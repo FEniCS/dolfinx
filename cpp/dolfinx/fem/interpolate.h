@@ -457,7 +457,6 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
       {
         // FIXME: Is num_scalar_dofs that number of interpolation points
         // per cell?
-        // coeffs[i] = f(k, c * num_scalar_dofs + i);
         std::copy_n(std::next(_f.begin(), k * f_shape1 + c * num_scalar_dofs),
                     num_scalar_dofs, _coeffs.begin());
         apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
@@ -552,8 +551,6 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
         // Extract computed expression values for element block k
         for (int m = 0; m < value_size; ++m)
         {
-          // std::copy_n(&f(k * value_size + m, c * X.shape(0)), X.shape(0),
-          //             xt::view(_vals, xt::all(), 0, m).begin());
           std::copy_n(std::next(_f.begin(), f_shape1 * (k * value_size + m)
                                                 + c * X.shape(0)),
                       X.shape(0), xt::view(_vals, xt::all(), 0, m).begin());
