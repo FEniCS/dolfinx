@@ -24,7 +24,7 @@ from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
 from mpi4py import MPI as _MPI
 
 __all__ = ["create_meshtags", "locate_entities", "locate_entities_boundary",
-           "refine", "create_mesh", "create_meshtags", "Mesh", "MeshTags", "CellType",
+           "refine", "create_mesh", "create_meshtags", "Mesh", "MeshTagsMetaClass", "meshtags", "CellType",
            "GhostMode", "build_dual_graph", "cell_dim", "compute_midpoints",
            "compute_boundary_facets", "compute_incident_entities", "create_cell_partitioner",
            "create_interval", "create_unit_interval", "create_rectangle", "create_unit_square",
@@ -123,13 +123,6 @@ _uflcell_to_dolfinxcell = {
     "hexahedron": CellType.hexahedron
 }
 
-_meshtags_types = {
-    np.int8: _cpp.mesh.MeshTags_int8,
-    np.int32: _cpp.mesh.MeshTags_int32,
-    np.int64: _cpp.mesh.MeshTags_int64,
-    np.double: _cpp.mesh.MeshTags_float64
-}
-
 
 def refine(mesh: Mesh, edges: np.ndarray = None, redistribute: bool = True) -> Mesh:
     """Refine a mesh
@@ -195,45 +188,15 @@ def create_submesh(mesh, dim, entities):
     return (Mesh.from_cpp(submesh, submesh_domain), vertex_map, geom_map)
 
 
-def MeshTags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> typing.Union[
-        _cpp.mesh.MeshTags_float64, _cpp.mesh.MeshTags_int32]:
-    """Create a MeshTag for a set of mesh entities.
-
-    Parameters
-    ----------
-    mesh
-        The mesh
-    dim
-        The topological dimension of the mesh entity
-    indices
-        The entity indices (local to process)
-    values
-        The corresponding value for each entity
-    """
-
-    if isinstance(values, int):
-        assert np.can_cast(values, np.int32)
-        values = np.full(indices.shape, values, dtype=np.int32)
-    elif isinstance(values, float):
-        values = np.full(indices.shape, values, dtype=np.double)
-
-    dtype = values.dtype.type
-    if dtype not in _meshtags_types.keys():
-        raise KeyError("Datatype {} of values array not recognised".format(dtype))
-
-    fn = _meshtags_types[dtype]
-    return fn(mesh, dim, indices.astype(np.int32), values)
-
-
 class MeshTagsMetaClass:
     def __init__(self, mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray):
         """A distributed sparse matrix that uses compressed sparse row storage.
 
         Args:
-            mesh:
-            dim:
-            indices:
-            values:
+            mesh: The mesh
+            dim: Topological dimension of the mesh entity
+            indices: Entity indices (local to process)
+            values: The corresponding value for each entity
 
         Note:
             Objects of this type should be created using
@@ -248,10 +211,10 @@ def meshtags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> M
     """Create a MeshTags object that associates data with a subset of mesh entities.
 
     Args:
-        mesh:
-        dim:
-        indices:
-        values:
+        mesh: The mesh
+        dim: Topological dimension of the mesh entity
+        indices: Entity indices (local to process)
+        values: The corresponding value for each entity
 
     Returns:
         A MeshTags object
