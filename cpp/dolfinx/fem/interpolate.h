@@ -554,8 +554,8 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
         {
           // std::copy_n(&f(k * value_size + m, c * X.shape(0)), X.shape(0),
           //             xt::view(_vals, xt::all(), 0, m).begin());
-          std::copy_n(std::next(_f.begin(),
-                                f_shape1 * k * value_size + m + c * X.shape(0)),
+          std::copy_n(std::next(_f.begin(), f_shape1 * (k * value_size + m)
+                                                + c * X.shape(0)),
                       X.shape(0), xt::view(_vals, xt::all(), 0, m).begin());
         }
 
