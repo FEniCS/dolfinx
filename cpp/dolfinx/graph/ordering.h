@@ -18,7 +18,7 @@ class AdjacencyList;
 ///
 /// An Algorithm for Reducing the Bandwidth and Profile of a Sparse
 /// Matrix SIAM Journal on Numerical Analysis, Vol. 13, No. 2 (Apr.,
-/// 1976), pp. 236-250 https://www.jstor.org/stable/2156090
+/// 1976), pp. 236-250 https://www.jstor.org/stable/2156090.
 ///
 /// @param[in] graph The graph to compute a re-ordering for
 /// @return Reordering array `map`, where `map[i]` is the new index of
