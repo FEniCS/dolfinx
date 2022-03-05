@@ -230,7 +230,7 @@ def meshtags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> M
     elif values.dtype == np.float64:
         ftype = _cpp.la.MeshTags_float64
     else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
+        raise NotImplementedError(f"Type {values.dtype} not supported.")
 
     tags = type("MeshTagsMetaClass", (MeshTagsMetaClass, ftype), {})
     return tags(mesh, dim, indices, values)
