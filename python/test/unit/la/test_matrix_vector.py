@@ -20,7 +20,7 @@ from mpi4py import MPI
 @pytest.mark.parametrize("fs", [FunctionSpace, VectorFunctionSpace])
 def test_create_matrix_bs(fs):
     """Test creation of CSR matrix with block size and specified types"""
-    mesh = create_unit_square(MPI.COMM_WORLD, 2, 2)
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 11)
     V = fs(mesh, ("Lagrange", 1))
     map = V.dofmap.index_map
     bs = V.dofmap.index_map_bs

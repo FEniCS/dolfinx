@@ -348,9 +348,6 @@ public:
            const xtl::span<const std::int32_t>& rows,
            const xtl::span<const std::int32_t>& cols)
   {
-    std::cout << x.size() << ", " << rows.size() << ", " << cols.size() << "\n";
-    for (int i = 0; i < rows.size(); ++i)
-      std::cout << rows[i] << "/" << cols[i] << "\n";
     impl::add_csr(_data, _cols, _row_ptr, x, rows, cols, _bs[0] * _bs[1]);
   }
 
@@ -368,7 +365,6 @@ public:
   /// @return Dense copy of the matrix
   xt::xtensor<T, 2> to_dense() const
   {
-    std::cout << "bs = " << _bs[0] << "," << _bs[1] << "\n";
     const std::int32_t nrows = num_all_rows();
     const std::int32_t ncols
         = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
