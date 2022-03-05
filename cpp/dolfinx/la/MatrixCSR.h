@@ -29,12 +29,13 @@ namespace impl
 /// in the matrix
 /// @param[in] xrows The row indices of `x`
 /// @param[in] xcols The column indices of `x`
+/// @param[in] nbs Number of entries in each block
 /// @param[in] local_size The maximum row index that can be set. Used
-/// when debugging is own to check that rows beyond a permitted range
+/// when debugging is on to check that rows beyond a permitted range
 /// are not being set.
 template <typename U, typename V, typename W, typename X>
 void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
-             const X& xrows, const X& xcols,
+             const X& xrows, const X& xcols, int nbs,
              [[maybe_unused]] typename X::value_type local_size)
 {
   assert(x.size() == xrows.size() * xcols.size());
@@ -60,7 +61,8 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
       assert(it != cit1);
       std::size_t d = std::distance(cols.begin(), it);
       assert(d < data.size());
-      data[d] = xr[c];
+      for (int k = 0; k < nbs; ++k)
+        data[d * nbs + k] = xr[c * nbs + k];
     }
   }
 }
@@ -74,9 +76,10 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 /// to the matrix
 /// @param[in] xrows The row indices of `x`
 /// @param[in] xcols The column indices of `x`
+/// @param[in] nbs Number of entries in each block
 template <typename U, typename V, typename W, typename X>
 void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
-             const X& xrows, const X& xcols)
+             const X& xrows, const X& xcols, int nbs)
 {
   assert(x.size() == xrows.size() * xcols.size());
   for (std::size_t r = 0; r < xrows.size(); ++r)
@@ -101,7 +104,8 @@ void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
       assert(it != cit1);
       std::size_t d = std::distance(cols.begin(), it);
       assert(d < data.size());
-      data[d] += xr[c];
+      for (int k = 0; k < nbs; ++k)
+        data[d * nbs + k] += xr[c * nbs + k];
     }
   }
 }
@@ -175,10 +179,6 @@ public:
         _row_ptr(p.graph().offsets().begin(), p.graph().offsets().end()),
         _comm(p.index_map(0)->comm(common::IndexMap::Direction::reverse))
   {
-    // TODO: handle block sizes
-    if (_bs[0] > 1 or _bs[1] > 1)
-      throw std::runtime_error("Block size not yet supported");
-
     // Compute off-diagonal offset for each row
     xtl::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offset();
     _off_diagonal_offset.reserve(num_diag_nnz.size());
@@ -230,7 +230,7 @@ public:
     std::vector<int> index_send_disp(num_neighbors + 1);
     std::transform(_val_send_disp.begin(), _val_send_disp.end(),
                    index_send_disp.begin(), [](int d) { return d * 2; });
-    int nbs = bs[0] * bs[1];
+    int nbs = _bs[0] * _bs[1];
     std::transform(_val_send_disp.begin(), _val_send_disp.end(),
                    _val_send_disp.begin(), [&nbs](int d) { return d * nbs; });
 
@@ -330,7 +330,7 @@ public:
            const xtl::span<const std::int32_t>& rows,
            const xtl::span<const std::int32_t>& cols)
   {
-    impl::set_csr(_data, _cols, _row_ptr, x, rows, cols,
+    impl::set_csr(_data, _cols, _row_ptr, x, rows, cols, _bs[0] * _bs[1],
                   _index_maps[0]->size_local());
   }
 
@@ -350,7 +350,7 @@ public:
            const xtl::span<const std::int32_t>& rows,
            const xtl::span<const std::int32_t>& cols)
   {
-    impl::add_csr(_data, _cols, _row_ptr, x, rows, cols);
+    impl::add_csr(_data, _cols, _row_ptr, x, rows, cols, _bs[0] * _bs[1]);
   }
 
   /// Number of local rows excluding ghost rows
@@ -370,15 +370,15 @@ public:
     const std::int32_t nrows = num_all_rows();
     const std::int32_t ncols
         = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
-    xt::xtensor<T, 2> A = xt::zeros<T>({nrows*bs[0], ncols*bs[1]});
+    xt::xtensor<T, 2> A = xt::zeros<T>({nrows * _bs[0], ncols * _bs[1]});
     for (std::size_t r = 0; r < nrows; ++r)
       for (int j = _row_ptr[r]; j < _row_ptr[r + 1]; ++j)
       {
-        int row = r * bs[0];
-        int col = _cols[j] * bs[1];
-        for (int k = 0; k < bs[0]; ++k)
-          for (int m = 0; m < bs[1]; ++m)
-            A(row + k, col + m) = _data[j*bs[0]*bs[1] + k*bs[1] + m];
+        int row = r * _bs[0];
+        int col = _cols[j] * _bs[1];
+        for (int k = 0; k < _bs[0]; ++k)
+          for (int m = 0; m < _bs[1]; ++m)
+            A(row + k, col + m) = _data[j * _bs[0] * _bs[1] + k * _bs[1] + m];
       }
     
     return A;
@@ -404,7 +404,7 @@ public:
   {
     const std::int32_t local_size0 = _index_maps[0]->size_local();
     const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
-    int nbs = bs[0] * bs[1];
+    int nbs = _bs[0] * _bs[1];
 
     // For each ghost row, pack and send values to send to neighborhood
     std::vector<int> insert_pos(_val_send_disp);
@@ -452,7 +452,7 @@ public:
     assert(status == MPI_SUCCESS);
 
     // Add to local rows
-    int nbs = bs[0] * bs[1];
+    int nbs = _bs[0] * _bs[1];
     assert(_ghost_value_data_in.size() == nbs * _unpack_pos.size());
     for (std::size_t i = 0; i < _unpack_pos.size(); ++i)
       for (int j = 0; j < nbs; ++j)
