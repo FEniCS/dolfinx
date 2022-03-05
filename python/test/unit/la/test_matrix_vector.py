@@ -73,9 +73,9 @@ def test_create_matrix_bs():
     assert A.data.dtype == np.complex128
 
     cmap = pattern.column_index_map()
-    num_cols = cmap.size_local + cmap.num_ghosts
+    num_cols = bs * (cmap.size_local + cmap.num_ghosts)
     num_rows = bs * (map.size_local + map.num_ghosts)
-    zero = np.zeros((num_rows, bs * num_cols), dtype=np.complex128)
+    zero = np.zeros((num_rows, num_cols), dtype=np.complex128)
     assert np.allclose(A.to_dense(), zero)
 
 

@@ -38,13 +38,13 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
              const X& xrows, const X& xcols, int nbs,
              [[maybe_unused]] typename X::value_type local_size)
 {
-  assert(x.size() == xrows.size() * xcols.size());
+  assert(x.size() == nbs * xrows.size() * xcols.size());
   for (std::size_t r = 0; r < xrows.size(); ++r)
   {
     // Row index and current data row
     auto row = xrows[r];
     using T = typename W::value_type;
-    const T* xr = x.data() + r * xcols.size();
+    const T* xr = x.data() + r * nbs * xcols.size();
 
 #ifndef NDEBUG
     if (row >= local_size)
@@ -81,13 +81,13 @@ template <typename U, typename V, typename W, typename X>
 void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
              const X& xrows, const X& xcols, int nbs)
 {
-  assert(x.size() == xrows.size() * xcols.size());
+  assert(x.size() == nbs * xrows.size() * xcols.size());
   for (std::size_t r = 0; r < xrows.size(); ++r)
   {
     // Row index and current data row
     auto row = xrows[r];
     using T = typename W::value_type;
-    const T* xr = x.data() + r * xcols.size();
+    const T* xr = x.data() + nbs * r * xcols.size();
 
 #ifndef NDEBUG
     if (row >= (int)row_ptr.size())
@@ -350,6 +350,9 @@ public:
            const xtl::span<const std::int32_t>& rows,
            const xtl::span<const std::int32_t>& cols)
   {
+    std::cout << x.size() << ", " << rows.size() << ", " << cols.size() << "\n";
+    for (int i = 0; i < rows.size(); ++i)
+      std::cout << rows[i] << "/" << cols[i] << "\n";
     impl::add_csr(_data, _cols, _row_ptr, x, rows, cols, _bs[0] * _bs[1]);
   }
 

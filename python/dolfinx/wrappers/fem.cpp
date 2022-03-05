@@ -152,12 +152,6 @@ void declare_functions(py::module& m)
          const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
              bcs)
       {
-        if (a.function_spaces()[0]->dofmap()->bs() != 1
-            or a.function_spaces()[0]->dofmap()->bs() != 1)
-        {
-          throw std::runtime_error("Assembly with block size > 1 not yet "
-                                   "supported with la::MatrixCSR.");
-        }
         dolfinx::fem::assemble_matrix(A.mat_add_values(), a,
                                       xtl::span(constants),
                                       py_to_cpp_coeffs(coefficients), bcs);
