@@ -150,10 +150,8 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = inner(u, v) * dx + inner(u, v) * ds
-    a = form(a)
+    a = form(inner(u, v) * dx + inner(u, v) * ds)
 
-    np.set_printoptions(precision=2)
     A0 = fem.assemble_matrix(a)
     A0.finalize()
     assert isinstance(A0, la.MatrixCSRMetaClass)
