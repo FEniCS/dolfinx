@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, MeshTags, create_unit_cube, locate_entities
+from dolfinx.mesh import CellType, meshtags, create_unit_cube, locate_entities
 
 from mpi4py import MPI
 
@@ -38,7 +38,7 @@ def test_3d(tempdir, cell_type, encoding):
     left_values = np.full(left_facets.shape, 2, dtype=np.int32)
 
     indices, pos = np.unique(np.hstack((bottom_facets, left_facets)), return_index=True)
-    mt = MeshTags(mesh, 2, indices, np.hstack((bottom_values, left_values))[pos])
+    mt = meshtags(mesh, 2, indices, np.hstack((bottom_values, left_values))[pos])
     mt.name = "facets"
 
     top_lines = locate_entities(mesh, 1, lambda x: np.isclose(x[2], 1.0))
@@ -47,7 +47,7 @@ def test_3d(tempdir, cell_type, encoding):
     right_values = np.full(right_lines.shape, 4, dtype=np.int32)
 
     indices, pos = np.unique(np.hstack((top_lines, right_lines)), return_index=True)
-    mt_lines = MeshTags(mesh, 1, indices, np.hstack((top_values, right_values))[pos])
+    mt_lines = meshtags(mesh, 1, indices, np.hstack((top_values, right_values))[pos])
     mt_lines.name = "lines"
 
     mesh.topology.create_connectivity(1, 3)
