@@ -319,7 +319,6 @@ void mesh(py::module& m)
           "Mesh topology", py::return_value_policy::reference_internal)
       .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self)
                              { return MPICommWrapper(self.comm()); })
-      .def_property_readonly("id", &dolfinx::mesh::Mesh::id)
       .def_readwrite("name", &dolfinx::mesh::Mesh::name);
 
   // dolfinx::mesh::MeshTags

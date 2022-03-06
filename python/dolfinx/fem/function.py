@@ -526,11 +526,6 @@ class FunctionSpace(ufl.FunctionSpace):
         return self
 
     @property
-    def id(self) -> int:
-        """Unique identifier"""
-        return self._cpp_object.id
-
-    @property
     def element(self):
         return self._cpp_object.element
 
