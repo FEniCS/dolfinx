@@ -367,10 +367,10 @@ class Function(ufl.Coefficient):
     def name(self, name):
         self._cpp_object.name = name
 
-    @property
-    def id(self) -> int:
-        """Object id index."""
-        return self._cpp_object.id
+    # @property
+    # def id(self) -> int:
+    #     """Object id index."""
+    #     return self._cpp_object.id
 
     def __str__(self):
         """Pretty print representation of it self."""
