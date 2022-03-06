@@ -153,7 +153,7 @@ def test_not_equal(W, V, W2, V2):
 def test_clone(W):
     V = W.clone()
     assert V == W
-    assert V is not W.id
+    assert V is not W
 
 
 def test_collapse(W, V):

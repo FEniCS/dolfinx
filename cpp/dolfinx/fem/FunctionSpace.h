@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <vector>
@@ -93,9 +94,6 @@ public:
   /// transposed.
   xt::xtensor<double, 2> tabulate_dof_coordinates(bool transpose) const;
 
-  /// Unique identifier
-  std::size_t id() const;
-
   /// The mesh
   std::shared_ptr<const mesh::Mesh> mesh() const;
 
@@ -118,11 +116,8 @@ private:
   // The component w.r.t. to root space
   std::vector<int> _component;
 
-  // Unique identifier
-  std::size_t _id;
-
   // The identifier of root space
-  std::size_t _root_space_id;
+  std::uintptr_t _root_space_id;
 
   // Cache of subspaces
   mutable std::map<std::vector<int>, std::weak_ptr<FunctionSpace>> _subspaces;

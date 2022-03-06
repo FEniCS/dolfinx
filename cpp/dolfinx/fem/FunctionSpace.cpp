@@ -9,7 +9,6 @@
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -27,7 +26,7 @@ FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
                              std::shared_ptr<const fem::FiniteElement> element,
                              std::shared_ptr<const fem::DofMap> dofmap)
     : _mesh(mesh), _element(element), _dofmap(dofmap),
-      _id(common::UniqueIdGenerator::id()), _root_space_id(_id)
+      _root_space_id(reinterpret_cast<std::uintptr_t>(this))
 {
   // Do nothing
 }
@@ -217,8 +216,6 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 
   return coords;
 }
-//-----------------------------------------------------------------------------
-std::size_t FunctionSpace::id() const { return _id; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const mesh::Mesh> FunctionSpace::mesh() const { return _mesh; }
 //-----------------------------------------------------------------------------
