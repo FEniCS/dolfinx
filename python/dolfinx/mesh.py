@@ -200,8 +200,8 @@ class MeshTagsMetaClass:
 
         Note:
             Objects of this type should be created using
-            :func:`meshtags` and not created using the class
-            initialiser.
+            :func:`meshtags` and not created using this initialiser
+            directly.
 
         """
         super().__init__(mesh, dim, indices.astype(np.int32), values)
@@ -219,16 +219,27 @@ def meshtags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> M
     Returns:
         A MeshTags object
 
+    Note:
+        The type of the returned MeshTags is inferred from the type of
+        ``values``.
+
     """
+
+    if isinstance(values, int):
+        assert np.can_cast(values, np.int32)
+        values = np.full(indices.shape, values, dtype=np.int32)
+    elif isinstance(values, float):
+        values = np.full(indices.shape, values, dtype=np.double)
+
     values = np.asarray(values)
     if values.dtype == np.int8:
         ftype = _cpp.mesh.MeshTags_int8
     elif values.dtype == np.int32:
         ftype = _cpp.mesh.MeshTags_int32
     elif values.dtype == np.int64:
-        ftype = _cpp.la.MeshTags_int64
+        ftype = _cpp.mesh.MeshTags_int64
     elif values.dtype == np.float64:
-        ftype = _cpp.la.MeshTags_float64
+        ftype = _cpp.mesh.MeshTags_float64
     else:
         raise NotImplementedError(f"Type {values.dtype} not supported.")
 
