@@ -365,20 +365,28 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   // owned dofs. Set to -1 for unowned dofs.
   std::vector<int> original_to_contiguous(dof_entity.size(), -1);
   std::int32_t counter_owned(0), counter_unowned(owned_size);
-  for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
+  if (dofmap.num_nodes() > 0)
   {
-    auto dofs = dofmap.links(cell);
-    for (std::size_t i = 0; i < dofs.size(); ++i)
+    for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
     {
-      if (original_to_contiguous[dofs[i]] == -1)
+      auto dofs = dofmap.links(cell);
+      for (std::size_t i = 0; i < dofs.size(); ++i)
       {
-        const std::pair<std::int8_t, std::int32_t>& e = dof_entity[dofs[i]];
-        if (e.second < offset[e.first])
-          original_to_contiguous[dofs[i]] = counter_owned++;
-        else
-          original_to_contiguous[dofs[i]] = counter_unowned++;
+        if (original_to_contiguous[dofs[i]] == -1)
+        {
+          const std::pair<std::int8_t, std::int32_t>& e = dof_entity[dofs[i]];
+          if (e.second < offset[e.first])
+            original_to_contiguous[dofs[i]] = counter_owned++;
+          else
+            original_to_contiguous[dofs[i]] = counter_unowned++;
+        }
       }
     }
+  }
+  else
+  {
+    // If this process has no cells, use identity map
+    std::iota(original_to_contiguous.begin(), original_to_contiguous.end(), 0);
   }
 
   if (reorder_fn)
