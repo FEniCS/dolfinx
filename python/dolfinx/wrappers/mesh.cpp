@@ -110,7 +110,7 @@ void declare_meshtags(py::module& m, std::string type)
       .def_property_readonly("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<T>::mesh)
       // .def("ufl_id", &dolfinx::mesh::MeshTags<T>::id)
-      .def("ufl_id", [](const& dolfinx::mesh::MeshTags<T>& self)
+      .def("ufl_id", [](const dolfinx::mesh::MeshTags<T>& self)
            { return reinterpret_cast<std::uintptr_t>(std::addressof(self)); })
       .def_property_readonly("values",
                              [](dolfinx::mesh::MeshTags<T>& self)
