@@ -36,7 +36,7 @@ from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
-from dolfinx.mesh import MeshTags, locate_entities_boundary
+from dolfinx.mesh import meshtags, locate_entities_boundary
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -64,7 +64,7 @@ u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
 # Locate all facets at the free end and assign them value 1. Sort the
 # facet indices (requirement for constructing MeshTags)
 free_end_facets = np.sort(locate_entities_boundary(msh, 1, lambda x: np.isclose(x[0], 48.0)))
-mt = MeshTags(msh, 1, free_end_facets, 1)
+mt = meshtags(msh, 1, free_end_facets, 1)
 
 ds = ufl.Measure("ds", subdomain_data=mt)
 
