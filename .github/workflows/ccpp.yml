@@ -162,7 +162,7 @@ jobs:
           git rm -r --ignore-unmatch dolfinx/${{ env.VERSION_NAME }}/cpp
           git rm -r --ignore-unmatch dolfinx/${{ env.VERSION_NAME }}/python
           mkdir -p dolfinx/${{ env.VERSION_NAME }}/cpp
-          mkdir -p dolfinx/${{ env.VERSION_NAME }}/doxygen
+          mkdir -p dolfinx/${{ env.VERSION_NAME }}/cpp/doxygen
           mkdir -p dolfinx/${{ env.VERSION_NAME }}/python
           cp -r ../cpp/doc/build/html/* dolfinx/${{ env.VERSION_NAME }}/cpp/
           cp -r ../cpp/doc/html/* dolfinx/${{ env.VERSION_NAME }}/cpp/doxygen
