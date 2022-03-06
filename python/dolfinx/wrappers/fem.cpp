@@ -354,7 +354,6 @@ void declare_objects(py::module& m, const std::string& type)
       .def(py::init<std::shared_ptr<dolfinx::fem::FunctionSpace>,
                     std::shared_ptr<dolfinx::la::Vector<T>>>())
       .def_readwrite("name", &dolfinx::fem::Function<T>::name)
-      .def_property_readonly("id", &dolfinx::fem::Function<T>::id)
       .def("sub", &dolfinx::fem::Function<T>::sub,
            "Return sub-function (view into parent Function")
       .def("collapse", &dolfinx::fem::Function<T>::collapse,

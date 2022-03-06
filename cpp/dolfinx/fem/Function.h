@@ -11,7 +11,6 @@
 #include "FunctionSpace.h"
 #include "interpolate.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -51,7 +50,7 @@ public:
   /// Create function on given function space
   /// @param[in] V The function space
   explicit Function(std::shared_ptr<const FunctionSpace> V)
-      : _id(common::UniqueIdGenerator::id()), _function_space(V),
+      : _function_space(V),
         _x(std::make_shared<la::Vector<T>>(V->dofmap()->index_map,
                                            V->dofmap()->index_map_bs()))
   {
@@ -71,7 +70,7 @@ public:
   /// @param[in] x The vector
   Function(std::shared_ptr<const FunctionSpace> V,
            std::shared_ptr<la::Vector<T>> x)
-      : _id(common::UniqueIdGenerator::id()), _function_space(V), _x(x)
+      : _function_space(V), _x(x)
   {
     // We do not check for a subspace since this constructor is used for
     // creating subfunctions
@@ -518,13 +517,7 @@ public:
   /// Name
   std::string name = "u";
 
-  /// ID
-  std::size_t id() const { return _id; }
-
 private:
-  // ID
-  std::size_t _id;
-
   // The function space
   std::shared_ptr<const FunctionSpace> _function_space;
 
