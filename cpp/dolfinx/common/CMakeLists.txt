@@ -15,7 +15,6 @@ set(HEADERS_common
   ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogger.h
   ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogManager.h
   ${CMAKE_CURRENT_SOURCE_DIR}/timing.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/UniqueIdGenerator.h
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
   ${CMAKE_CURRENT_SOURCE_DIR}/version.h
   PARENT_SCOPE)
@@ -32,5 +31,4 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogger.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogManager.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/timing.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/UniqueIdGenerator.cpp
 )
