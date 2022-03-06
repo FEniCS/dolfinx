@@ -162,9 +162,10 @@ jobs:
           git rm -r --ignore-unmatch dolfinx/${{ env.VERSION_NAME }}/cpp
           git rm -r --ignore-unmatch dolfinx/${{ env.VERSION_NAME }}/python
           mkdir -p dolfinx/${{ env.VERSION_NAME }}/cpp
+          mkdir -p dolfinx/${{ env.VERSION_NAME }}/doxygen
           mkdir -p dolfinx/${{ env.VERSION_NAME }}/python
-          cp -r ../cpp/doc/html/* dolfinx/${{ env.VERSION_NAME }}/cpp/doxygen
           cp -r ../cpp/doc/build/html/* dolfinx/${{ env.VERSION_NAME }}/cpp/
+          cp -r ../cpp/doc/html/* dolfinx/${{ env.VERSION_NAME }}/cpp/doxygen
           cp -r ../python/doc/build/html/* dolfinx/${{ env.VERSION_NAME }}/python
       - name: Commit and push documentation to FEniCS/docs
         if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == '32' }}
