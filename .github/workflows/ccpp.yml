@@ -145,18 +145,18 @@ jobs:
           if-no-files-found: error
 
       - name: Checkout FEniCS/docs
-        # if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' }}
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' }}
         uses: actions/checkout@v2
         with:
           repository: "FEniCS/docs"
           path: "docs"
           ssh-key: "${{ secrets.SSH_GITHUB_DOCS_PRIVATE_KEY }}"
       - name: Set version name
-        # if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' }}
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' }}
         run: |
           echo "VERSION_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: Copy documentation into repository
-        # if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' }}
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' }}
         run: |
           cd docs
           git rm -r --ignore-unmatch dolfinx/${{ env.VERSION_NAME }}/cpp
@@ -168,7 +168,7 @@ jobs:
           cp -r ../cpp/doc/html/* dolfinx/${{ env.VERSION_NAME }}/cpp/doxygen
           cp -r ../python/doc/build/html/* dolfinx/${{ env.VERSION_NAME }}/python
       - name: Commit and push documentation to FEniCS/docs
-        # if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == '32' }}
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == '32' }}
         run: |
           cd docs
           git config --global user.email "fenics@github.com"
