@@ -381,7 +381,7 @@ interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
 template <typename T>
-void interpolate(Function<T>& u, xt::xarray<T>& f,
+void interpolate(Function<T>& u, const xt::xarray<T>& f,
                  const xtl::span<const std::int32_t>& cells)
 {
   const std::shared_ptr<const FiniteElement> element
@@ -413,13 +413,18 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
   if (f.dimension() == 1)
   {
     if (element->value_size() != 1)
-      throw std::runtime_error("Interpolation data has the wrong shape.");
-    f.reshape({std::size_t(element->value_size()),
-               std::size_t(f.shape(0) / element->value_size())});
+      throw std::runtime_error("Interpolation data has the wrong shape/size.");
   }
+  else if (f.dimension() == 2)
+  {
+    if (f.shape(0) != element->value_size())
+      throw std::runtime_error("Interpolation data has the wrong shape/size.");
+  }
+  else
+    throw std::runtime_error("Interpolation data has wrong shape.");
 
-  if (f.shape(0) != element->value_size())
-    throw std::runtime_error("Interpolation data has the wrong shape.");
+  const xtl::span<const T> _f(f.data(), f.size());
+  const std::size_t f_shape1 = _f.size() / element->value_size();
 
   // Get dofmap
   const auto dofmap = u.function_space()->dofmap();
@@ -442,14 +447,18 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
                              std::int32_t, int)>
         apply_inv_transpose_dof_transformation
         = element->get_dof_transformation_function<T>(true, true, true);
+
+    // Loop over cells
     for (std::size_t c = 0; c < cells.size(); ++c)
     {
       const std::int32_t cell = cells[c];
       xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
       for (int k = 0; k < element_bs; ++k)
       {
-        for (int i = 0; i < num_scalar_dofs; ++i)
-          _coeffs[i] = f(k, c * num_scalar_dofs + i);
+        // FIXME: Is num_scalar_dofs that number of interpolation points
+        // per cell?
+        std::copy_n(std::next(_f.begin(), k * f_shape1 + c * num_scalar_dofs),
+                    num_scalar_dofs, _coeffs.begin());
         apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
@@ -542,8 +551,9 @@ void interpolate(Function<T>& u, xt::xarray<T>& f,
         // Extract computed expression values for element block k
         for (int m = 0; m < value_size; ++m)
         {
-          std::copy_n(&f(k * value_size + m, c * X.shape(0)), X.shape(0),
-                      xt::view(_vals, xt::all(), 0, m).begin());
+          std::copy_n(std::next(_f.begin(), f_shape1 * (k * value_size + m)
+                                                + c * X.shape(0)),
+                      X.shape(0), xt::view(_vals, xt::all(), 0, m).begin());
         }
 
         // Get element degrees of freedom for block

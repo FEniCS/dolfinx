@@ -13,13 +13,13 @@ namespace dolfinx::common
 
 /// This is a singleton class that return IDs that are unique in the
 /// lifetime of a program.
-
 class UniqueIdGenerator
 {
 public:
   UniqueIdGenerator();
 
   /// Generate a unique ID
+  // @return An ID inetger
   static std::size_t id();
 
 private:
