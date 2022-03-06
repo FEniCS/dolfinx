@@ -71,9 +71,10 @@ public:
   }
 
   /// Set all connections for all entities (T is a '2D' container, e.g.
-  /// a std::vector<<std::vector<std::size_t>>,
-  /// std::vector<<std::set<std::size_t>>, etc)
-  /// @param [in] data TODO
+  /// a `std::vector<<std::vector<std::size_t>>`,
+  /// `std::vector<<std::set<std::size_t>>`, etc).
+  /// @param [in] data Adjacency list data, where `std::next(data, i)`
+  /// points to the container of edges for node `i`.
   template <typename X>
   explicit AdjacencyList(const std::vector<X>& data)
   {
@@ -97,20 +98,21 @@ public:
   /// Destructor
   ~AdjacencyList() = default;
 
-  /// Assignment
+  /// Assignment operator
   AdjacencyList& operator=(const AdjacencyList& list) = default;
 
-  /// Move assignment
+  /// Move assignment operator
   AdjacencyList& operator=(AdjacencyList&& list) = default;
 
   /// Equality operator
+  /// @return True is the adjacency lists are equal
   bool operator==(const AdjacencyList& list) const
   {
     return this->_array == list._array and this->_offsets == list._offsets;
   }
 
   /// Get the number of nodes
-  /// @return The number of nodes
+  /// @return The number of nodes in the adjacency list
   std::int32_t num_nodes() const { return _offsets.size() - 1; }
 
   /// Number of connections for given node
@@ -125,7 +127,7 @@ public:
   /// Get the links (edges) for given node
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
-  /// AdjacencyList:num_links(node).
+  /// AdjacencyList::num_links(node).
   xtl::span<T> links(int node)
   {
     return xtl::span<T>(_array.data() + _offsets[node],
@@ -154,7 +156,8 @@ public:
   /// Offset for each node in array()
   std::vector<std::int32_t>& offsets() { return _offsets; }
 
-  /// Return informal string representation (pretty-print)
+  /// Informal string representation (pretty-print)
+  /// @return String representation of the adjacency list
   std::string str() const
   {
     std::stringstream s;
@@ -178,14 +181,15 @@ private:
   std::vector<std::int32_t> _offsets;
 };
 
-/// Construct an adjacency list from array of data for a graph with
-/// constant degree (valency). A constant degree graph has the same
-/// number of edges for every node.
+/// @brief Construct a constant degree (valency) adjacency list.
+///
+/// A constant degree graph has the same number of edges for every node.
 /// @param [in] data Adjacency array
 /// @param [in] degree The number of (outgoing) edges for each node
 /// @return An adjacency list
-template <typename T, typename U>
-AdjacencyList<T> build_adjacency_list(U&& data, int degree)
+template <typename U>
+AdjacencyList<typename U::value_type> regular_adjacency_list(U&& data,
+                                                             int degree)
 {
   if (degree == 0 and !data.empty())
   {
@@ -203,7 +207,8 @@ AdjacencyList<T> build_adjacency_list(U&& data, int degree)
   std::vector<std::int32_t> offsets(num_nodes + 1, 0);
   for (std::size_t i = 1; i < offsets.size(); ++i)
     offsets[i] = offsets[i - 1] + degree;
-  return AdjacencyList<T>(std::forward<U>(data), std::move(offsets));
+  return AdjacencyList<typename U::value_type>(std::forward<U>(data),
+                                               std::move(offsets));
 }
 
 } // namespace dolfinx::graph

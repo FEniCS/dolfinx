@@ -460,7 +460,7 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
     if (nparts == 1 and dolfinx::MPI::size(comm) == 1)
     {
       // Nothing to be partitioned
-      return build_adjacency_list<std::int32_t>(
+      return regular_adjacency_list(
           std::vector<std::int32_t>(graph.num_nodes(), 0), 1);
     }
 
@@ -521,7 +521,7 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
     else
     {
       MPI_Comm_free(&pcomm);
-      return build_adjacency_list<std::int32_t>(
+      return regular_adjacency_list(
           std::vector<std::int32_t>(part.begin(), part.end()), 1);
     }
   };
@@ -580,7 +580,7 @@ graph::kahip::partitioner(int mode, int seed, double imbalance,
       return compute_destination_ranks(comm, graph, node_disp, part);
     else
     {
-      return build_adjacency_list<std::int32_t>(
+      return regular_adjacency_list(
           std::vector<std::int32_t>(part.begin(), part.end()), 1);
     }
   };

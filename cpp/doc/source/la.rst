@@ -1,0 +1,5 @@
+Linea algebra (``dolfinx::la``)
+===============================
+
+.. doxygennamespace:: dolfinx::la
+   :project: DOLFINx
