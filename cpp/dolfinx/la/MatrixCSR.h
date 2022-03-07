@@ -29,10 +29,10 @@ namespace impl
 /// in the matrix
 /// @param[in] xrows The row indices of `x`
 /// @param[in] xcols The column indices of `x`
-/// @param[in] nbs Number of entries in each block
+/// @param[in] bs Number of entries in each block
 /// @param[in] local_size The maximum row index that can be set. Used
-/// when debugging is on to check that rows beyond a permitted range
-/// are not being set.
+/// when debugging is on to check that rows beyond a permitted range are
+/// not being set.
 template <typename U, typename V, typename W, typename X>
 void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
              const X& xrows, const X& xcols, std::array<int, 2> bs,
@@ -79,7 +79,7 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 /// to the matrix
 /// @param[in] xrows The row indices of `x`
 /// @param[in] xcols The column indices of `x`
-/// @param[in] nbs Number of entries in each block
+/// @param[in] bs Number of entries in each block
 template <typename U, typename V, typename W, typename X>
 void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
              const X& xrows, const X& xcols, std::array<int, 2> bs)
