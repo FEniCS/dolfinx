@@ -36,7 +36,7 @@ from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
-from dolfinx.mesh import meshtags, locate_entities_boundary
+from dolfinx.mesh import locate_entities_boundary, meshtags
 
 from mpi4py import MPI
 from petsc4py import PETSc
