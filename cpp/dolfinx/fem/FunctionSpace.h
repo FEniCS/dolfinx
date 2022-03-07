@@ -6,7 +6,9 @@
 
 #pragma once
 
+#include <boost/uuid/uuid.hpp>
 #include <cstddef>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <vector>
@@ -52,24 +54,15 @@ public:
   /// Move assignment operator
   FunctionSpace& operator=(FunctionSpace&& V) = default;
 
-  /// Equality operator
-  /// @param[in] V Another function space
-  /// @return True is the function spaces are the same
-  bool operator==(const FunctionSpace& V) const;
-
-  /// Inequality operator
-  /// @param[in] V Another function space.
-  /// @return True is the function spaces are not the same
-  bool operator!=(const FunctionSpace& V) const;
-
   /// Extract subspace for component
   /// @param[in] component The subspace component
   /// @return The subspace
   std::shared_ptr<FunctionSpace> sub(const std::vector<int>& component) const;
 
-  /// Check whether V is subspace of this, or this itself
+  /// @brief Check whether V is subspace of this, or this itself
   /// @param[in] V The space to be tested for inclusion
-  /// @return True if V is contained in or equal to this FunctionSpace
+  /// @return True if V is contained in or is equal to this
+  /// FunctionSpace
   bool contains(const FunctionSpace& V) const;
 
   /// Collapse a subspace and return a new function space and a map from
@@ -82,18 +75,16 @@ public:
   /// W.sub(1).sub(0) == [1, 0]
   std::vector<int> component() const;
 
+  /// @brief Tabulate the physical coordinates of all dofs on this process.
+  ///
   /// @todo Remove - see function in interpolate.h
-  /// Tabulate the physical coordinates of all dofs on this process.
   /// @param[in] transpose If false the returned data has shape
-  /// (num_points, gdim), otherwise it is transposed and has shape
-  /// (gdim, num_points)
-  /// @return The dof coordinates [([x0, y0, z0], [x1, y1, z1], ...) if
-  /// @p transpose is false, and otherwise the returned data is
+  /// `(num_points, gdim)`, otherwise it is transposed and has shape
+  /// `(gdim, num_points)`
+  /// @return The dof coordinates `[([x0, y0, z0], [x1, y1, z1], ...)`
+  /// if @p transpose is false, and otherwise the returned data is
   /// transposed.
   xt::xtensor<double, 2> tabulate_dof_coordinates(bool transpose) const;
-
-  /// Unique identifier
-  std::size_t id() const;
 
   /// The mesh
   std::shared_ptr<const mesh::Mesh> mesh() const;
@@ -117,11 +108,9 @@ private:
   // The component w.r.t. to root space
   std::vector<int> _component;
 
-  // Unique identifier
-  std::size_t _id;
-
-  // The identifier of root space
-  std::size_t _root_space_id;
+  // Unique identifier for the space and for its root space
+  boost::uuids::uuid _id;
+  boost::uuids::uuid _root_space_id;
 
   // Cache of subspaces
   mutable std::map<std::vector<int>, std::weak_ptr<FunctionSpace>> _subspaces;
