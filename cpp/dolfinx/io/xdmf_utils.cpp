@@ -414,8 +414,6 @@ xdmf_utils::distribute_entity_data(
     const xtl::span<const std::int32_t>& data)
 {
   LOG(INFO) << "XDMF distribute entity data";
-  // if (entities.shape(0) != data.size())
-  //   throw std::runtime_error("Number of entities and data size must match");
 
   // Use ElementDofLayout of the cell to get vertex dof indices (local
   // to a cell), i.e. build a map from local vertex index to associated
@@ -433,6 +431,7 @@ xdmf_utils::distribute_entity_data(
       cell_vertex_dofs.push_back(local_index[0]);
     }
   }
+
   // -------------------
   // 1. Send this rank's global "input" nodes indices to the
   //    'postmaster' rank, and receive global "input" nodes for which
@@ -502,7 +501,6 @@ xdmf_utils::distribute_entity_data(
         = mesh.geometry().cmap().create_dof_layout();
     const std::vector<int> entity_layout
         = cmap_dof_layout.entity_closure_dofs(entity_dim, 0);
-    // assert(entity_layout.size() == entities.shape(1));
 
     // Find map from entity vertex to local (w.r.t. dof numbering on the
     // entity) dof number. E.g., if there are dofs on entity [0 3 6 7 9]
@@ -526,7 +524,6 @@ xdmf_utils::distribute_entity_data(
       {
         entities_vertices(e, i)
             = entities[e * shape_e_1 + entity_vertex_dofs[i]];
-        // entities_vertices(e, i) = entities(e, entity_vertex_dofs[i]);
       }
     }
 
