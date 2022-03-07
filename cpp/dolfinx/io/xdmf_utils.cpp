@@ -468,38 +468,55 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
       entities_vertices(e, i) = entities(e, entity_vertex_dofs[i]);
   }
 
+  const MPI_Comm comm = mesh.comm();
+  const int comm_size = dolfinx::MPI::size(comm);
+  // Get "input" global node indices (as in the input file before any
+  // internal re-ordering)
+  const std::vector<std::int64_t>& nodes_g
+      = mesh.geometry().input_global_indices();
+  const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
+
   // -------------------
   // 1. Send this rank's global "input" nodes indices to the
   //    'postmaster' rank, and receive global "input" nodes for which
   //    this rank is the postmaster
 
-  // Get "input" global node indices (as in the input file before any
-  // internal re-ordering)
-  const std::vector<std::int64_t>& nodes_g
-      = mesh.geometry().input_global_indices();
-
-  // Send input global indices to 'post master' rank, based on input
-  // global index value
-  const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
-  const MPI_Comm comm = mesh.comm();
-  const int comm_size = dolfinx::MPI::size(comm);
-  // NOTE: could make this int32_t be sending: index <- index - dest_rank_offset
-  std::vector<std::vector<std::int64_t>> nodes_g_send(comm_size);
-  for (std::int64_t node : nodes_g)
+  auto postmaster_global_nodes_sendrecv = [](const mesh::Mesh& mesh)
   {
-    // TODO: Optimise this call by adding 'vectorised verion of
-    //       MPI::index_owner
-    // Figure out which process is the postmaster for the input global index
-    const std::int32_t p
-        = dolfinx::MPI::index_owner(comm_size, node, num_nodes_g);
-    nodes_g_send[p].push_back(node);
-  }
+    const MPI_Comm comm = mesh.comm();
+    const int comm_size = dolfinx::MPI::size(comm);
 
-  // Send/receive
-  LOG(INFO) << "XDMF send entity nodes size:(" << num_nodes_g << ")";
+    // Get "input" global node indices (as in the input file before any
+    // internal re-ordering)
+    const std::vector<std::int64_t>& nodes_g
+        = mesh.geometry().input_global_indices();
+
+    // Send input global indices to 'post master' rank, based on input
+    // global index value
+    const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
+    // NOTE: could make this int32_t be sending: index <- index -
+    // dest_rank_offset
+    std::vector<std::vector<std::int64_t>> nodes_g_send(comm_size);
+    for (std::int64_t node : nodes_g)
+    {
+      // TODO: Optimise this call by adding 'vectorised verion of
+      //       MPI::index_owner
+      // Figure out which process is the postmaster for the input global index
+      const std::int32_t p
+          = dolfinx::MPI::index_owner(comm_size, node, num_nodes_g);
+      nodes_g_send[p].push_back(node);
+    }
+
+    // Send/receive
+    LOG(INFO) << "XDMF send entity nodes size:(" << num_nodes_g << ")";
+    graph::AdjacencyList<std::int64_t> nodes_g_recv = dolfinx::MPI::all_to_all(
+        comm, graph::AdjacencyList<std::int64_t>(nodes_g_send));
+
+    return nodes_g_recv;
+  };
+
   const graph::AdjacencyList<std::int64_t> nodes_g_recv
-      = dolfinx::MPI::all_to_all(
-          comm, graph::AdjacencyList<std::int64_t>(nodes_g_send));
+      = postmaster_global_nodes_sendrecv(mesh);
 
   // -------------------
   // 2. Send the entity key (nodes list) and tag to the postmaster based
