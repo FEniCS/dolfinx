@@ -367,7 +367,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
                                       num_vertices_per_entity);
   mesh::MeshTags meshtags = mesh::create_meshtags(
       mesh, mesh::cell_dim(cell_type), entities_adj,
-      xtl::span<const std::int32_t>`(entities_values.second));
+      xtl::span<const std::int32_t>(entities_values.second));
   meshtags.name = name;
 
   return meshtags;
