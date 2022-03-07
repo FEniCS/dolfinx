@@ -145,6 +145,8 @@ def test_save_3d_vector_series(tempdir, encoding, cell_type):
         u.vector.set(2.0 + (2j if np.issubdtype(PETSc.ScalarType, np.complexfloating) else 0))
         file.write_function(u, 0.2)
 
+
+    # NOTE: This is an issue with appending in parallel
     # with XDMFFile(mesh.comm, filename, "a", encoding=encoding) as file:
     #     u.vector.set(3.0 + (3j if np.issubdtype(PETSc.ScalarType, np.complexfloating) else 0))
     #     file.write_function(u, 0.3)
