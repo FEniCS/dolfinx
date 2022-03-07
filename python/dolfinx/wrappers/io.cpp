@@ -68,11 +68,25 @@ void io(py::module& m)
         //                            xt::no_ownership(), shape);
         xt::xtensor<std::int64_t, 2> _entities(shape);
         std::copy_n(entities.data(), entities.size(), _entities.data());
-        auto [e, v] = dolfinx::io::xdmf_utils::distribute_entity_data(
-            mesh, entity_dim, _entities,
-            xtl::span(values.data(), values.size()));
 
-        return std::pair(xt_as_pyarray(std::move(e)), as_pyarray(std::move(v)));
+        // auto [e, v] = dolfinx::io::xdmf_utils::distribute_entity_data(
+        //     mesh, entity_dim, _entities,
+        //     xtl::span(values.data(), values.size()));
+        std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
+            entities_values = dolfinx::io::xdmf_utils::distribute_entity_data(
+                mesh, entity_dim, _entities,
+                xtl::span(values.data(), values.size()));
+
+        std::size_t num_vertices_per_entity = dolfinx::mesh::cell_num_entities(
+            dolfinx::mesh::cell_entity_type(mesh.topology().cell_type(),
+                                            entity_dim, 0),
+            0);
+
+        std::array shape_e
+            = {entities_values.first.size() / num_vertices_per_entity,
+               num_vertices_per_entity};
+        return std::pair(as_pyarray(std::move(entities_values.first), shape_e),
+                         as_pyarray(std::move(entities_values.second)));
       });
 
   // dolfinx::io::XDMFFile

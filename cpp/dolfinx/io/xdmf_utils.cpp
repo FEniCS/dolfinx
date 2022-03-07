@@ -407,7 +407,7 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
   return cell_str->second;
 }
 //-----------------------------------------------------------------------------
-std::pair<xt::xtensor<std::int32_t, 2>, std::vector<std::int32_t>>
+std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
 xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
                                    const xt::xtensor<std::int64_t, 2>& entities,
                                    const xtl::span<const std::int32_t>& data)
@@ -707,12 +707,6 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   auto [entities_new, data_new]
       = determine_my_entities(mesh, entity_dim, recv_ents, recv_vals);
 
-  const std::size_t num_vertices_per_entity = mesh::cell_num_entities(
-      mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim, 0), 0);
-  std::vector<std::size_t> shape_r = {
-      entities_new.size() / num_vertices_per_entity, num_vertices_per_entity};
-  auto e_new = xt::adapt(entities_new.data(), entities_new.size(),
-                         xt::no_ownership(), shape_r);
-  return {e_new, std::move(data_new)};
+  return {std::move(entities_new), std::move(data_new)};
 }
 //-----------------------------------------------------------------------------
