@@ -9,10 +9,9 @@
 namespace dolfinx::common
 {
 
-/// Function in this namesspace are convenience functtions for the
+/// Functions in this namesspace are convenience functtions for the
 /// initialisation and finalisation of various sub systems, such as MPI
 /// and PETSc.
-
 namespace subsystem
 {
 

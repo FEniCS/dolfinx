@@ -48,7 +48,7 @@ public:
       : _mesh(mesh), _dim(dim), _indices(std::forward<U>(indices)),
         _values(std::forward<V>(values))
   {
-    if (indices.size() != values.size())
+    if (_indices.size() != _values.size())
     {
       throw std::runtime_error(
           "Indices and values arrays must have same size.");

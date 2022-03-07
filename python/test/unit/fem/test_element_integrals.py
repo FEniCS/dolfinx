@@ -16,7 +16,7 @@ import ufl
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.fem.petsc import assemble_matrix, assemble_vector
-from dolfinx.mesh import CellType, MeshTags, create_mesh
+from dolfinx.mesh import CellType, meshtags, create_mesh
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -146,7 +146,7 @@ def test_facet_integral(cell_type):
         num_facets = map_f.size_local + map_f.num_ghosts
         indices = np.arange(0, num_facets)
         values = np.arange(0, num_facets, dtype=np.intc)
-        marker = MeshTags(mesh, tdim - 1, indices, values)
+        marker = meshtags(mesh, tdim - 1, indices, values)
 
         # Functions that will have the same integral over each facet
         if cell_type == CellType.triangle:
@@ -189,7 +189,7 @@ def test_facet_normals(cell_type):
         num_facets = map_f.size_local + map_f.num_ghosts
         indices = np.arange(0, num_facets)
         values = np.arange(0, num_facets, dtype=np.intc)
-        marker = MeshTags(mesh, tdim - 1, indices, values)
+        marker = meshtags(mesh, tdim - 1, indices, values)
 
         # For each facet, check that the inner product of the normal and
         # the vector that has a positive normal component on only that

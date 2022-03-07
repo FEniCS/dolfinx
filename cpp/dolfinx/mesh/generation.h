@@ -13,12 +13,11 @@
 #include <cstddef>
 #include <mpi.h>
 
-/// Right cuboid mesh creation
 namespace dolfinx::mesh
 {
 
-/// Create a uniform mesh::Mesh over the rectangular prism spanned by the
-/// two points @p p. The order of the two points is not important in
+/// Create a uniform mesh::Mesh over the rectangular prism spanned by
+/// the two points @p p. The order of the two points is not important in
 /// terms of minimum and maximum coordinates. The total number of
 /// vertices will be `(n[0] + 1)*(n[1] + 1)*(n[2] + 1)`. For tetrahedra
 /// there will be  will be `6*n[0]*n[1]*n[2]` cells. For hexahedra the

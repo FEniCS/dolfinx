@@ -13,7 +13,7 @@ from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_scalar,
                          dirichletbc, form)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
-from dolfinx.mesh import (GhostMode, MeshTags, create_unit_square,
+from dolfinx.mesh import (GhostMode, meshtags, create_unit_square,
                           locate_entities_boundary)
 
 from mpi4py import MPI
@@ -47,7 +47,7 @@ def test_assembly_dx_domains(mode):
     values = np.full(indices.shape, 3, dtype=np.intc)
     values[0] = 1
     values[1] = 2
-    marker = MeshTags(mesh, mesh.topology.dim, indices, values)
+    marker = meshtags(mesh, mesh.topology.dim, indices, values)
     dx = ufl.Measure('dx', subdomain_data=marker, domain=mesh)
     w = Function(V)
     w.x.array[:] = 0.5
@@ -125,7 +125,7 @@ def test_assembly_ds_domains(mode):
     values = np.hstack((bottom_vals, top_vals, left_vals, right_vals))
 
     indices, pos = np.unique(indices, return_index=True)
-    marker = MeshTags(mesh, mesh.topology.dim - 1, indices, values[pos])
+    marker = meshtags(mesh, mesh.topology.dim - 1, indices, values[pos])
 
     ds = ufl.Measure('ds', subdomain_data=marker, domain=mesh)
 

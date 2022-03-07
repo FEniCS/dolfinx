@@ -104,6 +104,8 @@ void declare_meshtags(py::module& m, std::string type)
             return dolfinx::mesh::MeshTags<T>(mesh, dim, std::move(indices_vec),
                                               std::move(values_vec));
           }))
+      .def_property_readonly("dtype", [](const dolfinx::mesh::MeshTags<T>& self)
+                             { return py::dtype::of<T>(); })
       .def_readwrite("name", &dolfinx::mesh::MeshTags<T>::name)
       .def_property_readonly("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<T>::mesh)
@@ -324,8 +326,8 @@ void mesh(py::module& m)
 
   declare_meshtags<std::int8_t>(m, "int8");
   declare_meshtags<std::int32_t>(m, "int32");
-  declare_meshtags<double>(m, "double");
   declare_meshtags<std::int64_t>(m, "int64");
+  declare_meshtags<double>(m, "float64");
 
   // Partitioning interface using
   using PythonCellPartitionFunction
