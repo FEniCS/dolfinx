@@ -86,10 +86,10 @@ public:
   ///
   /// @todo Remove - see function in interpolate.h
   /// @param[in] transpose If false the returned data has shape
-  /// (num_points, gdim), otherwise it is transposed and has shape
-  /// (gdim, num_points)
-  /// @return The dof coordinates [([x0, y0, z0], [x1, y1, z1], ...) if
-  /// @p transpose is false, and otherwise the returned data is
+  /// `(num_points, gdim)`, otherwise it is transposed and has shape
+  /// `(gdim, num_points)`
+  /// @return The dof coordinates `[([x0, y0, z0], [x1, y1, z1], ...)`
+  /// if @p transpose is false, and otherwise the returned data is
   /// transposed.
   xt::xtensor<double, 2> tabulate_dof_coordinates(bool transpose) const;
 

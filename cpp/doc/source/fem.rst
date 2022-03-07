@@ -17,14 +17,14 @@ Function spaces and functions
 Finite element functions, expressions and constants
 
 Function spaces
----------------
+^^^^^^^^^^^^^^^
 
 .. doxygenclass:: dolfinx::fem::FunctionSpace
    :project: DOLFINx
    :members:
 
 Functions
----------
+^^^^^^^^^
 
 .. doxygenclass:: dolfinx::fem::Function
    :project: DOLFINx
@@ -32,7 +32,7 @@ Functions
 
 
 Constants
----------
+^^^^^^^^^
 
 .. doxygenclass:: dolfinx::fem::Constant
    :project: DOLFINx
