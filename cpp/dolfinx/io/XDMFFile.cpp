@@ -350,7 +350,8 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   //                                          entities1, values);
   std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
       entities_values = xdmf_utils::distribute_entity_data(
-          *mesh, mesh::cell_dim(cell_type), entities1, values);
+          *mesh, mesh::cell_dim(cell_type),
+          xtl::span(entities1.data(), entities1.size()), values);
 
   LOG(INFO) << "XDMF create meshtags";
   // auto [data, offset] = graph::create_adjacency_data(entities_local);

@@ -88,6 +88,8 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// triangle (using local indexing). Each vertex has a 'node' (geometry
 /// dof) index, and each node has a persistent input global index, so
 /// the triangle [gi0, gi1, gi2] could be identified with [v0, v1, v2].
+/// The data is flattened and the shape is `(num_entities,
+/// nodes_per_entity)`.
 /// @param[in] data Data associated with each entity in `entities`.
 /// @return (entity-vertex connectivity of owned entities, associated
 /// data (values) with each entity)
@@ -100,7 +102,7 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// for this triangle.
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
 distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
-                       const xt::xtensor<std::int64_t, 2>& entities,
+                       const xtl::span<const std::int64_t>& entities,
                        const xtl::span<const std::int32_t>& data);
 
 /// TODO: Document

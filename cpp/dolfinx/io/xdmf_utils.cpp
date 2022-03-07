@@ -408,13 +408,14 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
-                                   const xt::xtensor<std::int64_t, 2>& entities,
-                                   const xtl::span<const std::int32_t>& data)
+xdmf_utils::distribute_entity_data(
+    const mesh::Mesh& mesh, int entity_dim,
+    const xtl::span<const std::int64_t>& entities,
+    const xtl::span<const std::int32_t>& data)
 {
   LOG(INFO) << "XDMF distribute entity data";
-  if (entities.shape(0) != data.size())
-    throw std::runtime_error("Number of entities and data size must match");
+  // if (entities.shape(0) != data.size())
+  //   throw std::runtime_error("Number of entities and data size must match");
 
   // Use ElementDofLayout of the cell to get vertex dof indices (local
   // to a cell), i.e. build a map from local vertex index to associated
@@ -484,7 +485,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
 
   auto postmaster_global_ent_sendrecv
       = [&cell_vertex_dofs](const mesh::Mesh& mesh, int entity_dim,
-                            const xt::xtensor<std::int64_t, 2>& entities,
+                            const xtl::span<const std::int64_t>& entities,
                             const xtl::span<const std::int32_t>& data)
   {
     const MPI_Comm comm = mesh.comm();
@@ -501,7 +502,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
         = mesh.geometry().cmap().create_dof_layout();
     const std::vector<int> entity_layout
         = cmap_dof_layout.entity_closure_dofs(entity_dim, 0);
-    assert(entity_layout.size() == entities.shape(1));
+    // assert(entity_layout.size() == entities.shape(1));
 
     // Find map from entity vertex to local (w.r.t. dof numbering on the
     // entity) dof number. E.g., if there are dofs on entity [0 3 6 7 9]
@@ -515,11 +516,19 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
         entity_vertex_dofs.push_back(std::distance(entity_layout.begin(), it));
     }
 
+    const std::size_t shape_e_1 = entity_layout.size();
+    const std::size_t shape_e_0 = entities.size() / shape_e_1;
     xt::xtensor<std::int64_t, 2> entities_vertices(
-        {entities.shape(0), num_vertices_per_entity});
+        {shape_e_0, num_vertices_per_entity});
     for (std::size_t e = 0; e < entities_vertices.shape(0); ++e)
+    {
       for (std::size_t i = 0; i < entities_vertices.shape(1); ++i)
-        entities_vertices(e, i) = entities(e, entity_vertex_dofs[i]);
+      {
+        entities_vertices(e, i)
+            = entities[e * shape_e_1 + entity_vertex_dofs[i]];
+        // entities_vertices(e, i) = entities(e, entity_vertex_dofs[i]);
+      }
+    }
 
     std::vector<std::vector<std::int64_t>> entities_send(comm_size);
     std::vector<std::vector<std::int32_t>> data_send(comm_size);
