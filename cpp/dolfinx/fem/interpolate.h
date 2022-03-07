@@ -784,7 +784,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
           xt::shape(
               {pointsToReceive.shape(0),
                static_cast<decltype(pointsToReceive.shape(0))>(value_size)}),
-          0);
+          static_cast<T>(0));
       v.eval(pointsToReceive, evaluationCells, values);
 
       // Allocate memory to store function values fetched from other processes
@@ -794,7 +794,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
                                static_cast<std::size_t>(0))
                    / 3,
                static_cast<std::size_t>(value_size)}),
-          0);
+          static_cast<T>(0));
 
       // Compute the offset retrievingOffsets[i] at which data fetched from
       // process i will be stored
