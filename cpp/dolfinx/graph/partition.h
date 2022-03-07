@@ -23,12 +23,13 @@ namespace dolfinx::graph
 /// Signature of functions for computing the parallel partitioning of a
 /// distributed graph
 ///
-/// @param comm MPI Communicator that the graph is distributed across
-/// @param nparts Number of partitions to divide graph nodes into
-/// @param local_graph Node connectivity graph
-/// @param num_ghost_nodes Number of graph nodes appearing in @p
+/// @param[in] comm MPI Communicator that the graph is distributed
+/// across
+/// @param[in] nparts Number of partitions to divide graph nodes into
+/// @param[in] local_graph Node connectivity graph
+/// @param[in] num_ghost_nodes Number of graph nodes appearing in @p
 /// local_graph that are owned on other processes
-/// @param ghosting Flag to enable ghosting of the output node
+/// @param[in] ghosting Flag to enable ghosting of the output node
 /// distribution
 /// @return Destination rank for each input node
 using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
@@ -36,12 +37,13 @@ using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
 
 /// Partition graph across processes using the default graph partitioner
 ///
-/// @param comm MPI Communicator that the graph is distributed across
-/// @param nparts Number of partitions to divide graph nodes into
-/// @param local_graph Node connectivity graph
-/// @param num_ghost_nodes Number of graph nodes appearing in @p
+/// @param[in] comm MPI Communicator that the graph is distributed
+/// across
+/// @param[in] nparts Number of partitions to divide graph nodes into
+/// @param[in] local_graph Node connectivity graph
+/// @param[in] num_ghost_nodes Number of graph nodes appearing in @p
 /// local_graph that are owned on other processes
-/// @param ghosting Flag to enable ghosting of the output node
+/// @param[in] ghosting Flag to enable ghosting of the output node
 /// distribution
 /// @return Destination rank for each input node
 AdjacencyList<std::int32_t>
@@ -61,10 +63,10 @@ namespace build
 /// @param[in] comm MPI Communicator
 /// @param[in] list The adjacency list to distribute
 /// @param[in] destinations Destination ranks for the ith node in the
-///   adjacency list
+/// adjacency list
 /// @return Adjacency list for this process, array of source ranks for
-///   each node in the adjacency list, and the original global index
-///   for each node.
+/// each node in the adjacency list, and the original global index for
+/// each node.
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
 distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
@@ -89,8 +91,8 @@ compute_ghost_indices(MPI_Comm comm,
 /// @param[in] indices Global indices of the data (rows) required by
 /// this process
 /// @param[in] x Data on this process which may be distributed (by row).
-/// The global index for the [0, ..., n) local rows is assumed to be the
-/// local index plus the offset for this rank. Layout is row-major.
+/// The global index for the `[0, ..., n)` local rows is assumed to be
+/// the local index plus the offset for this rank. Layout is row-major.
 /// @param[in] shape1 The number of columns of the data array
 /// @return The data for each index in @p indices (row-major storage)
 /// @pre `shape1 > 0`
@@ -105,8 +107,7 @@ std::vector<T> distribute_data(MPI_Comm comm,
 /// Both adjacency lists must have the same shape.
 ///
 /// @param[in] global Adjacency list with global link indices
-/// @param[in] local Adjacency list with local, contiguous link
-///   indices
+/// @param[in] local Adjacency list with local, contiguous link indices
 /// @return Map from local index to global index, which if applied to
 /// the local adjacency list indices would yield the global adjacency
 /// list
@@ -118,9 +119,9 @@ compute_local_to_global_links(const graph::AdjacencyList<std::int64_t>& global,
 /// common global indices
 ///
 /// @param[in] local0_to_global Map from local0 indices to global
-///   indices
+/// indices
 /// @param[in] local1_to_global Map from local1 indices to global
-///   indices
+/// indices
 /// @return Map from local0 indices to local1 indices
 std::vector<std::int32_t>
 compute_local_to_local(const xtl::span<const std::int64_t>& local0_to_global,

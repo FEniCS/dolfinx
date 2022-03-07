@@ -53,8 +53,8 @@ Enumerations and typedefs
    :project: DOLFINx
 
 
-Function for building distributed graphs
-----------------------------------------
+Functions for building distributed graphs
+-----------------------------------------
 
 .. doxygennamespace:: dolfinx::graph::build
    :project: DOLFINx
