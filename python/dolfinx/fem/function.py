@@ -245,7 +245,6 @@ class Function(ufl.Coefficient):
             self._cpp_object = functiontype(dtype)(V._cpp_object)
 
         # Initialize the ufl.FunctionSpace
-        # super().__init__(V.ufl_function_space(), count=self._cpp_object.id)
         super().__init__(V.ufl_function_space(), count=id(self))
 
         # Set name
