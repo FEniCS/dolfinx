@@ -206,6 +206,18 @@ class MeshTagsMetaClass:
         """
         super().__init__(mesh, dim, indices.astype(np.int32), values)
 
+    def ufl_id(self) -> int:
+        """Object identifier.
+
+        Notes:
+            This method is used by UFL.
+
+        Returns:
+            The `id` of the object
+
+        """
+        return id(self)
+
 
 def meshtags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> MeshTagsMetaClass:
     """Create a MeshTags object that associates data with a subset of mesh entities.
