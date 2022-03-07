@@ -24,7 +24,6 @@
 #include <map>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -457,7 +456,8 @@ xdmf_utils::distribute_entity_data(
     {
       // TODO: Optimise this call by adding 'vectorised verion of
       //       MPI::index_owner
-      // Figure out which process is the postmaster for the input global index
+      // Figure out which process is the postmaster for the input global
+      // index
       const std::int32_t p
           = dolfinx::MPI::index_owner(comm_size, node, num_nodes_g);
       nodes_g_send[p].push_back(node);
@@ -491,7 +491,7 @@ xdmf_utils::distribute_entity_data(
     const int comm_size = dolfinx::MPI::size(comm);
     const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
 
-    const std::size_t num_vertices_per_entity = mesh::cell_num_entities(
+    const std::size_t num_vert_per_entity = mesh::cell_num_entities(
         mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim, 0), 0);
     auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
     if (!c_to_v)
@@ -504,7 +504,8 @@ xdmf_utils::distribute_entity_data(
 
     // Find map from entity vertex to local (w.r.t. dof numbering on the
     // entity) dof number. E.g., if there are dofs on entity [0 3 6 7 9]
-    // and dofs 3 and 7 belong to vertices, then this produces map [1, 3]
+    // and dofs 3 and 7 belong to vertices, then this produces map [1,
+    // 3].
     std::vector<int> entity_vertex_dofs;
     for (std::size_t i = 0; i < cell_vertex_dofs.size(); ++i)
     {
@@ -516,15 +517,13 @@ xdmf_utils::distribute_entity_data(
 
     const std::size_t shape_e_1 = entity_layout.size();
     const std::size_t shape_e_0 = entities.size() / shape_e_1;
-    // xt::xtensor<std::int64_t, 2> entities_vertices(
-    //     {shape_e_0, num_vertices_per_entity});
     std::vector<std::int64_t> entities_vertices(shape_e_0
-                                                * num_vertices_per_entity);
+                                                * num_vert_per_entity);
     for (std::size_t e = 0; e < shape_e_0; ++e)
     {
-      for (std::size_t i = 0; i < num_vertices_per_entity; ++i)
+      for (std::size_t i = 0; i < num_vert_per_entity; ++i)
       {
-        entities_vertices[e * num_vertices_per_entity + i]
+        entities_vertices[e * num_vert_per_entity + i]
             = entities[e * shape_e_1 + entity_vertex_dofs[i]];
       }
     }
@@ -534,8 +533,8 @@ xdmf_utils::distribute_entity_data(
     for (std::size_t e = 0; e < shape_e_0; ++e)
     {
       xtl::span<std::int64_t> entity(entities_vertices.data()
-                                         + e * num_vertices_per_entity,
-                                     num_vertices_per_entity);
+                                         + e * num_vert_per_entity,
+                                     num_vert_per_entity);
       std::sort(entity.begin(), entity.end());
 
       // Determine postmaster based on lowest entity node
@@ -578,7 +577,7 @@ xdmf_utils::distribute_entity_data(
     const MPI_Comm comm = mesh.comm();
     const int comm_size = dolfinx::MPI::size(comm);
 
-    const std::size_t num_vertices_per_entity = mesh::cell_num_entities(
+    const std::size_t num_vert_per_entity = mesh::cell_num_entities(
         mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim, 0), 0);
 
     // Build map from global node index to ranks that have the node
@@ -593,21 +592,17 @@ xdmf_utils::distribute_entity_data(
     // Figure out which processes are owners of received nodes
     std::vector<std::vector<std::int64_t>> send_nodes_owned(comm_size);
     std::vector<std::vector<std::int32_t>> send_vals_owned(comm_size);
-    std::array<std::size_t, 2> shape
-        = {entities_recv.array().size() / num_vertices_per_entity,
-           num_vertices_per_entity};
-    auto _entities_recv
-        = xt::adapt(entities_recv.array().data(), entities_recv.array().size(),
-                    xt::no_ownership(), shape);
-
+    const std::size_t shape0
+        = entities_recv.array().size() / num_vert_per_entity;
+    const std::size_t shape1 = num_vert_per_entity;
     const std::vector<std::int32_t>& _data_recv = data_recv.array();
-    assert(_data_recv.size() == _entities_recv.shape(0));
-    for (std::size_t e = 0; e < _entities_recv.shape(0); ++e)
+    assert(_data_recv.size() == shape0);
+    for (std::size_t e = 0; e < shape0; ++e)
     {
-      auto e_recv = xt::row(_entities_recv, e);
+      xtl::span e_recv(entities_recv.array().data() + e * shape1, shape1);
 
       // Find ranks that have node0
-      auto [it0, it1] = node_to_rank.equal_range(e_recv[0]);
+      auto [it0, it1] = node_to_rank.equal_range(e_recv.front());
       for (auto it = it0; it != it1; ++it)
       {
         const int p1 = it->second;
@@ -656,7 +651,7 @@ xdmf_utils::distribute_entity_data(
     // Build map from input global indices to local vertex numbers
     LOG(INFO) << "XDMF build map";
 
-    const std::size_t num_vertices_per_entity = mesh::cell_num_entities(
+    const std::size_t num_vert_per_entity = mesh::cell_num_entities(
         mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim, 0), 0);
     auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
     if (!c_to_v)
@@ -668,7 +663,6 @@ xdmf_utils::distribute_entity_data(
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh.geometry().dofmap();
     std::map<std::int64_t, std::int32_t> igi_to_vertex;
-
     for (int c = 0; c < c_to_v->num_nodes(); ++c)
     {
       auto vertices = c_to_v->links(c);
@@ -681,15 +675,15 @@ xdmf_utils::distribute_entity_data(
     entities_new.reserve(recv_ents.array().size());
     std::vector<std::int32_t> data_new;
     data_new.reserve(recv_vals.array().size());
-    for (std::size_t e = 0;
-         e < recv_ents.array().size() / num_vertices_per_entity; ++e)
+    for (std::size_t e = 0; e < recv_ents.array().size() / num_vert_per_entity;
+         ++e)
     {
       bool entity_found = true;
-      std::vector<std::int32_t> entity(num_vertices_per_entity);
-      for (std::size_t i = 0; i < num_vertices_per_entity; ++i)
+      std::vector<std::int32_t> entity(num_vert_per_entity);
+      for (std::size_t i = 0; i < num_vert_per_entity; ++i)
       {
         const auto it = igi_to_vertex.find(
-            recv_ents.array()[e * num_vertices_per_entity + i]);
+            recv_ents.array()[e * num_vert_per_entity + i]);
         if (it == igi_to_vertex.end())
         {
           // As soon as this received index is not in locally owned input
