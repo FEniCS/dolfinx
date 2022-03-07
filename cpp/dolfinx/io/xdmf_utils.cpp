@@ -474,7 +474,6 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   // internal re-ordering)
   const std::vector<std::int64_t>& nodes_g
       = mesh.geometry().input_global_indices();
-  const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
 
   // -------------------
   // 1. Send this rank's global "input" nodes indices to the
@@ -526,32 +525,45 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   //    data (i) the communication could be combined, or (ii) the
   //    communication in Step 1 could be make non-blocking.
 
-  std::vector<std::vector<std::int64_t>> entities_send(comm_size);
-  std::vector<std::vector<std::int32_t>> data_send(comm_size);
-  std::vector<std::int64_t> entity(num_vertices_per_entity);
-  for (std::size_t e = 0; e < entities_vertices.shape(0); ++e)
+  auto postmaster_global_ent_sendrecv
+      = [num_vertices_per_entity, &entities_vertices](
+            const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& data)
   {
-    // Copy vertices for entity and sort
-    auto ev = xt::row(entities_vertices, e);
-    std::copy(ev.cbegin(), ev.cend(), entity.begin());
-    std::sort(entity.begin(), entity.end());
+    const MPI_Comm comm = mesh.comm();
+    const int comm_size = dolfinx::MPI::size(comm);
+    const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
 
-    // Determine postmaster based on lowest entity node
-    const std::int32_t p
-        = dolfinx::MPI::index_owner(comm_size, entity.front(), num_nodes_g);
-    entities_send[p].insert(entities_send[p].end(), entity.begin(),
-                            entity.end());
-    data_send[p].push_back(data[e]);
-  }
+    std::vector<std::vector<std::int64_t>> entities_send(comm_size);
+    std::vector<std::vector<std::int32_t>> data_send(comm_size);
+    std::vector<std::int64_t> entity(num_vertices_per_entity);
+    for (std::size_t e = 0; e < entities_vertices.shape(0); ++e)
+    {
+      // Copy vertices for entity and sort
+      auto ev = xt::row(entities_vertices, e);
+      std::copy(ev.cbegin(), ev.cend(), entity.begin());
+      std::sort(entity.begin(), entity.end());
 
-  LOG(INFO) << "XDMF send entity keys size:(" << entities_vertices.shape(0)
-            << ")";
-  // TODO: Pack into one MPI call
-  const graph::AdjacencyList<std::int64_t> entities_recv
-      = dolfinx::MPI::all_to_all(
-          comm, graph::AdjacencyList<std::int64_t>(entities_send));
-  const graph::AdjacencyList<std::int32_t> data_recv = dolfinx::MPI::all_to_all(
-      comm, graph::AdjacencyList<std::int32_t>(data_send));
+      // Determine postmaster based on lowest entity node
+      const std::int32_t p
+          = dolfinx::MPI::index_owner(comm_size, entity.front(), num_nodes_g);
+      entities_send[p].insert(entities_send[p].end(), entity.begin(),
+                              entity.end());
+      data_send[p].push_back(data[e]);
+    }
+
+    LOG(INFO) << "XDMF send entity keys size:(" << entities_vertices.shape(0)
+              << ")";
+    // TODO: Pack into one MPI call
+    graph::AdjacencyList<std::int64_t> entities_recv = dolfinx::MPI::all_to_all(
+        comm, graph::AdjacencyList<std::int64_t>(entities_send));
+    graph::AdjacencyList<std::int32_t> data_recv = dolfinx::MPI::all_to_all(
+        comm, graph::AdjacencyList<std::int32_t>(data_send));
+
+    return std::pair(entities_recv, data_recv);
+  };
+
+  const auto [entities_recv, data_recv]
+      = postmaster_global_ent_sendrecv(mesh, data);
 
   // -------------------
   // 3. As 'postmaster', send back the entity key (vertex list) and tag
