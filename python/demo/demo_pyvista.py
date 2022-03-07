@@ -21,8 +21,8 @@ import numpy as np
 
 import dolfinx.plot as plot
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.mesh import (CellType, meshtags, compute_midpoints,
-                          create_unit_cube, create_unit_square)
+from dolfinx.mesh import (CellType, compute_midpoints, create_unit_cube,
+                          create_unit_square, meshtags)
 
 from mpi4py import MPI
 
