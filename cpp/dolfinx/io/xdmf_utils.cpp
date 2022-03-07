@@ -416,29 +416,22 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   if (entities.shape(0) != data.size())
     throw std::runtime_error("Number of entities and data size must match");
 
-  // Get layout of dofs on 0th cell entity of dimension entity_dim
-  const fem::ElementDofLayout cmap_dof_layout
-      = mesh.geometry().cmap().create_dof_layout();
-  const std::vector<int> entity_layout
-      = cmap_dof_layout.entity_closure_dofs(entity_dim, 0);
-  assert(entity_layout.size() == entities.shape(1));
-
   // Use ElementDofLayout of the cell to get vertex dof indices (local
   // to a cell), i.e. build a map from local vertex index to associated
   // local dof index
-  const int num_vertices_per_cell
-      = mesh::cell_num_entities(mesh.topology().cell_type(), 0);
-  std::vector<int> cell_vertex_dofs(num_vertices_per_cell);
-  for (int i = 0; i < num_vertices_per_cell; ++i)
+  std::vector<int> cell_vertex_dofs;
   {
-    const std::vector<int>& local_index = cmap_dof_layout.entity_dofs(0, i);
-    assert(local_index.size() == 1);
-    cell_vertex_dofs[i] = local_index[0];
+    // Get layout of dofs on 0th cell entity of dimension entity_dim
+    const fem::ElementDofLayout cmap_dof_layout
+        = mesh.geometry().cmap().create_dof_layout();
+    for (int i = 0; i < mesh::cell_num_entities(mesh.topology().cell_type(), 0);
+         ++i)
+    {
+      const std::vector<int>& local_index = cmap_dof_layout.entity_dofs(0, i);
+      assert(local_index.size() == 1);
+      cell_vertex_dofs.push_back(local_index[0]);
+    }
   }
-
-  const std::size_t num_vertices_per_entity = mesh::cell_num_entities(
-      mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim, 0), 0);
-
   // -------------------
   // 1. Send this rank's global "input" nodes indices to the
   //    'postmaster' rank, and receive global "input" nodes for which
@@ -714,6 +707,8 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   auto [entities_new, data_new]
       = determine_my_entities(mesh, entity_dim, recv_ents, recv_vals);
 
+  const std::size_t num_vertices_per_entity = mesh::cell_num_entities(
+      mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim, 0), 0);
   std::vector<std::size_t> shape_r = {
       entities_new.size() / num_vertices_per_entity, num_vertices_per_entity};
   auto e_new = xt::adapt(entities_new.data(), entities_new.size(),
