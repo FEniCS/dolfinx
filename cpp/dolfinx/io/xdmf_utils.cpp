@@ -439,41 +439,41 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
     cell_vertex_dofs[i] = local_index[0];
   }
 
-  // Find map from entity vertex to local (w.r.t. dof numbering on the
-  // entity) dof number. E.g., if there are dofs on entity [0 3 6 7 9]
-  // and dofs 3 and 7 belong to vertices, then this produces map [1, 3]
-  std::vector<int> entity_vertex_dofs;
-  for (std::size_t i = 0; i < cell_vertex_dofs.size(); ++i)
-  {
-    auto it = std::find(entity_layout.begin(), entity_layout.end(),
-                        cell_vertex_dofs[i]);
-    if (it != entity_layout.end())
-      entity_vertex_dofs.push_back(std::distance(entity_layout.begin(), it));
-  }
+  // // Find map from entity vertex to local (w.r.t. dof numbering on the
+  // // entity) dof number. E.g., if there are dofs on entity [0 3 6 7 9]
+  // // and dofs 3 and 7 belong to vertices, then this produces map [1, 3]
+  // std::vector<int> entity_vertex_dofs;
+  // for (std::size_t i = 0; i < cell_vertex_dofs.size(); ++i)
+  // {
+  //   auto it = std::find(entity_layout.begin(), entity_layout.end(),
+  //                       cell_vertex_dofs[i]);
+  //   if (it != entity_layout.end())
+  //     entity_vertex_dofs.push_back(std::distance(entity_layout.begin(), it));
+  // }
 
   const mesh::CellType entity_type
       = mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim, 0);
   const std::size_t num_vertices_per_entity
       = mesh::cell_num_entities(entity_type, 0);
-  assert(entity_vertex_dofs.size() == num_vertices_per_entity);
+  // assert(entity_vertex_dofs.size() == num_vertices_per_entity);
 
   // Throw away input global indices which do not belong to entity
   // vertices. This decreases the amount of data needed in parallel
   // communication.
-  xt::xtensor<std::int64_t, 2> entities_vertices(
-      {entities.shape(0), num_vertices_per_entity});
-  for (std::size_t e = 0; e < entities_vertices.shape(0); ++e)
-  {
-    for (std::size_t i = 0; i < entities_vertices.shape(1); ++i)
-      entities_vertices(e, i) = entities(e, entity_vertex_dofs[i]);
-  }
+  // xt::xtensor<std::int64_t, 2> entities_vertices(
+  //     {entities.shape(0), num_vertices_per_entity});
+  // for (std::size_t e = 0; e < entities_vertices.shape(0); ++e)
+  // {
+  //   for (std::size_t i = 0; i < entities_vertices.shape(1); ++i)
+  //     entities_vertices(e, i) = entities(e, entity_vertex_dofs[i]);
+  // }
 
   // const MPI_Comm comm = mesh.comm();
   // const int comm_size = dolfinx::MPI::size(comm);
   // Get "input" global node indices (as in the input file before any
   // internal re-ordering)
-  const std::vector<std::int64_t>& nodes_g
-      = mesh.geometry().input_global_indices();
+  // const std::vector<std::int64_t>& nodes_g
+  //     = mesh.geometry().input_global_indices();
 
   // -------------------
   // 1. Send this rank's global "input" nodes indices to the
@@ -526,12 +526,53 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   //    communication in Step 1 could be make non-blocking.
 
   auto postmaster_global_ent_sendrecv
-      = [num_vertices_per_entity, &entities_vertices](
-            const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& data)
+      = [num_vertices_per_entity,
+         &cell_vertex_dofs](const mesh::Mesh& mesh, int entity_dim,
+                            const xt::xtensor<std::int64_t, 2>& entities,
+                            const xtl::span<const std::int32_t>& data)
   {
     const MPI_Comm comm = mesh.comm();
     const int comm_size = dolfinx::MPI::size(comm);
     const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
+
+    auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
+    if (!c_to_v)
+      throw std::runtime_error("Missing cell-vertex connectivity.");
+
+    const fem::ElementDofLayout cmap_dof_layout
+        = mesh.geometry().cmap().create_dof_layout();
+    const std::vector<int> entity_layout
+        = cmap_dof_layout.entity_closure_dofs(entity_dim, 0);
+    assert(entity_layout.size() == entities.shape(1));
+
+    // const int num_vertices_per_cell = c_to_v->num_links(0);
+    // std::vector<int> cell_vertex_dofs(num_vertices_per_cell);
+    // for (int i = 0; i < num_vertices_per_cell; ++i)
+    // {
+    //   const std::vector<int>& local_index = cmap_dof_layout.entity_dofs(0,
+    //   i); assert(local_index.size() == 1); cell_vertex_dofs[i] =
+    //   local_index[0];
+    // }
+
+    // Find map from entity vertex to local (w.r.t. dof numbering on the
+    // entity) dof number. E.g., if there are dofs on entity [0 3 6 7 9]
+    // and dofs 3 and 7 belong to vertices, then this produces map [1, 3]
+    std::vector<int> entity_vertex_dofs;
+    for (std::size_t i = 0; i < cell_vertex_dofs.size(); ++i)
+    {
+      auto it = std::find(entity_layout.begin(), entity_layout.end(),
+                          cell_vertex_dofs[i]);
+      if (it != entity_layout.end())
+        entity_vertex_dofs.push_back(std::distance(entity_layout.begin(), it));
+    }
+
+    xt::xtensor<std::int64_t, 2> entities_vertices(
+        {entities.shape(0), num_vertices_per_entity});
+    for (std::size_t e = 0; e < entities_vertices.shape(0); ++e)
+    {
+      for (std::size_t i = 0; i < entities_vertices.shape(1); ++i)
+        entities_vertices(e, i) = entities(e, entity_vertex_dofs[i]);
+    }
 
     std::vector<std::vector<std::int64_t>> entities_send(comm_size);
     std::vector<std::vector<std::int32_t>> data_send(comm_size);
@@ -551,7 +592,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
       data_send[p].push_back(data[e]);
     }
 
-    LOG(INFO) << "XDMF send entity keys size:(" << entities_vertices.shape(0)
+    LOG(INFO) << "XDMF send entity keys size: (" << entities_vertices.shape(0)
               << ")";
     // TODO: Pack into one MPI call
     graph::AdjacencyList<std::int64_t> entities_recv = dolfinx::MPI::all_to_all(
@@ -563,7 +604,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   };
 
   const auto [entities_recv, data_recv]
-      = postmaster_global_ent_sendrecv(mesh, data);
+      = postmaster_global_ent_sendrecv(mesh, entity_dim, entities, data);
 
   // -------------------
   // 3. As 'postmaster', send back the entity key (vertex list) and tag
@@ -654,48 +695,69 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   //       the std::map for *all* entities and just for candidate
   //       entities.
 
-  // Build map from input global indices to local vertex numbers
-  LOG(INFO) << "XDMF build map";
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  std::map<std::int64_t, std::int32_t> igi_to_vertex;
-
-  for (int c = 0; c < c_to_v->num_nodes(); ++c)
+  auto determine_my_entities
+      = [num_vertices_per_entity,
+         &cell_vertex_dofs](const mesh::Mesh& mesh,
+                            const graph::AdjacencyList<std::int64_t>& recv_ents,
+                            const graph::AdjacencyList<std::int32_t>& recv_vals)
   {
-    auto vertices = c_to_v->links(c);
-    auto x_dofs = x_dofmap.links(c);
-    for (std::size_t v = 0; v < vertices.size(); ++v)
-      igi_to_vertex[nodes_g[x_dofs[cell_vertex_dofs[v]]]] = vertices[v];
-  }
+    // Build map from input global indices to local vertex numbers
+    LOG(INFO) << "XDMF build map";
 
-  std::vector<std::int32_t> entities_new;
-  entities_new.reserve(recv_ents.array().size());
-  std::vector<std::int32_t> data_new;
-  data_new.reserve(recv_vals.array().size());
-  for (std::size_t e = 0;
-       e < recv_ents.array().size() / num_vertices_per_entity; ++e)
-  {
-    bool entity_found = true;
-    std::vector<std::int32_t> entity(num_vertices_per_entity);
-    for (std::size_t i = 0; i < num_vertices_per_entity; ++i)
+    auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
+    if (!c_to_v)
+      throw std::runtime_error("Missing cell-vertex connectivity.");
+
+    const std::vector<std::int64_t>& nodes_g
+        = mesh.geometry().input_global_indices();
+
+    const graph::AdjacencyList<std::int32_t>& x_dofmap
+        = mesh.geometry().dofmap();
+    std::map<std::int64_t, std::int32_t> igi_to_vertex;
+
+    for (int c = 0; c < c_to_v->num_nodes(); ++c)
     {
-      const auto it = igi_to_vertex.find(
-          recv_ents.array()[e * num_vertices_per_entity + i]);
-      if (it == igi_to_vertex.end())
+      auto vertices = c_to_v->links(c);
+      auto x_dofs = x_dofmap.links(c);
+      for (std::size_t v = 0; v < vertices.size(); ++v)
+        igi_to_vertex[nodes_g[x_dofs[cell_vertex_dofs[v]]]] = vertices[v];
+    }
+
+    std::vector<std::int32_t> entities_new;
+    entities_new.reserve(recv_ents.array().size());
+    std::vector<std::int32_t> data_new;
+    data_new.reserve(recv_vals.array().size());
+    for (std::size_t e = 0;
+         e < recv_ents.array().size() / num_vertices_per_entity; ++e)
+    {
+      bool entity_found = true;
+      std::vector<std::int32_t> entity(num_vertices_per_entity);
+      for (std::size_t i = 0; i < num_vertices_per_entity; ++i)
       {
-        // As soon as this received index is not in locally owned input
-        // global indices skip the entire entity
-        entity_found = false;
-        break;
+        const auto it = igi_to_vertex.find(
+            recv_ents.array()[e * num_vertices_per_entity + i]);
+        if (it == igi_to_vertex.end())
+        {
+          // As soon as this received index is not in locally owned input
+          // global indices skip the entire entity
+          entity_found = false;
+          break;
+        }
+        entity[i] = it->second;
       }
-      entity[i] = it->second;
+
+      if (entity_found == true)
+      {
+        entities_new.insert(entities_new.end(), entity.begin(), entity.end());
+        data_new.push_back(recv_vals.array()[e]);
+      }
     }
 
-    if (entity_found == true)
-    {
-      entities_new.insert(entities_new.end(), entity.begin(), entity.end());
-      data_new.push_back(recv_vals.array()[e]);
-    }
-  }
+    return std::pair(std::move(entities_new), std::move(data_new));
+  };
+
+  auto [entities_new, data_new]
+      = determine_my_entities(mesh, recv_ents, recv_vals);
 
   std::vector<std::size_t> shape_r = {
       entities_new.size() / num_vertices_per_entity, num_vertices_per_entity};
