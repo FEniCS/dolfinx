@@ -5,3 +5,4 @@ Mesh (``dolfinx::mesh``)
 
 .. doxygennamespace:: dolfinx::mesh
    :project: DOLFINx
+   :members:

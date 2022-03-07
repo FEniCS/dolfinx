@@ -27,21 +27,23 @@ class IndexMap;
 namespace dolfinx::refinement
 {
 
-/// Compute the sharing of edges between processes.
-/// The resulting MPI_Comm is over the neighborhood of shared edges, allowing
-/// direct communication between peers. The resulting map is from local edge
-/// index to the set of neighbors (within the comm) that share that edge.
+/// @brief Compute the sharing of edges between processes.
+///
+/// The resulting MPI_Comm is over the neighborhood of shared edges,
+/// allowing direct communication between peers. The resulting map is
+/// from local edge index to the set of neighbors (within the comm) that
+/// share that edge.
 /// @param[in] mesh Mesh
 /// @return pair of comm and map
 std::pair<MPI_Comm, std::map<std::int32_t, std::vector<int>>>
 compute_edge_sharing(const mesh::Mesh& mesh);
 
 /// Transfer marked edges between processes.
-/// @param neighbor_comm MPI Communicator for neighborhood
-/// @param marked_for_update Lists of edges to be updates on each
+/// @param[in] neighbor_comm MPI Communicator for neighborhood
+/// @param[in] marked_for_update Lists of edges to be updates on each
 /// neighbor
-/// @param marked_edges Marked edges to be updated
-/// @param map_e IndexMap for edges
+/// @param[in, out] marked_edges Marked edges to be updated
+/// @param[in] map_e IndexMap for edges
 void update_logical_edgefunction(
     const MPI_Comm& neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
@@ -74,14 +76,15 @@ mesh::Mesh partition(const mesh::Mesh& old_mesh,
                      const xt::xtensor<double, 2>& new_vertex_coordinates,
                      bool redistribute, mesh::GhostMode ghost_mode);
 
-/// Adjust indices to account for extra n values on each process This
-/// is a utility to help add new topological vertices on each process
-/// into the space of the index map.
+/// @brief brief description indices to account for extra n values on each process.
 ///
-/// @param index_map Index map for the current mesh vertices
-/// @param n Number of new entries to be accommodated on this process
+/// This is a utility to help add new topological vertices on each
+/// process into the space of the index map.
+///
+/// @param[in] index_map Index map for the current mesh vertices
+/// @param[in] n Number of new entries to be accommodated on this process
 /// @return Global indices as if "n" extra values are appended on each
-///   process
+/// process
 std::vector<std::int64_t> adjust_indices(const common::IndexMap& index_map,
                                          std::int32_t n);
 
