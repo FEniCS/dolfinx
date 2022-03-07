@@ -468,8 +468,8 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
       entities_vertices(e, i) = entities(e, entity_vertex_dofs[i]);
   }
 
-  const MPI_Comm comm = mesh.comm();
-  const int comm_size = dolfinx::MPI::size(comm);
+  // const MPI_Comm comm = mesh.comm();
+  // const int comm_size = dolfinx::MPI::size(comm);
   // Get "input" global node indices (as in the input file before any
   // internal re-ordering)
   const std::vector<std::int64_t>& nodes_g
@@ -574,53 +574,71 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   // owned nodes to the postmaster and use map, unordered_map or
   // std::vector<pair>>, followed by a neighborhood all_to_all at the
   // end.
-  //
-  // Build map from global node index to ranks that have the node
-  std::multimap<std::int64_t, int> node_to_rank;
-  for (int p = 0; p < nodes_g_recv.num_nodes(); ++p)
+
+  auto postmaster_send_to_candidates
+      = [num_vertices_per_entity](
+            const mesh::Mesh& mesh,
+            const graph::AdjacencyList<std::int64_t>& nodes_g_recv,
+            const graph::AdjacencyList<std::int64_t>& entities_recv,
+            const graph::AdjacencyList<std::int32_t>& data_recv)
   {
-    auto nodes = nodes_g_recv.links(p);
-    for (std::int32_t node : nodes)
-      node_to_rank.insert({node, p});
-  }
+    const MPI_Comm comm = mesh.comm();
+    const int comm_size = dolfinx::MPI::size(comm);
+    // const std::int64_t num_nodes_g =
+    // mesh.geometry().index_map()->size_global();
 
-  // Figure out which processes are owners of received nodes
-  std::vector<std::vector<std::int64_t>> send_nodes_owned(comm_size);
-  std::vector<std::vector<std::int32_t>> send_vals_owned(comm_size);
-  std::array<std::size_t, 2> shape
-      = {entities_recv.array().size() / num_vertices_per_entity,
-         num_vertices_per_entity};
-  auto _entities_recv
-      = xt::adapt(entities_recv.array().data(), entities_recv.array().size(),
-                  xt::no_ownership(), shape);
-
-  const std::vector<std::int32_t>& _data_recv = data_recv.array();
-  assert(_data_recv.size() == _entities_recv.shape(0));
-  for (std::size_t e = 0; e < _entities_recv.shape(0); ++e)
-  {
-    auto e_recv = xt::row(_entities_recv, e);
-
-    // Find ranks that have node0
-    auto [it0, it1] = node_to_rank.equal_range(e_recv[0]);
-    for (auto it = it0; it != it1; ++it)
+    // Build map from global node index to ranks that have the node
+    std::multimap<std::int64_t, int> node_to_rank;
+    for (int p = 0; p < nodes_g_recv.num_nodes(); ++p)
     {
-      const int p1 = it->second;
-      send_nodes_owned[p1].insert(send_nodes_owned[p1].end(), e_recv.begin(),
-                                  e_recv.end());
-      send_vals_owned[p1].push_back(_data_recv[e]);
+      auto nodes = nodes_g_recv.links(p);
+      for (std::int32_t node : nodes)
+        node_to_rank.insert({node, p});
     }
-  }
 
-  // TODO: Pack into one MPI call
-  const int send_val_size = std::transform_reduce(
-      send_vals_owned.begin(), send_vals_owned.end(), 0, std::plus<int>(),
-      [](const std::vector<std::int32_t>& v) { return v.size(); });
-  LOG(INFO) << "XDMF return entity and value data size:(" << send_val_size
-            << ")";
-  const graph::AdjacencyList<std::int64_t> recv_ents = dolfinx::MPI::all_to_all(
-      comm, graph::AdjacencyList<std::int64_t>(send_nodes_owned));
-  const graph::AdjacencyList<std::int32_t> recv_vals = dolfinx::MPI::all_to_all(
-      comm, graph::AdjacencyList<std::int32_t>(send_vals_owned));
+    // Figure out which processes are owners of received nodes
+    std::vector<std::vector<std::int64_t>> send_nodes_owned(comm_size);
+    std::vector<std::vector<std::int32_t>> send_vals_owned(comm_size);
+    std::array<std::size_t, 2> shape
+        = {entities_recv.array().size() / num_vertices_per_entity,
+           num_vertices_per_entity};
+    auto _entities_recv
+        = xt::adapt(entities_recv.array().data(), entities_recv.array().size(),
+                    xt::no_ownership(), shape);
+
+    const std::vector<std::int32_t>& _data_recv = data_recv.array();
+    assert(_data_recv.size() == _entities_recv.shape(0));
+    for (std::size_t e = 0; e < _entities_recv.shape(0); ++e)
+    {
+      auto e_recv = xt::row(_entities_recv, e);
+
+      // Find ranks that have node0
+      auto [it0, it1] = node_to_rank.equal_range(e_recv[0]);
+      for (auto it = it0; it != it1; ++it)
+      {
+        const int p1 = it->second;
+        send_nodes_owned[p1].insert(send_nodes_owned[p1].end(), e_recv.begin(),
+                                    e_recv.end());
+        send_vals_owned[p1].push_back(_data_recv[e]);
+      }
+    }
+
+    // TODO: Pack into one MPI call
+    const int send_val_size = std::transform_reduce(
+        send_vals_owned.begin(), send_vals_owned.end(), 0, std::plus<int>(),
+        [](const std::vector<std::int32_t>& v) { return v.size(); });
+    LOG(INFO) << "XDMF return entity and value data size:(" << send_val_size
+              << ")";
+    graph::AdjacencyList<std::int64_t> recv_ents = dolfinx::MPI::all_to_all(
+        comm, graph::AdjacencyList<std::int64_t>(send_nodes_owned));
+    graph::AdjacencyList<std::int32_t> recv_vals = dolfinx::MPI::all_to_all(
+        comm, graph::AdjacencyList<std::int32_t>(send_vals_owned));
+
+    return std::pair(std::move(recv_ents), std::move(recv_vals));
+  };
+
+  const auto [recv_ents, recv_vals] = postmaster_send_to_candidates(
+      mesh, nodes_g_recv, entities_recv, data_recv);
 
   // -------------------
   // 4. From the received (key, value) data, determine which keys
@@ -679,15 +697,10 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
     }
   }
 
-  std::array<std::size_t, 2> shape_r = {
+  std::vector<std::size_t> shape_r = {
       entities_new.size() / num_vertices_per_entity, num_vertices_per_entity};
-
-  // The below should work, but misbehaves with the Intel icpx compiler
-  // auto e_new = xt::adapt(entities_new.data(), entities_new.size(),
-  //                        xt::no_ownership(), shape_r);
-  xt::xtensor<std::int32_t, 2> e_new(shape_r);
-  std::copy_n(entities_new.data(), entities_new.size(), e_new.data());
-
-  return {std::move(e_new), std::move(data_new)};
+  auto e_new = xt::adapt(entities_new.data(), entities_new.size(),
+                         xt::no_ownership(), shape_r);
+  return {e_new, std::move(data_new)};
 }
 //-----------------------------------------------------------------------------
