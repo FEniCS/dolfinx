@@ -410,7 +410,6 @@ graph::AdjacencyList<std::int32_t> geometry::compute_colliding_cells(
   std::vector<std::int32_t> colliding_cells;
   constexpr double eps2 = 1e-20;
   const int tdim = mesh.topology().dim();
-  std::vector<std::int32_t> result;
   for (std::int32_t i = 0; i < candidate_cells.num_nodes(); i++)
   {
     auto cells = candidate_cells.links(i);
