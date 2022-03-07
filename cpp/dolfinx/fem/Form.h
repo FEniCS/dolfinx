@@ -61,7 +61,10 @@ template <typename T>
 class Form
 {
 public:
-  /// @brief Create as finite element form.
+  /// @brief Create a finite element form.
+  ///
+  /// @note User applications will normally call a fem::Form builder
+  /// function rather using this interfcae directly.
   ///
   /// @param[in] function_spaces Function spaces for the form arguments
   /// @param[in] integrals The integrals in the form. The first key is
