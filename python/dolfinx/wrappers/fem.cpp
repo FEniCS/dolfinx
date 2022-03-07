@@ -1164,8 +1164,6 @@ void fem(py::module& m)
       .def(py::init<std::shared_ptr<dolfinx::mesh::Mesh>,
                     std::shared_ptr<dolfinx::fem::FiniteElement>,
                     std::shared_ptr<dolfinx::fem::DofMap>>())
-      // .def("__hash__", &dolfinx::fem::FunctionSpace::hash)
-      // .def("__eq__", &dolfinx::fem::FunctionSpace::operator==)
       .def("collapse", &dolfinx::fem::FunctionSpace::collapse)
       .def("component", &dolfinx::fem::FunctionSpace::component)
       .def("contains", &dolfinx::fem::FunctionSpace::contains)

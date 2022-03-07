@@ -54,16 +54,6 @@ public:
   /// Move assignment operator
   FunctionSpace& operator=(FunctionSpace&& V) = default;
 
-  /// Equality operator
-  /// @param[in] V Another function space
-  /// @return True is the function spaces are equal
-  bool operator==(const FunctionSpace& V) const;
-
-  /// Inequality operator
-  /// @param[in] V Another function space.
-  /// @return True is the function spaces are not equal
-  bool operator!=(const FunctionSpace& V) const;
-
   /// Extract subspace for component
   /// @param[in] component The subspace component
   /// @return The subspace
@@ -104,9 +94,6 @@ public:
 
   /// The dofmap
   std::shared_ptr<const fem::DofMap> dofmap() const;
-
-  /// A hash integer
-  std::size_t hash() const;
 
 private:
   // The mesh

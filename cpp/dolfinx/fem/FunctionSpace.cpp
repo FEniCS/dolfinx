@@ -8,7 +8,6 @@
 #include "CoordinateElement.h"
 #include "DofMap.h"
 #include "FiniteElement.h"
-#include <boost/functional/hash.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -31,19 +30,6 @@ FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
       _id(boost::uuids::random_generator()()), _root_space_id(_id)
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-bool FunctionSpace::operator==(const FunctionSpace& V) const
-{
-  if (this == std::addressof(V))
-    return true;
-  else
-    return _element == V._element and _mesh == V._mesh and _dofmap == V._dofmap;
-}
-//-----------------------------------------------------------------------------
-bool FunctionSpace::operator!=(const FunctionSpace& V) const
-{
-  return !(*this == V);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>
@@ -263,12 +249,6 @@ std::shared_ptr<const fem::FiniteElement> FunctionSpace::element() const
 std::shared_ptr<const fem::DofMap> FunctionSpace::dofmap() const
 {
   return _dofmap;
-}
-//-----------------------------------------------------------------------------
-std::size_t FunctionSpace::hash() const
-{
-  boost::hash<boost::uuids::uuid> uuid_hasher;
-  return uuid_hasher(_id);
 }
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::shared_ptr<const fem::FunctionSpace>>, 2>
