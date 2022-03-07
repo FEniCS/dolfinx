@@ -22,9 +22,9 @@ class MeshTags;
 namespace dolfinx::refinement
 {
 
-/// Implementation of the refinement method described in Plaza and Carey
-/// "Local refinement of simplicial grids based on the skeleton"
-/// (Applied Numerical Mathematics 32 (2000) 195-218)
+/// Function in this namespace implement the refinement method described
+/// in Plaza and Carey "Local refinement of simplicial grids based on
+/// the skeleton" (Applied Numerical Mathematics 32 (2000) 195-218).
 namespace plaza
 {
 
@@ -37,7 +37,7 @@ namespace plaza
 /// @return New mesh
 mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute);
 
-/// Refine with markers, optionally redistributing
+/// Refine with markers, optionally redistributing.
 ///
 /// @param[in] mesh Input mesh to be refined
 /// @param[in] edges Indices of the edges that should be split by this
@@ -49,22 +49,22 @@ mesh::Mesh refine(const mesh::Mesh& mesh,
                   const xtl::span<const std::int32_t>& edges,
                   bool redistribute);
 
-/// Refine mesh returning new mesh data
+/// Refine mesh returning new mesh data.
 ///
 /// @param[in] mesh Input mesh to be refined
-/// @return New mesh data: cell topology, vertex coordinates and parent cell
-/// index
+/// @return New mesh data: cell topology, vertex coordinates and parent
+/// cell index
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>>
 compute_refinement_data(const mesh::Mesh& mesh);
 
-/// Refine with markers returning new mesh data
+/// Refine with markers returning new mesh data.
 ///
 /// @param[in] mesh Input mesh to be refined
 /// @param[in] edges Indices of the edges that should be split by this
 /// refinement
-/// @return New mesh data: cell topology, vertex coordinates and parent cell
-/// index
+/// @return New mesh data: cell topology, vertex coordinates and parent
+/// cell index
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>>
 compute_refinement_data(const mesh::Mesh& mesh,
