@@ -516,25 +516,26 @@ xdmf_utils::distribute_entity_data(
 
     const std::size_t shape_e_1 = entity_layout.size();
     const std::size_t shape_e_0 = entities.size() / shape_e_1;
-    xt::xtensor<std::int64_t, 2> entities_vertices(
-        {shape_e_0, num_vertices_per_entity});
-    for (std::size_t e = 0; e < entities_vertices.shape(0); ++e)
+    // xt::xtensor<std::int64_t, 2> entities_vertices(
+    //     {shape_e_0, num_vertices_per_entity});
+    std::vector<std::int64_t> entities_vertices(shape_e_0
+                                                * num_vertices_per_entity);
+    for (std::size_t e = 0; e < shape_e_0; ++e)
     {
-      for (std::size_t i = 0; i < entities_vertices.shape(1); ++i)
+      for (std::size_t i = 0; i < num_vertices_per_entity; ++i)
       {
-        entities_vertices(e, i)
+        entities_vertices[e * num_vertices_per_entity + i]
             = entities[e * shape_e_1 + entity_vertex_dofs[i]];
       }
     }
 
     std::vector<std::vector<std::int64_t>> entities_send(comm_size);
     std::vector<std::vector<std::int32_t>> data_send(comm_size);
-    std::vector<std::int64_t> entity(num_vertices_per_entity);
-    for (std::size_t e = 0; e < entities_vertices.shape(0); ++e)
+    for (std::size_t e = 0; e < shape_e_0; ++e)
     {
-      // Copy vertices for entity and sort
-      auto ev = xt::row(entities_vertices, e);
-      std::copy(ev.cbegin(), ev.cend(), entity.begin());
+      xtl::span<std::int64_t> entity(entities_vertices.data()
+                                         + e * num_vertices_per_entity,
+                                     num_vertices_per_entity);
       std::sort(entity.begin(), entity.end());
 
       // Determine postmaster based on lowest entity node
@@ -545,8 +546,7 @@ xdmf_utils::distribute_entity_data(
       data_send[p].push_back(data[e]);
     }
 
-    LOG(INFO) << "XDMF send entity keys size: (" << entities_vertices.shape(0)
-              << ")";
+    LOG(INFO) << "XDMF send entity keys size: (" << shape_e_0 << ")";
     // TODO: Pack into one MPI call
     graph::AdjacencyList<std::int64_t> entities_recv = dolfinx::MPI::all_to_all(
         comm, graph::AdjacencyList<std::int64_t>(entities_send));
