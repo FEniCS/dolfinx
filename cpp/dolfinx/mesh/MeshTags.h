@@ -11,7 +11,6 @@
 #include "Topology.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
@@ -25,30 +24,32 @@
 namespace dolfinx::mesh
 {
 
-/// A MeshTags are used to associate mesh entities with values. The
-/// entity index (local to process) identifies the entity. MeshTags is a
-/// sparse data storage class; it allows tags to be associated with an
-/// arbitrary subset of mesh entities. An entity can have only one
+/// @brief MeshTags associate values with mesh entities.
+///
+/// The entity index (local to process) identifies the entity. MeshTags
+/// is a sparse data storage class; it allows tags to be associated with
+/// an arbitrary subset of mesh entities. An entity can have only one
 /// associated tag.
 /// @tparam Type
 template <typename T>
 class MeshTags
 {
 public:
-  /// Create from entities of given dimension on a mesh
+  /// @brief Create from entities of given dimension on a mesh
+  //
   /// @param[in] mesh The mesh on which the tags are associated
   /// @param[in] dim Topological dimension of mesh entities to tag
   /// @param[in] indices std::vector<std::int32> of sorted and unique
-  ///   entity indices (indices local to the process)
+  /// entity indices (indices local to the process)
   /// @param[in] values std::vector<T> of values for each index in
-  ///   indices. The size must be equal to the size of @p indices.
+  /// indices. The size must be equal to the size of @p indices.
   template <typename U, typename V>
   MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim, U&& indices,
            V&& values)
       : _mesh(mesh), _dim(dim), _indices(std::forward<U>(indices)),
         _values(std::forward<V>(values))
   {
-    if (indices.size() != values.size())
+    if (_indices.size() != _values.size())
     {
       throw std::runtime_error(
           "Indices and values arrays must have same size.");
@@ -108,13 +109,7 @@ public:
   /// Name
   std::string name = "mesh_tags";
 
-  /// Unique ID of the object
-  std::size_t id() const { return _unique_id; }
-
 private:
-  // Unique identifier
-  std::size_t _unique_id = common::UniqueIdGenerator::id();
-
   // Associated mesh
   std::shared_ptr<const Mesh> _mesh;
 

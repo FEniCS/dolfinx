@@ -336,7 +336,7 @@ def _(A: PETSc.Mat, a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = [
     constants = _pack_constants(a) if constants is None else constants
     coeffs = _pack_coefficients(a) if coeffs is None else coeffs
     _cpp.fem.petsc.assemble_matrix(A, a, constants, coeffs, bcs)
-    if a.function_spaces[0].id == a.function_spaces[1].id:
+    if a.function_spaces[0] is a.function_spaces[1]:
         A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
         A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
         _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], bcs, diagonal)
@@ -414,7 +414,7 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[FormMetaClass]],
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
-                if a_sub.function_spaces[0].id == a_sub.function_spaces[1].id:
+                if a_sub.function_spaces[0] is a_sub.function_spaces[1]:
                     _cpp.fem.petsc.insert_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
 

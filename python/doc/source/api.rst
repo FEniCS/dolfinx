@@ -48,10 +48,3 @@ application-level use.
    dolfinx.cpp.nls
    dolfinx.cpp.nls.petsc
    dolfinx.cpp.refinement
-
-
-C++
-===
-
-The C++ API is documented `here
-<https://docs.fenicsproject.org/dolfinx/main/cpp/>`_.

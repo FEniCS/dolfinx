@@ -21,8 +21,8 @@ import numpy as np
 
 import dolfinx.plot as plot
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.mesh import (CellType, MeshTags, compute_midpoints,
-                          create_unit_cube, create_unit_square)
+from dolfinx.mesh import (CellType, compute_midpoints, create_unit_cube,
+                          create_unit_square, meshtags)
 
 from mpi4py import MPI
 
@@ -107,7 +107,7 @@ def plot_meshtags():
     # circle, it gets value 1, otherwise 0.
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     midpoints = compute_midpoints(msh, msh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
-    cell_tags = MeshTags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
+    cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
     cells, types, x = plot.create_vtk_mesh(msh, msh.topology.dim)
     grid = pyvista.UnstructuredGrid(cells, types, x)
@@ -164,7 +164,7 @@ def plot_higher_order():
     # circle, it gets value 1, otherwise 0.
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     midpoints = compute_midpoints(msh, msh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
-    cell_tags = MeshTags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
+    cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
     # We start by interpolating a discontinuous function into a second order
     # discontinuous Lagrange  space Note that we use the `cell_tags` from

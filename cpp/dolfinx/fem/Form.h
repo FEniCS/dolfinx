@@ -25,16 +25,16 @@ class Constant;
 template <typename T>
 class Function;
 
-/// Type of integral
+/// @brief Type of integral
 enum class IntegralType : std::int8_t
 {
-  cell = 0,
-  exterior_facet = 1,
-  interior_facet = 2,
-  vertex = 3
+  cell = 0,           ///< Cell
+  exterior_facet = 1, ///< Exterior facet
+  interior_facet = 2, ///< Interior facet
+  vertex = 3          ///< Vertex
 };
 
-/// Class for variational forms
+/// @brief A representation of finite element variational forms.
 ///
 /// A note on the order of trial and test spaces: FEniCS numbers
 /// argument spaces starting with the leading dimension of the
@@ -57,12 +57,14 @@ enum class IntegralType : std::int8_t
 /// (the variable `function_spaces` in the constructors below), the list
 /// of spaces should start with space number 0 (the test space) and then
 /// space number 1 (the trial space).
-
 template <typename T>
 class Form
 {
 public:
-  /// Create form
+  /// @brief Create a finite element form.
+  ///
+  /// @note User applications will normally call a fem::Form builder
+  /// function rather using this interfcae directly.
   ///
   /// @param[in] function_spaces Function spaces for the form arguments
   /// @param[in] integrals The integrals in the form. The first key is

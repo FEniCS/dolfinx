@@ -354,7 +354,6 @@ void declare_objects(py::module& m, const std::string& type)
       .def(py::init<std::shared_ptr<dolfinx::fem::FunctionSpace>,
                     std::shared_ptr<dolfinx::la::Vector<T>>>())
       .def_readwrite("name", &dolfinx::fem::Function<T>::name)
-      .def_property_readonly("id", &dolfinx::fem::Function<T>::id)
       .def("sub", &dolfinx::fem::Function<T>::sub,
            "Return sub-function (view into parent Function")
       .def("collapse", &dolfinx::fem::Function<T>::collapse,
@@ -1165,9 +1164,6 @@ void fem(py::module& m)
       .def(py::init<std::shared_ptr<dolfinx::mesh::Mesh>,
                     std::shared_ptr<dolfinx::fem::FiniteElement>,
                     std::shared_ptr<dolfinx::fem::DofMap>>())
-      .def_property_readonly("id", &dolfinx::fem::FunctionSpace::id)
-      .def("__hash__", &dolfinx::fem::FunctionSpace::id)
-      .def("__eq__", &dolfinx::fem::FunctionSpace::operator==)
       .def("collapse", &dolfinx::fem::FunctionSpace::collapse)
       .def("component", &dolfinx::fem::FunctionSpace::component)
       .def("contains", &dolfinx::fem::FunctionSpace::contains)

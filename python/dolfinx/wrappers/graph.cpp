@@ -48,8 +48,7 @@ void declare_adjacency_list(py::module& m, std::string type)
               throw std::runtime_error("Incorrect array dimension.");
             const std::size_t dim = adj.ndim() < 2 ? 1 : adj.shape(1);
             std::vector<T> data(adj.data(), adj.data() + adj.size());
-            return dolfinx::graph::build_adjacency_list<T>(std::move(data),
-                                                           dim);
+            return dolfinx::graph::regular_adjacency_list(std::move(data), dim);
           }))
       .def(py::init(
                [](const py::array_t<T, py::array::c_style>& array,

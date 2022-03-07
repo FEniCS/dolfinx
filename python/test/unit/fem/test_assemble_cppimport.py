@@ -105,7 +105,7 @@ PYBIND11_MODULE(eigen_csr, m)
         """Assemble bilinear form into an SciPy CSR matrix, in serial."""
         module = compile_eigen_csr_assembler_module()
         A = module.assemble_matrix(a, bcs)
-        if a.function_spaces[0].id == a.function_spaces[1].id:
+        if a.function_spaces[0] is a.function_spaces[1]:
             for bc in bcs:
                 if a.function_spaces[0].contains(bc.function_space):
                     bc_dofs, _ = bc.dof_indices()
