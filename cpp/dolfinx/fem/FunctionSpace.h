@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <boost/uuid/uuid.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <map>
@@ -55,12 +56,12 @@ public:
 
   /// Equality operator
   /// @param[in] V Another function space
-  /// @return True is the function spaces are the same
+  /// @return True is the function spaces are equal
   bool operator==(const FunctionSpace& V) const;
 
   /// Inequality operator
   /// @param[in] V Another function space.
-  /// @return True is the function spaces are not the same
+  /// @return True is the function spaces are not equal
   bool operator!=(const FunctionSpace& V) const;
 
   /// Extract subspace for component
@@ -68,9 +69,10 @@ public:
   /// @return The subspace
   std::shared_ptr<FunctionSpace> sub(const std::vector<int>& component) const;
 
-  /// Check whether V is subspace of this, or this itself
+  /// @brief Check whether V is subspace of this, or this itself
   /// @param[in] V The space to be tested for inclusion
-  /// @return True if V is contained in or equal to this FunctionSpace
+  /// @return True if V is contained in or is equal to this
+  /// FunctionSpace
   bool contains(const FunctionSpace& V) const;
 
   /// Collapse a subspace and return a new function space and a map from
@@ -103,6 +105,9 @@ public:
   /// The dofmap
   std::shared_ptr<const fem::DofMap> dofmap() const;
 
+  /// A hash integer
+  std::size_t hash() const;
+
 private:
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;
@@ -116,8 +121,9 @@ private:
   // The component w.r.t. to root space
   std::vector<int> _component;
 
-  // The identifier of root space
-  std::uintptr_t _root_space_id;
+  // Unique identifier for the space and for its root space
+  boost::uuids::uuid _id;
+  boost::uuids::uuid _root_space_id;
 
   // Cache of subspaces
   mutable std::map<std::vector<int>, std::weak_ptr<FunctionSpace>> _subspaces;
