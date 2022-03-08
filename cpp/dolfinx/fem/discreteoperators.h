@@ -19,21 +19,18 @@
 namespace dolfinx::fem
 {
 
-/// @todo Improve documentation
 /// This function class computes the sparsity pattern for discrete gradient
 /// operators (matrices) that map derivatives of finite element functions into
 /// other finite element spaces.
 ///
-/// @warning This function is highly experimental and likely to change
-/// or be replaced or be removed
-///
 /// Build the sparsity for the discrete gradient operator A that takes a
-/// \f$w \in H^1\f$ (P1, nodal Lagrange) to \f$v \in H(curl)\f$
-/// (lowest order Nedelec), i.e. v = Aw. V0 is the H(curl) space,
-/// and V1 is the P1 Lagrange space.
+/// \f$w \in H^p\f$ (p-th order nodal Lagrange) to \f$v \in H(curl)\f$
+/// (p-th order Nedelec first kind), i.e. v = Aw. V0 is the H(curl) space,
+/// and V1 is the Lagrange space.
 ///
-/// @param[in] V0 A H(curl) space
-/// @param[in] V1 A P1 Lagrange space
+/// @param[in] mesh The mesh
+/// @param[in] V0 A p-th order Nedelec (first kind) space
+/// @param[in] V1 A p-th order Lagrange space
 /// @return The sparsity pattern
 la::SparsityPattern
 create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
