@@ -108,17 +108,15 @@ std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 std::vector<int>
-dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, const std::set<int>& edges)
-// const xtl::span<const int>& edges)
+dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
+                                      const xtl::span<const int>& edges)
 {
   // Start non-blocking synchronised send
   std::vector<MPI_Request> send_requests(edges.size());
   std::byte send_buffer;
-  std::vector<int> _edges(edges.begin(), edges.end());
-
-  for (std::size_t e = 0; e < _edges.size(); ++e)
+  for (std::size_t e = 0; e < edges.size(); ++e)
   {
-    MPI_Issend(&send_buffer, 1, MPI_BYTE, _edges[e], 90, comm,
+    MPI_Issend(&send_buffer, 1, MPI_BYTE, edges[e], 90, comm,
                &send_requests[e]);
   }
 

@@ -16,6 +16,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <xtl/xspan.hpp>
 
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>
@@ -102,22 +103,23 @@ std::vector<int> compute_graph_edges(MPI_Comm comm, const std::set<int>& edges);
 /// @param[in] edges Edges (ranks) from this rank (the caller).
 /// @return Ranks that have defined edges from them to this rank.
 std::vector<int> compute_graph_edges_nbx(MPI_Comm comm,
-                                         const std::set<int>& edges);
-// std::vector<int> compute_graph_edges_nbx(MPI_Comm comm,
-//                                          const xtl::span<const int>& edges);
+                                         const xtl::span<const int>& edges);
 
-/// Neighborhood all-to-all. Send data to neighbors.
-/// Send in_values[n0] to neighbor process n0 and receive values from neighbor
-/// process n1 in out_values[n1]
+/// @brief Send in_values[n0] to neighbor process n0 and receive values
+/// from neighbor process n1 in out_values[n1].
+/// @param[in] comm Neighborhood communicator
+/// @param[in] send_data The data to send to each rank.
+/// graph::AdjacencyList<T>::num_nodes should be equal to the number of
+/// neighbourhood out edges.
+/// @return Data received from incoming neighbourhood ranks.
 template <typename T>
 graph::AdjacencyList<T>
-neighbor_all_to_all(MPI_Comm neighbor_comm,
-                    const graph::AdjacencyList<T>& send_data);
+neighbor_all_to_all(MPI_Comm comm, const graph::AdjacencyList<T>& send_data);
 
-/// Return list of neighbors (sources and and destination) for a
-/// neighborhood communicator
+/// @brief Return list of neighbors (sources and destinations) for a
+/// neighborhood communicator.
 /// @param[in] comm Neighborhood communicator
-/// @return source ranks, destination ranks
+/// @return source ranks [0], destination ranks [1]
 std::array<std::vector<int>, 2> neighbors(MPI_Comm comm);
 
 /// Return local range for given process, splitting [0, N - 1] into
@@ -243,13 +245,11 @@ graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 template <typename T>
 graph::AdjacencyList<T>
-neighbor_all_to_all(MPI_Comm neighbor_comm,
-                    const graph::AdjacencyList<T>& send_data)
+neighbor_all_to_all(MPI_Comm comm, const graph::AdjacencyList<T>& send_data)
 {
   // Get neighbor processes
   int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
-                                 &weighted);
+  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
 
   // Allocate memory (add '1' to handle empty case as OpenMPI fails for
   // null pointers
@@ -258,9 +258,8 @@ neighbor_all_to_all(MPI_Comm neighbor_comm,
   std::adjacent_difference(std::next(send_data.offsets().begin()),
                            send_data.offsets().end(), send_sizes.begin());
   // Get receive sizes
-  MPI_Neighbor_alltoall(send_sizes.data(), 1, dolfinx::MPI::mpi_type<int>(),
-                        recv_sizes.data(), 1, dolfinx::MPI::mpi_type<int>(),
-                        neighbor_comm);
+  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                        MPI_INT, comm);
   send_sizes.pop_back();
   recv_sizes.pop_back();
 
@@ -274,7 +273,7 @@ neighbor_all_to_all(MPI_Comm neighbor_comm,
   MPI_Neighbor_alltoallv(
       send_data.array().data(), send_sizes.data(), send_data.offsets().data(),
       dolfinx::MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
-      recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), neighbor_comm);
+      recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), comm);
 
   return graph::AdjacencyList<T>(std::move(recv_data), std::move(recv_offsets));
 }

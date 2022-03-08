@@ -330,8 +330,8 @@ std::vector<std::int64_t> exchange_ghost_vertex_numbering(
   // ('true') boundary from the ghost cell owner. Note: the ghost cell
   // owner might not be the same as the vertex owner.
 
-  const int mpi_rank = dolfinx::MPI::rank(comm);
-
+  // Build map from vertices of owned and shared cells to the global of
+  // the ghosts
   std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;
   {
     // Get indices of owned cells that are ghosted on other ranks
@@ -342,9 +342,6 @@ std::vector<std::int64_t> exchange_ghost_vertex_numbering(
     const std::vector<int> fwd_ranks = dolfinx::MPI::neighbors(
         index_map_c.comm(common::IndexMap::Direction::forward))[1];
 
-    // Build map from vertices of owned and shared cells to the global of
-    // the ghosts
-    // std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;
     for (int r = 0; r < fwd_shared_cells.num_nodes(); ++r)
     {
       // Iterate over cells that are shared by rank r
@@ -369,10 +366,12 @@ std::vector<std::int64_t> exchange_ghost_vertex_numbering(
       send_sizes[rank_it->second] += 3;
     }
   }
-  std::partial_sum(send_sizes.begin(), send_sizes.end(), sdispl.begin() + 1);
+  std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                   std::next(sdispl.begin()));
   std::vector<int> tmp_offsets(sdispl.begin(), sdispl.end());
 
   // Pack data for neighbor alltoall
+  const int mpi_rank = dolfinx::MPI::rank(comm);
   std::vector<std::int64_t> send_triplet_data(sdispl.back());
   for (const auto& vertex_ranks : fwd_shared_vertices)
   {
@@ -398,8 +397,8 @@ std::vector<std::int64_t> exchange_ghost_vertex_numbering(
   }
 
   return dolfinx::MPI::neighbor_all_to_all(
-             comm,
-             graph::AdjacencyList<std::int64_t>(send_triplet_data, sdispl))
+             comm, graph::AdjacencyList<std::int64_t>(
+                       std::move(send_triplet_data), std::move(sdispl)))
       .array();
 }
 //---------------------------------------------------------------------------------
@@ -631,16 +630,15 @@ mesh::create_topology(MPI_Comm comm,
     const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
         comm, original_cell_index, ghost_owners);
 
-    auto foo = dolfinx::MPI::compute_graph_edges_nbx(
-        comm, std::set<int>(ghost_owners.begin(), ghost_owners.end()));
-    // std::sort(foo.begin(), foo.end());
-
-    // int rank = dolfinx::MPI::rank(comm);
-    // for (auto f : foo)
-    //   std::cout << "R, remote: " << rank << ", " << f << std::endl;
+    // Determine src ranks
+    std::vector<int> neigh_out(ghost_owners.begin(), ghost_owners.end());
+    std::sort(neigh_out.begin(), neigh_out.end());
+    neigh_out.erase(std::unique(neigh_out.begin(), neigh_out.end()),
+                    neigh_out.end());
+    auto src_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, neigh_out);
 
     index_map_c = std::make_shared<common::IndexMap>(
-        comm, num_local_cells, foo, cell_ghost_indices, ghost_owners);
+        comm, num_local_cells, src_ranks, cell_ghost_indices, ghost_owners);
   }
 
   // Create a map from global index to a label, using labels

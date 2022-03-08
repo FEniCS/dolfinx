@@ -300,8 +300,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
   {
     const std::int64_t _num_local = num_local;
     std::int64_t local_offset = 0;
-    MPI_Exscan(&_num_local, &local_offset, 1,
-               dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm);
+    MPI_Exscan(&_num_local, &local_offset, 1, MPI_INT64_T, MPI_SUM, comm);
 
     std::vector<std::int64_t> send_global_index_data;
     std::vector<int> send_global_index_offsets = {0};
