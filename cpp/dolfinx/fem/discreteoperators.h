@@ -28,7 +28,6 @@ namespace dolfinx::fem
 /// (p-th order Nedelec first kind), i.e. v = Aw. V0 is the H(curl) space,
 /// and V1 is the Lagrange space.
 ///
-/// @param[in] mesh The mesh
 /// @param[in] V0 A p-th order Nedelec (first kind) space
 /// @param[in] V1 A p-th order Lagrange space
 /// @return The sparsity pattern
