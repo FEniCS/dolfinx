@@ -226,7 +226,7 @@ class MeshTagsMetaClass:
 
     @name.setter
     def name(self, value: str):
-        self.name = value
+        super().name = value
 
     @property
     def dim(self) -> int:
