@@ -219,40 +219,6 @@ class MeshTagsMetaClass:
         """
         super().__init__(mesh, dim, indices.astype(np.int32), values)
 
-    @property
-    def name(self) -> str:
-        """Name of the object."""
-        return super().name
-
-    @name.setter
-    def name(self, value: str):
-        super().name = value
-
-    @property
-    def dim(self) -> int:
-        """Topological dimension of the tagged mesh entities."""
-        return super().dim
-
-    @property
-    def mesh(self) -> _cpp.mesh.Mesh:
-        """Mesh that the tags are defined on."""
-        return super().mesh
-
-    @property
-    def dtype(self) -> np.dtype:
-        """Type of the mesh tags values."""
-        return super().dtype
-
-    @property
-    def indices(self) -> np.ndarray:
-        """Mesh tag values."""
-        return super().indices
-
-    @property
-    def values(self) -> np.ndarray:
-        """Mesh tag values."""
-        return super().values
-
     def ufl_id(self) -> int:
         """Object identifier.
 
