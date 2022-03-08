@@ -670,7 +670,7 @@ void petsc_module(py::module& m)
             = dolfinx::fem::create_sparsity_discrete_gradient(V0, V1);
         Mat A = dolfinx::la::petsc::create_matrix(MPI_COMM_WORLD, sp);
         dolfinx::fem::assemble_discrete_gradient<PetscScalar>(
-            dolfinx::la::petsc::Matrix::set_fn(A, ADD_VALUES), V0, V1);
+            dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES), V0, V1);
         MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
         MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
         return A;

@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "discreteoperators.h"
-#include "FiniteElement.h"
 #include "sparsitybuild.h"
 
 using namespace dolfinx;
@@ -31,7 +30,6 @@ fem::create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
       = {"Nedelec 1st kind H(curl)", "RTCE", "NCE"};
   auto e0 = V0.element();
   std::string fam0 = e0->family();
-  std::cout << fam0 << "\n";
   if (std::find(nedelec_identities.begin(), nedelec_identities.end(), fam0)
       == nedelec_identities.end())
   {
