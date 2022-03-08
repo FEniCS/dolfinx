@@ -3,7 +3,7 @@ DOLFINx C++ API documentation
 =============================
 
 The is experimental documentation for the C++ API. The full Doxygen
-generated documentation is `here </doxygen>`_.
+generated documentation is `here <doxygen>`_.
 
 Installation
 ============
