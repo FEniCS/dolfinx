@@ -116,14 +116,14 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
   std::byte send_buffer;
   for (std::size_t e = 0; e < edges.size(); ++e)
   {
-    MPI_Issend(&send_buffer, 1, MPI_BYTE, edges[e], 90, comm,
-               &send_requests[e]);
+    MPI_Issend(&send_buffer, 1, MPI_BYTE, edges[e],
+               static_cast<int>(tag::consensus_pex), comm, &send_requests[e]);
   }
 
-  // Vector to holder ranks that send data to this rank
+  // Vector to hold ranks that send data to this rank
   std::vector<int> other_ranks;
 
-  // Start receiving
+  // Start sending/receiving
   MPI_Request barrier_request;
   bool comm_complete = false;
   bool barrier_active = false;
@@ -132,7 +132,8 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
     // Check for message
     int request_pending;
     MPI_Status status;
-    MPI_Iprobe(MPI_ANY_SOURCE, 90, comm, &request_pending, &status);
+    MPI_Iprobe(MPI_ANY_SOURCE, static_cast<int>(tag::consensus_pex), comm,
+               &request_pending, &status);
 
     // Check if message is waiting to be procssed
     if (request_pending)
@@ -140,8 +141,8 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
       // Receive it
       int other_rank = status.MPI_SOURCE;
       std::byte buffer_recv;
-      MPI_Recv(&buffer_recv, 1, MPI_BYTE, other_rank, 90, comm,
-               MPI_STATUS_IGNORE);
+      MPI_Recv(&buffer_recv, 1, MPI_BYTE, other_rank,
+               static_cast<int>(tag::consensus_pex), comm, MPI_STATUS_IGNORE);
       other_ranks.push_back(other_rank);
     }
 

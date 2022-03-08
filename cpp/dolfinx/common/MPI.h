@@ -25,6 +25,12 @@
 namespace dolfinx::MPI
 {
 
+/// MPI communication tags
+enum class tag : int
+{
+  consensus_pex
+};
+
 /// A duplicate MPI communicator and manage lifetime of the
 /// communicator
 class Comm
