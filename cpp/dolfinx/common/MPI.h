@@ -82,6 +82,30 @@ graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
 /// @return Ranks that have defined edges from them to this rank
 std::vector<int> compute_graph_edges(MPI_Comm comm, const std::set<int>& edges);
 
+/// @brief Compute communication graph edges via sparse MPI
+/// communication.
+///
+/// Given a list of outgoing edges (destination ranks) from this rank,
+/// this function returns the incoming edges (source ranks) to this rank
+/// that are outgoing eddges on other ranks.
+///
+/// @note This function is for sparse communication patterns, i.e. where
+/// the number of ranks that communicate with each other is relatively
+/// small. It is scalable, i.e. no arrays the size of the communicator
+/// are constructed and the communication pattern is sparse It
+/// implements the NBX algorithm presented in
+/// https://dx.doi.org/10.1145/1837853.1693476.
+///
+/// @note Collective
+///
+/// @param[in] comm MPI communicator
+/// @param[in] edges Edges (ranks) from this rank (the caller).
+/// @return Ranks that have defined edges from them to this rank.
+std::vector<int> compute_graph_edges_nbx(MPI_Comm comm,
+                                         const std::set<int>& edges);
+// std::vector<int> compute_graph_edges_nbx(MPI_Comm comm,
+//                                          const xtl::span<const int>& edges);
+
 /// Neighborhood all-to-all. Send data to neighbors.
 /// Send in_values[n0] to neighbor process n0 and receive values from neighbor
 /// process n1 in out_values[n1]

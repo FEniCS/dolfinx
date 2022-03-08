@@ -107,6 +107,72 @@ std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
   return edges1;
 }
 //-----------------------------------------------------------------------------
+std::vector<int>
+dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, const std::set<int>& edges)
+// const xtl::span<const int>& edges)
+{
+  // Start non-blocking synchronised send
+  std::vector<MPI_Request> send_requests(edges.size());
+  std::byte send_buffer;
+  std::vector<int> _edges(edges.begin(), edges.end());
+
+  for (std::size_t e = 0; e < _edges.size(); ++e)
+  {
+    MPI_Issend(&send_buffer, 1, MPI_BYTE, _edges[e], 90, comm,
+               &send_requests[e]);
+  }
+
+  // Vector to holder ranks that send data to this rank
+  std::vector<int> other_ranks;
+
+  // Start receiving
+  MPI_Request barrier_request;
+  bool comm_complete = false;
+  bool barrier_active = false;
+  while (!comm_complete)
+  {
+    // Check for message
+    int request_pending;
+    MPI_Status status;
+    MPI_Iprobe(MPI_ANY_SOURCE, 90, comm, &request_pending, &status);
+
+    // Check if message is waiting to be procssed
+    if (request_pending)
+    {
+      // Receive it
+      int other_rank = status.MPI_SOURCE;
+      std::byte buffer_recv;
+      MPI_Recv(&buffer_recv, 1, MPI_BYTE, other_rank, 90, comm,
+               MPI_STATUS_IGNORE);
+      other_ranks.push_back(other_rank);
+    }
+
+    if (barrier_active)
+    {
+      // Check for barrier completion
+      int flag = 0;
+      MPI_Test(&barrier_request, &flag, MPI_STATUS_IGNORE);
+      if (flag)
+        comm_complete = true;
+    }
+    else
+    {
+      // Check if all sends have completed
+      int flag = 0;
+      MPI_Testall(send_requests.size(), send_requests.data(), &flag,
+                  MPI_STATUSES_IGNORE);
+      if (flag)
+      {
+        // All send have completed, start non-blocking barrier
+        MPI_Ibarrier(comm, &barrier_request);
+        barrier_active = true;
+      }
+    }
+  }
+
+  return other_ranks;
+}
+//-----------------------------------------------------------------------------
 std::array<std::vector<int>, 2> dolfinx::MPI::neighbors(MPI_Comm comm)
 {
   int status;
