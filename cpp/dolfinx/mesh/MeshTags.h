@@ -123,7 +123,7 @@ private:
   std::vector<T> _values;
 };
 
-/// Create MeshTags from arrays
+/// @brief Create MeshTags from arrays
 /// @param[in] mesh The Mesh that the tags are associated with
 /// @param[in] dim Topological dimension of tagged entities
 /// @param[in] entities Local vertex indices for tagged entities.
