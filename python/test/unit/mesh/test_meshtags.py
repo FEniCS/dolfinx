@@ -1,3 +1,9 @@
+# Copyright (C) 2022 Michal Habera and Garth N. Wells
+#
+# This file is part of DOLFINx (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+
 import numpy as np
 import pytest
 
@@ -20,7 +26,10 @@ def test_create(cell_type):
 
     entities = create_adjacencylist(f_v[marked_lines])
     values = np.full(marked_lines.shape[0], 2, dtype=np.int32)
-
     mt = meshtags_from_entities(mesh, 1, entities, values)
+
     mt.ufl_id()
     assert mt.indices.shape == marked_lines.shape
+    assert mt.dtype == np.int32
+    assert mt.values.dtype == np.int32
+    assert mt.values.shape[0] == entities.num_nodes
