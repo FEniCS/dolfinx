@@ -631,14 +631,13 @@ mesh::create_topology(MPI_Comm comm,
         comm, original_cell_index, ghost_owners);
 
     // Determine src ranks
-    std::vector<int> neigh_out(ghost_owners.begin(), ghost_owners.end());
-    std::sort(neigh_out.begin(), neigh_out.end());
-    neigh_out.erase(std::unique(neigh_out.begin(), neigh_out.end()),
-                    neigh_out.end());
-    auto src_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, neigh_out);
-
+    std::vector<int> src_ranks(ghost_owners.begin(), ghost_owners.end());
+    std::sort(src_ranks.begin(), src_ranks.end());
+    src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
+                    src_ranks.end());
+    auto dest_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, src_ranks);
     index_map_c = std::make_shared<common::IndexMap>(
-        comm, num_local_cells, src_ranks, cell_ghost_indices, ghost_owners);
+        comm, num_local_cells, dest_ranks, cell_ghost_indices, ghost_owners);
   }
 
   // Create a map from global index to a label, using labels
