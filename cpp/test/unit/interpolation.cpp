@@ -85,7 +85,7 @@ void test_interpolation_different_meshes()
 
   if (diffNorm > 1e-13)
   {
-    //    throw std::runtime_error("Interpolation on different meshes failed.");
+    throw std::runtime_error("Interpolation on different meshes failed.");
   }
 }
 
