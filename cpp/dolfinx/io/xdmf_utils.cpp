@@ -675,23 +675,25 @@ xdmf_utils::distribute_entity_data(
     entities_new.reserve(recv_ents.array().size());
     std::vector<std::int32_t> data_new;
     data_new.reserve(recv_vals.array().size());
-    for (std::size_t e = 0; e < recv_ents.array().size() / num_vert_per_entity;
+    std::vector<std::int32_t> entity(num_vert_per_entity);
+    const std::vector<std::int64_t>& recv_ents_array = recv_ents.array();
+    for (std::size_t e = 0; e < recv_ents_array.size() / num_vert_per_entity;
          ++e)
     {
       bool entity_found = true;
-      std::vector<std::int32_t> entity(num_vert_per_entity);
       for (std::size_t i = 0; i < num_vert_per_entity; ++i)
       {
-        const auto it = igi_to_vertex.find(
-            recv_ents.array()[e * num_vert_per_entity + i]);
-        if (it == igi_to_vertex.end())
+        if (auto it
+            = igi_to_vertex.find(recv_ents_array[e * num_vert_per_entity + i]);
+            it == igi_to_vertex.end())
         {
           // As soon as this received index is not in locally owned input
           // global indices skip the entire entity
           entity_found = false;
           break;
         }
-        entity[i] = it->second;
+        else
+          entity[i] = it->second;
       }
 
       if (entity_found == true)
