@@ -158,12 +158,13 @@ build::distribute_data(MPI_Comm comm,
   MPI_Exscan(&shape0, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
 
   // Determine which postoffice ranks will receive data from me
-  std::vector<int> dests, row_to_dest;
+  std::vector<int> dests, row_to_dest(indices.size());
   for (std::size_t i = 0; i < indices.size(); i += shape1)
   {
     int dest = dolfinx::MPI::index_owner(size, indices[i], num_rows_global);
-    // if (dest != rank)
-    dests.push_back(dest);
+    row_to_dest[i] = dest;
+    if (dest != rank)
+      dests.push_back(dest);
   }
 
   // Get ranks that will be sending data to me
@@ -186,12 +187,16 @@ build::distribute_data(MPI_Comm comm,
       postoffices_dest.size(), postoffices_dest.data(), MPI_UNWEIGHTED,
       MPI_INFO_NULL, false, &neigh_comm0);
 
+  std::map<int, int> global_to_neigh_rank;
+  for (std::size_t i = 0; i < postoffices_dest.size(); ++i)
+    global_to_neigh_rank.insert({postoffices_dest[i], postoffice_src[i]});
+
   // Pack send buffer
   std::vector<T> send_buffer(dests.size());
 
   MPI_Comm_free(&neigh_comm0);
-*/
 
+  */
   // --
 
   // Get number of rows on each rank
