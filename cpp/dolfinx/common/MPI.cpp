@@ -210,7 +210,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
     }
   }
 
-  LOG(INFO) << "Finished graph edge discovery using NBXÎ algorithm. Number "
+  LOG(INFO) << "Finished graph edge discovery using NBX algorithm. Number "
                "of discovered edges "
             << other_ranks.size();
 
