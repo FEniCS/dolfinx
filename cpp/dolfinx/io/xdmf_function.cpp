@@ -157,8 +157,7 @@ void _add_function(MPI_Comm comm, const fem::Function<Scalar>& u,
       // Add data item of component
       const std::int64_t num_local = component_data_values.size() / width;
       std::int64_t offset = 0;
-      MPI_Exscan(&num_local, &offset, 1, dolfinx::MPI::mpi_type<std::int64_t>(),
-                 MPI_SUM, comm);
+      MPI_Exscan(&num_local, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
       xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name,
                                 component_data_values, offset,
                                 {num_values, width}, "", use_mpi_io);
@@ -170,8 +169,7 @@ void _add_function(MPI_Comm comm, const fem::Function<Scalar>& u,
       // Add data item
       const std::int64_t num_local = data_values.size() / width;
       std::int64_t offset = 0;
-      MPI_Exscan(&num_local, &offset, 1, dolfinx::MPI::mpi_type<std::int64_t>(),
-                 MPI_SUM, comm);
+      MPI_Exscan(&num_local, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
       xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name,
                                 data_values, offset, {num_values, width}, "",
                                 use_mpi_io);
