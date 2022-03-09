@@ -48,8 +48,7 @@ graph::build::distribute(MPI_Comm comm,
   std::int64_t offset_global = 0;
   const std::int64_t num_owned = list.num_nodes();
   MPI_Request request_offset_scan;
-  MPI_Iexscan(&num_owned, &offset_global, 1,
-              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
+  MPI_Iexscan(&num_owned, &offset_global, 1, MPI_INT64_T, MPI_SUM, comm,
               &request_offset_scan);
 
   const int size = dolfinx::MPI::size(comm);
@@ -189,8 +188,7 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
 
   std::int64_t offset_local = 0;
   MPI_Request request_offset_scan;
-  MPI_Iexscan(&num_local, &offset_local, 1,
-              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
+  MPI_Iexscan(&num_local, &offset_local, 1, MPI_INT64_T, MPI_SUM, comm,
               &request_offset_scan);
 
   // Find out how many ghosts are on each neighboring process
