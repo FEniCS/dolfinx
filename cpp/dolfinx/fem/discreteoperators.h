@@ -70,16 +70,16 @@ void assemble_discrete_gradient(
   std::array<std::string, 3> nedelec_identities
       = {"Nedelec 1st kind H(curl)", "RTCE", "NCE"};
   auto e0 = V0.element();
-  std::string fam0 = e0->family();
-  if (std::find(nedelec_identities.begin(), nedelec_identities.end(), fam0)
+  if (std::string fam0 = e0->family();
+      std::find(nedelec_identities.begin(), nedelec_identities.end(), fam0)
       == nedelec_identities.end())
   {
     throw std::runtime_error(
         "Output space has to be a Nedelec (first kind) function space.");
   }
   auto e1 = V1.element();
-  std::string fam1 = e1->family();
-  if (std::find(lagrange_identities.begin(), lagrange_identities.end(), fam1)
+  if (std::string fam1 = e1->family();
+      std::find(lagrange_identities.begin(), lagrange_identities.end(), fam1)
       == lagrange_identities.end())
   {
     throw std::runtime_error(
