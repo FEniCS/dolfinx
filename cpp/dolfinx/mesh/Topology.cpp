@@ -811,3 +811,55 @@ mesh::create_topology(MPI_Comm comm,
   return topology;
 }
 //-----------------------------------------------------------------------------
+std::vector<std::int32_t>
+mesh::entities_to_index(const mesh::Topology& topology, int dim,
+                        const graph::AdjacencyList<std::int32_t>& entities)
+{
+  // Tagged entity topological dimension
+  auto map_e = topology.index_map(dim);
+  assert(map_e);
+
+  auto e_to_v = topology.connectivity(dim, 0);
+  if (!e_to_v)
+    throw std::runtime_error("Missing entity-vertex connectivity.");
+
+  const int num_vertices_per_entity = e_to_v->num_links(0);
+  const int num_entities_mesh = map_e->size_local() + map_e->num_ghosts();
+
+  // Build map from ordered local vertex indices (key) to entity index
+  // (value)
+  std::map<std::vector<std::int32_t>, std::int32_t> entity_key_to_index;
+  std::vector<std::int32_t> key(num_vertices_per_entity);
+  for (int e = 0; e < num_entities_mesh; ++e)
+  {
+    auto vertices = e_to_v->links(e);
+    std::copy(vertices.begin(), vertices.end(), key.begin());
+    std::sort(key.begin(), key.end());
+    auto ins = entity_key_to_index.insert({key, e});
+    if (!ins.second)
+      throw std::runtime_error("Duplicate mesh entity detected.");
+  }
+
+  // Iterate over all entities and find index
+  std::vector<std::int32_t> indices;
+  indices.reserve(entities.num_nodes());
+  std::vector<std::int32_t> vertices(num_vertices_per_entity);
+  for (std::int32_t e = 0; e < entities.num_nodes(); ++e)
+  {
+    auto v = entities.links(e);
+    assert(num_vertices_per_entity == entities.num_links(e));
+    std::copy(v.begin(), v.end(), vertices.begin());
+    std::sort(vertices.begin(), vertices.end());
+
+    if (auto it = entity_key_to_index.find(vertices);
+        it != entity_key_to_index.end())
+    {
+      indices.push_back(it->second);
+    }
+    else
+      indices.push_back(-1);
+  }
+
+  return indices;
+}
+//-----------------------------------------------------------------------------

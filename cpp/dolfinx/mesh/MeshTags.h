@@ -127,64 +127,40 @@ private:
 /// @param[in] mesh The Mesh that the tags are associated with
 /// @param[in] dim Topological dimension of tagged entities
 /// @param[in] entities Local vertex indices for tagged entities.
-/// @param[in] values Tag values for each entity in @ entities. The
-/// length of @ values  must be equal to number of rows in @ entities.
+/// @param[in] values Tag values for each entity in `entities`. The
+/// length of `values` must be equal to number of rows in `entities`.
+/// @note Entities that are not owned by this rank are ignored.
 template <typename T>
 MeshTags<T> create_meshtags(const std::shared_ptr<const Mesh>& mesh, int dim,
                             const graph::AdjacencyList<std::int32_t>& entities,
                             const xtl::span<const T>& values)
 {
   assert(mesh);
-  if ((std::size_t)entities.num_nodes() != values.size())
-    throw std::runtime_error("Number of entities and values must match");
 
-  // Tagged entity topological dimension
-  const auto map_e = mesh->topology().index_map(dim);
-  assert(map_e);
+  // Compute the indices of the mesh entities (index is set to -1 if it
+  // can't be found)
+  const std::vector<std::int32_t> indices
+      = entities_to_index(mesh->topology(), dim, entities);
 
-  auto e_to_v = mesh->topology().connectivity(dim, 0);
-  if (!e_to_v)
-    throw std::runtime_error("Missing entity-vertex connectivity.");
+  // Sort the indices and values by indices
+  auto [indices_sorted, values_sorted] = common::sort_unique(indices, values);
 
-  const int num_vertices_per_entity = e_to_v->num_links(0);
-  const int num_entities_mesh = map_e->size_local() + map_e->num_ghosts();
+  // Remove any entities that were not found (these have andindex of -1)
+  auto it0 = std::lower_bound(indices_sorted.begin(), indices_sorted.end(), 0);
+  std::size_t pos0 = std::distance(indices_sorted.begin(), it0);
+  indices_sorted.erase(indices_sorted.begin(), it0);
+  values_sorted.erase(values_sorted.begin(),
+                      std::next(values_sorted.begin(), pos0));
 
-  std::map<std::vector<std::int32_t>, std::int32_t> entity_key_to_index;
-  std::vector<std::int32_t> key(num_vertices_per_entity);
-  for (int e = 0; e < num_entities_mesh; ++e)
-  {
-    // Prepare a map from ordered local vertex indices to local entity
-    // number. This map is used to identify if received entity is owned
-    // or ghost
-    auto vertices = e_to_v->links(e);
-    std::copy(vertices.begin(), vertices.end(), key.begin());
-    std::sort(key.begin(), key.end());
-    entity_key_to_index.insert({key, e});
-  }
+  // // Remove ghosts
+  // std::int32_t owned_size = mesh->topology().index_map(dim)->size_local();
+  // auto it1 = std::lower_bound(indices_sorted.begin(), indices_sorted.end(),
+  //                             owned_size);
+  // std::size_t pos1 = std::distance(indices_sorted.begin(), it1);
+  // indices_sorted.erase(it1, indices_sorted.end());
+  // values_sorted.erase(std::next(values_sorted.begin(), pos1),
+  //                     values_sorted.end());
 
-  // Iterate over all received entities. If entity is on this rank,
-  // store (local entity index, tag value)
-  std::vector<std::int32_t> indices_new;
-  std::vector<T> values_new;
-  std::vector<std::int32_t> entity(num_vertices_per_entity);
-  for (std::int32_t e = 0; e < entities.num_nodes(); ++e)
-  {
-    // This would fail for mixed cell type meshes
-    assert(num_vertices_per_entity == entities.num_links(e));
-    std::copy(entities.links(e).begin(), entities.links(e).end(),
-              entity.begin());
-    std::sort(entity.begin(), entity.end());
-
-    if (const auto it = entity_key_to_index.find(entity);
-        it != entity_key_to_index.end())
-    {
-      indices_new.push_back(it->second);
-      values_new.push_back(values[e]);
-    }
-  }
-
-  auto [indices_sorted, values_sorted]
-      = common::sort_unique(indices_new, values_new);
   return MeshTags<T>(mesh, dim, std::move(indices_sorted),
                      std::move(values_sorted));
 }

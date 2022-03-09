@@ -187,4 +187,17 @@ create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                 const xtl::span<const std::int64_t>& original_cell_index,
                 const xtl::span<const int>& ghost_owners,
                 const CellType& cell_type, GhostMode ghost_mode);
+
+/// @brief Computed entity indices for entities defined by their
+/// vertices.
+///
+/// @param[in] topology The mesh topology
+/// @param[in] dim Topological dimension of the entities
+/// @param[in] entities The mesh entities defined by their vertices
+/// @return The index of the ith entity in `entities`
+/// @note If an entity cannot be found on this rank, -1 is returned as
+/// the index.
+std::vector<std::int32_t>
+entities_to_index(const mesh::Topology& topology, int dim,
+                  const graph::AdjacencyList<std::int32_t>& entities);
 } // namespace dolfinx::mesh
