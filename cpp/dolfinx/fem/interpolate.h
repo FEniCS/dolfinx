@@ -809,9 +809,9 @@ void interpolate(Function<T>& u, const Function<T>& v,
                     });
 
       // Open a window for other processes to read data from, then sync
-      MPI_Win_create(values.data(),
-                     sizeof(dolfinx::MPI::mpi_type<T>()) * values.size(),
-                     sizeof(dolfinx::MPI::mpi_type<T>()), MPI_INFO_NULL,
+      int Tsize;
+      MPI_Type_size(dolfinx::MPI::mpi_type<T>(), &Tsize);
+      MPI_Win_create(values.data(), Tsize * values.size(), Tsize, MPI_INFO_NULL,
                      mesh->comm(), &window);
       MPI_Win_fence(0, window);
 
