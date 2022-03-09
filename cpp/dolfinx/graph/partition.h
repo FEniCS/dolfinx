@@ -137,13 +137,65 @@ build::distribute_data(MPI_Comm comm,
                        const xtl::span<const std::int64_t>& indices,
                        const xtl::span<const T>& x, int shape1)
 {
-  common::Timer timer("Fetch float data from remote processes");
+  common::Timer timer("Fetch data from remote processes");
   assert(shape1 > 0);
 
-  assert(x.size() % shape1 == 0);
-  const std::int64_t shape0 = x.size() / shape1;
   const int size = dolfinx::MPI::size(comm);
   const int rank = dolfinx::MPI::rank(comm);
+
+  // --
+
+  // // Get numebr of rows globally
+  assert(x.size() % shape1 == 0);
+  const std::int64_t shape0 = x.size() / shape1;
+
+  /*
+  std::int64_t num_rows_global = 0;
+  MPI_Allreduce(&shape0, &num_rows_global, 1, MPI_INT64_T, MPI_MAX, comm);
+
+  // Compute my offset
+  std::int64_t offset = 0;
+  MPI_Exscan(&shape0, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
+
+  // Determine which postoffice ranks will receive data from me
+  std::vector<int> dests, row_to_dest;
+  for (std::size_t i = 0; i < indices.size(); i += shape1)
+  {
+    int dest = dolfinx::MPI::index_owner(size, indices[i], num_rows_global);
+    // if (dest != rank)
+    dests.push_back(dest);
+  }
+
+  // Get ranks that will be sending data to me
+  std::vector<int> postoffices_dest = dests;
+  std::sort(postoffices_dest.begin(), postoffices_dest.end());
+  postoffices_dest.erase(
+      std::unique(postoffices_dest.begin(), postoffices_dest.end()),
+      postoffices_dest.end());
+  postoffices_dest.erase(
+      std::remove(postoffices_dest.begin(), postoffices_dest.end(), rank),
+      postoffices_dest.end());
+  const std::vector<int> postoffice_src
+      = dolfinx::MPI::compute_graph_edges_nbx(comm, postoffices_dest);
+
+  // Create neighbourhood communicator for sending data to the right
+  // post office
+  MPI_Comm neigh_comm0;
+  MPI_Dist_graph_create_adjacent(
+      comm, postoffice_src.size(), postoffice_src.data(), MPI_UNWEIGHTED,
+      postoffices_dest.size(), postoffices_dest.data(), MPI_UNWEIGHTED,
+      MPI_INFO_NULL, false, &neigh_comm0);
+
+  // Pack send buffer
+  std::vector<T> send_buffer(dests.size());
+
+  MPI_Comm_free(&neigh_comm0);
+*/
+
+  // --
+
+  // Get number of rows on each rank
+  // const std::int64_t shape0 = x.size() / shape1;
   std::vector<std::int64_t> global_sizes(size);
   MPI_Allgather(&shape0, 1, MPI_INT64_T, global_sizes.data(), 1, MPI_INT64_T,
                 comm);
