@@ -38,34 +38,24 @@ void test_interpolation_different_meshes()
   auto uL = std::make_shared<fem::Function<PetscScalar>>(VL);
   auto uR = std::make_shared<fem::Function<PetscScalar>>(VR);
 
-  uL->interpolate(
-      [](auto& x)
-      {
-        auto r = xt::zeros_like(x);
-        for (std::size_t i = 0; i < x.shape(1); ++i)
-        {
-          r(0, i) = std::cos(10 * x(0, i)) * std::sin(10 * x(2, i));
-          r(1, i) = std::sin(10 * x(0, i)) * std::sin(10 * x(2, i));
-          r(2, i) = std::cos(10 * x(0, i)) * std::cos(10 * x(2, i));
-        }
-        return r;
-      });
+  auto fun = [](auto& x)
+  {
+    auto r = xt::zeros_like(x);
+    for (std::size_t i = 0; i < x.shape(1); ++i)
+    {
+      r(0, i) = std::cos(10 * x(0, i)) * std::sin(10 * x(2, i));
+      r(1, i) = std::sin(10 * x(0, i)) * std::sin(10 * x(2, i));
+      r(2, i) = std::cos(10 * x(0, i)) * std::cos(10 * x(2, i));
+    }
+    return r;
+  };
+
+  uL->interpolate(fun);
 
   uR->interpolate(*uL);
 
   auto uR_ex = std::make_shared<fem::Function<PetscScalar>>(VR);
-  uR_ex->interpolate(
-      [](auto& x)
-      {
-        auto r = xt::zeros_like(x);
-        for (std::size_t i = 0; i < x.shape(1); ++i)
-        {
-          r(0, i) = std::cos(10 * x(0, i)) * std::sin(10 * x(2, i));
-          r(1, i) = std::sin(10 * x(0, i)) * std::sin(10 * x(2, i));
-          r(2, i) = std::cos(10 * x(0, i)) * std::cos(10 * x(2, i));
-        }
-        return r;
-      });
+  uR_ex->interpolate(fun);
 
   const PetscReal diffNorm = std::sqrt(std::transform_reduce(
       uR->x()->array().cbegin(), uR->x()->array().cend(),
