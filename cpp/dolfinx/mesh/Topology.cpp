@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2020 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2022 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -28,8 +28,10 @@ namespace
 //-----------------------------------------------------------------------------
 
 /// Compute list of processes sharing the same index
+///
 /// @note Collective
-/// @param unknown_idx List of indices on each process
+/// @param[in] comm MPI communicator
+/// @param[in] unknown_idx List of indices on each process
 /// @return a map to sharing processes for each index, with the (random)
 /// owner as the first in the list
 std::unordered_map<std::int64_t, std::vector<int>>
@@ -138,6 +140,7 @@ determine_sharing_ranks(MPI_Comm comm,
 
 /// Create a map from the 64-bit input vertex index to an index that
 /// indicates:
+///
 /// * (-1) Vertex is connected to a ghost cell
 /// * (-2) Vertex is connected to local cells only
 ///
@@ -809,5 +812,63 @@ mesh::create_topology(MPI_Comm comm,
   topology.set_connectivity(cells_local_idx, tdim, 0);
 
   return topology;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int32_t>
+mesh::entities_to_index(const mesh::Topology& topology, int dim,
+                        const graph::AdjacencyList<std::int32_t>& entities)
+{
+  LOG(INFO) << "Build list if mesh entity indices from the entity vertices.";
+
+  // Tagged entity topological dimension
+  auto map_e = topology.index_map(dim);
+  if (!map_e)
+  {
+    throw std::runtime_error("Mesh entities of dimension " + std::to_string(dim)
+                             + "have not been created.");
+  }
+
+  auto e_to_v = topology.connectivity(dim, 0);
+  assert(e_to_v);
+
+  const int num_vertices_per_entity = mesh::cell_num_entities(
+      mesh::cell_entity_type(topology.cell_type(), dim, 0), 0);
+
+  // Build map from ordered local vertex indices (key) to entity index
+  // (value)
+  std::map<std::vector<std::int32_t>, std::int32_t> entity_key_to_index;
+  std::vector<std::int32_t> key(num_vertices_per_entity);
+  const int num_entities_mesh = map_e->size_local() + map_e->num_ghosts();
+  for (int e = 0; e < num_entities_mesh; ++e)
+  {
+    auto vertices = e_to_v->links(e);
+    std::copy(vertices.begin(), vertices.end(), key.begin());
+    std::sort(key.begin(), key.end());
+    auto ins = entity_key_to_index.insert({key, e});
+    if (!ins.second)
+      throw std::runtime_error("Duplicate mesh entity detected.");
+  }
+
+  // Iterate over all entities and find index
+  std::vector<std::int32_t> indices;
+  indices.reserve(entities.num_nodes());
+  std::vector<std::int32_t> vertices(num_vertices_per_entity);
+  for (std::int32_t e = 0; e < entities.num_nodes(); ++e)
+  {
+    auto v = entities.links(e);
+    assert(num_vertices_per_entity == entities.num_links(e));
+    std::copy(v.begin(), v.end(), vertices.begin());
+    std::sort(vertices.begin(), vertices.end());
+
+    if (auto it = entity_key_to_index.find(vertices);
+        it != entity_key_to_index.end())
+    {
+      indices.push_back(it->second);
+    }
+    else
+      indices.push_back(-1);
+  }
+
+  return indices;
 }
 //-----------------------------------------------------------------------------
