@@ -1,4 +1,4 @@
-# Copyright (C) 2015 Garth N. Wells
+# Copyright (C) 2015-2022 Garth N. Wells, Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
