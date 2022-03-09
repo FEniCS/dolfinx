@@ -26,29 +26,12 @@ fem::create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
                              "spaces do not share the same mesh");
   }
 
-  // Check that first input space is Nedelec (first kind) or equivalent space on
-  // quad/hex
-  std::array<std::string, 3> nedelec_identities
-      = {"Nedelec 1st kind H(curl)", "RTCE", "NCE"};
+  // Check that output space uses covariant Piola while input space uses
+  // identity
   auto e0 = V0.element();
-  if (std::string fam0 = e0->family();
-      std::find(nedelec_identities.begin(), nedelec_identities.end(), fam0)
-      == nedelec_identities.end())
-  {
-    throw std::runtime_error(
-        "Output space has to be a Nedelec (first kind) function space.");
-  }
-
-  // Check that second input space is a Lagrange space
-  std::array<std::string, 2> lagrange_identities = {"Q", "Lagrange"};
   auto e1 = V1.element();
-  if (std::string fam1 = e1->family();
-      std::find(lagrange_identities.begin(), lagrange_identities.end(), fam1)
-      == nedelec_identities.end())
-  {
-    throw std::runtime_error(
-        "Input space has to be a Lagrange function space.");
-  }
+  assert(e0->map_type() == basix::maps::type::covariantPiola);
+  assert(e1->map_type() == basix::maps::type::identity);
 
   // Copy index maps from dofmaps
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps

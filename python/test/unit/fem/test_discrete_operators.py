@@ -39,24 +39,11 @@ def test_gradient(mesh):
     assert np.isclose(G.norm(PETSc.NormType.FROBENIUS), np.sqrt(2.0 * num_edges))
 
 
-def test_incompatible_spaces():
-    """Test that error is thrown when function spaces are not compatible"""
-
-    mesh = create_unit_square(MPI.COMM_WORLD, 13, 7)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
-    W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
-    with pytest.raises(RuntimeError):
-        create_discrete_gradient(V._cpp_object, W._cpp_object)
-    with pytest.raises(RuntimeError):
-        create_discrete_gradient(V._cpp_object, V._cpp_object)
-    with pytest.raises(RuntimeError):
-        create_discrete_gradient(W._cpp_object, W._cpp_object)
-
-
 @pytest.mark.parametrize("p", range(1, 5))
+@pytest.mark.parametrize("q", range(1, 5))
 @pytest.mark.parametrize("cell_type", [
     CellType.quadrilateral, CellType.triangle, CellType.tetrahedron, CellType.hexahedron])
-def test_interpolation_matrix(cell_type, p):
+def test_interpolation_matrix(cell_type, p, q):
     """Test discrete gradient computation (typically used for curl-curl
     AMG preconditioners"""
 
@@ -78,7 +65,7 @@ def test_interpolation_matrix(cell_type, p):
         n_fam = "Nedelec 1st kind H(curl)"
 
     V = FunctionSpace(mesh, (l_fam, p))
-    W = FunctionSpace(mesh, (n_fam, p))
+    W = FunctionSpace(mesh, (n_fam, q))
     G = create_discrete_gradient(W._cpp_object, V._cpp_object)
 
     u = Function(V)

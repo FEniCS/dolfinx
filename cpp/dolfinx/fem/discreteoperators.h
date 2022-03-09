@@ -27,34 +27,36 @@ namespace dolfinx::fem
 ///
 /// Build the sparsity for the discrete gradient operator A that takes a
 /// \f$w \in H^p\f$ (p-th order nodal Lagrange) to \f$v \in H(curl)\f$
-/// (p-th order Nedelec first kind), i.e. v = Aw. V0 is the H(curl) space,
+/// (q-th order Nedelec first kind), i.e. v = Aw. V0 is the H(curl) space,
 /// and V1 is the Lagrange space.
 ///
-/// @param[in] V0 A p-th order Nedelec (first kind) space
+/// @warning This function relies on the user supplying the appropriate input
+/// and output space for the interpolation matrix.
+///
+/// @param[in] V0 A q-th order Nedelec (first kind) space
 /// @param[in] V1 A p-th order Lagrange space
 /// @return The sparsity pattern
 la::SparsityPattern
 create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
                                   const fem::FunctionSpace& V1);
 
-/// @todo Improve documentation
 /// This function class computes discrete gradient operators (matrices)
 /// that map derivatives of finite element functions into other finite
 /// element spaces. An example of where discrete gradient operators are
 /// required is the creation of algebraic multigrid solvers for H(curl)
 /// and H(div) problems.
 ///
-/// @warning This function is highly experimental and likely to change
-/// or be replaced or be removed
+/// @warning This function relies on the user supplying the appropriate input
+/// and output space for the interpolation matrix.
 ///
 /// Build the discrete gradient operator A that takes a
-/// \f$w \in H^1\f$ (P1, nodal Lagrange) to \f$v \in H(curl)\f$
-/// (lowest order Nedelec), i.e. v = Aw. V0 is the H(curl) space,
-/// and V1 is the P1 Lagrange space.
+/// \f$w \in H^p\f$ (p-th order nodal Lagrange) to \f$v \in H(curl)\f$
+/// (q-th order Nedelec first kind), i.e. v = Aw. V0 is the H(curl) space,
+/// and V1 is the Lagrange space.
 ///
 /// @param[in] mat_set A function (or lambda capture) to set values in a matrix
-/// @param[in] V0 A H(curl) space
-/// @param[in] V1 A P1 Lagrange space
+/// @param[in] V0 A q-th order Nedelec (first kind) space
+/// @param[in] V1 A p-th order Lagrange space
 template <typename T>
 void assemble_discrete_gradient(
     const std::function<int(const xtl::span<const std::int32_t>&,
@@ -66,29 +68,12 @@ void assemble_discrete_gradient(
   std::shared_ptr<const mesh::Mesh> mesh = V0.mesh();
   assert(mesh);
 
-  // Check that first input space is Nedelec (first kind) or equivalent space on
-  // quad/hex
-  std::array<std::string, 3> nedelec_identities
-      = {"Nedelec 1st kind H(curl)", "RTCE", "NCE"};
+  // Check that output space uses covariant Piola while input space uses
+  // identity
   auto e0 = V0.element();
-  if (std::string fam0 = e0->family();
-      std::find(nedelec_identities.begin(), nedelec_identities.end(), fam0)
-      == nedelec_identities.end())
-  {
-    throw std::runtime_error(
-        "Output space has to be a Nedelec (first kind) function space.");
-  }
-
-  // Check that second input space is a Lagrange space
-  std::array<std::string, 2> lagrange_identities = {"Q", "Lagrange"};
   auto e1 = V1.element();
-  if (std::string fam1 = e1->family();
-      std::find(lagrange_identities.begin(), lagrange_identities.end(), fam1)
-      == lagrange_identities.end())
-  {
-    throw std::runtime_error(
-        "Input space has to be a Lagrange function space.");
-  }
+  assert(e0->map_type() == basix::maps::type::covariantPiola);
+  assert(e1->map_type() == basix::maps::type::identity);
 
   // Get H(curl) interpolation points
   const xt::xtensor<double, 2> X = e0->interpolation_points();
