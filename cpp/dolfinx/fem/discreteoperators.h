@@ -16,7 +16,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
 #include <vector>
-#include <xtensor/xio.hpp>
 #include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
@@ -108,7 +107,7 @@ void assemble_discrete_gradient(
   const int bs_0 = e0->block_size();
   assert(bs_0 == 1);
   const int ndofs_cell_0 = e0->space_dimension() / bs_0;
-  xt::xtensor<double, 2> Ae = xt::zeros<double>({ndofs_cell_0, ndofs_cell_1});
+  xt::xtensor<T, 2> Ae = xt::zeros<double>({ndofs_cell_0, ndofs_cell_1});
   const xt::xtensor<double, 2> Pi = e0->interpolation_operator();
   math::dot(Pi, dphi, Ae);
 
