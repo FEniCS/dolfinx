@@ -108,11 +108,13 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   }
 
   // Create new index map
+  std::vector<int> src_ranks = ghost_owners;
+  std::sort(src_ranks.begin(), src_ranks.end());
+  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
+                  src_ranks.end());
+  auto dest_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, src_ranks);
   auto index_map = std::make_shared<common::IndexMap>(
-      comm, num_owned,
-      dolfinx::MPI::compute_graph_edges(
-          comm, std::set<int>(ghost_owners.begin(), ghost_owners.end())),
-      ghosts, ghost_owners);
+      comm, num_owned, dest_ranks, ghosts, ghost_owners);
 
   // Create array from dofs in view to new dof indices
   std::vector<std::int32_t> old_to_new(dofs_view.back() + 1, -1);
