@@ -68,7 +68,6 @@ void assemble_discrete_gradient(
 
   // Check that first input space is Nedelec (first kind) or equivalent space on
   // quad/hex
-  std::array<std::string, 2> lagrange_identities = {"Q", "Lagrange"};
   std::array<std::string, 3> nedelec_identities
       = {"Nedelec 1st kind H(curl)", "RTCE", "NCE"};
   auto e0 = V0.element();
@@ -81,13 +80,14 @@ void assemble_discrete_gradient(
   }
 
   // Check that second input space is a Lagrange space
+  std::array<std::string, 2> lagrange_identities = {"Q", "Lagrange"};
   auto e1 = V1.element();
   if (std::string fam1 = e1->family();
       std::find(lagrange_identities.begin(), lagrange_identities.end(), fam1)
       == lagrange_identities.end())
   {
     throw std::runtime_error(
-        "Output space has to be a Lagrange function space.");
+        "Input space has to be a Lagrange function space.");
   }
 
   // Get H(curl) interpolation points
