@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Magnus Vikstrøm
+// Copyright (C) 2007-2022 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,6 +6,7 @@
 
 #include "MPI.h"
 #include <algorithm>
+#include <dolfinx/common/log.h>
 
 //-----------------------------------------------------------------------------
 dolfinx::MPI::Comm::Comm(MPI_Comm comm, bool duplicate)
@@ -86,29 +87,141 @@ int dolfinx::MPI::size(const MPI_Comm comm)
   return size;
 }
 //-----------------------------------------------------------------------------
-std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
-                                                   const std::set<int>& edges)
+std::vector<int>
+dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm,
+                                      const xtl::span<const int>& edges)
 {
-  // Send '1' to ranks that I have an edge to
-  std::vector<std::uint8_t> edge_count_send(dolfinx::MPI::size(comm), 0);
-  std::for_each(edges.cbegin(), edges.cend(),
-                [&edge_count_send](auto e) { edge_count_send[e] = 1; });
-  std::vector<std::uint8_t> edge_count_recv(edge_count_send.size());
-  MPI_Alltoall(edge_count_send.data(), 1, MPI_UINT8_T, edge_count_recv.data(),
-               1, MPI_UINT8_T, comm);
+  LOG(INFO) << "Computing communicaton graph edges using PCX algorithm. Number "
+               "of input edges "
+            << edges.size();
 
-  // Build list of rank that had an edge to me
-  std::vector<int> edges1;
-  for (std::size_t i = 0; i < edge_count_recv.size(); ++i)
+  // Build array with '0' for no outedge and '1' for an outedge for each
+  // rank
+  const int size = dolfinx::MPI::size(comm);
+  std::vector<int> edge_count_send(size, 0);
+  for (auto e : edges)
+    edge_count_send[e] = 1;
+
+  // Determine how many in-edges this rank has
+  std::vector<int> recvcounts(size, 1);
+  int in_edges = 0;
+  MPI_Reduce_scatter(edge_count_send.data(), &in_edges, recvcounts.data(),
+                     MPI_INT, MPI_SUM, comm);
+
+  std::vector<MPI_Request> send_requests(edges.size());
+  std::byte send_buffer;
+  for (std::size_t e = 0; e < edges.size(); ++e)
   {
-    if (edge_count_recv[i] > 0)
-      edges1.push_back(i);
+    MPI_Isend(&send_buffer, 1, MPI_BYTE, edges[e],
+              static_cast<int>(tag::consensus_pcx), comm, &send_requests[e]);
   }
-  return edges1;
+
+  // Probe for incoming messages and store incoming rank
+  std::vector<int> other_ranks;
+  while (in_edges > 0)
+  {
+    // Check for message
+    int request_pending;
+    MPI_Status status;
+    MPI_Iprobe(MPI_ANY_SOURCE, static_cast<int>(tag::consensus_pcx), comm,
+               &request_pending, &status);
+    if (request_pending)
+    {
+      // Receive message and store rank
+      int other_rank = status.MPI_SOURCE;
+      std::byte buffer_recv;
+      MPI_Recv(&buffer_recv, 1, MPI_BYTE, other_rank,
+               static_cast<int>(tag::consensus_pcx), comm, MPI_STATUS_IGNORE);
+      other_ranks.push_back(other_rank);
+      --in_edges;
+    }
+  }
+
+  LOG(INFO) << "Finished graph edge discovery using PCX algorithm. Number "
+               "of discovered edges "
+            << other_ranks.size();
+
+  return other_ranks;
+}
+//-----------------------------------------------------------------------------
+std::vector<int>
+dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
+                                      const xtl::span<const int>& edges)
+{
+  LOG(INFO) << "Computing communicaton graph edges using NBX algorithm. Number "
+               "of input edges "
+            << edges.size();
+
+  // Start non-blocking synchronised send
+  std::vector<MPI_Request> send_requests(edges.size());
+  std::byte send_buffer;
+  for (std::size_t e = 0; e < edges.size(); ++e)
+  {
+    MPI_Issend(&send_buffer, 1, MPI_BYTE, edges[e],
+               static_cast<int>(tag::consensus_pex), comm, &send_requests[e]);
+  }
+
+  // Vector to hold ranks that send data to this rank
+  std::vector<int> other_ranks;
+
+  // Start sending/receiving
+  MPI_Request barrier_request;
+  bool comm_complete = false;
+  bool barrier_active = false;
+  while (!comm_complete)
+  {
+    // Check for message
+    int request_pending;
+    MPI_Status status;
+    MPI_Iprobe(MPI_ANY_SOURCE, static_cast<int>(tag::consensus_pex), comm,
+               &request_pending, &status);
+
+    // Check if message is waiting to be procssed
+    if (request_pending)
+    {
+      // Receive it
+      int other_rank = status.MPI_SOURCE;
+      std::byte buffer_recv;
+      MPI_Recv(&buffer_recv, 1, MPI_BYTE, other_rank,
+               static_cast<int>(tag::consensus_pex), comm, MPI_STATUS_IGNORE);
+      other_ranks.push_back(other_rank);
+    }
+
+    if (barrier_active)
+    {
+      // Check for barrier completion
+      int flag = 0;
+      MPI_Test(&barrier_request, &flag, MPI_STATUS_IGNORE);
+      if (flag)
+        comm_complete = true;
+    }
+    else
+    {
+      // Check if all sends have completed
+      int flag = 0;
+      MPI_Testall(send_requests.size(), send_requests.data(), &flag,
+                  MPI_STATUSES_IGNORE);
+      if (flag)
+      {
+        // All send have completed, start non-blocking barrier
+        MPI_Ibarrier(comm, &barrier_request);
+        barrier_active = true;
+      }
+    }
+  }
+
+  LOG(INFO) << "Finished graph edge discovery using NBX algorithm. Number "
+               "of discovered edges "
+            << other_ranks.size();
+
+  return other_ranks;
 }
 //-----------------------------------------------------------------------------
 std::array<std::vector<int>, 2> dolfinx::MPI::neighbors(MPI_Comm comm)
 {
+  LOG(INFO)
+      << "Getting source/destination edges for neighborhood MPI communicator.";
+
   int status;
   MPI_Topo_test(comm, &status);
   assert(status != MPI_UNDEFINED);

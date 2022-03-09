@@ -556,12 +556,13 @@ fem::build_dofmap_data(
   assert(local_to_global_unowned.size() == local_to_global_owner.size());
 
   // Create IndexMap for dofs range on this process
-  common::IndexMap index_map(
-      comm, num_owned,
-      dolfinx::MPI::compute_graph_edges(
-          comm, std::set<int>(local_to_global_owner.begin(),
-                              local_to_global_owner.end())),
-      local_to_global_unowned, local_to_global_owner);
+  std::vector<int> src_ranks = local_to_global_owner;
+  std::sort(src_ranks.begin(), src_ranks.end());
+  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
+                  src_ranks.end());
+  auto dest_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, src_ranks);
+  common::IndexMap index_map(comm, num_owned, dest_ranks,
+                             local_to_global_unowned, local_to_global_owner);
 
   // Build re-ordered dofmap
   std::vector<std::int32_t> dofmap(node_graph0.array().size());

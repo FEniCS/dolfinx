@@ -30,12 +30,14 @@ void test_scatter_fwd(int n)
   std::vector<int> global_ghost_owner(ghosts.size(), (mpi_rank + 1) % mpi_size);
 
   // Create an IndexMap
-  common::IndexMap idx_map(
-      MPI_COMM_WORLD, size_local,
-      dolfinx::MPI::compute_graph_edges(
-          MPI_COMM_WORLD,
-          std::set<int>(global_ghost_owner.begin(), global_ghost_owner.end())),
-      ghosts, global_ghost_owner);
+  std::vector<int> src_ranks = global_ghost_owner;
+  std::sort(src_ranks.begin(), src_ranks.end());
+  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
+                  src_ranks.end());
+  auto dest_ranks
+      = dolfinx::MPI::compute_graph_edges_nbx(MPI_COMM_WORLD, src_ranks);
+  common::IndexMap idx_map(MPI_COMM_WORLD, size_local, dest_ranks, ghosts,
+                           global_ghost_owner);
 
   // Create some data to scatter
   const std::int64_t val = 11;
@@ -69,12 +71,14 @@ void test_scatter_rev()
   std::vector<int> global_ghost_owner(ghosts.size(), (mpi_rank + 1) % mpi_size);
 
   // Create an IndexMap
-  common::IndexMap idx_map(
-      MPI_COMM_WORLD, size_local,
-      dolfinx::MPI::compute_graph_edges(
-          MPI_COMM_WORLD,
-          std::set<int>(global_ghost_owner.begin(), global_ghost_owner.end())),
-      ghosts, global_ghost_owner);
+  std::vector<int> src_ranks = global_ghost_owner;
+  std::sort(src_ranks.begin(), src_ranks.end());
+  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
+                  src_ranks.end());
+  auto dest_ranks
+      = dolfinx::MPI::compute_graph_edges_nbx(MPI_COMM_WORLD, src_ranks);
+  common::IndexMap idx_map(MPI_COMM_WORLD, size_local, dest_ranks, ghosts,
+                           global_ghost_owner);
 
   // Create some data, setting ghost values
   std::int64_t value = 15;
@@ -101,6 +105,36 @@ void test_scatter_rev()
   sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == 2 * n * value * num_ghosts);
 }
+
+void test_consensus_exchange()
+{
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  const int size_local = 100;
+
+  // Create some ghost entries on next process
+  const int num_ghosts = (mpi_size - 1) * 3;
+  std::vector<std::int64_t> ghosts(num_ghosts);
+  for (int i = 0; i < num_ghosts; ++i)
+    ghosts[i] = (mpi_rank + 1) % mpi_size * size_local + i;
+
+  std::vector<int> global_ghost_owner(ghosts.size(), (mpi_rank + 1) % mpi_size);
+
+  // Create an IndexMap
+  std::vector<int> src_ranks = global_ghost_owner;
+  std::sort(src_ranks.begin(), src_ranks.end());
+  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
+                  src_ranks.end());
+
+  auto dest_ranks0
+      = dolfinx::MPI::compute_graph_edges_nbx(MPI_COMM_WORLD, src_ranks);
+  auto dest_ranks1
+      = dolfinx::MPI::compute_graph_edges_pcx(MPI_COMM_WORLD, src_ranks);
+  std::sort(dest_ranks0.begin(), dest_ranks0.end());
+  std::sort(dest_ranks1.begin(), dest_ranks1.end());
+
+  CHECK(dest_ranks0 == dest_ranks1);
+}
 } // namespace
 
 TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
@@ -112,4 +146,10 @@ TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
 TEST_CASE("Scatter reverse using IndexMap", "[index_map_scatter_rev]")
 {
   CHECK_NOTHROW(test_scatter_rev());
+}
+
+TEST_CASE("Communication graph edges via consensus exchange",
+          "[consensus_exchange]")
+{
+  CHECK_NOTHROW(test_consensus_exchange());
 }
