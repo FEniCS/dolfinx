@@ -66,6 +66,8 @@ void assemble_discrete_gradient(
   std::shared_ptr<const mesh::Mesh> mesh = V0.mesh();
   assert(mesh);
 
+  // Check that first input space is Nedelec (first kind) or equivalent space on
+  // quad/hex
   std::array<std::string, 2> lagrange_identities = {"Q", "Lagrange"};
   std::array<std::string, 3> nedelec_identities
       = {"Nedelec 1st kind H(curl)", "RTCE", "NCE"};
@@ -77,6 +79,8 @@ void assemble_discrete_gradient(
     throw std::runtime_error(
         "Output space has to be a Nedelec (first kind) function space.");
   }
+
+  // Check that second input space is a Lagrange space
   auto e1 = V1.element();
   if (std::string fam1 = e1->family();
       std::find(lagrange_identities.begin(), lagrange_identities.end(), fam1)
@@ -86,43 +90,52 @@ void assemble_discrete_gradient(
         "Output space has to be a Lagrange function space.");
   }
 
-  // Tabulate Lagrange space at H(curl) interpolation points
+  // Get H(curl) interpolation points
   const xt::xtensor<double, 2> X = e0->interpolation_points();
-  const int bs_1 = e1->block_size();
-  assert(bs_1 == 1);
-  const int ndofs_cell_1 = e1->space_dimension() / bs_1;
-  const int ref_vs_1 = e1->reference_value_size();
-  assert(ref_vs_1 == 1);
-  const int tdim = mesh->topology().dim();
-  std::array<std::size_t, 4> t_shape
-      = {(std::size_t)tdim + 1, X.shape(0), (std::size_t)ndofs_cell_1,
-         (std::size_t)ref_vs_1};
-  xt::xtensor<double, 4> l_basis(t_shape);
-  e1->tabulate(l_basis, X, 1);
-  auto l_dphi
-      = xt::view(l_basis, xt::xrange(1, tdim + 1), xt::all(), xt::all(), 0);
-  auto dphi = xt::reshape_view(l_dphi, {tdim * t_shape[1], t_shape[2]});
 
-  // Compute local element interpolation matrix
-  const int bs_0 = e0->block_size();
+  // Tabulate first order derivatives of Lagrange space at H(curl) interpolation
+  // points
+  const auto bs_1 = (std::size_t)e1->block_size();
+  assert(bs_1 == 1);
+  const auto ndofs_cell_1 = (std::size_t)e1->space_dimension() / bs_1;
+  const auto ref_vs_1 = (std::size_t)e1->reference_value_size();
+  assert(ref_vs_1 == 1);
+  const auto tdim = (std::size_t)mesh->topology().dim();
+  std::array<std::size_t, 4> t_shape
+      = {tdim + 1, X.shape(0), ndofs_cell_1, ref_vs_1};
+  xt::xtensor<double, 4> lagrange_reference_basis(t_shape);
+  e1->tabulate(lagrange_reference_basis, X, 1);
+
+  // Reshape lagrange basis derivatives as a matrix of shape (tdim * num_points,
+  // num_dofs_per_cell)
+  auto lagrange_reference_basis_derivatives
+      = xt::view(lagrange_reference_basis, xt::xrange(1, (int)tdim + 1),
+                 xt::all(), xt::all(), 0);
+  auto dphi = xt::reshape_view(lagrange_reference_basis_derivatives,
+                               {tdim * t_shape[1], t_shape[2]});
+
+  // Get the eleemnt interpolation matrix
+  const auto bs_0 = (std::size_t)e0->block_size();
   assert(bs_0 == 1);
-  const int ndofs_cell_0 = e0->space_dimension() / bs_0;
+  const auto ndofs_cell_0 = (std::size_t)e0->space_dimension() / bs_0;
   xt::xtensor<T, 2> Ae = xt::zeros<double>({ndofs_cell_0, ndofs_cell_1});
   const xt::xtensor<double, 2> Pi = e0->interpolation_operator();
   math::dot(Pi, dphi, Ae);
 
-  // Get inverse transform
+  // Get inverse DOF transform function
   const std::function<void(const xtl::span<T>&,
                            const xtl::span<const std::uint32_t>&, std::int32_t,
                            int)>
       apply_inverse_dof_transform
       = e0->get_dof_transformation_function<T>(true, true, false);
+  // Generate cell permutations
   mesh->topology_mutable().create_entity_permutations();
   xtl::span<const std::uint32_t> cell_info
       = xtl::span(mesh->topology().get_cell_permutation_info());
+
+  // Create element kernel
   auto dofmap0 = V0.dofmap();
   auto dofmap1 = V1.dofmap();
-  // Create element kernel
   auto kernel = [&dofmap0, &dofmap1, &apply_inverse_dof_transform, &cell_info,
                  ndofs_cell_1](auto mat_set, auto Ae, const auto cell)
   {

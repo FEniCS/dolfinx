@@ -53,7 +53,6 @@ def test_incompatible_spaces():
         create_discrete_gradient(W._cpp_object, W._cpp_object)
 
 
-@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("p", range(1, 5))
 @pytest.mark.parametrize("cell_type", [
     CellType.quadrilateral, CellType.triangle, CellType.tetrahedron, CellType.hexahedron])
@@ -84,15 +83,15 @@ def test_interpolation_matrix(cell_type, p):
 
     u = Function(V)
     u.interpolate(lambda x: 2 * x[0]**p + 3 * x[1]**p)
+    u.x.scatter_forward()
 
     grad_u = Expression(ufl.grad(u), W.element.interpolation_points)
     w_expr = Function(W)
     w_expr.interpolate(grad_u)
 
     # Compute global matrix vector product
-    w_new = G[:, :] @ u.x.array
-    wnew = Function(W)
-    wnew.x.array[:] = w_new
-    wnew.name = "W_new"
+    w = Function(W)
+    G.mult(u.vector, w.vector)
+    w.x.scatter_forward()
 
-    assert np.allclose(w_expr.x.array, wnew.x.array)
+    assert np.allclose(w_expr.x.array, w.x.array)
