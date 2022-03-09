@@ -80,18 +80,17 @@ graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
 /// algorithm.
 ///
 /// Given a list of outgoing edges (destination ranks) from this rank,
-/// this function returns the incoming edges (source ranks) to this rank
-/// that are outgoing eddges on other ranks.
+/// this function returns the incoming edges (source ranks) to this rank.
 ///
 /// @note This function is for sparse communication patterns, i.e. where
 /// the number of ranks that communicate with each other is relatively
-/// small. It is scalable, i.e. no arrays the size of the communicator
-/// are constructed and the communication pattern is sparse It
-/// implements the PCX algorithm described in
+/// small. It **is not** scalable as arrays the size of the communicator
+/// are allocated. It implements the PCX algorithm described in
 /// https://dx.doi.org/10.1145/1837853.1693476.
 ///
-/// @note For sparse graphs, this function has O(p) cost, where p is the
-/// number of MPI ranks. It is suitable for modest MPI rank counts.
+/// @note For sparse graphs, this function has \f$O(p)\f$ cost, where
+/// \f$p\f$is the number of MPI ranks. It is suitable for modest MPI
+/// rank counts.
 ///
 /// @note Collective
 ///
@@ -105,18 +104,18 @@ std::vector<int> compute_graph_edges_pcx(MPI_Comm comm,
 /// algorithm.
 ///
 /// Given a list of outgoing edges (destination ranks) from this rank,
-/// this function returns the incoming edges (source ranks) to this rank
-/// that are outgoing eddges on other ranks.
+/// this function returns the incoming edges (source ranks) to this rank.
 ///
 /// @note This function is for sparse communication patterns, i.e. where
 /// the number of ranks that communicate with each other is relatively
 /// small. It is scalable, i.e. no arrays the size of the communicator
-/// are constructed and the communication pattern is sparse It
+/// are constructed and the communication pattern is sparse. It
 /// implements the NBX algorithm presented in
 /// https://dx.doi.org/10.1145/1837853.1693476.
 ///
-/// @note For sparse graphs, this function has O(log(p)) const, where p
-/// is the number of MPI ranks.
+/// @note For sparse graphs, this function has \f$O(\log p)\f$ cost,
+/// where \f$p\f$is the number of MPI ranks. It is suitable for modest
+/// MPI rank counts.
 ///
 /// @note Collective over ranks that are connected by graph edge.
 ///
