@@ -64,8 +64,7 @@ compute_nonlocal_dual_graph(
   const std::int64_t num_local = local_graph.num_nodes();
   std::int64_t cell_offset = 0;
   MPI_Request request_cell_offset;
-  MPI_Iexscan(&num_local, &cell_offset, 1,
-              dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm,
+  MPI_Iexscan(&num_local, &cell_offset, 1, MPI_INT64_T, MPI_SUM, comm,
               &request_cell_offset);
 
   // At this stage facet_cell map only contains facets->cells with edge
