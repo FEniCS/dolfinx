@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2020 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2022 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -28,8 +28,10 @@ namespace
 //-----------------------------------------------------------------------------
 
 /// Compute list of processes sharing the same index
+///
 /// @note Collective
-/// @param unknown_idx List of indices on each process
+/// @param[in] comm MPI communicator
+/// @param[in] unknown_idx List of indices on each process
 /// @return a map to sharing processes for each index, with the (random)
 /// owner as the first in the list
 std::unordered_map<std::int64_t, std::vector<int>>
@@ -138,6 +140,7 @@ determine_sharing_ranks(MPI_Comm comm,
 
 /// Create a map from the 64-bit input vertex index to an index that
 /// indicates:
+///
 /// * (-1) Vertex is connected to a ghost cell
 /// * (-2) Vertex is connected to local cells only
 ///
@@ -815,6 +818,8 @@ std::vector<std::int32_t>
 mesh::entities_to_index(const mesh::Topology& topology, int dim,
                         const graph::AdjacencyList<std::int32_t>& entities)
 {
+  LOG(INFO) << "Build list if mesh entity indices from the entity vertices.";
+
   // Tagged entity topological dimension
   auto map_e = topology.index_map(dim);
   if (!map_e)

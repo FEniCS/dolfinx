@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Michal Habera
+// Copyright (C) 2020-2022 Michal Habera and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -11,6 +11,7 @@
 #include "Topology.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
@@ -131,20 +132,30 @@ private:
 /// @param[in] mesh The Mesh that the tags are associated with
 /// @param[in] dim Topological dimension of tagged entities
 /// @param[in] entities Local vertex indices for tagged entities.
+///
 /// @param[in] values Tag values for each entity in `entities`. The
 /// length of `values` must be equal to number of rows in `entities`.
 /// @note Entities that do not exist on this rank are ignored.
+/// @warning `entities` must not conatined duplicate entities.
 template <typename T>
 MeshTags<T> create_meshtags(const std::shared_ptr<const Mesh>& mesh, int dim,
                             const graph::AdjacencyList<std::int32_t>& entities,
                             const xtl::span<const T>& values)
 {
+  LOG(INFO)
+      << "Building MeshTgas object from tagged entities (defined by vertices).";
+
   assert(mesh);
 
   // Compute the indices of the mesh entities (index is set to -1 if it
   // can't be found)
   const std::vector<std::int32_t> indices
       = entities_to_index(mesh->topology(), dim, entities);
+  if (indices.size() != values.size())
+  {
+    throw std::runtime_error(
+        "Duplicate mesh entities when building MeshTags object.");
+  }
 
   // Sort the indices and values by indices
   auto [indices_sorted, values_sorted] = common::sort_unique(indices, values);
