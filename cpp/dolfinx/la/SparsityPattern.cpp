@@ -147,6 +147,53 @@ SparsityPattern::SparsityPattern(
   }
 }
 //-----------------------------------------------------------------------------
+SparsityPattern SparsityPattern::expand()
+{
+  if (_bs[0] == 1 and _bs[1] == 1)
+    throw std::runtime_error("Cannot expand SparsityPattern, already bs=1");
+
+  std::array<int, 2> size_local = {_index_maps[0]->size_local() * _bs[0],
+                                   _index_maps[1]->size_local() * _bs[1]};
+  std::array<std::vector<std::int64_t>, 2> ghosts;
+  for (int j = 0; j < 2; ++j)
+  {
+    for (int p : _index_maps[j]->ghosts())
+    {
+      for (int i = 0; i < _bs[j]; ++i)
+        ghosts[j].push_back(p);
+    }
+  }
+  const auto [src_rank0, dest_rank0] = dolfinx::MPI::neighbors(
+      _index_maps[0]->comm(common::IndexMap::Direction::forward));
+  const auto [src_rank1, dest_rank1] = dolfinx::MPI::neighbors(
+      _index_maps[1]->comm(common::IndexMap::Direction::forward));
+
+  auto map0 = std::make_shared<common::IndexMap>(
+      _index_maps[0]->comm(), size_local[0], xtl::span(dest_rank0),
+      xtl::span(ghosts[0]), xtl::span(src_rank0));
+  auto map1 = std::make_shared<common::IndexMap>(
+      _index_maps[1]->comm(), size_local[1], xtl::span(dest_rank1),
+      xtl::span(ghosts[1]), xtl::span(src_rank1));
+
+  // Make new SparsityPattern with bs={1, 1}
+  SparsityPattern sp(comm(), {map0, map1}, {1, 1});
+
+  // Copy sparsity from input pattern
+  for (int i = 0; i < _row_cache.size(); ++i)
+  {
+    for (int j = 0; j < _bs[0]; ++j)
+    {
+      for (auto q : _row_cache[i])
+      {
+        for (int k = 0; k < _bs[1]; ++k)
+          sp._row_cache[i * _bs[0] + j].push_back(q * _bs[1] + k);
+      }
+    }
+  }
+
+  return sp;
+}
+//-----------------------------------------------------------------------------
 void SparsityPattern::insert(const xtl::span<const std::int32_t>& rows,
                              const xtl::span<const std::int32_t>& cols)
 {
