@@ -117,19 +117,18 @@ void assemble_discrete_gradient(
                            const xtl::span<const std::uint32_t>&, std::int32_t,
                            int)>
       apply_inverse_dof_transform
-      = e0->get_dof_transformation_function<T>(true, false, false);
+      = e0->get_dof_transformation_function<T>(true, true, false);
   mesh->topology_mutable().create_entity_permutations();
   xtl::span<const std::uint32_t> cell_info
       = xtl::span(mesh->topology().get_cell_permutation_info());
-
   auto dofmap0 = V0.dofmap();
   auto dofmap1 = V1.dofmap();
   // Create element kernel
-  auto kernel = [&dofmap0, &dofmap1, &apply_inverse_dof_transform,
-                 &cell_info](auto mat_set, auto Ae, const auto cell)
+  auto kernel = [&dofmap0, &dofmap1, &apply_inverse_dof_transform, &cell_info,
+                 ndofs_cell_1](auto mat_set, auto Ae, const auto cell)
   {
     const xtl::span<T> _Ae(Ae);
-    apply_inverse_dof_transform(_Ae, cell_info, cell, Ae.shape(1));
+    apply_inverse_dof_transform(_Ae, cell_info, cell, ndofs_cell_1);
     auto rows = dofmap0->cell_dofs(cell);
     auto cols = dofmap1->cell_dofs(cell);
     mat_set(rows, cols, _Ae);
