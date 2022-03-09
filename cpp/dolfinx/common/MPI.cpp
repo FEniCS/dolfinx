@@ -6,6 +6,7 @@
 
 #include "MPI.h"
 #include <algorithm>
+#include <dolfinx/common/log.h>
 
 //-----------------------------------------------------------------------------
 dolfinx::MPI::Comm::Comm(MPI_Comm comm, bool duplicate)
@@ -90,6 +91,10 @@ std::vector<int>
 dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm,
                                       const xtl::span<const int>& edges)
 {
+  LOG(INFO) << "Computing communicaton graph edges using PCX algorithm. Number "
+               "of input edges "
+            << edges.size();
+
   // Build array with '0' for no outedge and '1' for an outedge for each
   // rank
   const int size = dolfinx::MPI::size(comm);
@@ -132,6 +137,10 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm,
     }
   }
 
+  LOG(INFO) << "Finished graph edge discovery using PCX algorithm. Number "
+               "of discovered edges "
+            << other_ranks.size();
+
   return other_ranks;
 }
 //-----------------------------------------------------------------------------
@@ -139,7 +148,9 @@ std::vector<int>
 dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
                                       const xtl::span<const int>& edges)
 {
-  return compute_graph_edges_pcx(comm, edges);
+  LOG(INFO) << "Computing communicaton graph edges using NBX algorithm. Number "
+               "of input edges "
+            << edges.size();
 
   // Start non-blocking synchronised send
   std::vector<MPI_Request> send_requests(edges.size());
@@ -199,11 +210,18 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
     }
   }
 
+  LOG(INFO) << "Finished graph edge discovery using NBXÎ algorithm. Number "
+               "of discovered edges "
+            << other_ranks.size();
+
   return other_ranks;
 }
 //-----------------------------------------------------------------------------
 std::array<std::vector<int>, 2> dolfinx::MPI::neighbors(MPI_Comm comm)
 {
+  LOG(INFO)
+      << "Getting source/destination edges for neighborhood MPI communicator.";
+
   int status;
   MPI_Topo_test(comm, &status);
   assert(status != MPI_UNDEFINED);
