@@ -817,19 +817,23 @@ mesh::entities_to_index(const mesh::Topology& topology, int dim,
 {
   // Tagged entity topological dimension
   auto map_e = topology.index_map(dim);
-  assert(map_e);
+  if (!map_e)
+  {
+    throw std::runtime_error("Mesh entities of dimension " + std::to_string(dim)
+                             + "have not been created.");
+  }
 
   auto e_to_v = topology.connectivity(dim, 0);
-  if (!e_to_v)
-    throw std::runtime_error("Missing entity-vertex connectivity.");
+  assert(e_to_v);
 
-  const int num_vertices_per_entity = e_to_v->num_links(0);
-  const int num_entities_mesh = map_e->size_local() + map_e->num_ghosts();
+  const int num_vertices_per_entity = mesh::cell_num_entities(
+      mesh::cell_entity_type(topology.cell_type(), dim, 0), 0);
 
   // Build map from ordered local vertex indices (key) to entity index
   // (value)
   std::map<std::vector<std::int32_t>, std::int32_t> entity_key_to_index;
   std::vector<std::int32_t> key(num_vertices_per_entity);
+  const int num_entities_mesh = map_e->size_local() + map_e->num_ghosts();
   for (int e = 0; e < num_entities_mesh; ++e)
   {
     auto vertices = e_to_v->links(e);

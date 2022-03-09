@@ -15,7 +15,6 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/io/cells.h>
-#include <map>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -27,16 +26,16 @@ namespace dolfinx::mesh
 /// @brief MeshTags associate values with mesh entities.
 ///
 /// The entity index (local to process) identifies the entity. MeshTags
-/// is a sparse data storage class; it allows tags to be associated with
-/// an arbitrary subset of mesh entities. An entity can have only one
-/// associated tag.
+/// is a *sparse* data storage class; it allows tags to be associated
+/// with an arbitrary subset of mesh entities. An entity can have only
+/// one associated tag.
 /// @tparam Type
 template <typename T>
 class MeshTags
 {
 public:
-  /// @brief Create from entities of given dimension on a mesh
-  //
+  /// @brief Create a MeshTag from entities of given dimension on a mesh.
+  ///
   /// @param[in] mesh The mesh on which the tags are associated
   /// @param[in] dim Topological dimension of mesh entities to tag
   /// @param[in] indices std::vector<std::int32> of sorted and unique
@@ -77,7 +76,7 @@ public:
   /// Move assignment
   MeshTags& operator=(MeshTags&& tags) = default;
 
-  /// Find all entities with a given tag value
+  /// @brief Find all entities with a given tag value
   /// @param[in] value The value
   /// @return Indices of tagged entities
   std::vector<std::int32_t> find(const T value) const
@@ -123,13 +122,18 @@ private:
   std::vector<T> _values;
 };
 
-/// Create MeshTags from arrays
+/// @brief Create MeshTags from arrays
+///
+/// @note This function is designed for *sparse* problems, i.e. where a
+/// relatively small fraction of the entities are tagged. Performance
+/// will degrade when a large fraction of entities are tagged.
+///
 /// @param[in] mesh The Mesh that the tags are associated with
 /// @param[in] dim Topological dimension of tagged entities
 /// @param[in] entities Local vertex indices for tagged entities.
 /// @param[in] values Tag values for each entity in `entities`. The
 /// length of `values` must be equal to number of rows in `entities`.
-/// @note Entities that are not owned by this rank are ignored.
+/// @note Entities that do not exist on this rank are ignored.
 template <typename T>
 MeshTags<T> create_meshtags(const std::shared_ptr<const Mesh>& mesh, int dim,
                             const graph::AdjacencyList<std::int32_t>& entities,
@@ -151,15 +155,6 @@ MeshTags<T> create_meshtags(const std::shared_ptr<const Mesh>& mesh, int dim,
   indices_sorted.erase(indices_sorted.begin(), it0);
   values_sorted.erase(values_sorted.begin(),
                       std::next(values_sorted.begin(), pos0));
-
-  // // Remove ghosts
-  // std::int32_t owned_size = mesh->topology().index_map(dim)->size_local();
-  // auto it1 = std::lower_bound(indices_sorted.begin(), indices_sorted.end(),
-  //                             owned_size);
-  // std::size_t pos1 = std::distance(indices_sorted.begin(), it1);
-  // indices_sorted.erase(it1, indices_sorted.end());
-  // values_sorted.erase(std::next(values_sorted.begin(), pos1),
-  //                     values_sorted.end());
 
   return MeshTags<T>(mesh, dim, std::move(indices_sorted),
                      std::move(values_sorted));

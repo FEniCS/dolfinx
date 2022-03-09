@@ -36,14 +36,15 @@ class Topology;
 /// require parallel communication.
 /// @param[in] topology The topology
 /// @return Vector with length equal to the number of owned facets on
-///   this this process. True if the ith facet (local index) is on the
-///   exterior of the domain.
+/// this this process. True if the ith facet (local index) is on the
+/// exterior of the domain.
 std::vector<std::int8_t> compute_boundary_facets(const Topology& topology);
 
-/// Topology stores the topology of a mesh, consisting of mesh entities
-/// and connectivity (incidence relations for the mesh entities).
+/// @brief Topology stores the topology of a mesh, consisting of mesh
+/// entities and connectivity (incidence relations for the mesh
+/// entities).
 ///
-/// A mesh entity e may be identified globally as a pair e = (dim, i),
+/// A mesh entity e may be identified globally as a pair `e = (dim, i)`,
 /// where dim is the topological dimension and i is the index of the
 /// entity within that topological dimension.
 class Topology
@@ -80,7 +81,7 @@ public:
   /// Get the IndexMap that described the parallel distribution of the
   /// mesh entities
   /// @param[in] dim Topological dimension
-  /// @return Index map for the entities of dimension @p dim. Returns
+  /// @return Index map for the entities of dimension `dim`. Returns
   /// `nullptr` if index map has not been set.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
@@ -129,7 +130,7 @@ public:
   /// already existed
   std::int32_t create_entities(int dim);
 
-  /// Create connectivity between given pair of dimensions, d0 -> d1
+  /// Create connectivity between given pair of dimensions, `d0 -> d1`
   /// @param[in] d0 Topological dimension
   /// @param[in] d1 Topological dimension
   void create_connectivity(int d0, int d1);
