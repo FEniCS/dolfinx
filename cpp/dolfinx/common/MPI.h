@@ -28,6 +28,7 @@ namespace dolfinx::MPI
 /// MPI communication tags
 enum class tag : int
 {
+  consensus_pcx,
   consensus_pex
 };
 
@@ -75,22 +76,33 @@ template <typename T>
 graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
                                    const graph::AdjacencyList<T>& send_data);
 
-/// @todo Experimental. Maybe be moved or removed.
+/// @brief Determine incoming graph edges using the PCX consensus
+/// algorithm.
 ///
-/// Compute communication graph edges. The caller provides edges that
-/// it can define, and will receive edges to it that are defined by
-/// other ranks.
+/// Given a list of outgoing edges (destination ranks) from this rank,
+/// this function returns the incoming edges (source ranks) to this rank
+/// that are outgoing eddges on other ranks.
 ///
-/// @note This function involves global communication
+/// @note This function is for sparse communication patterns, i.e. where
+/// the number of ranks that communicate with each other is relatively
+/// small. It is scalable, i.e. no arrays the size of the communicator
+/// are constructed and the communication pattern is sparse It
+/// implements the PCX algorithm described in
+/// https://dx.doi.org/10.1145/1837853.1693476.
 ///
-/// @param[in] comm The MPI communicator
-/// @param[in] edges Communication edges between the caller and the
-///   ranks in @p edges.
-/// @return Ranks that have defined edges from them to this rank
-std::vector<int> compute_graph_edges(MPI_Comm comm, const std::set<int>& edges);
+/// @note For sparse graphs, this function has O(p) cost, where p is the
+/// number of MPI ranks. It is suitable for modest MPI rank counts.
+///
+/// @note Collective
+///
+/// @param[in] comm MPI communicator
+/// @param[in] edges Edges (ranks) from this rank (the caller).
+/// @return Ranks that have defined edges from them to this rank.
+std::vector<int> compute_graph_edges_pcx(MPI_Comm comm,
+                                         const xtl::span<const int>& edges);
 
-/// @brief Compute communication graph edges via sparse MPI
-/// communication.
+/// @brief Determine incoming graph edges using the NBX consensus
+/// algorithm.
 ///
 /// Given a list of outgoing edges (destination ranks) from this rank,
 /// this function returns the incoming edges (source ranks) to this rank
@@ -103,7 +115,10 @@ std::vector<int> compute_graph_edges(MPI_Comm comm, const std::set<int>& edges);
 /// implements the NBX algorithm presented in
 /// https://dx.doi.org/10.1145/1837853.1693476.
 ///
-/// @note Collective
+/// @note For sparse graphs, this function has O(log(p)) const, where p
+/// is the number of MPI ranks.
+///
+/// @note Collective over ranks that are connected by graph edge.
 ///
 /// @param[in] comm MPI communicator
 /// @param[in] edges Edges (ranks) from this rank (the caller).
