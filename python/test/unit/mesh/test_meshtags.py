@@ -37,10 +37,8 @@ def test_create(cell_type):
 
 
 def test_ufl_id():
-    """Test that ufl form can  MeshTags has a ufl_id"""
-
+    """Test that UFL can process MeshTags (tests ufl_id attribute)"""
     comm = MPI.COMM_WORLD
-
     mesh = create_unit_cube(comm, 6, 6, 6)
     tdim = mesh.topology.dim
     marked_facets = locate_entities(mesh, tdim - 1, lambda x: np.isclose(x[1], 1))
@@ -48,7 +46,6 @@ def test_ufl_id():
 
     entities = create_adjacencylist(f_v[marked_facets])
     values = np.full(marked_facets.shape[0], 2, dtype=np.int32)
-
     ft = meshtags_from_entities(mesh, tdim - 1, entities, values)
     ds = Measure("ds", domain=mesh, subdomain_data=ft, subdomain_id=(2, 3))
     a = 1 * ds
