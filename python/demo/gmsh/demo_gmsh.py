@@ -29,7 +29,7 @@ from dolfinx.graph import create_adjacencylist
 from dolfinx.io import (XDMFFile, cell_perm_gmsh, distribute_entity_data,
                         extract_gmsh_geometry,
                         extract_gmsh_topology_and_markers, ufl_mesh_from_gmsh)
-from dolfinx.mesh import CellType, create_mesh, create_meshtags
+from dolfinx.mesh import CellType, create_mesh, meshtags_from_entities
 
 from mpi4py import MPI
 # -
@@ -119,7 +119,7 @@ msh.name = "ball_d1"
 entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
 
 msh.topology.create_connectivity(2, 0)
-mt = create_meshtags(msh, 2, create_adjacencylist(entities), np.int32(values))
+mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), np.int32(values))
 mt.name = "ball_d1_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
@@ -179,7 +179,7 @@ marked_facets = marked_facets[:, gmsh_triangle6]
 
 entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
 msh.topology.create_connectivity(2, 0)
-mt = create_meshtags(msh, 2, create_adjacencylist(entities), np.int32(values))
+mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), np.int32(values))
 mt.name = "ball_d2_surface"
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
     file.write_mesh(msh)
@@ -256,7 +256,7 @@ msh.name = "hex_d2"
 
 entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
 msh.topology.create_connectivity(2, 0)
-mt = create_meshtags(msh, 2, create_adjacencylist(entities), np.int32(values))
+mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), np.int32(values))
 mt.name = "hex_d2_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:

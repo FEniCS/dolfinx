@@ -124,11 +124,6 @@ private:
 };
 
 /// @brief Create MeshTags from arrays
-///
-/// @note This function is designed for *sparse* problems, i.e. where a
-/// relatively small fraction of the entities are tagged. Performance
-/// will degrade when a large fraction of entities are tagged.
-///
 /// @param[in] mesh The Mesh that the tags are associated with
 /// @param[in] dim Topological dimension of tagged entities
 /// @param[in] entities Local vertex indices for tagged entities.
