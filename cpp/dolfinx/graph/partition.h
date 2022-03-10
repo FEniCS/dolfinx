@@ -451,6 +451,7 @@ build::distribute_data(MPI_Comm comm,
       if (int src = MPI::index_owner(size, index, shape0_global); src == rank)
       {
         // In my post office bag
+        // TODO: use offset of my bag to convert global/local
 
         // TODO: avoid std::find
         // auto it = std::find(post_indices.begin(), post_indices.end(), index);
