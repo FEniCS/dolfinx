@@ -80,10 +80,12 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 /// @param[in] xrows The row indices of `x`
 /// @param[in] xcols The column indices of `x`
 /// @param[in] bs Number of entries in each block
-template <typename U, typename V, typename W, typename X>
+template <typename U, typename V, typename W, typename X, int BS = -1>
 void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
              const X& xrows, const X& xcols, std::array<int, 2> bs)
 {
+  assert(BS < 0 or (bs[0] == BS and bs[1] == BS));
+
   const int nbs = bs[0] * bs[1];
   assert(x.size() == nbs * xrows.size() * xcols.size());
   for (std::size_t r = 0; r < xrows.size(); ++r)
@@ -109,12 +111,23 @@ void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
       assert(it != cit1);
       std::size_t d = std::distance(cols.begin(), it);
       assert(d < data.size());
-      for (int i = 0; i < bs[0]; ++i)
-        for (int j = 0; j < bs[1]; ++j)
-          data[d * nbs + i * bs[1] + j] += xr[(i * nc + c) * bs[1] + j];
+
+      if constexpr (BS > 0)
+      {
+        for (int i = 0; i < BS; ++i)
+          for (int j = 0; j < BS; ++j)
+            data[d * BS * BS + i * BS + j] += xr[(i * nc + c) * BS + j];
+      }
+      else
+      {
+        for (int i = 0; i < bs[0]; ++i)
+          for (int j = 0; j < bs[1]; ++j)
+            data[d * nbs + i * bs[1] + j] += xr[(i * nc + c) * bs[1] + j];
+      }
     }
   }
 }
+
 } // namespace impl
 
 /// Distributed sparse matrix
