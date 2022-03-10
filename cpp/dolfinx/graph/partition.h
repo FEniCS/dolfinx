@@ -138,7 +138,12 @@ compute_local_to_local(const xtl::span<const std::int64_t>& local0_to_global,
 namespace impl
 {
 
-/// Send data to post office rank (by first index in each row)
+/// @brief Send data to 'post office' rank (by first index in each row)
+/// @param[in] comm MPI communicator
+/// @param[in] x Data to distribute (2D, row-major layout)
+/// @param[in] shape1 Number of columns for `x`
+/// @returns (0) global indices of my post office data and (1) the data
+/// (row-major).
 template <typename T>
 std::pair<std::vector<std::int64_t>, std::vector<T>>
 send_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1)
@@ -155,30 +160,29 @@ send_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1)
   MPI_Allreduce(&shape0, &num_rows_global, 1, MPI_INT64_T, MPI_SUM, comm);
   MPI_Exscan(&shape0, &rank_offset, 1, MPI_INT64_T, MPI_SUM, comm);
 
-  // Determine which post office ranks will receive data from me
+  // Post office ranks will receive data from this rank
   std::vector<int> row_to_dest(shape0);
   for (std::int32_t i = 0; i < shape0; ++i)
   {
-    int dest
-        = dolfinx::MPI::index_owner(size, i + rank_offset, num_rows_global);
+    int dest = MPI::index_owner(size, i + rank_offset, num_rows_global);
     row_to_dest[i] = dest;
   }
 
   // Remove my rank from array of destination ranks, and then sort
-  std::vector<int> postoffices_dest;
+  std::vector<int> dest;
   std::copy_if(row_to_dest.begin(), row_to_dest.end(),
-               std::back_insert_iterator(postoffices_dest),
+               std::back_insert_iterator(dest),
                [rank](int r) { return r != rank; });
-  std::sort(postoffices_dest.begin(), postoffices_dest.end());
+  std::sort(dest.begin(), dest.end());
 
   // Count number of items (rows of x) to send to each post office (by
   // neighbourhood rank)
   std::vector<std::int32_t> num_items_per_dest;
   {
-    auto it = postoffices_dest.begin();
-    while (it != postoffices_dest.end())
+    auto it = dest.begin();
+    while (it != dest.end())
     {
-      auto it1 = std::find_if(it, postoffices_dest.end(),
+      auto it1 = std::find_if(it, dest.end(),
                               [r = *it](auto idx) { return idx != r; });
       num_items_per_dest.push_back(std::distance(it, it1));
       it = it1;
@@ -186,43 +190,39 @@ send_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1)
   }
 
   // Erase duplicates from array of destination ranks
-  postoffices_dest.erase(
-      std::unique(postoffices_dest.begin(), postoffices_dest.end()),
-      postoffices_dest.end());
-  assert(postoffices_dest.size() == num_items_per_dest.size());
+  dest.erase(std::unique(dest.begin(), dest.end()), dest.end());
+  assert(dest.size() == num_items_per_dest.size());
 
   // Determine source ranks
-  const std::vector<int> postoffice_src
-      = dolfinx::MPI::compute_graph_edges_nbx(comm, postoffices_dest);
-  // std::cout << "XX*** Number of neighbours: " << rank << ", "
-  //           << postoffice_src.size() << std::endl;
+  const std::vector<int> src = MPI::compute_graph_edges_nbx(comm, dest);
   LOG(INFO) << "Number of neighbourhood source ranks in send_to_postoffice: "
-            << postoffice_src.size();
+            << src.size();
 
   // Build map global rank -> neighbourhood rank
   std::map<int, int> global_to_neigh_rank_dest;
-  for (std::size_t i = 0; i < postoffices_dest.size(); ++i)
-    global_to_neigh_rank_dest.insert({postoffices_dest[i], i});
+  for (std::size_t i = 0; i < dest.size(); ++i)
+    global_to_neigh_rank_dest.insert({dest[i], i});
 
   // Create neighbourhood communicator for sending data to post offices
   MPI_Comm neigh_comm;
-  MPI_Dist_graph_create_adjacent(
-      comm, postoffice_src.size(), postoffice_src.data(), MPI_UNWEIGHTED,
-      postoffices_dest.size(), postoffices_dest.data(), MPI_UNWEIGHTED,
-      MPI_INFO_NULL, false, &neigh_comm);
+  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
+                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &neigh_comm);
 
-  // Compute send displacements and pack buffer
+  // Compute send displacements
   std::vector<std::int32_t> send_disp = {0};
   std::partial_sum(num_items_per_dest.begin(), num_items_per_dest.end(),
                    std::back_insert_iterator(send_disp));
-  std::vector<T> send_buffer_data(shape1 * (send_disp.back() + 1));
-  std::vector<std::int64_t> send_buffer_index(send_disp.back() + 1);
+
+  // Pack send buffers
+  std::vector<T> send_buffer_data(shape1 * send_disp.back());
+  std::vector<std::int64_t> send_buffer_index(send_disp.back());
   {
     std::vector<std::int32_t> send_offsets = send_disp;
     for (std::int32_t i = 0; i < shape0; ++i)
     {
       std::int64_t global_index = i + rank_offset;
-      int dest = dolfinx::MPI::index_owner(size, global_index, num_rows_global);
+      int dest = MPI::index_owner(size, global_index, num_rows_global);
       if (dest != rank)
       {
         auto neigh_dest_it = global_to_neigh_rank_dest.find(dest);
@@ -240,49 +240,37 @@ send_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1)
 
   // Send number of items to post offices (destination) that I will be
   // sending
-  std::vector<int> num_items_recv(postoffice_src.size());
+  std::vector<int> num_items_recv(src.size());
   MPI_Neighbor_alltoall(num_items_per_dest.data(), 1, MPI_INT,
                         num_items_recv.data(), 1, MPI_INT, neigh_comm);
-
-  MPI_Datatype compound_type;
-  MPI_Type_contiguous(shape1, dolfinx::MPI::mpi_type<T>(), &compound_type);
-  MPI_Type_commit(&compound_type);
 
   // Prepare receive displacement and buffers
   std::vector<std::int32_t> recv_disp = {0};
   std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
                    std::back_insert_iterator(recv_disp));
 
-  // num_items_per_dest.push_back(0);
+  MPI_Datatype compound_type;
+  MPI_Type_contiguous(shape1, dolfinx::MPI::mpi_type<T>(), &compound_type);
+  MPI_Type_commit(&compound_type);
 
-  // Send/receive data (x) (add '1' for MPI bug)
-  std::vector<T> recv_buffer_data(shape1 * recv_disp.back() + shape1);
+  // Send/receive data (x)
+  std::vector<T> recv_buffer_data(shape1 * recv_disp.back());
   MPI_Neighbor_alltoallv(send_buffer_data.data(), num_items_per_dest.data(),
                          send_disp.data(), compound_type,
                          recv_buffer_data.data(), num_items_recv.data(),
                          recv_disp.data(), compound_type, neigh_comm);
-  recv_buffer_data.erase(std::prev(recv_buffer_data.end(), shape1),
-                         recv_buffer_data.end());
 
-  // Send/receive data global indices for reach received row  (add '1'
-  // to buffer for MPI bug)
-  // if (rank == 0)
-  // {
-  //   for (std::size_t i = 0; i < send_buffer_index.size() - 1; ++i)
-  //     std::cout << "Send global idx: " << send_buffer_index[i] << std::endl;
-  // }
-
-  std::vector<std::int64_t> recv_buffer_index(recv_disp.back() + 1);
+  // Send/receive global indices
+  std::vector<std::int64_t> recv_buffer_index(recv_disp.back());
   MPI_Neighbor_alltoallv(send_buffer_index.data(), num_items_per_dest.data(),
                          send_disp.data(), MPI_INT64_T,
                          recv_buffer_index.data(), num_items_recv.data(),
                          recv_disp.data(), MPI_INT64_T, neigh_comm);
-  recv_buffer_index.pop_back();
 
   MPI_Type_free(&compound_type);
   MPI_Comm_free(&neigh_comm);
 
-  LOG(INFO) << "Completed send data to post office: ";
+  LOG(INFO) << "Completed send data to post offices.";
 
   return {recv_buffer_index, recv_buffer_data};
 };
