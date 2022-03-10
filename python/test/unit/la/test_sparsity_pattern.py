@@ -9,6 +9,7 @@ from dolfinx.cpp.la import SparsityPattern
 from dolfinx.fem import VectorFunctionSpace, locate_dofs_topological
 from dolfinx.mesh import compute_boundary_facets, create_unit_square
 
+import numpy as np
 from mpi4py import MPI
 
 
@@ -19,8 +20,23 @@ def test_add_diagonal():
     pattern = SparsityPattern(mesh.comm, [V.dofmap.index_map, V.dofmap.index_map],
                               [V.dofmap.index_map_bs, V.dofmap.index_map_bs])
     mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
-    facets = compute_boundary_facets(mesh.topology)
+    facets = np.flatnonzero(compute_boundary_facets(mesh.topology))
     blocks = locate_dofs_topological(V, mesh.topology.dim - 1, facets)
     pattern.insert_diagonal(blocks)
     pattern.assemble()
     assert len(blocks) == pattern.num_nonzeros
+
+
+def test_expand():
+    """Test expanding a sparsity pattern with a block size"""
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
+    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    pattern = SparsityPattern(mesh.comm, [V.dofmap.index_map, V.dofmap.index_map],
+                              [V.dofmap.index_map_bs, V.dofmap.index_map_bs])
+    mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+    facets = np.flatnonzero(compute_boundary_facets(mesh.topology))
+    blocks = locate_dofs_topological(V, mesh.topology.dim - 1, facets)
+    pattern.insert_diagonal(blocks)
+    pattern = pattern.expand()
+    pattern.assemble()
+    assert len(blocks) * 4 == pattern.num_nonzeros

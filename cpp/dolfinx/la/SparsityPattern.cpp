@@ -155,25 +155,33 @@ SparsityPattern SparsityPattern::expand()
   std::array<int, 2> size_local = {_index_maps[0]->size_local() * _bs[0],
                                    _index_maps[1]->size_local() * _bs[1]};
   std::array<std::vector<std::int64_t>, 2> ghosts;
-  for (int j = 0; j < 2; ++j)
+  std::array<std::vector<int>, 2> src_rank;
+  for (int i = 0; i < 2; ++i)
   {
-    for (int p : _index_maps[j]->ghosts())
+    const auto im = _index_maps[i];
+    const std::vector<std::int64_t> ghost_i = im->ghosts();
+    const std::vector<int> ghost_owner_i = im->ghost_owner_rank();
+    for (int j = 0; j < ghost_i.size(); ++j)
     {
-      for (int i = 0; i < _bs[j]; ++i)
-        ghosts[j].push_back(p);
+      for (int k = 0; k < _bs[i]; ++k)
+      {
+        ghosts[i].push_back(ghost_i[j] * _bs[i] + k);
+        src_rank[i].push_back(ghost_owner_i[j]);
+      }
     }
   }
-  const auto [src_rank0, dest_rank0] = dolfinx::MPI::neighbors(
+
+  const auto [src_rank_set_0, dest_rank0] = dolfinx::MPI::neighbors(
       _index_maps[0]->comm(common::IndexMap::Direction::forward));
-  const auto [src_rank1, dest_rank1] = dolfinx::MPI::neighbors(
+  const auto [src_rank_set_1, dest_rank1] = dolfinx::MPI::neighbors(
       _index_maps[1]->comm(common::IndexMap::Direction::forward));
 
   auto map0 = std::make_shared<common::IndexMap>(
       _index_maps[0]->comm(), size_local[0], xtl::span(dest_rank0),
-      xtl::span(ghosts[0]), xtl::span(src_rank0));
+      xtl::span(ghosts[0]), xtl::span(src_rank[0]));
   auto map1 = std::make_shared<common::IndexMap>(
       _index_maps[1]->comm(), size_local[1], xtl::span(dest_rank1),
-      xtl::span(ghosts[1]), xtl::span(src_rank1));
+      xtl::span(ghosts[1]), xtl::span(src_rank[1]));
 
   // Make new SparsityPattern with bs={1, 1}
   SparsityPattern sp(comm(), {map0, map1}, {1, 1});
