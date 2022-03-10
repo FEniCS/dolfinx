@@ -159,9 +159,9 @@ SparsityPattern SparsityPattern::expand()
   for (int i = 0; i < 2; ++i)
   {
     const auto im = _index_maps[i];
-    const std::vector<std::int64_t> ghost_i = im->ghosts();
+    const std::vector<std::int64_t>& ghost_i = im->ghosts();
     const std::vector<int> ghost_owner_i = im->ghost_owner_rank();
-    for (int j = 0; j < ghost_i.size(); ++j)
+    for (std::size_t j = 0; j < ghost_i.size(); ++j)
     {
       for (int k = 0; k < _bs[i]; ++k)
       {
@@ -187,11 +187,11 @@ SparsityPattern SparsityPattern::expand()
   SparsityPattern sp(comm(), {map0, map1}, {1, 1});
 
   // Copy sparsity from input pattern
-  for (int i = 0; i < _row_cache.size(); ++i)
+  for (std::size_t i = 0; i < _row_cache.size(); ++i)
   {
     for (int j = 0; j < _bs[0]; ++j)
     {
-      for (auto q : _row_cache[i])
+      for (std::int32_t q : _row_cache[i])
       {
         for (int k = 0; k < _bs[1]; ++k)
           sp._row_cache[i * _bs[0] + j].push_back(q * _bs[1] + k);
