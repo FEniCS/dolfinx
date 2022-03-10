@@ -49,6 +49,39 @@ def test_create_matrix_bs(fs):
     assert np.allclose(A.to_dense(), zero)
 
 
+def test_create_matrix_expanded():
+    """Test creation of CSR matrix with block size"""
+    mesh = create_unit_square(MPI.COMM_WORLD, 7, 11)
+    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    map = V.dofmap.index_map
+    bs = V.dofmap.index_map_bs
+
+    pattern = _cpp.la.SparsityPattern(mesh.comm, [map, map], [bs, bs])
+    rows = range(0, map.size_local)
+    cols = range(0, map.size_local)
+    pattern.insert(rows, cols)
+    pattern = pattern.expand()
+    pattern.assemble()
+
+    A = la.matrix_csr(pattern)
+    assert A.data.dtype == np.float64
+    A = la.matrix_csr(pattern, dtype=np.float64)
+    assert A.data.dtype == np.float64
+
+    A = la.matrix_csr(pattern, dtype=np.float32)
+    assert A.data.dtype == np.float32
+
+    A = la.matrix_csr(pattern, dtype=np.complex128)
+    assert A.data.dtype == np.complex128
+
+    cmap = pattern.column_index_map()
+    rmap = pattern.index_map(0)
+    num_cols = cmap.size_local + cmap.num_ghosts
+    num_rows = rmap.size_local + rmap.num_ghosts
+    zero = np.zeros((num_rows, num_cols), dtype=np.complex128)
+    assert np.allclose(A.to_dense(), zero)
+
+
 def test_create_vector():
     """Test creation of a distributed vector"""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 11)
