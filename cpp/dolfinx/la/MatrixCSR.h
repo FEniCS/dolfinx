@@ -224,14 +224,60 @@ public:
   /// typically used in finite element assembly functions.
   /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
-  auto mat_add_values()
+  std::function<int(const xtl::span<const std::int32_t>& rows,
+                    const xtl::span<const std::int32_t>& cols,
+                    const xtl::span<const T>& data)>
+  mat_add_values()
   {
-    return [&](const xtl::span<const std::int32_t>& rows,
-               const xtl::span<const std::int32_t>& cols,
-               const xtl::span<const T>& data) -> int {
-      this->add(data, rows, cols);
-      return 0;
-    };
+    if (_bs[0] == _bs[1])
+    {
+      switch (_bs[0])
+      {
+      case 1:
+        return [&](const xtl::span<const std::int32_t>& rows,
+                   const xtl::span<const std::int32_t>& cols,
+                   const xtl::span<const T>& data) -> int {
+          impl::add_csr<std::vector<T, Allocator>&, std::vector<std::int32_t>,
+                        xtl::span<const T>, xtl::span<const std::int32_t>, 1>(
+              _data, _cols, _row_ptr, data, rows, cols, _bs);
+          return 0;
+        };
+      case 2:
+        return [&](const xtl::span<const std::int32_t>& rows,
+                   const xtl::span<const std::int32_t>& cols,
+                   const xtl::span<const T>& data) -> int {
+          impl::add_csr<std::vector<T, Allocator>&, std::vector<std::int32_t>,
+                        xtl::span<const T>, xtl::span<const std::int32_t>, 2>(
+              _data, _cols, _row_ptr, data, rows, cols, _bs);
+          return 0;
+        };
+      case 3:
+        return [&](const xtl::span<const std::int32_t>& rows,
+                   const xtl::span<const std::int32_t>& cols,
+                   const xtl::span<const T>& data) -> int {
+          impl::add_csr<std::vector<T, Allocator>&, std::vector<std::int32_t>,
+                        xtl::span<const T>, xtl::span<const std::int32_t>, 3>(
+              _data, _cols, _row_ptr, data, rows, cols, _bs);
+          return 0;
+        };
+      default:
+        return [&](const xtl::span<const std::int32_t>& rows,
+                   const xtl::span<const std::int32_t>& cols,
+                   const xtl::span<const T>& data) -> int {
+          impl::add_csr(_data, _cols, _row_ptr, data, rows, cols, _bs);
+          return 0;
+        };
+      }
+    }
+    else
+    {
+      return [&](const xtl::span<const std::int32_t>& rows,
+                 const xtl::span<const std::int32_t>& cols,
+                 const xtl::span<const T>& data) -> int {
+        impl::add_csr(_data, _cols, _row_ptr, data, rows, cols, _bs);
+        return 0;
+      };
+    }
   }
 
   /// Create a distributed matrix
