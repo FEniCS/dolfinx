@@ -33,11 +33,12 @@ namespace impl
 /// @param[in] local_size The maximum row index that can be set. Used
 /// when debugging is on to check that rows beyond a permitted range are
 /// not being set.
-template <typename U, typename V, typename W, typename X>
+template <int BS = -1, typename U, typename V, typename W, typename X>
 void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
              const X& xrows, const X& xcols, std::array<int, 2> bs,
              [[maybe_unused]] typename X::value_type local_size)
 {
+  assert(BS < 0 or (bs[0] == BS and bs[1] == BS));
   const int nbs = bs[0] * bs[1];
   assert(x.size() == nbs * xrows.size() * xcols.size());
   for (std::size_t r = 0; r < xrows.size(); ++r)
@@ -63,9 +64,18 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
       assert(it != cit1);
       std::size_t d = std::distance(cols.begin(), it);
       assert(d < data.size());
-      for (int i = 0; i < bs[0]; ++i)
-        for (int j = 0; j < bs[1]; ++j)
-          data[d * nbs + i * bs[1] + j] = xr[(i * nc + c) * bs[1] + j];
+      if constexpr (BS > 0)
+      {
+        for (int i = 0; i < BS; ++i)
+          for (int j = 0; j < BS; ++j)
+            data[d * BS * BS + i * BS + j] = xr[(i * nc + c) * BS + j];
+      }
+      else
+      {
+        for (int i = 0; i < bs[0]; ++i)
+          for (int j = 0; j < bs[1]; ++j)
+            data[d * nbs + i * bs[1] + j] = xr[(i * nc + c) * bs[1] + j];
+      }
     }
   }
 }
@@ -210,12 +220,49 @@ public:
   /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
   /// @todo clarify setting on non-owned enrties
-  auto mat_set_values()
+  std::function<int(const xtl::span<const std::int32_t>& rows,
+                    const xtl::span<const std::int32_t>& cols,
+                    const xtl::span<const T>& data)>
+  mat_set_values()
   {
+    const std::int32_t local_size = _index_maps[0]->size_local();
+    // Template for common bs: {1,1}, {2,2} and {3,3}.
+    if (_bs[0] == _bs[1])
+    {
+      switch (_bs[0])
+      {
+      case 1:
+        return [&](const xtl::span<const std::int32_t>& rows,
+                   const xtl::span<const std::int32_t>& cols,
+                   const xtl::span<const T>& data) -> int {
+          impl::set_csr<1>(_data, _cols, _row_ptr, data, rows, cols, _bs,
+                           local_size);
+          return 0;
+        };
+      case 2:
+        return [&](const xtl::span<const std::int32_t>& rows,
+                   const xtl::span<const std::int32_t>& cols,
+                   const xtl::span<const T>& data) -> int {
+          impl::set_csr<2>(_data, _cols, _row_ptr, data, rows, cols, _bs,
+                           local_size);
+          return 0;
+        };
+      case 3:
+        return [&](const xtl::span<const std::int32_t>& rows,
+                   const xtl::span<const std::int32_t>& cols,
+                   const xtl::span<const T>& data) -> int {
+          impl::set_csr<3>(_data, _cols, _row_ptr, data, rows, cols, _bs,
+                           local_size);
+          return 0;
+        };
+      }
+    }
+
+    // Drop through to default implementation (non-template for bs)
     return [&](const xtl::span<const std::int32_t>& rows,
                const xtl::span<const std::int32_t>& cols,
                const xtl::span<const T>& data) -> int {
-      this->set(data, rows, cols);
+      impl::set_csr(_data, _cols, _row_ptr, data, rows, cols, _bs, local_size);
       return 0;
     };
   }
