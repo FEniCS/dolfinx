@@ -80,7 +80,7 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 /// @param[in] xrows The row indices of `x`
 /// @param[in] xcols The column indices of `x`
 /// @param[in] bs Number of entries in each block
-template <typename U, typename V, typename W, typename X, int BS = -1>
+template <int BS = -1, typename U, typename V, typename W, typename X>
 void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
              const X& xrows, const X& xcols, std::array<int, 2> bs)
 {
@@ -229,6 +229,7 @@ public:
                     const xtl::span<const T>& data)>
   mat_add_values()
   {
+    // Template for common bs: {1,1}, {2,2} and {3,3}.
     if (_bs[0] == _bs[1])
     {
       switch (_bs[0])
@@ -237,47 +238,33 @@ public:
         return [&](const xtl::span<const std::int32_t>& rows,
                    const xtl::span<const std::int32_t>& cols,
                    const xtl::span<const T>& data) -> int {
-          impl::add_csr<std::vector<T, Allocator>&, std::vector<std::int32_t>,
-                        xtl::span<const T>, xtl::span<const std::int32_t>, 1>(
-              _data, _cols, _row_ptr, data, rows, cols, _bs);
+          impl::add_csr<1>(_data, _cols, _row_ptr, data, rows, cols, _bs);
           return 0;
         };
       case 2:
         return [&](const xtl::span<const std::int32_t>& rows,
                    const xtl::span<const std::int32_t>& cols,
                    const xtl::span<const T>& data) -> int {
-          impl::add_csr<std::vector<T, Allocator>&, std::vector<std::int32_t>,
-                        xtl::span<const T>, xtl::span<const std::int32_t>, 2>(
-              _data, _cols, _row_ptr, data, rows, cols, _bs);
+          impl::add_csr<2>(_data, _cols, _row_ptr, data, rows, cols, _bs);
           return 0;
         };
       case 3:
         return [&](const xtl::span<const std::int32_t>& rows,
                    const xtl::span<const std::int32_t>& cols,
                    const xtl::span<const T>& data) -> int {
-          impl::add_csr<std::vector<T, Allocator>&, std::vector<std::int32_t>,
-                        xtl::span<const T>, xtl::span<const std::int32_t>, 3>(
-              _data, _cols, _row_ptr, data, rows, cols, _bs);
-          return 0;
-        };
-      default:
-        return [&](const xtl::span<const std::int32_t>& rows,
-                   const xtl::span<const std::int32_t>& cols,
-                   const xtl::span<const T>& data) -> int {
-          impl::add_csr(_data, _cols, _row_ptr, data, rows, cols, _bs);
+          impl::add_csr<3>(_data, _cols, _row_ptr, data, rows, cols, _bs);
           return 0;
         };
       }
     }
-    else
-    {
-      return [&](const xtl::span<const std::int32_t>& rows,
-                 const xtl::span<const std::int32_t>& cols,
-                 const xtl::span<const T>& data) -> int {
-        impl::add_csr(_data, _cols, _row_ptr, data, rows, cols, _bs);
-        return 0;
-      };
-    }
+
+    // Drop through to default implementation (non-template for bs)
+    return [&](const xtl::span<const std::int32_t>& rows,
+               const xtl::span<const std::int32_t>& cols,
+               const xtl::span<const T>& data) -> int {
+      impl::add_csr(_data, _cols, _row_ptr, data, rows, cols, _bs);
+      return 0;
+    };
   }
 
   /// Create a distributed matrix
