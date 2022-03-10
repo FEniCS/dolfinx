@@ -128,6 +128,57 @@ void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
   }
 }
 
+/// @brief Add block data to a CSR matrix of blocksize 1
+///
+/// @param[out] data The CSR matrix data
+/// @param[in] cols The CSR column indices
+/// @param[in] row_ptr The pointer to the ith row in the CSR data
+/// @param[in] x The `m` by `n` dense block of values (row-major) to add
+/// to the matrix
+/// @param[in] xrows The block row indices of `x`
+/// @param[in] xcols The block column indices of `x`
+/// @param[in] bs Number of entries in each block
+template <typename U, typename V, typename W, typename X>
+void add_csr_blocked(U&& data, const V& cols, const V& row_ptr, const W& x,
+                     const X& xrows, const X& xcols, std::array<int, 2> bs)
+{
+  const int nbs = bs[0] * bs[1];
+  assert(x.size() == nbs * xrows.size() * xcols.size());
+
+  for (std::size_t r = 0; r < xrows.size(); ++r)
+  {
+    for (int k = 0; k < bs[0]; ++k)
+    {
+      // Row index and current data row
+      auto row = xrows[r] * bs[0] + k;
+      using T = typename W::value_type;
+      const int nc = xcols.size() * bs[1];
+      const T* xr = x.data() + (r * bs[0] + k) * nc;
+
+#ifndef NDEBUG
+      if (row >= (int)row_ptr.size())
+        throw std::runtime_error("Local row out of range");
+#endif
+
+      // Columns indices for row
+      auto cit0 = std::next(cols.begin(), row_ptr[row]);
+      auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
+      for (std::size_t c = 0; c < nc; ++c)
+      {
+        for (int j = 0; j < bs[1]; ++j)
+        {
+          // Find position of column index
+          auto it = std::lower_bound(cit0, cit1, xcols[c] * bs[1] + j);
+          assert(it != cit1);
+          std::size_t d = std::distance(cols.begin(), it);
+          assert(d < data.size());
+          data[d] += xr[c * bs[1] + j];
+        }
+      }
+    }
+  }
+}
+
 } // namespace impl
 
 /// Distributed sparse matrix
