@@ -300,8 +300,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
   {
     const std::int64_t _num_local = num_local;
     std::int64_t local_offset = 0;
-    MPI_Exscan(&_num_local, &local_offset, 1,
-               dolfinx::MPI::mpi_type<std::int64_t>(), MPI_SUM, comm);
+    MPI_Exscan(&_num_local, &local_offset, 1, MPI_INT64_T, MPI_SUM, comm);
 
     std::vector<std::int64_t> send_global_index_data;
     std::vector<int> send_global_index_offsets = {0};
@@ -355,12 +354,13 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
   }
 
   MPI_Comm_free(&neighbor_comm);
-
-  common::IndexMap index_map(
-      comm, num_local,
-      dolfinx::MPI::compute_graph_edges(
-          comm, std::set<int>(ghost_owners.begin(), ghost_owners.end())),
-      ghost_indices, ghost_owners);
+  std::vector<int> src_ranks = ghost_owners;
+  std::sort(src_ranks.begin(), src_ranks.end());
+  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
+                  src_ranks.end());
+  auto dest_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, src_ranks);
+  common::IndexMap index_map(comm, num_local, dest_ranks, ghost_indices,
+                             ghost_owners);
 
   // Map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());

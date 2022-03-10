@@ -258,7 +258,7 @@ def _(A: la.MatrixCSRMetaClass, a: FormMetaClass,
 
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
     # dofs
-    if a.function_spaces[0].id == a.function_spaces[1].id:
+    if a.function_spaces[0] is a.function_spaces[1]:
         _cpp.fem.insert_diagonal(A, a.function_spaces[0], bcs, diagonal)
     return A
 

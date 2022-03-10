@@ -18,13 +18,13 @@ from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
                               compute_boundary_facets,
                               compute_incident_entities, compute_midpoints,
-                              create_cell_partitioner, create_meshtags,
+                              create_cell_partitioner,
                               to_string, to_type)
 
 from mpi4py import MPI as _MPI
 
-__all__ = ["create_meshtags", "locate_entities", "locate_entities_boundary",
-           "refine", "create_mesh", "create_meshtags", "Mesh", "MeshTagsMetaClass", "meshtags", "CellType",
+__all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundary",
+           "refine", "create_mesh", "Mesh", "MeshTagsMetaClass", "meshtags", "CellType",
            "GhostMode", "build_dual_graph", "cell_dim", "compute_midpoints",
            "compute_boundary_facets", "compute_incident_entities", "create_cell_partitioner",
            "create_interval", "create_unit_interval", "create_rectangle", "create_unit_square",
@@ -188,6 +188,19 @@ def create_submesh(mesh, dim, entities):
     return (Mesh.from_cpp(submesh, submesh_domain), vertex_map, geom_map)
 
 
+# Add attribute to MeshTags
+def _ufl_id(self) -> int:
+    return id(self)
+
+
+setattr(_cpp.mesh.MeshTags_int8, 'ufl_id', _ufl_id)
+setattr(_cpp.mesh.MeshTags_int32, 'ufl_id', _ufl_id)
+setattr(_cpp.mesh.MeshTags_int64, 'ufl_id', _ufl_id)
+setattr(_cpp.mesh.MeshTags_float64, 'ufl_id', _ufl_id)
+
+del _ufl_id
+
+
 class MeshTagsMetaClass:
     def __init__(self, mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray):
         """A distributed sparse matrix that uses compressed sparse row storage.
@@ -205,6 +218,18 @@ class MeshTagsMetaClass:
 
         """
         super().__init__(mesh, dim, indices.astype(np.int32), values)
+
+    def ufl_id(self) -> int:
+        """Object identifier.
+
+        Notes:
+            This method is used by UFL.
+
+        Returns:
+            The `id` of the object
+
+        """
+        return id(self)
 
 
 def meshtags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> MeshTagsMetaClass:
@@ -245,6 +270,35 @@ def meshtags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> M
 
     tags = type("MeshTagsMetaClass", (MeshTagsMetaClass, ftype), {})
     return tags(mesh, dim, indices, values)
+
+
+def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32, values: np.ndarray):
+    """Create a MeshTags object that associates data with a subset of
+    mesh entities, where the entities are defined by their vertices.
+
+    Args:
+        mesh: The mesh
+        dim: Topological dimension of the mesh entity
+        entities: Tagged entities, with entities defined by their vertices
+        values: The corresponding value for each entity
+
+    Returns:
+        A MeshTags object
+
+    Note:
+        The type of the returned MeshTags is inferred from the type of
+        ``values``.
+
+    """
+
+    if isinstance(values, int):
+        assert np.can_cast(values, np.int32)
+        values = np.full(entities.num_nodes, values, dtype=np.int32)
+    elif isinstance(values, float):
+        values = np.full(entities.num_nodes, values, dtype=np.double)
+
+    values = np.asarray(values)
+    return _cpp.mesh.create_meshtags(mesh, dim, entities, values)
 
 
 def create_interval(comm: _MPI.Comm, nx: int, points: list, ghost_mode=GhostMode.shared_facet,
