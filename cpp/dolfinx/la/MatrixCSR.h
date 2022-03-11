@@ -200,6 +200,7 @@ void add_csr_blocked(U&& data, const V& cols, const V& row_ptr, const W& x,
       auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
       for (std::size_t c = 0; c < xcols.size(); ++c)
       {
+        const int xi = c * bs[1];
         for (int j = 0; j < bs[1]; ++j)
         {
           // Find position of column index
@@ -207,7 +208,7 @@ void add_csr_blocked(U&& data, const V& cols, const V& row_ptr, const W& x,
           assert(it != cit1);
           std::size_t d = std::distance(cols.begin(), it);
           assert(d < data.size());
-          data[d] += xr[c * bs[1] + j];
+          data[d] += xr[xi + j];
         }
       }
     }
@@ -571,9 +572,14 @@ public:
       {
         int row = r * _bs[0];
         int col = _cols[j] * _bs[1];
+
+        int ki = j * _bs[0] * _bs[1];
         for (int k = 0; k < _bs[0]; ++k)
+        {
           for (int m = 0; m < _bs[1]; ++m)
-            A(row + k, col + m) = _data[j * _bs[0] * _bs[1] + k * _bs[1] + m];
+            A(row + k, col + m) = _data[ki + m];
+          ki += _bs[1];
+        }
       }
 
     return A;
