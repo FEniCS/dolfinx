@@ -170,14 +170,14 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     assert isinstance(A1, PETSc.Mat)
     assert np.sqrt(A0.norm_squared()) == pytest.approx(A1.norm())
 
-    np.set_printoptions(precision=2)
+    # Assemble blocks into matrix with bs=1
     sp = fem.create_sparsity_pattern(a)
     sp = sp.expand()
     sp.assemble()
-    matA = la.matrix_csr(sp, dtype=a.dtype)
-    _cpp.fem.assemble_matrix_blocked(matA, a, _cpp.fem.pack_constants(a), _cpp.fem.pack_coefficients(a), [], [2, 2])
-    matA.finalize()
-    assert np.sqrt(matA.norm_squared()) == pytest.approx(A1.norm())
+    A2 = la.matrix_csr(sp, dtype=a.dtype)
+    _cpp.fem.assemble_matrix_blocked(A2, a, _cpp.fem.pack_constants(a), _cpp.fem.pack_coefficients(a), [], [2, 2])
+    A2.finalize()
+    assert np.sqrt(A2.norm_squared()) == pytest.approx(A1.norm())
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
