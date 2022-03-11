@@ -155,8 +155,11 @@ SparsityPattern::SparsityPattern(
   }
 }
 //-----------------------------------------------------------------------------
-SparsityPattern SparsityPattern::expand()
+SparsityPattern SparsityPattern::expand() const
 {
+  if (_graph)
+    throw std::runtime_error("Sparsity pattern has already been finalised.");
+
   if (_bs[0] == 1 and _bs[1] == 1)
     throw std::runtime_error("Cannot expand SparsityPattern, already bs=1");
 
@@ -199,10 +202,12 @@ SparsityPattern SparsityPattern::expand()
   {
     for (int j = 0; j < _bs[0]; ++j)
     {
+      std::vector<std::int32_t>& vj = sp._row_cache[i * _bs[0] + j];
+      vj.reserve(_row_cache[i].size() * _bs[1]);
       for (std::int32_t q : _row_cache[i])
       {
         for (int k = 0; k < _bs[1]; ++k)
-          sp._row_cache[i * _bs[0] + j].push_back(q * _bs[1] + k);
+          vj.push_back(q * _bs[1] + k);
       }
     }
   }

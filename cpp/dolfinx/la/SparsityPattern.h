@@ -70,10 +70,11 @@ public:
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
-  /// Take a SparsityPattern with a block size greater than 1, and
-  /// expand the entries, repeating rows and columns in each block.
-  /// @return SparsityPattern with bs={1, 1}
-  SparsityPattern expand();
+  /// Take an unassembled SparsityPattern with a block size greater than 1, and
+  /// expand the entries, repeating rows and columns in each block. More entries
+  /// may be added to the new expanded SparsityPattern before assembling.
+  /// @return Unassembled SparsityPattern of same size but with bs={1, 1}
+  SparsityPattern expand() const;
 
   /// Insert non-zero locations using local (process-wise) indices
   void insert(const xtl::span<const std::int32_t>& rows,
