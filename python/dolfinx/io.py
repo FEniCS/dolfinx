@@ -15,10 +15,55 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import distribute_entity_data
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
+from dolfinx.common import has_adios2
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh
+from mpi4py import MPI as _MPI
 
-__all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "distribute_entity_data"]
+__all__ = ["FidesWriter", "VTKFile", "VTXWriter", "XDMFFile", "cell_perm_gmsh", "distribute_entity_data"]
+
+if has_adios2:
+    class VTXWriter(_cpp.io.VTXWriter):
+        """Interface to VTK files for ADIOS 2
+
+        VTX supports arbitrary order Lagrangian finite elements for the geometry description.
+        VTX supports arbitrary order (discontinous) Lagrangian finite elements for functions.
+        All functions has to be of the same element family and same order.
+
+        """
+
+        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, typing.List[Function], Function]):
+            """
+            Initialize a writer for outputting a mesh, a single (discontinuous) Lagrange function or
+            list of (discontinuous Lagrange functions sharing the same element familty and degree
+            """
+            if isinstance(output, Mesh):
+                super().__init__(comm, filename, output)
+            elif isinstance(output, (list, tuple)):
+                super().__init__(comm, filename, [getattr(u, "_cpp_object", u) for u in output])
+            else:
+                super().__init__(comm, filename, getattr(output, "_cpp_object", output))
+
+    class FidesWriter(_cpp.io.FidesWriter):
+        """Interface to Fides data structures for ADIOS 2
+
+        Fides supports first order Lagrangian finite elements for the geometry description.
+        Fides supports first order Lagrangian finite elements for functions.
+        All functions has to be of the same element family and same order.
+
+        """
+
+        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, typing.List[Function], Function]):
+            """
+            Initialize a writer for outputting a mesh, a single Lagrange function or
+            list of Lagrange functions sharing the same element familty and degree
+            """
+            if isinstance(output, Mesh):
+                super().__init__(comm, filename, output)
+            elif isinstance(output, (list, tuple)):
+                super().__init__(comm, filename, [getattr(u, "_cpp_object", u) for u in output])
+            else:
+                super().__init__(comm, filename, [getattr(output, "_cpp_object", output)])
 
 
 class VTKFile(_cpp.io.VTKFile):
