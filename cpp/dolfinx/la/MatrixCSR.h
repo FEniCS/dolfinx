@@ -21,6 +21,7 @@ namespace dolfinx::la
 namespace impl
 {
 /// @brief Set data in a CSR matrix
+/// @note For block data layout see `add_csr`
 /// @tparam BS Templated block size, default=-1, untemplated. Templating with
 /// BS>0 allows optimisation for square blocks (bs[0]==bs[1]).
 /// @param[out] data The CSR matrix data
@@ -95,6 +96,16 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 
 /// @brief Add data to a CSR matrix
 ///
+/// Data layout for blocks. For example, the following can be inserted
+/// into the top-left corner of a suitable CSR matrix with xrows={0,1} and
+/// xcols={0,1}, bs={2,2} and x={0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}.
+///
+/// 0  1  | 2  3
+/// 4  5  | 6  7
+/// -------------
+/// 8  9  | 10 11
+/// 12 13 | 14 15
+///
 /// @tparam BS Templated block size, default=-1, untemplated. Templating with
 /// BS>0 allows optimisation for square blocks (bs[0]==bs[1]).
 /// @param[out] data The CSR matrix data
@@ -104,7 +115,7 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 /// to the matrix
 /// @param[in] xrows The (block) row indices of `x`
 /// @param[in] xcols The (block) column indices of `x`
-/// @param[in] bs Number of entries in each block
+/// @param[in] bs Number of entries in each direction in each block
 template <int BS = -1, typename U, typename V, typename W, typename X>
 void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
              const X& xrows, const X& xcols, std::array<int, 2> bs)
@@ -165,16 +176,19 @@ void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
   }
 }
 
-/// @brief Add block data to a CSR matrix of blocksize 1
-///
+/// @brief Add block data to a CSR matrix with blocksize 1
+/// Add data which is in block format (i.e. the rows and columns are indexed
+/// by block) into a CSR matrix which has bs={1,1}. The matrix must have the
+/// appropriate sparsity to receive the block data. For the input data layout of
+/// `x`, see `add_csr`.
 /// @param[out] data The CSR matrix data
 /// @param[in] cols The CSR column indices
 /// @param[in] row_ptr The pointer to the ith row in the CSR data
-/// @param[in] x The `m` by `n` dense block of values (row-major) to add
+/// @param[in] x The `m` by `n` dense array of values (row-major) to add
 /// to the matrix
 /// @param[in] xrows The block row indices of `x`
 /// @param[in] xcols The block column indices of `x`
-/// @param[in] bs Number of entries in each block
+/// @param[in] bs Number of block entries in each direction for the input `x`
 template <typename U, typename V, typename W, typename X>
 void add_csr_blocked(U&& data, const V& cols, const V& row_ptr, const W& x,
                      const X& xrows, const X& xcols, std::array<int, 2> bs)
@@ -245,7 +259,6 @@ public:
   /// used in finite element assembly functions.
   /// @return Function for inserting values into the matrix
   /// @todo clarify setting on non-owned enrties
-
   std::function<int(const xtl::span<const std::int32_t>& rows,
                     const xtl::span<const std::int32_t>& cols,
                     const xtl::span<const T>& data)>
@@ -300,6 +313,7 @@ public:
   /// Insertion functor for accumulating values in matrix. It is
   /// typically used in finite element assembly functions.
   /// @return Function for inserting values into the matrix
+
   std::function<int(const xtl::span<const std::int32_t>& rows,
                     const xtl::span<const std::int32_t>& cols,
                     const xtl::span<const T>& data)>
@@ -349,6 +363,9 @@ public:
 
   /// Insertion functor for accumulating values in matrix. It is
   /// typically used in finite element assembly functions.
+  /// This is a special version, which uses "block" insertion on an unblocked
+  /// CSR matrix which has the appropriate sparsity. By specifying the block
+  /// size here, the rows and columns will use block indices during insertion.
   /// @param bs Block size to use with insertion
   /// @return Function for inserting values into `A`
   auto mat_add_values_blocked(std::array<int, 2> bs)
