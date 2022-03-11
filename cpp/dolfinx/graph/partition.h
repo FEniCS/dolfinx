@@ -19,7 +19,6 @@
 #include <xtl/xspan.hpp>
 
 #include <iostream>
-#include <map>
 
 namespace dolfinx::graph
 {
@@ -299,6 +298,16 @@ build::distribute_data(MPI_Comm comm,
       = impl::send_to_postoffice(comm, x, shape1, shape0_global, rank_offset);
   assert(post_indices.size() == post_x.size() / shape1);
 
+  const std::array<std::int64_t, 2> postoffice_range
+      = MPI::local_range(rank, shape0_global, size);
+  std::vector<std::int32_t> post_indices_new(post_indices.size());
+  for (std::size_t i = 0; i < post_indices_new.size(); ++i)
+    post_indices_new[i] = post_indices[i] - postoffice_range[0];
+
+  std::vector<std::int32_t> post_indices_map(post_indices_new.size());
+  for (std::size_t i = 0; i < post_indices_new.size(); ++i)
+    post_indices_map[post_indices_new[i]] = i;
+
   // Find source post office ranks for my 'indices'
   std::vector<int> index_to_src;
   std::vector<std::pair<int, std::int64_t>> src_to_index;
@@ -380,11 +389,6 @@ build::distribute_data(MPI_Comm comm,
 
   // Get data and send back (transpose operation)
 
-  // Map from global index to post office storage
-  std::map<std::int64_t, std::int32_t> global_to_local;
-  for (std::size_t i = 0; i < post_indices.size(); ++i)
-    global_to_local.insert({post_indices[i], i});
-
   // Build send buffer
   std::vector<T> send_buffer_data(shape1 * recv_disp.back());
   for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
@@ -403,14 +407,10 @@ build::distribute_data(MPI_Comm comm,
       else
       {
         // Take from my 'post bag'
-        auto it = global_to_local.find(index);
-        assert(it != global_to_local.end());
-        std::int32_t local_index = it->second;
+        auto local_index = index - postoffice_range[0];
+        std::int32_t pos = post_indices_map[local_index];
         for (int j = 0; j < shape1; ++j)
-        {
-          send_buffer_data[shape1 * offset + j]
-              = post_x[shape1 * local_index + j];
-        }
+          send_buffer_data[shape1 * offset + j] = post_x[shape1 * pos + j];
       }
 
       ++offset;
@@ -441,7 +441,6 @@ build::distribute_data(MPI_Comm comm,
     if (index >= rank_offset and index < (rank_offset + shape0))
     {
       // Had data from the start
-
       auto local_index = index - rank_offset;
       for (int j = 0; j < shape1; ++j)
         x_new[shape1 * i + j] = x[shape1 * local_index + j];
@@ -451,14 +450,8 @@ build::distribute_data(MPI_Comm comm,
       if (int src = MPI::index_owner(size, index, shape0_global); src == rank)
       {
         // In my post office bag
-        // TODO: use offset of my bag to convert global/local
-
-        // TODO: avoid std::find
-        // auto it = std::find(post_indices.begin(), post_indices.end(), index);
-        auto it = global_to_local.find(index);
-        // assert(it != send_buffer_index.end());
-        // std::size_t pos = std::distance(post_indices.begin(), it);
-        std::size_t pos = it->second;
+        auto local_index = index - postoffice_range[0];
+        std::int32_t pos = post_indices_map[local_index];
         for (int j = 0; j < shape1; ++j)
           x_new[shape1 * i + j] = post_x[shape1 * pos + j];
       }
