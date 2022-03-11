@@ -176,6 +176,7 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     sp.assemble()
     matA = la.matrix_csr(sp, dtype=a.dtype)
     _cpp.fem.assemble_matrix_blocked(matA, a, _cpp.fem.pack_constants(a), _cpp.fem.pack_coefficients(a), [], [2, 2])
+    matA.finalize()
     assert np.sqrt(matA.norm_squared()) == pytest.approx(A1.norm())
 
 
