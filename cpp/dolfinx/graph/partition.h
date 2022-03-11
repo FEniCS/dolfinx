@@ -147,7 +147,7 @@ namespace impl
 /// @returns (0) global indices of my post office data and (1) the data
 /// (row-major). It **does not** include rows that are in `x`.
 template <typename T>
-std::pair<std::vector<std::int64_t>, std::vector<T>>
+std::pair<std::vector<std::int32_t>, std::vector<T>>
 send_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
                    std::int64_t shape0_global, std::int64_t rank_offset)
 {
@@ -267,7 +267,13 @@ send_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
 
   LOG(INFO) << "Completed send data to post offices.";
 
-  return {recv_buffer_index, recv_buffer_data};
+  const std::array range = MPI::local_range(rank, shape0_global, size);
+  std::vector<std::int32_t> index_local;
+  index_local.reserve(recv_buffer_index.size());
+  for (auto idx : recv_buffer_index)
+    index_local.push_back(idx - range[0]);
+
+  return {index_local, recv_buffer_data};
 };
 } // namespace impl
 
@@ -300,49 +306,39 @@ build::distribute_data(MPI_Comm comm,
 
   const std::array<std::int64_t, 2> postoffice_range
       = MPI::local_range(rank, shape0_global, size);
-  std::vector<std::int32_t> post_indices_new(post_indices.size());
-  for (std::size_t i = 0; i < post_indices_new.size(); ++i)
-    post_indices_new[i] = post_indices[i] - postoffice_range[0];
 
-  std::vector<std::int32_t> post_indices_map(post_indices_new.size());
-  for (std::size_t i = 0; i < post_indices_new.size(); ++i)
-    post_indices_map[post_indices_new[i]] = i;
+  std::vector<std::int32_t> post_indices_map(post_indices.size());
+  for (std::size_t i = 0; i < post_indices.size(); ++i)
+    post_indices_map[post_indices[i]] = i;
 
   // Find source post office ranks for my 'indices'
-  std::vector<int> index_to_src;
-  std::vector<std::pair<int, std::int64_t>> src_to_index;
-  for (auto idx : indices)
+  // (src, gindex, pos)
+  std::vector<std::tuple<int, std::int64_t, std::int32_t>> src_to_index;
+  for (std::size_t i = 0; i < indices.size(); ++i)
   {
-    int src = MPI::index_owner(size, idx, shape0_global);
-    index_to_src.push_back(src);
-    if (src != rank)
-      src_to_index.push_back({src, idx});
+    std::size_t idx = indices[i];
+    if (int src = MPI::index_owner(size, idx, shape0_global); src != rank)
+      src_to_index.push_back({src, idx, i});
   }
-
-  // Remove my rank from list of source ranks, and then sort
-  std::vector<int> src;
-  std::copy_if(index_to_src.begin(), index_to_src.end(),
-               std::back_insert_iterator(src),
-               [rank](int idx) { return idx != rank; });
-  std::sort(src.begin(), src.end());
+  std::sort(src_to_index.begin(), src_to_index.end());
 
   // Count number of items (rows of x) to receive from each src post
   // office (by neighbourhood rank)
   std::vector<std::int32_t> num_items_per_src;
+  std::vector<int> src;
   {
-    auto it = src.begin();
-    while (it != src.end())
+    auto it = src_to_index.begin();
+    while (it != src_to_index.end())
     {
-      auto it1 = std::find_if(it, src.end(),
-                              [r = *it](auto idx) { return idx != r; });
+      const int rank = std::get<0>(*it);
+      src.push_back(rank);
+      auto it1 = std::find_if(it, src_to_index.end(),
+                              [rank](auto& idx)
+                              { return std::get<0>(idx) != rank; });
       num_items_per_src.push_back(std::distance(it, it1));
       it = it1;
     }
   }
-
-  // Erase duplicates from list of source ranks
-  src.erase(std::unique(src.begin(), src.end()), src.end());
-  assert(src.size() == num_items_per_src.size());
 
   // Determine 'delivery' destination ranks (ranks that want data from
   // me)
@@ -376,7 +372,7 @@ build::distribute_data(MPI_Comm comm,
   assert(send_disp.back() == (int)src_to_index.size());
   std::vector<std::int64_t> send_buffer_index(send_disp.back() + 1);
   for (std::size_t i = 0; i < src_to_index.size(); ++i)
-    send_buffer_index[i] = src_to_index[i].second;
+    send_buffer_index[i] = std::get<1>(src_to_index[i]);
 
   // Prepare the receive buffer
   std::vector<std::int64_t> recv_buffer_index(recv_disp.back());
@@ -434,6 +430,11 @@ build::distribute_data(MPI_Comm comm,
   MPI_Type_free(&compound_type0);
   MPI_Comm_free(&neigh_comm0);
 
+  // std::vector<std::int32_t> buffer_to_gindex_pos(indices.size(), -1);
+  std::vector<std::int32_t> index_pos_to_buffer(indices.size(), -1);
+  for (std::size_t i = 0; i < src_to_index.size(); ++i)
+    index_pos_to_buffer[std::get<2>(src_to_index[i])] = i;
+
   std::vector<T> x_new(shape1 * indices.size());
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
@@ -457,14 +458,9 @@ build::distribute_data(MPI_Comm comm,
       }
       else
       {
-        // In my received post
-
-        // Get index in buffer
-        // FIXME: Avoid linear search
-        auto it = std::find(send_buffer_index.begin(), send_buffer_index.end(),
-                            index);
-        assert(it != send_buffer_index.end());
-        std::size_t pos = std::distance(send_buffer_index.begin(), it);
+        // In my received post_x
+        std::int32_t pos = index_pos_to_buffer[i];
+        assert(pos != -1);
         for (int j = 0; j < shape1; ++j)
           x_new[shape1 * i + j] = recv_buffer_data[shape1 * pos + j];
       }
