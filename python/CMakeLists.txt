@@ -43,7 +43,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Create the binding library
 # pybind11 handles its own calls to target_link_libraries
-pybind11_add_module(cpp MODULE
+pybind11_add_module(cpp MODULE NO_EXTRAS
   dolfinx/wrappers/dolfinx.cpp
   dolfinx/wrappers/common.cpp
   dolfinx/wrappers/fem.cpp

@@ -162,18 +162,16 @@ void add_csr_blocked(U&& data, const V& cols, const V& row_ptr, const W& x,
       // Row index and current data row
       auto row = xrows[r] * bs[0] + k;
       using T = typename W::value_type;
-      const int nc = xcols.size() * bs[1];
-      const T* xr = x.data() + (r * bs[0] + k) * nc;
-
+      const T* xr = x.data() + (r * bs[0] + k) * xcols.size() * bs[1];
 #ifndef NDEBUG
       if (row >= (int)row_ptr.size())
         throw std::runtime_error("Local row out of range");
 #endif
 
-      // Columns indices for row
+      // Column indices for row
       auto cit0 = std::next(cols.begin(), row_ptr[row]);
       auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
-      for (std::size_t c = 0; c < nc; ++c)
+      for (std::size_t c = 0; c < xcols.size(); ++c)
       {
         for (int j = 0; j < bs[1]; ++j)
         {
@@ -217,8 +215,7 @@ public:
 
   /// Insertion functor for setting values in matrix. It is typically
   /// used in finite element assembly functions.
-  /// @param A Matrix to insert into
-  /// @return Function for inserting values into `A`
+  /// @return Function for inserting values into the matrix
   /// @todo clarify setting on non-owned enrties
   std::function<int(const xtl::span<const std::int32_t>& rows,
                     const xtl::span<const std::int32_t>& cols,
@@ -269,8 +266,7 @@ public:
 
   /// Insertion functor for accumulating values in matrix. It is
   /// typically used in finite element assembly functions.
-  /// @param A Matrix to insert into
-  /// @return Function for inserting values into `A`
+  /// @return Function for inserting values into the matrix
   std::function<int(const xtl::span<const std::int32_t>& rows,
                     const xtl::span<const std::int32_t>& cols,
                     const xtl::span<const T>& data)>
@@ -310,6 +306,20 @@ public:
                const xtl::span<const std::int32_t>& cols,
                const xtl::span<const T>& data) -> int {
       impl::add_csr(_data, _cols, _row_ptr, data, rows, cols, _bs);
+      return 0;
+    };
+  }
+
+  /// Insertion functor for accumulating values in matrix. It is
+  /// typically used in finite element assembly functions.
+  /// @param bs Block size to use with insertion
+  /// @return Function for inserting values into `A`
+  auto mat_add_values_blocked(std::array<int, 2> bs)
+  {
+    return [&, bs](const xtl::span<const std::int32_t>& rows,
+                   const xtl::span<const std::int32_t>& cols,
+                   const xtl::span<const T>& data) -> int {
+      impl::add_csr_blocked(_data, _cols, _row_ptr, data, rows, cols, bs);
       return 0;
     };
   }
