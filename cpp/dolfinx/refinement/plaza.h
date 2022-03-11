@@ -35,7 +35,8 @@ namespace plaza
 /// @param[in] redistribute Flag to call the mesh partitioner to
 /// redistribute after refinement
 /// @return New mesh
-mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute);
+std::pair<std::vector<std::int32_t>, mesh::Mesh> refine(const mesh::Mesh& mesh,
+                                                        bool redistribute);
 
 /// Refine with markers, optionally redistributing.
 ///

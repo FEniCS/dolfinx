@@ -21,7 +21,7 @@ mesh::Mesh refinement::refine(const mesh::Mesh& mesh, bool redistribute)
     throw std::runtime_error("Refinement only defined for simplices");
   }
 
-  mesh::Mesh refined_mesh = plaza::refine(mesh, redistribute);
+  auto [parent_cell, refined_mesh] = plaza::refine(mesh, redistribute);
 
   // Report the number of refined cells
   const int D = mesh.topology().dim();

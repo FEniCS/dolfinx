@@ -516,15 +516,17 @@ compute_refinement(
 } // namespace
 
 //-----------------------------------------------------------------------------
-mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
+std::pair<std::vector<std::int32_t>, mesh::Mesh>
+plaza::refine(const mesh::Mesh& mesh, bool redistribute)
 {
   auto [cell_adj, new_vertex_coordinates, parent_cell]
       = plaza::compute_refinement_data(mesh);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
-                             new_vertex_coordinates, mesh::GhostMode::none);
+    return {std::move(parent_cell),
+            mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
+                              new_vertex_coordinates, mesh::GhostMode::none)};
   }
 
   const std::shared_ptr<const common::IndexMap> map_c
@@ -541,8 +543,9 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh, bool redistribute)
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
-  return refinement::partition(mesh, cell_adj, new_vertex_coordinates,
-                               redistribute, ghost_mode);
+  return {std::move(parent_cell),
+          refinement::partition(mesh, cell_adj, new_vertex_coordinates,
+                                redistribute, ghost_mode)};
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
