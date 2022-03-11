@@ -299,20 +299,21 @@ build::distribute_data(MPI_Comm comm,
   MPI_Exscan(&shape0, &rank_offset, 1, MPI_INT64_T, MPI_SUM, comm);
 
   // Send receive x data to post office (only for rows that need to be
-  // moved)
+  // communicated)
   auto [post_indices, post_x]
       = impl::send_to_postoffice(comm, x, shape1, shape0_global, rank_offset);
   assert(post_indices.size() == post_x.size() / shape1);
 
-  const std::array<std::int64_t, 2> postoffice_range
-      = MPI::local_range(rank, shape0_global, size);
-
-  std::vector<std::int32_t> post_indices_map(post_indices.size());
+  // Build map from post_indices values to position
+  std::vector<std::int32_t> post_indices_map(indices.size());
   for (std::size_t i = 0; i < post_indices.size(); ++i)
+  {
+    assert(post_indices[i] < post_indices_map.size());
     post_indices_map[post_indices[i]] = i;
+  }
 
-  // Find source post office ranks for my 'indices'
-  // (src, gindex, pos)
+  // Build list of (src, global index, global index positions), and then
+  // sort
   std::vector<std::tuple<int, std::int64_t, std::int32_t>> src_to_index;
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
@@ -330,11 +331,10 @@ build::distribute_data(MPI_Comm comm,
     auto it = src_to_index.begin();
     while (it != src_to_index.end())
     {
-      const int rank = std::get<0>(*it);
-      src.push_back(rank);
+      src.push_back(std::get<0>(*it));
       auto it1 = std::find_if(it, src_to_index.end(),
-                              [rank](auto& idx)
-                              { return std::get<0>(idx) != rank; });
+                              [r = src.back()](auto& idx)
+                              { return std::get<0>(idx) != r; });
       num_items_per_src.push_back(std::distance(it, it1));
       it = it1;
     }
@@ -385,6 +385,9 @@ build::distribute_data(MPI_Comm comm,
 
   // Get data and send back (transpose operation)
 
+  const std::array<std::int64_t, 2> postoffice_range
+      = MPI::local_range(rank, shape0_global, size);
+
   // Build send buffer
   std::vector<T> send_buffer_data(shape1 * recv_disp.back());
   for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
@@ -398,7 +401,8 @@ build::distribute_data(MPI_Comm comm,
         // I already had this index before any communication
         std::int32_t local_index = index - rank_offset;
         for (int j = 0; j < shape1; ++j)
-          send_buffer_data[shape1 * offset + j] = x[shape1 * local_index + j];
+          send_buffer_data[shape1 * offset + j] = x[shape1 * local_index +
+          j];
       }
       else
       {
@@ -413,7 +417,8 @@ build::distribute_data(MPI_Comm comm,
     }
   }
 
-  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
+  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(),
+  MPI_UNWEIGHTED,
                                  dest.size(), dest.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &neigh_comm0);
 
@@ -430,7 +435,6 @@ build::distribute_data(MPI_Comm comm,
   MPI_Type_free(&compound_type0);
   MPI_Comm_free(&neigh_comm0);
 
-  // std::vector<std::int32_t> buffer_to_gindex_pos(indices.size(), -1);
   std::vector<std::int32_t> index_pos_to_buffer(indices.size(), -1);
   for (std::size_t i = 0; i < src_to_index.size(); ++i)
     index_pos_to_buffer[std::get<2>(src_to_index[i])] = i;
