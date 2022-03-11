@@ -21,15 +21,16 @@ namespace dolfinx::la
 namespace impl
 {
 /// @brief Set data in a CSR matrix
-///
+/// @tparam BS Templated block size, default=-1, untemplated. Templating with
+/// BS>0 allows optimisation for square blocks (bs[0]==bs[1]).
 /// @param[out] data The CSR matrix data
 /// @param[in] cols The CSR column indices
 /// @param[in] row_ptr The pointer to the ith row in the CSR data
-/// @param[in] x The `m` by `n` dense block of values (row-major) to set
-/// in the matrix
-/// @param[in] xrows The row indices of `x`
-/// @param[in] xcols The column indices of `x`
-/// @param[in] bs Number of entries in each block
+/// @param[in] x The `m` by `n` dense array of values (row-major) to set
+/// in the matrix.
+/// @param[in] xrows The (block) row indices of `x`
+/// @param[in] xcols The (block) column indices of `x`
+/// @param[in] bs Two dimensional size of each block.
 /// @param[in] local_size The maximum row index that can be set. Used
 /// when debugging is on to check that rows beyond a permitted range are
 /// not being set.
@@ -66,15 +67,27 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
       assert(d < data.size());
       if constexpr (BS > 0)
       {
+        int di = d * BS * BS;
+        int xi = c * BS;
         for (int i = 0; i < BS; ++i)
+        {
           for (int j = 0; j < BS; ++j)
-            data[d * BS * BS + i * BS + j] = xr[(i * nc + c) * BS + j];
+            data[di + j] = xr[xi + j];
+          di += BS;
+          xi += nc * BS;
+        }
       }
       else
       {
+        int di = d * nbs;
+        int xi = c * bs[1];
         for (int i = 0; i < bs[0]; ++i)
+        {
           for (int j = 0; j < bs[1]; ++j)
-            data[d * nbs + i * bs[1] + j] = xr[(i * nc + c) * bs[1] + j];
+            data[di + j] = xr[xi + j];
+          di += bs[1];
+          xi += nc * bs[1];
+        }
       }
     }
   }
@@ -82,13 +95,15 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 
 /// @brief Add data to a CSR matrix
 ///
+/// @tparam BS Templated block size, default=-1, untemplated. Templating with
+/// BS>0 allows optimisation for square blocks (bs[0]==bs[1]).
 /// @param[out] data The CSR matrix data
 /// @param[in] cols The CSR column indices
 /// @param[in] row_ptr The pointer to the ith row in the CSR data
-/// @param[in] x The `m` by `n` dense block of values (row-major) to add
+/// @param[in] x The `m` by `n` dense array of values (row-major) to add
 /// to the matrix
-/// @param[in] xrows The row indices of `x`
-/// @param[in] xcols The column indices of `x`
+/// @param[in] xrows The (block) row indices of `x`
+/// @param[in] xcols The (block) column indices of `x`
 /// @param[in] bs Number of entries in each block
 template <int BS = -1, typename U, typename V, typename W, typename X>
 void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
@@ -124,15 +139,27 @@ void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 
       if constexpr (BS > 0)
       {
+        int di = d * BS * BS;
+        int xi = c * BS;
         for (int i = 0; i < BS; ++i)
+        {
           for (int j = 0; j < BS; ++j)
-            data[d * BS * BS + i * BS + j] += xr[(i * nc + c) * BS + j];
+            data[di + j] += xr[xi + j];
+          di += BS;
+          xi += nc * BS;
+        }
       }
       else
       {
+        int di = d * nbs;
+        int xi = c * bs[1];
         for (int i = 0; i < bs[0]; ++i)
+        {
           for (int j = 0; j < bs[1]; ++j)
-            data[d * nbs + i * bs[1] + j] += xr[(i * nc + c) * bs[1] + j];
+            data[di + j] += xr[xi + j];
+          di += bs[1];
+          xi += nc * bs[1];
+        }
       }
     }
   }
@@ -217,6 +244,7 @@ public:
   /// used in finite element assembly functions.
   /// @return Function for inserting values into the matrix
   /// @todo clarify setting on non-owned enrties
+
   std::function<int(const xtl::span<const std::int32_t>& rows,
                     const xtl::span<const std::int32_t>& cols,
                     const xtl::span<const T>& data)>
