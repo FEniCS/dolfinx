@@ -231,7 +231,8 @@ public:
       case 1:
         return [&, local_size](const xtl::span<const std::int32_t>& rows,
                                const xtl::span<const std::int32_t>& cols,
-                               const xtl::span<const T>& data) -> int {
+                               const xtl::span<const T>& data) -> int
+        {
           impl::set_csr<1>(_data, _cols, _row_ptr, data, rows, cols, _bs,
                            local_size);
           return 0;
@@ -239,7 +240,8 @@ public:
       case 2:
         return [&, local_size](const xtl::span<const std::int32_t>& rows,
                                const xtl::span<const std::int32_t>& cols,
-                               const xtl::span<const T>& data) -> int {
+                               const xtl::span<const T>& data) -> int
+        {
           impl::set_csr<2>(_data, _cols, _row_ptr, data, rows, cols, _bs,
                            local_size);
           return 0;
@@ -247,7 +249,8 @@ public:
       case 3:
         return [&, local_size](const xtl::span<const std::int32_t>& rows,
                                const xtl::span<const std::int32_t>& cols,
-                               const xtl::span<const T>& data) -> int {
+                               const xtl::span<const T>& data) -> int
+        {
           impl::set_csr<3>(_data, _cols, _row_ptr, data, rows, cols, _bs,
                            local_size);
           return 0;
@@ -258,7 +261,8 @@ public:
     // Drop through to default implementation (non-template for bs)
     return [&, local_size](const xtl::span<const std::int32_t>& rows,
                            const xtl::span<const std::int32_t>& cols,
-                           const xtl::span<const T>& data) -> int {
+                           const xtl::span<const T>& data) -> int
+    {
       impl::set_csr(_data, _cols, _row_ptr, data, rows, cols, _bs, local_size);
       return 0;
     };
@@ -280,21 +284,24 @@ public:
       case 1:
         return [&](const xtl::span<const std::int32_t>& rows,
                    const xtl::span<const std::int32_t>& cols,
-                   const xtl::span<const T>& data) -> int {
+                   const xtl::span<const T>& data) -> int
+        {
           impl::add_csr<1>(_data, _cols, _row_ptr, data, rows, cols, _bs);
           return 0;
         };
       case 2:
         return [&](const xtl::span<const std::int32_t>& rows,
                    const xtl::span<const std::int32_t>& cols,
-                   const xtl::span<const T>& data) -> int {
+                   const xtl::span<const T>& data) -> int
+        {
           impl::add_csr<2>(_data, _cols, _row_ptr, data, rows, cols, _bs);
           return 0;
         };
       case 3:
         return [&](const xtl::span<const std::int32_t>& rows,
                    const xtl::span<const std::int32_t>& cols,
-                   const xtl::span<const T>& data) -> int {
+                   const xtl::span<const T>& data) -> int
+        {
           impl::add_csr<3>(_data, _cols, _row_ptr, data, rows, cols, _bs);
           return 0;
         };
@@ -304,7 +311,8 @@ public:
     // Drop through to default implementation (non-template for bs)
     return [&](const xtl::span<const std::int32_t>& rows,
                const xtl::span<const std::int32_t>& cols,
-               const xtl::span<const T>& data) -> int {
+               const xtl::span<const T>& data) -> int
+    {
       impl::add_csr(_data, _cols, _row_ptr, data, rows, cols, _bs);
       return 0;
     };
@@ -318,7 +326,8 @@ public:
   {
     return [&, bs](const xtl::span<const std::int32_t>& rows,
                    const xtl::span<const std::int32_t>& cols,
-                   const xtl::span<const T>& data) -> int {
+                   const xtl::span<const T>& data) -> int
+    {
       impl::add_csr_blocked(_data, _cols, _row_ptr, data, rows, cols, bs);
       return 0;
     };
