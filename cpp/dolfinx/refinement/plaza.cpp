@@ -106,9 +106,6 @@ std::vector<std::int32_t>
 get_triangles(const std::vector<std::int64_t>& indices,
               const std::int32_t longest_edge, bool uniform)
 {
-  // Longest edge must be marked
-  assert(indices[longest_edge] >= 0);
-
   // v0 and v1 are at ends of longest_edge (e2) opposite vertex has same
   // index as longest_edge
   const std::int32_t v0 = (longest_edge + 1) % 3;
@@ -118,18 +115,21 @@ get_triangles(const std::vector<std::int64_t>& indices,
   const std::int32_t e1 = v1 + 3;
   const std::int32_t e2 = v2 + 3;
 
+  // Longest edge must be marked
+  assert(indices[e2] >= 0);
+
   // If all edges marked, consider uniform refinement
-  if (uniform and indices[v0] >= 0 and indices[v1] >= 0)
+  if (uniform and indices[e0] >= 0 and indices[e1] >= 0)
     return {e0, e1, v2, e1, e2, v0, e2, e0, v1, e2, e1, e0};
 
   // Break each half of triangle into one or two sub-triangles
   std::vector<std::int32_t> tri_set;
-  if (indices[v0] >= 0)
+  if (indices[e0] >= 0)
     tri_set = {e2, v2, e0, e2, e0, v1};
   else
     tri_set = {e2, v2, v1};
 
-  if (indices[v1] >= 0)
+  if (indices[e1] >= 0)
   {
     tri_set.insert(tri_set.end(), {e2, v2, e1});
     tri_set.insert(tri_set.end(), {e2, e1, v0});
@@ -160,7 +160,7 @@ get_tetrahedra(const std::vector<std::int64_t>& indices,
   {
     const std::int32_t v0 = edges[ei][0];
     const std::int32_t v1 = edges[ei][1];
-    if (indices[ei] >= 0)
+    if (indices[ei + 4] >= 0)
     {
       // Connect edge midpoint to its end vertices
 
@@ -188,7 +188,7 @@ get_tetrahedra(const std::vector<std::int64_t>& indices,
 
           // Only add upper-triangular connection
           conn[fk][ei + 4] = true;
-          if (le_k == ei and indices[e_opp] >= 0)
+          if (le_k == ei and indices[e_opp + 4] >= 0)
           {
             // Longest edge of two adjacent facets
             // Join to opposite edge (through centre of tetrahedron)
