@@ -108,11 +108,13 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   }
 
   // Create new index map
+  std::vector<int> src_ranks = ghost_owners;
+  std::sort(src_ranks.begin(), src_ranks.end());
+  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
+                  src_ranks.end());
+  auto dest_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, src_ranks);
   auto index_map = std::make_shared<common::IndexMap>(
-      comm, num_owned,
-      dolfinx::MPI::compute_graph_edges(
-          comm, std::set<int>(ghost_owners.begin(), ghost_owners.end())),
-      ghosts, ghost_owners);
+      comm, num_owned, dest_ranks, ghosts, ghost_owners);
 
   // Create array from dofs in view to new dof indices
   std::vector<std::int32_t> old_to_new(dofs_view.back() + 1, -1);
@@ -135,10 +137,9 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   ElementDofLayout element_dof_layout = dofmap_view.element_dof_layout().copy();
 
   // Create new dofmap and return
-  return fem::DofMap(std::move(element_dof_layout), index_map, 1,
-                     graph::build_adjacency_list<std::int32_t>(
-                         std::move(dofmap), cell_dimension),
-                     1);
+  return fem::DofMap(
+      std::move(element_dof_layout), index_map, 1,
+      graph::regular_adjacency_list(std::move(dofmap), cell_dimension), 1);
 }
 
 } // namespace
@@ -226,11 +227,9 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
   // Set element dof layout and cell dimension
   ElementDofLayout sub_element_dof_layout
       = _element_dof_layout.sub_layout(component);
-  return DofMap(std::move(sub_element_dof_layout), this->index_map,
-                this->index_map_bs(),
-                graph::build_adjacency_list<std::int32_t>(std::move(dofmap),
-                                                          dofs_per_cell),
-                1);
+  return DofMap(
+      std::move(sub_element_dof_layout), this->index_map, this->index_map_bs(),
+      graph::regular_adjacency_list(std::move(dofmap), dofs_per_cell), 1);
 }
 //-----------------------------------------------------------------------------
 std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(

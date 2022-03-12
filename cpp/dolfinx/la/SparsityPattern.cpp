@@ -65,16 +65,24 @@ SparsityPattern::SparsityPattern(
     ghost_owners1.insert(ghost_owners1.end(), owners.begin(), owners.end());
 
   // Create new IndexMaps
-  _index_maps[0] = std::make_shared<common::IndexMap>(
-      comm, local_offset0.back(),
-      dolfinx::MPI::compute_graph_edges(
-          comm, std::set<int>(ghost_owners0.begin(), ghost_owners0.end())),
-      ghosts0, ghost_owners0);
-  _index_maps[1] = std::make_shared<common::IndexMap>(
-      comm, local_offset1.back(),
-      dolfinx::MPI::compute_graph_edges(
-          comm, std::set<int>(ghost_owners1.begin(), ghost_owners1.end())),
-      ghosts1, ghost_owners1);
+  {
+    std::vector<int> src_ranks = ghost_owners0;
+    std::sort(src_ranks.begin(), src_ranks.end());
+    src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
+                    src_ranks.end());
+    auto dest_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, src_ranks);
+    _index_maps[0] = std::make_shared<common::IndexMap>(
+        comm, local_offset0.back(), dest_ranks, ghosts0, ghost_owners0);
+  }
+  {
+    std::vector<int> src_ranks = ghost_owners1;
+    std::sort(src_ranks.begin(), src_ranks.end());
+    src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
+                    src_ranks.end());
+    auto dest_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, src_ranks);
+    _index_maps[1] = std::make_shared<common::IndexMap>(
+        comm, local_offset1.back(), dest_ranks, ghosts1, ghost_owners1);
+  }
 
   _row_cache.resize(_index_maps[0]->size_local()
                     + _index_maps[0]->num_ghosts());
@@ -224,12 +232,14 @@ common::IndexMap SparsityPattern::column_index_map() const
 
   std::array range = _index_maps[1]->local_range();
   const std::int32_t local_size = range[1] - range[0];
-  return common::IndexMap(
-      _comm.comm(), local_size,
-      dolfinx::MPI::compute_graph_edges(
-          _comm.comm(),
-          std::set<int>(_col_ghost_owners.begin(), _col_ghost_owners.end())),
-      _col_ghosts, _col_ghost_owners);
+  std::vector<int> src_ranks = _col_ghost_owners;
+  std::sort(src_ranks.begin(), src_ranks.end());
+  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
+                  src_ranks.end());
+  auto dest_ranks
+      = dolfinx::MPI::compute_graph_edges_nbx(_comm.comm(), src_ranks);
+  return common::IndexMap(_comm.comm(), local_size, dest_ranks, _col_ghosts,
+                          _col_ghost_owners);
 }
 //-----------------------------------------------------------------------------
 int SparsityPattern::block_size(int dim) const { return _bs[dim]; }

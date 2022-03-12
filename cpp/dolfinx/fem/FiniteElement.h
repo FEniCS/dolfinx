@@ -208,9 +208,10 @@ public:
   const xt::xtensor<double, 2>& interpolation_operator() const;
 
   /// Create a matrix that maps degrees of freedom from one element to
-  /// this element (interpolation)
+  /// this element (interpolation).
+  ///
   /// @param[in] from The element to interpolate from
-  /// @return Matrix operator that maps the 'from' degrees-of-freedom to
+  /// @return Matrix operator that maps the `from` degrees-of-freedom to
   /// the degrees-of-freedom of this element. Shape is (num_dofs of this
   /// element, num_dofs of `from`).
   /// @note The two elements must use the same mapping between the

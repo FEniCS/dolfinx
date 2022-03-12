@@ -8,8 +8,8 @@
 #include "CoordinateElement.h"
 #include "DofMap.h"
 #include "FiniteElement.h"
+#include <boost/uuid/uuid_generators.hpp>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -27,19 +27,9 @@ FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
                              std::shared_ptr<const fem::FiniteElement> element,
                              std::shared_ptr<const fem::DofMap> dofmap)
     : _mesh(mesh), _element(element), _dofmap(dofmap),
-      _id(common::UniqueIdGenerator::id()), _root_space_id(_id)
+      _id(boost::uuids::random_generator()()), _root_space_id(_id)
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-bool FunctionSpace::operator==(const FunctionSpace& V) const
-{
-  return _element == V._element and _mesh == V._mesh and _dofmap == V._dofmap;
-}
-//-----------------------------------------------------------------------------
-bool FunctionSpace::operator!=(const FunctionSpace& V) const
-{
-  return !(*this == V);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>
@@ -77,6 +67,37 @@ FunctionSpace::sub(const std::vector<int>& component) const
   _subspaces.emplace(sub_space->_component, sub_space);
 
   return sub_space;
+}
+//-----------------------------------------------------------------------------
+bool FunctionSpace::contains(const FunctionSpace& V) const
+{
+  if (this == std::addressof(V))
+  {
+    // Spaces are the same (same memory address)
+    return true;
+  }
+  else if (_root_space_id != V._root_space_id)
+  {
+    // Different root spaces
+    return false;
+  }
+  else if (_component.size() > V._component.size())
+  {
+    // V is a superspace of *this
+    return false;
+  }
+  else if (!std::equal(_component.begin(), _component.end(),
+                       V._component.begin()))
+  {
+    // Components of 'this' are not the same as the leading components
+    // of V
+    return false;
+  }
+  else
+  {
+    // Ok, V is really our subspace
+    return true;
+  }
 }
 //-----------------------------------------------------------------------------
 std::pair<FunctionSpace, std::vector<std::int32_t>>
@@ -218,8 +239,6 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   return coords;
 }
 //-----------------------------------------------------------------------------
-std::size_t FunctionSpace::id() const { return _id; }
-//-----------------------------------------------------------------------------
 std::shared_ptr<const mesh::Mesh> FunctionSpace::mesh() const { return _mesh; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const fem::FiniteElement> FunctionSpace::element() const
@@ -230,24 +249,6 @@ std::shared_ptr<const fem::FiniteElement> FunctionSpace::element() const
 std::shared_ptr<const fem::DofMap> FunctionSpace::dofmap() const
 {
   return _dofmap;
-}
-//-----------------------------------------------------------------------------
-bool FunctionSpace::contains(const FunctionSpace& V) const
-{
-  // Is the root space same?
-  if (_root_space_id != V._root_space_id)
-    return false;
-
-  // Is V possibly our superspace?
-  if (_component.size() > V._component.size())
-    return false;
-
-  // Are our components same as leading components of V?
-  if (!std::equal(_component.begin(), _component.end(), V._component.begin()))
-    return false;
-
-  // Ok, V is really our subspace
-  return true;
 }
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::shared_ptr<const fem::FunctionSpace>>, 2>

@@ -35,7 +35,9 @@ inline void copy_N(InputIt first, OutputIt result)
 /// @param[in] values Array of values
 /// @return Sorted (indices, values), with sorting based on indices
 template <typename U, typename V>
-std::pair<U, V> sort_unique(const U& indices, const V& values)
+std::pair<std::vector<typename U::value_type>,
+          std::vector<typename V::value_type>>
+sort_unique(const U& indices, const V& values)
 {
   if (indices.size() != values.size())
     throw std::runtime_error("Cannot sort two arrays of different lengths");
@@ -53,8 +55,8 @@ std::pair<U, V> sort_unique(const U& indices, const V& values)
   auto it = std::unique(data.begin(), data.end(),
                         [](auto& a, auto& b) { return a.first == b.first; });
 
-  U indices_new;
-  V values_new;
+  std::vector<typename U::value_type> indices_new;
+  std::vector<typename V::value_type> values_new;
   indices_new.reserve(data.size());
   values_new.reserve(data.size());
   std::transform(data.begin(), it, std::back_inserter(indices_new),

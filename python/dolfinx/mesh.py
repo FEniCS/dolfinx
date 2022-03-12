@@ -18,13 +18,13 @@ from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
                               compute_boundary_facets,
                               compute_incident_entities, compute_midpoints,
-                              create_cell_partitioner, create_meshtags,
+                              create_cell_partitioner,
                               to_string, to_type)
 
 from mpi4py import MPI as _MPI
 
-__all__ = ["create_meshtags", "locate_entities", "locate_entities_boundary",
-           "refine", "create_mesh", "create_meshtags", "Mesh", "MeshTags", "CellType",
+__all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundary",
+           "refine", "create_mesh", "Mesh", "MeshTagsMetaClass", "meshtags", "CellType",
            "GhostMode", "build_dual_graph", "cell_dim", "compute_midpoints",
            "compute_boundary_facets", "compute_incident_entities", "create_cell_partitioner",
            "create_interval", "create_unit_interval", "create_rectangle", "create_unit_square",
@@ -42,7 +42,7 @@ class Mesh(_cpp.mesh.Mesh):
             geometry: The mesh geometry
             domain: The MPI communicator
 
-        Notes:
+        Note:
             Mesh objects are not generally created using this class directly.
 
         """
@@ -51,7 +51,7 @@ class Mesh(_cpp.mesh.Mesh):
         domain._ufl_cargo = self
 
     @classmethod
-    def from_cpp(cls, obj, domain: ufl.Mesh) -> Mesh:
+    def from_cpp(cls, obj: _cpp.mesh.Mesh, domain: ufl.Mesh) -> Mesh:
         """Create Mesh object from a C++ Mesh object"""
         obj._ufl_domain = domain
         obj.__class__ = Mesh
@@ -123,13 +123,6 @@ _uflcell_to_dolfinxcell = {
     "hexahedron": CellType.hexahedron
 }
 
-_meshtags_types = {
-    np.int8: _cpp.mesh.MeshTags_int8,
-    np.int32: _cpp.mesh.MeshTags_int32,
-    np.int64: _cpp.mesh.MeshTags_int64,
-    np.double: _cpp.mesh.MeshTags_double
-}
-
 
 def refine(mesh: Mesh, edges: np.ndarray = None, redistribute: bool = True) -> Mesh:
     """Refine a mesh
@@ -195,20 +188,66 @@ def create_submesh(mesh, dim, entities):
     return (Mesh.from_cpp(submesh, submesh_domain), vertex_map, geom_map)
 
 
-def MeshTags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> typing.Union[
-        _cpp.mesh.MeshTags_double, _cpp.mesh.MeshTags_int32]:
-    """Create a MeshTag for a set of mesh entities.
+# Add attribute to MeshTags
+def _ufl_id(self) -> int:
+    return id(self)
 
-    Parameters
-    ----------
-    mesh
-        The mesh
-    dim
-        The topological dimension of the mesh entity
-    indices
-        The entity indices (local to process)
-    values
-        The corresponding value for each entity
+
+setattr(_cpp.mesh.MeshTags_int8, 'ufl_id', _ufl_id)
+setattr(_cpp.mesh.MeshTags_int32, 'ufl_id', _ufl_id)
+setattr(_cpp.mesh.MeshTags_int64, 'ufl_id', _ufl_id)
+setattr(_cpp.mesh.MeshTags_float64, 'ufl_id', _ufl_id)
+
+del _ufl_id
+
+
+class MeshTagsMetaClass:
+    def __init__(self, mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray):
+        """A distributed sparse matrix that uses compressed sparse row storage.
+
+        Args:
+            mesh: The mesh
+            dim: Topological dimension of the mesh entity
+            indices: Entity indices (local to process)
+            values: The corresponding value for each entity
+
+        Note:
+            Objects of this type should be created using
+            :func:`meshtags` and not created using this initialiser
+            directly.
+
+        """
+        super().__init__(mesh, dim, indices.astype(np.int32), values)
+
+    def ufl_id(self) -> int:
+        """Object identifier.
+
+        Notes:
+            This method is used by UFL.
+
+        Returns:
+            The `id` of the object
+
+        """
+        return id(self)
+
+
+def meshtags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> MeshTagsMetaClass:
+    """Create a MeshTags object that associates data with a subset of mesh entities.
+
+    Args:
+        mesh: The mesh
+        dim: Topological dimension of the mesh entity
+        indices: Entity indices (local to process)
+        values: The corresponding value for each entity
+
+    Returns:
+        A MeshTags object
+
+    Note:
+        The type of the returned MeshTags is inferred from the type of
+        ``values``.
+
     """
 
     if isinstance(values, int):
@@ -217,32 +256,66 @@ def MeshTags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> t
     elif isinstance(values, float):
         values = np.full(indices.shape, values, dtype=np.double)
 
-    dtype = values.dtype.type
-    if dtype not in _meshtags_types.keys():
-        raise KeyError("Datatype {} of values array not recognised".format(dtype))
+    values = np.asarray(values)
+    if values.dtype == np.int8:
+        ftype = _cpp.mesh.MeshTags_int8
+    elif values.dtype == np.int32:
+        ftype = _cpp.mesh.MeshTags_int32
+    elif values.dtype == np.int64:
+        ftype = _cpp.mesh.MeshTags_int64
+    elif values.dtype == np.float64:
+        ftype = _cpp.mesh.MeshTags_float64
+    else:
+        raise NotImplementedError(f"Type {values.dtype} not supported.")
 
-    fn = _meshtags_types[dtype]
-    return fn(mesh, dim, indices.astype(np.int32), values)
+    tags = type("MeshTagsMetaClass", (MeshTagsMetaClass, ftype), {})
+    return tags(mesh, dim, indices, values)
+
+
+def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32, values: np.ndarray):
+    """Create a MeshTags object that associates data with a subset of
+    mesh entities, where the entities are defined by their vertices.
+
+    Args:
+        mesh: The mesh
+        dim: Topological dimension of the mesh entity
+        entities: Tagged entities, with entities defined by their vertices
+        values: The corresponding value for each entity
+
+    Returns:
+        A MeshTags object
+
+    Note:
+        The type of the returned MeshTags is inferred from the type of
+        ``values``.
+
+    """
+
+    if isinstance(values, int):
+        assert np.can_cast(values, np.int32)
+        values = np.full(entities.num_nodes, values, dtype=np.int32)
+    elif isinstance(values, float):
+        values = np.full(entities.num_nodes, values, dtype=np.double)
+
+    values = np.asarray(values)
+    return _cpp.mesh.create_meshtags(mesh, dim, entities, values)
 
 
 def create_interval(comm: _MPI.Comm, nx: int, points: list, ghost_mode=GhostMode.shared_facet,
                     partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
     """Create an interval mesh
 
-    Parameters
-    ----------
-    comm
-        MPI communicator
-    nx
-        Number of cells
-    point
-        Coordinates of the end points
-    ghost_mode
-        The ghost mode used in the mesh partitioning. Options are
-        `GhostMode.none' and `GhostMode.shared_facet`.
-    partitioner
-        Partitioning function to use for determining the parallel
-        distribution of cells across MPI ranks
+    Args:
+        comm: MPI communicator
+        nx: Number of cells
+        points: Coordinates of the end points
+        ghost_mode: Ghost mode used in the mesh partitioning. Options
+            are `GhostMode.none' and `GhostMode.shared_facet`.
+        partitioner: Partitioning function to use for determining the
+            parallel distribution of cells across MPI ranks
+
+    Returns:
+        An interval mesh
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "interval", 1))
@@ -254,18 +327,17 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_f
                          partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
     """Create a mesh on the unit interval
 
-    Parameters
-    ----------
-    comm
-        MPI communicator
-    nx
-        Number of cells
-    ghost_mode
-        The ghost mode used in the mesh partitioning. Options are
-        `GhostMode.none' and `GhostMode.shared_facet`.
-    partitioner
-        Partitioning function to use for determining the parallel
-        distribution of cells across MPI ranks
+    Args:
+        comm: MPI communicator
+        nx: Number of cells
+        points: Coordinates of the end points
+        ghost_mode: Ghost mode used in the mesh partitioning. Options
+            are `GhostMode.none' and `GhostMode.shared_facet`.
+        partitioner: Partitioning function to use for determining the
+            parallel distribution of cells across MPI ranks
+
+    Returns:
+        A unit interval mesh with end points at 0 and 1
 
     """
     return create_interval(comm, nx, [0.0, 1.0], ghost_mode, partitioner)
@@ -276,25 +348,21 @@ def create_rectangle(comm: _MPI.Comm, points: typing.List[np.array], n: list, ce
                      diagonal: DiagonalType = DiagonalType.right) -> Mesh:
     """Create rectangle mesh
 
-    Parameters
-    ----------
-    comm
-        MPI communicator
-    points
-        Coordinates of the lower-left and upper-right corners of the
-        rectangle
-    n
-        Number of cells in each direction
-    cell_type
-        The cell type
-    ghost_mode
-        The ghost mode used in the mesh partitioning
-    partitioner
-        Function that computes the parallel distribution of cells across
-        MPI ranks
-    diagonal
-        Direction of diagonal of triangular meshes. The options are
-        'left', 'right', 'crossed', 'left/right', 'right/left'
+    Args:
+        comm: MPI communicator
+        points: Coordinates of the lower-left and upper-right corners of the
+            rectangle
+        n: Number of cells in each direction
+        cell_type: Mesh cell type
+        ghost_mode: Ghost mode used in the mesh partitioning
+        partitioner: Function that computes the parallel distribution of
+            cells across MPI ranks
+        diagonal: Direction of diagonal of triangular meshes. The
+            options are ``left``, ``right``, ``crossed``, ``left/right``,
+            ``right/left``.
+
+    Returns:
+        A mesh of a rectangle
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
@@ -307,23 +375,19 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
                        diagonal: DiagonalType = DiagonalType.right) -> Mesh:
     """Create a mesh of a unit square
 
-    Parameters
-    ----------
-    comm
-        MPI communicator
-    nx
-        Number of cells in "x" direction
-    ny
-        Number of cells in "y" direction
-    cell_type
-        The cell type
-    ghost_mode
-        The ghost mode used in the mesh partitioning
-    partitioner
-        Function that computes the parallel distribution of cells across
-        MPI ranks
-    diagonal
-        Direction of diagonal
+    Args:
+        comm: MPI communicator
+        nx: Number of cells in the "x" direction
+        ny: Number of cells in the "y" direction
+        cell_type: Mesh cell type
+        ghost_mode: Ghost mode used in the mesh partitioning
+        partitioner:Function that computes the parallel distribution of cells across
+            MPI ranks
+        diagonal:
+            Direction of diagonal
+
+    Returns:
+        A mesh of a square with corners at (0, 0) and (1, 1)
 
     """
     return create_rectangle(comm, [np.array([0.0, 0.0]),
@@ -337,22 +401,18 @@ def create_box(comm: _MPI.Comm, points: typing.List[np.array], n: list,
                partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
     """Create box mesh
 
-    Parameters
-    ----------
-    comm
-        MPI communicator
-    points
-        Coordinates of the 'lower-left' and 'upper-right' corners of the
-        box
-    n
-        List of cells in each direction
-    cell_type
-        The cell type
-    ghost_mode
-        The ghost mode used in the mesh partitioning
-    partitioner
-        Function that computes the parallel distribution of cells across
-        MPI ranks
+    Args:
+        comm: MPI communicator
+        points: Coordinates of the 'lower-left' and 'upper-right'
+            corners of the box
+        n: List of cells in each direction
+        cell_type: The cell type
+        ghost_mode: The ghost mode used in the mesh partitioning
+        partitioner: Function that computes the parallel distribution of
+            cells across MPI ranks
+
+    Returns:
+        A mesh of a box domain
 
     """
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
@@ -364,23 +424,19 @@ def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellT
                      ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
     """Create a mesh of a unit cube
 
-    Parameters
-    ----------
-    comm
-        MPI communicator
-    nx
-        Number of cells in "x" direction
-    ny
-        Number of cells in "y" direction
-    nz
-        Number of cells in "z" direction
-    cell_type
-        The cell type
-    ghost_mode
-        The ghost mode used in the mesh partitioning
-    partitioner
-        Function that computes the parallel distribution of cells across
-        MPI ranks
+    Args:
+        comm: MPI communicator
+        nx: Number of cells in "x" direction
+        ny: Number of cells in "y" direction
+        nz: Number of cells in "z" direction
+        cell_type: Mesh cell type
+        ghost_mode: Ghost mode used in the mesh partitioning
+        partitioner: Function that computes the parallel distribution of
+            cells across MPI ranks
+
+    Returns:
+        A mesh of an axis-aligned unit cube with corners at (0, 0, 0)
+        and (1, 1, 1)
 
     """
     return create_box(comm, [np.array([0.0, 0.0, 0.0]), np.array(

@@ -245,7 +245,7 @@ class Function(ufl.Coefficient):
             self._cpp_object = functiontype(dtype)(V._cpp_object)
 
         # Initialize the ufl.FunctionSpace
-        super().__init__(V.ufl_function_space(), count=self._cpp_object.id)
+        super().__init__(V.ufl_function_space(), count=id(self))
 
         # Set name
         if name is None:
@@ -366,11 +366,6 @@ class Function(ufl.Coefficient):
     @name.setter
     def name(self, name):
         self._cpp_object.name = name
-
-    @property
-    def id(self) -> int:
-        """Object id index."""
-        return self._cpp_object.id
 
     def __str__(self):
         """Pretty print representation of it self."""
@@ -499,21 +494,16 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.component()
 
     def contains(self, V) -> bool:
-        """Check whether a FunctionSpace is in this FunctionSpace, or is the
-        same as this FunctionSpace.
+        """Check if a space is contained in, or is the same as (identity), this space.
+
+        Args:
+            V: The space to check to for inclusion.
+
+        Returns:
+            True is ``V`` is contained in, or is the same as, this space
 
         """
         return self._cpp_object.contains(V._cpp_object)
-
-    def __contains__(self, u):
-        """Check whether a function is in the FunctionSpace."""
-        try:
-            return u._in(self._cpp_object)
-        except AttributeError:
-            try:
-                return u._cpp_object._in(self._cpp_object)
-            except Exception as e:
-                raise RuntimeError("Unable to check if object is in FunctionSpace ({})".format(e))
 
     def __eq__(self, other):
         """Comparison for equality."""
@@ -529,11 +519,6 @@ class FunctionSpace(ufl.FunctionSpace):
     def ufl_function_space(self) -> ufl.FunctionSpace:
         """UFL function space"""
         return self
-
-    @property
-    def id(self) -> int:
-        """Unique identifier"""
-        return self._cpp_object.id
 
     @property
     def element(self):
