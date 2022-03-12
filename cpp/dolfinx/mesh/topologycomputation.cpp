@@ -449,16 +449,19 @@ compute_entities_by_key_matching(
 
   std::vector<std::int32_t> entity_index(entity_list.shape(0), 0);
   std::int32_t entity_count = 0;
-  std::int32_t last = sort_order.empty() ? 0 : sort_order.front();
-  for (std::size_t i = 1; i < sort_order.size(); ++i)
+  if (!sort_order.empty())
   {
-    std::int32_t j = sort_order[i];
-    if (xt::row(entity_list_sorted, j) != xt::row(entity_list_sorted, last))
-      ++entity_count;
-    entity_index[j] = entity_count;
-    last = j;
+    std::int32_t last = sort_order.front();
+    for (std::size_t i = 1; i < sort_order.size(); ++i)
+    {
+      std::int32_t j = sort_order[i];
+      if (xt::row(entity_list_sorted, j) != xt::row(entity_list_sorted, last))
+        ++entity_count;
+      entity_index[j] = entity_count;
+      last = j;
+    }
+    ++entity_count;
   }
-  ++entity_count;
 
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
