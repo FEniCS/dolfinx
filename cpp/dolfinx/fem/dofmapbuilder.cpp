@@ -566,6 +566,11 @@ fem::build_dofmap_data(
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
+  const int rank = dolfinx::MPI::rank(comm);
+
+  std::stringstream ss;
+  ss << "rank = " << rank << "\n";
+
   common::Timer t0("Build dofmap data");
 
   const int D = topology.dim();
@@ -576,6 +581,11 @@ fem::build_dofmap_data(
   // i is associated with.
   const auto [node_graph0, local_to_global0, dof_entity0]
       = build_basic_dofmap(topology, element_dof_layout);
+
+  ss << "node_graph0.array() = " << xt::adapt(node_graph0.array()) << "\n";
+
+  // FIXME It appears that dof 0 appears twice in local_to_global0
+  ss << "local_to_global0 = " << xt::adapt(local_to_global0) << "\n";
 
   // Compute global dofmap offset
   std::int64_t offset = 0;
@@ -629,6 +639,7 @@ fem::build_dofmap_data(
       = graph::build_adjacency_list<std::int32_t>(std::move(dofmap),
                                                   dofs_per_cell);
 
+  std::cout << ss.str() << "\n";
   return {std::move(index_map), element_dof_layout.block_size(),
           std::move(dmap)};
 }
