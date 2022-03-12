@@ -87,8 +87,8 @@ compute_ghost_indices(MPI_Comm comm,
                       const xtl::span<const std::int64_t>& global_indices,
                       const xtl::span<const int>& ghost_owners);
 
-/// Distribute rows of a rectangular data array to process ranks where
-/// it ia required
+/// @brief Distribute rows of a rectangular data array to process ranks
+/// where they are required.
 ///
 /// @param[in] comm The MPI communicator
 /// @param[in] indices Global indices of the data (rows) required by
@@ -97,7 +97,7 @@ compute_ghost_indices(MPI_Comm comm,
 /// The global index for the `[0, ..., n)` local rows is assumed to be
 /// the local index plus the offset for this rank. Layout is row-major.
 /// @param[in] shape1 The number of columns of the data array
-/// @return The data for each index in @p indices (row-major storage)
+/// @return The data for each index in `indices` (row-major storage)
 /// @pre `shape1 > 0`
 template <typename T>
 std::vector<T> distribute_data(MPI_Comm comm,
@@ -216,7 +216,6 @@ send_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
       int d = MPI::index_owner(size, global_index, shape0_global);
       if (d != rank)
       {
-        // auto neigh_dest_it = global_to_neigh_rank_dest.find(dest);
         auto neigh_dest_it = std::lower_bound(dest.begin(), dest.end(), d);
         assert(neigh_dest_it != dest.end());
         assert(*neigh_dest_it == d);
@@ -224,8 +223,8 @@ send_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
 
         std::size_t offset = send_offsets[neigh_dest];
         send_buffer_index[offset] = global_index;
-        for (int j = 0; j < shape1; ++j)
-          send_buffer_data[shape1 * offset + j] = x[i * shape1 + j];
+        std::copy_n(std::next(x.begin(), i * shape1), shape1,
+                    std::next(send_buffer_data.begin(), shape1 * offset));
         ++send_offsets[neigh_dest];
       }
     }
@@ -407,8 +406,8 @@ build::distribute_data(MPI_Comm comm,
       {
         // I already had this index before any communication
         std::int32_t local_index = index - rank_offset;
-        for (int j = 0; j < shape1; ++j)
-          send_buffer_data[shape1 * offset + j] = x[shape1 * local_index + j];
+        std::copy_n(std::next(x.begin(), shape1 * local_index), shape1,
+                    std::next(send_buffer_data.begin(), shape1 * offset));
       }
       else
       {
@@ -416,8 +415,8 @@ build::distribute_data(MPI_Comm comm,
         auto local_index = index - postoffice_range[0];
         std::int32_t pos = post_indices_map[local_index];
         assert(pos != -1);
-        for (int j = 0; j < shape1; ++j)
-          send_buffer_data[shape1 * offset + j] = post_x[shape1 * pos + j];
+        std::copy_n(std::next(post_x.begin(), shape1 * pos), shape1,
+                    std::next(send_buffer_data.begin(), shape1 * offset));
       }
 
       ++offset;
@@ -453,8 +452,8 @@ build::distribute_data(MPI_Comm comm,
     {
       // Had data from the start
       auto local_index = index - rank_offset;
-      for (int j = 0; j < shape1; ++j)
-        x_new[shape1 * i + j] = x[shape1 * local_index + j];
+      std::copy_n(std::next(x.begin(), shape1 * local_index), shape1,
+                  std::next(x_new.begin(), shape1 * i));
     }
     else
     {
@@ -464,16 +463,16 @@ build::distribute_data(MPI_Comm comm,
         auto local_index = index - postoffice_range[0];
         std::int32_t pos = post_indices_map[local_index];
         assert(pos != -1);
-        for (int j = 0; j < shape1; ++j)
-          x_new[shape1 * i + j] = post_x[shape1 * pos + j];
+        std::copy_n(std::next(post_x.begin(), shape1 * pos), shape1,
+                    std::next(x_new.begin(), shape1 * i));
       }
       else
       {
         // In my received post_x
         std::int32_t pos = index_pos_to_buffer[i];
         assert(pos != -1);
-        for (int j = 0; j < shape1; ++j)
-          x_new[shape1 * i + j] = recv_buffer_data[shape1 * pos + j];
+        std::copy_n(std::next(recv_buffer_data.begin(), shape1 * pos), shape1,
+                    std::next(x_new.begin(), shape1 * i));
       }
     }
   }
@@ -481,7 +480,6 @@ build::distribute_data(MPI_Comm comm,
   // --------
 
   // Get number of rows on each rank
-  // const std::int64_t shape0 = x.size() / shape1;
   std::vector<std::int64_t> global_sizes(size);
   MPI_Allgather(&shape0, 1, MPI_INT64_T, global_sizes.data(), 1, MPI_INT64_T,
                 comm);

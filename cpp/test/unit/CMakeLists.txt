@@ -42,7 +42,7 @@ endif()
 
 add_executable(unittests ${TEST_SOURCES})
 target_link_libraries(unittests PRIVATE Catch2::Catch2 dolfinx)
-# target_compile_options(unittests PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Werror -Wextra -pedantic>)
+target_compile_options(unittests PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Werror -Wextra -pedantic>)
 
 # Enable testing
 enable_testing()
