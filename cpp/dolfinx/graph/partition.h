@@ -305,15 +305,18 @@ build::distribute_data(MPI_Comm comm,
   assert(post_indices.size() == post_x.size() / shape1);
 
   // Build map from post_indices values to position
-  std::vector<std::int32_t> post_indices_map(indices.size());
+  // std::vector<std::int32_t> post_indices_map(indices.size());
+  std::vector<std::int32_t> post_indices_map(post_indices.size());
   for (std::size_t i = 0; i < post_indices.size(); ++i)
   {
     assert(post_indices[i] < (int)post_indices_map.size());
     post_indices_map[post_indices[i]] = i;
   }
 
-  // Build list of (src, global index, global index positions), and then
-  // sort
+  // 1. Send request to post office ranks for data
+
+  // Build list of (src, global index, global, index positions) for each
+  // entry in 'indices' that doesn't belong to this rank, then sort
   std::vector<std::tuple<int, std::int64_t, std::int32_t>> src_to_index;
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
@@ -323,8 +326,8 @@ build::distribute_data(MPI_Comm comm,
   }
   std::sort(src_to_index.begin(), src_to_index.end());
 
-  // Count number of items (rows of x) to receive from each src post
-  // office (by neighbourhood rank)
+  // Build list is neighbour src ranks and count number of items (rows
+  // of x) to receive from each src post office (by neighbourhood rank)
   std::vector<std::int32_t> num_items_per_src;
   std::vector<int> src;
   {
@@ -348,18 +351,19 @@ build::distribute_data(MPI_Comm comm,
                "distribute_data (rank, number): "
             << rank << ", " << dest.size();
 
-  // Create neighbourhood communicator for sending data to post offices (src),
-  // and receiving data form my send my post office
+  // Create neighbourhood communicator for sending data to post offices
+  // (src), and receiving data form my send my post office
   MPI_Comm neigh_comm0;
   MPI_Dist_graph_create_adjacent(comm, dest.size(), dest.data(), MPI_UNWEIGHTED,
                                  src.size(), src.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &neigh_comm0);
 
+  // Communicate number of requests to each source
   std::vector<int> num_items_recv(dest.size());
   MPI_Neighbor_alltoall(num_items_per_src.data(), 1, MPI_INT,
                         num_items_recv.data(), 1, MPI_INT, neigh_comm0);
 
-  // Prepare send and receive displacements
+  // Prepare send/receive displacements
   std::vector<std::int32_t> send_disp = {0};
   std::partial_sum(num_items_per_src.begin(), num_items_per_src.end(),
                    std::back_insert_iterator(send_disp));
@@ -367,8 +371,8 @@ build::distribute_data(MPI_Comm comm,
   std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
                    std::back_insert_iterator(recv_disp));
 
-  // Pack my requested indices in send buffer ready to send to post
-  // offices
+  // Pack my requested indices (global) in send buffer ready to send to
+  // post offices
   assert(send_disp.back() == (int)src_to_index.size());
   std::vector<std::int64_t> send_buffer_index(send_disp.back() + 1);
   for (std::size_t i = 0; i < src_to_index.size(); ++i)
@@ -383,7 +387,8 @@ build::distribute_data(MPI_Comm comm,
 
   MPI_Comm_free(&neigh_comm0);
 
-  // Get data and send back (transpose operation)
+  // 2. Send data (rows of x) back to requesting ranks (transpose of the
+  // preceding communication pattern operation)
 
   const std::array<std::int64_t, 2> postoffice_range
       = MPI::local_range(rank, shape0_global, size);
@@ -401,8 +406,7 @@ build::distribute_data(MPI_Comm comm,
         // I already had this index before any communication
         std::int32_t local_index = index - rank_offset;
         for (int j = 0; j < shape1; ++j)
-          send_buffer_data[shape1 * offset + j] = x[shape1 * local_index +
-          j];
+          send_buffer_data[shape1 * offset + j] = x[shape1 * local_index + j];
       }
       else
       {
@@ -417,8 +421,7 @@ build::distribute_data(MPI_Comm comm,
     }
   }
 
-  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(),
-  MPI_UNWEIGHTED,
+  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
                                  dest.size(), dest.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &neigh_comm0);
 
