@@ -103,11 +103,11 @@ void enforce_rules(
 //-----------------------------------------------------------------------------
 // 2D version of subdivision allowing for uniform subdivision (flag)
 std::vector<std::int32_t>
-get_triangles(const std::vector<std::int8_t>& marked_edges,
+get_triangles(const std::vector<std::int64_t>& indices,
               const std::int32_t longest_edge, bool uniform)
 {
   // Longest edge must be marked
-  assert(marked_edges[longest_edge]);
+  assert(indices[longest_edge] >= 0);
 
   // v0 and v1 are at ends of longest_edge (e2) opposite vertex has same
   // index as longest_edge
@@ -119,17 +119,17 @@ get_triangles(const std::vector<std::int8_t>& marked_edges,
   const std::int32_t e2 = v2 + 3;
 
   // If all edges marked, consider uniform refinement
-  if (uniform and marked_edges[v0] and marked_edges[v1])
+  if (uniform and indices[v0] >= 0 and indices[v1] >= 0)
     return {e0, e1, v2, e1, e2, v0, e2, e0, v1, e2, e1, e0};
 
   // Break each half of triangle into one or two sub-triangles
   std::vector<std::int32_t> tri_set;
-  if (marked_edges[v0])
+  if (indices[v0] >= 0)
     tri_set = {e2, v2, e0, e2, e0, v1};
   else
     tri_set = {e2, v2, v1};
 
-  if (marked_edges[v1])
+  if (indices[v1] >= 0)
   {
     tri_set.insert(tri_set.end(), {e2, v2, e1});
     tri_set.insert(tri_set.end(), {e2, e1, v0});
@@ -142,7 +142,7 @@ get_triangles(const std::vector<std::int8_t>& marked_edges,
 //-----------------------------------------------------------------------------
 // 3D version of subdivision
 std::vector<std::int32_t>
-get_tetrahedra(const std::vector<std::int8_t>& marked_edges,
+get_tetrahedra(const std::vector<std::int64_t>& indices,
                const std::vector<std::int32_t>& longest_edge)
 {
   // Connectivity matrix for ten possible points (4 vertices + 6 edge
@@ -160,7 +160,7 @@ get_tetrahedra(const std::vector<std::int8_t>& marked_edges,
   {
     const std::int32_t v0 = edges[ei][0];
     const std::int32_t v1 = edges[ei][1];
-    if (marked_edges[ei])
+    if (indices[ei] >= 0)
     {
       // Connect edge midpoint to its end vertices
 
@@ -188,7 +188,7 @@ get_tetrahedra(const std::vector<std::int8_t>& marked_edges,
 
           // Only add upper-triangular connection
           conn[fk][ei + 4] = true;
-          if (le_k == ei and marked_edges[e_opp])
+          if (le_k == ei and indices[e_opp] >= 0)
           {
             // Longest edge of two adjacent facets
             // Join to opposite edge (through centre of tetrahedron)
@@ -246,8 +246,8 @@ get_tetrahedra(const std::vector<std::int8_t>& marked_edges,
 /// (cell local indexing). A flag indicates if a uniform subdivision is
 /// preferable in 2D.
 ///
-/// @param[in] marked_edges Vector indicating which edges are to be
-///   split
+/// @param[in] indices Vector indicating which edges are to be
+///   split (value >=0)
 /// @param[in] longest_edge Vector indicating the longest edge for each
 ///   triangle. For tdim=2, one entry, for tdim=3, four entries.
 /// @param[in] tdim Topological dimension (2 or 3)
@@ -255,19 +255,19 @@ get_tetrahedra(const std::vector<std::int8_t>& marked_edges,
 ///   being similar shape
 /// @return
 std::vector<std::int32_t>
-get_simplices(const std::vector<std::int8_t>& marked_edges,
+get_simplices(const std::vector<std::int64_t>& indices,
               const std::vector<std::int32_t>& longest_edge, std::int32_t tdim,
               bool uniform)
 {
   if (tdim == 2)
   {
     assert(longest_edge.size() == 1);
-    return get_triangles(marked_edges, longest_edge[0], uniform);
+    return get_triangles(indices, longest_edge[0], uniform);
   }
   else if (tdim == 3)
   {
     assert(longest_edge.size() == 4);
-    return get_tetrahedra(marked_edges, longest_edge);
+    return get_tetrahedra(indices, longest_edge);
   }
   else
     throw std::runtime_error("Topological dimension not supported");
@@ -388,12 +388,12 @@ face_long_edge(const mesh::Mesh& mesh)
 //-----------------------------------------------------------------------------
 // Convenient interface for both uniform and marker refinement
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>>
+           std::vector<std::int32_t>, std::vector<std::int64_t>>
 compute_refinement(
     const MPI_Comm& neighbor_comm, const std::vector<std::int8_t>& marked_edges,
     const std::map<std::int32_t, std::vector<std::int32_t>> shared_edges,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& long_edge,
-    const std::vector<std::int8_t>& edge_ratio_ok)
+    const std::vector<std::int8_t>& edge_ratio_ok, bool store_indices)
 {
   const std::int32_t tdim = mesh.topology().dim();
   const std::int32_t num_cell_edges = tdim * 3 - 3;
@@ -408,6 +408,7 @@ compute_refinement(
   std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
   std::vector<int> marked_edge_list;
   std::vector<std::int32_t> simplex_set;
+  std::vector<std::int64_t> stored_indices;
 
   auto map_c = mesh.topology().index_map(tdim);
   assert(map_c);
@@ -427,6 +428,8 @@ compute_refinement(
       *mesh.topology().index_map(0), num_new_vertices_local);
 
   const int num_cells = map_c->size_local();
+  if (store_indices)
+    stored_indices.reserve(num_cells * indices.size());
   std::vector<std::int64_t> cell_topology;
   for (int c = 0; c < num_cells; ++c)
   {
@@ -439,13 +442,28 @@ compute_refinement(
       indices[v] = global_indices[vertices[v]];
 
     // Get cell-local indices of marked edges
-    marked_edge_list.clear();
     auto edges = c_to_e->links(c);
+    bool no_edge_marked = true;
     for (std::size_t ei = 0; ei < edges.size(); ++ei)
+    {
       if (marked_edges[edges[ei]])
-        marked_edge_list.push_back(ei);
+      {
+        no_edge_marked = false;
+        auto it = new_vertex_map.find(edges[ei]);
+        assert(it != new_vertex_map.end());
+        indices[num_cell_vertices + ei] = it->second;
+      }
+      else
+        indices[num_cell_vertices + ei] = -1;
+    }
 
-    if (marked_edge_list.empty())
+    if (store_indices)
+    {
+      stored_indices.insert(stored_indices.end(), indices.begin(),
+                            indices.end());
+    }
+
+    if (no_edge_marked)
     {
       // Copy over existing Cell to new topology
       for (auto v : vertices)
@@ -454,18 +472,6 @@ compute_refinement(
     }
     else
     {
-      // Get the marked edge indices for new vertices and make bool
-      // vector of marked edges
-      std::vector<std::int8_t> markers(num_cell_edges, false);
-      auto edges = c_to_e->links(c);
-      for (int p : marked_edge_list)
-      {
-        markers[p] = true;
-        auto it = new_vertex_map.find(edges[p]);
-        assert(it != new_vertex_map.end());
-        indices[num_cell_vertices + p] = it->second;
-      }
-
       // Need longest edges of each face in cell local indexing. NB in
       // 2D the face is the cell itself, and there is just one entry.
       std::vector<std::int32_t> longest_edge;
@@ -488,7 +494,7 @@ compute_refinement(
       const bool uniform = (tdim == 2) ? edge_ratio_ok[c] : false;
 
       // FIXME: this has an expensive dynamic memory allocation
-      simplex_set = get_simplices(markers, longest_edge, tdim, uniform);
+      simplex_set = get_simplices(indices, longest_edge, tdim, uniform);
 
       // Save parent index
       const std::int32_t ncells = simplex_set.size() / num_cell_vertices;
@@ -510,8 +516,10 @@ compute_refinement(
                                               std::move(offsets));
 
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
-          std::move(parent_cell)};
+          std::move(parent_cell), std::move(stored_indices)};
 }
+//-----------------------------------------------------------------------------
+
 //-----------------------------------------------------------------------------
 } // namespace
 
@@ -599,10 +607,12 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh)
   std::vector<std::int8_t> marked_edges(
       map_e->size_local() + map_e->num_ghosts(), true);
 
+  bool store_indices = true;
+
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
-  auto [cell_adj, new_vertex_coordinates, parent_cell]
+  auto [cell_adj, new_vertex_coordinates, parent_cell, stored_indices]
       = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
-                           long_edge, edge_ratio_ok);
+                           long_edge, edge_ratio_ok, store_indices);
   MPI_Comm_free(&neighbor_comm);
 
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
@@ -663,9 +673,9 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
   enforce_rules(neighbor_comm, shared_edges, marked_edges, mesh, long_edge);
 
-  auto [cell_adj, new_vertex_coordinates, parent_cell]
+  auto [cell_adj, new_vertex_coordinates, parent_cell, stored_indices]
       = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
-                           long_edge, edge_ratio_ok);
+                           long_edge, edge_ratio_ok, true);
   MPI_Comm_free(&neighbor_comm);
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
           std::move(parent_cell)};
