@@ -308,7 +308,7 @@ build::distribute_data(MPI_Comm comm,
   std::vector<std::int32_t> post_indices_map(indices.size());
   for (std::size_t i = 0; i < post_indices.size(); ++i)
   {
-    assert(post_indices[i] < post_indices_map.size());
+    assert(post_indices[i] < (int)post_indices_map.size());
     post_indices_map[post_indices[i]] = i;
   }
 
