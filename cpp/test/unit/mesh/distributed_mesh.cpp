@@ -61,7 +61,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   fem::CoordinateElement cmap(e);
 
   // read mesh data
-  xt::xtensor<double, 2> x({0, 3});
+  xt::xtensor<double, 2> x({0, 2});
   xt::xtensor<std::int64_t, 2> cells(
       {0, static_cast<std::size_t>(
               dolfinx::mesh::num_cell_vertices(mesh::CellType::triangle))});
@@ -79,6 +79,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
         graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offsets)),
         mesh::GhostMode::shared_facet);
   }
+  CHECK(x.shape(1) == 2);
 
   auto [data, offsets] = graph::create_adjacency_data(cells);
   graph::AdjacencyList<std::int64_t> cells_topology(std::move(data),
@@ -108,9 +109,10 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
         == mesh->topology().index_map(0)->size_local()
                + mesh->topology().index_map(0)->num_ghosts());
 
-  MPI_Comm_free(&subset_comm);
-  MPI_Group_free(&new_group);
   MPI_Group_free(&comm_group);
+  MPI_Group_free(&new_group);
+  if (subset_comm != MPI_COMM_NULL)
+    MPI_Comm_free(&subset_comm);
 }
 } // namespace
 
