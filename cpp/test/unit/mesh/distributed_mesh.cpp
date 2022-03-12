@@ -108,9 +108,10 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
         == mesh->topology().index_map(0)->size_local()
                + mesh->topology().index_map(0)->num_ghosts());
 
-  MPI_Comm_free(&subset_comm);
-  MPI_Group_free(&new_group);
   MPI_Group_free(&comm_group);
+  MPI_Group_free(&new_group);
+  if (subset_comm != MPI_COMM_NULL)
+    MPI_Comm_free(&subset_comm);
 }
 } // namespace
 
