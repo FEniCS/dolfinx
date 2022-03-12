@@ -180,13 +180,14 @@ send_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
 
   // Build list is neighbour src ranks and count number of items (rows
   // of x) to receive from each src post office (by neighbourhood rank)
-  std::vector<std::int32_t> num_items_per_dest;
   std::vector<int> dest;
-  std::vector<std::int32_t> pos_to_neigh_rank(shape0, -1);
+  std::vector<std::int32_t> num_items_per_dest, pos_to_neigh_rank(shape0, -1);
   {
     auto it = dest_to_index.begin();
     while (it != dest_to_index.end())
     {
+      const int neigh_rank = dest.size();
+
       // Store global rank
       dest.push_back((*it)[0]);
 
@@ -200,8 +201,9 @@ send_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
 
       // Map from local x index to local destination rank
       for (auto e = it; e != it1; ++e)
-        pos_to_neigh_rank[(*e)[1]] = dest.size() - 1;
+        pos_to_neigh_rank[(*e)[1]] = neigh_rank;
 
+      // Advance iterator
       it = it1;
     }
   }
@@ -223,8 +225,8 @@ send_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
                    std::back_insert_iterator(send_disp));
 
   // Pack send buffers
-  std::vector<T> send_buffer_data(shape1 * (send_disp.back() + 1));
-  std::vector<std::int64_t> send_buffer_index(send_disp.back() + 1);
+  std::vector<T> send_buffer_data(shape1 * send_disp.back());
+  std::vector<std::int64_t> send_buffer_index(send_disp.back());
   {
     std::vector<std::int32_t> send_offsets = send_disp;
     for (std::int32_t i = 0; i < shape0; ++i)
@@ -251,17 +253,6 @@ send_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
   std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
                    std::back_insert_iterator(recv_disp));
 
-  MPI_Datatype compound_type;
-  MPI_Type_contiguous(shape1, dolfinx::MPI::mpi_type<T>(), &compound_type);
-  MPI_Type_commit(&compound_type);
-
-  // Send/receive data (x)
-  std::vector<T> recv_buffer_data(shape1 * recv_disp.back());
-  MPI_Neighbor_alltoallv(send_buffer_data.data(), num_items_per_dest.data(),
-                         send_disp.data(), compound_type,
-                         recv_buffer_data.data(), num_items_recv.data(),
-                         recv_disp.data(), compound_type, neigh_comm);
-
   // Send/receive global indices
   std::vector<std::int64_t> recv_buffer_index(recv_disp.back());
   MPI_Neighbor_alltoallv(send_buffer_index.data(), num_items_per_dest.data(),
@@ -269,16 +260,26 @@ send_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
                          recv_buffer_index.data(), num_items_recv.data(),
                          recv_disp.data(), MPI_INT64_T, neigh_comm);
 
+  // Send/receive data (x)
+  MPI_Datatype compound_type;
+  MPI_Type_contiguous(shape1, dolfinx::MPI::mpi_type<T>(), &compound_type);
+  MPI_Type_commit(&compound_type);
+  std::vector<T> recv_buffer_data(shape1 * recv_disp.back());
+  MPI_Neighbor_alltoallv(send_buffer_data.data(), num_items_per_dest.data(),
+                         send_disp.data(), compound_type,
+                         recv_buffer_data.data(), num_items_recv.data(),
+                         recv_disp.data(), compound_type, neigh_comm);
   MPI_Type_free(&compound_type);
+
   MPI_Comm_free(&neigh_comm);
 
   LOG(2) << "Completed send data to post offices.";
 
-  const std::array range = MPI::local_range(rank, shape0_global, size);
-  std::vector<std::int32_t> index_local;
-  index_local.reserve(recv_buffer_index.size());
-  for (auto idx : recv_buffer_index)
-    index_local.push_back(idx - range[0]);
+  // Convert to local indices
+  const std::int64_t r0 = MPI::local_range(rank, shape0_global, size)[0];
+  std::vector<std::int32_t> index_local(recv_buffer_index.size());
+  std::transform(recv_buffer_index.cbegin(), recv_buffer_index.cend(),
+                 index_local.begin(), [r0](auto idx) { return idx - r0; });
 
   return {index_local, recv_buffer_data};
 };
@@ -375,7 +376,7 @@ build::distribute_data(MPI_Comm comm,
   // Pack my requested indices (global) in send buffer ready to send to
   // post offices
   assert(send_disp.back() == (int)src_to_index.size());
-  std::vector<std::int64_t> send_buffer_index(send_disp.back() + 1);
+  std::vector<std::int64_t> send_buffer_index(send_disp.back());
   for (std::size_t i = 0; i < src_to_index.size(); ++i)
     send_buffer_index[i] = std::get<1>(src_to_index[i]);
 
@@ -496,7 +497,7 @@ build::distribute_data(MPI_Comm comm,
                 comm);
   std::vector<std::int64_t> global_offsets(size + 1, 0);
   std::partial_sum(global_sizes.begin(), global_sizes.end(),
-                   global_offsets.begin() + 1);
+                   std::next(global_offsets.begin()));
 
   // Build index data requests
   std::vector<int> number_index_send(size, 0);
@@ -519,7 +520,7 @@ build::distribute_data(MPI_Comm comm,
   // Compute send displacements
   std::vector<int> disp_index_send(size + 1, 0);
   std::partial_sum(number_index_send.begin(), number_index_send.end(),
-                   disp_index_send.begin() + 1);
+                   std::next(disp_index_send.begin()));
 
   // Pack global index send data
   std::vector<std::int64_t> indices_send(disp_index_send.back());
@@ -538,7 +539,7 @@ build::distribute_data(MPI_Comm comm,
   // Compute receive displacements
   std::vector<int> disp_index_recv(size + 1, 0);
   std::partial_sum(number_index_recv.begin(), number_index_recv.end(),
-                   disp_index_recv.begin() + 1);
+                   std::next(disp_index_recv.begin()));
 
   // Send/receive global indices
   std::vector<std::int64_t> indices_recv(disp_index_recv.back());
