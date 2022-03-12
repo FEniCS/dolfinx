@@ -376,9 +376,10 @@ build::distribute_data(MPI_Comm comm,
   // Pack my requested indices (global) in send buffer ready to send to
   // post offices
   assert(send_disp.back() == (int)src_to_index.size());
-  std::vector<std::int64_t> send_buffer_index(send_disp.back());
-  for (std::size_t i = 0; i < src_to_index.size(); ++i)
-    send_buffer_index[i] = std::get<1>(src_to_index[i]);
+  std::vector<std::int64_t> send_buffer_index(src_to_index.size());
+  std::transform(src_to_index.cbegin(), src_to_index.cend(),
+                 send_buffer_index.begin(),
+                 [](auto& x) { return std::get<1>(x); });
 
   // Prepare the receive buffer
   std::vector<std::int64_t> recv_buffer_index(recv_disp.back());
@@ -462,7 +463,7 @@ build::distribute_data(MPI_Comm comm,
     const std::int64_t index = indices[i];
     if (index >= rank_offset and index < (rank_offset + shape0))
     {
-      // Had data from the start
+      // Had data from the start in x
       auto local_index = index - rank_offset;
       std::copy_n(std::next(x.begin(), shape1 * local_index), shape1,
                   std::next(x_new.begin(), shape1 * i));
@@ -480,7 +481,7 @@ build::distribute_data(MPI_Comm comm,
       }
       else
       {
-        // In my received post_x
+        // In my received post
         std::int32_t pos = index_pos_to_buffer[i];
         assert(pos != -1);
         std::copy_n(std::next(recv_buffer_data.begin(), shape1 * pos), shape1,
@@ -488,8 +489,12 @@ build::distribute_data(MPI_Comm comm,
       }
     }
   }
+  timer.stop();
 
   // --------
+  // Original code
+
+  common::Timer timer1("Fetch row-wise data from remote processes (OLD)");
 
   // Get number of rows on each rank
   std::vector<std::int64_t> global_sizes(size);
@@ -572,6 +577,8 @@ build::distribute_data(MPI_Comm comm,
                 number_index_send.data(), disp_index_send.data(), compound_type,
                 comm);
   MPI_Type_free(&compound_type);
+
+  timer1.stop();
 
   if (x_new != my_x)
     throw std::runtime_error("Parallel data does not match");
