@@ -151,8 +151,6 @@ std::pair<std::vector<std::int32_t>, std::vector<T>>
 send_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
                    std::int64_t shape0_global, std::int64_t rank_offset)
 {
-  LOG(INFO) << "Send data to post office: ";
-
   const int size = dolfinx::MPI::size(comm);
   const int rank = dolfinx::MPI::rank(comm);
   assert(x.size() % shape1 == 0);
@@ -208,8 +206,8 @@ send_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
                    std::back_insert_iterator(send_disp));
 
   // Pack send buffers
-  std::vector<T> send_buffer_data(shape1 * send_disp.back());
-  std::vector<std::int64_t> send_buffer_index(send_disp.back());
+  std::vector<T> send_buffer_data(shape1 * (send_disp.back() + 1));
+  std::vector<std::int64_t> send_buffer_index(send_disp.back() + 1);
   {
     std::vector<std::int32_t> send_offsets = send_disp;
     for (std::int32_t i = 0; i < shape0; ++i)
@@ -304,9 +302,14 @@ build::distribute_data(MPI_Comm comm,
       = impl::send_to_postoffice(comm, x, shape1, shape0_global, rank_offset);
   assert(post_indices.size() == post_x.size() / shape1);
 
-  // Build map from post_indices values to position
-  // std::vector<std::int32_t> post_indices_map(indices.size());
-  std::vector<std::int32_t> post_indices_map(post_indices.size());
+  const std::array<std::int64_t, 2> postoffice_range
+      = MPI::local_range(rank, shape0_global, size);
+
+  // Build map from local index to post_indices position. Set to -1 for
+  // data that was already on this rank and was therefore was not
+  // sent/received via a postoffice.
+  std::vector<std::int32_t> post_indices_map(
+      postoffice_range[1] - postoffice_range[0], -1);
   for (std::size_t i = 0; i < post_indices.size(); ++i)
   {
     assert(post_indices[i] < (int)post_indices_map.size());
@@ -390,9 +393,6 @@ build::distribute_data(MPI_Comm comm,
   // 2. Send data (rows of x) back to requesting ranks (transpose of the
   // preceding communication pattern operation)
 
-  const std::array<std::int64_t, 2> postoffice_range
-      = MPI::local_range(rank, shape0_global, size);
-
   // Build send buffer
   std::vector<T> send_buffer_data(shape1 * recv_disp.back());
   for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
@@ -413,6 +413,7 @@ build::distribute_data(MPI_Comm comm,
         // Take from my 'post bag'
         auto local_index = index - postoffice_range[0];
         std::int32_t pos = post_indices_map[local_index];
+        assert(pos != -1);
         for (int j = 0; j < shape1; ++j)
           send_buffer_data[shape1 * offset + j] = post_x[shape1 * pos + j];
       }
@@ -460,6 +461,7 @@ build::distribute_data(MPI_Comm comm,
         // In my post office bag
         auto local_index = index - postoffice_range[0];
         std::int32_t pos = post_indices_map[local_index];
+        assert(pos != -1);
         for (int j = 0; j < shape1; ++j)
           x_new[shape1 * i + j] = post_x[shape1 * pos + j];
       }
@@ -559,10 +561,12 @@ build::distribute_data(MPI_Comm comm,
                 comm);
   MPI_Type_free(&compound_type);
 
-  if (x_new == my_x)
-    std::cout << "Data matches" << std::endl;
-  else
-    std::cout << "Data doesn't match" << std::endl;
+  if (x_new != my_x)
+    throw std::runtime_error("Parallel data does not match");
+  // if (x_new == my_x)
+  //   std::cout << "Data matches" << std::endl;
+  // else
+  //   std::cout << "Data doesn't match" << std::endl;
 
   return my_x;
 }
