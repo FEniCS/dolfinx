@@ -242,12 +242,10 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
     ++ghost_index_offset[np];
   }
 
-  std::vector<int> recv_sizes(neighbors.size() + 1);
-  ghost_index_count.push_back(0);
-  MPI_Neighbor_alltoall(ghost_index_count.data(), 1, MPI_INT, recv_sizes.data(),
-                        1, MPI_INT, neighbor_comm);
-  ghost_index_count.pop_back();
-  recv_sizes.pop_back();
+  std::vector<int> recv_sizes(neighbors.size());
+  MPI_Neighbor_alltoall(
+      ghost_index_count.data(), ghost_index_count.empty() ? 0 : 1, MPI_INT,
+      recv_sizes.data(), recv_sizes.empty() ? 0 : 1, MPI_INT, neighbor_comm);
   std::vector<int> recv_offsets = {0};
   for (int q : recv_sizes)
     recv_offsets.push_back(recv_offsets.back() + q);
