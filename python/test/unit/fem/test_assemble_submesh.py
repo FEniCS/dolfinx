@@ -3,12 +3,13 @@
 from dolfinx.mesh import (create_unit_square, create_rectangle,
                           locate_entities, create_submesh, GhostMode)
 from mpi4py import MPI
-from dolfinx.io import XDMFFile
 from dolfinx import fem
 
 import ufl
 
 import numpy as np
+
+import pytest
 
 
 def assemble(mesh):
@@ -26,19 +27,24 @@ def assemble(mesh):
     return A
 
 
-def test_submesh_cell_assembly():
-    n = 2
-    mesh = create_unit_square(MPI.COMM_WORLD, n, n)
+# TODO Try different ghost modes
+@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+def test_submesh_cell_assembly(n, ghost_mode):
+    mesh = create_unit_square(MPI.COMM_WORLD, n, n,
+                              ghost_mode=ghost_mode)
     A_unit_mesh = assemble(mesh)
 
     mesh = create_rectangle(
-        MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n))
+        MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+        ghost_mode=ghost_mode)
     edim = mesh.topology.dim
     entities = locate_entities(mesh, edim, lambda x: x[0] <= 1.0)
     submesh = create_submesh(mesh, edim, entities)[0]
 
     A_submesh = assemble(submesh)
 
-    # FIXME Just comparing norms for now, need to communicate to single
-    # rank and compare properly
+    # FIXME Would probably be better to compare entries rather than just
+    # norms
     assert(np.isclose(A_unit_mesh.norm(), A_submesh.norm()))
