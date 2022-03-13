@@ -362,28 +362,40 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   // owned dofs. Set to -1 for unowned dofs.
   std::vector<int> original_to_contiguous(dof_entity.size(), -1);
   std::int32_t counter_owned(0), counter_unowned(owned_size);
-  if (dofmap.num_nodes() > 0)
+  for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
   {
-    for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
+    auto dofs = dofmap.links(cell);
+    for (std::size_t i = 0; i < dofs.size(); ++i)
     {
-      auto dofs = dofmap.links(cell);
-      for (std::size_t i = 0; i < dofs.size(); ++i)
+      if (original_to_contiguous[dofs[i]] == -1)
       {
-        if (original_to_contiguous[dofs[i]] == -1)
-        {
-          const std::pair<std::int8_t, std::int32_t>& e = dof_entity[dofs[i]];
-          if (e.second < offset[e.first])
-            original_to_contiguous[dofs[i]] = counter_owned++;
-          else
-            original_to_contiguous[dofs[i]] = counter_unowned++;
-        }
+        const std::pair<std::int8_t, std::int32_t>& e = dof_entity[dofs[i]];
+        if (e.second < offset[e.first])
+          original_to_contiguous[dofs[i]] = counter_owned++;
+        else
+          original_to_contiguous[dofs[i]] = counter_unowned++;
       }
     }
   }
-  else
+
+  // Check for any -1's remaining in `original_to_contiguous` due to vertices
+  // on the process that don't belong to a cell. Determine if the dof is owned
+  // or a ghost and map to the ends of the owned and ghost "parts" of the
+  // contiguous array respectively.
+  for(std::size_t dof = 0; dof < original_to_contiguous.size(); ++dof)
   {
-    // If this process has no cells, use identity map
-    std::iota(original_to_contiguous.begin(), original_to_contiguous.end(), 0);
+    if (original_to_contiguous[dof] == -1)
+    {
+      const std::pair<std::int8_t, std::int32_t>& e = dof_entity[dof];
+      if (e.second < offset[e.first])
+      {
+        original_to_contiguous[dof] = counter_owned++;
+      }
+      else
+      {
+        original_to_contiguous[dof] = counter_unowned++;
+      }
+    }
   }
 
   if (reorder_fn)
@@ -563,11 +575,6 @@ fem::build_dofmap_data(
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
-  const int rank = dolfinx::MPI::rank(comm);
-
-  std::stringstream ss;
-  ss << "rank = " << rank << "\n";
-
   common::Timer t0("Build dofmap data");
 
   const int D = topology.dim();
@@ -578,14 +585,6 @@ fem::build_dofmap_data(
   // i is associated with.
   const auto [node_graph0, local_to_global0, dof_entity0]
       = build_basic_dofmap(topology, element_dof_layout);
-
-  ss << "node_graph0.array() = " << xt::adapt(node_graph0.array()) << "\n";
-  ss << "local_to_global0 = " << xt::adapt(local_to_global0) << "\n";
-  for(int i = 0; i < dof_entity0.size(); ++i)
-  {
-    ss << "dof = " << i << ", entity = " << dof_entity0[i].second << "\n";
-  }
-  ss << "\n";
 
   // Compute global dofmap offset
   std::int64_t offset = 0;
@@ -639,7 +638,6 @@ fem::build_dofmap_data(
   graph::AdjacencyList<std::int32_t> dmap
       = graph::regular_adjacency_list(std::move(dofmap), dofs_per_cell);
 
-  std::cout << ss.str() << "\n";
   return {std::move(index_map), element_dof_layout.block_size(),
           std::move(dmap)};
 }
