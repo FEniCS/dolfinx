@@ -214,66 +214,63 @@ build_basic_dofmap(const mesh::Topology& topology,
   // Dof -> (dim, entity index) marker
   std::vector<std::pair<std::int8_t, std::int32_t>> dof_entity(local_size);
 
-  if (connectivity[0]->num_nodes() > 0)
+  // Loops over cells and build dofmaps from ElementDofmap
+  for (int c = 0; c < connectivity[0]->num_nodes(); ++c)
   {
-    // Loops over cells and build dofmaps from ElementDofmap
-    for (int c = 0; c < connectivity[0]->num_nodes(); ++c)
+    // Get local (process) and global indices for each cell entity
+    for (int d = 0; d < D; ++d)
     {
-      // Get local (process) and global indices for each cell entity
-      for (int d = 0; d < D; ++d)
+      if (needs_entities[d])
       {
-        if (needs_entities[d])
+        auto entities = connectivity[d]->links(c);
+        for (std::size_t i = 0; i < entities.size(); ++i)
         {
-          auto entities = connectivity[d]->links(c);
-          for (std::size_t i = 0; i < entities.size(); ++i)
-          {
-            entity_indices_local[d][i] = entities[i];
-            entity_indices_global[d][i] = global_indices[d][entities[i]];
-          }
+          entity_indices_local[d][i] = entities[i];
+          entity_indices_global[d][i] = global_indices[d][entities[i]];
         }
       }
+    }
 
-      // Handle cell index separately because cell.entities(D) doesn't work.
-      if (needs_entities[D])
+    // Handle cell index separately because cell.entities(D) doesn't work.
+    if (needs_entities[D])
+    {
+      entity_indices_global[D][0] = global_indices[D][c];
+      entity_indices_local[D][0] = c;
+    }
+
+    // Iterate over each topological dimension
+    std::int32_t offset_local = 0;
+    std::int64_t offset_global = 0;
+    for (auto e_dofs_d = entity_dofs.begin(); e_dofs_d != entity_dofs.end();
+        ++e_dofs_d)
+    {
+      const std::size_t d = std::distance(entity_dofs.begin(), e_dofs_d);
+
+      // Iterate over each entity of current dimension d
+      for (auto e_dofs = e_dofs_d->begin(); e_dofs != e_dofs_d->end(); ++e_dofs)
       {
-        entity_indices_global[D][0] = global_indices[D][c];
-        entity_indices_local[D][0] = c;
-      }
+        // Get entity indices (local to cell, local to process, and
+        // global)
+        const std::size_t e = std::distance(e_dofs_d->begin(), e_dofs);
+        const std::int32_t e_index_local = entity_indices_local[d][e];
+        const std::int64_t e_index_global = entity_indices_global[d][e];
 
-      // Iterate over each topological dimension
-      std::int32_t offset_local = 0;
-      std::int64_t offset_global = 0;
-      for (auto e_dofs_d = entity_dofs.begin(); e_dofs_d != entity_dofs.end();
-          ++e_dofs_d)
-      {
-        const std::size_t d = std::distance(entity_dofs.begin(), e_dofs_d);
-
-        // Iterate over each entity of current dimension d
-        for (auto e_dofs = e_dofs_d->begin(); e_dofs != e_dofs_d->end(); ++e_dofs)
+        // Loop over dofs belong to entity e of dimension d (d, e)
+        // d: topological dimension
+        // e: local entity index
+        // dof_local: local index of dof at (d, e)
+        const std::size_t num_entity_dofs = e_dofs->size();
+        for (auto dof_local = e_dofs->begin(); dof_local != e_dofs->end();
+            ++dof_local)
         {
-          // Get entity indices (local to cell, local to process, and
-          // global)
-          const std::size_t e = std::distance(e_dofs_d->begin(), e_dofs);
-          const std::int32_t e_index_local = entity_indices_local[d][e];
-          const std::int64_t e_index_global = entity_indices_global[d][e];
-
-          // Loop over dofs belong to entity e of dimension d (d, e)
-          // d: topological dimension
-          // e: local entity index
-          // dof_local: local index of dof at (d, e)
-          const std::size_t num_entity_dofs = e_dofs->size();
-          for (auto dof_local = e_dofs->begin(); dof_local != e_dofs->end();
-              ++dof_local)
-          {
-            const std::int32_t count = std::distance(e_dofs->begin(), dof_local);
-            const std::int32_t dof
-                = offset_local + num_entity_dofs * e_index_local + count;
-            dofs[cell_ptr[c] + *dof_local] = dof;
-          }
+          const std::int32_t count = std::distance(e_dofs->begin(), dof_local);
+          const std::int32_t dof
+              = offset_local + num_entity_dofs * e_index_local + count;
+          dofs[cell_ptr[c] + *dof_local] = dof;
         }
-        offset_local += entity_dofs[d][0].size() * num_mesh_entities_local[d];
-        offset_global += entity_dofs[d][0].size() * num_mesh_entities_global[d];
       }
+      offset_local += entity_dofs[d][0].size() * num_mesh_entities_local[d];
+      offset_global += entity_dofs[d][0].size() * num_mesh_entities_global[d];
     }
   }
 
