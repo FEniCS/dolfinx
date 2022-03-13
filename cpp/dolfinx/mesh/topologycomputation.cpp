@@ -103,12 +103,6 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
       std::fill(ghost_status.begin(), ghost_status.end(), 3);
     else
     {
-      // const std::int32_t num_cells
-      //     = cell_indexmap.size_local() + cell_indexmap.num_ghosts();
-      // assert(entity_index.size() % num_cells == 0);
-      // FIXME: zero num_cells will cause a problem
-      // const std::int32_t num_entities_per_cell
-      //     = entity_index.size() / num_cells;
       const std::int32_t ghost_offset
           = cell_indexmap.size_local() * num_entities_per_cell;
 
@@ -430,12 +424,10 @@ compute_entities_by_key_matching(
       const std::int32_t idx = c * num_entities_per_cell + i;
       auto ev = e_vertices.links(i);
 
-      // Get entity vertices, padding with -1 if fewer than
+      // Get entity vertices. Padded with -1 if fewer than
       // max_vertices_per_entity
-      // entity_list(idx, max_vertices_per_entity - 1) = -1;
       for (std::size_t j = 0; j < ev.size(); ++j)
         entity_list[idx * entity_list_shape1 + j] = vertices[ev[j]];
-      // entity_list(idx, j) = vertices[ev[j]];
     }
   }
 
@@ -513,7 +505,6 @@ compute_entities_by_key_matching(
   for (std::size_t i = 0; i < entity_list_shape0; ++i)
   {
     auto _ev = ev.links(local_index[i]);
-    // std::copy_n(xt::row(entity_list, i).begin(), _ev.size(), _ev.begin());
     std::copy_n(std::next(entity_list.begin(), i * entity_list_shape1),
                 _ev.size(), _ev.begin());
   }

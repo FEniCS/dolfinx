@@ -165,29 +165,6 @@ void argsort_radix(const xtl::span<const T>& array,
     std::copy(perm2.begin(), perm2.end(), perm.begin());
 }
 
-template <typename T, int BITS = 16>
-std::vector<std::int32_t> sort_by_perm(const xt::xtensor<T, 2>& array)
-{
-  static_assert(std::is_integral<T>::value, "Integral required.");
-
-  // Sort the list and label uniquely
-  const int cols = array.shape(1);
-  const int size = array.shape(0);
-  std::vector<std::int32_t> perm(size);
-  std::iota(perm.begin(), perm.end(), 0);
-
-  // Sort each column at a time from right to left.
-  // Col 0 has the most signficant "digit".
-  for (int i = 0; i < cols; i++)
-  {
-    int col = cols - 1 - i;
-    xt::xtensor<T, 1> column = xt::view(array, xt::all(), col);
-    argsort_radix<std::int32_t, BITS>(xtl::span<const T>(column), perm);
-  }
-
-  return perm;
-}
-
 /// @brief Compute the permutation array that sorts a 2D array by row.
 ///
 /// @param[in] x The flattened 2D array to compute the permutation array

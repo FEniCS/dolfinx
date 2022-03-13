@@ -446,7 +446,6 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
     for (int f = 0; f < cell_facets.num_nodes(); ++f)
     {
       // Get data array for this facet
-      // auto facet = xt::row(facets, facet_to_cell.size());
       xtl::span facet(facets.data()
                           + facet_to_cell.size() * max_num_facet_vertices,
                       max_num_facet_vertices);
@@ -516,8 +515,6 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   for (auto f = unshared_facets.begin(); f != unshared_facets.end(); ++f)
   {
     std::size_t pos = std::distance(unshared_facets.begin(), f);
-    // auto facet_unmatched = xt::row(unmatched_facet_data, pos);
-    // auto facet = xt::row(facets, *f);
     xtl::span facet_unmatched(unmatched_facet_data.data()
                                   + pos * (max_num_facet_vertices + 1),
                               max_num_facet_vertices + 1);
