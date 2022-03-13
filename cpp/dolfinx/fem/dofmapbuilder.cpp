@@ -253,7 +253,6 @@ build_basic_dofmap(const mesh::Topology& topology,
         // global)
         const std::size_t e = std::distance(e_dofs_d->begin(), e_dofs);
         const std::int32_t e_index_local = entity_indices_local[d][e];
-        const std::int64_t e_index_global = entity_indices_global[d][e];
 
         // Loop over dofs belong to entity e of dimension d (d, e)
         // d: topological dimension
@@ -290,7 +289,7 @@ build_basic_dofmap(const mesh::Topology& topology,
         auto num_entity_dofs = entity_dofs[d][0].size();
         auto e_index_global = global_indices[d][e_index_local];
 
-        for (std::int32_t count = 0; count < num_entity_dofs; ++count)
+        for (std::size_t count = 0; count < num_entity_dofs; ++count)
         {
           const std::int32_t dof
               = offset_local + num_entity_dofs * e_index_local + count;
