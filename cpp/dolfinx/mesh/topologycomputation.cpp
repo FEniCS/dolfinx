@@ -27,8 +27,6 @@
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
-#include <xtl/xspan.hpp>
-
 using namespace dolfinx;
 
 namespace
@@ -63,6 +61,7 @@ int get_ownership(std::set<int>& processes, std::vector<std::int64_t>& vertices)
 /// @param[in] entity_list List of entities, each entity represented by
 /// its local vertex indices
 /// @param[in] num_vertices_per_e Number of vertices per entity
+/// @param[in] num_entities_per_cell Number of entities per cell
 /// @param[in] entity_index Initial numbering for each row in
 /// entity_list
 /// @returns Tuple of (local_indices, index map, shared entities)
@@ -70,7 +69,9 @@ std::tuple<std::vector<int>, common::IndexMap>
 get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
                    const common::IndexMap& vertex_indexmap,
                    const xtl::span<const std::int32_t>& entity_list,
-                   const xtl::span<const std::int32_t>& entity_index)
+                   std::size_t num_vertices_per_e,
+                   std::size_t num_entities_per_cell,
+                   const std::vector<std::int32_t>& entity_index)
 {
   // entity_list contains all the entities for all the cells,
   // listed as local vertex indices, and entity_index contains the
@@ -94,22 +95,20 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
   // Set ghost status array values
   // 1 = entities that are only in local cells (i.e. owned)
   // 2 = entities that are only in ghost cells (i.e. not owned)
-  // 3 = entities with ownership that needs deciding (used also for unghosted
-  // case)
+  // 3 = entities with ownership that needs deciding (used also for
+  // un-ghosted case)
   std::vector<int> ghost_status(entity_count, 0);
   {
     if (cell_indexmap.num_ghosts() == 0)
       std::fill(ghost_status.begin(), ghost_status.end(), 3);
     else
     {
-      // const std::size_t shape0 = entity_index.size();
-      // const std::size_t shape1 = entity_list.size() / entity_index.size();
-
       const std::int32_t num_cells
           = cell_indexmap.size_local() + cell_indexmap.num_ghosts();
-      assert(entity_index.size() % num_cells == 0);
-      const std::int32_t num_entities_per_cell
-          = entity_index.size() / num_cells;
+      // assert(entity_index.size() % num_cells == 0);
+      // FIXME: zero num_cells will cause a problem
+      // const std::int32_t num_entities_per_cell
+      //     = entity_index.size() / num_cells;
       const std::int32_t ghost_offset
           = cell_indexmap.size_local() * num_entities_per_cell;
 
@@ -164,21 +163,19 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
   std::vector<std::int32_t> unique_row(entity_count);
   for (std::size_t i = 0; i < entity_index.size(); ++i)
     unique_row[entity_index[i]] = i;
-  const int num_vertices_per_e = entity_list.size() / entity_index.size();
   std::unordered_map<int, int> procs;
   std::vector<std::int64_t> vglobal(num_vertices_per_e);
   for (int i : unique_row)
   {
     // std::copy_n(xt::row(entity_list, i).begin(), num_vertices_per_e,
     //             entity_list_i.begin());
-
     xtl::span entity_list_i
         = entity_list.subspan(i * num_vertices_per_e, num_vertices_per_e);
+
     procs.clear();
-    for (int j = 0; j < num_vertices_per_e; ++j)
+    for (auto v : entity_list_i)
     {
-      if (auto it = shared_vertices.find(entity_list_i[j]);
-          it != shared_vertices.end())
+      if (auto it = shared_vertices.find(v); it != shared_vertices.end())
       {
         for (std::int32_t p : it->second)
           ++procs[p];
@@ -494,7 +491,8 @@ compute_entities_by_key_matching(
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
   auto [local_index, index_map] = get_local_indexing(
-      comm, cell_index_map, vertex_index_map, entity_list, entity_index);
+      comm, cell_index_map, vertex_index_map, entity_list,
+      max_vertices_per_entity, num_entities_per_cell, entity_index);
 
   // Entity-vertex connectivity
   std::vector<std::int32_t> offsets_ev(entity_count + 1, 0);
