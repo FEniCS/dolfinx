@@ -439,47 +439,45 @@ compute_entities_by_key_matching(
   std::int32_t entity_count = 0;
   {
     // Copy list and sort vertices of each entity into (reverse) order
-    xt::xtensor<std::int32_t, 2> entity_list_sorted = entity_list;
-    for (std::size_t i = 0; i < entity_list_sorted.shape(0); ++i)
+    std::vector<std::int32_t> entity_list_sorted(entity_list.begin(),
+                                                 entity_list.end());
+    const std::size_t shape0 = entity_list.shape(0);
+    const std::size_t shape1 = entity_list.shape(1);
+    for (std::size_t i = 0; i < shape0; ++i)
     {
-      std::sort(xt::row(entity_list_sorted, i).begin(),
-                xt::row(entity_list_sorted, i).end(), std::greater<>());
+      auto it = std::next(entity_list_sorted.begin(), i * shape1);
+      std::sort(it, std::next(it, shape1), std::greater<>());
     }
 
     // Sort the list and label uniquely
     const std::vector<std::int32_t> sort_order
-        = dolfinx::sort_by_perm<std::int32_t>(
-            xtl::span(entity_list_sorted.data(), entity_list_sorted.size()),
-            entity_list_sorted.shape(1));
+        = dolfinx::sort_by_perm<std::int32_t>(entity_list_sorted, shape1);
 
-    auto it = sort_order.begin();
     std::vector<std::int32_t> entity(max_vertices_per_entity),
         entity0(max_vertices_per_entity);
+    auto it = sort_order.begin();
     while (it != sort_order.end())
     {
+      // First entity in new index range
       std::size_t offset = (*it) * max_vertices_per_entity;
-      std::copy_n(entity_list_sorted.data() + offset, max_vertices_per_entity,
-                  entity0.begin());
-      std::sort(entity0.begin(), entity0.end());
+      xtl::span e0(entity_list_sorted.data() + offset, max_vertices_per_entity);
 
       // Find iterator to next entity
-      auto it1
-          = std::find_if(it, sort_order.end(),
-                         [&entity, &entity0, &entity_list_sorted,
-                          max_vertices_per_entity](auto idx) -> bool
-                         {
-                           std::size_t offset = idx * max_vertices_per_entity;
-                           std::copy_n(entity_list_sorted.begin() + offset,
-                                       max_vertices_per_entity, entity.begin());
-                           std::sort(entity.begin(), entity.end());
-                           return entity != entity0;
-                         });
+      auto it1 = std::find_if_not(
+          it, sort_order.end(),
+          [e0, &entity_list_sorted, max_vertices_per_entity](auto idx) -> bool
+          {
+            std::size_t offset = idx * max_vertices_per_entity;
+            return std::equal(e0.cbegin(), e0.cend(),
+                              std::next(entity_list_sorted.begin(), offset));
+          });
 
+      // Set entity unique index
       std::for_each(it, it1,
                     [&entity_index, entity_count](auto idx)
                     { entity_index[idx] = entity_count; });
 
-      // Advance iterator
+      // Advance iterator and increment entity
       it = it1;
       ++entity_count;
     }

@@ -20,8 +20,8 @@
 namespace dolfinx
 {
 
-/// Sort a vector of integers with radix sorting algorithm.The bucket size is
-/// determined by the number of bits to sort at a time (2^BITS).
+/// Sort a vector of integers with radix sorting algorithm.The bucket
+/// size is determined by the number of bits to sort at a time (2^BITS).
 /// @tparam T Integral type
 /// @tparam BITS The number of bits to sort at a time.
 /// @param[in, out] array The array to sort.
@@ -99,6 +99,8 @@ template <typename T, int BITS = 16>
 void argsort_radix(const xtl::span<const T>& array,
                    xtl::span<std::int32_t> perm)
 {
+  static_assert(std::is_integral<T>::value, "Integral required.");
+
   if (array.size() <= 1)
     return;
 
@@ -166,6 +168,8 @@ void argsort_radix(const xtl::span<const T>& array,
 template <typename T, int BITS = 16>
 std::vector<std::int32_t> sort_by_perm(const xt::xtensor<T, 2>& array)
 {
+  static_assert(std::is_integral<T>::value, "Integral required.");
+
   // Sort the list and label uniquely
   const int cols = array.shape(1);
   const int size = array.shape(0);
@@ -177,14 +181,22 @@ std::vector<std::int32_t> sort_by_perm(const xt::xtensor<T, 2>& array)
   for (int i = 0; i < cols; i++)
   {
     int col = cols - 1 - i;
-    xt::xtensor<std::int32_t, 1> column = xt::view(array, xt::all(), col);
-    argsort_radix<std::int32_t, BITS>(xtl::span<const std::int32_t>(column),
-                                      perm);
+    xt::xtensor<T, 1> column = xt::view(array, xt::all(), col);
+    argsort_radix<std::int32_t, BITS>(xtl::span<const T>(column), perm);
   }
 
   return perm;
 }
 
+/// @brief Compute the permutation array that sorts a 2D array by row.
+///
+/// @param[in] x The flattened 2D array to compute the permutation array
+/// for.
+/// @param[in] shape1 The number of columns of `x`.
+/// @return The permutation array such that `x[perm[i]] <= x[perm[i +1]].
+/// @pre `x.size()` must be a multiple of `shape1`.
+/// @note This function is suitable for small values of `shape1`. Each
+/// column of `x` is copied into an array that is then sorted.
 template <typename T, int BITS = 16>
 std::vector<std::int32_t> sort_by_perm(const xtl::span<const T>& x,
                                        std::size_t shape1)
