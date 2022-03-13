@@ -448,27 +448,28 @@ compute_entities_by_key_matching(
 
     // Sort the list and label uniquely
     const std::vector<std::int32_t> sort_order
-        = dolfinx::sort_by_perm(entity_list_sorted);
+        = dolfinx::sort_by_perm<std::int32_t>(
+            xtl::span(entity_list_sorted.data(), entity_list_sorted.size()),
+            entity_list_sorted.shape(1));
 
     auto it = sort_order.begin();
     std::vector<std::int32_t> entity(max_vertices_per_entity),
         entity0(max_vertices_per_entity);
-    std::cout << "Start while loop" << std::endl;
     while (it != sort_order.end())
     {
       std::size_t offset = (*it) * max_vertices_per_entity;
-      std::copy_n(entity_list.data() + offset, max_vertices_per_entity,
+      std::copy_n(entity_list_sorted.data() + offset, max_vertices_per_entity,
                   entity0.begin());
       std::sort(entity0.begin(), entity0.end());
 
       // Find iterator to next entity
       auto it1
           = std::find_if(it, sort_order.end(),
-                         [&entity, &entity0, &entity_list,
+                         [&entity, &entity0, &entity_list_sorted,
                           max_vertices_per_entity](auto idx) -> bool
                          {
                            std::size_t offset = idx * max_vertices_per_entity;
-                           std::copy_n(entity_list.begin() + offset,
+                           std::copy_n(entity_list_sorted.begin() + offset,
                                        max_vertices_per_entity, entity.begin());
                            std::sort(entity.begin(), entity.end());
                            return entity != entity0;
