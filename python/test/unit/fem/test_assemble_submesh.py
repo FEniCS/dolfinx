@@ -1,3 +1,9 @@
+# Copyright (C) 2022 Joseph P. Dean
+#
+# This file is part of DOLFINx (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+
 # TODO Test replacing mesh with submesh for existing assembler tests
 
 from dolfinx.mesh import (create_unit_square, create_rectangle,
@@ -33,6 +39,9 @@ def assemble(mesh):
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 def test_submesh_cell_assembly(d, n, ghost_mode):
+    """Check that assembling a form over a unit square gives the same
+    result as assembling over half of a 2x1 rectangle with the same
+    triangulation."""
     if d == 2:
         mesh_0 = create_unit_square(
             MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
