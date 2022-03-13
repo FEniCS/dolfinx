@@ -484,8 +484,8 @@ transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& input_meshtag,
     const std::int32_t f = parent_facet[i];
     if (f != -1)
     {
-      child_facet[offset_child[f[i]]] = i;
-      ++offset_child[f[i]];
+      child_facet[offset_child[f]] = i;
+      ++offset_child[f];
     }
   }
   offset_child[0] = 0;

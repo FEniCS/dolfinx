@@ -35,8 +35,8 @@ namespace plaza
 /// @param[in] redistribute Flag to call the mesh partitioner to
 /// redistribute after refinement
 /// @return New mesh
-std::pair<std::vector<std::int32_t>, mesh::Mesh> refine(const mesh::Mesh& mesh,
-                                                        bool redistribute);
+std::tuple<std::vector<std::int32_t>, mesh::Mesh> refine(const mesh::Mesh& mesh,
+                                                         bool redistribute);
 
 /// Refine with markers, optionally redistributing.
 ///
@@ -46,18 +46,21 @@ std::pair<std::vector<std::int32_t>, mesh::Mesh> refine(const mesh::Mesh& mesh,
 /// @param[in] redistribute Flag to call the Mesh Partitioner to
 /// redistribute after refinement
 /// @return New Mesh
-mesh::Mesh refine(const mesh::Mesh& mesh,
-                  const xtl::span<const std::int32_t>& edges,
-                  bool redistribute);
+std::tuple<std::vector<std::int32_t>, mesh::Mesh>
+refine(const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& edges,
+       bool redistribute);
 
 /// Refine mesh returning new mesh data.
 ///
 /// @param[in] mesh Input mesh to be refined
+/// @param[in] store_indices If true, returns internal data of new vertex
+/// indices associated with each original cell.
 /// @return New mesh data: cell topology, vertex coordinates and parent
-/// cell index
+/// cell index, and stored refined vertex indices on each parent cell (if
+/// requested).
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>>
-compute_refinement_data(const mesh::Mesh& mesh);
+           std::vector<std::int32_t>, std::vector<std::int64_t>>
+compute_refinement_data(const mesh::Mesh& mesh, bool store_indices);
 
 /// Refine with markers returning new mesh data.
 ///
@@ -67,9 +70,10 @@ compute_refinement_data(const mesh::Mesh& mesh);
 /// @return New mesh data: cell topology, vertex coordinates and parent
 /// cell index
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>>
+           std::vector<std::int32_t>, std::vector<std::int64_t>>
 compute_refinement_data(const mesh::Mesh& mesh,
-                        const xtl::span<const std::int32_t>& edges);
+                        const xtl::span<const std::int32_t>& edges,
+                        bool store_indices);
 
 } // namespace plaza
 } // namespace dolfinx::refinement

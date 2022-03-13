@@ -522,11 +522,13 @@ compute_refinement(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::pair<std::vector<std::int32_t>, mesh::Mesh>
+std::tuple<std::vector<std::int32_t>, mesh::Mesh>
 plaza::refine(const mesh::Mesh& mesh, bool redistribute)
 {
-  auto [cell_adj, new_vertex_coordinates, parent_cell]
-      = plaza::compute_refinement_data(mesh);
+  bool store_indices = false;
+
+  auto [cell_adj, new_vertex_coordinates, parent_cell, stored_indices]
+      = plaza::compute_refinement_data(mesh, store_indices);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
@@ -554,17 +556,20 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute)
                                 redistribute, ghost_mode)};
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
-                         const xtl::span<const std::int32_t>& edges,
-                         bool redistribute)
+std::tuple<std::vector<std::int32_t>, mesh::Mesh>
+plaza::refine(const mesh::Mesh& mesh,
+              const xtl::span<const std::int32_t>& edges, bool redistribute)
 {
-  auto [cell_adj, new_vertex_coordinates, parent_cell]
-      = plaza::compute_refinement_data(mesh, edges);
+  bool store_indices = false;
+
+  auto [cell_adj, new_vertex_coordinates, parent_cell, stored_indices]
+      = plaza::compute_refinement_data(mesh, edges, store_indices);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
-                             new_vertex_coordinates, mesh::GhostMode::none);
+    return {std::move(parent_cell),
+            mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
+                              new_vertex_coordinates, mesh::GhostMode::none)};
   }
 
   const std::shared_ptr<const common::IndexMap> map_c
@@ -581,13 +586,14 @@ mesh::Mesh plaza::refine(const mesh::Mesh& mesh,
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
-  return refinement::partition(mesh, cell_adj, new_vertex_coordinates,
-                               redistribute, ghost_mode);
+  return {std::move(parent_cell),
+          refinement::partition(mesh, cell_adj, new_vertex_coordinates,
+                                redistribute, ghost_mode)};
 }
 //------------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>>
-plaza::compute_refinement_data(const mesh::Mesh& mesh)
+           std::vector<std::int32_t>, std::vector<std::int64_t>>
+plaza::compute_refinement_data(const mesh::Mesh& mesh, bool store_indices)
 {
 
   if (mesh.topology().cell_type() != mesh::CellType::triangle
@@ -605,8 +611,6 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh)
   std::vector<std::int8_t> marked_edges(
       map_e->size_local() + map_e->num_ghosts(), true);
 
-  bool store_indices = true;
-
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
   auto [cell_adj, new_vertex_coordinates, parent_cell, stored_indices]
       = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
@@ -614,13 +618,14 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh)
   MPI_Comm_free(&neighbor_comm);
 
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
-          std::move(parent_cell)};
+          std::move(parent_cell), std::move(stored_indices)};
 }
 //------------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>>
+           std::vector<std::int32_t>, std::vector<std::int64_t>>
 plaza::compute_refinement_data(const mesh::Mesh& mesh,
-                               const xtl::span<const std::int32_t>& edges)
+                               const xtl::span<const std::int32_t>& edges,
+                               bool store_indices)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
@@ -673,9 +678,9 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
 
   auto [cell_adj, new_vertex_coordinates, parent_cell, stored_indices]
       = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
-                           long_edge, edge_ratio_ok, true);
+                           long_edge, edge_ratio_ok, store_indices);
   MPI_Comm_free(&neighbor_comm);
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
-          std::move(parent_cell)};
+          std::move(parent_cell), std::move(stored_indices)};
 }
 //-----------------------------------------------------------------------------
