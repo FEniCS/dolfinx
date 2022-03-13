@@ -102,13 +102,14 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
       std::fill(ghost_status.begin(), ghost_status.end(), 3);
     else
     {
-      const std::size_t shape0 = entity_index.size();
-      const std::size_t shape1 = entity_list.size() / entity_index.size();
+      // const std::size_t shape0 = entity_index.size();
+      // const std::size_t shape1 = entity_list.size() / entity_index.size();
 
       const std::int32_t num_cells
           = cell_indexmap.size_local() + cell_indexmap.num_ghosts();
-      assert(shape0 % num_cells == 0);
-      const std::int32_t num_entities_per_cell = shape0 / num_cells;
+      assert(entity_index.size() % num_cells == 0);
+      const std::int32_t num_entities_per_cell
+          = entity_index.size() / num_cells;
       const std::int32_t ghost_offset
           = cell_indexmap.size_local() * num_entities_per_cell;
 
@@ -120,7 +121,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
       }
 
       // Set entities in ghost cells to 2 (purely ghost) or 3 (border)
-      for (std::size_t i = ghost_offset; i < shape0; ++i)
+      for (std::size_t i = ghost_offset; i < entity_index.size(); ++i)
       {
         const std::int32_t idx = entity_index[i];
         ghost_status[idx] = ghost_status[idx] | 2;
