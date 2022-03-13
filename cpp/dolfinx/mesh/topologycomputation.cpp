@@ -27,6 +27,8 @@
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
+#include <xtl/xspan.hpp>
+
 using namespace dolfinx;
 
 namespace
@@ -67,8 +69,8 @@ int get_ownership(std::set<int>& processes, std::vector<std::int64_t>& vertices)
 std::tuple<std::vector<int>, common::IndexMap>
 get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
                    const common::IndexMap& vertex_indexmap,
-                   const xt::xtensor<std::int32_t, 2>& entity_list,
-                   const std::vector<std::int32_t>& entity_index)
+                   const xtl::span<const std::int32_t>& entity_list,
+                   const xtl::span<const std::int32_t>& entity_index)
 {
   // entity_list contains all the entities for all the cells,
   // listed as local vertex indices, and entity_index contains the
@@ -100,11 +102,13 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
       std::fill(ghost_status.begin(), ghost_status.end(), 3);
     else
     {
+      const std::size_t shape0 = entity_index.size();
+      const std::size_t shape1 = entity_list.size() / entity_index.size();
+
       const std::int32_t num_cells
           = cell_indexmap.size_local() + cell_indexmap.num_ghosts();
-      assert(entity_list.shape(0) % num_cells == 0);
-      const std::int32_t num_entities_per_cell
-          = entity_list.shape(0) / num_cells;
+      assert(shape0 % num_cells == 0);
+      const std::int32_t num_entities_per_cell = shape0 / num_cells;
       const std::int32_t ghost_offset
           = cell_indexmap.size_local() * num_entities_per_cell;
 
@@ -116,7 +120,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
       }
 
       // Set entities in ghost cells to 2 (purely ghost) or 3 (border)
-      for (std::size_t i = ghost_offset; i < entity_list.shape(0); ++i)
+      for (std::size_t i = ghost_offset; i < shape0; ++i)
       {
         const std::int32_t idx = entity_index[i];
         ghost_status[idx] = ghost_status[idx] | 2;
@@ -157,16 +161,18 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
   // Set of sharing procs for each entity, counting vertex hits
   // Get a list of unique entities
   std::vector<std::int32_t> unique_row(entity_count);
-  for (std::size_t i = 0; i < entity_list.shape(0); ++i)
+  for (std::size_t i = 0; i < entity_index.size(); ++i)
     unique_row[entity_index[i]] = i;
-  const int num_vertices_per_e = entity_list.shape(1);
+  const int num_vertices_per_e = entity_list.size() / entity_index.size();
   std::unordered_map<int, int> procs;
   std::vector<std::int64_t> vglobal(num_vertices_per_e);
-  std::vector<std::int32_t> entity_list_i(num_vertices_per_e);
   for (int i : unique_row)
   {
-    std::copy_n(xt::row(entity_list, i).begin(), num_vertices_per_e,
-                entity_list_i.begin());
+    // std::copy_n(xt::row(entity_list, i).begin(), num_vertices_per_e,
+    //             entity_list_i.begin());
+
+    xtl::span entity_list_i
+        = entity_list.subspan(i * num_vertices_per_e, num_vertices_per_e);
     procs.clear();
     for (int j = 0; j < num_vertices_per_e; ++j)
     {
