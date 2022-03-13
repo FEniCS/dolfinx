@@ -24,9 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include <xtensor/xio.hpp>
-#include <xtensor/xadapt.hpp>
-
 using namespace dolfinx;
 
 namespace
