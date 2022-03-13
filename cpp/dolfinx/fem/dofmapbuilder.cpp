@@ -217,7 +217,6 @@ build_basic_dofmap(const mesh::Topology& topology,
   // Dof -> (dim, entity index) marker
   std::vector<std::pair<std::int8_t, std::int32_t>> dof_entity(local_size);
 
-  // FIXME Could combine these rather than having two branches
   if (connectivity[0]->num_nodes() > 0)
   {
     // Loops over cells and build dofmaps from ElementDofmap
@@ -273,9 +272,6 @@ build_basic_dofmap(const mesh::Topology& topology,
             const std::int32_t dof
                 = offset_local + num_entity_dofs * e_index_local + count;
             dofs[cell_ptr[c] + *dof_local] = dof;
-            local_to_global[dof]
-                = offset_global + num_entity_dofs * e_index_global + count;
-            dof_entity[dof] = {d, e_index_local};
           }
         }
         offset_local += entity_dofs[d][0].size() * num_mesh_entities_local[d];
@@ -283,34 +279,35 @@ build_basic_dofmap(const mesh::Topology& topology,
       }
     }
   }
-  else
-  {
-    std::int32_t offset_local = 0;
-    std::int64_t offset_global = 0;
-    for (int d = 0; d < D; ++d)
-    {
-      if (needs_entities[d])
-      {
-        for (std::int32_t e_index_local = 0; e_index_local < num_mesh_entities_local[d];
-              ++e_index_local)
-        {
-          // This assumes all entities have the same number of dofs, which seems to
-          // be OK based on the computation of offset_global above
-          auto num_entity_dofs = entity_dofs[d][0].size();
-          auto e_index_global = global_indices[d][e_index_local];
 
-          for (std::int32_t count = 0; count < num_entity_dofs; ++count)
-          {
-            const std::int32_t dof
-                      = offset_local + num_entity_dofs * e_index_local + count;
-            local_to_global[dof]
-                      = offset_global + num_entity_dofs * e_index_global + count;
-            dof_entity[dof] = {d, e_index_local};
-          }
+  // Create local to global map and dof entity map. NOTE this must be done outside
+  // of the above loop as some processes may have vertices that don't belong to a
+  // cell on that process.
+  std::int32_t offset_local = 0;
+  std::int64_t offset_global = 0;
+  for (int d = 0; d < D; ++d)
+  {
+    if (needs_entities[d])
+    {
+      for (std::int32_t e_index_local = 0; e_index_local < num_mesh_entities_local[d];
+            ++e_index_local)
+      {
+        // This assumes all entities have the same number of dofs, which seems to
+        // be OK based on the computation of offset_global above
+        auto num_entity_dofs = entity_dofs[d][0].size();
+        auto e_index_global = global_indices[d][e_index_local];
+
+        for (std::int32_t count = 0; count < num_entity_dofs; ++count)
+        {
+          const std::int32_t dof
+                    = offset_local + num_entity_dofs * e_index_local + count;
+          local_to_global[dof]
+                    = offset_global + num_entity_dofs * e_index_global + count;
+          dof_entity[dof] = {d, e_index_local};
         }
-        offset_local += entity_dofs[d][0].size() * num_mesh_entities_local[d];
-        offset_global += entity_dofs[d][0].size() * num_mesh_entities_global[d];
       }
+      offset_local += entity_dofs[d][0].size() * num_mesh_entities_local[d];
+      offset_global += entity_dofs[d][0].size() * num_mesh_entities_global[d];
     }
   }
 
@@ -583,9 +580,12 @@ fem::build_dofmap_data(
       = build_basic_dofmap(topology, element_dof_layout);
 
   ss << "node_graph0.array() = " << xt::adapt(node_graph0.array()) << "\n";
-
-  // FIXME It appears that dof 0 appears twice in local_to_global0
   ss << "local_to_global0 = " << xt::adapt(local_to_global0) << "\n";
+  for(int i = 0; i < dof_entity0.size(); ++i)
+  {
+    ss << "dof = " << i << ", entity = " << dof_entity0[i].second << "\n";
+  }
+  ss << "\n";
 
   // Compute global dofmap offset
   std::int64_t offset = 0;
