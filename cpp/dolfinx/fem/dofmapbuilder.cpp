@@ -240,7 +240,6 @@ build_basic_dofmap(const mesh::Topology& topology,
 
     // Iterate over each topological dimension
     std::int32_t offset_local = 0;
-    std::int64_t offset_global = 0;
     for (auto e_dofs_d = entity_dofs.begin(); e_dofs_d != entity_dofs.end();
          ++e_dofs_d)
     {
@@ -269,7 +268,6 @@ build_basic_dofmap(const mesh::Topology& topology,
         }
       }
       offset_local += entity_dofs[d][0].size() * num_mesh_entities_local[d];
-      offset_global += entity_dofs[d][0].size() * num_mesh_entities_global[d];
     }
   }
 
