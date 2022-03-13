@@ -69,8 +69,8 @@ std::tuple<std::vector<int>, common::IndexMap>
 get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
                    const common::IndexMap& vertex_indexmap,
                    const xtl::span<const std::int32_t>& entity_list,
-                   std::size_t num_vertices_per_e,
-                   std::size_t num_entities_per_cell,
+                   std::int32_t num_vertices_per_e,
+                   std::int32_t num_entities_per_cell,
                    const std::vector<std::int32_t>& entity_index)
 {
   // entity_list contains all the entities for all the cells,
@@ -103,8 +103,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
       std::fill(ghost_status.begin(), ghost_status.end(), 3);
     else
     {
-      const std::int32_t num_cells
-          = cell_indexmap.size_local() + cell_indexmap.num_ghosts();
+      // const std::int32_t num_cells
+      //     = cell_indexmap.size_local() + cell_indexmap.num_ghosts();
       // assert(entity_index.size() % num_cells == 0);
       // FIXME: zero num_cells will cause a problem
       // const std::int32_t num_entities_per_cell
