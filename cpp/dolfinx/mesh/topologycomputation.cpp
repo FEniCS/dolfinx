@@ -71,7 +71,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
                    const xtl::span<const std::int32_t>& entity_list,
                    std::int32_t num_vertices_per_e,
                    std::int32_t num_entities_per_cell,
-                   const std::vector<std::int32_t>& entity_index)
+                   const xtl::span<const std::int32_t>& entity_index)
 {
   // entity_list contains all the entities for all the cells,
   // listed as local vertex indices, and entity_index contains the
