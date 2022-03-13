@@ -245,8 +245,10 @@ send_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
   // Send number of items to post offices (destination) that I will be
   // sending
   std::vector<int> num_items_recv(src.size());
-  MPI_Neighbor_alltoall(num_items_per_dest.data(), 1, MPI_INT,
-                        num_items_recv.data(), 1, MPI_INT, neigh_comm);
+  MPI_Neighbor_alltoall(num_items_per_dest.data(),
+                        num_items_per_dest.empty() ? 0 : 1, MPI_INT,
+                        num_items_recv.data(), num_items_recv.empty() ? 0 : 1,
+                        MPI_INT, neigh_comm);
 
   // Prepare receive displacement and buffers
   std::vector<std::int32_t> recv_disp = {0};
@@ -362,8 +364,10 @@ build::distribute_data(MPI_Comm comm,
 
   // Communicate number of requests to each source
   std::vector<int> num_items_recv(dest.size());
-  MPI_Neighbor_alltoall(num_items_per_src.data(), 1, MPI_INT,
-                        num_items_recv.data(), 1, MPI_INT, neigh_comm0);
+  MPI_Neighbor_alltoall(num_items_per_src.data(),
+                        num_items_per_src.empty() ? 0 : 1, MPI_INT,
+                        num_items_recv.data(), num_items_recv.empty() ? 0 : 1,
+                        MPI_INT, neigh_comm0);
 
   // Prepare send/receive displacements
   std::vector<std::int32_t> send_disp = {0};
