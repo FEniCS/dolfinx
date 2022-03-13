@@ -28,21 +28,20 @@ def assemble(mesh):
     return A
 
 
-# TODO Try different ghost modes
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 def test_submesh_cell_assembly(d, n, ghost_mode):
     if d == 2:
-        mesh_0 = create_unit_square(MPI.COMM_WORLD, n, n,
-                                    ghost_mode=ghost_mode)
+        mesh_0 = create_unit_square(
+            MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
         mesh_1 = create_rectangle(
             MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
             ghost_mode=ghost_mode)
     else:
-        mesh_0 = create_unit_cube(MPI.COMM_WORLD, n, n, n,
-                                  ghost_mode=ghost_mode)
+        mesh_0 = create_unit_cube(
+            MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
         mesh_1 = create_box(
             MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
             (2 * n, n, n), ghost_mode=ghost_mode)
@@ -52,7 +51,6 @@ def test_submesh_cell_assembly(d, n, ghost_mode):
     edim = mesh_1.topology.dim
     entities = locate_entities(mesh_1, edim, lambda x: x[0] <= 1.0)
     submesh = create_submesh(mesh_1, edim, entities)[0]
-
     A_submesh = assemble(submesh)
 
     # FIXME Would probably be better to compare entries rather than just
