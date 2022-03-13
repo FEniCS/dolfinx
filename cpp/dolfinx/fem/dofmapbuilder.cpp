@@ -286,8 +286,7 @@ build_basic_dofmap(const mesh::Topology& topology,
       for (std::int32_t e_index_local = 0;
            e_index_local < num_mesh_entities_local[d]; ++e_index_local)
       {
-        // This assumes all entities have the same number of dofs, which seems
-        // to be OK based on the computation of offset_global above
+        // NOTE This assumes all entities have the same number of dofs
         auto num_entity_dofs = entity_dofs[d][0].size();
         auto e_index_global = global_indices[d][e_index_local];
 
