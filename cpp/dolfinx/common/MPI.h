@@ -273,15 +273,15 @@ neighbor_all_to_all(MPI_Comm comm, const graph::AdjacencyList<T>& send_data)
 
   // Allocate memory (add '1' to handle empty case as OpenMPI fails for
   // null pointers
-  std::vector<int> send_sizes(outdegree + 1, 0);
-  std::vector<int> recv_sizes(indegree + 1);
+  std::vector<int> send_sizes(outdegree, 0);
+  std::vector<int> recv_sizes(indegree);
   std::adjacent_difference(std::next(send_data.offsets().begin()),
                            send_data.offsets().end(), send_sizes.begin());
   // Get receive sizes
+  send_sizes.reserve(1);
+  recv_sizes.reserve(1);
   MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
                         MPI_INT, comm);
-  send_sizes.pop_back();
-  recv_sizes.pop_back();
 
   // Work out recv offsets
   std::vector<int> recv_offsets(indegree + 1);
