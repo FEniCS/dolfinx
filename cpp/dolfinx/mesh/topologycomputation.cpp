@@ -427,7 +427,7 @@ compute_entities_by_key_matching(
       const std::int32_t idx = c * num_entities_per_cell + i;
       auto ev = e_vertices.links(i);
 
-      // Get entity vertices padding with -1 if fewer than
+      // Get entity vertices, padding with -1 if fewer than
       // max_vertices_per_entity
       entity_list(idx, max_vertices_per_entity - 1) = -1;
       for (std::size_t j = 0; j < ev.size(); ++j)
@@ -435,32 +435,53 @@ compute_entities_by_key_matching(
     }
   }
 
-  // Copy list and sort vertices of each entity into (reverse) order
-  xt::xtensor<std::int32_t, 2> entity_list_sorted = entity_list;
-  for (std::size_t i = 0; i < entity_list_sorted.shape(0); ++i)
-  {
-    std::sort(xt::row(entity_list_sorted, i).begin(),
-              xt::row(entity_list_sorted, i).end(), std::greater<>());
-  }
-
-  // Sort the list and label uniquely
-  const std::vector<std::int32_t> sort_order
-      = dolfinx::sort_by_perm(entity_list_sorted);
-
-  std::vector<std::int32_t> entity_index(entity_list.shape(0), 0);
+  std::vector<std::int32_t> entity_index(entity_list.shape(0), -1);
   std::int32_t entity_count = 0;
-  if (!sort_order.empty())
   {
-    std::int32_t last = sort_order.front();
-    for (std::size_t i = 1; i < sort_order.size(); ++i)
+    // Copy list and sort vertices of each entity into (reverse) order
+    xt::xtensor<std::int32_t, 2> entity_list_sorted = entity_list;
+    for (std::size_t i = 0; i < entity_list_sorted.shape(0); ++i)
     {
-      std::int32_t j = sort_order[i];
-      if (xt::row(entity_list_sorted, j) != xt::row(entity_list_sorted, last))
-        ++entity_count;
-      entity_index[j] = entity_count;
-      last = j;
+      std::sort(xt::row(entity_list_sorted, i).begin(),
+                xt::row(entity_list_sorted, i).end(), std::greater<>());
     }
-    ++entity_count;
+
+    // Sort the list and label uniquely
+    const std::vector<std::int32_t> sort_order
+        = dolfinx::sort_by_perm(entity_list_sorted);
+
+    auto it = sort_order.begin();
+    std::vector<std::int32_t> entity(max_vertices_per_entity),
+        entity0(max_vertices_per_entity);
+    std::cout << "Start while loop" << std::endl;
+    while (it != sort_order.end())
+    {
+      std::size_t offset = (*it) * max_vertices_per_entity;
+      std::copy_n(entity_list.data() + offset, max_vertices_per_entity,
+                  entity0.begin());
+      std::sort(entity0.begin(), entity0.end());
+
+      // Find iterator to next entity
+      auto it1
+          = std::find_if(it, sort_order.end(),
+                         [&entity, &entity0, &entity_list,
+                          max_vertices_per_entity](auto idx) -> bool
+                         {
+                           std::size_t offset = idx * max_vertices_per_entity;
+                           std::copy_n(entity_list.begin() + offset,
+                                       max_vertices_per_entity, entity.begin());
+                           std::sort(entity.begin(), entity.end());
+                           return entity != entity0;
+                         });
+
+      std::for_each(it, it1,
+                    [&entity_index, entity_count](auto idx)
+                    { entity_index[idx] = entity_count; });
+
+      // Advance iterator
+      it = it1;
+      ++entity_count;
+    }
   }
 
   // Communicate with other processes to find out which entities are
