@@ -471,15 +471,22 @@ transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& input_meshtag,
         + input_meshtag.mesh()->topology().index_map(2)->num_ghosts();
   std::vector<int> count_child(num_input_facets, 0);
   for (std::int32_t f : parent_facet)
-    ++count_child[f];
+  {
+    if (f != -1)
+      ++count_child[f];
+  }
   std::vector<int> offset_child(num_input_facets + 1, 0);
   std::partial_sum(count_child.begin(), count_child.end(),
                    std::next(offset_child.begin()));
   std::vector<std::int32_t> child_facet(offset_child.back());
   for (std::size_t i = 0; i < parent_facet.size(); ++i)
   {
-    child_facet[offset_child[parent_facet[i]]] = i;
-    ++offset_child[parent_facet[i]];
+    const std::int32_t f = parent_facet[i];
+    if (f != -1)
+    {
+      child_facet[offset_child[f[i]]] = i;
+      ++offset_child[f[i]];
+    }
   }
   offset_child[0] = 0;
   std::partial_sum(count_child.begin(), count_child.end(),
