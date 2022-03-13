@@ -242,7 +242,7 @@ build_basic_dofmap(const mesh::Topology& topology,
     std::int32_t offset_local = 0;
     std::int64_t offset_global = 0;
     for (auto e_dofs_d = entity_dofs.begin(); e_dofs_d != entity_dofs.end();
-        ++e_dofs_d)
+         ++e_dofs_d)
     {
       const std::size_t d = std::distance(entity_dofs.begin(), e_dofs_d);
 
@@ -261,7 +261,7 @@ build_basic_dofmap(const mesh::Topology& topology,
         // dof_local: local index of dof at (d, e)
         const std::size_t num_entity_dofs = e_dofs->size();
         for (auto dof_local = e_dofs->begin(); dof_local != e_dofs->end();
-            ++dof_local)
+             ++dof_local)
         {
           const std::int32_t count = std::distance(e_dofs->begin(), dof_local);
           const std::int32_t dof
@@ -274,29 +274,29 @@ build_basic_dofmap(const mesh::Topology& topology,
     }
   }
 
-  // Create local to global map and dof entity map. NOTE this must be done outside
-  // of the above loop as some processes may have vertices that don't belong to a
-  // cell on that process.
+  // Create local to global map and dof entity map. NOTE this must be done
+  // outside of the above loop as some processes may have vertices that don't
+  // belong to a cell on that process.
   std::int32_t offset_local = 0;
   std::int64_t offset_global = 0;
   for (int d = 0; d < D; ++d)
   {
     if (needs_entities[d])
     {
-      for (std::int32_t e_index_local = 0; e_index_local < num_mesh_entities_local[d];
-            ++e_index_local)
+      for (std::int32_t e_index_local = 0;
+           e_index_local < num_mesh_entities_local[d]; ++e_index_local)
       {
-        // This assumes all entities have the same number of dofs, which seems to
-        // be OK based on the computation of offset_global above
+        // This assumes all entities have the same number of dofs, which seems
+        // to be OK based on the computation of offset_global above
         auto num_entity_dofs = entity_dofs[d][0].size();
         auto e_index_global = global_indices[d][e_index_local];
 
         for (std::int32_t count = 0; count < num_entity_dofs; ++count)
         {
           const std::int32_t dof
-                    = offset_local + num_entity_dofs * e_index_local + count;
+              = offset_local + num_entity_dofs * e_index_local + count;
           local_to_global[dof]
-                    = offset_global + num_entity_dofs * e_index_global + count;
+              = offset_global + num_entity_dofs * e_index_global + count;
           dof_entity[dof] = {d, e_index_local};
         }
       }
@@ -376,7 +376,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   // on the process that don't belong to a cell. Determine if the dof is owned
   // or a ghost and map to the ends of the owned and ghost "parts" of the
   // contiguous array respectively.
-  for(std::size_t dof = 0; dof < original_to_contiguous.size(); ++dof)
+  for (std::size_t dof = 0; dof < original_to_contiguous.size(); ++dof)
   {
     if (original_to_contiguous[dof] == -1)
     {
