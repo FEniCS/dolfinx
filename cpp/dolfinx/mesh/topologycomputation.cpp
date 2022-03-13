@@ -167,8 +167,6 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
   std::vector<std::int64_t> vglobal(num_vertices_per_e);
   for (int i : unique_row)
   {
-    // std::copy_n(xt::row(entity_list, i).begin(), num_vertices_per_e,
-    //             entity_list_i.begin());
     xtl::span entity_list_i
         = entity_list.subspan(i * num_vertices_per_e, num_vertices_per_e);
 
@@ -418,9 +416,10 @@ compute_entities_by_key_matching(
 
   // List of vertices for each entity in each cell
   const std::size_t num_cells = cells.num_nodes();
-  xt::xtensor<std::int32_t, 2> entity_list(
-      {num_cells * num_entities_per_cell,
-       (std::size_t)max_vertices_per_entity});
+  const std::size_t entity_list_shape0 = num_cells * num_entities_per_cell;
+  const std::size_t entity_list_shape1 = max_vertices_per_entity;
+  std::vector<std::int32_t> entity_list(entity_list_shape0 * entity_list_shape1,
+                                        -1);
   for (std::size_t c = 0; c < num_cells; ++c)
   {
     // Get vertices from cell
@@ -433,29 +432,28 @@ compute_entities_by_key_matching(
 
       // Get entity vertices, padding with -1 if fewer than
       // max_vertices_per_entity
-      entity_list(idx, max_vertices_per_entity - 1) = -1;
+      // entity_list(idx, max_vertices_per_entity - 1) = -1;
       for (std::size_t j = 0; j < ev.size(); ++j)
-        entity_list(idx, j) = vertices[ev[j]];
+        entity_list[idx * entity_list_shape1 + j] = vertices[ev[j]];
+      // entity_list(idx, j) = vertices[ev[j]];
     }
   }
 
-  std::vector<std::int32_t> entity_index(entity_list.shape(0), -1);
+  std::vector<std::int32_t> entity_index(entity_list_shape0, -1);
   std::int32_t entity_count = 0;
   {
     // Copy list and sort vertices of each entity into (reverse) order
-    std::vector<std::int32_t> entity_list_sorted(entity_list.begin(),
-                                                 entity_list.end());
-    const std::size_t shape0 = entity_list.shape(0);
-    const std::size_t shape1 = entity_list.shape(1);
-    for (std::size_t i = 0; i < shape0; ++i)
+    std::vector<std::int32_t> entity_list_sorted = entity_list;
+    for (std::size_t i = 0; i < entity_list_shape0; ++i)
     {
-      auto it = std::next(entity_list_sorted.begin(), i * shape1);
-      std::sort(it, std::next(it, shape1), std::greater<>());
+      auto it = std::next(entity_list_sorted.begin(), i * entity_list_shape1);
+      std::sort(it, std::next(it, entity_list_shape1), std::greater<>());
     }
 
     // Sort the list and label uniquely
     const std::vector<std::int32_t> sort_order
-        = dolfinx::sort_by_perm<std::int32_t>(entity_list_sorted, shape1);
+        = dolfinx::sort_by_perm<std::int32_t>(entity_list_sorted,
+                                              entity_list_shape1);
 
     std::vector<std::int32_t> entity(max_vertices_per_entity),
         entity0(max_vertices_per_entity);
@@ -497,9 +495,10 @@ compute_entities_by_key_matching(
   // Entity-vertex connectivity
   std::vector<std::int32_t> offsets_ev(entity_count + 1, 0);
   std::vector<int> size_ev(entity_count);
-  for (std::size_t i = 0; i < entity_list.shape(0); ++i)
+  for (std::size_t i = 0; i < entity_list_shape0; ++i)
   {
-    if (entity_list(i, max_vertices_per_entity - 1) == -1)
+    // if (entity_list(i, max_vertices_per_entity - 1) == -1)
+    if (entity_list[i * entity_list_shape1 + entity_list_shape1 - 1] == -1)
       size_ev[local_index[i]] = max_vertices_per_entity - 1;
     else
       size_ev[local_index[i]] = max_vertices_per_entity;
@@ -511,10 +510,12 @@ compute_entities_by_key_matching(
 
   graph::AdjacencyList<std::int32_t> ev(
       std::vector<std::int32_t>(offsets_ev.back()), std::move(offsets_ev));
-  for (std::size_t i = 0; i < entity_list.shape(0); ++i)
+  for (std::size_t i = 0; i < entity_list_shape0; ++i)
   {
     auto _ev = ev.links(local_index[i]);
-    std::copy_n(xt::row(entity_list, i).begin(), _ev.size(), _ev.begin());
+    // std::copy_n(xt::row(entity_list, i).begin(), _ev.size(), _ev.begin());
+    std::copy_n(std::next(entity_list.begin(), i * entity_list_shape1),
+                _ev.size(), _ev.begin());
   }
 
   // NOTE: Cell-entity connectivity comes after ev creation because
