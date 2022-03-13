@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2020 Chris Richardson
+// Copyright (C) 2013-2022 Chris Richardson
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -394,3 +394,111 @@ refinement::adjust_indices(const common::IndexMap& index_map, std::int32_t n)
   return global_indices;
 }
 //-----------------------------------------------------------------------------
+mesh::MeshTags<std::int32_t>
+transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& input_meshtag,
+                       const mesh::Mesh& refined_mesh,
+                       std::vector<std::int32_t>& parent_cell,
+                       std::vector<std::int64_t>& stored_indices)
+{
+  // Facets of 3D mesh only so far
+  assert(input_meshtag.mesh()->topology().dim() == 3);
+  assert(input_meshtag.dim() == 2);
+
+  auto input_c_to_f = input_meshtag.mesh()->topology().connectivity(3, 2);
+
+  // Map from stored indices for each parent cell to vertices
+  // which may occur on each facet.
+  static const int facet_table_3d[4][6] = {{1, 2, 3, 7, 8, 9},
+                                           {0, 2, 3, 5, 6, 9},
+                                           {0, 1, 3, 4, 6, 8},
+                                           {0, 1, 2, 4, 5, 7}};
+  int nv = 10;
+
+  auto c_to_f = refined_mesh.topology().connectivity(3, 2);
+  auto f_to_v = refined_mesh.topology().connectivity(2, 0);
+
+  // Mapping from facets on refined mesh, back to parent.
+  // i.e. child->parent facet
+  std::vector<std::int32_t> parent_facet(
+      refined_mesh.topology().index_map(2)->size_local()
+          + refined_mesh.topology().index_map(2)->num_ghosts(),
+      -1);
+
+  // small temporaries for comparing vertex lists
+  std::vector<std::int64_t> vertex_list_pf;
+  std::vector<std::int64_t> vertex_list_cf;
+  std::vector<std::int64_t> set_output(nv);
+  for (std::size_t c = 0; c < parent_cell.size(); ++c)
+  {
+    auto refined_facets = c_to_f->links(c);
+
+    std::int32_t pc = parent_cell[c];
+    xtl::span<std::int64_t> v(stored_indices.data() + nv * pc, nv);
+    // reconstruct facets (parent)
+    for (int i = 0; i < 4; ++i)
+    {
+      vertex_list_pf.clear();
+      for (int j = 0; j < 6; ++j)
+        vertex_list_pf.push_back(v[facet_table_3d[i][j]]);
+      std::sort(vertex_list_pf.begin(), vertex_list_pf.end());
+      // get facets (child)
+      for (int f = 0; f < 4; ++f)
+      {
+        auto v = f_to_v->links(refined_facets[f]);
+        vertex_list_cf.assign(v.begin(), v.end());
+        std::sort(vertex_list_cf.begin(), vertex_list_cf.end());
+        auto it = std::set_intersection(
+            vertex_list_pf.begin(), vertex_list_pf.end(),
+            vertex_list_cf.begin(), vertex_list_cf.end(), set_output.begin());
+        if (std::distance(set_output.begin(), it) == 3)
+        {
+          // Found matching facet, facet f of child cell matches facet i of
+          // parent.
+
+          // Either -1 or already set.
+          assert(parent_facet[refined_facets[f]] == -1
+                 or parent_facet[refined_facets[f]]
+                        == input_c_to_f->links(pc)[i]);
+          parent_facet[refined_facets[f]] = input_c_to_f->links(pc)[i];
+        }
+      }
+    }
+  }
+
+  // Invert map from child->parent to parent->child facets
+  const std::int32_t num_input_facets
+      = input_meshtag.mesh()->topology().index_map(2)->size_local()
+        + input_meshtag.mesh()->topology().index_map(2)->num_ghosts();
+  std::vector<int> count_child(num_input_facets, 0);
+  for (std::int32_t f : parent_facet)
+    ++count_child[f];
+  std::vector<int> offset_child(num_input_facets + 1, 0);
+  std::partial_sum(count_child.begin(), count_child.end(),
+                   std::next(offset_child.begin()));
+  std::vector<std::int32_t> child_facet(offset_child.back());
+  for (std::size_t i = 0; i < parent_facet.size(); ++i)
+  {
+    child_facet[offset_child[parent_facet[i]]] = i;
+    ++offset_child[parent_facet[i]];
+  }
+  offset_child[0] = 0;
+  std::partial_sum(count_child.begin(), count_child.end(),
+                   std::next(offset_child.begin()));
+  graph::AdjacencyList<std::int32_t> p_to_c_facet(child_facet, offset_child);
+
+  std::vector<std::int32_t> facet_indices;
+  std::vector<std::int32_t> tag_values;
+  for (std::size_t i = 0; i < input_meshtag.indices().size(); ++i)
+  {
+    std::int32_t parent_index = input_meshtag.indices()[i];
+    for (int child_index : p_to_c_facet.links(parent_index))
+    {
+      facet_indices.push_back(child_index);
+      tag_values.push_back(input_meshtag.values()[i]);
+    }
+  }
+
+  return mesh::MeshTags<std::int32_t>(
+      std::make_shared<mesh::Mesh>(refined_mesh), 2, std::move(facet_indices),
+      std::move(tag_values));
+}

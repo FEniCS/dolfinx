@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/mesh/MeshTags.h>
 #include <map>
 #include <memory>
 #include <set>
@@ -76,7 +77,8 @@ mesh::Mesh partition(const mesh::Mesh& old_mesh,
                      const xt::xtensor<double, 2>& new_vertex_coordinates,
                      bool redistribute, mesh::GhostMode ghost_mode);
 
-/// @brief brief description indices to account for extra n values on each process.
+/// @brief brief description indices to account for extra n values on each
+/// process.
 ///
 /// This is a utility to help add new topological vertices on each
 /// process into the space of the index map.
@@ -87,5 +89,12 @@ mesh::Mesh partition(const mesh::Mesh& old_mesh,
 /// process
 std::vector<std::int64_t> adjust_indices(const common::IndexMap& index_map,
                                          std::int32_t n);
+
+/// Transfer MeshTags from coarse mesh to refined mesh
+mesh::MeshTags<std::int32_t>
+transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& input_meshtag,
+                       const mesh::Mesh& refined_mesh,
+                       std::vector<std::int32_t>& parent_cell,
+                       std::vector<std::int64_t>& stored_indices);
 
 } // namespace dolfinx::refinement

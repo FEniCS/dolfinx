@@ -1,4 +1,4 @@
-// Copyright (C) 2014-2020 Chris Richardson
+// Copyright (C) 2014-2022 Chris Richardson
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -518,8 +518,6 @@ compute_refinement(
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
           std::move(parent_cell), std::move(stored_indices)};
 }
-//-----------------------------------------------------------------------------
-
 //-----------------------------------------------------------------------------
 } // namespace
 
