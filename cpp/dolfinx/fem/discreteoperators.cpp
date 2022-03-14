@@ -28,26 +28,23 @@ fem::create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
 
   // Check that output space uses covariant Piola while input space uses
   // identity
-  auto e0 = V0.element();
-  auto e1 = V1.element();
-  assert(e0->map_type() == basix::maps::type::covariantPiola);
-  assert(e1->map_type() == basix::maps::type::identity);
+  std::shared_ptr<const FiniteElement> e0 = V0.element();
+  assert(e0);
+  std::shared_ptr<const FiniteElement> e1 = V1.element();
+  assert(e1);
 
-  // Copy index maps from dofmaps
+  // Get index maps from dofmaps
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
       = {{V0.dofmap()->index_map, V1.dofmap()->index_map}};
-  std::array<int, 2> block_sizes
+
+  std::array block_sizes
       = {V0.dofmap()->index_map_bs(), V1.dofmap()->index_map_bs()};
-  std::vector<std::array<std::int64_t, 2>> local_range
-      = {index_maps[0]->local_range(), index_maps[1]->local_range()};
-  assert(block_sizes[0] == block_sizes[1]);
 
   // Create and assemble sparsity pattern
   la::SparsityPattern pattern(mesh->comm(), index_maps, block_sizes);
-  std::array<const std::reference_wrapper<const fem::DofMap>, 2> dofmaps
-      = {*V0.dofmap(), *V1.dofmap()};
-  sparsitybuild::cells(pattern, mesh->topology(), dofmaps);
+  sparsitybuild::cells(pattern, mesh->topology(), {*V0.dofmap(), *V1.dofmap()});
   pattern.assemble();
+
   return pattern;
 };
 //-----------------------------------------------------------------------------
