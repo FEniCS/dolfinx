@@ -36,6 +36,7 @@ def test_gradient(mesh):
     m, n = G.getSize()
     assert m == num_edges
     assert n == mesh.topology.index_map(0).size_global
+    G.assemble()
     assert np.isclose(G.norm(PETSc.NormType.FROBENIUS), np.sqrt(2.0 * num_edges))
 
 
@@ -69,6 +70,7 @@ def test_interpolation_matrix(cell_type, p, q):
     V = FunctionSpace(mesh, (l_fam, p))
     W = FunctionSpace(mesh, (n_fam, q))
     G = create_discrete_gradient(W._cpp_object, V._cpp_object)
+    G.assemble()
 
     u = Function(V)
     u.interpolate(lambda x: 2 * x[0]**p + 3 * x[1]**p)
