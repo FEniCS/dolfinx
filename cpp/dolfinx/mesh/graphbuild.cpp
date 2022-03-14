@@ -14,7 +14,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <utility>
 #include <vector>
-#include <xtensor/xview.hpp>
+#include <xtl/xspan.hpp>
 
 using namespace dolfinx;
 
@@ -36,14 +36,23 @@ namespace
 /// for the mixed topology case where facets can have differing number
 /// of vertices, and `cell_index` is the global index of the attached
 /// cell.
+/// @param[in] unmatched_facets_shape1 Number of columns for
+/// `unmatched_facets`.
 /// @param[in] local_graph The dual graph for cells on this MPI rank
 /// @return (0) Extended dual graph to include ghost edges (edges to
 /// off-rank cells) and (1) the number of ghost edges
 std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
 compute_nonlocal_dual_graph(
-    const MPI_Comm comm, const xt::xtensor<std::int64_t, 2>& unmatched_facets,
+    const MPI_Comm comm, const xtl::span<const std::int64_t>& unmatched_facets,
+    const std::size_t unmatched_facets_shape1,
     const graph::AdjacencyList<std::int32_t>& local_graph)
 {
+  assert(unmatched_facets_shape1 > 0 or unmatched_facets.empty());
+  const std::size_t unmatched_facets_shape0
+      = unmatched_facets_shape1 > 0
+            ? unmatched_facets.size() / unmatched_facets_shape1
+            : 0;
+
   LOG(INFO) << "Build nonlocal part of mesh dual graph";
   common::Timer timer("Compute non-local part of mesh dual graph");
 
@@ -81,19 +90,26 @@ compute_nonlocal_dual_graph(
   //
   // Combine into single MPI reduce (MPI_MIN)
   std::array<std::int64_t, 3> buffer_local_min
-      = {-std::int64_t(unmatched_facets.shape(1) - 1),
+      = {-std::int64_t(unmatched_facets_shape1 - 1),
          std::numeric_limits<std::int64_t>::max(), 0};
-  if (unmatched_facets.shape(0) > 0)
+  if (!unmatched_facets.empty())
   {
-    auto local_minmax = xt::minmax(xt::col(unmatched_facets, 0))();
-    buffer_local_min[1] = local_minmax[0];
-    buffer_local_min[2] = -local_minmax[1];
+    buffer_local_min[1] = std::numeric_limits<std::int64_t>::max();
+    buffer_local_min[2] = std::numeric_limits<std::int64_t>::min();
+    for (std::size_t i = 0; i < unmatched_facets.size();
+         i += unmatched_facets_shape1)
+    {
+      buffer_local_min[1] = std::min(buffer_local_min[1], unmatched_facets[i]);
+      buffer_local_min[2] = std::max(buffer_local_min[2], unmatched_facets[i]);
+    }
+    buffer_local_min[2] = -buffer_local_min[2];
   }
+
   std::array<std::int64_t, 3> buffer_global_min;
   MPI_Allreduce(buffer_local_min.data(), buffer_global_min.data(), 3,
                 MPI_INT64_T, MPI_MIN, comm);
   const std::int32_t max_num_vertices_per_facet = -buffer_global_min[0];
-  LOG(INFO) << "Max. vertices per facet=" << max_num_vertices_per_facet << "\n";
+  LOG(2) << "Max. vertices per facet=" << max_num_vertices_per_facet << "\n";
   assert(buffer_global_min[1] != std::numeric_limits<std::int64_t>::max());
   const std::array<std::int64_t, 2> global_minmax
       = {buffer_global_min[1], -buffer_global_min[2]};
@@ -103,10 +119,11 @@ compute_nonlocal_dual_graph(
 
   // Count number of item to send to each rank
   std::vector<int> p_count(num_ranks, 0);
-  for (std::size_t i = 0; i < unmatched_facets.shape(0); ++i)
+  for (std::size_t i = 0; i < unmatched_facets_shape0; ++i)
   {
     // Use first vertex of facet to partition into blocks
-    std::int64_t v0 = unmatched_facets(i, 0) - global_minmax[0];
+    std::int64_t v0
+        = unmatched_facets[i * unmatched_facets_shape1] - global_minmax[0];
     const int dest = dolfinx::MPI::index_owner(num_ranks, v0, global_range);
     p_count[dest] += max_num_vertices_per_facet + 1;
   }
@@ -122,15 +139,16 @@ compute_nonlocal_dual_graph(
 
   // Pack facet-to-cell to send to match-maker rank
   std::vector<int> pos(send_buffer.num_nodes(), 0);
-  for (std::size_t i = 0; i < unmatched_facets.shape(0); ++i)
+  for (std::size_t i = 0; i < unmatched_facets_shape0; ++i)
   {
-    std::int64_t v0 = unmatched_facets(i, 0) - global_minmax[0];
+    std::int64_t v0
+        = unmatched_facets[i * unmatched_facets_shape1] - global_minmax[0];
     const int dest = dolfinx::MPI::index_owner(num_ranks, v0, global_range);
 
     // Pack facet vertices, and attached cell local index
     xtl::span<std::int64_t> buffer = send_buffer.links(dest);
     for (int j = 0; j < max_num_vertices_per_facet + 1; ++j)
-      buffer[pos[dest] + j] = unmatched_facets(i, j);
+      buffer[pos[dest] + j] = unmatched_facets[i * unmatched_facets_shape1 + j];
 
     // Add cell index offset
     buffer[pos[dest] + max_num_vertices_per_facet] += cell_offset;
@@ -298,7 +316,8 @@ compute_nonlocal_dual_graph(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::pair<graph::AdjacencyList<std::int32_t>, xt::xtensor<std::int64_t, 2>>
+std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
+           std::size_t>
 mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
                              const xtl::span<const std::int32_t>& cell_offsets,
                              int tdim)
@@ -310,8 +329,8 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   if (num_local_cells == 0)
   {
     // Empty mesh on this process
-    return {graph::AdjacencyList<std::int32_t>(0),
-            xt::xtensor<std::int64_t, 2>({0, 0})};
+    return {graph::AdjacencyList<std::int32_t>(0), std::vector<std::int64_t>(),
+            0};
   }
 
   // Create local (starting from 0), contiguous version of cell_vertices
@@ -412,9 +431,8 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
 
   // Iterating over every cell, create a 'key' (sorted vertex indices)
   // for each facet and store the associated cell index
-  xt::xtensor<std::int32_t, 2> facets(
-      {std::size_t(num_facets), std::size_t(max_num_facet_vertices)},
-      std::numeric_limits<std::int32_t>::max());
+  std::vector<std::int32_t> facets(num_facets * max_num_facet_vertices,
+                                   std::numeric_limits<std::int32_t>::max());
   std::vector<std::int32_t> facet_to_cell;
   facet_to_cell.reserve(num_facets);
   for (std::int32_t c = 0; c < num_local_cells; ++c)
@@ -428,7 +446,9 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
     for (int f = 0; f < cell_facets.num_nodes(); ++f)
     {
       // Get data array for this facet
-      auto facet = xt::row(facets, facet_to_cell.size());
+      xtl::span facet(facets.data()
+                          + facet_to_cell.size() * max_num_facet_vertices,
+                      max_num_facet_vertices);
 
       // Get facet vertices (local indices)
       auto facet_vertices = cell_facets.links(f);
@@ -445,10 +465,11 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
       facet_to_cell.push_back(c);
     }
   }
-  assert(facet_to_cell.size() == facets.shape(0));
+  assert((int)facet_to_cell.size() == num_facets);
 
   // Sort facets by lexicographic order of vertices
-  const std::vector<std::int32_t> facet_perm = dolfinx::sort_by_perm(facets);
+  const std::vector<std::int32_t> facet_perm
+      = dolfinx::sort_by_perm<std::int32_t>(facets, max_num_facet_vertices);
 
   // Iterator over facets, and push back cells that share the facet. If
   // facet is not shared, store in 'unshared_facets'.
@@ -457,10 +478,13 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   std::vector<std::int32_t> unshared_facets;
   unshared_facets.reserve(num_local_cells);
   int eq_count = 0;
-  for (std::size_t f = 1; f < facets.shape(0); ++f)
+  for (std::int32_t f = 1; f < num_facets; ++f)
   {
-    auto current = xt::row(facets, facet_perm[f]);
-    auto previous = xt::row(facets, facet_perm[f - 1]);
+    xtl::span current(facets.data() + facet_perm[f] * max_num_facet_vertices,
+                      max_num_facet_vertices);
+    xtl::span previous(facets.data()
+                           + facet_perm[f - 1] * max_num_facet_vertices,
+                       max_num_facet_vertices);
     if (current == previous)
     {
       // Add cell indices
@@ -485,14 +509,17 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
 
   // Pack 'unmatched' facet data, storing facet global vertices and
   // the attached cell index
-  xt::xtensor<std::int64_t, 2> unmatched_facet_data(
-      {unshared_facets.size(), std::size_t(max_num_facet_vertices + 1)},
+  std::vector<std::int64_t> unmatched_facet_data(
+      unshared_facets.size() * (max_num_facet_vertices + 1),
       std::numeric_limits<std::int64_t>::max());
   for (auto f = unshared_facets.begin(); f != unshared_facets.end(); ++f)
   {
     std::size_t pos = std::distance(unshared_facets.begin(), f);
-    auto facet_unmatched = xt::row(unmatched_facet_data, pos);
-    auto facet = xt::row(facets, *f);
+    xtl::span facet_unmatched(unmatched_facet_data.data()
+                                  + pos * (max_num_facet_vertices + 1),
+                              max_num_facet_vertices + 1);
+    xtl::span facet(facets.data() + (*f) * max_num_facet_vertices,
+                    max_num_facet_vertices);
     for (int v = 0; v < max_num_facet_vertices; ++v)
     {
       // Note: Global vertex indices in facet will be sorted because
@@ -535,9 +562,11 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
     local_graph_data[pos[c1]++] = c0;
   }
 
+  std::vector<std::int64_t> tmp(unmatched_facet_data.begin(),
+                                unmatched_facet_data.end());
   return {graph::AdjacencyList<std::int32_t>(std::move(local_graph_data),
                                              std::move(offsets)),
-          std::move(unmatched_facet_data)};
+          std::move(unmatched_facet_data), max_num_facet_vertices + 1};
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
@@ -549,12 +578,12 @@ mesh::build_dual_graph(const MPI_Comm comm,
 
   // Compute local part of dual graph (cells are graph nodes, and edges
   // are connections by facet)
-  auto [local_graph, facet_cell_map]
+  auto [local_graph, facet_cell_map, shape1]
       = mesh::build_local_dual_graph(cells.array(), cells.offsets(), tdim);
 
   // Extend with nonlocal edges and convert to global indices
   auto [graph, num_ghost_edges]
-      = compute_nonlocal_dual_graph(comm, facet_cell_map, local_graph);
+      = compute_nonlocal_dual_graph(comm, facet_cell_map, shape1, local_graph);
   assert(local_graph.num_nodes() == cells.num_nodes());
 
   LOG(INFO) << "Graph edges (local:" << local_graph.offsets().back()
