@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells, Michal Habera
+# Copyright (C) 2017-2022 Chris N. Richardson, Garth N. Wells, Michal Habera
 # and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -15,14 +15,23 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import distribute_entity_data
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
-from dolfinx.common import has_adios2
 from dolfinx.fem import Function
+
 from dolfinx.mesh import GhostMode, Mesh
 from mpi4py import MPI as _MPI
 
 __all__ = ["FidesWriter", "VTKFile", "VTXWriter", "XDMFFile", "cell_perm_gmsh", "distribute_entity_data"]
 
-if has_adios2:
+
+def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Function]):
+    """Extract C++ object for a single function or a list of functions"""
+    if isinstance(functions, (list, tuple)):
+        return [getattr(u, "_cpp_object", u) for u in functions]
+    else:
+        return [getattr(functions, "_cpp_object", functions)]
+
+
+try:
     class VTXWriter(_cpp.io.VTXWriter):
         """Interface to VTK files for ADIOS 2
 
@@ -34,15 +43,20 @@ if has_adios2:
 
         def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, typing.List[Function], Function]):
             """
-            Initialize a writer for outputting a mesh, a single (discontinuous) Lagrange function or
-            list of (discontinuous Lagrange functions sharing the same element familty and degree
+            Initialize a writer for outputting data to a `.bp` file, for usage with the ADIOS2VTXReader in Paraview.
+
+            Args:
+                comm: The MPI communicator
+                filename: The output filename
+                output: The data to output. Either a mesh, a single (discontinuous) Lagrange function or list of
+                    (discontinuous Lagrange functions sharing the same element familty and degree.
             """
-            if isinstance(output, Mesh):
+            try:
+                # Input is a mesh
                 super().__init__(comm, filename, output)
-            elif isinstance(output, (list, tuple)):
-                super().__init__(comm, filename, [getattr(u, "_cpp_object", u) for u in output])
-            else:
-                super().__init__(comm, filename, getattr(output, "_cpp_object", output))
+            except (NotImplementedError, TypeError):
+                # Input is a single function or a list of functions
+                super().__init__(comm, filename, _extract_cpp_functions(output))
 
     class FidesWriter(_cpp.io.FidesWriter):
         """Interface to Fides data structures for ADIOS 2
@@ -57,13 +71,26 @@ if has_adios2:
             """
             Initialize a writer for outputting a mesh, a single Lagrange function or
             list of Lagrange functions sharing the same element familty and degree
+
+            Args:
+                comm: The MPI communicator
+                filename: The output filename
+                output: The data to output. Either a mesh, a single first order Lagrange function or list of
+                    first order Lagrange functions.
             """
-            if isinstance(output, Mesh):
+            try:
                 super().__init__(comm, filename, output)
-            elif isinstance(output, (list, tuple)):
-                super().__init__(comm, filename, [getattr(u, "_cpp_object", u) for u in output])
-            else:
-                super().__init__(comm, filename, [getattr(output, "_cpp_object", output)])
+            except (NotImplementedError, TypeError):
+                super().__init__(comm, filename, _extract_cpp_functions(output))
+
+except AttributeError:
+    class FidesWriter():
+        def __init__(self, *args):
+            raise RuntimeError("DOLFINx has not been configured with ADIOS2 support")
+
+    class VTXWriter():
+        def __init__(self, *args):
+            raise RuntimeError("DOLFINx has not been configured with ADIOS2 support")
 
 
 class VTKFile(_cpp.io.VTKFile):
@@ -81,10 +108,7 @@ class VTKFile(_cpp.io.VTKFile):
 
     def write_function(self, u: typing.Union[typing.List[Function], Function], t: float = 0.0) -> None:
         """Write a single function or a list of functions to file for a given time (default 0.0)"""
-        if isinstance(u, (list, tuple)):
-            super().write([getattr(u_, "_cpp_object", u_) for u_ in u], t)
-        else:
-            super().write([getattr(u, "_cpp_object", u)], t)
+        super().write(_extract_cpp_functions(u), t)
 
 
 class XDMFFile(_cpp.io.XDMFFile):

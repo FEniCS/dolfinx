@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
+from dolfinx.io import FidesWriter
 
 import numpy as np
 import pytest
@@ -114,7 +115,7 @@ def test_two_fides_functions(tempdir, dim, simplex):
     v = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)))
     q = Function(FunctionSpace(mesh, ("Lagrange", 1)))
     filename = os.path.join(tempdir, "v.bp")
-    with FidesWriter(mesh.comm, filename, [v, q]) as f:
+    with FidesWriter(mesh.comm, filename, [v._cpp_object, q]) as f:
         f.write(0)
 
         def vel(x):
@@ -125,6 +126,20 @@ def test_two_fides_functions(tempdir, dim, simplex):
         v.interpolate(vel)
         q.interpolate(lambda x: x[0])
         f.write(1)
+
+
+@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("simplex", [True, False])
+def test_findes_single_function(tempdir, dim, simplex):
+    "Test saving a single first order Lagrange functions"
+    from dolfinx.io import VTXWriter
+    mesh = generate_mesh(dim, simplex)
+    v = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+    filename = os.path.join(tempdir, "v.bp")
+    writer = FidesWriter(mesh.comm, filename, v)
+    writer.write(0)
+    writer.close()
 
 
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
@@ -207,6 +222,20 @@ def test_vtx_different_meshes_function(tempdir, dim, simplex):
     filename = os.path.join(tempdir, "v.bp")
     with pytest.raises(RuntimeError):
         VTXWriter(mesh.comm, filename, [v, w])
+
+
+@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("simplex", [True, False])
+def test_vtx_single_function(tempdir, dim, simplex):
+    "Test saving a single first order Lagrange functions"
+    from dolfinx.io import VTXWriter
+    mesh = generate_mesh(dim, simplex)
+    v = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+    filename = os.path.join(tempdir, "v.bp")
+    writer = VTXWriter(mesh.comm, filename, v)
+    writer.write(0)
+    writer.close()
 
 
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
