@@ -183,17 +183,50 @@ std::vector<int> compute_graph_edges_nbx(MPI_Comm comm,
 ///
 /// @param[in] comm MPI communicator
 /// @param[in] x Data to distribute (2D, row-major layout)
-/// @param[in] shape1 Number of columns for `x`
-/// @param[in] shape0_global Number of global rows for  `x`
+/// @param[in] shape The global shape of `x`
 /// @param[in] rank_offset The rank offset such that global index of
-/// local row `i` in `x` is `rank_offset + i`.
+/// local row `i` in `x` is `rank_offset + i`. It is usually computed
+/// using `MPI_Exscan`.
 /// @returns (0) global indices of my post office data and (1) the data
 /// (row-major). It **does not** include rows that are in `x`, i.e. rows
 /// for which the calling process is the post office
 template <typename T>
 std::pair<std::vector<std::int32_t>, std::vector<T>>
-distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
-                         std::int64_t shape0_global, std::int64_t rank_offset);
+distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x,
+                         std::array<std::int64_t, 2> shape,
+                         std::int64_t rank_offset);
+
+/// @brief Distribute rows of a rectangular data array to ranks where
+/// they are required.
+///
+/// This functions determines local neighborhoods for communication, and
+/// then using MPI neighbourhood collectives to exchange data. It is
+/// scalable if the neighborhoods are relatively small, i.e. each process
+/// communicated with a modest number of othe processes/
+///
+/// @note The non-scalable version of this function,
+/// MPI::distribute_data1, can be faster up to some number of MPI ranks
+/// with number of ranks depending on the locality of the data, the MPI
+/// implementation and the network.
+///
+/// @param[in] comm The MPI communicator
+/// @param[in] indices Global indices of the data (row indices) required
+/// by calling process
+/// @param[in] x Data (2D array, row-major) on calling process which may
+/// be distributed (by row). The global index for the `[0, ..., n)`
+/// local rows is assumed to be the local index plus the offset for this
+/// rank.
+/// @param[in] shape The global shape of `x`
+/// @param[in] rank_offset The rank offset such that global index of
+/// local row `i` in `x` is `rank_offset + i`. It is usually computed
+/// using `MPI_Exscan`.
+/// @return The data for each index in `indices` (row-major storage)
+/// @pre `shape1 > 0`
+template <typename T>
+std::vector<T> distribute_from_postoffice(
+    MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
+    const xtl::span<const T>& x, std::array<std::int64_t, 2> shape,
+    std::int64_t rank_offset);
 
 /// @brief Distribute rows of a rectangular data array to ranks where
 /// they are required.
@@ -308,32 +341,33 @@ constexpr MPI_Datatype mpi_type()
 //---------------------------------------------------------------------------
 template <typename T>
 std::pair<std::vector<std::int32_t>, std::vector<T>>
-distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
-                         std::int64_t shape0_global, std::int64_t rank_offset)
+distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x,
+                         std::array<std::int64_t, 2> shape,
+                         std::int64_t rank_offset)
 {
   const int size = dolfinx::MPI::size(comm);
   const int rank = dolfinx::MPI::rank(comm);
-  assert(x.size() % shape1 == 0);
-  const std::int32_t shape0 = x.size() / shape1;
+  assert(x.size() % shape[1] == 0);
+  const std::int32_t shape0_local = x.size() / shape[1];
 
   LOG(2) << "Sending data to post offices (distribute_to_postoffice)";
 
   // Post office ranks will receive data from this rank
-  std::vector<int> row_to_dest(shape0);
-  for (std::int32_t i = 0; i < shape0; ++i)
+  std::vector<int> row_to_dest(shape0_local);
+  for (std::int32_t i = 0; i < shape0_local; ++i)
   {
-    int dest = MPI::index_owner(size, i + rank_offset, shape0_global);
+    int dest = MPI::index_owner(size, i + rank_offset, shape[0]);
     row_to_dest[i] = dest;
   }
 
   // Build list of (dest, positions) for each row that doesn't belong to
   // this rank, then sort
   std::vector<std::array<std::int32_t, 2>> dest_to_index;
-  dest_to_index.reserve(shape0);
-  for (std::int32_t i = 0; i < shape0; ++i)
+  dest_to_index.reserve(shape0_local);
+  for (std::int32_t i = 0; i < shape0_local; ++i)
   {
     std::size_t idx = i + rank_offset;
-    if (int dest = MPI::index_owner(size, idx, shape0_global); dest != rank)
+    if (int dest = MPI::index_owner(size, idx, shape[0]); dest != rank)
       dest_to_index.push_back({dest, i});
   }
   std::sort(dest_to_index.begin(), dest_to_index.end());
@@ -341,7 +375,8 @@ distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
   // Build list is neighbour src ranks and count number of items (rows
   // of x) to receive from each src post office (by neighbourhood rank)
   std::vector<int> dest;
-  std::vector<std::int32_t> num_items_per_dest, pos_to_neigh_rank(shape0, -1);
+  std::vector<std::int32_t> num_items_per_dest,
+      pos_to_neigh_rank(shape0_local, -1);
   {
     auto it = dest_to_index.begin();
     while (it != dest_to_index.end())
@@ -386,18 +421,18 @@ distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
                    std::back_insert_iterator(send_disp));
 
   // Pack send buffers
-  std::vector<T> send_buffer_data(shape1 * send_disp.back());
+  std::vector<T> send_buffer_data(shape[1] * send_disp.back());
   std::vector<std::int64_t> send_buffer_index(send_disp.back());
   {
     std::vector<std::int32_t> send_offsets = send_disp;
-    for (std::int32_t i = 0; i < shape0; ++i)
+    for (std::int32_t i = 0; i < shape0_local; ++i)
     {
       if (int neigh_dest = pos_to_neigh_rank[i]; neigh_dest != -1)
       {
         std::size_t pos = send_offsets[neigh_dest];
         send_buffer_index[pos] = i + rank_offset;
-        std::copy_n(std::next(x.begin(), i * shape1), shape1,
-                    std::next(send_buffer_data.begin(), shape1 * pos));
+        std::copy_n(std::next(x.begin(), i * shape[1]), shape[1],
+                    std::next(send_buffer_data.begin(), shape[1] * pos));
         ++send_offsets[neigh_dest];
       }
     }
@@ -425,9 +460,9 @@ distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
 
   // Send/receive data (x)
   MPI_Datatype compound_type;
-  MPI_Type_contiguous(shape1, dolfinx::MPI::mpi_type<T>(), &compound_type);
+  MPI_Type_contiguous(shape[1], dolfinx::MPI::mpi_type<T>(), &compound_type);
   MPI_Type_commit(&compound_type);
-  std::vector<T> recv_buffer_data(shape1 * recv_disp.back());
+  std::vector<T> recv_buffer_data(shape[1] * recv_disp.back());
   MPI_Neighbor_alltoallv(send_buffer_data.data(), num_items_per_dest.data(),
                          send_disp.data(), compound_type,
                          recv_buffer_data.data(), num_items_recv.data(),
@@ -439,7 +474,7 @@ distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
   LOG(2) << "Completed send data to post offices.";
 
   // Convert to local indices
-  const std::int64_t r0 = MPI::local_range(rank, shape0_global, size)[0];
+  const std::int64_t r0 = MPI::local_range(rank, shape[0], size)[0];
   std::vector<std::int32_t> index_local(recv_buffer_index.size());
   std::transform(recv_buffer_index.cbegin(), recv_buffer_index.cend(),
                  index_local.begin(), [r0](auto idx) { return idx - r0; });
@@ -448,29 +483,26 @@ distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x, int shape1,
 };
 //---------------------------------------------------------------------------
 template <typename T>
-std::vector<T> distribute_data(MPI_Comm comm,
-                               const xtl::span<const std::int64_t>& indices,
-                               const xtl::span<const T>& x, int shape1)
+std::vector<T> distribute_from_postoffice(
+    MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
+    const xtl::span<const T>& x, std::array<std::int64_t, 2> shape,
+    std::int64_t rank_offset)
 {
   common::Timer timer("Distribute row-wise data (scalable)");
-  assert(shape1 > 0);
+  assert(shape[1] > 0);
 
   const int size = dolfinx::MPI::size(comm);
   const int rank = dolfinx::MPI::rank(comm);
-  assert(x.size() % shape1 == 0);
-  const std::int64_t shape0 = x.size() / shape1;
-
-  std::int64_t shape0_global(0), rank_offset(0);
-  MPI_Allreduce(&shape0, &shape0_global, 1, MPI_INT64_T, MPI_SUM, comm);
-  MPI_Exscan(&shape0, &rank_offset, 1, MPI_INT64_T, MPI_SUM, comm);
+  assert(x.size() % shape[1] == 0);
+  const std::int64_t shape0_local = x.size() / shape[1];
 
   // 0. Send x data to/from post offices
 
   // Send receive x data to post office (only for rows that need to be
   // communicated)
   auto [post_indices, post_x] = MPI::distribute_to_postoffice(
-      comm, x, shape1, shape0_global, rank_offset);
-  assert(post_indices.size() == post_x.size() / shape1);
+      comm, x, {shape[0], shape[1]}, rank_offset);
+  assert(post_indices.size() == post_x.size() / shape[1]);
 
   // 1. Send request to post office ranks for data
 
@@ -480,7 +512,7 @@ std::vector<T> distribute_data(MPI_Comm comm,
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
     std::size_t idx = indices[i];
-    if (int src = MPI::index_owner(size, idx, shape0_global); src != rank)
+    if (int src = MPI::index_owner(size, idx, shape[0]); src != rank)
       src_to_index.push_back({src, idx, i});
   }
   std::sort(src_to_index.begin(), src_to_index.end());
@@ -557,7 +589,7 @@ std::vector<T> distribute_data(MPI_Comm comm,
   // data that was already on this rank and was therefore was not
   // sent/received via a postoffice.
   const std::array<std::int64_t, 2> postoffice_range
-      = MPI::local_range(rank, shape0_global, size);
+      = MPI::local_range(rank, shape[0], size);
   std::vector<std::int32_t> post_indices_map(
       postoffice_range[1] - postoffice_range[0], -1);
   for (std::size_t i = 0; i < post_indices.size(); ++i)
@@ -567,19 +599,19 @@ std::vector<T> distribute_data(MPI_Comm comm,
   }
 
   // Build send buffer
-  std::vector<T> send_buffer_data(shape1 * recv_disp.back());
+  std::vector<T> send_buffer_data(shape[1] * recv_disp.back());
   for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
   {
     int offset = recv_disp[p];
     for (std::int32_t i = recv_disp[p]; i < recv_disp[p + 1]; ++i)
     {
       std::int64_t index = recv_buffer_index[i];
-      if (index >= rank_offset and index < (rank_offset + shape0))
+      if (index >= rank_offset and index < (rank_offset + shape0_local))
       {
         // I already had this index before any communication
         std::int32_t local_index = index - rank_offset;
-        std::copy_n(std::next(x.begin(), shape1 * local_index), shape1,
-                    std::next(send_buffer_data.begin(), shape1 * offset));
+        std::copy_n(std::next(x.begin(), shape[1] * local_index), shape[1],
+                    std::next(send_buffer_data.begin(), shape[1] * offset));
       }
       else
       {
@@ -587,8 +619,8 @@ std::vector<T> distribute_data(MPI_Comm comm,
         auto local_index = index - postoffice_range[0];
         std::int32_t pos = post_indices_map[local_index];
         assert(pos != -1);
-        std::copy_n(std::next(post_x.begin(), shape1 * pos), shape1,
-                    std::next(send_buffer_data.begin(), shape1 * offset));
+        std::copy_n(std::next(post_x.begin(), shape[1] * pos), shape[1],
+                    std::next(send_buffer_data.begin(), shape[1] * offset));
       }
 
       ++offset;
@@ -600,10 +632,10 @@ std::vector<T> distribute_data(MPI_Comm comm,
                                  MPI_INFO_NULL, false, &neigh_comm0);
 
   MPI_Datatype compound_type0;
-  MPI_Type_contiguous(shape1, dolfinx::MPI::mpi_type<T>(), &compound_type0);
+  MPI_Type_contiguous(shape[1], dolfinx::MPI::mpi_type<T>(), &compound_type0);
   MPI_Type_commit(&compound_type0);
 
-  std::vector<T> recv_buffer_data(shape1 * send_disp.back());
+  std::vector<T> recv_buffer_data(shape[1] * send_disp.back());
   MPI_Neighbor_alltoallv(send_buffer_data.data(), num_items_recv.data(),
                          recv_disp.data(), compound_type0,
                          recv_buffer_data.data(), num_items_per_src.data(),
@@ -617,40 +649,57 @@ std::vector<T> distribute_data(MPI_Comm comm,
     index_pos_to_buffer[std::get<2>(src_to_index[i])] = i;
 
   // Extra data to return
-  std::vector<T> x_new(shape1 * indices.size());
+  std::vector<T> x_new(shape[1] * indices.size());
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
     const std::int64_t index = indices[i];
-    if (index >= rank_offset and index < (rank_offset + shape0))
+    if (index >= rank_offset and index < (rank_offset + shape0_local))
     {
       // Had data from the start in x
       auto local_index = index - rank_offset;
-      std::copy_n(std::next(x.begin(), shape1 * local_index), shape1,
-                  std::next(x_new.begin(), shape1 * i));
+      std::copy_n(std::next(x.begin(), shape[1] * local_index), shape[1],
+                  std::next(x_new.begin(), shape[1] * i));
     }
     else
     {
-      if (int src = MPI::index_owner(size, index, shape0_global); src == rank)
+      if (int src = MPI::index_owner(size, index, shape[0]); src == rank)
       {
         // In my post office bag
         auto local_index = index - postoffice_range[0];
         std::int32_t pos = post_indices_map[local_index];
         assert(pos != -1);
-        std::copy_n(std::next(post_x.begin(), shape1 * pos), shape1,
-                    std::next(x_new.begin(), shape1 * i));
+        std::copy_n(std::next(post_x.begin(), shape[1] * pos), shape[1],
+                    std::next(x_new.begin(), shape[1] * i));
       }
       else
       {
         // In my received post
         std::int32_t pos = index_pos_to_buffer[i];
         assert(pos != -1);
-        std::copy_n(std::next(recv_buffer_data.begin(), shape1 * pos), shape1,
-                    std::next(x_new.begin(), shape1 * i));
+        std::copy_n(std::next(recv_buffer_data.begin(), shape[1] * pos),
+                    shape[1], std::next(x_new.begin(), shape[1] * i));
       }
     }
   }
 
   return x_new;
+}
+//---------------------------------------------------------------------------
+template <typename T>
+std::vector<T> distribute_data(MPI_Comm comm,
+                               const xtl::span<const std::int64_t>& indices,
+                               const xtl::span<const T>& x, int shape1)
+{
+  assert(shape1 > 1);
+  assert(x.size() % shape1 == 0);
+  const std::int64_t shape0_local = x.size() / shape1;
+
+  std::int64_t shape0(0), rank_offset(0);
+  MPI_Allreduce(&shape0_local, &shape0, 1, MPI_INT64_T, MPI_SUM, comm);
+  MPI_Exscan(&shape0, &rank_offset, 1, MPI_INT64_T, MPI_SUM, comm);
+
+  return distribute_from_postoffice(comm, indices, x, {shape0, shape1},
+                                    rank_offset);
 }
 //---------------------------------------------------------------------------
 template <typename T>
@@ -665,7 +714,6 @@ std::vector<T> distribute_data1(MPI_Comm comm,
   const int rank = dolfinx::MPI::rank(comm);
   assert(x.size() % shape1 == 0);
   const std::int64_t shape0 = x.size() / shape1;
-
 
   // Get number of rows on each rank
   std::vector<std::int64_t> global_sizes(size);

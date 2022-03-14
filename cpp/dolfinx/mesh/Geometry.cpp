@@ -82,7 +82,7 @@ mesh::Geometry mesh::create_geometry(
     //  Fetch node coordinates by global index from other ranks. Order of
     //  coords matches order of the indices in 'indices'
     std::vector<double> coords
-        = MPI::distribute_data1<double>(comm, indices, x, dim);
+        = MPI::distribute_data<double>(comm, indices, x, dim);
 
     // Compute local-to-global map from local indices in dofmap to the
     // corresponding global indices in cell_nodes
