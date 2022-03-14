@@ -682,17 +682,16 @@ void petsc_module(py::module& m)
         assert(dofmap0->index_map);
         assert(dofmap1->index_map);
         dolfinx::la::SparsityPattern sp(
-            comm, {dofmap0->index_map, dofmap1->index_map},
-            {dofmap0->index_map_bs(), dofmap1->index_map_bs()});
-
+            comm, {dofmap1->index_map, dofmap0->index_map},
+            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
         dolfinx::fem::sparsitybuild::cells(sp, mesh->topology(),
-                                           {*dofmap0, *dofmap1});
+                                           {*dofmap1, *dofmap0});
         sp.assemble();
 
         // Build operator
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         dolfinx::fem::assemble_discrete_gradient<PetscScalar>(
-            dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES), V0, V1);
+            V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
         return A;
       },
       py::return_value_policy::take_ownership);
