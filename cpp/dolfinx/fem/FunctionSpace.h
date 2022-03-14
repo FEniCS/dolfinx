@@ -36,8 +36,8 @@ public:
   /// @param[in] element The element
   /// @param[in] dofmap The dofmap
   FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
-                std::shared_ptr<const fem::FiniteElement> element,
-                std::shared_ptr<const fem::DofMap> dofmap);
+                std::shared_ptr<const FiniteElement> element,
+                std::shared_ptr<const DofMap> dofmap);
 
   // Copy constructor (deleted)
   FunctionSpace(const FunctionSpace& V) = delete;
@@ -90,20 +90,20 @@ public:
   std::shared_ptr<const mesh::Mesh> mesh() const;
 
   /// The finite element
-  std::shared_ptr<const fem::FiniteElement> element() const;
+  std::shared_ptr<const FiniteElement> element() const;
 
   /// The dofmap
-  std::shared_ptr<const fem::DofMap> dofmap() const;
+  std::shared_ptr<const DofMap> dofmap() const;
 
 private:
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;
 
   // The finite element
-  std::shared_ptr<const fem::FiniteElement> _element;
+  std::shared_ptr<const FiniteElement> _element;
 
   // The dofmap
-  std::shared_ptr<const fem::DofMap> _dofmap;
+  std::shared_ptr<const DofMap> _dofmap;
 
   // The component w.r.t. to root space
   std::vector<int> _component;

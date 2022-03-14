@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2022 Garth N. Wells and and Jørgen S. Dokken
+// Copyright (C) 2020-2022 Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
