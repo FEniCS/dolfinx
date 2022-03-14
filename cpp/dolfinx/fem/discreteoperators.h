@@ -26,24 +26,26 @@ namespace dolfinx::fem
 
 /// @brief Assemble a discrete gradient operator.
 ///
-/// Build the discrete gradient operator \f$A\f$ that takes a
-/// \f$w \in H^p\f$ (p-th order nodal Lagrange) to \f$v \in H(curl)\f$
-/// (q-th order Nedelec first kind), i.e. v = Aw. V0 is the H(curl) space,
-/// and V1 is the Lagrange space.
+/// The discrete gradient operator \f$A\f$ takes the gradient of a
+/// Lagrange finite element function \f$v \in V_h \subset H^1\f$ to a
+/// Nedelec (first kind) function \f$w \in W_h \subset H({\rm curl})\f$.
+/// i.e. \f$w=Av\f$ where \f$v\f$ are the Lagrange space
+/// degrees-of-freedom and \f$w\f$ are the curl space
+/// degrees-of-freedom.
 ///
-/// An example of where discrete gradient operators are required is the
-/// creation of algebraic multigrid solvers for H(curl) and H(div)
-/// problems.
-///
-/// @warning This function relies on the user supplying appropriate
-/// input and output spaces. See parameter descriptions.
+/// An example of where discrete gradient operators are used is the
+/// creation of algebraic multigrid solvers for \f$H({\rm curl})\f$  and
+/// \f$H({\rm curl})\f$ problems.
 ///
 /// @note The sparsity pattern for a discrete operator can be
 /// initialised using sparsitybuild::cells.
 ///
+/// @warning This function relies on the user supplying appropriate
+/// input and output spaces. See parameter descriptions.
+///
 /// @param[in] mat_set A functor that sets values in a matrix
-/// @param[in] V0 A degree q Nedelec (first kind) space
-/// @param[in] V1 A degere p Lagrange space
+/// @param[in] V0 A Nedelec (first kind) space
+/// @param[in] V1 A Lagrange space
 template <typename T>
 void assemble_discrete_gradient(
     const std::function<int(const xtl::span<const std::int32_t>&,
