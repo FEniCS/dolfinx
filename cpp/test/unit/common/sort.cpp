@@ -31,9 +31,10 @@ TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int32_t,
 
 TEST_CASE("Test argsort bitset")
 {
-  auto size = GENERATE(100, 1000, 10000);
+  auto shape0 = GENERATE(100, 1000, 10000);
+  constexpr int shape1 = 2;
 
-  xt::xtensor<std::int32_t, 2> arr = xt::empty<std::int32_t>({size, 2});
+  std::vector<std::int32_t> arr(shape0 * shape1);
 
   // Gererate a vector of ints with a Uniform Int distribution
   std::uniform_int_distribution<std::int32_t> distribution(0, 10000);
@@ -41,22 +42,25 @@ TEST_CASE("Test argsort bitset")
   auto generator = std::bind(distribution, engine);
   std::generate(arr.begin(), arr.end(), generator);
 
-  std::vector<std::int32_t> perm = dolfinx::sort_by_perm(arr);
-  REQUIRE(perm.size() == arr.shape(0));
+  std::vector<std::int32_t> perm
+      = dolfinx::sort_by_perm<std::int32_t>(arr, shape1);
+  REQUIRE((int)perm.size() == shape0);
 
   // Sort by perm using to std::lexicographical_compare
-  std::vector<int> index(arr.shape(0));
+  std::vector<int> index(shape0);
   std::iota(index.begin(), index.end(), 0);
   std::sort(index.begin(), index.end(),
             [&arr](int a, int b)
             {
-              return std::lexicographical_compare(
-                  xt::row(arr, a).begin(), xt::row(arr, a).end(),
-                  xt::row(arr, b).begin(), xt::row(arr, b).end());
+              auto it0 = std::next(arr.begin(), shape1 * a);
+              auto it1 = std::next(arr.begin(), shape1 * b);
+              return std::lexicographical_compare(it0, std::next(it0, shape1),
+                                                  it1, std::next(it1, shape1));
             });
 
   // Requiring equality of permutation vectors is not a good test, because
   // std::sort is not stable, so we compare the effect on the actual array.
   for (std::size_t i = 0; i < perm.size(); i++)
-    REQUIRE((xt::row(arr, perm[i]) == xt::row(arr, index[i])));
+    REQUIRE((xtl::span(arr.data() + shape1 * perm[i], shape1)
+             == xtl::span(arr.data() + shape1 * index[i], shape1)));
 }
