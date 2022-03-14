@@ -25,6 +25,7 @@
 #include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/interpolate.h>
 #include <dolfinx/fem/petsc.h>
+#include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/graph/ordering.h>
@@ -666,9 +667,30 @@ void petsc_module(py::module& m)
       [](const dolfinx::fem::FunctionSpace& V0,
          const dolfinx::fem::FunctionSpace& V1)
       {
-        dolfinx::la::SparsityPattern sp
-            = dolfinx::fem::create_sparsity_discrete_gradient(V0, V1);
-        Mat A = dolfinx::la::petsc::create_matrix(MPI_COMM_WORLD, sp);
+        assert(V0.mesh());
+        std::shared_ptr<const dolfinx::mesh::Mesh> mesh = V0.mesh();
+        assert(V1.mesh());
+        assert(mesh == V1.mesh());
+        MPI_Comm comm = mesh->comm();
+
+        std::shared_ptr<const dolfinx::fem::DofMap> dofmap0 = V0.dofmap();
+        assert(dofmap0);
+        std::shared_ptr<const dolfinx::fem::DofMap> dofmap1 = V1.dofmap();
+        assert(dofmap1);
+
+        // Create and build  sparsity pattern
+        assert(dofmap0->index_map);
+        assert(dofmap1->index_map);
+        dolfinx::la::SparsityPattern sp(
+            comm, {dofmap0->index_map, dofmap1->index_map},
+            {dofmap0->index_map_bs(), dofmap1->index_map_bs()});
+
+        dolfinx::fem::sparsitybuild::cells(sp, mesh->topology(),
+                                           {*dofmap0, *dofmap1});
+        sp.assemble();
+
+        // Build operator
+        Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         dolfinx::fem::assemble_discrete_gradient<PetscScalar>(
             dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES), V0, V1);
         MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);

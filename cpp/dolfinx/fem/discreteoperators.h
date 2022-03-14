@@ -24,18 +24,6 @@
 namespace dolfinx::fem
 {
 
-/// @brief Create a sparsity pattern for a discrete gradient
-/// operator.
-///
-/// @warning This function relies on the user supplying appropriate
-/// input and output spaces. See parameter descriptions.
-///
-/// @param[in] V0 A degree q Nedelec (first kind) space
-/// @param[in] V1 A degere p Lagrange space
-la::SparsityPattern
-create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
-                                  const fem::FunctionSpace& V1);
-
 /// @brief Assemble a discrete gradient operator.
 ///
 /// Build the discrete gradient operator \f$A\f$ that takes a
@@ -49,6 +37,9 @@ create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
 ///
 /// @warning This function relies on the user supplying appropriate
 /// input and output spaces. See parameter descriptions.
+///
+/// @note The sparsity pattern for a discrete operator can be
+/// initialised using sparsitybuild::cells.
 ///
 /// @param[in] mat_set A functor that sets values in a matrix
 /// @param[in] V0 A degree q Nedelec (first kind) space
