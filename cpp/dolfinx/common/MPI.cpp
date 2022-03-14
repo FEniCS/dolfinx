@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Magnus Vikstrøm
+// Copyright (C) 2007-2022 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
