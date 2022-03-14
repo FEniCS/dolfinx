@@ -72,8 +72,9 @@ int rank(MPI_Comm comm);
 /// communicator
 int size(MPI_Comm comm);
 
-/// @brief Return local range for given process, splitting [0, N - 1]
-/// into size() portions of almost equal size.
+/// @brief Return local range for the calling process, partitioning the
+/// global [0, N - 1] range across all ranks into partitions of almost
+/// equal size.
 /// @param[in] rank MPI rank of the caller
 /// @param[in] N The value to partition
 /// @param[in] size The number of MPI ranks across which to partition
@@ -96,7 +97,8 @@ constexpr std::array<std::int64_t, 2> local_range(int rank, std::int64_t N,
     return {rank * n + r, rank * n + r + n};
 }
 
-/// @brief Return which rank owns index (inverse of MPI::local_range)
+/// @brief Return which rank owns index in global range [0, N - 1]
+/// (inverse of MPI::local_range).
 /// @param[in] size Number of MPI ranks
 /// @param[in] index The index to determine owning rank
 /// @param[in] N Total number of indices
@@ -121,9 +123,9 @@ constexpr int index_owner(int size, std::size_t index, std::size_t N)
   }
 }
 
-/// @brief Return list of neighbors (sources and destinations) for a
-/// neighborhood communicator.
-/// @param[in] comm Neighborhood communicator
+/// @brief Return list of neighbors ranks (sources and destinations) for
+/// a neighborhood communicator.
+/// @param[in] comm Communicator with a neighborhood
 /// @return source ranks [0], destination ranks [1]
 std::array<std::vector<int>, 2> neighbors(MPI_Comm comm);
 
@@ -229,7 +231,7 @@ std::vector<T> distribute_from_postoffice(
     std::int64_t rank_offset);
 
 /// @brief Distribute rows of a rectangular data array to ranks where
-/// they are required.
+/// they are required (scalable version).
 ///
 /// This functions determines local neighborhoods for communication, and
 /// then using MPI neighbourhood collectives to exchange data. It is
@@ -257,7 +259,7 @@ std::vector<T> distribute_data(MPI_Comm comm,
                                const xtl::span<const T>& x, int shape1);
 
 /// @brief Distribute rows of a rectangular data array to ranks where
-/// they are required.
+/// they are required (non-scalable version).
 ///
 /// See MPI::distribute_data description.
 ///
@@ -281,14 +283,15 @@ std::vector<T> distribute_data1(MPI_Comm comm,
                                 const xtl::span<const T>& x, int shape1);
 
 /// @todo Remove this function
-/// Send in_values[p0] to process p0 and receive values from process
-/// p1 in out_values[p1]
+/// Send in_values[p0] to process p0 and receive values from process p1
+/// in out_values[p1]
 template <typename T>
 graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
                                    const graph::AdjacencyList<T>& send_data);
 
 /// @brief Send in_values[n0] to neighbor process n0 and receive values
 /// from neighbor process n1 in out_values[n1].
+///
 /// @param[in] comm Neighborhood communicator
 /// @param[in] send_data The data to send to each rank.
 /// graph::AdjacencyList<T>::num_nodes should be equal to the number of
@@ -690,7 +693,7 @@ std::vector<T> distribute_data(MPI_Comm comm,
                                const xtl::span<const std::int64_t>& indices,
                                const xtl::span<const T>& x, int shape1)
 {
-  assert(shape1 > 1);
+  assert(shape1 > 0);
   assert(x.size() % shape1 == 0);
   const std::int64_t shape0_local = x.size() / shape1;
 
@@ -732,12 +735,11 @@ std::vector<T> distribute_data1(MPI_Comm comm,
             [&indices](int a, int b) { return (indices[a] < indices[b]); });
 
   int p = 0;
-  for (std::size_t i = 0; i < index_order.size(); ++i)
+  for (auto idx : index_order)
   {
-    int j = index_order[i];
-    while (indices[j] >= global_offsets[p + 1])
+    while (indices[idx] >= global_offsets[p + 1])
       ++p;
-    index_owner[j] = p;
+    index_owner[idx] = p;
     number_index_send[p]++;
   }
 
