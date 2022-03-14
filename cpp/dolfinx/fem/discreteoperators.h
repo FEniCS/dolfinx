@@ -30,8 +30,6 @@ namespace dolfinx::fem
 /// @warning This function relies on the user supplying appropriate
 /// input and output spaces. See parameter descriptions.
 ///
-/// @param[in] V0 A q-th order Nedelec (first kind) space
-/// @param[in] V1 A p-th order Lagrange space
 /// @param[in] V0 A degree q Nedelec (first kind) space
 /// @param[in] V1 A degere p Lagrange space
 la::SparsityPattern
