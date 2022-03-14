@@ -196,8 +196,8 @@ distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x,
                          std::array<std::int64_t, 2> shape,
                          std::int64_t rank_offset);
 
-/// @brief Distribute rows of a rectangular data array to ranks where
-/// they are required.
+/// @brief Distribute rows of a rectangular data array from post office
+/// ranks to ranks where they are required.
 ///
 /// This functions determines local neighborhoods for communication, and
 /// then using MPI neighbourhood collectives to exchange data. It is
@@ -696,7 +696,7 @@ std::vector<T> distribute_data(MPI_Comm comm,
 
   std::int64_t shape0(0), rank_offset(0);
   MPI_Allreduce(&shape0_local, &shape0, 1, MPI_INT64_T, MPI_SUM, comm);
-  MPI_Exscan(&shape0, &rank_offset, 1, MPI_INT64_T, MPI_SUM, comm);
+  MPI_Exscan(&shape0_local, &rank_offset, 1, MPI_INT64_T, MPI_SUM, comm);
 
   return distribute_from_postoffice(comm, indices, x, {shape0, shape1},
                                     rank_offset);

@@ -79,8 +79,8 @@ mesh::Geometry mesh::create_geometry(
     dolfinx::radix_sort(xtl::span(indices));
     indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
 
-    //  Fetch node coordinates by global index from other ranks. Order of
-    //  coords matches order of the indices in 'indices'
+    //  Distribute  node coordinates by global index from other ranks.
+    //  Order of coords matches order of the indices in 'indices'.
     std::vector<double> coords
         = MPI::distribute_data<double>(comm, indices, x, dim);
 
