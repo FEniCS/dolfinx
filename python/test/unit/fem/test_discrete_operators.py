@@ -39,10 +39,12 @@ def test_gradient(mesh):
     assert np.isclose(G.norm(PETSc.NormType.FROBENIUS), np.sqrt(2.0 * num_edges))
 
 
-@pytest.mark.parametrize("p", range(1, 5))
-@pytest.mark.parametrize("q", range(1, 5))
-@pytest.mark.parametrize("cell_type", [
-    CellType.quadrilateral, CellType.triangle, CellType.tetrahedron, CellType.hexahedron])
+@pytest.mark.parametrize("p", range(1, 4))
+@pytest.mark.parametrize("q", range(1, 4))
+@pytest.mark.parametrize("cell_type", [CellType.quadrilateral,
+                                       CellType.triangle,
+                                       CellType.tetrahedron,
+                                       CellType.hexahedron])
 def test_interpolation_matrix(cell_type, p, q):
     """Test discrete gradient computation (typically used for curl-curl
     AMG preconditioners"""

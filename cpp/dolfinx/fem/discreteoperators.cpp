@@ -50,3 +50,4 @@ fem::create_sparsity_discrete_gradient(const fem::FunctionSpace& V0,
   pattern.assemble();
   return pattern;
 };
+//-----------------------------------------------------------------------------
