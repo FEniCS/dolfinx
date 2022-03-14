@@ -12,7 +12,6 @@
 #include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/math.h>
-#include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
 #include <vector>
