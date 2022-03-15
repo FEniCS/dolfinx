@@ -562,8 +562,6 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
     local_graph_data[pos[c1]++] = c0;
   }
 
-  std::vector<std::int64_t> tmp(unmatched_facet_data.begin(),
-                                unmatched_facet_data.end());
   return {graph::AdjacencyList<std::int32_t>(std::move(local_graph_data),
                                              std::move(offsets)),
           std::move(unmatched_facet_data), max_num_facet_vertices + 1};
