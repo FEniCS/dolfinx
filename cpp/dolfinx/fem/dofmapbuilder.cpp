@@ -280,11 +280,11 @@ build_basic_dofmap(const mesh::Topology& topology,
   {
     if (needs_entities[d])
     {
+      // NOTE This assumes all entities have the same number of dofs
+      auto num_entity_dofs = entity_dofs[d][0].size();
       for (std::int32_t e_index_local = 0;
            e_index_local < num_mesh_entities_local[d]; ++e_index_local)
       {
-        // NOTE This assumes all entities have the same number of dofs
-        auto num_entity_dofs = entity_dofs[d][0].size();
         auto e_index_global = global_indices[d][e_index_local];
 
         for (std::size_t count = 0; count < num_entity_dofs; ++count)
@@ -296,8 +296,8 @@ build_basic_dofmap(const mesh::Topology& topology,
           dof_entity[dof] = {d, e_index_local};
         }
       }
-      offset_local += entity_dofs[d][0].size() * num_mesh_entities_local[d];
-      offset_global += entity_dofs[d][0].size() * num_mesh_entities_global[d];
+      offset_local += num_entity_dofs * num_mesh_entities_local[d];
+      offset_global += num_entity_dofs * num_mesh_entities_global[d];
     }
   }
 
