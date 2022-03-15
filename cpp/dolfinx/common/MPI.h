@@ -178,10 +178,15 @@ std::vector<int> compute_graph_edges_pcx(MPI_Comm comm,
 std::vector<int> compute_graph_edges_nbx(MPI_Comm comm,
                                          const xtl::span<const int>& edges);
 
-/// @brief Distribute row data to 'post office' rank.
+/// @brief Distribute row data to 'post office' ranks.
 ///
-/// The post office rank for a row is determined by applying
-/// MPI::index_owner global index of the row.
+/// This function takes row-wise data that is distributed across
+/// processes. Data is not duplicated across ranks. The global index of
+/// a row is its local row position plus the offset for the calling
+/// process. The post office rank for a row is determined by applying
+/// MPI::index_owner to the global index, and the row is then sent to
+/// the post office rank. The function returns that row data for which
+/// the caller is the post office.
 ///
 /// @param[in] comm MPI communicator
 /// @param[in] x Data to distribute (2D, row-major layout)
@@ -201,10 +206,10 @@ distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x,
 /// @brief Distribute rows of a rectangular data array from post office
 /// ranks to ranks where they are required.
 ///
-/// This functions determines local neighborhoods for communication, and
+/// This function determines local neighborhoods for communication, and
 /// then using MPI neighbourhood collectives to exchange data. It is
-/// scalable if the neighborhoods are relatively small, i.e. each process
-/// communicated with a modest number of othe processes/
+/// scalable if the neighborhoods are relatively small, i.e. each
+/// process communicated with a modest number of othe processes/
 ///
 /// @note The non-scalable version of this function,
 /// MPI::distribute_data1, can be faster up to some number of MPI ranks
@@ -233,10 +238,10 @@ std::vector<T> distribute_from_postoffice(
 /// @brief Distribute rows of a rectangular data array to ranks where
 /// they are required (scalable version).
 ///
-/// This functions determines local neighborhoods for communication, and
+/// This function determines local neighborhoods for communication, and
 /// then using MPI neighbourhood collectives to exchange data. It is
-/// scalable if the neighborhoods are relatively small, i.e. each process
-/// communicated with a modest number of othe processes/
+/// scalable if the neighborhoods are relatively small, i.e. each
+/// process communicated with a modest number of othe processes.
 ///
 /// @note The non-scalable version of this function,
 /// MPI::distribute_data1, can be faster up to some number of MPI ranks
