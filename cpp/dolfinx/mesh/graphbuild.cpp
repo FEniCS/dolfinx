@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2021 Garth N. Wells
+// Copyright (C) 2010-2022 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -48,8 +48,13 @@ compute_nonlocal_dual_graph_new(
     std::size_t shape1, const xtl::span<const std::int32_t>& cells,
     const graph::AdjacencyList<std::int32_t>& local_graph)
 {
-  LOG(INFO) << "Build nonlocal part of mesh dual graph";
+  LOG(INFO) << "Build nonlocal part of mesh dual graph (NEW)";
   common::Timer timer("Compute non-local part of mesh dual graph (NEW)");
+
+  // TODO: Two possible straightforward optimisations:
+  // 1. Do not send owned data to self via MPI.
+  // 2. Modify MPI::index_owner to use a subet of ranks as post offices.
+  // 3. Use non-blocking MPI calls.
 
   const std::size_t shape0 = cells.size();
 
@@ -57,7 +62,7 @@ compute_nonlocal_dual_graph_new(
   const int num_ranks = dolfinx::MPI::size(comm);
   if (num_ranks == 1)
   {
-    // Convert graph to int64 and return
+    // Convert graph to int64_t and return
     return {graph::AdjacencyList<std::int64_t>(
                 std::vector<std::int64_t>(local_graph.array().begin(),
                                           local_graph.array().end()),
@@ -67,15 +72,14 @@ compute_nonlocal_dual_graph_new(
 
   // Get cell offset for this process for converting local cell indices
   // to global cell indices
-  const std::int64_t num_local = local_graph.num_nodes();
   std::int64_t cell_offset = 0;
-  MPI_Exscan(&num_local, &cell_offset, 1, MPI_INT64_T, MPI_SUM, comm);
+  {
+    const std::int64_t num_local = local_graph.num_nodes();
+    MPI_Exscan(&num_local, &cell_offset, 1, MPI_INT64_T, MPI_SUM, comm);
+  }
 
   // Find (max_vert_per_facet, min_vertex_index, max_vertex_index)
   // across all processes. Use first facet vertex for min/max index.
-  // std::array<std::int64_t, 2> global_minmax;
-  // TODO: use better name for 'global_range'
-  // std::int64_t global_range = -1;
   std::int32_t fshape1 = -1;
   std::array<std::int64_t, 2> vrange;
   {
@@ -150,8 +154,14 @@ compute_nonlocal_dual_graph_new(
 
   // Determine source ranks
   const std::vector<int> src = MPI::compute_graph_edges_nbx(comm, dest);
+  LOG(INFO) << "Number of destination and source ranks in non-local dual graph "
+               "construction, and ratio to total number of ranks: "
+            << dest.size() << ", " << src.size() << ", "
+            << static_cast<double>(dest.size()) / num_ranks << ", "
+            << static_cast<double>(src.size()) / num_ranks;
 
-  // Create neighbourhood communicator for sending data to post offices
+  // Create neighbourhood communicator for sending data to
+  // post offices
   MPI_Comm neigh_comm0;
   MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
                                  dest.size(), dest.data(), MPI_UNWEIGHTED,
@@ -232,8 +242,11 @@ compute_nonlocal_dual_graph_new(
 
       std::size_t num_matches = std::distance(it, it1);
       if (num_matches > 2)
+      {
         throw std::runtime_error(
             "A facet is connected to more than two cells.");
+      }
+
       if (num_matches == 2)
       {
         // Store the global cell index from the other rank
