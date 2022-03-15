@@ -49,7 +49,7 @@ compute_nonlocal_dual_graph_new(
     const graph::AdjacencyList<std::int32_t>& local_graph)
 {
   LOG(INFO) << "Build nonlocal part of mesh dual graph";
-  common::Timer timer("Compute non-local part of mesh dual graph");
+  common::Timer timer("Compute non-local part of mesh dual graph (NEW)");
 
   const std::size_t shape0 = cells.size();
 
@@ -335,7 +335,7 @@ compute_nonlocal_dual_graph_new(
 /// @param[in] local_graph The dual graph for cells on this MPI rank
 /// @return (0) Extended dual graph to include ghost edges (edges to
 /// off-rank cells) and (1) the number of ghost edges
-std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
+[[maybe_unused]] std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
 compute_nonlocal_dual_graph(
     const MPI_Comm comm, const xtl::span<const std::int64_t>& unmatched_facets,
     const std::size_t unmatched_facets_shape1,
@@ -872,6 +872,7 @@ mesh::build_dual_graph(const MPI_Comm comm,
   // are connections by facet)
   auto [local_graph, facet_cell_map, shape1]
       = mesh::build_local_dual_graph(cells.array(), cells.offsets(), tdim);
+  assert(local_graph.num_nodes() == cells.num_nodes());
 
   // Extend with nonlocal edges and convert to global indices
 
@@ -886,22 +887,20 @@ mesh::build_dual_graph(const MPI_Comm comm,
     std::size_t offset = i * shape1;
     xtl::span row(facet_cell_map.data() + offset, shape1);
     facets.insert(facets.end(), row.begin(), std::prev(row.end()));
-    // std::sort(std::prev(facets.end(), shape1 - 1), facets.end());
     fcells.push_back(row.back());
   }
 
-  auto [xgraph, xnum_ghost_edges] = compute_nonlocal_dual_graph_new(
+  auto [graph, num_ghost_edges] = compute_nonlocal_dual_graph_new(
       comm, facets, shape1 - 1, fcells, local_graph);
 
-  auto [graph, num_ghost_edges]
-      = compute_nonlocal_dual_graph(comm, facet_cell_map, shape1, local_graph);
+  // auto [graph, num_ghost_edges]
+  //     = compute_nonlocal_dual_graph(comm, facet_cell_map, shape1,
+  //     local_graph);
 
-  if (xgraph.array() != graph.array())
-    throw std::runtime_error("Data mis-match");
-  if (xgraph.offsets() != graph.offsets())
-    throw std::runtime_error("Offsets mis-match");
-
-  assert(local_graph.num_nodes() == cells.num_nodes());
+  // if (xgraph.array() != graph.array())
+  //   throw std::runtime_error("Data mis-match");
+  // if (xgraph.offsets() != graph.offsets())
+  //   throw std::runtime_error("Offsets mis-match");
 
   LOG(INFO) << "Graph edges (local:" << local_graph.offsets().back()
             << ", non-local:"
