@@ -583,7 +583,14 @@ void Topology::set_connectivity(
 //-----------------------------------------------------------------------------
 const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 {
-  if (_cell_permutations.empty())
+  std::cout << "get_cell_permutation_info\n";
+  // TODO Do I need to check this index map exists? It the cell index map should
+  // always exist.
+  auto i_map = this->index_map(this->dim());
+  assert(i_map);
+  const bool has_cells = i_map->size_local() + i_map->num_ghosts() > 0;
+
+  if (_cell_permutations.empty() and has_cells)
   {
     throw std::runtime_error(
         "create_entity_permutations must be called before using this data.");
@@ -593,6 +600,8 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 //-----------------------------------------------------------------------------
 const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
 {
+  // TODO Same as above
+  std::cout << "get_facet_permutations\n";
   if (_facet_permutations.empty())
   {
     throw std::runtime_error(
