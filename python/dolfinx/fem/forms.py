@@ -143,7 +143,7 @@ def extract_function_spaces(forms: typing.Union[typing.Iterable[FormMetaClass],
                                                 typing.Iterable[typing.Iterable[FormMetaClass]]],
                             index: int = 0) -> typing.Iterable[function.FunctionSpace]:
     """Extract common function spaces from an array of forms. If `forms`
-    is a list of linear form, this function returns of list of the the
+    is a list of linear form, this function returns of list of the
     corresponding test functions. If `forms` is a 2D array of bilinear
     forms, for index=0 the list common test function space for each row
     is returned, and if index=1 the common trial function spaces for

@@ -104,9 +104,9 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
   }
 
   // TODO: UFC dofmaps just use simple offset for each field but this
-  // could be different for custom dofmaps This data should come
-  // directly from the UFC interface in place of the the implicit
-  // assumption
+  // could be different for custom dofmaps. This data should come
+  // directly from the UFC interface in place of the implicit
+  // assumption.
 
   // Create UFC subdofmaps and compute offset
   std::vector<int> offsets(1, 0);

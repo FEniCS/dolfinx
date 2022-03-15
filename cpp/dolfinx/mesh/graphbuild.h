@@ -8,8 +8,10 @@
 
 #include <cstdint>
 #include <mpi.h>
+#include <tuple>
 #include <utility>
-#include <xtensor/xarray.hpp>
+#include <vector>
+#include <xtl/xspan.hpp>
 
 namespace dolfinx::graph
 {
@@ -26,12 +28,14 @@ namespace dolfinx::mesh
 /// @param[in] offsets Adjacency list offsets, i.e. index of the first
 /// entry of cell `i` in `cell_vertices` `is offsets[i]`
 /// @param[in] tdim The topological dimension of the cells
-/// @return (0) Local dual graph and (1) facet data for facets that are
-/// shared by only one cell on this rank. The facet data is `[v0, ...
-/// v_(n-1), x, .., x, cell_index]`, where `v_i` is a vertex global
+/// @return (0) Local dual graph, (1) facet data (2D flattened) for
+/// facets that are shared by only one cell on this rank, and (2) the
+/// number of columns for the facet data array. The facet data is `[v0,
+/// ... v_(n-1), x, .., x, cell_index]`, where `v_i` is a vertex global
 /// index, `x` is a padding value (all padding values will be equal) and
 /// `cell_index` is the global index of the attached cell.
-std::pair<graph::AdjacencyList<std::int32_t>, xt::xtensor<std::int64_t, 2>>
+std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
+           std::size_t>
 build_local_dual_graph(const xtl::span<const std::int64_t>& cells,
                        const xtl::span<const std::int32_t>& offsets, int tdim);
 
