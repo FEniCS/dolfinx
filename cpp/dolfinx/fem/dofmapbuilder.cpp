@@ -276,7 +276,7 @@ build_basic_dofmap(const mesh::Topology& topology,
   // belong to a cell on that process.
   std::int32_t offset_local = 0;
   std::int64_t offset_global = 0;
-  for (int d = 0; d < D; ++d)
+  for (int d = 0; d <= D; ++d)
   {
     if (needs_entities[d])
     {
