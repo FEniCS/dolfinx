@@ -273,7 +273,6 @@ compute_nonlocal_dual_graph_new(
   std::vector<std::int32_t> num_edges(local_graph.num_nodes(), 0);
   std::adjacent_difference(std::next(local_graph.offsets().begin()),
                            local_graph.offsets().end(), num_edges.begin());
-  std::vector<std::int32_t> num_edges0 = num_edges;
   for (std::size_t i = 0; i < recv_buffer1.size(); ++i)
   {
     if (recv_buffer1[i] >= 0)
@@ -289,26 +288,29 @@ compute_nonlocal_dual_graph_new(
   std::partial_sum(num_edges.cbegin(), num_edges.cend(),
                    std::next(offsets.begin()));
 
+  // Compute adjacency list data (edges)
   std::vector<std::int64_t> data(offsets.back());
-
-  // Copy local data
-  for (std::size_t i = 0; i < offsets.size() - 1; ++i)
   {
-    auto e = local_graph.links(i);
-    std::copy(e.cbegin(), e.cend(), std::next(data.begin(), offsets[i]));
-  }
+    std::vector<std::int32_t> disp = offsets;
 
-  // Add non-local data
-  std::vector<std::int32_t> off(num_edges0.size(), 0);
-  std::transform(num_edges0.cbegin(), num_edges0.cend(), offsets.cbegin(),
-                 off.begin(), [](auto size, auto disp) { return disp + size; });
-  for (std::size_t i = 0; i < recv_buffer1.size(); ++i)
-  {
-    if (recv_buffer1[i] >= 0)
+    // Copy local data and add cell offset
+    for (std::int32_t i = 0; i < local_graph.num_nodes(); ++i)
     {
-      std::size_t pos = send_indx_to_pos[i];
-      std::size_t cell = cells[pos];
-      data[off[cell]++] = recv_buffer1[i];
+      auto e = local_graph.links(i);
+      disp[i] += e.size();
+      std::transform(e.cbegin(), e.cend(), std::next(data.begin(), offsets[i]),
+                     [cell_offset](auto x) { return x + cell_offset; });
+    }
+
+    // Add non-local data
+    for (std::size_t i = 0; i < recv_buffer1.size(); ++i)
+    {
+      if (recv_buffer1[i] >= 0)
+      {
+        std::size_t pos = send_indx_to_pos[i];
+        std::size_t cell = cells[pos];
+        data[disp[cell]++] = recv_buffer1[i];
+      }
     }
   }
 
@@ -336,10 +338,16 @@ compute_nonlocal_dual_graph_new(
   }
 
   graph::AdjacencyList<std::int64_t> graph(xgraph);
-  if (new_graph.array() != graph.array())
-    throw std::runtime_error("Incompatible (data).");
-  if (new_graph.offsets() != graph.offsets())
-    throw std::runtime_error("Incompatible (offsets).");
+
+  if (MPI::rank(comm) == 1)
+  {
+    // std::cout << new_graph.str() << std::endl;
+    // std::cout << graph.str() << std::endl;
+    if (new_graph.array() != graph.array())
+      throw std::runtime_error("Incompatible (data).");
+    if (new_graph.offsets() != graph.offsets())
+      throw std::runtime_error("Incompatible (offsets).");
+  }
 
   std::int64_t num_ghosts = std::count_if(
       recv_buffer1.begin(), recv_buffer1.end(), [](auto x) { return x > 0; });
@@ -929,17 +937,10 @@ mesh::build_dual_graph(const MPI_Comm comm,
   auto [graph, num_ghost_edges]
       = compute_nonlocal_dual_graph(comm, facet_cell_map, shape1, local_graph);
 
-  if (xgraph.array() != graph.array())
-    throw std::runtime_error("Data mis-match");
-  if (xgraph.offsets() != graph.offsets())
-    throw std::runtime_error("Offsets mis-match");
-
-  // if (MPI::rank(comm) == 1)
-  // {
-  //   std::cout << local_graph.str() << std::endl;
-  //   std::cout << graph.str() << std::endl;
-  //   std::cout << xgraph.str() << std::endl;
-  // }
+  // if (xgraph.array() != graph.array())
+  //   throw std::runtime_error("Data mis-match");
+  // if (xgraph.offsets() != graph.offsets())
+  //   throw std::runtime_error("Offsets mis-match");
 
   assert(local_graph.num_nodes() == cells.num_nodes());
 
