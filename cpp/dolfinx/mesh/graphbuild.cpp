@@ -42,6 +42,308 @@ namespace
 /// @return (0) Extended dual graph to include ghost edges (edges to
 /// off-rank cells) and (1) the number of ghost edges
 std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
+compute_nonlocal_dual_graph_new(
+    const MPI_Comm comm, const xtl::span<const std::int64_t>& facets,
+    const xtl::span<const std::int64_t>& cells, const std::size_t shape1,
+    const graph::AdjacencyList<std::int32_t>& local_graph)
+{
+  LOG(INFO) << "Build nonlocal part of mesh dual graph";
+  common::Timer timer("Compute non-local part of mesh dual graph");
+
+  const std::size_t shape0 = cells.size();
+
+  // Return empty data if mesh is not distributed
+  const int num_ranks = dolfinx::MPI::size(comm);
+  if (num_ranks == 1)
+  {
+    // Convert graph to int64
+    return {graph::AdjacencyList<std::int64_t>(
+                std::vector<std::int64_t>(local_graph.array().begin(),
+                                          local_graph.array().end()),
+                local_graph.offsets()),
+            0};
+  }
+
+  // Get cell offset for this process to create global numbering for
+  // cells
+  const std::int64_t num_local = local_graph.num_nodes();
+  std::int64_t cell_offset = 0;
+  MPI_Exscan(&num_local, &cell_offset, 1, MPI_INT64_T, MPI_SUM, comm);
+
+  // Using the first index of facets, compute the array
+  // (max_vertices_per_facet, min_index, max_index) across all ranks
+  std::array<std::int64_t, 2> global_minmax;
+  // TODO: use better name for 'global_range'
+  std::int64_t global_range = -1;
+  std::int32_t fshape1 = -1;
+  {
+    std::array<std::int64_t, 3> send_buffer
+        = {-std::int64_t(shape1), std::numeric_limits<std::int64_t>::max(),
+           std::numeric_limits<std::int64_t>::max()};
+    for (std::size_t i = 0; i < facets.size(); i += shape1)
+    {
+      send_buffer[1] = std::min(send_buffer[1], facets[i]);
+      send_buffer[2] = std::min(send_buffer[2], -facets[i]);
+    }
+
+    // Compute reductions
+    std::array<std::int64_t, 3> buffer_global_min;
+    MPI_Allreduce(send_buffer.data(), buffer_global_min.data(), 3, MPI_INT64_T,
+                  MPI_MIN, comm);
+    assert(buffer_global_min[1] != std::numeric_limits<std::int64_t>::max());
+    assert(buffer_global_min[2] != std::numeric_limits<std::int64_t>::max());
+
+    fshape1 = -buffer_global_min[0];
+    global_minmax = {buffer_global_min[1], -buffer_global_min[2]};
+    global_range = global_minmax[1] - global_minmax[0] + 1;
+
+    LOG(2) << "Max. vertices per facet=" << fshape1 << "\n";
+  }
+  std::int32_t buffer_shape1 = fshape1 + 1;
+
+  // Build {v0, dest} list for each facet, and sort (dest is the post
+  // office rank)
+  std::vector<std::array<std::int32_t, 2>> dest_to_index;
+  dest_to_index.reserve(shape0);
+  for (std::size_t i = 0; i < shape0; ++i)
+  {
+    std::int64_t idx = facets[i * shape1] - global_minmax[0];
+    dest_to_index.push_back(
+        {MPI::index_owner(num_ranks, idx, global_range), int(i)});
+  }
+  std::sort(dest_to_index.begin(), dest_to_index.end());
+
+  // Build list or src ranks and count number of items (rows of x) to
+  // receive from each src post office (by neighbourhood rank)
+  std::vector<int> dest;
+  std::vector<std::int32_t> num_items_per_dest, pos_to_neigh_rank(shape0, -1);
+  {
+    auto it = dest_to_index.begin();
+    while (it != dest_to_index.end())
+    {
+      const int neigh_rank = dest.size();
+
+      // Store global rank
+      dest.push_back((*it)[0]);
+
+      // Find iterator to next global rank
+      auto it1
+          = std::find_if(it, dest_to_index.end(),
+                         [r = dest.back()](auto& idx) { return idx[0] != r; });
+
+      // Store number of items for current rank
+      num_items_per_dest.push_back(std::distance(it, it1));
+
+      // Set entry in map from local facet row index (position) to local
+      // destination rank
+      for (auto e = it; e != it1; ++e)
+        pos_to_neigh_rank[(*e)[1]] = neigh_rank;
+
+      // Advance iterator
+      it = it1;
+    }
+  }
+
+  // Determine source ranks
+  const std::vector<int> src = MPI::compute_graph_edges_nbx(comm, dest);
+
+  // Create neighbourhood communicator for sending data to post offices
+  MPI_Comm neigh_comm;
+  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
+                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &neigh_comm);
+
+  // Compute send displacements
+  std::vector<std::int32_t> send_disp = {0};
+  std::partial_sum(num_items_per_dest.begin(), num_items_per_dest.end(),
+                   std::back_insert_iterator(send_disp));
+
+  // Pack send buffers
+  std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back());
+  {
+    std::vector<std::int32_t> send_offsets = send_disp;
+    for (std::int32_t i = 0; i < shape0; ++i)
+    {
+      // FIXME: remove if?
+      if (int neigh_dest = pos_to_neigh_rank[i]; neigh_dest != -1)
+      {
+        std::size_t pos = send_offsets[neigh_dest];
+
+        // Copy facet data into buffer
+        std::copy_n(std::next(facets.begin(), i * buffer_shape1), shape1,
+                    std::next(send_buffer.begin(), buffer_shape1 * pos));
+
+        // Set cell index in buffer
+        send_buffer[buffer_shape1 * pos + fshape1] = cells[i];
+
+        ++send_offsets[neigh_dest];
+      }
+    }
+  }
+
+  // Send number of items to post offices (destination) that I will be
+  // sending
+  std::vector<int> num_items_recv(src.size());
+  num_items_per_dest.reserve(1);
+  num_items_recv.reserve(1);
+  MPI_Neighbor_alltoall(num_items_per_dest.data(), 1, MPI_INT,
+                        num_items_recv.data(), 1, MPI_INT, neigh_comm);
+
+  // Prepare receive displacement and buffers
+  std::vector<std::int32_t> recv_disp = {0};
+  std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
+                   std::back_insert_iterator(recv_disp));
+
+  // Send/receive data facet
+  MPI_Datatype compound_type;
+  MPI_Type_contiguous(buffer_shape1, MPI_INT64_T, &compound_type);
+  MPI_Type_commit(&compound_type);
+  std::vector<std::int64_t> recv_buffer(buffer_shape1 * recv_disp.back());
+  MPI_Neighbor_alltoallv(send_buffer.data(), num_items_per_dest.data(),
+                         send_disp.data(), compound_type, recv_buffer.data(),
+                         num_items_recv.data(), recv_disp.data(), compound_type,
+                         neigh_comm);
+
+  MPI_Type_free(&compound_type);
+  MPI_Comm_free(&neigh_comm);
+
+  // // if (MPI::rank(comm) == 0)
+  // // {
+  // //   std::cout << "RANK: " << MPI::rank(comm) << std::endl;
+  // //   for (std::size_t i = 0;
+  // //        i < recv_buffer_data.size() / max_num_vertices_per_facet; ++i)
+  // //   {
+  // //     std::cout << "facet: " << i << std::endl;
+  // //     for (std::size_t j = 0; j < max_num_vertices_per_facet; ++j)
+  // //       std::cout << "  v: "
+  // //                 << recv_buffer_data[i * max_num_vertices_per_facet + j]
+  // //                 << std::endl;
+  // //   }
+  // // }
+
+  // For each row in recv_buffer_data, store the receiving rank
+  std::vector<int> recv_buffer_src;
+  recv_buffer_src.reserve(recv_disp.back());
+  for (std::size_t p = 0; p < num_items_recv.size(); ++p)
+    recv_buffer_src.insert(recv_buffer_src.end(), num_items_recv[p], p);
+
+  // Compute sort permutation for received data
+  const std::vector<std::int32_t> sort_order
+      = dolfinx::sort_by_perm<std::int64_t>(recv_buffer, buffer_shape1);
+
+  // Sort
+  std::vector<std::int64_t> send_buffer1(recv_disp.back(), -1);
+  auto it = sort_order.begin();
+  while (it != sort_order.end())
+  {
+    std::size_t offset = (*it) * buffer_shape1;
+    xtl::span f0(recv_buffer.data() + offset, fshape1);
+
+    // Find iterator to next entity
+    auto it1 = std::find_if_not(
+        it, sort_order.end(),
+        [f0, &recv_buffer, buffer_shape1](auto idx) -> bool
+        {
+          std::size_t offset = idx * buffer_shape1;
+          xtl::span f1(recv_buffer.data() + offset, buffer_shape1 - 1);
+          return f0 == f1;
+        });
+
+    std::size_t num_matches = std::distance(it, it1) - 1;
+    std::cout << "Num matches: " << num_matches << std::endl;
+
+    if (num_matches > 0)
+    {
+      for (auto itx = it; itx != it1; ++itx)
+      {
+        std::size_t idx = *itx;
+        send_buffer1[idx] = recv_buffer[idx * buffer_shape1 + fshape1];
+      }
+    }
+
+    // Advance iterator and increment entity
+    it = it1;
+  }
+
+  // Create neighbourhood communicator for sending data from post offices
+  MPI_Comm neigh_comm1;
+  MPI_Dist_graph_create_adjacent(comm, dest.size(), dest.data(), MPI_UNWEIGHTED,
+                                 src.size(), src.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &neigh_comm1);
+
+  // Send back data
+  std::vector<std::int64_t> recv_buffer1(send_disp.back());
+  MPI_Neighbor_alltoallv(send_buffer1.data(), num_items_recv.data(),
+                         recv_disp.data(), MPI_INT64_T, recv_buffer1.data(),
+                         num_items_per_dest.data(), send_disp.data(),
+                         MPI_INT64_T, neigh_comm1);
+
+  std::cout << "END" << std::endl;
+
+  // --- Build new graph
+
+  // Count number of adjacency list edges
+  std::vector<int> edge_count(local_graph.num_nodes(), 0);
+  for (int i = 0; i < local_graph.num_nodes(); ++i)
+    edge_count[i] += local_graph.num_links(i);
+  for (std::size_t i = 0; i < recv_buffer1.size(); i += 2)
+  {
+    if (recv_buffer1[i] >= 0)
+    {
+      assert(recv_buffer1[i] - cell_offset >= 0);
+      assert(recv_buffer1[i] - cell_offset < std::int64_t(edge_count.size()));
+      edge_count[recv_buffer1[i] - cell_offset] += 1;
+    }
+  }
+
+  // Quick hack
+  std::vector<std::vector<std::int64_t>> xgraph(local_graph.num_nodes());
+  for (int i = 0; i < local_graph.num_nodes(); ++i)
+  {
+    xgraph[i].insert(xgraph[i].end(), local_graph.links(i).begin(),
+                     local_graph.links(i).end());
+  }
+
+  for (std::size_t i = 0; i < recv_buffer1.size(); i += 2)
+  {
+    if (recv_buffer1[i] >= 0)
+    {
+      assert(recv_buffer1[i] - cell_offset >= 0);
+      assert(recv_buffer1[i] - cell_offset < std::int64_t(edge_count.size()));
+      std::int32_t cell = recv_buffer1[i] - cell_offset;
+      xgraph[cell].push_back(recv_buffer1[i]);
+    }
+  }
+
+  graph::AdjacencyList<std::int64_t> graph(xgraph);
+  std::int64_t num_ghosts = std::count_if(
+      recv_buffer1.begin(), recv_buffer1.end(), [](auto x) { return x > 0; });
+
+  // Convert graph to int64
+  return {graph, num_ghosts};
+}
+//-----------------------------------------------------------------------------
+
+/// Build nonlocal part of dual graph for mesh and return number of
+/// non-local edges. Note: GraphBuilder::compute_local_dual_graph should
+/// be called before this function is called. Returns (ghost vertices,
+/// num_nonlocal_edges)
+/// @param[in] comm MPI communicator
+/// @param[in] unmatched_facets Facets on this rank that are shared by
+/// only on cell on this rank. This makes them candidates for possibly
+/// matching to the same facet on another MPI rank. Each row
+/// `unmatched_facets` corresponds to a facet, and the row data has the
+/// form [v0, ..., v_{n-1}, x, x, cell_index], where `v_i` are the
+/// sorted vertex global indices of the facets, `x` is a padding value
+/// for the mixed topology case where facets can have differing number
+/// of vertices, and `cell_index` is the global index of the attached
+/// cell.
+/// @param[in] unmatched_facets_shape1 Number of columns for
+/// `unmatched_facets`.
+/// @param[in] local_graph The dual graph for cells on this MPI rank
+/// @return (0) Extended dual graph to include ghost edges (edges to
+/// off-rank cells) and (1) the number of ghost edges
+std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
 compute_nonlocal_dual_graph(
     const MPI_Comm comm, const xtl::span<const std::int64_t>& unmatched_facets,
     const std::size_t unmatched_facets_shape1,
@@ -580,8 +882,27 @@ mesh::build_dual_graph(const MPI_Comm comm,
       = mesh::build_local_dual_graph(cells.array(), cells.offsets(), tdim);
 
   // Extend with nonlocal edges and convert to global indices
+  // assert(shape1 != 0);
+  // std::size_t shape0 = facet_cell_map.size() / shape1;
+  // std::size_t shape0 = shape1 > 0 ? facet_cell_map.size() / shape1 : 0;
+
+  // std::vector<std::int64_t> facets, xcells;
+  // for (std::size_t i = 0; i < shape0; ++i)
+  // {
+  //   std::size_t offset = i * shape1;
+  //   facets.insert(facets.end(), std::next(facet_cell_map.begin() + offset),
+  //                 std::next(facet_cell_map.begin() + offset + (shape1 - 1)));
+  //   std::sort(std::prev(facets.end(), shape1 - 1), facets.end());
+  //   xcells.push_back(facet_cell_map.back());
+  // }
+
+  // auto [graph, num_ghost_edges] = compute_nonlocal_dual_graph_new(
+  //     comm, facets, xcells, shape1 - 1, local_graph);
+  // auto [xgraph, xnum_ghost_edges] = compute_nonlocal_dual_graph_new(
+  //     comm, facets, xcells, shape1 - 1, local_graph);
   auto [graph, num_ghost_edges]
-      = compute_nonlocal_dual_graph(comm, facet_cell_map, shape1, local_graph);
+      = compute_nonlocal_dual_graph(comm, facet_cell_map, shape1,
+      local_graph);
   assert(local_graph.num_nodes() == cells.num_nodes());
 
   LOG(INFO) << "Graph edges (local:" << local_graph.offsets().back()
