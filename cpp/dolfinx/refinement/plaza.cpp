@@ -522,17 +522,16 @@ compute_refinement(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::tuple<std::vector<std::int32_t>, mesh::Mesh>
-plaza::refine(const mesh::Mesh& mesh, bool redistribute)
+std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>, mesh::Mesh>
+plaza::refine(const mesh::Mesh& mesh, bool redistribute, bool store_indices)
 {
-  bool store_indices = false;
 
   auto [cell_adj, new_vertex_coordinates, parent_cell, stored_indices]
       = plaza::compute_refinement_data(mesh, store_indices);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {std::move(parent_cell),
+    return {std::move(parent_cell), std::move(stored_indices),
             mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
                               new_vertex_coordinates, mesh::GhostMode::none)};
   }
@@ -551,23 +550,23 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute)
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
-  return {std::move(parent_cell),
+  return {std::move(parent_cell), std::move(stored_indices),
           refinement::partition(mesh, cell_adj, new_vertex_coordinates,
                                 redistribute, ghost_mode)};
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::vector<std::int32_t>, mesh::Mesh>
+std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>, mesh::Mesh>
 plaza::refine(const mesh::Mesh& mesh,
-              const xtl::span<const std::int32_t>& edges, bool redistribute)
+              const xtl::span<const std::int32_t>& edges, bool redistribute,
+              bool store_indices)
 {
-  bool store_indices = false;
 
   auto [cell_adj, new_vertex_coordinates, parent_cell, stored_indices]
       = plaza::compute_refinement_data(mesh, edges, store_indices);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {std::move(parent_cell),
+    return {std::move(parent_cell), std::move(stored_indices),
             mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
                               new_vertex_coordinates, mesh::GhostMode::none)};
   }
@@ -586,7 +585,7 @@ plaza::refine(const mesh::Mesh& mesh,
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
-  return {std::move(parent_cell),
+  return {std::move(parent_cell), std::move(stored_indices),
           refinement::partition(mesh, cell_adj, new_vertex_coordinates,
                                 redistribute, ghost_mode)};
 }

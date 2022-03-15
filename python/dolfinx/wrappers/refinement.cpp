@@ -5,9 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/refinement/plaza.h>
 #include <dolfinx/refinement/refine.h>
+#include <dolfinx/refinement/utils.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
@@ -21,6 +24,12 @@ void refinement(py::module& m)
         py::overload_cast<const dolfinx::mesh::Mesh&, bool>(
             &dolfinx::refinement::refine),
         py::arg("mesh"), py::arg("redistribute") = true);
+
+  m.def("plaza_refine_data",
+        py::overload_cast<const dolfinx::mesh::Mesh&, bool, bool>(
+            &dolfinx::refinement::plaza::refine));
+
+  m.def("transfer_facet_meshtag", &dolfinx::refinement::transfer_facet_meshtag);
 
   m.def(
       "refine",

@@ -35,8 +35,8 @@ namespace plaza
 /// @param[in] redistribute Flag to call the mesh partitioner to
 /// redistribute after refinement
 /// @return New mesh
-std::tuple<std::vector<std::int32_t>, mesh::Mesh> refine(const mesh::Mesh& mesh,
-                                                         bool redistribute);
+std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>, mesh::Mesh>
+refine(const mesh::Mesh& mesh, bool redistribute, bool store_indices);
 
 /// Refine with markers, optionally redistributing.
 ///
@@ -46,9 +46,9 @@ std::tuple<std::vector<std::int32_t>, mesh::Mesh> refine(const mesh::Mesh& mesh,
 /// @param[in] redistribute Flag to call the Mesh Partitioner to
 /// redistribute after refinement
 /// @return New Mesh
-std::tuple<std::vector<std::int32_t>, mesh::Mesh>
+std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>, mesh::Mesh>
 refine(const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& edges,
-       bool redistribute);
+       bool redistribute, bool store_indices);
 
 /// Refine mesh returning new mesh data.
 ///

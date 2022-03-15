@@ -139,14 +139,14 @@ Mesh mesh::create_mesh(MPI_Comm comm,
             .first);
 
     // Create re-ordered cell lists (leaves ghosts unchanged)
-    std::vector<std::int64_t> original_cell_index(original_cell_index0.size());
-    for (std::size_t i = 0; i < remap.size(); ++i)
-      original_cell_index[remap[i]] = original_cell_index0[i];
-    std::copy_n(std::next(original_cell_index0.cbegin(), num_owned_cells),
-                ghost_owners.size(),
-                std::next(original_cell_index.begin(), num_owned_cells));
-    cells_extracted = reorder_list(cells_extracted, remap);
-    cell_nodes = reorder_list(cell_nodes, remap);
+    std::vector<std::int64_t> original_cell_index(original_cell_index0);
+    // for (std::size_t i = 0; i < remap.size(); ++i)
+    //   original_cell_index[remap[i]] = original_cell_index0[i];
+    // std::copy_n(std::next(original_cell_index0.cbegin(), num_owned_cells),
+    //             ghost_owners.size(),
+    //             std::next(original_cell_index.begin(), num_owned_cells));
+    //  cells_extracted = reorder_list(cells_extracted, remap);
+    //  cell_nodes = reorder_list(cell_nodes, remap);
 
     // -- Create Topology
 

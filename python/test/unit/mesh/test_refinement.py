@@ -10,9 +10,10 @@ import ufl
 from dolfinx.fem import FunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import (DiagonalType, GhostMode, compute_incident_entities,
-                          create_unit_cube, create_unit_square,
+                          create_unit_cube, create_unit_square, meshtags,
                           locate_entities, locate_entities_boundary, refine)
-
+from dolfinx import cpp as _cpp
+import numpy
 from mpi4py import MPI
 
 
@@ -115,3 +116,27 @@ def test_refine_from_cells():
     num_cells_global = mesh2.topology.index_map(2).size_global
     actual_cells = 3 * (Nx * Ny) + 3 * Ny + 2 * Nx * Ny
     assert num_cells_global == actual_cells
+
+
+def test_refine_facet_meshtag():
+
+    mesh = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1)
+    mesh.topology.create_entities(2)
+    mesh.topology.create_connectivity(2, 3)
+    mesh.topology.create_entities(1)
+    f_to_c = mesh.topology.connectivity(2, 3)
+    facet_indices = []
+    for f in range(mesh.topology.index_map(2).size_local):
+        if len(f_to_c.links(f)) == 1:
+            facet_indices += [f]
+    meshtag = meshtags(mesh, 2, numpy.array(facet_indices, dtype=numpy.int32),
+                       numpy.arange(len(facet_indices), dtype=numpy.int32))
+
+    parent_cell, stored_indices, fine_mesh = _cpp.refinement.plaza_refine_data(mesh, False, True)
+    fine_mesh.topology.create_entities(2)
+
+    new_meshtag = _cpp.refinement.transfer_facet_meshtag(meshtag, fine_mesh, parent_cell, stored_indices)
+
+    assert len(new_meshtag.indices) == 4 * len(meshtag.indices)
+    assert sum(meshtag.values) == 66
+    assert sum(new_meshtag.values) == 4 * 66

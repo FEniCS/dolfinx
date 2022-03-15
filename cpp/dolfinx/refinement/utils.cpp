@@ -394,11 +394,10 @@ refinement::adjust_indices(const common::IndexMap& index_map, std::int32_t n)
   return global_indices;
 }
 //-----------------------------------------------------------------------------
-mesh::MeshTags<std::int32_t>
-transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& input_meshtag,
-                       const mesh::Mesh& refined_mesh,
-                       std::vector<std::int32_t>& parent_cell,
-                       std::vector<std::int64_t>& stored_indices)
+mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
+    const mesh::MeshTags<std::int32_t>& input_meshtag,
+    const mesh::Mesh& refined_mesh, std::vector<std::int32_t>& parent_cell,
+    std::vector<std::int64_t>& stored_indices)
 {
   // Facets of 3D mesh only so far
   assert(input_meshtag.mesh()->topology().dim() == 3);
@@ -408,14 +407,17 @@ transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& input_meshtag,
 
   // Map from stored indices for each parent cell to vertices
   // which may occur on each facet.
-  static const int facet_table_3d[4][6] = {{1, 2, 3, 7, 8, 9},
-                                           {0, 2, 3, 5, 6, 9},
-                                           {0, 1, 3, 4, 6, 8},
-                                           {0, 1, 2, 4, 5, 7}};
+  static const int facet_table_3d[4][6] = {{1, 2, 3, 4, 5, 6},
+                                           {0, 2, 3, 4, 7, 8},
+                                           {0, 1, 3, 5, 7, 9},
+                                           {0, 1, 2, 6, 8, 9}};
   int nv = 10;
 
   auto c_to_f = refined_mesh.topology().connectivity(3, 2);
   auto f_to_v = refined_mesh.topology().connectivity(2, 0);
+
+  const std::vector<std::int64_t>& global_vertex_index
+      = refined_mesh.geometry().input_global_indices();
 
   // Mapping from facets on refined mesh, back to parent.
   // i.e. child->parent facet
@@ -441,12 +443,17 @@ transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& input_meshtag,
       for (int j = 0; j < 6; ++j)
         vertex_list_pf.push_back(v[facet_table_3d[i][j]]);
       std::sort(vertex_list_pf.begin(), vertex_list_pf.end());
+
       // get facets (child)
       for (int f = 0; f < 4; ++f)
       {
         auto v = f_to_v->links(refined_facets[f]);
-        vertex_list_cf.assign(v.begin(), v.end());
+        vertex_list_cf.resize(v.size());
+        std::transform(v.begin(), v.end(), vertex_list_cf.begin(),
+                       [&](std::int32_t idx)
+                       { return global_vertex_index[idx]; });
         std::sort(vertex_list_cf.begin(), vertex_list_cf.end());
+
         auto it = std::set_intersection(
             vertex_list_pf.begin(), vertex_list_pf.end(),
             vertex_list_cf.begin(), vertex_list_cf.end(), set_output.begin());
@@ -505,7 +512,16 @@ transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& input_meshtag,
     }
   }
 
+  std::vector<int> sort_order(tag_values.size());
+  std::iota(sort_order.begin(), sort_order.end(), 0);
+  std::sort(sort_order.begin(), sort_order.end(),
+            [&](int a, int b) { return facet_indices[a] < facet_indices[b]; });
+  std::vector<std::int32_t> sorted_tag_values(tag_values.size());
+  for (std::size_t i = 0; i < sort_order.size(); ++i)
+    sorted_tag_values[i] = tag_values[sort_order[i]];
+  std::sort(facet_indices.begin(), facet_indices.end());
+
   return mesh::MeshTags<std::int32_t>(
       std::make_shared<mesh::Mesh>(refined_mesh), 2, std::move(facet_indices),
-      std::move(tag_values));
+      std::move(sorted_tag_values));
 }
