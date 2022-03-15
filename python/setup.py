@@ -47,10 +47,12 @@ class CMakeBuild(build_ext):
                       f'-DPython3_LIBRARIES={sysconfig.get_config_var("LIBDEST")}',
                       f'-DPython3_INCLUDE_DIRS={sysconfig.get_config_var("INCLUDEPY")}']
 
-        cfg = 'Debug' if self.debug else 'Release'
+        cfg = 'Debug'
+        # cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
         cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-        build_args += ['--', '-j3']
+        # build_args += ['--', '-j3']
+        build_args += ['--', '-j']
 
         env = os.environ.copy()
         import pybind11
