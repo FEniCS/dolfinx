@@ -23,24 +23,25 @@ namespace
 //-----------------------------------------------------------------------------
 
 /// Build nonlocal part of dual graph for mesh and return number of
-/// non-local edges. Note: GraphBuilder::compute_local_dual_graph should
-/// be called before this function is called. Returns (ghost vertices,
-/// num_nonlocal_edges)
+/// non-local edges.
+///
+/// @note Note: graphbuild::compute_local_dual_graph should be called
+/// before this function is called.
+///
 /// @param[in] comm MPI communicator
-/// @param[in] unmatched_facets Facets on this rank that are shared by
-/// only on cell on this rank. This makes them candidates for possibly
-/// matching to the same facet on another MPI rank. Each row
-/// `unmatched_facets` corresponds to a facet, and the row data has the
-/// form [v0, ..., v_{n-1}, x, x, cell_index], where `v_i` are the
-/// sorted vertex global indices of the facets, `x` is a padding value
-/// for the mixed topology case where facets can have differing number
-/// of vertices, and `cell_index` is the global index of the attached
-/// cell.
-/// @param[in] unmatched_facets_shape1 Number of columns for
-/// `unmatched_facets`.
+/// @param[in] facets Facets on this rank that are shared by only on
+/// cell on this rank. This makes them candidates for possibly matching
+/// to the same facet on another MPI rank. Each row in `facets`
+/// corresponds to a facet, and the row data has the form [v0, ...,
+/// v_{n-1}, x, x], where `v_i` are the sorted vertex global indices of
+/// the facets and `x` is a padding value for the mixed topology case
+/// where facets can have differing number of vertices.
+/// @param[in] shape1 Number of columns for `facets`.
+/// @param[in] cells Attached cell (local index) for each facet in
+/// `facet`.
 /// @param[in] local_graph The dual graph for cells on this MPI rank
 /// @return (0) Extended dual graph to include ghost edges (edges to
-/// off-rank cells) and (1) the number of ghost edges
+/// off-procss cells) and (1) the number of ghost edges
 std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
 compute_nonlocal_dual_graph_new(
     const MPI_Comm comm, const xtl::span<const std::int64_t>& facets,
@@ -56,7 +57,7 @@ compute_nonlocal_dual_graph_new(
   const int num_ranks = dolfinx::MPI::size(comm);
   if (num_ranks == 1)
   {
-    // Convert graph to int64
+    // Convert graph to int64 and return
     return {graph::AdjacencyList<std::int64_t>(
                 std::vector<std::int64_t>(local_graph.array().begin(),
                                           local_graph.array().end()),
@@ -107,46 +108,50 @@ compute_nonlocal_dual_graph_new(
   }
   std::int32_t buffer_shape1 = fshape1 + 1;
 
-  // Build {v0, dest} list for each facet, and sort (dest is the post
-  // office rank)
-  std::vector<std::array<std::int32_t, 2>> dest_to_index;
-  dest_to_index.reserve(shape0);
-  for (std::size_t i = 0; i < shape0; ++i)
-  {
-    std::int64_t v0 = facets[i * shape1];
-    dest_to_index.push_back(
-        {MPI::index_owner(num_ranks, v0, global_range), int(i)});
-  }
-  std::sort(dest_to_index.begin(), dest_to_index.end());
-
-  // Build list of dest ranks and count number of items (rows of x) to
-  // receive from each src post office (by neighbourhood rank)
+  // Build list of dest ranks and count number of items (facets) to send
+  // to each dest post office (by neighbourhood rank)
   std::vector<int> dest;
   std::vector<std::int32_t> num_items_per_dest, pos_to_neigh_rank(shape0, -1);
   {
-    auto it = dest_to_index.begin();
-    while (it != dest_to_index.end())
+    // Build {v0, dest} list for each facet, and sort (dest is the post
+    // office rank)
+    std::vector<std::array<std::int32_t, 2>> dest_to_index;
+    dest_to_index.reserve(shape0);
+    for (std::size_t i = 0; i < shape0; ++i)
     {
-      const int neigh_rank = dest.size();
+      std::int64_t v0 = facets[i * shape1];
+      dest_to_index.push_back(
+          {MPI::index_owner(num_ranks, v0, global_range), int(i)});
+    }
+    std::sort(dest_to_index.begin(), dest_to_index.end());
 
-      // Store global rank
-      dest.push_back((*it)[0]);
+    // Build list of dest ranks and count number of items (facets) to
+    // send to each dest post office (by neighbourhood rank)
+    {
+      auto it = dest_to_index.begin();
+      while (it != dest_to_index.end())
+      {
+        const int neigh_rank = dest.size();
 
-      // Find iterator to next global rank
-      auto it1
-          = std::find_if(it, dest_to_index.end(),
-                         [r = dest.back()](auto& idx) { return idx[0] != r; });
+        // Store global rank
+        dest.push_back((*it)[0]);
 
-      // Store number of items for current rank
-      num_items_per_dest.push_back(std::distance(it, it1));
+        // Find iterator to next global rank
+        auto it1 = std::find_if(it, dest_to_index.end(),
+                                [r = dest.back()](auto& idx)
+                                { return idx[0] != r; });
 
-      // Set entry in map from local facet row index (position) to local
-      // destination rank
-      for (auto e = it; e != it1; ++e)
-        pos_to_neigh_rank[(*e)[1]] = neigh_rank;
+        // Store number of items for current rank
+        num_items_per_dest.push_back(std::distance(it, it1));
 
-      // Advance iterator
-      it = it1;
+        // Set entry in map from local facet row index (position) to local
+        // destination rank
+        for (auto e = it; e != it1; ++e)
+          pos_to_neigh_rank[(*e)[1]] = neigh_rank;
+
+        // Advance iterator
+        it = it1;
+      }
     }
   }
 
@@ -154,10 +159,10 @@ compute_nonlocal_dual_graph_new(
   const std::vector<int> src = MPI::compute_graph_edges_nbx(comm, dest);
 
   // Create neighbourhood communicator for sending data to post offices
-  MPI_Comm neigh_comm;
+  MPI_Comm neigh_comm0;
   MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
                                  dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neigh_comm);
+                                 MPI_INFO_NULL, false, &neigh_comm0);
 
   // Compute send displacements
   std::vector<std::int32_t> send_disp = {0};
@@ -191,7 +196,7 @@ compute_nonlocal_dual_graph_new(
   num_items_per_dest.reserve(1);
   num_items_recv.reserve(1);
   MPI_Neighbor_alltoall(num_items_per_dest.data(), 1, MPI_INT,
-                        num_items_recv.data(), 1, MPI_INT, neigh_comm);
+                        num_items_recv.data(), 1, MPI_INT, neigh_comm0);
 
   // Prepare receive displacement and buffers
   std::vector<std::int32_t> recv_disp = {0};
@@ -206,10 +211,10 @@ compute_nonlocal_dual_graph_new(
   MPI_Neighbor_alltoallv(send_buffer.data(), num_items_per_dest.data(),
                          send_disp.data(), compound_type, recv_buffer.data(),
                          num_items_recv.data(), recv_disp.data(), compound_type,
-                         neigh_comm);
+                         neigh_comm0);
 
   MPI_Type_free(&compound_type);
-  MPI_Comm_free(&neigh_comm);
+  MPI_Comm_free(&neigh_comm0);
 
   // For each row in recv_buffer_data, store the receiving rank
   // std::vector<int> recv_buffer_src;
@@ -217,42 +222,48 @@ compute_nonlocal_dual_graph_new(
   // for (std::size_t p = 0; p < num_items_recv.size(); ++p)
   //   recv_buffer_src.insert(recv_buffer_src.end(), num_items_recv[p], p);
 
-  // Compute sort permutation for received data
-  const std::vector<std::int32_t> sort_order
-      = dolfinx::sort_by_perm<std::int64_t>(recv_buffer, buffer_shape1);
-
+  // Search for consecutive facets (-> dual graph edge between cells)
+  // and pack into send buffer
   std::vector<std::int64_t> send_buffer1(recv_disp.back(), -1);
-  auto it = sort_order.begin();
-  while (it != sort_order.end())
   {
-    std::size_t offset = (*it) * buffer_shape1;
-    xtl::span f0(recv_buffer.data() + offset, fshape1);
+    // Compute sort permutation for received data
+    const std::vector<std::int32_t> sort_order
+        = dolfinx::sort_by_perm<std::int64_t>(recv_buffer, buffer_shape1);
 
-    // Find iterator to next entity
-    auto it1 = std::find_if_not(
-        it, sort_order.end(),
-        [f0, &recv_buffer, buffer_shape1](auto idx) -> bool
-        {
-          std::size_t offset = idx * buffer_shape1;
-          xtl::span f1(recv_buffer.data() + offset, buffer_shape1 - 1);
-          return f0 == f1;
-        });
-
-    std::size_t num_matches = std::distance(it, it1);
-    if (num_matches > 2)
-      throw std::runtime_error("A facet is connected to more than two cells.");
-
-    if (num_matches == 2)
+    auto it = sort_order.begin();
+    while (it != sort_order.end())
     {
-      send_buffer1[*it] = recv_buffer[*(it + 1) * buffer_shape1 + fshape1];
-      send_buffer1[*(it + 1)] = recv_buffer[*it * buffer_shape1 + fshape1];
-    }
+      std::size_t offset = (*it) * buffer_shape1;
+      xtl::span f0(recv_buffer.data() + offset, fshape1);
 
-    // Advance iterator and increment entity
-    it = it1;
+      // Find iterator to next different facet
+      auto it1 = std::find_if_not(
+          it, sort_order.end(),
+          [f0, &recv_buffer, buffer_shape1](auto idx) -> bool
+          {
+            std::size_t offset = idx * buffer_shape1;
+            xtl::span f1(recv_buffer.data() + offset, buffer_shape1 - 1);
+            return f0 == f1;
+          });
+
+      std::size_t num_matches = std::distance(it, it1);
+      if (num_matches > 2)
+        throw std::runtime_error(
+            "A facet is connected to more than two cells.");
+      if (num_matches == 2)
+      {
+        // Store the global cell index from the other rank
+        send_buffer1[*it] = recv_buffer[*(it + 1) * buffer_shape1 + fshape1];
+        send_buffer1[*(it + 1)] = recv_buffer[*it * buffer_shape1 + fshape1];
+      }
+
+      // Advance iterator and increment entity
+      it = it1;
+    }
   }
 
-  // Create neighbourhood communicator for sending data from post offices
+  // Create neighbourhood communicator for sending data from post
+  // offices
   MPI_Comm neigh_comm1;
   MPI_Dist_graph_create_adjacent(comm, dest.size(), dest.data(), MPI_UNWEIGHTED,
                                  src.size(), src.data(), MPI_UNWEIGHTED,
@@ -264,8 +275,7 @@ compute_nonlocal_dual_graph_new(
                          recv_disp.data(), MPI_INT64_T, recv_buffer1.data(),
                          num_items_per_dest.data(), send_disp.data(),
                          MPI_INT64_T, neigh_comm1);
-
-  // std::cout << "END" << std::endl;
+  MPI_Comm_free(&neigh_comm1);
 
   // --- Build new graph
 
@@ -314,46 +324,11 @@ compute_nonlocal_dual_graph_new(
     }
   }
 
-  graph::AdjacencyList<std::int64_t> new_graph(std::move(data),
-                                               std::move(offsets));
-
-  // Quick hack
-  std::vector<std::vector<std::int64_t>> xgraph(local_graph.num_nodes());
-  for (int i = 0; i < local_graph.num_nodes(); ++i)
-  {
-    xgraph[i].insert(xgraph[i].end(), local_graph.links(i).begin(),
-                     local_graph.links(i).end());
-    std::transform(xgraph[i].begin(), xgraph[i].end(), xgraph[i].begin(),
-                   [cell_offset](auto x) { return x + cell_offset; });
-  }
-
-  for (std::size_t i = 0; i < recv_buffer1.size(); ++i)
-  {
-    if (recv_buffer1[i] >= 0)
-    {
-      std::size_t pos = send_indx_to_pos[i];
-      std::size_t cell = cells[pos];
-      xgraph[cell].push_back(recv_buffer1[i]);
-    }
-  }
-
-  graph::AdjacencyList<std::int64_t> graph(xgraph);
-
-  if (MPI::rank(comm) == 1)
-  {
-    // std::cout << new_graph.str() << std::endl;
-    // std::cout << graph.str() << std::endl;
-    if (new_graph.array() != graph.array())
-      throw std::runtime_error("Incompatible (data).");
-    if (new_graph.offsets() != graph.offsets())
-      throw std::runtime_error("Incompatible (offsets).");
-  }
-
   std::int64_t num_ghosts = std::count_if(
       recv_buffer1.begin(), recv_buffer1.end(), [](auto x) { return x > 0; });
-
-  // Convert graph to int64
-  return {graph, num_ghosts};
+  return {
+      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offsets)),
+      num_ghosts};
 }
 //-----------------------------------------------------------------------------
 
