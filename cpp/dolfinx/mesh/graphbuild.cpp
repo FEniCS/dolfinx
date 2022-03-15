@@ -65,63 +65,56 @@ compute_nonlocal_dual_graph_new(
             0};
   }
 
-  // Get cell offset for this process to create global numbering for
-  // cells
+  // Get cell offset for this process for converting local cell indices
+  // to global cell indices
   const std::int64_t num_local = local_graph.num_nodes();
   std::int64_t cell_offset = 0;
   MPI_Exscan(&num_local, &cell_offset, 1, MPI_INT64_T, MPI_SUM, comm);
 
-  // Using the first index of facets, compute the array
-  // (max_vertices_per_facet, min_vertex_index, max_vertex_index) across all
-  // ranks
+  // Find (max_vert_per_facet, min_vertex_index, max_vertex_index)
+  // across all processes. Use first facet vertex for min/max index.
   // std::array<std::int64_t, 2> global_minmax;
   // TODO: use better name for 'global_range'
-  std::int64_t global_range = -1;
+  // std::int64_t global_range = -1;
   std::int32_t fshape1 = -1;
+  std::array<std::int64_t, 2> vrange;
   {
-    std::array<std::int64_t, 3> send_buffer
-        = {-std::int64_t(shape1), std::numeric_limits<std::int64_t>::max(),
-           std::numeric_limits<std::int64_t>::max()};
+    std::array<std::int64_t, 3> send_buffer_r
+        = {std::int64_t(shape1), std::numeric_limits<std::int64_t>::min(), -1};
     for (std::size_t i = 0; i < facets.size(); i += shape1)
     {
-      send_buffer[1] = std::min(send_buffer[1], facets[i]);
-      send_buffer[2] = std::min(send_buffer[2], -facets[i]);
+      send_buffer_r[1] = std::max(send_buffer_r[1], -facets[i]);
+      send_buffer_r[2] = std::max(send_buffer_r[2], facets[i]);
     }
 
     // Compute reductions
-    std::array<std::int64_t, 3> buffer_global_min;
-    MPI_Allreduce(send_buffer.data(), buffer_global_min.data(), 3, MPI_INT64_T,
-                  MPI_MIN, comm);
-    assert(buffer_global_min[1] != std::numeric_limits<std::int64_t>::max());
-    assert(buffer_global_min[2] != std::numeric_limits<std::int64_t>::max());
-
-    // fshape1 = -buffer_global_min[0];
-    // global_minmax = {buffer_global_min[1], -buffer_global_min[2]};
-    // global_range = global_minmax[1] - global_minmax[0] + 1;
-
-    fshape1 = -buffer_global_min[0];
-    // global_minmax = {buffer_global_min[1], -buffer_global_min[2]};
-    // global_range = global_minmax[1] - global_minmax[0] + 1;
-    global_range = -buffer_global_min[2] + 1;
+    std::array<std::int64_t, 3> recv_buffer_r;
+    MPI_Allreduce(send_buffer_r.data(), recv_buffer_r.data(), 3, MPI_INT64_T,
+                  MPI_MAX, comm);
+    assert(recv_buffer_r[1] != std::numeric_limits<std::int64_t>::min());
+    assert(recv_buffer_r[2] != -1);
+    fshape1 = recv_buffer_r[0];
+    vrange = {-recv_buffer_r[1], recv_buffer_r[2] + 1};
 
     LOG(2) << "Max. vertices per facet=" << fshape1 << "\n";
   }
-  std::int32_t buffer_shape1 = fshape1 + 1;
+  const std::int32_t buffer_shape1 = fshape1 + 1;
 
   // Build list of dest ranks and count number of items (facets) to send
   // to each dest post office (by neighbourhood rank)
   std::vector<int> dest;
   std::vector<std::int32_t> num_items_per_dest, pos_to_neigh_rank(shape0, -1);
   {
-    // Build {v0, dest} list for each facet, and sort (dest is the post
+    // Build {dest, pos} list for each facet, and sort (dest is the post
     // office rank)
     std::vector<std::array<std::int32_t, 2>> dest_to_index;
     dest_to_index.reserve(shape0);
+    std::int64_t range = vrange[1] - vrange[0];
     for (std::size_t i = 0; i < shape0; ++i)
     {
-      std::int64_t v0 = facets[i * shape1];
+      std::int64_t v0 = facets[i * shape1] - vrange[0];
       dest_to_index.push_back(
-          {MPI::index_owner(num_ranks, v0, global_range), int(i)});
+          {MPI::index_owner(num_ranks, v0, range), static_cast<int>(i)});
     }
     std::sort(dest_to_index.begin(), dest_to_index.end());
 
@@ -171,9 +164,7 @@ compute_nonlocal_dual_graph_new(
 
   // Pack send buffer
   std::vector<std::int32_t> send_indx_to_pos(send_disp.back());
-  std::vector<std::int64_t> send_buffer(
-      buffer_shape1 * send_disp.back(),
-      std::numeric_limits<std::int64_t>::max());
+  std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back(), -1);
   {
     std::vector<std::int32_t> send_offsets = send_disp;
     for (std::size_t i = 0; i < shape0; ++i)
@@ -190,8 +181,7 @@ compute_nonlocal_dual_graph_new(
     }
   }
 
-  // Send number of items to post offices (destination) that I will be
-  // sending
+  // Send number of send items to post offices
   std::vector<int> num_items_recv(src.size());
   num_items_per_dest.reserve(1);
   num_items_recv.reserve(1);
@@ -216,12 +206,6 @@ compute_nonlocal_dual_graph_new(
   MPI_Type_free(&compound_type);
   MPI_Comm_free(&neigh_comm0);
 
-  // For each row in recv_buffer_data, store the receiving rank
-  // std::vector<int> recv_buffer_src;
-  // recv_buffer_src.reserve(recv_disp.back());
-  // for (std::size_t p = 0; p < num_items_recv.size(); ++p)
-  //   recv_buffer_src.insert(recv_buffer_src.end(), num_items_recv[p], p);
-
   // Search for consecutive facets (-> dual graph edge between cells)
   // and pack into send buffer
   std::vector<std::int64_t> send_buffer1(recv_disp.back(), -1);
@@ -236,7 +220,7 @@ compute_nonlocal_dual_graph_new(
       std::size_t offset = (*it) * buffer_shape1;
       xtl::span f0(recv_buffer.data() + offset, fshape1);
 
-      // Find iterator to next different facet
+      // Find iterator to next facet different from f0
       auto it1 = std::find_if_not(
           it, sort_order.end(),
           [f0, &recv_buffer, buffer_shape1](auto idx) -> bool
@@ -902,7 +886,7 @@ mesh::build_dual_graph(const MPI_Comm comm,
     std::size_t offset = i * shape1;
     xtl::span row(facet_cell_map.data() + offset, shape1);
     facets.insert(facets.end(), row.begin(), std::prev(row.end()));
-    std::sort(std::prev(facets.end(), shape1 - 1), facets.end());
+    // std::sort(std::prev(facets.end(), shape1 - 1), facets.end());
     fcells.push_back(row.back());
   }
 
@@ -912,10 +896,10 @@ mesh::build_dual_graph(const MPI_Comm comm,
   auto [graph, num_ghost_edges]
       = compute_nonlocal_dual_graph(comm, facet_cell_map, shape1, local_graph);
 
-  // if (xgraph.array() != graph.array())
-  //   throw std::runtime_error("Data mis-match");
-  // if (xgraph.offsets() != graph.offsets())
-  //   throw std::runtime_error("Offsets mis-match");
+  if (xgraph.array() != graph.array())
+    throw std::runtime_error("Data mis-match");
+  if (xgraph.offsets() != graph.offsets())
+    throw std::runtime_error("Offsets mis-match");
 
   assert(local_graph.num_nodes() == cells.num_nodes());
 
