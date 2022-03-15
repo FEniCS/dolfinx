@@ -18,6 +18,7 @@ namespace dolfinx::graph
 template <typename T>
 class AdjacencyList;
 } // namespace dolfinx::graph
+
 namespace dolfinx::mesh
 {
 
@@ -33,7 +34,7 @@ namespace dolfinx::mesh
 /// number of columns for the facet data array. The facet data is `[v0,
 /// ... v_(n-1), x, .., x, cell_index]`, where `v_i` is a vertex global
 /// index, `x` is a padding value (all padding values will be equal) and
-/// `cell_index` is the global index of the attached cell.
+/// `cell_index` is the local index of the attached cell.
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t>
 build_local_dual_graph(const xtl::span<const std::int64_t>& cells,

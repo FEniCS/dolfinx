@@ -182,7 +182,7 @@ compute_nonlocal_dual_graph_new(
       std::numeric_limits<std::int64_t>::max());
   {
     std::vector<std::int32_t> send_offsets = send_disp;
-    for (std::int32_t i = 0; i < shape0; ++i)
+    for (std::size_t i = 0; i < shape0; ++i)
     {
       int neigh_dest = pos_to_neigh_rank[i];
       std::size_t pos = send_offsets[neigh_dest];
@@ -267,7 +267,7 @@ compute_nonlocal_dual_graph_new(
   //   }
   // }
 
-  const int rank = MPI::rank(comm);
+  // const int rank = MPI::rank(comm);
   std::vector<std::int64_t> send_buffer1(recv_disp.back(), -1);
   auto it = sort_order.begin();
   while (it != sort_order.end())
