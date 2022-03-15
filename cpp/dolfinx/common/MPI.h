@@ -189,7 +189,7 @@ std::vector<int> compute_graph_edges_nbx(MPI_Comm comm,
 /// @param[in] rank_offset The rank offset such that global index of
 /// local row `i` in `x` is `rank_offset + i`. It is usually computed
 /// using `MPI_Exscan`.
-/// @returns (0) global indices of my post office data and (1) the data
+/// @returns (0) local indices of my post office data and (1) the data
 /// (row-major). It **does not** include rows that are in `x`, i.e. rows
 /// for which the calling process is the post office
 template <typename T>
