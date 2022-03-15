@@ -270,36 +270,50 @@ compute_nonlocal_dual_graph_new(
   // --- Build new graph
 
   // Count number of adjacency list edges
-  std::vector<int> edge_count(local_graph.num_nodes(), 0);
-  for (int i = 0; i < local_graph.num_nodes(); ++i)
-    edge_count[i] += local_graph.num_links(i);
+  std::vector<std::int32_t> num_edges(local_graph.num_nodes(), 0);
+  std::adjacent_difference(std::next(local_graph.offsets().begin()),
+                           local_graph.offsets().end(), num_edges.begin());
+  std::vector<std::int32_t> num_edges0 = num_edges;
   for (std::size_t i = 0; i < recv_buffer1.size(); ++i)
   {
     if (recv_buffer1[i] >= 0)
     {
       std::size_t pos = send_indx_to_pos[i];
       std::size_t cell = cells[pos];
-      edge_count[cell] += 1;
+      num_edges[cell] += 1;
     }
   }
 
-  // std::size_t num_edges
-  //     = std::accumulate(edge_count.begin(), edge_count.end(), 0);
+  // Compute adjacency list offsets
   std::vector<std::int32_t> offsets(local_graph.num_nodes() + 1, 0);
-  std::partial_sum(edge_count.begin(), edge_count.end(),
+  std::partial_sum(num_edges.cbegin(), num_edges.cend(),
                    std::next(offsets.begin()));
-  // std::vector<std::int64_t> data(offsets.back());
 
-  graph::AdjacencyList<std::int64_t> new_graph(
-      std::vector<std::int64_t>(offsets.back()), std::move(offsets));
-  std::vector<std::int32_t> pos(new_graph.num_nodes(), 0);
-  for (int i = 0; i < local_graph.num_nodes(); ++i)
+  std::vector<std::int64_t> data(offsets.back());
+
+  // Copy local data
+  for (std::size_t i = 0; i < offsets.size() - 1; ++i)
   {
-    auto local_graph_i = local_graph.links(i);
-    auto graph_i = new_graph.links(i);
-    for (std::size_t j = 0; j < local_graph_i.size(); ++j)
-      graph_i[pos[i]++] = local_graph_i[j] + cell_offset;
+    auto e = local_graph.links(i);
+    std::copy(e.cbegin(), e.cend(), std::next(data.begin(), offsets[i]));
   }
+
+  // Add non-local data
+  std::vector<std::int32_t> off(num_edges0.size(), 0);
+  std::transform(num_edges0.cbegin(), num_edges0.cend(), offsets.cbegin(),
+                 off.begin(), [](auto size, auto disp) { return disp + size; });
+  for (std::size_t i = 0; i < recv_buffer1.size(); ++i)
+  {
+    if (recv_buffer1[i] >= 0)
+    {
+      std::size_t pos = send_indx_to_pos[i];
+      std::size_t cell = cells[pos];
+      data[off[cell]++] = recv_buffer1[i];
+    }
+  }
+
+  graph::AdjacencyList<std::int64_t> new_graph(std::move(data),
+                                               std::move(offsets));
 
   // Quick hack
   std::vector<std::vector<std::int64_t>> xgraph(local_graph.num_nodes());
@@ -318,13 +332,15 @@ compute_nonlocal_dual_graph_new(
       std::size_t pos = send_indx_to_pos[i];
       std::size_t cell = cells[pos];
       xgraph[cell].push_back(recv_buffer1[i]);
-      // if (rank == 0)
-      //   std::cout << "PB: " << i << ", " << pos << ", " << cell << ", "
-      //             << recv_buffer1[i] << std::endl;
     }
   }
 
   graph::AdjacencyList<std::int64_t> graph(xgraph);
+  if (new_graph.array() != graph.array())
+    throw std::runtime_error("Incompatible (data).");
+  if (new_graph.offsets() != graph.offsets())
+    throw std::runtime_error("Incompatible (offsets).");
+
   std::int64_t num_ghosts = std::count_if(
       recv_buffer1.begin(), recv_buffer1.end(), [](auto x) { return x > 0; });
 
