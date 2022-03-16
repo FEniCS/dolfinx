@@ -90,32 +90,31 @@ def test_gradient_interpolation(cell_type, p, q):
 
 @pytest.mark.parametrize("p", range(1, 4))
 @pytest.mark.parametrize("q", range(1, 4))
-@pytest.mark.parametrize("from_lagrange", [True])  # , False])
+@pytest.mark.parametrize("from_lagrange", [True, False])
 @pytest.mark.parametrize("cell_type", [CellType.quadrilateral,
                                        CellType.triangle,
                                        CellType.tetrahedron,
                                        CellType.hexahedron])
 def test_interpolation_matrix(cell_type, p, q, from_lagrange):
-    """Test discrete gradient computation with verification using Expression."""
+    """Test that discrete interpolation matrix yields the same result as interpolation."""
 
     comm = MPI.COMM_WORLD
     if cell_type == CellType.triangle:
         mesh = create_unit_square(comm, 7, 5, ghost_mode=GhostMode.none, cell_type=cell_type)
-        lagrange = "Lagrange"
+        lagrange = "Lagrange" if from_lagrange else "DG"
         nedelec = "Nedelec 1st kind H(curl)"
     elif cell_type == CellType.quadrilateral:
         mesh = create_unit_square(comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type)
-        lagrange = "Q"
+        lagrange = "Q" if from_lagrange else "DQ"
         nedelec = "RTCE"
     elif cell_type == CellType.hexahedron:
         mesh = create_unit_cube(comm, 3, 2, 1, ghost_mode=GhostMode.none, cell_type=cell_type)
-        lagrange = "Q"
+        lagrange = "Q" if from_lagrange else "DQ"
         nedelec = "NCE"
     elif cell_type == CellType.tetrahedron:
         mesh = create_unit_cube(comm, 3, 2, 2, ghost_mode=GhostMode.none, cell_type=cell_type)
-        lagrange = "Lagrange"
+        lagrange = "Lagrange" if from_lagrange else "DG"
         nedelec = "Nedelec 1st kind H(curl)"
-
     v_el = ufl.VectorElement(lagrange, mesh.ufl_cell(), p)
     s_el = ufl.FiniteElement(nedelec, mesh.ufl_cell(), q)
     if from_lagrange:
@@ -134,9 +133,9 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
 
     def f(x):
         if mesh.geometry.dim == 2:
-            return (x[0]**(p - 1), x[1]**(p - 1))
+            return (x[1]**p, x[0]**p)
         else:
-            return (x[0]**(p - 1), x[1]**(p - 1), x[2]**(p - 1))
+            return (x[0]**p, x[2]**p, x[1]**p)
     u.interpolate(f)
     w_vec = Function(W)
     w_vec.interpolate(u)
@@ -146,10 +145,4 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
     G.mult(u.vector, w.vector)
     w.x.scatter_forward()
 
-    w_true = Function(W)
-    w_true.interpolate(f)
-
-    # if not np.allclose(w_vec.x.array, w.x.array):
-    #     from IPython import embed
-    #     embed()
     assert np.allclose(w_vec.x.array, w.x.array)
