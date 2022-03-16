@@ -641,7 +641,7 @@ compute_nonlocal_dual_graph(
 
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
-           std::size_t>
+           std::size_t, std::vector<std::int32_t>>
 mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
                              const xtl::span<const std::int32_t>& cell_offsets,
                              int tdim)
@@ -654,7 +654,7 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   {
     // Empty mesh on this process
     return {graph::AdjacencyList<std::int32_t>(0), std::vector<std::int64_t>(),
-            0};
+            0, std::vector<std::int32_t>()};
   }
 
   // Create local (starting from 0), contiguous version of cell_vertices
@@ -833,15 +833,17 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
 
   // Pack 'unmatched' facet data, storing facet global vertices and
   // the attached cell index
-  std::vector<std::int64_t> unmatched_facet_data(
-      unshared_facets.size() * (max_num_facet_vertices + 1),
+  std::vector<std::int64_t> unmatched_facets(
+      unshared_facets.size() * max_num_facet_vertices,
       std::numeric_limits<std::int64_t>::max());
+  std::vector<std::int32_t> fcells;
+  fcells.reserve(unshared_facets.size());
   for (auto f = unshared_facets.begin(); f != unshared_facets.end(); ++f)
   {
     std::size_t pos = std::distance(unshared_facets.begin(), f);
-    xtl::span facet_unmatched(unmatched_facet_data.data()
-                                  + pos * (max_num_facet_vertices + 1),
-                              max_num_facet_vertices + 1);
+    xtl::span facet_unmatched(unmatched_facets.data()
+                                  + pos * max_num_facet_vertices,
+                              max_num_facet_vertices);
     xtl::span facet(facets.data() + (*f) * max_num_facet_vertices,
                     max_num_facet_vertices);
     for (int v = 0; v < max_num_facet_vertices; ++v)
@@ -855,7 +857,8 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
     }
 
     // Store cell index
-    facet_unmatched.back() = facet_to_cell[*f];
+    // facet_unmatched.back() = facet_to_cell[*f];
+    fcells.push_back(facet_to_cell[*f]);
   }
 
   // Count number of edges for each cell
@@ -888,7 +891,7 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
 
   return {graph::AdjacencyList<std::int32_t>(std::move(local_graph_data),
                                              std::move(offsets)),
-          std::move(unmatched_facet_data), max_num_facet_vertices + 1};
+          std::move(unmatched_facets), max_num_facet_vertices, fcells};
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
@@ -900,32 +903,31 @@ mesh::build_dual_graph(const MPI_Comm comm,
 
   // Compute local part of dual graph (cells are graph nodes, and edges
   // are connections by facet)
-  auto [local_graph, facet_cell_map, shape1]
+  auto [local_graph, facets, shape1, fcells]
       = mesh::build_local_dual_graph(cells.array(), cells.offsets(), tdim);
   assert(local_graph.num_nodes() == cells.num_nodes());
 
   // Extend with nonlocal edges and convert to global indices
 
+  auto [xgraph, xnum_ghost_edges] = compute_nonlocal_dual_graph_new(
+      comm, facets, shape1, fcells, local_graph);
+
   // Pack data
-  std::size_t shape0 = shape1 > 0 ? facet_cell_map.size() / shape1 : 0;
-  std::vector<std::int64_t> facets;
-  std::vector<std::int32_t> fcells;
-  facets.reserve(shape0 * (shape1 - 1));
-  fcells.reserve(shape0);
+  std::size_t shape0 = shape1 > 0 ? facets.size() / shape1 : 0;
+  std::vector<std::int64_t> xfacets;
+  xfacets.reserve(shape0 * (shape1 + 1));
   for (std::size_t i = 0; i < shape0; ++i)
   {
     std::size_t offset = i * shape1;
-    xtl::span row(facet_cell_map.data() + offset, shape1);
-    facets.insert(facets.end(), row.begin(), std::prev(row.end()));
-    fcells.push_back(row.back());
+    xtl::span row(facets.data() + offset, shape1);
+    xfacets.insert(xfacets.end(), row.begin(), row.end());
+    xfacets.push_back(fcells[i]);
   }
 
-  auto [xgraph, xnum_ghost_edges] = compute_nonlocal_dual_graph_new(
-      comm, facets, shape1 - 1, fcells, local_graph);
-
   auto [graph, num_ghost_edges]
-      = compute_nonlocal_dual_graph(comm, facet_cell_map, shape1, local_graph);
+      = compute_nonlocal_dual_graph(comm, xfacets, shape1 + 1, local_graph);
 
+  // TEST
   if (xgraph.array() != graph.array())
     throw std::runtime_error("Data mis-match");
   if (xgraph.offsets() != graph.offsets())
@@ -934,11 +936,11 @@ mesh::build_dual_graph(const MPI_Comm comm,
   {
     std::cout << "Num ghost mis-match: " << xnum_ghost_edges << ", "
               << num_ghost_edges << std::endl;
-    // throw std::runtime_error("Num ghost mis-match");
+    throw std::runtime_error("Num ghost mis-match");
   }
 
-  LOG(INFO) << "Graph edges (local:" << local_graph.offsets().back()
-            << ", non-local:"
+  LOG(INFO) << "Graph edges (local: " << local_graph.offsets().back()
+            << ", non-local: "
             << graph.offsets().back() - local_graph.offsets().back() << ")";
 
   return {std::move(graph), num_ghost_edges};
