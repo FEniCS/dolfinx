@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx.cpp.fem.petsc import create_discrete_gradient
+from dolfinx.cpp.fem.petsc import create_discrete_gradient, create_interpolation_matrix
 from dolfinx.fem import Expression, Function, FunctionSpace
 from dolfinx.mesh import GhostMode, create_unit_cube, create_unit_square, CellType
 
@@ -47,7 +47,7 @@ def test_gradient(mesh):
                                        CellType.triangle,
                                        CellType.tetrahedron,
                                        CellType.hexahedron])
-def test_interpolation_matrix(cell_type, p, q):
+def test_gradient_interpolation(cell_type, p, q):
     """Test discrete gradient computation with verification using Expression."""
 
     comm = MPI.COMM_WORLD
@@ -86,3 +86,70 @@ def test_interpolation_matrix(cell_type, p, q):
     w.x.scatter_forward()
 
     assert np.allclose(w_expr.x.array, w.x.array)
+
+
+@pytest.mark.parametrize("p", range(1, 4))
+@pytest.mark.parametrize("q", range(1, 4))
+@pytest.mark.parametrize("from_lagrange", [True])  # , False])
+@pytest.mark.parametrize("cell_type", [CellType.quadrilateral,
+                                       CellType.triangle,
+                                       CellType.tetrahedron,
+                                       CellType.hexahedron])
+def test_interpolation_matrix(cell_type, p, q, from_lagrange):
+    """Test discrete gradient computation with verification using Expression."""
+
+    comm = MPI.COMM_WORLD
+    if cell_type == CellType.triangle:
+        mesh = create_unit_square(comm, 7, 5, ghost_mode=GhostMode.none, cell_type=cell_type)
+        lagrange = "Lagrange"
+        nedelec = "Nedelec 1st kind H(curl)"
+    elif cell_type == CellType.quadrilateral:
+        mesh = create_unit_square(comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type)
+        lagrange = "Q"
+        nedelec = "RTCE"
+    elif cell_type == CellType.hexahedron:
+        mesh = create_unit_cube(comm, 3, 2, 1, ghost_mode=GhostMode.none, cell_type=cell_type)
+        lagrange = "Q"
+        nedelec = "NCE"
+    elif cell_type == CellType.tetrahedron:
+        mesh = create_unit_cube(comm, 3, 2, 2, ghost_mode=GhostMode.none, cell_type=cell_type)
+        lagrange = "Lagrange"
+        nedelec = "Nedelec 1st kind H(curl)"
+
+    v_el = ufl.VectorElement(lagrange, mesh.ufl_cell(), p)
+    s_el = ufl.FiniteElement(nedelec, mesh.ufl_cell(), q)
+    if from_lagrange:
+        el0 = v_el
+        el1 = s_el
+    else:
+        el0 = s_el
+        el1 = v_el
+
+    V = FunctionSpace(mesh, el0)
+    W = FunctionSpace(mesh, el1)
+    G = create_interpolation_matrix(V._cpp_object, W._cpp_object)
+    G.assemble()
+
+    u = Function(V)
+
+    def f(x):
+        if mesh.geometry.dim == 2:
+            return (x[0]**(p - 1), x[1]**(p - 1))
+        else:
+            return (x[0]**(p - 1), x[1]**(p - 1), x[2]**(p - 1))
+    u.interpolate(f)
+    w_vec = Function(W)
+    w_vec.interpolate(u)
+
+    # Compute global matrix vector product
+    w = Function(W)
+    G.mult(u.vector, w.vector)
+    w.x.scatter_forward()
+
+    w_true = Function(W)
+    w_true.interpolate(f)
+
+    # if not np.allclose(w_vec.x.array, w.x.array):
+    #     from IPython import embed
+    #     embed()
+    assert np.allclose(w_vec.x.array, w.x.array)
