@@ -50,8 +50,8 @@ compute_nonlocal_dual_graph(
     std::size_t shape1, const xtl::span<const std::int32_t>& cells,
     const graph::AdjacencyList<std::int32_t>& local_graph)
 {
-  LOG(INFO) << "Build nonlocal part of mesh dual graph (NEW)";
-  common::Timer timer("Compute non-local part of mesh dual graph (NEW)");
+  LOG(INFO) << "Build nonlocal part of mesh dual graph (scalable)";
+  common::Timer timer("Compute non-local part of mesh dual graph (scalable)");
 
   // TODO: Two possible straightforward optimisations:
   // 1. Do not send owned data to self via MPI.
@@ -683,8 +683,8 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
                              const xtl::span<const std::int32_t>& cell_offsets,
                              int tdim)
 {
-  LOG(INFO) << "Build local part of mesh dual graph";
-  common::Timer timer("Compute local part of mesh dual graph");
+  LOG(INFO) << "Build local part of mesh dual graph (non-scalable)";
+  common::Timer timer("Compute local part of mesh dual graph (non-scalable)");
 
   const std::int32_t num_local_cells = cell_offsets.size() - 1;
   if (num_local_cells == 0)
