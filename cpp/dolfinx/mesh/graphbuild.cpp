@@ -169,9 +169,9 @@ compute_nonlocal_dual_graph_new(
                                  MPI_INFO_NULL, false, &neigh_comm0);
 
   // Compute send displacements
-  std::vector<std::int32_t> send_disp = {0};
+  std::vector<std::int32_t> send_disp(num_items_per_dest.size() + 1, 0);
   std::partial_sum(num_items_per_dest.begin(), num_items_per_dest.end(),
-                   std::back_insert_iterator(send_disp));
+                   std::next(send_disp.begin()));
 
   // Pack send buffer
   std::vector<std::int32_t> send_indx_to_pos(send_disp.back());
@@ -200,9 +200,9 @@ compute_nonlocal_dual_graph_new(
                         num_items_recv.data(), 1, MPI_INT, neigh_comm0);
 
   // Prepare receive displacement and buffers
-  std::vector<std::int32_t> recv_disp = {0};
+  std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
   std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
-                   std::back_insert_iterator(recv_disp));
+                   std::next(recv_disp.begin()));
 
   // Send/receive data facet
   MPI_Datatype compound_type;
@@ -222,8 +222,16 @@ compute_nonlocal_dual_graph_new(
   std::vector<std::int64_t> send_buffer1(recv_disp.back(), -1);
   {
     // Compute sort permutation for received data
-    const std::vector<std::int32_t> sort_order
-        = dolfinx::sort_by_perm<std::int64_t>(recv_buffer, buffer_shape1);
+    std::vector<int> sort_order(recv_buffer.size() / buffer_shape1);
+    std::iota(sort_order.begin(), sort_order.end(), 0);
+    std::sort(sort_order.begin(), sort_order.end(),
+              [&recv_buffer, buffer_shape1, fshape1](auto f0, auto f1)
+              {
+                auto it0 = std::next(recv_buffer.begin(), f0 * buffer_shape1);
+                auto it1 = std::next(recv_buffer.begin(), f1 * buffer_shape1);
+                return std::lexicographical_compare(
+                    it0, std::next(it0, fshape1), it1, std::next(it1, fshape1));
+              });
 
     auto it = sort_order.begin();
     while (it != sort_order.end())
