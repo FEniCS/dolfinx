@@ -21,7 +21,6 @@ class AdjacencyList;
 
 namespace dolfinx::mesh
 {
-
 /// @brief Compute the local part of the dual graph (cell-cell
 /// connections via facets) and facet with only one attached cell.
 ///

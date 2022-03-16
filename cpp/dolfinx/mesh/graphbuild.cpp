@@ -73,9 +73,11 @@ compute_nonlocal_dual_graph_new(
   // Get cell offset for this process for converting local cell indices
   // to global cell indices
   std::int64_t cell_offset = 0;
+  MPI_Request request_cell_offset;
   {
     const std::int64_t num_local = local_graph.num_nodes();
-    MPI_Exscan(&num_local, &cell_offset, 1, MPI_INT64_T, MPI_SUM, comm);
+    MPI_Iexscan(&num_local, &cell_offset, 1, MPI_INT64_T, MPI_SUM, comm,
+                &request_cell_offset);
   }
 
   // Find (max_vert_per_facet, min_vertex_index, max_vertex_index)
@@ -173,6 +175,9 @@ compute_nonlocal_dual_graph_new(
   std::partial_sum(num_items_per_dest.begin(), num_items_per_dest.end(),
                    std::next(send_disp.begin()));
 
+  // Wait for the MPI_Iexscan to complete (before using cell_offset)
+  MPI_Wait(&request_cell_offset, MPI_STATUS_IGNORE);
+
   // Pack send buffer
   std::vector<std::int32_t> send_indx_to_pos(send_disp.back());
   std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back(), -1);
@@ -203,6 +208,26 @@ compute_nonlocal_dual_graph_new(
   std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
   std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
                    std::next(recv_disp.begin()));
+
+  {
+    // DEBUG
+    int sbuffer_size = send_disp.back();
+    int rbuffer_size = recv_disp.back();
+    int num_src = src.size();
+    int num_dests = dest.size();
+    std::array<int, 4> sdata = {sbuffer_size, rbuffer_size, num_src, num_dests};
+    std::array<int, 4> rdata_min, rdata_max;
+
+    MPI_Reduce(sdata.data(), rdata_min.data(), 4, MPI_INT, MPI_MIN, 0, comm);
+    MPI_Reduce(sdata.data(), rdata_max.data(), 4, MPI_INT, MPI_MAX, 0, comm);
+    if (dolfinx::MPI::rank(comm) == 0)
+    {
+      std::cout << "Min: " << rdata_min[0] << ", " << rdata_min[1] << ", "
+                << rdata_min[2] << ", " << rdata_min[3] << std::endl;
+      std::cout << "Max: " << rdata_max[0] << ", " << rdata_max[1] << ", "
+                << rdata_max[2] << ", " << rdata_max[3] << std::endl;
+    }
+  }
 
   // Send/receive data facet
   MPI_Datatype compound_type;
@@ -236,17 +261,17 @@ compute_nonlocal_dual_graph_new(
     auto it = sort_order.begin();
     while (it != sort_order.end())
     {
-      std::size_t offset = (*it) * buffer_shape1;
-      xtl::span f0(recv_buffer.data() + offset, fshape1);
+      std::size_t offset0 = (*it) * buffer_shape1;
+      auto f0 = std::next(recv_buffer.data(), offset0);
 
       // Find iterator to next facet different from f0
       auto it1 = std::find_if_not(
           it, sort_order.end(),
-          [f0, &recv_buffer, buffer_shape1](auto idx) -> bool
+          [f0, &recv_buffer, buffer_shape1, fshape1](auto idx) -> bool
           {
-            std::size_t offset = idx * buffer_shape1;
-            xtl::span f1(recv_buffer.data() + offset, buffer_shape1 - 1);
-            return f0 == f1;
+            std::size_t offset1 = idx * buffer_shape1;
+            auto f1 = std::next(recv_buffer.data(), offset1);
+            return std::equal(f0, std::next(f0, fshape1), f1);
           });
 
       std::size_t num_matches = std::distance(it, it1);
@@ -256,6 +281,8 @@ compute_nonlocal_dual_graph_new(
             "A facet is connected to more than two cells.");
       }
 
+      // TODO: generalise for more than matches and log warning (maybe
+      // with an option?). Would need to send back multiple values,
       if (num_matches == 2)
       {
         // Store the global cell index from the other rank
@@ -337,17 +364,9 @@ compute_nonlocal_dual_graph_new(
     num_ghosts = std::distance(ghost_edges.begin(), it);
   }
 
-  // std::int64_t num_ghosts = 0;
-  // for (std::size_t i = buffer_shape1 - 1; i < recv_buffer1.size();
-  //      i += buffer_shape1)
-  // {
-  //   if (recv_buffer1[i] >= 0)
-  //     ++num_ghosts;
-  // }
+  // TODO: get rid of 'num_ghosts'. Only required by PT-SCOTCH, and
+  // could be computed inside SCOTCH wrappers.
 
-  // std::int64_t num_ghosts = std::count_if(
-  //     recv_buffer1.begin(), recv_buffer1.end(), [](auto x) { return x >= 0;
-  //     });
   return {
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offsets)),
       num_ghosts};
@@ -899,7 +918,8 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
 
   return {graph::AdjacencyList<std::int32_t>(std::move(local_graph_data),
                                              std::move(offsets)),
-          std::move(unmatched_facets), max_num_facet_vertices, fcells};
+          std::move(unmatched_facets), max_num_facet_vertices,
+          std::move(fcells)};
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
