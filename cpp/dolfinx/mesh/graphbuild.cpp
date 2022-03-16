@@ -22,20 +22,22 @@ namespace
 {
 //-----------------------------------------------------------------------------
 
-/// Build nonlocal part of dual graph for mesh and return number of
-/// non-local edges.
+/// @brief Build nonlocal part of dual graph for mesh and return number
+/// of non-local edges.
 ///
-/// @note Note: graphbuild::compute_local_dual_graph should be called
+/// @note Scalable version
+///
+/// @note graphbuild::compute_local_dual_graph should be called
 /// before this function is called.
 ///
 /// @param[in] comm MPI communicator
 /// @param[in] facets Facets on this rank that are shared by only on
-/// cell on this rank. This makes them candidates for possibly matching
-/// to the same facet on another MPI rank. Each row in `facets`
-/// corresponds to a facet, and the row data has the form [v0, ...,
-/// v_{n-1}, x, x], where `v_i` are the sorted vertex global indices of
-/// the facets and `x` is a padding value for the mixed topology case
-/// where facets can have differing number of vertices.
+/// cell on this rank, i.e. candidates for possibly residing on other
+/// processes. Each row in `facets` corresponds to a facet, and the row
+/// data has the form [v0, ..., v_{n-1}, x, x], where `v_i` are the
+/// sorted vertex global indices of the facets and `x` is a padding
+/// value for the mixed topology case where facets can have differing
+/// number of vertices.
 /// @param[in] shape1 Number of columns for `facets`.
 /// @param[in] cells Attached cell (local index) for each facet in
 /// `facet`.
@@ -43,7 +45,7 @@ namespace
 /// @return (0) Extended dual graph to include ghost edges (edges to
 /// off-procss cells) and (1) the number of ghost edges
 std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
-compute_nonlocal_dual_graph_new(
+compute_nonlocal_dual_graph(
     const MPI_Comm comm, const xtl::span<const std::int64_t>& facets,
     std::size_t shape1, const xtl::span<const std::int32_t>& cells,
     const graph::AdjacencyList<std::int32_t>& local_graph)
@@ -54,7 +56,11 @@ compute_nonlocal_dual_graph_new(
   // TODO: Two possible straightforward optimisations:
   // 1. Do not send owned data to self via MPI.
   // 2. Modify MPI::index_owner to use a subet of ranks as post offices.
-  // 3. Use non-blocking MPI calls.
+  //
+  // Less straightforward optimisations:
+  // 3. After matching, send back matches only, (and only to ranks with
+  //    a match) (Note: this would complicate the communication and
+  //    handling of buffers)
 
   const std::size_t shape0 = cells.size();
 
@@ -373,10 +379,14 @@ compute_nonlocal_dual_graph_new(
 }
 //-----------------------------------------------------------------------------
 
-/// Build nonlocal part of dual graph for mesh and return number of
-/// non-local edges. Note: GraphBuilder::compute_local_dual_graph should
-/// be called before this function is called. Returns (ghost vertices,
-/// num_nonlocal_edges)
+/// @brief Build nonlocal part of dual graph for mesh and return number of
+/// non-local edges.
+///
+/// @note Non-scalable version
+///
+/// @note graphbuild::compute_local_dual_graph should be called
+/// before this function is called.
+///
 /// @param[in] comm MPI communicator
 /// @param[in] unmatched_facets Facets on this rank that are shared by
 /// only on cell on this rank. This makes them candidates for possibly
@@ -393,7 +403,7 @@ compute_nonlocal_dual_graph_new(
 /// @return (0) Extended dual graph to include ghost edges (edges to
 /// off-rank cells) and (1) the number of ghost edges
 [[maybe_unused]] std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
-compute_nonlocal_dual_graph(
+compute_nonlocal_dual_graph1(
     const MPI_Comm comm, const xtl::span<const std::int64_t>& unmatched_facets,
     const std::size_t unmatched_facets_shape1,
     const graph::AdjacencyList<std::int32_t>& local_graph)
@@ -937,34 +947,36 @@ mesh::build_dual_graph(const MPI_Comm comm,
 
   // Extend with nonlocal edges and convert to global indices
 
-  auto [xgraph, xnum_ghost_edges] = compute_nonlocal_dual_graph_new(
-      comm, facets, shape1, fcells, local_graph);
-
-  // Pack data
-  std::size_t shape0 = shape1 > 0 ? facets.size() / shape1 : 0;
-  std::vector<std::int64_t> xfacets;
-  xfacets.reserve(shape0 * (shape1 + 1));
-  for (std::size_t i = 0; i < shape0; ++i)
-  {
-    std::size_t offset = i * shape1;
-    xtl::span row(facets.data() + offset, shape1);
-    xfacets.insert(xfacets.end(), row.begin(), row.end());
-    xfacets.push_back(fcells[i]);
-  }
-
   auto [graph, num_ghost_edges]
-      = compute_nonlocal_dual_graph(comm, xfacets, shape1 + 1, local_graph);
+      = compute_nonlocal_dual_graph(comm, facets, shape1, fcells, local_graph);
 
-  // TEST
-  if (xgraph.array() != graph.array())
-    throw std::runtime_error("Data mis-match");
-  if (xgraph.offsets() != graph.offsets())
-    throw std::runtime_error("Offsets mis-match");
-  if (xnum_ghost_edges != num_ghost_edges)
   {
-    std::cout << "Num ghost mis-match: " << xnum_ghost_edges << ", "
-              << num_ghost_edges << std::endl;
-    throw std::runtime_error("Num ghost mis-match");
+    // Pack data
+    std::size_t shape0 = shape1 > 0 ? facets.size() / shape1 : 0;
+    std::vector<std::int64_t> xfacets;
+    xfacets.reserve(shape0 * (shape1 + 1));
+    for (std::size_t i = 0; i < shape0; ++i)
+    {
+      std::size_t offset = i * shape1;
+      xtl::span row(facets.data() + offset, shape1);
+      xfacets.insert(xfacets.end(), row.begin(), row.end());
+      xfacets.push_back(fcells[i]);
+    }
+
+    auto [xgraph, xnum_ghost_edges]
+        = compute_nonlocal_dual_graph1(comm, xfacets, shape1 + 1, local_graph);
+
+    // TEST
+    if (xgraph.array() != graph.array())
+      throw std::runtime_error("Data mis-match");
+    if (xgraph.offsets() != graph.offsets())
+      throw std::runtime_error("Offsets mis-match");
+    if (xnum_ghost_edges != num_ghost_edges)
+    {
+      std::cout << "Num ghost mis-match: " << xnum_ghost_edges << ", "
+                << num_ghost_edges << std::endl;
+      throw std::runtime_error("Num ghost mis-match");
+    }
   }
 
   LOG(INFO) << "Graph edges (local: " << local_graph.offsets().back()
