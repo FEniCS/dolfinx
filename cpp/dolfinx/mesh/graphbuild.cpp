@@ -298,6 +298,7 @@ compute_nonlocal_dual_graph_new(
 
   // Compute adjacency list data (edges)
   std::vector<std::int64_t> data(offsets.back());
+  std::int64_t num_ghosts = 0;
   {
     std::vector<std::int32_t> disp = offsets;
 
@@ -311,6 +312,7 @@ compute_nonlocal_dual_graph_new(
     }
 
     // Add non-local data
+    std::vector<std::int64_t> ghost_edges;
     for (std::size_t i = 0; i < recv_buffer1.size(); ++i)
     {
       if (recv_buffer1[i] >= 0)
@@ -318,12 +320,26 @@ compute_nonlocal_dual_graph_new(
         std::size_t pos = send_indx_to_pos[i];
         std::size_t cell = cells[pos];
         data[disp[cell]++] = recv_buffer1[i];
+        ghost_edges.push_back(recv_buffer1[i]);
       }
     }
+
+    std::sort(ghost_edges.begin(), ghost_edges.end());
+    auto it = std::unique(ghost_edges.begin(), ghost_edges.end());
+    num_ghosts = std::distance(ghost_edges.begin(), it);
   }
 
-  std::int64_t num_ghosts = std::count_if(
-      recv_buffer1.begin(), recv_buffer1.end(), [](auto x) { return x > 0; });
+  // std::int64_t num_ghosts = 0;
+  // for (std::size_t i = buffer_shape1 - 1; i < recv_buffer1.size();
+  //      i += buffer_shape1)
+  // {
+  //   if (recv_buffer1[i] >= 0)
+  //     ++num_ghosts;
+  // }
+
+  // std::int64_t num_ghosts = std::count_if(
+  //     recv_buffer1.begin(), recv_buffer1.end(), [](auto x) { return x >= 0;
+  //     });
   return {
       graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offsets)),
       num_ghosts};
@@ -904,17 +920,22 @@ mesh::build_dual_graph(const MPI_Comm comm,
     fcells.push_back(row.back());
   }
 
-  auto [graph, num_ghost_edges] = compute_nonlocal_dual_graph_new(
+  auto [xgraph, xnum_ghost_edges] = compute_nonlocal_dual_graph_new(
       comm, facets, shape1 - 1, fcells, local_graph);
 
-  // auto [graph, num_ghost_edges]
-  //     = compute_nonlocal_dual_graph(comm, facet_cell_map, shape1,
-  //     local_graph);
+  auto [graph, num_ghost_edges]
+      = compute_nonlocal_dual_graph(comm, facet_cell_map, shape1, local_graph);
 
-  // if (xgraph.array() != graph.array())
-  //   throw std::runtime_error("Data mis-match");
-  // if (xgraph.offsets() != graph.offsets())
-  //   throw std::runtime_error("Offsets mis-match");
+  if (xgraph.array() != graph.array())
+    throw std::runtime_error("Data mis-match");
+  if (xgraph.offsets() != graph.offsets())
+    throw std::runtime_error("Offsets mis-match");
+  if (xnum_ghost_edges != num_ghost_edges)
+  {
+    std::cout << "Num ghost mis-match: " << xnum_ghost_edges << ", "
+              << num_ghost_edges << std::endl;
+    // throw std::runtime_error("Num ghost mis-match");
+  }
 
   LOG(INFO) << "Graph edges (local:" << local_graph.offsets().back()
             << ", non-local:"
