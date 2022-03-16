@@ -29,7 +29,6 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/ElementDofLayout.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/FunctionSpace.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/discreteoperators.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/dofmapbuilder.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/interpolate.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/petsc.cpp
