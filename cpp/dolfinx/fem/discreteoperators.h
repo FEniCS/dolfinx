@@ -124,7 +124,14 @@ void assemble_discrete_gradient(const fem::FunctionSpace& V0,
   }
 }
 
-/// @brief Assemble a discrete gradient operator.
+/// @brief Assemble an interpolation operator matrix
+///
+/// This function creates a discrete operator \f$A\f$ that interpolates
+/// a function \f$V_0\f$ into a compatible space \f$V_1\f$, i.e.
+/// \f$V_0 \rightarrow V_1\f$. If \f$u_0\f$ is the
+/// degree-of-freedom vector associated with \f$V_0\f$, then
+/// \f$u_1=Au_0\f$ where \f$u_1\f$ is the degrees-of-freedom vector for
+/// interpolating function in the \f$V_1\f$ space.
 ///
 /// @warning This function relies on the user supplying appropriate
 /// input and output spaces. See parameter descriptions.
