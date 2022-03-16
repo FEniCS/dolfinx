@@ -583,30 +583,37 @@ void Topology::set_connectivity(
 //-----------------------------------------------------------------------------
 const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 {
-  std::cout << "get_cell_permutation_info\n";
-  // TODO Do I need to check this index map exists? It the cell index map should
-  // always exist.
   auto i_map = this->index_map(this->dim());
   assert(i_map);
-  const bool has_cells = i_map->size_local() + i_map->num_ghosts() > 0;
 
+  // Check if this process owns or ghosts any cells
+  const bool has_cells = i_map->size_local() + i_map->num_ghosts() > 0;
   if (_cell_permutations.empty() and has_cells)
   {
     throw std::runtime_error(
         "create_entity_permutations must be called before using this data.");
   }
+
   return _cell_permutations;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
 {
-  // TODO Same as above
-  std::cout << "get_facet_permutations\n";
-  if (_facet_permutations.empty())
+  auto i_map = this->index_map(this->dim() - 1);
+  std::string error_message
+      = "create_entity_permutations must be called before using this data.";
+  if (!i_map)
   {
-    throw std::runtime_error(
-        "create_entity_permutations must be called before using this data.");
+    throw std::runtime_error(error_message);
   }
+
+  // Check if this process owns or ghosts any facets
+  const bool has_facets = i_map->size_local() + i_map->num_ghosts() > 0;
+  if (_facet_permutations.empty() and has_facets)
+  {
+    throw std::runtime_error(error_message);
+  }
+
   return _facet_permutations;
 }
 //-----------------------------------------------------------------------------
