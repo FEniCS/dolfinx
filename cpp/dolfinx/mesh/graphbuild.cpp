@@ -117,8 +117,8 @@ compute_nonlocal_dual_graph_new(
     for (std::size_t i = 0; i < shape0; ++i)
     {
       std::int64_t v0 = facets[i * shape1] - vrange[0];
-      dest_to_index.push_back(
-          {MPI::index_owner(num_ranks, v0, range), static_cast<int>(i)});
+      dest_to_index.push_back({dolfinx::MPI::index_owner(num_ranks, v0, range),
+                               static_cast<int>(i)});
     }
     std::sort(dest_to_index.begin(), dest_to_index.end());
 
@@ -153,7 +153,8 @@ compute_nonlocal_dual_graph_new(
   }
 
   // Determine source ranks
-  const std::vector<int> src = MPI::compute_graph_edges_nbx(comm, dest);
+  const std::vector<int> src
+      = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
   LOG(INFO) << "Number of destination and source ranks in non-local dual graph "
                "construction, and ratio to total number of ranks: "
             << dest.size() << ", " << src.size() << ", "
