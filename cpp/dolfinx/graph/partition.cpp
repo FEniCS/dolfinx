@@ -66,9 +66,6 @@ graph::build::distribute_new(
   // and node global index)
   const std::size_t buffer_shape1 = shape1 + 3;
 
-  // std::cout << "Buffer shape1: " << rank << ", " << buffer_shape1 <<
-  // std::endl;
-
   // Build (dest, index, owning rank) list and sort
   std::vector<std::array<int, 3>> dest_to_index;
   dest_to_index.reserve(destinations.array().size());
@@ -88,10 +85,8 @@ graph::build::distribute_new(
     auto it = dest_to_index.begin();
     while (it != dest_to_index.end())
     {
-      // Store global rank
+      // Store global rank and find iterator to next global rank
       dest.push_back((*it)[0]);
-
-      // Find iterator to next global rank
       auto it1
           = std::find_if(it, dest_to_index.end(),
                          [r = dest.back()](auto& idx) { return idx[0] != r; });
@@ -132,9 +127,6 @@ graph::build::distribute_new(
                    std::next(send_disp.begin()));
 
   // Pack send buffer
-  // std::cout << "bshape1, shape1: " << buffer_shape1 << ", " <<
-  // send_disp.back()
-  //           << std::endl;
   std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back(), -1);
   {
     assert(send_disp.back() == (std::int32_t)dest_to_index.size());
@@ -147,18 +139,14 @@ graph::build::distribute_new(
       auto row = list.links(pos);
       std::copy(row.begin(), row.end(), b.begin());
 
-      // std::cout << "Pos: " << rank << ", " << pos << ", " << list.num_nodes()
-      //           << std::endl;
-      // std::cout << "Buffer size: " << rank << ", " << send_buffer.size() <<
-      // ", "
-      //           << i * buffer_shape1 << ", " << buffer_shape1 << std::endl;
+      auto info = b.last(3);
+      info[0] = row.size();          // Number of edges for node
+      info[1] = dest_data[2];        // Owning rank
+      info[2] = pos + offset_global; // Original global index
 
-      *std::prev(b.end(), 3) = row.size();          // Number of edges for node
-      *std::prev(b.end(), 2) = dest_data[2];        // Owning rank
-      *std::prev(b.end(), 1) = pos + offset_global; // Original global index
-
-      // if (rank == 0)
-      //   std::cout << "XXX Dest: " << dest_to_index[i][2] << std::endl;
+      // *std::prev(b.end(), 3) = row.size();          // Number of edges for
+      // node *std::prev(b.end(), 2) = dest_data[2];        // Owning rank
+      // *std::prev(b.end(), 1) = pos + offset_global; // Original global index
     }
   }
 
@@ -174,9 +162,6 @@ graph::build::distribute_new(
 
   MPI_Type_free(&compound_type);
   MPI_Comm_free(&neigh_comm);
-
-  // std::cout << "Shape1: " << rank << ", " << shape1 << ", " << buffer_shape1
-  //           << std::endl;
 
   // Unpack receive buffer
   std::vector<int> src_ranks0, src_ranks1;
@@ -214,40 +199,22 @@ graph::build::distribute_new(
     }
   }
 
-  // if (rank == 1)
-  //   std::cout << "Back: " << offsets0.back() << ", " << offsets1.back()
-  //             << std::endl;
-
   std::transform(offsets1.begin(), offsets1.end(), offsets1.begin(),
                  [off = offsets0.back()](auto x) { return x + off; });
-
   data0.insert(data0.end(), data1.begin(), data1.end());
   offsets0.insert(offsets0.end(), std::next(offsets1.begin()), offsets1.end());
-
-  // if (rank == 1)
-  //   std::cout << "Back0: " << offsets0.back() << ", " << offsets1.back()
-  //             << std::endl;
-
   src_ranks0.insert(src_ranks0.end(), src_ranks1.begin(), src_ranks1.end());
   global_indices0.insert(global_indices0.end(), global_indices1.begin(),
                          global_indices1.end());
 
-  // std::cout << "R: " << rank << ", " << data0.size() << ",  " <<
-  // offsets0.back()
-  //           << ", " << shape1 << std::endl;
+  data0.shrink_to_fit();
+  offsets0.shrink_to_fit();
+  src_ranks0.shrink_to_fit();
+  global_indices0.shrink_to_fit();
+  ghost_index_owner.shrink_to_fit();
 
-  // if (rank == 1)
-  // {
-  //   std::cout << "Off: " << offsets0.size() << ", " << offsets1.size()
-  //             << std::endl;
-  // }
-
-  // MPI_Barrier(comm);
   return {graph::AdjacencyList<std::int64_t>(data0, offsets0), src_ranks0,
           global_indices0, ghost_index_owner};
-
-  // return {graph::AdjacencyList<std::int64_t>(0), std::vector<int>(),
-  //         std::vector<std::int64_t>(), std::vector<int>()};
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
