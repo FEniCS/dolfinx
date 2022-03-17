@@ -40,7 +40,7 @@ graph::build::distribute_new(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
     const graph::AdjacencyList<std::int32_t>& destinations)
 {
-  common::Timer timer("XXDistribute AdjacencyList nodes to destination ranks "
+  common::Timer timer("Distribute AdjacencyList nodes to destination ranks "
                       "(graph::build::distribute, scalable)");
 
   assert(list.num_nodes() == (int)destinations.num_nodes());
@@ -133,20 +133,14 @@ graph::build::distribute_new(
     for (std::size_t i = 0; i < dest_to_index.size(); ++i)
     {
       const std::array<int, 3>& dest_data = dest_to_index[i];
-
-      std::size_t pos = dest_data[1];
       xtl::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
-      auto row = list.links(pos);
+      auto row = list.links(dest_data[1]);
       std::copy(row.begin(), row.end(), b.begin());
 
       auto info = b.last(3);
       info[0] = row.size();          // Number of edges for node
       info[1] = dest_data[2];        // Owning rank
       info[2] = pos + offset_global; // Original global index
-
-      // *std::prev(b.end(), 3) = row.size();          // Number of edges for
-      // node *std::prev(b.end(), 2) = dest_data[2];        // Owning rank
-      // *std::prev(b.end(), 1) = pos + offset_global; // Original global index
     }
   }
 
@@ -164,12 +158,10 @@ graph::build::distribute_new(
   MPI_Comm_free(&neigh_comm);
 
   // Unpack receive buffer
-  std::vector<int> src_ranks0, src_ranks1;
+  std::vector<int> src_ranks0, src_ranks1, ghost_index_owner;
   std::vector<std::int64_t> data0, data1;
-  std::vector<std::int32_t> offsets0 = {0};
-  std::vector<std::int32_t> offsets1 = {0};
+  std::vector<std::int32_t> offsets0{0}, offsets1{0};
   std::vector<std::int64_t> global_indices0, global_indices1;
-  std::vector<int> ghost_index_owner;
   for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
   {
     const int src_rank = src[p];
@@ -178,9 +170,10 @@ graph::build::distribute_new(
       xtl::span row(recv_buffer.data() + i * buffer_shape1, buffer_shape1);
       auto info = row.last(3);
       std::size_t num_edges = info[0];
+      int owner = info[1];
       std::int64_t orig_global_index = info[2];
       auto edges = row.first(num_edges);
-      if (info[1] == rank)
+      if (owner == rank)
       {
         data0.insert(data0.end(), edges.begin(), edges.end());
         offsets0.push_back(offsets0.back() + num_edges);
