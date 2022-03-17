@@ -23,15 +23,16 @@ graph::partition_graph(MPI_Comm comm, int nparts,
                        const AdjacencyList<std::int64_t>& local_graph,
                        bool ghosting)
 {
-// #if HAS_PARMETIS
-//   return graph::parmetis::partitioner()(comm, nparts, local_graph, ghosting);
-// #elif HAS_PTSCOTCH
+  // #if HAS_PARMETIS
+  //   return graph::parmetis::partitioner()(comm, nparts, local_graph,
+  //   ghosting);
+  // #elif HAS_PTSCOTCH
   return graph::scotch::partitioner()(comm, nparts, local_graph, ghosting);
-// #elif HAS_KAHIP
-//   return graph::kahip::partitioner()(comm, nparts, local_graph, ghosting);
-// #else
-// // Should never reach this point
-// #endif
+  // #elif HAS_KAHIP
+  //   return graph::kahip::partitioner()(comm, nparts, local_graph, ghosting);
+  // #else
+  // // Should never reach this point
+  // #endif
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
@@ -40,7 +41,8 @@ graph::build::distribute(MPI_Comm comm,
                          const graph::AdjacencyList<std::int64_t>& list,
                          const graph::AdjacencyList<std::int32_t>& destinations)
 {
-  common::Timer timer("Distribute in graph creation AdjacencyList");
+  common::Timer timer("Distribute AdjacencyList nodes to destination ranks "
+                      "(graph::build::distribute)");
 
   assert(list.num_nodes() == (int)destinations.num_nodes());
 
@@ -220,6 +222,7 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
                                  MPI_INFO_NULL, false, &neighbor_comm);
 
   std::vector<int> send_offsets = {0};
+  send_offsets.reserve(ghost_index_count.size() + 1);
   for (int index_count : ghost_index_count)
     send_offsets.push_back(send_offsets.back() + index_count);
   std::vector<std::int64_t> send_data(send_offsets.back());
@@ -247,6 +250,7 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   MPI_Neighbor_alltoall(ghost_index_count.data(), 1, MPI_INT, recv_sizes.data(),
                         1, MPI_INT, neighbor_comm);
   std::vector<int> recv_offsets = {0};
+  recv_offsets.reserve(recv_sizes.size() + 1);
   for (int q : recv_sizes)
     recv_offsets.push_back(recv_offsets.back() + q);
 
