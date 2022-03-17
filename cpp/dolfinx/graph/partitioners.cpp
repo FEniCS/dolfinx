@@ -265,13 +265,18 @@ std::vector<int> refine(MPI_Comm comm, const graph::AdjacencyList<T>& adj_graph)
 graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
                                                double imbalance, int seed)
 {
-  return
-      [imbalance, strategy, seed](MPI_Comm comm, int nparts,
-                                  const AdjacencyList<std::int64_t>& graph,
-                                  std::int32_t num_ghost_nodes, bool ghosting)
+  return [imbalance, strategy, seed](MPI_Comm comm, int nparts,
+                                     const AdjacencyList<std::int64_t>& graph,
+                                     bool ghosting)
   {
     LOG(INFO) << "Compute graph partition using PT-SCOTCH";
     common::Timer timer("Compute graph partition (SCOTCH)");
+
+    std::int64_t offset_global = 0;
+    const std::int64_t num_owned = graph.num_nodes();
+    MPI_Request request_offset_scan;
+    MPI_Iexscan(&num_owned, &offset_global, 1, MPI_INT64_T, MPI_SUM, comm,
+                &request_offset_scan);
 
     // C-style array indexing
     constexpr SCOTCH_Num baseval = 0;
@@ -353,6 +358,22 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
                                      imbalance);
     if (err != 0)
       throw std::runtime_error("Error calling SCOTCH_stratDgraphMapBuild");
+
+    // Count number of 'ghost' edges, i.e. an edge to a cell that does
+    // not belong to the caller
+    std::int32_t num_ghost_nodes = 0;
+    {
+      MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
+      std::array<std::int64_t, 2> range
+          = {offset_global, offset_global + num_owned};
+      std::vector<std::int64_t> ghost_edges;
+      std::copy_if(graph.array().begin(), graph.array().end(),
+                   std::back_inserter(ghost_edges),
+                   [range](auto e) { return e < range[0] or e >= range[1]; });
+      std::sort(ghost_edges.begin(), ghost_edges.end());
+      auto it = std::unique(ghost_edges.begin(), ghost_edges.end());
+      num_ghost_nodes = std::distance(ghost_edges.begin(), it);
+    }
 
     // Resize vector to hold node partition indices with enough extra
     // space for ghost node partition information too. When there are no
@@ -452,7 +473,7 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
 {
   return [imbalance, options](MPI_Comm comm, idx_t nparts,
                               const graph::AdjacencyList<std::int64_t>& graph,
-                              std::int32_t, bool ghosting)
+                              bool ghosting)
   {
     LOG(INFO) << "Compute graph partition using ParMETIS";
     common::Timer timer("Compute graph partition (ParMETIS)");
@@ -538,10 +559,9 @@ std::function<graph::AdjacencyList<std::int32_t>(
 graph::kahip::partitioner(int mode, int seed, double imbalance,
                           bool suppress_output)
 {
-  return [mode, seed, imbalance,
-          suppress_output](MPI_Comm comm, int nparts,
-                           const graph::AdjacencyList<std::int64_t>& graph,
-                           std::int32_t, bool ghosting)
+  return [mode, seed, imbalance, suppress_output](
+             MPI_Comm comm, int nparts,
+             const graph::AdjacencyList<std::int64_t>& graph, bool ghosting)
   {
     LOG(INFO) << "Compute graph partition using (parallel) KaHIP";
 

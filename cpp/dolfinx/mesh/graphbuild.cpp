@@ -44,8 +44,7 @@ namespace
 /// @param[in] local_graph The dual graph for cells on this MPI rank
 /// @return (0) Extended dual graph to include ghost edges (edges to
 /// off-procss cells) and (1) the number of ghost edges
-std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
-compute_nonlocal_dual_graph(
+graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     const MPI_Comm comm, const xtl::span<const std::int64_t>& facets,
     std::size_t shape1, const xtl::span<const std::int32_t>& cells,
     const graph::AdjacencyList<std::int32_t>& local_graph)
@@ -69,11 +68,10 @@ compute_nonlocal_dual_graph(
   if (num_ranks == 1)
   {
     // Convert graph to int64_t and return
-    return {graph::AdjacencyList<std::int64_t>(
-                std::vector<std::int64_t>(local_graph.array().begin(),
-                                          local_graph.array().end()),
-                local_graph.offsets()),
-            0};
+    return graph::AdjacencyList<std::int64_t>(
+        std::vector<std::int64_t>(local_graph.array().begin(),
+                                  local_graph.array().end()),
+        local_graph.offsets());
   }
 
   // Get cell offset for this process for converting local cell indices
@@ -339,7 +337,6 @@ compute_nonlocal_dual_graph(
 
   // Compute adjacency list data (edges)
   std::vector<std::int64_t> data(offsets.back());
-  std::int64_t num_ghosts = 0;
   {
     std::vector<std::int32_t> disp = offsets;
 
@@ -353,7 +350,6 @@ compute_nonlocal_dual_graph(
     }
 
     // Add non-local data
-    std::vector<std::int64_t> ghost_edges;
     for (std::size_t i = 0; i < recv_buffer1.size(); ++i)
     {
       if (recv_buffer1[i] >= 0)
@@ -361,21 +357,12 @@ compute_nonlocal_dual_graph(
         std::size_t pos = send_indx_to_pos[i];
         std::size_t cell = cells[pos];
         data[disp[cell]++] = recv_buffer1[i];
-        ghost_edges.push_back(recv_buffer1[i]);
       }
     }
-
-    std::sort(ghost_edges.begin(), ghost_edges.end());
-    auto it = std::unique(ghost_edges.begin(), ghost_edges.end());
-    num_ghosts = std::distance(ghost_edges.begin(), it);
   }
 
-  // TODO: get rid of 'num_ghosts'. Only required by PT-SCOTCH, and
-  // could be computed inside SCOTCH wrappers.
-
-  return {
-      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offsets)),
-      num_ghosts};
+  return graph::AdjacencyList<std::int64_t>(std::move(data),
+                                            std::move(offsets));
 }
 //-----------------------------------------------------------------------------
 
@@ -402,7 +389,7 @@ compute_nonlocal_dual_graph(
 /// @param[in] local_graph The dual graph for cells on this MPI rank
 /// @return (0) Extended dual graph to include ghost edges (edges to
 /// off-rank cells) and (1) the number of ghost edges
-[[maybe_unused]] std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
+[[maybe_unused]] graph::AdjacencyList<std::int64_t>
 compute_nonlocal_dual_graph1(
     const MPI_Comm comm, const xtl::span<const std::int64_t>& unmatched_facets,
     const std::size_t unmatched_facets_shape1,
@@ -423,11 +410,10 @@ compute_nonlocal_dual_graph1(
   if (num_ranks == 1)
   {
     // Convert graph to int64
-    return {graph::AdjacencyList<std::int64_t>(
-                std::vector<std::int64_t>(local_graph.array().begin(),
-                                          local_graph.array().end()),
-                local_graph.offsets()),
-            0};
+    return graph::AdjacencyList<std::int64_t>(
+        std::vector<std::int64_t>(local_graph.array().begin(),
+                                  local_graph.array().end()),
+        local_graph.offsets());
   }
 
   // Get cell offset for this process to create global numbering for
@@ -641,7 +627,6 @@ compute_nonlocal_dual_graph1(
   graph::AdjacencyList<std::int64_t> graph(
       std::vector<std::int64_t>(offsets.back()), std::move(offsets));
   pos.assign(graph.num_nodes(), 0);
-  std::vector<std::int64_t> ghost_edges;
   for (int i = 0; i < local_graph.num_nodes(); ++i)
   {
     auto local_graph_i = local_graph.links(i);
@@ -664,14 +649,9 @@ compute_nonlocal_dual_graph1(
     }
 #endif
     edges[pos[node]++] = cell_list[i + 1];
-    ghost_edges.push_back(cell_list[i + 1]);
   }
 
-  std::sort(ghost_edges.begin(), ghost_edges.end());
-  const std::int32_t num_ghost_edges = std::distance(
-      ghost_edges.begin(), std::unique(ghost_edges.begin(), ghost_edges.end()));
-
-  return {std::move(graph), num_ghost_edges};
+  return graph;
 }
 //-----------------------------------------------------------------------------
 
@@ -933,7 +913,7 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
           std::move(fcells)};
 }
 //-----------------------------------------------------------------------------
-std::pair<graph::AdjacencyList<std::int64_t>, std::int32_t>
+graph::AdjacencyList<std::int64_t>
 mesh::build_dual_graph(const MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        int tdim)
@@ -948,7 +928,7 @@ mesh::build_dual_graph(const MPI_Comm comm,
 
   // Extend with nonlocal edges and convert to global indices
 
-  auto [graph, num_ghost_edges]
+  graph::AdjacencyList<std::int64_t> graph
       = compute_nonlocal_dual_graph(comm, facets, shape1, fcells, local_graph);
 
   {
@@ -964,7 +944,7 @@ mesh::build_dual_graph(const MPI_Comm comm,
       xfacets.push_back(fcells[i]);
     }
 
-    auto [xgraph, xnum_ghost_edges]
+    graph::AdjacencyList<std::int64_t> xgraph
         = compute_nonlocal_dual_graph1(comm, xfacets, shape1 + 1, local_graph);
 
     // TEST
@@ -972,18 +952,12 @@ mesh::build_dual_graph(const MPI_Comm comm,
       throw std::runtime_error("Data mis-match");
     if (xgraph.offsets() != graph.offsets())
       throw std::runtime_error("Offsets mis-match");
-    if (xnum_ghost_edges != num_ghost_edges)
-    {
-      std::cout << "Num ghost mis-match: " << xnum_ghost_edges << ", "
-                << num_ghost_edges << std::endl;
-      throw std::runtime_error("Num ghost mis-match");
-    }
   }
 
   LOG(INFO) << "Graph edges (local: " << local_graph.offsets().back()
             << ", non-local: "
             << graph.offsets().back() - local_graph.offsets().back() << ")";
 
-  return {std::move(graph), num_ghost_edges};
+  return graph;
 }
 //-----------------------------------------------------------------------------
