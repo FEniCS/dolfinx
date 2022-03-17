@@ -43,6 +43,7 @@ graph::build::distribute_new(
   common::Timer timer("Distribute AdjacencyList nodes to destination ranks "
                       "(graph::build::distribute)");
 
+  // const int size = dolfinx::MPI::size(comm);
   assert(list.num_nodes() == (int)destinations.num_nodes());
 
   std::int64_t offset_global = 0;
@@ -60,8 +61,7 @@ graph::build::distribute_new(
     MPI_Allreduce(&shape1_local, &shape1, 1, MPI_INT, MPI_MAX, comm);
   }
   const std::size_t shape0 = destinations.num_nodes();
-
-  const int size = dolfinx::MPI::size(comm);
+  const std::size_t buffer_shape1 = shape1 + 2;
 
   // Build (dest, index) list and sort
   std::vector<std::array<int, 2>> dest_to_index;
@@ -74,11 +74,10 @@ graph::build::distribute_new(
   }
   std::sort(dest_to_index.begin(), dest_to_index.end());
 
-  // Build list of dest ranks and count number of rows to send to each
-  // dest (by neighbourhood rank)
+  // Build list of unique dest ranks and count number of rows to send to
+  // each dest (by neighbourhood rank)
   std::vector<int> dest;
   std::vector<std::int32_t> num_items_per_dest;
-  //     pos_to_neigh_rank(dest_to_index.size(), -1);
   {
     auto it = dest_to_index.begin();
     while (it != dest_to_index.end())
@@ -96,11 +95,6 @@ graph::build::distribute_new(
       // Store number of items for current rank
       num_items_per_dest.push_back(std::distance(it, it1));
 
-      // // Set entry in map from local facet row index (position) to local
-      // // destination rank
-      // for (auto e = it; e != it1; ++e)
-      //   pos_to_neigh_rank[(*e)[1]] = neigh_rank;
-
       // Advance iterator
       it = it1;
     }
@@ -116,14 +110,14 @@ graph::build::distribute_new(
                                  dest.size(), dest.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &neigh_comm);
 
-  // Send number of send to receivers
+  // Send number of rows  to receivers
   std::vector<int> num_items_recv(src.size());
   num_items_per_dest.reserve(1);
   num_items_recv.reserve(1);
   MPI_Neighbor_alltoall(num_items_per_dest.data(), 1, MPI_INT,
                         num_items_recv.data(), 1, MPI_INT, neigh_comm);
 
-  // Prepare receive displacement and buffers
+  // Prepare receive displacement
   std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
   std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
                    std::next(recv_disp.begin()));
@@ -134,17 +128,19 @@ graph::build::distribute_new(
                    std::next(send_disp.begin()));
 
   // Pack send buffer
-  std::vector<std::int64_t> send_buffer(shape1 * send_disp.back(), -1);
+  std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back(), -1);
   {
     std::size_t send_offset = 0;
     for (std::size_t i = 0; i < dest_to_index.size(); ++i)
     {
       std::size_t pos = dest_to_index[i][1];
       auto row = list.links(pos);
-      std::copy(row.begin(), row.end(),
-                std::next(send_buffer.begin(), i * shape1));
+      xtl::span b(send_buffer.data() + i * buffer_shape1, i * buffer_shape1);
+      std::copy(row.begin(), row.end(), b.begin());
 
-      send_buffer[i * shape1 + shape1 - 1] = 1; // global index
+      // send_buffer[i * shape1 + buffer_shape1 - 2] = row.size();
+      *std::prev(b.end(), 1) = row.size();
+      b.back() = pos + offset_global;
 
       ++send_offset;
     }
