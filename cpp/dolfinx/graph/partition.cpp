@@ -36,6 +36,139 @@ graph::partition_graph(MPI_Comm comm, int nparts,
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
+graph::build::distribute_new(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
+    const graph::AdjacencyList<std::int32_t>& destinations)
+{
+  common::Timer timer("Distribute AdjacencyList nodes to destination ranks "
+                      "(graph::build::distribute)");
+
+  assert(list.num_nodes() == (int)destinations.num_nodes());
+
+  std::int64_t offset_global = 0;
+  const std::int64_t num_owned = list.num_nodes();
+  // MPI_Request request_offset_scan;
+  // MPI_Iexscan(&num_owned, &offset_global, 1, MPI_INT64_T, MPI_SUM, comm,
+  //             &request_offset_scan);
+  MPI_Exscan(&num_owned, &offset_global, 1, MPI_INT64_T, MPI_SUM, comm);
+
+  // TODO: Do this on the neighbourhood only
+  // Get max shape1
+  int shape1 = 0;
+  {
+    int shape1_local = list.num_nodes() > 1 ? list.links(0).size() : 0;
+    MPI_Allreduce(&shape1_local, &shape1, 1, MPI_INT, MPI_MAX, comm);
+  }
+  const std::size_t shape0 = destinations.num_nodes();
+
+  const int size = dolfinx::MPI::size(comm);
+
+  // Build (dest, index) list and sort
+  std::vector<std::array<int, 2>> dest_to_index;
+  dest_to_index.reserve(destinations.array().size());
+  for (std::size_t i = 0; i < destinations.num_nodes(); ++i)
+  {
+    auto di = destinations.links(i);
+    for (auto d : di)
+      dest_to_index.push_back({d, int(i)});
+  }
+  std::sort(dest_to_index.begin(), dest_to_index.end());
+
+  // Build list of dest ranks and count number of rows to send to each
+  // dest (by neighbourhood rank)
+  std::vector<int> dest;
+  std::vector<std::int32_t> num_items_per_dest;
+  //     pos_to_neigh_rank(dest_to_index.size(), -1);
+  {
+    auto it = dest_to_index.begin();
+    while (it != dest_to_index.end())
+    {
+      const int neigh_rank = dest.size();
+
+      // Store global rank
+      dest.push_back((*it)[0]);
+
+      // Find iterator to next global rank
+      auto it1
+          = std::find_if(it, dest_to_index.end(),
+                         [r = dest.back()](auto& idx) { return idx[0] != r; });
+
+      // Store number of items for current rank
+      num_items_per_dest.push_back(std::distance(it, it1));
+
+      // // Set entry in map from local facet row index (position) to local
+      // // destination rank
+      // for (auto e = it; e != it1; ++e)
+      //   pos_to_neigh_rank[(*e)[1]] = neigh_rank;
+
+      // Advance iterator
+      it = it1;
+    }
+  }
+
+  // Determine source ranks
+  const std::vector<int> src
+      = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
+
+  // Create neighbourhood communicator
+  MPI_Comm neigh_comm;
+  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
+                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &neigh_comm);
+
+  // Send number of send to receivers
+  std::vector<int> num_items_recv(src.size());
+  num_items_per_dest.reserve(1);
+  num_items_recv.reserve(1);
+  MPI_Neighbor_alltoall(num_items_per_dest.data(), 1, MPI_INT,
+                        num_items_recv.data(), 1, MPI_INT, neigh_comm);
+
+  // Prepare receive displacement and buffers
+  std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
+  std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
+                   std::next(recv_disp.begin()));
+
+  // Compute send displacements
+  std::vector<std::int32_t> send_disp(num_items_per_dest.size() + 1, 0);
+  std::partial_sum(num_items_per_dest.begin(), num_items_per_dest.end(),
+                   std::next(send_disp.begin()));
+
+  // Pack send buffer
+  std::vector<std::int64_t> send_buffer(shape1 * send_disp.back(), -1);
+  {
+    std::size_t send_offset = 0;
+    for (std::size_t i = 0; i < dest_to_index.size(); ++i)
+    {
+      std::size_t pos = dest_to_index[i][1];
+      auto row = list.links(pos);
+      std::copy(row.begin(), row.end(),
+                std::next(send_buffer.begin(), i * shape1));
+
+      send_buffer[i * shape1 + shape1 - 1] = 1; // global index
+
+      ++send_offset;
+    }
+  }
+
+  // Send/receive data facet
+  MPI_Datatype compound_type;
+  MPI_Type_contiguous(shape1, MPI_INT64_T, &compound_type);
+  MPI_Type_commit(&compound_type);
+  std::vector<std::int64_t> recv_buffer(shape1 * recv_disp.back());
+  MPI_Neighbor_alltoallv(send_buffer.data(), num_items_per_dest.data(),
+                         send_disp.data(), compound_type, recv_buffer.data(),
+                         num_items_recv.data(), recv_disp.data(), compound_type,
+                         neigh_comm);
+
+  MPI_Type_free(&compound_type);
+  MPI_Comm_free(&neigh_comm);
+
+  return {graph::AdjacencyList<std::int64_t>(0), std::vector<int>(),
+          std::vector<std::int64_t>(), std::vector<int>()};
+}
+//-----------------------------------------------------------------------------
+std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
+           std::vector<std::int64_t>, std::vector<int>>
 graph::build::distribute(MPI_Comm comm,
                          const graph::AdjacencyList<std::int64_t>& list,
                          const graph::AdjacencyList<std::int32_t>& destinations)
