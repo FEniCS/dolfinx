@@ -40,11 +40,14 @@ graph::build::distribute_new(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
     const graph::AdjacencyList<std::int32_t>& destinations)
 {
-  common::Timer timer("Distribute AdjacencyList nodes to destination ranks "
+  // std::cout << "*** Distribute new" << std::endl;
+
+  common::Timer timer("XXDistribute AdjacencyList nodes to destination ranks "
                       "(graph::build::distribute)");
 
   // const int size = dolfinx::MPI::size(comm);
   assert(list.num_nodes() == (int)destinations.num_nodes());
+  const int rank = dolfinx::MPI::rank(comm);
 
   std::int64_t offset_global = 0;
   const std::int64_t num_owned = list.num_nodes();
@@ -60,17 +63,17 @@ graph::build::distribute_new(
     int shape1_local = list.num_nodes() > 1 ? list.links(0).size() : 0;
     MPI_Allreduce(&shape1_local, &shape1, 1, MPI_INT, MPI_MAX, comm);
   }
-  const std::size_t shape0 = destinations.num_nodes();
-  const std::size_t buffer_shape1 = shape1 + 2;
+  // const std::size_t shape0 = destinations.num_nodes();
+  const std::size_t buffer_shape1 = shape1 + 3;
 
-  // Build (dest, index) list and sort
-  std::vector<std::array<int, 2>> dest_to_index;
+  // Build (dest, index, owning rank) list and sort
+  std::vector<std::array<int, 3>> dest_to_index;
   dest_to_index.reserve(destinations.array().size());
-  for (std::size_t i = 0; i < destinations.num_nodes(); ++i)
+  for (std::int32_t i = 0; i < destinations.num_nodes(); ++i)
   {
     auto di = destinations.links(i);
     for (auto d : di)
-      dest_to_index.push_back({d, int(i)});
+      dest_to_index.push_back({d, int(i), di[0]});
   }
   std::sort(dest_to_index.begin(), dest_to_index.end());
 
@@ -82,7 +85,7 @@ graph::build::distribute_new(
     auto it = dest_to_index.begin();
     while (it != dest_to_index.end())
     {
-      const int neigh_rank = dest.size();
+      // const int neigh_rank = dest.size();
 
       // Store global rank
       dest.push_back((*it)[0]);
@@ -128,19 +131,25 @@ graph::build::distribute_new(
                    std::next(send_disp.begin()));
 
   // Pack send buffer
+  // std::cout << "bshape1, shape1: " << buffer_shape1 << ", " << shape1
+  //           << std::endl;
   std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back(), -1);
   {
+    assert(send_disp.back() == (std::int32_t)dest_to_index.size());
     std::size_t send_offset = 0;
     for (std::size_t i = 0; i < dest_to_index.size(); ++i)
     {
       std::size_t pos = dest_to_index[i][1];
       auto row = list.links(pos);
-      xtl::span b(send_buffer.data() + i * buffer_shape1, i * buffer_shape1);
+      xtl::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
       std::copy(row.begin(), row.end(), b.begin());
 
-      // send_buffer[i * shape1 + buffer_shape1 - 2] = row.size();
-      *std::prev(b.end(), 1) = row.size();
+      *std::prev(b.end(), 3) = shape1;
+      *std::prev(b.end(), 2) = dest_to_index[i][2];
       b.back() = pos + offset_global;
+
+      // if (rank == 0)
+      //   std::cout << "XXX Dest: " << dest_to_index[i][2] << std::endl;
 
       ++send_offset;
     }
@@ -148,9 +157,9 @@ graph::build::distribute_new(
 
   // Send/receive data facet
   MPI_Datatype compound_type;
-  MPI_Type_contiguous(shape1, MPI_INT64_T, &compound_type);
+  MPI_Type_contiguous(buffer_shape1, MPI_INT64_T, &compound_type);
   MPI_Type_commit(&compound_type);
-  std::vector<std::int64_t> recv_buffer(shape1 * recv_disp.back());
+  std::vector<std::int64_t> recv_buffer(buffer_shape1 * recv_disp.back());
   MPI_Neighbor_alltoallv(send_buffer.data(), num_items_per_dest.data(),
                          send_disp.data(), compound_type, recv_buffer.data(),
                          num_items_recv.data(), recv_disp.data(), compound_type,
@@ -159,8 +168,81 @@ graph::build::distribute_new(
   MPI_Type_free(&compound_type);
   MPI_Comm_free(&neigh_comm);
 
-  return {graph::AdjacencyList<std::int64_t>(0), std::vector<int>(),
-          std::vector<std::int64_t>(), std::vector<int>()};
+  // std::cout << "Shape1: " << rank << ", " << shape1 << ", " << buffer_shape1
+  //           << std::endl;
+
+  // Unpack receive buffer (owned)
+  std::vector<int> src_ranks0, src_ranks1;
+  std::vector<std::int64_t> data0, data1;
+  std::vector<std::int32_t> offsets0 = {0};
+  std::vector<std::int32_t> offsets1 = {0};
+  std::vector<std::int64_t> global_indices0, global_indices1;
+  std::vector<int> ghost_index_owner;
+  for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
+  {
+    for (std::int32_t i = recv_disp[p]; i < recv_disp[p + 1]; ++i)
+    {
+      xtl::span row(recv_buffer.data() + i * buffer_shape1, buffer_shape1);
+      if (*std::prev(row.end(), 2) == rank)
+      {
+        // if (rank == 1)
+        //   std::cout << "btest: " << row.back() << std::endl;
+        data0.insert(data0.end(), row.begin(), std::next(row.begin(), shape1));
+        offsets0.push_back(offsets0.back() + shape1);
+        src_ranks0.push_back(src[p]);
+        global_indices0.push_back(row.back());
+      }
+      else
+      {
+        // if (rank == 0)
+        // {
+        //   std::cout << "YYY Dest: " << *std::prev(row.end(), 2) << std::endl;
+        //   // std::cout << "rback: " << row.back() << std::endl;
+        // }
+        data1.insert(data1.end(), row.begin(), std::next(row.begin(), shape1));
+        offsets1.push_back(offsets1.back() + shape1);
+        src_ranks1.push_back(src[p]);
+        global_indices1.push_back(row.back());
+
+        ghost_index_owner.push_back(*std::prev(row.end(), 2));
+      }
+    }
+  }
+
+  // if (rank == 1)
+  //   std::cout << "Back: " << offsets0.back() << ", " << offsets1.back()
+  //             << std::endl;
+
+  std::transform(offsets1.begin(), offsets1.end(), offsets1.begin(),
+                 [off = offsets0.back()](auto x) { return x + off; });
+
+  data0.insert(data0.end(), data1.begin(), data1.end());
+  offsets0.insert(offsets0.end(), std::next(offsets1.begin()), offsets1.end());
+
+  // if (rank == 1)
+  //   std::cout << "Back0: " << offsets0.back() << ", " << offsets1.back()
+  //             << std::endl;
+
+  src_ranks0.insert(src_ranks0.end(), src_ranks1.begin(), src_ranks1.end());
+  global_indices0.insert(global_indices0.end(), global_indices1.begin(),
+                         global_indices1.end());
+
+  // std::cout << "R: " << rank << ", " << data0.size() << ",  " <<
+  // offsets0.back()
+  //           << ", " << shape1 << std::endl;
+
+  // if (rank == 1)
+  // {
+  //   std::cout << "Off: " << offsets0.size() << ", " << offsets1.size()
+  //             << std::endl;
+  // }
+
+  // MPI_Barrier(comm);
+  return {graph::AdjacencyList<std::int64_t>(data0, offsets0), src_ranks0,
+          global_indices0, ghost_index_owner};
+
+  // return {graph::AdjacencyList<std::int64_t>(0), std::vector<int>(),
+  //         std::vector<std::int64_t>(), std::vector<int>()};
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
@@ -298,6 +380,49 @@ graph::build::distribute(MPI_Comm comm,
   src.shrink_to_fit();
   global_indices.shrink_to_fit();
   ghost_index_owner.shrink_to_fit();
+
+  // if (dolfinx::MPI::rank(comm) == 1)
+  // {
+  //   auto tmp = graph::AdjacencyList<std::int64_t>(array, list_offset);
+  //   std::cout << tmp.str() << std::endl;
+  //   std::cout << "src" << std::endl;
+  //   for (auto x : src)
+  //     std::cout << "   " << x << std::endl;
+  //   std::cout << "global_indices" << std::endl;
+  //   for (auto x : global_indices)
+  //     std::cout << "   " << x << std::endl;
+  //   std::cout << "ghost_index_owner" << std::endl;
+  //   for (auto x : ghost_index_owner)
+  //     std::cout << "   " << x << std::endl;
+
+  //   auto g1 = std::get<1>(foo);
+  //   auto g2 = std::get<2>(foo);
+  //   auto g3 = std::get<3>(foo);
+  //   std::cout << std::get<0>(foo).str() << std::endl;
+  //   std::cout << "src" << std::endl;
+  //   for (auto x : g1)
+  //     std::cout << "   " << x << std::endl;
+  //   std::cout << "global_indices" << std::endl;
+  //   for (auto x : g2)
+  //     std::cout << "   " << x << std::endl;
+  //   std::cout << "ghost_index_owner" << std::endl;
+  //   for (auto x : g3)
+  //     std::cout << "   " << x << std::endl;
+  // }
+
+  auto [g, xsrc, xglobal_indices, xghost_index_owner]
+      = distribute_new(comm, list, destinations);
+  if (g.array() != array)
+    std::cout << "Array mis-match" << std::endl;
+  if (g.offsets() != list_offset)
+    std::cout << "Offset mis-match" << std::endl;
+  if (src != xsrc)
+    std::cout << "src mis-match" << std::endl;
+  if (global_indices != xglobal_indices)
+    std::cout << "global_indices mis-match" << std::endl;
+  if (ghost_index_owner != xghost_index_owner)
+    std::cout << "ghost_index_owner mis-match" << std::endl;
+
   return {graph::AdjacencyList<std::int64_t>(std::move(array),
                                              std::move(list_offset)),
           std::move(src), std::move(global_indices),

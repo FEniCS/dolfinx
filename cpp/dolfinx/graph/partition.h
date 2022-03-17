@@ -59,9 +59,11 @@ namespace build
 /// @param[in] list The adjacency list to distribute
 /// @param[in] destinations Destination ranks for the ith node in the
 /// adjacency list
-/// @return (0) Adjacency list for this process, (1) array of source
-/// ranks for each node in the adjacency list, and (2) original global
-/// index for each node.
+/// @return
+/// 1. Adjacency list for this process
+/// 2. Source ranks for each node in the adjacency list
+/// 3. Original global index for each node.
+/// 4. ????
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
 distribute_new(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
