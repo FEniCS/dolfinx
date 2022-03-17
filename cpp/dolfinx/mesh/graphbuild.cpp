@@ -369,6 +369,9 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 /// @brief Build nonlocal part of dual graph for mesh and return number of
 /// non-local edges.
 ///
+/// @warning This function will be removed at some point. It is retained
+/// at present to aid testing.
+///
 /// @note Non-scalable version
 ///
 /// @note graphbuild::compute_local_dual_graph should be called
