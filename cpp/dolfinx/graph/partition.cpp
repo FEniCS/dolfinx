@@ -40,32 +40,30 @@ graph::build::distribute_new(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
     const graph::AdjacencyList<std::int32_t>& destinations)
 {
-  // std::cout << "*** Distribute new" << std::endl;
-
   common::Timer timer("XXDistribute AdjacencyList nodes to destination ranks "
-                      "(graph::build::distribute)");
+                      "(graph::build::distribute, scalable)");
 
-  // const int size = dolfinx::MPI::size(comm);
   assert(list.num_nodes() == (int)destinations.num_nodes());
   const int rank = dolfinx::MPI::rank(comm);
 
+  // Get global offset for converting local index to global index for
+  // nodes in 'list'
   std::int64_t offset_global = 0;
-  const std::int64_t num_owned = list.num_nodes();
-  // MPI_Request request_offset_scan;
-  // MPI_Iexscan(&num_owned, &offset_global, 1, MPI_INT64_T, MPI_SUM, comm,
-  //             &request_offset_scan);
-  MPI_Exscan(&num_owned, &offset_global, 1, MPI_INT64_T, MPI_SUM, comm);
+  {
+    const std::int64_t num_owned = list.num_nodes();
+    MPI_Exscan(&num_owned, &offset_global, 1, MPI_INT64_T, MPI_SUM, comm);
+  }
 
   // TODO: Do this on the neighbourhood only
-  // Get max shape1
+  // Get the maximum number of eddges for a node
   int shape1 = 0;
   {
     int shape1_local = list.num_nodes() > 0 ? list.links(0).size() : 0;
-    // std::cout << "Local shape1: " << rank << ", " << shape1_local <<
-    // std::endl;
     MPI_Allreduce(&shape1_local, &shape1, 1, MPI_INT, MPI_MAX, comm);
   }
-  // const std::size_t shape0 = destinations.num_nodes();
+
+  // Buffer size (max number of edges + 3 for num_edges, owning rank,
+  // and node global index)
   const std::size_t buffer_shape1 = shape1 + 3;
 
   // std::cout << "Buffer shape1: " << rank << ", " << buffer_shape1 <<
@@ -78,7 +76,7 @@ graph::build::distribute_new(
   {
     auto di = destinations.links(i);
     for (auto d : di)
-      dest_to_index.push_back({d, int(i), di[0]});
+      dest_to_index.push_back({d, i, di[0]});
   }
   std::sort(dest_to_index.begin(), dest_to_index.end());
 
@@ -90,8 +88,6 @@ graph::build::distribute_new(
     auto it = dest_to_index.begin();
     while (it != dest_to_index.end())
     {
-      // const int neigh_rank = dest.size();
-
       // Store global rank
       dest.push_back((*it)[0]);
 
@@ -118,7 +114,7 @@ graph::build::distribute_new(
                                  dest.size(), dest.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &neigh_comm);
 
-  // Send number of rows  to receivers
+  // Send number of nodes to receivers
   std::vector<int> num_items_recv(src.size());
   num_items_per_dest.reserve(1);
   num_items_recv.reserve(1);
@@ -142,27 +138,27 @@ graph::build::distribute_new(
   std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back(), -1);
   {
     assert(send_disp.back() == (std::int32_t)dest_to_index.size());
-    std::size_t send_offset = 0;
     for (std::size_t i = 0; i < dest_to_index.size(); ++i)
     {
-      std::size_t pos = dest_to_index[i][1];
+      const std::array<int, 3>& dest_data = dest_to_index[i];
+
+      std::size_t pos = dest_data[1];
+      xtl::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
+      auto row = list.links(pos);
+      std::copy(row.begin(), row.end(), b.begin());
+
       // std::cout << "Pos: " << rank << ", " << pos << ", " << list.num_nodes()
       //           << std::endl;
-      auto row = list.links(pos);
-      xtl::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
       // std::cout << "Buffer size: " << rank << ", " << send_buffer.size() <<
       // ", "
       //           << i * buffer_shape1 << ", " << buffer_shape1 << std::endl;
-      std::copy(row.begin(), row.end(), b.begin());
 
-      *std::prev(b.end(), 3) = shape1;
-      *std::prev(b.end(), 2) = dest_to_index[i][2];
-      b.back() = pos + offset_global;
+      *std::prev(b.end(), 3) = row.size();          // Number of edges for node
+      *std::prev(b.end(), 2) = dest_data[2];        // Owning rank
+      *std::prev(b.end(), 1) = pos + offset_global; // Original global index
 
       // if (rank == 0)
       //   std::cout << "XXX Dest: " << dest_to_index[i][2] << std::endl;
-
-      ++send_offset;
     }
   }
 
@@ -182,7 +178,7 @@ graph::build::distribute_new(
   // std::cout << "Shape1: " << rank << ", " << shape1 << ", " << buffer_shape1
   //           << std::endl;
 
-  // Unpack receive buffer (owned)
+  // Unpack receive buffer
   std::vector<int> src_ranks0, src_ranks1;
   std::vector<std::int64_t> data0, data1;
   std::vector<std::int32_t> offsets0 = {0};
@@ -191,31 +187,29 @@ graph::build::distribute_new(
   std::vector<int> ghost_index_owner;
   for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
   {
+    const int src_rank = src[p];
     for (std::int32_t i = recv_disp[p]; i < recv_disp[p + 1]; ++i)
     {
       xtl::span row(recv_buffer.data() + i * buffer_shape1, buffer_shape1);
-      if (*std::prev(row.end(), 2) == rank)
+      auto info = row.last(3);
+      std::size_t num_edges = info[0];
+      std::int64_t orig_global_index = info[2];
+      auto edges = row.first(num_edges);
+      if (info[1] == rank)
       {
-        // if (rank == 1)
-        //   std::cout << "btest: " << row.back() << std::endl;
-        data0.insert(data0.end(), row.begin(), std::next(row.begin(), shape1));
-        offsets0.push_back(offsets0.back() + shape1);
-        src_ranks0.push_back(src[p]);
-        global_indices0.push_back(row.back());
+        data0.insert(data0.end(), edges.begin(), edges.end());
+        offsets0.push_back(offsets0.back() + num_edges);
+        src_ranks0.push_back(src_rank);
+        global_indices0.push_back(orig_global_index);
       }
       else
       {
-        // if (rank == 0)
-        // {
-        //   std::cout << "YYY Dest: " << *std::prev(row.end(), 2) << std::endl;
-        //   // std::cout << "rback: " << row.back() << std::endl;
-        // }
-        data1.insert(data1.end(), row.begin(), std::next(row.begin(), shape1));
-        offsets1.push_back(offsets1.back() + shape1);
-        src_ranks1.push_back(src[p]);
-        global_indices1.push_back(row.back());
+        data1.insert(data1.end(), edges.begin(), edges.end());
+        offsets1.push_back(offsets1.back() + info[0]);
+        src_ranks1.push_back(src_rank);
+        global_indices1.push_back(orig_global_index);
 
-        ghost_index_owner.push_back(*std::prev(row.end(), 2));
+        ghost_index_owner.push_back(info[1]);
       }
     }
   }
