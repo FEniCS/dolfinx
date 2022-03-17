@@ -133,8 +133,10 @@ graph::build::distribute_new(
     for (std::size_t i = 0; i < dest_to_index.size(); ++i)
     {
       const std::array<int, 3>& dest_data = dest_to_index[i];
+      const std::size_t pos = dest_data[1];
+
       xtl::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
-      auto row = list.links(dest_data[1]);
+      auto row = list.links(pos);
       std::copy(row.begin(), row.end(), b.begin());
 
       auto info = b.last(3);
