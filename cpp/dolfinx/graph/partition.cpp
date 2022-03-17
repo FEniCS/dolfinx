@@ -60,11 +60,16 @@ graph::build::distribute_new(
   // Get max shape1
   int shape1 = 0;
   {
-    int shape1_local = list.num_nodes() > 1 ? list.links(0).size() : 0;
+    int shape1_local = list.num_nodes() > 0 ? list.links(0).size() : 0;
+    // std::cout << "Local shape1: " << rank << ", " << shape1_local <<
+    // std::endl;
     MPI_Allreduce(&shape1_local, &shape1, 1, MPI_INT, MPI_MAX, comm);
   }
   // const std::size_t shape0 = destinations.num_nodes();
   const std::size_t buffer_shape1 = shape1 + 3;
+
+  // std::cout << "Buffer shape1: " << rank << ", " << buffer_shape1 <<
+  // std::endl;
 
   // Build (dest, index, owning rank) list and sort
   std::vector<std::array<int, 3>> dest_to_index;
@@ -131,7 +136,8 @@ graph::build::distribute_new(
                    std::next(send_disp.begin()));
 
   // Pack send buffer
-  // std::cout << "bshape1, shape1: " << buffer_shape1 << ", " << shape1
+  // std::cout << "bshape1, shape1: " << buffer_shape1 << ", " <<
+  // send_disp.back()
   //           << std::endl;
   std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back(), -1);
   {
@@ -140,8 +146,13 @@ graph::build::distribute_new(
     for (std::size_t i = 0; i < dest_to_index.size(); ++i)
     {
       std::size_t pos = dest_to_index[i][1];
+      // std::cout << "Pos: " << rank << ", " << pos << ", " << list.num_nodes()
+      //           << std::endl;
       auto row = list.links(pos);
       xtl::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
+      // std::cout << "Buffer size: " << rank << ", " << send_buffer.size() <<
+      // ", "
+      //           << i * buffer_shape1 << ", " << buffer_shape1 << std::endl;
       std::copy(row.begin(), row.end(), b.begin());
 
       *std::prev(b.end(), 3) = shape1;
@@ -381,6 +392,10 @@ graph::build::distribute(MPI_Comm comm,
   global_indices.shrink_to_fit();
   ghost_index_owner.shrink_to_fit();
 
+  // auto [g, xsrc, xglobal_indices, xghost_index_owner]
+  //     = distribute_new(comm, list, destinations);
+
+  return distribute_new(comm, list, destinations);
   // if (dolfinx::MPI::rank(comm) == 1)
   // {
   //   auto tmp = graph::AdjacencyList<std::int64_t>(array, list_offset);
@@ -395,38 +410,36 @@ graph::build::distribute(MPI_Comm comm,
   //   for (auto x : ghost_index_owner)
   //     std::cout << "   " << x << std::endl;
 
-  //   auto g1 = std::get<1>(foo);
-  //   auto g2 = std::get<2>(foo);
-  //   auto g3 = std::get<3>(foo);
-  //   std::cout << std::get<0>(foo).str() << std::endl;
+  //   std::cout << g.str() << std::endl;
   //   std::cout << "src" << std::endl;
-  //   for (auto x : g1)
+  //   for (auto x : xsrc)
   //     std::cout << "   " << x << std::endl;
   //   std::cout << "global_indices" << std::endl;
-  //   for (auto x : g2)
+  //   for (auto x : xglobal_indices)
   //     std::cout << "   " << x << std::endl;
   //   std::cout << "ghost_index_owner" << std::endl;
-  //   for (auto x : g3)
+  //   for (auto x : xghost_index_owner)
   //     std::cout << "   " << x << std::endl;
   // }
 
-  auto [g, xsrc, xglobal_indices, xghost_index_owner]
-      = distribute_new(comm, list, destinations);
-  if (g.array() != array)
-    std::cout << "Array mis-match" << std::endl;
-  if (g.offsets() != list_offset)
-    std::cout << "Offset mis-match" << std::endl;
-  if (src != xsrc)
-    std::cout << "src mis-match" << std::endl;
-  if (global_indices != xglobal_indices)
-    std::cout << "global_indices mis-match" << std::endl;
-  if (ghost_index_owner != xghost_index_owner)
-    std::cout << "ghost_index_owner mis-match" << std::endl;
+  // if (g.array() != array)
+  //   std::cout << "Array mis-match " << dolfinx::MPI::rank(comm) << std::endl;
+  // if (g.offsets() != list_offset)
+  //   std::cout << "Offset mis-match " << dolfinx::MPI::rank(comm) <<
+  //   std::endl;
+  // if (src != xsrc)
+  //   std::cout << "src mis-match " << dolfinx::MPI::rank(comm) << std::endl;
+  // if (global_indices != xglobal_indices)
+  //   std::cout << "global_indices mis-match " << dolfinx::MPI::rank(comm)
+  //             << std::endl;
+  // if (ghost_index_owner != xghost_index_owner)
+  //   std::cout << "ghost_index_owner mis-match " << dolfinx::MPI::rank(comm)
+  //             << std::endl;
 
-  return {graph::AdjacencyList<std::int64_t>(std::move(array),
-                                             std::move(list_offset)),
-          std::move(src), std::move(global_indices),
-          std::move(ghost_index_owner)};
+  // return {graph::AdjacencyList<std::int64_t>(std::move(array),
+  //                                            std::move(list_offset)),
+  //         std::move(src), std::move(global_indices),
+  //         std::move(ghost_index_owner)};
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> graph::build::compute_ghost_indices(
