@@ -51,35 +51,20 @@ partition_graph(MPI_Comm comm, int nparts,
 /// @todo Add a function that sends data to the 'owner'
 namespace build
 {
-/// Distribute adjacency list nodes to destination ranks. The global
-/// index of each node is assumed to be the local index plus the
-/// offset for this rank.
+/// @brief Distribute adjacency list nodes to destination ranks.
+///
+/// The global index of each node is assumed to be the local index plus
+/// the offset for this rank.
 ///
 /// @param[in] comm MPI Communicator
 /// @param[in] list The adjacency list to distribute
 /// @param[in] destinations Destination ranks for the ith node in the
-/// adjacency list
+/// adjacency list. The first rank is the 'owner' of the node.
 /// @return
-/// 1. Adjacency list for this process
+/// 1. Received adjacency list for this process
 /// 2. Source ranks for each node in the adjacency list
-/// 3. Original global index for each node.
-/// 4. ????
-std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
-           std::vector<std::int64_t>, std::vector<int>>
-distribute_new(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
-               const graph::AdjacencyList<std::int32_t>& destinations);
-
-/// Distribute adjacency list nodes to destination ranks. The global
-/// index of each node is assumed to be the local index plus the
-/// offset for this rank.
-///
-/// @param[in] comm MPI Communicator
-/// @param[in] list The adjacency list to distribute
-/// @param[in] destinations Destination ranks for the ith node in the
-/// adjacency list
-/// @return (0) Adjacency list for this process, (1) array of source
-/// ranks for each node in the adjacency list, and (2) original global
-/// index for each node.
+/// 3. Original global index for each node in the adjacency list
+/// 4. Owner rank of ghost nodes
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
 distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
