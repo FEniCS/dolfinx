@@ -32,7 +32,7 @@ graph::partition_graph(MPI_Comm comm, int nparts,
 #else
 // Should never reach this point
 #endif
-}s
+}
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
