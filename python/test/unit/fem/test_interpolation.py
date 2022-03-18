@@ -163,6 +163,17 @@ def test_Lagrange_interpolation(cell_type, order):
 
 
 @pytest.mark.skip_in_parallel
+@pytest.mark.parametrize("cell_type", [CellType.interval, CellType.quadrilateral, CellType.hexahedron])
+@pytest.mark.parametrize("order", range(1, 5))
+def test_serendipity_interpolation(cell_type, order):
+    """Test that interpolation is correct in a FunctionSpace"""
+    mesh = one_cell_mesh(cell_type)
+    V = FunctionSpace(mesh, ("S", order))
+    tdim = mesh.topology.dim
+    run_scalar_test(V, order - tdim)
+
+
+@pytest.mark.skip_in_parallel
 @parametrize_cell_types
 @pytest.mark.parametrize('order', range(1, 5))
 def test_vector_interpolation(cell_type, order):
