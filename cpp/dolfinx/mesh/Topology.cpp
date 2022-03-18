@@ -981,7 +981,7 @@ mesh::create_topology(MPI_Comm comm,
         + std::to_string(num_cell_vertices(cell_type)) + ".");
   }
 
-  // Create index map for cells
+  // Create an index map for cells
   const std::int32_t num_local_cells = cells.num_nodes() - ghost_owners.size();
   std::shared_ptr<common::IndexMap> index_map_c;
   if (ghost_mode == GhostMode::none)
@@ -1016,8 +1016,8 @@ mesh::create_topology(MPI_Comm comm,
   // unknown_indices_set), compute the list of sharing ranks. The first
   // index in the vector of ranks is the owner as determined by
   // determine_sharing_ranks.
-  // std::unordered_map<std::int64_t, std::vector<int>> global_vertex_to_ranks
-  //     = determine_sharing_ranks(comm, unknown_indices_set);
+  std::unordered_map<std::int64_t, std::vector<int>> global_vertex_to_ranks_old
+      = determine_sharing_ranks(comm, unknown_indices_set);
 
   // std::cout << "Call new func" << std::endl;
   const graph::AdjacencyList<int> global_vertex_to_ranks_new
@@ -1030,12 +1030,17 @@ mesh::create_topology(MPI_Comm comm,
     global_vertex_to_ranks.insert(
         {unknown_indices_set[i], std::vector<int>(ranks.begin(), ranks.end())});
   }
-  // for (auto& x : newmap0)
-  //   std::sort(x.second.begin(), x.second.end());
-  // for (auto& x : newmap1)
-  //   std::sort(x.second.begin(), x.second.end());
 
-  // assert(newmap0 == newmap1);
+  std::unordered_map<std::int64_t, std::vector<int>> newmap0
+      = global_vertex_to_ranks_old;
+  std::unordered_map<std::int64_t, std::vector<int>> newmap1
+      = global_vertex_to_ranks;
+  for (auto& x : newmap0)
+    std::sort(x.second.begin(), x.second.end());
+  for (auto& x : newmap1)
+    std::sort(x.second.begin(), x.second.end());
+
+  assert(newmap0 == newmap1);
   // if (newmap0 == newmap1)
   //   std::cout << "EEEEE: " << std::endl;
   // else
@@ -1046,16 +1051,16 @@ mesh::create_topology(MPI_Comm comm,
   // Iterate over vertices that have 'unknown' ownership, and if flagged
   // as owned by determine_sharing_ranks update ownership status
   const int mpi_rank = dolfinx::MPI::rank(comm);
-  for (std::int64_t global_index : unknown_indices_set)
+  for (std::size_t i = 0; i < unknown_indices_set.size(); ++i)
   {
-    const auto it = global_vertex_to_ranks.find(global_index);
-    assert(it != global_vertex_to_ranks.end());
-
-    // Vertex is shared and owned by this rank if first owning rank is
-    // my rank
-    if (it->second[0] == mpi_rank)
+    // Vertex is shared and owned by this rank if the first sharing rank
+    // is my rank
+    auto ranks = global_vertex_to_ranks_new.links(i);
+    assert(!ranks.empty());
+    if (ranks.front() == mpi_rank)
     {
       // Should already be in map
+      std::int64_t global_index = unknown_indices_set[i];
       auto it_gi = global_to_local_vertices.find(global_index);
       assert(it_gi != global_to_local_vertices.end());
       assert(it_gi->second == -1);
@@ -1064,6 +1069,25 @@ mesh::create_topology(MPI_Comm comm,
       it_gi->second = -2;
     }
   }
+
+  // for (std::int64_t global_index : unknown_indices_set)
+  // {
+  //   const auto it = global_vertex_to_ranks.find(global_index);
+  //   assert(it != global_vertex_to_ranks.end());
+
+  //   // Vertex is shared and owned by this rank if first owning rank is
+  //   // my rank
+  //   if (it->second[0] == mpi_rank)
+  //   {
+  //     // Should already be in map
+  //     auto it_gi = global_to_local_vertices.find(global_index);
+  //     assert(it_gi != global_to_local_vertices.end());
+  //     assert(it_gi->second == -1);
+
+  //     // Mark as locally owned
+  //     it_gi->second = -2;
+  //   }
+  // }
 
   // Number all owned vertices, iterating over vertices cell-wise
   std::int32_t v = 0;
