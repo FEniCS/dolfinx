@@ -534,6 +534,12 @@ class LinearProblem():
         opts.prefixPop()
         self._solver.setFromOptions()
 
+        # Set matrix and vector PETSc options
+        self._A.setOptionsPrefix(solver_prefix)
+        self._A.setFromOptions()
+        self._b.setOptionsPrefix(solver_prefix)
+        self._b.setFromOptions()
+
     def solve(self) -> _Function:
         """Solve the problem."""
 
