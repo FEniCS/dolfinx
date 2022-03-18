@@ -150,7 +150,7 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
           static_cast<basix::element::dpc_variant>(e.dpc_variant),
           e.discontinuous));
     }
-    if (e.lagrange_variant != -1)
+    else if (e.lagrange_variant != -1)
     {
       _element = std::make_unique<basix::FiniteElement>(basix::create_element(
           static_cast<basix::element::family>(e.basix_family),
