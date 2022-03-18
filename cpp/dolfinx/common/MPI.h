@@ -380,7 +380,7 @@ distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x,
   }
   std::sort(dest_to_index.begin(), dest_to_index.end());
 
-  // Build list is neighbour src ranks and count number of items (rows
+  // Build list of neighbour src ranks and count number of items (rows
   // of x) to receive from each src post office (by neighbourhood rank)
   std::vector<int> dest;
   std::vector<std::int32_t> num_items_per_dest,
@@ -455,9 +455,9 @@ distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x,
                         num_items_recv.data(), 1, MPI_INT, neigh_comm);
 
   // Prepare receive displacement and buffers
-  std::vector<std::int32_t> recv_disp = {0};
+  std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
   std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
-                   std::back_insert_iterator(recv_disp));
+                   std::next(recv_disp.begin()));
 
   // Send/receive global indices
   std::vector<std::int64_t> recv_buffer_index(recv_disp.back());
