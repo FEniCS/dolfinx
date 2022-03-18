@@ -523,21 +523,21 @@ class LinearProblem():
         self._solver.setOperators(self._A)
 
         # Give PETSc solver options a unique prefix
-        solver_prefix = "dolfinx_solve_{}".format(id(self))
-        self._solver.setOptionsPrefix(solver_prefix)
+        problem_prefix = "dolfinx_solve_{}".format(id(self))
+        self._solver.setOptionsPrefix(problem_prefix)
 
         # Set PETSc options
         opts = PETSc.Options()
-        opts.prefixPush(solver_prefix)
+        opts.prefixPush(problem_prefix)
         for k, v in petsc_options.items():
             opts[k] = v
         opts.prefixPop()
         self._solver.setFromOptions()
 
         # Set matrix and vector PETSc options
-        self._A.setOptionsPrefix(solver_prefix)
+        self._A.setOptionsPrefix(problem_prefix)
         self._A.setFromOptions()
-        self._b.setOptionsPrefix(solver_prefix)
+        self._b.setOptionsPrefix(problem_prefix)
         self._b.setFromOptions()
 
     def solve(self) -> _Function:
