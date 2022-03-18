@@ -38,8 +38,8 @@ namespace
 /// @return Map from global index to sharing ranks for each index in
 /// indices. The owner rank is the first as the first in the of ranks.
 graph::AdjacencyList<int>
-determine_sharing_ranks_new(MPI_Comm comm,
-                            const xtl::span<const std::int64_t>& indices)
+determine_sharing_ranks(MPI_Comm comm,
+                        const xtl::span<const std::int64_t>& indices)
 {
   const int size = dolfinx::MPI::size(comm);
 
@@ -274,120 +274,6 @@ determine_sharing_ranks_new(MPI_Comm comm,
   }
 
   return graph::AdjacencyList<int>(std::move(data), std::move(graph_offsets));
-}
-//-----------------------------------------------------------------------------
-
-/// @brief Compute list of ranks sharing an index.
-///
-/// @note Collective
-///
-/// A random number generator is used to determine the unique ownership.
-///
-/// @param[in] comm MPI communicator
-/// @param[in] indices Global indices to determine a an owning MPI ranks for
-/// @return Map from global index to sharing ranks for each index in
-/// indices. The owner rank is the first as the first in the of ranks.
-[[maybe_unused]] std::unordered_map<std::int64_t, std::vector<int>>
-determine_sharing_ranks(MPI_Comm comm,
-                        const xtl::span<const std::int64_t>& indices)
-{
-  const int mpi_size = dolfinx::MPI::size(comm);
-
-  // Create a global address space to use with all_to_all post-office
-  // algorithm and find the owner of each index within that space
-  std::int64_t global_space = 0;
-  std::int64_t max_index
-      = indices.empty() ? 0 : *std::max_element(indices.begin(), indices.end());
-  MPI_Allreduce(&max_index, &global_space, 1, MPI_INT64_T, MPI_MAX, comm);
-  global_space += 1;
-
-  std::vector<std::int32_t> send_sizes(mpi_size);
-  std::vector<std::int32_t> send_offsets(mpi_size + 1, 0);
-  for (std::int64_t global_i : indices)
-  {
-    const int index_owner
-        = dolfinx::MPI::index_owner(mpi_size, global_i, global_space);
-    send_sizes[index_owner]++;
-  }
-  std::partial_sum(send_sizes.begin(), send_sizes.end(),
-                   std::next(send_offsets.begin()));
-
-  std::vector<std::int64_t> send_indices(send_offsets.back());
-  for (std::int64_t global_i : indices)
-  {
-    const int index_owner
-        = dolfinx::MPI::index_owner(mpi_size, global_i, global_space);
-    send_indices[send_offsets[index_owner]] = global_i;
-    send_offsets[index_owner]++;
-  }
-  // Reset offsets
-  send_offsets[0] = 0;
-  std::partial_sum(send_sizes.begin(), send_sizes.end(),
-                   std::next(send_offsets.begin()));
-
-  LOG(2) << "Sending " << send_indices.size() << " indices";
-  const graph::AdjacencyList<std::int64_t> send_index_adj(
-      std::move(send_indices), std::move(send_offsets));
-
-  const graph::AdjacencyList<std::int64_t> recv_indices
-      = dolfinx::MPI::all_to_all(comm, send_index_adj);
-
-  // Get index sharing - ownership will be first entry (randomised
-  // later)
-  std::unordered_map<std::int64_t, std::vector<int>> index_to_owner;
-  for (int p = 0; p < recv_indices.num_nodes(); ++p)
-  {
-    auto recv_p = recv_indices.links(p);
-    for (std::size_t j = 0; j < recv_p.size(); ++j)
-      index_to_owner[recv_p[j]].push_back(p);
-  }
-
-  // Randomise ownership
-  std::mt19937 g(0);
-  for (auto& map_entry : index_to_owner)
-  {
-    std::vector<int>& procs = map_entry.second;
-    std::shuffle(procs.begin(), procs.end(), g);
-  }
-
-  // Send index ownership data back to all sharing processes
-  std::vector<std::vector<int>> send_owner(mpi_size);
-  for (int p = 0; p < recv_indices.num_nodes(); ++p)
-  {
-    auto recv_p = recv_indices.links(p);
-    for (std::size_t j = 0; j < recv_p.size(); ++j)
-    {
-      const auto it = index_to_owner.find(recv_p[j]);
-      assert(it != index_to_owner.end());
-      const std::vector<int>& sharing_procs = it->second;
-      send_owner[p].push_back(sharing_procs.size());
-      send_owner[p].insert(send_owner[p].end(), sharing_procs.begin(),
-                           sharing_procs.end());
-    }
-  }
-
-  // Alltoall is necessary because cells which are shared by vertex are
-  // not yet known to this process
-  const graph::AdjacencyList<int> recv_owner
-      = dolfinx::MPI::all_to_all(comm, graph::AdjacencyList<int>(send_owner));
-
-  // Now fill index_to_owner with locally needed indices
-  index_to_owner.clear();
-  for (int p = 0; p < mpi_size; ++p)
-  {
-    xtl::span<const std::int64_t> send_v = send_index_adj.links(p);
-    auto r_owner = recv_owner.links(p);
-    std::size_t c(0), i(0);
-    while (c < r_owner.size())
-    {
-      int count = r_owner[c++];
-      for (int j = 0; j < count; ++j)
-        index_to_owner[send_v[i]].push_back(r_owner[c++]);
-      ++i;
-    }
-  }
-
-  return index_to_owner;
 }
 //-----------------------------------------------------------------------------
 
@@ -910,12 +796,8 @@ mesh::create_topology(MPI_Comm comm,
   // unknown_indices_set), compute the list of sharing ranks. The first
   // index in the vector of ranks is the owner as determined by
   // determine_sharing_ranks.
-  std::unordered_map<std::int64_t, std::vector<int>> global_vertex_to_ranks_old
-      = determine_sharing_ranks(comm, unknown_indices_set);
-
-  // std::cout << "Call new func" << std::endl;
   const graph::AdjacencyList<int> global_vertex_to_ranks_new
-      = determine_sharing_ranks_new(comm, unknown_indices_set);
+      = determine_sharing_ranks(comm, unknown_indices_set);
 
   std::unordered_map<std::int64_t, std::vector<int>> global_vertex_to_ranks;
   for (std::size_t i = 0; i < unknown_indices_set.size(); ++i)
@@ -924,26 +806,6 @@ mesh::create_topology(MPI_Comm comm,
     global_vertex_to_ranks.insert(
         {unknown_indices_set[i], std::vector<int>(ranks.begin(), ranks.end())});
   }
-
-  std::unordered_map<std::int64_t, std::vector<int>> newmap0
-      = global_vertex_to_ranks_old;
-  std::unordered_map<std::int64_t, std::vector<int>> newmap1
-      = global_vertex_to_ranks;
-  for (auto& x : newmap0)
-    std::sort(x.second.begin(), x.second.end());
-  for (auto& x : newmap1)
-    std::sort(x.second.begin(), x.second.end());
-
-  if (newmap0 == newmap1)
-    std::cout << "EEEEE: " << std::endl;
-  else
-  {
-    std::cout << "NNNNNNN: " << std::endl;
-    throw std::runtime_error("Rank funding mis-match");
-  }
-  // assert(newmap0 == newmap1);
-
-  // std::cout << "End call new func" << std::endl;
 
   // Iterate over vertices that have 'unknown' ownership, and if flagged
   // as owned by determine_sharing_ranks update ownership status
