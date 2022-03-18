@@ -311,6 +311,7 @@ common::stack_index_maps(
   // Figure out how much data to receive from each neighbor
   const int num_my_rows = indices.size();
   std::vector<int> num_rows_recv(indegree);
+  num_rows_recv.reserve(1);
   MPI_Neighbor_allgather(&num_my_rows, 1, MPI_INT, num_rows_recv.data(), 1,
                          MPI_INT, comm);
 

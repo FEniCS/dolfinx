@@ -100,9 +100,9 @@ determine_sharing_ranks_new(MPI_Comm comm,
                                  MPI_INFO_NULL, false, &neigh_comm);
 
   // Compute send displacements
-  std::vector<std::int32_t> send_disp0 = {0};
+  std::vector<std::int32_t> send_disp0(num_items_per_dest0.size() + 1, 0);
   std::partial_sum(num_items_per_dest0.begin(), num_items_per_dest0.end(),
-                   std::back_insert_iterator(send_disp0));
+                   std::next(send_disp0.begin()));
 
   // Send number of items to post offices (destination) that I will be
   // sending
