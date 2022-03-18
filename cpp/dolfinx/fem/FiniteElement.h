@@ -189,6 +189,11 @@ public:
   /// @return True if interpolation is an identity operation
   bool interpolation_ident() const noexcept;
 
+  /// Check if the map from the reference to a physical cell for this element is
+  /// the identity map.
+  /// @return True if the map is the identity
+  bool map_ident() const noexcept;
+
   /// Points on the reference cell at which an expression need to be
   /// evaluated in order to interpolate the expression in the finite
   /// element space. For Lagrange elements the points will just be the

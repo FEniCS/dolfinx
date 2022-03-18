@@ -169,8 +169,7 @@ def test_serendipity_interpolation(cell_type, order):
     """Test that interpolation is correct in a FunctionSpace"""
     mesh = one_cell_mesh(cell_type)
     V = FunctionSpace(mesh, ("S", order))
-    tdim = mesh.topology.dim
-    run_scalar_test(V, order - tdim)
+    run_scalar_test(V, order)
 
 
 @pytest.mark.skip_in_parallel

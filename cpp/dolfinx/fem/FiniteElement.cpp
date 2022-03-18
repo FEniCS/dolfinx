@@ -319,10 +319,16 @@ basix::maps::type FiniteElement::map_type() const
   return _element->map_type();
 }
 //-----------------------------------------------------------------------------
-bool FiniteElement::interpolation_ident() const noexcept
+bool FiniteElement::map_ident() const noexcept
 {
   assert(_element);
   return _element->map_type() == basix::maps::type::identity;
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::interpolation_ident() const noexcept
+{
+  assert(_element);
+  return _element->interpolation_is_identity();
 }
 //-----------------------------------------------------------------------------
 const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
