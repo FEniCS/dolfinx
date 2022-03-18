@@ -1043,8 +1043,11 @@ mesh::create_topology(MPI_Comm comm,
   if (newmap0 == newmap1)
     std::cout << "EEEEE: " << std::endl;
   else
+  {
     std::cout << "NNNNNNN: " << std::endl;
-  assert(newmap0 == newmap1);
+    throw std::runtime_error("Rank funding mis-match");
+  }
+  // assert(newmap0 == newmap1);
 
   // std::cout << "End call new func" << std::endl;
 
