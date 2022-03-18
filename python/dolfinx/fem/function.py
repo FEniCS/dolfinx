@@ -382,7 +382,7 @@ class Function(ufl.Coefficient):
             the total number of sub spaces.
 
         """
-        return Function(self._V.sub(i), self.x, name="{}-{}".format(str(self), i))
+        return Function(self._V.sub(i), self.x, name=f"{str(self)}_{i}")
 
     def split(self) -> tuple[Function, ...]:
         """Extract any sub functions.
