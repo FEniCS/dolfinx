@@ -287,7 +287,8 @@ std::vector<T> distribute_data1(MPI_Comm comm,
                                 const xtl::span<const std::int64_t>& indices,
                                 const xtl::span<const T>& x, int shape1);
 
-/// @todo Remove this function
+/// @warning Do not use. This function will be removed.
+///
 /// Send in_values[p0] to process p0 and receive values from process p1
 /// in out_values[p1]
 template <typename T>
