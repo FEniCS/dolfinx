@@ -281,9 +281,8 @@ determine_sharing_ranks_new(MPI_Comm comm,
 
       auto it1 = std::next(it0, num_sharing_ranks);
       auto it_owner = std::find(it0, it1, src[owner_rank]);
-      // if (rank == 2)
       assert(it_owner != it1);
-      // std::iter_swap(it0, it_owner);
+      std::iter_swap(it0, it_owner);
     }
   }
 
