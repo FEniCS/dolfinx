@@ -41,6 +41,8 @@ graph::AdjacencyList<int>
 determine_sharing_ranks(MPI_Comm comm,
                         const xtl::span<const std::int64_t>& indices)
 {
+  common::Timer timer("Topology: determine shared index ownership");
+
   const int size = dolfinx::MPI::size(comm);
 
   // FIXME: use sensible name
