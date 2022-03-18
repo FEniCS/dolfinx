@@ -454,8 +454,6 @@ xdmf_utils::distribute_entity_data(
     std::vector<std::vector<std::int64_t>> nodes_g_send(comm_size);
     for (std::int64_t node : nodes_g)
     {
-      // TODO: Optimise this call by adding 'vectorised verion of
-      //       MPI::index_owner
       // Figure out which process is the postmaster for the input global
       // index
       const std::int32_t p
