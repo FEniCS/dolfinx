@@ -42,7 +42,7 @@ determine_sharing_ranks_new(MPI_Comm comm,
                             const xtl::span<const std::int64_t>& indices)
 {
   const int size = dolfinx::MPI::size(comm);
-  int rank = dolfinx::MPI::rank(comm);
+  // int rank = dolfinx::MPI::rank(comm);
 
   // FIXME: use sensible name
   std::int64_t global_space = 0;
@@ -74,7 +74,7 @@ determine_sharing_ranks_new(MPI_Comm comm,
     auto it = dest_to_index.begin();
     while (it != dest_to_index.end())
     {
-      const int neigh_rank = dest.size();
+      // const int neigh_rank = dest.size();
 
       // Store global rank and find iterator to next global rank
       dest.push_back((*it)[0]);
@@ -258,8 +258,8 @@ determine_sharing_ranks_new(MPI_Comm comm,
   for (std::size_t i = 0; i < disp1.size() - 1; ++i)
   {
     // Get data for first occurrence of global index
-    auto& data0 = indices_list[i];
-    std::int64_t global_index = data0[0];
+    // auto& data0 = indices_list[i];
+    // std::int64_t global_index = data0[0];
     std::int32_t owner_rank = owner[i];
     std::int32_t num_sharing_ranks = disp1[i + 1] - disp1[i];
 
