@@ -69,7 +69,7 @@ def test_sub_index_map():
     assert np.allclose(submap.ghosts, submap_ghosts)
 
 
-def xtest_sub_index_map_ghost_mode_none():
+def test_sub_index_map_ghost_mode_none():
     n = 2
     mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=GhostMode.none)
     tdim = mesh.topology.dim
