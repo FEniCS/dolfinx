@@ -1040,11 +1040,11 @@ mesh::create_topology(MPI_Comm comm,
   for (auto& x : newmap1)
     std::sort(x.second.begin(), x.second.end());
 
+  if (newmap0 == newmap1)
+    std::cout << "EEEEE: " << std::endl;
+  else
+    std::cout << "NNNNNNN: " << std::endl;
   assert(newmap0 == newmap1);
-  // if (newmap0 == newmap1)
-  //   std::cout << "EEEEE: " << std::endl;
-  // else
-  //   std::cout << "NNNNNNN: " << std::endl;
 
   // std::cout << "End call new func" << std::endl;
 
