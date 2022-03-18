@@ -107,6 +107,7 @@ determine_sharing_ranks_new(MPI_Comm comm,
   // Send number of items to post offices (destination) that I will be
   // sending
   std::vector<int> num_items_recv0(src.size());
+  num_items_per_dest0.reserve(1);
   num_items_recv0.reserve(1);
   MPI_Neighbor_alltoall(num_items_per_dest0.data(), 1, MPI_INT,
                         num_items_recv0.data(), 1, MPI_INT, neigh_comm);
@@ -293,6 +294,8 @@ determine_sharing_ranks_new(MPI_Comm comm,
 
   // Send number of values to receive
   std::vector<int> num_items_recv1(dest.size());
+  num_items_per_dest1.reserve(1);
+  num_items_recv1.reserve(1);
   MPI_Neighbor_alltoall(num_items_per_dest1.data(), 1, MPI_INT,
                         num_items_recv1.data(), 1, MPI_INT, neigh_comm);
 
@@ -390,7 +393,7 @@ determine_sharing_ranks_new(MPI_Comm comm,
 /// @param[in] indices Global indices to determine a an owning MPI ranks for
 /// @return Map from global index to sharing ranks for each index in
 /// indices. The owner rank is the first as the first in the of ranks.
-std::unordered_map<std::int64_t, std::vector<int>>
+[[maybe_unused]] std::unordered_map<std::int64_t, std::vector<int>>
 determine_sharing_ranks(MPI_Comm comm,
                         const xtl::span<const std::int64_t>& indices)
 {
@@ -1013,32 +1016,30 @@ mesh::create_topology(MPI_Comm comm,
   // unknown_indices_set), compute the list of sharing ranks. The first
   // index in the vector of ranks is the owner as determined by
   // determine_sharing_ranks.
-  std::unordered_map<std::int64_t, std::vector<int>> global_vertex_to_ranks
-      = determine_sharing_ranks(comm, unknown_indices_set);
+  // std::unordered_map<std::int64_t, std::vector<int>> global_vertex_to_ranks
+  //     = determine_sharing_ranks(comm, unknown_indices_set);
 
   // std::cout << "Call new func" << std::endl;
-  auto foo = determine_sharing_ranks_new(comm, unknown_indices_set);
-  assert(foo.num_nodes() == (int)unknown_indices_set.size());
+  const graph::AdjacencyList<int> global_vertex_to_ranks_new
+      = determine_sharing_ranks_new(comm, unknown_indices_set);
 
-  std::unordered_map<std::int64_t, std::vector<int>> newmap0
-      = global_vertex_to_ranks;
-  std::unordered_map<std::int64_t, std::vector<int>> newmap1;
+  std::unordered_map<std::int64_t, std::vector<int>> global_vertex_to_ranks;
   for (std::size_t i = 0; i < unknown_indices_set.size(); ++i)
   {
-    newmap1.insert(
-        {unknown_indices_set[i],
-         std::vector<int>(foo.links(i).begin(), foo.links(i).end())});
+    auto ranks = global_vertex_to_ranks_new.links(i);
+    global_vertex_to_ranks.insert(
+        {unknown_indices_set[i], std::vector<int>(ranks.begin(), ranks.end())});
   }
-  for (auto& x : newmap0)
-    std::sort(x.second.begin(), x.second.end());
-  for (auto& x : newmap1)
-    std::sort(x.second.begin(), x.second.end());
+  // for (auto& x : newmap0)
+  //   std::sort(x.second.begin(), x.second.end());
+  // for (auto& x : newmap1)
+  //   std::sort(x.second.begin(), x.second.end());
 
-  assert(newmap0 == newmap1);
-  if (newmap0 == newmap1)
-    std::cout << "EEEEE: " << std::endl;
-  else
-    std::cout << "NNNNNNN: " << std::endl;
+  // assert(newmap0 == newmap1);
+  // if (newmap0 == newmap1)
+  //   std::cout << "EEEEE: " << std::endl;
+  // else
+  //   std::cout << "NNNNNNN: " << std::endl;
 
   // std::cout << "End call new func" << std::endl;
 
