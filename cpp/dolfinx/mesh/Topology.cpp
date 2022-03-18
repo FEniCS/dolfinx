@@ -43,9 +43,10 @@ determine_sharing_ranks(MPI_Comm comm,
   // Create a global address space to use with all_to_all post-office
   // algorithm and find the owner of each index within that space
   std::int64_t global_space = 0;
-  std::int64_t max_index = 0;
-  if (!unknown_idx.empty())
-    max_index = *std::max_element(unknown_idx.begin(), unknown_idx.end());
+  std::int64_t max_index
+      = unknown_idx.empty()
+            ? 0
+            : *std::max_element(unknown_idx.begin(), unknown_idx.end());
   MPI_Allreduce(&max_index, &global_space, 1, MPI_INT64_T, MPI_MAX, comm);
   global_space += 1;
 
