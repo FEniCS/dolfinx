@@ -913,12 +913,14 @@ mesh::create_topology(MPI_Comm comm,
   MPI_Comm_free(&neighbor_comm);
 
   // TODO: has this been computed earlier?
+
   // Determine which ranks ghost data on this rank
   std::vector<int> out_edges;
   {
     std::vector<int> in_edges = ghost_vertex_owners;
     std::sort(in_edges.begin(), in_edges.end());
-    in_edges.erase(std::unique(in_edges.begin(), in_edges.end()));
+    in_edges.erase(std::unique(in_edges.begin(), in_edges.end()),
+                   in_edges.end());
     out_edges = dolfinx::MPI::compute_graph_edges_nbx(comm, in_edges);
   }
 
