@@ -442,6 +442,11 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
       vertex_list_pf.clear();
       for (int j = 0; j < 6; ++j)
         vertex_list_pf.push_back(v[facet_table_3d[i][j]]);
+      std::cout << "vlpf = ";
+      for (auto q : vertex_list_pf)
+        std::cout << q << " ";
+      std::cout << "\n";
+
       std::sort(vertex_list_pf.begin(), vertex_list_pf.end());
 
       // get facets (child)
@@ -452,6 +457,11 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
         std::transform(v.begin(), v.end(), vertex_list_cf.begin(),
                        [&](std::int32_t idx)
                        { return global_vertex_index[idx]; });
+        std::cout << "vlcf = ";
+        for (auto q : vertex_list_cf)
+          std::cout << q << " ";
+        std::cout << "\n";
+
         std::sort(vertex_list_cf.begin(), vertex_list_cf.end());
 
         auto it = std::set_intersection(

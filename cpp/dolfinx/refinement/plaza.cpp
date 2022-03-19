@@ -515,6 +515,11 @@ compute_refinement(
   graph::AdjacencyList<std::int64_t> cell_adj(std::move(cell_topology),
                                               std::move(offsets));
 
+  std::cout << "stored indices = [";
+  for (auto q : stored_indices)
+    std::cout << q << " ";
+  std::cout << "]\n";
+
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
           std::move(parent_cell), std::move(stored_indices)};
 }
@@ -616,6 +621,8 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh, bool store_indices)
                            long_edge, edge_ratio_ok, store_indices);
   MPI_Comm_free(&neighbor_comm);
 
+  std::cout << "new cells\n--------\n" << cell_adj.str();
+
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
           std::move(parent_cell), std::move(stored_indices)};
 }
@@ -679,6 +686,7 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
       = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
                            long_edge, edge_ratio_ok, store_indices);
   MPI_Comm_free(&neighbor_comm);
+
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
           std::move(parent_cell), std::move(stored_indices)};
 }
