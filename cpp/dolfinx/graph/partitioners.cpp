@@ -740,23 +740,25 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
 
     if (ghosting and graph.num_nodes() > 0)
     {
-      graph::AdjacencyList<std::int32_t> dest
-          = compute_destination_ranks(pcomm, graph, node_disp, part);
+      graph::AdjacencyList<int> dest
+          = compute_destination_ranks_new(pcomm, graph, node_disp, part);
+      // graph::AdjacencyList<std::int32_t> dest
+      //     = compute_destination_ranks(pcomm, graph, node_disp, part);
 
-      // Test new code
-      {
-        graph::AdjacencyList<std::int32_t> newg
-            = compute_destination_ranks_new(pcomm, graph, node_disp, part);
-        graph::AdjacencyList<std::int32_t> oldg = dest;
-        for (std::int32_t i = 0; i < oldg.num_nodes(); ++i)
-        {
-          auto ranks = oldg.links(i);
-          std::sort(ranks.begin(), ranks.end());
-        }
+      // // Test new code
+      // {
+      //   graph::AdjacencyList<std::int32_t> newg
+      //       = compute_destination_ranks_new(pcomm, graph, node_disp, part);
+      //   graph::AdjacencyList<std::int32_t> oldg = dest;
+      //   for (std::int32_t i = 0; i < oldg.num_nodes(); ++i)
+      //   {
+      //     auto ranks = oldg.links(i);
+      //     std::sort(ranks.begin(), ranks.end());
+      //   }
 
-        if (newg.array() != oldg.array() or newg.offsets() != oldg.offsets())
-          throw std::runtime_error("Destination rank mis-match");
-      }
+      //   if (newg.array() != oldg.array() or newg.offsets() != oldg.offsets())
+      //     throw std::runtime_error("Destination rank mis-match");
+      // }
 
       MPI_Comm_free(&pcomm);
       return dest;
