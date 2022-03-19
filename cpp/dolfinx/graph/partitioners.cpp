@@ -36,6 +36,9 @@ using namespace dolfinx;
 
 namespace
 {
+
+/// @todo Is is un-documented that the owning rank must come first in
+/// reach list of edges?
 template <typename T>
 graph::AdjacencyList<std::int32_t> compute_destination_ranks_new(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
@@ -76,6 +79,8 @@ graph::AdjacencyList<std::int32_t> compute_destination_ranks_new(
       }
       else
         node_to_dest.push_back({rank, node + range0, part[node]});
+      // else if (part[node] != rank)
+      //   node_to_dest.push_back({rank, node + range0, part[node]});
     }
   }
   std::sort(node_to_dest.begin(), node_to_dest.end());
@@ -169,11 +174,7 @@ graph::AdjacencyList<std::int32_t> compute_destination_ranks_new(
 
       // For each local node, add size((dest0, dest1, ...))
       for (auto r = pit.first; r != pit.second; ++r)
-      {
-        // std::int64_t global_node = r->first;
-        // std::int32_t attached_local_node = r->second;
         dests_per_node[r->second] += num_dest;
-      }
 
       it = it1;
     }
@@ -225,6 +226,12 @@ graph::AdjacencyList<std::int32_t> compute_destination_ranks_new(
     auto ranks = g_new.links(i);
     std::sort(ranks.begin(), ranks.end());
     auto it = std::unique(ranks.begin(), ranks.end());
+
+    // Make sure owner comes first
+    auto it_owner = std::find(ranks.begin(), it, part[i]);
+    assert(it_owner != it);
+    std::iter_swap(ranks.begin(), it_owner);
+
     data1.insert(data1.end(), ranks.begin(), it);
     offsets1.push_back(offsets1.back() + std::distance(ranks.begin(), it));
   }
@@ -740,25 +747,36 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
 
     if (ghosting and graph.num_nodes() > 0)
     {
-      graph::AdjacencyList<int> dest
+      // FIXME: Is it implicit the the first entry is the owner?
+      graph::AdjacencyList<std::int32_t> dest
           = compute_destination_ranks_new(pcomm, graph, node_disp, part);
-      // graph::AdjacencyList<std::int32_t> dest
-      //     = compute_destination_ranks(pcomm, graph, node_disp, part);
 
-      // // Test new code
+      // for (std::int32_t i = 0; i < dest.num_nodes(); ++i)
       // {
-      //   graph::AdjacencyList<std::int32_t> newg
-      //       = compute_destination_ranks_new(pcomm, graph, node_disp, part);
-      //   graph::AdjacencyList<std::int32_t> oldg = dest;
-      //   for (std::int32_t i = 0; i < oldg.num_nodes(); ++i)
-      //   {
-      //     auto ranks = oldg.links(i);
-      //     std::sort(ranks.begin(), ranks.end());
-      //   }
-
-      //   if (newg.array() != oldg.array() or newg.offsets() != oldg.offsets())
-      //     throw std::runtime_error("Destination rank mis-match");
+      //   auto ranks = dest.links(i);
+      //   std::sort(std::next(ranks.begin()), ranks.end());
       // }
+
+      // Test new code
+      {
+        graph::AdjacencyList<std::int32_t> newg
+            = compute_destination_ranks_new(pcomm, graph, node_disp, part);
+        for (std::int32_t i = 0; i < newg.num_nodes(); ++i)
+        {
+          auto ranks = newg.links(i);
+          std::sort(ranks.begin(), ranks.end());
+        }
+
+        graph::AdjacencyList<std::int32_t> oldg = dest;
+        for (std::int32_t i = 0; i < oldg.num_nodes(); ++i)
+        {
+          auto ranks = oldg.links(i);
+          std::sort(ranks.begin(), ranks.end());
+        }
+
+        if (newg.array() != oldg.array() or newg.offsets() != oldg.offsets())
+          throw std::runtime_error("Destination rank mis-match");
+      }
 
       MPI_Comm_free(&pcomm);
       return dest;
