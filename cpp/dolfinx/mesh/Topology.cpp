@@ -784,7 +784,7 @@ mesh::create_topology(MPI_Comm comm,
         comm, num_local_cells, dest_ranks, cell_ghost_indices, ghost_owners);
   }
 
-  // Create a map from global index to a label, using labels
+  // Create a map from global index to a label, using the labels:
   //
   // * -2 for owned (not shared with any ghost cells)
   // * -1 for all other vertices (shared by a ghost cell)
@@ -801,6 +801,7 @@ mesh::create_topology(MPI_Comm comm,
   const graph::AdjacencyList<int> global_vertex_to_ranks_new
       = determine_sharing_ranks(comm, unknown_indices_set);
 
+  // TMP: transition
   std::unordered_map<std::int64_t, std::vector<int>> global_vertex_to_ranks;
   for (std::size_t i = 0; i < unknown_indices_set.size(); ++i)
   {
@@ -820,6 +821,7 @@ mesh::create_topology(MPI_Comm comm,
     assert(!ranks.empty());
     if (ranks.front() == mpi_rank)
     {
+      // TODO: avoid map lookup
       // Should already be in map
       std::int64_t global_index = unknown_indices_set[i];
       auto it_gi = global_to_local_vertices.find(global_index);
@@ -830,25 +832,6 @@ mesh::create_topology(MPI_Comm comm,
       it_gi->second = -2;
     }
   }
-
-  // for (std::int64_t global_index : unknown_indices_set)
-  // {
-  //   const auto it = global_vertex_to_ranks.find(global_index);
-  //   assert(it != global_vertex_to_ranks.end());
-
-  //   // Vertex is shared and owned by this rank if first owning rank is
-  //   // my rank
-  //   if (it->second[0] == mpi_rank)
-  //   {
-  //     // Should already be in map
-  //     auto it_gi = global_to_local_vertices.find(global_index);
-  //     assert(it_gi != global_to_local_vertices.end());
-  //     assert(it_gi->second == -1);
-
-  //     // Mark as locally owned
-  //     it_gi->second = -2;
-  //   }
-  // }
 
   // Number all owned vertices, iterating over vertices cell-wise
   std::int32_t v = 0;
@@ -929,22 +912,15 @@ mesh::create_topology(MPI_Comm comm,
 
   MPI_Comm_free(&neighbor_comm);
 
-  // TODO: is it possible to build neighbourhood communictor that is
-  // larger than neighbor_comm to capture all ghost owners?
-
-  // Determine which ranks ghost data on this rank by  sending '1' to
-  // ranks that this rank has ghost vertices for
-  std::vector<int> in_edges = ghost_vertex_owners;
-  std::sort(in_edges.begin(), in_edges.end());
-  in_edges.erase(std::unique(in_edges.begin(), in_edges.end()), in_edges.end());
-  // Send '1' to ranks that I have an edge to
-  std::vector<std::uint8_t> edge_count_send(dolfinx::MPI::size(comm), 0);
-  std::for_each(in_edges.cbegin(), in_edges.cend(),
-                [&edge_count_send](auto e) { edge_count_send[e] = 1; });
-  MPI_Request request;
-  std::vector<std::uint8_t> edge_count_recv(edge_count_send.size());
-  MPI_Ialltoall(edge_count_send.data(), 1, MPI_UINT8_T, edge_count_recv.data(),
-                1, MPI_UINT8_T, comm, &request);
+  // TODO: has this been computed earlier?
+  // Determine which ranks ghost data on this rank
+  std::vector<int> out_edges;
+  {
+    std::vector<int> in_edges = ghost_vertex_owners;
+    std::sort(in_edges.begin(), in_edges.end());
+    in_edges.erase(std::unique(in_edges.begin(), in_edges.end()));
+    out_edges = dolfinx::MPI::compute_graph_edges_nbx(comm, in_edges);
+  }
 
   // Convert input cell topology to local vertex indexing
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells_local_idx
@@ -956,15 +932,6 @@ mesh::create_topology(MPI_Comm comm,
 
   Topology topology(comm, cell_type);
   const int tdim = topology.dim();
-
-  // Create vertex index map
-  MPI_Wait(&request, MPI_STATUS_IGNORE);
-  std::vector<int> out_edges;
-  for (std::size_t i = 0; i < edge_count_recv.size(); ++i)
-  {
-    if (edge_count_recv[i] > 0)
-      out_edges.push_back(i);
-  }
 
   auto index_map_v = std::make_shared<common::IndexMap>(
       comm, nlocal, out_edges, ghost_vertices, ghost_vertex_owners);
