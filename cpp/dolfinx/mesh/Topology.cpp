@@ -400,28 +400,30 @@ compute_neighbor_comm(const MPI_Comm& comm,
 /// @note Collective
 /// @param[in] comm Neighbourhood communicator
 /// @return list of triplets
-std::vector<std::int64_t> exchange_vertex_numbering(
-    const MPI_Comm& comm, const std::map<int, int>& global_to_neighbor_rank,
-    const std::unordered_map<std::int64_t, std::vector<int>>&
-        global_vertex_to_ranks,
-    std::int64_t global_offset_v,
-    const std::unordered_map<std::int64_t, std::int32_t>&
-        global_to_local_vertices)
+std::vector<std::int64_t>
+exchange_vertex_numbering(const MPI_Comm& comm,
+                          const std::map<int, int>& global_to_neighbor_rank,
+                          const xtl::span<std::int64_t>& vertices,
+                          const graph::AdjacencyList<int>& vertex_to_ranks,
+                          std::int64_t global_offset_v,
+                          const std::unordered_map<std::int64_t, std::int32_t>&
+                              global_to_local_vertices)
 {
   const int mpi_rank = dolfinx::MPI::rank(comm);
 
   // Pack send data
   std::vector<std::vector<std::int64_t>> send_buffer(
       global_to_neighbor_rank.size());
-  for (const auto& vertex : global_vertex_to_ranks)
+  for (std::int32_t i = 0; i < vertex_to_ranks.num_nodes(); ++i)
   {
     // Get (global) ranks that share this vertex. Note that first rank
     // is the owner.
-    const std::vector<int>& vertex_ranks = vertex.second;
+    auto vertex_ranks = vertex_to_ranks.links(i);
     if (vertex_ranks.front() == mpi_rank)
     {
       // Get local vertex index
-      auto vlocal_it = global_to_local_vertices.find(vertex.first);
+      std::int64_t vertex_idx_global = vertices[i];
+      auto vlocal_it = global_to_local_vertices.find(vertex_idx_global);
       assert(vlocal_it != global_to_local_vertices.end());
       assert(vlocal_it->second != -1);
 
@@ -794,17 +796,8 @@ mesh::create_topology(MPI_Comm comm,
   // unknown_indices_set), compute the list of sharing ranks. The first
   // index in the vector of ranks is the owner as determined by
   // determine_sharing_ranks.
-  const graph::AdjacencyList<int> global_vertex_to_ranks_new
+  const graph::AdjacencyList<int> global_vertex_to_ranks
       = determine_sharing_ranks(comm, unknown_indices_set);
-
-  // TMP: transition
-  std::unordered_map<std::int64_t, std::vector<int>> global_vertex_to_ranks;
-  for (std::size_t i = 0; i < unknown_indices_set.size(); ++i)
-  {
-    auto ranks = global_vertex_to_ranks_new.links(i);
-    global_vertex_to_ranks.insert(
-        {unknown_indices_set[i], std::vector<int>(ranks.begin(), ranks.end())});
-  }
 
   // Iterate over vertices that have 'unknown' ownership, and if flagged
   // as owned by determine_sharing_ranks update ownership status
@@ -813,7 +806,7 @@ mesh::create_topology(MPI_Comm comm,
   {
     // Vertex is shared and owned by this rank if the first sharing rank
     // is my rank
-    auto ranks = global_vertex_to_ranks_new.links(i);
+    auto ranks = global_vertex_to_ranks.links(i);
     assert(!ranks.empty());
     if (ranks.front() == mpi_rank)
     {
@@ -850,14 +843,14 @@ mesh::create_topology(MPI_Comm comm,
   // Create neighborhood communicator for vertices on the 'true'
   // boundary and a map from MPI rank on comm to rank on neighbor_comm
   auto [neighbor_comm, global_to_neighbor_rank]
-      = compute_neighbor_comm(comm, global_vertex_to_ranks_new);
+      = compute_neighbor_comm(comm, global_vertex_to_ranks);
 
   // Send and receive list of triplets map (input vertex index) -> (new
   // global index, owner rank) with neighbours (for vertices on 'true
   // domain boundary')
   auto recv_triplets = exchange_vertex_numbering(
-      neighbor_comm, global_to_neighbor_rank, global_vertex_to_ranks,
-      global_offset_v, global_to_local_vertices);
+      neighbor_comm, global_to_neighbor_rank, unknown_indices_set,
+      global_vertex_to_ranks, global_offset_v, global_to_local_vertices);
   assert(recv_triplets.size() % 3 == 0);
 
   // Unpack received data and build array of ghost vertices and owners
