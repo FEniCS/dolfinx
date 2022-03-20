@@ -359,18 +359,14 @@ compute_vertex_markers(const graph::AdjacencyList<std::int64_t>& cells,
 /// @return (neighbor_comm, global_to_neighbor_rank map)
 std::pair<MPI_Comm, std::map<int, int>>
 compute_neighbor_comm(const MPI_Comm& comm,
-                      const std::unordered_map<std::int64_t, std::vector<int>>&
-                          global_vertex_to_ranks)
+                      const graph::AdjacencyList<int>& vertices_rank)
 {
   const int mpi_rank = dolfinx::MPI::rank(comm);
 
   // Create set of all ranks that share a vertex with this rank. Note
   // this can be 'wider' than the neighbor comm of shared cells.
-  std::vector<int> neighbors;
-  std::for_each(
-      global_vertex_to_ranks.begin(), global_vertex_to_ranks.end(),
-      [&neighbors](auto& q)
-      { neighbors.insert(neighbors.end(), q.second.begin(), q.second.end()); });
+  std::vector<int> neighbors(vertices_rank.array().begin(),
+                             vertices_rank.array().end());
   std::sort(neighbors.begin(), neighbors.end());
   neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
                   neighbors.end());
@@ -854,7 +850,7 @@ mesh::create_topology(MPI_Comm comm,
   // Create neighborhood communicator for vertices on the 'true'
   // boundary and a map from MPI rank on comm to rank on neighbor_comm
   auto [neighbor_comm, global_to_neighbor_rank]
-      = compute_neighbor_comm(comm, global_vertex_to_ranks);
+      = compute_neighbor_comm(comm, global_vertex_to_ranks_new);
 
   // Send and receive list of triplets map (input vertex index) -> (new
   // global index, owner rank) with neighbours (for vertices on 'true
