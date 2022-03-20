@@ -155,7 +155,6 @@ graph::build::distribute(MPI_Comm comm,
                          send_disp.data(), compound_type, recv_buffer.data(),
                          num_items_recv.data(), recv_disp.data(), compound_type,
                          neigh_comm);
-
   MPI_Type_free(&compound_type);
   MPI_Comm_free(&neigh_comm);
 

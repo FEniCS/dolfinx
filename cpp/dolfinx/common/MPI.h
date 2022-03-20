@@ -211,11 +211,6 @@ distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x,
 /// scalable if the neighborhoods are relatively small, i.e. each
 /// process communicated with a modest number of othe processes/
 ///
-/// @note The non-scalable version of this function,
-/// MPI::distribute_data1, can be faster up to some number of MPI ranks
-/// with number of ranks depending on the locality of the data, the MPI
-/// implementation and the network.
-///
 /// @param[in] comm The MPI communicator
 /// @param[in] indices Global indices of the data (row indices) required
 /// by calling process
@@ -262,38 +257,6 @@ template <typename T>
 std::vector<T> distribute_data(MPI_Comm comm,
                                const xtl::span<const std::int64_t>& indices,
                                const xtl::span<const T>& x, int shape1);
-
-/// @brief Distribute rows of a rectangular data array to ranks where
-/// they are required (non-scalable version).
-///
-/// See MPI::distribute_data description.
-///
-/// @note This functions used MPI all-to-all collectives and is
-/// therefore not scalable. It is typically faster the the scalable
-/// MPI::distribute_data function up to some number of MPI ranks.
-///
-/// @param[in] comm The MPI communicator
-/// @param[in] indices Global indices of the data (row indices) required
-/// by calling process
-/// @param[in] x Data (2D array, row-major) on calling process which may
-/// be distributed (by row). The global index for the `[0, ..., n)`
-/// local rows is assumed to be the local index plus the offset for this
-/// rank.
-/// @param[in] shape1 The number of columns of the data array `x`.
-/// @return The data for each index in `indices` (row-major storage)
-/// @pre `shape1 > 0`
-template <typename T>
-std::vector<T> distribute_data1(MPI_Comm comm,
-                                const xtl::span<const std::int64_t>& indices,
-                                const xtl::span<const T>& x, int shape1);
-
-/// @warning Do not use. This function will be removed.
-///
-/// Send in_values[p0] to process p0 and receive values from process p1
-/// in out_values[p1]
-template <typename T>
-graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
-                                   const graph::AdjacencyList<T>& send_data);
 
 /// @brief Send in_values[n0] to neighbor process n0 and receive values
 /// from neighbor process n1 in out_values[n1].
@@ -477,7 +440,6 @@ distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x,
                          recv_buffer_data.data(), num_items_recv.data(),
                          recv_disp.data(), compound_type, neigh_comm);
   MPI_Type_free(&compound_type);
-
   MPI_Comm_free(&neigh_comm);
 
   LOG(2) << "Completed send data to post offices.";
@@ -711,138 +673,6 @@ std::vector<T> distribute_data(MPI_Comm comm,
                                     rank_offset);
 }
 //---------------------------------------------------------------------------
-template <typename T>
-std::vector<T> distribute_data1(MPI_Comm comm,
-                                const xtl::span<const std::int64_t>& indices,
-                                const xtl::span<const T>& x, int shape1)
-{
-  common::Timer timer("Distribute row-wise data (non-scalable)");
-  assert(shape1 > 0);
-
-  const int size = dolfinx::MPI::size(comm);
-  const int rank = dolfinx::MPI::rank(comm);
-  assert(x.size() % shape1 == 0);
-  const std::int64_t shape0 = x.size() / shape1;
-
-  // Get number of rows on each rank
-  std::vector<std::int64_t> global_sizes(size);
-  MPI_Allgather(&shape0, 1, MPI_INT64_T, global_sizes.data(), 1, MPI_INT64_T,
-                comm);
-  std::vector<std::int64_t> global_offsets(size + 1, 0);
-  std::partial_sum(global_sizes.begin(), global_sizes.end(),
-                   std::next(global_offsets.begin()));
-
-  // Build index data requests
-  std::vector<int> number_index_send(size, 0);
-  std::vector<int> index_owner(indices.size());
-  std::vector<int> index_order(indices.size());
-  std::iota(index_order.begin(), index_order.end(), 0);
-  std::sort(index_order.begin(), index_order.end(),
-            [&indices](int a, int b) { return (indices[a] < indices[b]); });
-
-  int p = 0;
-  for (auto idx : index_order)
-  {
-    while (indices[idx] >= global_offsets[p + 1])
-      ++p;
-    index_owner[idx] = p;
-    number_index_send[p]++;
-  }
-
-  // Compute send displacements
-  std::vector<int> disp_index_send(size + 1, 0);
-  std::partial_sum(number_index_send.begin(), number_index_send.end(),
-                   std::next(disp_index_send.begin()));
-
-  // Pack global index send data
-  std::vector<std::int64_t> indices_send(disp_index_send.back());
-  std::vector<int> disp_tmp = disp_index_send;
-  for (std::size_t i = 0; i < indices.size(); ++i)
-  {
-    const int owner = index_owner[i];
-    indices_send[disp_tmp[owner]++] = indices[i];
-  }
-
-  // Send/receive number of indices to communicate to each process
-  std::vector<int> number_index_recv(size);
-  MPI_Alltoall(number_index_send.data(), 1, MPI_INT, number_index_recv.data(),
-               1, MPI_INT, comm);
-
-  // Compute receive displacements
-  std::vector<int> disp_index_recv(size + 1, 0);
-  std::partial_sum(number_index_recv.begin(), number_index_recv.end(),
-                   std::next(disp_index_recv.begin()));
-
-  // Send/receive global indices
-  std::vector<std::int64_t> indices_recv(disp_index_recv.back());
-  MPI_Alltoallv(indices_send.data(), number_index_send.data(),
-                disp_index_send.data(), MPI_INT64_T, indices_recv.data(),
-                number_index_recv.data(), disp_index_recv.data(), MPI_INT64_T,
-                comm);
-
-  // Pack point data to send back (transpose)
-  std::vector<T> x_return(indices_recv.size() * shape1);
-  for (int p = 0; p < size; ++p)
-  {
-    for (int i = disp_index_recv[p]; i < disp_index_recv[p + 1]; ++i)
-    {
-      const std::int32_t index_local = indices_recv[i] - global_offsets[rank];
-      assert(index_local >= 0);
-      std::copy_n(std::next(x.cbegin(), shape1 * index_local), shape1,
-                  std::next(x_return.begin(), shape1 * i));
-    }
-  }
-
-  MPI_Datatype compound_type;
-  MPI_Type_contiguous(shape1, dolfinx::MPI::mpi_type<T>(), &compound_type);
-  MPI_Type_commit(&compound_type);
-
-  // Send back point data
-  std::vector<T> my_x(disp_index_send.back() * shape1);
-  MPI_Alltoallv(x_return.data(), number_index_recv.data(),
-                disp_index_recv.data(), compound_type, my_x.data(),
-                number_index_send.data(), disp_index_send.data(), compound_type,
-                comm);
-  MPI_Type_free(&compound_type);
-
-  return my_x;
-}
-//-----------------------------------------------------------------------------
-template <typename T>
-graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
-                                   const graph::AdjacencyList<T>& send_data)
-{
-  const std::vector<std::int32_t>& send_offsets = send_data.offsets();
-  const std::vector<T>& values_in = send_data.array();
-
-  const int comm_size = dolfinx::MPI::size(comm);
-  assert(send_data.num_nodes() == comm_size);
-
-  // Data size per destination rank
-  std::vector<int> send_size(comm_size);
-  std::adjacent_difference(std::next(send_offsets.begin()), send_offsets.end(),
-                           send_size.begin());
-
-  // Get received data sizes from each rank
-  std::vector<int> recv_size(comm_size);
-  MPI_Alltoall(send_size.data(), 1, mpi_type<int>(), recv_size.data(), 1,
-               mpi_type<int>(), comm);
-
-  // Compute receive offset
-  std::vector<std::int32_t> recv_offset(comm_size + 1, 0);
-  std::partial_sum(recv_size.begin(), recv_size.end(),
-                   std::next(recv_offset.begin()));
-
-  // Send/receive data
-  std::vector<T> recv_values(recv_offset.back());
-  MPI_Alltoallv(values_in.data(), send_size.data(), send_offsets.data(),
-                mpi_type<T>(), recv_values.data(), recv_size.data(),
-                recv_offset.data(), mpi_type<T>(), comm);
-
-  return graph::AdjacencyList<T>(std::move(recv_values),
-                                 std::move(recv_offset));
-}
-//-----------------------------------------------------------------------------
 template <typename T>
 graph::AdjacencyList<T>
 neighbor_all_to_all(MPI_Comm comm, const graph::AdjacencyList<T>& send_data)
