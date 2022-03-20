@@ -55,68 +55,61 @@ graph::AdjacencyList<std::int32_t> compute_destination_ranks_new(
   const std::int64_t range1 = node_disp[rank + 1];
   assert(static_cast<std::int32_t>(range1 - range0) == graph.num_nodes());
 
-  std::vector<std::array<std::int64_t, 3>> node_to_dest;
-  std::vector<std::pair<std::int64_t, int>> remote_to_local_node;
-
   // For nodes that I own, find remote edges and send to the owner of
   // the nodes at the end of those edges which rank my node will be sent
   // to (in `part`).
 
   // Build (node -> ghosting owning ranks) map for my nodes with a ghost
   // edge
-  std::map<std::int32_t, std::set<int>> halo_node_to_ranks;
+  std::vector<std::array<std::int64_t, 3>> node_to_dest;
   for (int node = 0; node < graph.num_nodes(); ++node)
   {
-    // global_to_node.push_back({node + range0, node});
+    // Wherever 'node' goes to, so must 'node1'
     for (auto node1 : graph.links(node))
     {
-      remote_to_local_node.push_back({node1, node});
       if (node1 < range0 or node1 >= range1)
       {
         auto it = std::upper_bound(node_disp.begin(), node_disp.end(), node1);
-        const int remote_rank = std::distance(node_disp.begin(), it) - 1;
-        node_to_dest.push_back({remote_rank, node + range0, part[node]});
+        int remote_rank = std::distance(node_disp.begin(), it) - 1;
+        node_to_dest.push_back({remote_rank, node1, part[node]});
       }
       else
-        node_to_dest.push_back({rank, node + range0, part[node]});
-      // else if (part[node] != rank)
-      //   node_to_dest.push_back({rank, node + range0, part[node]});
+        node_to_dest.push_back({rank, node1, part[node]});
     }
   }
   std::sort(node_to_dest.begin(), node_to_dest.end());
-  std::sort(remote_to_local_node.begin(), remote_to_local_node.end());
-
   node_to_dest.erase(std::unique(node_to_dest.begin(), node_to_dest.end()),
                      node_to_dest.end());
-  remote_to_local_node.erase(
-      std::unique(remote_to_local_node.begin(), remote_to_local_node.end()),
-      remote_to_local_node.end());
 
-  // Get destination names and compute send displacement
-  std::vector<int> dest, send_sizes, send_disp{0};
+  // Build send data and buffer
+  std::vector<int> dest, send_sizes;
   std::vector<std::int64_t> send_buffer;
-  auto it = node_to_dest.begin();
-  while (it != node_to_dest.end())
   {
-    // Current destination rank
-    dest.push_back((*it)[0]);
-
-    // Find iterator to next destination rank
-    auto it1
-        = std::find_if(it, node_to_dest.end(),
-                       [r0 = dest.back()](auto& idx) { return idx[0] != r0; });
-    std::size_t num_nodes = std::distance(it, it1);
-    send_sizes.push_back(2 * num_nodes);
-    send_disp.push_back(send_disp.back() + 2 * num_nodes);
-
-    for (auto itx = it; itx != it1; ++itx)
+    auto it = node_to_dest.begin();
+    while (it != node_to_dest.end())
     {
-      send_buffer.push_back((*itx)[1]);
-      send_buffer.push_back((*itx)[2]);
-    }
+      // Current destination rank
+      dest.push_back((*it)[0]);
 
-    it = it1;
+      // Find iterator to next destination rank
+      auto it1 = std::find_if(it, node_to_dest.end(),
+                              [r0 = dest.back()](auto& idx)
+                              { return idx[0] != r0; });
+      send_sizes.push_back(2 * std::distance(it, it1));
+      for (auto itx = it; itx != it1; ++itx)
+      {
+        send_buffer.push_back((*itx)[1]);
+        send_buffer.push_back((*itx)[2]);
+      }
+
+      it = it1;
+    }
   }
+
+  // Prepare send displacements
+  std::vector<int> send_disp(send_sizes.size() + 1, 0);
+  std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                   std::next(send_disp.begin()));
 
   // Discover src ranks
   const std::vector<int> src
@@ -127,6 +120,7 @@ graph::AdjacencyList<std::int32_t> compute_destination_ranks_new(
                                  dest.size(), dest.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &neigh_comm);
 
+  // Determine receives sizes
   std::vector<int> recv_sizes(dest.size());
   send_sizes.reserve(1);
   recv_sizes.reserve(1);
@@ -145,95 +139,42 @@ graph::AdjacencyList<std::int32_t> compute_destination_ranks_new(
                          neigh_comm);
   MPI_Comm_free(&neigh_comm);
 
-  // Re-pack. ghost_edges (global node, destination)
-  std::vector<std::pair<std::int64_t, std::int32_t>> ghost_edges;
-  for (std::size_t i = 0; i < recv_buffer.size(); i += 2)
-    ghost_edges.push_back({recv_buffer[i], recv_buffer[i + 1]});
-  std::sort(ghost_edges.begin(), ghost_edges.end());
-  ghost_edges.erase(std::unique(ghost_edges.begin(), ghost_edges.end()),
-                    ghost_edges.end());
-
-  // Count number of destinations per node
-  std::vector<int> dests_per_node(graph.num_nodes(), 1);
+  std::vector<std::array<int, 2>> extra_dests;
+  for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
   {
-    auto it = ghost_edges.begin();
-    while (it != ghost_edges.end())
+    for (std::int32_t i = recv_disp[p]; i < recv_disp[p + 1]; i += 2)
     {
-      // Get range with same 'global node' in (global node, dest)
-      // buffer, i.e. for global_node get (dest0, dest1, etc)
-      std::int64_t e0 = it->first;
-      auto it1 = std::find_if(it, ghost_edges.end(),
-                              [e0](auto& e) { return e.first != e0; });
-      const int num_dest = std::distance(it, it1);
-
-      // Find local nodes attached to global_node
-      std::pair<std::int64_t, std::int32_t> e = {e0, 0};
-      auto pit = std::equal_range(
-          remote_to_local_node.cbegin(), remote_to_local_node.cend(), e,
-          [](auto a, auto b) { return a.first < b.first; });
-
-      // For each local node, add size((dest0, dest1, ...))
-      for (auto r = pit.first; r != pit.second; ++r)
-        dests_per_node[r->second] += num_dest;
-
-      it = it1;
+      std::int64_t idx = recv_buffer[i];
+      int d = recv_buffer[i + 1];
+      assert(idx >= range0 and idx < range1);
+      std::int32_t idx_local = idx - range0;
+      extra_dests.push_back({idx_local, d});
     }
   }
 
-  std::vector<std::int32_t> offsets_new(graph.num_nodes() + 1, 0);
-  std::partial_sum(dests_per_node.begin(), dests_per_node.end(),
-                   std::next(offsets_new.begin()));
-
-  std::vector<int> data(offsets_new.back(), 0);
+  std::vector<std::vector<int>> tmp(graph.num_nodes());
+  for (std::size_t i = 0; i < tmp.size(); ++i)
+    tmp[i].push_back(part[i]);
+  for (std::size_t i = 0; i < extra_dests.size(); ++i)
   {
-    std::vector<std::int32_t> disp = offsets_new;
-    for (std::size_t i = 0; i < part.size(); ++i)
-      data[disp[i]++] = part[i];
-
-    auto it = ghost_edges.begin();
-    while (it != ghost_edges.end())
-    {
-      // Get range with same 'global node' in (global node, dest) buffer
-      std::int64_t e0 = it->first;
-      auto it1 = std::find_if(it, ghost_edges.end(),
-                              [e0](auto& e) { return e.first != e0; });
-
-      // Have global_node -> (dest0, dest1, ...)
-
-      // Find local nodes attached to global_node
-      std::pair<std::int64_t, std::int32_t> e = {it->first, 0};
-      auto pit = std::equal_range(
-          remote_to_local_node.cbegin(), remote_to_local_node.cend(), e,
-          [](auto a, auto b) { return a.first < b.first; });
-
-      // For each local node, add (dest0, dest1, ...)
-      for (auto r = pit.first; r != pit.second; ++r)
-      {
-        const int node = r->second;
-        for (auto n = it; n != it1; ++n)
-          data[disp[node]++] = n->second;
-      }
-      it = it1;
-    }
+    int idx_local = extra_dests[i][0];
+    int d = extra_dests[i][1];
+    tmp[idx_local].push_back(d);
   }
-
-  graph::AdjacencyList<int> g_new(data, offsets_new);
 
   std::vector<int> data1;
   std::vector<int> offsets1 = {0};
-  for (std::int32_t i = 0; i < g_new.num_nodes(); ++i)
+  for (std::int32_t i = 0; i < graph.num_nodes(); ++i)
   {
-    auto ranks = g_new.links(i);
-    std::sort(ranks.begin(), ranks.end());
-    auto it = std::unique(ranks.begin(), ranks.end());
+    auto& row = tmp[i];
+    std::sort(row.begin(), row.end());
+    row.erase(std::unique(row.begin(), row.end()), row.end());
+    auto it = std::find(row.begin(), row.end(), part[i]);
+    assert(it != row.end());
+    std::iter_swap(row.begin(), it);
 
-    // Make sure owner comes first
-    auto it_owner = std::find(ranks.begin(), it, part[i]);
-    assert(it_owner != it);
-    std::iter_swap(ranks.begin(), it_owner);
-
-    data1.insert(data1.end(), ranks.begin(), it);
-    offsets1.push_back(offsets1.back() + std::distance(ranks.begin(), it));
+    data1.insert(data1.end(), row.begin(), row.end());
+    offsets1.push_back(offsets1.back() + row.size());
   }
 
   return graph::AdjacencyList<int>(std::move(data1), std::move(offsets1));
@@ -751,32 +692,40 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       graph::AdjacencyList<std::int32_t> dest
           = compute_destination_ranks_new(pcomm, graph, node_disp, part);
 
-      // for (std::int32_t i = 0; i < dest.num_nodes(); ++i)
-      // {
-      //   auto ranks = dest.links(i);
-      //   std::sort(std::next(ranks.begin()), ranks.end());
-      // }
-
-      // Test new code
+      // // Test new code
+      /*
       {
         graph::AdjacencyList<std::int32_t> newg
             = compute_destination_ranks_new(pcomm, graph, node_disp, part);
-        for (std::int32_t i = 0; i < newg.num_nodes(); ++i)
+        if (dolfinx::MPI::rank(comm) == 0)
         {
-          auto ranks = newg.links(i);
-          std::sort(ranks.begin(), ranks.end());
+          std::cout << "Dest: " << rank << ", " << graph.num_nodes()
+                    << std::endl;
+          for (auto x : part)
+            std::cout << "  " << x << std::endl;
+
+          std::cout << dest.str() << std::endl;
+          std::cout << newg.str() << std::endl;
         }
 
-        graph::AdjacencyList<std::int32_t> oldg = dest;
-        for (std::int32_t i = 0; i < oldg.num_nodes(); ++i)
-        {
-          auto ranks = oldg.links(i);
-          std::sort(ranks.begin(), ranks.end());
-        }
+        //   for (std::int32_t i = 0; i < newg.num_nodes(); ++i)
+        //   {
+        //     auto ranks = newg.links(i);
+        //     std::sort(ranks.begin(), ranks.end());
+        //   }
 
-        if (newg.array() != oldg.array() or newg.offsets() != oldg.offsets())
-          throw std::runtime_error("Destination rank mis-match");
+        //   graph::AdjacencyList<std::int32_t> oldg = dest;
+        //   for (std::int32_t i = 0; i < oldg.num_nodes(); ++i)
+        //   {
+        //     auto ranks = oldg.links(i);
+        //     std::sort(ranks.begin(), ranks.end());
+        //   }
+
+        //   if (newg.array() != oldg.array() or newg.offsets() !=
+        //   oldg.offsets())
+        //     throw std::runtime_error("Destination rank mis-match");
       }
+*/
 
       MPI_Comm_free(&pcomm);
       return dest;
