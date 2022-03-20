@@ -49,7 +49,7 @@ namespace
 /// is the destination of the node with local index `i`.
 /// @return Destination ranks for each local node.
 template <typename T>
-graph::AdjacencyList<std::int32_t> compute_destination_ranks_new(
+graph::AdjacencyList<int> compute_destination_ranks(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
     const std::vector<T>& node_disp, const std::vector<T>& part)
 {
@@ -146,15 +146,14 @@ graph::AdjacencyList<std::int32_t> compute_destination_ranks_new(
                          neigh_comm);
   MPI_Comm_free(&neigh_comm);
 
-  // Prepare (local node, dest) array. Add local data, then add the received
-  // data, and the make unique.
+  // Prepare (local node index, destination rank) array. Add local data,
+  // then add the received data, and the make unique.
   std::vector<std::array<int, 2>> local_node_to_dest;
   for (auto d : part)
   {
     local_node_to_dest.push_back(
         {static_cast<int>(local_node_to_dest.size()), d});
   }
-
   for (std::size_t i = 0; i < recv_buffer.size(); i += 2)
   {
     std::int64_t idx = recv_buffer[i];
@@ -163,7 +162,6 @@ graph::AdjacencyList<std::int32_t> compute_destination_ranks_new(
     std::int32_t idx_local = idx - range0;
     local_node_to_dest.push_back({idx_local, d});
   }
-
   std::sort(local_node_to_dest.begin(), local_node_to_dest.end());
   local_node_to_dest.erase(
       std::unique(local_node_to_dest.begin(), local_node_to_dest.end()),
@@ -200,137 +198,6 @@ graph::AdjacencyList<std::int32_t> compute_destination_ranks_new(
 
   return g;
 }
-//-----------------------------------------------------------------------------
-template <typename T>
-graph::AdjacencyList<std::int32_t> compute_destination_ranks(
-    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
-    const std::vector<T>& node_disp, const std::vector<T>& part)
-{
-  // Create a map from local nodes to their additional destination
-  // ranks, due to ghosting.
-
-  // Work out halo nodes for current division of graph
-  common::Timer timer2("Compute graph halo data (ParMETIS/KaHIP)");
-
-  const int rank = dolfinx::MPI::rank(comm);
-  const int size = dolfinx::MPI::size(comm);
-  const std::int64_t range0 = node_disp[rank];
-  const std::int64_t range1 = node_disp[rank + 1];
-  assert(static_cast<std::int32_t>(range1 - range0) == graph.num_nodes());
-
-  // local indexing "i"
-  // std::vector<std::array<int, 2>> node_to_pos;
-  // std::vector<std::array<int, 2>> node_to_pos;
-  // std::vector<int> remote_ranks;
-
-  // For nodes that I own, find remote edges and send to the owner of
-  // the nodes at the end of those edges which rank my node will be sent
-  // to (in `part`).
-
-  // Build (node -> ghosting owning ranks) map for my nodes with a ghost
-  // edge
-  std::map<std::int32_t, std::set<int>> halo_node_to_ranks;
-  for (int node = 0; node < graph.num_nodes(); ++node)
-  {
-    // global_to_node.push_back({node + range0, node});
-    for (auto node1 : graph.links(node))
-    {
-
-      if (node1 < range0 or node1 >= range1)
-      {
-        // Get rank that has node1
-        auto it = std::upper_bound(node_disp.begin(), node_disp.end(), node1);
-        const int remote_rank = std::distance(node_disp.begin(), it) - 1;
-
-        assert(remote_rank < size);
-        halo_node_to_ranks[node].insert(remote_rank);
-      }
-    }
-  }
-
-  // Loop over each halo node and count number of values to be sent to
-  // each rank
-  std::vector<std::int32_t> count(size, 0);
-  for (const auto& halo_node : halo_node_to_ranks)
-  {
-    for (auto rank : halo_node.second)
-      count[rank] += 2;
-  }
-
-  // Compute displacement (offsets)
-  std::vector<std::int32_t> disp(size + 1, 0);
-  std::partial_sum(count.begin(), count.end(), std::next(disp.begin()));
-
-  // Pack send data (global node index, partition index)
-  graph::AdjacencyList<std::int64_t> send_node_partition(
-      std::vector<std::int64_t>(disp.back()), disp);
-  std::vector<std::int32_t> pos(size, 0);
-  for (const auto& halo_node : halo_node_to_ranks)
-  {
-    const std::int32_t node_index = halo_node.first;
-    std::for_each(
-        halo_node.second.cbegin(), halo_node.second.cend(),
-        [&send_node_partition, &pos, &part, node_index, range0](auto rank)
-        {
-          assert(rank < send_node_partition.num_nodes());
-          // (0) global node index and (1) partitioning
-          auto dests = send_node_partition.links(rank);
-          dests[pos[rank]++] = node_index + range0;
-          dests[pos[rank]++] = part[node_index];
-        });
-  }
-
-  // Do halo exchange
-  const std::vector<std::int64_t> recv_node_partition
-      = dolfinx::MPI::all_to_all(comm, send_node_partition).array();
-
-  // Construct a map from all currently foreign nodes to their new
-  // partition number
-  std::map<std::int64_t, std::int32_t> node_ownership;
-  for (std::size_t p = 0; p < recv_node_partition.size(); p += 2)
-    node_ownership.insert({recv_node_partition[p], recv_node_partition[p + 1]});
-
-  // Generate map for where new boundary nodes need to be sent
-  std::map<std::int32_t, std::set<std::int32_t>> local_node_to_dests;
-  for (std::int32_t node0 = 0; node0 < graph.num_nodes(); ++node0)
-  {
-    const std::int32_t node0_rank = part[node0];
-    for (auto node1 : graph.links(node0))
-    {
-      std::int32_t node1_rank;
-      if (node1 < range0 or node1 >= range1)
-      {
-        const auto it = node_ownership.find(node1);
-        // remote cell - should be in map
-        assert(it != node_ownership.end());
-        node1_rank = it->second;
-      }
-      else
-        node1_rank = part[node1 - range0];
-
-      if (node0_rank != node1_rank)
-        local_node_to_dests[node0].insert(node1_rank);
-    }
-  }
-
-  // Convert to AdjacencyList
-  std::vector<std::int32_t> dests, offsets{0};
-  offsets.reserve(graph.num_nodes() + 1);
-  for (std::int32_t node = 0; node < graph.num_nodes(); ++node)
-  {
-    dests.push_back(part[node]);
-    if (auto it = local_node_to_dests.find(node);
-        it != local_node_to_dests.end())
-    {
-      dests.insert(dests.end(), it->second.begin(), it->second.end());
-    }
-    offsets.push_back(dests.size());
-  }
-
-  return graph::AdjacencyList<std::int32_t>(std::move(dests),
-                                            std::move(offsets));
-}
-
 //-----------------------------------------------------------------------------
 #ifdef HAS_PARMETIS
 template <typename T>
@@ -710,43 +577,8 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
     if (ghosting and graph.num_nodes() > 0)
     {
       // FIXME: Is it implicit the the first entry is the owner?
-      graph::AdjacencyList<std::int32_t> dest
-          = compute_destination_ranks_new(pcomm, graph, node_disp, part);
-
-      // Test new code
-      {
-        // graph::AdjacencyList<std::int32_t> newg
-        //     = compute_destination_ranks_new(pcomm, graph, node_disp, part);
-        graph::AdjacencyList<std::int32_t> oldg
-            = compute_destination_ranks(pcomm, graph, node_disp, part);
-        // if (dolfinx::MPI::rank(comm) == 0)
-        // {
-        //   std::cout << "Dest: " << rank << ", " << graph.num_nodes()
-        //             << std::endl;
-        //   for (auto x : part)
-        //     std::cout << "  " << x << std::endl;
-
-        //   std::cout << dest.str() << std::endl;
-        //   std::cout << newg.str() << std::endl;
-        // }
-
-        graph::AdjacencyList<std::int32_t> newg = dest;
-
-        for (std::int32_t i = 0; i < oldg.num_nodes(); ++i)
-        {
-          auto ranks = oldg.links(i);
-          std::sort(ranks.begin(), ranks.end());
-        }
-
-        for (std::int32_t i = 0; i < newg.num_nodes(); ++i)
-        {
-          auto ranks = newg.links(i);
-          std::sort(ranks.begin(), ranks.end());
-        }
-
-        if (newg.array() != oldg.array() or newg.offsets() != oldg.offsets())
-          throw std::runtime_error("Destination rank mis-match");
-      }
+      graph::AdjacencyList<int> dest
+          = compute_destination_ranks(pcomm, graph, node_disp, part);
 
       MPI_Comm_free(&pcomm);
       return dest;
@@ -754,8 +586,8 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
     else
     {
       MPI_Comm_free(&pcomm);
-      return regular_adjacency_list(
-          std::vector<std::int32_t>(part.begin(), part.end()), 1);
+      return regular_adjacency_list(std::vector<int>(part.begin(), part.end()),
+                                    1);
     }
   };
 }
