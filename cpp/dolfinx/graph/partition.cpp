@@ -40,8 +40,7 @@ graph::build::distribute(MPI_Comm comm,
                          const graph::AdjacencyList<std::int64_t>& list,
                          const graph::AdjacencyList<std::int32_t>& destinations)
 {
-  common::Timer timer("Distribute AdjacencyList nodes to destination ranks "
-                      "(graph::build::distribute, scalable)");
+  common::Timer timer("Distribute AdjacencyList nodes to destination ranks");
 
   assert(list.num_nodes() == (int)destinations.num_nodes());
   const int rank = dolfinx::MPI::rank(comm);
