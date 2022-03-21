@@ -583,11 +583,10 @@ void Topology::set_connectivity(
 //-----------------------------------------------------------------------------
 const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 {
-  auto i_map = this->index_map(this->dim());
-  assert(i_map);
-
   // Check if this process owns or ghosts any cells
-  if (_cell_permutations.empty()
+  assert(this->index_map(this->dim()));
+  if (auto i_map = this->index_map(this->dim());
+      _cell_permutations.empty()
       and i_map->size_local() + i_map->num_ghosts() > 0)
   {
     throw std::runtime_error(
@@ -599,7 +598,6 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 //-----------------------------------------------------------------------------
 const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
 {
-
   if (auto i_map = this->index_map(this->dim() - 1);
       !i_map
       or (_facet_permutations.empty()
