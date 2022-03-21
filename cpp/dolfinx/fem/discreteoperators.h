@@ -188,7 +188,6 @@ void assemble_interpolation_matrix(const fem::FunctionSpace& V0,
   const fem::CoordinateElement& cmap = mesh->geometry().cmap();
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
-  // FIXME: Add proper interface for num coordinate dofs
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
   xtl::span<const double> x_g = mesh->geometry().x();
 
