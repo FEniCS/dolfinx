@@ -249,7 +249,7 @@ class Function(ufl.Coefficient):
 
         # Set name
         if name is None:
-            self.name = "f_{}".format(self.count())
+            self.name = "f"
         else:
             self.name = name
 
