@@ -189,7 +189,7 @@ def test_vtx_mesh(tempdir, dim, simplex):
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
 def test_vtx_functions_fail(tempdir, dim, simplex):
-    "Test saving high order Lagrange functions"
+    "Test for error when elements differ"
     mesh = generate_mesh(dim, simplex)
     v = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
     w = Function(FunctionSpace(mesh, ("Lagrange", 1)))
@@ -199,13 +199,12 @@ def test_vtx_functions_fail(tempdir, dim, simplex):
 
 
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-@pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
-def test_vtx_different_meshes_function(tempdir, dim, simplex):
-    "Test saving  first order Lagrange functions"
-    mesh = generate_mesh(dim, simplex)
+def test_vtx_different_meshes_function(tempdir, simplex):
+    "Test for error when functions do not share a mesh"
+    mesh = generate_mesh(2, simplex)
     v = Function(FunctionSpace(mesh, ("Lagrange", 1)))
-    mesh2 = generate_mesh(dim, simplex)
+    mesh2 = generate_mesh(2, simplex)
     w = Function(FunctionSpace(mesh2, ("Lagrange", 1)))
     filename = os.path.join(tempdir, "v.bp")
     with pytest.raises(RuntimeError):
@@ -219,11 +218,16 @@ def test_vtx_single_function(tempdir, dim, simplex):
     "Test saving a single first order Lagrange functions"
     mesh = generate_mesh(dim, simplex)
     v = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+
     filename = os.path.join(tempdir, "v.bp")
     writer = VTXWriter(mesh.comm, filename, v)
     writer.write(0)
     writer.close()
 
+    filename = os.path.join(tempdir, "v2.bp")
+    writer = VTXWriter(mesh.comm, filename, v._cpp_object)
+    writer.write(0)
+    writer.close()
 
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 @pytest.mark.parametrize("dim", [2, 3])
