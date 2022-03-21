@@ -864,7 +864,7 @@ mesh::create_topology(MPI_Comm comm,
   // FIXME: Has this already been computed elsewhere?
   // FIXME: Does the communicator have to be 'symmetric?
   //
-  // Build list of neighborhood ranks and create neighborhood
+  // Build list of neighborhood ranks and create a neighborhood
   // communicator for vertices
   std::vector<int> local_to_global_rank(global_vertex_to_ranks.array().begin(),
                                         global_vertex_to_ranks.array().end());
