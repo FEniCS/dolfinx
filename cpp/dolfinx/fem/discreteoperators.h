@@ -197,7 +197,7 @@ void assemble_interpolation_matrix(const fem::FunctionSpace& V0,
   cmap.tabulate(1, X, phi);
   dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
 
-  // Evaluate v basis functions at reference interpolation points
+  // Evaluate V0 basis functions at reference interpolation points for V1
   xt::xtensor<double, 4> basis_derivatives_reference0(
       {1, X.shape(0), dim0, value_size_ref0});
   element0->tabulate(basis_derivatives_reference0, X, 0);
