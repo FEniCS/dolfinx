@@ -113,13 +113,10 @@ graph::build::distribute(MPI_Comm comm,
   std::vector<int> num_items_recv(src.size());
   num_items_per_dest.reserve(1);
   num_items_recv.reserve(1);
-  MPI_Neighbor_alltoall(num_items_per_dest.data(), 1, MPI_INT,
-                        num_items_recv.data(), 1, MPI_INT, neigh_comm);
-
-  // Prepare receive displacement
-  std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
-  std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
-                   std::next(recv_disp.begin()));
+  MPI_Request request_size;
+  MPI_Ineighbor_alltoall(num_items_per_dest.data(), 1, MPI_INT,
+                         num_items_recv.data(), 1, MPI_INT, neigh_comm,
+                         &request_size);
 
   // Compute send displacements
   std::vector<std::int32_t> send_disp(num_items_per_dest.size() + 1, 0);
@@ -146,6 +143,12 @@ graph::build::distribute(MPI_Comm comm,
     }
   }
 
+  // Prepare receive displacement
+  MPI_Wait(&request_size, MPI_STATUS_IGNORE);
+  std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
+  std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
+                   std::next(recv_disp.begin()));
+
   // Send/receive data facet
   MPI_Datatype compound_type;
   MPI_Type_contiguous(buffer_shape1, MPI_INT64_T, &compound_type);
@@ -160,9 +163,20 @@ graph::build::distribute(MPI_Comm comm,
 
   // Unpack receive buffer
   std::vector<int> src_ranks0, src_ranks1, ghost_index_owner;
+  src_ranks0.reserve(recv_disp.back());
+  src_ranks1.reserve(recv_disp.back());
+
   std::vector<std::int64_t> data0, data1;
+  data0.reserve((buffer_shape1 - 3) * recv_disp.back());
+  data1.reserve((buffer_shape1 - 3) * recv_disp.back());
+
   std::vector<std::int32_t> offsets0{0}, offsets1{0};
+  offsets0.reserve(recv_disp.back());
+  offsets1.reserve(recv_disp.back());
+
   std::vector<std::int64_t> global_indices0, global_indices1;
+  global_indices0.reserve(recv_disp.back());
+  global_indices1.reserve(recv_disp.back());
   for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
   {
     const int src_rank = src[p];
@@ -303,14 +317,12 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   for (int i = 0; i < num_local; ++i)
     old_to_new.insert({global_indices[i], offset_local + i});
 
-  std::for_each(recv_data.begin(), recv_data.end(),
-                [&old_to_new](auto& r)
-                {
-                  auto it = old_to_new.find(r);
-                  // Must exist on this process!
-                  assert(it != old_to_new.end());
-                  r = it->second;
-                });
+  std::for_each(recv_data.begin(), recv_data.end(), [&old_to_new](auto& r) {
+    auto it = old_to_new.find(r);
+    // Must exist on this process!
+    assert(it != old_to_new.end());
+    r = it->second;
+  });
 
   std::vector<std::int64_t> new_recv(send_data.size());
   MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
@@ -328,8 +340,7 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   }
 
   std::for_each(ghost_global_indices.begin(), ghost_global_indices.end(),
-                [&old_to_new](auto& q)
-                {
+                [&old_to_new](auto& q) {
                   const auto it = old_to_new.find(q);
                   assert(it != old_to_new.end());
                   q = it->second;
@@ -393,8 +404,7 @@ std::vector<std::int32_t> graph::build::compute_local_to_local(
   std::vector<std::int32_t> local0_to_local1;
   std::transform(local0_to_global.cbegin(), local0_to_global.cend(),
                  std::back_inserter(local0_to_local1),
-                 [&global_to_local1](auto l2g)
-                 {
+                 [&global_to_local1](auto l2g) {
                    auto it = global_to_local1.find(l2g);
                    assert(it != global_to_local1.end());
                    return it->second;

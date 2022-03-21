@@ -55,9 +55,11 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   // TODO: Two possible straightforward optimisations:
   // 1. Do not send owned data to self via MPI.
   // 2. Modify MPI::index_owner to use a subet of ranks as post offices.
+  // 3. Find the max buffer row size for the neighbourhood rather than
+  //    globally.
   //
   // Less straightforward optimisations:
-  // 3. After matching, send back matches only, (and only to ranks with
+  // 4. After matching, send back matches only, (and only to ranks with
   //    a match) (Note: this would complicate the communication and
   //    handling of buffers)
 
@@ -212,26 +214,6 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
   std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
                    std::next(recv_disp.begin()));
-
-  {
-    // DEBUG
-    int sbuffer_size = send_disp.back();
-    int rbuffer_size = recv_disp.back();
-    int num_src = src.size();
-    int num_dests = dest.size();
-    std::array<int, 4> sdata = {sbuffer_size, rbuffer_size, num_src, num_dests};
-    std::array<int, 4> rdata_min, rdata_max;
-
-    MPI_Reduce(sdata.data(), rdata_min.data(), 4, MPI_INT, MPI_MIN, 0, comm);
-    MPI_Reduce(sdata.data(), rdata_max.data(), 4, MPI_INT, MPI_MAX, 0, comm);
-    if (dolfinx::MPI::rank(comm) == 0)
-    {
-      std::cout << "Min: " << rdata_min[0] << ", " << rdata_min[1] << ", "
-                << rdata_min[2] << ", " << rdata_min[3] << std::endl;
-      std::cout << "Max: " << rdata_max[0] << ", " << rdata_max[1] << ", "
-                << rdata_max[2] << ", " << rdata_max[3] << std::endl;
-    }
-  }
 
   // Send/receive data facet
   MPI_Datatype compound_type;
