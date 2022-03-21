@@ -587,8 +587,8 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
   assert(i_map);
 
   // Check if this process owns or ghosts any cells
-  const bool has_cells = i_map->size_local() + i_map->num_ghosts() > 0;
-  if (_cell_permutations.empty() and has_cells)
+  if (_cell_permutations.empty()
+      and i_map->size_local() + i_map->num_ghosts() > 0)
   {
     throw std::runtime_error(
         "create_entity_permutations must be called before using this data.");
@@ -600,18 +600,13 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
 {
   auto i_map = this->index_map(this->dim() - 1);
-  std::string error_message
-      = "create_entity_permutations must be called before using this data.";
-  if (!i_map)
+  std::string error_message = ;
+  if (!i_map
+      or (_facet_permutations.empty()
+          and i_map->size_local() + i_map->num_ghosts() > 0))
   {
-    throw std::runtime_error(error_message);
-  }
-
-  // Check if this process owns or ghosts any facets
-  const bool has_facets = i_map->size_local() + i_map->num_ghosts() > 0;
-  if (_facet_permutations.empty() and has_facets)
-  {
-    throw std::runtime_error(error_message);
+    throw std::runtime_error(
+        "create_entity_permutations must be called before using this data.");
   }
 
   return _facet_permutations;

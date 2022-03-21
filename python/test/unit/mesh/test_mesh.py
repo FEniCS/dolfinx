@@ -561,8 +561,7 @@ def test_empty_rank_mesh():
         assert len(e_to_v.array) == 0
         assert e_to_v.num_nodes == 0
 
-    # Test creating and getting permutations
-    # doesn't throw an error
+    # Test creating and getting permutations doesn't throw an error
     mesh.topology.create_entity_permutations()
     mesh.topology.get_cell_permutation_info()
     mesh.topology.get_facet_permutations()
