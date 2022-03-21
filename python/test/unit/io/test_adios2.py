@@ -229,6 +229,7 @@ def test_vtx_single_function(tempdir, dim, simplex):
     writer.write(0)
     writer.close()
 
+
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
