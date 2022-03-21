@@ -583,21 +583,30 @@ void Topology::set_connectivity(
 //-----------------------------------------------------------------------------
 const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 {
-  if (_cell_permutations.empty())
+  // Check if this process owns or ghosts any cells
+  assert(this->index_map(this->dim()));
+  if (auto i_map = this->index_map(this->dim());
+      _cell_permutations.empty()
+      and i_map->size_local() + i_map->num_ghosts() > 0)
   {
     throw std::runtime_error(
         "create_entity_permutations must be called before using this data.");
   }
+
   return _cell_permutations;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
 {
-  if (_facet_permutations.empty())
+  if (auto i_map = this->index_map(this->dim() - 1);
+      !i_map
+      or (_facet_permutations.empty()
+          and i_map->size_local() + i_map->num_ghosts() > 0))
   {
     throw std::runtime_error(
         "create_entity_permutations must be called before using this data.");
   }
+
   return _facet_permutations;
 }
 //-----------------------------------------------------------------------------
