@@ -26,9 +26,9 @@ __all__ = ["FidesWriter", "VTKFile", "VTXWriter", "XDMFFile", "cell_perm_gmsh",
 
 def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Function]):
     """Extract C++ object for a single function or a list of functions"""
-    try:
+    if isinstance(functions, (list, tuple)):
         return [getattr(u, "_cpp_object", u) for u in functions]
-    except (NotImplementedError, TypeError):
+    else:
         return [getattr(functions, "_cpp_object", functions)]
 
 
