@@ -133,9 +133,6 @@ void assemble_discrete_gradient(const fem::FunctionSpace& V0,
 /// \f$u_1=Au_0\f$ where \f$u_1\f$ is the degrees-of-freedom vector for
 /// interpolating function in the \f$V_1\f$ space.
 ///
-/// @warning This function relies on the user supplying appropriate
-/// input and output spaces. See parameter descriptions.
-///
 /// @param[in] V0 The space to interpolate from
 /// @param[in] V1 The space to interpolate to
 /// @param[in] mat_set A functor that sets values in a matrix
@@ -303,7 +300,7 @@ void assemble_interpolation_matrix(const fem::FunctionSpace& V0,
       auto _U = xt::view(mapped_values, p, xt::all(), xt::all());
       pull_back_fn1(_U, _u, _K, 1.0 / detJ[p], _J);
     }
-    // Apply interpolation matrix
+    // Apply interpolation matrix to basis values of V0 at the interpolation points of V1
     for (std::size_t i = 0; i < mapped_values.shape(1); ++i)
     {
       auto _mapped_values = xt::view(mapped_values, xt::all(), i, xt::all());
