@@ -766,6 +766,8 @@ mesh::create_topology(MPI_Comm comm,
                       const xtl::span<const int>& ghost_owners,
                       const CellType& cell_type, mesh::GhostMode ghost_mode)
 {
+  common::Timer timer("Topology: create");
+
   LOG(INFO) << "Create topology";
   if (cells.num_nodes() > 0
       and cells.num_links(0) != num_cell_vertices(cell_type))
