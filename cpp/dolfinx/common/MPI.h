@@ -187,6 +187,11 @@ constexpr int index_owner(int size, std::size_t index, std::size_t N)
   return r + (index - r * (n + 1)) / n;
 }
 
+/// Get a a subset communicator that has one process per shared-memory node
+/// @param[in] input_comm The original MPI communicator
+/// @return MPI_Comm A communicator with one process per node
+MPI_Comm node_comm(const MPI_Comm& input_comm);
+
 template <typename T>
 struct dependent_false : std::false_type
 {

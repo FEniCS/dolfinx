@@ -236,3 +236,22 @@ std::array<std::vector<int>, 2> dolfinx::MPI::neighbors(MPI_Comm comm)
   return {std::move(sources), std::move(destinations)};
 }
 //-----------------------------------------------------------------------------
+MPI_Comm dolfinx::MPI::node_comm(const MPI_Comm& input_comm)
+{
+  // Get a shared memory comm, i.e. comm local to a node
+  MPI_Comm local_comm;
+  MPI_Comm_split_type(input_comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,
+                      &local_comm);
+
+  // Find root rank on each node
+  int local_rank;
+  MPI_Comm_rank(local_comm, &local_rank);
+
+  // Only local root rank takes part in node_root_comm, others return
+  // MPI_COMM_NULL.
+  MPI_Comm node_root_comm;
+  MPI_Comm_split(input_comm, (local_rank == 0 ? 0 : MPI_UNDEFINED), 0,
+                 &node_root_comm);
+
+  return node_root_comm;
+}
