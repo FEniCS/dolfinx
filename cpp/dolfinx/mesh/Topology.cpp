@@ -599,9 +599,9 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 //-----------------------------------------------------------------------------
 const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
 {
-  auto i_map = this->index_map(this->dim() - 1);
-  std::string error_message = ;
-  if (!i_map
+
+  if (auto i_map = this->index_map(this->dim() - 1);
+      !i_map
       or (_facet_permutations.empty()
           and i_map->size_local() + i_map->num_ghosts() > 0))
   {
