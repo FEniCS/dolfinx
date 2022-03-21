@@ -245,11 +245,11 @@ class Function(ufl.Coefficient):
             self._cpp_object = functiontype(dtype)(V._cpp_object)
 
         # Initialize the ufl.FunctionSpace
-        super().__init__(V.ufl_function_space(), count=id(self))
+        super().__init__(V.ufl_function_space())
 
         # Set name
         if name is None:
-            self.name = "f_{}".format(self.count())
+            self.name = "f"
         else:
             self.name = name
 
