@@ -623,30 +623,6 @@ mesh::build_dual_graph(const MPI_Comm comm,
   graph::AdjacencyList<std::int64_t> graph
       = compute_nonlocal_dual_graph(comm, facets, shape1, fcells, local_graph);
 
-  // {
-  //   // Pack data
-  //   std::size_t shape0 = shape1 > 0 ? facets.size() / shape1 : 0;
-  //   std::vector<std::int64_t> xfacets;
-  //   xfacets.reserve(shape0 * (shape1 + 1));
-  //   for (std::size_t i = 0; i < shape0; ++i)
-  //   {
-  //     std::size_t offset = i * shape1;
-  //     xtl::span row(facets.data() + offset, shape1);
-  //     xfacets.insert(xfacets.end(), row.begin(), row.end());
-  //     xfacets.push_back(fcells[i]);
-  //   }
-
-  //   graph::AdjacencyList<std::int64_t> xgraph
-  //       = compute_nonlocal_dual_graph1(comm, xfacets, shape1 + 1,
-  //       local_graph);
-
-  //   // TEST
-  //   if (xgraph.array() != graph.array())
-  //     throw std::runtime_error("Data mis-match");
-  //   if (xgraph.offsets() != graph.offsets())
-  //     throw std::runtime_error("Offsets mis-match");
-  // }
-
   LOG(INFO) << "Graph edges (local: " << local_graph.offsets().back()
             << ", non-local: "
             << graph.offsets().back() - local_graph.offsets().back() << ")";
