@@ -380,43 +380,6 @@ compute_vertex_markers(const graph::AdjacencyList<std::int64_t>& cells,
 }
 //-----------------------------------------------------------------------------
 
-/// Compute a neighborhood comm from the ranks in
-/// global_vertex_to_ranks, also returning a map from global rank number
-/// to neighborhood rank
-/// @note Collective
-/// @param[in] comm The global communicator
-/// @param[in] global_vertex_to_ranks Map from global vertex index to
-/// sharing ranks
-/// @return (neighbor_comm, global_to_neighbor_rank map)
-std::pair<MPI_Comm, std::vector<int>>
-compute_neighbor_comm(const MPI_Comm& comm,
-                      const graph::AdjacencyList<int>& vertices_rank)
-{
-  const int mpi_rank = dolfinx::MPI::rank(comm);
-
-  // Create set of all ranks that share a vertex with this rank. Note
-  // this can be 'wider' than the neighbor comm of shared cells.
-  std::vector<int> neighbors(vertices_rank.array().begin(),
-                             vertices_rank.array().end());
-  std::sort(neighbors.begin(), neighbors.end());
-  neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
-                  neighbors.end());
-
-  // Remove self
-  neighbors.erase(std::remove(neighbors.begin(), neighbors.end(), mpi_rank),
-                  neighbors.end());
-
-  // Create symmetric neighborhood communicator
-  MPI_Comm neighbor_comm;
-  MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
-                                 MPI_UNWEIGHTED, neighbors.size(),
-                                 neighbors.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neighbor_comm);
-
-  return {neighbor_comm, std::move(neighbors)};
-}
-//-------------------------------------------------------------------------------
-
 /// @brief Send the vertex numbering for owned vertices to processes
 /// that also share them, returning a list of triplets received from
 /// other ranks.
@@ -898,12 +861,22 @@ mesh::create_topology(MPI_Comm comm,
   const std::int64_t nlocal = v;
   MPI_Exscan(&nlocal, &global_offset_v, 1, MPI_INT64_T, MPI_SUM, comm);
 
-  // FIXME: Improve description
+  // FIXME: Has this already been computed elsewhere?
+  // FIXME: Does the communicator have to be 'symmetric?
   //
-  // Create neighborhood communicator for vertices on the 'true'
-  // boundary and a map from MPI rank on comm to rank on neighbor_comm
-  auto [neighbor_comm, local_to_global_rank]
-      = compute_neighbor_comm(comm, global_vertex_to_ranks);
+  // Build list of neighborhood ranks and create neighborhood
+  // communicator for vertices
+  std::vector<int> local_to_global_rank(global_vertex_to_ranks.array().begin(),
+                                        global_vertex_to_ranks.array().end());
+  dolfinx::radix_sort(xtl::span(local_to_global_rank));
+  local_to_global_rank.erase(
+      std::unique(local_to_global_rank.begin(), local_to_global_rank.end()),
+      local_to_global_rank.end());
+  MPI_Comm neighbor_comm;
+  MPI_Dist_graph_create_adjacent(
+      comm, local_to_global_rank.size(), local_to_global_rank.data(),
+      MPI_UNWEIGHTED, local_to_global_rank.size(), local_to_global_rank.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm);
 
   // Send and receive list of triplets map (input vertex index) -> (new
   // global index, owner rank) with neighbours (for vertices on 'true
