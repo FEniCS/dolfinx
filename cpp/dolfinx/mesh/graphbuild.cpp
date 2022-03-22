@@ -142,9 +142,9 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
         dest.push_back((*it)[0]);
 
         // Find iterator to next global rank
-        auto it1 = std::find_if(
-            it, dest_to_index.end(),
-            [r = dest.back()](auto& idx) { return idx[0] != r; });
+        auto it1 = std::find_if(it, dest_to_index.end(),
+                                [r = dest.back()](auto& idx)
+                                { return idx[0] != r; });
 
         // Store number of items for current rank
         num_items_per_dest.push_back(std::distance(it, it1));
@@ -236,7 +236,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     std::vector<int> sort_order(recv_buffer.size() / buffer_shape1);
     std::iota(sort_order.begin(), sort_order.end(), 0);
     std::sort(sort_order.begin(), sort_order.end(),
-              [&recv_buffer, buffer_shape1, fshape1](auto f0, auto f1) {
+              [&recv_buffer, buffer_shape1, fshape1](auto f0, auto f1)
+              {
                 auto it0 = std::next(recv_buffer.begin(), f0 * buffer_shape1);
                 auto it1 = std::next(recv_buffer.begin(), f1 * buffer_shape1);
                 return std::lexicographical_compare(
@@ -252,7 +253,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       // Find iterator to next facet different from f0
       auto it1 = std::find_if_not(
           it, sort_order.end(),
-          [f0, &recv_buffer, buffer_shape1, fshape1](auto idx) -> bool {
+          [f0, &recv_buffer, buffer_shape1, fshape1](auto idx) -> bool
+          {
             std::size_t offset1 = idx * buffer_shape1;
             auto f1 = std::next(recv_buffer.data(), offset1);
             return std::equal(f0, std::next(f0, fshape1), f1);
@@ -487,9 +489,8 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
       assert(facet_vertices.size() <= std::size_t(max_num_facet_vertices));
       std::transform(facet_vertices.cbegin(), facet_vertices.cend(),
                      facet.begin(),
-                     [&cell_vertices_local, offset = cell_offsets[c]](auto fv) {
-                       return cell_vertices_local[offset + fv];
-                     });
+                     [&cell_vertices_local, offset = cell_offsets[c]](auto fv)
+                     { return cell_vertices_local[offset + fv]; });
 
       // Sort facet "indices"
       std::sort(facet.begin(), facet.end());
@@ -505,7 +506,8 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   std::vector<int> facet_perm(facets.size() / max_num_facet_vertices);
   std::iota(facet_perm.begin(), facet_perm.end(), 0);
   std::sort(facet_perm.begin(), facet_perm.end(),
-            [&facets, shape1](auto f0, auto f1) {
+            [&facets, shape1](auto f0, auto f1)
+            {
               auto it0 = std::next(facets.begin(), f0 * shape1);
               auto it1 = std::next(facets.begin(), f1 * shape1);
               return std::lexicographical_compare(it0, std::next(it0, shape1),
@@ -629,30 +631,6 @@ mesh::build_dual_graph(const MPI_Comm comm,
 
   graph::AdjacencyList<std::int64_t> graph
       = compute_nonlocal_dual_graph(comm, facets, shape1, fcells, local_graph);
-
-  // {
-  //   // Pack data
-  //   std::size_t shape0 = shape1 > 0 ? facets.size() / shape1 : 0;
-  //   std::vector<std::int64_t> xfacets;
-  //   xfacets.reserve(shape0 * (shape1 + 1));
-  //   for (std::size_t i = 0; i < shape0; ++i)
-  //   {
-  //     std::size_t offset = i * shape1;
-  //     xtl::span row(facets.data() + offset, shape1);
-  //     xfacets.insert(xfacets.end(), row.begin(), row.end());
-  //     xfacets.push_back(fcells[i]);
-  //   }
-
-  //   graph::AdjacencyList<std::int64_t> xgraph
-  //       = compute_nonlocal_dual_graph1(comm, xfacets, shape1 + 1,
-  //       local_graph);
-
-  //   // TEST
-  //   if (xgraph.array() != graph.array())
-  //     throw std::runtime_error("Data mis-match");
-  //   if (xgraph.offsets() != graph.offsets())
-  //     throw std::runtime_error("Offsets mis-match");
-  // }
 
   LOG(INFO) << "Graph edges (local: " << local_graph.offsets().back()
             << ", non-local: "
