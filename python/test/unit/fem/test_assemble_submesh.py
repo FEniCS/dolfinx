@@ -18,8 +18,8 @@ from dolfinx.mesh import (GhostMode, create_box, create_rectangle,
 from mpi4py import MPI
 
 
-def assemble(mesh):
-    V = fem.FunctionSpace(mesh, ("Lagrange", 1))
+def assemble(mesh, k):
+    V = fem.FunctionSpace(mesh, ("Lagrange", k))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dx = ufl.Measure("dx", domain=mesh)
     a = fem.form(ufl.inner(u, v) * dx)
@@ -32,9 +32,10 @@ def assemble(mesh):
 
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
-def test_submesh_cell_assembly(d, n, ghost_mode):
+def test_submesh_cell_assembly(d, n, k, ghost_mode):
     """Check that assembling a form over a unit square gives the same
     result as assembling over half of a 2x1 rectangle with the same
     triangulation."""
@@ -51,12 +52,12 @@ def test_submesh_cell_assembly(d, n, ghost_mode):
             MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
             (2 * n, n, n), ghost_mode=ghost_mode)
 
-    A_mesh_0 = assemble(mesh_0)
+    A_mesh_0 = assemble(mesh_0, k)
 
     edim = mesh_1.topology.dim
     entities = locate_entities(mesh_1, edim, lambda x: x[0] <= 1.0)
     submesh = create_submesh(mesh_1, edim, entities)[0]
-    A_submesh = assemble(submesh)
+    A_submesh = assemble(submesh, k)
 
     # FIXME Would probably be better to compare entries rather than just
     # norms
