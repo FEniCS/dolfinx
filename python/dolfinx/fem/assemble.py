@@ -201,7 +201,7 @@ def _(b: np.ndarray, L: FormMetaClass, constants=None, coeffs=None):
 
 
 @functools.singledispatch
-def assemble_matrix(a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = [],
+def assemble_matrix(a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = None,
                     diagonal: float = 1.0,
                     constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
     """Assemble bilinear form into a matrix.
@@ -225,6 +225,7 @@ def assemble_matrix(a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = [
         accumulated.
 
     """
+    bcs = [] if bcs is None else bcs
     A = create_matrix(a)
     assemble_matrix(A, a, bcs, diagonal, constants, coeffs)
     return A
@@ -232,7 +233,7 @@ def assemble_matrix(a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = [
 
 @assemble_matrix.register(la.MatrixCSRMetaClass)
 def _(A: la.MatrixCSRMetaClass, a: FormMetaClass,
-      bcs: typing.List[DirichletBCMetaClass] = [],
+      bcs: typing.List[DirichletBCMetaClass] = None,
       diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
     """Assemble bilinear form into a matrix.
 
@@ -252,6 +253,7 @@ def _(A: la.MatrixCSRMetaClass, a: FormMetaClass,
         accumulated.
 
     """
+    bcs = [] if bcs is None else bcs
     constants = _pack_constants(a) if constants is None else constants
     coeffs = _pack_coefficients(a) if coeffs is None else coeffs
     _cpp.fem.assemble_matrix(A, a, constants, coeffs, bcs)
@@ -268,7 +270,7 @@ def _(A: la.MatrixCSRMetaClass, a: FormMetaClass,
 
 def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
                   bcs: typing.List[typing.List[DirichletBCMetaClass]],
-                  x0: typing.Optional[typing.List[np.ndarray]] = [],
+                  x0: typing.Optional[typing.List[np.ndarray]] = None,
                   scale: float = 1.0, constants=None, coeffs=None) -> None:
     """Modify RHS vector b for lifting of Dirichlet boundary conditions.
 
@@ -289,6 +291,7 @@ def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
         Caller is responsible for calling VecGhostUpdateBegin/End.
 
     """
+    x0 = [] if x0 is None else x0
     constants = [form and _pack_constants(form) for form in a] if constants is None else constants
     coeffs = [{} if form is None else _pack_coefficients(form) for form in a] if coeffs is None else coeffs
     _cpp.fem.apply_lifting(b, a, constants, coeffs, bcs, x0, scale)
