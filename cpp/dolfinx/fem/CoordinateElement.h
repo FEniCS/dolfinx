@@ -33,7 +33,7 @@ public:
   /// @param[in] element Element from Basix
   explicit CoordinateElement(std::shared_ptr<basix::FiniteElement> element);
 
-  /// Create a Lagrage coordinate element
+  /// Create a Lagrange coordinate element
   /// @param[in] celltype The cell shape
   /// @param[in] degree Polynomial degree of the map
   /// @param[in] type The type of Lagrange element (see Basix

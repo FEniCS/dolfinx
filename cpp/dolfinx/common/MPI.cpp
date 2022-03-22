@@ -91,9 +91,10 @@ std::vector<int>
 dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm,
                                       const xtl::span<const int>& edges)
 {
-  LOG(INFO) << "Computing communicaton graph edges using PCX algorithm. Number "
-               "of input edges "
-            << edges.size();
+  LOG(INFO)
+      << "Computing communicaton graph edges (using PCX algorithm). Number "
+         "of input edges: "
+      << edges.size();
 
   // Build array with '0' for no outedge and '1' for an outedge for each
   // rank
@@ -105,8 +106,9 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm,
   // Determine how many in-edges this rank has
   std::vector<int> recvcounts(size, 1);
   int in_edges = 0;
-  MPI_Reduce_scatter(edge_count_send.data(), &in_edges, recvcounts.data(),
-                     MPI_INT, MPI_SUM, comm);
+  MPI_Request request_scatter;
+  MPI_Ireduce_scatter(edge_count_send.data(), &in_edges, recvcounts.data(),
+                      MPI_INT, MPI_SUM, comm, &request_scatter);
 
   std::vector<MPI_Request> send_requests(edges.size());
   std::byte send_buffer;
@@ -117,6 +119,7 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm,
   }
 
   // Probe for incoming messages and store incoming rank
+  MPI_Wait(&request_scatter, MPI_STATUS_IGNORE);
   std::vector<int> other_ranks;
   while (in_edges > 0)
   {
@@ -148,9 +151,10 @@ std::vector<int>
 dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
                                       const xtl::span<const int>& edges)
 {
-  LOG(INFO) << "Computing communicaton graph edges using NBX algorithm. Number "
-               "of input edges "
-            << edges.size();
+  LOG(INFO)
+      << "Computing communicaton graph edges (using NBX algorithm). Number "
+         "of input edges: "
+      << edges.size();
 
   // Start non-blocking synchronised send
   std::vector<MPI_Request> send_requests(edges.size());
