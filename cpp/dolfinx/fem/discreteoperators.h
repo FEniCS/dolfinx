@@ -237,7 +237,6 @@ void assemble_interpolation_matrix(const fem::FunctionSpace& V0,
 
   std::vector<T> A(element1->space_dimension() * element0->space_dimension());
   std::vector<T> local1(element1->space_dimension());
-      A, {element1->space_dimension(), element0->space_dimension()});
 
   // Iterate over mesh and interpolate on each cell
   auto cell_map = mesh->topology().index_map(tdim);
