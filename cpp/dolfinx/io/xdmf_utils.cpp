@@ -30,6 +30,46 @@ using namespace dolfinx::io;
 
 namespace
 {
+/// @warning Do not use. This function will be removed.
+///
+/// Send in_values[p0] to process p0 and receive values from process p1
+/// in out_values[p1]
+template <typename T>
+graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
+                                   const graph::AdjacencyList<T>& send_data)
+{
+  const std::vector<std::int32_t>& send_offsets = send_data.offsets();
+  const std::vector<T>& values_in = send_data.array();
+
+  const int comm_size = dolfinx::MPI::size(comm);
+  assert(send_data.num_nodes() == comm_size);
+
+  // Data size per destination rank
+  std::vector<int> send_size(comm_size);
+  std::adjacent_difference(std::next(send_offsets.begin()), send_offsets.end(),
+                           send_size.begin());
+
+  // Get received data sizes from each rank
+  std::vector<int> recv_size(comm_size);
+  MPI_Alltoall(send_size.data(), 1, MPI_INT, recv_size.data(), 1, MPI_INT,
+               comm);
+
+  // Compute receive offset
+  std::vector<std::int32_t> recv_offset(comm_size + 1, 0);
+  std::partial_sum(recv_size.begin(), recv_size.end(),
+                   std::next(recv_offset.begin()));
+
+  // Send/receive data
+  std::vector<T> recv_values(recv_offset.back());
+  MPI_Alltoallv(values_in.data(), send_size.data(), send_offsets.data(),
+                dolfinx::MPI::mpi_type<T>(), recv_values.data(),
+                recv_size.data(), recv_offset.data(),
+                dolfinx::MPI::mpi_type<T>(), comm);
+
+  return graph::AdjacencyList<T>(std::move(recv_values),
+                                 std::move(recv_offset));
+}
+
 /// Compute values at all mesh 'nodes'
 /// @return The values at all geometric points
 /// @warning This function will be removed soon. Use interpolation
@@ -454,8 +494,6 @@ xdmf_utils::distribute_entity_data(
     std::vector<std::vector<std::int64_t>> nodes_g_send(comm_size);
     for (std::int64_t node : nodes_g)
     {
-      // TODO: Optimise this call by adding 'vectorised verion of
-      //       MPI::index_owner
       // Figure out which process is the postmaster for the input global
       // index
       const std::int32_t p
@@ -465,8 +503,8 @@ xdmf_utils::distribute_entity_data(
 
     // Send/receive
     LOG(INFO) << "XDMF send entity nodes size:(" << num_nodes_g << ")";
-    graph::AdjacencyList<std::int64_t> nodes_g_recv = dolfinx::MPI::all_to_all(
-        comm, graph::AdjacencyList<std::int64_t>(nodes_g_send));
+    graph::AdjacencyList<std::int64_t> nodes_g_recv
+        = all_to_all(comm, graph::AdjacencyList<std::int64_t>(nodes_g_send));
 
     return nodes_g_recv;
   };
@@ -547,10 +585,10 @@ xdmf_utils::distribute_entity_data(
 
     LOG(INFO) << "XDMF send entity keys size: (" << shape_e_0 << ")";
     // TODO: Pack into one MPI call
-    graph::AdjacencyList<std::int64_t> entities_recv = dolfinx::MPI::all_to_all(
-        comm, graph::AdjacencyList<std::int64_t>(entities_send));
-    graph::AdjacencyList<std::int32_t> data_recv = dolfinx::MPI::all_to_all(
-        comm, graph::AdjacencyList<std::int32_t>(data_send));
+    graph::AdjacencyList<std::int64_t> entities_recv
+        = all_to_all(comm, graph::AdjacencyList<std::int64_t>(entities_send));
+    graph::AdjacencyList<std::int32_t> data_recv
+        = all_to_all(comm, graph::AdjacencyList<std::int32_t>(data_send));
 
     return std::pair(entities_recv, data_recv);
   };
@@ -618,10 +656,10 @@ xdmf_utils::distribute_entity_data(
         [](const std::vector<std::int32_t>& v) { return v.size(); });
     LOG(INFO) << "XDMF return entity and value data size:(" << send_val_size
               << ")";
-    graph::AdjacencyList<std::int64_t> recv_ents = dolfinx::MPI::all_to_all(
+    graph::AdjacencyList<std::int64_t> recv_ents = all_to_all(
         comm, graph::AdjacencyList<std::int64_t>(send_nodes_owned));
-    graph::AdjacencyList<std::int32_t> recv_vals = dolfinx::MPI::all_to_all(
-        comm, graph::AdjacencyList<std::int32_t>(send_vals_owned));
+    graph::AdjacencyList<std::int32_t> recv_vals
+        = all_to_all(comm, graph::AdjacencyList<std::int32_t>(send_vals_owned));
 
     return std::pair(std::move(recv_ents), std::move(recv_vals));
   };

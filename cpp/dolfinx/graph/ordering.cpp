@@ -43,11 +43,11 @@ residual_graph_components(const graph::AdjacencyList<int>& graph,
   {
     r.clear();
     r.push_back(std::distance(labelled.begin(), it));
-    labelled[r[0]] = true;
+    labelled[r.front()] = true;
 
     // Get connected component of graph starting from r[0]
-    int c = 0;
-    while (c < static_cast<int>(r.size()))
+    std::size_t c = 0;
+    while (c < r.size())
     {
       for (int w : graph.links(r[c]))
       {
