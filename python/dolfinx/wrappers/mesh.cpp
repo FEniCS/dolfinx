@@ -40,10 +40,10 @@ auto create_cell_partitioner_cpp(Functor p_py)
 {
   return [p_py](MPI_Comm comm, int nparts,
                 const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-                std::int32_t num_ghost_nodes, bool ghosting)
+                bool ghosting)
   {
     return p_py(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph,
-                num_ghost_nodes, ghosting);
+                ghosting);
   };
 }
 
@@ -343,8 +343,7 @@ void mesh(py::module& m)
         [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
                MPICommWrapper comm, int nparts,
                const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-               std::int32_t num_ghost_nodes, bool ghosting)>& part)
-            -> PythonCellPartitionFunction
+               bool ghosting)>& part) -> PythonCellPartitionFunction
         {
           return create_cell_partitioner_py(
               dolfinx::mesh::create_cell_partitioner(

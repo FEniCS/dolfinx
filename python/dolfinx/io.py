@@ -1,11 +1,11 @@
-# Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells, Michal Habera
+# Copyright (C) 2017-2022 Chris N. Richardson, Garth N. Wells, Michal Habera
 # and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-
-"""IO module for input data, post-processing and checkpointing"""
+"""IO module for input data, post-processing file outout and
+checkpointing"""
 
 import typing
 
@@ -18,13 +18,99 @@ from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh
 
-__all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "distribute_entity_data"]
+from mpi4py import MPI as _MPI
+
+__all__ = ["FidesWriter", "VTKFile", "VTXWriter", "XDMFFile", "cell_perm_gmsh",
+           "distribute_entity_data"]
+
+
+def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Function]):
+    """Extract C++ object for a single function or a list of functions"""
+    if isinstance(functions, (list, tuple)):
+        return [getattr(u, "_cpp_object", u) for u in functions]
+    else:
+        return [getattr(functions, "_cpp_object", functions)]
+
+
+try:
+    class VTXWriter(_cpp.io.VTXWriter):
+        """Interface to VTK files for ADIOS2
+
+        VTX supports arbitrary order Lagrange finite elements for the
+        geometry description and arbitrary order (discontinuous)
+        Lagrange finite elements for Functions.
+
+        The files can be displayed by Paraview. The storage backend uses
+        ADIOS2.
+
+        """
+
+        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, typing.List[Function], Function]):
+            """Initialize a writer for outputting data in the VTX format.
+
+            Args:
+                comm: The MPI communicator
+                filename: The output filename
+                output: The data to output. Either a mesh, a single
+                    (discontinuous) Lagrange Function or list of
+                    (discontinuous Lagrange Functions.
+
+            Note:
+                All Functions for output must share the same mesh and
+                have the same element type.
+
+            """
+            try:
+                # Input is a mesh
+                super().__init__(comm, filename, output)
+            except (NotImplementedError, TypeError):
+                # Input is a single function or a list of functions
+                super().__init__(comm, filename, _extract_cpp_functions(output))
+
+    class FidesWriter(_cpp.io.FidesWriter):
+        """Interface to Fides file formt.
+
+        Fides supports first order Lagrange finite elements for the
+        geometry descriptionand first order Lagrange finite elements for
+        functions. All functions has to be of the same element family
+        and same order.
+
+        The files can be displayed by Paraview. The storage backend uses
+        ADIOS2.
+
+        """
+
+        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, typing.List[Function], Function]):
+            """Initialize a writer for outputting a mesh, a single Lagrange
+            function or list of Lagrange functions sharing the same
+            element family and degree
+
+            Args:
+                comm: The MPI communicator
+                filename: The output filename
+                output: The data to output. Either a mesh, a single
+                    first order Lagrange function or list of first order
+                    Lagrange functions.
+
+            """
+            try:
+                super().__init__(comm, filename, output)
+            except (NotImplementedError, TypeError):
+                super().__init__(comm, filename, _extract_cpp_functions(output))
+except AttributeError:
+    class FidesWriter():
+        def __init__(self, *args):
+            raise RuntimeError("DOLFINx has not been configured with ADIOS2 support")
+
+    class VTXWriter():
+        def __init__(self, *args):
+            raise RuntimeError("DOLFINx has not been configured with ADIOS2 support")
 
 
 class VTKFile(_cpp.io.VTKFile):
     """Interface to VTK files
 
-    VTK supports arbitrary order Lagrangian finite elements for the
+    VTK supports arbitrary order Lagrange finite elements for the
     geometry description. XDMF is the preferred format for geometry
     order <= 2.
 
@@ -36,10 +122,7 @@ class VTKFile(_cpp.io.VTKFile):
 
     def write_function(self, u: typing.Union[typing.List[Function], Function], t: float = 0.0) -> None:
         """Write a single function or a list of functions to file for a given time (default 0.0)"""
-        if isinstance(u, (list, tuple)):
-            super().write([getattr(u_, "_cpp_object", u_) for u_ in u], t)
-        else:
-            super().write([getattr(u, "_cpp_object", u)], t)
+        super().write(_extract_cpp_functions(u), t)
 
 
 class XDMFFile(_cpp.io.XDMFFile):
@@ -74,7 +157,7 @@ class XDMFFile(_cpp.io.XDMFFile):
 
 def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
     """Extract all entities tagged with a physical marker in the gmsh
-    model, and collects the data per cell type. Returns a nested
+    model, and collect the data per cell type. Returns a nested
     dictionary where the first key is the gmsh MSH element type integer.
     Each element type present in the model contains the cell topology of
     the elements and corresponding markers.
@@ -129,7 +212,7 @@ def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
 
 def extract_gmsh_geometry(gmsh_model, model_name=None):
     """For a given gmsh model, extract the mesh geometry as a numpy
-    (N,3) array where the i-th row corresponds to the i-th node in the
+    (N, 3) array where the i-th row corresponds to the i-th node in the
     mesh.
 
     """
@@ -164,7 +247,7 @@ _gmsh_to_cells = {1: ("interval", 1), 2: ("triangle", 1),
 
 def ufl_mesh_from_gmsh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
     """Create a UFL mesh from a Gmsh cell identifier and the geometric dimension.
-    See: # http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
+    See: http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format.
 
     """
     shape, degree = _gmsh_to_cells[gmsh_cell]
