@@ -36,9 +36,9 @@ try:
     class VTXWriter(_cpp.io.VTXWriter):
         """Interface to VTK files for ADIOS2
 
-        VTX supports arbitrary order Lagrangian finite elements for the
+        VTX supports arbitrary order Lagrange finite elements for the
         geometry description and arbitrary order (discontinuous)
-        Lagrangian finite elements for Functions.
+        Lagrange finite elements for Functions.
 
         The files can be displayed by Paraview. The storage backend uses
         ADIOS2.
@@ -70,10 +70,10 @@ try:
     class FidesWriter(_cpp.io.FidesWriter):
         """Interface to Fides file formt.
 
-        Fides supports first order Lagrangian finite elements for the
-        geometry descriptionand first order Lagrangian finite elements
-        for functions. All functions has to be of the same element
-        family and same order.
+        Fides supports first order Lagrange finite elements for the
+        geometry descriptionand first order Lagrange finite elements for
+        functions. All functions has to be of the same element family
+        and same order.
 
         The files can be displayed by Paraview. The storage backend uses
         ADIOS2.
@@ -110,7 +110,7 @@ except AttributeError:
 class VTKFile(_cpp.io.VTKFile):
     """Interface to VTK files
 
-    VTK supports arbitrary order Lagrangian finite elements for the
+    VTK supports arbitrary order Lagrange finite elements for the
     geometry description. XDMF is the preferred format for geometry
     order <= 2.
 
@@ -157,7 +157,7 @@ class XDMFFile(_cpp.io.XDMFFile):
 
 def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
     """Extract all entities tagged with a physical marker in the gmsh
-    model, and collects the data per cell type. Returns a nested
+    model, and collect the data per cell type. Returns a nested
     dictionary where the first key is the gmsh MSH element type integer.
     Each element type present in the model contains the cell topology of
     the elements and corresponding markers.
