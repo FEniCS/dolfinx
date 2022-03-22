@@ -22,7 +22,8 @@ def assemble(mesh):
     V = fem.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dx = ufl.Measure("dx", domain=mesh)
-    a = fem.form(ufl.inner(u, v) * dx)
+    ds = ufl.Measure("ds", domain=mesh)
+    a = fem.form(ufl.inner(u, v) * (dx + ds))
 
     A = fem.petsc.assemble_matrix(a)
     A.assemble()
