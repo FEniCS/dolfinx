@@ -205,7 +205,7 @@ def _(b: PETSc.Vec, L: FormMetaClass, constants=None, coeffs=None) -> PETSc.Vec:
 
 
 @functools.singledispatch
-def assemble_vector_nest(L: FormMetaClass, constants=None, coeffs=None) -> PETSc.Vec:
+def assemble_vector_nest(L: typing.List[FormMetaClass], constants=None, coeffs=None) -> PETSc.Vec:
     """Assemble linear forms into a new nested PETSc (VecNest) vector.
     The returned vector is not finalised, i.e. ghost values are not
     accumulated on the owning processes.
