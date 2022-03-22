@@ -189,8 +189,8 @@ public:
   /// @return True if interpolation is an identity operation
   bool interpolation_ident() const noexcept;
 
-  /// Check if the map from the reference to a physical cell for this element is
-  /// the identity map.
+  /// Check if the push forward/pull back map from the values on reference to
+  /// the values on a physical cell for this element is the identity map.
   /// @return True if the map is the identity
   bool map_ident() const noexcept;
 
