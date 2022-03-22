@@ -207,7 +207,9 @@ void assemble_interpolation_matrix(const fem::FunctionSpace& V0,
   xt::xtensor<double, 3> K({X.shape(0), tdim, gdim});
   std::vector<double> detJ(X.shape(0));
 
-  // Get interpolation operator
+  // Get the interpolation operator (matrix) `Pi` that maps a function
+  // evaluated at the interpolation points to the element degrees of
+  // freedom, i.e. dofs = Pi f_x
   const xt::xtensor<double, 2>& Pi_1 = element1->interpolation_operator();
 
   using u_t = xt::xview<decltype(basis_reference0)&, std::size_t,
