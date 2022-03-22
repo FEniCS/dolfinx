@@ -180,7 +180,7 @@ void SparsityPattern::insert(const xtl::span<const std::int32_t>& rows,
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert_diagonal(const xtl::span<const int32_t>& rows)
+void SparsityPattern::insert_diagonal(const xtl::span<const std::int32_t>& rows)
 {
   if (_graph)
   {
