@@ -142,7 +142,7 @@ def test_read_write_p2_mesh(tempdir, encoding):
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 @pytest.mark.parametrize("encoding", encodings)
-def test_submesh(tempdir, d, n, codim, ghost_mode, encoding):
+def xtest_submesh(tempdir, d, n, codim, ghost_mode, encoding):
     mesh = mesh_factory(d, n, ghost_mode)
     edim = d - codim
     entities = locate_entities(mesh, edim, lambda x: x[0] >= 0.5)
