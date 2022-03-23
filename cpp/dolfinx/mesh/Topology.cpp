@@ -53,10 +53,14 @@ auto find_idx(T& x, typename T::value_type::first_type value)
 ///
 /// @note Collective
 ///
-/// A random number generator is used to determine the unique ownership.
+/// Indices are sent to a 'post office' rank, which uses a
+/// (deterministic) random number generator to determine which ranks is
+/// the 'owner'. This information is sent back to the ranks who sent the
+/// index to the post office,
 ///
 /// @param[in] comm MPI communicator
-/// @param[in] indices Global indices to determine a an owning MPI ranks for
+/// @param[in] indices Global indices to determine a an owning MPI ranks
+/// for.
 /// @return Map from global index to sharing ranks for each index in
 /// indices. The owner rank is the first as the first in the of ranks.
 graph::AdjacencyList<int>

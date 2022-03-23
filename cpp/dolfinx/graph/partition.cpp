@@ -244,20 +244,22 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   std::vector<int> ghost_index_count;
   std::vector<int> neighbors;
   std::map<int, int> proc_to_neighbor;
-  int np = 0;
-  [[maybe_unused]] int mpi_rank = dolfinx::MPI::rank(comm);
-  for (int p : ghost_owners)
   {
-    assert(p != mpi_rank);
-    const auto [it, insert] = proc_to_neighbor.insert({p, np});
-    if (insert)
+    int np = 0;
+    [[maybe_unused]] int mpi_rank = dolfinx::MPI::rank(comm);
+    for (int p : ghost_owners)
     {
-      // New neighbor found
-      neighbors.push_back(p);
-      ghost_index_count.push_back(0);
-      ++np;
+      assert(p != mpi_rank);
+      auto [it, insert] = proc_to_neighbor.insert({p, np});
+      if (insert)
+      {
+        // New neighbor found
+        neighbors.push_back(p);
+        ghost_index_count.push_back(0);
+        ++np;
+      }
+      ++ghost_index_count[it->second];
     }
-    ++ghost_index_count[it->second];
   }
 
   // NB - this assumes a symmetry, i.e. that if one process shares an index
@@ -271,25 +273,26 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
 
   std::vector<int> send_offsets = {0};
   send_offsets.reserve(ghost_index_count.size() + 1);
-  for (int index_count : ghost_index_count)
-    send_offsets.push_back(send_offsets.back() + index_count);
-  std::vector<std::int64_t> send_data(send_offsets.back());
+  std::partial_sum(ghost_index_count.begin(), ghost_index_count.end(),
+                   std::back_inserter(send_offsets));
 
   // Copy offsets to help fill array
-  std::vector<int> ghost_index_offset(send_offsets.begin(), send_offsets.end());
-
-  for (std::size_t i = 0; i < ghost_owners.size(); ++i)
+  std::vector<std::int64_t> send_data(send_offsets.back());
   {
-    // Owning process
-    int p = ghost_owners[i];
+    std::vector<int> ghost_index_offset = send_offsets;
+    for (std::size_t i = 0; i < ghost_owners.size(); ++i)
+    {
+      // Owning process
+      int p = ghost_owners[i];
 
-    // Owning neighbor
-    int np = proc_to_neighbor[p];
+      // Owning neighbor
+      int np = proc_to_neighbor[p];
 
-    // Send data location
-    int pos = ghost_index_offset[np];
-    send_data[pos] = global_indices[num_local + i];
-    ++ghost_index_offset[np];
+      // Send data location
+      int pos = ghost_index_offset[np];
+      send_data[pos] = global_indices[num_local + i];
+      ++ghost_index_offset[np];
+    }
   }
 
   std::vector<int> recv_sizes(neighbors.size());
@@ -299,8 +302,8 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
                         1, MPI_INT, neighbor_comm);
   std::vector<int> recv_offsets = {0};
   recv_offsets.reserve(recv_sizes.size() + 1);
-  for (int q : recv_sizes)
-    recv_offsets.push_back(recv_offsets.back() + q);
+  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                   std::back_inserter(recv_offsets));
 
   std::vector<std::int64_t> recv_data(recv_offsets.back());
   MPI_Neighbor_alltoallv(send_data.data(), ghost_index_count.data(),
@@ -330,13 +333,14 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
                          recv_offsets.data(), MPI_INT64_T, new_recv.data(),
                          ghost_index_count.data(), send_offsets.data(),
                          MPI_INT64_T, neighbor_comm);
+  MPI_Comm_free(&neighbor_comm);
 
   // Add to map
   for (std::size_t i = 0; i < send_data.size(); ++i)
   {
     std::int64_t old_idx = send_data[i];
     std::int64_t new_idx = new_recv[i];
-    [[maybe_unused]] auto [it, insert] = old_to_new.insert({old_idx, new_idx});
+    auto [it, insert] = old_to_new.insert({old_idx, new_idx});
     assert(insert);
   }
 
@@ -348,7 +352,6 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
                   q = it->second;
                 });
 
-  MPI_Comm_free(&neighbor_comm);
   return ghost_global_indices;
 }
 //-----------------------------------------------------------------------------
