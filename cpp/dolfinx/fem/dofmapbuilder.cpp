@@ -20,7 +20,6 @@
 #include <memory>
 #include <numeric>
 #include <random>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -526,21 +525,31 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     auto [neighbors, _] = dolfinx::MPI::neighbors(comm[d]);
 
     // Build (global old, global new) map for dofs of dimension d
-    std::unordered_map<std::int64_t, std::pair<int64_t, int>> global_old_new;
+    std::vector<std::pair<std::int64_t, std::pair<int64_t, int>>>
+        global_old_new;
+    global_old_new.reserve(disp_recv[d].back());
     for (std::size_t j = 0; j < all_dofs_received[d].size(); j += 2)
     {
       const auto pos
           = std::upper_bound(disp_recv[d].begin(), disp_recv[d].end(), j);
       const int owner = std::distance(disp_recv[d].begin(), pos) - 1;
-      global_old_new.insert({all_dofs_received[d][j],
-                             {all_dofs_received[d][j + 1], neighbors[owner]}});
+      global_old_new.push_back(
+          {all_dofs_received[d][j],
+           {all_dofs_received[d][j + 1], neighbors[owner]}});
     }
+    std::sort(global_old_new.begin(), global_old_new.end());
 
     // Build the dimension d part of local_to_global_new vector
     for (std::size_t i = 0; i < local_new_to_global_old[d].size(); i += 2)
     {
-      auto it = global_old_new.find(local_new_to_global_old[d][i]);
-      assert(it != global_old_new.end());
+      std::pair<std::int64_t, std::pair<int64_t, int>> idx_old
+          = {local_new_to_global_old[d][i], {0, 0}};
+
+      auto it = std::lower_bound(
+          global_old_new.begin(), global_old_new.end(), idx_old,
+          [](auto& a, auto& b) { return a.first < b.first; });
+      assert(it != global_old_new.end() and it->first == idx_old.first);
+
       local_to_global_new[local_new_to_global_old[d][i + 1]] = it->second.first;
       local_to_global_new_owner[local_new_to_global_old[d][i + 1]]
           = it->second.second;
