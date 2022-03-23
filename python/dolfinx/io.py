@@ -20,8 +20,7 @@ from dolfinx.mesh import GhostMode, Mesh
 
 from mpi4py import MPI as _MPI
 
-__all__ = ["FidesWriter", "VTKFile", "VTXWriter", "XDMFFile", "cell_perm_gmsh",
-           "distribute_entity_data"]
+__all__ = ["FidesWriter", "VTKFile", "VTXWriter", "XDMFFile", "cell_perm_gmsh", "distribute_entity_data"]
 
 
 def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Function]):
@@ -32,8 +31,12 @@ def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Functi
         return [getattr(functions, "_cpp_object", functions)]
 
 
-try:
-    class VTXWriter(_cpp.io.VTXWriterxx):
+if _cpp.common.has_adios2:
+    # FidesWriter and VTXWriter require ADIOS2
+
+    __all__ = __all__ + ["FidesWriter", "VTXWriter"]
+
+    class VTXWriter(_cpp.io.VTXWriter):
         """Interface to VTK files for ADIOS2
 
         VTX supports arbitrary order Lagrange finite elements for the
@@ -109,16 +112,6 @@ try:
 
         def __exit__(self, exception_type, exception_value, traceback):
             self.close()
-
-
-except AttributeError:
-    class FidesWriter():
-        def __init__(self, *args):
-            raise ImportError("DOLFINx has not been configured with ADIOS2 support")
-
-    class VTXWriter():
-        def __init__(self, *args):
-            raise ImportError("DOLFINx has not been configured with ADIOS2 support")
 
 
 class VTKFile(_cpp.io.VTKFile):
