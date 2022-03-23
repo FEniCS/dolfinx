@@ -67,6 +67,12 @@ try:
                 # Input is a single function or a list of functions
                 super().__init__(comm, filename, _extract_cpp_functions(output))
 
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            self.close()
+
     class FidesWriter(_cpp.io.FidesWriter):
         """Interface to Fides file formt.
 
@@ -97,6 +103,14 @@ try:
                 super().__init__(comm, filename, output)
             except (NotImplementedError, TypeError):
                 super().__init__(comm, filename, _extract_cpp_functions(output))
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            self.close()
+
+
 except AttributeError:
     class FidesWriter():
         def __init__(self, *args):
@@ -116,6 +130,12 @@ class VTKFile(_cpp.io.VTKFile):
 
     """
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
     def write_mesh(self, mesh: Mesh, t: float = 0.0) -> None:
         """Write mesh to file for a given time (default 0.0)"""
         self.write(mesh, t)
@@ -126,6 +146,12 @@ class VTKFile(_cpp.io.VTKFile):
 
 
 class XDMFFile(_cpp.io.XDMFFile):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
     def write_mesh(self, mesh: Mesh) -> None:
         """Write mesh to file for a given time (default 0.0)"""
         super().write_mesh(mesh)
