@@ -811,8 +811,10 @@ mesh::create_topology(MPI_Comm comm,
   else
   {
     // Get global indices of ghost cells
+    xtl::span cell_idx(original_cell_index);
     const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
-        comm, original_cell_index, ghost_owners);
+        comm, cell_idx.first(cells.num_nodes() - ghost_owners.size()),
+        cell_idx.last(ghost_owners.size()), ghost_owners);
 
     // Determine src ranks
     std::vector<int> src_ranks(ghost_owners.begin(), ghost_owners.end());

@@ -70,16 +70,22 @@ std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
 distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
            const graph::AdjacencyList<std::int32_t>& destinations);
 
-/// Compute ghost indices in a global IndexMap space, from a list of arbitrary
-/// global indices, where the ghosts are at the end of the list, and their
-/// owning processes are known.
+/// @todo Make sense of this docstring
+///
+/// Compute ghost indices in a global IndexMap space, from a list of
+/// arbitrary global indices, where the ghosts are at the end of the
+/// list, and their owning processes are known.
 /// @param[in] comm MPI communicator
-/// @param[in] global_indices List of arbitrary global indices, ghosts at end
-/// @param[in] ghost_owners List of owning processes of the ghost indices
+/// @param[in] owned_indices List of arbitrary global indices, with
+/// ghosts at end
+/// @param[in] ghost_indices List of arbitrary global indices, with
+/// ghosts at end
+/// @param[in] ghost_owners List of owning process for each ghost index
 /// @return Indexing of ghosts in a global space starting from 0 on process 0
 std::vector<std::int64_t>
 compute_ghost_indices(MPI_Comm comm,
-                      const xtl::span<const std::int64_t>& global_indices,
+                      const xtl::span<const std::int64_t>& owned_indices,
+                      const xtl::span<const std::int64_t>& ghost_indices,
                       const xtl::span<const int>& ghost_owners);
 
 /// Given an adjacency list with global, possibly non-contiguous, link

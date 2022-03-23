@@ -225,18 +225,19 @@ graph::build::distribute(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> graph::build::compute_ghost_indices(
-    MPI_Comm comm, const xtl::span<const std::int64_t>& global_indices,
+    MPI_Comm comm, const xtl::span<const std::int64_t>& owned_indices,
+    const xtl::span<const std::int64_t>& ghost_indices,
     const xtl::span<const int>& ghost_owners)
 {
   LOG(INFO) << "Compute ghost indices";
 
   // Get number of local cells and global offset
-  const std::int64_t num_local = global_indices.size() - ghost_owners.size();
-  std::vector<std::int64_t> ghost_global_indices(
-      global_indices.begin() + num_local, global_indices.end());
+  std::vector<std::int64_t> ghost_global_indices(ghost_indices.begin(),
+                                                 ghost_indices.end());
 
   std::int64_t offset_local = 0;
   MPI_Request request_offset_scan;
+  const std::int64_t num_local = owned_indices.size();
   MPI_Iexscan(&num_local, &offset_local, 1, MPI_INT64_T, MPI_SUM, comm,
               &request_offset_scan);
 
@@ -290,7 +291,7 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
 
       // Send data location
       int pos = ghost_index_offset[np];
-      send_data[pos] = global_indices[num_local + i];
+      send_data[pos] = ghost_indices[i];
       ++ghost_index_offset[np];
     }
   }
@@ -316,8 +317,8 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
 
   // Replace values in recv_data with new_index and send back
   std::unordered_map<std::int64_t, std::int64_t> old_to_new;
-  for (int i = 0; i < num_local; ++i)
-    old_to_new.insert({global_indices[i], offset_local + i});
+  for (std::size_t i = 0; i < owned_indices.size(); ++i)
+    old_to_new.insert({owned_indices[i], offset_local + i});
 
   std::for_each(recv_data.begin(), recv_data.end(),
                 [&old_to_new](auto& r)
