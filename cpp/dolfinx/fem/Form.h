@@ -582,10 +582,8 @@ private:
         // cells but another process could share one of this process cells)
         std::set<std::int32_t> fwd_shared_facets;
         assert(topology.index_map(tdim - 1));
-        const bool owned_cells_shared =
-          topology.index_map(tdim)->scatter_fwd_indices().array().size() > 0;
         if (topology.index_map(tdim)->num_ghosts() == 0
-            and !owned_cells_shared)
+            and topology.index_map(tdim)->scatter_fwd_indices().array().empty())
         {
           const std::vector<std::int32_t>& fwd_indices
               = topology.index_map(tdim - 1)->scatter_fwd_indices().array();
