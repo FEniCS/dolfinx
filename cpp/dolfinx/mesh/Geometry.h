@@ -114,16 +114,23 @@ private:
   std::vector<std::int64_t> _input_global_indices;
 };
 
-/// Build Geometry from input data
+/// @brief Build Geometry from input data.
+///
+/// This function called after the mesh topology is built. It
+/// distributeds the 'node' coordinate data to the required MPI process,
+/// and the created a mesh::Geometry object.
 ///
 /// @param[in] comm The MPI communicator to build the Geometry on
 /// @param[in] topology The mesh topology
 /// @param[in] element The element that defines the geometry map for
 /// each cell
 /// @param[in] cells The mesh cells, including higher-ordder geometry 'nodes'
-/// @param[in] x The node coordinates (row-major, with shape (num_nodes,
-/// geometric dimension)
-/// @param[in] dim The geometric dimensions (1, 2, or 3)
+/// @param[in] x The node coordinates (row-major, with shape
+/// `(num_nodes, dim)`. The global index of each node is `i +
+/// rank_offset`, where `i` is the local row index in `x` and
+/// `rank_offset` is the sum of `x` rows on all processed with a lower
+/// rank than the caller.
+/// @param[in] dim The geometric dimension (1, 2, or 3)
 /// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
 /// map associated with the geometry data
 mesh::Geometry

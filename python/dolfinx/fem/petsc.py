@@ -205,7 +205,7 @@ def _(b: PETSc.Vec, L: FormMetaClass, constants=None, coeffs=None) -> PETSc.Vec:
 
 
 @functools.singledispatch
-def assemble_vector_nest(L: FormMetaClass, constants=None, coeffs=None) -> PETSc.Vec:
+def assemble_vector_nest(L: typing.List[FormMetaClass], constants=None, coeffs=None) -> PETSc.Vec:
     """Assemble linear forms into a new nested PETSc (VecNest) vector.
     The returned vector is not finalised, i.e. ghost values are not
     accumulated on the owning processes.
@@ -523,16 +523,22 @@ class LinearProblem():
         self._solver.setOperators(self._A)
 
         # Give PETSc solver options a unique prefix
-        solver_prefix = "dolfinx_solve_{}".format(id(self))
-        self._solver.setOptionsPrefix(solver_prefix)
+        problem_prefix = "dolfinx_solve_{}".format(id(self))
+        self._solver.setOptionsPrefix(problem_prefix)
 
         # Set PETSc options
         opts = PETSc.Options()
-        opts.prefixPush(solver_prefix)
+        opts.prefixPush(problem_prefix)
         for k, v in petsc_options.items():
             opts[k] = v
         opts.prefixPop()
         self._solver.setFromOptions()
+
+        # Set matrix and vector PETSc options
+        self._A.setOptionsPrefix(problem_prefix)
+        self._A.setFromOptions()
+        self._b.setOptionsPrefix(problem_prefix)
+        self._b.setFromOptions()
 
     def solve(self) -> _Function:
         """Solve the problem."""
