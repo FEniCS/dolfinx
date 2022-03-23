@@ -312,11 +312,11 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   // Complete global_offset scan
   MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
 
-  // Replace values in recv_data with new_index and send back
   std::unordered_map<std::int64_t, std::int64_t> old_to_new;
   for (std::size_t i = 0; i < owned_indices.size(); ++i)
     old_to_new.insert({owned_indices[i], offset_local + i});
 
+  // Replace values in recv_data with new_index and send back
   std::transform(recv_data.begin(), recv_data.end(), recv_data.begin(),
                  [&old_to_new](auto r)
                  {
@@ -333,21 +333,28 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
                          MPI_INT64_T, neighbor_comm);
   MPI_Comm_free(&neighbor_comm);
 
-  // Add received (old id, )
+  // Build (old id,  new id) pairs
+  std::vector<std::array<std::int64_t, 2>> old_to_new1(send_data.size());
   std::transform(send_data.begin(), send_data.end(), new_recv.begin(),
-                 std::inserter(old_to_new, old_to_new.end()),
-                 [](auto idx_old, auto idx_new)
-                 { return std::pair(idx_old, idx_new); });
+                 old_to_new1.begin(),
+                 [](auto idx_old, auto idx_new) ->
+                 typename decltype(old_to_new1)::value_type {
+                   return {idx_old, idx_new};
+                 });
+  std::sort(old_to_new1.begin(), old_to_new1.end());
 
   std::vector<std::int64_t> ghost_global_indices(ghost_indices.size());
-  std::transform(ghost_indices.begin(), ghost_indices.end(),
-                 ghost_global_indices.begin(),
-                 [&old_to_new](auto q)
-                 {
-                   const auto it = old_to_new.find(q);
-                   assert(it != old_to_new.end());
-                   return it->second;
-                 });
+  std::transform(
+      ghost_indices.begin(), ghost_indices.end(), ghost_global_indices.begin(),
+      [&old_to_new1](auto q)
+      {
+        auto it
+            = std::lower_bound(old_to_new1.begin(), old_to_new1.end(),
+                               std::array<std::int64_t, 2>{q, 0},
+                               [](auto& a, auto& b) { return a[0] < b[0]; });
+        assert(it != old_to_new1.end() and (*it)[0] == q);
+        return (*it)[1];
+      });
 
   return ghost_global_indices;
 }
