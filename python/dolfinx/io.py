@@ -33,7 +33,7 @@ def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Functi
 
 
 try:
-    class VTXWriter(_cpp.io.VTXWriter):
+    class VTXWriter(_cpp.io.VTXWriterxx):
         """Interface to VTK files for ADIOS2
 
         VTX supports arbitrary order Lagrange finite elements for the
@@ -114,11 +114,11 @@ try:
 except AttributeError:
     class FidesWriter():
         def __init__(self, *args):
-            raise RuntimeError("DOLFINx has not been configured with ADIOS2 support")
+            raise ImportError("DOLFINx has not been configured with ADIOS2 support")
 
     class VTXWriter():
         def __init__(self, *args):
-            raise RuntimeError("DOLFINx has not been configured with ADIOS2 support")
+            raise ImportError("DOLFINx has not been configured with ADIOS2 support")
 
 
 class VTKFile(_cpp.io.VTKFile):
