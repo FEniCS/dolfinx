@@ -70,7 +70,7 @@ try:
         def __enter__(self):
             return self
 
-        def __exit__(self, *args):
+        def __exit__(self, exception_type, exception_value, traceback):
             self.close()
 
     class FidesWriter(_cpp.io.FidesWriter):
@@ -107,7 +107,7 @@ try:
         def __enter__(self):
             return self
 
-        def __exit__(self, *args):
+        def __exit__(self, exception_type, exception_value, traceback):
             self.close()
 
 
@@ -133,7 +133,7 @@ class VTKFile(_cpp.io.VTKFile):
     def __enter__(self):
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, exception_type, exception_value, traceback):
         self.close()
 
     def write_mesh(self, mesh: Mesh, t: float = 0.0) -> None:
@@ -149,7 +149,7 @@ class XDMFFile(_cpp.io.XDMFFile):
     def __enter__(self):
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, exception_type, exception_value, traceback):
         self.close()
 
     def write_mesh(self, mesh: Mesh) -> None:
