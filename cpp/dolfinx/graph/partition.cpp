@@ -312,18 +312,25 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   // Complete global_offset scan
   MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
 
-  std::unordered_map<std::int64_t, std::int64_t> old_to_new;
-  for (std::size_t i = 0; i < owned_indices.size(); ++i)
-    old_to_new.insert({owned_indices[i], offset_local + i});
+  std::vector<std::array<std::int64_t, 2>> old_to_new;
+  old_to_new.reserve(owned_indices.size());
+  for (auto idx : owned_indices)
+  {
+    old_to_new.push_back(
+        {idx, static_cast<std::int64_t>(offset_local + old_to_new.size())});
+  }
+  std::sort(old_to_new.begin(), old_to_new.end());
 
   // Replace values in recv_data with new_index and send back
   std::transform(recv_data.begin(), recv_data.end(), recv_data.begin(),
                  [&old_to_new](auto r)
                  {
-                   auto it = old_to_new.find(r);
-                   // Must exist on this process!
-                   assert(it != old_to_new.end());
-                   return it->second;
+                   auto it = std::lower_bound(
+                       old_to_new.begin(), old_to_new.end(),
+                       std::array<std::int64_t, 2>{r, 0},
+                       [](auto& a, auto& b) { return a[0] < b[0]; });
+                   assert(it != old_to_new.end() and (*it)[0] == r);
+                   return (*it)[1];
                  });
 
   std::vector<std::int64_t> new_recv(send_data.size());
@@ -411,7 +418,8 @@ std::vector<std::int32_t> graph::build::compute_local_to_local(
 
   // Compute inverse map for local0_to_local1
   std::vector<std::int32_t> local0_to_local1;
-  std::transform(local0_to_global.cbegin(), local0_to_global.cend(),
+  local0_to_local1.reserve(local0_to_global.size());
+  std::transform(local0_to_global.begin(), local0_to_global.end(),
                  std::back_inserter(local0_to_local1),
                  [&global_to_local1](auto l2g)
                  {

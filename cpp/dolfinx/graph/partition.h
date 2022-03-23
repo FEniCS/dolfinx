@@ -70,18 +70,29 @@ std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
 distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
            const graph::AdjacencyList<std::int32_t>& destinations);
 
-/// @todo Make sense of this docstring
+/// @brief Take a set of distributed input global indices, including
+/// ghosts, and determine the new global indices  after remapping.
 ///
-/// Compute ghost indices in a global IndexMap space, from a list of
-/// arbitrary global indices, where the ghosts are at the end of the
-/// list, and their owning processes are known.
+/// Each rank receive 'input' global indices `[i0, i1, ..., i(m-1), im,
+/// ..., i(n-1)]`, where the first `m` indices are owned by the caller
+/// and the remained are 'ghosts' indices that are owned by other ranks.
+///
+/// Each rank assigns new global indices to its owned indices. The new
+/// index is the rank offset (scan of the number of indices owned by the
+/// lower rank processes, typically computed using `MPI_Exscan` with
+/// `MPI_SUM`), i.e. `i1 -> offset + 1`, `i2 -> offset + 2`, etc. Ghost
+/// indices are number by the remote owning processes. The function
+/// returns the new ghost global indices but retrieving the new indices
+/// from the owning ranks.
+///
 /// @param[in] comm MPI communicator
-/// @param[in] owned_indices List of arbitrary global indices, with
-/// ghosts at end
-/// @param[in] ghost_indices List of arbitrary global indices, with
-/// ghosts at end
-/// @param[in] ghost_owners List of owning process for each ghost index
-/// @return Indexing of ghosts in a global space starting from 0 on process 0
+/// @param[in] owned_indices List of owned global indices. It should not
+/// contain duplicates, and these indices must now appear in
+/// `owned_indices` on other ranks.
+/// @param[in] ghost_indices List of ghost global indices.
+/// @param[in] ghost_owners The owning rank for each entry in
+/// `ghost_indices`.
+/// @return New global indices for the ghost indices.
 std::vector<std::int64_t>
 compute_ghost_indices(MPI_Comm comm,
                       const xtl::span<const std::int64_t>& owned_indices,
