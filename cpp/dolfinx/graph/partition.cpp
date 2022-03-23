@@ -231,10 +231,7 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
 {
   LOG(INFO) << "Compute ghost indices";
 
-  // Get number of local cells and global offset
-  std::vector<std::int64_t> ghost_global_indices(ghost_indices.begin(),
-                                                 ghost_indices.end());
-
+  // Get number of local cells determine global offset
   std::int64_t offset_local = 0;
   MPI_Request request_offset_scan;
   const std::int64_t num_local = owned_indices.size();
@@ -320,14 +317,14 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   for (std::size_t i = 0; i < owned_indices.size(); ++i)
     old_to_new.insert({owned_indices[i], offset_local + i});
 
-  std::for_each(recv_data.begin(), recv_data.end(),
-                [&old_to_new](auto& r)
-                {
-                  auto it = old_to_new.find(r);
-                  // Must exist on this process!
-                  assert(it != old_to_new.end());
-                  r = it->second;
-                });
+  std::transform(recv_data.begin(), recv_data.end(), recv_data.begin(),
+                 [&old_to_new](auto r)
+                 {
+                   auto it = old_to_new.find(r);
+                   // Must exist on this process!
+                   assert(it != old_to_new.end());
+                   return it->second;
+                 });
 
   std::vector<std::int64_t> new_recv(send_data.size());
   MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
@@ -336,22 +333,21 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
                          MPI_INT64_T, neighbor_comm);
   MPI_Comm_free(&neighbor_comm);
 
-  // Add to map
-  for (std::size_t i = 0; i < send_data.size(); ++i)
-  {
-    std::int64_t old_idx = send_data[i];
-    std::int64_t new_idx = new_recv[i];
-    auto [it, insert] = old_to_new.insert({old_idx, new_idx});
-    assert(insert);
-  }
+  // Add received (old id, )
+  std::transform(send_data.begin(), send_data.end(), new_recv.begin(),
+                 std::inserter(old_to_new, old_to_new.end()),
+                 [](auto idx_old, auto idx_new)
+                 { return std::pair(idx_old, idx_new); });
 
-  std::for_each(ghost_global_indices.begin(), ghost_global_indices.end(),
-                [&old_to_new](auto& q)
-                {
-                  const auto it = old_to_new.find(q);
-                  assert(it != old_to_new.end());
-                  q = it->second;
-                });
+  std::vector<std::int64_t> ghost_global_indices(ghost_indices.size());
+  std::transform(ghost_indices.begin(), ghost_indices.end(),
+                 ghost_global_indices.begin(),
+                 [&old_to_new](auto q)
+                 {
+                   const auto it = old_to_new.find(q);
+                   assert(it != old_to_new.end());
+                   return it->second;
+                 });
 
   return ghost_global_indices;
 }

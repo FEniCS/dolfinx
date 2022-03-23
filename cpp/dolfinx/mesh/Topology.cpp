@@ -517,10 +517,6 @@ std::vector<std::int64_t> exchange_ghost_vertex_numbering(
   {
     for (int rank : vertex_ranks.second)
     {
-      // auto rank_it = global_to_neighbor_rank.find(rank);
-      // assert(rank_it != global_to_neighbor_rank.end());
-      // send_sizes[rank_it->second] += 3;
-
       auto rank_it = std::lower_bound(local_to_global_rank.begin(),
                                       local_to_global_rank.end(), rank);
       assert(rank_it != local_to_global_rank.end());
