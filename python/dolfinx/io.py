@@ -13,8 +13,8 @@ import numpy as np
 
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.io import distribute_entity_data  # noqa
-from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa
+from dolfinx.cpp.io import distribute_entity_data  # noqa: F401
+from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa F401
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh
 
