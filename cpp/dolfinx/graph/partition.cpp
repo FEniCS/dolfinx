@@ -12,8 +12,8 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <map>
 #include <memory>
-#include <unordered_map>
 
 using namespace dolfinx;
 
@@ -412,9 +412,11 @@ std::vector<std::int32_t> graph::build::compute_local_to_local(
   assert(local0_to_global.size() == local1_to_global.size());
 
   // Compute inverse map for local1_to_global
-  std::unordered_map<std::int64_t, std::int32_t> global_to_local1;
-  for (std::size_t i = 0; i < local1_to_global.size(); ++i)
-    global_to_local1.insert({local1_to_global[i], i});
+  std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local1;
+  global_to_local1.reserve(local1_to_global.size());
+  for (auto idx_global : local1_to_global)
+    global_to_local1.push_back({idx_global, global_to_local1.size()});
+  std::sort(global_to_local1.begin(), global_to_local1.end());
 
   // Compute inverse map for local0_to_local1
   std::vector<std::int32_t> local0_to_local1;
@@ -423,8 +425,11 @@ std::vector<std::int32_t> graph::build::compute_local_to_local(
                  std::back_inserter(local0_to_local1),
                  [&global_to_local1](auto l2g)
                  {
-                   auto it = global_to_local1.find(l2g);
-                   assert(it != global_to_local1.end());
+                   auto it = std::lower_bound(
+                       global_to_local1.begin(), global_to_local1.end(),
+                       typename decltype(global_to_local1)::value_type(l2g, 0),
+                       [](auto& a, auto& b) { return a.first < b.first; });
+                   assert(it != global_to_local1.end() and it->first == l2g);
                    return it->second;
                  });
 

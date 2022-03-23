@@ -113,8 +113,8 @@ std::vector<std::int64_t>
 compute_local_to_global_links(const graph::AdjacencyList<std::int64_t>& global,
                               const graph::AdjacencyList<std::int32_t>& local);
 
-/// Compute a local0-to-local1 map from two local-to-global maps with
-/// common global indices
+/// @brief Compute a local0-to-local1 map from two local-to-global maps
+/// with common global indices.
 ///
 /// @param[in] local0_to_global Map from local0 indices to global
 /// indices
