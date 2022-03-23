@@ -24,6 +24,18 @@ using namespace dolfinx::mesh;
 
 namespace
 {
+
+/// @brief Find an entry in an a sorted container of `std::pair` objects
+/// by the first element of the pair.
+///
+/// @note This function uses `std::lower_bound`, hence the input
+/// container should be sorted. To check that an enty is found, the
+/// return iterators should be checked against the `value.`
+///
+/// @param[in] x Sorted container of `std::pair` objects
+/// @param[in] value The value to find in the container (first entry of
+/// the pair)
+/// @return Iterator to the position in `x` where `value` is found
 template <typename T>
 auto find_idx(T& x, typename T::value_type::first_type value)
 {
