@@ -10,10 +10,10 @@ project(DOLFINX VERSION "0.3.1.0")
 set(DOXYGEN_DOLFINX_VERSION ${DOLFINX_VERSION} CACHE STRING "Version for Doxygen" FORCE)
 
 #------------------------------------------------------------------------------
-# Use C++17
-set(CMAKE_CXX_STANDARD 17)
+# Use C++20
+set(CMAKE_CXX_STANDARD 20)
 
-# Require C++17
+# Require C++20
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Do not enable compler-specific extensions
