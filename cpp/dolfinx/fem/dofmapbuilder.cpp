@@ -389,9 +389,10 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     // Apply graph reordering to owned dofs
     const std::vector<int> node_remap
         = reorder_owned(dofmap, owned_size, original_to_contiguous, reorder_fn);
-    std::for_each(original_to_contiguous.begin(), original_to_contiguous.end(),
-                  [&node_remap, owned_size](auto index)
-                  { return index < owned_size ? node_remap[index] : index; });
+    std::transform(original_to_contiguous.begin(), original_to_contiguous.end(),
+                   original_to_contiguous.begin(),
+                   [&node_remap, owned_size](auto index)
+                   { return index < owned_size ? node_remap[index] : index; });
   }
 
   return {std::move(original_to_contiguous), owned_size};
