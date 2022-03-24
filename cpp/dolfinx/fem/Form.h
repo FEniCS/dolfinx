@@ -577,10 +577,14 @@ private:
         assert(c_to_f);
 
         // Only need to consider shared facets when there are no ghost
-        // cells
+        // cells and none of cells owned by this process are shared. The
+        // latter check is required because a submesh could have no ghost
+        // cells on this process but another process could ghost some of
+        // those cells)
         std::set<std::int32_t> fwd_shared_facets;
         assert(topology.index_map(tdim - 1));
-        if (topology.index_map(tdim)->num_ghosts() == 0)
+        if (topology.index_map(tdim)->num_ghosts() == 0
+            and topology.index_map(tdim)->scatter_fwd_indices().array().empty())
         {
           const std::vector<std::int32_t>& fwd_indices
               = topology.index_map(tdim - 1)->scatter_fwd_indices().array();
