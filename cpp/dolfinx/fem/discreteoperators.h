@@ -189,7 +189,7 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   const fem::CoordinateElement& cmap = mesh->geometry().cmap();
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const std::size_t num_dofs_g = gdim * cmap.dim();
   xtl::span<const double> x_g = mesh->geometry().x();
 
   // Evaluate coordinate map basis at reference interpolation points
@@ -238,7 +238,7 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
   auto pull_back_fn1 = element1->map_fn<U1_t, u1_t, K_t, J_t>();
 
-  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
+  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
   xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});
   std::vector<T> A(element1->space_dimension() * element0->space_dimension());
   std::vector<T> local1(element1->space_dimension());
@@ -247,9 +247,10 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   auto cell_map = mesh->topology().index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local();
+  auto _coordinate_dofs
+      = xt::adapt(coordinate_dofs, std::vector<std::size_t>{num_dofs_g, 3});
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
-
     // Get cell geometry (coordinate dofs)
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
@@ -258,21 +259,12 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
                               std::next(coordinate_dofs.begin(), 3 * i));
     }
 
-    // // Get cell geometry (coordinate dofs)
-    // auto x_dofs = x_dofmap.links(c);
-    // for (std::size_t i = 0; i < num_dofs_g; ++i)
-    // {
-    //   const int pos = 3 * x_dofs[i];
-    //   for (std::size_t j = 0; j < gdim; ++j)
-    //     coordinate_dofs(i, j) = x_g[pos + j];
-    // }
-
     // Compute Jacobians and reference points for current cell
     J.fill(0);
     for (std::size_t p = 0; p < X.shape(0); ++p)
     {
       auto _J = xt::view(J, p, xt::all(), xt::all());
-      cmap.compute_jacobian(dphi, coordinate_dofs, _J);
+      cmap.compute_jacobian(dphi, _coordinate_dofs, _J);
       cmap.compute_jacobian_inverse(_J, xt::view(K, p, xt::all(), xt::all()));
       detJ[p] = cmap.compute_jacobian_determinant(_J);
     }

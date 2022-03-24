@@ -52,6 +52,16 @@ public:
   /// The degree of the element
   int degree() const;
 
+  /// @brief The dimension of the geometry element space
+  ///
+  /// The number of basis function is returned. If the coordinate
+  /// element uses Lagrange basis functions, the return dimension needs
+  /// to be multiplied by the geometric dimension to get the number of
+  /// geometry degrees-of-freedom for a cell.
+  ///
+  /// @return The coordinate element dimension.
+  int dim() const;
+
   /// The variant of the element
   basix::element::lagrange_variant variant() const;
 

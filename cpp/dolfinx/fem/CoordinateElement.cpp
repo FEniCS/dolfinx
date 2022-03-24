@@ -197,6 +197,12 @@ int CoordinateElement::degree() const
   return _element->degree();
 }
 //-----------------------------------------------------------------------------
+int CoordinateElement::dim() const
+{
+  assert(_element);
+  return _element->dim();
+}
+//-----------------------------------------------------------------------------
 basix::element::lagrange_variant CoordinateElement::variant() const
 {
   assert(_element);
