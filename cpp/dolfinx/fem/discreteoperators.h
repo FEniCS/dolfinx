@@ -189,7 +189,7 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   const fem::CoordinateElement& cmap = mesh->geometry().cmap();
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
-  const std::size_t num_dofs_g = gdim * cmap.dim();
+  const std::size_t num_dofs_g = cmap.dim();
   xtl::span<const double> x_g = mesh->geometry().x();
 
   // Evaluate coordinate map basis at reference interpolation points
