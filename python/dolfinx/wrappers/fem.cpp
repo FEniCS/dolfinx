@@ -663,7 +663,7 @@ void petsc_module(py::module& m)
         });
 
   m.def(
-      "create_discrete_gradient",
+      "discrete_gradient",
       [](const dolfinx::fem::FunctionSpace& V0,
          const dolfinx::fem::FunctionSpace& V1)
       {
@@ -690,13 +690,13 @@ void petsc_module(py::module& m)
 
         // Build operator
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
-        dolfinx::fem::assemble_discrete_gradient<PetscScalar>(
+        dolfinx::fem::discrete_gradient<PetscScalar>(
             V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
         return A;
       },
       py::return_value_policy::take_ownership);
   m.def(
-      "create_interpolation_matrix",
+      "interpolation_matrix",
       [](const dolfinx::fem::FunctionSpace& V0,
          const dolfinx::fem::FunctionSpace& V1)
       {
@@ -723,7 +723,7 @@ void petsc_module(py::module& m)
 
         // Build operator
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
-        dolfinx::fem::assemble_interpolation_matrix<PetscScalar>(
+        dolfinx::fem::interpolation_matrix<PetscScalar>(
             V0, V1, dolfinx::la::petsc::Matrix::set_block_fn(A, INSERT_VALUES));
         return A;
       },

@@ -12,6 +12,7 @@
 #include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/math.h>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
 #include <vector>
@@ -37,7 +38,8 @@ namespace dolfinx::fem
 /// \f$H({\rm div})\f$ problems.
 ///
 /// @note The sparsity pattern for a discrete operator can be
-/// initialised using sparsitybuild::cells.
+/// initialised using sparsitybuild::cells. The space `V1` should be
+/// used for the rows of the sparsity pattern, `V0` for the columns.
 ///
 /// @warning This function relies on the user supplying appropriate
 /// input and output spaces. See parameter descriptions.
@@ -46,8 +48,8 @@ namespace dolfinx::fem
 /// @param[in] V1 A Nédélec (first kind) space to interpolate into
 /// @param[in] mat_set A functor that sets values in a matrix
 template <typename T, typename U>
-void assemble_discrete_gradient(const fem::FunctionSpace& V0,
-                                const fem::FunctionSpace& V1, U&& mat_set)
+void discrete_gradient(const fem::FunctionSpace& V0,
+                       const fem::FunctionSpace& V1, U&& mat_set)
 {
   // Get mesh
   std::shared_ptr<const mesh::Mesh> mesh = V1.mesh();
@@ -126,19 +128,22 @@ void assemble_discrete_gradient(const fem::FunctionSpace& V0,
 
 /// @brief Assemble an interpolation operator matrix
 ///
-/// This function creates a discrete operator \f$A\f$ that interpolates
-/// a function \f$V_0\f$ into a compatible space (same value shape)
-///  \f$V_1\f$, i.e. \f$V_0 \rightarrow V_1\f$. If \f$u_0\f$ is the
-/// degree-of-freedom vector associated with \f$V_0\f$, then
-/// \f$u_1=Au_0\f$ where \f$u_1\f$ is the degrees-of-freedom vector for
-/// interpolating function in the \f$V_1\f$ space.
+/// The interpolation operator \f$A\f$ interpolates a function in the
+/// space \f$V_0\f$ into a space \f$V_1\f$. If \f$u_0\f$ is the
+/// degree-of-freedom vector associated with \f$V_0\f$, then the
+/// degree-of-freedom vector \f$u_1\f$ for the interpolated function in
+/// \f$V_1\f$ is given by \f$u_1=Au_0\f$.
+///
+/// @note The sparsity pattern for a discrete operator can be
+/// initialised using sparsitybuild::cells. The space `V1` should be
+/// used for the rows of the sparsity pattern, `V0` for the columns.
 ///
 /// @param[in] V0 The space to interpolate from
 /// @param[in] V1 The space to interpolate to
 /// @param[in] mat_set A functor that sets values in a matrix
 template <typename T, typename U>
-void assemble_interpolation_matrix(const fem::FunctionSpace& V0,
-                                   const fem::FunctionSpace& V1, U&& mat_set)
+void interpolation_matrix(const fem::FunctionSpace& V0,
+                          const fem::FunctionSpace& V1, U&& mat_set)
 {
   // Get mesh
   auto mesh = V0.mesh();
@@ -166,7 +171,6 @@ void assemble_interpolation_matrix(const fem::FunctionSpace& V0,
   auto dofmap0 = V0.dofmap();
   auto dofmap1 = V1.dofmap();
 
-  const xt::xtensor<double, 2> X = element1->interpolation_points();
   // Get block sizes and dof transformation operators
   const int bs0 = element0->block_size();
   const int bs1 = element1->block_size();
@@ -189,10 +193,11 @@ void assemble_interpolation_matrix(const fem::FunctionSpace& V0,
   xtl::span<const double> x_g = mesh->geometry().x();
 
   // Evaluate coordinate map basis at reference interpolation points
+  const xt::xtensor<double, 2> X = element1->interpolation_points();
   xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, X.shape(0)));
-  xt::xtensor<double, 2> dphi;
   cmap.tabulate(1, X, phi);
-  dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
+  xt::xtensor<double, 2> dphi
+      = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
 
   // Evaluate V0 basis functions at reference interpolation points for V1
   xt::xtensor<double, 4> basis_derivatives_reference0(
@@ -200,9 +205,7 @@ void assemble_interpolation_matrix(const fem::FunctionSpace& V0,
   element0->tabulate(basis_derivatives_reference0, X, 0);
 
   // Create working arrays
-  xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});
   xt::xtensor<double, 3> basis_reference0({X.shape(0), dim0, value_size_ref0});
-  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
   xt::xtensor<double, 3> J({X.shape(0), gdim, tdim});
   xt::xtensor<double, 3> K({X.shape(0), tdim, gdim});
   std::vector<double> detJ(X.shape(0));
@@ -235,6 +238,8 @@ void assemble_interpolation_matrix(const fem::FunctionSpace& V0,
                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
   auto pull_back_fn1 = element1->map_fn<U1_t, u1_t, K_t, J_t>();
 
+  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
+  xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});
   std::vector<T> A(element1->space_dimension() * element0->space_dimension());
   std::vector<T> local1(element1->space_dimension());
 
@@ -244,14 +249,23 @@ void assemble_interpolation_matrix(const fem::FunctionSpace& V0,
   std::int32_t num_cells = cell_map->size_local();
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
+
     // Get cell geometry (coordinate dofs)
     auto x_dofs = x_dofmap.links(c);
-    for (std::size_t i = 0; i < num_dofs_g; ++i)
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      const int pos = 3 * x_dofs[i];
-      for (std::size_t j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g[pos + j];
+      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
+                              std::next(coordinate_dofs.begin(), 3 * i));
     }
+
+    // // Get cell geometry (coordinate dofs)
+    // auto x_dofs = x_dofmap.links(c);
+    // for (std::size_t i = 0; i < num_dofs_g; ++i)
+    // {
+    //   const int pos = 3 * x_dofs[i];
+    //   for (std::size_t j = 0; j < gdim; ++j)
+    //     coordinate_dofs(i, j) = x_g[pos + j];
+    // }
 
     // Compute Jacobians and reference points for current cell
     J.fill(0);
@@ -300,7 +314,8 @@ void assemble_interpolation_matrix(const fem::FunctionSpace& V0,
       auto _U = xt::view(mapped_values, p, xt::all(), xt::all());
       pull_back_fn1(_U, _u, _K, 1.0 / detJ[p], _J);
     }
-    // Apply interpolation matrix to basis values of V0 at the interpolation points of V1
+    // Apply interpolation matrix to basis values of V0 at the interpolation
+    // points of V1
     for (std::size_t i = 0; i < mapped_values.shape(1); ++i)
     {
       auto _mapped_values = xt::view(mapped_values, xt::all(), i, xt::all());

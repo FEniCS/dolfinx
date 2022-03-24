@@ -9,9 +9,10 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx.cpp.fem.petsc import create_discrete_gradient, create_interpolation_matrix
+from dolfinx.cpp.fem.petsc import discrete_gradient, interpolation_matrix
 from dolfinx.fem import Expression, Function, FunctionSpace
-from dolfinx.mesh import GhostMode, create_unit_cube, create_unit_square, CellType
+from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
+                          create_unit_square)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -29,7 +30,7 @@ def test_gradient(mesh):
 
     V = FunctionSpace(mesh, ("Lagrange", 1))
     W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
-    G = create_discrete_gradient(V._cpp_object, W._cpp_object)
+    G = discrete_gradient(V._cpp_object, W._cpp_object)
     assert G.getRefCount() == 1
 
     num_edges = mesh.topology.index_map(1).size_global
@@ -70,7 +71,7 @@ def test_gradient_interpolation(cell_type, p, q):
 
     V = FunctionSpace(mesh, (family0, p))
     W = FunctionSpace(mesh, (family1, q))
-    G = create_discrete_gradient(V._cpp_object, W._cpp_object)
+    G = discrete_gradient(V._cpp_object, W._cpp_object)
     G.assemble()
 
     u = Function(V)
@@ -126,7 +127,7 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
 
     V = FunctionSpace(mesh, el0)
     W = FunctionSpace(mesh, el1)
-    G = create_interpolation_matrix(V._cpp_object, W._cpp_object)
+    G = interpolation_matrix(V._cpp_object, W._cpp_object)
     G.assemble()
 
     u = Function(V)
