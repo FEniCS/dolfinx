@@ -171,9 +171,6 @@ public:
   const std::vector<std::shared_ptr<const FiniteElement>>&
   sub_elements() const noexcept;
 
-  /// Return the topological dimension
-  int tdim() const noexcept;
-
   /// Extract sub finite element for component
   std::shared_ptr<const FiniteElement>
   extract_sub_element(const std::vector<int>& component) const;
@@ -188,6 +185,11 @@ public:
   /// elements.
   /// @return True if interpolation is an identity operation
   bool interpolation_ident() const noexcept;
+
+  /// Check if the push forward/pull back map from the values on reference to
+  /// the values on a physical cell for this element is the identity map.
+  /// @return True if the map is the identity
+  bool map_ident() const noexcept;
 
   /// Points on the reference cell at which an expression need to be
   /// evaluated in order to interpolate the expression in the finite
@@ -677,7 +679,7 @@ private:
 
   mesh::CellType _cell_shape;
 
-  int _tdim, _space_dim;
+  int _space_dim;
 
   // List of sub-elements (if any)
   std::vector<std::shared_ptr<const FiniteElement>> _sub_elements;

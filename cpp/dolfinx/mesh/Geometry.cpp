@@ -79,10 +79,10 @@ mesh::Geometry mesh::create_geometry(
     dolfinx::radix_sort(xtl::span(indices));
     indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
 
-    //  Fetch node coordinates by global index from other ranks. Order of
-    //  coords matches order of the indices in 'indices'
+    //  Distribute  node coordinates by global index from other ranks.
+    //  Order of coords matches order of the indices in 'indices'.
     std::vector<double> coords
-        = graph::build::distribute_data<double>(comm, indices, x, dim);
+        = MPI::distribute_data<double>(comm, indices, x, dim);
 
     // Compute local-to-global map from local indices in dofmap to the
     // corresponding global indices in cell_nodes

@@ -16,7 +16,6 @@
 #include <dolfinx/mesh/graphbuild.h>
 
 using namespace dolfinx;
-using namespace dolfinx::mesh;
 
 namespace
 {
@@ -64,15 +63,16 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   xt::xtensor<double, 2> x({0, 2});
   xt::xtensor<std::int64_t, 2> cells(
       {0, static_cast<std::size_t>(
-              dolfinx::mesh::num_cell_vertices(mesh::CellType::triangle))});
+              mesh::num_cell_vertices(mesh::CellType::triangle))});
   graph::AdjacencyList<std::int32_t> dest(0);
   if (subset_comm != MPI_COMM_NULL)
   {
-    int nparts = mpi_size;
     io::XDMFFile infile(subset_comm, "mesh.xdmf", "r");
     cells = infile.read_topology_data("mesh");
     x = infile.read_geometry_data("mesh");
     auto [data, offsets] = graph::create_adjacency_data(cells);
+
+    int nparts = mpi_size;
     const int tdim = mesh::cell_dim(mesh::CellType::triangle);
     dest = partitioner(
         subset_comm, nparts, tdim,
@@ -89,15 +89,16 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
       = graph::build::distribute(mpi_comm, cells_topology, dest);
 
-  dolfinx::mesh::Topology topology = mesh::create_topology(
+  mesh::Topology topology = mesh::create_topology(
       mpi_comm, cell_nodes, original_cell_index, ghost_owners,
       cmap.cell_shape(), mesh::GhostMode::shared_facet);
   int tdim = topology.dim();
-  dolfinx::mesh::Geometry geometry = mesh::create_geometry(
-      mpi_comm, topology, cmap, cell_nodes, x, x.shape(1));
 
-  auto mesh = std::make_shared<dolfinx::mesh::Mesh>(
-      mpi_comm, std::move(topology), std::move(geometry));
+  mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, cmap,
+                                                  cell_nodes, x, x.shape(1));
+
+  auto mesh = std::make_shared<mesh::Mesh>(mpi_comm, std::move(topology),
+                                           std::move(geometry));
 
   CHECK(mesh->topology().index_map(tdim)->size_global() == 2 * N * N);
   CHECK(mesh->topology().index_map(tdim)->size_local() > 0);
@@ -122,7 +123,7 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 
   SECTION("SCOTCH")
   {
-    CHECK_NOTHROW(test_distributed_mesh(create_cell_partitioner()));
+    CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner()));
   }
 
 #ifdef HAS_KAHIP
@@ -132,8 +133,8 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 
     CellPartitionFunction kahip
         = [&](MPI_Comm comm, int nparts, int tdim,
-              const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-              dolfinx::mesh::GhostMode ghost_mode)
+              const graph::AdjacencyList<std::int64_t>& cells,
+              mesh::GhostMode ghost_mode)
     {
       LOG(INFO) << "Compute partition of cells across ranks (KaHIP).";
       // Compute distributed dual graph (for the cells on this process)
