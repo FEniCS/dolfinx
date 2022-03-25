@@ -442,12 +442,10 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
   // is a point evaluation
   if (element->interpolation_ident())
   {
-    assert(element->map_ident());
+    if (!element->map_ident())
+      throw std::runtime_error("Element does not have identity map.");
 
-    const std::function<void(const xtl::span<T>&,
-                             const xtl::span<const std::uint32_t>&,
-                             std::int32_t, int)>
-        apply_inv_transpose_dof_transformation
+    auto apply_inv_transpose_dof_transformation
         = element->get_dof_transformation_function<T>(true, true, true);
 
     // Loop over cells
@@ -457,8 +455,8 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
       xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
       for (int k = 0; k < element_bs; ++k)
       {
-        // num_scalar_dofs is the number of interpolation points per cell in
-        // this case (interpolation matrix is identity)
+        // num_scalar_dofs is the number of interpolation points per
+        // cell in this case (interpolation matrix is identity)
         std::copy_n(std::next(_f.begin(), k * f_shape1 + c * num_scalar_dofs),
                     num_scalar_dofs, _coeffs.begin());
         apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
@@ -481,15 +479,11 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
     const std::size_t num_interp_points = Pi.shape(1);
     assert(Pi.shape(0) == num_scalar_dofs);
 
-    const std::function<void(const xtl::span<T>&,
-                             const xtl::span<const std::uint32_t>&,
-                             std::int32_t, int)>
-        apply_inv_transpose_dof_transformation
+    auto apply_inv_transpose_dof_transformation
         = element->get_dof_transformation_function<T>(true, true, true);
 
-    xt::xtensor<T, 2> reference_data({num_interp_points, 1});
-
     // Loop over cells
+    xt::xtensor<T, 2> reference_data({num_interp_points, 1});
     for (std::size_t c = 0; c < cells.size(); ++c)
     {
       const std::int32_t cell = cells[c];
