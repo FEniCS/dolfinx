@@ -12,38 +12,15 @@ import pytest
 import ufl
 from dolfinx.common import has_adios2
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.io import FidesWriter, VTXWriter
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square)
 
 from mpi4py import MPI
 
-
-@pytest.mark.skipif(MPI.COMM_WORLD.size > 1, reason="This test should only be run in serial.")
-@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-def test_second_order_fides(tempdir):
-    """Check that fides throws error on second order mesh"""
-    filename = os.path.join(tempdir, "mesh_fides.bp")
-    points = np.array([[0, 0, 0], [1, 0, 0], [0.5, 0, 0]], dtype=np.float64)
-    cells = np.array([[0, 1, 2]], dtype=np.int32)
-    cell = ufl.Cell("interval", geometric_dimension=points.shape[1])
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 2))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
-    with pytest.raises(RuntimeError):
-        FidesWriter(mesh.comm, filename, mesh)
-
-
-@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-def test_functions_from_different_meshes_fides(tempdir):
-    """Check that the underlying ADIOS2Writer catches sending in
-    functions on different meshes"""
-    filename = os.path.join(tempdir, "mesh_fides.bp")
-    mesh0 = create_unit_square(MPI.COMM_WORLD, 5, 5)
-    mesh1 = create_unit_square(MPI.COMM_WORLD, 10, 2)
-    u0 = Function(FunctionSpace(mesh0, ("Lagrange", 1)))
-    u1 = Function(FunctionSpace(mesh1, ("Lagrange", 1)))
-    with pytest.raises(RuntimeError):
-        FidesWriter(mesh0.comm, filename, [u0, u1])
+try:
+    from dolfinx.io import FidesWriter, VTXWriter
+except ImportError:
+    pytest.skip("Test require ADIOS2", allow_module_level=True)
 
 
 def generate_mesh(dim: int, simplex: bool, N: int = 3):
@@ -73,31 +50,6 @@ def test_fides_mesh(tempdir, dim, simplex):
         f.write(0.0)
         mesh.geometry.x[:, 1] += 0.1
         f.write(0.1)
-
-
-@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-@pytest.mark.parametrize("dim", [2, 3])
-@pytest.mark.parametrize("simplex", [True, False])
-def test_mixed_fides_functions(tempdir, dim, simplex):
-    """Test saving P2 and P1 functions with Fides"""
-    mesh = generate_mesh(dim, simplex)
-    v = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
-    q = Function(FunctionSpace(mesh, ("Lagrange", 1)))
-    filename = os.path.join(tempdir, "v.bp")
-    with pytest.raises(RuntimeError):
-        FidesWriter(mesh.comm, filename, [v, q])
-
-
-@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-@pytest.mark.parametrize("dim", [2, 3])
-@pytest.mark.parametrize("simplex", [True, False])
-def test_mixed_fides_dg(tempdir, dim, simplex):
-    """Test saving a DG function with Fides"""
-    mesh = generate_mesh(dim, simplex)
-    q = Function(FunctionSpace(mesh, ("DG", 1)))
-    filename = os.path.join(tempdir, "v.bp")
-    with pytest.raises(RuntimeError):
-        FidesWriter(mesh.comm, filename, q)
 
 
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
