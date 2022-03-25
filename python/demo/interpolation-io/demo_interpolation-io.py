@@ -60,9 +60,9 @@ try:
     # Save the interpolated function u0 in VTX format. It should be seen
     # when visualising that the x0-component is discontinuous across
     # x0=0.5 and the x0-component is continuous across x0=0.5
-    from dolfinx.cpp.io import VTXWriter
-    with VTXWriter(msh.comm, "output_nedelec.bp", [u0._cpp_object]) as file:
-        file.write(0.0)
+    from dolfinx.io import VTXWriter
+    with VTXWriter(msh.comm, "output_nedelec.bp", u0) as f:
+        f.write(0.0)
 except ImportError:
     print("ADIOS2 required for VTK output")
 

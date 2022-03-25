@@ -98,11 +98,6 @@ void io(py::module& m)
                }),
            py::arg("comm"), py::arg("filename"), py::arg("file_mode"),
            py::arg("encoding") = dolfinx::io::XDMFFile::Encoding::HDF5)
-      .def("__enter__",
-           [](std::shared_ptr<dolfinx::io::XDMFFile>& self) { return self; })
-      .def("__exit__",
-           [](dolfinx::io::XDMFFile& self, py::object exc_type,
-              py::object exc_value, py::object traceback) { self.close(); })
       .def("close", &dolfinx::io::XDMFFile::close)
       .def("write_mesh", &dolfinx::io::XDMFFile::write_mesh, py::arg("mesh"),
            py::arg("xpath") = "/Xdmf/Domain")
@@ -160,11 +155,6 @@ void io(py::module& m)
                                                                filename, mode);
                }),
            py::arg("comm"), py::arg("filename"), py::arg("mode"))
-      .def("__enter__",
-           [](std::shared_ptr<dolfinx::io::VTKFile>& self) { return self; })
-      .def("__exit__",
-           [](dolfinx::io::VTKFile& self, py::object exc_type,
-              py::object exc_value, py::object traceback) { self.close(); })
       .def("close", &dolfinx::io::VTKFile::close)
       .def("write", &dolfinx::io::VTKFile::write<double>, py::arg("u"),
            py::arg("t") = 0.0)
@@ -199,11 +189,6 @@ void io(py::module& m)
             return std::make_unique<dolfinx::io::FidesWriter>(comm.get(),
                                                               filename, u);
           }))
-      .def("__enter__",
-           [](std::shared_ptr<dolfinx::io::FidesWriter>& self) { return self; })
-      .def("__exit__",
-           [](dolfinx::io::FidesWriter& self, py::object exc_type,
-              py::object exc_value, py::object traceback) { self.close(); })
       .def("close", [](dolfinx::io::FidesWriter& self) { self.close(); })
       .def("write",
            [](dolfinx::io::FidesWriter& self, double t) { self.write(t); });
@@ -228,11 +213,6 @@ void io(py::module& m)
             return std::make_unique<dolfinx::io::VTXWriter>(comm.get(),
                                                             filename, u);
           }))
-      .def("__enter__",
-           [](std::shared_ptr<dolfinx::io::VTXWriter>& self) { return self; })
-      .def("__exit__",
-           [](dolfinx::io::VTXWriter& self, py::object exc_type,
-              py::object exc_value, py::object traceback) { self.close(); })
       .def("close", [](dolfinx::io::VTXWriter& self) { self.close(); })
       .def("write",
            [](dolfinx::io::VTXWriter& self, double t) { self.write(t); });
