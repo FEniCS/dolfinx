@@ -218,8 +218,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   const fem::CoordinateElement& cmap = mesh->geometry().cmap();
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
-  // FIXME: Add proper interface for num coordinate dofs
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const std::size_t num_dofs_g = cmap.dim();
   xtl::span<const double> x_g = mesh->geometry().x();
 
   // Evaluate coordinate map basis at reference interpolation points
@@ -442,10 +441,10 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
   // is a point evaluation
   if (element->interpolation_ident())
   {
-    const std::function<void(const xtl::span<T>&,
-                             const xtl::span<const std::uint32_t>&,
-                             std::int32_t, int)>
-        apply_inv_transpose_dof_transformation
+    if (!element->map_ident())
+      throw std::runtime_error("Element does not have identity map.");
+
+    auto apply_inv_transpose_dof_transformation
         = element->get_dof_transformation_function<T>(true, true, true);
 
     // Loop over cells
@@ -455,10 +454,46 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
       xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
       for (int k = 0; k < element_bs; ++k)
       {
-        // FIXME: Is num_scalar_dofs that number of interpolation points
-        // per cell?
+        // num_scalar_dofs is the number of interpolation points per
+        // cell in this case (interpolation matrix is identity)
         std::copy_n(std::next(_f.begin(), k * f_shape1 + c * num_scalar_dofs),
                     num_scalar_dofs, _coeffs.begin());
+        apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
+        for (int i = 0; i < num_scalar_dofs; ++i)
+        {
+          const int dof = i * element_bs + k;
+          std::div_t pos = std::div(dof, dofmap_bs);
+          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+        }
+      }
+    }
+  }
+  else if (element->map_ident())
+  {
+    if (f.dimension() != 1)
+      throw std::runtime_error("Interpolation data has the wrong shape.");
+
+    // Get interpolation operator
+    const xt::xtensor<double, 2>& Pi = element->interpolation_operator();
+    const std::size_t num_interp_points = Pi.shape(1);
+    assert(Pi.shape(0) == num_scalar_dofs);
+
+    auto apply_inv_transpose_dof_transformation
+        = element->get_dof_transformation_function<T>(true, true, true);
+
+    // Loop over cells
+    xt::xtensor<T, 2> reference_data({num_interp_points, 1});
+    for (std::size_t c = 0; c < cells.size(); ++c)
+    {
+      const std::int32_t cell = cells[c];
+      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
+      for (int k = 0; k < element_bs; ++k)
+      {
+        std::copy_n(std::next(_f.begin(), k * f_shape1 + c * num_interp_points),
+                    num_interp_points, reference_data.begin());
+
+        impl::interpolation_apply(Pi, reference_data, _coeffs, element_bs);
+
         apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
@@ -489,7 +524,7 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
     // FIXME: Add proper interface for num coordinate dofs
-    const int num_dofs_g = x_dofmap.num_links(0);
+    const int num_dofs_g = cmap.dim();
     xtl::span<const double> x_g = mesh->geometry().x();
 
     // Create data structures for Jacobian info
