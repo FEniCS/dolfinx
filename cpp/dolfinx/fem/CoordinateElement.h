@@ -23,9 +23,10 @@ class FiniteElement;
 namespace dolfinx::fem
 {
 
-// FIXME: A dof layout on a reference cell needs to be defined.
-/// This class manages coordinate mappings for isoparametric cells.
-
+/// @todo A dof layout on a reference cell needs to be defined.
+///
+/// A CoordinateElement manages coordinate mappings for isoparametric
+/// cells.
 class CoordinateElement
 {
 public:
@@ -50,12 +51,13 @@ public:
   /// @return The cell shape
   mesh::CellType cell_shape() const;
 
-  /// The degree of the element
+  /// The polynomial degree of the element
   int degree() const;
 
-  /// @brief The dimension of the geometry element space
+  /// @brief The dimension of the geometry element space.
   ///
-  /// The number of basis function is returned.
+  /// The number of basis function is returned. E.g., for a linear
+  /// triangle cell the dimension will be 3.
   ///
   /// @return The coordinate element dimension.
   int dim() const;
