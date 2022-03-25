@@ -1096,7 +1096,8 @@ void fem(py::module& m)
            {
              const std::size_t num_points = x.shape(0);
              const std::size_t gdim = x.shape(1);
-             const std::size_t tdim = self.topological_dimension();
+             const std::size_t tdim = dolfinx::mesh::cell_dim(self.cell_shape());;
+
              xt::xtensor<double, 2> X = xt::empty<double>({num_points, tdim});
 
              std::array<std::size_t, 2> s_x;
