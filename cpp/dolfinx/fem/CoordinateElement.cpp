@@ -17,11 +17,11 @@ using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(
-    std::shared_ptr<basix::FiniteElement> element)
+    std::shared_ptr<const basix::FiniteElement> element)
     : _element(element)
 {
   int degree = _element->degree();
-  const mesh::CellType cell = cell_shape();
+  mesh::CellType cell = this->cell_shape();
   _is_affine = mesh::is_simplex(cell) and degree == 1;
 }
 //-----------------------------------------------------------------------------
@@ -38,11 +38,6 @@ CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree,
 mesh::CellType CoordinateElement::cell_shape() const
 {
   return mesh::cell_type_from_basix_type(_element->cell_type());
-}
-//-----------------------------------------------------------------------------
-int CoordinateElement::topological_dimension() const
-{
-  return basix::cell::topological_dimension(_element->cell_type());
 }
 //-----------------------------------------------------------------------------
 std::array<std::size_t, 4>
@@ -117,7 +112,7 @@ void CoordinateElement::pull_back_nonaffine(
   if (num_points == 0)
     return;
 
-  const std::size_t tdim = this->topological_dimension();
+  const std::size_t tdim = mesh::cell_dim(this->cell_shape());
   const std::size_t gdim = x.shape(1);
   const std::size_t num_xnodes = cell_geometry.shape(0);
   assert(cell_geometry.shape(1) == gdim);
@@ -195,6 +190,12 @@ int CoordinateElement::degree() const
 {
   assert(_element);
   return _element->degree();
+}
+//-----------------------------------------------------------------------------
+int CoordinateElement::dim() const
+{
+  assert(_element);
+  return _element->dim();
 }
 //-----------------------------------------------------------------------------
 basix::element::lagrange_variant CoordinateElement::variant() const
