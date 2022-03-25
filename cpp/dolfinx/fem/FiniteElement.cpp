@@ -81,9 +81,7 @@ _extract_sub_element(const FiniteElement& finite_element,
 
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(const ufcx_finite_element& e)
-    : _signature(e.signature), _family(e.family),
-      // _tdim(e.topological_dimension),
-      _space_dim(e.space_dimension),
+    : _signature(e.signature), _family(e.family), _space_dim(e.space_dimension),
       _value_shape(e.value_shape, e.value_shape + e.value_rank),
       _bs(e.block_size)
 {
@@ -186,8 +184,7 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
 }
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
-    : // _tdim(basix::cell::topological_dimension(element.cell_type())),
-      _space_dim(bs * element.dim()), _value_shape(element.value_shape()),
+    : _space_dim(bs * element.dim()), _value_shape(element.value_shape()),
       _bs(bs)
 {
   if (_value_shape.empty() and bs > 1)
