@@ -31,7 +31,8 @@ class CoordinateElement
 public:
   /// Create a coordinate element from a Basix element
   /// @param[in] element Element from Basix
-  explicit CoordinateElement(std::shared_ptr<basix::FiniteElement> element);
+  explicit CoordinateElement(
+      std::shared_ptr<const basix::FiniteElement> element);
 
   /// Create a Lagrange coordinate element
   /// @param[in] celltype The cell shape
@@ -54,9 +55,6 @@ public:
 
   /// The variant of the element
   basix::element::lagrange_variant variant() const;
-
-  /// Return the topological dimension of the cell shape
-  int topological_dimension() const;
 
   /// Shape of array to fill when calling `FiniteElement::tabulate`
   /// @param[in] nd The order of derivatives, up to and including, to
@@ -209,6 +207,6 @@ private:
   bool _is_affine;
 
   // Basix Element
-  std::shared_ptr<basix::FiniteElement> _element;
+  std::shared_ptr<const basix::FiniteElement> _element;
 };
 } // namespace dolfinx::fem
