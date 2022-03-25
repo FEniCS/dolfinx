@@ -171,9 +171,6 @@ public:
   const std::vector<std::shared_ptr<const FiniteElement>>&
   sub_elements() const noexcept;
 
-  /// Return the topological dimension
-  int tdim() const noexcept;
-
   /// Extract sub finite element for component
   std::shared_ptr<const FiniteElement>
   extract_sub_element(const std::vector<int>& component) const;
@@ -682,7 +679,7 @@ private:
 
   mesh::CellType _cell_shape;
 
-  int _tdim, _space_dim;
+  int _space_dim;
 
   // List of sub-elements (if any)
   std::vector<std::shared_ptr<const FiniteElement>> _sub_elements;
