@@ -218,8 +218,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   const fem::CoordinateElement& cmap = mesh->geometry().cmap();
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
-  // FIXME: Add proper interface for num coordinate dofs
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const std::size_t num_dofs_g = cmap.dim();
   xtl::span<const double> x_g = mesh->geometry().x();
 
   // Evaluate coordinate map basis at reference interpolation points
@@ -525,7 +524,7 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
     // FIXME: Add proper interface for num coordinate dofs
-    const int num_dofs_g = x_dofmap.num_links(0);
+    const int num_dofs_g = cmap.dim();
     xtl::span<const double> x_g = mesh->geometry().x();
 
     // Create data structures for Jacobian info
