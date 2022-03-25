@@ -81,8 +81,7 @@ _extract_sub_element(const FiniteElement& finite_element,
 
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(const ufcx_finite_element& e)
-    : _signature(e.signature), _family(e.family),
-      _tdim(e.topological_dimension), _space_dim(e.space_dimension),
+    : _signature(e.signature), _family(e.family), _space_dim(e.space_dimension),
       _value_shape(e.value_shape, e.value_shape + e.value_rank),
       _bs(e.block_size)
 {
@@ -111,7 +110,7 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
     throw std::runtime_error(
         "Unknown UFC cell type when building FiniteElement.");
   }
-  assert(mesh::cell_dim(_cell_shape) == _tdim);
+  assert(mesh::cell_dim(_cell_shape) == e.topological_dimension);
 
   static const std::map<ufcx_shape, std::string> ufcx_to_cell
       = {{vertex, "point"},         {interval, "interval"},
@@ -185,9 +184,7 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
 }
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
-    : // _signature("Basix element " + std::to_string(bs)),
-      _tdim(basix::cell::topological_dimension(element.cell_type())),
-      _space_dim(bs * element.dim()), _value_shape(element.value_shape()),
+    : _space_dim(bs * element.dim()), _value_shape(element.value_shape()),
       _bs(bs)
 {
   if (_value_shape.empty() and bs > 1)
@@ -248,8 +245,6 @@ mesh::CellType FiniteElement::cell_shape() const noexcept
 {
   return _cell_shape;
 }
-//-----------------------------------------------------------------------------
-int FiniteElement::tdim() const noexcept { return _tdim; }
 //-----------------------------------------------------------------------------
 int FiniteElement::space_dimension() const noexcept { return _space_dim; }
 //-----------------------------------------------------------------------------
@@ -319,10 +314,16 @@ basix::maps::type FiniteElement::map_type() const
   return _element->map_type();
 }
 //-----------------------------------------------------------------------------
-bool FiniteElement::interpolation_ident() const noexcept
+bool FiniteElement::map_ident() const noexcept
 {
   assert(_element);
   return _element->map_type() == basix::maps::type::identity;
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::interpolation_ident() const noexcept
+{
+  assert(_element);
+  return _element->interpolation_is_identity();
 }
 //-----------------------------------------------------------------------------
 const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const

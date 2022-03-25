@@ -119,7 +119,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 
     // -- Extra cell topology
 
-    // Extract cell 'topology', i.e. the vertices for each cell
+    // Extract cell 'topology', i.e. extract the vertices for each cell
+    // and discard any 'higher-order' nodes
     graph::AdjacencyList<std::int64_t> cells_extracted
         = extract_topology(element.cell_shape(), dof_layout, cell_nodes);
 
