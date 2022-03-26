@@ -7,7 +7,7 @@
 #include <basix/e-lagrange.h>
 #include <basix/e-nedelec.h>
 #include <cmath>
-#include <dolfinx/common/subsystem.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/utils.h>
@@ -17,6 +17,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/generation.h>
 #include <filesystem>
+#include <mpi.h>
 
 using namespace dolfinx;
 
