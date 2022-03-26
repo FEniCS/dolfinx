@@ -132,15 +132,15 @@ void nls::petsc::NewtonSolver::set_form(const std::function<void(Vec)>& form)
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::NewtonSolver::set_convergence_check(
-    const std::function<std::pair<double, bool>(
-        const nls::petsc::NewtonSolver& solver, const Vec r)>& c)
+    const std::function<std::pair<double, bool>(const NewtonSolver&,
+                                                const Vec)>& c)
 {
   _converged = c;
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::NewtonSolver::set_update(
-    const std::function<void(const nls::petsc::NewtonSolver& solver,
-                             const Vec dx, Vec x)>& update)
+    const std::function<void(const NewtonSolver& solver, const Vec, Vec)>&
+        update)
 {
   _update_solution = update;
 }

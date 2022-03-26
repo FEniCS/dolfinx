@@ -12,8 +12,8 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <map>
 #include <memory>
-#include <unordered_map>
 
 using namespace dolfinx;
 
@@ -226,18 +226,16 @@ graph::build::distribute(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> graph::build::compute_ghost_indices(
-    MPI_Comm comm, const xtl::span<const std::int64_t>& global_indices,
+    MPI_Comm comm, const xtl::span<const std::int64_t>& owned_indices,
+    const xtl::span<const std::int64_t>& ghost_indices,
     const xtl::span<const int>& ghost_owners)
 {
   LOG(INFO) << "Compute ghost indices";
 
-  // Get number of local cells and global offset
-  const std::int64_t num_local = global_indices.size() - ghost_owners.size();
-  std::vector<std::int64_t> ghost_global_indices(
-      global_indices.begin() + num_local, global_indices.end());
-
+  // Get number of local cells determine global offset
   std::int64_t offset_local = 0;
   MPI_Request request_offset_scan;
+  const std::int64_t num_local = owned_indices.size();
   MPI_Iexscan(&num_local, &offset_local, 1, MPI_INT64_T, MPI_SUM, comm,
               &request_offset_scan);
 
@@ -245,20 +243,22 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   std::vector<int> ghost_index_count;
   std::vector<int> neighbors;
   std::map<int, int> proc_to_neighbor;
-  int np = 0;
-  [[maybe_unused]] int mpi_rank = dolfinx::MPI::rank(comm);
-  for (int p : ghost_owners)
   {
-    assert(p != mpi_rank);
-    const auto [it, insert] = proc_to_neighbor.insert({p, np});
-    if (insert)
+    int np = 0;
+    [[maybe_unused]] int mpi_rank = dolfinx::MPI::rank(comm);
+    for (int p : ghost_owners)
     {
-      // New neighbor found
-      neighbors.push_back(p);
-      ghost_index_count.push_back(0);
-      ++np;
+      assert(p != mpi_rank);
+      auto [it, insert] = proc_to_neighbor.insert({p, np});
+      if (insert)
+      {
+        // New neighbor found
+        neighbors.push_back(p);
+        ghost_index_count.push_back(0);
+        ++np;
+      }
+      ++ghost_index_count[it->second];
     }
-    ++ghost_index_count[it->second];
   }
 
   // NB - this assumes a symmetry, i.e. that if one process shares an index
@@ -272,25 +272,26 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
 
   std::vector<int> send_offsets = {0};
   send_offsets.reserve(ghost_index_count.size() + 1);
-  for (int index_count : ghost_index_count)
-    send_offsets.push_back(send_offsets.back() + index_count);
-  std::vector<std::int64_t> send_data(send_offsets.back());
+  std::partial_sum(ghost_index_count.begin(), ghost_index_count.end(),
+                   std::back_inserter(send_offsets));
 
   // Copy offsets to help fill array
-  std::vector<int> ghost_index_offset(send_offsets.begin(), send_offsets.end());
-
-  for (std::size_t i = 0; i < ghost_owners.size(); ++i)
+  std::vector<std::int64_t> send_data(send_offsets.back());
   {
-    // Owning process
-    int p = ghost_owners[i];
+    std::vector<int> ghost_index_offset = send_offsets;
+    for (std::size_t i = 0; i < ghost_owners.size(); ++i)
+    {
+      // Owning process
+      int p = ghost_owners[i];
 
-    // Owning neighbor
-    int np = proc_to_neighbor[p];
+      // Owning neighbor
+      int np = proc_to_neighbor[p];
 
-    // Send data location
-    int pos = ghost_index_offset[np];
-    send_data[pos] = global_indices[num_local + i];
-    ++ghost_index_offset[np];
+      // Send data location
+      int pos = ghost_index_offset[np];
+      send_data[pos] = ghost_indices[i];
+      ++ghost_index_offset[np];
+    }
   }
 
   std::vector<int> recv_sizes(neighbors.size());
@@ -300,8 +301,8 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
                         1, MPI_INT, neighbor_comm);
   std::vector<int> recv_offsets = {0};
   recv_offsets.reserve(recv_sizes.size() + 1);
-  for (int q : recv_sizes)
-    recv_offsets.push_back(recv_offsets.back() + q);
+  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                   std::back_inserter(recv_offsets));
 
   std::vector<std::int64_t> recv_data(recv_offsets.back());
   MPI_Neighbor_alltoallv(send_data.data(), ghost_index_count.data(),
@@ -312,44 +313,57 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   // Complete global_offset scan
   MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
 
-  // Replace values in recv_data with new_index and send back
-  std::unordered_map<std::int64_t, std::int64_t> old_to_new;
-  for (int i = 0; i < num_local; ++i)
-    old_to_new.insert({global_indices[i], offset_local + i});
+  std::vector<std::array<std::int64_t, 2>> old_to_new;
+  old_to_new.reserve(owned_indices.size());
+  for (auto idx : owned_indices)
+  {
+    old_to_new.push_back(
+        {idx, static_cast<std::int64_t>(offset_local + old_to_new.size())});
+  }
+  std::sort(old_to_new.begin(), old_to_new.end());
 
-  std::for_each(recv_data.begin(), recv_data.end(),
-                [&old_to_new](auto& r)
-                {
-                  auto it = old_to_new.find(r);
-                  // Must exist on this process!
-                  assert(it != old_to_new.end());
-                  r = it->second;
-                });
+  // Replace values in recv_data with new_index and send back
+  std::transform(recv_data.begin(), recv_data.end(), recv_data.begin(),
+                 [&old_to_new](auto r)
+                 {
+                   auto it = std::lower_bound(
+                       old_to_new.begin(), old_to_new.end(),
+                       std::array<std::int64_t, 2>{r, 0},
+                       [](auto& a, auto& b) { return a[0] < b[0]; });
+                   assert(it != old_to_new.end() and (*it)[0] == r);
+                   return (*it)[1];
+                 });
 
   std::vector<std::int64_t> new_recv(send_data.size());
   MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
                          recv_offsets.data(), MPI_INT64_T, new_recv.data(),
                          ghost_index_count.data(), send_offsets.data(),
                          MPI_INT64_T, neighbor_comm);
-
-  // Add to map
-  for (std::size_t i = 0; i < send_data.size(); ++i)
-  {
-    std::int64_t old_idx = send_data[i];
-    std::int64_t new_idx = new_recv[i];
-    [[maybe_unused]] auto [it, insert] = old_to_new.insert({old_idx, new_idx});
-    assert(insert);
-  }
-
-  std::for_each(ghost_global_indices.begin(), ghost_global_indices.end(),
-                [&old_to_new](auto& q)
-                {
-                  const auto it = old_to_new.find(q);
-                  assert(it != old_to_new.end());
-                  q = it->second;
-                });
-
   MPI_Comm_free(&neighbor_comm);
+
+  // Build (old id,  new id) pairs
+  std::vector<std::array<std::int64_t, 2>> old_to_new1(send_data.size());
+  std::transform(send_data.begin(), send_data.end(), new_recv.begin(),
+                 old_to_new1.begin(),
+                 [](auto idx_old, auto idx_new) ->
+                 typename decltype(old_to_new1)::value_type {
+                   return {idx_old, idx_new};
+                 });
+  std::sort(old_to_new1.begin(), old_to_new1.end());
+
+  std::vector<std::int64_t> ghost_global_indices(ghost_indices.size());
+  std::transform(
+      ghost_indices.begin(), ghost_indices.end(), ghost_global_indices.begin(),
+      [&old_to_new1](auto q)
+      {
+        auto it
+            = std::lower_bound(old_to_new1.begin(), old_to_new1.end(),
+                               std::array<std::int64_t, 2>{q, 0},
+                               [](auto& a, auto& b) { return a[0] < b[0]; });
+        assert(it != old_to_new1.end() and (*it)[0] == q);
+        return (*it)[1];
+      });
+
   return ghost_global_indices;
 }
 //-----------------------------------------------------------------------------
@@ -399,18 +413,24 @@ std::vector<std::int32_t> graph::build::compute_local_to_local(
   assert(local0_to_global.size() == local1_to_global.size());
 
   // Compute inverse map for local1_to_global
-  std::unordered_map<std::int64_t, std::int32_t> global_to_local1;
-  for (std::size_t i = 0; i < local1_to_global.size(); ++i)
-    global_to_local1.insert({local1_to_global[i], i});
+  std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local1;
+  global_to_local1.reserve(local1_to_global.size());
+  for (auto idx_global : local1_to_global)
+    global_to_local1.push_back({idx_global, global_to_local1.size()});
+  std::sort(global_to_local1.begin(), global_to_local1.end());
 
   // Compute inverse map for local0_to_local1
   std::vector<std::int32_t> local0_to_local1;
-  std::transform(local0_to_global.cbegin(), local0_to_global.cend(),
+  local0_to_local1.reserve(local0_to_global.size());
+  std::transform(local0_to_global.begin(), local0_to_global.end(),
                  std::back_inserter(local0_to_local1),
                  [&global_to_local1](auto l2g)
                  {
-                   auto it = global_to_local1.find(l2g);
-                   assert(it != global_to_local1.end());
+                   auto it = std::lower_bound(
+                       global_to_local1.begin(), global_to_local1.end(),
+                       typename decltype(global_to_local1)::value_type(l2g, 0),
+                       [](auto& a, auto& b) { return a.first < b.first; });
+                   assert(it != global_to_local1.end() and it->first == l2g);
                    return it->second;
                  });
 
