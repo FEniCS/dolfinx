@@ -10,3 +10,11 @@
 #define LOGURU_REPLACE_GLOG 1
 
 #include "loguru.hpp"
+
+namespace dolfinx
+{
+
+/// Initialise loguru
+void init_logging(int argc, char* argv[]);
+
+} // namespace dolfinx

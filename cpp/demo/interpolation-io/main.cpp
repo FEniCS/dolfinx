@@ -134,7 +134,7 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
 /// generated code
 int main(int argc, char* argv[])
 {
-  common::subsystem::init_logging(argc, argv);
+  dolfinx::init_logging(argc, argv);
   MPI_Init(&argc, &argv);
 
   // The main body of the function is scoped with the curly braces to

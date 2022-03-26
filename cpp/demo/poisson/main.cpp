@@ -115,7 +115,7 @@ using T = PetscScalar;
 
 int main(int argc, char* argv[])
 {
-  common::subsystem::init_logging(argc, argv);
+  dolfinx::init_logging(argc, argv);
   PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   {

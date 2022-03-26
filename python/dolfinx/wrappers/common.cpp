@@ -142,7 +142,7 @@ void common(py::module& m)
           std::vector<char*> argv(args.size() + 1, nullptr);
           for (std::size_t i = 0; i < args.size(); ++i)
             argv[i] = const_cast<char*>(args[i].data());
-          dolfinx::common::subsystem::init_logging(args.size(), argv.data());
+          dolfinx::init_logging(args.size(), argv.data());
         });
 }
 } // namespace dolfinx_wrappers
