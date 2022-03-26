@@ -135,7 +135,7 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
 int main(int argc, char* argv[])
 {
   common::subsystem::init_logging(argc, argv);
-  common::subsystem::init_mpi(argc, argv);
+  MPI_Init(&argc, &argv);
 
   // The main body of the function is scoped with the curly braces to
   // ensure that all objects that depend on an MPI communicator are
@@ -159,6 +159,7 @@ int main(int argc, char* argv[])
     interpolate_nedelec<std::complex<double>>(mesh, "u_nedelec_complex");
   }
 
-  common::subsystem::finalize_mpi();
+  MPI_Finalize();
+
   return 0;
 }
