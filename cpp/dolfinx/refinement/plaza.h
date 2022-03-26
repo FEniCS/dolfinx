@@ -36,7 +36,7 @@ namespace plaza
 /// redistribute after refinement
 /// @param[in] store_indices Flag to save refinement data for further use
 /// @return New mesh
-std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>, mesh::Mesh>
+std::tuple<std::vector<std::int32_t>, std::vector<std::int8_t>, mesh::Mesh>
 refine(const mesh::Mesh& mesh, bool redistribute, bool store_indices);
 
 /// Refine with markers, optionally redistributing.
@@ -48,7 +48,7 @@ refine(const mesh::Mesh& mesh, bool redistribute, bool store_indices);
 /// redistribute after refinement
 /// @param[in] store_indices Flag to save refinement data for further use
 /// @return optional refeinemtn data and New Mesh
-std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>, mesh::Mesh>
+std::tuple<std::vector<std::int32_t>, std::vector<std::int8_t>, mesh::Mesh>
 refine(const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& edges,
        bool redistribute, bool store_indices);
 
@@ -61,7 +61,7 @@ refine(const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& edges,
 /// cell index, and stored refined vertex indices on each parent cell (if
 /// requested).
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>, std::vector<std::int64_t>>
+           std::vector<std::int32_t>, std::vector<std::int8_t>>
 compute_refinement_data(const mesh::Mesh& mesh, bool store_indices);
 
 /// Refine with markers returning new mesh data.
@@ -74,7 +74,7 @@ compute_refinement_data(const mesh::Mesh& mesh, bool store_indices);
 /// @return New mesh data: cell topology, vertex coordinates and parent
 /// cell index
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>, std::vector<std::int64_t>>
+           std::vector<std::int32_t>, std::vector<std::int8_t>>
 compute_refinement_data(const mesh::Mesh& mesh,
                         const xtl::span<const std::int32_t>& edges,
                         bool store_indices);

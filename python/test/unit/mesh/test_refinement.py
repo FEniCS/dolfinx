@@ -137,7 +137,7 @@ def test_refine_facet_meshtag():
 
     new_meshtag = _cpp.refinement.transfer_facet_meshtag(meshtag, fine_mesh, parent_cell, stored_indices)
 
-    print(new_meshtag.indices, new_meshtag.values)
+    print(new_meshtag.indices, sorted(new_meshtag.values))
     assert len(new_meshtag.indices) == 4 * len(meshtag.indices)
     # assert sum(meshtag.values) == 66
     # assert sum(new_meshtag.values) == 4 * 66

@@ -95,6 +95,6 @@ mesh::MeshTags<std::int32_t>
 transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& input_meshtag,
                        const mesh::Mesh& refined_mesh,
                        std::vector<std::int32_t>& parent_cell,
-                       std::vector<std::int64_t>& stored_indices);
+                       std::vector<std::int8_t>& parent_facet);
 
 } // namespace dolfinx::refinement

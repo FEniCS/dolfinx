@@ -398,7 +398,7 @@ refinement::adjust_indices(const common::IndexMap& index_map, std::int32_t n)
 mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
     const mesh::MeshTags<std::int32_t>& input_meshtag,
     const mesh::Mesh& refined_mesh, std::vector<std::int32_t>& parent_cell,
-    std::vector<std::int64_t>& stored_indices)
+    std::vector<std::int8_t>& parent_facet)
 {
   // Facets of 3D mesh only so far
   assert(input_meshtag.mesh()->topology().dim() == 3);
@@ -406,80 +406,26 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
 
   auto input_c_to_f = input_meshtag.mesh()->topology().connectivity(3, 2);
 
-  // Map from stored indices for each parent cell to vertices
-  // which may occur on each facet.
-  static const int facet_table_3d[4][6] = {{1, 2, 3, 4, 5, 6},
-                                           {0, 2, 3, 4, 7, 8},
-                                           {0, 1, 3, 5, 7, 9},
-                                           {0, 1, 2, 6, 8, 9}};
-  int nv = 10;
-
   auto c_to_f = refined_mesh.topology().connectivity(3, 2);
-  auto f_to_v = refined_mesh.topology().connectivity(2, 0);
-
-  const std::vector<std::int64_t>& global_vertex_index
-      = refined_mesh.geometry().input_global_indices();
 
   // Mapping from facets on refined mesh, back to parent.
   // i.e. child->parent facet
-  std::vector<std::int32_t> parent_facet(
+  std::vector<std::int32_t> parent_facet_map(
       refined_mesh.topology().index_map(2)->size_local()
           + refined_mesh.topology().index_map(2)->num_ghosts(),
       -1);
 
-  // small temporaries for comparing vertex lists
-  std::vector<std::int64_t> vertex_list_pf;
-  std::vector<std::int64_t> vertex_list_cf;
-  std::vector<std::int64_t> set_output(nv);
   for (std::size_t c = 0; c < parent_cell.size(); ++c)
   {
-    auto refined_facets = c_to_f->links(c);
-
     std::int32_t pc = parent_cell[c];
-    xtl::span<std::int64_t> v(stored_indices.data() + nv * pc, nv);
-    // reconstruct facets (parent)
-    for (int i = 0; i < 4; ++i)
+    auto parent_cf = input_c_to_f->links(pc);
+    auto refined_cf = c_to_f->links(c);
+
+    for (int j = 0; j < 4; ++j)
     {
-      vertex_list_pf.clear();
-      for (int j = 0; j < 6; ++j)
-        vertex_list_pf.push_back(v[facet_table_3d[i][j]]);
-      std::cout << "vlpf = ";
-      for (auto q : vertex_list_pf)
-        std::cout << q << " ";
-      std::cout << "\n";
-
-      std::sort(vertex_list_pf.begin(), vertex_list_pf.end());
-
-      // get facets (child)
-      for (int f = 0; f < 4; ++f)
-      {
-        auto v = f_to_v->links(refined_facets[f]);
-        vertex_list_cf.resize(v.size());
-        std::transform(v.begin(), v.end(), vertex_list_cf.begin(),
-                       [&](std::int32_t idx)
-                       { return global_vertex_index[idx]; });
-        std::cout << "vlcf = ";
-        for (auto q : vertex_list_cf)
-          std::cout << q << " ";
-        std::cout << "\n";
-
-        std::sort(vertex_list_cf.begin(), vertex_list_cf.end());
-
-        auto it = std::set_intersection(
-            vertex_list_pf.begin(), vertex_list_pf.end(),
-            vertex_list_cf.begin(), vertex_list_cf.end(), set_output.begin());
-        if (std::distance(set_output.begin(), it) == 3)
-        {
-          // Found matching facet, facet f of child cell matches facet i of
-          // parent.
-
-          // Either -1 or already set.
-          assert(parent_facet[refined_facets[f]] == -1
-                 or parent_facet[refined_facets[f]]
-                        == input_c_to_f->links(pc)[i]);
-          parent_facet[refined_facets[f]] = input_c_to_f->links(pc)[i];
-        }
-      }
+      std::int8_t fidx = parent_facet[c * 4 + j];
+      if (fidx != -1)
+        parent_facet_map[refined_cf[j]] = parent_cf[fidx];
     }
   }
 
@@ -488,7 +434,7 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
       = input_meshtag.mesh()->topology().index_map(2)->size_local()
         + input_meshtag.mesh()->topology().index_map(2)->num_ghosts();
   std::vector<int> count_child(num_input_facets, 0);
-  for (std::int32_t f : parent_facet)
+  for (std::int32_t f : parent_facet_map)
   {
     if (f != -1)
       ++count_child[f];
@@ -497,9 +443,9 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   std::partial_sum(count_child.begin(), count_child.end(),
                    std::next(offset_child.begin()));
   std::vector<std::int32_t> child_facet(offset_child.back());
-  for (std::size_t i = 0; i < parent_facet.size(); ++i)
+  for (std::size_t i = 0; i < parent_facet_map.size(); ++i)
   {
-    const std::int32_t f = parent_facet[i];
+    const std::int32_t f = parent_facet_map[i];
     if (f != -1)
     {
       child_facet[offset_child[f]] = i;

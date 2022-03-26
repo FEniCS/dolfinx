@@ -388,7 +388,7 @@ face_long_edge(const mesh::Mesh& mesh)
 //-----------------------------------------------------------------------------
 // Convenient interface for both uniform and marker refinement
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>, std::vector<std::int64_t>>
+           std::vector<std::int32_t>, std::vector<std::int8_t>>
 compute_refinement(
     const MPI_Comm& neighbor_comm, const std::vector<std::int8_t>& marked_edges,
     const std::map<std::int32_t, std::vector<std::int32_t>> shared_edges,
@@ -405,10 +405,10 @@ compute_refinement(
                                         marked_edges);
 
   std::vector<std::int32_t> parent_cell;
+  std::vector<std::int8_t> parent_facet;
   std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
   std::vector<int> marked_edge_list;
   std::vector<std::int32_t> simplex_set;
-  std::vector<std::int64_t> stored_indices;
 
   auto map_c = mesh.topology().index_map(tdim);
   assert(map_c);
@@ -428,8 +428,7 @@ compute_refinement(
       *mesh.topology().index_map(0), num_new_vertices_local);
 
   const int num_cells = map_c->size_local();
-  if (store_indices)
-    stored_indices.reserve(num_cells * indices.size());
+
   std::vector<std::int64_t> cell_topology;
   for (int c = 0; c < num_cells; ++c)
   {
@@ -455,12 +454,6 @@ compute_refinement(
       }
       else
         indices[num_cell_vertices + ei] = -1;
-    }
-
-    if (store_indices)
-    {
-      stored_indices.insert(stored_indices.end(), indices.begin(),
-                            indices.end());
     }
 
     if (no_edge_marked)
@@ -501,6 +494,47 @@ compute_refinement(
       for (std::int32_t i = 0; i < ncells; ++i)
         parent_cell.push_back(c);
 
+      if (store_indices)
+      {
+        static const int facet_table_3d[4][6] = {{1, 2, 3, 4, 5, 6},
+                                                 {0, 2, 3, 4, 7, 8},
+                                                 {0, 1, 3, 5, 7, 9},
+                                                 {0, 1, 2, 6, 8, 9}};
+
+        int pf_offset = parent_facet.size();
+        parent_facet.resize(parent_facet.size() + ncells * 4, -1);
+
+        for (int fpi = 0; fpi < 4; ++fpi)
+        {
+          // Indices of all vertices on parent facet, sorted
+          std::array<std::int64_t, 6> pf;
+          for (int j = 0; j < 6; ++j)
+            pf[j] = indices[facet_table_3d[fpi][j]];
+          std::sort(pf.begin(), pf.end());
+
+          // For each child cell, consider all facets
+          for (int cc = 0; cc < ncells; ++cc)
+          {
+            for (int fci = 0; fci < 4; ++fci)
+            {
+              // Indices of all vertices on child facet, sorted
+              std::array<std::int64_t, 3> cf, set_output;
+              for (int j = 0; j < 3; ++j)
+                cf[j] = indices[simplex_set[cc * 4 + facet_table_3d[fci][j]]];
+              std::sort(cf.begin(), cf.end());
+
+              auto it = std::set_intersection(pf.begin(), pf.end(), cf.begin(),
+                                              cf.end(), set_output.begin());
+              if (std::distance(set_output.begin(), it) == 3)
+              {
+                // Child facet "fci" of cell cc, lies on parent facet "fpi"
+                parent_facet[pf_offset + cc * 4 + fci] = fpi;
+              }
+            }
+          }
+        }
+      }
+
       // Convert from cell local index to mesh index and add to cells
       for (std::int32_t v : simplex_set)
         cell_topology.push_back(indices[v]);
@@ -515,28 +549,28 @@ compute_refinement(
   graph::AdjacencyList<std::int64_t> cell_adj(std::move(cell_topology),
                                               std::move(offsets));
 
-  std::cout << "stored indices = [";
-  for (auto q : stored_indices)
-    std::cout << q << " ";
+  std::cout << "parent_facet = [";
+  for (auto q : parent_facet)
+    std::cout << (int)q << " ";
   std::cout << "]\n";
 
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
-          std::move(parent_cell), std::move(stored_indices)};
+          std::move(parent_cell), std::move(parent_facet)};
 }
 //-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>, mesh::Mesh>
+std::tuple<std::vector<std::int32_t>, std::vector<std::int8_t>, mesh::Mesh>
 plaza::refine(const mesh::Mesh& mesh, bool redistribute, bool store_indices)
 {
 
-  auto [cell_adj, new_vertex_coordinates, parent_cell, stored_indices]
+  auto [cell_adj, new_vertex_coordinates, parent_cell, parent_facet]
       = plaza::compute_refinement_data(mesh, store_indices);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {std::move(parent_cell), std::move(stored_indices),
+    return {std::move(parent_cell), std::move(parent_facet),
             mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
                               new_vertex_coordinates, mesh::GhostMode::none)};
   }
@@ -555,23 +589,23 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute, bool store_indices)
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
-  return {std::move(parent_cell), std::move(stored_indices),
+  return {std::move(parent_cell), std::move(parent_facet),
           refinement::partition(mesh, cell_adj, new_vertex_coordinates,
                                 redistribute, ghost_mode)};
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>, mesh::Mesh>
+std::tuple<std::vector<std::int32_t>, std::vector<std::int8_t>, mesh::Mesh>
 plaza::refine(const mesh::Mesh& mesh,
               const xtl::span<const std::int32_t>& edges, bool redistribute,
               bool store_indices)
 {
 
-  auto [cell_adj, new_vertex_coordinates, parent_cell, stored_indices]
+  auto [cell_adj, new_vertex_coordinates, parent_cell, parent_facet]
       = plaza::compute_refinement_data(mesh, edges, store_indices);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {std::move(parent_cell), std::move(stored_indices),
+    return {std::move(parent_cell), std::move(parent_facet),
             mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
                               new_vertex_coordinates, mesh::GhostMode::none)};
   }
@@ -590,13 +624,13 @@ plaza::refine(const mesh::Mesh& mesh,
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
-  return {std::move(parent_cell), std::move(stored_indices),
+  return {std::move(parent_cell), std::move(parent_facet),
           refinement::partition(mesh, cell_adj, new_vertex_coordinates,
                                 redistribute, ghost_mode)};
 }
 //------------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>, std::vector<std::int64_t>>
+           std::vector<std::int32_t>, std::vector<std::int8_t>>
 plaza::compute_refinement_data(const mesh::Mesh& mesh, bool store_indices)
 {
 
@@ -616,7 +650,7 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh, bool store_indices)
       map_e->size_local() + map_e->num_ghosts(), true);
 
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
-  auto [cell_adj, new_vertex_coordinates, parent_cell, stored_indices]
+  auto [cell_adj, new_vertex_coordinates, parent_cell, parent_facet]
       = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
                            long_edge, edge_ratio_ok, store_indices);
   MPI_Comm_free(&neighbor_comm);
@@ -624,11 +658,11 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh, bool store_indices)
   std::cout << "new cells\n--------\n" << cell_adj.str();
 
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
-          std::move(parent_cell), std::move(stored_indices)};
+          std::move(parent_cell), std::move(parent_facet)};
 }
 //------------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>, std::vector<std::int64_t>>
+           std::vector<std::int32_t>, std::vector<std::int8_t>>
 plaza::compute_refinement_data(const mesh::Mesh& mesh,
                                const xtl::span<const std::int32_t>& edges,
                                bool store_indices)
@@ -682,12 +716,12 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
   enforce_rules(neighbor_comm, shared_edges, marked_edges, mesh, long_edge);
 
-  auto [cell_adj, new_vertex_coordinates, parent_cell, stored_indices]
+  auto [cell_adj, new_vertex_coordinates, parent_cell, parent_facet]
       = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
                            long_edge, edge_ratio_ok, store_indices);
   MPI_Comm_free(&neighbor_comm);
 
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
-          std::move(parent_cell), std::move(stored_indices)};
+          std::move(parent_cell), std::move(parent_facet)};
 }
 //-----------------------------------------------------------------------------
