@@ -138,5 +138,9 @@ def test_refine_facet_meshtag():
     new_meshtag = _cpp.refinement.transfer_facet_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
 
     assert len(new_meshtag.indices) == 4 * len(meshtag.indices)
-    # assert sum(meshtag.values) == 66
-    # assert sum(new_meshtag.values) == 4 * 66
+
+    # New tags should be on facets with one cell (i.e. exterior)
+    fine_mesh.topology.create_connectivity(2, 3)
+    new_f_to_c = fine_mesh.topology.connectivity(2, 3)
+    for f in new_meshtag.indices:
+        assert len(new_f_to_c.links(f)) == 1

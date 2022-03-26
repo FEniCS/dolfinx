@@ -405,16 +405,34 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   assert(input_meshtag.dim() == 2);
 
   auto input_c_to_f = input_meshtag.mesh()->topology().connectivity(3, 2);
-
   auto c_to_f = refined_mesh.topology().connectivity(3, 2);
 
-  // Mapping from facets on refined mesh, back to parent.
-  // i.e. child->parent facet
-  std::vector<std::int32_t> parent_facet_map(
-      refined_mesh.topology().index_map(2)->size_local()
-          + refined_mesh.topology().index_map(2)->num_ghosts(),
-      -1);
+  // Create map parent->child facets
+  const std::int32_t num_input_facets
+      = input_meshtag.mesh()->topology().index_map(2)->size_local()
+        + input_meshtag.mesh()->topology().index_map(2)->num_ghosts();
+  std::vector<int> count_child(num_input_facets, 0);
 
+  // Count number of child facets for each parent facet
+  for (std::size_t c = 0; c < parent_cell.size(); ++c)
+  {
+    const std::int32_t pc = parent_cell[c];
+    auto parent_cf = input_c_to_f->links(pc);
+
+    for (int j = 0; j < 4; ++j)
+    {
+      std::int8_t fidx = parent_facet[c * 4 + j];
+      if (fidx != -1)
+        ++count_child[parent_cf[fidx]];
+    }
+  }
+
+  std::vector<int> offset_child(num_input_facets + 1, 0);
+  std::partial_sum(count_child.begin(), count_child.end(),
+                   std::next(offset_child.begin()));
+  std::vector<std::int32_t> child_facet(offset_child.back());
+
+  // Fill in data for each child facet
   for (std::size_t c = 0; c < parent_cell.size(); ++c)
   {
     std::int32_t pc = parent_cell[c];
@@ -425,38 +443,22 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
     {
       std::int8_t fidx = parent_facet[c * 4 + j];
       if (fidx != -1)
-        parent_facet_map[refined_cf[j]] = parent_cf[fidx];
+      {
+        int offset = offset_child[parent_cf[fidx]];
+        child_facet[offset] = refined_cf[j];
+        ++offset_child[parent_cf[fidx]];
+      }
     }
   }
 
-  // Invert map from child->parent to parent->child facets
-  const std::int32_t num_input_facets
-      = input_meshtag.mesh()->topology().index_map(2)->size_local()
-        + input_meshtag.mesh()->topology().index_map(2)->num_ghosts();
-  std::vector<int> count_child(num_input_facets, 0);
-  for (std::int32_t f : parent_facet_map)
-  {
-    if (f != -1)
-      ++count_child[f];
-  }
-  std::vector<int> offset_child(num_input_facets + 1, 0);
-  std::partial_sum(count_child.begin(), count_child.end(),
-                   std::next(offset_child.begin()));
-  std::vector<std::int32_t> child_facet(offset_child.back());
-  for (std::size_t i = 0; i < parent_facet_map.size(); ++i)
-  {
-    const std::int32_t f = parent_facet_map[i];
-    if (f != -1)
-    {
-      child_facet[offset_child[f]] = i;
-      ++offset_child[f];
-    }
-  }
+  // Rebuild offset
   offset_child[0] = 0;
   std::partial_sum(count_child.begin(), count_child.end(),
                    std::next(offset_child.begin()));
-  graph::AdjacencyList<std::int32_t> p_to_c_facet(child_facet, offset_child);
+  graph::AdjacencyList<std::int32_t> p_to_c_facet(std::move(child_facet),
+                                                  std::move(offset_child));
 
+  // Copy facet meshtag from parent to child
   std::vector<std::int32_t> facet_indices;
   std::vector<std::int32_t> tag_values;
   for (std::size_t i = 0; i < input_meshtag.indices().size(); ++i)
@@ -469,6 +471,7 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
     }
   }
 
+  // Sort values into order, based on facet indices
   std::vector<int> sort_order(tag_values.size());
   std::iota(sort_order.begin(), sort_order.end(), 0);
   std::sort(sort_order.begin(), sort_order.end(),
@@ -476,6 +479,8 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   std::vector<std::int32_t> sorted_tag_values(tag_values.size());
   for (std::size_t i = 0; i < sort_order.size(); ++i)
     sorted_tag_values[i] = tag_values[sort_order[i]];
+
+  // Sort facet indices into order
   std::sort(facet_indices.begin(), facet_indices.end());
 
   return mesh::MeshTags<std::int32_t>(
