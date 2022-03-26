@@ -45,8 +45,7 @@ sort_unique(const U& indices, const V& values)
   using T = typename std::pair<typename U::value_type, typename V::value_type>;
   std::vector<T> data(indices.size());
   std::transform(indices.cbegin(), indices.cend(), values.cbegin(),
-                 data.begin(),
-                 [](auto& idx, auto& v) -> T {
+                 data.begin(), [](auto& idx, auto& v) -> T {
                    return {idx, v};
                  });
 
@@ -79,22 +78,23 @@ std::size_t hash_local(const T& x)
 /// each process, and the hash of the std::vector of all local hash keys
 /// is returned. This function is collective.
 template <class T>
-std::int64_t hash_global(const MPI_Comm comm, const T& x)
+std::size_t hash_global(const MPI_Comm comm, const T& x)
 {
   // Compute local hash
-  std::int64_t local_hash = hash_local(x);
+  std::size_t local_hash = hash_local(x);
 
   // Gather hash keys on root process
-  std::vector<int64_t> all_hashes(dolfinx::MPI::size(comm));
-  MPI_Gather(&local_hash, 1, MPI_INT64_T, all_hashes.data(), 1, MPI_INT64_T, 0,
+  std::vector<std::size_t> all_hashes(dolfinx::MPI::size(comm));
+  MPI_Gather(&local_hash, 1, dolfinx::MPI::mpi_type<std::size_t>(),
+             all_hashes.data(), 1, dolfinx::MPI::mpi_type<std::size_t>(), 0,
              comm);
 
   // Hash the received hash keys
-  boost::hash<std::vector<std::int64_t>> hash;
-  std::int64_t global_hash = hash(all_hashes);
+  boost::hash<std::vector<std::size_t>> hash;
+  std::size_t global_hash = hash(all_hashes);
 
   // Broadcast hash key to all processes
-  MPI_Bcast(&global_hash, 1, MPI_INT64_T, 0, comm);
+  MPI_Bcast(&global_hash, 1, dolfinx::MPI::mpi_type<std::size_t>(), 0, comm);
 
   return global_hash;
 }

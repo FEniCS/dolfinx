@@ -91,8 +91,8 @@ determine_sharing_ranks(MPI_Comm comm,
     }
   }
 
-  const std::vector<int> src
-      = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
+  std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
+  std::sort(src.begin(), src.end());
 
   // Create neighbourhood communicator for sending data to post offices
   MPI_Comm neigh_comm0;
@@ -151,14 +151,15 @@ determine_sharing_ranks(MPI_Comm comm,
   std::vector<int> owner;
   std::vector<int> disp1 = {0};
   {
-    std::mt19937 rng(0);
+    std::mt19937 rng(dolfinx::MPI::rank(comm));
     auto it = indices_list.begin();
     while (it != indices_list.end())
     {
       // Find iterator to next different global index
-      auto it1 = std::find_if(it, indices_list.end(),
-                              [idx0 = (*it)[0]](auto& idx)
-                              { return idx[0] != idx0; });
+      auto it1
+          = std::find_if(it, indices_list.end(), [idx0 = (*it)[0]](auto& idx) {
+              return idx[0] != idx0;
+            });
 
       // Number of times index is repeated
       std::size_t num = std::distance(it, it1);
@@ -322,10 +323,10 @@ compute_vertex_markers(const graph::AdjacencyList<std::int64_t>& cells,
 
   // Any vertices which are in ghost cells set to -1
   std::unordered_map<std::int64_t, std::int32_t> global_to_local_v;
-  std::transform(ghost_vertex_set.begin(), ghost_vertex_set.end(),
-                 std::inserter(global_to_local_v, global_to_local_v.end()),
-                 [](auto idx)
-                 { return std::pair<std::int64_t, std::int32_t>(idx, -1); });
+  std::transform(
+      ghost_vertex_set.begin(), ghost_vertex_set.end(),
+      std::inserter(global_to_local_v, global_to_local_v.end()),
+      [](auto idx) { return std::pair<std::int64_t, std::int32_t>(idx, -1); });
 
   std::vector<std::int64_t> unknown_indices_set;
   for (std::int64_t global_index : local_vertex_set)
@@ -565,8 +566,9 @@ graph::AdjacencyList<std::int32_t> convert_cells_to_local_indexing(
   std::transform(cells.array().begin(),
                  std::next(cells.array().begin(), cells_array_local.size()),
                  cells_array_local.begin(),
-                 [&global_to_local_vertices](std::int64_t i)
-                 { return global_to_local_vertices.at(i); });
+                 [&global_to_local_vertices](std::int64_t i) {
+                   return global_to_local_vertices.at(i);
+                 });
 
   return graph::AdjacencyList<std::int32_t>(std::move(cells_array_local),
                                             std::move(local_offsets));
