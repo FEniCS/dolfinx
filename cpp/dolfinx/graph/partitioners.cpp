@@ -73,10 +73,12 @@ graph::AdjacencyList<int> compute_destination_ranks(
       {
         auto it = std::upper_bound(node_disp.begin(), node_disp.end(), node1);
         int remote_rank = std::distance(node_disp.begin(), it) - 1;
-        node_to_dest.push_back({remote_rank, node1, part[node0]});
+        node_to_dest.push_back(
+            {remote_rank, node1, static_cast<std::int64_t>(part[node0])});
       }
       else
-        node_to_dest.push_back({rank, node1, part[node0]});
+        node_to_dest.push_back(
+            {rank, node1, static_cast<std::int64_t>(part[node0])});
     }
   }
   std::sort(node_to_dest.begin(), node_to_dest.end());
@@ -152,7 +154,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
   for (auto d : part)
   {
     local_node_to_dest.push_back(
-        {static_cast<int>(local_node_to_dest.size()), d});
+        {static_cast<int>(local_node_to_dest.size()), static_cast<int>(d)});
   }
   for (std::size_t i = 0; i < recv_buffer.size(); i += 2)
   {
@@ -597,11 +599,9 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
 #ifdef HAS_KAHIP
 
 //----------------------------------------------------------------------------
-std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm, int, const graph::AdjacencyList<std::int64_t>&, std::int32_t,
-    bool)>
-graph::kahip::partitioner(int mode, int seed, double imbalance,
-                          bool suppress_output)
+graph::partition_fn graph::kahip::partitioner(int mode, int seed,
+                                              double imbalance,
+                                              bool suppress_output)
 {
   return [mode, seed, imbalance, suppress_output](
              MPI_Comm comm, int nparts,

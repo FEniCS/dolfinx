@@ -117,8 +117,10 @@ determine_sharing_ranks(MPI_Comm comm,
     }
   }
 
-  const std::vector<int> src
-      = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
+  // Determine src ranks. Sort ranks so that ownership determination is
+  // deterministic for a given number of ranks.
+  std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
+  std::sort(src.begin(), src.end());
 
   // Create neighbourhood communicator for sending data to post offices
   MPI_Comm neigh_comm0;
@@ -176,14 +178,15 @@ determine_sharing_ranks(MPI_Comm comm,
   std::vector<int> owner;
   std::vector<int> disp1 = {0};
   {
-    std::mt19937 rng(0);
+    std::mt19937 rng(dolfinx::MPI::rank(comm));
     auto it = indices_list.begin();
     while (it != indices_list.end())
     {
       // Find iterator to next different global index
-      auto it1 = std::find_if(it, indices_list.end(),
-                              [idx0 = (*it)[0]](auto& idx)
-                              { return idx[0] != idx0; });
+      auto it1
+          = std::find_if(it, indices_list.end(), [idx0 = (*it)[0]](auto& idx) {
+              return idx[0] != idx0;
+            });
 
       // Number of times index is repeated
       std::size_t num = std::distance(it, it1);

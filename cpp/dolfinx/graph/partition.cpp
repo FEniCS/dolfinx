@@ -98,9 +98,10 @@ graph::build::distribute(MPI_Comm comm,
     }
   }
 
-  // Determine source ranks
-  const std::vector<int> src
-      = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
+  // Determine source ranks. Sort ranks to make distribution
+  // deterministic.
+  std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
+  std::sort(src.begin(), src.end());
 
   // Create neighbourhood communicator
   MPI_Comm neigh_comm;
