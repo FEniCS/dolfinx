@@ -527,6 +527,7 @@ compute_refinement(
                                               cf.end(), set_output.begin());
               if (std::distance(set_output.begin(), it) == 3)
               {
+                assert(parent_facet[pf_offset + cc * 4 + fci] == -1);
                 // Child facet "fci" of cell cc, lies on parent facet "fpi"
                 parent_facet[pf_offset + cc * 4 + fci] = fpi;
               }
@@ -548,11 +549,6 @@ compute_refinement(
     offsets[i + 1] = offsets[i] + num_cell_vertices;
   graph::AdjacencyList<std::int64_t> cell_adj(std::move(cell_topology),
                                               std::move(offsets));
-
-  std::cout << "parent_facet = [";
-  for (auto q : parent_facet)
-    std::cout << (int)q << " ";
-  std::cout << "]\n";
 
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
           std::move(parent_cell), std::move(parent_facet)};
@@ -654,8 +650,6 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh, bool store_indices)
       = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
                            long_edge, edge_ratio_ok, store_indices);
   MPI_Comm_free(&neighbor_comm);
-
-  std::cout << "new cells\n--------\n" << cell_adj.str();
 
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
           std::move(parent_cell), std::move(parent_facet)};

@@ -132,12 +132,11 @@ def test_refine_facet_meshtag():
     meshtag = meshtags(mesh, 2, numpy.array(facet_indices, dtype=numpy.int32),
                        numpy.arange(len(facet_indices), dtype=numpy.int32))
 
-    parent_cell, stored_indices, fine_mesh = _cpp.refinement.plaza_refine_data(mesh, False, True)
+    parent_cell, parent_facet, fine_mesh = _cpp.refinement.plaza_refine_data(mesh, False, True)
     fine_mesh.topology.create_entities(2)
 
-    new_meshtag = _cpp.refinement.transfer_facet_meshtag(meshtag, fine_mesh, parent_cell, stored_indices)
+    new_meshtag = _cpp.refinement.transfer_facet_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
 
-    print(new_meshtag.indices, sorted(new_meshtag.values))
     assert len(new_meshtag.indices) == 4 * len(meshtag.indices)
     # assert sum(meshtag.values) == 66
     # assert sum(new_meshtag.values) == 4 * 66
