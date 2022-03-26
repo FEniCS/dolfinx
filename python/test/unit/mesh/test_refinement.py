@@ -144,3 +144,12 @@ def test_refine_facet_meshtag():
     new_f_to_c = fine_mesh.topology.connectivity(2, 3)
     for f in new_meshtag.indices:
         assert len(new_f_to_c.links(f)) == 1
+
+    # Now mark all facets (including internal)
+    facet_indices = numpy.arange(mesh.topology.index_map(2).size_local)
+    meshtag = meshtags(mesh, 2, numpy.array(facet_indices, dtype=numpy.int32),
+                       numpy.arange(len(facet_indices), dtype=numpy.int32))
+
+    new_meshtag = _cpp.refinement.transfer_facet_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
+
+    assert len(new_meshtag.indices) == 4 * len(meshtag.indices)

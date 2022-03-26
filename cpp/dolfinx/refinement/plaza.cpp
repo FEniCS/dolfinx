@@ -385,6 +385,56 @@ face_long_edge(const mesh::Mesh& mesh)
 
   return std::pair(std::move(long_edge), std::move(edge_ratio_ok));
 }
+//-----------------------------------------------------------------
+std::vector<std::int8_t>
+compute_parent_facets(const std::vector<std::int64_t>& indices,
+                      const std::vector<std::int32_t>& simplex_set)
+{
+  // TODO: implement for 2D
+  assert(indices.size() == 10);
+  assert(simplex_set.size() % 4 == 0);
+
+  std::vector<std::int8_t> parent_facet(simplex_set.size(), -1);
+
+  static const int facet_table_3d[4][6] = {{1, 2, 3, 4, 5, 6},
+                                           {0, 2, 3, 4, 7, 8},
+                                           {0, 1, 3, 5, 7, 9},
+                                           {0, 1, 2, 6, 8, 9}};
+
+  const int ncells = simplex_set.size() / 4;
+
+  for (int fpi = 0; fpi < 4; ++fpi)
+  {
+    // Indices of all vertices on parent facet, sorted
+    std::array<std::int64_t, 6> pf;
+    for (int j = 0; j < 6; ++j)
+      pf[j] = indices[facet_table_3d[fpi][j]];
+    std::sort(pf.begin(), pf.end());
+
+    // For each child cell, consider all facets
+    for (int cc = 0; cc < ncells; ++cc)
+    {
+      for (int fci = 0; fci < 4; ++fci)
+      {
+        // Indices of all vertices on child facet, sorted
+        std::array<std::int64_t, 3> cf, set_output;
+        for (int j = 0; j < 3; ++j)
+          cf[j] = indices[simplex_set[cc * 4 + facet_table_3d[fci][j]]];
+        std::sort(cf.begin(), cf.end());
+
+        auto it = std::set_intersection(pf.begin(), pf.end(), cf.begin(),
+                                        cf.end(), set_output.begin());
+        if (std::distance(set_output.begin(), it) == 3)
+        {
+          assert(parent_facet[cc * 4 + fci] == -1);
+          // Child facet "fci" of cell cc, lies on parent facet "fpi"
+          parent_facet[cc * 4 + fci] = fpi;
+        }
+      }
+    }
+  }
+  return parent_facet;
+}
 //-----------------------------------------------------------------------------
 // Convenient interface for both uniform and marker refinement
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
@@ -393,7 +443,7 @@ compute_refinement(
     const MPI_Comm& neighbor_comm, const std::vector<std::int8_t>& marked_edges,
     const std::map<std::int32_t, std::vector<std::int32_t>> shared_edges,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& long_edge,
-    const std::vector<std::int8_t>& edge_ratio_ok, bool store_indices)
+    const std::vector<std::int8_t>& edge_ratio_ok, bool store_facets)
 {
   const std::int32_t tdim = mesh.topology().dim();
   const std::int32_t num_cell_edges = tdim * 3 - 3;
@@ -494,46 +544,11 @@ compute_refinement(
       for (std::int32_t i = 0; i < ncells; ++i)
         parent_cell.push_back(c);
 
-      if (store_indices)
+      if (store_facets)
       {
-        static const int facet_table_3d[4][6] = {{1, 2, 3, 4, 5, 6},
-                                                 {0, 2, 3, 4, 7, 8},
-                                                 {0, 1, 3, 5, 7, 9},
-                                                 {0, 1, 2, 6, 8, 9}};
-
-        int pf_offset = parent_facet.size();
-        parent_facet.resize(parent_facet.size() + ncells * 4, -1);
-
-        for (int fpi = 0; fpi < 4; ++fpi)
-        {
-          // Indices of all vertices on parent facet, sorted
-          std::array<std::int64_t, 6> pf;
-          for (int j = 0; j < 6; ++j)
-            pf[j] = indices[facet_table_3d[fpi][j]];
-          std::sort(pf.begin(), pf.end());
-
-          // For each child cell, consider all facets
-          for (int cc = 0; cc < ncells; ++cc)
-          {
-            for (int fci = 0; fci < 4; ++fci)
-            {
-              // Indices of all vertices on child facet, sorted
-              std::array<std::int64_t, 3> cf, set_output;
-              for (int j = 0; j < 3; ++j)
-                cf[j] = indices[simplex_set[cc * 4 + facet_table_3d[fci][j]]];
-              std::sort(cf.begin(), cf.end());
-
-              auto it = std::set_intersection(pf.begin(), pf.end(), cf.begin(),
-                                              cf.end(), set_output.begin());
-              if (std::distance(set_output.begin(), it) == 3)
-              {
-                assert(parent_facet[pf_offset + cc * 4 + fci] == -1);
-                // Child facet "fci" of cell cc, lies on parent facet "fpi"
-                parent_facet[pf_offset + cc * 4 + fci] = fpi;
-              }
-            }
-          }
-        }
+        std::vector<std::int8_t> npf
+            = compute_parent_facets(indices, simplex_set);
+        parent_facet.insert(parent_facet.end(), npf.begin(), npf.end());
       }
 
       // Convert from cell local index to mesh index and add to cells

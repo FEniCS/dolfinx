@@ -464,9 +464,13 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   for (std::size_t i = 0; i < input_meshtag.indices().size(); ++i)
   {
     std::int32_t parent_index = input_meshtag.indices()[i];
-    for (int child_index : p_to_c_facet.links(parent_index))
+    auto pclinks = p_to_c_facet.links(parent_index);
+    // eliminate duplicates
+    std::sort(pclinks.begin(), pclinks.end());
+    auto it_end = std::unique(pclinks.begin(), pclinks.end());
+    for (auto child_it = pclinks.begin(); child_it != it_end; ++child_it)
     {
-      facet_indices.push_back(child_index);
+      facet_indices.push_back(*child_it);
       tag_values.push_back(input_meshtag.values()[i]);
     }
   }
