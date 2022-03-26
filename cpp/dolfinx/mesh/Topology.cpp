@@ -91,6 +91,8 @@ determine_sharing_ranks(MPI_Comm comm,
     }
   }
 
+  // Determine src ranks. Sort ranks so that ownership determination is
+  // deterministic for a given number of ranks.
   std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
   std::sort(src.begin(), src.end());
 
