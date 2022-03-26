@@ -52,8 +52,8 @@ mesh::extract_topology(const CellType& cell_type,
       topology[num_vertices_per_cell * c + j] = p[local_vertices[j]];
   }
 
-  return graph::build_adjacency_list<std::int64_t>(std::move(topology),
-                                                   num_vertices_per_cell);
+  return graph::regular_adjacency_list(std::move(topology),
+                                       num_vertices_per_cell);
 }
 //-----------------------------------------------------------------------------
 std::vector<double> mesh::h(const Mesh& mesh,
@@ -528,14 +528,14 @@ mesh::create_cell_partitioner(const graph::partition_fn& partfn)
     LOG(INFO) << "Compute partition of cells across ranks";
 
     // Compute distributed dual graph (for the cells on this process)
-    const auto [dual_graph, num_ghost_edges]
+    const graph::AdjacencyList<std::int64_t> dual_graph
         = build_dual_graph(comm, cells, tdim);
 
     // Just flag any kind of ghosting for now
     bool ghosting = (ghost_mode != GhostMode::none);
 
     // Compute partition
-    return partfn(comm, nparts, dual_graph, num_ghost_edges, ghosting);
+    return partfn(comm, nparts, dual_graph, ghosting);
   };
 }
 //-----------------------------------------------------------------------------

@@ -45,7 +45,7 @@ def Q(mesh):
 def test_name_argument(W):
     u = Function(W)
     v = Function(W, name="v")
-    assert u.name == "f_{}".format(u.count())
+    assert u.name == "f"
     assert v.name == "v"
     assert str(v) == "v"
 

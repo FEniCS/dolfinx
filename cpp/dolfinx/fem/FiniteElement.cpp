@@ -81,8 +81,7 @@ _extract_sub_element(const FiniteElement& finite_element,
 
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(const ufcx_finite_element& e)
-    : _signature(e.signature), _family(e.family),
-      _tdim(e.topological_dimension), _space_dim(e.space_dimension),
+    : _signature(e.signature), _family(e.family), _space_dim(e.space_dimension),
       _value_shape(e.value_shape, e.value_shape + e.value_rank),
       _bs(e.block_size)
 {
@@ -111,7 +110,7 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
     throw std::runtime_error(
         "Unknown UFC cell type when building FiniteElement.");
   }
-  assert(mesh::cell_dim(_cell_shape) == _tdim);
+  assert(mesh::cell_dim(_cell_shape) == e.topological_dimension);
 
   static const std::map<ufcx_shape, std::string> ufcx_to_cell
       = {{vertex, "point"},         {interval, "interval"},
@@ -150,7 +149,7 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
           static_cast<basix::element::dpc_variant>(e.dpc_variant),
           e.discontinuous));
     }
-    if (e.lagrange_variant != -1)
+    else if (e.lagrange_variant != -1)
     {
       _element = std::make_unique<basix::FiniteElement>(basix::create_element(
           static_cast<basix::element::family>(e.basix_family),
@@ -185,9 +184,7 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
 }
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
-    : // _signature("Basix element " + std::to_string(bs)),
-      _tdim(basix::cell::topological_dimension(element.cell_type())),
-      _space_dim(bs * element.dim()), _value_shape(element.value_shape()),
+    : _space_dim(bs * element.dim()), _value_shape(element.value_shape()),
       _bs(bs)
 {
   if (_value_shape.empty() and bs > 1)
@@ -195,7 +192,15 @@ FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
   std::transform(_value_shape.cbegin(), _value_shape.cend(),
                  _value_shape.begin(), [bs](auto s) { return bs * s; });
 
+  if (bs > 1)
+  {
+    // Create all sub-elements
+    for (int i = 0; i < bs; ++i)
+      _sub_elements.push_back(std::make_shared<FiniteElement>(element, 1));
+  }
+
   _element = std::make_unique<basix::FiniteElement>(element);
+  assert(_element);
   _needs_dof_transformations
       = !_element->dof_transformations_are_identity()
         and !_element->dof_transformations_are_permutations();
@@ -203,8 +208,6 @@ FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
   _needs_dof_permutations
       = !_element->dof_transformations_are_identity()
         and _element->dof_transformations_are_permutations();
-
-  assert(_element);
   switch (_element->family())
   {
   case basix::element::family::P:
@@ -242,8 +245,6 @@ mesh::CellType FiniteElement::cell_shape() const noexcept
 {
   return _cell_shape;
 }
-//-----------------------------------------------------------------------------
-int FiniteElement::tdim() const noexcept { return _tdim; }
 //-----------------------------------------------------------------------------
 int FiniteElement::space_dimension() const noexcept { return _space_dim; }
 //-----------------------------------------------------------------------------
@@ -313,10 +314,16 @@ basix::maps::type FiniteElement::map_type() const
   return _element->map_type();
 }
 //-----------------------------------------------------------------------------
-bool FiniteElement::interpolation_ident() const noexcept
+bool FiniteElement::map_ident() const noexcept
 {
   assert(_element);
   return _element->map_type() == basix::maps::type::identity;
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::interpolation_ident() const noexcept
+{
+  assert(_element);
+  return _element->interpolation_is_identity();
 }
 //-----------------------------------------------------------------------------
 const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const

@@ -10,7 +10,6 @@
 #include "Topology.h"
 #include "utils.h"
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/UniqueIdGenerator.h>
 #include <string>
 #include <utility>
 
@@ -86,10 +85,6 @@ public:
   /// @return The geometry object associated with the mesh
   const Geometry& geometry() const;
 
-  /// Get unique identifier for the mesh
-  /// @returns The unique identifier associated with the object
-  std::size_t id() const { return _unique_id; }
-
   /// Mesh MPI communicator
   /// @return The communicator on which the mesh is distributed
   MPI_Comm comm() const;
@@ -110,9 +105,6 @@ private:
 
   // MPI communicator
   dolfinx::MPI::Comm _comm;
-
-  // Unique identifier
-  std::size_t _unique_id = common::UniqueIdGenerator::id();
 };
 
 /// Create a mesh using the default partitioner. This function takes

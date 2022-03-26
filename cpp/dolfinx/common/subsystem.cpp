@@ -54,7 +54,7 @@ void subsystem::init_logging(int argc, char* argv[])
 
   loguru::Options options = {"-dolfinx_loglevel", "main", signals};
 
-  // Make a copy of argv, as loguru may modify it.
+  // Make a copy of argv, as loguru may modify it
   std::vector<char*> argv_copy;
   for (int i = 0; i < argc; ++i)
     argv_copy.push_back(argv[i]);

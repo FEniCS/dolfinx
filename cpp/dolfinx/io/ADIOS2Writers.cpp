@@ -741,12 +741,11 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
         "Piecewise constants are not (yet) supported by VTXWriter");
   }
 
-  // FIXME: is the below check adequate for dectecting a Lagrange
-  // element?
-  // Check that element is Lagrange
+  // FIXME: is the below check adequate for dectecting a
+  // Lagrange element? Check that element is Lagrange
   if (!element0->interpolation_ident())
   {
-    throw std::runtime_error("Only (discontinuous) Lagrange functions are "
+    throw std::runtime_error("Only Lagrange functions are "
                              "supported. Interpolate Functions before ouput.");
   }
 
@@ -765,9 +764,10 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
             throw std::runtime_error(
                 "All functions in FidesWriter must have the same element type");
           }
-
+          auto dof_layout = u->function_space()->dofmap()->element_dof_layout();
+          int num_vertex_dofs = dof_layout.num_entity_dofs(0);
           int num_dofs = element->space_dimension() / element->block_size();
-          if (num_dofs != num_vertices_per_cell)
+          if (num_dofs != num_vertices_per_cell or num_vertex_dofs != 1)
           {
             throw std::runtime_error("Only first order Lagrange spaces are "
                                      "supported by FidesWriter");

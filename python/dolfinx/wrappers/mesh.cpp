@@ -40,10 +40,10 @@ auto create_cell_partitioner_cpp(Functor p_py)
 {
   return [p_py](MPI_Comm comm, int nparts,
                 const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-                std::int32_t num_ghost_nodes, bool ghosting)
+                bool ghosting)
   {
     return p_py(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph,
-                num_ghost_nodes, ghosting);
+                ghosting);
   };
 }
 
@@ -104,10 +104,11 @@ void declare_meshtags(py::module& m, std::string type)
             return dolfinx::mesh::MeshTags<T>(mesh, dim, std::move(indices_vec),
                                               std::move(values_vec));
           }))
+      .def_property_readonly("dtype", [](const dolfinx::mesh::MeshTags<T>& self)
+                             { return py::dtype::of<T>(); })
       .def_readwrite("name", &dolfinx::mesh::MeshTags<T>::name)
       .def_property_readonly("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<T>::mesh)
-      .def("ufl_id", &dolfinx::mesh::MeshTags<T>::id)
       .def_property_readonly("values",
                              [](dolfinx::mesh::MeshTags<T>& self)
                              {
@@ -317,15 +318,14 @@ void mesh(py::module& m)
           "Mesh topology", py::return_value_policy::reference_internal)
       .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self)
                              { return MPICommWrapper(self.comm()); })
-      .def_property_readonly("id", &dolfinx::mesh::Mesh::id)
       .def_readwrite("name", &dolfinx::mesh::Mesh::name);
 
   // dolfinx::mesh::MeshTags
 
   declare_meshtags<std::int8_t>(m, "int8");
   declare_meshtags<std::int32_t>(m, "int32");
-  declare_meshtags<double>(m, "double");
   declare_meshtags<std::int64_t>(m, "int64");
+  declare_meshtags<double>(m, "float64");
 
   // Partitioning interface using
   using PythonCellPartitionFunction
@@ -343,8 +343,7 @@ void mesh(py::module& m)
         [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
                MPICommWrapper comm, int nparts,
                const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-               std::int32_t num_ghost_nodes, bool ghosting)>& part)
-            -> PythonCellPartitionFunction
+               bool ghosting)>& part) -> PythonCellPartitionFunction
         {
           return create_cell_partitioner_py(
               dolfinx::mesh::create_cell_partitioner(

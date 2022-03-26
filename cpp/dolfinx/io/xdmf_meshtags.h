@@ -10,6 +10,7 @@
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <hdf5.h>
 #include <string>
@@ -29,6 +30,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
                   pugi::xml_node& xml_node, const hid_t h5_id,
                   const std::string name)
 {
+  LOG(INFO) << "XDMF: add meshtags (" << name << ")";
   // Get mesh
   assert(meshtags.mesh());
   std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
@@ -63,8 +65,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
                 comm);
   const std::int64_t num_local = num_active_entities;
   std::int64_t offset = 0;
-  MPI_Exscan(&num_local, &offset, 1, dolfinx::MPI::mpi_type<std::int64_t>(),
-             MPI_SUM, comm);
+  MPI_Exscan(&num_local, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
   xdmf_utils::add_data_item(
       attribute_node, h5_id, path_prefix + std::string("/Values"),

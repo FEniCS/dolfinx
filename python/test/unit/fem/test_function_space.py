@@ -71,8 +71,8 @@ def test_python_interface(V, V2, W, W2, Q):
     assert W.element == W2.element
     assert V.ufl_element() == V2.ufl_element()
     assert W.ufl_element() == W2.ufl_element()
-    assert W.id == W2.id
-    assert V.id == V2.id
+    assert W is W2
+    assert V is V2
 
 
 def test_component(V, W, Q):
@@ -151,9 +151,7 @@ def test_not_equal(W, V, W2, V2):
 
 
 def test_clone(W):
-    V = W.clone()
-    assert V == W
-    assert V.id != W.id
+    assert W.clone() is not W
 
 
 def test_collapse(W, V):

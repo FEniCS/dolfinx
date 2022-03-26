@@ -66,14 +66,14 @@
 // containing the actual solver.
 //
 // Running this demo requires the files: :download:`main.cpp`,
-// :download:`Poisson.ufl` and :download:`CMakeLists.txt`.
+// :download:`poisson.py` and :download:`CMakeLists.txt`.
 //
 //
 // UFL form file
 // ^^^^^^^^^^^^^
 //
-// The UFL file is implemented in :download:`Poisson.ufl`, and the
-// explanation of the UFL file can be found at :doc:`here <Poisson.ufl>`.
+// The UFL file is implemented in :download:`poisson.py`, and the
+// explanation of the UFL file can be found at :doc:`here <poisson.py>`.
 //
 //
 // C++ program
@@ -202,8 +202,8 @@ int main(int argc, char* argv[])
                          *a, {bc});
     MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
-    fem::set_diagonal(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
-                      {bc});
+    fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
+                         {bc});
     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 

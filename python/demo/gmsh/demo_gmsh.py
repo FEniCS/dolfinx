@@ -29,7 +29,7 @@ from dolfinx.graph import create_adjacencylist
 from dolfinx.io import (XDMFFile, cell_perm_gmsh, distribute_entity_data,
                         extract_gmsh_geometry,
                         extract_gmsh_topology_and_markers, ufl_mesh_from_gmsh)
-from dolfinx.mesh import CellType, create_mesh, create_meshtags
+from dolfinx.mesh import CellType, create_mesh, meshtags_from_entities
 
 from mpi4py import MPI
 # -
@@ -119,7 +119,7 @@ msh.name = "ball_d1"
 entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
 
 msh.topology.create_connectivity(2, 0)
-mt = create_meshtags(msh, 2, create_adjacencylist(entities), np.int32(values))
+mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), np.int32(values))
 mt.name = "ball_d1_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as file:
@@ -179,7 +179,7 @@ marked_facets = marked_facets[:, gmsh_triangle6]
 
 entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
 msh.topology.create_connectivity(2, 0)
-mt = create_meshtags(msh, 2, create_adjacencylist(entities), np.int32(values))
+mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), np.int32(values))
 mt.name = "ball_d2_surface"
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:
     file.write_mesh(msh)
@@ -236,12 +236,15 @@ if MPI.COMM_WORLD.rank == 0:
     marked_facets = topologies[gmsh_facet_id]["topology"].astype(np.int64)
     facet_values = topologies[gmsh_facet_id]["cell_data"].astype(np.int32)
     gmsh.finalize()
+
+    # Permute tagged entities
+    gmsh_quad9 = cell_perm_gmsh(CellType.quadrilateral, 9)
+    marked_facets = marked_facets[:, gmsh_quad9]
 else:
     gmsh_cell_id = MPI.COMM_WORLD.bcast(None, root=0)
     num_nodes = MPI.COMM_WORLD.bcast(None, root=0)
     cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
-    marked_facets, facet_values = np.empty((0, 6)).astype(np.int64), np.empty((0,)).astype(np.int32)
-
+    marked_facets, facet_values = np.empty((0, 9)).astype(np.int64), np.empty((0,)).astype(np.int32)
 
 # Permute the mesh topology from GMSH ordering to DOLFINx ordering
 domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
@@ -251,13 +254,9 @@ cells = cells[:, gmsh_hex27]
 msh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 msh.name = "hex_d2"
 
-# Permute also entities which are tagged
-gmsh_quad9 = cell_perm_gmsh(CellType.quadrilateral, 9)
-marked_facets = marked_facets[:, gmsh_quad9]
-
 entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
 msh.topology.create_connectivity(2, 0)
-mt = create_meshtags(msh, 2, create_adjacencylist(entities), np.int32(values))
+mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), np.int32(values))
 mt.name = "hex_d2_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "a") as file:

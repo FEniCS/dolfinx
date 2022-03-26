@@ -119,7 +119,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 
     // -- Extra cell topology
 
-    // Extract cell 'topology', i.e. the vertices for each cell
+    // Extract cell 'topology', i.e. extract the vertices for each cell
+    // and discard any 'higher-order' nodes
     graph::AdjacencyList<std::int64_t> cells_extracted
         = extract_topology(element.cell_shape(), dof_layout, cell_nodes);
 
@@ -128,15 +129,14 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // Build local dual graph for owned cells to apply re-ordering to
     const std::int32_t num_owned_cells
         = cells_extracted.num_nodes() - ghost_owners.size();
-    const std::vector<int> remap = graph::reorder_gps(
-        build_local_dual_graph(
+    const std::vector<int> remap
+        = graph::reorder_gps(std::get<0>(build_local_dual_graph(
             xtl::span<const std::int64_t>(
                 cells_extracted.array().data(),
                 cells_extracted.offsets()[num_owned_cells]),
             xtl::span<const std::int32_t>(cells_extracted.offsets().data(),
                                           num_owned_cells + 1),
-            tdim)
-            .first);
+            tdim)));
 
     // Create re-ordered cell lists (leaves ghosts unchanged)
     std::vector<std::int64_t> original_cell_index(original_cell_index0.size());

@@ -27,14 +27,18 @@ namespace dolfinx::la
 {
 
 /// This class provides a sparsity pattern data structure that can be
-/// used to initialize sparse matrices. After assembly, column indices are
-/// always sorted in increasing order. Ghost entries are kept after assembly.
-
+/// used to initialize sparse matrices. After assembly, column indices
+/// are always sorted in increasing order. Ghost entries are kept after
+/// assembly.
 class SparsityPattern
 {
 
 public:
   /// Create an empty sparsity pattern with specified dimensions
+  /// @param[in] comm The communicator that the pattenr is defined on
+  /// @param[in] maps The index maps describing the [0] row and [1]
+  /// column index ranges (up to a block size)
+  /// @param[in] bs The block sizes for the [0] row and [1] column maps
   SparsityPattern(
       MPI_Comm comm,
       const std::array<std::shared_ptr<const common::IndexMap>, 2>& maps,

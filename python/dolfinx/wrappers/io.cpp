@@ -52,28 +52,30 @@ void io(py::module& m)
         "Permutation array to map from Gmsh to DOLFINx node ordering");
 
   // TODO: Template for different values dtypes
-  m.def(
-      "distribute_entity_data",
-      [](const dolfinx::mesh::Mesh& mesh, int entity_dim,
-         const py::array_t<std::int64_t, py::array::c_style>& entities,
-         const py::array_t<std::int32_t, py::array::c_style>& values)
-      {
-        assert(entities.ndim() == 2);
-        std::array shape
-            = {std::size_t(entities.shape(0)), std::size_t(entities.shape(1))};
+  m.def("distribute_entity_data",
+        [](const dolfinx::mesh::Mesh& mesh, int entity_dim,
+           const py::array_t<std::int64_t, py::array::c_style>& entities,
+           const py::array_t<std::int32_t, py::array::c_style>& values)
+        {
+          assert(entities.ndim() == 2);
+          assert(values.ndim() == 1);
+          assert(entities.shape(0) == values.shape(0));
+          std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
+              entities_values = dolfinx::io::xdmf_utils::distribute_entity_data(
+                  mesh, entity_dim, xtl::span(entities.data(), entities.size()),
+                  xtl::span(values.data(), values.size()));
 
-        // The below should work, but misbehaves with the Intel icpx
-        // compiler
-        // auto _entities = xt::adapt(entities.data(), entities.size(),
-        //                            xt::no_ownership(), shape);
-        xt::xtensor<std::int64_t, 2> _entities(shape);
-        std::copy_n(entities.data(), entities.size(), _entities.data());
-        auto [e, v] = dolfinx::io::xdmf_utils::distribute_entity_data(
-            mesh, entity_dim, _entities,
-            xtl::span(values.data(), values.size()));
-
-        return std::pair(xt_as_pyarray(std::move(e)), as_pyarray(std::move(v)));
-      });
+          std::size_t num_vert_per_entity = dolfinx::mesh::cell_num_entities(
+              dolfinx::mesh::cell_entity_type(mesh.topology().cell_type(),
+                                              entity_dim, 0),
+              0);
+          std::array shape_e
+              = {entities_values.first.size() / num_vert_per_entity,
+                 num_vert_per_entity};
+          return std::pair(
+              as_pyarray(std::move(entities_values.first), shape_e),
+              as_pyarray(std::move(entities_values.second)));
+        });
 
   // dolfinx::io::XDMFFile
   py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>
@@ -96,11 +98,6 @@ void io(py::module& m)
                }),
            py::arg("comm"), py::arg("filename"), py::arg("file_mode"),
            py::arg("encoding") = dolfinx::io::XDMFFile::Encoding::HDF5)
-      .def("__enter__",
-           [](std::shared_ptr<dolfinx::io::XDMFFile>& self) { return self; })
-      .def("__exit__",
-           [](dolfinx::io::XDMFFile& self, py::object exc_type,
-              py::object exc_value, py::object traceback) { self.close(); })
       .def("close", &dolfinx::io::XDMFFile::close)
       .def("write_mesh", &dolfinx::io::XDMFFile::write_mesh, py::arg("mesh"),
            py::arg("xpath") = "/Xdmf/Domain")
@@ -158,11 +155,6 @@ void io(py::module& m)
                                                                filename, mode);
                }),
            py::arg("comm"), py::arg("filename"), py::arg("mode"))
-      .def("__enter__",
-           [](std::shared_ptr<dolfinx::io::VTKFile>& self) { return self; })
-      .def("__exit__",
-           [](dolfinx::io::VTKFile& self, py::object exc_type,
-              py::object exc_value, py::object traceback) { self.close(); })
       .def("close", &dolfinx::io::VTKFile::close)
       .def("write", &dolfinx::io::VTKFile::write<double>, py::arg("u"),
            py::arg("t") = 0.0)
@@ -197,11 +189,6 @@ void io(py::module& m)
             return std::make_unique<dolfinx::io::FidesWriter>(comm.get(),
                                                               filename, u);
           }))
-      .def("__enter__",
-           [](std::shared_ptr<dolfinx::io::FidesWriter>& self) { return self; })
-      .def("__exit__",
-           [](dolfinx::io::FidesWriter& self, py::object exc_type,
-              py::object exc_value, py::object traceback) { self.close(); })
       .def("close", [](dolfinx::io::FidesWriter& self) { self.close(); })
       .def("write",
            [](dolfinx::io::FidesWriter& self, double t) { self.write(t); });
@@ -226,11 +213,6 @@ void io(py::module& m)
             return std::make_unique<dolfinx::io::VTXWriter>(comm.get(),
                                                             filename, u);
           }))
-      .def("__enter__",
-           [](std::shared_ptr<dolfinx::io::VTXWriter>& self) { return self; })
-      .def("__exit__",
-           [](dolfinx::io::VTXWriter& self, py::object exc_type,
-              py::object exc_value, py::object traceback) { self.close(); })
       .def("close", [](dolfinx::io::VTXWriter& self) { self.close(); })
       .def("write",
            [](dolfinx::io::VTXWriter& self, double t) { self.write(t); });

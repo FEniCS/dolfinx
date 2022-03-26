@@ -13,7 +13,7 @@ import pytest
 import ufl
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
-from dolfinx.mesh import (CellType, MeshTags, create_mesh, create_unit_cube,
+from dolfinx.mesh import (CellType, meshtags, create_mesh, create_unit_cube,
                           create_unit_square, locate_entities)
 
 from mpi4py import MPI
@@ -159,6 +159,16 @@ def test_Lagrange_interpolation(cell_type, order):
     """Test that interpolation is correct in a FunctionSpace"""
     mesh = one_cell_mesh(cell_type)
     V = FunctionSpace(mesh, ("Lagrange", order))
+    run_scalar_test(V, order)
+
+
+@pytest.mark.skip_in_parallel
+@pytest.mark.parametrize("cell_type", [CellType.interval, CellType.quadrilateral, CellType.hexahedron])
+@pytest.mark.parametrize("order", range(1, 5))
+def test_serendipity_interpolation(cell_type, order):
+    """Test that interpolation is correct in a FunctionSpace"""
+    mesh = one_cell_mesh(cell_type)
+    V = FunctionSpace(mesh, ("S", order))
     run_scalar_test(V, order)
 
 
@@ -527,7 +537,7 @@ def test_interpolate_subset(order, dim, affine):
     f = x[1]**order
     expr = Expression(f, V.element.interpolation_points)
     u.interpolate(expr, cells_local)
-    mt = MeshTags(mesh, mesh.topology.dim, cells_local, np.ones(cells_local.size, dtype=np.int32))
+    mt = meshtags(mesh, mesh.topology.dim, cells_local, np.ones(cells_local.size, dtype=np.int32))
     dx = ufl.Measure("dx", domain=mesh, subdomain_data=mt)
     assert np.isclose(np.abs(form(assemble_scalar(form(ufl.inner(u - f, u - f) * dx(1))))), 0)
     integral = mesh.comm.allreduce(assemble_scalar(form(u * dx)), op=MPI.SUM)

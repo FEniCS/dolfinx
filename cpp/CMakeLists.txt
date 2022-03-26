@@ -341,7 +341,7 @@ install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/demo DESTINATION ${CMAKE_INSTALL_D
   PATTERN "*.hpp"
   PATTERN "*.c"
   PATTERN "*.cpp"
-  PATTERN "*.ufl"
+  PATTERN "*.py"
   PATTERN "*.xdmf"
   PATTERN "*.h5"
   PATTERN "CMakeFiles" EXCLUDE)

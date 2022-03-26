@@ -166,7 +166,7 @@ class Expression:
         else:
             if values.shape != values_shape:
                 raise TypeError("Passed array values does not have correct shape.")
-            if values.dtype != self._dtype:
+            if values.dtype != self.dtype:
                 raise TypeError("Passed array values does not have correct dtype.")
 
         self._cpp_object.eval(cells, values)
@@ -245,11 +245,11 @@ class Function(ufl.Coefficient):
             self._cpp_object = functiontype(dtype)(V._cpp_object)
 
         # Initialize the ufl.FunctionSpace
-        super().__init__(V.ufl_function_space(), count=self._cpp_object.id)
+        super().__init__(V.ufl_function_space())
 
         # Set name
         if name is None:
-            self.name = "f_{}".format(self.count())
+            self.name = "f"
         else:
             self.name = name
 
@@ -367,11 +367,6 @@ class Function(ufl.Coefficient):
     def name(self, name):
         self._cpp_object.name = name
 
-    @property
-    def id(self) -> int:
-        """Object id index."""
-        return self._cpp_object.id
-
     def __str__(self):
         """Pretty print representation of it self."""
         return self.name
@@ -387,7 +382,7 @@ class Function(ufl.Coefficient):
             the total number of sub spaces.
 
         """
-        return Function(self._V.sub(i), self.x, name="{}-{}".format(str(self), i))
+        return Function(self._V.sub(i), self.x, name=f"{str(self)}_{i}")
 
     def split(self) -> tuple[Function, ...]:
         """Extract any sub functions.
@@ -395,6 +390,9 @@ class Function(ufl.Coefficient):
         A sub function can be extracted from a discrete function that
         is in a mixed, vector, or tensor FunctionSpace. The sub
         function resides in the subspace of the mixed space.
+
+        Args:
+            Function space subspaces.
 
         """
         num_sub_spaces = self.function_space.num_sub_spaces
@@ -496,21 +494,16 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.component()
 
     def contains(self, V) -> bool:
-        """Check whether a FunctionSpace is in this FunctionSpace, or is the
-        same as this FunctionSpace.
+        """Check if a space is contained in, or is the same as (identity), this space.
+
+        Args:
+            V: The space to check to for inclusion.
+
+        Returns:
+            True is ``V`` is contained in, or is the same as, this space
 
         """
         return self._cpp_object.contains(V._cpp_object)
-
-    def __contains__(self, u):
-        """Check whether a function is in the FunctionSpace."""
-        try:
-            return u._in(self._cpp_object)
-        except AttributeError:
-            try:
-                return u._cpp_object._in(self._cpp_object)
-            except Exception as e:
-                raise RuntimeError("Unable to check if object is in FunctionSpace ({})".format(e))
 
     def __eq__(self, other):
         """Comparison for equality."""
@@ -526,11 +519,6 @@ class FunctionSpace(ufl.FunctionSpace):
     def ufl_function_space(self) -> ufl.FunctionSpace:
         """UFL function space"""
         return self
-
-    @property
-    def id(self) -> int:
-        """Unique identifier"""
-        return self._cpp_object.id
 
     @property
     def element(self):

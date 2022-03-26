@@ -13,7 +13,7 @@ import scipy.sparse
 
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx import graph, la
+from dolfinx import fem, graph, la
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, bcs_by_block,
                          dirichletbc, extract_function_spaces, form,
@@ -143,6 +143,29 @@ def test_basic_assembly(mode):
     assemble_matrix(A, a)
     A.assemble()
     assert 2.0 * normA == pytest.approx(A.norm())
+
+
+@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
+def test_basic_assembly_petsc_matrixcsr(mode):
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = inner(u, v) * dx + inner(u, v) * ds
+    a = form(a)
+
+    A0 = fem.assemble_matrix(a)
+    A0.finalize()
+    assert isinstance(A0, la.MatrixCSRMetaClass)
+    A1 = fem.petsc.assemble_matrix(a)
+    A1.assemble()
+    assert isinstance(A1, PETSc.Mat)
+    assert np.sqrt(A0.norm_squared()) == pytest.approx(A1.norm())
+
+    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = form(inner(u, v) * dx + inner(u, v) * ds)
+    with pytest.raises(RuntimeError):
+        A0 = fem.assemble_matrix(a)
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])

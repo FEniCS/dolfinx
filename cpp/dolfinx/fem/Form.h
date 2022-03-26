@@ -25,16 +25,16 @@ class Constant;
 template <typename T>
 class Function;
 
-/// Type of integral
+/// @brief Type of integral
 enum class IntegralType : std::int8_t
 {
-  cell = 0,
-  exterior_facet = 1,
-  interior_facet = 2,
-  vertex = 3
+  cell = 0,           ///< Cell
+  exterior_facet = 1, ///< Exterior facet
+  interior_facet = 2, ///< Interior facet
+  vertex = 3          ///< Vertex
 };
 
-/// Class for variational forms
+/// @brief A representation of finite element variational forms.
 ///
 /// A note on the order of trial and test spaces: FEniCS numbers
 /// argument spaces starting with the leading dimension of the
@@ -57,12 +57,14 @@ enum class IntegralType : std::int8_t
 /// (the variable `function_spaces` in the constructors below), the list
 /// of spaces should start with space number 0 (the test space) and then
 /// space number 1 (the trial space).
-
 template <typename T>
 class Form
 {
 public:
-  /// Create form
+  /// @brief Create a finite element form.
+  ///
+  /// @note User applications will normally call a fem::Form builder
+  /// function rather using this interfcae directly.
   ///
   /// @param[in] function_spaces Function spaces for the form arguments
   /// @param[in] integrals The integrals in the form. The first key is
@@ -575,10 +577,14 @@ private:
         assert(c_to_f);
 
         // Only need to consider shared facets when there are no ghost
-        // cells
+        // cells and none of cells owned by this process are shared. The
+        // latter check is required because a submesh could have no ghost
+        // cells on this process but another process could ghost some of
+        // those cells)
         std::set<std::int32_t> fwd_shared_facets;
         assert(topology.index_map(tdim - 1));
-        if (topology.index_map(tdim)->num_ghosts() == 0)
+        if (topology.index_map(tdim)->num_ghosts() == 0
+            and topology.index_map(tdim)->scatter_fwd_indices().array().empty())
         {
           const std::vector<std::int32_t>& fwd_indices
               = topology.index_map(tdim - 1)->scatter_fwd_indices().array();
