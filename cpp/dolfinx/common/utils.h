@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2010 Anders Logg
+// Copyright (C) 2009-2022 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "IndexMap.h"
 #include <algorithm>
 #include <boost/functional/hash.hpp>
 #include <dolfinx/common/MPI.h>
@@ -45,7 +44,8 @@ sort_unique(const U& indices, const V& values)
   using T = typename std::pair<typename U::value_type, typename V::value_type>;
   std::vector<T> data(indices.size());
   std::transform(indices.cbegin(), indices.cend(), values.cbegin(),
-                 data.begin(), [](auto& idx, auto& v) -> T {
+                 data.begin(),
+                 [](auto& idx, auto& v) -> T {
                    return {idx, v};
                  });
 
@@ -66,7 +66,13 @@ sort_unique(const U& indices, const V& values)
   return {std::move(indices_new), std::move(values_new)};
 }
 
-/// Return a hash of a given object
+/// @brief Compute a hash of a given object
+///
+/// The hash is computed using Boost container hash
+/// (https://www.boost.org/doc/libs/release/libs/container_hash/).
+///
+/// @param[in] x The object to compute a hash of.
+/// @return The hash values.
 template <class T>
 std::size_t hash_local(const T& x)
 {
@@ -74,11 +80,19 @@ std::size_t hash_local(const T& x)
   return hash(x);
 }
 
-/// Return a hash for a distributed (MPI) object. A hash is computed on
-/// each process, and the hash of the std::vector of all local hash keys
-/// is returned. This function is collective.
+/// @brief Compute a hash for a distributed (MPI) object.
+///
+/// A hash is computed on each process for the local part of the obejct.
+/// Then, a hash of the std::vector containing each local hash key in
+/// rank order is returned.
+///
+/// @note Collective
+///
+/// @param[in] comm The communicator on which to compute the hash.
+/// @param[in] x The object to compute a hash of.
+/// @return The hash values.
 template <class T>
-std::size_t hash_global(const MPI_Comm comm, const T& x)
+std::size_t hash_global(MPI_Comm comm, const T& x)
 {
   // Compute local hash
   std::size_t local_hash = hash_local(x);
