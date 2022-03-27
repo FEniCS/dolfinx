@@ -9,7 +9,8 @@ from numpy import isclose, logical_and
 import ufl
 from dolfinx.fem import FunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix
-from dolfinx.mesh import (DiagonalType, GhostMode, compute_incident_entities,
+from dolfinx.mesh import (DiagonalType, CellType, GhostMode,
+                          compute_incident_entities,
                           create_unit_cube, create_unit_square, meshtags,
                           locate_entities, locate_entities_boundary, refine)
 from dolfinx import cpp as _cpp
@@ -119,8 +120,7 @@ def test_refine_from_cells():
 
 
 def test_refine_facet_meshtag():
-
-    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, CellType.tetrahedron, GhostMode.none)
     mesh.topology.create_entities(2)
     mesh.topology.create_connectivity(2, 3)
     mesh.topology.create_entities(1)
