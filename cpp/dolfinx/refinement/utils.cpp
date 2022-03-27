@@ -462,9 +462,11 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   // Copy facet meshtag from parent to child
   std::vector<std::int32_t> facet_indices;
   std::vector<std::int32_t> tag_values;
+  const std::vector<std::int32_t>& in_index = input_meshtag.indices();
+  const std::vector<std::int32_t>& in_value = input_meshtag.values();
   for (std::size_t i = 0; i < input_meshtag.indices().size(); ++i)
   {
-    std::int32_t parent_index = input_meshtag.indices()[i];
+    std::int32_t parent_index = in_index[i];
     auto pclinks = p_to_c_facet.links(parent_index);
     // eliminate duplicates
     std::sort(pclinks.begin(), pclinks.end());
@@ -472,7 +474,7 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
     for (auto child_it = pclinks.begin(); child_it != it_end; ++child_it)
     {
       facet_indices.push_back(*child_it);
-      tag_values.push_back(input_meshtag.values()[i]);
+      tag_values.push_back(in_value[i]);
     }
   }
 
@@ -491,4 +493,76 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   return mesh::MeshTags<std::int32_t>(
       std::make_shared<mesh::Mesh>(refined_mesh), tdim - 1,
       std::move(facet_indices), std::move(sorted_tag_values));
+}
+//----------------------------------------------------------------------------
+mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
+    const mesh::MeshTags<std::int32_t>& input_meshtag,
+    const mesh::Mesh& refined_mesh, std::vector<std::int32_t>& parent_cell)
+{
+  const int tdim = input_meshtag.mesh()->topology().dim();
+  if (input_meshtag.dim() != tdim)
+    throw std::runtime_error("Input meshtag is not cell-based");
+
+  // Create map parent->child facets
+  const std::int32_t num_input_cells
+      = input_meshtag.mesh()->topology().index_map(tdim)->size_local()
+        + input_meshtag.mesh()->topology().index_map(tdim)->num_ghosts();
+  std::vector<int> count_child(num_input_cells, 0);
+
+  // Count number of child cells for each parent cell
+  for (std::size_t c = 0; c < parent_cell.size(); ++c)
+    ++count_child[parent_cell[c]];
+
+  std::vector<int> offset_child(num_input_cells + 1, 0);
+  std::partial_sum(count_child.begin(), count_child.end(),
+                   std::next(offset_child.begin()));
+  std::vector<std::int32_t> child_cell(offset_child.back());
+
+  // Fill in data for each child cell
+  for (std::size_t c = 0; c < parent_cell.size(); ++c)
+  {
+    std::int32_t pc = parent_cell[c];
+    int offset = offset_child[pc];
+    child_cell[offset] = c;
+    ++offset_child[pc];
+  }
+
+  // Rebuild offset
+  offset_child[0] = 0;
+  std::partial_sum(count_child.begin(), count_child.end(),
+                   std::next(offset_child.begin()));
+  graph::AdjacencyList<std::int32_t> p_to_c_cell(std::move(child_cell),
+                                                 std::move(offset_child));
+
+  // Copy cell meshtag from parent to child
+  std::vector<std::int32_t> cell_indices;
+  std::vector<std::int32_t> tag_values;
+  const std::vector<std::int32_t>& in_index = input_meshtag.indices();
+  const std::vector<std::int32_t>& in_value = input_meshtag.values();
+  for (std::size_t i = 0; i < input_meshtag.indices().size(); ++i)
+  {
+    std::int32_t parent_index = in_index[i];
+    auto pclinks = p_to_c_cell.links(parent_index);
+    for (std::int32_t child : pclinks)
+    {
+      cell_indices.push_back(child);
+      tag_values.push_back(in_value[i]);
+    }
+  }
+
+  // Sort values into order, based on cell indices
+  std::vector<int> sort_order(tag_values.size());
+  std::iota(sort_order.begin(), sort_order.end(), 0);
+  std::sort(sort_order.begin(), sort_order.end(),
+            [&](int a, int b) { return cell_indices[a] < cell_indices[b]; });
+  std::vector<std::int32_t> sorted_tag_values(tag_values.size());
+  for (std::size_t i = 0; i < sort_order.size(); ++i)
+    sorted_tag_values[i] = tag_values[sort_order[i]];
+
+  // Sort cell indices into order
+  std::sort(cell_indices.begin(), cell_indices.end());
+
+  return mesh::MeshTags<std::int32_t>(
+      std::make_shared<mesh::Mesh>(refined_mesh), tdim, std::move(cell_indices),
+      std::move(sorted_tag_values));
 }
