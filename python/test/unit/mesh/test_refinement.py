@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 from numpy import isclose, logical_and
+import pytest
 
 import ufl
 from dolfinx.fem import FunctionSpace, form
@@ -119,37 +120,63 @@ def test_refine_from_cells():
     assert num_cells_global == actual_cells
 
 
-def test_refine_facet_meshtag():
-    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, CellType.tetrahedron, GhostMode.none)
-    mesh.topology.create_entities(2)
-    mesh.topology.create_connectivity(2, 3)
+@pytest.mark.parametrize("tdim", [2, 3])
+def test_refine_facet_meshtag(tdim):
+    if tdim == 3:
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron, GhostMode.none)
+    else:
+        mesh = create_unit_square(MPI.COMM_WORLD, 2, 5, CellType.triangle, GhostMode.none)
+    mesh.topology.create_entities(tdim - 1)
+    mesh.topology.create_connectivity(tdim - 1, tdim)
     mesh.topology.create_entities(1)
-    f_to_c = mesh.topology.connectivity(2, 3)
+    f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
     facet_indices = []
-    for f in range(mesh.topology.index_map(2).size_local):
+    for f in range(mesh.topology.index_map(tdim - 1).size_local):
         if len(f_to_c.links(f)) == 1:
             facet_indices += [f]
-    meshtag = meshtags(mesh, 2, numpy.array(facet_indices, dtype=numpy.int32),
+    meshtag = meshtags(mesh, tdim - 1, numpy.array(facet_indices, dtype=numpy.int32),
                        numpy.arange(len(facet_indices), dtype=numpy.int32))
 
     parent_cell, parent_facet, fine_mesh = _cpp.refinement.plaza_refine_data(mesh, False, True)
-    fine_mesh.topology.create_entities(2)
+    fine_mesh.topology.create_entities(tdim - 1)
 
     new_meshtag = _cpp.refinement.transfer_facet_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
 
-    assert len(new_meshtag.indices) == 4 * len(meshtag.indices)
+    assert len(new_meshtag.indices) == (tdim * 2 - 2) * len(meshtag.indices)
 
     # New tags should be on facets with one cell (i.e. exterior)
-    fine_mesh.topology.create_connectivity(2, 3)
-    new_f_to_c = fine_mesh.topology.connectivity(2, 3)
+    fine_mesh.topology.create_connectivity(tdim - 1, tdim)
+    new_f_to_c = fine_mesh.topology.connectivity(tdim - 1, tdim)
     for f in new_meshtag.indices:
         assert len(new_f_to_c.links(f)) == 1
 
     # Now mark all facets (including internal)
-    facet_indices = numpy.arange(mesh.topology.index_map(2).size_local)
-    meshtag = meshtags(mesh, 2, numpy.array(facet_indices, dtype=numpy.int32),
+    facet_indices = numpy.arange(mesh.topology.index_map(tdim - 1).size_local)
+    meshtag = meshtags(mesh, tdim - 1, numpy.array(facet_indices, dtype=numpy.int32),
                        numpy.arange(len(facet_indices), dtype=numpy.int32))
 
     new_meshtag = _cpp.refinement.transfer_facet_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
 
-    assert len(new_meshtag.indices) == 4 * len(meshtag.indices)
+    assert len(new_meshtag.indices) == (tdim * 2 - 2) * len(meshtag.indices)
+
+
+@pytest.mark.parametrize("tdim", [2, 3])
+def test_refine_cell_meshtag(tdim):
+
+    if tdim == 3:
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron, GhostMode.none)
+    else:
+        mesh = create_unit_square(MPI.COMM_WORLD, 2, 5, CellType.triangle, GhostMode.none)
+
+    mesh.topology.create_entities(1)
+
+    cell_indices = numpy.arange(mesh.topology.index_map(tdim).size_local)
+    meshtag = meshtags(mesh, tdim, numpy.array(cell_indices, dtype=numpy.int32),
+                       numpy.arange(len(cell_indices), dtype=numpy.int32))
+
+    parent_cell, parent_facet, fine_mesh = _cpp.refinement.plaza_refine_data(mesh, False, False)
+
+    new_meshtag = _cpp.refinement.transfer_cell_meshtag(meshtag, fine_mesh, parent_cell)
+
+    assert sum(new_meshtag.values) == (tdim * 4 - 4) * sum(meshtag.values)
+    assert len(new_meshtag.indices) == (tdim * 4 - 4) * len(meshtag.indices)

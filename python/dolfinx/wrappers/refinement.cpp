@@ -30,6 +30,7 @@ void refinement(py::module& m)
             &dolfinx::refinement::plaza::refine));
 
   m.def("transfer_facet_meshtag", &dolfinx::refinement::transfer_facet_meshtag);
+  m.def("transfer_cell_meshtag", &dolfinx::refinement::transfer_cell_meshtag);
 
   m.def(
       "refine",
