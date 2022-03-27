@@ -13,10 +13,10 @@ void dolfinx::init_logging(int argc, char* argv[])
 {
   loguru::g_stderr_verbosity = loguru::Verbosity_WARNING;
 
-#ifndef NDEBUG
-  loguru::SignalOptions signals;
-#else
+#ifdef NDEBUG
   loguru::SignalOptions signals = loguru::SignalOptions::none();
+#else
+  loguru::SignalOptions signals;
 #endif
 
   loguru::Options options = {"-dolfinx_loglevel", "main", signals};
