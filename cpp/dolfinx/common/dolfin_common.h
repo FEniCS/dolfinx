@@ -16,7 +16,5 @@ namespace dolfinx
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/defines.h>
-#include <dolfinx/common/init.h>
-#include <dolfinx/common/subsystem.h>
 #include <dolfinx/common/timing.h>
 #include <dolfinx/common/version.h>
