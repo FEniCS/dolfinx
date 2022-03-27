@@ -34,10 +34,10 @@ namespace plaza
 /// @param[in] mesh Input mesh to be refined
 /// @param[in] redistribute Flag to call the mesh partitioner to
 /// redistribute after refinement
-/// @param[in] store_indices Flag to save refinement data for further use
+/// @param[in] compute_facets Flag to save facet data for further use
 /// @return New mesh
 std::tuple<std::vector<std::int32_t>, std::vector<std::int8_t>, mesh::Mesh>
-refine(const mesh::Mesh& mesh, bool redistribute, bool store_indices);
+refine(const mesh::Mesh& mesh, bool redistribute, bool compute_facets);
 
 /// Refine with markers, optionally redistributing.
 ///
@@ -46,33 +46,32 @@ refine(const mesh::Mesh& mesh, bool redistribute, bool store_indices);
 /// refinement
 /// @param[in] redistribute Flag to call the Mesh Partitioner to
 /// redistribute after refinement
-/// @param[in] store_indices Flag to save refinement data for further use
+/// @param[in] compute_facets Flag to save facet data for further use
 /// @return optional refeinemtn data and New Mesh
 std::tuple<std::vector<std::int32_t>, std::vector<std::int8_t>, mesh::Mesh>
 refine(const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& edges,
-       bool redistribute, bool store_indices);
+       bool redistribute, bool compute_facets);
 
 /// Refine mesh returning new mesh data.
 ///
 /// @param[in] mesh Input mesh to be refined
-/// @param[in] store_indices If true, returns internal data of new vertex
-/// indices associated with each original cell.
+/// @param[in] compute_facets If true, returns list of facets for each new cell,
+/// as local facet index of parent cell, or -1 if no corresponding facet.
 /// @return New mesh data: cell topology, vertex coordinates and parent
-/// cell index, and stored refined vertex indices on each parent cell (if
-/// requested).
+/// cell index, and stored parent facet indices (if requested).
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>, std::vector<std::int8_t>>
-compute_refinement_data(const mesh::Mesh& mesh, bool store_indices);
+compute_refinement_data(const mesh::Mesh& mesh, bool compute_facets);
 
 /// Refine with markers returning new mesh data.
 ///
 /// @param[in] mesh Input mesh to be refined
 /// @param[in] edges Indices of the edges that should be split by this
 /// refinement
-/// @param[in] store_indices If true, returns internal data of new vertex
-/// indices associated with each original cell.
+/// @param[in] compute_facets  If true, returns list of facets for each new
+/// cell, as local facet index of parent cell, or -1 if no corresponding facet.
 /// @return New mesh data: cell topology, vertex coordinates and parent
-/// cell index
+/// cell index, and stored parent facet indices (if requested).
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>, std::vector<std::int8_t>>
 compute_refinement_data(const mesh::Mesh& mesh,

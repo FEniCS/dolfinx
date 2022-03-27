@@ -386,49 +386,62 @@ face_long_edge(const mesh::Mesh& mesh)
   return std::pair(std::move(long_edge), std::move(edge_ratio_ok));
 }
 //-----------------------------------------------------------------
+
+template <int tdim>
 std::vector<std::int8_t>
 compute_parent_facets(const std::vector<std::int64_t>& indices,
                       const std::vector<std::int32_t>& simplex_set)
 {
-  // TODO: implement for 2D
-  assert(indices.size() == 10);
-  assert(simplex_set.size() % 4 == 0);
-
   std::vector<std::int8_t> parent_facet(simplex_set.size(), -1);
 
-  static const int facet_table_3d[4][6] = {{1, 2, 3, 4, 5, 6},
-                                           {0, 2, 3, 4, 7, 8},
-                                           {0, 1, 3, 5, 7, 9},
-                                           {0, 1, 2, 6, 8, 9}};
+  constexpr int facet_table_2d[3][3] = {{1, 2, 3}, {0, 2, 4}, {0, 1, 5}};
 
-  const int ncells = simplex_set.size() / 4;
+  constexpr int facet_table_3d[4][6] = {{1, 2, 3, 4, 5, 6},
+                                        {0, 2, 3, 4, 7, 8},
+                                        {0, 1, 3, 5, 7, 9},
+                                        {0, 1, 2, 6, 8, 9}};
 
-  for (int fpi = 0; fpi < 4; ++fpi)
+  assert(indices.size() == tdim * 4 - 2);
+  assert(simplex_set.size() % (tdim + 1) == 0);
+
+  const int ncells = simplex_set.size() / (tdim + 1);
+
+  for (int fpi = 0; fpi < (tdim + 1); ++fpi)
   {
     // Indices of all vertices on parent facet, sorted
-    std::array<std::int64_t, 6> pf;
-    for (int j = 0; j < 6; ++j)
-      pf[j] = indices[facet_table_3d[fpi][j]];
+    std::array<std::int64_t, (tdim * 3 - 3)> pf;
+    for (std::size_t j = 0; j < pf.size(); ++j)
+    {
+      if constexpr (tdim == 2)
+        pf[j] = indices[facet_table_2d[fpi][j]];
+      else
+        pf[j] = indices[facet_table_3d[fpi][j]];
+    }
     std::sort(pf.begin(), pf.end());
 
     // For each child cell, consider all facets
     for (int cc = 0; cc < ncells; ++cc)
     {
-      for (int fci = 0; fci < 4; ++fci)
+      for (int fci = 0; fci < (tdim + 1); ++fci)
       {
         // Indices of all vertices on child facet, sorted
-        std::array<std::int64_t, 3> cf, set_output;
-        for (int j = 0; j < 3; ++j)
-          cf[j] = indices[simplex_set[cc * 4 + facet_table_3d[fci][j]]];
+        std::array<std::int64_t, tdim> cf, set_output;
+        for (int j = 0; j < tdim; ++j)
+        {
+          if constexpr (tdim == 2)
+            cf[j] = indices[simplex_set[cc * 3 + facet_table_2d[fci][j]]];
+          else
+            cf[j] = indices[simplex_set[cc * 4 + facet_table_3d[fci][j]]];
+        }
         std::sort(cf.begin(), cf.end());
 
         auto it = std::set_intersection(pf.begin(), pf.end(), cf.begin(),
                                         cf.end(), set_output.begin());
-        if (std::distance(set_output.begin(), it) == 3)
+        if (std::distance(set_output.begin(), it) == tdim)
         {
-          assert(parent_facet[cc * 4 + fci] == -1);
+          assert(parent_facet[cc * (tdim + 1) + fci] == -1);
           // Child facet "fci" of cell cc, lies on parent facet "fpi"
-          parent_facet[cc * 4 + fci] = fpi;
+          parent_facet[cc * (tdim + 1) + fci] = fpi;
         }
       }
     }
@@ -443,7 +456,7 @@ compute_refinement(
     const MPI_Comm& neighbor_comm, const std::vector<std::int8_t>& marked_edges,
     const std::map<std::int32_t, std::vector<std::int32_t>> shared_edges,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& long_edge,
-    const std::vector<std::int8_t>& edge_ratio_ok, bool store_facets)
+    const std::vector<std::int8_t>& edge_ratio_ok, bool compute_facets)
 {
   const std::int32_t tdim = mesh.topology().dim();
   const std::int32_t num_cell_edges = tdim * 3 - 3;
@@ -544,10 +557,13 @@ compute_refinement(
       for (std::int32_t i = 0; i < ncells; ++i)
         parent_cell.push_back(c);
 
-      if (store_facets)
+      if (compute_facets)
       {
-        std::vector<std::int8_t> npf
-            = compute_parent_facets(indices, simplex_set);
+        std::vector<std::int8_t> npf;
+        if (tdim == 3)
+          npf = compute_parent_facets<3>(indices, simplex_set);
+        else
+          npf = compute_parent_facets<2>(indices, simplex_set);
         parent_facet.insert(parent_facet.end(), npf.begin(), npf.end());
       }
 
@@ -573,11 +589,11 @@ compute_refinement(
 
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<std::int32_t>, std::vector<std::int8_t>, mesh::Mesh>
-plaza::refine(const mesh::Mesh& mesh, bool redistribute, bool store_indices)
+plaza::refine(const mesh::Mesh& mesh, bool redistribute, bool compute_facets)
 {
 
   auto [cell_adj, new_vertex_coordinates, parent_cell, parent_facet]
-      = plaza::compute_refinement_data(mesh, store_indices);
+      = plaza::compute_refinement_data(mesh, compute_facets);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
@@ -608,11 +624,11 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute, bool store_indices)
 std::tuple<std::vector<std::int32_t>, std::vector<std::int8_t>, mesh::Mesh>
 plaza::refine(const mesh::Mesh& mesh,
               const xtl::span<const std::int32_t>& edges, bool redistribute,
-              bool store_indices)
+              bool compute_facets)
 {
 
   auto [cell_adj, new_vertex_coordinates, parent_cell, parent_facet]
-      = plaza::compute_refinement_data(mesh, edges, store_indices);
+      = plaza::compute_refinement_data(mesh, edges, compute_facets);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
@@ -642,7 +658,7 @@ plaza::refine(const mesh::Mesh& mesh,
 //------------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>, std::vector<std::int8_t>>
-plaza::compute_refinement_data(const mesh::Mesh& mesh, bool store_indices)
+plaza::compute_refinement_data(const mesh::Mesh& mesh, bool compute_facets)
 {
 
   if (mesh.topology().cell_type() != mesh::CellType::triangle
@@ -663,7 +679,7 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh, bool store_indices)
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
   auto [cell_adj, new_vertex_coordinates, parent_cell, parent_facet]
       = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
-                           long_edge, edge_ratio_ok, store_indices);
+                           long_edge, edge_ratio_ok, compute_facets);
   MPI_Comm_free(&neighbor_comm);
 
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
@@ -674,7 +690,7 @@ std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>, std::vector<std::int8_t>>
 plaza::compute_refinement_data(const mesh::Mesh& mesh,
                                const xtl::span<const std::int32_t>& edges,
-                               bool store_indices)
+                               bool compute_facets)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
@@ -727,7 +743,7 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
 
   auto [cell_adj, new_vertex_coordinates, parent_cell, parent_facet]
       = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
-                           long_edge, edge_ratio_ok, store_indices);
+                           long_edge, edge_ratio_ok, compute_facets);
   MPI_Comm_free(&neighbor_comm);
 
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
