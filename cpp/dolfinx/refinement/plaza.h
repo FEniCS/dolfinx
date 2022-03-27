@@ -76,7 +76,7 @@ std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>, std::vector<std::int8_t>>
 compute_refinement_data(const mesh::Mesh& mesh,
                         const xtl::span<const std::int32_t>& edges,
-                        bool store_indices);
+                        bool compute_facets);
 
 } // namespace plaza
 } // namespace dolfinx::refinement

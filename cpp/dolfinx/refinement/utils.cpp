@@ -400,17 +400,18 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
     const mesh::Mesh& refined_mesh, std::vector<std::int32_t>& parent_cell,
     std::vector<std::int8_t>& parent_facet)
 {
-  // Facets of 3D mesh only so far
-  assert(input_meshtag.mesh()->topology().dim() == 3);
-  assert(input_meshtag.dim() == 2);
+  const int tdim = input_meshtag.mesh()->topology().dim();
+  if (input_meshtag.dim() != tdim - 1)
+    throw std::runtime_error("Input meshtag is not facet-based");
 
-  auto input_c_to_f = input_meshtag.mesh()->topology().connectivity(3, 2);
-  auto c_to_f = refined_mesh.topology().connectivity(3, 2);
+  auto input_c_to_f
+      = input_meshtag.mesh()->topology().connectivity(tdim, tdim - 1);
+  auto c_to_f = refined_mesh.topology().connectivity(tdim, tdim - 1);
 
   // Create map parent->child facets
   const std::int32_t num_input_facets
-      = input_meshtag.mesh()->topology().index_map(2)->size_local()
-        + input_meshtag.mesh()->topology().index_map(2)->num_ghosts();
+      = input_meshtag.mesh()->topology().index_map(tdim - 1)->size_local()
+        + input_meshtag.mesh()->topology().index_map(tdim - 1)->num_ghosts();
   std::vector<int> count_child(num_input_facets, 0);
 
   // Count number of child facets for each parent facet
@@ -419,9 +420,9 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
     const std::int32_t pc = parent_cell[c];
     auto parent_cf = input_c_to_f->links(pc);
 
-    for (int j = 0; j < 4; ++j)
+    for (int j = 0; j < (tdim + 1); ++j)
     {
-      std::int8_t fidx = parent_facet[c * 4 + j];
+      std::int8_t fidx = parent_facet[c * (tdim + 1) + j];
       if (fidx != -1)
         ++count_child[parent_cf[fidx]];
     }
@@ -439,9 +440,9 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
     auto parent_cf = input_c_to_f->links(pc);
     auto refined_cf = c_to_f->links(c);
 
-    for (int j = 0; j < 4; ++j)
+    for (int j = 0; j < (tdim + 1); ++j)
     {
-      std::int8_t fidx = parent_facet[c * 4 + j];
+      std::int8_t fidx = parent_facet[c * (tdim + 1) + j];
       if (fidx != -1)
       {
         int offset = offset_child[parent_cf[fidx]];
@@ -488,6 +489,6 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   std::sort(facet_indices.begin(), facet_indices.end());
 
   return mesh::MeshTags<std::int32_t>(
-      std::make_shared<mesh::Mesh>(refined_mesh), 2, std::move(facet_indices),
-      std::move(sorted_tag_values));
+      std::make_shared<mesh::Mesh>(refined_mesh), tdim - 1,
+      std::move(facet_indices), std::move(sorted_tag_values));
 }
