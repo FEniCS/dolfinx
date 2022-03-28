@@ -864,9 +864,10 @@ mesh::create_topology(MPI_Comm comm,
   MPI_Exscan(&nlocal, &global_offset_v, 1, MPI_INT64_T, MPI_SUM, comm);
 
   // Build list of neighborhood ranks and create a neighborhood
-  // communicator for vertices. The neighborhood is made symmetric to
-  // avoid having to check with remote processes whether to not ths rank
-  // is a destination.
+  // communicator for vertices on the 'true' boundart, i.e. vertices
+  // that are attached to owned and non-owned cells. The neighborhood is
+  // made symmetric to avoid having to check with remote processes
+  // whether to not ths rank is a destination.
   std::vector<int> src_dest(global_vertex_to_ranks.array().begin(),
                             global_vertex_to_ranks.array().end());
   dolfinx::radix_sort(xtl::span(src_dest));
@@ -985,7 +986,10 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
 
-  // Determine which ranks ghost data on this rank
+  // Determine which ranks ghost data on this rank.
+  // Note: For ghosted meshes this is 'bigger' than neighbourhood comm0.
+  // It includes vertices that lie outside of the 'true' boundary, i.e.
+  // vertices that are attached only to ghost cells
   std::vector<int> out_edges;
   {
     // Build list of ranks that own vertices that are ghosted by this
