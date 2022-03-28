@@ -27,7 +27,7 @@ namespace
 
 //-----------------------------------------------------------------------------
 
-/// @brief Compute out edges on a symmetric neighbourhood communicator
+/// @brief Compute out-edges on a symmetric neighbourhood communicator/
 /// @param[in] comm A communicator with a symmetric neighbourhood
 /// @param[in] edges The edges (neighbour ranks) for the neighbourhood
 /// communicator
@@ -1040,6 +1040,7 @@ mesh::create_topology(MPI_Comm comm,
   return topology;
 }
 //-----------------------------------------------------------------------------
+
 std::vector<std::int32_t>
 mesh::entities_to_index(const mesh::Topology& topology, int dim,
                         const graph::AdjacencyList<std::int32_t>& entities)

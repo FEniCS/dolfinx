@@ -23,11 +23,11 @@ namespace dolfinx::mesh
 {
 class Topology;
 
-/// Geometry stores the geometry imposed on a mesh
+/// @brief Geometry stores the geometry imposed on a mesh.
 class Geometry
 {
 public:
-  /// Constructor
+  /// @brief Constructor
   ///
   /// @param[in] index_map Index map associated with the geometry dofmap
   /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
@@ -76,17 +76,21 @@ public:
   /// Index map
   std::shared_ptr<const common::IndexMap> index_map() const;
 
-  /// Access geometry degrees-of-freedom data (const version)
+  /// @brief Access geometry degrees-of-freedom data (const version).
+  ///
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
   xtl::span<const double> x() const;
 
-  /// Access geometry degrees-of-freedom data (version)
+  /// @brief Access geometry degrees-of-freedom data (non-const
+  /// version).
+  ///
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
   xtl::span<double> x();
 
-  /// The element that describes the geometry map
+  /// @brief The element that describes the geometry map.
+  ///
   /// @return The coordinate/geometry element
   const fem::CoordinateElement& cmap() const;
 
