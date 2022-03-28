@@ -147,8 +147,8 @@ void test_matrix_apply()
   // a constant vector the result should be zero
   spmv(A, x, y);
 
-  auto check_component = [](auto a) { REQUIRE(std::abs(a) < 1e-13); };
-  std::for_each(y.array().begin(), y.array().begin(), check_component);
+  std::for_each(y.array().begin(), y.array().end(),
+                [](auto a) { REQUIRE(std::abs(a) < 1e-13); });
 }
 
 void test_matrix()

@@ -76,7 +76,8 @@ mesh::Mesh partition(const mesh::Mesh& old_mesh,
                      const xt::xtensor<double, 2>& new_vertex_coordinates,
                      bool redistribute, mesh::GhostMode ghost_mode);
 
-/// @brief brief description indices to account for extra n values on each process.
+/// @brief brief description indices to account for extra n values on each
+/// process.
 ///
 /// This is a utility to help add new topological vertices on each
 /// process into the space of the index map.

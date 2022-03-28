@@ -663,7 +663,7 @@ void petsc_module(py::module& m)
         });
 
   m.def(
-      "create_discrete_gradient",
+      "discrete_gradient",
       [](const dolfinx::fem::FunctionSpace& V0,
          const dolfinx::fem::FunctionSpace& V1)
       {
@@ -690,8 +690,41 @@ void petsc_module(py::module& m)
 
         // Build operator
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
-        dolfinx::fem::assemble_discrete_gradient<PetscScalar>(
+        dolfinx::fem::discrete_gradient<PetscScalar>(
             V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
+        return A;
+      },
+      py::return_value_policy::take_ownership);
+  m.def(
+      "interpolation_matrix",
+      [](const dolfinx::fem::FunctionSpace& V0,
+         const dolfinx::fem::FunctionSpace& V1)
+      {
+        assert(V0.mesh());
+        std::shared_ptr<const dolfinx::mesh::Mesh> mesh = V0.mesh();
+        assert(V1.mesh());
+        assert(mesh == V1.mesh());
+        MPI_Comm comm = mesh->comm();
+
+        std::shared_ptr<const dolfinx::fem::DofMap> dofmap0 = V0.dofmap();
+        assert(dofmap0);
+        std::shared_ptr<const dolfinx::fem::DofMap> dofmap1 = V1.dofmap();
+        assert(dofmap1);
+
+        // Create and build  sparsity pattern
+        assert(dofmap0->index_map);
+        assert(dofmap1->index_map);
+        dolfinx::la::SparsityPattern sp(
+            comm, {dofmap1->index_map, dofmap0->index_map},
+            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
+        dolfinx::fem::sparsitybuild::cells(sp, mesh->topology(),
+                                           {*dofmap1, *dofmap0});
+        sp.assemble();
+
+        // Build operator
+        Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
+        dolfinx::fem::interpolation_matrix<PetscScalar>(
+            V0, V1, dolfinx::la::petsc::Matrix::set_block_fn(A, INSERT_VALUES));
         return A;
       },
       py::return_value_policy::take_ownership);
@@ -1063,7 +1096,8 @@ void fem(py::module& m)
            {
              const std::size_t num_points = x.shape(0);
              const std::size_t gdim = x.shape(1);
-             const std::size_t tdim = self.topological_dimension();
+             const std::size_t tdim = dolfinx::mesh::cell_dim(self.cell_shape());;
+
              xt::xtensor<double, 2> X = xt::empty<double>({num_points, tdim});
 
              std::array<std::size_t, 2> s_x;

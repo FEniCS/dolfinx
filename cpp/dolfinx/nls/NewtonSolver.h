@@ -83,19 +83,19 @@ public:
   /// are computed. It is commonly used to update ghost values.
   /// @param[in] form The function to call. It takes the latest solution
   /// vector @p x as an argument
-  void set_form(const std::function<void(Vec x)>& form);
+  void set_form(const std::function<void(Vec)>& form);
 
   /// Set function that is called at the end of each Newton iteration to
   /// test for convergence.
   /// @param[in] c The function that tests for convergence
   void set_convergence_check(const std::function<std::pair<double, bool>(
-                                 const NewtonSolver& solver, const Vec r)>& c);
+                                 const NewtonSolver&, const Vec)>& c);
 
   /// Set function that is called after each Newton iteration to update
   /// the solution
   /// @param[in] update The function that updates the solution
   void set_update(const std::function<void(const NewtonSolver& solver,
-                                           const Vec dx, Vec x)>& update);
+                                           const Vec, Vec)>& update);
 
   /// Solve the nonlinear problem \f$`F(x) = 0\f$ for given \f$F\f$ and
   /// Jacobian \f$\dfrac{\partial F}{\partial x}\f$.
