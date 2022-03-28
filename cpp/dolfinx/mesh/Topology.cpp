@@ -50,6 +50,8 @@ std::vector<int> find_out_edges(MPI_Comm comm, xtl::span<const int> edges,
                 [&edge_count_send](auto e) { edge_count_send[e] = 1; });
 
   std::vector<std::uint8_t> edge_count_recv(edge_count_send.size());
+  edge_count_send.reserve(1);
+  edge_count_recv.reserve(1);
   MPI_Neighbor_alltoall(edge_count_send.data(), 1, MPI_UINT8_T,
                         edge_count_recv.data(), 1, MPI_UINT8_T, comm);
 
