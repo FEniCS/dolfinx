@@ -232,9 +232,6 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
       {X.shape(0), bs0 * dim0, (std::size_t)element1->value_size()});
   xt::xtensor<double, 3> mapped_values(
       {X.shape(0), bs0 * dim0, (std::size_t)element1->value_size()});
-  xt::xtensor<double, 3> mapped_transpose(
-      {X.shape(0), (std::size_t)element1->value_size(),
-       (std::size_t)element0->space_dimension()});
 
   using u1_t = xt::xview<decltype(basis_values)&, std::size_t,
                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
@@ -246,6 +243,11 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});
   std::vector<T> A(element1->space_dimension() * element0->space_dimension());
   std::vector<T> local1(element1->space_dimension());
+
+  std::vector<std::size_t> shape
+      = {X.shape(0), (std::size_t)element1->value_size(),
+         (std::size_t)element0->space_dimension()};
+  auto _A = xt::adapt(A, shape);
 
   // Iterate over mesh and interpolate on each cell
   auto cell_map = mesh->topology().index_map(tdim);
@@ -314,10 +316,7 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
     // Apply interpolation matrix to basis values of V0 at the interpolation
     // points of V1
     if (interpolation_ident)
-    {
-      mapped_transpose = xt::transpose(mapped_values, {0, 2, 1});
-      std::copy(mapped_transpose.begin(), mapped_transpose.end(), A.begin());
-    }
+      _A.assign(xt::transpose(mapped_values, {0, 2, 1}));
     else
     {
       for (std::size_t i = 0; i < mapped_values.shape(1); ++i)
