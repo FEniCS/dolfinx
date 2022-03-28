@@ -450,6 +450,9 @@ std::vector<std::int64_t> exchange_vertex_numbering(
 }
 //---------------------------------------------------------------------
 
+/// @todo This function requires significant improvement of the
+/// implementation and the documentation.
+///
 /// Send vertex numbering of vertices in ghost cells to neighbours.
 /// These include vertices that were numbered remotely and received in a
 /// previous round. This is only needed for meshes with shared cells,
