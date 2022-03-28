@@ -27,6 +27,42 @@ namespace
 
 //-----------------------------------------------------------------------------
 
+/// @brief Compute out edges on a symmetric neighbourhood communicator
+/// @param[in] comm A communicator with a symmetric neighbourhood
+/// @param[in] edges The edges (neighbour ranks) for the neighbourhood
+/// communicator
+/// @param[in] in_edges Direct edges (ranks). Must be a subset of `edges`.
+/// @return Out edges ranks
+std::vector<int> find_out_edges(MPI_Comm comm, xtl::span<const int> edges,
+                                xtl::span<const int> in_edges)
+{
+  std::vector<int> in_edges_neigh;
+  in_edges_neigh.reserve(in_edges.size());
+  for (int r : in_edges)
+  {
+    auto it = std::lower_bound(edges.begin(), edges.end(), r);
+    assert(it != edges.end() and *it == r);
+    std::size_t rank_neigh = std::distance(edges.begin(), it);
+    in_edges_neigh.push_back(rank_neigh);
+  }
+  std::vector<std::uint8_t> edge_count_send(edges.size(), 0);
+  std::for_each(in_edges_neigh.cbegin(), in_edges_neigh.cend(),
+                [&edge_count_send](auto e) { edge_count_send[e] = 1; });
+
+  std::vector<std::uint8_t> edge_count_recv(edge_count_send.size());
+  MPI_Neighbor_alltoall(edge_count_send.data(), 1, MPI_UINT8_T,
+                        edge_count_recv.data(), 1, MPI_UINT8_T, comm);
+
+  std::vector<int> out_edges;
+  for (std::size_t i = 0; i < edge_count_recv.size(); ++i)
+    if (edge_count_recv[i] > 0)
+      out_edges.push_back(edges[i]);
+
+  return out_edges;
+}
+
+//-----------------------------------------------------------------------------
+//
 /// @todo Improve documentation
 /// @brief Determine owner and sharing ranks sharing an index.
 ///
@@ -754,28 +790,7 @@ mesh::create_topology(MPI_Comm comm,
         + std::to_string(num_cell_vertices(cell_type)) + ".");
   }
 
-  // Create an index map for cells
   const std::int32_t num_local_cells = cells.num_nodes() - ghost_owners.size();
-  std::shared_ptr<common::IndexMap> index_map_c;
-  if (ghost_mode == GhostMode::none)
-    index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells);
-  else
-  {
-    // Get global indices of ghost cells
-    xtl::span cell_idx(original_cell_index);
-    const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
-        comm, cell_idx.first(cells.num_nodes() - ghost_owners.size()),
-        cell_idx.last(ghost_owners.size()), ghost_owners);
-
-    // Determine src ranks
-    std::vector<int> src_ranks(ghost_owners.begin(), ghost_owners.end());
-    std::sort(src_ranks.begin(), src_ranks.end());
-    src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
-                    src_ranks.end());
-    auto dest_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, src_ranks);
-    index_map_c = std::make_shared<common::IndexMap>(
-        comm, num_local_cells, dest_ranks, cell_ghost_indices, ghost_owners);
-  }
 
   // Create sets of (1) owned, (2) undetermined, (3) not-owned vertices
   auto [owned_vertices, unknown_vertices, unowned_vertices]
@@ -856,6 +871,30 @@ mesh::create_topology(MPI_Comm comm,
       comm, src_dest.size(), src_dest.data(), MPI_UNWEIGHTED, src_dest.size(),
       src_dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
 
+  // Create an index map for cells. We do it here because we can find
+  // src ranks for the cell index map using comm0.
+  std::shared_ptr<common::IndexMap> index_map_c;
+  if (ghost_mode == GhostMode::none)
+    index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells);
+  else
+  {
+    // Get global indices of ghost cells
+    xtl::span cell_idx(original_cell_index);
+    const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
+        comm, cell_idx.first(cells.num_nodes() - ghost_owners.size()),
+        cell_idx.last(ghost_owners.size()), ghost_owners);
+
+    // Determine src ranks
+    std::vector<int> src_ranks(ghost_owners.begin(), ghost_owners.end());
+    std::sort(src_ranks.begin(), src_ranks.end());
+    src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
+                    src_ranks.end());
+    std::vector<int> dest_ranks = find_out_edges(comm0, src_dest, src_ranks);
+
+    index_map_c = std::make_shared<common::IndexMap>(
+        comm, num_local_cells, dest_ranks, cell_ghost_indices, ghost_owners);
+  }
+
   // Send and receive  ((input vertex index) -> (new global index, owner
   // rank)) data with neighbours (for vertices on 'true domain
   // boundary')
@@ -889,6 +928,7 @@ mesh::create_topology(MPI_Comm comm,
 
     if (ghost_mode != GhostMode::none)
     {
+      // TODO: avoid building global_to_local_vertices
       std::vector<std::pair<std::int64_t, std::int32_t>>
           global_to_local_vertices;
       global_to_local_vertices.reserve(owned_vertices.size()
@@ -949,31 +989,12 @@ mesh::create_topology(MPI_Comm comm,
     dolfinx::radix_sort(xtl::span(in_edges));
     in_edges.erase(std::unique(in_edges.begin(), in_edges.end()),
                    in_edges.end());
-
-    // Build list of out edges, using neigbourhood comm0
-    std::vector<int> in_edges_neigh;
-    in_edges_neigh.reserve(in_edges.size());
-    for (int r : in_edges)
-    {
-      auto it = std::lower_bound(src_dest.begin(), src_dest.end(), r);
-      assert(it != src_dest.end() and *it == r);
-      std::size_t rank_neigh = std::distance(src_dest.begin(), it);
-      in_edges_neigh.push_back(rank_neigh);
-    }
-    std::vector<std::uint8_t> edge_count_send(src_dest.size(), 0);
-    std::for_each(in_edges_neigh.cbegin(), in_edges_neigh.cend(),
-                  [&edge_count_send](auto e) { edge_count_send[e] = 1; });
-
-    std::vector<std::uint8_t> edge_count_recv(edge_count_send.size());
-    MPI_Neighbor_alltoall(edge_count_send.data(), 1, MPI_UINT8_T,
-                          edge_count_recv.data(), 1, MPI_UINT8_T, comm0);
-
-    for (std::size_t i = 0; i < edge_count_recv.size(); ++i)
-      if (edge_count_recv[i] > 0)
-        out_edges.push_back(src_dest[i]);
+    out_edges = find_out_edges(comm0, src_dest, in_edges);
   }
 
   MPI_Comm_free(&comm0);
+
+  // TODO: avoid building global_to_local_vertices
 
   // Convert input cell topology to local vertex indexing
   std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local_vertices;
