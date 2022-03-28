@@ -36,8 +36,8 @@ namespace
 /// @return owning process number
 int get_ownership(std::set<int>& processes, std::vector<std::int64_t>& vertices)
 {
-  // Use a deterministic random number generator, seeded with global vertex
-  // indices ensuring all processes get the same answer
+  // Use a deterministic random number generator, seeded with global
+  // vertex indices ensuring all processes get the same answer
   std::mt19937 gen;
   std::seed_seq seq(vertices.begin(), vertices.end());
   gen.seed(seq);
