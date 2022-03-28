@@ -21,7 +21,7 @@ mesh::Mesh refinement::refine(const mesh::Mesh& mesh, bool redistribute)
     throw std::runtime_error("Refinement only defined for simplices");
   }
 
-  auto [parent_cell, stored_indices, refined_mesh]
+  auto [parent_cell, parent_facet, refined_mesh]
       = plaza::refine(mesh, redistribute, false);
 
   // Report the number of refined cells
@@ -45,7 +45,7 @@ mesh::Mesh refinement::refine(const mesh::Mesh& mesh,
     throw std::runtime_error("Refinement only defined for simplices");
   }
 
-  auto [parent_cell, stored_indices, refined_mesh]
+  auto [parent_cell, parent_facet, refined_mesh]
       = plaza::refine(mesh, edges, redistribute, false);
 
   // Report the number of refined cells

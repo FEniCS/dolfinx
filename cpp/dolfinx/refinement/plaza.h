@@ -29,13 +29,13 @@ namespace plaza
 {
 
 /// Uniform refine, optionally redistributing and optionally
-/// calculating the parent-child relation for facets (in 2D)
+/// calculating the parent-child relation for facets.
 ///
 /// @param[in] mesh Input mesh to be refined
 /// @param[in] redistribute Flag to call the mesh partitioner to
 /// redistribute after refinement
 /// @param[in] compute_facets Flag to save facet data for further use
-/// @return New mesh
+/// @return Parent cell and facet data and new mesh
 std::tuple<std::vector<std::int32_t>, std::vector<std::int8_t>, mesh::Mesh>
 refine(const mesh::Mesh& mesh, bool redistribute, bool compute_facets);
 
@@ -47,7 +47,7 @@ refine(const mesh::Mesh& mesh, bool redistribute, bool compute_facets);
 /// @param[in] redistribute Flag to call the Mesh Partitioner to
 /// redistribute after refinement
 /// @param[in] compute_facets Flag to save facet data for further use
-/// @return optional refeinemtn data and New Mesh
+/// @return parent cell and facet data and New Mesh
 std::tuple<std::vector<std::int32_t>, std::vector<std::int8_t>, mesh::Mesh>
 refine(const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& edges,
        bool redistribute, bool compute_facets);
