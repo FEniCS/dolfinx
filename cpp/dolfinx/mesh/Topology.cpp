@@ -361,9 +361,8 @@ vertex_ownerhip_groups(const graph::AdjacencyList<std::int64_t>& cells,
 //// @note Collective
 /// @param[in] comm Neighbourhood communicator
 /// @return list of triplets
-
 std::vector<std::int64_t> exchange_vertex_numbering(
-    const MPI_Comm& comm, const xtl::span<const int>& local_to_global_rank,
+    MPI_Comm comm, const xtl::span<const int>& src_dest,
     const xtl::span<const std::int64_t>& vertices,
     const graph::AdjacencyList<int>& vertex_to_ranks,
     std::int64_t global_offset_v,
@@ -374,8 +373,7 @@ std::vector<std::int64_t> exchange_vertex_numbering(
 
   // Pack send data. Use std::vector<std::vector>> since size will be
   // small (equal to number of neighbours)
-  std::vector<std::vector<std::int64_t>> send_buffer(
-      local_to_global_rank.size());
+  std::vector<std::vector<std::int64_t>> send_buffer(src_dest.size());
   for (std::int32_t i = 0; i < vertex_to_ranks.num_nodes(); ++i)
   {
     // Get (global) ranks that share this vertex. Note that first rank
@@ -396,13 +394,11 @@ std::vector<std::int64_t> exchange_vertex_numbering(
       for (std::size_t j = 1; j < vertex_ranks.size(); ++j)
       {
         // Find rank on the neighborhood comm
-        auto nrank_it
-            = std::lower_bound(local_to_global_rank.begin(),
-                               local_to_global_rank.end(), vertex_ranks[j]);
-        assert(nrank_it != local_to_global_rank.end());
+        auto nrank_it = std::lower_bound(src_dest.begin(), src_dest.end(),
+                                         vertex_ranks[j]);
+        assert(nrank_it != src_dest.end());
         assert(*nrank_it == vertex_ranks[j]);
-        int rank_neighbor
-            = std::distance(local_to_global_rank.begin(), nrank_it);
+        int rank_neighbor = std::distance(src_dest.begin(), nrank_it);
 
         // Add (old global vertex index, new  global vertex index, owner
         // rank (global))
@@ -427,12 +423,12 @@ std::vector<std::int64_t> exchange_vertex_numbering(
 /// @param[in] comm Neigborhood communicator
 /// @return list of triplets
 std::vector<std::int64_t> exchange_ghost_vertex_numbering(
-    MPI_Comm comm, const xtl::span<const int>& local_to_global_rank,
+    MPI_Comm comm, const xtl::span<const int>& src_dest,
     const common::IndexMap& index_map_c,
     const graph::AdjacencyList<std::int64_t>& cells, int nlocal,
     std::int64_t global_offset_v,
     const xtl::span<const std::pair<std::int64_t, std::int32_t>>&
-        global_to_local_vertices0,
+        global_to_local_vertices,
     const xtl::span<const std::int64_t>& ghost_vertices,
     const xtl::span<const int>& ghost_vertex_owners)
 {
@@ -465,61 +461,60 @@ std::vector<std::int64_t> exchange_ghost_vertex_numbering(
   }
 
   // Compute sizes and offsets
-  std::vector<int> send_sizes(local_to_global_rank.size()),
-      sdispl(local_to_global_rank.size() + 1);
+  std::vector<int> send_sizes(src_dest.size()), send_disp(src_dest.size() + 1);
   for (const auto& vertex_ranks : fwd_shared_vertices)
   {
     for (int rank : vertex_ranks.second)
     {
-      auto rank_it = std::lower_bound(local_to_global_rank.begin(),
-                                      local_to_global_rank.end(), rank);
-      assert(rank_it != local_to_global_rank.end());
+      auto rank_it = std::lower_bound(src_dest.begin(), src_dest.end(), rank);
+      assert(rank_it != src_dest.end());
       assert(*rank_it == rank);
-      int rank_neighbor = std::distance(local_to_global_rank.begin(), rank_it);
+      int rank_neighbor = std::distance(src_dest.begin(), rank_it);
       send_sizes[rank_neighbor] += 3;
     }
   }
   std::partial_sum(send_sizes.begin(), send_sizes.end(),
-                   std::next(sdispl.begin()));
-  std::vector<int> tmp_offsets(sdispl.begin(), sdispl.end());
+                   std::next(send_disp.begin()));
 
   // Pack data for neighbor alltoall
-  const int mpi_rank = dolfinx::MPI::rank(comm);
-  std::vector<std::int64_t> send_triplet_data(sdispl.back());
-  for (const auto& vertex_ranks : fwd_shared_vertices)
+  std::vector<std::int64_t> send_data(send_disp.back());
   {
-    std::int64_t global_idx_old = vertex_ranks.first;
-    auto it = std::lower_bound(
-        global_to_local_vertices0.begin(), global_to_local_vertices0.end(),
-        std::pair<std::int64_t, std::int32_t>(global_idx_old, 0),
-        [](auto& a, auto& b) { return a.first < b.first; });
-    assert(it != global_to_local_vertices0.end());
-    assert(it->first == global_idx_old);
-    assert(it->second != -1);
-
-    std::int64_t global_idx = it->second < nlocal
-                                  ? it->second + global_offset_v
-                                  : ghost_vertices[it->second - nlocal];
-    int owner_rank = it->second < nlocal
-                         ? mpi_rank
-                         : ghost_vertex_owners[it->second - nlocal];
-    for (int rank : vertex_ranks.second)
+    const int mpi_rank = dolfinx::MPI::rank(comm);
+    std::vector<int> tmp_offsets = send_disp;
+    for (const auto& vertex_ranks : fwd_shared_vertices)
     {
-      auto rank_it = std::lower_bound(local_to_global_rank.begin(),
-                                      local_to_global_rank.end(), rank);
-      assert(rank_it != local_to_global_rank.end());
-      assert(*rank_it == rank);
-      int np = std::distance(local_to_global_rank.begin(), rank_it);
+      std::int64_t global_idx_old = vertex_ranks.first;
+      auto it = std::lower_bound(
+          global_to_local_vertices.begin(), global_to_local_vertices.end(),
+          std::pair<std::int64_t, std::int32_t>(global_idx_old, 0),
+          [](auto& a, auto& b) { return a.first < b.first; });
+      assert(it != global_to_local_vertices.end());
+      assert(it->first == global_idx_old);
+      assert(it->second != -1);
 
-      send_triplet_data[tmp_offsets[np]++] = global_idx_old;
-      send_triplet_data[tmp_offsets[np]++] = global_idx;
-      send_triplet_data[tmp_offsets[np]++] = owner_rank;
+      std::int64_t global_idx = it->second < nlocal
+                                    ? it->second + global_offset_v
+                                    : ghost_vertices[it->second - nlocal];
+      int owner_rank = it->second < nlocal
+                           ? mpi_rank
+                           : ghost_vertex_owners[it->second - nlocal];
+      for (int rank : vertex_ranks.second)
+      {
+        auto rank_it = std::lower_bound(src_dest.begin(), src_dest.end(), rank);
+        assert(rank_it != src_dest.end());
+        assert(*rank_it == rank);
+        int np = std::distance(src_dest.begin(), rank_it);
+
+        send_data[tmp_offsets[np]++] = global_idx_old;
+        send_data[tmp_offsets[np]++] = global_idx;
+        send_data[tmp_offsets[np]++] = owner_rank;
+      }
     }
   }
 
   return dolfinx::MPI::neighbor_all_to_all(
-             comm, graph::AdjacencyList<std::int64_t>(
-                       std::move(send_triplet_data), std::move(sdispl)))
+             comm, graph::AdjacencyList<std::int64_t>(std::move(send_data),
+                                                      std::move(send_disp)))
       .array();
 }
 //---------------------------------------------------------------------------------
@@ -782,222 +777,226 @@ mesh::create_topology(MPI_Comm comm,
         comm, num_local_cells, dest_ranks, cell_ghost_indices, ghost_owners);
   }
 
-  // Create a map for vertices from global index to a label, using the
-  // labels:
-  //
-  // * -2 for owned (not shared with any ghost cells)
-  // * -1 for all other vertices (shared by a ghost cell)
-  //
-  // and create a list of vertices whose ownership needs determining
-  // (vertices that are attached to both owned and ghost cells)
+  // Create sets of (1) owned, (2) undetermined, (3) not-owned vertices
   auto [owned_vertices, unknown_vertices, unowned_vertices]
       = vertex_ownerhip_groups(cells, num_local_cells);
 
-  // For each vertex whose ownership needs determining (indices in
-  // unknown_vertices), find the sharing ranks. The first index in
-  // the vector of ranks is the owner as determined by
-  // determine_sharing_ranks.
+  // For each vertex whose ownership needs determining find the sharing
+  // ranks. The first index in the list of ranks for a vertex the owner
+  // (as determined by determine_sharing_ranks).
   const graph::AdjacencyList<int> global_vertex_to_ranks
       = determine_sharing_ranks(comm, unknown_vertices);
 
   // Iterate over vertices that have 'unknown' ownership, and if flagged
   // as owned by determine_sharing_ranks update ownership status
-  const int mpi_rank = dolfinx::MPI::rank(comm);
-  std::vector<std::int64_t> owned_shared_vertices;
-  for (std::size_t i = 0; i < unknown_vertices.size(); ++i)
   {
-    // Vertex is shared and owned by this rank if the first sharing rank
-    // is my rank
-    auto ranks = global_vertex_to_ranks.links(i);
-    assert(!ranks.empty());
-    if (std::int64_t global_index = unknown_vertices[i];
-        ranks.front() == mpi_rank)
+    const int mpi_rank = dolfinx::MPI::rank(comm);
+    std::vector<std::int64_t> owned_shared_vertices;
+    for (std::size_t i = 0; i < unknown_vertices.size(); ++i)
     {
-      // TODO: avoid search lookup
-      auto it = std::lower_bound(unknown_vertices.begin(),
-                                 unknown_vertices.end(), global_index);
-      assert(it != unknown_vertices.end() and *it == global_index);
-      owned_shared_vertices.push_back(global_index);
+      // Vertex is shared and owned by this rank if the first sharing rank
+      // is my rank
+      auto ranks = global_vertex_to_ranks.links(i);
+      assert(!ranks.empty());
+      if (std::int64_t global_index = unknown_vertices[i];
+          ranks.front() == mpi_rank)
+      {
+        // TODO: avoid search lookup
+        auto it = std::lower_bound(unknown_vertices.begin(),
+                                   unknown_vertices.end(), global_index);
+        assert(it != unknown_vertices.end() and *it == global_index);
+        owned_shared_vertices.push_back(global_index);
+      }
+      else
+        unowned_vertices.push_back(global_index);
     }
-    else
-    {
-      unowned_vertices.push_back(global_index);
-    }
+    dolfinx::radix_sort(xtl::span(unowned_vertices));
+
+    // Add owned but shared vertices to owned_vertices, and sort
+    owned_vertices.insert(owned_vertices.end(), owned_shared_vertices.begin(),
+                          owned_shared_vertices.end());
+    dolfinx::radix_sort(xtl::span(owned_vertices));
   }
-  dolfinx::radix_sort(xtl::span(unowned_vertices));
-
-  // TODO: remove owned_shared_vertices from unknown_vertices?
-
-  // Add owned but shared vertices to owned_vertices, and sort
-  owned_vertices.insert(owned_vertices.end(), owned_shared_vertices.begin(),
-                        owned_shared_vertices.end());
-  dolfinx::radix_sort(xtl::span(owned_vertices));
 
   // Number all owned vertices, iterating over vertices cell-wise
-  std::int32_t v = 0;
   std::vector<std::int32_t> local_vertex_indices(owned_vertices.size(), -1);
-  for (std::int32_t c = 0; c < cells.num_nodes(); ++c)
   {
-    for (auto vtx : cells.links(c))
+    std::int32_t v = 0;
+    for (std::int32_t c = 0; c < cells.num_nodes(); ++c)
     {
-      // NEW
-      auto it0
-          = std::lower_bound(owned_vertices.begin(), owned_vertices.end(), vtx);
-      if (it0 != owned_vertices.end() and *it0 == vtx)
+      for (auto vtx : cells.links(c))
       {
-        std::size_t pos = std::distance(owned_vertices.begin(), it0);
-        if (local_vertex_indices[pos] < 0)
-          local_vertex_indices[pos] = v++;
-      }
-    }
-  }
-
-  // Compute the global offset for local vertex indices
-  std::int64_t global_offset_v = 0;
-  const std::int64_t nlocal = owned_vertices.size();
-  MPI_Exscan(&nlocal, &global_offset_v, 1, MPI_INT64_T, MPI_SUM, comm);
-
-  // FIXME: Has this already been computed elsewhere?
-  // FIXME: Does the communicator have to be 'symmetric?
-  //
-  // Build list of neighborhood ranks and create a neighborhood
-  // communicator for vertices
-  std::vector<int> local_to_global_rank(global_vertex_to_ranks.array().begin(),
-                                        global_vertex_to_ranks.array().end());
-  dolfinx::radix_sort(xtl::span(local_to_global_rank));
-  local_to_global_rank.erase(
-      std::unique(local_to_global_rank.begin(), local_to_global_rank.end()),
-      local_to_global_rank.end());
-  MPI_Comm neighbor_comm;
-  MPI_Dist_graph_create_adjacent(
-      comm, local_to_global_rank.size(), local_to_global_rank.data(),
-      MPI_UNWEIGHTED, local_to_global_rank.size(), local_to_global_rank.data(),
-      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm);
-
-  // Send and receive list of triplets map (input vertex index) -> (new
-  // global index, owner rank) with neighbours (for vertices on 'true
-  // domain boundary')
-  auto recv_triplets = exchange_vertex_numbering(
-      neighbor_comm, local_to_global_rank, unknown_vertices,
-      global_vertex_to_ranks, global_offset_v, owned_vertices,
-      local_vertex_indices);
-  assert(recv_triplets.size() % 3 == 0);
-
-  // Unpack received data and build array of ghost vertices and owners
-  // of the ghost vertices
-  std::vector<std::int64_t> ghost_vertices;
-  std::vector<int> ghost_vertex_owners;
-
-  std::vector<std::int64_t> ghost_vertices_new(unowned_vertices.size(), -1);
-  std::vector<int> ghost_vertex_owners_new(unowned_vertices.size(), -1);
-  std::vector<std::int32_t> local_vertex_indices_unowned(
-      unowned_vertices.size(), -1);
-  for (std::size_t i = 0; i < recv_triplets.size(); i += 3)
-  {
-    assert(i + 2 < recv_triplets.size());
-    const std::int64_t gi = recv_triplets[i];
-
-    // NEW
-    auto it0 = std::lower_bound(unowned_vertices.begin(),
-                                unowned_vertices.end(), gi);
-    assert(it0 != unowned_vertices.end() and *it0 == gi);
-    std::size_t pos = std::distance(unowned_vertices.begin(), it0);
-    assert(local_vertex_indices_unowned[pos] < 0);
-    local_vertex_indices_unowned[pos] = v++;
-    ghost_vertices.push_back(recv_triplets[i + 1]);      // New global index
-    ghost_vertex_owners.push_back(recv_triplets[i + 2]); // Owning rank
-  }
-
-  if (ghost_mode != GhostMode::none)
-  {
-    std::vector<std::pair<std::int64_t, std::int32_t>>
-        global_to_local_vertices0;
-    std::transform(owned_vertices.begin(), owned_vertices.end(),
-                   local_vertex_indices.begin(),
-                   std::back_inserter(global_to_local_vertices0),
-                   [](auto idx0, auto idx1) {
-                     return std::pair<std::int64_t, std::int32_t>(idx0, idx1);
-                   });
-    std::transform(unowned_vertices.begin(), unowned_vertices.end(),
-                   local_vertex_indices_unowned.begin(),
-                   std::back_inserter(global_to_local_vertices0),
-                   [](auto idx0, auto idx1) {
-                     return std::pair<std::int64_t, std::int32_t>(idx0, idx1);
-                   });
-    std::sort(global_to_local_vertices0.begin(),
-              global_to_local_vertices0.end());
-
-    // assert(std::find_if(global_to_local_vertices0.begin(),
-    //                     global_to_local_vertices0.end(),
-    //                     [](auto p) { return p.second == -1; })
-    //        == global_to_local_vertices0.end());
-
-    // Send (from the ghost cell owner) and receive global indices for
-    // ghost vertices that are not on the process boundary.
-    //
-    // Note: the ghost cell owner might not be the same as the vertex
-    // owner
-    const std::vector<std::int64_t> recv_triplets
-        = exchange_ghost_vertex_numbering(
-            neighbor_comm, local_to_global_rank, *index_map_c, cells, nlocal,
-            global_offset_v, global_to_local_vertices0, ghost_vertices,
-            ghost_vertex_owners);
-
-    // Unpack received data and add to arrays of ghost indices and ghost
-    // owners
-    for (std::size_t i = 0; i < recv_triplets.size(); i += 3)
-    {
-      assert(i < recv_triplets.size());
-      const std::int64_t global_idx_old = recv_triplets[i];
-      auto it0 = std::lower_bound(unowned_vertices.begin(),
-                                  unowned_vertices.end(), global_idx_old);
-      if (it0 != unowned_vertices.end() and *it0 == global_idx_old)
-      {
-        std::size_t pos = std::distance(unowned_vertices.begin(), it0);
-        if (local_vertex_indices_unowned[pos] < 0)
+        auto it = std::lower_bound(owned_vertices.begin(), owned_vertices.end(),
+                                   vtx);
+        if (it != owned_vertices.end() and *it == vtx)
         {
-          local_vertex_indices_unowned[pos] = v++;
-          ghost_vertices.push_back(recv_triplets[i + 1]);
-          ghost_vertex_owners.push_back(recv_triplets[i + 2]);
+          std::size_t pos = std::distance(owned_vertices.begin(), it);
+          if (local_vertex_indices[pos] < 0)
+            local_vertex_indices[pos] = v++;
         }
       }
     }
   }
 
-  MPI_Comm_free(&neighbor_comm);
+  // Compute the global offset for owned (local) vertex indices
+  std::int64_t global_offset_v = 0;
+  const std::int64_t nlocal = owned_vertices.size();
+  MPI_Exscan(&nlocal, &global_offset_v, 1, MPI_INT64_T, MPI_SUM, comm);
 
-  // TODO: has this neighbourhood information been computed earlier?
+  // Build list of neighborhood ranks and create a neighborhood
+  // communicator for vertices. The neighborhood is made symmetric to
+  // avoid having to check with remote processes whether to not ths rank
+  // is a destination.
+  std::vector<int> src_dest(global_vertex_to_ranks.array().begin(),
+                            global_vertex_to_ranks.array().end());
+  dolfinx::radix_sort(xtl::span(src_dest));
+  src_dest.erase(std::unique(src_dest.begin(), src_dest.end()), src_dest.end());
+  MPI_Comm comm0;
+  MPI_Dist_graph_create_adjacent(
+      comm, src_dest.size(), src_dest.data(), MPI_UNWEIGHTED, src_dest.size(),
+      src_dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+
+  // Send and receive  ((input vertex index) -> (new global index, owner
+  // rank)) data with neighbours (for vertices on 'true domain
+  // boundary')
+  const std::vector<std::int64_t> unowned_vertex_data
+      = exchange_vertex_numbering(comm0, src_dest, unknown_vertices,
+                                  global_vertex_to_ranks, global_offset_v,
+                                  owned_vertices, local_vertex_indices);
+  assert(unowned_vertex_data.size() % 3 == 0);
+
+  // Unpack received data and build array of ghost vertices and owners
+  // of the ghost vertices
+  std::vector<std::int64_t> ghost_vertices;
+  std::vector<int> ghost_vertex_owners;
+  std::vector<std::int32_t> local_vertex_indices_unowned(
+      unowned_vertices.size(), -1);
+  {
+    std::int32_t v = owned_vertices.size();
+    for (std::size_t i = 0; i < unowned_vertex_data.size(); i += 3)
+    {
+      const std::int64_t idx_global = unowned_vertex_data[i];
+
+      auto it = std::lower_bound(unowned_vertices.begin(),
+                                 unowned_vertices.end(), idx_global);
+      assert(it != unowned_vertices.end() and *it == idx_global);
+      std::size_t pos = std::distance(unowned_vertices.begin(), it);
+      assert(local_vertex_indices_unowned[pos] < 0);
+      local_vertex_indices_unowned[pos] = v++;
+      ghost_vertices.push_back(unowned_vertex_data[i + 1]); // New global index
+      ghost_vertex_owners.push_back(unowned_vertex_data[i + 2]); // Owning rank
+    }
+
+    if (ghost_mode != GhostMode::none)
+    {
+      std::vector<std::pair<std::int64_t, std::int32_t>>
+          global_to_local_vertices;
+      global_to_local_vertices.reserve(owned_vertices.size()
+                                       + unowned_vertices.size());
+      std::transform(owned_vertices.begin(), owned_vertices.end(),
+                     local_vertex_indices.begin(),
+                     std::back_inserter(global_to_local_vertices),
+                     [](auto idx0, auto idx1) {
+                       return std::pair<std::int64_t, std::int32_t>(idx0, idx1);
+                     });
+      std::transform(unowned_vertices.begin(), unowned_vertices.end(),
+                     local_vertex_indices_unowned.begin(),
+                     std::back_inserter(global_to_local_vertices),
+                     [](auto idx0, auto idx1) {
+                       return std::pair<std::int64_t, std::int32_t>(idx0, idx1);
+                     });
+      std::sort(global_to_local_vertices.begin(),
+                global_to_local_vertices.end());
+
+      // Send (from the ghost cell owner) and receive global indices for
+      // ghost vertices that are not on the process boundary.
+      //
+      // Note: the ghost cell owner might not be the same as the vertex
+      // owner
+      const std::vector<std::int64_t> recv_triplets
+          = exchange_ghost_vertex_numbering(
+              comm0, src_dest, *index_map_c, cells, nlocal, global_offset_v,
+              global_to_local_vertices, ghost_vertices, ghost_vertex_owners);
+
+      // Unpack received data and add to arrays of ghost indices and ghost
+      // owners
+      for (std::size_t i = 0; i < recv_triplets.size(); i += 3)
+      {
+        assert(i < recv_triplets.size());
+        const std::int64_t global_idx_old = recv_triplets[i];
+        auto it0 = std::lower_bound(unowned_vertices.begin(),
+                                    unowned_vertices.end(), global_idx_old);
+        if (it0 != unowned_vertices.end() and *it0 == global_idx_old)
+        {
+          std::size_t pos = std::distance(unowned_vertices.begin(), it0);
+          if (local_vertex_indices_unowned[pos] < 0)
+          {
+            local_vertex_indices_unowned[pos] = v++;
+            ghost_vertices.push_back(recv_triplets[i + 1]);
+            ghost_vertex_owners.push_back(recv_triplets[i + 2]);
+          }
+        }
+      }
+    }
+  }
 
   // Determine which ranks ghost data on this rank
   std::vector<int> out_edges;
   {
+    // Build list of ranks that own vertices that are ghosted by this
+    // rank (out edges)
     std::vector<int> in_edges = ghost_vertex_owners;
-    std::sort(in_edges.begin(), in_edges.end());
+    dolfinx::radix_sort(xtl::span(in_edges));
     in_edges.erase(std::unique(in_edges.begin(), in_edges.end()),
                    in_edges.end());
-    out_edges = dolfinx::MPI::compute_graph_edges_nbx(comm, in_edges);
+
+    // Build list of out edges, using neigbourhood comm0
+    std::vector<int> in_edges_neigh;
+    in_edges_neigh.reserve(in_edges.size());
+    for (int r : in_edges)
+    {
+      auto it = std::lower_bound(src_dest.begin(), src_dest.end(), r);
+      assert(it != src_dest.end() and *it == r);
+      std::size_t rank_neigh = std::distance(src_dest.begin(), it);
+      in_edges_neigh.push_back(rank_neigh);
+    }
+    std::vector<std::uint8_t> edge_count_send(src_dest.size(), 0);
+    std::for_each(in_edges_neigh.cbegin(), in_edges_neigh.cend(),
+                  [&edge_count_send](auto e) { edge_count_send[e] = 1; });
+
+    std::vector<std::uint8_t> edge_count_recv(edge_count_send.size());
+    MPI_Neighbor_alltoall(edge_count_send.data(), 1, MPI_UINT8_T,
+                          edge_count_recv.data(), 1, MPI_UINT8_T, comm0);
+
+    for (std::size_t i = 0; i < edge_count_recv.size(); ++i)
+      if (edge_count_recv[i] > 0)
+        out_edges.push_back(src_dest[i]);
   }
 
+  MPI_Comm_free(&comm0);
+
   // Convert input cell topology to local vertex indexing
-  std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local_vertices1;
+  std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local_vertices;
+  global_to_local_vertices.reserve(owned_vertices.size()
+                                   + unowned_vertices.size());
   std::transform(owned_vertices.begin(), owned_vertices.end(),
                  local_vertex_indices.begin(),
-                 std::back_inserter(global_to_local_vertices1),
+                 std::back_inserter(global_to_local_vertices),
                  [](auto idx0, auto idx1)
                  { return std::pair<std::int64_t, std::int32_t>(idx0, idx1); });
   std::transform(unowned_vertices.begin(), unowned_vertices.end(),
                  local_vertex_indices_unowned.begin(),
-                 std::back_inserter(global_to_local_vertices1),
+                 std::back_inserter(global_to_local_vertices),
                  [](auto idx0, auto idx1)
                  { return std::pair<std::int64_t, std::int32_t>(idx0, idx1); });
-  std::sort(global_to_local_vertices1.begin(), global_to_local_vertices1.end());
+  std::sort(global_to_local_vertices.begin(), global_to_local_vertices.end());
 
   const std::size_t num_local_nodes
-      = (ghost_mode == GhostMode::none) ? num_local_cells : cells.num_nodes();
+      = ghost_mode == GhostMode::none ? num_local_cells : cells.num_nodes();
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells_local_idx
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           convert_to_local_indexing(cells, num_local_nodes,
-                                    global_to_local_vertices1));
+                                    global_to_local_vertices));
 
   // Create Topology object
 
