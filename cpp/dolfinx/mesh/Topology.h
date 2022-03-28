@@ -18,7 +18,7 @@ namespace dolfinx::common
 class IndexMap;
 }
 
-namespace dolfinx::graphÌ
+namespace dolfinx::graph
 {
 template <typename T>
 class AdjacencyList;
