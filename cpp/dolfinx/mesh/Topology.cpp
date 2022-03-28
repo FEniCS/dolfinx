@@ -1088,9 +1088,6 @@ mesh::create_topology(MPI_Comm comm,
       neighbor_comm, local_to_global_rank, unknown_vertices,
       global_vertex_to_ranks, global_offset_v, owned_vertices,
       local_vertex_indices);
-  // auto recv_triplets = exchange_vertex_numbering(
-  //     neighbor_comm, local_to_global_rank, unknown_vertices,
-  //     global_vertex_to_ranks, global_offset_v, global_to_local_vertices);
   assert(recv_triplets.size() % 3 == 0);
 
   // Unpack received data and build array of ghost vertices and owners
@@ -1112,24 +1109,43 @@ mesh::create_topology(MPI_Comm comm,
                                 unowned_vertices.end(), gi);
     assert(it0 != unowned_vertices.end() and *it0 == gi);
     std::size_t pos = std::distance(unowned_vertices.begin(), it0);
-    if (local_vertex_indices_unowned[pos] < 0)
-      local_vertex_indices_unowned[pos] = v;
-    ghost_vertices_new[pos] = recv_triplets[i + 1];      // New global index
-    ghost_vertex_owners_new[pos] = recv_triplets[i + 2]; // Owning rank
+    assert(local_vertex_indices_unowned[pos] < 0);
+    local_vertex_indices_unowned[pos] = v++;
+    ghost_vertices.push_back(recv_triplets[i + 1]);      // New global index
+    ghost_vertex_owners.push_back(recv_triplets[i + 2]); // Owning rank
 
     // OLD
     auto it = find_idx(global_to_local_vertices, gi);
     assert(it != global_to_local_vertices.end());
     assert(it->first == gi);
     assert(it->second == -1);
-    it->second = v++;
-
-    ghost_vertices.push_back(recv_triplets[i + 1]);      // New global index
-    ghost_vertex_owners.push_back(recv_triplets[i + 2]); // Owning rank
+    it->second = 0;
   }
 
   if (ghost_mode != GhostMode::none)
   {
+    std::vector<std::pair<std::int64_t, std::int32_t>>
+        global_to_local_vertices0;
+    std::transform(owned_vertices.begin(), owned_vertices.end(),
+                   local_vertex_indices.begin(),
+                   std::back_inserter(global_to_local_vertices0),
+                   [](auto idx0, auto idx1) {
+                     return std::pair<std::int64_t, std::int32_t>(idx0, idx1);
+                   });
+    std::transform(unowned_vertices.begin(), unowned_vertices.end(),
+                   local_vertex_indices_unowned.begin(),
+                   std::back_inserter(global_to_local_vertices0),
+                   [](auto idx0, auto idx1) {
+                     return std::pair<std::int64_t, std::int32_t>(idx0, idx1);
+                   });
+    std::sort(global_to_local_vertices0.begin(),
+              global_to_local_vertices0.end());
+
+    // assert(std::find_if(global_to_local_vertices0.begin(),
+    //                     global_to_local_vertices0.end(),
+    //                     [](auto p) { return p.second == -1; })
+    //        == global_to_local_vertices0.end());
+
     // Send (from the ghost cell owner) and receive global indices for
     // ghost vertices that are not on the process boundary.
     //
@@ -1138,13 +1154,8 @@ mesh::create_topology(MPI_Comm comm,
     const std::vector<std::int64_t> recv_triplets
         = exchange_ghost_vertex_numbering(
             neighbor_comm, local_to_global_rank, *index_map_c, cells, nlocal,
-            global_offset_v, global_to_local_vertices, ghost_vertices,
+            global_offset_v, global_to_local_vertices0, ghost_vertices,
             ghost_vertex_owners);
-    // const std::vector<std::int64_t> recv_triplets
-    //     = exchange_ghost_vertex_numbering(
-    //         neighbor_comm, local_to_global_rank, *index_map_c, cells, nlocal,
-    //         global_offset_v, global_to_local_vertices, ghost_vertices,
-    //         ghost_vertex_owners);
 
     // Unpack received data and add to arrays of ghost indices and ghost
     // owners
@@ -1152,30 +1163,17 @@ mesh::create_topology(MPI_Comm comm,
     {
       assert(i < recv_triplets.size());
       const std::int64_t global_idx_old = recv_triplets[i];
-
-      // NEW
       auto it0 = std::lower_bound(unowned_vertices.begin(),
                                   unowned_vertices.end(), global_idx_old);
       if (it0 != unowned_vertices.end() and *it0 == global_idx_old)
       {
         std::size_t pos = std::distance(unowned_vertices.begin(), it0);
         if (local_vertex_indices_unowned[pos] < 0)
-          local_vertex_indices_unowned[pos] = v;
-
-        ghost_vertices_new.push_back(recv_triplets[i + 1]);
-        ghost_vertex_owners_new.push_back(recv_triplets[i + 2]);
-      }
-
-      // OLD
-      auto it = find_idx(global_to_local_vertices, global_idx_old);
-      assert(it != global_to_local_vertices.end());
-      assert(it->first == global_idx_old);
-      if (it->second == -1)
-      {
-        assert(i + 2 < recv_triplets.size());
-        it->second = v++;
-        ghost_vertices.push_back(recv_triplets[i + 1]);
-        ghost_vertex_owners.push_back(recv_triplets[i + 2]);
+        {
+          local_vertex_indices_unowned[pos] = v++;
+          ghost_vertices.push_back(recv_triplets[i + 1]);
+          ghost_vertex_owners.push_back(recv_triplets[i + 2]);
+        }
       }
     }
   }
@@ -1195,7 +1193,6 @@ mesh::create_topology(MPI_Comm comm,
   }
 
   // Convert input cell topology to local vertex indexing
-
   std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local_vertices1;
   std::transform(owned_vertices.begin(), owned_vertices.end(),
                  local_vertex_indices.begin(),
@@ -1207,8 +1204,12 @@ mesh::create_topology(MPI_Comm comm,
                  std::back_inserter(global_to_local_vertices1),
                  [](auto idx0, auto idx1)
                  { return std::pair<std::int64_t, std::int32_t>(idx0, idx1); });
-
   std::sort(global_to_local_vertices1.begin(), global_to_local_vertices1.end());
+
+  assert(std::find_if(global_to_local_vertices1.begin(),
+                      global_to_local_vertices1.end(),
+                      [](auto p) { return p.second == -1; })
+         == global_to_local_vertices1.end());
 
   const std::size_t num_local_nodes
       = (ghost_mode == GhostMode::none) ? num_local_cells : cells.num_nodes();
@@ -1216,10 +1217,6 @@ mesh::create_topology(MPI_Comm comm,
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           convert_to_local_indexing(cells, num_local_nodes,
                                     global_to_local_vertices1));
-  // std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells_local_idx
-  //     = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-  //         convert_to_local_indexing(cells, num_local_nodes,
-  //                                   global_to_local_vertices));
 
   // Create Topology object
 
