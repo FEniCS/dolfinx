@@ -251,10 +251,10 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
   {
     std::array<std::array<double, 3>, 2> b
         = compute_bbox_of_entity(mesh, tdim, e);
-    std::for_each(b[0].begin(), b[0].end(),
-                  [padding](double& x) { x -= padding; });
-    std::for_each(b[1].begin(), b[1].end(),
-                  [padding](double& x) { x += padding; });
+    std::transform(b[0].begin(), b[0].end(), b[0].begin(),
+                   [padding](double x) { return x - padding; });
+    std::transform(b[1].begin(), b[1].end(), b[1].begin(),
+                   [padding](double& x) { return x + padding; });
     leaf_bboxes.emplace_back(b, e);
   }
 

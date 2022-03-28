@@ -13,7 +13,7 @@
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/defines.h>
-#include <dolfinx/common/subsystem.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/timing.h>
 #include <dolfinx/common/utils.h>
 #include <memory>
@@ -142,7 +142,7 @@ void common(py::module& m)
           std::vector<char*> argv(args.size() + 1, nullptr);
           for (std::size_t i = 0; i < args.size(); ++i)
             argv[i] = const_cast<char*>(args[i].data());
-          dolfinx::common::subsystem::init_logging(args.size(), argv.data());
+          dolfinx::init_logging(args.size(), argv.data());
         });
 }
 } // namespace dolfinx_wrappers
