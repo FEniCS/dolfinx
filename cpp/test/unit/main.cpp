@@ -1,11 +1,11 @@
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
-#include <dolfinx/common/subsystem.h>
+#include <dolfinx/common/log.h>
 #include <mpi.h>
 
 int main(int argc, char* argv[])
 {
-  dolfinx::common::subsystem::init_logging(argc, argv);
+  dolfinx::init_logging(argc, argv);
 
   // Parallel tests require MPI initialization before any tests run and
   // termination only after all tests complete.

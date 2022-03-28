@@ -502,8 +502,17 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
   assert((int)facet_to_cell.size() == num_facets);
 
   // Sort facets by lexicographic order of vertices
-  const std::vector<std::int32_t> facet_perm
-      = dolfinx::sort_by_perm<std::int32_t>(facets, max_num_facet_vertices);
+  const std::size_t shape1 = max_num_facet_vertices;
+  std::vector<int> facet_perm(facets.size() / max_num_facet_vertices);
+  std::iota(facet_perm.begin(), facet_perm.end(), 0);
+  std::sort(facet_perm.begin(), facet_perm.end(),
+            [&facets, shape1](auto f0, auto f1)
+            {
+              auto it0 = std::next(facets.begin(), f0 * shape1);
+              auto it1 = std::next(facets.begin(), f1 * shape1);
+              return std::lexicographical_compare(it0, std::next(it0, shape1),
+                                                  it1, std::next(it1, shape1));
+            });
 
   // Iterator over facets, and push back cells that share the facet. If
   // facet is not shared, store in 'unshared_facets'.

@@ -166,7 +166,7 @@ class Expression:
         else:
             if values.shape != values_shape:
                 raise TypeError("Passed array values does not have correct shape.")
-            if values.dtype != self._dtype:
+            if values.dtype != self.dtype:
                 raise TypeError("Passed array values does not have correct dtype.")
 
         self._cpp_object.eval(cells, values)
