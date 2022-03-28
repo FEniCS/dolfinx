@@ -70,10 +70,10 @@ std::vector<int> find_out_edges(MPI_Comm comm, xtl::span<const int> edges,
 ///
 /// @note Collective
 ///
-/// Indices are sent to a 'post office' rank, which uses a
-/// (deterministic) random number generator to determine which ranks is
-/// the 'owner'. This information is sent back to the ranks who sent the
-/// index to the post office,
+/// Indices are sent to a 'post office' rank, which uses a /
+//(deterministic) random number generator to determine which ranks is /
+//the 'owner'. This information is sent back to the ranks who sent the /
+//index to the post office.
 ///
 /// @param[in] comm MPI communicator
 /// @param[in] indices Global indices to determine a an owning MPI ranks
@@ -994,7 +994,7 @@ mesh::create_topology(MPI_Comm comm,
     dolfinx::radix_sort(xtl::span(in_edges));
     in_edges.erase(std::unique(in_edges.begin(), in_edges.end()),
                    in_edges.end());
-    out_edges = find_out_edges(comm0, src_dest, in_edges);
+    out_edges = dolfinx::MPI::compute_graph_edges_nbx(comm, in_edges);
   }
 
   MPI_Comm_free(&comm0);
