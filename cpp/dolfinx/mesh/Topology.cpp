@@ -183,10 +183,9 @@ determine_sharing_ranks(MPI_Comm comm,
     while (it != indices_list.end())
     {
       // Find iterator to next different global index
-      auto it1
-          = std::find_if(it, indices_list.end(), [idx0 = (*it)[0]](auto& idx) {
-              return idx[0] != idx0;
-            });
+      auto it1 = std::find_if(it, indices_list.end(),
+                              [idx0 = (*it)[0]](auto& idx)
+                              { return idx[0] != idx0; });
 
       // Number of times index is repeated
       std::size_t num = std::distance(it, it1);
@@ -306,42 +305,27 @@ determine_sharing_ranks(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 
-/// @brief For each vertex, assign a marker that indicates if the vertex
-/// is connected to a ghost cell and build a list of vertices with
-/// undetermined ownership.
+/// @brief Determine ownership status of vertices.
 ///
-/// The marker for each vertex is:
-///
-/// * (-1) for a vertex that is connected to a ghost cell
-/// * (-2) for a vertex that connected **only** to owned (local) cells
-///
-/// The index of vertices that are connected to both owned and ghost
-/// cells are added to a vector.
-///
-/// @todo Would it be helpful here to also make vertices that are
-/// definitely not owned, i.e. are connect to ghost cells only?
+/// Owned vertices are attached only to owned cells and 'unowned'
+/// vertices are attached only to ghost cells. Vertices with
+/// undetermined ownership are attached to owned and unowned cells.
 ///
 /// @param cells Input mesh topology
 /// @param num_local_cells Number of local (non-ghost) cells. These
 /// comes before ghost cells in `cells`.
-/// @return (global_index_to_maker for (-1) and (-2) cases, indices for
-/// other vertices)
-
-/// @return
-/// 1. For each vertex, a (global_index, marker) pair, where the marker
-/// is as described above.
-/// 2. List if vertices (using global indices) with undetermined
-/// ownership. These vertices are attached to owned and an un-owned
-/// cells.
-std::pair<std::vector<std::pair<std::int64_t, std::int32_t>>,
-          std::vector<std::int64_t>>
-compute_vertex_markers(const graph::AdjacencyList<std::int64_t>& cells,
+/// @return Sorted lists of vertex indices:
+/// 1. Owned by the caller
+/// 2. With undetermined ownership
+/// 2. Not owned by the caller
+std::array<std::vector<std::int64_t>, 3>
+vertex_ownerhip_groups(const graph::AdjacencyList<std::int64_t>& cells,
                        int num_local_cells)
 {
-  common::Timer t0(
-      "Topology: mark vertices by type (owned, possibly owned, ghost)");
+  common::Timer timer("Topology: determine vertex ownership groups (owned, "
+                      "undetermined, unowned)");
 
-  // Build set of 'local' cell vertices
+  // Build set of 'local' cell vertices (attached to an owned cell)
   std::vector<std::int64_t> local_vertex_set(
       cells.array().begin(),
       std::next(cells.array().begin(), cells.offsets()[num_local_cells]));
@@ -350,7 +334,7 @@ compute_vertex_markers(const graph::AdjacencyList<std::int64_t>& cells,
       std::unique(local_vertex_set.begin(), local_vertex_set.end()),
       local_vertex_set.end());
 
-  // Build set of ghost cell vertices
+  // Build set of ghost cell vertices (attached to a ghost cell)
   std::vector<std::int64_t> ghost_vertex_set(
       std::next(cells.array().begin(), cells.offsets()[num_local_cells]),
       cells.array().end());
@@ -359,43 +343,29 @@ compute_vertex_markers(const graph::AdjacencyList<std::int64_t>& cells,
       std::unique(ghost_vertex_set.begin(), ghost_vertex_set.end()),
       ghost_vertex_set.end());
 
-  // Vector to hold markers for vertices
-  std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local_v;
+  // Build intersection (vertices attached to owned and ghost cells,
+  // therefore ownership is undetermined)
+  std::vector<std::int64_t> unknown_vertices;
+  std::set_intersection(local_vertex_set.begin(), local_vertex_set.end(),
+                        ghost_vertex_set.begin(), ghost_vertex_set.end(),
+                        std::back_inserter(unknown_vertices));
 
-  // Add all vertices attached a ghost cell to `global_to_local_v` with
-  // the marker -1
-  std::transform(ghost_vertex_set.begin(), ghost_vertex_set.end(),
-                 std::back_inserter(global_to_local_v),
-                 [](auto idx) -> decltype(global_to_local_v)::value_type {
-                   return {idx, -1};
-                 });
+  // Build differece 1. Vertices attached only to owned cells, and
+  // therefore owned by this rank
+  std::vector<std::int64_t> owned_vertices;
+  std::set_difference(local_vertex_set.begin(), local_vertex_set.end(),
+                      unknown_vertices.begin(), unknown_vertices.end(),
+                      std::back_inserter(owned_vertices));
 
-  // For vertices that are attached to owned cells:
-  // - If the vertex is also in the set of vertices attached to a ghost
-  //   cell, add vertex to set of vertices with undetermined ownership
-  // - Else, add vertex to `global_to_local_v` with marker '-2' to
-  //   indicate that the vertex is owned by the current process
-  std::vector<std::int64_t> unknown_indices_set;
-  for (std::int64_t global_index : local_vertex_set)
-  {
-    // Check if vertex is attached to a ghost cell
-    auto it = std::lower_bound(ghost_vertex_set.begin(), ghost_vertex_set.end(),
-                               global_index);
-    if (it != ghost_vertex_set.end() and *it == global_index)
-    {
-      // Vertex is attached to a ghost cell, therefore ownership is
-      // undetermined at this stage
-      unknown_indices_set.push_back(global_index);
-    }
-    else
-    {
-      // Vertex is not attached to a ghost cell, therefore is owned by
-      // this rank. Set maker to -2.
-      global_to_local_v.push_back({global_index, -2});
-    }
-  }
+  // Build differece 2: Vertices attached only to ghost cells, and
+  // therefore not owned by this rank
+  std::vector<std::int64_t> unowned_vertices;
+  std::set_difference(ghost_vertex_set.begin(), ghost_vertex_set.end(),
+                      unknown_vertices.begin(), unknown_vertices.end(),
+                      std::back_inserter(unowned_vertices));
 
-  return {std::move(global_to_local_v), std::move(unknown_indices_set)};
+  return {std::move(owned_vertices), std::move(unknown_vertices),
+          std::move(unowned_vertices)};
 }
 //-----------------------------------------------------------------------------
 
@@ -825,31 +795,58 @@ mesh::create_topology(MPI_Comm comm,
         comm, num_local_cells, dest_ranks, cell_ghost_indices, ghost_owners);
   }
 
-  // Create a map from global index to a label, using the labels:
+  // Create a map for vertices from global index to a label, using the
+  // labels:
   //
   // * -2 for owned (not shared with any ghost cells)
   // * -1 for all other vertices (shared by a ghost cell)
   //
-  // and a list of vertices whose ownership needs determining (vertices
-  // that are attached to both owned and ghost cells)
-  auto [global_to_local_vertices, unknown_indices_set]
-      = compute_vertex_markers(cells, num_local_cells);
-  std::sort(global_to_local_vertices.begin(), global_to_local_vertices.end());
+  // and create a list of vertices whose ownership needs determining
+  // (vertices that are attached to both owned and ghost cells)
+  std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local_vertices;
+  std::vector<std::int64_t> unknown_vertices;
+  {
+    auto [owned, unknown, unowned]
+        = vertex_ownerhip_groups(cells, num_local_cells);
+    global_to_local_vertices.reserve(owned.size() + unknown.size()
+                                     + unowned.size());
+    std::transform(
+        owned.begin(), owned.end(),
+        std::back_inserter(global_to_local_vertices),
+        [](auto idx) -> decltype(global_to_local_vertices)::value_type {
+          return {idx, -2};
+        });
+    std::transform(
+        unknown.begin(), unknown.end(),
+        std::back_inserter(global_to_local_vertices),
+        [](auto idx) -> decltype(global_to_local_vertices)::value_type {
+          return {idx, -1};
+        });
+    std::transform(
+        unowned.begin(), unowned.end(),
+        std::back_inserter(global_to_local_vertices),
+        [](auto idx) -> decltype(global_to_local_vertices)::value_type {
+          return {idx, -1};
+        });
+    std::sort(global_to_local_vertices.begin(), global_to_local_vertices.end());
+
+    unknown_vertices = std::move(unknown);
+  }
 
   // FIXME: do we already have information in the ranks that we re-use
   // here?
   //
   // For each vertex whose ownership needs determining (indices in
-  // unknown_indices_set), find the sharing ranks. The first index in
+  // unknown_vertices), find the sharing ranks. The first index in
   // the vector of ranks is the owner as determined by
   // determine_sharing_ranks.
   const graph::AdjacencyList<int> global_vertex_to_ranks
-      = determine_sharing_ranks(comm, unknown_indices_set);
+      = determine_sharing_ranks(comm, unknown_vertices);
 
   // Iterate over vertices that have 'unknown' ownership, and if flagged
   // as owned by determine_sharing_ranks update ownership status
   const int mpi_rank = dolfinx::MPI::rank(comm);
-  for (std::size_t i = 0; i < unknown_indices_set.size(); ++i)
+  for (std::size_t i = 0; i < unknown_vertices.size(); ++i)
   {
     // Vertex is shared and owned by this rank if the first sharing rank
     // is my rank
@@ -859,7 +856,7 @@ mesh::create_topology(MPI_Comm comm,
     {
       // TODO: avoid map lookup
 
-      std::int64_t global_index = unknown_indices_set[i];
+      std::int64_t global_index = unknown_vertices[i];
       auto it_gi = find_idx(global_to_local_vertices, global_index);
       assert(it_gi != global_to_local_vertices.end());
       assert(it_gi->first == global_index);
@@ -910,7 +907,7 @@ mesh::create_topology(MPI_Comm comm,
   // global index, owner rank) with neighbours (for vertices on 'true
   // domain boundary')
   auto recv_triplets = exchange_vertex_numbering(
-      neighbor_comm, local_to_global_rank, unknown_indices_set,
+      neighbor_comm, local_to_global_rank, unknown_vertices,
       global_vertex_to_ranks, global_offset_v, global_to_local_vertices);
   assert(recv_triplets.size() % 3 == 0);
 
@@ -935,7 +932,7 @@ mesh::create_topology(MPI_Comm comm,
 
   if (ghost_mode != GhostMode::none)
   {
-    // Send and receive global (from the ghost cell owner) indices for
+    // Send (from the ghost cell owner) and receive global indices for
     // ghost vertices that are not on the process boundary.
     //
     // Note: the ghost cell owner might not be the same as the vertex
