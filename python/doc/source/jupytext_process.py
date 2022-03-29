@@ -11,7 +11,7 @@ import jupytext
 
 
 def process():
-    """Convert light format demo Python files into myrst flavoured markdown and
+    """Convert light format demo Python files into MyST flavoured markdown and
     ipynb using Jupytext. These files can then be included in Sphinx
     documentation"""
     # Directories to scan
