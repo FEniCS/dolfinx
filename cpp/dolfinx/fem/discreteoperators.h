@@ -180,7 +180,9 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
       = element1->get_dof_transformation_function<T>(true, true, false);
 
   // Get sizes of elements
-  const std::size_t dim0 = element0->space_dimension() / bs0;
+  const std::size_t space_dim0 = element0->space_dimension();
+  const std::size_t space_dim1 = element1->space_dimension();
+  const std::size_t dim0 = space_dim0 / bs0;
   const std::size_t value_size_ref0 = element0->reference_value_size() / bs0;
   const std::size_t value_size0 = element0->value_size() / bs0;
   const std::size_t value_size1 = element1->value_size() / bs1;
@@ -241,12 +243,11 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
 
   std::vector<double> coordinate_dofs(num_dofs_g * gdim);
   xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});
-  std::vector<T> A(element1->space_dimension() * element0->space_dimension());
-  std::vector<T> local1(element1->space_dimension());
+  std::vector<T> A(space_dim0 * space_dim1);
+  std::vector<T> local1(space_dim1);
 
   std::vector<std::size_t> shape
-      = {X.shape(0), (std::size_t)element1->value_size(),
-         (std::size_t)element0->space_dimension()};
+      = {X.shape(0), (std::size_t)element1->value_size(), space_dim0};
   auto _A = xt::adapt(A, shape);
 
   // Iterate over mesh and interpolate on each cell
@@ -324,10 +325,10 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
         auto _mapped_values = xt::view(mapped_values, xt::all(), i, xt::all());
         impl::interpolation_apply(Pi_1, _mapped_values, local1, bs1);
         for (std::size_t j = 0; j < local1.size(); j++)
-          A[element0->space_dimension() * j + i] = local1[j];
+          A[space_dim0 * j + i] = local1[j];
       }
     }
-    apply_inverse_dof_transform1(A, cell_info, c, element0->space_dimension());
+    apply_inverse_dof_transform1(A, cell_info, c, space_dim0);
     mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), A);
   }
 }
