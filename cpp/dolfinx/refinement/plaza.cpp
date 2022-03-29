@@ -470,7 +470,6 @@ compute_refinement(
   std::vector<std::int32_t> parent_cell;
   std::vector<std::int8_t> parent_facet;
   std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
-  std::vector<int> marked_edge_list;
   std::vector<std::int32_t> simplex_set;
 
   auto map_c = mesh.topology().index_map(tdim);
@@ -521,10 +520,11 @@ compute_refinement(
 
     if (no_edge_marked)
     {
-      // Copy over existing Cell to new topology
+      // Copy over existing cell to new topology
       for (auto v : vertices)
         cell_topology.push_back(global_indices[v]);
       parent_cell.push_back(c);
+      parent_facet.insert(parent_facet.end(), {0, 1, 2, 3});
     }
     else
     {
