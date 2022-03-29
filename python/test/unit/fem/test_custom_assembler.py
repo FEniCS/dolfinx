@@ -12,6 +12,7 @@ import math
 import os
 import pathlib
 import time
+from pathlib import Path
 
 import cffi
 import numba
@@ -77,9 +78,9 @@ if petsc_lib_name is not None:
     petsc_lib_ctypes = ctypes.CDLL(petsc_lib_name)
 else:
     try:
-        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
+        petsc_lib_ctypes = ctypes.CDLL(Path(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
     except OSError:
-        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
+        petsc_lib_ctypes = ctypes.CDLL(Path(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
     except OSError:
         print("Could not load PETSc library for CFFI (ABI mode).")
         raise
@@ -106,9 +107,9 @@ if petsc_lib_name is not None:
     petsc_lib_cffi = ffi.dlopen(petsc_lib_name)
 else:
     try:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
+        petsc_lib_cffi = ffi.dlopen(Path(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
     except OSError:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
+        petsc_lib_cffi = ffi.dlopen(Path(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
     except OSError:
         print("Could not load PETSc library for CFFI (ABI mode).")
         raise
@@ -139,9 +140,9 @@ def get_matsetvalues_api():
             #include "petscmat.h"
         """,
                               libraries=['petsc'],
-                              include_dirs=[os.path.join(petsc_dir, petsc_arch, 'include'),
-                                            os.path.join(petsc_dir, 'include')] + dolfinx_pc["include_dirs"],
-                              library_dirs=[os.path.join(petsc_dir, petsc_arch, 'lib')],
+                              include_dirs=[Path(petsc_dir, petsc_arch, 'include'),
+                                            Path(petsc_dir, 'include')] + dolfinx_pc["include_dirs"],
+                              library_dirs=[Path(petsc_dir, petsc_arch, 'lib')],
                               extra_compile_args=[])
 
         # Build module in same directory as test file

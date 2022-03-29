@@ -6,13 +6,14 @@
 
 import ctypes
 import ctypes.util
-import os
+from pathlib import Path
 
 import cffi
 import numba
 import numpy as np
 
 import basix
+import dolfinx.cpp
 import ufl
 from dolfinx.cpp.la.petsc import create_matrix
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
@@ -23,7 +24,7 @@ import petsc4py.lib
 from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
-import dolfinx.cpp
+
 dolfinx.cpp.common.init_logging(["-v"])
 # Get details of PETSc install
 petsc_dir = PETSc_get_config()['PETSC_DIR']
@@ -78,9 +79,9 @@ if petsc_lib_name is not None:
     petsc_lib_cffi = ffi.dlopen(petsc_lib_name)
 else:
     try:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
+        petsc_lib_cffi = ffi.dlopen(Path(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
     except OSError:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
+        petsc_lib_cffi = ffi.dlopen(Path(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
     except OSError:
         print("Could not load PETSc library for CFFI (ABI mode).")
         raise
