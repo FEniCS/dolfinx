@@ -90,7 +90,7 @@ mesh::Mesh partition(const mesh::Mesh& old_mesh,
 std::vector<std::int64_t> adjust_indices(const common::IndexMap& index_map,
                                          std::int32_t n);
 
-/// Transfer faceg MeshTags from coarse mesh to refined mesh
+/// Transfer facet MeshTags from coarse mesh to refined mesh
 /// @note The refined mesh must not have been redistributed during refinement
 /// @note GhostMode must be GhostMode.none
 /// @param input_meshtag Facet MeshTags on parent mesh

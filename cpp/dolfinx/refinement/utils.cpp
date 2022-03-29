@@ -404,6 +404,9 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   if (input_meshtag.dim() != tdim - 1)
     throw std::runtime_error("Input meshtag is not facet-based");
 
+  if (input_meshtag.mesh()->topology().index_map(tdim)->num_ghosts() > 0)
+    throw std::runtime_error("Ghosted meshes are not supported");
+
   auto input_c_to_f
       = input_meshtag.mesh()->topology().connectivity(tdim, tdim - 1);
   auto c_to_f = refined_mesh.topology().connectivity(tdim, tdim - 1);
@@ -418,6 +421,7 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   // construction
   const std::vector<std::int64_t>& original_cell_index
       = refined_mesh.topology().original_cell_index;
+  assert(original_cell_index.size() == parent_cell.size());
   std::int64_t global_offset
       = refined_mesh.topology().index_map(tdim)->local_range()[0];
   // Map back to original index
@@ -522,6 +526,9 @@ mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
   if (input_meshtag.dim() != tdim)
     throw std::runtime_error("Input meshtag is not cell-based");
 
+  if (input_meshtag.mesh()->topology().index_map(tdim)->num_ghosts() > 0)
+    throw std::runtime_error("Ghosted meshes are not supported");
+
   // Create map parent->child facets
   const std::int32_t num_input_cells
       = input_meshtag.mesh()->topology().index_map(tdim)->size_local()
@@ -532,6 +539,7 @@ mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
   // construction
   const std::vector<std::int64_t>& original_cell_index
       = refined_mesh.topology().original_cell_index;
+  assert(original_cell_index.size() == parent_cell.size());
   std::int64_t global_offset
       = refined_mesh.topology().index_map(tdim)->local_range()[0];
   // Map back to original index
