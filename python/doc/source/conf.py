@@ -146,3 +146,5 @@ autoclass_content = "both"
 
 napoleon_google_docstring = True
 napoleon_use_admonition_for_notes = False
+
+myst_enable_extensions = ["dollarmath",]
