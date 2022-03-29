@@ -29,7 +29,7 @@ jobs:
 
       - name: Build C++ unit tests
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/unit/ -S build/test/unit/
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S build/test/
           cmake --build build/test/unit
       - name: Run C++ unit tests (serial)
         run: |
