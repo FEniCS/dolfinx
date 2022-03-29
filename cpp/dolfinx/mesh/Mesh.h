@@ -110,7 +110,7 @@ private:
 /// @brief Create a mesh using the default partitioner.
 ///
 /// This function takes mesh input data that is distributed across
-/// processes and creates a mesh::Mesh, with the cell distribution
+/// processes and creates a mesh::Mesh, with the mesh cell distribution
 /// determined by the default cell partitioner. The default partitioner
 /// is based a graph partitioning.
 ///

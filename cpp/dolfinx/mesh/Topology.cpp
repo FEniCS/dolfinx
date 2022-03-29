@@ -18,6 +18,7 @@
 #include <dolfinx/graph/partition.h>
 #include <numeric>
 #include <random>
+#include <set>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -64,16 +65,16 @@ std::vector<int> find_out_edges(MPI_Comm comm, xtl::span<const int> edges,
 }
 
 //-----------------------------------------------------------------------------
-//
+
 /// @todo Improve documentation
 /// @brief Determine owner and sharing ranks sharing an index.
 ///
 /// @note Collective
 ///
-/// Indices are sent to a 'post office' rank, which uses a /
-//(deterministic) random number generator to determine which ranks is /
-//the 'owner'. This information is sent back to the ranks who sent the /
-//index to the post office.
+/// Indices are sent to a 'post office' rank, which uses a
+/// (deterministic) random number generator to determine which ranks is
+/// the 'owner'. This information is sent back to the ranks who sent the
+/// index to the post office.
 ///
 /// @param[in] comm MPI communicator
 /// @param[in] indices Global indices to determine a an owning MPI ranks
@@ -331,10 +332,10 @@ determine_sharing_ranks(MPI_Comm comm,
 /// @param cells Input mesh topology
 /// @param num_local_cells Number of local (non-ghost) cells. These
 /// comes before ghost cells in `cells`.
-/// @return Sorted lists of vertex indices:
+/// @return Sorted lists of vertex indices that are:
 /// 1. Owned by the caller
 /// 2. With undetermined ownership
-/// 2. Not owned by the caller
+/// 3. Not owned by the caller
 std::array<std::vector<std::int64_t>, 3>
 vertex_ownerhip_groups(const graph::AdjacencyList<std::int64_t>& cells,
                        int num_local_cells)
@@ -386,6 +387,8 @@ vertex_ownerhip_groups(const graph::AdjacencyList<std::int64_t>& cells,
 }
 //-----------------------------------------------------------------------------
 
+/// @todo Improve doc
+///
 /// @brief Send the vertex numbering for owned vertices to processes
 /// that also share them, returning a list of triplets received from
 /// other ranks.
@@ -396,7 +399,8 @@ vertex_ownerhip_groups(const graph::AdjacencyList<std::int64_t>& cells,
 ///
 /// Input params as in mesh::create_topology()
 ///
-//// @note Collective
+/// @note Collective
+///
 /// @param[in] comm Neighbourhood communicator
 /// @return list of triplets
 std::vector<std::int64_t> exchange_vertex_numbering(
@@ -410,7 +414,7 @@ std::vector<std::int64_t> exchange_vertex_numbering(
   const int mpi_rank = dolfinx::MPI::rank(comm);
 
   // Pack send data. Use std::vector<std::vector>> since size will be
-  // small (equal to number of neighbours)
+  // small (equal to number of neighbour ranks)
   std::vector<std::vector<std::int64_t>> send_buffer(src_dest.size());
   for (std::int32_t i = 0; i < vertex_to_ranks.num_nodes(); ++i)
   {
@@ -428,7 +432,8 @@ std::vector<std::int64_t> exchange_vertex_numbering(
       std::size_t pos = std::distance(global_vertex_indices.begin(), vlocal_it);
       std::int64_t idx_new = local_vertex_indices[pos] + global_offset_v;
 
-      // Owned and shared with these processes (starting from 1, 0 is self)
+      // Owned and shared with these processes (starting from 1, 0 is
+      // self)
       for (std::size_t j = 1; j < vertex_ranks.size(); ++j)
       {
         // Find rank on the neighborhood comm
@@ -604,12 +609,15 @@ std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
   if (!facets)
     throw std::runtime_error("Facets have not been computed.");
 
-  std::set<std::int32_t> fwd_shared_facets;
+  std::vector<std::int32_t> fwd_shared_facets;
   if (facets->num_ghosts() == 0)
   {
-    fwd_shared_facets
-        = std::set<std::int32_t>(facets->scatter_fwd_indices().array().begin(),
-                                 facets->scatter_fwd_indices().array().end());
+    fwd_shared_facets.assign(facets->scatter_fwd_indices().array().begin(),
+                             facets->scatter_fwd_indices().array().end());
+    dolfinx::radix_sort(xtl::span(fwd_shared_facets));
+    fwd_shared_facets.erase(
+        std::unique(fwd_shared_facets.begin(), fwd_shared_facets.end()),
+        fwd_shared_facets.end());
   }
 
   auto fc = topology.connectivity(tdim - 1, tdim);
@@ -618,10 +626,14 @@ std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
   std::vector<std::int8_t> _boundary_facet(facets->size_local(), false);
   for (std::size_t f = 0; f < _boundary_facet.size(); ++f)
   {
-    if (fc->num_links(f) == 1
-        and fwd_shared_facets.find(f) == fwd_shared_facets.end())
+    if (fc->num_links(f) == 1)
     {
-      _boundary_facet[f] = true;
+      if (std::lower_bound(fwd_shared_facets.begin(), fwd_shared_facets.end(),
+                           f)
+          == fwd_shared_facets.end())
+      {
+        _boundary_facet[f] = true;
+      }
     }
   }
 
