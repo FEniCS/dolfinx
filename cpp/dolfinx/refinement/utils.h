@@ -91,6 +91,8 @@ std::vector<std::int64_t> adjust_indices(const common::IndexMap& index_map,
                                          std::int32_t n);
 
 /// Transfer faceg MeshTags from coarse mesh to refined mesh
+/// @note The refined mesh must not have been redistributed during refinement
+/// @note GhostMode must be GhostMode.none
 /// @param input_meshtag Facet MeshTags on parent mesh
 /// @param refined_mesh Refined mesh based on parent mesh
 /// @param parent_cell Parent cell of each cell in refined mesh
@@ -103,6 +105,8 @@ transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& input_meshtag,
                        std::vector<std::int8_t>& parent_facet);
 
 /// Transfer cell MeshTags from coarse mesh to refined mesh
+/// @note The refined mesh must not have been redistributed during refinement
+/// @note GhostMode must be GhostMode.none
 /// @param input_meshtag Cell MeshTags on parent mesh
 /// @param refined_mesh Refined mesh based on parent mesh
 /// @param parent_cell Parent cell of each cell in refined mesh

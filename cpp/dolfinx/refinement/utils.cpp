@@ -414,6 +414,22 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
         + input_meshtag.mesh()->topology().index_map(tdim - 1)->num_ghosts();
   std::vector<int> count_child(num_input_facets, 0);
 
+  // Get global index for each refined cell, before reordering in Mesh
+  // construction
+  const std::vector<std::int64_t>& original_cell_index
+      = refined_mesh.topology().original_cell_index;
+  std::int64_t global_offset
+      = refined_mesh.topology().index_map(tdim)->local_range()[0];
+  // Map back to original index
+  std::vector<std::int32_t> local_cell_index(original_cell_index.size());
+  for (std::size_t i = 0; i < local_cell_index.size(); ++i)
+  {
+    assert(original_cell_index[i] >= global_offset);
+    assert(original_cell_index[i] - global_offset
+           < (int)local_cell_index.size());
+    local_cell_index[original_cell_index[i] - global_offset] = i;
+  }
+
   // Count number of child facets for each parent facet
   for (std::size_t c = 0; c < parent_cell.size(); ++c)
   {
@@ -438,7 +454,10 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   {
     std::int32_t pc = parent_cell[c];
     auto parent_cf = input_c_to_f->links(pc);
-    auto refined_cf = c_to_f->links(c);
+
+    // Use original indexing for child cell
+    const std::int32_t lc = local_cell_index[c];
+    auto refined_cf = c_to_f->links(lc);
 
     for (int j = 0; j < (tdim + 1); ++j)
     {
@@ -509,6 +528,22 @@ mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
         + input_meshtag.mesh()->topology().index_map(tdim)->num_ghosts();
   std::vector<int> count_child(num_input_cells, 0);
 
+  // Get global index for each refined cell, before reordering in Mesh
+  // construction
+  const std::vector<std::int64_t>& original_cell_index
+      = refined_mesh.topology().original_cell_index;
+  std::int64_t global_offset
+      = refined_mesh.topology().index_map(tdim)->local_range()[0];
+  // Map back to original index
+  std::vector<std::int32_t> local_cell_index(original_cell_index.size());
+  for (std::size_t i = 0; i < local_cell_index.size(); ++i)
+  {
+    assert(original_cell_index[i] >= global_offset);
+    assert(original_cell_index[i] - global_offset
+           < (int)local_cell_index.size());
+    local_cell_index[original_cell_index[i] - global_offset] = i;
+  }
+
   // Count number of child cells for each parent cell
   for (std::size_t c = 0; c < parent_cell.size(); ++c)
     ++count_child[parent_cell[c]];
@@ -523,7 +558,9 @@ mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
   {
     std::int32_t pc = parent_cell[c];
     int offset = offset_child[pc];
-    child_cell[offset] = c;
+    // Use original indexing for child cell
+    const std::int32_t lc = local_cell_index[c];
+    child_cell[offset] = lc;
     ++offset_child[pc];
   }
 
