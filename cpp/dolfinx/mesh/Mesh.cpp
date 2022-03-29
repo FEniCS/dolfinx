@@ -205,7 +205,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   return Mesh(comm, std::move(topology), std::move(geometry));
 }
 //-----------------------------------------------------------------------------
-std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>>
+std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>,
+           std::vector<std::int32_t>>
 mesh::create_submesh(const Mesh& mesh, int dim,
                      const xtl::span<const std::int32_t>& entities)
 {
@@ -286,7 +287,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   const int num_vertices_per_entity = cell_num_entities(entity_type, 0);
   auto mesh_e_to_v = mesh.topology().connectivity(dim, 0);
   std::vector<std::int32_t> submesh_e_to_v_vec;
-  submesh_e_to_v_vec.reserve(submesh_to_mesh_entity_map.size() * num_vertices_per_entity);
+  submesh_e_to_v_vec.reserve(submesh_to_mesh_entity_map.size()
+                             * num_vertices_per_entity);
   std::vector<std::int32_t> submesh_e_to_v_offsets(1, 0);
   submesh_e_to_v_offsets.reserve(submesh_to_mesh_entity_map.size() + 1);
   for (std::int32_t e : submesh_to_mesh_entity_map)
@@ -406,9 +408,9 @@ mesh::create_submesh(const Mesh& mesh, int dim,
       submesh_x_dof_index_map, std::move(submesh_x_dofmap), submesh_coord_ele,
       std::move(submesh_x), mesh.geometry().dim(), std::move(submesh_igi));
 
-  // TODO Return entity map!
   return {Mesh(mesh.comm(), std::move(submesh_topology),
                std::move(submesh_geometry)),
+          std::move(submesh_to_mesh_entity_map),
           std::move(submesh_to_mesh_vertex_map),
           std::move(submesh_to_mesh_x_dof_map)};
 }
