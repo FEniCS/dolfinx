@@ -77,8 +77,8 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S build/test/
-          cmake --build build/test/unit
-          cd build/test/unit
+          cmake --build build/test
+          cd build/test
           ctest --output-on-failure -R unittests
           mpiexec -np 2 ctest --output-on-failure -R unittests
 
