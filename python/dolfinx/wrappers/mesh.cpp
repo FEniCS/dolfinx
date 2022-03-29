@@ -293,6 +293,8 @@ void mesh(py::module& m)
            })
       .def_property_readonly("dim", &dolfinx::mesh::Topology::dim,
                              "Topological dimension")
+      .def_readonly("original_cell_index",
+                    &dolfinx::mesh::Topology::original_cell_index)
       .def("connectivity",
            py::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        py::const_))

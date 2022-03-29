@@ -565,3 +565,12 @@ def test_empty_rank_mesh():
     mesh.topology.create_entity_permutations()
     mesh.topology.get_cell_permutation_info()
     mesh.topology.get_facet_permutations()
+
+
+def test_original_index():
+    nx = 7
+    mesh = create_unit_cube(MPI.COMM_WORLD, nx, nx, nx, ghost_mode=GhostMode.none)
+
+    s = sum(mesh.topology.original_cell_index)
+    s = MPI.COMM_WORLD.allreduce(s, MPI.SUM)
+    assert(s == nx**3 * 6 * (nx**3 * 6 - 1) // 2)

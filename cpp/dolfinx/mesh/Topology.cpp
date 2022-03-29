@@ -183,10 +183,9 @@ determine_sharing_ranks(MPI_Comm comm,
     while (it != indices_list.end())
     {
       // Find iterator to next different global index
-      auto it1
-          = std::find_if(it, indices_list.end(), [idx0 = (*it)[0]](auto& idx) {
-              return idx[0] != idx0;
-            });
+      auto it1 = std::find_if(it, indices_list.end(),
+                              [idx0 = (*it)[0]](auto& idx)
+                              { return idx[0] != idx0; });
 
       // Number of times index is repeated
       std::size_t num = std::distance(it, it1);
@@ -1004,6 +1003,11 @@ mesh::create_topology(MPI_Comm comm,
   // Set cell index map and connectivity
   topology.set_index_map(tdim, index_map_c);
   topology.set_connectivity(cells_local_idx, tdim, 0);
+
+  // Save original cell index
+  topology.original_cell_index.assign(
+      original_cell_index.begin(),
+      std::next(original_cell_index.begin(), num_local_nodes));
 
   return topology;
 }
