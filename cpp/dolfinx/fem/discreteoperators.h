@@ -241,7 +241,7 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
   auto pull_back_fn1 = element1->map_fn<U1_t, u1_t, K_t, J_t>();
 
-  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
+  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, 3});
   xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});
   std::vector<T> A(space_dim0 * space_dim1);
   std::vector<T> local1(space_dim1);
@@ -255,7 +255,7 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local();
   auto _coordinate_dofs
-      = xt::adapt(coordinate_dofs, std::vector<std::size_t>{num_dofs_g, 3});
+      = xt::view(coordinate_dofs, xt::all(), xt::xrange(0, gdim));
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get cell geometry (coordinate dofs)
