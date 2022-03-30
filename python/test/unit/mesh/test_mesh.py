@@ -31,14 +31,14 @@ def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
     submesh_cell_imap = submesh.topology.index_map(entity_dim)
     submesh_c_to_v = submesh.topology.connectivity(entity_dim, 0)
 
-    assert(submesh_cell_imap.size_local + submesh_cell_imap.num_ghosts == submesh_c_to_v.num_nodes)
+    assert(submesh_cell_imap.size_local + submesh_cell_imap.num_ghosts ==
+           submesh_c_to_v.num_nodes)
 
     # Check that creating facets / creating connectivity doesn't cause
     # a segmentation fault
     mesh_tdim = mesh.topology.dim
-    if entity_dim == mesh_tdim:
-        submesh.topology.create_entities(mesh_tdim - 1)
-        submesh.topology.create_connectivity(mesh_tdim - 1, 0)
+    submesh.topology.create_entities(mesh_tdim - 1)
+    submesh.topology.create_connectivity(mesh_tdim - 1, 0)
 
     # Some processes might not own or ghost entities
     if len(entity_map) > 0:
