@@ -690,6 +690,7 @@ void petsc_module(py::module& m)
 
         // Build operator
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
+        MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
         dolfinx::fem::discrete_gradient<PetscScalar>(
             V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
         return A;
@@ -723,6 +724,7 @@ void petsc_module(py::module& m)
 
         // Build operator
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
+        MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
         dolfinx::fem::interpolation_matrix<PetscScalar>(
             V0, V1, dolfinx::la::petsc::Matrix::set_block_fn(A, INSERT_VALUES));
         return A;
@@ -1096,7 +1098,8 @@ void fem(py::module& m)
            {
              const std::size_t num_points = x.shape(0);
              const std::size_t gdim = x.shape(1);
-             const std::size_t tdim = dolfinx::mesh::cell_dim(self.cell_shape());;
+             const std::size_t tdim
+                 = dolfinx::mesh::cell_dim(self.cell_shape());
 
              xt::xtensor<double, 2> X = xt::empty<double>({num_points, tdim});
 
