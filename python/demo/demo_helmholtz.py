@@ -68,7 +68,7 @@ problem = LinearProblem(a, L, u=uh, petsc_options={"ksp_type": "preonly", "pc_ty
 problem.solve()
 
 # Save solution in XDMF format (to be viewed in Paraview, for example)
-with XDMFFile(MPI.COMM_WORLD, "plane_wave.xdmf", "w", encoding=XDMFFile.Encoding.HDF5) as file:
+with XDMFFile(MPI.COMM_WORLD, "out_helmholtz/plane_wave.xdmf", "w", encoding=XDMFFile.Encoding.HDF5) as file:
     file.write_mesh(msh)
     file.write_function(uh)
 # -

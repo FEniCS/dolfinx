@@ -145,7 +145,7 @@ uh = problem.solve()
 # <dolfinx.io.XDMFFile>` file visualization with ParaView ot VisIt
 
 # +
-with io.XDMFFile(msh.comm, "poisson.xdmf", "w") as file:
+with io.XDMFFile(msh.comm, "out_poisson/poisson.xdmf", "w") as file:
     file.write_mesh(msh)
     file.write_function(uh)
 # -
