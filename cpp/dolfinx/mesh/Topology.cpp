@@ -28,7 +28,13 @@ namespace
 
 //-----------------------------------------------------------------------------
 
-/// @brief Compute out-edges on a symmetric neighbourhood communicator/
+/// @brief Compute out-edges on a symmetric neighbourhood communicator
+///
+/// This function finds out-edges on a neighbourhood communicator. The
+/// communicator neighbourhood must contain all in- and out-edges. The
+/// neighbourhood discovery uses MPI_Neighbor_alltoall; the function is
+/// therefore appropriate for when the  neighbourhood size is 'small'.
+///
 /// @param[in] comm A communicator with a symmetric neighbourhood
 /// @param[in] edges The edges (neighbour ranks) for the neighbourhood
 /// communicator
@@ -964,7 +970,7 @@ mesh::create_topology(MPI_Comm comm,
       //
       // Note: the ghost cell owner might not be the same as the vertex
       // owner
-      const std::vector<std::int64_t> recv_triplets
+      const std::vector<std::int64_t> recv_data
           = exchange_ghost_vertex_numbering(
               comm0, src_dest, *index_map_c, cells, nlocal, global_offset_v,
               global_to_local_vertices, ghost_vertices, ghost_vertex_owners);
@@ -973,8 +979,8 @@ mesh::create_topology(MPI_Comm comm,
       // owners
       for (std::size_t i = 0; i < recv_triplets.size(); i += 3)
       {
-        assert(i < recv_triplets.size());
-        const std::int64_t global_idx_old = recv_triplets[i];
+        assert(i < recv_data.size());
+        const std::int64_t global_idx_old = recv_data[i];
         auto it0 = std::lower_bound(unowned_vertices.begin(),
                                     unowned_vertices.end(), global_idx_old);
         if (it0 != unowned_vertices.end() and *it0 == global_idx_old)
@@ -983,8 +989,8 @@ mesh::create_topology(MPI_Comm comm,
           if (local_vertex_indices_unowned[pos] < 0)
           {
             local_vertex_indices_unowned[pos] = v++;
-            ghost_vertices.push_back(recv_triplets[i + 1]);
-            ghost_vertex_owners.push_back(recv_triplets[i + 2]);
+            ghost_vertices.push_back(recv_data[i + 1]);
+            ghost_vertex_owners.push_back(recv_data[i + 2]);
           }
         }
       }
