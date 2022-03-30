@@ -610,7 +610,7 @@ std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
     throw std::runtime_error("Facets have not been computed.");
 
   std::vector<std::int32_t> fwd_shared_facets;
-  if (facets->num_ghosts() == 0)
+  if (dolfinx::MPI::size(facets->comm()) > 1 and facets->num_ghosts() == 0)
   {
     fwd_shared_facets.assign(facets->scatter_fwd_indices().array().begin(),
                              facets->scatter_fwd_indices().array().end());
@@ -626,14 +626,11 @@ std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
   std::vector<std::int8_t> _boundary_facet(facets->size_local(), false);
   for (std::size_t f = 0; f < _boundary_facet.size(); ++f)
   {
-    if (fc->num_links(f) == 1)
+    if (fc->num_links(f) == 1
+        and !std::binary_search(fwd_shared_facets.begin(),
+                                fwd_shared_facets.end(), f))
     {
-      if (std::lower_bound(fwd_shared_facets.begin(), fwd_shared_facets.end(),
-                           f)
-          == fwd_shared_facets.end())
-      {
-        _boundary_facet[f] = true;
-      }
+      _boundary_facet[f] = true;
     }
   }
 
@@ -833,10 +830,6 @@ mesh::create_topology(MPI_Comm comm,
       if (std::int64_t global_index = unknown_vertices[i];
           ranks.front() == mpi_rank)
       {
-        // TODO: avoid search lookup
-        auto it = std::lower_bound(unknown_vertices.begin(),
-                                   unknown_vertices.end(), global_index);
-        assert(it != unknown_vertices.end() and *it == global_index);
         owned_shared_vertices.push_back(global_index);
       }
       else

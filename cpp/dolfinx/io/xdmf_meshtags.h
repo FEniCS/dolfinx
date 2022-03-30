@@ -40,10 +40,9 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
       = mesh->topology().index_map(dim)->size_local();
 
   // Find number of tagged entities in local range
-  const int num_active_entities
-      = std::lower_bound(meshtags.indices().begin(), meshtags.indices().end(),
-                         num_local_entities)
-        - meshtags.indices().begin();
+  auto it = std::lower_bound(meshtags.indices().begin(),
+                             meshtags.indices().end(), num_local_entities);
+  const int num_active_entities = std::distance(meshtags.indices().begin(), it);
 
   const std::string path_prefix = "/MeshTags/" + name;
   xdmf_mesh::add_topology_data(
