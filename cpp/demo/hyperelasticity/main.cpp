@@ -109,8 +109,8 @@ private:
 
 int main(int argc, char* argv[])
 {
-  common::subsystem::init_logging(argc, argv);
-  common::subsystem::init_petsc(argc, argv);
+  dolfinx::init_logging(argc, argv);
+  PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   // Set the logging thread name to show the process rank
   int mpi_rank;
@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
     file_sigma.write_function(sigma, 0.0);
   }
 
-  common::subsystem::finalize_petsc();
+  PetscFinalize();
 
   return 0;
 }

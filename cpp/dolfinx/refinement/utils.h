@@ -45,7 +45,7 @@ compute_edge_sharing(const mesh::Mesh& mesh);
 /// @param[in, out] marked_edges Marked edges to be updated
 /// @param[in] map_e IndexMap for edges
 void update_logical_edgefunction(
-    const MPI_Comm& neighbor_comm,
+    MPI_Comm neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
     std::vector<std::int8_t>& marked_edges, const common::IndexMap& map_e);
 
@@ -59,7 +59,7 @@ void update_logical_edgefunction(
 /// @return edge_to_new_vertex map and geometry array
 std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
 create_new_vertices(
-    const MPI_Comm& neighbor_comm,
+    MPI_Comm neighbor_comm,
     const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
     const mesh::Mesh& mesh, const std::vector<std::int8_t>& marked_edges);
 
