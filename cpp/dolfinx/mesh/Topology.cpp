@@ -977,7 +977,7 @@ mesh::create_topology(MPI_Comm comm,
 
       // Unpack received data and add to arrays of ghost indices and ghost
       // owners
-      for (std::size_t i = 0; i < recv_triplets.size(); i += 3)
+      for (std::size_t i = 0; i < recv_data.size(); i += 3)
       {
         assert(i < recv_data.size());
         const std::int64_t global_idx_old = recv_data[i];
