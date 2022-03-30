@@ -387,7 +387,7 @@ face_long_edge(const mesh::Mesh& mesh)
 }
 //-----------------------------------------------------------------
 // Computes the parent-child facet relationship
-// @param simlpex_set - index into indices for each child cell
+// @param simplex_set - index into indices for each child cell
 // @return mapping from child to parent facets, using cell-local index
 template <int tdim>
 std::vector<std::int8_t>
@@ -410,7 +410,6 @@ compute_parent_facets(const std::vector<std::int32_t>& simplex_set)
        {0, 1, 2, 6, 8, 9}}};
 
   const int ncells = simplex_set.size() / (tdim + 1);
-  int num_common_vertices;
   for (int fpi = 0; fpi < (tdim + 1); ++fpi)
   {
     // For each child cell, consider all facets
@@ -420,17 +419,13 @@ compute_parent_facets(const std::vector<std::int32_t>& simplex_set)
       {
         // Indices of all vertices on child facet, sorted
         std::array<int, tdim> cf, set_output;
-        for (int j = 0; j < tdim; ++j)
-        {
-          if constexpr (tdim == 2)
-            cf[j] = simplex_set[cc * 3 + facet_table_2d[fci][j]];
-          else
-            cf[j] = simplex_set[cc * 4 + facet_table_3d[fci][j]];
-        }
-        std::sort(cf.begin(), cf.end());
 
+        int num_common_vertices;
         if constexpr (tdim == 2)
         {
+          for (int j = 0; j < tdim; ++j)
+            cf[j] = simplex_set[cc * 3 + facet_table_2d[fci][j]];
+          std::sort(cf.begin(), cf.end());
           auto it = std::set_intersection(facet_table_2d[fpi].begin(),
                                           facet_table_2d[fpi].end(), cf.begin(),
                                           cf.end(), set_output.begin());
@@ -438,6 +433,9 @@ compute_parent_facets(const std::vector<std::int32_t>& simplex_set)
         }
         else
         {
+          for (int j = 0; j < tdim; ++j)
+            cf[j] = simplex_set[cc * 4 + facet_table_3d[fci][j]];
+          std::sort(cf.begin(), cf.end());
           auto it = std::set_intersection(facet_table_3d[fpi].begin(),
                                           facet_table_3d[fpi].end(), cf.begin(),
                                           cf.end(), set_output.begin());
