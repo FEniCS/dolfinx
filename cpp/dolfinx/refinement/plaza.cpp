@@ -524,7 +524,13 @@ compute_refinement(
       for (auto v : vertices)
         cell_topology.push_back(global_indices[v]);
       parent_cell.push_back(c);
-      parent_facet.insert(parent_facet.end(), {0, 1, 2, 3});
+      if (compute_facets)
+      {
+        if (tdim == 3)
+          parent_facet.insert(parent_facet.end(), {0, 1, 2, 3});
+        else
+          parent_facet.insert(parent_facet.end(), {0, 1, 2});
+      }
     }
     else
     {
