@@ -30,7 +30,7 @@ build-install-cpp: &build-install-cpp
 unit-tests-cpp: &unit-tests-cpp
   name: Build and run C++ unit tests (serial and MPI)
   command: |
-    cd build/test/unit
+    cd build/test/
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer .
     ninja -j3
     ctest --output-on-failure -R unittests

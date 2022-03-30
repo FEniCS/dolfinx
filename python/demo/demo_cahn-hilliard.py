@@ -144,7 +144,7 @@ try:
     if pv.OFF_SCREEN:
         pv.start_xvfb(wait=0.5)
 except ModuleNotFoundError:
-    print("pyvista is required to visualise the solution")
+    print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
 
 # Save all logging to file
@@ -282,7 +282,7 @@ ksp.setFromOptions()
 
 # +
 # Output file
-file = XDMFFile(MPI.COMM_WORLD, "output.xdmf", "w")
+file = XDMFFile(MPI.COMM_WORLD, "demo_ch/output.xdmf", "w")
 file.write_mesh(msh)
 
 # Step in time

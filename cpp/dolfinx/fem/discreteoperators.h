@@ -18,6 +18,7 @@
 #include <vector>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xbuilder.hpp>
+#include <xtensor/xindex_view.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
@@ -180,7 +181,9 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
       = element1->get_dof_transformation_function<T>(true, true, false);
 
   // Get sizes of elements
-  const std::size_t dim0 = element0->space_dimension() / bs0;
+  const std::size_t space_dim0 = element0->space_dimension();
+  const std::size_t space_dim1 = element1->space_dimension();
+  const std::size_t dim0 = space_dim0 / bs0;
   const std::size_t value_size_ref0 = element0->reference_value_size() / bs0;
   const std::size_t value_size0 = element0->value_size() / bs0;
   const std::size_t value_size1 = element1->value_size() / bs1;
@@ -204,6 +207,11 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
       {1, X.shape(0), dim0, value_size_ref0});
   element0->tabulate(basis_derivatives_reference0, X, 0);
 
+  double rtol = 1e-14;
+  double atol = 1e-14;
+  auto inds = xt::isclose(basis_derivatives_reference0, 0.0, rtol, atol);
+  xt::filtration(basis_derivatives_reference0, inds) = 0.0;
+
   // Create working arrays
   xt::xtensor<double, 3> basis_reference0({X.shape(0), dim0, value_size_ref0});
   xt::xtensor<double, 3> J({X.shape(0), gdim, tdim});
@@ -214,6 +222,7 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   // evaluated at the interpolation points to the element degrees of
   // freedom, i.e. dofs = Pi f_x
   const xt::xtensor<double, 2>& Pi_1 = element1->interpolation_operator();
+  bool interpolation_ident = element1->interpolation_ident();
 
   using u_t = xt::xview<decltype(basis_reference0)&, std::size_t,
                         xt::xall<std::size_t>, xt::xall<std::size_t>>;
@@ -238,17 +247,21 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
   auto pull_back_fn1 = element1->map_fn<U1_t, u1_t, K_t, J_t>();
 
-  std::vector<double> coordinate_dofs(num_dofs_g * gdim);
+  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, 3});
   xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});
-  std::vector<T> A(element1->space_dimension() * element0->space_dimension());
-  std::vector<T> local1(element1->space_dimension());
+  std::vector<T> A(space_dim0 * space_dim1);
+  std::vector<T> local1(space_dim1);
+
+  std::vector<std::size_t> shape
+      = {X.shape(0), (std::size_t)element1->value_size(), space_dim0};
+  auto _A = xt::adapt(A, shape);
 
   // Iterate over mesh and interpolate on each cell
   auto cell_map = mesh->topology().index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local();
   auto _coordinate_dofs
-      = xt::adapt(coordinate_dofs, std::vector<std::size_t>{num_dofs_g, 3});
+      = xt::view(coordinate_dofs, xt::all(), xt::xrange(0, gdim));
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get cell geometry (coordinate dofs)
@@ -306,17 +319,22 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
       auto _U = xt::view(mapped_values, p, xt::all(), xt::all());
       pull_back_fn1(_U, _u, _K, 1.0 / detJ[p], _J);
     }
+
     // Apply interpolation matrix to basis values of V0 at the interpolation
     // points of V1
-    for (std::size_t i = 0; i < mapped_values.shape(1); ++i)
+    if (interpolation_ident)
+      _A.assign(xt::transpose(mapped_values, {0, 2, 1}));
+    else
     {
-      auto _mapped_values = xt::view(mapped_values, xt::all(), i, xt::all());
-      dolfinx::fem::impl::interpolation_apply(Pi_1, _mapped_values, local1,
-                                              bs1);
-      for (std::size_t j = 0; j < local1.size(); j++)
-        A[element0->space_dimension() * j + i] = local1[j];
+      for (std::size_t i = 0; i < mapped_values.shape(1); ++i)
+      {
+        auto _mapped_values = xt::view(mapped_values, xt::all(), i, xt::all());
+        impl::interpolation_apply(Pi_1, _mapped_values, local1, bs1);
+        for (std::size_t j = 0; j < local1.size(); j++)
+          A[space_dim0 * j + i] = local1[j];
+      }
     }
-    apply_inverse_dof_transform1(A, cell_info, c, element0->space_dimension());
+    apply_inverse_dof_transform1(A, cell_info, c, space_dim0);
     mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), A);
   }
 }

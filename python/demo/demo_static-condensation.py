@@ -20,7 +20,7 @@
 # degrees-of-freedom is demonstrated.
 
 # +
-import os
+from pathlib import Path
 
 import cffi
 import numba
@@ -41,8 +41,7 @@ from dolfinx.mesh import locate_entities_boundary, meshtags
 from mpi4py import MPI
 from petsc4py import PETSc
 
-filedir = os.path.dirname(__file__)
-infile = XDMFFile(MPI.COMM_WORLD, os.path.join(filedir, "cooks_tri_mesh.xdmf"),
+infile = XDMFFile(MPI.COMM_WORLD, Path(Path(__file__).parent, "data", "cooks_tri_mesh.xdmf"),
                   "r", encoding=XDMFFile.Encoding.ASCII)
 msh = infile.read_mesh(name="Grid")
 infile.close()
