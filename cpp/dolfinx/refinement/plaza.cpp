@@ -387,63 +387,63 @@ face_long_edge(const mesh::Mesh& mesh)
 }
 //-----------------------------------------------------------------
 // Computes the parent-child facet relationship
-// @param indices - global indices of vertices in the child cells
 // @param simlpex_set - index into indices for each child cell
 // @return mapping from child to parent facets, using cell-local index
 template <int tdim>
 std::vector<std::int8_t>
-compute_parent_facets(const std::vector<std::int64_t>& indices,
-                      const std::vector<std::int32_t>& simplex_set)
+compute_parent_facets(const std::vector<std::int32_t>& simplex_set)
 {
+  assert(simplex_set.size() % (tdim + 1) == 0);
+
   std::vector<std::int8_t> parent_facet(simplex_set.size(), -1);
 
   // Index lookups in 'indices' for the child vertices that occur on each parent
   // facet in 2D and 3D. In 2D each edge has 3 child vertices, and in 3D each
   // triangular facet has six child vertices.
-  constexpr int facet_table_2d[3][3] = {{1, 2, 3}, {0, 2, 4}, {0, 1, 5}};
+  constexpr std::array<std::array<int, 3>, 3> facet_table_2d{
+      {{1, 2, 3}, {0, 2, 4}, {0, 1, 5}}};
 
-  constexpr int facet_table_3d[4][6] = {{1, 2, 3, 4, 5, 6},
-                                        {0, 2, 3, 4, 7, 8},
-                                        {0, 1, 3, 5, 7, 9},
-                                        {0, 1, 2, 6, 8, 9}};
-
-  assert(indices.size() == tdim * 4 - 2);
-  assert(simplex_set.size() % (tdim + 1) == 0);
+  constexpr std::array<std::array<int, 6>, 4> facet_table_3d{
+      {{1, 2, 3, 4, 5, 6},
+       {0, 2, 3, 4, 7, 8},
+       {0, 1, 3, 5, 7, 9},
+       {0, 1, 2, 6, 8, 9}}};
 
   const int ncells = simplex_set.size() / (tdim + 1);
-
+  int num_common_vertices;
   for (int fpi = 0; fpi < (tdim + 1); ++fpi)
   {
-    // Indices of all vertices on parent facet, sorted
-    std::array<std::int64_t, (tdim * 3 - 3)> pf;
-    for (std::size_t j = 0; j < pf.size(); ++j)
-    {
-      if constexpr (tdim == 2)
-        pf[j] = indices[facet_table_2d[fpi][j]];
-      else
-        pf[j] = indices[facet_table_3d[fpi][j]];
-    }
-    std::sort(pf.begin(), pf.end());
-
     // For each child cell, consider all facets
     for (int cc = 0; cc < ncells; ++cc)
     {
       for (int fci = 0; fci < (tdim + 1); ++fci)
       {
         // Indices of all vertices on child facet, sorted
-        std::array<std::int64_t, tdim> cf, set_output;
+        std::array<int, tdim> cf, set_output;
         for (int j = 0; j < tdim; ++j)
         {
           if constexpr (tdim == 2)
-            cf[j] = indices[simplex_set[cc * 3 + facet_table_2d[fci][j]]];
+            cf[j] = simplex_set[cc * 3 + facet_table_2d[fci][j]];
           else
-            cf[j] = indices[simplex_set[cc * 4 + facet_table_3d[fci][j]]];
+            cf[j] = simplex_set[cc * 4 + facet_table_3d[fci][j]];
         }
         std::sort(cf.begin(), cf.end());
 
-        auto it = std::set_intersection(pf.begin(), pf.end(), cf.begin(),
-                                        cf.end(), set_output.begin());
-        if (std::distance(set_output.begin(), it) == tdim)
+        if constexpr (tdim == 2)
+        {
+          auto it = std::set_intersection(facet_table_2d[fpi].begin(),
+                                          facet_table_2d[fpi].end(), cf.begin(),
+                                          cf.end(), set_output.begin());
+          num_common_vertices = std::distance(set_output.begin(), it);
+        }
+        else
+        {
+          auto it = std::set_intersection(facet_table_3d[fpi].begin(),
+                                          facet_table_3d[fpi].end(), cf.begin(),
+                                          cf.end(), set_output.begin());
+          num_common_vertices = std::distance(set_output.begin(), it);
+        }
+        if (num_common_vertices == tdim)
         {
           assert(parent_facet[cc * (tdim + 1) + fci] == -1);
           // Child facet "fci" of cell cc, lies on parent facet "fpi"
@@ -573,9 +573,9 @@ compute_refinement(
       {
         std::vector<std::int8_t> npf;
         if (tdim == 3)
-          npf = compute_parent_facets<3>(indices, simplex_set);
+          npf = compute_parent_facets<3>(simplex_set);
         else
-          npf = compute_parent_facets<2>(indices, simplex_set);
+          npf = compute_parent_facets<2>(simplex_set);
         parent_facet.insert(parent_facet.end(), npf.begin(), npf.end());
       }
 
@@ -735,12 +735,9 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
       marked_edges[edge] = true;
 
       // If it is a shared edge, add all sharing neighbors to update set
-      auto map_it = shared_edges.find(edge);
-      if (map_it != shared_edges.end())
-      {
+      if (auto map_it = shared_edges.find(edge); map_it != shared_edges.end())
         for (int p : map_it->second)
           marked_for_update[p].push_back(edge);
-      }
     }
   }
 
