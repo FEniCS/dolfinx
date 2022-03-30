@@ -52,7 +52,7 @@ elif index_size == 4:
     c_int_t = "int32_t"
     ctypes_index = ctypes.c_int32
 else:
-    raise RuntimeError("Cannot translate PETSc index size into a C type, index_size: {}.".format(index_size))
+    raise RuntimeError(f"Cannot translate PETSc index size into a C type, index_size: {index_size}.")
 
 if complex and scalar_size == 16:
     c_scalar_t = "double _Complex"
@@ -68,7 +68,7 @@ elif not complex and scalar_size == 4:
     numba_scalar_t = numba.types.float32
 else:
     raise RuntimeError(
-        "Cannot translate PETSc scalar type to a C type, complex: {} size: {}.".format(complex, scalar_size))
+        f"Cannot translate PETSc scalar type to a C type, complex: {complex} size: {scalar_size}.")
 
 
 # Load PETSc library via ctypes
