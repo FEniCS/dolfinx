@@ -22,9 +22,6 @@
 #include <xtensor/xsort.hpp>
 #include <xtensor/xview.hpp>
 
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xio.hpp>
-
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
