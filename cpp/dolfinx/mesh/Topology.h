@@ -144,6 +144,9 @@ public:
   /// Compute entity permutations and reflections
   void create_entity_permutations();
 
+  /// Original cell index
+  std::vector<std::int64_t> original_cell_index;
+
   /// Mesh MPI communicator
   /// @return The communicator on which the topology is distributed
   MPI_Comm comm() const;

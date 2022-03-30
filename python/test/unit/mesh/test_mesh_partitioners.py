@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import os
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -58,7 +58,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     points = [np.array([0, 0, 0]), np.array([Lx, Lx, Lx])]
     mesh = create_box(mpi_comm, points, [Nx, Nx, Nx], cell_type, GhostMode.shared_facet)
 
-    filename = os.path.join(tempdir, "u1_.xdmf")
+    filename = Path(tempdir, "u1_.xdmf")
     with XDMFFile(mpi_comm, filename, "w") as file:
         file.write_mesh(mesh)
 

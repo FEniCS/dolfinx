@@ -1051,6 +1051,11 @@ mesh::create_topology(MPI_Comm comm,
   topology.set_index_map(tdim, index_map_c);
   topology.set_connectivity(cells_local_idx, tdim, 0);
 
+  // Save original cell index
+  topology.original_cell_index.assign(
+      original_cell_index.begin(),
+      std::next(original_cell_index.begin(), num_local_nodes));
+
   return topology;
 }
 //-----------------------------------------------------------------------------

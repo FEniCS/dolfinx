@@ -18,6 +18,7 @@
 #include <vector>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xbuilder.hpp>
+#include <xtensor/xindex_view.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
@@ -205,6 +206,11 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   xt::xtensor<double, 4> basis_derivatives_reference0(
       {1, X.shape(0), dim0, value_size_ref0});
   element0->tabulate(basis_derivatives_reference0, X, 0);
+
+  double rtol = 1e-14;
+  double atol = 1e-14;
+  auto inds = xt::isclose(basis_derivatives_reference0, 0.0, rtol, atol);
+  xt::filtration(basis_derivatives_reference0, inds) = 0.0;
 
   // Create working arrays
   xt::xtensor<double, 3> basis_reference0({X.shape(0), dim0, value_size_ref0});

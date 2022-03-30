@@ -280,12 +280,12 @@ if MPI.COMM_WORLD.rank == 0:
 # are updated.
 
 # +
-with XDMFFile(MPI.COMM_WORLD, "velocity.xdmf", "w") as ufile_xdmf:
+with XDMFFile(MPI.COMM_WORLD, "out_stokes/velocity.xdmf", "w") as ufile_xdmf:
     u.x.scatter_forward()
     ufile_xdmf.write_mesh(msh)
     ufile_xdmf.write_function(u)
 
-with XDMFFile(MPI.COMM_WORLD, "pressure.xdmf", "w") as pfile_xdmf:
+with XDMFFile(MPI.COMM_WORLD, "out_stokes/pressure.xdmf", "w") as pfile_xdmf:
     p.x.scatter_forward()
     pfile_xdmf.write_mesh(msh)
     pfile_xdmf.write_function(p)
@@ -485,12 +485,12 @@ if MPI.COMM_WORLD.rank == 0:
 assert np.isclose(norm_u_3, norm_u_0)
 
 # Write the solution to file
-with XDMFFile(MPI.COMM_WORLD, "new_velocity.xdmf", "w") as ufile_xdmf:
+with XDMFFile(MPI.COMM_WORLD, "out_stokes/new_velocity.xdmf", "w") as ufile_xdmf:
     u.x.scatter_forward()
     ufile_xdmf.write_mesh(msh)
     ufile_xdmf.write_function(u)
 
-with XDMFFile(MPI.COMM_WORLD, "my.xdmf", "w") as pfile_xdmf:
+with XDMFFile(MPI.COMM_WORLD, "out_stokes/my.xdmf", "w") as pfile_xdmf:
     p.x.scatter_forward()
     pfile_xdmf.write_mesh(msh)
     pfile_xdmf.write_function(p)

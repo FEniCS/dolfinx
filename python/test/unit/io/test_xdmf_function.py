@@ -4,7 +4,6 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import os
 from pathlib import Path
 
 import numpy as np
@@ -46,7 +45,7 @@ def mesh_factory(tdim, n):
 def test_save_1d_scalar(tempdir, encoding, use_pathlib):
     filename2 = (
         Path(tempdir).joinpath("u1_.xdmf")
-        if use_pathlib else os.path.join(tempdir, "u1_.xdmf")
+        if use_pathlib else Path(tempdir, "u1_.xdmf")
     )
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)
     V = FunctionSpace(mesh, ("Lagrange", 2))
@@ -60,7 +59,7 @@ def test_save_1d_scalar(tempdir, encoding, use_pathlib):
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_2d_scalar(tempdir, encoding, cell_type):
-    filename = os.path.join(tempdir, "u2.xdmf")
+    filename = Path(tempdir, "u2.xdmf")
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
@@ -73,7 +72,7 @@ def test_save_2d_scalar(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_3d_scalar(tempdir, encoding, cell_type):
-    filename = os.path.join(tempdir, "u3.xdmf")
+    filename = Path(tempdir, "u3.xdmf")
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 4, cell_type)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
@@ -86,7 +85,7 @@ def test_save_3d_scalar(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_2d_vector(tempdir, encoding, cell_type):
-    filename = os.path.join(tempdir, "u_2dv.xdmf")
+    filename = Path(tempdir, "u_2dv.xdmf")
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 13, cell_type)
     V = VectorFunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
@@ -99,7 +98,7 @@ def test_save_2d_vector(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_3d_vector(tempdir, encoding, cell_type):
-    filename = os.path.join(tempdir, "u_3Dv.xdmf")
+    filename = Path(tempdir, "u_3Dv.xdmf")
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)))
     u.vector.set(1.0 + (1j if np.issubdtype(PETSc.ScalarType, np.complexfloating) else 0))
@@ -111,7 +110,7 @@ def test_save_3d_vector(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_2d_tensor(tempdir, encoding, cell_type):
-    filename = os.path.join(tempdir, "tensor.xdmf")
+    filename = Path(tempdir, "tensor.xdmf")
     mesh = create_unit_square(MPI.COMM_WORLD, 16, 16, cell_type)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0 + (1j if np.issubdtype(PETSc.ScalarType, np.complexfloating) else 0))
@@ -123,7 +122,7 @@ def test_save_2d_tensor(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_3d_tensor(tempdir, encoding, cell_type):
-    filename = os.path.join(tempdir, "u3t.xdmf")
+    filename = Path(tempdir, "u3t.xdmf")
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, cell_type)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0 + (1j if np.issubdtype(PETSc.ScalarType, np.complexfloating) else 0))
@@ -135,7 +134,7 @@ def test_save_3d_tensor(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_3d_vector_series(tempdir, encoding, cell_type):
-    filename = os.path.join(tempdir, "u_3D.xdmf")
+    filename = Path(tempdir, "u_3D.xdmf")
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
