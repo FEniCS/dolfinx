@@ -386,7 +386,10 @@ face_long_edge(const mesh::Mesh& mesh)
   return std::pair(std::move(long_edge), std::move(edge_ratio_ok));
 }
 //-----------------------------------------------------------------
-
+// Computes the parent-child facet relationship
+// @param indices - global indices of vertices in the child cells
+// @param simlpex_set - index into indices for each child cell
+// @return mapping from child to parent facets, using cell-local index
 template <int tdim>
 std::vector<std::int8_t>
 compute_parent_facets(const std::vector<std::int64_t>& indices,
@@ -394,6 +397,9 @@ compute_parent_facets(const std::vector<std::int64_t>& indices,
 {
   std::vector<std::int8_t> parent_facet(simplex_set.size(), -1);
 
+  // Index lookups in 'indices' for the child vertices that occur on each parent
+  // facet in 2D and 3D. In 2D each edge has 3 child vertices, and in 3D each
+  // triangular facet has six child vertices.
   constexpr int facet_table_2d[3][3] = {{1, 2, 3}, {0, 2, 4}, {0, 1, 5}};
 
   constexpr int facet_table_3d[4][6] = {{1, 2, 3, 4, 5, 6},
