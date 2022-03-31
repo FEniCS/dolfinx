@@ -587,7 +587,7 @@ mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
   std::vector<std::int32_t> tag_values;
   const std::vector<std::int32_t>& in_index = input_meshtag.indices();
   const std::vector<std::int32_t>& in_value = input_meshtag.values();
-  for (std::size_t i = 0; i < input_meshtag.indices().size(); ++i)
+  for (std::size_t i = 0; i < in_index.size(); ++i)
   {
     std::int32_t parent_index = in_index[i];
     auto pclinks = p_to_c_cell.links(parent_index);
