@@ -556,8 +556,8 @@ mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
   }
 
   // Count number of child cells for each parent cell
-  for (std::size_t c = 0; c < parent_cell.size(); ++c)
-    ++count_child[parent_cell[c]];
+  for (std::int32_t pcell : parent_cell)
+    ++count_child[pcell];
 
   std::vector<int> offset_child(num_input_cells + 1, 0);
   std::partial_sum(count_child.begin(), count_child.end(),
