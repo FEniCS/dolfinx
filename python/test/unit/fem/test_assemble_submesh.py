@@ -31,41 +31,41 @@ def assemble(mesh, space, k):
     return A
 
 
-# @pytest.mark.parametrize("d", [2, 3])
-# @pytest.mark.parametrize("n", [2, 6])
-# @pytest.mark.parametrize("k", [1, 4])
-# # FIXME Nedelec
-# @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange",
-#                                    "Raviart-Thomas"])
-# @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
-#                                         GhostMode.shared_facet])
-# def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
-#     """Check that assembling a form over a unit square gives the same
-#     result as assembling over half of a 2x1 rectangle with the same
-#     triangulation."""
-#     if d == 2:
-#         mesh_0 = create_unit_square(
-#             MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
-#         mesh_1 = create_rectangle(
-#             MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-#             ghost_mode=ghost_mode)
-#     else:
-#         mesh_0 = create_unit_cube(
-#             MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
-#         mesh_1 = create_box(
-#             MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
-#             (2 * n, n, n), ghost_mode=ghost_mode)
+@pytest.mark.parametrize("d", [2, 3])
+@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("k", [1, 4])
+# FIXME Nedelec
+@pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange",
+                                   "Raviart-Thomas"])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
+    """Check that assembling a form over a unit square gives the same
+    result as assembling over half of a 2x1 rectangle with the same
+    triangulation."""
+    if d == 2:
+        mesh_0 = create_unit_square(
+            MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+        mesh_1 = create_rectangle(
+            MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+            ghost_mode=ghost_mode)
+    else:
+        mesh_0 = create_unit_cube(
+            MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
+        mesh_1 = create_box(
+            MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
+            (2 * n, n, n), ghost_mode=ghost_mode)
 
-#     A_mesh_0 = assemble(mesh_0, space, k)
+    A_mesh_0 = assemble(mesh_0, space, k)
 
-#     edim = mesh_1.topology.dim
-#     entities = locate_entities(mesh_1, edim, lambda x: x[0] <= 1.0)
-#     submesh = create_submesh(mesh_1, edim, entities)[0]
-#     A_submesh = assemble(submesh, space, k)
+    edim = mesh_1.topology.dim
+    entities = locate_entities(mesh_1, edim, lambda x: x[0] <= 1.0)
+    submesh = create_submesh(mesh_1, edim, entities)[0]
+    A_submesh = assemble(submesh, space, k)
 
-#     # FIXME Would probably be better to compare entries rather than just
-#     # norms
-#     assert(np.isclose(A_mesh_0.norm(), A_submesh.norm()))
+    # FIXME Would probably be better to compare entries rather than just
+    # norms
+    assert(np.isclose(A_mesh_0.norm(), A_submesh.norm()))
 
 
 # TODO Test 2D
@@ -73,20 +73,14 @@ def assemble(mesh, space, k):
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange",
                                    "Raviart-Thomas"])
-# FIXME GhostMode.shared_facet
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
 def test_submesh_facet_assembly(n, k, space, ghost_mode):
     mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
     edim = mesh.topology.dim - 1
     entities = locate_entities_boundary(
         mesh, edim, lambda x: np.isclose(x[2], 0.0))
     submesh = create_submesh(mesh, edim, entities)[0]
-
-    # from dolfinx.io import XDMFFile
-    # with XDMFFile(submesh.comm, "mesh.xdmf", "w") as file:
-    #     file.write_mesh(mesh)
-    # with XDMFFile(submesh.comm, "submesh.xdmf", "w") as file:
-    #     file.write_mesh(submesh)
 
     A_submesh = assemble(submesh, space, k)
 
