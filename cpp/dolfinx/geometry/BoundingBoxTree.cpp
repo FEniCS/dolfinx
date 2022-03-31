@@ -296,7 +296,7 @@ BoundingBoxTree::BoundingBoxTree(std::vector<std::int32_t>&& bboxes,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoundingBoxTree BoundingBoxTree::create_global_tree(const MPI_Comm& comm) const
+BoundingBoxTree BoundingBoxTree::create_global_tree(MPI_Comm comm) const
 {
   // Build tree for each rank
   const int mpi_size = dolfinx::MPI::size(comm);

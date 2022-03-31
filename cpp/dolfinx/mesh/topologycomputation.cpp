@@ -34,10 +34,11 @@ namespace
 /// @param processes Set of sharing processes
 /// @param vertices Global vertex indices of entity
 /// @return owning process number
-int get_ownership(std::set<int>& processes, std::vector<std::int64_t>& vertices)
+int get_ownership(const std::set<int>& processes,
+                  const std::vector<std::int64_t>& vertices)
 {
-  // Use a deterministic random number generator, seeded with global vertex
-  // indices ensuring all processes get the same answer
+  // Use a deterministic random number generator, seeded with global
+  // vertex indices ensuring all processes get the same answer
   std::mt19937 gen;
   std::seed_seq seq(vertices.begin(), vertices.end());
   gen.seed(seq);
@@ -367,14 +368,15 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
 //-----------------------------------------------------------------------------
 
 /// Compute entities of dimension d
+///
 /// @param[in] comm MPI communicator (TODO: full or neighbor hood?)
 /// @param[in] cells Adjacency list for cell-vertex connectivity
 /// @param[in] shared_vertices TODO
 /// @param[in] cell_type Cell type
 /// @param[in] dim Topological dimension of the entities to be computed
 /// @return Returns the (cell-entity connectivity, entity-cell
-///   connectivity, index map for the entity distribution across
-///   processes, shared entities)
+/// connectivity, index map for the entity distribution across
+/// processes, shared entities)
 std::tuple<graph::AdjacencyList<std::int32_t>,
            graph::AdjacencyList<std::int32_t>, common::IndexMap>
 compute_entities_by_key_matching(
@@ -525,11 +527,12 @@ compute_entities_by_key_matching(
 
 /// Compute connectivity from entities of dimension d0 to entities of
 /// dimension d1 using the transpose connectivity (d1 -> d0)
+///
 /// @param[in] c_d1_d0 The connectivity from entities of dimension d1 to
-///   entities of dimension d0
-/// @param[in] num_entities_d0 The number of entities of dimension d0
+/// entities of dimension d0.
+/// @param[in] num_entities_d0 The number of entities of dimension d0.
 /// @return The connectivity from entities of dimension d0 to entities
-///   of dimension d1
+/// of dimension d1.
 graph::AdjacencyList<std::int32_t>
 compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
                        const int num_entities_d0, int d0, int d1)
@@ -589,8 +592,8 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
     edge_to_index.insert({key, e});
   }
 
-  // Number of edges for a tri/quad is the same as number of vertices
-  // so AdjacencyList will have same offset pattern
+  // Number of edges for a tri/quad is the same as number of vertices so
+  // AdjacencyList will have same offset pattern
   std::vector<std::int32_t> connections;
   connections.reserve(c_d0_0.array().size());
   std::vector<std::int32_t> offsets(c_d0_0.offsets());
