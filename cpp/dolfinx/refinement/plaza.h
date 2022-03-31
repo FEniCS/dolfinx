@@ -28,16 +28,30 @@ namespace dolfinx::refinement
 namespace plaza
 {
 
+/// Selection of options when refining a Mesh. `parent_cell` will output a list
+/// containing the local parent cell index for each new cell, `parent_facet`
+/// will output a list of the cell-local facet indices in the parent cell of
+/// each facet in each new cell (or -1 if no match). `parent_cell_and_facet`
+/// will output both datasets.
+enum class RefinementOptions : int
+{
+  none = 0,
+  parent_cell = 1,
+  parent_facet = 2,
+  parent_cell_and_facet = 3
+};
+
 /// Uniform refine, optionally redistributing and optionally
 /// calculating the parent-child relation for facets.
 ///
 /// @param[in] mesh Input mesh to be refined
 /// @param[in] redistribute Flag to call the mesh partitioner to
 /// redistribute after refinement
-/// @param[in] compute_facets Flag to save facet data for further use
-/// @return Parent cell and facet data and new mesh
-std::tuple<std::vector<std::int32_t>, std::vector<std::int8_t>, mesh::Mesh>
-refine(const mesh::Mesh& mesh, bool redistribute, bool compute_facets);
+/// @param[in] options RefinementOptions enum to choose the computation of
+/// parent facets, parent cells.
+/// @return New Mesh and optional parent cell index, parent facet indices
+std::tuple<mesh::Mesh, std::vector<std::int32_t>, std::vector<std::int8_t>>
+refine(const mesh::Mesh& mesh, bool redistribute, RefinementOptions options);
 
 /// Refine with markers, optionally redistributing.
 ///
@@ -46,37 +60,38 @@ refine(const mesh::Mesh& mesh, bool redistribute, bool compute_facets);
 /// refinement
 /// @param[in] redistribute Flag to call the Mesh Partitioner to
 /// redistribute after refinement
-/// @param[in] compute_facets Flag to save facet data for further use
-/// @return parent cell and facet data and New Mesh
-std::tuple<std::vector<std::int32_t>, std::vector<std::int8_t>, mesh::Mesh>
+/// @param[in] options RefinementOptions enum to choose the computation of
+/// parent facets, parent cells.
+/// @return New Mesh and optional parent cell index, parent facet indices
+std::tuple<mesh::Mesh, std::vector<std::int32_t>, std::vector<std::int8_t>>
 refine(const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& edges,
-       bool redistribute, bool compute_facets);
+       bool redistribute, RefinementOptions options);
 
 /// Refine mesh returning new mesh data.
 ///
 /// @param[in] mesh Input mesh to be refined
-/// @param[in] compute_facets If true, returns list of facets for each new cell,
-/// as local facet index of parent cell, or -1 if no corresponding facet.
-/// @return New mesh data: cell topology, vertex coordinates and parent
-/// cell index, and stored parent facet indices (if requested).
+/// @param[in] options RefinementOptions enum to choose the computation of
+/// parent facets, parent cells.
+/// @return New mesh data: cell topology, vertex coordinates, and optional
+/// parent cell index, and parent facet indices.
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>, std::vector<std::int8_t>>
-compute_refinement_data(const mesh::Mesh& mesh, bool compute_facets);
+compute_refinement_data(const mesh::Mesh& mesh, RefinementOptions options);
 
 /// Refine with markers returning new mesh data.
 ///
 /// @param[in] mesh Input mesh to be refined
 /// @param[in] edges Indices of the edges that should be split by this
 /// refinement
-/// @param[in] compute_facets  If true, returns list of facets for each new
-/// cell, as local facet index of parent cell, or -1 if no corresponding facet.
+/// @param[in] options RefinementOptions enum to choose the computation of
+/// parent facets, parent cells.
 /// @return New mesh data: cell topology, vertex coordinates and parent
 /// cell index, and stored parent facet indices (if requested).
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>, std::vector<std::int8_t>>
 compute_refinement_data(const mesh::Mesh& mesh,
                         const xtl::span<const std::int32_t>& edges,
-                        bool compute_facets);
+                        RefinementOptions options);
 
 } // namespace plaza
 } // namespace dolfinx::refinement

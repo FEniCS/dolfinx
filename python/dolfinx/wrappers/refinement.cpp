@@ -19,6 +19,17 @@ namespace dolfinx_wrappers
 
 void refinement(py::module& m)
 {
+
+  py::enum_<dolfinx::refinement::plaza::RefinementOptions>(m,
+                                                           "RefinementOptions")
+      .value("parent_facet",
+             dolfinx::refinement::plaza::RefinementOptions::parent_facet)
+      .value("parent_cell",
+             dolfinx::refinement::plaza::RefinementOptions::parent_cell)
+      .value(
+          "parent_cell_and_facet",
+          dolfinx::refinement::plaza::RefinementOptions::parent_cell_and_facet);
+
   // dolfinx::refinement::refine
   m.def("refine",
         py::overload_cast<const dolfinx::mesh::Mesh&, bool>(
@@ -26,7 +37,8 @@ void refinement(py::module& m)
         py::arg("mesh"), py::arg("redistribute") = true);
 
   m.def("plaza_refine_data",
-        py::overload_cast<const dolfinx::mesh::Mesh&, bool, bool>(
+        py::overload_cast<const dolfinx::mesh::Mesh&, bool,
+                          dolfinx::refinement::plaza::RefinementOptions>(
             &dolfinx::refinement::plaza::refine));
 
   m.def("transfer_facet_meshtag", &dolfinx::refinement::transfer_facet_meshtag);

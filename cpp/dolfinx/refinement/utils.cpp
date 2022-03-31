@@ -508,16 +508,17 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   std::sort(sort_order.begin(), sort_order.end(),
             [&facet_indices](auto a, auto b)
             { return facet_indices[a] < facet_indices[b]; });
+  std::vector<std::int32_t> sorted_facet_indices(facet_indices.size());
   std::vector<std::int32_t> sorted_tag_values(tag_values.size());
   for (std::size_t i = 0; i < sort_order.size(); ++i)
+  {
     sorted_tag_values[i] = tag_values[sort_order[i]];
-
-  // Sort facet indices into order
-  std::sort(facet_indices.begin(), facet_indices.end());
+    sorted_facet_indices[i] = facet_indices[sort_order[i]];
+  }
 
   return mesh::MeshTags<std::int32_t>(
       std::make_shared<mesh::Mesh>(refined_mesh), tdim - 1,
-      std::move(facet_indices), std::move(sorted_tag_values));
+      std::move(sorted_facet_indices), std::move(sorted_tag_values));
 }
 //----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
@@ -605,13 +606,14 @@ mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
             [&cell_indices](auto a, auto b)
             { return cell_indices[a] < cell_indices[b]; });
   std::vector<std::int32_t> sorted_tag_values(tag_values.size());
+  std::vector<std::int32_t> sorted_cell_indices(cell_indices.size());
   for (std::size_t i = 0; i < sort_order.size(); ++i)
+  {
     sorted_tag_values[i] = tag_values[sort_order[i]];
-
-  // Sort cell indices into order
-  std::sort(cell_indices.begin(), cell_indices.end());
+    sorted_cell_indices[i] = cell_indices[sort_order[i]];
+  }
 
   return mesh::MeshTags<std::int32_t>(
-      std::make_shared<mesh::Mesh>(refined_mesh), tdim, std::move(cell_indices),
-      std::move(sorted_tag_values));
+      std::make_shared<mesh::Mesh>(refined_mesh), tdim,
+      std::move(sorted_cell_indices), std::move(sorted_tag_values));
 }
