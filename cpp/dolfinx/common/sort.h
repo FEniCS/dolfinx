@@ -20,7 +20,7 @@
 namespace dolfinx
 {
 
-/// Sort a vector of integers with radix sorting algorithm.The bucket
+/// Sort a vector of integers with radix sorting algorithm. The bucket
 /// size is determined by the number of bits to sort at a time (2^BITS).
 /// @tparam T Integral type
 /// @tparam BITS The number of bits to sort at a time.
