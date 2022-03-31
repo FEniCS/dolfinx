@@ -396,26 +396,26 @@ refinement::adjust_indices(const common::IndexMap& index_map, std::int32_t n)
 }
 //-----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
-    const mesh::MeshTags<std::int32_t>& input_meshtag,
+    const mesh::MeshTags<std::int32_t>& parent_meshtag,
     const mesh::Mesh& refined_mesh,
     const std::vector<std::int32_t>& parent_cell,
     const std::vector<std::int8_t>& parent_facet)
 {
-  const int tdim = input_meshtag.mesh()->topology().dim();
-  if (input_meshtag.dim() != tdim - 1)
+  const int tdim = parent_meshtag.mesh()->topology().dim();
+  if (parent_meshtag.dim() != tdim - 1)
     throw std::runtime_error("Input meshtag is not facet-based");
 
-  if (input_meshtag.mesh()->topology().index_map(tdim)->num_ghosts() > 0)
+  if (parent_meshtag.mesh()->topology().index_map(tdim)->num_ghosts() > 0)
     throw std::runtime_error("Ghosted meshes are not supported");
 
   auto input_c_to_f
-      = input_meshtag.mesh()->topology().connectivity(tdim, tdim - 1);
+      = parent_meshtag.mesh()->topology().connectivity(tdim, tdim - 1);
   auto c_to_f = refined_mesh.topology().connectivity(tdim, tdim - 1);
 
   // Create map parent->child facets
   const std::int32_t num_input_facets
-      = input_meshtag.mesh()->topology().index_map(tdim - 1)->size_local()
-        + input_meshtag.mesh()->topology().index_map(tdim - 1)->num_ghosts();
+      = parent_meshtag.mesh()->topology().index_map(tdim - 1)->size_local()
+        + parent_meshtag.mesh()->topology().index_map(tdim - 1)->num_ghosts();
   std::vector<int> count_child(num_input_facets, 0);
 
   // Get global index for each refined cell, before reordering in Mesh
@@ -425,7 +425,7 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   assert(original_cell_index.size() == parent_cell.size());
   std::int64_t global_offset
       = refined_mesh.topology().index_map(tdim)->local_range()[0];
-  // Map back to original index
+  // Map cells back to original index
   std::vector<std::int32_t> local_cell_index(original_cell_index.size());
   for (std::size_t i = 0; i < local_cell_index.size(); ++i)
   {
@@ -438,14 +438,13 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   // Count number of child facets for each parent facet
   for (std::size_t c = 0; c < parent_cell.size(); ++c)
   {
-    const std::int32_t pc = parent_cell[c];
-    auto parent_cf = input_c_to_f->links(pc);
+    auto parent_facet = input_c_to_f->links(parent_cell[c]);
 
     for (int j = 0; j < (tdim + 1); ++j)
     {
       std::int8_t fidx = parent_facet[c * (tdim + 1) + j];
       if (fidx != -1)
-        ++count_child[parent_cf[fidx]];
+        ++count_child[parent_facet[fidx]];
     }
   }
 
@@ -464,6 +463,7 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
     const std::int32_t lc = local_cell_index[c];
     auto refined_cf = c_to_f->links(lc);
 
+    // Get child facets for each cell
     for (int j = 0; j < (tdim + 1); ++j)
     {
       std::int8_t fidx = parent_facet[c * (tdim + 1) + j];
@@ -486,8 +486,8 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   // Copy facet meshtag from parent to child
   std::vector<std::int32_t> facet_indices;
   std::vector<std::int32_t> tag_values;
-  const std::vector<std::int32_t>& in_index = input_meshtag.indices();
-  const std::vector<std::int32_t>& in_value = input_meshtag.values();
+  const std::vector<std::int32_t>& in_index = parent_meshtag.indices();
+  const std::vector<std::int32_t>& in_value = parent_meshtag.values();
   for (std::size_t i = 0; i < in_index.size(); ++i)
   {
     std::int32_t parent_index = in_index[i];
@@ -522,21 +522,21 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
 }
 //----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
-    const mesh::MeshTags<std::int32_t>& input_meshtag,
+    const mesh::MeshTags<std::int32_t>& parent_meshtag,
     const mesh::Mesh& refined_mesh,
     const std::vector<std::int32_t>& parent_cell)
 {
-  const int tdim = input_meshtag.mesh()->topology().dim();
-  if (input_meshtag.dim() != tdim)
+  const int tdim = parent_meshtag.mesh()->topology().dim();
+  if (parent_meshtag.dim() != tdim)
     throw std::runtime_error("Input meshtag is not cell-based");
 
-  if (input_meshtag.mesh()->topology().index_map(tdim)->num_ghosts() > 0)
+  if (parent_meshtag.mesh()->topology().index_map(tdim)->num_ghosts() > 0)
     throw std::runtime_error("Ghosted meshes are not supported");
 
   // Create map parent->child facets
   const std::int32_t num_input_cells
-      = input_meshtag.mesh()->topology().index_map(tdim)->size_local()
-        + input_meshtag.mesh()->topology().index_map(tdim)->num_ghosts();
+      = parent_meshtag.mesh()->topology().index_map(tdim)->size_local()
+        + parent_meshtag.mesh()->topology().index_map(tdim)->num_ghosts();
   std::vector<int> count_child(num_input_cells, 0);
 
   // Get global index for each refined cell, before reordering in Mesh
@@ -586,8 +586,8 @@ mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
   // Copy cell meshtag from parent to child
   std::vector<std::int32_t> cell_indices;
   std::vector<std::int32_t> tag_values;
-  const std::vector<std::int32_t>& in_index = input_meshtag.indices();
-  const std::vector<std::int32_t>& in_value = input_meshtag.values();
+  const std::vector<std::int32_t>& in_index = parent_meshtag.indices();
+  const std::vector<std::int32_t>& in_value = parent_meshtag.values();
   for (std::size_t i = 0; i < in_index.size(); ++i)
   {
     std::int32_t parent_index = in_index[i];
