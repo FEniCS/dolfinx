@@ -101,8 +101,8 @@ std::vector<std::int64_t> adjust_indices(const common::IndexMap& index_map,
 mesh::MeshTags<std::int32_t>
 transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& input_meshtag,
                        const mesh::Mesh& refined_mesh,
-                       std::vector<std::int32_t>& parent_cell,
-                       std::vector<std::int8_t>& parent_facet);
+                       const std::vector<std::int32_t>& parent_cell,
+                       const std::vector<std::int8_t>& parent_facet);
 
 /// Transfer cell MeshTags from coarse mesh to refined mesh
 /// @note The refined mesh must not have been redistributed during refinement
@@ -114,5 +114,5 @@ transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& input_meshtag,
 mesh::MeshTags<std::int32_t>
 transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& input_meshtag,
                       const mesh::Mesh& refined_mesh,
-                      std::vector<std::int32_t>& parent_cell);
+                      const std::vector<std::int32_t>& parent_cell);
 } // namespace dolfinx::refinement

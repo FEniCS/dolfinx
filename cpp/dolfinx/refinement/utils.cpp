@@ -397,8 +397,9 @@ refinement::adjust_indices(const common::IndexMap& index_map, std::int32_t n)
 //-----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
     const mesh::MeshTags<std::int32_t>& input_meshtag,
-    const mesh::Mesh& refined_mesh, std::vector<std::int32_t>& parent_cell,
-    std::vector<std::int8_t>& parent_facet)
+    const mesh::Mesh& refined_mesh,
+    const std::vector<std::int32_t>& parent_cell,
+    const std::vector<std::int8_t>& parent_facet)
 {
   const int tdim = input_meshtag.mesh()->topology().dim();
   if (input_meshtag.dim() != tdim - 1)
@@ -502,10 +503,11 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   }
 
   // Sort values into order, based on facet indices
-  std::vector<int> sort_order(tag_values.size());
+  std::vector<std::int32_t> sort_order(tag_values.size());
   std::iota(sort_order.begin(), sort_order.end(), 0);
   std::sort(sort_order.begin(), sort_order.end(),
-            [&](int a, int b) { return facet_indices[a] < facet_indices[b]; });
+            [&facet_indices](auto a, auto b)
+            { return facet_indices[a] < facet_indices[b]; });
   std::vector<std::int32_t> sorted_tag_values(tag_values.size());
   for (std::size_t i = 0; i < sort_order.size(); ++i)
     sorted_tag_values[i] = tag_values[sort_order[i]];
@@ -520,7 +522,8 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
 //----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
     const mesh::MeshTags<std::int32_t>& input_meshtag,
-    const mesh::Mesh& refined_mesh, std::vector<std::int32_t>& parent_cell)
+    const mesh::Mesh& refined_mesh,
+    const std::vector<std::int32_t>& parent_cell)
 {
   const int tdim = input_meshtag.mesh()->topology().dim();
   if (input_meshtag.dim() != tdim)
@@ -596,10 +599,11 @@ mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
   }
 
   // Sort values into order, based on cell indices
-  std::vector<int> sort_order(tag_values.size());
+  std::vector<std::int32_t> sort_order(tag_values.size());
   std::iota(sort_order.begin(), sort_order.end(), 0);
   std::sort(sort_order.begin(), sort_order.end(),
-            [&](int a, int b) { return cell_indices[a] < cell_indices[b]; });
+            [&cell_indices](auto a, auto b)
+            { return cell_indices[a] < cell_indices[b]; });
   std::vector<std::int32_t> sorted_tag_values(tag_values.size());
   for (std::size_t i = 0; i < sort_order.size(); ++i)
     sorted_tag_values[i] = tag_values[sort_order[i]];
