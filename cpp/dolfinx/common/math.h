@@ -176,7 +176,8 @@ void pinv(const U& A, V&& P)
     xt::xtensor_fixed<T, xt::xshape<2, 2>> ATA;
     xt::xtensor_fixed<T, xt::xshape<2, 2>> Inv;
     AT = xt::transpose(A);
-    ATA.fill(0);
+    std::fill(ATA.begin(), ATA.end(), 0.0);
+    std::fill(P.begin(), P.end(), 0.0);
 
     // pinv(A) = (A^T * A)^-1 * A^T
     dolfinx::math::dot(AT, A, ATA);
