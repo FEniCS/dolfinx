@@ -15,10 +15,9 @@
 #include <dolfinx/mesh/Topology.h>
 #include <limits>
 #include <map>
+#include <numeric>
 #include <vector>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xnorm.hpp>
-#include <xtensor/xview.hpp>
+#include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::refinement;
@@ -311,10 +310,6 @@ face_long_edge(const mesh::Mesh& mesh)
   auto map_e = mesh.topology().index_map(1);
   assert(map_e);
   std::vector<double> edge_length(map_e->size_local() + map_e->num_ghosts());
-  auto x = xt::adapt(
-      mesh.geometry().x().data(), mesh.geometry().x().size(),
-      xt::no_ownership(),
-      std::vector({mesh.geometry().x().size() / 3, std::size_t(3)}));
   for (std::size_t e = 0; e < edge_length.size(); ++e)
   {
     // Get first attached cell
@@ -334,15 +329,16 @@ face_long_edge(const mesh::Mesh& mesh)
     const std::size_t local1 = std::distance(cell_vertices.begin(), it1);
 
     auto x_dofs = x_dofmap.links(cells.front());
-    auto x0 = xt::row(x, x_dofs[local0]);
-    auto x1 = xt::row(x, x_dofs[local1]);
+    xtl::span<const double, 3> x0(
+        mesh.geometry().x().data() + 3 * x_dofs[local0], 3);
+    xtl::span<const double, 3> x1(
+        mesh.geometry().x().data() + 3 * x_dofs[local1], 3);
 
     // Compute length of edge between vertex x0 and x1
-    double length = 0;
-    for (std::size_t i = 0; i < 3; i++)
-      length += std::pow(x0[i] - x1[i], 2);
-    length = std::sqrt(length);
-    edge_length[e] = length;
+
+    edge_length[e] = std::sqrt(std::transform_reduce(
+        x0.begin(), x0.end(), x1.begin(), 0.0, std::plus<>(),
+        [](auto x0, auto x1) { return (x0 - x1) * (x0 - x1); }));
   }
 
   // Get longest edge of each face
