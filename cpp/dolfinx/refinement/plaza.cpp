@@ -320,7 +320,7 @@ face_long_edge(const mesh::Mesh& mesh)
     // Get first attached cell
     auto cells = e_to_c->links(e);
     assert(!cells.empty());
-    auto cell_vertices = c_to_v->links(cells[0]);
+    auto cell_vertices = c_to_v->links(cells.front());
     auto edge_vertices = e_to_v->links(e);
 
     // Find local index of edge vertices in the cell geometry map
@@ -333,7 +333,7 @@ face_long_edge(const mesh::Mesh& mesh)
     assert(it1 != cell_vertices.end());
     const std::size_t local1 = std::distance(cell_vertices.begin(), it1);
 
-    auto x_dofs = x_dofmap.links(cells[0]);
+    auto x_dofs = x_dofmap.links(cells.front());
     auto x0 = xt::row(x, x_dofs[local0]);
     auto x1 = xt::row(x, x_dofs[local1]);
 
