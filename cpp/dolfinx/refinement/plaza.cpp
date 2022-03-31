@@ -318,9 +318,9 @@ face_long_edge(const mesh::Mesh& mesh)
   for (std::size_t e = 0; e < edge_length.size(); ++e)
   {
     // Get first attached cell
-    assert(e_to_c->num_links(e) > 0);
-    const std::int32_t c = e_to_c->links(e)[0];
-    auto cell_vertices = c_to_v->links(c);
+    auto cells = e_to_c->links(e);
+    assert(!cells.empty());
+    auto cell_vertices = c_to_v->links(cells[0]);
     auto edge_vertices = e_to_v->links(e);
 
     // Find local index of edge vertices in the cell geometry map
@@ -333,10 +333,16 @@ face_long_edge(const mesh::Mesh& mesh)
     assert(it1 != cell_vertices.end());
     const std::size_t local1 = std::distance(cell_vertices.begin(), it1);
 
-    auto x_dofs = x_dofmap.links(c);
+    auto x_dofs = x_dofmap.links(cells[0]);
     auto x0 = xt::row(x, x_dofs[local0]);
     auto x1 = xt::row(x, x_dofs[local1]);
-    edge_length[e] = xt::norm_l2(x0 - x1)();
+
+    // Compute length of edge between vertex x0 and x1
+    double length = 0;
+    for (std::size_t i = 0; i < 3; i++)
+      length += std::pow(x0[i] - x1[i], 2);
+    length = std::sqrt(length);
+    edge_length[e] = length;
   }
 
   // Get longest edge of each face

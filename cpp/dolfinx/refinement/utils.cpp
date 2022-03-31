@@ -18,8 +18,6 @@
 #include <memory>
 #include <mpi.h>
 #include <vector>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
@@ -66,17 +64,18 @@ xt::xtensor<double, 2> create_new_geometry(
   std::vector<std::int32_t> vertex_to_x(map_v->size_local()
                                         + map_v->num_ghosts());
   auto map_c = mesh.topology().index_map(tdim);
+
   assert(map_c);
+  auto dof_layout = mesh.geometry().cmap().create_dof_layout();
+  auto entity_dofs_all = dof_layout.entity_dofs_all();
   for (int c = 0; c < map_c->size_local() + map_c->num_ghosts(); ++c)
   {
     auto vertices = c_to_v->links(c);
     auto dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < vertices.size(); ++i)
     {
-      // FIXME: We are making an assumption here on the
-      // ElementDofLayout. We should use an ElementDofLayout to map
-      // between local vertex index and x dof index.
-      vertex_to_x[vertices[i]] = dofs[i];
+      auto vertex_pos = entity_dofs_all[0][i][0];
+      vertex_to_x[vertices[i]] = dofs[vertex_pos];
     }
   }
 
@@ -217,7 +216,7 @@ refinement::create_new_vertices(
   std::map<std::int32_t, std::int64_t> local_edge_to_new_vertex;
   for (int local_i = 0; local_i < edge_index_map->size_local(); ++local_i)
   {
-    if (marked_edges[local_i] == true)
+    if (marked_edges[local_i])
     {
       [[maybe_unused]] auto it = local_edge_to_new_vertex.insert({local_i, n});
       assert(it.second);
