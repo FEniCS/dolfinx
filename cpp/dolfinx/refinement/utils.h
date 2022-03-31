@@ -8,7 +8,6 @@
 
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/mesh/MeshTags.h>
 #include <map>
 #include <memory>
 #include <set>
@@ -16,6 +15,8 @@
 
 namespace dolfinx::mesh
 {
+template <typename T>
+class MeshTags;
 class Mesh;
 enum class GhostMode;
 } // namespace dolfinx::mesh
