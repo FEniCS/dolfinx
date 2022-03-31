@@ -48,7 +48,8 @@ enum class RefinementOptions : int
 /// @param[in] redistribute Flag to call the mesh partitioner to
 /// redistribute after refinement
 /// @param[in] options RefinementOptions enum to choose the computation of
-/// parent facets, parent cells.
+/// parent facets, parent cells. If an option is unselected, an empty list is
+/// returned.
 /// @return New Mesh and optional parent cell index, parent facet indices
 std::tuple<mesh::Mesh, std::vector<std::int32_t>, std::vector<std::int8_t>>
 refine(const mesh::Mesh& mesh, bool redistribute, RefinementOptions options);
@@ -62,7 +63,8 @@ refine(const mesh::Mesh& mesh, bool redistribute, RefinementOptions options);
 /// @param[in] redistribute Flag to call the Mesh Partitioner to
 /// redistribute after refinement
 /// @param[in] options RefinementOptions enum to choose the computation of
-/// parent facets, parent cells.
+/// parent facets, parent cells. If an option is unselected, an empty list is
+/// returned.
 /// @return New Mesh and optional parent cell index, parent facet indices
 std::tuple<mesh::Mesh, std::vector<std::int32_t>, std::vector<std::int8_t>>
 refine(const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& edges,
@@ -72,7 +74,8 @@ refine(const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& edges,
 ///
 /// @param[in] mesh Input mesh to be refined
 /// @param[in] options RefinementOptions enum to choose the computation of
-/// parent facets, parent cells.
+/// parent facets, parent cells. If an option is unselected, an empty list is
+/// returned.
 /// @return New mesh data: cell topology, vertex coordinates, and optional
 /// parent cell index, and parent facet indices.
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
@@ -85,7 +88,8 @@ compute_refinement_data(const mesh::Mesh& mesh, RefinementOptions options);
 /// @param[in] edges Indices of the edges that should be split by this
 /// refinement
 /// @param[in] options RefinementOptions enum to choose the computation of
-/// parent facets, parent cells.
+/// parent facets, parent cells. If an option is unselected, an empty list is
+/// returned.
 /// @return New mesh data: cell topology, vertex coordinates and parent
 /// cell index, and stored parent facet indices (if requested).
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
