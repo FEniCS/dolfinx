@@ -107,9 +107,9 @@ transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& input_meshtag,
 /// Transfer cell MeshTags from coarse mesh to refined mesh
 /// @note The refined mesh must not have been redistributed during refinement
 /// @note GhostMode must be GhostMode.none
-/// @param input_meshtag Cell MeshTags on parent mesh
-/// @param refined_mesh Refined mesh based on parent mesh
-/// @param parent_cell Parent cell of each cell in refined mesh
+/// @param[in] input_meshtag Cell MeshTags on parent mesh
+/// @param[in] refined_mesh Refined mesh based on parent mesh
+/// @param[in] parent_cell Parent cell of each cell in refined mesh
 /// @return MeshTags on refined mesh, values copied over from coarse mesh
 mesh::MeshTags<std::int32_t>
 transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& input_meshtag,
