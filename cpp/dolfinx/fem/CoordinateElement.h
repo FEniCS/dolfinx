@@ -23,15 +23,17 @@ class FiniteElement;
 namespace dolfinx::fem
 {
 
-// FIXME: A dof layout on a reference cell needs to be defined.
-/// This class manages coordinate mappings for isoparametric cells.
-
+/// @todo A dof layout on a reference cell needs to be defined.
+///
+/// A CoordinateElement manages coordinate mappings for isoparametric
+/// cells.
 class CoordinateElement
 {
 public:
   /// Create a coordinate element from a Basix element
   /// @param[in] element Element from Basix
-  explicit CoordinateElement(std::shared_ptr<basix::FiniteElement> element);
+  explicit CoordinateElement(
+      std::shared_ptr<const basix::FiniteElement> element);
 
   /// Create a Lagrange coordinate element
   /// @param[in] celltype The cell shape
@@ -49,14 +51,19 @@ public:
   /// @return The cell shape
   mesh::CellType cell_shape() const;
 
-  /// The degree of the element
+  /// The polynomial degree of the element
   int degree() const;
+
+  /// @brief The dimension of the geometry element space.
+  ///
+  /// The number of basis function is returned. E.g., for a linear
+  /// triangle cell the dimension will be 3.
+  ///
+  /// @return The coordinate element dimension.
+  int dim() const;
 
   /// The variant of the element
   basix::element::lagrange_variant variant() const;
-
-  /// Return the topological dimension of the cell shape
-  int topological_dimension() const;
 
   /// Shape of array to fill when calling `FiniteElement::tabulate`
   /// @param[in] nd The order of derivatives, up to and including, to
@@ -209,6 +216,6 @@ private:
   bool _is_affine;
 
   // Basix Element
-  std::shared_ptr<basix::FiniteElement> _element;
+  std::shared_ptr<const basix::FiniteElement> _element;
 };
 } // namespace dolfinx::fem

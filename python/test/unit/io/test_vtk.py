@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import os
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -22,8 +22,8 @@ cell_types_2D = [CellType.triangle, CellType.quadrilateral]
 cell_types_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 
-def test_save_1d_mesh(tempdir):
-    filename = os.path.join(tempdir, "mesh.pvd")
+def test_save_1d_mesh_subdir(tempdir):
+    filename = Path(tempdir, "mesh.pvd")
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_mesh(mesh)
@@ -33,7 +33,7 @@ def test_save_1d_mesh(tempdir):
 @pytest.mark.parametrize("cell_type", cell_types_2D)
 def test_save_2d_mesh(tempdir, cell_type):
     mesh = create_unit_square(MPI.COMM_WORLD, 32, 32, cell_type=cell_type)
-    filename = os.path.join(tempdir, f"mesh_{cell_type.name}.pvd")
+    filename = Path(tempdir, f"mesh_{cell_type.name}.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_mesh(mesh, 0.)
         vtk.write_mesh(mesh, 2.)
@@ -42,7 +42,7 @@ def test_save_2d_mesh(tempdir, cell_type):
 @pytest.mark.parametrize("cell_type", cell_types_3D)
 def test_save_3d_mesh(tempdir, cell_type):
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8, cell_type=cell_type)
-    filename = os.path.join(tempdir, f"mesh_{cell_type.name}.pvd")
+    filename = Path(tempdir, f"mesh_{cell_type.name}.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_mesh(mesh, 0.)
         vtk.write_mesh(mesh, 2.)
@@ -52,7 +52,7 @@ def test_save_1d_scalar(tempdir):
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
     u.interpolate(lambda x: x[0])
-    filename = os.path.join(tempdir, "u.pvd")
+    filename = Path(tempdir, "u.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_function(u, 0.)
 
@@ -63,7 +63,7 @@ def test_save_2d_scalar(tempdir, cell_type):
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
     u.x.array[:] = 1.0
 
-    filename = os.path.join(tempdir, "u.pvd")
+    filename = Path(tempdir, "u.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_function(u, 0.)
         vtk.write_function(u, 1.)
@@ -75,7 +75,7 @@ def test_save_3d_scalar(tempdir, cell_type):
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
     u.x.array[:] = 1.0
 
-    filename = os.path.join(tempdir, "u.pvd")
+    filename = Path(tempdir, "u.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_function(u, 0.)
         vtk.write_function(u, 1.)
@@ -93,7 +93,7 @@ def test_save_1d_vector(tempdir):
     element = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2, dim=2)
     u = Function(FunctionSpace(mesh, element))
     u.interpolate(f)
-    filename = os.path.join(tempdir, "u.pvd")
+    filename = Path(tempdir, "u.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_function(u, 0.)
 
@@ -110,7 +110,7 @@ def test_save_2d_vector(tempdir, cell_type):
         return vals
 
     u.interpolate(f)
-    filename = os.path.join(tempdir, "u.pvd")
+    filename = Path(tempdir, "u.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
         vtk.write_function(u, 0.)
         vtk.write_function(u, 1.)
@@ -129,7 +129,7 @@ def test_save_2d_vector_CG2(tempdir):
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
     u.interpolate(lambda x: np.vstack((x[0], x[1])))
-    filename = os.path.join(tempdir, "u.pvd")
+    filename = Path(tempdir, "u.pvd")
     with VTKFile(mesh.comm, filename, "w") as vtk:
         vtk.write_function(u, 0.)
 
@@ -152,7 +152,7 @@ def test_save_vtk_mixed(tempdir):
     U2.name = "u"
     U1.name = "p"
 
-    filename = os.path.join(tempdir, "u.pvd")
+    filename = Path(tempdir, "u.pvd")
     with VTKFile(mesh.comm, filename, "w") as vtk:
         vtk.write_function([U2, U1], 0.)
     with VTKFile(mesh.comm, filename, "w") as vtk:
@@ -181,7 +181,7 @@ def test_save_vtk_cell_point(tempdir):
     U2.name = "A"
     U1.name = "B"
 
-    filename = os.path.join(tempdir, "u.pvd")
+    filename = Path(tempdir, "u.pvd")
     with VTKFile(mesh.comm, filename, "w") as vtk:
         vtk.write_function([U2, U1], 0.)
     with VTKFile(mesh.comm, filename, "w") as vtk:
@@ -193,7 +193,7 @@ def test_save_1d_tensor(tempdir):
     element = ufl.TensorElement("Lagrange", mesh.ufl_cell(), 2, shape=(2, 2))
     u = Function(FunctionSpace(mesh, element))
     u.x.array[:] = 1.0
-    filename = os.path.join(tempdir, "u.pvd")
+    filename = Path(tempdir, "u.pvd")
     with VTKFile(mesh.comm, filename, "w") as vtk:
         vtk.write_function(u, 0.)
 
@@ -202,7 +202,7 @@ def test_save_2d_tensor(tempdir):
     mesh = create_unit_square(MPI.COMM_WORLD, 16, 16)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.x.array[:] = 1.0
-    filename = os.path.join(tempdir, "u.pvd")
+    filename = Path(tempdir, "u.pvd")
     with VTKFile(mesh.comm, filename, "w") as vtk:
         vtk.write_function(u, 0.)
         u.x.array[:] = 2.0
@@ -213,6 +213,6 @@ def test_save_3d_tensor(tempdir):
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.x.array[:] = 1.0
-    filename = os.path.join(tempdir, "u.pvd")
+    filename = Path(tempdir, "u.pvd")
     with VTKFile(mesh.comm, filename, "w") as vtk:
         vtk.write_function(u, 0.)

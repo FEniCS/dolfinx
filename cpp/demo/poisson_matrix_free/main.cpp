@@ -116,8 +116,8 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
 
 int main(int argc, char* argv[])
 {
-  common::subsystem::init_logging(argc, argv);
-  common::subsystem::init_mpi(argc, argv);
+  dolfinx::init_logging(argc, argv);
+  MPI_Init(&argc, &argv);
 
   {
     using T = PetscScalar;
@@ -222,6 +222,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  common::subsystem::finalize_mpi();
+  MPI_Finalize();
+
   return 0;
 }

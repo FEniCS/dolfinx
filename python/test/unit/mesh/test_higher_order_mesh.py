@@ -5,8 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """ Unit-tests for higher order meshes """
 
-import os
 import random
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -526,7 +526,7 @@ def test_map_vtk_to_dolfin(vtk, dolfin, cell_type):
 
 @pytest.mark.skip_in_parallel
 def test_xdmf_input_tri(datadir):
-    with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, "mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+    with XDMFFile(MPI.COMM_WORLD, Path(datadir, "mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
     surface = assemble_scalar(form(1 * dx(mesh)))
     assert mesh.comm.allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=1e-4)

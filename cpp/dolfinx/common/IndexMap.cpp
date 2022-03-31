@@ -9,7 +9,6 @@
 #include <dolfinx/common/sort.h>
 #include <functional>
 #include <numeric>
-#include <unordered_map>
 
 using namespace dolfinx;
 using namespace dolfinx::common;
@@ -153,13 +152,15 @@ compute_owned_shared(MPI_Comm comm, const xtl::span<const std::int64_t>& ghosts,
 std::vector<int32_t> dolfinx::common::compute_owned_indices(
     const xtl::span<const std::int32_t>& indices, const IndexMap& map)
 {
-  // Split indices into those owned by this process and those that
-  // are ghosts. `ghost_indices` contains the position of the ghost
-  // in map.ghosts()
+  // Split indices into those owned by this process and those that are
+  // ghosts. `ghost_indices` contains the position of the ghost in
+  // map.ghosts()
   std::vector<std::int32_t> owned;
   std::vector<std::int32_t> ghost_indices;
   const int size_local = map.size_local();
-  // Get number of owned and ghost indices in indicies list to reserve vectors
+
+  // Get number of owned and ghost indices in indicies list to reserve
+  // vectors
   const int num_owned = std::count_if(indices.begin(), indices.end(),
                                       [size_local](std::int32_t index)
                                       { return index < size_local; });
@@ -176,8 +177,8 @@ std::vector<int32_t> dolfinx::common::compute_owned_indices(
                 });
 
   // Create an AdjacencyList whose nodes are the processes in the
-  // neighborhood and the links for a given process are the ghosts (global
-  // numbering) in `indices` owned by that process.
+  // neighborhood and the links for a given process are the ghosts
+  // (global numbering) in `indices` owned by that process.
   MPI_Comm reverse_comm = map.comm(IndexMap::Direction::reverse);
   std::vector<std::int32_t> dest_ranks
       = dolfinx::MPI::neighbors(reverse_comm)[1];
@@ -185,6 +186,7 @@ std::vector<int32_t> dolfinx::common::compute_owned_indices(
   const std::vector<std::int64_t>& ghosts = map.ghosts();
   std::vector<std::int64_t> ghosts_to_send;
   std::vector<std::int32_t> ghosts_per_proc(dest_ranks.size(), 0);
+
   // Loop through all destination ranks in the neighborhood
   for (std::size_t dest_rank_index = 0; dest_rank_index < dest_ranks.size();
        ++dest_rank_index)
@@ -192,8 +194,8 @@ std::vector<int32_t> dolfinx::common::compute_owned_indices(
     // Loop through all ghost indices on this rank
     for (std::int32_t ghost_index : ghost_indices)
     {
-      // Check if the ghost is owned by the destination rank. If so,
-      // add that ghost so it is sent to the correct process.
+      // Check if the ghost is owned by the destination rank. If so, add
+      // that ghost so it is sent to the correct process.
       if (ghost_owner_rank[ghost_index] == dest_ranks[dest_rank_index])
       {
         ghosts_to_send.push_back(ghosts[ghost_index]);
@@ -216,20 +218,26 @@ std::vector<int32_t> dolfinx::common::compute_owned_indices(
   // Get the local index from the global indices received from other
   // processes and add to `owned`
   const std::vector<std::int64_t>& global_indices = map.global_indices();
-  std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local(
-      global_indices.size());
-  for (std::size_t i = 0; i < global_indices.size(); ++i)
-    global_to_local[i] = {global_indices[i], i};
-  std::transform(data_in.array().cbegin(), data_in.array().cend(),
-                 std::back_inserter(owned),
-                 [g_to_l = std::unordered_map(global_to_local.begin(),
-                                              global_to_local.end())](
-                     std::int64_t global_index)
-                 {
-                   auto it = g_to_l.find(global_index);
-                   assert(it != g_to_l.end());
-                   return it->second;
-                 });
+  std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local;
+  global_to_local.reserve(global_indices.size());
+  for (auto idx : global_indices)
+  {
+    global_to_local.push_back(
+        {idx, static_cast<std::int32_t>(global_to_local.size())});
+  }
+  std::sort(global_to_local.begin(), global_to_local.end());
+  std::transform(
+      data_in.array().cbegin(), data_in.array().cend(),
+      std::back_inserter(owned),
+      [&global_to_local](std::int64_t global_index)
+      {
+        auto it = std::lower_bound(
+            global_to_local.begin(), global_to_local.end(),
+            typename decltype(global_to_local)::value_type(global_index, 0),
+            [](auto& a, auto& b) { return a.first < b.first; });
+        assert(it != global_to_local.end() and it->first == global_index);
+        return it->second;
+      });
 
   // Sort `owned` and remove non-unique entries (we could have received
   // the same ghost from multiple other processes)
@@ -736,10 +744,14 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
     shared_indices[size_local + i].insert(ghost_owners[i]);
 
   // Build map from global index to local index for ghosts
-  std::unordered_map<std::int64_t, std::int32_t> ghosts;
+  std::vector<std::pair<std::int64_t, std::int32_t>> ghosts;
   ghosts.reserve(_ghosts.size());
-  for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    ghosts.emplace(_ghosts[i], i + size_local);
+  for (auto idx : _ghosts)
+  {
+    ghosts.push_back(
+        {idx, static_cast<std::int32_t>(size_local + ghosts.size())});
+  }
+  std::sort(ghosts.begin(), ghosts.end());
 
   // Wait for all-to-all to complete
   MPI_Wait(&request, MPI_STATUS_IGNORE);
@@ -749,11 +761,15 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   MPI_Comm_rank(_comm_owner_to_ghost.comm(), &myrank);
   for (std::size_t i = 0; i < recv_data.size();)
   {
-    auto it = ghosts.find(recv_data[i]);
-    assert(it != ghosts.end());
+    auto it = std::lower_bound(
+        ghosts.begin(), ghosts.end(),
+        typename decltype(ghosts)::value_type(recv_data[i], 0),
+        [](auto& a, auto& b) { return a.first < b.first; });
+    assert(it != ghosts.end() and it->first == recv_data[i]);
+
     const std::int32_t idx = it->second;
     const int set_size = recv_data[i + 1];
-    for (int j = 0; j < set_size; j++)
+    for (int j = 0; j < set_size; ++j)
     {
       if (recv_data[i + 2 + j] != myrank)
         shared_indices[idx].insert(recv_data[i + 2 + +j]);

@@ -12,7 +12,7 @@ learning FEniCS. We recommend that you go through these examples in the
 given order.
 
 1. Getting started: :doc:`Poisson equation <demos/demo_poisson>`.
-2. Using mixed, Taylor-Hood element: :doc:`Stokes equation <demos/demo_stokes-taylor-hood>`
+2. Using mixed, Taylor-Hood element: :doc:`Stokes equation <demos/demo_stokes>`
 
 
 Advanced demos
@@ -32,11 +32,11 @@ All demos
 
    demos/demo_poisson.md
    demos/demo_cahn-hilliard.md
-   demos/demo_stokes-taylor-hood.md
+   demos/demo_stokes.md
    demos/demo_elasticity.md
    demos/demo_gmsh.md
-   demos/demo_helmholtz_2d.md
-   demos/demo_static-condensation-elasticity.md
+   demos/demo_helmholtz.md
+   demos/demo_static-condensation.md
    demos/demo_pyvista.md
    demos/demo_interpolation-io.md
    demos/demo_types.md

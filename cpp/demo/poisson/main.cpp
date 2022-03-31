@@ -115,8 +115,8 @@ using T = PetscScalar;
 
 int main(int argc, char* argv[])
 {
-  common::subsystem::init_logging(argc, argv);
-  common::subsystem::init_petsc(argc, argv);
+  dolfinx::init_logging(argc, argv);
+  PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   {
     // Create mesh and function space
@@ -235,6 +235,7 @@ int main(int argc, char* argv[])
     file.write<T>({u}, 0.0);
   }
 
-  common::subsystem::finalize_petsc();
+  PetscFinalize();
+
   return 0;
 }

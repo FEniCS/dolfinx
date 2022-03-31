@@ -230,12 +230,12 @@ sigma_vm_h.interpolate(sigma_vm_expr)
 # XDMF format files.
 
 # +
-with XDMFFile(msh.comm, "displacements.xdmf", "w") as file:
+with XDMFFile(msh.comm, "out_elasticity/displacements.xdmf", "w") as file:
     file.write_mesh(msh)
     file.write_function(uh)
 
 # Save solution to XDMF format
-with XDMFFile(msh.comm, "von_mises_stress.xdmf", "w") as file:
+with XDMFFile(msh.comm, "out_elasticity/von_mises_stress.xdmf", "w") as file:
     file.write_mesh(msh)
     file.write_function(sigma_vm_h)
 # -
