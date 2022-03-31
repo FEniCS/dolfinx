@@ -335,7 +335,6 @@ face_long_edge(const mesh::Mesh& mesh)
         mesh.geometry().x().data() + 3 * x_dofs[local1], 3);
 
     // Compute length of edge between vertex x0 and x1
-
     edge_length[e] = std::sqrt(std::transform_reduce(
         x0.begin(), x0.end(), x1.begin(), 0.0, std::plus<>(),
         [](auto x0, auto x1) { return (x0 - x1) * (x0 - x1); }));
