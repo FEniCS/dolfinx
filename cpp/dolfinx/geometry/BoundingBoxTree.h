@@ -78,7 +78,7 @@ public:
   /// collision with.
   /// @param[in] comm MPI Communicator for collective communication
   /// @return BoundingBoxTree where each node represents a process
-  BoundingBoxTree create_global_tree(const MPI_Comm& comm) const;
+  BoundingBoxTree create_global_tree(MPI_Comm comm) const;
 
   /// Return number of bounding boxes
   std::int32_t num_bboxes() const;

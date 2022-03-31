@@ -107,10 +107,12 @@ private:
   dolfinx::MPI::Comm _comm;
 };
 
-/// Create a mesh using the default partitioner. This function takes
-/// mesh input data that is distributed across processes and creates a
-/// @p Mesh, with the cell distribution determined by the default cell
-/// partitioner. The default partitioner is based a graph partitioning.
+/// @brief Create a mesh using the default partitioner.
+///
+/// This function takes mesh input data that is distributed across
+/// processes and creates a mesh::Mesh, with the mesh cell distribution
+/// determined by the default cell partitioner. The default partitioner
+/// is based a graph partitioning.
 ///
 /// @param[in] comm The MPI communicator to build the mesh on
 /// @param[in] cells The cells on the this MPI rank. Each cell (node in

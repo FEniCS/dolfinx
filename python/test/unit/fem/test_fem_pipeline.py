@@ -3,7 +3,8 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-import os
+
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -361,7 +362,7 @@ def get_mesh(cell_type, datadir):
         filename = "create_unit_cube_tetra.xdmf"
     elif cell_type == CellType.hexahedron:
         filename = "create_unit_cube_hexahedron.xdmf"
-    with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+    with XDMFFile(MPI.COMM_WORLD, Path(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         return xdmf.read_mesh(name="Grid")
 
 
