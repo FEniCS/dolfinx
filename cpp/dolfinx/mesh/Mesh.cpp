@@ -269,9 +269,9 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::transform(submesh_entity_index_map_pair.second.begin(),
                  submesh_entity_index_map_pair.second.end(),
                  std::back_inserter(submesh_to_mesh_entity_map),
-                 [mesh_entity_index_map](std::int32_t entity_index) {
-                   return mesh_entity_index_map->size_local() + entity_index;
-                 });
+                 [size_local = mesh_entity_index_map->size_local()](
+                     std::int32_t entity_index)
+                 { return size_local + entity_index; });
 
   // Submesh vertex to vertex connectivity (identity)
   auto submesh_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
