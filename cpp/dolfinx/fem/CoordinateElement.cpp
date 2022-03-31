@@ -143,7 +143,6 @@ void CoordinateElement::pull_back_nonaffine(
 
       // Compute Jacobian, its inverse and determinant
       std::fill(J.begin(), J.end(), 0.0);
-      std::fill(K.begin(), K.end(), 0.0);
       dphi = xt::view(basis, xt::range(1, tdim + 1), 0, xt::all(), 0);
       compute_jacobian(dphi, cell_geometry, J);
       compute_jacobian_inverse(J, K);
