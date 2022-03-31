@@ -42,7 +42,7 @@ enum class RefinementOptions : int
 };
 
 /// Uniform refine, optionally redistributing and optionally
-/// calculating the parent-child relation for facets.
+/// calculating the parent-child relationships, selected by `RefinementOptions`.
 ///
 /// @param[in] mesh Input mesh to be refined
 /// @param[in] redistribute Flag to call the mesh partitioner to
@@ -53,7 +53,8 @@ enum class RefinementOptions : int
 std::tuple<mesh::Mesh, std::vector<std::int32_t>, std::vector<std::int8_t>>
 refine(const mesh::Mesh& mesh, bool redistribute, RefinementOptions options);
 
-/// Refine with markers, optionally redistributing.
+/// Refine with markers, optionally redistributing, and optionally
+/// calculating the parent-child relationships, selected by `RefinementOptions`.
 ///
 /// @param[in] mesh Input mesh to be refined
 /// @param[in] edges Indices of the edges that should be split by this
