@@ -408,7 +408,7 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   if (parent_meshtag.mesh()->topology().index_map(tdim)->num_ghosts() > 0)
     throw std::runtime_error("Ghosted meshes are not supported");
 
-  auto input_c_to_f
+  auto parent_c_to_f
       = parent_meshtag.mesh()->topology().connectivity(tdim, tdim - 1);
   auto c_to_f = refined_mesh.topology().connectivity(tdim, tdim - 1);
 
@@ -438,13 +438,13 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   // Count number of child facets for each parent facet
   for (std::size_t c = 0; c < parent_cell.size(); ++c)
   {
-    auto parent_facet = input_c_to_f->links(parent_cell[c]);
+    auto parent_cf = parent_c_to_f->links(parent_cell[c]);
 
     for (int j = 0; j < (tdim + 1); ++j)
     {
       std::int8_t fidx = parent_facet[c * (tdim + 1) + j];
       if (fidx != -1)
-        ++count_child[parent_facet[fidx]];
+        ++count_child[parent_cf[fidx]];
     }
   }
 
@@ -457,7 +457,7 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   for (std::size_t c = 0; c < parent_cell.size(); ++c)
   {
     std::int32_t pc = parent_cell[c];
-    auto parent_cf = input_c_to_f->links(pc);
+    auto parent_cf = parent_c_to_f->links(pc);
 
     // Use original indexing for child cell
     const std::int32_t lc = local_cell_index[c];
