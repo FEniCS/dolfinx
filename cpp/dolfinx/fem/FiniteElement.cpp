@@ -169,6 +169,7 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
       value_shape[i] = ce->value_shape[i];
       value_size *= ce->value_shape[i];
     }
+
     xt::xtensor<double, 2> wcoeffs(
         {static_cast<std::size_t>(ce->wcoeffs_rows),
          static_cast<std::size_t>(ce->wcoeffs_cols)});
@@ -178,6 +179,7 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
         for (int j = 0; j < ce->wcoeffs_cols; ++j)
           wcoeffs(i, j) = ce->wcoeffs[e++];
     }
+
     std::map<basix::cell::type, xt::xtensor<double, 3>> entity_transformations;
     { // scope
       int e = 0;
@@ -185,21 +187,21 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
       {
         basix::cell::type c = static_cast<basix::cell::type>(
             ce->entity_transformations_entities[i]);
-        entity_transformations[c] = xt::xtensor<double, 3>(
+
+        xt::xtensor<double, 3> mat(
             {static_cast<std::size_t>(ce->entity_transformations_shapes[3 * i]),
              static_cast<std::size_t>(
                  ce->entity_transformations_shapes[3 * i + 1]),
              static_cast<std::size_t>(
                  ce->entity_transformations_shapes[3 * i + 2])});
-        for (int i0 = 0; i0 < ce->entity_transformations_shapes[3 * i]; ++i0)
-          for (int i1 = 0; i1 < ce->entity_transformations_shapes[3 * i + 1];
-               ++i1)
-            for (int i2 = 0; i2 < ce->entity_transformations_shapes[3 * i + 2];
-                 ++i2)
-              entity_transformations[c](i0, i1, i2)
-                  = ce->entity_transformations[e++];
+        for (std::size_t i0 = 0; i0 < mat.shape(0); ++i0)
+          for (std::size_t i1 = 0; i1 < mat.shape(1); ++i1)
+            for (std::size_t i2 = 0; i2 < mat.shape(2); ++i2)
+              mat(i0, i1, i2) = ce->entity_transformations[e++];
+        entity_transformations[c] = mat;
       }
     }
+
     std::array<std::vector<xt::xtensor<double, 2>>, 4> x;
     std::array<std::vector<xt::xtensor<double, 3>>, 4> M;
     { // scope
