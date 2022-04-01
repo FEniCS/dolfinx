@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import os
+from pathlib import Path
 
 import pytest
 
@@ -37,7 +37,7 @@ def mesh_factory(tdim, n):
 @pytest.mark.parametrize("tdim", [2, 3])
 @pytest.mark.parametrize("n", [6])
 def test_read_mesh_data(tempdir, tdim, n):
-    filename = os.path.join(tempdir, "mesh.xdmf")
+    filename = Path(tempdir, "mesh.xdmf")
     mesh = mesh_factory(tdim, n)
     encoding = XDMFFile.Encoding.HDF5
     with XDMFFile(mesh.comm, filename, "w", encoding) as file:

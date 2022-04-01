@@ -523,7 +523,7 @@ class LinearProblem():
         self._solver.setOperators(self._A)
 
         # Give PETSc solver options a unique prefix
-        problem_prefix = "dolfinx_solve_{}".format(id(self))
+        problem_prefix = f"dolfinx_solve_{id(self)}"
         self._solver.setOptionsPrefix(problem_prefix)
 
         # Set PETSc options

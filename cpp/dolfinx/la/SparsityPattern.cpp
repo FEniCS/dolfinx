@@ -240,7 +240,7 @@ void SparsityPattern::insert(const xtl::span<const std::int32_t>& rows,
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert_diagonal(const xtl::span<const int32_t>& rows)
+void SparsityPattern::insert_diagonal(const xtl::span<const std::int32_t>& rows)
 {
   if (_graph)
   {
@@ -432,15 +432,14 @@ void SparsityPattern::assemble()
   {
     std::vector<std::int32_t>& row = _row_cache[i];
     std::sort(row.begin(), row.end());
-    const std::vector<std::int32_t>::iterator it_end
-        = std::unique(row.begin(), row.end());
+    auto it_end = std::unique(row.begin(), row.end());
 
     // Find position of first "off-diagonal" column
     _off_diagonal_offset[i] = std::distance(
         row.begin(), std::lower_bound(row.begin(), it_end, local_size1));
 
     adj_data.insert(adj_data.end(), row.begin(), it_end);
-    adj_counts[i] += (it_end - row.begin());
+    adj_counts[i] += std::distance(row.begin(), it_end);
   }
   // Clear cache
   std::vector<std::vector<std::int32_t>>().swap(_row_cache);
@@ -450,6 +449,7 @@ void SparsityPattern::assemble()
   std::partial_sum(adj_counts.begin(), adj_counts.end(),
                    adj_offsets.begin() + 1);
 
+  adj_data.shrink_to_fit();
   _graph = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(adj_data), std::move(adj_offsets));
 

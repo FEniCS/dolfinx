@@ -202,7 +202,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   return Mesh(comm, std::move(topology), std::move(geometry));
 }
 //-----------------------------------------------------------------------------
-std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>>
+std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>,
+           std::vector<std::int32_t>>
 mesh::create_submesh(const Mesh& mesh, int dim,
                      const xtl::span<const std::int32_t>& entities)
 {
@@ -235,9 +236,9 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::transform(submesh_vertex_index_map_pair.second.begin(),
                  submesh_vertex_index_map_pair.second.end(),
                  std::back_inserter(submesh_to_mesh_vertex_map),
-                 [mesh_vertex_index_map](std::int32_t vertex_index) {
-                   return mesh_vertex_index_map->size_local() + vertex_index;
-                 });
+                 [size_local = mesh_vertex_index_map->size_local()](
+                     std::int32_t vertex_index)
+                 { return size_local + vertex_index; });
 
   // Get the entities in the submesh that are owned by this process
   auto mesh_entity_index_map = mesh.topology().index_map(dim);
@@ -258,6 +259,20 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   auto submesh_entity_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_entity_index_map_pair.first));
 
+  // Create a map from the (local) entities in the submesh to the (local)
+  // entities in the mesh.
+  std::vector<int32_t> submesh_to_mesh_entity_map(
+      submesh_owned_entities.begin(), submesh_owned_entities.end());
+  submesh_to_mesh_entity_map.reserve(submesh_entity_index_map->size_local()
+                                     + submesh_entity_index_map->num_ghosts());
+  // Add ghost vertices to the map
+  std::transform(submesh_entity_index_map_pair.second.begin(),
+                 submesh_entity_index_map_pair.second.end(),
+                 std::back_inserter(submesh_to_mesh_entity_map),
+                 [size_local = mesh_entity_index_map->size_local()](
+                     std::int32_t entity_index)
+                 { return size_local + entity_index; });
+
   // Submesh vertex to vertex connectivity (identity)
   auto submesh_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       submesh_vertex_index_map->size_local()
@@ -269,10 +284,11 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   const int num_vertices_per_entity = cell_num_entities(entity_type, 0);
   auto mesh_e_to_v = mesh.topology().connectivity(dim, 0);
   std::vector<std::int32_t> submesh_e_to_v_vec;
-  submesh_e_to_v_vec.reserve(entities.size() * num_vertices_per_entity);
+  submesh_e_to_v_vec.reserve(submesh_to_mesh_entity_map.size()
+                             * num_vertices_per_entity);
   std::vector<std::int32_t> submesh_e_to_v_offsets(1, 0);
-  submesh_e_to_v_offsets.reserve(entities.size() + 1);
-  for (std::int32_t e : entities)
+  submesh_e_to_v_offsets.reserve(submesh_to_mesh_entity_map.size() + 1);
+  for (std::int32_t e : submesh_to_mesh_entity_map)
   {
     xtl::span<const std::int32_t> vertices = mesh_e_to_v->links(e);
     for (std::int32_t v : vertices)
@@ -299,7 +315,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // Get the geometry dofs in the submesh based on the entities in
   // submesh
   xt::xtensor<std::int32_t, 2> e_to_g
-      = entities_to_geometry(mesh, dim, entities, false);
+      = entities_to_geometry(mesh, dim, submesh_to_mesh_entity_map, false);
   // FIXME Find better way to do this
   xt::xarray<int32_t> submesh_x_dofs_xt = xt::unique(e_to_g);
   std::vector<int32_t> submesh_x_dofs(submesh_x_dofs_xt.begin(),
@@ -324,12 +340,12 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                                                  submesh_owned_x_dofs.end());
   submesh_to_mesh_x_dof_map.reserve(submesh_x_dof_index_map->size_local()
                                     + submesh_x_dof_index_map->num_ghosts());
-  std::transform(
-      submesh_x_dof_index_map_pair.second.begin(),
-      submesh_x_dof_index_map_pair.second.end(),
-      std::back_inserter(submesh_to_mesh_x_dof_map),
-      [mesh_geometry_dof_index_map](std::int32_t x_dof_index)
-      { return mesh_geometry_dof_index_map->size_local() + x_dof_index; });
+  std::transform(submesh_x_dof_index_map_pair.second.begin(),
+                 submesh_x_dof_index_map_pair.second.end(),
+                 std::back_inserter(submesh_to_mesh_x_dof_map),
+                 [size_local = mesh_geometry_dof_index_map->size_local()](
+                     std::int32_t x_dof_index)
+                 { return size_local + x_dof_index; });
 
   // Create submesh geometry coordinates
   xtl::span<const double> mesh_x = mesh.geometry().x();
@@ -391,6 +407,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   return {Mesh(mesh.comm(), std::move(submesh_topology),
                std::move(submesh_geometry)),
+          std::move(submesh_to_mesh_entity_map),
           std::move(submesh_to_mesh_vertex_map),
           std::move(submesh_to_mesh_x_dof_map)};
 }

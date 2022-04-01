@@ -145,6 +145,8 @@ std::array<std::vector<int>, 2> neighbors(MPI_Comm comm);
 /// \f$p\f$is the number of MPI ranks. It is suitable for modest MPI
 /// rank counts.
 ///
+/// @note The order of the returned ranks is not deterministic.
+///
 /// @note Collective
 ///
 /// @param[in] comm MPI communicator
@@ -170,7 +172,9 @@ std::vector<int> compute_graph_edges_pcx(MPI_Comm comm,
 /// where \f$p\f$is the number of MPI ranks. It is suitable for modest
 /// MPI rank counts.
 ///
-/// @note Collective over ranks that are connected by graph edge.
+/// @note The order of the returned ranks is not deterministic.
+///
+/// @note Collective.
 ///
 /// @param[in] comm MPI communicator
 /// @param[in] edges Edges (ranks) from this rank (the caller).
