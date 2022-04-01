@@ -68,7 +68,6 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
     assert(np.isclose(A_mesh_0.norm(), A_submesh.norm()))
 
 
-# TODO Test 2D
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange",
