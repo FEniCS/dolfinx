@@ -286,6 +286,20 @@ mesh::create_submesh(const Mesh& mesh, int dim,
         mesh.comm(), submesh_owned_entities.size());
   }
 
+  // Create a map from the (local) entities in the submesh to the (local)
+  // entities in the mesh.
+  std::vector<int32_t> submesh_to_mesh_entity_map(
+      submesh_owned_entities.begin(), submesh_owned_entities.end());
+  submesh_to_mesh_entity_map.reserve(submesh_entity_index_map->size_local()
+                                     + submesh_entity_index_map->num_ghosts());
+  // Add ghost vertices to the map
+  std::transform(submesh_entity_index_map_pair.second.begin(),
+                 submesh_entity_index_map_pair.second.end(),
+                 std::back_inserter(submesh_to_mesh_entity_map),
+                 [size_local = mesh_entity_index_map->size_local()](
+                     std::int32_t entity_index)
+                 { return size_local + entity_index; });
+
   // Submesh vertex to vertex connectivity (identity)
   auto submesh_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       submesh_vertex_index_map->size_local()

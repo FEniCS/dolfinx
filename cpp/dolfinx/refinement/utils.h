@@ -15,6 +15,8 @@
 
 namespace dolfinx::mesh
 {
+template <typename T>
+class MeshTags;
 class Mesh;
 enum class GhostMode;
 } // namespace dolfinx::mesh
@@ -89,4 +91,29 @@ mesh::Mesh partition(const mesh::Mesh& old_mesh,
 std::vector<std::int64_t> adjust_indices(const common::IndexMap& index_map,
                                          std::int32_t n);
 
+/// Transfer facet MeshTags from coarse mesh to refined mesh
+/// @note The refined mesh must not have been redistributed during refinement
+/// @note GhostMode must be GhostMode.none
+/// @param[in] parent_meshtag Facet MeshTags on parent mesh
+/// @param[in] refined_mesh Refined mesh based on parent mesh
+/// @param[in] parent_cell Parent cell of each cell in refined mesh
+/// @param[in] parent_facet Local facets of parent in each cell in refined mesh
+/// @return MeshTags on refined mesh, values copied over from coarse mesh
+mesh::MeshTags<std::int32_t>
+transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& parent_meshtag,
+                       const mesh::Mesh& refined_mesh,
+                       const std::vector<std::int32_t>& parent_cell,
+                       const std::vector<std::int8_t>& parent_facet);
+
+/// Transfer cell MeshTags from coarse mesh to refined mesh
+/// @note The refined mesh must not have been redistributed during refinement
+/// @note GhostMode must be GhostMode.none
+/// @param[in] parent_meshtag Cell MeshTags on parent mesh
+/// @param[in] refined_mesh Refined mesh based on parent mesh
+/// @param[in] parent_cell Parent cell of each cell in refined mesh
+/// @return MeshTags on refined mesh, values copied over from coarse mesh
+mesh::MeshTags<std::int32_t>
+transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& parent_meshtag,
+                      const mesh::Mesh& refined_mesh,
+                      const std::vector<std::int32_t>& parent_cell);
 } // namespace dolfinx::refinement
