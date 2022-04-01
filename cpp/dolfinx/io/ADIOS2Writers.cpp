@@ -6,9 +6,6 @@
 
 #ifdef HAS_ADIOS2
 
-#include "Attribute.h"
-#include "Variable.h"
-
 #include "ADIOS2Writers.h"
 #include "cells.h"
 #include "pugixml.hpp"
