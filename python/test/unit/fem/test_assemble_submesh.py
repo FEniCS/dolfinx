@@ -76,11 +76,12 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 def test_submesh_facet_assembly(n, k, space, ghost_mode):
-    mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
-    edim = mesh.topology.dim - 1
+    cube_mesh = create_unit_cube(
+        MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
+    edim = cube_mesh.topology.dim - 1
     entities = locate_entities_boundary(
-        mesh, edim, lambda x: np.isclose(x[2], 0.0))
-    submesh = create_submesh(mesh, edim, entities)[0]
+        cube_mesh, edim, lambda x: np.isclose(x[2], 0.0))
+    submesh = create_submesh(cube_mesh, edim, entities)[0]
 
     A_submesh = assemble(submesh, space, k)
 
