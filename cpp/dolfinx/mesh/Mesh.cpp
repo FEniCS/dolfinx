@@ -249,29 +249,25 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                [mesh_entity_index_map](std::int32_t e)
                { return e < mesh_entity_index_map->size_local(); });
 
-  // Create submesh entity index map
-  // TODO Call dolfinx::common::get_owned_indices here? Do we want to
-  // support `entities` possibly haveing a ghost on one process that is not
-  // in `entities` on the owning process?
-  std::pair<common::IndexMap, std::vector<int32_t>>
-      submesh_entity_index_map_pair
-      = mesh_entity_index_map->create_submap(submesh_owned_entities);
-  auto submesh_entity_index_map
-      = (mesh.topology().dim() == dim)
-            ? std::make_shared<common::IndexMap>(
-                std::move(submesh_entity_index_map_pair.first))
-            : std::make_shared<common::IndexMap>(
-                mesh.comm(), submesh_entity_index_map_pair.first.size_local());
-
   // Create a map from the (local) entities in the submesh to the (local)
-  // entities in the mesh.
+  // entities in the mesh, and the submesh entity index map.
   std::vector<int32_t> submesh_to_mesh_entity_map(
       submesh_owned_entities.begin(), submesh_owned_entities.end());
-
+  std::shared_ptr<common::IndexMap> submesh_entity_index_map;
   if (mesh.topology().dim() == dim)
   {
-    submesh_to_mesh_entity_map.reserve(submesh_entity_index_map->size_local()
-                                      + submesh_entity_index_map->num_ghosts());
+    // TODO Call dolfinx::common::get_owned_indices here? Do we want to
+    // support `entities` possibly haveing a ghost on one process that is not
+    // in `entities` on the owning process?
+    std::pair<common::IndexMap, std::vector<int32_t>>
+        submesh_entity_index_map_pair
+        = mesh_entity_index_map->create_submap(submesh_owned_entities);
+    submesh_entity_index_map = std::make_shared<common::IndexMap>(
+        std::move(submesh_entity_index_map_pair.first));
+
+    submesh_to_mesh_entity_map.reserve(
+        submesh_entity_index_map->size_local()
+        + submesh_entity_index_map->num_ghosts());
     // Add ghost vertices to the map
     std::transform(submesh_entity_index_map_pair.second.begin(),
                    submesh_entity_index_map_pair.second.end(),
@@ -279,6 +275,11 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                    [size_local = mesh_entity_index_map->size_local()](
                        std::int32_t entity_index)
                    { return size_local + entity_index; });
+  }
+  else
+  {
+    submesh_entity_index_map = std::make_shared<common::IndexMap>(
+        mesh.comm(), submesh_owned_entities.size());
   }
 
   // Submesh vertex to vertex connectivity (identity)
