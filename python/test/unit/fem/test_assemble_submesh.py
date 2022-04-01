@@ -75,6 +75,8 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 def test_submesh_facet_assembly(n, k, space, ghost_mode):
+    """Test that assembling a form over the face of a unit cube gives
+    the same result as assembling it over a unit square."""
     cube_mesh = create_unit_cube(
         MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
     edim = cube_mesh.topology.dim - 1
