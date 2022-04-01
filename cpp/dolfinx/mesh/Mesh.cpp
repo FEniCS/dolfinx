@@ -250,10 +250,14 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                { return e < mesh_entity_index_map->size_local(); });
 
   // Create a map from the (local) entities in the submesh to the (local)
-  // entities in the mesh, and the submesh entity index map.
+  // entities in the mesh, and create the submesh entity index map.
   std::vector<int32_t> submesh_to_mesh_entity_map(
       submesh_owned_entities.begin(), submesh_owned_entities.end());
   std::shared_ptr<common::IndexMap> submesh_entity_index_map;
+  // If the entity dimension is the same as the input mesh topological
+  // dimension, add ghost entities to the submesh. If not, do not add ghost
+  // entities, because in general, not all expected ghost entities would be
+  // present.
   if (mesh.topology().dim() == dim)
   {
     // TODO Call dolfinx::common::get_owned_indices here? Do we want to
@@ -265,10 +269,10 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     submesh_entity_index_map = std::make_shared<common::IndexMap>(
         std::move(submesh_entity_index_map_pair.first));
 
+    // Add ghost vertices to the entity map
     submesh_to_mesh_entity_map.reserve(
         submesh_entity_index_map->size_local()
         + submesh_entity_index_map->num_ghosts());
-    // Add ghost vertices to the map
     std::transform(submesh_entity_index_map_pair.second.begin(),
                    submesh_entity_index_map_pair.second.end(),
                    std::back_inserter(submesh_to_mesh_entity_map),
