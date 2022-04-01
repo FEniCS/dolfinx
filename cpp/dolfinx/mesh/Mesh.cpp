@@ -267,11 +267,11 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // entities in the mesh.
   std::vector<int32_t> submesh_to_mesh_entity_map(
       submesh_owned_entities.begin(), submesh_owned_entities.end());
-  submesh_to_mesh_entity_map.reserve(submesh_entity_index_map->size_local()
-                                     + submesh_entity_index_map->num_ghosts());
 
   if (mesh.topology().dim() == dim)
   {
+    submesh_to_mesh_entity_map.reserve(submesh_entity_index_map->size_local()
+                                      + submesh_entity_index_map->num_ghosts());
     // Add ghost vertices to the map
     std::transform(submesh_entity_index_map_pair.second.begin(),
                    submesh_entity_index_map_pair.second.end(),
