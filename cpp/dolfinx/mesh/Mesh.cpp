@@ -269,7 +269,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     submesh_entity_index_map = std::make_shared<common::IndexMap>(
         std::move(submesh_entity_index_map_pair.first));
 
-    // Add ghost vertices to the entity map
+    // Add ghost entities to the entity map
     submesh_to_mesh_entity_map.reserve(
         submesh_entity_index_map->size_local()
         + submesh_entity_index_map->num_ghosts());
