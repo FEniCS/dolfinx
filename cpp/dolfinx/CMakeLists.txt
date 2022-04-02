@@ -78,7 +78,7 @@ target_link_libraries(dolfinx PUBLIC Boost::headers)
 target_link_libraries(dolfinx PUBLIC Boost::timer)
 
 # MPI
-target_link_libraries(dolfinx PUBLIC MPI::MPI_CXX)
+target_link_libraries(dolfinx PUBLIC MPI::MPI_C)
 
 # PETSc
 target_link_libraries(dolfinx PUBLIC PkgConfig::PETSC)
