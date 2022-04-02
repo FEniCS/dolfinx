@@ -404,40 +404,28 @@ mesh::build_local_dual_graph_new(
             0, std::vector<std::int32_t>()};
   }
 
-  // Determine maximum number of vertices for a cell
-  int max_vertices_per_cell = std::transform_reduce(
-      std::next(cell_offsets.begin()), cell_offsets.end(), cell_offsets.begin(),
-      0, [](auto n0, auto n1) { return std::max(n0, n1); },
-      [](auto idx1, auto idx0) { return idx1 - idx0; });
-
-  std::cout << "Test A: " << max_vertices_per_cell << std::endl;
+  // Note: only meshes with a single cell type are supported
+  const graph::AdjacencyList<int> cell_facets = mesh::get_entity_vertices(
+      get_cell_type(cell_offsets[1] - cell_offsets[0], tdim), tdim - 1);
 
   // Determine maximum number of vertices for facet
-  const graph::AdjacencyList<int> cell_facets_max = mesh::get_entity_vertices(
-      get_cell_type(max_vertices_per_cell, tdim), tdim - 1);
   int max_vertices_per_facet = 0;
-  for (int i = 0; i < cell_facets_max.num_nodes(); ++i)
+  for (int i = 0; i < cell_facets.num_nodes(); ++i)
   {
     max_vertices_per_facet
-        = std::max(max_vertices_per_facet, cell_facets_max.num_links(i));
+        = std::max(max_vertices_per_facet, cell_facets.num_links(i));
   }
 
   const int shape1 = max_vertices_per_facet + 1;
 
-  std::cout << "Test B: " << shape1 << std::endl;
-
   // Build list of facets, defined by sorted vertices, with connected
   // cell index at the end
   std::vector<std::int64_t> facets;
-  facets.reserve(num_cells * cell_facets_max.num_nodes() * shape1);
+  facets.reserve(num_cells * cell_facets.num_nodes() * shape1);
   for (auto it = cell_offsets.begin(); it != std::prev(cell_offsets.end());
        ++it)
   {
     int num_vertices = *std::next(it) - *it;
-
-    const graph::AdjacencyList<int> cell_facets = mesh::get_entity_vertices(
-        get_cell_type(num_vertices, tdim), tdim - 1);
-
     auto v = cell_vertices.subspan(*it, num_vertices);
     std::size_t c = std::distance(cell_offsets.begin(), it);
 
@@ -825,19 +813,13 @@ mesh::build_dual_graph(const MPI_Comm comm,
       = mesh::build_local_dual_graph(cells.array(), cells.offsets(), tdim);
 
   assert(local_graph.num_nodes() == cells.num_nodes());
-  std::cout << "Size check 0: " << xfcells.size() << ", " << fcells.size()
-            << std::endl;
-
-  std::cout << "Size check 1: " << xfacets.size() << ", " << facets.size()
-            << std::endl;
-
-  std::cout << "Size check 2: " << xshape1 << ", " << shape1 << std::endl;
 
   // assert(xfcells.size() == fcells.size());
   assert(xshape1 == shape1);
+  assert(xfcells == fcells);
+  assert(xlocal_graph.offsets() == local_graph.offsets());
 
   // Extend with nonlocal edges and convert to global indices
-
   graph::AdjacencyList<std::int64_t> graph
       = compute_nonlocal_dual_graph(comm, facets, shape1, fcells, local_graph);
 

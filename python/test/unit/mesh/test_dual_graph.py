@@ -31,7 +31,7 @@ def test_dgrsph_1d():
         assert len(w.links(i)) == 2
 
 
-def test_dgrsph_2d():
+def xtest_dgrsph_2d():
     rank = MPI.COMM_WORLD.Get_rank()
     size = MPI.COMM_WORLD.Get_size()
     n0 = rank * 6
@@ -49,7 +49,7 @@ def test_dgrsph_2d():
         assert len(w.links(i)) == 2
 
 
-def test_dgrsph_3d():
+def xtest_dgrsph_3d():
     rank = MPI.COMM_WORLD.Get_rank()
     size = MPI.COMM_WORLD.Get_size()
     n0 = rank * 9
