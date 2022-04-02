@@ -37,17 +37,13 @@ namespace dolfinx::mesh
 /// Each row of the returned data (2) contains `[v0, ... v_(n-1), x, ..,
 /// x]`, where `v_i` is a vertex global index, `x` is a padding value
 /// (all padding values will be equal).
+///
+/// @note The return data will likely change once we support mixed
+/// topology meshes.
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
 build_local_dual_graph(const xtl::span<const std::int64_t>& cells,
                        const xtl::span<const std::int32_t>& offsets, int tdim);
-
-/// NEW
-std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
-           std::size_t, std::vector<std::int32_t>>
-build_local_dual_graph_new(const xtl::span<const std::int64_t>& cells,
-                           const xtl::span<const std::int32_t>& offsets,
-                           int tdim);
 
 /// @brief Build distributed mesh dual graph (cell-cell connections via
 /// facets) from minimal mesh data.
