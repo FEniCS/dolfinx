@@ -20,6 +20,43 @@ using namespace dolfinx;
 
 namespace
 {
+/// Return cell type, deduced from the number of cell vertices and the
+/// topological dimension of the cell
+constexpr mesh::CellType get_cell_type(int num_vertices, int tdim)
+{
+  switch (tdim)
+  {
+  case 1:
+    return mesh::CellType::interval;
+  case 2:
+    switch (num_vertices)
+    {
+    case 3:
+      return mesh::CellType::triangle;
+    case 4:
+      return mesh::CellType::quadrilateral;
+    default:
+      throw std::runtime_error("Invalid data");
+    }
+  case 3:
+    switch (num_vertices)
+    {
+    case 4:
+      return mesh::CellType::tetrahedron;
+    case 5:
+      return mesh::CellType::pyramid;
+    case 6:
+      return mesh::CellType::prism;
+    case 8:
+      return mesh::CellType::hexahedron;
+    default:
+      throw std::runtime_error("Invalid data");
+    }
+  default:
+    throw std::runtime_error("Invalid data");
+  }
+};
+
 //-----------------------------------------------------------------------------
 
 /// @brief Build nonlocal part of dual graph for mesh and return number
@@ -367,58 +404,40 @@ mesh::build_local_dual_graph_new(
             0, std::vector<std::int32_t>()};
   }
 
-  auto cell_type = [](int num_vertices, int tdim)
+  // Determine maximum number of vertices for a cell
+  int max_vertices_per_cell = std::transform_reduce(
+      std::next(cell_offsets.begin()), cell_offsets.end(), cell_offsets.begin(),
+      0, [](auto n0, auto n1) { return std::max(n0, n1); },
+      [](auto idx1, auto idx0) { return idx1 - idx0; });
+
+  std::cout << "Test A: " << max_vertices_per_cell << std::endl;
+
+  // Determine maximum number of vertices for facet
+  const graph::AdjacencyList<int> cell_facets_max = mesh::get_entity_vertices(
+      get_cell_type(max_vertices_per_cell, tdim), tdim - 1);
+  int max_vertices_per_facet = 0;
+  for (int i = 0; i < cell_facets_max.num_nodes(); ++i)
   {
-    switch (tdim)
-    {
-    case 1:
-      return CellType::interval;
-    case 2:
-      switch (num_vertices)
-      {
-      case 3:
-        return CellType::triangle;
-      case 4:
-        return CellType::quadrilateral;
-      default:
-        throw std::runtime_error("Invalid data");
-      }
-    case 3:
-      switch (num_vertices)
-      {
-      case 4:
-        return CellType::tetrahedron;
-      case 5:
-        return CellType::pyramid;
-      case 6:
-        return CellType::prism;
-      case 8:
-        return CellType::hexahedron;
-      default:
-        throw std::runtime_error("Invalid data");
-      }
-    default:
-      throw std::runtime_error("Invalid data");
-    }
-  };
+    max_vertices_per_facet
+        = std::max(max_vertices_per_facet, cell_facets_max.num_links(i));
+  }
 
-  // TODO: generalise for other cells types
-  const int vertices_per_cells = cell_offsets[1] - cell_offsets[0];
+  const int shape1 = max_vertices_per_facet + 1;
 
-  const graph::AdjacencyList<int> cell_facets = mesh::get_entity_vertices(
-      cell_type(vertices_per_cells, tdim), tdim - 1);
-  const int vertices_per_facet = cell_facets.links(0).size();
-
-  const int shape1 = vertices_per_facet + 1;
+  std::cout << "Test B: " << shape1 << std::endl;
 
   // Build list of facets, defined by sorted vertices, with connected
   // cell index at the end
   std::vector<std::int64_t> facets;
-  facets.reserve(num_cells * cell_facets.num_nodes() * shape1);
+  facets.reserve(num_cells * cell_facets_max.num_nodes() * shape1);
   for (auto it = cell_offsets.begin(); it != std::prev(cell_offsets.end());
        ++it)
   {
     int num_vertices = *std::next(it) - *it;
+
+    const graph::AdjacencyList<int> cell_facets = mesh::get_entity_vertices(
+        get_cell_type(num_vertices, tdim), tdim - 1);
+
     auto v = cell_vertices.subspan(*it, num_vertices);
     std::size_t c = std::distance(cell_offsets.begin(), it);
 
@@ -430,12 +449,13 @@ mesh::build_local_dual_graph_new(
                      std::back_inserter(facets),
                      [v](auto idx) { return v[idx]; });
       std::sort(std::prev(facets.end(), facet_vertices.size()), facets.end());
-
+      facets.insert(facets.end(),
+                    max_vertices_per_facet - facet_vertices.size(), -1);
       facets.push_back(c);
     }
   }
 
-  // Sort facets
+  // Sort facets by vertex key
   std::vector<std::size_t> perm(facets.size() / shape1, 0);
   std::iota(perm.begin(), perm.end(), 0);
   std::sort(perm.begin(), perm.end(),
@@ -450,57 +470,53 @@ mesh::build_local_dual_graph_new(
   std::vector<std::int64_t> unmatched_facets;
   std::vector<std::int32_t> cells;
   std::vector<std::array<std::int32_t, 2>> edges;
-  auto it = perm.begin();
-  while (it != perm.end())
   {
-    std::size_t offset0 = (*it) * shape1;
-    auto f0 = std::next(facets.begin(), offset0);
-
-    // Find iterator to next facet different from f0
-    auto it1 = std::find_if_not(it, perm.end(),
-                                [f0, &facets, shape1](auto idx) -> bool
-                                {
-                                  std::size_t offset1 = idx * shape1;
-                                  auto f1 = std::next(facets.begin(), offset1);
-                                  return std::equal(
-                                      f0, std::next(f0, shape1 - 1), f1);
-                                });
-
-    // std::cout << "Dist: " << std::distance(it, it1) << std::endl;
-
-    if (std::size_t num_matches = std::distance(it, it1); num_matches == 1)
+    auto it = perm.begin();
+    while (it != perm.end())
     {
-      unmatched_facets.insert(unmatched_facets.end(), f0,
-                              std::next(f0, vertices_per_facet));
-      cells.push_back(*std::next(f0, shape1));
-    }
-    else
-    {
-      // FIXME: This assumes 2 connections only
-      assert(num_matches == 2);
       auto f0 = xtl::span(facets.data() + (*it) * shape1, shape1);
-      auto f1 = xtl::span(facets.data() + *std::next(it) * shape1, shape1);
 
-      // if (it1 == perm.end())
-      //   std::cout << "At end: " << num_matches << std::endl;
+      // Find iterator to next facet different from f0
+      auto it1 = std::find_if_not(
+          it, perm.end(),
+          [f0, &facets, shape1](auto idx) -> bool
+          {
+            std::size_t offset1 = idx * shape1;
+            auto f1_it = std::next(facets.begin(), offset1);
+            return std::equal(f0.begin(), std::prev(f0.end()), f1_it);
+          });
 
+      // Add dual graph edges (one direction only, other direction is
+      // added later)
       std::int32_t cell0 = f0.back();
-      // std::cout << "c0: " << cell0 << std::endl;
+      for (auto itx = std::next(it); itx != it1; ++itx)
+      {
+        auto f1 = xtl::span(facets.data() + *itx * shape1, shape1);
+        std::int32_t cell1 = f1.back();
+        edges.push_back({cell0, cell1});
+      }
 
-      std::int32_t cell1 = f1.back();
-      // std::cout << "c1: " << cell1 << std::endl;
+      // Store unmatched facets and the attached cell
+      if (std::distance(it, it1) == 1)
+      {
+        unmatched_facets.insert(unmatched_facets.end(), f0.begin(),
+                                std::prev(f0.end()));
+        cells.push_back(cell0);
+      }
 
-      edges.push_back({cell0, cell1});
-      edges.push_back({cell1, cell0});
+      // Update iterator
+      it = it1;
     }
-
-    it = it1;
   }
 
   // Build adjacency list data
+
   std::vector<std::int32_t> sizes(num_cells, 0);
   for (auto e : edges)
+  {
     ++sizes[e[0]];
+    ++sizes[e[1]];
+  }
 
   std::vector<std::int32_t> offsets(sizes.size() + 1, 0);
   std::partial_sum(sizes.cbegin(), sizes.cend(), std::next(offsets.begin()));
@@ -508,12 +524,15 @@ mesh::build_local_dual_graph_new(
   {
     std::vector<std::int32_t> pos = offsets;
     for (auto e : edges)
+    {
       data[pos[e[0]]++] = e[1];
+      data[pos[e[1]]++] = e[0];
+    }
   }
 
   return {
       graph::AdjacencyList<std::int32_t>(std::move(data), std::move(offsets)),
-      std::move(unmatched_facets), vertices_per_facet, std::move(cells)};
+      std::move(unmatched_facets), max_vertices_per_facet, std::move(cells)};
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
@@ -800,17 +819,22 @@ mesh::build_dual_graph(const MPI_Comm comm,
 
   // Compute local part of dual graph (cells are graph nodes, and edges
   // are connections by facet)
-  auto [local_graph, facets, shape1, fcells]
+  auto [xlocal_graph, xfacets, xshape1, xfcells]
       = mesh::build_local_dual_graph_new(cells.array(), cells.offsets(), tdim);
-  // auto [local_graph, facets, shape1, fcells]
-  //     = mesh::build_local_dual_graph(cells.array(), cells.offsets(), tdim);
+  auto [local_graph, facets, shape1, fcells]
+      = mesh::build_local_dual_graph(cells.array(), cells.offsets(), tdim);
 
   assert(local_graph.num_nodes() == cells.num_nodes());
-  // std::cout << "Size check: " << xfcells.size() << ", " << fcells.size()
-  //           << std::endl;
+  std::cout << "Size check 0: " << xfcells.size() << ", " << fcells.size()
+            << std::endl;
+
+  std::cout << "Size check 1: " << xfacets.size() << ", " << facets.size()
+            << std::endl;
+
+  std::cout << "Size check 2: " << xshape1 << ", " << shape1 << std::endl;
 
   // assert(xfcells.size() == fcells.size());
-  // assert(xshape1 == shape1);
+  assert(xshape1 == shape1);
 
   // Extend with nonlocal edges and convert to global indices
 
