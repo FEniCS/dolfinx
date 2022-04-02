@@ -380,6 +380,8 @@ mesh::build_local_dual_graph_new(
         return CellType::triangle;
       case 4:
         return CellType::quadrilateral;
+      default:
+        throw std::runtime_error("Invalid data");
       }
     case 3:
       switch (num_vertices)
@@ -392,6 +394,8 @@ mesh::build_local_dual_graph_new(
         return CellType::prism;
       case 8:
         return CellType::hexahedron;
+      default:
+        throw std::runtime_error("Invalid data");
       }
     default:
       throw std::runtime_error("Invalid data");
@@ -405,10 +409,12 @@ mesh::build_local_dual_graph_new(
       cell_type(vertices_per_cells, tdim), tdim - 1);
   const int vertices_per_facet = cell_facets.links(0).size();
 
+  const int shape1 = vertices_per_facet + 1;
+
   // Build list of facets, defined by sorted vertices, with connected
   // cell index at the end
   std::vector<std::int64_t> facets;
-  facets.reserve(num_cells * cell_facets.num_nodes() * vertices_per_facet);
+  facets.reserve(num_cells * cell_facets.num_nodes() * shape1);
   for (auto it = cell_offsets.begin(); it != std::prev(cell_offsets.end());
        ++it)
   {
@@ -430,7 +436,6 @@ mesh::build_local_dual_graph_new(
   }
 
   // Sort facets
-  const int shape1 = vertices_per_facet + 1;
   std::vector<std::size_t> perm(facets.size() / shape1, 0);
   std::iota(perm.begin(), perm.end(), 0);
   std::sort(perm.begin(), perm.end(),
@@ -461,6 +466,8 @@ mesh::build_local_dual_graph_new(
                                       f0, std::next(f0, shape1 - 1), f1);
                                 });
 
+    // std::cout << "Dist: " << std::distance(it, it1) << std::endl;
+
     if (std::size_t num_matches = std::distance(it, it1); num_matches == 1)
     {
       unmatched_facets.insert(unmatched_facets.end(), f0,
@@ -471,8 +478,18 @@ mesh::build_local_dual_graph_new(
     {
       // FIXME: This assumes 2 connections only
       assert(num_matches == 2);
-      std::int32_t cell0 = *std::next(facets.begin(), *it + shape1);
-      std::int32_t cell1 = *std::next(facets.begin(), *it1 + shape1);
+      auto f0 = xtl::span(facets.data() + (*it) * shape1, shape1);
+      auto f1 = xtl::span(facets.data() + *std::next(it) * shape1, shape1);
+
+      // if (it1 == perm.end())
+      //   std::cout << "At end: " << num_matches << std::endl;
+
+      std::int32_t cell0 = f0.back();
+      // std::cout << "c0: " << cell0 << std::endl;
+
+      std::int32_t cell1 = f1.back();
+      // std::cout << "c1: " << cell1 << std::endl;
+
       edges.push_back({cell0, cell1});
       edges.push_back({cell1, cell0});
     }
@@ -787,7 +804,8 @@ mesh::build_dual_graph(const MPI_Comm comm,
       = mesh::build_local_dual_graph_new(cells.array(), cells.offsets(), tdim);
   // auto [local_graph, facets, shape1, fcells]
   //     = mesh::build_local_dual_graph(cells.array(), cells.offsets(), tdim);
-  // assert(local_graph.num_nodes() == cells.num_nodes());
+
+  assert(local_graph.num_nodes() == cells.num_nodes());
   // std::cout << "Size check: " << xfcells.size() << ", " << fcells.size()
   //           << std::endl;
 
