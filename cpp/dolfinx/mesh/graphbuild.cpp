@@ -472,8 +472,7 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
           it, perm.end(),
           [f0, &facets, shape1](auto idx) -> bool
           {
-            std::size_t offset1 = idx * shape1;
-            auto f1_it = std::next(facets.begin(), offset1);
+            auto f1_it = std::next(facets.begin(), idx * shape1);
             return std::equal(f0.begin(), std::prev(f0.end()), f1_it);
           });
 
@@ -525,6 +524,7 @@ mesh::build_local_dual_graph(const xtl::span<const std::int64_t>& cell_vertices,
       graph::AdjacencyList<std::int32_t>(std::move(data), std::move(offsets)),
       std::move(unmatched_facets), max_vertices_per_facet, std::move(cells)};
 }
+//-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int64_t>
 mesh::build_dual_graph(const MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
