@@ -115,13 +115,13 @@ using T = PetscScalar;
 
 int main(int argc, char* argv[])
 {
-  dolfinx::init_logging(argc, argv);
-  PetscInitialize(&argc, &argv, nullptr, nullptr);
+  common::subsystem::init_logging(argc, argv);
+  common::subsystem::init_petsc(argc, argv);
 
   {
     // Create mesh and function space
     auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
-        MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}}, {4, 4},
+        MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}}, {32, 16},
         mesh::CellType::triangle, mesh::GhostMode::shared_facet));
 
     auto V = std::make_shared<fem::FunctionSpace>(
@@ -235,7 +235,6 @@ int main(int argc, char* argv[])
     file.write<T>({u}, 0.0);
   }
 
-  PetscFinalize();
-
+  common::subsystem::finalize_petsc();
   return 0;
 }
