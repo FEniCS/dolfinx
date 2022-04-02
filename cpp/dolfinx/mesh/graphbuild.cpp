@@ -408,6 +408,7 @@ mesh::build_local_dual_graph_new(
   // Build list of facets, defined by sorted vertices, with connected
   // cell index at the end
   std::vector<std::int64_t> facets;
+  facets.reserve(num_cells * cell_facets.num_nodes() * vertices_per_facet);
   for (auto it = cell_offsets.begin(); it != std::prev(cell_offsets.end());
        ++it)
   {

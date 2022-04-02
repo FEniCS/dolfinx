@@ -42,6 +42,7 @@ std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
 build_local_dual_graph(const xtl::span<const std::int64_t>& cells,
                        const xtl::span<const std::int32_t>& offsets, int tdim);
 
+/// NEW
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
 build_local_dual_graph_new(const xtl::span<const std::int64_t>& cells,
