@@ -72,7 +72,6 @@ std::vector<int> find_out_edges(MPI_Comm comm, xtl::span<const int> edges,
 
 //-----------------------------------------------------------------------------
 
-/// @todo Improve documentation
 /// @brief Determine owner and sharing ranks sharing an index.
 ///
 /// @note Collective
@@ -329,7 +328,8 @@ determine_sharing_ranks(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 
-/// @brief Determine ownership status of vertices.
+/// @brief Build ownership 'groups' (owned/undetermined/non-owned) of
+/// vertices.
 ///
 /// Owned vertices are attached only to owned cells and 'unowned'
 /// vertices are attached only to ghost cells. Vertices with
