@@ -29,12 +29,12 @@ namespace dolfinx::mesh
 /// @param[in] tdim The topological dimension of the cells
 /// @return
 /// 1. Local dual graph
-/// 2. Facet data (2D flattened) for facets that are shared by only one
-/// cell on this rank
+/// 2. Facets, defined by their vertices, that are shared by only one
+/// cell on this rank. The logically 2D is array flattened (row-major).
 /// 3. The number of columns for the facet data array (2).
 /// 4. The attached cell (local index) to each returned facet in (2).
 ///
-/// Each row of the returned data contains `[v0, ... v_(n-1), x, ..,
+/// Each row of the returned data (2) contains `[v0, ... v_(n-1), x, ..,
 /// x]`, where `v_i` is a vertex global index, `x` is a padding value
 /// (all padding values will be equal).
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
