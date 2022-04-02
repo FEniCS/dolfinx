@@ -418,8 +418,8 @@ mesh::build_local_dual_graph_new(
 
   const int shape1 = max_vertices_per_facet + 1;
 
-  // Build list of facets, defined by sorted vertices, with connected
-  // cell index at the end
+  // Build a list of facets, defined by sorted vertices, with the connected
+  // cell index after the vertices
   std::vector<std::int64_t> facets;
   facets.reserve(num_cells * cell_facets.num_nodes() * shape1);
   for (auto it = cell_offsets.begin(); it != std::prev(cell_offsets.end());
@@ -455,6 +455,9 @@ mesh::build_local_dual_graph_new(
                                                   it1, std::next(it1, shape1));
             });
 
+  // Iterate over sorted list of facets. Facets shared by more than one
+  // cell lead to a graph edge to be added. Facets that are not shared
+  // are stored as these might be shared by a cell on another process.
   std::vector<std::int64_t> unmatched_facets;
   std::vector<std::int32_t> cells;
   std::vector<std::array<std::int32_t, 2>> edges;
@@ -497,7 +500,7 @@ mesh::build_local_dual_graph_new(
     }
   }
 
-  // Build adjacency list data
+  // -- Build adjacency list data
 
   std::vector<std::int32_t> sizes(num_cells, 0);
   for (auto e : edges)
@@ -818,6 +821,7 @@ mesh::build_dual_graph(const MPI_Comm comm,
   assert(xshape1 == shape1);
   assert(xfcells == fcells);
   assert(xlocal_graph.offsets() == local_graph.offsets());
+  assert(xlocal_graph.array() == local_graph.array());
 
   // Extend with nonlocal edges and convert to global indices
   graph::AdjacencyList<std::int64_t> graph
