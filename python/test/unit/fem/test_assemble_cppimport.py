@@ -42,7 +42,7 @@ def test_eigen_assembly(tempdir):  # noqa: F811
 setup_pybind11(cfg)
 cfg['include_dirs'] = {dolfinx_pc["include_dirs"] + [petsc4py.get_include()]
   + [pybind11.get_include()] + [str(pybind_inc())] + eigen_dir}
-cfg['compiler_args'] = ["-std=c++17", "-Wno-comment"]
+cfg['compiler_args'] = ["-std=c++20", "-Wno-comment"]
 cfg['libraries'] = {dolfinx_pc["libraries"]}
 cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
 %>
