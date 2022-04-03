@@ -1071,10 +1071,6 @@ mesh::create_topology(MPI_Comm comm,
                              global_vertex_to_ranks.array().end());
       dolfinx::radix_sort(xtl::span(ranks));
       ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
-      MPI_Comm comm0;
-      MPI_Dist_graph_create_adjacent(
-          comm, ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
-          ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
 
       // Send (from the ghost cell owner) and receive global indices for
       // ghost vertices that are not on the process boundary.
@@ -1082,12 +1078,10 @@ mesh::create_topology(MPI_Comm comm,
       // Note: the ghost cell owner (who we get the vertex index from)
       // is not necessarily the vertex owner.
       const std::vector<std::array<std::int64_t, 3>> recv_data
-          = exchange_ghost_indexing(comm0, ranks, *index_map_c, cells,
+          = exchange_ghost_indexing(comm, ranks, *index_map_c, cells,
                                     owned_vertices.size(), global_offset_v,
                                     global_to_local_vertices, ghost_vertices,
                                     ghost_vertex_owners);
-
-      MPI_Comm_free(&comm0);
 
       // Unpack received data and add to arrays of ghost indices and ghost
       // owners
