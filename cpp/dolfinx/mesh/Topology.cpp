@@ -411,22 +411,20 @@ vertex_ownerhip_groups(const graph::AdjacencyList<std::int64_t>& cells,
 /// @param[in] ranks The neighbourhood ranks
 /// @param[in] indices Vertices on the process boundary and which are
 /// numbered by other ranks
-/// @param[in] index_to_ranks The sharing ranks for each vertex in
-/// `vertices`
-/// @param[in] offset The vertex indexing offset for this process, i.e.
-/// the global index of local index `idx` is `idx + offset_v`.
-/// @param[in] global_indices The input global index for vertices owned
-/// by this process
+/// @param[in] index_to_ranks The sharing ranks for each index in
+/// `indices`
+/// @param[in] offset The indexing offset for this process, i.e. the
+/// global index of local index `idx` is `idx + offset_v`.
+/// @param[in] global_indices The input global indices owned by this
+/// process
 /// @param[in] local_indices The new local index, i.e. for input global
-/// index `global_vertex_indices[i]` the new local index is
-/// `local_vertex_indices[i]`.
-/// @return Triplets of data for each entry in `vertices`, with
+/// index `global_indices[i]` the new local index is `local_indices[i]`.
+/// @return Triplets of data for each entry in `indices`, with
 /// 1. Old global index
 /// 2. New global index
 /// 3. MPI rank of the owner
 std::vector<std::int64_t>
-exchange_indexing(MPI_Comm comm, const xtl::span<const int>& ranks,
-                  const xtl::span<const std::int64_t>& indices,
+exchange_indexing(MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
                   const graph::AdjacencyList<int>& index_to_ranks,
                   std::int64_t offset,
                   const xtl::span<const std::int64_t>& global_indices,
@@ -434,9 +432,32 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const int>& ranks,
 {
   const int mpi_rank = dolfinx::MPI::rank(comm);
 
+  // Build src and destination ranks
+  std::vector<int> src, dest;
+  for (std::int32_t i = 0; i < index_to_ranks.num_nodes(); ++i)
+  {
+    auto index_ranks = index_to_ranks.links(i);
+    if (index_ranks.front() == mpi_rank)
+    {
+      dest.insert(dest.end(), std::next(index_ranks.begin()),
+                  index_ranks.end());
+    }
+    else
+      src.push_back(index_ranks.front());
+  }
+  std::sort(src.begin(), src.end());
+  src.erase(std::unique(src.begin(), src.end()), src.end());
+  std::sort(dest.begin(), dest.end());
+  dest.erase(std::unique(dest.begin(), dest.end()), dest.end());
+
+  MPI_Comm comm0;
+  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
+                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &comm0);
+
   // Pack send data. Use std::vector<std::vector>> since size will be
-  // small (equal to number of neighbour ranks)
-  std::vector<std::vector<std::int64_t>> send_buffer(ranks.size());
+  // modest (equal to number of neighbour ranks)
+  std::vector<std::vector<std::int64_t>> send_buffer(dest.size());
   for (std::int32_t i = 0; i < index_to_ranks.num_nodes(); ++i)
   {
     // Get (global) ranks that share this vertex. Note that first rank
@@ -457,10 +478,10 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const int>& ranks,
       for (std::size_t j = 1; j < index_ranks.size(); ++j)
       {
         // Find rank on the neighborhood comm
-        auto it = std::lower_bound(ranks.begin(), ranks.end(), index_ranks[j]);
-        assert(it != ranks.end());
+        auto it = std::lower_bound(dest.begin(), dest.end(), index_ranks[j]);
+        assert(it != dest.end());
         assert(*it == index_ranks[j]);
-        int neighbor = std::distance(ranks.begin(), it);
+        int neighbor = std::distance(dest.begin(), it);
 
         // Add (old global vertex index, new  global vertex index, owner
         // rank (global))
@@ -470,9 +491,46 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const int>& ranks,
     }
   }
 
-  return dolfinx::MPI::neighbor_all_to_all(
-             comm, graph::AdjacencyList<std::int64_t>(send_buffer))
-      .array();
+  // Send/receive daat
+  std::vector<std::int64_t> recv_data;
+  {
+    // Prepare send sizes and send displacements
+    std::vector<int> send_sizes;
+    send_sizes.reserve(dest.size());
+    std::transform(send_buffer.begin(), send_buffer.end(),
+                   std::back_inserter(send_sizes),
+                   [](auto& x) { return x.size(); });
+    std::vector<int> send_disp(dest.size() + 1, 0);
+    std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                     std::next(send_disp.begin()));
+
+    std::vector<std::int64_t> sbuffer;
+    sbuffer.reserve(send_disp.back());
+    for (auto& data : send_buffer)
+      sbuffer.insert(sbuffer.end(), data.begin(), data.end());
+
+    // Get receive sizes
+    std::vector<int> recv_sizes(src.size());
+    send_sizes.reserve(1);
+    recv_sizes.reserve(1);
+    MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                          MPI_INT, comm0);
+
+    std::vector<int> recv_disp(src.size() + 1, 0);
+    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                     std::next(recv_disp.begin()));
+    recv_data = std::vector<std::int64_t>(recv_disp.back());
+    MPI_Neighbor_alltoallv(sbuffer.data(), send_sizes.data(), send_disp.data(),
+                           MPI_INT64_T, recv_data.data(), recv_sizes.data(),
+                           recv_disp.data(), MPI_INT64_T, comm0);
+  }
+
+  MPI_Comm_free(&comm0);
+
+  return recv_data;
+  // return dolfinx::MPI::neighbor_all_to_all(
+  //            comm, graph::AdjacencyList<std::int64_t>(send_buffer))
+  //     .array();
 }
 //---------------------------------------------------------------------
 
@@ -937,8 +995,8 @@ mesh::create_topology(MPI_Comm comm,
   // rank)) data with neighbours (for vertices on 'true domain
   // boundary')
   const std::vector<std::int64_t> unowned_vertex_data = exchange_indexing(
-      comm0, src_dest, unknown_vertices, global_vertex_to_ranks,
-      global_offset_v, owned_vertices, local_vertex_indices);
+      comm, unknown_vertices, global_vertex_to_ranks, global_offset_v,
+      owned_vertices, local_vertex_indices);
   assert(unowned_vertex_data.size() % 3 == 0);
 
   // Unpack received data and build array of ghost vertices and owners
