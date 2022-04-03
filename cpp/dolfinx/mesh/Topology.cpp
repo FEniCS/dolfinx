@@ -1123,6 +1123,20 @@ mesh::create_topology(MPI_Comm comm,
     dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
   }
 
+  std::vector<int> dest_new;
+  const int mpi_rank = dolfinx::MPI::rank(comm);
+  for (int i = 0; i < global_vertex_to_ranks.num_nodes(); ++i)
+  {
+    auto ranks = global_vertex_to_ranks.links(i);
+    if (ranks.front() == mpi_rank)
+      dest_new.insert(dest_new.end(), std::next(ranks.begin()), ranks.end());
+  }
+  std::sort(dest_new.begin(), dest_new.end());
+  dest_new.erase(std::unique(dest_new.begin(), dest_new.end()), dest_new.end());
+
+  std::sort(dest.begin(), dest.end());
+  assert(dest_new == dest);
+
   Topology topology(comm, cell_type);
   const int tdim = topology.dim();
 
