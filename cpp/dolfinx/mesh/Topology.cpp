@@ -582,24 +582,24 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
         shared_vertices.end());
   }
 
-  // // Compute send sizes and offsets
-  std::vector<int> send_sizes_new(dest.size());
+  // Compute send sizes and offsets
+  std::vector<int> send_sizes(dest.size());
   std::transform(shared_vertices_fwd.begin(), shared_vertices_fwd.end(),
-                 send_sizes_new.begin(), [](auto& x) { return 3 * x.size(); });
-  std::vector<int> send_disp_new(dest.size() + 1);
-  std::partial_sum(send_sizes_new.begin(), send_sizes_new.end(),
-                   std::next(send_disp_new.begin()));
+                 send_sizes.begin(), [](auto& x) { return 3 * x.size(); });
+  std::vector<int> send_disp(dest.size() + 1);
+  std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                   std::next(send_disp.begin()));
 
   // Get receive sizes
   std::vector<int> recv_sizes(src.size());
-  send_sizes_new.reserve(1);
+  send_sizes.reserve(1);
   recv_sizes.reserve(1);
-  MPI_Neighbor_alltoall(send_sizes_new.data(), 1, MPI_INT, recv_sizes.data(), 1,
+  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
                         MPI_INT, comm);
 
   // Pack send buffer
   std::vector<std::int64_t> send_buffer;
-  send_buffer.reserve(send_disp_new.back());
+  send_buffer.reserve(send_disp.back());
   {
     const int mpi_rank = dolfinx::MPI::rank(comm);
 
@@ -630,14 +630,14 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
       }
     }
   }
-  assert(send_buffer.size() == (std::size_t)send_disp_new.back());
+  assert(send_buffer.size() == (std::size_t)send_disp.back());
 
   std::vector<int> recv_disp(src.size() + 1, 0);
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                    std::next(recv_disp.begin()));
   std::vector<std::int64_t> recv_buffer(recv_disp.back());
-  MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes_new.data(),
-                         send_disp_new.data(), MPI_INT64_T, recv_buffer.data(),
+  MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
+                         send_disp.data(), MPI_INT64_T, recv_buffer.data(),
                          recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
                          comm);
 
@@ -1079,21 +1079,6 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
 
-  // Determine which ranks ghost vertices that are owned by this rank.
-  // Note: For ghosted meshes this is 'bigger' than neighbourhood comm0.
-  // It includes vertices that lie outside of the 'true' boundary, i.e.
-  // vertices that are attached only to ghost cells
-  std::vector<int> out_edges;
-  {
-    // Build list of ranks that own vertices that are ghosted by this
-    // rank (out edges)
-    std::vector<int> in_edges = ghost_vertex_owners;
-    dolfinx::radix_sort(xtl::span(in_edges));
-    in_edges.erase(std::unique(in_edges.begin(), in_edges.end()),
-                   in_edges.end());
-    out_edges = dolfinx::MPI::compute_graph_edges_nbx(comm, in_edges);
-  }
-
   // TODO: avoid building global_to_local_vertices
 
   // Convert input cell topology to local vertex indexing
@@ -1119,14 +1104,30 @@ mesh::create_topology(MPI_Comm comm,
           convert_to_local_indexing(cells, num_local_nodes,
                                     global_to_local_vertices));
 
-  // Create Topology object
+  // -- Create Topology object
+
+  // Determine which ranks ghost vertices that are owned by this rank.
+  // Note: It includes vertices that lie outside of the 'true' boundary,
+  // i.e. vertices that are attached only to ghost cells. The
+  // neighbourhood communicator for ghost vertices is 'bigger' than the
+  // communicator for cells or vertices on the boundary between domains.
+  std::vector<int> dest;
+  {
+    // TODO: can we get the 'dest' ranks from the exchange_ghost_indexing data?
+
+    // Build list of ranks that own vertices that are ghosted by this
+    // rank (out edges)
+    std::vector<int> src = ghost_vertex_owners;
+    dolfinx::radix_sort(xtl::span(src));
+    src.erase(std::unique(src.begin(), src.end()), src.end());
+    dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
+  }
 
   Topology topology(comm, cell_type);
   const int tdim = topology.dim();
 
   auto index_map_v = std::make_shared<common::IndexMap>(
-      comm, owned_vertices.size(), out_edges, ghost_vertices,
-      ghost_vertex_owners);
+      comm, owned_vertices.size(), dest, ghost_vertices, ghost_vertex_owners);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       index_map_v->size_local() + index_map_v->num_ghosts());
 
