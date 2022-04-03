@@ -393,22 +393,11 @@ vertex_ownerhip_groups(const graph::AdjacencyList<std::int64_t>& cells,
 }
 //-----------------------------------------------------------------------------
 
-/// @todo Improve doc
+/// @brief Send entity indices for owned entities to processes that
+/// share but do not own the entities, and receive index data for
+/// entities caller shares but does not own (ghosts).
 ///
-/// @brief Send the vertex numbering for owned vertices to processes
-/// that also share them, returning a list of triplets received from
-/// other ranks.
-///
-/// Each triplet consists of {old_global_vertex_index,
-/// new_global_vertex_index, owning_rank}. The received vertices will be
-/// "ghost" on this rank.
-///
-/// Input params as in mesh::create_topology()
-///
-/// @note Collective
-///
-/// @param[in] comm Communicator with a neighbourhood
-/// @param[in] ranks The neighbourhood ranks
+/// @param[in] comm MPI communicator
 /// @param[in] indices Vertices on the process boundary and which are
 /// numbered by other ranks
 /// @param[in] index_to_ranks The sharing ranks for each index in
@@ -419,7 +408,7 @@ vertex_ownerhip_groups(const graph::AdjacencyList<std::int64_t>& cells,
 /// process
 /// @param[in] local_indices The new local index, i.e. for input global
 /// index `global_indices[i]` the new local index is `local_indices[i]`.
-/// @return Triplets of data for each entry in `indices`, with
+/// @return Triplets of data for entries in `indices`, with
 /// 1. Old global index
 /// 2. New global index
 /// 3. MPI rank of the owner
@@ -449,11 +438,6 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
   src.erase(std::unique(src.begin(), src.end()), src.end());
   std::sort(dest.begin(), dest.end());
   dest.erase(std::unique(dest.begin(), dest.end()), dest.end());
-
-  MPI_Comm comm0;
-  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
-                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &comm0);
 
   // Pack send data. Use std::vector<std::vector>> since size will be
   // modest (equal to number of neighbour ranks)
@@ -491,9 +475,14 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
     }
   }
 
-  // Send/receive daat
+  // Send/receive data
   std::vector<std::int64_t> recv_data;
   {
+    MPI_Comm comm0;
+    MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
+                                   dest.size(), dest.data(), MPI_UNWEIGHTED,
+                                   MPI_INFO_NULL, false, &comm0);
+
     // Prepare send sizes and send displacements
     std::vector<int> send_sizes;
     send_sizes.reserve(dest.size());
@@ -523,14 +512,11 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
     MPI_Neighbor_alltoallv(sbuffer.data(), send_sizes.data(), send_disp.data(),
                            MPI_INT64_T, recv_data.data(), recv_sizes.data(),
                            recv_disp.data(), MPI_INT64_T, comm0);
+
+    MPI_Comm_free(&comm0);
   }
 
-  MPI_Comm_free(&comm0);
-
   return recv_data;
-  // return dolfinx::MPI::neighbor_all_to_all(
-  //            comm, graph::AdjacencyList<std::int64_t>(send_buffer))
-  //     .array();
 }
 //---------------------------------------------------------------------
 
@@ -953,20 +939,6 @@ mesh::create_topology(MPI_Comm comm,
     MPI_Exscan(&nlocal, &global_offset_v, 1, MPI_INT64_T, MPI_SUM, comm);
   }
 
-  // Build list of neighborhood ranks and create a neighborhood
-  // communicator for vertices on the 'true' boundary, i.e. vertices
-  // that are attached to owned and non-owned cells. The neighborhood is
-  // made symmetric to avoid having to check with remote processes
-  // whether to not ths rank is a destination.
-  std::vector<int> src_dest(global_vertex_to_ranks.array().begin(),
-                            global_vertex_to_ranks.array().end());
-  dolfinx::radix_sort(xtl::span(src_dest));
-  src_dest.erase(std::unique(src_dest.begin(), src_dest.end()), src_dest.end());
-  MPI_Comm comm0;
-  MPI_Dist_graph_create_adjacent(
-      comm, src_dest.size(), src_dest.data(), MPI_UNWEIGHTED, src_dest.size(),
-      src_dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
-
   // Create an index map for cells. We do it here because we can find
   // src ranks for the cell index map using comm0.
   std::shared_ptr<common::IndexMap> index_map_c;
@@ -980,15 +952,30 @@ mesh::create_topology(MPI_Comm comm,
         comm, cell_idx.first(cells.num_nodes() - ghost_owners.size()),
         cell_idx.last(ghost_owners.size()), ghost_owners);
 
-    // Determine src ranks
-    std::vector<int> src_ranks(ghost_owners.begin(), ghost_owners.end());
-    std::sort(src_ranks.begin(), src_ranks.end());
-    src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
-                    src_ranks.end());
-    std::vector<int> dest_ranks = find_out_edges(comm0, src_dest, src_ranks);
+    std::vector<int> ranks(global_vertex_to_ranks.array().begin(),
+                           global_vertex_to_ranks.array().end());
+    dolfinx::radix_sort(xtl::span(ranks));
+    ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+
+    // Determine src ranks (on the src_dest sub-communicator)
+    std::vector<int> src(ghost_owners.begin(), ghost_owners.end());
+    std::sort(src.begin(), src.end());
+    src.erase(std::unique(src.begin(), src.end()), src.end());
+
+    // Build list of neighborhood ranks and create a neighborhood
+    // communicator for vertices on the 'true' boundary, i.e. vertices
+    // that are attached to owned and non-owned cells. The neighborhood is
+    // made symmetric to avoid having to check with remote processes
+    // whether or not ths rank is a destination.
+    MPI_Comm comm0;
+    MPI_Dist_graph_create_adjacent(
+        comm, ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
+        ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+    std::vector<int> dest = find_out_edges(comm0, ranks, src);
+    MPI_Comm_free(&comm0);
 
     index_map_c = std::make_shared<common::IndexMap>(
-        comm, num_local_cells, dest_ranks, cell_ghost_indices, ghost_owners);
+        comm, num_local_cells, dest, cell_ghost_indices, ghost_owners);
   }
 
   // Send and receive  ((input vertex index) -> (new global index, owner
@@ -1043,15 +1030,31 @@ mesh::create_topology(MPI_Comm comm,
       std::sort(global_to_local_vertices.begin(),
                 global_to_local_vertices.end());
 
+      // Build list of neighborhood ranks and create a neighborhood
+      // communicator for vertices on the 'true' boundary, i.e. vertices
+      // that are attached to owned and non-owned cells. The neighborhood is
+      // made symmetric to avoid having to check with remote processes
+      // whether or not ths rank is a destination.
+      std::vector<int> ranks(global_vertex_to_ranks.array().begin(),
+                             global_vertex_to_ranks.array().end());
+      dolfinx::radix_sort(xtl::span(ranks));
+      ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+      MPI_Comm comm0;
+      MPI_Dist_graph_create_adjacent(
+          comm, ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
+          ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+
       // Send (from the ghost cell owner) and receive global indices for
       // ghost vertices that are not on the process boundary.
       //
       // Note: the ghost cell owner (who we get the vertex index from)
       // is not necessarily the vertex owner.
       const std::vector<std::int64_t> recv_data = exchange_ghost_indexing(
-          comm0, src_dest, *index_map_c, cells, owned_vertices.size(),
+          comm0, ranks, *index_map_c, cells, owned_vertices.size(),
           global_offset_v, global_to_local_vertices, ghost_vertices,
           ghost_vertex_owners);
+
+      MPI_Comm_free(&comm0);
 
       // Unpack received data and add to arrays of ghost indices and ghost
       // owners
@@ -1089,8 +1092,6 @@ mesh::create_topology(MPI_Comm comm,
                    in_edges.end());
     out_edges = dolfinx::MPI::compute_graph_edges_nbx(comm, in_edges);
   }
-
-  MPI_Comm_free(&comm0);
 
   // TODO: avoid building global_to_local_vertices
 
