@@ -537,7 +537,7 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
 /// @param[in] offset1 The vertex indexing offset for this process, i.e.
 /// the global index of local index `idx` is `idx + offset_v`.
 /// @return list of triplets
-std::vector<std::int64_t> exchange_ghost_indexing(
+std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
     MPI_Comm comm, const xtl::span<const int>& ranks,
     const common::IndexMap& map0,
     const graph::AdjacencyList<std::int64_t>& entities0, int nlocal1,
@@ -656,15 +656,16 @@ std::vector<std::int64_t> exchange_ghost_indexing(
 
   MPI_Comm_free(&comm0);
 
-  // std::vector<std::array<std::int64_t, 3>> data(recv_buffer.size() / 3);
-  // for (std::size_t i = 0; i < recv_buffer.size(); i += 3)
-  //   data.push_back({recv_buffer[i], recv_buffer[i + 1], recv_buffer[i + 2]});
-  // std::sort(data.begin(), data.end());
-  // data.erase(std::unique(data.begin(), data.end()), data.end());
+  std::vector<std::array<std::int64_t, 3>> data;
+  data.reserve(recv_buffer.size() / 3);
+  for (std::size_t i = 0; i < recv_buffer.size(); i += 3)
+    data.push_back({recv_buffer[i], recv_buffer[i + 1], recv_buffer[i + 2]});
+  std::sort(data.begin(), data.end());
+  data.erase(std::unique(data.begin(), data.end()), data.end());
 
-  // return data;
+  return data;
 
-  return recv_buffer;
+  // return recv_buffer;
 }
 //---------------------------------------------------------------------------------
 
@@ -986,21 +987,21 @@ mesh::create_topology(MPI_Comm comm,
         comm, cell_idx.first(cells.num_nodes() - ghost_owners.size()),
         cell_idx.last(ghost_owners.size()), ghost_owners);
 
+    // Build list of owner ranks for vertices on the 'true boundary'
+    // between processes. This is a superset of the ranks that own ghost
+    // cells.
     std::vector<int> ranks(global_vertex_to_ranks.array().begin(),
                            global_vertex_to_ranks.array().end());
     dolfinx::radix_sort(xtl::span(ranks));
     ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
 
-    // Determine src ranks (on the src_dest sub-communicator)
+    // List of ranks that own cells that are ghosts on this rank
     std::vector<int> src(ghost_owners.begin(), ghost_owners.end());
     std::sort(src.begin(), src.end());
     src.erase(std::unique(src.begin(), src.end()), src.end());
 
-    // Build list of neighborhood ranks and create a neighborhood
-    // communicator for vertices on the 'true' boundary, i.e. vertices
-    // that are attached to owned and non-owned cells. The neighborhood is
-    // made symmetric to avoid having to check with remote processes
-    // whether or not ths rank is a destination.
+    // Determine dest ranks for cells, i.e. ranks that ghost cells that
+    // this ranks owns, on the 'ranks' sub-communicator
     MPI_Comm comm0;
     MPI_Dist_graph_create_adjacent(
         comm, ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
@@ -1079,17 +1080,17 @@ mesh::create_topology(MPI_Comm comm,
       //
       // Note: the ghost cell owner (who we get the vertex index from)
       // is not necessarily the vertex owner.
-      const std::vector<std::int64_t> recv_data = exchange_ghost_indexing(
-          comm, ranks, *index_map_c, cells, owned_vertices.size(),
-          global_offset_v, global_to_local_vertices, ghost_vertices,
-          ghost_vertex_owners);
+      const std::vector<std::array<std::int64_t, 3>> recv_data
+          = exchange_ghost_indexing(comm, ranks, *index_map_c, cells,
+                                    owned_vertices.size(), global_offset_v,
+                                    global_to_local_vertices, ghost_vertices,
+                                    ghost_vertex_owners);
 
       // Unpack received data and add to arrays of ghost indices and ghost
       // owners
-      for (std::size_t i = 0; i < recv_data.size(); i += 3)
+      for (auto& data : recv_data)
       {
-        assert(i < recv_data.size());
-        const std::int64_t global_idx_old = recv_data[i];
+        const std::int64_t global_idx_old = data[0];
         auto it0 = std::lower_bound(unowned_vertices.begin(),
                                     unowned_vertices.end(), global_idx_old);
         if (it0 != unowned_vertices.end() and *it0 == global_idx_old)
@@ -1098,8 +1099,8 @@ mesh::create_topology(MPI_Comm comm,
           if (local_vertex_indices_unowned[pos] < 0)
           {
             local_vertex_indices_unowned[pos] = v++;
-            ghost_vertices.push_back(recv_data[i + 1]);
-            ghost_vertex_owners.push_back(recv_data[i + 2]);
+            ghost_vertices.push_back(data[1]);
+            ghost_vertex_owners.push_back(data[2]);
           }
         }
       }
