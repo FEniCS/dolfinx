@@ -530,7 +530,7 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
 /// {old_global_vertex_index, new_global_vertex_index, owner}.
 /// Input params as in mesh::create_topology()
 //
-/// @param[in] comm Neigborhood communicator
+/// @param[in] comm MPI communicator
 /// @param[in] map0 Map for the entity that has access to all required indices
 /// @param[in] entities0 Vertices of the entities that have access to
 // all required new indices
@@ -538,7 +538,7 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
 /// the global index of local index `idx` is `idx + offset_v`.
 /// @return list of triplets
 std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
-    MPI_Comm comm, const xtl::span<const int>& ranks,
+    MPI_Comm /*comm*/, const xtl::span<const int>& /*ranks*/,
     const common::IndexMap& map0,
     const graph::AdjacencyList<std::int64_t>& entities0, int nlocal1,
     std::int64_t offset1,
@@ -548,15 +548,18 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
     const xtl::span<const int>& ghost_index_owners1)
 {
   // Receive index of ghost vertices that are not on the process
-  // ('true') boundary from the ghost cell owner. Note: the ghost cell
-  // owner might not be the same as the vertex owner.
+  // ('true') boundary from the owner of ghost cells.
+  //
+  // Note: the ghost cell owner might not be the same as the vertex
+  // owner.
 
   const graph::AdjacencyList<std::int32_t>& fwd_shared_entities0
       = map0.scatter_fwd_indices();
 
+  MPI_Comm comm0 = map0.comm(common::IndexMap::Direction::forward);
+
   // Get ranks that ghost cells owned by this rank
-  const std::vector<int> dest = dolfinx::MPI::neighbors(
-      map0.comm(common::IndexMap::Direction::forward))[1];
+  const auto [src, dest] = dolfinx::MPI::neighbors(comm0);
 
   std::vector<std::vector<std::int64_t>> shared_vertices_fwd(dest.size());
 
@@ -580,7 +583,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
         shared_vertices.end());
   }
 
-  // Compute send sizes and offsets
+  // // Compute send sizes and offsets
   std::vector<int> send_sizes_new(dest.size());
   std::transform(shared_vertices_fwd.begin(), shared_vertices_fwd.end(),
                  send_sizes_new.begin(), [](auto& x) { return 3 * x.size(); });
@@ -588,20 +591,21 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
   std::partial_sum(send_sizes_new.begin(), send_sizes_new.end(),
                    std::next(send_disp_new.begin()));
 
-  std::vector<int> src;
-  {
-    MPI_Comm comm0;
-    MPI_Dist_graph_create_adjacent(
-        comm, ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
-        ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
-    src = find_out_edges(comm0, ranks, dest);
-    MPI_Comm_free(&comm0);
-  }
+  // std::vector<int> src;
+  // {
+  //   MPI_Comm comm0;
+  //   MPI_Dist_graph_create_adjacent(
+  //       comm, ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
+  //       ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+  //   src = find_out_edges(comm0, ranks, dest);
+  //   MPI_Comm_free(&comm0);
+  // }
 
-  MPI_Comm comm0;
-  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
-                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &comm0);
+  // MPI_Comm comm0;
+  // MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(),
+  // MPI_UNWEIGHTED,
+  //                                dest.size(), dest.data(), MPI_UNWEIGHTED,
+  //                                MPI_INFO_NULL, false, &comm0);
 
   // Get receive sizes
   std::vector<int> recv_sizes(src.size());
@@ -614,7 +618,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
   std::vector<std::int64_t> send_buffer;
   send_buffer.reserve(send_disp_new.back());
   {
-    const int mpi_rank = dolfinx::MPI::rank(comm);
+    const int mpi_rank = dolfinx::MPI::rank(comm0);
 
     // Iterate over each rank to send vertex data to
     for (const auto& vertices_old : shared_vertices_fwd)
@@ -654,7 +658,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
                          recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
                          comm0);
 
-  MPI_Comm_free(&comm0);
+  // MPI_Comm_free(&comm0);
 
   std::vector<std::array<std::int64_t, 3>> data;
   data.reserve(recv_buffer.size() / 3);
@@ -664,8 +668,6 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
   data.erase(std::unique(data.begin(), data.end()), data.end());
 
   return data;
-
-  // return recv_buffer;
 }
 //---------------------------------------------------------------------------------
 
