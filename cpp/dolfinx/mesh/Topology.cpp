@@ -520,23 +520,35 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
 }
 //---------------------------------------------------------------------
 
-/// @todo This function requires significant improvement of the
-/// implementation and the documentation.
+/// @brief Send and receive vertex indicies and owning ranks for
+/// vertices that lie in the ghost cell region.
 ///
-/// Send vertex numbering of vertices in ghost cells to neighbours.
-/// These include vertices that were numbered remotely and received in a
-/// previous round. This is only needed for meshes with shared cells,
-/// i.e. ghost_mode=shared_facet. Returns a list of triplets,
-/// {old_global_vertex_index, new_global_vertex_index, owner}.
-/// Input params as in mesh::create_topology()
-//
-/// @param[in] comm MPI communicator
-/// @param[in] map0 Map for the entity that has access to all required indices
+/// Vertices that are attached to ghost cells but which are not attached
+/// to the 'true' boundary between processes may be owned (and therefore
+/// numbered) by a rank that does not share any (ghost) cells with the
+/// caller. The function is called after all vertices on the true
+/// boundary have been numbered, with the vertex indices that still need
+/// to be exchanged communicated by the ghost cells.
+///
+/// @param[in] map0 Map for the entity that has access to all required
+/// indices, typically the index map for cells.
 /// @param[in] entities0 Vertices of the entities that have access to
-// all required new indices
-/// @param[in] offset1 The vertex indexing offset for this process, i.e.
-/// the global index of local index `idx` is `idx + offset_v`.
-/// @return list of triplets
+/// all required new indices. Indices are 'old' global indices.
+/// @param[in] nlocal1 Number of owned entities of type '1'.
+/// @param[in] offset1 The indexing offset for this process for entities
+/// of type '1'. I.e., the global index of local index `idx` is `idx +
+/// offset1`.
+/// @param[in] global_to_local_entities1 List of (old global index, new
+/// local index) pairs for entities of type '1' that have been numbered.
+/// The 'new' global index is `global_to_local_entities1[i].first +
+/// offset1`. For entities that have not yet been assigned a new index,
+/// the second entry in the pair is `-1`.
+/// @param[in] ghost_index_owners1 The owning rank for indices that are
+/// not owned. If `idx` is the 'new' global index
+/// @return List of arrays for each entity, where the entity array contains:
+/// 1. Old entity index
+/// 2. New global index
+/// 3. Rank of the process that owns the entity
 std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
     const common::IndexMap& map0,
     const graph::AdjacencyList<std::int64_t>& entities0, int nlocal1,
@@ -897,7 +909,7 @@ mesh::create_topology(MPI_Comm comm,
   auto [owned_vertices, unknown_vertices, unowned_vertices]
       = vertex_ownerhip_groups(cells, num_local_cells);
 
-  // For each vertex whose ownership needs determining find the sharing
+  // For each vertex whose ownership needs determining, find the sharing
   // ranks. The first index in the list of ranks for a vertex the owner
   // (as determined by determine_sharing_ranks).
   const graph::AdjacencyList<int> global_vertex_to_ranks
@@ -968,7 +980,7 @@ mesh::create_topology(MPI_Comm comm,
     xtl::span cell_idx(original_cell_index);
     const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
         comm, cell_idx.first(cells.num_nodes() - ghost_owners.size()),
-        cell_idx.last(ghost_owners.size()), ghost_owners);
+        xtl::span(original_cell_index).last(ghost_owners.size()), ghost_owners);
 
     // Build list of owner ranks for vertices on the 'true boundary'
     // between processes. This is a superset of the ranks that own ghost
@@ -1107,14 +1119,23 @@ mesh::create_topology(MPI_Comm comm,
   // -- Create Topology object
 
   // Determine which ranks ghost vertices that are owned by this rank.
-  // Note: It includes vertices that lie outside of the 'true' boundary,
-  // i.e. vertices that are attached only to ghost cells. The
-  // neighbourhood communicator for ghost vertices is 'bigger' than the
-  // communicator for cells or vertices on the boundary between domains.
+  //
+  // Note: Other ranks can ghost vertices that lie inside the 'true'
+  // boundary on this process. When we got vertex owner indices via
+  // exchange_ghost_indexing, we received data from the ghost cell owner
+  // and not necessarily the vertex owner, therefore we cannot simply
+  // 'transpose' the communication graph to find out who ghosts vertices
+  // owned by this rank.
+  //
+  // TODO: Find a away to get the 'dest' without using
+  // compute_graph_edges_nbx. Maybe transpose the
+  // exchange_ghost_indexing step, followed by another communication
+  // round to the owner?
+  //
+  // Note: This step is required only for meshes with ghosts cells and
+  // could be skipped when the mesh is not ghosted.
   std::vector<int> dest;
   {
-    // TODO: can we get the 'dest' ranks from the exchange_ghost_indexing data?
-
     // Build list of ranks that own vertices that are ghosted by this
     // rank (out edges)
     std::vector<int> src = ghost_vertex_owners;
@@ -1123,23 +1144,10 @@ mesh::create_topology(MPI_Comm comm,
     dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
   }
 
-  std::vector<int> dest_new;
-  const int mpi_rank = dolfinx::MPI::rank(comm);
-  for (int i = 0; i < global_vertex_to_ranks.num_nodes(); ++i)
-  {
-    auto ranks = global_vertex_to_ranks.links(i);
-    if (ranks.front() == mpi_rank)
-      dest_new.insert(dest_new.end(), std::next(ranks.begin()), ranks.end());
-  }
-  std::sort(dest_new.begin(), dest_new.end());
-  dest_new.erase(std::unique(dest_new.begin(), dest_new.end()), dest_new.end());
-
-  std::sort(dest.begin(), dest.end());
-  assert(dest_new == dest);
-
   Topology topology(comm, cell_type);
   const int tdim = topology.dim();
 
+  // Create index map for vertices
   auto index_map_v = std::make_shared<common::IndexMap>(
       comm, owned_vertices.size(), dest, ghost_vertices, ghost_vertex_owners);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
