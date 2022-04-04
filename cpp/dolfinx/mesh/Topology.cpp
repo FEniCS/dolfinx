@@ -27,18 +27,20 @@ namespace
 
 //-----------------------------------------------------------------------------
 
-/// @brief Compute out-edges on a symmetric neighbourhood communicator
+/// @brief Compute out-edges on a symmetric neighbourhood communicator.
 ///
 /// This function finds out-edges on a neighbourhood communicator. The
 /// communicator neighbourhood must contain all in- and out-edges. The
 /// neighbourhood discovery uses MPI_Neighbor_alltoall; the function is
 /// therefore appropriate for when the  neighbourhood size is 'small'.
 ///
-/// @param[in] comm A communicator with a symmetric neighbourhood
+/// @param[in] comm A communicator with a symmetric neighbourhood.
 /// @param[in] edges The edges (neighbour ranks) for the neighbourhood
-/// communicator
-/// @param[in] in_edges Direct edges (ranks). Must be a subset of `edges`.
-/// @return Out edges ranks
+/// communicator.
+/// @param[in] in_edges Direct edges (ranks). Must be a subset of
+/// `edges`.
+/// @return Out edge ranks.
+/// @pre `edges` must be sorted.
 std::vector<int> find_out_edges(MPI_Comm comm, xtl::span<const int> edges,
                                 xtl::span<const int> in_edges)
 {
@@ -1119,16 +1121,16 @@ mesh::create_topology(MPI_Comm comm,
   // Note: Other ranks can ghost vertices that lie inside the 'true'
   // boundary on this process. When we got vertex owner indices via
   // exchange_ghost_indexing, we received data from the ghost cell owner
-  // and not necessarily the vertex owner, therefore we cannot simply
-  // 'transpose' the communication graph to find out who ghosts vertices
-  // owned by this rank.
+  // and not necessarily from the vertex owner; therefore, we cannot
+  // simply 'transpose' the communication graph to find out who ghosts
+  // vertices owned by this rank.
   //
   // TODO: Find a away to get the 'dest' without using
   // compute_graph_edges_nbx. Maybe transpose the
   // exchange_ghost_indexing step, followed by another communication
   // round to the owner?
   //
-  // Note: This step is required only for meshes with ghosts cells and
+  // Note: This step is required only for meshes with ghost cells and
   // could be skipped when the mesh is not ghosted.
   std::vector<int> dest;
   {

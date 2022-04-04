@@ -175,7 +175,7 @@ private:
   std::vector<std::uint32_t> _cell_permutations;
 };
 
-/// @brief Create distributed topology.
+/// @brief Create a distributed mesh topology.
 ///
 /// @param[in] comm MPI communicator across which the topology is
 /// distributed
@@ -186,12 +186,12 @@ private:
 /// neighboring process and share a facet with a local cell.
 /// @param[in] original_cell_index The original global index associated
 /// with each cell
-/// @param[in] ghost_owners The ownership of the ghost cells (ghost
+/// @param[in] ghost_owners The owning rank of each ghost cell (ghost
 /// cells are always at the end of the list of `cells`)
 /// @param[in] cell_type The cell shape
-/// @param[in] ghost_mode How to partition the cell overlap: none,
-/// shared_facet or shared_vertex
-/// @return A distributed Topology
+/// @param[in] ghost_mode Type of cell ghosting: none, shared_facet or
+/// shared_vertex
+/// @return A distributed mesh topology
 Topology
 create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                 const xtl::span<const std::int64_t>& original_cell_index,
