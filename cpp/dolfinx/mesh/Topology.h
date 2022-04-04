@@ -31,8 +31,8 @@ enum class GhostMode : int;
 enum class CellType;
 class Topology;
 
-/// @brief Compute marker for owned facets that are on the exterior of the
-/// domain, i.e. are connected to only one cell.
+/// @brief Compute marker for owned facets that are on the exterior of
+/// the domain, i.e. are connected to only one cell.
 ///
 /// This function does not require parallel communication.
 ///
@@ -49,6 +49,10 @@ std::vector<std::int8_t> compute_boundary_facets(const Topology& topology);
 /// A mesh entity e may be identified globally as a pair `e = (dim, i)`,
 /// where dim is the topological dimension and i is the index of the
 /// entity within that topological dimension.
+///
+/// @todo Rework memory management and associated API. Currently, there
+/// is no clear caching policy implemented and no way of discarding
+/// cached data.
 class Topology
 {
 public:
@@ -125,10 +129,6 @@ public:
   /// @return Cell type that the topology is for
   CellType cell_type() const noexcept;
 
-  // TODO: Rework memory management and associated API
-  // Currently, there is no clear caching policy implemented and no way of
-  // discarding cached data.
-
   /// @brief Create entities of given topological dimension.
   /// @param[in] dim Topological dimension
   /// @return Number of newly created entities, returns -1 if entities
@@ -175,7 +175,7 @@ private:
   std::vector<std::uint32_t> _cell_permutations;
 };
 
-/// @brief Create distributed topology.
+/// @brief Create a distributed mesh topology.
 ///
 /// @param[in] comm MPI communicator across which the topology is
 /// distributed
@@ -186,12 +186,12 @@ private:
 /// neighboring process and share a facet with a local cell.
 /// @param[in] original_cell_index The original global index associated
 /// with each cell
-/// @param[in] ghost_owners The ownership of the ghost cells (ghost
+/// @param[in] ghost_owners The owning rank of each ghost cell (ghost
 /// cells are always at the end of the list of `cells`)
 /// @param[in] cell_type The cell shape
-/// @param[in] ghost_mode How to partition the cell overlap: none,
-/// shared_facet or shared_vertex
-/// @return A distributed Topology
+/// @param[in] ghost_mode Type of cell ghosting: none, shared_facet or
+/// shared_vertex
+/// @return A distributed mesh topology
 Topology
 create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                 const xtl::span<const std::int64_t>& original_cell_index,
@@ -209,6 +209,6 @@ create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 /// @note If an entity cannot be found on this rank, -1 is returned as
 /// the index.
 std::vector<std::int32_t>
-entities_to_index(const mesh::Topology& topology, int dim,
+entities_to_index(const Topology& topology, int dim,
                   const graph::AdjacencyList<std::int32_t>& entities);
 } // namespace dolfinx::mesh
