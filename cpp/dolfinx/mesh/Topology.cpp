@@ -424,14 +424,11 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
   std::vector<int> src, dest;
   for (std::int32_t i = 0; i < index_to_ranks.num_nodes(); ++i)
   {
-    auto index_ranks = index_to_ranks.links(i);
-    if (index_ranks.front() == mpi_rank)
-    {
-      dest.insert(dest.end(), std::next(index_ranks.begin()),
-                  index_ranks.end());
-    }
+    auto ranks = index_to_ranks.links(i);
+    if (ranks.front() == mpi_rank)
+      dest.insert(dest.end(), std::next(ranks.begin()), ranks.end());
     else
-      src.push_back(index_ranks.front());
+      src.push_back(ranks.front());
   }
   std::sort(src.begin(), src.end());
   src.erase(std::unique(src.begin(), src.end()), src.end());
@@ -445,8 +442,8 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
   {
     // Get (global) ranks that share this vertex. Note that first rank
     // is the owner.
-    auto index_ranks = index_to_ranks.links(i);
-    if (index_ranks.front() == mpi_rank)
+    auto ranks = index_to_ranks.links(i);
+    if (ranks.front() == mpi_rank)
     {
       // Get local vertex index
       std::int64_t idx_old = indices[i];
@@ -458,12 +455,12 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
 
       // Owned and shared with these processes (starting from 1, 0 is
       // self)
-      for (std::size_t j = 1; j < index_ranks.size(); ++j)
+      for (std::size_t j = 1; j < ranks.size(); ++j)
       {
         // Find rank on the neighborhood comm
-        auto it = std::lower_bound(dest.begin(), dest.end(), index_ranks[j]);
+        auto it = std::lower_bound(dest.begin(), dest.end(), ranks[j]);
         assert(it != dest.end());
-        assert(*it == index_ranks[j]);
+        assert(*it == ranks[j]);
         int neighbor = std::distance(dest.begin(), it);
 
         // Add (old global vertex index, new  global vertex index, owner
