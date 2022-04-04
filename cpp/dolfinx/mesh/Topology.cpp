@@ -18,7 +18,6 @@
 #include <dolfinx/graph/partition.h>
 #include <numeric>
 #include <random>
-#include <set>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -538,12 +537,12 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
 /// @param[in] offset1 The indexing offset for this process for entities
 /// of type '1'. I.e., the global index of local index `idx` is `idx +
 /// offset1`.
-/// @param[in] global_to_local_entities1 List of (old global index, new
+/// @param[in] global_local_entities1 List of (old global index, new
 /// local index) pairs for entities of type '1' that have been numbered.
-/// The 'new' global index is `global_to_local_entities1[i].first +
+/// The 'new' global index is `global_local_entities1[i].first +
 /// offset1`. For entities that have not yet been assigned a new index,
 /// the second entry in the pair is `-1`.
-/// @param[in] ghost_index_owners1 The owning rank for indices that are
+/// @param[in] ghost_owners1 The owning rank for indices that are
 /// not owned. If `idx` is the 'new' global index
 /// @return List of arrays for each entity, where the entity array contains:
 /// 1. Old entity index
@@ -554,9 +553,9 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
     const graph::AdjacencyList<std::int64_t>& entities0, int nlocal1,
     std::int64_t offset1,
     const xtl::span<const std::pair<std::int64_t, std::int32_t>>&
-        global_to_local_entities1,
+        global_local_entities1,
     const xtl::span<const std::int64_t>& ghost_entities1,
-    const xtl::span<const int>& ghost_index_owners1)
+    const xtl::span<const int>& ghost_owners1)
 {
   // Receive index of ghost vertices that are not on the process
   // ('true') boundary from the owner of ghost cells.
@@ -623,10 +622,10 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
       {
         // Find new vertex index and determine owning rank
         auto it = std::lower_bound(
-            global_to_local_entities1.begin(), global_to_local_entities1.end(),
+            global_local_entities1.begin(), global_local_entities1.end(),
             std::pair<std::int64_t, std::int32_t>(vertex_old, 0),
             [](auto& a, auto& b) { return a.first < b.first; });
-        assert(it != global_to_local_entities1.end());
+        assert(it != global_local_entities1.end());
         assert(it->first == vertex_old);
         assert(it->second != -1);
 
@@ -635,7 +634,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
                                       : ghost_entities1[it->second - nlocal1];
         int owner_rank = it->second < nlocal1
                              ? mpi_rank
-                             : ghost_index_owners1[it->second - nlocal1];
+                             : ghost_owners1[it->second - nlocal1];
 
         send_buffer.insert(send_buffer.end(),
                            {vertex_old, global_idx, owner_rank});
@@ -736,7 +735,7 @@ std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
   return _boundary_facet;
 }
 //-----------------------------------------------------------------------------
-Topology::Topology(MPI_Comm comm, mesh::CellType type)
+Topology::Topology(MPI_Comm comm, CellType type)
     : _comm(comm), _cell_type(type),
       _connectivity(
           cell_dim(type) + 1,
@@ -889,7 +888,7 @@ mesh::create_topology(MPI_Comm comm,
                       const graph::AdjacencyList<std::int64_t>& cells,
                       const xtl::span<const std::int64_t>& original_cell_index,
                       const xtl::span<const int>& ghost_owners,
-                      const CellType& cell_type, mesh::GhostMode ghost_mode)
+                      const CellType& cell_type, GhostMode ghost_mode)
 {
   common::Timer timer("Topology: create");
 
@@ -1171,7 +1170,7 @@ mesh::create_topology(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 
 std::vector<std::int32_t>
-mesh::entities_to_index(const mesh::Topology& topology, int dim,
+mesh::entities_to_index(const Topology& topology, int dim,
                         const graph::AdjacencyList<std::int32_t>& entities)
 {
   LOG(INFO) << "Build list if mesh entity indices from the entity vertices.";
@@ -1187,8 +1186,8 @@ mesh::entities_to_index(const mesh::Topology& topology, int dim,
   auto e_to_v = topology.connectivity(dim, 0);
   assert(e_to_v);
 
-  const int num_vertices_per_entity = mesh::cell_num_entities(
-      mesh::cell_entity_type(topology.cell_type(), dim, 0), 0);
+  const int num_vertices_per_entity
+      = cell_num_entities(cell_entity_type(topology.cell_type(), dim, 0), 0);
 
   // Build map from ordered local vertex indices (key) to entity index
   // (value)

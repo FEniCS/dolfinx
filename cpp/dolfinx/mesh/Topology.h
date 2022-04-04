@@ -31,8 +31,8 @@ enum class GhostMode : int;
 enum class CellType;
 class Topology;
 
-/// @brief Compute marker for owned facets that are on the exterior of the
-/// domain, i.e. are connected to only one cell.
+/// @brief Compute marker for owned facets that are on the exterior of
+/// the domain, i.e. are connected to only one cell.
 ///
 /// This function does not require parallel communication.
 ///
@@ -49,6 +49,10 @@ std::vector<std::int8_t> compute_boundary_facets(const Topology& topology);
 /// A mesh entity e may be identified globally as a pair `e = (dim, i)`,
 /// where dim is the topological dimension and i is the index of the
 /// entity within that topological dimension.
+///
+/// @todo Rework memory management and associated API. Currently, there
+/// is no clear caching policy implemented and no way of discarding
+/// cached data.
 class Topology
 {
 public:
@@ -124,10 +128,6 @@ public:
   /// Cell type
   /// @return Cell type that the topology is for
   CellType cell_type() const noexcept;
-
-  // TODO: Rework memory management and associated API
-  // Currently, there is no clear caching policy implemented and no way of
-  // discarding cached data.
 
   /// @brief Create entities of given topological dimension.
   /// @param[in] dim Topological dimension
@@ -209,6 +209,6 @@ create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 /// @note If an entity cannot be found on this rank, -1 is returned as
 /// the index.
 std::vector<std::int32_t>
-entities_to_index(const mesh::Topology& topology, int dim,
+entities_to_index(const Topology& topology, int dim,
                   const graph::AdjacencyList<std::int32_t>& entities);
 } // namespace dolfinx::mesh
