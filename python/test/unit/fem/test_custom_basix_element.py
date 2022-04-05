@@ -86,7 +86,6 @@ def test_basix_element_wrapper(degree):
 
 def test_custom_element_triangle_degree1():
     wcoeffs = np.eye(3)
-    entity_transformations = {basix.CellType.interval: np.zeros((1, 0, 0))}
     z = np.zeros((0, 2))
     x = [[np.array([[0., 0.]]), np.array([[1., 0.]]), np.array([[0., 1.]])],
          [z, z, z], [z], []]
@@ -95,7 +94,7 @@ def test_custom_element_triangle_degree1():
          [z, z, z], [z], []]
 
     e = basix.create_custom_element(
-        basix.CellType.triangle, 1, [], wcoeffs, entity_transformations,
+        basix.CellType.triangle, 1, [], wcoeffs,
         x, M, basix.MapType.identity, False, 1, 1)
     ufl_element = BasixElement(e)
 
@@ -107,7 +106,6 @@ def test_custom_element_triangle_degree1():
 
 def test_custom_element_triangle_degree4():
     wcoeffs = np.eye(15)
-    entity_transformations = {basix.CellType.interval: [[[0, 0, 1], [0, 1, 0], [1, 0, 0]]]}
     x = [[np.array([[0., 0.]]), np.array([[1., 0.]]), np.array([[0., 1.]])],
          [np.array([[.75, .25], [.5, .5], [.25, .75]]), np.array([[0., .25], [0., .5], [0., .75]]),
           np.array([[.25, 0.], [.5, 0.], [.75, 0.]])],
@@ -117,7 +115,7 @@ def test_custom_element_triangle_degree4():
          [id, id, id], [id], []]
 
     e = basix.create_custom_element(
-        basix.CellType.triangle, 4, [], wcoeffs, entity_transformations,
+        basix.CellType.triangle, 4, [], wcoeffs,
         x, M, basix.MapType.identity, False, 3, 3)
     ufl_element = BasixElement(e)
 
@@ -129,7 +127,6 @@ def test_custom_element_triangle_degree4():
 
 def test_custom_element_quadrilateral_degree1():
     wcoeffs = np.eye(4)
-    entity_transformations = {basix.CellType.interval: np.zeros((1, 0, 0))}
     z = np.zeros((0, 2))
     x = [[np.array([[0., 0.]]), np.array([[1., 0.]]), np.array([[0., 1.]]), np.array([[1., 1.]])],
          [z, z, z, z], [z], []]
@@ -138,7 +135,7 @@ def test_custom_element_quadrilateral_degree1():
          [z, z, z, z], [z], []]
 
     e = basix.create_custom_element(
-        basix.CellType.quadrilateral, 1, [], wcoeffs, entity_transformations,
+        basix.CellType.quadrilateral, 1, [], wcoeffs,
         x, M, basix.MapType.identity, False, 1, 1)
     ufl_element = BasixElement(e)
 

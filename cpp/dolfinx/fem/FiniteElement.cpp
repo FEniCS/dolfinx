@@ -180,28 +180,6 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
           wcoeffs(i, j) = ce->wcoeffs[e++];
     }
 
-    std::map<basix::cell::type, xt::xtensor<double, 3>> entity_transformations;
-    { // scope
-      int e = 0;
-      for (int i = 0; i < ce->entity_transformations_count; ++i)
-      {
-        basix::cell::type c = static_cast<basix::cell::type>(
-            ce->entity_transformations_entities[i]);
-
-        xt::xtensor<double, 3> mat(
-            {static_cast<std::size_t>(ce->entity_transformations_shapes[3 * i]),
-             static_cast<std::size_t>(
-                 ce->entity_transformations_shapes[3 * i + 1]),
-             static_cast<std::size_t>(
-                 ce->entity_transformations_shapes[3 * i + 2])});
-        for (std::size_t i0 = 0; i0 < mat.shape(0); ++i0)
-          for (std::size_t i1 = 0; i1 < mat.shape(1); ++i1)
-            for (std::size_t i2 = 0; i2 < mat.shape(2); ++i2)
-              mat(i0, i1, i2) = ce->entity_transformations[e++];
-        entity_transformations[c] = mat;
-      }
-    }
-
     std::array<std::vector<xt::xtensor<double, 2>>, 4> x;
     std::array<std::vector<xt::xtensor<double, 3>>, 4> M;
     { // scope
@@ -235,10 +213,9 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
 
     _element
         = std::make_unique<basix::FiniteElement>(basix::create_custom_element(
-            cell_type, ce->degree, value_shape, wcoeffs, entity_transformations,
-            x, M, static_cast<basix::maps::type>(ce->map_type),
-            ce->discontinuous, ce->highest_degree,
-            ce->highest_complete_degree));
+            cell_type, ce->degree, value_shape, wcoeffs, x, M,
+            static_cast<basix::maps::type>(ce->map_type), ce->discontinuous,
+            ce->highest_degree, ce->highest_complete_degree));
   }
   else if (is_basix_element(e))
   {
