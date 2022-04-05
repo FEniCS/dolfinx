@@ -249,29 +249,42 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                [mesh_entity_index_map](std::int32_t e)
                { return e < mesh_entity_index_map->size_local(); });
 
-  // Create submesh entity index map
-  // TODO Call dolfinx::common::get_owned_indices here? Do we want to
-  // support `entities` possibly haveing a ghost on one process that is not
-  // in `entities` on the owning process?
-  std::pair<common::IndexMap, std::vector<int32_t>>
-      submesh_entity_index_map_pair
-      = mesh_entity_index_map->create_submap(submesh_owned_entities);
-  auto submesh_entity_index_map = std::make_shared<common::IndexMap>(
-      std::move(submesh_entity_index_map_pair.first));
-
   // Create a map from the (local) entities in the submesh to the (local)
-  // entities in the mesh.
+  // entities in the mesh, and create the submesh entity index map.
   std::vector<int32_t> submesh_to_mesh_entity_map(
       submesh_owned_entities.begin(), submesh_owned_entities.end());
-  submesh_to_mesh_entity_map.reserve(submesh_entity_index_map->size_local()
-                                     + submesh_entity_index_map->num_ghosts());
-  // Add ghost vertices to the map
-  std::transform(submesh_entity_index_map_pair.second.begin(),
-                 submesh_entity_index_map_pair.second.end(),
-                 std::back_inserter(submesh_to_mesh_entity_map),
-                 [size_local = mesh_entity_index_map->size_local()](
-                     std::int32_t entity_index)
-                 { return size_local + entity_index; });
+  std::shared_ptr<common::IndexMap> submesh_entity_index_map;
+  // If the entity dimension is the same as the input mesh topological
+  // dimension, add ghost entities to the submesh. If not, do not add ghost
+  // entities, because in general, not all expected ghost entities would be
+  // present.
+  if (mesh.topology().dim() == dim)
+  {
+    // TODO Call dolfinx::common::get_owned_indices here? Do we want to
+    // support `entities` possibly haveing a ghost on one process that is not
+    // in `entities` on the owning process?
+    std::pair<common::IndexMap, std::vector<int32_t>>
+        submesh_entity_index_map_pair
+        = mesh_entity_index_map->create_submap(submesh_owned_entities);
+    submesh_entity_index_map = std::make_shared<common::IndexMap>(
+        std::move(submesh_entity_index_map_pair.first));
+
+    // Add ghost entities to the entity map
+    submesh_to_mesh_entity_map.reserve(
+        submesh_entity_index_map->size_local()
+        + submesh_entity_index_map->num_ghosts());
+    std::transform(submesh_entity_index_map_pair.second.begin(),
+                   submesh_entity_index_map_pair.second.end(),
+                   std::back_inserter(submesh_to_mesh_entity_map),
+                   [size_local = mesh_entity_index_map->size_local()](
+                       std::int32_t entity_index)
+                   { return size_local + entity_index; });
+  }
+  else
+  {
+    submesh_entity_index_map = std::make_shared<common::IndexMap>(
+        mesh.comm(), submesh_owned_entities.size());
+  }
 
   // Submesh vertex to vertex connectivity (identity)
   auto submesh_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
