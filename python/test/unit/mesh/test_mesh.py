@@ -18,7 +18,8 @@ from dolfinx import mesh as _mesh
 from dolfinx.cpp.mesh import (create_cell_partitioner, entities_to_geometry,
                               is_simplex)
 from dolfinx.fem import assemble_scalar, form
-from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
+from dolfinx.mesh import (CellType, DiagonalType, GhostMode,
+                          compute_boundary_facets, create_box,
                           create_rectangle, create_submesh, create_unit_cube,
                           create_unit_interval, create_unit_square,
                           locate_entities, locate_entities_boundary)
@@ -578,3 +579,16 @@ def test_original_index():
     s = sum(mesh.topology.original_cell_index)
     s = MPI.COMM_WORLD.allreduce(s, MPI.SUM)
     assert(s == nx**3 * 6 * (nx**3 * 6 - 1) // 2)
+
+
+def test_boundary_identification():
+    nx = 8
+    mesh = create_unit_square(MPI.COMM_WORLD, nx, nx, ghost_mode=GhostMode.shared_facet)
+    left_cells = locate_entities(mesh, mesh.topology.dim, lambda x: x[0] <= 0.5 + 5e-16)
+    sub_mesh = create_submesh(mesh, mesh.topology.dim, left_cells)
+    sub_mesh[0].topology.create_entities(sub_mesh[0].topology.dim - 1)
+    sub_mesh[0].topology.create_connectivity(sub_mesh[0].topology.dim - 1, sub_mesh[0].topology.dim)
+
+    right_facets = compute_boundary_facets(sub_mesh[0].topology)
+    all_local_facets = np.hstack(sub_mesh[0].comm.allgather(right_facets))
+    assert(np.sum(all_local_facets) == 2 * nx + 2 * nx / 2)
