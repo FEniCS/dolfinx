@@ -705,9 +705,17 @@ std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
   auto facets = topology.index_map(tdim - 1);
   if (!facets)
     throw std::runtime_error("Facets have not been computed.");
+  auto cells = topology.index_map(tdim);
 
+  // Only need to consider shared facets when there are no ghost
+  // cells and none of cells owned by this process are shared. The
+  // latter check is required because a submesh could have no ghost
+  // cells on this process but another process could ghost some of
+  // those cells)
   std::vector<std::int32_t> fwd_shared_facets;
-  if (dolfinx::MPI::size(facets->comm()) > 1 and facets->num_ghosts() == 0)
+  if (dolfinx::MPI::size(facets->comm()) > 1 and facets->num_ghosts() == 0
+      and topology.index_map(tdim)->num_ghosts() == 0
+      and topology.index_map(tdim)->scatter_fwd_indices().array().empty())
   {
     fwd_shared_facets.assign(facets->scatter_fwd_indices().array().begin(),
                              facets->scatter_fwd_indices().array().end());
