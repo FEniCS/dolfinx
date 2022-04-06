@@ -745,12 +745,12 @@ void interpolate(Function<T>& u, const Function<T>& v,
       for (int i = mpi_rank; i < nProcs + mpi_rank; ++i)
       {
         const auto dest = i % nProcs;
+        const std::int32_t nPTS = pointsToSend[dest].size();
 
         // To which we have something to send
-        if (pointsToSend[dest].size() > 0)
+        if (nPTS > 0)
         {
           // We add (accumulate) how much we send to that process
-          const std::int32_t nPTS = pointsToSend[dest].size();
           MPI_Accumulate(&nPTS, 1, MPI_INT32_T, dest, 0, 1, MPI_INT32_T,
                          MPI_SUM, window);
         }
