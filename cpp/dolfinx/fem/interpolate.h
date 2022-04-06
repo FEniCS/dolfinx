@@ -732,28 +732,57 @@ void interpolate(Function<T>& u, const Function<T>& v,
                      nPointsToSend.begin(),
                      [](const auto& el) { return el.size(); });
 
-      // Share a matrix where element (i, j) is the number of coordinates that
-      // process i sends to process j
-      std::vector<std::int32_t> allPointsToSend(nProcs * nProcs);
-      MPI_Allgather(nPointsToSend.data(), nProcs, MPI_INT32_T,
-                    allPointsToSend.data(), nProcs, MPI_INT32_T, mesh->comm());
-
+      // Every process needs to know how many points it will receive
       std::size_t nPointsToReceive = 0;
-      for (int i = 0; i < nProcs; ++i)
-      {
-        nPointsToReceive += allPointsToSend[mpi_rank + i * nProcs];
-      }
+      MPI_Win window;
+      // We open a window on the variable nPointsToReceive
+      MPI_Win_create(&nPointsToReceive, sizeof(std::int32_t),
+                     sizeof(std::int32_t), MPI_INFO_NULL, mesh->comm(),
+                     &window);
+      MPI_Win_fence(0, window);
 
-      // Compute the offset sendingOffsets[i] at which data will be sent to
-      // process i
-      std::vector<std::int32_t> sendingOffsets(nProcs, 0);
-      for (int i = 0; i < nProcs; ++i)
+      // On every other process
+      for (int i = mpi_rank; i < nProcs + mpi_rank; ++i)
       {
-        for (int j = 0; j < mpi_rank; ++j)
+        const auto dest = i % nProcs;
+
+        // To which we have something to send
+        if (pointsToSend[dest].size() > 0)
         {
-          sendingOffsets[i] += allPointsToSend[nProcs * j + i];
+          // We add (accumulate) how much we send to that process
+          const std::int32_t nPTS = pointsToSend[dest].size();
+          MPI_Accumulate(&nPTS, 1, MPI_INT32_T, dest, 0, 1, MPI_INT32_T,
+                         MPI_SUM, window);
         }
       }
+
+      // Sync, then close window
+      MPI_Win_fence(0, window);
+      MPI_Win_free(&window);
+
+      // Compute the offset sendingOffsets[i] at which data will be sent to
+      // process i.
+      // When a process p sends to a process q, p needs to know where to put
+      // the data (offset).
+      // The offset of process p is the sum of the nPointsToSend[i] for i < p
+      std::vector<std::int32_t> sendingOffsets(nProcs, 0);
+
+      MPI_Win_create(sendingOffsets.data(), sizeof(std::int32_t) * nProcs,
+                     sizeof(std::int32_t), MPI_INFO_NULL, mesh->comm(),
+                     &window);
+      MPI_Win_fence(0, window);
+
+      // To each process with rank greater than the own rank
+      for (int i = mpi_rank + 1; i < nProcs; ++i)
+      {
+        // Send (accumulate) the list of nPointsToSend
+        MPI_Accumulate(nPointsToSend.data(), nProcs, MPI_INT32_T, i, 0, nProcs,
+                       MPI_INT32_T, MPI_SUM, window);
+      }
+
+      // Sync, then close window
+      MPI_Win_fence(0, window);
+      MPI_Win_free(&window);
 
       // Allocate memory to receive coordinate points from other processes
       xt::xtensor<double, 2> pointsToReceive(
@@ -761,7 +790,6 @@ void interpolate(Function<T>& u, const Function<T>& v,
                      static_cast<decltype(nPointsToReceive)>(3)}),
           0);
       // Open a window for other processes to write into, then sync
-      MPI_Win window;
       MPI_Win_create(pointsToReceive.data(), sizeof(double) * nPointsToReceive,
                      sizeof(double), MPI_INFO_NULL, mesh->comm(), &window);
       MPI_Win_fence(0, window);
