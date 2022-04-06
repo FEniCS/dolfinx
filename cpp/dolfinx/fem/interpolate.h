@@ -772,12 +772,20 @@ void interpolate(Function<T>& u, const Function<T>& v,
                      &window);
       MPI_Win_fence(0, window);
 
-      // To each process with rank greater than the own rank
-      for (int i = mpi_rank + 1; i < nProcs; ++i)
+      // For every other process j
+      for (decltype(nPointsToSend.size()) j = 0; j < nPointsToSend.size(); ++j)
       {
-        // Send (accumulate) the list of nPointsToSend
-        MPI_Accumulate(nPointsToSend.data(), nProcs, MPI_INT32_T, i, 0, nProcs,
-                       MPI_INT32_T, MPI_SUM, window);
+        // If this process is sending anything to j
+        if (nPointsToSend[j] != 0)
+        {
+          // Inform each process i with rank greater than the own rank
+          for (int i = mpi_rank + 1; i < nProcs; ++i)
+          {
+            // By sending (accumulating) to i the number of points sent to j
+            MPI_Accumulate(nPointsToSend.data() + j, 1, MPI_INT32_T, i, j, 1,
+                           MPI_INT32_T, MPI_SUM, window);
+          }
+        }
       }
 
       // Sync, then close window
