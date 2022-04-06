@@ -13,7 +13,7 @@ import ufl
 from dolfinx import fem
 from dolfinx.mesh import (GhostMode, create_box, create_rectangle,
                           create_submesh, create_unit_cube, create_unit_square,
-                          locate_entities)
+                          locate_entities, locate_entities_boundary)
 
 from mpi4py import MPI
 
@@ -66,3 +66,28 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
     # FIXME Would probably be better to compare entries rather than just
     # norms
     assert(np.isclose(A_mesh_0.norm(), A_submesh.norm()))
+
+
+@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("k", [1, 4])
+@pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange",
+                                   "Raviart-Thomas"])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+def test_submesh_facet_assembly(n, k, space, ghost_mode):
+    """Test that assembling a form over the face of a unit cube gives
+    the same result as assembling it over a unit square."""
+    cube_mesh = create_unit_cube(
+        MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
+    edim = cube_mesh.topology.dim - 1
+    entities = locate_entities_boundary(
+        cube_mesh, edim, lambda x: np.isclose(x[2], 0.0))
+    submesh = create_submesh(cube_mesh, edim, entities)[0]
+
+    A_submesh = assemble(submesh, space, k)
+
+    square_mesh = create_unit_square(
+        MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+    A_square_mesh = assemble(square_mesh, space, k)
+
+    assert(np.isclose(A_submesh.norm(), A_square_mesh.norm()))
