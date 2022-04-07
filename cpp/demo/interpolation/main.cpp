@@ -72,8 +72,8 @@ void interpolation_different_meshes()
 
 int main(int argc, char* argv[])
 {
-  common::subsystem::init_logging(argc, argv);
-  common::subsystem::init_petsc(argc, argv);
+  init_logging(argc, argv);
+  PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   // Set the logging thread name to show the process rank
   int mpi_rank;
@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
 
   interpolation_different_meshes();
 
-  common::subsystem::finalize_petsc();
+  PetscFinalize();
 
   return 0;
 }
