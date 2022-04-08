@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Garth N. Wells, Igor A. Baratta
+// Copyright (C) 2020-2021 Garth N. Wells, Igor A. Baratta, Massimiliano Leoni
 // and Jørgen S.Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -12,11 +12,14 @@
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/geometry/BoundingBoxTree.h>
+#include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <numeric>
 #include <vector>
 #include <xtensor/xarray.hpp>
+#include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
@@ -617,9 +620,33 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
     }
   }
 }
-
-/// Interpolate from one finite element Function to another on the same
-/// mesh
+//----------------------------------------------------------------------------
+/// Interpolate an expression in a finite element space
+///
+/// @param[out] u The function to interpolate into
+/// @param[in] f The expression to be interpolated
+/// @param[in] x The points at which f should be evaluated, as computed
+/// by fem::interpolation_coords. The element used in
+/// fem::interpolation_coords should be the same element as associated
+/// with u.
+/// @param[in] cells Indices of the cells in the mesh on which to
+/// interpolate. Should be the same as the list used when calling
+/// fem::interpolation_coords.
+template <typename T>
+void interpolate(
+    Function<T>& u,
+    const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
+    const xt::xtensor<double, 2>& x, const xtl::span<const std::int32_t>& cells)
+{
+  // Evaluate function at physical points. The returned array has a
+  // number of rows equal to the number of components of the function,
+  // and the number of columns is equal to the number of evaluation
+  // points.
+  xt::xarray<T> values = f(x);
+  interpolate(u, values, cells);
+}
+//----------------------------------------------------------------------------
+/// Interpolate from one finite element Function to another one
 /// @param[out] u The function to interpolate into
 /// @param[in] v The function to be interpolated
 /// @param[in] cells List of cell indices to interpolate on
@@ -647,69 +674,235 @@ void interpolate(Function<T>& u, const Function<T>& v,
     // Get mesh and check that functions share the same mesh
     if (mesh != v.function_space()->mesh())
     {
-      throw std::runtime_error(
-          "Interpolation on different meshes not supported (yet).");
-    }
+      int communicatorComparison;
+      MPI_Comm_compare(mesh->comm(), v.function_space()->mesh()->comm(),
+                       &communicatorComparison);
 
-    // Get elements and check value shape
-    auto element0 = v.function_space()->element();
-    assert(element0);
-    auto element1 = u.function_space()->element();
-    assert(element1);
-    if (element0->value_shape() != element1->value_shape())
-    {
-      throw std::runtime_error(
-          "Interpolation: elements have different value dimensions");
-    }
-
-    if (*element1 == *element0)
-    {
-      // Same element, different dofmaps (or just a subset of cells)
-
-      const int tdim = mesh->topology().dim();
-      auto cell_map = mesh->topology().index_map(tdim);
-      assert(cell_map);
-
-      assert(element1->block_size() == element0->block_size());
-
-      // Get dofmaps
-      std::shared_ptr<const fem::DofMap> dofmap0 = v.function_space()->dofmap();
-      assert(dofmap0);
-      std::shared_ptr<const fem::DofMap> dofmap1 = u.function_space()->dofmap();
-      assert(dofmap1);
-
-      xtl::span<T> u1_array = u.x()->mutable_array();
-      xtl::span<const T> u0_array = v.x()->array();
-
-      // Iterate over mesh and interpolate on each cell
-      const int bs0 = dofmap0->bs();
-      const int bs1 = dofmap1->bs();
-      for (auto c : cells)
+      if (communicatorComparison != MPI_IDENT
+          and communicatorComparison != MPI_CONGRUENT)
       {
-        xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
-        xtl::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
-        assert(bs0 * dofs0.size() == bs1 * dofs1.size());
-        for (std::size_t i = 0; i < dofs0.size(); ++i)
+        throw std::runtime_error("Interpolation on different meshes is only "
+                                 "supported with the same communicator.");
+      }
+      MPI_Comm comm = mesh->comm();
+
+      const int mpi_size = dolfinx::MPI::size(comm);
+      const auto mpi_rank = dolfinx::MPI::rank(comm);
+
+      const int tdim = u.function_space()->mesh()->topology().dim();
+      const auto cell_map
+          = u.function_space()->mesh()->topology().index_map(tdim);
+      const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
+      std::vector<std::int32_t> cells(num_cells, 0);
+      std::iota(cells.begin(), cells.end(), 0);
+
+      // Collect all the points at which values are needed to define the
+      // interpolating function
+      const xt::xtensor<double, 2> x = fem::interpolation_coords(
+          *u.function_space()->element(), *u.function_space()->mesh(), cells);
+
+      // Create a global bounding-box tree to quickly look for processes that
+      // might be able to evaluate the interpolating function at a given point
+      dolfinx::geometry::BoundingBoxTree bb(*v.function_space()->mesh(), tdim,
+                                            0.0001);
+      auto globalBB = bb.create_global_tree(v.function_space()->mesh()->comm());
+
+      // // Get the list of processes that might be able to evaluate each point
+      // For each point in `x` get the processes it should be sent to
+      graph::AdjacencyList<std::int32_t> collisions
+          = dolfinx::geometry::compute_collisions(globalBB, xt::transpose(x));
+
+      std::vector<std::int32_t> out_ranks = collisions.array();
+      std::sort(out_ranks.begin(), out_ranks.end());
+      out_ranks.erase(std::unique(out_ranks.begin(), out_ranks.end()),
+                      out_ranks.end());
+
+      std::map<std::int32_t, std::int32_t> rank_to_neighbor;
+      for (std::size_t i = 0; i < out_ranks.size(); i++)
+        rank_to_neighbor[out_ranks[i]] = i;
+
+      std::vector<int> in_ranks
+          = dolfinx::MPI::compute_graph_edges_pcx(comm, out_ranks);
+      // NOTE: do we need to sorte the incoming ranks?
+      std::sort(in_ranks.begin(), in_ranks.end());
+
+      // Create neighbourhood communicator
+      MPI_Comm forward_comm;
+      MPI_Dist_graph_create_adjacent(comm, in_ranks.size(), in_ranks.data(),
+                                     MPI_UNWEIGHTED, out_ranks.size(),
+                                     out_ranks.data(), MPI_UNWEIGHTED,
+                                     MPI_INFO_NULL, false, &forward_comm);
+
+      // Count the number of points to send per neighbor process
+      std::vector<std::int32_t> counter(out_ranks.size());
+      for (std::size_t i = 0; i < x.shape(1); ++i)
+        for (const auto& p : collisions.links(i))
+          counter[rank_to_neighbor[p]] += 3;
+
+      std::vector<std::int32_t> offsets(counter.size() + 1);
+      std::partial_sum(counter.begin(), counter.end(),
+                       std::next(offsets.begin(), 1));
+
+      std::vector<double> data_to_send(offsets.back());
+      std::vector<double> unpack_map(offsets.back() / 3);
+
+      // Create adjacency list [neighbor, list of points]
+      std::fill(counter.begin(), counter.end(), 0);
+      for (std::size_t i = 0; i < x.shape(1); ++i)
+      {
+        for (const auto& p : collisions.links(i))
         {
-          for (int k = 0; k < bs0; ++k)
-          {
-            int index = bs0 * i + k;
-            std::div_t dv1 = std::div(index, bs1);
-            u1_array[bs1 * dofs1[dv1.quot] + dv1.rem]
-                = u0_array[bs0 * dofs0[i] + k];
-          }
+
+          const auto point = xt::col(x, i);
+          int neighbor = rank_to_neighbor[p];
+          int pos = offsets[neighbor] + counter[neighbor];
+          std::copy(point.begin(), point.end(),
+                    std::next(data_to_send.begin(), pos));
+          unpack_map[pos / 3] = i;
+          counter[neighbor] += 3;
         }
       }
-    }
-    else if (element1->map_type() == element0->map_type())
-    {
-      // Different elements, same basis function map type
-      impl::interpolate_same_map(u, v, cells);
+
+      // create adjacency list, send to neighbors.
+      graph::AdjacencyList<double> points_to_send(data_to_send, offsets);
+      graph::AdjacencyList<double> recv_points
+          = dolfinx::MPI::neighbor_all_to_all(forward_comm, points_to_send);
+
+      const auto connectivity = v.function_space()->mesh()->geometry().dofmap();
+      const auto xv = v.function_space()->mesh()->geometry().x();
+
+      // Avoid copies by templating `compute_collisions`
+      std::size_t num_points = recv_points.array().size() / 3;
+      std::vector<std::size_t> shape = {num_points, 3};
+      xt::xtensor<double, 2> received_points
+          = xt::adapt(recv_points.array(), shape);
+
+      // Each process will now check at which points it can evaluate
+      // the interpolating function, and note that down in evaluation_cells
+      std::vector<std::int32_t> evaluation_cells(num_points, -1);
+
+      graph::AdjacencyList<int> candidate_cells
+          = geometry::compute_collisions(bb, received_points);
+
+      auto mesh_v = v.function_space()->mesh();
+      graph::AdjacencyList<int> colliding_cells
+          = geometry::compute_colliding_cells(*mesh_v, candidate_cells,
+                                              received_points);
+      // If any cell was found at all -- there should be at most one --note it
+      // down
+      for (std::size_t i = 0; i < num_points; ++i)
+        if (colliding_cells.num_links(i) > 0)
+          evaluation_cells[i] = colliding_cells.links(i)[0];
+
+      const auto value_size = u.function_space()->element()->value_size();
+
+      // Evaluate the interpolating function where possible
+      xt::xtensor<T, 2> values
+          = xt::zeros<T>({num_points, std::size_t(value_size)});
+      v.eval(received_points, evaluation_cells, values);
+
+      // Send compute values back to the processes that requested
+
+      // Create neighbourhood communicator in the reverse direction
+      MPI_Comm reverse_comm;
+      MPI_Dist_graph_create_adjacent(comm, out_ranks.size(), out_ranks.data(),
+                                     MPI_UNWEIGHTED, in_ranks.size(),
+                                     in_ranks.data(), MPI_UNWEIGHTED,
+                                     MPI_INFO_NULL, false, &reverse_comm);
+
+      // Pack values to send to send to requesting processes
+      offsets = recv_points.offsets();
+      std::for_each(offsets.begin(), offsets.end(),
+                    [value_size](auto& e) { e = e / 3 * value_size; });
+      assert(static_cast<std::size_t>(offsets.back()) == values.size());
+      std::vector<T> _values(values.begin(), values.end());
+      graph::AdjacencyList<T> values_to_send(std::move(_values),
+                                             std::move(offsets));
+      // Send values to "neighbor" processes
+      graph::AdjacencyList<T> rcv_values
+          = dolfinx::MPI::neighbor_all_to_all(reverse_comm, values_to_send);
+
+      xt::xtensor<T, 2> my_vals
+          = xt::zeros<T>({static_cast<std::size_t>(num_points),
+                          static_cast<std::size_t>(value_size)});
+
+      const std::vector<T>& rcv_array = rcv_values.array();
+      for (std::size_t i = 0; i < unpack_map.size(); i++)
+      {
+        auto values = xt::row(my_vals, unpack_map[i]);
+        auto it = std::next(rcv_array.begin(), i * value_size);
+        std::copy_n(it, value_size, values.begin());
+      }
+
+      // Finally, interpolate using the computed values
+      xt::xarray<T> my_vals_t = xt::transpose(my_vals);
+      fem::interpolate(u, my_vals_t, cells);
     }
     else
     {
-      //  Different elements with different maps for basis functions
-      impl::interpolate_nonmatching_maps(u, v, cells);
+
+      // Get elements and check value shape
+      auto element0 = v.function_space()->element();
+      assert(element0);
+      auto element1 = u.function_space()->element();
+      assert(element1);
+      if (element0->value_shape() != element1->value_shape())
+      {
+        throw std::runtime_error(
+            "Interpolation: elements have different value dimensions");
+      }
+
+      if (*element1 == *element0)
+      {
+        // Same element, different dofmaps (or just a subset of cells)
+
+        const int tdim = mesh->topology().dim();
+        auto cell_map = mesh->topology().index_map(tdim);
+        assert(cell_map);
+
+        assert(element1->block_size() == element0->block_size());
+
+        // Get dofmaps
+        std::shared_ptr<const fem::DofMap> dofmap0
+            = v.function_space()->dofmap();
+        assert(dofmap0);
+        std::shared_ptr<const fem::DofMap> dofmap1
+            = u.function_space()->dofmap();
+        assert(dofmap1);
+
+        xtl::span<T> u1_array = u.x()->mutable_array();
+        xtl::span<const T> u0_array = v.x()->array();
+
+        // Iterate over mesh and interpolate on each cell
+        const int bs0 = dofmap0->bs();
+        const int bs1 = dofmap1->bs();
+        for (auto c : cells)
+        {
+          xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
+          xtl::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
+          assert(bs0 * dofs0.size() == bs1 * dofs1.size());
+          for (std::size_t i = 0; i < dofs0.size(); ++i)
+          {
+            for (int k = 0; k < bs0; ++k)
+            {
+              int index = bs0 * i + k;
+              std::div_t dv1 = std::div(index, bs1);
+              u1_array[bs1 * dofs1[dv1.quot] + dv1.rem]
+                  = u0_array[bs0 * dofs0[i] + k];
+            }
+          }
+        }
+      }
+      else if (element1->map_type() == element0->map_type())
+      {
+        // Different elements, same basis function map type
+        impl::interpolate_same_map(u, v, cells);
+      }
+      else
+      {
+        //  Different elements with different maps for basis functions
+        impl::interpolate_nonmatching_maps(u, v, cells);
+      }
     }
   }
 }
