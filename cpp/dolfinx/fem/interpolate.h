@@ -686,9 +686,6 @@ void interpolate(Function<T>& u, const Function<T>& v,
       }
       MPI_Comm comm = mesh->comm();
 
-      const int mpi_size = dolfinx::MPI::size(comm);
-      const auto mpi_rank = dolfinx::MPI::rank(comm);
-
       const int tdim = u.function_space()->mesh()->topology().dim();
       const auto cell_map
           = u.function_space()->mesh()->topology().index_map(tdim);
@@ -703,11 +700,11 @@ void interpolate(Function<T>& u, const Function<T>& v,
 
       // Create a global bounding-box tree to quickly look for processes that
       // might be able to evaluate the interpolating function at a given point
+      double padding = 0.0001; // Note: Why padding?
       dolfinx::geometry::BoundingBoxTree bb(*v.function_space()->mesh(), tdim,
-                                            0.0001);
+                                            padding);
       auto globalBB = bb.create_global_tree(v.function_space()->mesh()->comm());
 
-      // // Get the list of processes that might be able to evaluate each point
       // For each point in `x` get the processes it should be sent to
       graph::AdjacencyList<std::int32_t> collisions
           = dolfinx::geometry::compute_collisions(globalBB, xt::transpose(x));
@@ -723,7 +720,6 @@ void interpolate(Function<T>& u, const Function<T>& v,
 
       std::vector<int> in_ranks
           = dolfinx::MPI::compute_graph_edges_pcx(comm, out_ranks);
-      // NOTE: do we need to sorte the incoming ranks?
       std::sort(in_ranks.begin(), in_ranks.end());
 
       // Create neighbourhood communicator
@@ -739,11 +735,14 @@ void interpolate(Function<T>& u, const Function<T>& v,
         for (const auto& p : collisions.links(i))
           counter[rank_to_neighbor[p]] += 3;
 
-      std::vector<std::int32_t> offsets(counter.size() + 1);
+      // Compute offsets
+      std::vector<std::int32_t> offsets(counter.size() + 1, 0);
       std::partial_sum(counter.begin(), counter.end(),
                        std::next(offsets.begin(), 1));
-
+      // Allocate data to send
       std::vector<double> data_to_send(offsets.back());
+
+      // Create unpack map: [index in adj list][pos in x]
       std::vector<double> unpack_map(offsets.back() / 3);
 
       // Create adjacency list [neighbor, list of points]
@@ -756,49 +755,46 @@ void interpolate(Function<T>& u, const Function<T>& v,
           const auto point = xt::col(x, i);
           int neighbor = rank_to_neighbor[p];
           int pos = offsets[neighbor] + counter[neighbor];
+          unpack_map[pos / 3] = i;
           std::copy(point.begin(), point.end(),
                     std::next(data_to_send.begin(), pos));
-          unpack_map[pos / 3] = i;
           counter[neighbor] += 3;
         }
       }
 
-      // create adjacency list, send to neighbors.
-      graph::AdjacencyList<double> points_to_send(data_to_send, offsets);
+      // create adjacency list and send to "neighbors"
+      graph::AdjacencyList<double> points_to_send(std::move(data_to_send),
+                                                  std::move(offsets));
       graph::AdjacencyList<double> recv_points
           = dolfinx::MPI::neighbor_all_to_all(forward_comm, points_to_send);
 
-      const auto connectivity = v.function_space()->mesh()->geometry().dofmap();
-      const auto xv = v.function_space()->mesh()->geometry().x();
-
-      // Avoid copies by templating `compute_collisions`
-      std::size_t num_points = recv_points.array().size() / 3;
-      std::vector<std::size_t> shape = {num_points, 3};
+      // FIXME: Avoid copies by templating `compute_collisions`
+      std::size_t num_recv_points = recv_points.array().size() / 3;
+      std::vector<std::size_t> shape = {num_recv_points, 3};
       xt::xtensor<double, 2> received_points
           = xt::adapt(recv_points.array(), shape);
 
       // Each process will now check at which points it can evaluate
       // the interpolating function, and note that down in evaluation_cells
-      std::vector<std::int32_t> evaluation_cells(num_points, -1);
-
+      auto mesh_v = v.function_space()->mesh();
+      std::vector<std::int32_t> evaluation_cells(num_recv_points, -1);
       graph::AdjacencyList<int> candidate_cells
           = geometry::compute_collisions(bb, received_points);
-
-      auto mesh_v = v.function_space()->mesh();
       graph::AdjacencyList<int> colliding_cells
           = geometry::compute_colliding_cells(*mesh_v, candidate_cells,
                                               received_points);
-      // If any cell was found at all -- there should be at most one --note it
-      // down
-      for (std::size_t i = 0; i < num_points; ++i)
+
+      // If any cell is found at all - there should be at most one -note it down
+      for (std::size_t i = 0; i < num_recv_points; ++i)
         if (colliding_cells.num_links(i) > 0)
           evaluation_cells[i] = colliding_cells.links(i)[0];
 
-      const auto value_size = u.function_space()->element()->value_size();
+      const std::size_t value_size
+          = u.function_space()->element()->value_size();
 
       // Evaluate the interpolating function where possible
       xt::xtensor<T, 2> values
-          = xt::zeros<T>({num_points, std::size_t(value_size)});
+          = xt::zeros<T>({num_recv_points, std::size_t(value_size)});
       v.eval(received_points, evaluation_cells, values);
 
       // Send compute values back to the processes that requested
@@ -822,16 +818,17 @@ void interpolate(Function<T>& u, const Function<T>& v,
       graph::AdjacencyList<T> rcv_values
           = dolfinx::MPI::neighbor_all_to_all(reverse_comm, values_to_send);
 
-      xt::xtensor<T, 2> my_vals
-          = xt::zeros<T>({static_cast<std::size_t>(num_points),
-                          static_cast<std::size_t>(value_size)});
-
+      // Unpack received values
+      xt::xtensor<T, 2> my_vals = xt::zeros<T>({x.shape(1), value_size});
       const std::vector<T>& rcv_array = rcv_values.array();
       for (std::size_t i = 0; i < unpack_map.size(); i++)
       {
         auto values = xt::row(my_vals, unpack_map[i]);
-        auto it = std::next(rcv_array.begin(), i * value_size);
-        std::copy_n(it, value_size, values.begin());
+        if (xt::allclose(values, 0))
+        {
+          auto it = std::next(rcv_array.begin(), i * value_size);
+          std::copy_n(it, value_size, values.begin());
+        }
       }
 
       // Finally, interpolate using the computed values

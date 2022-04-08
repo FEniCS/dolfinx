@@ -1,3 +1,4 @@
+#include "interpolation.h"
 #include <algorithm>
 #include <cmath>
 #include <dolfinx.h>
@@ -5,20 +6,18 @@
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/mesh/generation.h>
 
-#include "interpolation.h"
-
 using namespace dolfinx;
 
 void interpolation_different_meshes()
 {
-  const std::array<std::size_t, 3> subdivisions = {2, 2, 2};
+  const std::array<std::size_t, 3> subdivisions = {20, 20, 20};
 
   auto meshL = std::make_shared<mesh::Mesh>(mesh::create_box(
       MPI_COMM_WORLD, {{{0, 0, 0}, {1, 1, 1}}}, subdivisions,
       mesh::CellType::tetrahedron, mesh::GhostMode::shared_facet));
 
   auto meshR = std::make_shared<mesh::Mesh>(mesh::create_box(
-      MPI_COMM_WORLD, {{{0, 0, 0}, {1, 1, 1}}}, subdivisions,
+      MPI_COMM_WORLD, {{{0.1, 0.1, 0.1}, {1.1, 1.1, 1.1}}}, subdivisions,
       mesh::CellType::tetrahedron, mesh::GhostMode::shared_facet));
 
   auto VL = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
@@ -64,10 +63,11 @@ void interpolation_different_meshes()
       [](const auto& a, const auto& b)
       { return std::real((a - b) * std::conj(a - b)); }));
 
-  if (diffNorm > 1e-8)
-  {
-    throw std::runtime_error("Interpolation on different meshes failed.");
-  }
+  io::FidesWriter writeruL(meshL->comm(), "uL.bp", {uL});
+  writeruL.write(0.0);
+
+  io::FidesWriter writeruR(meshR->comm(), "uR.bp", {uR});
+  writeruR.write(0.0);
 }
 
 int main(int argc, char* argv[])
