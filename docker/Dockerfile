@@ -183,12 +183,12 @@ RUN LLVM_CONFIG=/usr/bin/llvm-config-9 pip3 install --no-cache-dir cffi mpi4py n
 RUN pip3 install --no-cache-dir --no-binary="numpy" numpy==${NUMPY_VERSION} --upgrade
 
 # Install xtl, xtensor
-RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack/xtl.git && \
+RUN git clone -b ${XTL_VERSION} --single-branch --depth 1 https://github.com/xtensor-stack/xtl.git && \
     cd xtl && \
     cmake -G Ninja . && \
     ninja install && \
     cd ../ && \
-    git clone -b ${XTENSOR_VERSION} --single-branch https://github.com/xtensor-stack/xtensor.git && \
+    git clone -b ${XTENSOR_VERSION} --single-branch --depth 1 https://github.com/xtensor-stack/xtensor.git && \
     cd xtensor && \
     cmake -G Ninja . && \
     ninja install && \
@@ -231,7 +231,7 @@ RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSI
     rm -rf /tmp/*
 
 # Install GMSH
-RUN git clone -b gmsh_${GMSH_VERSION} --single-branch https://gitlab.onelab.info/gmsh/gmsh.git && \
+RUN git clone -b gmsh_${GMSH_VERSION} --single-branch --depth 1 https://gitlab.onelab.info/gmsh/gmsh.git && \
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1  -DENABLE_OPENMP=1 -B build-dir -S gmsh && \
     cmake --build build-dir && \
     cmake --install build-dir && \
