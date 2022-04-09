@@ -776,11 +776,11 @@ void interpolate(Function<T>& u, const Function<T>& v,
       std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                        std::next(recv_offsets.begin(), 1));
 
-      std::vector<T> recv_points(recv_offsets.back());
-      MPI_Neighbor_alltoallv(
-          send_data.data(), send_sizes.data(), send_offsets.data(),
-          dolfinx::MPI::mpi_type<T>(), recv_points.data(), recv_sizes.data(),
-          recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), forward_comm);
+      std::vector<double> recv_points(recv_offsets.back());
+      MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
+                             send_offsets.data(), MPI_DOUBLE,
+                             recv_points.data(), recv_sizes.data(),
+                             recv_offsets.data(), MPI_DOUBLE, forward_comm);
 
       // FIXME: Avoid copies by templating `compute_collisions`
       std::size_t num_recv_points = recv_points.size() / 3;
