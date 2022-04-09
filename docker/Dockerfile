@@ -192,7 +192,7 @@ RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack
     cd xtensor && \
     cmake -G Ninja . && \
     ninja install && \
-    rm -rf xtl xtensor
+    rm -rf /tmp/*
 
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
