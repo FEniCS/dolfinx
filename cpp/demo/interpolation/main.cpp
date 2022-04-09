@@ -17,7 +17,7 @@ void interpolation_different_meshes()
       mesh::CellType::tetrahedron, mesh::GhostMode::shared_facet));
 
   auto meshR = std::make_shared<mesh::Mesh>(mesh::create_box(
-      MPI_COMM_WORLD, {{{0.1, 0.1, 0.1}, {1.1, 1.1, 1.1}}}, subdivisions,
+      MPI_COMM_WORLD, {{{0.5, 0.5, 0.5}, {1.5, 1.5, 1.5}}}, subdivisions,
       mesh::CellType::tetrahedron, mesh::GhostMode::shared_facet));
 
   auto VL = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
@@ -41,7 +41,10 @@ void interpolation_different_meshes()
         return r;
       });
 
+  double t = MPI_Wtime();
   uR->interpolate(*uL);
+  t = MPI_Wtime() - t;
+  std::cout << "Elapsed Time: " << t << std::endl;
 
   auto uR_ex = std::make_shared<fem::Function<PetscScalar>>(VR);
   uR_ex->interpolate(
@@ -78,12 +81,6 @@ int main(int argc, char* argv[])
   // Set the logging thread name to show the process rank
   int mpi_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-  //   std::string thread_name = "RANK " + std::to_string(mpi_rank);
-  //   loguru::set_thread_name(thread_name.c_str());
-  //   if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 0)
-  //   {
-  //     loguru::g_stderr_verbosity = loguru::Verbosity_INFO;
-  //   }
 
   interpolation_different_meshes();
 
