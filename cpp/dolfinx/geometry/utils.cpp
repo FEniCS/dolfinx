@@ -32,18 +32,33 @@ bool point_in_bbox(const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
                    const xt::xtensor_fixed<double, xt::xshape<3>>& x)
 {
   constexpr double rtol = 1e-14;
-  auto eps = rtol * (xt::row(b, 1) - xt::row(b, 0));
-  return xt::all(x >= xt::row(b, 0) - eps)
-         and xt::all(x <= xt::row(b, 1) + eps);
+  double eps;
+  bool in = true;
+  for (int i = 0; i < 3; i++)
+  {
+    eps = rtol * (b(1, i) - b(0, i));
+    in &= x[i] >= (b(0, i) - eps);
+    in &= x[i] <= (b(1, i) + eps);
+  }
+
+  return in;
 }
 //-----------------------------------------------------------------------------
 bool bbox_in_bbox(const xt::xtensor_fixed<double, xt::xshape<2, 3>>& a,
                   const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b)
 {
   constexpr double rtol = 1e-14;
-  auto eps = rtol * (xt::row(b, 1) - xt::row(b, 0));
-  return xt::all(xt::row(b, 0) - eps <= xt::row(a, 1))
-         and xt::all(xt::row(b, 1) + eps >= xt::row(a, 0));
+  double eps;
+  bool in = true;
+
+  for (int i = 0; i < 3; i++)
+  {
+    eps = rtol * (b(1, i) - b(0, i));
+    in &= a(1, i) >= (b(0, i) - eps);
+    in &= a(0, i) <= (b(1, i) + eps);
+  }
+
+  return in;
 }
 //-----------------------------------------------------------------------------
 // Compute closest entity {closest_entity, R2} (recursive)
@@ -111,31 +126,38 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
 void _compute_collisions_point(
     const geometry::BoundingBoxTree& tree,
     const xt::xtensor_fixed<double, xt::xshape<3>>& p, int node,
-    std::vector<int>& entities)
+    std::vector<int>& entities, std::vector<int>& stack)
 {
-  // Get children of current bounding box node
-  const std::array bbox = tree.bbox(node);
 
-  if (!point_in_bbox(tree.get_bbox(node), p))
-  {
-    // If point is not in bounding box, then don't search further
-    return;
-  }
-  else if (is_leaf(bbox))
-  {
-    // If box is a leaf (which we know contains the point), then add it
+  int next = node;
+  int top = -1;
 
-    // child_1 denotes entity for leaves
-    const int entity_index = bbox[1];
+  xt::xtensor_fixed<double, xt::xshape<2, 3>> coords;
 
-    // Add the candidate
-    entities.push_back(entity_index);
-  }
-  else
+  while (next != -1)
   {
-    // Check both children
-    _compute_collisions_point(tree, p, bbox[0], entities);
-    _compute_collisions_point(tree, p, bbox[1], entities);
+    std::array bbox = tree.bbox(next);
+    next = -1;
+
+    if (is_leaf(bbox))
+      entities.push_back(bbox[1]);
+    else
+    {
+      bool left = point_in_bbox(tree.get_bbox(bbox[0]), p);
+      bool right = point_in_bbox(tree.get_bbox(bbox[1]), p);
+      if (left && right)
+      {
+        stack[++top] = bbox[1];
+        next = bbox[0];
+      }
+      else if (left)
+        next = bbox[0];
+      else if (right)
+        next = bbox[1];
+    }
+
+    if (next == -1 && top != -1)
+      next = stack[top--];
   }
 }
 //-----------------------------------------------------------------------------
@@ -239,12 +261,14 @@ geometry::compute_collisions(const BoundingBoxTree& tree,
 {
   if (tree.num_bboxes() > 0)
   {
-    std::vector<std::int32_t> entities, offsets({0});
+    std::vector<int> stack(tree.num_bboxes() / 2 + 1);
+    std::vector<std::int32_t> entities, offsets(points.shape(0) + 1, 0);
+    entities.reserve(points.shape(0));
     for (std::size_t p = 0; p < points.shape(0); ++p)
     {
       _compute_collisions_point(tree, xt::row(points, p), tree.num_bboxes() - 1,
-                                entities);
-      offsets.push_back(entities.size());
+                                entities, stack);
+      offsets[p + 1] = entities.size();
     }
 
     return graph::AdjacencyList<std::int32_t>(std::move(entities),
