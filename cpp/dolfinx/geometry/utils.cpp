@@ -125,14 +125,11 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
 // Compute collisions with point (recursive)
 void _compute_collisions_point(
     const geometry::BoundingBoxTree& tree,
-    const xt::xtensor_fixed<double, xt::xshape<3>>& p, int node,
+    const xt::xtensor_fixed<double, xt::xshape<3>>& p,
     std::vector<int>& entities, std::vector<int>& stack)
 {
-
-  int next = node;
+  int next = tree.num_bboxes() - 1;
   int top = -1;
-
-  xt::xtensor_fixed<double, xt::xshape<2, 3>> coords;
 
   while (next != -1)
   {
@@ -140,22 +137,30 @@ void _compute_collisions_point(
     next = -1;
 
     if (is_leaf(bbox))
+      // If box is a leaf node then add it to the list of colliding entities
       entities.push_back(bbox[1]);
     else
     {
+      // Check whether the point collides with child nodes (left and right)
       bool left = point_in_bbox(tree.get_bbox(bbox[0]), p);
       bool right = point_in_bbox(tree.get_bbox(bbox[1]), p);
       if (left && right)
       {
+        // If the point collides with the two child nodes, add a node to the
+        // stack (for later visiting) and continue the tree traversal with
+        // the left subtree
         stack[++top] = bbox[1];
         next = bbox[0];
       }
       else if (left)
+        // Traverse the current node's left subtree
         next = bbox[0];
       else if (right)
+        // Traverse the current node's right subtree
         next = bbox[1];
     }
-
+    // If tree traversal reaches a dead end (box is a leaf node or no collision
+    // detected), check the stack for deferred subtrees.
     if (next == -1 && top != -1)
       next = stack[top--];
   }
@@ -266,8 +271,7 @@ geometry::compute_collisions(const BoundingBoxTree& tree,
     entities.reserve(points.shape(0));
     for (std::size_t p = 0; p < points.shape(0); ++p)
     {
-      _compute_collisions_point(tree, xt::row(points, p), tree.num_bboxes() - 1,
-                                entities, stack);
+      _compute_collisions_point(tree, xt::row(points, p), entities, stack);
       offsets[p + 1] = entities.size();
     }
 
