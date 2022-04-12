@@ -33,9 +33,16 @@ bool point_in_bbox(const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
                    const xt::xtensor_fixed<double, xt::xshape<3>>& x)
 {
   constexpr double rtol = 1e-14;
-  auto eps = rtol * (xt::row(b, 1) - xt::row(b, 0));
-  return xt::all(x >= xt::row(b, 0) - eps)
-         and xt::all(x <= xt::row(b, 1) + eps);
+  double eps;
+  bool in = true;
+  for (int i = 0; i < 3; i++)
+  {
+    eps = rtol * (b(1, i) - b(0, i));
+    in &= x[i] >= (b(0, i) - eps);
+    in &= x[i] <= (b(1, i) + eps);
+  }
+
+  return in;
 }
 //-----------------------------------------------------------------------------
 bool bbox_in_bbox(const xt::xtensor_fixed<double, xt::xshape<2, 3>>& a,

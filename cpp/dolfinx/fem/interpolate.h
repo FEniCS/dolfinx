@@ -780,15 +780,17 @@ void interpolate(Function<T>& u, const Function<T>& v,
           counter[neighbor] += 3;
         }
       }
-
-      dolfinx::common::Timer t4("~comm_forward");
       // Get receive sizes
       std::vector<std::int32_t> recv_sizes(in_ranks.size());
       send_sizes.reserve(1);
       recv_sizes.reserve(1);
+
+      dolfinx::common::Timer t4("~comm_forward");
       MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
                             MPI_INT, forward_comm);
+      t4.stop();
 
+      dolfinx::common::Timer t42("~comm_forward_alltoallv");
       // Work out recv offsets
       std::vector<std::int32_t> recv_offsets(in_ranks.size() + 1, 0);
       std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
@@ -799,21 +801,15 @@ void interpolate(Function<T>& u, const Function<T>& v,
                              send_offsets.data(), MPI_DOUBLE,
                              received_points.data(), recv_sizes.data(),
                              recv_offsets.data(), MPI_DOUBLE, forward_comm);
-      t4.stop();
+      t42.stop();
 
       // Each process will now check at which points it can evaluate
       // the interpolating function, and note that down in evaluation_cells
       std::vector<std::int32_t> evaluation_cells(received_points.shape(0));
-      dolfinx::common::Timer t5("~compute_collisions_candidates");
-
-      // graph::AdjacencyList<int> candidate_cells
-      //     = geometry::compute_collisions(bb, received_points);
-
+      dolfinx::common::Timer t5("~compute_first_colliding_cell");
       for (std::size_t p = 0; p < received_points.shape(0); ++p)
-      {
         evaluation_cells[p] = geometry::compute_first_colliding_cell(
             *mesh_v, bb, xt::row(received_points, p));
-      }
       t5.stop();
 
       dolfinx::common::Timer t7("~eval");
