@@ -684,7 +684,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
       MPI_Comm comm = mesh->comm();
       const int tdim = mesh->topology().dim();
       const auto cell_map = mesh->topology().index_map(tdim);
-      const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
+      const int num_cells = cell_map->size_local();
 
       std::shared_ptr<const FiniteElement> element_u
           = u.function_space()->element();
@@ -697,8 +697,10 @@ void interpolate(Function<T>& u, const Function<T>& v,
       // Collect all the points at which values are needed to define the
       // interpolating function
       dolfinx::common::Timer t0("~interpolation_coords");
+      // FIXME:
       const xt::xtensor<double, 2> x
           = fem::interpolation_coords(*element_u, *mesh, cells);
+
       t0.stop();
 
       dolfinx::common::Timer t1("~create_global_tree");
@@ -706,10 +708,17 @@ void interpolate(Function<T>& u, const Function<T>& v,
       // might be able to evaluate the interpolating function at a given point
       // FIXME: Why padding?
       double padding = 0.0001;
-      dolfinx::geometry::BoundingBoxTree bb(*mesh_v, tdim, padding);
+
+      const int v_tdim = mesh_v->topology().dim();
+      const auto v_cell_map = mesh_v->topology().index_map(v_tdim);
+      const int v_num_cells = v_cell_map->size_local();
+      std::vector<std::int32_t> cells_v(v_num_cells, 0);
+      std::iota(cells_v.begin(), cells_v.end(), 0);
+
+      dolfinx::geometry::BoundingBoxTree bb(*mesh_v, v_tdim, cells_v, padding);
       auto globalBB = bb.create_global_tree(comm);
       t1.stop();
-      
+
       dolfinx::common::Timer t2("~compute_collisions_globalBB");
       // Compute collisions:
       // For each point in `x` get the processes it should be sent to
@@ -728,7 +737,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
       for (std::size_t i = 0; i < out_ranks.size(); i++)
         rank_to_neighbor[out_ranks[i]] = i;
 
-      dolfinx::common::Timer t3("~compute_graph_edges_pcx");
+      dolfinx::common::Timer t3("~compute_graph_edges_nbx");
       // Compute incoming edges (processes that this rank receives points from)
       std::vector<int> in_ranks
           = dolfinx::MPI::compute_graph_edges_nbx(comm, out_ranks);
@@ -785,41 +794,32 @@ void interpolate(Function<T>& u, const Function<T>& v,
       std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                        std::next(recv_offsets.begin(), 1));
 
-      std::vector<double> recv_points(recv_offsets.back());
+      xt::xtensor<double, 2> received_points({recv_offsets.back() / 3, 3});
       MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
                              send_offsets.data(), MPI_DOUBLE,
-                             recv_points.data(), recv_sizes.data(),
+                             received_points.data(), recv_sizes.data(),
                              recv_offsets.data(), MPI_DOUBLE, forward_comm);
       t4.stop();
 
-      // FIXME: Avoid copies by templating `compute_collisions`
-      std::size_t num_recv_points = recv_points.size() / 3;
-      std::vector<std::size_t> shape = {num_recv_points, 3};
-      xt::xtensor<double, 2> received_points = xt::adapt(recv_points, shape);
-
       // Each process will now check at which points it can evaluate
       // the interpolating function, and note that down in evaluation_cells
-      std::vector<std::int32_t> evaluation_cells(num_recv_points, -1);
+      std::vector<std::int32_t> evaluation_cells(received_points.shape(0));
       dolfinx::common::Timer t5("~compute_collisions_candidates");
-      graph::AdjacencyList<int> candidate_cells
-          = geometry::compute_collisions(bb, received_points);
-      t5.stop();
-      
-      dolfinx::common::Timer t6("~compute_colliding_cells");
-      graph::AdjacencyList<int> colliding_cells
-          = geometry::compute_colliding_cells(*mesh_v, candidate_cells,
-                                              received_points);
-      t6.stop();
 
-      // If any cell is found at all - there should be at most one -note it down
-      for (std::size_t i = 0; i < num_recv_points; ++i)
-        if (colliding_cells.num_links(i) > 0)
-          evaluation_cells[i] = colliding_cells.links(i)[0];
+      // graph::AdjacencyList<int> candidate_cells
+      //     = geometry::compute_collisions(bb, received_points);
+
+      for (std::size_t p = 0; p < received_points.shape(0); ++p)
+      {
+        evaluation_cells[p] = geometry::compute_first_colliding_cell(
+            *mesh_v, bb, xt::row(received_points, p));
+      }
+      t5.stop();
 
       dolfinx::common::Timer t7("~eval");
       // Evaluate the interpolating function where possible
       xt::xtensor<T, 2> send_values
-          = xt::zeros<T>({num_recv_points, std::size_t(value_size)});
+          = xt::zeros<T>({received_points.shape(0), std::size_t(value_size)});
       v.eval(received_points, evaluation_cells, send_values);
       t7.stop();
 
@@ -854,7 +854,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
 
       dolfinx::common::Timer t9("~unpack");
       // Unpack received values
-      xt::xtensor<T,2> values = xt::zeros<T>({x.shape(1), value_size});
+      xt::xtensor<T, 2> values = xt::zeros<T>({x.shape(1), value_size});
       for (std::size_t i = 0; i < unpack_map.size(); i++)
       {
         auto vals = xt::row(values, unpack_map[i]);

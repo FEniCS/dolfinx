@@ -13,6 +13,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
 #include <xtensor/xfixed.hpp>
+#include <xtensor/xio.hpp>
 #include <xtensor/xnorm.hpp>
 #include <xtensor/xview.hpp>
 
@@ -430,3 +431,46 @@ graph::AdjacencyList<std::int32_t> geometry::compute_colliding_cells(
                                             std::move(offsets));
 }
 //-------------------------------------------------------------------------------
+int geometry::compute_first_colliding_cell(
+    const mesh::Mesh& mesh, const geometry::BoundingBoxTree& tree,
+    const xt::xtensor_fixed<double, xt::xshape<3>>& point)
+{
+  // Compute colliding bounding boxes(cell candidates)
+  std::vector<std::int32_t> cell_candidates;
+  _compute_collisions_point(tree, point, tree.num_bboxes() - 1,
+                            cell_candidates);
+
+  if (cell_candidates.empty())
+    return -1;
+  else
+  {
+    constexpr double eps2 = 1e-20;
+    const int tdim = mesh.topology().dim();
+    const mesh::Geometry& geometry = mesh.geometry();
+    xtl::span<const double> geom_dofs = geometry.x();
+    const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+    const std::size_t num_nodes = geometry.cmap().dim();
+    xt::xtensor<double, 2> nodes({num_nodes, std::size_t(3)});
+    for (auto cell : cell_candidates)
+    {
+      auto dofs = x_dofmap.links(cell);
+      for (std::size_t i = 0; i < num_nodes; ++i)
+      {
+        const int pos = 3 * dofs[i];
+        for (std::size_t j = 0; j < 3; ++j)
+          nodes(i, j) = geom_dofs[pos + j];
+      }
+
+      xt::xtensor_fixed<double, xt::xshape<3>> shortest_vector
+          = geometry::compute_distance_gjk(xt::reshape_view(point, {1, 3}),
+                                           nodes);
+      double norm = 0;
+      std::for_each(shortest_vector.cbegin(), shortest_vector.cend(),
+                    [&norm](const double e) { norm += std::pow(e, 2); });
+
+      if (norm < eps2)
+        return cell;
+    }
+  }
+  return -1;
+}

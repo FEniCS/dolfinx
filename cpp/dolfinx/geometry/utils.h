@@ -51,6 +51,16 @@ graph::AdjacencyList<std::int32_t>
 compute_collisions(const BoundingBoxTree& tree,
                    const xt::xtensor<double, 2>& points);
 
+/// Compute the first collision between a point and
+/// the cells of the mesh
+/// @param[in] mesh The mesh
+/// @param[in] tree The bounding box tree
+/// @param[in] point The point (shape=(3))
+/// @return The local cell index, -1 if not found
+int compute_first_colliding_cell(
+    const mesh::Mesh& mesh, const BoundingBoxTree& tree,
+    const xt::xtensor_fixed<double, xt::xshape<3>>& point);
+
 /// Compute closest mesh entity to a point
 /// @param[in] tree The bounding box tree for the entities
 /// @param[in] midpoint_tree A bounding box tree with the midpoints of
