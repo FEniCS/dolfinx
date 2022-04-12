@@ -576,26 +576,11 @@ private:
         auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
         assert(c_to_f);
 
-        // Only need to consider shared facets when there are no ghost
-        // cells and none of cells owned by this process are shared. The
-        // latter check is required because a submesh could have no ghost
-        // cells on this process but another process could ghost some of
-        // those cells)
-        std::set<std::int32_t> fwd_shared_facets;
-        assert(topology.index_map(tdim - 1));
-        if (topology.index_map(tdim)->num_ghosts() == 0
-            and topology.index_map(tdim)->scatter_fwd_indices().array().empty())
+        std::vector<std::int8_t> boundary_facet_markers =
+          mesh::compute_boundary_facets(mesh.topology());
+        for (std::size_t f = 0; f < boundary_facet_markers.size(); ++f)
         {
-          const std::vector<std::int32_t>& fwd_indices
-              = topology.index_map(tdim - 1)->scatter_fwd_indices().array();
-          fwd_shared_facets.insert(fwd_indices.begin(), fwd_indices.end());
-        }
-
-        const int num_facets = topology.index_map(tdim - 1)->size_local();
-        for (int f = 0; f < num_facets; ++f)
-        {
-          if (f_to_c->num_links(f) == 1
-              and fwd_shared_facets.find(f) == fwd_shared_facets.end())
+          if (boundary_facet_markers[f])
           {
             // There will only be one pair for an exterior facet
             // integral
