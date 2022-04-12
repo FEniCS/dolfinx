@@ -710,12 +710,18 @@ std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
   // Should always have cell index map
   assert(cell_imap);
 
-  // TODO UPDATE COMMENT
-  // Only need to consider shared facets when there are no ghost
-  // cells and none of cells owned by this process are shared. The
-  // latter check is required because a submesh could have no ghost
-  // cells on this process but another process could ghost some of
-  // those cells)
+  // In parallel, a mesh has either:
+  // i) Ghost cells connected to every shared facet
+  // ii) No ghost cells and no shared cells
+  // In case (i), checking that a facet is connected to only one cell is
+  // sufficient to identify it as a boundary facet. In case (ii), we must
+  // additionally check that the facet is not shared with another process to
+  // differentiate between the partition boundary and the physical boundary.
+  //
+  // NOTE: It is not sufficient to only check that a mesh has no ghost cells
+  // to determine if it falls into category (i) or (ii). This is because a
+  // submesh could have no ghost cells and no shared facets, but could share
+  // some cells with other processes.
   std::set<std::int32_t> fwd_shared_facets;
   if (cell_imap->num_ghosts() == 0
       and cell_imap->scatter_fwd_indices().array().empty())
