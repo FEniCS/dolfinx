@@ -1,9 +1,9 @@
 #include "interpolation.h"
 #include <algorithm>
+#include <basix/e-lagrange.h>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/io/ADIOS2Writers.h>
-#include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/mesh/generation.h>
 
 using namespace dolfinx;
@@ -17,66 +17,51 @@ void interpolation_different_meshes()
       mesh::CellType::tetrahedron, mesh::GhostMode::shared_facet));
 
   auto meshR = std::make_shared<mesh::Mesh>(mesh::create_box(
-      MPI_COMM_WORLD, {{{0.5, 0.5, 0.5}, {1.5, 1.5, 1.5}}}, subdivisions,
-      mesh::CellType::tetrahedron, mesh::GhostMode::shared_facet));
+      MPI_COMM_WORLD, {{{0.5, 0.5, 0.5}, {1.5, 1.5, 1.5}}}, {11, 12, 15},
+      mesh::CellType::hexahedron, mesh::GhostMode::shared_facet));
 
-  auto VL = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
-      functionspace_form_interpolation_a, "u", meshL));
-  auto VR = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
-      functionspace_form_interpolation_a, "u", meshR));
+  basix::FiniteElement eL = basix::element::create_lagrange(
+      mesh::cell_type_to_basix_type(meshL->topology().cell_type()), 1,
+      basix::element::lagrange_variant::equispaced, false);
+  auto VL = std::make_shared<fem::FunctionSpace>(
+      fem::create_functionspace(meshL, eL, 3));
+
+  basix::FiniteElement eR = basix::element::create_lagrange(
+      mesh::cell_type_to_basix_type(meshR->topology().cell_type()), 2,
+      basix::element::lagrange_variant::equispaced, false);
+  auto VR = std::make_shared<fem::FunctionSpace>(
+      fem::create_functionspace(meshR, eR, 3));
 
   auto uL = std::make_shared<fem::Function<PetscScalar>>(VL);
   auto uR = std::make_shared<fem::Function<PetscScalar>>(VR);
 
-  uL->interpolate(
-      [](auto& x)
-      {
-        auto r = xt::zeros_like(x);
-        for (std::size_t i = 0; i < x.shape(1); ++i)
-        {
-          r(0, i) = std::cos(10 * x(0, i)) * std::sin(10 * x(2, i));
-          r(1, i) = std::sin(10 * x(0, i)) * std::sin(10 * x(2, i));
-          r(2, i) = std::cos(10 * x(0, i)) * std::cos(10 * x(2, i));
-        }
-        return r;
-      });
+  auto fun = [](auto& x)
+  {
+    auto r = xt::zeros_like(x);
+    for (std::size_t i = 0; i < x.shape(1); ++i)
+    {
+      r(0, i) = std::cos(10 * x(0, i)) * std::sin(10 * x(2, i));
+      r(1, i) = std::sin(10 * x(0, i)) * std::sin(10 * x(2, i));
+      r(2, i) = std::cos(10 * x(0, i)) * std::cos(10 * x(2, i));
+    }
+    return r;
+  };
 
-  double t = MPI_Wtime();
+  uL->interpolate(fun);
+
   uR->interpolate(*uL);
-  t = MPI_Wtime() - t;
-  std::cout << "Elapsed Time: " << t << std::endl;
 
-  auto uR_ex = std::make_shared<fem::Function<PetscScalar>>(VR);
-  uR_ex->interpolate(
-      [](auto& x)
-      {
-        auto r = xt::zeros_like(x);
-        for (std::size_t i = 0; i < x.shape(1); ++i)
-        {
-          r(0, i) = std::cos(10 * x(0, i)) * std::sin(10 * x(2, i));
-          r(1, i) = std::sin(10 * x(0, i)) * std::sin(10 * x(2, i));
-          r(2, i) = std::cos(10 * x(0, i)) * std::cos(10 * x(2, i));
-        }
-        return r;
-      });
-
-  const PetscReal diffNorm = std::sqrt(std::transform_reduce(
-      uR->x()->array().cbegin(), uR->x()->array().cend(),
-      uR_ex->x()->array().cbegin(), static_cast<PetscReal>(0), std::plus<>(),
-      [](const auto& a, const auto& b)
-      { return std::real((a - b) * std::conj(a - b)); }));
-
-  io::FidesWriter writeruL(meshL->comm(), "uL.bp", {uL});
+  io::VTXWriter writeruL(meshL->comm(), "uL.bp", {uL});
   writeruL.write(0.0);
 
-  io::FidesWriter writeruR(meshR->comm(), "uR.bp", {uR});
+  io::VTXWriter writeruR(meshR->comm(), "uR.bp", {uR});
   writeruR.write(0.0);
 }
 
 int main(int argc, char* argv[])
 {
-  init_logging(argc, argv);
-  PetscInitialize(&argc, &argv, nullptr, nullptr);
+  dolfinx::init_logging(argc, argv);
+  MPI_Init(&argc, &argv);
 
   // Set the logging thread name to show the process rank
   int mpi_rank;
@@ -84,7 +69,7 @@ int main(int argc, char* argv[])
 
   interpolation_different_meshes();
 
-  PetscFinalize();
+  MPI_Finalize();
 
   return 0;
 }
