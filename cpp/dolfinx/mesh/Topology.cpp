@@ -702,36 +702,43 @@ graph::AdjacencyList<std::int32_t> convert_to_local_indexing(
 std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
 {
   const int tdim = topology.dim();
-  auto facets = topology.index_map(tdim - 1);
-  if (!facets)
+  auto facet_imap = topology.index_map(tdim - 1);
+  if (!facet_imap)
     throw std::runtime_error("Facets have not been computed.");
 
-  std::vector<std::int32_t> fwd_shared_facets;
-  if (dolfinx::MPI::size(facets->comm()) > 1 and facets->num_ghosts() == 0)
+  auto cell_imap = topology.index_map(tdim);
+  // Should always have cell index map
+  assert(cell_imap);
+
+  // TODO UPDATE COMMENT
+  // Only need to consider shared facets when there are no ghost
+  // cells and none of cells owned by this process are shared. The
+  // latter check is required because a submesh could have no ghost
+  // cells on this process but another process could ghost some of
+  // those cells)
+  std::set<std::int32_t> fwd_shared_facets;
+  if (cell_imap->num_ghosts() == 0
+      and cell_imap->scatter_fwd_indices().array().empty())
   {
-    fwd_shared_facets.assign(facets->scatter_fwd_indices().array().begin(),
-                             facets->scatter_fwd_indices().array().end());
-    dolfinx::radix_sort(xtl::span(fwd_shared_facets));
-    fwd_shared_facets.erase(
-        std::unique(fwd_shared_facets.begin(), fwd_shared_facets.end()),
-        fwd_shared_facets.end());
+    const std::vector<std::int32_t>& fwd_indices
+        = facet_imap->scatter_fwd_indices().array();
+    fwd_shared_facets.insert(fwd_indices.begin(), fwd_indices.end());
   }
 
-  auto fc = topology.connectivity(tdim - 1, tdim);
-  if (!fc)
+  auto f_to_c = topology.connectivity(tdim - 1, tdim);
+  if (!f_to_c)
     throw std::runtime_error("Facet-cell connectivity missing.");
-  std::vector<std::int8_t> _boundary_facet(facets->size_local(), false);
-  for (std::size_t f = 0; f < _boundary_facet.size(); ++f)
+  std::vector<std::int8_t> facet_markers(facet_imap->size_local(), false);
+  for (std::size_t f = 0; f < facet_markers.size(); ++f)
   {
-    if (fc->num_links(f) == 1
-        and !std::binary_search(fwd_shared_facets.begin(),
-                                fwd_shared_facets.end(), f))
+    if (f_to_c->num_links(f) == 1
+        and fwd_shared_facets.find(f) == fwd_shared_facets.end())
     {
-      _boundary_facet[f] = true;
+      facet_markers[f] = true;
     }
   }
 
-  return _boundary_facet;
+  return facet_markers;
 }
 //-----------------------------------------------------------------------------
 Topology::Topology(MPI_Comm comm, CellType type)
