@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Chris Richardson
+# Copyright (C) 2019-2022 Chris Richardson, Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -14,8 +14,10 @@ from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_scalar,
                          dirichletbc, form)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
-from dolfinx.mesh import (GhostMode, Mesh, create_unit_square, meshtags, meshtags_from_entities,
-                          locate_entities_boundary)
+from dolfinx.mesh import (GhostMode, Mesh, create_unit_cube,
+                          create_unit_square, locate_entities,
+                          locate_entities_boundary, meshtags,
+                          meshtags_from_entities)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -221,3 +223,51 @@ def test_additivity(mode):
     assert (J1 + J3) == pytest.approx(J13)
     assert (J2 + J3) == pytest.approx(J23)
     assert (J1 + J2 + J3) == pytest.approx(J123)
+
+
+def test_interior_facet_restriction():
+    """ Test that adding a cell marker to interior facet integral orients the '+' and '-' restrictions"""
+    mesh = create_unit_cube(MPI.COMM_WORLD, 10, 10, 10)
+    tdim = mesh.topology.dim
+    fdim = tdim - 1
+
+    plus_restriction, minus_restriction, facet_marker = 3, 5, 1
+    assert(plus_restriction < minus_restriction)
+    minus_cells = locate_entities(mesh, tdim, lambda x: x[1] <= 0.5 + 1e-16)
+    cell_map = mesh.topology.index_map(tdim)
+    all_cells = np.arange(cell_map.size_local + cell_map.num_ghosts, dtype=np.int32)
+
+    # All cells with x[1]>0.5 is tagged with plus restriction
+    cell_marker = np.full(len(all_cells), plus_restriction, dtype=np.int32)
+    # All cells with x[1]<=0.5 tagged with minus restriction
+    cell_marker[minus_cells] = 1
+    ct = meshtags(mesh, tdim, all_cells, cell_marker)
+
+    # Tag all facets on surface between tags with facet marker
+    midline_facets = locate_entities(mesh, fdim, lambda x: np.isclose(x[1], 0.5))
+    argsort_f = np.argsort(midline_facets)
+    ft = meshtags(mesh, fdim, midline_facets[argsort_f],
+                  np.full(len(midline_facets), facet_marker, dtype=np.int32))
+
+    # Interpolate non-zero value on minus restriction
+    V = FunctionSpace(mesh, ("DG", 0))
+    u = Function(V)
+    u.x.array[:] = 0
+    u.interpolate(lambda x: np.ones(x.shape[1]), minus_cells)
+    u.x.scatter_forward()
+
+    dS = ufl.Measure("dS", domain=mesh, subdomain_data=ft)
+    dx = ufl.Measure("dx", domain=mesh, subdomain_data=ct)
+    zero = Constant(mesh, PETSc.ScalarType(0))
+
+    # "+"" should be on side with larger value, i.e. exact value should be 0
+    plus_form = form(u("+") * dS(1) + zero * dx(88))
+    local_val = assemble_scalar(plus_form)
+    global_val = mesh.comm.allreduce(local_val, op=MPI.SUM)
+    assert np.isclose(global_val, 0)
+
+    # "-" should point out of domain with smaller value, exact value is 1
+    minus_form = form(u("-") * dS(1) + zero * dx(88))
+    local_val = assemble_scalar(minus_form)
+    global_val = mesh.comm.allreduce(local_val, op=MPI.SUM)
+    assert np.isclose(global_val, 1)
