@@ -106,6 +106,21 @@ public:
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
 
+    // Extract mesh tag for cells (used for consistent restriction of interior
+    // facet integrals)
+    std::shared_ptr<const mesh::MeshTags<int>> cell_marker;
+    for (auto& integral_type : integrals)
+    {
+      const IntegralType type = integral_type.first;
+      switch (type)
+      {
+      case IntegralType::cell:
+        cell_marker = std::make_shared<const mesh::MeshTags<int>>(
+            *integral_type.second.second);
+        break;
+      }
+    }
+
     // Store kernels, looping over integrals by domain type (dimension)
     for (auto& integral_type : integrals)
     {
@@ -136,7 +151,7 @@ public:
       if (integral_type.second.second)
       {
         assert(_mesh == integral_type.second.second->mesh());
-        set_domains(type, *integral_type.second.second);
+        set_domains(type, *integral_type.second.second, cell_marker);
       }
     }
 
@@ -461,7 +476,7 @@ private:
                                                       std::int32_t, int>>>>&
           integrals,
       const iterator& tagged_facets_begin, const iterator& tagged_facets_end,
-      const std::vector<int>& tags)
+      const std::vector<int>& tags, const xtl::span<const int>& cell_vals)
   {
     int tdim = topology.dim();
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
@@ -477,8 +492,19 @@ private:
         {
           std::array<std::pair<std::int32_t, int>, 2> pairs
               = get_cell_local_facet_pairs<2>(*f, f_to_c->links(*f), *c_to_f);
-          it->second.second.emplace_back(pairs[0].first, pairs[0].second,
-                                         pairs[1].first, pairs[1].second);
+
+          // Consistently order integral pairs such that "+" restrictions are
+          // taken on the side with the largest mesh tag value
+          if (cell_vals[pairs[0].first] < cell_vals[pairs[1].first])
+          {
+            it->second.second.emplace_back(pairs[1].first, pairs[1].second,
+                                           pairs[0].first, pairs[0].second);
+          }
+          else
+          {
+            it->second.second.emplace_back(pairs[0].first, pairs[0].second,
+                                           pairs[1].first, pairs[1].second);
+          }
         }
       }
     }
@@ -487,10 +513,13 @@ private:
   // Sets the entity indices to assemble over for kernels with a domain
   // ID
   // @param[in] type Integral type
-  // @param[in] marker MeshTags with domain ID. Entities with marker 'i'
-  // will be assembled over using the kernel with ID 'i'. The MeshTags
-  // is not stored.
-  void set_domains(IntegralType type, const mesh::MeshTags<int>& marker)
+  // @param[in] marker MeshTags with domain ID. Entities with marker 'i' will be
+  // assembled over using the kernel with ID 'i'. The MeshTags is not stored.
+  // @param[in] cell_marker MeshTags for cells. Used to consistently order
+  // interior facet intgrals.
+  void set_domains(IntegralType type, const mesh::MeshTags<int>& marker,
+                   const std::shared_ptr<const mesh::MeshTags<int>>& cell_marker
+                   = nullptr)
   {
     std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
     const mesh::Topology& topology = mesh->topology();
@@ -525,9 +554,22 @@ private:
                                    tagged_entities.cbegin(), entity_end, tags);
         break;
       case IntegralType::interior_facet:
+      {
+        // Unpack cell tags for consistent orientation of "+" and "-"
+        // restrictions
+        const std::int32_t num_cells = topology.index_map(tdim)->size_local()
+                                       + topology.index_map(tdim)->size_local();
+        std::vector<int> cell_vals(num_cells, 0);
+        if (cell_marker)
+        {
+          for (std::size_t i = 0; i < cell_marker->indices().size(); i++)
+            cell_vals[i] = cell_marker->values()[i];
+        }
         set_interior_facet_domains(topology, _interior_facet_integrals,
-                                   tagged_entities.cbegin(), entity_end, tags);
-        break;
+                                   tagged_entities.cbegin(), entity_end, tags,
+                                   cell_vals);
+      }
+      break;
       default:
         throw std::runtime_error(
             "Cannot set domains. Integral type not supported.");
