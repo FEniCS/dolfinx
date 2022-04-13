@@ -108,15 +108,18 @@ public:
 
     // Extract mesh tag for cells (used for consistent restriction of interior
     // facet integrals)
-    std::shared_ptr<const mesh::MeshTags<int>> cell_marker;
+    std::shared_ptr<const mesh::MeshTags<int>> cell_marker = nullptr;
     for (auto& integral_type : integrals)
     {
       const IntegralType type = integral_type.first;
       switch (type)
       {
       case IntegralType::cell:
-        cell_marker = std::make_shared<const mesh::MeshTags<int>>(
-            *integral_type.second.second);
+        if (integral_type.second.second)
+        {
+          cell_marker = std::make_shared<const mesh::MeshTags<int>>(
+              *integral_type.second.second);
+        }
         break;
       }
     }
