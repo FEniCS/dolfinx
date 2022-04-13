@@ -318,6 +318,8 @@ public:
           "Length of array for Function values must be the "
           "same as the number of points.");
     }
+    if (cells.empty())
+      return;
 
     // Get mesh
     assert(_function_space);
@@ -330,8 +332,7 @@ public:
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
-    // FIXME: Add proper interface for num coordinate dofs
-    const std::size_t num_dofs_g = x_dofmap.num_links(0);
+    const std::size_t num_dofs_g = mesh->geometry().cmap().dim();
     xtl::span<const double> x_g = mesh->geometry().x();
 
     // Get coordinate map
@@ -412,6 +413,7 @@ public:
 
       // Get cell geometry (coordinate dofs)
       auto x_dofs = x_dofmap.links(cell_index);
+      assert(x_dofs.size() == num_dofs_g);
       for (std::size_t i = 0; i < num_dofs_g; ++i)
       {
         const int pos = 3 * x_dofs[i];
