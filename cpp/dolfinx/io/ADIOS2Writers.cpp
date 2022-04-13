@@ -567,7 +567,7 @@ void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
   const mesh::Topology& topology = mesh.topology();
 
   // Check that mesh is first order mesh
-  const std::size_t num_dofs_g = geometry.cmap().dim();
+  const int num_dofs_g = geometry.cmap().dim();
   const int num_vertices_per_cell
       = mesh::cell_num_entities(topology.cell_type(), 0);
   if (num_dofs_g != num_vertices_per_cell)
