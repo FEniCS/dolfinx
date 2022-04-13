@@ -8,6 +8,7 @@
 #include "utils.h"
 #include "BoundingBoxTree.h"
 #include "gjk.h"
+#include <deque>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -122,12 +123,16 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
   }
 }
 //-----------------------------------------------------------------------------
-// Compute collisions with point (recursive)
+/// Compute collisions with a single point
+/// @param[in] tree The bounding box tree
+/// @param[in] points The points (shape=(num_points, 3))
+/// @param[in, out] entities The list of colliding entities (local to process)
 void _compute_collisions_point(
     const geometry::BoundingBoxTree& tree,
     const xt::xtensor_fixed<double, xt::xshape<3>>& p,
-    std::vector<int>& entities, std::vector<int>& stack)
+    std::vector<int>& entities)
 {
+  std::deque<std::int32_t> stack;
   int next = tree.num_bboxes() - 1;
   int top = -1;
 
@@ -146,10 +151,10 @@ void _compute_collisions_point(
       bool right = point_in_bbox(tree.get_bbox(bbox[1]), p);
       if (left && right)
       {
-        // If the point collides with both child nodes, add the right node to the
-        // stack (for later visiting) and continue the tree traversal with
+        // If the point collides with both child nodes, add the right node to
+        // the stack (for later visiting) and continue the tree traversal with
         // the left subtree
-        stack[++top] = bbox[1];
+        stack.push_back(bbox[1]);
         next = bbox[0];
       }
       else if (left)
@@ -161,8 +166,11 @@ void _compute_collisions_point(
     }
     // If tree traversal reaches a dead end (box is a leaf node or no collision
     // detected), check the stack for deferred subtrees.
-    if (next == -1 && top != -1)
-      next = stack[top--];
+    if (next == -1 && !stack.empty())
+    {
+      next = stack.back();
+      stack.pop_back();
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -266,12 +274,11 @@ geometry::compute_collisions(const BoundingBoxTree& tree,
 {
   if (tree.num_bboxes() > 0)
   {
-    std::vector<int> stack(tree.num_bboxes() / 2 + 1);
     std::vector<std::int32_t> entities, offsets(points.shape(0) + 1, 0);
     entities.reserve(points.shape(0));
     for (std::size_t p = 0; p < points.shape(0); ++p)
     {
-      _compute_collisions_point(tree, xt::row(points, p), entities, stack);
+      _compute_collisions_point(tree, xt::row(points, p), entities);
       offsets[p + 1] = entities.size();
     }
 
