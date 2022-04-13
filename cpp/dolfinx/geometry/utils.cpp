@@ -146,7 +146,7 @@ void _compute_collisions_point(
       bool right = point_in_bbox(tree.get_bbox(bbox[1]), p);
       if (left && right)
       {
-        // If the point collides with the two child nodes, add a node to the
+        // If the point collides with both child nodes, add the right node to the
         // stack (for later visiting) and continue the tree traversal with
         // the left subtree
         stack[++top] = bbox[1];
