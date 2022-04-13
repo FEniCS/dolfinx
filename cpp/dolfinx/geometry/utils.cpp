@@ -134,7 +134,6 @@ void _compute_collisions_point(
 {
   std::deque<std::int32_t> stack;
   int next = tree.num_bboxes() - 1;
-  int top = -1;
 
   while (next != -1)
   {
