@@ -5,10 +5,10 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tools for input/output (IO)."""
 
-from dolfinx.io import gmsh
+from dolfinx.io import gmsh  # noqa: F401
 from dolfinx.cpp.io import distribute_entity_data  # noqa: F401
 from dolfinx import cpp as _cpp
-from dolfinx.io.io import VTKFile, XDMFFile
+from dolfinx.io.io import VTKFile, XDMFFile  # noqa: F401
 
 __all__ = ["gmsh", "distribute_entity_data", "FidesWriter", "VTKFile", "VTXWriter", "XDMFFile"]
 
