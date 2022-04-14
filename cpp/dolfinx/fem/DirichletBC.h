@@ -140,7 +140,14 @@ private:
     // Find number of owned indices in _dofs0
     auto it0 = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
     _owned_indices0 = std::distance(_dofs0.begin(), it0);
-
+    if (std::holds_alternative<std::shared_ptr<const Constant<T>>>(_g))
+    {
+      auto c = std::get<std::shared_ptr<const Constant<T>>>(_g);
+      if (c->value.size() != _function_space->dofmap()->bs())
+        throw std::runtime_error("Constant input to DirichletBC is not "
+                                 "supported for mixed spaces with block size. "
+                                 "Please use a Function as input.");
+    }
     // Unroll _dofs0 for dofmap block size > 1
     if (const int bs = _function_space->dofmap()->bs(); bs > 1)
     {
