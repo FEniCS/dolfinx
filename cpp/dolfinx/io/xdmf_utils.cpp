@@ -93,7 +93,7 @@ xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
-  const std::size_t num_dofs_g = mesh->geometry().cmap().dim();
+  const int num_dofs_g = mesh->geometry().cmap().dim();
   const auto x_g
       = xt::adapt(mesh->geometry().x().data(), mesh->geometry().x().size(),
                   xt::no_ownership(),
