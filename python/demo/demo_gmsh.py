@@ -26,12 +26,14 @@ except ImportError:
 import numpy as np
 
 from dolfinx.graph import create_adjacencylist
-from dolfinx.io import (XDMFFile, cell_perm_gmsh, distribute_entity_data,
-                        extract_gmsh_geometry,
-                        extract_gmsh_topology_and_markers, ufl_mesh_from_gmsh)
+from dolfinx.io import XDMFFile, distribute_entity_data
+from dolfinx.io.gmsh import (cell_perm, extract_gmsh_geometry,
+                             extract_gmsh_topology_and_markers,
+                             ufl_mesh_from_gmsh)
 from dolfinx.mesh import CellType, create_mesh, meshtags_from_entities
 
 from mpi4py import MPI
+
 # -
 
 # Generate a mesh on each rank with the gmsh API, and create a DOLFINx
@@ -168,14 +170,14 @@ else:
 # Permute the topology from GMSH to DOLFINx ordering
 domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
 
-gmsh_tetra10 = cell_perm_gmsh(CellType.tetrahedron, 10)
+gmsh_tetra10 = cell_perm(CellType.tetrahedron, 10)
 cells = cells[:, gmsh_tetra10]
 
 msh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 msh.name = "ball_d2"
 
 # Permute also entities which are tagged
-gmsh_triangle6 = cell_perm_gmsh(CellType.triangle, 6)
+gmsh_triangle6 = cell_perm(CellType.triangle, 6)
 marked_facets = marked_facets[:, gmsh_triangle6]
 
 entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
@@ -239,7 +241,7 @@ if MPI.COMM_WORLD.rank == 0:
     gmsh.finalize()
 
     # Permute tagged entities
-    gmsh_quad9 = cell_perm_gmsh(CellType.quadrilateral, 9)
+    gmsh_quad9 = cell_perm(CellType.quadrilateral, 9)
     marked_facets = marked_facets[:, gmsh_quad9]
 else:
     gmsh_cell_id = MPI.COMM_WORLD.bcast(None, root=0)
@@ -249,7 +251,7 @@ else:
 
 # Permute the mesh topology from GMSH ordering to DOLFINx ordering
 domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
-gmsh_hex27 = cell_perm_gmsh(CellType.hexahedron, 27)
+gmsh_hex27 = cell_perm(CellType.hexahedron, 27)
 cells = cells[:, gmsh_hex27]
 
 msh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
