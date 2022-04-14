@@ -629,24 +629,24 @@ def test_submesh_codim_0_boundary_facets(n, d, ghost_mode):
     """Test that the correct number of boundary facets are computed
     for a submesh of codim 0"""
     if d == 2:
-        mesh_0 = create_unit_square(
-            MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
         mesh_1 = create_rectangle(
             MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
             ghost_mode=ghost_mode)
+        expected_num_boundary_facets = 4 * n
     else:
-        mesh_0 = create_unit_cube(
-            MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
         mesh_1 = create_box(
             MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
             (2 * n, n, n), ghost_mode=ghost_mode)
+        expected_num_boundary_facets = 6 * n**2 * 2
 
+    # Create submesh of half of the rectangle / box mesh to get unit
+    # square / cube mesh
     edim = mesh_1.topology.dim
     entities = locate_entities(mesh_1, edim, lambda x: x[0] <= 1.0)
     submesh = create_submesh(mesh_1, edim, entities)[0]
 
     assert(compute_num_boundary_facets(submesh)
-           == compute_num_boundary_facets(mesh_0))
+           == expected_num_boundary_facets)
 
 
 @pytest.mark.parametrize("n", [2, 5])
