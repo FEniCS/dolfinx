@@ -110,7 +110,7 @@ private:
   // The coordinate element
   fem::CoordinateElement _cmap;
 
-  // Coordinates for all points stored as a contiguous array (roe-major,
+  // Coordinates for all points stored as a contiguous array (row-major,
   // column size = 3)
   std::vector<double> _x;
 
@@ -120,9 +120,9 @@ private:
 
 /// @brief Build Geometry from input data.
 ///
-/// This function called after the mesh topology is built. It
-/// distributeds the 'node' coordinate data to the required MPI process,
-/// and the created a mesh::Geometry object.
+/// This function should be called after the mesh topology is built. It
+/// distributes the 'node' coordinate data to the required MPI process and then
+/// creates a mesh::Geometry object.
 ///
 /// @param[in] comm The MPI communicator to build the Geometry on
 /// @param[in] topology The mesh topology
