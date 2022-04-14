@@ -626,6 +626,8 @@ def test_boundary_facets(n, d, ghost_mode):
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 def test_submesh_codim_0_boundary_facets(n, d, ghost_mode):
+    """Test that the correct number of boundary facets are computed
+    for a submesh of codim 0"""
     if d == 2:
         mesh_0 = create_unit_square(
             MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
