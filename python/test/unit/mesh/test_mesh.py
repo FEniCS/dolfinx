@@ -619,3 +619,29 @@ def test_boundary_facets(n, d, ghost_mode):
     num_boundary_facets = compute_num_boundary_facets(mesh)
 
     assert(num_boundary_facets == expected_num_boundary_facets)
+
+
+@pytest.mark.parametrize("n", [2, 5])
+@pytest.mark.parametrize("d", [2, 3])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+def test_submesh_codim_0_boundary_facets(n, d, ghost_mode):
+    if d == 2:
+        mesh_0 = create_unit_square(
+            MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+        mesh_1 = create_rectangle(
+            MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+            ghost_mode=ghost_mode)
+    else:
+        mesh_0 = create_unit_cube(
+            MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
+        mesh_1 = create_box(
+            MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
+            (2 * n, n, n), ghost_mode=ghost_mode)
+
+    edim = mesh_1.topology.dim
+    entities = locate_entities(mesh_1, edim, lambda x: x[0] <= 1.0)
+    submesh = create_submesh(mesh_1, edim, entities)[0]
+
+    assert(compute_num_boundary_facets(submesh)
+           == compute_num_boundary_facets(mesh_0))
