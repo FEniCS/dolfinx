@@ -722,13 +722,18 @@ std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
   // to determine if it falls into category (i) or (ii). This is because a
   // submesh could have no ghost cells and no shared facets, but could share
   // some cells with other processes.
-  std::set<std::int32_t> fwd_shared_facets;
+  std::vector<std::int32_t> fwd_shared_facets;
   if (cell_imap->num_ghosts() == 0
       and cell_imap->scatter_fwd_indices().array().empty())
   {
     const std::vector<std::int32_t>& fwd_indices
         = facet_imap->scatter_fwd_indices().array();
-    fwd_shared_facets.insert(fwd_indices.begin(), fwd_indices.end());
+    fwd_shared_facets.assign(fwd_indices.begin(),
+                             fwd_indices.end());
+    dolfinx::radix_sort(xtl::span(fwd_shared_facets));
+    fwd_shared_facets.erase(
+        std::unique(fwd_shared_facets.begin(), fwd_shared_facets.end()),
+        fwd_shared_facets.end());
   }
 
   auto f_to_c = topology.connectivity(tdim - 1, tdim);
@@ -738,7 +743,8 @@ std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
   for (std::size_t f = 0; f < facet_markers.size(); ++f)
   {
     if (f_to_c->num_links(f) == 1
-        and fwd_shared_facets.find(f) == fwd_shared_facets.end())
+        and !std::binary_search(fwd_shared_facets.begin(),
+                                fwd_shared_facets.end(), f))
     {
       facet_markers[f] = true;
     }
