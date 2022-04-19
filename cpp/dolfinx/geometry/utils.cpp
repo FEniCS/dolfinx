@@ -141,8 +141,10 @@ void _compute_collisions_point(
     next = -1;
 
     if (is_leaf(bbox))
+    {
       // If box is a leaf node then add it to the list of colliding entities
       entities.push_back(bbox[1]);
+    }
     else
     {
       // Check whether the point collides with child nodes (left and right)
@@ -157,11 +159,15 @@ void _compute_collisions_point(
         next = bbox[0];
       }
       else if (left)
+      {
         // Traverse the current node's left subtree
         next = bbox[0];
+      }
       else if (right)
+      {
         // Traverse the current node's right subtree
         next = bbox[1];
+      }
     }
     // If tree traversal reaches a dead end (box is a leaf node or no collision
     // detected), check the stack for deferred subtrees.
