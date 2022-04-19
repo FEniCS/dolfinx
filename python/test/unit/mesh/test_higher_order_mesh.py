@@ -12,9 +12,10 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx.cpp.io import perm_gmsh, perm_vtk
+from dolfinx.cpp.io import perm_vtk
 from dolfinx.fem import assemble_scalar, form
-from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
+from dolfinx.io import XDMFFile
+from dolfinx.io.gmsh import cell_perm, ufl_mesh
 from dolfinx.mesh import CellType, create_mesh
 from ufl import dx
 
@@ -573,8 +574,8 @@ def test_gmsh_input_2d(order, cell_type):
         gmsh_cell_id = gmsh.model.mesh.getElementType("quadrangle", order)
     gmsh.finalize()
 
-    cells = cells[:, perm_gmsh(cell_type, cells.shape[1])]
-    mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, x.shape[1]))
+    cells = cells[:, cell_perm(cell_type, cells.shape[1])]
+    mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh(gmsh_cell_id, x.shape[1]))
     surface = assemble_scalar(form(1 * dx(mesh)))
 
     assert mesh.comm.allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=10 ** (-1 - order))
@@ -645,7 +646,7 @@ def test_gmsh_input_3d(order, cell_type):
     gmsh.finalize()
 
     # Permute the mesh topology from GMSH ordering to DOLFINx ordering
-    domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
+    domain = ufl_mesh(gmsh_cell_id, 3)
     cells = cells[:, perm_gmsh(cell_type, cells.shape[1])]
 
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)

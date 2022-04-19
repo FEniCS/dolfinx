@@ -8,10 +8,10 @@ import numpy as np
 import ufl
 from dolfinx.cpp.io import perm_gmsh as cell_perm
 
-__all__ = ["extract_gmsh_topology_and_markers", "extract_gmsh_geometry", "ufl_mesh_from_gmsh", "cell_perm"]
+__all__ = ["extract_topology_and_markers", "extract_geometry", "ufl_mesh", "cell_perm"]
 
 
-def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
+def extract_topology_and_markers(gmsh_model, model_name=None):
     """Extract all entities tagged with a physical marker in the gmsh
     model, and collect the data per cell type. Returns a nested
     dictionary where the first key is the gmsh MSH element type integer.
@@ -66,7 +66,7 @@ def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):
     return topologies
 
 
-def extract_gmsh_geometry(gmsh_model, model_name=None):
+def extract_geometry(gmsh_model, model_name=None):
     """For a given gmsh model, extract the mesh geometry as a numpy
     (N, 3) array where the i-th row corresponds to the i-th node in the
     mesh.
@@ -101,7 +101,7 @@ _gmsh_to_cells = {1: ("interval", 1), 2: ("triangle", 1),
                   36: ("quadrilateral", 3)}
 
 
-def ufl_mesh_from_gmsh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
+def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
     """Create a UFL mesh from a Gmsh cell identifier and the geometric dimension.
     See: http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format.
 
