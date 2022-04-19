@@ -21,7 +21,8 @@ from dolfinx.fem import assemble_scalar, form
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
                           create_rectangle, create_submesh, create_unit_cube,
                           create_unit_interval, create_unit_square,
-                          locate_entities, locate_entities_boundary)
+                          locate_entities, locate_entities_boundary,
+                          compute_boundary_facets)
 from ufl import dx
 
 from mpi4py import MPI
@@ -578,3 +579,90 @@ def test_original_index():
     s = sum(mesh.topology.original_cell_index)
     s = MPI.COMM_WORLD.allreduce(s, MPI.SUM)
     assert(s == nx**3 * 6 * (nx**3 * 6 - 1) // 2)
+
+
+def compute_num_boundary_facets(mesh):
+    "Compute the total number of boundary facets in the mesh"
+
+    # Create facets and facet cell connectivity
+    tdim = mesh.topology.dim
+    mesh.topology.create_entities(tdim - 1)
+    mesh.topology.create_connectivity(tdim - 1, tdim)
+
+    # Compute number of owned facets on the boundary
+    boundary_facet_marker = compute_boundary_facets(mesh.topology)
+    num_owned_boundary_facets = np.sum(boundary_facet_marker)
+
+    # Sum the number of boundary facets owned by each process to get the
+    # total number in the mesh
+    num_boundary_facets = mesh.comm.allreduce(
+        num_owned_boundary_facets, op=MPI.SUM)
+
+    return num_boundary_facets
+
+
+@pytest.mark.parametrize("n", [2, 5])
+@pytest.mark.parametrize("d", [2, 3])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+def test_boundary_facets(n, d, ghost_mode):
+    "Test that the correct number of boundary facets are computed"
+    if d == 2:
+        mesh = create_unit_square(
+            MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+        expected_num_boundary_facets = 4 * n
+    else:
+        mesh = create_unit_cube(
+            MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
+        expected_num_boundary_facets = 6 * n**2 * 2
+
+    num_boundary_facets = compute_num_boundary_facets(mesh)
+
+    assert(num_boundary_facets == expected_num_boundary_facets)
+
+
+@pytest.mark.parametrize("n", [2, 5])
+@pytest.mark.parametrize("d", [2, 3])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+def test_submesh_codim_0_boundary_facets(n, d, ghost_mode):
+    """Test that the correct number of boundary facets are computed
+    for a submesh of codim 0"""
+    if d == 2:
+        mesh_1 = create_rectangle(
+            MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+            ghost_mode=ghost_mode)
+        expected_num_boundary_facets = 4 * n
+    else:
+        mesh_1 = create_box(
+            MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
+            (2 * n, n, n), ghost_mode=ghost_mode)
+        expected_num_boundary_facets = 6 * n**2 * 2
+
+    # Create submesh of half of the rectangle / box mesh to get unit
+    # square / cube mesh
+    edim = mesh_1.topology.dim
+    entities = locate_entities(mesh_1, edim, lambda x: x[0] <= 1.0)
+    submesh = create_submesh(mesh_1, edim, entities)[0]
+
+    assert(compute_num_boundary_facets(submesh)
+           == expected_num_boundary_facets)
+
+
+@pytest.mark.parametrize("n", [2, 5])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+def test_submesh_codim_1_boundary_facets(n, ghost_mode):
+    """Test that the correct number of boundary facets are computed
+    for a submesh of codim 1"""
+    mesh = create_unit_cube(
+        MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
+    edim = mesh.topology.dim - 1
+    entities = locate_entities_boundary(
+        mesh, edim, lambda x: np.isclose(x[2], 0.0))
+    submesh = create_submesh(mesh, edim, entities)[0]
+
+    num_boundary_facets = compute_num_boundary_facets(submesh)
+    expected_num_boundary_facets = 4 * n
+
+    assert(num_boundary_facets == expected_num_boundary_facets)
