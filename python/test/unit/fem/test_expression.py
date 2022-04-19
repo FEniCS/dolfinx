@@ -350,3 +350,31 @@ def test_assembly_into_quadrature_function():
             x = mesh.geometry.cmap.push_forward(quadrature_points, xg)
             e_exact_eval[Q_dofs_unrolled[cell]] = e_exact(x.T).T.flatten()
         assert np.allclose(local.array, e_exact_eval)
+
+
+def test_expression_eval_cells_subset():
+    mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 2, 4)
+    V = dolfinx.fem.FunctionSpace(mesh, ("DG", 0))
+
+    cells_imap = mesh.topology.index_map(mesh.topology.dim)
+
+    u = dolfinx.fem.Function(V)
+    u.x.array[:] = np.arange(
+        cells_imap.size_local + cells_imap.num_ghosts, dtype=np.int32)
+    u.x.scatter_forward()
+    e = dolfinx.fem.Expression(u, V.element.interpolation_points)
+
+    # Test eval on single cell
+    for c in range(cells_imap.size_local):
+        u_ = e.eval(np.array([c], dtype=np.int32))
+        assert np.all(np.isclose(u_, c))
+
+    # Test eval on unordered cells
+    cells = np.arange(cells_imap.size_local, dtype=np.int32)[::-1]
+    u_ = e.eval(cells)
+    assert np.all(np.isclose(u_.ravel(), cells))
+
+    # Test eval on unordered and non sequential cells
+    cells = np.arange(cells_imap.size_local, dtype=np.int32)[::-2]
+    u_ = e.eval(cells)
+    assert np.all(np.isclose(u_.ravel(), cells))
