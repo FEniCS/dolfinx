@@ -130,9 +130,20 @@ private:
               U&& dofs, const std::shared_ptr<const FunctionSpace>& V, void*)
       : _function_space(V), _g(g), _dofs0(std::forward<U>(dofs))
   {
+    assert(_function_space);
+    if (auto c = std::get_if<std::shared_ptr<const Constant<T>>>(&_g))
+    {
+      assert(*c);
+      if ((*c)->value.size() != _function_space->dofmap()->bs())
+      {
+        throw std::runtime_error("Constant input to DirichletBC is not "
+                                 "supported for mixed spaces with block size. "
+                                 "Please use a Function as input.");
+      }
+    }
+
     // Compute number of owned dofs indices in the full space (will
     // contain 'gaps' for sub-spaces)
-    assert(_function_space);
     const int map0_bs = _function_space->dofmap()->index_map_bs();
     const int map0_size = _function_space->dofmap()->index_map->size_local();
     const int owned_size0 = map0_bs * map0_size;
@@ -140,14 +151,7 @@ private:
     // Find number of owned indices in _dofs0
     auto it0 = std::lower_bound(_dofs0.begin(), _dofs0.end(), owned_size0);
     _owned_indices0 = std::distance(_dofs0.begin(), it0);
-    if (std::holds_alternative<std::shared_ptr<const Constant<T>>>(_g))
-    {
-      auto c = std::get<std::shared_ptr<const Constant<T>>>(_g);
-      if (c->value.size() != _function_space->dofmap()->bs())
-        throw std::runtime_error("Constant input to DirichletBC is not "
-                                 "supported for mixed spaces with block size. "
-                                 "Please use a Function as input.");
-    }
+
     // Unroll _dofs0 for dofmap block size > 1
     if (const int bs = _function_space->dofmap()->bs(); bs > 1)
     {
@@ -163,19 +167,18 @@ private:
   }
 
 public:
-  /// Create a representation of a Dirichlet boundary condition
-  /// constrained by a scalar or tensor constant
+  /// @brief Create a representation of a Dirichlet boundary condition
+  /// constrained by a scalar or tensor constant.
   ///
   /// @param[in] g The boundary condition value (`T` or `xt::xarray<T>`)
-  /// @param[in] dofs Degree-of-freedom block indices (@p
-  /// std::vector<std::int32_t>) to be constrained. The indices must be
-  /// sorted.
+  /// @param[in] dofs Degree-of-freedom block indices (
+  /// `std::vector<std::int32_t>`) to be constrained. The indices must
+  /// be sorted.
   /// @param[in] V The function space to be constrained
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
   /// maps to 3 degrees-of-freedom if the dofmap associated with `g` has
   /// block size 3
-  /// @note Can be used only with point-evaluation elements
-  // template <typename U>
+  /// @note Can be used only with point-evaluation elements.
   template <typename S, typename U,
             typename = std::enable_if_t<
                 std::is_convertible_v<

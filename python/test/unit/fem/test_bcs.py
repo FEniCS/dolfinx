@@ -225,11 +225,13 @@ def test_mixed_constant_bc(mesh_factory):
     u = Function(W)
 
     bc_val = PETSc.ScalarType(3)
+    c = Constant(mesh, bc_val)
+    u_func = Function(W)
     for i in range(2):
+        u_func.x.array[:] = 0
         u.x.array[:] = 0
 
         # Apply BC to scalar component of a mixed space using a Constant
-        c = Constant(mesh, bc_val)
         dofs = locate_dofs_topological(W.sub(i), tdim - 1, boundary_facets)
         bc = dirichletbc(c, dofs, W.sub(i))
         set_bc(u.vector, [bc])
@@ -239,7 +241,6 @@ def test_mixed_constant_bc(mesh_factory):
         ubc.interpolate(lambda x: np.full(x.shape[1], bc_val))
         dofs_both = locate_dofs_topological((W.sub(i), ubc.function_space), tdim - 1, boundary_facets)
         bc_func = dirichletbc(ubc, dofs_both, W.sub(i))
-        u_func = Function(W)
         set_bc(u_func.vector, [bc_func])
 
         # Check that both approaches yield the same vector
@@ -247,9 +248,8 @@ def test_mixed_constant_bc(mesh_factory):
 
 
 def test_mixed_blocked_constant():
-    """
-    Check that mixed space with blocked component cannot have Dirichlet BC based on a vector valued Constant
-    """
+    """Check that mixed space with blocked component cannot have
+    Dirichlet BC based on a vector valued Constant."""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
 
     tdim = mesh.topology.dim
