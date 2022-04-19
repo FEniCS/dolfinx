@@ -702,36 +702,55 @@ graph::AdjacencyList<std::int32_t> convert_to_local_indexing(
 std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
 {
   const int tdim = topology.dim();
-  auto facets = topology.index_map(tdim - 1);
-  if (!facets)
+  auto facet_imap = topology.index_map(tdim - 1);
+  if (!facet_imap)
     throw std::runtime_error("Facets have not been computed.");
 
+  auto cell_imap = topology.index_map(tdim);
+  // Should always have cell index map
+  assert(cell_imap);
+
+  // In parallel, a mesh has either:
+  // i) Ghost cells connected to every shared facet
+  // ii) No ghost cells and no shared cells
+  // In case (i), checking that a facet is connected to only one cell is
+  // sufficient to identify it as a boundary facet. In case (ii), we must
+  // additionally check that the facet is not shared with another process to
+  // differentiate between the partition boundary and the physical boundary.
+  //
+  // NOTE: It is not sufficient to only check that a mesh has no ghost cells
+  // to determine if it falls into category (i) or (ii). This is because a
+  // submesh could have no ghost cells and no shared facets, but could share
+  // some cells with other processes.
   std::vector<std::int32_t> fwd_shared_facets;
-  if (dolfinx::MPI::size(facets->comm()) > 1 and facets->num_ghosts() == 0)
+  if (cell_imap->num_ghosts() == 0
+      and cell_imap->scatter_fwd_indices().array().empty())
   {
-    fwd_shared_facets.assign(facets->scatter_fwd_indices().array().begin(),
-                             facets->scatter_fwd_indices().array().end());
+    const std::vector<std::int32_t>& fwd_indices
+        = facet_imap->scatter_fwd_indices().array();
+    fwd_shared_facets.assign(fwd_indices.begin(),
+                             fwd_indices.end());
     dolfinx::radix_sort(xtl::span(fwd_shared_facets));
     fwd_shared_facets.erase(
         std::unique(fwd_shared_facets.begin(), fwd_shared_facets.end()),
         fwd_shared_facets.end());
   }
 
-  auto fc = topology.connectivity(tdim - 1, tdim);
-  if (!fc)
+  auto f_to_c = topology.connectivity(tdim - 1, tdim);
+  if (!f_to_c)
     throw std::runtime_error("Facet-cell connectivity missing.");
-  std::vector<std::int8_t> _boundary_facet(facets->size_local(), false);
-  for (std::size_t f = 0; f < _boundary_facet.size(); ++f)
+  std::vector<std::int8_t> facet_markers(facet_imap->size_local(), false);
+  for (std::size_t f = 0; f < facet_markers.size(); ++f)
   {
-    if (fc->num_links(f) == 1
+    if (f_to_c->num_links(f) == 1
         and !std::binary_search(fwd_shared_facets.begin(),
                                 fwd_shared_facets.end(), f))
     {
-      _boundary_facet[f] = true;
+      facet_markers[f] = true;
     }
   }
 
-  return _boundary_facet;
+  return facet_markers;
 }
 //-----------------------------------------------------------------------------
 Topology::Topology(MPI_Comm comm, CellType type)
