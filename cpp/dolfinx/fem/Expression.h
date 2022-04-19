@@ -187,7 +187,7 @@ public:
                                 std::next(coordinate_dofs.begin(), 3 * i));
       }
 
-      const T* coeff_cell = coeffs.data() + cell * cstride;
+      const T* coeff_cell = coeffs.data() + c * cstride;
       std::fill(values_local.begin(), values_local.end(), 0.0);
       _fn(values_local.data(), coeff_cell, constant_data.data(),
           coordinate_dofs.data(), nullptr, nullptr);
