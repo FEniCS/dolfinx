@@ -647,7 +647,7 @@ def test_gmsh_input_3d(order, cell_type):
 
     # Permute the mesh topology from GMSH ordering to DOLFINx ordering
     domain = ufl_mesh(gmsh_cell_id, 3)
-    cells = cells[:, perm_gmsh(cell_type, cells.shape[1])]
+    cells = cells[:, cell_perm(cell_type, cells.shape[1])]
 
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 

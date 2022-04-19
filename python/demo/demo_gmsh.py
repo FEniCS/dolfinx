@@ -27,9 +27,9 @@ import numpy as np
 
 from dolfinx.graph import create_adjacencylist
 from dolfinx.io import XDMFFile, distribute_entity_data
-from dolfinx.io.gmsh import (cell_perm, extract_gmsh_geometry,
-                             extract_gmsh_topology_and_markers,
-                             ufl_mesh_from_gmsh)
+from dolfinx.io.gmsh import (cell_perm, extract_geometry,
+                             extract_topology_and_markers,
+                             ufl_mesh)
 from dolfinx.mesh import CellType, create_mesh, meshtags_from_entities
 
 from mpi4py import MPI
@@ -53,7 +53,7 @@ model.mesh.generate(3)
 
 
 # Sort mesh nodes according to their index in gmsh (Starts at 1)
-x = extract_gmsh_geometry(model, model_name="Sphere")
+x = extract_geometry(model, model_name="Sphere")
 
 # Extract cells from gmsh (Only interested in tetrahedrons)
 element_types, element_tags, node_tags = model.mesh.getElements(dim=3)
@@ -61,7 +61,7 @@ assert len(element_types) == 1
 name, dim, order, num_nodes, local_coords, num_first_order_nodes = model.mesh.getElementProperties(element_types[0])
 cells = node_tags[0].reshape(-1, num_nodes) - 1
 
-msh = create_mesh(MPI.COMM_SELF, cells, x, ufl_mesh_from_gmsh(element_types[0], x.shape[1]))
+msh = create_mesh(MPI.COMM_SELF, cells, x, ufl_mesh(element_types[0], x.shape[1]))
 
 # with XDMFFile(MPI.COMM_SELF, f"out_gmsh/mesh_rank_{MPI.COMM_WORLD.rank}.xdmf", "w") as file:
 with XDMFFile(MPI.COMM_SELF, f"out_gmsh/mesh_rank_{MPI.COMM_WORLD.rank}.xdmf", "w") as file:
@@ -97,13 +97,13 @@ if MPI.COMM_WORLD.rank == 0:
     model.mesh.generate(3)
 
     # Sort mesh nodes according to their index in gmsh
-    x = extract_gmsh_geometry(model, model_name="Sphere minus box")
+    x = extract_geometry(model, model_name="Sphere minus box")
 
     # Broadcast cell type data and geometric dimension
     gmsh_cell_id = MPI.COMM_WORLD.bcast(model.mesh.getElementType("tetrahedron", 1), root=0)
 
     # Get mesh data for dim (0, tdim) for all physical entities
-    topologies = extract_gmsh_topology_and_markers(model, "Sphere minus box")
+    topologies = extract_topology_and_markers(model, "Sphere minus box")
     cells = topologies[gmsh_cell_id]["topology"]
     cell_data = topologies[gmsh_cell_id]["cell_data"]
     num_nodes = MPI.COMM_WORLD.bcast(cells.shape[1], root=0)
@@ -117,7 +117,7 @@ else:
     marked_facets, facet_values = np.empty((0, 3), dtype=np.int64), np.empty((0,), dtype=np.int32)
 
 
-msh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, 3))
+msh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh(gmsh_cell_id, 3))
 msh.name = "ball_d1"
 entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
 
@@ -146,13 +146,13 @@ if MPI.COMM_WORLD.rank == 0:
     gmsh.option.setNumber("General.Terminal", 0)
 
     # Sort mesh nodes according to their index in gmsh
-    x = extract_gmsh_geometry(model, model.getCurrent())
+    x = extract_geometry(model, model.getCurrent())
 
     # Broadcast cell type data and geometric dimension
     gmsh_cell_id = MPI.COMM_WORLD.bcast(model.mesh.getElementType("tetrahedron", 2), root=0)
 
     # Get mesh data for dim (0, tdim) for all physical entities
-    topologies = extract_gmsh_topology_and_markers(model, model.getCurrent())
+    topologies = extract_topology_and_markers(model, model.getCurrent())
     cells = topologies[gmsh_cell_id]["topology"]
     cell_data = topologies[gmsh_cell_id]["cell_data"]
 
@@ -168,7 +168,7 @@ else:
     marked_facets, facet_values = np.empty((0, 6)).astype(np.int64), np.empty((0,)).astype(np.int32)
 
 # Permute the topology from GMSH to DOLFINx ordering
-domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
+domain = ufl_mesh(gmsh_cell_id, 3)
 
 gmsh_tetra10 = cell_perm(CellType.tetrahedron, 10)
 cells = cells[:, gmsh_tetra10]
@@ -224,13 +224,13 @@ if MPI.COMM_WORLD.rank == 0:
     model.setPhysicalName(3, 1, "Mesh volume")
 
     # Sort mesh nodes according to their index in gmsh
-    x = extract_gmsh_geometry(model, model.getCurrent())
+    x = extract_geometry(model, model.getCurrent())
 
     # Broadcast cell type data and geometric dimension
     gmsh_cell_id = MPI.COMM_WORLD.bcast(model.mesh.getElementType("hexahedron", 2), root=0)
 
     # Get mesh data for dim (0, tdim) for all physical entities
-    topologies = extract_gmsh_topology_and_markers(model, model.getCurrent())
+    topologies = extract_topology_and_markers(model, model.getCurrent())
     cells = topologies[gmsh_cell_id]["topology"]
     cell_data = topologies[gmsh_cell_id]["cell_data"]
 
@@ -250,7 +250,7 @@ else:
     marked_facets, facet_values = np.empty((0, 9)).astype(np.int64), np.empty((0,)).astype(np.int32)
 
 # Permute the mesh topology from GMSH ordering to DOLFINx ordering
-domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
+domain = ufl_mesh(gmsh_cell_id, 3)
 gmsh_hex27 = cell_perm(CellType.hexahedron, 27)
 cells = cells[:, gmsh_hex27]
 
