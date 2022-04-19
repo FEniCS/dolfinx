@@ -357,24 +357,28 @@ def test_expression_eval_cells_subset():
     V = dolfinx.fem.FunctionSpace(mesh, ("DG", 0))
 
     cells_imap = mesh.topology.index_map(mesh.topology.dim)
+    all_cells = np.arange(
+        cells_imap.size_local + cells_imap.num_ghosts, dtype=np.int32)
+    cells_to_dofs = np.fromiter(
+        map(V.dofmap.cell_dofs, all_cells), dtype=np.int32)
+    dofs_to_cells = np.argsort(cells_to_dofs)
 
     u = dolfinx.fem.Function(V)
-    u.x.array[:] = np.arange(
-        cells_imap.size_local + cells_imap.num_ghosts, dtype=np.int32)
+    u.x.array[:] = dofs_to_cells
     u.x.scatter_forward()
     e = dolfinx.fem.Expression(u, V.element.interpolation_points)
 
     # Test eval on single cell
     for c in range(cells_imap.size_local):
         u_ = e.eval(np.array([c], dtype=np.int32))
-        assert np.all(np.isclose(u_, c))
+        assert np.allclose(u_, float(c))
 
     # Test eval on unordered cells
     cells = np.arange(cells_imap.size_local, dtype=np.int32)[::-1]
-    u_ = e.eval(cells)
-    assert np.all(np.isclose(u_.ravel(), cells))
+    u_ = e.eval(cells).flatten()
+    assert np.allclose(u_, cells)
 
     # Test eval on unordered and non sequential cells
     cells = np.arange(cells_imap.size_local, dtype=np.int32)[::-2]
     u_ = e.eval(cells)
-    assert np.all(np.isclose(u_.ravel(), cells))
+    assert np.allclose(u_.ravel(), cells)
