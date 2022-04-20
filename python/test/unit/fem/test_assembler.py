@@ -577,11 +577,12 @@ def test_assembly_solve_taylor_hood(mesh):
 
         a, p_form, L = form(a), form(p_form), form(L)
 
-        bdofsW0_P2_0 = locate_dofs_topological(W.sub(0), facetdim, bndry_facets0)
-        bdofsW0_P2_1 = locate_dofs_topological(W.sub(0), facetdim, bndry_facets1)
-
-        bc0 = dirichletbc(bc_value, bdofsW0_P2_0, W.sub(0))
-        bc1 = dirichletbc(bc_value, bdofsW0_P2_1, W.sub(0))
+        bdofsW0_P2_0 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets0)
+        bdofsW0_P2_1 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets1)
+        u0 = Function(P2)
+        u0.x.array[:] = 1.0
+        bc0 = dirichletbc(u0, bdofsW0_P2_0, W.sub(0))
+        bc1 = dirichletbc(u0, bdofsW0_P2_1, W.sub(0))
 
         A = assemble_matrix(a, bcs=[bc0, bc1])
         A.assemble()
