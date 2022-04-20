@@ -384,19 +384,19 @@ refinement::adjust_indices(const common::IndexMap& index_map, std::int32_t n)
   // forward comm to get ghost entry neighbors and create a dictionary
   // to lookup from the global rank
   MPI_Comm comm_fwd = index_map.comm(common::IndexMap::Direction::forward);
-  std::vector<int> neighbors = MPI::neighbors(comm_fwd)[0];
-  std::map<int, int> proc_to_nbr;
-  for (std::size_t i = 0; i < neighbors.size(); ++i)
-    proc_to_nbr.insert({neighbors[i], i});
+  int num_neighbors_fwd, num_neighbors_rev, weighted;
+  MPI_Dist_graph_neighbors_count(comm_fwd, &num_neighbors_fwd,
+                                 &num_neighbors_rev, &weighted);
 
   // Communicate offset to neighbors
-  std::vector<std::int64_t> neighbor_offsets(neighbors.size(), 0);
-  // Ensure allocation, in case where neighbors.size() == 0, needed for some MPI
+  std::vector<std::int64_t> neighbor_offsets(num_neighbors_fwd, 0);
+  // Ensure allocation, in case where num_neighbors_fwd == 0, needed for some
+  // MPI
   neighbor_offsets.reserve(1);
   MPI_Neighbor_allgather(&global_offset, 1, MPI_INT64_T,
                          neighbor_offsets.data(), 1, MPI_INT64_T, comm_fwd);
 
-  const std::vector<int>& ghost_owners = index_map.ghost_owner_rank();
+  const std::vector<int>& ghost_owners = index_map.ghost_owner_neighbor_rank();
   int local_size = index_map.size_local();
   std::vector<std::int64_t> global_indices = index_map.global_indices();
   std::transform(global_indices.begin(),
@@ -405,11 +405,7 @@ refinement::adjust_indices(const common::IndexMap& index_map, std::int32_t n)
                  [global_offset](auto x) { return x + global_offset; });
 
   for (std::size_t i = 0; i < ghost_owners.size(); ++i)
-  {
-    auto it = proc_to_nbr.find(ghost_owners[i]);
-    assert(it != proc_to_nbr.end());
-    global_indices[local_size + i] += neighbor_offsets[it->second];
-  }
+    global_indices[local_size + i] += neighbor_offsets[ghost_owners[i]];
 
   return global_indices;
 }
