@@ -171,7 +171,7 @@ void _compute_collisions_point(
     }
     // If tree traversal reaches a dead end (box is a leaf node or no collision
     // detected), check the stack for deferred subtrees.
-    if (next == -1 && !stack.empty())
+    if (next == -1 and !stack.empty())
     {
       next = stack.back();
       stack.pop_back();
