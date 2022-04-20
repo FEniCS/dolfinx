@@ -64,9 +64,7 @@ void _lift_bc_cells(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-
-  // FIXME: Add proper interface for num coordinate dofs
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const std::size_t num_dofs_g = geometry.cmap().dim();
   xtl::span<const double> x_g = geometry.x();
 
   // Data structures used in bc application
@@ -222,8 +220,8 @@ void _lift_bc_exterior_facets(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
-  // FIXME: Add proper interface for num coordinate dofs
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
+
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Data structures used in bc application
@@ -337,9 +335,7 @@ void _lift_bc_interior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-
-  // FIXME: Add proper interface for num coordinate dofs
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
   xtl::span<const double> x_g = mesh.geometry().x();
 
   const int num_cell_facets
@@ -523,9 +519,7 @@ void assemble_cells(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-
-  // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
+  const std::size_t num_dofs_g = geometry.cmap().dim();
   xtl::span<const double> x_g = geometry.x();
 
   // FIXME: Add proper interface for num_dofs
@@ -597,9 +591,7 @@ void assemble_exterior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-
-  // FIXME: Add proper interface for num coordinate dofs
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // FIXME: Add proper interface for num_dofs
@@ -671,9 +663,7 @@ void assemble_interior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-
-  // FIXME: Add proper interface for num coordinate dofs
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Create data structures used in assembly
