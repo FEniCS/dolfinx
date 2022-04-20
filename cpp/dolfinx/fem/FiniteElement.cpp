@@ -18,7 +18,7 @@ using namespace dolfinx::fem;
 namespace
 {
 //-----------------------------------------------------------------------------
-// Check if an element is a basix element (or a blocked element
+// Check if an element is a Basix element (or a blocked element
 // containing a Basix element)
 bool is_basix_element(const ufcx_finite_element& element)
 {
@@ -29,6 +29,22 @@ bool is_basix_element(const ufcx_finite_element& element)
     // TODO: what should happen if the element is a blocked element
     // containing a blocked element containing a Basix element?
     return element.sub_elements[0]->element_type == ufcx_basix_element;
+  }
+  else
+    return false;
+}
+//-----------------------------------------------------------------------------
+// Check if an element is a custom Basix element (or a blocked element
+// containing a custom Basix element)
+bool is_basix_custom_element(const ufcx_finite_element& element)
+{
+  if (element.element_type == ufcx_basix_custom_element)
+    return true;
+  else if (element.block_size != 1)
+  {
+    // TODO: what should happen if the element is a blocked element
+    // containing a blocked element containing a Basix element?
+    return element.sub_elements[0]->element_type == ufcx_basix_custom_element;
   }
   else
     return false;
@@ -138,7 +154,70 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
     }
   }
 
-  if (is_basix_element(e))
+  if (is_basix_custom_element(e))
+  {
+    // Recreate the custom Basix element using information written into the
+    // generated code
+    ufcx_basix_custom_finite_element* ce = e.custom_element;
+    const basix::cell::type cell_type
+        = static_cast<basix::cell::type>(ce->cell_type);
+
+    std::vector<std::size_t> value_shape(ce->value_shape_length);
+    int value_size = 1;
+    for (int i = 0; i < ce->value_shape_length; ++i)
+    {
+      value_shape[i] = ce->value_shape[i];
+      value_size *= ce->value_shape[i];
+    }
+
+    xt::xtensor<double, 2> wcoeffs(
+        {static_cast<std::size_t>(ce->wcoeffs_rows),
+         static_cast<std::size_t>(ce->wcoeffs_cols)});
+    { // scope
+      int e = 0;
+      for (int i = 0; i < ce->wcoeffs_rows; ++i)
+        for (int j = 0; j < ce->wcoeffs_cols; ++j)
+          wcoeffs(i, j) = ce->wcoeffs[e++];
+    }
+
+    std::array<std::vector<xt::xtensor<double, 2>>, 4> x;
+    std::array<std::vector<xt::xtensor<double, 3>>, 4> M;
+    { // scope
+      int pt_n = 0;
+      int p_e = 0;
+      int m_e = 0;
+      const int dim = basix::cell::topological_dimension(cell_type);
+      for (int d = 0; d <= dim; ++d)
+      {
+        const int num_entities = basix::cell::num_sub_entities(cell_type, d);
+        for (int entity = 0; entity < num_entities; ++entity)
+        {
+          const int npts = ce->npts[pt_n++];
+          xt::xtensor<double, 2> pts(
+              {static_cast<std::size_t>(npts), static_cast<std::size_t>(dim)});
+          xt::xtensor<double, 3> mat({static_cast<std::size_t>(npts),
+                                      static_cast<std::size_t>(value_size),
+                                      static_cast<std::size_t>(npts)});
+          for (int i = 0; i < npts; ++i)
+            for (int j = 0; j < dim; ++j)
+              pts(i, j) = ce->x[p_e++];
+          for (int i = 0; i < npts; ++i)
+            for (int j = 0; j < value_size; ++j)
+              for (int k = 0; k < npts; ++k)
+                mat(i, j, k) = ce->M[m_e++];
+          x[d].push_back(pts);
+          M[d].push_back(mat);
+        }
+      }
+    }
+
+    _element
+        = std::make_unique<basix::FiniteElement>(basix::create_custom_element(
+            cell_type, ce->degree, value_shape, wcoeffs, x, M,
+            static_cast<basix::maps::type>(ce->map_type), ce->discontinuous,
+            ce->highest_complete_degree));
+  }
+  else if (is_basix_element(e))
   {
     if (e.lagrange_variant != -1 and e.dpc_variant != -1)
     {
