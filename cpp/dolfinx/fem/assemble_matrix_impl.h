@@ -62,9 +62,8 @@ void assemble_cells(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  const std::size_t num_dofs_g = geometry.cmap().dim();
 
-  // FIXME: Add proper interface for num coordinate dofs
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
   xtl::span<const double> x_g = geometry.x();
 
   // Iterate over active cells
@@ -163,9 +162,7 @@ void assemble_exterior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-
-  // FIXME: Add proper interface for num coordinate dofs
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Data structures used in assembly
@@ -267,8 +264,8 @@ void assemble_interior_facets(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
-  // FIXME: Add proper interface for num coordinate dofs
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
+
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Data structures used in assembly
