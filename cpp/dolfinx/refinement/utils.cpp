@@ -391,10 +391,7 @@ refinement::adjust_indices(const common::IndexMap& index_map, std::int32_t n)
 
   // Communicate offset to neighbors
   std::vector<std::int64_t> neighbor_offsets(neighbors.size(), 0);
-<<<<<<< HEAD
   // Ensure allocation, in case where neighbors.size() == 0, needed for some MPI
-=======
->>>>>>> 92e9f5e01c1e01dbab52504aefdcfebc39a03373
   neighbor_offsets.reserve(1);
   MPI_Neighbor_allgather(&global_offset, 1, MPI_INT64_T,
                          neighbor_offsets.data(), 1, MPI_INT64_T, comm_fwd);
