@@ -87,16 +87,13 @@ xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
   const std::size_t value_size_loc = V->element()->value_size();
 
   // Resize Array for holding point values
-  xt::xtensor<T, 2> point_values(
-      {mesh->geometry().x().size() / 3, value_size_loc});
+  xt::xtensor<T, 2> point_values
+      = xt::zeros<T>({mesh->geometry().x().size() / 3, value_size_loc});
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
-
-  // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = x_dofmap.num_links(0);
-
+  const int num_dofs_g = mesh->geometry().cmap().dim();
   const auto x_g
       = xt::adapt(mesh->geometry().x().data(), mesh->geometry().x().size(),
                   xt::no_ownership(),
@@ -108,7 +105,7 @@ xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
   assert(map);
   const std::int32_t num_cells = map->size_local() + map->num_ghosts();
 
-  std::vector<std::int32_t> cells(x_g.shape(0));
+  std::vector<std::int32_t> cells(x_g.shape(0), -1);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get coordinates for all points in cell
