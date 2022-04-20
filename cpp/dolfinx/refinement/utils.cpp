@@ -45,11 +45,13 @@ std::int64_t local_to_global(std::int32_t local_index,
 }
 
 //-----------------------------------------------------------------------------
-// Create geometric points of new Mesh, from current Mesh and a edge_to_vertex
-// map listing the new local points (midpoints of those edges)
-// @param Mesh
-// @param local_edge_to_new_vertex
-// @return array of points
+
+/// Create geometric points of new Mesh, from current Mesh and a
+/// edge_to_vertex map listing the new local points (midpoints of those
+/// edges)
+/// @param Mesh
+/// @param local_edge_to_new_vertex
+/// @return array of points
 xt::xtensor<double, 2> create_new_geometry(
     const mesh::Mesh& mesh,
     const std::map<std::int32_t, std::int64_t>& local_edge_to_new_vertex)
@@ -296,7 +298,6 @@ refinement::partition(const mesh::Mesh& old_mesh,
                       const xt::xtensor<double, 2>& new_vertex_coordinates,
                       bool redistribute, mesh::GhostMode gm)
 {
-
   if (redistribute)
   {
     xt::xtensor<double, 2> new_coords(new_vertex_coordinates);
@@ -319,11 +320,12 @@ refinement::partition(const mesh::Mesh& old_mesh,
     const int mpi_rank = dolfinx::MPI::rank(comm);
     const std::int32_t local_size = graph.num_nodes();
     std::vector<std::int32_t> local_sizes(mpi_size);
-    std::vector<std::int64_t> local_offsets(mpi_size + 1);
 
     // Get the "local range" for all processes
     MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1,
                   MPI_INT32_T, comm);
+
+    std::vector<std::int64_t> local_offsets(mpi_size + 1);
     for (int i = 0; i < mpi_size; ++i)
       local_offsets[i + 1] = local_offsets[i] + local_sizes[i];
 
@@ -378,9 +380,9 @@ refinement::adjust_indices(const common::IndexMap& index_map, std::int32_t n)
   std::int64_t global_offset = 0;
   MPI_Exscan(&num_local, &global_offset, 1, MPI_INT64_T, MPI_SUM, comm);
 
-  // Use MPI neighbors to get offsets for ghosts
-  // Use the source of the forward comm to get ghost entry neighbors
-  // and create a dictionary to lookup from the global rank
+  // Use MPI neighbors to get offsets for ghosts. Use the source of the
+  // forward comm to get ghost entry neighbors and create a dictionary
+  // to lookup from the global rank
   MPI_Comm comm_fwd = index_map.comm(common::IndexMap::Direction::forward);
   std::vector<int> neighbors = MPI::neighbors(comm_fwd)[0];
   std::map<int, int> proc_to_nbr;
@@ -389,23 +391,29 @@ refinement::adjust_indices(const common::IndexMap& index_map, std::int32_t n)
 
   // Communicate offset to neighbors
   std::vector<std::int64_t> neighbor_offsets(neighbors.size(), 0);
+<<<<<<< HEAD
   // Ensure allocation, in case where neighbors.size() == 0, needed for some MPI
+=======
+>>>>>>> 92e9f5e01c1e01dbab52504aefdcfebc39a03373
   neighbor_offsets.reserve(1);
   MPI_Neighbor_allgather(&global_offset, 1, MPI_INT64_T,
                          neighbor_offsets.data(), 1, MPI_INT64_T, comm_fwd);
 
-  std::vector<std::int64_t> global_indices = index_map.global_indices();
-
   const std::vector<int>& ghost_owners = index_map.ghost_owner_rank();
   int local_size = index_map.size_local();
-  for (int i = 0; i < local_size; ++i)
-    global_indices[i] += global_offset;
+  std::vector<std::int64_t> global_indices = index_map.global_indices();
+  std::transform(global_indices.begin(),
+                 std::next(global_indices.begin(), local_size),
+                 global_indices.begin(),
+                 [global_offset](auto x) { return x + global_offset; });
+
   for (std::size_t i = 0; i < ghost_owners.size(); ++i)
   {
     auto it = proc_to_nbr.find(ghost_owners[i]);
     assert(it != proc_to_nbr.end());
     global_indices[local_size + i] += neighbor_offsets[it->second];
   }
+
   return global_indices;
 }
 //-----------------------------------------------------------------------------
