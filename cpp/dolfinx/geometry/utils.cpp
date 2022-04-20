@@ -29,6 +29,9 @@ constexpr bool is_leaf(const std::array<int, 2>& bbox)
   return bbox[0] == bbox[1];
 }
 //-----------------------------------------------------------------------------
+// A point `x` is inside a bounding box `b` if each component of its coordinates
+// lies within the range `[b(0,i), b(1,i)]` that defines the bounds of the
+// bounding box, b(0,i) <= x[i] <= b(1,i) for i = 0, 1, 2
 bool point_in_bbox(const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
                    const xt::xtensor_fixed<double, xt::xshape<3>>& x)
 {
@@ -45,6 +48,9 @@ bool point_in_bbox(const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
   return in;
 }
 //-----------------------------------------------------------------------------
+// A bounding box "a" is contained inside another bounding box "b", if each
+// of its intervals [a(0,i), a(1,i)] is contained in [b(0,i), b(1,i)],
+// a(0,i) <= b(1, i) and a(1,i) >= b(0, i)
 bool bbox_in_bbox(const xt::xtensor_fixed<double, xt::xshape<2, 3>>& a,
                   const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b)
 {
