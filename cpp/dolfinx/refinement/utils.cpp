@@ -372,24 +372,38 @@ refinement::adjust_indices(const common::IndexMap& index_map, std::int32_t n)
   // Add in an extra "n" indices at the end of the current local_range
   // of "index_map", and adjust existing indices to match.
 
-  // Get number of new indices on all processes
+  // Get offset for n for this process
   MPI_Comm comm = index_map.comm();
-  int mpi_size = dolfinx::MPI::size(comm);
-  int mpi_rank = dolfinx::MPI::rank(comm);
-  std::vector<std::int32_t> recvn(mpi_size);
-  MPI_Allgather(&n, 1, MPI_INT32_T, recvn.data(), 1, MPI_INT32_T, comm);
-  std::vector<std::int64_t> global_offsets = {0};
-  for (std::int32_t r : recvn)
-    global_offsets.push_back(global_offsets.back() + r);
+  const std::int64_t num_local = n;
+  std::int64_t global_offset = 0;
+  MPI_Exscan(&num_local, &global_offset, 1, MPI_INT64_T, MPI_SUM, comm);
 
-  std::vector global_indices = index_map.global_indices();
+  // Use MPI neighbors to get offsets for ghosts
+  // TODO: num_neighbors
+  MPI_Comm comm_fwd = index_map.comm(common::IndexMap::Direction::forward);
+  std::vector<int> neighbors = MPI::neighbors(comm_fwd)[0];
+  std::map<int, int> proc_to_nbr;
+  for (std::size_t i = 0; i < neighbors.size(); ++i)
+    proc_to_nbr.insert({neighbors[i], i});
 
+  std::vector<std::int64_t> neighbor_offsets(neighbors.size());
+  MPI_Neighbor_alltoall(&global_offset, 1, MPI_INT64_T, neighbor_offsets.data(),
+                        1, MPI_INT64_T, comm_fwd);
+
+  std::vector<std::int64_t> global_indices = index_map.global_indices();
+
+  // TODO: convert to neighbor rank, not global rank
   const std::vector<int>& ghost_owners = index_map.ghost_owner_rank();
+  std::vector<int> ghost_owner_nbr(ghost_owners.size());
+  std::transform(ghost_owners.begin(), ghost_owners.end(),
+                 ghost_owner_nbr.begin(),
+                 [&](int p) { return proc_to_nbr[p]; });
+
   int local_size = index_map.size_local();
   for (int i = 0; i < local_size; ++i)
-    global_indices[i] += global_offsets[mpi_rank];
+    global_indices[i] += global_offset;
   for (std::size_t i = 0; i < ghost_owners.size(); ++i)
-    global_indices[local_size + i] += global_offsets[ghost_owners[i]];
+    global_indices[local_size + i] += neighbor_offsets[ghost_owner_nbr[i]];
 
   return global_indices;
 }
