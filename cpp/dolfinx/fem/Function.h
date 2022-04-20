@@ -304,6 +304,9 @@ public:
             const xtl::span<const std::int32_t>& cells,
             xt::xtensor<T, 2>& u) const
   {
+    if (cells.empty())
+      return;
+
     // TODO: This could be easily made more efficient by exploiting points
     // being ordered by the cell to which they belong.
 
@@ -318,8 +321,6 @@ public:
           "Length of array for Function values must be the "
           "same as the number of points.");
     }
-    if (cells.empty())
-      return;
 
     // Get mesh
     assert(_function_space);
