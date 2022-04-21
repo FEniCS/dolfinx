@@ -209,6 +209,9 @@ public:
   /// Owner rank on the global communicator of each ghost entry
   std::vector<int> ghost_owner_rank() const;
 
+  /// Compute the owner on the neighborhood communicator of ghost indices
+  std::vector<int> ghost_owner_neighbor_rank() const;
+
   /// @todo Aim to remove this function? If it's kept, should it work
   /// with neighborhood ranks?
   ///
