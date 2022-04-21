@@ -342,8 +342,19 @@ common::stack_index_maps(
   {
     const int bs = maps[f].second;
     const std::vector<std::int64_t>& ghosts = maps[f].first.get().ghosts();
-    const std::vector<int>& ghost_owners
-        = maps[f].first.get().ghost_owner_rank();
+
+    // FIXME: avoid mapping back-and-forth between neighbourhood and
+    // global ranks
+    std::vector<int> ghost_owners;
+    {
+      std::vector<int> neighbors = dolfinx::MPI::neighbors(
+          maps[f].first.get().comm(common::IndexMap::Direction::forward))[0];
+      ghost_owners = maps[f].first.get().ghost_owner_neighbor_rank();
+      std::transform(ghost_owners.cbegin(), ghost_owners.cend(),
+                     ghost_owners.begin(),
+                     [&neighbors](auto r) { return neighbors[r]; });
+    }
+
     for (std::size_t i = 0; i < ghosts.size(); ++i)
     {
       for (int j = 0; j < bs; ++j)

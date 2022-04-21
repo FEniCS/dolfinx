@@ -256,13 +256,34 @@ void SparsityPattern::assemble()
   const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
   const std::array local_range0 = _index_maps[0]->local_range();
   const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
-  std::vector<int> ghost_owners0 = _index_maps[0]->ghost_owner_rank();
+
+  // FIXME: avoid mapping back-and-forth between neighbourhood and
+  // global ranks
+  std::vector<int> ghost_owners0;
+  {
+    std::vector<int> neighbors = dolfinx::MPI::neighbors(
+        _index_maps[0]->comm(common::IndexMap::Direction::forward))[0];
+    ghost_owners0 = _index_maps[0]->ghost_owner_neighbor_rank();
+    std::transform(ghost_owners0.cbegin(), ghost_owners0.cend(),
+                   ghost_owners0.begin(),
+                   [&neighbors](auto r) { return neighbors[r]; });
+  }
 
   assert(_index_maps[1]);
   const std::int32_t local_size1 = _index_maps[1]->size_local();
   const std::array local_range1 = _index_maps[1]->local_range();
   _col_ghosts = _index_maps[1]->ghosts();
-  _col_ghost_owners = _index_maps[1]->ghost_owner_rank();
+
+  // FIXME: avoid mapping back-and-forth between neighbourhood and
+  // global ranks
+  {
+    std::vector<int> neighbors = dolfinx::MPI::neighbors(
+        _index_maps[1]->comm(common::IndexMap::Direction::forward))[0];
+    _col_ghost_owners = _index_maps[1]->ghost_owner_neighbor_rank();
+    std::transform(_col_ghost_owners.cbegin(), _col_ghost_owners.cend(),
+                   _col_ghost_owners.begin(),
+                   [&neighbors](auto r) { return neighbors[r]; });
+  }
 
   // Global to local map for ghost columns
   std::map<std::int64_t, std::int32_t> global_to_local;

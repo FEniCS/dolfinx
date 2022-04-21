@@ -192,7 +192,19 @@ public:
     const std::array local_range
         = {_index_maps[0]->local_range(), _index_maps[1]->local_range()};
     const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
-    const std::vector<int> ghost_owners0 = _index_maps[0]->ghost_owner_rank();
+
+    // FIXME: avoid mapping back-and-forth between neighbourhood and
+    // global ranks
+    std::vector<int> ghost_owners0;
+    {
+      std::vector<int> neighbors = dolfinx::MPI::neighbors(
+          _index_maps[0]->comm(common::IndexMap::Direction::forward))[0];
+      ghost_owners0 = _index_maps[0]->ghost_owner_neighbor_rank();
+      std::transform(ghost_owners0.cbegin(), ghost_owners0.cend(),
+                     ghost_owners0.begin(),
+                     [&neighbors](auto r) { return neighbors[r]; });
+    }
+
     const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
     const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
 
