@@ -93,7 +93,19 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   dofmap_view.index_map->scatter_fwd(
       xtl::span<const std::int64_t>(global_index),
       xtl::span<std::int64_t>(global_index_remote), 1);
-  const std::vector ghost_owner_old = dofmap_view.index_map->ghost_owner_rank();
+
+  // FIXME: avoid mapping back-and-forth between neighbourhood and
+  // global ranks
+  // Determine owning rank (global) for each ghost
+  std::vector<int> ghost_owner_old;
+  {
+    std::vector<int> neighbors = dolfinx::MPI::neighbors(
+        dofmap_view.index_map->comm(common::IndexMap::Direction::forward))[0];
+    ghost_owner_old = dofmap_view.index_map->ghost_owner_neighbor_rank();
+    std::transform(ghost_owner_old.cbegin(), ghost_owner_old.cend(),
+                   ghost_owner_old.begin(),
+                   [&neighbors](auto r) { return neighbors[r]; });
+  }
 
   // Compute ghosts for collapsed dofmap
   std::vector<std::int64_t> ghosts(num_unowned);
