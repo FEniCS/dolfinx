@@ -636,10 +636,10 @@ std::vector<int> IndexMap::ghost_owner_rank() const
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
                                  &outdegree, &weighted);
-  std::vector<int> neighbors(indegree), neighbors_out(outdegree);
+  std::vector<int> neighbors(indegree), tmp(outdegree);
   MPI_Dist_graph_neighbors(_comm_owner_to_ghost.comm(), indegree,
-                           neighbors.data(), MPI_UNWEIGHTED, 0, &outdegree,
-                           MPI_UNWEIGHTED);
+                           neighbors.data(), MPI_UNWEIGHTED, outdegree,
+                           tmp.data(), MPI_UNWEIGHTED);
 
   // Compute index owner on neighbourhood comm
   const std::vector<int> ghost_owners = ghost_owner_neighbor_rank();
