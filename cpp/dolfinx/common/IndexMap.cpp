@@ -16,26 +16,6 @@ using namespace dolfinx::common;
 namespace
 {
 //-----------------------------------------------------------------------------
-
-/// Compute the owner on the neighbourgood communicator of ghost indices
-std::vector<int>
-compute_ghost_owners(const std::vector<int>& ghost_pos_recv_fwd,
-                     const std::vector<int>& displs_recv_fwd)
-{
-  std::vector<int> owners;
-  std::transform(ghost_pos_recv_fwd.cbegin(), ghost_pos_recv_fwd.cend(),
-                 std::back_inserter(owners),
-                 [&displs_recv_fwd](auto ghost_pos)
-                 {
-                   auto it
-                       = std::upper_bound(displs_recv_fwd.cbegin(),
-                                          displs_recv_fwd.cend(), ghost_pos);
-                   return std::distance(displs_recv_fwd.cbegin(), it) - 1;
-                 });
-  return owners;
-}
-//----------------------------------------------------------------------------
-
 /// Compute the owning rank of ghost indices
 [[maybe_unused]] std::vector<int>
 get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
@@ -625,6 +605,23 @@ IndexMap::scatter_fwd_ghost_positions() const noexcept
   return _ghost_pos_recv_fwd;
 }
 //-----------------------------------------------------------------------------
+std::vector<int> IndexMap::ghost_owner_neighbor_rank() const
+{
+  /// Compute the owner on the neighborhood communicator of ghost indices
+  std::vector<int> owners;
+  const std::vector<int>& displs_recv_fwd = _displs_recv_fwd;
+  std::transform(_ghost_pos_recv_fwd.cbegin(), _ghost_pos_recv_fwd.cend(),
+                 std::back_inserter(owners),
+                 [&displs_recv_fwd](auto ghost_pos)
+                 {
+                   auto it
+                       = std::upper_bound(displs_recv_fwd.cbegin(),
+                                          displs_recv_fwd.cend(), ghost_pos);
+                   return std::distance(displs_recv_fwd.cbegin(), it) - 1;
+                 });
+  return owners;
+}
+//----------------------------------------------------------------------------
 std::vector<int> IndexMap::ghost_owner_rank() const
 {
   int indegree(-1), outdegree(-2), weighted(-1);
@@ -636,8 +633,7 @@ std::vector<int> IndexMap::ghost_owner_rank() const
                            neighbors_out.data(), MPI_UNWEIGHTED);
 
   // Compute index owner on neighbourhood comm
-  const std::vector<int> ghost_owners
-      = compute_ghost_owners(_ghost_pos_recv_fwd, _displs_recv_fwd);
+  const std::vector<int> ghost_owners = ghost_owner_neighbor_rank();
 
   std::vector<std::int32_t> owners(ghost_owners.size());
   std::transform(ghost_owners.cbegin(), ghost_owners.cend(), owners.begin(),
