@@ -45,11 +45,13 @@ std::int64_t local_to_global(std::int32_t local_index,
 }
 
 //-----------------------------------------------------------------------------
-// Create geometric points of new Mesh, from current Mesh and a edge_to_vertex
-// map listing the new local points (midpoints of those edges)
-// @param Mesh
-// @param local_edge_to_new_vertex
-// @return array of points
+
+/// Create geometric points of new Mesh, from current Mesh and a
+/// edge_to_vertex map listing the new local points (midpoints of those
+/// edges)
+/// @param Mesh
+/// @param local_edge_to_new_vertex
+/// @return array of points
 xt::xtensor<double, 2> create_new_geometry(
     const mesh::Mesh& mesh,
     const std::map<std::int32_t, std::int64_t>& local_edge_to_new_vertex)
@@ -296,7 +298,6 @@ refinement::partition(const mesh::Mesh& old_mesh,
                       const xt::xtensor<double, 2>& new_vertex_coordinates,
                       bool redistribute, mesh::GhostMode gm)
 {
-
   if (redistribute)
   {
     xt::xtensor<double, 2> new_coords(new_vertex_coordinates);
@@ -319,11 +320,12 @@ refinement::partition(const mesh::Mesh& old_mesh,
     const int mpi_rank = dolfinx::MPI::rank(comm);
     const std::int32_t local_size = graph.num_nodes();
     std::vector<std::int32_t> local_sizes(mpi_size);
-    std::vector<std::int64_t> local_offsets(mpi_size + 1);
 
     // Get the "local range" for all processes
     MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1,
                   MPI_INT32_T, comm);
+
+    std::vector<std::int64_t> local_offsets(mpi_size + 1);
     for (int i = 0; i < mpi_size; ++i)
       local_offsets[i + 1] = local_offsets[i] + local_sizes[i];
 
@@ -372,24 +374,38 @@ refinement::adjust_indices(const common::IndexMap& index_map, std::int32_t n)
   // Add in an extra "n" indices at the end of the current local_range
   // of "index_map", and adjust existing indices to match.
 
-  // Get number of new indices on all processes
+  // Get offset for n for this process
   MPI_Comm comm = index_map.comm();
-  int mpi_size = dolfinx::MPI::size(comm);
-  int mpi_rank = dolfinx::MPI::rank(comm);
-  std::vector<std::int32_t> recvn(mpi_size);
-  MPI_Allgather(&n, 1, MPI_INT32_T, recvn.data(), 1, MPI_INT32_T, comm);
-  std::vector<std::int64_t> global_offsets = {0};
-  for (std::int32_t r : recvn)
-    global_offsets.push_back(global_offsets.back() + r);
+  const std::int64_t num_local = n;
+  std::int64_t global_offset = 0;
+  MPI_Exscan(&num_local, &global_offset, 1, MPI_INT64_T, MPI_SUM, comm);
 
-  std::vector global_indices = index_map.global_indices();
+  // Use MPI neighbors to get offsets for ghosts. Use the source of the
+  // forward comm to get ghost entry neighbors and create a dictionary
+  // to lookup from the global rank
+  MPI_Comm comm_fwd = index_map.comm(common::IndexMap::Direction::forward);
+  int num_neighbors_fwd, num_neighbors_rev, weighted;
+  MPI_Dist_graph_neighbors_count(comm_fwd, &num_neighbors_fwd,
+                                 &num_neighbors_rev, &weighted);
 
-  const std::vector<int>& ghost_owners = index_map.ghost_owner_rank();
+  // Communicate offset to neighbors
+  std::vector<std::int64_t> neighbor_offsets(num_neighbors_fwd, 0);
+  // Ensure allocation, in case where num_neighbors_fwd == 0, needed for some
+  // MPI
+  neighbor_offsets.reserve(1);
+  MPI_Neighbor_allgather(&global_offset, 1, MPI_INT64_T,
+                         neighbor_offsets.data(), 1, MPI_INT64_T, comm_fwd);
+
+  const std::vector<int>& ghost_owners = index_map.ghost_owner_neighbor_rank();
   int local_size = index_map.size_local();
-  for (int i = 0; i < local_size; ++i)
-    global_indices[i] += global_offsets[mpi_rank];
+  std::vector<std::int64_t> global_indices = index_map.global_indices();
+  std::transform(global_indices.begin(),
+                 std::next(global_indices.begin(), local_size),
+                 global_indices.begin(),
+                 [global_offset](auto x) { return x + global_offset; });
+
   for (std::size_t i = 0; i < ghost_owners.size(); ++i)
-    global_indices[local_size + i] += global_offsets[ghost_owners[i]];
+    global_indices[local_size + i] += neighbor_offsets[ghost_owners[i]];
 
   return global_indices;
 }
