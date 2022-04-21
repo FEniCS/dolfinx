@@ -626,7 +626,7 @@ std::vector<int> IndexMap::ghost_owner_rank() const
                                  &outdegree, &weighted);
   std::vector<int> neighbors(indegree);
   MPI_Dist_graph_neighbors(_comm_owner_to_ghost.comm(), indegree,
-                           neighbors.data(), MPI_UNWEIGHTED, 0, &outdegree,
+                           neighbors.data(), MPI_UNWEIGHTED, 0, nullptr,
                            MPI_UNWEIGHTED);
 
   // Compute index owner on neighbourhood comm
@@ -763,7 +763,7 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
     for (int j = 0; j < set_size; ++j)
     {
       if (recv_data[i + 2 + j] != myrank)
-        shared_indices[idx].insert(recv_data[i + 2 + +j]);
+        shared_indices[idx].insert(recv_data[i + 2 + j]);
     }
     i += set_size + 2;
   }
