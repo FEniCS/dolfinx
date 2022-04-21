@@ -344,8 +344,8 @@ determine_sharing_ranks(MPI_Comm comm,
 /// 2. With undetermined ownership
 /// 3. Not owned by the caller
 std::array<std::vector<std::int64_t>, 3>
-vertex_ownerhip_groups(const graph::AdjacencyList<std::int64_t>& cells,
-                       int num_local_cells)
+vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
+                        int num_local_cells)
 {
   common::Timer timer("Topology: determine vertex ownership groups (owned, "
                       "undetermined, unowned)");
@@ -728,8 +728,7 @@ std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
   {
     const std::vector<std::int32_t>& fwd_indices
         = facet_imap->scatter_fwd_indices().array();
-    fwd_shared_facets.assign(fwd_indices.begin(),
-                             fwd_indices.end());
+    fwd_shared_facets.assign(fwd_indices.begin(), fwd_indices.end());
     dolfinx::radix_sort(xtl::span(fwd_shared_facets));
     fwd_shared_facets.erase(
         std::unique(fwd_shared_facets.begin(), fwd_shared_facets.end()),
@@ -924,7 +923,7 @@ mesh::create_topology(MPI_Comm comm,
 
   // Create sets of (1) owned, (2) undetermined, (3) not-owned vertices
   auto [owned_vertices, unknown_vertices, unowned_vertices]
-      = vertex_ownerhip_groups(cells, num_local_cells);
+      = vertex_ownership_groups(cells, num_local_cells);
 
   // For each vertex whose ownership needs determining, find the sharing
   // ranks. The first index in the list of ranks for a vertex the owner
