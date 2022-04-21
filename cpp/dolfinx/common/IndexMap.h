@@ -209,7 +209,19 @@ public:
   /// Owner rank on the global communicator of each ghost entry
   std::vector<int> ghost_owner_rank() const;
 
-  /// Compute the owner on the neighborhood communicator of ghost indices
+  /// @brief Compute the owner on the neighborhood communicator of each
+  /// ghost index.
+  ///
+  /// The neighbourhood ranks are the 'source' ranks on the 'reverse'
+  /// communicator, i.e. the neighbourhood source ranks on the
+  /// communicator returned by
+  /// IndexMap::comm(IndexMap::Direction::reverse). The source ranks on
+  /// IndexMap::comm(IndexMap::Direction::reverse communicatorcan be
+  /// used convert the returned neighbour ranks to the rank indices on
+  /// the full communicator.
+  ///
+  /// @return The owning rank on the neighbourhood communicator of the
+  /// ith ghost index.
   std::vector<int> ghost_owner_neighbor_rank() const;
 
   /// @todo Aim to remove this function? If it's kept, should it work
