@@ -607,18 +607,15 @@ IndexMap::scatter_fwd_ghost_positions() const noexcept
 //-----------------------------------------------------------------------------
 std::vector<int> IndexMap::ghost_owner_neighbor_rank() const
 {
-  /// Compute the owner on the neighborhood communicator of ghost indices
-  std::vector<int> owners;
-  const std::vector<int>& displs_recv_fwd = _displs_recv_fwd;
-  std::transform(_ghost_pos_recv_fwd.cbegin(), _ghost_pos_recv_fwd.cend(),
-                 std::back_inserter(owners),
-                 [&displs_recv_fwd](auto ghost_pos)
-                 {
-                   auto it
-                       = std::upper_bound(displs_recv_fwd.cbegin(),
-                                          displs_recv_fwd.cend(), ghost_pos);
-                   return std::distance(displs_recv_fwd.cbegin(), it) - 1;
-                 });
+  std::vector<int> owners(_ghost_pos_recv_fwd.size());
+  std::transform(
+      _ghost_pos_recv_fwd.begin(), _ghost_pos_recv_fwd.end(), owners.begin(),
+      [&displs = _displs_recv_fwd](auto pos)
+      {
+        auto it = std::upper_bound(displs.begin(), displs.end(), pos);
+        return std::distance(displs.begin(), it) - 1;
+      });
+
   return owners;
 }
 //----------------------------------------------------------------------------
@@ -627,18 +624,16 @@ std::vector<int> IndexMap::ghost_owner_rank() const
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
                                  &outdegree, &weighted);
-  std::vector<int> neighbors_in(indegree), neighbors_out(outdegree);
+  std::vector<int> neighbors(indegree);
   MPI_Dist_graph_neighbors(_comm_owner_to_ghost.comm(), indegree,
-                           neighbors_in.data(), MPI_UNWEIGHTED, outdegree,
-                           neighbors_out.data(), MPI_UNWEIGHTED);
+                           neighbors.data(), MPI_UNWEIGHTED, 0, &outdegree,
+                           MPI_UNWEIGHTED);
 
   // Compute index owner on neighbourhood comm
   const std::vector<int> ghost_owners = ghost_owner_neighbor_rank();
-
   std::vector<std::int32_t> owners(ghost_owners.size());
-  std::transform(ghost_owners.cbegin(), ghost_owners.cend(), owners.begin(),
-                 [&neighbors_in](auto ghost_owner)
-                 { return neighbors_in[ghost_owner]; });
+  std::transform(ghost_owners.begin(), ghost_owners.end(), owners.begin(),
+                 [&neighbors](auto r) { return neighbors[r]; });
 
   return owners;
 }
@@ -685,7 +680,7 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   // other ranks which also ghost the index.
 
   std::vector<std::int64_t> fwd_sharing_data;
-  std::vector<int> fwd_sharing_offsets{0};
+  std::vector<int> fwd_sharing_offsets = {0};
   for (std::int32_t p = 0; p < _shared_indices->num_nodes(); ++p)
   {
     for (std::int32_t idx : _shared_indices->links(p))
