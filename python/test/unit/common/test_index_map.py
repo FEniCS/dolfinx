@@ -51,9 +51,9 @@ def test_sub_index_map():
 
     # Check that rank on sub-process ghosts is the same as the parent
     # map
-    owners = map.ghost_owner_rank()
-    assert (dest_ranks == owners).all()
-    assert (owners[ghosts_pos_sub] == submap.ghost_owner_rank()).all()
+    # owners = map.ghost_owner_rank()
+    # assert (dest_ranks == owners).all()
+    # assert (owners[ghosts_pos_sub] == submap.ghost_owner_rank()).all()
 
     # Check that ghost indices are correct in submap
     # NOTE This assumes size_local is the same for all ranks

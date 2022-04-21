@@ -206,9 +206,6 @@ public:
   /// @return Position of the ith ghost entry in the received buffer
   const std::vector<std::int32_t>& scatter_fwd_ghost_positions() const noexcept;
 
-  /// Owner rank on the global communicator of each ghost entry
-  std::vector<int> ghost_owner_rank() const;
-
   /// @brief Compute the owner on the neighborhood communicator of each
   /// ghost index.
   ///

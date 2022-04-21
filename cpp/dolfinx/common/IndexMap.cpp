@@ -642,25 +642,6 @@ std::vector<int> IndexMap::ghost_owner_neighbor_rank() const
   return owners;
 }
 //----------------------------------------------------------------------------
-std::vector<int> IndexMap::ghost_owner_rank() const
-{
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
-                                 &outdegree, &weighted);
-  std::vector<int> neighbors(indegree), tmp(outdegree);
-  MPI_Dist_graph_neighbors(_comm_owner_to_ghost.comm(), indegree,
-                           neighbors.data(), MPI_UNWEIGHTED, outdegree,
-                           tmp.data(), MPI_UNWEIGHTED);
-
-  // Compute index owner on neighbourhood comm
-  const std::vector<int> ghost_owners = ghost_owner_neighbor_rank();
-  std::vector<std::int32_t> owners(ghost_owners.size());
-  std::transform(ghost_owners.begin(), ghost_owners.end(), owners.begin(),
-                 [&neighbors](auto r) { return neighbors[r]; });
-
-  return owners;
-}
-//----------------------------------------------------------------------------
 MPI_Comm IndexMap::comm() const { return _comm.comm(); }
 //----------------------------------------------------------------------------
 MPI_Comm IndexMap::comm(Direction dir) const
@@ -753,7 +734,6 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
 
   // For my ghosts, add owning rank to list of sharing ranks
   const std::int32_t size_local = this->size_local();
-  // const std::vector<int> ghost_owners = this->ghost_owner_rank();
 
   // FIXME: avoid mapping back-and-forth between neighbourhood and
   // global ranks
