@@ -636,7 +636,7 @@ std::vector<int> IndexMap::ghost_owner_rank() const
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(_comm_owner_to_ghost.comm(), &indegree,
                                  &outdegree, &weighted);
-  std::vector<int> neighbors(indegree);
+  std::vector<int> neighbors(indegree), neighbors_out(outdegree);
   MPI_Dist_graph_neighbors(_comm_owner_to_ghost.comm(), indegree,
                            neighbors.data(), MPI_UNWEIGHTED, 0, &outdegree,
                            MPI_UNWEIGHTED);
