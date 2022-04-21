@@ -129,14 +129,17 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // Build local dual graph for owned cells to apply re-ordering to
     const std::int32_t num_owned_cells
         = cells_extracted.num_nodes() - ghost_owners.size();
-    const std::vector<int> remap
-        = graph::reorder_gps(std::get<0>(build_local_dual_graph(
+
+    auto [graph, unmatched_facets, max_v, facet_attached_cells]
+        = build_local_dual_graph(
             xtl::span<const std::int64_t>(
                 cells_extracted.array().data(),
                 cells_extracted.offsets()[num_owned_cells]),
             xtl::span<const std::int32_t>(cells_extracted.offsets().data(),
                                           num_owned_cells + 1),
-            tdim)));
+            tdim);
+
+    const std::vector<int> remap = graph::reorder_gps(graph);
 
     // Create re-ordered cell lists (leaves ghosts unchanged)
     std::vector<std::int64_t> original_cell_index(original_cell_index0.size());
@@ -155,7 +158,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // removed later if not required by ghost_mode.
     return std::pair{create_topology(comm, cells_extracted, original_cell_index,
                                      ghost_owners, element.cell_shape(),
-                                     ghost_mode),
+                                     ghost_mode, unmatched_facets),
                      std::move(cell_nodes)};
   };
 

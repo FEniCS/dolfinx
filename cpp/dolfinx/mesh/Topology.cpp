@@ -375,14 +375,14 @@ vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
                         ghost_vertex_set.begin(), ghost_vertex_set.end(),
                         std::back_inserter(unknown_vertices));
 
-  // Build differece 1. Vertices attached only to owned cells, and
+  // Build difference 1. Vertices attached only to owned cells, and
   // therefore owned by this rank
   std::vector<std::int64_t> owned_vertices;
   std::set_difference(local_vertex_set.begin(), local_vertex_set.end(),
                       unknown_vertices.begin(), unknown_vertices.end(),
                       std::back_inserter(owned_vertices));
 
-  // Build differece 2: Vertices attached only to ghost cells, and
+  // Build difference 2: Vertices attached only to ghost cells, and
   // therefore not owned by this rank
   std::vector<std::int64_t> unowned_vertices;
   std::set_difference(ghost_vertex_set.begin(), ghost_vertex_set.end(),
@@ -900,12 +900,11 @@ mesh::CellType Topology::cell_type() const noexcept { return _cell_type; }
 //-----------------------------------------------------------------------------
 MPI_Comm Topology::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------
-Topology
-mesh::create_topology(MPI_Comm comm,
-                      const graph::AdjacencyList<std::int64_t>& cells,
-                      const xtl::span<const std::int64_t>& original_cell_index,
-                      const xtl::span<const int>& ghost_owners,
-                      const CellType& cell_type, GhostMode ghost_mode)
+Topology mesh::create_topology(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+    const xtl::span<const std::int64_t>& original_cell_index,
+    const xtl::span<const int>& ghost_owners, const CellType& cell_type,
+    GhostMode ghost_mode, const std::vector<std::int64_t>&)
 {
   common::Timer timer("Topology: create");
 
