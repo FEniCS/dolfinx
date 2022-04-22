@@ -233,12 +233,12 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
       _element = std::make_unique<basix::FiniteElement>(basix::create_element(
           b_family, b_cell, e.degree, b_lv, b_dv, e.discontinuous));
     }
-    else if (lv != basix::element::lagrange_variant::unset)
+    else if (b_lv != basix::element::lagrange_variant::unset)
     {
       _element = std::make_unique<basix::FiniteElement>(basix::create_element(
           b_family, b_cell, e.degree, b_lv, e.discontinuous));
     }
-    else if (dv != basix::element::dpc_variant::unset)
+    else if (b_dv != basix::element::dpc_variant::unset)
     {
       _element = std::make_unique<basix::FiniteElement>(basix::create_element(
           b_family, b_cell, e.degree, b_dv, e.discontinuous));
