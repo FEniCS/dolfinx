@@ -52,9 +52,20 @@ def test_sub_index_map():
 
     # Check that rank on sub-process ghosts is the same as the parent
     # map
-    # owners = map.ghost_owner_rank()
-    # assert (dest_ranks == owners).all()
-    # assert (owners[ghosts_pos_sub] == submap.ghost_owner_rank()).all()
+    owners = map.ghost_owner_rank()
+    comm = map.comm(dolfinx.common.Direction.forward)
+    ranks = np.array(comm.Get_dist_neighbors()[0])
+
+    owners = ranks[owners]
+    assert (dest_ranks == owners).all()
+
+    # print(test, owners)
+
+    subowners = submap.ghost_owner_rank()
+    comm = submap.comm(dolfinx.common.Direction.forward)
+    ranks = np.array(comm.Get_dist_neighbors()[0])
+    subowners = ranks[subowners]
+    assert (owners[ghosts_pos_sub] == subowners).all()
 
     # Check that ghost indices are correct in submap
     # NOTE This assumes size_local is the same for all ranks
