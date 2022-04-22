@@ -46,7 +46,6 @@ def test_scatter_forward(element):
     ranks = np.array(comm.Get_dist_neighbors()[0])
     ghost_owners = ranks[ghost_owners]
 
-
     ghost_owners = np.repeat(ghost_owners, bs)
     local_size = u.function_space.dofmap.index_map.size_local * bs
     assert np.allclose(u.x.array[local_size:], ghost_owners)
