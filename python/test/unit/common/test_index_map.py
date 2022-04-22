@@ -21,9 +21,10 @@ def test_sub_index_map():
     assert comm.size < n + 1
     map_local_size = np.math.factorial(n)
 
-    # The ghosts added is the ith ghost from the ith process relative to the current rank, i.e.
-    # rank 0 contains the first index of rank 2, second of rank 3 etc.
-    # rank 1 contains the first index of rank 0, the second of rank 2 etc.
+    # The ghosts added is the ith ghost from the ith process relative to
+    # the current rank, i.e. rank 0 contains the first index of rank 2,
+    # second of rank 3 etc. rank 1 contains the first index of rank 0,
+    # the second of rank 2 etc.
     # Ghost one index from from every other rank
     dest_ranks = np.delete(np.arange(0, comm.size, dtype=np.int32), my_rank)
     map_ghosts = np.array([map_local_size * dest_ranks[r] + r % map_local_size for r in range(len(dest_ranks))])
