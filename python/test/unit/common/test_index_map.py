@@ -74,6 +74,6 @@ def test_sub_index_map_ghost_mode_none():
     n = 2
     mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=GhostMode.none)
     tdim = mesh.topology.dim
-    cell_index_map = mesh.topology.index_map(tdim)
-    submap_indices = np.array([0, 1], dtype=np.int32)
-    cell_index_map.create_submap(submap_indices)
+    map = mesh.topology.index_map(tdim)
+    submap_indices = range(0, min(2, map.size_local))
+    map.create_submap(submap_indices)
