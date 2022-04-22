@@ -173,24 +173,25 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
     uh = Function(V)
     uh.interpolate(lambda x: fun(x))
 
-    pts = []
-    cells = []
-    for cell in range(10):
-        for i in range(51):
-            pts.append([cell / 10 + i / 50 / 10, 0, 0])
-            cells.append(cell)
-    pts = np.array(pts)
-    values = uh.eval(pts, cells)
-    if plotting:
-        plt.plot(pts[:, 0], [fun(i) for i in pts], "k--")
-        plt.plot(pts[:, 0], values, "r-")
+    if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
+        pts = []
+        cells = []
+        for cell in range(10):
+            for i in range(51):
+                pts.append([cell / 10 + i / 50 / 10, 0, 0])
+                cells.append(cell)
+        pts = np.array(pts)
+        values = uh.eval(pts, cells)
+        if plotting:
+            plt.plot(pts[:, 0], [fun(i) for i in pts], "k--")
+            plt.plot(pts[:, 0], values, "r-")
 
-        plt.legend(["function", "approximation"])
-        plt.ylim([-0.1, 0.4])
-        plt.title(variant.name)
+            plt.legend(["function", "approximation"])
+            plt.ylim([-0.1, 0.4])
+            plt.title(variant.name)
 
-        plt.savefig(f"img/demo_lagrange_variants_interpolation_{variant.name}.png")
-        plt.clf()
+            plt.savefig(f"img/demo_lagrange_variants_interpolation_{variant.name}.png")
+            plt.clf()
 # -
 
 # ![](img/demo_lagrange_variants_interpolation_equispaced.png)
@@ -289,3 +290,6 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 # points ordered to match the ordering used by VTK. This variant should only be used when
 # inputting and outputting to/from VTK. Due to how Basix handles the numbering of points
 # by sub-entity, this variant can only be used for discontinuous Lagrange elements.
+
+
+# """
