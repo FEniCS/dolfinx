@@ -219,37 +219,34 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
   }
   else if (is_basix_element(e))
   {
-    if (e.lagrange_variant != -1 and e.dpc_variant != -1)
+    const basix::element::family b_family
+        = static_cast<basix::element::family>(e.basix_family);
+    const basix::cell::type b_cell
+        = static_cast<basix::cell::type>(e.basix_cell);
+    const basix::element::lagrange_variant b_lv
+        = static_cast<basix::element::lagrange_variant>(e.lagrange_variant);
+    const basix::element::dpc_variant b_dv
+        = static_cast<basix::element::dpc_variant>(e.dpc_variant);
+    if (b_lv != basix::element::lagrange_variant::unset
+        and b_dv != basix::element::dpc_variant::unset)
     {
       _element = std::make_unique<basix::FiniteElement>(basix::create_element(
-          static_cast<basix::element::family>(e.basix_family),
-          static_cast<basix::cell::type>(e.basix_cell), e.degree,
-          static_cast<basix::element::lagrange_variant>(e.lagrange_variant),
-          static_cast<basix::element::dpc_variant>(e.dpc_variant),
-          e.discontinuous));
+          b_family, b_cell, e.degree, b_lv, b_dv, e.discontinuous));
     }
-    else if (e.lagrange_variant != -1)
+    else if (lv != basix::element::lagrange_variant::unset)
     {
       _element = std::make_unique<basix::FiniteElement>(basix::create_element(
-          static_cast<basix::element::family>(e.basix_family),
-          static_cast<basix::cell::type>(e.basix_cell), e.degree,
-          static_cast<basix::element::lagrange_variant>(e.lagrange_variant),
-          e.discontinuous));
+          b_family, b_cell, e.degree, b_lv, e.discontinuous));
     }
-    else if (e.dpc_variant != -1)
+    else if (dv != basix::element::dpc_variant::unset)
     {
       _element = std::make_unique<basix::FiniteElement>(basix::create_element(
-          static_cast<basix::element::family>(e.basix_family),
-          static_cast<basix::cell::type>(e.basix_cell), e.degree,
-          static_cast<basix::element::dpc_variant>(e.dpc_variant),
-          e.discontinuous));
+          b_family, b_cell, e.degree, b_dv, e.discontinuous));
     }
     else
     {
-      _element = std::make_unique<basix::FiniteElement>(basix::create_element(
-          static_cast<basix::element::family>(e.basix_family),
-          static_cast<basix::cell::type>(e.basix_cell), e.degree,
-          e.discontinuous));
+      _element = std::make_unique<basix::FiniteElement>(
+          basix::create_element(b_family, b_cell, e.degree, e.discontinuous));
     }
 
     _needs_dof_transformations
