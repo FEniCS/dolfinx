@@ -4,8 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <basix/e-lagrange.h>
-#include <basix/e-nedelec.h>
+#include <basix/finite-element.h>
 #include <cmath>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/FiniteElement.h>
