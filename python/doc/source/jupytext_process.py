@@ -27,6 +27,13 @@ def process():
         demo_dir = pathlib.Path('./demos')
         demo_dir.mkdir(parents=True, exist_ok=True)
 
+        # Copy images used in demos
+        image_dir = subdir / "img"
+        image_target_dir = demo_dir / "img"
+        image_target_dir.mkdir(exist_ok=True)
+        for file in image_dir.glob("*"):
+            shutil.copy(image_dir / file, image_target_dir)
+
         # Process each demo using jupytext/myst
         for demo in demos:
             python_demo = jupytext.read(demo)
