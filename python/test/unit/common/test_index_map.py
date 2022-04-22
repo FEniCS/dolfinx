@@ -55,13 +55,10 @@ def test_sub_index_map():
     owners = map.ghost_owners()
     comm = map.comm(dolfinx.common.Direction.forward)
     ranks = np.array(comm.Get_dist_neighbors()[0])
-
     owners = ranks[owners]
     assert (dest_ranks == owners).all()
 
-    # print(test, owners)
-
-    subowners = submap.ghost_owner_rank()
+    subowners = submap.ghost_owners()
     comm = submap.comm(dolfinx.common.Direction.forward)
     ranks = np.array(comm.Get_dist_neighbors()[0])
     subowners = ranks[subowners]
