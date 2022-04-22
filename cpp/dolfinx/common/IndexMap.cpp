@@ -169,7 +169,7 @@ std::vector<int32_t> dolfinx::common::compute_owned_indices(
   {
     std::vector<int> neighbors = dolfinx::MPI::neighbors(
         map.comm(common::IndexMap::Direction::forward))[0];
-    ghost_owner_rank = map.ghost_owner_neighbor_rank();
+    ghost_owner_rank = map.ghost_owners();
     std::transform(ghost_owner_rank.cbegin(), ghost_owner_rank.cend(),
                    ghost_owner_rank.begin(),
                    [&neighbors](auto r) { return neighbors[r]; });
@@ -349,7 +349,7 @@ common::stack_index_maps(
     {
       std::vector<int> neighbors = dolfinx::MPI::neighbors(
           maps[f].first.get().comm(common::IndexMap::Direction::forward))[0];
-      ghost_owners = maps[f].first.get().ghost_owner_neighbor_rank();
+      ghost_owners = maps[f].first.get().ghost_owners();
       std::transform(ghost_owners.cbegin(), ghost_owners.cend(),
                      ghost_owners.begin(),
                      [&neighbors](auto r) { return neighbors[r]; });
@@ -628,7 +628,7 @@ IndexMap::scatter_fwd_ghost_positions() const noexcept
   return _ghost_pos_recv_fwd;
 }
 //-----------------------------------------------------------------------------
-std::vector<int> IndexMap::ghost_owner_neighbor_rank() const
+std::vector<int> IndexMap::ghost_owners() const
 {
   std::vector<int> owners(_ghost_pos_recv_fwd.size());
   std::transform(
@@ -741,7 +741,7 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   {
     std::vector<int> neighbors
         = dolfinx::MPI::neighbors(_comm_owner_to_ghost.comm())[0];
-    ghost_owners = this->ghost_owner_neighbor_rank();
+    ghost_owners = this->ghost_owners();
     std::transform(ghost_owners.cbegin(), ghost_owners.cend(),
                    ghost_owners.begin(),
                    [&neighbors](auto r) { return neighbors[r]; });

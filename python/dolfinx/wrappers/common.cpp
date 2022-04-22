@@ -86,9 +86,9 @@ void common(py::module& m)
           { return MPICommWrapper(self.comm(d)); },
           "Return MPI communicator")
       .def(
-          "ghost_owner_rank",
+          "ghost_owners",
           [](const dolfinx::common::IndexMap& self)
-          { return as_pyarray(self.ghost_owner_neighbor_rank()); },
+          { return as_pyarray(self.ghost_owners()); },
           "Return owning process for each ghost index")
       .def_property_readonly(
           "ghosts",

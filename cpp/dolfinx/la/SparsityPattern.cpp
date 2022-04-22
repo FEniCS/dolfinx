@@ -263,7 +263,7 @@ void SparsityPattern::assemble()
   {
     std::vector<int> neighbors = dolfinx::MPI::neighbors(
         _index_maps[0]->comm(common::IndexMap::Direction::forward))[0];
-    ghost_owners0 = _index_maps[0]->ghost_owner_neighbor_rank();
+    ghost_owners0 = _index_maps[0]->ghost_owners();
     std::transform(ghost_owners0.cbegin(), ghost_owners0.cend(),
                    ghost_owners0.begin(),
                    [&neighbors](auto r) { return neighbors[r]; });
@@ -279,7 +279,7 @@ void SparsityPattern::assemble()
   {
     std::vector<int> neighbors = dolfinx::MPI::neighbors(
         _index_maps[1]->comm(common::IndexMap::Direction::forward))[0];
-    _col_ghost_owners = _index_maps[1]->ghost_owner_neighbor_rank();
+    _col_ghost_owners = _index_maps[1]->ghost_owners();
     std::transform(_col_ghost_owners.cbegin(), _col_ghost_owners.cend(),
                    _col_ghost_owners.begin(),
                    [&neighbors](auto r) { return neighbors[r]; });

@@ -199,7 +199,7 @@ public:
     {
       std::vector<int> neighbors = dolfinx::MPI::neighbors(
           _index_maps[0]->comm(common::IndexMap::Direction::forward))[0];
-      ghost_owners0 = _index_maps[0]->ghost_owner_neighbor_rank();
+      ghost_owners0 = _index_maps[0]->ghost_owners();
       std::transform(ghost_owners0.cbegin(), ghost_owners0.cend(),
                      ghost_owners0.begin(),
                      [&neighbors](auto r) { return neighbors[r]; });

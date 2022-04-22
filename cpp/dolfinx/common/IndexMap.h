@@ -219,7 +219,7 @@ public:
   ///
   /// @return The owning rank on the neighbourhood communicator of the
   /// ith ghost index.
-  std::vector<int> ghost_owner_neighbor_rank() const;
+  std::vector<int> ghost_owners() const;
 
   /// @todo Aim to remove this function? If it's kept, should it work
   /// with neighborhood ranks?
