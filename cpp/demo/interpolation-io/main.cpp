@@ -59,7 +59,7 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
                          [[maybe_unused]] std::filesystem::path filename)
 {
   // Create a Basix Nedelec (first kind) element of degree 2 (dim=6 on triangle)
-  basix::FiniteElement e = basix::element::create_element(
+  basix::FiniteElement e = basix::create_element(
       basix::element::family::N1E,
       mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2,
       basix::element::lagrange_variant::legendre);
@@ -106,7 +106,7 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
   // then visualise. We do this here.
 
   // First create a degree 1 vector-valued discontinuous Lagrange space:
-  basix::FiniteElement e_l = basix::element::create_element(
+  basix::FiniteElement e_l = basix::create_element(
       basix::element::family::P,
       mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2, true);
 
