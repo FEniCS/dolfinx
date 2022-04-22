@@ -345,7 +345,8 @@ determine_sharing_ranks(MPI_Comm comm,
 /// 3. Not owned by the caller
 std::array<std::vector<std::int64_t>, 3>
 vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
-                        int num_local_cells)
+                        int num_local_cells,
+                        const std::vector<std::int64_t>& unmatched_facets)
 {
   common::Timer timer("Topology: determine vertex ownership groups (owned, "
                       "undetermined, unowned)");
@@ -368,14 +369,18 @@ vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
       std::unique(ghost_vertex_set.begin(), ghost_vertex_set.end()),
       ghost_vertex_set.end());
 
-  // Build intersection (vertices attached to owned and ghost cells,
-  // therefore ownership is undetermined)
-  std::vector<std::int64_t> unknown_vertices;
-  std::set_intersection(local_vertex_set.begin(), local_vertex_set.end(),
-                        ghost_vertex_set.begin(), ghost_vertex_set.end(),
-                        std::back_inserter(unknown_vertices));
+  // Boundary vertices are marked as unknown
+  std::vector<std::int64_t> unknown_vertices(unmatched_facets);
+  std::sort(unknown_vertices.begin(), unknown_vertices.end());
+  unknown_vertices.erase(
+      std::unique(unknown_vertices.begin(), unknown_vertices.end()),
+      unknown_vertices.end());
 
-  // Build difference 1. Vertices attached only to owned cells, and
+  // Remove -1 if it occurs in boundary vertices (may occur in mixed topology)
+  if (unknown_vertices.size() > 0 and unknown_vertices[0] == -1)
+    unknown_vertices.erase(unknown_vertices.begin());
+
+  // Build difference 1: Vertices attached only to owned cells, and
   // therefore owned by this rank
   std::vector<std::int64_t> owned_vertices;
   std::set_difference(local_vertex_set.begin(), local_vertex_set.end(),
@@ -904,7 +909,7 @@ Topology mesh::create_topology(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
     const xtl::span<const std::int64_t>& original_cell_index,
     const xtl::span<const int>& ghost_owners, const CellType& cell_type,
-    GhostMode ghost_mode, const std::vector<std::int64_t>&)
+    GhostMode ghost_mode, const std::vector<std::int64_t>& unmatched_facets)
 {
   common::Timer timer("Topology: create");
 
@@ -922,7 +927,7 @@ Topology mesh::create_topology(
 
   // Create sets of (1) owned, (2) undetermined, (3) not-owned vertices
   auto [owned_vertices, unknown_vertices, unowned_vertices]
-      = vertex_ownership_groups(cells, num_local_cells);
+      = vertex_ownership_groups(cells, num_local_cells, unmatched_facets);
 
   // For each vertex whose ownership needs determining, find the sharing
   // ranks. The first index in the list of ranks for a vertex the owner
