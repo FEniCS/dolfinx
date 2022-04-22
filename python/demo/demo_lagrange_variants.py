@@ -18,9 +18,10 @@
 #
 # We begin this demo by importing everything we require.
 
+# +
 import numpy as np
 import ufl
-import matplotlib.pylab as plt
+
 from dolfinx import fem, mesh
 from ufl import ds, dx, grad, inner
 from dolfinx.fem import Function, FunctionSpace, assemble_scalar, form
@@ -28,6 +29,14 @@ from dolfinx.mesh import create_unit_interval
 
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
+
+try:
+    import matplotlib.pylab as plt
+    plotting = True
+except ModuleNotFoundError:
+    print("")
+    plotting = False
+# -
 
 # In addition to the imports seen in many earlier demos, we also import Basix and its UFL wrapper directly.
 # Basix is the element definition and tabulation library that is used by FEniCSx.
@@ -51,12 +60,13 @@ element = basix.create_element(
 
 pts = basix.create_lattice(basix.CellType.interval, 200, basix.LatticeType.equispaced, True)
 values = element.tabulate(0, pts)[0, :, :, 0]
-for i in range(values.shape[1]):
-    plt.plot(pts, values[:, i])
-plt.plot(element.points, [0 for i in element.points], "ko")
-plt.ylim([-1, 6])
-plt.savefig("img/demo_lagrange_variants_equispaced_10.png")
-plt.clf()
+if plotting:
+    for i in range(values.shape[1]):
+        plt.plot(pts, values[:, i])
+    plt.plot(element.points, [0 for i in element.points], "ko")
+    plt.ylim([-1, 6])
+    plt.savefig("img/demo_lagrange_variants_equispaced_10.png")
+    plt.clf()
 # -
 
 # ![The basis functions of a degree 10 Lagrange space defined using equispaced
@@ -76,12 +86,13 @@ element = basix.create_element(
 
 pts = basix.create_lattice(basix.CellType.interval, 200, basix.LatticeType.equispaced, True)
 values = element.tabulate(0, pts)[0, :, :, 0]
-for i in range(values.shape[1]):
-    plt.plot(pts, values[:, i])
-plt.plot(element.points, [0 for i in element.points], "ko")
-plt.ylim([-1, 6])
-plt.savefig("img/demo_lagrange_variants_gll_10.png")
-plt.clf()
+if plotting:
+    for i in range(values.shape[1]):
+        plt.plot(pts, values[:, i])
+    plt.plot(element.points, [0 for i in element.points], "ko")
+    plt.ylim([-1, 6])
+    plt.savefig("img/demo_lagrange_variants_gll_10.png")
+    plt.clf()
 # -
 
 # ![The basis functions of a degree 10 Lagrange space defined using GLL points](img/demo_lagrange_variants_gll_10.png)
@@ -170,15 +181,16 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
             cells.append(cell)
     pts = np.array(pts)
     values = uh.eval(pts, cells)
-    plt.plot(pts[:, 0], [fun(i) for i in pts], "k--")
-    plt.plot(pts[:, 0], values, "r-")
+    if plotting:
+        plt.plot(pts[:, 0], [fun(i) for i in pts], "k--")
+        plt.plot(pts[:, 0], values, "r-")
 
-    plt.legend(["function", "approximation"])
-    plt.ylim([-0.1, 0.4])
-    plt.title(variant.name)
+        plt.legend(["function", "approximation"])
+        plt.ylim([-0.1, 0.4])
+        plt.title(variant.name)
 
-    plt.savefig(f"img/demo_lagrange_variants_interpolation_{variant.name}.png")
-    plt.clf()
+        plt.savefig(f"img/demo_lagrange_variants_interpolation_{variant.name}.png")
+        plt.clf()
 # -
 
 # ![](img/demo_lagrange_variants_interpolation_equispaced.png)
