@@ -523,7 +523,6 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
-    // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = cmap.dim();
     xtl::span<const double> x_g = mesh->geometry().x();
 

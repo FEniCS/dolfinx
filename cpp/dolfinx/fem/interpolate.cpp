@@ -21,10 +21,10 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   // Get mesh geometry data and the element coordinate map
   const std::size_t gdim = mesh.geometry().dim();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
-  xtl::span<const double> x_g = mesh.geometry().x();
 
+  xtl::span<const double> x_g = mesh.geometry().x();
   const fem::CoordinateElement& cmap = mesh.geometry().cmap();
+  const std::size_t num_dofs_g = cmap.dim();
 
   // Get the interpolation points on the reference cells
   const xt::xtensor<double, 2>& X = element.interpolation_points();

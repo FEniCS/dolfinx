@@ -217,28 +217,64 @@ def test_mixed_constant_bc(mesh_factory):
     function yields the same result as setting it with a function"""
     func, args = mesh_factory
     mesh = func(*args)
-    tdim, gdim = mesh.topology.dim, mesh.geometry.dim
+    tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
-    TH = ufl.MixedElement([ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2),
-                           ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)])
+    TH = ufl.MixedElement([ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1),
+                          ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 2)])
     W = FunctionSpace(mesh, TH)
-    U = Function(W)
+    u = Function(W)
 
-    # Apply BC to component of a mixed space using a Constant
-    c = Constant(mesh, (PETSc.ScalarType(2), PETSc.ScalarType(2)))
+    bc_val = PETSc.ScalarType(3)
+    c = Constant(mesh, bc_val)
+    u_func = Function(W)
+    for i in range(2):
+        u_func.x.array[:] = 0
+        u.x.array[:] = 0
+
+        # Apply BC to scalar component of a mixed space using a Constant
+        dofs = locate_dofs_topological(W.sub(i), tdim - 1, boundary_facets)
+        bc = dirichletbc(c, dofs, W.sub(i))
+        set_bc(u.vector, [bc])
+
+        # Apply BC to scalar component of a mixed space using a Function
+        ubc = u.sub(i).collapse()
+        ubc.interpolate(lambda x: np.full(x.shape[1], bc_val))
+        dofs_both = locate_dofs_topological((W.sub(i), ubc.function_space), tdim - 1, boundary_facets)
+        bc_func = dirichletbc(ubc, dofs_both, W.sub(i))
+        set_bc(u_func.vector, [bc_func])
+
+        # Check that both approaches yield the same vector
+        assert np.allclose(u.x.array, u_func.x.array)
+
+
+def test_mixed_blocked_constant():
+    """Check that mixed space with blocked component cannot have
+    Dirichlet BC based on a vector valued Constant."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+
+    tdim = mesh.topology.dim
+    boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
+
+    TH = ufl.MixedElement([ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1),
+                          ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)])
+    W = FunctionSpace(mesh, TH)
+    u = Function(W)
+    c0 = PETSc.ScalarType(3)
     dofs0 = locate_dofs_topological(W.sub(0), tdim - 1, boundary_facets)
-    bc0 = dirichletbc(c, dofs0, W.sub(0))
-    u = U.sub(0)
+    bc0 = dirichletbc(c0, dofs0, W.sub(0))
     set_bc(u.vector, [bc0])
 
-    # Apply BC to component of a mixed space using a Function
-    ubc1 = u.collapse()
-    ubc1.interpolate(lambda x: np.full((gdim, x.shape[1]), 2.0))
-    dofs1 = locate_dofs_topological((W.sub(0), ubc1.function_space), tdim - 1, boundary_facets)
-    bc1 = dirichletbc(ubc1, dofs1, W.sub(0))
-    U1 = Function(W)
-    u1 = U1.sub(0)
-    set_bc(u1.vector, [bc1])
+    # Apply BC to scalar component of a mixed space using a Function
+    ubc = u.sub(0).collapse()
+    ubc.interpolate(lambda x: np.full(x.shape[1], c0))
+    dofs_both = locate_dofs_topological((W.sub(0), ubc.function_space), tdim - 1, boundary_facets)
+    bc_func = dirichletbc(ubc, dofs_both, W.sub(0))
+    u_func = Function(W)
+    set_bc(u_func.vector, [bc_func])
+    assert np.allclose(u.x.array, u_func.x.array)
 
-    # Check that both approaches yield the same vector
-    assert np.allclose(u.x.array, u1.x.array)
+    # Check that vector space throws error
+    c1 = PETSc.ScalarType((5, 7))
+    with pytest.raises(RuntimeError):
+        dofs1 = locate_dofs_topological(W.sub(1), tdim - 1, boundary_facets)
+        dirichletbc(c1, dofs1, W.sub(1))

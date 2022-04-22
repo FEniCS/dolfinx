@@ -5,7 +5,6 @@
 [![Actions Docker images](https://github.com/FEniCS/dolfinx/actions/workflows/docker.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/docker.yml)
 [![Actions Spack build](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml)
 
-
 DOLFINx is a new version of DOLFIN. It is being actively developed and
 features may come and go as development proceeds.
 
@@ -55,7 +54,7 @@ git clone https://github.com/spack/spack.git
 . ./spack/share/spack/setup-env.sh
 spack env create fenicsx-env
 spack env activate fenicsx-env
-spack add py-fenics-dolfinx ^petsc+mumps cflags="-O3" fflags="-O3"
+spack add py-fenics-dolfinx cflags="-O3" fflags="-O3"
 spack install
 ```
 See the Spack [documentation](https://spack.readthedocs.io/) for
