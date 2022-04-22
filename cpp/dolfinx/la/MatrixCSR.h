@@ -196,10 +196,6 @@ public:
     const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
     const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
 
-    // const std::vector<int> dest_ranks
-    //     = dolfinx::MPI::neighbors(_comm.comm())[1];
-    // const int num_neighbors = dest_ranks.size();
-
     int outdegree(-1);
     {
       int indegree(-1), weighted(-1);
