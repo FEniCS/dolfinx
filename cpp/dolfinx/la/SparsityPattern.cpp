@@ -255,6 +255,7 @@ void SparsityPattern::assemble()
   const std::int32_t local_size0 = _index_maps[0]->size_local();
   const std::array local_range0 = _index_maps[0]->local_range();
   const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
+
   const std::vector<int> ghost_owners0 = _index_maps[0]->ghost_owners();
 
   assert(_index_maps[1]);
@@ -262,33 +263,29 @@ void SparsityPattern::assemble()
   const std::array local_range1 = _index_maps[1]->local_range();
   _col_ghosts = _index_maps[1]->ghosts();
 
-  // Get owner (global rank) for column ghosts
-  _col_ghost_owners = _index_maps[1]->ghost_owners();
+  // FIXME: avoid mapping back-and-forth between neighbourhood and
+  // global ranks
   {
-    std::vector<int> neighbors_src = dolfinx::MPI::neighbors(
+    std::vector<int> neighbors = dolfinx::MPI::neighbors(
         _index_maps[1]->comm(common::IndexMap::Direction::forward))[0];
     _col_ghost_owners = _index_maps[1]->ghost_owners();
     std::transform(_col_ghost_owners.cbegin(), _col_ghost_owners.cend(),
                    _col_ghost_owners.begin(),
-                   [&neighbors_src](auto r) { return neighbors_src[r]; });
+                   [&neighbors](auto r) { return neighbors[r]; });
   }
 
-  // Ghost column indices global-to-local map
+  // Global to local map for ghost column indices
   std::map<std::int64_t, std::int32_t> global_to_local;
   std::int32_t local_i = local_size1;
   for (std::int64_t global_i : _col_ghosts)
     global_to_local.insert({global_i, local_i++});
 
-  // Get number of destination ranks
-  int outdegree(-1);
-  {
-    MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
-    int indegree(-1), weighted(-1);
-    MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
-  }
+  // Get ghost->owner communicator for rows
+  MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
+  const auto dest_ranks = dolfinx::MPI::neighbors(comm)[1];
 
   // Compute size of data to send to each process
-  std::vector<std::int32_t> data_per_proc(outdegree, 0);
+  std::vector<std::int32_t> data_per_proc(dest_ranks.size(), 0);
   for (std::size_t i = 0; i < ghost_owners0.size(); ++i)
   {
     // Add to src size
@@ -297,41 +294,37 @@ void SparsityPattern::assemble()
   }
 
   // Compute send displacements
-  std::vector<int> send_disp(outdegree + 1, 0);
+  std::vector<int> send_disp(dest_ranks.size() + 1, 0);
   std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
                    std::next(send_disp.begin(), 1));
 
   // For each ghost row, pack and send (global row, global col,
-  // col_owner) data
+  // col_owner) triplets to send to neighborhood
+  std::vector<int> insert_pos(send_disp);
   std::vector<std::int64_t> ghost_data(send_disp.back());
+  const int rank = dolfinx::MPI::rank(_comm.comm());
+  for (std::size_t i = 0; i < ghost_owners0.size(); ++i)
   {
-    std::vector<int> insert_pos = send_disp;
-    const int rank = dolfinx::MPI::rank(_comm.comm());
-    for (std::size_t i = 0; i < ghost_owners0.size(); ++i)
+    const int neighbour_rank = ghost_owners0[i];
+    for (std::int32_t col_local : _row_cache[i + local_size0])
     {
-      const int neighbour_rank = ghost_owners0[i];
-      for (std::int32_t col_local : _row_cache[i + local_size0])
+      // Get index in send buffer
+      const std::int32_t pos = insert_pos[neighbour_rank];
+
+      // Pack send data
+      ghost_data[pos] = ghosts0[i];
+      if (col_local < local_size1)
       {
-        // Get index in send buffer
-        const std::int32_t pos = insert_pos[neighbour_rank];
-
-        // Pack send data
-        ghost_data[pos] = ghosts0[i];
-        if (col_local < local_size1)
-        {
-          ghost_data[pos + 1] = col_local + local_range1[0];
-          ghost_data[pos + 2] = rank;
-        }
-        else
-        {
-          std::size_t pos = col_local - local_size1;
-          int src = _col_ghost_owners[pos];
-          ghost_data[pos + 1] = _col_ghosts[pos];
-          ghost_data[pos + 2] = src;
-        }
-
-        insert_pos[neighbour_rank] += 3;
+        ghost_data[pos + 1] = col_local + local_range1[0];
+        ghost_data[pos + 2] = rank;
       }
+      else
+      {
+        ghost_data[pos + 1] = _col_ghosts[col_local - local_size1];
+        ghost_data[pos + 2] = _col_ghost_owners[col_local - local_size1];
+      }
+
+      insert_pos[neighbour_rank] += 3;
     }
   }
 
@@ -339,9 +332,7 @@ void SparsityPattern::assemble()
   const graph::AdjacencyList<std::int64_t> ghost_data_out(std::move(ghost_data),
                                                           std::move(send_disp));
   const graph::AdjacencyList<std::int64_t> ghost_data_in
-      = dolfinx::MPI::neighbor_all_to_all(
-          _index_maps[0]->comm(common::IndexMap::Direction::reverse),
-          ghost_data_out);
+      = dolfinx::MPI::neighbor_all_to_all(comm, ghost_data_out);
 
   // Add data received from the neighborhood
   const std::vector<std::int64_t>& in_ghost_data = ghost_data_in.array();

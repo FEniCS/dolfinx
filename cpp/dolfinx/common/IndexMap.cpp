@@ -163,8 +163,6 @@ std::vector<int32_t> dolfinx::common::compute_owned_indices(
   std::vector<std::int32_t> dest_ranks
       = dolfinx::MPI::neighbors(reverse_comm)[1];
 
-  // FIXME: avoid mapping back-and-forth between neighbourhood and
-  // global ranks
   std::vector<int> ghost_owner_rank;
   {
     std::vector<int> neighbors = dolfinx::MPI::neighbors(
@@ -343,8 +341,6 @@ common::stack_index_maps(
     const int bs = maps[f].second;
     const std::vector<std::int64_t>& ghosts = maps[f].first.get().ghosts();
 
-    // FIXME: avoid mapping back-and-forth between neighbourhood and
-    // global ranks
     std::vector<int> ghost_owners;
     {
       std::vector<int> neighbors = dolfinx::MPI::neighbors(
@@ -735,8 +731,6 @@ std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
   // For my ghosts, add owning rank to list of sharing ranks
   const std::int32_t size_local = this->size_local();
 
-  // FIXME: avoid mapping back-and-forth between neighbourhood and
-  // global ranks
   std::vector<int> ghost_owners;
   {
     std::vector<int> neighbors
