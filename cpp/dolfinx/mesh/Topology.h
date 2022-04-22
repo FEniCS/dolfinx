@@ -191,6 +191,8 @@ private:
 /// @param[in] cell_type The cell shape
 /// @param[in] ghost_mode Type of cell ghosting: none, shared_facet or
 /// shared_vertex
+/// @param[in] unmatched_facets List of facet vertices on facets exterior to the
+/// process, as found in the local dual graph.
 /// @return A distributed mesh topology
 Topology
 create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
