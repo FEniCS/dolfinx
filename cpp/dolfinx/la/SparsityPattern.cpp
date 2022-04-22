@@ -255,16 +255,13 @@ void SparsityPattern::assemble()
   const std::int32_t local_size0 = _index_maps[0]->size_local();
   const std::array local_range0 = _index_maps[0]->local_range();
   const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
-
   const std::vector<int> ghost_owners0 = _index_maps[0]->ghost_owners();
 
   assert(_index_maps[1]);
   const std::int32_t local_size1 = _index_maps[1]->size_local();
   const std::array local_range1 = _index_maps[1]->local_range();
-  _col_ghosts = _index_maps[1]->ghosts();
 
-  // FIXME: avoid mapping back-and-forth between neighbourhood and
-  // global ranks
+  _col_ghosts = _index_maps[1]->ghosts();
   {
     std::vector<int> neighbors = dolfinx::MPI::neighbors(
         _index_maps[1]->comm(common::IndexMap::Direction::forward))[0];
@@ -280,12 +277,16 @@ void SparsityPattern::assemble()
   for (std::int64_t global_i : _col_ghosts)
     global_to_local.insert({global_i, local_i++});
 
-  // Get ghost->owner communicator for rows
-  MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
-  const auto dest_ranks = dolfinx::MPI::neighbors(comm)[1];
+  // Get number of destination ranks for ghost rows
+  int outdegree(-1);
+  {
+    MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
+    int indegree(-1), weighted(-1);
+    MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
+  }
 
   // Compute size of data to send to each process
-  std::vector<std::int32_t> data_per_proc(dest_ranks.size(), 0);
+  std::vector<std::int32_t> data_per_proc(outdegree, 0);
   for (std::size_t i = 0; i < ghost_owners0.size(); ++i)
   {
     // Add to src size
@@ -294,7 +295,7 @@ void SparsityPattern::assemble()
   }
 
   // Compute send displacements
-  std::vector<int> send_disp(dest_ranks.size() + 1, 0);
+  std::vector<int> send_disp(outdegree + 1, 0);
   std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
                    std::next(send_disp.begin(), 1));
 
@@ -331,6 +332,7 @@ void SparsityPattern::assemble()
   // Create and communicate adjacency list to neighborhood
   const graph::AdjacencyList<std::int64_t> ghost_data_out(std::move(ghost_data),
                                                           std::move(send_disp));
+  MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
   const graph::AdjacencyList<std::int64_t> ghost_data_in
       = dolfinx::MPI::neighbor_all_to_all(comm, ghost_data_out);
 
