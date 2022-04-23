@@ -58,8 +58,8 @@ import basix.ufl_wrapper
 # function.
 
 # +
-element = basix.create_element(
-    basix.ElementFamily.P, basix.CellType.interval, 10, basix.LagrangeVariant.equispaced)
+element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 10,
+                               basix.LagrangeVariant.equispaced)
 
 pts = basix.create_lattice(basix.CellType.interval, 200, basix.LatticeType.equispaced, True)
 values = element.tabulate(0, pts)[0, :, :, 0]
@@ -87,8 +87,8 @@ if plotting:
 # to define the basis functions.
 
 # +
-element = basix.create_element(
-    basix.ElementFamily.P, basix.CellType.interval, 10, basix.LagrangeVariant.gll_warped)
+element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 10,
+                               basix.LagrangeVariant.gll_warped)
 
 pts = basix.create_lattice(basix.CellType.interval, 200, basix.LatticeType.equispaced, True)
 values = element.tabulate(0, pts)[0, :, :, 0]
@@ -112,8 +112,8 @@ if plotting:
 # Elements created using Basix can be used directly with UFL via Basix's
 # UFL wrapper.
 
-element = basix.create_element(
-    basix.ElementFamily.P, basix.CellType.triangle, 3, basix.LagrangeVariant.gll_warped)
+element = basix.create_element(basix.ElementFamily.P, basix.CellType.triangle, 3,
+                               basix.LagrangeVariant.gll_warped)
 ufl_element = basix.ufl_wrapper.BasixElement(element)
 
 # The UFL element created by this wrapped can then be used in the same
@@ -176,8 +176,7 @@ x = ufl.SpatialCoordinate(mesh)
 u_exact = saw_tooth(x[0])
 
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
-    element = basix.create_element(
-        basix.ElementFamily.P, basix.CellType.interval, 10, variant)
+    element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
     ufl_element = basix.ufl_wrapper.BasixElement(element)
     V = FunctionSpace(mesh, ufl_element)
 
@@ -226,8 +225,7 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 
 # +
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
-    element = basix.create_element(
-        basix.ElementFamily.P, basix.CellType.interval, 10, variant)
+    element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
     ufl_element = basix.ufl_wrapper.BasixElement(element)
     V = FunctionSpace(mesh, ufl_element)
 

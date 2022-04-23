@@ -23,7 +23,8 @@ advanced techniques. We recommend that you take a look at these demos
 for tips and tricks on how to use more advanced or lower-level
 functionality and optimizations.
 
-1. Defining variants of elements using Basix: :doc:`Variants of Lagrange elements <demos/demo_lagrange_variants>`.
+1. Defining variants of elements using Basix: :doc:`Variants of Lagrange
+   elements <demos/demo_lagrange_variants>`.
 
 
 All demos
