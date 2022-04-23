@@ -86,7 +86,6 @@ plt.clf()
 element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 10,
                                basix.LagrangeVariant.gll_warped)
 
-pts = basix.create_lattice(basix.CellType.interval, 200, basix.LatticeType.equispaced, True)
 values = element.tabulate(0, pts)[0, :, :, 0]
 for i in range(values.shape[1]):
     plt.plot(pts, values[:, i])
