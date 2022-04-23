@@ -89,7 +89,6 @@ cpp/demo/documented/cahn-hilliard/CahnHilliard3D.cpp
 *.bin
 *.bp
 *.png
-!python/demo/img/*.png
 
 # CMake files
 CMakeLists.txt
