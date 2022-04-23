@@ -157,11 +157,6 @@ def saw_tooth(x):
 # +
 mesh = create_unit_interval(MPI.COMM_WORLD, 10)
 
-
-def fun(x):
-    return saw_tooth(x[0])
-
-
 x = ufl.SpatialCoordinate(mesh)
 u_exact = saw_tooth(x[0])
 
@@ -171,7 +166,7 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
     V = FunctionSpace(mesh, ufl_element)
 
     uh = Function(V)
-    uh.interpolate(lambda x: fun(x))
+    uh.interpolate(lambda x: saw_tooth(x[0]))
 
     if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
         pts = []
@@ -292,6 +287,3 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 # VTK. This variant should only be used for IO to/from VTK. Due to how
 # Basix handles the numbering of points by sub-entity, this variant can
 # only be used for discontinuous Lagrange elements.
-
-
-# """
