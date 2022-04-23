@@ -222,9 +222,8 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 
 # ## Available Lagrange variants
 #
-# Basix provides the following Lagrange variants:
+# Basix supports many Lagrange variants, including:
 #
-# - `basix.LagrangeVariant.unset`
 # - `basix.LagrangeVariant.equispaced`
 # - `basix.LagrangeVariant.gll_warped`
 # - `basix.LagrangeVariant.gll_isaac`
@@ -236,11 +235,6 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 # - `basix.LagrangeVariant.gl_isaac`
 # - `basix.LagrangeVariant.gl_centroid`
 # - `basix.LagrangeVariant.legendre`
-# - `basix.LagrangeVariant.vtk`
-#
-# ### `basix.LagrangeVariant.unset`
-# This variant is used internally by Basix for low-degree Lagrange
-# elements that do not require a variant.
 #
 # ### Equispaced points
 # The variant `basix.LagrangeVariant.equispaced` defines an element
@@ -280,10 +274,3 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 # Lagrange element whose basis functions are the orthonormal Legendre
 # polynomials. These polynomials are not defined using points at the
 # endpoints, so can also only be used for discontinuous elements.
-#
-# ### VTK variant
-# The variant `basix.LagrangeVariant.vtk` can be used to define a
-# Lagrange element with points ordered to match the ordering used by
-# VTK. This variant should only be used for IO to/from VTK. Due to how
-# Basix handles the numbering of points by sub-entity, this variant can
-# only be used for discontinuous Lagrange elements.
