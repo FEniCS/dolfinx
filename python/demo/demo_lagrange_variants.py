@@ -30,12 +30,7 @@ from dolfinx.mesh import create_unit_interval
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
 
-try:
-    import matplotlib.pylab as plt
-    plotting = True
-except ModuleNotFoundError:
-    print("")
-    plotting = False
+import matplotlib.pylab as plt
 # -
 
 # In addition to the imports seen in many earlier demos, we also import
@@ -62,13 +57,12 @@ element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 1
 
 pts = basix.create_lattice(basix.CellType.interval, 200, basix.LatticeType.equispaced, True)
 values = element.tabulate(0, pts)[0, :, :, 0]
-if plotting:
-    for i in range(values.shape[1]):
-        plt.plot(pts, values[:, i])
-    plt.plot(element.points, [0 for i in element.points], "ko")
-    plt.ylim([-1, 6])
-    plt.savefig("img/demo_lagrange_variants_equispaced_10.png")
-    plt.clf()
+for i in range(values.shape[1]):
+    plt.plot(pts, values[:, i])
+plt.plot(element.points, [0 for i in element.points], "ko")
+plt.ylim([-1, 6])
+plt.savefig("img/demo_lagrange_variants_equispaced_10.png")
+plt.clf()
 # -
 
 # ![The basis functions of a degree 10 Lagrange space defined using
@@ -91,13 +85,12 @@ element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 1
 
 pts = basix.create_lattice(basix.CellType.interval, 200, basix.LatticeType.equispaced, True)
 values = element.tabulate(0, pts)[0, :, :, 0]
-if plotting:
-    for i in range(values.shape[1]):
-        plt.plot(pts, values[:, i])
-    plt.plot(element.points, [0 for i in element.points], "ko")
-    plt.ylim([-1, 6])
-    plt.savefig("img/demo_lagrange_variants_gll_10.png")
-    plt.clf()
+for i in range(values.shape[1]):
+    plt.plot(pts, values[:, i])
+plt.plot(element.points, [0 for i in element.points], "ko")
+plt.ylim([-1, 6])
+plt.savefig("img/demo_lagrange_variants_gll_10.png")
+plt.clf()
 # -
 
 # ![The basis functions of a degree 10 Lagrange space defined using GLL
@@ -189,16 +182,15 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
                 cells.append(cell)
         pts = np.array(pts)
         values = uh.eval(pts, cells)
-        if plotting:
-            plt.plot(pts[:, 0], [fun(i) for i in pts], "k--")
-            plt.plot(pts[:, 0], values, "r-")
+        plt.plot(pts[:, 0], [fun(i) for i in pts], "k--")
+        plt.plot(pts[:, 0], values, "r-")
 
-            plt.legend(["function", "approximation"])
-            plt.ylim([-0.1, 0.4])
-            plt.title(variant.name)
+        plt.legend(["function", "approximation"])
+        plt.ylim([-0.1, 0.4])
+        plt.title(variant.name)
 
-            plt.savefig(f"img/demo_lagrange_variants_interpolation_{variant.name}.png")
-            plt.clf()
+        plt.savefig(f"img/demo_lagrange_variants_interpolation_{variant.name}.png")
+        plt.clf()
 # -
 
 # ![](img/demo_lagrange_variants_interpolation_equispaced.png)
