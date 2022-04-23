@@ -230,7 +230,7 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
     M = form(M)
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
 
-    print(variant.name, error ** 0.5)
+    print(f"Computed L2 interpolation error ({variant.name}):", error ** 0.5)
 # -
 
 # ## Available Lagrange variants
