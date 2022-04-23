@@ -64,12 +64,12 @@ for i in range(values.shape[1]):
     plt.plot(pts, values[:, i])
 plt.plot(element.points, [0 for i in element.points], "ko")
 plt.ylim([-1, 6])
-plt.savefig("img/demo_lagrange_variants_equispaced_10.png")
+plt.savefig("demo_lagrange_variants_equispaced_10.png")
 plt.clf()
 # -
 
 # ![The basis functions of a degree 10 Lagrange space defined using
-# equispaced points.](img/demo_lagrange_variants_equispaced_10.png)
+# equispaced points.](demo_lagrange_variants_equispaced_10.png)
 #
 # The basis functions exhibit large peaks towards the ends of the
 # interval. This is known as [Runge's
@@ -91,12 +91,12 @@ for i in range(values.shape[1]):
     plt.plot(pts, values[:, i])
 plt.plot(element.points, [0 for i in element.points], "ko")
 plt.ylim([-1, 6])
-plt.savefig("img/demo_lagrange_variants_gll_10.png")
+plt.savefig("demo_lagrange_variants_gll_10.png")
 plt.clf()
 # -
 
 # ![The basis functions of a degree 10 Lagrange space defined using GLL
-# points.](img/demo_lagrange_variants_gll_10.png)
+# points.](demo_lagrange_variants_gll_10.png)
 #
 # The points are clustered towards the endpoints of the interval. The
 # basis functions of this variant do not exhibit Runge's phenomenon.
@@ -186,12 +186,12 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
         plt.ylim([-0.1, 0.4])
         plt.title(variant.name)
 
-        plt.savefig(f"img/demo_lagrange_variants_interpolation_{variant.name}.png")
+        plt.savefig(f"demo_lagrange_variants_interpolation_{variant.name}.png")
         plt.clf()
 # -
 
-# ![](img/demo_lagrange_variants_interpolation_equispaced.png)
-# ![](img/demo_lagrange_variants_interpolation_gll_warped.png)
+# ![](demo_lagrange_variants_interpolation_equispaced.png)
+# ![](demo_lagrange_variants_interpolation_gll_warped.png)
 #
 # The plots illustrate that Runge's phenomenon leads to the
 # interpolation being less accurate when using the equispaced variant of
