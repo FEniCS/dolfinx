@@ -41,7 +41,7 @@ import basix.ufl_wrapper
 # ## Equispaced points vs GLL points
 # The basis function of Lagrange elements are defined by placing points
 # on the reference element, with each basis function to be equal to 1 at
-# one point and 0 at all the others points.
+# one point and 0 at all the other points.
 #
 # To demonstrate the influence of interpolation point position, we
 # create a degree 10 element on an interval using equally spaced points,
@@ -140,10 +140,10 @@ uh = problem.solve()
 # -
 
 # ## Computing the error of an interpolation
-# To demonstrate the how the choice of Lagrange variant can affect
+# To demonstrate how the choice of Lagrange variant can affect
 # computed results, we will compute the error when interpolating a
 # function into a finite element space. For this example, we define a
-# saw tooth wave thatwill bed interpolated into a Lagrange space.
+# saw tooth wave that will be interpolated into a Lagrange space.
 
 
 def saw_tooth(x):
