@@ -46,11 +46,11 @@ def process():
             jupytext.write(python_demo, ipynb_file, fmt="ipynb")
 
             # Copy python demo files into documentation demo directory
-            shutil.copy(subdir / demo, demo_dir)
+            shutil.copy(demo, demo_dir)
 
         # Copy images used in demos
         for file in subdir.glob("**/*.png"):
-            shutil.copy(subdir / file, demo_dir)
+            shutil.copy(file, demo_dir)
 
 
 if __name__ == "__main__":
