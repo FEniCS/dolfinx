@@ -24,8 +24,6 @@ import ufl
 
 from dolfinx import fem, mesh
 from ufl import ds, dx, grad, inner
-from dolfinx.fem import Function, FunctionSpace, assemble_scalar, form
-from dolfinx.mesh import create_unit_interval
 
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
@@ -160,7 +158,7 @@ def saw_tooth(x):
 # elements, and plot the finite element interpolation.
 
 # +
-mesh = create_unit_interval(MPI.COMM_WORLD, 10)
+mesh = mesh.create_unit_interval(MPI.COMM_WORLD, 10)
 
 x = ufl.SpatialCoordinate(mesh)
 u_exact = saw_tooth(x[0])
@@ -168,9 +166,9 @@ u_exact = saw_tooth(x[0])
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
     element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
     ufl_element = basix.ufl_wrapper.BasixElement(element)
-    V = FunctionSpace(mesh, ufl_element)
+    V = fem.FunctionSpace(mesh, ufl_element)
 
-    uh = Function(V)
+    uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
 
     if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
@@ -182,7 +180,7 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
                 cells.append(cell)
         pts = np.array(pts)
         values = uh.eval(pts, cells)
-        plt.plot(pts[:, 0], [fun(i) for i in pts], "k--")
+        plt.plot(pts[:, 0], [saw_tooth(i[0]) for i in pts], "k--")
         plt.plot(pts[:, 0], values, "r-")
 
         plt.legend(["function", "approximation"])
@@ -213,14 +211,14 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
     element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
     ufl_element = basix.ufl_wrapper.BasixElement(element)
-    V = FunctionSpace(mesh, ufl_element)
+    V = fem.FunctionSpace(mesh, ufl_element)
 
-    uh = Function(V)
-    uh.interpolate(lambda x: fun(x))
+    uh = fem.Function(V)
+    uh.interpolate(lambda x: saw_tooth(x[0]))
 
     M = (u_exact - uh)**2 * dx
-    M = form(M)
-    error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
+    M = fem.form(M)
+    error = mesh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
 
     print(f"Computed L2 interpolation error ({variant.name}):", error ** 0.5)
 # -
