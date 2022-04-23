@@ -50,6 +50,11 @@ import basix.ufl_wrapper
 # and plot the basis functions. We create this element using Basix's
 # [`create_element`](https://docs.fenicsproject.org/basix/main/python/demo/demo_create_and_tabulate.py.html)
 # function.
+#
+# Basix's function `element.tabulate` returns a 4-dimensional array with
+# shape (derivatives, points, basis functions, value size). In this
+# example, we only tabulate the 0th derivative and the value size is
+# 1, so we take the slice `[0, :, :, 0]` to get a 2-dimensional array.
 
 # +
 element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 10,
