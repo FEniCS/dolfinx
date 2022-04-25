@@ -213,7 +213,7 @@ public:
   /// communicator, i.e. the neighbourhood source ranks on the
   /// communicator returned by
   /// IndexMap::comm(IndexMap::Direction::reverse). The source ranks on
-  /// IndexMap::comm(IndexMap::Direction::reverse communicatorcan be
+  /// IndexMap::comm(IndexMap::Direction::reverse) communicator can be
   /// used convert the returned neighbour ranks to the rank indices on
   /// the full communicator.
   ///
