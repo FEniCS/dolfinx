@@ -92,7 +92,7 @@ public:
       bool needs_facet_permutations,
       const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
       const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
-                     std::vector<int32_t>>& domain_map
+                     std::vector<std::int32_t>>& domain_map
       = {})
       : _function_spaces(function_spaces), _coefficients(coefficients),
         _constants(constants), _mesh(mesh),
@@ -342,7 +342,7 @@ public:
   using scalar_type = T;
 
   const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
-                 std::vector<int32_t>>&
+                 std::vector<std::int32_t>>&
   domain_map() const
   {
     return _domain_map;
@@ -665,7 +665,8 @@ private:
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
 
-  std::map<std::shared_ptr<const dolfinx::mesh::Mesh>, std::vector<int32_t>>
+  std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
+           std::vector<std::int32_t>>
       _domain_map;
 };
 } // namespace dolfinx::fem
