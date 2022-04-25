@@ -210,7 +210,7 @@ public:
   /// ghost index.
   ///
   /// The neighborhood ranks are the 'source' ranks on the 'reverse'
-  /// communicator, i.e. the neighbourhood source ranks on the
+  /// communicator, i.e. the neighborhood source ranks on the
   /// communicator returned by
   /// IndexMap::comm(IndexMap::Direction::reverse). The source ranks on
   /// IndexMap::comm(IndexMap::Direction::reverse) communicator can be
