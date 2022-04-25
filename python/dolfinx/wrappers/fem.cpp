@@ -797,11 +797,16 @@ void declare_form(py::module& m, const std::string& type)
                   const std::map<dolfinx::fem::IntegralType,
                                  const dolfinx::mesh::MeshTags<int>*>&
                       subdomains,
-                  const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
+                  const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
+                  const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
+                                 std::vector<int32_t>&>
+                      domain_map
+                  = {})
                {
                  ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
-                 return dolfinx::fem::create_form<T>(
-                     *p, spaces, coefficients, constants, subdomains, mesh);
+                 return dolfinx::fem::create_form<T>(*p, spaces, coefficients,
+                                                     constants, subdomains,
+                                                     mesh, domain_map);
                }),
            "Create a Form from a pointer to a ufcx_form")
       .def_property_readonly("dtype", [](const dolfinx::fem::Form<T>& self)
@@ -879,11 +884,15 @@ void declare_form(py::module& m, const std::string& type)
              constants,
          const std::map<dolfinx::fem::IntegralType,
                         const dolfinx::mesh::MeshTags<int>*>& subdomains,
-         const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
+         const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
+         const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
+                        const py::array_t<std::int32_t, py::array::c_style>&>
+             domain_map
+         = {})
       {
         ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
         return dolfinx::fem::create_form<T>(*p, spaces, coefficients, constants,
-                                            subdomains, mesh);
+                                            subdomains, mesh, domain_map);
       },
       "Create Form from a pointer to ufcx_form.");
 }

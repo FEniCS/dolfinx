@@ -90,10 +90,15 @@ public:
       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
       bool needs_facet_permutations,
-      const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+      const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
+      const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
+                     std::vector<int32_t>&>
+          domain_map
+      = {})
       : _function_spaces(function_spaces), _coefficients(coefficients),
         _constants(constants), _mesh(mesh),
-        _needs_facet_permutations(needs_facet_permutations)
+        _needs_facet_permutations(needs_facet_permutations),
+        _domain_map(domain_map)
   {
     // Extract _mesh from fem::FunctionSpace, and check they are the same
     if (!_mesh and !function_spaces.empty())
@@ -337,6 +342,13 @@ public:
   /// Scalar type (T)
   using scalar_type = T;
 
+  const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
+                 std::vector<int32_t>&>
+  domain_map() const
+  {
+    return _domain_map;
+  }
+
 private:
   using kern = std::function<void(T*, const T*, const T*, const double*,
                                   const int*, const std::uint8_t*)>;
@@ -576,8 +588,8 @@ private:
         auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
         assert(c_to_f);
 
-        std::vector<std::int8_t> boundary_facet_markers =
-          mesh::compute_boundary_facets(mesh.topology());
+        std::vector<std::int8_t> boundary_facet_markers
+            = mesh::compute_boundary_facets(mesh.topology());
         for (std::size_t f = 0; f < boundary_facet_markers.size(); ++f)
         {
           if (boundary_facet_markers[f])
@@ -653,5 +665,8 @@ private:
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
+
+  std::map<std::shared_ptr<const dolfinx::mesh::Mesh>, std::vector<int32_t>&>
+      _domain_map;
 };
 } // namespace dolfinx::fem

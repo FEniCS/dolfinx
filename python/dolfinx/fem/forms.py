@@ -24,7 +24,8 @@ from petsc4py import PETSc
 
 class FormMetaClass:
     def __init__(self, form, V: list[_cpp.fem.FunctionSpace], coeffs, constants,
-                 subdomains: dict[_cpp.mesh.MeshTags_int32], mesh: _cpp.mesh.Mesh, code):
+                 subdomains: dict[_cpp.mesh.MeshTags_int32], mesh: _cpp.mesh.Mesh,
+                 domain_map, code):
         """A finite element form
 
         Notes:
@@ -46,7 +47,7 @@ class FormMetaClass:
         self._ufcx_form = form
         ffi = cffi.FFI()
         super().__init__(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_form)),
-                         V, coeffs, constants, subdomains, mesh)
+                         V, coeffs, constants, subdomains, mesh, domain_map)
 
     @property
     def ufcx_form(self):
@@ -60,7 +61,8 @@ class FormMetaClass:
 
 
 def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = PETSc.ScalarType,
-         form_compiler_params: dict = {}, jit_params: dict = {}) -> FormMetaClass:
+         form_compiler_params: dict = {}, jit_params: dict = {},
+         domain_map={}) -> FormMetaClass:
     """Create a DOLFINx Form or an array of Forms
 
     Args:
@@ -125,7 +127,8 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
                       _cpp.fem.IntegralType.interior_facet: subdomains.get("interior_facet"),
                       _cpp.fem.IntegralType.vertex: subdomains.get("vertex")}
 
-        return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, code)
+        return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh,
+                       domain_map, code)
 
     def _create_form(form):
         """Recursively convert ufl.Forms to dolfinx.fem.Form, otherwise

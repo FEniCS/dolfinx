@@ -27,6 +27,9 @@
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
+#include <xtensor/xio.hpp>
+#include <xtensor/xadapt.hpp>
+
 /// @file utils.h
 /// @brief Functions supporting finite element method operations
 
@@ -163,7 +166,11 @@ Form<T> create_form(
     const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
     const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
-    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
+    const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
+                   std::vector<int32_t>&>
+        domain_map
+    = {})
 {
   if (ufcx_form.rank != (int)spaces.size())
     throw std::runtime_error("Wrong number of argument spaces for Form.");
@@ -344,7 +351,7 @@ Form<T> create_form(
   }
 
   return Form<T>(spaces, integral_data, coefficients, constants,
-                 needs_facet_permutations, mesh);
+                 needs_facet_permutations, mesh, domain_map);
 }
 
 /// @brief Create a Form from UFC input
@@ -675,6 +682,13 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        if (coefficients[coeff]->function_space()->mesh() != form.mesh())
+        {
+          std::cout << xt::adapt(
+              form.domain_map().at(coefficients[coeff]->function_space()->mesh()))
+                    << "\n";
+        }
+
         impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
                                       cell_info, cells, fetch_cell,
                                       offsets[coeff]);
