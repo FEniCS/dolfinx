@@ -209,7 +209,7 @@ public:
   /// @brief Compute the owner on the neighborhood communicator of each
   /// ghost index.
   ///
-  /// The neighbourhood ranks are the 'source' ranks on the 'reverse'
+  /// The neighborhood ranks are the 'source' ranks on the 'reverse'
   /// communicator, i.e. the neighbourhood source ranks on the
   /// communicator returned by
   /// IndexMap::comm(IndexMap::Direction::reverse). The source ranks on
