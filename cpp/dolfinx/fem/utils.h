@@ -27,8 +27,8 @@
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
-#include <xtensor/xio.hpp>
 #include <xtensor/xadapt.hpp>
+#include <xtensor/xio.hpp>
 
 /// @file utils.h
 /// @brief Functions supporting finite element method operations
@@ -168,8 +168,7 @@ Form<T> create_form(
     const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
     const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
-                   std::vector<int32_t>&>
-        domain_map
+                   std::vector<int32_t>>& domain_map
     = {})
 {
   if (ufcx_form.rank != (int)spaces.size())
@@ -684,8 +683,8 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       {
         if (coefficients[coeff]->function_space()->mesh() != form.mesh())
         {
-          std::cout << xt::adapt(
-              form.domain_map().at(coefficients[coeff]->function_space()->mesh()))
+          std::cout << xt::adapt(form.domain_map().at(
+              coefficients[coeff]->function_space()->mesh()))
                     << "\n";
         }
 
