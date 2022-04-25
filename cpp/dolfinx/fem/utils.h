@@ -27,9 +27,6 @@
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xio.hpp>
-
 /// @file utils.h
 /// @brief Functions supporting finite element method operations
 
@@ -168,7 +165,7 @@ Form<T> create_form(
     const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
     const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
-                   std::vector<int32_t>>& domain_map
+                   std::vector<std::int32_t>>& domain_map
     = {})
 {
   if (ufcx_form.rank != (int)spaces.size())
