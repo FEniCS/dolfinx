@@ -93,7 +93,13 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   dofmap_view.index_map->scatter_fwd(
       xtl::span<const std::int64_t>(global_index),
       xtl::span<std::int64_t>(global_index_remote), 1);
-  const std::vector ghost_owner_old = dofmap_view.index_map->ghost_owner_rank();
+
+  // Get owning ranks (neighbour) for each ghost and map from
+  // neighbourhood rank to global rank
+  const std::vector<int> ghost_owner_old
+      = dofmap_view.index_map->ghost_owners();
+  const std::vector<int> neighbor_ranks = dolfinx::MPI::neighbors(
+      dofmap_view.index_map->comm(common::IndexMap::Direction::forward))[0];
 
   // Compute ghosts for collapsed dofmap
   std::vector<std::int64_t> ghosts(num_unowned);
@@ -104,7 +110,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
     const std::int32_t index_old = *it / bs_view - num_owned_view;
     assert(global_index_remote[index_old] >= 0);
     ghosts[index] = global_index_remote[index_old];
-    ghost_owners[index] = ghost_owner_old[index_old];
+    ghost_owners[index] = neighbor_ranks[ghost_owner_old[index_old]];
   }
 
   // Create new index map

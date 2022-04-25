@@ -518,6 +518,39 @@ def test_dP_hex(family, degree, cell_type, datadir):
     run_dg_test(mesh, V, degree)
 
 
+@parametrize_cell_types_tp
+@pytest.mark.parametrize("family", ["S"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_S_tp(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
+    V = FunctionSpace(mesh, (family, degree))
+    run_scalar_test(mesh, V, degree // 2)
+
+
+@parametrize_cell_types_tp
+@pytest.mark.parametrize("family", ["S"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_S_tp_built_in_mesh(family, degree, cell_type, datadir):
+    if cell_type == CellType.hexahedron:
+        mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, cell_type)
+    elif cell_type == CellType.quadrilateral:
+        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, cell_type)
+    mesh = get_mesh(cell_type, datadir)
+    V = FunctionSpace(mesh, (family, degree))
+    run_scalar_test(mesh, V, degree // 2)
+
+
+@parametrize_cell_types_tp
+@pytest.mark.parametrize("family", ["S"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_vector_S_tp(family, degree, cell_type, datadir):
+    if cell_type == CellType.hexahedron and degree == 4:
+        pytest.skip("Skip expensive test on hexahedron")
+    mesh = get_mesh(cell_type, datadir)
+    V = VectorFunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree // 2)
+
+
 @parametrize_cell_types_quad
 @pytest.mark.parametrize("family", ["DPC"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
