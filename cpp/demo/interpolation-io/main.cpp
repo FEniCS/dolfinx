@@ -4,8 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <basix/e-lagrange.h>
-#include <basix/e-nedelec.h>
+#include <basix/finite-element.h>
 #include <cmath>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/FiniteElement.h>
@@ -29,9 +28,9 @@ void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
                         std::filesystem::path filename)
 {
   // Create a Basix continuous Lagrange element of degree 1
-  basix::FiniteElement e = basix::element::create_lagrange(
-      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1,
-      basix::element::lagrange_variant::equispaced, false);
+  basix::FiniteElement e = basix::create_element(
+      basix::element::family::P,
+      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1);
 
   // Create a scalar function space
   auto V = std::make_shared<fem::FunctionSpace>(
@@ -60,8 +59,10 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
                          [[maybe_unused]] std::filesystem::path filename)
 {
   // Create a Basix Nedelec (first kind) element of degree 2 (dim=6 on triangle)
-  basix::FiniteElement e = basix::element::create_nedelec(
-      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2, false);
+  basix::FiniteElement e = basix::create_element(
+      basix::element::family::N1E,
+      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2,
+      basix::element::lagrange_variant::legendre);
 
   // Create a Nedelec function space
   auto V = std::make_shared<fem::FunctionSpace>(
@@ -105,9 +106,9 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
   // then visualise. We do this here.
 
   // First create a degree 1 vector-valued discontinuous Lagrange space:
-  basix::FiniteElement e_l = basix::element::create_lagrange(
-      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2,
-      basix::element::lagrange_variant::equispaced, true);
+  basix::FiniteElement e_l = basix::create_element(
+      basix::element::family::P,
+      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2, true);
 
   // Create a function space
   auto V_l = std::make_shared<fem::FunctionSpace>(
