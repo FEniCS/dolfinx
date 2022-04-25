@@ -705,17 +705,29 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       const std::vector<std::pair<std::int32_t, int>>& facets
           = form.exterior_facet_domains(id);
 
-      // Create lambda function fetching cell index from exterior facet entity
-      auto fetch_cell = [](auto& entity) { return entity.first; };
-
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
-        impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
-                                      cell_info, facets, fetch_cell,
-                                      offsets[coeff]);
+        auto coeff_mesh = coefficients[coeff]->function_space()->mesh();
+        if (coeff_mesh != form.mesh())
+        {
+          auto fetch_cell
+              = [&domain_map = form.domain_map().at(coeff_mesh)](auto entity)
+          { return domain_map[entity.first]; };
+          impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
+                                        cell_info, facets, fetch_cell,
+                                        offsets[coeff]);
+        }
+        else
+        {
+          // Create lambda function fetching cell index from exterior facet
+          // entity
+          auto fetch_cell = [](auto& entity) { return entity.first; };
+          impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
+                                        cell_info, facets, fetch_cell,
+                                        offsets[coeff]);
+        }
       }
-
       break;
     }
     case IntegralType::interior_facet:
