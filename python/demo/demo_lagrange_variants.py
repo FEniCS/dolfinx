@@ -10,8 +10,7 @@
 
 # # Variants of Lagrange elements
 #
-# This demo is implemented in a single Python file,
-# {download}`demo_lagrange_variants.py`. It illustrates how to:
+# This demo ({download}`demo_lagrange_variants.py`) illustrates how to:
 #
 # - Define finite elements directly using Basix
 # - Create variants of Lagrange finite elements
@@ -31,17 +30,17 @@ from petsc4py.PETSc import ScalarType
 import matplotlib.pylab as plt
 # -
 
-# In addition to the imports seen in many earlier demos, we also import
-# Basix and its UFL wrapper directly. Basix is the element definition
-# and tabulation library that is used by FEniCSx.
+# In addition to the imports seen in other demos, we also import Basix
+# and its UFL wrapper directly. Basix is the element definition and
+# tabulation library that is used by FEniCSx.
 
 import basix
 import basix.ufl_wrapper
 
 # ## Equispaced points vs GLL points
 # The basis function of Lagrange elements are defined by placing points
-# on the reference element, with each basis function to be equal to 1 at
-# one point and 0 at all the other points.
+# on the reference element, with each basis function equal to 1 at one
+# point and 0 at all the other points.
 #
 # To demonstrate the influence of interpolation point position, we
 # create a degree 10 element on an interval using equally spaced points,
@@ -98,8 +97,8 @@ plt.clf()
 # ![The basis functions of a degree 10 Lagrange space defined using GLL
 # points.](demo_lagrange_variants_gll_10.png)
 #
-# The points are clustered towards the endpoints of the interval. The
-# basis functions of this variant do not exhibit Runge's phenomenon.
+# The points are clustered towards the endpoints of the interval, and
+# the basis functions do not exhibit Runge's phenomenon.
 
 # ## Wrapping a Basix element
 # Elements created using Basix can be used directly with UFL via Basix's
@@ -109,9 +108,9 @@ element = basix.create_element(basix.ElementFamily.P, basix.CellType.triangle, 3
                                basix.LagrangeVariant.gll_warped)
 ufl_element = basix.ufl_wrapper.BasixElement(element)
 
-# The UFL element created by this wrapped can then be used in the same
-# was as an element created directly in UFL. For example, we could
-# [solve a Poisson problem](demo_poisson) using this element.
+# The UFL element `ufl_element` can be used in the same way as an
+# element created directly in UFL. For example, we could [solve a
+# Poisson problem](demo_poisson) using this element.
 
 # +
 msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
@@ -197,7 +196,8 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 # interpolation being less accurate when using the equispaced variant of
 # Lagrange compared to the GLL variant.
 #
-# To quantify the error, we compute the interpolated error in the L2 norm,
+# To quantify the error, we compute the interpolation error in the L2
+# norm,
 #
 # $$\left\|u - u_h\right\|_2 = \left(\int_0^1 (u - u_h)^2\right)^{\frac{1}{2}},$$
 #
@@ -214,9 +214,7 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
-
-    M = (u_exact - uh)**2 * dx
-    M = fem.form(M)
+    M = fem.form((u_exact - uh)**2 * dx)
     error = mesh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
 
     print(f"Computed L2 interpolation error ({variant.name}):", error ** 0.5)
@@ -224,7 +222,7 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 
 # ## Available Lagrange variants
 #
-# Basix supports many Lagrange variants, including:
+# Basix supports numerous Lagrange variants, including:
 #
 # - `basix.LagrangeVariant.equispaced`
 # - `basix.LagrangeVariant.gll_warped`
@@ -268,11 +266,11 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 # `basix.LagrangeVariant.gl_centroid` can be used to define elements
 # using [Gauss-Legendre (GL)
 # points](https://en.wikipedia.org/wiki/Gaussian_quadrature#Gauss%E2%80%93Legendre_quadrature).
-# GL points do not include the endpoints, hence variants can only be
+# GL points do not include the endpoints, hence this variant can only be
 # used for discontinuous elements.
 #
 # ### Legendre polynomials
 # The variant `basix.LagrangeVariant.legendre` can be used to define a
-# Lagrange element whose basis functions are the orthonormal Legendre
-# polynomials. These polynomials are not defined using points at the
-# endpoints, so can also only be used for discontinuous elements.
+# Lagrange-like element whose basis functions are the orthonormal
+# Legendre polynomials. These polynomials are not defined using points
+# at the endpoints, so can also only be used for discontinuous elements.
