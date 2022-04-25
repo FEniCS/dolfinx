@@ -129,7 +129,6 @@ void CoordinateElement::pull_back_nonaffine(
   for (std::size_t p = 0; p < num_points; ++p)
   {
     std::fill(Xk.begin(), Xk.end(), 0.0);
-    Xk.fill(0);
     int k;
     for (k = 0; k < maxit; ++k)
     {
@@ -138,9 +137,9 @@ void CoordinateElement::pull_back_nonaffine(
       // x = cell_geometry * phi
       auto phi = xt::view(basis, 0, 0, xt::all(), 0);
       std::fill(xk.begin(), xk.end(), 0.0);
-      for (std::size_t i = 0; i < cell_geometry.shape(1); ++i)
-        for (std::size_t j = 0; j < cell_geometry.shape(0); ++j)
-          xk[i] += cell_geometry(j, i) * phi[j];
+      for (std::size_t i = 0; i < cell_geometry.shape(0); ++i)
+        for (std::size_t j = 0; j < cell_geometry.shape(1); ++j)
+          xk[j] += cell_geometry(i, j) * phi[i];
 
       // Compute Jacobian, its inverse and determinant
       std::fill(J.begin(), J.end(), 0.0);
@@ -148,22 +147,25 @@ void CoordinateElement::pull_back_nonaffine(
       compute_jacobian(dphi, cell_geometry, J);
       compute_jacobian_inverse(J, K);
 
-      dX.fill(0.0);
+      // Compute dX = K * (x_p - x_k)
+      std::fill(dX.begin(), dX.end(), 0);
+      auto x_p = xt::row(x, p);
       for (std::size_t i = 0; i < K.shape(0); ++i)
         for (std::size_t j = 0; j < K.shape(1); ++j)
-          dX[i] += K(i, j) * (x(p, j) - xk[j]);
+          dX[i] += K(i, j) * (x_p[j] - xk[j]);
 
       // Compute Xk += dX
       std::transform(dX.cbegin(), dX.cend(), Xk.cbegin(), Xk.begin(),
                      [](double a, double b) { return a + b; });
 
-      // Compute dot(dX, dX)
-      auto dX_squared = std::transform_reduce(
-          dX.cbegin(), dX.cend(), 0.0, std::plus<double>(),
-          [](const auto v) { return v * v; });
-
-      if (std::sqrt(dX_squared) < tol)
+      // Compute norm(dX)
+      if (auto dX_squared = std::transform_reduce(
+              dX.cbegin(), dX.cend(), 0.0, std::plus<double>(),
+              [](const auto v) { return v * v; });
+          std::sqrt(dX_squared) < tol)
+      {
         break;
+      }
     }
     std::copy(Xk.cbegin(), std::next(Xk.cbegin(), tdim),
               std::next(X.begin(), p * tdim));
