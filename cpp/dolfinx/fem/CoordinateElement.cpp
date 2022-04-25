@@ -128,6 +128,7 @@ void CoordinateElement::pull_back_nonaffine(
   xt::xtensor<double, 4> basis(_element->tabulate_shape(1, 1));
   for (std::size_t p = 0; p < num_points; ++p)
   {
+    std::fill(Xk.begin(), Xk.end(), 0.0);
     Xk.fill(0);
     int k;
     for (k = 0; k < maxit; ++k)
@@ -152,11 +153,20 @@ void CoordinateElement::pull_back_nonaffine(
         for (std::size_t j = 0; j < K.shape(1); ++j)
           dX[i] += K(i, j) * (x(p, j) - xk[j]);
 
-      Xk += dX;
-      if (std::sqrt(xt::sum(dX * dX)()) < tol)
+      // Compute Xk += dX
+      std::transform(dX.cbegin(), dX.cend(), Xk.cbegin(), Xk.begin(),
+                     [](double a, double b) { return a + b; });
+
+      // Compute dot(dX, dX)
+      auto dX_squared = std::transform_reduce(
+          dX.cbegin(), dX.cend(), 0.0, std::plus<double>(),
+          [](const auto v) { return v * v; });
+
+      if (std::sqrt(dX_squared) < tol)
         break;
     }
-    xt::row(X, p) = xt::row(Xk, 0);
+    std::copy(Xk.cbegin(), std::next(Xk.cbegin(), tdim),
+              std::next(X.begin(), p * tdim));
     if (k == maxit)
     {
       throw std::runtime_error(
