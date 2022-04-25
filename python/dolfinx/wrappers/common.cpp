@@ -49,6 +49,10 @@ void common(py::module& m)
       .value("add", dolfinx::common::IndexMap::Mode::add)
       .value("insert", dolfinx::common::IndexMap::Mode::insert);
 
+  py::enum_<dolfinx::common::IndexMap::Direction>(m, "Direction")
+      .value("forward", dolfinx::common::IndexMap::Direction::forward)
+      .value("reverse", dolfinx::common::IndexMap::Direction::reverse);
+
   py::enum_<dolfinx::Table::Reduction>(m, "Reduction")
       .value("max", dolfinx::Table::Reduction::max)
       .value("min", dolfinx::Table::Reduction::min)
@@ -76,9 +80,15 @@ void common(py::module& m)
                              &dolfinx::common::IndexMap::local_range,
                              "Range of indices owned by this map")
       .def(
-          "ghost_owner_rank",
+          "comm",
+          [](const dolfinx::common::IndexMap& self,
+             dolfinx::common::IndexMap::Direction d)
+          { return MPICommWrapper(self.comm(d)); },
+          "Return MPI communicator")
+      .def(
+          "ghost_owners",
           [](const dolfinx::common::IndexMap& self)
-          { return as_pyarray(self.ghost_owner_rank()); },
+          { return as_pyarray(self.ghost_owners()); },
           "Return owning process for each ghost index")
       .def_property_readonly(
           "ghosts",
