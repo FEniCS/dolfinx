@@ -151,7 +151,10 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
   }
 #endif
 #ifdef HAS_PARMETIS
-  auto partfn = graph::parmetis::partitioner();
-  CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(partfn)));
+  SECTION("parmetis")
+  {
+    auto partfn = graph::parmetis::partitioner();
+    CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(partfn)));
+  }
 #endif
 }
