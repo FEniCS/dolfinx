@@ -217,7 +217,7 @@ public:
   /// used to convert the returned neighbour ranks to the rank indices on
   /// the full communicator.
   ///
-  /// @return The owning rank on the neighbourhood communicator of the
+  /// @return The owning rank on the neighborhood communicator of the
   /// ith ghost index.
   std::vector<int> ghost_owners() const;
 
