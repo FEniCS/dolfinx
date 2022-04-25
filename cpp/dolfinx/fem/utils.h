@@ -676,21 +676,27 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
     {
     case IntegralType::cell:
     {
-      auto fetch_cell = [](auto entity) { return entity; };
       const std::vector<std::int32_t>& cells = form.cell_domains(id);
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
-        if (coefficients[coeff]->function_space()->mesh() != form.mesh())
+        auto coeff_mesh = coefficients[coeff]->function_space()->mesh();
+        if (coeff_mesh != form.mesh())
         {
-          std::cout << xt::adapt(form.domain_map().at(
-              coefficients[coeff]->function_space()->mesh()))
-                    << "\n";
+          auto fetch_cell
+              = [&domain_map = form.domain_map().at(coeff_mesh)](auto entity)
+          { return domain_map[entity]; };
+          impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
+                                        cell_info, cells, fetch_cell,
+                                        offsets[coeff]);
         }
-
-        impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
-                                      cell_info, cells, fetch_cell,
-                                      offsets[coeff]);
+        else
+        {
+          auto fetch_cell = [](auto entity) { return entity; };
+          impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
+                                        cell_info, cells, fetch_cell,
+                                        offsets[coeff]);
+        }
       }
       break;
     }
