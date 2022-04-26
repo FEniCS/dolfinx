@@ -19,7 +19,7 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 
-def assemble(mesh, space, k):
+def assemble_forms_0(mesh, space, k):
     V = fem.FunctionSpace(mesh, (space, k))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dx = ufl.Measure("dx", domain=mesh)
@@ -81,12 +81,12 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
             MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
             (2 * n, n, n), ghost_mode=ghost_mode)
 
-    A_mesh_0, b_mesh_0, s_mesh_0 = assemble(mesh_0, space, k)
+    A_mesh_0, b_mesh_0, s_mesh_0 = assemble_forms_0(mesh_0, space, k)
 
     edim = mesh_1.topology.dim
     entities = locate_entities(mesh_1, edim, lambda x: x[0] <= 1.0)
     submesh = create_submesh(mesh_1, edim, entities)[0]
-    A_submesh, b_submesh, s_submesh = assemble(submesh, space, k)
+    A_submesh, b_submesh, s_submesh = assemble_forms_0(submesh, space, k)
 
     assert(np.isclose(A_mesh_0.norm(), A_submesh.norm()))
     assert(np.isclose(b_mesh_0.norm(), b_submesh.norm()))
@@ -108,11 +108,11 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
         cube_mesh, edim, lambda x: np.isclose(x[2], 0.0))
     submesh = create_submesh(cube_mesh, edim, entities)[0]
 
-    A_submesh, b_submesh, s_submesh = assemble(submesh, space, k)
+    A_submesh, b_submesh, s_submesh = assemble_forms_0(submesh, space, k)
 
     square_mesh = create_unit_square(
         MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
-    A_square_mesh, b_square_mesh, s_square_mesh = assemble(
+    A_square_mesh, b_square_mesh, s_square_mesh = assemble_forms_0(
         square_mesh, space, k)
 
     assert(np.isclose(A_submesh.norm(), A_square_mesh.norm()))
@@ -120,7 +120,7 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     assert(np.isclose(s_submesh, s_square_mesh))
 
 
-def assemble_mixed_forms(comm, f, g, h, u, v, dx, ds, entity_maps={}):
+def assemble_forms_1(comm, f, g, h, u, v, dx, ds, entity_maps={}):
     a = fem.form(ufl.inner(f * g * h * u, v) * (dx + ds),
                  entity_maps=entity_maps)
     A = fem.petsc.assemble_matrix(a)
@@ -144,6 +144,11 @@ def assemble_mixed_forms(comm, f, g, h, u, v, dx, ds, entity_maps={}):
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 def test_mixed_codim_0_assembly(d, n, k, space, ghost_mode):
+    """Test that assembling a form where the coefficients are defined on
+    different meshes gives the expected result"""
+
+    # Create two meshes. mesh_0 is used to check the result. mesh_1 is
+    # used to create submeshes
     if d == 2:
         mesh_0 = create_unit_square(
             MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
@@ -157,57 +162,72 @@ def test_mixed_codim_0_assembly(d, n, k, space, ghost_mode):
             MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
             (2 * n, n, n), ghost_mode=ghost_mode)
 
+    # Create two different submeshes of mesh_1
     edim = mesh_1.topology.dim
-    entities = locate_entities(mesh_1, edim, lambda x: x[0] <= 1.0)
-    submesh, entity_map, vertex_map, geom_map = create_submesh(
-        mesh_1, edim, entities)
+    entities_0 = locate_entities(mesh_1, edim, lambda x: x[0] <= 1.0)
+    submesh_0, entity_map_0, vertex_map_0, geom_map_0 = create_submesh(
+        mesh_1, edim, entities_0)
+    entities_1 = locate_entities(mesh_1, edim, lambda x: x[0] <= 1.5)
+    submesh_1, entity_map_1, vertex_map_1, geom_map_1 = create_submesh(
+        mesh_1, edim, entities_1)
 
-    entities_2 = locate_entities(mesh_1, edim, lambda x: x[0] <= 1.5)
-    submesh_2, entity_map_2, vertex_map_2, geom_map_2 = create_submesh(
-        mesh_1, edim, entities_2)
+    # Create function spaces on mesh_1, submesh_0, and submesh_1
+    V_m_1 = fem.FunctionSpace(mesh_1, (space, k))
+    V_sm_0 = fem.FunctionSpace(submesh_0, (space, k))
+    V_sm_1 = fem.FunctionSpace(submesh_1, (space, k))
 
-    V_m1 = fem.FunctionSpace(mesh_1, (space, k))
-    V_sm = fem.FunctionSpace(submesh, (space, k))
-    V_sm_2 = fem.FunctionSpace(submesh_2, (space, k))
+    # Create trial and test functions, as well as integration measures
+    # on submesh_0
+    u_sm = ufl.TrialFunction(V_sm_0)
+    v_sm = ufl.TestFunction(V_sm_0)
+    dx_sm = ufl.Measure("dx", domain=submesh_0)
+    ds_sm = ufl.Measure("ds", domain=submesh_0)
 
-    u_sm = ufl.TrialFunction(V_sm)
-    v_sm = ufl.TestFunction(V_sm)
-    dx_sm = ufl.Measure("dx", domain=submesh)
-    ds_sm = ufl.Measure("ds", domain=submesh)
+    # Create functions defined over mesh_1, submesh_0, and submesh_1
+    # Since all functions are well defined on the integration domain,
+    # forms involving them make sense
+    f = fem.Function(V_m_1)
+    f.interpolate(lambda x: x[0])
+    g = fem.Function(V_sm_0)
+    # TODO Interpolate g and h when issue #2126 has been resolved
+    g.x.array[:] = 1.0
+    h = fem.Function(V_sm_1)
+    h.x.array[:] = 2.0
 
-    f_m1 = fem.Function(V_m1)
-    f_m1.interpolate(lambda x: x[0])
+    # Since the coefficients are defined over meshes that differ from
+    # the integration domain mesh (submesh_0), entity maps must be
+    # provided. In the case of mesh_1, we must relate the cells in
+    # submesh_0 to the cells in mesh_1, which is just the entity map
+    # returned from create_submesh. In the case of submesh_1, however,
+    # we must relate cells in submesh_0 to cells in submesh_1. This is
+    # done by using entity_map_0 to get the cell index in mesh_1,
+    # followed by the inverse of entity_map_1 to get the cell index in
+    # submesh_1 NOTE: This is done using list comprehension for
+    # simplicity, but there are far superior ways of doing this from the
+    # perspective of performance
+    entity_maps = {mesh_1: entity_map_0,
+                   submesh_1: [entity_map_1.index(entity)
+                               for entity in entity_map_0]}
+    A_sm, b_sm, s_sm = assemble_forms_1(
+        submesh_0.comm, f, g, h, u_sm, v_sm, dx_sm, ds_sm, entity_maps)
 
-    g_sm = fem.Function(V_sm)
-    # TODO Interpolate when issue #2126 has been resolved
-    g_sm.x.array[:] = 1.0
+    # Assemble the same form on a unit square and compare results
+    V_m = fem.FunctionSpace(mesh_0, (space, k))
+    f_m = fem.Function(V_m)
+    f_m.interpolate(lambda x: x[0])
 
-    h_sm_2 = fem.Function(V_sm_2)
-    # TODO Interpolate when issue #2126 has been resolved
-    h_sm_2.x.array[:] = 2.0
+    g_m = fem.Function(V_m)
+    g_m.x.array[:] = 1.0
 
-    entity_maps = {mesh_1: entity_map,
-                   submesh_2: [entity_map_2.index(entity)
-                               for entity in entity_map]}
-    A_sm, b_sm, s_sm = assemble_mixed_forms(
-        submesh.comm, f_m1, g_sm, h_sm_2, u_sm, v_sm, dx_sm, ds_sm, entity_maps)
+    h_m = fem.Function(V_m)
+    h_m.x.array[:] = 2.0
 
-    V_m0 = fem.FunctionSpace(mesh_0, (space, k))
-    f_m0 = fem.Function(V_m0)
-    f_m0.interpolate(lambda x: x[0])
+    u_m = ufl.TrialFunction(V_m)
+    v_m = ufl.TestFunction(V_m)
 
-    g_m0 = fem.Function(V_m0)
-    g_m0.x.array[:] = 1.0
+    A_m, b_m, s_m = assemble_forms_1(
+        mesh_0.comm, f_m, g_m, h_m, u_m, v_m, ufl.dx, ufl.ds)
 
-    h_m0 = fem.Function(V_m0)
-    h_m0.x.array[:] = 2.0
-
-    u_m0 = ufl.TrialFunction(V_m0)
-    v_m0 = ufl.TestFunction(V_m0)
-
-    A_m0, b_m0, s_m0 = assemble_mixed_forms(
-        mesh_0.comm, f_m0, g_m0, h_m0, u_m0, v_m0, ufl.dx, ufl.ds)
-
-    assert(np.isclose(A_sm.norm(), A_m0.norm()))
-    assert(np.isclose(b_sm.norm(), b_m0.norm()))
-    assert(np.isclose(s_sm, s_m0))
+    assert(np.isclose(A_sm.norm(), A_m.norm()))
+    assert(np.isclose(b_sm.norm(), b_m.norm()))
+    assert(np.isclose(s_sm, s_m))
