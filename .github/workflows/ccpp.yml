@@ -42,6 +42,8 @@ jobs:
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
           python3 -m pip install git+https://github.com/FEniCS/basix.git
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+      - name: Install matplotlib
+        run: pip3 install matplotlib
       - name: Flake8 checks
         run: |
           cd python/
