@@ -413,7 +413,9 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
                    const xtl::span<const std::int64_t>& ghosts,
                    const xtl::span<const int>& src_ranks)
     : _comm(comm), _comm_owner_to_ghost(MPI_COMM_NULL),
-      _comm_ghost_to_owner(MPI_COMM_NULL), _ghosts(ghosts.begin(), ghosts.end())
+      _comm_ghost_to_owner(MPI_COMM_NULL),
+      _ghosts(ghosts.begin(), ghosts.end()),
+      _owners(src_ranks.begin(), src_ranks.end())
 {
   assert(size_t(ghosts.size()) == src_ranks.size());
   assert(std::equal(src_ranks.begin(), src_ranks.end(),

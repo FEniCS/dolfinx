@@ -26,7 +26,7 @@ class IndexMap;
 /// TMP
 IndexMap create_old(const IndexMapNew& map);
 
-// TMP
+/// TMP
 IndexMapNew create_new(const IndexMap& map);
 
 /// Given a vector of indices (local numbering, owned or ghost) and an

@@ -151,13 +151,7 @@ common::IndexMap common::create_old(const IndexMapNew& map)
 //-----------------------------------------------------------------------------
 common::IndexMapNew common::create_new(const IndexMap& map)
 {
-  std::vector<int> neighbors = dolfinx::MPI::neighbors(
-      map.comm(common::IndexMap::Direction::forward))[0];
-  std::vector<int> ghost_owners = map.ghost_owners();
-  std::transform(ghost_owners.begin(), ghost_owners.end(), ghost_owners.begin(),
-                 [&neighbors](auto r) { return neighbors[r]; });
-
-  std::vector<int> src_ranks = ghost_owners;
+  std::vector<int> src_ranks = map.owners();
   std::sort(src_ranks.begin(), src_ranks.end());
   src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
                   src_ranks.end());
@@ -165,7 +159,7 @@ common::IndexMapNew common::create_new(const IndexMap& map)
   auto dest_ranks
       = dolfinx::MPI::compute_graph_edges_nbx(map.comm(), src_ranks);
   return IndexMapNew(map.comm(), map.size_local(), dest_ranks, map.ghosts(),
-                     ghost_owners);
+                     map.owners());
 }
 //-----------------------------------------------------------------------------
 std::vector<int32_t> dolfinx::common::compute_owned_indices(
