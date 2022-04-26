@@ -279,13 +279,14 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
     // found by other processes, e.g. a vertex dof on this process that
     // has no connected facets on the boundary
     auto map = dofmap->index_map;
+    common::IndexMap map_old = common::create_old(*map);
     dolfinx::MPI::Comm comm = create_symmetric_comm(
-        map->comm(common::IndexMap::Direction::forward));
+        map_old.comm(common::IndexMap::Direction::forward));
     std::vector<std::int32_t> dofs_remote;
     if (int map_bs = dofmap->index_map_bs(); map_bs == bs)
-      dofs_remote = get_remote_dofs(comm.comm(), *map, 1, dofs);
+      dofs_remote = get_remote_dofs(comm.comm(), map_old, 1, dofs);
     else
-      dofs_remote = get_remote_dofs(comm.comm(), *map, map_bs, dofs);
+      dofs_remote = get_remote_dofs(comm.comm(), map_old, map_bs, dofs);
 
     // Add received bc indices to dofs_local, sort, and remove
     // duplicates
@@ -398,19 +399,19 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     // Get bc dof indices (local) for each of spaces on this process that
     // were found by other processes, e.g. a vertex dof on this process
     // that has no connected facets on the boundary.
+    common::IndexMap map_old0 = common::create_old(*(V0.dofmap()->index_map));
     dolfinx::MPI::Comm comm = create_symmetric_comm(
-        V0.dofmap()->index_map->comm(common::IndexMap::Direction::forward));
-    std::vector<std::int32_t> dofs_remote
-        = get_remote_dofs(comm.comm(), *V0.dofmap()->index_map,
-                          V0.dofmap()->index_map_bs(), sorted_bc_dofs[0]);
+        map_old0.comm(common::IndexMap::Direction::forward));
+    std::vector<std::int32_t> dofs_remote = get_remote_dofs(
+        comm.comm(), map_old0, V0.dofmap()->index_map_bs(), sorted_bc_dofs[0]);
 
     // Add received bc indices to dofs_local
     sorted_bc_dofs[0].insert(sorted_bc_dofs[0].end(), dofs_remote.begin(),
                              dofs_remote.end());
 
-    dofs_remote
-        = get_remote_dofs(comm.comm(), *V1.dofmap()->index_map,
-                          V1.dofmap()->index_map_bs(), sorted_bc_dofs[1]);
+    common::IndexMap map_old1 = common::create_old(*(V1.dofmap()->index_map));
+    dofs_remote = get_remote_dofs(
+        comm.comm(), map_old1, V1.dofmap()->index_map_bs(), sorted_bc_dofs[1]);
     sorted_bc_dofs[1].insert(sorted_bc_dofs[1].end(), dofs_remote.begin(),
                              dofs_remote.end());
     assert(sorted_bc_dofs[0].size() == sorted_bc_dofs[1].size());

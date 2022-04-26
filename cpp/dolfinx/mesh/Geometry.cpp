@@ -57,7 +57,7 @@ mesh::Geometry mesh::create_geometry(
   auto [_dof_index_map, bs, dofmap] = fem::build_dofmap_data(
       comm, topology, element.create_dof_layout(), reorder_fn);
   auto dof_index_map
-      = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
+      = std::make_shared<common::IndexMapNew>(std::move(_dof_index_map));
 
   // If the mesh has higher order geometry, permute the dofmap
   if (element.needs_dof_permutations())
@@ -117,8 +117,7 @@ mesh::Geometry mesh::create_geometry(
                 std::next(xg.begin(), 3 * i));
   }
 
-  return Geometry(
-      std::make_shared<common::IndexMapNew>(common::create_new(*dof_index_map)),
-      std::move(dofmap), element, std::move(xg), dim, std::move(igi));
+  return Geometry(dof_index_map, std::move(dofmap), element, std::move(xg), dim,
+                  std::move(igi));
 }
 //-----------------------------------------------------------------------------

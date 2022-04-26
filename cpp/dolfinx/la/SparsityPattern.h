@@ -20,7 +20,7 @@ class AdjacencyList;
 
 namespace dolfinx::common
 {
-class IndexMap;
+class IndexMapNew;
 }
 
 namespace dolfinx::la
@@ -41,7 +41,7 @@ public:
   /// @param[in] bs The block sizes for the [0] row and [1] column maps
   SparsityPattern(
       MPI_Comm comm,
-      const std::array<std::shared_ptr<const common::IndexMap>, 2>& maps,
+      const std::array<std::shared_ptr<const common::IndexMapNew>, 2>& maps,
       const std::array<int, 2>& bs);
 
   /// Create a new sparsity pattern by concatenating sub-patterns, e.g.
@@ -58,8 +58,8 @@ public:
       MPI_Comm comm,
       const std::vector<std::vector<const SparsityPattern*>>& patterns,
       const std::array<
-          std::vector<
-              std::pair<std::reference_wrapper<const common::IndexMap>, int>>,
+          std::vector<std::pair<
+              std::reference_wrapper<const common::IndexMapNew>, int>>,
           2>& maps,
       const std::array<std::vector<int>, 2>& bs);
 
@@ -90,7 +90,7 @@ public:
   /// rows and columns that will be set by the current MPI rank.
   /// @param[in] dim The requested map, row (0) or column (1)
   /// @return The index map
-  std::shared_ptr<const common::IndexMap> index_map(int dim) const;
+  std::shared_ptr<const common::IndexMapNew> index_map(int dim) const;
 
   /// Global indices of non-zero columns on owned rows
   ///
@@ -106,7 +106,7 @@ public:
   /// ghosts
   /// @todo Should this be compted and stored when finalising the
   /// SparsityPattern?
-  common::IndexMap column_index_map() const;
+  common::IndexMapNew column_index_map() const;
 
   /// Return index map block size for dimension dim
   int block_size(int dim) const;
@@ -143,7 +143,7 @@ private:
   dolfinx::MPI::Comm _comm;
 
   // Index maps for each dimension
-  std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
+  std::array<std::shared_ptr<const common::IndexMapNew>, 2> _index_maps;
 
   // Block size
   std::array<int, 2> _bs;

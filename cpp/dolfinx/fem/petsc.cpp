@@ -9,6 +9,7 @@
 #include "assembler.h"
 #include "sparsitybuild.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
 #include <xtl/xspan.hpp>
@@ -53,7 +54,7 @@ Mat fem::petsc::create_matrix_block(
   {
     for (std::size_t col = 0; col < V[1].size(); ++col)
     {
-      const std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
+      const std::array<std::shared_ptr<const common::IndexMapNew>, 2> index_maps
           = {{V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
       const std::array bs = {V[0][row]->dofmap()->index_map_bs(),
                              V[1][col]->dofmap()->index_map_bs()};
@@ -91,15 +92,26 @@ Mat fem::petsc::create_matrix_block(
 
   // Compute offsets for the fields
   std::array<std::vector<std::pair<
-                 std::reference_wrapper<const common::IndexMap>, int>>,
+                 std::reference_wrapper<const common::IndexMapNew>, int>>,
              2>
       maps;
+  std::array<std::vector<std::pair<
+                 std::reference_wrapper<const common::IndexMap>, int>>,
+             2>
+      maps_old_ref;
+  std::array<std::vector<std::pair<common::IndexMap, int>>, 2> maps_old;
   for (std::size_t d = 0; d < 2; ++d)
   {
     for (auto space : V[d])
     {
       maps[d].emplace_back(*space->dofmap()->index_map,
                            space->dofmap()->index_map_bs());
+
+      maps_old[d].emplace_back(
+          common::create_old(*(space->dofmap()->index_map)),
+          space->dofmap()->index_map_bs());
+      maps_old_ref[d].emplace_back(maps_old[d].back().first,
+                                   maps_old[d].back().second);
     }
   }
 
@@ -108,7 +120,7 @@ Mat fem::petsc::create_matrix_block(
   // local-to-global map. Compute outside and pass into SparsityPattern
   // constructor.
   auto [rank_offset, local_offset, ghosts, owner]
-      = common::stack_index_maps(maps[0]);
+      = common::stack_index_maps(maps_old_ref[0]);
 
   // Create merged sparsity pattern
   std::vector<std::vector<const la::SparsityPattern*>> p(V[0].size());
@@ -131,7 +143,7 @@ Mat fem::petsc::create_matrix_block(
   {
     for (std::size_t f = 0; f < maps[d].size(); ++f)
     {
-      const common::IndexMap& map = maps[d][f].first.get();
+      const common::IndexMapNew& map = maps[d][f].first.get();
       const int bs = maps[d][f].second;
       const std::int32_t size_local = bs * map.size_local();
       const std::vector global = map.global_indices();

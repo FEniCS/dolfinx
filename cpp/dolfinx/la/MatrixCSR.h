@@ -7,6 +7,8 @@
 #pragma once
 
 #include "SparsityPattern.h"
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <mpi.h>
@@ -167,14 +169,16 @@ public:
   /// distribution and the non-zero structure
   /// @param[in] alloc The memory allocator for the data storafe
   MatrixCSR(const SparsityPattern& p, const Allocator& alloc = Allocator())
-      : _index_maps({p.index_map(0),
-                     std::make_shared<common::IndexMap>(p.column_index_map())}),
+      : _index_maps({p.index_map(0), std::make_shared<common::IndexMapNew>(
+                                         p.column_index_map())}),
+        _map0_old(std::make_unique<common::IndexMap>(
+            common::create_old(*(p.index_map(0))))),
         _bs({p.block_size(0), p.block_size(1)}),
         _data(p.num_nonzeros(), 0, alloc),
         _cols(p.graph().array().begin(), p.graph().array().end()),
         _row_ptr(p.graph().offsets().begin(), p.graph().offsets().end()),
-        _comm(p.index_map(0)->comm(common::IndexMap::Direction::reverse)),
-        _ghost_row_to_neighbor_rank(_index_maps[0]->ghost_owners())
+        _comm(_map0_old->comm(common::IndexMap::Direction::reverse)),
+        _ghost_row_to_neighbor_rank(_map0_old->ghost_owners())
   {
     // TODO: handle block sizes
     if (_bs[0] > 1 or _bs[1] > 1)
@@ -461,7 +465,7 @@ public:
   /// the owned rows.
   ///
   /// @return Row (0) and column (1) index maps
-  const std::array<std::shared_ptr<const common::IndexMap>, 2>&
+  const std::array<std::shared_ptr<const common::IndexMapNew>, 2>&
   index_maps() const
   {
     return _index_maps;
@@ -497,7 +501,9 @@ public:
 
 private:
   // Maps describing the data layout for rows and columns
-  std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
+  std::array<std::shared_ptr<const common::IndexMapNew>, 2> _index_maps;
+
+  std::unique_ptr<common::IndexMap> _map0_old;
 
   // Block sizes
   std::array<int, 2> _bs;

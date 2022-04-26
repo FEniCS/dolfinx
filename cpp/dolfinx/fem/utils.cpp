@@ -15,6 +15,7 @@
 #include "sparsitybuild.h"
 #include <array>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/la/SparsityPattern.h>
@@ -164,7 +165,7 @@ fem::create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
 
   auto [_index_map, bs, dofmap]
       = build_dofmap_data(comm, topology, layout, reorder_fn);
-  auto index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
+  auto index_map = std::make_shared<common::IndexMapNew>(std::move(_index_map));
 
   // If the element's DOF transformations are permutations, permute the
   // DOF numbering on each cell

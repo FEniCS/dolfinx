@@ -9,6 +9,7 @@
 #include "utils.h"
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <limits>
 #include <memory>
 #include <numeric>
@@ -31,10 +32,11 @@ public:
   using allocator_type = Allocator;
 
   /// Create a distributed vector
-  Vector(const std::shared_ptr<const common::IndexMap>& map, int bs,
+  Vector(const std::shared_ptr<const common::IndexMapNew>& map, int bs,
          const Allocator& alloc = Allocator())
-      : _map(map), _bs(bs),
-        _buffer_send_fwd(bs * map->scatter_fwd_indices().array().size()),
+      : _map(std::make_shared<common::IndexMap>(common::create_old(*map))),
+        _bs(bs),
+        _buffer_send_fwd(bs * _map->scatter_fwd_indices().array().size()),
         _buffer_recv_fwd(bs * map->num_ghosts()),
         _x(bs * (map->size_local() + map->num_ghosts()), alloc)
   {

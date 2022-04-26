@@ -7,6 +7,7 @@
 #include "SparsityPattern.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -19,7 +20,7 @@ using namespace dolfinx::la;
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
     MPI_Comm comm,
-    const std::array<std::shared_ptr<const common::IndexMap>, 2>& maps,
+    const std::array<std::shared_ptr<const common::IndexMapNew>, 2>& maps,
     const std::array<int, 2>& bs)
     : _comm(comm), _index_maps(maps), _bs(bs),
       _row_cache(maps[0]->size_local() + maps[0]->num_ghosts())
@@ -30,19 +31,33 @@ SparsityPattern::SparsityPattern(
 SparsityPattern::SparsityPattern(
     MPI_Comm comm,
     const std::vector<std::vector<const SparsityPattern*>>& patterns,
-    const std::array<std::vector<std::pair<
-                         std::reference_wrapper<const common::IndexMap>, int>>,
-                     2>& maps,
+    const std::array<
+        std::vector<
+            std::pair<std::reference_wrapper<const common::IndexMapNew>, int>>,
+        2>& maps,
     const std::array<std::vector<int>, 2>& bs)
     : _comm(comm), _bs({1, 1})
 {
   // FIXME: - Add range/bound checks for each block
   //        - Check for compatible block sizes for each block
 
+  std::vector<std::pair<common::IndexMap, int>> maps_old0, maps_old1;
+  std::vector<std::pair<std::reference_wrapper<const common::IndexMap>, int>>
+      maps_old0_ref, maps_old1_ref;
+  for (auto& m : maps[0])
+  {
+    maps_old0.push_back({common::create_old(m.first), m.second});
+    maps_old0_ref.emplace_back(maps_old0.back().first, maps_old0.back().second);
+  }
+  for (auto& m : maps[1])
+  {
+    maps_old1.push_back({common::create_old(m.first), m.second});
+    maps_old1_ref.emplace_back(maps_old1.back().first, maps_old1.back().second);
+  }
   const auto [rank_offset0, local_offset0, ghosts_new0, owners0]
-      = common::stack_index_maps(maps[0]);
+      = common::stack_index_maps(maps_old0_ref);
   const auto [rank_offset1, local_offset1, ghosts_new1, owners1]
-      = common::stack_index_maps(maps[1]);
+      = common::stack_index_maps(maps_old1_ref);
 
   std::vector<std::int64_t> ghosts0, ghosts1;
   std::vector<std::int32_t> ghost_offsets0(1, 0);
@@ -65,24 +80,10 @@ SparsityPattern::SparsityPattern(
     ghost_owners1.insert(ghost_owners1.end(), owners.begin(), owners.end());
 
   // Create new IndexMaps
-  {
-    std::vector<int> src_ranks = ghost_owners0;
-    std::sort(src_ranks.begin(), src_ranks.end());
-    src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
-                    src_ranks.end());
-    auto dest_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, src_ranks);
-    _index_maps[0] = std::make_shared<common::IndexMap>(
-        comm, local_offset0.back(), dest_ranks, ghosts0, ghost_owners0);
-  }
-  {
-    std::vector<int> src_ranks = ghost_owners1;
-    std::sort(src_ranks.begin(), src_ranks.end());
-    src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
-                    src_ranks.end());
-    auto dest_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, src_ranks);
-    _index_maps[1] = std::make_shared<common::IndexMap>(
-        comm, local_offset1.back(), dest_ranks, ghosts1, ghost_owners1);
-  }
+  _index_maps[0] = std::make_shared<common::IndexMapNew>(
+      comm, local_offset0.back(), ghosts0, ghost_owners0);
+  _index_maps[1] = std::make_shared<common::IndexMapNew>(
+      comm, local_offset1.back(), ghosts1, ghost_owners1);
 
   _row_cache.resize(_index_maps[0]->size_local()
                     + _index_maps[0]->num_ghosts());
@@ -91,14 +92,14 @@ SparsityPattern::SparsityPattern(
   // Iterate over block rows
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
-    const common::IndexMap& map_row = maps[0][row].first;
+    const common::IndexMapNew& map_row = maps[0][row].first;
     const std::int32_t num_rows_local = map_row.size_local();
     const std::int32_t num_ghost_rows_local = map_row.num_ghosts();
 
     // Iterate over block columns of current row (block)
     for (std::size_t col = 0; col < patterns[row].size(); ++col)
     {
-      const common::IndexMap& map_col = maps[1][col].first;
+      const common::IndexMapNew& map_col = maps[1][col].first;
       const std::int32_t num_cols_local = map_col.size_local();
       // Get pattern for this block
       const SparsityPattern* p = patterns[row][col];
@@ -204,7 +205,7 @@ void SparsityPattern::insert_diagonal(const xtl::span<const std::int32_t>& rows)
   }
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const common::IndexMap>
+std::shared_ptr<const common::IndexMapNew>
 SparsityPattern::index_map(int dim) const
 {
   return _index_maps.at(dim);
@@ -225,21 +226,15 @@ std::vector<std::int64_t> SparsityPattern::column_indices() const
   return global;
 }
 //-----------------------------------------------------------------------------
-common::IndexMap SparsityPattern::column_index_map() const
+common::IndexMapNew SparsityPattern::column_index_map() const
 {
   if (!_graph)
     throw std::runtime_error("Sparsity pattern has not been finalised.");
 
   std::array range = _index_maps[1]->local_range();
   const std::int32_t local_size = range[1] - range[0];
-  std::vector<int> src_ranks = _col_ghost_owners;
-  std::sort(src_ranks.begin(), src_ranks.end());
-  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
-                  src_ranks.end());
-  auto dest_ranks
-      = dolfinx::MPI::compute_graph_edges_nbx(_comm.comm(), src_ranks);
-  return common::IndexMap(_comm.comm(), local_size, dest_ranks, _col_ghosts,
-                          _col_ghost_owners);
+  return common::IndexMapNew(_comm.comm(), local_size, _col_ghosts,
+                             _col_ghost_owners);
 }
 //-----------------------------------------------------------------------------
 int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
@@ -255,21 +250,17 @@ void SparsityPattern::assemble()
   const std::int32_t local_size0 = _index_maps[0]->size_local();
   const std::array local_range0 = _index_maps[0]->local_range();
   const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
-  const std::vector<int> ghost_owners0 = _index_maps[0]->ghost_owners();
+
+  common::IndexMap map0_old = common::create_old(*_index_maps[0]);
+
+  const std::vector<int> ghost_owners0 = map0_old.ghost_owners();
 
   assert(_index_maps[1]);
   const std::int32_t local_size1 = _index_maps[1]->size_local();
   const std::array local_range1 = _index_maps[1]->local_range();
 
   _col_ghosts = _index_maps[1]->ghosts();
-  {
-    std::vector<int> neighbors = dolfinx::MPI::neighbors(
-        _index_maps[1]->comm(common::IndexMap::Direction::forward))[0];
-    _col_ghost_owners = _index_maps[1]->ghost_owners();
-    std::transform(_col_ghost_owners.cbegin(), _col_ghost_owners.cend(),
-                   _col_ghost_owners.begin(),
-                   [&neighbors](auto r) { return neighbors[r]; });
-  }
+  _col_ghost_owners = _index_maps[1]->owners();
 
   // Global to local map for ghost column indices
   std::map<std::int64_t, std::int32_t> global_to_local;
@@ -280,7 +271,7 @@ void SparsityPattern::assemble()
   // Get number of destination ranks for ghost rows
   int outdegree(-1);
   {
-    MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
+    MPI_Comm comm = map0_old.comm(common::IndexMap::Direction::reverse);
     int indegree(-1), weighted(-1);
     MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
   }
@@ -332,7 +323,7 @@ void SparsityPattern::assemble()
   // Create and communicate adjacency list to neighborhood
   const graph::AdjacencyList<std::int64_t> ghost_data_out(std::move(ghost_data),
                                                           std::move(send_disp));
-  MPI_Comm comm = _index_maps[0]->comm(common::IndexMap::Direction::reverse);
+  MPI_Comm comm = map0_old.comm(common::IndexMap::Direction::reverse);
   const graph::AdjacencyList<std::int64_t> ghost_data_in
       = dolfinx::MPI::neighbor_all_to_all(comm, ghost_data_out);
 

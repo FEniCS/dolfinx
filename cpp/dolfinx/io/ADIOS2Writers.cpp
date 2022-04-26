@@ -96,7 +96,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
   const std::uint32_t num_comp = std::pow(3, rank);
   std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
   assert(dofmap);
-  std::shared_ptr<const common::IndexMap> index_map = dofmap->index_map;
+  std::shared_ptr<const common::IndexMapNew> index_map = dofmap->index_map;
   assert(index_map);
   const int index_map_bs = dofmap->index_map_bs();
   const int dofmap_bs = dofmap->bs();

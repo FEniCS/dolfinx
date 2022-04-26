@@ -9,7 +9,7 @@
 #include "dofmapbuilder.h"
 #include "utils.h"
 #include <cstdint>
-#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -90,16 +90,16 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   // receive new global indices from owner
   std::vector<std::int64_t> global_index_remote(
       dofmap_view.index_map->num_ghosts());
-  dofmap_view.index_map->scatter_fwd(
-      xtl::span<const std::int64_t>(global_index),
-      xtl::span<std::int64_t>(global_index_remote), 1);
+  common::IndexMap map_view_old = common::create_old(*(dofmap_view.index_map));
+
+  map_view_old.scatter_fwd(xtl::span<const std::int64_t>(global_index),
+                           xtl::span<std::int64_t>(global_index_remote), 1);
 
   // Get owning ranks (neighbour) for each ghost and map from
   // neighbourhood rank to global rank
-  const std::vector<int> ghost_owner_old
-      = dofmap_view.index_map->ghost_owners();
+  const std::vector<int> ghost_owner_old = map_view_old.ghost_owners();
   const std::vector<int> neighbor_ranks = dolfinx::MPI::neighbors(
-      dofmap_view.index_map->comm(common::IndexMap::Direction::forward))[0];
+      map_view_old.comm(common::IndexMap::Direction::forward))[0];
 
   // Compute ghosts for collapsed dofmap
   std::vector<std::int64_t> ghosts(num_unowned);
@@ -114,13 +114,8 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   }
 
   // Create new index map
-  std::vector<int> src_ranks = ghost_owners;
-  std::sort(src_ranks.begin(), src_ranks.end());
-  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
-                  src_ranks.end());
-  auto dest_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, src_ranks);
-  auto index_map = std::make_shared<common::IndexMap>(
-      comm, num_owned, dest_ranks, ghosts, ghost_owners);
+  auto index_map = std::make_shared<common::IndexMapNew>(comm, num_owned,
+                                                         ghosts, ghost_owners);
 
   // Create array from dofs in view to new dof indices
   std::vector<std::int32_t> old_to_new(dofs_view.back() + 1, -1);
@@ -258,7 +253,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
       auto [_index_map, bs, dofmap] = fem::build_dofmap_data(
           comm, topology, collapsed_dof_layout, reorder_fn);
       auto index_map
-          = std::make_shared<common::IndexMap>(std::move(_index_map));
+          = std::make_shared<common::IndexMapNew>(std::move(_index_map));
       return DofMap(layout, index_map, bs, std::move(dofmap), bs);
     }
     else

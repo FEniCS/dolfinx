@@ -8,6 +8,7 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
@@ -35,7 +36,7 @@ void declare_objects(py::module& m, const std::string& type)
   py::class_<dolfinx::la::Vector<T>, std::shared_ptr<dolfinx::la::Vector<T>>>(
       m, pyclass_vector_name.c_str())
       .def(py::init(
-          [](const std::shared_ptr<const dolfinx::common::IndexMap>& map,
+          [](const std::shared_ptr<const dolfinx::common::IndexMapNew>& map,
              int bs) { return dolfinx::la::Vector<T>(map, bs); }))
       .def(py::init([](const dolfinx::la::Vector<T>& vec)
                     { return dolfinx::la::Vector<T>(vec); }))
@@ -177,8 +178,8 @@ void la(py::module& m)
                                                             "SparsityPattern")
       .def(py::init(
           [](const MPICommWrapper comm,
-             const std::array<std::shared_ptr<const dolfinx::common::IndexMap>,
-                              2>& maps,
+             const std::array<
+                 std::shared_ptr<const dolfinx::common::IndexMapNew>, 2>& maps,
              const std::array<int, 2>& bs)
           { return dolfinx::la::SparsityPattern(comm.get(), maps, bs); }))
       .def(py::init(
@@ -187,7 +188,7 @@ void la(py::module& m)
                  patterns,
              const std::array<
                  std::vector<std::pair<
-                     std::reference_wrapper<const dolfinx::common::IndexMap>,
+                     std::reference_wrapper<const dolfinx::common::IndexMapNew>,
                      int>>,
                  2>& maps,
              const std::array<std::vector<int>, 2>& bs) {
