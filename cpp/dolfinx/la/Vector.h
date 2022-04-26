@@ -35,7 +35,7 @@ public:
   Vector(const std::shared_ptr<const common::IndexMapNew>& map, int bs,
          const Allocator& alloc = Allocator())
       : _map(std::make_shared<common::IndexMap>(common::create_old(*map))),
-        _bs(bs),
+        _map_new(map), _bs(bs),
         _buffer_send_fwd(bs * _map->scatter_fwd_indices().array().size()),
         _buffer_recv_fwd(bs * map->num_ghosts()),
         _x(bs * (map->size_local() + map->num_ghosts()), alloc)
@@ -243,7 +243,7 @@ public:
   }
 
   /// Get IndexMap
-  std::shared_ptr<const common::IndexMap> map() const { return _map; }
+  std::shared_ptr<const common::IndexMapNew> map() const { return _map_new; }
 
   /// Get block size
   constexpr int bs() const { return _bs; }
@@ -260,6 +260,8 @@ public:
 private:
   // Map describing the data layout
   std::shared_ptr<const common::IndexMap> _map;
+
+  std::shared_ptr<const common::IndexMapNew> _map_new;
 
   // Block size
   int _bs;

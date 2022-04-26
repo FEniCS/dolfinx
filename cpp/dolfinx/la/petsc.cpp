@@ -63,7 +63,7 @@ la::petsc::create_vectors(MPI_Comm comm,
   return v;
 }
 //-----------------------------------------------------------------------------
-Vec la::petsc::create_vector(const dolfinx::common::IndexMap& map, int bs)
+Vec la::petsc::create_vector(const dolfinx::common::IndexMapNew& map, int bs)
 {
   return la::petsc::create_vector(map.comm(), map.local_range(), map.ghosts(),
                                   bs);
@@ -89,7 +89,7 @@ Vec la::petsc::create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
   return x;
 }
 //-----------------------------------------------------------------------------
-Vec la::petsc::create_vector_wrap(const common::IndexMap& map, int bs,
+Vec la::petsc::create_vector_wrap(const common::IndexMapNew& map, int bs,
                                   const xtl::span<const PetscScalar>& x)
 {
   const std::int32_t size_local = bs * map.size_local();
@@ -372,7 +372,7 @@ void petsc::options::clear()
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-petsc::Vector::Vector(const common::IndexMap& map, int bs)
+petsc::Vector::Vector(const common::IndexMapNew& map, int bs)
     : _x(la::petsc::create_vector(map, bs))
 {
   // Do nothing

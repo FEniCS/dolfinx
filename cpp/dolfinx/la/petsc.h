@@ -22,6 +22,7 @@
 namespace dolfinx::common
 {
 class IndexMap;
+class IndexMapNew;
 }
 
 namespace dolfinx::la
@@ -49,7 +50,7 @@ create_vectors(MPI_Comm comm,
 /// @param[in] map The index map describing the parallel layout (by block)
 /// @param[in] bs The block size
 /// @returns A PETSc Vec
-Vec create_vector(const common::IndexMap& map, int bs);
+Vec create_vector(const common::IndexMapNew& map, int bs);
 
 /// Create a ghosted PETSc Vec from a local range and ghost indices
 /// @note Caller is responsible for freeing the returned object
@@ -71,7 +72,7 @@ Vec create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
 /// @note The array `x` must be kept alive to use the PETSc Vec object
 /// @note The caller should call VecDestroy to free the return PETSc
 /// vector
-Vec create_vector_wrap(const common::IndexMap& map, int bs,
+Vec create_vector_wrap(const common::IndexMapNew& map, int bs,
                        const xtl::span<const PetscScalar>& x);
 
 /// Create a PETSc Vec that wraps the data in an array
@@ -165,7 +166,7 @@ public:
   /// @note Collective
   /// @param[in] map Index map describing the parallel layout
   /// @param[in] bs the block size
-  Vector(const common::IndexMap& map, int bs);
+  Vector(const common::IndexMapNew& map, int bs);
 
   // Delete copy constructor to avoid accidental copying of 'heavy' data
   Vector(const Vector& x) = delete;

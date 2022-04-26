@@ -17,7 +17,7 @@
 
 namespace dolfinx::common
 {
-class IndexMap;
+class IndexMapNew;
 }
 
 namespace dolfinx::fem
@@ -62,12 +62,14 @@ Mat create_matrix_nest(
 /// The caller is responsible for destroying the Mat object
 Vec create_vector_block(
     const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
+        std::pair<std::reference_wrapper<const common::IndexMapNew>, int>>&
+        maps);
 
 /// Create nested (VecNest) vector. Vector is not zeroed.
 Vec create_vector_nest(
     const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
+        std::pair<std::reference_wrapper<const common::IndexMapNew>, int>>&
+        maps);
 
 // -- Vectors ----------------------------------------------------------------
 

@@ -226,12 +226,22 @@ Mat fem::petsc::create_matrix_nest(
 //-----------------------------------------------------------------------------
 Vec fem::petsc::create_vector_block(
     const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
+        std::pair<std::reference_wrapper<const common::IndexMapNew>, int>>&
+        maps)
 {
   // FIXME: handle constant block size > 1
 
+  std::vector<std::pair<common::IndexMap, int>> maps_old;
+  std::vector<std::pair<std::reference_wrapper<const common::IndexMap>, int>>
+      maps_old_ref;
+  for (auto& m : maps)
+  {
+    maps_old.push_back({common::create_old(m.first), m.second});
+    maps_old_ref.emplace_back(maps_old.back().first, maps_old.back().second);
+  }
+
   auto [rank_offset, local_offset, ghosts_new, ghost_new_owners]
-      = common::stack_index_maps(maps);
+      = common::stack_index_maps(maps_old_ref);
   std::int32_t local_size = local_offset.back();
 
   std::vector<std::int64_t> ghosts;
@@ -242,27 +252,17 @@ Vec fem::petsc::create_vector_block(
   for (auto& sub_owner : ghost_new_owners)
     ghost_owners.insert(ghost_owners.end(), sub_owner.begin(), sub_owner.end());
 
-  std::vector<int> dest_ranks;
-  for (auto& map : maps)
-  {
-    const auto [_, ranks] = dolfinx::MPI::neighbors(
-        map.first.get().comm(common::IndexMap::Direction::forward));
-    dest_ranks.insert(dest_ranks.end(), ranks.begin(), ranks.end());
-  }
-  std::sort(dest_ranks.begin(), dest_ranks.end());
-  dest_ranks.erase(std::unique(dest_ranks.begin(), dest_ranks.end()),
-                   dest_ranks.end());
-
   // Create map for combined problem, and create vector
-  common::IndexMap index_map(maps[0].first.get().comm(), local_size, dest_ranks,
-                             ghosts, ghost_owners);
+  common::IndexMapNew index_map(maps[0].first.get().comm(), local_size, ghosts,
+                                ghost_owners);
 
   return la::petsc::create_vector(index_map, 1);
 }
 //-----------------------------------------------------------------------------
 Vec fem::petsc::create_vector_nest(
     const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
+        std::pair<std::reference_wrapper<const common::IndexMapNew>, int>>&
+        maps)
 {
   assert(!maps.empty());
 

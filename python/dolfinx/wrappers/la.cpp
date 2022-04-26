@@ -107,7 +107,7 @@ void declare_objects(py::module& m, const std::string& type)
 void petsc_module(py::module& m)
 {
   m.def("create_vector",
-        py::overload_cast<const dolfinx::common::IndexMap&, int>(
+        py::overload_cast<const dolfinx::common::IndexMapNew&, int>(
             &dolfinx::la::petsc::create_vector),
         py::return_value_policy::take_ownership,
         "Create a ghosted PETSc Vec for index map.");
