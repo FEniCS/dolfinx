@@ -396,7 +396,7 @@ refinement::adjust_indices(const common::IndexMap& index_map, std::int32_t n)
   MPI_Neighbor_allgather(&global_offset, 1, MPI_INT64_T,
                          neighbor_offsets.data(), 1, MPI_INT64_T, comm_fwd);
 
-  const std::vector<int>& ghost_owners = index_map.ghost_owner_neighbor_rank();
+  const std::vector<int>& ghost_owners = index_map.ghost_owners();
   int local_size = index_map.size_local();
   std::vector<std::int64_t> global_indices = index_map.global_indices();
   std::transform(global_indices.begin(),

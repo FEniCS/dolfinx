@@ -23,8 +23,8 @@ jobs:
       # For pyvista/pyvistaqt
       DISPLAY: ":99.0"
       PYVISTA_OFF_SCREEN: true
-      PYVISTA_VERSION: 0.33.2
-      PYVISTA_QT_VERSION: 0.7.0
+      PYVISTA_VERSION: 0.34.1
+      PYVISTA_QT_VERSION: 0.9.0
 
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-32
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -52,6 +52,7 @@ jobs:
           apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
           pip3 install pyvista==${PYVISTA_VERSION}
           pip3 install pyvistaqt==${PYVISTA_QT_VERSION}
+          pip3 install matplotlib
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
