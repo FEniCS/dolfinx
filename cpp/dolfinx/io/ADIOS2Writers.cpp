@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <array>
 #include <complex>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
@@ -151,7 +152,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   const mesh::Topology& topology = mesh.topology();
 
   // "Put" geometry
-  std::shared_ptr<const common::IndexMap> x_map = geometry.index_map();
+  std::shared_ptr<const common::IndexMapNew> x_map = geometry.index_map();
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   adios2::Variable<double> local_geometry
       = define_variable<double>(io, "geometry", {}, {}, {num_vertices, 3});

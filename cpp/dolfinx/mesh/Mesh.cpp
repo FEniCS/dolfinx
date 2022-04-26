@@ -13,6 +13,7 @@
 #include "topologycomputation.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -342,9 +343,10 @@ mesh::create_submesh(const Mesh& mesh, int dim,
       submesh_x_dofs, *mesh_geometry_dof_index_map);
 
   // Create submesh geometry index map
-  std::pair<common::IndexMap, std::vector<int32_t>> submesh_x_dof_index_map_pair
+  std::pair<common::IndexMapNew, std::vector<int32_t>>
+      submesh_x_dof_index_map_pair
       = mesh_geometry_dof_index_map->create_submap(submesh_owned_x_dofs);
-  auto submesh_x_dof_index_map = std::make_shared<common::IndexMap>(
+  auto submesh_x_dof_index_map = std::make_shared<common::IndexMapNew>(
       std::move(submesh_x_dof_index_map_pair.first));
 
   // Create a map from the (local) geometry dofs in the submesh to the (local)

@@ -7,6 +7,7 @@
 #include "Geometry.h"
 #include "Topology.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/dofmapbuilder.h>
@@ -23,7 +24,7 @@ const graph::AdjacencyList<std::int32_t>& Geometry::dofmap() const
   return _dofmap;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const common::IndexMap> Geometry::index_map() const
+std::shared_ptr<const common::IndexMapNew> Geometry::index_map() const
 {
   return _index_map;
 }
@@ -116,7 +117,8 @@ mesh::Geometry mesh::create_geometry(
                 std::next(xg.begin(), 3 * i));
   }
 
-  return Geometry(dof_index_map, std::move(dofmap), element, std::move(xg), dim,
-                  std::move(igi));
+  return Geometry(
+      std::make_shared<common::IndexMapNew>(common::create_new(*dof_index_map)),
+      std::move(dofmap), element, std::move(xg), dim, std::move(igi));
 }
 //-----------------------------------------------------------------------------
