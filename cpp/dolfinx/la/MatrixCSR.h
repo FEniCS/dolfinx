@@ -173,7 +173,8 @@ public:
         _data(p.num_nonzeros(), 0, alloc),
         _cols(p.graph().array().begin(), p.graph().array().end()),
         _row_ptr(p.graph().offsets().begin(), p.graph().offsets().end()),
-        _comm(p.index_map(0)->comm(common::IndexMap::Direction::reverse))
+        _comm(p.index_map(0)->comm(common::IndexMap::Direction::reverse)),
+        _ghost_row_to_neighbor_rank(_index_maps[0]->ghost_owners())
   {
     // TODO: handle block sizes
     if (_bs[0] > 1 or _bs[1] > 1)
@@ -191,51 +192,39 @@ public:
         = {_index_maps[0]->size_local(), _index_maps[1]->size_local()};
     const std::array local_range
         = {_index_maps[0]->local_range(), _index_maps[1]->local_range()};
-    const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
-    const std::vector<int> ghost_owners0 = _index_maps[0]->ghost_owner_rank();
+
     const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
     const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
 
-    const std::vector<int> dest_ranks
-        = dolfinx::MPI::neighbors(_comm.comm())[1];
-    const int num_neighbors = dest_ranks.size();
-
-    // Global-to-local ranks for neighborhood
-    std::map<int, std::int32_t> dest_proc_to_neighbor;
-    for (std::size_t i = 0; i < dest_ranks.size(); ++i)
-      dest_proc_to_neighbor.insert({dest_ranks[i], i});
-
-    // Ownership of each ghost row using neighbor rank
-    _ghost_row_to_neighbor_rank.resize(num_ghosts0, -1);
-    for (int i = 0; i < num_ghosts0; ++i)
+    int outdegree(-1);
     {
-      const auto it = dest_proc_to_neighbor.find(ghost_owners0[i]);
-      assert(it != dest_proc_to_neighbor.end());
-      _ghost_row_to_neighbor_rank[i] = it->second;
+      int indegree(-1), weighted(-1);
+      MPI_Dist_graph_neighbors_count(_comm.comm(), &indegree, &outdegree,
+                                     &weighted);
     }
 
     // Compute size of data to send to each neighbor
-    std::vector<std::int32_t> data_per_proc(num_neighbors, 0);
-    for (int i = 0; i < num_ghosts0; ++i)
+    std::vector<std::int32_t> data_per_proc(outdegree, 0);
+    for (std::size_t i = 0; i < _ghost_row_to_neighbor_rank.size(); ++i)
     {
-      assert(_ghost_row_to_neighbor_rank[i] < (int)data_per_proc.size());
+      assert(_ghost_row_to_neighbor_rank[i] < data_per_proc.size());
       data_per_proc[_ghost_row_to_neighbor_rank[i]]
           += _row_ptr[local_size[0] + i + 1] - _row_ptr[local_size[0] + i];
     }
 
     // Compute send displacements for values and indices (x2)
-    _val_send_disp.resize(num_neighbors + 1, 0);
+    _val_send_disp.resize(outdegree + 1, 0);
     std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
                      std::next(_val_send_disp.begin()));
 
-    std::vector<int> index_send_disp(num_neighbors + 1);
+    std::vector<int> index_send_disp(outdegree + 1);
     std::transform(_val_send_disp.begin(), _val_send_disp.end(),
                    index_send_disp.begin(), [](int d) { return d * 2; });
 
     // For each ghost row, pack and send indices to neighborhood
     std::vector<int> insert_pos(index_send_disp);
     std::vector<std::int64_t> ghost_index_data(index_send_disp.back());
-    for (int i = 0; i < num_ghosts0; ++i)
+    for (std::size_t i = 0; i < _ghost_row_to_neighbor_rank.size(); ++i)
     {
       const int neighbor_rank = _ghost_row_to_neighbor_rank[i];
       int row_id = local_size[0] + i;
