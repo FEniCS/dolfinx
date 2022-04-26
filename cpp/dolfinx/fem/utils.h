@@ -165,7 +165,7 @@ Form<T> create_form(
     const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
     const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
-                   std::vector<std::int32_t>>& domain_map
+                   std::vector<std::int32_t>>& entity_maps
     = {})
 {
   if (ufcx_form.rank != (int)spaces.size())
@@ -347,7 +347,7 @@ Form<T> create_form(
   }
 
   return Form<T>(spaces, integral_data, coefficients, constants,
-                 needs_facet_permutations, mesh, domain_map);
+                 needs_facet_permutations, mesh, entity_maps);
 }
 
 /// @brief Create a Form from UFC input
@@ -681,8 +681,8 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
         if (coeff_mesh != form.mesh())
         {
           auto fetch_cell
-              = [&domain_map = form.domain_map().at(coeff_mesh)](auto entity)
-          { return domain_map[entity]; };
+              = [&entity_map = form.entity_maps().at(coeff_mesh)](auto entity)
+          { return entity_map[entity]; };
           impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
                                         cell_info, cells, fetch_cell,
                                         offsets[coeff]);
@@ -709,8 +709,8 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
         if (coeff_mesh != form.mesh())
         {
           auto fetch_cell
-              = [&domain_map = form.domain_map().at(coeff_mesh)](auto entity)
-          { return domain_map[entity.first]; };
+              = [&entity_map = form.entity_maps().at(coeff_mesh)](auto entity)
+          { return entity_map[entity.first]; };
           impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
                                         cell_info, facets, fetch_cell,
                                         offsets[coeff]);
@@ -740,11 +740,11 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
         if (coeff_mesh != form.mesh())
         {
           auto fetch_cell0
-              = [&domain_map = form.domain_map().at(coeff_mesh)](auto entity)
-          { return domain_map[std::get<0>(entity)]; };
+              = [&entity_map = form.entity_maps().at(coeff_mesh)](auto entity)
+          { return entity_map[std::get<0>(entity)]; };
           auto fetch_cell1
-              = [&domain_map = form.domain_map().at(coeff_mesh)](auto entity)
-          { return domain_map[std::get<2>(entity)]; };
+              = [&entity_map = form.entity_maps().at(coeff_mesh)](auto entity)
+          { return entity_map[std::get<2>(entity)]; };
           // Pack coefficient ['+']
           impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
                                         cell_info, facets, fetch_cell0,

@@ -120,18 +120,18 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     assert(np.isclose(s_submesh, s_square_mesh))
 
 
-def assemble_mixed_forms(comm, f, g, h, u, v, dx, ds, domain_map={}):
+def assemble_mixed_forms(comm, f, g, h, u, v, dx, ds, entity_maps={}):
     a = fem.form(ufl.inner(f * g * h * u, v) * (dx + ds),
-                 domain_map=domain_map)
+                 entity_maps=entity_maps)
     A = fem.petsc.assemble_matrix(a)
     A.assemble()
 
-    L = fem.form(ufl.inner(f * g * h, v) * (dx + ds), domain_map=domain_map)
+    L = fem.form(ufl.inner(f * g * h, v) * (dx + ds), entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
 
-    M = fem.form(f * g * h * (dx + ds), domain_map=domain_map)
+    M = fem.form(f * g * h * (dx + ds), entity_maps=entity_maps)
     s = comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
 
     return A, b, s
@@ -186,11 +186,11 @@ def test_mixed_codim_0_assembly(d, n, k, space, ghost_mode):
     # TODO Interpolate when issue #2126 has been resolved
     h_sm_2.x.array[:] = 2.0
 
-    domain_map = {mesh_1: entity_map,
-                  submesh_2: [entity_map_2.index(entity)
-                              for entity in entity_map]}
+    entity_maps = {mesh_1: entity_map,
+                   submesh_2: [entity_map_2.index(entity)
+                               for entity in entity_map]}
     A_sm, b_sm, s_sm = assemble_mixed_forms(
-        submesh.comm, f_m1, g_sm, h_sm_2, u_sm, v_sm, dx_sm, ds_sm, domain_map)
+        submesh.comm, f_m1, g_sm, h_sm_2, u_sm, v_sm, dx_sm, ds_sm, entity_maps)
 
     V_m0 = fem.FunctionSpace(mesh_0, (space, k))
     f_m0 = fem.Function(V_m0)

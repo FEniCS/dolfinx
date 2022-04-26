@@ -92,12 +92,12 @@ public:
       bool needs_facet_permutations,
       const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
       const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
-                     std::vector<std::int32_t>>& domain_map
+                     std::vector<std::int32_t>>& entity_maps
       = {})
       : _function_spaces(function_spaces), _coefficients(coefficients),
         _constants(constants), _mesh(mesh),
         _needs_facet_permutations(needs_facet_permutations),
-        _domain_map(domain_map)
+        _entity_maps(entity_maps)
   {
     // Extract _mesh from fem::FunctionSpace, and check they are the same
     if (!_mesh and !function_spaces.empty())
@@ -343,9 +343,9 @@ public:
 
   const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
                  std::vector<std::int32_t>>&
-  domain_map() const
+  entity_maps() const
   {
-    return _domain_map;
+    return _entity_maps;
   }
 
 private:
@@ -667,6 +667,6 @@ private:
 
   std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
            std::vector<std::int32_t>>
-      _domain_map;
+      _entity_maps;
 };
 } // namespace dolfinx::fem

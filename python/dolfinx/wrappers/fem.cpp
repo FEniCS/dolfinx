@@ -799,13 +799,13 @@ void declare_form(py::module& m, const std::string& type)
                       subdomains,
                   const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
                   const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
-                                 std::vector<std::int32_t>>& domain_map
+                                 std::vector<std::int32_t>>& entity_maps
                   = {})
                {
                  ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
                  return dolfinx::fem::create_form<T>(*p, spaces, coefficients,
                                                      constants, subdomains,
-                                                     mesh, domain_map);
+                                                     mesh, entity_maps);
                }),
            "Create a Form from a pointer to a ufcx_form")
       .def_property_readonly("dtype", [](const dolfinx::fem::Form<T>& self)
@@ -885,12 +885,12 @@ void declare_form(py::module& m, const std::string& type)
                         const dolfinx::mesh::MeshTags<int>*>& subdomains,
          const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
          const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
-                        std::vector<std::int32_t>>& domain_map
+                        std::vector<std::int32_t>>& entity_maps
          = {})
       {
         ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
         return dolfinx::fem::create_form<T>(*p, spaces, coefficients, constants,
-                                            subdomains, mesh, domain_map);
+                                            subdomains, mesh, entity_maps);
       },
       "Create Form from a pointer to ufcx_form.");
 }
