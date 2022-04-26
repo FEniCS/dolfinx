@@ -156,6 +156,7 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] constants Spatial constants in the form
 /// @param[in] subdomains Subdomain markers
 /// @param[in] mesh The mesh of the domain
+/// @param[in] entity_maps The entity maps for the form
 template <typename T>
 Form<T> create_form(
     const ufcx_form& ufcx_form,
@@ -677,6 +678,10 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        // If the coefficient is defined over a different mesh to the
+        // integration domain mesh, we must map entities from the
+        // integration domain mesh to the coefficient mesh to pack them
+        // properly
         auto coeff_mesh = coefficients[coeff]->function_space()->mesh();
         if (coeff_mesh != form.mesh())
         {
@@ -705,6 +710,8 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        // Create lambda function fetching cell index from exterior facet
+        // entity
         auto coeff_mesh = coefficients[coeff]->function_space()->mesh();
         if (coeff_mesh != form.mesh())
         {
@@ -717,8 +724,6 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
         }
         else
         {
-          // Create lambda function fetching cell index from exterior facet
-          // entity
           auto fetch_cell = [](auto& entity) { return entity.first; };
           impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
                                         cell_info, facets, fetch_cell,
@@ -739,6 +744,7 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
         auto coeff_mesh = coefficients[coeff]->function_space()->mesh();
         if (coeff_mesh != form.mesh())
         {
+          // Lambda functions to fetch cell index from interior facet entity
           auto fetch_cell0
               = [&entity_map = form.entity_maps().at(coeff_mesh)](auto entity)
           { return entity_map[std::get<0>(entity)]; };
@@ -756,7 +762,6 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
         }
         else
         {
-          // Lambda functions to fetch cell index from interior facet entity
           auto fetch_cell0 = [](auto& entity) { return std::get<0>(entity); };
           auto fetch_cell1 = [](auto& entity) { return std::get<2>(entity); };
           // Pack coefficient ['+']

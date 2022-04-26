@@ -77,6 +77,12 @@ public:
   /// @param[in] mesh The mesh of the domain. This is required when
   /// there are not argument functions from which the mesh can be
   /// extracted, e.g. for functionals
+  /// @param[in] entity_maps If any coefficients in the form are not
+  /// defined over the same mesh as the integration domain, `entity_maps`
+  /// must be supplied. For each key (a mesh, different to the integration
+  /// domain mesh, over which some coefficient(s) are defined) there is a
+  /// map relating the entities in the integration domain mesh to the
+  /// entities in the key mesh.
   Form(
       const std::vector<std::shared_ptr<const fem::FunctionSpace>>&
           function_spaces,
@@ -341,6 +347,7 @@ public:
   /// Scalar type (T)
   using scalar_type = T;
 
+  /// Access entity_maps
   const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
                  std::vector<std::int32_t>>&
   entity_maps() const
@@ -665,6 +672,7 @@ private:
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
 
+  // Entity maps
   std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
            std::vector<std::int32_t>>
       _entity_maps;
