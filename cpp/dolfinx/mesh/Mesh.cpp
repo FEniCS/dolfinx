@@ -338,16 +338,23 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   auto mesh_geometry_dof_index_map = mesh.geometry().index_map();
   assert(mesh_geometry_dof_index_map);
 
+  // TMP
+  common::IndexMap mesh_geometry_dof_index_map_old
+      = common::create_old(*mesh_geometry_dof_index_map);
+
   // Get the geometry dofs in the submesh owned by this process
-  auto submesh_owned_x_dofs = dolfinx::common::compute_owned_indices(
-      submesh_x_dofs, *mesh_geometry_dof_index_map);
+  std::vector<int32_t> submesh_owned_x_dofs
+      = dolfinx::common::compute_owned_indices(submesh_x_dofs,
+                                               mesh_geometry_dof_index_map_old);
 
   // Create submesh geometry index map
-  std::pair<common::IndexMapNew, std::vector<int32_t>>
-      submesh_x_dof_index_map_pair
-      = mesh_geometry_dof_index_map->create_submap(submesh_owned_x_dofs);
+  std::pair<common::IndexMap, std::vector<int32_t>> submesh_x_dof_index_map_pair
+      = mesh_geometry_dof_index_map_old.create_submap(submesh_owned_x_dofs);
+
   auto submesh_x_dof_index_map = std::make_shared<common::IndexMapNew>(
-      std::move(submesh_x_dof_index_map_pair.first));
+      common::create_new(submesh_x_dof_index_map_pair.first));
+  // auto submesh_x_dof_index_map = std::make_shared<common::IndexMapNew>(
+  //     std::move(submesh_x_dof_index_map_pair.first));
 
   // Create a map from the (local) geometry dofs in the submesh to the (local)
   // geometry dofs in the mesh.
