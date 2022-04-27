@@ -15,6 +15,7 @@ __all__ = ["IndexMap", "Timer", "timed", "ScatterMode"]
 
 TimingType = _cpp.common.TimingType
 Reduction = _cpp.common.Reduction
+Direction = _cpp.common.Direction
 
 
 def timing(task: str):
