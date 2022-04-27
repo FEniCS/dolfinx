@@ -244,12 +244,21 @@ common::stack_index_maps(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
+  std::cout << "Check maps" << std::endl;
+  for (auto& m : maps)
+  {
+    std::cout << "Test1: " << m.first.get().scatter_fwd_indices().num_nodes()
+              << std::endl;
+  }
+
+  std::cout << "Stack 0" << std::endl;
   // Compute process offset
   const std::int64_t process_offset = std::accumulate(
       maps.cbegin(), maps.cend(), std::int64_t(0),
       [](std::int64_t c, auto& map) -> std::int64_t
       { return c + map.first.get().local_range()[0] * map.second; });
 
+  std::cout << "Stack 1" << std::endl;
   // Get local map offset
   std::vector<std::int32_t> local_offset(maps.size() + 1, 0);
   for (std::size_t f = 1; f < local_offset.size(); ++f)
@@ -259,27 +268,40 @@ common::stack_index_maps(
     local_offset[f] = local_offset[f - 1] + bs * local_size;
   }
 
+  std::cout << "Stack 2" << std::endl;
+
   // Pack old and new composite indices for owned entries that are ghost
   // on other ranks
   std::vector<std::int64_t> indices;
   for (std::size_t f = 0; f < maps.size(); ++f)
   {
+    std::cout << "Stack 2a" << std::endl;
     const int bs = maps[f].second;
+    std::cout << "Test: "
+              << maps[f].first.get().scatter_fwd_indices().num_nodes()
+              << std::endl;
     const std::vector<std::int32_t>& forward_indices
         = maps[f].first.get().scatter_fwd_indices().array();
     const std::int64_t offset = bs * maps[f].first.get().local_range()[0];
+    std::cout << "Stack 2b: " << forward_indices.size() << std::endl;
     for (std::int32_t local_index : forward_indices)
     {
+      std::cout << "Stack 2c" << std::endl;
       for (std::int32_t i = 0; i < bs; ++i)
       {
+        std::cout << "Stack 2d" << std::endl;
         // Insert field index, global index, composite global index
         indices.insert(
             indices.end(),
             {static_cast<std::int64_t>(f), bs * local_index + i + offset,
              bs * local_index + i + local_offset[f] + process_offset});
       }
+      std::cout << "Stack 2e" << std::endl;
     }
+    std::cout << "Stack 2f" << std::endl;
   }
+
+  std::cout << "Stack 3" << std::endl;
 
   // Build arrays of incoming and outcoming neighborhood ranks
   std::set<std::int32_t> in_neighbor_set, out_neighbor_set;
@@ -295,6 +317,8 @@ common::stack_index_maps(
                                       in_neighbor_set.end());
   const std::vector<int> out_neighbors(out_neighbor_set.begin(),
                                        out_neighbor_set.end());
+
+  std::cout << "Stack 4" << std::endl;
 
   // Create neighborhood communicator
   MPI_Comm comm;
@@ -613,9 +637,10 @@ std::vector<std::int64_t> IndexMap::global_indices() const
   return global;
 }
 //-----------------------------------------------------------------------------
-const graph::AdjacencyList<std::int32_t>&
-IndexMap::scatter_fwd_indices() const noexcept
+const graph::AdjacencyList<std::int32_t>& IndexMap::scatter_fwd_indices() const
 {
+  if (!_shared_indices)
+    throw std::runtime_error("Ooops");
   assert(_shared_indices);
   return *_shared_indices;
 }

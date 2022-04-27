@@ -386,6 +386,7 @@ def assemble_matrix_block(a: typing.List[typing.List[FormMetaClass]],
                           constants=None, coeffs=None) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     A = _cpp.fem.petsc.create_matrix_block(a)
+    print("Sizes:", A.getSizes())
     return assemble_matrix_block(A, a, bcs, diagonal, constants, coeffs)
 
 

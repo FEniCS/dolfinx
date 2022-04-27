@@ -12,6 +12,7 @@
 #include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
+#include <functional>
 #include <xtl/xspan.hpp>
 
 using namespace dolfinx;
@@ -95,40 +96,63 @@ Mat fem::petsc::create_matrix_block(
                  std::reference_wrapper<const common::IndexMapNew>, int>>,
              2>
       maps;
-  std::array<std::vector<std::pair<
-                 std::reference_wrapper<const common::IndexMap>, int>>,
-             2>
-      maps_old_ref;
-  std::array<std::vector<std::pair<common::IndexMap, int>>, 2> maps_old;
   for (std::size_t d = 0; d < 2; ++d)
   {
     for (auto space : V[d])
     {
       maps[d].emplace_back(*space->dofmap()->index_map,
                            space->dofmap()->index_map_bs());
-
-      maps_old[d].emplace_back(
-          common::create_old(*(space->dofmap()->index_map)),
-          space->dofmap()->index_map_bs());
-      maps_old_ref[d].emplace_back(maps_old[d].back().first,
-                                   maps_old[d].back().second);
     }
   }
+
+  std::vector<std::pair<common::IndexMap, int>> maps_old0;
+  for (auto& m : maps[0])
+    maps_old0.emplace_back(common::create_old(m.first), m.second);
+
+  std::cout << "Test full" << std::endl;
+  for (auto& m : maps_old0)
+  {
+    std::cout << "Test1: " << m.first.scatter_fwd_indices().num_nodes()
+              << std::endl;
+  }
+
+  std::vector<std::pair<std::reference_wrapper<const common::IndexMap>, int>>
+      maps_old_ref0;
+  for (auto& m : maps_old0)
+    maps_old_ref0.push_back({m.first, m.second});
+
+  std::cout << "Test ref" << std::endl;
+  for (auto& m : maps_old_ref0)
+  {
+    std::cout << "Test1: " << m.first.get().scatter_fwd_indices().num_nodes()
+              << std::endl;
+  }
+
+  std::cout << "Post test" << std::endl;
 
   // FIXME: This is computed again inside the SparsityPattern
   // constructor, but we also need to outside to build the PETSc
   // local-to-global map. Compute outside and pass into SparsityPattern
   // constructor.
+
   auto [rank_offset, local_offset, ghosts, owner]
-      = common::stack_index_maps(maps_old_ref[0]);
+      = common::stack_index_maps(maps_old_ref0);
+
+  std::cout << "Post stack" << std::endl;
 
   // Create merged sparsity pattern
   std::vector<std::vector<const la::SparsityPattern*>> p(V[0].size());
   for (std::size_t row = 0; row < V[0].size(); ++row)
     for (std::size_t col = 0; col < V[1].size(); ++col)
       p[row].push_back(patterns[row][col].get());
+
+  std::cout << "Sparsitty " << std::endl;
+
   la::SparsityPattern pattern(mesh->comm(), p, maps, bs_dofs);
+  std::cout << "Sparsitty assemble" << std::endl;
   pattern.assemble();
+
+  std::cout << "Block check 0" << std::endl;
 
   // FIXME: Add option to pass customised local-to-global map to PETSc
   // Mat constructor
@@ -138,6 +162,7 @@ Mat fem::petsc::create_matrix_block(
 
   // Create row and column local-to-global maps (field0, field1, field2,
   // etc), i.e. ghosts of field0 appear before owned indices of field1
+  std::cout << "Block check 1" << std::endl;
   std::array<std::vector<PetscInt>, 2> _maps;
   for (int d = 0; d < 2; ++d)
   {
@@ -153,6 +178,8 @@ Mat fem::petsc::create_matrix_block(
         _maps[d].push_back(ghosts[f][i - size_local]);
     }
   }
+
+  std::cout << "Block check 2" << std::endl;
 
   // Create PETSc local-to-global map/index sets and attach to matrix
   ISLocalToGlobalMapping petsc_local_to_global0;
@@ -178,6 +205,8 @@ Mat fem::petsc::create_matrix_block(
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
   }
+
+  std::cout << "End block mat" << std::endl;
 
   return A;
 }
@@ -232,16 +261,19 @@ Vec fem::petsc::create_vector_block(
   // FIXME: handle constant block size > 1
 
   std::vector<std::pair<common::IndexMap, int>> maps_old;
+  std::cout << "Adding maps" << std::endl;
+  for (auto& m : maps)
+    maps_old.emplace_back(common::create_old(m.first), m.second);
+
   std::vector<std::pair<std::reference_wrapper<const common::IndexMap>, int>>
       maps_old_ref;
-  for (auto& m : maps)
-  {
-    maps_old.push_back({common::create_old(m.first), m.second});
-    maps_old_ref.emplace_back(maps_old.back().first, maps_old.back().second);
-  }
+  for (auto& m : maps_old)
+    maps_old_ref.push_back({m.first, m.second});
 
+  std::cout << "Stack maps" << std::endl;
   auto [rank_offset, local_offset, ghosts_new, ghost_new_owners]
       = common::stack_index_maps(maps_old_ref);
+  std::cout << "End stack maps" << std::endl;
   std::int32_t local_size = local_offset.back();
 
   std::vector<std::int64_t> ghosts;

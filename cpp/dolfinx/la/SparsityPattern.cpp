@@ -42,18 +42,18 @@ SparsityPattern::SparsityPattern(
   //        - Check for compatible block sizes for each block
 
   std::vector<std::pair<common::IndexMap, int>> maps_old0, maps_old1;
+  for (auto& m : maps[0])
+    maps_old0.push_back({common::create_old(m.first), m.second});
+  for (auto& m : maps[1])
+    maps_old1.push_back({common::create_old(m.first), m.second});
+
   std::vector<std::pair<std::reference_wrapper<const common::IndexMap>, int>>
       maps_old0_ref, maps_old1_ref;
-  for (auto& m : maps[0])
-  {
-    maps_old0.push_back({common::create_old(m.first), m.second});
+  for (auto& m : maps_old0)
     maps_old0_ref.emplace_back(maps_old0.back().first, maps_old0.back().second);
-  }
-  for (auto& m : maps[1])
-  {
-    maps_old1.push_back({common::create_old(m.first), m.second});
+  for (auto& m : maps_old1)
     maps_old1_ref.emplace_back(maps_old1.back().first, maps_old1.back().second);
-  }
+
   const auto [rank_offset0, local_offset0, ghosts_new0, owners0]
       = common::stack_index_maps(maps_old0_ref);
   const auto [rank_offset1, local_offset1, ghosts_new1, owners1]

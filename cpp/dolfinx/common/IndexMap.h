@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <functional>
 #include <map>
 #include <memory>
 #include <tuple>
@@ -204,8 +205,7 @@ public:
   /// that should be placed at position `i` in the send buffer for a
   /// forward scatter.
   /// @return List of indices that are ghosted on other processes
-  const graph::AdjacencyList<std::int32_t>&
-  scatter_fwd_indices() const noexcept;
+  const graph::AdjacencyList<std::int32_t>& scatter_fwd_indices() const;
 
   /// Position of ghost entries in the receive buffer after a forward
   /// scatter, e.g. for a receive buffer `b` and a set operation, the

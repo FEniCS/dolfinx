@@ -23,7 +23,7 @@ namespace dolfinx::common
 {
 class IndexMap;
 class IndexMapNew;
-}
+} // namespace dolfinx::common
 
 namespace dolfinx::la
 {
@@ -98,19 +98,22 @@ Vec create_vector_wrap(const la::Vector<PetscScalar, Allocator>& x)
 /// @returns Vector of PETSc Index Sets, created on` PETSC_COMM_SELF`
 std::vector<IS> create_index_sets(
     const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
+        std::pair<std::reference_wrapper<const common::IndexMapNew>, int>>& maps);
 
 /// Copy blocks from Vec into local vectors
 std::vector<std::vector<PetscScalar>> get_local_vectors(
     const Vec x,
     const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
+        std::pair<std::reference_wrapper<const common::IndexMapNew>, int>>&
+        maps);
 
 /// Scatter local vectors to Vec
 void scatter_local_vectors(
     Vec x, const std::vector<xtl::span<const PetscScalar>>& x_b,
     const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
+        std::pair<std::reference_wrapper<const common::IndexMapNew>, int>>&
+        maps);
+
 /// Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
 Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,

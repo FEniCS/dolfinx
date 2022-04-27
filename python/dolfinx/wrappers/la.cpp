@@ -135,7 +135,7 @@ void petsc_module(py::module& m)
       [](Vec x,
          const std::vector<py::array_t<PetscScalar, py::array::c_style>>& x_b,
          const std::vector<std::pair<
-             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
+             std::reference_wrapper<const dolfinx::common::IndexMapNew>, int>>&
              maps)
       {
         std::vector<xtl::span<const PetscScalar>> _x_b;
@@ -149,7 +149,7 @@ void petsc_module(py::module& m)
       "get_local_vectors",
       [](const Vec x,
          const std::vector<std::pair<
-             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
+             std::reference_wrapper<const dolfinx::common::IndexMapNew>, int>>&
              maps)
       {
         std::vector<std::vector<PetscScalar>> vecs

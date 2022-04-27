@@ -103,7 +103,8 @@ Vec la::petsc::create_vector_wrap(const common::IndexMapNew& map, int bs,
 //-----------------------------------------------------------------------------
 std::vector<IS> la::petsc::create_index_sets(
     const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
+        std::pair<std::reference_wrapper<const common::IndexMapNew>, int>>&
+        maps)
 {
   std::vector<IS> is;
   std::int64_t offset = 0;
@@ -124,7 +125,8 @@ std::vector<IS> la::petsc::create_index_sets(
 std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
     const Vec x,
     const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
+        std::pair<std::reference_wrapper<const common::IndexMapNew>, int>>&
+        maps)
 {
   // Get ghost offset
   int offset_owned = 0;
@@ -167,7 +169,8 @@ std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
 void la::petsc::scatter_local_vectors(
     Vec x, const std::vector<xtl::span<const PetscScalar>>& x_b,
     const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
+        std::pair<std::reference_wrapper<const common::IndexMapNew>, int>>&
+        maps)
 {
   if (x_b.size() != maps.size())
     throw std::runtime_error("Mismatch in vector/map size.");
