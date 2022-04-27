@@ -244,12 +244,6 @@ common::stack_index_maps(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
-  for (auto& m : maps)
-  {
-    std::cout << "Test1: " << m.first.get().scatter_fwd_indices().num_nodes()
-              << std::endl;
-  }
-
   // Compute process offset
   const std::int64_t process_offset = std::accumulate(
       maps.cbegin(), maps.cend(), std::int64_t(0),

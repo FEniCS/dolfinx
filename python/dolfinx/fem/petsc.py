@@ -386,7 +386,6 @@ def assemble_matrix_block(a: typing.List[typing.List[FormMetaClass]],
                           constants=None, coeffs=None) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     A = _cpp.fem.petsc.create_matrix_block(a)
-    print("Sizes:", A.getSizes())
     return assemble_matrix_block(A, a, bcs, diagonal, constants, coeffs)
 
 
@@ -410,7 +409,6 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[FormMetaClass]],
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
-                print("Sub sizes: ", i, j, Asub.getSizes())
                 _cpp.fem.petsc.assemble_matrix(Asub, a_sub, constants[i][j], coeffs[i][j], bcs, True)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
             elif i == j:

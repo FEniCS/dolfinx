@@ -119,11 +119,14 @@ Mat fem::petsc::create_matrix_block(
   // local-to-global map. Compute outside and pass into SparsityPattern
   // constructor.
 
-  // auto [rank_offset, local_offset, ghosts, owner]
-  //     = common::stack_index_maps(maps_old_ref0);
+  auto [orank_offset, olocal_offset, oghosts, oowner]
+      = common::stack_index_maps(maps_old_ref0);
 
   // auto [trank_offset, tlocal_offset, tghosts, towner]
   //     = common::stack_index_maps(maps[0]);
+
+  auto [rank_offset, local_offset, ghosts, owner]
+      = common::stack_index_maps(maps[0]);
 
   // std::cout << "Ghost sizes: " << ghosts[0].size() << ", "
   //           << maps_old0[0].first.ghosts().size() << std::endl;
@@ -131,39 +134,20 @@ Mat fem::petsc::create_matrix_block(
   // std::cout << "New Ghost sizes: " << ghosts[0].size() << ", "
   //           << tghosts[0].size() << std::endl;
 
-  // int rank = dolfinx::MPI::rank(mesh->comm());
-  // if (rank_offset != trank_offset)
-  //   std::cout << "Offset mis-match: " << rank << std::endl;
-  // if (local_offset != tlocal_offset)
-  //   std::cout << "Local offset mis-match: " << rank << std::endl;
-  // if (ghosts != tghosts)
-  // {
-  //   std::cout << "Ghosts mis-match: " << rank << std::endl;
-  //   //   for (std::size_t i = 0; i < ghosts[0].size(); ++i)
-  //   //     std::cout << "Comp: " << rank << ", " << ghosts[0][i] << ", "
-  //   //               << tghosts[0][i] << std::endl;
-  // }
-  // if (owner != towner)
-  //   std::cout << "Owner mis-match: " << rank << std::endl;
-
-  auto [rank_offset, local_offset, ghosts, owner]
-      = common::stack_index_maps(maps[0]);
-
-  // for (std::size_t i = 0; i < local_offset.size(); ++i)
-  //   std::cout << "Test 1: " << rank << ", " << local_offset[i] << ", "
-  //             << tlocal_offset[i] << std::endl;
-
-  // for (std::size_t i = 0; i < ghosts.size(); ++i)
-  //   for (std::size_t j = 0; j < ghosts[i].size(); ++j)
-  //     std::cout << "Test 2: " << rank << ", " << ghosts[i][j] << ", "
-  //               << tghosts[i][j] << std::endl;
-
-  // std::cout << "Test 1: " << rank_offset << ", " << trank_offset <<
-  // std::endl; std::cout << "Test 2: " << local_offset[1] << ", " <<
-  // tlocal_offset[1]
-  //           << std::endl;
-
-  std::cout << "Post stack" << std::endl;
+  int rank = dolfinx::MPI::rank(mesh->comm());
+  if (rank_offset != orank_offset)
+    std::cout << "Offset mis-match: " << rank << std::endl;
+  if (local_offset != olocal_offset)
+    std::cout << "Local offset mis-match: " << rank << std::endl;
+  if (ghosts != oghosts)
+  {
+    std::cout << "Ghosts mis-match: " << rank << std::endl;
+    //   for (std::size_t i = 0; i < ghosts[0].size(); ++i)
+    //     std::cout << "Comp: " << rank << ", " << ghosts[0][i] << ", "
+    //               << tghosts[0][i] << std::endl;
+  }
+  if (owner != oowner)
+    std::cout << "Owner mis-match: " << rank << std::endl;
 
   // Create merged sparsity pattern
   std::vector<std::vector<const la::SparsityPattern*>> p(V[0].size());
@@ -198,8 +182,6 @@ Mat fem::petsc::create_matrix_block(
     }
   }
 
-  std::cout << "Block check 2" << std::endl;
-
   // Create PETSc local-to-global map/index sets and attach to matrix
   ISLocalToGlobalMapping petsc_local_to_global0;
   ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[0].size(),
@@ -224,8 +206,6 @@ Mat fem::petsc::create_matrix_block(
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
   }
-
-  std::cout << "End block mat" << std::endl;
 
   return A;
 }
@@ -280,7 +260,6 @@ Vec fem::petsc::create_vector_block(
   // FIXME: handle constant block size > 1
 
   std::vector<std::pair<common::IndexMap, int>> maps_old;
-  std::cout << "Adding maps" << std::endl;
   for (auto& m : maps)
     maps_old.emplace_back(common::create_old(m.first), m.second);
 
@@ -289,10 +268,8 @@ Vec fem::petsc::create_vector_block(
   for (auto& m : maps_old)
     maps_old_ref.push_back({m.first, m.second});
 
-  std::cout << "Stack maps" << std::endl;
   auto [rank_offset, local_offset, ghosts_new, ghost_new_owners]
       = common::stack_index_maps(maps_old_ref);
-  std::cout << "End stack maps" << std::endl;
   std::int32_t local_size = local_offset.back();
 
   std::vector<std::int64_t> ghosts;
