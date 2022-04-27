@@ -87,13 +87,13 @@ common::stack_index_maps(
       { return c + map.first.get().local_range()[0] * map.second; });
 
   // Get local offset (into new map) for each index map
-  std::vector<std::int32_t> local_offset(maps.size() + 1, 0);
-  for (std::size_t f = 1; f < local_offset.size(); ++f)
-  {
-    std::int32_t local_size = maps[f - 1].first.get().size_local();
-    int bs = maps[f - 1].second;
-    local_offset[f] = local_offset[f - 1] + bs * local_size;
-  }
+  std::vector<std::int32_t> local_sizes;
+  std::transform(maps.begin(), maps.end(), std::back_inserter(local_sizes),
+                 [](auto map)
+                 { return map.second * map.first.get().size_local(); });
+  std::vector<std::int32_t> local_offset(local_sizes.size() + 1, 0);
+  std::partial_sum(local_sizes.begin(), local_sizes.end(),
+                   std::next(local_offset.begin()));
 
   // Build list of src ranks (ranks that own ghosts)
   std::vector<int> src;
@@ -163,6 +163,8 @@ common::stack_index_maps(
     // Send how many indices I ghost to each owner, and receive how many
     // of my indices other ranks ghost
     std::vector<std::int32_t> recv_sizes(dest.size(), 0);
+    send_sizes.reserve(1);
+    recv_sizes.reserve(1);
     MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT32_T, recv_sizes.data(),
                           1, MPI_INT32_T, comm0);
 
@@ -194,7 +196,7 @@ common::stack_index_maps(
       ghost_old_to_new.push_back(bs * idx_local + offset_new);
     }
 
-    // Send back new indices
+    // Send back/receive new indices
     std::vector<std::int64_t> ghosts_new_idx(send_disp.back());
     MPI_Neighbor_alltoallv(ghost_old_to_new.data(), recv_sizes.data(),
                            recv_disp.data(), MPI_INT64_T, ghosts_new_idx.data(),
