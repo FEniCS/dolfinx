@@ -299,6 +299,9 @@ with XDMFFile(MPI.COMM_WORLD, "out_stokes/pressure.xdmf", "w") as pfile_xdmf:
 # +
 A = fem.petsc.assemble_matrix_block(a, bcs=bcs)
 A.assemble()
+
+exit(0)
+
 P = fem.petsc.assemble_matrix_block(a_p, bcs=bcs)
 P.assemble()
 b = fem.petsc.assemble_vector_block(L, a, bcs=bcs)

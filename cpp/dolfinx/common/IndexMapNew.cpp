@@ -128,6 +128,7 @@ common::stack_index_maps(
   std::vector<std::vector<int>> ghost_owners_new(maps.size());
   for (std::size_t m = 0; m < maps.size(); ++m)
   {
+    const int bs = maps[m].second;
     const common::IndexMapNew& map = maps[m].first.get();
     const std::vector<std::int64_t>& ghosts = map.ghosts();
     const std::vector<int>& owners = map.owners();
@@ -192,7 +193,7 @@ common::stack_index_maps(
     {
       auto idx_local = idx - offset_old;
       assert(idx_local >= 0);
-      ghost_old_to_new.push_back(idx_local + offset_new);
+      ghost_old_to_new.push_back(bs * idx_local + offset_new);
     }
 
     // Send back new indices
@@ -202,21 +203,23 @@ common::stack_index_maps(
                            send_sizes.data(), send_disp.data(), MPI_INT64_T,
                            comm1);
 
-    ghosts_new[m].resize(map.ghosts().size());
+    ghosts_new[m].resize(bs * map.ghosts().size());
     for (std::size_t j = 0; j < ghosts_new_idx.size(); ++j)
     {
       std::size_t p = ghost_idx_buffer[j];
-      ghosts_new[m][p] = ghosts_new_idx[j];
+      for (int k = 0; k < bs; ++k)
+        ghosts_new[m][bs * p + k] = ghosts_new_idx[j] + k;
     }
 
-    ghost_owners_new[m].resize(map.ghosts().size());
+    ghost_owners_new[m].resize(bs * map.ghosts().size());
     for (std::size_t i = 0; i < recv_disp.size() - 1; ++i)
     {
       int rank = src[i];
       for (int k = recv_disp[i]; k < recv_disp[i + 1]; ++k)
       {
         std::size_t p = ghost_idx_buffer[i];
-        ghost_owners_new[m][p] = rank;
+        for (int k = 0; k < bs; ++k)
+          ghost_owners_new[m][bs * p + k] = rank;
       }
     }
   }

@@ -125,10 +125,30 @@ Mat fem::petsc::create_matrix_block(
   // auto [trank_offset, tlocal_offset, tghosts, towner]
   //     = common::stack_index_maps(maps[0]);
 
+  // std::cout << "Ghost sizes: " << ghosts[0].size() << ", "
+  //           << maps_old0[0].first.ghosts().size() << std::endl;
+
+  // std::cout << "New Ghost sizes: " << ghosts[0].size() << ", "
+  //           << tghosts[0].size() << std::endl;
+
+  // int rank = dolfinx::MPI::rank(mesh->comm());
+  // if (rank_offset != trank_offset)
+  //   std::cout << "Offset mis-match: " << rank << std::endl;
+  // if (local_offset != tlocal_offset)
+  //   std::cout << "Local offset mis-match: " << rank << std::endl;
+  // if (ghosts != tghosts)
+  // {
+  //   std::cout << "Ghosts mis-match: " << rank << std::endl;
+  //   //   for (std::size_t i = 0; i < ghosts[0].size(); ++i)
+  //   //     std::cout << "Comp: " << rank << ", " << ghosts[0][i] << ", "
+  //   //               << tghosts[0][i] << std::endl;
+  // }
+  // if (owner != towner)
+  //   std::cout << "Owner mis-match: " << rank << std::endl;
+
   auto [rank_offset, local_offset, ghosts, owner]
       = common::stack_index_maps(maps[0]);
 
-  // int rank = dolfinx::MPI::rank(mesh->comm());
   // for (std::size_t i = 0; i < local_offset.size(); ++i)
   //   std::cout << "Test 1: " << rank << ", " << local_offset[i] << ", "
   //             << tlocal_offset[i] << std::endl;
@@ -151,10 +171,8 @@ Mat fem::petsc::create_matrix_block(
     for (std::size_t col = 0; col < V[1].size(); ++col)
       p[row].push_back(patterns[row][col].get());
 
-
   la::SparsityPattern pattern(mesh->comm(), p, maps, bs_dofs);
   pattern.assemble();
-
 
   // FIXME: Add option to pass customised local-to-global map to PETSc
   // Mat constructor
