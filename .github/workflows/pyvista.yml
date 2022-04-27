@@ -45,8 +45,8 @@ jobs:
       - name: Install FEniCS Python components
         run: |
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          python3 -m pip install git+https://github.com/FEniCS/basix.git@mscroggs/degree
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@mscroggs/degree
           apt-get update
           apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb  # pyvista
           apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt

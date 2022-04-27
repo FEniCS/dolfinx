@@ -16,8 +16,8 @@ jobs:
       - name: Install FEniCS Python components
         run: |
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          python3 -m pip install git+https://github.com/FEniCS/basix.git@mscroggs/degree
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@mscroggs/degree
       - name: Install matplotlib
         run: pip3 install matplotlib        
 

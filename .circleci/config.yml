@@ -3,13 +3,13 @@ version: 2.1
 install-python-components: &install-python-components
   name: Install FEniCS Python components
   command: |
-    git clone https://github.com/FEniCS/basix.git --branch main --single-branch
+    git clone https://github.com/FEniCS/basix.git --branch mscroggs/degree --single-branch
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S ./basix/cpp
     cmake --build build-dir --parallel 3
     cmake --install build-dir
     pip3 install ./basix/python
     pip3 install git+https://github.com/FEniCS/ufl.git
-    pip3 install git+https://github.com/FEniCS/ffcx.git
+    pip3 install git+https://github.com/FEniCS/ffcx.git@mscroggs/degree
     pip3 install matplotlib        
 
 flake8-python-code: &flake8-python-code
