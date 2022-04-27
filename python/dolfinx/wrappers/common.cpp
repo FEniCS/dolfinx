@@ -158,7 +158,19 @@ void common(py::module& m)
                                return py::array_t<int>(owners.size(),
                                                        owners.data(),
                                                        py::cast(self));
-                             });
+                             })
+      .def("local_to_global",
+           [](const dolfinx::common::IndexMapNew& self,
+              const py::array_t<std::int32_t, py::array::c_style>& local)
+           {
+             if (local.ndim() != 1)
+               throw std::runtime_error("Array of local indices must be 1D.");
+             py::array_t<std::int64_t> global(local.size());
+             self.local_to_global(
+                 local,
+                 xtl::span<std::int64_t>(global.mutable_data(), global.size()));
+             return global;
+           });
 
   // .def(
   //     "comm",
@@ -181,18 +193,6 @@ void common(py::module& m)
   //     },
   //     "Return list of ghost indices")
   // .def("global_indices", &dolfinx::common::IndexMap::global_indices)
-  // .def("local_to_global",
-  //      [](const dolfinx::common::IndexMap& self,
-  //         const py::array_t<std::int32_t, py::array::c_style>& local)
-  //      {
-  //        if (local.ndim() != 1)
-  //          throw std::runtime_error("Array of local indices must be 1D.");
-  //        py::array_t<std::int64_t> global(local.size());
-  //        self.local_to_global(
-  //            local,
-  //            xtl::span<std::int64_t>(global.mutable_data(), global.size()));
-  //        return global;
-  //      })
   // .def("create_submap",
   //      [](const dolfinx::common::IndexMap& self,
   //         const py::array_t<std::int32_t, py::array::c_style>& entities)
