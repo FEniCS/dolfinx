@@ -149,7 +149,10 @@ Mat fem::petsc::create_matrix_block(
   std::cout << "Sparsitty " << std::endl;
 
   la::SparsityPattern pattern(mesh->comm(), p, maps, bs_dofs);
-  std::cout << "Sparsitty assemble" << std::endl;
+  std::cout << "Sparsitty assemble (0): " << pattern.index_map(0)->size_global()
+            << std::endl;
+  std::cout << "Sparsitty assemble (1): " << pattern.index_map(1)->size_global()
+            << std::endl;
   pattern.assemble();
 
   std::cout << "Block check 0" << std::endl;

@@ -234,7 +234,7 @@ def test_assemble_manifold():
 
 
 @ pytest.mark.parametrize("mode", [
-    # GhostMode.none,
+    GhostMode.none,
     GhostMode.shared_facet
     ])
 def test_matrix_assembly_block(mode):
@@ -277,49 +277,49 @@ def test_matrix_assembly_block(mode):
     # Monolithic blocked
     A0 = assemble_matrix_block(a_block, bcs=[bc])
     A0.assemble()
-    # b0 = assemble_vector_block(L_block, a_block, bcs=[bc])
-    # assert A0.getType() != "nest"
-    # Anorm0 = A0.norm()
-    # bnorm0 = b0.norm()
+    b0 = assemble_vector_block(L_block, a_block, bcs=[bc])
+    assert A0.getType() != "nest"
+    Anorm0 = A0.norm()
+    bnorm0 = b0.norm()
 
-    # # Nested (MatNest)
-    # A1 = assemble_matrix_nest(a_block, bcs=[bc], mat_types=[["baij", "aij"], ["aij", ""]])
-    # A1.assemble()
-    # Anorm1 = nest_matrix_norm(A1)
-    # assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
+    # Nested (MatNest)
+    A1 = assemble_matrix_nest(a_block, bcs=[bc], mat_types=[["baij", "aij"], ["aij", ""]])
+    A1.assemble()
+    Anorm1 = nest_matrix_norm(A1)
+    assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
 
-    # b1 = assemble_vector_nest(L_block)
-    # apply_lifting_nest(b1, a_block, bcs=[bc])
-    # for b_sub in b1.getNestSubVecs():
-    #     b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    # bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
-    # set_bc_nest(b1, bcs0)
-    # b1.assemble()
+    b1 = assemble_vector_nest(L_block)
+    apply_lifting_nest(b1, a_block, bcs=[bc])
+    for b_sub in b1.getNestSubVecs():
+        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
+    set_bc_nest(b1, bcs0)
+    b1.assemble()
 
-    # bnorm1 = math.sqrt(sum([x.norm()**2 for x in b1.getNestSubVecs()]))
-    # assert bnorm0 == pytest.approx(bnorm1, 1.0e-12)
+    bnorm1 = math.sqrt(sum([x.norm()**2 for x in b1.getNestSubVecs()]))
+    assert bnorm0 == pytest.approx(bnorm1, 1.0e-12)
 
-    # # Monolithic version
-    # E = P0 * P1
-    # W = FunctionSpace(mesh, E)
-    # u0, u1 = ufl.TrialFunctions(W)
-    # v0, v1 = ufl.TestFunctions(W)
-    # a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
-    #     u1, v0) * dx
-    # L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
-    # a, L = form(a), form(L)
+    # Monolithic version
+    E = P0 * P1
+    W = FunctionSpace(mesh, E)
+    u0, u1 = ufl.TrialFunctions(W)
+    v0, v1 = ufl.TestFunctions(W)
+    a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
+        u1, v0) * dx
+    L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
+    a, L = form(a), form(L)
 
-    # bdofsW_V1 = locate_dofs_topological(W.sub(1), mesh.topology.dim - 1, bndry_facets)
-    # bc = dirichletbc(u_bc, bdofsW_V1, W.sub(1))
-    # A2 = assemble_matrix(a, bcs=[bc])
-    # A2.assemble()
-    # b2 = assemble_vector(L)
-    # apply_lifting(b2, [a], bcs=[[bc]])
-    # b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    # set_bc(b2, [bc])
-    # assert A2.getType() != "nest"
-    # assert A2.norm() == pytest.approx(Anorm0, 1.0e-9)
-    # assert b2.norm() == pytest.approx(bnorm0, 1.0e-9)
+    bdofsW_V1 = locate_dofs_topological(W.sub(1), mesh.topology.dim - 1, bndry_facets)
+    bc = dirichletbc(u_bc, bdofsW_V1, W.sub(1))
+    A2 = assemble_matrix(a, bcs=[bc])
+    A2.assemble()
+    b2 = assemble_vector(L)
+    apply_lifting(b2, [a], bcs=[[bc]])
+    b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    set_bc(b2, [bc])
+    assert A2.getType() != "nest"
+    assert A2.norm() == pytest.approx(Anorm0, 1.0e-9)
+    assert b2.norm() == pytest.approx(bnorm0, 1.0e-9)
 
 
 @ pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])

@@ -233,6 +233,9 @@ Mat la::petsc::create_matrix(MPI_Comm comm,
   const std::int32_t m = bs[0] * maps[0]->size_local();
   const std::int32_t n = bs[1] * maps[1]->size_local();
 
+  std::cout << "Matrix sizes (0): " << m << ", " << n << std::endl;
+  std::cout << "Matrix sizes (1): " << M << ", " << N << std::endl;
+
   // Set matrix size
   ierr = MatSetSizes(A, m, n, M, N);
   if (ierr != 0)
