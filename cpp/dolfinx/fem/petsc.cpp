@@ -109,34 +109,39 @@ Mat fem::petsc::create_matrix_block(
   for (auto& m : maps[0])
     maps_old0.emplace_back(common::create_old(m.first), m.second);
 
-  std::cout << "Test full" << std::endl;
-  for (auto& m : maps_old0)
-  {
-    std::cout << "Test1: " << m.first.scatter_fwd_indices().num_nodes()
-              << std::endl;
-  }
-
   std::vector<std::pair<std::reference_wrapper<const common::IndexMap>, int>>
       maps_old_ref0;
   for (auto& m : maps_old0)
     maps_old_ref0.push_back({m.first, m.second});
-
-  std::cout << "Test ref" << std::endl;
-  for (auto& m : maps_old_ref0)
-  {
-    std::cout << "Test1: " << m.first.get().scatter_fwd_indices().num_nodes()
-              << std::endl;
-  }
-
-  std::cout << "Post test" << std::endl;
 
   // FIXME: This is computed again inside the SparsityPattern
   // constructor, but we also need to outside to build the PETSc
   // local-to-global map. Compute outside and pass into SparsityPattern
   // constructor.
 
+  // auto [rank_offset, local_offset, ghosts, owner]
+  //     = common::stack_index_maps(maps_old_ref0);
+
+  // auto [trank_offset, tlocal_offset, tghosts, towner]
+  //     = common::stack_index_maps(maps[0]);
+
   auto [rank_offset, local_offset, ghosts, owner]
-      = common::stack_index_maps(maps_old_ref0);
+      = common::stack_index_maps(maps[0]);
+
+  // int rank = dolfinx::MPI::rank(mesh->comm());
+  // for (std::size_t i = 0; i < local_offset.size(); ++i)
+  //   std::cout << "Test 1: " << rank << ", " << local_offset[i] << ", "
+  //             << tlocal_offset[i] << std::endl;
+
+  // for (std::size_t i = 0; i < ghosts.size(); ++i)
+  //   for (std::size_t j = 0; j < ghosts[i].size(); ++j)
+  //     std::cout << "Test 2: " << rank << ", " << ghosts[i][j] << ", "
+  //               << tghosts[i][j] << std::endl;
+
+  // std::cout << "Test 1: " << rank_offset << ", " << trank_offset <<
+  // std::endl; std::cout << "Test 2: " << local_offset[1] << ", " <<
+  // tlocal_offset[1]
+  //           << std::endl;
 
   std::cout << "Post stack" << std::endl;
 
@@ -146,16 +151,10 @@ Mat fem::petsc::create_matrix_block(
     for (std::size_t col = 0; col < V[1].size(); ++col)
       p[row].push_back(patterns[row][col].get());
 
-  std::cout << "Sparsitty " << std::endl;
 
   la::SparsityPattern pattern(mesh->comm(), p, maps, bs_dofs);
-  std::cout << "Sparsitty assemble (0): " << pattern.index_map(0)->size_global()
-            << std::endl;
-  std::cout << "Sparsitty assemble (1): " << pattern.index_map(1)->size_global()
-            << std::endl;
   pattern.assemble();
 
-  std::cout << "Block check 0" << std::endl;
 
   // FIXME: Add option to pass customised local-to-global map to PETSc
   // Mat constructor
@@ -165,7 +164,6 @@ Mat fem::petsc::create_matrix_block(
 
   // Create row and column local-to-global maps (field0, field1, field2,
   // etc), i.e. ghosts of field0 appear before owned indices of field1
-  std::cout << "Block check 1" << std::endl;
   std::array<std::vector<PetscInt>, 2> _maps;
   for (int d = 0; d < 2; ++d)
   {
