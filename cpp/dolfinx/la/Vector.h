@@ -51,8 +51,8 @@ public:
 
   /// Copy constructor
   Vector(const Vector& x)
-      : _map(x._map), _bs(x._bs), _request(MPI_REQUEST_NULL),
-        _buffer_send_fwd(x._buffer_send_fwd),
+      : _map(x._map), _map_new(x._map_new), _bs(x._bs),
+        _request(MPI_REQUEST_NULL), _buffer_send_fwd(x._buffer_send_fwd),
         _buffer_recv_fwd(x._buffer_recv_fwd), _x(x._x)
   {
     if (_bs == 1)
@@ -63,7 +63,8 @@ public:
 
   /// Move constructor
   Vector(Vector&& x)
-      : _map(std::move(x._map)), _bs(std::move(x._bs)),
+      : _map(std::move(x._map)), _map_new(std::move(x._map_new)),
+        _bs(std::move(x._bs)),
         _datatype(std::exchange(x._datatype, MPI_DATATYPE_NULL)),
         _request(std::exchange(x._request, MPI_REQUEST_NULL)),
         _buffer_send_fwd(std::move(x._buffer_send_fwd)),
