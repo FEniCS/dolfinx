@@ -41,23 +41,10 @@ SparsityPattern::SparsityPattern(
   // FIXME: - Add range/bound checks for each block
   //        - Check for compatible block sizes for each block
 
-  std::vector<std::pair<common::IndexMap, int>> maps_old0, maps_old1;
-  for (auto& m : maps[0])
-    maps_old0.push_back({common::create_old(m.first), m.second});
-  for (auto& m : maps[1])
-    maps_old1.push_back({common::create_old(m.first), m.second});
-
-  std::vector<std::pair<std::reference_wrapper<const common::IndexMap>, int>>
-      maps_old0_ref, maps_old1_ref;
-  for (auto& m : maps_old0)
-    maps_old0_ref.emplace_back(m.first, m.second);
-  for (auto& m : maps_old1)
-    maps_old1_ref.emplace_back(m.first, m.second);
-
   const auto [rank_offset0, local_offset0, ghosts_new0, owners0]
-      = common::stack_index_maps(maps_old0_ref);
+      = common::stack_index_maps(maps[0]);
   const auto [rank_offset1, local_offset1, ghosts_new1, owners1]
-      = common::stack_index_maps(maps_old1_ref);
+      = common::stack_index_maps(maps[1]);
 
   std::vector<std::int64_t> ghosts0, ghosts1;
   std::vector<std::int32_t> ghost_offsets0(1, 0);

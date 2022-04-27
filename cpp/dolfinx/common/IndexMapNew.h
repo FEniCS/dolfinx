@@ -25,15 +25,23 @@ IndexMap create_old(const IndexMapNew& map);
 /// TMP
 IndexMapNew create_new(const IndexMap& map);
 
-/// Compute layout data and ghost indices for a stacked (concatenated)
-/// index map, i.e. 'splice' multiple maps into one. Communication is
-/// required to compute the new ghost indices.
+/// @brief Compute layout data and ghost indices for a stacked
+/// (concatenated) index map, i.e. 'splice' multiple maps into one.
+///
+/// The input maps are concatenated, with indices in `maps` and owned by
+/// the caller remaining owned by the caller. Ghost data is stored at
+/// the end of the local range as normal, with the ghosts in blocks in
+/// the order of the index maps in `maps`.
+///
+/// @note Index maps with a block size are unrolled in the data for the
+/// concatenated index map.
+/// @note Communication is required to compute the new ghost indices.
 ///
 /// @param[in] maps List of (index map, block size) pairs
-/// @returns The (0) global offset of a stacked map for this rank, (1)
-/// local offset for each submap in the stacked map, and (2) new indices
-/// for the ghosts for each submap (3) owner rank of each ghost entry
-/// for each submap
+/// @returns The (0) global offset of a concatenated map for the calling
+/// rank, (1) local offset for the owned indices of each submap in the
+/// concatenated map, (2) new indices for the ghosts for each submap,
+/// and (3) owner rank of each ghost entry for each submap.
 std::tuple<std::int64_t, std::vector<std::int32_t>,
            std::vector<std::vector<std::int64_t>>,
            std::vector<std::vector<int>>>

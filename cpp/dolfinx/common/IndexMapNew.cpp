@@ -119,6 +119,11 @@ common::stack_index_maps(
       maps.at(0).first.get().comm(), src.size(), src.data(), MPI_UNWEIGHTED,
       dest.size(), dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
 
+  // NOTE: We could perform each MPI call just once rather than per map,
+  // but the complexity may not be worthwhile since this function is
+  // typically used for 'block' (rather the nested) problems, which is
+  // not the most efficient approach anyway.
+
   std::vector<std::vector<std::int64_t>> ghosts_new(maps.size());
   std::vector<std::vector<int>> ghost_owners_new(maps.size());
 

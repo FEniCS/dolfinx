@@ -34,21 +34,6 @@ std::vector<int32_t>
 compute_owned_indices(const xtl::span<const std::int32_t>& indices,
                       const IndexMap& map);
 
-/// Compute layout data and ghost indices for a stacked (concatenated)
-/// index map, i.e. 'splice' multiple maps into one. Communication is
-/// required to compute the new ghost indices.
-///
-/// @param[in] maps List of (index map, block size) pairs
-/// @returns The (0) global offset of a stacked map for this rank, (1)
-/// local offset for each submap in the stacked map, and (2) new indices
-/// for the ghosts for each submap (3) owner rank of each ghost entry
-/// for each submap
-std::tuple<std::int64_t, std::vector<std::int32_t>,
-           std::vector<std::vector<std::int64_t>>,
-           std::vector<std::vector<int>>>
-stack_index_maps(
-    const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
 /// This class represents the distribution index arrays across
 /// processes. An index array is a contiguous collection of N+1 indices
@@ -56,7 +41,6 @@ stack_index_maps(
 /// process, the IndexMap stores a portion of the index set using local
 /// indices [0, 1, . . . , n], and a map from the local indices to a
 /// unique global index.
-
 class IndexMap
 {
 public:

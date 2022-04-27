@@ -8,7 +8,6 @@
 #include "FunctionSpace.h"
 #include "assembler.h"
 #include "sparsitybuild.h"
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
@@ -105,49 +104,13 @@ Mat fem::petsc::create_matrix_block(
     }
   }
 
-  std::vector<std::pair<common::IndexMap, int>> maps_old0;
-  for (auto& m : maps[0])
-    maps_old0.emplace_back(common::create_old(m.first), m.second);
-
-  std::vector<std::pair<std::reference_wrapper<const common::IndexMap>, int>>
-      maps_old_ref0;
-  for (auto& m : maps_old0)
-    maps_old_ref0.push_back({m.first, m.second});
-
   // FIXME: This is computed again inside the SparsityPattern
   // constructor, but we also need to outside to build the PETSc
   // local-to-global map. Compute outside and pass into SparsityPattern
   // constructor.
 
-  auto [orank_offset, olocal_offset, oghosts, oowner]
-      = common::stack_index_maps(maps_old_ref0);
-
-  // auto [trank_offset, tlocal_offset, tghosts, towner]
-  //     = common::stack_index_maps(maps[0]);
-
   auto [rank_offset, local_offset, ghosts, owner]
       = common::stack_index_maps(maps[0]);
-
-  // std::cout << "Ghost sizes: " << ghosts[0].size() << ", "
-  //           << maps_old0[0].first.ghosts().size() << std::endl;
-
-  // std::cout << "New Ghost sizes: " << ghosts[0].size() << ", "
-  //           << tghosts[0].size() << std::endl;
-
-  int rank = dolfinx::MPI::rank(mesh->comm());
-  if (rank_offset != orank_offset)
-    std::cout << "Offset mis-match: " << rank << std::endl;
-  if (local_offset != olocal_offset)
-    std::cout << "Local offset mis-match: " << rank << std::endl;
-  if (ghosts != oghosts)
-  {
-    std::cout << "Ghosts mis-match: " << rank << std::endl;
-    //   for (std::size_t i = 0; i < ghosts[0].size(); ++i)
-    //     std::cout << "Comp: " << rank << ", " << ghosts[0][i] << ", "
-    //               << tghosts[0][i] << std::endl;
-  }
-  if (owner != oowner)
-    std::cout << "Owner mis-match: " << rank << std::endl;
 
   // Create merged sparsity pattern
   std::vector<std::vector<const la::SparsityPattern*>> p(V[0].size());
@@ -259,17 +222,8 @@ Vec fem::petsc::create_vector_block(
 {
   // FIXME: handle constant block size > 1
 
-  std::vector<std::pair<common::IndexMap, int>> maps_old;
-  for (auto& m : maps)
-    maps_old.emplace_back(common::create_old(m.first), m.second);
-
-  std::vector<std::pair<std::reference_wrapper<const common::IndexMap>, int>>
-      maps_old_ref;
-  for (auto& m : maps_old)
-    maps_old_ref.push_back({m.first, m.second});
-
   auto [rank_offset, local_offset, ghosts_new, ghost_new_owners]
-      = common::stack_index_maps(maps_old_ref);
+      = common::stack_index_maps(maps);
   std::int32_t local_size = local_offset.back();
 
   std::vector<std::int64_t> ghosts;
