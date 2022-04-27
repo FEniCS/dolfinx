@@ -29,7 +29,7 @@ class IndexMap;
 /// another processes.
 /// @param[in] indices List of indices
 /// @param[in] map The index map
-/// @return Vector of indices owned by the process
+/// @return Indices owned by the calling process
 std::vector<int32_t>
 compute_owned_indices(const xtl::span<const std::int32_t>& indices,
                       const IndexMap& map);
@@ -230,7 +230,7 @@ public:
   /// @param[in] indices Local indices in the map that should appear in
   /// the new index map. All indices must be owned, i.e. indices must be
   /// less than `this->size_local()`.
-  /// @pre `indices` must be sorted and contain no duplicates
+  /// @pre `indices` must be sorted and contain no duplicates.
   /// @return The (i) new index map and (ii) a map from the ghost
   /// position in the new map to the ghost position in the original
   /// (this) map

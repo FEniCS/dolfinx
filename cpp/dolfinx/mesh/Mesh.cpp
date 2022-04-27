@@ -356,8 +356,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // auto submesh_x_dof_index_map = std::make_shared<common::IndexMapNew>(
   //     std::move(submesh_x_dof_index_map_pair.first));
 
-  // Create a map from the (local) geometry dofs in the submesh to the (local)
-  // geometry dofs in the mesh.
+  // Create a map from the (local) geometry dofs in the submesh to the
+  // (local) geometry dofs in the mesh.
   std::vector<int32_t> submesh_to_mesh_x_dof_map(submesh_owned_x_dofs.begin(),
                                                  submesh_owned_x_dofs.end());
   submesh_to_mesh_x_dof_map.reserve(submesh_x_dof_index_map->size_local()
