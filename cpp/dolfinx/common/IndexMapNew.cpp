@@ -213,7 +213,7 @@ common::stack_index_maps(
     for (std::size_t i = 0; i < recv_disp.size() - 1; ++i)
     {
       int rank = src[i];
-      for (std::size_t k = recv_disp[i]; k < recv_disp[i + 1]; ++k)
+      for (int k = recv_disp[i]; k < recv_disp[i + 1]; ++k)
       {
         std::size_t p = ghost_idx_buffer[i];
         ghost_owners_new[m][p] = rank;
