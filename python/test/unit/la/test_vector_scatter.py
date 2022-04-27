@@ -9,7 +9,6 @@
 import numpy as np
 import pytest
 
-import dolfinx
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.fem import Function, FunctionSpace
