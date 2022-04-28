@@ -1,9 +1,9 @@
 name: Red Hat clone
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
+      - "**"
 
 jobs:
   build:
@@ -16,7 +16,7 @@ jobs:
       - name: Install FEniCS Python components
         run: |
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
+          CPATH=/usr/include/openblas python3 -m pip install git+https://github.com/FEniCS/basix.git
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
       - name: Install matplotlib
         run: pip3 install matplotlib        
