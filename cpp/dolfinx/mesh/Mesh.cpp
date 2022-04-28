@@ -214,11 +214,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::vector<std::int32_t> submesh_vertices
       = compute_incident_entities(mesh, entities, dim, 0);
 
-  // std::sort(submesh_vertices.begin(), submesh_vertices.end());
-  // submesh_vertices.erase(
-  //     std::unique(submesh_vertices.begin(), submesh_vertices.end()),
-  //     submesh_vertices.end());
-
   // Get the vertices in the submesh owned by this process
   auto mesh_vertex_index_map_old = mesh.topology().index_map(0);
   assert(mesh_vertex_index_map_old);
@@ -235,8 +230,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   auto submesh_vertex_index_map = std::make_shared<common::IndexMapNew>(
       std::move(submesh_vertex_index_map_pair.first));
 
-  // Create a map from the (local) vertices in the submesh to the (local)
-  // vertices in the mesh.
+  // Create a map from the (local) vertices in the submesh to the
+  // (local) vertices in the mesh
   std::vector<int32_t> submesh_to_mesh_vertex_map(
       submesh_owned_vertices.begin(), submesh_owned_vertices.end());
   submesh_to_mesh_vertex_map.reserve(submesh_vertex_index_map->size_local()
@@ -261,15 +256,17 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                [&mesh_entity_index_map](std::int32_t e)
                { return e < mesh_entity_index_map.size_local(); });
 
-  // Create a map from the (local) entities in the submesh to the (local)
-  // entities in the mesh, and create the submesh entity index map.
+  // Create a map from the (local) entities in the submesh to the
+  // (local) entities in the mesh, and create the submesh entity index
+  // map.
   std::vector<int32_t> submesh_to_mesh_entity_map(
       submesh_owned_entities.begin(), submesh_owned_entities.end());
   std::shared_ptr<common::IndexMapNew> submesh_entity_index_map;
+
   // If the entity dimension is the same as the input mesh topological
-  // dimension, add ghost entities to the submesh. If not, do not add ghost
-  // entities, because in general, not all expected ghost entities would be
-  // present.
+  // dimension, add ghost entities to the submesh. If not, do not add
+  // ghost entities, because in general, not all expected ghost entities
+  // would be present.
   if (mesh.topology().dim() == dim)
   {
     // TODO Call dolfinx::common::get_owned_indices here? Do we want to
@@ -355,15 +352,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   auto mesh_geometry_dof_index_map = mesh.geometry().index_map();
   assert(mesh_geometry_dof_index_map);
-
-  // // TMP
-  // common::IndexMap mesh_geometry_dof_index_map_old
-  //     = common::create_old(*mesh_geometry_dof_index_map);
-
-  // Get the geometry dofs in the submesh owned by this process
-  // std::vector<int32_t> submesh_owned_x_dofs
-  //     = dolfinx::common::compute_owned_indices(submesh_x_dofs,
-  //                                              mesh_geometry_dof_index_map_old);
   std::vector<int32_t> submesh_owned_x_dofs
       = dolfinx::common::compute_owned_indices(submesh_x_dofs,
                                                *mesh_geometry_dof_index_map);
