@@ -505,33 +505,26 @@ std::vector<std::int64_t> IndexMapNew::global_indices() const
 //-----------------------------------------------------------------------------
 MPI_Comm IndexMapNew::comm() const { return _comm.comm(); }
 //----------------------------------------------------------------------------
-/*
 std::pair<IndexMapNew, std::vector<std::int32_t>>
-IndexMapNew::create_submap(const xtl::span<const std::int32_t>& indices) const
+IndexMapNew::create_submap_new(const xtl::span<const std::int32_t>& indices) const
 {
+  std::cout << "Create map 0" << std::endl;
+
   if (!indices.empty() and indices.back() >= this->size_local())
   {
     throw std::runtime_error(
         "Unowned index detected when creating sub-IndexMap");
   }
 
-  int myrank = 0;
-  MPI_Comm_rank(_comm.comm(), &myrank);
+  // --- Step 1: Compute new offset for this rank
 
-  // --- Step 1: Compute new offest for this rank and new global size
-
-  std::int64_t local_size = indices.size();
-  std::int64_t offset = 0;
+  std::int64_t local_size_new = indices.size();
+  std::int64_t offset_new = 0;
   MPI_Request request_offset;
-  MPI_Iexscan(&local_size, &offset, 1, MPI_INT64_T, MPI_SUM, _comm.comm(),
-              &request_offset);
+  MPI_Iexscan(&local_size_new, &offset_new, 1, MPI_INT64_T, MPI_SUM,
+              _comm.comm(), &request_offset);
 
-  std::int64_t size_global = 0;
-  MPI_Request request_size;
-  MPI_Iallreduce(&local_size, &size_global, 1, MPI_INT64_T, MPI_SUM,
-                 _comm.comm(), &request_size);
-
-  // -- Send ghosts in `indices` to owner
+  // --- Step 2: Send ghost indices to owning rank
 
   // Build list of src ranks (ranks that own ghosts)
   std::vector<int> src = this->owners();
@@ -549,14 +542,18 @@ IndexMapNew::create_submap(const xtl::span<const std::int32_t>& indices) const
                                  MPI_UNWEIGHTED, src.size(), src.data(),
                                  MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
 
-  // Pack ghosts in `indices` to send to owner
+  std::cout << "Create map 1" << std::endl;
+
+  // Pack ghosts indices
   std::vector<std::vector<std::int64_t>> send_data(src.size());
+  std::vector<std::vector<std::size_t>> pos_to_ghost(src.size());
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
   {
     auto it = std::lower_bound(src.begin(), src.end(), _owners[i]);
     assert(it != src.end() and *it == _owners[i]);
     int r = std::distance(src.begin(), it);
     send_data[r].push_back(_ghosts[i]);
+    pos_to_ghost[r].push_back(i);
   }
 
   // Count number of ghosts per dest
@@ -565,10 +562,13 @@ IndexMapNew::create_submap(const xtl::span<const std::int32_t>& indices) const
                  std::back_insert_iterator(send_sizes),
                  [](auto& d) { return d.size(); });
 
-  // Build Send buffer and ghost position to send buffer position
+  // Build send buffer and ghost position to send buffer position
   std::vector<std::int64_t> send_indices;
+  std::vector<std::size_t> ghost_buffer_pos;
   for (auto& d : send_data)
     send_indices.insert(send_indices.end(), d.begin(), d.end());
+  for (auto& p : pos_to_ghost)
+    ghost_buffer_pos.insert(ghost_buffer_pos.end(), p.begin(), p.end());
 
   // Send how many indices I ghost to each owner, and receive how many
   // of my indices other ranks ghost
@@ -594,36 +594,89 @@ IndexMapNew::create_submap(const xtl::span<const std::int32_t>& indices) const
 
   MPI_Comm_free(&comm0);
 
-  // src ranks for each ghost
-  std::vector<int> src_ranks;
-  for (std::size_t i = 0; i < recv_sizes.size(); ++i)
-    src_ranks.insert(src_ranks.end(), recv_sizes[i], src[i]);
+  MPI_Wait(&request_offset, MPI_STATUS_IGNORE);
 
-  std::vector<std::int32_t> new_to_old_ghost;
-  new_to_old_ghost.reserve(recv_indices.size());
+  std::cout << "Create map 2" << std::endl;
+
+  // --- Step 3: Check which received indexes (all of which I should
+  // own) are in the submap
+
+  // Build array for each received ghost that (i) contains the new
+  // submap index if it is retained, or (ii) set to -1 if it is not
+  // retained.
+  std::vector<std::int64_t> send_gidx;
+  send_gidx.reserve(recv_indices.size());
+  for (auto idx : recv_indices)
   {
-    std::vector<std::pair<std::int64_t, std::int32_t>> ghost_to_pos;
-    ghost_to_pos.reserve(_ghosts.size());
-    for (auto idx : _ghosts)
-    {
-      ghost_to_pos.push_back(
-          {idx, static_cast<std::int32_t>(ghost_to_pos.size())});
-    }
-    std::sort(ghost_to_pos.begin(), ghost_to_pos.end());
+    assert(idx - _local_range[0] >= 0);
+    assert(idx - _local_range[0] < _local_range[1]);
+    std::int32_t idx_local = idx - _local_range[0];
 
-    for (auto idx : recv_indices)
+    // Could avoid search by creating look-up array
+    auto it = std::lower_bound(indices.begin(), indices.end(), idx_local);
+    if (it != indices.end() and *it == idx_local)
     {
-      auto it = std::lower_bound(ghost_to_pos.begin(), ghost_to_pos.end(),
-                                 std::pair<std::int64_t, std::int32_t>{idx, 0},
-                                 [](auto& a, auto& b)
-                                 { return a.first < b.first; });
-      assert(it != ghost_to_pos.end() and it->first == idx);
-      new_to_old_ghost.push_back(it->second);
+      std::size_t idx_local_new = std::distance(indices.begin(), it);
+      send_gidx.push_back(idx_local_new + offset_new);
+    }
+    else
+      send_gidx.push_back(-1);
+  }
+
+  std::cout << "Create map 3" << std::endl;
+
+  // --- Step 4: Send new global indices from owner back to ranks that
+  // ghost the index
+
+  // Create neighbourhood comm (owner -> ghost)
+  MPI_Comm comm1;
+  MPI_Dist_graph_create_adjacent(_comm.comm(), src.size(), src.data(),
+                                 MPI_UNWEIGHTED, dest.size(), dest.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+
+  // Send index markers to ghosting ranks
+  std::vector<std::int64_t> recv_gidx(send_disp.back());
+  MPI_Neighbor_alltoallv(send_gidx.data(), recv_sizes.data(), recv_disp.data(),
+                         MPI_INT64_T, recv_gidx.data(), send_sizes.data(),
+                         send_disp.data(), MPI_INT64_T, comm1);
+
+  MPI_Comm_free(&comm1);
+
+  std::cout << "Create map 4" << std::endl;
+
+  // --- Step 5: Unpack received data
+
+  std::vector<std::int64_t> ghosts;
+  std::vector<int> src_ranks;
+  std::vector<std::int32_t> new_to_old_ghost;
+  for (std::size_t i = 0; i < send_disp.size() - 1; ++i)
+  {
+    for (int j = send_disp[i]; j < send_disp[i + 1]; ++j)
+    {
+      if (std::int64_t idx = recv_gidx[j]; idx >= 0)
+      {
+        std::size_t p = ghost_buffer_pos[j];
+        ghosts.push_back(idx);
+        src_ranks.push_back(src[i]);
+        new_to_old_ghost.push_back(p);
+      }
     }
   }
 
-  return {IndexMapNew(_comm.comm(), local_size, recv_indices, src_ranks),
-          std::move(new_to_old_ghost)};
+  std::cout << "Create map 5" << std::endl;
+
+  MPI_Barrier(_comm.comm());
+
+  std::cout << "Size check: " << local_size_new << ", " << ghosts.size() << ", "
+            << src_ranks.size() << std::endl;
+  MPI_Barrier(_comm.comm());
+  IndexMapNew tmp(_comm.comm(), local_size_new, ghosts, src_ranks);
+  std::cout << "Post create map: " << ghosts.size() << ", " << src_ranks.size()
+            << std::endl;
+  MPI_Barrier(_comm.comm());
+  return {std::move(tmp), std::move(new_to_old_ghost)};
+
+  // return {IndexMapNew(_comm.comm(), local_size_new, ghosts, src_ranks),
+  //         std::move(new_to_old_ghost)};
 }
-*/
 //-----------------------------------------------------------------------------

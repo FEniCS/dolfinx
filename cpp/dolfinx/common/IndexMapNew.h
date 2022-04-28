@@ -148,7 +148,6 @@ public:
   /// TMP
   const std::vector<int>& owners() const { return _owners; }
 
-  /*
   /// Create new index map from a subset of indices in this index map.
   /// The order of the owned indices is preserved, with new map
   /// effectively a 'compressed' map.
@@ -160,8 +159,7 @@ public:
   /// position in the new map to the ghost position in the original
   /// (this) map
   std::pair<IndexMapNew, std::vector<std::int32_t>>
-  create_submap(const xtl::span<const std::int32_t>& indices) const;
-  */
+  create_submap_new(const xtl::span<const std::int32_t>& indices) const;
 
 private:
   // Range of indices (global) owned by this process
