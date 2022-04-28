@@ -148,9 +148,12 @@ public:
   /// TMP
   const std::vector<int>& owners() const { return _owners; }
 
-  /// Create new index map from a subset of indices in this index map.
+  /// @brief Create new index map from a subset of indices in this index
+  /// map.
+  ///
   /// The order of the owned indices is preserved, with new map
   /// effectively a 'compressed' map.
+  ///
   /// @param[in] indices Local indices in the map that should appear in
   /// the new index map. All indices must be owned, i.e. indices must be
   /// less than `this->size_local()`.
