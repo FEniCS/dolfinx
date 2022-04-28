@@ -912,6 +912,9 @@ std::pair<std::vector<T>, int>
 pack_coefficients(const Expression<T>& u,
                   const xtl::span<const std::int32_t>& cells)
 {
+  // TODO Support coefficients defined on different meshes (see
+  // pack_coefficients for form)
+
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const Function<T>>>& coefficients
       = u.coefficients();
