@@ -72,7 +72,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   // Get geometry dofmap and dofs
   const Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  tcb::span<const double> x_g = geometry().x();
+  xtl::span<const double> x_g = geometry().x();
 
   auto geom_dofs
       = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
@@ -345,7 +345,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 
   // Get geometry data
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  xtl::span<const double> x_nodes = mesh.geometry().x();
+  tcb::span<const double> x_nodes = mesh.geometry().x();
 
   // Build vector of boundary vertices
   const std::vector<std::int32_t> vertices(boundary_vertices.begin(),
