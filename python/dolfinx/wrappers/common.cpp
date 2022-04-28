@@ -112,27 +112,26 @@ void common(py::module& m)
                  local,
                  xtl::span<std::int64_t>(global.mutable_data(), global.size()));
              return global;
-           })
-      .def("create_submap",
-           [](const dolfinx::common::IndexMap& self,
-              const py::array_t<std::int32_t, py::array::c_style>& entities)
-           {
-             auto [map, ghosts] = self.create_submap(entities);
-             return std::pair(std::move(map), as_pyarray(std::move(ghosts)));
            });
+  // .def("create_submap",
+  //      [](const dolfinx::common::IndexMap& self,
+  //         const py::array_t<std::int32_t, py::array::c_style>& entities)
+  //      {
+  //        auto [map, ghosts] = self.create_submap(entities);
+  //        return std::pair(std::move(map), as_pyarray(std::move(ghosts)));
+  //      });
 
   // dolfinx::common::IndexMap
   py::class_<dolfinx::common::IndexMapNew,
              std::shared_ptr<dolfinx::common::IndexMapNew>>(m, "IndexMapNew")
-      // .def(py::init(
-      //     [](const MPICommWrapper comm, std::int32_t local_size,
-      //        const std::vector<int>& dest_ranks,
-      //        const std::vector<std::int64_t>& ghosts,
-      //        const std::vector<int>& ghost_owners)
-      //     {
-      //       return std::make_shared<dolfinx::common::IndexMap>(
-      //           comm.get(), local_size, dest_ranks, ghosts, ghost_owners);
-      //     }))
+      .def(py::init(
+          [](const MPICommWrapper comm, std::int32_t local_size,
+             const std::vector<std::int64_t>& ghosts,
+             const std::vector<int>& ghost_owners)
+          {
+            return dolfinx::common::IndexMapNew(comm.get(), local_size, ghosts,
+                                                ghost_owners);
+          }))
       .def_property_readonly("size_local",
                              &dolfinx::common::IndexMapNew::size_local)
       .def_property_readonly("size_global",
@@ -170,6 +169,13 @@ void common(py::module& m)
                  local,
                  xtl::span<std::int64_t>(global.mutable_data(), global.size()));
              return global;
+           })
+      .def("create_submap",
+           [](const dolfinx::common::IndexMapNew& self,
+              const py::array_t<std::int32_t, py::array::c_style>& entities)
+           {
+             auto [map, ghosts] = self.create_submap_new(entities);
+             return std::pair(std::move(map), as_pyarray(std::move(ghosts)));
            });
 
   // .def(

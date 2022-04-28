@@ -8,7 +8,7 @@
 import functools
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.common import (IndexMap, ScatterMode, git_commit_hash,  # noqa
+from dolfinx.cpp.common import (IndexMap, IndexMapNew, ScatterMode, git_commit_hash,  # noqa
                                 has_adios2, has_debug, has_kahip, has_parmetis)
 
 __all__ = ["IndexMap", "Timer", "timed", "ScatterMode"]
