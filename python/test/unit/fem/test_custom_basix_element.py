@@ -94,8 +94,8 @@ def test_custom_element_triangle_degree1():
          [z, z, z], [z], []]
 
     e = basix.create_custom_element(
-        basix.CellType.triangle, 1, [], wcoeffs,
-        x, M, basix.MapType.identity, False, 1)
+        basix.CellType.triangle, [], wcoeffs,
+        x, M, basix.MapType.identity, False, 1, 1)
     ufl_element = BasixElement(e)
 
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
@@ -115,8 +115,8 @@ def test_custom_element_triangle_degree4():
          [id, id, id], [id], []]
 
     e = basix.create_custom_element(
-        basix.CellType.triangle, 4, [], wcoeffs,
-        x, M, basix.MapType.identity, False, 4)
+        basix.CellType.triangle, [], wcoeffs,
+        x, M, basix.MapType.identity, False, 4, 4)
     ufl_element = BasixElement(e)
 
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
@@ -135,8 +135,8 @@ def test_custom_element_quadrilateral_degree1():
          [z, z, z, z], [z], []]
 
     e = basix.create_custom_element(
-        basix.CellType.quadrilateral, 1, [], wcoeffs,
-        x, M, basix.MapType.identity, False, 1)
+        basix.CellType.quadrilateral, [], wcoeffs,
+        x, M, basix.MapType.identity, False, 1, 1)
     ufl_element = BasixElement(e)
 
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, CellType.quadrilateral)
