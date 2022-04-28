@@ -14,6 +14,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/math.h>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/partition.h>
 #include <stdexcept>
@@ -72,11 +73,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   // Get geometry dofmap and dofs
   const Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  xtl::span<const double> x_g = geometry().x();
-
-  auto geom_dofs
-      = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
-                  std::vector({geometry.x().size() / 3, std::size_t(3)}));
+  const xtl::span<const double> x_g = mesh.geometry().x();
 
   // Lambda function to compute norm
   auto l2_norm = [](auto p0, auto p1)
@@ -88,26 +85,20 @@ std::vector<double> mesh::h(const Mesh& mesh,
   };
 
   std::vector<double> h_cells(entities.size(), 0);
-  xt::xtensor<double, 2> coordinate_dofs({num_nodes, (std::size_t)3});
   for (std::size_t e = 0; e < entities.size(); ++e)
   {
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(entities[e]);
-    assert(dofs.size() == num_nodes);
-    for (std::size_t i = 0; i < num_nodes; ++i)
-    {
-      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
-                              std::next(coordinate_dofs.begin(), 3 * i));
-    }
+    assert(x_dofs.size() == num_nodes);
 
     // Get maximum edge length
     for (std::size_t i = 0; i < num_nodes; ++i)
     {
       for (std::size_t j = i + 1; j < num_nodes; ++j)
       {
-        auto p0 = xt::row(points, i);
-        auto p1 = xt::row(points, j);
-        h_cells[e] = std::max(h_cells[e], l2_norm(p0, p1));
+        h_cells[e] = std::max(h_cells[e],
+                              l2_norm(std::next(x_g.begin(), 3 * x_dofs[i]),
+                                      std::next(x_g.begin(), 3 * x_dofs[j])));
       }
     }
   }
