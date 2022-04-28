@@ -463,25 +463,13 @@ namespace impl
 {
 /// @private
 template <typename T>
-xtl::span<const std::uint32_t> get_cell_orientation_info(
-    const std::vector<std::shared_ptr<const Function<T>>>& coefficients)
+xtl::span<const std::uint32_t>
+get_cell_orientation_info(const Function<T>& coefficient)
 {
-  bool needs_dof_transformations = false;
-  for (auto coeff : coefficients)
-  {
-    std::shared_ptr<const FiniteElement> element
-        = coeff->function_space()->element();
-    if (element->needs_dof_transformations())
-    {
-      needs_dof_transformations = true;
-      break;
-    }
-  }
-
   xtl::span<const std::uint32_t> cell_info;
-  if (needs_dof_transformations)
+  if (coefficient.function_space()->element()->needs_dof_transformations())
   {
-    auto mesh = coefficients.front()->function_space()->mesh();
+    auto mesh = coefficient.function_space()->mesh();
     mesh->topology_mutable().create_entity_permutations();
     cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
   }
@@ -667,9 +655,6 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
 
   if (!coefficients.empty())
   {
-    xtl::span<const std::uint32_t> cell_info
-        = impl::get_cell_orientation_info(coefficients);
-
     switch (integral_type)
     {
     case IntegralType::cell:
@@ -678,6 +663,10 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        // Get cell info for coefficient (with respect to coefficient mesh)
+        xtl::span<const std::uint32_t> cell_info
+            = impl::get_cell_orientation_info(*coefficients[coeff]);
+
         // If the coefficient is defined over a different mesh to the
         // integration domain mesh, we must map entities from the
         // integration domain mesh to the coefficient mesh to pack them
@@ -710,6 +699,9 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        xtl::span<const std::uint32_t> cell_info
+            = impl::get_cell_orientation_info(*coefficients[coeff]);
+
         // Create lambda function fetching cell index from exterior facet
         // entity
         auto coeff_mesh = coefficients[coeff]->function_space()->mesh();
@@ -741,6 +733,9 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        xtl::span<const std::uint32_t> cell_info
+            = impl::get_cell_orientation_info(*coefficients[coeff]);
+
         auto coeff_mesh = coefficients[coeff]->function_space()->mesh();
         if (coeff_mesh != form.mesh())
         {
@@ -927,14 +922,15 @@ pack_coefficients(const Expression<T>& u,
   std::vector<T> c(cells.size() * offsets.back());
   if (!coefficients.empty())
   {
-    xtl::span<const std::uint32_t> cell_info
-        = impl::get_cell_orientation_info(coefficients);
-
     // Iterate over coefficients
     for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
+    {
+      xtl::span<const std::uint32_t> cell_info
+          = impl::get_cell_orientation_info(*coefficients[coeff]);
       impl::pack_coefficient_entity(
           xtl::span(c), cstride, *coefficients[coeff], cell_info, cells,
           [](std::int32_t entity) { return entity; }, offsets[coeff]);
+    }
   }
   return {std::move(c), cstride};
 }
