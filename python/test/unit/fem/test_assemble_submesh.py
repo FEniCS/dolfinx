@@ -121,17 +121,18 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
 
 
 def assemble_forms_1(comm, f, g, h, u, v, dx, ds, entity_maps={}):
-    a = fem.form(ufl.inner(f * g * h * u, v) * (dx + ds),
+    a = fem.form(ufl.inner(f[0] * f[1] * g * h * u, v) * (dx + ds),
                  entity_maps=entity_maps)
     A = fem.petsc.assemble_matrix(a)
     A.assemble()
 
-    L = fem.form(ufl.inner(f * g * h, v) * (dx + ds), entity_maps=entity_maps)
+    L = fem.form(ufl.inner(f[0] * f[1] * g * h, v) * (dx + ds),
+                 entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
 
-    M = fem.form(f * g * h * (dx + ds), entity_maps=entity_maps)
+    M = fem.form(f[0] * f[1] * g * h * (dx + ds), entity_maps=entity_maps)
     s = comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
 
     return A, b, s
@@ -171,8 +172,9 @@ def test_mixed_codim_0_assembly(d, n, k, space, ghost_mode):
     submesh_1, entity_map_1, vertex_map_1, geom_map_1 = create_submesh(
         mesh_1, edim, entities_1)
 
-    # Create function spaces on mesh_1, submesh_0, and submesh_1
-    V_m_1 = fem.FunctionSpace(mesh_1, (space, k))
+    # Create function spaces on mesh_1, submesh_0, and submesh_1. We use
+    # a Raviart-Thomas space on mesh_1 to test dof transformations
+    V_m_1 = fem.FunctionSpace(mesh_1, ("Raviart-Thomas", k))
     V_sm_0 = fem.FunctionSpace(submesh_0, (space, k))
     V_sm_1 = fem.FunctionSpace(submesh_1, (space, k))
 
@@ -187,7 +189,7 @@ def test_mixed_codim_0_assembly(d, n, k, space, ghost_mode):
     # Since all functions are well defined on the integration domain,
     # forms involving them make sense
     f = fem.Function(V_m_1)
-    f.interpolate(lambda x: x[0])
+    f.interpolate(lambda x: np.vstack([x[i] for i in range(d)]))
     g = fem.Function(V_sm_0)
     # TODO Interpolate g and h when issue #2126 has been resolved
     g.x.array[:] = 1.0
@@ -212,9 +214,10 @@ def test_mixed_codim_0_assembly(d, n, k, space, ghost_mode):
         submesh_0.comm, f, g, h, u_sm, v_sm, dx_sm, ds_sm, entity_maps)
 
     # Assemble the same form on a unit square and compare results
+    V_m_RT = fem.FunctionSpace(mesh_0, ("Raviart-Thomas", k))
     V_m = fem.FunctionSpace(mesh_0, (space, k))
-    f_m = fem.Function(V_m)
-    f_m.interpolate(lambda x: x[0])
+    f_m = fem.Function(V_m_RT)
+    f_m.interpolate(lambda x: np.vstack([x[i] for i in range(d)]))
 
     g_m = fem.Function(V_m)
     g_m.x.array[:] = 1.0
