@@ -214,6 +214,11 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::vector<std::int32_t> submesh_vertices
       = compute_incident_entities(mesh, entities, dim, 0);
 
+  // std::sort(submesh_vertices.begin(), submesh_vertices.end());
+  // submesh_vertices.erase(
+  //     std::unique(submesh_vertices.begin(), submesh_vertices.end()),
+  //     submesh_vertices.end());
+
   // Get the vertices in the submesh owned by this process
   auto mesh_vertex_index_map_old = mesh.topology().index_map(0);
   assert(mesh_vertex_index_map_old);
@@ -221,7 +226,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
       = common::create_new(*mesh_vertex_index_map_old);
   std::vector<int32_t> submesh_owned_vertices
       = dolfinx::common::compute_owned_indices(submesh_vertices,
-                                               *mesh_vertex_index_map_old);
+                                               mesh_vertex_index_map);
 
   // Create submesh vertex index map
   std::pair<common::IndexMapNew, std::vector<int32_t>>
@@ -268,8 +273,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   if (mesh.topology().dim() == dim)
   {
     // TODO Call dolfinx::common::get_owned_indices here? Do we want to
-    // support `entities` possibly haveing a ghost on one process that is not
-    // in `entities` on the owning process?
+    // support `entities` possibly haveing a ghost on one process that is
+    // not in `entities` on the owning process?
     std::pair<common::IndexMapNew, std::vector<int32_t>>
         submesh_entity_index_map_pair
         = mesh_entity_index_map.create_submap_new(submesh_owned_entities);
@@ -351,14 +356,17 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   auto mesh_geometry_dof_index_map = mesh.geometry().index_map();
   assert(mesh_geometry_dof_index_map);
 
-  // TMP
-  common::IndexMap mesh_geometry_dof_index_map_old
-      = common::create_old(*mesh_geometry_dof_index_map);
+  // // TMP
+  // common::IndexMap mesh_geometry_dof_index_map_old
+  //     = common::create_old(*mesh_geometry_dof_index_map);
 
   // Get the geometry dofs in the submesh owned by this process
+  // std::vector<int32_t> submesh_owned_x_dofs
+  //     = dolfinx::common::compute_owned_indices(submesh_x_dofs,
+  //                                              mesh_geometry_dof_index_map_old);
   std::vector<int32_t> submesh_owned_x_dofs
       = dolfinx::common::compute_owned_indices(submesh_x_dofs,
-                                               mesh_geometry_dof_index_map_old);
+                                               *mesh_geometry_dof_index_map);
 
   // Create submesh geometry index map
   std::vector<int32_t> submesh_to_mesh_x_dof_map(submesh_owned_x_dofs.begin(),

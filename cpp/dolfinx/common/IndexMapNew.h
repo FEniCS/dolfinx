@@ -25,16 +25,16 @@ IndexMap create_old(const IndexMapNew& map);
 /// TMP
 IndexMapNew create_new(const IndexMap& map);
 
-// /// @brief Given a vector of indices (local numbering, owned or ghost)
-// /// and an index map, this function returns the indices owned by this
-// /// process, including indices that might have been in the list of
-// /// indices on another processes.
-// /// @param[in] indices List of indices
-// /// @param[in] map The index map
-// /// @return Indices owned by the calling process
-// std::vector<int32_t>
-// compute_owned_indices(const xtl::span<const std::int32_t>& indices,
-//                       const IndexMapNew& map);
+/// @brief Given a vector of indices (local numbering, owned or ghost)
+/// and an index map, this function returns the indices owned by this
+/// process, including indices that might have been in the list of
+/// indices on another processes.
+/// @param[in] indices List of indices
+/// @param[in] map The index map
+/// @return Indices owned by the calling process
+std::vector<int32_t>
+compute_owned_indices(const xtl::span<const std::int32_t>& indices,
+                      const IndexMapNew& map);
 
 /// @brief Compute layout data and ghost indices for a stacked
 /// (concatenated) index map, i.e. 'splice' multiple maps into one.

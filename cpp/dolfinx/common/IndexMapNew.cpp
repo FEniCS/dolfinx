@@ -72,142 +72,103 @@ common::IndexMapNew common::create_new(const IndexMap& map)
   return IndexMapNew(map.comm(), map.size_local(), map.ghosts(), map.owners());
 }
 //-----------------------------------------------------------------------------
-/*
 std::vector<int32_t> dolfinx::common::compute_owned_indices(
     const xtl::span<const std::int32_t>& indices, const IndexMapNew& map)
 {
-  // Split indices span into those owned by this process and those that
-  // are ghosts. `ghost_indices` contains the position of the ghost in
-  // map.ghosts()
-  std::vector<std::int32_t> owned;
-  std::vector<std::int32_t> ghost_indices;
-
-  // Get number of owned and ghost indices in indicies list to reserve
-  // vectors
-  // const int num_owned
-  //     = std::count_if(indices.begin(), indices.end(),
-  //                     [size_local = map.size_local()](std::int32_t index)
-  //                     { return index < size_local; });
-  // const int num_ghost = indices.size() - num_owned;
-  // owned.reserve(num_owned);
-  // ghost_indices.reserve(num_ghost);
-  std::copy_if(indices.begin(), indices.end(), std::back_inserter(owned),
-               [size = map.size_local()](auto idx) { return idx < size; });
-
-  std::vector<int> src;
+  // Build list of (owner, index) pairs for each ghost in indices, and
+  // sort
+  std::vector<std::pair<int, std::int64_t>> send_idx;
   std::for_each(indices.begin(), indices.end(),
-                [&ghost_indices, size = map.size_local(),
-                 &owners = map.owners()](auto idx)
+                [&send_idx, &owners = map.owners(), &ghosts = map.ghosts(),
+                 size = map.size_local()](auto idx)
                 {
                   if (idx >= size)
                   {
-                    std::int32_t p = idx - size_local;
-                    ghost_indices.push_back(p);
-                    src.push_back[owners[p]];
+                    std::int32_t pos = idx - size;
+                    send_idx.push_back({owners[pos], ghosts[pos]});
                   }
                 });
+  std::sort(send_idx.begin(), send_idx.end());
 
-  // Create list of src ranks (remote owners of ghost indices)
-  std::sort(src.begin(), src.end());
-  src.erase(std::unique(src.begin(), src.end()), src.end());
+  // Build (i) list of src ranks, (ii) send buffer, (iii) send sizes and
+  // (iv) send displacements
+  std::vector<int> src;
+  std::vector<std::int64_t> send_buffer;
+  std::vector<int> send_sizes, send_disp(1, 0);
+  auto it = send_idx.begin();
+  while (it != send_idx.end())
+  {
+    src.push_back(it->first);
+    auto it1
+        = std::find_if(it, send_idx.end(),
+                       [r = src.back()](auto& idx) { return idx.first != r; });
 
-  // Destination ranks
+    // Pack send buffer
+    std::transform(it, it1, std::back_inserter(send_buffer),
+                   [](auto& idx) { return idx.second; });
+
+    // Send sizes and displacements
+    send_sizes.push_back(std::distance(it, it1));
+    send_disp.push_back(send_disp.back() + send_sizes.back());
+
+    // Advance iterator
+    it = it1;
+  }
+
+  // Determine destination ranks
   std::vector<int> dest
       = dolfinx::MPI::compute_graph_edges_nbx(map.comm(), src);
   std::sort(dest.begin(), dest.end());
 
-  // Owner -> ghost rank
-  MPI_Comm comm0;
-  MPI_Dist_graph_create_adjacent(map.comm(), src.size(), src.data(),
-                                 MPI_UNWEIGHTED, dest.size(), dest.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
-  // Ghost -> owner rank
-  MPI_Comm comm1;
+  // Create ghost -> owner comm
+  MPI_Comm comm;
   MPI_Dist_graph_create_adjacent(map.comm(), dest.size(), dest.data(),
                                  MPI_UNWEIGHTED, src.size(), src.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
 
-  // Create an AdjacencyList whose nodes are the processes in the
-  // neighborhood and the links for a given process are the ghosts
-  // (global numbering) in `indices` owned by that process.
-  MPI_Comm reverse_comm = map.comm(IndexMap::Direction::reverse);
-  std::vector<std::int32_t> dest_ranks
-      = dolfinx::MPI::neighbors(reverse_comm)[1];
+  // Exchange number of indices to send/receive from each rank
+  std::vector<int> recv_sizes(dest.size(), 0);
+  send_sizes.reserve(1);
+  recv_sizes.reserve(1);
+  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                        MPI_INT, comm);
 
-  // std::vector<int> ghost_owner_rank;
-  // {
-  //   std::vector<int> neighbors = dolfinx::MPI::neighbors(
-  //       map.comm(common::IndexMap::Direction::forward))[0];
-  //   ghost_owner_rank = map.ghost_owners();
-  //   std::transform(ghost_owner_rank.cbegin(), ghost_owner_rank.cend(),
-  //                  ghost_owner_rank.begin(),
-  //                  [&neighbors](auto r) { return neighbors[r]; });
-  // }
+  // Prepare receive displacement array
+  std::vector<int> recv_disp(dest.size() + 1, 0);
+  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                   std::next(recv_disp.begin()));
 
-  const std::vector<std::int64_t>& ghosts = map.ghosts();
-  std::vector<std::int64_t> ghosts_to_send;
-  std::vector<std::int32_t> ghosts_per_proc(dest_ranks.size(), 0);
+  // Send ghost indices to owner, and receive owned indices
+  std::vector<std::int64_t> recv_buffer(recv_disp.back());
+  MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
+                         send_disp.data(), MPI_INT64_T, recv_buffer.data(),
+                         recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                         comm);
+  MPI_Comm_free(&comm);
 
-  // Loop through all destination ranks in the neighborhood
-  for (std::size_t dest_rank_index = 0; dest_rank_index < dest_ranks.size();
-       ++dest_rank_index)
-  {
-    // Loop through all ghost indices on this rank
-    for (std::int32_t ghost_index : ghost_indices)
-    {
-      // Check if the ghost is owned by the destination rank. If so, add
-      // that ghost so it is sent to the correct process.
-      if (ghost_owner_rank[ghost_index] == dest_ranks[dest_rank_index])
-      {
-        ghosts_to_send.push_back(ghosts[ghost_index]);
-        ghosts_per_proc[dest_rank_index]++;
-      }
-    }
-  }
-  // Create a list of partial sums of the number of ghosts per process
-  // and create the AdjacencyList
-  std::vector<int> send_disp(dest_ranks.size() + 1, 0);
-  std::partial_sum(ghosts_per_proc.begin(), ghosts_per_proc.end(),
-                   std::next(send_disp.begin(), 1));
-  const graph::AdjacencyList<std::int64_t> data_out(std::move(ghosts_to_send),
-                                                    std::move(send_disp));
+  // Remove duplicates from received indices
+  std::sort(recv_buffer.begin(), recv_buffer.end());
+  recv_buffer.erase(std::unique(recv_buffer.begin(), recv_buffer.end()),
+                    recv_buffer.end());
 
-  // Communicate ghosts on this process in `indices` back to their owners
-  const graph::AdjacencyList<std::int64_t> data_in
-      = dolfinx::MPI::neighbor_all_to_all(reverse_comm, data_out);
+  // Copy owned and ghost indices into return array
+  std::vector<std::int32_t> owned;
+  std::copy_if(indices.begin(), indices.end(), std::back_inserter(owned),
+               [size = map.size_local()](auto idx) { return idx < size; });
+  std::transform(recv_buffer.begin(), recv_buffer.end(),
+                 std::back_inserter(owned),
+                 [range = map.local_range()](auto idx)
+                 {
+                   assert(idx >= range[0]); // problem
+                   assert(idx < range[1]);
+                   return idx - range[0];
+                 });
 
-  // Get the local index from the global indices received from other
-  // processes and add to `owned`
-  const std::vector<std::int64_t>& global_indices = map.global_indices();
-  std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local;
-  global_to_local.reserve(global_indices.size());
-  for (auto idx : global_indices)
-  {
-    global_to_local.push_back(
-        {idx, static_cast<std::int32_t>(global_to_local.size())});
-  }
-  std::sort(global_to_local.begin(), global_to_local.end());
-  std::transform(
-      data_in.array().cbegin(), data_in.array().cend(),
-      std::back_inserter(owned),
-      [&global_to_local](std::int64_t global_index)
-      {
-        auto it = std::lower_bound(
-            global_to_local.begin(), global_to_local.end(),
-            typename decltype(global_to_local)::value_type(global_index, 0),
-            [](auto& a, auto& b) { return a.first < b.first; });
-        assert(it != global_to_local.end() and it->first == global_index);
-        return it->second;
-      });
-
-  // Sort `owned` and remove non-unique entries (we could have received
-  // the same ghost from multiple other processes)
-  dolfinx::radix_sort(xtl::span(owned));
+  std::sort(owned.begin(), owned.end());
   owned.erase(std::unique(owned.begin(), owned.end()), owned.end());
 
   return owned;
 }
-*/
 //-----------------------------------------------------------------------------
 std::tuple<std::int64_t, std::vector<std::int32_t>,
            std::vector<std::vector<std::int64_t>>,
@@ -665,11 +626,13 @@ IndexMapNew::create_submap_new(
 
   MPI_Barrier(_comm.comm());
 
-  // std::cout << "Size check: " << local_size_new << ", " << ghosts.size() << ", "
+  // std::cout << "Size check: " << local_size_new << ", " << ghosts.size() <<
+  // ", "
   //           << src_ranks.size() << std::endl;
   // MPI_Barrier(_comm.comm());
   // IndexMapNew tmp(_comm.comm(), local_size_new, ghosts, src_ranks);
-  // std::cout << "Post create map: " << ghosts.size() << ", " << src_ranks.size()
+  // std::cout << "Post create map: " << ghosts.size() << ", " <<
+  // src_ranks.size()
   //           << std::endl;
   // MPI_Barrier(_comm.comm());
   // return {std::move(tmp), std::move(new_to_old_ghost)};
