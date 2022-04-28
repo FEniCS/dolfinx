@@ -474,7 +474,7 @@ def boundary_2(x):
 
 # TODO Test that submesh of full mesh is a copy of the mesh
 @pytest.mark.parametrize("d", [2, 3])
-@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("n", [3, 6])
 @pytest.mark.parametrize("codim", [0, 1])
 @pytest.mark.parametrize("marker", [lambda x: x[0] >= 0.5,
                                     lambda x: x[0] >= -1])
@@ -496,7 +496,7 @@ def test_submesh(d, n, codim, marker, ghost_mode):
 
 
 @pytest.mark.parametrize("d", [2, 3])
-@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("n", [3, 6])
 @pytest.mark.parametrize("boundary", [boundary_0,
                                       boundary_1,
                                       boundary_2])
@@ -621,7 +621,7 @@ def test_boundary_facets(n, d, ghost_mode):
     assert(num_boundary_facets == expected_num_boundary_facets)
 
 
-@pytest.mark.parametrize("n", [2, 5])
+@pytest.mark.parametrize("n", [3, 5])
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
