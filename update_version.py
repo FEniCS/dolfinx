@@ -8,7 +8,7 @@ python3 update_version.py -v 1.0.0
 python3 update_version.py --version 1.0.0
 ```
 
-To update the C++ version numbers to "1.0.0" and the Python version numbers to "1.0.0dev3", run
+To update the C++ version numbers to "1.0.0.3" and the Python version numbers to "1.0.0dev3", run
 either of the following:
 ```bash
 python3 update_version.py -v 1.0.0.dev3
