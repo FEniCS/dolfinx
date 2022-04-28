@@ -61,43 +61,53 @@ std::vector<double> mesh::h(const Mesh& mesh,
                             int dim)
 {
   if (dim != mesh.topology().dim())
-    throw std::runtime_error("Cell size when dim ne tdim  requires updating.");
+    throw std::runtime_error("Cell size when dim != tdim  requires updating.");
 
   if (mesh.topology().cell_type() == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cell");
 
-  // Get number of cell vertices
-  const CellType type = cell_entity_type(mesh.topology().cell_type(), dim, 0);
-  const int num_vertices = num_cell_vertices(type);
+  // Get number of cell nodes
+  const std::size_t num_nodes = mesh.geometry().cmap().dim();
 
   // Get geometry dofmap and dofs
   const Geometry& geometry = mesh.geometry();
-  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  tcb::span<const double> x_g = geometry().x();
+
   auto geom_dofs
       = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
                   std::vector({geometry.x().size() / 3, std::size_t(3)}));
+
+  // Lambda function to compute norm
+  auto l2_norm = [](auto p0, auto p1)
+  {
+    double norm = 0;
+    for (std::size_t k = 0; k < 3; ++k)
+      norm += std::pow(p0[k] - p1[k], 2);
+    return std::sqrt(norm);
+  };
+
   std::vector<double> h_cells(entities.size(), 0);
-  assert(num_vertices <= 8);
-  xt::xtensor_fixed<double, xt::xshape<8, 3>> points;
+  xt::xtensor<double, 2> coordinate_dofs({num_nodes, (std::size_t)3});
   for (std::size_t e = 0; e < entities.size(); ++e)
   {
-    // Get the coordinates  of the vertices
-    auto dofs = x_dofs.links(entities[e]);
-
-    // The below should work, but misbehaves with the Intel icpx compiler
-    // xt::view(points, xt::range(0, num_vertices), xt::all())
-    //     = xt::view(geom_dofs, xt::keep(dofs), xt::all());
-    auto points_view = xt::view(points, xt::range(0, num_vertices), xt::all());
-    points_view.assign(xt::view(geom_dofs, xt::keep(dofs), xt::all()));
+    // Get cell coordinates/geometry
+    auto x_dofs = x_dofmap.links(entities[e]);
+    assert(dofs.size() == num_nodes);
+    for (std::size_t i = 0; i < num_nodes; ++i)
+    {
+      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
+                              std::next(coordinate_dofs.begin(), 3 * i));
+    }
 
     // Get maximum edge length
-    for (int i = 0; i < num_vertices; ++i)
+    for (std::size_t i = 0; i < num_nodes; ++i)
     {
-      for (int j = i + 1; j < num_vertices; ++j)
+      for (std::size_t j = i + 1; j < num_nodes; ++j)
       {
         auto p0 = xt::row(points, i);
         auto p1 = xt::row(points, j);
-        h_cells[e] = std::max(h_cells[e], xt::norm_l2(p0 - p1)());
+        h_cells[e] = std::max(h_cells[e], l2_norm(p0, p1));
       }
     }
   }
