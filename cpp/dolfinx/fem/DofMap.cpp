@@ -239,8 +239,8 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn) const
 {
   // Create new dofmap
-  auto create_submap = [](MPI_Comm comm, auto index_map_bs, auto& layout,
-                          auto& topology, auto& reorder_fn, auto& dmap)
+  auto create_subdofmap = [](MPI_Comm comm, auto index_map_bs, auto& layout,
+                             auto& topology, auto& reorder_fn, auto& dmap)
   {
     if (index_map_bs == 1 and layout.block_size() > 1)
     {
@@ -263,8 +263,8 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
     }
   };
 
-  DofMap dofmap_new = create_submap(comm, index_map_bs(), _element_dof_layout,
-                                    topology, reorder_fn, *this);
+  DofMap dofmap_new = create_subdofmap(
+      comm, index_map_bs(), _element_dof_layout, topology, reorder_fn, *this);
 
   // Build map from collapsed dof index to original dof index
   auto index_map_new = dofmap_new.index_map;
