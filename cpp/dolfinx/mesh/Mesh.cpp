@@ -215,18 +215,16 @@ mesh::create_submesh(const Mesh& mesh, int dim,
       = compute_incident_entities(mesh, entities, dim, 0);
 
   // Get the vertices in the submesh owned by this process
-  auto mesh_vertex_index_map_old = mesh.topology().index_map(0);
-  assert(mesh_vertex_index_map_old);
-  common::IndexMapNew mesh_vertex_index_map
-      = common::create_new(*mesh_vertex_index_map_old);
+  auto mesh_vertex_index_map = mesh.topology().index_map(0);
+  assert(mesh_vertex_index_map);
   std::vector<int32_t> submesh_owned_vertices
       = dolfinx::common::compute_owned_indices(submesh_vertices,
-                                               mesh_vertex_index_map);
+                                               *mesh_vertex_index_map);
 
   // Create submesh vertex index map
   std::pair<common::IndexMapNew, std::vector<int32_t>>
       submesh_vertex_index_map_pair
-      = mesh_vertex_index_map.create_submap_new(submesh_owned_vertices);
+      = mesh_vertex_index_map->create_submap_new(submesh_owned_vertices);
   auto submesh_vertex_index_map = std::make_shared<common::IndexMapNew>(
       std::move(submesh_vertex_index_map_pair.first));
 
@@ -240,21 +238,19 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::transform(submesh_vertex_index_map_pair.second.begin(),
                  submesh_vertex_index_map_pair.second.end(),
                  std::back_inserter(submesh_to_mesh_vertex_map),
-                 [size_local = mesh_vertex_index_map.size_local()](
+                 [size_local = mesh_vertex_index_map->size_local()](
                      std::int32_t vertex_index)
                  { return size_local + vertex_index; });
 
   // Get the entities in the submesh that are owned by this process
-  auto mesh_entity_index_map_old = mesh.topology().index_map(dim);
-  assert(mesh_entity_index_map_old);
-  common::IndexMapNew mesh_entity_index_map
-      = common::create_new(*mesh_entity_index_map_old);
+  auto mesh_entity_index_map = mesh.topology().index_map(dim);
+  assert(mesh_entity_index_map);
 
   std::vector<std::int32_t> submesh_owned_entities;
   std::copy_if(entities.begin(), entities.end(),
                std::back_inserter(submesh_owned_entities),
-               [&mesh_entity_index_map](std::int32_t e)
-               { return e < mesh_entity_index_map.size_local(); });
+               [size = mesh_entity_index_map->size_local()](std::int32_t e)
+               { return e < size; });
 
   // Create a map from the (local) entities in the submesh to the
   // (local) entities in the mesh, and create the submesh entity index
@@ -274,7 +270,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     // not in `entities` on the owning process?
     std::pair<common::IndexMapNew, std::vector<int32_t>>
         submesh_entity_index_map_pair
-        = mesh_entity_index_map.create_submap_new(submesh_owned_entities);
+        = mesh_entity_index_map->create_submap_new(submesh_owned_entities);
     submesh_entity_index_map = std::make_shared<common::IndexMapNew>(
         std::move(submesh_entity_index_map_pair.first));
 
@@ -285,7 +281,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     std::transform(submesh_entity_index_map_pair.second.begin(),
                    submesh_entity_index_map_pair.second.end(),
                    std::back_inserter(submesh_to_mesh_entity_map),
-                   [size_local = mesh_entity_index_map.size_local()](
+                   [size_local = mesh_entity_index_map->size_local()](
                        std::int32_t entity_index)
                    { return size_local + entity_index; });
   }
@@ -328,14 +324,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Create submesh topology
   Topology submesh_topology(mesh.comm(), entity_type);
-  auto submesh_vertex_index_map_old = std::make_shared<common::IndexMap>(
-      common::create_old(*submesh_vertex_index_map));
-  submesh_topology.set_index_map(0, submesh_vertex_index_map_old);
-
-  auto submesh_entity_index_map_old = std::make_shared<common::IndexMap>(
-      common::create_old(*submesh_entity_index_map));
-  submesh_topology.set_index_map(dim, submesh_entity_index_map_old);
-
+  submesh_topology.set_index_map(0, submesh_vertex_index_map);
+  submesh_topology.set_index_map(dim, submesh_entity_index_map);
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
   submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
 

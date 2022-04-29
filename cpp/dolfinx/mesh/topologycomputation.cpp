@@ -11,6 +11,7 @@
 #include <boost/unordered_map.hpp>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -64,9 +65,9 @@ int get_ownership(const std::set<int>& processes,
 /// @param[in] entity_index Initial numbering for each row in
 /// entity_list
 /// @returns Tuple of (local_indices, index map, shared entities)
-std::tuple<std::vector<int>, common::IndexMap>
-get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
-                   const common::IndexMap& vertex_indexmap,
+std::tuple<std::vector<int>, common::IndexMapNew>
+get_local_indexing(MPI_Comm comm, const common::IndexMapNew& cell_indexmap,
+                   const common::IndexMapNew& vertex_indexmap,
                    const xtl::span<const std::int32_t>& entity_list,
                    std::int32_t num_vertices_per_e,
                    std::int32_t num_entities_per_cell,
@@ -123,8 +124,10 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
 
   //---------
   // Create an expanded neighbor_comm from shared_vertices
+  // const std::map<std::int32_t, std::set<std::int32_t>> shared_vertices
+  //     = vertex_indexmap.compute_shared_indices();
   const std::map<std::int32_t, std::set<std::int32_t>> shared_vertices
-      = vertex_indexmap.compute_shared_indices();
+      = common::create_old(vertex_indexmap).compute_shared_indices();
 
   std::set<std::int32_t> neighbor_set;
   for (auto& q : shared_vertices)
@@ -349,13 +352,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
   }
 
   MPI_Comm_free(&neighbor_comm);
-  std::vector<int> src_ranks = ghost_owners;
-  std::sort(src_ranks.begin(), src_ranks.end());
-  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
-                  src_ranks.end());
-  auto dest_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, src_ranks);
-  common::IndexMap index_map(comm, num_local, dest_ranks, ghost_indices,
-                             ghost_owners);
+  common::IndexMapNew index_map(comm, num_local, ghost_indices, ghost_owners);
 
   // Map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
@@ -378,11 +375,12 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
 /// connectivity, index map for the entity distribution across
 /// processes, shared entities)
 std::tuple<graph::AdjacencyList<std::int32_t>,
-           graph::AdjacencyList<std::int32_t>, common::IndexMap>
+           graph::AdjacencyList<std::int32_t>, common::IndexMapNew>
 compute_entities_by_key_matching(
     MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& cells,
-    const common::IndexMap& vertex_index_map,
-    const common::IndexMap& cell_index_map, mesh::CellType cell_type, int dim)
+    const common::IndexMapNew& vertex_index_map,
+    const common::IndexMapNew& cell_index_map, mesh::CellType cell_type,
+    int dim)
 {
   if (dim == 0)
   {
@@ -630,7 +628,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-           std::shared_ptr<common::IndexMap>>
+           std::shared_ptr<common::IndexMapNew>>
 mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
 {
   LOG(INFO) << "Computing mesh entities of dimension " << dim;
@@ -667,7 +665,7 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
 
   return {std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d0)),
           std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d1)),
-          std::make_shared<common::IndexMap>(std::move(d2))};
+          std::make_shared<common::IndexMapNew>(std::move(d2))};
 }
 //-----------------------------------------------------------------------------
 std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>

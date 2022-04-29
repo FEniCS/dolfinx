@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/math.h>
 #include <dolfinx/fem/ElementDofLayout.h>
@@ -494,11 +495,11 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
 
   // Only need to consider shared facets when there are no ghost cells
   std::set<std::int32_t> fwd_shared_facets;
+  common::IndexMap fmap_old = common::create_old(*topology.index_map(tdim - 1));
   if (topology.index_map(tdim)->num_ghosts() == 0)
   {
-    fwd_shared_facets.insert(
-        topology.index_map(tdim - 1)->scatter_fwd_indices().array().begin(),
-        topology.index_map(tdim - 1)->scatter_fwd_indices().array().end());
+    fwd_shared_facets.insert(fmap_old.scatter_fwd_indices().array().begin(),
+                             fmap_old.scatter_fwd_indices().array().end());
   }
 
   // Find all owned facets (not ghost) with only one attached cell, which are

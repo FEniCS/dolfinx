@@ -199,7 +199,7 @@ void add_mesh(const xt::xtensor<double, 2>& x,
               const xtl::span<const std::int64_t> x_id,
               const xtl::span<const std::uint8_t> x_ghost,
               const xt::xtensor<std::int64_t, 2>& cells,
-              const common::IndexMap& cellmap, mesh::CellType celltype,
+              const common::IndexMapNew& cellmap, mesh::CellType celltype,
               int tdim, pugi::xml_node& piece_node)
 {
   // -- Add geometry (points)

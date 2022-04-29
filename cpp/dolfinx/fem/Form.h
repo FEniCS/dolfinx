@@ -9,6 +9,7 @@
 #include "FunctionSpace.h"
 #include <algorithm>
 #include <array>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <functional>
@@ -420,10 +421,11 @@ private:
     int tdim = topology.dim();
     assert(topology.index_map(tdim));
     std::set<std::int32_t> fwd_shared_facets;
+    common::IndexMap fmap = common::create_old(*topology.index_map(tdim - 1));
     if (topology.index_map(tdim)->num_ghosts() == 0)
     {
       const std::vector<std::int32_t>& fwd_indices
-          = topology.index_map(tdim - 1)->scatter_fwd_indices().array();
+          = fmap.scatter_fwd_indices().array();
       fwd_shared_facets.insert(fwd_indices.begin(), fwd_indices.end());
     }
 
@@ -576,8 +578,8 @@ private:
         auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
         assert(c_to_f);
 
-        std::vector<std::int8_t> boundary_facet_markers =
-          mesh::compute_boundary_facets(mesh.topology());
+        std::vector<std::int8_t> boundary_facet_markers
+            = mesh::compute_boundary_facets(mesh.topology());
         for (std::size_t f = 0; f < boundary_facet_markers.size(); ++f)
         {
           if (boundary_facet_markers[f])

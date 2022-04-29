@@ -15,7 +15,7 @@
 
 namespace dolfinx::common
 {
-class IndexMap;
+class IndexMapNew;
 }
 
 namespace dolfinx::graph
@@ -82,7 +82,7 @@ public:
   /// Set the IndexMap for dimension dim
   /// @warning This is experimental and likely to change
   void set_index_map(int dim,
-                     const std::shared_ptr<const common::IndexMap>& map);
+                     const std::shared_ptr<const common::IndexMapNew>& map);
 
   /// @brief Get the IndexMap that described the parallel distribution
   /// of the mesh entities.
@@ -90,7 +90,7 @@ public:
   /// @param[in] dim Topological dimension
   /// @return Index map for the entities of dimension `dim`. Returns
   /// `nullptr` if index map has not been set.
-  std::shared_ptr<const common::IndexMap> index_map(int dim) const;
+  std::shared_ptr<const common::IndexMapNew> index_map(int dim) const;
 
   /// @brief Return connectivity from entities of dimension d0 to
   /// entities of dimension d1.
@@ -159,7 +159,7 @@ private:
   CellType _cell_type;
 
   // Parallel layout of entities for each dimension
-  std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
+  std::array<std::shared_ptr<const common::IndexMapNew>, 4> _index_map;
 
   // AdjacencyList for pairs [d0][d1] == d0 -> d1 connectivity
   std::vector<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>>

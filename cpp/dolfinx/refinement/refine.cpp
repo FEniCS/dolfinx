@@ -7,6 +7,7 @@
 #include "refine.h"
 #include "plaza.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Mesh.h>
 

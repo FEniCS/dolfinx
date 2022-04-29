@@ -424,6 +424,17 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
   const int D = topology.dim();
 
+  // HACK
+  std::vector<std::unique_ptr<common::IndexMap>> tmp_maps(D + 1);
+  for (int d = 0; d <= D; ++d)
+  {
+    if (auto map = topology.index_map(d); map)
+    {
+      tmp_maps[d]
+          = std::make_unique<common::IndexMap>(common::create_old(*map));
+    }
+  }
+
   // Build list flag for owned mesh entities that are shared, i.e. are a
   // ghost on a neighbor
   std::vector<std::vector<std::int8_t>> shared_entity(D + 1);
@@ -434,7 +445,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     {
       shared_entity[d] = std::vector<std::int8_t>(map->size_local(), false);
       const std::vector<std::int32_t>& forward_indices
-          = map->scatter_fwd_indices().array();
+          = tmp_maps[d]->scatter_fwd_indices().array();
       for (auto entity : forward_indices)
         shared_entity[d][entity] = true;
     }
@@ -470,7 +481,9 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     auto map = topology.index_map(d);
     if (map)
     {
-      comm[d] = map->comm(common::IndexMap::Direction::forward);
+      comm[d] = tmp_maps[d]->comm(common::IndexMap::Direction::forward);
+
+      // comm[d] = map->comm(common::IndexMap::Direction::forward);
 
       // Get number of neighbors
       int indegree(-1), outdegree(-2), weighted(-1);

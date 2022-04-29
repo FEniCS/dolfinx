@@ -14,7 +14,7 @@
 
 namespace dolfinx::common
 {
-class IndexMap;
+class IndexMapNew;
 }
 
 namespace dolfinx::graph
@@ -38,7 +38,7 @@ class Topology;
 /// {nullptr, nullptr, nullptr} is returned.
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-           std::shared_ptr<common::IndexMap>>
+           std::shared_ptr<common::IndexMapNew>>
 compute_entities(MPI_Comm comm, const Topology& topology, int dim);
 
 /// Compute connectivity (d0 -> d1) for given pair of topological
