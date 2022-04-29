@@ -132,6 +132,19 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
   auto map_e = mesh.topology().index_map(1);
   assert(map_e);
 
+  std::vector<int> ranks;
+  {
+    std::vector<int> src = map_e->owners();
+    std::sort(src.begin(), src.end());
+    src.erase(std::unique(src.begin(), src.end()), src.end());
+    auto dest = dolfinx::MPI::compute_graph_edges_nbx(mesh.comm(), src);
+    std::sort(dest.begin(), dest.end());
+    std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
+                   std::back_inserter(ranks));
+  }
+
+  // NOTE: Is the below basically building a symmetric communicator?
+
   // Create shared edges, for both owned and ghost indices returning
   // edge -> set(global process numbers)
   // std::map<std::int32_t, std::set<int>> shared_edges_by_proc
@@ -139,24 +152,17 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
   std::map<std::int32_t, std::set<int>> shared_edges_by_proc
       = common::create_old(*map_e).compute_shared_indices();
 
-  // Compute a slightly wider neighborhood for direct communication of
-  // shared edges
-  std::set<int> all_neighbor_set;
-  for (const auto& q : shared_edges_by_proc)
-    all_neighbor_set.insert(q.second.begin(), q.second.end());
-  std::vector<int> neighbors(all_neighbor_set.begin(), all_neighbor_set.end());
+  MPI_Comm comm;
+  MPI_Dist_graph_create_adjacent(mesh.comm(), ranks.size(), ranks.data(),
+                                 MPI_UNWEIGHTED, ranks.size(), ranks.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
 
-  MPI_Comm neighbor_comm;
-  MPI_Dist_graph_create_adjacent(
-      mesh.comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
-      neighbors.size(), neighbors.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false,
-      &neighbor_comm);
-
-  // Create a "shared_edge to neighbor map"
+  // Create a (global rank) -> (neighborhood rank) on neighbor_comm
   std::map<int, int> proc_to_neighbor;
-  for (std::size_t i = 0; i < neighbors.size(); ++i)
-    proc_to_neighbor.insert({neighbors[i], i});
+  for (std::size_t i = 0; i < ranks.size(); ++i)
+    proc_to_neighbor.insert({ranks[i], i});
 
+  // Create a (shared_edge index) -> (sharing neighbor ranks) map
   std::map<std::int32_t, std::vector<int>> shared_edges;
   for (auto& q : shared_edges_by_proc)
   {
@@ -169,7 +175,7 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
     shared_edges.insert({q.first, neighbor_set});
   }
 
-  return {neighbor_comm, std::move(shared_edges)};
+  return {comm, std::move(shared_edges)};
 }
 //-----------------------------------------------------------------------------
 void refinement::update_logical_edgefunction(
@@ -374,10 +380,12 @@ refinement::partition(const mesh::Mesh& old_mesh,
 std::vector<std::int64_t>
 refinement::adjust_indices(const common::IndexMapNew& index_map, std::int32_t n)
 {
+  // NOTE: Is this effectively concatenating index maps?
+
   // Add in an extra "n" indices at the end of the current local_range
   // of "index_map", and adjust existing indices to match.
 
-  // Get offset for n for this process
+  // Get offset for 'n' for this process
   MPI_Comm comm = index_map.comm();
   const std::int64_t num_local = n;
   std::int64_t global_offset = 0;

@@ -508,6 +508,7 @@ compute_refinement(
 
   const int num_cells = map_c->size_local();
 
+  // Iterate over all cells, and refine if cell has a marked edge
   std::vector<std::int64_t> cell_topology;
   for (int c = 0; c < num_cells; ++c)
   {
