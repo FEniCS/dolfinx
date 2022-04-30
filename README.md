@@ -60,9 +60,7 @@ spack install
 See the Spack [documentation](https://spack.readthedocs.io/) for
 comprehensive instructions.
 
-
 ## Docker images
-
 
 A Docker image with DOLFINx built nightly:
 ```
