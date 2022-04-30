@@ -263,9 +263,8 @@ def test_curl_curl_eigenvalue(family, order):
 def test_biharmonic(family):
     """Manufactured biharmonic problem.
 
-    Solved using rotated Regge mixed finite element method. This is equivalent
-    to the Hellan-Herrmann-Johnson (HHJ) finite element method in
-    two-dimensions."""
+    Solved using rotated Regge or the Hellan-Herrmann-Johnson (HHJ) mixed
+    finite element method in two-dimensions."""
     mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]),
                                              np.array([1.0, 1.0])], [32, 32], CellType.triangle)
 
@@ -290,9 +289,11 @@ def test_biharmonic(family):
         return tau - ufl.Identity(2) * ufl.tr(tau)
 
     if family == "Regge":
+        # Apply S if we are working with Regge which is H(curl curl)
         sigma_S = S(sigma)
         tau_S = S(tau)
     elif family == "HHJ":
+        # Don't apply S if we are working with HHJ which is already H(div div)
         sigma_S = sigma
         tau_S = tau
     else:
