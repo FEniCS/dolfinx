@@ -61,19 +61,14 @@ std::vector<double> mesh::h(const Mesh& mesh,
                             const xtl::span<const std::int32_t>& entities,
                             int dim)
 {
-  if (dim != mesh.topology().dim())
-    throw std::runtime_error("Cell size when dim != tdim  requires updating.");
 
-  if (mesh.topology().cell_type() == CellType::prism and dim == 2)
-    throw std::runtime_error("More work needed for prism cell");
-
-  // Get number of cell nodes
-  const std::size_t num_nodes = mesh.geometry().cmap().dim();
+  const mesh::Topology& topology = mesh.topology();
+  const int tdim = topology.dim();
 
   // Get geometry dofmap and dofs
-  const Geometry& geometry = mesh.geometry();
+  const mesh::Geometry& geometry = mesh.geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const xtl::span<const double> x_g = mesh.geometry().x();
+  const xtl::span<const double> x_g = geometry.x();
 
   // Lambda function to compute norm
   auto l2_norm = [](auto p0, auto p1)
@@ -85,24 +80,71 @@ std::vector<double> mesh::h(const Mesh& mesh,
   };
 
   std::vector<double> h_cells(entities.size(), 0);
-  for (std::size_t e = 0; e < entities.size(); ++e)
-  {
-    // Get cell coordinates/geometry
-    auto x_dofs = x_dofmap.links(entities[e]);
-    assert(x_dofs.size() == num_nodes);
 
-    // Get maximum edge length
-    for (std::size_t i = 0; i < num_nodes; ++i)
+  if (dim == 0)
+    return h_cells;
+  else if (dim == tdim)
+  {
+    // Get number of cell nodes
+    const std::size_t num_nodes = geometry.cmap().dim();
+
+    for (std::size_t e = 0; e < entities.size(); ++e)
     {
-      for (std::size_t j = i + 1; j < num_nodes; ++j)
+      // Get cell coordinates/geometry
+      auto x_dofs = x_dofmap.links(entities[e]);
+      assert(x_dofs.size() == num_nodes);
+
+      // Get maximum distance between any node in the geometry
+      for (std::size_t i = 0; i < num_nodes; ++i)
       {
-        h_cells[e] = std::max(h_cells[e],
-                              l2_norm(std::next(x_g.begin(), 3 * x_dofs[i]),
-                                      std::next(x_g.begin(), 3 * x_dofs[j])));
+        for (std::size_t j = i + 1; j < num_nodes; ++j)
+        {
+          h_cells[e] = std::max(h_cells[e],
+                                l2_norm(std::next(x_g.begin(), 3 * x_dofs[i]),
+                                        std::next(x_g.begin(), 3 * x_dofs[j])));
+        }
       }
     }
   }
+  else
+  {
+    fem::ElementDofLayout dof_layout = geometry.cmap().create_dof_layout();
+    mesh.topology_mutable().create_connectivity(dim, tdim);
+    mesh.topology_mutable().create_connectivity(tdim, dim);
+    auto e_to_c = mesh.topology().connectivity(dim, tdim);
+    assert(e_to_c);
+    auto c_to_e = mesh.topology().connectivity(tdim, dim);
+    assert(c_to_e);
 
+    for (std::size_t e = 0; e < entities.size(); ++e)
+    {
+      // Compute local entity index
+      auto cells = e_to_c->links(entities[e]);
+      assert(!cells.empty());
+      auto cell_entities = c_to_e->links(cells[0]);
+      auto entity_it
+          = std::find(cell_entities.begin(), cell_entities.end(), entities[e]);
+      assert(entity_it != cell_entities.end());
+      int local_e = std::distance(cell_entities.begin(), entity_it);
+      const std::vector<std::int32_t>& closure_dofs
+          = dof_layout.entity_closure_dofs(dim, local_e);
+
+      auto x_dofs = x_dofmap.links(cells[0]);
+      const std::size_t num_nodes = closure_dofs.size();
+
+      // Get maximum distance between any node in the geometry
+      for (std::size_t i = 0; i < num_nodes; ++i)
+      {
+        for (std::size_t j = i + 1; j < num_nodes; ++j)
+        {
+          h_cells[e] = std::max(
+              h_cells[e],
+              l2_norm(std::next(x_g.begin(), 3 * x_dofs[closure_dofs[i]]),
+                      std::next(x_g.begin(), 3 * x_dofs[closure_dofs[j]])));
+        }
+      }
+    }
+  }
   return h_cells;
 }
 //-----------------------------------------------------------------------------
