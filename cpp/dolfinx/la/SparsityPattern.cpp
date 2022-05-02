@@ -396,8 +396,7 @@ void SparsityPattern::assemble()
 
   // Column count increased due to received rows from other processes
   LOG(INFO) << "Column ghost size increased from "
-            << _index_maps[1]->ghosts().size() << " to " << _col_ghosts.size()
-            << "\n";
+            << _index_maps[1]->ghosts().size() << " to " << _col_ghosts.size();
 }
 //-----------------------------------------------------------------------------
 std::int64_t SparsityPattern::num_nonzeros() const

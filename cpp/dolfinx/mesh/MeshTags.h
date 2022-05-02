@@ -138,7 +138,7 @@ MeshTags<T> create_meshtags(const std::shared_ptr<const Mesh>& mesh, int dim,
                             const xtl::span<const T>& values)
 {
   LOG(INFO)
-      << "Building MeshTgas object from tagged entities (defined by vertices).";
+      << "Building MeshTags object from tagged entities (defined by vertices).";
 
   assert(mesh);
 
