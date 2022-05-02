@@ -29,17 +29,24 @@ namespace dolfinx::fem
 template <typename T>
 class Function;
 
+/// This class offers functionalities to interpolate functions defined on
+/// different meshes.
+/// The class caches as much data as possible to allow for fast repeated
+/// interpolation and the user can manually force recomputation by
+/// invalidating the instance.
 class M2MInterpolator
 {
 public:
-  M2MInterpolator() {}
-
+  /// Interpolate a function on the whole domain
   template <typename T>
   void interpolate(Function<T>& u, const Function<T>& v);
+  /// Interpolate a function on a list of cells
   template <typename T>
   void interpolate(Function<T>& u, const Function<T>& v,
                           const xtl::span<const std::int32_t>& cells);
 
+  /// Force recomputation of all intermediate data structures when
+  /// interpolation is called next.
   void invalidate() { valid = false; }
 
 private:
