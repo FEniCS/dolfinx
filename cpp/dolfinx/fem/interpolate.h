@@ -29,6 +29,29 @@ namespace dolfinx::fem
 template <typename T>
 class Function;
 
+class M2MInterpolator
+{
+public:
+  M2MInterpolator() {}
+
+  template <typename T>
+  void interpolate(Function<T>& u, const Function<T>& v);
+  template <typename T>
+  void interpolate(Function<T>& u, const Function<T>& v,
+                          const xtl::span<const std::int32_t>& cells);
+
+  void invalidate() { valid = false; }
+
+private:
+  std::vector<std::vector<double>> pointsToSend;
+  std::unique_ptr<graph::AdjacencyList<std::int32_t>> collisions = nullptr;
+  std::vector<std::int32_t> nPointsToSend;
+  std::vector<std::int32_t> sendingOffsets;
+  std::vector<std::int32_t> evaluationCells;
+  xt::xtensor<double, 2> pointsToReceive;
+  bool valid = false;
+};
+
 namespace impl
 {
 /// Apply interpolation operator Pi to data to evaluate the dof
@@ -673,271 +696,8 @@ void interpolate(Function<T>& u, const Function<T>& v,
     // Get mesh and check that functions share the same mesh
     if (mesh != v.function_space()->mesh())
     {
-      int communicatorComparison;
-      MPI_Comm_compare(mesh->comm(), v.function_space()->mesh()->comm(),
-                       &communicatorComparison);
-
-      if (communicatorComparison != MPI_IDENT
-          and communicatorComparison != MPI_CONGRUENT)
-      {
-        throw std::runtime_error("Interpolation on different meshes is only "
-                                 "supported with the same communicator.");
-      }
-
-      const int nProcs = dolfinx::MPI::size(mesh->comm());
-      const auto mpi_rank = dolfinx::MPI::rank(mesh->comm());
-
-      const int tdim = u.function_space()->mesh()->topology().dim();
-      const auto cell_map
-          = u.function_space()->mesh()->topology().index_map(tdim);
-      const int num_cells = cell_map->size_local() + cell_map->num_ghosts();
-      std::vector<std::int32_t> cells(num_cells, 0);
-      std::iota(cells.begin(), cells.end(), 0);
-
-      // Collect all the points at which values are needed to define the
-      // interpolating function
-      const xt::xtensor<double, 2> x = fem::interpolation_coords(
-          *u.function_space()->element(), *u.function_space()->mesh(), cells);
-
-      // Create a global bounding-box tree to quickly look for processes that
-      // might be able to evaluate the interpolating function at a given point
-      dolfinx::geometry::BoundingBoxTree bb(*v.function_space()->mesh(), tdim,
-                                            0.0001);
-      auto globalBB = bb.create_global_tree(v.function_space()->mesh()->comm());
-
-      // Get the list of processes that might be able to evaluate each point
-      const auto collisions
-          = dolfinx::geometry::compute_collisions(globalBB, xt::transpose(x));
-
-      // Compute which points need to be sent to which process
-      std::vector<std::vector<double>> pointsToSend(nProcs);
-      // Reserve enough space to avoid the need for reallocating
-      std::for_each(pointsToSend.begin(), pointsToSend.end(),
-                    [&x](auto& el) { el.reserve(3 * x.shape(1)); });
-      // The coordinates of the points that need to be sent to process p go into
-      // pointsToSend[p]
-      for (decltype(x.shape(1)) i = 0; i < x.shape(1); ++i)
-      {
-        for (const auto& p : collisions.links(i))
-        {
-          const auto point = xt::col(x, i);
-          pointsToSend[p].insert(pointsToSend[p].end(), point.cbegin(),
-                                 point.cend());
-        }
-      }
-
-      std::vector<std::int32_t> nPointsToSend(nProcs);
-      std::transform(pointsToSend.cbegin(), pointsToSend.cend(),
-                     nPointsToSend.begin(),
-                     [](const auto& el) { return el.size(); });
-
-      // Every process needs to know how many points it will receive
-      std::size_t nPointsToReceive = 0;
-      MPI_Win window;
-      // We open a window on the variable nPointsToReceive
-      MPI_Win_create(&nPointsToReceive, sizeof(std::int32_t),
-                     sizeof(std::int32_t), MPI_INFO_NULL, mesh->comm(),
-                     &window);
-      MPI_Win_fence(0, window);
-
-      // On every other process
-      for (int i = mpi_rank; i < nProcs + mpi_rank; ++i)
-      {
-        const auto dest = i % nProcs;
-        const std::int32_t nPTS = pointsToSend[dest].size();
-
-        // To which we have something to send
-        if (nPTS > 0)
-        {
-          // We add (accumulate) how much we send to that process
-          MPI_Accumulate(&nPTS, 1, MPI_INT32_T, dest, 0, 1, MPI_INT32_T,
-                         MPI_SUM, window);
-        }
-      }
-
-      // Sync, then close window
-      MPI_Win_fence(0, window);
-      MPI_Win_free(&window);
-
-      // Compute the offset sendingOffsets[i] at which data will be sent to
-      // process i.
-      // When a process p sends to a process q, p needs to know where to put
-      // the data (offset).
-      // The offset of process p is the sum of the nPointsToSend[i] for i < p
-      std::vector<std::int32_t> sendingOffsets(nProcs, 0);
-
-      MPI_Win_create(sendingOffsets.data(), sizeof(std::int32_t) * nProcs,
-                     sizeof(std::int32_t), MPI_INFO_NULL, mesh->comm(),
-                     &window);
-      MPI_Win_fence(0, window);
-
-      // For every other process j
-      for (decltype(nPointsToSend.size()) j = 0; j < nPointsToSend.size(); ++j)
-      {
-        // If this process is sending anything to j
-        if (nPointsToSend[j] != 0)
-        {
-          // Inform each process i with rank greater than the own rank
-          for (int i = mpi_rank + 1; i < nProcs; ++i)
-          {
-            // By sending (accumulating) to i the number of points sent to j
-            MPI_Accumulate(nPointsToSend.data() + j, 1, MPI_INT32_T, i, j, 1,
-                           MPI_INT32_T, MPI_SUM, window);
-          }
-        }
-      }
-
-      // Sync, then close window
-      MPI_Win_fence(0, window);
-      MPI_Win_free(&window);
-
-      // Allocate memory to receive coordinate points from other processes
-      xt::xtensor<double, 2> pointsToReceive(
-          xt::shape({nPointsToReceive / 3,
-                     static_cast<decltype(nPointsToReceive)>(3)}),
-          0);
-      // Open a window for other processes to write into, then sync
-      MPI_Win_create(pointsToReceive.data(), sizeof(double) * nPointsToReceive,
-                     sizeof(double), MPI_INFO_NULL, mesh->comm(), &window);
-      MPI_Win_fence(0, window);
-
-      // Send data to each process. It is intended that sending to itself is the
-      // same as just copying
-      for (int i = mpi_rank; i < nProcs + mpi_rank; ++i)
-      {
-        const auto dest = i % nProcs;
-        if (pointsToSend[dest].size() > 0)
-        {
-          MPI_Put(pointsToSend[dest].data(), pointsToSend[dest].size(),
-                  MPI_DOUBLE, dest, sendingOffsets[dest],
-                  pointsToSend[dest].size(), MPI_DOUBLE, window);
-        }
-      }
-
-      // Sync, then close window
-      MPI_Win_fence(0, window);
-      MPI_Win_free(&window);
-
-      //      std::ofstream out("put" + std::to_string(mpi_rank) + ".out");
-      //      std::copy(pointsToReceive.cbegin(), pointsToReceive.cend(),
-      //                std::ostream_iterator<double>(out, "\n"));
-
-      // Each process will now check at which points it can evaluate
-      // the interpolating function, and note that down in evaluationCells
-      std::vector<std::int32_t> evaluationCells(pointsToReceive.shape(0), -1);
-
-      const auto connectivity = v.function_space()->mesh()->geometry().dofmap();
-      const auto xv = v.function_space()->mesh()->geometry().x();
-
-      // Collect adjacency list of all cells that collide with a given point
-      const auto collidingCells = dolfinx::geometry::compute_colliding_cells(
-          *v.function_space()->mesh(),
-          // For each point at which the source function needs to be evaluated
-          dolfinx::geometry::compute_collisions(bb, pointsToReceive),
-          pointsToReceive);
-
-      for (decltype(pointsToReceive.shape(0)) i = 0;
-           i < pointsToReceive.shape(0); ++i)
-      {
-        // If any cell was found at all -- there should be at most one -- note
-        // it down
-        if (not collidingCells.links(i).empty())
-        {
-          evaluationCells[i] = collidingCells.links(i)[0];
-        }
-      }
-
-      const auto value_size = u.function_space()->element()->value_size();
-
-      // Evaluate the interpolating function where possible
-      xt::xtensor<T, 2> values(
-          xt::shape(
-              {pointsToReceive.shape(0),
-               static_cast<decltype(pointsToReceive.shape(0))>(value_size)}),
-          static_cast<T>(0));
-      v.eval(pointsToReceive, evaluationCells, values);
-
-      // Allocate memory to store function values fetched from other processes
-      xt::xtensor<T, 2> valuesToRetrieve(
-          xt::shape(
-              {std::accumulate(nPointsToSend.cbegin(), nPointsToSend.cend(),
-                               static_cast<std::size_t>(0))
-                   / 3,
-               static_cast<std::size_t>(value_size)}),
-          static_cast<T>(0));
-
-      // Compute the offset retrievingOffsets[i] at which data fetched from
-      // process i will be stored
-      std::vector<std::size_t> retrievingOffsets(nProcs, 0);
-      std::partial_sum(nPointsToSend.cbegin(), std::prev(nPointsToSend.cend()),
-                       std::next(retrievingOffsets.begin()));
-      std::for_each(retrievingOffsets.begin(), retrievingOffsets.end(),
-                    [&value_size](auto& el)
-                    {
-                      el /= 3;
-                      el *= value_size;
-                    });
-
-      // Open a window for other processes to read data from, then sync
-      int Tsize;
-      MPI_Type_size(dolfinx::MPI::mpi_type<T>(), &Tsize);
-      MPI_Win_create(values.data(), Tsize * values.size(), Tsize, MPI_INFO_NULL,
-                     mesh->comm(), &window);
-      MPI_Win_fence(0, window);
-
-      // Get data from each process. It is intended that fetching from itself is
-      // the same as just copying
-      for (int i = mpi_rank; i < nProcs + mpi_rank; ++i)
-      {
-        const auto dest = i % nProcs;
-        if (pointsToSend[dest].size() > 0)
-        {
-          MPI_Get(valuesToRetrieve.data() + retrievingOffsets[dest],
-                  pointsToSend[dest].size() / 3 * value_size,
-                  dolfinx::MPI::mpi_type<T>(), dest,
-                  sendingOffsets[dest] / 3 * value_size,
-                  pointsToSend[dest].size() / 3 * value_size,
-                  dolfinx::MPI::mpi_type<T>(), window);
-        }
-      }
-
-      // Sync, then close the window
-      MPI_Win_fence(0, window);
-      MPI_Win_free(&window);
-
-      xt::xarray<T> myVals(
-          {x.shape(1), static_cast<decltype(x.shape(1))>(value_size)},
-          static_cast<T>(0));
-
-      // Auxiliary counters to keep track of which values correspond to which
-      // point
-      std::vector<std::size_t> scanningProgress(nProcs, 0);
-
-      // For every point for which we need a value
-      for (decltype(x.shape(1)) i = 0; i < x.shape(1); ++i)
-      {
-        // For every candidate that might have provided that value
-        for (const auto& p : collisions.links(i))
-        {
-          // For every component of the value space
-          for (int j = 0; j < value_size; ++j)
-          {
-            // If the value is zero, get a value
-            if (myVals(i, j) == static_cast<T>(0))
-            {
-              myVals(i, j) = valuesToRetrieve(
-                  retrievingOffsets[p] / value_size + scanningProgress[p], j);
-            }
-          }
-          // Note down which values we already used
-          ++scanningProgress[p];
-        }
-      }
-
-      // Finally, interpolate using the computed values
-      xt::xarray<T> myVals_t = xt::transpose(myVals);
-      fem::interpolate(u, myVals_t, cells);
-
+      M2MInterpolator interpolator;
+      interpolator.interpolate(u, v, cells);
       return;
     }
 
@@ -1002,6 +762,292 @@ void interpolate(Function<T>& u, const Function<T>& v,
       impl::interpolate_nonmatching_maps(u, v, cells);
     }
   }
+}
+
+template <typename T>
+void M2MInterpolator::interpolate(Function<T>& u, const Function<T>& v,
+                                  const xtl::span<const std::int32_t>& cells)
+{
+  assert(u.function_space());
+  assert(v.function_space());
+  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
+  assert(mesh);
+  int communicatorComparison;
+  MPI_Comm_compare(mesh->comm(), v.function_space()->mesh()->comm(),
+                   &communicatorComparison);
+
+  if (communicatorComparison != MPI_IDENT
+      and communicatorComparison != MPI_CONGRUENT)
+  {
+    throw std::runtime_error("Interpolation on different meshes is only "
+                             "supported with the same communicator.");
+  }
+
+  const int nProcs = dolfinx::MPI::size(mesh->comm());
+  const auto mpi_rank = dolfinx::MPI::rank(mesh->comm());
+
+  // Collect all the points at which values are needed to define the
+  // interpolating function
+  const xt::xtensor<double, 2> x = fem::interpolation_coords(
+      *u.function_space()->element(), *u.function_space()->mesh(), cells);
+
+  if (not valid)
+  {
+      const int tdim = u.function_space()->mesh()->topology().dim();
+
+      // Create a global bounding-box tree to quickly look for processes that
+      // might be able to evaluate the interpolating function at a given point
+      dolfinx::geometry::BoundingBoxTree bb(*v.function_space()->mesh(), tdim,
+                                            0.0001);
+      auto globalBB = bb.create_global_tree(v.function_space()->mesh()->comm());
+
+      // Get the list of processes that might be able to evaluate each point
+      collisions = std::make_unique<graph::AdjacencyList<std::int32_t>>(
+          dolfinx::geometry::compute_collisions(globalBB, xt::transpose(x)));
+
+      // Compute which points need to be sent to which process
+      pointsToSend.resize(nProcs);
+      // Reserve enough space to avoid the need for reallocating
+      std::for_each(pointsToSend.begin(), pointsToSend.end(),
+                    [&x](auto& el) { el.reserve(3 * x.shape(1)); });
+      // The coordinates of the points that need to be sent to process p go into
+      // pointsToSend[p]
+      for (decltype(x.shape(1)) i = 0; i < x.shape(1); ++i)
+      {
+        for (const auto& p : collisions->links(i))
+        {
+          const auto point = xt::col(x, i);
+          pointsToSend[p].insert(pointsToSend[p].end(), point.cbegin(),
+                                 point.cend());
+        }
+      }
+
+      nPointsToSend.resize(nProcs);
+      std::transform(pointsToSend.cbegin(), pointsToSend.cend(),
+                     nPointsToSend.begin(),
+                     [](const auto& el) { return el.size(); });
+
+      // Every process needs to know how many points it will receive
+      std::size_t nPointsToReceive = 0;
+      MPI_Win window;
+      // We open a window on the variable nPointsToReceive
+      MPI_Win_create(&nPointsToReceive, sizeof(std::int32_t),
+                     sizeof(std::int32_t), MPI_INFO_NULL, mesh->comm(),
+                     &window);
+      MPI_Win_fence(0, window);
+
+      // On every other process
+      for (int i = mpi_rank; i < nProcs + mpi_rank; ++i)
+      {
+        const auto dest = i % nProcs;
+        const std::int32_t nPTS = pointsToSend[dest].size();
+
+        // To which we have something to send
+        if (nPTS > 0)
+        {
+          // We add (accumulate) how much we send to that process
+          MPI_Accumulate(&nPTS, 1, MPI_INT32_T, dest, 0, 1, MPI_INT32_T,
+                         MPI_SUM, window);
+        }
+      }
+
+      // Sync, then close window
+      MPI_Win_fence(0, window);
+      MPI_Win_free(&window);
+
+      // Compute the offset sendingOffsets[i] at which data will be sent to
+      // process i.
+      // When a process p sends to a process q, p needs to know where to put
+      // the data (offset).
+      // The offset of process p is the sum of the nPointsToSend[i] for i < p
+      sendingOffsets.resize(nProcs, 0);
+
+      MPI_Win_create(sendingOffsets.data(), sizeof(std::int32_t) * nProcs,
+                     sizeof(std::int32_t), MPI_INFO_NULL, mesh->comm(),
+                     &window);
+      MPI_Win_fence(0, window);
+
+      // For every other process j
+      for (decltype(nPointsToSend.size()) j = 0; j < nPointsToSend.size(); ++j)
+      {
+        // If this process is sending anything to j
+        if (nPointsToSend[j] != 0)
+        {
+          // Inform each process i with rank greater than the own rank
+          for (int i = mpi_rank + 1; i < nProcs; ++i)
+          {
+            // By sending (accumulating) to i the number of points sent to j
+            MPI_Accumulate(nPointsToSend.data() + j, 1, MPI_INT32_T, i, j, 1,
+                           MPI_INT32_T, MPI_SUM, window);
+          }
+        }
+      }
+
+      // Sync, then close window
+      MPI_Win_fence(0, window);
+      MPI_Win_free(&window);
+
+      // Allocate memory to receive coordinate points from other processes
+      pointsToReceive.resize(
+          xt::shape({nPointsToReceive / 3,
+                     static_cast<decltype(nPointsToReceive)>(3)}));
+      // Open a window for other processes to write into, then sync
+      MPI_Win_create(pointsToReceive.data(), sizeof(double) * nPointsToReceive,
+                     sizeof(double), MPI_INFO_NULL, mesh->comm(), &window);
+      MPI_Win_fence(0, window);
+
+      // Send data to each process. It is intended that sending to itself is the
+      // same as just copying
+      for (int i = mpi_rank; i < nProcs + mpi_rank; ++i)
+      {
+        const auto dest = i % nProcs;
+        if (pointsToSend[dest].size() > 0)
+        {
+          MPI_Put(pointsToSend[dest].data(), pointsToSend[dest].size(),
+                  MPI_DOUBLE, dest, sendingOffsets[dest],
+                  pointsToSend[dest].size(), MPI_DOUBLE, window);
+        }
+      }
+
+      // Sync, then close window
+      MPI_Win_fence(0, window);
+      MPI_Win_free(&window);
+
+      // Each process will now check at which points it can evaluate
+      // the interpolating function, and note that down in evaluationCells
+      evaluationCells.resize(pointsToReceive.shape(0), -1);
+
+      const auto connectivity = v.function_space()->mesh()->geometry().dofmap();
+      const auto xv = v.function_space()->mesh()->geometry().x();
+
+      // Collect adjacency list of all cells that collide with a given point
+      const auto collidingCells = dolfinx::geometry::compute_colliding_cells(
+          *v.function_space()->mesh(),
+          // For each point at which the source function needs to be evaluated
+          dolfinx::geometry::compute_collisions(bb, pointsToReceive),
+          pointsToReceive);
+
+      for (decltype(pointsToReceive.shape(0)) i = 0;
+           i < pointsToReceive.shape(0); ++i)
+      {
+        // If any cell was found at all -- there should be at most one -- note
+        // it down
+        if (not collidingCells.links(i).empty())
+        {
+          evaluationCells[i] = collidingCells.links(i)[0];
+        }
+      }
+      valid = true;
+  }
+
+  const auto value_size = u.function_space()->element()->value_size();
+
+  // Evaluate the interpolating function where possible
+  xt::xtensor<T, 2> values(
+      xt::shape(
+          {pointsToReceive.shape(0),
+           static_cast<decltype(pointsToReceive.shape(0))>(value_size)}),
+      static_cast<T>(0));
+  v.eval(pointsToReceive, evaluationCells, values);
+
+  // Allocate memory to store function values fetched from other processes
+  xt::xtensor<T, 2> valuesToRetrieve(
+      xt::shape(
+          {std::accumulate(nPointsToSend.cbegin(), nPointsToSend.cend(),
+                           static_cast<std::size_t>(0))
+               / 3,
+           static_cast<std::size_t>(value_size)}),
+      static_cast<T>(0));
+
+  // Compute the offset retrievingOffsets[i] at which data fetched from
+  // process i will be stored
+  std::vector<std::size_t> retrievingOffsets(nProcs, 0);
+  std::partial_sum(nPointsToSend.cbegin(), std::prev(nPointsToSend.cend()),
+                   std::next(retrievingOffsets.begin()));
+  std::for_each(retrievingOffsets.begin(), retrievingOffsets.end(),
+                [&value_size](auto& el)
+                {
+                  el /= 3;
+                  el *= value_size;
+                });
+
+  // Open a window for other processes to read data from, then sync
+  int Tsize;
+  MPI_Type_size(dolfinx::MPI::mpi_type<T>(), &Tsize);
+  MPI_Win window;
+  MPI_Win_create(values.data(), Tsize * values.size(), Tsize, MPI_INFO_NULL,
+                 mesh->comm(), &window);
+  MPI_Win_fence(0, window);
+
+  // Get data from each process. It is intended that fetching from itself is
+  // the same as just copying
+  for (int i = mpi_rank; i < nProcs + mpi_rank; ++i)
+  {
+    const auto dest = i % nProcs;
+    if (pointsToSend[dest].size() > 0)
+    {
+      MPI_Get(valuesToRetrieve.data() + retrievingOffsets[dest],
+              pointsToSend[dest].size() / 3 * value_size,
+              dolfinx::MPI::mpi_type<T>(), dest,
+              sendingOffsets[dest] / 3 * value_size,
+              pointsToSend[dest].size() / 3 * value_size,
+              dolfinx::MPI::mpi_type<T>(), window);
+    }
+  }
+
+  // Sync, then close the window
+  MPI_Win_fence(0, window);
+  MPI_Win_free(&window);
+
+  xt::xarray<T> myVals(
+      {x.shape(1), static_cast<decltype(x.shape(1))>(value_size)},
+      static_cast<T>(0));
+
+  // Auxiliary counters to keep track of which values correspond to which
+  // point
+  std::vector<std::size_t> scanningProgress(nProcs, 0);
+
+  // For every point for which we need a value
+  for (decltype(x.shape(1)) i = 0; i < x.shape(1); ++i)
+  {
+    // For every candidate that might have provided that value
+    for (const auto& p : collisions->links(i))
+    {
+      // For every component of the value space
+      for (int j = 0; j < value_size; ++j)
+      {
+        // If the value is zero, get a value
+        if (myVals(i, j) == static_cast<T>(0))
+        {
+          myVals(i, j) = valuesToRetrieve(
+              retrievingOffsets[p] / value_size + scanningProgress[p], j);
+        }
+      }
+      // Note down which values we already used
+      ++scanningProgress[p];
+    }
+  }
+
+  // Finally, interpolate using the computed values
+  xt::xarray<T> myVals_t = xt::transpose(myVals);
+  fem::interpolate(u, myVals_t, cells);
+
+  return;
+}
+
+template <typename T>
+void M2MInterpolator::interpolate(Function<T>& u, const Function<T>& v)
+{
+  assert(u.function_space());
+  assert(u.function_space()->mesh());
+  int tdim = u.function_space()->mesh()->topology().dim();
+  auto cell_map = u.function_space()->mesh()->topology().index_map(tdim);
+  assert(cell_map);
+  std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
+  std::vector<std::int32_t> cells(num_cells, 0);
+  std::iota(cells.begin(), cells.end(), 0);
+
+  interpolate(u, v, cells);
 }
 
 } // namespace dolfinx::fem
