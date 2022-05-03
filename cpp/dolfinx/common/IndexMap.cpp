@@ -317,64 +317,6 @@ const std::vector<std::int64_t>& IndexMap::ghosts() const noexcept
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
-void IndexMap::local_to_global(const xtl::span<const std::int32_t>& local,
-                               const xtl::span<std::int64_t>& global) const
-{
-  assert(local.size() <= global.size());
-  const std::int32_t local_size = _local_range[1] - _local_range[0];
-  std::transform(
-      local.cbegin(), local.cend(), global.begin(),
-      [local_size, local_range = _local_range[0], &ghosts = _ghosts](auto local)
-      {
-        if (local < local_size)
-          return local_range + local;
-        else
-        {
-          assert((local - local_size) < (int)ghosts.size());
-          return ghosts[local - local_size];
-        }
-      });
-}
-//-----------------------------------------------------------------------------
-void IndexMap::global_to_local(const xtl::span<const std::int64_t>& global,
-                               const xtl::span<std::int32_t>& local) const
-{
-  const std::int32_t local_size = _local_range[1] - _local_range[0];
-
-  std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts(
-      _ghosts.size());
-  for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    global_local_ghosts[i] = {_ghosts[i], i + local_size};
-  std::map<std::int64_t, std::int32_t> global_to_local(
-      global_local_ghosts.begin(), global_local_ghosts.end());
-
-  std::transform(global.cbegin(), global.cend(), local.begin(),
-                 [range = _local_range,
-                  &global_to_local](std::int64_t index) -> std::int32_t
-                 {
-                   if (index >= range[0] and index < range[1])
-                     return index - range[0];
-                   else
-                   {
-                     auto it = global_to_local.find(index);
-                     return it != global_to_local.end() ? it->second : -1;
-                   }
-                 });
-}
-//-----------------------------------------------------------------------------
-std::vector<std::int64_t> IndexMap::global_indices() const
-{
-  const std::int32_t local_size = _local_range[1] - _local_range[0];
-  const std::int32_t num_ghosts = _ghosts.size();
-  const std::int64_t global_offset = _local_range[0];
-  std::vector<std::int64_t> global(local_size + num_ghosts);
-  std::iota(global.begin(), std::next(global.begin(), local_size),
-            global_offset);
-  std::copy(_ghosts.cbegin(), _ghosts.cend(),
-            std::next(global.begin(), local_size));
-  return global;
-}
-//-----------------------------------------------------------------------------
 const graph::AdjacencyList<std::int32_t>& IndexMap::scatter_fwd_indices() const
 {
   if (!_shared_indices)

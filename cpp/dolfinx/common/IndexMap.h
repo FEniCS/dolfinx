@@ -72,39 +72,6 @@ public:
            const xtl::span<const std::int64_t>& ghosts,
            const xtl::span<const int>& src_ranks);
 
-private:
-  template <typename U, typename V, typename W, typename X>
-  IndexMap(std::array<std::int64_t, 2> local_range, std::size_t size_global,
-           MPI_Comm comm, U&& comm_owner_to_ghost, U&& comm_ghost_to_owner,
-           V&& displs_recv_fwd, V&& ghost_pos_recv_fwd, W&& ghosts,
-           X&& shared_indices)
-      : _local_range(local_range), _size_global(size_global), _comm(comm),
-        _comm_owner_to_ghost(std::forward<U>(comm_owner_to_ghost)),
-        _comm_ghost_to_owner(std::forward<U>(comm_ghost_to_owner)),
-        _displs_recv_fwd(std::forward<V>(displs_recv_fwd)),
-        _ghost_pos_recv_fwd(std::forward<V>(ghost_pos_recv_fwd)),
-        _ghosts(std::forward<W>(ghosts)),
-        _shared_indices(std::forward<X>(shared_indices))
-  {
-    _sizes_recv_fwd.resize(_displs_recv_fwd.size() - 1, 0);
-    std::adjacent_difference(_displs_recv_fwd.cbegin() + 1,
-                             _displs_recv_fwd.cend(), _sizes_recv_fwd.begin());
-
-    const std::vector<int32_t>& displs_send = _shared_indices->offsets();
-    _sizes_send_fwd.resize(_shared_indices->num_nodes(), 0);
-    std::adjacent_difference(displs_send.cbegin() + 1, displs_send.cend(),
-                             _sizes_send_fwd.begin());
-
-    {
-      std::vector<int> neighbors = dolfinx::MPI::neighbors(
-          this->comm(common::IndexMap::Direction::forward))[0];
-      _owners = this->ghost_owners();
-      std::transform(_owners.begin(), _owners.end(), _owners.begin(),
-                     [&neighbors](auto r) { return neighbors[r]; });
-    }
-  }
-
-public:
   // Copy constructor
   IndexMap(const IndexMap& map) = delete;
 
@@ -145,24 +112,6 @@ public:
   /// @param[in] dir Edge direction of communicator (forward, reverse)
   /// @return A neighborhood communicator for the specified edge direction
   MPI_Comm comm(Direction dir) const;
-
-  /// Compute global indices for array of local indices
-  /// @param[in] local Local indices
-  /// @param[out] global The global indices
-  void local_to_global(const xtl::span<const std::int32_t>& local,
-                       const xtl::span<std::int64_t>& global) const;
-
-  /// Compute local indices for array of global indices
-  /// @param[in] global Global indices
-  /// @param[out] local The local of the corresponding global index in 'global'.
-  /// Returns -1 if the local index does not exist on this process.
-  void global_to_local(const xtl::span<const std::int64_t>& global,
-                       const xtl::span<std::int32_t>& local) const;
-
-  /// Global indices
-  /// @return The global index for all local indices (0, 1, 2, ...) on
-  /// this process, including ghosts
-  std::vector<std::int64_t> global_indices() const;
 
   /// Local (owned) indices shared with neighbor processes, i.e. are
   /// ghosts on other processes, grouped by sharing (neighbor) process

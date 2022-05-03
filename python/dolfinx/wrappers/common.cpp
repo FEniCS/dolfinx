@@ -99,20 +99,7 @@ void common(py::module& m)
             return py::array_t<std::int64_t>(ghosts.size(), ghosts.data(),
                                              py::cast(self));
           },
-          "Return list of ghost indices")
-      .def("global_indices", &dolfinx::common::IndexMap::global_indices)
-      .def("local_to_global",
-           [](const dolfinx::common::IndexMap& self,
-              const py::array_t<std::int32_t, py::array::c_style>& local)
-           {
-             if (local.ndim() != 1)
-               throw std::runtime_error("Array of local indices must be 1D.");
-             py::array_t<std::int64_t> global(local.size());
-             self.local_to_global(
-                 local,
-                 xtl::span<std::int64_t>(global.mutable_data(), global.size()));
-             return global;
-           });
+          "Return list of ghost indices");
 
   // dolfinx::common::IndexMap
   py::class_<dolfinx::common::IndexMapNew,

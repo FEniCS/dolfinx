@@ -126,6 +126,7 @@ std::vector<int32_t> dolfinx::common::compute_owned_indices(
                                  MPI_UNWEIGHTED, src.size(), src.data(),
                                  MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
 
+  // FIXME: Should it be  recv_sizes(src.size(), 0)?
   // Exchange number of indices to send/receive from each rank
   std::vector<int> recv_sizes(dest.size(), 0);
   send_sizes.reserve(1);
@@ -253,7 +254,7 @@ common::stack_index_maps(
 
       // Count number of ghosts per dest
       std::transform(ghost_by_rank.begin(), ghost_by_rank.end(),
-                     std::back_insert_iterator(send_sizes),
+                     std::back_inserter(send_sizes),
                      [](auto& g) { return g.size(); });
 
       // Send buffer and ghost position to send buffer position
@@ -525,7 +526,7 @@ IndexMapNew::create_submap_new(
 
     // Count number of ghosts per dest
     std::transform(send_data.begin(), send_data.end(),
-                   std::back_insert_iterator(send_sizes),
+                   std::back_inserter(send_sizes),
                    [](auto& d) { return d.size(); });
 
     // Build send buffer and ghost position to send buffer position
@@ -639,5 +640,257 @@ IndexMapNew::create_submap_new(
 
   return {IndexMapNew(_comm.comm(), local_size_new, ghosts, src_ranks),
           std::move(new_to_old_ghost)};
+}
+//-----------------------------------------------------------------------------
+graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
+{
+  // Build lists of src and dest ranks
+  std::vector<int> src = _owners;
+  std::sort(src.begin(), src.end());
+  src.erase(std::unique(src.begin(), src.end()), src.end());
+  auto dest = dolfinx::MPI::compute_graph_edges_nbx(_comm.comm(), src);
+  std::sort(dest.begin(), dest.end());
+
+  // Build list of (owner rank, index) pairs for each ghost index, and sort
+  std::vector<std::pair<int, std::int64_t>> owner_to_ghost;
+  std::transform(_ghosts.begin(), _ghosts.end(), _owners.begin(),
+                 std::back_inserter(owner_to_ghost),
+                 [](auto idx, auto r) -> std::pair<int, std::int64_t> {
+                   return {r, idx};
+                 });
+  std::sort(owner_to_ghost.begin(), owner_to_ghost.end());
+
+  // Build send buffer (second component of pairs in owner_ghost_idx)
+  // to send to owner
+  std::vector<std::int64_t> send_buffer;
+  send_buffer.reserve(owner_to_ghost.size());
+  std::transform(owner_to_ghost.begin(), owner_to_ghost.end(),
+                 std::back_inserter(send_buffer),
+                 [](auto x) { return x.second; });
+
+  // Build send sizes and displacements
+  std::vector<int> send_sizes, send_disp(1, 0);
+  auto it = owner_to_ghost.begin();
+  while (it != owner_to_ghost.end())
+  {
+    auto it1 = std::find_if(it, owner_to_ghost.end(),
+                            [r = it->first](auto x) { return x.first != r; });
+    send_sizes.push_back(std::distance(it, it1));
+    send_disp.push_back(send_disp.back() + send_sizes.back());
+
+    // Advance iterator
+    it = it1;
+  }
+
+  // Create ghost -> owner comm
+  MPI_Comm comm0;
+  MPI_Dist_graph_create_adjacent(_comm.comm(), dest.size(), dest.data(),
+                                 MPI_UNWEIGHTED, src.size(), src.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+
+  // Exchange number of indices to send/receive from each rank
+  std::vector<int> recv_sizes(dest.size(), 0);
+  send_sizes.reserve(1);
+  recv_sizes.reserve(1);
+  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                        MPI_INT, comm0);
+
+  // Prepare receive displacement array
+  std::vector<int> recv_disp(dest.size() + 1, 0);
+  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                   std::next(recv_disp.begin()));
+
+  // Send ghost indices to owner, and receive owned indices
+  std::vector<std::int64_t> recv_buffer(recv_disp.back());
+  MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
+                         send_disp.data(), MPI_INT64_T, recv_buffer.data(),
+                         recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                         comm0);
+  MPI_Comm_free(&comm0);
+
+  // Build array of (local index, ghosting local rank), and sort
+  std::vector<std::pair<std::int32_t, int>> idx_to_rank;
+  std::int64_t offset = _local_range[0];
+  for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
+  {
+    for (int j = recv_disp[r]; j < recv_disp[r + 1]; ++j)
+      idx_to_rank.push_back({recv_buffer[j] - offset, r});
+  }
+  std::sort(idx_to_rank.begin(), idx_to_rank.end());
+
+  // -- Send to ranks that ghost my indices all the sharing ranks
+
+  // Build adjacency list data for (owned index) -> (ghosting ranks)
+  std::vector<int> data;
+  data.reserve(idx_to_rank.size());
+  std::transform(idx_to_rank.begin(), idx_to_rank.end(),
+                 std::back_inserter(data), [](auto x) { return x.second; });
+
+  std::vector<std::int32_t> offsets = {0};
+  const std::int32_t size = _local_range[1] - _local_range[0];
+  offsets.reserve(size + 1);
+  {
+    auto it = idx_to_rank.begin();
+
+    // Loop over owned indices
+    for (std::int32_t i = 0; i < size; ++i)
+    {
+      auto it1 = std::find_if(it, idx_to_rank.end(),
+                              [i](auto x) { return x.first != i; });
+      offsets.push_back(offsets.back() + std::distance(it, it1));
+      it = it1;
+    }
+  }
+
+  graph::AdjacencyList<int> tmp(data, offsets);
+
+  if (int rank = dolfinx::MPI::rank(MPI_COMM_WORLD); rank == 2)
+  {
+    std::cout << "Rank: " << rank << std::endl;
+    std::cout << "Dest" << std::endl;
+    for (auto d : src)
+      std::cout << "  " << d << std::endl;
+    std::cout << "Local idx: " << 18 - _local_range[0] << std::endl;
+    std::cout << "Size local idx: " << _local_range[1] - _local_range[0]
+              << std::endl;
+    std::cout << tmp.str() << std::endl;
+  }
+
+  // if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 0)
+  //   std::cout << tmp.str() << std::endl;
+
+  std::transform(idx_to_rank.begin(), idx_to_rank.end(), data.begin(),
+                 [&dest](auto x) { return dest[x.second]; });
+
+  if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 3)
+  {
+    for (auto x : dest)
+      std::cout << "Dest ranks: " << x << std::endl;
+  }
+
+  // Send data back to ghosting ranks (this is necessary to share with
+  // ghosting ranks the other ranks that also ghost an index)
+  std::vector<std::int64_t> send_buffer1;
+  std::vector<int> send_sizes1;
+  {
+    const int rank = dolfinx::MPI::rank(_comm.comm());
+    std::vector<std::vector<std::int64_t>> dest_idx_to_rank(dest.size());
+    for (std::int32_t n = 0; n < tmp.num_nodes(); ++n)
+    {
+      auto ranks = tmp.links(n);
+      if (!ranks.empty())
+      {
+        for (auto r0 : ranks)
+        {
+          for (auto r : ranks)
+          {
+            if (dest[r0] == 1 and dolfinx::MPI::rank(MPI_COMM_WORLD) == 3)
+            {
+              std::cout << "Pack for r1: " << n << ", " << n + offset << ", "
+                        << r << ", " << dest[r] << std::endl;
+            }
+            assert(r0 < (int)dest_idx_to_rank.size());
+            if (r0 != r)
+            {
+              dest_idx_to_rank[r0].push_back(n + offset);
+              dest_idx_to_rank[r0].push_back(dest[r]);
+            }
+            dest_idx_to_rank[r0].push_back(n + offset);
+            dest_idx_to_rank[r0].push_back(rank);
+          }
+        }
+      }
+    }
+
+    // Count number of ghosts per dest
+    std::transform(dest_idx_to_rank.begin(), dest_idx_to_rank.end(),
+                   std::back_inserter(send_sizes1),
+                   [](auto& x) { return x.size(); });
+    for (auto& d : dest_idx_to_rank)
+      send_buffer1.insert(send_buffer1.end(), d.begin(), d.end());
+
+    // Create owner -> ghost comm
+    MPI_Comm comm1;
+    MPI_Dist_graph_create_adjacent(
+        _comm.comm(), src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
+        dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+
+    // Send how many indices I ghost to each owner, and receive how many
+    // of my indices other ranks ghost
+    std::vector<int> recv_sizes1(src.size(), 0);
+    send_sizes.reserve(1);
+    recv_sizes.reserve(1);
+    MPI_Neighbor_alltoall(send_sizes1.data(), 1, MPI_INT, recv_sizes1.data(), 1,
+                          MPI_INT, comm1);
+
+    // Prepare displacement vectors
+    std::vector<int> send_disp1(dest.size() + 1, 0),
+        recv_disp1(src.size() + 1, 0);
+    std::partial_sum(send_sizes1.begin(), send_sizes1.end(),
+                     std::next(send_disp1.begin()));
+    std::partial_sum(recv_sizes1.begin(), recv_sizes1.end(),
+                     std::next(recv_disp1.begin()));
+
+    // if (int r = dolfinx::MPI::rank(MPI_COMM_WORLD); r ! = 1)
+    // {
+    //   for (std::size_t i = 0; i < send_buffer1.size(); i += 2)
+    //     std::cout << "Send: " << send_buffer1[i] << ", "
+    //               << send_buffer1[i + 1] std::endl;
+    // }
+
+    std::vector<std::int64_t> recv_indices1(recv_disp1.back());
+    MPI_Neighbor_alltoallv(send_buffer1.data(), send_sizes1.data(),
+                           send_disp1.data(), MPI_INT64_T, recv_indices1.data(),
+                           recv_sizes1.data(), recv_disp1.data(), MPI_INT64_T,
+                           comm1);
+    MPI_Comm_free(&comm1);
+
+    // ---------
+
+    std::vector<std::pair<std::int64_t, std::int32_t>> idx_to_pos;
+    for (auto idx : _ghosts)
+      idx_to_pos.push_back({idx, idx_to_pos.size()});
+    std::sort(idx_to_pos.begin(), idx_to_pos.end());
+
+    if (int rank = dolfinx::MPI::rank(MPI_COMM_WORLD); rank == 1)
+    {
+      std::cout << "Rank: " << rank << std::endl;
+      // std::cout << "G:    " << _ghosts[0] << std::endl;
+      std::cout << "G(1):    " << _ghosts.back() << std::endl;
+      std::cout << "O(1):    " << _owners.back() << std::endl;
+    }
+
+    std::vector<std::pair<std::int32_t, int>> idxpos_to_rank1;
+    for (std::size_t i = 0; i < recv_indices1.size(); i += 2)
+    {
+      std::int64_t idx = recv_indices1[i];
+      auto it
+          = std::lower_bound(idx_to_pos.begin(), idx_to_pos.end(),
+                             std::pair<std::int64_t, std::int32_t>{idx, 0},
+                             [](auto a, auto b) { return a.first < b.first; });
+      assert(it != idx_to_pos.end() and it->first == idx);
+      int rank = recv_indices1[i + 1];
+
+      idxpos_to_rank1.push_back({it->second, rank});
+    }
+    std::sort(idxpos_to_rank1.begin(), idxpos_to_rank1.end());
+
+    // TODO: exclude self rank
+    std::transform(idxpos_to_rank1.begin(), idxpos_to_rank1.end(),
+                   std::back_inserter(data), [](auto x) { return x.second; });
+
+    auto it = idxpos_to_rank1.begin();
+    for (std::size_t i = 0; i < _ghosts.size(); ++i)
+    {
+      auto it1
+          = std::find_if(it, idxpos_to_rank1.end(),
+                         [i](auto x) { return x.first != (std::int32_t)i; });
+      offsets.push_back(offsets.back() + std::distance(it, it1));
+      it = it1;
+    }
+  }
+
+  // return tmp;
+  return graph::AdjacencyList<int>(std::move(data), std::move(offsets));
 }
 //-----------------------------------------------------------------------------

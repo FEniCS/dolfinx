@@ -394,7 +394,7 @@ distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x,
   // Compute send displacements
   std::vector<std::int32_t> send_disp = {0};
   std::partial_sum(num_items_per_dest.begin(), num_items_per_dest.end(),
-                   std::back_insert_iterator(send_disp));
+                   std::back_inserter(send_disp));
 
   // Pack send buffers
   std::vector<T> send_buffer_data(shape[1] * send_disp.back());
@@ -535,10 +535,10 @@ std::vector<T> distribute_from_postoffice(
   // Prepare send/receive displacements
   std::vector<std::int32_t> send_disp = {0};
   std::partial_sum(num_items_per_src.begin(), num_items_per_src.end(),
-                   std::back_insert_iterator(send_disp));
+                   std::back_inserter(send_disp));
   std::vector<std::int32_t> recv_disp = {0};
   std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
-                   std::back_insert_iterator(recv_disp));
+                   std::back_inserter(recv_disp));
 
   // Pack my requested indices (global) in send buffer ready to send to
   // post offices

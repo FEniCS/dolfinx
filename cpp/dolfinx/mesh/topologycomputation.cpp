@@ -129,6 +129,22 @@ get_local_indexing(MPI_Comm comm, const common::IndexMapNew& cell_indexmap,
   const std::map<std::int32_t, std::set<std::int32_t>> shared_vertices
       = common::create_old(vertex_indexmap).compute_shared_indices();
 
+  // const graph::AdjacencyList<int> shared_vertices_foo
+  //     = vertex_indexmap.index_to_dest_ranks();
+  // if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 1)
+  // {
+  //   std::cout << "Local size: " << vertex_indexmap.size_local() << std::endl;
+  //   for (auto x : shared_vertices)
+  //   {
+  //     std::cout << "idx: " << x.first << std::endl;
+  //     for (auto r : x.second)
+  //       std::cout << r << "  ";
+  //     std::cout << std::endl;
+  //   }
+
+  //   std::cout << shared_vertices_foo.str() << std::endl;
+  // }
+
   std::set<std::int32_t> neighbor_set;
   for (auto& q : shared_vertices)
     neighbor_set.insert(q.second.begin(), q.second.end());

@@ -164,6 +164,14 @@ public:
   std::pair<IndexMapNew, std::vector<std::int32_t>>
   create_submap_new(const xtl::span<const std::int32_t>& indices) const;
 
+  /// @todo Aim to remove this function? If it's kept, should it work
+  /// with neighborhood ranks?
+  ///
+  /// Compute map from each local (owned) index to the set of ranks that
+  /// have the index as a ghost
+  /// @return shared indices
+  graph::AdjacencyList<int> index_to_dest_ranks() const;
+
 private:
   // Range of indices (global) owned by this process
   std::array<std::int64_t, 2> _local_range;
