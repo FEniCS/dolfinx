@@ -326,9 +326,10 @@ def test_cell_h_prism():
     assert(np.allclose(h, np.sqrt(3 / (N**2))))
 
 
-def test_facet_h():
+@pytest.mark.parametrize("ct", [CellType.hexahedron, CellType.tetrahedron])
+def test_facet_h(ct):
     N = 3
-    mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N)
+    mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, ct)
     left_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1,
                                            lambda x: np.isclose(x[0], 0))
     h = _cpp.mesh.h(mesh, mesh.topology.dim - 1, left_facets)

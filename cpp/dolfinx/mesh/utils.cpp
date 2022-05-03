@@ -62,12 +62,13 @@ std::vector<double> mesh::h(const Mesh& mesh,
                             int dim)
 {
 
-  const mesh::Topology& topology = mesh.topology();
-  const int tdim = topology.dim();
+  // Get entity vertices in geometry dofs
+  xt::xtensor<std::int32_t, 2> geometry_vertices
+      = entities_to_geometry(mesh, dim, entities, false);
+  const std::size_t num_vertices_per_entity = geometry_vertices.shape(1);
 
   // Get geometry dofmap and dofs
   const mesh::Geometry& geometry = mesh.geometry();
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   const xtl::span<const double> x_g = geometry.x();
 
   // Lambda function to compute norm
@@ -81,66 +82,19 @@ std::vector<double> mesh::h(const Mesh& mesh,
 
   std::vector<double> h_cells(entities.size(), 0);
 
-  if (dim == 0)
-    return h_cells;
-  else if (dim == tdim)
+  if (dim > 0)
   {
-    // Get number of cell nodes
-    const std::size_t num_nodes = geometry.cmap().dim();
-
     for (std::size_t e = 0; e < entities.size(); ++e)
     {
-      // Get cell coordinates/geometry
-      auto x_dofs = x_dofmap.links(entities[e]);
-      assert(x_dofs.size() == num_nodes);
-
-      // Get maximum distance between any node in the geometry
-      for (std::size_t i = 0; i < num_nodes; ++i)
+      // Get maximum distance between any vertex
+      auto e_vertices = xt::row(geometry_vertices, e);
+      for (std::size_t i = 0; i < num_vertices_per_entity; ++i)
       {
-        for (std::size_t j = i + 1; j < num_nodes; ++j)
-        {
-          h_cells[e] = std::max(h_cells[e],
-                                l2_norm(std::next(x_g.begin(), 3 * x_dofs[i]),
-                                        std::next(x_g.begin(), 3 * x_dofs[j])));
-        }
-      }
-    }
-  }
-  else
-  {
-    fem::ElementDofLayout dof_layout = geometry.cmap().create_dof_layout();
-    mesh.topology_mutable().create_connectivity(dim, tdim);
-    mesh.topology_mutable().create_connectivity(tdim, dim);
-    auto e_to_c = mesh.topology().connectivity(dim, tdim);
-    assert(e_to_c);
-    auto c_to_e = mesh.topology().connectivity(tdim, dim);
-    assert(c_to_e);
-
-    for (std::size_t e = 0; e < entities.size(); ++e)
-    {
-      // Compute local entity index
-      auto cells = e_to_c->links(entities[e]);
-      assert(!cells.empty());
-      auto cell_entities = c_to_e->links(cells[0]);
-      auto entity_it
-          = std::find(cell_entities.begin(), cell_entities.end(), entities[e]);
-      assert(entity_it != cell_entities.end());
-      int local_e = std::distance(cell_entities.begin(), entity_it);
-      const std::vector<std::int32_t>& closure_dofs
-          = dof_layout.entity_closure_dofs(dim, local_e);
-
-      auto x_dofs = x_dofmap.links(cells[0]);
-      const std::size_t num_nodes = closure_dofs.size();
-
-      // Get maximum distance between any node in the geometry
-      for (std::size_t i = 0; i < num_nodes; ++i)
-      {
-        for (std::size_t j = i + 1; j < num_nodes; ++j)
+        for (std::size_t j = i + 1; j < num_vertices_per_entity; ++j)
         {
           h_cells[e] = std::max(
-              h_cells[e],
-              l2_norm(std::next(x_g.begin(), 3 * x_dofs[closure_dofs[i]]),
-                      std::next(x_g.begin(), 3 * x_dofs[closure_dofs[j]])));
+              h_cells[e], l2_norm(std::next(x_g.begin(), 3 * e_vertices[i]),
+                                  std::next(x_g.begin(), 3 * e_vertices[j])));
         }
       }
     }

@@ -64,7 +64,7 @@ graph::AdjacencyList<std::int64_t>
 extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
                  const graph::AdjacencyList<std::int64_t>& cells);
 
-/// Compute greatest distance between any two nodes in the entity
+/// Compute greatest distance between any two vertices in the entity
 /// @param[in] mesh The mesh
 /// @param[in] entities List of entities (local to process)
 /// @param[in] dim The topological dimension of the entity
