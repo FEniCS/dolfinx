@@ -25,7 +25,6 @@ target_include_directories(dolfinx PUBLIC
 # Configure the common/version.h file
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/common/version.h.in common/version.h @ONLY)
-set_target_properties(dolfinx PROPERTIES PRIVATE_HEADER ${CMAKE_CURRENT_BINARY_DIR}/common/version.h)
 
 #------------------------------------------------------------------------------
 # Set target properties
@@ -148,7 +147,7 @@ foreach(DIR ${DOLFINX_DIRS})
     COMPONENT Development)
 endforeach()
 
-install(FILES  ${CMAKE_CURRENT_BINARY_DIR}/common/version.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dolfinx/common}
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/common/version.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dolfinx/common
 COMPONENT Development)
 
 #------------------------------------------------------------------------------
