@@ -331,7 +331,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 
   // Get geometry data
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  tcb::span<const double> x_nodes = mesh.geometry().x();
+  xtl::span<const double> x_nodes = mesh.geometry().x();
 
   // Build vector of boundary vertices
   const std::vector<std::int32_t> vertices(boundary_vertices.begin(),
