@@ -52,6 +52,7 @@ jobs:
           apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
           pip3 install pyvista==${PYVISTA_VERSION}
           pip3 install pyvistaqt==${PYVISTA_QT_VERSION}
+          pip3 install matplotlib
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
