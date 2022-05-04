@@ -153,14 +153,14 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
   std::map<std::int32_t, std::set<int>> shared_edges_by_proc
       = common::create_old(*map_e).compute_shared_indices();
 
-  // const graph::AdjacencyList<int> foo = map_e->index_to_dest_ranks();
-  // std::map<std::int32_t, std::set<int>> shared_edges_by_proc_new;
-  // for (std::int32_t n = 0; n < foo.num_nodes(); ++n)
-  // {
-  //   auto r = foo.links(n);
-  //   if (!r.empty())
-  //     shared_edges_by_proc_new[n] = std::set<int>(r.begin(), r.end());
-  // }
+  const graph::AdjacencyList<int> foo = map_e->index_to_dest_ranks();
+  std::map<std::int32_t, std::set<int>> shared_edges_by_proc_new;
+  for (std::int32_t n = 0; n < foo.num_nodes(); ++n)
+  {
+    auto r = foo.links(n);
+    if (!r.empty())
+      shared_edges_by_proc_new[n] = std::set<int>(r.begin(), r.end());
+  }
 
   // std::int32_t size_old = common::create_old(*map_e).size_local();
   // if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 1)
