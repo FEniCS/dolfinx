@@ -150,16 +150,16 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
   // std::map<std::int32_t, std::set<int>> shared_edges_by_proc
   //     = map_e->compute_shared_indices();
 
-  std::map<std::int32_t, std::set<int>> shared_edges_by_proc_ref
+  std::map<std::int32_t, std::set<int>> shared_edges_by_proc
       = common::create_old(*map_e).compute_shared_indices();
 
   const graph::AdjacencyList<int> foo = map_e->index_to_dest_ranks();
-  std::map<std::int32_t, std::set<int>> shared_edges_by_proc;
+  std::map<std::int32_t, std::set<int>> shared_edges_by_proc_new;
   for (std::int32_t n = 0; n < foo.num_nodes(); ++n)
   {
     auto r = foo.links(n);
     if (!r.empty())
-      shared_edges_by_proc[n] = std::set<int>(r.begin(), r.end());
+      shared_edges_by_proc_new[n] = std::set<int>(r.begin(), r.end());
   }
 
   // std::int32_t size_old = common::create_old(*map_e).size_local();
@@ -177,7 +177,7 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
   //   std::cout << foo.str() << std::endl;
   // }
 
-  if (shared_edges_by_proc != shared_edges_by_proc_ref)
+  if (shared_edges_by_proc_new != shared_edges_by_proc)
     throw std::runtime_error("Sharing rank mis-match");
 
   MPI_Comm comm;
