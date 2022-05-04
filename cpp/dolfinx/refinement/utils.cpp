@@ -150,33 +150,35 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
   // std::map<std::int32_t, std::set<int>> shared_edges_by_proc
   //     = map_e->compute_shared_indices();
 
-  std::map<std::int32_t, std::set<int>> shared_edges_by_proc
+  std::map<std::int32_t, std::set<int>> shared_edges_by_proc_ref
       = common::create_old(*map_e).compute_shared_indices();
 
-  // std::map<std::int32_t, std::set<int>> shared_edges_by_proc;
   const graph::AdjacencyList<int> foo = map_e->index_to_dest_ranks();
-  // for (std::int32_t n = 0; n < foo.num_nodes(); ++n)
+  std::map<std::int32_t, std::set<int>> shared_edges_by_proc;
+  for (std::int32_t n = 0; n < foo.num_nodes(); ++n)
+  {
+    auto r = foo.links(n);
+    if (!r.empty())
+      shared_edges_by_proc[n] = std::set<int>(r.begin(), r.end());
+  }
+
+  // std::int32_t size_old = common::create_old(*map_e).size_local();
+  // if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 1)
   // {
-  //   auto r = foo.links(n);
-  //   if (!r.empty())
-  //     shared_edges_by_proc[n] = std::set<int>(r.begin(), r.end());
+  //   std::cout << "Local size (new): " << map_e->size_local() << std::endl;
+  //   std::cout << "Local size (old): " << size_old << std::endl;
+  //   for (auto x : shared_edges_by_proc)
+  //   {
+  //     std::cout << "idx: " << x.first << std::endl;
+  //     for (auto r : x.second)
+  //       std::cout << r << "  ";
+  //     std::cout << std::endl;
+  //   }
+  //   std::cout << foo.str() << std::endl;
   // }
 
-  std::int32_t size_old = common::create_old(*map_e).size_local();
-  if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 1)
-  {
-    std::cout << "Local size (new): " << map_e->size_local() << std::endl;
-    std::cout << "Local size (old): " << size_old << std::endl;
-    for (auto x : shared_edges_by_proc)
-    {
-      std::cout << "idx: " << x.first << std::endl;
-      for (auto r : x.second)
-        std::cout << r << "  ";
-      std::cout << std::endl;
-    }
-
-    std::cout << foo.str() << std::endl;
-  }
+  if (shared_edges_by_proc != shared_edges_by_proc_ref)
+    throw std::runtime_error("Sharing rank mis-match");
 
   MPI_Comm comm;
   MPI_Dist_graph_create_adjacent(mesh.comm(), ranks.size(), ranks.data(),

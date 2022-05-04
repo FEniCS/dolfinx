@@ -129,6 +129,18 @@ get_local_indexing(MPI_Comm comm, const common::IndexMapNew& cell_indexmap,
   const std::map<std::int32_t, std::set<std::int32_t>> shared_vertices
       = common::create_old(vertex_indexmap).compute_shared_indices();
 
+  // const graph::AdjacencyList<int> foo = vertex_indexmap.index_to_dest_ranks();
+  // std::map<std::int32_t, std::set<int>> shared_vertices;
+  // for (std::int32_t n = 0; n < foo.num_nodes(); ++n)
+  // {
+  //   auto r = foo.links(n);
+  //   if (!r.empty())
+  //     shared_vertices[n] = std::set<int>(r.begin(), r.end());
+  // }
+
+  // if (shared_vertices != shared_vertices_ref)
+  //   throw std::runtime_error("Sharing rank mis-match");
+
   // const graph::AdjacencyList<int> shared_vertices_foo
   //     = vertex_indexmap.index_to_dest_ranks();
   // if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 1)

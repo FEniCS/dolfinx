@@ -743,18 +743,17 @@ graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
   }
 
   graph::AdjacencyList<int> tmp(data, offsets);
-
-  if (int rank = dolfinx::MPI::rank(MPI_COMM_WORLD); rank == 2)
-  {
-    std::cout << "Rank: " << rank << std::endl;
-    std::cout << "Dest" << std::endl;
-    for (auto d : src)
-      std::cout << "  " << d << std::endl;
-    std::cout << "Local idx: " << 18 - _local_range[0] << std::endl;
-    std::cout << "Size local idx: " << _local_range[1] - _local_range[0]
-              << std::endl;
-    std::cout << tmp.str() << std::endl;
-  }
+  // if (int rank = dolfinx::MPI::rank(MPI_COMM_WORLD); rank == 2)
+  // {
+  //   std::cout << "Rank: " << rank << std::endl;
+  //   std::cout << "Dest" << std::endl;
+  //   for (auto d : src)
+  //     std::cout << "  " << d << std::endl;
+  //   std::cout << "Local idx: " << 18 - _local_range[0] << std::endl;
+  //   std::cout << "Size local idx: " << _local_range[1] - _local_range[0]
+  //             << std::endl;
+  //   std::cout << tmp.str() << std::endl;
+  // }
 
   // if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 0)
   //   std::cout << tmp.str() << std::endl;
@@ -762,11 +761,11 @@ graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
   std::transform(idx_to_rank.begin(), idx_to_rank.end(), data.begin(),
                  [&dest](auto x) { return dest[x.second]; });
 
-  if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 3)
-  {
-    for (auto x : dest)
-      std::cout << "Dest ranks: " << x << std::endl;
-  }
+  // if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 3)
+  // {
+  //   for (auto x : dest)
+  //     std::cout << "Dest ranks: " << x << std::endl;
+  // }
 
   // Send data back to ghosting ranks (this is necessary to share with
   // ghosting ranks the other ranks that also ghost an index)
