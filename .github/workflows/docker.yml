@@ -89,7 +89,7 @@ jobs:
         id: tag_name
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-'latest'}"
+          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-latest}"
       - name: Log into the Dockerhub registry
         run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
       - name: Build the Docker image
@@ -124,7 +124,7 @@ jobs:
         id: tag_name
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-'latest'}"
+          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-latest}"
       - name: Build the Docker image
         run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG} docker/
       - name: Cleanup
@@ -155,7 +155,7 @@ jobs:
         id: tag_name
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-'latest'}"
+          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-latest}"
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Build the Docker image
@@ -176,7 +176,7 @@ jobs:
         id: tag_name
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-'latest'}"
+          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-latest}"
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push multiarch images
@@ -218,18 +218,18 @@ jobs:
         id: tag_name
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-'latest'}"
+          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-latest}"
       - name: Get git refs
         id: refs
         run: |
           USER_INPUT=${{ github.event.inputs.dolfinx_ref }}
-          echo "::set-output name=DOLFINX_REF::${USER_INPUT:-'main'}"
+          echo "::set-output name=DOLFINX_REF::${USER_INPUT:-main}"
           USER_INPUT=${{ github.event.inputs.basix_ref }}
-          echo "::set-output name=BASIX_REF::${USER_INPUT:-'main'}"
+          echo "::set-output name=BASIX_REF::${USER_INPUT:-main}"
           USER_INPUT=${{ github.event.inputs.ufl_ref }}
-          echo "::set-output name=UFL_REF::${USER_INPUT:-'main'}"
+          echo "::set-output name=UFL_REF::${USER_INPUT:-main}"
           USER_INPUT=${{ github.event.inputs.ffcx_ref }}
-          echo "::set-output name=FFCX_REF::${USER_INPUT:-'main'}"
+          echo "::set-output name=FFCX_REF::${USER_INPUT:-main}"
       - uses: actions/checkout@v2
         with:
           repository: "FEniCS/dolfinx"
@@ -299,7 +299,7 @@ jobs:
         id: tag_name
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-'latest'}"
+          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-latest}"
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push multiarch images
