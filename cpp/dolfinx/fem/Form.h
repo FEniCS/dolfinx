@@ -110,7 +110,8 @@ public:
       _mesh = function_spaces[0]->mesh();
     for (const auto& V : function_spaces)
     {
-      if (_mesh != V->mesh())
+      if (_mesh != V->mesh()
+          and entity_maps.find(V->mesh()) == entity_maps.end())
         throw std::runtime_error("Incompatible mesh");
     }
     if (!_mesh)
