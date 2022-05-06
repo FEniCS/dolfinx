@@ -176,7 +176,7 @@ RUN if [ "$MPI" = "mpich" ]; then \
 #   documentation or run tests.
 # LLVM_CONFIG required on aarch64, should be removed long-term.
 RUN LLVM_CONFIG=/usr/bin/llvm-config-9 pip3 install --no-cache-dir cffi mpi4py numba && \
-    pip3 install --no-cache-dir cppimport flake8 isort jupytext myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
+    pip3 install --no-cache-dir cppimport flake8 isort jupytext matplotlib myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
 # (See issue #126 and #1305)
