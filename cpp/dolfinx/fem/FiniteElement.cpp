@@ -213,7 +213,7 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
 
     _element
         = std::make_unique<basix::FiniteElement>(basix::create_custom_element(
-            cell_type, ce->degree, value_shape, wcoeffs, x, M,
+            cell_type, ce->highest_degree, value_shape, wcoeffs, x, M,
             static_cast<basix::maps::type>(ce->map_type), ce->discontinuous,
             ce->highest_complete_degree));
   }
