@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.16)
 #------------------------------------------------------------------------------
 # Set project name and version number
 
-project(DOLFINX VERSION "0.4.1.0")
+project(DOLFINX VERSION "0.4.2.0")
 
 set(DOXYGEN_DOLFINX_VERSION ${DOLFINX_VERSION} CACHE STRING "Version for Doxygen" FORCE)
 
