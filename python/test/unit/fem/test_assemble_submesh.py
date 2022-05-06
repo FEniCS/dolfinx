@@ -118,3 +118,32 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     assert(np.isclose(A_submesh.norm(), A_square_mesh.norm()))
     assert(np.isclose(b_submesh.norm(), b_square_mesh.norm()))
     assert(np.isclose(s_submesh, s_square_mesh))
+
+
+n = 2
+ghost_mode = GhostMode.none
+space = "Lagrange"
+k = 1
+
+mesh = create_rectangle(
+    MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+    ghost_mode=ghost_mode)
+edim = mesh.topology.dim
+entities = locate_entities(mesh, edim, lambda x: x[0] <= 1.0)
+submesh, entity_map, vertex_map, geom_map = create_submesh(
+    mesh, edim, entities)
+
+element = (space, k)
+V_m = fem.FunctionSpace(mesh, element)
+V_sm = fem.FunctionSpace(submesh, element)
+
+u = ufl.TrialFunction(V_sm)
+v = ufl.TestFunction(V_m)
+dx_sm = ufl.Measure("dx", domain=submesh)
+ds_sm = ufl.Measure("ds", domain=submesh)
+
+entity_maps = {mesh: entity_map}
+a = fem.form(ufl.inner(u, v) * (dx_sm + ds_sm),
+             entity_maps=entity_maps)
+A = fem.petsc.assemble_matrix(a)
+A.assemble()
