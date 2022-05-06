@@ -120,6 +120,7 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     assert(np.isclose(s_submesh, s_square_mesh))
 
 
+np.set_printoptions(linewidth=200)
 n = 2
 ghost_mode = GhostMode.none
 space = "Lagrange"
@@ -147,3 +148,5 @@ a = fem.form(ufl.inner(u, v) * (dx_sm + ds_sm),
              entity_maps=entity_maps)
 A = fem.petsc.assemble_matrix(a)
 A.assemble()
+
+print(A[:, :])
