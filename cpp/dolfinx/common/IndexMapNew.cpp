@@ -851,13 +851,13 @@ graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
       idx_to_pos.push_back({idx, idx_to_pos.size()});
     std::sort(idx_to_pos.begin(), idx_to_pos.end());
 
-    if (int rank = dolfinx::MPI::rank(MPI_COMM_WORLD); rank == 1)
-    {
-      std::cout << "Rank: " << rank << std::endl;
-      // std::cout << "G:    " << _ghosts[0] << std::endl;
-      std::cout << "G(1):    " << _ghosts.back() << std::endl;
-      std::cout << "O(1):    " << _owners.back() << std::endl;
-    }
+    // if (int rank = dolfinx::MPI::rank(MPI_COMM_WORLD); rank == 1)
+    // {
+    //   std::cout << "Rank: " << rank << std::endl;
+    //   // std::cout << "G:    " << _ghosts[0] << std::endl;
+    //   std::cout << "G(1):    " << _ghosts.back() << std::endl;
+    //   std::cout << "O(1):    " << _owners.back() << std::endl;
+    // }
 
     std::vector<std::pair<std::int32_t, int>> idxpos_to_rank1;
     for (std::size_t i = 0; i < recv_indices1.size(); i += 2)
