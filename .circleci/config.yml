@@ -10,7 +10,6 @@ install-python-components: &install-python-components
     pip3 install ./basix/python
     pip3 install git+https://github.com/FEniCS/ufl.git
     pip3 install git+https://github.com/FEniCS/ffcx.git
-    pip3 install matplotlib        
 
 flake8-python-code: &flake8-python-code
   name: Flake8 checks on Python code
