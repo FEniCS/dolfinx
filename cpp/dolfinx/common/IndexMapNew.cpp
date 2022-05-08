@@ -817,8 +817,8 @@ graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
     // Send how many indices I ghost to each owner, and receive how many
     // of my indices other ranks ghost
     std::vector<int> recv_sizes1(src.size(), 0);
-    send_sizes.reserve(1);
-    recv_sizes.reserve(1);
+    send_sizes1.reserve(1);
+    recv_sizes1.reserve(1);
     MPI_Neighbor_alltoall(send_sizes1.data(), 1, MPI_INT, recv_sizes1.data(), 1,
                           MPI_INT, comm1);
 
