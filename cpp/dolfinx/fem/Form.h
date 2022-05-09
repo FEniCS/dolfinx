@@ -356,6 +356,57 @@ public:
     return _entity_maps;
   }
 
+  /// TODO Add docs
+  const std::function<std::int32_t(std::int32_t)>
+  cell_map(FunctionSpace& function_space)
+  {
+    auto coeff_mesh = function_space.mesh();
+    if (coeff_mesh != mesh())
+    {
+      return [&entity_map = entity_maps().at(coeff_mesh)](std::int32_t e)
+      { return entity_map[e]; };
+    }
+    else
+    {
+      return [](std::int32_t e) { return e; };
+    }
+  }
+
+  /// TODO Add docs
+  const std::function<std::int32_t(std::pair<std::int32_t, int>)>
+  cell_local_facet_map(FunctionSpace& function_space)
+  {
+    auto mesh = mesh();
+    auto coeff_mesh = function_space.mesh();
+    if (coeff_mesh != mesh)
+    {
+      const int tdim = mesh->topology().dim();
+      const int codim = tdim - coeff_mesh->topology().dim();
+      // TODO Use switch
+      if (codim == 0)
+      {
+        return [&entity_map = entity_maps().at(coeff_mesh)](auto e)
+        { return entity_map[e.first]; };
+      }
+      else if (codim == 1)
+      {
+        mesh->topology_mutable().create_connectivity(tdim, tdim - 1);
+        return [&entity_map = entity_maps().at(coeff_mesh),
+                &c_to_f = mesh->topology().connectivity(tdim, tdim - 1)](auto e)
+        { return entity_map[c_to_f.links(e.first)[e.second]]; };
+      }
+      else
+      {
+        // TODO Handle this properly
+        throw std::runtime_error("codimension > 1 not supported");
+      }
+    }
+    else
+    {
+      return [](auto& e) { return e.first; };
+    }
+  }
+
 private:
   using kern = std::function<void(T*, const T*, const T*, const double*,
                                   const int*, const std::uint8_t*)>;
