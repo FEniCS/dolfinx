@@ -14,7 +14,6 @@ set(HEADERS_common
   ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogManager.h
   ${CMAKE_CURRENT_SOURCE_DIR}/timing.h
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/version.h
   PARENT_SCOPE)
 
 target_sources(dolfinx PRIVATE

@@ -2,13 +2,6 @@
 include(GNUInstallDirs)
 
 #------------------------------------------------------------------------------
-# Configure the dolfinx/common/version.h file
-
-# NOTE: This modifies a file in the source directory, which probably isn't good
-configure_file(${DOLFINX_SOURCE_DIR}/dolfinx/common/version.h.in
-  ${DOLFINX_SOURCE_DIR}/dolfinx/common/version.h @ONLY)
-
-#------------------------------------------------------------------------------
 # Delcare the library (target)
 
 add_library(dolfinx)
@@ -17,8 +10,6 @@ add_library(dolfinx)
 # Add source files to the target
 
 set(DOLFINX_DIRS common fem geometry graph io la mesh nls refinement)
-
-install(FILES dolfinx.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT Development)
 
 # Add source to dolfinx target, and get sets of header files
 foreach(DIR ${DOLFINX_DIRS})
@@ -29,6 +20,11 @@ endforeach()
 target_include_directories(dolfinx PUBLIC
                            $<INSTALL_INTERFACE:include>
                            "$<BUILD_INTERFACE:${DOLFINX_SOURCE_DIR};${DOLFINX_SOURCE_DIR}/dolfinx>")
+
+#------------------------------------------------------------------------------
+# Configure the common/version.h file
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/common/version.h.in common/version.h @ONLY)
 
 #------------------------------------------------------------------------------
 # Set target properties
@@ -144,10 +140,15 @@ install(TARGETS dolfinx
 install(EXPORT DOLFINXTargets DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx)
 
 # Install the header files
+install(FILES dolfinx.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT Development)
+
 foreach(DIR ${DOLFINX_DIRS})
   install(FILES ${HEADERS_${DIR}} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dolfinx/${DIR}
     COMPONENT Development)
 endforeach()
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/common/version.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dolfinx/common
+COMPONENT Development)
 
 #------------------------------------------------------------------------------
 # Generate CMake config files (DOLFINXConfig{,Version}.cmake)
