@@ -61,8 +61,8 @@ void enforce_rules(
   while (update_count > 0)
   {
     update_count = 0;
-    refinement::update_logical_edgefunction(neighbor_comm, marked_for_update,
-                                            marked_edges, *map_e);
+    update_logical_edgefunction(neighbor_comm, marked_for_update, marked_edges,
+                                *map_e);
     for (int i = 0; i < num_neighbors; ++i)
       marked_for_update[i].clear();
 
@@ -463,26 +463,23 @@ compute_refinement(
     const std::map<std::int32_t, std::vector<std::int32_t>> shared_edges,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& long_edge,
     const std::vector<std::int8_t>& edge_ratio_ok,
-    refinement::plaza::RefinementOptions options)
+    plaza::RefinementOptions options)
 {
   const std::int32_t tdim = mesh.topology().dim();
   const std::int32_t num_cell_edges = tdim * 3 - 3;
   const std::int32_t num_cell_vertices = tdim + 1;
 
   bool compute_facets
-      = (options == refinement::plaza::RefinementOptions::parent_facet
-         or options
-                == refinement::plaza::RefinementOptions::parent_cell_and_facet);
+      = (options == plaza::RefinementOptions::parent_facet
+         or options == plaza::RefinementOptions::parent_cell_and_facet);
 
   bool compute_parent_cell
-      = (options == refinement::plaza::RefinementOptions::parent_cell
-         or options
-                == refinement::plaza::RefinementOptions::parent_cell_and_facet);
+      = (options == plaza::RefinementOptions::parent_cell
+         or options == plaza::RefinementOptions::parent_cell_and_facet);
 
   // Make new vertices in parallel
   const auto [new_vertex_map, new_vertex_coordinates]
-      = refinement::create_new_vertices(neighbor_comm, shared_edges, mesh,
-                                        marked_edges);
+      = create_new_vertices(neighbor_comm, shared_edges, mesh, marked_edges);
 
   std::vector<std::int32_t> parent_cell;
   std::vector<std::int8_t> parent_facet;
@@ -503,8 +500,8 @@ compute_refinement(
       marked_edges.begin(),
       marked_edges.begin() + mesh.topology().index_map(1)->size_local(), true);
 
-  std::vector<std::int64_t> global_indices = refinement::adjust_indices(
-      *mesh.topology().index_map(0), num_new_vertices_local);
+  std::vector<std::int64_t> global_indices
+      = adjust_indices(*mesh.topology().index_map(0), num_new_vertices_local);
 
   const int num_cells = map_c->size_local();
 
@@ -646,8 +643,8 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute,
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
-  return {refinement::partition(mesh, cell_adj, new_vertex_coordinates,
-                                redistribute, ghost_mode),
+  return {partition(mesh, cell_adj, new_vertex_coordinates, redistribute,
+                    ghost_mode),
           std::move(parent_cell), std::move(parent_facet)};
 }
 //-----------------------------------------------------------------------------
@@ -681,8 +678,8 @@ plaza::refine(const mesh::Mesh& mesh,
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
-  return {refinement::partition(mesh, cell_adj, new_vertex_coordinates,
-                                redistribute, ghost_mode),
+  return {partition(mesh, cell_adj, new_vertex_coordinates, redistribute,
+                    ghost_mode),
           std::move(parent_cell), std::move(parent_facet)};
 }
 //------------------------------------------------------------------------------
@@ -700,7 +697,7 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
 
   common::Timer t0("PLAZA: refine");
 
-  auto [neighbor_comm, shared_edges] = refinement::compute_edge_sharing(mesh);
+  auto [neighbor_comm, shared_edges] = compute_edge_sharing(mesh);
 
   // Mark all edges
   auto map_e = mesh.topology().index_map(1);
@@ -731,7 +728,7 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
 
   common::Timer t0("PLAZA: refine");
 
-  auto [neighbor_comm, shared_edges] = refinement::compute_edge_sharing(mesh);
+  auto [comm, shared_edges] = compute_edge_sharing(mesh);
 
   auto map_e = mesh.topology().index_map(1);
   assert(map_e);
@@ -741,8 +738,7 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
 
   // Get number of neighbors
   int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
-                                 &weighted);
+  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
   assert(indegree == outdegree);
   const int num_neighbors = indegree;
   std::vector<std::vector<std::int32_t>> marked_for_update(num_neighbors);
@@ -761,18 +757,17 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
   }
 
   // Communicate any shared edges
-  refinement::update_logical_edgefunction(neighbor_comm, marked_for_update,
-                                          marked_edges, *map_e);
+  update_logical_edgefunction(comm, marked_for_update, marked_edges, *map_e);
 
   // Enforce rules about refinement (i.e. if any edge is marked in a
   // triangle, then the longest edge must also be marked).
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
-  enforce_rules(neighbor_comm, shared_edges, marked_edges, mesh, long_edge);
+  enforce_rules(comm, shared_edges, marked_edges, mesh, long_edge);
 
   auto [cell_adj, new_vertex_coordinates, parent_cell, parent_facet]
-      = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
-                           long_edge, edge_ratio_ok, options);
-  MPI_Comm_free(&neighbor_comm);
+      = compute_refinement(comm, marked_edges, shared_edges, mesh, long_edge,
+                           edge_ratio_ok, options);
+  MPI_Comm_free(&comm);
 
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
           std::move(parent_cell), std::move(parent_facet)};

@@ -126,84 +126,44 @@ xt::xtensor<double, 2> create_new_geometry(
 std::pair<MPI_Comm, std::map<std::int32_t, std::vector<int>>>
 refinement::compute_edge_sharing(const mesh::Mesh& mesh)
 {
-  if (!mesh.topology().connectivity(1, 0))
+  auto map_e = mesh.topology().index_map(1);
+  if (!map_e)
     throw std::runtime_error("Edges must be initialised");
 
-  auto map_e = mesh.topology().index_map(1);
-  assert(map_e);
+  graph::AdjacencyList<int> shared_edges = map_e->index_to_dest_ranks();
 
-  std::vector<int> ranks;
-  {
-    std::vector<int> src = map_e->owners();
-    std::sort(src.begin(), src.end());
-    src.erase(std::unique(src.begin(), src.end()), src.end());
-    auto dest = dolfinx::MPI::compute_graph_edges_nbx(mesh.comm(), src);
-    std::sort(dest.begin(), dest.end());
-    std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
-                   std::back_inserter(ranks));
-  }
-
-  // NOTE: Is the below basically building a symmetric communicator?
-
-  // Create shared edges, for both owned and ghost indices returning
-  // edge -> set(global process numbers)
-  // std::map<std::int32_t, std::set<int>> shared_edges_by_proc
-  //     = map_e->compute_shared_indices();
-
-  std::map<std::int32_t, std::set<int>> shared_edges_by_proc
-      = common::create_old(*map_e).compute_shared_indices();
-
-  const graph::AdjacencyList<int> foo = map_e->index_to_dest_ranks();
-  std::map<std::int32_t, std::set<int>> shared_edges_by_proc_new;
-  for (std::int32_t n = 0; n < foo.num_nodes(); ++n)
-  {
-    auto r = foo.links(n);
-    if (!r.empty())
-      shared_edges_by_proc_new[n] = std::set<int>(r.begin(), r.end());
-  }
-
-  // std::int32_t size_old = common::create_old(*map_e).size_local();
-  // if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 1)
-  // {
-  //   std::cout << "Local size (new): " << map_e->size_local() << std::endl;
-  //   std::cout << "Local size (old): " << size_old << std::endl;
-  //   for (auto x : shared_edges_by_proc)
-  //   {
-  //     std::cout << "idx: " << x.first << std::endl;
-  //     for (auto r : x.second)
-  //       std::cout << r << "  ";
-  //     std::cout << std::endl;
-  //   }
-  //   std::cout << foo.str() << std::endl;
-  // }
-
-  if (shared_edges_by_proc_new != shared_edges_by_proc)
-    throw std::runtime_error("Sharing rank mis-match");
+  std::vector<int> neighours(shared_edges.array().begin(),
+                             shared_edges.array().end());
+  std::sort(neighours.begin(), neighours.end());
+  neighours.erase(std::unique(neighours.begin(), neighours.end()),
+                  neighours.end());
 
   MPI_Comm comm;
-  MPI_Dist_graph_create_adjacent(mesh.comm(), ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, ranks.size(), ranks.data(),
+  MPI_Dist_graph_create_adjacent(mesh.comm(), neighours.size(),
+                                 neighours.data(), MPI_UNWEIGHTED,
+                                 neighours.size(), neighours.data(),
                                  MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
 
-  // Create a (global rank) -> (neighborhood rank) on neighbor_comm
-  std::map<int, int> proc_to_neighbor;
-  for (std::size_t i = 0; i < ranks.size(); ++i)
-    proc_to_neighbor.insert({ranks[i], i});
-
   // Create a (shared_edge index) -> (sharing neighbor ranks) map
-  std::map<std::int32_t, std::vector<int>> shared_edges;
-  for (auto& q : shared_edges_by_proc)
+  std::map<std::int32_t, std::vector<int>> shared_edges_local;
+  for (std::int32_t n = 0; n < shared_edges.num_nodes(); ++n)
   {
-    std::vector<int> neighbor_set;
-    for (int r : q.second)
-      neighbor_set.push_back(proc_to_neighbor[r]);
-    std::sort(neighbor_set.begin(), neighbor_set.end());
-    neighbor_set.erase(std::unique(neighbor_set.begin(), neighbor_set.end()),
-                       neighbor_set.end());
-    shared_edges.insert({q.first, neighbor_set});
+    auto ranks = shared_edges.links(n);
+    for (auto& rank : ranks)
+    {
+      auto it = std::lower_bound(neighours.begin(), neighours.end(), rank);
+      assert(it != neighours.end() and *it == rank);
+      rank = std::distance(neighours.begin(), it);
+    }
+
+    if (!ranks.empty())
+    {
+      shared_edges_local.insert(
+          {n, std::vector<int>(ranks.begin(), ranks.end())});
+    }
   }
 
-  return {comm, std::move(shared_edges)};
+  return {comm, std::move(shared_edges_local)};
 }
 //-----------------------------------------------------------------------------
 void refinement::update_logical_edgefunction(
