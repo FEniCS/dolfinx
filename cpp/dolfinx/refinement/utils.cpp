@@ -177,8 +177,8 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
   //   std::cout << foo.str() << std::endl;
   // }
 
-  // if (shared_edges_by_proc_new != shared_edges_by_proc)
-  //   throw std::runtime_error("Sharing rank mis-match");
+  if (shared_edges_by_proc_new != shared_edges_by_proc)
+    throw std::runtime_error("Sharing rank mis-match");
 
   MPI_Comm comm;
   MPI_Dist_graph_create_adjacent(mesh.comm(), ranks.size(), ranks.data(),

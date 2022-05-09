@@ -471,8 +471,6 @@ std::pair<IndexMapNew, std::vector<std::int32_t>>
 IndexMapNew::create_submap_new(
     const xtl::span<const std::int32_t>& indices) const
 {
-  std::cout << "Create map 0" << std::endl;
-
   if (!indices.empty() and indices.back() >= this->size_local())
   {
     throw std::runtime_error(
@@ -509,8 +507,6 @@ IndexMapNew::create_submap_new(
     MPI_Dist_graph_create_adjacent(
         _comm.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
         src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
-
-    std::cout << "Create map 1" << std::endl;
 
     // Pack ghosts indices
     std::vector<std::vector<std::int64_t>> send_data(src.size());
@@ -627,17 +623,6 @@ IndexMapNew::create_submap_new(
 
   MPI_Barrier(_comm.comm());
 
-  // std::cout << "Size check: " << local_size_new << ", " << ghosts.size() <<
-  // ", "
-  //           << src_ranks.size() << std::endl;
-  // MPI_Barrier(_comm.comm());
-  // IndexMapNew tmp(_comm.comm(), local_size_new, ghosts, src_ranks);
-  // std::cout << "Post create map: " << ghosts.size() << ", " <<
-  // src_ranks.size()
-  //           << std::endl;
-  // MPI_Barrier(_comm.comm());
-  // return {std::move(tmp), std::move(new_to_old_ghost)};
-
   return {IndexMapNew(_comm.comm(), local_size_new, ghosts, src_ranks),
           std::move(new_to_old_ghost)};
 }
@@ -658,7 +643,7 @@ graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
 
   // 1. Build adjacency list data for owned indices (index, [sharing
   //    ranks])
-  std::vector<std::int32_t> offsets;
+  std::vector<std::int32_t> offsets = {0};
   std::vector<int> data;
   {
     // Build list of (owner rank, index) pairs for each ghost index, and sort
@@ -728,15 +713,12 @@ graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
     data.reserve(idx_to_rank.size());
     std::transform(idx_to_rank.begin(), idx_to_rank.end(),
                    std::back_inserter(data), [](auto x) { return x.second; });
-
-    offsets = {0};
-    const std::int32_t size = _local_range[1] - _local_range[0];
-    offsets.reserve(size + 1);
+    offsets.reserve(this->size_local() + this->num_ghosts() + 1);
     {
       auto it = idx_to_rank.begin();
 
       // Loop over owned indices
-      for (std::int32_t i = 0; i < size; ++i)
+      for (std::int32_t i = 0; i < this->size_local(); ++i)
       {
         auto it1 = std::find_if(it, idx_to_rank.end(),
                                 [i](auto x) { return x.first != i; });
@@ -824,7 +806,7 @@ graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
 
       // Build list of (local ghost position, sharing rank) pairs from
       // the received data, and sort
-      std::vector<std::pair<std::int32_t, int>> idxpos_to_rank1;
+      std::vector<std::pair<std::int32_t, int>> idxpos_to_rank;
       for (std::size_t i = 0; i < recv_indices.size(); i += 2)
       {
         std::int64_t idx = recv_indices[i];
@@ -835,31 +817,30 @@ graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
         assert(it != idx_to_pos.end() and it->first == idx);
 
         int rank = recv_indices[i + 1];
-        idxpos_to_rank1.push_back({it->second, rank});
+        idxpos_to_rank.push_back({it->second, rank});
       }
-      std::sort(idxpos_to_rank1.begin(), idxpos_to_rank1.end());
+      std::sort(idxpos_to_rank.begin(), idxpos_to_rank.end());
 
       // Add processed received data to adjacency list data array, and
       // extend offset array
-      std::transform(idxpos_to_rank1.begin(), idxpos_to_rank1.end(),
+      std::transform(idxpos_to_rank.begin(), idxpos_to_rank.end(),
                      std::back_inserter(data), [](auto x) { return x.second; });
-      auto it = idxpos_to_rank1.begin();
+      auto it = idxpos_to_rank.begin();
       for (std::size_t i = 0; i < _ghosts.size(); ++i)
       {
-        auto it1
-            = std::find_if(it, idxpos_to_rank1.end(),
-                           [i](auto x) { return x.first != (std::int32_t)i; });
+        auto it1 = std::find_if(
+            it, idxpos_to_rank.end(),
+            [i](auto x) { return x.first != static_cast<std::int32_t>(i); });
         offsets.push_back(offsets.back() + std::distance(it, it1));
         it = it1;
       }
     }
   }
 
-  // Convert ranks for owned indices to global ranks
+  // Convert ranks for owned indices from neighbour to global ranks
   std::transform(idx_to_rank.begin(), idx_to_rank.end(), data.begin(),
                  [&dest](auto x) { return dest[x.second]; });
 
-  // return tmp;
   return graph::AdjacencyList<int>(std::move(data), std::move(offsets));
 }
 //-----------------------------------------------------------------------------
