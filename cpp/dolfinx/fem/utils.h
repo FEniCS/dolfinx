@@ -678,12 +678,11 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       const std::vector<std::pair<std::int32_t, int>>& facets
           = form.exterior_facet_domains(id);
 
-      // Create lambda function fetching cell index from exterior facet entity
-      auto fetch_cell = [](auto& entity) { return entity.first; };
-
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        // Create lambda function fetching cell index from exterior facet entity
+        auto fetch_cell = form.cell_local_facet_map(*coefficients[coeff]->function_space());
         xtl::span<const std::uint32_t> cell_info
             = impl::get_cell_orientation_info(*coefficients[coeff]);
         impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],

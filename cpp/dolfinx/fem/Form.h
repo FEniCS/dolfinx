@@ -357,7 +357,8 @@ public:
   }
 
   /// TODO Add docs
-  const std::function<std::int32_t(std::int32_t)>
+  // TODO Rename
+  std::function<std::int32_t(std::int32_t)>
   cell_map(const FunctionSpace& function_space) const
   {
     auto coeff_mesh = function_space.mesh();
@@ -373,27 +374,27 @@ public:
   }
 
   /// TODO Add docs
-  const std::function<std::int32_t(std::pair<std::int32_t, int>)>
-  cell_local_facet_map(const FunctionSpace& function_space)
+  // TODO Rename
+  std::function<std::int32_t(std::pair<std::int32_t, int>)>
+  cell_local_facet_map(const FunctionSpace& function_space) const
   {
-    auto mesh = mesh();
     auto coeff_mesh = function_space.mesh();
-    if (coeff_mesh != mesh)
+    if (coeff_mesh != mesh())
     {
-      const int tdim = mesh->topology().dim();
+      const int tdim = mesh()->topology().dim();
       const int codim = tdim - coeff_mesh->topology().dim();
       // TODO Use switch
       if (codim == 0)
       {
-        return [&entity_map = entity_maps().at(coeff_mesh)](auto e)
+        return [&entity_map = entity_maps().at(coeff_mesh)](std::pair<std::int32_t, int> e)
         { return entity_map[e.first]; };
       }
       else if (codim == 1)
       {
-        mesh->topology_mutable().create_connectivity(tdim, tdim - 1);
-        return [&entity_map = entity_maps().at(coeff_mesh),
-                &c_to_f = mesh->topology().connectivity(tdim, tdim - 1)](auto e)
-        { return entity_map[c_to_f.links(e.first)[e.second]]; };
+        auto c_to_f = mesh()->topology().connectivity(tdim, tdim - 1);
+        assert(c_to_f);
+        return [&entity_map = entity_maps().at(coeff_mesh), &c_to_f](std::pair<std::int32_t, int> e)
+        { return entity_map[c_to_f->links(e.first)[e.second]]; };
       }
       else
       {
@@ -403,7 +404,7 @@ public:
     }
     else
     {
-      return [](auto& e) { return e.first; };
+      return [](std::pair<std::int32_t, int> e) { return e.first; };
     }
   }
 
