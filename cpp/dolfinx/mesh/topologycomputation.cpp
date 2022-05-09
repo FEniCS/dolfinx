@@ -246,8 +246,6 @@ get_local_indexing(MPI_Comm comm, const common::IndexMapNew& cell_indexmap,
 
   // List of (local index, sorted global vertices) pairs received from
   // othe ranks. The list is eventully sorted.
-  // std::vector<std::pair<std::int32_t, std::vector<std::int64_t>>>
-  //     shared_entity_to_global_vertices;
   std::vector<std::pair<std::int32_t, std::int64_t>>
       shared_entity_to_global_vertices_data;
 
@@ -273,7 +271,6 @@ get_local_indexing(MPI_Comm comm, const common::IndexMapNew& cell_indexmap,
                                        a.first.begin(), a.first.end(),
                                        b.begin(), b.end());
                                  });
-
       if (it != global_entity_to_entity_index.end()
           and std::equal(it->first.begin(), it->first.end(), recv_vec.begin()))
       {
@@ -298,7 +295,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMapNew& cell_indexmap,
       = create_adj_list(shared_entity_to_global_vertices_data, entity_count);
 
   //---------
-  // Determine ownership
+  // Determine ownership of shared entities
+
   std::vector<std::int32_t> local_index(entity_count, -1);
   std::int32_t num_local;
   {
@@ -317,8 +315,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMapNew& cell_indexmap,
       if (auto ranks = shared_entities.links(i);
           ghost_status[i] == 1 or ranks.empty())
       {
-        local_index[i] = c;
-        ++c;
+        local_index[i] = c++;
       }
       else
       {
@@ -328,8 +325,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMapNew& cell_indexmap,
         if (owner_rank == mpi_rank)
         {
           // Take ownership
-          local_index[i] = c;
-          ++c;
+          local_index[i] = c++;
         }
       }
     }
@@ -338,12 +334,12 @@ get_local_indexing(MPI_Comm comm, const common::IndexMapNew& cell_indexmap,
     std::transform(local_index.cbegin(), local_index.cend(),
                    local_index.begin(),
                    [&c](auto index) { return index == -1 ? c++ : index; });
-
     assert(c == entity_count);
   }
 
   //---------
   // Communicate global indices to other processes
+
   std::vector<int> ghost_owners(entity_count - num_local, -1);
   std::vector<std::int64_t> ghost_indices(entity_count - num_local, -1);
   {
@@ -361,12 +357,12 @@ get_local_indexing(MPI_Comm comm, const common::IndexMapNew& cell_indexmap,
     {
       std::transform(indices.cbegin(), indices.cend(),
                      std::back_inserter(send_global_index_data),
-                     [&local_index, num_local,
-                      local_offset](std::int32_t index) -> std::int64_t
+                     [&local_index, size = num_local,
+                      offset = local_offset](auto idx) -> std::int64_t
                      {
                        // If not in our local range, send -1.
-                       return local_index[index] < num_local
-                                  ? local_offset + local_index[index]
+                       return local_index[idx] < size
+                                  ? offset + local_index[idx]
                                   : -1;
                      });
       send_global_index_offsets.push_back(send_global_index_data.size());
@@ -377,23 +373,20 @@ get_local_indexing(MPI_Comm comm, const common::IndexMapNew& cell_indexmap,
             neighbor_comm,
             graph::AdjacencyList<std::int64_t>(send_global_index_data,
                                                send_global_index_offsets));
-
-    const std::vector<std::int64_t>& recv_global_index_data = recv_data.array();
-    const std::vector<std::int32_t>& recv_offsets = recv_data.offsets();
-    assert(recv_global_index_data.size() == recv_index.size());
+    assert(recv_data.array().size() == recv_index.size());
 
     // Map back received indices
-    for (std::size_t j = 0; j < recv_global_index_data.size(); ++j)
+    for (std::size_t j = 0; j < recv_data.array().size(); ++j)
     {
-      const std::int64_t gi = recv_global_index_data[j];
+      const std::int64_t gi = recv_data.array()[j];
       const std::int32_t idx = recv_index[j];
       if (gi != -1 and idx != -1)
       {
         assert(local_index[idx] >= num_local);
         ghost_indices[local_index[idx] - num_local] = gi;
-        auto pos
-            = std::upper_bound(recv_offsets.begin(), recv_offsets.end(), j);
-        const int owner = std::distance(recv_offsets.begin(), pos) - 1;
+        auto pos = std::upper_bound(recv_data.offsets().begin(),
+                                    recv_data.offsets().end(), j);
+        int owner = std::distance(recv_data.offsets().begin(), pos) - 1;
         ghost_owners[local_index[idx] - num_local] = ranks[owner];
       }
     }

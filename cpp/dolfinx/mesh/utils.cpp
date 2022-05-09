@@ -502,8 +502,8 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
                              fmap_old.scatter_fwd_indices().array().end());
   }
 
-  // Find all owned facets (not ghost) with only one attached cell, which are
-  // also not shared forward (ghost on another process)
+  // Find all owned facets (not ghost) with only one attached cell,
+  // which are also not shared forward (ghost on another process)
   const int num_facets = topology.index_map(tdim - 1)->size_local();
   for (int f = 0; f < num_facets; ++f)
   {

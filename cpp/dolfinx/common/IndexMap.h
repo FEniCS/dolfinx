@@ -153,14 +153,6 @@ public:
   /// TMP
   const std::vector<int>& owners() const { return _owners; }
 
-  /// @todo Aim to remove this function? If it's kept, should it work
-  /// with neighborhood ranks?
-  ///
-  /// Compute map from each local (owned) index to the set of ranks that
-  /// have the index as a ghost
-  /// @return shared indices
-  std::map<std::int32_t, std::set<int>> compute_shared_indices() const;
-
   /// Start a non-blocking send of owned data to ranks that ghost the
   /// data. The communication is completed by calling
   /// IndexMap::scatter_fwd_end. The send and receive buffer should not

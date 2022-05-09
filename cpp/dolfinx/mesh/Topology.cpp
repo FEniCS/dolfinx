@@ -713,15 +713,17 @@ std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
   // In parallel, a mesh has either:
   // i) Ghost cells connected to every shared facet
   // ii) No ghost cells and no shared cells
-  // In case (i), checking that a facet is connected to only one cell is
-  // sufficient to identify it as a boundary facet. In case (ii), we must
-  // additionally check that the facet is not shared with another process to
-  // differentiate between the partition boundary and the physical boundary.
   //
-  // NOTE: It is not sufficient to only check that a mesh has no ghost cells
-  // to determine if it falls into category (i) or (ii). This is because a
-  // submesh could have no ghost cells and no shared facets, but could share
-  // some cells with other processes.
+  // In case (i), checking that a facet is connected to only one cell is
+  // sufficient to identify it as a boundary facet. In case (ii), we
+  // must additionally check that the facet is not shared with another
+  // process to differentiate between the partition boundary and the
+  // physical boundary.
+  //
+  // NOTE: It is not sufficient to only check that a mesh has no ghost
+  // cells to determine if it falls into category (i) or (ii). This is
+  // because a submesh could have no ghost cells and no shared facets,
+  // but could share some cells with other processes.
   std::vector<std::int32_t> fwd_shared_facets;
   common::IndexMap cmap_old = common::create_old(*cell_imap);
   common::IndexMap fmap_old = common::create_old(*facet_imap);
