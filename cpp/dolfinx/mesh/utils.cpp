@@ -75,7 +75,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   {
     double norm = 0;
     for (std::size_t k = 0; k < 3; ++k)
-      norm += std::pow(p0[k] - p1[k], 2);
+      norm += (p0[k] - p1[k]) * (p0[k] - p1[k]);
     return std::sqrt(norm);
   };
 
