@@ -123,17 +123,19 @@ xt::xtensor<double, 2> create_new_geometry(
 } // namespace
 
 //---------------------------------------------------------------------------------
-std::pair<MPI_Comm, std::map<std::int32_t, std::vector<int>>>
+std::pair<MPI_Comm, graph::AdjacencyList<int>>
 refinement::compute_edge_sharing(const mesh::Mesh& mesh)
 {
   auto map_e = mesh.topology().index_map(1);
   if (!map_e)
     throw std::runtime_error("Edges must be initialised");
 
-  graph::AdjacencyList<int> shared_edges = map_e->index_to_dest_ranks();
+  // Get sharing ranks for each edge
+  graph::AdjacencyList<int> sharing_ranks = map_e->index_to_dest_ranks();
 
-  std::vector<int> neighours(shared_edges.array().begin(),
-                             shared_edges.array().end());
+  // Build of ranks from sharing_ranks
+  std::vector<int> neighours(sharing_ranks.array().begin(),
+                             sharing_ranks.array().end());
   std::sort(neighours.begin(), neighours.end());
   neighours.erase(std::unique(neighours.begin(), neighours.end()),
                   neighours.end());
@@ -144,26 +146,19 @@ refinement::compute_edge_sharing(const mesh::Mesh& mesh)
                                  neighours.size(), neighours.data(),
                                  MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
 
-  // Create a (shared_edge index) -> (sharing neighbor ranks) map
-  std::map<std::int32_t, std::vector<int>> shared_edges_local;
-  for (std::int32_t n = 0; n < shared_edges.num_nodes(); ++n)
+  // Convert sharing_ranks from global rank to to neighbourhood ranks
+  for (std::int32_t n = 0; n < sharing_ranks.num_nodes(); ++n)
   {
-    auto ranks = shared_edges.links(n);
+    auto ranks = sharing_ranks.links(n);
     for (auto& rank : ranks)
     {
       auto it = std::lower_bound(neighours.begin(), neighours.end(), rank);
       assert(it != neighours.end() and *it == rank);
       rank = std::distance(neighours.begin(), it);
     }
-
-    if (!ranks.empty())
-    {
-      shared_edges_local.insert(
-          {n, std::vector<int>(ranks.begin(), ranks.end())});
-    }
   }
 
-  return {comm, std::move(shared_edges_local)};
+  return {comm, std::move(sharing_ranks)};
 }
 //-----------------------------------------------------------------------------
 void refinement::update_logical_edgefunction(
@@ -201,10 +196,10 @@ void refinement::update_logical_edgefunction(
 }
 //-----------------------------------------------------------------------------
 std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
-refinement::create_new_vertices(
-    MPI_Comm neighbor_comm,
-    const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
-    const mesh::Mesh& mesh, const std::vector<std::int8_t>& marked_edges)
+refinement::create_new_vertices(MPI_Comm neighbor_comm,
+                                const graph::AdjacencyList<int>& shared_edges,
+                                const mesh::Mesh& mesh,
+                                const std::vector<std::int8_t>& marked_edges)
 {
   // Take marked_edges and use to create new vertices
   std::shared_ptr<const common::IndexMapNew> edge_index_map
@@ -251,16 +246,12 @@ refinement::create_new_vertices(
     const std::size_t local_i = local_edge.first;
     // shared, but locally owned : remote owned are not in list.
 
-    if (auto shared_edge_i = shared_edges.find(local_i);
-        shared_edge_i != shared_edges.end())
+    for (int remote_process : shared_edges.links(local_i))
     {
-      for (int remote_process : shared_edge_i->second)
-      {
-        // send map from global edge index to new global vertex index
-        values_to_send[remote_process].push_back(
-            local_to_global(local_edge.first, *edge_index_map));
-        values_to_send[remote_process].push_back(local_edge.second);
-      }
+      // send map from global edge index to new global vertex index
+      values_to_send[remote_process].push_back(
+          local_to_global(local_i, *edge_index_map));
+      values_to_send[remote_process].push_back(local_edge.second);
     }
   }
 

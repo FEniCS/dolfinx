@@ -29,11 +29,11 @@ namespace
 //-----------------------------------------------------------------------------
 // Propagate edge markers according to rules (longest edge of each
 // face must be marked, if any edge of face is marked)
-void enforce_rules(
-    MPI_Comm neighbor_comm,
-    const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
-    std::vector<std::int8_t>& marked_edges, const mesh::Mesh& mesh,
-    const std::vector<std::int32_t>& long_edge)
+void enforce_rules(MPI_Comm neighbor_comm,
+                   const graph::AdjacencyList<int>& shared_edges,
+                   std::vector<std::int8_t>& marked_edges,
+                   const mesh::Mesh& mesh,
+                   const std::vector<std::int32_t>& long_edge)
 {
   common::Timer t0("PLAZA: Enforce rules");
 
@@ -82,14 +82,9 @@ void enforce_rules(
         {
           marked_edges[long_e] = true;
 
-          // If it is a shared edge, add all sharing neighbors to update
-          // set
-          if (auto map_it = shared_edges.find(long_e);
-              map_it != shared_edges.end())
-          {
-            for (int p : map_it->second)
-              marked_for_update[p].push_back(long_e);
-          }
+          // Add sharing neighbors to update set
+          for (int rank : shared_edges.links(long_e))
+            marked_for_update[rank].push_back(long_e);
         }
         ++update_count;
       }
@@ -458,12 +453,13 @@ compute_parent_facets(const std::vector<std::int32_t>& simplex_set)
 // Convenient interface for both uniform and marker refinement
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>, std::vector<std::int8_t>>
-compute_refinement(
-    MPI_Comm neighbor_comm, const std::vector<std::int8_t>& marked_edges,
-    const std::map<std::int32_t, std::vector<std::int32_t>> shared_edges,
-    const mesh::Mesh& mesh, const std::vector<std::int32_t>& long_edge,
-    const std::vector<std::int8_t>& edge_ratio_ok,
-    plaza::RefinementOptions options)
+compute_refinement(MPI_Comm neighbor_comm,
+                   const std::vector<std::int8_t>& marked_edges,
+                   const graph::AdjacencyList<int>& shared_edges,
+                   const mesh::Mesh& mesh,
+                   const std::vector<std::int32_t>& long_edge,
+                   const std::vector<std::int8_t>& edge_ratio_ok,
+                   plaza::RefinementOptions options)
 {
   const std::int32_t tdim = mesh.topology().dim();
   const std::int32_t num_cell_edges = tdim * 3 - 3;
@@ -697,18 +693,19 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
 
   common::Timer t0("PLAZA: refine");
 
-  auto [neighbor_comm, shared_edges] = compute_edge_sharing(mesh);
+  auto [comm, shared_edges] = compute_edge_sharing(mesh);
 
   // Mark all edges
   auto map_e = mesh.topology().index_map(1);
+  assert(map_e);
   std::vector<std::int8_t> marked_edges(
       map_e->size_local() + map_e->num_ghosts(), true);
 
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
   auto [cell_adj, new_vertex_coordinates, parent_cell, parent_facet]
-      = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
-                           long_edge, edge_ratio_ok, options);
-  MPI_Comm_free(&neighbor_comm);
+      = compute_refinement(comm, marked_edges, shared_edges, mesh, long_edge,
+                           edge_ratio_ok, options);
+  MPI_Comm_free(&comm);
 
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
           std::move(parent_cell), std::move(parent_facet)};
@@ -732,7 +729,6 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
 
   auto map_e = mesh.topology().index_map(1);
   assert(map_e);
-
   std::vector<std::int8_t> marked_edges(
       map_e->size_local() + map_e->num_ghosts(), false);
 
@@ -750,9 +746,8 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
       marked_edges[edge] = true;
 
       // If it is a shared edge, add all sharing neighbors to update set
-      if (auto map_it = shared_edges.find(edge); map_it != shared_edges.end())
-        for (int p : map_it->second)
-          marked_for_update[p].push_back(edge);
+      for (int rank : shared_edges.links(edge))
+        marked_for_update[rank].push_back(edge);
     }
   }
 

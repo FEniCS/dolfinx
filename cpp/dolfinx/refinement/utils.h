@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <memory>
 #include <set>
@@ -23,14 +24,14 @@ enum class GhostMode;
 
 namespace dolfinx::common
 {
-class IndexMap;
 class IndexMapNew;
 } // namespace dolfinx::common
 
 namespace dolfinx::refinement
 {
 
-/// @brief Compute the sharing of edges between processes.
+/// @brief For each edge in the mesh, compute the ranks that share the
+/// edge.
 ///
 /// The resulting MPI_Comm is over the neighborhood of shared edges,
 /// allowing direct communication between peers. The resulting map is
@@ -39,7 +40,7 @@ namespace dolfinx::refinement
 //
 /// @param[in] mesh Mesh
 /// @return pair of comm and map
-std::pair<MPI_Comm, std::map<std::int32_t, std::vector<int>>>
+std::pair<MPI_Comm, graph::AdjacencyList<int>>
 compute_edge_sharing(const mesh::Mesh& mesh);
 
 /// @brief Transfer marked edges between processes.
@@ -63,10 +64,10 @@ void update_logical_edgefunction(
 /// @param[in] marked_edges
 /// @return edge_to_new_vertex map and geometry array
 std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
-create_new_vertices(
-    MPI_Comm neighbor_comm,
-    const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
-    const mesh::Mesh& mesh, const std::vector<std::int8_t>& marked_edges);
+create_new_vertices(MPI_Comm neighbor_comm,
+                    const graph::AdjacencyList<int>& shared_edges,
+                    const mesh::Mesh& mesh,
+                    const std::vector<std::int8_t>& marked_edges);
 
 /// Use vertex and topology data to partition new mesh across
 /// processes
