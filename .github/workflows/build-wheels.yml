@@ -78,7 +78,7 @@ jobs:
         run: python -m pip install cibuildwheel simple503 wheel
 
       - name: Checkout Basix
-        if: ${{ github.event.inputs.build_fenicsx_stack }}
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         uses: actions/checkout@v2
         with:
           repository: FEniCS/basix
@@ -86,13 +86,13 @@ jobs:
           ref: ${{ github.event.inputs.basix_ref }}
 
       - name: Build Basix wheel
-        if: ${{ github.event.inputs.build_fenicsx_stack }}
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         run: |
           cd basix
           python -m cibuildwheel --output-dir ../wheelhouse .
 
       - name: Checkout UFL
-        if: ${{ github.event.inputs.build_fenicsx_stack }}
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         uses: actions/checkout@v2
         with:
           repository: FEniCS/ufl
@@ -100,11 +100,11 @@ jobs:
           ref: ${{ github.event.inputs.ufl_ref }}
 
       - name: Build UFL wheel
-        if: ${{ github.event.inputs.build_fenicsx_stack }}
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         run: python -m pip wheel --no-deps -w wheelhouse ./ufl
 
       - name: Checkout FFCx
-        if: ${{ github.event.inputs.build_fenicsx_stack }}
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         uses: actions/checkout@v2
         with:
           repository: FEniCS/ffcx
@@ -112,7 +112,7 @@ jobs:
           ref: ${{ github.event.inputs.ffcx_ref }}
 
       - name: Build FFCx wheel
-        if: ${{ github.event.inputs.build_fenicsx_stack }}
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         run: python -m pip wheel --no-deps -w wheelhouse ./ffcx
 
       - name: Download mpi4py
