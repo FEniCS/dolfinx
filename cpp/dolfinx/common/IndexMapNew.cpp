@@ -644,7 +644,7 @@ IndexMapNew::create_submap_new(
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
 {
-  std::int64_t offset = _local_range[0];
+  const std::int64_t offset = _local_range[0];
 
   // Build lists of src and dest ranks
   std::vector<int> src = _owners;
@@ -653,9 +653,11 @@ graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
   auto dest = dolfinx::MPI::compute_graph_edges_nbx(_comm.comm(), src);
   std::sort(dest.begin(), dest.end());
 
-  // (local idx, ghosting rank) pairs for owned indices
+  // Array (local idx, ghosting rank) pairs for owned indices
   std::vector<std::pair<std::int32_t, int>> idx_to_rank;
 
+  // 1. Build adjacency list data for owned indices (index, [sharing
+  //    ranks])
   std::vector<std::int32_t> offsets;
   std::vector<int> data;
   {
@@ -668,16 +670,16 @@ graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
                    });
     std::sort(owner_to_ghost.begin(), owner_to_ghost.end());
 
-    // Build send buffer (second component of each pair in owner_to_ghost)
-    // to send to owner
+    // Build send buffer (the second component of each pair in
+    // owner_to_ghost) to send to rank that owns the index
     std::vector<std::int64_t> send_buffer;
     send_buffer.reserve(owner_to_ghost.size());
     std::transform(owner_to_ghost.begin(), owner_to_ghost.end(),
                    std::back_inserter(send_buffer),
                    [](auto x) { return x.second; });
 
-    // Build send sizes and displacements
-    std::vector<int> send_sizes, send_disp(1, 0);
+    // Compute send sizes and displacements
+    std::vector<int> send_sizes, send_disp{0};
     auto it = owner_to_ghost.begin();
     while (it != owner_to_ghost.end())
     {
@@ -685,8 +687,6 @@ graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
                               [r = it->first](auto x) { return x.first != r; });
       send_sizes.push_back(std::distance(it, it1));
       send_disp.push_back(send_disp.back() + send_sizes.back());
-
-      // Advance iterator
       it = it1;
     }
 
@@ -746,29 +746,23 @@ graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
     }
   }
 
-  // local idx -> sharing ranks (on neighbourhood comm, global rank =
-  // dest[data])
-  // graph::AdjacencyList<int> tmp(data, offsets);
-
-  // // Convert data array to global ranks
-  // std::transform(idx_to_rank.begin(), idx_to_rank.end(), data.begin(),
-  //                [&dest](auto x) { return dest[x.second]; });
-
-  // Send data back to ghosting ranks (this is necessary to share with
-  // ghosting ranks the other ranks that also ghost an index)
-  std::vector<std::int64_t> send_buffer1;
-  std::vector<int> send_sizes1;
+  // 2. Build and add adjacency list data for non-owned indices
+  //    (index, [sharing ranks]). Non-owned indices are ghosted but
+  //    not owned by this rank.
   {
-    const int rank = dolfinx::MPI::rank(_comm.comm());
-    std::vector<std::vector<std::int64_t>> dest_idx_to_rank(dest.size());
-    // for (std::int32_t n = 0; n < tmp.num_nodes(); ++n)
-    for (std::size_t n = 0; n < offsets.size() - 1; ++n)
+
+    // Send data for owned indices back to ghosting ranks (this is
+    // necessary to share with ghosting ranks all the ranks that also
+    // ghost a ghost index)
+    std::vector<std::int64_t> send_buffer;
+    std::vector<int> send_sizes;
     {
-      // auto ranks = tmp.links(n);
-      xtl::span<const std::int32_t> ranks(data.data() + offsets[n],
-                                          offsets[n + 1] - offsets[n]);
-      if (!ranks.empty())
+      const int rank = dolfinx::MPI::rank(_comm.comm());
+      std::vector<std::vector<std::int64_t>> dest_idx_to_rank(dest.size());
+      for (std::size_t n = 0; n < offsets.size() - 1; ++n)
       {
+        xtl::span<const std::int32_t> ranks(data.data() + offsets[n],
+                                            offsets[n + 1] - offsets[n]);
         for (auto r0 : ranks)
         {
           for (auto r : ranks)
@@ -779,83 +773,85 @@ graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
               dest_idx_to_rank[r0].push_back(n + offset);
               dest_idx_to_rank[r0].push_back(dest[r]);
             }
-            dest_idx_to_rank[r0].push_back(n + offset);
-            dest_idx_to_rank[r0].push_back(rank);
           }
+          dest_idx_to_rank[r0].push_back(n + offset);
+          dest_idx_to_rank[r0].push_back(rank);
         }
       }
-    }
 
-    // Count number of ghosts per dest
-    std::transform(dest_idx_to_rank.begin(), dest_idx_to_rank.end(),
-                   std::back_inserter(send_sizes1),
-                   [](auto& x) { return x.size(); });
-    for (auto& d : dest_idx_to_rank)
-      send_buffer1.insert(send_buffer1.end(), d.begin(), d.end());
+      // Count number of ghosts per destination and build send buffer
+      std::transform(dest_idx_to_rank.begin(), dest_idx_to_rank.end(),
+                     std::back_inserter(send_sizes),
+                     [](auto& x) { return x.size(); });
+      for (auto& d : dest_idx_to_rank)
+        send_buffer.insert(send_buffer.end(), d.begin(), d.end());
 
-    // Create owner -> ghost comm
-    MPI_Comm comm1;
-    MPI_Dist_graph_create_adjacent(
-        _comm.comm(), src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
-        dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+      // Create owner -> ghost comm
+      MPI_Comm comm;
+      MPI_Dist_graph_create_adjacent(
+          _comm.comm(), src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
+          dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
 
-    // Send how many indices I ghost to each owner, and receive how many
-    // of my indices other ranks ghost
-    std::vector<int> recv_sizes1(src.size(), 0);
-    send_sizes1.reserve(1);
-    recv_sizes1.reserve(1);
-    MPI_Neighbor_alltoall(send_sizes1.data(), 1, MPI_INT, recv_sizes1.data(), 1,
-                          MPI_INT, comm1);
+      // Send how many indices I ghost to each owner, and receive how
+      // many of my indices other ranks ghost
+      std::vector<int> recv_sizes(src.size(), 0);
+      send_sizes.reserve(1);
+      recv_sizes.reserve(1);
+      MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                            MPI_INT, comm);
 
-    // Prepare displacement vectors
-    std::vector<int> send_disp1(dest.size() + 1, 0),
-        recv_disp1(src.size() + 1, 0);
-    std::partial_sum(send_sizes1.begin(), send_sizes1.end(),
-                     std::next(send_disp1.begin()));
-    std::partial_sum(recv_sizes1.begin(), recv_sizes1.end(),
-                     std::next(recv_disp1.begin()));
+      // Prepare displacement vectors
+      std::vector<int> send_disp(dest.size() + 1, 0),
+          recv_disp(src.size() + 1, 0);
+      std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                       std::next(send_disp.begin()));
+      std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                       std::next(recv_disp.begin()));
 
-    std::vector<std::int64_t> recv_indices1(recv_disp1.back());
-    MPI_Neighbor_alltoallv(send_buffer1.data(), send_sizes1.data(),
-                           send_disp1.data(), MPI_INT64_T, recv_indices1.data(),
-                           recv_sizes1.data(), recv_disp1.data(), MPI_INT64_T,
-                           comm1);
-    MPI_Comm_free(&comm1);
+      std::vector<std::int64_t> recv_indices(recv_disp.back());
+      MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
+                             send_disp.data(), MPI_INT64_T, recv_indices.data(),
+                             recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                             comm);
+      MPI_Comm_free(&comm);
 
-    // ---------
+      // Build list of (ghost index, ghost position) pairs for indices
+      // ghosted by this rank, and sort
+      std::vector<std::pair<std::int64_t, std::int32_t>> idx_to_pos;
+      for (auto idx : _ghosts)
+        idx_to_pos.push_back({idx, idx_to_pos.size()});
+      std::sort(idx_to_pos.begin(), idx_to_pos.end());
 
-    std::vector<std::pair<std::int64_t, std::int32_t>> idx_to_pos;
-    for (auto idx : _ghosts)
-      idx_to_pos.push_back({idx, idx_to_pos.size()});
-    std::sort(idx_to_pos.begin(), idx_to_pos.end());
+      // Build list of (local ghost position, sharing rank) pairs from
+      // the received data, and sort
+      std::vector<std::pair<std::int32_t, int>> idxpos_to_rank1;
+      for (std::size_t i = 0; i < recv_indices.size(); i += 2)
+      {
+        std::int64_t idx = recv_indices[i];
+        auto it = std::lower_bound(
+            idx_to_pos.begin(), idx_to_pos.end(),
+            std::pair<std::int64_t, std::int32_t>{idx, 0},
+            [](auto a, auto b) { return a.first < b.first; });
+        assert(it != idx_to_pos.end() and it->first == idx);
 
-    std::vector<std::pair<std::int32_t, int>> idxpos_to_rank1;
-    for (std::size_t i = 0; i < recv_indices1.size(); i += 2)
-    {
-      std::int64_t idx = recv_indices1[i];
-      auto it
-          = std::lower_bound(idx_to_pos.begin(), idx_to_pos.end(),
-                             std::pair<std::int64_t, std::int32_t>{idx, 0},
-                             [](auto a, auto b) { return a.first < b.first; });
-      assert(it != idx_to_pos.end() and it->first == idx);
-      int rank = recv_indices1[i + 1];
+        int rank = recv_indices[i + 1];
+        idxpos_to_rank1.push_back({it->second, rank});
+      }
+      std::sort(idxpos_to_rank1.begin(), idxpos_to_rank1.end());
 
-      idxpos_to_rank1.push_back({it->second, rank});
-    }
-    std::sort(idxpos_to_rank1.begin(), idxpos_to_rank1.end());
-
-    // TODO: exclude self rank
-    std::transform(idxpos_to_rank1.begin(), idxpos_to_rank1.end(),
-                   std::back_inserter(data), [](auto x) { return x.second; });
-
-    auto it = idxpos_to_rank1.begin();
-    for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    {
-      auto it1
-          = std::find_if(it, idxpos_to_rank1.end(),
-                         [i](auto x) { return x.first != (std::int32_t)i; });
-      offsets.push_back(offsets.back() + std::distance(it, it1));
-      it = it1;
+      // Add processed received data to adjacency list data array, and
+      // extend offset array
+      std::transform(idxpos_to_rank1.begin(), idxpos_to_rank1.end(),
+                     std::back_inserter(data), [](auto x) { return x.second; });
+      auto it = idxpos_to_rank1.begin();
+      for (std::size_t i = 0; i < _ghosts.size(); ++i)
+      {
+        auto it1
+            = std::find_if(it, idxpos_to_rank1.end(),
+                           [i](auto x) { return x.first != (std::int32_t)i; });
+        offsets.push_back(offsets.back() + std::distance(it, it1));
+        it = it1;
+      }
     }
   }
 
