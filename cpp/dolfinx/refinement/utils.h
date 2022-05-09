@@ -30,19 +30,6 @@ class IndexMapNew;
 namespace dolfinx::refinement
 {
 
-/// @brief For each edge in the mesh, compute the ranks that share the
-/// edge.
-///
-/// The resulting MPI_Comm is over the neighborhood of shared edges,
-/// allowing direct communication between peers. The resulting map is
-/// from local edge index to the set of neighbors (within the comm) that
-/// share that edge.
-//
-/// @param[in] mesh Mesh
-/// @return pair of comm and map
-std::pair<MPI_Comm, graph::AdjacencyList<int>>
-compute_edge_sharing(const mesh::Mesh& mesh);
-
 /// @brief Transfer marked edges between processes.
 ///
 /// @param[in] neighbor_comm MPI Communicator for neighborhood

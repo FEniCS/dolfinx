@@ -123,44 +123,6 @@ xt::xtensor<double, 2> create_new_geometry(
 } // namespace
 
 //---------------------------------------------------------------------------------
-std::pair<MPI_Comm, graph::AdjacencyList<int>>
-refinement::compute_edge_sharing(const mesh::Mesh& mesh)
-{
-  auto map_e = mesh.topology().index_map(1);
-  if (!map_e)
-    throw std::runtime_error("Edges must be initialised");
-
-  // Get sharing ranks for each edge
-  graph::AdjacencyList<int> sharing_ranks = map_e->index_to_dest_ranks();
-
-  // Build of ranks from sharing_ranks
-  std::vector<int> neighours(sharing_ranks.array().begin(),
-                             sharing_ranks.array().end());
-  std::sort(neighours.begin(), neighours.end());
-  neighours.erase(std::unique(neighours.begin(), neighours.end()),
-                  neighours.end());
-
-  MPI_Comm comm;
-  MPI_Dist_graph_create_adjacent(mesh.comm(), neighours.size(),
-                                 neighours.data(), MPI_UNWEIGHTED,
-                                 neighours.size(), neighours.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
-
-  // Convert sharing_ranks from global rank to to neighbourhood ranks
-  for (std::int32_t n = 0; n < sharing_ranks.num_nodes(); ++n)
-  {
-    auto ranks = sharing_ranks.links(n);
-    for (auto& rank : ranks)
-    {
-      auto it = std::lower_bound(neighours.begin(), neighours.end(), rank);
-      assert(it != neighours.end() and *it == rank);
-      rank = std::distance(neighours.begin(), it);
-    }
-  }
-
-  return {comm, std::move(sharing_ranks)};
-}
-//-----------------------------------------------------------------------------
 void refinement::update_logical_edgefunction(
     MPI_Comm neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
