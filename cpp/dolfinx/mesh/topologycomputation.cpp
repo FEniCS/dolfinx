@@ -30,6 +30,32 @@ using namespace dolfinx;
 
 namespace
 {
+template <typename U>
+graph::AdjacencyList<int> create_adj_list(U& data, std::int32_t size)
+{
+  std::sort(data.begin(), data.end());
+  data.erase(std::unique(data.begin(), data.end()), data.end());
+
+  std::vector<int> array;
+  array.reserve(data.size());
+  std::vector<std::int32_t> offsets{0};
+  offsets.reserve(size + 1);
+
+  std::transform(data.begin(), data.end(), std::back_inserter(array),
+                 [](auto x) { return x.second; });
+
+  auto it = data.begin();
+  for (std::int32_t e = 0; e < size; ++e)
+  {
+    auto it1
+        = std::find_if(it, data.end(), [e](auto x) { return x.first != e; });
+    offsets.push_back(offsets.back() + std::distance(it, it1));
+    it = it1;
+  }
+
+  return graph::AdjacencyList<int>(std::move(array), std::move(offsets));
+}
+
 //-----------------------------------------------------------------------------
 /// Get the ownership of an entity shared over several processes
 /// @param processes Set of sharing processes
@@ -265,63 +291,11 @@ get_local_indexing(MPI_Comm comm, const common::IndexMapNew& cell_indexmap,
     }
   }
 
-  std::sort(shared_entities_data.begin(), shared_entities_data.end());
-  shared_entities_data.erase(
-      std::unique(shared_entities_data.begin(), shared_entities_data.end()),
-      shared_entities_data.end());
+  const graph::AdjacencyList<int> shared_entities
+      = create_adj_list(shared_entities_data, entity_count);
 
-  std::sort(shared_entity_to_global_vertices_data.begin(),
-            shared_entity_to_global_vertices_data.end());
-  shared_entity_to_global_vertices_data.erase(
-      std::unique(shared_entity_to_global_vertices_data.begin(),
-                  shared_entity_to_global_vertices_data.end()),
-      shared_entity_to_global_vertices_data.end());
-
-  std::vector<int> data_ranks;
-  std::vector<std::int32_t> offsets_ranks{0};
-  {
-    data_ranks.reserve(shared_entities_data.size());
-    std::transform(shared_entities_data.begin(), shared_entities_data.end(),
-                   std::back_inserter(data_ranks),
-                   [](auto x) { return x.second; });
-    offsets_ranks.reserve(entity_count + 1);
-    {
-      auto it = shared_entities_data.begin();
-      for (std::int32_t e = 0; e < entity_count; ++e)
-      {
-        auto it1 = std::find_if(it, shared_entities_data.end(),
-                                [e](auto x) { return x.first != e; });
-        offsets_ranks.push_back(offsets_ranks.back() + std::distance(it, it1));
-        it = it1;
-      }
-    }
-  }
-  const graph::AdjacencyList<int> shared_entities(std::move(data_ranks),
-                                                  std::move(offsets_ranks));
-
-  std::vector<int> data_ranks1;
-  std::vector<std::int32_t> offsets_ranks1{0};
-  {
-    data_ranks1.reserve(shared_entity_to_global_vertices_data.size());
-    std::transform(shared_entity_to_global_vertices_data.begin(),
-                   shared_entity_to_global_vertices_data.end(),
-                   std::back_inserter(data_ranks1),
-                   [](auto x) { return x.second; });
-    offsets_ranks1.reserve(entity_count + 1);
-    {
-      auto it = shared_entity_to_global_vertices_data.begin();
-      for (std::int32_t e = 0; e < entity_count; ++e)
-      {
-        auto it1 = std::find_if(it, shared_entity_to_global_vertices_data.end(),
-                                [e](auto x) { return x.first != e; });
-        offsets_ranks1.push_back(offsets_ranks1.back()
-                                 + std::distance(it, it1));
-        it = it1;
-      }
-    }
-  }
-  const graph::AdjacencyList<int> shared_entities_v(std::move(data_ranks1),
-                                                    std::move(offsets_ranks1));
+  const graph::AdjacencyList<int> shared_entities_v
+      = create_adj_list(shared_entity_to_global_vertices_data, entity_count);
 
   //---------
   // Determine ownership
