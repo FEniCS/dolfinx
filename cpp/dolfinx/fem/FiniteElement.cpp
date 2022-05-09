@@ -192,8 +192,9 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
         const int num_entities = basix::cell::num_sub_entities(cell_type, d);
         for (int entity = 0; entity < num_entities; ++entity)
         {
-          const int npts = ce->npts[pt_n++];
-          const int ndofs = ce->ndofs[pt_n++];
+          const int npts = ce->npts[pt_n];
+          const int ndofs = ce->ndofs[pt_n];
+          ++pt_n;
           xt::xtensor<double, 2> pts(
               {static_cast<std::size_t>(npts), static_cast<std::size_t>(dim)});
           xt::xtensor<double, 3> mat({static_cast<std::size_t>(ndofs),
