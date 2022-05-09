@@ -48,7 +48,7 @@ jobs:
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: mscroggs/correct-custom-element-M-shape
+          ref: main
 
       - name: Install FFCx C interface
         run: |
