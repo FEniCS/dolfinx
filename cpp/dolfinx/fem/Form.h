@@ -358,7 +358,7 @@ public:
 
   /// TODO Add docs
   const std::function<std::int32_t(std::int32_t)>
-  cell_map(FunctionSpace& function_space)
+  cell_map(const FunctionSpace& function_space) const
   {
     auto coeff_mesh = function_space.mesh();
     if (coeff_mesh != mesh())
@@ -374,7 +374,7 @@ public:
 
   /// TODO Add docs
   const std::function<std::int32_t(std::pair<std::int32_t, int>)>
-  cell_local_facet_map(FunctionSpace& function_space)
+  cell_local_facet_map(const FunctionSpace& function_space)
   {
     auto mesh = mesh();
     auto coeff_mesh = function_space.mesh();
