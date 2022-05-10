@@ -510,7 +510,8 @@ void assemble_cells(
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& kernel,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
-    int cstride, const xtl::span<const std::uint32_t>& cell_info)
+    int cstride, const xtl::span<const std::uint32_t>& cell_info,
+    const std::function<std::int32_t(std::int32_t)>& cell_map)
 {
   assert(_bs < 0 or _bs == bs);
 
@@ -533,6 +534,7 @@ void assemble_cells(
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
     std::int32_t c = cells[index];
+    std::int32_t c_0 = cell_map(c);
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
@@ -546,10 +548,10 @@ void assemble_cells(
     std::fill(be.begin(), be.end(), 0);
     kernel(be.data(), coeffs.data() + index * cstride, constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
-    dof_transform(_be, cell_info, c, 1);
+    dof_transform(_be, cell_info, c_0, 1);
 
     // Scatter cell vector to 'global' vector array
-    auto dofs = dofmap.links(c);
+    auto dofs = dofmap.links(c_0);
     if constexpr (_bs > 0)
     {
       for (int i = 0; i < num_dofs; ++i)
@@ -985,12 +987,14 @@ void assemble_vector(
   xtl::span<const std::uint32_t> cell_info;
   if (needs_transformation_data)
   {
-    mesh->topology_mutable().create_entity_permutations();
-    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    auto mesh_0 = L.function_spaces().at(0)->mesh();
+    mesh_0->topology_mutable().create_entity_permutations();
+    cell_info = xtl::span(mesh_0->topology().get_cell_permutation_info());
   }
 
   for (int i : L.integral_ids(IntegralType::cell))
   {
+    const auto cell_map = L.cell_map(*L.function_spaces().at(0));
     const auto& fn = L.kernel(IntegralType::cell, i);
     const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = L.cell_domains(i);
@@ -998,18 +1002,18 @@ void assemble_vector(
     {
       impl::assemble_cells<T, 1>(dof_transform, b, mesh->geometry(), cells,
                                  dofs, bs, fn, constants, coeffs, cstride,
-                                 cell_info);
+                                 cell_info, cell_map);
     }
     else if (bs == 3)
     {
       impl::assemble_cells<T, 3>(dof_transform, b, mesh->geometry(), cells,
                                  dofs, bs, fn, constants, coeffs, cstride,
-                                 cell_info);
+                                 cell_info, cell_map);
     }
     else
     {
       impl::assemble_cells(dof_transform, b, mesh->geometry(), cells, dofs, bs,
-                           fn, constants, coeffs, cstride, cell_info);
+                           fn, constants, coeffs, cstride, cell_info, cell_map);
     }
   }
 
