@@ -584,7 +584,8 @@ void assemble_exterior_facets(
     const std::function<void(T*, const T*, const T*, const double*, const int*,
                              const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
-    int cstride, const xtl::span<const std::uint32_t>& cell_info)
+    int cstride, const xtl::span<const std::uint32_t>& cell_info,
+    const std::function<std::int32_t(std::pair<std::int32_t, int>)>& facet_map)
 {
   assert(_bs < 0 or _bs == bs);
 
@@ -607,6 +608,8 @@ void assemble_exterior_facets(
   {
     std::int32_t cell = facets[index].first;
     int local_facet = facets[index].second;
+    std::int32_t c_0 = facet_map(facets[index]);
+    assert(c_0 >= 0);
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cell);
@@ -622,10 +625,10 @@ void assemble_exterior_facets(
     fn(be.data(), coeffs.data() + index * cstride, constants.data(),
        coordinate_dofs.data(), &local_facet, nullptr);
 
-    dof_transform(_be, cell_info, cell, 1);
+    dof_transform(_be, cell_info, c_0, 1);
 
     // Add element vector to global vector
-    auto dofs = dofmap.links(cell);
+    auto dofs = dofmap.links(c_0);
     if constexpr (_bs > 0)
     {
       for (int i = 0; i < num_dofs; ++i)
@@ -1019,6 +1022,8 @@ void assemble_vector(
 
   for (int i : L.integral_ids(IntegralType::exterior_facet))
   {
+    const auto facet_map
+        = L.cell_local_facet_map(*L.function_spaces().at(0));
     const auto& fn = L.kernel(IntegralType::exterior_facet, i);
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
@@ -1028,18 +1033,19 @@ void assemble_vector(
     {
       impl::assemble_exterior_facets<T, 1>(dof_transform, b, *mesh, facets,
                                            dofs, bs, fn, constants, coeffs,
-                                           cstride, cell_info);
+                                           cstride, cell_info, facet_map);
     }
     else if (bs == 3)
     {
       impl::assemble_exterior_facets<T, 3>(dof_transform, b, *mesh, facets,
                                            dofs, bs, fn, constants, coeffs,
-                                           cstride, cell_info);
+                                           cstride, cell_info, facet_map);
     }
     else
     {
       impl::assemble_exterior_facets(dof_transform, b, *mesh, facets, dofs, bs,
-                                     fn, constants, coeffs, cstride, cell_info);
+                                     fn, constants, coeffs, cstride, cell_info,
+                                     facet_map);
     }
   }
 

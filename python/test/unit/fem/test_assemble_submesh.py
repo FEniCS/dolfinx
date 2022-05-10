@@ -257,21 +257,33 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
 
     c_to_v = mesh.topology.connectivity(tdim, 0)
     num_cells = c_to_v.num_nodes
-    entities_mt = create_adjacencylist([c_to_v.links(c)
-                                        for c in range(num_cells)])
-    values = np.zeros((num_cells), dtype=np.int32)
-    values[entities] = 1
-    mt = meshtags_from_entities(mesh, tdim, entities_mt, values)
+    cells = create_adjacencylist([c_to_v.links(c)
+                                  for c in range(num_cells)])
+    cell_values = np.zeros((num_cells), dtype=np.int32)
+    cell_values[entities] = 1
+    cell_mt = meshtags_from_entities(mesh, tdim, cells, cell_values)
+
+    mesh.topology.create_connectivity(tdim - 1, 0)
+    f_to_v = mesh.topology.connectivity(tdim - 1, 0)
+    num_facets = f_to_v.num_nodes
+    facets = create_adjacencylist([f_to_v.links(f)
+                                   for f in range(num_facets)])
+    facet_values = np.zeros((num_facets), dtype=np.int32)
+    left_facets = locate_entities_boundary(
+        mesh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
+    facet_values[left_facets] = 1
+    facet_mt = meshtags_from_entities(mesh, tdim - 1, facets, facet_values)
 
     V_sm = fem.FunctionSpace(submesh, (space, k))
     v = ufl.TestFunction(V_sm)
-    dx = ufl.Measure("dx", domain=mesh, subdomain_data=mt)
+    dx = ufl.Measure("dx", domain=mesh, subdomain_data=cell_mt)
+    ds = ufl.Measure("ds", domain=mesh, subdomain_data=facet_mt)
 
     mp = [entity_map.index(entity) if entity in entity_map else -1
           for entity in range(num_cells)]
 
     entity_maps = {submesh: mp}
-    L = fem.form(v * dx(1),
+    L = fem.form(v * (dx(1) + ds(1)),
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
@@ -280,31 +292,31 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
 
 
 # def test_mixed_mesh_codim_0_assembly(n, k, space, ghost_mode):
-    # TODO Add test to check vector is actually correct
-    # mesh = create_rectangle(
-    #     MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-    #     ghost_mode=ghost_mode)
-    # edim = mesh.topology.dim
-    # entities = locate_entities(mesh, edim, lambda x: x[0] <= 1.0)
-    # submesh, entity_map, vertex_map, geom_map = create_submesh(
-    #     mesh, edim, entities)
+# TODO Add test to check vector is actually correct
+# mesh = create_rectangle(
+#     MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+#     ghost_mode=ghost_mode)
+# edim = mesh.topology.dim
+# entities = locate_entities(mesh, edim, lambda x: x[0] <= 1.0)
+# submesh, entity_map, vertex_map, geom_map = create_submesh(
+#     mesh, edim, entities)
 
-    # element = (space, k)
-    # V_m = fem.FunctionSpace(mesh, element)
+# element = (space, k)
+# V_m = fem.FunctionSpace(mesh, element)
 
-    # v = ufl.TestFunction(V_m)
-    # dx_sm = ufl.Measure("dx", domain=submesh)
-    # ds_sm = ufl.Measure("ds", domain=submesh)
+# v = ufl.TestFunction(V_m)
+# dx_sm = ufl.Measure("dx", domain=submesh)
+# ds_sm = ufl.Measure("ds", domain=submesh)
 
-    # entity_maps = {mesh: entity_map}
-    # L = fem.form(v * (dx_sm + ds_sm),
-    #              entity_maps=entity_maps)
-    # b = fem.petsc.assemble_vector(L)
-    # b.ghostUpdate(addv=PETSc.InsertMode.ADD,
-    #               mode=PETSc.ScatterMode.REVERSE)
+# entity_maps = {mesh: entity_map}
+# L = fem.form(v * (dx_sm + ds_sm),
+#              entity_maps=entity_maps)
+# b = fem.petsc.assemble_vector(L)
+# b.ghostUpdate(addv=PETSc.InsertMode.ADD,
+#               mode=PETSc.ScatterMode.REVERSE)
 
-    # norm_0 = b.norm()
-    # print(norm_0)
+# norm_0 = b.norm()
+# print(norm_0)
 
 
 # np.set_printoptions(linewidth=200, suppress=True)
