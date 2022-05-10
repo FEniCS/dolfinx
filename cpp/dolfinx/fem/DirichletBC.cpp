@@ -394,10 +394,6 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     // Get bc dof indices (local) for each of spaces on this process that
     // were found by other processes, e.g. a vertex dof on this process
     // that has no connected facets on the boundary.
-    // common::IndexMap map_old0 =
-    // common::create_old(*(V0.dofmap()->index_map)); dolfinx::MPI::Comm comm =
-    // create_symmetric_comm(
-    //     map_old0.comm(common::IndexMap::Direction::forward));
 
     auto map0 = V0.dofmap()->index_map;
     assert(map0);

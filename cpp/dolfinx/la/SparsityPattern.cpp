@@ -239,8 +239,20 @@ void SparsityPattern::assemble()
   const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
 
   common::IndexMap map0_old = common::create_old(*_index_maps[0]);
-
   const std::vector<int> ghost_owners0 = map0_old.ghost_owners();
+
+  const std::vector<int>& owners0 = _index_maps[0]->owners();
+  std::vector<int> src0 = owners0;
+  std::sort(src0.begin(), src0.end());
+  src0.erase(std::unique(src0.begin(), src0.end()), src0.end());
+  std::vector<int> dest0
+      = dolfinx::MPI::compute_graph_edges_nbx(_index_maps[0]->comm(), src0);
+  std::sort(dest0.begin(), dest0.end());
+
+  MPI_Comm comm0;
+  MPI_Dist_graph_create_adjacent(
+      _index_maps[0]->comm(), src0.size(), src0.data(), MPI_UNWEIGHTED,
+      dest0.size(), dest0.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
 
   assert(_index_maps[1]);
   const std::int32_t local_size1 = _index_maps[1]->size_local();
@@ -256,15 +268,16 @@ void SparsityPattern::assemble()
     global_to_local.insert({global_i, local_i++});
 
   // Get number of destination ranks for ghost rows
-  int outdegree(-1);
-  {
-    MPI_Comm comm = map0_old.comm(common::IndexMap::Direction::reverse);
-    int indegree(-1), weighted(-1);
-    MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
-  }
+  // int outdegree(-1);
+  // {
+  //   MPI_Comm comm = map0_old.comm(common::IndexMap::Direction::reverse);
+  //   int indegree(-1), weighted(-1);
+  //   MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
+  // }
 
   // Compute size of data to send to each process
-  std::vector<std::int32_t> data_per_proc(outdegree, 0);
+  // std::vector<std::int32_t> data_per_proc(outdegree, 0);
+  std::vector<std::int32_t> data_per_proc(src0.size(), 0);
   for (std::size_t i = 0; i < ghost_owners0.size(); ++i)
   {
     // Add to src size
@@ -273,7 +286,8 @@ void SparsityPattern::assemble()
   }
 
   // Compute send displacements
-  std::vector<int> send_disp(outdegree + 1, 0);
+  // std::vector<int> send_disp(outdegree + 1, 0);
+  std::vector<int> send_disp(src0.size() + 1, 0);
   std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
                    std::next(send_disp.begin(), 1));
 

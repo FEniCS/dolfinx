@@ -340,7 +340,7 @@ refinement::adjust_indices(const common::IndexMapNew& map, std::int32_t n)
 
   std::vector<int> dest
       = dolfinx::MPI::compute_graph_edges_nbx(map.comm(), src);
-  std::sort(src.begin(), src.end());
+  std::sort(dest.begin(), dest.end());
 
   MPI_Comm comm;
   MPI_Dist_graph_create_adjacent(map.comm(), src.size(), src.data(),
@@ -364,7 +364,7 @@ refinement::adjust_indices(const common::IndexMapNew& map, std::int32_t n)
                  global_indices.begin(),
                  [global_offset](auto x) { return x + global_offset; });
 
-  // Add offset to ghost indices
+  // Add offsets to ghost indices
   std::transform(std::next(global_indices.begin(), local_size),
                  global_indices.end(), owners.begin(),
                  std::next(global_indices.begin(), local_size),
