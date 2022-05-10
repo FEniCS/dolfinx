@@ -288,7 +288,6 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
     b = fem.petsc.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
-    print(b[:])
 
 
 # def test_mixed_mesh_codim_0_assembly(n, k, space, ghost_mode):
