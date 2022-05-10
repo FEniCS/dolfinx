@@ -839,3 +839,84 @@ graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
   return graph::AdjacencyList<int>(std::move(data), std::move(offsets));
 }
 //-----------------------------------------------------------------------------
+std::vector<std::int32_t> IndexMapNew::shared_indices() const
+{
+  // Build list of (owner, index) pairs for each ghost, and sort
+  std::vector<std::pair<int, std::int64_t>> send_idx;
+  std::transform(_ghosts.begin(), _ghosts.end(), _owners.begin(),
+                 std::back_inserter(send_idx),
+                 [](auto idx, auto r)
+                 { return std::pair<int, std::int64_t>(r, idx); });
+  std::sort(send_idx.begin(), send_idx.end());
+
+  std::vector<int> src;
+  std::vector<std::int64_t> send_buffer;
+  std::vector<int> send_sizes, send_disp{0};
+  {
+    auto it = send_idx.begin();
+    while (it != send_idx.end())
+    {
+      src.push_back(it->first);
+      auto it1 = std::find_if(it, send_idx.end(),
+                              [r = src.back()](auto& idx)
+                              { return idx.first != r; });
+
+      // Pack send buffer
+      std::transform(it, it1, std::back_inserter(send_buffer),
+                     [](auto& idx) { return idx.second; });
+
+      // Send sizes and displacements
+      send_sizes.push_back(std::distance(it, it1));
+      send_disp.push_back(send_disp.back() + send_sizes.back());
+
+      // Advance iterator
+      it = it1;
+    }
+  }
+
+  auto dest = dolfinx::MPI::compute_graph_edges_nbx(_comm.comm(), src);
+  std::sort(dest.begin(), dest.end());
+
+  // Create ghost -> owner comm
+  MPI_Comm comm;
+  MPI_Dist_graph_create_adjacent(_comm.comm(), dest.size(), dest.data(),
+                                 MPI_UNWEIGHTED, src.size(), src.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+
+  std::vector<int> recv_sizes(dest.size(), 0);
+  send_sizes.reserve(1);
+  recv_sizes.reserve(1);
+  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                        MPI_INT, comm);
+
+  // Prepare receive displacement array
+  std::vector<int> recv_disp(dest.size() + 1, 0);
+  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                   std::next(recv_disp.begin()));
+
+  // Send ghost indices to owner, and receive owned indices
+  std::vector<std::int64_t> recv_buffer(recv_disp.back());
+  MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
+                         send_disp.data(), MPI_INT64_T, recv_buffer.data(),
+                         recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                         comm);
+
+  MPI_Comm_free(&comm);
+
+  std::sort(recv_buffer.begin(), recv_buffer.end());
+  recv_buffer.erase(std::unique(recv_buffer.begin(), recv_buffer.end()),
+                    recv_buffer.end());
+
+  std::vector<std::int32_t> shared;
+  std::transform(recv_buffer.begin(), recv_buffer.end(),
+                 std::back_inserter(shared),
+                 [range = _local_range](auto idx)
+                 {
+                   assert(idx >= range[0]);
+                   assert(idx < range[1]);
+                   return idx - range[0];
+                 });
+
+  return shared;
+}
+//-----------------------------------------------------------------------------

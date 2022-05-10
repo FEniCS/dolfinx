@@ -169,6 +169,9 @@ public:
   /// @return shared indices
   graph::AdjacencyList<int> index_to_dest_ranks() const;
 
+  /// TODO
+  std::vector<std::int32_t> shared_indices() const;
+
 private:
   // Range of indices (global) owned by this process
   std::array<std::int64_t, 2> _local_range;
@@ -176,7 +179,7 @@ private:
   // Number indices across communicator
   std::int64_t _size_global;
 
-  // MPI communicator (duplicated of 'input' communicator)
+  // MPI communicator that map is defined on
   dolfinx::MPI::Comm _comm;
 
   // Local-to-global map for ghost indices
