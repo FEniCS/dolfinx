@@ -125,6 +125,37 @@ def test_custom_element_triangle_degree4():
     run_scalar_test(V, 4)
 
 
+def test_custom_element_triangle_degree4_integral():
+    pts, wts = basix.make_quadrature(basix.CellType.interval, 10)
+    tab = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 2).tabulate(0, pts)[0, :, :, 0]
+    wcoeffs = np.eye(15)
+    x = [[np.array([[0., 0.]]), np.array([[1., 0.]]), np.array([[0., 1.]])],
+         [np.array([[1. - p[0], p[0]] for p in pts]),
+          np.array([[0., p[0]] for p in pts]),
+          np.array([[p[0], 0.] for p in pts])],
+         [np.array([[.25, .25], [.5, .25], [.25, .5]])], []]
+
+    assert pts.shape[0] != 3
+    quadrature_mat = np.zeros([3, 1, pts.shape[0]])
+    for dof in range(3):
+        for p in range(pts.shape[0]):
+            quadrature_mat[dof, 0, p] = wts[p] * tab[p, dof]
+
+    M = [[np.array([[[1.]]]), np.array([[[1.]]]), np.array([[[1.]]])],
+         [quadrature_mat, quadrature_mat, quadrature_mat],
+         [np.array([[[1., 0., 0.]], [[0., 1., 0.]], [[0., 0., 1.]]])], []]
+
+    e = basix.create_custom_element(
+        basix.CellType.triangle, [], wcoeffs,
+        x, M, basix.MapType.identity, False, 4, 4)
+    ufl_element = BasixElement(e)
+
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
+    V = FunctionSpace(mesh, ufl_element)
+
+    run_scalar_test(V, 4)
+
+
 def test_custom_element_quadrilateral_degree1():
     wcoeffs = np.eye(4)
     z = np.zeros((0, 2))
