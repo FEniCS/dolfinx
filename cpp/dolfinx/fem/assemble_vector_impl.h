@@ -535,6 +535,7 @@ void assemble_cells(
   {
     std::int32_t c = cells[index];
     std::int32_t c_0 = cell_map(c);
+    assert(c_0 >= 0);
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
