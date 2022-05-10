@@ -287,6 +287,16 @@ def test_matrix_assembly_block(mode):
     Anorm0 = A0.norm()
     bnorm0 = b0.norm()
 
+    # Prepare a block problem with "None" on (1, 1) diagonal
+    a_block_none = form([[a00, a01, a02], [None, None, a12], [a20, a21, a22]])
+
+    try:
+        A0 = assemble_matrix_block(a_block_none, bcs=[bc])
+    except RuntimeError:
+        pass
+    else:
+        raise RuntimeError("DirichletBC for 'None' diagonal block must raise.")
+
     # Nested (MatNest)
     A1 = assemble_matrix_nest(a_block, bcs=[bc], mat_types=[["baij", "aij", "aij"],
                                                             ["aij", "", "aij"],
@@ -294,6 +304,13 @@ def test_matrix_assembly_block(mode):
     A1.assemble()
     Anorm1 = nest_matrix_norm(A1)
     assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
+
+    try:
+        A0 = assemble_matrix_nest(a_block_none, bcs=[bc])
+    except RuntimeError:
+        pass
+    else:
+        raise RuntimeError("DirichletBC for 'None' diagonal block must raise.")
 
     b1 = assemble_vector_nest(L_block)
     apply_lifting_nest(b1, a_block, bcs=[bc])
@@ -327,10 +344,6 @@ def test_matrix_assembly_block(mode):
     assert A2.getType() != "nest"
     assert A2.norm() == pytest.approx(Anorm0, 1.0e-9)
     assert b2.norm() == pytest.approx(bnorm0, 1.0e-9)
-
-    # Prepare a block problem with "None" on (1, 1) diagonal
-    a_block_none = form([[a00, a01, a02], [a10, None, a12], [a20, a21, a22]])
-    A0 = assemble_matrix_block(a_block_none, bcs=[bc])
 
 
 @ pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
