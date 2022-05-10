@@ -276,6 +276,13 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
 
     V_sm = fem.FunctionSpace(submesh, (space, k))
     v = ufl.TestFunction(V_sm)
+
+    submesh_boundary_facets = locate_entities_boundary(
+        submesh, edim - 1, lambda x: np.isclose(x[1], 1.0))
+    dofs = fem.locate_dofs_topological(V_sm, edim - 1, submesh_boundary_facets)
+    bc_func = fem.Function(V_sm)
+    bc = fem.dirichletbc(bc_func, dofs)
+
     dx = ufl.Measure("dx", domain=mesh, subdomain_data=cell_mt)
     ds = ufl.Measure("ds", domain=mesh, subdomain_data=facet_mt)
 
@@ -286,9 +293,15 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
     L = fem.form(v * (dx(1) + ds(1)),
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
+    # TODO Apply lifting
+    # fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
+    # TODO Set bc
+    # fem.petsc.set_bc(b, [bc])
 
+
+# test_mixed_codim_0_test_func_assembly(2, 1, "Lagrange", GhostMode.shared_facet)
 
 # def test_mixed_mesh_codim_0_assembly(n, k, space, ghost_mode):
 # TODO Add test to check vector is actually correct
