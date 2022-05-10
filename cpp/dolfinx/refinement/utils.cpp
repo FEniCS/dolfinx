@@ -318,8 +318,9 @@ refinement::partition(const mesh::Mesh& old_mesh,
                            gm, partitioner);
 }
 //-----------------------------------------------------------------------------
+
 std::vector<std::int64_t>
-refinement::adjust_indices(const common::IndexMapNew& index_map, std::int32_t n)
+refinement::adjust_indices(const common::IndexMapNew& map, std::int32_t n)
 {
   // NOTE: Is this effectively concatenating index maps?
 
@@ -327,37 +328,53 @@ refinement::adjust_indices(const common::IndexMapNew& index_map, std::int32_t n)
   // of "index_map", and adjust existing indices to match.
 
   // Get offset for 'n' for this process
-  MPI_Comm comm = index_map.comm();
   const std::int64_t num_local = n;
   std::int64_t global_offset = 0;
-  MPI_Exscan(&num_local, &global_offset, 1, MPI_INT64_T, MPI_SUM, comm);
+  MPI_Exscan(&num_local, &global_offset, 1, MPI_INT64_T, MPI_SUM, map.comm());
 
-  common::IndexMap index_map_old = common::create_old(index_map);
+  const std::vector<int>& owners = map.owners();
 
-  // Use MPI neighbors to get offsets for ghosts. Use the source of the
-  // forward comm to get ghost entry neighbors and create a dictionary
-  // to lookup from the global rank
-  MPI_Comm comm_fwd = index_map_old.comm(common::IndexMap::Direction::forward);
-  int num_neighbors_fwd, num_neighbors_rev, weighted;
-  MPI_Dist_graph_neighbors_count(comm_fwd, &num_neighbors_fwd,
-                                 &num_neighbors_rev, &weighted);
+  std::vector<int> src = owners;
+  std::sort(src.begin(), src.end());
+  src.erase(std::unique(src.begin(), src.end()), src.end());
+
+  std::vector<int> dest
+      = dolfinx::MPI::compute_graph_edges_nbx(map.comm(), src);
+  std::sort(src.begin(), src.end());
+
+  MPI_Comm comm;
+  MPI_Dist_graph_create_adjacent(map.comm(), src.size(), src.data(),
+                                 MPI_UNWEIGHTED, dest.size(), dest.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
 
   // Communicate offset to neighbors
-  std::vector<std::int64_t> neighbor_offsets(num_neighbors_fwd, 0);
-  neighbor_offsets.reserve(1);
-  MPI_Neighbor_allgather(&global_offset, 1, MPI_INT64_T,
-                         neighbor_offsets.data(), 1, MPI_INT64_T, comm_fwd);
+  std::vector<std::int64_t> offsets(src.size(), 0);
+  offsets.reserve(1);
+  MPI_Neighbor_allgather(&global_offset, 1, MPI_INT64_T, offsets.data(), 1,
+                         MPI_INT64_T, comm);
 
-  const std::vector<int>& ghost_owners = index_map_old.ghost_owners();
-  int local_size = index_map.size_local();
-  std::vector<std::int64_t> global_indices = index_map.global_indices();
+  MPI_Comm_free(&comm);
+
+  int local_size = map.size_local();
+  std::vector<std::int64_t> global_indices = map.global_indices();
+
+  // Add new offset to owned indices
   std::transform(global_indices.begin(),
                  std::next(global_indices.begin(), local_size),
                  global_indices.begin(),
                  [global_offset](auto x) { return x + global_offset; });
 
-  for (std::size_t i = 0; i < ghost_owners.size(); ++i)
-    global_indices[local_size + i] += neighbor_offsets[ghost_owners[i]];
+  // Add offset to ghost indices
+  std::transform(std::next(global_indices.begin(), local_size),
+                 global_indices.end(), owners.begin(),
+                 std::next(global_indices.begin(), local_size),
+                 [&src, &offsets](auto idx, auto r)
+                 {
+                   auto it = std::lower_bound(src.begin(), src.end(), r);
+                   assert(it != src.end() and *it == r);
+                   int rank = std::distance(src.begin(), it);
+                   return idx + offsets[rank];
+                 });
 
   return global_indices;
 }

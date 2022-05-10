@@ -69,16 +69,19 @@ mesh::Mesh partition(const mesh::Mesh& old_mesh,
                      const xt::xtensor<double, 2>& new_vertex_coordinates,
                      bool redistribute, mesh::GhostMode ghost_mode);
 
+/// @todo Fix docstring. It is unclear.
+///
 /// @brief Add indices to account for extra n values on this process.
 ///
 /// This is a utility to help add new topological vertices on each
 /// process into the space of the index map.
 ///
-/// @param[in] index_map Index map for the current mesh vertices
-/// @param[in] n Number of new entries to be accommodated on this process
+/// @param[in] map Index map for the current mesh vertices
+/// @param[in] n Number of new entries to be accommodated on this
+/// process
 /// @return Global indices as if "n" extra values are appended on each
 /// process
-std::vector<std::int64_t> adjust_indices(const common::IndexMapNew& index_map,
+std::vector<std::int64_t> adjust_indices(const common::IndexMapNew& map,
                                          std::int32_t n);
 
 /// Transfer facet MeshTags from coarse mesh to refined mesh
