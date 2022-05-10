@@ -237,7 +237,7 @@ def test_mixed_codim_0_assembly(d, n, k, space, ghost_mode):
     assert(np.isclose(s_sm, s_m))
 
 
-# np.set_printoptions(linewidth=200)
+# np.set_printoptions(linewidth=200, suppress=True)
 # n = 2
 # ghost_mode = GhostMode.none
 # space = "Lagrange"
@@ -246,14 +246,44 @@ def test_mixed_codim_0_assembly(d, n, k, space, ghost_mode):
 # mesh = create_rectangle(
 #     MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
 #     ghost_mode=ghost_mode)
-# edim = mesh.topology.dim
-# entities = locate_entities(mesh, edim, lambda x: x[0] <= 1.0)
+# edim = mesh.topology.dim - 1
+# num_facets = mesh.topology.create_entities(edim)
+# entities = locate_entities_boundary(mesh, edim, lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 2.0),
+#                                                                                       np.isclose(x[0], 0.0)),
+#                                                                         np.logical_or(np.isclose(x[1], 1.0),
+#                                                                                       np.isclose(x[1], 0.0))))
 # submesh, entity_map, vertex_map, geom_map = create_submesh(
 #     mesh, edim, entities)
 
 # element = (space, k)
 # V_m = fem.FunctionSpace(mesh, element)
 # V_sm = fem.FunctionSpace(submesh, element)
+
+# f = fem.Function(V_sm)
+# f.interpolate(lambda x: x[0])
+
+# from dolfinx import io
+# with io.XDMFFile(submesh.comm, "submesh.xdmf", "w") as file:
+#     file.write_mesh(submesh)
+#     file.write_function(f)
+
+# mp = [entity_map.index(entity) if entity in entity_map else -1 for entity in range(num_facets)]
+
+# v = ufl.TestFunction(V_m)
+
+# ds = ufl.Measure("ds", domain=mesh)
+# entity_maps = {submesh: mp}
+# L = fem.form(ufl.inner(f, v) * ds,
+#              entity_maps=entity_maps)
+# b = fem.petsc.assemble_vector(L)
+# print(b[:])
+
+# f = fem.Function(V_m)
+# f.interpolate(lambda x: x[0])
+# L = fem.form(ufl.inner(f, v) * ds)
+# b = fem.petsc.assemble_vector(L)
+# print(b[:])
+
 
 # u = ufl.TrialFunction(V_sm)
 # v = ufl.TestFunction(V_m)

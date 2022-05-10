@@ -391,9 +391,8 @@ public:
       }
       else if (codim == 1)
       {
-        auto c_to_f = mesh()->topology().connectivity(tdim, tdim - 1);
-        assert(c_to_f);
-        return [&entity_map = entity_maps().at(coeff_mesh), &c_to_f](std::pair<std::int32_t, int> e)
+        // TODO assert(c_to_f);
+        return [&entity_map = entity_maps().at(coeff_mesh), c_to_f = mesh()->topology().connectivity(tdim, tdim - 1)](std::pair<std::int32_t, int> e)
         { return entity_map[c_to_f->links(e.first)[e.second]]; };
       }
       else

@@ -616,6 +616,7 @@ void assemble_exterior_facets(
 
     // Tabulate element vector
     std::fill(be.begin(), be.end(), 0);
+    // TODO codim 1 forms need a facet permutation here
     fn(be.data(), coeffs.data() + index * cstride, constants.data(),
        coordinate_dofs.data(), &local_facet, nullptr);
 
