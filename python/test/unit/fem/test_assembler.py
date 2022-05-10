@@ -242,8 +242,10 @@ def test_matrix_assembly_block(mode):
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
+    P2 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     V0 = FunctionSpace(mesh, P0)
     V1 = FunctionSpace(mesh, P1)
+    V2 = FunctionSpace(mesh, P2)
 
     # Locate facets on boundary
     facetdim = mesh.topology.dim - 1
@@ -254,22 +256,28 @@ def test_matrix_assembly_block(mode):
     bc = dirichletbc(u_bc, bdofsV1, V1)
 
     # Define variational problem
-    u, p = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
-    v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
+    u, p, r = ufl.TrialFunction(V0), ufl.TrialFunction(V1), ufl.TrialFunction(V2)
+    v, q, s = ufl.TestFunction(V0), ufl.TestFunction(V1), ufl.TestFunction(V2)
     f = 1.0
     g = -3.0
     zero = Function(V0)
 
     a00 = inner(u, v) * dx
     a01 = inner(p, v) * dx
+    a02 = inner(r, v) * dx
     a10 = inner(u, q) * dx
     a11 = inner(p, q) * dx
+    a12 = inner(r, q) * dx
+    a20 = inner(u, s) * dx
+    a21 = inner(p, s) * dx
+    a22 = inner(r, s) * dx
 
     L0 = zero * inner(f, v) * dx
     L1 = inner(g, q) * dx
+    L2 = inner(g, s) * dx
 
-    a_block = form([[a00, a01], [a10, a11]])
-    L_block = form([L0, L1])
+    a_block = form([[a00, a01, a02], [a10, a11, a12], [a20, a21, a22]])
+    L_block = form([L0, L1, L2])
 
     # Monolithic blocked
     A0 = assemble_matrix_block(a_block, bcs=[bc])
@@ -279,11 +287,30 @@ def test_matrix_assembly_block(mode):
     Anorm0 = A0.norm()
     bnorm0 = b0.norm()
 
+    # Prepare a block problem with "None" on (1, 1) diagonal
+    a_block_none = form([[a00, a01, a02], [None, None, a12], [a20, a21, a22]])
+
+    try:
+        A0 = assemble_matrix_block(a_block_none, bcs=[bc])
+    except RuntimeError:
+        pass
+    else:
+        raise RuntimeError("DirichletBC for 'None' diagonal block must raise.")
+
     # Nested (MatNest)
-    A1 = assemble_matrix_nest(a_block, bcs=[bc], mat_types=[["baij", "aij"], ["aij", ""]])
+    A1 = assemble_matrix_nest(a_block, bcs=[bc], mat_types=[["baij", "aij", "aij"],
+                                                            ["aij", "", "aij"],
+                                                            ["aij", "aij", "aij"]])
     A1.assemble()
     Anorm1 = nest_matrix_norm(A1)
     assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
+
+    try:
+        A0 = assemble_matrix_nest(a_block_none, bcs=[bc])
+    except RuntimeError:
+        pass
+    else:
+        raise RuntimeError("DirichletBC for 'None' diagonal block must raise.")
 
     b1 = assemble_vector_nest(L_block)
     apply_lifting_nest(b1, a_block, bcs=[bc])
@@ -297,13 +324,13 @@ def test_matrix_assembly_block(mode):
     assert bnorm0 == pytest.approx(bnorm1, 1.0e-12)
 
     # Monolithic version
-    E = P0 * P1
-    W = FunctionSpace(mesh, E)
-    u0, u1 = ufl.TrialFunctions(W)
-    v0, v1 = ufl.TestFunctions(W)
+    W = FunctionSpace(mesh, ufl.MixedElement([P0, P1, P2]))
+    u0, u1, u2 = ufl.TrialFunctions(W)
+    v0, v1, v2 = ufl.TestFunctions(W)
     a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
-        u1, v0) * dx
-    L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
+        u1, v0) * dx + inner(u0, v2) * dx + inner(u1, v2) * dx + inner(u2, v2) * dx \
+        + inner(u2, v0) * dx + inner(u2, v1) * dx
+    L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx + inner(g, v2) * dx
     a, L = form(a), form(L)
 
     bdofsW_V1 = locate_dofs_topological(W.sub(1), mesh.topology.dim - 1, bndry_facets)
