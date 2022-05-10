@@ -22,9 +22,6 @@ class IndexMap;
 /// TMP
 IndexMap create_old(const IndexMapNew& map);
 
-/// TMP
-IndexMapNew create_new(const IndexMap& map);
-
 /// @brief Given a vector of indices (local numbering, owned or ghost)
 /// and an index map, this function returns the indices owned by this
 /// process, including indices that might have been in the list of

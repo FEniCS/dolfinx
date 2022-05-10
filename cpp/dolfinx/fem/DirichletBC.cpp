@@ -9,7 +9,7 @@
 #include "FiniteElement.h"
 #include <algorithm>
 #include <array>
-#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -25,31 +25,6 @@ using namespace dolfinx::fem;
 
 namespace
 {
-//-----------------------------------------------------------------------------
-/// Create a symmetric MPI neighbourhood communciator from an
-/// input neighbourhood communicator
-dolfinx::MPI::Comm create_symmetric_comm(MPI_Comm comm)
-{
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
-
-  std::vector<int> neighbors(indegree + outdegree);
-  MPI_Dist_graph_neighbors(comm, indegree, neighbors.data(), MPI_UNWEIGHTED,
-                           outdegree, neighbors.data() + indegree,
-                           MPI_UNWEIGHTED);
-
-  std::sort(neighbors.begin(), neighbors.end());
-  neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
-                  neighbors.end());
-
-  MPI_Comm comm_sym;
-  MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
-                                 MPI_UNWEIGHTED, neighbors.size(),
-                                 neighbors.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &comm_sym);
-
-  return dolfinx::MPI::Comm(comm_sym, false);
-}
 //-----------------------------------------------------------------------------
 /// Find the cell (local to process) and index of an entity (local to cell) for
 /// a list of entities
@@ -277,16 +252,36 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
   {
     // Get bc dof indices (local) in  V spaces on this process that were
     // found by other processes, e.g. a vertex dof on this process that
-    // has no connected facets on the boundary
+    // has no connected facets on the boundary.
     auto map = dofmap->index_map;
-    common::IndexMap map_old = common::create_old(*map);
-    dolfinx::MPI::Comm comm = create_symmetric_comm(
-        map_old.comm(common::IndexMap::Direction::forward));
+    assert(map);
+
+    // Create 'symmetric' neighbourhood communicator
+    MPI_Comm comm;
+    {
+      std::vector<int> src = map->owners();
+      std::sort(src.begin(), src.end());
+      std::vector<int> dest
+          = dolfinx::MPI::compute_graph_edges_nbx(map->comm(), src);
+      std::sort(dest.begin(), dest.end());
+
+      std::vector<int> ranks;
+      std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
+                     std::back_inserter(ranks));
+      ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+
+      MPI_Dist_graph_create_adjacent(
+          map->comm(), ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
+          ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+    }
+
     std::vector<std::int32_t> dofs_remote;
     if (int map_bs = dofmap->index_map_bs(); map_bs == bs)
-      dofs_remote = get_remote_dofs(comm.comm(), *map, 1, dofs);
+      dofs_remote = get_remote_dofs(comm, *map, 1, dofs);
     else
-      dofs_remote = get_remote_dofs(comm.comm(), *map, map_bs, dofs);
+      dofs_remote = get_remote_dofs(comm, *map, map_bs, dofs);
+
+    MPI_Comm_free(&comm);
 
     // Add received bc indices to dofs_local, sort, and remove
     // duplicates
@@ -399,24 +394,50 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     // Get bc dof indices (local) for each of spaces on this process that
     // were found by other processes, e.g. a vertex dof on this process
     // that has no connected facets on the boundary.
-    common::IndexMap map_old0 = common::create_old(*(V0.dofmap()->index_map));
-    dolfinx::MPI::Comm comm = create_symmetric_comm(
-        map_old0.comm(common::IndexMap::Direction::forward));
-    std::vector<std::int32_t> dofs_remote
-        = get_remote_dofs(comm.comm(), *(V0.dofmap()->index_map),
-                          V0.dofmap()->index_map_bs(), sorted_bc_dofs[0]);
+    // common::IndexMap map_old0 =
+    // common::create_old(*(V0.dofmap()->index_map)); dolfinx::MPI::Comm comm =
+    // create_symmetric_comm(
+    //     map_old0.comm(common::IndexMap::Direction::forward));
+
+    auto map0 = V0.dofmap()->index_map;
+    assert(map0);
+
+    // Create 'symmetric' neighbourhood communicator
+    MPI_Comm comm;
+    {
+
+      std::vector<int> src = map0->owners();
+      std::sort(src.begin(), src.end());
+      std::vector<int> dest
+          = dolfinx::MPI::compute_graph_edges_nbx(map0->comm(), src);
+      std::sort(dest.begin(), dest.end());
+
+      std::vector<int> ranks;
+      std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
+                     std::back_inserter(ranks));
+      ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+
+      MPI_Dist_graph_create_adjacent(map0->comm(), ranks.size(), ranks.data(),
+                                     MPI_UNWEIGHTED, ranks.size(), ranks.data(),
+                                     MPI_UNWEIGHTED, MPI_INFO_NULL, false,
+                                     &comm);
+    }
+
+    std::vector<std::int32_t> dofs_remote = get_remote_dofs(
+        comm, *map0, V0.dofmap()->index_map_bs(), sorted_bc_dofs[0]);
 
     // Add received bc indices to dofs_local
     sorted_bc_dofs[0].insert(sorted_bc_dofs[0].end(), dofs_remote.begin(),
                              dofs_remote.end());
 
-    common::IndexMap map_old1 = common::create_old(*(V1.dofmap()->index_map));
     dofs_remote
-        = get_remote_dofs(comm.comm(), *(V1.dofmap()->index_map),
+        = get_remote_dofs(comm, *(V1.dofmap()->index_map),
                           V1.dofmap()->index_map_bs(), sorted_bc_dofs[1]);
     sorted_bc_dofs[1].insert(sorted_bc_dofs[1].end(), dofs_remote.begin(),
                              dofs_remote.end());
     assert(sorted_bc_dofs[0].size() == sorted_bc_dofs[1].size());
+
+    MPI_Comm_free(&comm);
 
     // Remove duplicates and sort
     perm.resize(sorted_bc_dofs[0].size());

@@ -67,11 +67,6 @@ common::IndexMap common::create_old(const IndexMapNew& map)
                   map.owners());
 }
 //-----------------------------------------------------------------------------
-common::IndexMapNew common::create_new(const IndexMap& map)
-{
-  return IndexMapNew(map.comm(), map.size_local(), map.ghosts(), map.owners());
-}
-//-----------------------------------------------------------------------------
 std::vector<int32_t> dolfinx::common::compute_owned_indices(
     const xtl::span<const std::int32_t>& indices, const IndexMapNew& map)
 {
