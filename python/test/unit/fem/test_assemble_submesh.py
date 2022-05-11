@@ -305,7 +305,7 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
     V_m = fem.FunctionSpace(mesh, (space, k))
     u = ufl.TrialFunction(V_m)
 
-    a = fem.form(ufl.inner(u, v) * dx(1),
+    a = fem.form(ufl.inner(u, v) * (dx(1) + ds(1)),
                  entity_maps=entity_maps)
     # TODO BCs
     A = fem.petsc.assemble_matrix(a)

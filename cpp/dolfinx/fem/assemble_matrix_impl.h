@@ -162,7 +162,10 @@ void assemble_exterior_facets(
                              const std::uint8_t*)>& kernel,
     const xtl::span<const T>& coeffs, int cstride,
     const xtl::span<const T>& constants,
-    const xtl::span<const std::uint32_t>& cell_info)
+    const xtl::span<const std::uint32_t>& cell_info_0,
+    const xtl::span<const std::uint32_t>& cell_info_1,
+    const std::function<int32_t(std::pair<int32_t, int>)>& facet_map_0,
+    const std::function<int32_t(std::pair<int32_t, int>)>& facet_map_1)
 {
   if (facets.empty())
     return;
@@ -186,6 +189,11 @@ void assemble_exterior_facets(
     std::int32_t cell = facets[index].first;
     int local_facet = facets[index].second;
 
+    std::int32_t c_0 = facet_map_0(facets[index]);
+    assert(c_0 >= 0);
+    std::int32_t c_1 = facet_map_1(facets[index]);
+    assert(c_1 >= 0);
+
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
@@ -199,12 +207,12 @@ void assemble_exterior_facets(
     kernel(Ae.data(), coeffs.data() + index * cstride, constants.data(),
            coordinate_dofs.data(), &local_facet, nullptr);
 
-    dof_transform(_Ae, cell_info, cell, ndim1);
-    dof_transform_to_transpose(_Ae, cell_info, cell, ndim0);
+    dof_transform(_Ae, cell_info_1, c_1, ndim1);
+    dof_transform_to_transpose(_Ae, cell_info_0, c_0, ndim0);
 
     // Zero rows/columns for essential bcs
-    auto dofs0 = dofmap0.links(cell);
-    auto dofs1 = dofmap1.links(cell);
+    auto dofs0 = dofmap0.links(c_0);
+    auto dofs1 = dofmap1.links(c_1);
     if (!bc0.empty())
     {
       for (int i = 0; i < num_dofs0; ++i)
@@ -460,16 +468,20 @@ void assemble_matrix(
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
+    const auto& facet_map_0
+        = a.cell_local_facet_map(*a.function_spaces().at(0));
+    const auto& facet_map_1
+        = a.cell_local_facet_map(*a.function_spaces().at(1));
     const auto& fn = a.kernel(IntegralType::exterior_facet, i);
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::pair<std::int32_t, int>>& facets
         = a.exterior_facet_domains(i);
     // TODO Pass both cell infos
-    impl::assemble_exterior_facets(mat_set, *mesh, facets, dof_transform, dofs0,
-                                   bs0, dof_transform_to_transpose, dofs1, bs1,
-                                   bc0, bc1, fn, coeffs, cstride, constants,
-                                   cell_info_0);
+    impl::assemble_exterior_facets(
+        mat_set, *mesh, facets, dof_transform, dofs0, bs0,
+        dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn, coeffs, cstride,
+        constants, cell_info_0, cell_info_1, facet_map_0, facet_map_1);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
