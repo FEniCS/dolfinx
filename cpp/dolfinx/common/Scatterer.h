@@ -159,6 +159,10 @@ public:
                          const xtl::span<T>& recv_buffer,
                          std::vector<MPI_Request>& requests) const
   {
+    // Return early if there are no incoming or outgoing edges
+    if (_displs_local.size() == 1 and displs_remote.size() == 1)
+      return;
+
     MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_local.data(),
                             _displs_local.data(), MPI::mpi_type<T>(),
                             recv_buffer.data(), _sizes_remote.data(),
@@ -174,6 +178,10 @@ public:
   /// of the send
   void scatter_fwd_end(std::vector<MPI_Request>& requests) const
   {
+    // Return early if there are no incoming or outgoing edges
+    if (_displs_local.size() == 1 and displs_remote.size() == 1)
+      return;
+
     // Wait for communication to complete
     MPI_Waitall(requests.size(), requests.data(), MPI_STATUS_IGNORE);
   }
@@ -194,6 +202,34 @@ public:
     scatter_fwd_end(requests);
 
     gather_fn(buffer_recv, _remote_inds, remote_data);
+  }
+
+  /// Start a non-blocking send of ghost values to the owning rank.
+  template <typename T>
+  void scatter_rev_begin(const xtl::span<const T>& send_buffer,
+                         const xtl::span<T>& recv_buffer,
+                         std::vector<MPI_Request>& requests) const
+  {
+    // Return early if there are no incoming or outgoing edges
+    if (_displs_local.size() == 1 and displs_remote.size() == 1)
+      return;
+
+    // Send and receive data
+    MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_remote.data(),
+                            _displs_remote.data(), MPI::mpi_type<T>(),
+                            recv_buffer.data(), _sizes_local.data(),
+                            _displs_local.data(), MPI::mpi_type<T>(),
+                            _comm_ghost_to_owner.comm(), request.data());
+  }
+
+  void scatter_rev_end(MPI_Request& request) const
+  {
+    // Return early if there are no incoming or outgoing edges
+    if (_displs_local.size() == 1 and displs_remote.size() == 1)
+      return;
+
+    // Wait for communication to complete
+    MPI_Wait(&request, MPI_STATUS_IGNORE);
   }
 
   /// Local gather function
