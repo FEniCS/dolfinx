@@ -274,8 +274,6 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
     facet_values[left_facets] = 1
     facet_mt = meshtags_from_entities(mesh, tdim - 1, facets, facet_values)
 
-    # TODO Also do this with a dx measure on a submesh and check the
-    # result is the same
     V_m = fem.FunctionSpace(mesh, (space, k))
     V_sm = fem.FunctionSpace(submesh, (space, k))
     u = ufl.TrialFunction(V_m)
