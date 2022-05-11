@@ -23,20 +23,8 @@ using namespace dolfinx::fem;
 namespace
 {
 //-----------------------------------------------------------------------------
-template <typename T>
-std::vector<std::int32_t>
-remap_dofs(const std::vector<std::int32_t>& old_to_new,
-           const graph::AdjacencyList<T>& dofs_old)
-{
-  const std::vector<T>& _dofs_old = dofs_old.array();
-  std::vector<std::int32_t> dofmap(_dofs_old.size());
-  for (std::size_t i = 0; i < dofmap.size(); ++i)
-    dofmap[i] = old_to_new[_dofs_old[i]];
-  return dofmap;
-}
-//-----------------------------------------------------------------------------
 // Build a collapsed DofMap from a dofmap view. Extracts dofs and
-// doesn't build a new re-ordered dofmap
+// doesn't build a new re-ordered dofmap.
 fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
                                    const mesh::Topology& topology)
 {
@@ -59,36 +47,50 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
                   dofs_view.end());
 
-  // Get block size
-  const int bs_view = dofmap_view.index_map_bs();
-
   // Compute sizes
   const std::int32_t num_owned_view = dofmap_view.index_map->size_local();
-  const auto it_unowned0 = std::lower_bound(dofs_view.begin(), dofs_view.end(),
-                                            num_owned_view * bs_view);
 
   // Create sub-index map
   std::shared_ptr<common::IndexMapNew> index_map;
   {
-    std::vector<std::int32_t> indices;
-    indices.reserve(std::distance(dofs_view.begin(), it_unowned0));
-    std::transform(dofs_view.begin(), it_unowned0, std::back_inserter(indices),
-                   [bs = bs_view](auto idx) { return idx / bs; });
-    indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
+    // Get block size
+    int bs_view = dofmap_view.index_map_bs();
 
-    auto [_index_map, _] = dofmap_view.index_map->create_submap(indices);
-    index_map = std::make_shared<common::IndexMapNew>(std::move(_index_map));
+    auto it = std::lower_bound(dofs_view.begin(), dofs_view.end(),
+                               bs_view * num_owned_view);
+    if (bs_view == 1)
+    {
+      xtl::span<std::int32_t> indices(dofs_view.data(),
+                                      std::distance(dofs_view.begin(), it));
+      auto [_index_map, _] = dofmap_view.index_map->create_submap(indices);
+      index_map = std::make_shared<common::IndexMapNew>(std::move(_index_map));
+    }
+    else
+    {
+
+      std::vector<std::int32_t> indices;
+      indices.reserve(dofs_view.size());
+      std::transform(dofs_view.begin(), it, std::back_inserter(indices),
+                     [bs_view](auto idx) { return idx / bs_view; });
+      indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
+      auto [_index_map, _] = dofmap_view.index_map->create_submap(indices);
+      index_map = std::make_shared<common::IndexMapNew>(std::move(_index_map));
+    }
   }
 
   // Create map from dof in view to new dof index
   std::vector<std::int32_t> old_to_new(dofs_view.back() + 1, -1);
-  std::int32_t count = 0;
-  for (auto& dof : dofs_view)
-    old_to_new[dof] = count++;
+  {
+    std::int32_t count = 0;
+    for (auto dof : dofs_view)
+      old_to_new[dof] = count++;
+  }
 
   // Build new dofmap data
-  const graph::AdjacencyList<std::int32_t>& dof_array_view = dofmap_view.list();
-  std::vector<std::int32_t> dofmap = remap_dofs(old_to_new, dof_array_view);
+  std::vector<std::int32_t> dofmap(dof_array_view.size());
+  const std::vector<std::int32_t>& dof_array_view = dofmap_view.list().array();
+  for (std::size_t i = 0; i < dofmap.size(); ++i)
+    dofmap[i] = old_to_new[dof_array_view[i]];
 
   // Dimension sanity checks
   assert((int)dofmap.size()
