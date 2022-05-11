@@ -37,13 +37,13 @@ remap_dofs(const std::vector<std::int32_t>& old_to_new,
 //-----------------------------------------------------------------------------
 // Build a collapsed DofMap from a dofmap view. Extracts dofs and
 // doesn't build a new re-ordered dofmap
-fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
+fem::DofMap build_collapsed_dofmap(MPI_Comm /*comm*/, const DofMap& dofmap_view,
                                    const mesh::Topology& topology)
 {
   if (dofmap_view.element_dof_layout().block_size() > 1)
   {
     throw std::runtime_error(
-        "Cannot collapse dofmap with block size greater "
+        "Cannot collapse a dofmap with block size greater "
         "than 1 from parent with block size of 1. Create new dofmap first.");
   }
 
@@ -52,70 +52,32 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   auto cells = topology.connectivity(tdim, 0);
   assert(cells);
 
-  // Build set of dofs that are in the new dofmap
+  // Build set of dofs that are in the new dofmap (un-blocked)
   std::vector<std::int32_t> dofs_view = dofmap_view.list().array();
   dolfinx::radix_sort(xtl::span(dofs_view));
   dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
                   dofs_view.end());
 
-  // Get block sizes
+  // Get block size
   const int bs_view = dofmap_view.index_map_bs();
 
   // Compute sizes
   const std::int32_t num_owned_view = dofmap_view.index_map->size_local();
   const auto it_unowned0 = std::lower_bound(dofs_view.begin(), dofs_view.end(),
                                             num_owned_view * bs_view);
-  const std::size_t num_owned = std::distance(dofs_view.begin(), it_unowned0);
-  const std::size_t num_unowned = std::distance(it_unowned0, dofs_view.end());
 
-  // FIXME: We can avoid the MPI_Exscan by counting the offsets for the
-  // owned mesh entities
-
-  // Get process offset for new dofmap
-  std::size_t offset = 0;
-  MPI_Exscan(&num_owned, &offset, 1, dolfinx::MPI::mpi_type<std::size_t>(),
-             MPI_SUM, comm);
-
-  // For owned dofs, compute new global index
-  std::vector<std::int64_t> global_index(dofmap_view.index_map->size_local(),
-                                         -1);
-  for (auto it = dofs_view.begin(); it != it_unowned0; ++it)
+  // Create sub-index map
+  std::shared_ptr<common::IndexMapNew> index_map;
   {
-    const std::size_t block = std::distance(dofs_view.begin(), it);
-    const std::int32_t block_parent = *it / bs_view;
-    global_index[block_parent] = block + offset;
+    std::vector<std::int32_t> indices;
+    indices.reserve(std::distance(dofs_view.begin(), it_unowned0));
+    std::transform(dofs_view.begin(), it_unowned0, std::back_inserter(indices),
+                   [bs = bs_view](auto idx) { return idx / bs; });
+    indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
+
+    auto [_index_map, _] = dofmap_view.index_map->create_submap_new(indices);
+    index_map = std::make_shared<common::IndexMapNew>(std::move(_index_map));
   }
-
-  // Send new global indices for owned dofs to non-owning process, and
-  // receive new global indices from owner
-  std::vector<std::int64_t> global_index_remote(
-      dofmap_view.index_map->num_ghosts());
-  common::IndexMap map_view_old = common::create_old(*(dofmap_view.index_map));
-
-  map_view_old.scatter_fwd(xtl::span<const std::int64_t>(global_index),
-                           xtl::span<std::int64_t>(global_index_remote), 1);
-
-  // Get owning ranks (neighbour) for each ghost and map from
-  // neighbourhood rank to global rank
-  const std::vector<int> ghost_owner_old = map_view_old.ghost_owners();
-  const std::vector<int> neighbor_ranks = dolfinx::MPI::neighbors(
-      map_view_old.comm(common::IndexMap::Direction::forward))[0];
-
-  // Compute ghosts for collapsed dofmap
-  std::vector<std::int64_t> ghosts(num_unowned);
-  std::vector<int> ghost_owners(num_unowned);
-  for (auto it = it_unowned0; it != dofs_view.end(); ++it)
-  {
-    const std::int32_t index = std::distance(it_unowned0, it);
-    const std::int32_t index_old = *it / bs_view - num_owned_view;
-    assert(global_index_remote[index_old] >= 0);
-    ghosts[index] = global_index_remote[index_old];
-    ghost_owners[index] = neighbor_ranks[ghost_owner_old[index_old]];
-  }
-
-  // Create new index map
-  auto index_map = std::make_shared<common::IndexMapNew>(comm, num_owned,
-                                                         ghosts, ghost_owners);
 
   // Create array from dofs in view to new dof indices
   std::vector<std::int32_t> old_to_new(dofs_view.back() + 1, -1);
