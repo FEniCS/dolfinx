@@ -51,10 +51,13 @@ void _lift_bc_cells(
                              std::int32_t, int)>& dof_transform_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
-    int cstride, const xtl::span<const std::uint32_t>& cell_info,
+    int cstride, const xtl::span<const std::uint32_t>& cell_info_0,
+    const xtl::span<const std::uint32_t>& cell_info_1,
     const xtl::span<const T>& bc_values1,
     const xtl::span<const std::int8_t>& bc_markers1,
-    const xtl::span<const T>& x0, double scale)
+    const xtl::span<const T>& x0, double scale,
+    const std::function<std::int32_t(std::int32_t)>& cell_map_0,
+    const std::function<std::int32_t(std::int32_t)>& cell_map_1)
 {
   assert(_bs0 < 0 or _bs0 == bs0);
   assert(_bs1 < 0 or _bs1 == bs1);
@@ -73,9 +76,13 @@ void _lift_bc_cells(
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
     std::int32_t c = cells[index];
+    std::int32_t c_0 = cell_map_0(c);
+    assert(c_0 >= 0);
+    std::int32_t c_1 = cell_map_1(c);
+    assert(c_1 >= 0);
 
     // Get dof maps for cell
-    auto dmap1 = dofmap1.links(c);
+    auto dmap1 = dofmap1.links(c_1);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -119,7 +126,7 @@ void _lift_bc_cells(
     }
 
     // Size data structure for assembly
-    auto dmap0 = dofmap0.links(c);
+    auto dmap0 = dofmap0.links(c_0);
 
     const int num_rows = bs0 * dmap0.size();
     const int num_cols = bs1 * dmap1.size();
@@ -129,8 +136,8 @@ void _lift_bc_cells(
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array, constants.data(), coordinate_dofs.data(),
            nullptr, nullptr);
-    dof_transform(Ae, cell_info, c, num_cols);
-    dof_transform_to_transpose(Ae, cell_info, c, num_rows);
+    dof_transform(Ae, cell_info_1, c_1, num_cols);
+    dof_transform_to_transpose(Ae, cell_info_0, c_0, num_rows);
 
     // Size data structure for assembly
     be.resize(num_rows);
@@ -770,6 +777,7 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
              const xtl::span<const std::int8_t>& bc_markers1,
              const xtl::span<const T>& x0, double scale)
 {
+  std::cout << "lift_bc\n";
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
   assert(mesh);
 
@@ -792,11 +800,16 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
         or element1->needs_dof_transformations()
         or a.needs_facet_permutations();
 
-  xtl::span<const std::uint32_t> cell_info;
+  xtl::span<const std::uint32_t> cell_info_0;
+  xtl::span<const std::uint32_t> cell_info_1;
   if (needs_transformation_data)
   {
-    mesh->topology_mutable().create_entity_permutations();
-    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    auto mesh_0 = a.function_spaces().at(0)->mesh();
+    auto mesh_1 = a.function_spaces().at(1)->mesh();
+    mesh_0->topology_mutable().create_entity_permutations();
+    mesh_1->topology_mutable().create_entity_permutations();
+    cell_info_0 = xtl::span(mesh_0->topology().get_cell_permutation_info());
+    cell_info_1 = xtl::span(mesh_1->topology().get_cell_permutation_info());
   }
 
   const std::function<void(const xtl::span<T>&,
@@ -811,6 +824,8 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
 
   for (int i : a.integral_ids(IntegralType::cell))
   {
+    const auto& cell_map_0 = a.cell_map(*a.function_spaces().at(0));
+    const auto& cell_map_1 = a.cell_map(*a.function_spaces().at(1));
     const auto& kernel = a.kernel(IntegralType::cell, i);
     const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
@@ -818,22 +833,24 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
     {
       _lift_bc_cells<T, 1, 1>(b, mesh->geometry(), kernel, cells, dof_transform,
                               dofmap0, bs0, dof_transform_to_transpose, dofmap1,
-                              bs1, constants, coeffs, cstride, cell_info,
-                              bc_values1, bc_markers1, x0, scale);
+                              bs1, constants, coeffs, cstride, cell_info_0,
+                              cell_info_1, bc_values1, bc_markers1, x0, scale,
+                              cell_map_0, cell_map_1);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
       _lift_bc_cells<T, 3, 3>(b, mesh->geometry(), kernel, cells, dof_transform,
                               dofmap0, bs0, dof_transform_to_transpose, dofmap1,
-                              bs1, constants, coeffs, cstride, cell_info,
-                              bc_values1, bc_markers1, x0, scale);
+                              bs1, constants, coeffs, cstride, cell_info_0,
+                              cell_info_1, bc_values1, bc_markers1, x0, scale,
+                              cell_map_0, cell_map_1);
     }
     else
     {
       _lift_bc_cells(b, mesh->geometry(), kernel, cells, dof_transform, dofmap0,
                      bs0, dof_transform_to_transpose, dofmap1, bs1, constants,
-                     coeffs, cstride, cell_info, bc_values1, bc_markers1, x0,
-                     scale);
+                     coeffs, cstride, cell_info_0, cell_info_1, bc_values1,
+                     bc_markers1, x0, scale, cell_map_0, cell_map_1);
     }
   }
 
@@ -844,9 +861,10 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::pair<std::int32_t, int>>& facets
         = a.exterior_facet_domains(i);
+    // TODO Pass both cell infos
     _lift_bc_exterior_facets(b, *mesh, kernel, facets, dof_transform, dofmap0,
                              bs0, dof_transform_to_transpose, dofmap1, bs1,
-                             constants, coeffs, cstride, cell_info, bc_values1,
+                             constants, coeffs, cstride, cell_info_0, bc_values1,
                              bc_markers1, x0, scale);
   }
 
@@ -871,9 +889,10 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
       const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
           facets
           = a.interior_facet_domains(i);
+      // TODO Pass both cell infos
       _lift_bc_interior_facets(b, *mesh, kernel, facets, dof_transform, dofmap0,
                                bs0, dof_transform_to_transpose, dofmap1, bs1,
-                               constants, coeffs, cstride, cell_info, get_perm,
+                               constants, coeffs, cstride, cell_info_0, get_perm,
                                bc_values1, bc_markers1, x0, scale);
     }
   }
@@ -907,6 +926,7 @@ void apply_lifting(
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
+  std::cout << "apply_lifting\n";
   // FIXME: make changes to reactivate this check
   if (!x0.empty() and x0.size() != a.size())
   {
@@ -1023,8 +1043,7 @@ void assemble_vector(
 
   for (int i : L.integral_ids(IntegralType::exterior_facet))
   {
-    const auto facet_map
-        = L.cell_local_facet_map(*L.function_spaces().at(0));
+    const auto facet_map = L.cell_local_facet_map(*L.function_spaces().at(0));
     const auto& fn = L.kernel(IntegralType::exterior_facet, i);
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
