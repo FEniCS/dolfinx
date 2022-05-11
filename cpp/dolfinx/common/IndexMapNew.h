@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "IndexMap.h"
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <memory>
@@ -16,11 +17,11 @@
 namespace dolfinx::common
 {
 // Forward declaration
-class IndexMapNew;
+class IndexMapOld;
 class IndexMap;
 
 /// TMP
-IndexMap create_old(const IndexMapNew& map);
+IndexMapOld create_old(const IndexMap& map);
 
 /// @brief Given a vector of indices (local numbering, owned or ghost)
 /// and an index map, this function returns the indices owned by this
@@ -31,7 +32,7 @@ IndexMap create_old(const IndexMapNew& map);
 /// @return Indices owned by the calling process
 std::vector<int32_t>
 compute_owned_indices(const xtl::span<const std::int32_t>& indices,
-                      const IndexMapNew& map);
+                      const IndexMap& map);
 
 /// @brief Compute layout data and ghost indices for a stacked
 /// (concatenated) index map, i.e. 'splice' multiple maps into one.
@@ -55,16 +56,15 @@ std::tuple<std::int64_t, std::vector<std::int32_t>,
            std::vector<std::vector<int>>>
 stack_index_maps(
     const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMapNew>, int>>&
-        maps);
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
 /// This class represents the distribution index arrays across
 /// processes. An index array is a contiguous collection of N+1 indices
 /// [0, 1, . . ., N] that are distributed across M processes. On a given
-/// process, the IndexMapNew stores a portion of the index set using local
+/// process, the IndexMap stores a portion of the index set using local
 /// indices [0, 1, . . . , n], and a map from the local indices to a
 /// unique global index.
-class IndexMapNew
+class IndexMap
 {
 public:
   /// @brief Create an non-overlapping index map.
@@ -74,7 +74,7 @@ public:
   /// @param[in] comm The MPI communicator
   /// @param[in] local_size Local size of the index map, i.e. the number
   /// of owned entries
-  IndexMapNew(MPI_Comm comm, std::int32_t local_size);
+  IndexMap(MPI_Comm comm, std::int32_t local_size);
 
   /// @brief Create an overlapping (ghosted) index map.
   ///
@@ -86,9 +86,9 @@ public:
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] owners Owner rank (on global communicator) of each
   /// entry in `ghosts`
-  IndexMapNew(MPI_Comm comm, std::int32_t local_size,
-              const xtl::span<const std::int64_t>& ghosts,
-              const xtl::span<const int>& owners);
+  IndexMap(MPI_Comm comm, std::int32_t local_size,
+           const xtl::span<const std::int64_t>& ghosts,
+           const xtl::span<const int>& owners);
 
   /// @brief Create an overlapping (ghosted) index map.
   ///
@@ -109,25 +109,25 @@ public:
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] owners Owner rank (on global communicator) of each entry
   /// in `ghosts`
-  IndexMapNew(MPI_Comm comm, std::int32_t local_size,
-              const std::array<std::vector<int>, 2>& src_dest,
-              const xtl::span<const std::int64_t>& ghosts,
-              const xtl::span<const int>& owners);
+  IndexMap(MPI_Comm comm, std::int32_t local_size,
+           const std::array<std::vector<int>, 2>& src_dest,
+           const xtl::span<const std::int64_t>& ghosts,
+           const xtl::span<const int>& owners);
 
   // Copy constructor
-  IndexMapNew(const IndexMapNew& map) = delete;
+  IndexMap(const IndexMap& map) = delete;
 
   /// Move constructor
-  IndexMapNew(IndexMapNew&& map) = default;
+  IndexMap(IndexMap&& map) = default;
 
   /// Destructor
-  ~IndexMapNew() = default;
+  ~IndexMap() = default;
 
   /// Move assignment
-  IndexMapNew& operator=(IndexMapNew&& map) = default;
+  IndexMap& operator=(IndexMap&& map) = default;
 
   // Copy assignment
-  IndexMapNew& operator=(const IndexMapNew& map) = delete;
+  IndexMap& operator=(const IndexMap& map) = delete;
 
   /// Range of indices (global) owned by this process
   std::array<std::int64_t, 2> local_range() const noexcept;
@@ -186,7 +186,7 @@ public:
   /// @return The (i) new index map and (ii) a map from the ghost
   /// position in the new map to the ghost position in the original
   /// (this) map
-  std::pair<IndexMapNew, std::vector<std::int32_t>>
+  std::pair<IndexMap, std::vector<std::int32_t>>
   create_submap(const xtl::span<const std::int32_t>& indices) const;
 
   /// @todo Aim to remove this function?

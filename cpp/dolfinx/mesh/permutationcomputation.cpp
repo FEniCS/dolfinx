@@ -27,7 +27,7 @@ std::vector<std::bitset<BITSETSIZE>> compute_face_permutations_simplex(
     const graph::AdjacencyList<std::int32_t>& c_to_v,
     const graph::AdjacencyList<std::int32_t>& c_to_f,
     const graph::AdjacencyList<std::int32_t>& f_to_v, int faces_per_cell,
-    const common::IndexMapNew& im)
+    const common::IndexMap& im)
 {
   const std::int32_t num_cells = c_to_v.num_nodes();
   std::vector<std::bitset<BITSETSIZE>> face_perm(num_cells, 0);
@@ -108,7 +108,7 @@ std::vector<std::bitset<BITSETSIZE>>
 compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
                              const graph::AdjacencyList<std::int32_t>& c_to_f,
                              const graph::AdjacencyList<std::int32_t>& f_to_v,
-                             int faces_per_cell, const common::IndexMapNew& im)
+                             int faces_per_cell, const common::IndexMap& im)
 {
   const std::int32_t num_cells = c_to_v.num_nodes();
   std::vector<std::bitset<BITSETSIZE>> face_perm(num_cells, 0);

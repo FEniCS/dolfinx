@@ -23,7 +23,7 @@ const graph::AdjacencyList<std::int32_t>& Geometry::dofmap() const
   return _dofmap;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const common::IndexMapNew> Geometry::index_map() const
+std::shared_ptr<const common::IndexMap> Geometry::index_map() const
 {
   return _index_map;
 }
@@ -56,7 +56,7 @@ mesh::Geometry mesh::create_geometry(
   auto [_dof_index_map, bs, dofmap] = fem::build_dofmap_data(
       comm, topology, element.create_dof_layout(), reorder_fn);
   auto dof_index_map
-      = std::make_shared<common::IndexMapNew>(std::move(_dof_index_map));
+      = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 
   // If the mesh has higher order geometry, permute the dofmap
   if (element.needs_dof_permutations())

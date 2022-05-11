@@ -143,7 +143,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 
   // Get dofmap local size
   assert(_dofmap);
-  std::shared_ptr<const common::IndexMapNew> index_map = _dofmap->index_map;
+  std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map;
   assert(index_map);
   const int index_map_bs = _dofmap->index_map_bs();
   const int dofmap_bs = _dofmap->bs();

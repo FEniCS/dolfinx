@@ -23,7 +23,7 @@
 
 namespace dolfinx::common
 {
-class IndexMapNew;
+class IndexMap;
 }
 
 namespace dolfinx::mesh
@@ -87,7 +87,7 @@ public:
   template <typename E, typename U,
             typename = std::enable_if_t<std::is_same<
                 graph::AdjacencyList<std::int32_t>, std::decay_t<U>>::value>>
-  DofMap(E&& element, std::shared_ptr<const common::IndexMapNew> index_map,
+  DofMap(E&& element, std::shared_ptr<const common::IndexMap> index_map,
          int index_map_bs, U&& dofmap, int bs)
       : index_map(index_map), _index_map_bs(index_map_bs),
         _element_dof_layout(std::forward<E>(element)),
@@ -158,7 +158,7 @@ public:
 
   /// @brief Index map that describes the parallel distribution of the
   /// dofmap
-  std::shared_ptr<const common::IndexMapNew> index_map;
+  std::shared_ptr<const common::IndexMap> index_map;
 
   /// @brief Block size associated with the index_map
   int index_map_bs() const;

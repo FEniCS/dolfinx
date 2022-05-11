@@ -24,7 +24,7 @@ enum class GhostMode;
 
 namespace dolfinx::common
 {
-class IndexMapNew;
+class IndexMap;
 } // namespace dolfinx::common
 
 namespace dolfinx::refinement
@@ -40,7 +40,7 @@ namespace dolfinx::refinement
 void update_logical_edgefunction(
     MPI_Comm neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
-    std::vector<std::int8_t>& marked_edges, const common::IndexMapNew& map_e);
+    std::vector<std::int8_t>& marked_edges, const common::IndexMap& map_e);
 
 /// Add new vertex for each marked edge, and create
 /// new_vertex_coordinates and global_edge->new_vertex map.
@@ -81,7 +81,7 @@ mesh::Mesh partition(const mesh::Mesh& old_mesh,
 /// process
 /// @return Global indices as if "n" extra values are appended on each
 /// process
-std::vector<std::int64_t> adjust_indices(const common::IndexMapNew& map,
+std::vector<std::int64_t> adjust_indices(const common::IndexMap& map,
                                          std::int32_t n);
 
 /// Transfer facet MeshTags from coarse mesh to refined mesh

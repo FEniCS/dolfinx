@@ -21,15 +21,15 @@
 namespace dolfinx::common
 {
 // Forward declaration
-class IndexMap;
+class IndexMapOld;
 
 /// This class represents the distribution index arrays across
 /// processes. An index array is a contiguous collection of N+1 indices
 /// [0, 1, . . ., N] that are distributed across M processes. On a given
-/// process, the IndexMap stores a portion of the index set using local
+/// process, the IndexMapOld stores a portion of the index set using local
 /// indices [0, 1, . . . , n], and a map from the local indices to a
 /// unique global index.
-class IndexMap
+class IndexMapOld
 {
 public:
   /// Mode for reverse scatter operation
@@ -50,7 +50,7 @@ public:
   ///
   /// @note Collective
   /// @param[in] comm The MPI communicator
-  /// @param[in] local_size Local size of the IndexMap, i.e. the number
+  /// @param[in] local_size Local size of the IndexMapOld, i.e. the number
   /// of owned entries
   /// @param[in] dest_ranks Ranks that 'ghost' indices that are owned by
   /// the calling rank. I.e., ranks that the caller will send data to
@@ -58,25 +58,25 @@ public:
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] src_ranks Owner rank (on global communicator) of each
   /// entry in @p ghosts
-  IndexMap(MPI_Comm comm, std::int32_t local_size,
-           const xtl::span<const int>& dest_ranks,
-           const xtl::span<const std::int64_t>& ghosts,
-           const xtl::span<const int>& src_ranks);
+  IndexMapOld(MPI_Comm comm, std::int32_t local_size,
+              const xtl::span<const int>& dest_ranks,
+              const xtl::span<const std::int64_t>& ghosts,
+              const xtl::span<const int>& src_ranks);
 
   // Copy constructor
-  IndexMap(const IndexMap& map) = delete;
+  IndexMapOld(const IndexMapOld& map) = delete;
 
   /// Move constructor
-  IndexMap(IndexMap&& map) = default;
+  IndexMapOld(IndexMapOld&& map) = default;
 
   /// Destructor
-  ~IndexMap() = default;
+  ~IndexMapOld() = default;
 
   /// Move assignment
-  IndexMap& operator=(IndexMap&& map) = default;
+  IndexMapOld& operator=(IndexMapOld&& map) = default;
 
   // Copy assignment
-  IndexMap& operator=(const IndexMap& map) = delete;
+  IndexMapOld& operator=(const IndexMapOld& map) = delete;
 
   /// Range of indices (global) owned by this process
   std::array<std::int64_t, 2> local_range() const noexcept;
@@ -132,8 +132,8 @@ public:
   /// The neighborhood ranks are the 'source' ranks on the 'reverse'
   /// communicator, i.e. the neighborhood source ranks on the
   /// communicator returned by
-  /// IndexMap::comm(IndexMap::Direction::reverse). The source ranks on
-  /// IndexMap::comm(IndexMap::Direction::reverse) communicator can be
+  /// IndexMapOld::comm(IndexMapOld::Direction::reverse). The source ranks on
+  /// IndexMapOld::comm(IndexMapOld::Direction::reverse) communicator can be
   /// used to convert the returned neighbour ranks to the rank indices on
   /// the full communicator.
   ///
@@ -143,23 +143,23 @@ public:
 
   /// Start a non-blocking send of owned data to ranks that ghost the
   /// data. The communication is completed by calling
-  /// IndexMap::scatter_fwd_end. The send and receive buffer should not
-  /// be changed until after IndexMap::scatter_fwd_end has been called.
+  /// IndexMapOld::scatter_fwd_end. The send and receive buffer should not
+  /// be changed until after IndexMapOld::scatter_fwd_end has been called.
   ///
   /// @param[in] send_buffer Local data associated with each owned local
   /// index to be sent to process where the data is ghosted. It must not
-  /// be changed until after a call to IndexMap::scatter_fwd_end. The
+  /// be changed until after a call to IndexMapOld::scatter_fwd_end. The
   /// order of data in the buffer is given by
-  /// IndexMap::scatter_fwd_indices.
+  /// IndexMapOld::scatter_fwd_indices.
   /// @param data_type The MPI data type. To send data with a block size
   /// use `MPI_Type_contiguous` with size `n`
   /// @param request The MPI request handle for tracking the status of
   /// the non-blocking communication
   /// @param recv_buffer A buffer used for the received data. The
   /// position of ghost entries in the buffer is given by
-  /// IndexMap::scatter_fwd_ghost_positions. The buffer must not be
+  /// IndexMapOld::scatter_fwd_ghost_positions. The buffer must not be
   /// accessed or changed until after a call to
-  /// IndexMap::scatter_fwd_end.
+  /// IndexMapOld::scatter_fwd_end.
   template <typename T>
   void scatter_fwd_begin(const xtl::span<const T>& send_buffer,
                          MPI_Datatype& data_type, MPI_Request& request,
@@ -191,7 +191,7 @@ public:
 
   /// Complete a non-blocking send from the local owner of to process
   /// ranks that have the index as a ghost. This function complete the
-  /// communication started by IndexMap::scatter_fwd_begin.
+  /// communication started by IndexMapOld::scatter_fwd_begin.
   ///
   /// @param[in] request The MPI request handle for tracking the status
   /// of the send
@@ -257,23 +257,23 @@ public:
 
   /// Start a non-blocking send of ghost values to the owning rank. The
   /// non-blocking communication is completed by calling
-  /// IndexMap::scatter_rev_end. A reverse scatter is the transpose of
-  /// IndexMap::scatter_fwd_begin.
+  /// IndexMapOld::scatter_rev_end. A reverse scatter is the transpose of
+  /// IndexMapOld::scatter_fwd_begin.
   ///
   /// @param[in] send_buffer Send buffer filled with ghost data on this
   /// process to be sent to the owning rank. The order of the data is
-  /// given by IndexMap::scatter_fwd_ghost_positions, with
-  /// IndexMap::scatter_fwd_ghost_positions()[i] being the index of the
+  /// given by IndexMapOld::scatter_fwd_ghost_positions, with
+  /// IndexMapOld::scatter_fwd_ghost_positions()[i] being the index of the
   /// ghost data that should be placed in position `i` of the buffer.
   /// @param data_type The MPI data type. To send data with a block size
   /// use `MPI_Type_contiguous` with size `n`
   /// @param request The MPI request handle for tracking the status of
   /// the send
   /// @param recv_buffer A buffer used for the received data. It must
-  /// not be changed until after a call to IndexMap::scatter_rev_end.
+  /// not be changed until after a call to IndexMapOld::scatter_rev_end.
   /// The ordering of the data is given by
-  /// IndexMap::scatter_fwd_indices, with
-  /// IndexMap::scatter_fwd_indices()[i] being the position in the owned
+  /// IndexMapOld::scatter_fwd_indices, with
+  /// IndexMapOld::scatter_fwd_indices()[i] being the position in the owned
   /// data array that corresponds to position `i` in the buffer.
   template <typename T>
   void scatter_rev_begin(const xtl::span<const T>& send_buffer,
@@ -306,7 +306,7 @@ public:
 
   /// Complete a non-blocking send of ghost values to the owning rank.
   /// This function complete the communication started by
-  /// IndexMap::scatter_rev_begin.
+  /// IndexMapOld::scatter_rev_begin.
   ///
   /// @param[in] request The MPI request handle for tracking the status
   /// of the send
@@ -333,7 +333,7 @@ public:
   template <typename T>
   void scatter_rev(xtl::span<T> local_data,
                    const xtl::span<const T>& remote_data, int n,
-                   IndexMap::Mode op) const
+                   IndexMapOld::Mode op) const
   {
     MPI_Datatype data_type;
     if (n == 1)

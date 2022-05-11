@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
     b.set(0.0);
     fem::assemble_vector(b.mutable_array(), *L);
     fem::apply_lifting(b.mutable_array(), {a}, {{bc}}, {}, 1.0);
-    b.scatter_rev(common::IndexMap::Mode::add);
+    b.scatter_rev(common::IndexMapOld::Mode::add);
     fem::set_bc(b.mutable_array(), {bc});
 
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);

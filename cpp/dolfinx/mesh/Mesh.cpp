@@ -221,10 +221,10 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                                                *mesh_vertex_index_map);
 
   // Create submesh vertex index map
-  std::pair<common::IndexMapNew, std::vector<int32_t>>
+  std::pair<common::IndexMap, std::vector<int32_t>>
       submesh_vertex_index_map_pair
       = mesh_vertex_index_map->create_submap(submesh_owned_vertices);
-  auto submesh_vertex_index_map = std::make_shared<common::IndexMapNew>(
+  auto submesh_vertex_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_vertex_index_map_pair.first));
 
   // Create a map from the (local) vertices in the submesh to the
@@ -256,7 +256,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // map.
   std::vector<int32_t> submesh_to_mesh_entity_map(
       submesh_owned_entities.begin(), submesh_owned_entities.end());
-  std::shared_ptr<common::IndexMapNew> submesh_entity_index_map;
+  std::shared_ptr<common::IndexMap> submesh_entity_index_map;
 
   // If the entity dimension is the same as the input mesh topological
   // dimension, add ghost entities to the submesh. If not, do not add
@@ -267,10 +267,10 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     // TODO Call dolfinx::common::get_owned_indices here? Do we want to
     // support `entities` possibly haveing a ghost on one process that is
     // not in `entities` on the owning process?
-    std::pair<common::IndexMapNew, std::vector<int32_t>>
+    std::pair<common::IndexMap, std::vector<int32_t>>
         submesh_entity_index_map_pair
         = mesh_entity_index_map->create_submap(submesh_owned_entities);
-    submesh_entity_index_map = std::make_shared<common::IndexMapNew>(
+    submesh_entity_index_map = std::make_shared<common::IndexMap>(
         std::move(submesh_entity_index_map_pair.first));
 
     // Add ghost entities to the entity map
@@ -286,7 +286,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   }
   else
   {
-    submesh_entity_index_map = std::make_shared<common::IndexMapNew>(
+    submesh_entity_index_map = std::make_shared<common::IndexMap>(
         mesh.comm(), submesh_owned_entities.size());
   }
 
@@ -348,13 +348,13 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // Create submesh geometry index map
   std::vector<int32_t> submesh_to_mesh_x_dof_map(submesh_owned_x_dofs.begin(),
                                                  submesh_owned_x_dofs.end());
-  std::shared_ptr<common::IndexMapNew> submesh_x_dof_index_map;
+  std::shared_ptr<common::IndexMap> submesh_x_dof_index_map;
   {
-    std::pair<common::IndexMapNew, std::vector<int32_t>>
+    std::pair<common::IndexMap, std::vector<int32_t>>
         submesh_x_dof_index_map_pair
         = mesh_geometry_dof_index_map->create_submap(submesh_owned_x_dofs);
 
-    submesh_x_dof_index_map = std::make_shared<common::IndexMapNew>(
+    submesh_x_dof_index_map = std::make_shared<common::IndexMap>(
         std::move(submesh_x_dof_index_map_pair.first));
 
     // Create a map from the (local) geometry dofs in the submesh to the

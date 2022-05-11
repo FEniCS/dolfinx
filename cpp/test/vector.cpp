@@ -38,7 +38,7 @@ void test_vector()
                                             (mpi_rank + 1) % mpi_size);
 
   // Create an IndexMap
-  const auto index_map = std::make_shared<common::IndexMapNew>(
+  const auto index_map = std::make_shared<common::IndexMap>(
       MPI_COMM_WORLD, size_local, ghosts, global_ghost_owner);
 
   la::Vector<PetscScalar> v(index_map, 1);

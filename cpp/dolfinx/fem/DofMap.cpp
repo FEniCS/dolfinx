@@ -51,7 +51,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   const std::int32_t num_owned_view = dofmap_view.index_map->size_local();
 
   // Create sub-index map
-  std::shared_ptr<common::IndexMapNew> index_map;
+  std::shared_ptr<common::IndexMap> index_map;
   {
     // Get block size
     int bs_view = dofmap_view.index_map_bs();
@@ -63,7 +63,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
       xtl::span<std::int32_t> indices(dofs_view.data(),
                                       std::distance(dofs_view.begin(), it));
       auto [_index_map, _] = dofmap_view.index_map->create_submap(indices);
-      index_map = std::make_shared<common::IndexMapNew>(std::move(_index_map));
+      index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
     }
     else
     {
@@ -74,7 +74,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
                      [bs_view](auto idx) { return idx / bs_view; });
       indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
       auto [_index_map, _] = dofmap_view.index_map->create_submap(indices);
-      index_map = std::make_shared<common::IndexMapNew>(std::move(_index_map));
+      index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
     }
   }
 
@@ -218,7 +218,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
       auto [_index_map, bs, dofmap] = fem::build_dofmap_data(
           comm, topology, collapsed_dof_layout, reorder_fn);
       auto index_map
-          = std::make_shared<common::IndexMapNew>(std::move(_index_map));
+          = std::make_shared<common::IndexMap>(std::move(_index_map));
       return DofMap(layout, index_map, bs, std::move(dofmap), bs);
     }
     else

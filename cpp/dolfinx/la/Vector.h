@@ -8,7 +8,6 @@
 
 #include "utils.h"
 #include <complex>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/IndexMapNew.h>
 #include <limits>
 #include <memory>
@@ -32,9 +31,9 @@ public:
   using allocator_type = Allocator;
 
   /// Create a distributed vector
-  Vector(const std::shared_ptr<const common::IndexMapNew>& map, int bs,
+  Vector(const std::shared_ptr<const common::IndexMap>& map, int bs,
          const Allocator& alloc = Allocator())
-      : _map(std::make_shared<common::IndexMap>(common::create_old(*map))),
+      : _map(std::make_shared<common::IndexMapOld>(common::create_old(*map))),
         _map_new(map), _bs(bs),
         _buffer_send_fwd(bs * _map->scatter_fwd_indices().array().size()),
         _buffer_recv_fwd(bs * map->num_ghosts()),
@@ -164,7 +163,7 @@ public:
   /// @param op The operation to perform when adding/setting received
   /// values (add or insert)
   /// @note Collective MPI operation
-  void scatter_rev_end(common::IndexMap::Mode op)
+  void scatter_rev_end(common::IndexMapOld::Mode op)
   {
     // Complete scatter
     _map->scatter_rev_end(_request);
@@ -174,14 +173,14 @@ public:
         = _map->scatter_fwd_indices().array();
     switch (op)
     {
-    case common::IndexMap::Mode::insert:
+    case common::IndexMapOld::Mode::insert:
       for (std::size_t i = 0; i < shared_indices.size(); ++i)
       {
         std::copy_n(std::next(_buffer_send_fwd.cbegin(), _bs * i), _bs,
                     std::next(_x.begin(), _bs * shared_indices[i]));
       }
       break;
-    case common::IndexMap::Mode::add:
+    case common::IndexMapOld::Mode::add:
       for (std::size_t i = 0; i < shared_indices.size(); ++i)
         for (int j = 0; j < _bs; ++j)
           _x[shared_indices[i] * _bs + j] += _buffer_send_fwd[i * _bs + j];
@@ -194,7 +193,7 @@ public:
   /// inserted into the local portion of the vector.
   /// @param op IndexMap operation (add or insert)
   /// @note Collective MPI operation
-  void scatter_rev(dolfinx::common::IndexMap::Mode op)
+  void scatter_rev(dolfinx::common::IndexMapOld::Mode op)
   {
     this->scatter_rev_begin();
     this->scatter_rev_end(op);
@@ -244,7 +243,7 @@ public:
   }
 
   /// Get IndexMap
-  std::shared_ptr<const common::IndexMapNew> map() const { return _map_new; }
+  std::shared_ptr<const common::IndexMap> map() const { return _map_new; }
 
   /// Get block size
   constexpr int bs() const { return _bs; }
@@ -260,9 +259,9 @@ public:
 
 private:
   // Map describing the data layout
-  std::shared_ptr<const common::IndexMap> _map;
+  std::shared_ptr<const common::IndexMapOld> _map;
 
-  std::shared_ptr<const common::IndexMapNew> _map_new;
+  std::shared_ptr<const common::IndexMap> _map_new;
 
   // Block size
   int _bs;

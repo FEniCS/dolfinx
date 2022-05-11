@@ -9,7 +9,7 @@
 #include "caster_petsc.h"
 #include <array>
 #include <cstdint>
-#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DirichletBC.h>
@@ -1040,7 +1040,7 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::DofMap, std::shared_ptr<dolfinx::fem::DofMap>>(
       m, "DofMap", "DofMap object")
       .def(py::init<const dolfinx::fem::ElementDofLayout&,
-                    std::shared_ptr<const dolfinx::common::IndexMapNew>, int,
+                    std::shared_ptr<const dolfinx::common::IndexMap>, int,
                     dolfinx::graph::AdjacencyList<std::int32_t>&, int>(),
            py::arg("element_dof_layout"), py::arg("index_map"),
            py::arg("index_map_bs"), py::arg("dofmap"), py::arg("bs"))

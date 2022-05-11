@@ -45,14 +45,14 @@ void common(py::module& m)
 #endif
   m.attr("git_commit_hash") = dolfinx::git_commit_hash();
 
-  // dolfinx::common::IndexMap::Mode
-  py::enum_<dolfinx::common::IndexMap::Mode>(m, "ScatterMode")
-      .value("add", dolfinx::common::IndexMap::Mode::add)
-      .value("insert", dolfinx::common::IndexMap::Mode::insert);
+  // dolfinx::common::IndexMapOld::Mode
+  py::enum_<dolfinx::common::IndexMapOld::Mode>(m, "ScatterMode")
+      .value("add", dolfinx::common::IndexMapOld::Mode::add)
+      .value("insert", dolfinx::common::IndexMapOld::Mode::insert);
 
-  py::enum_<dolfinx::common::IndexMap::Direction>(m, "Direction")
-      .value("forward", dolfinx::common::IndexMap::Direction::forward)
-      .value("reverse", dolfinx::common::IndexMap::Direction::reverse);
+  py::enum_<dolfinx::common::IndexMapOld::Direction>(m, "Direction")
+      .value("forward", dolfinx::common::IndexMapOld::Direction::forward)
+      .value("reverse", dolfinx::common::IndexMapOld::Direction::reverse);
 
   py::enum_<dolfinx::Table::Reduction>(m, "Reduction")
       .value("max", dolfinx::Table::Reduction::max)
@@ -60,15 +60,15 @@ void common(py::module& m)
       .value("average", dolfinx::Table::Reduction::average);
 
   // dolfinx::common::IndexMap
-  py::class_<dolfinx::common::IndexMap,
-             std::shared_ptr<dolfinx::common::IndexMap>>(m, "IndexMap")
+  py::class_<dolfinx::common::IndexMapOld,
+             std::shared_ptr<dolfinx::common::IndexMapOld>>(m, "IndexMapOld")
       .def(py::init(
           [](const MPICommWrapper comm, std::int32_t local_size,
              const std::vector<int>& dest_ranks,
              const std::vector<std::int64_t>& ghosts,
              const std::vector<int>& ghost_owners)
           {
-            return std::make_shared<dolfinx::common::IndexMap>(
+            return std::make_shared<dolfinx::common::IndexMapOld>(
                 comm.get(), local_size, dest_ranks, ghosts, ghost_owners);
           }))
       .def_property_readonly("size_local",
@@ -82,18 +82,18 @@ void common(py::module& m)
                              "Range of indices owned by this map")
       .def(
           "comm",
-          [](const dolfinx::common::IndexMap& self,
-             dolfinx::common::IndexMap::Direction d)
+          [](const dolfinx::common::IndexMapOld& self,
+             dolfinx::common::IndexMapOld::Direction d)
           { return MPICommWrapper(self.comm(d)); },
           "Return MPI communicator")
       .def(
           "ghost_owners",
-          [](const dolfinx::common::IndexMap& self)
+          [](const dolfinx::common::IndexMapOld& self)
           { return as_pyarray(self.ghost_owners()); },
           "Return owning process for each ghost index")
       .def_property_readonly(
           "ghosts",
-          [](const dolfinx::common::IndexMap& self)
+          [](const dolfinx::common::IndexMapOld& self)
           {
             const std::vector<std::int64_t>& ghosts = self.ghosts();
             return py::array_t<std::int64_t>(ghosts.size(), ghosts.data(),
@@ -102,28 +102,28 @@ void common(py::module& m)
           "Return list of ghost indices");
 
   // dolfinx::common::IndexMap
-  py::class_<dolfinx::common::IndexMapNew,
-             std::shared_ptr<dolfinx::common::IndexMapNew>>(m, "IndexMapNew")
+  py::class_<dolfinx::common::IndexMap,
+             std::shared_ptr<dolfinx::common::IndexMap>>(m, "IndexMap")
       .def(py::init(
           [](const MPICommWrapper comm, std::int32_t local_size,
              const std::vector<std::int64_t>& ghosts,
              const std::vector<int>& ghost_owners)
           {
-            return dolfinx::common::IndexMapNew(comm.get(), local_size, ghosts,
-                                                ghost_owners);
+            return dolfinx::common::IndexMap(comm.get(), local_size, ghosts,
+                                             ghost_owners);
           }))
       .def_property_readonly("size_local",
-                             &dolfinx::common::IndexMapNew::size_local)
+                             &dolfinx::common::IndexMap::size_local)
       .def_property_readonly("size_global",
-                             &dolfinx::common::IndexMapNew::size_global)
+                             &dolfinx::common::IndexMap::size_global)
       .def_property_readonly("num_ghosts",
-                             &dolfinx::common::IndexMapNew::num_ghosts)
+                             &dolfinx::common::IndexMap::num_ghosts)
       .def_property_readonly("local_range",
-                             &dolfinx::common::IndexMapNew::local_range,
+                             &dolfinx::common::IndexMap::local_range,
                              "Range of indices owned by this map")
       .def_property_readonly(
           "ghosts",
-          [](const dolfinx::common::IndexMapNew& self)
+          [](const dolfinx::common::IndexMap& self)
           {
             const std::vector<std::int64_t>& ghosts = self.ghosts();
             return py::array_t<std::int64_t>(ghosts.size(), ghosts.data(),
@@ -131,7 +131,7 @@ void common(py::module& m)
           },
           "Return list of ghost indices")
       .def_property_readonly("owners",
-                             [](const dolfinx::common::IndexMapNew& self)
+                             [](const dolfinx::common::IndexMap& self)
                              {
                                const std::vector<int>& owners = self.owners();
                                return py::array_t<int>(owners.size(),
@@ -139,7 +139,7 @@ void common(py::module& m)
                                                        py::cast(self));
                              })
       .def("local_to_global",
-           [](const dolfinx::common::IndexMapNew& self,
+           [](const dolfinx::common::IndexMap& self,
               const py::array_t<std::int32_t, py::array::c_style>& local)
            {
              if (local.ndim() != 1)
@@ -151,7 +151,7 @@ void common(py::module& m)
              return global;
            })
       .def("create_submap",
-           [](const dolfinx::common::IndexMapNew& self,
+           [](const dolfinx::common::IndexMap& self,
               const py::array_t<std::int32_t, py::array::c_style>& entities)
            {
              auto [map, ghosts] = self.create_submap(entities);
@@ -161,7 +161,7 @@ void common(py::module& m)
   // .def(
   //     "comm",
   //     [](const dolfinx::common::IndexMap& self,
-  //        dolfinx::common::IndexMap::Direction d)
+  //        dolfinx::common::IndexMapOld::Direction d)
   //     { return MPICommWrapper(self.comm(d)); },
   //     "Return MPI communicator")
   // .def(

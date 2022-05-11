@@ -77,7 +77,7 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
 /// @returns Degrees of freedom found on the other ranks that exist on
 /// this rank
 std::vector<std::int32_t>
-get_remote_dofs(MPI_Comm comm, const common::IndexMapNew& map, int bs_map,
+get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
                 const xtl::span<const std::int32_t>& dofs_local)
 {
   int num_neighbors(-1), outdegree(-2), weighted(-1);

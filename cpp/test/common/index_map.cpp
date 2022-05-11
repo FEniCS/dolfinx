@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <catch2/catch.hpp>
-#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/MPI.h>
 #include <numeric>
 #include <set>
@@ -86,7 +86,7 @@ void test_scatter_rev()
   std::vector<std::int64_t> data_ghost(n * num_ghosts, value);
   idx_map.scatter_rev(xtl::span<std::int64_t>(data_local),
                       xtl::span<const std::int64_t>(data_ghost), n,
-                      common::IndexMap::Mode::add);
+                      common::IndexMapOld::Mode::add);
 
   std::int64_t sum;
   CHECK((int)data_local.size() == n * size_local);
@@ -95,13 +95,13 @@ void test_scatter_rev()
 
   idx_map.scatter_rev(xtl::span<std::int64_t>(data_local),
                       xtl::span<const std::int64_t>(data_ghost), n,
-                      common::IndexMap::Mode::insert);
+                      common::IndexMapOld::Mode::insert);
   sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == n * value * num_ghosts);
 
   idx_map.scatter_rev(xtl::span<std::int64_t>(data_local),
                       xtl::span<const std::int64_t>(data_ghost), n,
-                      common::IndexMap::Mode::add);
+                      common::IndexMapOld::Mode::add);
   sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == 2 * n * value * num_ghosts);
 }
