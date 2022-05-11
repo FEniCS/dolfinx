@@ -238,20 +238,10 @@ void SparsityPattern::assemble()
   const std::array local_range0 = _index_maps[0]->local_range();
   const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
 
-  common::IndexMap map0_old = common::create_old(*_index_maps[0]);
-
   const std::vector<int>& owners0 = _index_maps[0]->owners();
   std::vector<int> src0 = owners0;
   std::sort(src0.begin(), src0.end());
   src0.erase(std::unique(src0.begin(), src0.end()), src0.end());
-  std::vector<int> dest0
-      = dolfinx::MPI::compute_graph_edges_nbx(_index_maps[0]->comm(), src0);
-  std::sort(dest0.begin(), dest0.end());
-
-  MPI_Comm comm0;
-  MPI_Dist_graph_create_adjacent(
-      _index_maps[0]->comm(), src0.size(), src0.data(), MPI_UNWEIGHTED,
-      dest0.size(), dest0.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
 
   assert(_index_maps[1]);
   const std::int32_t local_size1 = _index_maps[1]->size_local();
@@ -259,12 +249,6 @@ void SparsityPattern::assemble()
 
   _col_ghosts = _index_maps[1]->ghosts();
   _col_ghost_owners = _index_maps[1]->owners();
-
-  // Global to local map for ghost column indices
-  std::map<std::int64_t, std::int32_t> global_to_local;
-  std::int32_t local_i = local_size1;
-  for (std::int64_t global_i : _col_ghosts)
-    global_to_local.insert({global_i, local_i++});
 
   // Compute size of data to send to each process
   std::vector<std::int32_t> data_per_proc(src0.size(), 0);
@@ -318,9 +302,28 @@ void SparsityPattern::assemble()
   // Create and communicate adjacency list to neighborhood
   const graph::AdjacencyList<std::int64_t> ghost_data_out(std::move(ghost_data),
                                                           std::move(send_disp));
-  MPI_Comm comm = map0_old.comm(common::IndexMap::Direction::reverse);
+
+  MPI_Comm comm;
+  {
+    std::vector<int> dest0
+        = dolfinx::MPI::compute_graph_edges_nbx(_index_maps[0]->comm(), src0);
+    std::sort(dest0.begin(), dest0.end());
+
+    MPI_Dist_graph_create_adjacent(
+        _index_maps[0]->comm(), dest0.size(), dest0.data(), MPI_UNWEIGHTED,
+        src0.size(), src0.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  }
+
   const graph::AdjacencyList<std::int64_t> ghost_data_in
       = dolfinx::MPI::neighbor_all_to_all(comm, ghost_data_out);
+
+  MPI_Comm_free(&comm);
+
+  // Global to local map for ghost column indices
+  std::map<std::int64_t, std::int32_t> global_to_local;
+  std::int32_t local_i = local_size1;
+  for (std::int64_t global_i : _col_ghosts)
+    global_to_local.insert({global_i, local_i++});
 
   // Add data received from the neighborhood
   const std::vector<std::int64_t>& in_ghost_data = ghost_data_in.array();
@@ -383,7 +386,7 @@ void SparsityPattern::assemble()
   // Column count increased due to received rows from other processes
   LOG(INFO) << "Column ghost size increased from "
             << _index_maps[1]->ghosts().size() << " to " << _col_ghosts.size()
-            << "\n";
+            << std::endl;
 }
 //-----------------------------------------------------------------------------
 std::int64_t SparsityPattern::num_nonzeros() const
