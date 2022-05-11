@@ -421,9 +421,10 @@ private:
     int tdim = topology.dim();
     assert(topology.index_map(tdim));
     assert(topology.index_map(tdim - 1));
-    std::vector<std::int32_t> fwd_shared_facets;
-    if (!topology.index_map(tdim)->overlapped())
-      fwd_shared_facets = topology.index_map(tdim - 1)->shared_indices();
+    const std::vector<std::int32_t> fwd_shared_facets
+        = topology.index_map(tdim)->overlapped()
+              ? std::vector<std::int32_t>()
+              : topology.index_map(tdim - 1)->shared_indices();
 
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
     assert(f_to_c);
