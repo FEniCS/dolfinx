@@ -172,6 +172,10 @@ public:
   /// TODO
   std::vector<std::int32_t> shared_indices() const;
 
+  /// @brief Check if index map has overlaps (ghosts on any rank)
+  /// @return True if index map has overlaps on any ranks, otherwise false
+  bool overlapped() const noexcept;
+
 private:
   // Range of indices (global) owned by this process
   std::array<std::int64_t, 2> _local_range;
@@ -187,6 +191,8 @@ private:
 
   // Local-to-global map for ghost indices
   std::vector<int> _owners;
-};
 
+  // // True if map has overlaps (ghosts)
+  bool _overlapping;
+};
 } // namespace dolfinx::common

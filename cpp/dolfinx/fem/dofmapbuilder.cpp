@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -424,17 +423,6 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
   const int D = topology.dim();
 
-  // HACK
-  std::vector<std::unique_ptr<common::IndexMap>> tmp_maps(D + 1);
-  for (int d = 0; d <= D; ++d)
-  {
-    if (auto map = topology.index_map(d); map)
-    {
-      tmp_maps[d]
-          = std::make_unique<common::IndexMap>(common::create_old(*map));
-    }
-  }
-
   // Build list flag for owned mesh entities that are shared, i.e. are a
   // ghost on a neighbor
   std::vector<std::vector<std::int8_t>> shared_entity(D + 1);
@@ -444,10 +432,10 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     if (map)
     {
       shared_entity[d] = std::vector<std::int8_t>(map->size_local(), false);
-      const std::vector<std::int32_t>& forward_indices
-          = tmp_maps[d]->scatter_fwd_indices().array();
-      for (auto entity : forward_indices)
-        shared_entity[d][entity] = true;
+      const std::vector<std::int32_t> forward_indices = map->shared_indices();
+      std::for_each(forward_indices.begin(), forward_indices.end(),
+                    [&entities = shared_entity[d]](auto idx)
+                    { entities[idx] = true; });
     }
   }
 
@@ -475,15 +463,24 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   std::vector<MPI_Comm> comm(D + 1, MPI_COMM_NULL);
   std::vector<std::vector<std::int64_t>> all_dofs_received(D + 1);
   std::vector<std::vector<int>> disp_recv(D + 1);
+  std::vector<std::vector<int>> srcs(D + 1);
   for (int d = 0; d <= D; ++d)
   {
     // FIXME: This should check which dimension are needed by the dofmap
     auto map = topology.index_map(d);
     if (map)
     {
-      comm[d] = tmp_maps[d]->comm(common::IndexMap::Direction::forward);
+      std::vector<int>& src = srcs[d];
+      src = map->owners();
+      std::sort(src.begin(), src.end());
+      src.erase(std::unique(src.begin(), src.end()), src.end());
+      std::vector<int> dest
+          = dolfinx::MPI::compute_graph_edges_nbx(map->comm(), src);
+      std::sort(dest.begin(), dest.end());
 
-      // comm[d] = map->comm(common::IndexMap::Direction::forward);
+      MPI_Dist_graph_create_adjacent(
+          map->comm(), src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
+          dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm[d]);
 
       // Get number of neighbors
       int indegree(-1), outdegree(-2), weighted(-1);
@@ -491,17 +488,15 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
       // Number and values to send and receive
       const int num_indices = global[d].size();
-      std::vector<int> size_recv(indegree);
-      // Note: add 1 for OpenMPI bug when indegree = 0
-      if (size_recv.empty())
-        size_recv.push_back(0);
+      std::vector<int> size_recv(src.size());
+      size_recv.reserve(1);
       MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, size_recv.data(), 1,
                              MPI_INT, comm[d]);
 
       // Compute displacements for data to receive. Last entry has total
       // number of received items.
-      disp_recv[d].resize(indegree + 1);
-      std::partial_sum(size_recv.begin(), size_recv.begin() + indegree,
+      disp_recv[d].resize(src.size() + 1);
+      std::partial_sum(size_recv.begin(), size_recv.begin() + src.size(),
                        disp_recv[d].begin() + 1);
 
       // TODO: use MPI_Ineighbor_alltoallv
@@ -537,7 +532,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     MPI_Waitany(requests_dim.size(), requests.data(), &idx, MPI_STATUS_IGNORE);
     d = requests_dim[idx];
 
-    auto [neighbors, _] = dolfinx::MPI::neighbors(comm[d]);
+    const std::vector<int>& src = srcs[d];
 
     // Build (global old, global new) map for dofs of dimension d
     std::vector<std::pair<std::int64_t, std::pair<int64_t, int>>>
@@ -549,8 +544,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
           = std::upper_bound(disp_recv[d].begin(), disp_recv[d].end(), j);
       const int owner = std::distance(disp_recv[d].begin(), pos) - 1;
       global_old_new.push_back(
-          {all_dofs_received[d][j],
-           {all_dofs_received[d][j + 1], neighbors[owner]}});
+          {all_dofs_received[d][j], {all_dofs_received[d][j + 1], src[owner]}});
     }
     std::sort(global_old_new.begin(), global_old_new.end());
 
@@ -569,6 +563,12 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
       local_to_global_new_owner[local_new_to_global_old[d][i + 1]]
           = it->second.second;
     }
+  }
+
+  for (std::size_t i = 0; i < comm.size(); ++i)
+  {
+    if (comm[i] != MPI_COMM_NULL)
+      MPI_Comm_free(&comm[i]);
   }
 
   return {std::move(local_to_global_new), std::move(local_to_global_new_owner)};

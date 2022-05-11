@@ -332,7 +332,8 @@ common::stack_index_maps(
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size) : _comm(comm)
+IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size)
+    : _comm(comm), _overlapping(false)
 {
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
@@ -357,7 +358,7 @@ IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size,
                          const xtl::span<const std::int64_t>& ghosts,
                          const xtl::span<const int>& src_ranks)
     : _comm(comm), _ghosts(ghosts.begin(), ghosts.end()),
-      _owners(src_ranks.begin(), src_ranks.end())
+      _owners(src_ranks.begin(), src_ranks.end()), _overlapping(true)
 {
   assert(size_t(ghosts.size()) == src_ranks.size());
   assert(std::equal(src_ranks.begin(), src_ranks.end(),
@@ -919,4 +920,6 @@ std::vector<std::int32_t> IndexMapNew::shared_indices() const
 
   return shared;
 }
+//-----------------------------------------------------------------------------
+bool IndexMapNew::overlapped() const noexcept { return _overlapping; }
 //-----------------------------------------------------------------------------
