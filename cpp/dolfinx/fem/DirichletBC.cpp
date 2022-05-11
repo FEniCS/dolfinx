@@ -259,15 +259,9 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
     // Create 'symmetric' neighbourhood communicator
     MPI_Comm comm;
     {
-      std::vector<int> src = map->owners();
-      std::sort(src.begin(), src.end());
-      std::vector<int> dest
-          = dolfinx::MPI::compute_graph_edges_nbx(map->comm(), src);
-      std::sort(dest.begin(), dest.end());
-
       std::vector<int> ranks;
-      std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
-                     std::back_inserter(ranks));
+      std::set_union(map->src().begin(), map->src().end(), map->dest().begin(),
+                     map->dest().end(), std::back_inserter(ranks));
       ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
 
       MPI_Dist_graph_create_adjacent(
@@ -401,15 +395,9 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     // Create 'symmetric' neighbourhood communicator
     MPI_Comm comm;
     {
-
-      std::vector<int> src = map0->owners();
-      std::sort(src.begin(), src.end());
-      std::vector<int> dest
-          = dolfinx::MPI::compute_graph_edges_nbx(map0->comm(), src);
-      std::sort(dest.begin(), dest.end());
-
       std::vector<int> ranks;
-      std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
+      std::set_union(map0->src().begin(), map0->src().end(),
+                     map0->dest().begin(), map0->dest().end(),
                      std::back_inserter(ranks));
       ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
 

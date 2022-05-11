@@ -562,50 +562,86 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
   // Note: the ghost cell owner might not be the same as the vertex
   // owner.
 
-  MPI_Comm comm;
-  std::vector<int> src = map0.owners();
-  std::sort(src.begin(), src.end());
-  src.erase(std::unique(src.begin(), src.end()), src.end());
-  std::vector<int> dest
-      = dolfinx::MPI::compute_graph_edges_nbx(map0.comm(), src);
-  std::sort(dest.begin(), dest.end());
+  // For each rank, list of owned vertices that are ghosted by other
+  // ranks
+  std::vector<std::vector<std::int64_t>> shared_vertices_fwd(
+      map0.dest().size());
 
-  MPI_Dist_graph_create_adjacent(map0.comm(), src.size(), src.data(),
-                                 MPI_UNWEIGHTED, dest.size(), dest.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
-
-  // --
-
-  std::vector<std::vector<std::int64_t>> shared_vertices_fwd(dest.size());
-  const int myrank = dolfinx::MPI::rank(comm);
   {
-    const graph::AdjacencyList<int> index_to_rank = map0.index_to_dest_ranks();
+    // -- Send cell ghost indices to owner
+    MPI_Comm comm1;
+    MPI_Dist_graph_create_adjacent(
+        map0.comm(), map0.dest().size(), map0.dest().data(), MPI_UNWEIGHTED,
+        map0.src().size(), map0.src().data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+        false, &comm1);
 
-    // Iterate over ranks that ghost cells owned by this rank
-    for (std::int32_t c = 0; c < map0.size_local(); ++c)
+    // Build list of (owner rank, index) pairs for each ghost index, and
+    // sort
+    std::vector<std::pair<int, std::int64_t>> owner_to_ghost;
+    std::transform(map0.ghosts().begin(), map0.ghosts().end(),
+                   map0.owners().begin(), std::back_inserter(owner_to_ghost),
+                   [](auto idx, auto r) -> std::pair<int, std::int64_t> {
+                     return {r, idx};
+                   });
+    std::sort(owner_to_ghost.begin(), owner_to_ghost.end());
+
+    // Build send buffer (the second component of each pair in
+    // owner_to_ghost) to send to rank that owns the index
+    std::vector<std::int64_t> send_buffer;
+    send_buffer.reserve(owner_to_ghost.size());
+    std::transform(owner_to_ghost.begin(), owner_to_ghost.end(),
+                   std::back_inserter(send_buffer),
+                   [](auto x) { return x.second; });
+
+    // Compute send sizes and displacements
+    std::vector<int> send_sizes, send_disp{0};
+    auto it = owner_to_ghost.begin();
+    while (it != owner_to_ghost.end())
     {
-      auto vertices = entities0.links(c);
-      auto ranks = index_to_rank.links(c);
-
-      // Iterate over ranks that share cell i
-      for (int r : ranks)
-      {
-        // Add vertices in owned, forward-shared cells
-        if (r != myrank)
-        {
-          auto it = std::lower_bound(dest.begin(), dest.end(), r);
-          assert(it != dest.end() and *it == r);
-          int neigh_rank = std::distance(dest.begin(), it);
-
-          shared_vertices_fwd[neigh_rank].insert(
-              shared_vertices_fwd[neigh_rank].end(), vertices.begin(),
-              vertices.end());
-        }
-      }
+      auto it1 = std::find_if(it, owner_to_ghost.end(),
+                              [r = it->first](auto x) { return x.first != r; });
+      send_sizes.push_back(std::distance(it, it1));
+      send_disp.push_back(send_disp.back() + send_sizes.back());
+      it = it1;
     }
 
-    for (auto& shared_vertices : shared_vertices_fwd)
+    // Exchange number of indices to send/receive from each rank
+    std::vector<int> recv_sizes(map0.dest().size(), 0);
+    send_sizes.reserve(1);
+    recv_sizes.reserve(1);
+    MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                          MPI_INT, comm1);
+
+    // Prepare receive displacement array
+    std::vector<int> recv_disp(map0.dest().size() + 1, 0);
+    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                     std::next(recv_disp.begin()));
+
+    // Send ghost indices to owner, and receive owned indices
+    std::vector<std::int64_t> recv_buffer(recv_disp.back());
+    MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
+                           send_disp.data(), MPI_INT64_T, recv_buffer.data(),
+                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                           comm1);
+    MPI_Comm_free(&comm1);
+
+    // Iterate over ranks that ghost cells owned by this rank
+    auto local_range = map0.local_range();
+    for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
     {
+      assert(r < shared_vertices_fwd.size());
+      std::vector<std::int64_t>& shared_vertices = shared_vertices_fwd[r];
+      for (int i = recv_disp[r]; i < recv_disp[r + 1]; ++i)
+      {
+        assert(recv_buffer[i] >= local_range[0]);
+        assert(recv_buffer[i] < local_range[1]);
+        std::int32_t cell_idx = recv_buffer[i] - local_range[0];
+
+        auto vertices = entities0.links(cell_idx);
+        shared_vertices.insert(shared_vertices.end(), vertices.begin(),
+                               vertices.end());
+      }
+
       std::sort(shared_vertices.begin(), shared_vertices.end());
       shared_vertices.erase(
           std::unique(shared_vertices.begin(), shared_vertices.end()),
@@ -613,16 +649,22 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
     }
   }
 
+  MPI_Comm comm;
+  MPI_Dist_graph_create_adjacent(map0.comm(), map0.src().size(),
+                                 map0.src().data(), MPI_UNWEIGHTED,
+                                 map0.dest().size(), map0.dest().data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+
   // Compute send sizes and offsets
-  std::vector<int> send_sizes(dest.size());
+  std::vector<int> send_sizes(map0.dest().size());
   std::transform(shared_vertices_fwd.begin(), shared_vertices_fwd.end(),
                  send_sizes.begin(), [](auto& x) { return 3 * x.size(); });
-  std::vector<int> send_disp(dest.size() + 1);
+  std::vector<int> send_disp(map0.dest().size() + 1);
   std::partial_sum(send_sizes.begin(), send_sizes.end(),
                    std::next(send_disp.begin()));
 
   // Get receive sizes
-  std::vector<int> recv_sizes(src.size());
+  std::vector<int> recv_sizes(map0.src().size());
   send_sizes.reserve(1);
   recv_sizes.reserve(1);
   MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
@@ -663,7 +705,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
   }
   assert(send_buffer.size() == (std::size_t)send_disp.back());
 
-  std::vector<int> recv_disp(src.size() + 1, 0);
+  std::vector<int> recv_disp(map0.src().size() + 1, 0);
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                    std::next(recv_disp.begin()));
   std::vector<std::int64_t> recv_buffer(recv_disp.back());

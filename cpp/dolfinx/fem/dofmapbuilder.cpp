@@ -463,28 +463,18 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   std::vector<MPI_Comm> comm(D + 1, MPI_COMM_NULL);
   std::vector<std::vector<std::int64_t>> all_dofs_received(D + 1);
   std::vector<std::vector<int>> disp_recv(D + 1);
-  std::vector<std::vector<int>> srcs(D + 1);
   for (int d = 0; d <= D; ++d)
   {
     // FIXME: This should check which dimension are needed by the dofmap
     auto map = topology.index_map(d);
     if (map)
     {
-      std::vector<int>& src = srcs[d];
-      src = map->owners();
-      std::sort(src.begin(), src.end());
-      src.erase(std::unique(src.begin(), src.end()), src.end());
-      std::vector<int> dest
-          = dolfinx::MPI::compute_graph_edges_nbx(map->comm(), src);
-      std::sort(dest.begin(), dest.end());
+      const std::vector<int>& src = map->src();
+      const std::vector<int>& dest = map->dest();
 
       MPI_Dist_graph_create_adjacent(
           map->comm(), src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
           dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm[d]);
-
-      // Get number of neighbors
-      int indegree(-1), outdegree(-2), weighted(-1);
-      MPI_Dist_graph_neighbors_count(comm[d], &indegree, &outdegree, &weighted);
 
       // Number and values to send and receive
       const int num_indices = global[d].size();
@@ -532,7 +522,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     MPI_Waitany(requests_dim.size(), requests.data(), &idx, MPI_STATUS_IGNORE);
     d = requests_dim[idx];
 
-    const std::vector<int>& src = srcs[d];
+    const std::vector<int>& src = topology.index_map(d)->src();
 
     // Build (global old, global new) map for dofs of dimension d
     std::vector<std::pair<std::int64_t, std::pair<int64_t, int>>>
