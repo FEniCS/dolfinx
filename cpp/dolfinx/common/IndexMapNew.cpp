@@ -473,8 +473,7 @@ std::vector<std::int64_t> IndexMapNew::global_indices() const
 MPI_Comm IndexMapNew::comm() const { return _comm.comm(); }
 //----------------------------------------------------------------------------
 std::pair<IndexMapNew, std::vector<std::int32_t>>
-IndexMapNew::create_submap_new(
-    const xtl::span<const std::int32_t>& indices) const
+IndexMapNew::create_submap(const xtl::span<const std::int32_t>& indices) const
 {
   if (!indices.empty() and indices.back() >= this->size_local())
   {

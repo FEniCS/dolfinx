@@ -75,7 +75,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm /*comm*/, const DofMap& dofmap_view,
                    [bs = bs_view](auto idx) { return idx / bs; });
     indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
 
-    auto [_index_map, _] = dofmap_view.index_map->create_submap_new(indices);
+    auto [_index_map, _] = dofmap_view.index_map->create_submap(indices);
     index_map = std::make_shared<common::IndexMapNew>(std::move(_index_map));
   }
 

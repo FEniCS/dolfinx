@@ -154,7 +154,7 @@ void common(py::module& m)
            [](const dolfinx::common::IndexMapNew& self,
               const py::array_t<std::int32_t, py::array::c_style>& entities)
            {
-             auto [map, ghosts] = self.create_submap_new(entities);
+             auto [map, ghosts] = self.create_submap(entities);
              return std::pair(std::move(map), as_pyarray(std::move(ghosts)));
            });
 
