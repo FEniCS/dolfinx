@@ -60,9 +60,11 @@ la::SparsityPattern fem::create_sparsity_pattern(
       break;
     case IntegralType::interior_facet:
       sparsitybuild::interior_facets(pattern, topology,
-                                     {{dofmaps[0], dofmaps[1]}});
+                                     {{dofmaps[0], dofmaps[1]}},
+                                     facet_maps);
       break;
     case IntegralType::exterior_facet:
+      // TODO Pass facet maps
       sparsitybuild::exterior_facets(pattern, topology,
                                      {{dofmaps[0], dofmaps[1]}});
       break;

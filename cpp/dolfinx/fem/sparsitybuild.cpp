@@ -19,7 +19,8 @@ void sparsitybuild::cells(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
         dofmaps,
-    const std::array<const std::function<std::int32_t(std::int32_t)>, 2>& cell_maps)
+    const std::array<const std::function<std::int32_t(std::int32_t)>, 2>&
+        cell_maps)
 {
   const int D = topology.dim();
   auto cells = topology.connectivity(D, 0);
@@ -38,7 +39,10 @@ void sparsitybuild::cells(
 void sparsitybuild::interior_facets(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
-        dofmaps)
+        dofmaps,
+    const std::array<
+        const std::function<std::int32_t(std::pair<std::int32_t, int>)>, 2>&
+        facet_maps)
 {
   const int D = topology.dim();
   if (!topology.connectivity(D - 1, 0))
