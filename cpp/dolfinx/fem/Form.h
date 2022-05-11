@@ -438,9 +438,8 @@ private:
       // tagged facets. This may be useful in a few cases.
       if (f_to_c->num_links(*f) == 1)
       {
-        auto it = std::lower_bound(fwd_shared_facets.begin(),
-                                   fwd_shared_facets.end(), *f);
-        if (it == fwd_shared_facets.end() or *it != *f)
+        if (!std::binary_search(fwd_shared_facets.begin(),
+                                fwd_shared_facets.end(), *f))
         {
           const std::size_t pos = std::distance(tagged_facets_begin, f);
           if (auto it = integrals.find(tags[pos]); it != integrals.end())

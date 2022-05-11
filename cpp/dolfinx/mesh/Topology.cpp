@@ -461,8 +461,7 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
       {
         // Find rank on the neighborhood comm
         auto it = std::lower_bound(dest.begin(), dest.end(), ranks[j]);
-        assert(it != dest.end());
-        assert(*it == ranks[j]);
+        assert(it != dest.end() and *it == ranks[j]);
         int neighbor = std::distance(dest.begin(), it);
 
         // Add (old global vertex index, new  global vertex index, owner
