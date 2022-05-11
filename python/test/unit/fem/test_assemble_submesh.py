@@ -299,7 +299,8 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
     # TODO BCs
     A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
-    print(A[:, :])
+
+    assert(np.isclose(A.norm(), unit_square_norm(n, space, k, ghost_mode)))
 
     L = fem.form(v * (dx(1) + ds(1)),
                  entity_maps=entity_maps)
@@ -310,6 +311,40 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
     #               mode=PETSc.ScatterMode.REVERSE)
     # TODO Set bc
     # fem.petsc.set_bc(b, [bc])
+
+
+def unit_square_norm(n, space, k, ghost_mode):
+    mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+    V_0 = fem.FunctionSpace(mesh, (space, k))
+    V_1 = fem.FunctionSpace(mesh, (space, k))
+    u = ufl.TrialFunction(V_0)
+    v = ufl.TestFunction(V_1)
+
+    tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(tdim - 1, 0)
+    f_to_v = mesh.topology.connectivity(tdim - 1, 0)
+    num_facets = f_to_v.num_nodes
+    facets = create_adjacencylist([f_to_v.links(f)
+                                   for f in range(num_facets)])
+    facet_values = np.zeros((num_facets), dtype=np.int32)
+    left_facets = locate_entities_boundary(
+        mesh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
+    facet_values[left_facets] = 1
+    facet_mt = meshtags_from_entities(mesh, tdim - 1, facets, facet_values)
+
+    ds = ufl.Measure("ds", domain=mesh, subdomain_data=facet_mt)
+
+    boundary_facets = locate_entities_boundary(
+        mesh, tdim - 1, lambda x: np.isclose(x[1], 1.0))
+    dofs = fem.locate_dofs_topological(V_1, tdim - 1, boundary_facets)
+    bc_func = fem.Function(V_1)
+    bc = fem.dirichletbc(bc_func, dofs)
+
+    a = fem.form(ufl.inner(u, v) * (ufl.dx + ds(1)))
+    A = fem.petsc.assemble_matrix(a, bcs=[bc])
+    A.assemble()
+
+    return A.norm()
 
 
 # np.set_printoptions(linewidth=200, suppress=True)
