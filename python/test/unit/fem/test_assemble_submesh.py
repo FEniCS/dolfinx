@@ -300,7 +300,21 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
     # TODO Set bc
     # fem.petsc.set_bc(b, [bc])
 
+    # TODO Also do this with a dx measure on a submesh and check the
+    # result is the same
+    V_m = fem.FunctionSpace(mesh, (space, k))
+    u = ufl.TrialFunction(V_m)
 
+    a = fem.form(ufl.inner(u, v) * dx(1),
+                 entity_maps=entity_maps)
+    # TODO BCs
+    A = fem.petsc.assemble_matrix(a)
+    A.assemble()
+
+    # print(A[:, :])
+
+
+# np.set_printoptions(linewidth=200, suppress=True)
 # test_mixed_codim_0_test_func_assembly(2, 1, "Lagrange", GhostMode.shared_facet)
 
 # def test_mixed_mesh_codim_0_assembly(n, k, space, ghost_mode):

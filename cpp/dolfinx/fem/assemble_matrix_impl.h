@@ -55,7 +55,10 @@ void assemble_cells(
                              const std::uint8_t*)>& kernel,
     const xtl::span<const T>& coeffs, int cstride,
     const xtl::span<const T>& constants,
-    const xtl::span<const std::uint32_t>& cell_info)
+    const xtl::span<const std::uint32_t>& cell_info_0,
+    const xtl::span<const std::uint32_t>& cell_info_1,
+    const std::function<std::int32_t(std::int32_t)>& cell_map_0,
+    const std::function<std::int32_t(std::int32_t)>& cell_map_1)
 {
   if (cells.empty())
     return;
@@ -79,6 +82,8 @@ void assemble_cells(
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
     std::int32_t c = cells[index];
+    std::int32_t c_0 = cell_map_0(c);
+    std::int32_t c_1 = cell_map_1(c);
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
@@ -93,12 +98,12 @@ void assemble_cells(
     kernel(Ae.data(), coeffs.data() + index * cstride, constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
 
-    dof_transform(_Ae, cell_info, c, ndim1);
-    dof_transform_to_transpose(_Ae, cell_info, c, ndim0);
+    dof_transform(_Ae, cell_info_1, c_1, ndim1);
+    dof_transform_to_transpose(_Ae, cell_info_0, c_0, ndim0);
 
     // Zero rows/columns for essential bcs
-    auto dofs0 = dofmap0.links(c);
-    auto dofs1 = dofmap1.links(c);
+    auto dofs0 = dofmap0.links(c_0);
+    auto dofs1 = dofmap1.links(c_1);
     if (!bc0.empty())
     {
       for (int i = 0; i < num_dofs0; ++i)
@@ -445,10 +450,10 @@ void assemble_matrix(
     const auto& fn = a.kernel(IntegralType::cell, i);
     const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
-    // TODO Pass both cell infos
     impl::assemble_cells(mat_set, mesh->geometry(), cells, dof_transform, dofs0,
                          bs0, dof_transform_to_transpose, dofs1, bs1, bc0, bc1,
-                         fn, coeffs, cstride, constants, cell_info_0);
+                         fn, coeffs, cstride, constants, cell_info_0,
+                         cell_info_1, cell_map_0, cell_map_1);
   }
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
