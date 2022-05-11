@@ -189,7 +189,6 @@ def create_tnt_quad(degree):
 def poisson_error(V):
     msh = V.mesh
     u, v = TrialFunction(V), TestFunction(V)
-    a = inner(grad(u), grad(v)) * dx
 
     a = inner(grad(u), grad(v)) * dx
     a = fem.form(a)
