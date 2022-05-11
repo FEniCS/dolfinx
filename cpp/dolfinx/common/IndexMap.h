@@ -46,15 +46,6 @@ public:
     forward, // Owner to ghost
   };
 
-  /// Create an non-overlapping index map with local_size owned on this
-  /// process.
-  ///
-  /// @note Collective
-  /// @param[in] comm The MPI communicator
-  /// @param[in] local_size Local size of the IndexMap, i.e. the number
-  /// of owned entries
-  IndexMap(MPI_Comm comm, std::int32_t local_size);
-
   /// Create an index map with local_size owned indiced on this process
   ///
   /// @note Collective
@@ -149,9 +140,6 @@ public:
   /// @return The owning rank on the neighborhood communicator of the
   /// ith ghost index.
   std::vector<int> ghost_owners() const;
-
-  /// TMP
-  const std::vector<int>& owners() const { return _owners; }
 
   /// Start a non-blocking send of owned data to ranks that ghost the
   /// data. The communication is completed by calling

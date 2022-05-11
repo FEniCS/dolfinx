@@ -259,11 +259,8 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
     // Create 'symmetric' neighbourhood communicator
     MPI_Comm comm;
     {
-      std::vector<int> src = map->owners();
-      std::sort(src.begin(), src.end());
-      std::vector<int> dest
-          = dolfinx::MPI::compute_graph_edges_nbx(map->comm(), src);
-      std::sort(dest.begin(), dest.end());
+      const std::vector<int>& src = map->src();
+      const std::vector<int>& dest = map->dest();
 
       std::vector<int> ranks;
       std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
@@ -401,12 +398,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     // Create 'symmetric' neighbourhood communicator
     MPI_Comm comm;
     {
-
-      std::vector<int> src = map0->owners();
-      std::sort(src.begin(), src.end());
-      std::vector<int> dest
-          = dolfinx::MPI::compute_graph_edges_nbx(map0->comm(), src);
-      std::sort(dest.begin(), dest.end());
+      const std::vector<int>& src = map0->src();
+      const std::vector<int>& dest = map0->dest();
 
       std::vector<int> ranks;
       std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
