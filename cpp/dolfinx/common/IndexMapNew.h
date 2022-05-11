@@ -67,8 +67,7 @@ stack_index_maps(
 class IndexMapNew
 {
 public:
-  /// @brief Create an non-overlapping index map with local_size owned
-  /// on this process.
+  /// @brief Create an non-overlapping index map.
   ///
   /// @note Collective
   ///
@@ -77,8 +76,7 @@ public:
   /// of owned entries
   IndexMapNew(MPI_Comm comm, std::int32_t local_size);
 
-  /// @brief Create an index map with local_size owned indiced on this
-  /// process.
+  /// @brief Create an overlapping (ghosted) index map.
   ///
   /// @note Collective
   ///
@@ -86,11 +84,26 @@ public:
   /// @param[in] local_size Local size of the index map, i.e. the number
   /// of owned entries
   /// @param[in] ghosts The global indices of ghost entries
-  /// @param[in] src_ranks Owner rank (on global communicator) of each
-  /// entry in @p ghosts
+  /// @param[in] owners Owner rank (on global communicator) of each
+  /// entry in `ghosts`
   IndexMapNew(MPI_Comm comm, std::int32_t local_size,
               const xtl::span<const std::int64_t>& ghosts,
-              const xtl::span<const int>& src_ranks);
+              const xtl::span<const int>& owners);
+
+  /// @brief Create an overlapping (ghosted) index map.
+  ///
+  /// @note Collective
+  ///
+  /// @param[in] comm The MPI communicator
+  /// @param[in] local_size Local size of the index map, i.e. the number
+  /// of owned entries
+  /// @param[in] ghosts The global indices of ghost entries
+  /// @param[in] src Owner rank (on global communicator) of each entry
+  /// in `ghosts`
+  IndexMapNew(MPI_Comm comm, std::int32_t local_size,
+              const xtl::span<const int>& dest,
+              const xtl::span<const std::int64_t>& ghosts,
+              const xtl::span<const int>& src);
 
   // Copy constructor
   IndexMapNew(const IndexMapNew& map) = delete;
@@ -184,7 +197,8 @@ public:
   ///
   /// Typically used when creating neighbourhood communicators.
   ///
-  /// @return MPI ranks than own ghost indices
+  /// @return MPI ranks than own ghost indices.  The ranks are unique
+  /// and sorted.
   const std::vector<int>& src() const noexcept;
 
   /// @brief Ordered set of MPI ranks that ghost indices owned by
@@ -192,7 +206,8 @@ public:
   ///
   /// Typically used when creating neighbourhood communicators.
   ///
-  /// @return MPI ranks than own ghost indices
+  /// @return MPI ranks than own ghost indices. The ranks are unique
+  /// and sorted.
   const std::vector<int>& dest() const noexcept;
 
   /// @brief Check if index map has overlaps (ghosts on any rank).
