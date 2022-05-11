@@ -172,21 +172,6 @@ public:
   /// TODO
   std::vector<std::int32_t> shared_indices() const;
 
-  /// @brief Ordered set of MPI ranks that own caller's ghost indices.
-  ///
-  /// Typically used when creating neighbourhood communicators
-  ///
-  /// @return MPI ranks than own ghost indices
-  const std::vector<int>& src() const noexcept;
-
-  /// @brief Ordered set of MPI ranks that ghost indices owned by
-  /// caller.
-  ///
-  /// Typically used when creating neighbourhood communicators.
-  ///
-  /// @return MPI ranks than own ghost indices
-  const std::vector<int>& dest() const noexcept;
-
   /// @brief Check if index map has overlaps (ghosts on any rank)
   /// @return True if index map has overlaps on any ranks, otherwise false
   bool overlapped() const noexcept;
@@ -207,13 +192,7 @@ private:
   // Local-to-global map for ghost indices
   std::vector<int> _owners;
 
-  // Set of ranks that own ghosts
-  std::vector<int> _src;
-
-  // Set of ranks ghost owned indices
-  std::vector<int> _dest;
-
-  // True if map has overlaps (ghosts)
+  // // True if map has overlaps (ghosts)
   bool _overlapping;
 };
 } // namespace dolfinx::common

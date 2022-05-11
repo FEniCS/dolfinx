@@ -333,8 +333,14 @@ refinement::adjust_indices(const common::IndexMapNew& map, std::int32_t n)
   MPI_Exscan(&num_local, &global_offset, 1, MPI_INT64_T, MPI_SUM, map.comm());
 
   const std::vector<int>& owners = map.owners();
-  const std::vector<int>& src = map.src();
-  const std::vector<int>& dest = map.dest();
+
+  std::vector<int> src = owners;
+  std::sort(src.begin(), src.end());
+  src.erase(std::unique(src.begin(), src.end()), src.end());
+
+  std::vector<int> dest
+      = dolfinx::MPI::compute_graph_edges_nbx(map.comm(), src);
+  std::sort(dest.begin(), dest.end());
 
   MPI_Comm comm;
   MPI_Dist_graph_create_adjacent(map.comm(), src.size(), src.data(),

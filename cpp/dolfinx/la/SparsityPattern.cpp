@@ -239,7 +239,9 @@ void SparsityPattern::assemble()
   const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
 
   const std::vector<int>& owners0 = _index_maps[0]->owners();
-  const std::vector<int>& src0 = _index_maps[0]->src();
+  std::vector<int> src0 = owners0;
+  std::sort(src0.begin(), src0.end());
+  src0.erase(std::unique(src0.begin(), src0.end()), src0.end());
 
   assert(_index_maps[1]);
   const std::int32_t local_size1 = _index_maps[1]->size_local();
@@ -303,7 +305,10 @@ void SparsityPattern::assemble()
 
   MPI_Comm comm;
   {
-    const std::vector<int>& dest0 = _index_maps[0]->dest();
+    std::vector<int> dest0
+        = dolfinx::MPI::compute_graph_edges_nbx(_index_maps[0]->comm(), src0);
+    std::sort(dest0.begin(), dest0.end());
+
     MPI_Dist_graph_create_adjacent(
         _index_maps[0]->comm(), dest0.size(), dest0.data(), MPI_UNWEIGHTED,
         src0.size(), src0.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);

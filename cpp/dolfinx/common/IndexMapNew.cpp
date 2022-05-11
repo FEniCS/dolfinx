@@ -191,19 +191,19 @@ common::stack_index_maps(
                    std::next(local_offset.begin()));
 
   // Build list of src ranks (ranks that own ghosts)
-  std::vector<int> src, dest;
+  std::vector<int> src;
   for (auto& map : maps)
   {
-    src.insert(src.end(), map.first.get().src().begin(),
-               map.first.get().src().end());
+    src.insert(src.end(), map.first.get().owners().begin(),
+               map.first.get().owners().end());
     std::sort(src.begin(), src.end());
     src.erase(std::unique(src.begin(), src.end()), src.end());
-
-    dest.insert(dest.end(), map.first.get().dest().begin(),
-                map.first.get().dest().end());
-    std::sort(dest.begin(), dest.end());
-    dest.erase(std::unique(dest.begin(), dest.end()), dest.end());
   }
+
+  // Get destination ranks (ranks that ghost my indices), and sort
+  std::vector<int> dest = dolfinx::MPI::compute_graph_edges_nbx(
+      maps.at(0).first.get().comm(), src);
+  std::sort(dest.begin(), dest.end());
 
   // Create neighbour comms (0: ghost -> owner, 1: (owner -> ghost)
   MPI_Comm comm0, comm1;
@@ -371,14 +371,6 @@ IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size,
   MPI_Request request_scan;
   MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM, comm,
               &request_scan);
-
-  _src = _owners;
-  std::sort(_src.begin(), _src.end());
-  _src.erase(std::unique(_src.begin(), _src.end()), _src.end());
-  _src.shrink_to_fit();
-
-  _dest = dolfinx::MPI::compute_graph_edges_nbx(comm, _src);
-  std::sort(_dest.begin(), _dest.end());
 
   // Send local size to sum reduction to get global size
   MPI_Request request;
@@ -660,8 +652,7 @@ graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
   std::vector<std::int32_t> offsets = {0};
   std::vector<int> data;
   {
-    // Build list of (owner rank, index) pairs for each ghost index, and
-    // sort
+    // Build list of (owner rank, index) pairs for each ghost index, and sort
     std::vector<std::pair<int, std::int64_t>> owner_to_ghost;
     std::transform(_ghosts.begin(), _ghosts.end(), _owners.begin(),
                    std::back_inserter(owner_to_ghost),
@@ -939,10 +930,6 @@ std::vector<std::int32_t> IndexMapNew::shared_indices() const
 
   return shared;
 }
-//-----------------------------------------------------------------------------
-const std::vector<int>& IndexMapNew::src() const noexcept { return _src; }
-//-----------------------------------------------------------------------------
-const std::vector<int>& IndexMapNew::dest() const noexcept { return _dest; }
 //-----------------------------------------------------------------------------
 bool IndexMapNew::overlapped() const noexcept { return _overlapping; }
 //-----------------------------------------------------------------------------
