@@ -224,7 +224,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // Create submesh vertex index map
   std::pair<common::IndexMapNew, std::vector<int32_t>>
       submesh_vertex_index_map_pair
-      = mesh_vertex_index_map->create_submap_new(submesh_owned_vertices);
+      = mesh_vertex_index_map->create_submap(submesh_owned_vertices);
   auto submesh_vertex_index_map = std::make_shared<common::IndexMapNew>(
       std::move(submesh_vertex_index_map_pair.first));
 
@@ -270,7 +270,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     // not in `entities` on the owning process?
     std::pair<common::IndexMapNew, std::vector<int32_t>>
         submesh_entity_index_map_pair
-        = mesh_entity_index_map->create_submap_new(submesh_owned_entities);
+        = mesh_entity_index_map->create_submap(submesh_owned_entities);
     submesh_entity_index_map = std::make_shared<common::IndexMapNew>(
         std::move(submesh_entity_index_map_pair.first));
 
@@ -353,7 +353,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   {
     std::pair<common::IndexMapNew, std::vector<int32_t>>
         submesh_x_dof_index_map_pair
-        = mesh_geometry_dof_index_map->create_submap_new(submesh_owned_x_dofs);
+        = mesh_geometry_dof_index_map->create_submap(submesh_owned_x_dofs);
 
     submesh_x_dof_index_map = std::make_shared<common::IndexMapNew>(
         std::move(submesh_x_dof_index_map_pair.first));

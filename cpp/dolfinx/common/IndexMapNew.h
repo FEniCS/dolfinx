@@ -159,7 +159,7 @@ public:
   /// position in the new map to the ghost position in the original
   /// (this) map
   std::pair<IndexMapNew, std::vector<std::int32_t>>
-  create_submap_new(const xtl::span<const std::int32_t>& indices) const;
+  create_submap(const xtl::span<const std::int32_t>& indices) const;
 
   /// @todo Aim to remove this function? If it's kept, should it work
   /// with neighborhood ranks?
