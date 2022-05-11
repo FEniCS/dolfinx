@@ -31,7 +31,8 @@ using namespace dolfinx;
 la::SparsityPattern fem::create_sparsity_pattern(
     const mesh::Topology& topology,
     const std::array<std::reference_wrapper<const DofMap>, 2>& dofmaps,
-    const std::set<IntegralType>& integrals)
+    const std::set<IntegralType>& integrals,
+    const std::array<const std::function<std::int32_t(std::int32_t)>, 2>& cell_maps)
 {
   common::Timer t0("Build sparsity");
 
@@ -50,7 +51,8 @@ la::SparsityPattern fem::create_sparsity_pattern(
     switch (type)
     {
     case IntegralType::cell:
-      sparsitybuild::cells(pattern, topology, {{dofmaps[0], dofmaps[1]}});
+      sparsitybuild::cells(pattern, topology, {{dofmaps[0], dofmaps[1]}},
+                           cell_maps);
       break;
     case IntegralType::interior_facet:
       sparsitybuild::interior_facets(pattern, topology,

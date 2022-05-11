@@ -18,15 +18,16 @@ using namespace dolfinx::fem;
 void sparsitybuild::cells(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
-        dofmaps)
+        dofmaps,
+    const std::array<const std::function<std::int32_t(std::int32_t)>, 2>& cell_maps)
 {
   const int D = topology.dim();
   auto cells = topology.connectivity(D, 0);
   assert(cells);
   for (int c = 0; c < cells->num_nodes(); ++c)
   {
-    pattern.insert(dofmaps[0].get().cell_dofs(c),
-                   dofmaps[1].get().cell_dofs(c));
+    pattern.insert(dofmaps[0].get().cell_dofs(cell_maps[0](c)),
+                   dofmaps[1].get().cell_dofs(cell_maps[1](c)));
   }
 }
 //-----------------------------------------------------------------------------

@@ -82,7 +82,10 @@ extract_function_spaces(const std::vector<std::vector<const Form<T>*>>& a)
 la::SparsityPattern create_sparsity_pattern(
     const mesh::Topology& topology,
     const std::array<std::reference_wrapper<const DofMap>, 2>& dofmaps,
-    const std::set<IntegralType>& integrals);
+    const std::set<IntegralType>& integrals,
+    const std::array<const std::function<std::int32_t(std::int32_t)>, 2>& cell_maps
+    = {[](std::int32_t e) { return e; },
+       [](std::int32_t e) { return e; }});
 
 /// @brief Create a sparsity pattern for a given form.
 /// @note The pattern is not finalised, i.e. the caller is responsible
@@ -115,7 +118,18 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
   }
 
-  return create_sparsity_pattern(mesh->topology(), dofmaps, types);
+  auto cell_map_0 = a.cell_map(*a.function_spaces().at(0));
+  auto cell_map_1 = a.cell_map(*a.function_spaces().at(1));
+  std::array<const std::function<std::int32_t(std::int32_t)>, 2> cell_maps
+      = {cell_map_0, cell_map_1};
+
+  auto facet_map_0 = a.cell_local_facet_map(*a.function_spaces().at(0));
+  auto facet_map_1 = a.cell_local_facet_map(*a.function_spaces().at(1));
+  std::array<const std::function<std::int32_t(std::pair<std::int32_t, int>)>, 2>
+      facet_maps = {facet_map_0, facet_map_1};
+
+  return create_sparsity_pattern(mesh->topology(), dofmaps, types,
+                                 cell_maps);
 }
 
 /// Create an ElementDofLayout from a ufcx_dofmap
@@ -682,7 +696,8 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
         // Create lambda function fetching cell index from exterior facet entity
-        auto fetch_cell = form.cell_local_facet_map(*coefficients[coeff]->function_space());
+        auto fetch_cell
+            = form.cell_local_facet_map(*coefficients[coeff]->function_space());
         xtl::span<const std::uint32_t> cell_info
             = impl::get_cell_orientation_info(*coefficients[coeff]);
         impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
