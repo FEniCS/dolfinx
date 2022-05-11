@@ -90,20 +90,20 @@ public:
               const xtl::span<const std::int64_t>& ghosts,
               const xtl::span<const int>& owners);
 
-  /// @brief Create an overlapping (ghosted) index map.
-  ///
-  /// @note Collective
-  ///
-  /// @param[in] comm The MPI communicator
-  /// @param[in] local_size Local size of the index map, i.e. the number
-  /// of owned entries
-  /// @param[in] ghosts The global indices of ghost entries
-  /// @param[in] src Owner rank (on global communicator) of each entry
-  /// in `ghosts`
-  IndexMapNew(MPI_Comm comm, std::int32_t local_size,
-              const xtl::span<const int>& dest,
-              const xtl::span<const std::int64_t>& ghosts,
-              const xtl::span<const int>& src);
+  // /// @brief Create an overlapping (ghosted) index map.
+  // ///
+  // /// @note Collective
+  // ///
+  // /// @param[in] comm The MPI communicator
+  // /// @param[in] local_size Local size of the index map, i.e. the number
+  // /// of owned entries
+  // /// @param[in] ghosts The global indices of ghost entries
+  // /// @param[in] src Owner rank (on global communicator) of each entry
+  // /// in `ghosts`
+  // IndexMapNew(MPI_Comm comm, std::int32_t local_size,
+  //             const xtl::span<const int>& dest,
+  //             const xtl::span<const std::int64_t>& ghosts,
+  //             const xtl::span<const int>& src);
 
   // Copy constructor
   IndexMapNew(const IndexMapNew& map) = delete;
