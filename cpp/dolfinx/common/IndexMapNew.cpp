@@ -903,11 +903,8 @@ std::vector<std::int32_t> IndexMapNew::shared_indices() const
 
   MPI_Comm_free(&comm);
 
-  std::sort(recv_buffer.begin(), recv_buffer.end());
-  recv_buffer.erase(std::unique(recv_buffer.begin(), recv_buffer.end()),
-                    recv_buffer.end());
-
   std::vector<std::int32_t> shared;
+  shared.reserve(recv_buffer.size());
   std::transform(recv_buffer.begin(), recv_buffer.end(),
                  std::back_inserter(shared),
                  [range = _local_range](auto idx)
@@ -916,6 +913,9 @@ std::vector<std::int32_t> IndexMapNew::shared_indices() const
                    assert(idx < range[1]);
                    return idx - range[0];
                  });
+
+  std::sort(shared.begin(), shared.end());
+  shared.erase(std::unique(shared.begin(), shared.end()), shared.end());
 
   return shared;
 }
