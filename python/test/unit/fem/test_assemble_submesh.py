@@ -296,7 +296,6 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
           for entity in range(num_cells)]
     entity_maps = {submesh: mp}
 
-    # a = fem.form(ufl.inner(u, v) * (dx(1)),
     a = fem.form(ufl.inner(u, v) * (dx(1) + ds(1)),
                  entity_maps=entity_maps)
     # TODO BCs
@@ -307,12 +306,11 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
         n, space, k, ghost_mode)
     assert(np.isclose(A.norm(), A_expected_norm))
 
-    # L = fem.form(v * (dx(1)),
     L = fem.form(v * (dx(1) + ds(1)),
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
     # TODO Apply lifting
-    # fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
+    fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
     # TODO Set bc
@@ -352,14 +350,12 @@ def unit_square_norm(n, space, k, ghost_mode):
     bc = fem.dirichletbc(bc_func, dofs)
 
     a = fem.form(ufl.inner(u, v) * (ufl.dx + ds(1)))
-    # a = fem.form(ufl.inner(u, v) * (ufl.dx))
     A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
 
     L = fem.form(v * (ufl.dx + ds(1)))
-    # L = fem.form(v * (ufl.dx))
     b = fem.petsc.assemble_vector(L)
-    # fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
+    fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
     # fem.petsc.set_bc(b, [bc])

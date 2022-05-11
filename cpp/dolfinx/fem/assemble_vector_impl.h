@@ -216,10 +216,13 @@ void _lift_bc_exterior_facets(
                              std::int32_t, int)>& dof_transform_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
-    int cstride, const xtl::span<const std::uint32_t>& cell_info,
+    int cstride, const xtl::span<const std::uint32_t>& cell_info_0,
+    const xtl::span<const std::uint32_t>& cell_info_1,
     const xtl::span<const T>& bc_values1,
     const xtl::span<const std::int8_t>& bc_markers1,
-    const xtl::span<const T>& x0, double scale)
+    const xtl::span<const T>& x0, double scale,
+    const std::function<int32_t(std::pair<int32_t, int>)>& facet_map_0,
+    const std::function<int32_t(std::pair<int32_t, int>)>& facet_map_1)
 {
   if (facets.empty())
     return;
@@ -240,8 +243,13 @@ void _lift_bc_exterior_facets(
     std::int32_t cell = facets[index].first;
     int local_facet = facets[index].second;
 
+    std::int32_t c_0 = facet_map_0(facets[index]);
+    assert(c_0 >= 0);
+    std::int32_t c_1 = facet_map_1(facets[index]);
+    assert(c_1 >= 0);
+
     // Get dof maps for cell
-    auto dmap1 = dofmap1.links(cell);
+    auto dmap1 = dofmap1.links(c_1);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -269,7 +277,7 @@ void _lift_bc_exterior_facets(
     }
 
     // Size data structure for assembly
-    auto dmap0 = dofmap0.links(cell);
+    auto dmap0 = dofmap0.links(c_0);
 
     const int num_rows = bs0 * dmap0.size();
     const int num_cols = bs1 * dmap1.size();
@@ -279,8 +287,8 @@ void _lift_bc_exterior_facets(
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array, constants.data(), coordinate_dofs.data(),
            &local_facet, nullptr);
-    dof_transform(Ae, cell_info, cell, num_cols);
-    dof_transform_to_transpose(Ae, cell_info, cell, num_rows);
+    dof_transform(Ae, cell_info_1, c_1, num_cols);
+    dof_transform_to_transpose(Ae, cell_info_0, c_0, num_rows);
 
     // Size data structure for assembly
     be.resize(num_rows);
@@ -856,6 +864,10 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
+    const auto& facet_map_0
+        = a.cell_local_facet_map(*a.function_spaces().at(0));
+    const auto& facet_map_1
+        = a.cell_local_facet_map(*a.function_spaces().at(1));
     const auto& kernel = a.kernel(IntegralType::exterior_facet, i);
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
@@ -864,8 +876,9 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
     // TODO Pass both cell infos
     _lift_bc_exterior_facets(b, *mesh, kernel, facets, dof_transform, dofmap0,
                              bs0, dof_transform_to_transpose, dofmap1, bs1,
-                             constants, coeffs, cstride, cell_info_0, bc_values1,
-                             bc_markers1, x0, scale);
+                             constants, coeffs, cstride, cell_info_0,
+                             cell_info_1, bc_values1, bc_markers1, x0, scale,
+                             facet_map_0, facet_map_1);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
