@@ -420,14 +420,10 @@ private:
     // exterior boundary.
     int tdim = topology.dim();
     assert(topology.index_map(tdim));
-    std::set<std::int32_t> fwd_shared_facets;
-    common::IndexMap fmap = common::create_old(*topology.index_map(tdim - 1));
+    assert(topology.index_map(tdim - 1));
+    std::vector<std::int32_t> fwd_shared_facets;
     if (topology.index_map(tdim)->num_ghosts() == 0)
-    {
-      const std::vector<std::int32_t>& fwd_indices
-          = fmap.scatter_fwd_indices().array();
-      fwd_shared_facets.insert(fwd_indices.begin(), fwd_indices.end());
-    }
+      fwd_shared_facets = topology.index_map(tdim - 1)->shared_indices();
 
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
     assert(f_to_c);
@@ -439,16 +435,20 @@ private:
       // shared, should be external
       // TODO: Consider removing this check and integrating over all
       // tagged facets. This may be useful in a few cases.
-      if (f_to_c->num_links(*f) == 1
-          and fwd_shared_facets.find(*f) == fwd_shared_facets.end())
+      if (f_to_c->num_links(*f) == 1)
       {
-        const std::size_t pos = std::distance(tagged_facets_begin, f);
-        if (auto it = integrals.find(tags[pos]); it != integrals.end())
+        auto it = std::lower_bound(fwd_shared_facets.begin(),
+                                   fwd_shared_facets.end(), *f);
+        if (it == fwd_shared_facets.end() or *it != *f)
         {
-          // There will only be one pair for an exterior facet integral
-          std::pair<std::int32_t, int> pair = get_cell_local_facet_pairs<1>(
-              *f, f_to_c->links(*f), *c_to_f)[0];
-          it->second.second.push_back(pair);
+          const std::size_t pos = std::distance(tagged_facets_begin, f);
+          if (auto it = integrals.find(tags[pos]); it != integrals.end())
+          {
+            // There will only be one pair for an exterior facet integral
+            std::pair<std::int32_t, int> pair = get_cell_local_facet_pairs<1>(
+                *f, f_to_c->links(*f), *c_to_f)[0];
+            it->second.second.push_back(pair);
+          }
         }
       }
     }
