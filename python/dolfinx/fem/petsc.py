@@ -371,7 +371,9 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[FormMetaClass]],
                 assemble_matrix(Asub, a_block, bcs, diagonal, const, coeff)
             elif i == j:
                 for bc in bcs:
-                    if a_row[0].function_spaces[0].contains(bc.function_space):
+                    row_forms = [row_form for row_form in a_row if row_form is not None]
+                    assert(len(row_forms) > 0)
+                    if row_forms[0].function_spaces[0].contains(bc.function_space):
                         raise RuntimeError(
                             f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC applied."
                             " Consider assembling a zero block.")
@@ -413,7 +415,9 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[FormMetaClass]],
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
             elif i == j:
                 for bc in bcs:
-                    if a_row[0].function_spaces[0].contains(bc.function_space):
+                    row_forms = [row_form for row_form in a_row if row_form is not None]
+                    assert(len(row_forms) > 0)
+                    if row_forms[0].function_spaces[0].contains(bc.function_space):
                         raise RuntimeError(
                             f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC applied."
                             " Consider assembling a zero block.")
