@@ -281,10 +281,11 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
     u = ufl.TrialFunction(V_m)
     v = ufl.TestFunction(V_sm)
 
-    submesh_boundary_facets = locate_entities_boundary(
-        submesh, edim - 1, lambda x: np.isclose(x[1], 1.0))
-    dofs = fem.locate_dofs_topological(V_sm, edim - 1, submesh_boundary_facets)
-    bc_func = fem.Function(V_sm)
+    boundary_facets = locate_entities_boundary(
+        mesh, edim - 1, lambda x: np.isclose(x[1], 1.0))
+    dofs = fem.locate_dofs_topological(V_m, edim - 1, boundary_facets)
+    bc_func = fem.Function(V_m)
+    # TODO Interpolate
     bc_func.x.array[:] = 1.0
     bc = fem.dirichletbc(bc_func, dofs)
 
@@ -345,8 +346,8 @@ def unit_square_norm(n, space, k, ghost_mode):
 
     boundary_facets = locate_entities_boundary(
         mesh, tdim - 1, lambda x: np.isclose(x[1], 1.0))
-    dofs = fem.locate_dofs_topological(V_1, tdim - 1, boundary_facets)
-    bc_func = fem.Function(V_1)
+    dofs = fem.locate_dofs_topological(V_0, tdim - 1, boundary_facets)
+    bc_func = fem.Function(V_0)
     bc_func.x.array[:] = 1.0
     bc = fem.dirichletbc(bc_func, dofs)
 
