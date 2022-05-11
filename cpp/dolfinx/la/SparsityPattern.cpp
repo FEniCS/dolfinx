@@ -239,7 +239,6 @@ void SparsityPattern::assemble()
   const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
 
   common::IndexMap map0_old = common::create_old(*_index_maps[0]);
-  const std::vector<int> ghost_owners0 = map0_old.ghost_owners();
 
   const std::vector<int>& owners0 = _index_maps[0]->owners();
   std::vector<int> src0 = owners0;
@@ -267,26 +266,18 @@ void SparsityPattern::assemble()
   for (std::int64_t global_i : _col_ghosts)
     global_to_local.insert({global_i, local_i++});
 
-  // Get number of destination ranks for ghost rows
-  // int outdegree(-1);
-  // {
-  //   MPI_Comm comm = map0_old.comm(common::IndexMap::Direction::reverse);
-  //   int indegree(-1), weighted(-1);
-  //   MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
-  // }
-
   // Compute size of data to send to each process
-  // std::vector<std::int32_t> data_per_proc(outdegree, 0);
   std::vector<std::int32_t> data_per_proc(src0.size(), 0);
-  for (std::size_t i = 0; i < ghost_owners0.size(); ++i)
+  for (std::size_t i = 0; i < owners0.size(); ++i)
   {
-    // Add to src size
-    assert(ghost_owners0[i] < (int)data_per_proc.size());
-    data_per_proc[ghost_owners0[i]] += 3 * _row_cache[i + local_size0].size();
+    auto it = std::lower_bound(src0.begin(), src0.end(), owners0[i]);
+    assert(it != src0.end() and *it == owners0[i]);
+    const int neighbour_rank = std::distance(src0.begin(), it);
+
+    data_per_proc[neighbour_rank] += 3 * _row_cache[i + local_size0].size();
   }
 
   // Compute send displacements
-  // std::vector<int> send_disp(outdegree + 1, 0);
   std::vector<int> send_disp(src0.size() + 1, 0);
   std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
                    std::next(send_disp.begin(), 1));
@@ -296,9 +287,12 @@ void SparsityPattern::assemble()
   std::vector<int> insert_pos(send_disp);
   std::vector<std::int64_t> ghost_data(send_disp.back());
   const int rank = dolfinx::MPI::rank(_comm.comm());
-  for (std::size_t i = 0; i < ghost_owners0.size(); ++i)
+  for (std::size_t i = 0; i < owners0.size(); ++i)
   {
-    const int neighbour_rank = ghost_owners0[i];
+    auto it = std::lower_bound(src0.begin(), src0.end(), owners0[i]);
+    assert(it != src0.end() and *it == owners0[i]);
+    const int neighbour_rank = std::distance(src0.begin(), it);
+
     for (std::int32_t col_local : _row_cache[i + local_size0])
     {
       // Get index in send buffer
@@ -358,10 +352,10 @@ void SparsityPattern::assemble()
   }
 
   // Sort and remove duplicate column indices in each row
-  std::vector<std::int32_t> adj_counts(local_size0 + ghost_owners0.size(), 0);
+  std::vector<std::int32_t> adj_counts(local_size0 + owners0.size(), 0);
   std::vector<std::int32_t> adj_data;
-  _off_diagonal_offset.resize(local_size0 + ghost_owners0.size());
-  for (std::size_t i = 0; i < local_size0 + ghost_owners0.size(); ++i)
+  _off_diagonal_offset.resize(local_size0 + owners0.size());
+  for (std::size_t i = 0; i < local_size0 + owners0.size(); ++i)
   {
     std::vector<std::int32_t>& row = _row_cache[i];
     std::sort(row.begin(), row.end());
@@ -378,7 +372,7 @@ void SparsityPattern::assemble()
   std::vector<std::vector<std::int32_t>>().swap(_row_cache);
 
   // Compute offsets for adjacency list
-  std::vector<std::int32_t> adj_offsets(local_size0 + ghost_owners0.size() + 1);
+  std::vector<std::int32_t> adj_offsets(local_size0 + owners0.size() + 1);
   std::partial_sum(adj_counts.begin(), adj_counts.end(),
                    adj_offsets.begin() + 1);
 
