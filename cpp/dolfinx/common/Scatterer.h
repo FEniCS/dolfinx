@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <MPI.h>
 #include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
+#include <mpi.h>
 
 using namespace dolfinx;
 
@@ -50,41 +50,46 @@ public:
                                      src_ranks.data(), src_weights.data(),
                                      MPI_INFO_NULL, false, &comm1);
       _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
+
+      // Compute shared indices and group by neighboring (processes for which an
+      // index is a ghost)
+      
     }
   }
 
-  /// Start a non-blocking send of owned data to ranks that ghost the
-  /// data. The communication is completed by calling
-  /// VectorScatter::fwd_end. The send and receive buffer should not
-  /// be changed until after VectorScatter::fwd_end has been called.
-  ///
-  /// @param[in] send_buffer Local data associated with each owned local
-  /// index to be sent to process where the data is ghosted. It must not
-  /// be changed until after a call to VectorScatter::fwd_end. The
-  /// order of data in the buffer is given by
-  /// VectorScatter::scatter_fwd_indices.
-  /// @param request The MPI request handle for tracking the status of
-  /// the non-blocking communication
-  /// @param recv_buffer A buffer used for the received data. The
-  /// position of ghost entries in the buffer is given by
-  /// VectorScatter::scatter_fwd_ghost_positions. The buffer must not be
-  /// accessed or changed until after a call to
-  /// VectorScatter::fwd_end.
-  template <typename T>
-  void scatter_fwd_begin(const xtl::span<const T>& send_buffer,
-                         const xtl::span<T>& recv_buffer,
-                         std::vector<MPI_Request>& request) const
-  {
-    // Send displacement
-    const std::vector<int32_t>& displs_send_fwd = _shared_indices->offsets();
-    assert(send_buffer.size() == std::size_t(displs_send_fwd.back()));
+  //   /// Start a non-blocking send of owned data to ranks that ghost the
+  //   /// data. The communication is completed by calling
+  //   /// VectorScatter::fwd_end. The send and receive buffer should not
+  //   /// be changed until after VectorScatter::fwd_end has been called.
+  //   ///
+  //   /// @param[in] send_buffer Local data associated with each owned local
+  //   /// index to be sent to process where the data is ghosted. It must not
+  //   /// be changed until after a call to VectorScatter::fwd_end. The
+  //   /// order of data in the buffer is given by
+  //   /// VectorScatter::scatter_fwd_indices.
+  //   /// @param request The MPI request handle for tracking the status of
+  //   /// the non-blocking communication
+  //   /// @param recv_buffer A buffer used for the received data. The
+  //   /// position of ghost entries in the buffer is given by
+  //   /// VectorScatter::scatter_fwd_ghost_positions. The buffer must not be
+  //   /// accessed or changed until after a call to
+  //   /// VectorScatter::fwd_end.
+  //   template <typename T>
+  //   void scatter_fwd_begin(const xtl::span<const T>& send_buffer,
+  //                          const xtl::span<T>& recv_buffer,
+  //                          std::vector<MPI_Request>& request) const
+  //   {
+  //     // Send displacement
+  //     const std::vector<int32_t>& displs_send_fwd =
+  //     _shared_indices->offsets(); assert(send_buffer.size() ==
+  //     std::size_t(displs_send_fwd.back()));
 
-    MPI_Ineighbor_alltoallv(
-        send_buffer.data(), _sizes_send_fwd.data(), displs_send_fwd.data(),
-        MPI::mpi_type<T>(), recv_buffer.data(), _sizes_recv_fwd.data(),
-        _displs_recv_fwd.data(), MPI::mpi_type<T>(),
-        _map->comm(IndexMap::Direction::forward), request.data());
-  }
+  //     MPI_Ineighbor_alltoallv(
+  //         send_buffer.data(), _sizes_send_fwd.data(), displs_send_fwd.data(),
+  //         MPI::mpi_type<T>(), recv_buffer.data(), _sizes_recv_fwd.data(),
+  //         _displs_recv_fwd.data(), MPI::mpi_type<T>(),
+  //         _map->comm(IndexMap::Direction::forward), request.data());
+  //   }
 
 private:
   // Map describing the data layout
@@ -106,5 +111,5 @@ private:
   // - in-edges (src) are from ranks that 'ghost' my owned indicies
   // - out-edges (dest) are to the owning ranks of my ghost indices
   dolfinx::MPI::Comm _comm_ghost_to_owner;
-}
+};
 } // namespace dolfinx::common
