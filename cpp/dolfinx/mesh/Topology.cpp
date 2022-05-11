@@ -703,12 +703,12 @@ graph::AdjacencyList<std::int32_t> convert_to_local_indexing(
 std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
 {
   const int tdim = topology.dim();
-  auto facet_imap = topology.index_map(tdim - 1);
-  if (!facet_imap)
+  auto facet_map = topology.index_map(tdim - 1);
+  if (!facet_map)
     throw std::runtime_error("Facets have not been computed.");
 
-  auto cell_imap = topology.index_map(tdim);
-  assert(cell_imap);
+  auto cell_map = topology.index_map(tdim);
+  assert(cell_map);
 
   // In parallel, a mesh has either:
   // i) Ghost cells connected to every shared facet
@@ -719,30 +719,14 @@ std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
   // must additionally check that the facet is not shared with another
   // process to differentiate between the partition boundary and the
   // physical boundary.
-  //
-  // NOTE: It is not sufficient to only check that a mesh has no ghost
-  // cells to determine if it falls into category (i) or (ii). This is
-  // because a submesh could have no ghost cells and no shared facets,
-  // but could share some cells with other processes.
   std::vector<std::int32_t> fwd_shared_facets;
-  common::IndexMap cmap_old = common::create_old(*cell_imap);
-  common::IndexMap fmap_old = common::create_old(*facet_imap);
-  if (cell_imap->num_ghosts() == 0
-      and cmap_old.scatter_fwd_indices().array().empty())
-  {
-    const std::vector<std::int32_t>& fwd_indices
-        = fmap_old.scatter_fwd_indices().array();
-    fwd_shared_facets.assign(fwd_indices.begin(), fwd_indices.end());
-    dolfinx::radix_sort(xtl::span(fwd_shared_facets));
-    fwd_shared_facets.erase(
-        std::unique(fwd_shared_facets.begin(), fwd_shared_facets.end()),
-        fwd_shared_facets.end());
-  }
+  if (!cell_map->overlapped())
+    fwd_shared_facets = facet_map->shared_indices();
 
   auto f_to_c = topology.connectivity(tdim - 1, tdim);
   if (!f_to_c)
     throw std::runtime_error("Facet-cell connectivity missing.");
-  std::vector<std::int8_t> facet_markers(facet_imap->size_local(), false);
+  std::vector<std::int8_t> facet_markers(facet_map->size_local(), false);
   for (std::size_t f = 0; f < facet_markers.size(); ++f)
   {
     if (f_to_c->num_links(f) == 1

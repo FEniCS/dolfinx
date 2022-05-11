@@ -619,8 +619,17 @@ IndexMapNew::create_submap_new(
 
   MPI_Barrier(_comm.comm());
 
-  return {IndexMapNew(_comm.comm(), local_size_new, ghosts, src_ranks),
-          std::move(new_to_old_ghost)};
+  if (_overlapping)
+  {
+    return {IndexMapNew(_comm.comm(), local_size_new, ghosts, src_ranks),
+            std::move(new_to_old_ghost)};
+  }
+  else
+  {
+    assert(new_to_old_ghost.empty());
+    return {IndexMapNew(_comm.comm(), local_size_new),
+            std::vector<std::int32_t>()};
+  }
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
