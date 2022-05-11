@@ -426,21 +426,29 @@ void assemble_matrix(
       = element0->needs_dof_transformations()
         or element1->needs_dof_transformations()
         or a.needs_facet_permutations();
-  xtl::span<const std::uint32_t> cell_info;
+  xtl::span<const std::uint32_t> cell_info_0;
+  xtl::span<const std::uint32_t> cell_info_1;
   if (needs_transformation_data)
   {
-    mesh->topology_mutable().create_entity_permutations();
-    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    auto mesh_0 = a.function_spaces().at(0)->mesh();
+    auto mesh_1 = a.function_spaces().at(1)->mesh();
+    mesh_0->topology_mutable().create_entity_permutations();
+    mesh_1->topology_mutable().create_entity_permutations();
+    cell_info_0 = xtl::span(mesh_0->topology().get_cell_permutation_info());
+    cell_info_1 = xtl::span(mesh_1->topology().get_cell_permutation_info());
   }
 
   for (int i : a.integral_ids(IntegralType::cell))
   {
+    const auto& cell_map_0 = a.cell_map(*a.function_spaces().at(0));
+    const auto& cell_map_1 = a.cell_map(*a.function_spaces().at(1));
     const auto& fn = a.kernel(IntegralType::cell, i);
     const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
+    // TODO Pass both cell infos
     impl::assemble_cells(mat_set, mesh->geometry(), cells, dof_transform, dofs0,
                          bs0, dof_transform_to_transpose, dofs1, bs1, bc0, bc1,
-                         fn, coeffs, cstride, constants, cell_info);
+                         fn, coeffs, cstride, constants, cell_info_0);
   }
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
@@ -450,10 +458,11 @@ void assemble_matrix(
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::pair<std::int32_t, int>>& facets
         = a.exterior_facet_domains(i);
+    // TODO Pass both cell infos
     impl::assemble_exterior_facets(mat_set, *mesh, facets, dof_transform, dofs0,
                                    bs0, dof_transform_to_transpose, dofs1, bs1,
                                    bc0, bc1, fn, coeffs, cstride, constants,
-                                   cell_info);
+                                   cell_info_0);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
@@ -478,10 +487,11 @@ void assemble_matrix(
       const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
           facets
           = a.interior_facet_domains(i);
+      // TODO Pass both cell infos
       impl::assemble_interior_facets(
           mat_set, *mesh, facets, dof_transform, *dofmap0, bs0,
           dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1, fn, coeffs,
-          cstride, c_offsets, constants, cell_info, get_perm);
+          cstride, c_offsets, constants, cell_info_0, get_perm);
     }
   }
 }
