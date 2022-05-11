@@ -6,7 +6,6 @@
 
 #include "Geometry.h"
 #include "Topology.h"
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/fem/ElementDofLayout.h>

@@ -6,7 +6,6 @@
 
 #include "SparsityPattern.h"
 #include <algorithm>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>

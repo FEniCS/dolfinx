@@ -87,8 +87,8 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   }
 
   // Build new dofmap data
-  std::vector<std::int32_t> dofmap(dof_array_view.size());
   const std::vector<std::int32_t>& dof_array_view = dofmap_view.list().array();
+  std::vector<std::int32_t> dofmap(dof_array_view.size());
   for (std::size_t i = 0; i < dofmap.size(); ++i)
     dofmap[i] = old_to_new[dof_array_view[i]];
 

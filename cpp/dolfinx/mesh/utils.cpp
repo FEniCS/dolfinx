@@ -11,7 +11,6 @@
 #include "graphbuild.h"
 #include <algorithm>
 #include <cstdlib>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/math.h>

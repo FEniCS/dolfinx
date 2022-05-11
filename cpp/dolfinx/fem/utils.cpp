@@ -14,7 +14,6 @@
 #include "dofmapbuilder.h"
 #include "sparsitybuild.h"
 #include <array>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
