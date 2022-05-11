@@ -418,33 +418,6 @@ def unit_square_norm(n, space, k, ghost_mode):
 # test_mixed_codim_0_test_func_assembly_alt(2, 1, "Lagrange", GhostMode.shared_facet)
 # unit_square_norm(2, "Lagrange", 1, GhostMode.shared_facet)
 
-# def test_mixed_mesh_codim_0_assembly(n, k, space, ghost_mode):
-# TODO Add test to check vector is actually correct
-# mesh = create_rectangle(
-#     MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-#     ghost_mode=ghost_mode)
-# edim = mesh.topology.dim
-# entities = locate_entities(mesh, edim, lambda x: x[0] <= 1.0)
-# submesh, entity_map, vertex_map, geom_map = create_submesh(
-#     mesh, edim, entities)
-
-# element = (space, k)
-# V_m = fem.FunctionSpace(mesh, element)
-
-# v = ufl.TestFunction(V_m)
-# dx_sm = ufl.Measure("dx", domain=submesh)
-# ds_sm = ufl.Measure("ds", domain=submesh)
-
-# entity_maps = {mesh: entity_map}
-# L = fem.form(v * (dx_sm + ds_sm),
-#              entity_maps=entity_maps)
-# b = fem.petsc.assemble_vector(L)
-# b.ghostUpdate(addv=PETSc.InsertMode.ADD,
-#               mode=PETSc.ScatterMode.REVERSE)
-
-# norm_0 = b.norm()
-# print(norm_0)
-
 
 # np.set_printoptions(linewidth=200, suppress=True)
 # n = 2
@@ -492,52 +465,3 @@ def unit_square_norm(n, space, k, ghost_mode):
 # L = fem.form(ufl.inner(f, v) * ds)
 # b = fem.petsc.assemble_vector(L)
 # print(b[:])
-
-
-# u = ufl.TrialFunction(V_sm)
-# v = ufl.TestFunction(V_m)
-# dx_sm = ufl.Measure("dx", domain=submesh)
-# ds_sm = ufl.Measure("ds", domain=submesh)
-
-# entity_maps = {mesh: entity_map}
-# a = fem.form(ufl.inner(u, v) * (dx_sm + ds_sm),
-#              entity_maps=entity_maps)
-# A = fem.petsc.assemble_matrix(a)
-# A.assemble()
-
-# print(A[:, :])
-
-
-# mesh = create_rectangle(
-#     MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-#     ghost_mode=ghost_mode)
-# tdim = mesh.topology.dim
-# edim = tdim
-# entities = locate_entities(mesh, edim, lambda x: x[0] <= 1.0)
-# submesh, entity_map, vertex_map, geom_map = create_submesh(
-#     mesh, edim, entities)
-
-# c_to_v = mesh.topology.connectivity(tdim, 0)
-# num_cells = c_to_v.num_nodes
-# entities_mt = create_adjacencylist([c_to_v.links(c)
-#                                     for c in range(num_cells)])
-# values = np.zeros((num_cells), dtype=np.int32)
-# values[entities] = 1
-# mt = meshtags_from_entities(mesh, tdim, entities_mt, values)
-
-# V_sm = fem.FunctionSpace(submesh, (space, k))
-# v = ufl.TestFunction(V_sm)
-# dx = ufl.Measure("dx", domain=mesh, subdomain_data=mt)
-
-# mp = [entity_map.index(entity) if entity in entity_map else -1
-#       for entity in range(num_cells)]
-
-# entity_maps = {submesh: mp}
-# L = fem.form(v * dx(1),
-#              entity_maps=entity_maps)
-# b = fem.petsc.assemble_vector(L)
-# b.ghostUpdate(addv=PETSc.InsertMode.ADD,
-#               mode=PETSc.ScatterMode.REVERSE)
-# print(b[:])
-# norm_0 = b.norm()
-# print(norm_0)
