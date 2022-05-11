@@ -25,6 +25,8 @@ functionality and optimizations.
 
 1. Defining variants of elements using Basix: :doc:`Variants of Lagrange
    elements <demos/demo_lagrange_variants>`.
+2. :doc:`Creating TNT elements using Basix's custom element interface
+   <demos/demo_tnt-elements>`.
 
 
 All demos
