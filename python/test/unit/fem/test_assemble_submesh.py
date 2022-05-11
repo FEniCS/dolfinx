@@ -274,7 +274,11 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
     facet_values[left_facets] = 1
     facet_mt = meshtags_from_entities(mesh, tdim - 1, facets, facet_values)
 
+    # TODO Also do this with a dx measure on a submesh and check the
+    # result is the same
+    V_m = fem.FunctionSpace(mesh, (space, k))
     V_sm = fem.FunctionSpace(submesh, (space, k))
+    u = ufl.TrialFunction(V_m)
     v = ufl.TestFunction(V_sm)
 
     submesh_boundary_facets = locate_entities_boundary(
@@ -288,30 +292,24 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
 
     mp = [entity_map.index(entity) if entity in entity_map else -1
           for entity in range(num_cells)]
-
     entity_maps = {submesh: mp}
-    L = fem.form(v * (dx(1) + ds(1)),
-                 entity_maps=entity_maps)
-    b = fem.petsc.assemble_vector(L)
-    # TODO Apply lifting
-    # fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD,
-                  mode=PETSc.ScatterMode.REVERSE)
-    # TODO Set bc
-    # fem.petsc.set_bc(b, [bc])
-
-    # TODO Also do this with a dx measure on a submesh and check the
-    # result is the same
-    V_m = fem.FunctionSpace(mesh, (space, k))
-    u = ufl.TrialFunction(V_m)
 
     a = fem.form(ufl.inner(u, v) * (dx(1) + ds(1)),
                  entity_maps=entity_maps)
     # TODO BCs
-    A = fem.petsc.assemble_matrix(a)
+    A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
+    print(A[:, :])
 
-    # print(A[:, :])
+    L = fem.form(v * (dx(1) + ds(1)),
+                 entity_maps=entity_maps)
+    b = fem.petsc.assemble_vector(L)
+    # # TODO Apply lifting
+    # fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
+    # b.ghostUpdate(addv=PETSc.InsertMode.ADD,
+    #               mode=PETSc.ScatterMode.REVERSE)
+    # TODO Set bc
+    # fem.petsc.set_bc(b, [bc])
 
 
 # np.set_printoptions(linewidth=200, suppress=True)
