@@ -314,6 +314,67 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
     assert(np.isclose(b.norm(), b_expected_norm))
 
 
+@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("k", [1, 4])
+@pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+def test_mixed_codim_0_test_func_assembly_alt(n, k, space, ghost_mode):
+    mesh = create_rectangle(
+        MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+        ghost_mode=ghost_mode)
+    tdim = mesh.topology.dim
+    edim = tdim
+    entities = locate_entities(mesh, edim, lambda x: x[0] <= 1.0)
+    submesh, entity_map, vertex_map, geom_map = create_submesh(
+        mesh, edim, entities)
+
+    submesh.topology.create_connectivity(tdim - 1, 0)
+    sm_f_to_v = submesh.topology.connectivity(tdim - 1, 0)
+    sm_num_facets = sm_f_to_v.num_nodes
+    sm_facets = create_adjacencylist([sm_f_to_v.links(f)
+                                      for f in range(sm_num_facets)])
+    sm_facet_values = np.zeros((sm_num_facets), dtype=np.int32)
+    left_facets = locate_entities_boundary(
+        submesh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
+    sm_facet_values[left_facets] = 1
+    sm_facet_mt = meshtags_from_entities(submesh, tdim - 1, sm_facets, sm_facet_values)
+
+    V_m = fem.FunctionSpace(mesh, (space, k))
+    V_sm = fem.FunctionSpace(submesh, (space, k))
+    u = ufl.TrialFunction(V_m)
+    v = ufl.TestFunction(V_sm)
+
+    boundary_facets = locate_entities_boundary(
+        mesh, edim - 1, lambda x: np.isclose(x[1], 1.0))
+    dofs = fem.locate_dofs_topological(V_m, edim - 1, boundary_facets)
+    bc_func = fem.Function(V_m)
+    bc_func.interpolate(lambda x: x[0])
+    bc = fem.dirichletbc(bc_func, dofs)
+
+    dx = ufl.Measure("dx", domain=submesh)
+    ds = ufl.Measure("ds", domain=submesh, subdomain_data=sm_facet_mt)
+
+    entity_maps = {mesh: entity_map}
+    a = fem.form(ufl.inner(u, v) * (dx + ds(1)),
+                 entity_maps=entity_maps)
+    A = fem.petsc.assemble_matrix(a, bcs=[bc])
+    A.assemble()
+
+    A_expected_norm, b_expected_norm = unit_square_norm(
+        n, space, k, ghost_mode)
+    assert(np.isclose(A.norm(), A_expected_norm))
+
+    L = fem.form(v * (dx + ds(1)),
+                 entity_maps=entity_maps)
+    b = fem.petsc.assemble_vector(L)
+    fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD,
+                  mode=PETSc.ScatterMode.REVERSE)
+
+    assert(np.isclose(b.norm(), b_expected_norm))
+
+
 def unit_square_norm(n, space, k, ghost_mode):
     mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
     V_0 = fem.FunctionSpace(mesh, (space, k))
@@ -356,7 +417,7 @@ def unit_square_norm(n, space, k, ghost_mode):
 
 
 # np.set_printoptions(linewidth=200, suppress=True)
-# test_mixed_codim_0_test_func_assembly(2, 1, "Lagrange", GhostMode.shared_facet)
+# test_mixed_codim_0_test_func_assembly_alt(2, 1, "Lagrange", GhostMode.shared_facet)
 # unit_square_norm(2, "Lagrange", 1, GhostMode.shared_facet)
 
 # def test_mixed_mesh_codim_0_assembly(n, k, space, ghost_mode):
