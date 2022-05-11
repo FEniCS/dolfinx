@@ -63,6 +63,7 @@ common::IndexMap common::create_old(const IndexMapNew& map)
 
   auto dest_ranks
       = dolfinx::MPI::compute_graph_edges_nbx(map.comm(), src_ranks);
+  std::sort(dest_ranks.begin(), dest_ranks.end());
   return IndexMap(map.comm(), map.size_local(), dest_ranks, map.ghosts(),
                   map.owners());
 }

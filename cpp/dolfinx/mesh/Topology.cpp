@@ -10,7 +10,6 @@
 #include "topologycomputation.h"
 #include "utils.h"
 #include <algorithm>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
@@ -549,7 +548,7 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
 /// 2. New global index
 /// 3. Rank of the process that owns the entity
 std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
-    const common::IndexMap& map0,
+    const common::IndexMapNew& map0,
     const graph::AdjacencyList<std::int64_t>& entities0, int nlocal1,
     std::int64_t offset1,
     const xtl::span<const std::pair<std::int64_t, std::int32_t>>&
@@ -563,34 +562,55 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
   // Note: the ghost cell owner might not be the same as the vertex
   // owner.
 
-  const graph::AdjacencyList<std::int32_t>& fwd_shared_entities0
-      = map0.scatter_fwd_indices();
+  MPI_Comm comm;
+  std::vector<int> src = map0.owners();
+  std::sort(src.begin(), src.end());
+  src.erase(std::unique(src.begin(), src.end()), src.end());
+  std::vector<int> dest
+      = dolfinx::MPI::compute_graph_edges_nbx(map0.comm(), src);
+  std::sort(dest.begin(), dest.end());
 
-  MPI_Comm comm = map0.comm(common::IndexMap::Direction::forward);
+  MPI_Dist_graph_create_adjacent(map0.comm(), src.size(), src.data(),
+                                 MPI_UNWEIGHTED, dest.size(), dest.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
 
-  // Get ranks that ghost cells owned by this rank
-  const auto [src, dest] = dolfinx::MPI::neighbors(comm);
+  // --
 
   std::vector<std::vector<std::int64_t>> shared_vertices_fwd(dest.size());
-
-  // Iterate over ranks that ghost cells owned by this rank
-  for (int r = 0; r < fwd_shared_entities0.num_nodes(); ++r)
+  const int myrank = dolfinx::MPI::rank(comm);
   {
-    std::vector<std::int64_t>& shared_vertices = shared_vertices_fwd[r];
+    const graph::AdjacencyList<int> index_to_rank = map0.index_to_dest_ranks();
 
-    // Iterate over cells that are shared by rank r
-    for (std::int32_t c : fwd_shared_entities0.links(r))
+    // Iterate over ranks that ghost cells owned by this rank
+    for (std::int32_t c = 0; c < map0.size_local(); ++c)
     {
-      // Add vertices in owned, forward-shared cells
       auto vertices = entities0.links(c);
-      shared_vertices.insert(shared_vertices.end(), vertices.begin(),
-                             vertices.end());
+      auto ranks = index_to_rank.links(c);
+
+      // Iterate over ranks that share cell i
+      for (int r : ranks)
+      {
+        // Add vertices in owned, forward-shared cells
+        if (r != myrank)
+        {
+          auto it = std::lower_bound(dest.begin(), dest.end(), r);
+          assert(it != dest.end() and *it == r);
+          int neigh_rank = std::distance(dest.begin(), it);
+
+          shared_vertices_fwd[neigh_rank].insert(
+              shared_vertices_fwd[neigh_rank].end(), vertices.begin(),
+              vertices.end());
+        }
+      }
     }
 
-    std::sort(shared_vertices.begin(), shared_vertices.end());
-    shared_vertices.erase(
-        std::unique(shared_vertices.begin(), shared_vertices.end()),
-        shared_vertices.end());
+    for (auto& shared_vertices : shared_vertices_fwd)
+    {
+      std::sort(shared_vertices.begin(), shared_vertices.end());
+      shared_vertices.erase(
+          std::unique(shared_vertices.begin(), shared_vertices.end()),
+          shared_vertices.end());
+    }
   }
 
   // Compute send sizes and offsets
@@ -658,6 +678,8 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
     data.push_back({recv_buffer[i], recv_buffer[i + 1], recv_buffer[i + 2]});
   std::sort(data.begin(), data.end());
   data.erase(std::unique(data.begin(), data.end()), data.end());
+
+  MPI_Comm_free(&comm);
 
   return data;
 }
@@ -1069,11 +1091,10 @@ mesh::create_topology(MPI_Comm comm,
       // communicated via ghost cells. Note that the ghost cell owner
       // (who we get the vertex index from) is not necessarily the
       // vertex owner.
-      common::IndexMap index_map_c_old = common::create_old(*index_map_c);
       const std::vector<std::array<std::int64_t, 3>> recv_data
-          = exchange_ghost_indexing(
-              index_map_c_old, cells, owned_vertices.size(), global_offset_v,
-              global_to_local_vertices, ghost_vertices, ghost_vertex_owners);
+          = exchange_ghost_indexing(*index_map_c, cells, owned_vertices.size(),
+                                    global_offset_v, global_to_local_vertices,
+                                    ghost_vertices, ghost_vertex_owners);
 
       // Unpack received data and add to arrays of ghost indices and ghost
       // owners
