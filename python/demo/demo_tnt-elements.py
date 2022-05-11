@@ -51,17 +51,8 @@ import basix.ufl_wrapper
 # polynomials appear in the polynomial sets for each cell are documented in [the Basix
 # documentation](https://docs.fenicsproject.org/basix/main/polyset-order.html).
 
-# +
 wcoeffs = np.zeros((8, 9))
-
-wcoeffs[0, 0] = 1
-wcoeffs[1, 1] = 1
-wcoeffs[2, 2] = 1
-wcoeffs[3, 3] = 1
-wcoeffs[4, 4] = 1
-wcoeffs[5, 5] = 1
-wcoeffs[6, 6] = 1
-wcoeffs[7, 7] = 1
+wcoeffs[:, :8] = np.eye(8)
 
 # ### The interpolation operators
 # Next, we define sets of points and matrices that define the DOFs associated with each sub-entity of the cell.
