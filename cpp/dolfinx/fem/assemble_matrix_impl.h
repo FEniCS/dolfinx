@@ -83,7 +83,9 @@ void assemble_cells(
   {
     std::int32_t c = cells[index];
     std::int32_t c_0 = cell_map_0(c);
+    assert(c_0 >= 0);
     std::int32_t c_1 = cell_map_1(c);
+    assert(c_1 >= 0);
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);

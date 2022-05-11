@@ -26,8 +26,12 @@ void sparsitybuild::cells(
   assert(cells);
   for (int c = 0; c < cells->num_nodes(); ++c)
   {
-    pattern.insert(dofmaps[0].get().cell_dofs(cell_maps[0](c)),
-                   dofmaps[1].get().cell_dofs(cell_maps[1](c)));
+    std::int32_t c_0 = cell_maps[0](c);
+    assert(c_0 >= 0);
+    std::int32_t c_1 = cell_maps[1](c);
+    assert(c_1 >= 0);
+    pattern.insert(dofmaps[0].get().cell_dofs(c_0),
+                   dofmaps[1].get().cell_dofs(c_1));
   }
 }
 //-----------------------------------------------------------------------------
