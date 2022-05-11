@@ -44,6 +44,7 @@ void sparsitybuild::interior_facets(
         const std::function<std::int32_t(std::pair<std::int32_t, int>)>, 2>&
         facet_maps)
 {
+  // TODO Use facet maps
   const int D = topology.dim();
   if (!topology.connectivity(D - 1, 0))
     throw std::runtime_error("Topology facets have not been created.");
@@ -88,14 +89,18 @@ void sparsitybuild::interior_facets(
 void sparsitybuild::exterior_facets(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
-        dofmaps)
+        dofmaps,
+    const std::array<
+        const std::function<std::int32_t(std::pair<std::int32_t, int>)>, 2>&
+        facet_maps)
 {
   const int D = topology.dim();
   if (!topology.connectivity(D - 1, 0))
     throw std::runtime_error("Topology facets have not been created.");
 
-  auto connectivity = topology.connectivity(D - 1, D);
-  if (!connectivity)
+  auto c_to_f = topology.connectivity(D, D - 1);
+  auto f_to_c = topology.connectivity(D - 1, D);
+  if (!c_to_f or !f_to_c)
     throw std::runtime_error("Facet-cell connectivity has not been computed.");
 
   // Loop over owned facets
@@ -105,13 +110,22 @@ void sparsitybuild::exterior_facets(
   for (int f = 0; f < num_facets; ++f)
   {
     // Proceed to next facet if we have an interior facet
-    if (connectivity->num_links(f) == 2)
+    if (f_to_c->num_links(f) == 2)
       continue;
 
-    auto cells = connectivity->links(f);
+    auto cells = f_to_c->links(f);
     assert(cells.size() == 1);
-    pattern.insert(dofmaps[0].get().cell_dofs(cells[0]),
-                   dofmaps[1].get().cell_dofs(cells[0]));
+
+    std::int32_t cell = cells[0];
+    auto cell_facets = c_to_f->links(cell);
+    auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), f);
+    assert(facet_it != cell_facets.end());
+    int local_f = std::distance(cell_facets.begin(), facet_it);
+
+    // NOTE: Must map cell facet pair (not cell alone) for the codim 0
+    // case to work
+    pattern.insert(dofmaps[0].get().cell_dofs(facet_maps[0]({cell, local_f})),
+                   dofmaps[1].get().cell_dofs(facet_maps[1]({cell, local_f})));
   }
 }
 //-----------------------------------------------------------------------------

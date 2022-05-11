@@ -75,7 +75,12 @@ void interior_facets(
 void exterior_facets(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
-        dofmaps);
+        dofmaps,
+    const std::array<
+        const std::function<std::int32_t(std::pair<std::int32_t, int>)>, 2>&
+        facet_maps
+    = {[](std::pair<std::int32_t, int> e) { return e.first; },
+       [](std::pair<std::int32_t, int> e) { return e.first; }});
 
 } // namespace sparsitybuild
 } // namespace dolfinx::fem
