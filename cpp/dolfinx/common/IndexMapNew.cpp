@@ -625,8 +625,6 @@ IndexMapNew::create_submap(const xtl::span<const std::int32_t>& indices) const
     }
   }
 
-  MPI_Barrier(_comm.comm());
-
   if (_overlapping)
   {
     return {IndexMapNew(_comm.comm(), local_size_new, ghosts, src_ranks),

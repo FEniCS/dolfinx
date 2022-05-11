@@ -37,14 +37,15 @@ remap_dofs(const std::vector<std::int32_t>& old_to_new,
 //-----------------------------------------------------------------------------
 // Build a collapsed DofMap from a dofmap view. Extracts dofs and
 // doesn't build a new re-ordered dofmap
-fem::DofMap build_collapsed_dofmap(MPI_Comm /*comm*/, const DofMap& dofmap_view,
+fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
                                    const mesh::Topology& topology)
 {
   if (dofmap_view.element_dof_layout().block_size() > 1)
   {
     throw std::runtime_error(
-        "Cannot collapse a dofmap with block size greater "
-        "than 1 from parent with block size of 1. Create new dofmap first.");
+        "Cannot collapse a dofmap view with block size greater "
+        "than 1 when the parent has a block size of 1. Create new dofmap "
+        "first.");
   }
 
   // Get topological dimension
@@ -79,13 +80,13 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm /*comm*/, const DofMap& dofmap_view,
     index_map = std::make_shared<common::IndexMapNew>(std::move(_index_map));
   }
 
-  // Create array from dofs in view to new dof indices
+  // Create map from dof in view to new dof index
   std::vector<std::int32_t> old_to_new(dofs_view.back() + 1, -1);
   std::int32_t count = 0;
   for (auto& dof : dofs_view)
     old_to_new[dof] = count++;
 
-  // Build new dofmap
+  // Build new dofmap data
   const graph::AdjacencyList<std::int32_t>& dof_array_view = dofmap_view.list();
   std::vector<std::int32_t> dofmap = remap_dofs(old_to_new, dof_array_view);
 
@@ -221,7 +222,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
     else
     {
       // Collapse dof map, without build and re-ordering from scratch
-      return build_collapsed_dofmap(comm, dmap, topology);
+      return build_collapsed_dofmap(dmap, topology);
     }
   };
 
