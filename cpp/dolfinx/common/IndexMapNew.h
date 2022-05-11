@@ -67,27 +67,52 @@ stack_index_maps(
 class IndexMapNew
 {
 public:
-  /// Create an non-overlapping index map with local_size owned on this
-  /// process.
+  /// @brief Create an non-overlapping index map.
   ///
   /// @note Collective
+  ///
   /// @param[in] comm The MPI communicator
-  /// @param[in] local_size Local size of the IndexMapNew, i.e. the number
+  /// @param[in] local_size Local size of the index map, i.e. the number
   /// of owned entries
   IndexMapNew(MPI_Comm comm, std::int32_t local_size);
 
-  /// Create an index map with local_size owned indiced on this process
+  /// @brief Create an overlapping (ghosted) index map.
   ///
   /// @note Collective
+  ///
   /// @param[in] comm The MPI communicator
-  /// @param[in] local_size Local size of the IndexMapNew, i.e. the number
+  /// @param[in] local_size Local size of the index map, i.e. the number
   /// of owned entries
   /// @param[in] ghosts The global indices of ghost entries
-  /// @param[in] src_ranks Owner rank (on global communicator) of each
-  /// entry in @p ghosts
+  /// @param[in] owners Owner rank (on global communicator) of each
+  /// entry in `ghosts`
   IndexMapNew(MPI_Comm comm, std::int32_t local_size,
               const xtl::span<const std::int64_t>& ghosts,
-              const xtl::span<const int>& src_ranks);
+              const xtl::span<const int>& owners);
+
+  /// @brief Create an overlapping (ghosted) index map.
+  ///
+  /// This constructor is optimised for the case where the 'source'
+  /// (ranks that own indices ghosted by the caller) and 'destination'
+  /// ranks (ranks that ghost indices owned by the caller) are already
+  /// available. It allows the complex computation of the destination
+  /// ranks from `owners`.
+  ///
+  /// @note Collective
+  ///
+  /// @param[in] comm The MPI communicator
+  /// @param[in] local_size Local size of the index map, i.e. the number
+  /// @param[in] src_dest Lists of [0] src and [1] dest ranks. The list
+  /// in each must be sorted and contain duplicates. `src` ranks are
+  /// owners of the indices in `ghosts`. `dest` ranks are the rank that
+  /// ghost indices owned by the caller.
+  /// @param[in] ghosts The global indices of ghost entries
+  /// @param[in] owners Owner rank (on global communicator) of each entry
+  /// in `ghosts`
+  IndexMapNew(MPI_Comm comm, std::int32_t local_size,
+              const std::array<std::vector<int>, 2>& src_dest,
+              const xtl::span<const std::int64_t>& ghosts,
+              const xtl::span<const int>& owners);
 
   // Copy constructor
   IndexMapNew(const IndexMapNew& map) = delete;
@@ -120,29 +145,32 @@ public:
   /// range)
   const std::vector<std::int64_t>& ghosts() const noexcept;
 
-  /// Return the MPI communicator used to create the index map
+  /// @brief Return the MPI communicator that the map is defined on.
   /// @return Communicator
   MPI_Comm comm() const;
 
-  /// Compute global indices for array of local indices
+  /// @brief Compute global indices for array of local indices.
   /// @param[in] local Local indices
   /// @param[out] global The global indices
   void local_to_global(const xtl::span<const std::int32_t>& local,
                        const xtl::span<std::int64_t>& global) const;
 
-  /// Compute local indices for array of global indices
+  /// @brief Compute local indices for array of global indices
   /// @param[in] global Global indices
-  /// @param[out] local The local of the corresponding global index in 'global'.
-  /// Returns -1 if the local index does not exist on this process.
+  /// @param[out] local The local of the corresponding global index in
+  /// 'global'. Returns -1 if the local index does not exist on this
+  /// process.
   void global_to_local(const xtl::span<const std::int64_t>& global,
                        const xtl::span<std::int32_t>& local) const;
 
-  /// Global indices
+  /// @brief Build list of indices with global indexing.
   /// @return The global index for all local indices (0, 1, 2, ...) on
   /// this process, including ghosts
   std::vector<std::int64_t> global_indices() const;
 
-  /// TMP
+  /// @brief The ranks that own each ghost index.
+  /// @return List of ghost owners. The owning rank of the ith ghost
+  /// index is `owners()[i]`.
   const std::vector<int>& owners() const { return _owners; }
 
   /// @brief Create new index map from a subset of indices in this index
@@ -161,22 +189,25 @@ public:
   std::pair<IndexMapNew, std::vector<std::int32_t>>
   create_submap(const xtl::span<const std::int32_t>& indices) const;
 
-  /// @todo Aim to remove this function? If it's kept, should it work
-  /// with neighborhood ranks?
+  /// @todo Aim to remove this function?
   ///
-  /// Compute map from each local (owned) index to the set of ranks that
-  /// have the index as a ghost
+  /// @brief Compute map from each local (owned) index to the set of
+  /// ranks that have the index as a ghost.
   /// @return shared indices
   graph::AdjacencyList<int> index_to_dest_ranks() const;
 
-  /// TODO
+  /// @brief Build a list of owned indices that are ghosted by another
+  /// rank.
+  /// @return The local index of owned indices that are ghosts on other
+  /// rank(s). The indicies are unique and sorted.
   std::vector<std::int32_t> shared_indices() const;
 
   /// @brief Ordered set of MPI ranks that own caller's ghost indices.
   ///
-  /// Typically used when creating neighbourhood communicators
+  /// Typically used when creating neighbourhood communicators.
   ///
-  /// @return MPI ranks than own ghost indices
+  /// @return MPI ranks than own ghost indices.  The ranks are unique
+  /// and sorted.
   const std::vector<int>& src() const noexcept;
 
   /// @brief Ordered set of MPI ranks that ghost indices owned by
@@ -184,11 +215,17 @@ public:
   ///
   /// Typically used when creating neighbourhood communicators.
   ///
-  /// @return MPI ranks than own ghost indices
+  /// @return MPI ranks than own ghost indices. The ranks are unique
+  /// and sorted.
   const std::vector<int>& dest() const noexcept;
 
-  /// @brief Check if index map has overlaps (ghosts on any rank)
-  /// @return True if index map has overlaps on any ranks, otherwise false
+  /// @brief Check if index map has overlaps (ghosts on any rank).
+  ///
+  /// The return value of this function is determined by which
+  /// constructor was used to create the index map.
+  ///
+  /// @return True if index map has overlaps on any ranks, otherwise
+  /// false.
   bool overlapped() const noexcept;
 
 private:

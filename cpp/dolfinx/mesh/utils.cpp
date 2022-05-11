@@ -11,7 +11,6 @@
 #include "graphbuild.h"
 #include <algorithm>
 #include <cstdlib>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/math.h>
@@ -493,9 +492,10 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
   assert(topology.index_map(tdim - 1));
 
   // Only need to consider shared facets when there are no ghost cells
-  std::vector<std::int32_t> fwd_shared_facets;
-  if (!topology.index_map(tdim)->overlapped())
-    fwd_shared_facets = topology.index_map(tdim - 1)->shared_indices();
+  const std::vector<std::int32_t> fwd_shared_facets
+      = topology.index_map(tdim)->overlapped()
+            ? std::vector<std::int32_t>()
+            : topology.index_map(tdim - 1)->shared_indices();
 
   // Find all owned facets (not ghost) with only one attached cell,
   // which are also not shared forward (ghost on another process)

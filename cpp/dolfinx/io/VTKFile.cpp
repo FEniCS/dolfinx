@@ -9,7 +9,6 @@
 #include "pugixml.hpp"
 #include "vtk_utils.h"
 #include "xdmf_utils.h"
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/DofMap.h>

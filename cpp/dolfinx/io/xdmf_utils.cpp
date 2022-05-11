@@ -8,7 +8,6 @@
 #include "pugixml.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DofMap.h>

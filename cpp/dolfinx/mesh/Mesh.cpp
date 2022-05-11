@@ -12,7 +12,6 @@
 #include "graphbuild.h"
 #include "topologycomputation.h"
 #include "utils.h"
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/CoordinateElement.h>

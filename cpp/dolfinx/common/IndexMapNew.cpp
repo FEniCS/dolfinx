@@ -16,41 +16,19 @@ using namespace dolfinx::common;
 
 namespace
 {
-//-----------------------------------------------------------------------------
-/// Compute the owning rank of ghost indices
-[[maybe_unused]] std::vector<int>
-get_ghost_ranks(MPI_Comm comm, std::int32_t local_size,
-                const xtl::span<const std::int64_t>& ghosts)
+std::array<std::vector<int>, 2>
+build_src_dest(MPI_Comm comm, const xtl::span<const int>& owners)
 {
-  int mpi_size = -1;
-  MPI_Comm_size(comm, &mpi_size);
-  std::vector<std::int32_t> local_sizes(mpi_size);
-  MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1, MPI_INT32_T,
-                comm);
+  std::vector<int> src(owners.begin(), owners.end());
+  std::sort(src.begin(), src.end());
+  src.erase(std::unique(src.begin(), src.end()), src.end());
+  src.shrink_to_fit();
 
-  // NOTE: We do not use std::partial_sum here as it narrows std::int64_t to
-  // std::int32_t.
-  // NOTE: Using std::inclusive_scan is possible, but GCC prior to 9.3.0
-  // only includes the parallel version of this algorithm, requiring
-  // e.g. Intel TBB.
-  std::vector<std::int64_t> all_ranges(mpi_size + 1, 0);
-  std::transform(all_ranges.cbegin(), std::prev(all_ranges.cend()),
-                 local_sizes.cbegin(), std::next(all_ranges.begin()),
-                 std::plus<std::int64_t>());
+  std::vector<int> dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
+  std::sort(dest.begin(), dest.end());
 
-  // Compute rank of ghost owners
-  std::vector<int> ghost_ranks(ghosts.size(), -1);
-  std::transform(ghosts.cbegin(), ghosts.cend(), ghost_ranks.begin(),
-                 [&all_ranges](auto ghost)
-                 {
-                   auto it = std::upper_bound(all_ranges.cbegin(),
-                                              all_ranges.cend(), ghost);
-                   return std::distance(all_ranges.cbegin(), it) - 1;
-                 });
-
-  return ghost_ranks;
+  return {std::move(src), std::move(dest)};
 }
-//-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -357,13 +335,22 @@ IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size)
 //-----------------------------------------------------------------------------
 IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size,
                          const xtl::span<const std::int64_t>& ghosts,
-                         const xtl::span<const int>& src_ranks)
-    : _comm(comm), _ghosts(ghosts.begin(), ghosts.end()),
-      _owners(src_ranks.begin(), src_ranks.end()), _overlapping(true)
+                         const xtl::span<const int>& owners)
+    : IndexMapNew(comm, local_size, build_src_dest(comm, owners), ghosts,
+                  owners)
 {
-  assert(size_t(ghosts.size()) == src_ranks.size());
-  assert(std::equal(src_ranks.begin(), src_ranks.end(),
-                    get_ghost_ranks(comm, local_size, _ghosts).begin()));
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size,
+                         const std::array<std::vector<int>, 2>& src_dest,
+                         const xtl::span<const std::int64_t>& ghosts,
+                         const xtl::span<const int>& owners)
+    : _comm(comm), _ghosts(ghosts.begin(), ghosts.end()),
+      _owners(owners.begin(), owners.end()), _src(src_dest[0]),
+      _dest(src_dest[1]), _overlapping(true)
+{
+  assert(ghosts.size() == owners.size());
 
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
@@ -371,14 +358,6 @@ IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size,
   MPI_Request request_scan;
   MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM, comm,
               &request_scan);
-
-  _src = _owners;
-  std::sort(_src.begin(), _src.end());
-  _src.erase(std::unique(_src.begin(), _src.end()), _src.end());
-  _src.shrink_to_fit();
-
-  _dest = dolfinx::MPI::compute_graph_edges_nbx(comm, _src);
-  std::sort(_dest.begin(), _dest.end());
 
   // Send local size to sum reduction to get global size
   MPI_Request request;

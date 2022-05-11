@@ -10,7 +10,7 @@
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include <array>
-#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/math.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/Mesh.h>

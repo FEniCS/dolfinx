@@ -9,7 +9,6 @@
 #include "SparsityPattern.h"
 #include "Vector.h"
 #include "utils.h"
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>

@@ -636,7 +636,6 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
                            comm1);
     MPI_Comm_free(&comm1);
 
-
     // Iterate over ranks that ghost cells owned by this rank
     auto local_range = map0.local_range();
     for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
@@ -789,9 +788,9 @@ std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
   // must additionally check that the facet is not shared with another
   // process to differentiate between the partition boundary and the
   // physical boundary.
-  std::vector<std::int32_t> fwd_shared_facets;
-  if (!cell_map->overlapped())
-    fwd_shared_facets = facet_map->shared_indices();
+  const std::vector<std::int32_t> fwd_shared_facets
+      = cell_map->overlapped() ? std::vector<std::int32_t>()
+                               : facet_map->shared_indices();
 
   auto f_to_c = topology.connectivity(tdim - 1, tdim);
   if (!f_to_c)
