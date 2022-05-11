@@ -7,14 +7,14 @@ FROM rockylinux/rockylinux:8
 
 ARG BUILD_NP=16
 
-ARG MPICH_VERSION=3.4.3
-ARG PETSC_VERSION=3.16.4
+ARG MPICH_VERSION=4.0.1
+ARG PETSC_VERSION=3.17.0
 ARG BOOST_VERSION=1.77.0
 ARG BOOST_VERSION_UNDERSCORES=1_77_0
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=1
-ARG PYBIND11_VERSION=2.9.1
-ARG XTENSOR_VERSION=0.24.0
+ARG PYBIND11_VERSION=2.9.2
+ARG XTENSOR_VERSION=0.24.1
 ARG XTL_VERSION=0.7.4
 
 WORKDIR /tmp
@@ -57,7 +57,7 @@ RUN curl -L -O http://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MP
 # First set of dependencies for building and running Python DOLFINx
 # Second set of dependencies for running DOLFINx tests
 RUN python3 -m pip install --no-cache-dir cffi numba mpi4py pybind11==${PYBIND11_VERSION} wheel && \
-    python3 -m pip install --no-cache-dir cppimport pytest pytest-xdist scipy
+    python3 -m pip install --no-cache-dir cppimport pytest pytest-xdist scipy matplotlib
 
 # Build PETSc
 RUN curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz && \
