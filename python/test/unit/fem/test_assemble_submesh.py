@@ -285,6 +285,7 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
         submesh, edim - 1, lambda x: np.isclose(x[1], 1.0))
     dofs = fem.locate_dofs_topological(V_sm, edim - 1, submesh_boundary_facets)
     bc_func = fem.Function(V_sm)
+    bc_func.x.array[:] = 1.0
     bc = fem.dirichletbc(bc_func, dofs)
 
     dx = ufl.Measure("dx", domain=mesh, subdomain_data=cell_mt)
@@ -294,6 +295,7 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
           for entity in range(num_cells)]
     entity_maps = {submesh: mp}
 
+    # a = fem.form(ufl.inner(u, v) * (dx(1)),
     a = fem.form(ufl.inner(u, v) * (dx(1) + ds(1)),
                  entity_maps=entity_maps)
     # TODO BCs
@@ -304,15 +306,18 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
         n, space, k, ghost_mode)
     assert(np.isclose(A.norm(), A_expected_norm))
 
+    # L = fem.form(v * (dx(1)),
     L = fem.form(v * (dx(1) + ds(1)),
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
-    # # TODO Apply lifting
+    # TODO Apply lifting
     # fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
     # TODO Set bc
     # fem.petsc.set_bc(b, [bc])
+
+    # print(b[:])
 
     assert(np.isclose(b.norm(), b_expected_norm))
 
@@ -342,23 +347,30 @@ def unit_square_norm(n, space, k, ghost_mode):
         mesh, tdim - 1, lambda x: np.isclose(x[1], 1.0))
     dofs = fem.locate_dofs_topological(V_1, tdim - 1, boundary_facets)
     bc_func = fem.Function(V_1)
+    bc_func.x.array[:] = 1.0
     bc = fem.dirichletbc(bc_func, dofs)
 
     a = fem.form(ufl.inner(u, v) * (ufl.dx + ds(1)))
+    # a = fem.form(ufl.inner(u, v) * (ufl.dx))
     A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
 
     L = fem.form(v * (ufl.dx + ds(1)))
+    # L = fem.form(v * (ufl.dx))
     b = fem.petsc.assemble_vector(L)
-
+    # fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
+    # fem.petsc.set_bc(b, [bc])
+
+    # print(b[:])
 
     return A.norm(), b.norm()
 
 
 # np.set_printoptions(linewidth=200, suppress=True)
 # test_mixed_codim_0_test_func_assembly(2, 1, "Lagrange", GhostMode.shared_facet)
+# unit_square_norm(2, "Lagrange", 1, GhostMode.shared_facet)
 
 # def test_mixed_mesh_codim_0_assembly(n, k, space, ghost_mode):
 # TODO Add test to check vector is actually correct
