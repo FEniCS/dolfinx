@@ -461,8 +461,7 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
       {
         // Find rank on the neighborhood comm
         auto it = std::lower_bound(dest.begin(), dest.end(), ranks[j]);
-        assert(it != dest.end());
-        assert(*it == ranks[j]);
+        assert(it != dest.end() and *it == ranks[j]);
         int neighbor = std::distance(dest.begin(), it);
 
         // Add (old global vertex index, new  global vertex index, owner
@@ -548,7 +547,7 @@ exchange_indexing(MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
 /// 2. New global index
 /// 3. Rank of the process that owns the entity
 std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
-    const common::IndexMapNew& map0,
+    const common::IndexMap& map0,
     const graph::AdjacencyList<std::int64_t>& entities0, int nlocal1,
     std::int64_t offset1,
     const xtl::span<const std::pair<std::int64_t, std::int32_t>>&
@@ -821,14 +820,14 @@ Topology::Topology(MPI_Comm comm, CellType type)
 //-----------------------------------------------------------------------------
 int Topology::dim() const noexcept { return _connectivity.size() - 1; }
 //-----------------------------------------------------------------------------
-void Topology::set_index_map(
-    int dim, const std::shared_ptr<const common::IndexMapNew>& map)
+void Topology::set_index_map(int dim,
+                             const std::shared_ptr<const common::IndexMap>& map)
 {
   assert(dim < (int)_index_map.size());
   _index_map[dim] = map;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const common::IndexMapNew> Topology::index_map(int dim) const
+std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
   assert(dim < (int)_index_map.size());
   return _index_map[dim];
@@ -1044,9 +1043,9 @@ mesh::create_topology(MPI_Comm comm,
 
   // Create an index map for cells. We do it here because we can find
   // src ranks for the cell index map using comm0.
-  std::shared_ptr<common::IndexMapNew> index_map_c;
+  std::shared_ptr<common::IndexMap> index_map_c;
   if (ghost_mode == GhostMode::none)
-    index_map_c = std::make_shared<common::IndexMapNew>(comm, num_local_cells);
+    index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells);
   else
   {
     // Get global indices of ghost cells
@@ -1077,7 +1076,7 @@ mesh::create_topology(MPI_Comm comm,
     std::vector<int> dest = find_out_edges(comm0, ranks, src);
     MPI_Comm_free(&comm0);
 
-    index_map_c = std::make_shared<common::IndexMapNew>(
+    index_map_c = std::make_shared<common::IndexMap>(
         comm, num_local_cells, cell_ghost_indices, ghost_owners);
   }
 
@@ -1221,7 +1220,7 @@ mesh::create_topology(MPI_Comm comm,
   const int tdim = topology.dim();
 
   // Create index map for vertices
-  auto index_map_v = std::make_shared<common::IndexMapNew>(
+  auto index_map_v = std::make_shared<common::IndexMap>(
       comm, owned_vertices.size(), ghost_vertices, ghost_vertex_owners);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       index_map_v->size_local() + index_map_v->num_ghosts());

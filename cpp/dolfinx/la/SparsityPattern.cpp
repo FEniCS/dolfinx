@@ -19,7 +19,7 @@ using namespace dolfinx::la;
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
     MPI_Comm comm,
-    const std::array<std::shared_ptr<const common::IndexMapNew>, 2>& maps,
+    const std::array<std::shared_ptr<const common::IndexMap>, 2>& maps,
     const std::array<int, 2>& bs)
     : _comm(comm), _index_maps(maps), _bs(bs),
       _row_cache(maps[0]->size_local() + maps[0]->num_ghosts())
@@ -30,10 +30,9 @@ SparsityPattern::SparsityPattern(
 SparsityPattern::SparsityPattern(
     MPI_Comm comm,
     const std::vector<std::vector<const SparsityPattern*>>& patterns,
-    const std::array<
-        std::vector<
-            std::pair<std::reference_wrapper<const common::IndexMapNew>, int>>,
-        2>& maps,
+    const std::array<std::vector<std::pair<
+                         std::reference_wrapper<const common::IndexMap>, int>>,
+                     2>& maps,
     const std::array<std::vector<int>, 2>& bs)
     : _comm(comm), _bs({1, 1})
 {
@@ -66,9 +65,9 @@ SparsityPattern::SparsityPattern(
     ghost_owners1.insert(ghost_owners1.end(), owners.begin(), owners.end());
 
   // Create new IndexMaps
-  _index_maps[0] = std::make_shared<common::IndexMapNew>(
+  _index_maps[0] = std::make_shared<common::IndexMap>(
       comm, local_offset0.back(), ghosts0, ghost_owners0);
-  _index_maps[1] = std::make_shared<common::IndexMapNew>(
+  _index_maps[1] = std::make_shared<common::IndexMap>(
       comm, local_offset1.back(), ghosts1, ghost_owners1);
 
   _row_cache.resize(_index_maps[0]->size_local()
@@ -78,14 +77,14 @@ SparsityPattern::SparsityPattern(
   // Iterate over block rows
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
-    const common::IndexMapNew& map_row = maps[0][row].first;
+    const common::IndexMap& map_row = maps[0][row].first;
     const std::int32_t num_rows_local = map_row.size_local();
     const std::int32_t num_ghost_rows_local = map_row.num_ghosts();
 
     // Iterate over block columns of current row (block)
     for (std::size_t col = 0; col < patterns[row].size(); ++col)
     {
-      const common::IndexMapNew& map_col = maps[1][col].first;
+      const common::IndexMap& map_col = maps[1][col].first;
       const std::int32_t num_cols_local = map_col.size_local();
       // Get pattern for this block
       const SparsityPattern* p = patterns[row][col];
@@ -191,7 +190,7 @@ void SparsityPattern::insert_diagonal(const xtl::span<const std::int32_t>& rows)
   }
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const common::IndexMapNew>
+std::shared_ptr<const common::IndexMap>
 SparsityPattern::index_map(int dim) const
 {
   return _index_maps.at(dim);
@@ -212,15 +211,15 @@ std::vector<std::int64_t> SparsityPattern::column_indices() const
   return global;
 }
 //-----------------------------------------------------------------------------
-common::IndexMapNew SparsityPattern::column_index_map() const
+common::IndexMap SparsityPattern::column_index_map() const
 {
   if (!_graph)
     throw std::runtime_error("Sparsity pattern has not been finalised.");
 
   std::array range = _index_maps[1]->local_range();
   const std::int32_t local_size = range[1] - range[0];
-  return common::IndexMapNew(_comm.comm(), local_size, _col_ghosts,
-                             _col_ghost_owners);
+  return common::IndexMap(_comm.comm(), local_size, _col_ghosts,
+                          _col_ghost_owners);
 }
 //-----------------------------------------------------------------------------
 int SparsityPattern::block_size(int dim) const { return _bs[dim]; }

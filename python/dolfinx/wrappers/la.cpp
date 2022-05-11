@@ -7,7 +7,7 @@
 #include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
@@ -36,7 +36,7 @@ void declare_objects(py::module& m, const std::string& type)
   py::class_<dolfinx::la::Vector<T>, std::shared_ptr<dolfinx::la::Vector<T>>>(
       m, pyclass_vector_name.c_str())
       .def(py::init(
-          [](const std::shared_ptr<const dolfinx::common::IndexMapNew>& map,
+          [](const std::shared_ptr<const dolfinx::common::IndexMap>& map,
              int bs) { return dolfinx::la::Vector<T>(map, bs); }))
       .def(py::init([](const dolfinx::la::Vector<T>& vec)
                     { return dolfinx::la::Vector<T>(vec); }))
@@ -107,7 +107,7 @@ void declare_objects(py::module& m, const std::string& type)
 void petsc_module(py::module& m)
 {
   m.def("create_vector",
-        py::overload_cast<const dolfinx::common::IndexMapNew&, int>(
+        py::overload_cast<const dolfinx::common::IndexMap&, int>(
             &dolfinx::la::petsc::create_vector),
         py::return_value_policy::take_ownership,
         "Create a ghosted PETSc Vec for index map.");
@@ -135,7 +135,7 @@ void petsc_module(py::module& m)
       [](Vec x,
          const std::vector<py::array_t<PetscScalar, py::array::c_style>>& x_b,
          const std::vector<std::pair<
-             std::reference_wrapper<const dolfinx::common::IndexMapNew>, int>>&
+             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
              maps)
       {
         std::vector<xtl::span<const PetscScalar>> _x_b;
@@ -149,7 +149,7 @@ void petsc_module(py::module& m)
       "get_local_vectors",
       [](const Vec x,
          const std::vector<std::pair<
-             std::reference_wrapper<const dolfinx::common::IndexMapNew>, int>>&
+             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
              maps)
       {
         std::vector<std::vector<PetscScalar>> vecs
@@ -179,7 +179,7 @@ void la(py::module& m)
       .def(py::init(
           [](const MPICommWrapper comm,
              const std::array<
-                 std::shared_ptr<const dolfinx::common::IndexMapNew>, 2>& maps,
+                 std::shared_ptr<const dolfinx::common::IndexMap>, 2>& maps,
              const std::array<int, 2>& bs)
           { return dolfinx::la::SparsityPattern(comm.get(), maps, bs); }))
       .def(py::init(
@@ -188,7 +188,7 @@ void la(py::module& m)
                  patterns,
              const std::array<
                  std::vector<std::pair<
-                     std::reference_wrapper<const dolfinx::common::IndexMapNew>,
+                     std::reference_wrapper<const dolfinx::common::IndexMap>,
                      int>>,
                  2>& maps,
              const std::array<std::vector<int>, 2>& bs) {

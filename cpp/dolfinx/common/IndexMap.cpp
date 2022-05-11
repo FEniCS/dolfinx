@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "IndexMap.h"
+#include "IndexMapNew.h"
 #include <algorithm>
 #include <dolfinx/common/sort.h>
 #include <functional>
@@ -95,10 +95,10 @@ compute_owned_shared(MPI_Comm comm, const xtl::span<const std::int64_t>& ghosts,
 } // namespace
 
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
-                   const xtl::span<const int>& dest_ranks,
-                   const xtl::span<const std::int64_t>& ghosts,
-                   const xtl::span<const int>& src_ranks)
+IndexMapOld::IndexMapOld(MPI_Comm comm, std::int32_t local_size,
+                         const xtl::span<const int>& dest_ranks,
+                         const xtl::span<const std::int64_t>& ghosts,
+                         const xtl::span<const int>& src_ranks)
     : _comm(comm), _comm_owner_to_ghost(MPI_COMM_NULL),
       _comm_ghost_to_owner(MPI_COMM_NULL),
       _ghosts(ghosts.begin(), ghosts.end()),
@@ -221,26 +221,27 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
                  { return displs[owner]++; });
 }
 //-----------------------------------------------------------------------------
-std::array<std::int64_t, 2> IndexMap::local_range() const noexcept
+std::array<std::int64_t, 2> IndexMapOld::local_range() const noexcept
 {
   return _local_range;
 }
 //-----------------------------------------------------------------------------
-std::int32_t IndexMap::num_ghosts() const noexcept { return _ghosts.size(); }
+std::int32_t IndexMapOld::num_ghosts() const noexcept { return _ghosts.size(); }
 //-----------------------------------------------------------------------------
-std::int32_t IndexMap::size_local() const noexcept
+std::int32_t IndexMapOld::size_local() const noexcept
 {
   return _local_range[1] - _local_range[0];
 }
 //-----------------------------------------------------------------------------
-std::int64_t IndexMap::size_global() const noexcept { return _size_global; }
+std::int64_t IndexMapOld::size_global() const noexcept { return _size_global; }
 //-----------------------------------------------------------------------------
-const std::vector<std::int64_t>& IndexMap::ghosts() const noexcept
+const std::vector<std::int64_t>& IndexMapOld::ghosts() const noexcept
 {
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
-const graph::AdjacencyList<std::int32_t>& IndexMap::scatter_fwd_indices() const
+const graph::AdjacencyList<std::int32_t>&
+IndexMapOld::scatter_fwd_indices() const
 {
   if (!_shared_indices)
     throw std::runtime_error("Ooops");
@@ -249,12 +250,12 @@ const graph::AdjacencyList<std::int32_t>& IndexMap::scatter_fwd_indices() const
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::int32_t>&
-IndexMap::scatter_fwd_ghost_positions() const noexcept
+IndexMapOld::scatter_fwd_ghost_positions() const noexcept
 {
   return _ghost_pos_recv_fwd;
 }
 //-----------------------------------------------------------------------------
-std::vector<int> IndexMap::ghost_owners() const
+std::vector<int> IndexMapOld::ghost_owners() const
 {
   std::vector<int> owners(_ghost_pos_recv_fwd.size());
   std::transform(
@@ -268,9 +269,9 @@ std::vector<int> IndexMap::ghost_owners() const
   return owners;
 }
 //----------------------------------------------------------------------------
-MPI_Comm IndexMap::comm() const { return _comm.comm(); }
+MPI_Comm IndexMapOld::comm() const { return _comm.comm(); }
 //----------------------------------------------------------------------------
-MPI_Comm IndexMap::comm(Direction dir) const
+MPI_Comm IndexMapOld::comm(Direction dir) const
 {
   switch (dir)
   {

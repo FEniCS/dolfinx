@@ -16,7 +16,7 @@
 
 namespace dolfinx::common
 {
-class IndexMapNew;
+class IndexMap;
 }
 
 namespace dolfinx::mesh
@@ -40,7 +40,7 @@ public:
   /// point, commonly from a mesh input file. The type is
   /// `std:vector<std::int64_t>`.
   template <typename AdjacencyList32, typename Array, typename Vector64>
-  Geometry(const std::shared_ptr<const common::IndexMapNew>& index_map,
+  Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
            AdjacencyList32&& dofmap, const fem::CoordinateElement& element,
            Array&& x, int dim, Vector64&& input_global_indices)
       : _dim(dim), _dofmap(std::forward<AdjacencyList32>(dofmap)),
@@ -74,7 +74,7 @@ public:
   const graph::AdjacencyList<std::int32_t>& dofmap() const;
 
   /// Index map
-  std::shared_ptr<const common::IndexMapNew> index_map() const;
+  std::shared_ptr<const common::IndexMap> index_map() const;
 
   /// @brief Access geometry degrees-of-freedom data (const version).
   ///
@@ -105,7 +105,7 @@ private:
   graph::AdjacencyList<std::int32_t> _dofmap;
 
   // IndexMap for geometry 'dofmap'
-  std::shared_ptr<const common::IndexMapNew> _index_map;
+  std::shared_ptr<const common::IndexMap> _index_map;
 
   // The coordinate element
   fem::CoordinateElement _cmap;

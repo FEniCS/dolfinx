@@ -27,7 +27,7 @@ using namespace xt::placeholders;
 namespace
 {
 std::int64_t local_to_global(std::int32_t local_index,
-                             const common::IndexMapNew& map)
+                             const common::IndexMap& map)
 {
   assert(local_index >= 0);
   const std::array local_range = map.local_range();
@@ -126,7 +126,7 @@ xt::xtensor<double, 2> create_new_geometry(
 void refinement::update_logical_edgefunction(
     MPI_Comm neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
-    std::vector<std::int8_t>& marked_edges, const common::IndexMapNew& map_e)
+    std::vector<std::int8_t>& marked_edges, const common::IndexMap& map_e)
 {
   std::vector<std::int32_t> send_offsets = {0};
   std::vector<std::int64_t> data_to_send;
@@ -164,7 +164,7 @@ refinement::create_new_vertices(MPI_Comm neighbor_comm,
                                 const std::vector<std::int8_t>& marked_edges)
 {
   // Take marked_edges and use to create new vertices
-  std::shared_ptr<const common::IndexMapNew> edge_index_map
+  std::shared_ptr<const common::IndexMap> edge_index_map
       = mesh.topology().index_map(1);
 
   // Add new edge midpoints to list of vertices
@@ -320,7 +320,7 @@ refinement::partition(const mesh::Mesh& old_mesh,
 //-----------------------------------------------------------------------------
 
 std::vector<std::int64_t>
-refinement::adjust_indices(const common::IndexMapNew& map, std::int32_t n)
+refinement::adjust_indices(const common::IndexMap& map, std::int32_t n)
 {
   // NOTE: Is this effectively concatenating index maps?
 

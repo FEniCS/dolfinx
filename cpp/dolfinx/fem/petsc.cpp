@@ -54,7 +54,7 @@ Mat fem::petsc::create_matrix_block(
   {
     for (std::size_t col = 0; col < V[1].size(); ++col)
     {
-      const std::array<std::shared_ptr<const common::IndexMapNew>, 2> index_maps
+      const std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
           = {{V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
       const std::array bs = {V[0][row]->dofmap()->index_map_bs(),
                              V[1][col]->dofmap()->index_map_bs()};
@@ -92,7 +92,7 @@ Mat fem::petsc::create_matrix_block(
 
   // Compute offsets for the fields
   std::array<std::vector<std::pair<
-                 std::reference_wrapper<const common::IndexMapNew>, int>>,
+                 std::reference_wrapper<const common::IndexMap>, int>>,
              2>
       maps;
   for (std::size_t d = 0; d < 2; ++d)
@@ -134,7 +134,7 @@ Mat fem::petsc::create_matrix_block(
   {
     for (std::size_t f = 0; f < maps[d].size(); ++f)
     {
-      const common::IndexMapNew& map = maps[d][f].first.get();
+      const common::IndexMap& map = maps[d][f].first.get();
       const int bs = maps[d][f].second;
       const std::int32_t size_local = bs * map.size_local();
       const std::vector global = map.global_indices();
@@ -217,8 +217,7 @@ Mat fem::petsc::create_matrix_nest(
 //-----------------------------------------------------------------------------
 Vec fem::petsc::create_vector_block(
     const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMapNew>, int>>&
-        maps)
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
   // FIXME: handle constant block size > 1
 
@@ -235,16 +234,15 @@ Vec fem::petsc::create_vector_block(
     ghost_owners.insert(ghost_owners.end(), sub_owner.begin(), sub_owner.end());
 
   // Create map for combined problem, and create vector
-  common::IndexMapNew index_map(maps[0].first.get().comm(), local_size, ghosts,
-                                ghost_owners);
+  common::IndexMap index_map(maps[0].first.get().comm(), local_size, ghosts,
+                             ghost_owners);
 
   return la::petsc::create_vector(index_map, 1);
 }
 //-----------------------------------------------------------------------------
 Vec fem::petsc::create_vector_nest(
     const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMapNew>, int>>&
-        maps)
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
   assert(!maps.empty());
 

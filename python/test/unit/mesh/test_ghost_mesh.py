@@ -56,8 +56,7 @@ def test_ghost_3d(mode):
 
 
 @pytest.mark.parametrize("mode",
-                         [
-                             GhostMode.none, GhostMode.shared_facet,
+                         [GhostMode.none, GhostMode.shared_facet,
                              pytest.param(GhostMode.shared_vertex,
                                           marks=pytest.mark.xfail(reason="Shared vertex currently disabled"))])
 def test_ghost_connectivities(mode):

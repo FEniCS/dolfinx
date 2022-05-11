@@ -571,7 +571,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::tuple<common::IndexMapNew, int, graph::AdjacencyList<std::int32_t>>
+std::tuple<common::IndexMap, int, graph::AdjacencyList<std::int32_t>>
 fem::build_dofmap_data(
     MPI_Comm comm, const mesh::Topology& topology,
     const ElementDofLayout& element_dof_layout,
@@ -613,8 +613,8 @@ fem::build_dofmap_data(
   assert(local_to_global_unowned.size() == local_to_global_owner.size());
 
   // Create IndexMap for dofs range on this process
-  common::IndexMapNew index_map(comm, num_owned, local_to_global_unowned,
-                                local_to_global_owner);
+  common::IndexMap index_map(comm, num_owned, local_to_global_unowned,
+                             local_to_global_owner);
 
   // Build re-ordered dofmap
   std::vector<std::int32_t> dofmap(node_graph0.array().size());

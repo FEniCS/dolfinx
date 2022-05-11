@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "IndexMapNew.h"
-#include "IndexMap.h"
 #include <algorithm>
 #include <dolfinx/common/sort.h>
 #include <functional>
@@ -32,7 +31,7 @@ build_src_dest(MPI_Comm comm, const xtl::span<const int>& owners)
 } // namespace
 
 //-----------------------------------------------------------------------------
-common::IndexMap common::create_old(const IndexMapNew& map)
+common::IndexMapOld common::create_old(const IndexMap& map)
 {
   std::vector<int> src_ranks = map.owners();
   std::sort(src_ranks.begin(), src_ranks.end());
@@ -42,12 +41,12 @@ common::IndexMap common::create_old(const IndexMapNew& map)
   auto dest_ranks
       = dolfinx::MPI::compute_graph_edges_nbx(map.comm(), src_ranks);
   std::sort(dest_ranks.begin(), dest_ranks.end());
-  return IndexMap(map.comm(), map.size_local(), dest_ranks, map.ghosts(),
-                  map.owners());
+  return IndexMapOld(map.comm(), map.size_local(), dest_ranks, map.ghosts(),
+                     map.owners());
 }
 //-----------------------------------------------------------------------------
 std::vector<int32_t> dolfinx::common::compute_owned_indices(
-    const xtl::span<const std::int32_t>& indices, const IndexMapNew& map)
+    const xtl::span<const std::int32_t>& indices, const IndexMap& map)
 {
   // Build list of (owner, index) pairs for each ghost in indices, and
   // sort
@@ -150,8 +149,7 @@ std::tuple<std::int64_t, std::vector<std::int32_t>,
            std::vector<std::vector<int>>>
 common::stack_index_maps(
     const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMapNew>, int>>&
-        maps)
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
   // Compute process offset for stacked index map
   const std::int64_t process_offset = std::accumulate(
@@ -205,7 +203,7 @@ common::stack_index_maps(
   for (std::size_t m = 0; m < maps.size(); ++m)
   {
     const int bs = maps[m].second;
-    const common::IndexMapNew& map = maps[m].first.get();
+    const common::IndexMap& map = maps[m].first.get();
     const std::vector<std::int64_t>& ghosts = map.ghosts();
     const std::vector<int>& owners = map.owners();
 
@@ -311,7 +309,7 @@ common::stack_index_maps(
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size)
+IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
     : _comm(comm), _overlapping(false)
 {
   // Get global offset (index), using partial exclusive reduction
@@ -333,19 +331,18 @@ IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size)
   MPI_Wait(&request, MPI_STATUS_IGNORE);
 }
 //-----------------------------------------------------------------------------
-IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size,
-                         const xtl::span<const std::int64_t>& ghosts,
-                         const xtl::span<const int>& owners)
-    : IndexMapNew(comm, local_size, build_src_dest(comm, owners), ghosts,
-                  owners)
+IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
+                   const xtl::span<const std::int64_t>& ghosts,
+                   const xtl::span<const int>& owners)
+    : IndexMap(comm, local_size, build_src_dest(comm, owners), ghosts, owners)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size,
-                         const std::array<std::vector<int>, 2>& src_dest,
-                         const xtl::span<const std::int64_t>& ghosts,
-                         const xtl::span<const int>& owners)
+IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
+                   const std::array<std::vector<int>, 2>& src_dest,
+                   const xtl::span<const std::int64_t>& ghosts,
+                   const xtl::span<const int>& owners)
     : _comm(comm), _ghosts(ghosts.begin(), ghosts.end()),
       _owners(owners.begin(), owners.end()), _src(src_dest[0]),
       _dest(src_dest[1]), _overlapping(true)
@@ -372,27 +369,27 @@ IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size,
   MPI_Wait(&request, MPI_STATUS_IGNORE);
 }
 //-----------------------------------------------------------------------------
-std::array<std::int64_t, 2> IndexMapNew::local_range() const noexcept
+std::array<std::int64_t, 2> IndexMap::local_range() const noexcept
 {
   return _local_range;
 }
 //-----------------------------------------------------------------------------
-std::int32_t IndexMapNew::num_ghosts() const noexcept { return _ghosts.size(); }
+std::int32_t IndexMap::num_ghosts() const noexcept { return _ghosts.size(); }
 //-----------------------------------------------------------------------------
-std::int32_t IndexMapNew::size_local() const noexcept
+std::int32_t IndexMap::size_local() const noexcept
 {
   return _local_range[1] - _local_range[0];
 }
 //-----------------------------------------------------------------------------
-std::int64_t IndexMapNew::size_global() const noexcept { return _size_global; }
+std::int64_t IndexMap::size_global() const noexcept { return _size_global; }
 //-----------------------------------------------------------------------------
-const std::vector<std::int64_t>& IndexMapNew::ghosts() const noexcept
+const std::vector<std::int64_t>& IndexMap::ghosts() const noexcept
 {
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
-void IndexMapNew::local_to_global(const xtl::span<const std::int32_t>& local,
-                                  const xtl::span<std::int64_t>& global) const
+void IndexMap::local_to_global(const xtl::span<const std::int32_t>& local,
+                               const xtl::span<std::int64_t>& global) const
 {
   assert(local.size() <= global.size());
   const std::int32_t local_size = _local_range[1] - _local_range[0];
@@ -410,8 +407,8 @@ void IndexMapNew::local_to_global(const xtl::span<const std::int32_t>& local,
       });
 }
 //-----------------------------------------------------------------------------
-void IndexMapNew::global_to_local(const xtl::span<const std::int64_t>& global,
-                                  const xtl::span<std::int32_t>& local) const
+void IndexMap::global_to_local(const xtl::span<const std::int64_t>& global,
+                               const xtl::span<std::int32_t>& local) const
 {
   const std::int32_t local_size = _local_range[1] - _local_range[0];
 
@@ -436,7 +433,7 @@ void IndexMapNew::global_to_local(const xtl::span<const std::int64_t>& global,
                  });
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t> IndexMapNew::global_indices() const
+std::vector<std::int64_t> IndexMap::global_indices() const
 {
   const std::int32_t local_size = _local_range[1] - _local_range[0];
   const std::int32_t num_ghosts = _ghosts.size();
@@ -449,10 +446,10 @@ std::vector<std::int64_t> IndexMapNew::global_indices() const
   return global;
 }
 //-----------------------------------------------------------------------------
-MPI_Comm IndexMapNew::comm() const { return _comm.comm(); }
+MPI_Comm IndexMap::comm() const { return _comm.comm(); }
 //----------------------------------------------------------------------------
-std::pair<IndexMapNew, std::vector<std::int32_t>>
-IndexMapNew::create_submap(const xtl::span<const std::int32_t>& indices) const
+std::pair<IndexMap, std::vector<std::int32_t>>
+IndexMap::create_submap(const xtl::span<const std::int32_t>& indices) const
 {
   if (!indices.empty() and indices.back() >= this->size_local())
   {
@@ -606,18 +603,18 @@ IndexMapNew::create_submap(const xtl::span<const std::int32_t>& indices) const
 
   if (_overlapping)
   {
-    return {IndexMapNew(_comm.comm(), local_size_new, ghosts, src_ranks),
+    return {IndexMap(_comm.comm(), local_size_new, ghosts, src_ranks),
             std::move(new_to_old_ghost)};
   }
   else
   {
     assert(new_to_old_ghost.empty());
-    return {IndexMapNew(_comm.comm(), local_size_new),
+    return {IndexMap(_comm.comm(), local_size_new),
             std::vector<std::int32_t>()};
   }
 }
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
+graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
 {
   const std::int64_t offset = _local_range[0];
 
@@ -834,7 +831,7 @@ graph::AdjacencyList<int> IndexMapNew::index_to_dest_ranks() const
   return graph::AdjacencyList<int>(std::move(data), std::move(offsets));
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> IndexMapNew::shared_indices() const
+std::vector<std::int32_t> IndexMap::shared_indices() const
 {
   // Build list of (owner, index) pairs for each ghost, and sort
   std::vector<std::pair<int, std::int64_t>> send_idx;
@@ -915,9 +912,9 @@ std::vector<std::int32_t> IndexMapNew::shared_indices() const
   return shared;
 }
 //-----------------------------------------------------------------------------
-const std::vector<int>& IndexMapNew::src() const noexcept { return _src; }
+const std::vector<int>& IndexMap::src() const noexcept { return _src; }
 //-----------------------------------------------------------------------------
-const std::vector<int>& IndexMapNew::dest() const noexcept { return _dest; }
+const std::vector<int>& IndexMap::dest() const noexcept { return _dest; }
 //-----------------------------------------------------------------------------
-bool IndexMapNew::overlapped() const noexcept { return _overlapping; }
+bool IndexMap::overlapped() const noexcept { return _overlapping; }
 //-----------------------------------------------------------------------------

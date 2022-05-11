@@ -31,7 +31,7 @@ def test_sub_index_map():
     src_ranks = dest_ranks
 
     # Create index map
-    map = dolfinx.common.IndexMapNew(comm, map_local_size, map_ghosts, src_ranks)
+    map = dolfinx.common.IndexMap(comm, map_local_size, map_ghosts, src_ranks)
     assert map.size_global == map_local_size * comm.size
 
     # Build list for each rank of the first (myrank + myrank % 2) local indices
@@ -72,7 +72,7 @@ def test_sub_index_map():
     assert np.allclose(submap.ghosts, submap_ghosts)
 
 
-def xtest_sub_index_map_ghost_mode_none():
+def test_sub_index_map_ghost_mode_none():
     n = 2
     mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=GhostMode.none)
     tdim = mesh.topology.dim

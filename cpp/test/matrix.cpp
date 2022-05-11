@@ -9,7 +9,7 @@
 #include "poisson.h"
 #include <catch2/catch.hpp>
 #include <dolfinx.h>
-#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
@@ -154,7 +154,7 @@ void test_matrix_apply()
 
 void test_matrix()
 {
-  auto map0 = std::make_shared<common::IndexMapNew>(MPI_COMM_SELF, 8);
+  auto map0 = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 8);
   la::SparsityPattern p(MPI_COMM_SELF, {map0, map0}, {1, 1});
   p.insert(std::vector{0}, std::vector{0});
   p.insert(std::vector{4}, std::vector{5});
