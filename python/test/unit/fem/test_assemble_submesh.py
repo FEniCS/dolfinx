@@ -300,17 +300,21 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
     A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
 
-    assert(np.isclose(A.norm(), unit_square_norm(n, space, k, ghost_mode)))
+    A_expected_norm, b_expected_norm = unit_square_norm(
+        n, space, k, ghost_mode)
+    assert(np.isclose(A.norm(), A_expected_norm))
 
     L = fem.form(v * (dx(1) + ds(1)),
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
     # # TODO Apply lifting
     # fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
-    # b.ghostUpdate(addv=PETSc.InsertMode.ADD,
-    #               mode=PETSc.ScatterMode.REVERSE)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD,
+                  mode=PETSc.ScatterMode.REVERSE)
     # TODO Set bc
     # fem.petsc.set_bc(b, [bc])
+
+    assert(np.isclose(b.norm(), b_expected_norm))
 
 
 def unit_square_norm(n, space, k, ghost_mode):
@@ -344,7 +348,13 @@ def unit_square_norm(n, space, k, ghost_mode):
     A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
 
-    return A.norm()
+    L = fem.form(v * (ufl.dx + ds(1)))
+    b = fem.petsc.assemble_vector(L)
+
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD,
+                  mode=PETSc.ScatterMode.REVERSE)
+
+    return A.norm(), b.norm()
 
 
 # np.set_printoptions(linewidth=200, suppress=True)
