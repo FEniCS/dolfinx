@@ -30,13 +30,7 @@ void test_scatter_fwd(int n)
   std::vector<int> global_ghost_owner(ghosts.size(), (mpi_rank + 1) % mpi_size);
 
   // Create an IndexMap
-  std::vector<int> src_ranks = global_ghost_owner;
-  std::sort(src_ranks.begin(), src_ranks.end());
-  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
-                  src_ranks.end());
-  auto dest_ranks
-      = dolfinx::MPI::compute_graph_edges_nbx(MPI_COMM_WORLD, src_ranks);
-  common::IndexMap idx_map(MPI_COMM_WORLD, size_local, dest_ranks, ghosts,
+  common::IndexMap idx_map(MPI_COMM_WORLD, size_local, ghosts,
                            global_ghost_owner);
 
   // Create some data to scatter
@@ -44,9 +38,11 @@ void test_scatter_fwd(int n)
   std::vector<std::int64_t> data_local(n * size_local, val * mpi_rank);
   std::vector<std::int64_t> data_ghost(n * num_ghosts, -1);
 
+  common::IndexMapOld idx_map_old = common::create_old(idx_map);
+
   // Scatter values to ghost and check value is correctly received
-  idx_map.scatter_fwd(xtl::span<const std::int64_t>(data_local),
-                      xtl::span<std::int64_t>(data_ghost), n);
+  idx_map_old.scatter_fwd(xtl::span<const std::int64_t>(data_local),
+                          xtl::span<std::int64_t>(data_ghost), n);
   CHECK((int)data_ghost.size() == n * num_ghosts);
   CHECK(std::all_of(data_ghost.begin(), data_ghost.end(),
                     [=](auto i)
@@ -71,37 +67,33 @@ void test_scatter_rev()
   std::vector<int> global_ghost_owner(ghosts.size(), (mpi_rank + 1) % mpi_size);
 
   // Create an IndexMap
-  std::vector<int> src_ranks = global_ghost_owner;
-  std::sort(src_ranks.begin(), src_ranks.end());
-  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
-                  src_ranks.end());
-  auto dest_ranks
-      = dolfinx::MPI::compute_graph_edges_nbx(MPI_COMM_WORLD, src_ranks);
-  common::IndexMap idx_map(MPI_COMM_WORLD, size_local, dest_ranks, ghosts,
+  common::IndexMap idx_map(MPI_COMM_WORLD, size_local, ghosts,
                            global_ghost_owner);
+
+  common::IndexMapOld idx_map_old = common::create_old(idx_map);
 
   // Create some data, setting ghost values
   std::int64_t value = 15;
   std::vector<std::int64_t> data_local(n * size_local, 0);
   std::vector<std::int64_t> data_ghost(n * num_ghosts, value);
-  idx_map.scatter_rev(xtl::span<std::int64_t>(data_local),
-                      xtl::span<const std::int64_t>(data_ghost), n,
-                      common::IndexMapOld::Mode::add);
+  idx_map_old.scatter_rev(xtl::span<std::int64_t>(data_local),
+                          xtl::span<const std::int64_t>(data_ghost), n,
+                          common::IndexMapOld::Mode::add);
 
   std::int64_t sum;
   CHECK((int)data_local.size() == n * size_local);
   sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == n * value * num_ghosts);
 
-  idx_map.scatter_rev(xtl::span<std::int64_t>(data_local),
-                      xtl::span<const std::int64_t>(data_ghost), n,
-                      common::IndexMapOld::Mode::insert);
+  idx_map_old.scatter_rev(xtl::span<std::int64_t>(data_local),
+                          xtl::span<const std::int64_t>(data_ghost), n,
+                          common::IndexMapOld::Mode::insert);
   sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == n * value * num_ghosts);
 
-  idx_map.scatter_rev(xtl::span<std::int64_t>(data_local),
-                      xtl::span<const std::int64_t>(data_ghost), n,
-                      common::IndexMapOld::Mode::add);
+  idx_map_old.scatter_rev(xtl::span<std::int64_t>(data_local),
+                          xtl::span<const std::int64_t>(data_ghost), n,
+                          common::IndexMapOld::Mode::add);
   sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == 2 * n * value * num_ghosts);
 }
