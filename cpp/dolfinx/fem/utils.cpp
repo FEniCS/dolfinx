@@ -32,7 +32,11 @@ la::SparsityPattern fem::create_sparsity_pattern(
     const mesh::Topology& topology,
     const std::array<std::reference_wrapper<const DofMap>, 2>& dofmaps,
     const std::set<IntegralType>& integrals,
-    const std::array<const std::function<std::int32_t(std::int32_t)>, 2>& cell_maps)
+    const std::array<const std::function<std::int32_t(std::int32_t)>, 2>&
+        cell_maps,
+    const std::array<
+        const std::function<std::int32_t(std::pair<std::int32_t, int>)>, 2>&
+        facet_maps)
 {
   common::Timer t0("Build sparsity");
 
