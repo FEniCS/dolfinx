@@ -285,8 +285,7 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
         mesh, edim - 1, lambda x: np.isclose(x[1], 1.0))
     dofs = fem.locate_dofs_topological(V_m, edim - 1, boundary_facets)
     bc_func = fem.Function(V_m)
-    # TODO Interpolate
-    bc_func.x.array[:] = 1.0
+    bc_func.interpolate(lambda x: x[0])
     bc = fem.dirichletbc(bc_func, dofs)
 
     dx = ufl.Measure("dx", domain=mesh, subdomain_data=cell_mt)
@@ -340,7 +339,7 @@ def unit_square_norm(n, space, k, ghost_mode):
         mesh, tdim - 1, lambda x: np.isclose(x[1], 1.0))
     dofs = fem.locate_dofs_topological(V_0, tdim - 1, boundary_facets)
     bc_func = fem.Function(V_0)
-    bc_func.x.array[:] = 1.0
+    bc_func.interpolate(lambda x: x[0])
     bc = fem.dirichletbc(bc_func, dofs)
 
     a = fem.form(ufl.inner(u, v) * (ufl.dx + ds(1)))
