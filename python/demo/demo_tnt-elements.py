@@ -46,7 +46,7 @@ import basix.ufl_wrapper
 # We begin by defining a basis of the polynomial space that this element spans. This is defined in terms
 # of the orthogonal Legendre polynomials on the cell. For a degree 1 TNT element, the polynomial set contains
 # the polynomials $1$, $y$, $y^2$, $x$, $xy$, $xy^2$, $x^2$, and $x^2y$. These are the first 8 polynomials
-# in the degree 2 set of polynomials on a quadrilateral, so we create a 8 by 9 (number of dofs by number of
+# in the degree 2 set of polynomials on a quadrilateral, so we create an 8 by 9 (number of dofs by number of
 # polynomials in the degree 2 set) matrix with an 8 by 8 identity in the first 8 columns. The order in which
 # polynomials appear in the polynomial sets for each cell are documented in [the Basix
 # documentation](https://docs.fenicsproject.org/basix/main/polyset-order.html).
