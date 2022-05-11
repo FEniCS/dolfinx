@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
     // Create a mesh. For what comes later in this demo we need to
     // ensure that a boundary between cells is located at x0=0.5
     auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
-        MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {10, 10},
+        MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {5, 5},
         mesh::CellType::triangle, mesh::GhostMode::none));
 
     // Interpolate a function in a scalar Lagrange space and output the
