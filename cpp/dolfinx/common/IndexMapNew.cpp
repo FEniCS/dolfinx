@@ -372,6 +372,14 @@ IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size,
   MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM, comm,
               &request_scan);
 
+  _src = _owners;
+  std::sort(_src.begin(), _src.end());
+  _src.erase(std::unique(_src.begin(), _src.end()), _src.end());
+  _src.shrink_to_fit();
+
+  _dest = dolfinx::MPI::compute_graph_edges_nbx(comm, _src);
+  std::sort(_dest.begin(), _dest.end());
+
   // Send local size to sum reduction to get global size
   MPI_Request request;
   MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM, comm,
@@ -930,6 +938,10 @@ std::vector<std::int32_t> IndexMapNew::shared_indices() const
 
   return shared;
 }
+//-----------------------------------------------------------------------------
+const std::vector<int>& IndexMapNew::src() const noexcept { return _src; }
+//-----------------------------------------------------------------------------
+const std::vector<int>& IndexMapNew::dest() const noexcept { return _dest; }
 //-----------------------------------------------------------------------------
 bool IndexMapNew::overlapped() const noexcept { return _overlapping; }
 //-----------------------------------------------------------------------------
