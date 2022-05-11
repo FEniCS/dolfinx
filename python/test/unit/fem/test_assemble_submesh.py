@@ -308,7 +308,6 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode):
     L = fem.form(v * (dx(1) + ds(1)),
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
-    # TODO Apply lifting
     fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
