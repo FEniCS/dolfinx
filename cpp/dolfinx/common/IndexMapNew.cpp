@@ -14,6 +14,23 @@
 using namespace dolfinx;
 using namespace dolfinx::common;
 
+namespace
+{
+std::array<std::vector<int>, 2>
+build_src_dest(MPI_Comm comm, const xtl::span<const int>& owners)
+{
+  std::vector<int> src(owners.begin(), owners.end());
+  std::sort(src.begin(), src.end());
+  src.erase(std::unique(src.begin(), src.end()), src.end());
+  src.shrink_to_fit();
+
+  std::vector<int> dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
+  std::sort(dest.begin(), dest.end());
+
+  return {std::move(src), std::move(dest)};
+}
+} // namespace
+
 //-----------------------------------------------------------------------------
 common::IndexMap common::create_old(const IndexMapNew& map)
 {
@@ -319,8 +336,19 @@ IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size)
 IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size,
                          const xtl::span<const std::int64_t>& ghosts,
                          const xtl::span<const int>& owners)
+    : IndexMapNew(comm, local_size, build_src_dest(comm, owners), ghosts,
+                  owners)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size,
+                         const std::array<std::vector<int>, 2>& src_dest,
+                         const xtl::span<const std::int64_t>& ghosts,
+                         const xtl::span<const int>& owners)
     : _comm(comm), _ghosts(ghosts.begin(), ghosts.end()),
-      _owners(owners.begin(), owners.end()), _overlapping(true)
+      _owners(owners.begin(), owners.end()), _src(src_dest[0]),
+      _dest(src_dest[1]), _overlapping(true)
 {
   assert(ghosts.size() == owners.size());
 
@@ -335,14 +363,6 @@ IndexMapNew::IndexMapNew(MPI_Comm comm, std::int32_t local_size,
   MPI_Request request;
   MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM, comm,
                  &request);
-
-  _src = _owners;
-  std::sort(_src.begin(), _src.end());
-  _src.erase(std::unique(_src.begin(), _src.end()), _src.end());
-  _src.shrink_to_fit();
-
-  _dest = dolfinx::MPI::compute_graph_edges_nbx(comm, _src);
-  std::sort(_dest.begin(), _dest.end());
 
   // Wait for MPI_Iexscan to complete (get offset)
   MPI_Wait(&request_scan, MPI_STATUS_IGNORE);

@@ -90,20 +90,29 @@ public:
               const xtl::span<const std::int64_t>& ghosts,
               const xtl::span<const int>& owners);
 
-  // /// @brief Create an overlapping (ghosted) index map.
-  // ///
-  // /// @note Collective
-  // ///
-  // /// @param[in] comm The MPI communicator
-  // /// @param[in] local_size Local size of the index map, i.e. the number
-  // /// of owned entries
-  // /// @param[in] ghosts The global indices of ghost entries
-  // /// @param[in] src Owner rank (on global communicator) of each entry
-  // /// in `ghosts`
-  // IndexMapNew(MPI_Comm comm, std::int32_t local_size,
-  //             const xtl::span<const int>& dest,
-  //             const xtl::span<const std::int64_t>& ghosts,
-  //             const xtl::span<const int>& src);
+  /// @brief Create an overlapping (ghosted) index map.
+  ///
+  /// This constructor is optimised for the case where the 'source'
+  /// (ranks that own indices ghosted by the caller) and 'destination'
+  /// ranks (ranks that ghost indices owned by the caller) are already
+  /// available. It allows the complex computation of the destination
+  /// ranks from `owners`.
+  ///
+  /// @note Collective
+  ///
+  /// @param[in] comm The MPI communicator
+  /// @param[in] local_size Local size of the index map, i.e. the number
+  /// @param[in] src_dest Lists of [0] src and [1] dest ranks. The list
+  /// in each must be sorted and contain duplicates. `src` ranks are
+  /// owners of the indices in `ghosts`. `dest` ranks are the rank that
+  /// ghost indices owned by the caller.
+  /// @param[in] ghosts The global indices of ghost entries
+  /// @param[in] owners Owner rank (on global communicator) of each entry
+  /// in `ghosts`
+  IndexMapNew(MPI_Comm comm, std::int32_t local_size,
+              const std::array<std::vector<int>, 2>& src_dest,
+              const xtl::span<const std::int64_t>& ghosts,
+              const xtl::span<const int>& owners);
 
   // Copy constructor
   IndexMapNew(const IndexMapNew& map) = delete;
