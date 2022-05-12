@@ -72,8 +72,6 @@ jobs:
         run: |
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
           python3 -m pip install ffcx/
-      - name: Install matplotlib
-        run: pip3 install matplotlib
 
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)
         run: |
