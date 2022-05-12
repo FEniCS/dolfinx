@@ -484,3 +484,12 @@ def test_codim_1_coeffs(n, k, space, ghost_mode):
     b_expected_norm = b.norm()
 
     assert(np.isclose(b_norm, b_expected_norm))
+
+    M = fem.form(f * ds,
+                 entity_maps=entity_maps)
+    s = mesh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
+
+    M = fem.form(f_m * ds)
+    s_expected = mesh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
+
+    assert(np.isclose(s, s_expected))

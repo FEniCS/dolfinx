@@ -100,8 +100,10 @@ T assemble_exterior_facets(
     }
 
     const T* coeff_cell = coeffs.data() + index * cstride;
+    // TODO Pass correct facet perm
+    std::vector<std::uint8_t> facet_perms = {0, 0};
     fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(),
-       &local_facet, nullptr);
+       &local_facet, facet_perms.data());
   }
 
   return value;
