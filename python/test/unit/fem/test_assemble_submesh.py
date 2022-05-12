@@ -441,6 +441,8 @@ def test_codim_1_coeffs(n, k, space, ghost_mode):
     f = fem.Function(V_sm)
     # NOTE Interpolating in parallel may not work correctly, see issue #2126
     f.interpolate(lambda x: x[0])
+    f_m = fem.Function(V_m)
+    f_m.interpolate(lambda x: x[0])
 
     from dolfinx import io
     with io.XDMFFile(submesh.comm, "submesh.xdmf", "w") as file:
@@ -450,19 +452,33 @@ def test_codim_1_coeffs(n, k, space, ghost_mode):
     mp = [entity_map.index(entity) if entity in entity_map else -1
           for entity in range(num_facets)]
 
+    u = ufl.TrialFunction(V_m)
     v = ufl.TestFunction(V_m)
 
     ds = ufl.Measure("ds", domain=mesh)
     entity_maps = {submesh: mp}
+    a = fem.form(ufl.inner(f * u, v) * ds,
+                 entity_maps=entity_maps)
+    A = fem.petsc.assemble_matrix(a)
+    A.assemble()
+
+    A_norm = A.norm()
+
+    a = fem.form(ufl.inner(f_m * u, v) * ds)
+    A = fem.petsc.assemble_matrix(a)
+    A.assemble()
+
+    A_expected_norm = A.norm()
+
+    assert(np.isclose(A_norm, A_expected_norm))
+
     L = fem.form(ufl.inner(f, v) * ds,
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
 
     b_norm = b.norm()
 
-    f = fem.Function(V_m)
-    f.interpolate(lambda x: x[0])
-    L = fem.form(ufl.inner(f, v) * ds)
+    L = fem.form(ufl.inner(f_m, v) * ds)
     b = fem.petsc.assemble_vector(L)
 
     b_expected_norm = b.norm()
