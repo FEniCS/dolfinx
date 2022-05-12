@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2018 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2022 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -69,7 +69,6 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   }
   else
   {
-
     std::vector<std::int32_t> indices;
     indices.reserve(dofs_view.size());
     std::transform(dofs_view.begin(), it, std::back_inserter(indices),
@@ -89,29 +88,30 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
       old_to_new[*dof_old] = count++;
 
     // old-to-new map for ghost dofs
+    const std::int32_t local_size_new = index_map->size_local();
     for (auto itp_old = ghost_new_to_old.begin();
          itp_old != ghost_new_to_old.end(); ++itp_old)
     {
-      std::size_t map_pos_new
-          = std::distance(ghost_new_to_old.begin(), itp_old);
-
+      std::int32_t map_pos_new
+          = local_size_new + std::distance(ghost_new_to_old.begin(), itp_old);
       std::int32_t idx = bs_view * (num_owned_view + *itp_old);
       for (int k = 0; k < bs_view; ++k)
       {
         assert(idx + k < (int)old_to_new.size());
-        old_to_new[idx + k] = map_pos_new + index_map->size_local();
+        old_to_new[idx + k] = map_pos_new;
       }
     }
   }
 
   // Build new dofmap data
   const std::vector<std::int32_t>& dof_array_view = dofmap_view.list().array();
-  std::vector<std::int32_t> dofmap(dof_array_view.size());
-  for (std::size_t i = 0; i < dofmap.size(); ++i)
+  std::vector<std::int32_t> dofmap;
+  dofmap.reserve(dof_array_view.size());
+  for (std::size_t i = 0; i < dof_array_view.size(); ++i)
   {
     assert(i < dof_array_view.size());
     assert(dof_array_view[i] < (int)old_to_new.size());
-    dofmap[i] = old_to_new[dof_array_view[i]];
+    dofmap.push_back(old_to_new[dof_array_view[i]]);
   }
 
   // Dimension sanity checks
