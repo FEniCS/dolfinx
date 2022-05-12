@@ -23,7 +23,6 @@ from dolfinx import fem, mesh
 from ufl import dx, div, grad, inner, TestFunction, TrialFunction, sin, cos, SpatialCoordinate
 
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import matplotlib.pylab as plt
 
@@ -180,44 +179,26 @@ def poisson_error(V):
     msh = V.mesh
     u, v = TrialFunction(V), TestFunction(V)
 
-    a = inner(grad(u), grad(v)) * dx
-    a = fem.form(a)
-
     x = SpatialCoordinate(msh)
     u_exact = sin(10 * x[1]) * cos(15 * x[0])
     f = - div(grad(u_exact))
 
+    a = inner(grad(u), grad(v)) * dx
     L = inner(f, v) * dx
-    L = fem.form(L)
 
+    # Create Dirichlet boundary condition
     u_bc = fem.Function(V)
     u_bc.interpolate(lambda x: np.sin(10 * x[1]) * np.cos(15 * x[0]))
 
-    # Create Dirichlet boundary condition
     facetdim = msh.topology.dim - 1
     msh.topology.create_connectivity(facetdim, msh.topology.dim)
     bndry_facets = np.where(np.array(mesh.compute_boundary_facets(msh.topology)) == 1)[0]
     bdofs = fem.locate_dofs_topological(V, facetdim, bndry_facets)
     bc = fem.dirichletbc(u_bc, bdofs)
 
-    b = fem.petsc.assemble_vector(L)
-    fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    fem.petsc.set_bc(b, [bc])
-
-    a = fem.form(a)
-    A = fem.petsc.assemble_matrix(a, bcs=[bc])
-    A.assemble()
-
-    # Create LU linear solver
-    solver = PETSc.KSP().create(MPI.COMM_WORLD)
-    solver.setType(PETSc.KSP.Type.PREONLY)
-    solver.getPC().setType(PETSc.PC.Type.LU)
-    solver.setOperators(A)
-
-    uh = fem.Function(V)
-    solver.solve(b, uh.vector)
-    uh.x.scatter_forward()
+    # Solve using LU linear solver
+    problem = fem.petsc.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+    uh = problem.solve()
 
     M = (u_exact - uh)**2 * dx
     M = fem.form(M)
