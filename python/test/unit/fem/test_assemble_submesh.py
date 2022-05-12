@@ -337,7 +337,8 @@ def test_mixed_codim_0_test_func_assembly_alt(n, k, space, ghost_mode):
     left_facets = locate_entities_boundary(
         submesh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
     sm_facet_values[left_facets] = 1
-    sm_facet_mt = meshtags_from_entities(submesh, tdim - 1, sm_facets, sm_facet_values)
+    sm_facet_mt = meshtags_from_entities(
+        submesh, tdim - 1, sm_facets, sm_facet_values)
 
     V_m = fem.FunctionSpace(mesh, (space, k))
     V_sm = fem.FunctionSpace(submesh, (space, k))
