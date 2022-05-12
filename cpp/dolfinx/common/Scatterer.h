@@ -146,7 +146,7 @@ public:
   template <typename T>
   void scatter_fwd_begin(const xtl::span<const T>& send_buffer,
                          const xtl::span<T>& recv_buffer,
-                         std::vector<MPI_Request>& requests) const
+                         MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_displs_local.size() == 1 and _displs_remote.size() == 1)
@@ -156,7 +156,7 @@ public:
                             _displs_local.data(), MPI::mpi_type<T>(),
                             recv_buffer.data(), _sizes_remote.data(),
                             _displs_remote.data(), MPI::mpi_type<T>(),
-                            _comm_owner_to_ghost.comm(), requests.data());
+                            _comm_owner_to_ghost.comm(), &request);
   }
 
   /// Complete a non-blocking send from the local owner of to process
@@ -165,14 +165,14 @@ public:
   ///
   /// @param[in] requests The MPI request handle for tracking the status
   /// of the send
-  void scatter_fwd_end(std::vector<MPI_Request>& requests) const
+  void scatter_fwd_end(MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_displs_local.size() == 1 and _displs_remote.size() == 1)
       return;
 
     // Wait for communication to complete
-    MPI_Waitall(requests.size(), requests.data(), MPI_STATUS_IGNORE);
+    MPI_Wait(&request, MPI_STATUS_IGNORE);
   }
 
   /// TODO: Add documentation
@@ -185,11 +185,11 @@ public:
     std::vector<T> send_buffer(_local_inds.size());
     pack_fn(local_data, _local_inds, send_buffer);
 
-    std::vector<MPI_Request> requests(1);
+    MPI_Request request;
     std::vector<T> buffer_recv(_displs_remote.back());
     scatter_fwd_begin(xtl::span<const T>(send_buffer),
-                      xtl::span<T>(buffer_recv), requests);
-    scatter_fwd_end(requests);
+                      xtl::span<T>(buffer_recv), &request);
+    scatter_fwd_end(request);
 
     // Insert op
     auto op = [](T a, T b) { return b; };
@@ -200,7 +200,7 @@ public:
   template <typename T>
   void scatter_rev_begin(const xtl::span<const T>& send_buffer,
                          const xtl::span<T>& recv_buffer,
-                         std::vector<MPI_Request>& requests) const
+                         MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_displs_local.size() == 1 and _displs_remote.size() == 1)
@@ -211,17 +211,17 @@ public:
                             _displs_remote.data(), MPI::mpi_type<T>(),
                             recv_buffer.data(), _sizes_local.data(),
                             _displs_local.data(), MPI::mpi_type<T>(),
-                            _comm_ghost_to_owner.comm(), requests.data());
+                            _comm_ghost_to_owner.comm(), &request);
   }
 
-  void scatter_rev_end(std::vector<MPI_Request>& requests) const
+  void scatter_rev_end(MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_displs_local.size() == 1 and _displs_remote.size() == 1)
       return;
 
     // Wait for communication to complete
-    MPI_Waitall(requests.size(), requests.data(), MPI_STATUS_IGNORE);
+    MPI_Wait(&request, MPI_STATUS_IGNORE);
   }
 
   /// Send n values for each ghost index to owning to the process
@@ -244,11 +244,11 @@ public:
     pack_fn(remote_data, _remote_inds, buffer_send);
 
     // Exchange data
-    std::vector<MPI_Request> requests(1);
+    MPI_Request request;
     std::vector<T> buffer_recv(_local_inds.size());
     scatter_rev_begin(xtl::span<const T>(buffer_send),
-                      xtl::span<T>(buffer_recv), requests);
-    scatter_rev_end(requests);
+                      xtl::span<T>(buffer_recv), request);
+    scatter_rev_end(request);
 
     // Copy or accumulate into "local_data"
     unpack_fn(buffer_recv, _local_inds, local_data, op);
@@ -269,7 +269,7 @@ public:
   // TODO: add documentation
   static auto unpack()
   {
-    return [](const auto& in, const auto& idx, auto& out, auto& op)
+    return [](const auto& in, const auto& idx, auto& out, auto op)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
@@ -283,7 +283,7 @@ public:
 
   const std::vector<std::int32_t>& remote_indices() const noexcept
   {
-    return _sizes_remote;
+    return _remote_inds;
   }
 
 private:

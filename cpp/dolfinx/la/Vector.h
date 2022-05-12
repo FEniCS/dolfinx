@@ -34,27 +34,26 @@ public:
   /// Create a distributed vector
   Vector(const std::shared_ptr<const common::IndexMap>& map, int bs,
          const Allocator& alloc = Allocator())
-      : _map(std::make_shared<common::IndexMapOld>(common::create_old(*map))),
-        _map_new(map), _scatterer(nullptr), _bs(bs),
-        _buffer_local(bs * _map->scatter_fwd_indices().array().size(), alloc),
+      : _map(map), _scatterer(std::make_shared<common::Scatterer>(_map, bs)),
+        _bs(bs),
+        _buffer_local(bs * _scatterer->local_shared_indices().size(), alloc),
         _buffer_remote(bs * map->num_ghosts(), alloc),
         _x(bs * (map->size_local() + map->num_ghosts()), alloc)
   {
-    _scatterer = std::make_shared<common::Scatterer>(_map_new, bs);
   }
 
   /// Copy constructor
   Vector(const Vector& x)
-      : _map(x._map), _map_new(x._map_new), _scatterer(x._scatterer),
-        _bs(x._bs), _request(MPI_REQUEST_NULL), _buffer_local(x._buffer_local),
+      : _map(x._map), _scatterer(x._scatterer), _bs(x._bs),
+        _request(MPI_REQUEST_NULL), _buffer_local(x._buffer_local),
         _buffer_remote(x._buffer_remote), _x(x._x)
   {
   }
 
   /// Move constructor
   Vector(Vector&& x)
-      : _map(std::move(x._map)), _map_new(std::move(x._map_new)),
-        _scatterer(std::move(x._scatterer)), _bs(std::move(x._bs)),
+      : _map(std::move(x._map)), _scatterer(std::move(x._scatterer)),
+        _bs(std::move(x._bs)),
         _request(std::exchange(x._request, MPI_REQUEST_NULL)),
         _buffer_local(std::move(x._buffer_local)),
         _buffer_remote(std::move(x._buffer_remote)), _x(std::move(x._x))
@@ -75,17 +74,26 @@ public:
   /// @note Collective MPI operation
   void scatter_fwd_begin()
   {
-    std::vector<MPI_Request> requests(1);
+    const std::int32_t local_size = _bs * _map->size_local();
+    xtl::span<const T> x_local(_x.data(), local_size);
     auto pack = common::Scatterer::pack();
-    xtl::span<double> x_local = _x.subspan(0, _map.size_local() * _bs);
     pack(x_local, _scatterer->local_shared_indices(), _buffer_local);
     _scatterer->scatter_fwd_begin(xtl::span<const T>(_buffer_local),
-                                  xtl::span<T>(_buffer_remote), requests);
+                                  xtl::span<T>(_buffer_remote), _request);
   }
 
   /// End scatter of local data from owner to ghosts on other ranks
   /// @note Collective MPI operation
-  void scatter_fwd_end() { _scatterer->scatter_fwd_end(requests); }
+  void scatter_fwd_end()
+  {
+    const std::int32_t local_size = _bs * _map->size_local();
+    const std::int32_t num_ghosts = _bs * _map->num_ghosts();
+    xtl::span<T> x_remote(_x.data() + local_size, num_ghosts);
+    auto unpack = common::Scatterer::unpack();
+    auto op = [](auto a, auto b) { return b; };
+    _scatterer->scatter_fwd_end(_request);
+    unpack(_buffer_remote, _scatterer->remote_indices(), x_remote, op);
+  }
 
   /// Scatter local data to ghost positions on other ranks
   /// @note Collective MPI operation
@@ -99,22 +107,13 @@ public:
   /// @note Collective MPI operation
   void scatter_rev_begin()
   {
-    // Pack send buffer
     const std::int32_t local_size = _bs * _map->size_local();
-    xtl::span<const T> xremote(_x.data() + local_size,
-                               _map->num_ghosts() * _bs);
-    const std::vector<std::int32_t>& scatter_fwd_ghost_pos
-        = _map->scatter_fwd_ghost_positions();
-    for (std::size_t i = 0; i < scatter_fwd_ghost_pos.size(); ++i)
-    {
-      const int pos = scatter_fwd_ghost_pos[i];
-      std::copy_n(std::next(xremote.cbegin(), _bs * i), _bs,
-                  std::next(_buffer_remote.begin(), _bs * pos));
-    }
-
-    // begin scatter
-    // _map->scatter_rev_begin(xtl::span<const T>(_buffer_remote), _datatype,
-    //                         _request, xtl::span<T>(_buffer_local));
+    const std::int32_t num_ghosts = _bs * _map->num_ghosts();
+    xtl::span<T> x_remote(_x.data() + local_size, num_ghosts);
+    auto pack = common::Scatterer::pack();
+    pack(x_remote, _scatterer->remote_indices(), _buffer_remote);
+    _scatterer->scatter_fwd_begin(xtl::span<T>(_buffer_local),
+                                  xtl::span<const T>(_buffer_remote), _request);
   }
 
   /// End scatter of ghost data to owner. This process may receive data
@@ -123,29 +122,14 @@ public:
   /// @param op The operation to perform when adding/setting received
   /// values (add or insert)
   /// @note Collective MPI operation
-  void scatter_rev_end(common::IndexMapOld::Mode op)
+  template <class BinaryOperation>
+  void scatter_rev_end(BinaryOperation op)
   {
-    // Complete scatter
-    _map->scatter_rev_end(_request);
-
-    // Copy/accumulate into owned part of the vector
-    const std::vector<std::int32_t>& shared_indices
-        = _map->scatter_fwd_indices().array();
-    switch (op)
-    {
-    case common::IndexMapOld::Mode::insert:
-      for (std::size_t i = 0; i < shared_indices.size(); ++i)
-      {
-        std::copy_n(std::next(_buffer_local.cbegin(), _bs * i), _bs,
-                    std::next(_x.begin(), _bs * shared_indices[i]));
-      }
-      break;
-    case common::IndexMapOld::Mode::add:
-      for (std::size_t i = 0; i < shared_indices.size(); ++i)
-        for (int j = 0; j < _bs; ++j)
-          _x[shared_indices[i] * _bs + j] += _buffer_local[i * _bs + j];
-      break;
-    }
+    const std::int32_t local_size = _bs * _map->size_local();
+    xtl::span<const T> x_local(_x.data(), local_size);
+    auto unpack = common::Scatterer::unpack();
+    _scatterer->scatter_rev_end(_request);
+    unpack(_buffer_local, _scatterer->local_shared_indices(), x_local, op);
   }
 
   /// Scatter ghost data to owner. This process may receive data from
@@ -153,7 +137,8 @@ public:
   /// inserted into the local portion of the vector.
   /// @param op IndexMap operation (add or insert)
   /// @note Collective MPI operation
-  void scatter_rev(dolfinx::common::IndexMapOld::Mode op)
+  template <class BinaryOperation>
+  void scatter_rev(BinaryOperation op)
   {
     this->scatter_rev_begin();
     this->scatter_rev_end(op);
@@ -203,7 +188,7 @@ public:
   }
 
   /// Get IndexMap
-  std::shared_ptr<const common::IndexMap> map() const { return _map_new; }
+  std::shared_ptr<const common::IndexMap> map() const { return _map; }
 
   /// Get block size
   constexpr int bs() const { return _bs; }
@@ -219,10 +204,7 @@ public:
 
 private:
   // Map describing the data layout
-  std::shared_ptr<const common::IndexMapOld> _map;
-
-  // Map describing the data layout
-  std::shared_ptr<const common::IndexMap> _map_new;
+  std::shared_ptr<const common::IndexMap> _map;
 
   std::shared_ptr<const common::Scatterer> _scatterer;
 
