@@ -103,16 +103,13 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
     }
   }
 
-  // Build new dofmap data
+  // Map dofs to new collapsed indices for new dofmap
   const std::vector<std::int32_t>& dof_array_view = dofmap_view.list().array();
   std::vector<std::int32_t> dofmap;
   dofmap.reserve(dof_array_view.size());
-  for (std::size_t i = 0; i < dof_array_view.size(); ++i)
-  {
-    assert(i < dof_array_view.size());
-    assert(dof_array_view[i] < (int)old_to_new.size());
-    dofmap.push_back(old_to_new[dof_array_view[i]]);
-  }
+  std::transform(dof_array_view.begin(), dof_array_view.end(),
+                 std::back_inserter(dofmap),
+                 [&old_to_new](auto idx_old) { return old_to_new[idx_old]; });
 
   // Dimension sanity checks
   assert((int)dofmap.size()
