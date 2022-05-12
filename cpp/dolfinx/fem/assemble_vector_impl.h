@@ -637,9 +637,10 @@ void assemble_exterior_facets(
 
     // Tabulate element vector
     std::fill(be.begin(), be.end(), 0);
-    // TODO codim 1 forms need a facet permutation here
+    // FIXME Pass correct perms for codim 1 case
+    std::vector<std::uint8_t> facet_perms = {0, 0};
     fn(be.data(), coeffs.data() + index * cstride, constants.data(),
-       coordinate_dofs.data(), &local_facet, nullptr);
+       coordinate_dofs.data(), &local_facet, facet_perms.data());
 
     dof_transform(_be, cell_info, c_0, 1);
 

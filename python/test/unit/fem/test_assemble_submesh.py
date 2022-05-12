@@ -414,54 +414,57 @@ def unit_square_norm(n, space, k, ghost_mode):
     return A.norm(), b.norm()
 
 
-# np.set_printoptions(linewidth=200, suppress=True)
-# test_mixed_codim_0_test_func_assembly_alt(2, 1, "Lagrange", GhostMode.shared_facet)
-# unit_square_norm(2, "Lagrange", 1, GhostMode.shared_facet)
+@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("k", [1, 4])
+@pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+def test_codim_1_coeffs(n, k, space, ghost_mode):
+    mesh = create_rectangle(
+        MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+        ghost_mode=ghost_mode)
+    edim = mesh.topology.dim - 1
+    num_facets = mesh.topology.create_entities(edim)
+    entities = locate_entities_boundary(
+        mesh, edim,
+        lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 2.0),
+                                              np.isclose(x[0], 0.0)),
+                                np.logical_or(np.isclose(x[1], 1.0),
+                                              np.isclose(x[1], 0.0))))
+    submesh, entity_map, vertex_map, geom_map = create_submesh(
+        mesh, edim, entities)
 
+    element = (space, k)
+    V_m = fem.FunctionSpace(mesh, element)
+    V_sm = fem.FunctionSpace(submesh, element)
 
-# np.set_printoptions(linewidth=200, suppress=True)
-# n = 2
-# ghost_mode = GhostMode.none
-# space = "Lagrange"
-# k = 1
+    f = fem.Function(V_sm)
+    # NOTE Interpolating in parallel may not work correctly, see issue #2126
+    f.interpolate(lambda x: x[0])
 
-# mesh = create_rectangle(
-#     MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-#     ghost_mode=ghost_mode)
-# edim = mesh.topology.dim - 1
-# num_facets = mesh.topology.create_entities(edim)
-# entities = locate_entities_boundary(mesh, edim, lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 2.0),
-#                                                                                       np.isclose(x[0], 0.0)),
-#                                                                         np.logical_or(np.isclose(x[1], 1.0),
-#                                                                                       np.isclose(x[1], 0.0))))
-# submesh, entity_map, vertex_map, geom_map = create_submesh(
-#     mesh, edim, entities)
+    from dolfinx import io
+    with io.XDMFFile(submesh.comm, "submesh.xdmf", "w") as file:
+        file.write_mesh(submesh)
+        file.write_function(f)
 
-# element = (space, k)
-# V_m = fem.FunctionSpace(mesh, element)
-# V_sm = fem.FunctionSpace(submesh, element)
+    mp = [entity_map.index(entity) if entity in entity_map else -1
+          for entity in range(num_facets)]
 
-# f = fem.Function(V_sm)
-# f.interpolate(lambda x: x[0])
+    v = ufl.TestFunction(V_m)
 
-# from dolfinx import io
-# with io.XDMFFile(submesh.comm, "submesh.xdmf", "w") as file:
-#     file.write_mesh(submesh)
-#     file.write_function(f)
+    ds = ufl.Measure("ds", domain=mesh)
+    entity_maps = {submesh: mp}
+    L = fem.form(ufl.inner(f, v) * ds,
+                 entity_maps=entity_maps)
+    b = fem.petsc.assemble_vector(L)
 
-# mp = [entity_map.index(entity) if entity in entity_map else -1 for entity in range(num_facets)]
+    b_norm = b.norm()
 
-# v = ufl.TestFunction(V_m)
+    f = fem.Function(V_m)
+    f.interpolate(lambda x: x[0])
+    L = fem.form(ufl.inner(f, v) * ds)
+    b = fem.petsc.assemble_vector(L)
 
-# ds = ufl.Measure("ds", domain=mesh)
-# entity_maps = {submesh: mp}
-# L = fem.form(ufl.inner(f, v) * ds,
-#              entity_maps=entity_maps)
-# b = fem.petsc.assemble_vector(L)
-# print(b[:])
+    b_expected_norm = b.norm()
 
-# f = fem.Function(V_m)
-# f.interpolate(lambda x: x[0])
-# L = fem.form(ufl.inner(f, v) * ds)
-# b = fem.petsc.assemble_vector(L)
-# print(b[:])
+    assert(np.isclose(b_norm, b_expected_norm))
