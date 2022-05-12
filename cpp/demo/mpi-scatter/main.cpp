@@ -99,8 +99,8 @@ int main(int argc, char* argv[])
       xtl::span<const double> x_remote = x.subspan(n, map->num_ghosts() * bs);
 
       sct.scatter_rev<double>(x_local, x_remote, std::plus<double>(),
-                              common::Scatterer::gather(),
-                              common::Scatterer::scatter());
+                              common::Scatterer::pack(),
+                              common::Scatterer::unpack());
 
       // debug_vector(x_local);
     }

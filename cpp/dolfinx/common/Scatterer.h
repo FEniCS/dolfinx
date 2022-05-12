@@ -17,7 +17,7 @@ using namespace dolfinx;
 namespace
 {
 template <typename T>
-void [[maybe_unused]] debug_vector(const std::vector<T>& vec)
+void debug_vector(const std::vector<T>& vec)
 {
   for (int i = 0; i < dolfinx::MPI::size(MPI_COMM_WORLD); i++)
   {
@@ -179,11 +179,11 @@ public:
   // NOTE: This function is not MPI-X friendly
   template <typename T, typename Functor1, typename Functor2>
   void scatter_fwd(const xtl::span<const T>& local_data,
-                   xtl::span<T> remote_data, Functor1 gather_fn,
-                   Functor2 scatter_fn) const
+                   xtl::span<T> remote_data, Functor1 pack_fn,
+                   Functor2 unpack_fn) const
   {
     std::vector<T> send_buffer(_local_inds.size());
-    gather_fn(local_data, _local_inds, send_buffer);
+    pack_fn(local_data, _local_inds, send_buffer);
 
     std::vector<MPI_Request> requests(1);
     std::vector<T> buffer_recv(_displs_remote.back());
@@ -193,7 +193,7 @@ public:
 
     // Insert op
     auto op = [](T a, T b) { return b; };
-    scatter_fn(buffer_recv, _remote_inds, remote_data, op);
+    unpack_fn(buffer_recv, _remote_inds, remote_data, op);
   }
 
   /// Start a non-blocking send of ghost values to the owning rank.
@@ -236,12 +236,12 @@ public:
   template <typename T, typename BinaryOp, typename Functor1, typename Functor2>
   void scatter_rev(xtl::span<T> local_data,
                    const xtl::span<const T>& remote_data, BinaryOp op,
-                   Functor1 gather_fn = gather(),
-                   Functor2 scatter_fn = scatter()) const
+                   Functor1 pack_fn = pack(),
+                   Functor2 unpack_fn = unpack()) const
   {
     // Pack send buffer
     std::vector<T> buffer_send(_displs_remote.back());
-    gather_fn(remote_data, _remote_inds, buffer_send);
+    pack_fn(remote_data, _remote_inds, buffer_send);
 
     // Exchange data
     std::vector<MPI_Request> requests(1);
@@ -251,12 +251,12 @@ public:
     scatter_rev_end(requests);
 
     // Copy or accumulate into "local_data"
-    scatter_fn(buffer_recv, _local_inds, local_data, op);
+    unpack_fn(buffer_recv, _local_inds, local_data, op);
   }
 
-  /// Local gather function
+  /// Local pack function
   // TODO: add documentation
-  static auto gather()
+  static auto pack()
   {
     return [](const auto& in, const auto& idx, auto& out)
     {
@@ -265,15 +265,25 @@ public:
     };
   }
 
-  /// Local scatter function
+  /// Local unpack function
   // TODO: add documentation
-  static auto scatter()
+  static auto unpack()
   {
     return [](const auto& in, const auto& idx, auto& out, auto& op)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
     };
+  }
+
+  const std::vector<std::int32_t>& local_shared_indices() const noexcept
+  {
+    return _local_inds;
+  }
+
+  const std::vector<std::int32_t>& remote_indices() const noexcept
+  {
+    return _sizes_remote;
   }
 
 private:

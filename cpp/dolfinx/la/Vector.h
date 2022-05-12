@@ -9,6 +9,7 @@
 #include "utils.h"
 #include <complex>
 #include <dolfinx/common/IndexMapNew.h>
+#include <dolfinx/common/Scatterer.h>
 #include <limits>
 #include <memory>
 #include <numeric>
@@ -34,48 +35,30 @@ public:
   Vector(const std::shared_ptr<const common::IndexMap>& map, int bs,
          const Allocator& alloc = Allocator())
       : _map(std::make_shared<common::IndexMapOld>(common::create_old(*map))),
-        _map_new(map), _bs(bs),
-        _buffer_send_fwd(bs * _map->scatter_fwd_indices().array().size()),
-        _buffer_recv_fwd(bs * map->num_ghosts()),
+        _map_new(map), _scatterer(nullptr), _bs(bs),
+        _buffer_local(bs * _map->scatter_fwd_indices().array().size(), alloc),
+        _buffer_remote(bs * map->num_ghosts(), alloc),
         _x(bs * (map->size_local() + map->num_ghosts()), alloc)
   {
-    if (_bs == 1)
-      _datatype = dolfinx::MPI::mpi_type<T>();
-    else
-    {
-      MPI_Type_contiguous(bs, dolfinx::MPI::mpi_type<T>(), &_datatype);
-      MPI_Type_commit(&_datatype);
-    }
+    _scatterer = std::make_shared<common::Scatterer>(_map_new, bs);
   }
 
   /// Copy constructor
   Vector(const Vector& x)
-      : _map(x._map), _map_new(x._map_new), _bs(x._bs),
-        _request(MPI_REQUEST_NULL), _buffer_send_fwd(x._buffer_send_fwd),
-        _buffer_recv_fwd(x._buffer_recv_fwd), _x(x._x)
+      : _map(x._map), _map_new(x._map_new), _scatterer(x._scatterer),
+        _bs(x._bs), _request(MPI_REQUEST_NULL), _buffer_local(x._buffer_local),
+        _buffer_remote(x._buffer_remote), _x(x._x)
   {
-    if (_bs == 1)
-      _datatype = dolfinx::MPI::mpi_type<T>();
-    else
-      MPI_Type_dup(x._datatype, &_datatype);
   }
 
   /// Move constructor
   Vector(Vector&& x)
       : _map(std::move(x._map)), _map_new(std::move(x._map_new)),
-        _bs(std::move(x._bs)),
-        _datatype(std::exchange(x._datatype, MPI_DATATYPE_NULL)),
+        _scatterer(std::move(x._scatterer)), _bs(std::move(x._bs)),
         _request(std::exchange(x._request, MPI_REQUEST_NULL)),
-        _buffer_send_fwd(std::move(x._buffer_send_fwd)),
-        _buffer_recv_fwd(std::move(x._buffer_recv_fwd)), _x(std::move(x._x))
+        _buffer_local(std::move(x._buffer_local)),
+        _buffer_remote(std::move(x._buffer_remote)), _x(std::move(x._x))
   {
-  }
-
-  /// Destructor
-  ~Vector()
-  {
-    if (_datatype != MPI_DATATYPE_NULL and _bs != 1)
-      MPI_Type_free(&_datatype);
   }
 
   // Assignment operator (disabled)
@@ -92,40 +75,17 @@ public:
   /// @note Collective MPI operation
   void scatter_fwd_begin()
   {
-    assert(_map);
-
-    // Pack send buffer
-    const std::vector<std::int32_t>& indices
-        = _map->scatter_fwd_indices().array();
-    for (std::size_t i = 0; i < indices.size(); ++i)
-    {
-      std::copy_n(std::next(_x.cbegin(), _bs * indices[i]), _bs,
-                  std::next(_buffer_send_fwd.begin(), _bs * i));
-    }
-
-    _map->scatter_fwd_begin(xtl::span<const T>(_buffer_send_fwd), _datatype,
-                            _request, xtl::span<T>(_buffer_recv_fwd));
+    std::vector<MPI_Request> requests(1);
+    auto pack = common::Scatterer::pack();
+    xtl::span<double> x_local = _x.subspan(0, _map.size_local() * _bs);
+    pack(x_local, _scatterer->local_shared_indices(), _buffer_local);
+    _scatterer->scatter_fwd_begin(xtl::span<const T>(_buffer_local),
+                                  xtl::span<T>(_buffer_remote), requests);
   }
 
   /// End scatter of local data from owner to ghosts on other ranks
   /// @note Collective MPI operation
-  void scatter_fwd_end()
-  {
-    assert(_map);
-    const std::int32_t local_size = _bs * _map->size_local();
-    xtl::span xremote(_x.data() + local_size, _map->num_ghosts() * _bs);
-    _map->scatter_fwd_end(_request);
-
-    // Copy received data into ghost positions
-    const std::vector<std::int32_t>& scatter_fwd_ghost_pos
-        = _map->scatter_fwd_ghost_positions();
-    for (std::size_t i = 0; i < _map->num_ghosts(); ++i)
-    {
-      const int pos = scatter_fwd_ghost_pos[i];
-      std::copy_n(std::next(_buffer_recv_fwd.cbegin(), _bs * pos), _bs,
-                  std::next(xremote.begin(), _bs * i));
-    }
-  }
+  void scatter_fwd_end() { _scatterer->scatter_fwd_end(requests); }
 
   /// Scatter local data to ghost positions on other ranks
   /// @note Collective MPI operation
@@ -149,12 +109,12 @@ public:
     {
       const int pos = scatter_fwd_ghost_pos[i];
       std::copy_n(std::next(xremote.cbegin(), _bs * i), _bs,
-                  std::next(_buffer_recv_fwd.begin(), _bs * pos));
+                  std::next(_buffer_remote.begin(), _bs * pos));
     }
 
     // begin scatter
-    _map->scatter_rev_begin(xtl::span<const T>(_buffer_recv_fwd), _datatype,
-                            _request, xtl::span<T>(_buffer_send_fwd));
+    // _map->scatter_rev_begin(xtl::span<const T>(_buffer_remote), _datatype,
+    //                         _request, xtl::span<T>(_buffer_local));
   }
 
   /// End scatter of ghost data to owner. This process may receive data
@@ -176,14 +136,14 @@ public:
     case common::IndexMapOld::Mode::insert:
       for (std::size_t i = 0; i < shared_indices.size(); ++i)
       {
-        std::copy_n(std::next(_buffer_send_fwd.cbegin(), _bs * i), _bs,
+        std::copy_n(std::next(_buffer_local.cbegin(), _bs * i), _bs,
                     std::next(_x.begin(), _bs * shared_indices[i]));
       }
       break;
     case common::IndexMapOld::Mode::add:
       for (std::size_t i = 0; i < shared_indices.size(); ++i)
         for (int j = 0; j < _bs; ++j)
-          _x[shared_indices[i] * _bs + j] += _buffer_send_fwd[i * _bs + j];
+          _x[shared_indices[i] * _bs + j] += _buffer_local[i * _bs + j];
       break;
     }
   }
@@ -261,15 +221,17 @@ private:
   // Map describing the data layout
   std::shared_ptr<const common::IndexMapOld> _map;
 
+  // Map describing the data layout
   std::shared_ptr<const common::IndexMap> _map_new;
+
+  std::shared_ptr<const common::Scatterer> _scatterer;
 
   // Block size
   int _bs;
 
-  // Data type and buffers for ghost scatters
-  MPI_Datatype _datatype = MPI_DATATYPE_NULL;
+  // Buffers for ghost scatters
   MPI_Request _request = MPI_REQUEST_NULL;
-  std::vector<T> _buffer_send_fwd, _buffer_recv_fwd;
+  std::vector<T, Allocator> _buffer_local, _buffer_remote;
 
   // Data
   std::vector<T, Allocator> _x;
