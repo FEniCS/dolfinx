@@ -19,6 +19,7 @@ from dolfinx.mesh import (GhostMode, create_box, create_rectangle,
 from mpi4py import MPI
 from petsc4py import PETSc
 from dolfinx.graph import create_adjacencylist
+from dolfinx import io
 
 
 def assemble_forms_0(mesh, space, k):
@@ -444,7 +445,6 @@ def test_codim_1_coeffs(n, k, space, ghost_mode):
     f_m = fem.Function(V_m)
     f_m.interpolate(lambda x: x[0])
 
-    from dolfinx import io
     with io.XDMFFile(submesh.comm, "submesh.xdmf", "w") as file:
         file.write_mesh(submesh)
         file.write_function(f)
@@ -493,3 +493,49 @@ def test_codim_1_coeffs(n, k, space, ghost_mode):
     s_expected = mesh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
 
     assert(np.isclose(s, s_expected))
+
+
+@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("k", [1, 4])
+@pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+def test_codim_1_assembly(n, k, space, ghost_mode):
+    # TODO Test vector and matrices are correct
+    mesh = create_rectangle(
+        MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+        ghost_mode=ghost_mode)
+    edim = mesh.topology.dim - 1
+    num_facets = mesh.topology.create_entities(edim)
+    entities = locate_entities_boundary(
+        mesh, edim,
+        lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 2.0),
+                                              np.isclose(x[0], 0.0)),
+                                np.logical_or(np.isclose(x[1], 1.0),
+                                              np.isclose(x[1], 0.0))))
+    submesh, entity_map, vertex_map, geom_map = create_submesh(
+        mesh, edim, entities)
+
+    element = (space, k)
+    V_m = fem.FunctionSpace(mesh, element)
+    V_sm = fem.FunctionSpace(submesh, element)
+
+    u = ufl.TrialFunction(V_m)
+    v = ufl.TestFunction(V_sm)
+
+    ds = ufl.Measure("ds", domain=mesh)
+    mp = [entity_map.index(entity) if entity in entity_map else -1
+          for entity in range(num_facets)]
+    entity_maps = {submesh: mp}
+    a = fem.form(ufl.inner(u, v) * ds,
+                 entity_maps=entity_maps)
+    A = fem.petsc.assemble_matrix(a)
+    A.assemble()
+
+    print(A.norm())
+
+    L = fem.form(v * ds,
+                 entity_maps=entity_maps)
+    b = fem.petsc.assemble_vector(L)
+
+    print(b.norm())
