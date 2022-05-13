@@ -443,6 +443,9 @@ void assemble_matrix(
       = element0->needs_dof_transformations()
         or element1->needs_dof_transformations()
         or a.needs_facet_permutations();
+  // NOTE: May only need to pass two cell infos for codim 1 ext facet
+  // integrals. I think the cell_infos are the same for if both spaces
+  // are cells
   xtl::span<const std::uint32_t> cell_info_0;
   xtl::span<const std::uint32_t> cell_info_1;
   if (needs_transformation_data)
