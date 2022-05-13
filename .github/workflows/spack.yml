@@ -16,10 +16,10 @@ on:
         type: string
       spack_branch:
         description: "Spack repository branch to test"
-        default: "developer"
+        default: "develop"
         type: string
       dolfinx_version:
-        description: "DOLFINx release to test"
+        description: "DOLFINx release to test (leave blank for latest)"
         default: ""
         type: string
 
