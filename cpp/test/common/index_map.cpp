@@ -146,8 +146,8 @@ TEST_CASE("Scatter reverse using IndexMap", "[index_map_scatter_rev]")
   CHECK_NOTHROW(test_scatter_rev());
 }
 
-// TEST_CASE("Communication graph edges via consensus exchange",
-//           "[consensus_exchange]")
-// {
-//   CHECK_NOTHROW(test_consensus_exchange());
-// }
+TEST_CASE("Communication graph edges via consensus exchange",
+          "[consensus_exchange]")
+{
+  CHECK_NOTHROW(test_consensus_exchange());
+}
