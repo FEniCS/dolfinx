@@ -94,7 +94,6 @@ public:
                      [&owners](auto idx) { return owners[idx]; });
       std::transform(perm.begin(), perm.end(), ghosts_sorted.begin(),
                      [&ghosts](auto idx) { return ghosts[idx]; });
-      std::swap(perm, _remote_inds);
 
       _sizes_remote.resize(src_ranks.size(), 0);
       _displs_remote.resize(src_ranks.size() + 1, 0);
@@ -139,17 +138,26 @@ public:
                     { assert(idx >= range[0] and idx < range[1]); });
 #endif
 
-      // expand by block size
+      // Scale sizes and displacements by block size
       auto scale = [bs = _bs](auto& e) { e *= bs; };
       std::for_each(_sizes_local.begin(), _sizes_local.end(), scale);
       std::for_each(_displs_local.begin(), _displs_local.end(), scale);
       std::for_each(_sizes_remote.begin(), _sizes_remote.end(), scale);
       std::for_each(_displs_remote.begin(), _displs_remote.end(), scale);
 
+      // Expand local indices using block size and convert it from global to
+      // local numbering
       _local_inds.resize(_displs_local.back() * _bs);
-      std::transform(recv_buffer.begin(), recv_buffer.end(),
-                     _local_inds.begin(),
-                     [offset = range[0]](auto idx) { return idx - offset; });
+      std::int64_t offset = range[0] * _bs;
+      for (std::size_t i = 0; i < recv_buffer.size(); i++)
+        for (int j = 0; j < _bs; j++)
+          _local_inds[i * _bs + j] = (recv_buffer[i] * _bs + j) - offset;
+
+      // Expand remote indices using block size
+      _remote_inds.resize(perm.size() * _bs);
+      for (std::size_t i = 0; i < perm.size(); i++)
+        for (int j = 0; j < _bs; j++)
+          _remote_inds[i * _bs + j] = perm[i] * _bs + j;
     }
   }
 
