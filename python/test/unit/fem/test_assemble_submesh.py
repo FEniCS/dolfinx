@@ -417,23 +417,37 @@ def unit_square_norm(n, space, k, ghost_mode):
     return A.norm(), b.norm()
 
 
+@pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
-def test_codim_1_coeffs(n, k, space, ghost_mode):
-    mesh = create_rectangle(
-        MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-        ghost_mode=ghost_mode)
+def test_codim_1_coeffs(d, n, k, space, ghost_mode):
+    if d == 2:
+        mesh = create_rectangle(
+            MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+            ghost_mode=ghost_mode)
+
+        def boundary_marker(x):
+            return np.logical_or(np.logical_or(np.isclose(x[0], 2.0),
+                                               np.isclose(x[0], 0.0)),
+                                 np.logical_or(np.isclose(x[1], 1.0),
+                                               np.isclose(x[1], 0.0)))
+    else:
+        mesh = create_box(
+            MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
+            (2 * n, n, n), ghost_mode=ghost_mode)
+
+        def boundary_marker(x):
+            b_0 = np.logical_or(np.isclose(x[0], 2.0), np.isclose(x[0], 0.0))
+            b_1 = np.logical_or(np.isclose(x[1], 1.0), np.isclose(x[1], 0.0))
+            b_2 = np.logical_or(np.isclose(x[2], 1.0), np.isclose(x[2], 0.0))
+
+            return np.logical_or(np.logical_or(b_0, b_1), b_2)
     edim = mesh.topology.dim - 1
     num_facets = mesh.topology.create_entities(edim)
-    entities = locate_entities_boundary(
-        mesh, edim,
-        lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 2.0),
-                                              np.isclose(x[0], 0.0)),
-                                np.logical_or(np.isclose(x[1], 1.0),
-                                              np.isclose(x[1], 0.0))))
+    entities = locate_entities_boundary(mesh, edim, boundary_marker)
     submesh, entity_map, vertex_map, geom_map = create_submesh(
         mesh, edim, entities)
 
@@ -565,20 +579,44 @@ def test_codim_1_assembly(n, k, space, ghost_mode):
 #             random.shuffle(cell_1)
 #             cells.append(cell_1)
 #     return create_mesh(MPI.COMM_WORLD, cells, points, domain)
-
+# def create_random_mesh(N):
+#     N += 1
+#     random.seed(6)
+#     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "triangle", 1))
+#     temp_points = np.array([[x / 2, y / 2] for y in range(N) for x in range(N)])
+#     order = [i for i, j in enumerate(temp_points)]
+#     random.shuffle(order)
+#     points = np.zeros(temp_points.shape)
+#     for i, j in enumerate(order):
+#         points[j] = temp_points[i]
+#     cells = []
+#     for x in range(N - 1):
+#         for y in range(N - 1):
+#             a = N * y + x
+#             # Adds two triangle cells:
+#             # a+N -- a+N+1
+#             #  |   / |
+#             #  |  /  |
+#             #  | /   |
+#             #  a --- a+1
+#             for cell in [[a, a + 1, a + N + 1], [a, a + N + 1, a + N]]:
+#                 cells.append([order[i] for i in cell])
+#     points /= np.max(points)
+#     return create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
 # # TODO Figure out why this is working without permutations
 # space = "Lagrange"
-# k = 1
+# k = 3
 
-# mesh = create_random_mesh(4, 2, ((0, 0), (2, 1)))
+# # mesh = create_random_mesh(4, 2, ((0, 0), (1, 1)))
+# mesh = create_random_mesh(8)
 # # with io.XDMFFile(mesh.comm, "mesh.xdmf", "w") as file:
 # #     file.write_mesh(mesh)
 # edim = mesh.topology.dim - 1
 # num_facets = mesh.topology.create_entities(edim)
 # entities = locate_entities_boundary(
 #     mesh, edim,
-#     lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 2.0),
+#     lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 1.0),
 #                                           np.isclose(x[0], 0.0)),
 #                             np.logical_or(np.isclose(x[1], 1.0),
 #                                           np.isclose(x[1], 0.0))))
@@ -620,9 +658,6 @@ def test_codim_1_assembly(n, k, space, ghost_mode):
 # print(s, s_expected)
 
 
-
-
-
 # a = fem.form(ufl.inner(f * u, v) * ds,
 #              entity_maps=entity_maps)
 # A = fem.petsc.assemble_matrix(a)
@@ -637,3 +672,26 @@ def test_codim_1_assembly(n, k, space, ghost_mode):
 # A_expected_norm = A.norm()
 
 # assert(np.isclose(A_norm, A_expected_norm))
+
+
+# cells = [[2, 0, 1]]
+# points = [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0)]
+# domain = ufl.Mesh(ufl.VectorElement("Lagrange", "triangle", 1))
+# mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+
+# tdim = mesh.topology.dim
+# edim = tdim - 1
+# entities = locate_entities_boundary(
+#     mesh, edim, lambda x: np.isclose(x[0], 0.0))
+# submesh, entity_map, vertex_map, geom_map = create_submesh(
+#     mesh, edim, entities)
+
+
+# with io.XDMFFile(submesh.comm, "mesh.xdmf", "w") as file:
+#     file.write_mesh(mesh)
+# with io.XDMFFile(submesh.comm, "submesh.xdmf", "w") as file:
+#     file.write_mesh(submesh)
+
+# print(mesh.topology.connectivity(tdim, 0))
+# print(submesh.topology.connectivity(edim, 0))
+# print(vertex_map)
