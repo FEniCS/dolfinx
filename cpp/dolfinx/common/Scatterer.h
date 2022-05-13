@@ -47,7 +47,7 @@ public:
   {
     if (map->overlapped())
     {
-      // Ger source (owner of ghosts) and destination (processes that ghosts an
+      // Get source (owner of ghosts) and destination (processes that ghosts an
       // owned index) ranks
       const std::vector<int>& src_ranks = map->src();
       const std::vector<int>& dest_ranks = map->dest();
