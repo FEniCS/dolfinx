@@ -220,9 +220,8 @@ public:
   // NOTE: This function is not MPI-X friendly
   template <typename T, typename Functor1, typename Functor2>
   void scatter_fwd(const xtl::span<const T>& local_data,
-                   xtl::span<T> remote_data,
-                   Functor1 pack_fn = Scatterer::pack(),
-                   Functor2 unpack_fn = Scatterer::unpack()) const
+                   xtl::span<T> remote_data, Functor1 pack_fn,
+                   Functor2 unpack_fn) const
   {
     std::vector<T> send_buffer(_local_inds.size());
     pack_fn(local_data, _local_inds, send_buffer);
@@ -281,8 +280,7 @@ public:
   template <typename T, typename BinaryOp, typename Functor1, typename Functor2>
   void scatter_rev(xtl::span<T> local_data,
                    const xtl::span<const T>& remote_data, BinaryOp op,
-                   Functor1 pack_fn = Scatterer::pack(),
-                   Functor2 unpack_fn = Scatterer::unpack()) const
+                   Functor1 pack_fn, Functor2 unpack_fn) const
   {
     // Pack send buffer
     std::vector<T> buffer_send(_displs_remote.back());
