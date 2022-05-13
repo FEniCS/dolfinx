@@ -14,12 +14,13 @@ from dolfinx import fem
 from dolfinx.mesh import (GhostMode, create_box, create_rectangle,
                           create_submesh, create_unit_cube, create_unit_square,
                           locate_entities, locate_entities_boundary,
-                          meshtags_from_entities)
+                          meshtags_from_entities, create_mesh)
 
 from mpi4py import MPI
 from petsc4py import PETSc
 from dolfinx.graph import create_adjacencylist
 from dolfinx import io
+import random
 
 
 def assemble_forms_0(mesh, space, k):
@@ -540,3 +541,99 @@ def test_codim_1_assembly(n, k, space, ghost_mode):
     b = fem.petsc.assemble_vector(L)
 
     print(b.norm())
+
+
+# def create_random_mesh(n_x, n_y, corners):
+#     h_x = (corners[1][0] - corners[0][0]) / n_x
+#     h_y = (corners[1][1] - corners[0][1]) / n_y
+
+#     points = [(i * h_x, j * h_y)
+#               for i in range(n_x + 1) for j in range(n_y + 1)]
+
+#     random.seed(6)
+#     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "triangle", 1))
+
+#     cells = []
+#     for i in range(n_x):
+#         for j in range(n_y):
+#             v = (n_y + 1) * i + j
+#             cell_0 = [v, v + 1, v + n_y + 2]
+#             random.shuffle(cell_0)
+#             cells.append(cell_0)
+
+#             cell_1 = [v, v + n_y + 1, v + n_y + 2]
+#             random.shuffle(cell_1)
+#             cells.append(cell_1)
+#     return create_mesh(MPI.COMM_WORLD, cells, points, domain)
+
+
+# # TODO Figure out why this is working without permutations
+# space = "Lagrange"
+# k = 1
+
+# mesh = create_random_mesh(4, 2, ((0, 0), (2, 1)))
+# # with io.XDMFFile(mesh.comm, "mesh.xdmf", "w") as file:
+# #     file.write_mesh(mesh)
+# edim = mesh.topology.dim - 1
+# num_facets = mesh.topology.create_entities(edim)
+# entities = locate_entities_boundary(
+#     mesh, edim,
+#     lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 2.0),
+#                                           np.isclose(x[0], 0.0)),
+#                             np.logical_or(np.isclose(x[1], 1.0),
+#                                           np.isclose(x[1], 0.0))))
+# submesh, entity_map, vertex_map, geom_map = create_submesh(
+#     mesh, edim, entities)
+
+# element = (space, k)
+# V_m = fem.FunctionSpace(mesh, element)
+# V_sm = fem.FunctionSpace(submesh, element)
+
+# f = fem.Function(V_sm)
+# # NOTE Interpolating in parallel may not work correctly, see issue #2126
+# f.interpolate(lambda x: x[0] * np.sin(np.pi * x[0]))
+# g = fem.Function(V_m)
+# g.interpolate(lambda x: x[0]**2)
+# f_m = fem.Function(V_m)
+# f_m.interpolate(lambda x: x[0] * np.sin(np.pi * x[0]))
+
+# with io.XDMFFile(submesh.comm, "submesh.xdmf", "w") as file:
+#     file.write_mesh(submesh)
+#     file.write_function(f)
+
+# mp = [entity_map.index(entity) if entity in entity_map else -1
+#       for entity in range(num_facets)]
+
+# u = ufl.TrialFunction(V_m)
+# v = ufl.TestFunction(V_m)
+
+# ds = ufl.Measure("ds", domain=mesh)
+# entity_maps = {submesh: mp}
+# M = fem.form(f * g * ds,
+#              entity_maps=entity_maps)
+# s = mesh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
+
+# M = fem.form(f_m * g * ds)
+# s_expected = mesh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
+
+# assert(np.isclose(s, s_expected))
+# print(s, s_expected)
+
+
+
+
+
+# a = fem.form(ufl.inner(f * u, v) * ds,
+#              entity_maps=entity_maps)
+# A = fem.petsc.assemble_matrix(a)
+# A.assemble()
+
+# A_norm = A.norm()
+
+# a = fem.form(ufl.inner(f_m * u, v) * ds)
+# A = fem.petsc.assemble_matrix(a)
+# A.assemble()
+
+# A_expected_norm = A.norm()
+
+# assert(np.isclose(A_norm, A_expected_norm))
