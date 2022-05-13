@@ -344,22 +344,24 @@ private:
   // - out-edges (dest) are to the owning ranks of my ghost indices
   dolfinx::MPI::Comm _comm_ghost_to_owner;
 
-  // TODO: add documentation
+  // Permutation indices used to pack and unpack ghost data (remote)
   std::vector<std::int32_t> _remote_inds;
 
-  // TODO: add documentation
+  // Number of remote indices (ghosts) per neighbor process.
   std::vector<std::int32_t> _sizes_remote;
 
-  // TODO: add documentation
+  // Displacements of remote data for mpi scatter and gather.
   std::vector<std::int32_t> _displs_remote;
 
-  // TODO: add documentation
+  // Permutation indices used to pack and unpack local shared data (owned
+  // indices that are shared with other processes). Indices are grouped by
+  // neighbor process.
   std::vector<std::int32_t> _local_inds;
 
-  // TODO: add documentation
+  // Number of local shared indices per neighbor process.
   std::vector<std::int32_t> _sizes_local;
 
-  // TODO: add documentation
+  // Displacements of local data for mpi scatter and gather.
   std::vector<std::int32_t> _displs_local;
 };
 } // namespace dolfinx::common
