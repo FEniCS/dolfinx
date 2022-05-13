@@ -78,7 +78,7 @@ void test_scatter_rev()
   std::vector<std::int64_t> data_ghost(n * num_ghosts, value);
   idx_map_old.scatter_rev(xtl::span<std::int64_t>(data_local),
                           xtl::span<const std::int64_t>(data_ghost), n,
-                          common::IndexMapOld::Mode::add);
+                          std::plus<std::int64_t>());
 
   std::int64_t sum;
   CHECK((int)data_local.size() == n * size_local);
@@ -87,13 +87,13 @@ void test_scatter_rev()
 
   idx_map_old.scatter_rev(xtl::span<std::int64_t>(data_local),
                           xtl::span<const std::int64_t>(data_ghost), n,
-                          common::IndexMapOld::Mode::insert);
+                          [](auto /*a*/, auto b) { return b; });
   sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == n * value * num_ghosts);
 
   idx_map_old.scatter_rev(xtl::span<std::int64_t>(data_local),
                           xtl::span<const std::int64_t>(data_ghost), n,
-                          common::IndexMapOld::Mode::add);
+                          std::plus<std::int64_t>());
   sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == 2 * n * value * num_ghosts);
 }

@@ -112,8 +112,8 @@ public:
     xtl::span<T> x_remote(_x.data() + local_size, num_ghosts);
     auto pack = common::Scatterer::pack();
     pack(x_remote, _scatterer->remote_indices(), _buffer_remote);
-    _scatterer->scatter_fwd_begin(xtl::span<T>(_buffer_local),
-                                  xtl::span<const T>(_buffer_remote), _request);
+    _scatterer->scatter_rev_begin(xtl::span<const T>(_buffer_remote),
+                                  xtl::span<T>(_buffer_local), _request);
   }
 
   /// End scatter of ghost data to owner. This process may receive data
@@ -126,7 +126,7 @@ public:
   void scatter_rev_end(BinaryOperation op)
   {
     const std::int32_t local_size = _bs * _map->size_local();
-    xtl::span<const T> x_local(_x.data(), local_size);
+    xtl::span<T> x_local(_x.data(), local_size);
     auto unpack = common::Scatterer::unpack();
     _scatterer->scatter_rev_end(_request);
     unpack(_buffer_local, _scatterer->local_shared_indices(), x_local, op);

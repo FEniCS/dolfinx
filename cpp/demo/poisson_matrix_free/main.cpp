@@ -164,7 +164,7 @@ int main(int argc, char* argv[])
     dolfinx::fem::assemble_vector(b.mutable_array(), *M);
 
     // Communicate ghost values
-    b.scatter_rev(common::IndexMapOld::Mode::add);
+    b.scatter_rev(std::plus<T>());
 
     // Set BC dofs to zero (effectively zeroes columns of A)
     fem::set_bc(b.mutable_array(), {bc}, 0.0);
@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
       fem::set_bc(y.mutable_array(), {bc}, 0.0);
 
       // Accumuate ghost values
-      y.scatter_rev(common::IndexMapOld::Mode::add);
+      y.scatter_rev(std::plus<T>());
 
       // Update ghost values
       y.scatter_fwd();
