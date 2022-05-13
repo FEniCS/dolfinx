@@ -86,23 +86,25 @@ int main(int argc, char* argv[])
     //   std::iota(x.begin(), x.end(), 0);
     //   std::for_each(x.begin(), x.end(), [offset](auto& e) { e += offset; });
     //   xtl::span<const double> x_local = x.subspan(0, n);
-    //   xtl::span<double> x_remote = x.subspan(n, map->num_ghosts() * bs);
+    // xtl::span<double> x_remote = x.subspan(n, map->num_ghosts() * bs);
     //   std::fill(x_remote.begin(), x_remote.end(), 0);
     //   sct.scatter_fwd<double>(x_local, x_remote, common::Scatterer::gather(),
     //                           common::Scatterer::scatter());
     // }
     {
       auto x = vec.mutable_array();
-      std::fill(x.begin(), x.end(), 0);
-      std::fill(x.begin() + n, x.end(), dolfinx::MPI::rank(comm) + 1);
-      xtl::span<double> x_local = x.subspan(0, n);
-      xtl::span<const double> x_remote = x.subspan(n, map->num_ghosts() * bs);
+      std::fill(x.begin(), x.end(), dolfinx::MPI::rank(comm));
+      std::fill(x.begin() + n, x.end(), 0);
+      vec.scatter_fwd();
+      // xtl::span<double> x_local = x.subspan(0, n);
+      // xtl::span<const double> x_remote = x.subspan(n, map->num_ghosts() *
+      // bs);
 
-      sct.scatter_rev<double>(x_local, x_remote, std::plus<double>(),
-                              common::Scatterer::pack(),
-                              common::Scatterer::unpack());
+      // sct.scatter_rev<double>(x_local, x_remote, std::plus<double>(),
+      //                         common::Scatterer::pack(),
+      //                         common::Scatterer::unpack());
 
-      // debug_vector(x_local);
+      debug_vector(x);
     }
   }
 

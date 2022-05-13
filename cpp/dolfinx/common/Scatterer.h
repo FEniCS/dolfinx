@@ -139,7 +139,14 @@ public:
                     { assert(idx >= range[0] and idx < range[1]); });
 #endif
 
-      _local_inds.resize(_displs_local.back());
+      // expand by block size
+      auto scale = [bs = _bs](auto& e) { e *= bs; };
+      std::for_each(_sizes_local.begin(), _sizes_local.end(), scale);
+      std::for_each(_displs_local.begin(), _displs_local.end(), scale);
+      std::for_each(_sizes_remote.begin(), _sizes_remote.end(), scale);
+      std::for_each(_displs_remote.begin(), _displs_remote.end(), scale);
+
+      _local_inds.resize(_displs_local.back() * _bs);
       std::transform(recv_buffer.begin(), recv_buffer.end(),
                      _local_inds.begin(),
                      [offset = range[0]](auto idx) { return idx - offset; });
