@@ -161,6 +161,28 @@ public:
     }
   }
 
+  /// Local pack function
+  // TODO: add documentation
+  static auto pack()
+  {
+    return [](const auto& in, const auto& idx, auto& out)
+    {
+      for (std::size_t i = 0; i < idx.size(); ++i)
+        out[i] = in[idx[i]];
+    };
+  }
+
+  /// Local unpack function
+  // TODO: add documentation
+  static auto unpack()
+  {
+    return [](const auto& in, const auto& idx, auto& out, auto op)
+    {
+      for (std::size_t i = 0; i < idx.size(); ++i)
+        out[idx[i]] = op(out[idx[i]], in[i]);
+    };
+  }
+
   /// TODO
   template <typename T>
   void scatter_fwd_begin(const xtl::span<const T>& send_buffer,
@@ -198,8 +220,9 @@ public:
   // NOTE: This function is not MPI-X friendly
   template <typename T, typename Functor1, typename Functor2>
   void scatter_fwd(const xtl::span<const T>& local_data,
-                   xtl::span<T> remote_data, Functor1 pack_fn,
-                   Functor2 unpack_fn) const
+                   xtl::span<T> remote_data,
+                   Functor1 pack_fn = Scatterer::pack(),
+                   Functor2 unpack_fn = Scatterer::unpack()) const
   {
     std::vector<T> send_buffer(_local_inds.size());
     pack_fn(local_data, _local_inds, send_buffer);
@@ -207,7 +230,7 @@ public:
     MPI_Request request;
     std::vector<T> buffer_recv(_displs_remote.back());
     scatter_fwd_begin(xtl::span<const T>(send_buffer),
-                      xtl::span<T>(buffer_recv), &request);
+                      xtl::span<T>(buffer_recv), request);
     scatter_fwd_end(request);
 
     // Insert op
@@ -244,28 +267,6 @@ public:
     MPI_Wait(&request, MPI_STATUS_IGNORE);
   }
 
-  /// Local pack function
-  // TODO: add documentation
-  static auto pack()
-  {
-    return [](const auto& in, const auto& idx, auto& out)
-    {
-      for (std::size_t i = 0; i < idx.size(); ++i)
-        out[i] = in[idx[i]];
-    };
-  }
-
-  /// Local unpack function
-  // TODO: add documentation
-  static auto unpack()
-  {
-    return [](const auto& in, const auto& idx, auto& out, auto op)
-    {
-      for (std::size_t i = 0; i < idx.size(); ++i)
-        out[idx[i]] = op(out[idx[i]], in[i]);
-    };
-  }
-
   /// Send n values for each ghost index to owning to the process
   ///
   /*
@@ -278,23 +279,10 @@ public:
   /// @param[in] op Sum or set received values in local_data
   */
   template <typename T, typename BinaryOp, typename Functor1, typename Functor2>
-  void scatter_rev(
-      xtl::span<T> local_data, const xtl::span<const T>& remote_data,
-      BinaryOp op,
-      Functor1 pack_fn =
-          [](const auto& in, const auto& idx, auto& out)
-      {
-        for (std::size_t i = 0; i < idx.size(); ++i)
-          out[i] = in[idx[i]];
-      },
-      Functor2 unpack_fn =
-          [](const auto& in, const auto& idx, auto& out, auto op)
-      {
-        for (std::size_t i = 0; i < idx.size(); ++i)
-          out[idx[i]] = op(out[idx[i]], in[i]);
-      }) const
-  //  Functor1 pack_fn = pack(),
-  //  Functor2 unpack_fn = unpack()) const
+  void scatter_rev(xtl::span<T> local_data,
+                   const xtl::span<const T>& remote_data, BinaryOp op,
+                   Functor1 pack_fn = Scatterer::pack(),
+                   Functor2 unpack_fn = Scatterer::unpack()) const
   {
     // Pack send buffer
     std::vector<T> buffer_send(_displs_remote.back());
