@@ -259,16 +259,16 @@ def test_curl_curl_eigenvalue(family, order):
 
 @pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
                     reason="This test does not work in complex mode.")
-def test_biharmonic():
+@pytest.mark.parametrize("family", ["HHJ", "Regge"])
+def test_biharmonic(family):
     """Manufactured biharmonic problem.
 
-    Solved using rotated Regge mixed finite element method. This is equivalent
-    to the Hellan-Herrmann-Johnson (HHJ) finite element method in
-    two-dimensions."""
+    Solved using rotated Regge or the Hellan-Herrmann-Johnson (HHJ) mixed
+    finite element method in two-dimensions."""
     mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]),
                                              np.array([1.0, 1.0])], [32, 32], CellType.triangle)
 
-    element = ufl.MixedElement([ufl.FiniteElement("Regge", ufl.triangle, 1),
+    element = ufl.MixedElement([ufl.FiniteElement(family, ufl.triangle, 1),
                                 ufl.FiniteElement("Lagrange", ufl.triangle, 2)])
 
     V = FunctionSpace(mesh, element)
@@ -288,8 +288,16 @@ def test_biharmonic():
     def S(tau):
         return tau - ufl.Identity(2) * ufl.tr(tau)
 
-    sigma_S = S(sigma)
-    tau_S = S(tau)
+    if family == "Regge":
+        # Apply S if we are working with Regge which is H(curl curl)
+        sigma_S = S(sigma)
+        tau_S = S(tau)
+    elif family == "HHJ":
+        # Don't apply S if we are working with HHJ which is already H(div div)
+        sigma_S = sigma
+        tau_S = tau
+    else:
+        raise ValueError(f"Family {family} not supported.")
 
     # Discrete duality inner product eq. 4.5 Lizao Li's PhD thesis
     def b(tau_S, v):
@@ -342,7 +350,13 @@ def test_biharmonic():
 
     # Reconstruct tensor from flattened indices.
     # Apply inverse transform. In 2D we have S^{-1} = S.
-    sigma_h = S(ufl.as_tensor([[x_h[0], x_h[1]], [x_h[2], x_h[3]]]))
+    if family == "Regge":
+        sigma_h = S(ufl.as_tensor([[x_h[0], x_h[1]], [x_h[2], x_h[3]]]))
+    elif family == "HHJ":
+        sigma_h = ufl.as_tensor([[x_h[0], x_h[1]], [x_h[2], x_h[3]]])
+    else:
+        raise ValueError(f"Family {family} not supported.")
+
     sigma_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         form(inner(sigma_exact - sigma_h, sigma_exact - sigma_h) * dx(mesh, metadata={"quadrature_degree": 5}))),
         op=MPI.SUM))
@@ -516,6 +530,39 @@ def test_dP_hex(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_dg_test(mesh, V, degree)
+
+
+@parametrize_cell_types_tp
+@pytest.mark.parametrize("family", ["S"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_S_tp(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
+    V = FunctionSpace(mesh, (family, degree))
+    run_scalar_test(mesh, V, degree // 2)
+
+
+@parametrize_cell_types_tp
+@pytest.mark.parametrize("family", ["S"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_S_tp_built_in_mesh(family, degree, cell_type, datadir):
+    if cell_type == CellType.hexahedron:
+        mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, cell_type)
+    elif cell_type == CellType.quadrilateral:
+        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, cell_type)
+    mesh = get_mesh(cell_type, datadir)
+    V = FunctionSpace(mesh, (family, degree))
+    run_scalar_test(mesh, V, degree // 2)
+
+
+@parametrize_cell_types_tp
+@pytest.mark.parametrize("family", ["S"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_vector_S_tp(family, degree, cell_type, datadir):
+    if cell_type == CellType.hexahedron and degree == 4:
+        pytest.skip("Skip expensive test on hexahedron")
+    mesh = get_mesh(cell_type, datadir)
+    V = VectorFunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree // 2)
 
 
 @parametrize_cell_types_quad
