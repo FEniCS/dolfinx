@@ -111,6 +111,8 @@ public:
       _sizes_local.resize(dest_ranks.size());
       _displs_local.resize(_sizes_local.size() + 1);
 
+      _sizes_remote.reserve(1);
+      _sizes_local.reserve(1);
       MPI_Neighbor_alltoall(_sizes_remote.data(), 1,
                             MPI::mpi_type<std::int32_t>(), _sizes_local.data(),
                             1, MPI::mpi_type<std::int32_t>(),
