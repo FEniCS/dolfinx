@@ -237,6 +237,16 @@ public:
     unpack_fn(buffer_recv, _remote_inds, remote_data, op);
   }
 
+  /// TODO: Add documentation
+  template <typename T, typename Functor1, typename Functor2>
+  void scatter_fwd(const xtl::span<const T>& local_data,
+                   xtl::span<T> remote_data) const
+  {
+    auto pack_fn = Scatterer::pack();
+    auto unpack_fn = Scatterer::unpack();
+    scatter_fwd(local_data, remote_data, pack_fn, unpack_fn);
+  }
+
   /// Start a non-blocking send of ghost values to the owning rank.
   template <typename T>
   void scatter_rev_begin(const xtl::span<const T>& send_buffer,
@@ -267,16 +277,6 @@ public:
   }
 
   /// Send n values for each ghost index to owning to the process
-  ///
-  /*
-  /// @param[in,out] local_data Local data associated with each owned
-  /// local index to be sent to process where the data is ghosted. Size
-  /// must be n * size_local().
-  /// @param[in] remote_data Ghost data on this process received from
-  /// the owning process. Size will be n * num_ghosts().
-  /// @param[in] n Number of data items per index
-  /// @param[in] op Sum or set received values in local_data
-  */
   template <typename T, typename BinaryOp, typename Functor1, typename Functor2>
   void scatter_rev(xtl::span<T> local_data,
                    const xtl::span<const T>& remote_data, BinaryOp op,
@@ -296,6 +296,18 @@ public:
     // Copy or accumulate into "local_data"
     unpack_fn(buffer_recv, _local_inds, local_data, op);
   }
+
+  /// TODO
+  std::int32_t local_buffer_size() const noexcept
+  {
+    return _local_inds.size();
+  };
+
+  /// TODO
+  std::int32_t remote_buffer_size() const noexcept
+  {
+    return _remote_inds.size();
+  };
 
   /// TODO
   const std::vector<std::int32_t>& local_shared_indices() const noexcept

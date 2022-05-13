@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
 
     // Create a scalar function space
     auto V = std::make_shared<fem::FunctionSpace>(
-        fem::create_functionspace(mesh, e, 2));
+        fem::create_functionspace(mesh, e, 5));
 
     // Create a finite element Function
     auto u = std::make_shared<fem::Function<double>>(V);
@@ -78,17 +78,18 @@ int main(int argc, char* argv[])
     common::Scatterer sct(map, bs);
     la::Vector<double> vec(map, bs);
 
-    // std::int32_t n = map->size_local() * bs;
-    std::int64_t offset = map->local_range()[0];
+    std::int32_t n = map->size_local() * bs;
+    std::int64_t offset = map->local_range()[0] * bs;
 
     auto x = vec.mutable_array();
     std::iota(x.begin(), x.end(), 0);
     std::for_each(x.begin(), x.end(), [offset](auto& e) { e += offset; });
-
-    debug_vector(sct.local_shared_indices());
+    vec.scatter_fwd();
+    xtl::span<double> x_remote = x.subspan(n, map->num_ghosts() * bs);
+    debug_vector(x_remote);
+    debug_vector(map->ghosts());
 
     // // {
-    // //   auto x = vec.mutable_array();
     // //   std::iota(x.begin(), x.end(), 0);
     // //   std::for_each(x.begin(), x.end(), [offset](auto& e) { e += offset;
     // });
