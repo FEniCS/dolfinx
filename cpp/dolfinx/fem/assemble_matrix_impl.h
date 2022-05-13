@@ -473,6 +473,9 @@ void assemble_matrix(
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
+    // TODO: For codim 1
+    // - Add needs_full_cell_perms
+    // - Pass cell perm as first and full cell perm second
     const auto& facet_map_0
         = a.cell_local_facet_map(*a.function_spaces().at(0));
     const auto& facet_map_1
