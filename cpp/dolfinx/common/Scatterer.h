@@ -147,7 +147,7 @@ public:
 
       // Expand local indices using block size and convert it from global to
       // local numbering
-      _local_inds.resize(_displs_local.back() * _bs);
+      _local_inds.resize(recv_buffer.size() * _bs);
       std::int64_t offset = range[0] * _bs;
       for (std::size_t i = 0; i < recv_buffer.size(); i++)
         for (int j = 0; j < _bs; j++)

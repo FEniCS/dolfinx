@@ -36,8 +36,8 @@ public:
          const Allocator& alloc = Allocator())
       : _map(map), _scatterer(std::make_shared<common::Scatterer>(_map, bs)),
         _bs(bs),
-        _buffer_local(bs * _scatterer->local_shared_indices().size(), alloc),
-        _buffer_remote(bs * map->num_ghosts(), alloc),
+        _buffer_local(_scatterer->local_shared_indices().size(), alloc),
+        _buffer_remote(_scatterer->remote_indices().size(), alloc),
         _x(bs * (map->size_local() + map->num_ghosts()), alloc)
   {
   }
