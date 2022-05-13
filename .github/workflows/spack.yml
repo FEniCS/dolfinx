@@ -13,7 +13,7 @@ on:
 jobs:
   build:
     env:
-      release_version: 0.3.0
+      release_version: 0.4.1
     strategy:
       matrix:
         # os: [ubuntu-20.04, macos-10.15]
@@ -26,8 +26,10 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: ./spack
-          repository: spack/spack
-          ref: develop
+          repository: FEniCS/spack
+          ref: ufcx_0.4.0
+          # repository: spack/spack
+          # ref: develop
       - name: Build DOLFINx (C++) development version via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
@@ -63,17 +65,16 @@ jobs:
         with:
           ref: v${{ env.release_version }}
           path: ./dolfinx-release
-      # - name: Run a C++ test (release version)
-      #   run: |
-      #     . ./spack/share/spack/setup-env.sh
-      #     spack env activate cpp-release
-      #     cd dolfinx-release/cpp/
-      #     cd demo/poisson
-      #     ffcx poisson.ufl
-      #     cmake .
-      #     export VERBOSE=1
-      #     make -j2
-      #     mpirun -np 2 ./demo_poisson
+      - name: Run a C++ test (release version)
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env activate cpp-release
+          cd dolfinx-release/cpp/
+          cd demo/poisson
+          cmake .
+          export VERBOSE=1
+          make -j2
+          mpirun -np 2 ./demo_poisson
 
       - name: Build DOLFINx (Python, development)
         run: |
