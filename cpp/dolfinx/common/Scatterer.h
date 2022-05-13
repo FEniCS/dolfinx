@@ -35,9 +35,12 @@ void debug_vector(const std::vector<T>& vec)
 
 namespace dolfinx::common
 {
+
+/// Manage MPI data scatter and gather
 class Scatterer
 {
 public:
+  /// Constructor
   Scatterer(const std::shared_ptr<const common::IndexMap> map, int bs)
       : _bs(bs), _comm_owner_to_ghost(MPI_COMM_NULL),
         _comm_ghost_to_owner(MPI_COMM_NULL)
@@ -119,8 +122,8 @@ public:
 
       // Send ghost indices to owner, and receive owned indices
       std::vector<std::int64_t> recv_buffer(_displs_local.back(), 0);
-      assert(ghosts_sorted.size() == _displs_remote.back());
-      assert(ghosts_sorted.size() == _displs_remote.back());
+      assert((std::int32_t)ghosts_sorted.size() == _displs_remote.back());
+      assert((std::int32_t)ghosts_sorted.size() == _displs_remote.back());
 
       MPI_Neighbor_alltoallv(
           ghosts_sorted.data(), _sizes_remote.data(), _displs_remote.data(),
@@ -143,6 +146,7 @@ public:
     }
   }
 
+  /// TODO
   template <typename T>
   void scatter_fwd_begin(const xtl::span<const T>& send_buffer,
                          const xtl::span<T>& recv_buffer,
@@ -163,7 +167,7 @@ public:
   /// ranks that have the index as a ghost. This function complete the
   /// communication started by VectorScatter::scatter_fwd_begin.
   ///
-  /// @param[in] requests The MPI request handle for tracking the status
+  /// @param[in] request The MPI request handle for tracking the status
   /// of the send
   void scatter_fwd_end(MPI_Request& request) const
   {
@@ -192,7 +196,7 @@ public:
     scatter_fwd_end(request);
 
     // Insert op
-    auto op = [](T a, T b) { return b; };
+    auto op = [](T /*a*/, T b) { return b; };
     unpack_fn(buffer_recv, _remote_inds, remote_data, op);
   }
 
@@ -214,6 +218,7 @@ public:
                             _comm_ghost_to_owner.comm(), &request);
   }
 
+  /// TODO
   void scatter_rev_end(MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
@@ -222,36 +227,6 @@ public:
 
     // Wait for communication to complete
     MPI_Wait(&request, MPI_STATUS_IGNORE);
-  }
-
-  /// Send n values for each ghost index to owning to the process
-  ///
-  /// @param[in,out] local_data Local data associated with each owned
-  /// local index to be sent to process where the data is ghosted. Size
-  /// must be n * size_local().
-  /// @param[in] remote_data Ghost data on this process received from
-  /// the owning process. Size will be n * num_ghosts().
-  /// @param[in] n Number of data items per index
-  /// @param[in] op Sum or set received values in local_data
-  template <typename T, typename BinaryOp, typename Functor1, typename Functor2>
-  void scatter_rev(xtl::span<T> local_data,
-                   const xtl::span<const T>& remote_data, BinaryOp op,
-                   Functor1 pack_fn = pack(),
-                   Functor2 unpack_fn = unpack()) const
-  {
-    // Pack send buffer
-    std::vector<T> buffer_send(_displs_remote.back());
-    pack_fn(remote_data, _remote_inds, buffer_send);
-
-    // Exchange data
-    MPI_Request request;
-    std::vector<T> buffer_recv(_local_inds.size());
-    scatter_rev_begin(xtl::span<const T>(buffer_send),
-                      xtl::span<T>(buffer_recv), request);
-    scatter_rev_end(request);
-
-    // Copy or accumulate into "local_data"
-    unpack_fn(buffer_recv, _local_inds, local_data, op);
   }
 
   /// Local pack function
@@ -276,15 +251,65 @@ public:
     };
   }
 
+  /// Send n values for each ghost index to owning to the process
+  ///
+  /*
+  /// @param[in,out] local_data Local data associated with each owned
+  /// local index to be sent to process where the data is ghosted. Size
+  /// must be n * size_local().
+  /// @param[in] remote_data Ghost data on this process received from
+  /// the owning process. Size will be n * num_ghosts().
+  /// @param[in] n Number of data items per index
+  /// @param[in] op Sum or set received values in local_data
+  */
+  template <typename T, typename BinaryOp, typename Functor1, typename Functor2>
+  void scatter_rev(
+      xtl::span<T> local_data, const xtl::span<const T>& remote_data,
+      BinaryOp op,
+      Functor1 pack_fn =
+          [](const auto& in, const auto& idx, auto& out)
+      {
+        for (std::size_t i = 0; i < idx.size(); ++i)
+          out[i] = in[idx[i]];
+      },
+      Functor2 unpack_fn =
+          [](const auto& in, const auto& idx, auto& out, auto op)
+      {
+        for (std::size_t i = 0; i < idx.size(); ++i)
+          out[idx[i]] = op(out[idx[i]], in[i]);
+      }) const
+  //  Functor1 pack_fn = pack(),
+  //  Functor2 unpack_fn = unpack()) const
+  {
+    // Pack send buffer
+    std::vector<T> buffer_send(_displs_remote.back());
+    pack_fn(remote_data, _remote_inds, buffer_send);
+
+    // Exchange data
+    MPI_Request request;
+    std::vector<T> buffer_recv(_local_inds.size());
+    scatter_rev_begin(xtl::span<const T>(buffer_send),
+                      xtl::span<T>(buffer_recv), request);
+    scatter_rev_end(request);
+
+    // Copy or accumulate into "local_data"
+    unpack_fn(buffer_recv, _local_inds, local_data, op);
+  }
+
+  /// TODO
   const std::vector<std::int32_t>& local_shared_indices() const noexcept
   {
     return _local_inds;
   }
 
+  /// TODO
   const std::vector<std::int32_t>& remote_indices() const noexcept
   {
     return _remote_inds;
   }
+
+  /// TODO
+  int bs() const noexcept { return _bs; }
 
 private:
   // Block size

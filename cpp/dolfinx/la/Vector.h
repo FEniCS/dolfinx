@@ -90,7 +90,7 @@ public:
     const std::int32_t num_ghosts = _bs * _map->num_ghosts();
     xtl::span<T> x_remote(_x.data() + local_size, num_ghosts);
     auto unpack = common::Scatterer::unpack();
-    auto op = [](auto a, auto b) { return b; };
+    auto op = [](auto /*a*/, auto b) { return b; };
     _scatterer->scatter_fwd_end(_request);
     unpack(_buffer_remote, _scatterer->remote_indices(), x_remote, op);
   }
