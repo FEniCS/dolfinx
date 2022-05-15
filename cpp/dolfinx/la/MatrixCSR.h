@@ -171,8 +171,6 @@ public:
   MatrixCSR(const SparsityPattern& p, const Allocator& alloc = Allocator())
       : _index_maps({p.index_map(0),
                      std::make_shared<common::IndexMap>(p.column_index_map())}),
-        _map0_old(std::make_unique<common::IndexMapOld>(
-            common::create_old(*(p.index_map(0))))),
         _bs({p.block_size(0), p.block_size(1)}),
         _data(p.num_nonzeros(), 0, alloc),
         _cols(p.graph().array().begin(), p.graph().array().end()),
@@ -199,30 +197,23 @@ public:
     const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
     const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
 
-    {
-      auto dest_ranks = _index_maps[0]->dest();
-      auto src_ranks = _index_maps[0]->src();
+    // TODO: create ghost ro to neihbor rank from new indexmap
+    auto _map0_old = std::make_unique<common::IndexMapOld>(
+        common::create_old(*(p.index_map(0))));
+    _ghost_row_to_neighbor_rank = _map0_old->ghost_owners();
 
-      std::vector<int> src_weights(src_ranks.size(), 1);
-      std::vector<int> dest_weights(dest_ranks.size(), 1);
+    auto dest_ranks = _index_maps[0]->dest();
+    auto src_ranks = _index_maps[0]->src();
 
-      MPI_Comm comm;
-      MPI_Dist_graph_create_adjacent(
-          _index_maps[0]->comm(), dest_ranks.size(), dest_ranks.data(),
-          dest_weights.data(), src_ranks.size(), src_ranks.data(),
-          src_weights.data(), MPI_INFO_NULL, false, &comm);
-      _comm = dolfinx::MPI::Comm(comm, false);
-    }
-
-    int outdegree(-1);
-    {
-      int indegree(-1), weighted(-1);
-      MPI_Dist_graph_neighbors_count(_comm.comm(), &indegree, &outdegree,
-                                     &weighted);
-    }
+    MPI_Comm comm;
+    MPI_Dist_graph_create_adjacent(_index_maps[0]->comm(), dest_ranks.size(),
+                                   dest_ranks.data(), MPI_UNWEIGHTED,
+                                   src_ranks.size(), src_ranks.data(),
+                                   MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+    _comm = dolfinx::MPI::Comm(comm, false);
 
     // Compute size of data to send to each neighbor
-    std::vector<std::int32_t> data_per_proc(outdegree, 0);
+    std::vector<std::int32_t> data_per_proc(src_ranks.size(), 0);
     for (std::size_t i = 0; i < _ghost_row_to_neighbor_rank.size(); ++i)
     {
       assert(_ghost_row_to_neighbor_rank[i] < data_per_proc.size());
@@ -231,11 +222,11 @@ public:
     }
 
     // Compute send displacements for values and indices (x2)
-    _val_send_disp.resize(outdegree + 1, 0);
+    _val_send_disp.resize(src_ranks.size() + 1, 0);
     std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
                      std::next(_val_send_disp.begin()));
 
-    std::vector<int> index_send_disp(outdegree + 1);
+    std::vector<int> index_send_disp(src_ranks.size() + 1);
     std::transform(_val_send_disp.begin(), _val_send_disp.end(),
                    index_send_disp.begin(), [](int d) { return d * 2; });
 
@@ -516,8 +507,6 @@ public:
 private:
   // Maps describing the data layout for rows and columns
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
-
-  std::unique_ptr<common::IndexMapOld> _map0_old;
 
   // Block sizes
   std::array<int, 2> _bs;
