@@ -175,7 +175,7 @@ public:
   /// order of data in the buffer is given by Scatterer::local_indices.
   /// @param recv_buffer A buffer used for the received data. The
   /// position of ghost entries in the buffer is given by
-  /// IndexMap::remote_indices. The buffer must not be
+  /// Scatterer::remote_indices. The buffer must not be
   /// accessed or changed until after a call to
   /// Scatterer::scatter_fwd_end.
   /// @param request The MPI request handle for tracking the status of
@@ -186,7 +186,7 @@ public:
                          MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
-    if (_displs_local.size() <= 1 and _displs_remote.size() <= 1)
+    if (_sizes_local.empty() and _sizes_remote.empty())
       return;
 
     MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_local.data(),
@@ -205,7 +205,7 @@ public:
   void scatter_fwd_end(MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
-    if (_displs_local.size() <= 1 and _displs_remote.size() <= 1)
+    if (_sizes_local.empty() and _sizes_remote.empty())
       return;
 
     // Wait for communication to complete
@@ -254,7 +254,7 @@ public:
                          MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
-    if (_displs_local.size() == 1 and _displs_remote.size() == 1)
+    if (_sizes_local.empty() and _sizes_remote.empty())
       return;
 
     // Send and receive data
@@ -269,7 +269,7 @@ public:
   void scatter_rev_end(MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
-    if (_displs_local.size() == 1 and _displs_remote.size() == 1)
+    if (_sizes_local.empty() and _sizes_remote.empty())
       return;
 
     // Wait for communication to complete
