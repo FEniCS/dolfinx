@@ -233,5 +233,5 @@ def test_cffi_assembly():
     assert np.isclose(np.sqrt(A.norm_squared()), 56.124860801609124)
 
     b = fem.assemble_vector(L)
-    b.scatter_reverse(_cpp.common.ScatterMode.add)
+    b.scatter_reverse(_cpp.la.ScatterMode.add)
     assert np.isclose(b.norm(), 0.0739710713711999)

@@ -79,7 +79,7 @@ def solve(dtype=np.float32):
     A.finalize()
     b = fem.assemble_vector(L0)
     fem.apply_lifting(b.array, [a0], bcs=[[bc]])
-    b.scatter_reverse(common.ScatterMode.add)
+    b.scatter_reverse(la.ScatterMode.add)
     fem.set_bc(b.array, [bc])
 
     # Create a Scipy sparse matrix that shares data with A

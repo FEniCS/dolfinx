@@ -11,6 +11,7 @@
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/IndexMapNew.h>
+#include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/defines.h>
@@ -45,61 +46,10 @@ void common(py::module& m)
 #endif
   m.attr("git_commit_hash") = dolfinx::git_commit_hash();
 
-  // dolfinx::common::IndexMapOld::Mode
-  py::enum_<dolfinx::common::IndexMapOld::Mode>(m, "ScatterMode")
-      .value("add", dolfinx::common::IndexMapOld::Mode::add)
-      .value("insert", dolfinx::common::IndexMapOld::Mode::insert);
-
-  py::enum_<dolfinx::common::IndexMapOld::Direction>(m, "Direction")
-      .value("forward", dolfinx::common::IndexMapOld::Direction::forward)
-      .value("reverse", dolfinx::common::IndexMapOld::Direction::reverse);
-
   py::enum_<dolfinx::Table::Reduction>(m, "Reduction")
       .value("max", dolfinx::Table::Reduction::max)
       .value("min", dolfinx::Table::Reduction::min)
       .value("average", dolfinx::Table::Reduction::average);
-
-  // dolfinx::common::IndexMap
-  py::class_<dolfinx::common::IndexMapOld,
-             std::shared_ptr<dolfinx::common::IndexMapOld>>(m, "IndexMapOld")
-      .def(py::init(
-          [](const MPICommWrapper comm, std::int32_t local_size,
-             const std::vector<int>& dest_ranks,
-             const std::vector<std::int64_t>& ghosts,
-             const std::vector<int>& ghost_owners)
-          {
-            return std::make_shared<dolfinx::common::IndexMapOld>(
-                comm.get(), local_size, dest_ranks, ghosts, ghost_owners);
-          }))
-      .def_property_readonly("size_local",
-                             &dolfinx::common::IndexMap::size_local)
-      .def_property_readonly("size_global",
-                             &dolfinx::common::IndexMap::size_global)
-      .def_property_readonly("num_ghosts",
-                             &dolfinx::common::IndexMap::num_ghosts)
-      .def_property_readonly("local_range",
-                             &dolfinx::common::IndexMap::local_range,
-                             "Range of indices owned by this map")
-      .def(
-          "comm",
-          [](const dolfinx::common::IndexMapOld& self,
-             dolfinx::common::IndexMapOld::Direction d)
-          { return MPICommWrapper(self.comm(d)); },
-          "Return MPI communicator")
-      .def(
-          "ghost_owners",
-          [](const dolfinx::common::IndexMapOld& self)
-          { return as_pyarray(self.ghost_owners()); },
-          "Return owning process for each ghost index")
-      .def_property_readonly(
-          "ghosts",
-          [](const dolfinx::common::IndexMapOld& self)
-          {
-            const std::vector<std::int64_t>& ghosts = self.ghosts();
-            return py::array_t<std::int64_t>(ghosts.size(), ghosts.data(),
-                                             py::cast(self));
-          },
-          "Return list of ghost indices");
 
   // dolfinx::common::IndexMap
   py::class_<dolfinx::common::IndexMap,
@@ -157,28 +107,6 @@ void common(py::module& m)
              auto [map, ghosts] = self.create_submap(entities);
              return std::pair(std::move(map), as_pyarray(std::move(ghosts)));
            });
-
-  // .def(
-  //     "comm",
-  //     [](const dolfinx::common::IndexMap& self,
-  //        dolfinx::common::IndexMapOld::Direction d)
-  //     { return MPICommWrapper(self.comm(d)); },
-  //     "Return MPI communicator")
-  // .def(
-  //     "ghost_owners",
-  //     [](const dolfinx::common::IndexMap& self)
-  //     { return as_pyarray(self.ghost_owners()); },
-  //     "Return owning process for each ghost index")
-  // .def_property_readonly(
-  //     "ghosts",
-  //     [](const dolfinx::common::IndexMap& self)
-  //     {
-  //       const std::vector<std::int64_t>& ghosts = self.ghosts();
-  //       return py::array_t<std::int64_t>(ghosts.size(), ghosts.data(),
-  //                                        py::cast(self));
-  //     },
-  //     "Return list of ghost indices")
-  // .def("global_indices", &dolfinx::common::IndexMap::global_indices)
 
   // dolfinx::common::Timer
   py::class_<dolfinx::common::Timer, std::shared_ptr<dolfinx::common::Timer>>(

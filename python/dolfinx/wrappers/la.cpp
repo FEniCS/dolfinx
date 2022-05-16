@@ -8,7 +8,6 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <dolfinx/common/IndexMapNew.h>
-#include <dolfinx/common/IndexMapNew.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
@@ -55,7 +54,22 @@ void declare_objects(py::module& m, const std::string& type)
                                                      py::cast(self));
                              })
       .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
-      .def("scatter_reverse", &dolfinx::la::Vector<T>::scatter_rev);
+      .def("scatter_reverse",
+           [](dolfinx::la::Vector<T>& self, dolfinx::la::ScatterMode mode)
+           {
+             switch (mode)
+             {
+             case dolfinx::la::ScatterMode::add: // Add
+               self.scatter_rev(std::plus<T>());
+               break;
+             case dolfinx::la::ScatterMode::insert: // Insert
+               self.scatter_rev([](T /*a*/, T b) { return b; });
+               break;
+             default:
+               throw std::runtime_error("ScatterMode not recognized.");
+               break;
+             }
+           });
 
   // dolfinx::la::MatrixCSR
   std::string pyclass_matrix_name = std::string("MatrixCSR_") + type;
@@ -178,8 +192,8 @@ void la(py::module& m)
                                                             "SparsityPattern")
       .def(py::init(
           [](const MPICommWrapper comm,
-             const std::array<
-                 std::shared_ptr<const dolfinx::common::IndexMap>, 2>& maps,
+             const std::array<std::shared_ptr<const dolfinx::common::IndexMap>,
+                              2>& maps,
              const std::array<int, 2>& bs)
           { return dolfinx::la::SparsityPattern(comm.get(), maps, bs); }))
       .def(py::init(
@@ -219,6 +233,10 @@ void la(py::module& m)
       .value("l2", dolfinx::la::Norm::l2)
       .value("linf", dolfinx::la::Norm::linf)
       .value("frobenius", dolfinx::la::Norm::frobenius);
+
+  py::enum_<dolfinx::la::ScatterMode>(m, "ScatterMode")
+      .value("add", dolfinx::la::ScatterMode::add)
+      .value("insert", dolfinx::la::ScatterMode::insert);
 
   // Declare objects that are templated over type
   declare_objects<double>(m, "float64");
