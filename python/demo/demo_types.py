@@ -22,7 +22,7 @@ import scipy.sparse
 import scipy.sparse.linalg
 
 import ufl
-from dolfinx import common, fem, mesh, plot
+from dolfinx import fem, la, mesh, plot
 
 from mpi4py import MPI
 
