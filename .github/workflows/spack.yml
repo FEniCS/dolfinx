@@ -14,19 +14,13 @@ on:
         description: "Spack repository to test"
         default: "spack/spack"
         type: string
-      spack_branch:
-        description: "Spack repository branch to test"
+      spack_ref:
+        description: "Spack repository branch/tag to test"
         default: "develop"
-        type: string
-      dolfinx_version:
-        description: "DOLFINx release to test (leave blank for latest)"
-        default: ""
         type: string
 
 jobs:
   build:
-    # env:
-    #   release_version: 0.4.1
     strategy:
       matrix:
         # os: [ubuntu-20.04, macos-10.15]
@@ -40,7 +34,7 @@ jobs:
         with:
           path: ./spack
           repository: ${{ github.event.inputs.spack_repo }}
-          ref: ${{ github.event.inputs.spack_branch }}
+          ref: ${{ github.event.inputs.spack_ref }}
       - name: Build DOLFINx (C++) development version via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
@@ -72,7 +66,8 @@ jobs:
           export VERBOSE=1
           make -j2
           mpirun -np 2 ./demo_poisson
-      - name: Get DOLFINx code (to access test files)
+
+      - name: Get DOLFINx release code (to access test files)
         uses: actions/checkout@v2
         with:
           ref: main
