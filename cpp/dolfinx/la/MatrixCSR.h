@@ -204,7 +204,17 @@ public:
         common::create_old(*(p.index_map(0))));
     _comm = dolfinx::MPI::Comm(
         map0_old->comm(common::IndexMapOld::Direction::reverse));
-    _ghost_row_to_neighbor_rank = map0_old->ghost_owners();
+
+    const std::vector<int>& owners = _index_maps[0]->owners();
+    _ghost_row_to_neighbor_rank.reserve(owners.size());
+
+    for (const int& o : owners)
+    {
+      auto it = std::find(src_ranks.begin(), src_ranks.end(), o);
+      assert(it != src_ranks.end());
+      int pos = std::distance(src_ranks.begin(), it);
+      _ghost_row_to_neighbor_rank.push_back(pos);
+    }
 
 #ifndef NDEBUG
     int outdegree(-1), indegree(-1), weighted(-1);
