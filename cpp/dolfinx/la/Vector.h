@@ -34,7 +34,7 @@ public:
   /// Create a distributed vector
   Vector(const std::shared_ptr<const common::IndexMap>& map, int bs,
          const Allocator& alloc = Allocator())
-      : _map(map), _scatterer(std::make_shared<common::Scatterer>(_map, bs)),
+      : _map(map), _scatterer(std::make_shared<common::Scatterer>(*_map, bs)),
         _bs(bs), _buffer_local(_scatterer->local_buffer_size(), alloc),
         _buffer_remote(_scatterer->remote_buffer_size(), alloc),
         _x(bs * (map->size_local() + map->num_ghosts()), alloc)

@@ -14,25 +14,6 @@
 
 using namespace dolfinx;
 
-namespace
-{
-template <typename T>
-void debug_vector(const std::vector<T>& vec)
-{
-  for (int i = 0; i < dolfinx::MPI::size(MPI_COMM_WORLD); i++)
-  {
-    MPI_Barrier(MPI_COMM_WORLD);
-    if (int rank = dolfinx::MPI::rank(MPI_COMM_WORLD); rank == i)
-    {
-      std::cout << "\n Rank " << i << std::endl;
-      for (auto e : vec)
-        std::cout << e << " ";
-      std::cout << std::endl;
-    }
-  }
-}
-} // namespace
-
 namespace dolfinx::common
 {
 
@@ -41,16 +22,16 @@ class Scatterer
 {
 public:
   /// Constructor
-  Scatterer(const std::shared_ptr<const common::IndexMap> map, int bs)
+  Scatterer(const common::IndexMap& map, int bs)
       : _bs(bs), _comm_owner_to_ghost(MPI_COMM_NULL),
         _comm_ghost_to_owner(MPI_COMM_NULL)
   {
-    if (map->overlapped())
+    if (map.overlapped())
     {
-      // Get source (owner of ghosts) and destination (processes that ghosts an
-      // owned index) ranks
-      const std::vector<int>& src_ranks = map->src();
-      const std::vector<int>& dest_ranks = map->dest();
+      // Get source (owner of ghosts) and destination (processes that
+      // ghosts an owned index) ranks
+      const std::vector<int>& src_ranks = map.src();
+      const std::vector<int>& dest_ranks = map.dest();
 
       // We assume src and dest ranks are unique and sorted
       assert(std::is_sorted(src_ranks.begin(), src_ranks.end()));
@@ -67,22 +48,22 @@ public:
 
       MPI_Comm comm0;
       MPI_Dist_graph_create_adjacent(
-          map->comm(), src_ranks.size(), src_ranks.data(), src_weights.data(),
+          map.comm(), src_ranks.size(), src_ranks.data(), src_weights.data(),
           dest_ranks.size(), dest_ranks.data(), dest_weights.data(),
           MPI_INFO_NULL, false, &comm0);
       _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
 
       MPI_Comm comm1;
       MPI_Dist_graph_create_adjacent(
-          map->comm(), dest_ranks.size(), dest_ranks.data(),
-          dest_weights.data(), src_ranks.size(), src_ranks.data(),
-          src_weights.data(), MPI_INFO_NULL, false, &comm1);
+          map.comm(), dest_ranks.size(), dest_ranks.data(), dest_weights.data(),
+          src_ranks.size(), src_ranks.data(), src_weights.data(), MPI_INFO_NULL,
+          false, &comm1);
       _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
 
-      // Compute shared indices and group by neighboring (processes for which
-      // an index is a ghost)
-      const std::vector<int>& owners = map->owners();
-      const std::vector<std::int64_t>& ghosts = map->ghosts();
+      // Compute shared indices and group by neighboring (processes for
+      // which an index is a ghost)
+      const std::vector<int>& owners = map.owners();
+      const std::vector<std::int64_t>& ghosts = map.ghosts();
       std::vector<std::int32_t> perm(owners.size());
       std::iota(perm.begin(), perm.end(), 0);
       dolfinx::argsort_radix<std::int32_t>(owners, perm);
@@ -132,7 +113,7 @@ public:
           _sizes_local.data(), _displs_local.data(),
           MPI::mpi_type<std::int64_t>(), _comm_ghost_to_owner.comm());
 
-      std::array<std::int64_t, 2> range = map->local_range();
+      const std::array<std::int64_t, 2> range = map.local_range();
 
 #ifndef NDEBUG
       std::for_each(recv_buffer.begin(), recv_buffer.end(),

@@ -31,8 +31,8 @@ void test_scatter_fwd(int n)
   std::vector<int> global_ghost_owner(ghosts.size(), (mpi_rank + 1) % mpi_size);
 
   // Create an IndexMap
-  auto idx_map = std::make_shared<const common::IndexMap>(
-      MPI_COMM_WORLD, size_local, ghosts, global_ghost_owner);
+  const common::IndexMap idx_map(MPI_COMM_WORLD, size_local, ghosts,
+                                 global_ghost_owner);
   common::Scatterer sct(idx_map, n);
 
   // Create some data to scatter
@@ -70,8 +70,8 @@ void test_scatter_rev()
   std::vector<int> global_ghost_owner(ghosts.size(), (mpi_rank + 1) % mpi_size);
 
   // Create an IndexMap
-  auto idx_map = std::make_shared<const common::IndexMap>(
-      MPI_COMM_WORLD, size_local, ghosts, global_ghost_owner);
+  const common::IndexMap idx_map(MPI_COMM_WORLD, size_local, ghosts,
+                                 global_ghost_owner);
   common::Scatterer sct(idx_map, n);
 
   auto pack = common::Scatterer::pack();
