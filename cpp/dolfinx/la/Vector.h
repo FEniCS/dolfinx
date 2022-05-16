@@ -8,7 +8,7 @@
 
 #include "utils.h"
 #include <complex>
-#include <dolfinx/common/IndexMapNew.h>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <limits>
 #include <memory>

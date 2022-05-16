@@ -9,7 +9,7 @@
 #include "cell_types.h"
 #include <algorithm>
 #include <bitset>
-#include <dolfinx/common/IndexMapNew.h>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 
 namespace

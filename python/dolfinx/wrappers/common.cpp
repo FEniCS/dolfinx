@@ -10,7 +10,7 @@
 #include "caster_petsc.h"
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/IndexMapNew.h>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>

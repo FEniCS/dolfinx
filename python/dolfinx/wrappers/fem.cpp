@@ -9,7 +9,7 @@
 #include "caster_petsc.h"
 #include <array>
 #include <cstdint>
-#include <dolfinx/common/IndexMapNew.h>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DirichletBC.h>

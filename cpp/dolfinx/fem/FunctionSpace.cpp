@@ -9,7 +9,7 @@
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include <boost/uuid/uuid_generators.hpp>
-#include <dolfinx/common/IndexMapNew.h>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>

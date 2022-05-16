@@ -8,7 +8,7 @@
 #include "FunctionSpace.h"
 #include "assembler.h"
 #include "sparsitybuild.h"
-#include <dolfinx/common/IndexMapNew.h>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
 #include <functional>

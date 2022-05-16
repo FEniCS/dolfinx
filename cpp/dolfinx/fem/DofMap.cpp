@@ -9,7 +9,7 @@
 #include "dofmapbuilder.h"
 #include "utils.h"
 #include <cstdint>
-#include <dolfinx/common/IndexMapNew.h>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>

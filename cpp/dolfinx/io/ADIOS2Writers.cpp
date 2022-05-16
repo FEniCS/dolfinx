@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <array>
 #include <complex>
-#include <dolfinx/common/IndexMapNew.h>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>

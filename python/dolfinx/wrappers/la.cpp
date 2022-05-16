@@ -7,7 +7,7 @@
 #include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <dolfinx/common/IndexMapNew.h>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>

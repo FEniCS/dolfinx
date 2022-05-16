@@ -9,7 +9,7 @@
 #include "FunctionSpace.h"
 #include <algorithm>
 #include <array>
-#include <dolfinx/common/IndexMapNew.h>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <functional>

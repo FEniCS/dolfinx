@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <boost/unordered_map.hpp>
 #include <cstdint>
-#include <dolfinx/common/IndexMapNew.h>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>

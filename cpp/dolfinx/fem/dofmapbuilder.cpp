@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
-#include <dolfinx/common/IndexMapNew.h>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/utils.h>
