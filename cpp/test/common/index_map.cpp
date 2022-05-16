@@ -41,11 +41,8 @@ void test_scatter_fwd(int n)
   std::vector<std::int64_t> data_ghost(n * num_ghosts, -1);
 
   // Scatter values to ghost and check value is correctly received
-  auto pack = common::Scatterer::pack();
-  auto unpack = common::Scatterer::unpack();
   sct.scatter_fwd<std::int64_t>(xtl::span<const std::int64_t>(data_local),
-                                xtl::span<std::int64_t>(data_ghost), pack,
-                                unpack);
+                                xtl::span<std::int64_t>(data_ghost));
   CHECK((int)data_ghost.size() == n * num_ghosts);
   CHECK(std::all_of(data_ghost.begin(), data_ghost.end(),
                     [=](auto i)
@@ -74,32 +71,29 @@ void test_scatter_rev()
                                  global_ghost_owner);
   common::Scatterer sct(idx_map, n);
 
-  auto pack = common::Scatterer::pack();
-  auto unpack = common::Scatterer::unpack();
   // Create some data, setting ghost values
   std::int64_t value = 15;
   std::vector<std::int64_t> data_local(n * size_local, 0);
   std::vector<std::int64_t> data_ghost(n * num_ghosts, value);
   sct.scatter_rev(xtl::span<std::int64_t>(data_local),
                   xtl::span<const std::int64_t>(data_ghost),
-                  std::plus<std::int64_t>(), pack, unpack);
+                  std::plus<std::int64_t>());
 
   std::int64_t sum;
   CHECK((int)data_local.size() == n * size_local);
   sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == n * value * num_ghosts);
 
-  sct.scatter_rev(
-      xtl::span<std::int64_t>(data_local),
-      xtl::span<const std::int64_t>(data_ghost),
-      [](auto /*a*/, auto b) { return b; }, pack, unpack);
+  sct.scatter_rev(xtl::span<std::int64_t>(data_local),
+                  xtl::span<const std::int64_t>(data_ghost),
+                  [](auto /*a*/, auto b) { return b; });
 
   sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == n * value * num_ghosts);
 
   sct.scatter_rev(xtl::span<std::int64_t>(data_local),
                   xtl::span<const std::int64_t>(data_ghost),
-                  std::plus<std::int64_t>(), pack, unpack);
+                  std::plus<std::int64_t>());
   sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == 2 * n * value * num_ghosts);
 }

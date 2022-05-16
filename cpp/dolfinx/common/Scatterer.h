@@ -40,23 +40,17 @@ public:
       // Create communicators with directed edges:
       // (0) owner -> ghost,
       // (1) ghost -> owner
-
-      // NOTE: create uniform weights as a workaround to issue
-      // https://github.com/pmodels/mpich/issues/5764
-      std::vector<int> src_weights(src_ranks.size(), 1);
-      std::vector<int> dest_weights(dest_ranks.size(), 1);
-
       MPI_Comm comm0;
       MPI_Dist_graph_create_adjacent(
-          map.comm(), src_ranks.size(), src_ranks.data(), src_weights.data(),
-          dest_ranks.size(), dest_ranks.data(), dest_weights.data(),
-          MPI_INFO_NULL, false, &comm0);
+          map.comm(), src_ranks.size(), src_ranks.data(), MPI_UNWEIGHTED,
+          dest_ranks.size(), dest_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+          false, &comm0);
       _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
 
       MPI_Comm comm1;
       MPI_Dist_graph_create_adjacent(
-          map.comm(), dest_ranks.size(), dest_ranks.data(), dest_weights.data(),
-          src_ranks.size(), src_ranks.data(), src_weights.data(), MPI_INFO_NULL,
+          map.comm(), dest_ranks.size(), dest_ranks.data(), MPI_UNWEIGHTED,
+          src_ranks.size(), src_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
           false, &comm1);
       _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
 
@@ -71,14 +65,16 @@ public:
       std::vector<int> owners_sorted(owners.size());
       std::vector<std::int64_t> ghosts_sorted(owners.size());
 
+      // Sort ghosts and owners using perm from argsort.
       std::transform(perm.begin(), perm.end(), owners_sorted.begin(),
                      [&owners](auto idx) { return owners[idx]; });
       std::transform(perm.begin(), perm.end(), ghosts_sorted.begin(),
                      [&ghosts](auto idx) { return ghosts[idx]; });
 
+      // Compute sizes and displacements of remote data (how many remote
+      // to be sent/received grouped by neighbors)
       _sizes_remote.resize(src_ranks.size(), 0);
       _displs_remote.resize(src_ranks.size() + 1, 0);
-
       std::vector<std::int32_t>::iterator begin = owners_sorted.begin();
       for (std::size_t i = 0; i < src_ranks.size(); i++)
       {
@@ -89,6 +85,8 @@ public:
         begin = upper;
       }
 
+      // Compute sizes and displacements of local data (how many local elements
+      // to be sent/received grouped by neighbors)
       _sizes_local.resize(dest_ranks.size());
       _displs_local.resize(_sizes_local.size() + 1);
 
@@ -102,20 +100,20 @@ public:
       std::partial_sum(_sizes_local.begin(), _sizes_local.end(),
                        std::next(_displs_local.begin()));
 
-      // Send ghost indices to owner, and receive owned indices
+      // Send ghost indices (global) to owner, and receive owned indices that
+      // are ghost in other process grouped by neighbor process.
       std::vector<std::int64_t> recv_buffer(_displs_local.back(), 0);
       assert((std::int32_t)ghosts_sorted.size() == _displs_remote.back());
       assert((std::int32_t)ghosts_sorted.size() == _displs_remote.back());
-
       MPI_Neighbor_alltoallv(
           ghosts_sorted.data(), _sizes_remote.data(), _displs_remote.data(),
           MPI::mpi_type<std::int64_t>(), recv_buffer.data(),
           _sizes_local.data(), _displs_local.data(),
           MPI::mpi_type<std::int64_t>(), _comm_ghost_to_owner.comm());
 
-      const std::array<std::int64_t, 2> range = map.local_range();
-
+      std::array<std::int64_t, 2> range = map.local_range();
 #ifndef NDEBUG
+      // Check if all indices received are within the owned range
       std::for_each(recv_buffer.begin(), recv_buffer.end(),
                     [&range](auto idx)
                     { assert(idx >= range[0] and idx < range[1]); });
@@ -144,8 +142,8 @@ public:
     }
   }
 
-  /// Local pack function
-  // TODO: add documentation
+  /// Return a lambda expression for packing data to be used in scatter_fwd
+  /// and "scatter_rev".
   static auto pack()
   {
     return [](const auto& in, const auto& idx, auto& out)
@@ -155,8 +153,8 @@ public:
     };
   }
 
-  /// Local unpack function
-  // TODO: add documentation
+  /// Return a lambda expression for unpacking received data from neighbors
+  /// using "scatter_fwd" or "scatter_rev".
   static auto unpack()
   {
     return [](const auto& in, const auto& idx, auto& out, auto op)
@@ -166,14 +164,29 @@ public:
     };
   }
 
-  /// TODO
+  /// Start a non-blocking send of owned data to ranks that ghost the
+  /// data. The communication is completed by calling
+  /// Scatterer::scatter_fwd_end. The send and receive buffer should not
+  /// be changed until after Scatterer::scatter_fwd_end has been called.
+  ///
+  /// @param[in] send_buffer Local data associated with each owned local
+  /// index to be sent to process where the data is ghosted. It must not
+  /// be changed until after a call to IScatterer::scatter_fwd_end. The
+  /// order of data in the buffer is given by Scatterer::local_indices.
+  /// @param recv_buffer A buffer used for the received data. The
+  /// position of ghost entries in the buffer is given by
+  /// IndexMap::remote_indices. The buffer must not be
+  /// accessed or changed until after a call to
+  /// Scatterer::scatter_fwd_end.
+  /// @param request The MPI request handle for tracking the status of
+  /// the non-blocking communication
   template <typename T>
   void scatter_fwd_begin(const xtl::span<const T>& send_buffer,
                          const xtl::span<T>& recv_buffer,
                          MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
-    if (_displs_local.size() == 1 and _displs_remote.size() == 1)
+    if (_displs_local.size() <= 1 and _displs_remote.size() <= 1)
       return;
 
     MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_local.data(),
@@ -185,14 +198,14 @@ public:
 
   /// Complete a non-blocking send from the local owner of to process
   /// ranks that have the index as a ghost. This function complete the
-  /// communication started by VectorScatter::scatter_fwd_begin.
+  /// communication started by Scatterer::scatter_fwd_begin.
   ///
   /// @param[in] request The MPI request handle for tracking the status
   /// of the send
   void scatter_fwd_end(MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
-    if (_displs_local.size() == 1 and _displs_remote.size() == 1)
+    if (_displs_local.size() <= 1 and _displs_remote.size() <= 1)
       return;
 
     // Wait for communication to complete
@@ -203,31 +216,35 @@ public:
   // NOTE: This function is not MPI-X friendly
   template <typename T, typename Functor1, typename Functor2>
   void scatter_fwd(const xtl::span<const T>& local_data,
-                   xtl::span<T> remote_data, Functor1 pack_fn,
+                   xtl::span<T> remote_data, xtl::span<T> local_buffer,
+                   xtl::span<T> remote_buffer, Functor1 pack_fn,
                    Functor2 unpack_fn) const
   {
-    std::vector<T> send_buffer(_local_inds.size());
-    pack_fn(local_data, _local_inds, send_buffer);
+    assert(local_buffer.size() == _local_inds.size());
+    assert(remote_buffer.size() == _remote_inds.size());
+
+    pack_fn(local_data, _local_inds, local_buffer);
 
     MPI_Request request;
-    std::vector<T> buffer_recv(_displs_remote.back());
-    scatter_fwd_begin(xtl::span<const T>(send_buffer),
-                      xtl::span<T>(buffer_recv), request);
+    scatter_fwd_begin(xtl::span<const T>(local_buffer), remote_buffer, request);
     scatter_fwd_end(request);
 
     // Insert op
     auto op = [](T /*a*/, T b) { return b; };
-    unpack_fn(buffer_recv, _remote_inds, remote_data, op);
+    unpack_fn(remote_buffer, _remote_inds, remote_data, op);
   }
 
   /// TODO: Add documentation
-  template <typename T, typename Functor1, typename Functor2>
+  template <typename T>
   void scatter_fwd(const xtl::span<const T>& local_data,
                    xtl::span<T> remote_data) const
   {
+    std::vector<T> local_buffer(local_buffer_size(), 0);
+    std::vector<T> remote_buffer(remote_buffer_size(), 0);
     auto pack_fn = Scatterer::pack();
     auto unpack_fn = Scatterer::unpack();
-    scatter_fwd(local_data, remote_data, pack_fn, unpack_fn);
+    scatter_fwd(local_data, remote_data, xtl::span<T>(local_buffer),
+                xtl::span<T>(remote_buffer), pack_fn, unpack_fn);
   }
 
   /// Start a non-blocking send of ghost values to the owning rank.
@@ -259,25 +276,39 @@ public:
     MPI_Wait(&request, MPI_STATUS_IGNORE);
   }
 
-  /// Send n values for each ghost index to owning to the process
+  /// TODO
   template <typename T, typename BinaryOp, typename Functor1, typename Functor2>
   void scatter_rev(xtl::span<T> local_data,
-                   const xtl::span<const T>& remote_data, BinaryOp op,
-                   Functor1 pack_fn, Functor2 unpack_fn) const
+                   const xtl::span<const T>& remote_data,
+                   xtl::span<T> local_buffer, xtl::span<T> remote_buffer,
+                   BinaryOp op, Functor1 pack_fn, Functor2 unpack_fn) const
   {
+    assert(local_buffer.size() == _local_inds.size());
+    assert(remote_buffer.size() == _remote_inds.size());
+
     // Pack send buffer
-    std::vector<T> buffer_send(_displs_remote.back());
-    pack_fn(remote_data, _remote_inds, buffer_send);
+    pack_fn(remote_data, _remote_inds, remote_buffer);
 
     // Exchange data
     MPI_Request request;
-    std::vector<T> buffer_recv(_local_inds.size());
-    scatter_rev_begin(xtl::span<const T>(buffer_send),
-                      xtl::span<T>(buffer_recv), request);
+    scatter_rev_begin(xtl::span<const T>(remote_buffer), local_buffer, request);
     scatter_rev_end(request);
 
     // Copy or accumulate into "local_data"
-    unpack_fn(buffer_recv, _local_inds, local_data, op);
+    unpack_fn(local_buffer, _local_inds, local_data, op);
+  }
+
+  /// TODO
+  template <typename T, typename BinaryOp>
+  void scatter_rev(xtl::span<T> local_data,
+                   const xtl::span<const T>& remote_data, BinaryOp op)
+  {
+    std::vector<T> local_buffer(local_buffer_size(), 0);
+    std::vector<T> remote_buffer(remote_buffer_size(), 0);
+    auto pack_fn = Scatterer::pack();
+    auto unpack_fn = Scatterer::unpack();
+    scatter_rev(local_data, remote_data, xtl::span<T>(local_buffer),
+                xtl::span<T>(remote_buffer), op, pack_fn, unpack_fn);
   }
 
   /// TODO
