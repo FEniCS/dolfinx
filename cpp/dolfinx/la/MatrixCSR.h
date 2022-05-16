@@ -8,7 +8,6 @@
 
 #include "SparsityPattern.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <mpi.h>
