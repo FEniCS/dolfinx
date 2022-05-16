@@ -104,7 +104,7 @@ jobs:
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate py-main
-          mpirun -np 2 python3 ./dolfinx-main/python/demo_elasticity.py
+          mpirun -np 2 python3 ./dolfinx-main/python/demo/demo_elasticity.py
       - name: Run DOLFINx (Python, release) test
         run: |
           . ./spack/share/spack/setup-env.sh
