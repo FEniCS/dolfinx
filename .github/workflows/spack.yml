@@ -59,7 +59,7 @@ jobs:
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate cpp-main
-          spack install py-fenics-ffcx
+          spack install py-fenics-ffcx@main
           cd dolfinx-main/cpp/
           cd demo/poisson
           cmake .
