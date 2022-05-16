@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - name: Get Spack
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: ./spack
           repository: ${{ github.event.inputs.spack_repo }}
@@ -51,7 +51,7 @@ jobs:
           spack install
 
       - name: Get DOLFINx code (to access test files)
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: main
           path: ./dolfinx-main
@@ -68,7 +68,7 @@ jobs:
           mpirun -np 2 ./demo_poisson
 
       - name: Get DOLFINx release code (to access test files)
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: main
           # ref: v${{ github.event.inputs.spack_branch }}
