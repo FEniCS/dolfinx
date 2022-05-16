@@ -200,10 +200,12 @@ public:
     const std::vector<int>& src_ranks = _index_maps[0]->src();
     const std::vector<int>& dest_ranks = _index_maps[0]->dest();
 
-    auto map0_old = std::make_unique<common::IndexMapOld>(
-        common::create_old(*(p.index_map(0))));
-    _comm = dolfinx::MPI::Comm(
-        map0_old->comm(common::IndexMapOld::Direction::reverse));
+    MPI_Comm comm;
+    MPI_Dist_graph_create_adjacent(_index_maps[0]->comm(), dest_ranks.size(),
+                                   dest_ranks.data(), MPI_UNWEIGHTED,
+                                   src_ranks.size(), src_ranks.data(),
+                                   MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+    _comm = dolfinx::MPI::Comm(comm, false);
 
     const std::vector<int>& owners = _index_maps[0]->owners();
     _ghost_row_to_neighbor_rank.reserve(owners.size());
@@ -221,6 +223,7 @@ public:
     MPI_Dist_graph_neighbors_count(_comm.comm(), &indegree, &outdegree,
                                    &weighted);
     assert(src_ranks.size() == static_cast<std::size_t>(outdegree));
+    assert(dest_ranks.size() == static_cast<std::size_t>(indegree));
 #endif
 
     // Compute size of data to send to each neighbor
