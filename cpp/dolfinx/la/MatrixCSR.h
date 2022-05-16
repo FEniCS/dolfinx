@@ -197,20 +197,21 @@ public:
     const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
     const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
 
-    // TODO: create ghost ro to neihbor rank from new indexmap
-    auto _map0_old = std::make_unique<common::IndexMapOld>(
+    const std::vector<int>& src_ranks = _index_maps[0]->src();
+    const std::vector<int>& dest_ranks = _index_maps[0]->dest();
+
+    auto map0_old = std::make_unique<common::IndexMapOld>(
         common::create_old(*(p.index_map(0))));
-    _ghost_row_to_neighbor_rank = _map0_old->ghost_owners();
+    _comm = dolfinx::MPI::Comm(
+        map0_old->comm(common::IndexMapOld::Direction::reverse));
+    _ghost_row_to_neighbor_rank = map0_old->ghost_owners();
 
-    auto dest_ranks = _index_maps[0]->dest();
-    auto src_ranks = _index_maps[0]->src();
-
-    MPI_Comm comm;
-    MPI_Dist_graph_create_adjacent(_index_maps[0]->comm(), dest_ranks.size(),
-                                   dest_ranks.data(), MPI_UNWEIGHTED,
-                                   src_ranks.size(), src_ranks.data(),
-                                   MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
-    _comm = dolfinx::MPI::Comm(comm, false);
+#ifndef NDEBUG
+    int outdegree(-1), indegree(-1), weighted(-1);
+    MPI_Dist_graph_neighbors_count(_comm.comm(), &indegree, &outdegree,
+                                   &weighted);
+    assert(src_ranks.size() == static_cast<std::size_t>(outdegree));
+#endif
 
     // Compute size of data to send to each neighbor
     std::vector<std::int32_t> data_per_proc(src_ranks.size(), 0);
