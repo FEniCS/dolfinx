@@ -29,7 +29,7 @@ public:
     if (map.overlapped())
     {
       // Get source (owner of ghosts) and destination (processes that
-      // ghosts an owned index) ranks
+      // ghost an owned index) ranks
       const std::vector<int>& src_ranks = map.src();
       const std::vector<int>& dest_ranks = map.dest();
 
@@ -54,18 +54,17 @@ public:
           false, &comm1);
       _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
 
-      // Compute shared indices and group by neighboring (processes for
-      // which an index is a ghost)
+      // Group ghosts by owning process by computing the indices
+      // that would sort the ghost owners vector
       const std::vector<int>& owners = map.owners();
       const std::vector<std::int64_t>& ghosts = map.ghosts();
       std::vector<std::int32_t> perm(owners.size());
       std::iota(perm.begin(), perm.end(), 0);
       dolfinx::argsort_radix<std::int32_t>(owners, perm);
 
+      // Sort ghosts and owners using perm from argsort.
       std::vector<int> owners_sorted(owners.size());
       std::vector<std::int64_t> ghosts_sorted(owners.size());
-
-      // Sort ghosts and owners using perm from argsort.
       std::transform(perm.begin(), perm.end(), owners_sorted.begin(),
                      [&owners](auto idx) { return owners[idx]; });
       std::transform(perm.begin(), perm.end(), ghosts_sorted.begin(),
@@ -113,7 +112,7 @@ public:
 
       std::array<std::int64_t, 2> range = map.local_range();
 #ifndef NDEBUG
-      // Check if all indices received are within the owned range
+      // Check if all indices received are within the owned range.
       std::for_each(recv_buffer.begin(), recv_buffer.end(),
                     [&range](auto idx)
                     { assert(idx >= range[0] and idx < range[1]); });
@@ -361,7 +360,7 @@ private:
   // Permutation indices used to pack and unpack ghost data (remote)
   std::vector<std::int32_t> _remote_inds;
 
-  // Number of remote indices (ghosts) per neighbor process.
+  // Number of remote indices (ghosts) for each neighbor process.
   std::vector<std::int32_t> _sizes_remote;
 
   // Displacements of remote data for mpi scatter and gather.
