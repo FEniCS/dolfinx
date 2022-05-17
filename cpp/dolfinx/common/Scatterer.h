@@ -196,8 +196,8 @@ public:
                             _comm_owner_to_ghost.comm(), &request);
   }
 
-  /// Complete a non-blocking send from the local owner of to process
-  /// ranks that have the index as a ghost. This function complete the
+  /// Complete a non-blocking send from the local owner to process
+  /// ranks that have the index as a ghost. This function completes the
   /// communication started by Scatterer::scatter_fwd_begin.
   ///
   /// @param[in] request The MPI request handle for tracking the status
@@ -311,13 +311,15 @@ public:
                 xtl::span<T>(remote_buffer), op, pack_fn, unpack_fn);
   }
 
-  /// TODO
+  /// Get size of buffer for local data (owned and shared) used in forward and
+  /// reverse communication
   std::int32_t local_buffer_size() const noexcept
   {
     return _local_inds.size();
   };
 
-  /// TODO
+  /// Get buffer size for remote data (ghosts) used in forward and
+  /// reverse communication
   std::int32_t remote_buffer_size() const noexcept
   {
     return _remote_inds.size();
@@ -335,7 +337,7 @@ public:
     return _remote_inds;
   }
 
-  /// TODO
+  /// Get block size
   int bs() const noexcept { return _bs; }
 
 private:
