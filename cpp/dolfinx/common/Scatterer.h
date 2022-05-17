@@ -345,7 +345,7 @@ public:
   ///
   /// @param[in] request The handle used when calling
   /// Scatterer::scatter_rev_begin
-  void scatter_rev_end(MPI_Request request) const
+  void scatter_rev_end(MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
