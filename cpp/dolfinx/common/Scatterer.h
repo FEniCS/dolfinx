@@ -66,7 +66,7 @@ public:
       std::iota(perm.begin(), perm.end(), 0);
       dolfinx::argsort_radix<std::int32_t>(owners, perm);
 
-      // Sort (I) ghost indices and (ii) ghost index owners by rank
+      // Sort (i) ghost indices and (ii) ghost index owners by rank
       // (using perm array)
       const std::vector<std::int64_t>& ghosts = map.ghosts();
       std::vector<int> owners_sorted(owners.size());
@@ -76,22 +76,32 @@ public:
       std::transform(perm.begin(), perm.end(), ghosts_sorted.begin(),
                      [&ghosts](auto idx) { return ghosts[idx]; });
 
-      // Compute sizes and displacements of remote data (how many remote
-      // to be sent/received grouped by neighbors)
-      _sizes_remote.resize(src_ranks.size(), 0);
-      _displs_remote.resize(src_ranks.size() + 1, 0);
+      // For data associated with ghost indices, packed by owning
+      // (neighbourhood) rank, compute sizes and displacements. I.e.,
+      // when sending ghost index data from this rank to the owning
+      // ranks, disp[i] is the first entry in the buffer sent to
+      // neighbourhood rank i, and disp[i + 1] - disp[i] is the number
+      // of values sent to rank i.
+      _sizes_remote.reserve(src_ranks.size());
+      _displs_remote = {0};
+      _displs_remote.reserve(src_ranks.size() + 1);
       {
-        auto begin = owners_sorted.begin();
-        for (std::size_t i = 0; i < src_ranks.size(); i++)
+        auto it0 = owners_sorted.begin();
+        while (it0 != owners_sorted.end())
         {
-          auto upper
-              = std::upper_bound(begin, owners_sorted.end(), src_ranks[i]);
-          int num_ind = std::distance(begin, upper);
-          _displs_remote[i + 1] = _displs_remote[i] + num_ind;
-          _sizes_remote[i] = num_ind;
-          begin = upper;
+          int src = *it0;
+          auto it1 = std::upper_bound(it0, owners_sorted.end(), src);
+          int size = std::distance(it0, it1);
+          _displs_remote.push_back(_displs_remote.back() + size);
+          _sizes_remote.push_back(size);
+          it0 = it1;
         }
       }
+
+      // For data associated with owned indices that are ghosted by
+      // other ranks, compute the size and displacement arrays. When
+      // sending data associated with ghost indices to the owner, these
+      // size and displacement arrays are for the receive buffer.
 
       // Compute sizes and displacements of local data (how many local
       // elements to be sent/received grouped by neighbors)
@@ -99,27 +109,26 @@ public:
       _displs_local.resize(_sizes_local.size() + 1);
       _sizes_remote.reserve(1);
       _sizes_local.reserve(1);
-      MPI_Neighbor_alltoall(_sizes_remote.data(), 1,
-                            MPI::mpi_type<std::int32_t>(), _sizes_local.data(),
-                            1, MPI::mpi_type<std::int32_t>(),
+      MPI_Neighbor_alltoall(_sizes_remote.data(), 1, MPI_INT32_T,
+                            _sizes_local.data(), 1, MPI_INT32_T,
                             _comm_ghost_to_owner.comm());
-
       std::partial_sum(_sizes_local.begin(), _sizes_local.end(),
                        std::next(_displs_local.begin()));
 
-      // Send ghost indices (global) to owner, and receive owned indices
-      // that are ghost in other process grouped by neighbor process.
+      assert((std::int32_t)ghosts_sorted.size() == _displs_remote.back());
+      assert((std::int32_t)ghosts_sorted.size() == _displs_remote.back());
+
+      // Send ghost global indices to owning rank, and receive owned
+      // indices that are ghosts on other ranks
       std::vector<std::int64_t> recv_buffer(_displs_local.back(), 0);
-      assert((std::int32_t)ghosts_sorted.size() == _displs_remote.back());
-      assert((std::int32_t)ghosts_sorted.size() == _displs_remote.back());
       MPI_Neighbor_alltoallv(
           ghosts_sorted.data(), _sizes_remote.data(), _displs_remote.data(),
           MPI_INT64_T, recv_buffer.data(), _sizes_local.data(),
           _displs_local.data(), MPI_INT64_T, _comm_ghost_to_owner.comm());
 
-      std::array<std::int64_t, 2> range = map.local_range();
+      const std::array<std::int64_t, 2> range = map.local_range();
 #ifndef NDEBUG
-      // Check if all indices received are within the owned range.
+      // Check that all received indice are within the owned range
       std::for_each(recv_buffer.begin(), recv_buffer.end(),
                     [range](auto idx)
                     { assert(idx >= range[0] and idx < range[1]); });
@@ -149,10 +158,8 @@ public:
       // Expand remote indices using block size
       _remote_inds.resize(perm.size() * _bs);
       for (std::size_t i = 0; i < perm.size(); i++)
-      {
         for (int j = 0; j < _bs; j++)
           _remote_inds[i * _bs + j] = perm[i] * _bs + j;
-      }
     }
   }
 
@@ -178,8 +185,10 @@ public:
     };
   }
 
-  /// Start a non-blocking send of owned data to ranks that ghost the
-  /// data. The communication is completed by calling
+  /// @brief Start a non-blocking send of owned data to ranks that ghost
+  /// the data.
+  ///
+  /// The communication is completed by calling
   /// Scatterer::scatter_fwd_end. The send and receive buffer should not
   /// be changed until after Scatterer::scatter_fwd_end has been called.
   ///
@@ -197,7 +206,7 @@ public:
   template <typename T>
   void scatter_fwd_begin(const xtl::span<const T>& send_buffer,
                          const xtl::span<T>& recv_buffer,
-                         MPI_Request& request) const
+                         MPI_Request request) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
@@ -210,9 +219,11 @@ public:
                             _comm_owner_to_ghost.comm(), &request);
   }
 
-  /// Complete a non-blocking send from the local owner to process
-  /// ranks that have the index as a ghost. This function completes the
-  /// communication started by Scatterer::scatter_fwd_begin.
+  /// @brief Complete a non-blocking send from the local owner to
+  /// process ranks that have the index as a ghost.
+  ///
+  /// This function completes the communication started by
+  /// Scatterer::scatter_fwd_begin.
   ///
   /// @param[in] request The MPI request handle for tracking the status
   /// of the send
@@ -226,8 +237,30 @@ public:
     MPI_Wait(&request, MPI_STATUS_IGNORE);
   }
 
-  /// TODO: Add documentation
-  // NOTE: This function is not MPI-X friendly
+  /// @brief Scatter data associated with owned indices to ghosting
+  /// ranks.
+  ///
+  /// @note This function is intended for advanced usage, and in
+  /// particular when using CUDA/device-aware MPI.
+  ///
+  /// @param[in] local_data All data associated with owned indices. Size
+  /// is `size_local()` from the IndexMap used to create the scatterer,
+  /// multiplied by the block size. The data for each index is blocked
+  /// @param[out] remote_data Received data associated with the ghost
+  /// indices. The order follows the order of the ghost indices in the
+  /// IndexMap used to create the scatterer. The size equal to the
+  /// number of ghosts in the index map multiplied by the block size.
+  /// The data for each index is blocked.
+  /// @param[in] local_buffer Working buffer. The requires size is given
+  /// by Scatterer::local_buffer_size.
+  /// @param[out] remote_buffer Working buffer. The requires size is
+  /// given by Scatterer::remote_buffer_size.
+  /// @param[in] pack_fn Function to pack data from `local_data` into
+  /// the send buffer. It is passed as an argument to support
+  /// CUDA/device-aware MPI.
+  /// @param[in] unpack_fn Function to unpack the receive buffer into
+  /// `remote_data`. It is passed as an argument to support
+  /// CUDA/device-aware MPI.
   template <typename T, typename Functor1, typename Functor2>
   void scatter_fwd(const xtl::span<const T>& local_data,
                    xtl::span<T> remote_data, xtl::span<T> local_buffer,
@@ -244,11 +277,21 @@ public:
     scatter_fwd_end(request);
 
     // Insert op
-    auto op = [](T /*a*/, T b) { return b; };
-    unpack_fn(remote_buffer, _remote_inds, remote_data, op);
+    unpack_fn(remote_buffer, _remote_inds, remote_data,
+              [](T /*a*/, T b) { return b; });
   }
 
-  /// TODO: Add documentation
+  /// @brief Scatter data associated with owned indices to ghosting
+  /// ranks.
+  ///
+  /// @param[in] local_data All data associated with owned indices. Size
+  /// is `size_local()` from the IndexMap used to create the scatterer,
+  /// multiplied by the block size. The data for each index is blocked
+  /// @param[out] remote_data Received data associated with the ghost
+  /// indices. The order follows the order of the ghost indices in the
+  /// IndexMap used to create the scatterer. The size equal to the
+  /// number of ghosts in the index map multiplied by the block size.
+  /// The data for each index is blocked.
   template <typename T>
   void scatter_fwd(const xtl::span<const T>& local_data,
                    xtl::span<T> remote_data) const
@@ -261,11 +304,34 @@ public:
                 xtl::span<T>(remote_buffer), pack_fn, unpack_fn);
   }
 
-  /// Start a non-blocking send of ghost values to the owning rank.
+  /// @brief Start a non-blocking send of ghost data to ranks that own
+  /// the data.
+  ///
+  /// The communication is completed by calling
+  /// Scatterer::scatter_rev_end. The send and receive buffers should not
+  /// be changed until after Scatterer::scatter_rev_end has been called.
+  ///
+  /// @param[in] send_buffer Data associated with each ghost index. This
+  /// data is sent to process that owns the index. It must not be
+  /// changed until after a call to IScatterer::scatter_ref_end.
+  /// @param recv_buffer Buffer used for the received data. The position
+  /// of owned indices in the buffer is given by
+  /// Scatterer::local_indices. Scatterer::local_displacements()[i] is
+  /// the location of the first entry in `recv_buffer` received from
+  /// neighbourhood rank i. The number of entries received from
+  /// neighbourhood rank i is Scatterer::local_displacements()[i + 1] -
+  /// Scatterer::local_displacements()[i]. `recv_buffer[j]` is the data
+  /// associated with the index Scatterer::local_indices()[j] in the
+  /// index map.
+  ///
+  /// The buffer must not be accessed or changed until after a call to
+  /// Scatterer::scatter_fwd_end.
+  /// @param request The MPI request handle for tracking the status of
+  /// the non-blocking communication
   template <typename T>
   void scatter_rev_begin(const xtl::span<const T>& send_buffer,
                          const xtl::span<T>& recv_buffer,
-                         MPI_Request& request) const
+                         MPI_Request request) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
@@ -279,9 +345,15 @@ public:
                             _comm_ghost_to_owner.comm(), &request);
   }
 
-  /// @brief End the reverse scatter communication
-  /// @param[in] The request handle used when calling scatter_rev_begin
-  void scatter_rev_end(MPI_Request& request) const
+  /// @brief End the reverse scatter communication.
+  ///
+  /// This function must be called after Scatterer::scatter_rev_begin.
+  /// The buffers passed to Scatterer::scatter_rev_begin must not be
+  /// modified until after the function has been called.
+  ///
+  /// @param[in] request The handle used when calling
+  /// Scatterer::scatter_rev_begin
+  void scatter_rev_end(MPI_Request request) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
@@ -291,7 +363,39 @@ public:
     MPI_Wait(&request, MPI_STATUS_IGNORE);
   }
 
-  /// TODO
+  /// @brief Scatter data associated with ghost indices to owning ranks.
+  ///
+  /// @note This function is intended for advanced usage, and in
+  /// particular when using CUDA/device-aware MPI.
+  ///
+  /// @tparam T The data type to send
+  /// @tparam BinaryOp The reduction to perform when reducing data
+  /// received from ghosting ranks to the value associated with the
+  /// index on the owner
+  /// @tparam Functor1 The pack function
+  /// @tparam Functor2 The unpack function
+  ///
+  /// @param[out] local_data All data associated with owned indices.
+  /// Size is `size_local()` from the IndexMap used to create the
+  /// scatterer, multiplied by the block size. The data for each index
+  /// is blocked
+  /// @param[in] remote_data Received data associated with the ghost
+  /// indices. The order follows the order of the ghost indices in the
+  /// IndexMap used to create the scatterer. The size equal to the
+  /// number of ghosts in the index map multiplied by the block size.
+  /// The data for each index is blocked.
+  /// @param[in] local_buffer Working buffer. The requires size is given
+  /// by Scatterer::local_buffer_size.
+  /// @param[out] remote_buffer Working buffer. The requires size is
+  /// given by Scatterer::remote_buffer_size.
+  /// @param[in] op The reduction operation when accumulating received
+  /// values. To add the received values use `std::plus<T>()`.
+  /// @param[in] pack_fn Function to pack data from `local_data` into
+  /// the send buffer. It is passed as an argument to support
+  /// CUDA/device-aware MPI.
+  /// @param[in] unpack_fn Function to unpack the receive buffer into
+  /// `remote_data`. It is passed as an argument to support
+  /// CUDA/device-aware MPI.
   template <typename T, typename BinaryOp, typename Functor1, typename Functor2>
   void scatter_rev(xtl::span<T> local_data,
                    const xtl::span<const T>& remote_data,
@@ -313,8 +417,8 @@ public:
     unpack_fn(local_buffer, _local_inds, local_data, op);
   }
 
-  /// TODO
-  template <typename T, typename BinaryOp>
+  /// @brief Scatter data associated with ghost indices to ranks that
+  /// own the indices.
   void scatter_rev(xtl::span<T> local_data,
                    const xtl::span<const T>& remote_data, BinaryOp op)
   {
@@ -358,7 +462,7 @@ public:
   }
 
   /// @brief The number values (block size) to send per index in the
-  /// ::IndexMap use to create the scatterer
+  /// common::IndexMap use to create the scatterer
   /// @return The block size
   int bs() const noexcept { return _bs; }
 
@@ -384,10 +488,10 @@ private:
   std::vector<std::int32_t> _remote_inds;
 
   // Number of remote indices (ghosts) for each neighbor process
-  std::vector<std::int32_t> _sizes_remote;
+  std::vector<int> _sizes_remote;
 
   // Displacements of remote data for mpi scatter and gather
-  std::vector<std::int32_t> _displs_remote;
+  std::vector<int> _displs_remote;
 
   // Permutation indices used to pack and unpack local shared data
   // (owned indices that are shared with other processes). Indices are
@@ -395,9 +499,9 @@ private:
   std::vector<std::int32_t> _local_inds;
 
   // Number of local shared indices per neighbor process
-  std::vector<std::int32_t> _sizes_local;
+  std::vector<int> _sizes_local;
 
   // Displacements of local data for mpi scatter and gather
-  std::vector<std::int32_t> _displs_local;
+  std::vector<int> _displs_local;
 };
 } // namespace dolfinx::common
