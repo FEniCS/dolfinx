@@ -6,11 +6,13 @@
 
 #pragma once
 
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/sort.h>
+#include "IndexMap.h"
+#include "sort.h>"
+#include <algorithm>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <mpi.h>
+#include <vector>
 
 using namespace dolfinx;
 
@@ -33,7 +35,7 @@ public:
     if (map.overlapped())
     {
       // Get source (owner of ghosts) and destination (processes that
-      // ghosts an owned index) ranks
+      // ghost an owned index) ranks
       const std::vector<int>& src_ranks = map.src();
       const std::vector<int>& dest_ranks = map.dest();
 
@@ -64,7 +66,8 @@ public:
       std::iota(perm.begin(), perm.end(), 0);
       dolfinx::argsort_radix<std::int32_t>(owners, perm);
 
-      // Sort ghosts and owners using perm from argsort
+      // Sort (I) ghost indices and (ii) ghost index owners by rank
+      // (using perm array)
       const std::vector<std::int64_t>& ghosts = map.ghosts();
       std::vector<int> owners_sorted(owners.size());
       std::vector<std::int64_t> ghosts_sorted(owners.size());
@@ -116,7 +119,7 @@ public:
 
       std::array<std::int64_t, 2> range = map.local_range();
 #ifndef NDEBUG
-      // Check if all indices received are within the owned range
+      // Check if all indices received are within the owned range.
       std::for_each(recv_buffer.begin(), recv_buffer.end(),
                     [range](auto idx)
                     { assert(idx >= range[0] and idx < range[1]); });
@@ -207,8 +210,8 @@ public:
                             _comm_owner_to_ghost.comm(), &request);
   }
 
-  /// Complete a non-blocking send from the local owner of to process
-  /// ranks that have the index as a ghost. This function complete the
+  /// Complete a non-blocking send from the local owner to process
+  /// ranks that have the index as a ghost. This function completes the
   /// communication started by Scatterer::scatter_fwd_begin.
   ///
   /// @param[in] request The MPI request handle for tracking the status
@@ -276,7 +279,8 @@ public:
                             _comm_ghost_to_owner.comm(), &request);
   }
 
-  /// TODO
+  /// @brief End the reverse scatter communication
+  /// @param[in] The request handle used when calling scatter_rev_begin
   void scatter_rev_end(MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
@@ -305,7 +309,7 @@ public:
     scatter_rev_begin(xtl::span<const T>(remote_buffer), local_buffer, request);
     scatter_rev_end(request);
 
-    // Copy or accumulate into "local_data"
+    // Copy/accumulate into 'local_data'
     unpack_fn(local_buffer, _local_inds, local_data, op);
   }
 
@@ -322,13 +326,17 @@ public:
                 xtl::span<T>(remote_buffer), op, pack_fn, unpack_fn);
   }
 
-  /// TODO
+  /// @brief Size of buffer for local data (owned and shared) used in
+  /// forward and reverse communication
+  /// @return The required buffer size
   std::int32_t local_buffer_size() const noexcept
   {
     return _local_inds.size();
   };
 
-  /// TODO
+  /// @brief Buffer size for remote data (ghosts) used in forward and
+  /// reverse communication
+  /// @return The required buffer size
   std::int32_t remote_buffer_size() const noexcept
   {
     return _remote_inds.size();
@@ -346,7 +354,9 @@ public:
     return _remote_inds;
   }
 
-  /// TODO
+  /// @brief The number values (block size) to send per index in the
+  /// ::IndexMap use to create the scatterer
+  /// @return The block size
   int bs() const noexcept { return _bs; }
 
 private:
@@ -370,21 +380,21 @@ private:
   // Permutation indices used to pack and unpack ghost data (remote)
   std::vector<std::int32_t> _remote_inds;
 
-  // Number of remote indices (ghosts) per neighbor process.
+  // Number of remote indices (ghosts) for each neighbor process
   std::vector<std::int32_t> _sizes_remote;
 
-  // Displacements of remote data for mpi scatter and gather.
+  // Displacements of remote data for mpi scatter and gather
   std::vector<std::int32_t> _displs_remote;
 
-  // Permutation indices used to pack and unpack local shared data (owned
-  // indices that are shared with other processes). Indices are grouped by
-  // neighbor process.
+  // Permutation indices used to pack and unpack local shared data
+  // (owned indices that are shared with other processes). Indices are
+  // grouped by neighbor process.
   std::vector<std::int32_t> _local_inds;
 
-  // Number of local shared indices per neighbor process.
+  // Number of local shared indices per neighbor process
   std::vector<std::int32_t> _sizes_local;
 
-  // Displacements of local data for mpi scatter and gather.
+  // Displacements of local data for mpi scatter and gather
   std::vector<std::int32_t> _displs_local;
 };
 } // namespace dolfinx::common

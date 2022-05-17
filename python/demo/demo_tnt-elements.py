@@ -261,8 +261,8 @@ for degree in range(1, 10):
 # -
 
 # We now plot the data that we have obtained. First we plot the error
-# against the polynomial degree for the two elements. Apart from the
-# lowest degree elements, the two elements perform equally well.
+# against the polynomial degree for the two elements. The two elements
+# appear to perform equally well.
 
 # +
 plt.plot(q_degrees, q_errors, "bo-")
