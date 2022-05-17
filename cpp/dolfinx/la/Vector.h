@@ -76,7 +76,7 @@ public:
     const std::int32_t local_size = _bs * _map->size_local();
     xtl::span<const T> x_local(_x.data(), local_size);
     auto pack = common::Scatterer::pack();
-    pack(x_local, _scatterer->local_shared_indices(), _buffer_local);
+    pack(x_local, _scatterer->local_indices(), _buffer_local);
     _scatterer->scatter_fwd_begin(xtl::span<const T>(_buffer_local),
                                   xtl::span<T>(_buffer_remote), _request);
   }
@@ -128,7 +128,7 @@ public:
     xtl::span<T> x_local(_x.data(), local_size);
     auto unpack = common::Scatterer::unpack();
     _scatterer->scatter_rev_end(_request);
-    unpack(_buffer_local, _scatterer->local_shared_indices(), x_local, op);
+    unpack(_buffer_local, _scatterer->local_indices(), x_local, op);
   }
 
   /// Scatter ghost data to owner. This process may receive data from

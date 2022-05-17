@@ -324,13 +324,16 @@ public:
     return _remote_inds.size();
   };
 
-  /// TODO
-  const std::vector<std::int32_t>& local_shared_indices() const noexcept
+  /// Return a vector of local indices (owned) used to pack/unpack local data.
+  /// These indices are grouped by neighbor process (process for which an index
+  /// is a ghost).
+  const std::vector<std::int32_t>& local_indices() const noexcept
   {
     return _local_inds;
   }
 
-  /// TODO
+  /// Return a vector of remote indices (ghosts) used to pack/unpack ghost
+  /// data. These indices are grouped by neighbor process (ghost owners).
   const std::vector<std::int32_t>& remote_indices() const noexcept
   {
     return _remote_inds;
