@@ -75,26 +75,18 @@ public:
       std::transform(perm.begin(), perm.end(), ghosts_sorted.begin(),
                      [&ghosts](auto idx) { return ghosts[idx]; });
 
-      // For data associated with ghost indices, packed by owning
-      // (neighbourhood) rank, compute sizes and displacements. I.e.,
-      // when sending ghost index data from this rank to the owning
-      // ranks, disp[i] is the first entry in the buffer sent to
-      // neighbourhood rank i, and disp[i + 1] - disp[i] is the number
-      // of values sent to rank i.
-      _sizes_remote.reserve(src_ranks.size());
-      _displs_remote = {0};
-      _displs_remote.reserve(src_ranks.size() + 1);
+      // Compute sizes and displacements of remote data (how many remote
+      // to be sent/received grouped by neighbors)
+      _sizes_remote.resize(src_ranks.size(), 0);
+      _displs_remote.resize(src_ranks.size() + 1, 0);
+      std::vector<std::int32_t>::iterator begin = owners_sorted.begin();
+      for (std::size_t i = 0; i < src_ranks.size(); i++)
       {
-        auto it0 = owners_sorted.begin();
-        while (it0 != owners_sorted.end())
-        {
-          int src = *it0;
-          auto it1 = std::upper_bound(it0, owners_sorted.end(), src);
-          int size = std::distance(it0, it1);
-          _displs_remote.push_back(_displs_remote.back() + size);
-          _sizes_remote.push_back(size);
-          it0 = it1;
-        }
+        auto upper = std::upper_bound(begin, owners_sorted.end(), src_ranks[i]);
+        int num_ind = std::distance(begin, upper);
+        _displs_remote[i + 1] = _displs_remote[i] + num_ind;
+        _sizes_remote[i] = num_ind;
+        begin = upper;
       }
 
       // For data associated with owned indices that are ghosted by
@@ -204,7 +196,7 @@ public:
   template <typename T>
   void scatter_fwd_begin(const xtl::span<const T>& send_buffer,
                          const xtl::span<T>& recv_buffer,
-                         MPI_Request request) const
+                         MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
@@ -274,8 +266,8 @@ public:
     scatter_fwd_end(request);
 
     // Insert op
-    unpack_fn(remote_buffer, _remote_inds, remote_data,
-              [](T /*a*/, T b) { return b; });
+    auto op = [](T /*a*/, T b) { return b; };
+    unpack_fn(remote_buffer, _remote_inds, remote_data, op);
   }
 
   /// @brief Scatter data associated with owned indices to ghosting
@@ -328,7 +320,7 @@ public:
   template <typename T>
   void scatter_rev_begin(const xtl::span<const T>& send_buffer,
                          const xtl::span<T>& recv_buffer,
-                         MPI_Request request) const
+                         MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
