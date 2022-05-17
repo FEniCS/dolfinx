@@ -75,8 +75,12 @@ public:
       std::transform(perm.begin(), perm.end(), ghosts_sorted.begin(),
                      [&ghosts](auto idx) { return ghosts[idx]; });
 
-      // Compute sizes and displacements of remote data (how many remote
-      // to be sent/received grouped by neighbors)
+      // For data associated with ghost indices, packed by owning
+      // (neighbourhood) rank, compute sizes and displacements. I.e.,
+      // when sending ghost index data from this rank to the owning
+      // ranks, disp[i] is the first entry in the buffer sent to
+      // neighbourhood rank i, and disp[i + 1] - disp[i] is the number
+      // of values sent to rank i.
       _sizes_remote.resize(src_ranks.size(), 0);
       _displs_remote.resize(src_ranks.size() + 1, 0);
       std::vector<std::int32_t>::iterator begin = owners_sorted.begin();
