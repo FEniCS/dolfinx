@@ -7,7 +7,7 @@
 #pragma once
 
 #include "IndexMap.h"
-#include "sort.h>"
+#include "sort.h"
 #include <algorithm>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
