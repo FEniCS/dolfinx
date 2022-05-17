@@ -21,7 +21,11 @@ namespace dolfinx::common
 class Scatterer
 {
 public:
-  /// Constructor
+  /// @brief Create a scatter for MPI communication
+  /// @param[in] map The index map the describes the parallel layout of
+  /// data
+  /// @param[in] bs The block size of data that will be communicated for
+  /// indices in the `map`.
   Scatterer(const common::IndexMap& map, int bs)
       : _bs(bs), _comm_owner_to_ghost(MPI_COMM_NULL),
         _comm_ghost_to_owner(MPI_COMM_NULL)
@@ -33,7 +37,7 @@ public:
       const std::vector<int>& src_ranks = map.src();
       const std::vector<int>& dest_ranks = map.dest();
 
-      // We assume src and dest ranks are unique and sorted
+      // Check that assume src and dest ranks are unique and sorted
       assert(std::is_sorted(src_ranks.begin(), src_ranks.end()));
       assert(std::is_sorted(src_ranks.begin(), src_ranks.end()));
 
@@ -54,18 +58,16 @@ public:
           false, &comm1);
       _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
 
-      // Compute shared indices and group by neighboring (processes for
-      // which an index is a ghost)
+      // Build permutation array that sorts ghost indices by owning rank
       const std::vector<int>& owners = map.owners();
-      const std::vector<std::int64_t>& ghosts = map.ghosts();
       std::vector<std::int32_t> perm(owners.size());
       std::iota(perm.begin(), perm.end(), 0);
       dolfinx::argsort_radix<std::int32_t>(owners, perm);
 
+      // Sort ghosts and owners using perm from argsort
+      const std::vector<std::int64_t>& ghosts = map.ghosts();
       std::vector<int> owners_sorted(owners.size());
       std::vector<std::int64_t> ghosts_sorted(owners.size());
-
-      // Sort ghosts and owners using perm from argsort.
       std::transform(perm.begin(), perm.end(), owners_sorted.begin(),
                      [&owners](auto idx) { return owners[idx]; });
       std::transform(perm.begin(), perm.end(), ghosts_sorted.begin(),
@@ -75,21 +77,23 @@ public:
       // to be sent/received grouped by neighbors)
       _sizes_remote.resize(src_ranks.size(), 0);
       _displs_remote.resize(src_ranks.size() + 1, 0);
-      std::vector<std::int32_t>::iterator begin = owners_sorted.begin();
-      for (std::size_t i = 0; i < src_ranks.size(); i++)
       {
-        auto upper = std::upper_bound(begin, owners_sorted.end(), src_ranks[i]);
-        int num_ind = std::distance(begin, upper);
-        _displs_remote[i + 1] = _displs_remote[i] + num_ind;
-        _sizes_remote[i] = num_ind;
-        begin = upper;
+        auto begin = owners_sorted.begin();
+        for (std::size_t i = 0; i < src_ranks.size(); i++)
+        {
+          auto upper
+              = std::upper_bound(begin, owners_sorted.end(), src_ranks[i]);
+          int num_ind = std::distance(begin, upper);
+          _displs_remote[i + 1] = _displs_remote[i] + num_ind;
+          _sizes_remote[i] = num_ind;
+          begin = upper;
+        }
       }
 
-      // Compute sizes and displacements of local data (how many local elements
-      // to be sent/received grouped by neighbors)
+      // Compute sizes and displacements of local data (how many local
+      // elements to be sent/received grouped by neighbors)
       _sizes_local.resize(dest_ranks.size());
       _displs_local.resize(_sizes_local.size() + 1);
-
       _sizes_remote.reserve(1);
       _sizes_local.reserve(1);
       MPI_Neighbor_alltoall(_sizes_remote.data(), 1,
@@ -100,34 +104,39 @@ public:
       std::partial_sum(_sizes_local.begin(), _sizes_local.end(),
                        std::next(_displs_local.begin()));
 
-      // Send ghost indices (global) to owner, and receive owned indices that
-      // are ghost in other process grouped by neighbor process.
+      // Send ghost indices (global) to owner, and receive owned indices
+      // that are ghost in other process grouped by neighbor process.
       std::vector<std::int64_t> recv_buffer(_displs_local.back(), 0);
       assert((std::int32_t)ghosts_sorted.size() == _displs_remote.back());
       assert((std::int32_t)ghosts_sorted.size() == _displs_remote.back());
       MPI_Neighbor_alltoallv(
           ghosts_sorted.data(), _sizes_remote.data(), _displs_remote.data(),
-          MPI::mpi_type<std::int64_t>(), recv_buffer.data(),
-          _sizes_local.data(), _displs_local.data(),
-          MPI::mpi_type<std::int64_t>(), _comm_ghost_to_owner.comm());
+          MPI_INT64_T, recv_buffer.data(), _sizes_local.data(),
+          _displs_local.data(), MPI_INT64_T, _comm_ghost_to_owner.comm());
 
       std::array<std::int64_t, 2> range = map.local_range();
 #ifndef NDEBUG
       // Check if all indices received are within the owned range
       std::for_each(recv_buffer.begin(), recv_buffer.end(),
-                    [&range](auto idx)
+                    [range](auto idx)
                     { assert(idx >= range[0] and idx < range[1]); });
 #endif
 
       // Scale sizes and displacements by block size
-      auto scale = [bs = _bs](auto& e) { e *= bs; };
-      std::for_each(_sizes_local.begin(), _sizes_local.end(), scale);
-      std::for_each(_displs_local.begin(), _displs_local.end(), scale);
-      std::for_each(_sizes_remote.begin(), _sizes_remote.end(), scale);
-      std::for_each(_displs_remote.begin(), _displs_remote.end(), scale);
+      {
+        auto rescale = [](auto& x, int bs)
+        {
+          std::transform(x.begin(), x.end(), x.begin(),
+                         [bs](auto e) { return e *= bs; });
+        };
+        rescale(_sizes_local, bs);
+        rescale(_displs_local, bs);
+        rescale(_sizes_remote, bs);
+        rescale(_displs_remote, bs);
+      }
 
-      // Expand local indices using block size and convert it from global to
-      // local numbering
+      // Expand local indices using block size and convert it from
+      // global to local numbering
       _local_inds.resize(recv_buffer.size() * _bs);
       std::int64_t offset = range[0] * _bs;
       for (std::size_t i = 0; i < recv_buffer.size(); i++)
@@ -137,13 +146,15 @@ public:
       // Expand remote indices using block size
       _remote_inds.resize(perm.size() * _bs);
       for (std::size_t i = 0; i < perm.size(); i++)
+      {
         for (int j = 0; j < _bs; j++)
           _remote_inds[i * _bs + j] = perm[i] * _bs + j;
+      }
     }
   }
 
-  /// Return a lambda expression for packing data to be used in scatter_fwd
-  /// and "scatter_rev".
+  /// Return a lambda expression for packing data to be used in
+  /// scatter_fwd and scatter_rev'.
   static auto pack()
   {
     return [](const auto& in, const auto& idx, auto& out)
@@ -153,8 +164,8 @@ public:
     };
   }
 
-  /// Return a lambda expression for unpacking received data from neighbors
-  /// using "scatter_fwd" or "scatter_rev".
+  /// Return a lambda expression for unpacking received data from
+  /// neighbors using 'scatter_fwd' or 'scatter_rev'.
   static auto unpack()
   {
     return [](const auto& in, const auto& idx, auto& out, auto op)
