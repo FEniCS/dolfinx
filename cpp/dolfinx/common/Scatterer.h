@@ -29,8 +29,7 @@ public:
   /// @param[in] bs The block size of data that will be communicated for
   /// indices in the `map`.
   Scatterer(const common::IndexMap& map, int bs)
-      : _bs(bs), _comm_owner_to_ghost(MPI_COMM_NULL),
-        _comm_ghost_to_owner(MPI_COMM_NULL)
+      : _bs(bs), _comm0(MPI_COMM_NULL), _comm1(MPI_COMM_NULL)
   {
     if (map.overlapped())
     {
@@ -51,14 +50,14 @@ public:
           map.comm(), src_ranks.size(), src_ranks.data(), MPI_UNWEIGHTED,
           dest_ranks.size(), dest_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
           false, &comm0);
-      _comm_owner_to_ghost = dolfinx::MPI::Comm(comm0, false);
+      _comm0 = dolfinx::MPI::Comm(comm0, false);
 
       MPI_Comm comm1;
       MPI_Dist_graph_create_adjacent(
           map.comm(), dest_ranks.size(), dest_ranks.data(), MPI_UNWEIGHTED,
           src_ranks.size(), src_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
           false, &comm1);
-      _comm_ghost_to_owner = dolfinx::MPI::Comm(comm1, false);
+      _comm1 = dolfinx::MPI::Comm(comm1, false);
 
       // Build permutation array that sorts ghost indices by owning rank
       const std::vector<int>& owners = map.owners();
@@ -110,8 +109,7 @@ public:
       _sizes_remote.reserve(1);
       _sizes_local.reserve(1);
       MPI_Neighbor_alltoall(_sizes_remote.data(), 1, MPI_INT32_T,
-                            _sizes_local.data(), 1, MPI_INT32_T,
-                            _comm_ghost_to_owner.comm());
+                            _sizes_local.data(), 1, MPI_INT32_T, _comm1.comm());
       std::partial_sum(_sizes_local.begin(), _sizes_local.end(),
                        std::next(_displs_local.begin()));
 
@@ -121,10 +119,10 @@ public:
       // Send ghost global indices to owning rank, and receive owned
       // indices that are ghosts on other ranks
       std::vector<std::int64_t> recv_buffer(_displs_local.back(), 0);
-      MPI_Neighbor_alltoallv(
-          ghosts_sorted.data(), _sizes_remote.data(), _displs_remote.data(),
-          MPI_INT64_T, recv_buffer.data(), _sizes_local.data(),
-          _displs_local.data(), MPI_INT64_T, _comm_ghost_to_owner.comm());
+      MPI_Neighbor_alltoallv(ghosts_sorted.data(), _sizes_remote.data(),
+                             _displs_remote.data(), MPI_INT64_T,
+                             recv_buffer.data(), _sizes_local.data(),
+                             _displs_local.data(), MPI_INT64_T, _comm1.comm());
 
       const std::array<std::int64_t, 2> range = map.local_range();
 #ifndef NDEBUG
@@ -212,11 +210,10 @@ public:
     if (_sizes_local.empty() and _sizes_remote.empty())
       return;
 
-    MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_local.data(),
-                            _displs_local.data(), MPI::mpi_type<T>(),
-                            recv_buffer.data(), _sizes_remote.data(),
-                            _displs_remote.data(), MPI::mpi_type<T>(),
-                            _comm_owner_to_ghost.comm(), &request);
+    MPI_Ineighbor_alltoallv(
+        send_buffer.data(), _sizes_local.data(), _displs_local.data(),
+        MPI::mpi_type<T>(), recv_buffer.data(), _sizes_remote.data(),
+        _displs_remote.data(), MPI::mpi_type<T>(), _comm0.comm(), &request);
   }
 
   /// @brief Complete a non-blocking send from the local owner to
@@ -338,11 +335,10 @@ public:
       return;
 
     // Send and receive data
-    MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_remote.data(),
-                            _displs_remote.data(), MPI::mpi_type<T>(),
-                            recv_buffer.data(), _sizes_local.data(),
-                            _displs_local.data(), MPI::mpi_type<T>(),
-                            _comm_ghost_to_owner.comm(), &request);
+    MPI_Ineighbor_alltoallv(
+        send_buffer.data(), _sizes_remote.data(), _displs_remote.data(),
+        MPI::mpi_type<T>(), recv_buffer.data(), _sizes_local.data(),
+        _displs_local.data(), MPI::mpi_type<T>(), _comm1.comm(), &request);
   }
 
   /// @brief End the reverse scatter communication.
@@ -419,6 +415,7 @@ public:
 
   /// @brief Scatter data associated with ghost indices to ranks that
   /// own the indices.
+  template <typename T, typename BinaryOp>
   void scatter_rev(xtl::span<T> local_data,
                    const xtl::span<const T>& remote_data, BinaryOp op)
   {
@@ -475,14 +472,14 @@ private:
   // caller. I.e.,
   // - in-edges (src) are from ranks that own my ghosts
   // - out-edges (dest) go to ranks that 'ghost' my owned indices
-  dolfinx::MPI::Comm _comm_owner_to_ghost;
+  dolfinx::MPI::Comm _comm0;
 
   // Communicator where the source ranks have ghost indices that are
   // owned by the caller, and the destination ranks are the owners of
   // indices in the callers halo region. I.e.,
   // - in-edges (src) are from ranks that 'ghost' my owned indicies
   // - out-edges (dest) are to the owning ranks of my ghost indices
-  dolfinx::MPI::Comm _comm_ghost_to_owner;
+  dolfinx::MPI::Comm _comm1;
 
   // Permutation indices used to pack and unpack ghost data (remote)
   std::vector<std::int32_t> _remote_inds;
