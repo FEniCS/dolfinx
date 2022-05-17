@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - name: Get Spack
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: ./spack
           repository: ${{ github.event.inputs.spack_repo }}
@@ -51,7 +51,7 @@ jobs:
           spack install
 
       - name: Get DOLFINx code (to access test files)
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: main
           path: ./dolfinx-main
@@ -59,7 +59,7 @@ jobs:
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate cpp-main
-          spack install py-fenics-ffcx
+          spack install py-fenics-ffcx@main
           cd dolfinx-main/cpp/
           cd demo/poisson
           cmake .
@@ -68,7 +68,7 @@ jobs:
           mpirun -np 2 ./demo_poisson
 
       - name: Get DOLFINx release code (to access test files)
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: main
           # ref: v${{ github.event.inputs.spack_branch }}
@@ -104,7 +104,7 @@ jobs:
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate py-main
-          mpirun -np 2 python3 ./dolfinx-main/python/demo_elasticity.py
+          mpirun -np 2 python3 ./dolfinx-main/python/demo/demo_elasticity.py
       - name: Run DOLFINx (Python, release) test
         run: |
           . ./spack/share/spack/setup-env.sh
