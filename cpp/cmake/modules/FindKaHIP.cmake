@@ -85,11 +85,9 @@ if (MPI_CXX_FOUND)
         }
         " KAHIP_TEST_RUNS)
     endif()
+    find_package_handle_standard_args(KaHIP "KaHIP could not be found/configured."
+                                      KAHIP_INCLUDE_DIRS
+                                      KAHIP_LIBRARIES
+                                      KAHIP_TEST_RUNS)
   endif()
-
-  find_package_handle_standard_args(KaHIP
-                                    "KaHIP could not be found/configured."
-                                    KAHIP_INCLUDE_DIRS
-                                    KAHIP_LIBRARIES
-                                    KAHIP_TEST_RUNS)
 endif()
