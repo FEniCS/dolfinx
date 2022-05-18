@@ -144,3 +144,35 @@ Scatterer::Scatterer(const IndexMap& map, int bs)
   }
 }
 //-----------------------------------------------------------------------------
+void Scatterer::scatter_rev_end(MPI_Request& request) const
+{
+  // Return early if there are no incoming or outgoing edges
+  if (_sizes_local.empty() and _sizes_remote.empty())
+    return;
+
+  // Wait for communication to complete
+  MPI_Wait(&request, MPI_STATUS_IGNORE);
+}
+//-----------------------------------------------------------------------------
+std::int32_t Scatterer::local_buffer_size() const noexcept
+{
+  return _local_inds.size();
+};
+//-----------------------------------------------------------------------------
+std::int32_t Scatterer::remote_buffer_size() const noexcept
+{
+  return _remote_inds.size();
+};
+//-----------------------------------------------------------------------------
+const std::vector<std::int32_t>& Scatterer::local_indices() const noexcept
+{
+  return _local_inds;
+}
+//-----------------------------------------------------------------------------
+const std::vector<std::int32_t>& Scatterer::remote_indices() const noexcept
+{
+  return _remote_inds;
+}
+//-----------------------------------------------------------------------------
+int Scatterer::bs() const noexcept { return _bs; }
+//-----------------------------------------------------------------------------

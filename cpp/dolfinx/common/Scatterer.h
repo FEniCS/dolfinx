@@ -209,15 +209,7 @@ public:
   ///
   /// @param[in] request The handle used when calling
   /// Scatterer::scatter_rev_begin
-  void scatter_rev_end(MPI_Request& request) const
-  {
-    // Return early if there are no incoming or outgoing edges
-    if (_sizes_local.empty() and _sizes_remote.empty())
-      return;
-
-    // Wait for communication to complete
-    MPI_Wait(&request, MPI_STATUS_IGNORE);
-  }
+  void scatter_rev_end(MPI_Request& request) const;
 
   /// @brief Scatter data associated with ghost indices to owning ranks.
   ///
@@ -298,38 +290,26 @@ public:
   /// @brief Size of buffer for local data (owned and shared) used in
   /// forward and reverse communication
   /// @return The required buffer size
-  std::int32_t local_buffer_size() const noexcept
-  {
-    return _local_inds.size();
-  };
+  std::int32_t local_buffer_size() const noexcept;
 
   /// @brief Buffer size for remote data (ghosts) used in forward and
   /// reverse communication
   /// @return The required buffer size
-  std::int32_t remote_buffer_size() const noexcept
-  {
-    return _remote_inds.size();
-  };
+  std::int32_t remote_buffer_size() const noexcept;
 
   /// Return a vector of local indices (owned) used to pack/unpack local data.
   /// These indices are grouped by neighbor process (process for which an index
   /// is a ghost).
-  const std::vector<std::int32_t>& local_indices() const noexcept
-  {
-    return _local_inds;
-  }
+  const std::vector<std::int32_t>& local_indices() const noexcept;
 
   /// Return a vector of remote indices (ghosts) used to pack/unpack ghost
   /// data. These indices are grouped by neighbor process (ghost owners).
-  const std::vector<std::int32_t>& remote_indices() const noexcept
-  {
-    return _remote_inds;
-  }
+  const std::vector<std::int32_t>& remote_indices() const noexcept;
 
   /// @brief The number values (block size) to send per index in the
   /// common::IndexMap use to create the scatterer
   /// @return The block size
-  int bs() const noexcept { return _bs; }
+  int bs() const noexcept;
 
 private:
   // Block size
