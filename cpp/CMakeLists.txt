@@ -70,18 +70,11 @@ add_feature_info(XTENSOR_OPTIMIZE XTENSOR_OPTIMIZE "Enable architecture-specific
 # Enable or disable optional packages
 
 # List optional packages
-list(APPEND OPTIONAL_PACKAGES "ADIOS2")
-list(APPEND OPTIONAL_PACKAGES "ParMETIS")
-list(APPEND OPTIONAL_PACKAGES "SCOTCH")
-list(APPEND OPTIONAL_PACKAGES "SLEPc")
-list(APPEND OPTIONAL_PACKAGES "KaHIP")
-
-# Add options
-foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
-  string(TOUPPER "DOLFINX_ENABLE_${OPTIONAL_PACKAGE}" OPTION_NAME)
-  option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
-  add_feature_info(${OPTION_NAME} ${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}.")
-endforeach()
+option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2." ON)
+option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS." ON)
+option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." ON)
+option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." ON)
+option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." OFF)
 
 #------------------------------------------------------------------------------
 # Check for MPI
