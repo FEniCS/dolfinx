@@ -29,6 +29,13 @@ using namespace dolfinx;
 
 namespace
 {
+
+/// @brief Create an adjacency list from array of pairs, where the first
+/// value in the pair is the node and the second value is the edge.
+/// @param[in] data List if pairs
+/// @param[in] size The number of edges in the graph. For example, this
+/// can be used to build an adjacency list that includes 'owned' nodes only.
+/// @pre The `data` array must be sorted.
 template <typename U>
 graph::AdjacencyList<int> create_adj_list(U& data, std::int32_t size)
 {
@@ -37,12 +44,11 @@ graph::AdjacencyList<int> create_adj_list(U& data, std::int32_t size)
 
   std::vector<int> array;
   array.reserve(data.size());
-  std::vector<std::int32_t> offsets{0};
-  offsets.reserve(size + 1);
-
   std::transform(data.begin(), data.end(), std::back_inserter(array),
                  [](auto x) { return x.second; });
 
+  std::vector<std::int32_t> offsets{0};
+  offsets.reserve(size + 1);
   auto it = data.begin();
   for (std::int32_t e = 0; e < size; ++e)
   {

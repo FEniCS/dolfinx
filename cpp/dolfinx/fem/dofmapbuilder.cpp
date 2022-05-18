@@ -476,10 +476,6 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
           map->comm(), src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
           dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm[d]);
 
-      // Get number of neighbors
-      int indegree(-1), outdegree(-2), weighted(-1);
-      MPI_Dist_graph_neighbors_count(comm[d], &indegree, &outdegree, &weighted);
-
       // Number and values to send and receive
       const int num_indices = global[d].size();
       std::vector<int> size_recv(src.size());

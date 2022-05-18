@@ -17,11 +17,4 @@ enum class Norm
   frobenius
 };
 
-/// ScatterMode types
-enum class ScatterMode
-{
-  add,
-  insert
-};
-
 } // namespace dolfinx::la

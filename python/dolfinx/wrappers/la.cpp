@@ -26,6 +26,13 @@ namespace py = pybind11;
 
 namespace
 {
+// ScatterMode types
+enum class PyScatterMode
+{
+  add,
+  insert
+};
+
 // Declare objects that have multiple scalar types
 template <typename T>
 void declare_objects(py::module& m, const std::string& type)
@@ -55,14 +62,14 @@ void declare_objects(py::module& m, const std::string& type)
                              })
       .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
       .def("scatter_reverse",
-           [](dolfinx::la::Vector<T>& self, dolfinx::la::ScatterMode mode)
+           [](dolfinx::la::Vector<T>& self, PyScatterMode mode)
            {
              switch (mode)
              {
-             case dolfinx::la::ScatterMode::add: // Add
+             case PyScatterMode::add: // Add
                self.scatter_rev(std::plus<T>());
                break;
-             case dolfinx::la::ScatterMode::insert: // Insert
+             case PyScatterMode::insert: // Insert
                self.scatter_rev([](T /*a*/, T b) { return b; });
                break;
              default:
@@ -186,6 +193,16 @@ void la(py::module& m)
       = m.def_submodule("petsc", "PETSc-specific linear algebra");
   petsc_module(petsc_mod);
 
+  py::enum_<PyScatterMode>(m, "ScatterMode")
+      .value("add", PyScatterMode::add)
+      .value("insert", PyScatterMode::insert);
+
+  py::enum_<dolfinx::la::Norm>(m, "Norm")
+      .value("l1", dolfinx::la::Norm::l1)
+      .value("l2", dolfinx::la::Norm::l2)
+      .value("linf", dolfinx::la::Norm::linf)
+      .value("frobenius", dolfinx::la::Norm::frobenius);
+
   // dolfinx::la::SparsityPattern
   py::class_<dolfinx::la::SparsityPattern,
              std::shared_ptr<dolfinx::la::SparsityPattern>>(m,
@@ -227,16 +244,6 @@ void la(py::module& m)
            { self.insert_diagonal(rows); })
       .def_property_readonly("graph", &dolfinx::la::SparsityPattern::graph,
                              py::return_value_policy::reference_internal);
-
-  py::enum_<dolfinx::la::Norm>(m, "Norm")
-      .value("l1", dolfinx::la::Norm::l1)
-      .value("l2", dolfinx::la::Norm::l2)
-      .value("linf", dolfinx::la::Norm::linf)
-      .value("frobenius", dolfinx::la::Norm::frobenius);
-
-  py::enum_<dolfinx::la::ScatterMode>(m, "ScatterMode")
-      .value("add", dolfinx::la::ScatterMode::add)
-      .value("insert", dolfinx::la::ScatterMode::insert);
 
   // Declare objects that are templated over type
   declare_objects<double>(m, "float64");
