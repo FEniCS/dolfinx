@@ -67,7 +67,6 @@ if (MPI_CXX_FOUND)
         #include <mpi.h>
         #include <vector>
         #include <kaHIP_interface.h>
-
         int main()
         {
           int n = 5;
@@ -80,8 +79,8 @@ if (MPI_CXX_FOUND)
           int *vwgt = nullptr;;
           int *adjcwgt = nullptr;;
           kaffpa(&n, vwgt, xadj.data(), adjcwgt, adjncy.data(),
-                &nparts, &imbalance, false, 0, ECO, &edge_cut,
-                part.data());
+                 &nparts, &imbalance, false, 0, ECO, &edge_cut,
+                 part.data());
         return 0;
         }
         " KAHIP_TEST_RUNS)
