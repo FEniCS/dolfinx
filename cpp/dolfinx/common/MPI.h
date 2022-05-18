@@ -123,12 +123,6 @@ constexpr int index_owner(int size, std::size_t index, std::size_t N)
   }
 }
 
-/// @brief Return list of neighbors ranks (sources and destinations) for
-/// a neighborhood communicator.
-/// @param[in] comm Communicator with a neighborhood
-/// @return source ranks [0], destination ranks [1]
-std::array<std::vector<int>, 2> neighbors(MPI_Comm comm);
-
 /// @brief Determine incoming graph edges using the PCX consensus
 /// algorithm.
 ///
@@ -264,6 +258,8 @@ std::vector<T> distribute_data(MPI_Comm comm,
 
 /// @brief Send in_values[n0] to neighbor process n0 and receive values
 /// from neighbor process n1 in out_values[n1].
+///
+/// @todo Remove this function. Do not use in new code.
 ///
 /// @param[in] comm Neighborhood communicator
 /// @param[in] send_data The data to send to each rank.
