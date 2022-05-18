@@ -22,7 +22,6 @@
 namespace dolfinx::common
 {
 class IndexMap;
-class IndexMap;
 } // namespace dolfinx::common
 
 namespace dolfinx::la

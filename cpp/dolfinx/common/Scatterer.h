@@ -1,4 +1,4 @@
-// Copyright (C) 2022 Igor A. Baratta and Garth N. Wells
+// Copyright (C) 2022 Igor Baratta and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -29,7 +29,7 @@ class Scatterer
 {
 public:
   /// @brief Create a scatterer
-  /// @param[in] map The index map the describes the parallel layout of
+  /// @param[in] map The index map that describes the parallel layout of
   /// data
   /// @param[in] bs The block size of data that will be communicated for
   /// indices in the `map`.
@@ -44,7 +44,7 @@ public:
   ///
   /// @param[in] send_buffer Local data associated with each owned local
   /// index to be sent to process where the data is ghosted. It must not
-  /// be changed until after a call to IScatterer::scatter_fwd_end. The
+  /// be changed until after a call to Scatterer::scatter_fwd_end. The
   /// order of data in the buffer is given by Scatterer::local_indices.
   /// @param recv_buffer A buffer used for the received data. The
   /// position of ghost entries in the buffer is given by
@@ -94,15 +94,15 @@ public:
   ///
   /// @param[in] local_data All data associated with owned indices. Size
   /// is `size_local()` from the IndexMap used to create the scatterer,
-  /// multiplied by the block size. The data for each index is blocked
+  /// multiplied by the block size. The data for each index is blocked.
   /// @param[out] remote_data Received data associated with the ghost
   /// indices. The order follows the order of the ghost indices in the
   /// IndexMap used to create the scatterer. The size equal to the
   /// number of ghosts in the index map multiplied by the block size.
   /// The data for each index is blocked.
-  /// @param[in] local_buffer Working buffer. The requires size is given
+  /// @param[in] local_buffer Working buffer. The required size is given
   /// by Scatterer::local_buffer_size.
-  /// @param[out] remote_buffer Working buffer. The requires size is
+  /// @param[out] remote_buffer Working buffer. The required size is
   /// given by Scatterer::remote_buffer_size.
   /// @param[in] pack_fn Function to pack data from `local_data` into
   /// the send buffer. It is passed as an argument to support
@@ -170,7 +170,7 @@ public:
   ///
   /// @param[in] send_buffer Data associated with each ghost index. This
   /// data is sent to process that owns the index. It must not be
-  /// changed until after a call to IScatterer::scatter_ref_end.
+  /// changed until after a call to Scatterer::scatter_ref_end.
   /// @param recv_buffer Buffer used for the received data. The position
   /// of owned indices in the buffer is given by
   /// Scatterer::local_indices. Scatterer::local_displacements()[i] is
