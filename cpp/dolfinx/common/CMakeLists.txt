@@ -22,6 +22,7 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/IndexMap.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/log.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/MPI.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Scatterer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Table.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Timer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogger.cpp
