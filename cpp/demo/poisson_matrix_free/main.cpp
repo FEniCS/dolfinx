@@ -76,9 +76,9 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
   la::Vector<U> p(r);
 
   // Iterations of CG
-  double rnorm0 = la::squared_norm(r);
-  const double rtol2 = rtol * rtol;
-  double rnorm = rnorm0;
+  auto rnorm0 = la::squared_norm(r);
+  const auto rtol2 = rtol * rtol;
+  auto rnorm = rnorm0;
   int k = 0;
   while (k < kmax)
   {
@@ -97,10 +97,8 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
     axpy(r, -alpha, y, r);
 
     // Update residual norm
-    // Note: we use U for beta to support float, double, etc. U can be
-    // complex, even though the value will always be real
-    const double rnorm_new = la::squared_norm(r);
-    const U beta = rnorm_new / rnorm;
+    const auto rnorm_new = la::squared_norm(r);
+    const auto beta = rnorm_new / rnorm;
     rnorm = rnorm_new;
 
     if (rnorm / rnorm0 < rtol2)
