@@ -7,14 +7,9 @@
 // Unit tests for Distributed la::Vector
 
 #include <catch2/catch.hpp>
-#include <dolfinx.h>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/la/MatrixCSR.h>
-#include <dolfinx/la/SparsityPattern.h>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/la/Vector.h>
-
-// #include <xtensor/xeval.hpp>
-#include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
@@ -22,6 +17,7 @@ using namespace dolfinx;
 namespace
 {
 
+template <typename T>
 void test_vector()
 {
   const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
@@ -47,7 +43,7 @@ void test_vector()
   const auto index_map = std::make_shared<common::IndexMap>(
       MPI_COMM_WORLD, size_local, dest_ranks, ghosts, global_ghost_owner);
 
-  la::Vector<PetscScalar> v(index_map, 1);
+  la::Vector<T> v(index_map, 1);
   std::fill(v.mutable_array().begin(), v.mutable_array().end(), 1.0);
 
   const double norm2 = v.squared_norm();
@@ -60,12 +56,13 @@ void test_vector()
   CHECK(v.squared_norm() == sumn2);
   CHECK(v.norm(la::Norm::l2) == std::sqrt(sumn2));
   CHECK(la::inner_product(v, v) == sumn2);
-  CHECK(v.norm(la::Norm::linf) == static_cast<PetscScalar>(mpi_size - 1));
+  CHECK(v.norm(la::Norm::linf) == static_cast<T>(mpi_size - 1));
 }
 
 } // namespace
 
-TEST_CASE("Linear Algebra Vector", "[la_vector]")
+TEMPLATE_TEST_CASE("Linear Algebra Vector", "[la_vector]", double,
+                   std::complex<double>)
 {
-  CHECK_NOTHROW(test_vector());
+  CHECK_NOTHROW(test_vector<TestType>());
 }

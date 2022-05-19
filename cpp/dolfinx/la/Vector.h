@@ -197,49 +197,6 @@ public:
     this->scatter_rev_end(op);
   }
 
-  /// Compute the norm of the vector
-  /// @note Collective MPI operation
-  /// @param type Norm type (supported types are \f$L^2\f$ and \f$L^\infty\f$)
-  double norm(Norm type = Norm::l2) const
-  {
-    switch (type)
-    {
-    case Norm::l2:
-      return std::sqrt(this->squared_norm());
-    case Norm::linf:
-    {
-      const std::int32_t size_local = _bs * _map->size_local();
-      double local_linf = 0.0;
-      if (size_local > 0)
-      {
-        auto local_max_entry = std::max_element(
-            _x.begin(), std::next(_x.begin(), size_local),
-            [](T a, T b) { return std::norm(a) < std::norm(b); });
-        local_linf = std::abs(*local_max_entry);
-      }
-
-      double linf = 0.0;
-      MPI_Allreduce(&local_linf, &linf, 1, MPI_DOUBLE, MPI_MAX, _map->comm());
-      return linf;
-    }
-    default:
-      throw std::runtime_error("Norm type not supported");
-    }
-  }
-
-  /// Compute the squared L2 norm of vector
-  /// @note Collective MPI operation
-  double squared_norm() const
-  {
-    const std::int32_t size_local = _bs * _map->size_local();
-    double result = std::transform_reduce(
-        _x.begin(), std::next(_x.begin(), size_local), double(0),
-        std::plus<double>(), [](T val) { return std::norm(val); });
-    double norm2;
-    MPI_Allreduce(&result, &norm2, 1, MPI_DOUBLE, MPI_SUM, _map->comm());
-    return norm2;
-  }
-
   /// Get IndexMap
   std::shared_ptr<const common::IndexMap> map() const { return _map; }
 
@@ -273,22 +230,21 @@ private:
 
 /// Compute the inner product of two vectors. The two vectors must have
 /// the same parallel layout
-/// @note Collective
+/// @note Collective MPI operation
 /// @param a A vector
 /// @param b A vector
 /// @return Returns `a^{H} b` (`a^{T} b` if `a` and `b` are real)
-template <typename T, class Allocator = std::allocator<T>>
+template <typename T, class Allocator>
 T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
 {
   const std::int32_t local_size = a.bs() * a.map()->size_local();
   if (local_size != b.bs() * b.map()->size_local())
     throw std::runtime_error("Incompatible vector sizes");
-  xtl::span<const T> x_a = a.array();
-  xtl::span<const T> x_b = b.array();
+  xtl::span<const T> x_a = a.array().subspan(0, local_size);
+  xtl::span<const T> x_b = b.array().subspan(0, local_size);
 
   const T local = std::transform_reduce(
-      x_a.begin(), std::next(x_a.begin(), local_size), x_b.begin(),
-      static_cast<T>(0), std::plus<T>(),
+      x_a.begin(), x_a.end(), x_b.begin(), static_cast<T>(0), std::plus<T>(),
       [](T a, T b) -> T
       {
         if constexpr (std::is_same<T, std::complex<double>>::value
@@ -304,6 +260,44 @@ T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
   MPI_Allreduce(&local, &result, 1, dolfinx::MPI::mpi_type<T>(), MPI_SUM,
                 a.map()->comm());
   return result;
+}
+
+/// Compute the squared L2 norm of vector
+/// @note Collective MPI operation
+template <typename T, class Allocator>
+auto squared_norm(const Vector<T, Allocator>& a)
+{
+  T result = inner_product(a, a);
+  return std::real(result);
+}
+
+/// Compute the norm of the vector
+/// @note Collective MPI operation
+/// @param type Norm type (supported types are \f$L^2\f$ and \f$L^\infty\f$)
+template <typename T, class Allocator>
+auto norm(const Vector<T, Allocator>& a, Norm type = Norm::l2)
+{
+  switch (type)
+  {
+  case Norm::l2:
+    return std::sqrt(squared_norm(a));
+  case Norm::linf:
+  {
+    const std::int32_t size_local = a.bs() * a.map()->size_local();
+    xtl::span<const T> x_a = a.array().subspan(0, size_local);
+    T local_linf = 0.0;
+    auto local_max_entry = *std::max_element(
+        x_a.begin(), x_a.end(),
+        [](T a, T b) { return std::norm(a) < std::norm(b); });
+    auto linf = std::abs(local_max_entry);
+    MPI_Allreduce(&local_linf, &local_max_entry, 1,
+                  dolfinx::MPI::mpi_type<decltype(linf)>(), MPI_MAX,
+                  a.map()->comm());
+    return linf;
+  }
+  default:
+    throw std::runtime_error("Norm type not supported");
+  }
 }
 
 /// Orthonormalize a set of vectors
