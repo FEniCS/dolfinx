@@ -10,7 +10,6 @@
 #include "caster_petsc.h"
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
@@ -55,12 +54,30 @@ void common(py::module& m)
   py::class_<dolfinx::common::IndexMap,
              std::shared_ptr<dolfinx::common::IndexMap>>(m, "IndexMap")
       .def(py::init(
+          [](const MPICommWrapper comm, std::int32_t local_size)
+          { return dolfinx::common::IndexMap(comm.get(), local_size); }))
+      .def(py::init(
           [](const MPICommWrapper comm, std::int32_t local_size,
-             const std::vector<std::int64_t>& ghosts,
-             const std::vector<int>& ghost_owners)
+             const py::array_t<std::int64_t, py::array::c_style>& ghosts,
+             const py::array_t<int, py::array::c_style>& ghost_owners)
           {
             return dolfinx::common::IndexMap(comm.get(), local_size, ghosts,
                                              ghost_owners);
+          }))
+      .def(py::init(
+          [](const MPICommWrapper comm, std::int32_t local_size,
+             const std::array<py::array_t<int, py::array::c_style>, 2>&
+                 dest_src,
+             const py::array_t<std::int64_t, py::array::c_style>& ghosts,
+             const py::array_t<int, py::array::c_style>& ghost_owners)
+          {
+            std::array<std::vector<int>, 2> ranks;
+            ranks[0].assign(dest_src[0].data(),
+                            dest_src[0].data() + dest_src[0].size());
+            ranks[1].assign(dest_src[1].data(),
+                            dest_src[1].data() + dest_src[1].size());
+            return dolfinx::common::IndexMap(comm.get(), local_size, ranks,
+                                             ghosts, ghost_owners);
           }))
       .def_property_readonly("size_local",
                              &dolfinx::common::IndexMap::size_local)

@@ -135,6 +135,8 @@ class DirichletBCMetaClass:
             try:
                 super().__init__(_value, dofs, V)
             except TypeError:
+                if isinstance(dofs, list):
+                    print("CCCCC:", type(dofs), type(dofs[0]))
                 super().__init__(_value, dofs, V._cpp_object)
         else:
             super().__init__(_value, dofs)

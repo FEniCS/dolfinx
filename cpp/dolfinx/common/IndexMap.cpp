@@ -334,6 +334,8 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
       _dest(src_dest[1]), _overlapping(true)
 {
   assert(ghosts.size() == owners.size());
+  assert(std::is_sorted(src_dest[0].begin(), src_dest[0].end()));
+  assert(std::is_sorted(src_dest[1].begin(), src_dest[1].end()));
 
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;

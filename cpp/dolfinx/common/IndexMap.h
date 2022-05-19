@@ -74,6 +74,12 @@ public:
 
   /// @brief Create an overlapping (ghosted) index map.
   ///
+  /// This constructor uses a 'consensus' algorithm to determine the
+  /// ranks that ghost indices that are owned by the caller. This
+  /// requires non-trivial MPI communication. If the ranks that ghost
+  /// indices owned by the caller are known, it more efficient to use
+  /// the constructor that takes these ranks as an argument.
+  ///
   /// @note Collective
   ///
   /// @param[in] comm The MPI communicator
@@ -99,7 +105,7 @@ public:
   /// @param[in] comm The MPI communicator
   /// @param[in] local_size Local size of the index map, i.e. the number
   /// @param[in] src_dest Lists of [0] src and [1] dest ranks. The list
-  /// in each must be sorted and contain duplicates. `src` ranks are
+  /// in each must be sorted and not contain duplicates. `src` ranks are
   /// owners of the indices in `ghosts`. `dest` ranks are the rank that
   /// ghost indices owned by the caller.
   /// @param[in] ghosts The global indices of ghost entries
