@@ -98,7 +98,7 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
 
     // Update residual norm
     const auto rnorm_new = la::squared_norm(r);
-    const auto beta = rnorm_new / rnorm;
+    const T beta = rnorm_new / rnorm;
     rnorm = rnorm_new;
 
     if (rnorm / rnorm0 < rtol2)

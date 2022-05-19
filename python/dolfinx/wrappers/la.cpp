@@ -42,8 +42,9 @@ void declare_objects(py::module& m, const std::string& type)
       .def_property_readonly("dtype", [](const dolfinx::la::Vector<T>& self)
                              { return py::dtype::of<T>(); })
       .def("set", &dolfinx::la::Vector<T>::set)
-      .def("norm", &dolfinx::la::Vector<T>::norm,
-           py::arg("type") = dolfinx::la::Norm::l2)
+      .def("norm", [](dolfinx::la::Vector<T>& self,
+                      dolfinx::la::Norm type = dolfinx::la::Norm::l2)
+           { return dolfinx::la::norm(self, type); })
       .def_property_readonly("map", &dolfinx::la::Vector<T>::map)
       .def_property_readonly("bs", &dolfinx::la::Vector<T>::bs)
       .def_property_readonly("array",
