@@ -273,6 +273,7 @@ auto squared_norm(const Vector<T, Allocator>& a)
 
 /// Compute the norm of the vector
 /// @note Collective MPI operation
+/// @param a A vector
 /// @param type Norm type (supported types are \f$L^2\f$ and \f$L^\infty\f$)
 template <typename T, class Allocator>
 auto norm(const Vector<T, Allocator>& a, Norm type = Norm::l2)
@@ -285,14 +286,13 @@ auto norm(const Vector<T, Allocator>& a, Norm type = Norm::l2)
   {
     const std::int32_t size_local = a.bs() * a.map()->size_local();
     xtl::span<const T> x_a = a.array().subspan(0, size_local);
-    T local_linf = 0.0;
-    auto local_max_entry = *std::max_element(
-        x_a.begin(), x_a.end(),
-        [](T a, T b) { return std::norm(a) < std::norm(b); });
-    auto linf = std::abs(local_max_entry);
-    MPI_Allreduce(&local_linf, &local_max_entry, 1,
-                  dolfinx::MPI::mpi_type<decltype(linf)>(), MPI_MAX,
-                  a.map()->comm());
+    auto max_pos = std::max_element(x_a.begin(), x_a.end(),
+                                    [](T a, T b)
+                                    { return std::norm(a) < std::norm(b); });
+    auto local_linf = std::abs(*max_pos);
+    decltype(local_linf) linf = 0;
+    MPI_Allreduce(&linf, &local_linf, 1, MPI::mpi_type<decltype(linf)>(),
+                  MPI_MAX, a.map()->comm());
     return linf;
   }
   default:

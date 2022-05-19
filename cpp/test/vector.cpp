@@ -46,17 +46,17 @@ void test_vector()
   la::Vector<T> v(index_map, 1);
   std::fill(v.mutable_array().begin(), v.mutable_array().end(), 1.0);
 
-  const double norm2 = v.squared_norm();
+  const double norm2 = la::squared_norm(v);
   CHECK(norm2 == mpi_size * size_local);
 
   std::fill(v.mutable_array().begin(), v.mutable_array().end(), mpi_rank);
 
   const double sumn2
       = size_local * (mpi_size - 1) * mpi_size * (2 * mpi_size - 1) / 6;
-  CHECK(v.squared_norm() == sumn2);
-  CHECK(v.norm(la::Norm::l2) == std::sqrt(sumn2));
+  CHECK(la::squared_norm(v) == sumn2);
+  CHECK(la::norm(v, la::Norm::l2) == std::sqrt(sumn2));
   CHECK(la::inner_product(v, v) == sumn2);
-  CHECK(v.norm(la::Norm::linf) == static_cast<T>(mpi_size - 1));
+  CHECK(la::norm(v, la::Norm::linf) == static_cast<T>(mpi_size - 1));
 }
 
 } // namespace
