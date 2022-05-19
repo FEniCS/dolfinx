@@ -10,6 +10,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <numeric>
 #include <stdexcept>
+#include <stdio.h>
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
@@ -90,7 +91,7 @@ int cell_degree(mesh::CellType type, int num_nodes)
 
 std::uint8_t vec_pop(std::vector<std::uint8_t>& v, int i)
 {
-  auto pos = (i < 0) ? v.end() - i : v.begin() + i;
+  auto pos = (i < 0) ? v.end() + i : v.begin() + i;
   std::uint8_t value = *pos;
   v.erase(pos);
   return value;
@@ -122,6 +123,12 @@ std::vector<std::uint8_t> vtk_triangle(int num_nodes)
 
   while (remainders.size() > 0)
   {
+    if (remainders.size() == 1)
+    {
+      map[j++] = base + vec_pop(remainders, 0);
+      break;
+    }
+
     degree = cell_degree(mesh::CellType::triangle, remainders.size());
 
     map[j++] = base + vec_pop(remainders, 0);
@@ -137,9 +144,6 @@ std::vector<std::uint8_t> vtk_triangle(int num_nodes)
 
     for (int i = 1, k = 1; i < degree; k += i, ++i)
       map[j++] = base + vec_pop(remainders, -k);
-
-    if (remainders.size() == 1)
-      map[j++] = base + vec_pop(remainders, 0);
   }
 
   return map;
