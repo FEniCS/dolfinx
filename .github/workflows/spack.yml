@@ -2,9 +2,9 @@ name: Spack build
 
 on:
   # Uncomment the below 'push' to trigger on push
-  # push:
-  #  branches:
-  #    - "**"
+  push:
+   branches:
+     - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 2 * * THU"
@@ -30,11 +30,19 @@ jobs:
 
     steps:
       - name: Get Spack
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/checkout@v3
+        with:
+          path: ./spack
+          repository: spack/spack
+      - name: Get Spack
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/checkout@v3
         with:
           path: ./spack
           repository: ${{ github.event.inputs.spack_repo }}
           ref: ${{ github.event.inputs.spack_ref }}
+
       - name: Build DOLFINx (C++) development version via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
@@ -53,8 +61,8 @@ jobs:
       - name: Get DOLFINx code (to access test files)
         uses: actions/checkout@v3
         with:
-          ref: main
           path: ./dolfinx-main
+
       - name: Run a C++ test (development version)
         run: |
           . ./spack/share/spack/setup-env.sh
