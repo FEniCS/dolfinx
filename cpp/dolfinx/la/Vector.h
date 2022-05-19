@@ -291,7 +291,7 @@ auto norm(const Vector<T, Allocator>& a, Norm type = Norm::l2)
                                     { return std::norm(a) < std::norm(b); });
     auto local_linf = std::abs(*max_pos);
     decltype(local_linf) linf = 0;
-    MPI_Allreduce(&linf, &local_linf, 1, MPI::mpi_type<decltype(linf)>(),
+    MPI_Allreduce(&local_linf, &linf, 1, MPI::mpi_type<decltype(linf)>(),
                   MPI_MAX, a.map()->comm());
     return linf;
   }
