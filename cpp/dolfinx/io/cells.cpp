@@ -10,7 +10,6 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <numeric>
 #include <stdexcept>
-#include <stdio.h>
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
