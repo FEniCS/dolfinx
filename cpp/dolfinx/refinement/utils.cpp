@@ -126,7 +126,7 @@ xt::xtensor<double, 2> create_new_geometry(
 void refinement::update_logical_edgefunction(
     MPI_Comm neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
-    std::vector<std::int8_t>& marked_edges, const common::IndexMap& map_e)
+    std::vector<std::int8_t>& marked_edges, const common::IndexMap& map)
 {
   std::vector<std::int32_t> send_offsets = {0};
   std::vector<std::int64_t> data_to_send;
@@ -134,7 +134,7 @@ void refinement::update_logical_edgefunction(
   for (int i = 0; i < num_neighbors; ++i)
   {
     for (std::int32_t q : marked_for_update[i])
-      data_to_send.push_back(local_to_global(q, map_e));
+      data_to_send.push_back(local_to_global(q, map));
 
     send_offsets.push_back(data_to_send.size());
   }
@@ -149,7 +149,7 @@ void refinement::update_logical_edgefunction(
 
   // Flatten received values and set marked_edges at each index received
   std::vector<std::int32_t> local_indices(data_to_recv.size());
-  map_e.global_to_local(data_to_recv, local_indices);
+  map.global_to_local(data_to_recv, local_indices);
   for (std::int32_t local_index : local_indices)
   {
     assert(local_index != -1);
@@ -210,7 +210,7 @@ refinement::create_new_vertices(MPI_Comm neighbor_comm,
 
     for (int remote_process : shared_edges.links(local_i))
     {
-      // send map from global edge index to new global vertex index
+      // Send (global edge index) -> (new global vertex index) map
       values_to_send[remote_process].push_back(
           local_to_global(local_i, *edge_index_map));
       values_to_send[remote_process].push_back(local_edge.second);

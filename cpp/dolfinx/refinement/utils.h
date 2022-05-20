@@ -30,17 +30,17 @@ class IndexMap;
 namespace dolfinx::refinement
 {
 
-/// @brief Transfer marked edges between processes.
+/// @brief Communicate edge markers between processes that share edges.
 ///
 /// @param[in] neighbor_comm MPI Communicator for neighborhood
 /// @param[in] marked_for_update Lists of edges to be updates on each
 /// neighbor
 /// @param[in, out] marked_edges Marked edges to be updated
-/// @param[in] map_e IndexMap for edges
+/// @param[in] map Index map for edge entities
 void update_logical_edgefunction(
     MPI_Comm neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
-    std::vector<std::int8_t>& marked_edges, const common::IndexMap& map_e);
+    std::vector<std::int8_t>& marked_edges, const common::IndexMap& map);
 
 /// Add new vertex for each marked edge, and create
 /// new_vertex_coordinates and global_edge->new_vertex map.

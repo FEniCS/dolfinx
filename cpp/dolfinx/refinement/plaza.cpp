@@ -699,7 +699,8 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
   // Get sharing ranks for each edge
   graph::AdjacencyList<int> edge_ranks = map_e->index_to_dest_ranks();
 
-  // Create unique list of sharing ranks
+  // Create unique list of ranks that share edges (owners of ghosts
+  // plus ranks that ghost owned indices)
   std::vector<int> ranks(edge_ranks.array().begin(), edge_ranks.array().end());
   std::sort(ranks.begin(), ranks.end());
   ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());

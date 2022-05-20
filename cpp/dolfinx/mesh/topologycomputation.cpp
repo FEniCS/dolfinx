@@ -160,7 +160,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
   graph::AdjacencyList<int> vertex_ranks
       = vertex_indexmap.index_to_dest_ranks();
 
-  // Create unique list of sharing ranks
+  // Create unique list of ranks that share vertices (owners of ghosts
+  // plus ranks that ghost owned indices)
   std::vector<int> ranks(vertex_ranks.array().begin(),
                          vertex_ranks.array().end());
   std::sort(ranks.begin(), ranks.end());
