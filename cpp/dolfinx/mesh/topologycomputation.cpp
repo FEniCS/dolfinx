@@ -425,37 +425,19 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
                            recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
                            neighbor_comm);
 
-    // const graph::AdjacencyList<std::int64_t> recv_data
-    //     = dolfinx::MPI::neighbor_all_to_all(
-    //         neighbor_comm,
-    //         graph::AdjacencyList<std::int64_t>(send_global_index_data,
-    //                                            send_global_index_offsets));
-    // assert(recv_data.array().size() == recv_index.size());
-
-    // if (mpi_rank == 0)
-    // {
-    //   // std::cout << "Size test: " << recv_data.offsets().size() << ", "
-    //   //           << recv_disp.size() << std::endl;
-    //   for (std::size_t i = 0; i < recv_disp.size(); ++i)
-    //     std::cout << "Data: " << recv_data.offsets()[i] << ", " <<
-    //     recv_disp[i]
-    //               << std::endl;
-    // }
-    // assert(recv_data.offsets() == recv_disp);
-
     // Map back received indices
-    // for (std::size_t j = 0; j < recv_data.array().size(); ++j)
-    for (std::size_t j = 0; j < recv_data.size(); ++j)
+    for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
     {
-      const std::int64_t gi = recv_data[j];
-      const std::int32_t idx = recv_index[j];
-      if (gi != -1 and idx != -1)
+      for (int j = recv_disp[r]; j < recv_disp[r + 1]; ++j)
       {
-        assert(local_index[idx] >= num_local);
-        ghost_indices[local_index[idx] - num_local] = gi;
-        auto pos = std::upper_bound(recv_disp.begin(), recv_disp.end(), j);
-        int owner = std::distance(recv_disp.begin(), pos) - 1;
-        ghost_owners[local_index[idx] - num_local] = ranks[owner];
+        const std::int64_t gi = recv_data[j];
+        const std::int32_t idx = recv_index[j];
+        if (gi != -1 and idx != -1)
+        {
+          assert(local_index[idx] >= num_local);
+          ghost_indices[local_index[idx] - num_local] = gi;
+          ghost_owners[local_index[idx] - num_local] = ranks[r];
+        }
       }
     }
 
