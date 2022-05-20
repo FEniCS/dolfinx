@@ -160,8 +160,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
   graph::AdjacencyList<int> vertex_ranks
       = vertex_indexmap.index_to_dest_ranks();
 
-  // Create unique list of ranks that share vertices (owners of ghosts
-  // plus ranks that ghost owned indices)
+  // Create unique list of ranks that share vertices (owners of)
   std::vector<int> ranks(vertex_ranks.array().begin(),
                          vertex_ranks.array().end());
   std::sort(ranks.begin(), ranks.end());
@@ -246,9 +245,41 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
   // for the received entities (from other processes) with the indices
   // of the sent entities (to other processes)
 
-  const graph::AdjacencyList<std::int64_t> recv_data
-      = dolfinx::MPI::neighbor_all_to_all(
-          neighbor_comm, graph::AdjacencyList<std::int64_t>(send_entities));
+  // TODO: document better
+  std::vector<std::int64_t> recv_data;
+  std::vector<int> recv_disp;
+  {
+    std::vector<int> send_sizes;
+    std::vector<std::int64_t> send_buffer;
+    for (auto& x : send_entities)
+    {
+      send_sizes.push_back(x.size());
+      send_buffer.insert(send_buffer.end(), x.begin(), x.end());
+    }
+    assert(send_sizes.size() == ranks.size());
+
+    // Build send displacements
+    std::vector<int> send_disp = {0};
+    std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                     std::back_inserter(send_disp));
+
+    std::vector<int> recv_sizes(ranks.size());
+    send_sizes.reserve(1);
+    recv_sizes.reserve(1);
+    MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                          MPI_INT, comm);
+
+    // Build recv displacements
+    recv_disp = {0};
+    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                     std::back_inserter(recv_disp));
+
+    recv_data.resize(recv_disp.back());
+    MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
+                           send_disp.data(), MPI_INT64_T, recv_data.data(),
+                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                           neighbor_comm);
+  }
 
   // List of (local index, sorted global vertices) pairs received from
   // othe ranks. The list is eventully sorted.
@@ -262,12 +293,11 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
   // set to -1.
   std::vector<std::int32_t> recv_index;
   const int mpi_rank = dolfinx::MPI::rank(comm);
-  for (std::size_t r = 0; r < ranks.size(); ++r)
+  for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
   {
-    for (int j = recv_data.offsets()[r]; j < recv_data.offsets()[r + 1];
-         j += num_vertices_per_e)
+    for (int j = recv_disp[r]; j < recv_disp[r + 1]; j += num_vertices_per_e)
     {
-      xtl::span<const std::int64_t> recv_vec(recv_data.array().data() + j,
+      xtl::span<const std::int64_t> recv_vec(recv_data.data() + j,
                                              num_vertices_per_e);
       auto it = std::lower_bound(global_entity_to_entity_index.begin(),
                                  global_entity_to_entity_index.end(), recv_vec,
