@@ -431,26 +431,28 @@ class FunctionSpace(ufl.FunctionSpace):
             self._cpp_object = cppV
             return
 
-        # Initialise the ufl.FunctionSpace
-        if isinstance(element, ufl.FiniteElementBase):
-            super().__init__(mesh.ufl_domain(), element)
-        else:
-            e = ElementMetaData(*element)
-            ufl_element = ufl.FiniteElement(e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree)
-            super().__init__(mesh.ufl_domain(), ufl_element)
+        # This if is required for type checks to pass
+        if mesh is not None:
+            # Initialise the ufl.FunctionSpace
+            if isinstance(element, ufl.FiniteElementBase):
+                super().__init__(mesh.ufl_domain(), element)
+            else:
+                e = ElementMetaData(*element)
+                ufl_element = ufl.FiniteElement(e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree)
+                super().__init__(mesh.ufl_domain(), ufl_element)
 
-        # Compile dofmap and element and create DOLFIN objects
-        (self._ufcx_element, self._ufcx_dofmap), module, code = jit.ffcx_jit(
-            mesh.comm, self.ufl_element(), form_compiler_params=form_compiler_params,
-            jit_params=jit_params)
+            # Compile dofmap and element and create DOLFIN objects
+            (self._ufcx_element, self._ufcx_dofmap), module, code = jit.ffcx_jit(
+                mesh.comm, self.ufl_element(), form_compiler_params=form_compiler_params,
+                jit_params=jit_params)
 
-        ffi = cffi.FFI()
-        cpp_element = _cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
-        cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
-            "uintptr_t", ffi.addressof(self._ufcx_dofmap)), mesh.topology, cpp_element)
+            ffi = cffi.FFI()
+            cpp_element = _cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
+            cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
+                "uintptr_t", ffi.addressof(self._ufcx_dofmap)), mesh.topology, cpp_element)
 
-        # Initialize the cpp.FunctionSpace
-        self._cpp_object = _cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
+            # Initialize the cpp.FunctionSpace
+            self._cpp_object = _cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
 
     def clone(self) -> FunctionSpace:
         """Return a new FunctionSpace :math:`W` which shares data with this
