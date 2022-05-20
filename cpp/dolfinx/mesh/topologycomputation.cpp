@@ -179,6 +179,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
   // index
   std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>
       entity_global_to_local;
+  std::vector<std::int64_t> entity_global_to_local_new;
 
   {
     // If another rank shares all vertices of an entity, it may need the entity
@@ -215,6 +216,10 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
           std::sort(vglobal.begin(), vglobal.end());
           entity_global_to_local.push_back({vglobal, *entity_idx});
 
+          entity_global_to_local_new.insert(entity_global_to_local_new.end(),
+                                            vglobal.begin(), vglobal.end());
+          entity_global_to_local_new.push_back(*entity_idx);
+
           // Only send entities that are not known to be ghosts
           if (ghost_status[*entity_idx] != 2)
           {
@@ -232,6 +237,29 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
         it = it1;
       }
     }
+
+    std::vector<std::int32_t> perm(entity_global_to_local_new.size()
+                                   / (num_vertices_per_e + 1));
+    std::iota(perm.begin(), perm.end(), 0);
+    std::sort(perm.begin(), perm.end(),
+              [&entities = entity_global_to_local_new,
+               shape1 = num_vertices_per_e + 1](auto e0, auto e1)
+              {
+                auto it0 = std::next(entities.begin(), e0 * shape1);
+                auto it1 = std::next(entities.begin(), e1 * shape1);
+                return std::lexicographical_compare(
+                    it0, std::next(it0, shape1), it1, std::next(it1, shape1));
+              });
+    perm.erase(
+        std::unique(perm.begin(), perm.end(),
+                    [&entities = entity_global_to_local_new,
+                     shape1 = num_vertices_per_e + 1](auto e0, auto e1)
+                    {
+                      auto it0 = std::next(entities.begin(), e0 * shape1);
+                      auto it1 = std::next(entities.begin(), e1 * shape1);
+                      return std::equal(it0, std::next(it0, shape1), it1);
+                    }),
+        perm.end());
 
     std::sort(entity_global_to_local.begin(), entity_global_to_local.end());
     entity_global_to_local.erase(std::unique(entity_global_to_local.begin(),
