@@ -33,23 +33,29 @@ namespace dolfinx::refinement
 /// @brief Communicate edge markers between processes that share edges.
 ///
 /// @param[in] neighbor_comm MPI Communicator for neighborhood
-/// @param[in] marked_for_update Lists of edges to be updates on each
-/// neighbor
-/// @param[in, out] marked_edges Marked edges to be updated
-/// @param[in] map Index map for edge entities
+/// @param[in] marked_for_update Lists of edges to be updated on each
+/// neighbor. `marked_for_update[r]` is the list of edge indices that
+/// are marked by the caller and are shared with local MPI rank `r`.
+/// @param[in, out] marked_edges Marker for each edge on the calling
+/// process
+/// @param[in] map Index map for the mesh edges
 void update_logical_edgefunction(
     MPI_Comm neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
     std::vector<std::int8_t>& marked_edges, const common::IndexMap& map);
 
-/// Add new vertex for each marked edge, and create
+/// @brief Add new vertex for each marked edge, and create
 /// new_vertex_coordinates and global_edge->new_vertex map.
+///
 /// Communicate new vertices with MPI to all affected processes.
+///
 /// @param[in] neighbor_comm MPI Communicator for neighborhood
 /// @param[in] shared_edges
 /// @param[in] mesh Existing mesh
 /// @param[in] marked_edges
-/// @return edge_to_new_vertex map and geometry array
+/// @return (0) map from local edge index to new vertex global index,
+/// and (1) the coordinates of the new vertices
+edge_to_new_vertex map and geometry array
 std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
 create_new_vertices(MPI_Comm neighbor_comm,
                     const graph::AdjacencyList<int>& shared_edges,
