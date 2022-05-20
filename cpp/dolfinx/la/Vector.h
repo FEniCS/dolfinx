@@ -94,7 +94,6 @@ public:
     const std::int32_t local_size = _bs * _map->size_local();
     const std::int32_t num_ghosts = _bs * _map->num_ghosts();
     xtl::span<T> x_remote(_x.data() + local_size, num_ghosts);
-    auto op = [](auto /*a*/, auto b) { return b; };
     _scatterer->scatter_fwd_end(_request);
 
     auto unpack = [](const auto& in, const auto& idx, auto& out, auto op)
@@ -102,7 +101,9 @@ public:
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
     };
-    unpack(_buffer_remote, _scatterer->remote_indices(), x_remote, op);
+
+    unpack(_buffer_remote, _scatterer->remote_indices(), x_remote,
+           [](auto /*a*/, auto b) { return b; });
   }
 
   /// Scatter local data to ghost positions on other ranks
@@ -184,16 +185,19 @@ private:
   // Map describing the data layout
   std::shared_ptr<const common::IndexMap> _map;
 
+  // Scatter for managing MPI communication
   std::shared_ptr<const common::Scatterer> _scatterer;
 
   // Block size
   int _bs;
 
-  // Buffers for ghost scatters
+  // MPI request handle
   MPI_Request _request = MPI_REQUEST_NULL;
+
+  // Buffers for ghost scatters
   std::vector<T, Allocator> _buffer_local, _buffer_remote;
 
-  // Data
+  // Vector data
   std::vector<T, Allocator> _x;
 };
 
