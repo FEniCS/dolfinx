@@ -11,7 +11,7 @@ from __future__ import annotations
 import typing
 
 if typing.TYPE_CHECKING:
-    from dolfinx.fem.function import Constant, Function, FunctionSpace
+    from dolfinx.fem.function import Constant, Function
 
 import collections.abc
 import types
@@ -20,10 +20,11 @@ import typing
 import numpy as np
 
 import ufl
+import dolfinx
 from dolfinx import cpp as _cpp
 
 
-def locate_dofs_geometrical(V: typing.Iterable[typing.Union[_cpp.fem.FunctionSpace, FunctionSpace]],
+def locate_dofs_geometrical(V: typing.Union[dolfinx.fem.FunctionSpace, typing.Iterable[dolfinx.fem.FunctionSpace]],
                             marker: types.FunctionType) -> np.ndarray:
     """Locate degrees-of-freedom geometrically using a marker function.
 
@@ -48,21 +49,15 @@ def locate_dofs_geometrical(V: typing.Iterable[typing.Union[_cpp.fem.FunctionSpa
     """
 
     if isinstance(V, collections.abc.Sequence):
-        _V = []
-        for space in V:
-            try:
-                _V.append(space._cpp_object)
-            except AttributeError:
-                _V.append(space)
+        _V = [space._cpp_object for space in V]
         return _cpp.fem.locate_dofs_geometrical(_V, marker)
+    elif isinstance(V, dolfinx.fem.FunctionSpace):
+        return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)
     else:
-        try:
-            return _cpp.fem.locate_dofs_geometrical(V, marker)
-        except TypeError:
-            return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)
+        raise TypeError
 
 
-def locate_dofs_topological(V: typing.Iterable[typing.Union[_cpp.fem.FunctionSpace, FunctionSpace]],
+def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpace, typing.Iterable[dolfinx.fem.FunctionSpace]],
                             entity_dim: int, entities: typing.List[int],
                             remote: bool = True) -> np.ndarray:
     """Locate degrees-of-freedom belonging to mesh entities topologically.
@@ -87,23 +82,17 @@ def locate_dofs_topological(V: typing.Iterable[typing.Union[_cpp.fem.FunctionSpa
 
     _entities = np.asarray(entities, dtype=np.int32)
     if isinstance(V, collections.abc.Sequence):
-        _V = []
-        for space in V:
-            try:
-                _V.append(space._cpp_object)
-            except AttributeError:
-                _V.append(space)
+        _V = [space._cpp_object for space in V]
         return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
+    elif isinstance(V, dolfinx.fem.FunctionSpace):
+        return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)
     else:
-        try:
-            return _cpp.fem.locate_dofs_topological(V, entity_dim, _entities, remote)
-        except TypeError:
-            return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)
+        raise TypeError
 
 
 class DirichletBCMetaClass:
     def __init__(self, value: typing.Union[ufl.Coefficient, Function, Constant],
-                 dofs: typing.List[int], V: FunctionSpace = None):
+                 dofs: typing.List[int], V: dolfinx.fem.FunctionSpace = None):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
@@ -133,11 +122,11 @@ class DirichletBCMetaClass:
 
         if V is not None:
             try:
-                super().__init__(_value, dofs, V)
+                super().__init__(_value, dofs, V)  # type: ignore
             except TypeError:
-                super().__init__(_value, dofs, V._cpp_object)
+                super().__init__(_value, dofs, V._cpp_object)  # type: ignore
         else:
-            super().__init__(_value, dofs)
+            super().__init__(_value, dofs)  # type: ignore
 
     @property
     def g(self):
@@ -146,7 +135,7 @@ class DirichletBCMetaClass:
 
 
 def dirichletbc(value: typing.Union[Function, Constant],
-                dofs: typing.List[int], V: FunctionSpace = None) -> DirichletBCMetaClass:
+                dofs: typing.List[int], V: dolfinx.fem.FunctionSpace = None) -> DirichletBCMetaClass:
     """Create a representation of Dirichlet boundary condition which
     is imposed on a linear system.
 
@@ -181,7 +170,7 @@ def dirichletbc(value: typing.Union[Function, Constant],
     return formcls(value, dofs, V)
 
 
-def bcs_by_block(spaces: typing.Iterable[FunctionSpace],
+def bcs_by_block(spaces: typing.Iterable[dolfinx.fem.FunctionSpace],
                  bcs: typing.Iterable[DirichletBCMetaClass]) -> typing.Iterable[typing.Iterable[DirichletBCMetaClass]]:
     """Arrange Dirichlet boundary conditions by the function space that
     they constrain.

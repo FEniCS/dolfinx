@@ -98,7 +98,7 @@ class VectorMetaClass:
 
     @property
     def array(self) -> np.ndarray:
-        raise NotImplementedError
+        return super().array  # type: ignore
 
 
 def vector(map, bs=1, dtype=np.float64) -> VectorMetaClass:

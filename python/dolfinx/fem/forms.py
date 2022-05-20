@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import collections
+import collections.abc
 import typing
 
 from dolfinx.fem.function import FunctionSpace
@@ -62,29 +63,30 @@ class FormMetaClass:
         """C code strings"""
         return self._code
 
+    # The below member function definitions are necessary for type checking
     @property
     def function_spaces(self) -> typing.List[FunctionSpace]:
         """Function spaces on which this form is defined"""
-        raise NotImplementedError
+        return super().function_spaces  # type: ignore
 
     @property
     def dtype(self) -> np.dtype:
         """dtype of this form"""
-        raise NotImplementedError
+        return super().dtype  # type: ignore
 
     @property
     def mesh(self) -> Mesh:
         """Mesh on which this form is defined"""
-        raise NotImplementedError
+        return super().mesh  # type: ignore
 
     @property
     def integral_types(self):
         """Integral types in the form"""
-        raise NotImplementedError
+        return super().integral_types  # type: ignore
 
 
 def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = PETSc.ScalarType,
-         form_compiler_params: dict = {}, jit_params: dict = {}) -> FormMetaClass:
+         form_compiler_params: dict = {}, jit_params: dict = {}):
     """Create a DOLFINx Form or an array of Forms
 
     Args:
@@ -165,7 +167,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
 
 def extract_function_spaces(forms: typing.Union[typing.Iterable[FormMetaClass],
                                                 typing.Iterable[typing.Iterable[FormMetaClass]]],
-                            index: int = 0) -> typing.Iterable[function.FunctionSpace]:
+                            index: int = 0) -> typing.Iterable[typing.Union[None, function.FunctionSpace]]:
     """Extract common function spaces from an array of forms. If `forms`
     is a list of linear form, this function returns of list of the
     corresponding test functions. If `forms` is a 2D array of bilinear
