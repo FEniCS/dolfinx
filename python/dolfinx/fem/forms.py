@@ -13,6 +13,7 @@ from dolfinx.fem.function import FunctionSpace
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem import function
+    from dolfinx.mesh import Mesh
 
 import cffi
 import numpy as np
@@ -63,10 +64,22 @@ class FormMetaClass:
 
     @property
     def function_spaces(self) -> typing.List[FunctionSpace]:
+        """Function spaces on which this form is defined"""
         raise NotImplementedError
 
     @property
     def dtype(self) -> np.dtype:
+        """dtype of this form"""
+        raise NotImplementedError
+
+    @property
+    def mesh(self) -> Mesh:
+        """Mesh on which this form is defined"""
+        raise NotImplementedError
+
+    @property
+    def integral_types(self):
+        """Integral types in the form"""
         raise NotImplementedError
 
 
