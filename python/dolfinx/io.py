@@ -21,7 +21,8 @@ from dolfinx.mesh import GhostMode, Mesh
 
 from mpi4py import MPI as _MPI
 
-__all__ = ["FidesWriter", "VTKFile", "VTXWriter", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
+__all__ = ["FidesWriter", "VTKFile", "VTXWriter", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk",
+           "distribute_entity_data"]
 
 
 def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Function]):
