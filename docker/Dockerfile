@@ -49,7 +49,7 @@ ARG PYBIND11_VERSION=2.9.2
 ARG PETSC_VERSION=3.17.1
 ARG SLEPC_VERSION=3.17.1
 ARG ADIOS2_VERSION=2.8.0
-ARG PYVISTA_VERSION=0.34.1
+# ARG PYVISTA_VERSION=0.34.1 # Deactivated until https://gitlab.kitware.com/vtk/vtk/-/issues/18335 is resolved
 ARG NUMPY_VERSION=1.21.5
 ARG KAHIP_VERSION=3.14
 ARG XTENSOR_VERSION=0.24.2
@@ -465,7 +465,7 @@ ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
 FROM dolfinx as lab
 LABEL description="DOLFINx Jupyter Lab"
 
-ARG PYVISTA_VERSION
+# ARG PYVISTA_VERSION
 
 WORKDIR /root
 
@@ -481,7 +481,8 @@ RUN apt-get -qq update && \
 # matplotlib improves plotting quality with better color maps and properly rendering colorbars.
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
-    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
+    # pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
+    pip3 install --find-links https://wheels.pyvista.org/ pyvista ;; \
     esac; \
     pip3 install --no-cache-dir matplotlib
 
