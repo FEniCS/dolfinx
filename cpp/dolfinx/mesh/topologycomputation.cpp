@@ -291,8 +291,9 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
   // Compare received and sent entity keys. Any received entities that
   // are not found in global_entity_to_entity_index will have recv_index
   // set to -1.
-  std::vector<std::int32_t> recv_index;
   const int mpi_rank = dolfinx::MPI::rank(comm);
+  std::vector<std::int32_t> recv_index;
+  recv_index.reserve(recv_disp.size() - 1);
   for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
   {
     for (int j = recv_disp[r]; j < recv_disp[r + 1]; j += num_vertices_per_e)
@@ -383,12 +384,11 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
     std::int64_t local_offset = 0;
     MPI_Exscan(&_num_local, &local_offset, 1, MPI_INT64_T, MPI_SUM, comm);
 
-    std::vector<std::int64_t> send_global_index_data;
-    std::vector<int> send_global_index_offsets = {0};
-
     // Send global indices for same entities that we sent before. This
     // uses the same pattern as before, so we can match up the received
     // data to the indices in recv_index
+    std::vector<std::int64_t> send_global_index_data;
+    std::vector<int> send_sizes;
     for (const auto& indices : send_index)
     {
       std::transform(indices.cbegin(), indices.cend(),
@@ -401,28 +401,60 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
                                   ? offset + local_index[idx]
                                   : -1;
                      });
-      send_global_index_offsets.push_back(send_global_index_data.size());
+      send_sizes.push_back(indices.size());
     }
 
-    const graph::AdjacencyList<std::int64_t> recv_data
-        = dolfinx::MPI::neighbor_all_to_all(
-            neighbor_comm,
-            graph::AdjacencyList<std::int64_t>(send_global_index_data,
-                                               send_global_index_offsets));
-    assert(recv_data.array().size() == recv_index.size());
+    std::vector<int> send_disp = {0};
+    std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                     std::back_inserter(send_disp));
+
+    std::vector<int> recv_sizes(ranks.size());
+    send_sizes.reserve(1);
+    recv_sizes.reserve(1);
+    MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                          MPI_INT, neighbor_comm);
+
+    // Build recv displacements
+    recv_disp = {0};
+    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                     std::back_inserter(recv_disp));
+
+    recv_data.resize(recv_disp.back());
+    MPI_Neighbor_alltoallv(send_global_index_data.data(), send_sizes.data(),
+                           send_disp.data(), MPI_INT64_T, recv_data.data(),
+                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                           neighbor_comm);
+
+    // const graph::AdjacencyList<std::int64_t> recv_data
+    //     = dolfinx::MPI::neighbor_all_to_all(
+    //         neighbor_comm,
+    //         graph::AdjacencyList<std::int64_t>(send_global_index_data,
+    //                                            send_global_index_offsets));
+    // assert(recv_data.array().size() == recv_index.size());
+
+    // if (mpi_rank == 0)
+    // {
+    //   // std::cout << "Size test: " << recv_data.offsets().size() << ", "
+    //   //           << recv_disp.size() << std::endl;
+    //   for (std::size_t i = 0; i < recv_disp.size(); ++i)
+    //     std::cout << "Data: " << recv_data.offsets()[i] << ", " <<
+    //     recv_disp[i]
+    //               << std::endl;
+    // }
+    // assert(recv_data.offsets() == recv_disp);
 
     // Map back received indices
-    for (std::size_t j = 0; j < recv_data.array().size(); ++j)
+    // for (std::size_t j = 0; j < recv_data.array().size(); ++j)
+    for (std::size_t j = 0; j < recv_data.size(); ++j)
     {
-      const std::int64_t gi = recv_data.array()[j];
+      const std::int64_t gi = recv_data[j];
       const std::int32_t idx = recv_index[j];
       if (gi != -1 and idx != -1)
       {
         assert(local_index[idx] >= num_local);
         ghost_indices[local_index[idx] - num_local] = gi;
-        auto pos = std::upper_bound(recv_data.offsets().begin(),
-                                    recv_data.offsets().end(), j);
-        int owner = std::distance(recv_data.offsets().begin(), pos) - 1;
+        auto pos = std::upper_bound(recv_disp.begin(), recv_disp.end(), j);
+        int owner = std::distance(recv_disp.begin(), pos) - 1;
         ghost_owners[local_index[idx] - num_local] = ranks[owner];
       }
     }
