@@ -68,11 +68,10 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
 
 /// Find all DOFs on this process that have been detected on another
 /// process
-/// @param[in] comm A symmetric communicator based on the forward
-/// neighborhood communicator in the IndexMap
-/// @param[in] map The IndexMap with the dof layout
+/// @param[in] comm A symmetric communicator
+/// @param[in] map The index map with the dof layout
 /// @param[in] bs_map The block size of the index map, i.e. the dof
-/// array. It should be set to one if `dofs_local` contains block indices.
+/// array. It should be set to 1 if `dofs_local` contains block indices.
 /// @param[in] dofs_local List of degrees of freedom on this rank
 /// @returns Degrees of freedom found on the other ranks that exist on
 /// this rank
@@ -80,9 +79,12 @@ std::vector<std::int32_t>
 get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
                 const xtl::span<const std::int32_t>& dofs_local)
 {
-  int num_neighbors(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);
-  assert(num_neighbors == outdegree);
+  int num_neighbors(-1);
+  {
+    int outdegree(-2), weighted(-1);
+    MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);
+    assert(num_neighbors == outdegree);
+  }
 
   // Return early if there are no neighbors
   if (num_neighbors == 0)
@@ -250,7 +252,7 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
 
   if (remote)
   {
-    // Get bc dof indices (local) in  V spaces on this process that were
+    // Get bc dof indices (local) in V spaces on this process that were
     // found by other processes, e.g. a vertex dof on this process that
     // has no connected facets on the boundary.
     auto map = dofmap->index_map;

@@ -423,8 +423,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
   const int D = topology.dim();
 
-  // Build list flag for owned mesh entities that are shared, i.e. are a
-  // ghost on a neighbor
+  // Build list of flags for owned mesh entities that are shared, i.e.
+  // are a ghost on a neighbor
   std::vector<std::vector<std::int8_t>> shared_entity(D + 1);
   for (std::size_t d = 0; d < shared_entity.size(); ++d)
   {
