@@ -95,11 +95,6 @@ public:
   /// @param[in] local_data All data associated with owned indices. Size
   /// is `size_local()` from the IndexMap used to create the scatterer,
   /// multiplied by the block size. The data for each index is blocked.
-  /// @param[out] remote_data Received data associated with the ghost
-  /// indices. The order follows the order of the ghost indices in the
-  /// IndexMap used to create the scatterer. The size equal to the
-  /// number of ghosts in the index map multiplied by the block size.
-  /// The data for each index is blocked.
   /// @param[in] local_buffer Working buffer. The required size is given
   /// by Scatterer::local_buffer_size.
   /// @param[out] remote_buffer Working buffer. The required size is
@@ -107,27 +102,48 @@ public:
   /// @param[in] pack_fn Function to pack data from `local_data` into
   /// the send buffer. It is passed as an argument to support
   /// CUDA/device-aware MPI.
-  /// @param[in] unpack_fn Function to unpack the receive buffer into
-  /// `remote_data`. It is passed as an argument to support
-  /// CUDA/device-aware MPI.
-  template <typename T, typename Functor1, typename Functor2>
-  void scatter_fwd(const xtl::span<const T>& local_data,
-                   xtl::span<T> remote_data, xtl::span<T> local_buffer,
-                   xtl::span<T> remote_buffer, Functor1 pack_fn,
-                   Functor2 unpack_fn) const
+  /// @param[in] request The MPI request handle for tracking the status
+  /// of the send
+  template <typename T, typename Functor>
+  void scatter_fwd_begin(const xtl::span<const T>& local_data,
+                         xtl::span<T> local_buffer, xtl::span<T> remote_buffer,
+                         Functor pack_fn, MPI_Request& request) const
   {
     assert(local_buffer.size() == _local_inds.size());
     assert(remote_buffer.size() == _remote_inds.size());
-
     pack_fn(local_data, _local_inds, local_buffer);
-
-    MPI_Request request;
     scatter_fwd_begin(xtl::span<const T>(local_buffer), remote_buffer, request);
-    scatter_fwd_end(request);
+  }
 
-    // Insert op
-    auto op = [](T /*a*/, T b) { return b; };
-    unpack_fn(remote_buffer, _remote_inds, remote_data, op);
+  /// @brief Complete a non-blocking send from the local owner to
+  /// process ranks that have the index as a ghost, and unpack  received
+  /// buffer into remote data.
+  ///
+  /// This function completes the communication started by
+  /// Scatterer::scatter_fwd_begin.
+  ///
+  /// @param[in] remote_buffer Working buffer, same used in
+  /// Scatterer::scatter_fwd_begin.
+  /// @param[out] remote_data Received data associated with the ghost
+  /// indices. The order follows the order of the ghost indices in the
+  /// IndexMap used to create the scatterer. The size equal to the
+  /// number of ghosts in the index map multiplied by the block size.
+  /// The data for each index is blocked.
+  /// @param[in] unpack_fn Function to unpack the received buffer into
+  /// `remote_data`. It is passed as an argument to support
+  /// CUDA/device-aware MPI.
+  /// @param[in] request The MPI request handle for tracking the status
+  /// of the send
+  template <typename T, typename Functor>
+  void scatter_fwd_end(const xtl::span<const T>& remote_buffer,
+                       xtl::span<T> remote_data, Functor unpack_fn,
+                       MPI_Request& request) const
+  {
+    assert(remote_buffer.size() == _remote_inds.size());
+    assert(remote_data.size() == _remote_inds.size());
+    scatter_fwd_end(request);
+    unpack_fn(remote_buffer, _remote_inds, remote_data,
+              [](T /*a*/, T b) { return b; });
   }
 
   /// @brief Scatter data associated with owned indices to ghosting
@@ -145,6 +161,7 @@ public:
   void scatter_fwd(const xtl::span<const T>& local_data,
                    xtl::span<T> remote_data) const
   {
+    MPI_Request request;
     std::vector<T> local_buffer(local_buffer_size(), 0);
     std::vector<T> remote_buffer(remote_buffer_size(), 0);
     auto pack_fn = [](const auto& in, const auto& idx, auto& out)
@@ -152,13 +169,17 @@ public:
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[i] = in[idx[i]];
     };
+    scatter_fwd_begin(local_data, xtl::span<T>(local_buffer),
+                      xtl::span<T>(remote_buffer), pack_fn, request);
+
     auto unpack_fn = [](const auto& in, const auto& idx, auto& out, auto op)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
     };
-    scatter_fwd(local_data, remote_data, xtl::span<T>(local_buffer),
-                xtl::span<T>(remote_buffer), pack_fn, unpack_fn);
+
+    scatter_fwd_end(xtl::span<const T>(remote_buffer), remote_data, unpack_fn,
+                    request);
   }
 
   /// @brief Start a non-blocking send of ghost data to ranks that own
@@ -223,45 +244,58 @@ public:
   /// @tparam Functor1 The pack function
   /// @tparam Functor2 The unpack function
   ///
-  /// @param[out] local_data All data associated with owned indices.
-  /// Size is `size_local()` from the IndexMap used to create the
-  /// scatterer, multiplied by the block size. The data for each index
-  /// is blocked
   /// @param[in] remote_data Received data associated with the ghost
   /// indices. The order follows the order of the ghost indices in the
   /// IndexMap used to create the scatterer. The size equal to the
   /// number of ghosts in the index map multiplied by the block size.
   /// The data for each index is blocked.
-  /// @param[in] local_buffer Working buffer. The requires size is given
+  /// @param[out] local_buffer Working buffer. The requires size is given
   /// by Scatterer::local_buffer_size.
   /// @param[out] remote_buffer Working buffer. The requires size is
   /// given by Scatterer::remote_buffer_size.
-  /// @param[in] op The reduction operation when accumulating received
-  /// values. To add the received values use `std::plus<T>()`.
   /// @param[in] pack_fn Function to pack data from `local_data` into
   /// the send buffer. It is passed as an argument to support
   /// CUDA/device-aware MPI.
-  /// @param[in] unpack_fn Function to unpack the receive buffer into
-  /// `remote_data`. It is passed as an argument to support
-  /// CUDA/device-aware MPI.
-  template <typename T, typename BinaryOp, typename Functor1, typename Functor2>
-  void scatter_rev(xtl::span<T> local_data,
-                   const xtl::span<const T>& remote_data,
-                   xtl::span<T> local_buffer, xtl::span<T> remote_buffer,
-                   BinaryOp op, Functor1 pack_fn, Functor2 unpack_fn) const
+  /// @param request The MPI request handle for tracking the status of
+  /// the non-blocking communication
+  template <typename T, typename Functor>
+  void scatter_rev_begin(const xtl::span<const T>& remote_data,
+                         xtl::span<T> remote_buffer, xtl::span<T> local_buffer,
+                         Functor pack_fn, MPI_Request& request) const
   {
     assert(local_buffer.size() == _local_inds.size());
     assert(remote_buffer.size() == _remote_inds.size());
-
-    // Pack send buffer
     pack_fn(remote_data, _remote_inds, remote_buffer);
-
-    // Exchange data
-    MPI_Request request;
     scatter_rev_begin(xtl::span<const T>(remote_buffer), local_buffer, request);
-    scatter_rev_end(request);
+  }
 
-    // Copy/accumulate into 'local_data'
+  /// @brief End the reverse scatter communication, and unpack the received
+  /// local buffer into local data.
+  ///
+  /// This function must be called after Scatterer::scatter_rev_begin.
+  /// The buffers passed to Scatterer::scatter_rev_begin must not be
+  /// modified until after the function has been called.
+  /// @param[in] local_buffer Working buffer. Same buffer should be used in
+  /// Scatterer::scatter_rev_begin.
+  /// @param[out] local_data All data associated with owned indices.
+  /// Size is `size_local()` from the IndexMap used to create the
+  /// scatterer, multiplied by the block size. The data for each index
+  /// is blocked.
+  /// @param[in] unpack_fn Function to unpack the receive buffer into
+  /// `local_data`. It is passed as an argument to support
+  /// CUDA/device-aware MPI.
+  /// @param[in] op The reduction operation when accumulating received
+  /// values. To add the received values use `std::plus<T>()`.
+  /// @param[in] request The handle used when calling
+  /// Scatterer::scatter_rev_begin
+  template <typename T, typename Functor, typename BinaryOp>
+  void scatter_rev_end(const xtl::span<const T>& local_buffer,
+                       xtl::span<T> local_data, Functor unpack_fn, BinaryOp op,
+                       MPI_Request& request)
+  {
+    assert(local_buffer.size() == _local_inds.size());
+    assert(_local_inds.size() <= local_data.size());
+    scatter_rev_end(request);
     unpack_fn(local_buffer, _local_inds, local_data, op);
   }
 
@@ -283,8 +317,11 @@ public:
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
     };
-    scatter_rev(local_data, remote_data, xtl::span<T>(local_buffer),
-                xtl::span<T>(remote_buffer), op, pack_fn, unpack_fn);
+    MPI_Request request;
+    scatter_rev_begin(remote_data, xtl::span<T>(remote_buffer),
+                      xtl::span<T>(local_buffer), pack_fn, request);
+    scatter_rev_end(xtl::span<const T>(local_buffer), local_data, unpack_fn, op,
+                    request);
   }
 
   /// @brief Size of buffer for local data (owned and shared) used in
