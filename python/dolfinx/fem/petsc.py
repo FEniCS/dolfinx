@@ -50,8 +50,8 @@ def _extract_function_spaces(a: typing.List[typing.List[FormMetaClass]]):
     Vblock = map(partial(map, fn), a)
 
     # Compute spaces for each row/column block
-    rows = [set() for i in range(len(a))]
-    cols = [set() for i in range(len(a[0]))]
+    rows: typing.List[typing.Set] = [set() for i in range(len(a))]
+    cols: typing.List[typing.Set] = [set() for i in range(len(a[0]))]
     for i, Vrow in enumerate(Vblock):
         for j, V in enumerate(Vrow):
             if V is not None:

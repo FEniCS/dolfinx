@@ -217,7 +217,7 @@ class MeshTagsMetaClass:
             directly.
 
         """
-        super().__init__(mesh, dim, indices.astype(np.int32), values)
+        super().__init__(mesh, dim, indices.astype(np.int32), values)  # type: ignore
 
     def ufl_id(self) -> int:
         """Object identifier.
@@ -343,7 +343,7 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_f
     return create_interval(comm, nx, [0.0, 1.0], ghost_mode, partitioner)
 
 
-def create_rectangle(comm: _MPI.Comm, points: typing.List[np.array], n: list, cell_type=CellType.triangle,
+def create_rectangle(comm: _MPI.Comm, points: typing.List[np.ndarray], n: list, cell_type=CellType.triangle,
                      ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner(),
                      diagonal: DiagonalType = DiagonalType.right) -> Mesh:
     """Create rectangle mesh
@@ -395,7 +395,7 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
                             partitioner, diagonal)
 
 
-def create_box(comm: _MPI.Comm, points: typing.List[np.array], n: list,
+def create_box(comm: _MPI.Comm, points: typing.List[np.ndarray], n: list,
                cell_type=CellType.tetrahedron,
                ghost_mode=GhostMode.shared_facet,
                partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:

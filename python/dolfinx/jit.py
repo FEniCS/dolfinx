@@ -132,7 +132,7 @@ def get_parameters(priority_parameters: Optional[dict] = None) -> dict:
     """
     parameters = {}
 
-    for param, (value, desc) in DOLFINX_DEFAULT_JIT_PARAMETERS.items():
+    for param, (value, _) in DOLFINX_DEFAULT_JIT_PARAMETERS.items():
         parameters[param] = value
 
     # NOTE: _load_parameters uses functools.lru_cache
@@ -143,7 +143,7 @@ def get_parameters(priority_parameters: Optional[dict] = None) -> dict:
     if priority_parameters is not None:
         parameters.update(priority_parameters)
 
-    parameters["cache_dir"] = Path(parameters["cache_dir"]).expanduser()
+    parameters["cache_dir"] = Path(str(parameters["cache_dir"])).expanduser()
 
     return parameters
 

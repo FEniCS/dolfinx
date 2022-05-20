@@ -402,7 +402,7 @@ class Function(ufl.Coefficient):
 
     def collapse(self) -> Function:
         u_collapsed = self._cpp_object.collapse()
-        V_collapsed = FunctionSpace(None, self.ufl_element(),
+        V_collapsed = FunctionSpace(self.mesh, self.ufl_element(),
                                     u_collapsed.function_space)
         return Function(V_collapsed, u_collapsed.x)
 
@@ -467,7 +467,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
         """
         Vcpp = _cpp.fem.FunctionSpace(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
-        return FunctionSpace(None, self.ufl_element(), Vcpp)
+        return FunctionSpace(self.mesh, self.ufl_element(), Vcpp)
 
     @property
     def num_sub_spaces(self) -> int:
@@ -487,7 +487,7 @@ class FunctionSpace(ufl.FunctionSpace):
         assert self.ufl_element().num_sub_elements() > i
         sub_element = self.ufl_element().sub_elements()[i]
         cppV_sub = self._cpp_object.sub([i])
-        return FunctionSpace(None, sub_element, cppV_sub)
+        return FunctionSpace(self.mesh, sub_element, cppV_sub)
 
     def component(self):
         """Return the component relative to the parent space."""
@@ -543,7 +543,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
         """
         cpp_space, dofs = self._cpp_object.collapse()
-        V = FunctionSpace(None, self.ufl_element(), cpp_space)
+        V = FunctionSpace(self.mesh, self.ufl_element(), cpp_space)
         return V, dofs
 
     def tabulate_dof_coordinates(self) -> np.ndarray:
