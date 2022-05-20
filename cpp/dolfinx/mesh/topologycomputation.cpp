@@ -177,9 +177,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
 
   // Map from entity (defined by global vertex indices) to local entity
   // index
-  std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>>
-      entity_global_to_local;
-  std::vector<std::int64_t> entity_global_to_local_new;
+  std::vector<std::int64_t> entity_global_to_local;
+  std::vector<std::int32_t> perm;
 
   {
     // If another rank shares all vertices of an entity, it may need the entity
@@ -214,11 +213,9 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
         {
           vertex_map.local_to_global(entity, vglobal);
           std::sort(vglobal.begin(), vglobal.end());
-          entity_global_to_local.push_back({vglobal, *entity_idx});
-
-          entity_global_to_local_new.insert(entity_global_to_local_new.end(),
-                                            vglobal.begin(), vglobal.end());
-          entity_global_to_local_new.push_back(*entity_idx);
+          entity_global_to_local.insert(entity_global_to_local.end(),
+                                        vglobal.begin(), vglobal.end());
+          entity_global_to_local.push_back(*entity_idx);
 
           // Only send entities that are not known to be ghosts
           if (ghost_status[*entity_idx] != 2)
@@ -238,11 +235,10 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
       }
     }
 
-    std::vector<std::int32_t> perm(entity_global_to_local_new.size()
-                                   / (num_vertices_per_e + 1));
+    perm.resize(entity_global_to_local.size() / (num_vertices_per_e + 1));
     std::iota(perm.begin(), perm.end(), 0);
     std::sort(perm.begin(), perm.end(),
-              [&entities = entity_global_to_local_new,
+              [&entities = entity_global_to_local,
                shape1 = num_vertices_per_e + 1](auto e0, auto e1)
               {
                 auto it0 = std::next(entities.begin(), e0 * shape1);
@@ -252,7 +248,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
               });
     perm.erase(
         std::unique(perm.begin(), perm.end(),
-                    [&entities = entity_global_to_local_new,
+                    [&entities = entity_global_to_local,
                      shape1 = num_vertices_per_e + 1](auto e0, auto e1)
                     {
                       auto it0 = std::next(entities.begin(), e0 * shape1);
@@ -260,11 +256,6 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
                       return std::equal(it0, std::next(it0, shape1), it1);
                     }),
         perm.end());
-
-    std::sort(entity_global_to_local.begin(), entity_global_to_local.end());
-    entity_global_to_local.erase(std::unique(entity_global_to_local.begin(),
-                                             entity_global_to_local.end()),
-                                 entity_global_to_local.end());
   }
 
   // Get shared entities of this dimension, and also match up an index
@@ -322,33 +313,42 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
   recv_index.reserve(recv_disp.size() - 1);
   for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
   {
-    // Loop over received entities (defined by array of entity vertices
+    // Loop over received entities (defined by array of entity vertices)
     for (int j = recv_disp[r]; j < recv_disp[r + 1]; j += num_vertices_per_e)
     {
       xtl::span<const std::int64_t> entity(recv_data.data() + j,
                                            num_vertices_per_e);
       auto it = std::lower_bound(
-          entity_global_to_local.begin(), entity_global_to_local.end(), entity,
-          [](auto& a, auto& b)
+          perm.begin(), perm.end(), entity,
+          [&entities = entity_global_to_local,
+           shape1 = num_vertices_per_e](auto& e0, auto& e1)
           {
-            return std::lexicographical_compare(a.first.begin(), a.first.end(),
-                                                b.begin(), b.end());
+            auto it0 = std::next(entities.begin(), e0 * (shape1 + 1));
+            return std::lexicographical_compare(it0, std::next(it0, shape1),
+                                                e1.begin(), e1.end());
           });
 
-      if (it != entity_global_to_local.end()
-          and std::equal(it->first.begin(), it->first.end(), entity.begin()))
+      if (it != perm.end())
       {
-        shared_entities_data.push_back({it->second, ranks[r]});
-        shared_entities_data.push_back({it->second, mpi_rank});
-        std::transform(
-            entity.begin(), entity.end(),
-            std::back_inserter(shared_entity_to_global_vertices_data),
-            [e = it->second](auto v)
-            { return std::pair<std::int32_t, std::int64_t>(e, v); });
-        recv_index.push_back(it->second);
+        auto offset = (*it) * (num_vertices_per_e + 1);
+        xtl::span<const std::int64_t> ex(entity_global_to_local.data() + offset,
+                                         num_vertices_per_e + 1);
+        if (std::equal(ex.begin(), std::prev(ex.end()), entity.begin()))
+        {
+          auto idx = ex.back();
+          shared_entities_data.push_back({idx, ranks[r]});
+          shared_entities_data.push_back({idx, mpi_rank});
+          recv_index.push_back(idx);
+          std::transform(
+              entity.begin(), entity.end(),
+              std::back_inserter(shared_entity_to_global_vertices_data),
+              [e = idx](auto v) -> std::pair<std::int32_t, std::int64_t> {
+                return {e, v};
+              });
+        }
+        else
+          recv_index.push_back(-1);
       }
-      else
-        recv_index.push_back(-1);
     }
   }
 
