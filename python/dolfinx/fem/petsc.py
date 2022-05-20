@@ -47,7 +47,7 @@ def _extract_function_spaces(a: typing.List[typing.List[FormMetaClass]]):
     def fn(form):
         return form.function_spaces if form is not None else None
     from functools import partial
-    Vblock = map(partial(map, fn), a)
+    Vblock: typing.Iterable = map(partial(map, fn), a)
 
     # Compute spaces for each row/column block
     rows: typing.List[typing.Set] = [set() for i in range(len(a))]
@@ -441,7 +441,7 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[FormMetaClass]],
 
 def apply_lifting(b: PETSc.Vec, a: typing.List[FormMetaClass],
                   bcs: typing.List[typing.List[DirichletBCMetaClass]],
-                  x0: typing.Optional[typing.List[PETSc.Vec]] = [],
+                  x0: typing.List[PETSc.Vec] = [],
                   scale: float = 1.0, constants=None, coeffs=None) -> None:
     """Apply the function :func:`dolfinx.fem.apply_lifting` to a PETSc Vector."""
     with contextlib.ExitStack() as stack:
