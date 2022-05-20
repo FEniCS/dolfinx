@@ -9,6 +9,7 @@ via modification of linear systems."""
 from __future__ import annotations
 
 import typing
+import numpy.typing
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem.function import Constant, Function
@@ -58,7 +59,7 @@ def locate_dofs_geometrical(V: typing.Union[dolfinx.fem.FunctionSpace, typing.It
 
 
 def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpace, typing.Iterable[dolfinx.fem.FunctionSpace]],
-                            entity_dim: int, entities: typing.List[int],
+                            entity_dim: int, entities: numpy.typing.NDArray[np.int32],
                             remote: bool = True) -> np.ndarray:
     """Locate degrees-of-freedom belonging to mesh entities topologically.
 
@@ -92,7 +93,7 @@ def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpace, typing.It
 
 class DirichletBCMetaClass:
     def __init__(self, value: typing.Union[ufl.Coefficient, Function, Constant],
-                 dofs: typing.List[int], V: dolfinx.fem.FunctionSpace = None):
+                 dofs: numpy.typing.ArrayLike, V: dolfinx.fem.FunctionSpace = None):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
@@ -135,7 +136,7 @@ class DirichletBCMetaClass:
 
 
 def dirichletbc(value: typing.Union[Function, Constant],
-                dofs: typing.List[int], V: dolfinx.fem.FunctionSpace = None) -> DirichletBCMetaClass:
+                dofs: numpy.typing.NDArray[np.int32], V: dolfinx.fem.FunctionSpace = None) -> DirichletBCMetaClass:
     """Create a representation of Dirichlet boundary condition which
     is imposed on a linear system.
 

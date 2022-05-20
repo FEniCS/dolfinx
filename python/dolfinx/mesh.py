@@ -11,6 +11,7 @@ import types
 import typing
 
 import numpy as np
+import numpy.typing
 
 import ufl
 from dolfinx import cpp as _cpp
@@ -84,7 +85,7 @@ def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType) -> np.ndar
     return _cpp.mesh.locate_entities(mesh, dim, marker)
 
 
-def locate_entities_boundary(mesh: Mesh, dim: int, marker: types.FunctionType) -> np.ndarray:
+def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
     """Compute mesh entities that are connected to an owned boundary
     facet and satisfy a geometric marking function
 
@@ -343,7 +344,7 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_f
     return create_interval(comm, nx, [0.0, 1.0], ghost_mode, partitioner)
 
 
-def create_rectangle(comm: _MPI.Comm, points: typing.List[np.ndarray], n: list, cell_type=CellType.triangle,
+def create_rectangle(comm: _MPI.Comm, points: numpy.typing.ArrayLike, n: numpy.typing.ArrayLike, cell_type=CellType.triangle,
                      ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner(),
                      diagonal: DiagonalType = DiagonalType.right) -> Mesh:
     """Create rectangle mesh
