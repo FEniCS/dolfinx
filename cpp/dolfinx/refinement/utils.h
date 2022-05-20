@@ -55,7 +55,6 @@ void update_logical_edgefunction(
 /// @param[in] marked_edges
 /// @return (0) map from local edge index to new vertex global index,
 /// and (1) the coordinates of the new vertices
-edge_to_new_vertex map and geometry array
 std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
 create_new_vertices(MPI_Comm neighbor_comm,
                     const graph::AdjacencyList<int>& shared_edges,

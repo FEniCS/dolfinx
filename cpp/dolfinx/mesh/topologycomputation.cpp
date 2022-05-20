@@ -248,8 +248,10 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
   // TODO: document better
   std::vector<std::int64_t> recv_data;
   std::vector<int> recv_disp;
+  std::vector<int> send_sizes;
+  std::vector<int> send_disp;
+  std::vector<int> recv_sizes(ranks.size());
   {
-    std::vector<int> send_sizes;
     std::vector<std::int64_t> send_buffer;
     for (auto& x : send_entities)
     {
@@ -259,11 +261,11 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
     assert(send_sizes.size() == ranks.size());
 
     // Build send displacements
-    std::vector<int> send_disp = {0};
+    send_disp = {0};
     std::partial_sum(send_sizes.begin(), send_sizes.end(),
                      std::back_inserter(send_disp));
 
-    std::vector<int> recv_sizes(ranks.size());
+    recv_sizes.resize(ranks.size());
     send_sizes.reserve(1);
     recv_sizes.reserve(1);
     MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
@@ -388,7 +390,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
     // uses the same pattern as before, so we can match up the received
     // data to the indices in recv_index
     std::vector<std::int64_t> send_global_index_data;
-    std::vector<int> send_sizes;
+    std::vector<int> send_sizes1;
     for (const auto& indices : send_index)
     {
       std::transform(indices.cbegin(), indices.cend(),
@@ -401,36 +403,38 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
                                   ? offset + local_index[idx]
                                   : -1;
                      });
-      send_sizes.push_back(indices.size());
+      send_sizes1.push_back(indices.size());
     }
 
-    std::vector<int> send_disp = {0};
-    std::partial_sum(send_sizes.begin(), send_sizes.end(),
-                     std::back_inserter(send_disp));
+    std::vector<int> send_disp1 = {0};
+    std::partial_sum(send_sizes1.begin(), send_sizes1.end(),
+                     std::back_inserter(send_disp1));
 
-    std::vector<int> recv_sizes(ranks.size());
-    send_sizes.reserve(1);
-    recv_sizes.reserve(1);
-    MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+    std::vector<int> recv_sizes1(ranks.size());
+    send_sizes1.reserve(1);
+    recv_sizes1.reserve(1);
+    MPI_Neighbor_alltoall(send_sizes1.data(), 1, MPI_INT, recv_sizes1.data(), 1,
                           MPI_INT, neighbor_comm);
 
     // Build recv displacements
-    recv_disp = {0};
-    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                     std::back_inserter(recv_disp));
+    std::vector<int> recv_disp1 = {0};
+    std::partial_sum(recv_sizes1.begin(), recv_sizes1.end(),
+                     std::back_inserter(recv_disp1));
 
-    recv_data.resize(recv_disp.back());
-    MPI_Neighbor_alltoallv(send_global_index_data.data(), send_sizes.data(),
-                           send_disp.data(), MPI_INT64_T, recv_data.data(),
-                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+    std::vector<std::int64_t> recv_data1;
+
+    recv_data1.resize(recv_disp1.back());
+    MPI_Neighbor_alltoallv(send_global_index_data.data(), send_sizes1.data(),
+                           send_disp1.data(), MPI_INT64_T, recv_data1.data(),
+                           recv_sizes1.data(), recv_disp1.data(), MPI_INT64_T,
                            neighbor_comm);
 
     // Map back received indices
-    for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
+    for (std::size_t r = 0; r < recv_disp1.size() - 1; ++r)
     {
-      for (int j = recv_disp[r]; j < recv_disp[r + 1]; ++j)
+      for (int j = recv_disp1[r]; j < recv_disp1[r + 1]; ++j)
       {
-        const std::int64_t gi = recv_data[j];
+        const std::int64_t gi = recv_data1[j];
         const std::int32_t idx = recv_index[j];
         if (gi != -1 and idx != -1)
         {
