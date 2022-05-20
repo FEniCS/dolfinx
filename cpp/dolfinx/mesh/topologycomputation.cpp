@@ -267,7 +267,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_indexmap,
     send_sizes.reserve(1);
     recv_sizes.reserve(1);
     MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
-                          MPI_INT, comm);
+                          MPI_INT, neighbor_comm);
 
     // Build recv displacements
     recv_disp = {0};
