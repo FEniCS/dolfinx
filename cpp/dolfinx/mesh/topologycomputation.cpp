@@ -328,11 +328,12 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
                                                 e1.begin(), e1.end());
           });
 
+      xtl::span<const std::int64_t> ex;
       if (it != perm.end())
       {
-        xtl::span<const std::int64_t> ex(entity_global_to_local.data()
-                                             + (*it) * (num_vertices_per_e + 1),
-                                         num_vertices_per_e + 1);
+        ex = xtl::span<const std::int64_t>(
+            entity_global_to_local.data() + (*it) * (num_vertices_per_e + 1),
+            num_vertices_per_e + 1);
         if (std::equal(ex.begin(), std::prev(ex.end()), entity.begin()))
         {
 
