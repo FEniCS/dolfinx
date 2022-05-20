@@ -328,23 +328,27 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
                                                 e1.begin(), e1.end());
           });
 
-      if (xtl::span<const std::int64_t> ex(
-              entity_global_to_local.data() + (*it) * (num_vertices_per_e + 1),
-              num_vertices_per_e + 1);
-          it != perm.end()
-          and std::equal(ex.begin(), std::prev(ex.end()), entity.begin()))
+      if (it != perm.end())
       {
+        xtl::span<const std::int64_t> ex(entity_global_to_local.data()
+                                             + (*it) * (num_vertices_per_e + 1),
+                                         num_vertices_per_e + 1);
+        if (std::equal(ex.begin(), std::prev(ex.end()), entity.begin()))
+        {
 
-        auto idx = ex.back();
-        shared_entities_data.push_back({idx, ranks[r]});
-        shared_entities_data.push_back({idx, mpi_rank});
-        recv_index.push_back(idx);
-        std::transform(
-            entity.begin(), entity.end(),
-            std::back_inserter(shared_entity_to_global_vertices_data),
-            [e = idx](auto v) -> std::pair<std::int32_t, std::int64_t> {
-              return {e, v};
-            });
+          auto idx = ex.back();
+          shared_entities_data.push_back({idx, ranks[r]});
+          shared_entities_data.push_back({idx, mpi_rank});
+          recv_index.push_back(idx);
+          std::transform(
+              entity.begin(), entity.end(),
+              std::back_inserter(shared_entity_to_global_vertices_data),
+              [e = idx](auto v) -> std::pair<std::int32_t, std::int64_t> {
+                return {e, v};
+              });
+        }
+        else
+          recv_index.push_back(-1);
       }
       else
         recv_index.push_back(-1);
