@@ -562,13 +562,8 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
   // owner.
 
   MPI_Comm comm;
-  std::vector<int> src = map0.owners();
-  std::sort(src.begin(), src.end());
-  src.erase(std::unique(src.begin(), src.end()), src.end());
-  std::vector<int> dest
-      = dolfinx::MPI::compute_graph_edges_nbx(map0.comm(), src);
-  std::sort(dest.begin(), dest.end());
-
+  const std::vector<int>& src = map0.src();
+  const std::vector<int>& dest = map0.dest();
   MPI_Dist_graph_create_adjacent(map0.comm(), src.size(), src.data(),
                                  MPI_UNWEIGHTED, dest.size(), dest.data(),
                                  MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
