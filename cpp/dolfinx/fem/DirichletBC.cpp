@@ -451,12 +451,12 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
   }
 
   // Compute dof coordinates
-  const xt::xtensor<double, 2> dof_coordinates
-      = V.tabulate_dof_coordinates(true);
-  assert(dof_coordinates.shape(0) == 3);
+  const std::vector<double> dof_coordinates = V.tabulate_dof_coordinates(true);
 
   // Compute marker for each dof coordinate
-  const xt::xtensor<bool, 1> marked_dofs = marker_fn(dof_coordinates);
+  auto x = xt::adapt(dof_coordinates,
+                     std::vector<std::size_t>{3, dof_coordinates.size() / 3});
+  const xt::xtensor<bool, 1> marked_dofs = marker_fn(x);
 
   std::vector<std::int32_t> dofs;
   dofs.reserve(std::count(marked_dofs.begin(), marked_dofs.end(), true));
@@ -496,12 +496,12 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     throw std::runtime_error("Function spaces must have the same element.");
 
   // Compute dof coordinates
-  const xt::xtensor<double, 2> dof_coordinates
-      = V1.tabulate_dof_coordinates(true);
-  assert(dof_coordinates.shape(0) == 3);
+  const std::vector<double> dof_coordinates = V1.tabulate_dof_coordinates(true);
 
   // Evaluate marker for each dof coordinate
-  const xt::xtensor<bool, 1> marked_dofs = marker_fn(dof_coordinates);
+  auto x = xt::adapt(dof_coordinates,
+                     std::vector<std::size_t>{3, dof_coordinates.size() / 3});
+  const xt::xtensor<bool, 1> marked_dofs = marker_fn(x);
 
   // Get dofmaps
   std::shared_ptr<const DofMap> dofmap0 = V0.dofmap();
