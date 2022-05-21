@@ -26,7 +26,7 @@ from dolfinx import cpp as _cpp
 
 
 def locate_dofs_geometrical(V: typing.Union[dolfinx.fem.FunctionSpace, typing.Iterable[dolfinx.fem.FunctionSpace]],
-                            marker: types.FunctionType) -> np.ndarray:
+                            marker: typing.Callable) -> np.ndarray:
     """Locate degrees-of-freedom geometrically using a marker function.
 
     Args:
@@ -171,8 +171,8 @@ def dirichletbc(value: typing.Union[Function, Constant],
     return formcls(value, dofs, V)
 
 
-def bcs_by_block(spaces: typing.Iterable[dolfinx.fem.FunctionSpace],
-                 bcs: typing.Iterable[DirichletBCMetaClass]) -> typing.Iterable[typing.Iterable[DirichletBCMetaClass]]:
+def bcs_by_block(spaces: typing.Iterable[typing.Union[dolfinx.fem.FunctionSpace, None]],
+                 bcs: typing.Iterable[DirichletBCMetaClass]) -> typing.List[typing.List[DirichletBCMetaClass]]:
     """Arrange Dirichlet boundary conditions by the function space that
     they constrain.
 

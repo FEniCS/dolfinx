@@ -69,8 +69,8 @@ wcoeffs = np.eye(8, 9)
 # +
 geometry = basix.geometry(basix.CellType.quadrilateral)
 topology = basix.topology(basix.CellType.quadrilateral)
-x : typing.List[typing.List[np.ndarray]] = [[], [], [], []]
-M : typing.List[typing.List[np.ndarray]] = [[], [], [], []]
+x: typing.List[typing.List[np.ndarray]] = [[], [], [], []]
+M: typing.List[typing.List[np.ndarray]] = [[], [], [], []]
 
 for v in topology[0]:
     x[0].append(np.array(geometry[v]))

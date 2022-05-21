@@ -68,7 +68,7 @@ class Mesh(_cpp.mesh.Mesh):
         return self._ufl_domain
 
 
-def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType) -> np.ndarray:
+def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
     """Compute mesh entities satisfying a geometric marking function
 
     Args:

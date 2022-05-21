@@ -136,7 +136,7 @@ V, Q = FunctionSpace(msh, P2), FunctionSpace(msh, P1)
 # +
 # No-slip boundary condition for velocity field (`V`) on boundaries
 # where x = 0, x = 1, and y = 0
-noslip = np.zeros(msh.geometry.dim, dtype=PETSc.ScalarType)
+noslip = Function(V)
 facets = locate_entities_boundary(msh, 1, noslip_boundary)
 bc0 = dirichletbc(noslip, locate_dofs_topological(V, 1, facets), V)
 
