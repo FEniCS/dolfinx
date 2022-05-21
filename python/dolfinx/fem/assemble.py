@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2022 Garth N. Wells
+# Copyright (C) 2018-2022 Garth N. Wells, Jack S. Hale
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -11,7 +11,6 @@ import collections
 import typing
 
 if typing.TYPE_CHECKING:
-    from dolfinx.fem.forms import FormMetaClass
     from dolfinx.fem.bcs import DirichletBCMetaClass
 
 import functools
@@ -23,6 +22,7 @@ from dolfinx import cpp as _cpp
 from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
+from dolfinx.fem.forms import FormMetaClass
 
 
 def pack_constants(form: typing.Union[FormMetaClass,
@@ -133,11 +133,16 @@ def assemble_scalar(M: FormMetaClass, constants=None, coeffs=None):
 # -- Vector assembly ---------------------------------------------------------
 
 @functools.singledispatch
-def assemble_vector(L: FormMetaClass, constants=None, coeffs=None) -> la.VectorMetaClass:
+def assemble_vector(L: typing.Any, constants=None, coeffs=None):
+    raise NotImplementedError
+
+
+@assemble_vector.register(FormMetaClass)
+def _(L: FormMetaClass, constants=None, coeffs=None) -> la.VectorMetaClass:
     """Assemble linear form into a new Vector.
 
     Args:
-        L: The linear form assemble.
+        L: The linear form to assemble.
         constants: Constants that appear in the form. If not provided,
             any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
