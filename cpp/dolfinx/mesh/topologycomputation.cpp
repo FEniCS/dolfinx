@@ -177,12 +177,12 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
 
   // Map from entity (defined by global vertex indices) to local entity
   // index
-  std::vector<std::int64_t> entity_global_to_local;
+  std::vector<std::int64_t> entity_to_local_idx;
   std::vector<std::int32_t> perm;
 
   {
-    // If another rank shares all vertices of an entity, it may need the entity
-    // Set of sharing procs for each entity, counting vertex hits
+    // If another rank shares all vertices of an entity, it may need the
+    // entity Set of sharing procs for each entity, counting vertex hits
     std::vector<std::int64_t> vglobal(num_vertices_per_e);
     std::vector<int> entity_ranks;
     for (auto entity_idx = entity_index.begin();
@@ -213,9 +213,9 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
         {
           vertex_map.local_to_global(entity, vglobal);
           std::sort(vglobal.begin(), vglobal.end());
-          entity_global_to_local.insert(entity_global_to_local.end(),
-                                        vglobal.begin(), vglobal.end());
-          entity_global_to_local.push_back(*entity_idx);
+          entity_to_local_idx.insert(entity_to_local_idx.end(), vglobal.begin(),
+                                     vglobal.end());
+          entity_to_local_idx.push_back(*entity_idx);
 
           // Only send entities that are not known to be ghosts
           if (ghost_status[*entity_idx] != 2)
@@ -235,27 +235,26 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
       }
     }
 
-    perm.resize(entity_global_to_local.size() / (num_vertices_per_e + 1));
+    perm.resize(entity_to_local_idx.size() / (num_vertices_per_e + 1));
     std::iota(perm.begin(), perm.end(), 0);
     std::sort(perm.begin(), perm.end(),
-              [&entities = entity_global_to_local,
-               shape1 = num_vertices_per_e + 1](auto e0, auto e1)
+              [&entities = entity_to_local_idx,
+               shape = num_vertices_per_e + 1](auto e0, auto e1)
               {
-                auto it0 = std::next(entities.begin(), e0 * shape1);
-                auto it1 = std::next(entities.begin(), e1 * shape1);
-                return std::lexicographical_compare(
-                    it0, std::next(it0, shape1), it1, std::next(it1, shape1));
+                auto it0 = std::next(entities.begin(), e0 * shape);
+                auto it1 = std::next(entities.begin(), e1 * shape);
+                return std::lexicographical_compare(it0, std::next(it0, shape),
+                                                    it1, std::next(it1, shape));
               });
-    perm.erase(
-        std::unique(perm.begin(), perm.end(),
-                    [&entities = entity_global_to_local,
-                     shape1 = num_vertices_per_e + 1](auto e0, auto e1)
-                    {
-                      auto it0 = std::next(entities.begin(), e0 * shape1);
-                      auto it1 = std::next(entities.begin(), e1 * shape1);
-                      return std::equal(it0, std::next(it0, shape1), it1);
-                    }),
-        perm.end());
+    perm.erase(std::unique(perm.begin(), perm.end(),
+                           [&entities = entity_to_local_idx,
+                            shape = num_vertices_per_e + 1](auto e0, auto e1)
+                           {
+                             auto it0 = std::next(entities.begin(), e0 * shape);
+                             auto it1 = std::next(entities.begin(), e1 * shape);
+                             return std::equal(it0, std::next(it0, shape), it1);
+                           }),
+               perm.end());
   }
 
   // Get shared entities of this dimension, and also match up an index
@@ -306,7 +305,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
   std::vector<std::pair<std::int32_t, int>> shared_entities_data;
 
   // Compare received and sent entity keys. Any received entities
-  // not found in entity_global_to_local will have recv_index
+  // not found in entity_to_local_idx will have recv_index
   // set to -1.
   const int mpi_rank = dolfinx::MPI::rank(comm);
   std::vector<std::int32_t> recv_index;
@@ -320,32 +319,30 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
                                            num_vertices_per_e);
       auto it = std::lower_bound(
           perm.begin(), perm.end(), entity,
-          [&entities = entity_global_to_local,
-           shape1 = num_vertices_per_e](auto& e0, auto& e1)
+          [&entities = entity_to_local_idx,
+           shape = num_vertices_per_e](auto& e0, auto& e1)
           {
-            auto it0 = std::next(entities.begin(), e0 * (shape1 + 1));
-            return std::lexicographical_compare(it0, std::next(it0, shape1),
+            auto it0 = std::next(entities.begin(), e0 * (shape + 1));
+            return std::lexicographical_compare(it0, std::next(it0, shape),
                                                 e1.begin(), e1.end());
           });
 
-      xtl::span<const std::int64_t> ex;
       if (it != perm.end())
       {
-        ex = xtl::span<const std::int64_t>(
-            entity_global_to_local.data() + (*it) * (num_vertices_per_e + 1),
-            num_vertices_per_e + 1);
-        if (std::equal(ex.begin(), std::prev(ex.end()), entity.begin()))
+        auto offset = (*it) * (num_vertices_per_e + 1);
+        xtl::span<const std::int64_t> e(entity_to_local_idx.data() + offset,
+                                        num_vertices_per_e + 1);
+        if (std::equal(e.begin(), std::prev(e.end()), entity.begin()))
         {
-
-          auto idx = ex.back();
+          auto idx = e.back();
           shared_entities_data.push_back({idx, ranks[r]});
           shared_entities_data.push_back({idx, mpi_rank});
           recv_index.push_back(idx);
           std::transform(
               entity.begin(), entity.end(),
               std::back_inserter(shared_entity_to_global_vertices_data),
-              [e = idx](auto v) -> std::pair<std::int32_t, std::int64_t> {
-                return {e, v};
+              [idx](auto v) -> std::pair<std::int32_t, std::int64_t> {
+                return {idx, v};
               });
         }
         else
