@@ -7,7 +7,6 @@
 
 from __future__ import annotations
 
-import types
 import typing
 
 import numpy as np
@@ -344,8 +343,9 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_f
     return create_interval(comm, nx, [0.0, 1.0], ghost_mode, partitioner)
 
 
-def create_rectangle(comm: _MPI.Comm, points: numpy.typing.ArrayLike, n: numpy.typing.ArrayLike, cell_type=CellType.triangle,
-                     ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner(),
+def create_rectangle(comm: _MPI.Comm, points: numpy.typing.ArrayLike, n: numpy.typing.ArrayLike,
+                     cell_type=CellType.triangle, ghost_mode=GhostMode.shared_facet,
+                     partitioner=_cpp.mesh.create_cell_partitioner(),
                      diagonal: DiagonalType = DiagonalType.right) -> Mesh:
     """Create rectangle mesh
 

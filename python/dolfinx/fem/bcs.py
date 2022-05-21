@@ -8,15 +8,13 @@ via modification of linear systems."""
 
 from __future__ import annotations
 
+import collections.abc
 import typing
 import numpy.typing
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem.function import Constant, Function
 
-import collections.abc
-import types
-import typing
 
 import numpy as np
 
