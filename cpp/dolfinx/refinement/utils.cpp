@@ -128,24 +128,46 @@ void refinement::update_logical_edgefunction(
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
     std::vector<std::int8_t>& marked_edges, const common::IndexMap& map)
 {
-  std::vector<std::int32_t> send_offsets = {0};
+  std::vector<int> send_sizes;
   std::vector<std::int64_t> data_to_send;
-  int num_neighbors = marked_for_update.size();
-  for (int i = 0; i < num_neighbors; ++i)
+  for (std::size_t i = 0; i < marked_for_update.size(); ++i)
   {
     for (std::int32_t q : marked_for_update[i])
       data_to_send.push_back(local_to_global(q, map));
 
-    send_offsets.push_back(data_to_send.size());
+    send_sizes.push_back(marked_for_update[i].size());
   }
 
   // Send all shared edges marked for update and receive from other
   // processes
-  const std::vector<std::int64_t> data_to_recv
-      = dolfinx::MPI::neighbor_all_to_all(
-            neighbor_comm,
-            graph::AdjacencyList<std::int64_t>(data_to_send, send_offsets))
-            .array();
+  std::vector<std::int64_t> data_to_recv;
+  {
+    int indegree(-1), outdegree(-2), weighted(-1);
+    MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
+                                   &weighted);
+    assert(indegree == (int)marked_for_update.size());
+    assert(indegree == outdegree);
+
+    std::vector<int> recv_sizes(outdegree);
+    send_sizes.reserve(1);
+    recv_sizes.reserve(1);
+    MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                          MPI_INT, neighbor_comm);
+
+    // Build displacements
+    std::vector<int> send_disp = {0};
+    std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                     std::back_inserter(send_disp));
+    std::vector<int> recv_disp = {0};
+    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                     std::back_inserter(recv_disp));
+
+    data_to_recv.resize(recv_disp.back());
+    MPI_Neighbor_alltoallv(data_to_send.data(), send_sizes.data(),
+                           send_disp.data(), MPI_INT64_T, data_to_recv.data(),
+                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                           neighbor_comm);
+  }
 
   // Flatten received values and set marked_edges at each index received
   std::vector<std::int32_t> local_indices(data_to_recv.size());
@@ -217,10 +239,44 @@ refinement::create_new_vertices(MPI_Comm neighbor_comm,
     }
   }
 
-  const std::vector<std::int64_t> received_values
-      = dolfinx::MPI::neighbor_all_to_all(
-            neighbor_comm, graph::AdjacencyList<std::int64_t>(values_to_send))
-            .array();
+  // Send all shared edges marked for update and receive from other
+  // processes
+  std::vector<std::int64_t> received_values;
+  {
+    int indegree(-1), outdegree(-2), weighted(-1);
+    MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
+                                   &weighted);
+    assert(indegree == outdegree);
+
+    std::vector<std::int64_t> send_buffer;
+    std::vector<int> send_sizes;
+    for (auto& x : values_to_send)
+    {
+      send_sizes.push_back(x.size());
+      send_buffer.insert(send_buffer.end(), x.begin(), x.end());
+    }
+    assert((int)send_sizes.size() == outdegree);
+
+    std::vector<int> recv_sizes(outdegree);
+    send_sizes.reserve(1);
+    recv_sizes.reserve(1);
+    MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                          MPI_INT, neighbor_comm);
+
+    // Build displacements
+    std::vector<int> send_disp = {0};
+    std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                     std::back_inserter(send_disp));
+    std::vector<int> recv_disp = {0};
+    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                     std::back_inserter(recv_disp));
+
+    received_values.resize(recv_disp.back());
+    MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
+                           send_disp.data(), MPI_INT64_T,
+                           received_values.data(), recv_sizes.data(),
+                           recv_disp.data(), MPI_INT64_T, neighbor_comm);
+  }
 
   // Add received remote global vertex indices to map
   std::vector<std::int64_t> recv_global_edge;

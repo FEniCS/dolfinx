@@ -207,14 +207,13 @@ public:
     _comm = dolfinx::MPI::Comm(comm, false);
 
     const std::vector<int>& owners = _index_maps[0]->owners();
-    _ghost_row_to_neighbor_rank.reserve(owners.size());
-
-    for (const int& o : owners)
+    _ghost_row_to_rank.reserve(owners.size());
+    for (const int& r : owners)
     {
-      auto it = std::find(src_ranks.begin(), src_ranks.end(), o);
-      assert(it != src_ranks.end());
+      auto it = std::lower_bound(src_ranks.begin(), src_ranks.end(), r);
+      assert(it != src_ranks.end() and *it == r);
       int pos = std::distance(src_ranks.begin(), it);
-      _ghost_row_to_neighbor_rank.push_back(pos);
+      _ghost_row_to_rank.push_back(pos);
     }
 
 #ifndef NDEBUG
@@ -227,10 +226,10 @@ public:
 
     // Compute size of data to send to each neighbor
     std::vector<std::int32_t> data_per_proc(src_ranks.size(), 0);
-    for (std::size_t i = 0; i < _ghost_row_to_neighbor_rank.size(); ++i)
+    for (std::size_t i = 0; i < _ghost_row_to_rank.size(); ++i)
     {
-      assert(_ghost_row_to_neighbor_rank[i] < data_per_proc.size());
-      data_per_proc[_ghost_row_to_neighbor_rank[i]]
+      assert(_ghost_row_to_rank[i] < data_per_proc.size());
+      data_per_proc[_ghost_row_to_rank[i]]
           += _row_ptr[local_size[0] + i + 1] - _row_ptr[local_size[0] + i];
     }
 
@@ -239,21 +238,20 @@ public:
     std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
                      std::next(_val_send_disp.begin()));
 
-    std::vector<int> index_send_disp(src_ranks.size() + 1);
+    std::vector<int> insert_pos(src_ranks.size() + 1);
     std::transform(_val_send_disp.begin(), _val_send_disp.end(),
-                   index_send_disp.begin(), [](int d) { return d * 2; });
+                   insert_pos.begin(), [](int d) { return 2 * d; });
 
     // For each ghost row, pack and send indices to neighborhood
-    std::vector<int> insert_pos(index_send_disp);
-    std::vector<std::int64_t> ghost_index_data(index_send_disp.back());
-    for (std::size_t i = 0; i < _ghost_row_to_neighbor_rank.size(); ++i)
+    std::vector<std::int64_t> ghost_index_data(insert_pos.back());
+    for (std::size_t i = 0; i < _ghost_row_to_rank.size(); ++i)
     {
-      const int neighbor_rank = _ghost_row_to_neighbor_rank[i];
+      const int rank = _ghost_row_to_rank[i];
       int row_id = local_size[0] + i;
       for (int j = _row_ptr[row_id]; j < _row_ptr[row_id + 1]; ++j)
       {
         // Get position in send buffer to place data for this neighbour
-        const std::int32_t idx_pos = insert_pos[neighbor_rank];
+        const std::int32_t idx_pos = insert_pos[rank];
 
         // Pack send data (row, col) as global indices
         ghost_index_data[idx_pos] = ghosts0[i];
@@ -262,20 +260,44 @@ public:
         else
           ghost_index_data[idx_pos + 1] = ghosts1[col_local - local_size[1]];
 
-        insert_pos[neighbor_rank] += 2;
+        insert_pos[rank] += 2;
       }
     }
 
-    // Create and communicate adjacency list to neighborhood
-    const graph::AdjacencyList<std::int64_t> ghost_index_data_out(
-        std::move(ghost_index_data), std::move(index_send_disp));
-    const graph::AdjacencyList<std::int64_t> ghost_index_data_in
-        = dolfinx::MPI::neighbor_all_to_all(_comm.comm(), ghost_index_data_out);
+    // Communicate data with neighborhood
+    std::vector<std::int64_t> ghost_index_array;
+    std::vector<int> recv_disp;
+    {
+      std::vector<int> send_sizes;
+      std::transform(data_per_proc.begin(), data_per_proc.end(),
+                     std::back_inserter(send_sizes),
+                     [](auto x) { return 2 * x; });
 
-    // Store received offsets for future use, when transferring data values.
-    _val_recv_disp.resize(ghost_index_data_in.offsets().size());
-    std::transform(ghost_index_data_in.offsets().begin(),
-                   ghost_index_data_in.offsets().end(), _val_recv_disp.begin(),
+      std::vector<int> recv_sizes(dest_ranks.size());
+      send_sizes.reserve(1);
+      recv_sizes.reserve(1);
+      MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                            MPI_INT, _comm.comm());
+
+      // Build send/recv displacement
+      std::vector<int> send_disp = {0};
+      std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                       std::back_inserter(send_disp));
+      recv_disp = {0};
+      std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                       std::back_inserter(recv_disp));
+
+      ghost_index_array.resize(recv_disp.back());
+      MPI_Neighbor_alltoallv(ghost_index_data.data(), send_sizes.data(),
+                             send_disp.data(), MPI_INT64_T,
+                             ghost_index_array.data(), recv_sizes.data(),
+                             recv_disp.data(), MPI_INT64_T, _comm.comm());
+    }
+
+    // Store receive displacements for future use, when transferring
+    // data values
+    _val_recv_disp.resize(recv_disp.size());
+    std::transform(recv_disp.begin(), recv_disp.end(), _val_recv_disp.begin(),
                    [](int d) { return d / 2; });
 
     // Global to local map for ghost columns
@@ -286,8 +308,6 @@ public:
 
     // Compute location in which data for each index should be stored
     // when received
-    const std::vector<std::int64_t>& ghost_index_array
-        = ghost_index_data_in.array();
     for (std::size_t i = 0; i < ghost_index_array.size(); i += 2)
     {
       // Row must be on this process
@@ -408,18 +428,19 @@ public:
     const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
 
     // For each ghost row, pack and send values to send to neighborhood
-    std::vector<int> insert_pos(_val_send_disp);
+    std::vector<int> insert_pos = _val_send_disp;
     std::vector<T> ghost_value_data(_val_send_disp.back());
     for (int i = 0; i < num_ghosts0; ++i)
     {
-      const int neighbor_rank = _ghost_row_to_neighbor_rank[i];
+      const int rank = _ghost_row_to_rank[i];
 
-      // Get position in send buffer to place data to send to this neighbour
-      const std::int32_t val_pos = insert_pos[neighbor_rank];
+      // Get position in send buffer to place data to send to this
+      // neighbour
+      const std::int32_t val_pos = insert_pos[rank];
       std::copy(std::next(_data.data(), _row_ptr[local_size0 + i]),
                 std::next(_data.data(), _row_ptr[local_size0 + i + 1]),
                 std::next(ghost_value_data.begin(), val_pos));
-      insert_pos[neighbor_rank]
+      insert_pos[rank]
           += _row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i];
     }
 
@@ -510,15 +531,15 @@ public:
   /// Operations (such as matrix-vector multiply) between the owned
   /// parts of the matrix and vector can then be performed separately
   /// from operations on the unowned parts.
-  /// @note Includes ghost rows, which should be truncated manually if not
-  /// required.
+  /// @note Includes ghost rows, which should be truncated manually if
+  /// not required.
   const std::vector<std::int32_t>& off_diag_offset() const
   {
     return _off_diagonal_offset;
   }
 
 private:
-  // Maps describing the data layout for rows and columns
+  // Maps for the distribution of the ows and columns
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
   // Block sizes
@@ -546,8 +567,9 @@ private:
   // receiving
   std::vector<int> _val_send_disp, _val_recv_disp;
 
+  // FIXME: neighbour on which communicator?
   // Ownership of each row, by neighbor
-  std::vector<int> _ghost_row_to_neighbor_rank;
+  std::vector<int> _ghost_row_to_rank;
 
   // Temporary store for finalize data during non-blocking communication
   std::vector<T> _ghost_value_data_in;

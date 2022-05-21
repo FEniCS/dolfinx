@@ -247,19 +247,18 @@ void SparsityPattern::assemble()
   _col_ghost_owners = _index_maps[1]->owners();
 
   // Compute size of data to send to each process
-  std::vector<std::int32_t> data_per_proc(src0.size(), 0);
+  std::vector<int> send_sizes(src0.size(), 0);
   for (std::size_t i = 0; i < owners0.size(); ++i)
   {
     auto it = std::lower_bound(src0.begin(), src0.end(), owners0[i]);
     assert(it != src0.end() and *it == owners0[i]);
     const int neighbour_rank = std::distance(src0.begin(), it);
-
-    data_per_proc[neighbour_rank] += 3 * _row_cache[i + local_size0].size();
+    send_sizes[neighbour_rank] += 3 * _row_cache[i + local_size0].size();
   }
 
   // Compute send displacements
-  std::vector<int> send_disp(src0.size() + 1, 0);
-  std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
+  std::vector<int> send_disp(send_sizes.size() + 1, 0);
+  std::partial_sum(send_sizes.begin(), send_sizes.end(),
                    std::next(send_disp.begin(), 1));
 
   // For each ghost row, pack and send (global row, global col,
@@ -295,22 +294,33 @@ void SparsityPattern::assemble()
     }
   }
 
-  // Create and communicate adjacency list to neighborhood
-  const graph::AdjacencyList<std::int64_t> ghost_data_out(std::move(ghost_data),
-                                                          std::move(send_disp));
-
-  MPI_Comm comm;
+  // Exchange data between processes
+  std::vector<std::int64_t> ghost_data_in;
   {
+    MPI_Comm comm;
     const std::vector<int>& dest0 = _index_maps[0]->dest();
     MPI_Dist_graph_create_adjacent(
         _index_maps[0]->comm(), dest0.size(), dest0.data(), MPI_UNWEIGHTED,
         src0.size(), src0.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+
+    std::vector<int> recv_sizes(dest0.size());
+    send_sizes.reserve(1);
+    recv_sizes.reserve(1);
+    MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                          MPI_INT, comm);
+
+    // Build recv displacements
+    std::vector<int> recv_disp = {0};
+    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                     std::back_inserter(recv_disp));
+
+    ghost_data_in.resize(recv_disp.back());
+    MPI_Neighbor_alltoallv(ghost_data.data(), send_sizes.data(),
+                           send_disp.data(), MPI_INT64_T, ghost_data_in.data(),
+                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                           comm);
+    MPI_Comm_free(&comm);
   }
-
-  const graph::AdjacencyList<std::int64_t> ghost_data_in
-      = dolfinx::MPI::neighbor_all_to_all(comm, ghost_data_out);
-
-  MPI_Comm_free(&comm);
 
   // Global to local map for ghost column indices
   std::map<std::int64_t, std::int32_t> global_to_local;
@@ -319,12 +329,11 @@ void SparsityPattern::assemble()
     global_to_local.insert({global_i, local_i++});
 
   // Add data received from the neighborhood
-  const std::vector<std::int64_t>& in_ghost_data = ghost_data_in.array();
-  for (std::size_t i = 0; i < in_ghost_data.size(); i += 3)
+  for (std::size_t i = 0; i < ghost_data_in.size(); i += 3)
   {
-    const std::int32_t row_local = in_ghost_data[i] - local_range0[0];
-    const std::int64_t col = in_ghost_data[i + 1];
-    const int owner = in_ghost_data[i + 2];
+    const std::int32_t row_local = ghost_data_in[i] - local_range0[0];
+    const std::int64_t col = ghost_data_in[i + 1];
+    const int owner = ghost_data_in[i + 2];
     if (col >= local_range1[0] and col < local_range1[1])
     {
       // Convert to local column index
