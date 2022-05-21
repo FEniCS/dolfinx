@@ -98,8 +98,11 @@ void declare_objects(py::module& m, const std::string& type)
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {
-             xt::xtensor<T, 2> mat = self.to_dense();
-             return py::array_t<T>(mat.shape(), mat.data());
+             std::size_t nrows = self.num_all_rows();
+             auto map_col = self.index_maps()[1];
+             std::size_t ncols = map_col->size_local() + map_col->num_ghosts();
+             return dolfinx_wrappers::as_pyarray(self.to_dense(),
+                                                 std::array{nrows, ncols});
            })
       .def_property_readonly("data",
                              [](dolfinx::la::MatrixCSR<T>& self)

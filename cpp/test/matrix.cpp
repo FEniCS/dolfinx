@@ -10,7 +10,6 @@
 #include <catch2/catch.hpp>
 #include <dolfinx.h>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
@@ -167,7 +166,9 @@ void test_matrix()
   A.add(std::vector<decltype(A)::value_type>{2.3}, std::vector{4},
         std::vector{5});
 
-  const auto Adense = A.to_dense();
+  const std::vector Adense0 = A.to_dense();
+  auto Adense = xt::adapt(Adense0, {8, 8});
+
   xt::xtensor<float, 2> Aref = xt::zeros<float>({8, 8});
   Aref(0, 0) = 1;
   Aref(4, 5) = 2.3;
