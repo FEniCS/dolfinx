@@ -179,14 +179,16 @@ public:
     assert(_function_space);
     assert(_function_space->element());
     assert(_function_space->mesh());
-    const xt::xtensor<double, 2> x = fem::interpolation_coords(
+    const std::vector<double> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
-    auto fx = f(x);
+    // std::vector<std::size_t> shape =
+    auto _x = xt::adapt(x, std::vector<std::size_t>{3, x.size() / 3});
+    auto fx = f(_x);
     if (int vs = _function_space->element()->value_size();
         vs == 1 and fx.dimension() == 1)
     {
       // Check for scalar-valued functions
-      if (fx.shape(0) != x.shape(1))
+      if (fx.shape(0) != x.size() / 3)
         throw std::runtime_error("Data returned by callable has wrong length");
     }
     else
@@ -199,7 +201,7 @@ public:
         throw std::runtime_error(
             "Data returned by callable has wrong shape(0) size");
       }
-      if (fx.shape(1) != x.shape(1))
+      if (fx.shape(1) != x.size() / 3)
       {
         throw std::runtime_error(
             "Data returned by callable has wrong shape(1) size");
