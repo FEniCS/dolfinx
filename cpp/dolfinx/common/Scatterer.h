@@ -8,7 +8,6 @@
 
 #include "MPI.h"
 #include <algorithm>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <mpi.h>
 #include <vector>
 #include <xtl/xspan.hpp>
@@ -22,17 +21,17 @@ class IndexMap;
 /// @brief A Scatterer supports the MPI scattering and gathering of data
 /// that is associated with a common::IndexMap.
 ///
-/// Communicator uses MPI neighbourhood communicators and is designed
-/// for the cases where communication is sparse, as it typical of
-/// patterns based on and IndexMap.
+/// Scatter and gather operations uses MPI neighbourhood collectives.
+/// The implementation is designed is for sparse communication patterns,
+/// as it typical of patterns based on and IndexMap.
 class Scatterer
 {
 public:
   /// @brief Create a scatterer
   /// @param[in] map The index map that describes the parallel layout of
   /// data
-  /// @param[in] bs The block size of data that will be communicated for
-  /// indices in the `map`.
+  /// @param[in] bs The block size of data associated with each index in
+  /// `map` that will be scattered/gathered
   Scatterer(const IndexMap& map, int bs);
 
   /// @brief Start a non-blocking send of owned data to ranks that ghost
