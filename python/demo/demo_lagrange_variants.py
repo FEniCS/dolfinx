@@ -180,7 +180,7 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
         cells_np = np.array(cells)
         values = uh.eval(pts_np, cells_np)
         plt.plot(pts_np[:, 0], [saw_tooth(i[0]) for i in pts], "k--")
-        plt.plot(pts[:, 0], values, "r-")
+        plt.plot(pts_np[:, 0], values, "r-")
 
         plt.legend(["function", "approximation"])
         plt.ylim([-0.1, 0.4])

@@ -417,7 +417,8 @@ class ElementMetaData(typing.NamedTuple):
 class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
-    def __init__(self, mesh: typing.Union[None, Mesh], element: typing.Union[ufl.FiniteElementBase, ElementMetaData],
+    def __init__(self, mesh: typing.Union[None, Mesh],
+                 element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple],
                  cppV: typing.Optional[_cpp.fem.FunctionSpace] = None,
                  form_compiler_params: dict = {}, jit_params: dict = {}):
         """Create a finite element function space."""

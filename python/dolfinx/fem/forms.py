@@ -182,7 +182,7 @@ def extract_function_spaces(forms: typing.Union[typing.Iterable[FormMetaClass],
         for form in _forms:
             if form is not None:
                 assert form.rank == 1, "Expected linear form"
-        return [form.function_spaces[0] if form is not None else None for form in forms]
+        return [form.function_spaces[0] if form is not None else None for form in forms]  # type: ignore[union-attr]
     elif _forms.ndim == 2:
         assert index == 0 or index == 1
         extract_spaces = np.vectorize(lambda form: form.function_spaces[index] if form is not None else None)
@@ -210,3 +210,5 @@ def extract_function_spaces(forms: typing.Union[typing.Iterable[FormMetaClass],
             return list(unique_spaces(V.transpose()))
     else:
         raise RuntimeError("Unsupported array of forms")
+
+    return []  # For static type checkers, will never reach.

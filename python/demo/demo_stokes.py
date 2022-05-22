@@ -138,7 +138,7 @@ V, Q = FunctionSpace(msh, P2), FunctionSpace(msh, P1)
 # where x = 0, x = 1, and y = 0
 noslip = Function(V)
 facets = locate_entities_boundary(msh, 1, noslip_boundary)
-bc0 = dirichletbc(noslip, locate_dofs_topological(V, 1, facets), V)
+bc0 = dirichletbc(noslip, locate_dofs_topological(V, 1, facets))
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(V)
