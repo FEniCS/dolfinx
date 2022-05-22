@@ -486,6 +486,10 @@ mesh::entities_to_geometry(const Mesh& mesh, int dim,
       // should be negative. Switch points if not.
       auto _a = xt::adapt(a.data(), 9, xt::no_ownership(),
                           std::vector<std::size_t>{3, 3});
+
+      if (math::det(_a) != math::det(a.data(), {3, 3}))
+        throw std::runtime_error("Det problem");
+
       if (math::det(_a) > 0.0)
       {
         std::swap(geometry_idx[i * num_vertices + 1],

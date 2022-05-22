@@ -44,6 +44,7 @@ T difference_of_products(T a, T b, T c, T d) noexcept
 /// @note Tailored for use in computations using the Jacobian
 /// @param[in] A The matrix to compute the determinant of. Row-major
 /// storage.
+/// @param[in] shape The shape of `A`
 /// @return The determinate of `A`
 template <typename T>
 auto det(const T* A, std::array<std::size_t, 2> shape)
@@ -68,7 +69,7 @@ auto det(const T* A, std::array<std::size_t, 2> shape)
     T w1 = difference_of_products(A[3], A[3 + 2], A[3 * 2], A[3 * 2 + 2]);
     T w2 = difference_of_products(A[3], A[3 + 1], A[3 * 2], A[3 * 2 + 1]);
     T w3 = difference_of_products(A[0], A[1], w1, w0);
-    T w4 = std::fma(A(0, 2), w2, w3);
+    T w4 = std::fma(A[2], w2, w3);
     return w4;
   }
   default:
