@@ -552,7 +552,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.tabulate_dof_coordinates()
 
 
-def VectorFunctionSpace(mesh: Mesh, element: ElementMetaData, dim=None,
+def VectorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]], dim=None,
                         restriction=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
 

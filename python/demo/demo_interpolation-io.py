@@ -70,7 +70,7 @@ except ImportError:
 # Plot solution
 try:
     import pyvista
-    cells, types, x = plot.create_vtk_mesh(V0)
+    cells, types, x = plot.create_vtk_mesh(V0, dim=msh.topology.dim)
     grid = pyvista.UnstructuredGrid(cells, types, x)
     values = np.zeros((x.shape[0], 3), dtype=np.float64)
     values[:, :msh.topology.dim] = u0.x.array.reshape(x.shape[0], msh.topology.dim).real

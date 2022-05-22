@@ -301,7 +301,7 @@ def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyL
     return _cpp.mesh.create_meshtags(mesh, dim, entities, values)
 
 
-def create_interval(comm: _MPI.Comm, nx: int, points: list, ghost_mode=GhostMode.shared_facet,
+def create_interval(comm: _MPI.Comm, nx: int, points: numpy.typing.ArrayLike, ghost_mode=GhostMode.shared_facet,
                     partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
     """Create an interval mesh
 
@@ -396,7 +396,7 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
                             partitioner, diagonal)
 
 
-def create_box(comm: _MPI.Comm, points: typing.List[np.ndarray], n: list,
+def create_box(comm: _MPI.Comm, points: typing.List[numpy.typing.ArrayLike], n: list,
                cell_type=CellType.tetrahedron,
                ghost_mode=GhostMode.shared_facet,
                partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:

@@ -176,10 +176,10 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
             for i in range(51):
                 pts.append([cell / 10 + i / 50 / 10, 0, 0])
                 cells.append(cell)
-        pts = np.array(pts)
-        cells = np.array(cells)
-        values = uh.eval(pts, cells)
-        plt.plot(pts[:, 0], [saw_tooth(i[0]) for i in pts], "k--")
+        pts_np = np.array(pts)
+        cells_np = np.array(cells)
+        values = uh.eval(pts_np, cells_np)
+        plt.plot(pts_np[:, 0], [saw_tooth(i[0]) for i in pts], "k--")
         plt.plot(pts[:, 0], values, "r-")
 
         plt.legend(["function", "approximation"])
