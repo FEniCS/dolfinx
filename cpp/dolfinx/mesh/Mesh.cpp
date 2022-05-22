@@ -19,6 +19,7 @@
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <memory>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xsort.hpp>
 #include <xtensor/xview.hpp>
 
@@ -327,8 +328,13 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // Submesh geometry
   // Get the geometry dofs in the submesh based on the entities in
   // submesh
-  xt::xtensor<std::int32_t, 2> e_to_g
+  std::vector<std::int32_t> _e_to_g
       = entities_to_geometry(mesh, dim, submesh_to_mesh_entity_map, false);
+  CellType cell_type = mesh.topology().cell_type();
+  std::vector<std::size_t> shape = {submesh_to_mesh_entity_map.size(),
+                                    (std::size_t)mesh::num_cell_vertices(
+                                        cell_entity_type(cell_type, dim, 0))};
+  auto e_to_g = xt::adapt(_e_to_g, shape);
   // FIXME Find better way to do this
   xt::xarray<int32_t> submesh_x_dofs_xt = xt::unique(e_to_g);
   std::vector<int32_t> submesh_x_dofs(submesh_x_dofs_xt.begin(),
@@ -373,10 +379,10 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Crete submesh geometry dofmap
   std::vector<std::int32_t> submesh_x_dofmap_vec;
-  submesh_x_dofmap_vec.reserve(e_to_g.shape()[0] * e_to_g.shape()[1]);
+  submesh_x_dofmap_vec.reserve(e_to_g.shape(0) * e_to_g.shape(1));
   std::vector<std::int32_t> submesh_x_dofmap_offsets(1, 0);
-  submesh_x_dofmap_offsets.reserve(e_to_g.shape()[0] + 1);
-  for (std::size_t i = 0; i < e_to_g.shape()[0]; ++i)
+  submesh_x_dofmap_offsets.reserve(e_to_g.shape(0) + 1);
+  for (std::size_t i = 0; i < e_to_g.shape(0); ++i)
   {
     // Get the mesh geometry dofs for ith entity in entities
     auto entity_x_dofs = xt::row(e_to_g, i);

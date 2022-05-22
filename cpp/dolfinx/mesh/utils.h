@@ -118,20 +118,22 @@ std::vector<std::int32_t> locate_entities_boundary(
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker);
 
-/// Compute the indices the geometry data for the vertices of the given
-/// mesh entities
+/// @brief Determine the indices in the geometry data for each vertex of
+/// the given mesh entities.
 ///
-/// @param[in] mesh Mesh
+/// @param[in] mesh The mesh
 /// @param[in] dim Topological dimension of the entities of interest
-/// @param[in] entity_list List of entity indices (local)
+/// @param[in] entities Entity indices (local) to compute the vertex
+/// geometry indices for
 /// @param[in] orient If true, in 3D, reorients facets to have
 /// consistent normal direction
-/// @return Indices in the geometry array for the mesh entity vertices, i.e.
-/// indices(i, j) is the position in the geometry array of the j-th vertex of
-/// the entity entity_list[i].
-xt::xtensor<std::int32_t, 2>
+/// @return Indices in the geometry array for the entity vertices. The
+/// shape is `(num_entities, num_vertices_per_entity)` and the storage
+/// is row-major. The index `indices[i, j]` is the position in the
+/// geometry array of the `j`-th vertex of the `entity[i]`.
+std::vector<std::int32_t>
 entities_to_geometry(const Mesh& mesh, int dim,
-                     const xtl::span<const std::int32_t>& entity_list,
+                     const xtl::span<const std::int32_t>& entities,
                      bool orient);
 
 /// Compute the indices (local) of all exterior facets. An exterior facet

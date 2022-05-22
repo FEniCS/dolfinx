@@ -396,12 +396,16 @@ void mesh(py::module& m)
 
   m.def("entities_to_geometry",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
-           py::array_t<std::int32_t, py::array::c_style> entity_list,
-           bool orient)
+           py::array_t<std::int32_t, py::array::c_style> entities, bool orient)
         {
-          return xt_as_pyarray(dolfinx::mesh::entities_to_geometry(
-              mesh, dim, xtl::span(entity_list.data(), entity_list.size()),
-              orient));
+          std::vector<std::int32_t> idx = dolfinx::mesh::entities_to_geometry(
+              mesh, dim, entities, orient);
+          dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
+          std::size_t num_vertices = dolfinx::mesh::num_cell_vertices(
+              cell_entity_type(cell_type, dim, 0));
+          std::array<std::size_t, 2> shape
+              = {(std::size_t)entities.size(), num_vertices};
+          return as_pyarray(std::move(idx), shape);
         });
   m.def("exterior_facet_indices", &dolfinx::mesh::exterior_facet_indices);
   m.def("compute_incident_entities",

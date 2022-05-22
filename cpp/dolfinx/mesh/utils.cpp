@@ -125,8 +125,13 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   bool orient = false;
   if (mesh.topology().cell_type() == CellType::tetrahedron)
     orient = true;
-  xt::xtensor<std::int32_t, 2> geometry_entities
+  std::vector<std::int32_t> _geometry_entities
       = entities_to_geometry(mesh, dim, entities, orient);
+  CellType cell_type = mesh.topology().cell_type();
+  std::vector<std::size_t> shape
+      = {entities.size(), (std::size_t)mesh::num_cell_vertices(
+                              cell_entity_type(cell_type, dim, 0))};
+  auto geometry_entities = xt::adapt(_geometry_entities, shape);
 
   const std::size_t num_entities = entities.size();
   xt::xtensor<double, 2> n({num_entities, 3});
@@ -205,8 +210,13 @@ mesh::compute_midpoints(const Mesh& mesh, int dim,
 
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
-  xt::xtensor<std::int32_t, 2> entity_to_geometry
+  std::vector<std::int32_t> _entity_to_geometry
       = entities_to_geometry(mesh, dim, entities, false);
+  CellType cell_type = mesh.topology().cell_type();
+  std::vector<std::size_t> shape
+      = {entities.size(), (std::size_t)mesh::num_cell_vertices(
+                              cell_entity_type(cell_type, dim, 0))};
+  auto entity_to_geometry = xt::adapt(_entity_to_geometry, shape);
 
   xt::xtensor<double, 2> x_mid({entities.size(), 3});
   for (std::size_t e = 0; e < entity_to_geometry.shape(0); ++e)
@@ -399,29 +409,21 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   return entities;
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<std::int32_t, 2>
+std::vector<std::int32_t>
 mesh::entities_to_geometry(const Mesh& mesh, int dim,
-                           const xtl::span<const std::int32_t>& entity_list,
+                           const xtl::span<const std::int32_t>& entities,
                            bool orient)
 {
   CellType cell_type = mesh.topology().cell_type();
   if (cell_type == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cells");
-
-  const std::size_t num_entity_vertices
-      = num_cell_vertices(cell_entity_type(cell_type, dim, 0));
-  xt::xtensor<std::int32_t, 2> entity_geometry(
-      {entity_list.size(), num_entity_vertices});
-
   if (orient and (cell_type != CellType::tetrahedron or dim != 2))
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
 
   const Geometry& geometry = mesh.geometry();
-  auto geom_dofs
-      = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
-                  std::vector({geometry.x().size() / 3, std::size_t(3)}));
-  const Topology& topology = mesh.topology();
+  auto x = geometry.x();
 
+  const Topology& topology = mesh.topology();
   const int tdim = topology.dim();
   mesh.topology_mutable().create_entities(dim);
   mesh.topology_mutable().create_connectivity(dim, tdim);
@@ -435,48 +437,65 @@ mesh::entities_to_geometry(const Mesh& mesh, int dim,
   assert(e_to_v);
   const auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
-  for (std::size_t i = 0; i < entity_list.size(); ++i)
+
+  const std::size_t num_vertices
+      = num_cell_vertices(cell_entity_type(cell_type, dim, 0));
+  std::vector<std::int32_t> geometry_idx(entities.size() * num_vertices);
+  for (std::size_t i = 0; i < entities.size(); ++i)
   {
-    const std::int32_t idx = entity_list[i];
+    const std::int32_t idx = entities[i];
     const std::int32_t cell = e_to_c->links(idx)[0];
     auto ev = e_to_v->links(idx);
-    assert(ev.size() == num_entity_vertices);
+    assert(ev.size() == num_vertices);
     const auto cv = c_to_v->links(cell);
     const auto xc = xdofs.links(cell);
-    for (std::size_t j = 0; j < num_entity_vertices; ++j)
+    for (std::size_t j = 0; j < num_vertices; ++j)
     {
       int k = std::distance(cv.begin(), std::find(cv.begin(), cv.end(), ev[j]));
       assert(k < (int)cv.size());
-      entity_geometry(i, j) = xc[k];
+      geometry_idx[i * num_vertices + j] = xc[k];
     }
 
     if (orient)
     {
       // Compute cell midpoint
-      xt::xtensor_fixed<double, xt::xshape<3>> midpoint = {0, 0, 0};
+      std::array<double, 3> midpoint = {0, 0, 0};
       for (std::int32_t j : xc)
         for (int k = 0; k < 3; ++k)
-          midpoint[k] += geom_dofs(j, k);
-      midpoint /= xc.size();
+          midpoint[k] += x[3 * j + k];
+      std::transform(midpoint.begin(), midpoint.end(), midpoint.begin(),
+                     [size = xc.size()](auto x) { return x / size; });
 
       // Compute vector triple product of two edges and vector to midpoint
-      auto p0 = xt::row(geom_dofs, entity_geometry(i, 0));
-      auto p1 = xt::row(geom_dofs, entity_geometry(i, 1));
-      auto p2 = xt::row(geom_dofs, entity_geometry(i, 2));
+      std::array<double, 3> p0, p1, p2;
+      std::copy_n(std::next(x.begin(), 3 * geometry_idx[i * num_vertices + 0]),
+                  3, p0.begin());
+      std::copy_n(std::next(x.begin(), 3 * geometry_idx[i * num_vertices + 1]),
+                  3, p1.begin());
+      std::copy_n(std::next(x.begin(), 3 * geometry_idx[i * num_vertices + 2]),
+                  3, p2.begin());
 
-      xt::xtensor_fixed<double, xt::xshape<3, 3>> a;
-      xt::row(a, 0) = midpoint - p0;
-      xt::row(a, 1) = p1 - p0;
-      xt::row(a, 2) = p2 - p0;
+      std::array<double, 9> a;
+      std::transform(midpoint.begin(), midpoint.end(), p0.begin(), a.begin(),
+                     [](auto x, auto y) { return x - y; });
+      std::transform(p1.begin(), p1.end(), p0.begin(), std::next(a.begin(), 3),
+                     [](auto x, auto y) { return x - y; });
+      std::transform(p1.begin(), p2.end(), p0.begin(), std::next(a.begin(), 6),
+                     [](auto x, auto y) { return x - y; });
 
       // Midpoint direction should be opposite to normal, hence this
       // should be negative. Switch points if not.
-      if (math::det(a) > 0.0)
-        std::swap(entity_geometry(i, 1), entity_geometry(i, 2));
+      auto _a = xt::adapt(a.data(), 9, xt::no_ownership(),
+                          std::vector<std::size_t>{3, 3});
+      if (math::det(_a) > 0.0)
+      {
+        std::swap(geometry_idx[i * num_vertices + 1],
+                  geometry_idx[i * num_vertices + 2]);
+      }
     }
   }
 
-  return entity_geometry;
+  return geometry_idx;
 }
 //------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
@@ -484,15 +503,14 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
   // Note: Possible duplication of mesh::Topology::compute_boundary_facets
 
   const Topology& topology = mesh.topology();
-  std::vector<std::int32_t> surface_facets;
 
-  // Get number of facets owned by this process
   const int tdim = topology.dim();
   mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
   auto f_to_c = topology.connectivity(tdim - 1, tdim);
   assert(topology.index_map(tdim - 1));
 
-  // Only need to consider shared facets when there are no ghost cells
+  // Get number of facets owned by this process. Only need to consider
+  // shared facets when there are no ghost cells.
   std::set<std::int32_t> fwd_shared_facets;
   if (topology.index_map(tdim)->num_ghosts() == 0)
   {
@@ -501,8 +519,9 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
         topology.index_map(tdim - 1)->scatter_fwd_indices().array().end());
   }
 
-  // Find all owned facets (not ghost) with only one attached cell, which are
-  // also not shared forward (ghost on another process)
+  // Find all owned facets (not ghost) with only one attached cell,
+  // which are also not shared forward (ghost on another process)
+  std::vector<std::int32_t> surface_facets;
   const int num_facets = topology.index_map(tdim - 1)->size_local();
   for (int f = 0; f < num_facets; ++f)
   {
