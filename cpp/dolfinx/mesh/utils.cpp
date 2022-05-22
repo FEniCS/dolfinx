@@ -125,12 +125,11 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   bool orient = false;
   if (mesh.topology().cell_type() == CellType::tetrahedron)
     orient = true;
+
   std::vector<std::int32_t> _geometry_entities
       = entities_to_geometry(mesh, dim, entities, orient);
-  CellType cell_type = mesh.topology().cell_type();
   std::vector<std::size_t> shape
-      = {entities.size(), (std::size_t)mesh::num_cell_vertices(
-                              cell_entity_type(cell_type, dim, 0))};
+      = {entities.size(), (std::size_t)mesh::num_cell_vertices(type)};
   auto geometry_entities = xt::adapt(_geometry_entities, shape);
 
   const std::size_t num_entities = entities.size();
@@ -480,7 +479,7 @@ mesh::entities_to_geometry(const Mesh& mesh, int dim,
                      [](auto x, auto y) { return x - y; });
       std::transform(p1.begin(), p1.end(), p0.begin(), std::next(a.begin(), 3),
                      [](auto x, auto y) { return x - y; });
-      std::transform(p1.begin(), p2.end(), p0.begin(), std::next(a.begin(), 6),
+      std::transform(p2.begin(), p2.end(), p0.begin(), std::next(a.begin(), 6),
                      [](auto x, auto y) { return x - y; });
 
       // Midpoint direction should be opposite to normal, hence this

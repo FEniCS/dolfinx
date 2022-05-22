@@ -42,6 +42,44 @@ T difference_of_products(T a, T b, T c, T d) noexcept
 
 /// Compute the determinant of a small matrix (1x1, 2x2, or 3x3)
 /// @note Tailored for use in computations using the Jacobian
+/// @param[in] A The matrix to compute the determinant of. Row-major
+/// storage.
+/// @return The determinate of `A`
+template <typename T>
+auto det(const T* A, std::array<std::size_t, 2> shape)
+{
+  assert(shape[0] == shape[1]);
+
+  // const int nrows = shape[0];
+  switch (shape[0])
+  {
+  case 1:
+    return *A;
+  case 2:
+    /* A(0, 0), A(0, 1), A(1, 0), A(1, 1) */
+    return difference_of_products(A[0], A[1], A[2], A[3]);
+  case 3:
+  {
+    // Leibniz formula combined with Kahan’s method for accurate
+    // computation of 3 x 3 determinants
+
+    T w0 = difference_of_products(A[3 + 1], A[3 + 2], A[3 * 2 + 1],
+                                  A[2 * 3 + 2]);
+    T w1 = difference_of_products(A[3], A[3 + 2], A[3 * 2], A[3 * 2 + 2]);
+    T w2 = difference_of_products(A[3], A[3 + 1], A[3 * 2], A[3 * 2 + 1]);
+    T w3 = difference_of_products(A[0], A[1], w1, w0);
+    T w4 = std::fma(A(0, 2), w2, w3);
+    return w4;
+  }
+  default:
+    throw std::runtime_error("math::det is not implemented for "
+                             + std::to_string(A[0]) + "x" + std::to_string(A[1])
+                             + " matrices.");
+  }
+}
+
+/// Compute the determinant of a small matrix (1x1, 2x2, or 3x3)
+/// @note Tailored for use in computations using the Jacobian
 /// @param[in] A The matrix tp compute the determinant of
 /// @return The determinate of @p A
 template <typename Matrix>
