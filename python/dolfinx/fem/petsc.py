@@ -160,7 +160,10 @@ def create_matrix_nest(a: typing.List[typing.List[FormMetaClass]]) -> PETSc.Mat:
 
 @functools.singledispatch
 def assemble_vector(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
-    raise NotImplementedError
+    try:
+        _assemble_vector_form(L, constants, coeffs)
+    except TypeError:
+        raise NotImplementedError
 
 
 @assemble_vector.register(FormMetaClass)
