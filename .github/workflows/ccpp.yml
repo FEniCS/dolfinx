@@ -144,9 +144,9 @@ jobs:
         run: |
           python -m pip install mypy # To remove once Docker images re-built
           cd python/
-          mypy --ignore-missing-imports dolfinx
-          mypy --ignore-missing-imports demo
-          mypy --ignore-missing-imports test
+          mypy dolfinx
+          mypy demo
+          mypy test
 
       - name: Run demos (Python, serial)
         run: python3 -m pytest -n=2 -m serial --durations=10 python/demo/test.py
