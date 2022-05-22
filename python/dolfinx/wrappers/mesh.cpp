@@ -159,8 +159,10 @@ void mesh(py::module& m)
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            const py::array_t<std::int32_t, py::array::c_style>& entities)
         {
-          return xt_as_pyarray(dolfinx::mesh::cell_normals(
-              mesh, dim, xtl::span(entities.data(), entities.size())));
+          std::vector<double> n = dolfinx::mesh::cell_normals(
+              mesh, dim, xtl::span(entities.data(), entities.size()));
+          return as_pyarray(std::move(n),
+                            std::array<std::size_t, 2>{n.size() / 3, 3});
         });
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
   m.def("extract_topology", &dolfinx::mesh::extract_topology);

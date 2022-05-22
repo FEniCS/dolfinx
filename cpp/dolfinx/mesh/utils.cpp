@@ -105,7 +105,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   return h_cells;
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2>
+std::vector<double>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                    const xtl::span<const std::int32_t>& entities)
 {
@@ -116,24 +116,19 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   const CellType type = cell_entity_type(mesh.topology().cell_type(), dim, 0);
 
   // Find geometry nodes for topology entities
-  auto xg = xt::adapt(
-      mesh.geometry().x().data(), mesh.geometry().x().size(),
-      xt::no_ownership(),
-      std::vector({mesh.geometry().x().size() / 3, std::size_t(3)}));
+  xtl::span<const double> x = mesh.geometry().x();
 
   // Orient cells if they are tetrahedron
   bool orient = false;
   if (mesh.topology().cell_type() == CellType::tetrahedron)
     orient = true;
 
-  std::vector<std::int32_t> _geometry_entities
+  std::vector<std::int32_t> geometry_entities
       = entities_to_geometry(mesh, dim, entities, orient);
-  std::vector<std::size_t> shape
-      = {entities.size(), (std::size_t)mesh::num_cell_vertices(type)};
-  auto geometry_entities = xt::adapt(_geometry_entities, shape);
 
+  const std::size_t shape1 = mesh::num_cell_vertices(type);
   const std::size_t num_entities = entities.size();
-  xt::xtensor<double, 2> n({num_entities, 3});
+  std::vector<double> n(num_entities * 3);
   switch (type)
   {
   case CellType::interval:
@@ -143,17 +138,22 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     for (std::size_t i = 0; i < num_entities; ++i)
     {
       // Get the two vertices as points
-      auto vertices = xt::row(geometry_entities, i);
-      auto p0 = xt::row(xg, vertices[0]);
-      auto p1 = xt::row(xg, vertices[1]);
+      std::array vertices{geometry_entities[i * shape1],
+                          geometry_entities[i * shape1 + 1]};
+      std::array p
+          = {xtl::span<const double, 3>(x.data() + 3 * vertices[0], 3),
+             xtl::span<const double, 3>(x.data() + 3 * vertices[1], 3)};
 
       // Define normal by rotating tangent counter-clockwise
-      auto t = p1 - p0;
-      auto ni = xt::row(n, i);
-      ni[0] = -t[1];
-      ni[1] = t[0];
+      std::array<double, 3> t;
+      std::transform(p[1].begin(), p[1].end(), p[0].begin(), t.begin(),
+                     [](auto x, auto y) { return x - y; });
+
+      double norm = std::sqrt(t[0] * t[0] + t[1] * t[1]);
+      xtl::span<double, 3> ni(n.data() + 3 * i, 3);
+      ni[0] = -t[1] / norm;
+      ni[1] = t[0] / norm;
       ni[2] = 0.0;
-      ni /= xt::norm_l2(ni);
     }
     return n;
   }
@@ -162,15 +162,26 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     for (std::size_t i = 0; i < num_entities; ++i)
     {
       // Get the three vertices as points
-      auto vertices = xt::row(geometry_entities, i);
-      auto p0 = xt::row(xg, vertices[0]);
-      auto p1 = xt::row(xg, vertices[1]);
-      auto p2 = xt::row(xg, vertices[2]);
+      std::array vertices = {geometry_entities[i * shape1 + 0],
+                             geometry_entities[i * shape1 + 1],
+                             geometry_entities[i * shape1 + 2]};
+      std::array p
+          = {xtl::span<const double, 3>(x.data() + 3 * vertices[0], 3),
+             xtl::span<const double, 3>(x.data() + 3 * vertices[1], 3),
+             xtl::span<const double, 3>(x.data() + 3 * vertices[2], 3)};
+
+      // Compute (p1 - p0) and (p2 - p0)
+      std::array<double, 3> dp1, dp2;
+      std::transform(p[1].begin(), p[1].end(), p[0].begin(), dp1.begin(),
+                     [](auto x, auto y) { return x - y; });
+      std::transform(p[2].begin(), p[2].end(), p[0].begin(), dp2.begin(),
+                     [](auto x, auto y) { return x - y; });
 
       // Define cell normal via cross product of first two edges
-      auto ni = xt::row(n, i);
-      ni = math::cross((p1 - p0), (p2 - p0));
-      ni /= xt::norm_l2(ni);
+      std::array<double, 3> ni = math::cross_new(dp1, dp2);
+      double norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
+      std::transform(ni.begin(), ni.end(), std::next(n.begin(), 3 * i),
+                     [norm](auto x) { return x / norm; });
     }
     return n;
   }
@@ -179,16 +190,27 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     // TODO: check
     for (std::size_t i = 0; i < num_entities; ++i)
     {
-      // Get three vertices as points
-      auto vertices = xt::row(geometry_entities, i);
-      auto p0 = xt::row(xg, vertices[0]);
-      auto p1 = xt::row(xg, vertices[1]);
-      auto p2 = xt::row(xg, vertices[2]);
+      // Get the three vertices as points
+      std::array vertices = {geometry_entities[i * shape1 + 0],
+                             geometry_entities[i * shape1 + 1],
+                             geometry_entities[i * shape1 + 2]};
+      std::array p
+          = {xtl::span<const double, 3>(x.data() + 3 * vertices[0], 3),
+             xtl::span<const double, 3>(x.data() + 3 * vertices[1], 3),
+             xtl::span<const double, 3>(x.data() + 3 * vertices[2], 3)};
 
-      // Defined cell normal via cross product of first two edges:
-      auto ni = xt::row(n, i);
-      ni = math::cross((p1 - p0), (p2 - p0));
-      ni /= xt::norm_l2(ni);
+      // Compute (p1 - p0) and (p2 - p0)
+      std::array<double, 3> dp1, dp2;
+      std::transform(p[1].begin(), p[1].end(), p[0].begin(), dp1.begin(),
+                     [](auto x, auto y) { return x - y; });
+      std::transform(p[2].begin(), p[2].end(), p[0].begin(), dp2.begin(),
+                     [](auto x, auto y) { return x - y; });
+
+      // Define cell normal via cross product of first two edges
+      std::array<double, 3> ni = math::cross_new(dp1, dp2);
+      double norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
+      std::transform(ni.begin(), ni.end(), std::next(n.begin(), 3 * i),
+                     [norm](auto x) { return x / norm; });
     }
     return n;
   }

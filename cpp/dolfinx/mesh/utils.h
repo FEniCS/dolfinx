@@ -68,10 +68,11 @@ extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
 std::vector<double> h(const Mesh& mesh,
                       const xtl::span<const std::int32_t>& entities, int dim);
 
-/// Compute normal to given cell (viewed as embedded in 3D)
-xt::xtensor<double, 2>
-cell_normals(const Mesh& mesh, int dim,
-             const xtl::span<const std::int32_t>& entities);
+/// @brief Compute normal to given cell (viewed as embedded in 3D)
+/// @returns The entity normals. The shape is `(entities.size(), 3)` and
+/// the storage is row-major.
+std::vector<double> cell_normals(const Mesh& mesh, int dim,
+                                 const xtl::span<const std::int32_t>& entities);
 
 /// Compute the midpoints for mesh entities of a given dimension
 xt::xtensor<double, 2>
