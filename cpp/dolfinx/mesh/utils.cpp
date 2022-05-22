@@ -220,33 +220,32 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   }
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2>
+std::vector<double>
 mesh::compute_midpoints(const Mesh& mesh, int dim,
                         const xtl::span<const std::int32_t>& entities)
 {
-  auto x = xt::adapt(
-      mesh.geometry().x().data(), mesh.geometry().x().size(),
-      xt::no_ownership(),
-      std::vector({mesh.geometry().x().size() / 3, std::size_t(3)}));
+  xtl::span<const double> x = mesh.geometry().x();
 
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
-  std::vector<std::int32_t> _entity_to_geometry
+  const std::vector<std::int32_t> e_to_g
       = entities_to_geometry(mesh, dim, entities, false);
   CellType cell_type = mesh.topology().cell_type();
-  std::vector<std::size_t> shape
-      = {entities.size(), (std::size_t)mesh::num_cell_vertices(
-                              cell_entity_type(cell_type, dim, 0))};
-  auto entity_to_geometry = xt::adapt(_entity_to_geometry, shape);
+  std::size_t shape1
+      = mesh::num_cell_vertices(cell_entity_type(cell_type, dim, 0));
 
-  xt::xtensor<double, 2> x_mid({entities.size(), 3});
-  for (std::size_t e = 0; e < entity_to_geometry.shape(0); ++e)
+  std::vector<double> x_mid(entities.size() * 3, 0);
+  for (std::size_t e = 0; e < entities.size(); ++e)
   {
-    auto rows = xt::row(entity_to_geometry, e);
-    // The below should work, but misbehaves with the Intel icpx compiler
-    // xt::row(x_mid, e) = xt::mean(xt::view(x, xt::keep(rows)), 0);
-    auto _x = xt::row(x_mid, e);
-    _x.assign(xt::mean(xt::view(x, xt::keep(rows)), 0));
+    xtl::span<double, 3> p(x_mid.data() + 3 * e, 3);
+    xtl::span<const std::int32_t> rows(e_to_g.data() + e * shape1, shape1);
+    for (auto row : rows)
+    {
+      xtl::span<const double, 3> xg(x.data() + 3 * row, 3);
+      std::transform(p.begin(), p.end(), xg.begin(), p.begin(),
+                     [size = rows.size()](auto x, auto y)
+                     { return x + y / size; });
+    }
   }
 
   return x_mid;

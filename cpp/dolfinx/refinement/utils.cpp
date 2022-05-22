@@ -18,6 +18,7 @@
 #include <memory>
 #include <mpi.h>
 #include <vector>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
@@ -104,8 +105,11 @@ xt::xtensor<double, 2> create_new_geometry(
     for (auto& e : local_edge_to_new_vertex)
       edges[i++] = e.first;
 
-    const xt::xtensor<double, 2> midpoints
+    const std::vector<double> midpoints
         = mesh::compute_midpoints(mesh, 1, edges);
+
+    std::vector<std::size_t> shape = {edges.size(), 3};
+    auto _midpoints = xt::adapt(midpoints, shape);
 
     // The below should work, but misbehaves with the Intel icpx compiler
     // xt::view(new_vertex_coordinates, xt::range(-num_new_vertices, _),
@@ -113,7 +117,7 @@ xt::xtensor<double, 2> create_new_geometry(
     //     = midpoints;
     auto _vertex = xt::view(new_vertex_coordinates,
                             xt::range(-num_new_vertices, _), xt::all());
-    _vertex.assign(midpoints);
+    _vertex.assign(_midpoints);
   }
 
   return xt::view(new_vertex_coordinates, xt::all(),

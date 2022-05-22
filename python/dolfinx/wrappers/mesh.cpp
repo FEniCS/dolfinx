@@ -179,10 +179,12 @@ void mesh(py::module& m)
 
   m.def("compute_midpoints",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
-           py::array_t<std::int32_t, py::array::c_style> entity_list)
+           py::array_t<std::int32_t, py::array::c_style> entities)
         {
-          return xt_as_pyarray(dolfinx::mesh::compute_midpoints(
-              mesh, dim, xtl::span(entity_list.data(), entity_list.size())));
+          std::vector<double> x = dolfinx::mesh::compute_midpoints(
+              mesh, dim, xtl::span(entities.data(), entities.size()));
+          std::array<std::size_t, 2> shape = {(std::size_t)entities.size(), 3};
+          return as_pyarray(std::move(x), shape);
         });
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
 
@@ -412,11 +414,11 @@ void mesh(py::module& m)
   m.def("exterior_facet_indices", &dolfinx::mesh::exterior_facet_indices);
   m.def("compute_incident_entities",
         [](const dolfinx::mesh::Mesh& mesh,
-           py::array_t<std::int32_t, py::array::c_style> entity_list, int d0,
+           py::array_t<std::int32_t, py::array::c_style> entities, int d0,
            int d1)
         {
           return as_pyarray(dolfinx::mesh::compute_incident_entities(
-              mesh, xtl::span(entity_list.data(), entity_list.size()), d0, d1));
+              mesh, xtl::span(entities.data(), entities.size()), d0, d1));
         });
 
   // Mesh generation

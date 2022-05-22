@@ -74,8 +74,10 @@ std::vector<double> h(const Mesh& mesh,
 std::vector<double> cell_normals(const Mesh& mesh, int dim,
                                  const xtl::span<const std::int32_t>& entities);
 
-/// Compute the midpoints for mesh entities of a given dimension
-xt::xtensor<double, 2>
+/// @brief Compute the midpoints for mesh entities of a given dimension.
+/// @returns The entity midpoints. The shape is `(entities.size(), 3)`
+/// and the storage is row-major.
+std::vector<double>
 compute_midpoints(const Mesh& mesh, int dim,
                   const xtl::span<const std::int32_t>& entities);
 
