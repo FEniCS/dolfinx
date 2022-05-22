@@ -161,7 +161,7 @@ def create_matrix_nest(a: typing.List[typing.List[FormMetaClass]]) -> PETSc.Mat:
 @functools.singledispatch
 def assemble_vector(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
     try:
-        _assemble_vector_form(L, constants, coeffs)
+        return _assemble_vector_form(L, constants, coeffs)
     except TypeError:
         raise NotImplementedError
 
@@ -212,7 +212,10 @@ def _assemble_vector_vec(b: PETSc.Vec, L: FormMetaClass, constants=None, coeffs=
 
 @functools.singledispatch
 def assemble_vector_nest(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
-    raise NotImplementedError
+    try:
+        return _assemble_vector_form(L, constants, coeffs)
+    except TypeError:
+        raise NotImplementedError
 
 
 @assemble_vector_nest.register(list)
@@ -255,17 +258,20 @@ def assemble_vector_block(L: typing.Any,
                           scale: float = 1.0,
                           constants_L=None, coeffs_L=None,
                           constants_a=None, coeffs_a=None) -> PETSc.Vec:
-    raise NotImplementedError
+    try:
+        return _assemble_vector_block_form(L, a, bcs, x0, scale, constants_L, coeffs_L, constants_a, coeffs_a)
+    except TypeError:
+        raise NotImplementedError
 
 
 @assemble_vector_block.register(list)
-def _assemble_vector_block_forms(L: typing.List[FormMetaClass],
-                                 a: typing.List[typing.List[FormMetaClass]],
-                                 bcs: typing.List[DirichletBCMetaClass] = [],
-                                 x0: typing.Optional[PETSc.Vec] = None,
-                                 scale: float = 1.0,
-                                 constants_L=None, coeffs_L=None,
-                                 constants_a=None, coeffs_a=None) -> PETSc.Vec:
+def _assemble_vector_block_form(L: typing.List[FormMetaClass],
+                                a: typing.List[typing.List[FormMetaClass]],
+                                bcs: typing.List[DirichletBCMetaClass] = [],
+                                x0: typing.Optional[PETSc.Vec] = None,
+                                scale: float = 1.0,
+                                constants_L=None, coeffs_L=None,
+                                constants_a=None, coeffs_a=None) -> PETSc.Vec:
     """Assemble linear forms into a monolithic vector. The vector is not
     finalised, i.e. ghost values are not accumulated.
 

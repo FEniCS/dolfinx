@@ -114,10 +114,11 @@ class DirichletBCMetaClass:
         """
 
         # Unwrap value object, if required
-        try:
-            _value = value._cpp_object
-        except AttributeError:
-            _value = value
+        if not isinstance(value, np.ndarray):
+            try:
+                _value = value._cpp_object
+            except AttributeError:
+                _value = value
 
         if V is not None:
             try:
