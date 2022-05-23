@@ -144,8 +144,8 @@ public:
     assert(local_buffer.size() == _local_inds.size());
     assert(remote_buffer.size() == _remote_inds.size());
     pack_fn(local_data, _local_inds, local_buffer);
-    scatter_fwd_begin(xtl::span<const T>(local_buffer), remote_buffer,
-                      requests);
+    scatter_fwd_begin(xtl::span<const T>(local_buffer), remote_buffer, requests,
+                      type);
   }
 
   /// @brief Complete a non-blocking send from the local owner to
