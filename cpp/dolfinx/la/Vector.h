@@ -145,7 +145,7 @@ public:
   {
     const std::int32_t local_size = _bs * _map->size_local();
     xtl::span<T> x_local(_x.data(), local_size);
-    _scatterer->scatter_rev_end(_request[0]);
+    _scatterer->scatter_rev_end(_request);
 
     auto unpack = [](const auto& in, const auto& idx, auto& out, auto op)
     {

@@ -145,14 +145,14 @@ Scatterer::Scatterer(const IndexMap& map, int bs)
   }
 }
 //-----------------------------------------------------------------------------
-void Scatterer::scatter_rev_end(MPI_Request& request) const
+void Scatterer::scatter_rev_end(xtl::span<MPI_Request> request) const
 {
   // Return early if there are no incoming or outgoing edges
   if (_sizes_local.empty() and _sizes_remote.empty())
     return;
 
   // Wait for communication to complete
-  MPI_Wait(&request, MPI_STATUS_IGNORE);
+  MPI_Waitall(request.size(), request.data(), MPI_STATUS_IGNORE);
 }
 //-----------------------------------------------------------------------------
 std::int32_t Scatterer::local_buffer_size() const noexcept

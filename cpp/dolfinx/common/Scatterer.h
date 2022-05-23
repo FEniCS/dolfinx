@@ -243,22 +243,54 @@ public:
   ///
   /// The buffer must not be accessed or changed until after a call to
   /// Scatterer::scatter_fwd_end.
-  /// @param request The MPI request handle for tracking the status of
+  /// @param requests The MPI request handle for tracking the status of
   /// the non-blocking communication
+  /// @param[in] type The type of MPI communication pattern used by the
+  /// Scatterer, either Scatterer::type::neighbor or Scatterer::type::p2p.
   template <typename T>
   void scatter_rev_begin(const xtl::span<const T>& send_buffer,
                          const xtl::span<T>& recv_buffer,
-                         MPI_Request& request) const
+                         xtl::span<MPI_Request> requests,
+                         Scatterer::type type = type::neighbour) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
       return;
 
-    // Send and receive data
-    MPI_Ineighbor_alltoallv(
-        send_buffer.data(), _sizes_remote.data(), _displs_remote.data(),
-        MPI::mpi_type<T>(), recv_buffer.data(), _sizes_local.data(),
-        _displs_local.data(), MPI::mpi_type<T>(), _comm1.comm(), &request);
+    // // Send and receive data
+
+    switch (type)
+    {
+    case type::neighbour:
+    {
+      assert(requests.size() == 0);
+      MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_remote.data(),
+                              _displs_remote.data(), MPI::mpi_type<T>(),
+                              recv_buffer.data(), _sizes_local.data(),
+                              _displs_local.data(), MPI::mpi_type<T>(),
+                              _comm1.comm(), &requests[0]);
+      break;
+    }
+    case type::p2p:
+    {
+      assert(requests.size() == _dest.size() + _src.size());
+      // Start non-blocking send from this process to ghost owners.
+      for (std::size_t i = 0; i < _dest.size(); i++)
+        MPI_Irecv(recv_buffer.data() + _displs_local[i], _sizes_local[i],
+                  MPI::mpi_type<T>(), _dest[i], MPI_ANY_TAG, _comm0.comm(),
+                  &requests[i]);
+      // Start non-blocking receive from neighbor process for which an owned
+      // index is a ghost.
+      for (std::size_t i = 0; i < _src.size(); i++)
+        MPI_Isend(send_buffer.data() + _displs_remote[i], _sizes_remote[i],
+                  MPI::mpi_type<T>(), _src[i], 0, _comm0.comm(),
+                  &requests[i + _dest.size()]);
+      break;
+    }
+    default:
+      throw std::runtime_error("Scatter::type not recognized");
+      break;
+    }
   }
 
   /// @brief End the reverse scatter communication.
@@ -269,7 +301,7 @@ public:
   ///
   /// @param[in] request The handle used when calling
   /// Scatterer::scatter_rev_begin
-  void scatter_rev_end(MPI_Request& request) const;
+  void scatter_rev_end(xtl::span<MPI_Request> request) const;
 
   /// @brief Scatter data associated with ghost indices to owning ranks.
   ///
@@ -297,15 +329,19 @@ public:
   /// CUDA/device-aware MPI.
   /// @param request The MPI request handle for tracking the status of
   /// the non-blocking communication
+  /// @param[in] type The type of MPI communication pattern used by the
+  /// Scatterer, either Scatterer::type::neighbor or Scatterer::type::p2p.
   template <typename T, typename Functor>
   void scatter_rev_begin(const xtl::span<const T>& remote_data,
                          xtl::span<T> remote_buffer, xtl::span<T> local_buffer,
-                         Functor pack_fn, MPI_Request& request) const
+                         Functor pack_fn, xtl::span<MPI_Request> request,
+                         Scatterer::type type = type::neighbour) const
   {
     assert(local_buffer.size() == _local_inds.size());
     assert(remote_buffer.size() == _remote_inds.size());
     pack_fn(remote_data, _remote_inds, remote_buffer);
-    scatter_rev_begin(xtl::span<const T>(remote_buffer), local_buffer, request);
+    scatter_rev_begin(xtl::span<const T>(remote_buffer), local_buffer, request,
+                      type);
   }
 
   /// @brief End the reverse scatter communication, and unpack the received
@@ -330,7 +366,7 @@ public:
   template <typename T, typename Functor, typename BinaryOp>
   void scatter_rev_end(const xtl::span<const T>& local_buffer,
                        xtl::span<T> local_data, Functor unpack_fn, BinaryOp op,
-                       MPI_Request& request)
+                       xtl::span<MPI_Request> request)
   {
     assert(local_buffer.size() == _local_inds.size());
     assert(_local_inds.size() <= local_data.size());
@@ -356,7 +392,7 @@ public:
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
     };
-    MPI_Request request;
+    std::vector<MPI_Request> request(1);
     scatter_rev_begin(remote_data, xtl::span<T>(remote_buffer),
                       xtl::span<T>(local_buffer), pack_fn, request);
     scatter_rev_end(xtl::span<const T>(local_buffer), local_data, unpack_fn, op,
