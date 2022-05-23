@@ -34,14 +34,8 @@ void test_vector()
                                             (mpi_rank + 1) % mpi_size);
 
   // Create an IndexMap
-  std::vector<int> src_ranks = global_ghost_owner;
-  std::sort(src_ranks.begin(), src_ranks.end());
-  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
-                  src_ranks.end());
-  auto dest_ranks
-      = dolfinx::MPI::compute_graph_edges_nbx(MPI_COMM_WORLD, src_ranks);
   const auto index_map = std::make_shared<common::IndexMap>(
-      MPI_COMM_WORLD, size_local, dest_ranks, ghosts, global_ghost_owner);
+      MPI_COMM_WORLD, size_local, ghosts, global_ghost_owner);
 
   la::Vector<T> v(index_map, 1);
   std::fill(v.mutable_array().begin(), v.mutable_array().end(), 1.0);

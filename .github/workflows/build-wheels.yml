@@ -79,7 +79,7 @@ jobs:
 
       - name: Checkout Basix
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: FEniCS/basix
           path: basix
@@ -93,7 +93,7 @@ jobs:
 
       - name: Checkout UFL
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: FEniCS/ufl
           path: ufl
@@ -105,7 +105,7 @@ jobs:
 
       - name: Checkout FFCx
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: FEniCS/ffcx
           path: ffcx
@@ -147,7 +147,7 @@ jobs:
           python -m simple503 --base-url file:///project/simple simple
 
       - name: Checkout DOLFINx
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: dolfinx
           ref: ${{ github.event.inputs.dolfinx_ref }}

@@ -208,7 +208,8 @@ std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>,
 mesh::create_submesh(const Mesh& mesh, int dim,
                      const xtl::span<const std::int32_t>& entities)
 {
-  // Submesh topology
+  // -- Submesh topology
+
   // Get the verticies in the submesh
   std::vector<std::int32_t> submesh_vertices
       = compute_incident_entities(mesh, entities, dim, 0);
@@ -227,8 +228,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   auto submesh_vertex_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_vertex_index_map_pair.first));
 
-  // Create a map from the (local) vertices in the submesh to the (local)
-  // vertices in the mesh.
+  // Create a map from the (local) vertices in the submesh to the
+  // (local) vertices in the mesh
   std::vector<int32_t> submesh_to_mesh_vertex_map(
       submesh_owned_vertices.begin(), submesh_owned_vertices.end());
   submesh_to_mesh_vertex_map.reserve(submesh_vertex_index_map->size_local()
@@ -244,26 +245,29 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // Get the entities in the submesh that are owned by this process
   auto mesh_entity_index_map = mesh.topology().index_map(dim);
   assert(mesh_entity_index_map);
+
   std::vector<std::int32_t> submesh_owned_entities;
   std::copy_if(entities.begin(), entities.end(),
                std::back_inserter(submesh_owned_entities),
-               [mesh_entity_index_map](std::int32_t e)
-               { return e < mesh_entity_index_map->size_local(); });
+               [size = mesh_entity_index_map->size_local()](std::int32_t e)
+               { return e < size; });
 
-  // Create a map from the (local) entities in the submesh to the (local)
-  // entities in the mesh, and create the submesh entity index map.
+  // Create a map from the (local) entities in the submesh to the
+  // (local) entities in the mesh, and create the submesh entity index
+  // map.
   std::vector<int32_t> submesh_to_mesh_entity_map(
       submesh_owned_entities.begin(), submesh_owned_entities.end());
   std::shared_ptr<common::IndexMap> submesh_entity_index_map;
+
   // If the entity dimension is the same as the input mesh topological
-  // dimension, add ghost entities to the submesh. If not, do not add ghost
-  // entities, because in general, not all expected ghost entities would be
-  // present.
+  // dimension, add ghost entities to the submesh. If not, do not add
+  // ghost entities, because in general, not all expected ghost entities
+  // would be present.
   if (mesh.topology().dim() == dim)
   {
     // TODO Call dolfinx::common::get_owned_indices here? Do we want to
-    // support `entities` possibly haveing a ghost on one process that is not
-    // in `entities` on the owning process?
+    // support `entities` possibly haveing a ghost on one process that is
+    // not in `entities` on the owning process?
     std::pair<common::IndexMap, std::vector<int32_t>>
         submesh_entity_index_map_pair
         = mesh_entity_index_map->create_submap(submesh_owned_entities);
@@ -325,7 +329,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
   submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
 
-  // Submesh geometry
+  // -- Submesh geometry
+
   // Get the geometry dofs in the submesh based on the entities in
   // submesh
   const std::vector<std::int32_t> e_to_g
@@ -346,23 +351,27 @@ mesh::create_submesh(const Mesh& mesh, int dim,
       submesh_x_dofs, *mesh_geometry_dof_index_map);
 
   // Create submesh geometry index map
-  std::pair<common::IndexMap, std::vector<int32_t>> submesh_x_dof_index_map_pair
-      = mesh_geometry_dof_index_map->create_submap(submesh_owned_x_dofs);
-  auto submesh_x_dof_index_map = std::make_shared<common::IndexMap>(
-      std::move(submesh_x_dof_index_map_pair.first));
-
-  // Create a map from the (local) geometry dofs in the submesh to the (local)
-  // geometry dofs in the mesh.
   std::vector<int32_t> submesh_to_mesh_x_dof_map(submesh_owned_x_dofs.begin(),
                                                  submesh_owned_x_dofs.end());
-  submesh_to_mesh_x_dof_map.reserve(submesh_x_dof_index_map->size_local()
-                                    + submesh_x_dof_index_map->num_ghosts());
-  std::transform(submesh_x_dof_index_map_pair.second.begin(),
-                 submesh_x_dof_index_map_pair.second.end(),
-                 std::back_inserter(submesh_to_mesh_x_dof_map),
-                 [size_local = mesh_geometry_dof_index_map->size_local()](
-                     std::int32_t x_dof_index)
-                 { return size_local + x_dof_index; });
+  std::shared_ptr<common::IndexMap> submesh_x_dof_index_map;
+  {
+    std::pair<common::IndexMap, std::vector<int32_t>>
+        submesh_x_dof_index_map_pair
+        = mesh_geometry_dof_index_map->create_submap(submesh_owned_x_dofs);
+
+    submesh_x_dof_index_map = std::make_shared<common::IndexMap>(
+        std::move(submesh_x_dof_index_map_pair.first));
+
+    // Create a map from the (local) geometry dofs in the submesh to the
+    // (local) geometry dofs in the mesh.
+    submesh_to_mesh_x_dof_map.reserve(submesh_x_dof_index_map->size_local()
+                                      + submesh_x_dof_index_map->num_ghosts());
+    std::transform(submesh_x_dof_index_map_pair.second.begin(),
+                   submesh_x_dof_index_map_pair.second.end(),
+                   std::back_inserter(submesh_to_mesh_x_dof_map),
+                   [size = mesh_geometry_dof_index_map->size_local()](
+                       auto x_dof_index) { return size + x_dof_index; });
+  }
 
   // Create submesh geometry coordinates
   xtl::span<const double> mesh_x = mesh.geometry().x();
