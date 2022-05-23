@@ -54,8 +54,8 @@ RUN curl -L -O http://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MP
 
 # First set of dependencies for building and running Python DOLFINx
 # Second set of dependencies for running DOLFINx tests
-RUN python3 -m pip install --no-cache-dir cffi numpy mpi4py pybind11==${PYBIND11_VERSION} wheel && \
-    python3 -m pip install --no-cache-dir cppimport numba pytest pytest-xdist scipy matplotlib
+RUN python3 -m pip install --no-cache-dir cffi numba numpy mpi4py pybind11==${PYBIND11_VERSION} wheel && \
+    python3 -m pip install --no-cache-dir cppimport pytest pytest-xdist scipy matplotlib
 
 # Build PETSc
 RUN curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz && \
