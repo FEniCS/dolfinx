@@ -60,45 +60,51 @@ std::vector<double> mesh::h(const Mesh& mesh,
                             const xtl::span<const std::int32_t>& entities,
                             int dim)
 {
+  if (entities.empty())
+    return std::vector<double>();
+  if (dim > 0)
+    return std::vector<double>(entities.size(), 0);
 
-  // Get entity vertices in geometry dofs
-  xt::xtensor<std::int32_t, 2> geometry_vertices
+  // Get the geometry dofs for the vertices of each entity
+  const std::vector<std::int32_t> vertex_xdofs
       = entities_to_geometry(mesh, dim, entities, false);
-  const std::size_t num_vertices_per_entity = geometry_vertices.shape(1);
+  assert(!entities.empty());
+  const std::size_t num_vertices = vertex_xdofs.size() / entities.size();
 
-  // Get geometry dofmap and dofs
-  const mesh::Geometry& geometry = mesh.geometry();
-  const xtl::span<const double> x_g = geometry.x();
+  // Get the  geometry coordinate
+  const xtl::span<const double> x = mesh.geometry().x();
 
-  // Lambda function to compute norm
-  auto l2_norm = [](auto p0, auto p1)
+  // Function to compute the length of (p0 - p1)
+  auto delta_norm = [](const auto& p0, const auto& p1)
   {
     double norm = 0;
-    for (std::size_t k = 0; k < 3; ++k)
-      norm += (p0[k] - p1[k]) * (p0[k] - p1[k]);
+    for (std::size_t i = 0; i < 3; ++i)
+      norm += (p0[i] - p1[i]) * (p0[i] - p1[i]);
     return std::sqrt(norm);
   };
 
-  std::vector<double> h_cells(entities.size(), 0);
-
-  if (dim > 0)
+  // Compute greatest distance between any to vertices
+  assert(dim > 0);
+  std::vector<double> h(entities.size(), 0);
+  for (std::size_t e = 0; e < entities.size(); ++e)
   {
-    for (std::size_t e = 0; e < entities.size(); ++e)
+    // Get geometry 'dof' for each vertex of entity e
+    xtl::span<const std::int32_t> e_vertices(
+        vertex_xdofs.data() + e * num_vertices, num_vertices);
+
+    // Compute maximum distance between any two vertices
+    for (std::size_t i = 0; i < e_vertices.size(); ++i)
     {
-      // Get maximum distance between any vertex
-      auto e_vertices = xt::row(geometry_vertices, e);
-      for (std::size_t i = 0; i < num_vertices_per_entity; ++i)
+      xtl::span<const double, 3> p0(x.data() + 3 * e_vertices[i], 3);
+      for (std::size_t j = i + 1; j < e_vertices.size(); ++j)
       {
-        for (std::size_t j = i + 1; j < num_vertices_per_entity; ++j)
-        {
-          h_cells[e] = std::max(
-              h_cells[e], l2_norm(std::next(x_g.begin(), 3 * e_vertices[i]),
-                                  std::next(x_g.begin(), 3 * e_vertices[j])));
-        }
+        xtl::span<const double, 3> p1(x.data() + 3 * e_vertices[j], 3);
+        h[e] = std::max(h[e], delta_norm(p0, p1));
       }
     }
   }
-  return h_cells;
+
+  return h;
 }
 //-----------------------------------------------------------------------------
 std::vector<double>

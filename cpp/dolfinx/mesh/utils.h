@@ -64,10 +64,13 @@ graph::AdjacencyList<std::int64_t>
 extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
                  const graph::AdjacencyList<std::int64_t>& cells);
 
-/// Compute greatest distance between any two vertices in the entity
-/// @param[in] mesh The mesh
-/// @param[in] entities List of entities (local to process)
-/// @param[in] dim The topological dimension of the entity
+/// @brief Compute greatest distance between any two vertices of the
+/// mesh entities (`h`).
+/// @param[in] mesh The mesh that the entities belong to.
+/// @param[in] entities Indices (local to process) of entities to compute `h` for.
+/// @param[in] dim Topological dimension of the entities.
+/// @returns The greatest distance between any two vertices, `h[i]`
+/// corresponds to the entity `entities[i]`.
 std::vector<double> h(const Mesh& mesh,
                       const xtl::span<const std::int32_t>& entities, int dim);
 
