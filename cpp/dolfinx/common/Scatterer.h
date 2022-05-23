@@ -209,7 +209,7 @@ public:
     };
     scatter_fwd_begin(local_data, xtl::span<T>(local_buffer),
                       xtl::span<T>(remote_buffer), pack_fn,
-                      xtl::span<T>(requests));
+                      xtl::span<MPI_Request>(requests));
 
     auto unpack_fn = [](const auto& in, const auto& idx, auto& out, auto op)
     {
@@ -218,7 +218,7 @@ public:
     };
 
     scatter_fwd_end(xtl::span<const T>(remote_buffer), remote_data, unpack_fn,
-                    xtl::span<T>(requests));
+                    xtl::span<MPI_Request>(requests));
   }
 
   /// @brief Start a non-blocking send of ghost data to ranks that own
