@@ -8,14 +8,13 @@
 import functools
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.common import (IndexMap, ScatterMode, git_commit_hash,  # noqa
-                                has_adios2, has_debug, has_kahip, has_parmetis)
+from dolfinx.cpp.common import (IndexMap, git_commit_hash, has_adios2,  # noqa
+                                has_debug, has_kahip, has_parmetis)
 
-__all__ = ["IndexMap", "Timer", "timed", "ScatterMode"]
+__all__ = ["IndexMap", "Timer", "timed"]
 
 TimingType = _cpp.common.TimingType
 Reduction = _cpp.common.Reduction
-Direction = _cpp.common.Direction
 
 
 def timing(task: str):

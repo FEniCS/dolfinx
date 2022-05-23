@@ -316,6 +316,26 @@ def test_cell_h(c0, c1, c5):
         assert _cpp.mesh.h(c[0], c[1], [c[2]]) == pytest.approx(math.sqrt(2.0))
 
 
+def test_cell_h_prism():
+    N = 3
+    mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, cell_type=CellType.prism)
+    tdim = mesh.topology.dim
+    num_cells = mesh.topology.index_map(tdim).size_local
+    cells = np.arange(num_cells, dtype=np.int32)
+    h = _cpp.mesh.h(mesh, tdim, cells)
+    assert(np.allclose(h, np.sqrt(3 / (N**2))))
+
+
+@pytest.mark.parametrize("ct", [CellType.hexahedron, CellType.tetrahedron])
+def test_facet_h(ct):
+    N = 3
+    mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, ct)
+    left_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1,
+                                           lambda x: np.isclose(x[0], 0))
+    h = _cpp.mesh.h(mesh, mesh.topology.dim - 1, left_facets)
+    assert(np.allclose(h, np.sqrt(2 / (N**2))))
+
+
 @pytest.mark.skip("Needs to be re-implemented")
 @pytest.mark.skip_in_parallel
 def test_cell_radius_ratio(c0, c1, c5):
@@ -474,13 +494,13 @@ def boundary_2(x):
 
 # TODO Test that submesh of full mesh is a copy of the mesh
 @pytest.mark.parametrize("d", [2, 3])
-@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("n", [3, 6])
 @pytest.mark.parametrize("codim", [0, 1])
 @pytest.mark.parametrize("marker", [lambda x: x[0] >= 0.5,
                                     lambda x: x[0] >= -1])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
-def test_submesh(d, n, codim, marker, ghost_mode):
+def test_submesh_full(d, n, codim, marker, ghost_mode):
     if d == 2:
         mesh = create_unit_square(MPI.COMM_WORLD, n, n,
                                   ghost_mode=ghost_mode)
@@ -496,7 +516,7 @@ def test_submesh(d, n, codim, marker, ghost_mode):
 
 
 @pytest.mark.parametrize("d", [2, 3])
-@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("n", [3, 6])
 @pytest.mark.parametrize("boundary", [boundary_0,
                                       boundary_1,
                                       boundary_2])
@@ -621,7 +641,7 @@ def test_boundary_facets(n, d, ghost_mode):
     assert(num_boundary_facets == expected_num_boundary_facets)
 
 
-@pytest.mark.parametrize("n", [2, 5])
+@pytest.mark.parametrize("n", [3, 5])
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])

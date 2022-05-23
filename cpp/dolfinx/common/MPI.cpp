@@ -221,22 +221,3 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
   return other_ranks;
 }
 //-----------------------------------------------------------------------------
-std::array<std::vector<int>, 2> dolfinx::MPI::neighbors(MPI_Comm comm)
-{
-  LOG(INFO)
-      << "Getting source/destination edges for neighborhood MPI communicator.";
-
-  int status;
-  MPI_Topo_test(comm, &status);
-  assert(status != MPI_UNDEFINED);
-
-  // Get list of neighbors
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
-  std::vector<int> sources(indegree), destinations(outdegree);
-  MPI_Dist_graph_neighbors(comm, indegree, sources.data(), MPI_UNWEIGHTED,
-                           outdegree, destinations.data(), MPI_UNWEIGHTED);
-
-  return {std::move(sources), std::move(destinations)};
-}
-//-----------------------------------------------------------------------------

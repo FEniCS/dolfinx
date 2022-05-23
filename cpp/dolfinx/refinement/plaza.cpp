@@ -28,11 +28,11 @@ namespace
 //-----------------------------------------------------------------------------
 // Propagate edge markers according to rules (longest edge of each
 // face must be marked, if any edge of face is marked)
-void enforce_rules(
-    MPI_Comm neighbor_comm,
-    const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
-    std::vector<std::int8_t>& marked_edges, const mesh::Mesh& mesh,
-    const std::vector<std::int32_t>& long_edge)
+void enforce_rules(MPI_Comm neighbor_comm,
+                   const graph::AdjacencyList<int>& shared_edges,
+                   std::vector<std::int8_t>& marked_edges,
+                   const mesh::Mesh& mesh,
+                   const std::vector<std::int32_t>& long_edge)
 {
   common::Timer t0("PLAZA: Enforce rules");
 
@@ -60,8 +60,8 @@ void enforce_rules(
   while (update_count > 0)
   {
     update_count = 0;
-    refinement::update_logical_edgefunction(neighbor_comm, marked_for_update,
-                                            marked_edges, *map_e);
+    update_logical_edgefunction(neighbor_comm, marked_for_update, marked_edges,
+                                *map_e);
     for (int i = 0; i < num_neighbors; ++i)
       marked_for_update[i].clear();
 
@@ -81,14 +81,9 @@ void enforce_rules(
         {
           marked_edges[long_e] = true;
 
-          // If it is a shared edge, add all sharing neighbors to update
-          // set
-          if (auto map_it = shared_edges.find(long_e);
-              map_it != shared_edges.end())
-          {
-            for (int p : map_it->second)
-              marked_for_update[p].push_back(long_e);
-          }
+          // Add sharing neighbors to update set
+          for (int rank : shared_edges.links(long_e))
+            marked_for_update[rank].push_back(long_e);
         }
         ++update_count;
       }
@@ -457,31 +452,29 @@ compute_parent_facets(const std::vector<std::int32_t>& simplex_set)
 // Convenient interface for both uniform and marker refinement
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>, std::vector<std::int8_t>>
-compute_refinement(
-    MPI_Comm neighbor_comm, const std::vector<std::int8_t>& marked_edges,
-    const std::map<std::int32_t, std::vector<std::int32_t>> shared_edges,
-    const mesh::Mesh& mesh, const std::vector<std::int32_t>& long_edge,
-    const std::vector<std::int8_t>& edge_ratio_ok,
-    refinement::plaza::RefinementOptions options)
+compute_refinement(MPI_Comm neighbor_comm,
+                   const std::vector<std::int8_t>& marked_edges,
+                   const graph::AdjacencyList<int>& shared_edges,
+                   const mesh::Mesh& mesh,
+                   const std::vector<std::int32_t>& long_edge,
+                   const std::vector<std::int8_t>& edge_ratio_ok,
+                   plaza::RefinementOptions options)
 {
   const std::int32_t tdim = mesh.topology().dim();
   const std::int32_t num_cell_edges = tdim * 3 - 3;
   const std::int32_t num_cell_vertices = tdim + 1;
 
   bool compute_facets
-      = (options == refinement::plaza::RefinementOptions::parent_facet
-         or options
-                == refinement::plaza::RefinementOptions::parent_cell_and_facet);
+      = (options == plaza::RefinementOptions::parent_facet
+         or options == plaza::RefinementOptions::parent_cell_and_facet);
 
   bool compute_parent_cell
-      = (options == refinement::plaza::RefinementOptions::parent_cell
-         or options
-                == refinement::plaza::RefinementOptions::parent_cell_and_facet);
+      = (options == plaza::RefinementOptions::parent_cell
+         or options == plaza::RefinementOptions::parent_cell_and_facet);
 
   // Make new vertices in parallel
   const auto [new_vertex_map, new_vertex_coordinates]
-      = refinement::create_new_vertices(neighbor_comm, shared_edges, mesh,
-                                        marked_edges);
+      = create_new_vertices(neighbor_comm, shared_edges, mesh, marked_edges);
 
   std::vector<std::int32_t> parent_cell;
   std::vector<std::int8_t> parent_facet;
@@ -502,11 +495,12 @@ compute_refinement(
       marked_edges.begin(),
       marked_edges.begin() + mesh.topology().index_map(1)->size_local(), true);
 
-  std::vector<std::int64_t> global_indices = refinement::adjust_indices(
-      *mesh.topology().index_map(0), num_new_vertices_local);
+  std::vector<std::int64_t> global_indices
+      = adjust_indices(*mesh.topology().index_map(0), num_new_vertices_local);
 
   const int num_cells = map_c->size_local();
 
+  // Iterate over all cells, and refine if cell has a marked edge
   std::vector<std::int64_t> cell_topology;
   for (int c = 0; c < num_cells; ++c)
   {
@@ -644,8 +638,8 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute,
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
-  return {refinement::partition(mesh, cell_adj, new_vertex_coordinates,
-                                redistribute, ghost_mode),
+  return {partition(mesh, cell_adj, new_vertex_coordinates, redistribute,
+                    ghost_mode),
           std::move(parent_cell), std::move(parent_facet)};
 }
 //-----------------------------------------------------------------------------
@@ -679,8 +673,8 @@ plaza::refine(const mesh::Mesh& mesh,
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
-  return {refinement::partition(mesh, cell_adj, new_vertex_coordinates,
-                                redistribute, ghost_mode),
+  return {partition(mesh, cell_adj, new_vertex_coordinates, redistribute,
+                    ghost_mode),
           std::move(parent_cell), std::move(parent_facet)};
 }
 //------------------------------------------------------------------------------
@@ -698,18 +692,41 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
 
   common::Timer t0("PLAZA: refine");
 
-  auto [neighbor_comm, shared_edges] = refinement::compute_edge_sharing(mesh);
-
-  // Mark all edges
   auto map_e = mesh.topology().index_map(1);
-  std::vector<std::int8_t> marked_edges(
-      map_e->size_local() + map_e->num_ghosts(), true);
+  if (!map_e)
+    throw std::runtime_error("Edges must be initialised");
+
+  // Get sharing ranks for each edge
+  graph::AdjacencyList<int> edge_ranks = map_e->index_to_dest_ranks();
+
+  // Create unique list of ranks that share edges (owners of ghosts
+  // plus ranks that ghost owned indices)
+  std::vector<int> ranks(edge_ranks.array().begin(), edge_ranks.array().end());
+  std::sort(ranks.begin(), ranks.end());
+  ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+
+  // Convert edge_ranks from global rank to to neighbourhood ranks
+  std::transform(edge_ranks.array().begin(), edge_ranks.array().end(),
+                 edge_ranks.array().begin(),
+                 [&ranks](auto r)
+                 {
+                   auto it = std::lower_bound(ranks.begin(), ranks.end(), r);
+                   assert(it != ranks.end() and *it == r);
+                   return std::distance(ranks.begin(), it);
+                 });
+
+  MPI_Comm comm;
+  MPI_Dist_graph_create_adjacent(mesh.comm(), ranks.size(), ranks.data(),
+                                 MPI_UNWEIGHTED, ranks.size(), ranks.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
 
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
   auto [cell_adj, new_vertex_coordinates, parent_cell, parent_facet]
-      = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
-                           long_edge, edge_ratio_ok, options);
-  MPI_Comm_free(&neighbor_comm);
+      = compute_refinement(comm,
+                           std::vector<std::int8_t>(
+                               map_e->size_local() + map_e->num_ghosts(), true),
+                           edge_ranks, mesh, long_edge, edge_ratio_ok, options);
+  MPI_Comm_free(&comm);
 
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
           std::move(parent_cell), std::move(parent_facet)};
@@ -729,48 +746,62 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
 
   common::Timer t0("PLAZA: refine");
 
-  auto [neighbor_comm, shared_edges] = refinement::compute_edge_sharing(mesh);
-
   auto map_e = mesh.topology().index_map(1);
-  assert(map_e);
+  if (!map_e)
+    throw std::runtime_error("Edges must be initialised");
 
-  std::vector<std::int8_t> marked_edges(
-      map_e->size_local() + map_e->num_ghosts(), false);
+  // Get sharing ranks for each edge
+  graph::AdjacencyList<int> edge_ranks = map_e->index_to_dest_ranks();
+
+  // Create unique list of ranks that share edges (owners of ghosts plus
+  // ranks that ghost owned indices)
+  std::vector<int> ranks(edge_ranks.array().begin(), edge_ranks.array().end());
+  std::sort(ranks.begin(), ranks.end());
+  ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+
+  // Convert edge_ranks from global rank to to neighbourhood ranks
+  std::transform(edge_ranks.array().begin(), edge_ranks.array().end(),
+                 edge_ranks.array().begin(),
+                 [&ranks](auto r)
+                 {
+                   auto it = std::lower_bound(ranks.begin(), ranks.end(), r);
+                   assert(it != ranks.end() and *it == r);
+                   return std::distance(ranks.begin(), it);
+                 });
 
   // Get number of neighbors
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
-                                 &weighted);
-  assert(indegree == outdegree);
-  const int num_neighbors = indegree;
-  std::vector<std::vector<std::int32_t>> marked_for_update(num_neighbors);
+  std::vector<std::int8_t> marked_edges(
+      map_e->size_local() + map_e->num_ghosts(), false);
+  std::vector<std::vector<std::int32_t>> marked_for_update(ranks.size());
   for (auto edge : edges)
   {
-    // Already marked, so nothing to do
     if (!marked_edges[edge])
     {
       marked_edges[edge] = true;
 
       // If it is a shared edge, add all sharing neighbors to update set
-      if (auto map_it = shared_edges.find(edge); map_it != shared_edges.end())
-        for (int p : map_it->second)
-          marked_for_update[p].push_back(edge);
+      for (int rank : edge_ranks.links(edge))
+        marked_for_update[rank].push_back(edge);
     }
   }
 
+  MPI_Comm comm;
+  MPI_Dist_graph_create_adjacent(mesh.comm(), ranks.size(), ranks.data(),
+                                 MPI_UNWEIGHTED, ranks.size(), ranks.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+
   // Communicate any shared edges
-  refinement::update_logical_edgefunction(neighbor_comm, marked_for_update,
-                                          marked_edges, *map_e);
+  update_logical_edgefunction(comm, marked_for_update, marked_edges, *map_e);
 
   // Enforce rules about refinement (i.e. if any edge is marked in a
   // triangle, then the longest edge must also be marked).
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
-  enforce_rules(neighbor_comm, shared_edges, marked_edges, mesh, long_edge);
+  enforce_rules(comm, edge_ranks, marked_edges, mesh, long_edge);
 
   auto [cell_adj, new_vertex_coordinates, parent_cell, parent_facet]
-      = compute_refinement(neighbor_comm, marked_edges, shared_edges, mesh,
-                           long_edge, edge_ratio_ok, options);
-  MPI_Comm_free(&neighbor_comm);
+      = compute_refinement(comm, marked_edges, edge_ranks, mesh, long_edge,
+                           edge_ratio_ok, options);
+  MPI_Comm_free(&comm);
 
   return {std::move(cell_adj), std::move(new_vertex_coordinates),
           std::move(parent_cell), std::move(parent_facet)};
