@@ -29,9 +29,9 @@ constexpr bool is_leaf(const std::array<int, 2>& bbox)
   return bbox[0] == bbox[1];
 }
 //-----------------------------------------------------------------------------
-/// A point `x` is inside a bounding box `b` if each component of its coordinates
-/// lies within the range `[b(0,i), b(1,i)]` that defines the bounds of the
-/// bounding box, b(0,i) <= x[i] <= b(1,i) for i = 0, 1, 2
+/// A point `x` is inside a bounding box `b` if each component of its
+/// coordinates lies within the range `[b(0,i), b(1,i)]` that defines the bounds
+/// of the bounding box, b(0,i) <= x[i] <= b(1,i) for i = 0, 1, 2
 bool point_in_bbox(const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
                    const xt::xtensor_fixed<double, xt::xshape<3>>& x)
 {
@@ -250,13 +250,14 @@ geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
   LOG(INFO) << "Building point search tree to accelerate distance queries for "
                "a given topological dimension and subset of entities.";
 
-  const auto midpoints = mesh::compute_midpoints(mesh, tdim, entities);
+  const std::vector<double> midpoints
+      = mesh::compute_midpoints(mesh, tdim, entities);
   std::vector<std::pair<std::array<double, 3>, std::int32_t>> points(
       entities.size());
   for (std::size_t i = 0; i < points.size(); ++i)
   {
     for (std::size_t j = 0; j < 3; ++j)
-      points[i].first[j] = midpoints(i, j);
+      points[i].first[j] = midpoints[3 * i + j];
     points[i].second = entities[i];
   }
 
