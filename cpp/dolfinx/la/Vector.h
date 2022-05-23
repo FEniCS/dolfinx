@@ -131,7 +131,7 @@ public:
     pack(x_remote, _scatterer->remote_indices(), _buffer_remote);
 
     _scatterer->scatter_rev_begin(xtl::span<const T>(_buffer_remote),
-                                  xtl::span<T>(_buffer_local), _request[0]);
+                                  xtl::span<T>(_buffer_local), _request);
   }
 
   /// End scatter of ghost data to owner. This process may receive data
