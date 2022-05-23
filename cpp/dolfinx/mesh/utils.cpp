@@ -59,7 +59,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
 {
   if (entities.empty())
     return std::vector<double>();
-  if (dim > 0)
+  if (dim == 0)
     return std::vector<double>(entities.size(), 0);
 
   // Get the geometry dofs for the vertices of each entity
