@@ -132,6 +132,9 @@ std::vector<std::int32_t> locate_entities_boundary(
 /// @brief Determine the indices in the geometry data for each vertex of
 /// the given mesh entities.
 ///
+/// @warning This function should be used unless there is no
+/// alternative. It may be removed in the future.
+///
 /// @param[in] mesh The mesh
 /// @param[in] dim Topological dimension of the entities of interest
 /// @param[in] entities Entity indices (local) to compute the vertex
