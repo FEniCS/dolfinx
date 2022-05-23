@@ -192,10 +192,9 @@ public:
         = {_index_maps[0]->size_local(), _index_maps[1]->size_local()};
     const std::array local_range
         = {_index_maps[0]->local_range(), _index_maps[1]->local_range()};
-
-    const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
     const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
 
+    const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
     const std::vector<int>& src_ranks = _index_maps[0]->src();
     const std::vector<int>& dest_ranks = _index_maps[0]->dest();
 
@@ -207,9 +206,10 @@ public:
                                    MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
     _comm = dolfinx::MPI::Comm(comm, false);
 
-    // Build map from ghost row index to owning (neighborhood) rank
+    // Build map from ghost row index position to owning (neighborhood)
+    // rank
     _ghost_row_to_rank.reserve(_index_maps[0]->owners().size());
-    for (const int& r : _index_maps[0]->owners())
+    for (int r : _index_maps[0]->owners())
     {
       auto it = std::lower_bound(src_ranks.begin(), src_ranks.end(), r);
       assert(it != src_ranks.end() and *it == r);
@@ -222,39 +222,37 @@ public:
     for (std::size_t i = 0; i < _ghost_row_to_rank.size(); ++i)
     {
       assert(_ghost_row_to_rank[i] < data_per_proc.size());
-      data_per_proc[_ghost_row_to_rank[i]]
-          += _row_ptr[local_size[0] + i + 1] - _row_ptr[local_size[0] + i];
+      std::size_t pos = local_size[0] + i;
+      data_per_proc[_ghost_row_to_rank[i]] += _row_ptr[pos + 1] - _row_ptr[pos];
     }
 
-    // Compute send displacements , multiplying by 2
+    // Compute send displacements
     _val_send_disp.resize(src_ranks.size() + 1, 0);
     std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
                      std::next(_val_send_disp.begin()));
 
-    // Compute send displacements for later send (2x _val_send_disp)
-    std::vector<int> insert_pos(src_ranks.size() + 1);
-    std::transform(_val_send_disp.begin(), _val_send_disp.end(),
-                   insert_pos.begin(), [](auto d) { return 2 * d; });
-
     // For each ghost row, pack and send indices to neighborhood
-    std::vector<std::int64_t> ghost_index_data(insert_pos.back());
-    for (std::size_t i = 0; i < _ghost_row_to_rank.size(); ++i)
+    std::vector<std::int64_t> ghost_index_data(2 * _val_send_disp.back());
     {
-      const int rank = _ghost_row_to_rank[i];
-      int row_id = local_size[0] + i;
-      for (int j = _row_ptr[row_id]; j < _row_ptr[row_id + 1]; ++j)
+      std::vector<int> insert_pos = _val_send_disp;
+      for (std::size_t i = 0; i < _ghost_row_to_rank.size(); ++i)
       {
-        // Get position in send buffer
-        const std::int32_t idx_pos = insert_pos[rank];
+        const int rank = _ghost_row_to_rank[i];
+        int row_id = local_size[0] + i;
+        for (int j = _row_ptr[row_id]; j < _row_ptr[row_id + 1]; ++j)
+        {
+          // Get position in send buffer
+          const std::int32_t idx_pos = 2 * insert_pos[rank];
 
-        // Pack send data (row, col) as global indices
-        ghost_index_data[idx_pos] = ghosts0[i];
-        if (const std::int32_t col_local = _cols[j]; col_local < local_size[1])
-          ghost_index_data[idx_pos + 1] = col_local + local_range[1][0];
-        else
-          ghost_index_data[idx_pos + 1] = ghosts1[col_local - local_size[1]];
+          // Pack send data (row, col) as global indices
+          ghost_index_data[idx_pos] = ghosts0[i];
+          if (std::int32_t col_local = _cols[j]; col_local < local_size[1])
+            ghost_index_data[idx_pos + 1] = col_local + local_range[1][0];
+          else
+            ghost_index_data[idx_pos + 1] = ghosts1[col_local - local_size[1]];
 
-        insert_pos[rank] += 2;
+          insert_pos[rank] += 1;
+        }
       }
     }
 
@@ -302,7 +300,7 @@ public:
       global_to_local.push_back({idx, global_to_local.size() + local_size[1]});
     std::sort(global_to_local.begin(), global_to_local.end());
 
-    // Compute location in which data for each index should be storeŽ
+    // Compute location in which data for each index should be stored
     // when received
     for (std::size_t i = 0; i < ghost_index_array.size(); i += 2)
     {
@@ -569,8 +567,8 @@ private:
   // receiving
   std::vector<int> _val_send_disp, _val_recv_disp;
 
-  // FIXME: neighbour on which communicator?
-  // Ownership of each row, by neighbor
+  // Ownership of each row, by neighbor (for the neighbourhood defined
+  // on _comm)
   std::vector<int> _ghost_row_to_rank;
 
   // Temporary store for finalize data during non-blocking communication

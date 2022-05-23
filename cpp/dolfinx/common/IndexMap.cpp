@@ -85,7 +85,6 @@ std::vector<int32_t> dolfinx::common::compute_owned_indices(
                                  MPI_UNWEIGHTED, src.size(), src.data(),
                                  MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
 
-  // FIXME: Should it be  recv_sizes(src.size(), 0)?
   // Exchange number of indices to send/receive from each rank
   std::vector<int> recv_sizes(dest.size(), 0);
   send_sizes.reserve(1);
