@@ -316,6 +316,26 @@ def test_cell_h(c0, c1, c5):
         assert _cpp.mesh.h(c[0], c[1], [c[2]]) == pytest.approx(math.sqrt(2.0))
 
 
+def test_cell_h_prism():
+    N = 3
+    mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, cell_type=CellType.prism)
+    tdim = mesh.topology.dim
+    num_cells = mesh.topology.index_map(tdim).size_local
+    cells = np.arange(num_cells, dtype=np.int32)
+    h = _cpp.mesh.h(mesh, tdim, cells)
+    assert(np.allclose(h, np.sqrt(3 / (N**2))))
+
+
+@pytest.mark.parametrize("ct", [CellType.hexahedron, CellType.tetrahedron])
+def test_facet_h(ct):
+    N = 3
+    mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, ct)
+    left_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1,
+                                           lambda x: np.isclose(x[0], 0))
+    h = _cpp.mesh.h(mesh, mesh.topology.dim - 1, left_facets)
+    assert(np.allclose(h, np.sqrt(2 / (N**2))))
+
+
 @pytest.mark.skip("Needs to be re-implemented")
 @pytest.mark.skip_in_parallel
 def test_cell_radius_ratio(c0, c1, c5):
