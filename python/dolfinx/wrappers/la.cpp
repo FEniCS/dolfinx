@@ -26,6 +26,13 @@ namespace py = pybind11;
 
 namespace
 {
+// ScatterMode types
+enum class PyScatterMode
+{
+  add,
+  insert
+};
+
 // Declare objects that have multiple scalar types
 template <typename T>
 void declare_objects(py::module& m, const std::string& type)
@@ -57,7 +64,22 @@ void declare_objects(py::module& m, const std::string& type)
                                                      py::cast(self));
                              })
       .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
-      .def("scatter_reverse", &dolfinx::la::Vector<T>::scatter_rev);
+      .def("scatter_reverse",
+           [](dolfinx::la::Vector<T>& self, PyScatterMode mode)
+           {
+             switch (mode)
+             {
+             case PyScatterMode::add: // Add
+               self.scatter_rev(std::plus<T>());
+               break;
+             case PyScatterMode::insert: // Insert
+               self.scatter_rev([](T /*a*/, T b) { return b; });
+               break;
+             default:
+               throw std::runtime_error("ScatterMode not recognized.");
+               break;
+             }
+           });
 
   // dolfinx::la::MatrixCSR
   std::string pyclass_matrix_name = std::string("MatrixCSR_") + type;
@@ -76,8 +98,11 @@ void declare_objects(py::module& m, const std::string& type)
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {
-             xt::xtensor<T, 2> mat = self.to_dense();
-             return py::array_t<T>(mat.shape(), mat.data());
+             std::size_t nrows = self.num_all_rows();
+             auto map_col = self.index_maps()[1];
+             std::size_t ncols = map_col->size_local() + map_col->num_ghosts();
+             return dolfinx_wrappers::as_pyarray(self.to_dense(),
+                                                 std::array{nrows, ncols});
            })
       .def_property_readonly("data",
                              [](dolfinx::la::MatrixCSR<T>& self)
@@ -174,6 +199,16 @@ void la(py::module& m)
       = m.def_submodule("petsc", "PETSc-specific linear algebra");
   petsc_module(petsc_mod);
 
+  py::enum_<PyScatterMode>(m, "ScatterMode")
+      .value("add", PyScatterMode::add)
+      .value("insert", PyScatterMode::insert);
+
+  py::enum_<dolfinx::la::Norm>(m, "Norm")
+      .value("l1", dolfinx::la::Norm::l1)
+      .value("l2", dolfinx::la::Norm::l2)
+      .value("linf", dolfinx::la::Norm::linf)
+      .value("frobenius", dolfinx::la::Norm::frobenius);
+
   // dolfinx::la::SparsityPattern
   py::class_<dolfinx::la::SparsityPattern,
              std::shared_ptr<dolfinx::la::SparsityPattern>>(m,
@@ -215,12 +250,6 @@ void la(py::module& m)
            { self.insert_diagonal(rows); })
       .def_property_readonly("graph", &dolfinx::la::SparsityPattern::graph,
                              py::return_value_policy::reference_internal);
-
-  py::enum_<dolfinx::la::Norm>(m, "Norm")
-      .value("l1", dolfinx::la::Norm::l1)
-      .value("l2", dolfinx::la::Norm::l2)
-      .value("linf", dolfinx::la::Norm::linf)
-      .value("frobenius", dolfinx::la::Norm::frobenius);
 
   // Declare objects that are templated over type
   declare_objects<double>(m, "float64");

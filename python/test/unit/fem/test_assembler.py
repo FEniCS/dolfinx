@@ -233,7 +233,10 @@ def test_assemble_manifold():
     assert np.isclose(A.norm(), 25.0199)
 
 
-@ pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
+@ pytest.mark.parametrize("mode", [
+    GhostMode.none,
+    GhostMode.shared_facet
+])
 def test_matrix_assembly_block(mode):
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic
@@ -857,7 +860,7 @@ def test_vector_types():
     c0 = _cpp.fem.pack_constants(L)
     c1 = _cpp.fem.pack_coefficients(L)
     _cpp.fem.assemble_vector(x0.array, L, c0, c1)
-    x0.scatter_reverse(_cpp.common.ScatterMode.add)
+    x0.scatter_reverse(la.ScatterMode.add)
 
     c = Constant(mesh, np.complex128(1))
     L = inner(c, v) * ufl.dx
@@ -866,7 +869,7 @@ def test_vector_types():
     c0 = _cpp.fem.pack_constants(L)
     c1 = _cpp.fem.pack_coefficients(L)
     _cpp.fem.assemble_vector(x1.array, L, c0, c1)
-    x1.scatter_reverse(_cpp.common.ScatterMode.add)
+    x1.scatter_reverse(la.ScatterMode.add)
 
     c = Constant(mesh, np.float32(1))
     L = inner(c, v) * ufl.dx
@@ -875,7 +878,7 @@ def test_vector_types():
     c0 = _cpp.fem.pack_constants(L)
     c1 = _cpp.fem.pack_coefficients(L)
     _cpp.fem.assemble_vector(x2.array, L, c0, c1)
-    x2.scatter_reverse(_cpp.common.ScatterMode.add)
+    x2.scatter_reverse(la.ScatterMode.add)
 
     assert np.linalg.norm(x0.array - x1.array) == pytest.approx(0.0)
     assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-8)

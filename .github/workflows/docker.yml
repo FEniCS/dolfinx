@@ -84,7 +84,7 @@ jobs:
       DOCKER_BUILD_ARGS: "--build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI"
       ARCH_TAG: ${{ matrix.arch_tag }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Get tag name
         id: tag_name
         run: |
@@ -117,7 +117,7 @@ jobs:
       DOCKER_BUILD_ARGS: "--build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI"
       ARCH_TAG: ${{ matrix.arch_tag }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Get tag name
@@ -150,7 +150,7 @@ jobs:
       DOCKER_BUILD_ARGS: "--build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI"
       ARCH_TAG: ${{ matrix.arch_tag }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Get tag name
         id: tag_name
         run: |
@@ -230,22 +230,22 @@ jobs:
           echo "::set-output name=UFL_REF::${USER_INPUT:-main}"
           USER_INPUT=${{ github.event.inputs.ffcx_ref }}
           echo "::set-output name=FFCX_REF::${USER_INPUT:-main}"
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: "FEniCS/dolfinx"
           path: "dolfinx"
           ref: ${{ steps.refs.outputs.DOLFINX_REF }}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: "FEniCS/basix"
           path: "basix"
           ref: ${{ steps.refs.outputs.BASIX_REF }}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: "FEniCS/ufl"
           path: "ufl"
           ref: ${{ steps.refs.outputs.UFL_REF }}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: "FEniCS/ffcx"
           path: "ffcx"
