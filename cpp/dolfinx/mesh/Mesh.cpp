@@ -19,6 +19,7 @@
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <memory>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xsort.hpp>
 #include <xtensor/xview.hpp>
 
@@ -332,18 +333,22 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Get the geometry dofs in the submesh based on the entities in
   // submesh
-  xt::xtensor<std::int32_t, 2> e_to_g
+  const std::vector<std::int32_t> e_to_g
       = entities_to_geometry(mesh, dim, submesh_to_mesh_entity_map, false);
-  // FIXME Find better way to do this
-  xt::xarray<int32_t> submesh_x_dofs_xt = xt::unique(e_to_g);
-  std::vector<int32_t> submesh_x_dofs(submesh_x_dofs_xt.begin(),
-                                      submesh_x_dofs_xt.end());
+  const std::size_t num_vertices = mesh::num_cell_vertices(
+      cell_entity_type(mesh.topology().cell_type(), dim, 0));
 
+  std::vector<int32_t> submesh_x_dofs = e_to_g;
+  std::sort(submesh_x_dofs.begin(), submesh_x_dofs.end());
+  submesh_x_dofs.erase(
+      std::unique(submesh_x_dofs.begin(), submesh_x_dofs.end()),
+      submesh_x_dofs.end());
+
+  // Get the geometry dofs in the submesh owned by this process
   auto mesh_geometry_dof_index_map = mesh.geometry().index_map();
   assert(mesh_geometry_dof_index_map);
-  std::vector<int32_t> submesh_owned_x_dofs
-      = dolfinx::common::compute_owned_indices(submesh_x_dofs,
-                                               *mesh_geometry_dof_index_map);
+  auto submesh_owned_x_dofs = dolfinx::common::compute_owned_indices(
+      submesh_x_dofs, *mesh_geometry_dof_index_map);
 
   // Create submesh geometry index map
   std::vector<int32_t> submesh_to_mesh_x_dof_map(submesh_owned_x_dofs.begin(),
@@ -379,15 +384,18 @@ mesh::create_submesh(const Mesh& mesh, int dim,
         std::next(submesh_x.begin(), 3 * i));
   }
 
+  std::vector<std::int32_t> entity_x_dofs;
+
   // Crete submesh geometry dofmap
   std::vector<std::int32_t> submesh_x_dofmap_vec;
-  submesh_x_dofmap_vec.reserve(e_to_g.shape()[0] * e_to_g.shape()[1]);
+  submesh_x_dofmap_vec.reserve(e_to_g.size());
   std::vector<std::int32_t> submesh_x_dofmap_offsets(1, 0);
-  submesh_x_dofmap_offsets.reserve(e_to_g.shape()[0] + 1);
-  for (std::size_t i = 0; i < e_to_g.shape()[0]; ++i)
+  submesh_x_dofmap_offsets.reserve(submesh_to_mesh_entity_map.size() + 1);
+  for (std::size_t i = 0; i < submesh_to_mesh_entity_map.size(); ++i)
   {
     // Get the mesh geometry dofs for ith entity in entities
-    auto entity_x_dofs = xt::row(e_to_g, i);
+    auto it = std::next(e_to_g.begin(), i * num_vertices);
+    entity_x_dofs.assign(it, std::next(it, num_vertices));
 
     // For each mesh dof of the entity, get the submesh dof
     for (std::int32_t x_dof : entity_x_dofs)
