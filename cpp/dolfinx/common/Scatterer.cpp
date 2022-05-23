@@ -25,7 +25,7 @@ Scatterer::Scatterer(const IndexMap& map, int bs)
     const std::vector<int>& src_ranks = map.src();
     const std::vector<int>& dest_ranks = map.dest();
 
-    // Check that assume src and dest ranks are unique and sorted
+    // Check that src and dest ranks are unique and sorted
     assert(std::is_sorted(src_ranks.begin(), src_ranks.end()));
     assert(std::is_sorted(dest_ranks.begin(), dest_ranks.end()));
 
