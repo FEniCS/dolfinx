@@ -15,14 +15,11 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/math.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <stdexcept>
 #include <unordered_set>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xbuilder.hpp>
-#include <xtensor/xfixed.hpp>
-#include <xtensor/xmath.hpp>
-#include <xtensor/xnorm.hpp>
+#include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
@@ -111,6 +108,9 @@ std::vector<double>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                    const xtl::span<const std::int32_t>& entities)
 {
+  if (entities.empty())
+    return std::vector<double>();
+
   if (mesh.topology().cell_type() == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cell");
 
@@ -128,16 +128,15 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   std::vector<std::int32_t> geometry_entities
       = entities_to_geometry(mesh, dim, entities, orient);
 
-  const std::size_t shape1 = mesh::num_cell_vertices(type);
-  const std::size_t num_entities = entities.size();
-  std::vector<double> n(num_entities * 3);
+  const std::size_t shape1 = geometry_entities.size() / entities.size();
+  std::vector<double> n(entities.size() * 3);
   switch (type)
   {
   case CellType::interval:
   {
     if (gdim > 2)
       throw std::invalid_argument("Interval cell normal undefined in 3D");
-    for (std::size_t i = 0; i < num_entities; ++i)
+    for (std::size_t i = 0; i < entities.size(); ++i)
     {
       // Get the two vertices as points
       std::array vertices{geometry_entities[i * shape1],
@@ -161,7 +160,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   }
   case CellType::triangle:
   {
-    for (std::size_t i = 0; i < num_entities; ++i)
+    for (std::size_t i = 0; i < entities.size(); ++i)
     {
       // Get the three vertices as points
       std::array vertices = {geometry_entities[i * shape1 + 0],
@@ -190,7 +189,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   case CellType::quadrilateral:
   {
     // TODO: check
-    for (std::size_t i = 0; i < num_entities; ++i)
+    for (std::size_t i = 0; i < entities.size(); ++i)
     {
       // Get the three vertices as points
       std::array vertices = {geometry_entities[i * shape1 + 0],
@@ -226,15 +225,16 @@ std::vector<double>
 mesh::compute_midpoints(const Mesh& mesh, int dim,
                         const xtl::span<const std::int32_t>& entities)
 {
+  if (entities.empty())
+    return std::vector<double>();
+
   xtl::span<const double> x = mesh.geometry().x();
 
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
   const std::vector<std::int32_t> e_to_g
       = entities_to_geometry(mesh, dim, entities, false);
-  CellType cell_type = mesh.topology().cell_type();
-  std::size_t shape1
-      = mesh::num_cell_vertices(cell_entity_type(cell_type, dim, 0));
+  std::size_t shape1 = e_to_g.size() / entities.size();
 
   std::vector<double> x_mid(entities.size() * 3, 0);
   for (std::size_t e = 0; e < entities.size(); ++e)
@@ -357,11 +357,9 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   {
     if (boundary_facet[f])
     {
-      for (auto e : f_to_e->links(f))
-        facet_entities.insert(e);
-
-      for (auto v : f_to_v->links(f))
-        boundary_vertices.insert(v);
+      facet_entities.insert(f_to_e->links(f).begin(), f_to_e->links(f).end());
+      boundary_vertices.insert(f_to_v->links(f).begin(),
+                               f_to_v->links(f).end());
     }
   }
 

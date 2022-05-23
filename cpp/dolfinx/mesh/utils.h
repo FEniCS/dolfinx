@@ -10,6 +10,7 @@
 #include <dolfinx/graph/partition.h>
 #include <functional>
 #include <mpi.h>
+#include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
@@ -67,7 +68,8 @@ extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
 /// @brief Compute greatest distance between any two vertices of the
 /// mesh entities (`h`).
 /// @param[in] mesh The mesh that the entities belong to.
-/// @param[in] entities Indices (local to process) of entities to compute `h` for.
+/// @param[in] entities Indices (local to process) of entities to compute `h`
+/// for.
 /// @param[in] dim Topological dimension of the entities.
 /// @returns The greatest distance between any two vertices, `h[i]`
 /// corresponds to the entity `entities[i]`.
