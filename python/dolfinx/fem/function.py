@@ -418,9 +418,9 @@ class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
     def __init__(self, mesh: typing.Union[None, Mesh],
-                 element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple],
+                 element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int]],
                  cppV: typing.Optional[_cpp.fem.FunctionSpace] = None,
-                 form_compiler_params: dict = {}, jit_params: dict = {}):
+                 form_compiler_params: dict[str, typing.Any] = {}, jit_params: dict[str, typing.Any] = {}):
         """Create a finite element function space."""
 
         # Create function space from a UFL element and existing cpp
