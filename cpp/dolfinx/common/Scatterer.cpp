@@ -16,8 +16,8 @@ using namespace dolfinx::common;
 
 //-----------------------------------------------------------------------------
 Scatterer::Scatterer(const IndexMap& map, int bs)
-    : _bs(bs), _comm0(MPI_COMM_NULL), _comm1(MPI_COMM_NULL), _dest(map.dest()),
-      _src(map.src())
+    : _bs(bs), _comm0(MPI_COMM_NULL), _comm1(MPI_COMM_NULL), _src(map.src()),
+      _dest(map.dest())
 {
   if (map.overlapped())
   {
