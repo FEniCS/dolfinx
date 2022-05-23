@@ -27,7 +27,7 @@ Scatterer::Scatterer(const IndexMap& map, int bs)
 
     // Check that assume src and dest ranks are unique and sorted
     assert(std::is_sorted(src_ranks.begin(), src_ranks.end()));
-    assert(std::is_sorted(src_ranks.begin(), src_ranks.end()));
+    assert(std::is_sorted(dest_ranks.begin(), dest_ranks.end()));
 
     // Create communicators with directed edges:
     // (0) owner -> ghost,
@@ -142,6 +142,16 @@ Scatterer::Scatterer(const IndexMap& map, int bs)
       for (int j = 0; j < _bs; j++)
         _remote_inds[i * _bs + j] = perm[i] * _bs + j;
   }
+}
+//-----------------------------------------------------------------------------
+void Scatterer::scatter_fwd_end(MPI_Request& request) const
+{
+  // Return early if there are no incoming or outgoing edges
+  if (_sizes_local.empty() and _sizes_remote.empty())
+    return;
+
+  // Wait for communication to complete
+  MPI_Wait(&request, MPI_STATUS_IGNORE);
 }
 //-----------------------------------------------------------------------------
 void Scatterer::scatter_rev_end(MPI_Request& request) const
