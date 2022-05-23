@@ -12,10 +12,9 @@ preparation."""
 
 from __future__ import annotations
 
-import typing
-
 import contextlib
 import functools
+import typing
 
 import ufl
 from dolfinx import cpp as _cpp
@@ -23,11 +22,11 @@ from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
 from dolfinx.fem import assemble
-from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
 from dolfinx.fem.bcs import DirichletBCMetaClass
+from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
+from dolfinx.fem.forms import FormMetaClass
 from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
-from dolfinx.fem.forms import FormMetaClass
 from dolfinx.fem.function import Function as _Function
 
 from petsc4py import PETSc

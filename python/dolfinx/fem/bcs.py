@@ -10,11 +10,11 @@ from __future__ import annotations
 
 import collections.abc
 import typing
+
 import numpy.typing
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem.function import Constant, Function
-
 
 import numpy as np
 

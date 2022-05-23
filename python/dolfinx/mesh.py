@@ -18,8 +18,7 @@ from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
                               compute_boundary_facets,
                               compute_incident_entities, compute_midpoints,
-                              create_cell_partitioner,
-                              to_string, to_type)
+                              create_cell_partitioner, to_string, to_type)
 
 from mpi4py import MPI as _MPI
 
