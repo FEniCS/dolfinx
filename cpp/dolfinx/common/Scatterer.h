@@ -27,6 +27,7 @@ class IndexMap;
 class Scatterer
 {
 public:
+  /// Types of MPI communication pattern used by the Scatterer.
   enum class type
   {
     neighbour, // use MPI neighbourhood collectives
@@ -56,8 +57,10 @@ public:
   /// Scatterer::remote_indices. The buffer must not be
   /// accessed or changed until after a call to
   /// Scatterer::scatter_fwd_end.
-  /// @param request The MPI request handle for tracking the status of
+  /// @param requests The MPI request handle for tracking the status of
   /// the non-blocking communication
+  /// @param[in] type The type of MPI communication pattern used by the
+  /// Scatterer, either Scatterer::type::neighbor or Scatterer::type::p2p.
   template <typename T>
   void scatter_fwd_begin(const xtl::span<const T>& send_buffer,
                          const xtl::span<T>& recv_buffer,
@@ -105,7 +108,7 @@ public:
   /// This function completes the communication started by
   /// Scatterer::scatter_fwd_begin.
   ///
-  /// @param[in] request The MPI request handle for tracking the status
+  /// @param[in] requests The MPI request handle for tracking the status
   /// of the send
   void scatter_fwd_end(xtl::span<MPI_Request> requests) const
   {
@@ -133,8 +136,10 @@ public:
   /// @param[in] pack_fn Function to pack data from `local_data` into
   /// the send buffer. It is passed as an argument to support
   /// CUDA/device-aware MPI.
-  /// @param[in] request The MPI request handle for tracking the status
+  /// @param[in] requests The MPI request handle for tracking the status
   /// of the send
+  /// @param[in] type The type of MPI communication pattern used by the
+  /// Scatterer, either Scatterer::type::neighbor or Scatterer::type::p2p.
   template <typename T, typename Functor>
   void scatter_fwd_begin(const xtl::span<const T>& local_data,
                          xtl::span<T> local_buffer, xtl::span<T> remote_buffer,
@@ -165,7 +170,7 @@ public:
   /// @param[in] unpack_fn Function to unpack the received buffer into
   /// `remote_data`. It is passed as an argument to support
   /// CUDA/device-aware MPI.
-  /// @param[in] request The MPI request handle for tracking the status
+  /// @param[in] requests The MPI request handle for tracking the status
   /// of the send
   template <typename T, typename Functor>
   void scatter_fwd_end(const xtl::span<const T>& remote_buffer,
