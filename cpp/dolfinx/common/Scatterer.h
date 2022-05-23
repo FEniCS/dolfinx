@@ -199,7 +199,7 @@ public:
   void scatter_fwd(const xtl::span<const T>& local_data,
                    xtl::span<T> remote_data) const
   {
-    std::vector<MPI_Request> requests(1);
+    std::vector<MPI_Request> requests(1, MPI_REQUEST_NULL);
     std::vector<T> local_buffer(local_buffer_size(), 0);
     std::vector<T> remote_buffer(remote_buffer_size(), 0);
     auto pack_fn = [](const auto& in, const auto& idx, auto& out)
@@ -263,7 +263,7 @@ public:
     {
     case type::neighbour:
     {
-      assert(requests.size() == 0);
+      assert(requests.size() == 1);
       MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_remote.data(),
                               _displs_remote.data(), MPI::mpi_type<T>(),
                               recv_buffer.data(), _sizes_local.data(),
@@ -392,11 +392,12 @@ public:
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
     };
-    std::vector<MPI_Request> request(1);
+    std::vector<MPI_Request> request(1, MPI_REQUEST_NULL);
     scatter_rev_begin(remote_data, xtl::span<T>(remote_buffer),
-                      xtl::span<T>(local_buffer), pack_fn, request);
+                      xtl::span<T>(local_buffer), pack_fn,
+                      xtl::span<MPI_Request>(request));
     scatter_rev_end(xtl::span<const T>(local_buffer), local_data, unpack_fn, op,
-                    request);
+                    xtl::span<MPI_Request>(request));
   }
 
   /// @brief Size of buffer for local data (owned and shared) used in
