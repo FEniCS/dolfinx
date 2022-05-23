@@ -18,7 +18,6 @@ if typing.TYPE_CHECKING:
 
 import numpy as np
 
-import ufl
 import dolfinx
 from dolfinx import cpp as _cpp
 
