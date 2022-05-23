@@ -82,7 +82,7 @@ jobs:
       - name: mypy checks (non-blocking)
         continue-on-error: true
         run: |
-          python -m pip install mypy # To remove once Docker images re-built
+          python3 -m pip install mypy # To remove once Docker images re-built
           cd python/
           mypy dolfinx
           mypy demo
