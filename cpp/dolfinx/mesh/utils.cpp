@@ -464,7 +464,7 @@ mesh::entities_to_geometry(const Mesh& mesh, int dim,
   for (std::size_t i = 0; i < entities.size(); ++i)
   {
     const std::int32_t idx = entities[i];
-    const std::int32_t cell = e_to_c->links(idx)[0];
+    const std::int32_t cell = e_to_c->links(idx).front();
     auto ev = e_to_v->links(idx);
     assert(ev.size() == num_vertices);
     const auto cv = c_to_v->links(cell);
@@ -505,13 +505,7 @@ mesh::entities_to_geometry(const Mesh& mesh, int dim,
 
       // Midpoint direction should be opposite to normal, hence this
       // should be negative. Switch points if not.
-      auto _a = xt::adapt(a.data(), 9, xt::no_ownership(),
-                          std::vector<std::size_t>{3, 3});
-
-      if (math::det(_a) != math::det(a.data(), {3, 3}))
-        throw std::runtime_error("Det problem");
-
-      if (math::det(_a) > 0.0)
+      if (math::det(a.data(), {3, 3}) > 0.0)
       {
         std::swap(geometry_idx[i * num_vertices + 1],
                   geometry_idx[i * num_vertices + 2]);

@@ -34,7 +34,6 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   // Push reference coordinates (X) forward to the physical coordinates
   // (x) for each cell
   std::vector<double> coordinate_dofs(num_dofs_g * gdim, 0);
-  // std::array<std::size_t, 2> shape = {3, cells.size() * X.shape(0)};
   std::vector<double> x(3 * (cells.size() * X.shape(0)), 0);
   for (std::size_t c = 0; c < cells.size(); ++c)
   {

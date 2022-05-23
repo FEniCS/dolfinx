@@ -181,7 +181,6 @@ public:
     assert(_function_space->mesh());
     const std::vector<double> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
-    // std::vector<std::size_t> shape =
     auto _x = xt::adapt(x, std::vector<std::size_t>{3, x.size() / 3});
     auto fx = f(_x);
     if (int vs = _function_space->element()->value_size();
