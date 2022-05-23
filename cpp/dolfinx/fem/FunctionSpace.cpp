@@ -225,13 +225,13 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (std::size_t j = 0; j < gdim; ++j)
-          coords[dofs[i] * shape_c1 + j] = x(i, j);
+          coords[dofs[i] * 3 + j] = x(i, j);
     }
     else
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (std::size_t j = 0; j < gdim; ++j)
-          coords[j * shape_c1 + dofs[i]] = x(i, j);
+          coords[j * num_dofs + dofs[i]] = x(i, j);
     }
   }
 
