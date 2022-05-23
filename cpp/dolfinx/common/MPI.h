@@ -123,12 +123,6 @@ constexpr int index_owner(int size, std::size_t index, std::size_t N)
   }
 }
 
-/// @brief Return list of neighbors ranks (sources and destinations) for
-/// a neighborhood communicator.
-/// @param[in] comm Communicator with a neighborhood
-/// @return source ranks [0], destination ranks [1]
-std::array<std::vector<int>, 2> neighbors(MPI_Comm comm);
-
 /// @brief Determine incoming graph edges using the PCX consensus
 /// algorithm.
 ///
@@ -262,18 +256,6 @@ std::vector<T> distribute_data(MPI_Comm comm,
                                const xtl::span<const std::int64_t>& indices,
                                const xtl::span<const T>& x, int shape1);
 
-/// @brief Send in_values[n0] to neighbor process n0 and receive values
-/// from neighbor process n1 in out_values[n1].
-///
-/// @param[in] comm Neighborhood communicator
-/// @param[in] send_data The data to send to each rank.
-/// graph::AdjacencyList<T>::num_nodes should be equal to the number of
-/// neighbourhood out edges.
-/// @return Data received from incoming neighbourhood ranks.
-template <typename T>
-graph::AdjacencyList<T>
-neighbor_all_to_all(MPI_Comm comm, const graph::AdjacencyList<T>& send_data);
-
 template <typename T>
 struct dependent_false : std::false_type
 {
@@ -394,7 +376,7 @@ distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x,
   // Compute send displacements
   std::vector<std::int32_t> send_disp = {0};
   std::partial_sum(num_items_per_dest.begin(), num_items_per_dest.end(),
-                   std::back_insert_iterator(send_disp));
+                   std::back_inserter(send_disp));
 
   // Pack send buffers
   std::vector<T> send_buffer_data(shape[1] * send_disp.back());
@@ -535,10 +517,10 @@ std::vector<T> distribute_from_postoffice(
   // Prepare send/receive displacements
   std::vector<std::int32_t> send_disp = {0};
   std::partial_sum(num_items_per_src.begin(), num_items_per_src.end(),
-                   std::back_insert_iterator(send_disp));
+                   std::back_inserter(send_disp));
   std::vector<std::int32_t> recv_disp = {0};
   std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
-                   std::back_insert_iterator(recv_disp));
+                   std::back_inserter(recv_disp));
 
   // Pack my requested indices (global) in send buffer ready to send to
   // post offices
@@ -675,41 +657,6 @@ std::vector<T> distribute_data(MPI_Comm comm,
 
   return distribute_from_postoffice(comm, indices, x, {shape0, shape1},
                                     rank_offset);
-}
-//---------------------------------------------------------------------------
-template <typename T>
-graph::AdjacencyList<T>
-neighbor_all_to_all(MPI_Comm comm, const graph::AdjacencyList<T>& send_data)
-{
-  // Get neighbor processes
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
-
-  // Allocate memory (add '1' to handle empty case as OpenMPI fails for
-  // null pointers
-  std::vector<int> send_sizes(outdegree, 0);
-  std::vector<int> recv_sizes(indegree);
-  std::adjacent_difference(std::next(send_data.offsets().begin()),
-                           send_data.offsets().end(), send_sizes.begin());
-  // Get receive sizes
-  send_sizes.reserve(1);
-  recv_sizes.reserve(1);
-  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
-                        MPI_INT, comm);
-
-  // Work out recv offsets
-  std::vector<int> recv_offsets(indegree + 1);
-  recv_offsets[0] = 0;
-  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                   std::next(recv_offsets.begin(), 1));
-
-  std::vector<T> recv_data(recv_offsets[recv_offsets.size() - 1]);
-  MPI_Neighbor_alltoallv(
-      send_data.array().data(), send_sizes.data(), send_data.offsets().data(),
-      dolfinx::MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
-      recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), comm);
-
-  return graph::AdjacencyList<T>(std::move(recv_data), std::move(recv_offsets));
 }
 //---------------------------------------------------------------------------
 
