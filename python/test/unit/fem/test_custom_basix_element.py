@@ -89,8 +89,8 @@ def test_custom_element_triangle_degree1():
     z = np.zeros((0, 2))
     x = [[np.array([[0., 0.]]), np.array([[1., 0.]]), np.array([[0., 1.]])],
          [z, z, z], [z], []]
-    z = np.zeros((0, 1, 0))
-    M = [[np.array([[[1.]]]), np.array([[[1.]]]), np.array([[[1.]]])],
+    z = np.zeros((0, 1, 0, 1))
+    M = [[np.array([[[[1.]]]]), np.array([[[[1.]]]]), np.array([[[[1.]]]])],
          [z, z, z], [z], []]
 
     e = basix.create_custom_element(
@@ -110,8 +110,8 @@ def test_custom_element_triangle_degree4():
          [np.array([[.75, .25], [.5, .5], [.25, .75]]), np.array([[0., .25], [0., .5], [0., .75]]),
           np.array([[.25, 0.], [.5, 0.], [.75, 0.]])],
          [np.array([[.25, .25], [.5, .25], [.25, .5]])], []]
-    id = np.array([[[1., 0., 0.]], [[0., 1., 0.]], [[0., 0., 1.]]])
-    M = [[np.array([[[1.]]]), np.array([[[1.]]]), np.array([[[1.]]])],
+    id = np.array([[[[1.], [0.], [0.]]], [[[0.], [1.], [0.]]], [[[0.], [0.], [1.]]]])
+    M = [[np.array([[[[1.]]]]), np.array([[[[1.]]]]), np.array([[[[1.]]]])],
          [id, id, id], [id], []]
 
     e = basix.create_custom_element(
@@ -136,14 +136,14 @@ def test_custom_element_triangle_degree4_integral():
          [np.array([[.25, .25], [.5, .25], [.25, .5]])], []]
 
     assert pts.shape[0] != 3
-    quadrature_mat = np.zeros([3, 1, pts.shape[0]])
+    quadrature_mat = np.zeros([3, 1, pts.shape[0], 1])
     for dof in range(3):
         for p in range(pts.shape[0]):
-            quadrature_mat[dof, 0, p] = wts[p] * tab[p, dof]
+            quadrature_mat[dof, 0, p, 0] = wts[p] * tab[p, dof]
 
-    M = [[np.array([[[1.]]]), np.array([[[1.]]]), np.array([[[1.]]])],
+    M = [[np.array([[[[1.]]]]), np.array([[[[1.]]]]), np.array([[[[1.]]]])],
          [quadrature_mat, quadrature_mat, quadrature_mat],
-         [np.array([[[1., 0., 0.]], [[0., 1., 0.]], [[0., 0., 1.]]])], []]
+         [np.array([[[[1.], [0.], [0.]]], [[[0.], [1.], [0.]]], [[[0.], [0.], [1.]]]])], []]
 
     e = basix.create_custom_element(
         basix.CellType.triangle, [], wcoeffs,
@@ -161,8 +161,8 @@ def test_custom_element_quadrilateral_degree1():
     z = np.zeros((0, 2))
     x = [[np.array([[0., 0.]]), np.array([[1., 0.]]), np.array([[0., 1.]]), np.array([[1., 1.]])],
          [z, z, z, z], [z], []]
-    z = np.zeros((0, 1, 0))
-    M = [[np.array([[[1.]]]), np.array([[[1.]]]), np.array([[[1.]]]), np.array([[[1.]]])],
+    z = np.zeros((0, 1, 0, 1))
+    M = [[np.array([[[[1.]]]]), np.array([[[[1.]]]]), np.array([[[[1.]]]]), np.array([[[[1.]]]])],
          [z, z, z, z], [z], []]
 
     e = basix.create_custom_element(
