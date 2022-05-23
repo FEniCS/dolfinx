@@ -301,7 +301,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
   std::vector<std::pair<std::int32_t, std::int64_t>>
       shared_entity_to_global_vertices_data;
 
-  // TODO: document
+  // List of (local enity index, global MPI ranks)
   std::vector<std::pair<std::int32_t, int>> shared_entities_data;
 
   // Compare received and sent entity keys. Any received entities
@@ -467,7 +467,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
 
   common::IndexMap index_map(comm, num_local, ghost_indices, ghost_owners);
 
-  // Creat map from initial numbering to new local indices
+  // Create map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
   std::transform(entity_index.cbegin(), entity_index.cend(),
                  new_entity_index.begin(),
