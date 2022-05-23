@@ -110,7 +110,7 @@ public:
   ///
   /// @param[in] requests The MPI request handle for tracking the status
   /// of the send
-  void scatter_fwd_end(xtl::span<MPI_Request> request) const;
+  void scatter_fwd_end(xtl::span<MPI_Request> requests) const;
 
   /// @brief Scatter data associated with owned indices to ghosting
   /// ranks.
