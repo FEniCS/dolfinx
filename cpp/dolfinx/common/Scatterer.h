@@ -61,7 +61,7 @@ public:
   template <typename T>
   void scatter_fwd_begin(const xtl::span<const T>& send_buffer,
                          const xtl::span<T>& recv_buffer,
-                         const xtl::span<MPI_Request>& requests,
+                         xtl::span<MPI_Request> requests,
                          Scatterer::type type = type::neighbour) const
   {
     // Return early if there are no incoming or outgoing edges
@@ -138,8 +138,7 @@ public:
   template <typename T, typename Functor>
   void scatter_fwd_begin(const xtl::span<const T>& local_data,
                          xtl::span<T> local_buffer, xtl::span<T> remote_buffer,
-                         Functor pack_fn,
-                         const xtl::span<MPI_Request>& requests,
+                         Functor pack_fn, xtl::span<MPI_Request> requests,
                          Scatterer::type type = type::neighbour) const
   {
     assert(local_buffer.size() == _local_inds.size());
@@ -171,7 +170,7 @@ public:
   template <typename T, typename Functor>
   void scatter_fwd_end(const xtl::span<const T>& remote_buffer,
                        xtl::span<T> remote_data, Functor unpack_fn,
-                       const xtl::span<MPI_Request>& requests) const
+                       xtl::span<MPI_Request> requests) const
   {
     assert(remote_buffer.size() == _remote_inds.size());
     assert(remote_data.size() == _remote_inds.size());
