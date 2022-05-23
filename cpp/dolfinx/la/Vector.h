@@ -44,7 +44,7 @@ public:
   /// Copy constructor
   Vector(const Vector& x)
       : _map(x._map), _scatterer(x._scatterer), _bs(x._bs),
-        _request(MPI_REQUEST_NULL), _buffer_local(x._buffer_local),
+        _request(1, MPI_REQUEST_NULL), _buffer_local(x._buffer_local),
         _buffer_remote(x._buffer_remote), _x(x._x)
   {
   }
@@ -53,7 +53,7 @@ public:
   Vector(Vector&& x)
       : _map(std::move(x._map)), _scatterer(std::move(x._scatterer)),
         _bs(std::move(x._bs)),
-        _request(std::exchange(x._request, MPI_REQUEST_NULL)),
+        _request(std::exchange(x._request, {MPI_REQUEST_NULL})),
         _buffer_local(std::move(x._buffer_local)),
         _buffer_remote(std::move(x._buffer_remote)), _x(std::move(x._x))
   {
@@ -84,7 +84,8 @@ public:
     pack(x_local, _scatterer->local_indices(), _buffer_local);
 
     _scatterer->scatter_fwd_begin(xtl::span<const T>(_buffer_local),
-                                  xtl::span<T>(_buffer_remote), _request);
+                                  xtl::span<T>(_buffer_remote),
+                                  xtl::span<MPI_Request>(_request));
   }
 
   /// End scatter of local data from owner to ghosts on other ranks
@@ -94,7 +95,7 @@ public:
     const std::int32_t local_size = _bs * _map->size_local();
     const std::int32_t num_ghosts = _bs * _map->num_ghosts();
     xtl::span<T> x_remote(_x.data() + local_size, num_ghosts);
-    _scatterer->scatter_fwd_end(_request);
+    _scatterer->scatter_fwd_end(xtl::span<MPI_Request>(_request));
 
     auto unpack = [](const auto& in, const auto& idx, auto& out, auto op)
     {
@@ -130,7 +131,7 @@ public:
     pack(x_remote, _scatterer->remote_indices(), _buffer_remote);
 
     _scatterer->scatter_rev_begin(xtl::span<const T>(_buffer_remote),
-                                  xtl::span<T>(_buffer_local), _request);
+                                  xtl::span<T>(_buffer_local), _request[0]);
   }
 
   /// End scatter of ghost data to owner. This process may receive data
@@ -144,7 +145,7 @@ public:
   {
     const std::int32_t local_size = _bs * _map->size_local();
     xtl::span<T> x_local(_x.data(), local_size);
-    _scatterer->scatter_rev_end(_request);
+    _scatterer->scatter_rev_end(_request[0]);
 
     auto unpack = [](const auto& in, const auto& idx, auto& out, auto op)
     {
@@ -192,7 +193,7 @@ private:
   int _bs;
 
   // MPI request handle
-  MPI_Request _request = MPI_REQUEST_NULL;
+  std::vector<MPI_Request> _request = {MPI_REQUEST_NULL};
 
   // Buffers for ghost scatters
   std::vector<T, Allocator> _buffer_local, _buffer_remote;

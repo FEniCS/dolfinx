@@ -27,6 +27,12 @@ class IndexMap;
 class Scatterer
 {
 public:
+  enum class type
+  {
+    neighbour, // use MPI neighbourhood collectives
+    p2p        // use MPI Isend/Irecv for communication
+  };
+
   /// @brief Create a scatterer
   /// @param[in] map The index map that describes the parallel layout of
   /// data
@@ -55,16 +61,42 @@ public:
   template <typename T>
   void scatter_fwd_begin(const xtl::span<const T>& send_buffer,
                          const xtl::span<T>& recv_buffer,
-                         MPI_Request& request) const
+                         const xtl::span<MPI_Request>& requests,
+                         Scatterer::type type = type::neighbour) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
       return;
 
-    MPI_Ineighbor_alltoallv(
-        send_buffer.data(), _sizes_local.data(), _displs_local.data(),
-        MPI::mpi_type<T>(), recv_buffer.data(), _sizes_remote.data(),
-        _displs_remote.data(), MPI::mpi_type<T>(), _comm0.comm(), &request);
+    switch (type)
+    {
+    case type::neighbour:
+    {
+      assert(requests.size() == std::size_t(1));
+      MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_local.data(),
+                              _displs_local.data(), MPI::mpi_type<T>(),
+                              recv_buffer.data(), _sizes_remote.data(),
+                              _displs_remote.data(), MPI::mpi_type<T>(),
+                              _comm0.comm(), requests.data());
+      break;
+    }
+    case type::p2p:
+    {
+      assert(requests.size() == _dest.size() + _src.size());
+      for (std::size_t i = 0; i < _src.size(); i++)
+        MPI_Irecv(recv_buffer.data() + _displs_remote[i], _sizes_remote[i],
+                  MPI::mpi_type<T>(), _src[i], MPI_ANY_TAG, _comm0.comm(),
+                  &requests[i]);
+      for (std::size_t i = 0; i < _dest.size(); i++)
+        MPI_Isend(send_buffer.data() + _displs_local[i], _sizes_local[i],
+                  MPI::mpi_type<T>(), _dest[i], 0, _comm0.comm(),
+                  &requests[i + _src.size()]);
+      break;
+    }
+    default:
+      throw std::runtime_error("Scatter::type not recognized");
+      break;
+    }
   }
 
   /// @brief Complete a non-blocking send from the local owner to
@@ -75,14 +107,14 @@ public:
   ///
   /// @param[in] request The MPI request handle for tracking the status
   /// of the send
-  void scatter_fwd_end(MPI_Request& request) const
+  void scatter_fwd_end(xtl::span<MPI_Request> requests) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
       return;
 
     // Wait for communication to complete
-    MPI_Wait(&request, MPI_STATUS_IGNORE);
+    MPI_Waitall(requests.size(), requests.data(), MPI_STATUS_IGNORE);
   }
 
   /// @brief Scatter data associated with owned indices to ghosting
@@ -106,12 +138,15 @@ public:
   template <typename T, typename Functor>
   void scatter_fwd_begin(const xtl::span<const T>& local_data,
                          xtl::span<T> local_buffer, xtl::span<T> remote_buffer,
-                         Functor pack_fn, MPI_Request& request) const
+                         Functor pack_fn,
+                         const xtl::span<MPI_Request>& requests,
+                         Scatterer::type type = type::neighbour) const
   {
     assert(local_buffer.size() == _local_inds.size());
     assert(remote_buffer.size() == _remote_inds.size());
     pack_fn(local_data, _local_inds, local_buffer);
-    scatter_fwd_begin(xtl::span<const T>(local_buffer), remote_buffer, request);
+    scatter_fwd_begin(xtl::span<const T>(local_buffer), remote_buffer,
+                      requests);
   }
 
   /// @brief Complete a non-blocking send from the local owner to
@@ -136,11 +171,11 @@ public:
   template <typename T, typename Functor>
   void scatter_fwd_end(const xtl::span<const T>& remote_buffer,
                        xtl::span<T> remote_data, Functor unpack_fn,
-                       MPI_Request& request) const
+                       const xtl::span<MPI_Request>& requests) const
   {
     assert(remote_buffer.size() == _remote_inds.size());
     assert(remote_data.size() == _remote_inds.size());
-    scatter_fwd_end(request);
+    scatter_fwd_end(requests);
     unpack_fn(remote_buffer, _remote_inds, remote_data,
               [](T /*a*/, T b) { return b; });
   }
@@ -160,7 +195,7 @@ public:
   void scatter_fwd(const xtl::span<const T>& local_data,
                    xtl::span<T> remote_data) const
   {
-    MPI_Request request;
+    std::vector<MPI_Request> requests(1);
     std::vector<T> local_buffer(local_buffer_size(), 0);
     std::vector<T> remote_buffer(remote_buffer_size(), 0);
     auto pack_fn = [](const auto& in, const auto& idx, auto& out)
@@ -169,7 +204,8 @@ public:
         out[i] = in[idx[i]];
     };
     scatter_fwd_begin(local_data, xtl::span<T>(local_buffer),
-                      xtl::span<T>(remote_buffer), pack_fn, request);
+                      xtl::span<T>(remote_buffer), pack_fn,
+                      xtl::span<T>(requests));
 
     auto unpack_fn = [](const auto& in, const auto& idx, auto& out, auto op)
     {
@@ -178,7 +214,7 @@ public:
     };
 
     scatter_fwd_end(xtl::span<const T>(remote_buffer), remote_data, unpack_fn,
-                    request);
+                    xtl::span<T>(requests));
   }
 
   /// @brief Start a non-blocking send of ghost data to ranks that own
@@ -384,5 +420,13 @@ private:
 
   // Displacements of local data for mpi scatter and gather
   std::vector<int> _displs_local;
+
+  // Set of ranks that own ghosts
+  // FIXME: Should we store the index map instead?
+  std::vector<int> _src;
+
+  // Set of ranks ghost owned indices
+  // FIXME: Should we store the index map instead?
+  std::vector<int> _dest;
 };
 } // namespace dolfinx::common
