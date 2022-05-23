@@ -90,7 +90,7 @@ def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpace, typing.It
 
 
 class DirichletBCMetaClass:
-    def __init__(self, value: typing.Union[ufl.Coefficient, Function, Constant, numpy.ndarray],
+    def __init__(self, value: typing.Union[Function, Constant, numpy.ndarray],
                  dofs: numpy.typing.ArrayLike, V: dolfinx.fem.FunctionSpace = None):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
@@ -106,19 +106,17 @@ class DirichletBCMetaClass:
             value: Lifted boundary values function.
             dofs: Local indices of degrees of freedom in function space to which
                 boundary condition applies. Expects array of size (number of
-                dofs, 2) if function space of the problem, ``V``, is passed.
+                dofs, 2) if function space of the problem, ``V`` is passed.
                 Otherwise assumes function space of the problem is the same
-                of function space of boundary values function. V: Function
-                space of a problem to which boundary conditions are applied.
-
+                of function space of boundary values function.
+            V: Function space of a problem to which boundary conditions are applied.
         """
 
         # Unwrap value object, if required
-        if not isinstance(value, np.ndarray):
-            try:
-                _value = value._cpp_object
-            except AttributeError:
-                _value = value
+        try:
+            _value = value._cpp_object
+        except AttributeError:
+            _value = value
 
         if V is not None:
             try:
