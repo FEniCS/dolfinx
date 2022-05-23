@@ -110,15 +110,7 @@ public:
   ///
   /// @param[in] requests The MPI request handle for tracking the status
   /// of the send
-  void scatter_fwd_end(xtl::span<MPI_Request> requests) const
-  {
-    // Return early if there are no incoming or outgoing edges
-    if (_sizes_local.empty() and _sizes_remote.empty())
-      return;
-
-    // Wait for communication to complete
-    MPI_Waitall(requests.size(), requests.data(), MPI_STATUS_IGNORE);
-  }
+  void scatter_fwd_end(xtl::span<MPI_Request> request) const;
 
   /// @brief Scatter data associated with owned indices to ghosting
   /// ranks.
