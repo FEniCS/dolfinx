@@ -79,6 +79,14 @@ jobs:
           python3 -m isort --check dolfinx
           python3 -m isort --check demo
           python3 -m isort --check test
+      - name: mypy checks (non-blocking)
+        continue-on-error: true
+        run: |
+          python -m pip install mypy # To remove once Docker images re-built
+          cd python/
+          mypy dolfinx
+          mypy demo
+          mypy test
       - name: clang-format C++ checks (non-blocking)
         continue-on-error: true
         run: |
@@ -138,15 +146,6 @@ jobs:
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
-
-      - name: mypy checks (non-blocking)
-        continue-on-error: true
-        run: |
-          python -m pip install mypy # To remove once Docker images re-built
-          cd python/
-          mypy dolfinx
-          mypy demo
-          mypy test
 
       - name: Run demos (Python, serial)
         run: python3 -m pytest -n=2 -m serial --durations=10 python/demo/test.py
