@@ -557,6 +557,51 @@ def test_codim_1_assembly(n, k, space, ghost_mode):
     print(b.norm())
 
 
+def test_assemble_block():
+    n = 2
+    msh = create_unit_square(MPI.COMM_WORLD, n, n)
+    edim = msh.topology.dim - 1
+    num_facets = msh.topology.create_entities(edim)
+    entities = locate_entities_boundary(
+        msh, edim,
+        lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 1.0),
+                                              np.isclose(x[0], 0.0)),
+                                np.logical_or(np.isclose(x[1], 1.0),
+                                              np.isclose(x[1], 0.0))))
+    submesh, entity_map, vertex_map, geom_map = create_submesh(
+        msh, edim, entities)
+
+    V = fem.FunctionSpace(msh, ("Lagrange", 1))
+    W = fem.FunctionSpace(submesh, ("Lagrange", 1))
+
+    u = ufl.TrialFunction(V)
+    v = ufl.TestFunction(V)
+    lmbda = ufl.TrialFunction(W)
+    mu = ufl.TestFunction(W)
+
+    dx_m = ufl.Measure("dx", domain=msh)
+    dx_sm = ufl.Measure("dx", domain=submesh)
+    ds = ufl.Measure("ds", domain=msh)
+
+    mp = [entity_map.index(entity) if entity in entity_map else -1
+          for entity in range(num_facets)]
+    entity_maps = {submesh: mp}
+
+    a_00 = fem.form(ufl.inner(u, v) * dx_m)
+    a_01 = fem.form(ufl.inner(lmbda, v) * ds, entity_maps=entity_maps)
+    a_10 = fem.form(ufl.inner(u, mu) * ds, entity_maps=entity_maps)
+    a_11 = fem.form(ufl.inner(lmbda, mu) * dx_sm)
+
+    a = [[a_00, a_01],
+         [a_10, a_11]]
+
+    A = fem.petsc.assemble_matrix_block(a)
+    A.assemble()
+
+    # TODO Check value
+    assert(np.isclose(A.norm(), 1.7447838930175097))
+
+
 # def create_random_mesh(n_x, n_y, corners):
 #     h_x = (corners[1][0] - corners[0][0]) / n_x
 #     h_y = (corners[1][1] - corners[0][1]) / n_y

@@ -42,9 +42,8 @@ Mat fem::petsc::create_matrix_block(
       bs_dofs[i].push_back(_V->dofmap()->bs());
   }
 
-  std::shared_ptr mesh = V[0][0]->mesh();
-  assert(mesh);
-  const int tdim = mesh->topology().dim();
+  // FIXME Where to get comm from?
+  auto comm = V[0][0]->mesh()->comm();
 
   // Build sparsity pattern for each block
   std::vector<std::vector<std::unique_ptr<la::SparsityPattern>>> patterns(
@@ -59,30 +58,9 @@ Mat fem::petsc::create_matrix_block(
                              V[1][col]->dofmap()->index_map_bs()};
       if (const fem::Form<PetscScalar>* form = a[row][col]; form)
       {
-        // Create sparsity pattern for block
+        // FIXME THIS IS PROBABLY WRONG/COPYING, CHECK!
         patterns[row].push_back(std::make_unique<la::SparsityPattern>(
-            mesh->comm(), index_maps, bs));
-
-        // Build sparsity pattern for block
-        assert(V[0][row]->dofmap());
-        assert(V[1][col]->dofmap());
-        std::array<const std::reference_wrapper<const fem::DofMap>, 2> dofmaps{
-            *V[0][row]->dofmap(), *V[1][col]->dofmap()};
-        assert(patterns[row].back());
-        auto& sp = patterns[row].back();
-        assert(sp);
-        if (form->num_integrals(IntegralType::cell) > 0)
-          sparsitybuild::cells(*sp, mesh->topology(), dofmaps);
-        if (form->num_integrals(IntegralType::interior_facet) > 0)
-        {
-          mesh->topology_mutable().create_entities(tdim - 1);
-          sparsitybuild::interior_facets(*sp, mesh->topology(), dofmaps);
-        }
-        if (form->num_integrals(IntegralType::exterior_facet) > 0)
-        {
-          mesh->topology_mutable().create_entities(tdim - 1);
-          sparsitybuild::exterior_facets(*sp, mesh->topology(), dofmaps);
-        }
+            create_sparsity_pattern(*form)));
       }
       else
         patterns[row].push_back(nullptr);
@@ -115,14 +93,14 @@ Mat fem::petsc::create_matrix_block(
   for (std::size_t row = 0; row < V[0].size(); ++row)
     for (std::size_t col = 0; col < V[1].size(); ++col)
       p[row].push_back(patterns[row][col].get());
-  la::SparsityPattern pattern(mesh->comm(), p, maps, bs_dofs);
+  la::SparsityPattern pattern(comm, p, maps, bs_dofs);
   pattern.assemble();
 
   // FIXME: Add option to pass customised local-to-global map to PETSc
   // Mat constructor
 
   // Initialise matrix
-  Mat A = la::petsc::create_matrix(mesh->comm(), pattern, type);
+  Mat A = la::petsc::create_matrix(comm, pattern, type);
 
   // Create row and column local-to-global maps (field0, field1, field2,
   // etc), i.e. ghosts of field0 appear before owned indices of field1
