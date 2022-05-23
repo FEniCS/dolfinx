@@ -129,8 +129,8 @@ L = form(inner(f, v) * dx)
 facets = locate_entities_boundary(msh, dim=2,
                                   marker=lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                  np.isclose(x[1], 1.0)))
-u_zero = Function(V)
-bc = dirichletbc(u_zero, locate_dofs_topological(V, entity_dim=2, entities=facets))
+bc = dirichletbc(np.zeros(3, dtype=dtype),
+                 locate_dofs_topological(V, entity_dim=2, entities=facets), V=V)
 
 # ## Assemble and solve
 #
