@@ -20,9 +20,9 @@ from petsc4py import PETSc
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:
-    encodings = (XDMFFile.Encoding.HDF5)
+    encodings = [XDMFFile.Encoding.HDF5]
 else:
-    encodings = (XDMFFile.Encoding.HDF5, XDMFFile.Encoding.ASCII)
+    encodings = [XDMFFile.Encoding.HDF5, XDMFFile.Encoding.ASCII]
 
 celltypes_2D = [CellType.triangle, CellType.quadrilateral]
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]

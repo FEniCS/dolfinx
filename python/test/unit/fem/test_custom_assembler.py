@@ -86,9 +86,10 @@ else:
         raise
 
 # Get the PETSc MatSetValuesLocal function via ctypes
+# ctypes does not support static types well, ignore type check errors
 MatSetValues_ctypes = petsc_lib_ctypes.MatSetValuesLocal
-MatSetValues_ctypes.argtypes = (ctypes.c_void_p, ctypes_index, ctypes.POINTER(
-    ctypes_index), ctypes_index, ctypes.POINTER(ctypes_index), ctypes.c_void_p, ctypes.c_int)
+MatSetValues_ctypes.argtypes = [ctypes.c_void_p, ctypes_index, ctypes.POINTER(  # type: ignore
+    ctypes_index), ctypes_index, ctypes.POINTER(ctypes_index), ctypes.c_void_p, ctypes.c_int]  # type: ignore
 del petsc_lib_ctypes
 
 
