@@ -10,6 +10,7 @@
 #include <dolfinx/graph/partition.h>
 #include <functional>
 #include <mpi.h>
+#include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
@@ -64,17 +65,27 @@ graph::AdjacencyList<std::int64_t>
 extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
                  const graph::AdjacencyList<std::int64_t>& cells);
 
-/// Compute greatest distance between any two vertices
+/// @brief Compute greatest distance between any two vertices of the
+/// mesh entities (`h`).
+/// @param[in] mesh The mesh that the entities belong to.
+/// @param[in] entities Indices (local to process) of entities to compute `h`
+/// for.
+/// @param[in] dim Topological dimension of the entities.
+/// @returns The greatest distance between any two vertices, `h[i]`
+/// corresponds to the entity `entities[i]`.
 std::vector<double> h(const Mesh& mesh,
                       const xtl::span<const std::int32_t>& entities, int dim);
 
-/// Compute normal to given cell (viewed as embedded in 3D)
-xt::xtensor<double, 2>
-cell_normals(const Mesh& mesh, int dim,
-             const xtl::span<const std::int32_t>& entities);
+/// @brief Compute normal to given cell (viewed as embedded in 3D)
+/// @returns The entity normals. The shape is `(entities.size(), 3)` and
+/// the storage is row-major.
+std::vector<double> cell_normals(const Mesh& mesh, int dim,
+                                 const xtl::span<const std::int32_t>& entities);
 
-/// Compute the midpoints for mesh entities of a given dimension
-xt::xtensor<double, 2>
+/// @brief Compute the midpoints for mesh entities of a given dimension.
+/// @returns The entity midpoints. The shape is `(entities.size(), 3)`
+/// and the storage is row-major.
+std::vector<double>
 compute_midpoints(const Mesh& mesh, int dim,
                   const xtl::span<const std::int32_t>& entities);
 
@@ -118,20 +129,25 @@ std::vector<std::int32_t> locate_entities_boundary(
     const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
         marker);
 
-/// Compute the indices the geometry data for the vertices of the given
-/// mesh entities
+/// @brief Determine the indices in the geometry data for each vertex of
+/// the given mesh entities.
 ///
-/// @param[in] mesh Mesh
+/// @warning This function should be used unless there is no
+/// alternative. It may be removed in the future.
+///
+/// @param[in] mesh The mesh
 /// @param[in] dim Topological dimension of the entities of interest
-/// @param[in] entity_list List of entity indices (local)
+/// @param[in] entities Entity indices (local) to compute the vertex
+/// geometry indices for
 /// @param[in] orient If true, in 3D, reorients facets to have
 /// consistent normal direction
-/// @return Indices in the geometry array for the mesh entity vertices, i.e.
-/// indices(i, j) is the position in the geometry array of the j-th vertex of
-/// the entity entity_list[i].
-xt::xtensor<std::int32_t, 2>
+/// @return Indices in the geometry array for the entity vertices. The
+/// shape is `(num_entities, num_vertices_per_entity)` and the storage
+/// is row-major. The index `indices[i, j]` is the position in the
+/// geometry array of the `j`-th vertex of the `entity[i]`.
+std::vector<std::int32_t>
 entities_to_geometry(const Mesh& mesh, int dim,
-                     const xtl::span<const std::int32_t>& entity_list,
+                     const xtl::span<const std::int32_t>& entities,
                      bool orient);
 
 /// Compute the indices (local) of all exterior facets. An exterior facet

@@ -42,26 +42,26 @@
 #
 
 
-ARG GMSH_VERSION=4_9_3
+ARG GMSH_VERSION=4_10_1
 ARG HDF5_SERIES=1.12
-ARG HDF5_PATCH=1
+ARG HDF5_PATCH=2
 ARG PYBIND11_VERSION=2.9.2
-ARG PETSC_VERSION=3.17.0
-ARG SLEPC_VERSION=3.17.0
+ARG PETSC_VERSION=3.17.1
+ARG SLEPC_VERSION=3.17.1
 ARG ADIOS2_VERSION=2.8.0
-ARG PYVISTA_VERSION=0.33.3
+# ARG PYVISTA_VERSION=0.34.1 # Deactivated until https://gitlab.kitware.com/vtk/vtk/-/issues/18335 is resolved
 ARG NUMPY_VERSION=1.21.5
 ARG KAHIP_VERSION=3.14
-ARG XTENSOR_VERSION=0.24.1
+ARG XTENSOR_VERSION=0.24.2
 ARG XTL_VERSION=0.7.4
 
-ARG MPICH_VERSION=4.0.1
+ARG MPICH_VERSION=4.0.2
 ARG OPENMPI_SERIES=4.1
 ARG OPENMPI_PATCH=3
 
 ########################################
 
-FROM ubuntu:21.10 as dev-env
+FROM ubuntu:22.04 as dev-env
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
@@ -121,7 +121,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libboost-timer-dev \
     liblapack-dev \
     libopenblas-dev \
-    llvm-9 \
     ninja-build \
     pkg-config \
     python3-dev \
@@ -174,9 +173,8 @@ RUN if [ "$MPI" = "mpich" ]; then \
 # - First set of packages are required to build and run DOLFINx Python.
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
-# LLVM_CONFIG required on aarch64, should be removed long-term.
-RUN LLVM_CONFIG=/usr/bin/llvm-config-9 pip3 install --no-cache-dir cffi mpi4py numba && \
-    pip3 install --no-cache-dir cppimport flake8 isort jupytext myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
+RUN pip3 install --no-cache-dir cffi mpi4py numba && \
+    pip3 install --no-cache-dir cppimport flake8 isort jupytext matplotlib myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
 # (See issue #126 and #1305)
@@ -467,6 +465,8 @@ ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
 FROM dolfinx as lab
 LABEL description="DOLFINx Jupyter Lab"
 
+# ARG PYVISTA_VERSION
+
 WORKDIR /root
 
 RUN pip3 install --upgrade --no-cache-dir jupyter jupyterlab
@@ -481,7 +481,8 @@ RUN apt-get -qq update && \
 # matplotlib improves plotting quality with better color maps and properly rendering colorbars.
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
-    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
+    # pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
+    pip3 install --find-links https://wheels.pyvista.org/ pyvista ;; \
     esac; \
     pip3 install --no-cache-dir matplotlib
 

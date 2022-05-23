@@ -369,6 +369,14 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[FormMetaClass]],
             if a_block is not None:
                 Asub = A.getNestSubMatrix(i, j)
                 assemble_matrix(Asub, a_block, bcs, diagonal, const, coeff)
+            elif i == j:
+                for bc in bcs:
+                    row_forms = [row_form for row_form in a_row if row_form is not None]
+                    assert(len(row_forms) > 0)
+                    if row_forms[0].function_spaces[0].contains(bc.function_space):
+                        raise RuntimeError(
+                            f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC applied."
+                            " Consider assembling a zero block.")
     return A
 
 
@@ -405,6 +413,14 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[FormMetaClass]],
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
                 _cpp.fem.petsc.assemble_matrix(Asub, a_sub, constants[i][j], coeffs[i][j], bcs, True)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
+            elif i == j:
+                for bc in bcs:
+                    row_forms = [row_form for row_form in a_row if row_form is not None]
+                    assert(len(row_forms) > 0)
+                    if row_forms[0].function_spaces[0].contains(bc.function_space):
+                        raise RuntimeError(
+                            f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC applied."
+                            " Consider assembling a zero block.")
 
     # Flush to enable switch from add to set in the matrix
     A.assemble(PETSc.Mat.AssemblyType.FLUSH)

@@ -206,8 +206,20 @@ public:
   /// @return Position of the ith ghost entry in the received buffer
   const std::vector<std::int32_t>& scatter_fwd_ghost_positions() const noexcept;
 
-  /// Owner rank on the global communicator of each ghost entry
-  std::vector<int> ghost_owner_rank() const;
+  /// @brief Compute the owner on the neighborhood communicator of each
+  /// ghost index.
+  ///
+  /// The neighborhood ranks are the 'source' ranks on the 'reverse'
+  /// communicator, i.e. the neighborhood source ranks on the
+  /// communicator returned by
+  /// IndexMap::comm(IndexMap::Direction::reverse). The source ranks on
+  /// IndexMap::comm(IndexMap::Direction::reverse) communicator can be
+  /// used to convert the returned neighbour ranks to the rank indices on
+  /// the full communicator.
+  ///
+  /// @return The owning rank on the neighborhood communicator of the
+  /// ith ghost index.
+  std::vector<int> ghost_owners() const;
 
   /// @todo Aim to remove this function? If it's kept, should it work
   /// with neighborhood ranks?

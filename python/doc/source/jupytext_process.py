@@ -6,6 +6,7 @@
 
 import shutil
 import pathlib
+import os
 
 import jupytext
 
@@ -19,16 +20,19 @@ def process():
 
     # Iterate over subdirectories containing demos
     for subdir in subdirs:
-
-        # Build list of demo files
-        demos = list(subdir.glob('**/demo*.py'))
-
         # Make demo doc directory
         demo_dir = pathlib.Path('./demos')
         demo_dir.mkdir(parents=True, exist_ok=True)
 
         # Process each demo using jupytext/myst
-        for demo in demos:
+        for demo in subdir.glob('**/demo*.py'):
+            # If demo saves matplotlib images, run the demo
+            if "savefig" in demo.read_text():
+                here = os.getcwd()
+                os.chdir(demo.parent)
+                os.system(f"python3 {demo.name}")
+                os.chdir(here)
+
             python_demo = jupytext.read(demo)
             myst_text = jupytext.writes(python_demo, fmt="myst")
 
@@ -42,8 +46,11 @@ def process():
             jupytext.write(python_demo, ipynb_file, fmt="ipynb")
 
             # Copy python demo files into documentation demo directory
-            for f in demos:
-                shutil.copy(f, demo_dir)
+            shutil.copy(demo, demo_dir)
+
+        # Copy images used in demos
+        for file in subdir.glob("**/*.png"):
+            shutil.copy(file, demo_dir)
 
 
 if __name__ == "__main__":
