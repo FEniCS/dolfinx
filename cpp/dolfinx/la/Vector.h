@@ -297,7 +297,7 @@ void orthonormalize(const xtl::span<Vector<T, U>>& basis, double tol = 1.0e-10)
     }
 
     // Normalise basis function
-    double norm = basis[i].norm(Norm::l2);
+    double norm = la::norm(basis[i], la::Norm::l2);
     if (norm < tol)
     {
       throw std::runtime_error(

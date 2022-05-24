@@ -42,16 +42,16 @@
 #
 
 
+ARG ADIOS2_VERSION=2.8.0
 ARG GMSH_VERSION=4_10_1
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=2
+ARG KAHIP_VERSION=3.14
+ARG NUMPY_VERSION=1.21.6
 ARG PYBIND11_VERSION=2.9.2
 ARG PETSC_VERSION=3.17.1
 ARG SLEPC_VERSION=3.17.1
-ARG ADIOS2_VERSION=2.8.0
 # ARG PYVISTA_VERSION=0.34.1 # Deactivated until https://gitlab.kitware.com/vtk/vtk/-/issues/18335 is resolved
-ARG NUMPY_VERSION=1.21.5
-ARG KAHIP_VERSION=3.14
 ARG XTENSOR_VERSION=0.24.2
 ARG XTL_VERSION=0.7.4
 
@@ -124,9 +124,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     ninja-build \
     pkg-config \
     python3-dev \
-    python3-numpy \
     python3-pip \
-    python3-scipy \
     python3-setuptools && \
     #
     apt-get -y install \
@@ -170,15 +168,13 @@ RUN if [ "$MPI" = "mpich" ]; then \
     rm -rf /tmp/*
 
 # Install Python packages (via pip)
+# Install numpy via pip. Exclude binaries to avoid conflicts with libblas
+# (See issue #126 and #1305)
 # - First set of packages are required to build and run DOLFINx Python.
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
-RUN pip3 install --no-cache-dir cffi mpi4py numba && \
+RUN pip3 install --no-binary="numpy" --no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scipy && \
     pip3 install --no-cache-dir cppimport flake8 isort jupytext matplotlib myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
-
-# Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
-# (See issue #126 and #1305)
-RUN pip3 install --no-cache-dir --no-binary="numpy" numpy==${NUMPY_VERSION} --upgrade
 
 # Install xtl, xtensor
 RUN git clone -b ${XTL_VERSION} --single-branch --depth 1 https://github.com/xtensor-stack/xtl.git && \
