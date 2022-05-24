@@ -32,6 +32,7 @@ from dolfinx.io import (XDMFFile, cell_perm_gmsh, distribute_entity_data,
 from dolfinx.mesh import CellType, create_mesh, meshtags_from_entities
 
 from mpi4py import MPI
+
 # -
 
 # Generate a mesh on each rank with the gmsh API, and create a DOLFINx

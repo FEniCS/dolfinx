@@ -84,6 +84,10 @@ class FormMetaClass:
         return super().integral_types  # type: ignore
 
 
+form_types = typing.Union[FormMetaClass, _cpp.fem.Form_float32, _cpp.fem.Form_float64,
+                          _cpp.fem.Form_complex64, _cpp.fem.Form_complex128]
+
+
 def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = PETSc.ScalarType,
          form_compiler_params: dict = {}, jit_params: dict = {}):
     """Create a DOLFINx Form or an array of Forms

@@ -18,6 +18,7 @@
 
 # +
 import typing
+
 import matplotlib.pylab as plt
 import numpy as np
 
@@ -28,6 +29,7 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx,
                  grad, inner, sin)
 
 from mpi4py import MPI
+
 # -
 
 # ## Defining a degree 1 TNT element

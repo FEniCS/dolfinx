@@ -17,25 +17,25 @@
 #
 # We begin this demo by importing everything we require.
 
+import matplotlib.pylab as plt
 # +
 import numpy as np
-import ufl
 
+import basix
+import basix.ufl_wrapper
+import ufl
 from dolfinx import fem, mesh
 from ufl import ds, dx, grad, inner
 
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
 
-import matplotlib.pylab as plt
 # -
 
 # In addition to the imports seen in other demos, we also import Basix
 # and its UFL wrapper directly. Basix is the element definition and
 # tabulation library that is used by FEniCSx.
 
-import basix
-import basix.ufl_wrapper
 
 # ## Equispaced points vs GLL points
 # The basis function of Lagrange elements are defined by placing points

@@ -8,12 +8,8 @@
 from __future__ import annotations
 
 import collections
-import typing
-
-if typing.TYPE_CHECKING:
-    from dolfinx.fem.bcs import DirichletBCMetaClass
-
 import functools
+import typing
 
 import numpy as np
 
@@ -22,7 +18,8 @@ from dolfinx import cpp as _cpp
 from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
-from dolfinx.fem.forms import FormMetaClass
+from dolfinx.fem.bcs import DirichletBCMetaClass
+from dolfinx.fem.forms import FormMetaClass, form_types
 
 
 def pack_constants(form: typing.Union[FormMetaClass,
@@ -139,7 +136,7 @@ def assemble_vector(L: typing.Any,
 
 
 @assemble_vector.register(FormMetaClass)
-def _assemble_vector_form(L: FormMetaClass, constants=None, coeffs=None) -> la.VectorMetaClass:
+def _assemble_vector_form(L: form_types, constants=None, coeffs=None) -> la.VectorMetaClass:
     """Assemble linear form into a new Vector.
 
     Args:
@@ -210,11 +207,11 @@ def _assemble_vector_array(b: np.ndarray, L: FormMetaClass, constants=None, coef
 def assemble_matrix(a: typing.Any,
                     bcs: typing.List[DirichletBCMetaClass] = None,
                     diagonal: float = 1.0, constants=None, coeffs=None):
-    raise NotImplementedError
+    _assemble_matrix_form(a, bcs, diagonal, constants, coeffs)
 
 
-@assemble_matrix.register(la.MatrixCSRMetaClass)
-def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: FormMetaClass,
+@assemble_matrix.register
+def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: form_types,
                          bcs: typing.List[DirichletBCMetaClass] = None,
                          diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
     """Assemble bilinear form into a matrix.
@@ -247,8 +244,8 @@ def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: FormMetaClass,
     return A
 
 
-@assemble_matrix.register(FormMetaClass)
-def _assemble_matrix_form(a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = None,
+@assemble_vector.register(FormMetaClass)
+def _assemble_matrix_form(a: form_types, bcs: typing.List[DirichletBCMetaClass] = None,
                           diagonal: float = 1.0,
                           constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
     """Assemble bilinear form into a matrix.

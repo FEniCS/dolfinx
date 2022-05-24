@@ -15,7 +15,7 @@ import numpy.typing as npt
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.fem import Function
-from dolfinx.mesh import GhostMode, Mesh, CellType
+from dolfinx.mesh import CellType, GhostMode, Mesh
 
 from mpi4py import MPI as _MPI
 

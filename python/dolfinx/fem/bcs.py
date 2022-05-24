@@ -110,7 +110,6 @@ class DirichletBCMetaClass:
                 of function space of boundary values function.
             V: Function space of a problem to which boundary conditions are applied.
         """
-
         # Unwrap value object, if required
         if isinstance(value, np.ndarray):
             _value = value
@@ -129,9 +128,14 @@ class DirichletBCMetaClass:
             super().__init__(_value, dofs)  # type: ignore
 
     @property
-    def g(self):
+    def value(self):
         """The boundary condition value(s)"""
-        return self.value
+        return super().value  # type: ignore
+
+    @property
+    def function_space(self) -> dolfinx.fem.FunctionSpace:
+        """The function space on which the boundary condition is defined"""
+        return super().function_space  # type: ignore
 
 
 def dirichletbc(value: typing.Union[Function, Constant, np.ndarray],

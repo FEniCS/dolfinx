@@ -1,6 +1,4 @@
 import os
-import platform
-import re
 import subprocess
 import sys
 import sysconfig
@@ -8,8 +6,8 @@ import sysconfig
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
-if sys.version_info < (3, 7):
-    print("Python 3.7 or higher required, please upgrade.")
+if sys.version_info < (3, 8):
+    print("Python 3.8 or higher required, please upgrade.")
     sys.exit(1)
 
 VERSION = "0.4.2.dev0"
@@ -32,7 +30,7 @@ class CMakeExtension(Extension):
 class CMakeBuild(build_ext):
     def run(self):
         try:
-            out = subprocess.check_output(['cmake', '--version'])
+            _ = subprocess.check_output(['cmake', '--version'])
         except OSError:
             raise RuntimeError("CMake must be installed to build the following extensions: "
                                + ", ".join(e.name for e in self.extensions))
