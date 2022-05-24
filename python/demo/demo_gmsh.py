@@ -61,7 +61,6 @@ cells = node_tags[0].reshape(-1, num_nodes) - 1
 
 msh = create_mesh(MPI.COMM_SELF, cells, x, ufl_mesh_from_gmsh(element_types[0], x.shape[1]))
 
-# with XDMFFile(MPI.COMM_SELF, f"out_gmsh/mesh_rank_{MPI.COMM_WORLD.rank}.xdmf", "w") as file:
 with XDMFFile(MPI.COMM_SELF, f"out_gmsh/mesh_rank_{MPI.COMM_WORLD.rank}.xdmf", "w") as file:
     file.write_mesh(msh)
 # -
