@@ -48,7 +48,7 @@ public:
   /// @param[in] alloc The memory allocator for indices.
   Scatterer(const IndexMap& map, int bs, const Allocator& alloc = Allocator())
       : _bs(bs), _comm0(MPI_COMM_NULL), _comm1(MPI_COMM_NULL), _src(map.src()),
-        _dest(map.dest())
+        _dest(map.dest()), _remote_inds(0, alloc), _local_inds(0, alloc)
   {
     if (map.overlapped())
     {
