@@ -9,6 +9,7 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <cfloat>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Geometry.h>

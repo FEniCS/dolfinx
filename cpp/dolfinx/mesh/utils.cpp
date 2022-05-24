@@ -524,27 +524,25 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
 
   const int tdim = topology.dim();
   mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-  auto f_to_c = topology.connectivity(tdim - 1, tdim);
   assert(topology.index_map(tdim - 1));
 
-  // Get number of facets owned by this process. Only need to consider
-  // shared facets when there are no ghost cells.
-  std::set<std::int32_t> fwd_shared_facets;
-  if (topology.index_map(tdim)->num_ghosts() == 0)
-  {
-    fwd_shared_facets.insert(
-        topology.index_map(tdim - 1)->scatter_fwd_indices().array().begin(),
-        topology.index_map(tdim - 1)->scatter_fwd_indices().array().end());
-  }
+  // Only need to consider shared facets when there are no ghost cells
+  const std::vector<std::int32_t> fwd_shared_facets
+      = topology.index_map(tdim)->overlapped()
+            ? std::vector<std::int32_t>()
+            : topology.index_map(tdim - 1)->shared_indices();
 
   // Find all owned facets (not ghost) with only one attached cell,
   // which are also not shared forward (ghost on another process)
-  std::vector<std::int32_t> surface_facets;
   const int num_facets = topology.index_map(tdim - 1)->size_local();
-  for (int f = 0; f < num_facets; ++f)
+  auto f_to_c = topology.connectivity(tdim - 1, tdim);
+  assert(f_to_c);
+  std::vector<std::int32_t> surface_facets;
+  for (std::int32_t f = 0; f < num_facets; ++f)
   {
     if (f_to_c->num_links(f) == 1
-        and fwd_shared_facets.find(f) == fwd_shared_facets.end())
+        and !std::binary_search(fwd_shared_facets.begin(),
+                                fwd_shared_facets.end(), f))
     {
       surface_facets.push_back(f);
     }
