@@ -63,7 +63,7 @@ u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
 # Locate all facets at the free end and assign them value 1. Sort the
 # facet indices (requirement for constructing MeshTags)
 free_end_facets = np.sort(locate_entities_boundary(msh, 1, lambda x: np.isclose(x[0], 48.0)))
-mt = meshtags(msh, 1, free_end_facets, np.ones_like(free_end_facets))
+mt = meshtags(msh, 1, free_end_facets, 1)
 
 ds = ufl.Measure("ds", subdomain_data=mt)
 

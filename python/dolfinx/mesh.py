@@ -231,7 +231,8 @@ class MeshTagsMetaClass:
         return id(self)
 
 
-def meshtags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> MeshTagsMetaClass:
+def meshtags(mesh: Mesh, dim: int, indices: np.ndarray,
+             values: typing.Union[np.ndarray, int, float]) -> MeshTagsMetaClass:
     """Create a MeshTags object that associates data with a subset of mesh entities.
 
     Args:
