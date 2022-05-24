@@ -133,15 +133,18 @@ def assemble_scalar(M: FormMetaClass, constants=None, coeffs=None):
 # -- Vector assembly ---------------------------------------------------------
 
 @functools.singledispatch
-def assemble_vector(L: typing.Any, constants=None, coeffs=None):
-    try:
-        return _assemble_vector_form(L, constants, coeffs)
-    except TypeError:
-        raise NotImplementedError
+def assemble_vector(L: typing.Any,
+                    constants=None, coeffs=None):
+    raise NotImplementedError
 
 
+@assemble_vector.register(_cpp.fem.Form_float32)
+@assemble_vector.register(_cpp.fem.Form_float64)
+@assemble_vector.register(_cpp.fem.Form_complex64)
+@assemble_vector.register(_cpp.fem.Form_complex128)
 @assemble_vector.register(FormMetaClass)
-def _assemble_vector_form(L: FormMetaClass, constants=None, coeffs=None) -> la.VectorMetaClass:
+def _assemble_vector_form(L: typing.Union[FormMetaClass, _cpp.fem.Form_float32,
+                                          _cpp.fem.Form_float64, _cpp.fem.Form_complex64, _cpp.fem.Form_complex128], constants=None, coeffs=None) -> la.VectorMetaClass:
     """Assemble linear form into a new Vector.
 
     Args:
@@ -209,12 +212,11 @@ def _assemble_vector_array(b: np.ndarray, L: FormMetaClass, constants=None, coef
 
 
 @functools.singledispatch
-def assemble_matrix(a: typing.Any, bcs: typing.List[DirichletBCMetaClass] = None,
+def assemble_matrix(a: typing.Union[FormMetaClass, la.MatrixCSRMetaClass, _cpp.fem.Form_float32,
+                                    _cpp.fem.Form_float64, _cpp.fem.Form_complex64, _cpp.fem.Form_complex128],
+                    bcs: typing.List[DirichletBCMetaClass] = None,
                     diagonal: float = 1.0, constants=None, coeffs=None):
-    try:
-        return _assemble_matrix_form(a, bcs, diagonal, constants, coeffs)
-    except TypeError:
-        raise NotImplementedError
+    return _assemble_matrix_form(a, bcs, diagonal, constants, coeffs)
 
 
 @assemble_matrix.register(la.MatrixCSRMetaClass)
