@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <memory>
 #include <set>
@@ -24,46 +25,41 @@ enum class GhostMode;
 namespace dolfinx::common
 {
 class IndexMap;
-}
+} // namespace dolfinx::common
 
 namespace dolfinx::refinement
 {
 
-/// @brief Compute the sharing of edges between processes.
+/// @brief Communicate edge markers between processes that share edges.
 ///
-/// The resulting MPI_Comm is over the neighborhood of shared edges,
-/// allowing direct communication between peers. The resulting map is
-/// from local edge index to the set of neighbors (within the comm) that
-/// share that edge.
-/// @param[in] mesh Mesh
-/// @return pair of comm and map
-std::pair<MPI_Comm, std::map<std::int32_t, std::vector<int>>>
-compute_edge_sharing(const mesh::Mesh& mesh);
-
-/// Transfer marked edges between processes.
 /// @param[in] neighbor_comm MPI Communicator for neighborhood
-/// @param[in] marked_for_update Lists of edges to be updates on each
-/// neighbor
-/// @param[in, out] marked_edges Marked edges to be updated
-/// @param[in] map_e IndexMap for edges
+/// @param[in] marked_for_update Lists of edges to be updated on each
+/// neighbor. `marked_for_update[r]` is the list of edge indices that
+/// are marked by the caller and are shared with local MPI rank `r`.
+/// @param[in, out] marked_edges Marker for each edge on the calling
+/// process
+/// @param[in] map Index map for the mesh edges
 void update_logical_edgefunction(
     MPI_Comm neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
-    std::vector<std::int8_t>& marked_edges, const common::IndexMap& map_e);
+    std::vector<std::int8_t>& marked_edges, const common::IndexMap& map);
 
-/// Add new vertex for each marked edge, and create
+/// @brief Add new vertex for each marked edge, and create
 /// new_vertex_coordinates and global_edge->new_vertex map.
+///
 /// Communicate new vertices with MPI to all affected processes.
+///
 /// @param[in] neighbor_comm MPI Communicator for neighborhood
 /// @param[in] shared_edges
 /// @param[in] mesh Existing mesh
 /// @param[in] marked_edges
-/// @return edge_to_new_vertex map and geometry array
+/// @return (0) map from local edge index to new vertex global index,
+/// and (1) the coordinates of the new vertices
 std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
-create_new_vertices(
-    MPI_Comm neighbor_comm,
-    const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
-    const mesh::Mesh& mesh, const std::vector<std::int8_t>& marked_edges);
+create_new_vertices(MPI_Comm neighbor_comm,
+                    const graph::AdjacencyList<int>& shared_edges,
+                    const mesh::Mesh& mesh,
+                    const std::vector<std::int8_t>& marked_edges);
 
 /// Use vertex and topology data to partition new mesh across
 /// processes
@@ -78,17 +74,19 @@ mesh::Mesh partition(const mesh::Mesh& old_mesh,
                      const xt::xtensor<double, 2>& new_vertex_coordinates,
                      bool redistribute, mesh::GhostMode ghost_mode);
 
-/// @brief brief description indices to account for extra n values on each
-/// process.
+/// @todo Fix docstring. It is unclear.
+///
+/// @brief Add indices to account for extra n values on this process.
 ///
 /// This is a utility to help add new topological vertices on each
 /// process into the space of the index map.
 ///
-/// @param[in] index_map Index map for the current mesh vertices
-/// @param[in] n Number of new entries to be accommodated on this process
+/// @param[in] map Index map for the current mesh vertices
+/// @param[in] n Number of new entries to be accommodated on this
+/// process
 /// @return Global indices as if "n" extra values are appended on each
 /// process
-std::vector<std::int64_t> adjust_indices(const common::IndexMap& index_map,
+std::vector<std::int64_t> adjust_indices(const common::IndexMap& map,
                                          std::int32_t n);
 
 /// Transfer facet MeshTags from coarse mesh to refined mesh

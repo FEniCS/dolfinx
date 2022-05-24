@@ -9,7 +9,6 @@
 import numpy as np
 import pytest
 
-import dolfinx
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.fem import Function, FunctionSpace
@@ -41,11 +40,7 @@ def test_scatter_forward(element):
 
     # Now the ghosts should have the value of the rank of the owning
     # process
-    ghost_owners = u.function_space.dofmap.index_map.ghost_owners()
-    comm = u.function_space.dofmap.index_map.comm(dolfinx.common.Direction.forward)
-    ranks = np.array(comm.Get_dist_neighbors()[0])
-    ghost_owners = ranks[ghost_owners]
-
+    ghost_owners = u.function_space.dofmap.index_map.owners
     ghost_owners = np.repeat(ghost_owners, bs)
     local_size = u.function_space.dofmap.index_map.size_local * bs
     assert np.allclose(u.x.array[local_size:], ghost_owners)
@@ -65,7 +60,7 @@ def test_scatter_reverse(element):
 
     # Reverse scatter (insert) should have no effect
     w0 = u.x.array.copy()
-    u.x.scatter_reverse(_cpp.common.ScatterMode.insert)
+    u.x.scatter_reverse(_cpp.la.ScatterMode.insert)
     assert np.allclose(w0, u.x.array)
 
     # Fill with MPI rank, and sum all entries in the vector (including
@@ -74,7 +69,7 @@ def test_scatter_reverse(element):
     all_count0 = MPI.COMM_WORLD.allreduce(u.x.array.sum(), op=MPI.SUM)
 
     # Reverse scatter (add)
-    u.x.scatter_reverse(_cpp.common.ScatterMode.add)
+    u.x.scatter_reverse(_cpp.la.ScatterMode.add)
     num_ghosts = V.dofmap.index_map.num_ghosts
     ghost_count = MPI.COMM_WORLD.allreduce(num_ghosts * comm.rank, op=MPI.SUM)
 

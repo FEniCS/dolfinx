@@ -7,7 +7,6 @@
 #include "partition.h"
 #include "partitioners.h"
 #include <algorithm>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
