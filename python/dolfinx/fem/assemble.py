@@ -132,7 +132,7 @@ def assemble_scalar(M: FormMetaClass, constants=None, coeffs=None):
 @functools.singledispatch
 def assemble_vector(L: typing.Any,
                     constants=None, coeffs=None):
-    raise NotImplementedError
+    return _assemble_vector_form(L, constants, coeffs)
 
 
 @assemble_vector.register(FormMetaClass)
@@ -207,7 +207,7 @@ def _assemble_vector_array(b: np.ndarray, L: FormMetaClass, constants=None, coef
 def assemble_matrix(a: typing.Any,
                     bcs: typing.List[DirichletBCMetaClass] = None,
                     diagonal: float = 1.0, constants=None, coeffs=None):
-    _assemble_matrix_form(a, bcs, diagonal, constants, coeffs)
+    return _assemble_matrix_form(a, bcs, diagonal, constants, coeffs)
 
 
 @assemble_matrix.register
@@ -244,7 +244,7 @@ def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: form_types,
     return A
 
 
-@assemble_vector.register(FormMetaClass)
+@assemble_matrix.register(FormMetaClass)
 def _assemble_matrix_form(a: form_types, bcs: typing.List[DirichletBCMetaClass] = None,
                           diagonal: float = 1.0,
                           constants=None, coeffs=None) -> la.MatrixCSRMetaClass:

@@ -418,7 +418,7 @@ def assemble_matrix_block(a: typing.Any,
                           bcs: typing.List[DirichletBCMetaClass] = [],
                           diagonal: float = 1.0,
                           constants=None, coeffs=None) -> PETSc.Mat:
-    _assemble_matrix_block_form(a, bcs, diagonal, constants, coeffs)
+    return _assemble_matrix_block_form(a, bcs, diagonal, constants, coeffs)
 
 
 @assemble_matrix_block.register(list)
