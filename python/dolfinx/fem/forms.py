@@ -63,7 +63,6 @@ class FormMetaClass:
         """C code strings"""
         return self._code
 
-    # The below member function definitions are necessary for type checking
     @property
     def function_spaces(self) -> typing.List[FunctionSpace]:
         """Function spaces on which this form is defined"""
