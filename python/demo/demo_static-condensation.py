@@ -32,8 +32,8 @@ from dolfinx import geometry
 from dolfinx.cpp.fem import Form_complex128, Form_float64
 from dolfinx.fem import (Function, FunctionSpace, IntegralType, dirichletbc,
                          form, locate_dofs_topological)
-from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
-                               set_bc)
+from dolfinx.fem.petsc import (apply_lifting, set_bc, assemble_vector)
+from dolfinx.fem.petsc import _assemble_matrix_form as assemble_matrix
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary, meshtags

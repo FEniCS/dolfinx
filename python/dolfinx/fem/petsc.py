@@ -159,10 +159,7 @@ def create_matrix_nest(a: typing.List[typing.List[FormMetaClass]]) -> PETSc.Mat:
 
 @functools.singledispatch
 def assemble_vector(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
-    try:
-        return _assemble_vector_form(L, constants, coeffs)
-    except TypeError:
-        raise NotImplementedError
+    raise NotImplementedError
 
 
 @assemble_vector.register(FormMetaClass)
@@ -211,10 +208,7 @@ def _assemble_vector_vec(b: PETSc.Vec, L: FormMetaClass, constants=None, coeffs=
 
 @functools.singledispatch
 def assemble_vector_nest(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
-    try:
-        return _assemble_vector_form(L, constants, coeffs)
-    except TypeError:
-        raise NotImplementedError
+    raise NotImplementedError
 
 
 @assemble_vector_nest.register(list)
@@ -342,10 +336,7 @@ def _assemble_vector_block_vec(b: PETSc.Vec,
 def assemble_matrix(a: typing.Any, bcs: typing.List[DirichletBCMetaClass] = [],
                     diagonal: float = 1.0,
                     constants=None, coeffs=None) -> PETSc.Mat:
-    try:
-        return _assemble_matrix_form(a, bcs, diagonal, constants, coeffs)
-    except TypeError:
-        raise NotImplementedError
+    raise NotImplementedError
 
 
 @assemble_matrix.register
@@ -432,10 +423,7 @@ def assemble_matrix_block(a: typing.Any,
                           bcs: typing.List[DirichletBCMetaClass] = [],
                           diagonal: float = 1.0,
                           constants=None, coeffs=None) -> PETSc.Mat:
-    try:
-        return _assemble_matrix_block_form(a, bcs, diagonal, constants, coeffs)
-    except TypeError:
-        raise NotImplementedError
+    raise NotImplementedError
 
 
 @assemble_matrix_block.register(list)
