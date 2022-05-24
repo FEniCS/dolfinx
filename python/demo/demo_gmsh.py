@@ -120,7 +120,7 @@ msh.name = "ball_d1"
 entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
 
 msh.topology.create_connectivity(2, 0)
-mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), np.array(values, dtype=np.int32))
+mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), values)
 mt.name = "ball_d1_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "out_gmsh/mesh.xdmf", "w") as file:
