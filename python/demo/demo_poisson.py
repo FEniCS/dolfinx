@@ -142,7 +142,7 @@ uh = problem.solve()
 # -
 
 # The solution can be written to a  {py:class}`XDMFFile
-# <dolfinx.io.XDMFFile>` file visualization with ParaView ot VisIt
+# <dolfinx.io.XDMFFile>` file visualization with ParaView or VisIt
 
 # +
 with io.XDMFFile(msh.comm, "out_poisson/poisson.xdmf", "w") as file:

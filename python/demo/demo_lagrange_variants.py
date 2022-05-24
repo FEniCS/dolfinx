@@ -196,14 +196,14 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 # interpolation being less accurate when using the equispaced variant of
 # Lagrange compared to the GLL variant.
 #
-# To quantify the error, we compute the interpolation error in the L2
+# To quantify the error, we compute the interpolation error in the $L_2$
 # norm,
 #
 # $$\left\|u - u_h\right\|_2 = \left(\int_0^1 (u - u_h)^2\right)^{\frac{1}{2}},$$
 #
 # where $u$ is the function and $u_h$ is its interpolation in the finite
-# element space. The following code uses UFL to compute the L2 error for
-# the equispaced and GLL variants. The L2 error for the GLL variant is
+# element space. The following code uses UFL to compute the $L_2$ error for
+# the equispaced and GLL variants. The $L_2$ error for the GLL variant is
 # considerably smaller than the error for the equispaced variant.
 
 # +
