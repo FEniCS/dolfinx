@@ -67,7 +67,7 @@ values = element.tabulate(0, pts)[0, :, :, 0]
 if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
     for i in range(values.shape[1]):
         plt.plot(pts, values[:, i])
-    plt.plot(element.points, [0 for i in element.points], "ko")
+    plt.plot(element.points, [0 for _ in element.points], "ko")
     plt.ylim([-1, 6])
     plt.savefig("demo_lagrange_variants_equispaced_10.png")
     plt.clf()
@@ -96,7 +96,7 @@ values = element.tabulate(0, pts)[0, :, :, 0]
 if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
     for i in range(values.shape[1]):
         plt.plot(pts, values[:, i])
-    plt.plot(element.points, [0 for i in element.points], "ko")
+    plt.plot(element.points, [0 for _ in element.points], "ko")
     plt.ylim([-1, 6])
     plt.savefig("demo_lagrange_variants_gll_10.png")
     plt.clf()
@@ -155,7 +155,7 @@ uh = problem.solve()
 
 def saw_tooth(x):
     f = 4 * abs(x - 0.43)
-    for i in range(8):
+    for _ in range(8):
         f = abs(f - 0.3)
     return f
 
