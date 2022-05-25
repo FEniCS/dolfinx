@@ -19,7 +19,6 @@ from dolfinx.mesh import (GhostMode, create_box, create_rectangle,
 from mpi4py import MPI
 from petsc4py import PETSc
 from dolfinx.graph import create_adjacencylist
-from dolfinx import io
 import random
 
 
@@ -516,10 +515,6 @@ def test_codim_1_coeffs(d, n, k, space, ghost_mode, random_ordering):
     f.interpolate(lambda x: x[0])
     f_m = fem.Function(V_m)
     f_m.interpolate(lambda x: x[0])
-
-    with io.XDMFFile(submesh.comm, "submesh.xdmf", "w") as file:
-        file.write_mesh(submesh)
-        file.write_function(f)
 
     mp = [entity_map.index(entity) if entity in entity_map else -1
           for entity in range(num_facets)]
