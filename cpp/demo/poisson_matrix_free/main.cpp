@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
         });
 
     mesh->topology_mutable().create_connectivity(1, 2);
-    std::vector<std::int32_t> facets
+    const std::vector<std::int32_t> facets
         = mesh::exterior_facet_indices(mesh->topology());
     std::vector<std::int32_t> bdofs
         = fem::locate_dofs_topological({*V}, 1, facets);

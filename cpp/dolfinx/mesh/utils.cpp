@@ -19,7 +19,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <stdexcept>
-#include <unordered_set>
+#include <vector>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
@@ -349,25 +349,33 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   mesh.topology_mutable().create_connectivity(tdim, 0);
 
   // Build set of vertices on boundary and set of boundary entities
-  auto f_to_v = topology.connectivity(tdim - 1, 0);
-  assert(f_to_v);
-  auto f_to_e = topology.connectivity(tdim - 1, dim);
-  assert(f_to_e);
-  std::unordered_set<std::int32_t> boundary_vertices;
-  std::unordered_set<std::int32_t> facet_entities;
-  for (auto f : boundary_facets)
+  std::vector<std::int32_t> vertices, facet_entities;
   {
-    facet_entities.insert(f_to_e->links(f).begin(), f_to_e->links(f).end());
-    boundary_vertices.insert(f_to_v->links(f).begin(), f_to_v->links(f).end());
+    auto f_to_v = topology.connectivity(tdim - 1, 0);
+    assert(f_to_v);
+    auto f_to_e = topology.connectivity(tdim - 1, dim);
+    assert(f_to_e);
+    for (auto f : boundary_facets)
+    {
+      auto v = f_to_v->links(f);
+      vertices.insert(vertices.end(), v.begin(), v.end());
+      auto e = f_to_e->links(f);
+      facet_entities.insert(facet_entities.end(), e.begin(), e.end());
+    }
+
+    // Build vector of boundary vertices
+    std::sort(vertices.begin(), vertices.end());
+    vertices.erase(std::unique(vertices.begin(), vertices.end()),
+                   vertices.end());
+    std::sort(facet_entities.begin(), facet_entities.end());
+    facet_entities.erase(
+        std::unique(facet_entities.begin(), facet_entities.end()),
+        facet_entities.end());
   }
 
   // Get geometry data
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   xtl::span<const double> x_nodes = mesh.geometry().x();
-
-  // Build vector of boundary vertices
-  const std::vector<std::int32_t> vertices(boundary_vertices.begin(),
-                                           boundary_vertices.end());
 
   // Get all vertex 'node' indices
   auto v_to_c = topology.connectivity(0, tdim);
@@ -513,7 +521,7 @@ mesh::entities_to_geometry(const Mesh& mesh, int dim,
 
   return geometry_idx;
 }
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
 {
   const int tdim = topology.dim();

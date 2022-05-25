@@ -411,7 +411,8 @@ void mesh(py::module& m)
               = {(std::size_t)entities.size(), num_vertices};
           return as_pyarray(std::move(idx), shape);
         });
-  m.def("exterior_facet_indices", &dolfinx::mesh::exterior_facet_indices);
+  m.def("exterior_facet_indices", [](const dolfinx::mesh::Topology& t)
+        { return as_pyarray(dolfinx::mesh::exterior_facet_indices(t)); });
   m.def("compute_incident_entities",
         [](const dolfinx::mesh::Mesh& mesh,
            py::array_t<std::int32_t, py::array::c_style> entities, int d0,
