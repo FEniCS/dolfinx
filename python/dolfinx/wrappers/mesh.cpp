@@ -187,7 +187,6 @@ void mesh(py::module& m)
           std::array<std::size_t, 2> shape = {(std::size_t)entities.size(), 3};
           return as_pyarray(std::move(x), shape);
         });
-  m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
 
   using PythonPartitioningFunction
       = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
