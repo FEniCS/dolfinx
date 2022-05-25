@@ -410,30 +410,34 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[FormMetaClass]],
     for i, a_row in enumerate(a):
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
+                print("I, J:", i, j)
+                # is_rows[i].view()
+                # is_rows[j].view()
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
                 _cpp.fem.petsc.assemble_matrix(Asub, a_sub, constants[i][j], coeffs[i][j], bcs, True)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
-            elif i == j:
-                for bc in bcs:
-                    row_forms = [row_form for row_form in a_row if row_form is not None]
-                    assert(len(row_forms) > 0)
-                    if row_forms[0].function_spaces[0].contains(bc.function_space):
-                        raise RuntimeError(
-                            f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC applied."
-                            " Consider assembling a zero block.")
+            # elif i == j:
+            #     for bc in bcs:
+            #         row_forms = [row_form for row_form in a_row if row_form is not None]
+            #         assert(len(row_forms) > 0)
+            #         if row_forms[0].function_spaces[0].contains(bc.function_space):
+            #             raise RuntimeError(
+            #                 f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC applied."
+            #                 " Consider assembling a zero block.")
 
-    # Flush to enable switch from add to set in the matrix
-    A.assemble(PETSc.Mat.AssemblyType.FLUSH)
+    # # Flush to enable switch from add to set in the matrix
+    # A.assemble(PETSc.Mat.AssemblyType.FLUSH)
 
-    # Set diagonal
-    for i, a_row in enumerate(a):
-        for j, a_sub in enumerate(a_row):
-            if a_sub is not None:
-                Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
-                if a_sub.function_spaces[0] is a_sub.function_spaces[1]:
-                    _cpp.fem.petsc.insert_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
-                A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
+    # # Set diagonal
+    # for i, a_row in enumerate(a):
+    #     for j, a_sub in enumerate(a_row):
+    #         if a_sub is not None:
+    #             Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
+    #             if a_sub.function_spaces[0] is a_sub.function_spaces[1]:
+    #                 _cpp.fem.petsc.insert_diagonal(Asub, a_sub.function_spaces[0], bcs, diagonal)
+    #             A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
 
+    print("Done")
     return A
 
 

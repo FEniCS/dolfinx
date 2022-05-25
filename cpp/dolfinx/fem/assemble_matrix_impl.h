@@ -132,7 +132,13 @@ void assemble_cells(
       }
     }
 
-    mat_set(dofs0, dofs1, Ae);
+    std::cout << "Col dofs: " << std::endl;
+    for (auto c : dofs1)
+      std::cout << "Index: " << c << std::endl;
+
+    if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 0)
+      mat_set(dofs0, dofs1, Ae);
+    std::cout << "done" << std::endl;
   }
 }
 
