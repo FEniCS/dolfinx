@@ -17,8 +17,8 @@
 #
 # We begin this demo by importing everything we require.
 
-import matplotlib.pylab as plt
 # +
+import matplotlib.pylab as plt
 import numpy as np
 
 import basix
@@ -33,8 +33,6 @@ from petsc4py.PETSc import ScalarType
 if np.issubdtype(ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx real mode")
     exit(0)
-
-import matplotlib.pylab as plt
 
 # -
 
