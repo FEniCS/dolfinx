@@ -209,7 +209,7 @@ def poisson_error(V):
     u_bc.interpolate(lambda x: np.sin(10 * x[1]) * np.cos(15 * x[0]))
 
     msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
-    bndry_facets = np.where(np.array(mesh.compute_boundary_facets(msh.topology)) == 1)[0]
+    bndry_facets = mesh.exterior_facet_indices(msh.topology)
     bdofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, bndry_facets)
     bc = fem.dirichletbc(u_bc, bdofs)
 
