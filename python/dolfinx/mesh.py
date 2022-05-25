@@ -7,10 +7,10 @@
 
 from __future__ import annotations
 
-import types
 import typing
 
 import numpy as np
+import numpy.typing
 
 import ufl
 from dolfinx import cpp as _cpp
@@ -66,7 +66,7 @@ class Mesh(_cpp.mesh.Mesh):
         return self._ufl_domain
 
 
-def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType) -> np.ndarray:
+def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
     """Compute mesh entities satisfying a geometric marking function
 
     Args:
@@ -83,7 +83,7 @@ def locate_entities(mesh: Mesh, dim: int, marker: types.FunctionType) -> np.ndar
     return _cpp.mesh.locate_entities(mesh, dim, marker)
 
 
-def locate_entities_boundary(mesh: Mesh, dim: int, marker: types.FunctionType) -> np.ndarray:
+def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
     """Compute mesh entities that are connected to an owned boundary
     facet and satisfy a geometric marking function
 
@@ -216,7 +216,7 @@ class MeshTagsMetaClass:
             directly.
 
         """
-        super().__init__(mesh, dim, indices.astype(np.int32), values)
+        super().__init__(mesh, dim, indices.astype(np.int32), values)  # type: ignore
 
     def ufl_id(self) -> int:
         """Object identifier.
@@ -231,7 +231,8 @@ class MeshTagsMetaClass:
         return id(self)
 
 
-def meshtags(mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray) -> MeshTagsMetaClass:
+def meshtags(mesh: Mesh, dim: int, indices: np.ndarray,
+             values: typing.Union[np.ndarray, int, float]) -> MeshTagsMetaClass:
     """Create a MeshTags object that associates data with a subset of mesh entities.
 
     Args:
@@ -300,7 +301,7 @@ def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyL
     return _cpp.mesh.create_meshtags(mesh, dim, entities, values)
 
 
-def create_interval(comm: _MPI.Comm, nx: int, points: list, ghost_mode=GhostMode.shared_facet,
+def create_interval(comm: _MPI.Comm, nx: int, points: numpy.typing.ArrayLike, ghost_mode=GhostMode.shared_facet,
                     partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
     """Create an interval mesh
 
@@ -342,8 +343,9 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_f
     return create_interval(comm, nx, [0.0, 1.0], ghost_mode, partitioner)
 
 
-def create_rectangle(comm: _MPI.Comm, points: typing.List[np.array], n: list, cell_type=CellType.triangle,
-                     ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner(),
+def create_rectangle(comm: _MPI.Comm, points: numpy.typing.ArrayLike, n: numpy.typing.ArrayLike,
+                     cell_type=CellType.triangle, ghost_mode=GhostMode.shared_facet,
+                     partitioner=_cpp.mesh.create_cell_partitioner(),
                      diagonal: DiagonalType = DiagonalType.right) -> Mesh:
     """Create rectangle mesh
 
@@ -394,7 +396,7 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
                             partitioner, diagonal)
 
 
-def create_box(comm: _MPI.Comm, points: typing.List[np.array], n: list,
+def create_box(comm: _MPI.Comm, points: typing.List[numpy.typing.ArrayLike], n: list,
                cell_type=CellType.tetrahedron,
                ghost_mode=GhostMode.shared_facet,
                partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
