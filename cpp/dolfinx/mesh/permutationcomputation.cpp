@@ -281,6 +281,7 @@ std::vector<std::bitset<BITSETSIZE>>
 compute_face_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
+  assert(tdim > 2);
   if (!topology.index_map(2))
     throw std::runtime_error("Faces have not been computed.");
 
@@ -364,31 +365,5 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
   assert(used_bits < _BITSETSIZE);
 
   return {std::move(facet_permutations), std::move(cell_permutation_info)};
-}
-//-----------------------------------------------------------------------------
-std::vector<std::uint8_t>
-mesh::compute_cell_permutations(const mesh::Topology& topology)
-{
-  const int tdim = topology.dim();
-  const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
-
-  if (tdim == 3)
-    throw std::runtime_error("Cannot compute cell permutations of a 3D mesh.");
-
-  std::vector<std::uint8_t> cell_permutations(num_cells);
-
-  if (tdim == 2)
-  {
-    const auto perms = compute_face_permutations<_BITSETSIZE>(topology);
-    for (int c = 0; c < num_cells; ++c)
-      cell_permutations[c] = perms[c].to_ulong() & 7;
-  }
-  else if (tdim == 1)
-  {
-    const auto perms = compute_edge_reflections<_BITSETSIZE>(topology);
-    for (int c = 0; c < num_cells; ++c)
-      cell_permutations[c] = perms[c].to_ulong() & 1;
-  }
-  return cell_permutations;
 }
 //-----------------------------------------------------------------------------
