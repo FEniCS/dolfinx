@@ -12,7 +12,7 @@ import numpy as np
 import dolfinx
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
-from dolfinx import fem, list_timings
+from dolfinx import fem, la, list_timings
 from dolfinx.fem import Function, FunctionSpace, IntegralType
 from dolfinx.mesh import create_unit_square
 
@@ -233,5 +233,5 @@ def test_cffi_assembly():
     assert np.isclose(np.sqrt(A.norm_squared()), 56.124860801609124)
 
     b = fem.assemble_vector(L)
-    b.scatter_reverse(_cpp.common.ScatterMode.add)
+    b.scatter_reverse(la.ScatterMode.add)
     assert np.isclose(b.norm(), 0.0739710713711999)

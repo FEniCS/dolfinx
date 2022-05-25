@@ -1,6 +1,4 @@
 import os
-import platform
-import re
 import subprocess
 import sys
 import sysconfig
@@ -8,18 +6,18 @@ import sysconfig
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
-if sys.version_info < (3, 7):
-    print("Python 3.7 or higher required, please upgrade.")
+if sys.version_info < (3, 8):
+    print("Python 3.8 or higher required, please upgrade.")
     sys.exit(1)
 
-VERSION = "0.3.1.dev0"
+VERSION = "0.4.2.dev0"
 
 REQUIREMENTS = [
-    "numpy",
+    "numpy>=1.20",
     "mpi4py",
     "petsc4py",
-    "fenics-ffcx>=0.3.1.dev0,<0.4.0",
-    "fenics-ufl>=2021.2.0.dev0,<2021.3.0"
+    "fenics-ffcx>=0.4.3.dev0,<0.5.0",
+    "fenics-ufl>=2022.2.0.dev0,<2022.3.0"
 ]
 
 
@@ -32,7 +30,7 @@ class CMakeExtension(Extension):
 class CMakeBuild(build_ext):
     def run(self):
         try:
-            out = subprocess.check_output(['cmake', '--version'])
+            _ = subprocess.check_output(['cmake', '--version'])
         except OSError:
             raise RuntimeError("CMake must be installed to build the following extensions: "
                                + ", ".join(e.name for e in self.extensions))
@@ -73,7 +71,8 @@ setup(name='fenics-dolfinx',
                 "dolfinx.fem",
                 "dolfinx.nls",
                 "dolfinx.wrappers"],
-      package_data={'dolfinx.wrappers': ['*.h']},
+      package_data={'dolfinx.wrappers': ['*.h'], 'dolfinx': ['py.typed'],
+                    'dolfinx.fem': ['py.typed'], 'dolfinx.nls': ['py.typed']},
       ext_modules=[CMakeExtension('dolfinx.cpp')],
       cmdclass=dict(build_ext=CMakeBuild),
       install_requires=REQUIREMENTS,

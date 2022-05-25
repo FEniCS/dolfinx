@@ -16,6 +16,7 @@ from functools import singledispatch
 
 import cffi
 import numpy as np
+import numpy.typing as npt
 
 import ufl
 import ufl.algorithms
@@ -265,29 +266,29 @@ class Function(ufl.Coefficient):
         """The FunctionSpace that the Function is defined on"""
         return self._V
 
-    def eval(self, x: np.ndarray, cells: np.ndarray, u=None) -> np.ndarray:
+    def eval(self, x: npt.ArrayLike, cells: npt.ArrayLike, u=None) -> np.ndarray:
         """Evaluate Function at points x, where x has shape (num_points, 3),
         and cells has shape (num_points,) and cell[i] is the index of the
         cell containing point x[i]. If the cell index is negative the
         point is ignored."""
 
         # Make sure input coordinates are a NumPy array
-        x = np.asarray(x, dtype=np.float64)
-        assert x.ndim < 3
-        if len(x) == 0:
-            x = np.zeros((0, 3))
+        _x = np.asarray(x, dtype=np.float64)
+        assert _x.ndim < 3
+        if len(_x) == 0:
+            _x = np.zeros((0, 3))
         else:
-            shape0 = x.shape[0] if x.ndim == 2 else 1
-            x = np.reshape(x, (shape0, -1))
-        num_points = x.shape[0]
-        if x.shape[1] != 3:
+            shape0 = _x.shape[0] if _x.ndim == 2 else 1
+            _x = np.reshape(_x, (shape0, -1))
+        num_points = _x.shape[0]
+        if _x.shape[1] != 3:
             raise ValueError("Coordinate(s) for Function evaluation must have length 3.")
 
         # Make sure cells are a NumPy array
-        cells = np.asarray(cells, dtype=np.int32)
-        assert cells.ndim < 2
-        num_points_c = cells.shape[0] if cells.ndim == 1 else 1
-        cells = np.reshape(cells, num_points_c)
+        _cells = np.asarray(cells, dtype=np.int32)
+        assert _cells.ndim < 2
+        num_points_c = _cells.shape[0] if _cells.ndim == 1 else 1
+        _cells = np.reshape(_cells, num_points_c)
 
         # Allocate memory for return value if not provided
         if u is None:
@@ -297,7 +298,7 @@ class Function(ufl.Coefficient):
             else:
                 u = np.empty((num_points, value_size))
 
-        self._cpp_object.eval(x, cells, u)
+        self._cpp_object.eval(_x, _cells, u)
         if num_points == 1:
             u = np.reshape(u, (-1, ))
         return u
@@ -417,9 +418,10 @@ class ElementMetaData(typing.NamedTuple):
 class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
-    def __init__(self, mesh: Mesh, element: typing.Union[ufl.FiniteElementBase, ElementMetaData],
+    def __init__(self, mesh: typing.Union[None, Mesh],
+                 element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int]],
                  cppV: typing.Optional[_cpp.fem.FunctionSpace] = None,
-                 form_compiler_params: dict = {}, jit_params: dict = {}):
+                 form_compiler_params: dict[str, typing.Any] = {}, jit_params: dict[str, typing.Any] = {}):
         """Create a finite element function space."""
 
         # Create function space from a UFL element and existing cpp
@@ -431,26 +433,28 @@ class FunctionSpace(ufl.FunctionSpace):
             self._cpp_object = cppV
             return
 
-        # Initialise the ufl.FunctionSpace
-        if isinstance(element, ufl.FiniteElementBase):
-            super().__init__(mesh.ufl_domain(), element)
-        else:
-            e = ElementMetaData(*element)
-            ufl_element = ufl.FiniteElement(e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree)
-            super().__init__(mesh.ufl_domain(), ufl_element)
+        if mesh is not None:
+            assert cppV is None
+            # Initialise the ufl.FunctionSpace
+            if isinstance(element, ufl.FiniteElementBase):
+                super().__init__(mesh.ufl_domain(), element)
+            else:
+                e = ElementMetaData(*element)
+                ufl_element = ufl.FiniteElement(e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree)
+                super().__init__(mesh.ufl_domain(), ufl_element)
 
-        # Compile dofmap and element and create DOLFIN objects
-        (self._ufcx_element, self._ufcx_dofmap), module, code = jit.ffcx_jit(
-            mesh.comm, self.ufl_element(), form_compiler_params=form_compiler_params,
-            jit_params=jit_params)
+            # Compile dofmap and element and create DOLFIN objects
+            (self._ufcx_element, self._ufcx_dofmap), module, code = jit.ffcx_jit(
+                mesh.comm, self.ufl_element(), form_compiler_params=form_compiler_params,
+                jit_params=jit_params)
 
-        ffi = cffi.FFI()
-        cpp_element = _cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
-        cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
-            "uintptr_t", ffi.addressof(self._ufcx_dofmap)), mesh.topology, cpp_element)
+            ffi = cffi.FFI()
+            cpp_element = _cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
+            cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
+                "uintptr_t", ffi.addressof(self._ufcx_dofmap)), mesh.topology, cpp_element)
 
-        # Initialize the cpp.FunctionSpace
-        self._cpp_object = _cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
+            # Initialize the cpp.FunctionSpace
+            self._cpp_object = _cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
 
     def clone(self) -> FunctionSpace:
         """Return a new FunctionSpace :math:`W` which shares data with this
@@ -550,7 +554,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.tabulate_dof_coordinates()
 
 
-def VectorFunctionSpace(mesh: Mesh, element: ElementMetaData, dim=None,
+def VectorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]], dim=None,
                         restriction=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
 
