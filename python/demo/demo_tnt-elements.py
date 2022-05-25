@@ -265,16 +265,17 @@ for degree in range(1, 10):
 # appear to perform equally well.
 
 # +
-plt.plot(q_degrees, q_errors, "bo-")
-plt.plot(tnt_degrees, tnt_errors, "gs-")
+if MPI.COMM_WORLD.rank == 0:  # Only plot on one rank
+    plt.plot(q_degrees, q_errors, "bo-")
+    plt.plot(tnt_degrees, tnt_errors, "gs-")
 
-plt.yscale("log")
-plt.xlabel("Polynomial degree")
-plt.ylabel("Error")
-plt.legend(["Q", "TNT"])
+    plt.yscale("log")
+    plt.xlabel("Polynomial degree")
+    plt.ylabel("Error")
+    plt.legend(["Q", "TNT"])
 
-plt.savefig("demo_tnt-elements_degrees_vs_error.png")
-plt.clf()
+    plt.savefig("demo_tnt-elements_degrees_vs_error.png")
+    plt.clf()
 # -
 
 # ![](demo_tnt-elements_degrees_vs_error.png)
@@ -285,16 +286,17 @@ plt.clf()
 # error against the number of DOFs.
 
 # +
-plt.plot(q_ndofs, q_errors, "bo-")
-plt.plot(tnt_ndofs, tnt_errors, "gs-")
+if MPI.COMM_WORLD.rank == 0:  # Only plot on one rank
+    plt.plot(q_ndofs, q_errors, "bo-")
+    plt.plot(tnt_ndofs, tnt_errors, "gs-")
 
-plt.yscale("log")
-plt.xlabel("Number of DOFs")
-plt.ylabel("Error")
-plt.legend(["Q", "TNT"])
+    plt.yscale("log")
+    plt.xlabel("Number of DOFs")
+    plt.ylabel("Error")
+    plt.legend(["Q", "TNT"])
 
-plt.savefig("demo_tnt-elements_ndofs_vs_error.png")
-plt.clf()
+    plt.savefig("demo_tnt-elements_ndofs_vs_error.png")
+    plt.clf()
 # -
 
 # ![](demo_tnt-elements_ndofs_vs_error.png)
