@@ -27,20 +27,7 @@ class AdjacencyList;
 namespace dolfinx::mesh
 {
 enum class GhostMode : int;
-
 enum class CellType;
-class Topology;
-
-/// @brief Compute marker for owned facets that are on the exterior of
-/// the domain, i.e. are connected to only one cell.
-///
-/// This function does not require parallel communication.
-///
-/// @param[in] topology The topology
-/// @return Vector with length equal to the number of owned facets on
-/// this this process. True if the ith facet (local index) is on the
-/// exterior of the domain.
-std::vector<std::int8_t> compute_boundary_facets(const Topology& topology);
 
 /// @brief Topology stores the topology of a mesh, consisting of mesh
 /// entities and connectivity (incidence relations for the mesh

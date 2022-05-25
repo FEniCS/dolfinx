@@ -88,9 +88,9 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
     submesh = create_submesh(mesh_1, edim, entities)[0]
     A_submesh, b_submesh, s_submesh = assemble(submesh, space, k)
 
-    assert(np.isclose(A_mesh_0.norm(), A_submesh.norm()))
-    assert(np.isclose(b_mesh_0.norm(), b_submesh.norm()))
-    assert(np.isclose(s_mesh_0, s_submesh))
+    assert np.isclose(A_mesh_0.norm(), A_submesh.norm())
+    assert np.isclose(b_mesh_0.norm(), b_submesh.norm())
+    assert np.isclose(s_mesh_0, s_submesh)
 
 
 @pytest.mark.parametrize("n", [2, 6])
@@ -115,6 +115,6 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     A_square_mesh, b_square_mesh, s_square_mesh = assemble(
         square_mesh, space, k)
 
-    assert(np.isclose(A_submesh.norm(), A_square_mesh.norm()))
-    assert(np.isclose(b_submesh.norm(), b_square_mesh.norm()))
-    assert(np.isclose(s_submesh, s_square_mesh))
+    assert np.isclose(A_submesh.norm(), A_square_mesh.norm())
+    assert np.isclose(b_submesh.norm(), b_square_mesh.norm())
+    assert np.isclose(s_submesh, s_square_mesh)
