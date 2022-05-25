@@ -14,7 +14,8 @@ from dolfinx.geometry import (BoundingBoxTree, compute_closest_entity,
                               compute_distance_gjk, create_midpoint_tree)
 from dolfinx.mesh import (CellType, create_box, create_unit_cube,
                           create_unit_interval, create_unit_square,
-                          locate_entities, locate_entities_boundary)
+                          exterior_facet_indices, locate_entities,
+                          locate_entities_boundary)
 
 from mpi4py import MPI
 
@@ -359,7 +360,7 @@ def test_compute_closest_sub_entity(dim):
 def test_surface_bbtree():
     """Test creation of BBTree on subset of entities(surface cells)"""
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
-    sf = _cpp.mesh.exterior_facet_indices(mesh)
+    sf = exterior_facet_indices(mesh.topology)
     tdim = mesh.topology.dim
     f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
     cells = [f_to_c.links(f)[0] for f in sf]
@@ -425,14 +426,14 @@ def test_surface_bbtree_collision():
     mesh2 = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron)
     mesh2.geometry.x[:, :] += np.array([0.9, 0.9, 0.9])
 
-    sf = _cpp.mesh.exterior_facet_indices(mesh1)
+    sf = exterior_facet_indices(mesh1.topology)
     f_to_c = mesh1.topology.connectivity(tdim - 1, tdim)
 
     # Compute unique set of cells (some will be counted multiple times)
     cells = list(set([f_to_c.links(f)[0] for f in sf]))
     bbtree1 = BoundingBoxTree(mesh1, tdim, cells)
 
-    sf = _cpp.mesh.exterior_facet_indices(mesh2)
+    sf = exterior_facet_indices(mesh2.topology)
     f_to_c = mesh2.topology.connectivity(tdim - 1, tdim)
     cells = list(set([f_to_c.links(f)[0] for f in sf]))
     bbtree2 = BoundingBoxTree(mesh2, tdim, cells)

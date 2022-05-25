@@ -21,8 +21,8 @@ from dolfinx.fem import assemble_scalar, form
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
                           create_rectangle, create_submesh, create_unit_cube,
                           create_unit_interval, create_unit_square,
-                          locate_entities, locate_entities_boundary,
-                          compute_boundary_facets)
+                          exterior_facet_indices, locate_entities,
+                          locate_entities_boundary)
 from ufl import dx
 
 from mpi4py import MPI
@@ -610,8 +610,8 @@ def compute_num_boundary_facets(mesh):
     mesh.topology.create_connectivity(tdim - 1, tdim)
 
     # Compute number of owned facets on the boundary
-    boundary_facet_marker = compute_boundary_facets(mesh.topology)
-    num_owned_boundary_facets = np.sum(boundary_facet_marker)
+    # boundary_facet_marker = compute_boundary_facets(mesh.topology)
+    num_owned_boundary_facets = len(exterior_facet_indices(mesh.topology))
 
     # Sum the number of boundary facets owned by each process to get the
     # total number in the mesh

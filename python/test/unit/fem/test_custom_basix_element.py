@@ -10,7 +10,7 @@ from dolfinx.fem import (Function, FunctionSpace,
                          locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
-from dolfinx.mesh import CellType, compute_boundary_facets, create_unit_square
+from dolfinx.mesh import CellType, exterior_facet_indices, create_unit_square
 from ufl import SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad, inner
 
 from mpi4py import MPI
@@ -43,7 +43,7 @@ def run_scalar_test(V, degree):
     # Create Dirichlet boundary condition
     facetdim = mesh.topology.dim - 1
     mesh.topology.create_connectivity(facetdim, mesh.topology.dim)
-    bndry_facets = np.where(np.array(compute_boundary_facets(mesh.topology)) == 1)[0]
+    bndry_facets = mesh.exterior_facet_indices(mesh.topology)
     bdofs = locate_dofs_topological(V, facetdim, bndry_facets)
     bc = dirichletbc(u_bc, bdofs)
 
