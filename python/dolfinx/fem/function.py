@@ -433,8 +433,8 @@ class FunctionSpace(ufl.FunctionSpace):
             self._cpp_object = cppV
             return
 
-        # This if is required for type checks to pass
         if mesh is not None:
+            assert cppV is None
             # Initialise the ufl.FunctionSpace
             if isinstance(element, ufl.FiniteElementBase):
                 super().__init__(mesh.ufl_domain(), element)
