@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "Geometry.h"
 #include "Mesh.h"
+#include "Topology.h"
 #include "cell_types.h"
 #include "graphbuild.h"
 #include <algorithm>
@@ -516,39 +517,37 @@ mesh::entities_to_geometry(const Mesh& mesh, int dim,
   return geometry_idx;
 }
 //------------------------------------------------------------------------
-std::vector<std::int32_t> mesh::exterior_facet_indices(const Mesh& mesh)
+std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
 {
-  // Note: Possible duplication of mesh::Topology::compute_boundary_facets
-
-  const Topology& topology = mesh.topology();
-
   const int tdim = topology.dim();
-  mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-  assert(topology.index_map(tdim - 1));
+  auto facet_map = topology.index_map(tdim - 1);
+  if (!facet_map)
+    throw std::runtime_error("Facets have not been computed.");
+  auto cell_map = topology.index_map(tdim);
+  assert(cell_map);
 
   // Only need to consider shared facets when there are no ghost cells
   const std::vector<std::int32_t> fwd_shared_facets
-      = topology.index_map(tdim)->overlapped()
-            ? std::vector<std::int32_t>()
-            : topology.index_map(tdim - 1)->shared_indices();
+      = cell_map->overlapped() ? std::vector<std::int32_t>()
+                               : facet_map->shared_indices();
 
   // Find all owned facets (not ghost) with only one attached cell,
   // which are also not shared forward (ghost on another process)
-  const int num_facets = topology.index_map(tdim - 1)->size_local();
+  const int num_facets = facet_map->size_local();
   auto f_to_c = topology.connectivity(tdim - 1, tdim);
   assert(f_to_c);
-  std::vector<std::int32_t> surface_facets;
+  std::vector<std::int32_t> facets;
   for (std::int32_t f = 0; f < num_facets; ++f)
   {
     if (f_to_c->num_links(f) == 1
         and !std::binary_search(fwd_shared_facets.begin(),
                                 fwd_shared_facets.end(), f))
     {
-      surface_facets.push_back(f);
+      facets.push_back(f);
     }
   }
 
-  return surface_facets;
+  return facets;
 }
 //------------------------------------------------------------------------------
 mesh::CellPartitionFunction
