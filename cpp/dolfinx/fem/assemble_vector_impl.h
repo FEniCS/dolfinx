@@ -285,10 +285,8 @@ void _lift_bc_exterior_facets(
     const T* coeff_array = coeffs.data() + index * cstride;
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
-    // FIXME Pass correct perms for codim 1 case
-    std::vector<std::uint8_t> facet_perms = {0, 0};
     kernel(Ae.data(), coeff_array, constants.data(), coordinate_dofs.data(),
-           &local_facet, facet_perms.data());
+           &local_facet, nullptr);
     dof_transform(Ae, cell_info_1, c_1, num_cols);
     dof_transform_to_transpose(Ae, cell_info_0, c_0, num_rows);
 
@@ -639,10 +637,8 @@ void assemble_exterior_facets(
 
     // Tabulate element vector
     std::fill(be.begin(), be.end(), 0);
-    // FIXME Pass correct perms for codim 1 case
-    std::vector<std::uint8_t> facet_perms = {0, 0};
     fn(be.data(), coeffs.data() + index * cstride, constants.data(),
-       coordinate_dofs.data(), &local_facet, facet_perms.data());
+       coordinate_dofs.data(), &local_facet, nullptr);
 
     dof_transform(_be, cell_info, c_0, 1);
 

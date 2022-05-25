@@ -204,10 +204,8 @@ void assemble_exterior_facets(
 
     // Tabulate tensor
     std::fill(Ae.begin(), Ae.end(), 0);
-    // TODO Pass correct facet perm
-    std::vector<std::uint8_t> facet_perms = {0, 0};
     kernel(Ae.data(), coeffs.data() + index * cstride, constants.data(),
-           coordinate_dofs.data(), &local_facet, facet_perms.data());
+           coordinate_dofs.data(), &local_facet, nullptr);
 
     dof_transform(_Ae, cell_info_1, c_1, ndim1);
     dof_transform_to_transpose(_Ae, cell_info_0, c_0, ndim0);
