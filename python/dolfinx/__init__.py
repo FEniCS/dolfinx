@@ -6,6 +6,24 @@
 """Main module for DOLFINx"""
 
 # flake8: noqa
+
+# Store dl open flags to restore them after import
+import sys
+
+stored_dlopen_flags = sys.getdlopenflags()
+
+# Developer note: below is related to OpenMPI 
+# Fix dlopen flags
+if "linux" in sys.platform:
+    RTLD_NOW = 2
+    RTLD_GLOBAL = 256
+    sys.setdlopenflags(RTLD_NOW | RTLD_GLOBAL)
+del sys
+
+# Reset dl open flags
+# sys.setdlopenflags(stored_dlopen_flags)
+# del sys
+
 import sys
 
 from dolfinx import common
