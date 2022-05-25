@@ -11,6 +11,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
+#include <functional>
 #include <xtl/xspan.hpp>
 
 using namespace dolfinx;
@@ -83,6 +84,7 @@ Mat fem::petsc::create_matrix_block(
   // constructor, but we also need to outside to build the PETSc
   // local-to-global map. Compute outside and pass into SparsityPattern
   // constructor.
+
   auto [rank_offset, local_offset, ghosts, owner]
       = common::stack_index_maps(maps[0]);
 
@@ -206,20 +208,9 @@ Vec fem::petsc::create_vector_block(
   for (auto& sub_owner : ghost_new_owners)
     ghost_owners.insert(ghost_owners.end(), sub_owner.begin(), sub_owner.end());
 
-  std::vector<int> dest_ranks;
-  for (auto& map : maps)
-  {
-    const auto [_, ranks] = dolfinx::MPI::neighbors(
-        map.first.get().comm(common::IndexMap::Direction::forward));
-    dest_ranks.insert(dest_ranks.end(), ranks.begin(), ranks.end());
-  }
-  std::sort(dest_ranks.begin(), dest_ranks.end());
-  dest_ranks.erase(std::unique(dest_ranks.begin(), dest_ranks.end()),
-                   dest_ranks.end());
-
   // Create map for combined problem, and create vector
-  common::IndexMap index_map(maps[0].first.get().comm(), local_size, dest_ranks,
-                             ghosts, ghost_owners);
+  common::IndexMap index_map(maps[0].first.get().comm(), local_size, ghosts,
+                             ghost_owners);
 
   return la::petsc::create_vector(index_map, 1);
 }

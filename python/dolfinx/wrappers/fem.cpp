@@ -1236,6 +1236,10 @@ void fem(py::module& m)
       .def("sub", &dolfinx::fem::FunctionSpace::sub)
       .def("tabulate_dof_coordinates",
            [](const dolfinx::fem::FunctionSpace& self)
-           { return xt_as_pyarray(self.tabulate_dof_coordinates(false)); });
+           {
+             std::vector x = self.tabulate_dof_coordinates(false);
+             std::vector<std::size_t> shape = {x.size() / 3, 3};
+             return as_pyarray(std::move(x), shape);
+           });
 }
 } // namespace dolfinx_wrappers

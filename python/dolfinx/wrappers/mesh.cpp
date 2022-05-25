@@ -9,6 +9,7 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <cfloat>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -159,8 +160,10 @@ void mesh(py::module& m)
         [](const dolfinx::mesh::Mesh& mesh, int dim,
            const py::array_t<std::int32_t, py::array::c_style>& entities)
         {
-          return xt_as_pyarray(dolfinx::mesh::cell_normals(
-              mesh, dim, xtl::span(entities.data(), entities.size())));
+          std::vector<double> n = dolfinx::mesh::cell_normals(
+              mesh, dim, xtl::span(entities.data(), entities.size()));
+          return as_pyarray(std::move(n),
+                            std::array<std::size_t, 2>{n.size() / 3, 3});
         });
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
@@ -177,10 +180,12 @@ void mesh(py::module& m)
 
   m.def("compute_midpoints",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
-           py::array_t<std::int32_t, py::array::c_style> entity_list)
+           py::array_t<std::int32_t, py::array::c_style> entities)
         {
-          return xt_as_pyarray(dolfinx::mesh::compute_midpoints(
-              mesh, dim, xtl::span(entity_list.data(), entity_list.size())));
+          std::vector<double> x = dolfinx::mesh::compute_midpoints(
+              mesh, dim, xtl::span(entities.data(), entities.size()));
+          std::array<std::size_t, 2> shape = {(std::size_t)entities.size(), 3};
+          return as_pyarray(std::move(x), shape);
         });
   m.def("compute_boundary_facets", &dolfinx::mesh::compute_boundary_facets);
 
@@ -406,21 +411,25 @@ void mesh(py::module& m)
 
   m.def("entities_to_geometry",
         [](const dolfinx::mesh::Mesh& mesh, int dim,
-           py::array_t<std::int32_t, py::array::c_style> entity_list,
-           bool orient)
+           py::array_t<std::int32_t, py::array::c_style> entities, bool orient)
         {
-          return xt_as_pyarray(dolfinx::mesh::entities_to_geometry(
-              mesh, dim, xtl::span(entity_list.data(), entity_list.size()),
-              orient));
+          std::vector<std::int32_t> idx = dolfinx::mesh::entities_to_geometry(
+              mesh, dim, entities, orient);
+          dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
+          std::size_t num_vertices = dolfinx::mesh::num_cell_vertices(
+              cell_entity_type(cell_type, dim, 0));
+          std::array<std::size_t, 2> shape
+              = {(std::size_t)entities.size(), num_vertices};
+          return as_pyarray(std::move(idx), shape);
         });
   m.def("exterior_facet_indices", &dolfinx::mesh::exterior_facet_indices);
   m.def("compute_incident_entities",
         [](const dolfinx::mesh::Mesh& mesh,
-           py::array_t<std::int32_t, py::array::c_style> entity_list, int d0,
+           py::array_t<std::int32_t, py::array::c_style> entities, int d0,
            int d1)
         {
           return as_pyarray(dolfinx::mesh::compute_incident_entities(
-              mesh, xtl::span(entity_list.data(), entity_list.size()), d0, d1));
+              mesh, xtl::span(entities.data(), entities.size()), d0, d1));
         });
 
   // Mesh generation
