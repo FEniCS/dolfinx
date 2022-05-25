@@ -35,6 +35,8 @@ namespace sparsitybuild
 /// over
 /// @param[in] dofmaps The dofmap to use in building the sparsity
 /// pattern
+/// @param[in] cell_maps Maps from the cells in the integration domain to
+/// the cells in each function space in the form.
 /// @note The sparsity pattern is not finalised
 void cells(la::SparsityPattern& pattern, const mesh::Topology& topology,
            const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
@@ -66,6 +68,9 @@ void interior_facets(
 /// over
 /// @param[in] dofmaps The dofmap to use in building the sparsity
 /// pattern
+/// @param[in] facet_maps Maps from the facets as a (cell, local_index)
+/// pair in the integration domain to the cell cells in each function
+/// space in the form.
 /// @note The sparsity pattern is not finalised
 void exterior_facets(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
