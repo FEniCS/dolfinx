@@ -14,7 +14,6 @@
 #include <functional>
 #include <xtl/xspan.hpp>
 
-
 #include <petscis.h>
 
 using namespace dolfinx;
@@ -131,7 +130,8 @@ Mat fem::petsc::create_matrix_block(
   la::SparsityPattern pattern(mesh->comm(), p, maps, bs_dofs);
   pattern.assemble();
 
-  std::cout << rank << std::endl << pattern.graph().str() << std::endl;
+  if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 0)
+    std::cout << rank << std::endl << pattern.graph().str() << std::endl;
 
   // FIXME: Add option to pass customised local-to-global map to PETSc
   // Mat constructor
@@ -178,7 +178,13 @@ Mat fem::petsc::create_matrix_block(
                                  _maps[1].data(), PETSC_COPY_VALUES,
                                  &petsc_local_to_global1);
 
-    ISLocalToGlobalMappingView(petsc_local_to_global0, PETSC_VIEWER_STDOUT_SELF);
+    if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 0)
+    {
+      ISLocalToGlobalMappingView(petsc_local_to_global0,
+                                 PETSC_VIEWER_STDOUT_SELF);
+      ISLocalToGlobalMappingView(petsc_local_to_global1,
+                                 PETSC_VIEWER_STDOUT_SELF);
+    }
 
     MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
                                petsc_local_to_global1);
