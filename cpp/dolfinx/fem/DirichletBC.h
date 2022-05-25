@@ -221,7 +221,7 @@ public:
           "Rank mis-match between Constant and function space in DirichletBC");
     }
 
-    if (!V->element()->interpolation_ident())
+    if (!V->element()->basix_element().interpolation_is_identity())
     {
       throw std::runtime_error(
           "Constant can be used only with point-evaluation elements");

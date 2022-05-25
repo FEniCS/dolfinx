@@ -156,12 +156,12 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
         / dofmap_bs;
 
   // Get the dof coordinates on the reference element
-  if (!_element->interpolation_ident())
+  if (!_element->basix_element().interpolation_is_identity())
   {
     throw std::runtime_error("Cannot evaluate dof coordinates - this element "
                              "does not have pointwise evaluation.");
   }
-  const xt::xtensor<double, 2>& X = _element->interpolation_points();
+  const xt::xtensor<double, 2>& X = _element->basix_element().points();
 
   // Get coordinate map
   const CoordinateElement& cmap = _mesh->geometry().cmap();

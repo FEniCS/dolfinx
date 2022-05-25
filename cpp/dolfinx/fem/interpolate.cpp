@@ -27,7 +27,7 @@ fem::interpolation_coords(const fem::FiniteElement& element,
   const std::size_t num_dofs_g = cmap.dim();
 
   // Get the interpolation points on the reference cells
-  const xt::xtensor<double, 2>& X = element.interpolation_points();
+  const xt::xtensor<double, 2>& X = element.basix_element().points();
   const xt::xtensor<double, 2> phi
       = xt::view(cmap.tabulate(0, X), 0, xt::all(), xt::all(), 0);
 

@@ -249,7 +249,7 @@ public:
     }
 
     if (!xt::allclose(e.X(),
-                      _function_space->element()->interpolation_points()))
+                      _function_space->element()->basix_element().points()))
     {
       throw std::runtime_error("Function element interpolation points not "
                                "equal to Expression interpolation points");

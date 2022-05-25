@@ -973,6 +973,7 @@ void fem(py::module& m)
         "dofmap ((cell, local index ) -> index).");
 
   // dolfinx::fem::FiniteElement
+  py::module_::import("basix");
   py::class_<dolfinx::fem::FiniteElement,
              std::shared_ptr<dolfinx::fem::FiniteElement>>(
       m, "FiniteElement", "Finite element object")
@@ -984,17 +985,23 @@ void fem(py::module& m)
             return dolfinx::fem::FiniteElement(*p);
           }))
       .def("__eq__", &dolfinx::fem::FiniteElement::operator==)
+      .def_property_readonly("basix_element",
+                             &dolfinx::fem::FiniteElement::basix_element,
+                             py::return_value_policy::reference_internal)
       .def_property_readonly("num_sub_elements",
                              &dolfinx::fem::FiniteElement::num_sub_elements)
       .def_property_readonly(
           "interpolation_points",
           [](const dolfinx::fem::FiniteElement& self)
           {
-            const xt::xtensor<double, 2>& x = self.interpolation_points();
+            const xt::xtensor<double, 2>& x = self.basix_element().points();
             return py::array_t<double>(x.shape(), x.data(), py::cast(self));
           })
       .def_property_readonly("interpolation_ident",
-                             &dolfinx::fem::FiniteElement::interpolation_ident)
+                             [](const dolfinx::fem::FiniteElement& self)
+                             {
+                               return self.basix_element().interpolation_is_identity();
+                             })
       .def_property_readonly("space_dimension",
                              &dolfinx::fem::FiniteElement::space_dimension)
       .def_property_readonly("value_shape",
