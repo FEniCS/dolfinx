@@ -204,7 +204,6 @@ public:
     switch (type)
     {
     case type::neighbour:
-    {
       assert(requests.size() == std::size_t(1));
       MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_local.data(),
                               _displs_local.data(), MPI::mpi_type<T>(),
@@ -212,23 +211,24 @@ public:
                               _displs_remote.data(), MPI::mpi_type<T>(),
                               _comm0.comm(), requests.data());
       break;
-    }
     case type::p2p:
-    {
       assert(requests.size() == _dest.size() + _src.size());
       for (std::size_t i = 0; i < _src.size(); i++)
+      {
         MPI_Irecv(recv_buffer.data() + _displs_remote[i], _sizes_remote[i],
                   MPI::mpi_type<T>(), _src[i], MPI_ANY_TAG, _comm0.comm(),
                   &requests[i]);
+      }
+
       for (std::size_t i = 0; i < _dest.size(); i++)
+      {
         MPI_Isend(send_buffer.data() + _displs_local[i], _sizes_local[i],
                   MPI::mpi_type<T>(), _dest[i], 0, _comm0.comm(),
                   &requests[i + _src.size()]);
+      }
       break;
-    }
     default:
       throw std::runtime_error("Scatter::type not recognized");
-      break;
     }
   }
 
@@ -392,7 +392,6 @@ public:
     switch (type)
     {
     case type::neighbour:
-    {
       assert(requests.size() == 1);
       MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_remote.data(),
                               _displs_remote.data(), MPI::mpi_type<T>(),
@@ -400,26 +399,27 @@ public:
                               _displs_local.data(), MPI::mpi_type<T>(),
                               _comm1.comm(), &requests[0]);
       break;
-    }
     case type::p2p:
-    {
       assert(requests.size() == _dest.size() + _src.size());
       // Start non-blocking send from this process to ghost owners.
       for (std::size_t i = 0; i < _dest.size(); i++)
+      {
         MPI_Irecv(recv_buffer.data() + _displs_local[i], _sizes_local[i],
                   MPI::mpi_type<T>(), _dest[i], MPI_ANY_TAG, _comm0.comm(),
                   &requests[i]);
+      }
+
       // Start non-blocking receive from neighbor process for which an owned
       // index is a ghost.
       for (std::size_t i = 0; i < _src.size(); i++)
+      {
         MPI_Isend(send_buffer.data() + _displs_remote[i], _sizes_remote[i],
                   MPI::mpi_type<T>(), _src[i], 0, _comm0.comm(),
                   &requests[i + _dest.size()]);
+      }
       break;
-    }
     default:
       throw std::runtime_error("Scatter::type not recognized");
-      break;
     }
   }
 
@@ -580,14 +580,13 @@ public:
     switch (type)
     {
     case type::neighbour:
-      requests.resize(1, MPI_REQUEST_NULL);
+      requests = {MPI_REQUEST_NULL};
       break;
     case type::p2p:
       requests.resize(_dest.size() + _src.size(), MPI_REQUEST_NULL);
       break;
     default:
       throw std::runtime_error("Scatter::type not recognized");
-      break;
     }
   }
 
