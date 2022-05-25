@@ -175,39 +175,8 @@ public:
   std::shared_ptr<const FiniteElement>
   extract_sub_element(const std::vector<int>& component) const;
 
-  /// Get the map type used by the element
-  basix::maps::type map_type() const;
-
-  /// Check if interpolation into the finite element space is an
-  /// identity operation given the evaluation on an expression at
-  /// specific points, i.e. the degree-of-freedom are equal to point
-  /// evaluations. The function will return `true` for Lagrange
-  /// elements.
-  /// @return True if interpolation is an identity operation
-  bool interpolation_ident() const noexcept;
-
-  /// Check if the push forward/pull back map from the values on reference to
-  /// the values on a physical cell for this element is the identity map.
-  /// @return True if the map is the identity
-  bool map_ident() const noexcept;
-
-  /// Points on the reference cell at which an expression need to be
-  /// evaluated in order to interpolate the expression in the finite
-  /// element space. For Lagrange elements the points will just be the
-  /// nodal positions. For other elements the points will typically be
-  /// the quadrature points used to evaluate moment degrees of freedom.
-  /// @return Points on the reference cell. Shape is (num_points, tdim).
-  const xt::xtensor<double, 2>& interpolation_points() const;
-
-  /// Interpolation operator (matrix) `Pi` that maps a function
-  /// evaluated at the points provided by
-  /// FiniteElement::interpolation_points to the element degrees of
-  /// freedom, i.e. dofs = Pi f_x. See the Basix documentation for
-  /// basix::FiniteElement::interpolation_matrix for how the data in
-  /// `f_x` should be ordered.
-  /// @return The interpolation operator `Pi`. Shape is (num_dofs,
-  /// num_points*value_size)
-  const xt::xtensor<double, 2>& interpolation_operator() const;
+  /// Return underlying basix element (if it exists)
+  const basix::FiniteElement& basix_element() const;
 
   /// Create a matrix that maps degrees of freedom from one element to
   /// this element (interpolation).
