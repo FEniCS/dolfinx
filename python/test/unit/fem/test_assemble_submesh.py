@@ -350,7 +350,7 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode, random_orderi
         n, space, k, ghost_mode)
     assert(np.isclose(A.norm(), A_expected_norm))
 
-    L = fem.form(v * (dx(1) + ds(1)),
+    L = fem.form(ufl.inner(1.0, v) * (dx(1) + ds(1)),
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
     fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
@@ -417,7 +417,7 @@ def test_mixed_codim_0_test_func_assembly_alt(n, k, space, ghost_mode, random_or
         n, space, k, ghost_mode)
     assert(np.isclose(A.norm(), A_expected_norm))
 
-    L = fem.form(v * (dx + ds(1)),
+    L = fem.form(ufl.inner(1.0, v) * (dx + ds(1)),
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
     fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
@@ -459,7 +459,7 @@ def unit_square_norm(n, space, k, ghost_mode):
     A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
 
-    L = fem.form(v * (ufl.dx + ds(1)))
+    L = fem.form(ufl.inner(1.0, v) * (ufl.dx + ds(1)))
     b = fem.petsc.assemble_vector(L)
     fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
@@ -611,7 +611,7 @@ def test_codim_1_assembly(n, k, space, ghost_mode, random_ordering):
 
     print(A.norm())
 
-    L = fem.form(v * ds,
+    L = fem.form(ufl.inner(1.0, v) * ds,
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
 
