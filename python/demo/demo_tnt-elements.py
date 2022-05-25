@@ -27,6 +27,7 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx,
                  grad, inner, sin)
 
 from mpi4py import MPI
+
 # -
 
 # ## Defining a degree 1 TNT element
@@ -68,8 +69,8 @@ wcoeffs = np.eye(8, 9)
 # +
 geometry = basix.geometry(basix.CellType.quadrilateral)
 topology = basix.topology(basix.CellType.quadrilateral)
-x = [[], [], [], []]
-M = [[], [], [], []]
+x = [[], [], [], []]  # type: ignore [var-annotated]
+M = [[], [], [], []]  # type: ignore [var-annotated]
 
 for v in topology[0]:
     x[0].append(np.array(geometry[v]))

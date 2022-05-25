@@ -6,6 +6,7 @@
 """Support functions for plotting"""
 
 import functools
+import typing
 import warnings
 
 import numpy as np
@@ -29,13 +30,17 @@ _first_order_vtk = {mesh.CellType.interval: 3,
 
 
 @functools.singledispatch
-def create_vtk_mesh(msh: mesh.Mesh, dim: int, entities=None):
+def create_vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=None):
     """Create vtk mesh topology data for mesh entities of a given
     dimension. The vertex indices in the returned topology array are the
     indices for the associated entry in the mesh geometry.
 
     """
+    if dim is None:
+        dim = msh.topology.dim
+
     tdim = msh.topology.dim
+
     cell_type = _cpp.mesh.cell_entity_type(msh.topology.cell_type, dim, 0)
     degree = msh.geometry.cmap.degree
     if cell_type == mesh.CellType.prism:

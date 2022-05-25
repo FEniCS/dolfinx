@@ -95,7 +95,11 @@ class VectorMetaClass:
             and not created using the class initialiser.
 
         """
-        super().__init__(map, bs)
+        super().__init__(map, bs)  # type: ignore
+
+    @property
+    def array(self) -> np.ndarray:
+        return super().array  # type: ignore
 
 
 def vector(map, bs=1, dtype=np.float64) -> VectorMetaClass:
