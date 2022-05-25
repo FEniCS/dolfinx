@@ -372,7 +372,7 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[FormMetaClass]],
             elif i == j:
                 for bc in bcs:
                     row_forms = [row_form for row_form in a_row if row_form is not None]
-                    assert(len(row_forms) > 0)
+                    assert len(row_forms) > 0
                     if row_forms[0].function_spaces[0].contains(bc.function_space):
                         raise RuntimeError(
                             f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC applied."
@@ -416,7 +416,7 @@ def _(A: PETSc.Mat, a: typing.List[typing.List[FormMetaClass]],
             elif i == j:
                 for bc in bcs:
                     row_forms = [row_form for row_form in a_row if row_form is not None]
-                    assert(len(row_forms) > 0)
+                    assert len(row_forms) > 0
                     if row_forms[0].function_spaces[0].contains(bc.function_space):
                         raise RuntimeError(
                             f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC applied."
