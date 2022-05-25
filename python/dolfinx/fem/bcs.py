@@ -128,9 +128,9 @@ class DirichletBCMetaClass:
             super().__init__(_value, dofs)  # type: ignore
 
     @property
-    def value(self):
+    def g(self):
         """The boundary condition value(s)"""
-        return super().value  # type: ignore
+        return self.value  # type: ignore
 
     @property
     def function_space(self) -> dolfinx.fem.FunctionSpace:
