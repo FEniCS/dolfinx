@@ -67,15 +67,15 @@ uh.name = "u"
 problem = LinearProblem(a, L, u=uh, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 problem.solve()
 
-# Save solution in XDMF format (to be viewed in Paraview, for example)
+# Save solution in XDMF format (to be viewed in ParaView, for example)
 with XDMFFile(MPI.COMM_WORLD, "out_helmholtz/plane_wave.xdmf", "w", encoding=XDMFFile.Encoding.HDF5) as file:
     file.write_mesh(msh)
     file.write_function(uh)
 # -
 
-# Calculate L2 and H1 errors of FEM solution and best approximation.
-# This demonstrates the error bounds given in Ihlenburg. Pollution errors
-# are evident for high wavenumbers.
+# Calculate $L_2$ and $H^1$ errors of FEM solution and best approximation.
+# This demonstrates the error bounds given in Ihlenburg. Pollution errors are
+# evident for high wavenumbers.
 
 # +
 # Function space for exact solution - need it to be higher than deg
