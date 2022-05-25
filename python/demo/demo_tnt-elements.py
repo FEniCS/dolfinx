@@ -17,8 +17,6 @@
 # We begin this demo by importing everything we require.
 
 # +
-import typing
-
 import matplotlib.pylab as plt
 import numpy as np
 
