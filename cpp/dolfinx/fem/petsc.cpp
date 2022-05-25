@@ -35,9 +35,6 @@ Mat fem::petsc::create_matrix_block(
     const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
     const std::string& type)
 {
-  std::cout << "Shape 0: " << a.size() << std::endl;
-  std::cout << "Shape 1: " << a[0].size() << std::endl;
-
   // Extract and check row/column ranges
   std::array<std::vector<std::shared_ptr<const fem::FunctionSpace>>, 2> V
       = fem::common_function_spaces(extract_function_spaces(a));
@@ -109,18 +106,6 @@ Mat fem::petsc::create_matrix_block(
     }
   }
 
-  // FIXME: This is computed again inside the SparsityPattern
-  // constructor, but we also need to outside to build the PETSc
-  // local-to-global map. Compute outside and pass into SparsityPattern
-  // constructor.
-
-  auto [rank_offset, local_offset, ghosts, owner]
-      = common::stack_index_maps(maps[0]);
-
-  int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-  std::cout << "Data: " << rank << ": " << rank_offset << ", "
-            << local_offset[0] << ", " << local_offset[1] << std::endl;
-
   // Create merged sparsity pattern
   std::vector<std::vector<const la::SparsityPattern*>> p(V[0].size());
   for (std::size_t row = 0; row < V[0].size(); ++row)
@@ -129,9 +114,6 @@ Mat fem::petsc::create_matrix_block(
 
   la::SparsityPattern pattern(mesh->comm(), p, maps, bs_dofs);
   pattern.assemble();
-
-  if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 0)
-    std::cout << rank << std::endl << pattern.graph().str() << std::endl;
 
   // FIXME: Add option to pass customised local-to-global map to PETSc
   // Mat constructor
@@ -144,6 +126,17 @@ Mat fem::petsc::create_matrix_block(
   std::array<std::vector<PetscInt>, 2> _maps;
   for (int d = 0; d < 2; ++d)
   {
+    // FIXME: Index map concatenation has already been computed inside
+    // the SparsityPattern constructor, but we also need it here to
+    // build the PETSc local-to-global map. Compute outside and pass
+    // into SparsityPattern constructor.
+
+    // FIXME: avoid concatenating the same maps twice in case that V[0]
+    // == V[1].
+
+    // Concatenate the block index map in the row and column directions
+    auto [rank_offset, local_offset, ghosts, _]
+        = common::stack_index_maps(maps[d]);
     for (std::size_t f = 0; f < maps[d].size(); ++f)
     {
       const common::IndexMap& map = maps[d][f].first.get();
@@ -164,34 +157,19 @@ Mat fem::petsc::create_matrix_block(
                                &petsc_local_to_global0);
   if (V[0] == V[1])
   {
-    std::cout << "Square" << std::endl;
     MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
                                petsc_local_to_global0);
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
   }
   else
   {
-    std::cout << "Rectangular" << std::endl;
 
     ISLocalToGlobalMapping petsc_local_to_global1;
     ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[1].size(),
                                  _maps[1].data(), PETSC_COPY_VALUES,
                                  &petsc_local_to_global1);
-
-    if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 0)
-    {
-      ISLocalToGlobalMappingView(petsc_local_to_global0,
-                                 PETSC_VIEWER_STDOUT_SELF);
-      ISLocalToGlobalMappingView(petsc_local_to_global1,
-                                 PETSC_VIEWER_STDOUT_SELF);
-    }
-
     MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
                                petsc_local_to_global1);
-
-    // MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
-    //                            petsc_local_to_global1);
-
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
   }

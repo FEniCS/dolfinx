@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 Garth N. Wells
+# Copyright (C) 2018-2022 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -937,3 +937,27 @@ def test_assemble_empty_rank_mesh():
     ksp.solve(b, x)
 
     assert np.allclose(x.array, 10.0)
+
+
+@ pytest.mark.parametrize("mode", [
+    GhostMode.none,
+    GhostMode.shared_facet
+])
+def test_matrix_assembly_rectangular(mode):
+    """Test assembly of block rectangular block matrices"""
+    msh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
+    V0 = FunctionSpace(msh, ("Lagrange", 1))
+    V1 = V0.clone()
+    u = ufl.TrialFunction(V0)
+    v0, v1 = ufl.TestFunction(V0), ufl.TestFunction(V1)
+
+    a2 = form([[ufl.inner(u, v0) * ufl.dx],
+              [ufl.inner(u, v1) * ufl.dx]])
+    A2 = assemble_matrix_block(a2, bcs=[])
+    A2.assemble()
+
+    a1 = form(ufl.inner(u, v0) * ufl.dx)
+    A1 = assemble_matrix(a1, bcs=[])
+    A1.assemble()
+
+    assert A2.norm() == pytest.approx(np.sqrt(2) * A1.norm())
