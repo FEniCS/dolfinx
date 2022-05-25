@@ -14,7 +14,7 @@
  "env": {
      "PKG_CONFIG_PATH": "/usr/local/dolfinx-complex/lib/pkgconfig",
      "PETSC_ARCH": "linux-gnu-complex-32",
-     "PYTHONPATH": "/usr/local/dolfinx-complex/lib/python3.10/dist-packages",
+     "PYTHONPATH": "/usr/local/dolfinx-complex/lib/python3.8/dist-packages",
      "LD_LIBRARY_PATH": "/usr/local/dolfinx-complex/lib"
  }
 }
