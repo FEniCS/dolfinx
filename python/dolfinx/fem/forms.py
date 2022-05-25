@@ -168,7 +168,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
     return _create_form(form)
 
 
-def extract_function_spaces(forms: typing.Union[typing.Iterable[FormMetaClass], # type: ignore [return]
+def extract_function_spaces(forms: typing.Union[typing.Iterable[FormMetaClass],  # type: ignore [return]
                                                 typing.Iterable[typing.Iterable[FormMetaClass]]],
                             index: int = 0) -> typing.Iterable[typing.Union[None, function.FunctionSpace]]:
     """Extract common function spaces from an array of forms. If `forms`
