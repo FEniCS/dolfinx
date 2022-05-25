@@ -1,17 +1,16 @@
-import basix
-from basix.ufl_wrapper import BasixElement
-
 import numpy as np
 import pytest
 
+import basix
 import ufl
-from dolfinx.fem import (Function, FunctionSpace,
-                         assemble_scalar, dirichletbc, form,
-                         locate_dofs_topological)
+from basix.ufl_wrapper import BasixElement
+from dolfinx.fem import (Function, FunctionSpace, assemble_scalar, dirichletbc,
+                         form, locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
-from dolfinx.mesh import CellType, exterior_facet_indices, create_unit_square
-from ufl import SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad, inner
+from dolfinx.mesh import CellType, create_unit_square, exterior_facet_indices
+from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
+                 inner)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -43,7 +42,7 @@ def run_scalar_test(V, degree):
     # Create Dirichlet boundary condition
     facetdim = mesh.topology.dim - 1
     mesh.topology.create_connectivity(facetdim, mesh.topology.dim)
-    bndry_facets = mesh.exterior_facet_indices(mesh.topology)
+    bndry_facets = exterior_facet_indices(mesh.topology)
     bdofs = locate_dofs_topological(V, facetdim, bndry_facets)
     bc = dirichletbc(u_bc, bdofs)
 

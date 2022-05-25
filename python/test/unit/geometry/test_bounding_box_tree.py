@@ -360,6 +360,7 @@ def test_compute_closest_sub_entity(dim):
 def test_surface_bbtree():
     """Test creation of BBTree on subset of entities(surface cells)"""
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
+    mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
     sf = exterior_facet_indices(mesh.topology)
     tdim = mesh.topology.dim
     f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
@@ -426,6 +427,7 @@ def test_surface_bbtree_collision():
     mesh2 = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron)
     mesh2.geometry.x[:, :] += np.array([0.9, 0.9, 0.9])
 
+    mesh1.topology.create_connectivity(mesh1.topology.dim - 1, mesh1.topology.dim)
     sf = exterior_facet_indices(mesh1.topology)
     f_to_c = mesh1.topology.connectivity(tdim - 1, tdim)
 
@@ -433,6 +435,7 @@ def test_surface_bbtree_collision():
     cells = list(set([f_to_c.links(f)[0] for f in sf]))
     bbtree1 = BoundingBoxTree(mesh1, tdim, cells)
 
+    mesh2.topology.create_connectivity(mesh2.topology.dim - 1, mesh2.topology.dim)
     sf = exterior_facet_indices(mesh2.topology)
     f_to_c = mesh2.topology.connectivity(tdim - 1, tdim)
     cells = list(set([f_to_c.links(f)[0] for f in sf]))
