@@ -285,8 +285,10 @@ void _lift_bc_exterior_facets(
     const T* coeff_array = coeffs.data() + index * cstride;
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
+    // FIXME Pass correct perms for codim 1 case
+    std::vector<std::uint8_t> facet_perms = {0, 0};
     kernel(Ae.data(), coeff_array, constants.data(), coordinate_dofs.data(),
-           &local_facet, nullptr);
+           &local_facet, facet_perms.data());
     dof_transform(Ae, cell_info_1, c_1, num_cols);
     dof_transform_to_transpose(Ae, cell_info_0, c_0, num_rows);
 
@@ -786,7 +788,6 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
              const xtl::span<const std::int8_t>& bc_markers1,
              const xtl::span<const T>& x0, double scale)
 {
-  std::cout << "lift_bc\n";
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
   assert(mesh);
 
@@ -940,7 +941,6 @@ void apply_lifting(
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<xtl::span<const T>>& x0, double scale)
 {
-  std::cout << "apply_lifting\n";
   // FIXME: make changes to reactivate this check
   if (!x0.empty() and x0.size() != a.size())
   {
