@@ -12,9 +12,8 @@
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
 #include <functional>
+#include <petscistypes.h>
 #include <xtl/xspan.hpp>
-
-#include <petscis.h>
 
 using namespace dolfinx;
 
