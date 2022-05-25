@@ -22,6 +22,7 @@ namespace dolfinx::mesh
 {
 enum class CellType;
 class Mesh;
+class Topology;
 
 /// Enum for different partitioning ghost modes
 enum class GhostMode : int
@@ -150,12 +151,18 @@ entities_to_geometry(const Mesh& mesh, int dim,
                      const xtl::span<const std::int32_t>& entities,
                      bool orient);
 
-/// Compute the indices (local) of all exterior facets. An exterior facet
-/// (co-dimension 1) is one that is connected globally to only one cell of
-/// co-dimension 0).
-/// @param[in] mesh Mesh
-/// @return List of facet indices of exterior facets of the mesh
-std::vector<std::int32_t> exterior_facet_indices(const Mesh& mesh);
+/// @brief Compute the indices of all exterior facets that are owned by
+/// the caller.
+///
+/// An exterior facet (co-dimension 1) is one that is connected globally
+/// to only one cell of co-dimension 0).
+///
+/// @note Collective
+///
+/// @param[in] topology The mesh topology
+/// @return Sorted list of owned facet indices that are exterior facets
+/// of the mesh.
+std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 
 /// Create a function that computes destination rank for mesh cells in
 /// this rank by applying the default graph partitioner to the dual

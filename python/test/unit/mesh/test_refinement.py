@@ -4,18 +4,19 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from numpy import isclose, logical_and
+import numpy
 import pytest
+from numpy import isclose, logical_and
 
 import ufl
+from dolfinx import cpp as _cpp
 from dolfinx.fem import FunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix
-from dolfinx.mesh import (DiagonalType, CellType, GhostMode,
-                          compute_incident_entities,
-                          create_unit_cube, create_unit_square, meshtags,
-                          locate_entities, locate_entities_boundary, refine)
-from dolfinx import cpp as _cpp
-import numpy
+from dolfinx.mesh import (CellType, DiagonalType, GhostMode,
+                          compute_incident_entities, create_unit_cube,
+                          create_unit_square, locate_entities,
+                          locate_entities_boundary, meshtags, refine)
+
 from mpi4py import MPI
 
 

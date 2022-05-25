@@ -16,16 +16,16 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
-                              compute_boundary_facets,
                               compute_incident_entities, compute_midpoints,
-                              create_cell_partitioner, to_string, to_type)
+                              create_cell_partitioner, exterior_facet_indices,
+                              to_string, to_type)
 
 from mpi4py import MPI as _MPI
 
 __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "Mesh", "MeshTagsMetaClass", "meshtags", "CellType",
            "GhostMode", "build_dual_graph", "cell_dim", "compute_midpoints",
-           "compute_boundary_facets", "compute_incident_entities", "create_cell_partitioner",
+           "exterior_facet_indices", "compute_incident_entities", "create_cell_partitioner",
            "create_interval", "create_unit_interval", "create_rectangle", "create_unit_square",
            "create_box", "create_unit_cube", "to_type", "to_string"]
 
