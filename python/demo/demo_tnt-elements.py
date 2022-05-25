@@ -73,7 +73,7 @@ M = [[], [], [], []]
 
 for v in topology[0]:
     x[0].append(np.array(geometry[v]))
-    M[0].append(np.array([[[1.]]]))
+    M[0].append(np.array([[[[1.]]]]))
 # -
 
 # For each edge of the cell, we define points and a matrix that
@@ -89,8 +89,8 @@ for e in topology[1]:
     edge_pts = np.array([v0 + p * (v1 - v0) for p in pts])
     x[1].append(edge_pts)
 
-    mat = np.zeros((1, 1, pts.shape[0]))
-    mat[0, 0, :] = wts
+    mat = np.zeros((1, 1, pts.shape[0], 1))
+    mat[0, 0, :, 0] = wts
     M[1].append(mat)
 # -
 
@@ -99,7 +99,7 @@ for e in topology[1]:
 # an empty matrix with the interior.
 
 x[2].append(np.zeros([0, 2]))
-M[2].append(np.zeros([0, 1, 0]))
+M[2].append(np.zeros([0, 1, 0, 1]))
 
 # ### Creating the Basix element
 #
@@ -107,7 +107,7 @@ M[2].append(np.zeros([0, 1, 0]))
 # this element so that it can be used with FFCx/DOLFINx.
 
 e = basix.create_custom_element(basix.CellType.quadrilateral, [], wcoeffs, x, M,
-                                basix.MapType.identity, False, 1, 2)
+                                0, basix.MapType.identity, False, 1, 2)
 tnt_degree1 = basix.ufl_wrapper.BasixElement(e)
 
 # ## Creating higher degree TNT elements
@@ -144,7 +144,7 @@ def create_tnt_quad(degree):
     # Vertices
     for v in topology[0]:
         x[0].append(np.array(geometry[v]))
-        M[0].append(np.array([[[1.]]]))
+        M[0].append(np.array([[[[1.]]]]))
 
     # Edges
     pts, wts = basix.make_quadrature(basix.CellType.interval, 2 * degree - 1)
@@ -156,27 +156,27 @@ def create_tnt_quad(degree):
         edge_pts = np.array([v0 + p * (v1 - v0) for p in pts])
         x[1].append(edge_pts)
 
-        mat = np.zeros((edge_ndofs, 1, len(pts)))
+        mat = np.zeros((edge_ndofs, 1, len(pts), 1))
         for i in range(edge_ndofs):
-            mat[i, 0, :] = wts[:] * poly[:, i]
+            mat[i, 0, :, 0] = wts[:] * poly[:, i]
         M[1].append(mat)
 
     # Interior
     if degree == 1:
         x[2].append(np.zeros([0, 2]))
-        M[2].append(np.zeros([0, 1, 0]))
+        M[2].append(np.zeros([0, 1, 0, 1]))
     else:
         pts, wts = basix.make_quadrature(basix.CellType.quadrilateral, 2 * degree - 2)
         poly = basix.tabulate_polynomials(basix.PolynomialType.legendre, basix.CellType.quadrilateral, degree - 2, pts)
         face_ndofs = poly.shape[1]
         x[2].append(pts)
-        mat = np.zeros((face_ndofs, 1, len(pts)))
+        mat = np.zeros((face_ndofs, 1, len(pts), 1))
         for i in range(face_ndofs):
-            mat[i, 0, :] = wts[:] * poly[:, i]
+            mat[i, 0, :, 0] = wts[:] * poly[:, i]
         M[2].append(mat)
 
     e = basix.create_custom_element(
-        basix.CellType.quadrilateral, [], wcoeffs, x, M, basix.MapType.identity, False, degree, degree + 1)
+        basix.CellType.quadrilateral, [], wcoeffs, x, M, 0, basix.MapType.identity, False, degree, degree + 1)
     return basix.ufl_wrapper.BasixElement(e)
 # -
 
