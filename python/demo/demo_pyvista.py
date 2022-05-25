@@ -56,7 +56,7 @@ def plot_scalar():
     u.interpolate(lambda x: np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi))
 
     # As we want to visualize the function u, we have to create a grid to
-    # attached the dof values to We do this by creating a topology and
+    # attached the DoF values to We do this by creating a topology and
     # geometry based on the function space V
     cells, types, x = plot.create_vtk_mesh(V)
     grid = pyvista.UnstructuredGrid(cells, types, x)
@@ -90,7 +90,7 @@ def plot_scalar():
         subplotter.show()
 
 
-# ## MeshTags and using subplots
+# ## Mesh tags and using subplots
 
 def plot_meshtags():
 
@@ -103,7 +103,7 @@ def plot_meshtags():
         """True for points inside circle with radius 2"""
         return np.array((x.T[0] - 0.5)**2 + (x.T[1] - 0.5)**2 < 0.2**2, dtype=np.int32)
 
-    # Create a dolfinx.MeshTag for all cells. If midpoint is inside the
+    # Create mesh tags for all cells. If midpoint is inside the
     # circle, it gets value 1, otherwise 0.
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     midpoints = compute_midpoints(msh, msh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
@@ -112,13 +112,13 @@ def plot_meshtags():
     cells, types, x = plot.create_vtk_mesh(msh, msh.topology.dim)
     grid = pyvista.UnstructuredGrid(cells, types, x)
 
-    # As the dolfinx.MeshTag contains a value for every cell in the
+    # As the mesh tags contain a value for every cell in the
     # geometry, we can attach it directly to the grid
     grid.cell_data["Marker"] = cell_tags.values
     grid.set_active_scalars("Marker")
 
     # We create a plotter consisting of two windows, and add a plot of the
-    # Meshtags to the first window.
+    # mesh tags to the first window.
     subplotter = pyvista.Plotter(shape=(1, 2))
     subplotter.subplot(0, 0)
     subplotter.add_text("Mesh with markers", font_size=14, color="black", position="upper_edge")
@@ -127,7 +127,7 @@ def plot_meshtags():
 
     # We can also visualize subsets of data, by creating a smaller topology,
     # only consisting of those entities that has value one in the
-    # dolfinx.MeshTag
+    # mesh tags
     cells, types, x = plot.create_vtk_mesh(
         msh, msh.topology.dim, cell_tags.indices[cell_tags.values == 1])
 
@@ -160,14 +160,14 @@ def plot_higher_order():
         """Mark sphere with radius < sqrt(2)"""
         return np.array((x.T[0] - 0.5)**2 + (x.T[1] - 0.5)**2 < 0.2**2, dtype=np.int32)
 
-    # Create a dolfinx.MeshTag for all cells. If midpoint is inside the
+    # Create mesh tags for all cells. If midpoint is inside the
     # circle, it gets value 1, otherwise 0.
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     midpoints = compute_midpoints(msh, msh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
     cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
     # We start by interpolating a discontinuous function into a second order
-    # discontinuous Lagrange  space Note that we use the `cell_tags` from
+    # discontinuous Lagrange space. Note that we use the `cell_tags` from
     # the previous section to get the cells for each of the regions
     cells0 = cell_tags.indices[cell_tags.values == 0]
     cells1 = cell_tags.indices[cell_tags.values == 1]

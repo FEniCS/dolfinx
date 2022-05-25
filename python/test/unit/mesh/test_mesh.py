@@ -500,7 +500,7 @@ def boundary_2(x):
                                     lambda x: x[0] >= -1])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
-def test_submesh(d, n, codim, marker, ghost_mode):
+def test_submesh_full(d, n, codim, marker, ghost_mode):
     if d == 2:
         mesh = create_unit_square(MPI.COMM_WORLD, n, n,
                                   ghost_mode=ghost_mode)
@@ -641,7 +641,7 @@ def test_boundary_facets(n, d, ghost_mode):
     assert(num_boundary_facets == expected_num_boundary_facets)
 
 
-@pytest.mark.parametrize("n", [2, 5])
+@pytest.mark.parametrize("n", [3, 5])
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
