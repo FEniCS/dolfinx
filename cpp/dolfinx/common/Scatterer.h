@@ -571,6 +571,26 @@ public:
   /// @return The block size
   int bs() const noexcept { return _bs; }
 
+  /// @brief Create a vector of MPI_Requests for a given Scatterer::type
+  /// @return A vector of MPI requests
+  std::vector<MPI_Request> create_request_vector(Scatterer::type type
+                                                 = type::neighbour)
+  {
+    std::vector<MPI_Request> requests;
+    switch (type)
+    {
+    case type::neighbour:
+      requests.resize(1, MPI_REQUEST_NULL);
+      break;
+    case type::p2p:
+      requests.resize(_dest.size() + _src.size(), MPI_REQUEST_NULL);
+      break;
+    default:
+      throw std::runtime_error("Scatter::type not recognized");
+      break;
+    }
+  }
+
 private:
   // Block size
   int _bs;
