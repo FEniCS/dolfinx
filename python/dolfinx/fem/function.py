@@ -412,7 +412,6 @@ class ElementMetaData(typing.NamedTuple):
     """Data for representing a finite element"""
     family: str
     degree: int
-    form_degree: typing.Optional[int] = None  # noqa
 
 
 class FunctionSpace(ufl.FunctionSpace):
@@ -440,7 +439,7 @@ class FunctionSpace(ufl.FunctionSpace):
                 super().__init__(mesh.ufl_domain(), element)
             else:
                 e = ElementMetaData(*element)
-                ufl_element = ufl.FiniteElement(e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree)
+                ufl_element = ufl.FiniteElement(e.family, mesh.ufl_cell(), e.degree)
                 super().__init__(mesh.ufl_domain(), ufl_element)
 
             # Compile dofmap and element and create DOLFIN objects
@@ -559,7 +558,7 @@ def VectorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typin
     """Create vector finite element (composition of scalar elements) function space."""
 
     e = ElementMetaData(*element)
-    ufl_element = ufl.VectorElement(e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree, dim=dim)
+    ufl_element = ufl.VectorElement(e.family, mesh.ufl_cell(), e.degree, dim=dim)
     return FunctionSpace(mesh, ufl_element)
 
 
