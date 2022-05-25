@@ -39,10 +39,7 @@ void sparsitybuild::cells(
 void sparsitybuild::interior_facets(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
-        dofmaps,
-    const std::array<
-        const std::function<std::int32_t(std::pair<std::int32_t, int>)>, 2>&
-        facet_maps)
+        dofmaps)
 {
   // TODO Use facet maps
   const int D = topology.dim();

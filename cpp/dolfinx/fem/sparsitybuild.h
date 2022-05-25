@@ -56,12 +56,7 @@ void cells(la::SparsityPattern& pattern, const mesh::Topology& topology,
 void interior_facets(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
-        dofmaps,
-    const std::array<
-        const std::function<std::int32_t(std::pair<std::int32_t, int>)>, 2>&
-        facet_maps
-    = {[](std::pair<std::int32_t, int> e) { return e.first; },
-       [](std::pair<std::int32_t, int> e) { return e.first; }});
+        dofmaps);
 
 /// @brief Iterate over exterior facets and insert entries into sparsity
 /// pattern.

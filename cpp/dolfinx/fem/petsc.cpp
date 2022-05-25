@@ -54,8 +54,6 @@ Mat fem::petsc::create_matrix_block(
     {
       const std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
           = {{V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
-      const std::array bs = {V[0][row]->dofmap()->index_map_bs(),
-                             V[1][col]->dofmap()->index_map_bs()};
       if (const fem::Form<PetscScalar>* form = a[row][col]; form)
       {
         // FIXME THIS IS PROBABLY WRONG/COPYING, CHECK!
