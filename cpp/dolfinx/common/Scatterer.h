@@ -47,8 +47,8 @@ public:
   /// `map` that will be scattered/gathered.
   /// @param[in] alloc The memory allocator for indices.
   Scatterer(const IndexMap& map, int bs, const Allocator& alloc = Allocator())
-      : _bs(bs), _comm0(MPI_COMM_NULL), _comm1(MPI_COMM_NULL), _src(map.src()),
-        _dest(map.dest()), _remote_inds(0, alloc), _local_inds(0, alloc)
+      : _bs(bs), _src(map.src()), _dest(map.dest()), _remote_inds(0, alloc),
+        _local_inds(0, alloc)
   {
     if (map.overlapped())
     {
@@ -580,14 +580,14 @@ private:
   // caller. I.e.,
   // - in-edges (src) are from ranks that own my ghosts
   // - out-edges (dest) go to ranks that 'ghost' my owned indices
-  dolfinx::MPI::Comm _comm0;
+  dolfinx::MPI::Comm _comm0{MPI_COMM_NULL};
 
   // Communicator where the source ranks have ghost indices that are
   // owned by the caller, and the destination ranks are the owners of
   // indices in the callers halo region. I.e.,
   // - in-edges (src) are from ranks that 'ghost' my owned indicies
   // - out-edges (dest) are to the owning ranks of my ghost indices
-  dolfinx::MPI::Comm _comm1;
+  dolfinx::MPI::Comm _comm1{MPI_COMM_NULL};
 
   // Permutation indices used to pack and unpack ghost data (remote)
   std::vector<std::int32_t, allocator_type> _remote_inds;
