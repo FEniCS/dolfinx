@@ -51,6 +51,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Install pugixml (temp)
+        run: apt-get install libpugixml-dev
+
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
@@ -90,7 +93,7 @@ jobs:
         continue-on-error: true
         run: |
           cd cpp
-          find . -type f \( -name "*.cpp" -o -name "*.h" \) ! -name "pugixml.cpp" ! -name "loguru.cpp" | xargs clang-format --dry-run --Werror
+          find . -type f \( -name "*.cpp" -o -name "*.h" \) ! -name "loguru.cpp" | xargs clang-format --dry-run --Werror
       - name: clang-format Python binding checks (non-blocking)
         continue-on-error: true
         run: |

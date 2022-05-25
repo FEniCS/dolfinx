@@ -8,7 +8,6 @@
 
 #include "ADIOS2Writers.h"
 #include "cells.h"
-#include "pugixml.hpp"
 #include "vtk_utils.h"
 #include <adios2.h>
 #include <algorithm>
@@ -20,6 +19,7 @@
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
+#include <pugixml.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
