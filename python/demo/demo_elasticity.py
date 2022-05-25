@@ -39,9 +39,9 @@ from petsc4py import PETSc
 dtype = PETSc.ScalarType
 # -
 
-# ## Operators nullspace
+# ## Operator's nullspace
 #
-# Smoother aggregation algebraic multigrid solver require the so-called
+# Smooth aggregation algebraic multigrid solvers require the so-called
 # 'near-nullspace', which is the nullspace of the operator in the
 # absence of boundary conditions. The below function builds a PETSc
 # NullSpace object. For this 3D elasticity problem the nullspace is
@@ -123,7 +123,7 @@ a = form(inner(σ(u), grad(v)) * dx)
 L = form(inner(f, v) * dx)
 
 # A homogeneous (zero) boundary condition is created on $x_0 = 0$ and
-# $x_1 = 1$ by finding all boundary facets on $x_0 = 0$ and # $x_1 = 1$,
+# $x_1 = 1$ by finding all boundary facets on $x_0 = 0$ and $x_1 = 1$,
 # and then creating a Dirichlet boundary condition object.
 
 facets = locate_entities_boundary(msh, dim=2,
@@ -157,12 +157,12 @@ b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 set_bc(b, [bc])
 # -
 
-# Create the a near nullspace and attach it to the PETSc matrix:
+# Create the near-nullspace and attach it to the PETSc matrix:
 
 null_space = build_nullspace(V)
 A.setNearNullSpace(null_space)
 
-# Set PETsc solver options, create a PETSc Krylov solver, and attach the
+# Set PETSc solver options, create a PETSc Krylov solver, and attach the
 # matrix `A` to the solver:
 
 # +
@@ -188,18 +188,19 @@ solver.setFromOptions()
 solver.setOperators(A)
 # -
 
-# Create a solution Function `uh` and solve:
+# Create a solution {py:class}`Function<dolfinx.fem.Function>`, `uh`, and
+# solve:
 
 # +
 uh = Function(V)
 
-# Set a monitor, solve linear system, and dispay the solver
+# Set a monitor, solve linear system, and display the solver
 # configuration
 solver.setMonitor(lambda _, its, rnorm: print(f"Iteration: {its}, rel. residual: {rnorm}"))
 solver.solve(b, uh.vector)
 solver.view()
 
-# Scatter forward the solution vector to udpate ghost values
+# Scatter forward the solution vector to update ghost values
 uh.x.scatter_forward()
 # -
 

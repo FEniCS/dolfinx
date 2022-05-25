@@ -32,6 +32,7 @@ from dolfinx.io import (XDMFFile, cell_perm_gmsh, distribute_entity_data,
 from dolfinx.mesh import CellType, create_mesh, meshtags_from_entities
 
 from mpi4py import MPI
+
 # -
 
 # Generate a mesh on each rank with the gmsh API, and create a DOLFINx
@@ -61,7 +62,6 @@ cells = node_tags[0].reshape(-1, num_nodes) - 1
 
 msh = create_mesh(MPI.COMM_SELF, cells, x, ufl_mesh_from_gmsh(element_types[0], x.shape[1]))
 
-# with XDMFFile(MPI.COMM_SELF, f"out_gmsh/mesh_rank_{MPI.COMM_WORLD.rank}.xdmf", "w") as file:
 with XDMFFile(MPI.COMM_SELF, f"out_gmsh/mesh_rank_{MPI.COMM_WORLD.rank}.xdmf", "w") as file:
     file.write_mesh(msh)
 # -
@@ -120,7 +120,7 @@ msh.name = "ball_d1"
 entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
 
 msh.topology.create_connectivity(2, 0)
-mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), np.int32(values))
+mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), values)
 mt.name = "ball_d1_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "out_gmsh/mesh.xdmf", "w") as file:
@@ -180,7 +180,7 @@ marked_facets = marked_facets[:, gmsh_triangle6]
 
 entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
 msh.topology.create_connectivity(2, 0)
-mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), np.int32(values))
+mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), values)
 mt.name = "ball_d2_surface"
 with XDMFFile(MPI.COMM_WORLD, "out_gmsh/mesh.xdmf", "a") as file:
     file.write_mesh(msh)
@@ -257,7 +257,7 @@ msh.name = "hex_d2"
 
 entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
 msh.topology.create_connectivity(2, 0)
-mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), np.int32(values))
+mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), values)
 mt.name = "hex_d2_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "out_gmsh/mesh.xdmf", "a") as file:
