@@ -894,6 +894,9 @@ namespace dolfinx_wrappers
 
 void fem(py::module& m)
 {
+  // Load basix and dolfinx to use Pybindings
+  py::module_::import("basix");
+
   py::module petsc_mod
       = m.def_submodule("petsc", "PETSc-specific finite element module");
   petsc_module(petsc_mod);
@@ -973,7 +976,6 @@ void fem(py::module& m)
         "dofmap ((cell, local index ) -> index).");
 
   // dolfinx::fem::FiniteElement
-  py::module_::import("basix");
   py::class_<dolfinx::fem::FiniteElement,
              std::shared_ptr<dolfinx::fem::FiniteElement>>(
       m, "FiniteElement", "Finite element object")
