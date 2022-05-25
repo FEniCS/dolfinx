@@ -58,6 +58,8 @@ ARG XTL_VERSION=0.7.4
 ARG MPICH_VERSION=4.0.2
 ARG OPENMPI_SERIES=4.1
 ARG OPENMPI_PATCH=3
+# Used to set the correct PYTHONPATH for the real and complex install of DOLFINx
+ARG PYTHON_VERSION=3.10
 
 ########################################
 
@@ -370,6 +372,8 @@ WORKDIR /root
 FROM dev-env as dolfinx-onbuild
 LABEL description="DOLFINx in 32-bit real and complex modes (onbuild)"
 
+ARG PYTHON_VERSION
+
 ADD dolfinx/docker/dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
 ADD dolfinx/docker/dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
 RUN chmod +x /usr/local/bin/dolfinx-*-mode
@@ -413,7 +417,7 @@ ONBUILD RUN cd dolfinx && \
     PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} ../cpp && \
     ninja install && \
     cd ../python && \
-    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.10/dist-packages --no-dependencies . && \
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies . && \
     cd ../ && \
     mkdir -p build-complex && \
     cd build-complex && \
@@ -421,12 +425,12 @@ ONBUILD RUN cd dolfinx && \
     ninja install && \
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
-    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.10/dist-packages --no-dependencies .
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies .
 
 # Real by default.
 ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
     PETSC_ARCH=linux-gnu-real-32 \
-    PYTHONPATH=/usr/local/dolfinx-real/lib/python3.10/dist-packages:$PYTHONPATH \
+    PYTHONPATH=/usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages:$PYTHONPATH \
     LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ONBUILD WORKDIR /root
@@ -439,6 +443,8 @@ FROM dolfinx-onbuild as intermediate
 
 FROM dev-env as dolfinx
 LABEL description="DOLFINx in 32-bit real and complex modes"
+
+ARG PYTHON_VERSION
 
 # This layer manually copies the build artifacts from intermediate into
 # dev-env to make the final image. This is a workaround for a well known
@@ -453,7 +459,7 @@ COPY --from=intermediate /root/.config /root/.config
 # dolfinx-onbuild so this must be repeated here.
 ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
     PETSC_ARCH=linux-gnu-real-32 \
-    PYTHONPATH=/usr/local/dolfinx-real/lib/python3.10/dist-packages:$PYTHONPATH \
+    PYTHONPATH=/usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages:$PYTHONPATH \
     LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ########################################
