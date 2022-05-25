@@ -763,46 +763,6 @@ graph::AdjacencyList<std::int32_t> convert_to_local_indexing(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::vector<std::int8_t> mesh::compute_boundary_facets(const Topology& topology)
-{
-  const int tdim = topology.dim();
-  auto facet_map = topology.index_map(tdim - 1);
-  if (!facet_map)
-    throw std::runtime_error("Facets have not been computed.");
-
-  auto cell_map = topology.index_map(tdim);
-  assert(cell_map);
-
-  // In parallel, a mesh has either:
-  // i) Ghost cells connected to every shared facet
-  // ii) No ghost cells and no shared cells
-  //
-  // In case (i), checking that a facet is connected to only one cell is
-  // sufficient to identify it as a boundary facet. In case (ii), we
-  // must additionally check that the facet is not shared with another
-  // process to differentiate between the partition boundary and the
-  // physical boundary.
-  const std::vector<std::int32_t> fwd_shared_facets
-      = cell_map->overlapped() ? std::vector<std::int32_t>()
-                               : facet_map->shared_indices();
-
-  auto f_to_c = topology.connectivity(tdim - 1, tdim);
-  if (!f_to_c)
-    throw std::runtime_error("Facet-cell connectivity missing.");
-  std::vector<std::int8_t> facet_markers(facet_map->size_local(), false);
-  for (std::size_t f = 0; f < facet_markers.size(); ++f)
-  {
-    if (f_to_c->num_links(f) == 1
-        and !std::binary_search(fwd_shared_facets.begin(),
-                                fwd_shared_facets.end(), f))
-    {
-      facet_markers[f] = true;
-    }
-  }
-
-  return facet_markers;
-}
-//-----------------------------------------------------------------------------
 Topology::Topology(MPI_Comm comm, CellType type)
     : _comm(comm), _cell_type(type),
       _connectivity(
