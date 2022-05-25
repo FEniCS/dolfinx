@@ -951,13 +951,19 @@ def test_matrix_assembly_rectangular(mode):
     u = ufl.TrialFunction(V0)
     v0, v1 = ufl.TestFunction(V0), ufl.TestFunction(V1)
 
-    a2 = form([[ufl.inner(u, v0) * ufl.dx],
-              [ufl.inner(u, v1) * ufl.dx]])
-    A2 = assemble_matrix_block(a2, bcs=[])
-    A2.assemble()
-
     a1 = form(ufl.inner(u, v0) * ufl.dx)
     A1 = assemble_matrix(a1, bcs=[])
     A1.assemble()
 
+    a2 = form([[ufl.inner(u, v0) * ufl.dx],
+              [ufl.inner(u, v1) * ufl.dx]])
+
+    A2 = assemble_matrix_block(a2, bcs=[])
+    A2.assemble()
     assert A2.norm() == pytest.approx(np.sqrt(2) * A1.norm())
+
+    A2 = assemble_matrix_nest(a2, bcs=[])
+    A2.assemble()
+    for row in range(2):
+        A_sub = A2.getNestSubMatrix(row, 0)
+        assert A_sub.equal(A1)
