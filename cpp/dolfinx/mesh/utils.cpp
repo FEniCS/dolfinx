@@ -338,7 +338,8 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   // Compute marker for boundary facets
   mesh.topology_mutable().create_entities(tdim - 1);
   mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-  const std::vector boundary_facet = compute_boundary_facets(topology);
+  const std::vector<std::int32_t> boundary_facets
+      = exterior_facet_indices(topology);
 
   // Create entities and connectivities
   mesh.topology_mutable().create_entities(dim);
@@ -354,14 +355,10 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   assert(f_to_e);
   std::unordered_set<std::int32_t> boundary_vertices;
   std::unordered_set<std::int32_t> facet_entities;
-  for (std::size_t f = 0; f < boundary_facet.size(); ++f)
+  for (auto f : boundary_facets)
   {
-    if (boundary_facet[f])
-    {
-      facet_entities.insert(f_to_e->links(f).begin(), f_to_e->links(f).end());
-      boundary_vertices.insert(f_to_v->links(f).begin(),
-                               f_to_v->links(f).end());
-    }
+    facet_entities.insert(f_to_e->links(f).begin(), f_to_e->links(f).end());
+    boundary_vertices.insert(f_to_v->links(f).begin(), f_to_v->links(f).end());
   }
 
   // Get geometry data

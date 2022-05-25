@@ -610,13 +610,11 @@ def compute_num_boundary_facets(mesh):
     mesh.topology.create_connectivity(tdim - 1, tdim)
 
     # Compute number of owned facets on the boundary
-    # boundary_facet_marker = compute_boundary_facets(mesh.topology)
     num_owned_boundary_facets = len(exterior_facet_indices(mesh.topology))
 
     # Sum the number of boundary facets owned by each process to get the
     # total number in the mesh
-    num_boundary_facets = mesh.comm.allreduce(
-        num_owned_boundary_facets, op=MPI.SUM)
+    num_boundary_facets = mesh.comm.allreduce(num_owned_boundary_facets, op=MPI.SUM)
 
     return num_boundary_facets
 
