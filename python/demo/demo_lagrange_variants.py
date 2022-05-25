@@ -18,24 +18,28 @@
 # We begin this demo by importing everything we require.
 
 # +
+import matplotlib.pylab as plt
 import numpy as np
-import ufl
 
+import basix
+import basix.ufl_wrapper
+import ufl
 from dolfinx import fem, mesh
 from ufl import ds, dx, grad, inner
 
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
 
-import matplotlib.pylab as plt
+if np.issubdtype(ScalarType, np.complexfloating):
+    print("Demo should only be executed with DOLFINx real mode")
+    exit(0)
+
 # -
 
 # In addition to the imports seen in other demos, we also import Basix
 # and its UFL wrapper directly. Basix is the element definition and
 # tabulation library that is used by FEniCSx.
 
-import basix
-import basix.ufl_wrapper
 
 # ## Equispaced points vs GLL points
 # The basis function of Lagrange elements are defined by placing points
@@ -59,12 +63,13 @@ element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 1
 
 pts = basix.create_lattice(basix.CellType.interval, 200, basix.LatticeType.equispaced, True)
 values = element.tabulate(0, pts)[0, :, :, 0]
-for i in range(values.shape[1]):
-    plt.plot(pts, values[:, i])
-plt.plot(element.points, [0 for i in element.points], "ko")
-plt.ylim([-1, 6])
-plt.savefig("demo_lagrange_variants_equispaced_10.png")
-plt.clf()
+if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
+    for i in range(values.shape[1]):
+        plt.plot(pts, values[:, i])
+    plt.plot(element.points, [0 for _ in element.points], "ko")
+    plt.ylim([-1, 6])
+    plt.savefig("demo_lagrange_variants_equispaced_10.png")
+    plt.clf()
 # -
 
 # ![The basis functions of a degree 10 Lagrange space defined using
@@ -86,12 +91,14 @@ element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 1
                                basix.LagrangeVariant.gll_warped)
 
 values = element.tabulate(0, pts)[0, :, :, 0]
-for i in range(values.shape[1]):
-    plt.plot(pts, values[:, i])
-plt.plot(element.points, [0 for i in element.points], "ko")
-plt.ylim([-1, 6])
-plt.savefig("demo_lagrange_variants_gll_10.png")
-plt.clf()
+
+if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
+    for i in range(values.shape[1]):
+        plt.plot(pts, values[:, i])
+    plt.plot(element.points, [0 for _ in element.points], "ko")
+    plt.ylim([-1, 6])
+    plt.savefig("demo_lagrange_variants_gll_10.png")
+    plt.clf()
 # -
 
 # ![The basis functions of a degree 10 Lagrange space defined using GLL
@@ -147,7 +154,7 @@ uh = problem.solve()
 
 def saw_tooth(x):
     f = 4 * abs(x - 0.43)
-    for i in range(8):
+    for _ in range(8):
         f = abs(f - 0.3)
     return f
 
@@ -176,10 +183,9 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
             for i in range(51):
                 pts.append([cell / 10 + i / 50 / 10, 0, 0])
                 cells.append(cell)
-        pts = np.array(pts)
         values = uh.eval(pts, cells)
-        plt.plot(pts[:, 0], [saw_tooth(i[0]) for i in pts], "k--")
-        plt.plot(pts[:, 0], values, "r-")
+        plt.plot(pts, [saw_tooth(i[0]) for i in pts], "k--")
+        plt.plot(pts, values, "r-")
 
         plt.legend(["function", "approximation"])
         plt.ylim([-0.1, 0.4])

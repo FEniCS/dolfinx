@@ -7,10 +7,14 @@
 from __future__ import annotations
 
 import collections
+import collections.abc
 import typing
+
+from dolfinx.fem.function import FunctionSpace
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem import function
+    from dolfinx.mesh import Mesh
 
 import cffi
 import numpy as np
@@ -24,7 +28,8 @@ from petsc4py import PETSc
 
 class FormMetaClass:
     def __init__(self, form, V: list[_cpp.fem.FunctionSpace], coeffs, constants,
-                 subdomains: dict[_cpp.mesh.MeshTags_int32], mesh: _cpp.mesh.Mesh, code):
+                 subdomains: dict[_cpp.mesh.MeshTags_int32, typing.Union[None, typing.Any]], mesh: _cpp.mesh.Mesh,
+                 code):
         """A finite element form
 
         Notes:
@@ -46,7 +51,7 @@ class FormMetaClass:
         self._ufcx_form = form
         ffi = cffi.FFI()
         super().__init__(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_form)),
-                         V, coeffs, constants, subdomains, mesh)
+                         V, coeffs, constants, subdomains, mesh)  # type: ignore
 
     @property
     def ufcx_form(self):
@@ -58,9 +63,33 @@ class FormMetaClass:
         """C code strings"""
         return self._code
 
+    @property
+    def function_spaces(self) -> typing.List[FunctionSpace]:
+        """Function spaces on which this form is defined"""
+        return super().function_spaces  # type: ignore
+
+    @property
+    def dtype(self) -> np.dtype:
+        """dtype of this form"""
+        return super().dtype  # type: ignore
+
+    @property
+    def mesh(self) -> Mesh:
+        """Mesh on which this form is defined"""
+        return super().mesh  # type: ignore
+
+    @property
+    def integral_types(self):
+        """Integral types in the form"""
+        return super().integral_types  # type: ignore
+
+
+form_types = typing.Union[FormMetaClass, _cpp.fem.Form_float32, _cpp.fem.Form_float64,
+                          _cpp.fem.Form_complex64, _cpp.fem.Form_complex128]
+
 
 def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = PETSc.ScalarType,
-         form_compiler_params: dict = {}, jit_params: dict = {}) -> FormMetaClass:
+         form_compiler_params: dict = {}, jit_params: dict = {}):
     """Create a DOLFINx Form or an array of Forms
 
     Args:
@@ -139,9 +168,9 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
     return _create_form(form)
 
 
-def extract_function_spaces(forms: typing.Union[typing.Iterable[FormMetaClass],
+def extract_function_spaces(forms: typing.Union[typing.Iterable[FormMetaClass],  # type: ignore [return]
                                                 typing.Iterable[typing.Iterable[FormMetaClass]]],
-                            index: int = 0) -> typing.Iterable[function.FunctionSpace]:
+                            index: int = 0) -> typing.Iterable[typing.Union[None, function.FunctionSpace]]:
     """Extract common function spaces from an array of forms. If `forms`
     is a list of linear form, this function returns of list of the
     corresponding test functions. If `forms` is a 2D array of bilinear
@@ -156,7 +185,7 @@ def extract_function_spaces(forms: typing.Union[typing.Iterable[FormMetaClass],
         for form in _forms:
             if form is not None:
                 assert form.rank == 1, "Expected linear form"
-        return [form.function_spaces[0] if form is not None else None for form in forms]
+        return [form.function_spaces[0] if form is not None else None for form in forms]  # type: ignore[union-attr]
     elif _forms.ndim == 2:
         assert index == 0 or index == 1
         extract_spaces = np.vectorize(lambda form: form.function_spaces[index] if form is not None else None)
