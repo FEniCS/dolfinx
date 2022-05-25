@@ -30,7 +30,7 @@ void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
   // Create a Basix continuous Lagrange element of degree 1
   basix::FiniteElement e = basix::create_element(
       basix::element::family::P,
-      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2);
+      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1);
 
   // Create a scalar function space
   auto V = std::make_shared<fem::FunctionSpace>(
