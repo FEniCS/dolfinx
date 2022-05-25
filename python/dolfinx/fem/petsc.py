@@ -32,8 +32,6 @@ from dolfinx.fem.function import Function as _Function
 
 from petsc4py import PETSc
 
-from mpi4py import MPI
-
 
 def _extract_function_spaces(a: typing.List[typing.List[FormMetaClass]]):
     """From a rectangular array of bilinear forms, extract the function
