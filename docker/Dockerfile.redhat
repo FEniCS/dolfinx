@@ -20,9 +20,11 @@ ARG XTL_VERSION=0.7.4
 
 WORKDIR /tmp
 
-RUN sed -i 's/enabled=0/enabled=1/' /etc/yum.repos.d/Rocky-PowerTools.repo && \
-    yum -y update && \
-    yum -y install \
+RUN dnf -y update && \
+    dnf install -y dnf-plugins-core && \
+    dnf config-manager --set-enabled powertools && \
+    dnf install -y epel-release && \
+    dnf -y install \
       # Required by PETSc build
       bison \
       cmake \
@@ -37,7 +39,7 @@ RUN sed -i 's/enabled=0/enabled=1/' /etc/yum.repos.d/Rocky-PowerTools.repo && \
       python39 \
       python39-devel \
       python39-pip && \
-    yum -y clean all && \
+    dnf -y clean all && \
     rm -rf /var/cache
 
 # Permanently enable GCC 11 toolset

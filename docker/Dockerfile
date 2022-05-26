@@ -125,6 +125,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libopenblas-dev \
     ninja-build \
     pkg-config \
+    pugixml-dev \
     python3-dev \
     python3-pip \
     python3-setuptools && \
