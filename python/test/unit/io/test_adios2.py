@@ -242,7 +242,7 @@ def test_save_vtkx_cell_point(tempdir):
 
 
 def test_empty_rank_mesh(tempdir):
-    """Test VTXWrite on mesh where some ranks have no cells"""
+    """Test VTXWriter on mesh where some ranks have no cells"""
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
     domain = ufl.Mesh(
