@@ -632,6 +632,16 @@ private:
 
     // Exterior facets. If there is a default integral, define it only
     // on owned surface facets.
+
+    if (!_exterior_facet_integrals.empty())
+    {
+      mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+      mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
+    }
+    const std::vector<std::int32_t> boundary_facets
+        = _exterior_facet_integrals.empty()
+              ? std::vector<std::int32_t>()
+              : mesh::exterior_facet_indices(topology);
     for (auto& [domain_id, kernel_facets] : _exterior_facet_integrals)
     {
       if (domain_id == -1)
@@ -640,26 +650,16 @@ private:
             = kernel_facets.second;
         facets.clear();
 
-        mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
         auto f_to_c = topology.connectivity(tdim - 1, tdim);
         assert(f_to_c);
-
-        mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
-        auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
+        auto c_to_f = topology.connectivity(tdim, tdim - 1);
         assert(c_to_f);
-
-        std::vector<std::int8_t> boundary_facet_markers
-            = mesh::compute_boundary_facets(mesh.topology());
-        for (std::size_t f = 0; f < boundary_facet_markers.size(); ++f)
+        for (std::int32_t f : boundary_facets)
         {
-          if (boundary_facet_markers[f])
-          {
-            // There will only be one pair for an exterior facet
-            // integral
-            std::pair<std::int32_t, int> pair = get_cell_local_facet_pairs<1>(
-                f, f_to_c->links(f), *c_to_f)[0];
-            facets.push_back(pair);
-          }
+          // There will only be one pair for an exterior facet integral
+          std::pair<std::int32_t, int> pair
+              = get_cell_local_facet_pairs<1>(f, f_to_c->links(f), *c_to_f)[0];
+          facets.push_back(pair);
         }
       }
     }

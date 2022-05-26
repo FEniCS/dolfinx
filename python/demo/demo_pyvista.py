@@ -109,7 +109,7 @@ def plot_meshtags():
     midpoints = compute_midpoints(msh, msh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
     cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
-    cells, types, x = plot.create_vtk_mesh(msh, msh.topology.dim)
+    cells, types, x = plot.create_vtk_mesh(msh)
     grid = pyvista.UnstructuredGrid(cells, types, x)
 
     # As the mesh tags contain a value for every cell in the
@@ -129,7 +129,7 @@ def plot_meshtags():
     # only consisting of those entities that has value one in the
     # mesh tags
     cells, types, x = plot.create_vtk_mesh(
-        msh, msh.topology.dim, cell_tags.indices[cell_tags.values == 1])
+        msh, entities=cell_tags.indices[cell_tags.values == 1])
 
     # We add this grid to the second plotter
     sub_grid = pyvista.UnstructuredGrid(cells, types, x)
@@ -191,7 +191,7 @@ def plot_higher_order():
     # that as we have done previously
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     cell_entities = np.arange(num_cells, dtype=np.int32)
-    cells, types, x = plot.create_vtk_mesh(msh, msh.topology.dim, cell_entities)
+    cells, types, x = plot.create_vtk_mesh(msh, entities=cell_entities)
     org_grid = pyvista.UnstructuredGrid(cells, types, x)
 
     # We visualize the data
@@ -225,7 +225,7 @@ def plot_nedelec():
                      position="upper_edge", font_size=14, color="black")
 
     # Next, we create a pyvista.UnstructuredGrid based on the mesh
-    pyvista_cells, cell_types, x = plot.create_vtk_mesh(msh, msh.topology.dim)
+    pyvista_cells, cell_types, x = plot.create_vtk_mesh(msh)
     grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, x)
 
     # Add this grid (as a wireframe) to the plotter

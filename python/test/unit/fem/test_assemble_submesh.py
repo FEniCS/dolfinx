@@ -127,9 +127,9 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode, random_ordering):
     submesh = create_submesh(mesh_1, edim, entities)[0]
     A_submesh, b_submesh, s_submesh = assemble_forms_0(submesh, space, k)
 
-    assert(np.isclose(A_mesh_0.norm(), A_submesh.norm()))
-    assert(np.isclose(b_mesh_0.norm(), b_submesh.norm()))
-    assert(np.isclose(s_mesh_0, s_submesh))
+    assert np.isclose(A_mesh_0.norm(), A_submesh.norm())
+    assert np.isclose(b_mesh_0.norm(), b_submesh.norm())
+    assert np.isclose(s_mesh_0, s_submesh)
 
 
 @pytest.mark.parametrize("n", [2, 6])
