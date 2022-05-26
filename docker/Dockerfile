@@ -123,9 +123,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libboost-timer-dev \
     liblapack-dev \
     libopenblas-dev \
+    libpugixml-dev \
     ninja-build \
     pkg-config \
-    pugixml-dev \
     python3-dev \
     python3-pip \
     python3-setuptools && \
