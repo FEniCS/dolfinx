@@ -7,13 +7,14 @@ FROM rockylinux/rockylinux:8
 
 ARG BUILD_NP=16
 
-ARG MPICH_VERSION=4.0.1
-ARG PETSC_VERSION=3.17.0
 ARG BOOST_VERSION=1.77.0
 ARG BOOST_VERSION_UNDERSCORES=1_77_0
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=1
+ARG PETSC_VERSION=3.17.0
 ARG PYBIND11_VERSION=2.9.2
+ARG NUMPY_VERSION=1.21.6
+ARG MPICH_VERSION=4.0.1
 ARG XTENSOR_VERSION=0.24.1
 ARG XTL_VERSION=0.7.4
 
@@ -35,9 +36,7 @@ RUN sed -i 's/enabled=0/enabled=1/' /etc/yum.repos.d/Rocky-PowerTools.repo && \
       openblas-devel \
       python39 \
       python39-devel \
-      python39-numpy \
-      python39-pip \
-      python39-pip-wheel && \
+      python39-pip && \
     yum -y clean all && \
     rm -rf /var/cache
 
@@ -56,7 +55,7 @@ RUN curl -L -O http://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MP
 
 # First set of dependencies for building and running Python DOLFINx
 # Second set of dependencies for running DOLFINx tests
-RUN python3 -m pip install --no-cache-dir cffi numba mpi4py pybind11==${PYBIND11_VERSION} wheel && \
+RUN python3 -m pip install --no-binary="numpy" --no-cache-dir cffi numba numpy==${NUMPY_VERSION} mpi4py pybind11==${PYBIND11_VERSION} wheel && \
     python3 -m pip install --no-cache-dir cppimport pytest pytest-xdist scipy matplotlib
 
 # Build PETSc
