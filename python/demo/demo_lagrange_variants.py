@@ -18,8 +18,11 @@
 # We begin this demo by importing everything we require.
 
 # +
+import matplotlib.pylab as plt
 import numpy as np
 
+import basix
+import basix.ufl_wrapper
 import ufl
 from dolfinx import fem, mesh
 from ufl import ds, dx, grad, inner
@@ -31,16 +34,12 @@ if np.issubdtype(ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx real mode")
     exit(0)
 
-import matplotlib.pylab as plt
-
 # -
 
 # In addition to the imports seen in other demos, we also import Basix
 # and its UFL wrapper directly. Basix is the element definition and
 # tabulation library that is used by FEniCSx.
 
-import basix
-import basix.ufl_wrapper
 
 # ## Equispaced points vs GLL points
 # The basis function of Lagrange elements are defined by placing points
@@ -184,10 +183,9 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
             for i in range(51):
                 pts.append([cell / 10 + i / 50 / 10, 0, 0])
                 cells.append(cell)
-        pts = np.array(pts)
         values = uh.eval(pts, cells)
-        plt.plot(pts[:, 0], [saw_tooth(i[0]) for i in pts], "k--")
-        plt.plot(pts[:, 0], values, "r-")
+        plt.plot(pts, [saw_tooth(i[0]) for i in pts], "k--")
+        plt.plot(pts, values, "r-")
 
         plt.legend(["function", "approximation"])
         plt.ylim([-0.1, 0.4])

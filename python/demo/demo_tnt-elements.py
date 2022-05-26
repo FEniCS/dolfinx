@@ -27,6 +27,7 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx,
                  grad, inner, sin)
 
 from mpi4py import MPI
+
 # -
 
 # ## Defining a degree 1 TNT element
@@ -68,8 +69,8 @@ wcoeffs = np.eye(8, 9)
 # +
 geometry = basix.geometry(basix.CellType.quadrilateral)
 topology = basix.topology(basix.CellType.quadrilateral)
-x = [[], [], [], []]
-M = [[], [], [], []]
+x = [[], [], [], []]  # type: ignore [var-annotated]
+M = [[], [], [], []]  # type: ignore [var-annotated]
 
 for v in topology[0]:
     x[0].append(np.array(geometry[v]))
@@ -208,7 +209,7 @@ def poisson_error(V):
     u_bc.interpolate(lambda x: np.sin(10 * x[1]) * np.cos(15 * x[0]))
 
     msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
-    bndry_facets = np.where(np.array(mesh.compute_boundary_facets(msh.topology)) == 1)[0]
+    bndry_facets = mesh.exterior_facet_indices(msh.topology)
     bdofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, bndry_facets)
     bc = fem.dirichletbc(u_bc, bdofs)
 
