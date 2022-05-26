@@ -123,7 +123,13 @@ void declare_meshtags(py::module& m, std::string type)
                                return py::array_t<std::int32_t>(
                                    self.indices().size(), self.indices().data(),
                                    py::cast(self));
-                             });
+                             })
+      .def("find",
+           [](dolfinx::mesh::MeshTags<T>& self, T value)
+           {
+             std::vector<std::int32_t> indices = self.find(value);
+             return py::array_t<std::int32_t>(indices.size(), indices.data());
+           });
 
   m.def("create_meshtags",
         [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, int dim,
