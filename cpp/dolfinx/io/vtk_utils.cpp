@@ -151,7 +151,7 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
   // Create permutation from DOLFINx dof ordering to VTK
   auto dofmap = V.dofmap();
   assert(dofmap);
-  const std::uint32_t num_nodes = dofmap->cell_dofs(0).size();
+  const std::uint32_t num_nodes = V.element()->space_dimension();
   const std::vector<std::uint8_t> vtkmap = io::cells::transpose(
       io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
 
