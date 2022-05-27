@@ -122,6 +122,9 @@ endif()
 #------------------------------------------------------------------------------
 # Find required packages
 
+# pugixml
+find_package(pugixml REQUIRED)
+
 # Note: When updating Boost version, also update DOLFINXCongif.cmake.in
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
