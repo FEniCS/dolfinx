@@ -51,11 +51,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install pugixml (temp)
-        run: |
-          apt-get -y update
-          apt-get install -y libpugixml-dev
-
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |

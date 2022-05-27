@@ -29,11 +29,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install pugixml (temp)
-        run: |
-          apt-get -y update
-          apt-get install -y libpugixml-dev
-
       - name: Install Intel compilers
         run: |
           wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB

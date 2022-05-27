@@ -15,7 +15,6 @@ jobs:
 
       - name: Install FEniCS Python components
         run: |
-          dnf install -y epel-release && dnf install -y pugixml-devel
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
           CPATH=/usr/include/openblas python3 -m pip install git+https://github.com/FEniCS/basix.git
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
