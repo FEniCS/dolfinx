@@ -159,7 +159,7 @@ def create_tnt_quad(degree):
 
         mat = np.zeros((edge_ndofs, 1, len(pts), 1))
         for i in range(edge_ndofs):
-            mat[i, 0, :, 0] = wts[:] * poly[:, i]
+            mat[i, 0, :, 0] = wts[:] * poly[i, :]
         M[1].append(mat)
 
     # Interior
@@ -173,7 +173,7 @@ def create_tnt_quad(degree):
         x[2].append(pts)
         mat = np.zeros((face_ndofs, 1, len(pts), 1))
         for i in range(face_ndofs):
-            mat[i, 0, :, 0] = wts[:] * poly[:, i]
+            mat[i, 0, :, 0] = wts[:] * poly[i, :]
         M[2].append(mat)
 
     e = basix.create_custom_element(
