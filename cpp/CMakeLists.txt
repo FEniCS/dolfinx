@@ -66,6 +66,10 @@ add_feature_info(XTENSOR_USE_XSIMD XTENSOR_USE_XSIMD "Enable SIMD with xtensor (
 option(XTENSOR_OPTIMIZE "Enable xtensor target-specific optimization" OFF)
 add_feature_info(XTENSOR_OPTIMIZE XTENSOR_OPTIMIZE "Enable architecture-specific optimizations as defined by xtensor.")
 
+# Control UFCx discovery
+option(DOLFINX_UFCX_PYTHON "Enable UFCx discovery using Python. Disable if UFCx should be found using CMake." ON)
+add_feature_info(DOLFINX_UFCX_PYTHON DOLFINX_UFCX_PYTHON "Enable UFCx discovery using Python. Disable if UFCx should be found using a CMake config file.")
+
 #------------------------------------------------------------------------------
 # Enable or disable optional packages
 
@@ -200,12 +204,14 @@ set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
   URL "https://www.hdfgroup.org/HDF5")
 
-# Check for UFC. First check for UFCxConfig.cmake (CONFIG)
+# Check for UFC
 # Note: we use the case (ufcx vs UFCx) elsewhere to determine by which
 # method UFCx was found
-find_package(ufcx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} CONFIG)
-if (NOT ufcx_FOUND)
-  # Next, check in MODULE mode (using FindUFCX.cmake)
+if (NOT DOLFINX_UFCX_PYTHON)
+  # Check in CONFIG mode, i.e. look for instaled ufcxConfig.cmake
+  find_package(ufcx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} REQUIRED CONFIG)
+else()
+  # Check in MODULE mode (using FindUFCX.cmake)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
   find_package(UFCx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} REQUIRED MODULE)
 endif()
