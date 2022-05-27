@@ -182,13 +182,6 @@ io::extract_vtk_connectivity(const mesh::Mesh& mesh)
   std::vector vtkmap
       = io::cells::transpose(io::cells::perm_vtk(cell_type, num_nodes));
 
-  // TODO: Remove when when paraview issue 19433 is resolved
-  // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
-  if (cell_type == mesh::CellType::hexahedron and num_nodes == 27)
-  {
-    vtkmap = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
-              22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
-  }
   // Extract mesh 'nodes'
   const int tdim = mesh.topology().dim();
   const std::size_t num_cells = mesh.topology().index_map(tdim)->size_local()
