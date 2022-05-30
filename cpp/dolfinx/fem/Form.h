@@ -113,7 +113,7 @@ public:
     {
       if (_mesh != V->mesh()
           and entity_maps.find(V->mesh()) == entity_maps.end())
-        throw std::runtime_error("Incompatible mesh");
+        throw std::runtime_error("Incompatible mesh. entity_maps must be provided.");
     }
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
@@ -357,7 +357,11 @@ public:
     return _entity_maps;
   }
 
-  /// TODO Add docs
+  /// Given a `fem::FunctionSpace`, this function returns the required
+  /// map from cells in the integration domain mesh to cells in the mesh
+  /// that the function space is defined over.
+  /// @param[in] function_space The functions space
+  /// @return The map
   // TODO Rename
   std::function<std::int32_t(std::int32_t)>
   cell_map(const FunctionSpace& function_space) const
@@ -374,7 +378,12 @@ public:
     }
   }
 
-  /// TODO Add docs
+  /// Given a `fem::FunctionSpace`, this function returns the required
+  /// map from facets in the integration domain mesh (identified as
+  /// (cell, local_facet_index) pairs) to cells in the mesh
+  /// that the function space is defined over.
+  /// @param[in] function_space The functions space
+  /// @return The map
   // TODO Rename
   std::function<std::int32_t(std::pair<std::int32_t, int>)>
   cell_local_facet_map(const FunctionSpace& function_space) const
