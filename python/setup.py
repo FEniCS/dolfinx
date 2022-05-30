@@ -13,7 +13,7 @@ if sys.version_info < (3, 8):
 VERSION = "0.4.2.dev0"
 
 REQUIREMENTS = [
-    "numpy>=1.20",
+    "numpy>=1.21",
     "mpi4py",
     "petsc4py",
     "fenics-ffcx>=0.4.3.dev0,<0.5.0",
