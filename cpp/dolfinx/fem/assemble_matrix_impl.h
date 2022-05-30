@@ -471,9 +471,6 @@ void assemble_matrix(
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
-    // TODO: For codim 1
-    // - Add needs_full_cell_perms
-    // - Pass cell perm as first and full cell perm second
     const auto& facet_map_0
         = a.cell_local_facet_map(*a.function_spaces().at(0));
     const auto& facet_map_1
@@ -483,7 +480,6 @@ void assemble_matrix(
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::pair<std::int32_t, int>>& facets
         = a.exterior_facet_domains(i);
-    // TODO Pass both cell infos
     impl::assemble_exterior_facets(
         mat_set, *mesh, facets, dof_transform, dofs0, bs0,
         dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn, coeffs, cstride,
@@ -512,7 +508,6 @@ void assemble_matrix(
       const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
           facets
           = a.interior_facet_domains(i);
-      // TODO Pass both cell infos
       impl::assemble_interior_facets(
           mat_set, *mesh, facets, dof_transform, *dofmap0, bs0,
           dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1, fn, coeffs,
