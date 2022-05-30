@@ -900,7 +900,6 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
       const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
           facets
           = a.interior_facet_domains(i);
-      // TODO Pass both cell infos
       _lift_bc_interior_facets(b, *mesh, kernel, facets, dof_transform, dofmap0,
                                bs0, dof_transform_to_transpose, dofmap1, bs1,
                                constants, coeffs, cstride, cell_info_0, get_perm,
