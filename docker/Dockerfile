@@ -123,6 +123,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libboost-timer-dev \
     liblapack-dev \
     libopenblas-dev \
+    libpugixml-dev \
     ninja-build \
     pkg-config \
     python3-dev \
