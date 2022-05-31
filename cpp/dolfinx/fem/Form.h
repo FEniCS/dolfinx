@@ -113,7 +113,8 @@ public:
     {
       if (_mesh != V->mesh()
           and entity_maps.find(V->mesh()) == entity_maps.end())
-        throw std::runtime_error("Incompatible mesh. entity_maps must be provided.");
+        throw std::runtime_error(
+            "Incompatible mesh. entity_maps must be provided.");
     }
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
@@ -366,10 +367,10 @@ public:
   std::function<std::int32_t(std::int32_t)>
   cell_map(const FunctionSpace& function_space) const
   {
-    auto coeff_mesh = function_space.mesh();
-    if (coeff_mesh != mesh())
+    auto mesh_fs = function_space.mesh();
+    if (mesh_fs != mesh())
     {
-      return [&entity_map = entity_maps().at(coeff_mesh)](std::int32_t e)
+      return [&entity_map = entity_maps().at(mesh_fs)](std::int32_t e)
       { return entity_map[e]; };
     }
     else
@@ -388,26 +389,28 @@ public:
   std::function<std::int32_t(std::pair<std::int32_t, int>)>
   cell_local_facet_map(const FunctionSpace& function_space) const
   {
-    auto coeff_mesh = function_space.mesh();
-    if (coeff_mesh != mesh())
+    auto mesh_fs = function_space.mesh();
+    if (mesh_fs != mesh())
     {
       const int tdim = mesh()->topology().dim();
-      const int codim = tdim - coeff_mesh->topology().dim();
+      const int codim = tdim - mesh_fs->topology().dim();
       // TODO Use switch
       if (codim == 0)
       {
-        return [&entity_map = entity_maps().at(coeff_mesh)](std::pair<std::int32_t, int> e)
+        return [&entity_map
+                = entity_maps().at(mesh_fs)](std::pair<std::int32_t, int> e)
         { return entity_map[e.first]; };
       }
       else if (codim == 1)
       {
         // TODO assert(c_to_f);
-        return [&entity_map = entity_maps().at(coeff_mesh), c_to_f = mesh()->topology().connectivity(tdim, tdim - 1)](std::pair<std::int32_t, int> e)
+        return [&entity_map = entity_maps().at(mesh_fs),
+                c_to_f = mesh()->topology().connectivity(tdim, tdim - 1)](
+                   std::pair<std::int32_t, int> e)
         { return entity_map[c_to_f->links(e.first)[e.second]]; };
       }
       else
       {
-        // TODO Handle this properly
         throw std::runtime_error("codimension > 1 not supported");
       }
     }
