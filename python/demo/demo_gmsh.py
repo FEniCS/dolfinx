@@ -121,7 +121,7 @@ entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
 
 msh.topology.create_connectivity(2, 0)
 mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), values)
-mt.name = "ball_d1_surface"
+mt._name = "ball_d1_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "out_gmsh/mesh.xdmf", "w") as file:
     file.write_mesh(msh)
@@ -181,7 +181,7 @@ marked_facets = marked_facets[:, gmsh_triangle6]
 entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
 msh.topology.create_connectivity(2, 0)
 mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), values)
-mt.name = "ball_d2_surface"
+mt._name = "ball_d2_surface"
 with XDMFFile(MPI.COMM_WORLD, "out_gmsh/mesh.xdmf", "a") as file:
     file.write_mesh(msh)
     msh.topology.create_connectivity(2, 3)
@@ -258,7 +258,7 @@ msh.name = "hex_d2"
 entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
 msh.topology.create_connectivity(2, 0)
 mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), values)
-mt.name = "hex_d2_surface"
+mt._name = "hex_d2_surface"
 
 with XDMFFile(MPI.COMM_WORLD, "out_gmsh/mesh.xdmf", "a") as file:
     file.write_mesh(msh)
