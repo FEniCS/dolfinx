@@ -7,7 +7,6 @@ Project <https://fenicsproject.org/>`_. It is developed on `GitHub
 
 .. toctree::
    :maxdepth: 2
-   :numbered:
 
    installation
    demos

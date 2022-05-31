@@ -25,6 +25,7 @@
 #include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/interpolate.h>
 #include <dolfinx/fem/petsc.h>
+#include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/graph/ordering.h>
@@ -354,7 +355,6 @@ void declare_objects(py::module& m, const std::string& type)
       .def(py::init<std::shared_ptr<dolfinx::fem::FunctionSpace>,
                     std::shared_ptr<dolfinx::la::Vector<T>>>())
       .def_readwrite("name", &dolfinx::fem::Function<T>::name)
-      .def_property_readonly("id", &dolfinx::fem::Function<T>::id)
       .def("sub", &dolfinx::fem::Function<T>::sub,
            "Return sub-function (view into parent Function")
       .def("collapse", &dolfinx::fem::Function<T>::collapse,
@@ -663,17 +663,70 @@ void petsc_module(py::module& m)
         });
 
   m.def(
-      "create_discrete_gradient",
+      "discrete_gradient",
       [](const dolfinx::fem::FunctionSpace& V0,
          const dolfinx::fem::FunctionSpace& V1)
       {
-        dolfinx::la::SparsityPattern sp
-            = dolfinx::fem::create_sparsity_discrete_gradient(V0, V1);
-        Mat A = dolfinx::la::petsc::create_matrix(MPI_COMM_WORLD, sp);
-        dolfinx::fem::assemble_discrete_gradient<PetscScalar>(
-            dolfinx::la::petsc::Matrix::set_fn(A, ADD_VALUES), V0, V1);
-        MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-        MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+        assert(V0.mesh());
+        std::shared_ptr<const dolfinx::mesh::Mesh> mesh = V0.mesh();
+        assert(V1.mesh());
+        assert(mesh == V1.mesh());
+        MPI_Comm comm = mesh->comm();
+
+        std::shared_ptr<const dolfinx::fem::DofMap> dofmap0 = V0.dofmap();
+        assert(dofmap0);
+        std::shared_ptr<const dolfinx::fem::DofMap> dofmap1 = V1.dofmap();
+        assert(dofmap1);
+
+        // Create and build  sparsity pattern
+        assert(dofmap0->index_map);
+        assert(dofmap1->index_map);
+        dolfinx::la::SparsityPattern sp(
+            comm, {dofmap1->index_map, dofmap0->index_map},
+            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
+        dolfinx::fem::sparsitybuild::cells(sp, mesh->topology(),
+                                           {*dofmap1, *dofmap0});
+        sp.assemble();
+
+        // Build operator
+        Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
+        MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
+        dolfinx::fem::discrete_gradient<PetscScalar>(
+            V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
+        return A;
+      },
+      py::return_value_policy::take_ownership);
+  m.def(
+      "interpolation_matrix",
+      [](const dolfinx::fem::FunctionSpace& V0,
+         const dolfinx::fem::FunctionSpace& V1)
+      {
+        assert(V0.mesh());
+        std::shared_ptr<const dolfinx::mesh::Mesh> mesh = V0.mesh();
+        assert(V1.mesh());
+        assert(mesh == V1.mesh());
+        MPI_Comm comm = mesh->comm();
+
+        std::shared_ptr<const dolfinx::fem::DofMap> dofmap0 = V0.dofmap();
+        assert(dofmap0);
+        std::shared_ptr<const dolfinx::fem::DofMap> dofmap1 = V1.dofmap();
+        assert(dofmap1);
+
+        // Create and build  sparsity pattern
+        assert(dofmap0->index_map);
+        assert(dofmap1->index_map);
+        dolfinx::la::SparsityPattern sp(
+            comm, {dofmap1->index_map, dofmap0->index_map},
+            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
+        dolfinx::fem::sparsitybuild::cells(sp, mesh->topology(),
+                                           {*dofmap1, *dofmap0});
+        sp.assemble();
+
+        // Build operator
+        Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
+        MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
+        dolfinx::fem::interpolation_matrix<PetscScalar>(
+            V0, V1, dolfinx::la::petsc::Matrix::set_block_fn(A, INSERT_VALUES));
         return A;
       },
       py::return_value_policy::take_ownership);
@@ -1045,7 +1098,9 @@ void fem(py::module& m)
            {
              const std::size_t num_points = x.shape(0);
              const std::size_t gdim = x.shape(1);
-             const std::size_t tdim = self.topological_dimension();
+             const std::size_t tdim
+                 = dolfinx::mesh::cell_dim(self.cell_shape());
+
              xt::xtensor<double, 2> X = xt::empty<double>({num_points, tdim});
 
              std::array<std::size_t, 2> s_x;
@@ -1165,9 +1220,6 @@ void fem(py::module& m)
       .def(py::init<std::shared_ptr<dolfinx::mesh::Mesh>,
                     std::shared_ptr<dolfinx::fem::FiniteElement>,
                     std::shared_ptr<dolfinx::fem::DofMap>>())
-      .def_property_readonly("id", &dolfinx::fem::FunctionSpace::id)
-      .def("__hash__", &dolfinx::fem::FunctionSpace::id)
-      .def("__eq__", &dolfinx::fem::FunctionSpace::operator==)
       .def("collapse", &dolfinx::fem::FunctionSpace::collapse)
       .def("component", &dolfinx::fem::FunctionSpace::component)
       .def("contains", &dolfinx::fem::FunctionSpace::contains)
@@ -1177,6 +1229,10 @@ void fem(py::module& m)
       .def("sub", &dolfinx::fem::FunctionSpace::sub)
       .def("tabulate_dof_coordinates",
            [](const dolfinx::fem::FunctionSpace& self)
-           { return xt_as_pyarray(self.tabulate_dof_coordinates(false)); });
+           {
+             std::vector x = self.tabulate_dof_coordinates(false);
+             std::vector<std::size_t> shape = {x.size() / 3, 3};
+             return as_pyarray(std::move(x), shape);
+           });
 }
 } // namespace dolfinx_wrappers

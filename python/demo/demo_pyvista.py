@@ -21,8 +21,8 @@ import numpy as np
 
 import dolfinx.plot as plot
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.mesh import (CellType, MeshTags, compute_midpoints,
-                          create_unit_cube, create_unit_square)
+from dolfinx.mesh import (CellType, compute_midpoints, create_unit_cube,
+                          create_unit_square, meshtags)
 
 from mpi4py import MPI
 
@@ -56,7 +56,7 @@ def plot_scalar():
     u.interpolate(lambda x: np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi))
 
     # As we want to visualize the function u, we have to create a grid to
-    # attached the dof values to We do this by creating a topology and
+    # attached the DoF values to We do this by creating a topology and
     # geometry based on the function space V
     cells, types, x = plot.create_vtk_mesh(V)
     grid = pyvista.UnstructuredGrid(cells, types, x)
@@ -90,11 +90,11 @@ def plot_scalar():
         subplotter.show()
 
 
-# ## MeshTags and using subplots
+# ## Mesh tags and using subplots
 
 def plot_meshtags():
 
-    msh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
+    msh = create_unit_square(MPI.COMM_WORLD, 25, 25, cell_type=CellType.quadrilateral)
 
     # We continue using the mesh from the previous section, and find all
     # cells satisfying the condition below
@@ -103,22 +103,22 @@ def plot_meshtags():
         """True for points inside circle with radius 2"""
         return np.array((x.T[0] - 0.5)**2 + (x.T[1] - 0.5)**2 < 0.2**2, dtype=np.int32)
 
-    # Create a dolfinx.MeshTag for all cells. If midpoint is inside the
+    # Create mesh tags for all cells. If midpoint is inside the
     # circle, it gets value 1, otherwise 0.
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     midpoints = compute_midpoints(msh, msh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
-    cell_tags = MeshTags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
+    cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
-    cells, types, x = plot.create_vtk_mesh(msh, msh.topology.dim)
+    cells, types, x = plot.create_vtk_mesh(msh)
     grid = pyvista.UnstructuredGrid(cells, types, x)
 
-    # As the dolfinx.MeshTag contains a value for every cell in the
+    # As the mesh tags contain a value for every cell in the
     # geometry, we can attach it directly to the grid
     grid.cell_data["Marker"] = cell_tags.values
     grid.set_active_scalars("Marker")
 
     # We create a plotter consisting of two windows, and add a plot of the
-    # Meshtags to the first window.
+    # mesh tags to the first window.
     subplotter = pyvista.Plotter(shape=(1, 2))
     subplotter.subplot(0, 0)
     subplotter.add_text("Mesh with markers", font_size=14, color="black", position="upper_edge")
@@ -127,9 +127,8 @@ def plot_meshtags():
 
     # We can also visualize subsets of data, by creating a smaller topology,
     # only consisting of those entities that has value one in the
-    # dolfinx.MeshTag
-    cells, types, x = plot.create_vtk_mesh(
-        msh, msh.topology.dim, cell_tags.indices[cell_tags.values == 1])
+    # mesh tags
+    cells, types, x = plot.create_vtk_mesh(msh, entities=cell_tags.find(1))
 
     # We add this grid to the second plotter
     sub_grid = pyvista.UnstructuredGrid(cells, types, x)
@@ -160,21 +159,20 @@ def plot_higher_order():
         """Mark sphere with radius < sqrt(2)"""
         return np.array((x.T[0] - 0.5)**2 + (x.T[1] - 0.5)**2 < 0.2**2, dtype=np.int32)
 
-    # Create a dolfinx.MeshTag for all cells. If midpoint is inside the
+    # Create mesh tags for all cells. If midpoint is inside the
     # circle, it gets value 1, otherwise 0.
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     midpoints = compute_midpoints(msh, msh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
-    cell_tags = MeshTags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
+    cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
     # We start by interpolating a discontinuous function into a second order
-    # discontinuous Lagrange  space Note that we use the `cell_tags` from
+    # discontinuous Lagrange space. Note that we use the `cell_tags` from
     # the previous section to get the cells for each of the regions
-    cells0 = cell_tags.indices[cell_tags.values == 0]
-    cells1 = cell_tags.indices[cell_tags.values == 1]
     V = FunctionSpace(msh, ("Discontinuous Lagrange", 2))
     u = Function(V, dtype=np.float64)
-    u.interpolate(lambda x: x[0], cells0)
-    u.interpolate(lambda x: x[1] + 1, cells1)
+    u.interpolate(lambda x: x[0], cell_tags.find(0))
+    u.interpolate(lambda x: x[1] + 1, cell_tags.find(1))
+    u.x.scatter_forward()
 
     # To get a topology that has a 1-1 correspondence with the
     # degrees-of-freedom in the function space, we call
@@ -191,7 +189,7 @@ def plot_higher_order():
     # that as we have done previously
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     cell_entities = np.arange(num_cells, dtype=np.int32)
-    cells, types, x = plot.create_vtk_mesh(msh, msh.topology.dim, cell_entities)
+    cells, types, x = plot.create_vtk_mesh(msh, entities=cell_entities)
     org_grid = pyvista.UnstructuredGrid(cells, types, x)
 
     # We visualize the data
@@ -225,7 +223,7 @@ def plot_nedelec():
                      position="upper_edge", font_size=14, color="black")
 
     # Next, we create a pyvista.UnstructuredGrid based on the mesh
-    pyvista_cells, cell_types, x = plot.create_vtk_mesh(msh, msh.topology.dim)
+    pyvista_cells, cell_types, x = plot.create_vtk_mesh(msh)
     grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, x)
 
     # Add this grid (as a wireframe) to the plotter

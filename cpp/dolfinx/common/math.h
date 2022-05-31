@@ -20,6 +20,19 @@ namespace dolfinx::math
 /// @param v The second vector. It must has size 3.
 /// @return The cross product `u x v`. The type will be the same as `u`.
 template <typename U, typename V>
+std::array<typename U::value_type, 3> cross_new(const U& u, const V& v)
+{
+  assert(u.size() == 3);
+  assert(v.size() == 3);
+  return {u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2],
+          u[0] * v[1] - u[1] * v[0]};
+}
+
+/// Compute the cross product u x v
+/// @param u The first vector. It must has size 3.
+/// @param v The second vector. It must has size 3.
+/// @return The cross product `u x v`. The type will be the same as `u`.
+template <typename U, typename V>
 xt::xtensor_fixed<typename U::value_type, xt::xshape<3>> cross(const U& u,
                                                                const V& v)
 {
@@ -38,6 +51,45 @@ T difference_of_products(T a, T b, T c, T d) noexcept
   T err = std::fma(-b, c, w);
   T diff = std::fma(a, d, -w);
   return diff + err;
+}
+
+/// Compute the determinant of a small matrix (1x1, 2x2, or 3x3)
+/// @note Tailored for use in computations using the Jacobian
+/// @param[in] A The matrix to compute the determinant of. Row-major
+/// storage.
+/// @param[in] shape The shape of `A`
+/// @return The determinate of `A`
+template <typename T>
+auto det(const T* A, std::array<std::size_t, 2> shape)
+{
+  assert(shape[0] == shape[1]);
+
+  // const int nrows = shape[0];
+  switch (shape[0])
+  {
+  case 1:
+    return *A;
+  case 2:
+    /* A(0, 0), A(0, 1), A(1, 0), A(1, 1) */
+    return difference_of_products(A[0], A[1], A[2], A[3]);
+  case 3:
+  {
+    // Leibniz formula combined with Kahan’s method for accurate
+    // computation of 3 x 3 determinants
+
+    T w0 = difference_of_products(A[3 + 1], A[3 + 2], A[3 * 2 + 1],
+                                  A[2 * 3 + 2]);
+    T w1 = difference_of_products(A[3], A[3 + 2], A[3 * 2], A[3 * 2 + 2]);
+    T w2 = difference_of_products(A[3], A[3 + 1], A[3 * 2], A[3 * 2 + 1]);
+    T w3 = difference_of_products(A[0], A[1], w1, w0);
+    T w4 = std::fma(A[2], w2, w3);
+    return w4;
+  }
+  default:
+    throw std::runtime_error("math::det is not implemented for "
+                             + std::to_string(A[0]) + "x" + std::to_string(A[1])
+                             + " matrices.");
+  }
 }
 
 /// Compute the determinant of a small matrix (1x1, 2x2, or 3x3)
@@ -176,7 +228,8 @@ void pinv(const U& A, V&& P)
     xt::xtensor_fixed<T, xt::xshape<2, 2>> ATA;
     xt::xtensor_fixed<T, xt::xshape<2, 2>> Inv;
     AT = xt::transpose(A);
-    ATA.fill(0);
+    std::fill(ATA.begin(), ATA.end(), 0.0);
+    std::fill(P.begin(), P.end(), 0.0);
 
     // pinv(A) = (A^T * A)^-1 * A^T
     dolfinx::math::dot(AT, A, ATA);

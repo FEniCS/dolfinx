@@ -11,7 +11,6 @@
 #include "FunctionSpace.h"
 #include "interpolate.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -51,7 +50,7 @@ public:
   /// Create function on given function space
   /// @param[in] V The function space
   explicit Function(std::shared_ptr<const FunctionSpace> V)
-      : _id(common::UniqueIdGenerator::id()), _function_space(V),
+      : _function_space(V),
         _x(std::make_shared<la::Vector<T>>(V->dofmap()->index_map,
                                            V->dofmap()->index_map_bs()))
   {
@@ -71,7 +70,7 @@ public:
   /// @param[in] x The vector
   Function(std::shared_ptr<const FunctionSpace> V,
            std::shared_ptr<la::Vector<T>> x)
-      : _id(common::UniqueIdGenerator::id()), _function_space(V), _x(x)
+      : _function_space(V), _x(x)
   {
     // We do not check for a subspace since this constructor is used for
     // creating subfunctions
@@ -180,14 +179,15 @@ public:
     assert(_function_space);
     assert(_function_space->element());
     assert(_function_space->mesh());
-    const xt::xtensor<double, 2> x = fem::interpolation_coords(
+    const std::vector<double> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
-    auto fx = f(x);
+    auto _x = xt::adapt(x, std::vector<std::size_t>{3, x.size() / 3});
+    auto fx = f(_x);
     if (int vs = _function_space->element()->value_size();
         vs == 1 and fx.dimension() == 1)
     {
       // Check for scalar-valued functions
-      if (fx.shape(0) != x.shape(1))
+      if (fx.shape(0) != x.size() / 3)
         throw std::runtime_error("Data returned by callable has wrong length");
     }
     else
@@ -200,7 +200,7 @@ public:
         throw std::runtime_error(
             "Data returned by callable has wrong shape(0) size");
       }
-      if (fx.shape(1) != x.shape(1))
+      if (fx.shape(1) != x.size() / 3)
       {
         throw std::runtime_error(
             "Data returned by callable has wrong shape(1) size");
@@ -305,6 +305,9 @@ public:
             const xtl::span<const std::int32_t>& cells,
             xt::xtensor<T, 2>& u) const
   {
+    if (cells.empty())
+      return;
+
     // TODO: This could be easily made more efficient by exploiting points
     // being ordered by the cell to which they belong.
 
@@ -331,8 +334,7 @@ public:
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
-    // FIXME: Add proper interface for num coordinate dofs
-    const std::size_t num_dofs_g = x_dofmap.num_links(0);
+    const std::size_t num_dofs_g = mesh->geometry().cmap().dim();
     xtl::span<const double> x_g = mesh->geometry().x();
 
     // Get coordinate map
@@ -413,6 +415,7 @@ public:
 
       // Get cell geometry (coordinate dofs)
       auto x_dofs = x_dofmap.links(cell_index);
+      assert(x_dofs.size() == num_dofs_g);
       for (std::size_t i = 0; i < num_dofs_g; ++i)
       {
         const int pos = 3 * x_dofs[i];
@@ -518,13 +521,7 @@ public:
   /// Name
   std::string name = "u";
 
-  /// ID
-  std::size_t id() const { return _id; }
-
 private:
-  // ID
-  std::size_t _id;
-
   // The function space
   std::shared_ptr<const FunctionSpace> _function_space;
 

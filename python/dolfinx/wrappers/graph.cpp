@@ -26,8 +26,8 @@ auto create_partitioner_py(Functor p_cpp)
 {
   return [p_cpp](dolfinx_wrappers::MPICommWrapper comm, int nparts,
                  const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-                 std::int32_t num_ghost_nodes, bool ghosting)
-  { return p_cpp(comm.get(), nparts, local_graph, num_ghost_nodes, ghosting); };
+                 bool ghosting)
+  { return p_cpp(comm.get(), nparts, local_graph, ghosting); };
 }
 } // namespace
 
@@ -48,8 +48,7 @@ void declare_adjacency_list(py::module& m, std::string type)
               throw std::runtime_error("Incorrect array dimension.");
             const std::size_t dim = adj.ndim() < 2 ? 1 : adj.shape(1);
             std::vector<T> data(adj.data(), adj.data() + adj.size());
-            return dolfinx::graph::build_adjacency_list<T>(std::move(data),
-                                                           dim);
+            return dolfinx::graph::regular_adjacency_list(std::move(data), dim);
           }))
       .def(py::init(
                [](const py::array_t<T, py::array::c_style>& array,
@@ -101,8 +100,7 @@ void graph(py::module& m)
   using partition_fn
       = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
           MPICommWrapper, int,
-          const dolfinx::graph::AdjacencyList<std::int64_t>&, std::int32_t,
-          bool)>;
+          const dolfinx::graph::AdjacencyList<std::int64_t>&, bool)>;
   m.def(
       "partitioner",
       []() -> partition_fn

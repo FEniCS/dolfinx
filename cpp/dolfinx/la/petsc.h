@@ -22,7 +22,7 @@
 namespace dolfinx::common
 {
 class IndexMap;
-}
+} // namespace dolfinx::common
 
 namespace dolfinx::la
 {
@@ -110,6 +110,7 @@ void scatter_local_vectors(
     Vec x, const std::vector<xtl::span<const PetscScalar>>& x_b,
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
+
 /// Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
 Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
@@ -176,7 +177,7 @@ public:
   /// Create holder of a PETSc Vec object/pointer. The Vec x object
   /// should already be created. If inc_ref_count is true, the reference
   /// counter of the Vec object will be increased. The Vec reference
-  /// count will always be decreased upon destruction of the the
+  /// count will always be decreased upon destruction of the
   /// PETScVector.
   ///
   /// @note Collective
@@ -392,7 +393,7 @@ public:
   /// Create holder of a PETSc Mat object/pointer. The Mat A object
   /// should already be created. If inc_ref_count is true, the reference
   /// counter of the Mat will be increased. The Mat reference count will
-  /// always be decreased upon destruction of the the petsc::Matrix.
+  /// always be decreased upon destruction of the petsc::Matrix.
   Matrix(Mat A, bool inc_ref_count);
 
   // Copy constructor (deleted)

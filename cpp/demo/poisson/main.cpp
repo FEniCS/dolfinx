@@ -115,8 +115,8 @@ using T = PetscScalar;
 
 int main(int argc, char* argv[])
 {
-  common::subsystem::init_logging(argc, argv);
-  common::subsystem::init_petsc(argc, argv);
+  dolfinx::init_logging(argc, argv);
+  PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   {
     // Create mesh and function space
@@ -179,8 +179,8 @@ int main(int argc, char* argv[])
           return 10 * xt::exp(-(dx) / 0.02);
         });
 
-    g->interpolate([](auto&& x) -> xt::xarray<T>
-                   { return xt::sin(5 * xt::row(x, 0)); });
+    g->interpolate(
+        [](auto&& x) -> xt::xarray<T> { return xt::sin(5 * xt::row(x, 0)); });
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a
@@ -203,14 +203,14 @@ int main(int argc, char* argv[])
     MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
     fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
-                      {bc});
+                         {bc});
     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
     b.set(0.0);
     fem::assemble_vector(b.mutable_array(), *L);
     fem::apply_lifting(b.mutable_array(), {a}, {{bc}}, {}, 1.0);
-    b.scatter_rev(common::IndexMap::Mode::add);
+    b.scatter_rev(std::plus<T>());
     fem::set_bc(b.mutable_array(), {bc});
 
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
@@ -235,6 +235,7 @@ int main(int argc, char* argv[])
     file.write<T>({u}, 0.0);
   }
 
-  common::subsystem::finalize_petsc();
+  PetscFinalize();
+
   return 0;
 }

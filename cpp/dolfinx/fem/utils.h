@@ -27,6 +27,9 @@
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
+/// @file utils.h
+/// @brief Functions supporting finite element method operations
+
 namespace basix
 {
 class FiniteElement;
@@ -47,7 +50,7 @@ namespace dolfinx::fem
 {
 class FunctionSpace;
 
-/// Extract test (0) and trial (1) function spaces pairs for each
+/// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms
 ///
 /// @param[in] a A rectangular block on bilinear forms
@@ -73,9 +76,17 @@ extract_function_spaces(const std::vector<std::vector<const Form<T>*>>& a)
   return spaces;
 }
 
-/// Create a sparsity pattern for a given form. The pattern is not
-/// finalised, i.e. the caller is responsible for calling
-/// SparsityPattern::assemble.
+/// @brief Create a sparsity pattern for a given form.
+/// @note The pattern is not finalised, i.e. the caller is responsible
+/// for calling SparsityPattern::assemble.
+la::SparsityPattern create_sparsity_pattern(
+    const mesh::Topology& topology,
+    const std::array<std::reference_wrapper<const DofMap>, 2>& dofmaps,
+    const std::set<IntegralType>& integrals);
+
+/// @brief Create a sparsity pattern for a given form.
+/// @note The pattern is not finalised, i.e. the caller is responsible
+/// for calling SparsityPattern::assemble.
 /// @param[in] a A bilinear form
 /// @return The corresponding sparsity pattern
 template <typename T>
@@ -107,27 +118,20 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
   return create_sparsity_pattern(mesh->topology(), dofmaps, types);
 }
 
-/// Create a sparsity pattern for a given form. The pattern is not
-/// finalised, i.e. the caller is responsible for calling
-/// SparsityPattern::assemble.
-la::SparsityPattern create_sparsity_pattern(
-    const mesh::Topology& topology,
-    const std::array<std::reference_wrapper<const DofMap>, 2>& dofmaps,
-    const std::set<IntegralType>& integrals);
-
 /// Create an ElementDofLayout from a ufcx_dofmap
 ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
                                            const mesh::CellType cell_type,
                                            const std::vector<int>& parent_map
                                            = {});
 
-/// Create a dof map on mesh
+/// @brief Create a dof map on mesh
 /// @param[in] comm MPI communicator
 /// @param[in] layout The dof layout on an element
 /// @param[in] topology The mesh topology
 /// @param[in] element The finite element
 /// @param[in] reorder_fn The graph reordering function called on the
 /// dofmap
+/// @return A new dof map
 DofMap
 create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
               mesh::Topology& topology,
@@ -140,12 +144,12 @@ create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
 /// return The name of each coefficient
 std::vector<std::string> get_coefficient_names(const ufcx_form& ufcx_form);
 
-/// Get the name of each constant in a UFC form
+/// @brief Get the name of each constant in a UFC form
 /// @param[in] ufcx_form The UFC form
-/// return The name of each constant
+/// @return The name of each constant
 std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 
-/// Create a Form from UFC input
+/// @brief Create a Form from UFC input
 /// @param[in] ufcx_form The UFC form
 /// @param[in] spaces Vector of function spaces
 /// @param[in] coefficients Coefficient fields in the form
@@ -343,7 +347,7 @@ Form<T> create_form(
                  needs_facet_permutations, mesh);
 }
 
-/// Create a Form from UFC input
+/// @brief Create a Form from UFC input
 /// @param[in] ufcx_form The UFC form
 /// @param[in] spaces The function spaces for the Form arguments
 /// @param[in] coefficients Coefficient fields in the form (by name)
@@ -388,8 +392,8 @@ Form<T> create_form(
   return create_form(ufcx_form, spaces, coeff_map, const_map, subdomains, mesh);
 }
 
-/// Create a Form using a factory function that returns a pointer to a
-/// ufcx_form
+/// @brief Create a Form using a factory function that returns a pointer
+/// to a ufcx_form
 /// @param[in] fptr pointer to a function returning a pointer to
 /// ufcx_form
 /// @param[in] spaces The function spaces for the Form arguments
@@ -416,8 +420,7 @@ Form<T> create_form(
   return L;
 }
 
-/// Create a FunctionSpace from a Basix element
-///
+/// @brief Create a FunctionSpace from a Basix element
 /// @param[in] mesh Mesh
 /// @param[in] e Basix finite element
 /// @param[in] bs The block size, e.g. 3 for a 'vector' Lagrange element
@@ -451,8 +454,10 @@ FunctionSpace create_functionspace(
         std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
     = nullptr);
 
+/// @private
 namespace impl
 {
+/// @private
 template <typename T>
 xtl::span<const std::uint32_t> get_cell_orientation_info(
     const std::vector<std::shared_ptr<const Function<T>>>& coefficients)
@@ -509,7 +514,7 @@ static inline void pack(const xtl::span<T>& coeffs, std::int32_t cell, int bs,
   transform(coeffs, cell_info, cell, 1);
 }
 
-/// Pack a single coefficient for a set of active entities
+/// @brief Pack a single coefficient for a set of active entities
 ///
 /// @param[out] c The coefficient to be packed
 /// @param[in] cstride The total number of coefficient values to pack
@@ -577,9 +582,8 @@ void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
 
 } // namespace impl
 
-/// Allocate storage for coefficients of a pair (integral_type, id) from
-/// a Form form
-///
+/// @brief Allocate storage for coefficients of a pair (integral_type,
+/// id) from a fem::Form form
 /// @param[in] form The Form
 /// @param[in] integral_type Type of integral
 /// @param[in] id The id of the integration domain
@@ -619,8 +623,7 @@ allocate_coefficient_storage(const Form<T>& form, IntegralType integral_type,
   return {std::vector<T>(num_entities * cstride), cstride};
 }
 
-/// Allocate memory for packed coefficients of a Form
-///
+/// @brief Allocate memory for packed coefficients of a Form
 /// @param[in] form The Form
 /// @return A map from a form (integral_type, domain_id) pair to a
 /// (coeffs, cstride) pair
@@ -642,8 +645,8 @@ allocate_coefficient_storage(const Form<T>& form)
   return coeffs;
 }
 
-/// Pack coefficients of a Form for a given integral type and domain id
-///
+/// @brief Pack coefficients of a Form for a given integral type and
+/// domain id
 /// @param[in] form The Form
 /// @param[in] integral_type Type of integral
 /// @param[in] id The id of the integration domain
@@ -726,7 +729,7 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
   }
 }
 
-/// Create Expression from UFC
+/// @brief Create Expression from UFC
 template <typename T>
 fem::Expression<T> create_expression(
     const ufcx_expression& expression,
@@ -784,8 +787,8 @@ fem::Expression<T> create_expression(
                          value_shape, mesh, argument_function_space);
 }
 
-/// Create Expression from UFC input
-/// (with named coefficients and constants)
+/// @brief Create Expression from UFC input (with named coefficients and
+/// constants)
 template <typename T>
 fem::Expression<T> create_expression(
     const ufcx_expression& expression,
@@ -835,9 +838,8 @@ fem::Expression<T> create_expression(
                            argument_function_space);
 }
 
-// NOTE: This is subject to change
-/// Pack coefficients of a Form
-///
+/// @warning This is subject to change
+/// @brief Pack coefficients of a Form
 /// @param[in] form The Form
 /// @param[in] coeffs A map from a (integral_type, domain_id) pair to a
 /// (coeffs, cstride) pair
@@ -850,7 +852,8 @@ void pack_coefficients(const Form<T>& form,
     pack_coefficients<T>(form, key.first, key.second, val.first, val.second);
 }
 
-/// Pack coefficients of a Expression u for a give list of active cells
+/// @brief Pack coefficients of a Expression u for a give list of active
+/// cells
 ///
 /// @param[in] u The Expression
 /// @param[in] cells A list of active cells
@@ -882,8 +885,8 @@ pack_coefficients(const Expression<T>& u,
   return {std::move(c), cstride};
 }
 
-/// @note This function is subject to change
-/// Pack constants of u of generic type U ready for assembly
+/// @brief Pack constants of u of generic type U ready for assembly
+/// @warning This function is subject to change
 template <typename U>
 std::vector<typename U::scalar_type> pack_constants(const U& u)
 {

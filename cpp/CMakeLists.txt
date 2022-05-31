@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.16)
 #------------------------------------------------------------------------------
 # Set project name and version number
 
-project(DOLFINX VERSION "0.3.1.0")
+project(DOLFINX VERSION "0.4.2.0")
 
 set(DOXYGEN_DOLFINX_VERSION ${DOLFINX_VERSION} CACHE STRING "Version for Doxygen" FORCE)
 
@@ -66,27 +66,23 @@ add_feature_info(XTENSOR_USE_XSIMD XTENSOR_USE_XSIMD "Enable SIMD with xtensor (
 option(XTENSOR_OPTIMIZE "Enable xtensor target-specific optimization" OFF)
 add_feature_info(XTENSOR_OPTIMIZE XTENSOR_OPTIMIZE "Enable architecture-specific optimizations as defined by xtensor.")
 
+# Control UFCx discovery
+option(DOLFINX_UFCX_PYTHON "Enable UFCx discovery using Python. Disable if UFCx should be found using CMake." ON)
+add_feature_info(DOLFINX_UFCX_PYTHON DOLFINX_UFCX_PYTHON "Enable UFCx discovery using Python. Disable if UFCx should be found using a CMake config file.")
+
 #------------------------------------------------------------------------------
 # Enable or disable optional packages
 
 # List optional packages
-list(APPEND OPTIONAL_PACKAGES "ADIOS2")
-list(APPEND OPTIONAL_PACKAGES "ParMETIS")
-list(APPEND OPTIONAL_PACKAGES "SCOTCH")
-list(APPEND OPTIONAL_PACKAGES "SLEPc")
-list(APPEND OPTIONAL_PACKAGES "KaHIP")
-
-# Add options
-foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
-  string(TOUPPER "DOLFINX_ENABLE_${OPTIONAL_PACKAGE}" OPTION_NAME)
-  option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
-  add_feature_info(${OPTION_NAME} ${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}.")
-endforeach()
+option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2." ON)
+option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS." ON)
+option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." ON)
+option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." ON)
+option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." OFF)
 
 #------------------------------------------------------------------------------
 # Check for MPI
 
-# FIXME: Should we set CMake to use the discovered MPI compiler wrappers?
 find_package(MPI 3 REQUIRED)
 
 #------------------------------------------------------------------------------
@@ -125,6 +121,9 @@ endif()
 
 #------------------------------------------------------------------------------
 # Find required packages
+
+# pugixml
+find_package(pugixml REQUIRED)
 
 # Note: When updating Boost version, also update DOLFINXCongif.cmake.in
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
@@ -208,12 +207,14 @@ set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
   URL "https://www.hdfgroup.org/HDF5")
 
-# Check for UFC. First check for UFCxConfig.cmake (CONFIG)
+# Check for UFC
 # Note: we use the case (ufcx vs UFCx) elsewhere to determine by which
 # method UFCx was found
-find_package(ufcx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} CONFIG)
-if (NOT ufcx_FOUND)
-  # Next, check in MODULE mode (using FindUFCX.cmake)
+if (NOT DOLFINX_UFCX_PYTHON)
+  # Check in CONFIG mode, i.e. look for instaled ufcxConfig.cmake
+  find_package(ufcx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} REQUIRED CONFIG)
+else()
+  # Check in MODULE mode (using FindUFCX.cmake)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
   find_package(UFCx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} REQUIRED MODULE)
 endif()

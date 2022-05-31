@@ -8,8 +8,8 @@
 #include "CoordinateElement.h"
 #include "DofMap.h"
 #include "FiniteElement.h"
+#include <boost/uuid/uuid_generators.hpp>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -24,22 +24,12 @@ using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
-                             std::shared_ptr<const fem::FiniteElement> element,
-                             std::shared_ptr<const fem::DofMap> dofmap)
+                             std::shared_ptr<const FiniteElement> element,
+                             std::shared_ptr<const DofMap> dofmap)
     : _mesh(mesh), _element(element), _dofmap(dofmap),
-      _id(common::UniqueIdGenerator::id()), _root_space_id(_id)
+      _id(boost::uuids::random_generator()()), _root_space_id(_id)
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-bool FunctionSpace::operator==(const FunctionSpace& V) const
-{
-  return _element == V._element and _mesh == V._mesh and _dofmap == V._dofmap;
-}
-//-----------------------------------------------------------------------------
-bool FunctionSpace::operator!=(const FunctionSpace& V) const
-{
-  return !(*this == V);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>
@@ -57,12 +47,12 @@ FunctionSpace::sub(const std::vector<int>& component) const
   }
 
   // Extract sub-element
-  std::shared_ptr<const fem::FiniteElement> element
+  std::shared_ptr<const FiniteElement> element
       = this->_element->extract_sub_element(component);
 
   // Extract sub dofmap
   auto dofmap
-      = std::make_shared<fem::DofMap>(_dofmap->extract_sub_dofmap(component));
+      = std::make_shared<DofMap>(_dofmap->extract_sub_dofmap(component));
 
   // Create new sub space
   auto sub_space = std::make_shared<FunctionSpace>(_mesh, element, dofmap);
@@ -79,6 +69,37 @@ FunctionSpace::sub(const std::vector<int>& component) const
   return sub_space;
 }
 //-----------------------------------------------------------------------------
+bool FunctionSpace::contains(const FunctionSpace& V) const
+{
+  if (this == std::addressof(V))
+  {
+    // Spaces are the same (same memory address)
+    return true;
+  }
+  else if (_root_space_id != V._root_space_id)
+  {
+    // Different root spaces
+    return false;
+  }
+  else if (_component.size() > V._component.size())
+  {
+    // V is a superspace of *this
+    return false;
+  }
+  else if (!std::equal(_component.begin(), _component.end(),
+                       V._component.begin()))
+  {
+    // Components of 'this' are not the same as the leading components
+    // of V
+    return false;
+  }
+  else
+  {
+    // Ok, V is really our subspace
+    return true;
+  }
+}
+//-----------------------------------------------------------------------------
 std::pair<FunctionSpace, std::vector<std::int32_t>>
 FunctionSpace::collapse() const
 {
@@ -89,7 +110,7 @@ FunctionSpace::collapse() const
   auto [_collapsed_dofmap, collapsed_dofs]
       = _dofmap->collapse(_mesh->comm(), _mesh->topology());
   auto collapsed_dofmap
-      = std::make_shared<fem::DofMap>(std::move(_collapsed_dofmap));
+      = std::make_shared<DofMap>(std::move(_collapsed_dofmap));
 
   // Create new FunctionSpace and return
   return {FunctionSpace(_mesh, _element, collapsed_dofmap),
@@ -98,7 +119,7 @@ FunctionSpace::collapse() const
 //-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2>
+std::vector<double>
 FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 {
   if (!_component.empty())
@@ -123,9 +144,9 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   // Get dofmap local size
   assert(_dofmap);
   std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map;
+  assert(index_map);
   const int index_map_bs = _dofmap->index_map_bs();
   const int dofmap_bs = _dofmap->bs();
-  assert(index_map);
 
   const int element_block_size = _element->block_size();
   const std::size_t scalar_dofs
@@ -143,19 +164,18 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   const xt::xtensor<double, 2>& X = _element->interpolation_points();
 
   // Get coordinate map
-  const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
+  const CoordinateElement& cmap = _mesh->geometry().cmap();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = _mesh->geometry().dofmap();
-  // FIXME: Add proper interface for num coordinate dofs
+  const std::size_t num_dofs_g = _mesh->geometry().cmap().dim();
   xtl::span<const double> x_g = _mesh->geometry().x();
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
 
   // Array to hold coordinates to return
   const std::size_t shape_c0 = transpose ? 3 : num_dofs;
   const std::size_t shape_c1 = transpose ? num_dofs : 3;
-  xt::xtensor<double, 2> coords = xt::zeros<double>({shape_c0, shape_c1});
+  std::vector<double> coords(shape_c0 * shape_c1, 0);
 
   // Loop over cells and tabulate dofs
   xt::xtensor<double, 2> x = xt::zeros<double>({scalar_dofs, gdim});
@@ -205,52 +225,29 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (std::size_t j = 0; j < gdim; ++j)
-          coords(dofs[i], j) = x(i, j);
+          coords[dofs[i] * 3 + j] = x(i, j);
     }
     else
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (std::size_t j = 0; j < gdim; ++j)
-          coords(j, dofs[i]) = x(i, j);
+          coords[j * num_dofs + dofs[i]] = x(i, j);
     }
   }
 
   return coords;
 }
 //-----------------------------------------------------------------------------
-std::size_t FunctionSpace::id() const { return _id; }
-//-----------------------------------------------------------------------------
 std::shared_ptr<const mesh::Mesh> FunctionSpace::mesh() const { return _mesh; }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const fem::FiniteElement> FunctionSpace::element() const
+std::shared_ptr<const FiniteElement> FunctionSpace::element() const
 {
   return _element;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const fem::DofMap> FunctionSpace::dofmap() const
-{
-  return _dofmap;
-}
+std::shared_ptr<const DofMap> FunctionSpace::dofmap() const { return _dofmap; }
 //-----------------------------------------------------------------------------
-bool FunctionSpace::contains(const FunctionSpace& V) const
-{
-  // Is the root space same?
-  if (_root_space_id != V._root_space_id)
-    return false;
-
-  // Is V possibly our superspace?
-  if (_component.size() > V._component.size())
-    return false;
-
-  // Are our components same as leading components of V?
-  if (!std::equal(_component.begin(), _component.end(), V._component.begin()))
-    return false;
-
-  // Ok, V is really our subspace
-  return true;
-}
-//-----------------------------------------------------------------------------
-std::array<std::vector<std::shared_ptr<const fem::FunctionSpace>>, 2>
+std::array<std::vector<std::shared_ptr<const FunctionSpace>>, 2>
 fem::common_function_spaces(
     const std::vector<
         std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>& V)

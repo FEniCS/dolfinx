@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <basix/finite-element.h>
 #include <basix/interpolation.h>
+#include <basix/polyset.h>
 #include <dolfinx/common/log.h>
 #include <functional>
 #include <ufcx.h>
@@ -18,7 +19,7 @@ using namespace dolfinx::fem;
 namespace
 {
 //-----------------------------------------------------------------------------
-// Check if an element is a basix element (or a blocked element
+// Check if an element is a Basix element (or a blocked element
 // containing a Basix element)
 bool is_basix_element(const ufcx_finite_element& element)
 {
@@ -29,6 +30,22 @@ bool is_basix_element(const ufcx_finite_element& element)
     // TODO: what should happen if the element is a blocked element
     // containing a blocked element containing a Basix element?
     return element.sub_elements[0]->element_type == ufcx_basix_element;
+  }
+  else
+    return false;
+}
+//-----------------------------------------------------------------------------
+// Check if an element is a custom Basix element (or a blocked element
+// containing a custom Basix element)
+bool is_basix_custom_element(const ufcx_finite_element& element)
+{
+  if (element.element_type == ufcx_basix_custom_element)
+    return true;
+  else if (element.block_size != 1)
+  {
+    // TODO: what should happen if the element is a blocked element
+    // containing a blocked element containing a Basix element?
+    return element.sub_elements[0]->element_type == ufcx_basix_custom_element;
   }
   else
     return false;
@@ -81,8 +98,7 @@ _extract_sub_element(const FiniteElement& finite_element,
 
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(const ufcx_finite_element& e)
-    : _signature(e.signature), _family(e.family),
-      _tdim(e.topological_dimension), _space_dim(e.space_dimension),
+    : _signature(e.signature), _family(e.family), _space_dim(e.space_dimension),
       _value_shape(e.value_shape, e.value_shape + e.value_rank),
       _bs(e.block_size)
 {
@@ -111,7 +127,7 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
     throw std::runtime_error(
         "Unknown UFC cell type when building FiniteElement.");
   }
-  assert(mesh::cell_dim(_cell_shape) == _tdim);
+  assert(mesh::cell_dim(_cell_shape) == e.topological_dimension);
 
   static const std::map<ufcx_shape, std::string> ufcx_to_cell
       = {{vertex, "point"},         {interval, "interval"},
@@ -139,40 +155,80 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
     }
   }
 
-  if (is_basix_element(e))
+  if (is_basix_custom_element(e))
   {
-    if (e.lagrange_variant != -1 and e.dpc_variant != -1)
+    // Recreate the custom Basix element using information written into the
+    // generated code
+    ufcx_basix_custom_finite_element* ce = e.custom_element;
+    const basix::cell::type cell_type
+        = static_cast<basix::cell::type>(ce->cell_type);
+
+    std::vector<std::size_t> value_shape(ce->value_shape_length);
+    std::size_t value_size = 1;
+    for (int i = 0; i < ce->value_shape_length; ++i)
     {
-      _element = std::make_unique<basix::FiniteElement>(basix::create_element(
-          static_cast<basix::element::family>(e.basix_family),
-          static_cast<basix::cell::type>(e.basix_cell), e.degree,
-          static_cast<basix::element::lagrange_variant>(e.lagrange_variant),
-          static_cast<basix::element::dpc_variant>(e.dpc_variant),
-          e.discontinuous));
+      value_shape[i] = ce->value_shape[i];
+      value_size *= ce->value_shape[i];
     }
-    if (e.lagrange_variant != -1)
-    {
-      _element = std::make_unique<basix::FiniteElement>(basix::create_element(
-          static_cast<basix::element::family>(e.basix_family),
-          static_cast<basix::cell::type>(e.basix_cell), e.degree,
-          static_cast<basix::element::lagrange_variant>(e.lagrange_variant),
-          e.discontinuous));
+    const int nderivs = ce->interpolation_nderivs;
+    const std::size_t nderivs_dim = basix::polyset::nderivs(cell_type, nderivs);
+
+    xt::xtensor<double, 2> wcoeffs(
+        {static_cast<std::size_t>(ce->wcoeffs_rows),
+         static_cast<std::size_t>(ce->wcoeffs_cols)});
+    { // scope
+      int e = 0;
+      for (int i = 0; i < ce->wcoeffs_rows; ++i)
+        for (int j = 0; j < ce->wcoeffs_cols; ++j)
+          wcoeffs(i, j) = ce->wcoeffs[e++];
     }
-    else if (e.dpc_variant != -1)
-    {
-      _element = std::make_unique<basix::FiniteElement>(basix::create_element(
-          static_cast<basix::element::family>(e.basix_family),
-          static_cast<basix::cell::type>(e.basix_cell), e.degree,
-          static_cast<basix::element::dpc_variant>(e.dpc_variant),
-          e.discontinuous));
+
+    std::array<std::vector<xt::xtensor<double, 2>>, 4> x;
+    std::array<std::vector<xt::xtensor<double, 4>>, 4> M;
+    { // scope
+      int pt_n = 0;
+      int p_e = 0;
+      int m_e = 0;
+      const std::size_t dim = static_cast<std::size_t>(
+          basix::cell::topological_dimension(cell_type));
+      for (std::size_t d = 0; d <= dim; ++d)
+      {
+        const int num_entities = basix::cell::num_sub_entities(cell_type, d);
+        for (int entity = 0; entity < num_entities; ++entity)
+        {
+          const std::size_t npts = static_cast<std::size_t>(ce->npts[pt_n]);
+          const std::size_t ndofs = static_cast<std::size_t>(ce->ndofs[pt_n]);
+          ++pt_n;
+          xt::xtensor<double, 2> pts({npts, dim});
+          xt::xtensor<double, 4> mat({ndofs, value_size, npts, nderivs_dim});
+          for (std::size_t i = 0; i < npts; ++i)
+            for (std::size_t j = 0; j < dim; ++j)
+              pts(i, j) = ce->x[p_e++];
+          for (std::size_t i = 0; i < ndofs; ++i)
+            for (std::size_t j = 0; j < value_size; ++j)
+              for (std::size_t k = 0; k < npts; ++k)
+                for (std::size_t l = 0; l < nderivs_dim; ++l)
+                  mat(i, j, k, l) = ce->M[m_e++];
+          x[d].push_back(pts);
+          M[d].push_back(mat);
+        }
+      }
     }
-    else
-    {
-      _element = std::make_unique<basix::FiniteElement>(basix::create_element(
-          static_cast<basix::element::family>(e.basix_family),
-          static_cast<basix::cell::type>(e.basix_cell), e.degree,
-          e.discontinuous));
-    }
+
+    _element
+        = std::make_unique<basix::FiniteElement>(basix::create_custom_element(
+            cell_type, value_shape, wcoeffs, x, M, nderivs,
+            static_cast<basix::maps::type>(ce->map_type), ce->discontinuous,
+            ce->highest_complete_degree, ce->highest_degree));
+  }
+  else if (is_basix_element(e))
+  {
+    _element = std::make_unique<basix::FiniteElement>(basix::create_element(
+        static_cast<basix::element::family>(e.basix_family),
+        static_cast<basix::cell::type>(e.basix_cell), e.degree,
+        static_cast<basix::element::lagrange_variant>(e.lagrange_variant),
+        static_cast<basix::element::dpc_variant>(e.dpc_variant),
+        e.discontinuous));
 
     _needs_dof_transformations
         = !_element->dof_transformations_are_identity()
@@ -185,9 +241,7 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
 }
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
-    : // _signature("Basix element " + std::to_string(bs)),
-      _tdim(basix::cell::topological_dimension(element.cell_type())),
-      _space_dim(bs * element.dim()), _value_shape(element.value_shape()),
+    : _space_dim(bs * element.dim()), _value_shape(element.value_shape()),
       _bs(bs)
 {
   if (_value_shape.empty() and bs > 1)
@@ -248,8 +302,6 @@ mesh::CellType FiniteElement::cell_shape() const noexcept
 {
   return _cell_shape;
 }
-//-----------------------------------------------------------------------------
-int FiniteElement::tdim() const noexcept { return _tdim; }
 //-----------------------------------------------------------------------------
 int FiniteElement::space_dimension() const noexcept { return _space_dim; }
 //-----------------------------------------------------------------------------
@@ -319,10 +371,16 @@ basix::maps::type FiniteElement::map_type() const
   return _element->map_type();
 }
 //-----------------------------------------------------------------------------
-bool FiniteElement::interpolation_ident() const noexcept
+bool FiniteElement::map_ident() const noexcept
 {
   assert(_element);
   return _element->map_type() == basix::maps::type::identity;
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::interpolation_ident() const noexcept
+{
+  assert(_element);
+  return _element->interpolation_is_identity();
 }
 //-----------------------------------------------------------------------------
 const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const

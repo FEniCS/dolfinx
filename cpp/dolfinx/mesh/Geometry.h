@@ -23,19 +23,19 @@ namespace dolfinx::mesh
 {
 class Topology;
 
-/// Geometry stores the geometry imposed on a mesh
+/// @brief Geometry stores the geometry imposed on a mesh.
 class Geometry
 {
 public:
-  /// Constructor
+  /// @brief Constructor
   ///
   /// @param[in] index_map Index map associated with the geometry dofmap
   /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
   /// gives the position in the point array of each local geometry node
   /// @param[in] element The element that describes the cell geometry map
   /// @param[in] x The point coordinates. It is a `std::vector<double>`
-  /// and uses row-major storage. The shape is (num_points, 3).
-  /// @param[in] dim The geometric dimension (0 < dim <= 3)
+  /// and uses row-major storage. The shape is `(num_points, 3)`.
+  /// @param[in] dim The geometric dimension (`0 < dim <= 3`)
   /// @param[in] input_global_indices The 'global' input index of each
   /// point, commonly from a mesh input file. The type is
   /// `std:vector<std::int64_t>`.
@@ -76,17 +76,21 @@ public:
   /// Index map
   std::shared_ptr<const common::IndexMap> index_map() const;
 
-  /// Access geometry degrees-of-freedom data (const version)
+  /// @brief Access geometry degrees-of-freedom data (const version).
+  ///
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
   xtl::span<const double> x() const;
 
-  /// Access geometry degrees-of-freedom data (version)
+  /// @brief Access geometry degrees-of-freedom data (non-const
+  /// version).
+  ///
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
   xtl::span<double> x();
 
-  /// The element that describes the geometry map
+  /// @brief The element that describes the geometry map.
+  ///
   /// @return The coordinate/geometry element
   const fem::CoordinateElement& cmap() const;
 
@@ -106,7 +110,7 @@ private:
   // The coordinate element
   fem::CoordinateElement _cmap;
 
-  // Coordinates for all points stored as a contiguous array (roe-major,
+  // Coordinates for all points stored as a contiguous array (row-major,
   // column size = 3)
   std::vector<double> _x;
 
@@ -114,16 +118,23 @@ private:
   std::vector<std::int64_t> _input_global_indices;
 };
 
-/// Build Geometry from input data
+/// @brief Build Geometry from input data.
+///
+/// This function should be called after the mesh topology is built. It
+/// distributes the 'node' coordinate data to the required MPI process and then
+/// creates a mesh::Geometry object.
 ///
 /// @param[in] comm The MPI communicator to build the Geometry on
 /// @param[in] topology The mesh topology
 /// @param[in] element The element that defines the geometry map for
 /// each cell
 /// @param[in] cells The mesh cells, including higher-ordder geometry 'nodes'
-/// @param[in] x The node coordinates (row-major, with shape (num_nodes,
-/// geometric dimension)
-/// @param[in] dim The geometric dimensions (1, 2, or 3)
+/// @param[in] x The node coordinates (row-major, with shape
+/// `(num_nodes, dim)`. The global index of each node is `i +
+/// rank_offset`, where `i` is the local row index in `x` and
+/// `rank_offset` is the sum of `x` rows on all processed with a lower
+/// rank than the caller.
+/// @param[in] dim The geometric dimension (1, 2, or 3)
 /// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
 /// map associated with the geometry data
 mesh::Geometry

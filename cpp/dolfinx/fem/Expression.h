@@ -134,9 +134,7 @@ public:
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = _mesh->geometry().dofmap();
-
-    // FIXME: Add proper interface for num coordinate dofs
-    const std::size_t num_dofs_g = x_dofmap.num_links(0);
+    const std::size_t num_dofs_g = _mesh->geometry().cmap().dim();
     xtl::span<const double> x_g = _mesh->geometry().x();
 
     // Create data structures used in evaluation
@@ -187,7 +185,7 @@ public:
                                 std::next(coordinate_dofs.begin(), 3 * i));
       }
 
-      const T* coeff_cell = coeffs.data() + cell * cstride;
+      const T* coeff_cell = coeffs.data() + c * cstride;
       std::fill(values_local.begin(), values_local.end(), 0.0);
       _fn(values_local.data(), coeff_cell, constant_data.data(),
           coordinate_dofs.data(), nullptr, nullptr);
