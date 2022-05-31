@@ -14,7 +14,6 @@ from dolfinx.fem.assemble import (apply_lifting, assemble_matrix,
 from dolfinx.fem.bcs import (DirichletBCMetaClass, bcs_by_block, dirichletbc,
                              locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.fem.dofmap import DofMap
-from dolfinx.fem.formmanipulations import adjoint
 from dolfinx.fem.forms import FormMetaClass, extract_function_spaces, form
 from dolfinx.fem.function import (Constant, Expression, Function,
                                   FunctionSpace, TensorFunctionSpace,

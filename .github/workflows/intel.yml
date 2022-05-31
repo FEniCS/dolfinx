@@ -27,7 +27,7 @@ jobs:
             cxx_compiler: icpx
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install Intel compilers
         run: |
@@ -44,7 +44,7 @@ jobs:
           python3 -m pip install git+https://github.com/FEniCS/basix.git
 
       - name: Clone FFCx
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
@@ -60,7 +60,7 @@ jobs:
       - name: Configure DOLFInx C++
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_UFCX_PYTHON=off -B build -S cpp/
 
       - name: Build and install DOLFINx C++ library
         run: |
