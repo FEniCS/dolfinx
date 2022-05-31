@@ -27,8 +27,11 @@ void sparsitybuild::cells(
   assert(cells);
   for (int c = 0; c < cells->num_nodes(); ++c)
   {
-    // NOTE c_0 and c_1 may not exist. TODO Check if this is safe and if not,
-    // add check that c_0 and c_1 are >= 0 before inserting into pattern
+    // NOTE Since this loops over all cells, not just the integration domains
+    // of the integrals in the form, c_0 or c_1 may not exist. In this case,
+    // nothing needs to be inserted into the sparsity pattern.
+    // TODO See if it is necessary to add check that c_0 and c_1 are >= 0 before
+    // inserting into pattern
     std::int32_t c_0 = cell_maps[0](c);
     std::int32_t c_1 = cell_maps[1](c);
     pattern.insert(dofmaps[0].get().cell_dofs(c_0),
@@ -41,7 +44,6 @@ void sparsitybuild::interior_facets(
     const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
         dofmaps)
 {
-  // TODO Use facet maps
   const int D = topology.dim();
   if (!topology.connectivity(D - 1, 0))
     throw std::runtime_error("Topology facets have not been created.");
@@ -119,8 +121,6 @@ void sparsitybuild::exterior_facets(
     assert(facet_it != cell_facets.end());
     int local_f = std::distance(cell_facets.begin(), facet_it);
 
-    // NOTE: Must map cell facet pair (not cell alone) for the codim 0
-    // case to work
     pattern.insert(dofmaps[0].get().cell_dofs(facet_maps[0]({cell, local_f})),
                    dofmaps[1].get().cell_dofs(facet_maps[1]({cell, local_f})));
   }
