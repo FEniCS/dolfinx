@@ -44,7 +44,6 @@ Mat fem::petsc::create_matrix_block(
       bs_dofs[i].push_back(_V->dofmap()->bs());
   }
 
-  // FIXME Where to get comm from?
   auto comm = V[0][0]->mesh()->comm();
 
   // Build sparsity pattern for each block
@@ -58,7 +57,7 @@ Mat fem::petsc::create_matrix_block(
           = {{V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
       if (const fem::Form<PetscScalar>* form = a[row][col]; form)
       {
-        // FIXME THIS IS PROBABLY WRONG/COPYING, CHECK!
+        // FIXME Check this!
         patterns[row].push_back(std::make_unique<la::SparsityPattern>(
             create_sparsity_pattern(*form)));
       }
