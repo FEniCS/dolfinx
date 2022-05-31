@@ -107,7 +107,7 @@ void declare_meshtags(py::module& m, std::string type)
           }))
       .def_property_readonly("dtype", [](const dolfinx::mesh::MeshTags<T>& self)
                              { return py::dtype::of<T>(); })
-      .def_readwrite("name", &dolfinx::mesh::MeshTags<T>::name)
+      .def_readwrite("_name", &dolfinx::mesh::MeshTags<T>::name)
       .def_property_readonly("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<T>::mesh)
       .def_property_readonly("values",

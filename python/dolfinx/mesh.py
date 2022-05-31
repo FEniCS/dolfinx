@@ -247,7 +247,11 @@ class MeshTagsMetaClass:
 
     @property
     def name(self) -> str:
-        return super().name  # type: ignore[misc]
+        return super()._name  # type: ignore[misc]
+
+    @name.setter
+    def name(self, name: str):
+        super().__setattr__("_name", name)
 
     def find(self, value: typing.Union[int, np.int8, np.int32, np.int64, np.float64]):
         """ Find all entities marked with input value"""
