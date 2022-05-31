@@ -68,8 +68,8 @@ void interior_facets(
 /// over
 /// @param[in] dofmaps The dofmap to use in building the sparsity
 /// pattern
-/// @param[in] facet_maps Maps from the facets as a (cell, local_index)
-/// pair in the integration domain to the cell cells in each function
+/// @param[in] facet_maps Maps from the facets as (cell, local_index)
+/// pairs in the integration domain to the cells in each function
 /// space in the form.
 /// @note The sparsity pattern is not finalised
 void exterior_facets(
