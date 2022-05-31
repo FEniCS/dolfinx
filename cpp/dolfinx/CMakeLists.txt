@@ -50,9 +50,9 @@ target_compile_definitions(dolfinx PUBLIC DOLFINX_VERSION="${DOLFINX_VERSION}")
 # Add include directories and libraries of required packages
 
 # pugixml
-target_link_libraries(dolfinx PUBLIC pugixml::pugixml)
+target_link_libraries(dolfinx PUBLIC pugixml)
 
-  # UFCx
+# UFCx
 if (TARGET ufcx::ufcx)
   target_link_libraries(dolfinx PUBLIC ufcx::ufcx)
 else()
