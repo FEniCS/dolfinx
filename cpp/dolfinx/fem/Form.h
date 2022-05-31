@@ -394,14 +394,15 @@ public:
     {
       const int tdim = mesh()->topology().dim();
       const int codim = tdim - mesh_fs->topology().dim();
-      // TODO Use switch
-      if (codim == 0)
+      switch (codim)
+      {
+      case 0:
       {
         return [&entity_map
                 = entity_maps().at(mesh_fs)](std::pair<std::int32_t, int> e)
         { return entity_map[e.first]; };
       }
-      else if (codim == 1)
+      case 1:
       {
         // TODO assert(c_to_f);
         return [&entity_map = entity_maps().at(mesh_fs),
@@ -409,9 +410,10 @@ public:
                    std::pair<std::int32_t, int> e)
         { return entity_map[c_to_f->links(e.first)[e.second]]; };
       }
-      else
+      default:
       {
         throw std::runtime_error("codimension > 1 not supported");
+      }
       }
     }
     else
