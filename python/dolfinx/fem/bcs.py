@@ -121,21 +121,21 @@ class DirichletBCMetaClass:
 
         if V is not None:
             try:
-                super().__init__(_value, dofs, V)  # type: ignore
+                super().__init__(_value, dofs, V)  # type: ignore[call-arg]
             except TypeError:
-                super().__init__(_value, dofs, V._cpp_object)  # type: ignore
+                super().__init__(_value, dofs, V._cpp_object)  # type: ignore[call-arg]
         else:
-            super().__init__(_value, dofs)  # type: ignore
+            super().__init__(_value, dofs)  # type: ignore[call-arg]
 
     @property
     def g(self):
         """The boundary condition value(s)"""
-        return self.value  # type: ignore
+        return self.value
 
     @property
     def function_space(self) -> dolfinx.fem.FunctionSpace:
         """The function space on which the boundary condition is defined"""
-        return super().function_space  # type: ignore
+        return super().function_space  # type: ignore[misc]
 
 
 def dirichletbc(value: typing.Union[Function, Constant, np.ndarray],

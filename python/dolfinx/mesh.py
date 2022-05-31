@@ -216,7 +216,7 @@ class MeshTagsMetaClass:
             directly.
 
         """
-        super().__init__(mesh, dim, indices.astype(np.int32), values)  # type: ignore
+        super().__init__(mesh, dim, indices.astype(np.int32), values)  # type: ignore[call-arg]
 
     def ufl_id(self) -> int:
         """Object identifier.
@@ -229,6 +229,25 @@ class MeshTagsMetaClass:
 
         """
         return id(self)
+
+    @property
+    def dim(self) -> int:
+        """Topological dimension of the entities"""
+        return super().dim  # type: ignore[misc]
+
+    @property
+    def values(self) -> np.ndarray:
+        """ The values corresponding to each entity"""
+        return super().values  # type: ignore[misc]
+
+    @property
+    def indices(self) -> numpy.typing.NDArray[np.int32]:
+        """ Entity indices (local to process)"""
+        return super().indices   # type: ignore[misc]
+
+    def find(self, value: typing.Union[int, np.int8, np.int32, np.int64, np.float64]):
+        """ Find all entities marked with input value"""
+        return super().find(value)  # type:ignore[misc]
 
 
 def meshtags(mesh: Mesh, dim: int, indices: np.ndarray,

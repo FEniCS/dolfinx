@@ -51,7 +51,7 @@ class FormMetaClass:
         self._ufcx_form = form
         ffi = cffi.FFI()
         super().__init__(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_form)),
-                         V, coeffs, constants, subdomains, mesh)  # type: ignore
+                         V, coeffs, constants, subdomains, mesh)  # type: ignore[call-arg]
 
     @property
     def ufcx_form(self):
@@ -66,22 +66,22 @@ class FormMetaClass:
     @property
     def function_spaces(self) -> typing.List[FunctionSpace]:
         """Function spaces on which this form is defined"""
-        return super().function_spaces  # type: ignore
+        return super().function_spaces  # type: ignore[misc]
 
     @property
     def dtype(self) -> np.dtype:
         """dtype of this form"""
-        return super().dtype  # type: ignore
+        return super().dtype  # type: ignore[misc]
 
     @property
     def mesh(self) -> Mesh:
         """Mesh on which this form is defined"""
-        return super().mesh  # type: ignore
+        return super().mesh  # type: ignore[misc]
 
     @property
     def integral_types(self):
         """Integral types in the form"""
-        return super().integral_types  # type: ignore
+        return super().integral_types  # type: ignore[misc]
 
 
 form_types = typing.Union[FormMetaClass, _cpp.fem.Form_float32, _cpp.fem.Form_float64,
