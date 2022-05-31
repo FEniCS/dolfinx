@@ -245,6 +245,10 @@ class MeshTagsMetaClass:
         """ Entity indices (local to process)"""
         return super().indices   # type: ignore[misc]
 
+    @property
+    def name(self) -> str:
+        return super().name  # type: ignore[misc]
+
     def find(self, value: typing.Union[int, np.int8, np.int32, np.int64, np.float64]):
         """ Find all entities marked with input value"""
         return super().find(value)  # type:ignore[misc]
