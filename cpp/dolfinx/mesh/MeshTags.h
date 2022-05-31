@@ -79,7 +79,7 @@ public:
 
   /// @brief Find all entities with a given tag value
   /// @param[in] value The value
-  /// @return Indices of tagged entities
+  /// @return Indices of tagged entities. The indices are sorted.
   std::vector<std::int32_t> find(const T value) const
   {
     int n = std::count(_values.begin(), _values.end(), value);

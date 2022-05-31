@@ -6,7 +6,6 @@
 
 #include "VTKFile.h"
 #include "cells.h"
-#include "pugixml.hpp"
 #include "vtk_utils.h"
 #include "xdmf_utils.h"
 #include <dolfinx/common/IndexMap.h>
@@ -20,6 +19,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <filesystem>
 #include <iterator>
+#include <pugixml.hpp>
 #include <sstream>
 #include <string>
 #include <xtensor/xbuilder.hpp>

@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "pugixml.hpp"
 #include "xdmf_utils.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -14,6 +13,7 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <pugixml.hpp>
 
 /// Low-level methods for reading XDMF files
 namespace dolfinx::io::xdmf_read
