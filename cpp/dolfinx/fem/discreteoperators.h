@@ -59,7 +59,7 @@ void discrete_gradient(const fem::FunctionSpace& V0,
   // Check spaces
   std::shared_ptr<const FiniteElement> e0 = V0.element();
   assert(e0);
-  if (e0->basix_element().map_type() != basix::maps::type::identity)
+  if (e0->map_type() != basix::maps::type::identity)
     throw std::runtime_error("Wrong finite element space for V0.");
   if (e0->block_size() != 1)
     throw std::runtime_error("Block size is greather than 1 for V0.");
@@ -68,13 +68,13 @@ void discrete_gradient(const fem::FunctionSpace& V0,
 
   std::shared_ptr<const FiniteElement> e1 = V1.element();
   assert(e1);
-  if (e1->basix_element().map_type() != basix::maps::type::covariantPiola)
+  if (e1->map_type() != basix::maps::type::covariantPiola)
     throw std::runtime_error("Wrong finite element space for V1.");
   if (e1->block_size() != 1)
     throw std::runtime_error("Block size is greather than 1 for V1.");
 
   // Get V0 (H(curl)) space interpolation points
-  const xt::xtensor<double, 2> X = e1->basix_element().points();
+  const xt::xtensor<double, 2> X = e1->interpolation_points();
 
   // Tabulate first order derivatives of Lagrange space at H(curl)
   // interpolation points
@@ -110,7 +110,7 @@ void discrete_gradient(const fem::FunctionSpace& V0,
   std::vector<T> A(e1->space_dimension() * ndofs0);
   {
     auto _A = xt::adapt(A, std::vector<int>{e1->space_dimension(), ndofs0});
-    const xt::xtensor<double, 2> Pi = e1->basix_element().interpolation_matrix();
+    const xt::xtensor<double, 2> Pi = e1->interpolation_operator();
     math::dot(Pi, dphi_reshaped, _A);
   }
 
@@ -196,7 +196,7 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   xtl::span<const double> x_g = mesh->geometry().x();
 
   // Evaluate coordinate map basis at reference interpolation points
-  const xt::xtensor<double, 2> X = element1->basix_element().points();
+  const xt::xtensor<double, 2> X = element1->interpolation_points();
   xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, X.shape(0)));
   cmap.tabulate(1, X, phi);
   xt::xtensor<double, 2> dphi
@@ -221,8 +221,8 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   // Get the interpolation operator (matrix) `Pi` that maps a function
   // evaluated at the interpolation points to the element degrees of
   // freedom, i.e. dofs = Pi f_x
-  const xt::xtensor<double, 2>& Pi_1 = element1->basix_element().interpolation_matrix();
-  bool interpolation_ident = element1->basix_element().interpolation_is_identity();
+  const xt::xtensor<double, 2>& Pi_1 = element1->interpolation_operator();
+  bool interpolation_ident = element1->interpolation_ident();
 
   using u_t = xt::xview<decltype(basis_reference0)&, std::size_t,
                         xt::xall<std::size_t>, xt::xall<std::size_t>>;

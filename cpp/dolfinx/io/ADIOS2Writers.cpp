@@ -739,7 +739,7 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
 
   // FIXME: is the below check adequate for dectecting a
   // Lagrange element? Check that element is Lagrange
-  if (!element0->basix_element().interpolation_is_identity())
+  if (!element0->interpolation_ident())
   {
     throw std::runtime_error("Only Lagrange functions are "
                              "supported. Interpolate Functions before ouput.");
@@ -829,7 +829,7 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
   // FIXME: is the below check adequate for dectecting a Lagrange
   // element?
   // Check that element is Lagrange
-  if (!element0->basix_element().interpolation_is_identity())
+  if (!element0->interpolation_ident())
   {
     throw std::runtime_error("Only (discontinuous) Lagrange functions are "
                              "supported. Interpolate Functions before ouput.");

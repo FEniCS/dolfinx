@@ -199,7 +199,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   auto dofmap0 = V0->dofmap();
   auto dofmap1 = V1->dofmap();
 
-  const xt::xtensor<double, 2> X = element1->basix_element().points();
+  const xt::xtensor<double, 2> X = element1->interpolation_points();
 
   // Get block sizes and dof transformation operators
   const int bs0 = element0->block_size();
@@ -245,7 +245,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   std::vector<double> detJ(X.shape(0));
 
   // Get interpolation operator
-  const xt::xtensor<double, 2>& Pi_1 = element1->basix_element().interpolation_matrix();
+  const xt::xtensor<double, 2>& Pi_1 = element1->interpolation_operator();
 
   using u_t = xt::xview<decltype(basis_reference0)&, std::size_t,
                         xt::xall<std::size_t>, xt::xall<std::size_t>>;
@@ -439,9 +439,9 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
 
   // This assumes that any element with an identity interpolation matrix
   // is a point evaluation
-  if (element->basix_element().interpolation_is_identity())
+  if (element->interpolation_ident())
   {
-    if (element->basix_element().map_type() != basix::maps::type::identity)
+    if (!element->map_ident())
       throw std::runtime_error("Element does not have identity map.");
 
     auto apply_inv_transpose_dof_transformation
@@ -468,13 +468,13 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
       }
     }
   }
-  else if (element->basix_element().map_type() == basix::maps::type::identity)
+  else if (element->map_ident())
   {
     if (f.dimension() != 1)
       throw std::runtime_error("Interpolation data has the wrong shape.");
 
     // Get interpolation operator
-    const xt::xtensor<double, 2>& Pi = element->basix_element().interpolation_matrix();
+    const xt::xtensor<double, 2>& Pi = element->interpolation_operator();
     const std::size_t num_interp_points = Pi.shape(1);
     assert(Pi.shape(0) == num_scalar_dofs);
 
@@ -507,7 +507,7 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
   else
   {
     // Get the interpolation points on the reference cells
-    const xt::xtensor<double, 2>& X = element->basix_element().points();
+    const xt::xtensor<double, 2>& X = element->interpolation_points();
     if (X.shape(0) == 0)
     {
       throw std::runtime_error(
@@ -548,7 +548,7 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
         = element->get_dof_transformation_function<T>(true, true);
 
     // Get interpolation operator
-    const xt::xtensor<double, 2>& Pi = element->basix_element().interpolation_matrix();
+    const xt::xtensor<double, 2>& Pi = element->interpolation_operator();
 
     using U_t = xt::xview<decltype(reference_data)&, std::size_t,
                           xt::xall<std::size_t>, xt::xall<std::size_t>>;
@@ -700,7 +700,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
         }
       }
     }
-    else if (element1->basix_element().map_type() == element0->basix_element().map_type())
+    else if (element1->map_type() == element0->map_type())
     {
       // Different elements, same basis function map type
       impl::interpolate_same_map(u, v, cells);

@@ -996,14 +996,11 @@ void fem(py::module& m)
           "interpolation_points",
           [](const dolfinx::fem::FiniteElement& self)
           {
-            const xt::xtensor<double, 2>& x = self.basix_element().points();
+            const xt::xtensor<double, 2>& x = self.interpolation_points();
             return py::array_t<double>(x.shape(), x.data(), py::cast(self));
           })
       .def_property_readonly("interpolation_ident",
-                             [](const dolfinx::fem::FiniteElement& self)
-                             {
-                               return self.basix_element().interpolation_is_identity();
-                             })
+                             &dolfinx::fem::FiniteElement::interpolation_ident)
       .def_property_readonly("space_dimension",
                              &dolfinx::fem::FiniteElement::space_dimension)
       .def_property_readonly("value_shape",

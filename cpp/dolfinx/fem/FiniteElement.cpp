@@ -371,6 +371,52 @@ const basix::FiniteElement& FiniteElement::basix_element() const
   return *_element;
 }
 //-----------------------------------------------------------------------------
+basix::maps::type FiniteElement::map_type() const
+{
+  if (!_element)
+  {
+    throw std::runtime_error("Cannot element map type - no Basix element "
+                             "available. Maybe this is a mixed element?");
+  }
+
+  return _element->map_type();
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::map_ident() const noexcept
+{
+  assert(_element);
+  return _element->map_type() == basix::maps::type::identity;
+}
+//-----------------------------------------------------------------------------
+bool FiniteElement::interpolation_ident() const noexcept
+{
+  assert(_element);
+  return _element->interpolation_is_identity();
+}
+//-----------------------------------------------------------------------------
+const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
+{
+  if (!_element)
+  {
+    throw std::runtime_error(
+        "Cannot get interpolation points - no Basix element available. Maybe "
+        "this is a mixed element?");
+  }
+
+  return _element->points();
+}
+//-----------------------------------------------------------------------------
+const xt::xtensor<double, 2>& FiniteElement::interpolation_operator() const
+{
+  if (!_element)
+  {
+    throw std::runtime_error("No underlying element for interpolation. "
+                             "Cannot interpolate mixed elements directly.");
+  }
+
+  return _element->interpolation_matrix();
+}
+//-----------------------------------------------------------------------------
 xt::xtensor<double, 2>
 FiniteElement::create_interpolation_operator(const FiniteElement& from) const
 {
