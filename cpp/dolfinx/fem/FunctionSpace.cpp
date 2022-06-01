@@ -226,55 +226,48 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
     auto dofs = _dofmap->cell_dofs(c);
 
     // Copy dof coordinates into vector
-    if (!transpose)
-    {
-      for (std::size_t i = 0; i < dofs.size(); ++i)
-        for (std::size_t j = 0; j < gdim; ++j)
-          coords[dofs[i] * 3 + j] = x(i, j);
-    }
-    else
-    {
-      for (std::size_t i = 0; i < dofs.size(); ++i)
-        for (std::size_t j = 0; j < gdim; ++j)
-          coords[j * num_dofs + dofs[i]] = x(i, j);
-    }
+    for (std::size_t i = 0; i < dofs.size(); ++i)
+      for (std::size_t j = 0; j < gdim; ++j)
+        coords[dofs[i] * 3 + j] = x(i, j);
   }
 
-  if (!transpose)
-  {
-    // TODO See if these are defined above
-    const int size_local = index_map->size_local();
-    const int bs = 3;
-    std::vector<double> data_local(coords.begin(),
-                                   coords.begin() + bs * size_local);
-    std::vector<double> data_ghost(coords.begin() + bs * size_local,
-                                   coords.end());
+  // TODO See if these are defined above
+  const int size_local = index_map->size_local();
+  const int bs = 3;
+  std::vector<double> data_local(coords.begin(),
+                                  coords.begin() + bs * size_local);
+  std::vector<double> data_ghost(coords.begin() + bs * size_local,
+                                  coords.end());
 
-    common::Scatterer scatterer(*index_map, bs);
-    scatterer.scatter_rev(xtl::span<double>(data_local),
-                          xtl::span<const double>(data_ghost),
-                          [](auto a, auto b)
+  common::Scatterer scatterer(*index_map, bs);
+  scatterer.scatter_rev(xtl::span<double>(data_local),
+                        xtl::span<const double>(data_ghost),
+                        [](auto a, auto b)
+                        {
+                          if (abs(b) > 0.0)
                           {
-                            if (abs(b) > 0.0)
-                            {
-                              return b;
-                            }
-                            else
-                            {
-                              return a;
-                            }
-                          });
-    scatterer.scatter_fwd(xtl::span<const double>(data_local),
-                          xtl::span<double>(data_ghost));
+                            return b;
+                          }
+                          else
+                          {
+                            return a;
+                          }
+                        });
+  scatterer.scatter_fwd(xtl::span<const double>(data_local),
+                        xtl::span<double>(data_ghost));
 
-    std::copy(data_local.begin(), data_local.end(), coords.begin());
-    std::copy(data_ghost.begin(), data_ghost.end(),
-              coords.begin() + bs * size_local);
+  std::copy(data_local.begin(), data_local.end(), coords.begin());
+  std::copy(data_ghost.begin(), data_ghost.end(),
+            coords.begin() + bs * size_local);
 
-    ss << "rank " << MPI::rank(MPI_COMM_WORLD) << ":\n";
-    ss << "data_local = " << xt::adapt(data_local) << "\n";
-    ss << "data_ghost = " << xt::adapt(data_ghost) << "\n";
-    ss << "coords = " << xt::adapt(coords) << "\n";
+  ss << "rank " << MPI::rank(MPI_COMM_WORLD) << ":\n";
+  ss << "data_local = " << xt::adapt(data_local) << "\n";
+  ss << "data_ghost = " << xt::adapt(data_ghost) << "\n";
+  ss << "coords = " << xt::adapt(coords) << "\n";
+
+  if (transpose)
+  {
+    // TODO Transpose
   }
 
   std::cout << ss.str() << "\n";
