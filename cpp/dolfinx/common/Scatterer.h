@@ -285,7 +285,6 @@ public:
                        MPI_Request& request)
   {
     assert(local_buffer.size() == _local_inds.size());
-    assert(_local_inds.size() <= local_data.size());
     scatter_rev_end(request);
     unpack_fn(local_buffer, _local_inds, local_data, op);
   }
