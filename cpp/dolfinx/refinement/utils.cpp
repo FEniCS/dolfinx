@@ -557,7 +557,7 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   }
 
   return mesh::MeshTags<std::int32_t>(
-      std::make_shared<mesh::Mesh>(refined_mesh), tdim - 1,
+      std::make_shared<mesh::Mesh>(std::move(refined_mesh)), tdim - 1,
       std::move(sorted_facet_indices), std::move(sorted_tag_values));
 }
 //----------------------------------------------------------------------------
@@ -654,6 +654,6 @@ mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
   }
 
   return mesh::MeshTags<std::int32_t>(
-      std::make_shared<mesh::Mesh>(refined_mesh), tdim,
+      std::make_shared<mesh::Mesh>(std::move(refined_mesh)), tdim,
       std::move(sorted_cell_indices), std::move(sorted_tag_values));
 }
