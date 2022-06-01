@@ -244,7 +244,6 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   {
     // TODO See if these are defined above
     const int size_local = index_map->size_local();
-    const int num_ghosts = index_map->num_ghosts();
     const int bs = 3;
     std::vector<double> data_local(coords.begin(),
                                    coords.begin() + bs * size_local);
