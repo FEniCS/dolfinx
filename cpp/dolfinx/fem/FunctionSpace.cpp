@@ -178,9 +178,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   xtl::span<const double> x_g = _mesh->geometry().x();
 
   // Array to hold coordinates to return
-  const std::size_t shape_c0 = transpose ? 3 : num_dofs;
-  const std::size_t shape_c1 = transpose ? num_dofs : 3;
-  std::vector<double> coords(shape_c0 * shape_c1, 0);
+  std::vector<double> coords(num_dofs * 3, 0);
 
   // Loop over cells and tabulate dofs
   xt::xtensor<double, 2> x = xt::zeros<double>({scalar_dofs, gdim});
@@ -235,9 +233,9 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   const int size_local = index_map->size_local();
   const int bs = 3;
   std::vector<double> data_local(coords.begin(),
-                                  coords.begin() + bs * size_local);
+                                 coords.begin() + bs * size_local);
   std::vector<double> data_ghost(coords.begin() + bs * size_local,
-                                  coords.end());
+                                 coords.end());
 
   common::Scatterer scatterer(*index_map, bs);
   scatterer.scatter_rev(xtl::span<double>(data_local),
@@ -256,20 +254,37 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   scatterer.scatter_fwd(xtl::span<const double>(data_local),
                         xtl::span<double>(data_ghost));
 
-  std::copy(data_local.begin(), data_local.end(), coords.begin());
-  std::copy(data_ghost.begin(), data_ghost.end(),
-            coords.begin() + bs * size_local);
+  if (!transpose)
+  {
+    std::copy(data_local.begin(), data_local.end(), coords.begin());
+    std::copy(data_ghost.begin(), data_ghost.end(),
+              coords.begin() + bs * size_local);
+  }
+  else
+  {
+    for (int j = 0; j < 3; ++j)
+    {
+      for (int i = 0; i < num_dofs; ++i)
+      {
+        const int idx_0 = i + num_dofs * j;
+        const int idx_1 = j + 3 * i;
+
+        if (idx_1 < data_local.size())
+        {
+          coords[idx_0] = data_local[idx_1];
+        }
+        else
+        {
+          coords[idx_0] = data_ghost[idx_1 - data_local.size()];
+        }
+      }
+    }
+  }
 
   ss << "rank " << MPI::rank(MPI_COMM_WORLD) << ":\n";
   ss << "data_local = " << xt::adapt(data_local) << "\n";
   ss << "data_ghost = " << xt::adapt(data_ghost) << "\n";
   ss << "coords = " << xt::adapt(coords) << "\n";
-
-  if (transpose)
-  {
-    // TODO Transpose
-  }
-
   std::cout << ss.str() << "\n";
 
   return coords;
