@@ -817,54 +817,40 @@ void declare_form(py::module& m, const std::string& type)
                              &dolfinx::fem::Form<T>::integral_types)
       .def_property_readonly("needs_facet_permutations",
                              &dolfinx::fem::Form<T>::needs_facet_permutations)
-      .def(
-          "domains",
-          [](const dolfinx::fem::Form<T>& self, dolfinx::fem::IntegralType type,
-             int i) -> py::array_t<std::int32_t>
-          {
-            switch (type)
-            {
-            case dolfinx::fem::IntegralType::cell:
-            {
-              return py::array_t<std::int32_t>(self.cell_domains(i).size(),
-                                               self.cell_domains(i).data(),
-                                               py::cast(self));
-            }
-            case dolfinx::fem::IntegralType::exterior_facet:
-            {
-              const std::vector<std::pair<std::int32_t, int>>& _d
-                  = self.exterior_facet_domains(i);
-              std::array<py::ssize_t, 2> shape = {py::ssize_t(_d.size()), 2};
-              py::array_t<std::int32_t> domains(shape);
-              auto d = domains.mutable_unchecked<2>();
-              for (py::ssize_t i = 0; i < d.shape(0); ++i)
-              {
-                d(i, 0) = _d[i].first;
-                d(i, 1) = _d[i].second;
-              }
-              return domains;
-            }
-            case dolfinx::fem::IntegralType::interior_facet:
-            {
-              const std::vector<
-                  std::tuple<std::int32_t, int, std::int32_t, int>>& _d
-                  = self.interior_facet_domains(i);
-              std::array<py::ssize_t, 3> shape = {py::ssize_t(_d.size()), 2, 2};
-              py::array_t<std::int32_t> domains(shape);
-              auto d = domains.mutable_unchecked<3>();
-              for (py::ssize_t i = 0; i < d.shape(0); ++i)
-              {
-                d(i, 0, 0) = std::get<0>(_d[i]);
-                d(i, 0, 1) = std::get<1>(_d[i]);
-                d(i, 1, 0) = std::get<2>(_d[i]);
-                d(i, 1, 1) = std::get<3>(_d[i]);
-              }
-              return domains;
-            }
-            default:
-              throw ::std::runtime_error("Integral type unsupported.");
-            }
-          });
+      .def("domains",
+           [](const dolfinx::fem::Form<T>& self,
+              dolfinx::fem::IntegralType type,
+              int i) -> py::array_t<std::int32_t>
+           {
+             switch (type)
+             {
+             case dolfinx::fem::IntegralType::cell:
+             {
+               return py::array_t<std::int32_t>(self.cell_domains(i).size(),
+                                                self.cell_domains(i).data(),
+                                                py::cast(self));
+             }
+             case dolfinx::fem::IntegralType::exterior_facet:
+             {
+               const std::vector<std::int32_t>& _d
+                   = self.exterior_facet_domains(i);
+               std::array<py::ssize_t, 2> shape
+                   = {py::ssize_t(_d.size()) / 2, 2};
+               return dolfinx_wrappers::as_pyarray(std::move(_d), shape);
+             }
+             case dolfinx::fem::IntegralType::interior_facet:
+             {
+               const std::vector<std::int32_t>& _d
+                   = self.interior_facet_domains(i);
+               std::array<py::ssize_t, 3> shape
+                   = {py::ssize_t(_d.size()) / 4, 2, 2};
+               py::array_t<std::int32_t> domains(shape);
+               return dolfinx_wrappers::as_pyarray(std::move(_d), shape);
+             }
+             default:
+               throw ::std::runtime_error("Integral type unsupported.");
+             }
+           });
 
   // Form
   std::string pymethod_create_form = std::string("create_form_") + type;
