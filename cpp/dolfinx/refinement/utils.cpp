@@ -448,7 +448,9 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
 
   auto parent_c_to_f
       = parent_meshtag.mesh()->topology().connectivity(tdim, tdim - 1);
+  assert(parent_c_to_f);
   auto c_to_f = refined_mesh.topology().connectivity(tdim, tdim - 1);
+  assert(c_to_f);
 
   // Create map parent->child facets
   const std::int32_t num_input_facets
