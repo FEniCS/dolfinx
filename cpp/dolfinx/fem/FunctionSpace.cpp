@@ -266,8 +266,8 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
     {
       for (int i = 0; i < num_dofs; ++i)
       {
-        const int idx_0 = i + num_dofs * j;
-        const int idx_1 = j + 3 * i;
+        const std::size_t idx_0 = i + num_dofs * j;
+        const std::size_t idx_1 = j + 3 * i;
 
         if (idx_1 < data_local.size())
         {
