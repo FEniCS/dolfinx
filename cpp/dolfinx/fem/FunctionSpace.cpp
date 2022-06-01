@@ -229,17 +229,22 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
         coords[dofs[i] * 3 + j] = x(i, j);
   }
 
-  // TODO See if these are defined above
+  // If this process owns or ghosts dofs that do not belong to a cell
+  // on this process, the coordinates of those dofs will not have been
+  // tabulated by the above. Hence, these must be communicated.
   const int size_local = index_map->size_local();
   const int bs = 3;
-  std::vector<double> data_local(coords.begin(),
+  // Create storage for coordinates of owned and ghost dofs.
+  std::vector<double> coords_local(coords.begin(),
                                  coords.begin() + bs * size_local);
-  std::vector<double> data_ghost(coords.begin() + bs * size_local,
+  std::vector<double> coords_ghost(coords.begin() + bs * size_local,
                                  coords.end());
 
+  // Scatter ghost values to owners. Only overwrite the owned value if
+  // the ghost value is non-zero. 
   common::Scatterer scatterer(*index_map, bs);
-  scatterer.scatter_rev(xtl::span<double>(data_local),
-                        xtl::span<const double>(data_ghost),
+  scatterer.scatter_rev(xtl::span<double>(coords_local),
+                        xtl::span<const double>(coords_ghost),
                         [](auto a, auto b)
                         {
                           if (abs(b) > 0.0)
@@ -251,17 +256,21 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
                             return a;
                           }
                         });
-  scatterer.scatter_fwd(xtl::span<const double>(data_local),
-                        xtl::span<double>(data_ghost));
+  // Scatter owned values to ghosts to ensure all ghost dof coordinates
+  // are tabulated.
+  scatterer.scatter_fwd(xtl::span<const double>(coords_local),
+                        xtl::span<double>(coords_ghost));
 
+  // Copy data into `coords`, transposing if necessary
   if (!transpose)
   {
-    std::copy(data_local.begin(), data_local.end(), coords.begin());
-    std::copy(data_ghost.begin(), data_ghost.end(),
+    std::copy(coords_local.begin(), coords_local.end(), coords.begin());
+    std::copy(coords_ghost.begin(), coords_ghost.end(),
               coords.begin() + bs * size_local);
   }
   else
   {
+    // FIXME There are better ways of transposing
     for (int j = 0; j < bs; ++j)
     {
       for (int i = 0; i < num_dofs; ++i)
@@ -269,14 +278,10 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
         const std::size_t idx_0 = i + num_dofs * j;
         const std::size_t idx_1 = j + bs * i;
 
-        if (idx_1 < data_local.size())
-        {
-          coords[idx_0] = data_local[idx_1];
-        }
+        if (idx_1 < coords_local.size())
+          coords[idx_0] = coords_local[idx_1];
         else
-        {
-          coords[idx_0] = data_ghost[idx_1 - data_local.size()];
-        }
+          coords[idx_0] = coords_ghost[idx_1 - coords_local.size()];
       }
     }
   }
