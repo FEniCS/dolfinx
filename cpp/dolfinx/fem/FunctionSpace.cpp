@@ -9,6 +9,7 @@
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include <boost/uuid/uuid_generators.hpp>
+#include <common/Scatterer.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -18,6 +19,8 @@
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
+
+#include <xtensor/xio.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -122,6 +125,8 @@ std::vector<int> FunctionSpace::component() const { return _component; }
 std::vector<double>
 FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 {
+  std::stringstream ss;
+
   if (!_component.empty())
   {
     throw std::runtime_error(
@@ -234,6 +239,46 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
           coords[j * num_dofs + dofs[i]] = x(i, j);
     }
   }
+
+  if (!transpose)
+  {
+    // TODO See if these are defined above
+    const int size_local = index_map->size_local();
+    const int num_ghosts = index_map->num_ghosts();
+    const int bs = 3;
+    std::vector<double> data_local(coords.begin(),
+                                   coords.begin() + bs * size_local);
+    std::vector<double> data_ghost(coords.begin() + bs * size_local,
+                                   coords.end());
+
+    common::Scatterer scatterer(*index_map, bs);
+    scatterer.scatter_rev(xtl::span<double>(data_local),
+                          xtl::span<const double>(data_ghost),
+                          [](auto a, auto b)
+                          {
+                            if (abs(b) > 0.0)
+                            {
+                              return b;
+                            }
+                            else
+                            {
+                              return a;
+                            }
+                          });
+    scatterer.scatter_fwd(xtl::span<const double>(data_local),
+                          xtl::span<double>(data_ghost));
+
+    std::copy(data_local.begin(), data_local.end(), coords.begin());
+    std::copy(data_ghost.begin(), data_ghost.end(),
+              coords.begin() + bs * size_local);
+
+    ss << "rank " << MPI::rank(MPI_COMM_WORLD) << ":\n";
+    ss << "data_local = " << xt::adapt(data_local) << "\n";
+    ss << "data_ghost = " << xt::adapt(data_ghost) << "\n";
+    ss << "coords = " << xt::adapt(coords) << "\n";
+  }
+
+  std::cout << ss.str() << "\n";
 
   return coords;
 }
