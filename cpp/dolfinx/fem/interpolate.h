@@ -795,8 +795,10 @@ void M2MInterpolator::interpolate(Function<T>& u, const Function<T>& v,
 
   // Collect all the points at which values are needed to define the
   // interpolating function
-  const xt::xtensor<double, 2> x = fem::interpolation_coords(
+  const std::vector<double> x_v = fem::interpolation_coords(
       *u.function_space()->element(), *u.function_space()->mesh(), cells);
+  std::vector<std::size_t> shape = {3, x_v.size() / 3};
+  const xt::xtensor<double, 2> x = xt::adapt(x_v, shape);
 
   if (not valid)
   {
