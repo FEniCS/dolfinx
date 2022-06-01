@@ -21,10 +21,10 @@ def collect_pkg_modules_recursive(name):
     return list(set(submodules))
 
 
-@pytest.mark.parametrize("module_name",
-                         collect_pkg_modules_recursive("dolfinx"))
-def test_all_implemented(module_name):
-    module = importlib.import_module(module_name)
-    if hasattr(module, "__all__"):
-        for member in module.__all__:
-            assert hasattr(module, member)
+def test_all_implemented():
+    module_names = collect_pkg_modules_recursive("dolfinx")
+    for module_name in module_names:
+        module = importlib.import_module(module_name)
+        if hasattr(module, "__all__"):
+            for member in module.__all__:
+                assert hasattr(module, member)
