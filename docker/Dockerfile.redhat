@@ -10,19 +10,22 @@ ARG BUILD_NP=16
 ARG BOOST_VERSION=1.77.0
 ARG BOOST_VERSION_UNDERSCORES=1_77_0
 ARG HDF5_SERIES=1.12
-ARG HDF5_PATCH=1
-ARG PETSC_VERSION=3.17.0
+ARG HDF5_PATCH=2
+ARG PETSC_VERSION=3.17.1
 ARG PYBIND11_VERSION=2.9.2
 ARG NUMPY_VERSION=1.21.6
-ARG MPICH_VERSION=4.0.1
-ARG XTENSOR_VERSION=0.24.1
+ARG MPICH_VERSION=4.0.2
+ARG XTENSOR_VERSION=0.24.2
 ARG XTL_VERSION=0.7.4
 
 WORKDIR /tmp
 
-RUN sed -i 's/enabled=0/enabled=1/' /etc/yum.repos.d/Rocky-PowerTools.repo && \
-    yum -y update && \
-    yum -y install \
+RUN dnf -y update && \
+    dnf install -y dnf-plugins-core && \
+    dnf config-manager --set-enabled powertools && \
+    dnf install -y epel-release && \
+    dnf -y install \
+      pugixml-devel \
       # Required by PETSc build
       bison \
       cmake \
@@ -37,7 +40,7 @@ RUN sed -i 's/enabled=0/enabled=1/' /etc/yum.repos.d/Rocky-PowerTools.repo && \
       python39 \
       python39-devel \
       python39-pip && \
-    yum -y clean all && \
+    dnf -y clean all && \
     rm -rf /var/cache
 
 # Permanently enable GCC 11 toolset
