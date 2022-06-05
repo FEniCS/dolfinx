@@ -49,7 +49,8 @@ https://docs.fenicsproject.org/dolfinx/main/python/installation.
 ### Spack
 
 To build the most recent release using
-[Spack](https://spack.readthedocs.io/) (assuming a bash shell):
+[Spack](https://spack.readthedocs.io/) (assuming a bash-compatible
+shell):
 ```shell
 git clone https://github.com/spack/spack.git
 . ./spack/share/spack/setup-env.sh
@@ -71,7 +72,7 @@ conda install -c conda-forge fenics-dolfinx mpich pyvista
 ```
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
 [Miniconda](https://docs.conda.io/en/latest/miniconda.html). The conda
-recipes are hosted on
+recipe is hosted on
 [conda-forge](https://github.com/conda-forge/fenics-dolfinx-feedstock).
 
 > **Note**
@@ -86,7 +87,7 @@ A Docker image with DOLFINx built nightly:
 docker run -ti dolfinx/dolfinx:latest
 ```
 
-To switch between real and complex builds of DOLFINx.
+To switch between real and complex builds of DOLFINx/PETSc.
 ```shell
 source /usr/local/bin/dolfinx-complex-mode
 source /usr/local/bin/dolfinx-real-mode
