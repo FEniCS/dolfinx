@@ -27,10 +27,10 @@ Documentation can be viewed at:
 
 To build and install the C++ core, in the ``cpp/`` directory, run::
 ```shell
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make install
+mkdir build
+cd build
+cmake ..
+make install
 ```
 
 #### Python interface
@@ -38,7 +38,7 @@ $ make install
 To install the Python interface, first install the C++ core, and then
 in the ``python/`` directory run::
 ```shell
-$ pip install .
+pip install .
 ```
 (you may need to use ``pip3``, depending on your system).
 
@@ -51,12 +51,12 @@ https://docs.fenicsproject.org/dolfinx/main/python/installation.
 To build the most recent release using
 [Spack](https://spack.readthedocs.io/) (assuming a bash shell):
 ```shell
-$ git clone https://github.com/spack/spack.git
-$ . ./spack/share/spack/setup-env.sh
-$ spack env create fenicsx-env
-$ spack env activate fenicsx-env
-$ spack add py-fenics-dolfinx cflags="-O3" fflags="-O3"
-$ spack install
+git clone https://github.com/spack/spack.git
+. ./spack/share/spack/setup-env.sh
+spack env create fenicsx-env
+spack env activate fenicsx-env
+spack add py-fenics-dolfinx cflags="-O3" fflags="-O3"
+spack install
 ```
 See the Spack [documentation](https://spack.readthedocs.io/) for
 comprehensive instructions.
@@ -67,39 +67,40 @@ comprehensive instructions.
 To install the Python interface, with pyvista support for visualisation,
 using [conda](https://conda.io):
 ```shell
-$ conda install -c conda-forge fenics-dolfinx mpich pyvista
+conda install -c conda-forge fenics-dolfinx mpich pyvista
 ```
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
 [Miniconda](https://docs.conda.io/en/latest/miniconda.html). The conda
 recipes are hosted on
 [conda-forge](https://github.com/conda-forge/fenics-dolfinx-feedstock).
 
-**Note**
-Windows is not supported.
+> **Note**
+> Windows packages are not available. This is due to some DOLFINx
+> dependencies not supporting Windows.
 
 
 ## Docker images
 
 A Docker image with DOLFINx built nightly:
 ```shell
-$ docker run -ti dolfinx/dolfinx:latest
+docker run -ti dolfinx/dolfinx:latest
 ```
 
 To switch between real and complex builds of DOLFINx.
 ```shell
-$ source /usr/local/bin/dolfinx-complex-mode
-$ source /usr/local/bin/dolfinx-real-mode
+source /usr/local/bin/dolfinx-complex-mode
+source /usr/local/bin/dolfinx-real-mode
 ```
 
 A Jupyter Lab environment with DOLFINx built nightly:
 ```shell
-$ docker run --init -ti -p 8888:8888 dolfinx/lab:latest  # Access at http://localhost:8888
+docker run --init -ti -p 8888:8888 dolfinx/lab:latest  # Access at http://localhost:8888
 ```
 
 A development image with all of the dependencies required
 to build DOLFINx:
 ```shell
-$ docker run -ti dolfinx/dev-env:latest
+docker run -ti dolfinx/dev-env:latest
 ```
 
 All Docker images support arm64 and amd64 architectures.
