@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "xdmf_function.h"
-#include "pugixml.hpp"
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
 #include <boost/lexical_cast.hpp>
@@ -16,6 +15,7 @@
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <pugixml.hpp>
 #include <string>
 
 using namespace dolfinx;
