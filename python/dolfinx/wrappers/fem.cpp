@@ -836,7 +836,8 @@ void declare_form(py::module& m, const std::string& type)
                    = self.exterior_facet_domains(i);
                std::array<py::ssize_t, 2> shape
                    = {py::ssize_t(_d.size()) / 2, 2};
-               return dolfinx_wrappers::as_pyarray(std::move(_d), shape);
+               return py::array_t<std::int32_t>(shape, _d.data(),
+                                                py::cast(self));
              }
              case dolfinx::fem::IntegralType::interior_facet:
              {
@@ -844,8 +845,8 @@ void declare_form(py::module& m, const std::string& type)
                    = self.interior_facet_domains(i);
                std::array<py::ssize_t, 3> shape
                    = {py::ssize_t(_d.size()) / 4, 2, 2};
-               py::array_t<std::int32_t> domains(shape);
-               return dolfinx_wrappers::as_pyarray(std::move(_d), shape);
+               return py::array_t<std::int32_t>(shape, _d.data(),
+                                                py::cast(self));
              }
              default:
                throw ::std::runtime_error("Integral type unsupported.");

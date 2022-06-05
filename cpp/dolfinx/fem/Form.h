@@ -277,8 +277,8 @@ public:
   /// Get the list of (cell_index, local_facet_index) pairs for the ith
   /// integral (kernel) for the exterior facet domain type
   /// @param[in] i Integral ID, i.e. (sub)domain index
-  /// @return List of (cell_index, local_facet_index) pairs. Storage is row
-  /// major.
+  /// @return List of (cell_index, local_facet_index) pairs. This data is
+  /// flattened with row-major layout, shape=(num_facets, 2)
   const std::vector<std::int32_t>& exterior_facet_domains(int i) const
   {
     auto it = _exterior_facet_integrals.find(i);
@@ -288,12 +288,12 @@ public:
   }
 
   /// Get the list of (cell_index_0, local_facet_index_0, cell_index_1,
-  /// local_facet_index_1) tuples for the ith integral (kernel) for the
+  /// local_facet_index_1) quadruplets for the ith integral (kernel) for the
   /// interior facet domain type.
   /// @param[in] i Integral ID, i.e. (sub)domain index
   /// @return List of tuples of the form
   /// (cell_index_0, local_facet_index_0, cell_index_1, local_facet_index_1).
-  /// Storage is row major
+  /// This data is flattened with row-major layout, shape=(num_facets, 4)
   const std::vector<std::int32_t>& interior_facet_domains(int i) const
   {
     auto it = _interior_facet_integrals.find(i);

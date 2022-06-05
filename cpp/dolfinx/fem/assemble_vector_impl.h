@@ -228,10 +228,10 @@ void _lift_bc_exterior_facets(
   std::vector<double> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> Ae, be;
   assert(facets.size() % 2 == 0);
-  for (std::size_t index = 0; index < facets.size() / 2; ++index)
+  for (std::size_t index = 0; index < facets.size(); index += 2)
   {
-    std::int32_t cell = facets[2 * index];
-    std::int32_t local_facet = facets[2 * index + 1];
+    std::int32_t cell = facets[index];
+    std::int32_t local_facet = facets[index + 1];
 
     // Get dof maps for cell
     auto dmap1 = dofmap1.links(cell);
@@ -350,10 +350,10 @@ void _lift_bc_interior_facets(
   std::array<std::int32_t, 2> cells;
   std::array<std::int32_t, 2> local_facet;
 
-  for (std::size_t index = 0; index < facets.size() / 4; ++index)
+  for (std::size_t index = 0; index < facets.size(); index += 4)
   {
-    cells = {facets[4 * index], facets[4 * index + 2]};
-    local_facet = {facets[4 * index + 1], facets[4 * index + 3]};
+    cells = {facets[index], facets[index + 2]};
+    local_facet = {facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
@@ -601,10 +601,10 @@ void assemble_exterior_facets(
   std::vector<T> be(bs * num_dofs);
   const xtl::span<T> _be(be);
   assert(facets.size() % 2 == 0);
-  for (std::size_t index = 0; index < facets.size() / 2; ++index)
+  for (std::size_t index = 0; index < facets.size(); index += 2)
   {
-    std::int32_t cell = facets[2 * index];
-    std::int32_t local_facet = facets[2 * index + 1];
+    std::int32_t cell = facets[index];
+    std::int32_t local_facet = facets[index + 1];
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cell);
@@ -675,13 +675,12 @@ void assemble_interior_facets(
   assert(_bs < 0 or _bs == bs);
 
   assert(facets.size() % 4 == 0);
-  const std::size_t num_facets = facets.size() / 4;
   std::array<std::int32_t, 2> cells;
   std::array<std::int32_t, 2> local_facet;
-  for (std::size_t index = 0; index < num_facets; ++index)
+  for (std::size_t index = 0; index < facets.size(); index += 4)
   {
-    cells = {facets[4 * index], facets[4 * index + 2]};
-    local_facet = {facets[4 * index + 1], facets[4 * index + 3]};
+    cells = {facets[index], facets[index + 2]};
+    local_facet = {facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
