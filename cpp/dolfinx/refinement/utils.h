@@ -99,7 +99,7 @@ std::vector<std::int64_t> adjust_indices(const common::IndexMap& map,
 /// @return MeshTags on refined mesh, values copied over from coarse mesh
 mesh::MeshTags<std::int32_t>
 transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& parent_meshtag,
-                       const mesh::Mesh& refined_mesh,
+                       std::shared_ptr<const mesh::Mesh> refined_mesh,
                        const std::vector<std::int32_t>& parent_cell,
                        const std::vector<std::int8_t>& parent_facet);
 
@@ -112,6 +112,6 @@ transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& parent_meshtag,
 /// @return MeshTags on refined mesh, values copied over from coarse mesh
 mesh::MeshTags<std::int32_t>
 transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& parent_meshtag,
-                      const mesh::Mesh& refined_mesh,
+                      std::shared_ptr<const mesh::Mesh> refined_mesh,
                       const std::vector<std::int32_t>& parent_cell);
 } // namespace dolfinx::refinement

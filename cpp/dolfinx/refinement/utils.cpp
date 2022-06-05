@@ -7,6 +7,7 @@
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/sort.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -435,10 +436,12 @@ refinement::adjust_indices(const common::IndexMap& map, std::int32_t n)
 //-----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
     const mesh::MeshTags<std::int32_t>& parent_meshtag,
-    const mesh::Mesh& refined_mesh,
+    std::shared_ptr<const mesh::Mesh> refined_mesh,
     const std::vector<std::int32_t>& parent_cell,
     const std::vector<std::int8_t>& parent_facet)
 {
+  assert(refined_mesh);
+
   const int tdim = parent_meshtag.mesh()->topology().dim();
   if (parent_meshtag.dim() != tdim - 1)
     throw std::runtime_error("Input meshtag is not facet-based");
@@ -448,9 +451,13 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
 
   auto parent_c_to_f
       = parent_meshtag.mesh()->topology().connectivity(tdim, tdim - 1);
-  assert(parent_c_to_f);
-  auto c_to_f = refined_mesh.topology().connectivity(tdim, tdim - 1);
-  assert(c_to_f);
+  if (!parent_c_to_f)
+    throw std::runtime_error("Parent mesh is missing cell-facet connectivity.");
+
+  auto c_to_f = refined_mesh->topology().connectivity(tdim, tdim - 1);
+  if (!c_to_f)
+    throw std::runtime_error(
+        "Refined mesh is missing cell-facet connectivity.");
 
   // Create map parent->child facets
   const std::int32_t num_input_facets
@@ -461,10 +468,10 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   // Get global index for each refined cell, before reordering in Mesh
   // construction
   const std::vector<std::int64_t>& original_cell_index
-      = refined_mesh.topology().original_cell_index;
+      = refined_mesh->topology().original_cell_index;
   assert(original_cell_index.size() == parent_cell.size());
   std::int64_t global_offset
-      = refined_mesh.topology().index_map(tdim)->local_range()[0];
+      = refined_mesh->topology().index_map(tdim)->local_range()[0];
   // Map cells back to original index
   std::vector<std::int32_t> local_cell_index(original_cell_index.size());
   for (std::size_t i = 0; i < local_cell_index.size(); ++i)
@@ -545,9 +552,7 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   // Sort values into order, based on facet indices
   std::vector<std::int32_t> sort_order(tag_values.size());
   std::iota(sort_order.begin(), sort_order.end(), 0);
-  std::sort(sort_order.begin(), sort_order.end(),
-            [&facet_indices](auto a, auto b)
-            { return facet_indices[a] < facet_indices[b]; });
+  dolfinx::argsort_radix<std::int32_t>(facet_indices, sort_order);
   std::vector<std::int32_t> sorted_facet_indices(facet_indices.size());
   std::vector<std::int32_t> sorted_tag_values(tag_values.size());
   for (std::size_t i = 0; i < sort_order.size(); ++i)
@@ -556,16 +561,18 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
     sorted_facet_indices[i] = facet_indices[sort_order[i]];
   }
 
-  return mesh::MeshTags<std::int32_t>(
-      std::make_shared<mesh::Mesh>(std::move(refined_mesh)), tdim - 1,
-      std::move(sorted_facet_indices), std::move(sorted_tag_values));
+  return mesh::MeshTags<std::int32_t>(refined_mesh, tdim - 1,
+                                      std::move(sorted_facet_indices),
+                                      std::move(sorted_tag_values));
 }
 //----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
     const mesh::MeshTags<std::int32_t>& parent_meshtag,
-    const mesh::Mesh& refined_mesh,
+    std::shared_ptr<const mesh::Mesh> refined_mesh,
     const std::vector<std::int32_t>& parent_cell)
 {
+  assert(refined_mesh);
+
   const int tdim = parent_meshtag.mesh()->topology().dim();
   if (parent_meshtag.dim() != tdim)
     throw std::runtime_error("Input meshtag is not cell-based");
@@ -582,10 +589,10 @@ mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
   // Get global index for each refined cell, before reordering in Mesh
   // construction
   const std::vector<std::int64_t>& original_cell_index
-      = refined_mesh.topology().original_cell_index;
+      = refined_mesh->topology().original_cell_index;
   assert(original_cell_index.size() == parent_cell.size());
   std::int64_t global_offset
-      = refined_mesh.topology().index_map(tdim)->local_range()[0];
+      = refined_mesh->topology().index_map(tdim)->local_range()[0];
   // Map back to original index
   std::vector<std::int32_t> local_cell_index(original_cell_index.size());
   for (std::size_t i = 0; i < local_cell_index.size(); ++i)
@@ -642,9 +649,7 @@ mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
   // Sort values into order, based on cell indices
   std::vector<std::int32_t> sort_order(tag_values.size());
   std::iota(sort_order.begin(), sort_order.end(), 0);
-  std::sort(sort_order.begin(), sort_order.end(),
-            [&cell_indices](auto a, auto b)
-            { return cell_indices[a] < cell_indices[b]; });
+  dolfinx::argsort_radix<std::int32_t>(cell_indices, sort_order);
   std::vector<std::int32_t> sorted_tag_values(tag_values.size());
   std::vector<std::int32_t> sorted_cell_indices(cell_indices.size());
   for (std::size_t i = 0; i < sort_order.size(); ++i)
@@ -653,7 +658,7 @@ mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
     sorted_cell_indices[i] = cell_indices[sort_order[i]];
   }
 
-  return mesh::MeshTags<std::int32_t>(
-      std::make_shared<mesh::Mesh>(std::move(refined_mesh)), tdim,
-      std::move(sorted_cell_indices), std::move(sorted_tag_values));
+  return mesh::MeshTags<std::int32_t>(refined_mesh, tdim,
+                                      std::move(sorted_cell_indices),
+                                      std::move(sorted_tag_values));
 }
