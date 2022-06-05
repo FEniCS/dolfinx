@@ -552,7 +552,7 @@ void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
     {
       auto entity = entities.subspan(e, estride);
       std::int32_t cell = fetch_cells(entity);
-      auto cell_coeff = c.subspan(e * cstride / estride + offset, space_dim);
+      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
       pack<T, 1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
     break;
@@ -561,7 +561,7 @@ void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
     {
       auto entity = entities.subspan(e, estride);
       std::int32_t cell = fetch_cells(entity);
-      auto cell_coeff = c.subspan(e * cstride / estride + offset, space_dim);
+      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
       pack<T, 2>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
     break;
@@ -570,7 +570,7 @@ void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
     {
       auto entity = entities.subspan(e, estride);
       std::int32_t cell = fetch_cells(entity);
-      auto cell_coeff = c.subspan(e * cstride / estride + offset, space_dim);
+      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
       pack<T, 3>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
     break;
@@ -579,7 +579,7 @@ void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
     {
       auto entity = entities.subspan(e, estride);
       std::int32_t cell = fetch_cells(entity);
-      auto cell_coeff = c.subspan(e * cstride / estride + offset, space_dim);
+      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
       pack<T, -1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
     break;
@@ -615,10 +615,10 @@ allocate_coefficient_storage(const Form<T>& form, IntegralType integral_type,
       num_entities = form.cell_domains(id).size();
       break;
     case IntegralType::exterior_facet:
-      num_entities = form.exterior_facet_domains(id).size();
+      num_entities = form.exterior_facet_domains(id).size() / 2;
       break;
     case IntegralType::interior_facet:
-      num_entities = form.interior_facet_domains(id).size() * 2;
+      num_entities = form.interior_facet_domains(id).size() / 2;
       break;
     default:
       throw std::runtime_error(

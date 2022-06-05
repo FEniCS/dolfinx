@@ -99,7 +99,7 @@ T assemble_exterior_facets(
                               std::next(coordinate_dofs.begin(), 3 * i));
     }
 
-    const T* coeff_cell = coeffs.data() + index * cstride;
+    const T* coeff_cell = coeffs.data() + index / 2 * cstride;
     fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(),
        &local_facet, nullptr);
   }
@@ -163,7 +163,7 @@ T assemble_interior_facets(
 
     const std::array perm{perms[cells[0] * num_cell_facets + local_facet[0]],
                           perms[cells[1] * num_cell_facets + local_facet[1]]};
-    fn(&value, coeffs.data() + index * 2 * cstride, constants.data(),
+    fn(&value, coeffs.data() + index / 2 * cstride, constants.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data());
   }
 
