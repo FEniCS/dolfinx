@@ -5,12 +5,12 @@
 [![Actions Docker images](https://github.com/FEniCS/dolfinx/actions/workflows/docker.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/docker.yml)
 [![Actions Spack build](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml)
 
-DOLFINx is a new version of DOLFIN. It is being actively developed and
-features may come and go as development proceeds.
-
 DOLFINx is the computational environment of
 [FEniCSx](https://fenicsproject.org) and implements the FEniCS Problem
-Solving Environment in Python and C++.
+Solving Environment in C++ and Python.
+
+DOLFINx is a new version of DOLFIN and is being actively developed.
+
 
 ## Documentation
 
@@ -26,67 +26,86 @@ Documentation can be viewed at:
 #### C++ core
 
 To build and install the C++ core, in the ``cpp/`` directory, run::
-```
-mkdir build
-cd build
-cmake ..
-make install
+```shell
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make install
 ```
 
 #### Python interface
 
 To install the Python interface, first install the C++ core, and then
 in the ``python/`` directory run::
-```
-pip install .
+```shell
+$ pip install .
 ```
 (you may need to use ``pip3``, depending on your system).
 
 For detailed instructions, see
 https://docs.fenicsproject.org/dolfinx/main/python/installation.
 
+
 ### Spack
 
 To build the most recent release using
 [Spack](https://spack.readthedocs.io/) (assuming a bash shell):
-```
-git clone https://github.com/spack/spack.git
-. ./spack/share/spack/setup-env.sh
-spack env create fenicsx-env
-spack env activate fenicsx-env
-spack add py-fenics-dolfinx cflags="-O3" fflags="-O3"
-spack install
+```shell
+$ git clone https://github.com/spack/spack.git
+$ . ./spack/share/spack/setup-env.sh
+$ spack env create fenicsx-env
+$ spack env activate fenicsx-env
+$ spack add py-fenics-dolfinx cflags="-O3" fflags="-O3"
+$ spack install
 ```
 See the Spack [documentation](https://spack.readthedocs.io/) for
 comprehensive instructions.
 
+
+## conda
+
+To install the Python interface, with pyvista support for visualisation,
+using [conda](https://conda.io):
+```shell
+$ conda install -c conda-forge fenics-dolfinx mpich pyvista
+```
+conda is distributed with [Anaconda](https://www.anaconda.com/) and
+[Miniconda](https://docs.conda.io/en/latest/miniconda.html). The conda
+recipes are hosted on
+[conda-forge](https://github.com/conda-forge/fenics-dolfinx-feedstock).
+
+**Note**
+Windows is not supported.
+
+
 ## Docker images
 
 A Docker image with DOLFINx built nightly:
-```
-docker run -ti dolfinx/dolfinx:latest
+```shell
+$ docker run -ti dolfinx/dolfinx:latest
 ```
 
 To switch between real and complex builds of DOLFINx.
-```
-source /usr/local/bin/dolfinx-complex-mode
-source /usr/local/bin/dolfinx-real-mode
+```shell
+$ source /usr/local/bin/dolfinx-complex-mode
+$ source /usr/local/bin/dolfinx-real-mode
 ```
 
 A Jupyter Lab environment with DOLFINx built nightly:
-```
-docker run --init -ti -p 8888:8888 dolfinx/lab:latest # Access at http://localhost:8888
+```shell
+$ docker run --init -ti -p 8888:8888 dolfinx/lab:latest  # Access at http://localhost:8888
 ```
 
 A development image with all of the dependencies required
 to build DOLFINx:
-```
-docker run -ti dolfinx/dev-env:latest
+```shell
+$ docker run -ti dolfinx/dev-env:latest
 ```
 
 All Docker images support arm64 and amd64 architectures.
 
 For more information, see https://hub.docker.com/u/dolfinx
+
 
 ## License
 
@@ -103,6 +122,7 @@ Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public
 License along with DOLFINx. If not, see
 <http://www.gnu.org/licenses/>.
+
 
 ## Contact
 
