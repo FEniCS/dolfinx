@@ -100,7 +100,7 @@ void spmv(la::MatrixCSR<T>& A, la::Vector<T>& x, la::Vector<T>& y)
   // Second stage:  spmv - off-diagonal
   // yi[0] += Ai[1] * xi[1]
   spmv_impl<T>(values, off_diag_offset, row_end, cols, _x, _y);
-};
+}
 
 void test_matrix_apply()
 {
