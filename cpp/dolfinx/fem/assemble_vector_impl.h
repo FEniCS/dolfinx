@@ -616,7 +616,7 @@ void assemble_exterior_facets(
 
     // Tabulate element vector
     std::fill(be.begin(), be.end(), 0);
-    fn(be.data(), coeffs.data() + index * cstride, constants.data(),
+    fn(be.data(), coeffs.data() + index / 2 * cstride, constants.data(),
        coordinate_dofs.data(), &local_facet, nullptr);
 
     dof_transform(_be, cell_info, cell, 1);
@@ -708,7 +708,7 @@ void assemble_interior_facets(
     const std::array perm{
         get_perm(cells[0] * num_cell_facets + local_facet[0]),
         get_perm(cells[1] * num_cell_facets + local_facet[1])};
-    fn(be.data(), coeffs.data() + index * 2 * cstride, constants.data(),
+    fn(be.data(), coeffs.data() + index / 2 * cstride, constants.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data());
 
     const xtl::span<T> _be(be);
