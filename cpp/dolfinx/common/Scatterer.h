@@ -286,10 +286,8 @@ public:
   {
     assert(local_buffer.size() == _local_inds.size());
     if (_local_inds.size() > 0)
-    {
       assert(*std::max_element(_local_inds.begin(), _local_inds.end())
              < local_data.size());
-    }
     scatter_rev_end(request);
     unpack_fn(local_buffer, _local_inds, local_data, op);
   }
