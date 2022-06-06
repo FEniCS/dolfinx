@@ -14,7 +14,8 @@ import ufl
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.mesh import (CellType, meshtags, create_mesh, create_unit_cube,
-                          create_unit_square, locate_entities)
+                          create_unit_square, locate_entities, GhostMode,
+                          create_rectangle, create_submesh)
 
 from mpi4py import MPI
 
@@ -542,3 +543,35 @@ def test_interpolate_subset(order, dim, affine):
     assert np.isclose(np.abs(form(assemble_scalar(form(ufl.inner(u - f, u - f) * dx(1))))), 0)
     integral = mesh.comm.allreduce(assemble_scalar(form(u * dx)), op=MPI.SUM)
     assert np.isclose(integral, 1 / (order + 1) * 0.5**(order + 1), 0)
+
+
+@pytest.mark.parametrize("n", [1, 6, 11])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+def test_dof_without_cell(n, ghost_mode):
+    mesh = create_unit_square(
+        MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+    mesh_1 = create_rectangle(
+        MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+        ghost_mode=ghost_mode)
+
+    edim = mesh_1.topology.dim
+    entities = locate_entities(mesh_1, edim, lambda x: x[0] <= 1.0)
+    submesh = create_submesh(mesh_1, edim, entities)[0]
+
+    element = ("Lagrange", 1)
+
+    V_mesh = FunctionSpace(mesh, element)
+    V_submesh = FunctionSpace(submesh, element)
+
+    def f_expr(x): return x[0]**2
+
+    f_mesh = Function(V_mesh)
+    f_mesh.interpolate(f_expr)
+    f_mesh.x.scatter_forward()
+
+    f_submesh = Function(V_submesh)
+    f_submesh.interpolate(f_expr)
+    f_mesh.x.scatter_forward()
+
+    assert(np.isclose(f_mesh.vector.norm(), f_submesh.vector.norm()))
