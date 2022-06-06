@@ -20,8 +20,6 @@
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
-#include <xtensor/xio.hpp>
-
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
@@ -125,8 +123,6 @@ std::vector<int> FunctionSpace::component() const { return _component; }
 std::vector<double>
 FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 {
-  std::stringstream ss;
-
   if (!_component.empty())
   {
     throw std::runtime_error(
@@ -236,25 +232,21 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   const int bs = 3;
   // Create storage for coordinates of owned and ghost dofs.
   std::vector<double> coords_local(coords.begin(),
-                                 coords.begin() + bs * size_local);
+                                   coords.begin() + bs * size_local);
   std::vector<double> coords_ghost(coords.begin() + bs * size_local,
-                                 coords.end());
+                                   coords.end());
 
   // Scatter ghost values to owners. Only overwrite the owned value if
-  // the ghost value is non-zero. 
+  // the ghost value is non-zero.
   common::Scatterer scatterer(*index_map, bs);
   scatterer.scatter_rev(xtl::span<double>(coords_local),
                         xtl::span<const double>(coords_ghost),
                         [](auto a, auto b)
                         {
                           if (abs(b) > 0.0)
-                          {
                             return b;
-                          }
                           else
-                          {
                             return a;
-                          }
                         });
   // Scatter owned values to ghosts to ensure all ghost dof coordinates
   // are tabulated.
