@@ -45,7 +45,7 @@ def test_dof_not_in_cell(ghost_mode):
     # Currently, it doesn't seem to be possible to directly
     # create a mesh where some some dofs don't belong to a
     # cell on some processes, so create one indirectly with
-    # create_submesh
+    # `create_submesh`
     n = 1
     mesh = create_rectangle(
         MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
@@ -54,8 +54,8 @@ def test_dof_not_in_cell(ghost_mode):
     entities = locate_entities(mesh, edim, lambda x: x[0] <= 1.0)
     submesh = create_submesh(mesh, edim, entities)[0]
 
-    # Create a function space over the submesh, and check that
-    # tabulate the dof coordinates
+    # Create a function space over the submesh, and tabulate the
+    # dof coordinates
     V = FunctionSpace(submesh, ("Lagrange", 1))
     coords = V.tabulate_dof_coordinates()
 
