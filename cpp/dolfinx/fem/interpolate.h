@@ -12,6 +12,7 @@
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <numeric>
@@ -434,10 +435,13 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
 
-  // Set vector to zero so that old data does not interfere for ghosts that do
-  // not belong to a cell when ghost values are communicated to owners
-  u.x()->set(0.0);
-  xtl::span<T> coeffs = u.x()->mutable_array();
+  // Create temporary vector to work with and set all values to NAN so
+  // we know which values need to be copied, so that old data does not
+  // interfere for ghosts that do not belong to a cell when ghost
+  // values are communicated to owners
+  la::Vector temp_x(*u.x());
+  temp_x.set(NAN);
+  xtl::span<T> coeffs = temp_x.mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
 
   // This assumes that any element with an identity interpolation matrix
@@ -622,14 +626,19 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
   // If there are owned dofs on this process that do not belong to a cell on
   // this process, their values will not have been set by the above. Hence,
   // communicate the values of ghost dofs back to their owners.
-  u.x()->scatter_rev(
+  temp_x.scatter_rev(
       [](auto a, auto b)
       {
-        if (abs(b) > 0.0)
+        if (!std::isnan(std::abs(b)))
           return b;
         else
           return a;
       });
+
+  // Copy interpolated values (which aren't NAN) back to original vector
+  std::copy_if(temp_x.array().begin(), temp_x.array().end(),
+               u.x()->mutable_array().begin(),
+               [](auto t) { return !std::isnan(std::abs(t)); });
 }
 
 /// Interpolate from one finite element Function to another on the same
