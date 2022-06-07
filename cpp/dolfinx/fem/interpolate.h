@@ -635,10 +635,14 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
           return a;
       });
 
-  // Copy interpolated values (which aren't NAN) back to original vector
-  std::copy_if(temp_x.array().begin(), temp_x.array().end(),
-               u.x()->mutable_array().begin(),
-               [](auto t) { return !std::isnan(std::abs(t)); });
+  // FIXME See if this can be done with something like a copy_if
+  for (int i = 0; i < temp_x.array().size(); ++i)
+  {
+    if (!std::isnan(std::abs(coeffs[i])))
+    {
+      u.x()->mutable_array()[i] = coeffs[i];
+    }
+  }
 }
 
 /// Interpolate from one finite element Function to another on the same
