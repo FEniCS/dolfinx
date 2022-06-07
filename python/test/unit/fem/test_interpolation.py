@@ -564,7 +564,8 @@ def test_dof_without_cell(n, ghost_mode):
     V_mesh = FunctionSpace(mesh, element)
     V_submesh = FunctionSpace(submesh, element)
 
-    def f_expr(x): return x[0]**2
+    def f_expr(x):
+        return x[0]**2
 
     f_mesh = Function(V_mesh)
     f_mesh.interpolate(f_expr)
