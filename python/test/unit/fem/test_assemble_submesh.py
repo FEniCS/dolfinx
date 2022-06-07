@@ -302,6 +302,8 @@ def test_mixed_codim_0_assembly_coeffs(d, n, k, space, ghost_mode,
 
 
 def unit_square_norm(n, space, k, ghost_mode):
+    """A helper function to assemble some forms on the unit square for
+    testing."""
     mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
     V_0 = fem.FunctionSpace(mesh, (space, k))
     V_1 = fem.FunctionSpace(mesh, (space, k))
@@ -348,7 +350,7 @@ def unit_square_norm(n, space, k, ghost_mode):
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 @pytest.mark.parametrize("random_ordering", [False, True])
-def test_mixed_codim_0_assembly(n, k, space, ghost_mode,
+def test_mixed_codim_0_assembly_0(n, k, space, ghost_mode,
                                 random_ordering):
     """Test that assembling a form where the trial and test functions
     are defined on different meshes gives the correct result"""
@@ -437,7 +439,9 @@ def test_mixed_codim_0_assembly(n, k, space, ghost_mode,
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 @pytest.mark.parametrize("random_ordering", [False, True])
-def test_mixed_codim_0_assembly_alt(n, k, space, ghost_mode, random_ordering):
+def test_mixed_codim_0_assembly_1(n, k, space, ghost_mode, random_ordering):
+    """Same test as test_mixed_codim_0_assembly_0, but this time assembling
+    with respect to the submesh rather than the mesh."""
     if random_ordering:
         mesh = create_random_mesh(((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
                                   ghost_mode=ghost_mode)
@@ -484,10 +488,6 @@ def test_mixed_codim_0_assembly_alt(n, k, space, ghost_mode, random_ordering):
     A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
 
-    A_expected_norm, b_expected_norm = unit_square_norm(
-        n, space, k, ghost_mode)
-    assert(np.isclose(A.norm(), A_expected_norm))
-
     L = fem.form(ufl.inner(1.0, v) * (dx + ds(1)),
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
@@ -495,6 +495,9 @@ def test_mixed_codim_0_assembly_alt(n, k, space, ghost_mode, random_ordering):
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
 
+    A_expected_norm, b_expected_norm = unit_square_norm(
+        n, space, k, ghost_mode)
+    assert(np.isclose(A.norm(), A_expected_norm))
     assert(np.isclose(b.norm(), b_expected_norm))
 
 
