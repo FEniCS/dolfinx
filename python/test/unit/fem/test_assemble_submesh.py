@@ -235,7 +235,6 @@ def test_mixed_codim_0_assembly(d, n, k, space, ghost_mode, random_ordering):
     f = fem.Function(V_m_1)
     f.interpolate(lambda x: np.vstack([x[i] for i in range(d)]))
     g = fem.Function(V_sm_0)
-    # TODO Interpolate g and h when issue #2126 has been resolved
     g.interpolate(lambda x: x[0]**2)
     h = fem.Function(V_sm_1)
     h.interpolate(lambda x: x[0])
@@ -510,7 +509,6 @@ def test_codim_1_coeffs(d, n, k, space, ghost_mode, random_ordering):
     V_sm = fem.FunctionSpace(submesh, element)
 
     f = fem.Function(V_sm)
-    # NOTE Interpolating in parallel may not work correctly, see issue #2126
     f.interpolate(lambda x: x[0])
     f_m = fem.Function(V_m)
     f_m.interpolate(lambda x: x[0])
