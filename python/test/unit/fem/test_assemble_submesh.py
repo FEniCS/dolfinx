@@ -62,7 +62,6 @@ def assemble_forms_0(mesh, space, k):
     ds = ufl.Measure("ds", domain=mesh)
 
     c = fem.Constant(mesh, PETSc.ScalarType(0.75))
-    # TODO Test assembly with fem.Function
     x = ufl.SpatialCoordinate(mesh)
     f = 1.5 + x[0]
     g = fem.Function(V)
@@ -162,18 +161,20 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     assert(np.isclose(s_submesh, s_square_mesh))
 
 
-def assemble_forms_1(comm, f, g, h, u, v, dx, ds, entity_maps={}):
-    # TODO Add ds
+def assemble_forms_1(comm, f, g, h, u, v, dx, ds, bc, entity_maps={}):
+    """Helper function to assemble some forms for testing"""
     a = fem.form(ufl.inner(f[0] * f[1] * g * h * u, v) * (dx + ds),
                  entity_maps=entity_maps)
-    A = fem.petsc.assemble_matrix(a)
+    A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
 
     L = fem.form(ufl.inner(f[0] * f[1] * g * h, v) * (dx + ds),
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
+    fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
+    fem.petsc.set_bc(b, [bc])
 
     M = fem.form(f[0] * f[1] * g * h * (dx + ds), entity_maps=entity_maps)
     s = comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
@@ -243,6 +244,14 @@ def test_mixed_codim_0_assembly(d, n, k, space, ghost_mode, random_ordering):
     h = fem.Function(V_sm_1)
     h.interpolate(lambda x: x[0])
 
+    facet_dim = edim - 1
+    facets = locate_entities_boundary(
+        submesh_0, facet_dim, lambda x: np.isclose(x[0], 0))
+    dofs = fem.locate_dofs_topological(V_sm_0, facet_dim, facets)
+    bc_func = fem.Function(V_sm_0)
+    bc_func.interpolate(lambda x: x[0]**2)
+    bc = fem.dirichletbc(bc_func, dofs)
+
     # Since the coefficients are defined over meshes that differ from
     # the integration domain mesh (submesh_0), entity maps must be
     # provided. In the case of mesh_1, we must relate the cells in
@@ -258,7 +267,7 @@ def test_mixed_codim_0_assembly(d, n, k, space, ghost_mode, random_ordering):
                    submesh_1: [entity_map_1.index(entity)
                                for entity in entity_map_0]}
     A_sm, b_sm, s_sm = assemble_forms_1(
-        submesh_0.comm, f, g, h, u_sm, v_sm, dx_sm, ds_sm, entity_maps)
+        submesh_0.comm, f, g, h, u_sm, v_sm, dx_sm, ds_sm, bc, entity_maps)
 
     # Assemble the same form on a unit square and compare results
     V_m_RT = fem.FunctionSpace(mesh_0, ("Raviart-Thomas", k))
@@ -275,8 +284,15 @@ def test_mixed_codim_0_assembly(d, n, k, space, ghost_mode, random_ordering):
     u_m = ufl.TrialFunction(V_m)
     v_m = ufl.TestFunction(V_m)
 
+    facets = locate_entities_boundary(
+        mesh_0, facet_dim, lambda x: np.isclose(x[0], 0))
+    dofs = fem.locate_dofs_topological(V_m, facet_dim, facets)
+    bc_func = fem.Function(V_m)
+    bc_func.interpolate(lambda x: x[0]**2)
+    bc = fem.dirichletbc(bc_func, dofs)
+
     A_m, b_m, s_m = assemble_forms_1(
-        mesh_0.comm, f_m, g_m, h_m, u_m, v_m, ufl.dx, ufl.ds)
+        mesh_0.comm, f_m, g_m, h_m, u_m, v_m, ufl.dx, ufl.ds, bc)
 
     assert(np.isclose(A_sm.norm(), A_m.norm()))
     assert(np.isclose(b_sm.norm(), b_m.norm()))
