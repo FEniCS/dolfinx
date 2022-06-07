@@ -881,6 +881,9 @@ namespace dolfinx_wrappers
 
 void fem(py::module& m)
 {
+  // Load basix and dolfinx to use Pybindings
+  py::module_::import("basix");
+
   py::module petsc_mod
       = m.def_submodule("petsc", "PETSc-specific finite element module");
   petsc_module(petsc_mod);
@@ -971,6 +974,9 @@ void fem(py::module& m)
             return dolfinx::fem::FiniteElement(*p);
           }))
       .def("__eq__", &dolfinx::fem::FiniteElement::operator==)
+      .def_property_readonly("basix_element",
+                             &dolfinx::fem::FiniteElement::basix_element,
+                             py::return_value_policy::reference_internal)
       .def_property_readonly("num_sub_elements",
                              &dolfinx::fem::FiniteElement::num_sub_elements)
       .def_property_readonly(
