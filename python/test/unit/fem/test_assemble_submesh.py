@@ -351,7 +351,7 @@ def unit_square_norm(n, space, k, ghost_mode):
                                         GhostMode.shared_facet])
 @pytest.mark.parametrize("random_ordering", [False, True])
 def test_mixed_codim_0_assembly_0(n, k, space, ghost_mode,
-                                random_ordering):
+                                  random_ordering):
     """Test that assembling a form where the trial and test functions
     are defined on different meshes gives the correct result"""
     # Create a rectangle mesh, and create a submesh of half of it
@@ -509,6 +509,8 @@ def test_mixed_codim_0_assembly_1(n, k, space, ghost_mode, random_ordering):
                                         GhostMode.shared_facet])
 @pytest.mark.parametrize("random_ordering", [False, True])
 def test_codim_1_coeffs(d, n, k, space, ghost_mode, random_ordering):
+    """Test that assembling forms with coefficients defined only on the
+    boundary of the mesh gives the expected result."""
     if d == 2:
         if random_ordering:
             mesh = create_random_mesh(((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
@@ -532,8 +534,9 @@ def test_codim_1_coeffs(d, n, k, space, ghost_mode, random_ordering):
             b_0 = np.logical_or(np.isclose(x[0], 2.0), np.isclose(x[0], 0.0))
             b_1 = np.logical_or(np.isclose(x[1], 1.0), np.isclose(x[1], 0.0))
             b_2 = np.logical_or(np.isclose(x[2], 1.0), np.isclose(x[2], 0.0))
-
             return np.logical_or(np.logical_or(b_0, b_1), b_2)
+
+    # Create a submesh of the boundary of the mesh
     edim = mesh.topology.dim - 1
     num_facets = mesh.topology.create_entities(edim)
     entities = locate_entities_boundary(mesh, edim, boundary_marker)
@@ -544,54 +547,53 @@ def test_codim_1_coeffs(d, n, k, space, ghost_mode, random_ordering):
     V_m = fem.FunctionSpace(mesh, element)
     V_sm = fem.FunctionSpace(submesh, element)
 
+    # Create a coefficient on submesh and the mesh (for comparison)
     f = fem.Function(V_sm)
     f.interpolate(lambda x: x[0])
     f_m = fem.Function(V_m)
     f_m.interpolate(lambda x: x[0])
 
-    mp = [entity_map.index(entity) if entity in entity_map else -1
-          for entity in range(num_facets)]
-
     u = ufl.TrialFunction(V_m)
     v = ufl.TestFunction(V_m)
 
+    # Create a map from facets in the mesh to facets in the submesh
+    # (the inverse of the entity map retuned by create_submesh)
+    entity_maps = {submesh: [entity_map.index(entity)
+                             if entity in entity_map else -1
+                             for entity in range(num_facets)]}
+
+    # Assemble a matrix and compare with coefficient defined over whole mesh
     ds = ufl.Measure("ds", domain=mesh)
-    entity_maps = {submesh: mp}
     a = fem.form(ufl.inner(f * u, v) * ds,
                  entity_maps=entity_maps)
     A = fem.petsc.assemble_matrix(a)
     A.assemble()
-
     A_norm = A.norm()
 
     a = fem.form(ufl.inner(f_m * u, v) * ds)
     A = fem.petsc.assemble_matrix(a)
     A.assemble()
-
     A_expected_norm = A.norm()
-
     assert(np.isclose(A_norm, A_expected_norm))
 
+    # Assemble a vector and compare
     L = fem.form(ufl.inner(f, v) * ds,
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
-
     b_norm = b.norm()
 
     L = fem.form(ufl.inner(f_m, v) * ds)
     b = fem.petsc.assemble_vector(L)
-
     b_expected_norm = b.norm()
-
     assert(np.isclose(b_norm, b_expected_norm))
 
+    # Assemble a scalar and compare
     M = fem.form(f * ds,
                  entity_maps=entity_maps)
     s = mesh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
 
     M = fem.form(f_m * ds)
     s_expected = mesh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
-
     assert(np.isclose(s, s_expected))
 
 
