@@ -23,6 +23,7 @@ import random
 
 
 def create_random_mesh(corners, n, ghost_mode):
+    """Create a rectangular mesh made of randomly ordered simplices"""
     if MPI.COMM_WORLD.rank == 0:
         h_x = (corners[1][0] - corners[0][0]) / n[0]
         h_y = (corners[1][1] - corners[0][1]) / n[1]
@@ -54,13 +55,19 @@ def create_random_mesh(corners, n, ghost_mode):
 
 
 def assemble_forms_0(mesh, space, k):
+    """Helper function to assemble some forms for testing"""
     V = fem.FunctionSpace(mesh, (space, k))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dx = ufl.Measure("dx", domain=mesh)
     ds = ufl.Measure("ds", domain=mesh)
 
     c = fem.Constant(mesh, PETSc.ScalarType(0.75))
-    a = fem.form(ufl.inner(c * u, v) * (dx + ds))
+    # TODO Test assembly with fem.Function
+    x = ufl.SpatialCoordinate(mesh)
+    f = 1.5 + x[0]
+    g = fem.Function(V)
+    g.interpolate(lambda x: x[0]**2 + x[1])
+    a = fem.form(ufl.inner(c * f * g * u, v) * (dx + ds))
 
     facet_dim = mesh.topology.dim - 1
     facets = locate_entities_boundary(
@@ -75,10 +82,7 @@ def assemble_forms_0(mesh, space, k):
     A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
 
-    # TODO Test assembly with fem.Function
-    x = ufl.SpatialCoordinate(mesh)
-    f = 1.5 + x[0]
-    L = fem.form(ufl.inner(c * f, v) * (dx + ds))
+    L = fem.form(ufl.inner(c * f * g, v) * (dx + ds))
     b = fem.petsc.assemble_vector(L)
     fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
@@ -86,7 +90,7 @@ def assemble_forms_0(mesh, space, k):
     fem.petsc.set_bc(b, [bc])
 
     s = mesh.comm.allreduce(fem.assemble_scalar(
-        fem.form(ufl.inner(c * f, f) * (dx + ds))), op=MPI.SUM)
+        fem.form(ufl.inner(c * f * g, f) * (dx + ds))), op=MPI.SUM)
 
     return A, b, s
 
