@@ -68,8 +68,7 @@ def assemble_forms_0(mesh, space, k):
     dofs = fem.locate_dofs_topological(V, facet_dim, facets)
 
     bc_func = fem.Function(V)
-    # TODO Interpolate when issue #2126 has been resolved
-    bc_func.x.array[:] = 1.0
+    bc_func.interpolate(lambda x: x[0]**2)
 
     bc = fem.dirichletbc(bc_func, dofs)
 
@@ -237,9 +236,9 @@ def test_mixed_codim_0_assembly(d, n, k, space, ghost_mode, random_ordering):
     f.interpolate(lambda x: np.vstack([x[i] for i in range(d)]))
     g = fem.Function(V_sm_0)
     # TODO Interpolate g and h when issue #2126 has been resolved
-    g.x.array[:] = 1.0
+    g.interpolate(lambda x: x[0]**2)
     h = fem.Function(V_sm_1)
-    h.x.array[:] = 2.0
+    h.interpolate(lambda x: x[0])
 
     # Since the coefficients are defined over meshes that differ from
     # the integration domain mesh (submesh_0), entity maps must be
@@ -265,10 +264,10 @@ def test_mixed_codim_0_assembly(d, n, k, space, ghost_mode, random_ordering):
     f_m.interpolate(lambda x: np.vstack([x[i] for i in range(d)]))
 
     g_m = fem.Function(V_m)
-    g_m.x.array[:] = 1.0
+    g_m.interpolate(lambda x: x[0]**2)
 
     h_m = fem.Function(V_m)
-    h_m.x.array[:] = 2.0
+    h_m.interpolate(lambda x: x[0])
 
     u_m = ufl.TrialFunction(V_m)
     v_m = ufl.TestFunction(V_m)
