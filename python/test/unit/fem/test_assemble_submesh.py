@@ -189,7 +189,9 @@ def assemble_forms_1(comm, f, g, h, u, v, dx, ds, bc, entity_maps={}):
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 @pytest.mark.parametrize("random_ordering", [False, True])
-def test_mixed_codim_0_assembly(d, n, k, space, ghost_mode, random_ordering):
+def test_mixed_codim_0_assembly_coeffs(d, n, k, space, ghost_mode,
+                                       random_ordering):
+    # TODO see if this test can be combined with the below
     """Test that assembling a form where the coefficients are defined on
     different meshes gives the expected result"""
 
@@ -299,14 +301,58 @@ def test_mixed_codim_0_assembly(d, n, k, space, ghost_mode, random_ordering):
     assert(np.isclose(s_sm, s_m))
 
 
+def unit_square_norm(n, space, k, ghost_mode):
+    mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+    V_0 = fem.FunctionSpace(mesh, (space, k))
+    V_1 = fem.FunctionSpace(mesh, (space, k))
+    u = ufl.TrialFunction(V_0)
+    v = ufl.TestFunction(V_1)
+
+    tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(tdim - 1, 0)
+    f_to_v = mesh.topology.connectivity(tdim - 1, 0)
+    num_facets = f_to_v.num_nodes
+    facets = create_adjacencylist([f_to_v.links(f)
+                                   for f in range(num_facets)])
+    facet_values = np.zeros((num_facets), dtype=np.int32)
+    left_facets = locate_entities_boundary(
+        mesh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
+    facet_values[left_facets] = 1
+    facet_mt = meshtags_from_entities(mesh, tdim - 1, facets, facet_values)
+
+    ds = ufl.Measure("ds", domain=mesh, subdomain_data=facet_mt)
+
+    boundary_facets = locate_entities_boundary(
+        mesh, tdim - 1, lambda x: np.isclose(x[1], 1.0))
+    dofs = fem.locate_dofs_topological(V_0, tdim - 1, boundary_facets)
+    bc_func = fem.Function(V_0)
+    bc_func.interpolate(lambda x: x[0])
+    bc = fem.dirichletbc(bc_func, dofs)
+
+    a = fem.form(ufl.inner(u, v) * (ufl.dx + ds(1)))
+    A = fem.petsc.assemble_matrix(a, bcs=[bc])
+    A.assemble()
+
+    L = fem.form(ufl.inner(1.0, v) * (ufl.dx + ds(1)))
+    b = fem.petsc.assemble_vector(L)
+    fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD,
+                  mode=PETSc.ScatterMode.REVERSE)
+
+    return A.norm(), b.norm()
+
+
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 @pytest.mark.parametrize("random_ordering", [False, True])
-def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode, random_ordering):
-    # TODO Test vector is correct
+def test_mixed_codim_0_assembly(n, k, space, ghost_mode,
+                                random_ordering):
+    """Test that assembling a form where the trial and test functions
+    are defined on different meshes gives the correct result"""
+    # Create a rectangle mesh, and create a submesh of half of it
     if random_ordering:
         mesh = create_random_mesh(((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
                                   ghost_mode=ghost_mode)
@@ -320,6 +366,7 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode, random_orderi
     submesh, entity_map, vertex_map, geom_map = create_submesh(
         mesh, edim, entities)
 
+    # Create cell meshtags to mark half of the rectangle mesh
     c_to_v = mesh.topology.connectivity(tdim, 0)
     num_cells = c_to_v.num_nodes
     cells = create_adjacencylist([c_to_v.links(c)
@@ -328,6 +375,7 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode, random_orderi
     cell_values[entities] = 1
     cell_mt = meshtags_from_entities(mesh, tdim, cells, cell_values)
 
+    # Create facet meshtags to mark the left side of the rectangle
     mesh.topology.create_connectivity(tdim - 1, 0)
     f_to_v = mesh.topology.connectivity(tdim - 1, 0)
     num_facets = f_to_v.num_nodes
@@ -339,11 +387,14 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode, random_orderi
     facet_values[left_facets] = 1
     facet_mt = meshtags_from_entities(mesh, tdim - 1, facets, facet_values)
 
+    # Create trial and test functions defined on the mesh and submesh
+    # respectively
     V_m = fem.FunctionSpace(mesh, (space, k))
     V_sm = fem.FunctionSpace(submesh, (space, k))
     u = ufl.TrialFunction(V_m)
     v = ufl.TestFunction(V_sm)
 
+    # Apply boundary condition to the top boundary
     boundary_facets = locate_entities_boundary(
         mesh, edim - 1, lambda x: np.isclose(x[1], 1.0))
     dofs = fem.locate_dofs_topological(V_m, edim - 1, boundary_facets)
@@ -351,21 +402,20 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode, random_orderi
     bc_func.interpolate(lambda x: x[0])
     bc = fem.dirichletbc(bc_func, dofs)
 
+    # Create integration measure on the mesh
     dx = ufl.Measure("dx", domain=mesh, subdomain_data=cell_mt)
     ds = ufl.Measure("ds", domain=mesh, subdomain_data=facet_mt)
 
-    mp = [entity_map.index(entity) if entity in entity_map else -1
-          for entity in range(num_cells)]
-    entity_maps = {submesh: mp}
-
+    # Create entity map from mesh cells to submesh cells (this is the inverse
+    # of the entity map provided by create_submesh)
+    entity_maps = {submesh: [entity_map.index(entity)
+                             if entity in entity_map else -1
+                             for entity in range(num_cells)]}
+    # Create and assemble some forms
     a = fem.form(ufl.inner(u, v) * (dx(1) + ds(1)),
                  entity_maps=entity_maps)
     A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
-
-    A_expected_norm, b_expected_norm = unit_square_norm(
-        n, space, k, ghost_mode)
-    assert(np.isclose(A.norm(), A_expected_norm))
 
     L = fem.form(ufl.inner(1.0, v) * (dx(1) + ds(1)),
                  entity_maps=entity_maps)
@@ -374,6 +424,10 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode, random_orderi
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
 
+    # Compute expected norms and compare
+    A_expected_norm, b_expected_norm = unit_square_norm(
+        n, space, k, ghost_mode)
+    assert(np.isclose(A.norm(), A_expected_norm))
     assert(np.isclose(b.norm(), b_expected_norm))
 
 
@@ -383,7 +437,7 @@ def test_mixed_codim_0_test_func_assembly(n, k, space, ghost_mode, random_orderi
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 @pytest.mark.parametrize("random_ordering", [False, True])
-def test_mixed_codim_0_test_func_assembly_alt(n, k, space, ghost_mode, random_ordering):
+def test_mixed_codim_0_assembly_alt(n, k, space, ghost_mode, random_ordering):
     if random_ordering:
         mesh = create_random_mesh(((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
                                   ghost_mode=ghost_mode)
@@ -442,47 +496,6 @@ def test_mixed_codim_0_test_func_assembly_alt(n, k, space, ghost_mode, random_or
                   mode=PETSc.ScatterMode.REVERSE)
 
     assert(np.isclose(b.norm(), b_expected_norm))
-
-
-def unit_square_norm(n, space, k, ghost_mode):
-    mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
-    V_0 = fem.FunctionSpace(mesh, (space, k))
-    V_1 = fem.FunctionSpace(mesh, (space, k))
-    u = ufl.TrialFunction(V_0)
-    v = ufl.TestFunction(V_1)
-
-    tdim = mesh.topology.dim
-    mesh.topology.create_connectivity(tdim - 1, 0)
-    f_to_v = mesh.topology.connectivity(tdim - 1, 0)
-    num_facets = f_to_v.num_nodes
-    facets = create_adjacencylist([f_to_v.links(f)
-                                   for f in range(num_facets)])
-    facet_values = np.zeros((num_facets), dtype=np.int32)
-    left_facets = locate_entities_boundary(
-        mesh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
-    facet_values[left_facets] = 1
-    facet_mt = meshtags_from_entities(mesh, tdim - 1, facets, facet_values)
-
-    ds = ufl.Measure("ds", domain=mesh, subdomain_data=facet_mt)
-
-    boundary_facets = locate_entities_boundary(
-        mesh, tdim - 1, lambda x: np.isclose(x[1], 1.0))
-    dofs = fem.locate_dofs_topological(V_0, tdim - 1, boundary_facets)
-    bc_func = fem.Function(V_0)
-    bc_func.interpolate(lambda x: x[0])
-    bc = fem.dirichletbc(bc_func, dofs)
-
-    a = fem.form(ufl.inner(u, v) * (ufl.dx + ds(1)))
-    A = fem.petsc.assemble_matrix(a, bcs=[bc])
-    A.assemble()
-
-    L = fem.form(ufl.inner(1.0, v) * (ufl.dx + ds(1)))
-    b = fem.petsc.assemble_vector(L)
-    fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD,
-                  mode=PETSc.ScatterMode.REVERSE)
-
-    return A.norm(), b.norm()
 
 
 @pytest.mark.parametrize("d", [2, 3])
