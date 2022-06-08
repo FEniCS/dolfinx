@@ -597,13 +597,14 @@ def test_codim_1_coeffs(d, n, k, space, ghost_mode, random_ordering):
     assert(np.isclose(s, s_expected))
 
 
+@pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("space", ["Lagrange"])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 @pytest.mark.parametrize("random_ordering", [False, True])
-def test_codim_1_assembly(n, k, space, ghost_mode, random_ordering):
+def test_codim_1_assembly(d, n, k, space, ghost_mode, random_ordering):
     """Test that assembling a form with a trial function defined over
     the mesh and a test function defined only over the mesh boundary
     gives the expected result"""
@@ -612,21 +613,35 @@ def test_codim_1_assembly(n, k, space, ghost_mode, random_ordering):
     # Lagrange space on the boundary facets will be discontinuous at
     # corners, which is not the case for a discontinuous Lagrange
     # space on the cells of the mesh.
-    if random_ordering:
-        mesh = create_random_mesh(((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-                                  ghost_mode=ghost_mode)
+    if d == 2:
+        if random_ordering:
+            mesh = create_random_mesh(((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+                                      ghost_mode=ghost_mode)
+        else:
+            mesh = create_rectangle(
+                MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+                ghost_mode=ghost_mode)
+
+        def boundary_marker(x):
+            return np.logical_or(np.logical_or(np.isclose(x[0], 2.0),
+                                               np.isclose(x[0], 0.0)),
+                                 np.logical_or(np.isclose(x[1], 1.0),
+                                               np.isclose(x[1], 0.0)))
     else:
-        mesh = create_rectangle(
-            MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-            ghost_mode=ghost_mode)
+        mesh = create_box(
+            MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
+            (2 * n, n, n), ghost_mode=ghost_mode)
+
+        def boundary_marker(x):
+            b_0 = np.logical_or(np.isclose(x[0], 2.0), np.isclose(x[0], 0.0))
+            b_1 = np.logical_or(np.isclose(x[1], 1.0), np.isclose(x[1], 0.0))
+            b_2 = np.logical_or(np.isclose(x[2], 1.0), np.isclose(x[2], 0.0))
+            return np.logical_or(np.logical_or(b_0, b_1), b_2)
+
     edim = mesh.topology.dim - 1
     num_facets = mesh.topology.create_entities(edim)
     entities = locate_entities_boundary(
-        mesh, edim,
-        lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 2.0),
-                                              np.isclose(x[0], 0.0)),
-                                np.logical_or(np.isclose(x[1], 1.0),
-                                              np.isclose(x[1], 0.0))))
+        mesh, edim, boundary_marker)
     submesh, entity_map, vertex_map, geom_map = create_submesh(
         mesh, edim, entities)
 
