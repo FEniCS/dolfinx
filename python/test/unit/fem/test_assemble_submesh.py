@@ -301,10 +301,13 @@ def test_mixed_codim_0_assembly_coeffs(d, n, k, space, ghost_mode,
     assert(np.isclose(s_sm, s_m))
 
 
-def unit_square_norm(n, space, k, ghost_mode):
+def unit_norm(d, n, space, k, ghost_mode):
     """A helper function to assemble some forms on the unit square for
     testing."""
-    mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+    if d == 2:
+        mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+    else:
+        mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
     V_0 = fem.FunctionSpace(mesh, (space, k))
     V_1 = fem.FunctionSpace(mesh, (space, k))
     u = ufl.TrialFunction(V_0)
@@ -344,24 +347,30 @@ def unit_square_norm(n, space, k, ghost_mode):
     return A.norm(), b.norm()
 
 
+@pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 @pytest.mark.parametrize("random_ordering", [False, True])
-def test_mixed_codim_0_assembly_0(n, k, space, ghost_mode,
+def test_mixed_codim_0_assembly_0(d, n, k, space, ghost_mode,
                                   random_ordering):
     """Test that assembling a form where the trial and test functions
     are defined on different meshes gives the correct result"""
     # Create a rectangle mesh, and create a submesh of half of it
-    if random_ordering:
-        mesh = create_random_mesh(((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-                                  ghost_mode=ghost_mode)
+    if d == 2:
+        if random_ordering:
+            mesh = create_random_mesh(((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+                                      ghost_mode=ghost_mode)
+        else:
+            mesh = create_rectangle(
+                MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+                ghost_mode=ghost_mode)
     else:
-        mesh = create_rectangle(
-            MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-            ghost_mode=ghost_mode)
+        mesh = create_box(
+            MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
+            (2 * n, n, n), ghost_mode=ghost_mode)
     tdim = mesh.topology.dim
     edim = tdim
     entities = locate_entities(mesh, edim, lambda x: x[0] <= 1.0)
@@ -427,28 +436,34 @@ def test_mixed_codim_0_assembly_0(n, k, space, ghost_mode,
                   mode=PETSc.ScatterMode.REVERSE)
 
     # Compute expected norms and compare
-    A_expected_norm, b_expected_norm = unit_square_norm(
-        n, space, k, ghost_mode)
+    A_expected_norm, b_expected_norm = unit_norm(
+        d, n, space, k, ghost_mode)
     assert(np.isclose(A.norm(), A_expected_norm))
     assert(np.isclose(b.norm(), b_expected_norm))
 
 
+@pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 @pytest.mark.parametrize("random_ordering", [False, True])
-def test_mixed_codim_0_assembly_1(n, k, space, ghost_mode, random_ordering):
+def test_mixed_codim_0_assembly_1(d, n, k, space, ghost_mode, random_ordering):
     """Same test as test_mixed_codim_0_assembly_0, but this time assembling
     with respect to the submesh rather than the mesh."""
-    if random_ordering:
-        mesh = create_random_mesh(((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-                                  ghost_mode=ghost_mode)
+    if d == 2:
+        if random_ordering:
+            mesh = create_random_mesh(((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+                                      ghost_mode=ghost_mode)
+        else:
+            mesh = create_rectangle(
+                MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+                ghost_mode=ghost_mode)
     else:
-        mesh = create_rectangle(
-            MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-            ghost_mode=ghost_mode)
+        mesh = create_box(
+            MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
+            (2 * n, n, n), ghost_mode=ghost_mode)
     tdim = mesh.topology.dim
     edim = tdim
     entities = locate_entities(mesh, edim, lambda x: x[0] <= 1.0)
@@ -495,8 +510,8 @@ def test_mixed_codim_0_assembly_1(n, k, space, ghost_mode, random_ordering):
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
 
-    A_expected_norm, b_expected_norm = unit_square_norm(
-        n, space, k, ghost_mode)
+    A_expected_norm, b_expected_norm = unit_norm(
+        d, n, space, k, ghost_mode)
     assert(np.isclose(A.norm(), A_expected_norm))
     assert(np.isclose(b.norm(), b_expected_norm))
 
