@@ -599,12 +599,16 @@ def test_codim_1_coeffs(d, n, k, space, ghost_mode, random_ordering):
 
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("k", [1, 4])
-@pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
+@pytest.mark.parametrize("space", ["Lagrange"])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 @pytest.mark.parametrize("random_ordering", [False, True])
 def test_codim_1_assembly(n, k, space, ghost_mode, random_ordering):
-    # TODO Test vector and matrices are correct
+    # TODO Test discontinuous Lagrange spaces. Can't just compare to
+    # the same spaces on the mesh in that case because a discontinuous
+    # Lagrange space on the boundary facets will be discontinuous at
+    # corners, which is not the case for a discontinuous Lagrange
+    # space on the cells of the mesh.
     if random_ordering:
         mesh = create_random_mesh(((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
                                   ghost_mode=ghost_mode)
@@ -627,22 +631,27 @@ def test_codim_1_assembly(n, k, space, ghost_mode, random_ordering):
     V_m = fem.FunctionSpace(mesh, element)
     V_sm = fem.FunctionSpace(submesh, element)
 
-    u = ufl.TrialFunction(V_m)
-    v = ufl.TestFunction(V_sm)
+    u_m = ufl.TrialFunction(V_m)
+    v_m = ufl.TestFunction(V_m)
+    v_sm = ufl.TestFunction(V_sm)
 
     ds = ufl.Measure("ds", domain=mesh)
     mp = [entity_map.index(entity) if entity in entity_map else -1
           for entity in range(num_facets)]
     entity_maps = {submesh: mp}
-    a = fem.form(ufl.inner(u, v) * ds,
+    a = fem.form(ufl.inner(u_m, v_sm) * ds,
                  entity_maps=entity_maps)
     A = fem.petsc.assemble_matrix(a)
     A.assemble()
 
-    print(A.norm())
+    a_2 = fem.form(ufl.inner(u_m, v_m) * ds)
+    A_2 = fem.petsc.assemble_matrix(a_2)
+    A_2.assemble()
+
+    assert(np.isclose(A.norm(), A_2.norm()))
 
     f = fem.Function(V_m)
-    f.interpolate(lambda x: np.sin(np.pi * x[0]))
+    f.interpolate(lambda x: np.cos(np.pi * x[0]))
 
     L = fem.form(ufl.inner(f, v_sm) * ds,
                  entity_maps=entity_maps)
