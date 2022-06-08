@@ -182,8 +182,8 @@ def create_submesh(mesh, dim, entities):
     submesh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(mesh, dim, entities)
     submesh_ufl_cell = ufl.Cell(submesh.topology.cell_name(),
                                 geometric_dimension=submesh.geometry.dim)
-    # FIXME Don't hard code degree (and maybe Lagrange?)
-    submesh_domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell=submesh_ufl_cell, degree=1))
+    submesh_domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell=submesh_ufl_cell,
+                                                degree=mesh.geometry.cmap.degree))
     return (Mesh.from_cpp(submesh, submesh_domain), entity_map, vertex_map, geom_map)
 
 
