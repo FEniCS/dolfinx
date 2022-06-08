@@ -641,11 +641,17 @@ def test_codim_1_assembly(n, k, space, ghost_mode, random_ordering):
 
     print(A.norm())
 
-    L = fem.form(ufl.inner(1.0, v) * ds,
+    f = fem.Function(V_m)
+    f.interpolate(lambda x: np.sin(np.pi * x[0]))
+
+    L = fem.form(ufl.inner(f, v_sm) * ds,
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
 
-    print(b.norm())
+    L_2 = fem.form(ufl.inner(f, v_m) * ds)
+    b_2 = fem.petsc.assemble_vector(L_2)
+
+    assert(np.isclose(b.norm(), b_2.norm()))
 
 
 @pytest.mark.parametrize("random_ordering", [False, True])
