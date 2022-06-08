@@ -604,6 +604,9 @@ def test_codim_1_coeffs(d, n, k, space, ghost_mode, random_ordering):
                                         GhostMode.shared_facet])
 @pytest.mark.parametrize("random_ordering", [False, True])
 def test_codim_1_assembly(n, k, space, ghost_mode, random_ordering):
+    """Test that assembling a form with a trial function defined over
+    the mesh and a test function defined only over the mesh boundary
+    gives the expected result"""
     # TODO Test discontinuous Lagrange spaces. Can't just compare to
     # the same spaces on the mesh in that case because a discontinuous
     # Lagrange space on the boundary facets will be discontinuous at
