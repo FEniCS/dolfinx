@@ -696,17 +696,20 @@ void interpolate(Function<T>& u, const Function<T>& v,
       // Collect all the points at which values are needed to define the
       // interpolating function
       dolfinx::common::Timer t0("~interpolation_coords");
-      // FIXME:
-      const xt::xtensor<double, 2> x
-          = fem::interpolation_coords(*element_u, *mesh, cells);
-
+      xt::xtensor<double, 2> x;
+      {
+        const std::vector<double> coords
+            = fem::interpolation_coords(*element_u, *mesh, cells);
+        x = xt::transpose(xt::adapt(
+            coords, std::array<std::size_t, 2>{3, coords.size() / 3}));
+      }
       t0.stop();
 
       dolfinx::common::Timer t1("~create_global_tree");
       // Create a global bounding-box tree to quickly look for processes that
       // might be able to evaluate the interpolating function at a given point
       // FIXME: Why padding?
-      double padding = 0.0001;
+      constexpr double padding = 0.0001;
 
       const int v_tdim = mesh_v->topology().dim();
       const auto v_cell_map = mesh_v->topology().index_map(v_tdim);
@@ -722,7 +725,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
       // Compute collisions:
       // For each point in `x` get the processes it should be sent to
       graph::AdjacencyList<std::int32_t> collisions
-          = dolfinx::geometry::compute_collisions(globalBB, xt::transpose(x));
+          = dolfinx::geometry::compute_collisions(globalBB, x);
       t2.stop();
 
       // Get unique list of outcoming ranks ()
@@ -752,7 +755,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
 
       // Count the number of points to send per neighbor process
       std::vector<std::int32_t> send_sizes(out_ranks.size());
-      for (std::size_t i = 0; i < x.shape(1); ++i)
+      for (std::size_t i = 0; i < x.shape(0); ++i)
         for (const auto& p : collisions.links(i))
           send_sizes[rank_to_neighbor[p]] += 3;
 
@@ -766,11 +769,11 @@ void interpolate(Function<T>& u, const Function<T>& v,
       std::vector<std::int32_t> counter(send_sizes.size(), 0);
       // unpack map: [index in adj list][pos in x]
       std::vector<std::int32_t> unpack_map(send_offsets.back() / 3);
-      for (std::size_t i = 0; i < x.shape(1); ++i)
+      for (std::size_t i = 0; i < x.shape(0); ++i)
       {
         for (const auto& p : collisions.links(i))
         {
-          const auto point = xt::col(x, i);
+          const auto point = xt::row(x, i);
           int neighbor = rank_to_neighbor[p];
           int pos = send_offsets[neighbor] + counter[neighbor];
           auto it = std::next(send_data.begin(), pos);
@@ -827,18 +830,24 @@ void interpolate(Function<T>& u, const Function<T>& v,
                                      MPI_INFO_NULL, false, &reverse_comm);
 
       dolfinx::common::Timer t8("~comm_reverse");
+
       // Reuse sizes and offsets from first communication set
       // but scale the values by `value_size`
-      auto scale_fn
-          = [value_size](std::int32_t& e) { e = (e / 3) * value_size; };
-      std::for_each(recv_sizes.begin(), recv_sizes.end(), scale_fn);
-      std::for_each(recv_offsets.begin(), recv_offsets.end(), scale_fn);
-      std::for_each(send_sizes.begin(), send_sizes.end(), scale_fn);
-      std::for_each(send_offsets.begin(), send_offsets.end(), scale_fn);
+      {
+        auto rescale = [](auto& x, int value_size)
+        {
+          std::transform(x.cbegin(), x.cend(), x.begin(),
+                         [value_size](auto e) { return (e / 3) * value_size; });
+        };
+        rescale(recv_sizes, value_size);
+        rescale(recv_offsets, value_size);
+        rescale(send_sizes, value_size);
+        rescale(send_offsets, value_size);
 
-      // The communication is reversed, so swap recv to send offsets
-      std::swap(recv_sizes, send_sizes);
-      std::swap(recv_offsets, send_offsets);
+        // The communication is reversed, so swap recv to send offsets
+        std::swap(recv_sizes, send_sizes);
+        std::swap(recv_offsets, send_offsets);
+      }
 
       std::vector<T> recv_values(recv_offsets.back());
       MPI_Neighbor_alltoallv(
@@ -849,11 +858,11 @@ void interpolate(Function<T>& u, const Function<T>& v,
 
       dolfinx::common::Timer t9("~unpack");
       // Unpack received values
-      xt::xtensor<T, 2> values = xt::zeros<T>({x.shape(1), value_size});
+      xt::xtensor<T, 2> values = xt::zeros<T>({x.shape(0), value_size});
       for (std::size_t i = 0; i < unpack_map.size(); i++)
       {
         auto vals = xt::row(values, unpack_map[i]);
-        bool identically_zero = std::all_of(vals.begin(), vals.end(),
+        bool identically_zero = std::all_of(vals.cbegin(), vals.cend(),
                                             [](T v) { return v == 0.; });
         if (identically_zero)
         {

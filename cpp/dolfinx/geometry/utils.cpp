@@ -10,6 +10,7 @@
 #include "gjk.h"
 #include <deque>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
@@ -496,20 +497,17 @@ int geometry::compute_first_colliding_cell(
     xtl::span<const double> geom_dofs = geometry.x();
     const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
     const std::size_t num_nodes = geometry.cmap().dim();
-    xt::xtensor<double, 2> nodes({num_nodes, std::size_t(3)});
+    xt::xtensor<double, 2> coordinate_dofs({num_nodes, std::size_t(3)});
     for (auto cell : cell_candidates)
     {
       auto dofs = x_dofmap.links(cell);
       for (std::size_t i = 0; i < num_nodes; ++i)
-      {
-        const int pos = 3 * dofs[i];
-        for (std::size_t j = 0; j < 3; ++j)
-          nodes(i, j) = geom_dofs[pos + j];
-      }
-
+        common::impl::copy_N<3>(std::next(geom_dofs.begin(), 3 * dofs[i]),
+                                std::next(coordinate_dofs.begin(), 3 * i));
+      // Fix
       xt::xtensor_fixed<double, xt::xshape<3>> shortest_vector
           = geometry::compute_distance_gjk(xt::reshape_view(point, {1, 3}),
-                                           nodes);
+                                           coordinate_dofs);
       double norm = 0;
       std::for_each(shortest_vector.cbegin(), shortest_vector.cend(),
                     [&norm](const double e) { norm += std::pow(e, 2); });

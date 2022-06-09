@@ -19,6 +19,7 @@ namespace dolfinx::geometry
 /// @param[in] p Body 1 list of points, shape (num_points, 3)
 /// @param[in] q Body 2 list of points, shape (num_points, 3)
 /// @return shortest vector between bodies
+/// @note Avoid allocation of output, use input/output parameters instead.
 xt::xtensor_fixed<double, xt::xshape<3>>
 compute_distance_gjk(const xt::xtensor<double, 2>& p,
                      const xt::xtensor<double, 2>& q);
