@@ -821,7 +821,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
       v.eval(received_points, evaluation_cells, send_values);
       t7.stop();
 
-      // Create neighbourhood communicator in the reverse direction to send back
+      // Create neighborhood communicator in the reverse direction to send back
       // values to processes that sent a evaluation point
       MPI_Comm reverse_comm;
       MPI_Dist_graph_create_adjacent(comm, out_ranks.size(), out_ranks.data(),
@@ -856,22 +856,30 @@ void interpolate(Function<T>& u, const Function<T>& v,
           recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), reverse_comm);
       t8.stop();
 
-      dolfinx::common::Timer t9("~unpack");
       // Unpack received values
-      xt::xtensor<T, 2> values = xt::zeros<T>({x.shape(0), value_size});
+      dolfinx::common::Timer t12("~alloc");
+      xt::xtensor<T, 2> values({x.shape(0), value_size});
+      std::fill(values.begin(), values.end(), T(0));
+      t12.stop();
+
+      dolfinx::common::Timer t9("~unpack");
+      constexpr T zero{0.};
       for (std::size_t i = 0; i < unpack_map.size(); i++)
       {
-        auto vals = xt::row(values, unpack_map[i]);
-        bool identically_zero = std::all_of(vals.cbegin(), vals.cend(),
-                                            [](T v) { return v == 0.; });
-        if (identically_zero)
+        auto vals = std::next(values.begin(), unpack_map[i] * value_size);
+        bool vals_is_zero = std::all_of(vals, std::next(vals, value_size),
+                                        [zero](T v) { return v == zero; });
+        if (vals_is_zero)
         {
-          auto it = std::next(recv_values.begin(), i * value_size);
-          std::copy_n(it, value_size, vals.begin());
+          auto vals_from = std::next(recv_values.begin(), i * value_size);
+          std::copy_n(vals_from, value_size, vals);
         }
       }
-      xt::xarray<T> values_t = xt::transpose(values);
       t9.stop();
+
+      dolfinx::common::Timer t11("~transpose");
+      xt::xarray<T> values_t = xt::transpose(values);
+      t11.stop();
 
       dolfinx::common::Timer t10("~interpolate_values");
       // Finally, interpolate using the computed values

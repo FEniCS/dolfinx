@@ -492,7 +492,6 @@ int geometry::compute_first_colliding_cell(
   else
   {
     constexpr double eps2 = 1e-20;
-    const int tdim = mesh.topology().dim();
     const mesh::Geometry& geometry = mesh.geometry();
     xtl::span<const double> geom_dofs = geometry.x();
     const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();

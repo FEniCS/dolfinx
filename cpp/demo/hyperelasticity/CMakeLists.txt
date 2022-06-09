@@ -26,7 +26,7 @@ else()
     VERBATIM DEPENDS hyperelasticity.py COMMENT "Compile hyperelasticity.py using FFCx")
 
   set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
+  
   add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/hyperelasticity.c)
   target_link_libraries(${PROJECT_NAME} dolfinx)
 

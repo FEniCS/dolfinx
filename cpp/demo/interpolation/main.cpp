@@ -1,13 +1,14 @@
-#include "interpolation.h"
-#include <algorithm>
 #include <basix/e-lagrange.h>
 #include <cmath>
-#include <dolfinx.h>
 #include <dolfinx/common/timing.h>
+#include <dolfinx/fem/utils.h>
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/mesh/generation.h>
+#include <memory>
 
 using namespace dolfinx;
+
+using T = double;
 
 void interpolation_different_meshes()
 {
@@ -17,7 +18,7 @@ void interpolation_different_meshes()
       MPI_COMM_WORLD, {{{0, 0, 0}, {1, 1, 1}}}, subdivisions,
       mesh::CellType::tetrahedron, mesh::GhostMode::shared_facet));
 
-  auto meshR = std::make_shared<mesh::Mesh>(mesh::create_box(
+auto meshR = std::make_shared<mesh::Mesh>(mesh::create_box(
       MPI_COMM_WORLD, {{{0, 0, 0}, {1, 1, 1}}}, {47, 49, 33},
       mesh::CellType::hexahedron, mesh::GhostMode::shared_facet));
 
@@ -33,8 +34,8 @@ void interpolation_different_meshes()
   auto VR = std::make_shared<fem::FunctionSpace>(
       fem::create_functionspace(meshR, eR, 3));
 
-  auto uL = std::make_shared<fem::Function<PetscScalar>>(VL);
-  auto uR = std::make_shared<fem::Function<PetscScalar>>(VR);
+  auto uL = std::make_shared<fem::Function<T>>(VL);
+  auto uR = std::make_shared<fem::Function<T>>(VR);
 
   auto fun = [](auto& x)
   {
@@ -64,7 +65,6 @@ int main(int argc, char* argv[])
   dolfinx::init_logging(argc, argv);
   MPI_Init(&argc, &argv);
 
-  // Set the logging thread name to show the process rank
   int mpi_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
