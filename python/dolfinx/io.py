@@ -10,17 +10,16 @@ checkpointing"""
 import typing
 
 import numpy as np
+import numpy.typing as npt
 
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.io import distribute_entity_data  # noqa: F401
-from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa F401
 from dolfinx.fem import Function
-from dolfinx.mesh import GhostMode, Mesh
+from dolfinx.mesh import CellType, GhostMode, Mesh
 
 from mpi4py import MPI as _MPI
 
-__all__ = ["FidesWriter", "VTKFile", "VTXWriter", "XDMFFile", "cell_perm_gmsh", "distribute_entity_data"]
+__all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "distribute_entity_data"]
 
 
 def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Function]):
@@ -172,6 +171,15 @@ class XDMFFile(_cpp.io.XDMFFile):
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
         return super().read_meshtags(mesh, name, xpath)
+
+
+def distribute_entity_data(mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64],
+                           values: npt.NDArray[np.int32]) -> typing.Tuple[npt.NDArray[np.int64], npt.NDArray[np.int32]]:
+    return _cpp.io.distribute_entity_data(mesh, entity_dim, entities, values)
+
+
+def cell_perm_gmsh(cell_type: CellType, dim: int) -> typing.List[int]:
+    return _cpp.io.perm_gmsh(cell_type, dim)
 
 
 def extract_gmsh_topology_and_markers(gmsh_model, model_name=None):

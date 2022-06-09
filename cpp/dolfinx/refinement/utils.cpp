@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -18,6 +19,7 @@
 #include <memory>
 #include <mpi.h>
 #include <vector>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
@@ -45,11 +47,13 @@ std::int64_t local_to_global(std::int32_t local_index,
 }
 
 //-----------------------------------------------------------------------------
-// Create geometric points of new Mesh, from current Mesh and a edge_to_vertex
-// map listing the new local points (midpoints of those edges)
-// @param Mesh
-// @param local_edge_to_new_vertex
-// @return array of points
+
+/// Create geometric points of new Mesh, from current Mesh and a
+/// edge_to_vertex map listing the new local points (midpoints of those
+/// edges)
+/// @param Mesh
+/// @param local_edge_to_new_vertex
+/// @return array of points
 xt::xtensor<double, 2> create_new_geometry(
     const mesh::Mesh& mesh,
     const std::map<std::int32_t, std::int64_t>& local_edge_to_new_vertex)
@@ -102,8 +106,11 @@ xt::xtensor<double, 2> create_new_geometry(
     for (auto& e : local_edge_to_new_vertex)
       edges[i++] = e.first;
 
-    const xt::xtensor<double, 2> midpoints
+    const std::vector<double> midpoints
         = mesh::compute_midpoints(mesh, 1, edges);
+
+    std::vector<std::size_t> shape = {edges.size(), 3};
+    auto _midpoints = xt::adapt(midpoints, shape);
 
     // The below should work, but misbehaves with the Intel icpx compiler
     // xt::view(new_vertex_coordinates, xt::range(-num_new_vertices, _),
@@ -111,7 +118,7 @@ xt::xtensor<double, 2> create_new_geometry(
     //     = midpoints;
     auto _vertex = xt::view(new_vertex_coordinates,
                             xt::range(-num_new_vertices, _), xt::all());
-    _vertex.assign(midpoints);
+    _vertex.assign(_midpoints);
   }
 
   return xt::view(new_vertex_coordinates, xt::all(),
@@ -120,80 +127,55 @@ xt::xtensor<double, 2> create_new_geometry(
 } // namespace
 
 //---------------------------------------------------------------------------------
-std::pair<MPI_Comm, std::map<std::int32_t, std::vector<int>>>
-refinement::compute_edge_sharing(const mesh::Mesh& mesh)
-{
-  if (!mesh.topology().connectivity(1, 0))
-    throw std::runtime_error("Edges must be initialised");
-
-  auto map_e = mesh.topology().index_map(1);
-  assert(map_e);
-
-  // Create shared edges, for both owned and ghost indices
-  // returning edge -> set(global process numbers)
-  std::map<std::int32_t, std::set<int>> shared_edges_by_proc
-      = map_e->compute_shared_indices();
-
-  // Compute a slightly wider neighborhood for direct communication of shared
-  // edges
-  std::set<int> all_neighbor_set;
-  for (const auto& q : shared_edges_by_proc)
-    all_neighbor_set.insert(q.second.begin(), q.second.end());
-  std::vector<int> neighbors(all_neighbor_set.begin(), all_neighbor_set.end());
-
-  MPI_Comm neighbor_comm;
-  MPI_Dist_graph_create_adjacent(
-      mesh.comm(), neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
-      neighbors.size(), neighbors.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false,
-      &neighbor_comm);
-
-  // Create a "shared_edge to neighbor map"
-  std::map<int, int> proc_to_neighbor;
-  for (std::size_t i = 0; i < neighbors.size(); ++i)
-    proc_to_neighbor.insert({neighbors[i], i});
-
-  std::map<std::int32_t, std::vector<int>> shared_edges;
-  for (auto& q : shared_edges_by_proc)
-  {
-    std::vector<int> neighbor_set;
-    for (int r : q.second)
-      neighbor_set.push_back(proc_to_neighbor[r]);
-    std::sort(neighbor_set.begin(), neighbor_set.end());
-    neighbor_set.erase(std::unique(neighbor_set.begin(), neighbor_set.end()),
-                       neighbor_set.end());
-    shared_edges.insert({q.first, neighbor_set});
-  }
-
-  return {neighbor_comm, std::move(shared_edges)};
-}
-//-----------------------------------------------------------------------------
 void refinement::update_logical_edgefunction(
     MPI_Comm neighbor_comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
-    std::vector<std::int8_t>& marked_edges, const common::IndexMap& map_e)
+    std::vector<std::int8_t>& marked_edges, const common::IndexMap& map)
 {
-  std::vector<std::int32_t> send_offsets = {0};
+  std::vector<int> send_sizes;
   std::vector<std::int64_t> data_to_send;
-  int num_neighbors = marked_for_update.size();
-  for (int i = 0; i < num_neighbors; ++i)
+  for (std::size_t i = 0; i < marked_for_update.size(); ++i)
   {
     for (std::int32_t q : marked_for_update[i])
-      data_to_send.push_back(local_to_global(q, map_e));
+      data_to_send.push_back(local_to_global(q, map));
 
-    send_offsets.push_back(data_to_send.size());
+    send_sizes.push_back(marked_for_update[i].size());
   }
 
   // Send all shared edges marked for update and receive from other
   // processes
-  const std::vector<std::int64_t> data_to_recv
-      = dolfinx::MPI::neighbor_all_to_all(
-            neighbor_comm,
-            graph::AdjacencyList<std::int64_t>(data_to_send, send_offsets))
-            .array();
+  std::vector<std::int64_t> data_to_recv;
+  {
+    int indegree(-1), outdegree(-2), weighted(-1);
+    MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
+                                   &weighted);
+    assert(indegree == (int)marked_for_update.size());
+    assert(indegree == outdegree);
+
+    std::vector<int> recv_sizes(outdegree);
+    send_sizes.reserve(1);
+    recv_sizes.reserve(1);
+    MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                          MPI_INT, neighbor_comm);
+
+    // Build displacements
+    std::vector<int> send_disp = {0};
+    std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                     std::back_inserter(send_disp));
+    std::vector<int> recv_disp = {0};
+    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                     std::back_inserter(recv_disp));
+
+    data_to_recv.resize(recv_disp.back());
+    MPI_Neighbor_alltoallv(data_to_send.data(), send_sizes.data(),
+                           send_disp.data(), MPI_INT64_T, data_to_recv.data(),
+                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                           neighbor_comm);
+  }
 
   // Flatten received values and set marked_edges at each index received
   std::vector<std::int32_t> local_indices(data_to_recv.size());
-  map_e.global_to_local(data_to_recv, local_indices);
+  map.global_to_local(data_to_recv, local_indices);
   for (std::int32_t local_index : local_indices)
   {
     assert(local_index != -1);
@@ -202,13 +184,13 @@ void refinement::update_logical_edgefunction(
 }
 //-----------------------------------------------------------------------------
 std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
-refinement::create_new_vertices(
-    MPI_Comm neighbor_comm,
-    const std::map<std::int32_t, std::vector<std::int32_t>>& shared_edges,
-    const mesh::Mesh& mesh, const std::vector<std::int8_t>& marked_edges)
+refinement::create_new_vertices(MPI_Comm neighbor_comm,
+                                const graph::AdjacencyList<int>& shared_edges,
+                                const mesh::Mesh& mesh,
+                                const std::vector<std::int8_t>& marked_edges)
 {
   // Take marked_edges and use to create new vertices
-  const std::shared_ptr<const common::IndexMap> edge_index_map
+  std::shared_ptr<const common::IndexMap> edge_index_map
       = mesh.topology().index_map(1);
 
   // Add new edge midpoints to list of vertices
@@ -252,23 +234,53 @@ refinement::create_new_vertices(
     const std::size_t local_i = local_edge.first;
     // shared, but locally owned : remote owned are not in list.
 
-    if (auto shared_edge_i = shared_edges.find(local_i);
-        shared_edge_i != shared_edges.end())
+    for (int remote_process : shared_edges.links(local_i))
     {
-      for (int remote_process : shared_edge_i->second)
-      {
-        // send map from global edge index to new global vertex index
-        values_to_send[remote_process].push_back(
-            local_to_global(local_edge.first, *edge_index_map));
-        values_to_send[remote_process].push_back(local_edge.second);
-      }
+      // Send (global edge index) -> (new global vertex index) map
+      values_to_send[remote_process].push_back(
+          local_to_global(local_i, *edge_index_map));
+      values_to_send[remote_process].push_back(local_edge.second);
     }
   }
 
-  const std::vector<std::int64_t> received_values
-      = dolfinx::MPI::neighbor_all_to_all(
-            neighbor_comm, graph::AdjacencyList<std::int64_t>(values_to_send))
-            .array();
+  // Send all shared edges marked for update and receive from other
+  // processes
+  std::vector<std::int64_t> received_values;
+  {
+    int indegree(-1), outdegree(-2), weighted(-1);
+    MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
+                                   &weighted);
+    assert(indegree == outdegree);
+
+    std::vector<std::int64_t> send_buffer;
+    std::vector<int> send_sizes;
+    for (auto& x : values_to_send)
+    {
+      send_sizes.push_back(x.size());
+      send_buffer.insert(send_buffer.end(), x.begin(), x.end());
+    }
+    assert((int)send_sizes.size() == outdegree);
+
+    std::vector<int> recv_sizes(outdegree);
+    send_sizes.reserve(1);
+    recv_sizes.reserve(1);
+    MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                          MPI_INT, neighbor_comm);
+
+    // Build displacements
+    std::vector<int> send_disp = {0};
+    std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                     std::back_inserter(send_disp));
+    std::vector<int> recv_disp = {0};
+    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                     std::back_inserter(recv_disp));
+
+    received_values.resize(recv_disp.back());
+    MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
+                           send_disp.data(), MPI_INT64_T,
+                           received_values.data(), recv_sizes.data(),
+                           recv_disp.data(), MPI_INT64_T, neighbor_comm);
+  }
 
   // Add received remote global vertex indices to map
   std::vector<std::int64_t> recv_global_edge;
@@ -296,7 +308,6 @@ refinement::partition(const mesh::Mesh& old_mesh,
                       const xt::xtensor<double, 2>& new_vertex_coordinates,
                       bool redistribute, mesh::GhostMode gm)
 {
-
   if (redistribute)
   {
     xt::xtensor<double, 2> new_coords(new_vertex_coordinates);
@@ -319,11 +330,12 @@ refinement::partition(const mesh::Mesh& old_mesh,
     const int mpi_rank = dolfinx::MPI::rank(comm);
     const std::int32_t local_size = graph.num_nodes();
     std::vector<std::int32_t> local_sizes(mpi_size);
-    std::vector<std::int64_t> local_offsets(mpi_size + 1);
 
     // Get the "local range" for all processes
     MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1,
                   MPI_INT32_T, comm);
+
+    std::vector<std::int64_t> local_offsets(mpi_size + 1);
     for (int i = 0; i < mpi_size; ++i)
       local_offsets[i + 1] = local_offsets[i] + local_sizes[i];
 
@@ -366,30 +378,57 @@ refinement::partition(const mesh::Mesh& old_mesh,
                            gm, partitioner);
 }
 //-----------------------------------------------------------------------------
+
 std::vector<std::int64_t>
-refinement::adjust_indices(const common::IndexMap& index_map, std::int32_t n)
+refinement::adjust_indices(const common::IndexMap& map, std::int32_t n)
 {
+  // NOTE: Is this effectively concatenating index maps?
+
   // Add in an extra "n" indices at the end of the current local_range
   // of "index_map", and adjust existing indices to match.
 
-  // Get number of new indices on all processes
-  MPI_Comm comm = index_map.comm();
-  int mpi_size = dolfinx::MPI::size(comm);
-  int mpi_rank = dolfinx::MPI::rank(comm);
-  std::vector<std::int32_t> recvn(mpi_size);
-  MPI_Allgather(&n, 1, MPI_INT32_T, recvn.data(), 1, MPI_INT32_T, comm);
-  std::vector<std::int64_t> global_offsets = {0};
-  for (std::int32_t r : recvn)
-    global_offsets.push_back(global_offsets.back() + r);
+  // Get offset for 'n' for this process
+  const std::int64_t num_local = n;
+  std::int64_t global_offset = 0;
+  MPI_Exscan(&num_local, &global_offset, 1, MPI_INT64_T, MPI_SUM, map.comm());
 
-  std::vector global_indices = index_map.global_indices();
+  const std::vector<int>& owners = map.owners();
+  const std::vector<int>& src = map.src();
+  const std::vector<int>& dest = map.dest();
 
-  const std::vector<int>& ghost_owners = index_map.ghost_owner_rank();
-  int local_size = index_map.size_local();
-  for (int i = 0; i < local_size; ++i)
-    global_indices[i] += global_offsets[mpi_rank];
-  for (std::size_t i = 0; i < ghost_owners.size(); ++i)
-    global_indices[local_size + i] += global_offsets[ghost_owners[i]];
+  MPI_Comm comm;
+  MPI_Dist_graph_create_adjacent(map.comm(), src.size(), src.data(),
+                                 MPI_UNWEIGHTED, dest.size(), dest.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+
+  // Communicate offset to neighbors
+  std::vector<std::int64_t> offsets(src.size(), 0);
+  offsets.reserve(1);
+  MPI_Neighbor_allgather(&global_offset, 1, MPI_INT64_T, offsets.data(), 1,
+                         MPI_INT64_T, comm);
+
+  MPI_Comm_free(&comm);
+
+  int local_size = map.size_local();
+  std::vector<std::int64_t> global_indices = map.global_indices();
+
+  // Add new offset to owned indices
+  std::transform(global_indices.begin(),
+                 std::next(global_indices.begin(), local_size),
+                 global_indices.begin(),
+                 [global_offset](auto x) { return x + global_offset; });
+
+  // Add offsets to ghost indices
+  std::transform(std::next(global_indices.begin(), local_size),
+                 global_indices.end(), owners.begin(),
+                 std::next(global_indices.begin(), local_size),
+                 [&src, &offsets](auto idx, auto r)
+                 {
+                   auto it = std::lower_bound(src.begin(), src.end(), r);
+                   assert(it != src.end() and *it == r);
+                   int rank = std::distance(src.begin(), it);
+                   return idx + offsets[rank];
+                 });
 
   return global_indices;
 }

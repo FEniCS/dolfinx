@@ -8,17 +8,18 @@
 
 #include "ADIOS2Writers.h"
 #include "cells.h"
-#include "pugixml.hpp"
 #include "vtk_utils.h"
 #include <adios2.h>
 #include <algorithm>
 #include <array>
 #include <complex>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
+#include <pugixml.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
@@ -177,9 +178,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
       celltype_variable, cells::get_vtk_cell_type(topology.cell_type(), tdim));
 
   // Get DOLFINx to VTK permutation
-  // FIXME: Use better way to get number of nodes
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::uint32_t num_nodes = x_dofmap.num_links(0);
+  const std::uint32_t num_nodes = geometry.cmap().dim();
 
   // Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
@@ -544,12 +543,11 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
   // TODO: The DOLFINx and VTK topology are the same for some cell types
   // - no need to repack via extract_vtk_connectivity in these cases
 
-  // FIXME: Use better way to get number of nodes
   // Get topological dimenson, number of cells and number of 'nodes' per
   // cell, and compute 'VTK' connectivity
   const int tdim = topology.dim();
   const std::int32_t num_cells = topology.index_map(tdim)->size_local();
-  const int num_nodes = geometry.dofmap().num_links(0);
+  const int num_nodes = geometry.cmap().dim();
   const xt::xtensor<std::int64_t, 2> cells = extract_vtk_connectivity(mesh);
 
   // "Put" topology data in the result in the ADIOS2 file
@@ -569,10 +567,8 @@ void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
 
-  // FIXME: Add proper interface for num coordinate dofs
   // Check that mesh is first order mesh
-  const graph::AdjacencyList<std::int32_t>& dofmap_x = geometry.dofmap();
-  const int num_dofs_g = dofmap_x.num_links(0);
+  const int num_dofs_g = geometry.cmap().dim();
   const int num_vertices_per_cell
       = mesh::cell_num_entities(topology.cell_type(), 0);
   if (num_dofs_g != num_vertices_per_cell)
@@ -590,6 +586,8 @@ void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
 
   std::string cell_type = to_fides_cell(topology.cell_type());
   define_attribute<std::string>(io, "Fides_Cell_Type", cell_type);
+
+  define_attribute<std::string>(io, "Fides_Time_Variable", "step");
 }
 //-----------------------------------------------------------------------------
 

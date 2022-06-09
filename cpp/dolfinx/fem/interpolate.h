@@ -366,8 +366,8 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
 /// @param[in] cells Indices of the cells in the mesh to compute
 /// interpolation coordinates for
 /// @return The coordinates in the physical space at which to evaluate
-/// an expression. The shape is (3, num_points).
-xt::xtensor<double, 2>
+/// an expression. The shape is (3, num_points) and storage is row-major.
+std::vector<double>
 interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
                      const xtl::span<const std::int32_t>& cells);
 
@@ -526,7 +526,6 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
-    // FIXME: Add proper interface for num coordinate dofs
     const int num_dofs_g = cmap.dim();
     xtl::span<const double> x_g = mesh->geometry().x();
 

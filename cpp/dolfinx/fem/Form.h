@@ -9,6 +9,7 @@
 #include "FunctionSpace.h"
 #include <algorithm>
 #include <array>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <functional>
@@ -419,13 +420,11 @@ private:
     // exterior boundary.
     int tdim = topology.dim();
     assert(topology.index_map(tdim));
-    std::set<std::int32_t> fwd_shared_facets;
-    if (topology.index_map(tdim)->num_ghosts() == 0)
-    {
-      const std::vector<std::int32_t>& fwd_indices
-          = topology.index_map(tdim - 1)->scatter_fwd_indices().array();
-      fwd_shared_facets.insert(fwd_indices.begin(), fwd_indices.end());
-    }
+    assert(topology.index_map(tdim - 1));
+    const std::vector<std::int32_t> fwd_shared_facets
+        = topology.index_map(tdim)->overlapped()
+              ? std::vector<std::int32_t>()
+              : topology.index_map(tdim - 1)->shared_indices();
 
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
     assert(f_to_c);
@@ -437,16 +436,19 @@ private:
       // shared, should be external
       // TODO: Consider removing this check and integrating over all
       // tagged facets. This may be useful in a few cases.
-      if (f_to_c->num_links(*f) == 1
-          and fwd_shared_facets.find(*f) == fwd_shared_facets.end())
+      if (f_to_c->num_links(*f) == 1)
       {
-        const std::size_t pos = std::distance(tagged_facets_begin, f);
-        if (auto it = integrals.find(tags[pos]); it != integrals.end())
+        if (!std::binary_search(fwd_shared_facets.begin(),
+                                fwd_shared_facets.end(), *f))
         {
-          // There will only be one pair for an exterior facet integral
-          std::pair<std::int32_t, int> pair = get_cell_local_facet_pairs<1>(
-              *f, f_to_c->links(*f), *c_to_f)[0];
-          it->second.second.push_back(pair);
+          const std::size_t pos = std::distance(tagged_facets_begin, f);
+          if (auto it = integrals.find(tags[pos]); it != integrals.end())
+          {
+            // There will only be one pair for an exterior facet integral
+            std::pair<std::int32_t, int> pair = get_cell_local_facet_pairs<1>(
+                *f, f_to_c->links(*f), *c_to_f)[0];
+            it->second.second.push_back(pair);
+          }
         }
       }
     }
@@ -560,6 +562,16 @@ private:
 
     // Exterior facets. If there is a default integral, define it only
     // on owned surface facets.
+
+    if (!_exterior_facet_integrals.empty())
+    {
+      mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+      mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
+    }
+    const std::vector<std::int32_t> boundary_facets
+        = _exterior_facet_integrals.empty()
+              ? std::vector<std::int32_t>()
+              : mesh::exterior_facet_indices(topology);
     for (auto& [domain_id, kernel_facets] : _exterior_facet_integrals)
     {
       if (domain_id == -1)
@@ -568,41 +580,16 @@ private:
             = kernel_facets.second;
         facets.clear();
 
-        mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
         auto f_to_c = topology.connectivity(tdim - 1, tdim);
         assert(f_to_c);
-
-        mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
-        auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
+        auto c_to_f = topology.connectivity(tdim, tdim - 1);
         assert(c_to_f);
-
-        // Only need to consider shared facets when there are no ghost
-        // cells and none of cells owned by this process are shared. The
-        // latter check is required because a submesh could have no ghost
-        // cells on this process but another process could ghost some of
-        // those cells)
-        std::set<std::int32_t> fwd_shared_facets;
-        assert(topology.index_map(tdim - 1));
-        if (topology.index_map(tdim)->num_ghosts() == 0
-            and topology.index_map(tdim)->scatter_fwd_indices().array().empty())
+        for (std::int32_t f : boundary_facets)
         {
-          const std::vector<std::int32_t>& fwd_indices
-              = topology.index_map(tdim - 1)->scatter_fwd_indices().array();
-          fwd_shared_facets.insert(fwd_indices.begin(), fwd_indices.end());
-        }
-
-        const int num_facets = topology.index_map(tdim - 1)->size_local();
-        for (int f = 0; f < num_facets; ++f)
-        {
-          if (f_to_c->num_links(f) == 1
-              and fwd_shared_facets.find(f) == fwd_shared_facets.end())
-          {
-            // There will only be one pair for an exterior facet
-            // integral
-            std::pair<std::int32_t, int> pair = get_cell_local_facet_pairs<1>(
-                f, f_to_c->links(f), *c_to_f)[0];
-            facets.push_back(pair);
-          }
+          // There will only be one pair for an exterior facet integral
+          std::pair<std::int32_t, int> pair
+              = get_cell_local_facet_pairs<1>(f, f_to_c->links(f), *c_to_f)[0];
+          facets.push_back(pair);
         }
       }
     }
