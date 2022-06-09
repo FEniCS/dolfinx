@@ -360,7 +360,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     {
       const std::int32_t idx = submesh_to_mesh_entity_map[i];
       assert(!e_to_c->links(idx).empty());
-      const std::int32_t cell = e_to_c->links(idx)[0];
+      // Always pick the last cell to be consistent with the e_to_v connectivity
+      const std::int32_t cell = e_to_c->links(idx).back();
       const tcb::span<const int> cell_entities = c_to_e->links(cell);
       auto it = std::find(cell_entities.begin(), cell_entities.end(), idx);
       assert(it != cell_entities.end());

@@ -484,7 +484,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
 /// @param[in] shared_vertices TODO
 /// @param[in] cell_type Cell type
 /// @param[in] dim Topological dimension of the entities to be computed
-/// @return Returns the (cell-entity connectivity, entity-cell
+/// @return Returns the (cell-entity connectivity, entity-vertex
 /// connectivity, index map for the entity distribution across
 /// processes, shared entities)
 std::tuple<graph::AdjacencyList<std::int32_t>,

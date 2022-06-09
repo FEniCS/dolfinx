@@ -470,7 +470,8 @@ mesh::entities_to_geometry(const Mesh& mesh, int dim,
   for (std::size_t i = 0; i < entities.size(); ++i)
   {
     const std::int32_t idx = entities[i];
-    const std::int32_t cell = e_to_c->links(idx).front();
+    // Always pick the second cell to be consistent with the e_to_v connectivity
+    const std::int32_t cell = e_to_c->links(idx).back();
     auto ev = e_to_v->links(idx);
     assert(ev.size() == num_vertices);
     const auto cv = c_to_v->links(cell);
