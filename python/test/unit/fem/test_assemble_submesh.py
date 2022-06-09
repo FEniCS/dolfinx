@@ -735,8 +735,8 @@ def test_assemble_block(random_ordering):
     a_01 = fem.form(ufl.inner(lmbda, v) * ds, entity_maps=entity_maps)
     a_10 = fem.form(ufl.inner(u, mu) * ds, entity_maps=entity_maps)
     a_11 = fem.form(ufl.inner(lmbda, mu) * dx_sm)
-    L_0 = fem.form(v * dx_m)
-    L_1 = fem.form(mu * dx_sm)
+    L_0 = fem.form(ufl.inner(1.0, v) * dx_m)
+    L_1 = fem.form(ufl.inner(1.0, mu) * dx_sm)
 
     dofs = fem.locate_dofs_topological(V, edim, entities)
     bc = fem.dirichletbc(PETSc.ScalarType(0.0), dofs, V)
