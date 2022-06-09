@@ -484,8 +484,7 @@ int geometry::compute_first_colliding_cell(
 {
   // Compute colliding bounding boxes(cell candidates)
   std::vector<std::int32_t> cell_candidates;
-  _compute_collisions_point(tree, point, tree.num_bboxes() - 1,
-                            cell_candidates);
+  _compute_collisions_point(tree, point, cell_candidates);
 
   if (cell_candidates.empty())
     return -1;
