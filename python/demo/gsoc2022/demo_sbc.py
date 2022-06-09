@@ -1,3 +1,11 @@
+# Copyright (C) 2022 Michele Castriotta
+#
+# ====================================================
+# Demo: scattering of an electromagnetic field by an
+#       infinite wire (scattering boundary conditions)
+# ====================================================
+
+
 from dolfinx import io, fem, plot, cpp
 from petsc4py import PETSc
 import ufl
