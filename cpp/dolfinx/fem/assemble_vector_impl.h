@@ -838,8 +838,8 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
 
   for (int i : a.integral_ids(IntegralType::cell))
   {
-    const auto& cell_map_0 = a.cell_map(*a.function_spaces().at(0));
-    const auto& cell_map_1 = a.cell_map(*a.function_spaces().at(1));
+    const auto& cell_map_0 = a.cell_to_cell_map(*a.function_spaces().at(0));
+    const auto& cell_map_1 = a.cell_to_cell_map(*a.function_spaces().at(1));
     const auto& kernel = a.kernel(IntegralType::cell, i);
     const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
@@ -871,9 +871,9 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
     const auto& facet_map_0
-        = a.cell_local_facet_map(*a.function_spaces().at(0));
+        = a.facet_to_cell_map(*a.function_spaces().at(0));
     const auto& facet_map_1
-        = a.cell_local_facet_map(*a.function_spaces().at(1));
+        = a.facet_to_cell_map(*a.function_spaces().at(1));
     const auto& kernel = a.kernel(IntegralType::exterior_facet, i);
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
@@ -1034,7 +1034,7 @@ void assemble_vector(
 
   for (int i : L.integral_ids(IntegralType::cell))
   {
-    const auto cell_map = L.cell_map(*L.function_spaces().at(0));
+    const auto cell_map = L.cell_to_cell_map(*L.function_spaces().at(0));
     const auto& fn = L.kernel(IntegralType::cell, i);
     const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = L.cell_domains(i);
@@ -1059,7 +1059,7 @@ void assemble_vector(
 
   for (int i : L.integral_ids(IntegralType::exterior_facet))
   {
-    const auto facet_map = L.cell_local_facet_map(*L.function_spaces().at(0));
+    const auto facet_map = L.facet_to_cell_map(*L.function_spaces().at(0));
     const auto& fn = L.kernel(IntegralType::exterior_facet, i);
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});

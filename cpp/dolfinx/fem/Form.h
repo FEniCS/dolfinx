@@ -365,7 +365,7 @@ public:
   /// @return The map
   // TODO Rename
   std::function<std::int32_t(std::int32_t)>
-  cell_map(const FunctionSpace& function_space) const
+  cell_to_cell_map(const FunctionSpace& function_space) const
   {
     auto mesh_fs = function_space.mesh();
     if (mesh_fs != mesh())
@@ -383,11 +383,11 @@ public:
   /// map from facets in the integration domain mesh (identified as
   /// (cell, local_facet_index) pairs) to cells in the mesh
   /// that the function space is defined over.
-  /// @param[in] function_space The functions space
+  /// @param[in] function_space The function space
   /// @return The map
   // TODO Rename
   std::function<std::int32_t(std::pair<std::int32_t, int>)>
-  cell_local_facet_map(const FunctionSpace& function_space) const
+  facet_to_cell_map(const FunctionSpace& function_space) const
   {
     auto mesh_fs = function_space.mesh();
     if (mesh_fs != mesh())
