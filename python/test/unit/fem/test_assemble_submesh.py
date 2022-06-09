@@ -738,14 +738,17 @@ def test_assemble_block(random_ordering):
     L_0 = fem.form(v * dx_m)
     L_1 = fem.form(mu * dx_sm)
 
+    dofs = fem.locate_dofs_topological(V, edim, entities)
+    bc = fem.dirichletbc(PETSc.ScalarType(0.0), dofs, V)
+
     a = [[a_00, a_01],
          [a_10, a_11]]
     L = [L_0, L_1]
 
-    A = fem.petsc.assemble_matrix_block(a)
+    A = fem.petsc.assemble_matrix_block(a, bcs=[bc])
     A.assemble()
-    b = fem.petsc.assemble_vector_block(L, a)
+    b = fem.petsc.assemble_vector_block(L, a, bcs=[bc])
 
     # TODO Check value
-    assert(np.isclose(A.norm(), 1.7447838930175097))
-    assert(np.isclose(b.norm(), 1.463680672520858))
+    assert(np.isclose(A.norm(), 3.0026030373660784))
+    assert(np.isclose(b.norm(), 1.4361406616345072))
