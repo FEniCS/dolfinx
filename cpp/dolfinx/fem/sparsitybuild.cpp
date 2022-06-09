@@ -116,6 +116,7 @@ void sparsitybuild::exterior_facets(
     assert(cells.size() == 1);
 
     std::int32_t cell = cells[0];
+    // Get the local facet index
     auto cell_facets = c_to_f->links(cell);
     auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), f);
     assert(facet_it != cell_facets.end());
