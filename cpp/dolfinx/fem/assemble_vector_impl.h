@@ -76,6 +76,8 @@ void _lift_bc_cells(
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
     std::int32_t c = cells[index];
+    // Map the cell in the integration domain to the cell in the mesh
+    // each function space is defined over
     std::int32_t c_0 = cell_map_0(c);
     assert(c_0 >= 0);
     std::int32_t c_1 = cell_map_1(c);
@@ -243,6 +245,8 @@ void _lift_bc_exterior_facets(
     std::int32_t cell = facets[index].first;
     int local_facet = facets[index].second;
 
+    // Map the cell in the integration domain to the cell in the mesh
+    // each function space is defined over
     std::int32_t c_0 = facet_map_0(facets[index]);
     assert(c_0 >= 0);
     std::int32_t c_1 = facet_map_1(facets[index]);
@@ -549,6 +553,8 @@ void assemble_cells(
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
     std::int32_t c = cells[index];
+    // Map the cell in the integration domain to the cell in the mesh
+    // the function space is defined over
     std::int32_t c_0 = cell_map(c);
     assert(c_0 >= 0);
 
@@ -624,6 +630,8 @@ void assemble_exterior_facets(
   {
     std::int32_t cell = facets[index].first;
     int local_facet = facets[index].second;
+    // Map the cell in the integration domain to the cell in the mesh
+    // the function space is defined over
     std::int32_t c_0 = facet_map(facets[index]);
     assert(c_0 >= 0);
 
@@ -871,7 +879,6 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::pair<std::int32_t, int>>& facets
         = a.exterior_facet_domains(i);
-    // TODO Pass both cell infos
     _lift_bc_exterior_facets(b, *mesh, kernel, facets, dof_transform, dofmap0,
                              bs0, dof_transform_to_transpose, dofmap1, bs1,
                              constants, coeffs, cstride, cell_info_0,

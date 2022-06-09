@@ -82,6 +82,8 @@ void assemble_cells(
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
     std::int32_t c = cells[index];
+    // Map the cell in the integration domain to the cell in the mesh
+    // each function space is defined over
     std::int32_t c_0 = cell_map_0(c);
     assert(c_0 >= 0);
     std::int32_t c_1 = cell_map_1(c);
@@ -189,6 +191,8 @@ void assemble_exterior_facets(
     std::int32_t cell = facets[index].first;
     int local_facet = facets[index].second;
 
+    // Map the cell in the integration domain to the cell in the mesh
+    // each function space is defined over
     std::int32_t c_0 = facet_map_0(facets[index]);
     assert(c_0 >= 0);
     std::int32_t c_1 = facet_map_1(facets[index]);
@@ -441,9 +445,9 @@ void assemble_matrix(
       = element0->needs_dof_transformations()
         or element1->needs_dof_transformations()
         or a.needs_facet_permutations();
-  // NOTE: May only need to pass two cell infos for codim 1 ext facet
-  // integrals. I think the cell_infos are the same for if both spaces
-  // are cells
+  // Get the cell infos for the meshes each function space is defined over
+  // NOTE: These should only differ for mixed dimensional integrals, so
+  // this could be simplified
   xtl::span<const std::uint32_t> cell_info_0;
   xtl::span<const std::uint32_t> cell_info_1;
   if (needs_transformation_data)

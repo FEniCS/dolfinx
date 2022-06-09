@@ -361,7 +361,7 @@ public:
   /// Given a `fem::FunctionSpace`, this function returns the required
   /// map from cells in the integration domain mesh to cells in the mesh
   /// that the function space is defined over.
-  /// @param[in] function_space The functions space
+  /// @param[in] function_space The function space
   /// @return The map
   // TODO Rename
   std::function<std::int32_t(std::int32_t)>
