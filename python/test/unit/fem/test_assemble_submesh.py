@@ -735,12 +735,17 @@ def test_assemble_block(random_ordering):
     a_01 = fem.form(ufl.inner(lmbda, v) * ds, entity_maps=entity_maps)
     a_10 = fem.form(ufl.inner(u, mu) * ds, entity_maps=entity_maps)
     a_11 = fem.form(ufl.inner(lmbda, mu) * dx_sm)
+    L_0 = fem.form(v * dx_m)
+    L_1 = fem.form(mu * dx_sm)
 
     a = [[a_00, a_01],
          [a_10, a_11]]
+    L = [L_0, L_1]
 
     A = fem.petsc.assemble_matrix_block(a)
     A.assemble()
+    b = fem.petsc.assemble_vector_block(L, a)
 
     # TODO Check value
     assert(np.isclose(A.norm(), 1.7447838930175097))
+    assert(np.isclose(b.norm(), 1.463680672520858))
