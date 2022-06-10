@@ -156,13 +156,13 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] constants Spatial constants in the form
 /// @param[in] subdomains Subdomain markers
 /// @param[in] mesh The mesh of the domain
-template <typename T>
+template <typename T, typename U>
 Form<T> create_form(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
     const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
+    const std::map<IntegralType, const U*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   if (ufcx_form.rank != (int)spaces.size())
@@ -199,7 +199,7 @@ Form<T> create_form(
   using kern = std::function<void(T*, const T*, const T*, const double*,
                                   const int*, const std::uint8_t*)>;
   std::map<IntegralType, std::pair<std::vector<std::pair<int, kern>>,
-                                   const mesh::MeshTags<int>*>>
+                                   const U*>>
       integral_data;
 
   bool needs_facet_permutations = false;
@@ -356,14 +356,14 @@ Form<T> create_form(
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional
 /// @return A Form
-template <typename T>
+template <typename T, typename U>
 Form<T> create_form(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
     const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
+    const std::map<IntegralType, const U*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   // Place coefficients in appropriate order
@@ -403,14 +403,14 @@ Form<T> create_form(
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional.
 /// @return A Form
-template <typename T>
+template <typename T, typename U>
 Form<T> create_form(
     ufcx_form* (*fptr)(),
     const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
     const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
+    const std::map<IntegralType, const U*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   ufcx_form* form = fptr();

@@ -800,7 +800,25 @@ void declare_form(py::module& m, const std::string& type)
                   const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
                {
                  ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
-                 return dolfinx::fem::create_form<T>(
+                 return dolfinx::fem::create_form<T, const dolfinx::mesh::MeshTags<int>>(
+                     *p, spaces, coefficients, constants, subdomains, mesh);
+               }),
+           "Create a Form from a pointer to a ufcx_form")
+      .def(py::init(
+               [](std::uintptr_t form,
+                  const std::vector<std::shared_ptr<
+                      const dolfinx::fem::FunctionSpace>>& spaces,
+                  const std::vector<std::shared_ptr<
+                      const dolfinx::fem::Function<T>>>& coefficients,
+                  const std::vector<std::shared_ptr<
+                      const dolfinx::fem::Constant<T>>>& constants,
+                  const std::map<dolfinx::fem::IntegralType,
+                                 const std::vector<std::int32_t>*>&
+                      subdomains,
+                  const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
+               {
+                 ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
+                 return dolfinx::fem::create_form<T, const std::vector<std::int32_t>>(
                      *p, spaces, coefficients, constants, subdomains, mesh);
                }),
            "Create a Form from a pointer to a ufcx_form")

@@ -146,6 +146,71 @@ public:
     set_default_domains(*_mesh);
   }
 
+  Form(
+      const std::vector<std::shared_ptr<const fem::FunctionSpace>>&
+          function_spaces,
+      const std::map<
+          IntegralType,
+          std::pair<
+              std::vector<std::pair<
+                  int, std::function<void(T*, const T*, const T*, const double*,
+                                          const int*, const std::uint8_t*)>>>,
+              const std::vector<std::int32_t>*>>& integrals,
+      const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
+      const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
+      bool needs_facet_permutations,
+      const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+      : _function_spaces(function_spaces), _coefficients(coefficients),
+        _constants(constants), _mesh(mesh),
+        _needs_facet_permutations(needs_facet_permutations)
+  {
+    std::cout << "Hello from custom entity form\n";
+    // Extract _mesh from fem::FunctionSpace, and check they are the same
+    if (!_mesh and !function_spaces.empty())
+      _mesh = function_spaces[0]->mesh();
+    for (const auto& V : function_spaces)
+    {
+      if (_mesh != V->mesh())
+        throw std::runtime_error("Incompatible mesh");
+    }
+    if (!_mesh)
+      throw std::runtime_error("No mesh could be associated with the Form.");
+
+    // Store kernels, looping over integrals by domain type (dimension)
+    for (auto& integral_type : integrals)
+    {
+      const IntegralType type = integral_type.first;
+      // Loop over integrals kernels and set domains
+      switch (type)
+      {
+      case IntegralType::cell:
+        for (auto& integral : integral_type.second.first)
+          _cell_integrals.insert({integral.first, {integral.second, {}}});
+        break;
+      case IntegralType::exterior_facet:
+        for (auto& integral : integral_type.second.first)
+        {
+          _exterior_facet_integrals.insert(
+              {integral.first, {integral.second, {}}});
+        }
+        break;
+      case IntegralType::interior_facet:
+        for (auto& integral : integral_type.second.first)
+        {
+          _interior_facet_integrals.insert(
+              {integral.first, {integral.second, {}}});
+        }
+        break;
+      }
+
+      // if (integral_type.second.second)
+      // {
+      //   assert(_mesh == integral_type.second.second->mesh());
+      //   set_domains(type, *integral_type.second.second);
+      // }
+    }
+  }
+
   /// Copy constructor
   Form(const Form& form) = delete;
 
