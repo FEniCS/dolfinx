@@ -30,7 +30,7 @@ radius_wire = 0.050*um
 radius_dom = 1*um
 
 # the smaller the mesh_factor, the finer is the mesh
-mesh_factor = 0.5
+mesh_factor = 1.2
 
 # finite element degree
 degree = 3
@@ -103,7 +103,7 @@ if MPI.COMM_WORLD.rank == 0:
 
     gmsh.model.mesh.generate(2)
 
-    mesh, cell_tags, facet_tags = gmsh_model_to_mesh(gmsh.model, cell_data=True, facet_data=True, gdim=2)
+mesh, cell_tags, facet_tags = gmsh_model_to_mesh(gmsh.model, cell_data=True, facet_data=True, gdim=2)
 
 MPI.COMM_WORLD.barrier()
 
@@ -216,25 +216,31 @@ P = 0.5*inner(cross(Eh_3d,conj(Hh_3d)),n_3d)
 Q = 0.5*ieps_au*k0*(inner(E_3d,E_3d))/Z0/n_bkg
 
 # normalized efficiencies
-q_abs_fenics = ufl.real(fem.assemble_scalar(fem.form(Q*dAu))/gcs/I0)
-q_sca_fenics = ufl.real(fem.assemble_scalar(fem.form(P*dsbc))/gcs/I0)
+q_abs_fenics_proc = ufl.real(fem.assemble_scalar(fem.form(Q*dAu))/gcs/I0)
+q_abs_fenics = mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM) # sum results from all MPI processes
+
+q_sca_fenics_proc = ufl.real(fem.assemble_scalar(fem.form(P*dsbc))/gcs/I0)
+q_sca_fenics = mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM) # sum results from all MPI processes
+
 q_ext_fenics = q_abs_fenics + q_sca_fenics
 
 err_abs = np.abs(q_abs_analyt - q_abs_fenics)/q_abs_analyt*100
 err_sca = np.abs(q_sca_analyt - q_sca_fenics)/q_sca_analyt*100
 err_ext = np.abs(q_ext_analyt - q_ext_fenics)/q_ext_analyt*100
 
-print()
-print(f"The analytical absorption efficiency is {q_abs_analyt}")
-print(f"The numerical absorption efficiency is {q_abs_fenics}")
-print(f"The error is {err_abs}%")
-print()
-print(f"The analytical scattering efficiency is {q_sca_analyt}")
-print(f"The numerical scattering efficiency is {q_sca_fenics}")
-print(f"The error is {err_sca}%")
-print()
-print(f"The analytical extinction efficiency is {q_ext_analyt}")
-print(f"The numerical extinction efficiency is {q_ext_fenics}")
-print(f"The error is {err_ext}%")
+if MPI.COMM_WORLD.rank == 0:
+
+    print()
+    print(f"The analytical absorption efficiency is {q_abs_analyt}")
+    print(f"The numerical absorption efficiency is {q_abs_fenics}")
+    print(f"The error is {err_abs}%")
+    print()
+    print(f"The analytical scattering efficiency is {q_sca_analyt}")
+    print(f"The numerical scattering efficiency is {q_sca_fenics}")
+    print(f"The error is {err_sca}%")
+    print()
+    print(f"The analytical extinction efficiency is {q_ext_analyt}")
+    print(f"The numerical extinction efficiency is {q_ext_fenics}")
+    print(f"The error is {err_ext}%")
 
 
