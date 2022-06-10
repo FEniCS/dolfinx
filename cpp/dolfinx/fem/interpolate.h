@@ -798,7 +798,8 @@ void interpolate(Function<T>& u, const Function<T>& v,
       std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                        std::next(recv_offsets.begin(), 1));
 
-      xt::xtensor<double, 2> received_points({recv_offsets.back() / 3, 3});
+      xt::xtensor<double, 2> received_points(
+          {std::size_t(recv_offsets.back() / 3), 3});
       MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
                              send_offsets.data(), MPI_DOUBLE,
                              received_points.data(), recv_sizes.data(),
