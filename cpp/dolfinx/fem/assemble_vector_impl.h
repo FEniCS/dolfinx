@@ -347,13 +347,12 @@ void _lift_bc_interior_facets(
   // Temporaries for joint dofmaps
   std::vector<std::int32_t> dmapjoint0, dmapjoint1;
   assert(facets.size() % 4 == 0);
-  std::array<std::int32_t, 2> cells;
-  std::array<std::int32_t, 2> local_facet;
 
   for (std::size_t index = 0; index < facets.size(); index += 4)
   {
-    cells = {facets[index], facets[index + 2]};
-    local_facet = {facets[index + 1], facets[index + 3]};
+    std::array<std::int32_t, 2> cells = {facets[index], facets[index + 2]};
+    std::array<std::int32_t, 2> local_facet
+        = {facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
@@ -673,14 +672,12 @@ void assemble_interior_facets(
 
   const int bs = dofmap.bs();
   assert(_bs < 0 or _bs == bs);
-
   assert(facets.size() % 4 == 0);
-  std::array<std::int32_t, 2> cells;
-  std::array<std::int32_t, 2> local_facet;
   for (std::size_t index = 0; index < facets.size(); index += 4)
   {
-    cells = {facets[index], facets[index + 2]};
-    local_facet = {facets[index + 1], facets[index + 3]};
+    std::array<std::int32_t, 2> cells = {facets[index], facets[index + 2]};
+    std::array<std::int32_t, 2> local_facet
+        = {facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);

@@ -138,12 +138,11 @@ T assemble_interior_facets(
 
   // Iterate over all facets
   assert(facets.size() % 4 == 0);
-  std::array<std::int32_t, 2> cells;
-  std::array<std::int32_t, 2> local_facet;
   for (std::size_t index = 0; index < facets.size(); index += 4)
   {
-    cells = {facets[index], facets[index + 2]};
-    local_facet = {facets[index + 1], facets[index + 3]};
+    std::array<std::int32_t, 2> cells = {facets[index], facets[index + 2]};
+    std::array<std::int32_t, 2> local_facet
+        = {facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
