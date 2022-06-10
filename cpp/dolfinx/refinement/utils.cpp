@@ -435,43 +435,35 @@ refinement::adjust_indices(const common::IndexMap& map, std::int32_t n)
 }
 //-----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
-    const mesh::MeshTags<std::int32_t>& parent_meshtag,
+    const mesh::MeshTags<std::int32_t>& meshtag,
     std::shared_ptr<const mesh::Mesh> refined_mesh,
-    const std::vector<std::int32_t>& parent_cell,
-    const std::vector<std::int8_t>& parent_facet)
+    const std::vector<std::int32_t>& cell,
+    const std::vector<std::int8_t>& facet)
 {
-  assert(refined_mesh);
+  const int tdim = meshtag.mesh()->topology().dim();
 
-  const int tdim = parent_meshtag.mesh()->topology().dim();
-  if (parent_meshtag.dim() != tdim - 1)
+  if (meshtag.dim() != tdim - 1)
     throw std::runtime_error("Input meshtag is not facet-based");
-
-  if (parent_meshtag.mesh()->topology().index_map(tdim)->num_ghosts() > 0)
+  if (meshtag.mesh()->topology().index_map(tdim)->num_ghosts() > 0)
     throw std::runtime_error("Ghosted meshes are not supported");
 
-  auto parent_c_to_f
-      = parent_meshtag.mesh()->topology().connectivity(tdim, tdim - 1);
-  if (!parent_c_to_f)
-    throw std::runtime_error("Parent mesh is missing cell-facet connectivity.");
-
-  auto c_to_f = refined_mesh->topology().connectivity(tdim, tdim - 1);
+  auto c_to_f = meshtag.mesh()->topology().connectivity(tdim, tdim - 1);
   if (!c_to_f)
-    throw std::runtime_error(
-        "Refined mesh is missing cell-facet connectivity.");
+    throw std::runtime_error("Parent mesh is missing cell-facet connectivity.");
 
   // Create map parent->child facets
   const std::int32_t num_input_facets
-      = parent_meshtag.mesh()->topology().index_map(tdim - 1)->size_local()
-        + parent_meshtag.mesh()->topology().index_map(tdim - 1)->num_ghosts();
-  std::vector<int> count_child(num_input_facets, 0);
+      = meshtag.mesh()->topology().index_map(tdim - 1)->size_local()
+        + meshtag.mesh()->topology().index_map(tdim - 1)->num_ghosts();
 
   // Get global index for each refined cell, before reordering in Mesh
   // construction
   const std::vector<std::int64_t>& original_cell_index
       = refined_mesh->topology().original_cell_index;
-  assert(original_cell_index.size() == parent_cell.size());
+  assert(original_cell_index.size() == cell.size());
   std::int64_t global_offset
       = refined_mesh->topology().index_map(tdim)->local_range()[0];
+
   // Map cells back to original index
   std::vector<std::int32_t> local_cell_index(original_cell_index.size());
   for (std::size_t i = 0; i < local_cell_index.size(); ++i)
@@ -483,15 +475,14 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   }
 
   // Count number of child facets for each parent facet
-  for (std::size_t c = 0; c < parent_cell.size(); ++c)
+  std::vector<int> count_child(num_input_facets, 0);
+  for (std::size_t c = 0; c < cell.size(); ++c)
   {
-    auto parent_cf = parent_c_to_f->links(parent_cell[c]);
-
-    for (int j = 0; j < (tdim + 1); ++j)
+    auto facets = c_to_f->links(cell[c]);
+    for (int j = 0; j <= tdim; ++j)
     {
-      std::int8_t fidx = parent_facet[c * (tdim + 1) + j];
-      if (fidx != -1)
-        ++count_child[parent_cf[fidx]];
+      if (std::int8_t fidx = facet[c * (tdim + 1) + j]; fidx != -1)
+        ++count_child[facets[fidx]];
     }
   }
 
@@ -500,53 +491,56 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
                    std::next(offset_child.begin()));
   std::vector<std::int32_t> child_facet(offset_child.back());
 
-  // Fill in data for each child facet
-  for (std::size_t c = 0; c < parent_cell.size(); ++c)
+  assert(refined_mesh);
+  auto c_to_f_refined = refined_mesh->topology().connectivity(tdim, tdim - 1);
+  if (!c_to_f_refined)
   {
-    std::int32_t pc = parent_cell[c];
-    auto parent_cf = parent_c_to_f->links(pc);
+    throw std::runtime_error(
+        "Refined mesh is missing cell-facet connectivity.");
+  }
+
+  // Fill in data for each child facet
+  for (std::size_t c = 0; c < cell.size(); ++c)
+  {
+    auto facets = c_to_f->links(cell[c]);
 
     // Use original indexing for child cell
-    const std::int32_t lc = local_cell_index[c];
-    auto refined_cf = c_to_f->links(lc);
+    auto refined_facets = c_to_f_refined->links(local_cell_index[c]);
 
     // Get child facets for each cell
-    for (int j = 0; j < (tdim + 1); ++j)
+    for (int j = 0; j <= tdim; ++j)
     {
-      std::int8_t fidx = parent_facet[c * (tdim + 1) + j];
-      if (fidx != -1)
+      if (std::int8_t fidx = facet[c * (tdim + 1) + j]; fidx != -1)
       {
-        int offset = offset_child[parent_cf[fidx]];
-        child_facet[offset] = refined_cf[j];
-        ++offset_child[parent_cf[fidx]];
+        int offset = offset_child[facets[fidx]];
+        child_facet[offset] = refined_facets[j];
+        ++offset_child[facets[fidx]];
       }
     }
   }
 
   // Rebuild offset
-  offset_child[0] = 0;
+  offset_child.front() = 0;
   std::partial_sum(count_child.begin(), count_child.end(),
                    std::next(offset_child.begin()));
   graph::AdjacencyList<std::int32_t> p_to_c_facet(std::move(child_facet),
                                                   std::move(offset_child));
 
   // Copy facet meshtag from parent to child
-  std::vector<std::int32_t> facet_indices;
-  std::vector<std::int32_t> tag_values;
-  const std::vector<std::int32_t>& in_index = parent_meshtag.indices();
-  const std::vector<std::int32_t>& in_value = parent_meshtag.values();
+  std::vector<std::int32_t> facet_indices, tag_values;
+  const std::vector<std::int32_t>& in_index = meshtag.indices();
+  const std::vector<std::int32_t>& in_value = meshtag.values();
   for (std::size_t i = 0; i < in_index.size(); ++i)
   {
     std::int32_t parent_index = in_index[i];
     auto pclinks = p_to_c_facet.links(parent_index);
-    // eliminate duplicates
+
+    // Eliminate duplicates
     std::sort(pclinks.begin(), pclinks.end());
     auto it_end = std::unique(pclinks.begin(), pclinks.end());
-    for (auto child_it = pclinks.begin(); child_it != it_end; ++child_it)
-    {
-      facet_indices.push_back(*child_it);
-      tag_values.push_back(in_value[i]);
-    }
+    facet_indices.insert(facet_indices.end(), pclinks.begin(), it_end);
+    tag_values.insert(tag_values.end(), std::distance(pclinks.begin(), it_end),
+                      in_value[i]);
   }
 
   // Sort values into order, based on facet indices
