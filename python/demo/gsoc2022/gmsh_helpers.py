@@ -10,7 +10,8 @@ import numpy
 import gmsh
 
 from mpi4py import MPI
-from dolfinx.io import extract_gmsh_geometry, extract_gmsh_topology_and_markers, ufl_mesh_from_gmsh
+from dolfinx.io import extract_gmsh_geometry, \
+    extract_gmsh_topology_and_markers, ufl_mesh_from_gmsh
 from dolfinx.cpp.io import perm_gmsh, distribute_entity_data
 from dolfinx.cpp.mesh import to_type, cell_entity_type
 from dolfinx.cpp.graph import AdjacencyList_int32
@@ -95,21 +96,34 @@ def gmsh_model_to_mesh(model, cell_data=False, facet_data=False, gdim=None):
                 num_facet_nodes = MPI.COMM_WORLD.bcast(
                     cell_information[perm_sort[-2]]["num_nodes"], root=0)
                 gmsh_facet_id = cell_information[perm_sort[-2]]["id"]
-                marked_facets = numpy.asarray(topologies[gmsh_facet_id]["topology"], dtype=numpy.int64)
-                facet_values = numpy.asarray(topologies[gmsh_facet_id]["cell_data"], dtype=numpy.int32)
+                marked_facets = numpy.asarray(
+                    topologies[gmsh_facet_id]["topology"],
+                    dtype=numpy.int64)
+                facet_values = numpy.asarray(
+                    topologies[gmsh_facet_id]["cell_data"],
+                    dtype=numpy.int32)
             else:
                 raise ValueError("No facet data found in file.")
 
-        cells = numpy.asarray(topologies[cell_id]["topology"], dtype=numpy.int64)
-        cell_values = numpy.asarray(topologies[cell_id]["cell_data"], dtype=numpy.int32)
+        cells = numpy.asarray(
+            topologies[cell_id]["topology"],
+            dtype=numpy.int64)
+        cell_values = numpy.asarray(
+            topologies[cell_id]["cell_data"],
+            dtype=numpy.int32)
 
     else:
         cell_id, num_nodes = MPI.COMM_WORLD.bcast([None, None], root=0)
-        cells, x = numpy.empty([0, num_nodes], dtype=numpy.int32), numpy.empty([0, gdim])
+        cells, x = numpy.empty(
+            [0, num_nodes],
+            dtype=numpy.int32), numpy.empty(
+            [0, gdim])
         cell_values = numpy.empty((0,), dtype=numpy.int32)
         if facet_data:
             num_facet_nodes = MPI.COMM_WORLD.bcast(None, root=0)
-            marked_facets = numpy.empty((0, num_facet_nodes), dtype=numpy.int32)
+            marked_facets = numpy.empty(
+                (0, num_facet_nodes),
+                dtype=numpy.int32)
             facet_values = numpy.empty((0,), dtype=numpy.int32)
 
     # Create distributed mesh
