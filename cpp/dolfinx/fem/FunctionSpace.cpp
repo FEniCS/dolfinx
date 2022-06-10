@@ -229,7 +229,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   // on this process, the coordinates of those dofs will not have been
   // tabulated by the above. Hence, these must be communicated.
   const int size_local = index_map->size_local();
-  const int bs = 3;
+  constexpr int bs = 3;
   // Create storage for coordinates of owned and ghost dofs.
   std::vector<double> coords_local(coords.begin(),
                                    coords.begin() + bs * size_local);
