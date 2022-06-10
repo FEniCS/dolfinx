@@ -175,6 +175,9 @@ public:
   std::shared_ptr<const FiniteElement>
   extract_sub_element(const std::vector<int>& component) const;
 
+  /// Return underlying basix element (if it exists)
+  const basix::FiniteElement& basix_element() const;
+
   /// Get the map type used by the element
   basix::maps::type map_type() const;
 

@@ -586,6 +586,8 @@ void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
 
   std::string cell_type = to_fides_cell(topology.cell_type());
   define_attribute<std::string>(io, "Fides_Cell_Type", cell_type);
+
+  define_attribute<std::string>(io, "Fides_Time_Variable", "step");
 }
 //-----------------------------------------------------------------------------
 
