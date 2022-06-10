@@ -49,7 +49,6 @@ def read_from_msh(filename: str, cell_data=False, facet_data=False, gdim=None):
 
 
 def gmsh_model_to_mesh(model, cell_data=False, facet_data=False, gdim=None):
-    
     """
     Given a GMSH model, create a DOLFIN-X mesh and MeshTags.
         model: The GMSH model
@@ -125,7 +124,7 @@ def gmsh_model_to_mesh(model, cell_data=False, facet_data=False, gdim=None):
         mesh.topology.create_connectivity(mesh.topology.dim, 0)
         adj = AdjacencyList_int32(local_entities)
         ct = meshtags_from_entities(mesh, mesh.topology.dim,
-                             adj, numpy.int32(local_values))
+                                    adj, numpy.int32(local_values))
         ct.name = "Cell tags"
 
     # Create MeshTags for facets
@@ -143,7 +142,7 @@ def gmsh_model_to_mesh(model, cell_data=False, facet_data=False, gdim=None):
             mesh.topology.dim - 1, mesh.topology.dim)
         adj = AdjacencyList_int32(local_entities)
         ft = meshtags_from_entities(mesh, mesh.topology.dim - 1,
-                             adj, numpy.int32(local_values))
+                                    adj, numpy.int32(local_values))
         ft.name = "Facet tags"
 
     if cell_data and facet_data:
