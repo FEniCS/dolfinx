@@ -169,7 +169,7 @@ def create_tnt_quad(degree):
     else:
         pts, wts = basix.make_quadrature(basix.CellType.quadrilateral, 2 * degree - 2)
         poly = basix.tabulate_polynomials(basix.PolynomialType.legendre, basix.CellType.quadrilateral, degree - 2, pts)
-        face_ndofs = poly.shape[1]
+        face_ndofs = poly.shape[0]
         x[2].append(pts)
         mat = np.zeros((face_ndofs, 1, len(pts), 1))
         for i in range(face_ndofs):
