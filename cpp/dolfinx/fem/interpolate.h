@@ -29,6 +29,35 @@ namespace dolfinx::fem
 template <typename T>
 class Function;
 
+/// Compute the evaluation points in the physical space at which an
+/// expression should be computed to interpolate it in a finite element
+/// space.
+///
+/// @param[in] element The element to be interpolated into
+/// @param[in] mesh The domain
+/// @param[in] cells Indices of the cells in the mesh to compute
+/// interpolation coordinates for
+/// @return The coordinates in the physical space at which to evaluate
+/// an expression. The shape is (3, num_points) and storage is row-major.
+std::vector<double>
+interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
+                     const xtl::span<const std::int32_t>& cells);
+
+/// Interpolate an expression f(x) in a finite element space
+///
+/// @param[out] u The function to interpolate into
+/// @param[in] f Evaluation of the function `f(x)` at the physical
+/// points `x` given by fem::interpolation_coords. The element used in
+/// fem::interpolation_coords should be the same element as associated
+/// with `u`. The shape of `f` should be (value_size, num_points), or if
+/// value_size=1 the shape can be (num_points,).
+/// @param[in] cells Indices of the cells in the mesh on which to
+/// interpolate. Should be the same as the list used when calling
+/// fem::interpolation_coords.
+template <typename T>
+void interpolate(Function<T>& u, const xt::xarray<T>& f,
+                 const xtl::span<const std::int32_t>& cells);
+
 namespace impl
 {
 /// Apply interpolation operator Pi to data to evaluate the dof
@@ -355,33 +384,209 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
         array1[dof_bs1 * dofs1[i] + k] = local1[dof_bs1 * i + k];
   }
 }
+//----------------------------------------------------------------------------
+/// Interpolate from one finite element Function to another one
+/// @param[out] u The function to interpolate into
+/// @param[in] v The function to be interpolated
+/// @param[in] cells List of cell indices to interpolate on
+template <typename T>
+void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
+                                    const xtl::span<const std::int32_t>& cells)
+{
+  assert(u.function_space());
+  assert(v.function_space());
+
+  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
+  std::shared_ptr<const mesh::Mesh> mesh_v = v.function_space()->mesh();
+
+  assert(mesh);
+
+  int result;
+  MPI_Comm_compare(mesh->comm(), mesh_v->comm(), &result);
+
+  if (result == MPI_UNEQUAL)
+    throw std::runtime_error("Interpolation on different meshes is only "
+                             "supported with the same communicator.");
+
+  MPI_Comm comm = mesh->comm();
+  const int tdim = mesh->topology().dim();
+  const auto cell_map = mesh->topology().index_map(tdim);
+  const std::size_t num_cells = cells.size();
+
+  std::shared_ptr<const FiniteElement> element_u
+      = u.function_space()->element();
+  const std::size_t value_size = element_u->value_size();
+
+  // Collect all the points at which values are needed to define the
+  // interpolating function
+  xt::xtensor<double, 2> x;
+  {
+    const std::vector<double> coords
+        = fem::interpolation_coords(*element_u, *mesh, cells);
+    x = xt::transpose(
+        xt::adapt(coords, std::array<std::size_t, 2>{3, coords.size() / 3}));
+  }
+
+  // Create a global bounding-box tree to quickly look for processes that
+  // might be able to evaluate the interpolating function at a given point
+  // Should we use a subset of cells to interpolate from?
+  constexpr double padding = 0.0001;
+  const int v_tdim = mesh_v->topology().dim();
+  const auto v_cell_map = mesh_v->topology().index_map(v_tdim);
+  const int v_num_cells = v_cell_map->size_local();
+  std::vector<std::int32_t> cells_v(v_num_cells, 0);
+  std::iota(cells_v.begin(), cells_v.end(), 0);
+
+  dolfinx::geometry::BoundingBoxTree bb(*mesh_v, v_tdim, cells_v, padding);
+  dolfinx::geometry::BoundingBoxTree global_bbtree
+      = bb.create_global_tree(comm);
+
+  // Compute collisions:
+  // For each point in `x` get the processes it should be sent to
+  dolfinx::graph::AdjacencyList<std::int32_t> collisions
+      = dolfinx::geometry::compute_collisions(global_bbtree, x);
+
+  // Get unique list of outgoing ranks
+  std::vector<std::int32_t> out_ranks = collisions.array();
+  std::sort(out_ranks.begin(), out_ranks.end());
+  out_ranks.erase(std::unique(out_ranks.begin(), out_ranks.end()),
+                  out_ranks.end());
+
+  // Compute incoming edges (source processes)
+  std::vector<int> in_ranks
+      = dolfinx::MPI::compute_graph_edges_nbx(comm, out_ranks);
+  std::sort(in_ranks.begin(), in_ranks.end());
+
+  // Create neighborhood communicator in forward direction
+  MPI_Comm forward_comm;
+  MPI_Dist_graph_create_adjacent(
+      comm, in_ranks.size(), in_ranks.data(), MPI_UNWEIGHTED, out_ranks.size(),
+      out_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &forward_comm);
+
+  // Compute map from global mpi rank to neighbor rank, "collisions" uses
+  // global rank
+  std::map<std::int32_t, std::int32_t> rank_to_neighbor;
+  for (std::size_t i = 0; i < out_ranks.size(); i++)
+    rank_to_neighbor[out_ranks[i]] = i;
+
+  // Count the number of points to send per neighbor process
+  std::vector<std::int32_t> send_sizes(out_ranks.size());
+  for (std::size_t i = 0; i < x.shape(0); ++i)
+    for (const auto& p : collisions.links(i))
+      send_sizes[rank_to_neighbor[p]] += 3;
+
+  // Compute receive sizes
+  std::vector<std::int32_t> recv_sizes(in_ranks.size());
+  send_sizes.reserve(1);
+  recv_sizes.reserve(1);
+  MPI_Request sizes_request;
+  MPI_Ineighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                         MPI_INT, forward_comm, &sizes_request);
+
+  // Compute sending offsets
+  std::vector<std::int32_t> send_offsets(send_sizes.size() + 1, 0);
+  std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                   std::next(send_offsets.begin(), 1));
+
+  // Pack data to send and store unpack map
+  std::vector<double> send_data(send_offsets.back());
+  std::vector<std::int32_t> counter(send_sizes.size(), 0);
+  // unpack map: [index in adj list][pos in x]
+  std::vector<std::int32_t> unpack_map(send_offsets.back() / 3);
+  for (std::size_t i = 0; i < x.shape(0); ++i)
+  {
+    for (const auto& p : collisions.links(i))
+    {
+      const auto point = xt::row(x, i);
+      int neighbor = rank_to_neighbor[p];
+      int pos = send_offsets[neighbor] + counter[neighbor];
+      auto it = std::next(send_data.begin(), pos);
+      std::copy(point.begin(), point.end(), it);
+      unpack_map[pos / 3] = i;
+      counter[neighbor] += 3;
+    }
+  }
+
+  MPI_Wait(sizes_request, MPI_STATUS_IGNORE);
+  std::vector<std::int32_t> recv_offsets(in_ranks.size() + 1, 0);
+  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                   std::next(recv_offsets.begin(), 1));
+
+  xt::xtensor<double, 2> received_points(
+      {std::size_t(recv_offsets.back() / 3), 3});
+  MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
+                         send_offsets.data(), MPI_DOUBLE,
+                         received_points.data(), recv_sizes.data(),
+                         recv_offsets.data(), MPI_DOUBLE, forward_comm);
+
+  // Each process checks at which points it can evaluate
+  // the interpolating function, and note that down in evaluation_cells
+  std::vector<std::int32_t> evaluation_cells(received_points.shape(0));
+  for (std::size_t p = 0; p < received_points.shape(0); ++p)
+  {
+    evaluation_cells[p] = geometry::compute_first_colliding_cell(
+        *mesh_v, bb, xt::row(received_points, p));
+  }
+
+  // Evaluate the interpolating function where possible
+  xt::xtensor<T, 2> send_values
+      = xt::zeros<T>({received_points.shape(0), std::size_t(value_size)});
+  v.eval(received_points, evaluation_cells, send_values);
+
+  // Create neighborhood communicator in the reverse direction: send back
+  // values to requesting processes
+  MPI_Comm reverse_comm;
+  MPI_Dist_graph_create_adjacent(
+      comm, out_ranks.size(), out_ranks.data(), MPI_UNWEIGHTED, in_ranks.size(),
+      in_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &reverse_comm);
+
+  // Reuse sizes and offsets from first communication set
+  // but scale the values by `value_size`
+  {
+    auto rescale = [](auto& x, int value_size)
+    {
+      std::transform(x.cbegin(), x.cend(), x.begin(),
+                     [value_size](auto e) { return (e / 3) * value_size; });
+    };
+    rescale(recv_sizes, value_size);
+    rescale(recv_offsets, value_size);
+    rescale(send_sizes, value_size);
+    rescale(send_offsets, value_size);
+
+    // The communication is reversed, so swap recv to send offsets
+    std::swap(recv_sizes, send_sizes);
+    std::swap(recv_offsets, send_offsets);
+  }
+
+  std::vector<T> recv_values(recv_offsets.back());
+  MPI_Neighbor_alltoallv(
+      send_values.data(), send_sizes.data(), send_offsets.data(),
+      dolfinx::MPI::mpi_type<T>(), recv_values.data(), recv_sizes.data(),
+      recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), reverse_comm);
+
+  xt::xtensor<T, 2> values({x.shape(0), value_size});
+  std::fill(values.begin(), values.end(), T(0));
+  constexpr T zero{0.};
+  for (std::size_t i = 0; i < unpack_map.size(); i++)
+  {
+    auto vals = std::next(values.begin(), unpack_map[i] * value_size);
+    bool vals_is_zero = std::all_of(vals, std::next(vals, value_size),
+                                    [zero](T v) { return v == zero; });
+    if (vals_is_zero)
+    {
+      auto vals_from = std::next(recv_values.begin(), i * value_size);
+      std::copy_n(vals_from, value_size, vals);
+    }
+  }
+
+  xt::xarray<T> values_t = xt::transpose(values);
+  fem::interpolate(u, values_t, cells);
+
+  MPI_Comm_free(&forward_comm);
+  MPI_Comm_free(&reverse_comm);
+}
 } // namespace impl
 
-/// Compute the evaluation points in the physical space at which an
-/// expression should be computed to interpolate it in a finite elemenet
-/// space.
-///
-/// @param[in] element The element to be interpolated into
-/// @param[in] mesh The domain
-/// @param[in] cells Indices of the cells in the mesh to compute
-/// interpolation coordinates for
-/// @return The coordinates in the physical space at which to evaluate
-/// an expression. The shape is (3, num_points) and storage is row-major.
-std::vector<double>
-interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
-                     const xtl::span<const std::int32_t>& cells);
-
-/// Interpolate an expression f(x) in a finite element space
-///
-/// @param[out] u The function to interpolate into
-/// @param[in] f Evaluation of the function `f(x)` at the physical
-/// points `x` given by fem::interpolation_coords. The element used in
-/// fem::interpolation_coords should be the same element as associated
-/// with `u`. The shape of `f` should be (value_size, num_points), or if
-/// value_size=1 the shape can be (num_points,).
-/// @param[in] cells Indices of the cells in the mesh on which to
-/// interpolate. Should be the same as the list used when calling
-/// fem::interpolation_coords.
 template <typename T>
 void interpolate(Function<T>& u, const xt::xarray<T>& f,
                  const xtl::span<const std::int32_t>& cells)
@@ -672,227 +877,9 @@ void interpolate(Function<T>& u, const Function<T>& v,
   {
     // Get mesh and check that functions share the same mesh
     if (auto mesh_v = v.function_space()->mesh(); mesh != mesh_v)
-    {
-      int result;
-      MPI_Comm_compare(mesh->comm(), mesh_v->comm(), &result);
-
-      if (result == MPI_UNEQUAL)
-        throw std::runtime_error("Interpolation on different meshes is only "
-                                 "supported with the same communicator.");
-
-      MPI_Comm comm = mesh->comm();
-      const int tdim = mesh->topology().dim();
-      const auto cell_map = mesh->topology().index_map(tdim);
-      const int num_cells = cell_map->size_local();
-
-      std::shared_ptr<const FiniteElement> element_u
-          = u.function_space()->element();
-      const std::size_t value_size = element_u->value_size();
-
-      // FIXME: Cells is an inpute for this function
-      std::vector<std::int32_t> cells(num_cells, 0);
-      std::iota(cells.begin(), cells.end(), 0);
-
-      // Collect all the points at which values are needed to define the
-      // interpolating function
-      dolfinx::common::Timer t0("~interpolation_coords");
-      xt::xtensor<double, 2> x;
-      {
-        const std::vector<double> coords
-            = fem::interpolation_coords(*element_u, *mesh, cells);
-        x = xt::transpose(xt::adapt(
-            coords, std::array<std::size_t, 2>{3, coords.size() / 3}));
-      }
-      t0.stop();
-
-      dolfinx::common::Timer t1("~create_global_tree");
-      // Create a global bounding-box tree to quickly look for processes that
-      // might be able to evaluate the interpolating function at a given point
-      // FIXME: Why padding?
-      constexpr double padding = 0.0001;
-
-      const int v_tdim = mesh_v->topology().dim();
-      const auto v_cell_map = mesh_v->topology().index_map(v_tdim);
-      const int v_num_cells = v_cell_map->size_local();
-      std::vector<std::int32_t> cells_v(v_num_cells, 0);
-      std::iota(cells_v.begin(), cells_v.end(), 0);
-
-      dolfinx::geometry::BoundingBoxTree bb(*mesh_v, v_tdim, cells_v, padding);
-      auto globalBB = bb.create_global_tree(comm);
-      t1.stop();
-
-      dolfinx::common::Timer t2("~compute_collisions_globalBB");
-      // Compute collisions:
-      // For each point in `x` get the processes it should be sent to
-      graph::AdjacencyList<std::int32_t> collisions
-          = dolfinx::geometry::compute_collisions(globalBB, x);
-      t2.stop();
-
-      // Get unique list of outcoming ranks ()
-      std::vector<std::int32_t> out_ranks = collisions.array();
-      std::sort(out_ranks.begin(), out_ranks.end());
-      out_ranks.erase(std::unique(out_ranks.begin(), out_ranks.end()),
-                      out_ranks.end());
-
-      // Compute map from global mpi rank to neighbor rank
-      std::map<std::int32_t, std::int32_t> rank_to_neighbor;
-      for (std::size_t i = 0; i < out_ranks.size(); i++)
-        rank_to_neighbor[out_ranks[i]] = i;
-
-      dolfinx::common::Timer t3("~compute_graph_edges_nbx");
-      // Compute incoming edges (processes that this rank receives points from)
-      std::vector<int> in_ranks
-          = dolfinx::MPI::compute_graph_edges_nbx(comm, out_ranks);
-      std::sort(in_ranks.begin(), in_ranks.end());
-      t3.stop();
-
-      // Create neighborhood communicator in forward direction
-      MPI_Comm forward_comm;
-      MPI_Dist_graph_create_adjacent(comm, in_ranks.size(), in_ranks.data(),
-                                     MPI_UNWEIGHTED, out_ranks.size(),
-                                     out_ranks.data(), MPI_UNWEIGHTED,
-                                     MPI_INFO_NULL, false, &forward_comm);
-
-      // Count the number of points to send per neighbor process
-      std::vector<std::int32_t> send_sizes(out_ranks.size());
-      for (std::size_t i = 0; i < x.shape(0); ++i)
-        for (const auto& p : collisions.links(i))
-          send_sizes[rank_to_neighbor[p]] += 3;
-
-      // Compute sending offsets
-      std::vector<std::int32_t> send_offsets(send_sizes.size() + 1, 0);
-      std::partial_sum(send_sizes.begin(), send_sizes.end(),
-                       std::next(send_offsets.begin(), 1));
-
-      // Pack data to send and store unpack map
-      std::vector<double> send_data(send_offsets.back());
-      std::vector<std::int32_t> counter(send_sizes.size(), 0);
-      // unpack map: [index in adj list][pos in x]
-      std::vector<std::int32_t> unpack_map(send_offsets.back() / 3);
-      for (std::size_t i = 0; i < x.shape(0); ++i)
-      {
-        for (const auto& p : collisions.links(i))
-        {
-          const auto point = xt::row(x, i);
-          int neighbor = rank_to_neighbor[p];
-          int pos = send_offsets[neighbor] + counter[neighbor];
-          auto it = std::next(send_data.begin(), pos);
-          std::copy(point.begin(), point.end(), it);
-          unpack_map[pos / 3] = i;
-          counter[neighbor] += 3;
-        }
-      }
-      // Get receive sizes
-      std::vector<std::int32_t> recv_sizes(in_ranks.size());
-      send_sizes.reserve(1);
-      recv_sizes.reserve(1);
-
-      dolfinx::common::Timer t4("~comm_forward");
-      MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
-                            MPI_INT, forward_comm);
-      t4.stop();
-
-      dolfinx::common::Timer t42("~comm_forward_alltoallv");
-      // Work out recv offsets
-      std::vector<std::int32_t> recv_offsets(in_ranks.size() + 1, 0);
-      std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                       std::next(recv_offsets.begin(), 1));
-
-      xt::xtensor<double, 2> received_points(
-          {std::size_t(recv_offsets.back() / 3), 3});
-      MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
-                             send_offsets.data(), MPI_DOUBLE,
-                             received_points.data(), recv_sizes.data(),
-                             recv_offsets.data(), MPI_DOUBLE, forward_comm);
-      t42.stop();
-
-      // Each process will now check at which points it can evaluate
-      // the interpolating function, and note that down in evaluation_cells
-      std::vector<std::int32_t> evaluation_cells(received_points.shape(0));
-      dolfinx::common::Timer t5("~compute_first_colliding_cell");
-      for (std::size_t p = 0; p < received_points.shape(0); ++p)
-        evaluation_cells[p] = geometry::compute_first_colliding_cell(
-            *mesh_v, bb, xt::row(received_points, p));
-      t5.stop();
-
-      dolfinx::common::Timer t7("~eval");
-      // Evaluate the interpolating function where possible
-      xt::xtensor<T, 2> send_values
-          = xt::zeros<T>({received_points.shape(0), std::size_t(value_size)});
-      v.eval(received_points, evaluation_cells, send_values);
-      t7.stop();
-
-      // Create neighborhood communicator in the reverse direction to send back
-      // values to processes that sent a evaluation point
-      MPI_Comm reverse_comm;
-      MPI_Dist_graph_create_adjacent(comm, out_ranks.size(), out_ranks.data(),
-                                     MPI_UNWEIGHTED, in_ranks.size(),
-                                     in_ranks.data(), MPI_UNWEIGHTED,
-                                     MPI_INFO_NULL, false, &reverse_comm);
-
-      dolfinx::common::Timer t8("~comm_reverse");
-
-      // Reuse sizes and offsets from first communication set
-      // but scale the values by `value_size`
-      {
-        auto rescale = [](auto& x, int value_size)
-        {
-          std::transform(x.cbegin(), x.cend(), x.begin(),
-                         [value_size](auto e) { return (e / 3) * value_size; });
-        };
-        rescale(recv_sizes, value_size);
-        rescale(recv_offsets, value_size);
-        rescale(send_sizes, value_size);
-        rescale(send_offsets, value_size);
-
-        // The communication is reversed, so swap recv to send offsets
-        std::swap(recv_sizes, send_sizes);
-        std::swap(recv_offsets, send_offsets);
-      }
-
-      std::vector<T> recv_values(recv_offsets.back());
-      MPI_Neighbor_alltoallv(
-          send_values.data(), send_sizes.data(), send_offsets.data(),
-          dolfinx::MPI::mpi_type<T>(), recv_values.data(), recv_sizes.data(),
-          recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), reverse_comm);
-      t8.stop();
-
-      // Unpack received values
-      dolfinx::common::Timer t12("~alloc");
-      xt::xtensor<T, 2> values({x.shape(0), value_size});
-      std::fill(values.begin(), values.end(), T(0));
-      t12.stop();
-
-      dolfinx::common::Timer t9("~unpack");
-      constexpr T zero{0.};
-      for (std::size_t i = 0; i < unpack_map.size(); i++)
-      {
-        auto vals = std::next(values.begin(), unpack_map[i] * value_size);
-        bool vals_is_zero = std::all_of(vals, std::next(vals, value_size),
-                                        [zero](T v) { return v == zero; });
-        if (vals_is_zero)
-        {
-          auto vals_from = std::next(recv_values.begin(), i * value_size);
-          std::copy_n(vals_from, value_size, vals);
-        }
-      }
-      t9.stop();
-
-      dolfinx::common::Timer t11("~transpose");
-      xt::xarray<T> values_t = xt::transpose(values);
-      t11.stop();
-
-      dolfinx::common::Timer t10("~interpolate_values");
-      // Finally, interpolate using the computed values
-      fem::interpolate(u, values_t, cells);
-      t10.stop();
-
-      MPI_Comm_free(&forward_comm);
-      MPI_Comm_free(&reverse_comm);
-    }
+      interpolate_nonmatching_meshes(u, v, cells);
     else
     {
-
       // Get elements and check value shape
       auto element0 = v.function_space()->element();
       assert(element0);
