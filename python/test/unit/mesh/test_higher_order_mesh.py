@@ -101,6 +101,10 @@ def test_submesh(order):
     md = {"quadrature_degree": 10}
     measures = (ufl.ds(mesh, metadata=md), ufl.dx(mesh, metadata=md))
     dimensions = (mesh.topology.dim - 1, mesh.topology.dim)
+    # Check that creating a submesh of single cell mesh, consisting of:
+    # 1. The cell
+    # 2. The facets of the cell
+    # Gives the correct computation of: volume (case 1) or surface area (case 2)
     for dim, dC in zip(dimensions, measures):
         # Integrate on original mesh
         value = assemble_scalar(form(1 * dC))

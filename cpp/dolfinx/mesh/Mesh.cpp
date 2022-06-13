@@ -208,7 +208,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                      const xtl::span<const std::int32_t>& entities)
 {
   // -- Submesh topology
-  const mesh::Topology& topology = mesh.topology();
+  const Topology& topology = mesh.topology();
 
   // Get the verticies in the submesh
   std::vector<std::int32_t> submesh_vertices
@@ -329,11 +329,11 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
 
   // -- Submesh geometry
-  const dolfinx::mesh::Geometry& geometry = mesh.geometry();
+  const Geometry& geometry = mesh.geometry();
 
   // Get the geometry dofs in the submesh based on the entities in
   // submesh
-  const dolfinx::fem::ElementDofLayout layout
+  const fem::ElementDofLayout layout
       = geometry.cmap().create_dof_layout();
   // NOTE: Unclear what this return for prisms
   const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
@@ -362,14 +362,14 @@ mesh::create_submesh(const Mesh& mesh, int dim,
       assert(!e_to_c->links(idx).empty());
       // Always pick the last cell to be consistent with the e_to_v connectivity
       const std::int32_t cell = e_to_c->links(idx).back();
-      const tcb::span<const int> cell_entities = c_to_e->links(cell);
+      auto cell_entities = c_to_e->links(cell);
       auto it = std::find(cell_entities.begin(), cell_entities.end(), idx);
       assert(it != cell_entities.end());
       const auto local_entity = std::distance(cell_entities.begin(), it);
       const std::vector<std::int32_t>& entity_dofs
           = closure_dofs[dim][local_entity];
 
-      const tcb::span<const int> xc = xdofs.links(cell);
+      auto xc = xdofs.links(cell);
       for (std::size_t j = 0; j < num_entity_dofs; ++j)
         geometry_indices[i * num_entity_dofs + j] = xc[entity_dofs[j]];
     }
