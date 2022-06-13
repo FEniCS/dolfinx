@@ -877,7 +877,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
   {
     // Get mesh and check that functions share the same mesh
     if (auto mesh_v = v.function_space()->mesh(); mesh != mesh_v)
-      interpolate_nonmatching_meshes(u, v, cells);
+      impl::interpolate_nonmatching_meshes(u, v, cells);
     else
     {
       // Get elements and check value shape
