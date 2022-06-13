@@ -42,6 +42,7 @@ def check_cell_volume(points, cell, domain, volume):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 5))
 def test_submesh(order):
+    # Generate a single cell higher order mesh
     points = []
     points += [[i / order, j / order, 0] for j in range(order + 1)
                for i in range(order + 1 - j)]
