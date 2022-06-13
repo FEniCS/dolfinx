@@ -42,14 +42,14 @@
 #
 
 
-ARG ADIOS2_VERSION=2.8.0
+ARG ADIOS2_VERSION=2.8.1
 ARG GMSH_VERSION=4_10_1
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=2
 ARG KAHIP_VERSION=3.14
 ARG NUMPY_VERSION=1.21.6
 ARG PYBIND11_VERSION=2.9.2
-ARG PETSC_VERSION=3.17.1
+ARG PETSC_VERSION=3.17.2
 ARG SLEPC_VERSION=3.17.1
 # ARG PYVISTA_VERSION=0.34.1 # Deactivated until https://gitlab.kitware.com/vtk/vtk/-/issues/18335 is resolved
 ARG XTENSOR_VERSION=0.24.2
@@ -57,7 +57,7 @@ ARG XTL_VERSION=0.7.4
 
 ARG MPICH_VERSION=4.0.2
 ARG OPENMPI_SERIES=4.1
-ARG OPENMPI_PATCH=3
+ARG OPENMPI_PATCH=4
 # Used to set the correct PYTHONPATH for the real and complex install of DOLFINx
 ARG PYTHON_VERSION=3.10
 
@@ -418,7 +418,8 @@ ONBUILD RUN cd dolfinx && \
     PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} ../cpp && \
     ninja install && \
     cd ../python && \
-    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies . && \
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-real-32 pip3 install -v --target /usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir . && \
+    git clean -fdx && \
     cd ../ && \
     mkdir -p build-complex && \
     cd build-complex && \
@@ -426,7 +427,7 @@ ONBUILD RUN cd dolfinx && \
     ninja install && \
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
-    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies .
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install -v --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir .
 
 # Real by default.
 ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \

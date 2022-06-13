@@ -6,11 +6,11 @@
 
 #include "xdmf_mesh.h"
 #include "cells.h"
-#include "pugixml.hpp"
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <pugixml.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;

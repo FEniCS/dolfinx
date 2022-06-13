@@ -360,6 +360,17 @@ FiniteElement::extract_sub_element(const std::vector<int>& component) const
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
+const basix::FiniteElement& FiniteElement::basix_element() const
+{
+  if (!_element)
+  {
+    throw std::runtime_error("No Basix element available. "
+                             "Maybe this is a mixed element?");
+  }
+
+  return *_element;
+}
+//-----------------------------------------------------------------------------
 basix::maps::type FiniteElement::map_type() const
 {
   if (!_element)

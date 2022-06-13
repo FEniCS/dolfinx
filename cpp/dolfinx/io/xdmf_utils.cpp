@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "xdmf_utils.h"
-#include "pugixml.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
@@ -22,6 +21,7 @@
 #include <dolfinx/mesh/utils.h>
 #include <filesystem>
 #include <map>
+#include <pugixml.hpp>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
 

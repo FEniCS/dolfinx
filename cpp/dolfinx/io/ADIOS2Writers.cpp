@@ -8,7 +8,6 @@
 
 #include "ADIOS2Writers.h"
 #include "cells.h"
-#include "pugixml.hpp"
 #include "vtk_utils.h"
 #include <adios2.h>
 #include <algorithm>
@@ -20,6 +19,7 @@
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
+#include <pugixml.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
@@ -586,6 +586,8 @@ void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
 
   std::string cell_type = to_fides_cell(topology.cell_type());
   define_attribute<std::string>(io, "Fides_Cell_Type", cell_type);
+
+  define_attribute<std::string>(io, "Fides_Time_Variable", "step");
 }
 //-----------------------------------------------------------------------------
 
