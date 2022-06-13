@@ -101,10 +101,10 @@ endif()
 # Optional packages
 
 # ADIOS2
-# if (ADIOS2_FOUND)
-#   target_compile_definitions(dolfinx PUBLIC HAS_ADIOS2)
-#   target_link_libraries(dolfinx PRIVATE adios2::cxx11_mpi)
-# endif()
+if (ADIOS2_FOUND)
+  target_compile_definitions(dolfinx PUBLIC HAS_ADIOS2)
+  target_link_libraries(dolfinx PRIVATE adios2::cxx11_mpi)
+endif()
 
 # SLEPC
 if (DOLFINX_ENABLE_SLEPC AND SLEPC_FOUND)
