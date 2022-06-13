@@ -507,7 +507,7 @@ void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
     }
   }
 
-  MPI_Wait(sizes_request, MPI_STATUS_IGNORE);
+  MPI_Wait(&sizes_request, MPI_STATUS_IGNORE);
   std::vector<std::int32_t> recv_offsets(in_ranks.size() + 1, 0);
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                    std::next(recv_offsets.begin(), 1));
