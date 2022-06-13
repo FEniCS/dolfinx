@@ -411,7 +411,6 @@ void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
   MPI_Comm comm = mesh->comm();
   const int tdim = mesh->topology().dim();
   const auto cell_map = mesh->topology().index_map(tdim);
-  const std::size_t num_cells = cells.size();
 
   std::shared_ptr<const FiniteElement> element_u
       = u.function_space()->element();
