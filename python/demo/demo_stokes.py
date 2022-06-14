@@ -10,7 +10,7 @@
 
 # # Stokes equations with Taylor-Hood elements
 #
-# This demo show how to solve the Stokes problem using Taylor-Hood
+# This demo shows how to solve the Stokes problem using Taylor-Hood
 # elements with a range of different linear solvers.
 #
 # ## Equation and problem definition
@@ -23,11 +23,11 @@
 # \nabla \cdot u &= 0 \quad {\rm in} \ \Omega.
 # $$
 #
-# :::{note}
+# ```{note}
 # The sign of the pressure has been flipped from the classical
 # definition. This is done in order to have a symmetric system
 # of equations rather than a non-symmetric system of equations.
-# :::
+# ```
 #
 # A typical set of boundary conditions on the boundary $\partial
 # \Omega = \Gamma_{D} \cup \Gamma_{N}$ can be:
@@ -40,7 +40,7 @@
 #
 # ### Weak formulation
 #
-# We formulate the Stokes equations mixed variational form; that is, a
+# We formulate the Stokes equations' mixed variational form; that is, a
 # form where the two variables, the velocity and the pressure, are
 # approximated. We have the problem: find $(u, p) \in W$ such that
 #
@@ -58,12 +58,12 @@
 #            \Omega_N} g \cdot v \, {\rm d} s.
 # $$
 #
-# The space $W$ is mixed (product) function space $W = V
+# The space $W$ is a mixed (product) function space $W = V
 # \times Q$, such that $u \in V$ and $q \in Q$.
 #
 # ### Domain and boundary conditions
 #
-# We shall the lid-driven cavity problem with the following definitions
+# We define the lid-driven cavity problem with the following
 # domain and boundary conditions:
 #
 # - $\Omega = [0,1]\times[0,1]$ (a unit square)
@@ -74,7 +74,7 @@
 #
 # ## Implementation
 #
-# We first import the modules and function that the program uses:
+# We first import the modules and functions that the program uses:
 
 # +
 import numpy as np
@@ -94,7 +94,10 @@ from mpi4py import MPI
 from petsc4py import PETSc
 # -
 
-# We create a Mesh and attach a coordinate map to the mesh:
+# We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions to
+# geometrically locate subsets of its boundary and define a function
+# describing the velocity to be imposed as a boundary condition in a lid
+# driven cavity problem:
 
 # +
 # Create mesh
@@ -122,16 +125,16 @@ def lid_velocity_expression(x):
 # -
 
 # We define two {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
-# instances with different finite elements. `P2` corresponds to
-# piecewise quadratics for the velocity field and `P1` to continuous
-# piecewise linears for the pressure field:
+# instances with different finite elements. `P2` corresponds to a continuous
+# piecewise quadratic basis for the velocity field and `P1` to a continuous
+# piecewise linear basis for the pressure field:
 
 
 P2 = ufl.VectorElement("Lagrange", msh.ufl_cell(), 2)
 P1 = ufl.FiniteElement("Lagrange", msh.ufl_cell(), 1)
 V, Q = FunctionSpace(msh, P2), FunctionSpace(msh, P1)
 
-# We can define boundary conditions:
+# We define boundary conditions:
 
 # +
 # No-slip boundary condition for velocity field (`V`) on boundaries
@@ -207,7 +210,7 @@ bcs0 = fem.bcs_by_block(extract_function_spaces(L), bcs)
 fem.petsc.set_bc_nest(b, bcs0)
 # -
 
-# Ths pressure field for this problem is determined only up to a
+# The pressure field for this problem is determined only up to a
 # constant. We can supply the vector that spans the nullspace and any
 # component of the solution in this direction will be eliminated during
 # the iterative linear solution process.
@@ -259,7 +262,7 @@ ksp.setFromOptions()
 # -
 
 # To compute the solution, we create finite element {py:class}`Function
-# <fem.Function>` for the velocity (on the space `V`) and
+# <dolfinx.fem.Function>` for the velocity (on the space `V`) and
 # for the pressure (on the space `Q`). The vectors for `u` and `p` are
 # combined to form a nested vector and the system is solved:
 
@@ -276,7 +279,7 @@ if MPI.COMM_WORLD.rank == 0:
     print("(A) Norm of pressure coefficient vector (nested, iterative): {}".format(norm_p_0))
 
 # The solution fields can be saved to file in XDMF format for
-# visualization, e.g. with ParView. Before writing to file, ghost values
+# visualization, e.g. with ParaView. Before writing to file, ghost values
 # are updated.
 
 # +
@@ -303,7 +306,7 @@ P = fem.petsc.assemble_matrix_block(a_p, bcs=bcs)
 P.assemble()
 b = fem.petsc.assemble_vector_block(L, a, bcs=bcs)
 
-# Set near null space for pressure
+# Set near nullspace for pressure
 null_vec = A.createVecLeft()
 offset = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
 null_vec.array[offset:] = 1.0
@@ -345,7 +348,7 @@ opts["ksp_view"] = None
 ksp.setFromOptions()
 # -
 
-# We also need to create a block vector,\`\`x\`\`, to store the (full)
+# We also need to create a block vector, `x`, to store the (full)
 # solution, which we initialize using the block RHS form `L`.
 
 # +
@@ -366,7 +369,7 @@ norm_u_1 = u.x.norm()
 norm_p_1 = p.x.norm()
 if MPI.COMM_WORLD.rank == 0:
     print("(B) Norm of velocity coefficient vector (blocked, iterative): {}".format(norm_u_1))
-    print("(B) Norm of pressure coefficient vector (blocked, interative): {}".format(norm_p_1))
+    print("(B) Norm of pressure coefficient vector (blocked, iterative): {}".format(norm_p_1))
 assert np.isclose(norm_u_1, norm_u_0)
 assert np.isclose(norm_p_1, norm_p_0)
 
@@ -381,7 +384,7 @@ ksp.setType("preonly")
 ksp.getPC().setType("lu")
 ksp.getPC().setFactorSolverType("superlu_dist")
 
-# We also need to create a block vector,\`\`x\`\`, to store the (full)
+# We also need to create a block vector, `x`, to store the (full)
 # solution, which we initialize using the block RHS form `L`.
 
 # +

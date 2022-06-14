@@ -155,7 +155,7 @@ log.set_output_file("log.txt")
 
 lmbda = 1.0e-02  # surface parameter
 dt = 5.0e-06  # time step
-theta = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson
+theta = 0.5  # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicholson
 
 # A unit square mesh with 96 cells edges in each direction is created,
 # and on this mesh a

@@ -119,7 +119,7 @@ FunctionSpace::collapse() const
 //-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2>
+std::vector<double>
 FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 {
   if (!_component.empty())
@@ -144,9 +144,9 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   // Get dofmap local size
   assert(_dofmap);
   std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map;
+  assert(index_map);
   const int index_map_bs = _dofmap->index_map_bs();
   const int dofmap_bs = _dofmap->bs();
-  assert(index_map);
 
   const int element_block_size = _element->block_size();
   const std::size_t scalar_dofs
@@ -169,14 +169,13 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = _mesh->geometry().dofmap();
-  // FIXME: Add proper interface for num coordinate dofs
+  const std::size_t num_dofs_g = _mesh->geometry().cmap().dim();
   xtl::span<const double> x_g = _mesh->geometry().x();
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
 
   // Array to hold coordinates to return
   const std::size_t shape_c0 = transpose ? 3 : num_dofs;
   const std::size_t shape_c1 = transpose ? num_dofs : 3;
-  xt::xtensor<double, 2> coords = xt::zeros<double>({shape_c0, shape_c1});
+  std::vector<double> coords(shape_c0 * shape_c1, 0);
 
   // Loop over cells and tabulate dofs
   xt::xtensor<double, 2> x = xt::zeros<double>({scalar_dofs, gdim});
@@ -226,13 +225,13 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (std::size_t j = 0; j < gdim; ++j)
-          coords(dofs[i], j) = x(i, j);
+          coords[dofs[i] * 3 + j] = x(i, j);
     }
     else
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (std::size_t j = 0; j < gdim; ++j)
-          coords(j, dofs[i]) = x(i, j);
+          coords[j * num_dofs + dofs[i]] = x(i, j);
     }
   }
 

@@ -67,7 +67,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
   const graph::AdjacencyList<std::int32_t>& dofmap_x
       = mesh->geometry().dofmap();
   xtl::span<const double> x_g = mesh->geometry().x();
-  const std::size_t num_dofs_g = dofmap_x.num_links(0);
+  const std::size_t num_dofs_g = cmap.dim();
 
   xtl::span<const std::uint32_t> cell_info;
   if (element->needs_dof_transformations())
@@ -151,7 +151,9 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
   // Create permutation from DOLFINx dof ordering to VTK
   auto dofmap = V.dofmap();
   assert(dofmap);
-  const std::uint32_t num_nodes = dofmap->cell_dofs(0).size();
+  const int element_block_size = V.element()->block_size();
+  const std::uint32_t num_nodes
+      = V.element()->space_dimension() / element_block_size;
   const std::vector<std::uint8_t> vtkmap = io::cells::transpose(
       io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
 
@@ -175,18 +177,11 @@ io::extract_vtk_connectivity(const mesh::Mesh& mesh)
   // Get DOLFINx to VTK permutation
   // FIXME: Use better way to get number of nodes
   const graph::AdjacencyList<std::int32_t>& dofmap_x = mesh.geometry().dofmap();
-  const std::size_t num_nodes = dofmap_x.num_links(0);
+  const std::size_t num_nodes = mesh.geometry().cmap().dim();
   mesh::CellType cell_type = mesh.topology().cell_type();
   std::vector vtkmap
       = io::cells::transpose(io::cells::perm_vtk(cell_type, num_nodes));
 
-  // TODO: Remove when when paraview issue 19433 is resolved
-  // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
-  if (cell_type == mesh::CellType::hexahedron and num_nodes == 27)
-  {
-    vtkmap = {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
-              22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
-  }
   // Extract mesh 'nodes'
   const int tdim = mesh.topology().dim();
   const std::size_t num_cells = mesh.topology().index_map(tdim)->size_local()

@@ -7,15 +7,18 @@
 """IO module for input data and post-processing file output"""
 
 import typing
+
+import numpy as np
+import numpy.typing as npt
+
 import ufl
 from dolfinx import cpp as _cpp
-
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh
+
 from mpi4py import MPI as _MPI
 
-
-__all__ = ["VTKFile", "XDMFFile"]
+__all__ = ["VTKFile", "XDMFFile", "distribute_entity_data"]
 
 
 def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Function]):
@@ -166,3 +169,8 @@ class XDMFFile(_cpp.io.XDMFFile):
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
         return super().read_meshtags(mesh, name, xpath)
+
+
+def distribute_entity_data(mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64],
+                           values: npt.NDArray[np.int32]) -> typing.Tuple[npt.NDArray[np.int64], npt.NDArray[np.int32]]:
+    return _cpp.io.distribute_entity_data(mesh, entity_dim, entities, values)
