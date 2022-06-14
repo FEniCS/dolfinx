@@ -4,9 +4,13 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tools to extract data from GMSH models"""
+import typing
+
 import numpy as np
+
 import ufl
-from dolfinx.cpp.io import perm_gmsh as cell_perm
+from dolfinx import cpp as _cpp
+from dolfinx.mesh import CellType
 
 __all__ = ["extract_topology_and_markers", "extract_geometry", "ufl_mesh", "cell_perm"]
 
@@ -110,3 +114,7 @@ def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
     cell = ufl.Cell(shape, geometric_dimension=gdim)
     scalar_element = ufl.FiniteElement("Lagrange", cell, degree, variant="equispaced")
     return ufl.Mesh(ufl.VectorElement(scalar_element))
+
+
+def cell_perm(cell_type: CellType, dim: int) -> typing.List[int]:
+    return _cpp.io.perm_gmsh(cell_type, dim)
