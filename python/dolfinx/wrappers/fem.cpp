@@ -800,7 +800,7 @@ void declare_form(py::module& m, const std::string& type)
                   const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
                {
                  ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
-                 return dolfinx::fem::create_form<T, const dolfinx::mesh::MeshTags<int>>(
+                 return dolfinx::fem::create_form<T>(
                      *p, spaces, coefficients, constants, subdomains, mesh);
                }),
            "Create a Form from a pointer to a ufcx_form")
@@ -813,13 +813,20 @@ void declare_form(py::module& m, const std::string& type)
                   const std::vector<std::shared_ptr<
                       const dolfinx::fem::Constant<T>>>& constants,
                   const std::map<dolfinx::fem::IntegralType,
-                                 const std::vector<std::int32_t>*>&
-                      subdomains,
+                                 const std::vector<std::int32_t>>& subdomains,
                   const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
                {
+                 // HACK FIXME Do this properly
+                 std::map<dolfinx::fem::IntegralType,
+                          const std::vector<std::int32_t>*>
+                     _subdomains;
+                 for (auto const& kvp : subdomains)
+                 {
+                   _subdomains[kvp.first] = &kvp.second;
+                 }
                  ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
-                 return dolfinx::fem::create_form<T, const std::vector<std::int32_t>>(
-                     *p, spaces, coefficients, constants, subdomains, mesh);
+                 return dolfinx::fem::create_form<T>(
+                     *p, spaces, coefficients, constants, _subdomains, mesh);
                }),
            "Create a Form from a pointer to a ufcx_form")
       .def_property_readonly("dtype", [](const dolfinx::fem::Form<T>& self)
