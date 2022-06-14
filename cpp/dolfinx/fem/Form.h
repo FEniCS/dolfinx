@@ -289,9 +289,9 @@ public:
   /// Get the list of (cell_index, local_facet_index) pairs for the ith
   /// integral (kernel) for the exterior facet domain type
   /// @param[in] i Integral ID, i.e. (sub)domain index
-  /// @return List of (cell_index, local_facet_index) pairs
-  const std::vector<std::pair<std::int32_t, int>>&
-  exterior_facet_domains(int i) const
+  /// @return List of (cell_index, local_facet_index) pairs. This data is
+  /// flattened with row-major layout, shape=(num_facets, 2)
+  const std::vector<std::int32_t>& exterior_facet_domains(int i) const
   {
     auto it = _exterior_facet_integrals.find(i);
     if (it == _exterior_facet_integrals.end())
@@ -300,13 +300,13 @@ public:
   }
 
   /// Get the list of (cell_index_0, local_facet_index_0, cell_index_1,
-  /// local_facet_index_1) tuples for the ith integral (kernel) for the
-  /// interior facet domain type,
+  /// local_facet_index_1) quadruplets for the ith integral (kernel) for the
+  /// interior facet domain type.
   /// @param[in] i Integral ID, i.e. (sub)domain index
   /// @return List of tuples of the form
-  /// (cell_index_0, local_facet_index_0, cell_index_1, local_facet_index_1)
-  const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
-  interior_facet_domains(int i) const
+  /// (cell_index_0, local_facet_index_0, cell_index_1, local_facet_index_1).
+  /// This data is flattened with row-major layout, shape=(num_facets, 4)
+  const std::vector<std::int32_t>& interior_facet_domains(int i) const
   {
     auto it = _interior_facet_integrals.find(i);
     if (it == _interior_facet_integrals.end())
@@ -449,14 +449,14 @@ private:
   // @param[in] c_to_f Cell to facet connectivity
   // @return Vector of (cell, local_facet) pairs
   template <int num_cells>
-  static std::array<std::pair<std::int32_t, int>, num_cells>
+  static std::array<std::array<std::int32_t, 2>, num_cells>
   get_cell_local_facet_pairs(
       std::int32_t f, const xtl::span<const std::int32_t>& cells,
       const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f)
   {
     // Loop over cells sharing facet
     assert(cells.size() == num_cells);
-    std::array<std::pair<std::int32_t, int>, num_cells> cell_local_facet_pairs;
+    std::array<std::array<std::int32_t, 2>, num_cells> cell_local_facet_pairs;
     for (int c = 0; c < num_cells; ++c)
     {
       // Get local index of facet with respect to the cell
@@ -491,8 +491,7 @@ private:
   template <typename iterator>
   void set_exterior_facet_domains(
       const mesh::Topology& topology,
-      std::map<int, std::pair<kern, std::vector<std::pair<std::int32_t, int>>>>&
-          integrals,
+      std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
       const iterator& tagged_facets_begin, const iterator& tagged_facets_end,
       const std::vector<int>& tags)
   {
@@ -529,9 +528,11 @@ private:
           if (auto it = integrals.find(tags[pos]); it != integrals.end())
           {
             // There will only be one pair for an exterior facet integral
-            std::pair<std::int32_t, int> pair = get_cell_local_facet_pairs<1>(
-                *f, f_to_c->links(*f), *c_to_f)[0];
-            it->second.second.push_back(pair);
+            const std::array<std::int32_t, 2> pair
+                = get_cell_local_facet_pairs<1>(*f, f_to_c->links(*f),
+                                                *c_to_f)[0];
+            it->second.second.insert(it->second.second.end(), pair.cbegin(),
+                                     pair.cend());
           }
         }
       }
@@ -542,10 +543,7 @@ private:
   template <typename iterator>
   static void set_interior_facet_domains(
       const mesh::Topology& topology,
-      std::map<int,
-               std::pair<kern, std::vector<std::tuple<std::int32_t, int,
-                                                      std::int32_t, int>>>>&
-          integrals,
+      std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
       const iterator& tagged_facets_begin, const iterator& tagged_facets_end,
       const std::vector<int>& tags)
   {
@@ -561,10 +559,12 @@ private:
         const std::size_t pos = std::distance(tagged_facets_begin, f);
         if (auto it = integrals.find(tags[pos]); it != integrals.end())
         {
-          std::array<std::pair<std::int32_t, int>, 2> pairs
+          const std::array<std::array<std::int32_t, 2>, 2> pairs
               = get_cell_local_facet_pairs<2>(*f, f_to_c->links(*f), *c_to_f);
-          it->second.second.emplace_back(pairs[0].first, pairs[0].second,
-                                         pairs[1].first, pairs[1].second);
+          it->second.second.insert(it->second.second.end(), pairs[0].cbegin(),
+                                   pairs[0].cend());
+          it->second.second.insert(it->second.second.end(), pairs[1].cbegin(),
+                                   pairs[1].cend());
         }
       }
     }
@@ -660,8 +660,7 @@ private:
     {
       if (domain_id == -1)
       {
-        std::vector<std::pair<std::int32_t, int>>& facets
-            = kernel_facets.second;
+        std::vector<std::int32_t>& facets = kernel_facets.second;
         facets.clear();
 
         auto f_to_c = topology.connectivity(tdim - 1, tdim);
@@ -671,9 +670,9 @@ private:
         for (std::int32_t f : boundary_facets)
         {
           // There will only be one pair for an exterior facet integral
-          std::pair<std::int32_t, int> pair
+          std::array<std::int32_t, 2> pair
               = get_cell_local_facet_pairs<1>(f, f_to_c->links(f), *c_to_f)[0];
-          facets.push_back(pair);
+          facets.insert(facets.end(), pair.cbegin(), pair.cend());
         }
       }
     }
@@ -684,8 +683,7 @@ private:
     {
       if (domain_id == -1)
       {
-        std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>& facets
-            = kernel_facets.second;
+        std::vector<std::int32_t>& facets = kernel_facets.second;
         facets.clear();
 
         mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
@@ -703,10 +701,10 @@ private:
         {
           if (f_to_c->num_links(f) == 2)
           {
-            std::array<std::pair<std::int32_t, int>, 2> pairs
+            const std::array<std::array<std::int32_t, 2>, 2> pairs
                 = get_cell_local_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
-            facets.emplace_back(pairs[0].first, pairs[0].second, pairs[1].first,
-                                pairs[1].second);
+            facets.insert(facets.end(), pairs[0].cbegin(), pairs[0].cend());
+            facets.insert(facets.end(), pairs[1].cbegin(), pairs[1].cend());
           }
         }
       }
@@ -729,12 +727,11 @@ private:
   std::map<int, std::pair<kern, std::vector<std::int32_t>>> _cell_integrals;
 
   // Exterior facet integrals
-  std::map<int, std::pair<kern, std::vector<std::pair<std::int32_t, int>>>>
+  std::map<int, std::pair<kern, std::vector<std::int32_t>>>
       _exterior_facet_integrals;
 
   // Interior facet integrals
-  std::map<int, std::pair<kern, std::vector<std::tuple<std::int32_t, int,
-                                                       std::int32_t, int>>>>
+  std::map<int, std::pair<kern, std::vector<std::int32_t>>>
       _interior_facet_integrals;
 
   // True if permutation data needs to be passed into these integrals

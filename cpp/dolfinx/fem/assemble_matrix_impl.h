@@ -149,7 +149,7 @@ void assemble_cells(
 template <typename T, typename U>
 void assemble_exterior_facets(
     U mat_set, const mesh::Mesh& mesh,
-    const xtl::span<const std::pair<std::int32_t, int>>& facets,
+    const xtl::span<const std::int32_t>& facets,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
@@ -185,11 +185,11 @@ void assemble_exterior_facets(
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
   const xtl::span<T> _Ae(Ae);
-
-  for (std::size_t index = 0; index < facets.size(); ++index)
+  assert(facets.size() % 2 == 0);
+  for (std::size_t index = 0; index < facets.size(); index += 2)
   {
-    std::int32_t cell = facets[index].first;
-    int local_facet = facets[index].second;
+    std::int32_t cell = facets[index];
+    std::int32_t local_facet = facets[index + 1];
 
     // Map the cell in the integration domain to the cell in the mesh
     // each function space is defined over
@@ -208,7 +208,7 @@ void assemble_exterior_facets(
 
     // Tabulate tensor
     std::fill(Ae.begin(), Ae.end(), 0);
-    kernel(Ae.data(), coeffs.data() + index * cstride, constants.data(),
+    kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
            coordinate_dofs.data(), &local_facet, nullptr);
 
     dof_transform(_Ae, cell_info_1, c_1, ndim1);
@@ -257,8 +257,7 @@ void assemble_exterior_facets(
 template <typename T, typename U>
 void assemble_interior_facets(
     U mat_set, const mesh::Mesh& mesh,
-    const xtl::span<const std::tuple<std::int32_t, int, std::int32_t, int>>&
-        facets,
+    const xtl::span<const std::int32_t>& facets,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
@@ -298,13 +297,12 @@ void assemble_interior_facets(
 
   // Temporaries for joint dofmaps
   std::vector<std::int32_t> dmapjoint0, dmapjoint1;
-
-  for (std::size_t index = 0; index < facets.size(); ++index)
+  assert(facets.size() % 4 == 0);
+  for (std::size_t index = 0; index < facets.size(); index += 4)
   {
-    const std::array<std::int32_t, 2> cells
-        = {std::get<0>(facets[index]), std::get<2>(facets[index])};
-    const std::array<int, 2> local_facet
-        = {std::get<1>(facets[index]), std::get<3>(facets[index])};
+    std::array<std::int32_t, 2> cells = {facets[index], facets[index + 2]};
+    std::array<std::int32_t, 2> local_facet
+        = {facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
@@ -347,7 +345,7 @@ void assemble_interior_facets(
     const std::array perm{
         get_perm(cells[0] * num_cell_facets + local_facet[0]),
         get_perm(cells[1] * num_cell_facets + local_facet[1])};
-    kernel(Ae.data(), coeffs.data() + index * 2 * cstride, constants.data(),
+    kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data());
 
     const xtl::span<T> _Ae(Ae);
@@ -482,8 +480,7 @@ void assemble_matrix(
     const auto& fn = a.kernel(IntegralType::exterior_facet, i);
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
-    const std::vector<std::pair<std::int32_t, int>>& facets
-        = a.exterior_facet_domains(i);
+    const std::vector<std::int32_t>& facets = a.exterior_facet_domains(i);
     impl::assemble_exterior_facets(
         mat_set, *mesh, facets, dof_transform, dofs0, bs0,
         dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn, coeffs, cstride,
@@ -509,9 +506,7 @@ void assemble_matrix(
       const auto& fn = a.kernel(IntegralType::interior_facet, i);
       const auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
-      const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
-          facets
-          = a.interior_facet_domains(i);
+      const std::vector<std::int32_t>& facets = a.interior_facet_domains(i);
       impl::assemble_interior_facets(
           mat_set, *mesh, facets, dof_transform, *dofmap0, bs0,
           dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1, fn, coeffs,

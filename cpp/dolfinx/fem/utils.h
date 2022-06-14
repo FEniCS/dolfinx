@@ -534,15 +534,17 @@ static inline void pack(const xtl::span<T>& coeffs, std::int32_t cell, int bs,
 /// @param[in] cell_info Array of bytes describing which transformation
 /// has to be applied on the cell to map it to the reference element
 /// @param[in] entities The set of active entities
+/// @param[in] estride The stride for each entity in active entities.
 /// @param[in] fetch_cells Function that fetches the cell index for an
 /// entity in active_entities (signature:
 /// `std::function<std::int32_t(E::value_type)>`)
 /// @param[in] offset The offset for c
-template <typename T, typename E, typename Functor>
+template <typename T, typename Functor>
 void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
                              const Function<T>& u,
                              const xtl::span<const std::uint32_t>& cell_info,
-                             const E& entities, Functor fetch_cells,
+                             const xtl::span<const std::int32_t>& entities,
+                             std::size_t estride, Functor fetch_cells,
                              std::int32_t offset)
 {
   // Read data from coefficient "u"
@@ -557,34 +559,38 @@ void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
   switch (bs)
   {
   case 1:
-    for (std::size_t e = 0; e < entities.size(); ++e)
+    for (std::size_t e = 0; e < entities.size(); e += estride)
     {
-      std::int32_t cell = fetch_cells(entities[e]);
-      auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
+      auto entity = entities.subspan(e, estride);
+      std::int32_t cell = fetch_cells(entity);
+      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
       pack<T, 1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
     break;
   case 2:
-    for (std::size_t e = 0; e < entities.size(); ++e)
+    for (std::size_t e = 0; e < entities.size(); e += estride)
     {
-      std::int32_t cell = fetch_cells(entities[e]);
-      auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
+      auto entity = entities.subspan(e, estride);
+      std::int32_t cell = fetch_cells(entity);
+      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
       pack<T, 2>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
     break;
   case 3:
-    for (std::size_t e = 0; e < entities.size(); ++e)
+    for (std::size_t e = 0; e < entities.size(); e += estride)
     {
-      std::int32_t cell = fetch_cells(entities[e]);
-      auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
+      auto entity = entities.subspan(e, estride);
+      std::int32_t cell = fetch_cells(entity);
+      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
       pack<T, 3>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
     break;
   default:
-    for (std::size_t e = 0; e < entities.size(); ++e)
+    for (std::size_t e = 0; e < entities.size(); e += estride)
     {
-      std::int32_t cell = fetch_cells(entities[e]);
-      auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
+      auto entity = entities.subspan(e, estride);
+      std::int32_t cell = fetch_cells(entity);
+      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
       pack<T, -1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
     break;
@@ -620,10 +626,10 @@ allocate_coefficient_storage(const Form<T>& form, IntegralType integral_type,
       num_entities = form.cell_domains(id).size();
       break;
     case IntegralType::exterior_facet:
-      num_entities = form.exterior_facet_domains(id).size();
+      num_entities = form.exterior_facet_domains(id).size() / 2;
       break;
     case IntegralType::interior_facet:
-      num_entities = form.interior_facet_domains(id).size() * 2;
+      num_entities = form.interior_facet_domains(id).size() / 2;
       break;
     default:
       throw std::runtime_error(
@@ -688,15 +694,14 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
         xtl::span<const std::uint32_t> cell_info
             = impl::get_cell_orientation_info(*coefficients[coeff]);
         impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
-                                      cell_info, cells, fetch_cell,
+                                      cell_info, cells, 1, fetch_cell,
                                       offsets[coeff]);
       }
       break;
     }
     case IntegralType::exterior_facet:
     {
-      const std::vector<std::pair<std::int32_t, int>>& facets
-          = form.exterior_facet_domains(id);
+      const std::vector<std::int32_t>& facets = form.exterior_facet_domains(id);
 
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
@@ -707,7 +712,7 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
         xtl::span<const std::uint32_t> cell_info
             = impl::get_cell_orientation_info(*coefficients[coeff]);
         impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
-                                      cell_info, facets, fetch_cell,
+                                      cell_info, facets, 2, fetch_cell,
                                       offsets[coeff]);
       }
 
@@ -715,12 +720,10 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
     }
     case IntegralType::interior_facet:
     {
-      const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
-          facets
-          = form.interior_facet_domains(id);
+      const std::vector<std::int32_t>& facets = form.interior_facet_domains(id);
       // Lambda functions to fetch cell index from interior facet entity
-      auto fetch_cell0 = [](auto& entity) { return std::get<0>(entity); };
-      auto fetch_cell1 = [](auto& entity) { return std::get<2>(entity); };
+      auto fetch_cell0 = [](auto& entity) { return entity[0]; };
+      auto fetch_cell1 = [](auto& entity) { return entity[2]; };
 
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
@@ -729,11 +732,11 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
             = impl::get_cell_orientation_info(*coefficients[coeff]);
         // Pack coefficient ['+']
         impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
-                                      cell_info, facets, fetch_cell0,
+                                      cell_info, facets, 4, fetch_cell0,
                                       2 * offsets[coeff]);
         // Pack coefficient ['-']
         impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
-                                      cell_info, facets, fetch_cell1,
+                                      cell_info, facets, 4, fetch_cell1,
                                       offsets[coeff] + offsets[coeff + 1]);
       }
       break;
@@ -895,9 +898,8 @@ pack_coefficients(const Expression<T>& u,
       xtl::span<const std::uint32_t> cell_info
           = impl::get_cell_orientation_info(*coefficients[coeff]);
       impl::pack_coefficient_entity(
-          xtl::span(c), cstride, *coefficients[coeff], cell_info, cells,
-          [](std::int32_t entity) { return entity; }, offsets[coeff]);
-    }
+          xtl::span(c), cstride, *coefficients[coeff], cell_info, cells, 1,
+          [](auto entity) { return entity[0]; }, offsets[coeff]);
   }
   return {std::move(c), cstride};
 }
