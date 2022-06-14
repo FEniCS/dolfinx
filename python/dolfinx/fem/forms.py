@@ -157,12 +157,12 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         # HACK Horrible hack for testing TODO remove
         is_entities = False
         for key in subdomains:
-            if type(subdomains[key]) == list:
+            if type(subdomains[key]) == dict:
                 is_entities = True
         if is_entities:
             for key in subdomains:
                 if subdomains[key] is None:
-                    subdomains[key] = []
+                    subdomains[key] = {}
 
         return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, code)
 

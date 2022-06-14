@@ -812,13 +812,16 @@ void declare_form(py::module& m, const std::string& type)
                       const dolfinx::fem::Function<T>>>& coefficients,
                   const std::vector<std::shared_ptr<
                       const dolfinx::fem::Constant<T>>>& constants,
-                  const std::map<dolfinx::fem::IntegralType,
-                                 const std::vector<std::int32_t>>& subdomains,
+                  const std::map<
+                      dolfinx::fem::IntegralType,
+                      const std::map<std::int32_t, std::vector<std::int32_t>>>&
+                      subdomains,
                   const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
                {
                  // HACK FIXME Do this properly
-                 std::map<dolfinx::fem::IntegralType,
-                          const std::vector<std::int32_t>*>
+                 std::map<
+                     dolfinx::fem::IntegralType,
+                     const std::map<std::int32_t, std::vector<std::int32_t>>*>
                      _subdomains;
                  for (auto const& kvp : subdomains)
                  {

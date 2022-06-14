@@ -155,7 +155,7 @@ public:
               std::vector<std::pair<
                   int, std::function<void(T*, const T*, const T*, const double*,
                                           const int*, const std::uint8_t*)>>>,
-              const std::vector<std::int32_t>*>>& integrals,
+              const std::map<std::int32_t, std::vector<std::int32_t>>*>>& integrals,
       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
       bool needs_facet_permutations,
@@ -184,8 +184,17 @@ public:
       switch (type)
       {
       case IntegralType::cell:
+        // if (integral_type.second.second)
+        // {
+        //   for (const auto& c : *integral_type.second.second)
+        //   {
+        //     std::cout << c.second.size() << "\n";
+        //   }
+        // }
         for (auto& integral : integral_type.second.first)
+        {
           _cell_integrals.insert({integral.first, {integral.second, {}}});
+        }
         break;
       case IntegralType::exterior_facet:
         for (auto& integral : integral_type.second.first)
