@@ -90,7 +90,7 @@ la::SparsityPattern create_sparsity_pattern(
     const std::array<
         const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
         facet_maps
-    = {[](auto& e) { return e.front(); }, [](auto& e) { return e.front(); }});
+    = {[](auto e) { return e.front(); }, [](auto e) { return e.front(); }});
 
 /// @brief Create a sparsity pattern for a given form.
 /// @note The pattern is not finalised, i.e. the caller is responsible
@@ -901,36 +901,36 @@ pack_coefficients(const Expression<T>& u,
           xtl::span(c), cstride, *coefficients[coeff], cell_info, cells, 1,
           [](auto entity) { return entity[0]; }, offsets[coeff]);
     }
-    return {std::move(c), cstride};
   }
+  return {std::move(c), cstride};
+}
 
-  /// @brief Pack constants of u of generic type U ready for assembly
-  /// @warning This function is subject to change
-  template <typename U>
-  std::vector<typename U::scalar_type> pack_constants(const U& u)
+/// @brief Pack constants of u of generic type U ready for assembly
+/// @warning This function is subject to change
+template <typename U>
+std::vector<typename U::scalar_type> pack_constants(const U& u)
+{
+  using T = typename U::scalar_type;
+  const std::vector<std::shared_ptr<const Constant<T>>>& constants
+      = u.constants();
+
+  // Calculate size of array needed to store packed constants
+  std::int32_t size = std::accumulate(constants.cbegin(), constants.cend(), 0,
+                                      [](std::int32_t sum, auto& constant)
+                                      { return sum + constant->value.size(); });
+
+  // Pack constants
+  std::vector<T> constant_values(size);
+  std::int32_t offset = 0;
+  for (auto& constant : constants)
   {
-    using T = typename U::scalar_type;
-    const std::vector<std::shared_ptr<const Constant<T>>>& constants
-        = u.constants();
-
-    // Calculate size of array needed to store packed constants
-    std::int32_t size = std::accumulate(constants.cbegin(), constants.cend(), 0,
-                                        [](std::int32_t sum, auto& constant) {
-                                          return sum + constant->value.size();
-                                        });
-
-    // Pack constants
-    std::vector<T> constant_values(size);
-    std::int32_t offset = 0;
-    for (auto& constant : constants)
-    {
-      const std::vector<T>& value = constant->value;
-      std::copy(value.cbegin(), value.cend(),
-                std::next(constant_values.begin(), offset));
-      offset += value.size();
-    }
-
-    return constant_values;
+    const std::vector<T>& value = constant->value;
+    std::copy(value.cbegin(), value.cend(),
+              std::next(constant_values.begin(), offset));
+    offset += value.size();
   }
+
+  return constant_values;
+}
 
 } // namespace dolfinx::fem
