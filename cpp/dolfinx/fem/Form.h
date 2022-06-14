@@ -370,12 +370,12 @@ public:
     auto mesh_fs = function_space.mesh();
     if (mesh_fs != mesh())
     {
-      return [&entity_map = entity_maps().at(mesh_fs)](std::int32_t e)
-      { return entity_map[e]; };
+      return [&entity_map = entity_maps().at(mesh_fs)](auto e)
+      { return entity_map[e.front()]; };
     }
     else
     {
-      return [](std::int32_t e) { return e; };
+      return [](auto e) { return e.front(); };
     }
   }
 
@@ -399,16 +399,16 @@ public:
       case 0:
       {
         return [&entity_map
-                = entity_maps().at(mesh_fs)](std::pair<std::int32_t, int> e)
-        { return entity_map[e.first]; };
+                = entity_maps().at(mesh_fs)](auto& e)
+        { return entity_map[e.front()]; };
       }
       case 1:
       {
         // TODO assert(c_to_f);
         return [&entity_map = entity_maps().at(mesh_fs),
                 c_to_f = mesh()->topology().connectivity(tdim, tdim - 1)](
-                   std::pair<std::int32_t, int> e)
-        { return entity_map[c_to_f->links(e.first)[e.second]]; };
+                   auto& e)
+        { return entity_map[c_to_f->links(e[0])[e[1]]]; };
       }
       default:
       {
