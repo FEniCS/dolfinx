@@ -155,7 +155,8 @@ public:
               std::vector<std::pair<
                   int, std::function<void(T*, const T*, const T*, const double*,
                                           const int*, const std::uint8_t*)>>>,
-              const std::map<std::int32_t, std::vector<std::int32_t>>*>>& integrals,
+              const std::map<std::int32_t, std::vector<std::int32_t>>*>>&
+          integrals,
       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
       bool needs_facet_permutations,
@@ -184,15 +185,21 @@ public:
       switch (type)
       {
       case IntegralType::cell:
-        // if (integral_type.second.second)
-        // {
-        //   for (const auto& c : *integral_type.second.second)
-        //   {
-        //     std::cout << c.second.size() << "\n";
-        //   }
-        // }
+        if (integral_type.second.second)
+        {
+          for (const auto& c : *integral_type.second.second)
+          {
+            for (auto v : c.second)
+            {
+              std::cout << v << " ";
+            }
+            std::cout << "\n";
+          }
+        }
         for (auto& integral : integral_type.second.first)
         {
+          const std::vector<std::int32_t> test_vec
+              = integral_type.second.second->at(integral.first);
           _cell_integrals.insert({integral.first, {integral.second, {}}});
         }
         break;
@@ -218,6 +225,8 @@ public:
       //   set_domains(type, *integral_type.second.second);
       // }
     }
+
+    // TODO Should probably still set default domains
   }
 
   /// Copy constructor
