@@ -198,9 +198,19 @@ public:
         }
         for (auto& integral : integral_type.second.first)
         {
-          const std::vector<std::int32_t> test_vec
-              = integral_type.second.second->at(integral.first);
-          _cell_integrals.insert({integral.first, {integral.second, {}}});
+          const auto* id_to_entities = integral_type.second.second;
+          assert(id_to_entities);
+
+          if (id_to_entities->find(integral.first) == id_to_entities->end())
+          {
+            _cell_integrals.insert({integral.first, {integral.second, {}}});
+          }
+          else
+          {
+            _cell_integrals.insert(
+                {integral.first,
+                 {integral.second, id_to_entities->at(integral.first)}});
+          }
         }
         break;
       case IntegralType::exterior_facet:
