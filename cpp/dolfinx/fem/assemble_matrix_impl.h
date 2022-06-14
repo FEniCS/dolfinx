@@ -57,8 +57,8 @@ void assemble_cells(
     const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info_0,
     const xtl::span<const std::uint32_t>& cell_info_1,
-    const std::function<std::int32_t(std::int32_t)>& cell_map_0,
-    const std::function<std::int32_t(std::int32_t)>& cell_map_1)
+    const std::function<std::int32_t(std::vector<std::int32_t>)>& cell_map_0,
+    const std::function<std::int32_t(std::vector<std::int32_t>)>& cell_map_1)
 {
   if (cells.empty())
     return;
@@ -84,9 +84,9 @@ void assemble_cells(
     std::int32_t c = cells[index];
     // Map the cell in the integration domain to the cell in the mesh
     // each function space is defined over
-    std::int32_t c_0 = cell_map_0(c);
+    std::int32_t c_0 = cell_map_0({c});
     assert(c_0 >= 0);
-    std::int32_t c_1 = cell_map_1(c);
+    std::int32_t c_1 = cell_map_1({c});
     assert(c_1 >= 0);
 
     // Get cell coordinates/geometry
@@ -166,8 +166,8 @@ void assemble_exterior_facets(
     const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info_0,
     const xtl::span<const std::uint32_t>& cell_info_1,
-    const std::function<int32_t(std::pair<int32_t, int>)>& facet_map_0,
-    const std::function<int32_t(std::pair<int32_t, int>)>& facet_map_1)
+    const std::function<std::int32_t(std::vector<std::int32_t>)>& facet_map_0,
+    const std::function<std::int32_t(std::vector<std::int32_t>)>& facet_map_1)
 {
   if (facets.empty())
     return;
@@ -193,9 +193,9 @@ void assemble_exterior_facets(
 
     // Map the cell in the integration domain to the cell in the mesh
     // each function space is defined over
-    std::int32_t c_0 = facet_map_0(facets[index]);
+    std::int32_t c_0 = facet_map_0({cell, local_facet});
     assert(c_0 >= 0);
-    std::int32_t c_1 = facet_map_1(facets[index]);
+    std::int32_t c_1 = facet_map_1({cell, local_facet});
     assert(c_1 >= 0);
 
     // Get cell coordinates/geometry

@@ -364,7 +364,8 @@ public:
   /// @param[in] function_space The function space
   /// @return The map
   // TODO Rename
-  std::function<std::int32_t(std::int32_t)>
+  // TODO Use span const xtl::span<const std::int32_t>&
+  std::function<std::int32_t(std::vector<std::int32_t>)>
   cell_to_cell_map(const FunctionSpace& function_space) const
   {
     auto mesh_fs = function_space.mesh();
@@ -386,7 +387,7 @@ public:
   /// @param[in] function_space The function space
   /// @return The map
   // TODO Rename
-  std::function<std::int32_t(std::pair<std::int32_t, int>)>
+  std::function<std::int32_t(std::vector<std::int32_t>)>
   facet_to_cell_map(const FunctionSpace& function_space) const
   {
     auto mesh_fs = function_space.mesh();

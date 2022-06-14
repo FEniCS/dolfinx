@@ -41,10 +41,10 @@ namespace sparsitybuild
 void cells(la::SparsityPattern& pattern, const mesh::Topology& topology,
            const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
                dofmaps,
-           const std::array<const std::function<std::int32_t(std::int32_t)>, 2>&
+           const std::array<const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
                cell_maps
-           = {[](std::int32_t e) { return e; },
-              [](std::int32_t e) { return e; }});
+           = {[](auto e) { return e.front(); },
+              [](auto e) { return e.front(); }});
 
 /// @brief Iterate over interior facets and insert entries into sparsity
 /// pattern.
@@ -79,8 +79,8 @@ void exterior_facets(
     const std::array<
         const std::function<std::int32_t(std::pair<std::int32_t, int>)>, 2>&
         facet_maps
-    = {[](std::pair<std::int32_t, int> e) { return e.first; },
-       [](std::pair<std::int32_t, int> e) { return e.first; }});
+    = {[](auto& e) { return e.front(); },
+       [](auto& e) { return e.front(); }});
 
 } // namespace sparsitybuild
 } // namespace dolfinx::fem

@@ -19,7 +19,7 @@ void sparsitybuild::cells(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
         dofmaps,
-    const std::array<const std::function<std::int32_t(std::int32_t)>, 2>&
+    const std::array<const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
         cell_maps)
 {
   const int D = topology.dim();
@@ -32,8 +32,8 @@ void sparsitybuild::cells(
     // nothing needs to be inserted into the sparsity pattern.
     // TODO See if it is necessary to add check that c_0 and c_1 are >= 0 before
     // inserting into pattern
-    std::int32_t c_0 = cell_maps[0](c);
-    std::int32_t c_1 = cell_maps[1](c);
+    std::int32_t c_0 = cell_maps[0]({c});
+    std::int32_t c_1 = cell_maps[1]({c});
     pattern.insert(dofmaps[0].get().cell_dofs(c_0),
                    dofmaps[1].get().cell_dofs(c_1));
   }
@@ -90,7 +90,7 @@ void sparsitybuild::exterior_facets(
     const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
         dofmaps,
     const std::array<
-        const std::function<std::int32_t(std::pair<std::int32_t, int>)>, 2>&
+        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
         facet_maps)
 {
   const int D = topology.dim();

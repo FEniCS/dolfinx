@@ -83,14 +83,14 @@ la::SparsityPattern create_sparsity_pattern(
     const mesh::Topology& topology,
     const std::array<std::reference_wrapper<const DofMap>, 2>& dofmaps,
     const std::set<IntegralType>& integrals,
-    const std::array<const std::function<std::int32_t(std::int32_t)>, 2>&
-        cell_maps
-    = {[](std::int32_t e) { return e; }, [](std::int32_t e) { return e; }},
     const std::array<
-        const std::function<std::int32_t(std::pair<std::int32_t, int>)>, 2>&
+        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
+        cell_maps
+    = {[](auto e) { return e.front(); }, [](auto e) { return e.front(); }},
+    const std::array<
+        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
         facet_maps
-    = {[](std::pair<std::int32_t, int> e) { return e.first; },
-       [](std::pair<std::int32_t, int> e) { return e.first; }});
+    = {[](auto& e) { return e.front(); }, [](auto& e) { return e.front(); }});
 
 /// @brief Create a sparsity pattern for a given form.
 /// @note The pattern is not finalised, i.e. the caller is responsible
@@ -125,12 +125,12 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
 
   auto cell_map_0 = a.cell_to_cell_map(*a.function_spaces().at(0));
   auto cell_map_1 = a.cell_to_cell_map(*a.function_spaces().at(1));
-  std::array<const std::function<std::int32_t(std::int32_t)>, 2> cell_maps
-      = {cell_map_0, cell_map_1};
+  std::array<const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>
+      cell_maps = {cell_map_0, cell_map_1};
 
   auto facet_map_0 = a.facet_to_cell_map(*a.function_spaces().at(0));
   auto facet_map_1 = a.facet_to_cell_map(*a.function_spaces().at(1));
-  std::array<const std::function<std::int32_t(std::pair<std::int32_t, int>)>, 2>
+  std::array<const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>
       facet_maps = {facet_map_0, facet_map_1};
 
   return create_sparsity_pattern(mesh->topology(), dofmaps, types, cell_maps,
@@ -900,36 +900,37 @@ pack_coefficients(const Expression<T>& u,
       impl::pack_coefficient_entity(
           xtl::span(c), cstride, *coefficients[coeff], cell_info, cells, 1,
           [](auto entity) { return entity[0]; }, offsets[coeff]);
+    }
+    return {std::move(c), cstride};
   }
-  return {std::move(c), cstride};
-}
 
-/// @brief Pack constants of u of generic type U ready for assembly
-/// @warning This function is subject to change
-template <typename U>
-std::vector<typename U::scalar_type> pack_constants(const U& u)
-{
-  using T = typename U::scalar_type;
-  const std::vector<std::shared_ptr<const Constant<T>>>& constants
-      = u.constants();
-
-  // Calculate size of array needed to store packed constants
-  std::int32_t size = std::accumulate(constants.cbegin(), constants.cend(), 0,
-                                      [](std::int32_t sum, auto& constant)
-                                      { return sum + constant->value.size(); });
-
-  // Pack constants
-  std::vector<T> constant_values(size);
-  std::int32_t offset = 0;
-  for (auto& constant : constants)
+  /// @brief Pack constants of u of generic type U ready for assembly
+  /// @warning This function is subject to change
+  template <typename U>
+  std::vector<typename U::scalar_type> pack_constants(const U& u)
   {
-    const std::vector<T>& value = constant->value;
-    std::copy(value.cbegin(), value.cend(),
-              std::next(constant_values.begin(), offset));
-    offset += value.size();
-  }
+    using T = typename U::scalar_type;
+    const std::vector<std::shared_ptr<const Constant<T>>>& constants
+        = u.constants();
 
-  return constant_values;
-}
+    // Calculate size of array needed to store packed constants
+    std::int32_t size = std::accumulate(constants.cbegin(), constants.cend(), 0,
+                                        [](std::int32_t sum, auto& constant) {
+                                          return sum + constant->value.size();
+                                        });
+
+    // Pack constants
+    std::vector<T> constant_values(size);
+    std::int32_t offset = 0;
+    for (auto& constant : constants)
+    {
+      const std::vector<T>& value = constant->value;
+      std::copy(value.cbegin(), value.cend(),
+                std::next(constant_values.begin(), offset));
+      offset += value.size();
+    }
+
+    return constant_values;
+  }
 
 } // namespace dolfinx::fem
