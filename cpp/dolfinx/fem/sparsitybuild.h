@@ -77,10 +77,10 @@ void exterior_facets(
     const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
         dofmaps,
     const std::array<
-        const std::function<std::int32_t(std::pair<std::int32_t, int>)>, 2>&
+        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
         facet_maps
-    = {[](auto& e) { return e.front(); },
-       [](auto& e) { return e.front(); }});
+    = {[](auto e) { return e.front(); },
+       [](auto e) { return e.front(); }});
 
 } // namespace sparsitybuild
 } // namespace dolfinx::fem

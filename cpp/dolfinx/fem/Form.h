@@ -400,7 +400,7 @@ public:
       case 0:
       {
         return [&entity_map
-                = entity_maps().at(mesh_fs)](auto& e)
+                = entity_maps().at(mesh_fs)](auto e)
         { return entity_map[e.front()]; };
       }
       case 1:
@@ -408,7 +408,7 @@ public:
         // TODO assert(c_to_f);
         return [&entity_map = entity_maps().at(mesh_fs),
                 c_to_f = mesh()->topology().connectivity(tdim, tdim - 1)](
-                   auto& e)
+                   auto e)
         { return entity_map[c_to_f->links(e[0])[e[1]]]; };
       }
       default:
@@ -419,7 +419,7 @@ public:
     }
     else
     {
-      return [](std::pair<std::int32_t, int> e) { return e.first; };
+      return [](auto e) { return e.front(); };
     }
   }
 
