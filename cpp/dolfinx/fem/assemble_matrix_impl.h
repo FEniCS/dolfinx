@@ -57,8 +57,10 @@ void assemble_cells(
     const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info_0,
     const xtl::span<const std::uint32_t>& cell_info_1,
-    const std::function<std::int32_t(std::vector<std::int32_t>)>& cell_map_0,
-    const std::function<std::int32_t(std::vector<std::int32_t>)>& cell_map_1)
+    const std::function<std::int32_t(const xtl::span<const std::int32_t>&)>&
+        cell_map_0,
+    const std::function<std::int32_t(const xtl::span<const std::int32_t>&)>&
+        cell_map_1)
 {
   if (cells.empty())
     return;
@@ -84,9 +86,9 @@ void assemble_cells(
     std::int32_t c = cells[index];
     // Map the cell in the integration domain to the cell in the mesh
     // each function space is defined over
-    std::int32_t c_0 = cell_map_0({c});
+    std::int32_t c_0 = cell_map_0(cells.subspan(index, 1));
     assert(c_0 >= 0);
-    std::int32_t c_1 = cell_map_1({c});
+    std::int32_t c_1 = cell_map_1(cells.subspan(index, 1));
     assert(c_1 >= 0);
 
     // Get cell coordinates/geometry
@@ -166,8 +168,10 @@ void assemble_exterior_facets(
     const xtl::span<const T>& constants,
     const xtl::span<const std::uint32_t>& cell_info_0,
     const xtl::span<const std::uint32_t>& cell_info_1,
-    const std::function<std::int32_t(std::vector<std::int32_t>)>& facet_map_0,
-    const std::function<std::int32_t(std::vector<std::int32_t>)>& facet_map_1)
+    const std::function<std::int32_t(const xtl::span<const std::int32_t>&)>&
+        facet_map_0,
+    const std::function<std::int32_t(const xtl::span<const std::int32_t>&)>&
+        facet_map_1)
 {
   if (facets.empty())
     return;
@@ -193,9 +197,9 @@ void assemble_exterior_facets(
 
     // Map the cell in the integration domain to the cell in the mesh
     // each function space is defined over
-    std::int32_t c_0 = facet_map_0({cell, local_facet});
+    std::int32_t c_0 = facet_map_0(facets.subspan(index, 2));
     assert(c_0 >= 0);
-    std::int32_t c_1 = facet_map_1({cell, local_facet});
+    std::int32_t c_1 = facet_map_1(facets.subspan(index, 2));
     assert(c_1 >= 0);
 
     // Get cell coordinates/geometry
@@ -473,10 +477,8 @@ void assemble_matrix(
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
-    const auto facet_map_0
-        = a.facet_to_cell_map(*a.function_spaces().at(0));
-    const auto facet_map_1
-        = a.facet_to_cell_map(*a.function_spaces().at(1));
+    const auto facet_map_0 = a.facet_to_cell_map(*a.function_spaces().at(0));
+    const auto facet_map_1 = a.facet_to_cell_map(*a.function_spaces().at(1));
     const auto& fn = a.kernel(IntegralType::exterior_facet, i);
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
