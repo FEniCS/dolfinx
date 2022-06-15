@@ -835,8 +835,8 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
 
   for (int i : a.integral_ids(IntegralType::cell))
   {
-    const auto& cell_map_0 = a.cell_to_cell_map(*a.function_spaces().at(0));
-    const auto& cell_map_1 = a.cell_to_cell_map(*a.function_spaces().at(1));
+    const auto cell_map_0 = a.cell_to_cell_map(*a.function_spaces().at(0));
+    const auto cell_map_1 = a.cell_to_cell_map(*a.function_spaces().at(1));
     const auto& kernel = a.kernel(IntegralType::cell, i);
     const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
@@ -867,9 +867,9 @@ void lift_bc(xtl::span<T> b, const Form<T>& a,
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
-    const auto& facet_map_0
+    const auto facet_map_0
         = a.facet_to_cell_map(*a.function_spaces().at(0));
-    const auto& facet_map_1
+    const auto facet_map_1
         = a.facet_to_cell_map(*a.function_spaces().at(1));
     const auto& kernel = a.kernel(IntegralType::exterior_facet, i);
     const auto& [coeffs, cstride]
