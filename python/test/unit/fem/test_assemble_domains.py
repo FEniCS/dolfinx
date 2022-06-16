@@ -228,6 +228,7 @@ def test_manual_integration_domains():
     n = 8
     msh = create_unit_square(MPI.COMM_WORLD, n, n)
     V = FunctionSpace(msh, ("Lagrange", 1))
+    u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
 
     tdim = msh.topology.dim
@@ -242,15 +243,27 @@ def test_manual_integration_domains():
 
     dx_mt = ufl.Measure("dx", subdomain_data=mt, domain=msh)
 
-    L = form(v * dx_mt(1))
+    L = form(ufl.inner(1.0, v) * dx_mt(1))
     b = assemble_vector(L)
     b_expected_norm = b.norm()
 
     marker = {1: marked_cells}
     dx_manual = ufl.Measure("dx", subdomain_data=marker, domain=msh)
 
-    L = form(v * dx_manual(1))
+    L = form(ufl.inner(1.0, v) * dx_manual(1))
     b = assemble_vector(L)
     b_norm = b.norm()
 
     assert(np.isclose(b_norm, b_expected_norm))
+
+    a = form(ufl.inner(u, v) * dx_mt(1))
+    A = assemble_matrix(a)
+    A.assemble()
+    A_expected_norm = A.norm()
+
+    a = form(ufl.inner(u, v) * dx_manual(1))
+    A = assemble_matrix(a)
+    A.assemble()
+    A_norm = A.norm()
+
+    assert(np.isclose(A_norm, A_expected_norm))
