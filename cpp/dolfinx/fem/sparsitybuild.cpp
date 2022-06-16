@@ -30,7 +30,7 @@ void sparsitybuild::cells(
   }
 }
 //-----------------------------------------------------------------------------
-void cells(la::SparsityPattern& pattern,
+void sparsitybuild::cells(la::SparsityPattern& pattern,
            const xtl::span<const std::int32_t>& cells,
            const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
                dofmaps)
