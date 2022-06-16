@@ -28,9 +28,6 @@
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xio.hpp>
-
 /// @file utils.h
 /// @brief Functions supporting finite element method operations
 
@@ -96,7 +93,6 @@ la::SparsityPattern create_sparsity_pattern(
 template <typename T>
 la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
 {
-  std::cout << "create_sparsity_pattern\n";
   // TODO clean up data access
 
   if (a.rank() != 2)
@@ -133,10 +129,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
       = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};
 
   // Create and build sparsity pattern
-  // TODO Use mesh->comm()?
-  assert(dofmaps[0].get().index_map);
-  la::SparsityPattern pattern(dofmaps[0].get().index_map->comm(), index_maps,
-                              bs);
+  la::SparsityPattern pattern(mesh->comm(), index_maps, bs);
   for (auto type : types)
   {
     std::vector<int> ids = a.integral_ids(type);
