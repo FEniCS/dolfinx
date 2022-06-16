@@ -15,7 +15,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
 #include <xtensor/xfixed.hpp>
-#include <xtensor/xio.hpp>
 #include <xtensor/xnorm.hpp>
 #include <xtensor/xview.hpp>
 
