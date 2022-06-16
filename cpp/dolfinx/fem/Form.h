@@ -202,27 +202,23 @@ public:
       switch (type)
       {
       case IntegralType::cell:
-        if (integral_type.second.second)
-        {
-          for (const auto& c : *integral_type.second.second)
-          {
-            for (auto v : c.second)
-            {
-              std::cout << v << " ";
-            }
-            std::cout << "\n";
-          }
-        }
+        // if (integral_type.second.second)
+        // {
+        //   for (const auto& c : *integral_type.second.second)
+        //   {
+        //     for (auto v : c.second)
+        //     {
+        //       std::cout << v << " ";
+        //     }
+        //     std::cout << "\n";
+        //   }
+        // }
         for (auto& integral : integral_type.second.first)
         {
           const auto* id_to_entities = integral_type.second.second;
           assert(id_to_entities);
 
-          if (id_to_entities->find(integral.first) == id_to_entities->end())
-          {
-            _cell_integrals.insert({integral.first, {integral.second, {}}});
-          }
-          else
+          if (id_to_entities->find(integral.first) != id_to_entities->end())
           {
             _cell_integrals.insert(
                 {integral.first,
