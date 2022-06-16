@@ -493,9 +493,9 @@ void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
   std::vector<std::int32_t> unpack_map(send_offsets.back() / 3);
   for (std::size_t i = 0; i < x.shape(0); ++i)
   {
+    const auto point = xt::row(x, i);
     for (const auto& p : collisions.links(i))
     {
-      const auto point = xt::row(x, i);
       int neighbor = rank_to_neighbor[p];
       int pos = send_offsets[neighbor] + counter[neighbor];
       auto it = std::next(send_data.begin(), pos);
