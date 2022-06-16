@@ -14,8 +14,9 @@ from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_scalar,
                          dirichletbc, form)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
-from dolfinx.mesh import (GhostMode, Mesh, create_unit_square, meshtags, meshtags_from_entities,
-                          locate_entities_boundary)
+from dolfinx.mesh import (GhostMode, Mesh, create_unit_square, meshtags,
+                          meshtags_from_entities, locate_entities_boundary,
+                          locate_entities)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -221,3 +222,35 @@ def test_additivity(mode):
     assert (J1 + J3) == pytest.approx(J13)
     assert (J2 + J3) == pytest.approx(J23)
     assert (J1 + J2 + J3) == pytest.approx(J123)
+
+
+def test_manual_integration_domains():
+    n = 8
+    msh = create_unit_square(MPI.COMM_WORLD, n, n)
+    V = FunctionSpace(msh, ("Lagrange", 1))
+    v = ufl.TestFunction(V)
+
+    tdim = msh.topology.dim
+    cell_map = msh.topology.index_map(tdim)
+    num_cells = cell_map.size_local + cell_map.num_ghosts
+    indices = np.arange(0, num_cells)
+    values = np.zeros_like(indices, dtype=np.intc)
+    marked_cells = locate_entities(
+        msh, tdim, lambda x: x[0] < 0.5)
+    values[marked_cells] = 1
+    mt = meshtags(msh, tdim, indices, values)
+
+    dx_mt = ufl.Measure("dx", subdomain_data=mt, domain=msh)
+
+    L = form(v * dx_mt(1))
+    b = assemble_vector(L)
+    b_expected_norm = b.norm()
+
+    marker = {1: marked_cells}
+    dx_manual = ufl.Measure("dx", subdomain_data=marker, domain=msh)
+
+    L = form(v * dx_manual(1))
+    b = assemble_vector(L)
+    b_norm = b.norm()
+
+    assert(np.isclose(b_norm, b_expected_norm))
