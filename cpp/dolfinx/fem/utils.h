@@ -356,7 +356,7 @@ Form<T> create_form(
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional
 /// @return A Form
-template <typename T, typename U>
+template <typename T, typename U = mesh::MeshTags<int>>
 Form<T> create_form(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
@@ -403,7 +403,7 @@ Form<T> create_form(
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional.
 /// @return A Form
-template <typename T, typename U>
+template <typename T, typename U = mesh::MeshTags<int>>
 Form<T> create_form(
     ufcx_form* (*fptr)(),
     const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
