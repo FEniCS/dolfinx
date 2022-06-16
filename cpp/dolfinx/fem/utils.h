@@ -156,7 +156,7 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] constants Spatial constants in the form
 /// @param[in] subdomains Subdomain markers
 /// @param[in] mesh The mesh of the domain
-template <typename T, typename U>
+template <typename T, typename U = mesh::MeshTags<int>>
 Form<T> create_form(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
