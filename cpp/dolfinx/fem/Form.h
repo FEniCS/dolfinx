@@ -146,6 +146,23 @@ public:
     set_default_domains(*_mesh);
   }
 
+  /// @brief Create a finite element form.
+  ///
+  /// @note User applications will normally call a fem::Form builder
+  /// function rather using this interfcae directly.
+  ///
+  /// @param[in] function_spaces Function spaces for the form arguments
+  /// @param[in] integrals The integrals in the form. The first key is
+  /// the domain type. For each key there is a pair (list[domain id,
+  /// integration kernel], domains), where the domain marker is
+  /// a map from domain id to integration entities
+  /// @param[in] coefficients
+  /// @param[in] constants Constants in the Form
+  /// @param[in] needs_facet_permutations Set to true is any of the
+  /// integration kernels require cell permutation data
+  /// @param[in] mesh The mesh of the domain. This is required when
+  /// there are not argument functions from which the mesh can be
+  /// extracted, e.g. for functionals
   Form(
       const std::vector<std::shared_ptr<const fem::FunctionSpace>>&
           function_spaces,
