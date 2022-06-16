@@ -30,6 +30,18 @@ void sparsitybuild::cells(
   }
 }
 //-----------------------------------------------------------------------------
+void cells(la::SparsityPattern& pattern,
+           const xtl::span<const std::int32_t>& cells,
+           const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
+               dofmaps)
+{
+  for (std::int32_t c : cells)
+  {
+    pattern.insert(dofmaps[0].get().cell_dofs(c),
+                   dofmaps[1].get().cell_dofs(c));
+  }
+}
+//-----------------------------------------------------------------------------
 void sparsitybuild::interior_facets(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&

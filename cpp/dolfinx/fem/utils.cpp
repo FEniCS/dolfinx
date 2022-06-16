@@ -12,7 +12,6 @@
 #include "Function.h"
 #include "FunctionSpace.h"
 #include "dofmapbuilder.h"
-#include "sparsitybuild.h"
 #include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
@@ -33,6 +32,7 @@ la::SparsityPattern fem::create_sparsity_pattern(
     const std::array<std::reference_wrapper<const DofMap>, 2>& dofmaps,
     const std::set<IntegralType>& integrals)
 {
+  // TODO Make this use other function
   common::Timer t0("Build sparsity");
 
   // Get common::IndexMaps for each dimension
