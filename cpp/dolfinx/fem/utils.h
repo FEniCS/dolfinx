@@ -144,13 +144,11 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
     {
     case IntegralType::cell:
     {
-      // std::cout << xt::adapt(ids) << "\n";
-      // for (int id : ids)
-      // {
-      //   const std::vector<std::int32_t>& cells = a.cell_domains(id);
-      //   sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}});
-      // }
-      sparsitybuild::cells(pattern, topology, {{dofmaps[0], dofmaps[1]}});
+      for (int id : ids)
+      {
+        const std::vector<std::int32_t>& cells = a.cell_domains(id);
+        sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}});
+      }
       break;
     }
     case IntegralType::interior_facet:
