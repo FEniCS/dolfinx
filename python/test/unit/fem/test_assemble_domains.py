@@ -251,10 +251,18 @@ def test_manual_integration_domains():
     facet_values[marked_facets] = 1
     mt_f = meshtags(msh, tdim - 1, facet_indices, facet_values)
 
+    int_facet_values = np.zeros_like(facet_indices, dtype=np.intc)
+    marked_int_facets = locate_entities(
+        msh, tdim - 1, lambda x: x[0] < 0.5)
+    int_facet_values[marked_int_facets] = 1
+    mt_if = meshtags(msh, tdim - 1, facet_indices, int_facet_values)
+
     dx_mt = ufl.Measure("dx", subdomain_data=mt, domain=msh)
     ds_mt = ufl.Measure("ds", subdomain_data=mt_f, domain=msh)
+    dS_mt = ufl.Measure("dS", subdomain_data=mt_if, domain=msh)
 
-    L = form(ufl.inner(1.0, v) * (dx_mt(1) + ds_mt(1)))
+    L = form(ufl.inner(1.0, v) * (dx_mt(1) + ds_mt(1))
+             + ufl.inner(1.0, v("+") + v("-")) * dS_mt(1))
     b = assemble_vector(L)
     b_expected_norm = b.norm()
 
@@ -272,10 +280,28 @@ def test_manual_integration_domains():
         cell_local_facet_pairs.append(c)
         cell_local_facet_pairs.append(local_f)
 
+    int_cell_local_facet_pairs = []
+    for f in marked_int_facets:
+        if len(f_to_c.links(f)) != 2:
+            continue
+
+        c_0, c_1 = f_to_c.links(f)[0], f_to_c.links(f)[1]
+        local_f_0 = np.where(c_to_f.links(c_0) == f)[0][0]
+        local_f_1 = np.where(c_to_f.links(c_1) == f)[0][0]
+
+        int_cell_local_facet_pairs.append(c_0)
+        int_cell_local_facet_pairs.append(local_f_0)
+        int_cell_local_facet_pairs.append(c_1)
+        int_cell_local_facet_pairs.append(local_f_1)
+
     marker_facet = {1: cell_local_facet_pairs}
     ds_manual = ufl.Measure("ds", subdomain_data=marker_facet, domain=msh)
 
-    L = form(ufl.inner(1.0, v) * (dx_manual(1) + ds_manual(1)))
+    marker_int_facet = {1: int_cell_local_facet_pairs}
+    dS_manual = ufl.Measure("dS", subdomain_data=marker_int_facet, domain=msh)
+
+    L = form(ufl.inner(1.0, v) * (dx_manual(1) + ds_manual(1))
+             + ufl.inner(1.0, v("+") + v("-")) * dS_manual(1))
     b = assemble_vector(L)
     b_norm = b.norm()
 
@@ -284,12 +310,14 @@ def test_manual_integration_domains():
     # NOTE Until https://github.com/FEniCS/dolfinx/pull/2244 is merged,
     # only entries for facets on the exterior boundary will be added
     # for ds integrals
-    a = form(ufl.inner(u, v) * (dx_mt(1) + ds_mt(1)))
+    a = form(ufl.inner(u, v) * (dx_mt(1) + ds_mt(1))
+             + ufl.inner(u("+"), v("+") + v("-")) * dS_mt(1))
     A = assemble_matrix(a)
     A.assemble()
     A_expected_norm = A.norm()
 
-    a = form(ufl.inner(u, v) * (dx_manual(1) + ds_manual(1)))
+    a = form(ufl.inner(u, v) * (dx_manual(1) + ds_manual(1))
+             + ufl.inner(u("+"), v("+") + v("-")) * dS_manual(1))
     A = assemble_matrix(a)
     A.assemble()
     A_norm = A.norm()

@@ -240,8 +240,12 @@ public:
       case IntegralType::interior_facet:
         for (auto& integral : integral_type.second.first)
         {
-          _interior_facet_integrals.insert(
-              {integral.first, {integral.second, {}}});
+          if (id_to_entities->find(integral.first) != id_to_entities->end())
+          {
+            _interior_facet_integrals.insert(
+                {integral.first,
+                 {integral.second, id_to_entities->at(integral.first)}});
+          }
         }
         break;
       }
