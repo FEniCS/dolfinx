@@ -225,7 +225,7 @@ def test_additivity(mode):
 
 
 def test_manual_integration_domains():
-    n = 8
+    n = 11
     msh = create_unit_square(MPI.COMM_WORLD, n, n)
     V = FunctionSpace(msh, ("Lagrange", 1))
     u = ufl.TrialFunction(V)
@@ -241,16 +241,40 @@ def test_manual_integration_domains():
     values[marked_cells] = 1
     mt = meshtags(msh, tdim, indices, values)
 
-    dx_mt = ufl.Measure("dx", subdomain_data=mt, domain=msh)
+    msh.topology.create_entities(tdim - 1)
+    facet_map = msh.topology.index_map(tdim - 1)
+    num_facets = facet_map.size_local + facet_map.num_ghosts
+    facet_indices = np.arange(0, num_facets)
+    facet_values = np.zeros_like(facet_indices, dtype=np.intc)
+    marked_facets = locate_entities_boundary(
+        msh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
+    facet_values[marked_facets] = 1
+    mt_f = meshtags(msh, tdim - 1, facet_indices, facet_values)
 
-    L = form(ufl.inner(1.0, v) * dx_mt(1))
+    dx_mt = ufl.Measure("dx", subdomain_data=mt, domain=msh)
+    ds_mt = ufl.Measure("ds", subdomain_data=mt_f, domain=msh)
+
+    L = form(ufl.inner(1.0, v) * (dx_mt(1) + ds_mt(1)))
     b = assemble_vector(L)
     b_expected_norm = b.norm()
 
     marker = {1: marked_cells}
     dx_manual = ufl.Measure("dx", subdomain_data=marker, domain=msh)
 
-    L = form(ufl.inner(1.0, v) * dx_manual(1))
+    cell_local_facet_pairs = []
+    msh.topology.create_connectivity(tdim, tdim - 1)
+    msh.topology.create_connectivity(tdim - 1, tdim)
+    c_to_f = msh.topology.connectivity(tdim, tdim - 1)
+    f_to_c = msh.topology.connectivity(tdim - 1, tdim)
+    for f in marked_facets:
+        c = f_to_c.links(f)[0]
+        local_f = np.where(c_to_f.links(c) == f)[0][0]
+        cell_local_facet_pairs.append([c, local_f])
+
+    marker_facet = {1: cell_local_facet_pairs}
+    ds_manual = ufl.Measure("ds", subdomain_data=marker_facet, domain=msh)
+
+    L = form(ufl.inner(1.0, v) * (dx_manual(1) + ds_manual(1)))
     b = assemble_vector(L)
     b_norm = b.norm()
 
