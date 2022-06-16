@@ -269,7 +269,8 @@ def test_manual_integration_domains():
     for f in marked_facets:
         c = f_to_c.links(f)[0]
         local_f = np.where(c_to_f.links(c) == f)[0][0]
-        cell_local_facet_pairs.append([c, local_f])
+        cell_local_facet_pairs.append(c)
+        cell_local_facet_pairs.append(local_f)
 
     marker_facet = {1: cell_local_facet_pairs}
     ds_manual = ufl.Measure("ds", subdomain_data=marker_facet, domain=msh)
@@ -280,12 +281,15 @@ def test_manual_integration_domains():
 
     assert(np.isclose(b_norm, b_expected_norm))
 
-    a = form(ufl.inner(u, v) * dx_mt(1))
+    # NOTE Until https://github.com/FEniCS/dolfinx/pull/2244 is merged,
+    # only entries for facets on the exterior boundary will be added
+    # for ds integrals
+    a = form(ufl.inner(u, v) * (dx_mt(1) + ds_mt(1)))
     A = assemble_matrix(a)
     A.assemble()
     A_expected_norm = A.norm()
 
-    a = form(ufl.inner(u, v) * dx_manual(1))
+    a = form(ufl.inner(u, v) * (dx_manual(1) + ds_manual(1)))
     A = assemble_matrix(a)
     A.assemble()
     A_norm = A.norm()

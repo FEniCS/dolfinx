@@ -163,11 +163,6 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
             for key in subdomains:
                 if subdomains[key] is None:
                     subdomains[key] = {}
-                if key == _cpp.fem.IntegralType.exterior_facet:
-                    for id in subdomains[key]:
-                        flattened_facets = [x for xs in subdomains[key][id]
-                                            for x in xs]
-                        subdomains[key][id] = flattened_facets
 
         return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, code)
 
