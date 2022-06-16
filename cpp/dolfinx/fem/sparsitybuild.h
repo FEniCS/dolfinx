@@ -66,6 +66,19 @@ void interior_facets(
     const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
         dofmaps);
 
+/// @brief Iterate over interior facets and insert entries into sparsity
+/// pattern.
+///
+/// @param[in,out] pattern The sparsity pattern to insert into
+/// @param[in] facets The facets as (cell, local_index) pairs
+/// @param[in] dofmaps The dofmap to use in building the sparsity
+/// pattern
+/// @note The sparsity pattern is not finalised
+void interior_facets(
+    la::SparsityPattern& pattern, const xtl::span<const std::int32_t>& facets,
+    const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
+        dofmaps);
+
 /// @brief Iterate over exterior facets and insert entries into sparsity
 /// pattern.
 ///
