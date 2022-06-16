@@ -28,8 +28,8 @@
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
-#include <xtensor/xio.hpp>
 #include <xtensor/xadapt.hpp>
+#include <xtensor/xio.hpp>
 
 /// @file utils.h
 /// @brief Functions supporting finite element method operations
@@ -156,9 +156,15 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
                                      {{dofmaps[0], dofmaps[1]}});
       break;
     case IntegralType::exterior_facet:
-      sparsitybuild::exterior_facets(pattern, topology,
-                                     {{dofmaps[0], dofmaps[1]}});
+    {
+      for (int id : ids)
+      {
+        const std::vector<std::int32_t>& facets = a.exterior_facet_domains(id);
+        sparsitybuild::exterior_facets(pattern, facets,
+                                       {{dofmaps[0], dofmaps[1]}});
+      }
       break;
+    }
     default:
       throw std::runtime_error("Unsupported integral type");
     }
