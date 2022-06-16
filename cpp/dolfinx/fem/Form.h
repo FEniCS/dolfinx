@@ -182,7 +182,6 @@ public:
         _constants(constants), _mesh(mesh),
         _needs_facet_permutations(needs_facet_permutations)
   {
-    std::cout << "Hello from custom entity form\n";
     // Extract _mesh from fem::FunctionSpace, and check they are the same
     if (!_mesh and !function_spaces.empty())
       _mesh = function_spaces[0]->mesh();
@@ -198,6 +197,10 @@ public:
     for (auto& integral_type : integrals)
     {
       const IntegralType type = integral_type.first;
+
+      const auto* id_to_entities = integral_type.second.second;
+      assert(id_to_entities);
+
       // Loop over integrals kernels and set domains
       switch (type)
       {
@@ -215,9 +218,6 @@ public:
         // }
         for (auto& integral : integral_type.second.first)
         {
-          const auto* id_to_entities = integral_type.second.second;
-          assert(id_to_entities);
-
           if (id_to_entities->find(integral.first) != id_to_entities->end())
           {
             _cell_integrals.insert(
@@ -229,8 +229,12 @@ public:
       case IntegralType::exterior_facet:
         for (auto& integral : integral_type.second.first)
         {
-          _exterior_facet_integrals.insert(
-              {integral.first, {integral.second, {}}});
+          if (id_to_entities->find(integral.first) != id_to_entities->end())
+          {
+            _exterior_facet_integrals.insert(
+                {integral.first,
+                 {integral.second, id_to_entities->at(integral.first)}});
+          }
         }
         break;
       case IntegralType::interior_facet:
@@ -241,12 +245,6 @@ public:
         }
         break;
       }
-
-      // if (integral_type.second.second)
-      // {
-      //   assert(_mesh == integral_type.second.second->mesh());
-      //   set_domains(type, *integral_type.second.second);
-      // }
     }
 
     // TODO Should probably still set default domains
