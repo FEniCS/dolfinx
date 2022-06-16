@@ -93,8 +93,6 @@ la::SparsityPattern create_sparsity_pattern(
 template <typename T>
 la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
 {
-  // TODO clean up data access
-
   if (a.rank() != 2)
   {
     throw std::runtime_error(
@@ -107,8 +105,6 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
       *a.function_spaces().at(1)->dofmap()};
   std::shared_ptr mesh = a.mesh();
   assert(mesh);
-
-  const mesh::Topology& topology = mesh->topology();
 
   const std::set<IntegralType> types = a.integral_types();
   if (types.find(IntegralType::interior_facet) != types.end()
