@@ -225,12 +225,24 @@ def test_additivity(mode):
 
 
 def test_manual_integration_domains():
+    """Test that specifying integration domains manually i.e.
+    by passing a list of cell indices or (cell, local facet) pairs
+    to form gives the same result as the usual approach of tagging"""
+
+    # NOTE Until https://github.com/FEniCS/dolfinx/pull/2244 is merged,
+    # when assembling a matrix, only entries for exterior facets on the
+    # exterior boundary will be added for ds integrals, and only entries
+    # for interior facets on the interior boundary will be added for dS
+    # interior facets.
+
     n = 4
     msh = create_unit_square(MPI.COMM_WORLD, n, n)
+
     V = FunctionSpace(msh, ("Lagrange", 1))
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
 
+    # Create meshtags to mark some cells
     tdim = msh.topology.dim
     cell_map = msh.topology.index_map(tdim)
     num_cells = cell_map.size_local + cell_map.num_ghosts
@@ -241,47 +253,61 @@ def test_manual_integration_domains():
     values[marked_cells] = 1
     mt = meshtags(msh, tdim, indices, values)
 
+    # Create meshtags to mark some exterior facets
     msh.topology.create_entities(tdim - 1)
     facet_map = msh.topology.index_map(tdim - 1)
     num_facets = facet_map.size_local + facet_map.num_ghosts
     facet_indices = np.arange(0, num_facets)
-    facet_values = np.zeros_like(facet_indices, dtype=np.intc)
-    marked_facets = locate_entities_boundary(
+    ext_facet_values = np.zeros_like(facet_indices, dtype=np.intc)
+    marked_ext_facets = locate_entities_boundary(
         msh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
-    facet_values[marked_facets] = 1
-    mt_f = meshtags(msh, tdim - 1, facet_indices, facet_values)
+    ext_facet_values[marked_ext_facets] = 1
+    mt_ext_facets = meshtags(msh, tdim - 1, facet_indices, ext_facet_values)
 
+    # Create meshtags to mark some interior facets
     int_facet_values = np.zeros_like(facet_indices, dtype=np.intc)
     marked_int_facets = locate_entities(
         msh, tdim - 1, lambda x: x[0] < 0.75)
     int_facet_values[marked_int_facets] = 1
-    mt_if = meshtags(msh, tdim - 1, facet_indices, int_facet_values)
+    mt_int_facets = meshtags(msh, tdim - 1, facet_indices, int_facet_values)
 
+    # Create measures
     dx_mt = ufl.Measure("dx", subdomain_data=mt, domain=msh)
-    ds_mt = ufl.Measure("ds", subdomain_data=mt_f, domain=msh)
-    dS_mt = ufl.Measure("dS", subdomain_data=mt_if, domain=msh)
+    ds_mt = ufl.Measure("ds", subdomain_data=mt_ext_facets, domain=msh)
+    dS_mt = ufl.Measure("dS", subdomain_data=mt_int_facets, domain=msh)
 
+    # Create a forms and assemble
     L = form(ufl.inner(1.0, v) * (dx_mt(1) + ds_mt(1))
              + ufl.inner(1.0, v("+") + v("-")) * dS_mt(1))
     b = assemble_vector(L)
     b_expected_norm = b.norm()
 
-    marker = {1: [c for c in marked_cells if c < cell_map.size_local]}
-    dx_manual = ufl.Measure("dx", subdomain_data=marker, domain=msh)
+    a = form(ufl.inner(u, v) * (dx_mt(1) + ds_mt(1))
+             + ufl.inner(u("+"), v("+") + v("-")) * dS_mt(1))
+    A = assemble_matrix(a)
+    A.assemble()
+    A_expected_norm = A.norm()
 
-    cell_local_facet_pairs = []
+    # Manually specify cells to integrate over (need to remove ghosts
+    # to give same result as above)
+    cell_domain = [c for c in marked_cells if c < cell_map.size_local]
+
+    # Manually specify exterior facets to integrate over as
+    # (cell, local facet) pairs
+    ext_facet_domain = []
     msh.topology.create_connectivity(tdim, tdim - 1)
     msh.topology.create_connectivity(tdim - 1, tdim)
     c_to_f = msh.topology.connectivity(tdim, tdim - 1)
     f_to_c = msh.topology.connectivity(tdim - 1, tdim)
-    for f in marked_facets:
+    for f in marked_ext_facets:
         if f < facet_map.size_local:
             c = f_to_c.links(f)[0]
             local_f = np.where(c_to_f.links(c) == f)[0][0]
-            cell_local_facet_pairs.append(c)
-            cell_local_facet_pairs.append(local_f)
+            ext_facet_domain.append(c)
+            ext_facet_domain.append(local_f)
 
-    int_cell_local_facet_pairs = []
+    # Manually specify interior facets to integrate over
+    int_facet_domain = []
     for f in marked_int_facets:
         if f >= facet_map.size_local or len(f_to_c.links(f)) != 2:
             continue
@@ -290,32 +316,28 @@ def test_manual_integration_domains():
         local_f_0 = np.where(c_to_f.links(c_0) == f)[0][0]
         local_f_1 = np.where(c_to_f.links(c_1) == f)[0][0]
 
-        int_cell_local_facet_pairs.append(c_0)
-        int_cell_local_facet_pairs.append(local_f_0)
-        int_cell_local_facet_pairs.append(c_1)
-        int_cell_local_facet_pairs.append(local_f_1)
+        int_facet_domain.append(c_0)
+        int_facet_domain.append(local_f_0)
+        int_facet_domain.append(c_1)
+        int_facet_domain.append(local_f_1)
 
-    marker_facet = {1: cell_local_facet_pairs}
-    ds_manual = ufl.Measure("ds", subdomain_data=marker_facet, domain=msh)
+    # Create measures
+    cell_domains = {1: cell_domain}
+    dx_manual = ufl.Measure("dx", subdomain_data=cell_domains, domain=msh)
 
-    marker_int_facet = {1: int_cell_local_facet_pairs}
-    dS_manual = ufl.Measure("dS", subdomain_data=marker_int_facet, domain=msh)
+    ext_facet_domains = {1: ext_facet_domain}
+    ds_manual = ufl.Measure("ds", subdomain_data=ext_facet_domains, domain=msh)
 
+    int_facet_domains = {1: int_facet_domain}
+    dS_manual = ufl.Measure("dS", subdomain_data=int_facet_domains, domain=msh)
+
+    # Assemble forms and check
     L = form(ufl.inner(1.0, v) * (dx_manual(1) + ds_manual(1))
              + ufl.inner(1.0, v("+") + v("-")) * dS_manual(1))
     b = assemble_vector(L)
     b_norm = b.norm()
 
     assert(np.isclose(b_norm, b_expected_norm))
-
-    # NOTE Until https://github.com/FEniCS/dolfinx/pull/2244 is merged,
-    # only entries for facets on the exterior boundary will be added
-    # for ds integrals
-    a = form(ufl.inner(u, v) * (dx_mt(1) + ds_mt(1))
-             + ufl.inner(u("+"), v("+") + v("-")) * dS_mt(1))
-    A = assemble_matrix(a)
-    A.assemble()
-    A_expected_norm = A.norm()
 
     a = form(ufl.inner(u, v) * (dx_manual(1) + ds_manual(1))
              + ufl.inner(u("+"), v("+") + v("-")) * dS_manual(1))
