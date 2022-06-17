@@ -225,7 +225,7 @@ def test_additivity(mode):
 
 
 def test_manual_integration_domains():
-    n = 11
+    n = 4
     msh = create_unit_square(MPI.COMM_WORLD, n, n)
     V = FunctionSpace(msh, ("Lagrange", 1))
     u = ufl.TrialFunction(V)
@@ -237,7 +237,7 @@ def test_manual_integration_domains():
     indices = np.arange(0, num_cells)
     values = np.zeros_like(indices, dtype=np.intc)
     marked_cells = locate_entities(
-        msh, tdim, lambda x: x[0] < 0.5)
+        msh, tdim, lambda x: x[0] < 0.75)
     values[marked_cells] = 1
     mt = meshtags(msh, tdim, indices, values)
 
@@ -253,7 +253,7 @@ def test_manual_integration_domains():
 
     int_facet_values = np.zeros_like(facet_indices, dtype=np.intc)
     marked_int_facets = locate_entities(
-        msh, tdim - 1, lambda x: x[0] < 0.5)
+        msh, tdim - 1, lambda x: x[0] < 0.75)
     int_facet_values[marked_int_facets] = 1
     mt_if = meshtags(msh, tdim - 1, facet_indices, int_facet_values)
 
@@ -266,7 +266,7 @@ def test_manual_integration_domains():
     b = assemble_vector(L)
     b_expected_norm = b.norm()
 
-    marker = {1: marked_cells}
+    marker = {1: [c for c in marked_cells if c < cell_map.size_local]}
     dx_manual = ufl.Measure("dx", subdomain_data=marker, domain=msh)
 
     cell_local_facet_pairs = []
@@ -275,14 +275,15 @@ def test_manual_integration_domains():
     c_to_f = msh.topology.connectivity(tdim, tdim - 1)
     f_to_c = msh.topology.connectivity(tdim - 1, tdim)
     for f in marked_facets:
-        c = f_to_c.links(f)[0]
-        local_f = np.where(c_to_f.links(c) == f)[0][0]
-        cell_local_facet_pairs.append(c)
-        cell_local_facet_pairs.append(local_f)
+        if f < facet_map.size_local:
+            c = f_to_c.links(f)[0]
+            local_f = np.where(c_to_f.links(c) == f)[0][0]
+            cell_local_facet_pairs.append(c)
+            cell_local_facet_pairs.append(local_f)
 
     int_cell_local_facet_pairs = []
     for f in marked_int_facets:
-        if len(f_to_c.links(f)) != 2:
+        if f >= facet_map.size_local or len(f_to_c.links(f)) != 2:
             continue
 
         c_0, c_1 = f_to_c.links(f)[0], f_to_c.links(f)[1]
