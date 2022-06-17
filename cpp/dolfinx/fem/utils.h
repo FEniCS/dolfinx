@@ -13,6 +13,7 @@
 #include "Expression.h"
 #include "Form.h"
 #include "Function.h"
+#include "sparsitybuild.h"
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -115,7 +116,58 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
   }
 
-  return create_sparsity_pattern(mesh->topology(), dofmaps, types);
+  common::Timer t0("Build sparsity");
+
+  // Get common::IndexMaps for each dimension
+  const std::array index_maps{dofmaps[0].get().index_map,
+                              dofmaps[1].get().index_map};
+  const std::array bs
+      = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};
+
+  // Create and build sparsity pattern
+  la::SparsityPattern pattern(mesh->comm(), index_maps, bs);
+  for (auto type : types)
+  {
+    std::vector<int> ids = a.integral_ids(type);
+    switch (type)
+    {
+    case IntegralType::cell:
+    {
+      for (int id : ids)
+      {
+        const std::vector<std::int32_t>& cells = a.cell_domains(id);
+        sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}});
+      }
+      break;
+    }
+    case IntegralType::interior_facet:
+    {
+      for (int id : ids)
+      {
+        const std::vector<std::int32_t>& facets = a.interior_facet_domains(id);
+        sparsitybuild::interior_facets(pattern, facets,
+                                       {{dofmaps[0], dofmaps[1]}});
+      }
+      break;
+    }
+    case IntegralType::exterior_facet:
+    {
+      for (int id : ids)
+      {
+        const std::vector<std::int32_t>& facets = a.exterior_facet_domains(id);
+        sparsitybuild::exterior_facets(pattern, facets,
+                                       {{dofmaps[0], dofmaps[1]}});
+      }
+      break;
+    }
+    default:
+      throw std::runtime_error("Unsupported integral type");
+    }
+  }
+
+  t0.stop();
+
+  return pattern;
 }
 
 /// Create an ElementDofLayout from a ufcx_dofmap
