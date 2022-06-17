@@ -154,8 +154,10 @@ public:
   /// @param[in] function_spaces Function spaces for the form arguments
   /// @param[in] integrals The integrals in the form. The first key is
   /// the domain type. For each key there is a pair (list[domain id,
-  /// integration kernel], domains), where the domain marker is
-  /// a map from domain id to integration entities
+  /// integration kernel], domains), where domains is a map from domain
+  // id to the entities to integrate over i.e. cell indices for cell
+  // integrals, (cell, local_facet) pairs for exterior facet integrals
+  // etc.
   /// @param[in] coefficients
   /// @param[in] constants Constants in the Form
   /// @param[in] needs_facet_permutations Set to true is any of the
@@ -205,17 +207,6 @@ public:
       switch (type)
       {
       case IntegralType::cell:
-        // if (integral_type.second.second)
-        // {
-        //   for (const auto& c : *integral_type.second.second)
-        //   {
-        //     for (auto v : c.second)
-        //     {
-        //       std::cout << v << " ";
-        //     }
-        //     std::cout << "\n";
-        //   }
-        // }
         for (auto& integral : integral_type.second.first)
         {
           if (id_to_entities->find(integral.first) != id_to_entities->end())
