@@ -13,6 +13,7 @@ import gmsh
 import numpy as np
 import ufl
 from gmsh_helpers import gmsh_model_to_mesh
+from mesh_wire import generate_mesh_wire
 from mpi4py import MPI
 from petsc4py import PETSc
 from scipy.constants import epsilon_0, mu_0
@@ -27,6 +28,8 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     exit(0)
 
 # Definition of the background electric field
+
+
 class background_electric_field:
 
     def __init__(self, theta, n_bkg, k0):
@@ -46,10 +49,14 @@ class background_electric_field:
         return (-ax * np.exp(1j * phi), ay * np.exp(1j * phi))
 
 # Definition of the radial distance from the center
+
+
 def radial_distance(x):
     return np.sqrt(x[0]**2 + x[1]**2)
 
 # Definition of the curl for a 2d vector
+
+
 def curl_2d(a):
 
     ay_x = a[1].dx(0)
@@ -58,6 +65,7 @@ def curl_2d(a):
     c = as_vector((0, 0, ay_x - ax_y))
 
     return c
+
 
 # Constant definition
 um = 10**-6  # micron
@@ -98,56 +106,12 @@ au_tag = 1          # gold wire
 bkg_tag = 2         # background
 boundary_tag = 3    # boundary
 
-# Mesh definition in gmsh
-
-gmsh.initialize(sys.argv)
-if MPI.COMM_WORLD.rank == 0:
-
-    gmsh.model.add("nanowire")
-
-    # A dummy boundary is added for setting a finer mesh
-    gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_wire * 0.8,
-                             angle1=0.0, angle2=2 * pi, tag=1)
-    gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_wire,
-                             angle1=0, angle2=2 * pi, tag=2)
-
-    # A dummy boundary is added for setting a finer mesh
-    gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_dom * 0.9,
-                             angle1=0.0, angle2=2 * pi, tag=3)
-    gmsh.model.occ.addCircle(
-        0.0, 0.0, 0.0, radius_dom, angle1=0.0, angle2=2 * pi, tag=4)
-
-    gmsh.model.occ.addCurveLoop([1], tag=1)
-    gmsh.model.occ.addPlaneSurface([1], tag=1)
-
-    gmsh.model.occ.addCurveLoop([2], tag=2)
-    gmsh.model.occ.addCurveLoop([1], tag=3)
-    gmsh.model.occ.addPlaneSurface([2, 3], tag=2)
-
-    gmsh.model.occ.addCurveLoop([3], tag=4)
-    gmsh.model.occ.addCurveLoop([2], tag=5)
-    gmsh.model.occ.addPlaneSurface([4, 5], tag=3)
-
-    gmsh.model.occ.addCurveLoop([4], tag=6)
-    gmsh.model.occ.addCurveLoop([3], tag=7)
-    gmsh.model.occ.addPlaneSurface([6, 7], tag=4)
-
-    gmsh.model.occ.synchronize()
-
-    gmsh.model.addPhysicalGroup(2, [1, 2], tag=au_tag)
-    gmsh.model.addPhysicalGroup(2, [3, 4], tag=bkg_tag)
-
-    gmsh.model.addPhysicalGroup(1, [4], tag=boundary_tag)
-
-    gmsh.model.mesh.setSize([(0, 1)], size=in_wire_size)
-    gmsh.model.mesh.setSize([(0, 2)], size=on_wire_size)
-    gmsh.model.mesh.setSize([(0, 3)], size=bkg_size)
-    gmsh.model.mesh.setSize([(0, 4)], size=boundary_size)
-
-    gmsh.model.mesh.generate(2)
+model = generate_mesh_wire(
+    radius_wire, radius_dom, in_wire_size, on_wire_size, bkg_size,
+    boundary_size, au_tag, bkg_tag, boundary_tag)
 
 mesh, cell_tags, facet_tags = gmsh_model_to_mesh(
-    gmsh.model, cell_data=True, facet_data=True, gdim=2)
+    model, cell_data=True, facet_data=True, gdim=2)
 
 MPI.COMM_WORLD.barrier()
 
@@ -203,7 +167,8 @@ D = fem.FunctionSpace(mesh, ("DG", 0))
 eps = fem.Function(D)
 au_cells = cell_tags.find(au_tag)
 bkg_cells = cell_tags.find(bkg_tag)
-eps.x.array[au_cells] = np.full_like(au_cells, reps_au + ieps_au * 1j, dtype=np.complex128)
+eps.x.array[au_cells] = np.full_like(
+    au_cells, reps_au + ieps_au * 1j, dtype=np.complex128)
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
 
 # Weak form
