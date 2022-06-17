@@ -5,81 +5,117 @@
 #       infinite wire (scattering boundary conditions)
 # ====================================================
 
-from dolfinx import io, fem, plot, cpp
-from petsc4py import PETSc
-import ufl
-from ufl import FacetNormal, as_vector, inner, grad, curl, \
-    cross, lhs, rhs, dot, conj, sqrt
-from datetime import datetime
-import numpy as np
-import gmsh
-from mpi4py import MPI
 import os
 import sys
+from datetime import datetime
+
+import gmsh
+import numpy as np
+import ufl
 from gmsh_helpers import gmsh_model_to_mesh
-from utils import background_electric_field, curl_2d, radial_distance, \
-    from_2d_to_3d, \
-    calculateAnalyticalEfficiencies, save_as_xdmf \
+from mpi4py import MPI
+from petsc4py import PETSc
+from scipy.constants import epsilon_0, mu_0
+from ufl import (FacetNormal, as_vector, conj, cross, curl, dot, grad, inner,
+                 lhs, rhs, sqrt)
+from utils import calculate_analytical_efficiencies
 
-from scipy.constants import mu_0, epsilon_0
+from dolfinx import cpp, fem, io, plot
 
-# constant definition
+if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
+    print("Demo should only be executed with DOLFINx complex mode")
+    exit(0)
+
+# Definition of the background electric field
+class background_electric_field:
+
+    def __init__(self, theta, n_bkg, k0):
+        self.theta = theta
+        self.k0 = k0
+        self.n_bkg = n_bkg
+
+    def eval(self, x):
+
+        kx = self.n_bkg * self.k0 * np.cos(self.theta)
+        ky = self.n_bkg * self.k0 * np.sin(self.theta)
+        phi = kx * x[0] + ky * x[1]
+
+        ax = np.sin(self.theta)
+        ay = np.cos(self.theta)
+
+        return (-ax * np.exp(1j * phi), ay * np.exp(1j * phi))
+
+# Definition of the radial distance from the center
+def radial_distance(x):
+    return np.sqrt(x[0]**2 + x[1]**2)
+
+# Definition of the curl for a 2d vector
+def curl_2d(a):
+
+    ay_x = a[1].dx(0)
+    ax_y = a[0].dx(1)
+
+    c = as_vector((0, 0, ay_x - ax_y))
+
+    return c
+
+# Constant definition
 um = 10**-6  # micron
 nm = 10**-9  # nanometer
 pi = np.pi
 
-# radius of the wire and of the boundary of the domain
+# Radius of the wire and of the boundary of the domain
 radius_wire = 0.050 * um
 radius_dom = 1 * um
 
-# the smaller the mesh_factor, the finer is the mesh
+# The smaller the mesh_factor, the finer is the mesh
 mesh_factor = 1.2
 
-# finite element degree
+# Finite element degree
 degree = 3
 
-# wavelength sweep
+# Wavelength sweep
 wl0 = 0.4 * um
 
-# background refractive index
+# Background refractive index
 n_bkg = 1.33
 eps_bkg = n_bkg**2
 
-# mesh size inside the wire
+# Mesh size inside the wire
 in_wire_size = mesh_factor * 7 * nm
 
-# mesh size at the boundary of the wire
+# Mesh size at the boundary of the wire
 on_wire_size = mesh_factor * 3 * nm
 
-# mesh size in the vacuum
+# Mesh size in the vacuum
 bkg_size = mesh_factor * 60 * nm
 
-# mesh size at the boundary
+# Mesh size at the boundary
 boundary_size = mesh_factor * 30 * nm
 
-# tags for the subdomains
+# Tags for the subdomains
 au_tag = 1          # gold wire
 bkg_tag = 2         # background
 boundary_tag = 3    # boundary
 
-# mesh definition in gmsh
+# Mesh definition in gmsh
 
 gmsh.initialize(sys.argv)
 if MPI.COMM_WORLD.rank == 0:
 
     gmsh.model.add("nanowire")
 
-    # a dummy boundary is added for setting a finer mesh
-    gmsh.model.occ.addCircle(0, 0, 0, radius_wire * 0.8,
-                             angle1=0, angle2=2 * pi, tag=1)
-    gmsh.model.occ.addCircle(0, 0, 0, radius_wire,
+    # A dummy boundary is added for setting a finer mesh
+    gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_wire * 0.8,
+                             angle1=0.0, angle2=2 * pi, tag=1)
+    gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_wire,
                              angle1=0, angle2=2 * pi, tag=2)
 
-    # a dummy boundary is added for setting a finer mesh
-    gmsh.model.occ.addCircle(0, 0, 0, radius_dom * 0.9,
-                             angle1=0, angle2=2 * pi, tag=3)
+    # A dummy boundary is added for setting a finer mesh
+    gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_dom * 0.9,
+                             angle1=0.0, angle2=2 * pi, tag=3)
     gmsh.model.occ.addCircle(
-        0, 0, 0, radius_dom, angle1=0, angle2=2 * pi, tag=4)
+        0.0, 0.0, 0.0, radius_dom, angle1=0.0, angle2=2 * pi, tag=4)
 
     gmsh.model.occ.addCurveLoop([1], tag=1)
     gmsh.model.occ.addPlaneSurface([1], tag=1)
@@ -115,79 +151,76 @@ mesh, cell_tags, facet_tags = gmsh_model_to_mesh(
 
 MPI.COMM_WORLD.barrier()
 
-# definition of finite element for the electric field
+# Definition of finite element for the electric field
 curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), 3)
-
-# definition of finite element for the r function (see next)
-lagr_el = ufl.FiniteElement("CG", mesh.ufl_cell(), 2)
-
-# function space for the electric field
 V = fem.FunctionSpace(mesh, curl_el)
 
-# wavevector of the background field
+# Wavevector of the background field
 k0 = 2 * np.pi / wl0
 
-# angle of incidence of the background field
+# Angle of incidence of the background field
 deg = np.pi / 180
 theta = 45 * deg
 
-# plane wave function
+# Plane wave function
 f = background_electric_field(theta, n_bkg, k0)
 Eb = fem.Function(V, dtype=np.complex128)
 Eb.interpolate(f.eval)
 
-# function r = radial distance from the (0, 0) point
+# Function r = radial distance from the (0, 0) point
+lagr_el = ufl.FiniteElement("CG", mesh.ufl_cell(), 2)
 lagr_space = fem.FunctionSpace(mesh, lagr_el)
 r = fem.Function(lagr_space, dtype=np.complex128)
 r.interpolate(radial_distance)
 
-# definition of Trial and Test functions
+# Definition of Trial and Test functions
 Es = ufl.TrialFunction(V)
 Vs = ufl.TestFunction(V)
 
-# definition of 3d fields for cross and curl operations
-Es_3d = from_2d_to_3d(Es)
-Vs_3d = from_2d_to_3d(Vs)
+# Definition of 3d fields for cross and curl operations
+Es_3d = as_vector((Es[0], Es[1], 0))
+Vs_3d = as_vector((Vs[0], Vs[1], 0))
 
 # Measures for subdomains
-dAu = ufl.Measure("dx", mesh, subdomain_data=cell_tags, subdomain_id=au_tag)
-dBkg = ufl.Measure("dx", mesh, subdomain_data=cell_tags, subdomain_id=bkg_tag)
-dsbc = ufl.Measure("ds", mesh, subdomain_data=facet_tags,
-                   subdomain_id=boundary_tag)
+dx = ufl.Measure("dx", mesh, subdomain_data=cell_tags)
+ds = ufl.Measure("ds", mesh, subdomain_data=facet_tags)
+dAu = dx(au_tag)
+dBkg = dx(bkg_tag)
 dDom = dAu + dBkg
+dsbc = ds(boundary_tag)
 
-# normal to the boundary
+# Normal to the boundary
 n = FacetNormal(mesh)
-n_3d = from_2d_to_3d(n)
+n_3d = as_vector((n[0], n[1], 0))
 
-# definition of relative permittivity for Au @400nm
+# Definition of relative permittivity for Au @400nm
 reps_au = -1.0782
 ieps_au = 5.8089
 eps_au = reps_au + ieps_au * 1j
 
-# definition of the relative permittivity over the whole domain
+# Definition of the relative permittivity over the whole domain
 D = fem.FunctionSpace(mesh, ("DG", 0))
 eps = fem.Function(D)
-au_cells = cell_tags.indices[cell_tags.values == au_tag]
-bkg_cells = cell_tags.indices[cell_tags.values == bkg_tag]
-eps.x.array[au_cells] = np.full(len(au_cells), reps_au + ieps_au * 1j)
-eps.x.array[bkg_cells] = np.full(len(bkg_cells), eps_bkg)
+au_cells = cell_tags.find(au_tag)
+bkg_cells = cell_tags.find(bkg_tag)
+eps.x.array[au_cells] = np.full_like(au_cells, reps_au + ieps_au * 1j, dtype=np.complex128)
+eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
 
-# weak form
+# Weak form
 F = - inner(curl(Es), curl(Vs)) * dDom \
     + eps * k0 ** 2 * inner(Es, Vs) * dDom \
     + k0 ** 2 * (eps - eps_bkg) * inner(Eb, Vs) * dDom \
     + (1j * k0 * n_bkg + 1 / (2 * r)) \
     * inner(cross(Es_3d, n_3d), cross(Vs_3d, n_3d)) * dsbc
 
-# splitting in left-hand side and right-hand side
+# Splitting in left-hand side and right-hand side
 a, L = lhs(F), rhs(F)
 
 problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={
                                   "ksp_type": "preonly", "pc_type": "lu"})
 Eh = problem.solve()
 
-# total electric field E = Es + Eb
+# Total electric field E = Es + Eb
 E = fem.Function(V, dtype=np.complex128)
 E.x.array[:] = Eb.x.array[:] + Eh.x.array[:]
 
@@ -198,48 +231,55 @@ norm_expr = fem.Expression(norm_func, V_normEh.element.interpolation_points)
 normEh = fem.Function(V_normEh)
 normEh.interpolate(norm_expr)
 
-# save the fields as xdmf files
-save_as_xdmf("data/Es.xdmf", mesh, Eh)
-save_as_xdmf("data/E.xdmf", mesh, E)
-save_as_xdmf("data/normEh.xdmf", mesh, normEh)
+# Save the fields as xdmf files
+with io.XDMFFile(MPI.COMM_WORLD, "data/Es.xdmf", "w") as xdmf:
+    xdmf.write_mesh(mesh)
+    xdmf.write_function(Eh)
 
-# calculation of analytical efficiencies
-q_abs_analyt, q_sca_analyt, q_ext_analyt = calculateAnalyticalEfficiencies(
+with io.XDMFFile(MPI.COMM_WORLD, "data/E.xdmf", "w") as xdmf:
+    xdmf.write_mesh(mesh)
+    xdmf.write_function(E)
+
+with io.XDMFFile(MPI.COMM_WORLD, "data/normEs.xdmf", "w") as xdmf:
+    xdmf.write_mesh(mesh)
+    xdmf.write_function(normEh)
+
+# Calculation of analytical efficiencies
+q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
     reps_au,
     ieps_au,
     n_bkg,
     wl0,
     radius_wire)
 
-# vacuum impedance
+# Vacuum impedance
 Z0 = np.sqrt(mu_0 / epsilon_0)
 
-# magnetic field H
+# Magnetic field H
 Hh_3d = -1j * curl_2d(Eh) / Z0 / k0 / n_bkg
 
-Eh_3d = from_2d_to_3d(Eh)
-E_3d = from_2d_to_3d(E)
+Eh_3d = as_vector((Eh[0], Eh[1], 0))
+E_3d = as_vector((E[0], E[1], 0))
 
-# intensity of the electromagnetic fields I0 = 0.5*E0**2/Z0
+# Intensity of the electromagnetic fields I0 = 0.5*E0**2/Z0
 # E0 = np.sqrt(ax**2 + ay**2) = 1, see background_electric_field
 I0 = 0.5 / Z0
 
-# geometrical cross section of the wire
+# Geometrical cross section of the wire
 gcs = 2 * radius_wire
 
-# quantities for the calculation of efficiencies
+# Quantities for the calculation of efficiencies
 P = 0.5 * inner(cross(Eh_3d, conj(Hh_3d)), n_3d)
 Q = 0.5 * ieps_au * k0 * (inner(E_3d, E_3d)) / Z0 / n_bkg
 
-# normalized efficiencies
-q_abs_fenics_proc = ufl.real(fem.assemble_scalar(fem.form(Q * dAu)) / gcs / I0)
-# sum results from all MPI processes
+# Normalized efficiencies
+q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / gcs / I0).real
+# Sum results from all MPI processes
 q_abs_fenics = mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
-q_sca_fenics_proc = ufl.real(
-    fem.assemble_scalar(fem.form(P * dsbc)) / gcs / I0)
+q_sca_fenics_proc = (fem.assemble_scalar(fem.form(P * dsbc)) / gcs / I0).real
 
-# sum results from all MPI processes
+# Sum results from all MPI processes
 q_sca_fenics = mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
 q_ext_fenics = q_abs_fenics + q_sca_fenics

@@ -6,16 +6,15 @@
 # GMSH model to dolfinx.Mesh converter
 # =========================================
 
-import numpy
 import gmsh
-
-from mpi4py import MPI
-from dolfinx.io import extract_gmsh_geometry, \
-    extract_gmsh_topology_and_markers, ufl_mesh_from_gmsh
-from dolfinx.cpp.io import perm_gmsh, distribute_entity_data
-from dolfinx.cpp.mesh import to_type, cell_entity_type
+import numpy
 from dolfinx.cpp.graph import AdjacencyList_int32
-from dolfinx.mesh import meshtags_from_entities, create_mesh
+from dolfinx.cpp.io import distribute_entity_data, perm_gmsh
+from dolfinx.cpp.mesh import cell_entity_type, to_type
+from dolfinx.io import (extract_gmsh_geometry,
+                        extract_gmsh_topology_and_markers, ufl_mesh_from_gmsh)
+from dolfinx.mesh import create_mesh, meshtags_from_entities
+from mpi4py import MPI
 
 
 def read_from_msh(filename: str, cell_data=False, facet_data=False, gdim=None):
@@ -51,7 +50,7 @@ def read_from_msh(filename: str, cell_data=False, facet_data=False, gdim=None):
 
 def gmsh_model_to_mesh(model, cell_data=False, facet_data=False, gdim=None):
     """
-    Given a GMSH model, create a DOLFIN-X mesh and MeshTags.
+    Given a GMSH model, create a DOLFINx mesh and MeshTags.
         model: The GMSH model
         cell_data: Boolean, True of a mesh tag for cell data should be returned
                    (Default: False)
