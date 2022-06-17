@@ -250,7 +250,7 @@ def test_manual_integration_domains():
     values = np.zeros_like(indices, dtype=np.intc)
     marked_cells = locate_entities(
         msh, tdim, lambda x: x[0] < 0.75)
-    values[marked_cells] = 1
+    values[marked_cells] = 7
     mt = meshtags(msh, tdim, indices, values)
 
     # Create meshtags to mark some exterior facets
@@ -263,11 +263,11 @@ def test_manual_integration_domains():
         msh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
     marked_int_facets = locate_entities(
         msh, tdim - 1, lambda x: x[0] < 0.75)
-    # marked_int_facets will also contain facets on the boundary, 
+    # marked_int_facets will also contain facets on the boundary,
     # so set these values first, followed by the values for
     # marked_ext_facets
-    facet_values[marked_int_facets] = 2
-    facet_values[marked_ext_facets] = 1
+    facet_values[marked_int_facets] = 3
+    facet_values[marked_ext_facets] = 6
     mt_facets = meshtags(msh, tdim - 1, facet_indices, facet_values)
 
     # Create measures
@@ -276,13 +276,13 @@ def test_manual_integration_domains():
     dS_mt = ufl.Measure("dS", subdomain_data=mt_facets, domain=msh)
 
     # Create a forms and assemble
-    L = form(ufl.inner(1.0, v) * (dx_mt(1) + ds_mt(1))
-             + ufl.inner(1.0, v("+") + v("-")) * dS_mt(2))
+    L = form(ufl.inner(1.0, v) * (dx_mt(7) + ds_mt(6))
+             + ufl.inner(1.0, v("+") + v("-")) * dS_mt(3))
     b = assemble_vector(L)
     b_expected_norm = b.norm()
 
-    a = form(ufl.inner(u, v) * (dx_mt(1) + ds_mt(1))
-             + ufl.inner(u("+"), v("+") + v("-")) * dS_mt(2))
+    a = form(ufl.inner(u, v) * (dx_mt(7) + ds_mt(6))
+             + ufl.inner(u("+"), v("+") + v("-")) * dS_mt(3))
     A = assemble_matrix(a)
     A.assemble()
     A_expected_norm = A.norm()
@@ -321,25 +321,25 @@ def test_manual_integration_domains():
         int_facet_domain.append(local_f_1)
 
     # Create measures
-    cell_domains = {1: cell_domain}
+    cell_domains = {7: cell_domain}
     dx_manual = ufl.Measure("dx", subdomain_data=cell_domains, domain=msh)
 
-    ext_facet_domains = {1: ext_facet_domain}
+    ext_facet_domains = {6: ext_facet_domain}
     ds_manual = ufl.Measure("ds", subdomain_data=ext_facet_domains, domain=msh)
 
-    int_facet_domains = {1: int_facet_domain}
+    int_facet_domains = {3: int_facet_domain}
     dS_manual = ufl.Measure("dS", subdomain_data=int_facet_domains, domain=msh)
 
     # Assemble forms and check
-    L = form(ufl.inner(1.0, v) * (dx_manual(1) + ds_manual(1))
-             + ufl.inner(1.0, v("+") + v("-")) * dS_manual(1))
+    L = form(ufl.inner(1.0, v) * (dx_manual(7) + ds_manual(6))
+             + ufl.inner(1.0, v("+") + v("-")) * dS_manual(3))
     b = assemble_vector(L)
     b_norm = b.norm()
 
     assert(np.isclose(b_norm, b_expected_norm))
 
-    a = form(ufl.inner(u, v) * (dx_manual(1) + ds_manual(1))
-             + ufl.inner(u("+"), v("+") + v("-")) * dS_manual(1))
+    a = form(ufl.inner(u, v) * (dx_manual(7) + ds_manual(6))
+             + ufl.inner(u("+"), v("+") + v("-")) * dS_manual(3))
     A = assemble_matrix(a)
     A.assemble()
     A_norm = A.norm()
