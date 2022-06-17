@@ -164,13 +164,13 @@ theta = 45 * deg
 
 # Plane wave function
 f = background_electric_field(theta, n_bkg, k0)
-Eb = fem.Function(V, dtype=np.complex128)
+Eb = fem.Function(V)
 Eb.interpolate(f.eval)
 
 # Function r = radial distance from the (0, 0) point
 lagr_el = ufl.FiniteElement("CG", mesh.ufl_cell(), 2)
 lagr_space = fem.FunctionSpace(mesh, lagr_el)
-r = fem.Function(lagr_space, dtype=np.complex128)
+r = fem.Function(lagr_space)
 r.interpolate(radial_distance)
 
 # Definition of Trial and Test functions
@@ -221,7 +221,7 @@ problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={
 Eh = problem.solve()
 
 # Total electric field E = Es + Eb
-E = fem.Function(V, dtype=np.complex128)
+E = fem.Function(V)
 E.x.array[:] = Eb.x.array[:] + Eh.x.array[:]
 
 # ||E||
