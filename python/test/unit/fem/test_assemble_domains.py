@@ -258,32 +258,31 @@ def test_manual_integration_domains():
     facet_map = msh.topology.index_map(tdim - 1)
     num_facets = facet_map.size_local + facet_map.num_ghosts
     facet_indices = np.arange(0, num_facets)
-    ext_facet_values = np.zeros_like(facet_indices, dtype=np.intc)
+    facet_values = np.zeros_like(facet_indices, dtype=np.intc)
     marked_ext_facets = locate_entities_boundary(
         msh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
-    ext_facet_values[marked_ext_facets] = 1
-    mt_ext_facets = meshtags(msh, tdim - 1, facet_indices, ext_facet_values)
-
-    # Create meshtags to mark some interior facets
-    int_facet_values = np.zeros_like(facet_indices, dtype=np.intc)
     marked_int_facets = locate_entities(
         msh, tdim - 1, lambda x: x[0] < 0.75)
-    int_facet_values[marked_int_facets] = 1
-    mt_int_facets = meshtags(msh, tdim - 1, facet_indices, int_facet_values)
+    # marked_int_facets will also contain facets on the boundary, 
+    # so set these values first, followed by the values for
+    # marked_ext_facets
+    facet_values[marked_int_facets] = 2
+    facet_values[marked_ext_facets] = 1
+    mt_facets = meshtags(msh, tdim - 1, facet_indices, facet_values)
 
     # Create measures
     dx_mt = ufl.Measure("dx", subdomain_data=mt, domain=msh)
-    ds_mt = ufl.Measure("ds", subdomain_data=mt_ext_facets, domain=msh)
-    dS_mt = ufl.Measure("dS", subdomain_data=mt_int_facets, domain=msh)
+    ds_mt = ufl.Measure("ds", subdomain_data=mt_facets, domain=msh)
+    dS_mt = ufl.Measure("dS", subdomain_data=mt_facets, domain=msh)
 
     # Create a forms and assemble
     L = form(ufl.inner(1.0, v) * (dx_mt(1) + ds_mt(1))
-             + ufl.inner(1.0, v("+") + v("-")) * dS_mt(1))
+             + ufl.inner(1.0, v("+") + v("-")) * dS_mt(2))
     b = assemble_vector(L)
     b_expected_norm = b.norm()
 
     a = form(ufl.inner(u, v) * (dx_mt(1) + ds_mt(1))
-             + ufl.inner(u("+"), v("+") + v("-")) * dS_mt(1))
+             + ufl.inner(u("+"), v("+") + v("-")) * dS_mt(2))
     A = assemble_matrix(a)
     A.assemble()
     A_expected_norm = A.norm()
