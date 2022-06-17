@@ -1,9 +1,5 @@
 import numpy as np
-from mpi4py import MPI
 from scipy.special import h2vp, hankel2, jv, jvp
-from ufl import as_vector
-
-from dolfinx import io
 
 
 def calculate_analytical_efficiencies(reps, ieps, n_bkg, wl0, radius_wire):

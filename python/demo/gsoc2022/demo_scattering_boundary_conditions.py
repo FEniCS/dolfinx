@@ -5,11 +5,6 @@
 #       infinite wire (scattering boundary conditions)
 # ====================================================
 
-import os
-import sys
-from datetime import datetime
-
-import gmsh
 import numpy as np
 import ufl
 from gmsh_helpers import gmsh_model_to_mesh
@@ -17,11 +12,11 @@ from mesh_wire import generate_mesh_wire
 from mpi4py import MPI
 from petsc4py import PETSc
 from scipy.constants import epsilon_0, mu_0
-from ufl import (FacetNormal, as_vector, conj, cross, curl, dot, grad, inner,
+from ufl import (FacetNormal, as_vector, conj, cross, curl, inner,
                  lhs, rhs, sqrt)
 from utils import calculate_analytical_efficiencies
 
-from dolfinx import cpp, fem, io, plot
+from dolfinx import fem, io
 
 if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
