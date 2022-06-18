@@ -1,10 +1,179 @@
-# Copyright (C) 2022 Michele Castriotta
+# # Scattering from a wire with scattering boundary conditions
+# This demo is implemented in two files: one for the mesh
+# generation with gmsh, and one for the variational forms
+# and the solver. It illustrates how to:
 #
-# ====================================================
-# Demo: scattering of an electromagnetic field by an
-#       infinite wire (scattering boundary conditions)
-# ====================================================
+# - Use complex quantities in FEniCSx
+# - Setup and solve Maxwell's equations
+# - Add scattering boundary conditions for transparent boundaries
+# - Implement Scattering Boundary Conditions as absorbing boundaries
+# - Calculate absorption, scattering and extinction efficiencies
+#
+# ## Equations and problem definition
+# Let's consider an infinite metallic wire immersed in
+# a background medium (e.g. vacuum or water). Let's now
+# consider the plane cutting the wire perpendicularly to
+# its axis at a generic point. Such plane $\Omega=\Omega_{m}
+# \cup\Omega_{b}$ is formed by the cross-section
+# of the wire $\Omega_m$ and the background medium
+# $\Omega_{b}$ surrounding the wire. Let's consider
+# just the portion of this plane delimited by an external
+# circular boundary $\partial \Omega$. We want to calculate
+# the electric field $\mathbf{E}_s$ scattered by the wire
+# when a background wave $\mathbf{E}_b$ impinges on it.
+# We will consider a background plane wave at $\lambda_0$
+# wavelength, that can be written analytically as:
+#
+# $$
+# \mathbf{E}_b = \exp(\mathbf{k}\cdot\mathbf{r})\hat{\mathbf{u}}_p
+# $$
+#
+# with $\mathbf{k} = \frac{2\pi}{\lambda_0}n_b\hat{\mathbf{u}}_k$
+# being the wavevector of the
+# plane wave, pointing along the propagation direction,
+# with $\hat{\mathbf{u}}_p$ being the
+# polarization direction, and with $\mathbf{r}$ being a
+# point on the $\Omega$ domain.
+# We will only consider $\hat{\mathbf{u}}_k$ and $\hat{\mathbf{u}}_p$
+# with components belonging
+# to the $\Omega$ domain and perpendicular to each other,
+# i.e. $\hat{\mathbf{u}}_k \perp \hat{\mathbf{u}}_p$
+# (transversality condition of plane waves).
+# If we call $x$ and $y$ the horizontal
+# and vertical axis in our $\Omega$ domain,
+# and by defining $k_x = n_bk_0\cos\theta$ and
+# $k_y = n_bk_0\sin\theta$, with $\theta$ being the angle
+# defined by the propagation direction $\hat{\mathbf{u}}_k$
+# and the horizontal axis $\hat{\mathbf{u}}_x$,
+# we can write more explicitly:
+#
+# $$
+# \mathbf{E}_b = -\sin\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
+# + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y
+# $$
+#
+# The Maxwell's equation for scattering problems takes the following form:
+#
+# $$
+# \textrm{on } \Omega: \quad-\nabla \times
+# \nabla \times \mathbf{E}_s+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s
+# +k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_{b}\right)
+# \mathbf{E}_{\mathrm{b}}=0,
+# $$
+#
+# where $k_0 = 2\pi/\lambda_0$ is the vacuum wavevector of the background
+# field, $\varepsilon_b$ is the background relative permittivity and
+# $\varepsilon_r$ is the relative permittivity as a function of space,
+# i.e.:
+#
+# $$
+# \varepsilon_r = \begin{cases}
+# \varepsilon_m & \textrm{on }\Omega_m \\
+# \varepsilon_b & \textrm{on }\Omega_b
+# \end{cases}
+# $$
+#
+# with $\varepsilon_m$ being the relative permittivity of the matallic
+# wire. As reference values, we will consider $\lambda_0 = 400\textrm{nm}$
+# (violet light), $\varepsilon_b = 1.33^2$ (relative permittivity of water),
+# and $\varepsilon_m = -1.0782 + 5.8089\textrm{j}$ (relative permittivity of
+# gold at $400\textrm{nm}$ (ref)).
+#
+# To make the system determined, we need to add some boundary conditions
+# on $\partial \Omega$. A common approach is the use of scattering
+# boundary conditions (ref), which make the boundary transparent for
+# $\mathbf{E}_s$, allowing us to restric the computational boundary
+# to a finite $\Omega$ domain. The first-order boundary conditions
+# in the 2D case take the following form:
+#
+# $$
+# \textrm{on } \partial \Omega: \quad \mathbf{n} \times
+# \nabla \times \mathbf{E}_s+\left(j k_{0}n_b + \frac{1}{2r}
+# \right) \mathbf{n} \times \mathbf{E}_s
+# \times \mathbf{n}=0
+# $$
+#
+# with $n_b = \sqrt{\varepsilon_b}$ being the background refractive
+# index, $\mathbf{n}$ being the normal versor to $\partial \Omega$,
+# and $r = \sqrt{(x-x_s)^2 + (y-y_s)^2}$ being the distance of the
+# $(x, y)$ point on $\partial\Omega$ from the wire centered in
+# $(x_s, y_s)$. In our case we will consider
+# the wire centered in the origin of our mesh, and therefore $r =
+# \sqrt{x^2 + y^2}$.
+#
+# Now we need to find the weak form of the problem. First of all,
+# we need to take the inner products of the equations with a
+# complex test function $\mathbf{V}$, and then we need to integrate
+# the terms over the corresponding domains:
+#
+# $$
+# \begin{align}
+# & \iint_{\Omega}-\nabla \times \nabla \times \mathbf{E}_s \cdot
+# \bar{\mathbf{V}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
+# \bar{\mathbf{V}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
+# \mathbf{E}_b \cdot \bar{\mathbf{V}} d S \\ +& \int_{\partial \Omega}
+# \mathbf{n} \times \nabla \times \mathbf{E}_s \cdot \bar{\mathbf{V}}
+# +\left(j n_bk_{0}+\frac{1}{2r}\right) \mathbf{n} \times \mathbf{E}_s
+# \times \mathbf{n} \cdot \bar{\mathbf{V}} d l=0
+# \end{align}
+# $$
+#
+# By using the $(\nabla \times \mathbf{A}) \cdot \mathbf{B}=\mathbf{A}
+# \cdot(\nabla \times \mathbf{B})+\nabla \cdot(\mathbf{A}
+# \times \mathbf{B})$
+# relation, we can change the first term into:
+#
+# $$
+# \begin{align}
+# & \iint_{\Omega}-\nabla \cdot(\nabla\times\mathbf{E}_s \times
+# \bar{\mathbf{V}})-\nabla \times \mathbf{E}_s \cdot \nabla
+# \times\bar{\mathbf{V}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s
+# \cdot \bar{\mathbf{V}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
+# \mathbf{E}_b \cdot \bar{\mathbf{V}} d S \\ +&\int_{\partial \Omega}
+# \mathbf{n} \times \nabla \times \mathbf{E}_s \cdot \bar{\mathbf{V}}
+# +\left(j n_bk_{0}+\frac{1}{2r}\right) \mathbf{n} \times \mathbf{E}_s
+# \times \mathbf{n} \cdot \bar{\mathbf{V}} d l=0
+# \end{align}
+# $$
+#
+# using the divergence theorem $\iint_\Omega\nabla\cdot\mathbf{F}dS =
+# \int_{\partial\Omega} \mathbf{F}\cdot\mathbf{n}dl$, we can write:
+#
+# $$
+# \begin{align}
+# & \iint_{\Omega}-\nabla \times \mathbf{E}_s \cdot \nabla \times
+# \bar{\mathbf{V}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
+# \bar{\mathbf{V}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
+# \mathbf{E}_b \cdot \bar{\mathbf{V}} d S \\ +&\int_{\partial \Omega}
+# -(\nabla\times\mathbf{E}_s \times \bar{\mathbf{V}})\cdot\mathbf{n}
+# + \mathbf{n} \times \nabla \times \mathbf{E}_s \cdot \bar{\mathbf{V}}
+# +\left(j n_bk_{0}+\frac{1}{2r}\right) \mathbf{n} \times \mathbf{E}_s
+# \times \mathbf{n} \cdot \bar{\mathbf{V}} d l=0
+# \end{align}
+# $$
+#
+# We can cancel $-(\nabla\times\mathbf{E}_s \times \bar{\mathbf{V}})
+# \cdot\mathbf{n}$  and $\mathbf{n} \times \nabla \times \mathbf{E}_s
+# \cdot \bar{\mathbf{V}}$ thanks to the triple product rule $\mathbf{A}
+# \cdot(\mathbf{B} \times \mathbf{C})=\mathbf{B} \cdot(\mathbf{C} \times
+# \mathbf{A})=\mathbf{C} \cdot(\mathbf{A} \times \mathbf{B})$, arriving
+# at the final weak form:
+#
+# $$
+# \begin{align}
+# & \iint_{\Omega}-\nabla \times \mathbf{E}_s \cdot \nabla \times
+# \bar{\mathbf{V}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
+# \bar{\mathbf{V}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
+# \mathbf{E}_b \cdot \bar{\mathbf{V}} d S \\ +&\int_{\partial \Omega}
+# \left(j n_bk_{0}+\frac{1}{2r}\right) \mathbf{n} \times \mathbf{E}_s \times 
+# \mathbf{n} \cdot \bar{\mathbf{V}} d l=0
+# \end{align}
+# $$
+#
+# ## Implementation
+# The modules that will be used are imported:
 
+# +
 import numpy as np
 import ufl
 from gmsh_helpers import gmsh_model_to_mesh
@@ -12,37 +181,50 @@ from mesh_wire import generate_mesh_wire
 from mpi4py import MPI
 from petsc4py import PETSc
 from scipy.constants import epsilon_0, mu_0
-from ufl import (FacetNormal, as_vector, conj, cross, curl, inner,
-                 lhs, rhs, sqrt)
+from ufl import (FacetNormal, as_vector, conj, cross, curl, inner, lhs, rhs,
+                 sqrt)
 from utils import calculate_analytical_efficiencies
 
 from dolfinx import fem, io
 
+# -
+
+# The demo can only be run with DOLFINx complex mode.
+
+# +
 if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
     exit(0)
+# -
 
-# Definition of the background electric field
+# The following function is used for defining the background field.
+# The inputs to the function are the angle $\theta$, the background
+# refractive index $n_b$ and the vacuum wavevector $k_0$. The 
+# function returns the expression $ \mathbf{E}_b = -\sin
+# \theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
+# + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y$.
 
-
+# +
 class background_electric_field:
 
-    def __init__(self, theta, n_bkg, k0):
+    def __init__(self, theta, n_b, k0):
         self.theta = theta
         self.k0 = k0
-        self.n_bkg = n_bkg
+        self.n_b = n_b
 
     def eval(self, x):
 
-        kx = self.n_bkg * self.k0 * np.cos(self.theta)
-        ky = self.n_bkg * self.k0 * np.sin(self.theta)
+        kx = self.n_b * self.k0 * np.cos(self.theta)
+        ky = self.n_b * self.k0 * np.sin(self.theta)
         phi = kx * x[0] + ky * x[1]
 
         ax = np.sin(self.theta)
         ay = np.cos(self.theta)
 
         return (-ax * np.exp(1j * phi), ay * np.exp(1j * phi))
+# -
 
+# +
 # Definition of the radial distance from the center
 
 
@@ -262,3 +444,5 @@ if MPI.COMM_WORLD.rank == 0:
     print(f"The analytical extinction efficiency is {q_ext_analyt}")
     print(f"The numerical extinction efficiency is {q_ext_fenics}")
     print(f"The error is {err_ext}%")
+# -
+# ## References
