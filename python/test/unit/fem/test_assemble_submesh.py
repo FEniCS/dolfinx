@@ -755,13 +755,17 @@ def test_assemble_block(random_ordering):
     assert(np.isclose(b.norm(), 1.4361406616345072))
 
 
-@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("n", [2, 6, 8])
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
-def test_custom_domains(n, k, ghost_mode):
-    msh = create_unit_square(
-        MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+@pytest.mark.parametrize("random_ordering", [False, True])
+def test_custom_domains(n, k, ghost_mode, random_ordering):
+    if random_ordering:
+        msh = create_random_mesh(((0.0, 0.0), (1.0, 1.0)), (n, n), ghost_mode)
+    else:
+        msh = create_unit_square(
+            MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
     tdim = msh.topology.dim
     centre_facets = locate_entities(
         msh, tdim - 1, lambda x: np.isclose(x[0], 0.5))
