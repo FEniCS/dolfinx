@@ -55,10 +55,9 @@
 # The Maxwell's equation for scattering problems takes the following form:
 #
 # $$
-# \textrm{on } \Omega: \quad-\nabla \times
-# \nabla \times \mathbf{E}_s+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s
+# -\nabla \times \nabla \times \mathbf{E}_s+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s
 # +k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_{b}\right)
-# \mathbf{E}_{\mathrm{b}}=0,
+# \mathbf{E}_{\mathrm{b}}=0 \textrm{ in } \Omega,
 # $$
 #
 # where $k_0 = 2\pi/\lambda_0$ is the vacuum wavevector of the background
