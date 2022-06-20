@@ -373,17 +373,6 @@ def test_ext_facet_perms(i, k, ghost_mode):
     left_boundary_facets = locate_entities_boundary(
         msh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
 
-    # from dolfinx.mesh import create_submesh
-    # left_cell_submesh = create_submesh(msh, tdim, left_cells)[0]
-    # entity_submesh = create_submesh(msh, tdim - 1, marked_facets)[0]
-    # from dolfinx.io import XDMFFile
-    # with XDMFFile(msh.comm, "msh.xdmf", "w") as file:
-    #     file.write_mesh(msh)
-    # with XDMFFile(msh.comm, "left_cells.xdmf", "w") as file:
-    #     file.write_mesh(left_cell_submesh)
-    # with XDMFFile(msh.comm, "entities.xdmf", "w") as file:
-    #     file.write_mesh(entity_submesh)
-
     # Manually specify exterior facets to integrate over as
     # (cell, local facet) pairs
     left_cell_ext_facet_domain = []
