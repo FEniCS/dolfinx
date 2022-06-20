@@ -13,6 +13,7 @@
 #include "Expression.h"
 #include "Form.h"
 #include "Function.h"
+#include "sparsitybuild.h"
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -133,8 +134,59 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
   std::array<const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>
       facet_maps = {facet_map_0, facet_map_1};
 
-  return create_sparsity_pattern(mesh->topology(), dofmaps, types, cell_maps,
-                                 facet_maps);
+  common::Timer t0("Build sparsity");
+
+  // Get common::IndexMaps for each dimension
+  const std::array index_maps{dofmaps[0].get().index_map,
+                              dofmaps[1].get().index_map};
+  const std::array bs
+      = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};
+
+  // Create and build sparsity pattern
+  la::SparsityPattern pattern(mesh->comm(), index_maps, bs);
+  for (auto type : types)
+  {
+    std::vector<int> ids = a.integral_ids(type);
+    switch (type)
+    {
+    case IntegralType::cell:
+    {
+      for (int id : ids)
+      {
+        const std::vector<std::int32_t>& cells = a.cell_domains(id);
+        sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}},
+                             cell_maps);
+      }
+      break;
+    }
+    case IntegralType::interior_facet:
+    {
+      for (int id : ids)
+      {
+        const std::vector<std::int32_t>& facets = a.interior_facet_domains(id);
+        sparsitybuild::interior_facets(pattern, facets,
+                                       {{dofmaps[0], dofmaps[1]}});
+      }
+      break;
+    }
+    case IntegralType::exterior_facet:
+    {
+      for (int id : ids)
+      {
+        const std::vector<std::int32_t>& facets = a.exterior_facet_domains(id);
+        sparsitybuild::exterior_facets(pattern, facets,
+                                       {{dofmaps[0], dofmaps[1]}}, facet_maps);
+      }
+      break;
+    }
+    default:
+      throw std::runtime_error("Unsupported integral type");
+    }
+  }
+
+  t0.stop();
+
+  return pattern;
 }
 
 /// Create an ElementDofLayout from a ufcx_dofmap
@@ -176,17 +228,17 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] subdomains Subdomain markers
 /// @param[in] mesh The mesh of the domain
 /// @param[in] entity_maps The entity maps for the form
-template <typename T>
-Form<T> create_form(
-    const ufcx_form& ufcx_form,
-    const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
-    const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
-    const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
-    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
-    const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
-                   std::vector<std::int32_t>>& entity_maps
-    = {})
+template <typename T, typename U = mesh::MeshTags<int>>
+Form<T>
+create_form(const ufcx_form& ufcx_form,
+            const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
+            const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+            const std::vector<std::shared_ptr<const Constant<T>>>& constants,
+            const std::map<IntegralType, const U*>& subdomains,
+            const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
+            const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
+                           std::vector<std::int32_t>>& entity_maps
+            = {})
 {
   if (ufcx_form.rank != (int)spaces.size())
     throw std::runtime_error("Wrong number of argument spaces for Form.");
@@ -221,8 +273,7 @@ Form<T> create_form(
   // each
   using kern = std::function<void(T*, const T*, const T*, const double*,
                                   const int*, const std::uint8_t*)>;
-  std::map<IntegralType, std::pair<std::vector<std::pair<int, kern>>,
-                                   const mesh::MeshTags<int>*>>
+  std::map<IntegralType, std::pair<std::vector<std::pair<int, kern>>, const U*>>
       integral_data;
 
   bool needs_facet_permutations = false;
@@ -379,14 +430,14 @@ Form<T> create_form(
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional
 /// @return A Form
-template <typename T>
+template <typename T, typename U = mesh::MeshTags<int>>
 Form<T> create_form(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
     const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
+    const std::map<IntegralType, const U*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   // Place coefficients in appropriate order
@@ -426,14 +477,14 @@ Form<T> create_form(
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional.
 /// @return A Form
-template <typename T>
+template <typename T, typename U = mesh::MeshTags<int>>
 Form<T> create_form(
     ufcx_form* (*fptr)(),
     const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
     const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
+    const std::map<IntegralType, const U*>& subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   ufcx_form* form = fptr();

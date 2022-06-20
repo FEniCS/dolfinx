@@ -158,6 +158,105 @@ public:
     set_default_domains(*_mesh);
   }
 
+  /// @brief Create a finite element form.
+  ///
+  /// @note User applications will normally call a fem::Form builder
+  /// function rather using this interfcae directly.
+  ///
+  /// @param[in] function_spaces Function spaces for the form arguments
+  /// @param[in] integrals The integrals in the form. The first key is
+  /// the domain type. For each key there is a pair (list[domain id,
+  /// integration kernel], domains), where domains is a map from domain
+  // id to the entities to integrate over i.e. cell indices for cell
+  // integrals, (cell, local_facet) pairs for exterior facet integrals
+  // etc.
+  /// @param[in] coefficients
+  /// @param[in] constants Constants in the Form
+  /// @param[in] needs_facet_permutations Set to true is any of the
+  /// integration kernels require cell permutation data
+  /// @param[in] mesh The mesh of the domain. This is required when
+  /// there are not argument functions from which the mesh can be
+  /// extracted, e.g. for functionals
+  Form(
+      const std::vector<std::shared_ptr<const fem::FunctionSpace>>&
+          function_spaces,
+      const std::map<
+          IntegralType,
+          std::pair<
+              std::vector<std::pair<
+                  int, std::function<void(T*, const T*, const T*, const double*,
+                                          const int*, const std::uint8_t*)>>>,
+              const std::map<std::int32_t, std::vector<std::int32_t>>*>>&
+          integrals,
+      const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
+      const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
+      bool needs_facet_permutations,
+      const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+      : _function_spaces(function_spaces), _coefficients(coefficients),
+        _constants(constants), _mesh(mesh),
+        _needs_facet_permutations(needs_facet_permutations)
+  {
+    // Extract _mesh from fem::FunctionSpace, and check they are the same
+    if (!_mesh and !function_spaces.empty())
+      _mesh = function_spaces[0]->mesh();
+    for (const auto& V : function_spaces)
+    {
+      if (_mesh != V->mesh())
+        throw std::runtime_error("Incompatible mesh");
+    }
+    if (!_mesh)
+      throw std::runtime_error("No mesh could be associated with the Form.");
+
+    // Store kernels, looping over integrals by domain type (dimension)
+    for (auto& integral_type : integrals)
+    {
+      const IntegralType type = integral_type.first;
+
+      const auto* id_to_entities = integral_type.second.second;
+      assert(id_to_entities);
+
+      // Loop over integrals kernels and set domains
+      switch (type)
+      {
+      case IntegralType::cell:
+        for (auto& integral : integral_type.second.first)
+        {
+          if (id_to_entities->find(integral.first) != id_to_entities->end())
+          {
+            _cell_integrals.insert(
+                {integral.first,
+                 {integral.second, id_to_entities->at(integral.first)}});
+          }
+        }
+        break;
+      case IntegralType::exterior_facet:
+        for (auto& integral : integral_type.second.first)
+        {
+          if (id_to_entities->find(integral.first) != id_to_entities->end())
+          {
+            _exterior_facet_integrals.insert(
+                {integral.first,
+                 {integral.second, id_to_entities->at(integral.first)}});
+          }
+        }
+        break;
+      case IntegralType::interior_facet:
+        for (auto& integral : integral_type.second.first)
+        {
+          if (id_to_entities->find(integral.first) != id_to_entities->end())
+          {
+            _interior_facet_integrals.insert(
+                {integral.first,
+                 {integral.second, id_to_entities->at(integral.first)}});
+          }
+        }
+        break;
+      }
+    }
+
+    // TODO Should probably still set default domains
+  }
+
   /// Copy constructor
   Form(const Form& form) = delete;
 

@@ -39,6 +39,22 @@ void sparsitybuild::cells(
   }
 }
 //-----------------------------------------------------------------------------
+void sparsitybuild::cells(
+    la::SparsityPattern& pattern, const xtl::span<const std::int32_t>& cells,
+    const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
+        dofmaps,
+    const std::array<const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
+        cell_maps)
+{
+  for (std::int32_t c : cells)
+  {
+    std::int32_t c_0 = cell_maps[0]({c});
+    std::int32_t c_1 = cell_maps[1]({c});
+    pattern.insert(dofmaps[0].get().cell_dofs(c),
+                   dofmaps[1].get().cell_dofs(c));
+  }
+}
+//-----------------------------------------------------------------------------
 void sparsitybuild::interior_facets(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
@@ -85,6 +101,30 @@ void sparsitybuild::interior_facets(
   }
 }
 //-----------------------------------------------------------------------------
+void sparsitybuild::interior_facets(
+    la::SparsityPattern& pattern, const xtl::span<const std::int32_t>& facets,
+    const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
+        dofmaps)
+{
+  std::array<std::vector<std::int32_t>, 2> macro_dofs;
+  for (std::size_t index = 0; index < facets.size(); index += 4)
+  {
+    const int cell_0 = facets[index];
+    const int cell_1 = facets[index + 2];
+
+    for (std::size_t i = 0; i < 2; ++i)
+    {
+      auto cell_dofs_0 = dofmaps[i].get().cell_dofs(cell_0);
+      auto cell_dofs_1 = dofmaps[i].get().cell_dofs(cell_1);
+      macro_dofs[i].resize(cell_dofs_0.size() + cell_dofs_1.size());
+      std::copy(cell_dofs_0.begin(), cell_dofs_0.end(), macro_dofs[i].begin());
+      std::copy(cell_dofs_1.begin(), cell_dofs_1.end(),
+                std::next(macro_dofs[i].begin(), cell_dofs_0.size()));
+    }
+    pattern.insert(macro_dofs[0], macro_dofs[1]);
+  }
+}
+//-----------------------------------------------------------------------------
 void sparsitybuild::exterior_facets(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
@@ -122,6 +162,23 @@ void sparsitybuild::exterior_facets(
     assert(facet_it != cell_facets.end());
     int local_f = std::distance(cell_facets.begin(), facet_it);
 
+    pattern.insert(dofmaps[0].get().cell_dofs(facet_maps[0]({cell, local_f})),
+                   dofmaps[1].get().cell_dofs(facet_maps[1]({cell, local_f})));
+  }
+}
+//-----------------------------------------------------------------------------
+void sparsitybuild::exterior_facets(
+    la::SparsityPattern& pattern, const xtl::span<const std::int32_t>& facets,
+    const std::array<const std::reference_wrapper<const fem::DofMap>, 2>&
+        dofmaps,
+    const std::array<
+        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
+        facet_maps)
+{
+  for (std::size_t index = 0; index < facets.size(); index += 2)
+  {
+    std::int32_t cell = facets[index];
+    std::int32_t local_f = facets[index + 1];
     pattern.insert(dofmaps[0].get().cell_dofs(facet_maps[0]({cell, local_f})),
                    dofmaps[1].get().cell_dofs(facet_maps[1]({cell, local_f})));
   }

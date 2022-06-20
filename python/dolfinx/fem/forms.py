@@ -157,6 +157,16 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
                       _cpp.fem.IntegralType.interior_facet: subdomains.get("interior_facet"),
                       _cpp.fem.IntegralType.vertex: subdomains.get("vertex")}
 
+        # HACK Horrible hack for testing TODO remove
+        is_entities = False
+        for key in subdomains:
+            if type(subdomains[key]) == dict:
+                is_entities = True
+        if is_entities:
+            for key in subdomains:
+                if subdomains[key] is None:
+                    subdomains[key] = {}
+
         return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh,
                        entity_maps, code)
 
