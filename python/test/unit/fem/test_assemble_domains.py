@@ -458,8 +458,5 @@ def test_ext_facet_perms():
     A_right = assemble_matrix(a_right)
     A_right.assemble()
 
-    print()
-    print(A.norm(), A_left.norm(), A_right.norm())
-
     assert(np.isclose(A.norm(), A_left.norm()))
     assert(np.isclose(A.norm(), A_right.norm()))
