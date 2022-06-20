@@ -438,7 +438,10 @@ Form<T> create_form(
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::map<IntegralType, const U*>& subdomains,
-    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
+    const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
+                   std::vector<std::int32_t>>& entity_maps
+    = {})
 {
   // Place coefficients in appropriate order
   std::vector<std::shared_ptr<const Function<T>>> coeff_map;
@@ -463,7 +466,8 @@ Form<T> create_form(
       throw std::runtime_error("Form constant \"" + name + "\" not provided.");
   }
 
-  return create_form(ufcx_form, spaces, coeff_map, const_map, subdomains, mesh);
+  return create_form(ufcx_form, spaces, coeff_map, const_map, subdomains, mesh,
+                     entity_maps);
 }
 
 /// @brief Create a Form using a factory function that returns a pointer
@@ -485,11 +489,14 @@ Form<T> create_form(
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::map<IntegralType, const U*>& subdomains,
-    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
+    const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
+                   std::vector<std::int32_t>>& entity_maps
+    = {})
 {
   ufcx_form* form = fptr();
   Form<T> L = create_form<T>(*form, spaces, coefficients, constants, subdomains,
-                             mesh);
+                             mesh, entity_maps);
   std::free(form);
   return L;
 }
