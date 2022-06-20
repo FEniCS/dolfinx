@@ -355,7 +355,8 @@ def test_ext_facet_perms():
 
     # NOTE No permutations should be needed even on a random mesh,
     # since everything belongs to a single cell
-    msh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=GhostMode.none)
+    msh = create_unit_square(
+        MPI.COMM_WORLD, n, n, ghost_mode=GhostMode.shared_facet)
 
     V = FunctionSpace(msh, ("Lagrange", 1))
 
@@ -392,15 +393,15 @@ def test_ext_facet_perms():
     for f in marked_facets:
         for c in f_to_c.links(f):
             # TODO this is probably needed for shared facet
-            # if c < cell_map.size_local:
-            local_f = np.where(c_to_f.links(c) == f)[0][0]
+            if c < cell_map.size_local:
+                local_f = np.where(c_to_f.links(c) == f)[0][0]
 
-            if c in left_cells:
-                left_cell_ext_facet_domain.append(c)
-                left_cell_ext_facet_domain.append(local_f)
-            else:
-                right_cell_ext_facet_domain.append(c)
-                right_cell_ext_facet_domain.append(local_f)
+                if c in left_cells:
+                    left_cell_ext_facet_domain.append(c)
+                    left_cell_ext_facet_domain.append(local_f)
+                else:
+                    right_cell_ext_facet_domain.append(c)
+                    right_cell_ext_facet_domain.append(local_f)
 
     # print()
     # print(left_cell_ext_facet_domain)
@@ -411,62 +412,45 @@ def test_ext_facet_perms():
     ds_right = ufl.Measure(
         "ds", subdomain_data={1: right_cell_ext_facet_domain}, domain=msh)
 
-    f = Function(V)
-    f.interpolate(lambda x: np.ones_like(x[0]))
+    num_facets = facet_map.size_local + facet_map.num_ghosts
+    indices = np.arange(0, num_facets)
+    values = np.zeros_like(indices, dtype=np.intc)
+    left_facets = locate_entities_boundary(
+        msh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
+    values[left_facets] = 1
+    marker = meshtags(msh, msh.topology.dim - 1, indices, values)
+    ds = ufl.Measure("ds", subdomain_data=marker, domain=msh)
 
+    f = Function(V)
+    f.interpolate(lambda x: x[1]**2)
+
+    s = msh.comm.allreduce(
+        assemble_scalar(form(f * ds(1))), op=MPI.SUM)
     s_left = msh.comm.allreduce(
         assemble_scalar(form(f * ds_left(1))), op=MPI.SUM)
     s_right = msh.comm.allreduce(
         assemble_scalar(form(f * ds_right(1))), op=MPI.SUM)
 
-    assert(np.isclose(s_left, 1.0))
-    assert(np.isclose(s_right, 1.0))
+    assert(np.isclose(s, s_left))
+    assert(np.isclose(s, s_right))
 
-    # def bottom(x):
-    #     return np.isclose(x[1], 0.0)
+    L = form(ufl.inner(f, v) * ds(1))
+    b = assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD,
+                  mode=PETSc.ScatterMode.REVERSE)
 
-    # def top(x):
-    #     return np.isclose(x[1], 1.0)
+    L_left = form(ufl.inner(f, v) * ds_left(1))
+    b_left = assemble_vector(L_left)
+    b_left.ghostUpdate(addv=PETSc.InsertMode.ADD,
+                       mode=PETSc.ScatterMode.REVERSE)
 
-    # def left(x):
-    #     return np.isclose(x[0], 0.0)
+    L_right = form(ufl.inner(f, v) * ds_right(1))
+    b_right = assemble_vector(L_right)
+    b_right.ghostUpdate(addv=PETSc.InsertMode.ADD,
+                        mode=PETSc.ScatterMode.REVERSE)
 
-    # def right(x):
-    #     return np.isclose(x[0], 1.0)
-
-    # bottom_facets = locate_entities_boundary(msh, msh.topology.dim - 1, bottom)
-    # bottom_vals = np.full(bottom_facets.shape, 1, np.intc)
-
-    # top_facets = locate_entities_boundary(msh, msh.topology.dim - 1, top)
-    # top_vals = np.full(top_facets.shape, 2, np.intc)
-
-    # left_facets = locate_entities_boundary(msh, msh.topology.dim - 1, left)
-    # left_vals = np.full(left_facets.shape, 3, np.intc)
-
-    # right_facets = locate_entities_boundary(msh, msh.topology.dim - 1, right)
-    # right_vals = np.full(right_facets.shape, 6, np.intc)
-
-    # indices = np.hstack((bottom_facets, top_facets, left_facets, right_facets))
-    # values = np.hstack((bottom_vals, top_vals, left_vals, right_vals))
-
-    # indices, pos = np.unique(indices, return_index=True)
-    # marker = meshtags(msh, msh.topology.dim - 1, indices, values[pos])
-
-    # ds = ufl.Measure('ds', subdomain_data=marker, domain=msh)
-
-    # L = form(ufl.inner(f, v) * ds(6))
-    # b = assemble_vector(L)
-
-    # print()
-    # print(b.norm())
-
-    # L_left = form(ufl.inner(f, v) * ds_left(1))
-    # b_left = assemble_vector(L_left)
-
-    # L_right = form(ufl.inner(f, v) * ds_right(1))
-    # b_right = assemble_vector(L_right)
-
-    # assert(np.isclose(b_left.norm(), b_right.norm()))
+    assert(np.isclose(b.norm(), b_left.norm()))
+    assert(np.isclose(b.norm(), b_right.norm()))
 
     # a_left = form(ufl.inner(u, v) * ds_left(1))
     # A_left = assemble_matrix(a_left)
