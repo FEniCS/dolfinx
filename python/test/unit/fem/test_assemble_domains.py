@@ -351,7 +351,7 @@ def test_manual_integration_domains():
     "ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("i", [1, 3, 5])
 @pytest.mark.parametrize("k", [1, 4])
-def test_ext_facet_perms(i, k, ghost_mode):
+def test_interior_one_sided_facet_integrals(i, k, ghost_mode):
     # NOTE N must be even
     n = 2**i
 
