@@ -85,12 +85,12 @@
 # to a finite $\Omega$ domain. The first-order boundary conditions
 # in the 2D case take the following form:
 #
-# $$
-# \textrm{on } \partial \Omega: \quad \mathbf{n} \times
+# $$\mathbf{n} \times
 # \nabla \times \mathbf{E}_s+\left(j k_{0}n_b + \frac{1}{2r}
 # \right) \mathbf{n} \times \mathbf{E}_s
-# \times \mathbf{n}=0
+# \times \mathbf{n}=0\quad \textrm{ on } \partial \Omega,
 # $$
+
 #
 # with $n_b = \sqrt{\varepsilon_b}$ being the background refractive
 # index, $\mathbf{n}$ being the normal vector to $\partial \Omega$,
