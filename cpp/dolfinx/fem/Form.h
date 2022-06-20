@@ -191,18 +191,24 @@ public:
       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
       bool needs_facet_permutations,
-      const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+      const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
+      const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
+                     std::vector<std::int32_t>>& entity_maps
+      = {})
       : _function_spaces(function_spaces), _coefficients(coefficients),
         _constants(constants), _mesh(mesh),
-        _needs_facet_permutations(needs_facet_permutations)
+        _needs_facet_permutations(needs_facet_permutations),
+        _entity_maps(entity_maps)
   {
     // Extract _mesh from fem::FunctionSpace, and check they are the same
     if (!_mesh and !function_spaces.empty())
       _mesh = function_spaces[0]->mesh();
     for (const auto& V : function_spaces)
     {
-      if (_mesh != V->mesh())
-        throw std::runtime_error("Incompatible mesh");
+      if (_mesh != V->mesh()
+          and entity_maps.find(V->mesh()) == entity_maps.end())
+        throw std::runtime_error(
+            "Incompatible mesh. entity_maps must be provided.");
     }
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
