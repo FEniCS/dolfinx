@@ -21,25 +21,27 @@ def test_sub_index_map():
     assert comm.size < n + 1
     map_local_size = np.math.factorial(n)
 
-    # The ghosts added are the ith ghost from the ith process relative to
-    # the current rank, i.e. rank 0 contains the first index of rank 2,
-    # second of rank 3 etc. rank 1 contains the first index of rank 0,
-    # the second of rank 2 etc.
+    # The ghosts added are the ith ghost from the ith process relative
+    # to the current rank, i.e. rank 0 contains the first index of rank
+    # 2, second of rank 3 etc. rank 1 contains the first index of rank
+    # 0, the second of rank 2 etc.
     # Ghost one index from from every other rank
     dest_ranks = np.delete(np.arange(0, comm.size, dtype=np.int32), my_rank)
-    map_ghosts = np.array([map_local_size * dest_ranks[r] + r % map_local_size for r in range(len(dest_ranks))])
+    map_ghosts = np.array([map_local_size * dest_ranks[r] + r %
+                          map_local_size for r in range(len(dest_ranks))], dtype=np.int64)
     src_ranks = dest_ranks
 
     # Create index map
-    map = dolfinx.common.IndexMap(comm, map_local_size, dest_ranks, map_ghosts, src_ranks)
+    map = dolfinx.common.IndexMap(comm, map_local_size, [dest_ranks, src_ranks], map_ghosts, src_ranks)
     assert map.size_global == map_local_size * comm.size
 
-    # Build list for each rank of the first (myrank + myrank % 2) local indices
+    # Build list for each rank of the first (myrank + myrank % 2) local
+    # indices
     submap_local_size = [int((rank + rank % 2)) for rank in range(comm.size)]
     local_indices = [np.arange(submap_local_size[rank], dtype=np.int32) for rank in range(comm.size)]
 
-    # Create sub index map and a map from the ghost position in new map to the
-    # position in old map
+    # Create sub index map and a map from the ghost position in new map
+    # to the position in old map
     submap, ghosts_pos_sub = map.create_submap(local_indices[my_rank])
 
     # Check local and global sizes
@@ -52,16 +54,10 @@ def test_sub_index_map():
 
     # Check that rank on sub-process ghosts is the same as the parent
     # map
-    owners = map.ghost_owners()
-    comm = map.comm(dolfinx.common.Direction.forward)
-    ranks = np.array(comm.Get_dist_neighbors()[0])
-    owners = ranks[owners]
+    owners = map.owners
     assert (dest_ranks == owners).all()
 
-    subowners = submap.ghost_owners()
-    comm = submap.comm(dolfinx.common.Direction.forward)
-    ranks = np.array(comm.Get_dist_neighbors()[0])
-    subowners = ranks[subowners]
+    subowners = submap.owners
     assert (owners[ghosts_pos_sub] == subowners).all()
 
     # Check that ghost indices are correct in submap

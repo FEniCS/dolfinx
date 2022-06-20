@@ -9,10 +9,11 @@
 import numpy as np
 
 from dolfinx import cpp as _cpp
+from dolfinx.cpp.la import Norm, ScatterMode
 from dolfinx.cpp.la.petsc import create_vector as create_petsc_vector
 
-__all__ = ["orthonormalize", "is_orthonormal", "create_petsc_vector",
-           "MatrixCSRMetaClass", "VectorMetaClass", "matrix_csr", "vector"]
+__all__ = ["orthonormalize", "is_orthonormal", "create_petsc_vector", "matrix_csr", "vector",
+           "MatrixCSRMetaClass", "Norm", "ScatterMode", "VectorMetaClass", ]
 
 
 def orthonormalize(basis):
@@ -94,7 +95,11 @@ class VectorMetaClass:
             and not created using the class initialiser.
 
         """
-        super().__init__(map, bs)
+        super().__init__(map, bs)  # type: ignore
+
+    @property
+    def array(self) -> np.ndarray:
+        return super().array  # type: ignore
 
 
 def vector(map, bs=1, dtype=np.float64) -> VectorMetaClass:

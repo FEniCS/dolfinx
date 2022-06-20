@@ -16,8 +16,8 @@
 #
 # # Interpolation and IO
 #
-# This demo show the interpolation of functions into vector-element
-# (H(curl)) finite element spaces, and the interpolation of these
+# This demo shows the interpolation of functions into vector-element
+# $H(\mathrm{curl})$ finite element spaces, and the interpolation of these
 # special finite elements in discontinuous Lagrange spaces for
 # artifact-free visualisation.
 

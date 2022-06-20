@@ -21,8 +21,8 @@ from dolfinx.fem import assemble_scalar, form
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
                           create_rectangle, create_submesh, create_unit_cube,
                           create_unit_interval, create_unit_square,
-                          locate_entities, locate_entities_boundary,
-                          compute_boundary_facets)
+                          exterior_facet_indices, locate_entities,
+                          locate_entities_boundary)
 from ufl import dx
 
 from mpi4py import MPI
@@ -32,7 +32,7 @@ def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
     submesh_cell_imap = submesh.topology.index_map(entity_dim)
     submesh_c_to_v = submesh.topology.connectivity(entity_dim, 0)
 
-    assert(submesh_cell_imap.size_local + submesh_cell_imap.num_ghosts == submesh_c_to_v.num_nodes)
+    assert (submesh_cell_imap.size_local + submesh_cell_imap.num_ghosts) == submesh_c_to_v.num_nodes
 
     # Check that creating facets / creating connectivity doesn't cause
     # a segmentation fault
@@ -316,6 +316,25 @@ def test_cell_h(c0, c1, c5):
         assert _cpp.mesh.h(c[0], c[1], [c[2]]) == pytest.approx(math.sqrt(2.0))
 
 
+def test_cell_h_prism():
+    N = 3
+    mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, cell_type=CellType.prism)
+    tdim = mesh.topology.dim
+    num_cells = mesh.topology.index_map(tdim).size_local
+    cells = np.arange(num_cells, dtype=np.int32)
+    h = _cpp.mesh.h(mesh, tdim, cells)
+    assert np.allclose(h, np.sqrt(3 / (N**2)))
+
+
+@pytest.mark.parametrize("ct", [CellType.hexahedron, CellType.tetrahedron])
+def test_facet_h(ct):
+    N = 3
+    mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, ct)
+    left_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, lambda x: np.isclose(x[0], 0))
+    h = _cpp.mesh.h(mesh, mesh.topology.dim - 1, left_facets)
+    assert np.allclose(h, np.sqrt(2 / (N**2)))
+
+
 @pytest.mark.skip("Needs to be re-implemented")
 @pytest.mark.skip_in_parallel
 def test_cell_radius_ratio(c0, c1, c5):
@@ -375,7 +394,8 @@ mesh_factories = [
 
 # FIXME: Fix this xfail
 def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
-    """Xfail when mesh_factory on quads/hexes uses shared_vertex mode. Needs implementing."""
+    """Xfail when mesh_factory on quads/hexes uses shared_vertex mode.
+    Needs implementing."""
     if mesh_factory in [create_unit_square, create_unit_cube]:
         if ghost_mode == GhostMode.shared_vertex:
             pytest.xfail(reason="Missing functionality in \'{}\' with \'{}\' mode".format(mesh_factory, ghost_mode))
@@ -390,8 +410,7 @@ def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
 def xtest_mesh_topology_against_basix(mesh_factory, ghost_mode):
     """Test that mesh cells have topology matching to Basix reference
-    cell they were created from.
-    """
+    cell they were created from."""
     func, args = mesh_factory
     xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
@@ -419,7 +438,8 @@ def xtest_mesh_topology_against_basix(mesh_factory, ghost_mode):
             # Loop over all entities of fixed dimension d
             for entity_index, entity_topology in enumerate(d_topology):
 
-                # Check that entity vertices map to cell vertices in correct order
+                # Check that entity vertices map to cell vertices in
+                # correct order
                 vertices = mesh.topology.connectivity(d, 0).links(entities[entity_index])
                 vertices_dolfin = np.sort(vertices)
                 vertices2 = np.sort(vertex_global_indices[np.array(entity_topology)])
@@ -474,19 +494,17 @@ def boundary_2(x):
 
 # TODO Test that submesh of full mesh is a copy of the mesh
 @pytest.mark.parametrize("d", [2, 3])
-@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("n", [3, 6])
 @pytest.mark.parametrize("codim", [0, 1])
 @pytest.mark.parametrize("marker", [lambda x: x[0] >= 0.5,
                                     lambda x: x[0] >= -1])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
-def test_submesh(d, n, codim, marker, ghost_mode):
+def test_submesh_full(d, n, codim, marker, ghost_mode):
     if d == 2:
-        mesh = create_unit_square(MPI.COMM_WORLD, n, n,
-                                  ghost_mode=ghost_mode)
+        mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
     else:
-        mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n,
-                                ghost_mode=ghost_mode)
+        mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
 
     edim = mesh.topology.dim - codim
     entities = locate_entities(mesh, edim, marker)
@@ -496,7 +514,7 @@ def test_submesh(d, n, codim, marker, ghost_mode):
 
 
 @pytest.mark.parametrize("d", [2, 3])
-@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("n", [3, 6])
 @pytest.mark.parametrize("boundary", [boundary_0,
                                       boundary_1,
                                       boundary_2])
@@ -504,11 +522,9 @@ def test_submesh(d, n, codim, marker, ghost_mode):
                                         GhostMode.shared_facet])
 def test_submesh_boundary(d, n, boundary, ghost_mode):
     if d == 2:
-        mesh = create_unit_square(MPI.COMM_WORLD, n, n,
-                                  ghost_mode=ghost_mode)
+        mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
     else:
-        mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n,
-                                ghost_mode=ghost_mode)
+        mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
     edim = mesh.topology.dim - 1
     entities = locate_entities_boundary(mesh, edim, boundary)
     submesh, entity_map, vertex_map, geom_map = create_submesh(mesh, edim, entities)
@@ -537,7 +553,6 @@ def test_empty_rank_mesh():
         x = np.empty((0, 2), dtype=np.float64)
 
     mesh = _mesh.create_mesh(comm, cells, x, domain, GhostMode.none, partitioner)
-
     topology = mesh.topology
 
     # Check number of vertices
@@ -575,14 +590,13 @@ def test_empty_rank_mesh():
 def test_original_index():
     nx = 7
     mesh = create_unit_cube(MPI.COMM_WORLD, nx, nx, nx, ghost_mode=GhostMode.none)
-
     s = sum(mesh.topology.original_cell_index)
     s = MPI.COMM_WORLD.allreduce(s, MPI.SUM)
-    assert(s == nx**3 * 6 * (nx**3 * 6 - 1) // 2)
+    assert s == (nx**3 * 6 * (nx**3 * 6 - 1) // 2)
 
 
 def compute_num_boundary_facets(mesh):
-    "Compute the total number of boundary facets in the mesh"
+    """Compute the total number of boundary facets in the mesh"""
 
     # Create facets and facet cell connectivity
     tdim = mesh.topology.dim
@@ -590,13 +604,11 @@ def compute_num_boundary_facets(mesh):
     mesh.topology.create_connectivity(tdim - 1, tdim)
 
     # Compute number of owned facets on the boundary
-    boundary_facet_marker = compute_boundary_facets(mesh.topology)
-    num_owned_boundary_facets = np.sum(boundary_facet_marker)
+    num_owned_boundary_facets = len(exterior_facet_indices(mesh.topology))
 
     # Sum the number of boundary facets owned by each process to get the
     # total number in the mesh
-    num_boundary_facets = mesh.comm.allreduce(
-        num_owned_boundary_facets, op=MPI.SUM)
+    num_boundary_facets = mesh.comm.allreduce(num_owned_boundary_facets, op=MPI.SUM)
 
     return num_boundary_facets
 
@@ -606,22 +618,19 @@ def compute_num_boundary_facets(mesh):
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 def test_boundary_facets(n, d, ghost_mode):
-    "Test that the correct number of boundary facets are computed"
+    """Test that the correct number of boundary facets are computed"""
     if d == 2:
-        mesh = create_unit_square(
-            MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+        mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
         expected_num_boundary_facets = 4 * n
     else:
         mesh = create_unit_cube(
             MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
         expected_num_boundary_facets = 6 * n**2 * 2
 
-    num_boundary_facets = compute_num_boundary_facets(mesh)
-
-    assert(num_boundary_facets == expected_num_boundary_facets)
+    assert compute_num_boundary_facets(mesh) == expected_num_boundary_facets
 
 
-@pytest.mark.parametrize("n", [2, 5])
+@pytest.mark.parametrize("n", [3, 5])
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
@@ -629,14 +638,10 @@ def test_submesh_codim_0_boundary_facets(n, d, ghost_mode):
     """Test that the correct number of boundary facets are computed
     for a submesh of codim 0"""
     if d == 2:
-        mesh_1 = create_rectangle(
-            MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-            ghost_mode=ghost_mode)
+        mesh_1 = create_rectangle(MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n), ghost_mode=ghost_mode)
         expected_num_boundary_facets = 4 * n
     else:
-        mesh_1 = create_box(
-            MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
-            (2 * n, n, n), ghost_mode=ghost_mode)
+        mesh_1 = create_box(MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)), (2 * n, n, n), ghost_mode=ghost_mode)
         expected_num_boundary_facets = 6 * n**2 * 2
 
     # Create submesh of half of the rectangle / box mesh to get unit
@@ -644,9 +649,7 @@ def test_submesh_codim_0_boundary_facets(n, d, ghost_mode):
     edim = mesh_1.topology.dim
     entities = locate_entities(mesh_1, edim, lambda x: x[0] <= 1.0)
     submesh = create_submesh(mesh_1, edim, entities)[0]
-
-    assert(compute_num_boundary_facets(submesh)
-           == expected_num_boundary_facets)
+    assert compute_num_boundary_facets(submesh) == expected_num_boundary_facets
 
 
 @pytest.mark.parametrize("n", [2, 5])
@@ -655,14 +658,10 @@ def test_submesh_codim_0_boundary_facets(n, d, ghost_mode):
 def test_submesh_codim_1_boundary_facets(n, ghost_mode):
     """Test that the correct number of boundary facets are computed
     for a submesh of codim 1"""
-    mesh = create_unit_cube(
-        MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
+    mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
     edim = mesh.topology.dim - 1
-    entities = locate_entities_boundary(
-        mesh, edim, lambda x: np.isclose(x[2], 0.0))
+    entities = locate_entities_boundary(mesh, edim, lambda x: np.isclose(x[2], 0.0))
     submesh = create_submesh(mesh, edim, entities)[0]
 
-    num_boundary_facets = compute_num_boundary_facets(submesh)
     expected_num_boundary_facets = 4 * n
-
-    assert(num_boundary_facets == expected_num_boundary_facets)
+    assert compute_num_boundary_facets(submesh) == expected_num_boundary_facets
