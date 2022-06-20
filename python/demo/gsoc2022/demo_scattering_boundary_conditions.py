@@ -93,7 +93,7 @@
 # $$
 #
 # with $n_b = \sqrt{\varepsilon_b}$ being the background refractive
-# index, $\mathbf{n}$ being the normal versor to $\partial \Omega$,
+# index, $\mathbf{n}$ being the normal vector to $\partial \Omega$,
 # and $r = \sqrt{(x-x_s)^2 + (y-y_s)^2}$ being the distance of the
 # $(x, y)$ point on $\partial\Omega$ from the wire centered in
 # $(x_s, y_s)$. In our case we will consider
