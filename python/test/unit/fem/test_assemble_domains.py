@@ -349,7 +349,6 @@ def test_manual_integration_domains():
 
 # TODO Parametrise for ghost mode
 def test_ext_facet_perms():
-    # TODO Compare to ext facet integral over i.e. left boundary
     # NOTE N must be even
     n = 2
 
@@ -366,8 +365,10 @@ def test_ext_facet_perms():
     tdim = msh.topology.dim
     left_cells = locate_entities(
         msh, tdim, lambda x: x[0] <= 0.5)
-    marked_facets = locate_entities(
+    centre_facets = locate_entities(
         msh, tdim - 1, lambda x: np.isclose(x[0], 0.5))
+    left_boundary_facets = locate_entities_boundary(
+        msh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
 
     # from dolfinx.mesh import create_submesh
     # left_cell_submesh = create_submesh(msh, tdim, left_cells)[0]
@@ -390,9 +391,8 @@ def test_ext_facet_perms():
     f_to_c = msh.topology.connectivity(tdim - 1, tdim)
     facet_map = msh.topology.index_map(tdim - 1)
     cell_map = msh.topology.index_map(tdim)
-    for f in marked_facets:
+    for f in centre_facets:
         for c in f_to_c.links(f):
-            # TODO this is probably needed for shared facet
             if c < cell_map.size_local:
                 local_f = np.where(c_to_f.links(c) == f)[0][0]
 
@@ -403,10 +403,6 @@ def test_ext_facet_perms():
                     right_cell_ext_facet_domain.append(c)
                     right_cell_ext_facet_domain.append(local_f)
 
-    # print()
-    # print(left_cell_ext_facet_domain)
-    # print(right_cell_ext_facet_domain)
-
     ds_left = ufl.Measure(
         "ds", subdomain_data={1: left_cell_ext_facet_domain}, domain=msh)
     ds_right = ufl.Measure(
@@ -415,9 +411,7 @@ def test_ext_facet_perms():
     num_facets = facet_map.size_local + facet_map.num_ghosts
     indices = np.arange(0, num_facets)
     values = np.zeros_like(indices, dtype=np.intc)
-    left_facets = locate_entities_boundary(
-        msh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
-    values[left_facets] = 1
+    values[left_boundary_facets] = 1
     marker = meshtags(msh, msh.topology.dim - 1, indices, values)
     ds = ufl.Measure("ds", subdomain_data=marker, domain=msh)
 
