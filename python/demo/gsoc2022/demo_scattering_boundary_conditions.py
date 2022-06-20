@@ -72,7 +72,7 @@
 # \end{cases}
 # $$
 #
-# with $\varepsilon_m$ being the relative permittivity of the matallic
+# with $\varepsilon_m$ being the relative permittivity of the metallic
 # wire. As reference values, we will consider $\lambda_0 = 400\textrm{nm}$
 # (violet light), $\varepsilon_b = 1.33^2$ (relative permittivity of water),
 # and $\varepsilon_m = -1.0782 + 5.8089\textrm{j}$ (relative permittivity of
