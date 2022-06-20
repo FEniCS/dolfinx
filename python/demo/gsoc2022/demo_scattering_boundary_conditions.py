@@ -33,7 +33,7 @@
 # plane wave, pointing along the propagation direction,
 # with $\hat{\mathbf{u}}_p$ being the
 # polarization direction, and with $\mathbf{r}$ being a
-# point on the $\Omega$ domain.
+# point in $\Omega$.
 # We will only consider $\hat{\mathbf{u}}_k$ and $\hat{\mathbf{u}}_p$
 # with components belonging
 # to the $\Omega$ domain and perpendicular to each other,
