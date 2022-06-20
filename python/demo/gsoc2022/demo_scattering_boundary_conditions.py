@@ -102,7 +102,7 @@
 #
 # Now we need to find the weak form of the problem. First of all,
 # we need to take the inner products of the equations with a
-# complex test function $\mathbf{V}$, and then we need to integrate
+# complex test function $\mathbf{v}$, and then we need to integrate
 # the terms over the corresponding domains:
 #
 # $$
