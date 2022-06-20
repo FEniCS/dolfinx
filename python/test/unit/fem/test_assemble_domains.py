@@ -347,17 +347,20 @@ def test_manual_integration_domains():
     assert(np.isclose(A_norm, A_expected_norm))
 
 
-# TODO Parametrise for ghost mode
-def test_ext_facet_perms():
+@pytest.mark.parametrize(
+    "ghost_mode", [GhostMode.none, GhostMode.shared_facet])
+@pytest.mark.parametrize("i", [1, 3, 5])
+@pytest.mark.parametrize("k", [1, 4])
+def test_ext_facet_perms(i, k, ghost_mode):
     # NOTE N must be even
-    n = 2
+    n = 2**i
 
     # NOTE No permutations should be needed even on a random mesh,
     # since everything belongs to a single cell
     msh = create_unit_square(
-        MPI.COMM_WORLD, n, n, ghost_mode=GhostMode.none)
+        MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
 
-    V = FunctionSpace(msh, ("Lagrange", 1))
+    V = FunctionSpace(msh, ("Lagrange", k))
 
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
