@@ -355,7 +355,7 @@ def test_ext_facet_perms():
     # NOTE No permutations should be needed even on a random mesh,
     # since everything belongs to a single cell
     msh = create_unit_square(
-        MPI.COMM_WORLD, n, n, ghost_mode=GhostMode.shared_facet)
+        MPI.COMM_WORLD, n, n, ghost_mode=GhostMode.none)
 
     V = FunctionSpace(msh, ("Lagrange", 1))
 
@@ -446,12 +446,20 @@ def test_ext_facet_perms():
     assert(np.isclose(b.norm(), b_left.norm()))
     assert(np.isclose(b.norm(), b_right.norm()))
 
-    # a_left = form(ufl.inner(u, v) * ds_left(1))
-    # A_left = assemble_matrix(a_left)
-    # A_left.assemble()
+    a = form(ufl.inner(f * u, v) * ds(1))
+    A = assemble_matrix(a)
+    A.assemble()
 
-    # a_right = form(ufl.inner(u, v) * ds_right(1))
-    # A_right = assemble_matrix(a_right)
-    # A_right.assemble()
+    a_left = form(ufl.inner(f * u, v) * ds_left(1))
+    A_left = assemble_matrix(a_left)
+    A_left.assemble()
 
-    # assert(np.allclose(A_left.norm(), A_right.norm()))
+    a_right = form(ufl.inner(f * u, v) * ds_right(1))
+    A_right = assemble_matrix(a_right)
+    A_right.assemble()
+
+    print()
+    print(A.norm(), A_left.norm(), A_right.norm())
+
+    assert(np.isclose(A.norm(), A_left.norm()))
+    assert(np.isclose(A.norm(), A_right.norm()))
