@@ -107,14 +107,14 @@
 #
 # $$
 # \begin{align}
-# & \iint_{\Omega}-\nabla \times \nabla \times \mathbf{E}_s \cdot
-# \bar{\mathbf{V}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
-# \bar{\mathbf{V}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
-# \mathbf{E}_b \cdot \bar{\mathbf{V}} d S \\ +& \int_{\partial \Omega}
-# \mathbf{n} \times \nabla \times \mathbf{E}_s \cdot \bar{\mathbf{V}}
-# +\left(j n_bk_{0}+\frac{1}{2r}\right) \mathbf{n} \times \mathbf{E}_s
-# \times \mathbf{n} \cdot \bar{\mathbf{V}} d l=0
-# \end{align}
+# & \int_{\Omega}-\nabla \times( \nabla \times \mathbf{E}_s) \cdot
+# \bar{\mathbf{v}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
+# \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
+# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\ +& \int_{\partial \Omega}
+# (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
+# +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
+# \times \mathbf{n}) \cdot \bar{\mathbf{v}}~\mathrm{d}s=0
+# \end{align}.
 # $$
 #
 # By using the $(\nabla \times \mathbf{A}) \cdot \mathbf{B}=\mathbf{A}
