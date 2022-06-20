@@ -55,7 +55,8 @@
 # The Maxwell's equation for scattering problems takes the following form:
 #
 # $$
-# -\nabla \times \nabla \times \mathbf{E}_s+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s
+# -\nabla \times \nabla \times \mathbf{E}_s+\varepsilon_{r} k_{0}^{2}
+# \mathbf{E}_s
 # +k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_{b}\right)
 # \mathbf{E}_{\mathrm{b}}=0 \textrm{ in } \Omega,
 # $$
@@ -126,7 +127,7 @@
 # \begin{align}
 # & \int_{\Omega}-\nabla \cdot(\nabla\times\mathbf{E}_s \times
 # \bar{\mathbf{v}})-\nabla \times \mathbf{E}_s \cdot \nabla
-# \times\bar{\mathbf{v}{+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s
+# \times\bar{\mathbf{v}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s
 # \cdot \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
 # \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{dx} \\ +&\int_{\partial \Omega}
 # (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
@@ -164,7 +165,7 @@
 # \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
 # \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\ +&\int_{\partial \Omega}
-# \left(j n_bk_{0}+\frac{1}{2r}\right)( \mathbf{n} \times \mathbf{E}_s \times 
+# \left(j n_bk_{0}+\frac{1}{2r}\right)( \mathbf{n} \times \mathbf{E}_s \times
 # \mathbf{n}) \cdot \bar{\mathbf{v}} ~\mathrm{d} s = 0.
 # \end{align}
 # $$
@@ -179,7 +180,6 @@ from gmsh_helpers import gmsh_model_to_mesh
 from mesh_wire import generate_mesh_wire
 from mpi4py import MPI
 from petsc4py import PETSc
-from scipy.constants import epsilon_0, mu_0
 from ufl import (FacetNormal, as_vector, conj, cross, curl, inner, lhs, rhs,
                  sqrt)
 from utils import calculate_analytical_efficiencies
@@ -198,12 +198,14 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 
 # The following function is used for defining the background field.
 # The inputs to the function are the angle $\theta$, the background
-# refractive index $n_b$ and the vacuum wavevector $k_0$. The 
+# refractive index $n_b$ and the vacuum wavevector $k_0$. The
 # function returns the expression $ \mathbf{E}_b = -\sin
 # \theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
 # + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y$.
 
 # +
+
+
 class background_electric_field:
 
     def __init__(self, theta, n_b, k0):
@@ -247,6 +249,8 @@ def curl_2d(a):
 um = 10**-6  # micron
 nm = 10**-9  # nanometer
 pi = np.pi
+epsilon_0 = 8.8541878128 * 10**-12
+mu_0 = 4 * pi * 10**-7
 
 # Radius of the wire and of the boundary of the domain
 radius_wire = 0.050 * um
