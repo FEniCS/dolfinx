@@ -135,8 +135,8 @@
 # \end{align}
 # $$
 #
-# using the divergence theorem $\iint_\Omega\nabla\cdot\mathbf{F}dS =
-# \int_{\partial\Omega} \mathbf{F}\cdot\mathbf{n}dl$, we can write:
+# using the divergence theorem $\int_\Omega\nabla\cdot\mathbf{F}~\mathrm{d}x =
+# \int_{\partial\Omega} \mathbf{F}\cdot\mathbf{n}~\mathrm{d}s$, we can write:
 #
 # $$
 # \begin{align}
