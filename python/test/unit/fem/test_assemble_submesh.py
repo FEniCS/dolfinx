@@ -14,7 +14,8 @@ from dolfinx import fem
 from dolfinx.mesh import (GhostMode, create_box, create_rectangle,
                           create_submesh, create_unit_cube, create_unit_square,
                           locate_entities, locate_entities_boundary,
-                          meshtags_from_entities, create_mesh)
+                          meshtags_from_entities, create_mesh,
+                          meshtags)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -752,3 +753,80 @@ def test_assemble_block(random_ordering):
     # TODO Check value
     assert(np.isclose(A.norm(), 3.0026030373660784))
     assert(np.isclose(b.norm(), 1.4361406616345072))
+
+
+n = 2
+k = 1
+
+msh = create_unit_square(
+    MPI.COMM_WORLD, n, n, ghost_mode=GhostMode.none)
+tdim = msh.topology.dim
+centre_facets = locate_entities(
+    msh, tdim - 1, lambda x: np.isclose(x[0], 0.5))
+submesh, entity_map, vertex_map, geom_map = create_submesh(
+    msh, tdim - 1, centre_facets)
+
+V = fem.FunctionSpace(msh, ("Lagrange", k))
+W = fem.FunctionSpace(submesh, ("Lagrange", k))
+
+left_cells = locate_entities(
+    msh, tdim, lambda x: x[0] <= 0.5)
+left_boundary_facets = locate_entities_boundary(
+        msh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
+
+# Manually specify exterior facets to integrate over as
+# (cell, local facet) pairs
+left_cell_ext_facet_domain = []
+right_cell_ext_facet_domain = []
+msh.topology.create_connectivity(tdim, tdim - 1)
+msh.topology.create_connectivity(tdim - 1, tdim)
+c_to_f = msh.topology.connectivity(tdim, tdim - 1)
+f_to_c = msh.topology.connectivity(tdim - 1, tdim)
+facet_map = msh.topology.index_map(tdim - 1)
+cell_map = msh.topology.index_map(tdim)
+for f in centre_facets:
+    for c in f_to_c.links(f):
+        if c < cell_map.size_local:
+            local_f = np.where(c_to_f.links(c) == f)[0][0]
+
+            if c in left_cells:
+                left_cell_ext_facet_domain.append(c)
+                left_cell_ext_facet_domain.append(local_f)
+            else:
+                right_cell_ext_facet_domain.append(c)
+                right_cell_ext_facet_domain.append(local_f)
+
+ds_left = ufl.Measure(
+    "ds", subdomain_data={1: left_cell_ext_facet_domain}, domain=msh)
+ds_right = ufl.Measure(
+    "ds", subdomain_data={1: right_cell_ext_facet_domain}, domain=msh)
+
+num_facets = facet_map.size_local + facet_map.num_ghosts
+entity_maps = {submesh: [entity_map.index(entity)
+                         if entity in entity_map else -1
+                         for entity in range(num_facets)]}
+
+num_facets = facet_map.size_local + facet_map.num_ghosts
+indices = np.arange(0, num_facets)
+values = np.zeros_like(indices, dtype=np.intc)
+values[left_boundary_facets] = 1
+marker = meshtags(msh, msh.topology.dim - 1, indices, values)
+ds = ufl.Measure("ds", subdomain_data=marker, domain=msh)
+
+f = fem.Function(V)
+g_m = fem.Function(V)
+g_sm = fem.Function(W)
+
+f.interpolate(lambda x: x[1]**2)
+g_m.interpolate(lambda x: x[1]**3)
+g_sm.interpolate(lambda x: x[1]**3)
+
+m_m = fem.form(f * g_m * ds(1))
+m_sm_left = fem.form(f * g_sm * ds_left(1), entity_maps=entity_maps)
+m_sm_right = fem.form(f * g_sm * ds_right(1), entity_maps=entity_maps)
+
+s_m = msh.comm.allreduce(fem.assemble_scalar(m_m), op=MPI.SUM)
+s_sm_left = msh.comm.allreduce(fem.assemble_scalar(m_sm_left), op=MPI.SUM)
+s_sm_right = msh.comm.allreduce(fem.assemble_scalar(m_sm_right), op=MPI.SUM)
+
+print(s_m, s_sm_left, s_sm_right)
