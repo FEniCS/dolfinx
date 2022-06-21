@@ -278,30 +278,41 @@ bkg_tag = 2         # background
 boundary_tag = 3    # boundary
 # -
 
+# We generate the mesh using GMSH and convert it to a `dolfinx.mesh.Mesh`
+
+# +
 model = generate_mesh_wire(
     radius_wire, radius_dom, in_wire_size, on_wire_size, bkg_size,
     boundary_size, au_tag, bkg_tag, boundary_tag)
 
 mesh, cell_tags, facet_tags = gmsh_model_to_mesh(
     model, cell_data=True, facet_data=True, gdim=2)
-
+gmsh.finalize()
 MPI.COMM_WORLD.barrier()
+# -
 
-# Definition of finite element for the electric field
-curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), 3)
+# We define some other problem specific parameters
+
+wl0 = 0.4 * um  # Wavelength sweep
+n_bkg = 1.33
+eps_bkg = n_bkg**2  # Background refractive index
+k0 = 2 * np.pi / wl0  # Wavevector of the background field
+deg = np.pi / 180
+theta = 45 * deg  # Angle of incidence of the background field
+
+# and the function space used for the electric field. We will use a 3rd order
+# [Nedelec (first kind)](https://defelement.com/elements/nedelec1.html) element.
+
+degree = 3
+curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), degree)
 V = fem.FunctionSpace(mesh, curl_el)
 
-# Wavevector of the background field
-k0 = 2 * np.pi / wl0
+# Next, we can interpolate $\mathbf{E}_b$ into the function space $V$
 
-# Angle of incidence of the background field
-deg = np.pi / 180
-theta = 45 * deg
-
-# Plane wave function
 f = background_electric_field(theta, n_bkg, k0)
 Eb = fem.Function(V)
 Eb.interpolate(f.eval)
+
 
 # Function r = radial distance from the (0, 0) point
 lagr_el = ufl.FiniteElement("CG", mesh.ufl_cell(), 2)
