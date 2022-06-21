@@ -50,6 +50,24 @@ namespace dolfinx::fem
 {
 class FunctionSpace;
 
+namespace impl
+{
+/// @private These structs are used to get the float/value type from a
+/// template argument, including support for complex types
+template <typename T, typename = void>
+struct geom_type
+{
+  /// @internal
+  typedef T value_type;
+};
+/// @private
+template <typename T>
+struct geom_type<T, std::void_t<typename T::value_type>>
+{
+  typedef typename T::value_type value_type;
+};
+} // namespace impl
+
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms
 ///

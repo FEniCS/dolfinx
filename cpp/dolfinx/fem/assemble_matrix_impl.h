@@ -18,6 +18,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <functional>
 #include <iterator>
+#include <type_traits>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -51,7 +52,7 @@ void assemble_cells(
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const xtl::span<const std::int8_t>& bc0,
     const xtl::span<const std::int8_t>& bc1,
-    const std::function<void(T*, const T*, const T*, const double*, const int*,
+    const std::function<void(T*, const T*, const T*, const T*, const int*,
                              const std::uint8_t*)>& kernel,
     const xtl::span<const T>& coeffs, int cstride,
     const xtl::span<const T>& constants,
@@ -73,7 +74,8 @@ void assemble_cells(
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
   const xtl::span<T> _Ae(Ae);
-  std::vector<double> coordinate_dofs(3 * num_dofs_g);
+  using geom_t = typename geom_type<T>::value_type;
+  std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
 
   // Iterate over active cells
   for (std::size_t index = 0; index < cells.size(); ++index)
@@ -166,7 +168,8 @@ void assemble_exterior_facets(
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Data structures used in assembly
-  std::vector<double> coordinate_dofs(3 * num_dofs_g);
+  using geom_t = typename geom_type<T>::value_type;
+  std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
   const int num_dofs0 = dofmap0.links(0).size();
   const int num_dofs1 = dofmap1.links(0).size();
   const int ndim0 = bs0 * num_dofs0;
@@ -268,7 +271,8 @@ void assemble_interior_facets(
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Data structures used in assembly
-  xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, 3});
+  using geom_t = typename geom_type<T>::value_type;
+  xt::xtensor<geom_t, 3> coordinate_dofs({2, num_dofs_g, 3});
   std::vector<T> Ae, be;
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == cstride);

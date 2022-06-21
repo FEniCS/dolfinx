@@ -39,8 +39,9 @@ namespace dolfinx::fem::impl
 template <typename T, int _bs0 = -1, int _bs1 = -1>
 void _lift_bc_cells(
     xtl::span<T> b, const mesh::Geometry& geometry,
-    const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*)>& kernel,
+    const std::function<void(T*, const T*, const T*,
+                             const typename geom_type<T>::value_type*,
+                             const int*, const std::uint8_t*)>& kernel,
     const xtl::span<const std::int32_t>& cells,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
@@ -68,7 +69,8 @@ void _lift_bc_cells(
   xtl::span<const double> x_g = geometry.x();
 
   // Data structures used in bc application
-  std::vector<double> coordinate_dofs(3 * num_dofs_g);
+  using geom_t = typename geom_type<T>::value_type;
+  std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> Ae, be;
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
@@ -197,8 +199,9 @@ void _lift_bc_cells(
 template <typename T, int _bs = -1>
 void _lift_bc_exterior_facets(
     xtl::span<T> b, const mesh::Mesh& mesh,
-    const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*)>& kernel,
+    const std::function<void(T*, const T*, const T*,
+                             const typename geom_type<T>::value_type*,
+                             const int*, const std::uint8_t*)>& kernel,
     const xtl::span<const std::int32_t>& facets,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
@@ -225,7 +228,8 @@ void _lift_bc_exterior_facets(
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Data structures used in bc application
-  std::vector<double> coordinate_dofs(3 * num_dofs_g);
+  using geom_t = typename geom_type<T>::value_type;
+  std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> Ae, be;
   assert(facets.size() % 2 == 0);
   for (std::size_t index = 0; index < facets.size(); index += 2)
@@ -309,8 +313,9 @@ void _lift_bc_exterior_facets(
 template <typename T, int _bs = -1>
 void _lift_bc_interior_facets(
     xtl::span<T> b, const mesh::Mesh& mesh,
-    const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*)>& kernel,
+    const std::function<void(T*, const T*, const T*,
+                             const typename geom_type<T>::value_type*,
+                             const int*, const std::uint8_t*)>& kernel,
     const xtl::span<const std::int32_t>& facets,
     const std::function<void(const xtl::span<T>&,
                              const xtl::span<const std::uint32_t>&,
@@ -341,7 +346,8 @@ void _lift_bc_interior_facets(
       = mesh::cell_num_entities(mesh.topology().cell_type(), tdim - 1);
 
   // Data structures used in assembly
-  xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, 3});
+  using geom_t = typename geom_type<T>::value_type;
+  xt::xtensor<geom_t, 3> coordinate_dofs({2, num_dofs_g, 3});
   std::vector<T> Ae, be;
 
   // Temporaries for joint dofmaps
@@ -506,8 +512,9 @@ void assemble_cells(
     xtl::span<T> b, const mesh::Geometry& geometry,
     const xtl::span<const std::int32_t>& cells,
     const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
-    const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*)>& kernel,
+    const std::function<void(T*, const T*, const T*,
+                             const typename geom_type<T>::value_type*,
+                             const int*, const std::uint8_t*)>& kernel,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
     int cstride, const xtl::span<const std::uint32_t>& cell_info)
 {
@@ -524,7 +531,8 @@ void assemble_cells(
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
   const int num_dofs = dofmap.links(0).size();
-  std::vector<double> coordinate_dofs(3 * num_dofs_g);
+  using geom_t = typename geom_type<T>::value_type;
+  std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> be(bs * num_dofs);
   const xtl::span<T> _be(be);
 
@@ -578,8 +586,9 @@ void assemble_exterior_facets(
     xtl::span<T> b, const mesh::Mesh& mesh,
     const xtl::span<const std::int32_t>& facets,
     const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
-    const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*)>& fn,
+    const std::function<void(T*, const T*, const T*,
+                             const typename geom_type<T>::value_type*,
+                             const int*, const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
     int cstride, const xtl::span<const std::uint32_t>& cell_info)
 {
@@ -596,7 +605,8 @@ void assemble_exterior_facets(
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
   const int num_dofs = dofmap.links(0).size();
-  std::vector<double> coordinate_dofs(3 * num_dofs_g);
+  using geom_t = typename geom_type<T>::value_type;
+  std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> be(bs * num_dofs);
   const xtl::span<T> _be(be);
   assert(facets.size() % 2 == 0);
@@ -650,8 +660,9 @@ void assemble_interior_facets(
                              std::int32_t, int)>& dof_transform,
     xtl::span<T> b, const mesh::Mesh& mesh,
     const xtl::span<const std::int32_t>& facets, const fem::DofMap& dofmap,
-    const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*)>& fn,
+    const std::function<void(T*, const T*, const T*,
+                             const typename geom_type<T>::value_type*,
+                             const int*, const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
     int cstride, const xtl::span<const std::uint32_t>& cell_info,
     const std::function<std::uint8_t(std::size_t)>& get_perm)
@@ -664,7 +675,8 @@ void assemble_interior_facets(
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Create data structures used in assembly
-  xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, 3});
+  using geom_t = typename geom_type<T>::value_type;
+  xt::xtensor<geom_t, 3> coordinate_dofs({2, num_dofs_g, 3});
   std::vector<T> be;
 
   const int num_cell_facets

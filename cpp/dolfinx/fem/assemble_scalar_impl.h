@@ -23,12 +23,13 @@ namespace dolfinx::fem::impl
 
 /// Assemble functional over cells
 template <typename T>
-T assemble_cells(const mesh::Geometry& geometry,
-                 const xtl::span<const std::int32_t>& cells,
-                 const std::function<void(T*, const T*, const T*, const double*,
-                                          const int*, const std::uint8_t*)>& fn,
-                 const xtl::span<const T>& constants,
-                 const xtl::span<const T>& coeffs, int cstride)
+T assemble_cells(
+    const mesh::Geometry& geometry, const xtl::span<const std::int32_t>& cells,
+    const std::function<void(T*, const T*, const T*,
+                             const typename geom_type<T>::value_type*,
+                             const int*, const std::uint8_t*)>& fn,
+    const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
+    int cstride)
 {
   T value(0);
   if (cells.empty())
@@ -40,7 +41,8 @@ T assemble_cells(const mesh::Geometry& geometry,
   xtl::span<const double> x_g = geometry.x();
 
   // Create data structures used in assembly
-  std::vector<double> coordinate_dofs(3 * num_dofs_g);
+  using geom_t = typename geom_type<T>::value_type;
+  std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
 
   // Iterate over all cells
   for (std::size_t index = 0; index < cells.size(); ++index)
@@ -67,8 +69,9 @@ T assemble_cells(const mesh::Geometry& geometry,
 template <typename T>
 T assemble_exterior_facets(
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& facets,
-    const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*)>& fn,
+    const std::function<void(T*, const T*, const T*,
+                             const typename geom_type<T>::value_type*,
+                             const int*, const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
     int cstride)
 {
@@ -82,7 +85,8 @@ T assemble_exterior_facets(
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Create data structures used in assembly
-  std::vector<double> coordinate_dofs(3 * num_dofs_g);
+  using geom_t = typename geom_type<T>::value_type;
+  std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
 
   // Iterate over all facets
   assert(facets.size() % 2 == 0);
@@ -111,8 +115,9 @@ T assemble_exterior_facets(
 template <typename T>
 T assemble_interior_facets(
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& facets,
-    const std::function<void(T*, const T*, const T*, const double*, const int*,
-                             const std::uint8_t*)>& fn,
+    const std::function<void(T*, const T*, const T*,
+                             const typename geom_type<T>::value_type*,
+                             const int*, const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
     int cstride, const xtl::span<const int>& offsets,
     const xtl::span<const std::uint8_t>& perms)
@@ -129,7 +134,8 @@ T assemble_interior_facets(
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Create data structures used in assembly
-  xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, 3});
+  using geom_t = typename geom_type<T>::value_type;
+  xt::xtensor<geom_t, 3> coordinate_dofs({2, num_dofs_g, 3});
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == cstride);
 
