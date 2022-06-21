@@ -755,6 +755,7 @@ def test_assemble_block(random_ordering):
     assert(np.isclose(b.norm(), 1.4361406616345072))
 
 
+# NOTE n must be even
 @pytest.mark.parametrize("n", [2, 6, 8])
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
@@ -852,30 +853,15 @@ def test_custom_domains(n, k, ghost_mode, random_ordering):
     A = fem.petsc.assemble_matrix(a)
     A.assemble()
 
-    # a_sm_left = fem.form(ufl.inner(f * g_sm * u_sm, v) * ds_left(1),
-    #                      entity_maps=entity_maps)
-    # A_sm_left = fem.petsc.assemble_matrix(a_sm_left)
-    # A_sm_left.assemble()
-    # assert(np.isclose(A.norm(), A_sm_left.norm()))
+    a_sm_left = fem.form(ufl.inner(f * g_sm * u_sm, v) * ds_left(1),
+                         entity_maps=entity_maps)
+    A_sm_left = fem.petsc.assemble_matrix(a_sm_left)
+    A_sm_left.assemble()
+    assert(np.isclose(A.norm(), A_sm_left.norm()))
 
-    # a_sm_right = fem.form(ufl.inner(f * g_sm * u_sm, v) * ds_right(1),
-    #                       entity_maps=entity_maps)
-    # A_sm_right = fem.petsc.assemble_matrix(a_sm_right)
-    # A_sm_right.assemble()
+    a_sm_right = fem.form(ufl.inner(f * g_sm * u_sm, v) * ds_right(1),
+                          entity_maps=entity_maps)
+    A_sm_right = fem.petsc.assemble_matrix(a_sm_right)
+    A_sm_right.assemble()
 
-    # assert(np.isclose(A.norm(), A_sm_right.norm()))
-
-
-n = 2
-k = 1
-ghost_mode = GhostMode.none
-random_ordering = True
-# # msh = create_unit_square(
-# #     MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
-
-# # msh.topology.create_connectivity(msh.topology.dim - 1, 0)
-# # msh.topology.create_full_cell_permutations()
-
-# # print(msh.topology.get_full_cell_permutations())
-
-test_custom_domains(n, k, ghost_mode, random_ordering)
+    assert(np.isclose(A.norm(), A_sm_right.norm()))
