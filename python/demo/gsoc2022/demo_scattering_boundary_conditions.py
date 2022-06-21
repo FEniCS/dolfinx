@@ -223,26 +223,26 @@ class background_electric_field:
         ay = np.cos(self.theta)
 
         return (-ax * np.exp(1j * phi), ay * np.exp(1j * phi))
+
+
 # -
 
+# Next we define the function $r(x)$ and the $\nabla \times$ operator.
+
 # +
-# Definition of the radial distance from the center
-
-
 def radial_distance(x):
+    """Returns the radial distance from the origin"""
     return np.sqrt(x[0]**2 + x[1]**2)
-
-# Definition of the curl for a 2d vector
 
 
 def curl_2d(a):
-
+    """Returns the curl of two 2D vectors as a 3D vector"""
     ay_x = a[1].dx(0)
     ax_y = a[0].dx(1)
+    return as_vector((0, 0, ay_x - ax_y))
 
-    c = as_vector((0, 0, ay_x - ax_y))
 
-    return c
+# -
 
 
 # Constant definition
