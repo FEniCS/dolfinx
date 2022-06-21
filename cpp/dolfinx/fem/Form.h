@@ -7,6 +7,7 @@
 #pragma once
 
 #include "FunctionSpace.h"
+#include "utils.h"
 #include <algorithm>
 #include <array>
 #include <dolfinx/common/IndexMap.h>
@@ -61,6 +62,8 @@ enum class IntegralType : std::int8_t
 template <typename T>
 class Form
 {
+  using geom_t = typename fem::impl::geom_type<typename T>::value_type;
+
 public:
   /// @brief Create a finite element form.
   ///
@@ -85,7 +88,7 @@ public:
           IntegralType,
           std::pair<
               std::vector<std::pair<
-                  int, std::function<void(T*, const T*, const T*, const double*,
+                  int, std::function<void(T*, const T*, const T*, const geom_t*,
                                           const int*, const std::uint8_t*)>>>,
               const mesh::MeshTags<int>*>>& integrals,
       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
@@ -177,7 +180,7 @@ public:
   /// @param[in] type Integral type
   /// @param[in] i Domain index
   /// @return Function to call for tabulate_tensor
-  const std::function<void(T*, const T*, const T*, const double*, const int*,
+  const std::function<void(T*, const T*, const T*, const geom_t*, const int*,
                            const std::uint8_t*)>&
   kernel(IntegralType type, int i) const
   {
@@ -339,7 +342,7 @@ public:
   using scalar_type = T;
 
 private:
-  using kern = std::function<void(T*, const T*, const T*, const double*,
+  using kern = std::function<void(T*, const T*, const T*, const geom_t*,
                                   const int*, const std::uint8_t*)>;
 
   // Helper function to get the kernel for integral i from a map
@@ -348,7 +351,7 @@ private:
   // @param[in] i Domain index
   // @return Function to call for tabulate_tensor
   template <typename U>
-  const std::function<void(T*, const T*, const T*, const double*, const int*,
+  const std::function<void(T*, const T*, const T*, const geom_t*, const int*,
                            const std::uint8_t*)>&
   get_kernel_from_integrals(const U& integrals, int i) const
   {
