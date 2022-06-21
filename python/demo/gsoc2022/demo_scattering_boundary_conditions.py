@@ -353,6 +353,7 @@ bkg_cells = cell_tags.find(bkg_tag)
 eps.x.array[au_cells] = np.full_like(
     au_cells, reps_au + ieps_au * 1j, dtype=np.complex128)
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
+eps.x.scatter_forward()
 
 # Weak form
 F = - inner(curl(Es), curl(v)) * dDom \
