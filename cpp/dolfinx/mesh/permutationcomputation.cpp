@@ -366,28 +366,30 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
   return {std::move(facet_permutations), std::move(cell_permutation_info)};
 }
 //-----------------------------------------------------------------------------
+// TODO RENAME ETC. and ask Matthew
 std::vector<std::uint8_t>
 mesh::compute_cell_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
-  const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
+  assert(topology.connectivity(tdim - 1, 0));
+  const std::int32_t num_facets = topology.connectivity(tdim - 1, 0)->num_nodes();
+  std::vector<std::uint8_t> cell_permutations(num_facets);
 
   if (tdim == 3)
-    throw std::runtime_error("Cannot compute cell permutations of a 3D mesh.");
-
-  std::vector<std::uint8_t> cell_permutations(num_cells);
-
-  if (tdim == 2)
   {
     const auto perms = compute_face_permutations<_BITSETSIZE>(topology);
-    for (int c = 0; c < num_cells; ++c)
-      cell_permutations[c] = perms[c].to_ulong() & 7;
+    for (int f = 0; f < num_facets; ++f)
+      cell_permutations[f] = perms[f].to_ulong() & 7;
   }
-  else if (tdim == 1)
+  else if (tdim == 2)
   {
     const auto perms = compute_edge_reflections<_BITSETSIZE>(topology);
-    for (int c = 0; c < num_cells; ++c)
-      cell_permutations[c] = perms[c].to_ulong() & 1;
+    for (int f = 0; f < num_facets; ++f)
+      cell_permutations[f] = perms[f].to_ulong() & 1;
+  }
+  else
+  {
+    throw std::runtime_error("Cannot compute cell permutations.");
   }
   return cell_permutations;
 }
