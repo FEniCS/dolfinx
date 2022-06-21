@@ -245,13 +245,13 @@ def curl_2d(a):
 
 # -
 
+# Next we define some mesh specific parameters
 
+# +
 # Constant definition
 um = 10**-6  # micron
 nm = 10**-9  # nanometer
 pi = np.pi
-epsilon_0 = 8.8541878128 * 10**-12
-mu_0 = 4 * pi * 10**-7
 
 # Radius of the wire and of the boundary of the domain
 radius_wire = 0.050 * um
@@ -259,16 +259,6 @@ radius_dom = 1 * um
 
 # The smaller the mesh_factor, the finer is the mesh
 mesh_factor = 1.2
-
-# Finite element degree
-degree = 3
-
-# Wavelength sweep
-wl0 = 0.4 * um
-
-# Background refractive index
-n_bkg = 1.33
-eps_bkg = n_bkg**2
 
 # Mesh size inside the wire
 in_wire_size = mesh_factor * 7 * nm
@@ -286,6 +276,7 @@ boundary_size = mesh_factor * 30 * nm
 au_tag = 1          # gold wire
 bkg_tag = 2         # background
 boundary_tag = 3    # boundary
+# -
 
 model = generate_mesh_wire(
     radius_wire, radius_dom, in_wire_size, on_wire_size, bkg_size,
