@@ -303,7 +303,8 @@ deg = np.pi / 180
 theta = 45 * deg  # Angle of incidence of the background field
 
 # and the function space used for the electric field. We will use a 3rd order
-# [Nedelec (first kind)](https://defelement.com/elements/nedelec1.html) element.
+# [Nedelec (first kind)](https://defelement.com/elements/nedelec1.html)
+# element.
 
 degree = 3
 curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), degree)
@@ -382,15 +383,15 @@ normEh = fem.Function(V_normEh)
 normEh.interpolate(norm_expr)
 
 # Save the fields as xdmf files
-#with io.XDMFFile(MPI.COMM_WORLD, "data/Es.xdmf", "w") as xdmf:
+# with io.XDMFFile(MPI.COMM_WORLD, "data/Es.xdmf", "w") as xdmf:
 #    xdmf.write_mesh(mesh)
 #    xdmf.write_function(Eh)
 #
-#with io.XDMFFile(MPI.COMM_WORLD, "data/E.xdmf", "w") as xdmf:
+# with io.XDMFFile(MPI.COMM_WORLD, "data/E.xdmf", "w") as xdmf:
 #    xdmf.write_mesh(mesh)
 #    xdmf.write_function(E)
 #
-#with io.XDMFFile(MPI.COMM_WORLD, "data/normEs.xdmf", "w") as xdmf:
+# with io.XDMFFile(MPI.COMM_WORLD, "data/normEs.xdmf", "w") as xdmf:
 #    xdmf.write_mesh(mesh)
 #    xdmf.write_function(normEh)
 
