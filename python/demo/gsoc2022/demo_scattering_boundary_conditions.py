@@ -233,7 +233,7 @@ class background_electric_field:
 # +
 def radial_distance(x):
     """Returns the radial distance from the origin"""
-    return np.sqrt(x[0]**2 + x[1]**2)
+    return ufl.sqrt(x[0]**2 + x[1]**2)
 
 
 def curl_2d(a):
@@ -317,10 +317,8 @@ Eb.interpolate(f.eval)
 
 
 # Function r = radial distance from the (0, 0) point
-lagr_el = ufl.FiniteElement("CG", mesh.ufl_cell(), 2)
-lagr_space = fem.FunctionSpace(mesh, lagr_el)
-r = fem.Function(lagr_space)
-r.interpolate(radial_distance)
+x = ufl.SpatialCoordinate(mesh)
+r = radial_distance(x)
 
 # Definition of Trial and Test functions
 Es = ufl.TrialFunction(V)
@@ -375,6 +373,7 @@ E = fem.Function(V)
 E.x.array[:] = Eb.x.array[:] + Eh.x.array[:]
 
 # ||E||
+lagr_el = ufl.FiniteElement("CG", mesh.ufl_cell(), 2)
 norm_func = sqrt(inner(Eh, Eh))
 V_normEh = fem.FunctionSpace(mesh, lagr_el)
 norm_expr = fem.Expression(norm_func, V_normEh.element.interpolation_points)
