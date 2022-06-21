@@ -371,42 +371,46 @@ std::vector<std::uint8_t>
 mesh::compute_cell_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
+  const int fdim = tdim - 1;
 
   // FIXME Don't hardcode
   dolfinx::graph::AdjacencyList<int32_t> _v_to_v = *topology.connectivity(0, 0);
-  dolfinx::graph::AdjacencyList<int32_t> _e_to_v
-      = *topology.connectivity(tdim - 1, 0);
+  dolfinx::graph::AdjacencyList<int32_t> _f_to_v
+      = *topology.connectivity(fdim, 0);
 
   auto v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(_v_to_v));
-  auto e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-      std::move(_e_to_v));
+  auto f_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      std::move(_f_to_v));
 
-  Topology submesh_topology(MPI_COMM_WORLD, mesh::CellType::interval);
-  submesh_topology.set_index_map(0, topology.index_map(0));
-  submesh_topology.set_index_map(tdim - 1, topology.index_map(tdim - 1));
-  submesh_topology.set_connectivity(v_to_v, 0, 0);
-  submesh_topology.set_connectivity(e_to_v, tdim - 1, 0);
-  submesh_topology.create_connectivity(tdim - 1, tdim - 1);
+  const mesh::CellType facet_cell_type
+      = mesh::cell_entity_type(topology.cell_type(), fdim, 0);
 
-  const std::int32_t num_cells
-      = submesh_topology.connectivity(tdim - 1, 0)->num_nodes();
+  Topology facet_topology(topology.comm(), facet_cell_type);
+  facet_topology.set_index_map(0, topology.index_map(0));
+  facet_topology.set_index_map(fdim, topology.index_map(fdim));
+  facet_topology.set_connectivity(v_to_v, 0, 0);
+  facet_topology.set_connectivity(f_to_v, fdim, 0);
+  facet_topology.create_connectivity(fdim, fdim);
 
-  if (tdim - 1 == 3)
+  const std::int32_t num_facets
+      = facet_topology.connectivity(fdim, 0)->num_nodes();
+
+  if (fdim == 3)
     throw std::runtime_error("Cannot compute cell permutations of a 3D mesh.");
 
-  std::vector<std::uint8_t> cell_permutations(num_cells);
+  std::vector<std::uint8_t> cell_permutations(num_facets);
 
-  if (tdim - 1 == 2)
+  if (fdim == 2)
   {
-    const auto perms = compute_face_permutations<_BITSETSIZE>(submesh_topology);
-    for (int c = 0; c < num_cells; ++c)
+    const auto perms = compute_face_permutations<_BITSETSIZE>(facet_topology);
+    for (int c = 0; c < num_facets; ++c)
       cell_permutations[c] = perms[c].to_ulong() & 7;
   }
-  else if (tdim - 1 == 1)
+  else if (fdim == 1)
   {
-    const auto perms = compute_edge_reflections<_BITSETSIZE>(submesh_topology);
-    for (int c = 0; c < num_cells; ++c)
+    const auto perms = compute_edge_reflections<_BITSETSIZE>(facet_topology);
+    for (int c = 0; c < num_facets; ++c)
       cell_permutations[c] = perms[c].to_ulong() & 1;
   }
   return cell_permutations;
