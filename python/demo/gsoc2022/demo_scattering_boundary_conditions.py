@@ -252,6 +252,8 @@ def curl_2d(a):
 um = 10**-6  # micron
 nm = 10**-9  # nanometer
 pi = np.pi
+epsilon_0 = 8.8541878128 * 10**-12
+mu_0 = 4 * pi * 10**-7
 
 # Radius of the wire and of the boundary of the domain
 radius_wire = 0.050 * um
@@ -322,11 +324,11 @@ r.interpolate(radial_distance)
 
 # Definition of Trial and Test functions
 Es = ufl.TrialFunction(V)
-Vs = ufl.TestFunction(V)
+v = ufl.TestFunction(V)
 
 # Definition of 3d fields for cross and curl operations
 Es_3d = as_vector((Es[0], Es[1], 0))
-Vs_3d = as_vector((Vs[0], Vs[1], 0))
+v_3d = as_vector((v[0], v[1], 0))
 
 # Measures for subdomains
 dx = ufl.Measure("dx", mesh, subdomain_data=cell_tags)
@@ -355,11 +357,11 @@ eps.x.array[au_cells] = np.full_like(
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
 
 # Weak form
-F = - inner(curl(Es), curl(Vs)) * dDom \
-    + eps * k0 ** 2 * inner(Es, Vs) * dDom \
-    + k0 ** 2 * (eps - eps_bkg) * inner(Eb, Vs) * dDom \
+F = - inner(curl(Es), curl(v)) * dDom \
+    + eps * k0 ** 2 * inner(Es, v) * dDom \
+    + k0 ** 2 * (eps - eps_bkg) * inner(Eb, v) * dDom \
     + (1j * k0 * n_bkg + 1 / (2 * r)) \
-    * inner(cross(Es_3d, n_3d), cross(Vs_3d, n_3d)) * dsbc
+    * inner(cross(Es_3d, n_3d), cross(v_3d, n_3d)) * dsbc
 
 # Splitting in left-hand side and right-hand side
 a, L = lhs(F), rhs(F)
@@ -380,17 +382,17 @@ normEh = fem.Function(V_normEh)
 normEh.interpolate(norm_expr)
 
 # Save the fields as xdmf files
-with io.XDMFFile(MPI.COMM_WORLD, "data/Es.xdmf", "w") as xdmf:
-    xdmf.write_mesh(mesh)
-    xdmf.write_function(Eh)
-
-with io.XDMFFile(MPI.COMM_WORLD, "data/E.xdmf", "w") as xdmf:
-    xdmf.write_mesh(mesh)
-    xdmf.write_function(E)
-
-with io.XDMFFile(MPI.COMM_WORLD, "data/normEs.xdmf", "w") as xdmf:
-    xdmf.write_mesh(mesh)
-    xdmf.write_function(normEh)
+#with io.XDMFFile(MPI.COMM_WORLD, "data/Es.xdmf", "w") as xdmf:
+#    xdmf.write_mesh(mesh)
+#    xdmf.write_function(Eh)
+#
+#with io.XDMFFile(MPI.COMM_WORLD, "data/E.xdmf", "w") as xdmf:
+#    xdmf.write_mesh(mesh)
+#    xdmf.write_function(E)
+#
+#with io.XDMFFile(MPI.COMM_WORLD, "data/normEs.xdmf", "w") as xdmf:
+#    xdmf.write_mesh(mesh)
+#    xdmf.write_function(normEh)
 
 # Calculation of analytical efficiencies
 q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
