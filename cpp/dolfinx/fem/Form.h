@@ -7,7 +7,6 @@
 #pragma once
 
 #include "FunctionSpace.h"
-#include "utils.h"
 #include <algorithm>
 #include <array>
 #include <dolfinx/common/IndexMap.h>
@@ -62,7 +61,18 @@ enum class IntegralType : std::int8_t
 template <typename T>
 class Form
 {
-  using geom_t = typename fem::impl::geom_type<typename T>::value_type;
+  template <typename X, typename = void>
+  struct geom_type
+  {
+    /// @internal
+    typedef X value_type;
+  };
+  /// @private
+  template <typename X>
+  struct geom_type<X, std::void_t<typename X::value_type>>
+  {
+    typedef typename X::value_type value_type;
+  };
 
 public:
   /// @brief Create a finite element form.
@@ -81,20 +91,20 @@ public:
   /// @param[in] mesh The mesh of the domain. This is required when
   /// there are not argument functions from which the mesh can be
   /// extracted, e.g. for functionals
-  Form(
-      const std::vector<std::shared_ptr<const fem::FunctionSpace>>&
-          function_spaces,
-      const std::map<
-          IntegralType,
-          std::pair<
-              std::vector<std::pair<
-                  int, std::function<void(T*, const T*, const T*, const geom_t*,
-                                          const int*, const std::uint8_t*)>>>,
-              const mesh::MeshTags<int>*>>& integrals,
-      const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
-      const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
-      bool needs_facet_permutations,
-      const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+  Form(const std::vector<std::shared_ptr<const fem::FunctionSpace>>&
+           function_spaces,
+       const std::map<
+           IntegralType,
+           std::pair<std::vector<std::pair<
+                         int, std::function<
+                                  void(T*, const T*, const T*,
+                                       const typename geom_type<T>::value_type*,
+                                       const int*, const std::uint8_t*)>>>,
+                     const mesh::MeshTags<int>*>>& integrals,
+       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
+       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
+       bool needs_facet_permutations,
+       const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
       : _function_spaces(function_spaces), _coefficients(coefficients),
         _constants(constants), _mesh(mesh),
         _needs_facet_permutations(needs_facet_permutations)
@@ -180,7 +190,8 @@ public:
   /// @param[in] type Integral type
   /// @param[in] i Domain index
   /// @return Function to call for tabulate_tensor
-  const std::function<void(T*, const T*, const T*, const geom_t*, const int*,
+  const std::function<void(T*, const T*, const T*,
+                           const typename geom_type<T>::value_type*, const int*,
                            const std::uint8_t*)>&
   kernel(IntegralType type, int i) const
   {
@@ -342,7 +353,8 @@ public:
   using scalar_type = T;
 
 private:
-  using kern = std::function<void(T*, const T*, const T*, const geom_t*,
+  using kern = std::function<void(T*, const T*, const T*,
+                                  const typename geom_type<T>::value_type*,
                                   const int*, const std::uint8_t*)>;
 
   // Helper function to get the kernel for integral i from a map
@@ -351,7 +363,8 @@ private:
   // @param[in] i Domain index
   // @return Function to call for tabulate_tensor
   template <typename U>
-  const std::function<void(T*, const T*, const T*, const geom_t*, const int*,
+  const std::function<void(T*, const T*, const T*,
+                           const typename geom_type<T>::value_type*, const int*,
                            const std::uint8_t*)>&
   get_kernel_from_integrals(const U& integrals, int i) const
   {

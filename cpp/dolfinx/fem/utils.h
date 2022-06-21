@@ -214,8 +214,9 @@ Form<T> create_form(
 
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
-  using kern = std::function<void(T*, const T*, const T*, const double*,
-                                  const int*, const std::uint8_t*)>;
+  using kern = std::function<void(
+      T*, const T*, const T*, const typename impl::geom_type<T>::value_type*,
+      const int*, const std::uint8_t*)>;
   std::map<IntegralType, std::pair<std::vector<std::pair<int, kern>>,
                                    const mesh::MeshTags<int>*>>
       integral_data;
@@ -236,17 +237,19 @@ Form<T> create_form(
       k = integral->tabulate_tensor_float32;
     else if constexpr (std::is_same<T, std::complex<float>>::value)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex64);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::geom_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
     else if constexpr (std::is_same<T, double>::value)
       k = integral->tabulate_tensor_float64;
     else if constexpr (std::is_same<T, std::complex<double>>::value)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex128);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::geom_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex128);
     }
     assert(k);
 
@@ -292,17 +295,19 @@ Form<T> create_form(
       k = integral->tabulate_tensor_float32;
     else if constexpr (std::is_same<T, std::complex<float>>::value)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex64);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::geom_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
     else if constexpr (std::is_same<T, double>::value)
       k = integral->tabulate_tensor_float64;
     else if constexpr (std::is_same<T, std::complex<double>>::value)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex128);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::geom_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex128);
     }
     assert(k);
 
@@ -334,17 +339,19 @@ Form<T> create_form(
       k = integral->tabulate_tensor_float32;
     else if constexpr (std::is_same<T, std::complex<float>>::value)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex64);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::geom_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
     else if constexpr (std::is_same<T, double>::value)
       k = integral->tabulate_tensor_float64;
     else if constexpr (std::is_same<T, std::complex<double>>::value)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex128);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::geom_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex128);
     }
     assert(k);
 
@@ -777,26 +784,27 @@ fem::Expression<T> create_expression(
   for (int i = 0; i < expression.num_components; ++i)
     value_shape.push_back(expression.value_shape[i]);
 
-  std::function<void(T*, const T*, const T*, const double*, const int*,
+  std::function<void(T*, const T*, const T*,
+                     const typename impl::geom_type<T>::value_type*, const int*,
                      const std::uint8_t*)>
       tabulate_tensor = nullptr;
   if constexpr (std::is_same<T, float>::value)
     tabulate_tensor = expression.tabulate_tensor_float32;
   else if constexpr (std::is_same<T, std::complex<float>>::value)
   {
-    tabulate_tensor
-        = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-            expression.tabulate_tensor_complex64);
+    tabulate_tensor = reinterpret_cast<void (*)(
+        T*, const T*, const T*, const typename impl::geom_type<T>::value_type*,
+        const int*, const unsigned char*)>(
+        expression.tabulate_tensor_complex64);
   }
   else if constexpr (std::is_same<T, double>::value)
     tabulate_tensor = expression.tabulate_tensor_float64;
   else if constexpr (std::is_same<T, std::complex<double>>::value)
   {
-    tabulate_tensor
-        = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-            expression.tabulate_tensor_complex128);
+    tabulate_tensor = reinterpret_cast<void (*)(
+        T*, const T*, const T*, const typename impl::geom_type<T>::value_type*,
+        const int*, const unsigned char*)>(
+        expression.tabulate_tensor_complex128);
   }
   else
   {

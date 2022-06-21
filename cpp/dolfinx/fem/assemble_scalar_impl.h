@@ -70,8 +70,8 @@ template <typename T>
 T assemble_exterior_facets(
     const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& facets,
     const std::function<void(T*, const T*, const T*,
-                             const geom_type<T>::value_type*, const int*,
-                             const std::uint8_t*)>& fn,
+                             const typename geom_type<T>::value_type*,
+                             const int*, const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
     int cstride)
 {

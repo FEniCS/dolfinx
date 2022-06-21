@@ -32,6 +32,19 @@ class Constant;
 template <typename T>
 class Expression
 {
+  template <typename X, typename = void>
+  struct geom_type
+  {
+    /// @internal
+    typedef X value_type;
+  };
+  /// @private
+  template <typename X>
+  struct geom_type<X, std::void_t<typename X::value_type>>
+  {
+    typedef typename X::value_type value_type;
+  };
+
 public:
   /// Create an Expression
   ///
@@ -49,7 +62,8 @@ public:
       const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const Constant<T>>>& constants,
       const xt::xtensor<double, 2>& X,
-      const std::function<void(T*, const T*, const T*, const double*,
+      const std::function<void(T*, const T*, const T*,
+                               const typename geom_type<T>::value_type*,
                                const int*, const uint8_t*)>
           fn,
       const std::vector<int>& value_shape,
@@ -138,7 +152,8 @@ public:
     xtl::span<const double> x_g = _mesh->geometry().x();
 
     // Create data structures used in evaluation
-    std::vector<double> coordinate_dofs(3 * num_dofs_g);
+    std::vector<typename geom_type<T>::value_type> coordinate_dofs(
+        3 * num_dofs_g);
 
     int num_argument_dofs = 1;
     xtl::span<const std::uint32_t> cell_info;
@@ -199,7 +214,8 @@ public:
 
   /// Get function for tabulate_expression.
   /// @return fn Function to tabulate expression.
-  const std::function<void(T*, const T*, const T*, const double*, const int*,
+  const std::function<void(T*, const T*, const T*,
+                           const typename geom_type<T>::value_type*, const int*,
                            const uint8_t*)>&
   get_tabulate_expression() const
   {
@@ -240,7 +256,8 @@ private:
   std::vector<std::shared_ptr<const fem::Constant<T>>> _constants;
 
   // Function to evaluate the Expression
-  std::function<void(T*, const T*, const T*, const double*, const int*,
+  std::function<void(T*, const T*, const T*,
+                     const typename geom_type<T>::value_type*, const int*,
                      const uint8_t*)>
       _fn;
 
