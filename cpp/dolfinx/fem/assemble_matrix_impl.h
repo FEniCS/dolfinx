@@ -171,10 +171,17 @@ void assemble_exterior_facets(
     const std::function<std::int32_t(const xtl::span<const std::int32_t>&)>&
         facet_map_0,
     const std::function<std::int32_t(const xtl::span<const std::int32_t>&)>&
-        facet_map_1)
+        facet_map_1,
+    const std::function<std::uint8_t(std::int32_t)>& get_perm,
+    const std::function<std::uint8_t(std::int32_t, std::int32_t)>&
+        get_facet_perm)
 {
   if (facets.empty())
     return;
+
+  const int tdim = mesh.topology().dim();
+  const int num_cell_facets
+      = mesh::cell_num_entities(mesh.topology().cell_type(), tdim - 1);
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
@@ -210,10 +217,16 @@ void assemble_exterior_facets(
                               std::next(coordinate_dofs.begin(), 3 * i));
     }
 
+    const std::array<std::uint8_t, 2> perm{
+        get_perm(cell * num_cell_facets + local_facet),
+        get_facet_perm(cell, local_facet)};
+
+    std::cout << static_cast<int>(perm[0]) << " " << static_cast<int>(perm[1]) << "\n";
+
     // Tabulate tensor
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
-           coordinate_dofs.data(), &local_facet, nullptr);
+           coordinate_dofs.data(), &local_facet, perm.data());
 
     dof_transform(_Ae, cell_info_1, c_1, ndim1);
     dof_transform_to_transpose(_Ae, cell_info_0, c_0, ndim0);
@@ -477,16 +490,51 @@ void assemble_matrix(
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
+    // Facet permutations only needed for codim 1 integrals for ext facets
+    // TODO Package both of these into one lambda
+    std::function<std::uint8_t(std::int32_t)> get_perm;
+    std::function<std::uint8_t(std::int32_t, std::int32_t)> get_facet_perm;
+    // TODO SET needs_facet_permutations IN THE FORM and uncomment
+    // if (a.needs_facet_permutations())
+    if (true)
+    {
+      std::cout << "Needs facet perms\n";
+      mesh->topology_mutable().create_entity_permutations();
+      const std::vector<std::uint8_t>& perms
+          = mesh->topology().get_facet_permutations();
+      get_perm = [&perms](std::int32_t i) { return perms[i]; };
+
+      // FIXME I think we need to generate "full cell" permutations for all
+      // facets in the current mesh
+      mesh->topology_mutable().create_connectivity(mesh->topology().dim(),
+                                                   mesh->topology().dim() - 1);
+      // TODO Package as (cell, local_facet) pairs in
+      // create_full_cell_permutations?
+      auto c_to_f = mesh->topology().connectivity(mesh->topology().dim(),
+                                                  mesh->topology().dim() - 1);
+      mesh->topology_mutable().create_full_cell_permutations();
+      const std::vector<std::uint8_t>& facet_perms
+          = mesh->topology().get_full_cell_permutations();
+      get_facet_perm
+          = [&facet_perms, c_to_f](std::int32_t c, std::int32_t local_f)
+      { return facet_perms[c_to_f->links(c)[local_f]]; };
+    }
+    else
+    {
+      get_perm = [](std::int32_t) { return 0; };
+      get_facet_perm = [](std::int32_t, std::int32_t) { return 0; };
+    }
     const auto facet_map_0 = a.facet_to_cell_map(*a.function_spaces().at(0));
     const auto facet_map_1 = a.facet_to_cell_map(*a.function_spaces().at(1));
     const auto& fn = a.kernel(IntegralType::exterior_facet, i);
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::int32_t>& facets = a.exterior_facet_domains(i);
-    impl::assemble_exterior_facets(
-        mat_set, *mesh, facets, dof_transform, dofs0, bs0,
-        dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn, coeffs, cstride,
-        constants, cell_info_0, cell_info_1, facet_map_0, facet_map_1);
+    impl::assemble_exterior_facets(mat_set, *mesh, facets, dof_transform, dofs0,
+                                   bs0, dof_transform_to_transpose, dofs1, bs1,
+                                   bc0, bc1, fn, coeffs, cstride, constants,
+                                   cell_info_0, cell_info_1, facet_map_0,
+                                   facet_map_1, get_perm, get_facet_perm);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
