@@ -26,6 +26,8 @@ if (NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 add_executable(${{PROJECT_NAME}} {src_files})
 target_link_libraries(${{PROJECT_NAME}} dolfinx)
 
@@ -120,6 +122,8 @@ add_custom_command(
   COMMAND ffcx ${{CMAKE_CURRENT_SOURCE_DIR}}/{ufl_files} ${{SCALAR_TYPE}}
   VERBATIM DEPENDS {ufl_files} COMMENT "Compile {ufl_files} using FFCx")
 
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 add_executable(${{PROJECT_NAME}} {src_files} ${{CMAKE_CURRENT_BINARY_DIR}}/{ufl_c_files})
 target_link_libraries(${{PROJECT_NAME}} dolfinx)
 
@@ -181,9 +185,9 @@ def generate_cmake_files(subdirectory, generated_files):
                 filename, extension = os.path.splitext(f)
                 if extension == ".cpp":
                     cpp_files.add(f)
-                elif extension == ".ufl":
+                elif extension == ".py":
                     ufl_files.add(f)
-                    ufl_c_files.add(f.replace(".ufl", ".c"))
+                    ufl_c_files.add(f.replace(".py", ".c"))
                 if ".cpp.rst" in f:
                     cpp_files.add(filename)
 

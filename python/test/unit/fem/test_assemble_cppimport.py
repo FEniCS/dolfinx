@@ -16,19 +16,18 @@ import scipy.sparse.linalg
 import dolfinx
 import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import (FunctionSpace, assemble_matrix, dirichletbc, form,
+from dolfinx.fem import (FunctionSpace, dirichletbc, form,
                          locate_dofs_geometrical)
+from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import create_unit_square
 from dolfinx.wrappers import get_include_path as pybind_inc
-from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
-from dolfinx_utils.test.skips import skip_in_parallel
 
 import petsc4py
 from mpi4py import MPI
 from petsc4py import PETSc
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.skipif(not dolfinx.pkgconfig.exists("eigen3"),
                     reason="This test needs eigen3 pkg-config.")
 @pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),
@@ -66,17 +65,18 @@ assemble_csr(const dolfinx::fem::Form<T>& a,
              const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>& bcs)
 {
   std::vector<Eigen::Triplet<T>> triplets;
-  const auto mat_add
-      = [&triplets](std::int32_t nrow, const std::int32_t* rows,
-                    std::int32_t ncol, const std::int32_t* cols, const T* v)
+  auto mat_add
+      = [&triplets](const xtl::span<const std::int32_t>& rows,
+                    const xtl::span<const std::int32_t>& cols,
+                    const xtl::span<const T>& v)
     {
-      for (int i = 0; i < nrow; ++i)
-        for (int j = 0; j < ncol; ++j)
-          triplets.emplace_back(rows[i], cols[j], v[i * ncol + j]);
+      for (std::size_t i = 0; i < rows.size(); ++i)
+        for (std::size_t j = 0; j < cols.size(); ++j)
+          triplets.emplace_back(rows[i], cols[j], v[i * cols.size() + j]);
       return 0;
     };
 
-  dolfinx::fem::assemble_matrix<T>(mat_add, a, bcs);
+  dolfinx::fem::assemble_matrix(mat_add, a, bcs);
 
   auto map0 = a.function_spaces().at(0)->dofmap()->index_map;
   int bs0 = a.function_spaces().at(0)->dofmap()->index_map_bs();
@@ -105,7 +105,7 @@ PYBIND11_MODULE(eigen_csr, m)
         """Assemble bilinear form into an SciPy CSR matrix, in serial."""
         module = compile_eigen_csr_assembler_module()
         A = module.assemble_matrix(a, bcs)
-        if a.function_spaces[0].id == a.function_spaces[1].id:
+        if a.function_spaces[0] is a.function_spaces[1]:
             for bc in bcs:
                 if a.function_spaces[0].contains(bc.function_space):
                     bc_dofs, _ = bc.dof_indices()

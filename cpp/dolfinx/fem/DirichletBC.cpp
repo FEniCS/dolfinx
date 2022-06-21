@@ -26,31 +26,6 @@ using namespace dolfinx::fem;
 namespace
 {
 //-----------------------------------------------------------------------------
-/// Create a symmetric MPI neighbourhood communciator from an
-/// input neighbourhood communicator
-dolfinx::MPI::Comm create_symmetric_comm(MPI_Comm comm)
-{
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
-
-  std::vector<int> neighbors(indegree + outdegree);
-  MPI_Dist_graph_neighbors(comm, indegree, neighbors.data(), MPI_UNWEIGHTED,
-                           outdegree, neighbors.data() + indegree,
-                           MPI_UNWEIGHTED);
-
-  std::sort(neighbors.begin(), neighbors.end());
-  neighbors.erase(std::unique(neighbors.begin(), neighbors.end()),
-                  neighbors.end());
-
-  MPI_Comm comm_sym;
-  MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
-                                 MPI_UNWEIGHTED, neighbors.size(),
-                                 neighbors.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &comm_sym);
-
-  return dolfinx::MPI::Comm(comm_sym, false);
-}
-//-----------------------------------------------------------------------------
 /// Find the cell (local to process) and index of an entity (local to cell) for
 /// a list of entities
 /// @param[in] mesh The mesh
@@ -93,11 +68,10 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
 
 /// Find all DOFs on this process that have been detected on another
 /// process
-/// @param[in] comm A symmetric communicator based on the forward
-/// neighborhood communicator in the IndexMap
-/// @param[in] map The IndexMap with the dof layout
+/// @param[in] comm A symmetric communicator
+/// @param[in] map The index map with the dof layout
 /// @param[in] bs_map The block size of the index map, i.e. the dof
-/// array. It should be set to one if `dofs_local` contains block indices.
+/// array. It should be set to 1 if `dofs_local` contains block indices.
 /// @param[in] dofs_local List of degrees of freedom on this rank
 /// @returns Degrees of freedom found on the other ranks that exist on
 /// this rank
@@ -105,9 +79,12 @@ std::vector<std::int32_t>
 get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
                 const xtl::span<const std::int32_t>& dofs_local)
 {
-  int num_neighbors(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);
-  assert(num_neighbors == outdegree);
+  int num_neighbors(-1);
+  {
+    int outdegree(-2), weighted(-1);
+    MPI_Dist_graph_neighbors_count(comm, &num_neighbors, &outdegree, &weighted);
+    assert(num_neighbors == outdegree);
+  }
 
   // Return early if there are no neighbors
   if (num_neighbors == 0)
@@ -275,17 +252,35 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
 
   if (remote)
   {
-    // Get bc dof indices (local) in  V spaces on this process that were
+    // Get bc dof indices (local) in V spaces on this process that were
     // found by other processes, e.g. a vertex dof on this process that
-    // has no connected facets on the boundary
+    // has no connected facets on the boundary.
     auto map = dofmap->index_map;
-    dolfinx::MPI::Comm comm = create_symmetric_comm(
-        map->comm(common::IndexMap::Direction::forward));
+    assert(map);
+
+    // Create 'symmetric' neighbourhood communicator
+    MPI_Comm comm;
+    {
+      const std::vector<int>& src = map->src();
+      const std::vector<int>& dest = map->dest();
+
+      std::vector<int> ranks;
+      std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
+                     std::back_inserter(ranks));
+      ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+
+      MPI_Dist_graph_create_adjacent(
+          map->comm(), ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
+          ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+    }
+
     std::vector<std::int32_t> dofs_remote;
     if (int map_bs = dofmap->index_map_bs(); map_bs == bs)
-      dofs_remote = get_remote_dofs(comm.comm(), *map, 1, dofs);
+      dofs_remote = get_remote_dofs(comm, *map, 1, dofs);
     else
-      dofs_remote = get_remote_dofs(comm.comm(), *map, map_bs, dofs);
+      dofs_remote = get_remote_dofs(comm, *map, map_bs, dofs);
+
+    MPI_Comm_free(&comm);
 
     // Add received bc indices to dofs_local, sort, and remove
     // duplicates
@@ -314,7 +309,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   // FIXME: Elements must be the same?
   assert(V0.element());
   assert(V1.element());
-  if (V0.element()->hash() != V1.element()->hash())
+  if (*V0.element() != *V1.element())
     throw std::runtime_error("Function spaces must have the same element.");
 
   // Get dofmaps
@@ -398,22 +393,42 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     // Get bc dof indices (local) for each of spaces on this process that
     // were found by other processes, e.g. a vertex dof on this process
     // that has no connected facets on the boundary.
-    dolfinx::MPI::Comm comm = create_symmetric_comm(
-        V0.dofmap()->index_map->comm(common::IndexMap::Direction::forward));
-    std::vector<std::int32_t> dofs_remote
-        = get_remote_dofs(comm.comm(), *V0.dofmap()->index_map,
-                          V0.dofmap()->index_map_bs(), sorted_bc_dofs[0]);
+
+    auto map0 = V0.dofmap()->index_map;
+    assert(map0);
+
+    // Create 'symmetric' neighbourhood communicator
+    MPI_Comm comm;
+    {
+      const std::vector<int>& src = map0->src();
+      const std::vector<int>& dest = map0->dest();
+
+      std::vector<int> ranks;
+      std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
+                     std::back_inserter(ranks));
+      ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+
+      MPI_Dist_graph_create_adjacent(map0->comm(), ranks.size(), ranks.data(),
+                                     MPI_UNWEIGHTED, ranks.size(), ranks.data(),
+                                     MPI_UNWEIGHTED, MPI_INFO_NULL, false,
+                                     &comm);
+    }
+
+    std::vector<std::int32_t> dofs_remote = get_remote_dofs(
+        comm, *map0, V0.dofmap()->index_map_bs(), sorted_bc_dofs[0]);
 
     // Add received bc indices to dofs_local
     sorted_bc_dofs[0].insert(sorted_bc_dofs[0].end(), dofs_remote.begin(),
                              dofs_remote.end());
 
     dofs_remote
-        = get_remote_dofs(comm.comm(), *V1.dofmap()->index_map,
+        = get_remote_dofs(comm, *(V1.dofmap()->index_map),
                           V1.dofmap()->index_map_bs(), sorted_bc_dofs[1]);
     sorted_bc_dofs[1].insert(sorted_bc_dofs[1].end(), dofs_remote.begin(),
                              dofs_remote.end());
     assert(sorted_bc_dofs[0].size() == sorted_bc_dofs[1].size());
+
+    MPI_Comm_free(&comm);
 
     // Remove duplicates and sort
     perm.resize(sorted_bc_dofs[0].size());
@@ -451,12 +466,12 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
   }
 
   // Compute dof coordinates
-  const xt::xtensor<double, 2> dof_coordinates
-      = V.tabulate_dof_coordinates(true);
-  assert(dof_coordinates.shape(0) == 3);
+  const std::vector<double> dof_coordinates = V.tabulate_dof_coordinates(true);
 
   // Compute marker for each dof coordinate
-  const xt::xtensor<bool, 1> marked_dofs = marker_fn(dof_coordinates);
+  auto x = xt::adapt(dof_coordinates,
+                     std::vector<std::size_t>{3, dof_coordinates.size() / 3});
+  const xt::xtensor<bool, 1> marked_dofs = marker_fn(x);
 
   std::vector<std::int32_t> dofs;
   dofs.reserve(std::count(marked_dofs.begin(), marked_dofs.end(), true));
@@ -492,16 +507,16 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
 
   assert(V0.element());
   assert(V1.element());
-  if (V0.element()->hash() != V1.element()->hash())
+  if (*V0.element() != *V1.element())
     throw std::runtime_error("Function spaces must have the same element.");
 
   // Compute dof coordinates
-  const xt::xtensor<double, 2> dof_coordinates
-      = V1.tabulate_dof_coordinates(true);
-  assert(dof_coordinates.shape(0) == 3);
+  const std::vector<double> dof_coordinates = V1.tabulate_dof_coordinates(true);
 
   // Evaluate marker for each dof coordinate
-  const xt::xtensor<bool, 1> marked_dofs = marker_fn(dof_coordinates);
+  auto x = xt::adapt(dof_coordinates,
+                     std::vector<std::size_t>{3, dof_coordinates.size() / 3});
+  const xt::xtensor<bool, 1> marked_dofs = marker_fn(x);
 
   // Get dofmaps
   std::shared_ptr<const DofMap> dofmap0 = V0.dofmap();

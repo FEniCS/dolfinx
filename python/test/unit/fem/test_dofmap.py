@@ -16,7 +16,6 @@ from dolfinx.fem import FunctionSpace, VectorFunctionSpace
 from dolfinx.graph import create_adjacencylist
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
-from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import FiniteElement, MixedElement, VectorElement
 
 from mpi4py import MPI
@@ -102,7 +101,7 @@ def test_entity_dofs(mesh):
 
 
 @pytest.mark.skip
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize(
     'mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 2, 2)),
                      (create_unit_square,
@@ -231,7 +230,7 @@ def test_readonly_view_local_to_global_unwoned(mesh):
     assert sys.getrefcount(index_map) == rc
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("points, celltype, order", [
     (np.array([[0, 0], [1, 0], [0, 2], [1, 2]]),
      CellType.quadrilateral, 1),
@@ -279,7 +278,7 @@ def test_higher_order_coordinate_map(points, celltype, order):
         assert np.allclose(x[:, 2], 3 * X[:, 2])
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 # @pytest.mark.parametrize("order", [1, 2, 3])
 @pytest.mark.parametrize("order", [1, 2])
 def test_higher_order_tetra_coordinate_map(order):
@@ -325,7 +324,7 @@ def test_higher_order_tetra_coordinate_map(order):
     assert np.allclose(x[:, 2], 3 * X[:, 2])
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_transpose_dofmap():
     dofmap = create_adjacencylist(np.array([[0, 2, 1], [3, 2, 1], [4, 3, 1]], dtype=np.int32))
     transpose = dolfinx.fem.transpose_dofmap(dofmap, 3)

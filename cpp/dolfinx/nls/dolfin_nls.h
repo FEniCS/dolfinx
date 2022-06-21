@@ -5,7 +5,7 @@ namespace dolfinx
 /*! \namespace dolfinx::nls
     \brief Nonlinear solvers
 
-    Methods for solving nonlinear equations.
+    Methods for solving nonlinear equations
 */
 }
 

@@ -4,9 +4,9 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the FunctionSpace class"""
-
 import pytest
 
+import basix.finite_element
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import create_unit_cube
 from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
@@ -67,12 +67,12 @@ def test_python_interface(V, V2, W, W2, Q):
 
     assert V.ufl_cell() == V2.ufl_cell()
     assert W.ufl_cell() == W2.ufl_cell()
-    assert V.element.signature() == V2.element.signature()
-    assert W.element.signature() == W2.element.signature()
+    assert V.element == V2.element
+    assert W.element == W2.element
     assert V.ufl_element() == V2.ufl_element()
     assert W.ufl_element() == W2.ufl_element()
-    assert W.id == W2.id
-    assert V.id == V2.id
+    assert W is W2
+    assert V is V2
 
 
 def test_component(V, W, Q):
@@ -113,7 +113,7 @@ def test_sub(Q, W):
     assert W.element.space_dimension == X.element.space_dimension
     assert W.element.value_shape == X.element.value_shape
     assert W.element.interpolation_points.shape == X.element.interpolation_points.shape
-    assert W.element.signature() == X.element.signature()
+    assert W.element == X.element
 
 
 def test_inclusion(V, Q):
@@ -151,9 +151,7 @@ def test_not_equal(W, V, W2, V2):
 
 
 def test_clone(W):
-    V = W.clone()
-    assert V == W
-    assert V.id != W.id
+    assert W.clone() is not W
 
 
 def test_collapse(W, V):
@@ -224,3 +222,13 @@ def test_cell_mismatch(mesh):
     element = FiniteElement("P", triangle, 1)
     with pytest.raises(UFLException):
         FunctionSpace(mesh, element)
+
+
+def test_basix_element(V, W, Q, V2):
+    for V_ in (V, W, V2):
+        e = V_.element.basix_element
+        assert isinstance(e, basix.finite_element.FiniteElement)
+
+    # Mixed spaces do not yet return a basix element
+    with pytest.raises(RuntimeError):
+        e = Q.element.basix_element

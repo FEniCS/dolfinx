@@ -12,7 +12,6 @@ import ufl
 from dolfinx import geometry
 from dolfinx.geometry import compute_distance_gjk
 from dolfinx.mesh import create_mesh
-from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
 
@@ -159,7 +158,7 @@ def test_cube_distance(delta, scale):
             assert np.isclose(distance, delta)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_collision_2nd_order_triangle():
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.65, 0.65], [0.0, 0.5], [0.5, 0.0]])
     cells = np.array([[0, 1, 2, 3, 4, 5]])

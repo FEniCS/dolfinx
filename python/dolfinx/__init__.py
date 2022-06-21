@@ -12,15 +12,11 @@ import sys
 
 stored_dlopen_flags = sys.getdlopenflags()
 
-# Developer note: below is related to OpenMPI
-# Fix dlopen flags (may need reorganising)
+# Developer note: below is related to OpenMPI 
+# Fix dlopen flags
 if "linux" in sys.platform:
-    # FIXME: What with other platforms?
-    try:
-        from ctypes import RTLD_GLOBAL, RTLD_NOW
-    except ImportError:
-        RTLD_NOW = 2
-        RTLD_GLOBAL = 256
+    RTLD_NOW = 2
+    RTLD_GLOBAL = 256
     sys.setdlopenflags(RTLD_NOW | RTLD_GLOBAL)
 del sys
 
@@ -30,15 +26,17 @@ del sys
 
 import sys
 
-# Initialise logging
+from dolfinx import common
 from dolfinx import cpp as _cpp
+from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot
+# Initialise logging
 from dolfinx.common import (TimingType, git_commit_hash, has_debug, has_kahip,
                             has_parmetis, list_timings, timing)
 # Import cpp modules
 from dolfinx.cpp import __version__
 
 _cpp.common.init_logging(sys.argv)
-del sys
+del _cpp, sys
 
 def get_include(user=False):
     import os
@@ -49,3 +47,10 @@ def get_include(user=False):
     else:
         # Package is from a source directory
         return os.path.join(os.path.dirname(d), "src")
+
+
+__all__ = [
+    "fem", "common", "geometry", "graph", "io", "jit", "la", "log", "mesh", "nls", "plot",
+    "TimingType", "git_commit_hash", "has_debug", "has_kahip", "has_parmetis", "list_timings",
+    "timing"
+]

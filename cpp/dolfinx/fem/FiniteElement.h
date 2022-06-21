@@ -47,10 +47,22 @@ public:
   /// Move assignment
   FiniteElement& operator=(FiniteElement&& element) = default;
 
+  /// Check if two elements are equivalent
+  /// @return True is the two elements are the same
+  /// @note Equality can be checked only for non-mixed elements. For a
+  /// mixed element, this function will raise an exception.
+  bool operator==(const FiniteElement& e) const;
+
+  /// Check if two elements are not equivalent
+  /// @return True is the two elements are not the same
+  /// @note Equality can be checked only for non-mixed elements. For a
+  /// mixed element, this function will raise an exception.
+  bool operator!=(const FiniteElement& e) const;
+
   /// String identifying the finite element
   /// @return Element signature
-  /// @warning The function is provided for convenience, but it should not
-  /// be relied upon for determining the element type. Use other
+  /// @warning The function is provided for convenience, but it should
+  /// not be relied upon for determining the element type. Use other
   /// functions, commonly returning enums, to determine element
   /// properties.
   std::string signature() const noexcept;
@@ -70,12 +82,16 @@ public:
   /// @return Block size of the finite element space
   int block_size() const noexcept;
 
-  /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector
+  /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
+  /// for a second-order tensor in 3D.
+  /// @note The return value of this function is equal to
+  /// `std::accumulate(value_shape().begin(), value_shape().end(), 1,
+  /// std::multiplies<int>())`.
   /// @return The value size
   int value_size() const;
 
-  /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector
-  /// for the reference element
+  /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
+  /// for a second-order tensor in 3D, for the reference element
   /// @return The value size for the reference element
   int reference_value_size() const;
 
@@ -130,8 +146,8 @@ public:
   /// - `u` [in] The data on the physical cell that should be pulled
   /// back , flattened with row-major layout, shape=(num_points,
   /// value_size)
-  /// - `K` [in] The inverse oif the Jacobian matrix of the map, shape=(tdim,
-  /// gdim)
+  /// - `K` [in] The inverse oif the Jacobian matrix of the map,
+  /// shape=(tdim, gdim)
   /// - `detJ_inv` [in] 1/det(J)
   /// - `J` [in] The Jacobian matrix, shape=(gdim, tdim)
   template <typename O, typename P, typename Q, typename R>
@@ -155,15 +171,12 @@ public:
   const std::vector<std::shared_ptr<const FiniteElement>>&
   sub_elements() const noexcept;
 
-  /// Return the topological dimension
-  int tdim() const noexcept;
-
-  /// Return simple hash of the signature string
-  std::size_t hash() const noexcept;
-
   /// Extract sub finite element for component
   std::shared_ptr<const FiniteElement>
   extract_sub_element(const std::vector<int>& component) const;
+
+  /// Return underlying basix element (if it exists)
+  const basix::FiniteElement& basix_element() const;
 
   /// Get the map type used by the element
   basix::maps::type map_type() const;
@@ -173,8 +186,13 @@ public:
   /// specific points, i.e. the degree-of-freedom are equal to point
   /// evaluations. The function will return `true` for Lagrange
   /// elements.
-  ///  @return True if interpolation is an identity operation
+  /// @return True if interpolation is an identity operation
   bool interpolation_ident() const noexcept;
+
+  /// Check if the push forward/pull back map from the values on reference to
+  /// the values on a physical cell for this element is the identity map.
+  /// @return True if the map is the identity
+  bool map_ident() const noexcept;
 
   /// Points on the reference cell at which an expression need to be
   /// evaluated in order to interpolate the expression in the finite
@@ -195,11 +213,12 @@ public:
   const xt::xtensor<double, 2>& interpolation_operator() const;
 
   /// Create a matrix that maps degrees of freedom from one element to
-  /// this element (interpolation)
+  /// this element (interpolation).
+  ///
   /// @param[in] from The element to interpolate from
-  /// @return Matrix operator that maps the 'from' degrees-of-freedom to
+  /// @return Matrix operator that maps the `from` degrees-of-freedom to
   /// the degrees-of-freedom of this element. Shape is (num_dofs of this
-  /// element, num_dofs of `from`)
+  /// element, num_dofs of `from`).
   /// @note The two elements must use the same mapping between the
   /// reference and physical cells
   /// @note Does not support mixed elements
@@ -663,19 +682,16 @@ private:
 
   mesh::CellType _cell_shape;
 
-  int _tdim, _space_dim;
+  int _space_dim;
 
   // List of sub-elements (if any)
   std::vector<std::shared_ptr<const FiniteElement>> _sub_elements;
-
-  // Simple hash of the signature string
-  std::size_t _hash;
 
   // Dimension of each value space
   std::vector<int> _value_shape;
 
   // Block size for VectorElements and TensorElements. This gives the
-  // number of DOFs colocated at each point.
+  // number of DOFs co-located at each dof 'point'.
   int _bs;
 
   // Indicate whether the element needs permutations or transformations

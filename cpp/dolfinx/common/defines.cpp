@@ -19,7 +19,7 @@ std::string dolfinx::git_commit_hash()
 //-------------------------------------------------------------------------
 bool dolfinx::has_debug()
 {
-#ifdef DEBUG
+#ifndef NDEBUG
   return true;
 #else
   return false;

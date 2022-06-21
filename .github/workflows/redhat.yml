@@ -11,7 +11,7 @@ jobs:
     container: fenicsproject/test-env:latest-redhat
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install FEniCS Python components
         run: |
@@ -26,18 +26,18 @@ jobs:
         run: |
           cmake --build build
           cmake --install build
-      
+
       - name: Build C++ unit tests
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/unit/ -S build/test/unit/
-          cmake --build build/test/unit
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S build/test/
+          cmake --build build/test
       - name: Run C++ unit tests (serial)
         run: |
-          cd build/test/unit
+          cd build/test
           ctest -V --output-on-failure -R unittests
       - name: Run C++ unit tests (MPI)
         run: |
-          cd build/test/unit
+          cd build/test
           mpiexec -np 2 ctest -V --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
