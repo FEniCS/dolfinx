@@ -839,3 +839,24 @@ def test_custom_domains(n, k, ghost_mode, random_ordering):
 
     assert(np.isclose(s_m, s_sm_left))
     assert(np.isclose(s_m, s_sm_right))
+
+    u_m = ufl.TrialFunction(V)
+    u_sm = ufl.TrialFunction(W)
+    v = ufl.TestFunction(V)
+
+    a = fem.form(ufl.inner(f * g_m * u_m, v) * ds(1))
+    A = fem.petsc.assemble_matrix(a)
+    A.assemble()
+
+    a_sm_left = fem.form(ufl.inner(f * g_sm * u_sm, v) * ds_left(1),
+                         entity_maps=entity_maps)
+    A_sm_left = fem.petsc.assemble_matrix(a_sm_left)
+    A_sm_left.assemble()
+    assert(np.isclose(A.norm(), A_sm_left.norm()))
+
+    a_sm_right = fem.form(ufl.inner(f * g_sm * u_sm, v) * ds_right(1),
+                          entity_maps=entity_maps)
+    A_sm_right = fem.petsc.assemble_matrix(a_sm_right)
+    A_sm_right.assemble()
+
+    assert(np.isclose(A.norm(), A_sm_right.norm()))
