@@ -174,6 +174,7 @@
 # The modules that will be used are imported:
 
 # +
+import gmsh
 import numpy as np
 import ufl
 from gmsh_helpers import gmsh_model_to_mesh
