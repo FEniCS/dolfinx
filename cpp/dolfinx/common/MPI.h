@@ -251,10 +251,10 @@ std::vector<T> distribute_from_postoffice(
 /// @param[in] shape1 The number of columns of the data array `x`.
 /// @return The data for each index in `indices` (row-major storage)
 /// @pre `shape1 > 0`
-template <typename T>
-std::vector<T> distribute_data(MPI_Comm comm,
-                               const xtl::span<const std::int64_t>& indices,
-                               const xtl::span<const T>& x, int shape1);
+// template <typename T>
+// std::vector<T> distribute_data(MPI_Comm comm,
+//                                const xtl::span<const std::int64_t>& indices,
+//                                const xtl::span<const T>& x, int shape1);
 
 template <typename T>
 struct dependent_false : std::false_type
@@ -642,6 +642,7 @@ std::vector<T> distribute_from_postoffice(
   return x_new;
 }
 //---------------------------------------------------------------------------
+/*
 template <typename T>
 std::vector<T> distribute_data(MPI_Comm comm,
                                const xtl::span<const std::int64_t>& indices,
@@ -658,6 +659,7 @@ std::vector<T> distribute_data(MPI_Comm comm,
   return distribute_from_postoffice(comm, indices, x, {shape0, shape1},
                                     rank_offset);
 }
+*/
 //---------------------------------------------------------------------------
 
 } // namespace dolfinx::MPI
