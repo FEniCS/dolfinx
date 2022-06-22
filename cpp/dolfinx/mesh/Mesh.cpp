@@ -263,7 +263,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // dimension, add ghost entities to the submesh. If not, do not add
   // ghost entities, because in general, not all expected ghost entities
   // would be present.
-  if (mesh.topology().dim() == dim)
+  // if (mesh.topology().dim() == dim)
+  if (true)
   {
     // TODO Call dolfinx::common::get_owned_indices here? Do we want to
     // support `entities` possibly haveing a ghost on one process that is

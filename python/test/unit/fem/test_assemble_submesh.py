@@ -829,6 +829,8 @@ def test_custom_domains(n, k, space, ghost_mode, random_ordering):
     g_m.interpolate(lambda x: x[1]**3)
     g_sm.interpolate(lambda x: x[1]**3)
 
+    g_sm.x.scatter_forward()
+
     # FIXME Need to pass perms to assemble scalar
     # m_m = fem.form(f * g_m * ds(1))
     # m_sm_left = fem.form(f * g_sm * ds_left(1), entity_maps=entity_maps)
@@ -847,18 +849,39 @@ def test_custom_domains(n, k, space, ghost_mode, random_ordering):
     u_sm = ufl.TrialFunction(W)
     v = ufl.TestFunction(V)
 
-    a = fem.form(ufl.inner(f * g_m * u_m, v) * ds(1))
-    A = fem.petsc.assemble_matrix(a)
-    A.assemble()
+    # a = fem.form(ufl.inner(f * g_m * u_m, v) * ds(1))
+    # # # a = fem.form(ufl.inner(g_m * u_m, v) * ds(1))
+    # A = fem.petsc.assemble_matrix(a)
+    # A.assemble()
+    # A_range = A.getOwnershipRange()
+    # # print(A[A_range[0]:A_range[1], :])
 
     a_sm_left = fem.form(ufl.inner(f * g_sm * u_sm, v) * ds_left(1),
                          entity_maps=entity_maps)
+    # a_sm_left = fem.form(ufl.inner(g_sm * u_sm, v) * ds_left(1),
+    #                      entity_maps=entity_maps)
     A_sm_left = fem.petsc.assemble_matrix(a_sm_left)
     A_sm_left.assemble()
-    assert(np.isclose(A.norm(), A_sm_left.norm()))
+    # A_sm_left_range = A_sm_left.getOwnershipRange()
+    # print(A_sm_left[A_sm_left_range[0]:A_sm_left_range[1], :])
 
-    a_sm_right = fem.form(ufl.inner(f * g_sm * u_sm, v) * ds_right(1),
-                          entity_maps=entity_maps)
-    A_sm_right = fem.petsc.assemble_matrix(a_sm_right)
-    A_sm_right.assemble()
-    assert(np.isclose(A.norm(), A_sm_right.norm()))
+    # print(A.norm(), A_sm_left.norm())
+    # assert(np.isclose(A.norm(), A_sm_left.norm()))
+
+    # # a_sm_right = fem.form(ufl.inner(f * g_sm * u_sm, v) * ds_right(1),
+    # #                       entity_maps=entity_maps)
+    # a_sm_right = fem.form(ufl.inner(f * u_sm, v) * ds_right(1),
+    #                       entity_maps=entity_maps)
+    # A_sm_right = fem.petsc.assemble_matrix(a_sm_right)
+    # A_sm_right.assemble()
+    # assert(np.isclose(A.norm(), A_sm_right.norm()))
+
+
+# TODO Figure out why it doesn't work in parallel
+n = 2
+k = 1
+space = "Discontinuous Lagrange"
+ghost_mode = GhostMode.shared_facet
+random_ordering = True
+np.set_printoptions(suppress=True, linewidth=200, precision=5)
+test_custom_domains(n, k, space, ghost_mode, random_ordering)

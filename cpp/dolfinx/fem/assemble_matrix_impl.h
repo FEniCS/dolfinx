@@ -20,6 +20,9 @@
 #include <iterator>
 #include <vector>
 
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xio.hpp>
+
 namespace dolfinx::fem::impl
 {
 
@@ -197,10 +200,14 @@ void assemble_exterior_facets(
   std::vector<T> Ae(ndim0 * ndim1);
   const xtl::span<T> _Ae(Ae);
   assert(facets.size() % 2 == 0);
+  std::stringstream ss;
+  ss << "rank " << MPI::rank(MPI_COMM_WORLD) << ":\n";
   for (std::size_t index = 0; index < facets.size(); index += 2)
   {
     std::int32_t cell = facets[index];
     std::int32_t local_facet = facets[index + 1];
+
+    ss << "(" << cell << ", " << local_facet << ")\n";
 
     // Map the cell in the integration domain to the cell in the mesh
     // each function space is defined over
@@ -208,6 +215,8 @@ void assemble_exterior_facets(
     assert(c_0 >= 0);
     std::int32_t c_1 = facet_map_1(facets.subspan(index, 2));
     assert(c_1 >= 0);
+
+    ss << "c_0 = " << c_0 << " " << "c_1 = " << c_1 << "\n";
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cell);
@@ -220,13 +229,17 @@ void assemble_exterior_facets(
     const std::array<std::uint8_t, 2> perm{
         get_perm(cell * num_cell_facets + local_facet),
         get_facet_perm(cell, local_facet)};
+    // const std::array<std::uint8_t, 2> perm{0, 0};
 
-    std::cout << static_cast<int>(perm[0]) << " " << static_cast<int>(perm[1]) << "\n";
+    ss << "perms = {" << static_cast<int>(perm[0]) << ", "
+       << static_cast<int>(perm[1]) << "}\n";
 
     // Tabulate tensor
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
            coordinate_dofs.data(), &local_facet, perm.data());
+
+    ss << "Ae = " << xt::adapt(Ae) << "\n";
 
     dof_transform(_Ae, cell_info_1, c_1, ndim1);
     dof_transform_to_transpose(_Ae, cell_info_0, c_0, ndim0);
@@ -268,6 +281,7 @@ void assemble_exterior_facets(
 
     mat_set(dofs0, dofs1, Ae);
   }
+  std::cout << ss.str() << "\n";
 }
 
 /// Execute kernel over interior facets and  accumulate result in Mat
@@ -498,7 +512,6 @@ void assemble_matrix(
     // if (a.needs_facet_permutations())
     if (true)
     {
-      std::cout << "Needs facet perms\n";
       mesh->topology_mutable().create_entity_permutations();
       const std::vector<std::uint8_t>& perms
           = mesh->topology().get_facet_permutations();
