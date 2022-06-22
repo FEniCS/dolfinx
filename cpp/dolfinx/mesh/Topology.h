@@ -177,16 +177,16 @@ private:
 /// cells are always at the end of the list of `cells`)
 /// @param[in] cell_type The cell shape
 /// @param[in] ghost_mode Type of cell ghosting: none, shared_facet or
-/// shared_vertex
-/// @param[in] unmatched_facets List of facet vertices on facets exterior to the
-/// process, as found in the local dual graph.
+/// shared_vertex - FIXME: to be removed
+/// @param[in] unknown_vertices List of vertices on the exterior of the
+/// local mesh which may be shared with other processes.
 /// @return A distributed mesh topology
 Topology
 create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                 const xtl::span<const std::int64_t>& original_cell_index,
                 const xtl::span<const int>& ghost_owners,
                 const CellType& cell_type, GhostMode ghost_mode,
-                const std::vector<std::int64_t>& unmatched_facets);
+                const std::vector<std::int64_t>& unknown_vertices);
 
 /// @brief Get entity indices for entities defined by their vertices.
 ///

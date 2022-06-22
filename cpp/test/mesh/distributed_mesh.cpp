@@ -91,7 +91,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 
   mesh::Topology topology = mesh::create_topology(
       mpi_comm, cell_nodes, original_cell_index, ghost_owners,
-      cmap.cell_shape(), mesh::GhostMode::shared_facet);
+      cmap.cell_shape(), mesh::GhostMode::shared_facet, {});
   int tdim = topology.dim();
 
   mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, cmap,
