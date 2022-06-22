@@ -760,8 +760,9 @@ def test_assemble_block(random_ordering):
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
+@pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
 @pytest.mark.parametrize("random_ordering", [False, True])
-def test_custom_domains(n, k, ghost_mode, random_ordering):
+def test_custom_domains(n, k, space, ghost_mode, random_ordering):
     if random_ordering:
         msh = create_random_mesh(((0.0, 0.0), (1.0, 1.0)), (n, n), ghost_mode)
     else:
@@ -773,8 +774,8 @@ def test_custom_domains(n, k, ghost_mode, random_ordering):
     submesh, entity_map, vertex_map, geom_map = create_submesh(
         msh, tdim - 1, centre_facets)
 
-    V = fem.FunctionSpace(msh, ("Lagrange", k))
-    W = fem.FunctionSpace(submesh, ("Lagrange", k))
+    V = fem.FunctionSpace(msh, (space, k))
+    W = fem.FunctionSpace(submesh, (space, k))
 
     left_cells = locate_entities(
         msh, tdim, lambda x: x[0] <= 0.5)
@@ -828,9 +829,6 @@ def test_custom_domains(n, k, ghost_mode, random_ordering):
     g_m.interpolate(lambda x: x[1]**3)
     g_sm.interpolate(lambda x: x[1]**3)
 
-    msh.topology.create_full_cell_permutations()
-    print(msh.topology.get_full_cell_permutations())
-
     # FIXME Need to pass perms to assemble scalar
     # m_m = fem.form(f * g_m * ds(1))
     # m_sm_left = fem.form(f * g_sm * ds_left(1), entity_maps=entity_maps)
@@ -863,5 +861,4 @@ def test_custom_domains(n, k, ghost_mode, random_ordering):
                           entity_maps=entity_maps)
     A_sm_right = fem.petsc.assemble_matrix(a_sm_right)
     A_sm_right.assemble()
-
     assert(np.isclose(A.norm(), A_sm_right.norm()))
