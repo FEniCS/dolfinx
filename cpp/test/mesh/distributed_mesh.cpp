@@ -89,9 +89,16 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
       = graph::build::distribute(mpi_comm, cells_topology, dest);
 
+  // Make all vertices "external" (for now - FIXME)
+  std::vector<std::int64_t> external_vertices(cell_nodes.array());
+  std::sort(external_vertices.begin(), external_vertices.end());
+  external_vertices.erase(
+      std::unique(external_vertices.begin(), external_vertices.end()),
+      external_vertices.end());
+
   mesh::Topology topology = mesh::create_topology(
       mpi_comm, cell_nodes, original_cell_index, ghost_owners,
-      cmap.cell_shape(), mesh::GhostMode::shared_facet, {});
+      cmap.cell_shape(), mesh::GhostMode::shared_facet, external_vertices);
   int tdim = topology.dim();
 
   mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, cmap,
