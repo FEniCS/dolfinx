@@ -351,6 +351,9 @@ vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
   common::Timer timer("Topology: determine vertex ownership groups (owned, "
                       "undetermined, unowned)");
 
+  // FIXME: add sanity test. Vertices which appear only in ghost cells should
+  // not appear in unknown_vertices.
+
   // Build set of 'local' cell vertices (attached to an owned cell)
   std::vector<std::int64_t> local_vertex_set(
       cells.array().begin(),
