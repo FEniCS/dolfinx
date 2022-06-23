@@ -906,8 +906,6 @@ void fem(py::module& m)
   declare_functions<double>(m);
   declare_functions<float>(m);
   declare_functions<std::complex<double>>(m);
-  // NOTE: we can't enable std::complex<float> because C++ doesn't
-  // support multiplication of std::complex<float> and double.
   declare_functions<std::complex<float>>(m);
 
   declare_objects<float>(m, "float32");
