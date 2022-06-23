@@ -166,14 +166,14 @@ jobs:
           retention-days: 2
           if-no-files-found: error
 
-      - name: Upload Python documentation artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: doc-python-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
-          path: |
-            python/doc/build/html/
-          retention-days: 2
-          if-no-files-found: error
+      # - name: Upload Python documentation artifact
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: doc-python-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
+      #     path: |
+      #       python/doc/build/html/
+      #     retention-days: 2
+      #     if-no-files-found: error
 
       - name: Checkout FEniCS/docs
         if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' }}
