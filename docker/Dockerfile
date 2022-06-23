@@ -177,7 +177,7 @@ RUN if [ "$MPI" = "mpich" ]; then \
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
 RUN pip3 install --no-binary="numpy" --no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scipy && \
-    pip3 install --no-cache-dir cppimport flake8 isort jupytext matplotlib mypy myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx>=5.0.2 sphinx_rtd_theme
+    pip3 install --no-cache-dir cppimport flake8 isort jupytext matplotlib mypy myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Install xtl, xtensor
 RUN git clone -b ${XTL_VERSION} --single-branch --depth 1 https://github.com/xtensor-stack/xtl.git && \

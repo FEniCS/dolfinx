@@ -112,7 +112,6 @@ jobs:
           echo $DOLFINX_VERSION
           cd cpp/doc
           doxygen Doxyfile
-          python3 -m pip install --upgrade sphinx
           make html
 
       - name: Build C++ unit tests
