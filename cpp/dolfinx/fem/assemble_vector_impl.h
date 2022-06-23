@@ -40,7 +40,7 @@ template <typename T, int _bs0 = -1, int _bs1 = -1>
 void _lift_bc_cells(
     xtl::span<T> b, const mesh::Geometry& geometry,
     const std::function<void(T*, const T*, const T*,
-                             const typename geom_type<T>::value_type*,
+                             const typename scalar_value_type<T>::value_type*,
                              const int*, const std::uint8_t*)>& kernel,
     const xtl::span<const std::int32_t>& cells,
     const std::function<void(const xtl::span<T>&,
@@ -69,7 +69,7 @@ void _lift_bc_cells(
   xtl::span<const double> x_g = geometry.x();
 
   // Data structures used in bc application
-  using geom_t = typename geom_type<T>::value_type;
+  using geom_t = typename scalar_value_type<T>::value_type;
   std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> Ae, be;
   for (std::size_t index = 0; index < cells.size(); ++index)
@@ -137,6 +137,7 @@ void _lift_bc_cells(
     // Size data structure for assembly
     be.resize(num_rows);
     std::fill(be.begin(), be.end(), 0);
+    const geom_t _scale = scale;
     for (std::size_t j = 0; j < dmap1.size(); ++j)
     {
       if constexpr (_bs1 > 0)
@@ -152,7 +153,7 @@ void _lift_bc_cells(
             // const T _x0 = 0.0;
             // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
             for (int m = 0; m < num_rows; ++m)
-              be[m] -= Ae[m * num_cols + _bs1 * j + k] * scale * (bc - _x0);
+              be[m] -= Ae[m * num_cols + _bs1 * j + k] * _scale * (bc - _x0);
           }
         }
       }
@@ -168,7 +169,7 @@ void _lift_bc_cells(
             const T _x0 = x0.empty() ? 0.0 : x0[jj];
             // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
             for (int m = 0; m < num_rows; ++m)
-              be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
+              be[m] -= Ae[m * num_cols + bs1 * j + k] * _scale * (bc - _x0);
           }
         }
       }
@@ -200,7 +201,7 @@ template <typename T, int _bs = -1>
 void _lift_bc_exterior_facets(
     xtl::span<T> b, const mesh::Mesh& mesh,
     const std::function<void(T*, const T*, const T*,
-                             const typename geom_type<T>::value_type*,
+                             const typename scalar_value_type<T>::value_type*,
                              const int*, const std::uint8_t*)>& kernel,
     const xtl::span<const std::int32_t>& facets,
     const std::function<void(const xtl::span<T>&,
@@ -228,7 +229,7 @@ void _lift_bc_exterior_facets(
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Data structures used in bc application
-  using geom_t = typename geom_type<T>::value_type;
+  using geom_t = typename scalar_value_type<T>::value_type;
   std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> Ae, be;
   assert(facets.size() % 2 == 0);
@@ -282,6 +283,7 @@ void _lift_bc_exterior_facets(
     // Size data structure for assembly
     be.resize(num_rows);
     std::fill(be.begin(), be.end(), 0);
+    const geom_t _scale = scale;
     for (std::size_t j = 0; j < dmap1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
@@ -293,7 +295,7 @@ void _lift_bc_exterior_facets(
           const T _x0 = x0.empty() ? 0.0 : x0[jj];
           // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
           for (int m = 0; m < num_rows; ++m)
-            be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
+            be[m] -= Ae[m * num_cols + bs1 * j + k] * _scale * (bc - _x0);
         }
       }
     }
@@ -314,7 +316,7 @@ template <typename T, int _bs = -1>
 void _lift_bc_interior_facets(
     xtl::span<T> b, const mesh::Mesh& mesh,
     const std::function<void(T*, const T*, const T*,
-                             const typename geom_type<T>::value_type*,
+                             const typename scalar_value_type<T>::value_type*,
                              const int*, const std::uint8_t*)>& kernel,
     const xtl::span<const std::int32_t>& facets,
     const std::function<void(const xtl::span<T>&,
@@ -346,7 +348,7 @@ void _lift_bc_interior_facets(
       = mesh::cell_num_entities(mesh.topology().cell_type(), tdim - 1);
 
   // Data structures used in assembly
-  using geom_t = typename geom_type<T>::value_type;
+  using geom_t = typename scalar_value_type<T>::value_type;
   xt::xtensor<geom_t, 3> coordinate_dofs({2, num_dofs_g, 3});
   std::vector<T> Ae, be;
 
@@ -449,6 +451,7 @@ void _lift_bc_interior_facets(
 
     be.resize(num_rows);
     std::fill(be.begin(), be.end(), 0);
+    const geom_t _scale = scale;
 
     // Compute b = b - A*b for cell0
     for (std::size_t j = 0; j < dmap1_cell0.size(); ++j)
@@ -462,7 +465,7 @@ void _lift_bc_interior_facets(
           const T _x0 = x0.empty() ? 0.0 : x0[jj];
           // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
           for (int m = 0; m < num_rows; ++m)
-            be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
+            be[m] -= Ae[m * num_cols + bs1 * j + k] * _scale * (bc - _x0);
         }
       }
     }
@@ -481,8 +484,8 @@ void _lift_bc_interior_facets(
           // be -= Ae.col(offset + bs1 * j + k) * scale * (bc - x0[jj]);
           for (int m = 0; m < num_rows; ++m)
           {
-            be[m]
-                -= Ae[m * num_cols + offset + bs1 * j + k] * scale * (bc - _x0);
+            be[m] -= Ae[m * num_cols + offset + bs1 * j + k] * _scale
+                     * (bc - _x0);
           }
         }
       }
@@ -513,7 +516,7 @@ void assemble_cells(
     const xtl::span<const std::int32_t>& cells,
     const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
     const std::function<void(T*, const T*, const T*,
-                             const typename geom_type<T>::value_type*,
+                             const typename scalar_value_type<T>::value_type*,
                              const int*, const std::uint8_t*)>& kernel,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
     int cstride, const xtl::span<const std::uint32_t>& cell_info)
@@ -531,7 +534,7 @@ void assemble_cells(
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
   const int num_dofs = dofmap.links(0).size();
-  using geom_t = typename geom_type<T>::value_type;
+  using geom_t = typename scalar_value_type<T>::value_type;
   std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> be(bs * num_dofs);
   const xtl::span<T> _be(be);
@@ -587,7 +590,7 @@ void assemble_exterior_facets(
     const xtl::span<const std::int32_t>& facets,
     const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
     const std::function<void(T*, const T*, const T*,
-                             const typename geom_type<T>::value_type*,
+                             const typename scalar_value_type<T>::value_type*,
                              const int*, const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
     int cstride, const xtl::span<const std::uint32_t>& cell_info)
@@ -605,7 +608,7 @@ void assemble_exterior_facets(
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
   const int num_dofs = dofmap.links(0).size();
-  using geom_t = typename geom_type<T>::value_type;
+  using geom_t = typename scalar_value_type<T>::value_type;
   std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> be(bs * num_dofs);
   const xtl::span<T> _be(be);
@@ -661,7 +664,7 @@ void assemble_interior_facets(
     xtl::span<T> b, const mesh::Mesh& mesh,
     const xtl::span<const std::int32_t>& facets, const fem::DofMap& dofmap,
     const std::function<void(T*, const T*, const T*,
-                             const typename geom_type<T>::value_type*,
+                             const typename scalar_value_type<T>::value_type*,
                              const int*, const std::uint8_t*)>& fn,
     const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
     int cstride, const xtl::span<const std::uint32_t>& cell_info,
@@ -675,7 +678,7 @@ void assemble_interior_facets(
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Create data structures used in assembly
-  using geom_t = typename geom_type<T>::value_type;
+  using geom_t = typename scalar_value_type<T>::value_type;
   xt::xtensor<geom_t, 3> coordinate_dofs({2, num_dofs_g, 3});
   std::vector<T> be;
 

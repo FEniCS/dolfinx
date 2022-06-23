@@ -55,14 +55,14 @@ namespace impl
 /// @private These structs are used to get the float/value type from a
 /// template argument, including support for complex types
 template <typename T, typename = void>
-struct geom_type
+struct scalar_value_type
 {
   /// @internal
   typedef T value_type;
 };
 /// @private
 template <typename T>
-struct geom_type<T, std::void_t<typename T::value_type>>
+struct scalar_value_type<T, std::void_t<typename T::value_type>>
 {
   typedef typename T::value_type value_type;
 };
@@ -215,8 +215,9 @@ Form<T> create_form(
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
   using kern = std::function<void(
-      T*, const T*, const T*, const typename impl::geom_type<T>::value_type*,
-      const int*, const std::uint8_t*)>;
+      T*, const T*, const T*,
+      const typename impl::scalar_value_type<T>::value_type*, const int*,
+      const std::uint8_t*)>;
   std::map<IntegralType, std::pair<std::vector<std::pair<int, kern>>,
                                    const mesh::MeshTags<int>*>>
       integral_data;
@@ -239,7 +240,7 @@ Form<T> create_form(
     {
       k = reinterpret_cast<void (*)(
           T*, const T*, const T*,
-          const typename impl::geom_type<T>::value_type*, const int*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
           const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
     else if constexpr (std::is_same<T, double>::value)
@@ -248,7 +249,7 @@ Form<T> create_form(
     {
       k = reinterpret_cast<void (*)(
           T*, const T*, const T*,
-          const typename impl::geom_type<T>::value_type*, const int*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
           const unsigned char*)>(integral->tabulate_tensor_complex128);
     }
     assert(k);
@@ -297,7 +298,7 @@ Form<T> create_form(
     {
       k = reinterpret_cast<void (*)(
           T*, const T*, const T*,
-          const typename impl::geom_type<T>::value_type*, const int*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
           const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
     else if constexpr (std::is_same<T, double>::value)
@@ -306,7 +307,7 @@ Form<T> create_form(
     {
       k = reinterpret_cast<void (*)(
           T*, const T*, const T*,
-          const typename impl::geom_type<T>::value_type*, const int*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
           const unsigned char*)>(integral->tabulate_tensor_complex128);
     }
     assert(k);
@@ -341,7 +342,7 @@ Form<T> create_form(
     {
       k = reinterpret_cast<void (*)(
           T*, const T*, const T*,
-          const typename impl::geom_type<T>::value_type*, const int*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
           const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
     else if constexpr (std::is_same<T, double>::value)
@@ -350,7 +351,7 @@ Form<T> create_form(
     {
       k = reinterpret_cast<void (*)(
           T*, const T*, const T*,
-          const typename impl::geom_type<T>::value_type*, const int*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
           const unsigned char*)>(integral->tabulate_tensor_complex128);
     }
     assert(k);
@@ -785,26 +786,26 @@ fem::Expression<T> create_expression(
     value_shape.push_back(expression.value_shape[i]);
 
   std::function<void(T*, const T*, const T*,
-                     const typename impl::geom_type<T>::value_type*, const int*,
-                     const std::uint8_t*)>
+                     const typename impl::scalar_value_type<T>::value_type*,
+                     const int*, const std::uint8_t*)>
       tabulate_tensor = nullptr;
   if constexpr (std::is_same<T, float>::value)
     tabulate_tensor = expression.tabulate_tensor_float32;
   else if constexpr (std::is_same<T, std::complex<float>>::value)
   {
     tabulate_tensor = reinterpret_cast<void (*)(
-        T*, const T*, const T*, const typename impl::geom_type<T>::value_type*,
-        const int*, const unsigned char*)>(
-        expression.tabulate_tensor_complex64);
+        T*, const T*, const T*,
+        const typename impl::scalar_value_type<T>::value_type*, const int*,
+        const unsigned char*)>(expression.tabulate_tensor_complex64);
   }
   else if constexpr (std::is_same<T, double>::value)
     tabulate_tensor = expression.tabulate_tensor_float64;
   else if constexpr (std::is_same<T, std::complex<double>>::value)
   {
     tabulate_tensor = reinterpret_cast<void (*)(
-        T*, const T*, const T*, const typename impl::geom_type<T>::value_type*,
-        const int*, const unsigned char*)>(
-        expression.tabulate_tensor_complex128);
+        T*, const T*, const T*,
+        const typename impl::scalar_value_type<T>::value_type*, const int*,
+        const unsigned char*)>(expression.tabulate_tensor_complex128);
   }
   else
   {

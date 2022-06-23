@@ -53,7 +53,7 @@ void assemble_cells(
     const xtl::span<const std::int8_t>& bc0,
     const xtl::span<const std::int8_t>& bc1,
     const std::function<void(T*, const T*, const T*,
-                             const typename geom_type<T>::value_type*,
+                             const typename scalar_value_type<T>::value_type*,
                              const int*, const std::uint8_t*)>& kernel,
     const xtl::span<const T>& coeffs, int cstride,
     const xtl::span<const T>& constants,
@@ -75,7 +75,7 @@ void assemble_cells(
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
   const xtl::span<T> _Ae(Ae);
-  using geom_t = typename geom_type<T>::value_type;
+  using geom_t = typename scalar_value_type<T>::value_type;
   std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
 
   // Iterate over active cells
@@ -155,7 +155,7 @@ void assemble_exterior_facets(
     const xtl::span<const std::int8_t>& bc0,
     const xtl::span<const std::int8_t>& bc1,
     const std::function<void(T*, const T*, const T*,
-                             const typename geom_type<T>::value_type*,
+                             const typename scalar_value_type<T>::value_type*,
                              const int*, const std::uint8_t*)>& kernel,
     const xtl::span<const T>& coeffs, int cstride,
     const xtl::span<const T>& constants,
@@ -170,7 +170,7 @@ void assemble_exterior_facets(
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Data structures used in assembly
-  using geom_t = typename geom_type<T>::value_type;
+  using geom_t = typename scalar_value_type<T>::value_type;
   std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
   const int num_dofs0 = dofmap0.links(0).size();
   const int num_dofs1 = dofmap1.links(0).size();
@@ -254,7 +254,7 @@ void assemble_interior_facets(
     const DofMap& dofmap1, int bs1, const xtl::span<const std::int8_t>& bc0,
     const xtl::span<const std::int8_t>& bc1,
     const std::function<void(T*, const T*, const T*,
-                             const typename geom_type<T>::value_type*,
+                             const typename scalar_value_type<T>::value_type*,
                              const int*, const std::uint8_t*)>& kernel,
     const xtl::span<const T>& coeffs, int cstride,
     const xtl::span<const int>& offsets, const xtl::span<const T>& constants,
@@ -274,7 +274,7 @@ void assemble_interior_facets(
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Data structures used in assembly
-  using geom_t = typename geom_type<T>::value_type;
+  using geom_t = typename scalar_value_type<T>::value_type;
   xt::xtensor<geom_t, 3> coordinate_dofs({2, num_dofs_g, 3});
   std::vector<T> Ae, be;
   std::vector<T> coeff_array(2 * offsets.back());
