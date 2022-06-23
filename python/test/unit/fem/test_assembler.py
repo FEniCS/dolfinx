@@ -881,7 +881,7 @@ def test_vector_types():
     x2.scatter_reverse(la.ScatterMode.add)
 
     assert np.linalg.norm(x0.array - x1.array) == pytest.approx(0.0)
-    assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-8)
+    assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-7)
 
 
 def test_assemble_empty_rank_mesh():
