@@ -72,7 +72,6 @@ struct scalar_value_type<T, std::void_t<typename T::value_type>>
 template <typename T>
 using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 
-
 } // namespace impl
 
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
@@ -156,16 +155,13 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
     switch (type)
     {
     case IntegralType::cell:
-    {
       for (int id : ids)
       {
         const std::vector<std::int32_t>& cells = a.cell_domains(id);
         sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}});
       }
       break;
-    }
     case IntegralType::interior_facet:
-    {
       for (int id : ids)
       {
         const std::vector<std::int32_t>& facets = a.interior_facet_domains(id);
@@ -173,9 +169,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
                                        {{dofmaps[0], dofmaps[1]}});
       }
       break;
-    }
     case IntegralType::exterior_facet:
-    {
       for (int id : ids)
       {
         const std::vector<std::int32_t>& facets = a.exterior_facet_domains(id);
@@ -183,7 +177,6 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
                                        {{dofmaps[0], dofmaps[1]}});
       }
       break;
-    }
     default:
       throw std::runtime_error("Unsupported integral type");
     }
