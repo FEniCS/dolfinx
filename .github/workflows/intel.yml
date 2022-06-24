@@ -48,7 +48,7 @@ jobs:
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: main
+          ref: garth/geom-type
 
       - name: Install FFCx C interface
         run: |
