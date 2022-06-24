@@ -351,9 +351,6 @@ vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
   common::Timer timer("Topology: determine vertex ownership groups (owned, "
                       "undetermined, unowned)");
 
-  // FIXME: add sanity test. Vertices which appear only in ghost cells should
-  // not appear in unknown_vertices.
-
   // Build set of 'local' cell vertices (attached to an owned cell)
   std::vector<std::int64_t> local_vertex_set(
       cells.array().begin(),
@@ -383,8 +380,18 @@ vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
   // therefore not owned by this rank
   std::vector<std::int64_t> unowned_vertices;
   std::set_difference(ghost_vertex_set.begin(), ghost_vertex_set.end(),
-                      unknown_vertices.begin(), unknown_vertices.end(),
+                      local_vertex_set.begin(), local_vertex_set.end(),
                       std::back_inserter(unowned_vertices));
+
+  // No vertices in unowned should also be in unknown...
+  std::vector<std::int64_t> unowned_vertices_in_error;
+  std::set_intersection(unowned_vertices.begin(), unowned_vertices.end(),
+                        unknown_vertices.begin(), unknown_vertices.end(),
+                        std::back_inserter(unowned_vertices_in_error));
+
+  if (unowned_vertices_in_error.size() > 0)
+    throw std::runtime_error(
+        "Adding boundary vertices in ghost cells not allowed.");
 
   return {std::move(owned_vertices), std::move(unowned_vertices)};
 }
