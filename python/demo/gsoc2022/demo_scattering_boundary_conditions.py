@@ -176,16 +176,17 @@
 # +
 import gmsh
 import numpy as np
-import ufl
 from gmsh_helpers import gmsh_model_to_mesh
 from mesh_wire import generate_mesh_wire
-from mpi4py import MPI
-from petsc4py import PETSc
+from utils import calculate_analytical_efficiencies
+import pyvista
+import ufl
+from dolfinx import fem, plot
 from ufl import (FacetNormal, as_vector, conj, cross, curl, inner, lhs, rhs,
                  sqrt)
-from utils import calculate_analytical_efficiencies
 
-from dolfinx import fem, io
+from mpi4py import MPI
+from petsc4py import PETSc
 
 # -
 
@@ -293,6 +294,20 @@ gmsh.finalize()
 MPI.COMM_WORLD.barrier()
 # -
 
+# Let's plot the mesh with PyVista:
+
+# +
+topology, cell_types, geometry = plot.create_vtk_mesh(mesh, 2)
+grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
+pyvista.set_jupyter_backend("pythreejs")
+plotter = pyvista.Plotter()
+plotter.add_mesh(grid, show_edges=True)
+plotter.view_xy()
+if not pyvista.OFF_SCREEN:
+    plotter.show()
+# -
+
+
 # We define some other problem specific parameters
 
 wl0 = 0.4 * um  # Wavelength sweep
@@ -306,7 +321,7 @@ theta = 45 * deg  # Angle of incidence of the background field
 # [Nedelec (first kind)](https://defelement.com/elements/nedelec1.html)
 # element.
 
-degree = 3
+degree = 2
 curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), degree)
 V = fem.FunctionSpace(mesh, curl_el)
 
@@ -382,19 +397,6 @@ norm_expr = fem.Expression(norm_func, V_normEh.element.interpolation_points)
 normEh = fem.Function(V_normEh)
 normEh.interpolate(norm_expr)
 
-# Save the fields as xdmf files
-# with io.XDMFFile(MPI.COMM_WORLD, "data/Es.xdmf", "w") as xdmf:
-#    xdmf.write_mesh(mesh)
-#    xdmf.write_function(Eh)
-#
-# with io.XDMFFile(MPI.COMM_WORLD, "data/E.xdmf", "w") as xdmf:
-#    xdmf.write_mesh(mesh)
-#    xdmf.write_function(E)
-#
-# with io.XDMFFile(MPI.COMM_WORLD, "data/normEs.xdmf", "w") as xdmf:
-#    xdmf.write_mesh(mesh)
-#    xdmf.write_function(normEh)
-
 # Calculation of analytical efficiencies
 q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
     reps_au,
@@ -453,5 +455,6 @@ if MPI.COMM_WORLD.rank == 0:
     print(f"The analytical extinction efficiency is {q_ext_analyt}")
     print(f"The numerical extinction efficiency is {q_ext_fenics}")
     print(f"The error is {err_ext}%")
+
 # -
 # ## References
