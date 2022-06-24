@@ -42,7 +42,7 @@ class Expression
   {
     typedef typename X::value_type value_type;
   };
-  using geom_t = typename scalar_value_type<T>::value_type;
+  using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 
 public:
   /// @brief Create an Expression
@@ -61,8 +61,9 @@ public:
       const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const Constant<T>>>& constants,
       const xt::xtensor<double, 2>& X,
-      const std::function<void(T*, const T*, const T*, const geom_t*,
-                               const int*, const uint8_t*)>
+      const std::function<void(T*, const T*, const T*,
+                               const scalar_value_type_t*, const int*,
+                               const uint8_t*)>
           fn,
       const std::vector<int>& value_shape,
       const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
@@ -152,7 +153,7 @@ public:
     xtl::span<const double> x_g = _mesh->geometry().x();
 
     // Create data structures used in evaluation
-    std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
+    std::vector<scalar_value_type_t> coordinate_dofs(3 * num_dofs_g);
 
     int num_argument_dofs = 1;
     xtl::span<const std::uint32_t> cell_info;
@@ -213,8 +214,8 @@ public:
 
   /// Get function for tabulate_expression.
   /// @return fn Function to tabulate expression.
-  const std::function<void(T*, const T*, const T*, const geom_t*, const int*,
-                           const uint8_t*)>&
+  const std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
+                           const int*, const uint8_t*)>&
   get_tabulate_expression() const
   {
     return _fn;
@@ -254,8 +255,8 @@ private:
   std::vector<std::shared_ptr<const fem::Constant<T>>> _constants;
 
   // Function to evaluate the Expression
-  std::function<void(T*, const T*, const T*, const geom_t*, const int*,
-                     const uint8_t*)>
+  std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
+                     const int*, const uint8_t*)>
       _fn;
 
   // The mesh

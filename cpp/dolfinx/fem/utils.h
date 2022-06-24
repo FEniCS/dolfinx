@@ -67,6 +67,10 @@ struct scalar_value_type<T, std::void_t<typename T::value_type>>
 {
   typedef typename T::value_type value_type;
 };
+template <typename T>
+using scalar_value_type_t = typename scalar_value_type<T>::value_type;
+
+
 } // namespace impl
 
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
