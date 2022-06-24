@@ -21,6 +21,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <ufcx.h>
 #include <utility>
 #include <vector>
@@ -50,6 +51,29 @@ class Topology;
 namespace dolfinx::fem
 {
 class FunctionSpace;
+
+namespace impl
+{
+/// @private These structs are used to get the float/value type from a
+/// template argument, including support for complex types
+template <typename T, typename = void>
+struct scalar_value_type
+{
+  /// @internal
+  typedef T value_type;
+};
+/// @private
+template <typename T>
+struct scalar_value_type<T, std::void_t<typename T::value_type>>
+{
+  typedef typename T::value_type value_type;
+};
+/// @private Convenience typedef
+template <typename T>
+using scalar_value_type_t = typename scalar_value_type<T>::value_type;
+
+
+} // namespace impl
 
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms
@@ -248,8 +272,10 @@ Form<T> create_form(
 
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
-  using kern = std::function<void(T*, const T*, const T*, const double*,
-                                  const int*, const std::uint8_t*)>;
+  using kern = std::function<void(
+      T*, const T*, const T*,
+      const typename impl::scalar_value_type<T>::value_type*, const int*,
+      const std::uint8_t*)>;
   std::map<IntegralType, std::pair<std::vector<std::pair<int, kern>>,
                                    const mesh::MeshTags<int>*>>
       integral_data;
@@ -270,17 +296,19 @@ Form<T> create_form(
       k = integral->tabulate_tensor_float32;
     else if constexpr (std::is_same<T, std::complex<float>>::value)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex64);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
     else if constexpr (std::is_same<T, double>::value)
       k = integral->tabulate_tensor_float64;
     else if constexpr (std::is_same<T, std::complex<double>>::value)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex128);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex128);
     }
     assert(k);
 
@@ -326,17 +354,19 @@ Form<T> create_form(
       k = integral->tabulate_tensor_float32;
     else if constexpr (std::is_same<T, std::complex<float>>::value)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex64);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
     else if constexpr (std::is_same<T, double>::value)
       k = integral->tabulate_tensor_float64;
     else if constexpr (std::is_same<T, std::complex<double>>::value)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex128);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex128);
     }
     assert(k);
 
@@ -368,17 +398,19 @@ Form<T> create_form(
       k = integral->tabulate_tensor_float32;
     else if constexpr (std::is_same<T, std::complex<float>>::value)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex64);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
     else if constexpr (std::is_same<T, double>::value)
       k = integral->tabulate_tensor_float64;
     else if constexpr (std::is_same<T, std::complex<double>>::value)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex128);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex128);
     }
     assert(k);
 
@@ -811,26 +843,27 @@ fem::Expression<T> create_expression(
   for (int i = 0; i < expression.num_components; ++i)
     value_shape.push_back(expression.value_shape[i]);
 
-  std::function<void(T*, const T*, const T*, const double*, const int*,
-                     const std::uint8_t*)>
+  std::function<void(T*, const T*, const T*,
+                     const typename impl::scalar_value_type<T>::value_type*,
+                     const int*, const std::uint8_t*)>
       tabulate_tensor = nullptr;
   if constexpr (std::is_same<T, float>::value)
     tabulate_tensor = expression.tabulate_tensor_float32;
   else if constexpr (std::is_same<T, std::complex<float>>::value)
   {
-    tabulate_tensor
-        = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-            expression.tabulate_tensor_complex64);
+    tabulate_tensor = reinterpret_cast<void (*)(
+        T*, const T*, const T*,
+        const typename impl::scalar_value_type<T>::value_type*, const int*,
+        const unsigned char*)>(expression.tabulate_tensor_complex64);
   }
   else if constexpr (std::is_same<T, double>::value)
     tabulate_tensor = expression.tabulate_tensor_float64;
   else if constexpr (std::is_same<T, std::complex<double>>::value)
   {
-    tabulate_tensor
-        = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-            expression.tabulate_tensor_complex128);
+    tabulate_tensor = reinterpret_cast<void (*)(
+        T*, const T*, const T*,
+        const typename impl::scalar_value_type<T>::value_type*, const int*,
+        const unsigned char*)>(expression.tabulate_tensor_complex128);
   }
   else
   {
