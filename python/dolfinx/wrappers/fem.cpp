@@ -54,6 +54,17 @@ namespace py = pybind11;
 
 namespace
 {
+template <typename T, typename = void>
+struct geom_type
+{
+  typedef T value_type;
+};
+template <typename T>
+struct geom_type<T, std::void_t<typename T::value_type>>
+{
+  typedef typename T::value_type value_type;
+};
+
 template <typename T>
 std::map<std::pair<dolfinx::fem::IntegralType, int>,
          std::pair<xtl::span<const T>, int>>
@@ -499,7 +510,8 @@ void declare_objects(py::module& m, const std::string& type)
                          argument_function_space)
                   {
                     auto tabulate_expression_ptr
-                        = (void (*)(T*, const T*, const T*, const double*,
+                        = (void (*)(T*, const T*, const T*,
+                                    const typename geom_type<T>::value_type*,
                                     const int*, const std::uint8_t*))fn_addr;
                     auto _x_ref = xt::adapt(X.data(), {X.shape(0), X.shape(1)});
                     return dolfinx::fem::Expression<T>(
@@ -754,9 +766,10 @@ void declare_form(py::module& m, const std::string& type)
                  bool needs_permutation_data,
                  const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
               {
-                using kern
-                    = std::function<void(T*, const T*, const T*, const double*,
-                                         const int*, const std::uint8_t*)>;
+                using kern = std::function<void(
+                    T*, const T*, const T*,
+                    const typename geom_type<T>::value_type*, const int*,
+                    const std::uint8_t*)>;
                 std::map<dolfinx::fem::IntegralType,
                          std::pair<std::vector<std::pair<int, kern>>,
                                    const dolfinx::mesh::MeshTags<int>*>>
@@ -772,7 +785,8 @@ void declare_form(py::module& m, const std::string& type)
                   for (auto& kernel : kernel_type.second.first)
                   {
                     auto tabulate_tensor_ptr
-                        = (void (*)(T*, const T*, const T*, const double*,
+                        = (void (*)(T*, const T*, const T*,
+                                    const typename geom_type<T>::value_type*,
                                     const int*, const std::uint8_t*))
                               kernel.second.cast<std::uintptr_t>();
                     _integrals[kernel_type.first].first.push_back(
@@ -892,9 +906,7 @@ void fem(py::module& m)
   declare_functions<double>(m);
   declare_functions<float>(m);
   declare_functions<std::complex<double>>(m);
-  // NOTE: we can't enable std::complex<float> because C++ doesn't
-  // support multiplication of std::complex<float> and double.
-  // declare_functions<std::complex<float>>(m);
+  declare_functions<std::complex<float>>(m);
 
   declare_objects<float>(m, "float32");
   declare_objects<double>(m, "float64");
