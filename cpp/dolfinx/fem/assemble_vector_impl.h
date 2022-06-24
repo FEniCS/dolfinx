@@ -72,6 +72,7 @@ void _lift_bc_cells(
   using geom_t = typename scalar_value_type<T>::value_type;
   std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> Ae, be;
+  const geom_t _scale = static_cast<geom_t>(scale);
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
     std::int32_t c = cells[index];
@@ -137,7 +138,6 @@ void _lift_bc_cells(
     // Size data structure for assembly
     be.resize(num_rows);
     std::fill(be.begin(), be.end(), 0);
-    const geom_t _scale = scale;
     for (std::size_t j = 0; j < dmap1.size(); ++j)
     {
       if constexpr (_bs1 > 0)
@@ -223,9 +223,7 @@ void _lift_bc_exterior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-
   const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
-
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Data structures used in bc application
@@ -233,6 +231,7 @@ void _lift_bc_exterior_facets(
   std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> Ae, be;
   assert(facets.size() % 2 == 0);
+  const geom_t _scale = static_cast<geom_t>(scale);
   for (std::size_t index = 0; index < facets.size(); index += 2)
   {
     std::int32_t cell = facets[index];
@@ -268,7 +267,6 @@ void _lift_bc_exterior_facets(
 
     // Size data structure for assembly
     auto dmap0 = dofmap0.links(cell);
-
     const int num_rows = bs0 * dmap0.size();
     const int num_cols = bs1 * dmap1.size();
 
@@ -283,7 +281,6 @@ void _lift_bc_exterior_facets(
     // Size data structure for assembly
     be.resize(num_rows);
     std::fill(be.begin(), be.end(), 0);
-    const geom_t _scale = scale;
     for (std::size_t j = 0; j < dmap1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
@@ -356,6 +353,7 @@ void _lift_bc_interior_facets(
   std::vector<std::int32_t> dmapjoint0, dmapjoint1;
   assert(facets.size() % 4 == 0);
 
+  const geom_t _scale = static_cast<geom_t>(scale);
   for (std::size_t index = 0; index < facets.size(); index += 4)
   {
     std::array<std::int32_t, 2> cells = {facets[index], facets[index + 2]};
@@ -436,7 +434,6 @@ void _lift_bc_interior_facets(
            coordinate_dofs.data(), local_facet.data(), perm.data());
 
     const xtl::span<T> _Ae(Ae);
-
     const xtl::span<T> sub_Ae0
         = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
                       bs0 * dmap0_cell1.size() * num_cols);
@@ -451,7 +448,6 @@ void _lift_bc_interior_facets(
 
     be.resize(num_rows);
     std::fill(be.begin(), be.end(), 0);
-    const geom_t _scale = scale;
 
     // Compute b = b - A*b for cell0
     for (std::size_t j = 0; j < dmap1_cell0.size(); ++j)

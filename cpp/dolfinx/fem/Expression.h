@@ -35,22 +35,19 @@ class Expression
   template <typename X, typename = void>
   struct scalar_value_type
   {
-    /// @internal
     typedef X value_type;
   };
-  /// @private
   template <typename X>
   struct scalar_value_type<X, std::void_t<typename X::value_type>>
   {
     typedef typename X::value_type value_type;
   };
-
   using geom_t = typename scalar_value_type<T>::value_type;
 
 public:
-  /// Create an Expression
+  /// @brief Create an Expression
   ///
-  /// Users should prefer the create_expression factory functions
+  /// @note Users should prefer the create_expression factory functions
   ///
   /// @param[in] coefficients Coefficients in the Expression
   /// @param[in] constants Constants in the Expression
@@ -64,8 +61,7 @@ public:
       const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const Constant<T>>>& constants,
       const xt::xtensor<double, 2>& X,
-      const std::function<void(T*, const T*, const T*,
-                               const typename scalar_value_type<T>::value_type*,
+      const std::function<void(T*, const T*, const T*, const geom_t*,
                                const int*, const uint8_t*)>
           fn,
       const std::vector<int>& value_shape,
@@ -82,8 +78,10 @@ public:
     if (argument_function_space and _mesh != argument_function_space->mesh())
       throw std::runtime_error("Incompatible mesh");
     if (!_mesh)
+    {
       throw std::runtime_error(
           "No mesh could be associated with the Expression.");
+    }
   }
 
   /// Move constructor
@@ -154,8 +152,7 @@ public:
     xtl::span<const double> x_g = _mesh->geometry().x();
 
     // Create data structures used in evaluation
-    std::vector<typename scalar_value_type<T>::value_type> coordinate_dofs(
-        3 * num_dofs_g);
+    std::vector<geom_t> coordinate_dofs(3 * num_dofs_g);
 
     int num_argument_dofs = 1;
     xtl::span<const std::uint32_t> cell_info;
@@ -239,7 +236,7 @@ public:
   /// @return value shape
   const std::vector<int>& value_shape() const { return _value_shape; }
 
-  /// Get evaluation points on reference cell
+  /// @brief Evaluation points on the reference cell
   /// @return Evaluation points
   const xt::xtensor<double, 2>& X() const { return _x_ref; }
 

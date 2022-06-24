@@ -64,16 +64,13 @@ class Form
   template <typename X, typename = void>
   struct scalar_value_type
   {
-    /// @internal
     typedef X value_type;
   };
-  /// @private
   template <typename X>
   struct scalar_value_type<X, std::void_t<typename X::value_type>>
   {
     typedef typename X::value_type value_type;
   };
-
   using geom_t = typename scalar_value_type<T>::value_type;
 
 public:

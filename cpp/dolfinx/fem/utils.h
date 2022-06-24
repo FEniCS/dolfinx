@@ -20,6 +20,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <ufcx.h>
 #include <utility>
 #include <vector>

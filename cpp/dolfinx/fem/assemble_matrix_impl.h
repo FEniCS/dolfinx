@@ -18,7 +18,6 @@
 #include <dolfinx/mesh/Topology.h>
 #include <functional>
 #include <iterator>
-#include <type_traits>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -65,7 +64,6 @@ void assemble_cells(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   const std::size_t num_dofs_g = geometry.cmap().dim();
-
   xtl::span<const double> x_g = geometry.x();
 
   // Iterate over active cells
@@ -268,9 +266,7 @@ void assemble_interior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-
   const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
-
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Data structures used in assembly
