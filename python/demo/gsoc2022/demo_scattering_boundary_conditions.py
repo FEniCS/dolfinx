@@ -1,3 +1,18 @@
+# ---
+# jupyter:
+#   jupytext:
+#     formats: ipynb,py
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.13.8
+#   kernelspec:
+#     display_name: Python 3 (ipykernel)
+#     language: python
+#     name: python3
+# ---
+
 # # Scattering from a wire with scattering boundary conditions
 # This demo is implemented in two files: one for the mesh
 # generation with gmsh, and one for the variational forms
@@ -5,12 +20,40 @@
 #
 # - Use complex quantities in FEniCSx
 # - Setup and solve Maxwell's equations
-# - Add scattering boundary conditions for transparent boundaries
-# - Implement Scattering Boundary Conditions as absorbing boundaries
-# - Calculate absorption, scattering and extinction efficiencies
+# - Implement Scattering Boundary Conditions
 #
-# ## Equations and problem definition
-# Let's consider an infinite metallic wire immersed in
+# ## Equations, problem definition and implementation
+#
+# First of all, let's import the modules that will be used:
+
+# +
+import gmsh
+import numpy as np
+import pyvista
+from gmsh_helpers import gmsh_model_to_mesh
+from mesh_wire import generate_mesh_wire
+from utils import calculate_analytical_efficiencies
+
+import ufl
+from dolfinx import fem, plot
+from ufl import (FacetNormal, as_vector, conj, cross, curl, inner, lhs, rhs,
+                 sqrt)
+
+from mpi4py import MPI
+from petsc4py import PETSc
+
+# -
+
+# Since we want to solve Maxwell's equation, we need to specify that
+# the demo should only be executed with DOLFINx complex mode, otherwise
+# it would not work:
+
+if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
+    print("Demo should only be executed with DOLFINx complex mode")
+    exit(0)
+
+
+# Now, let's consider an infinite metallic wire immersed in
 # a background medium (e.g. vacuum or water). Let's now
 # consider the plane cutting the wire perpendicularly to
 # its axis at a generic point. Such plane $\Omega=\Omega_{m}
@@ -52,6 +95,36 @@
 # + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y
 # $$
 #
+# The `BackgroundElectricField` class below implements such function.
+# The inputs to the function are the angle $\theta$, the background
+# refractive index $n_b$ and the vacuum wavevector $k_0$. The
+# function returns the expression $ \mathbf{E}_b = -\sin
+# \theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
+# + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y$.
+
+# +
+
+class BackgroundElectricField:
+
+    def __init__(self, theta, n_b, k0):
+        self.theta = theta
+        self.k0 = k0
+        self.n_b = n_b
+
+    def eval(self, x):
+
+        kx = self.n_b * self.k0 * np.cos(self.theta)
+        ky = self.n_b * self.k0 * np.sin(self.theta)
+        phi = kx * x[0] + ky * x[1]
+
+        ax = np.sin(self.theta)
+        ay = np.cos(self.theta)
+
+        return (-ax * np.exp(1j * phi), ay * np.exp(1j * phi))
+
+
+# -
+
 # The Maxwell's equation for scattering problems takes the following form:
 #
 # $$
@@ -77,7 +150,7 @@
 # wire. As reference values, we will consider $\lambda_0 = 400\textrm{nm}$
 # (violet light), $\varepsilon_b = 1.33^2$ (relative permittivity of water),
 # and $\varepsilon_m = -1.0782 + 5.8089\textrm{j}$ (relative permittivity of
-# gold at $400\textrm{nm}$ (ref)).
+# gold at $400\textrm{nm}$).
 #
 # To make the system determined, we need to add some boundary conditions
 # on $\partial \Omega$. A common approach is the use of scattering
@@ -91,7 +164,7 @@
 # \right) \mathbf{n} \times \mathbf{E}_s
 # \times \mathbf{n}=0\quad \textrm{ on } \partial \Omega,
 # $$
-
+#
 #
 # with $n_b = \sqrt{\varepsilon_b}$ being the background refractive
 # index, $\mathbf{n}$ being the normal vector to $\partial \Omega$,
@@ -101,10 +174,167 @@
 # the wire centered in the origin of our mesh, and therefore $r =
 # \sqrt{x^2 + y^2}$.
 #
-# Now we need to find the weak form of the problem. First of all,
-# we need to take the inner products of the equations with a
-# complex test function $\mathbf{v}$, and then we need to integrate
-# the terms over the corresponding domains:
+# Let's therefore define the function $r(x)$ and the $\nabla \times$
+# operator for 2D vector, since they will be useful later on:
+#
+
+# +
+def radial_distance(x):
+    """Returns the radial distance from the origin"""
+    return ufl.sqrt(x[0]**2 + x[1]**2)
+
+
+def curl_2d(a):
+    """Returns the curl of two 2D vectors as a 3D vector"""
+    ay_x = a[1].dx(0)
+    ax_y = a[0].dx(1)
+    return as_vector((0, 0, ay_x - ax_y))
+
+
+# -
+
+# Next we define some mesh specific parameters
+
+# +
+# Constant definition
+um = 10**-6  # micron
+nm = 10**-9  # nanometer
+pi = np.pi
+epsilon_0 = 8.8541878128 * 10**-12
+mu_0 = 4 * pi * 10**-7
+
+# Radius of the wire and of the boundary of the domain
+radius_wire = 0.050 * um
+radius_dom = 1 * um
+
+# The smaller the mesh_factor, the finer is the mesh
+mesh_factor = 1.2
+
+# Mesh size inside the wire
+in_wire_size = mesh_factor * 7 * nm
+
+# Mesh size at the boundary of the wire
+on_wire_size = mesh_factor * 3 * nm
+
+# Mesh size in the background
+bkg_size = mesh_factor * 60 * nm
+
+# Mesh size at the boundary
+boundary_size = mesh_factor * 30 * nm
+
+# Tags for the subdomains
+au_tag = 1          # gold wire
+bkg_tag = 2         # background
+boundary_tag = 3    # boundary
+# -
+
+# We generate the mesh using GMSH and convert it to a
+# `dolfinx.mesh.Mesh`.
+
+# +
+model = generate_mesh_wire(
+    radius_wire, radius_dom, in_wire_size, on_wire_size, bkg_size,
+    boundary_size, au_tag, bkg_tag, boundary_tag)
+
+mesh, cell_tags, facet_tags = gmsh_model_to_mesh(
+    model, cell_data=True, facet_data=True, gdim=2)
+gmsh.finalize()
+MPI.COMM_WORLD.barrier()
+# -
+
+# Let's have a visual check of the mesh by plotting it with PyVista:
+
+topology, cell_types, geometry = plot.create_vtk_mesh(mesh, 2)
+grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
+pyvista.set_jupyter_backend("pythreejs")
+plotter = pyvista.Plotter()
+plotter.add_mesh(grid, show_edges=True)
+plotter.view_xy()
+if not pyvista.OFF_SCREEN:
+    plotter.show()
+else:
+    pyvista.start_xvfb()
+    figure = plotter.screenshot("wire_mesh.png")
+
+# Now we define some other problem specific parameters:
+
+wl0 = 0.4 * um  # Wavelength of the background field
+n_bkg = 1.33  # Background refractive index
+eps_bkg = n_bkg**2  # Background relative permittivity
+k0 = 2 * np.pi / wl0  # Wavevector of the background field
+deg = np.pi / 180
+theta = 45 * deg  # Angle of incidence of the background field
+
+# and then the function space used for the electric field.
+# We will use a 3rd order
+# [Nedelec (first kind)](https://defelement.com/elements/nedelec1.html)
+# element:
+
+degree = 3
+curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), degree)
+V = fem.FunctionSpace(mesh, curl_el)
+
+# Next, we can interpolate $\mathbf{E}_b$ into the function space $V$:
+
+f = BackgroundElectricField(theta, n_bkg, k0)
+Eb = fem.Function(V)
+Eb.interpolate(f.eval)
+
+
+# Function r = radial distance from the (0, 0) point
+x = ufl.SpatialCoordinate(mesh)
+r = radial_distance(x)
+
+# Definition of Trial and Test functions
+Es = ufl.TrialFunction(V)
+v = ufl.TestFunction(V)
+
+# Definition of 3d fields for cross and curl operations
+Es_3d = as_vector((Es[0], Es[1], 0))
+v_3d = as_vector((v[0], v[1], 0))
+
+# Measures for subdomains
+dx = ufl.Measure("dx", mesh, subdomain_data=cell_tags)
+ds = ufl.Measure("ds", mesh, subdomain_data=facet_tags)
+dAu = dx(au_tag)
+dBkg = dx(bkg_tag)
+dDom = dAu + dBkg
+dsbc = ds(boundary_tag)
+
+# Normal to the boundary
+n = FacetNormal(mesh)
+n_3d = as_vector((n[0], n[1], 0))
+
+# Now it is the turn of the permittivity $\varepsilon$.
+# First of all let's define the relative permittivity $\varepsilon_m$
+# of the gold wire at $400nm$ (data taken from
+# [*Olmon et al. 2012*](https://doi.org/10.1103/PhysRevB.86.235147)):
+
+# Definition of relative permittivity for Au @400nm
+reps_au = -1.0782
+ieps_au = 5.8089
+eps_au = reps_au + ieps_au * 1j
+
+# We want to define a space function for the permittivity
+# $\varepsilon$ that takes the value of the gold permittivity $\varepsilon_m$
+# for cells inside the wire, while it takes the value of the
+# background permittivity otherwise:
+
+# Definition of the relative permittivity over the whole domain
+D = fem.FunctionSpace(mesh, ("DG", 0))
+eps = fem.Function(D)
+au_cells = cell_tags.find(au_tag)
+bkg_cells = cell_tags.find(bkg_tag)
+eps.x.array[au_cells] = np.full_like(
+    au_cells, reps_au + ieps_au * 1j, dtype=np.complex128)
+eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
+eps.x.scatter_forward()
+
+# It is time to solve our problem, and therefore we need to find
+# the weak form of the Maxwell's equation plus the scattering
+# boundary conditions. First of all, we need to take the inner
+# products of the equations with a complex test function $\mathbf{v}$,
+# and then we need to integrate the terms over the corresponding domains:
 #
 # $$
 # \begin{align}
@@ -170,206 +400,7 @@
 # \end{align}
 # $$
 #
-# ## Implementation
-# The modules that will be used are imported:
-
-# +
-import gmsh
-import numpy as np
-from gmsh_helpers import gmsh_model_to_mesh
-from mesh_wire import generate_mesh_wire
-from utils import calculate_analytical_efficiencies
-import pyvista
-import ufl
-from dolfinx import fem, plot
-from ufl import (FacetNormal, as_vector, conj, cross, curl, inner, lhs, rhs,
-                 sqrt)
-
-from mpi4py import MPI
-from petsc4py import PETSc
-
-# -
-
-# The demo can only be run with DOLFINx complex mode.
-
-# +
-if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
-    print("Demo should only be executed with DOLFINx complex mode")
-    exit(0)
-# -
-
-# The following function is used for defining the background field.
-# The inputs to the function are the angle $\theta$, the background
-# refractive index $n_b$ and the vacuum wavevector $k_0$. The
-# function returns the expression $ \mathbf{E}_b = -\sin
-# \theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
-# + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y$.
-
-# +
-
-
-class background_electric_field:
-
-    def __init__(self, theta, n_b, k0):
-        self.theta = theta
-        self.k0 = k0
-        self.n_b = n_b
-
-    def eval(self, x):
-
-        kx = self.n_b * self.k0 * np.cos(self.theta)
-        ky = self.n_b * self.k0 * np.sin(self.theta)
-        phi = kx * x[0] + ky * x[1]
-
-        ax = np.sin(self.theta)
-        ay = np.cos(self.theta)
-
-        return (-ax * np.exp(1j * phi), ay * np.exp(1j * phi))
-
-
-# -
-
-# Next we define the function $r(x)$ and the $\nabla \times$ operator.
-
-# +
-def radial_distance(x):
-    """Returns the radial distance from the origin"""
-    return ufl.sqrt(x[0]**2 + x[1]**2)
-
-
-def curl_2d(a):
-    """Returns the curl of two 2D vectors as a 3D vector"""
-    ay_x = a[1].dx(0)
-    ax_y = a[0].dx(1)
-    return as_vector((0, 0, ay_x - ax_y))
-
-
-# -
-
-# Next we define some mesh specific parameters
-
-# +
-# Constant definition
-um = 10**-6  # micron
-nm = 10**-9  # nanometer
-pi = np.pi
-epsilon_0 = 8.8541878128 * 10**-12
-mu_0 = 4 * pi * 10**-7
-
-# Radius of the wire and of the boundary of the domain
-radius_wire = 0.050 * um
-radius_dom = 1 * um
-
-# The smaller the mesh_factor, the finer is the mesh
-mesh_factor = 1.2
-
-# Mesh size inside the wire
-in_wire_size = mesh_factor * 7 * nm
-
-# Mesh size at the boundary of the wire
-on_wire_size = mesh_factor * 3 * nm
-
-# Mesh size in the vacuum
-bkg_size = mesh_factor * 60 * nm
-
-# Mesh size at the boundary
-boundary_size = mesh_factor * 30 * nm
-
-# Tags for the subdomains
-au_tag = 1          # gold wire
-bkg_tag = 2         # background
-boundary_tag = 3    # boundary
-# -
-
-# We generate the mesh using GMSH and convert it to a `dolfinx.mesh.Mesh`
-
-# +
-model = generate_mesh_wire(
-    radius_wire, radius_dom, in_wire_size, on_wire_size, bkg_size,
-    boundary_size, au_tag, bkg_tag, boundary_tag)
-
-mesh, cell_tags, facet_tags = gmsh_model_to_mesh(
-    model, cell_data=True, facet_data=True, gdim=2)
-gmsh.finalize()
-MPI.COMM_WORLD.barrier()
-# -
-
-# Let's plot the mesh with PyVista:
-
-# +
-topology, cell_types, geometry = plot.create_vtk_mesh(mesh, 2)
-grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
-pyvista.set_jupyter_backend("pythreejs")
-plotter = pyvista.Plotter()
-plotter.add_mesh(grid, show_edges=True)
-plotter.view_xy()
-if not pyvista.OFF_SCREEN:
-    plotter.show()
-# -
-
-
-# We define some other problem specific parameters
-
-wl0 = 0.4 * um  # Wavelength sweep
-n_bkg = 1.33
-eps_bkg = n_bkg**2  # Background refractive index
-k0 = 2 * np.pi / wl0  # Wavevector of the background field
-deg = np.pi / 180
-theta = 45 * deg  # Angle of incidence of the background field
-
-# and the function space used for the electric field. We will use a 3rd order
-# [Nedelec (first kind)](https://defelement.com/elements/nedelec1.html)
-# element.
-
-degree = 2
-curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), degree)
-V = fem.FunctionSpace(mesh, curl_el)
-
-# Next, we can interpolate $\mathbf{E}_b$ into the function space $V$
-
-f = background_electric_field(theta, n_bkg, k0)
-Eb = fem.Function(V)
-Eb.interpolate(f.eval)
-
-
-# Function r = radial distance from the (0, 0) point
-x = ufl.SpatialCoordinate(mesh)
-r = radial_distance(x)
-
-# Definition of Trial and Test functions
-Es = ufl.TrialFunction(V)
-v = ufl.TestFunction(V)
-
-# Definition of 3d fields for cross and curl operations
-Es_3d = as_vector((Es[0], Es[1], 0))
-v_3d = as_vector((v[0], v[1], 0))
-
-# Measures for subdomains
-dx = ufl.Measure("dx", mesh, subdomain_data=cell_tags)
-ds = ufl.Measure("ds", mesh, subdomain_data=facet_tags)
-dAu = dx(au_tag)
-dBkg = dx(bkg_tag)
-dDom = dAu + dBkg
-dsbc = ds(boundary_tag)
-
-# Normal to the boundary
-n = FacetNormal(mesh)
-n_3d = as_vector((n[0], n[1], 0))
-
-# Definition of relative permittivity for Au @400nm
-reps_au = -1.0782
-ieps_au = 5.8089
-eps_au = reps_au + ieps_au * 1j
-
-# Definition of the relative permittivity over the whole domain
-D = fem.FunctionSpace(mesh, ("DG", 0))
-eps = fem.Function(D)
-au_cells = cell_tags.find(au_tag)
-bkg_cells = cell_tags.find(bkg_tag)
-eps.x.array[au_cells] = np.full_like(
-    au_cells, reps_au + ieps_au * 1j, dtype=np.complex128)
-eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
-eps.x.scatter_forward()
+# We can implement such equation in DOLFINx in the following way:
 
 # Weak form
 F = - inner(curl(Es), curl(v)) * dDom \
@@ -378,16 +409,32 @@ F = - inner(curl(Es), curl(v)) * dDom \
     + (1j * k0 * n_bkg + 1 / (2 * r)) \
     * inner(cross(Es_3d, n_3d), cross(v_3d, n_3d)) * dsbc
 
+# We can then split the weak form into its left-hand and right-hand side
+# and solve the problem, by storing the scattered field $\mathbf{E}_s$ in `Eh`:
+
+# +
 # Splitting in left-hand side and right-hand side
 a, L = lhs(F), rhs(F)
 
 problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={
                                   "ksp_type": "preonly", "pc_type": "lu"})
 Eh = problem.solve()
+# -
+
+# Next we can calculate the total electric field
+# $\mathbf{E}=\mathbf{E}_s+\mathbf{E}_b$:
 
 # Total electric field E = Es + Eb
 E = fem.Function(V)
 E.x.array[:] = Eb.x.array[:] + Eh.x.array[:]
+
+# Often it is useful to calculate the norm of the electric field:
+#
+# $$
+# ||\mathbf{E}_s|| = \sqrt{\mathbf{E}_s\cdot\bar{\mathbf{E}}_s}
+# $$
+#
+# which in DOLFINx can be retrieved in this way:
 
 # ||E||
 lagr_el = ufl.FiniteElement("CG", mesh.ufl_cell(), 2)
@@ -457,4 +504,3 @@ if MPI.COMM_WORLD.rank == 0:
     print(f"The error is {err_ext}%")
 
 # -
-# ## References
