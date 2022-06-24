@@ -18,6 +18,7 @@
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
+#include <common/Scatterer.h>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -173,9 +174,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   xtl::span<const double> x_g = _mesh->geometry().x();
 
   // Array to hold coordinates to return
-  const std::size_t shape_c0 = transpose ? 3 : num_dofs;
-  const std::size_t shape_c1 = transpose ? num_dofs : 3;
-  std::vector<double> coords(shape_c0 * shape_c1, 0);
+  std::vector<double> coords(num_dofs * 3, 0);
 
   // Loop over cells and tabulate dofs
   xt::xtensor<double, 2> x = xt::zeros<double>({scalar_dofs, gdim});
@@ -221,17 +220,61 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
     auto dofs = _dofmap->cell_dofs(c);
 
     // Copy dof coordinates into vector
-    if (!transpose)
+    for (std::size_t i = 0; i < dofs.size(); ++i)
+      for (std::size_t j = 0; j < gdim; ++j)
+        coords[dofs[i] * 3 + j] = x(i, j);
+  }
+
+  // If this process owns or ghosts dofs that do not belong to a cell
+  // on this process, the coordinates of those dofs will not have been
+  // tabulated by the above. Hence, these must be communicated.
+  const int size_local = index_map->size_local();
+  constexpr int bs = 3;
+  // Create storage for coordinates of owned and ghost dofs.
+  std::vector<double> coords_local(coords.begin(),
+                                   coords.begin() + bs * size_local);
+  std::vector<double> coords_ghost(coords.begin() + bs * size_local,
+                                   coords.end());
+
+  // Scatter ghost values to owners. Only overwrite the owned value if
+  // the ghost value is non-zero.
+  common::Scatterer scatterer(*index_map, bs);
+  scatterer.scatter_rev(xtl::span<double>(coords_local),
+                        xtl::span<const double>(coords_ghost),
+                        [](auto a, auto b)
+                        {
+                          if (abs(b) > 0.0)
+                            return b;
+                          else
+                            return a;
+                        });
+  // Scatter owned values to ghosts to ensure all ghost dof coordinates
+  // are tabulated.
+  scatterer.scatter_fwd(xtl::span<const double>(coords_local),
+                        xtl::span<double>(coords_ghost));
+
+  // Copy data into `coords`, transposing if necessary
+  if (!transpose)
+  {
+    std::copy(coords_local.begin(), coords_local.end(), coords.begin());
+    std::copy(coords_ghost.begin(), coords_ghost.end(),
+              coords.begin() + bs * size_local);
+  }
+  else
+  {
+    // FIXME There are better ways of transposing
+    for (int j = 0; j < bs; ++j)
     {
-      for (std::size_t i = 0; i < dofs.size(); ++i)
-        for (std::size_t j = 0; j < gdim; ++j)
-          coords[dofs[i] * 3 + j] = x(i, j);
-    }
-    else
-    {
-      for (std::size_t i = 0; i < dofs.size(); ++i)
-        for (std::size_t j = 0; j < gdim; ++j)
-          coords[j * num_dofs + dofs[i]] = x(i, j);
+      for (int i = 0; i < num_dofs; ++i)
+      {
+        const std::size_t idx_0 = i + num_dofs * j;
+        const std::size_t idx_1 = j + bs * i;
+
+        if (idx_1 < coords_local.size())
+          coords[idx_0] = coords_local[idx_1];
+        else
+          coords[idx_0] = coords_ghost[idx_1 - coords_local.size()];
+      }
     }
   }
 
