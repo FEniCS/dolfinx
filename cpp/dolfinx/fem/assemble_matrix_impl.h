@@ -508,9 +508,7 @@ void assemble_matrix(
     // TODO Package both of these into one lambda
     std::function<std::uint8_t(std::int32_t)> get_perm;
     std::function<std::uint8_t(std::int32_t, std::int32_t)> get_facet_perm;
-    // TODO SET needs_facet_permutations IN THE FORM and uncomment
-    // if (a.needs_facet_permutations())
-    if (true)
+    if (a.needs_facet_permutations())
     {
       mesh->topology_mutable().create_entity_permutations();
       const std::vector<std::uint8_t>& perms
