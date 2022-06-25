@@ -51,7 +51,8 @@ void assemble_cells(
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const xtl::span<const std::int8_t>& bc0,
     const xtl::span<const std::int8_t>& bc1,
-    const std::function<void(T*, const T*, const T*, const double*, const int*,
+    const std::function<void(T*, const T*, const T*,
+                             const scalar_value_type_t<T>*, const int*,
                              const std::uint8_t*)>& kernel,
     const xtl::span<const T>& coeffs, int cstride,
     const xtl::span<const T>& constants,
@@ -63,7 +64,6 @@ void assemble_cells(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   const std::size_t num_dofs_g = geometry.cmap().dim();
-
   xtl::span<const double> x_g = geometry.x();
 
   // Iterate over active cells
@@ -73,7 +73,7 @@ void assemble_cells(
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
   const xtl::span<T> _Ae(Ae);
-  std::vector<double> coordinate_dofs(3 * num_dofs_g);
+  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
 
   // Iterate over active cells
   for (std::size_t index = 0; index < cells.size(); ++index)
@@ -151,7 +151,8 @@ void assemble_exterior_facets(
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const xtl::span<const std::int8_t>& bc0,
     const xtl::span<const std::int8_t>& bc1,
-    const std::function<void(T*, const T*, const T*, const double*, const int*,
+    const std::function<void(T*, const T*, const T*,
+                             const scalar_value_type_t<T>*, const int*,
                              const std::uint8_t*)>& kernel,
     const xtl::span<const T>& coeffs, int cstride,
     const xtl::span<const T>& constants,
@@ -166,7 +167,7 @@ void assemble_exterior_facets(
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Data structures used in assembly
-  std::vector<double> coordinate_dofs(3 * num_dofs_g);
+  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
   const int num_dofs0 = dofmap0.links(0).size();
   const int num_dofs1 = dofmap1.links(0).size();
   const int ndim0 = bs0 * num_dofs0;
@@ -248,7 +249,8 @@ void assemble_interior_facets(
                              std::int32_t, int)>& dof_transform_to_transpose,
     const DofMap& dofmap1, int bs1, const xtl::span<const std::int8_t>& bc0,
     const xtl::span<const std::int8_t>& bc1,
-    const std::function<void(T*, const T*, const T*, const double*, const int*,
+    const std::function<void(T*, const T*, const T*,
+                             const scalar_value_type_t<T>*, const int*,
                              const std::uint8_t*)>& kernel,
     const xtl::span<const T>& coeffs, int cstride,
     const xtl::span<const int>& offsets, const xtl::span<const T>& constants,
@@ -262,13 +264,11 @@ void assemble_interior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-
   const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
-
   xtl::span<const double> x_g = mesh.geometry().x();
 
   // Data structures used in assembly
-  xt::xtensor<double, 3> coordinate_dofs({2, num_dofs_g, 3});
+  xt::xtensor<scalar_value_type_t<T>, 3> coordinate_dofs({2, num_dofs_g, 3});
   std::vector<T> Ae, be;
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == cstride);
