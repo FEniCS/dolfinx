@@ -36,6 +36,7 @@ from utils import calculate_analytical_efficiencies
 
 import ufl
 from dolfinx import fem, plot
+from dolfinx.io import VTXWriter
 from ufl import (FacetNormal, as_vector, conj, cross, curl, inner, lhs, rhs,
                  sqrt)
 
@@ -244,6 +245,7 @@ MPI.COMM_WORLD.barrier()
 
 # Let's have a visual check of the mesh by plotting it with PyVista:
 
+# +
 topology, cell_types, geometry = plot.create_vtk_mesh(mesh, 2)
 grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
 pyvista.set_jupyter_backend("pythreejs")
@@ -255,26 +257,36 @@ if not pyvista.OFF_SCREEN:
 else:
     pyvista.start_xvfb()
     figure = plotter.screenshot("wire_mesh.png")
+# -
 
 # Now we define some other problem specific parameters:
 
+# +
 wl0 = 0.4 * um  # Wavelength of the background field
 n_bkg = 1.33  # Background refractive index
 eps_bkg = n_bkg**2  # Background relative permittivity
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
 deg = np.pi / 180
 theta = 45 * deg  # Angle of incidence of the background field
+# -
 
-# and then the function space used for the electric field.
+# And then the function space used for the electric field.
 # We will use a 3rd order
 # [Nedelec (first kind)](https://defelement.com/elements/nedelec1.html)
 # element:
 
+# +
 degree = 3
 curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), degree)
 V = fem.FunctionSpace(mesh, curl_el)
+# -
 
 # Next, we can interpolate $\mathbf{E}_b$ into the function space $V$:
+
+# +
+degree = 3
+curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), degree)
+V = fem.FunctionSpace(mesh, curl_el)
 
 f = BackgroundElectricField(theta, n_bkg, k0)
 Eb = fem.Function(V)
@@ -304,22 +316,29 @@ dsbc = ds(boundary_tag)
 # Normal to the boundary
 n = FacetNormal(mesh)
 n_3d = as_vector((n[0], n[1], 0))
+# -
 
 # Now it is the turn of the permittivity $\varepsilon$.
 # First of all let's define the relative permittivity $\varepsilon_m$
 # of the gold wire at $400nm$ (data taken from
-# [*Olmon et al. 2012*](https://doi.org/10.1103/PhysRevB.86.235147)):
+# [*Olmon et al. 2012*](https://doi.org/10.1103/PhysRevB.86.235147)
+# , and for a quick reference have a look at [refractiveindex.info](
+# https://refractiveindex.info/?shelf=main&book=Au&page=Olmon-sc
+# )):
 
+# +
 # Definition of relative permittivity for Au @400nm
 reps_au = -1.0782
 ieps_au = 5.8089
 eps_au = reps_au + ieps_au * 1j
+# -
 
 # We want to define a space function for the permittivity
 # $\varepsilon$ that takes the value of the gold permittivity $\varepsilon_m$
 # for cells inside the wire, while it takes the value of the
 # background permittivity otherwise:
 
+# +
 # Definition of the relative permittivity over the whole domain
 D = fem.FunctionSpace(mesh, ("DG", 0))
 eps = fem.Function(D)
@@ -329,6 +348,7 @@ eps.x.array[au_cells] = np.full_like(
     au_cells, reps_au + ieps_au * 1j, dtype=np.complex128)
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
 eps.x.scatter_forward()
+# -
 
 # It is time to solve our problem, and therefore we need to find
 # the weak form of the Maxwell's equation plus the scattering
@@ -402,12 +422,14 @@ eps.x.scatter_forward()
 #
 # We can implement such equation in DOLFINx in the following way:
 
+# +
 # Weak form
 F = - inner(curl(Es), curl(v)) * dDom \
     + eps * k0 ** 2 * inner(Es, v) * dDom \
     + k0 ** 2 * (eps - eps_bkg) * inner(Eb, v) * dDom \
     + (1j * k0 * n_bkg + 1 / (2 * r)) \
     * inner(cross(Es_3d, n_3d), cross(v_3d, n_3d)) * dsbc
+# -
 
 # We can then split the weak form into its left-hand and right-hand side
 # and solve the problem, by storing the scattered field $\mathbf{E}_s$ in `Eh`:
@@ -421,12 +443,56 @@ problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={
 Eh = problem.solve()
 # -
 
+# Let's now save the solution in a VTK file. In order to do so,
+# we need to interpolate our solution into a discontinuous lagrange
+# space, and then we can save the interpolated function as a .bp folder:
+
+# +
+V_dg = fem.VectorFunctionSpace(mesh, ("DG", 2))
+Eh_dg = fem.Function(V_dg)
+Eh_dg.interpolate(Eh)
+
+with VTXWriter(MPI.COMM_WORLD, "Eh.bp", Eh_dg) as f:
+    f.write(0.0)
+# -
+
+# For a quick visualization we can use PyVista, as done for the mesh.
+# For more information about saving and visualizing vector fields
+# discretized with Nedelec elements, check [this](
+# https://docs.fenicsproject.org/dolfinx/main/python/demos/demo_interpolation-io.html)
+# DOLFINx demo.
+
+# +
+V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
+V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
+Eh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
+Eh_values[:, :mesh.topology.dim] = \
+    Eh_dg.x.array.reshape(V_x.shape[0], mesh.topology.dim).real
+
+V_grid.point_data["u"] = Eh_values
+
+pyvista.set_jupyter_backend("pythreejs")
+plotter = pyvista.Plotter()
+
+plotter.add_text("magnitude", font_size=12, color="black")
+plotter.add_mesh(V_grid.copy(), show_edges=True)
+plotter.view_xy()
+plotter.link_views()
+
+if not pyvista.OFF_SCREEN:
+    plotter.show()
+else:
+    pyvista.start_xvfb()
+    plotter.screenshot("Eh.png", window_size=[800, 800])
+# -
+
 # Next we can calculate the total electric field
 # $\mathbf{E}=\mathbf{E}_s+\mathbf{E}_b$:
 
-# Total electric field E = Es + Eb
+# +
 E = fem.Function(V)
 E.x.array[:] = Eb.x.array[:] + Eh.x.array[:]
+# -
 
 # Often it is useful to calculate the norm of the electric field:
 #
@@ -443,7 +509,9 @@ V_normEh = fem.FunctionSpace(mesh, lagr_el)
 norm_expr = fem.Expression(norm_func, V_normEh.element.interpolation_points)
 normEh = fem.Function(V_normEh)
 normEh.interpolate(norm_expr)
+# -
 
+# +
 # Calculation of analytical efficiencies
 q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
     reps_au,
