@@ -701,7 +701,7 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
   std::vector<std::int32_t> owned_recv_cells;
   for (std::size_t i = 0; i < in_ranks.size(); i++)
   {
-    for (std::size_t j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
+    for (std::int32_t j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
     {
       if (rank == dest_ranks[j])
       {
