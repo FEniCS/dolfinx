@@ -64,6 +64,29 @@ void geometry(py::module& m)
       },
       py::arg("tree"), py::arg("midpoint_tree"), py::arg("mesh"),
       py::arg("points"));
+  m.def("determine_point_ownership",
+        [](const dolfinx::mesh::Mesh& mesh, const py::array_t<double>& points)
+        {
+          const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
+          xt::xtensor<double, 2> _p
+              = xt::zeros<double>({p_s0, static_cast<std::size_t>(3)});
+          auto px = points.unchecked();
+          if (px.ndim() == 1)
+          {
+            for (py::ssize_t i = 0; i < px.shape(0); i++)
+              _p(0, i) = px(i);
+          }
+          else if (px.ndim() == 2)
+          {
+            for (py::ssize_t i = 0; i < px.shape(0); i++)
+              for (py::ssize_t j = 0; j < px.shape(1); j++)
+                _p(i, j) = px(i, j);
+          }
+          else
+            throw std::runtime_error("Array has wrong ndim.");
+
+          return dolfinx::geometry::determine_point_ownership(mesh, _p);
+        });
 
   m.def("compute_collisions",
         [](const dolfinx::geometry::BoundingBoxTree& tree,
