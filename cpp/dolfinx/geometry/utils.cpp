@@ -521,7 +521,7 @@ int geometry::compute_first_colliding_cell(
 
 //-------------------------------------------------------------------------------
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
-           std::vector<double>>
+           std::vector<double>, std::vector<std::int32_t>>
 geometry::determine_point_ownership(const mesh::Mesh& mesh,
                                     const xt::xtensor<double, 2>& points)
 {
@@ -621,11 +621,13 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
   // Each process checks which points collides with a cell on the process
   const int rank = dolfinx::MPI::rank(comm);
   std::vector<std::int32_t> cell_indicator(received_points.shape(0));
+  std::vector<std::int32_t> colliding_cells(received_points.shape(0));
   for (std::size_t p = 0; p < received_points.shape(0); ++p)
   {
     const int colliding_cell = geometry::compute_first_colliding_cell(
         mesh, bb, xt::row(received_points, p));
     cell_indicator[p] = (colliding_cell >= 0) ? rank : -1;
+    colliding_cells[p] = colliding_cell;
   }
   // Create neighborhood communicator in the reverse direction: send back col to
   // requesting processes
@@ -696,6 +698,7 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
   std::vector<std::int32_t> owned_recv_ranks;
   owned_recv_ranks.reserve(recv_offsets.back());
   std::vector<double> owned_recv_points;
+  std::vector<std::int32_t> owned_recv_cells;
   for (std::size_t i = 0; i < in_ranks.size(); i++)
   {
     for (std::size_t j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
@@ -703,12 +706,17 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
       if (rank == dest_ranks[j])
       {
         owned_recv_ranks.push_back(in_ranks[i]);
-        auto point = xt::row(received_points, recv_offsets[i]);
+        auto point = xt::row(received_points, j);
         owned_recv_points.insert(owned_recv_points.end(), point.cbegin(),
                                  point.cend());
+        owned_recv_cells.push_back(colliding_cells[j]);
       }
     }
   }
 
-  return std::make_tuple(point_owners, owned_recv_ranks, owned_recv_points);
+  MPI_Comm_free(&forward_comm);
+  MPI_Comm_free(&reverse_comm);
+
+  return std::make_tuple(point_owners, owned_recv_ranks, owned_recv_points,
+                         owned_recv_cells);
 };
