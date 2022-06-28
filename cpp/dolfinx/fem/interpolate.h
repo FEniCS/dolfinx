@@ -32,26 +32,22 @@ namespace
 ///
 /// @param[in] comm The mpi communicator
 /// @param[in] src_ranks The rank owning the values of each row in send_values
-/// @note It is assumed that src_ranks are allready sorted.
+/// @note It is assumed that src_ranks are already sorted.
 /// @param[in] dest_ranks The rank each local point is receiving data from.
 /// @note dest_ranks might contain -1 (no process owns the point)
-/// @param[in] num_points_local The number of points to receive data for. Should
-/// be the same number as the size of dest_ranks.
 /// @param[in] send_values The values to send back to owner. Shape
-/// (src_ranks.size(), value_size). returns An 2D array of shape
-/// (dest_ranks.size(), value_size) with values from the process owning the
-/// local point.
+/// (src_ranks.size(), value_size).
+/// @returns An 2D array of shape (dest_ranks.size(), value_size) with values
+/// from the process owning the local point.
 template <typename T>
 xt::xtensor<T, 2> send_back_values(const MPI_Comm& comm,
                                    const std::vector<std::int32_t>& src_ranks,
                                    const std::vector<std::int32_t>& dest_ranks,
-                                   std::size_t num_points_local,
                                    const xt::xtensor<T, 2> send_values)
 {
-  assert(num_points_local == dest_ranks.size());
   assert(src_ranks.size() == send_values.shape(0));
   const std::size_t value_size = send_values.shape(1);
-  xt::xtensor<T, 2> values({num_points_local, value_size});
+  xt::xtensor<T, 2> values({dest_ranks.size(), value_size});
 
   // Create neighborhood communicator from send back
   // values to requesting processes
@@ -570,7 +566,7 @@ void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
 
   // Send values back to owning process
   xt::xtensor<T, 2> values
-      = send_back_values(comm, src_ranks, dest_ranks, x.shape(0), send_values);
+      = send_back_values(comm, src_ranks, dest_ranks, send_values);
 
   // Call local interpolation operator
   xt::xarray<T> values_t = xt::transpose(values);
