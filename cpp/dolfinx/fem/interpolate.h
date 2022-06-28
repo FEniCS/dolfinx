@@ -27,8 +27,17 @@
 namespace
 {
 
-/// Communicate values for num_points_local values found on other processes.
-/// If no value is found for a certain point, 0 is inserted into output values.
+/// @brief Send data from a set of processes to another set using neighborhod
+/// communicators.
+///
+/// The data to send is structured as (src_ranks.size(), value_size), where the
+/// ith row of `send_data` is sent to the process with rank `src_ranks[i]`. The
+/// ranks are using the ranks of the input communicator `comm`. `src_ranks` and
+/// `send_values` are assumed to be sorted, meaning that it is ordered by
+/// process to receive data. `dest_ranks` is a list of ranks the current process
+/// is receiving data from. This function returns a 2D array of shape
+/// (dest_ranks.size(), value_size). If the j-th dest rank is -1, then
+/// row(output,j) = (0,)*value_size.
 ///
 /// @param[in] comm The mpi communicator
 /// @param[in] src_ranks The rank owning the values of each row in send_values
