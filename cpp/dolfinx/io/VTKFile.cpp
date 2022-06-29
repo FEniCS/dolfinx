@@ -165,7 +165,7 @@ template <typename T>
 void add_data(const std::string& name, int rank,
               const xtl::span<const T>& values, pugi::xml_node& node)
 {
-  if constexpr (std::is_scalar<T>::value)
+  if constexpr (std::is_scalar_v<T>)
     add_data_float(name, rank, values, node);
   else
   {
