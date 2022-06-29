@@ -265,35 +265,35 @@ struct dependent_false : std::false_type
 template <typename T>
 constexpr MPI_Datatype mpi_type()
 {
-  if constexpr (std::is_same<T, float>::value)
+  if constexpr (std::is_same_v<T, float>)
     return MPI_FLOAT;
-  else if constexpr (std::is_same<T, double>::value)
+  else if constexpr (std::is_same_v<T, double>)
     return MPI_DOUBLE;
-  else if constexpr (std::is_same<T, std::complex<double>>::value)
+  else if constexpr (std::is_same_v<T, std::complex<double>>)
     return MPI_C_DOUBLE_COMPLEX;
-  else if constexpr (std::is_same<T, std::complex<float>>::value)
+  else if constexpr (std::is_same_v<T, std::complex<float>>)
     return MPI_C_FLOAT_COMPLEX;
-  else if constexpr (std::is_same<T, short int>::value)
+  else if constexpr (std::is_same_v<T, short int>)
     return MPI_SHORT;
-  else if constexpr (std::is_same<T, int>::value)
+  else if constexpr (std::is_same_v<T, int>)
     return MPI_INT;
-  else if constexpr (std::is_same<T, unsigned int>::value)
+  else if constexpr (std::is_same_v<T, unsigned int>)
     return MPI_UNSIGNED;
-  else if constexpr (std::is_same<T, long int>::value)
+  else if constexpr (std::is_same_v<T, long int>)
     return MPI_LONG;
-  else if constexpr (std::is_same<T, unsigned long>::value)
+  else if constexpr (std::is_same_v<T, unsigned long>)
     return MPI_UNSIGNED_LONG;
-  else if constexpr (std::is_same<T, long long>::value)
+  else if constexpr (std::is_same_v<T, long long>)
     return MPI_LONG_LONG;
-  else if constexpr (std::is_same<T, unsigned long long>::value)
+  else if constexpr (std::is_same_v<T, unsigned long long>)
     return MPI_UNSIGNED_LONG_LONG;
-  else if constexpr (std::is_same<T, bool>::value)
+  else if constexpr (std::is_same_v<T, bool>)
     return MPI_C_BOOL;
-  else if constexpr (std::is_same<T, std::int8_t>::value)
+  else if constexpr (std::is_same_v<T, std::int8_t>)
     return MPI_INT8_T;
   else
     // Issue compile time error
-    static_assert(!std::is_same<T, T>::value);
+    static_assert(!std::is_same_v<T, T>);
 }
 
 //---------------------------------------------------------------------------
