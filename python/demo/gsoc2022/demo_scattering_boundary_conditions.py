@@ -27,7 +27,11 @@
 # First of all, let's import the modules that will be used:
 
 # +
-import gmsh
+try:
+    import gmsh
+except ModuleNotFoundError:
+    print("This demo requires gmsh to be installed")
+    sys.exit(0)
 import numpy as np
 try:
     import pyvista
