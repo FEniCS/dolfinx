@@ -12,7 +12,7 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.mesh import CellType
 
-__all__ = []
+__all__ = ["cell_perm_array", "ufl_mesh"]
 
 try:
     import gmsh
@@ -20,8 +20,39 @@ try:
 except ModuleNotFoundError:
     _has_gmsh = False
 
+
+def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
+    """Create a UFL mesh from a Gmsh cell identifier and the geometric dimension.
+    See: http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format.
+
+    Args:
+        gmsh_cell: The Gmsh cell identifier
+        gdim: The geometric dimension of the mesh
+
+    Returns:
+        A ufl Mesh using Lagrange elements (equispaced) of the corresponding DOLFINx cell
+    """
+    shape, degree = _gmsh_to_cells[gmsh_cell]
+    cell = ufl.Cell(shape, geometric_dimension=gdim)
+    scalar_element = ufl.FiniteElement("Lagrange", cell, degree, variant="equispaced")
+    return ufl.Mesh(ufl.VectorElement(scalar_element))
+
+
+def cell_perm_array(cell_type: CellType, num_nodes: int) -> typing.List[int]:
+    """The permuation array for permuting Gmsh ordering to DOLFINx ordering.
+
+    Args:
+        cell_type: The DOLFINx cell type
+        num_nodes: The number of nodes in the cell
+
+    Returns:
+        An array `p` such that `a_dolfinx[i] = a_gmsh[p[i]]`.
+    """
+    return _cpp.io.perm_gmsh(cell_type, num_nodes)
+
+
 if _has_gmsh:
-    __all__ += ["extract_topology_and_markers", "extract_geometry", "ufl_mesh", "cell_perm_array"]
+    __all__ += ["extract_topology_and_markers", "extract_geometry"]
 
     def extract_topology_and_markers(model: gmsh.model, name: str = None):
         """Extract all entities tagged with a physical marker in the gmsh
@@ -126,31 +157,3 @@ if _has_gmsh:
                       15: ("point", 0), 21: ("triangle", 3),
                       26: ("interval", 3), 29: ("tetrahedron", 3),
                       36: ("quadrilateral", 3)}
-
-    def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
-        """Create a UFL mesh from a Gmsh cell identifier and the geometric dimension.
-        See: http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format.
-
-        Args:
-            gmsh_cell: The Gmsh cell identifier
-            gdim: The geometric dimension of the mesh
-
-        Returns:
-            A ufl Mesh using Lagrange elements (equispaced) of the corresponding DOLFINx cell
-        """
-        shape, degree = _gmsh_to_cells[gmsh_cell]
-        cell = ufl.Cell(shape, geometric_dimension=gdim)
-        scalar_element = ufl.FiniteElement("Lagrange", cell, degree, variant="equispaced")
-        return ufl.Mesh(ufl.VectorElement(scalar_element))
-
-    def cell_perm_array(cell_type: CellType, num_nodes: int) -> typing.List[int]:
-        """The permuation array for permuting Gmsh ordering to DOLFINx ordering.
-
-        Args:
-            cell_type: The DOLFINx cell type
-            num_nodes: The number of nodes in the cell
-
-        Returns:
-            An array `p` such that `a_dolfinx[i] = a_gmsh[p[i]]`.
-        """
-        return _cpp.io.perm_gmsh(cell_type, num_nodes)
