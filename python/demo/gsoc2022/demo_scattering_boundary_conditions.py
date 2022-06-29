@@ -29,7 +29,12 @@
 # +
 import gmsh
 import numpy as np
-import pyvista
+try:
+    import pyvista
+    have_pyvista = True
+except ModuleNotFoundError:
+    print("pyvista and pyvistaqt are required to visualise the solution")
+    have_pyvista = False
 from gmsh_helpers import gmsh_model_to_mesh
 from mesh_wire import generate_mesh_wire
 from utils import calculate_analytical_efficiencies
