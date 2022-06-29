@@ -99,7 +99,7 @@ template <typename T, int BITS = 16>
 void argsort_radix(const xtl::span<const T>& array,
                    xtl::span<std::int32_t> perm)
 {
-  static_assert(std::is_integral<T>::value, "Integral required.");
+  static_assert(std::is_integral_v<T>, "Integral required.");
 
   if (array.size() <= 1)
     return;
@@ -178,7 +178,7 @@ template <typename T, int BITS = 16>
 std::vector<std::int32_t> sort_by_perm(const xtl::span<const T>& x,
                                        std::size_t shape1)
 {
-  static_assert(std::is_integral<T>::value, "Integral required.");
+  static_assert(std::is_integral_v<T>, "Integral required.");
   assert(shape1 > 0);
   assert(x.size() % shape1 == 0);
   const std::size_t shape0 = x.size() / shape1;
