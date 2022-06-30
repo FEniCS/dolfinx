@@ -33,6 +33,7 @@ except ModuleNotFoundError:
     print("This demo requires gmsh to be installed")
     sys.exit(0)
 import numpy as np
+
 try:
     import pyvista
     have_pyvista = True
@@ -54,9 +55,9 @@ from petsc4py import PETSc
 
 # -
 
-# Since we want to solve Maxwell's equation, we need to specify that
-# the demo should only be executed with DOLFINx complex mode, otherwise
-# it would not work:
+# Since we want to solve time-harmonic Maxwell's equation, we need to
+# specify that the demo should only be executed with DOLFINx complex mode,
+# otherwise it would not work:
 
 if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
@@ -441,7 +442,8 @@ F = - inner(curl(Es), curl(v)) * dDom \
 # -
 
 # We can then split the weak form into its left-hand and right-hand side
-# and solve the problem, by storing the scattered field $\mathbf{E}_s$ in `Eh`:
+# and solve the problem, by storing the scattered field $\mathbf{E}_s$ in
+# `Esh`:
 
 # +
 # Splitting in left-hand side and right-hand side
@@ -449,19 +451,20 @@ a, L = lhs(F), rhs(F)
 
 problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={
                                   "ksp_type": "preonly", "pc_type": "lu"})
-Eh = problem.solve()
+Esh = problem.solve()
 # -
 
 # Let's now save the solution in a VTK file. In order to do so,
-# we need to interpolate our solution into a discontinuous lagrange
-# space, and then we can save the interpolated function as a .bp folder:
+# we need to interpolate our solution discretized with Nedelec elements
+# into a discontinuous lagrange space, and then we can save the interpolated
+# function as a .bp folder:
 
 # +
-V_dg = fem.VectorFunctionSpace(mesh, ("DG", 2))
-Eh_dg = fem.Function(V_dg)
-Eh_dg.interpolate(Eh)
+V_dg = fem.VectorFunctionSpace(mesh, ("DG", 3))
+Esh_dg = fem.Function(V_dg)
+Esh_dg.interpolate(Esh)
 
-with VTXWriter(MPI.COMM_WORLD, "Eh.bp", Eh_dg) as f:
+with VTXWriter(MPI.COMM_WORLD, "Esh.bp", Esh_dg) as f:
     f.write(0.0)
 # -
 
@@ -474,11 +477,11 @@ with VTXWriter(MPI.COMM_WORLD, "Eh.bp", Eh_dg) as f:
 # +
 V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
 V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
-Eh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
-Eh_values[:, :mesh.topology.dim] = \
-    Eh_dg.x.array.reshape(V_x.shape[0], mesh.topology.dim).real
+Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
+Esh_values[:, :mesh.topology.dim] = \
+    Esh_dg.x.array.reshape(V_x.shape[0], mesh.topology.dim).real
 
-V_grid.point_data["u"] = Eh_values
+V_grid.point_data["u"] = Esh_values
 
 pyvista.set_jupyter_backend("pythreejs")
 plotter = pyvista.Plotter()
@@ -492,7 +495,7 @@ if not pyvista.OFF_SCREEN:
     plotter.show()
 else:
     pyvista.start_xvfb()
-    plotter.screenshot("Eh.png", window_size=[800, 800])
+    plotter.screenshot("Esh.png", window_size=[800, 800])
 # -
 
 # Next we can calculate the total electric field
@@ -500,7 +503,7 @@ else:
 
 # +
 E = fem.Function(V)
-E.x.array[:] = Eb.x.array[:] + Eh.x.array[:]
+E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
 # -
 
 # Often it is useful to calculate the norm of the electric field:
@@ -513,11 +516,11 @@ E.x.array[:] = Eb.x.array[:] + Eh.x.array[:]
 
 # ||E||
 lagr_el = ufl.FiniteElement("CG", mesh.ufl_cell(), 2)
-norm_func = sqrt(inner(Eh, Eh))
-V_normEh = fem.FunctionSpace(mesh, lagr_el)
-norm_expr = fem.Expression(norm_func, V_normEh.element.interpolation_points)
-normEh = fem.Function(V_normEh)
-normEh.interpolate(norm_expr)
+norm_func = sqrt(inner(Esh, Esh))
+V_normEsh = fem.FunctionSpace(mesh, lagr_el)
+norm_expr = fem.Expression(norm_func, V_normEsh.element.interpolation_points)
+normEsh = fem.Function(V_normEsh)
+normEsh.interpolate(norm_expr)
 # -
 
 # +
@@ -533,9 +536,9 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 Z0 = np.sqrt(mu_0 / epsilon_0)
 
 # Magnetic field H
-Hh_3d = -1j * curl_2d(Eh) / Z0 / k0 / n_bkg
+Hh_3d = -1j * curl_2d(Esh) / Z0 / k0 / n_bkg
 
-Eh_3d = as_vector((Eh[0], Eh[1], 0))
+Esh_3d = as_vector((Esh[0], Esh[1], 0))
 E_3d = as_vector((E[0], E[1], 0))
 
 # Intensity of the electromagnetic fields I0 = 0.5*E0**2/Z0
@@ -546,7 +549,7 @@ I0 = 0.5 / Z0
 gcs = 2 * radius_wire
 
 # Quantities for the calculation of efficiencies
-P = 0.5 * inner(cross(Eh_3d, conj(Hh_3d)), n_3d)
+P = 0.5 * inner(cross(Esh_3d, conj(Hh_3d)), n_3d)
 Q = 0.5 * ieps_au * k0 * (inner(E_3d, E_3d)) / Z0 / n_bkg
 
 # Normalized efficiencies
