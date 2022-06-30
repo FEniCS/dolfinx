@@ -27,6 +27,8 @@
 # First of all, let's import the modules that will be used:
 
 # +
+import sys
+
 try:
     import gmsh
 except ModuleNotFoundError:
