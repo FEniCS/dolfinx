@@ -499,11 +499,17 @@ else:
 # -
 
 # Next we can calculate the total electric field
-# $\mathbf{E}=\mathbf{E}_s+\mathbf{E}_b$:
+# $\mathbf{E}=\mathbf{E}_s+\mathbf{E}_b$ and save it:
 
 # +
 E = fem.Function(V)
 E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
+
+E_dg = fem.Function(V_dg)
+E_dg.interpolate(E)
+
+with VTXWriter(MPI.COMM_WORLD, "E.bp", E_dg) as f:
+    f.write(0.0)
 # -
 
 # Often it is useful to calculate the norm of the electric field:
