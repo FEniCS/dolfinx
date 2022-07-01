@@ -15,7 +15,7 @@ import ufl
 from dolfinx.cpp.io import perm_vtk
 from dolfinx.fem import assemble_scalar, form
 from dolfinx.io import XDMFFile
-from dolfinx.io.gmsh_io import cell_perm_array, ufl_mesh
+from dolfinx.io.gmshio import cell_perm_array, ufl_mesh
 from dolfinx.mesh import CellType, create_mesh
 from ufl import dx
 
