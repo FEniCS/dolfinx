@@ -13,6 +13,7 @@
 #include "Expression.h"
 #include "Form.h"
 #include "Function.h"
+#include "sparsitybuild.h"
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -70,7 +71,6 @@ struct scalar_value_type<T, std::void_t<typename T::value_type>>
 /// @private Convenience typedef
 template <typename T>
 using scalar_value_type_t = typename scalar_value_type<T>::value_type;
-
 
 } // namespace impl
 
@@ -139,7 +139,52 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
   }
 
-  return create_sparsity_pattern(mesh->topology(), dofmaps, types);
+  common::Timer t0("Build sparsity");
+
+  // Get common::IndexMaps for each dimension
+  const std::array index_maps{dofmaps[0].get().index_map,
+                              dofmaps[1].get().index_map};
+  const std::array bs
+      = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};
+
+  // Create and build sparsity pattern
+  la::SparsityPattern pattern(mesh->comm(), index_maps, bs);
+  for (auto type : types)
+  {
+    std::vector<int> ids = a.integral_ids(type);
+    switch (type)
+    {
+    case IntegralType::cell:
+      for (int id : ids)
+      {
+        const std::vector<std::int32_t>& cells = a.cell_domains(id);
+        sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}});
+      }
+      break;
+    case IntegralType::interior_facet:
+      for (int id : ids)
+      {
+        const std::vector<std::int32_t>& facets = a.interior_facet_domains(id);
+        sparsitybuild::interior_facets(pattern, facets,
+                                       {{dofmaps[0], dofmaps[1]}});
+      }
+      break;
+    case IntegralType::exterior_facet:
+      for (int id : ids)
+      {
+        const std::vector<std::int32_t>& facets = a.exterior_facet_domains(id);
+        sparsitybuild::exterior_facets(pattern, facets,
+                                       {{dofmaps[0], dofmaps[1]}});
+      }
+      break;
+    default:
+      throw std::runtime_error("Unsupported integral type");
+    }
+  }
+
+  t0.stop();
+
+  return pattern;
 }
 
 /// Create an ElementDofLayout from a ufcx_dofmap
@@ -240,18 +285,18 @@ Form<T> create_form(
     assert(integral);
 
     kern k = nullptr;
-    if constexpr (std::is_same<T, float>::value)
+    if constexpr (std::is_same_v<T, float>)
       k = integral->tabulate_tensor_float32;
-    else if constexpr (std::is_same<T, std::complex<float>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<float>>)
     {
       k = reinterpret_cast<void (*)(
           T*, const T*, const T*,
           const typename impl::scalar_value_type<T>::value_type*, const int*,
           const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
-    else if constexpr (std::is_same<T, double>::value)
+    else if constexpr (std::is_same_v<T, double>)
       k = integral->tabulate_tensor_float64;
-    else if constexpr (std::is_same<T, std::complex<double>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<double>>)
     {
       k = reinterpret_cast<void (*)(
           T*, const T*, const T*,
@@ -298,18 +343,18 @@ Form<T> create_form(
     assert(integral);
 
     kern k = nullptr;
-    if constexpr (std::is_same<T, float>::value)
+    if constexpr (std::is_same_v<T, float>)
       k = integral->tabulate_tensor_float32;
-    else if constexpr (std::is_same<T, std::complex<float>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<float>>)
     {
       k = reinterpret_cast<void (*)(
           T*, const T*, const T*,
           const typename impl::scalar_value_type<T>::value_type*, const int*,
           const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
-    else if constexpr (std::is_same<T, double>::value)
+    else if constexpr (std::is_same_v<T, double>)
       k = integral->tabulate_tensor_float64;
-    else if constexpr (std::is_same<T, std::complex<double>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<double>>)
     {
       k = reinterpret_cast<void (*)(
           T*, const T*, const T*,
@@ -342,18 +387,18 @@ Form<T> create_form(
     assert(integral);
 
     kern k = nullptr;
-    if constexpr (std::is_same<T, float>::value)
+    if constexpr (std::is_same_v<T, float>)
       k = integral->tabulate_tensor_float32;
-    else if constexpr (std::is_same<T, std::complex<float>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<float>>)
     {
       k = reinterpret_cast<void (*)(
           T*, const T*, const T*,
           const typename impl::scalar_value_type<T>::value_type*, const int*,
           const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
-    else if constexpr (std::is_same<T, double>::value)
+    else if constexpr (std::is_same_v<T, double>)
       k = integral->tabulate_tensor_float64;
-    else if constexpr (std::is_same<T, std::complex<double>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<double>>)
     {
       k = reinterpret_cast<void (*)(
           T*, const T*, const T*,
@@ -795,18 +840,18 @@ fem::Expression<T> create_expression(
                      const typename impl::scalar_value_type<T>::value_type*,
                      const int*, const std::uint8_t*)>
       tabulate_tensor = nullptr;
-  if constexpr (std::is_same<T, float>::value)
+  if constexpr (std::is_same_v<T, float>)
     tabulate_tensor = expression.tabulate_tensor_float32;
-  else if constexpr (std::is_same<T, std::complex<float>>::value)
+  else if constexpr (std::is_same_v<T, std::complex<float>>)
   {
     tabulate_tensor = reinterpret_cast<void (*)(
         T*, const T*, const T*,
         const typename impl::scalar_value_type<T>::value_type*, const int*,
         const unsigned char*)>(expression.tabulate_tensor_complex64);
   }
-  else if constexpr (std::is_same<T, double>::value)
+  else if constexpr (std::is_same_v<T, double>)
     tabulate_tensor = expression.tabulate_tensor_float64;
-  else if constexpr (std::is_same<T, std::complex<double>>::value)
+  else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
     tabulate_tensor = reinterpret_cast<void (*)(
         T*, const T*, const T*,
