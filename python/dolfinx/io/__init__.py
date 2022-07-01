@@ -14,10 +14,4 @@ __all__ = ["gmshio", "distribute_entity_data", "VTKFile", "XDMFFile"]
 if _cpp.common.has_adios2:
     # FidesWriter and VTXWriter require ADIOS2
     from dolfinx.io.utils import FidesWriter, VTXWriter  # noqa: F401
-    __all__ = __all__ + ["FidesWriter", "VTXWriter"]
-
-try:
-    import gmsh  # noqa: F401
-except ModuleNotFoundError:
-    from dolfinx.io import gmshio
-    __all__ = __all__ + ["gmshio"]
+    __all__ = __all__ + ["FidesWriter", "VTXWriter", "gmshio"]
