@@ -12,9 +12,10 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx.cpp.io import perm_gmsh, perm_vtk
+from dolfinx.cpp.io import perm_vtk
 from dolfinx.fem import assemble_scalar, form
-from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
+from dolfinx.io import XDMFFile
+from dolfinx.io.gmshio import cell_perm_array, ufl_mesh
 from dolfinx.mesh import CellType, create_mesh
 from ufl import dx
 
@@ -557,26 +558,11 @@ def test_gmsh_input_2d(order, cell_type):
         gmsh_cell_id = gmsh.model.mesh.getElementType("quadrangle", order)
     gmsh.finalize()
 
-    cells = cells[:, perm_gmsh(cell_type, cells.shape[1])]
-    mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh_from_gmsh(gmsh_cell_id, x.shape[1]))
+    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])]
+    mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh(gmsh_cell_id, x.shape[1]))
     surface = assemble_scalar(form(1 * dx(mesh)))
 
     assert mesh.comm.allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=10 ** (-1 - order))
-
-    # Bug related to VTK output writing
-    # def e2(x):
-    #     values = np.empty((x.shape[0], 1))
-    #     values[:, 0] = x[:, 0]
-    #     return values
-    # cmap = fem.create_coordinate_map(mesh.comm, mesh.ufl_domain())
-    # mesh.geometry.coord_mapping = cmap
-    # V = FunctionSpace(mesh, ("Lagrange", order))
-    # u = Function(V)
-    # u.interpolate(e2)
-    # from dolfinx.io import VTKFile
-    # VTKFile("u{0:d}.pvd".format(order)).write(u)
-    # print(min(u.vector.array),max(u.vector.array))
-    # print(assemble_scalar(u*dx(mesh)))
 
 
 @pytest.mark.skip_in_parallel
@@ -629,8 +615,9 @@ def test_gmsh_input_3d(order, cell_type):
     gmsh.finalize()
 
     # Permute the mesh topology from GMSH ordering to DOLFINx ordering
-    domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
-    cells = cells[:, perm_gmsh(cell_type, cells.shape[1])]
+    domain = ufl_mesh(gmsh_cell_id, 3)
+    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])]
+
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
     volume = assemble_scalar(form(1 * dx(mesh)))
     assert mesh.comm.allreduce(volume, op=MPI.SUM) == pytest.approx(np.pi, rel=10 ** (-1 - order))
