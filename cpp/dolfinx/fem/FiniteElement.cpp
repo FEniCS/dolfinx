@@ -330,7 +330,7 @@ void FiniteElement::tabulate(xt::xtensor<double, 4>& reference_values,
                              const xt::xtensor<double, 2>& X, int order) const
 {
   assert(_element);
-  reference_values = _element->tabulate(order, X);
+  reference_values = _element->tabulate(order, X, {X.shape(0), X.shape(1)});
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept
