@@ -6,7 +6,6 @@
 
 #include "XDMFFile.h"
 #include "cells.h"
-#include "pugixml.hpp"
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
 #include "xdmf_meshtags.h"
@@ -22,6 +21,7 @@
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/utils.h>
 #include <filesystem>
+#include <pugixml.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;

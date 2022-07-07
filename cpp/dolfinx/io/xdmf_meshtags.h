@@ -6,13 +6,14 @@
 
 #pragma once
 
-#include "pugixml.hpp"
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <hdf5.h>
+#include <pugixml.hpp>
 #include <string>
 #include <vector>
 #include <xtl/xspan.hpp>

@@ -6,7 +6,6 @@
 
 #include "VTKFile.h"
 #include "cells.h"
-#include "pugixml.hpp"
 #include "vtk_utils.h"
 #include "xdmf_utils.h"
 #include <dolfinx/common/IndexMap.h>
@@ -20,6 +19,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <filesystem>
 #include <iterator>
+#include <pugixml.hpp>
 #include <sstream>
 #include <string>
 #include <xtensor/xbuilder.hpp>
@@ -165,7 +165,7 @@ template <typename T>
 void add_data(const std::string& name, int rank,
               const xtl::span<const T>& values, pugi::xml_node& node)
 {
-  if constexpr (std::is_scalar<T>::value)
+  if constexpr (std::is_scalar_v<T>)
     add_data_float(name, rank, values, node);
   else
   {

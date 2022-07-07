@@ -100,12 +100,13 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
       cells1);
 
   // Nedelec spaces are not generally supported by visualisation tools.
-  // Simply evaluting a Nedelec function at cell vertices can
+  // Simply evaluating a Nedelec function at cell vertices can
   // mis-represent the function. However, we can represented a Nedelec
   // function exactly in a discontinuous Lagrange space which we can
   // then visualise. We do this here.
 
-  // First create a degree 1 vector-valued discontinuous Lagrange space:
+  // First create a degree 2 vector-valued discontinuous Lagrange space
+  // (which contains the N2 space):
   basix::FiniteElement e_l = basix::create_element(
       basix::element::family::P,
       mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2, true);
@@ -146,7 +147,7 @@ int main(int argc, char* argv[])
     // Create a mesh. For what comes later in this demo we need to
     // ensure that a boundary between cells is located at x0=0.5
     auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
-        MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 32},
+        MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
         mesh::CellType::triangle, mesh::GhostMode::none));
 
     // Interpolate a function in a scalar Lagrange space and output the

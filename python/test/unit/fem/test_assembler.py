@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 Garth N. Wells
+# Copyright (C) 2018-2022 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -233,7 +233,10 @@ def test_assemble_manifold():
     assert np.isclose(A.norm(), 25.0199)
 
 
-@ pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
+@ pytest.mark.parametrize("mode", [
+    GhostMode.none,
+    GhostMode.shared_facet
+])
 def test_matrix_assembly_block(mode):
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic
@@ -857,7 +860,7 @@ def test_vector_types():
     c0 = _cpp.fem.pack_constants(L)
     c1 = _cpp.fem.pack_coefficients(L)
     _cpp.fem.assemble_vector(x0.array, L, c0, c1)
-    x0.scatter_reverse(_cpp.common.ScatterMode.add)
+    x0.scatter_reverse(la.ScatterMode.add)
 
     c = Constant(mesh, np.complex128(1))
     L = inner(c, v) * ufl.dx
@@ -866,7 +869,7 @@ def test_vector_types():
     c0 = _cpp.fem.pack_constants(L)
     c1 = _cpp.fem.pack_coefficients(L)
     _cpp.fem.assemble_vector(x1.array, L, c0, c1)
-    x1.scatter_reverse(_cpp.common.ScatterMode.add)
+    x1.scatter_reverse(la.ScatterMode.add)
 
     c = Constant(mesh, np.float32(1))
     L = inner(c, v) * ufl.dx
@@ -875,10 +878,10 @@ def test_vector_types():
     c0 = _cpp.fem.pack_constants(L)
     c1 = _cpp.fem.pack_coefficients(L)
     _cpp.fem.assemble_vector(x2.array, L, c0, c1)
-    x2.scatter_reverse(_cpp.common.ScatterMode.add)
+    x2.scatter_reverse(la.ScatterMode.add)
 
     assert np.linalg.norm(x0.array - x1.array) == pytest.approx(0.0)
-    assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-8)
+    assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-7)
 
 
 def test_assemble_empty_rank_mesh():
@@ -934,3 +937,33 @@ def test_assemble_empty_rank_mesh():
     ksp.solve(b, x)
 
     assert np.allclose(x.array, 10.0)
+
+
+@ pytest.mark.parametrize("mode", [
+    GhostMode.none,
+    GhostMode.shared_facet
+])
+def test_matrix_assembly_rectangular(mode):
+    """Test assembly of block rectangular block matrices"""
+    msh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
+    V0 = FunctionSpace(msh, ("Lagrange", 1))
+    V1 = V0.clone()
+    u = ufl.TrialFunction(V0)
+    v0, v1 = ufl.TestFunction(V0), ufl.TestFunction(V1)
+
+    a1 = form(ufl.inner(u, v0) * ufl.dx)
+    A1 = assemble_matrix(a1, bcs=[])
+    A1.assemble()
+
+    a2 = form([[ufl.inner(u, v0) * ufl.dx],
+              [ufl.inner(u, v1) * ufl.dx]])
+
+    A2 = assemble_matrix_block(a2, bcs=[])
+    A2.assemble()
+    assert A2.norm() == pytest.approx(np.sqrt(2) * A1.norm())
+
+    A2 = assemble_matrix_nest(a2, bcs=[])
+    A2.assemble()
+    for row in range(2):
+        A_sub = A2.getNestSubMatrix(row, 0)
+        assert A_sub.equal(A1)

@@ -22,13 +22,13 @@ import scipy.sparse
 import scipy.sparse.linalg
 
 import ufl
-from dolfinx import common, fem, mesh, plot
+from dolfinx import fem, la, mesh, plot
 
 from mpi4py import MPI
 
 # -
 
-# SciPy solvers do no support MPI, so all computations are performed on
+# SciPy solvers do not support MPI, so all computations are performed on
 # a single MPI rank
 
 # +
@@ -41,7 +41,7 @@ msh = mesh.create_rectangle(comm=comm, points=((0.0, 0.0), (2.0, 1.0)), n=(32, 1
                             cell_type=mesh.CellType.triangle)
 V = fem.FunctionSpace(msh, ("Lagrange", 1))
 
-# Define a variartional problem
+# Define a variational problem
 u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(msh)
 fr = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
@@ -79,7 +79,7 @@ def solve(dtype=np.float32):
     A.finalize()
     b = fem.assemble_vector(L0)
     fem.apply_lifting(b.array, [a0], bcs=[[bc]])
-    b.scatter_reverse(common.ScatterMode.add)
+    b.scatter_reverse(la.ScatterMode.add)
     fem.set_bc(b.array, [bc])
 
     # Create a Scipy sparse matrix that shares data with A

@@ -13,6 +13,7 @@
 #include "Expression.h"
 #include "Form.h"
 #include "Function.h"
+#include "sparsitybuild.h"
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -20,6 +21,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <ufcx.h>
 #include <utility>
 #include <vector>
@@ -49,6 +51,28 @@ class Topology;
 namespace dolfinx::fem
 {
 class FunctionSpace;
+
+namespace impl
+{
+/// @private These structs are used to get the float/value type from a
+/// template argument, including support for complex types
+template <typename T, typename = void>
+struct scalar_value_type
+{
+  /// @internal
+  typedef T value_type;
+};
+/// @private
+template <typename T>
+struct scalar_value_type<T, std::void_t<typename T::value_type>>
+{
+  typedef typename T::value_type value_type;
+};
+/// @private Convenience typedef
+template <typename T>
+using scalar_value_type_t = typename scalar_value_type<T>::value_type;
+
+} // namespace impl
 
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms
@@ -115,7 +139,52 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
   }
 
-  return create_sparsity_pattern(mesh->topology(), dofmaps, types);
+  common::Timer t0("Build sparsity");
+
+  // Get common::IndexMaps for each dimension
+  const std::array index_maps{dofmaps[0].get().index_map,
+                              dofmaps[1].get().index_map};
+  const std::array bs
+      = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};
+
+  // Create and build sparsity pattern
+  la::SparsityPattern pattern(mesh->comm(), index_maps, bs);
+  for (auto type : types)
+  {
+    std::vector<int> ids = a.integral_ids(type);
+    switch (type)
+    {
+    case IntegralType::cell:
+      for (int id : ids)
+      {
+        const std::vector<std::int32_t>& cells = a.cell_domains(id);
+        sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}});
+      }
+      break;
+    case IntegralType::interior_facet:
+      for (int id : ids)
+      {
+        const std::vector<std::int32_t>& facets = a.interior_facet_domains(id);
+        sparsitybuild::interior_facets(pattern, facets,
+                                       {{dofmaps[0], dofmaps[1]}});
+      }
+      break;
+    case IntegralType::exterior_facet:
+      for (int id : ids)
+      {
+        const std::vector<std::int32_t>& facets = a.exterior_facet_domains(id);
+        sparsitybuild::exterior_facets(pattern, facets,
+                                       {{dofmaps[0], dofmaps[1]}});
+      }
+      break;
+    default:
+      throw std::runtime_error("Unsupported integral type");
+    }
+  }
+
+  t0.stop();
+
+  return pattern;
 }
 
 /// Create an ElementDofLayout from a ufcx_dofmap
@@ -196,8 +265,10 @@ Form<T> create_form(
 
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
-  using kern = std::function<void(T*, const T*, const T*, const double*,
-                                  const int*, const std::uint8_t*)>;
+  using kern = std::function<void(
+      T*, const T*, const T*,
+      const typename impl::scalar_value_type<T>::value_type*, const int*,
+      const std::uint8_t*)>;
   std::map<IntegralType, std::pair<std::vector<std::pair<int, kern>>,
                                    const mesh::MeshTags<int>*>>
       integral_data;
@@ -214,21 +285,23 @@ Form<T> create_form(
     assert(integral);
 
     kern k = nullptr;
-    if constexpr (std::is_same<T, float>::value)
+    if constexpr (std::is_same_v<T, float>)
       k = integral->tabulate_tensor_float32;
-    else if constexpr (std::is_same<T, std::complex<float>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<float>>)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex64);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
-    else if constexpr (std::is_same<T, double>::value)
+    else if constexpr (std::is_same_v<T, double>)
       k = integral->tabulate_tensor_float64;
-    else if constexpr (std::is_same<T, std::complex<double>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<double>>)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex128);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex128);
     }
     assert(k);
 
@@ -270,21 +343,23 @@ Form<T> create_form(
     assert(integral);
 
     kern k = nullptr;
-    if constexpr (std::is_same<T, float>::value)
+    if constexpr (std::is_same_v<T, float>)
       k = integral->tabulate_tensor_float32;
-    else if constexpr (std::is_same<T, std::complex<float>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<float>>)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex64);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
-    else if constexpr (std::is_same<T, double>::value)
+    else if constexpr (std::is_same_v<T, double>)
       k = integral->tabulate_tensor_float64;
-    else if constexpr (std::is_same<T, std::complex<double>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<double>>)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex128);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex128);
     }
     assert(k);
 
@@ -312,21 +387,23 @@ Form<T> create_form(
     assert(integral);
 
     kern k = nullptr;
-    if constexpr (std::is_same<T, float>::value)
+    if constexpr (std::is_same_v<T, float>)
       k = integral->tabulate_tensor_float32;
-    else if constexpr (std::is_same<T, std::complex<float>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<float>>)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex64);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
-    else if constexpr (std::is_same<T, double>::value)
+    else if constexpr (std::is_same_v<T, double>)
       k = integral->tabulate_tensor_float64;
-    else if constexpr (std::is_same<T, std::complex<double>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<double>>)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex128);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex128);
     }
     assert(k);
 
@@ -523,15 +600,17 @@ static inline void pack(const xtl::span<T>& coeffs, std::int32_t cell, int bs,
 /// @param[in] cell_info Array of bytes describing which transformation
 /// has to be applied on the cell to map it to the reference element
 /// @param[in] entities The set of active entities
+/// @param[in] estride The stride for each entity in active entities.
 /// @param[in] fetch_cells Function that fetches the cell index for an
 /// entity in active_entities (signature:
 /// `std::function<std::int32_t(E::value_type)>`)
 /// @param[in] offset The offset for c
-template <typename T, typename E, typename Functor>
+template <typename T, typename Functor>
 void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
                              const Function<T>& u,
                              const xtl::span<const std::uint32_t>& cell_info,
-                             const E& entities, Functor fetch_cells,
+                             const xtl::span<const std::int32_t>& entities,
+                             std::size_t estride, Functor fetch_cells,
                              std::int32_t offset)
 {
   // Read data from coefficient "u"
@@ -546,34 +625,38 @@ void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
   switch (bs)
   {
   case 1:
-    for (std::size_t e = 0; e < entities.size(); ++e)
+    for (std::size_t e = 0; e < entities.size(); e += estride)
     {
-      std::int32_t cell = fetch_cells(entities[e]);
-      auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
+      auto entity = entities.subspan(e, estride);
+      std::int32_t cell = fetch_cells(entity);
+      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
       pack<T, 1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
     break;
   case 2:
-    for (std::size_t e = 0; e < entities.size(); ++e)
+    for (std::size_t e = 0; e < entities.size(); e += estride)
     {
-      std::int32_t cell = fetch_cells(entities[e]);
-      auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
+      auto entity = entities.subspan(e, estride);
+      std::int32_t cell = fetch_cells(entity);
+      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
       pack<T, 2>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
     break;
   case 3:
-    for (std::size_t e = 0; e < entities.size(); ++e)
+    for (std::size_t e = 0; e < entities.size(); e += estride)
     {
-      std::int32_t cell = fetch_cells(entities[e]);
-      auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
+      auto entity = entities.subspan(e, estride);
+      std::int32_t cell = fetch_cells(entity);
+      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
       pack<T, 3>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
     break;
   default:
-    for (std::size_t e = 0; e < entities.size(); ++e)
+    for (std::size_t e = 0; e < entities.size(); e += estride)
     {
-      std::int32_t cell = fetch_cells(entities[e]);
-      auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
+      auto entity = entities.subspan(e, estride);
+      std::int32_t cell = fetch_cells(entity);
+      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
       pack<T, -1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
     break;
@@ -609,10 +692,10 @@ allocate_coefficient_storage(const Form<T>& form, IntegralType integral_type,
       num_entities = form.cell_domains(id).size();
       break;
     case IntegralType::exterior_facet:
-      num_entities = form.exterior_facet_domains(id).size();
+      num_entities = form.exterior_facet_domains(id).size() / 2;
       break;
     case IntegralType::interior_facet:
-      num_entities = form.interior_facet_domains(id).size() * 2;
+      num_entities = form.interior_facet_domains(id).size() / 2;
       break;
     default:
       throw std::runtime_error(
@@ -670,30 +753,29 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
     {
     case IntegralType::cell:
     {
-      auto fetch_cell = [](auto entity) { return entity; };
+      auto fetch_cell = [](auto entity) { return entity.front(); };
       const std::vector<std::int32_t>& cells = form.cell_domains(id);
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
         impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
-                                      cell_info, cells, fetch_cell,
+                                      cell_info, cells, 1, fetch_cell,
                                       offsets[coeff]);
       }
       break;
     }
     case IntegralType::exterior_facet:
     {
-      const std::vector<std::pair<std::int32_t, int>>& facets
-          = form.exterior_facet_domains(id);
+      const std::vector<std::int32_t>& facets = form.exterior_facet_domains(id);
 
       // Create lambda function fetching cell index from exterior facet entity
-      auto fetch_cell = [](auto& entity) { return entity.first; };
+      auto fetch_cell = [](auto& entity) { return entity.front(); };
 
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
         impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
-                                      cell_info, facets, fetch_cell,
+                                      cell_info, facets, 2, fetch_cell,
                                       offsets[coeff]);
       }
 
@@ -701,23 +783,21 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
     }
     case IntegralType::interior_facet:
     {
-      const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
-          facets
-          = form.interior_facet_domains(id);
+      const std::vector<std::int32_t>& facets = form.interior_facet_domains(id);
       // Lambda functions to fetch cell index from interior facet entity
-      auto fetch_cell0 = [](auto& entity) { return std::get<0>(entity); };
-      auto fetch_cell1 = [](auto& entity) { return std::get<2>(entity); };
+      auto fetch_cell0 = [](auto& entity) { return entity[0]; };
+      auto fetch_cell1 = [](auto& entity) { return entity[2]; };
 
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
         // Pack coefficient ['+']
         impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
-                                      cell_info, facets, fetch_cell0,
+                                      cell_info, facets, 4, fetch_cell0,
                                       2 * offsets[coeff]);
         // Pack coefficient ['-']
         impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
-                                      cell_info, facets, fetch_cell1,
+                                      cell_info, facets, 4, fetch_cell1,
                                       offsets[coeff] + offsets[coeff + 1]);
       }
       break;
@@ -756,26 +836,27 @@ fem::Expression<T> create_expression(
   for (int i = 0; i < expression.num_components; ++i)
     value_shape.push_back(expression.value_shape[i]);
 
-  std::function<void(T*, const T*, const T*, const double*, const int*,
-                     const std::uint8_t*)>
+  std::function<void(T*, const T*, const T*,
+                     const typename impl::scalar_value_type<T>::value_type*,
+                     const int*, const std::uint8_t*)>
       tabulate_tensor = nullptr;
-  if constexpr (std::is_same<T, float>::value)
+  if constexpr (std::is_same_v<T, float>)
     tabulate_tensor = expression.tabulate_tensor_float32;
-  else if constexpr (std::is_same<T, std::complex<float>>::value)
+  else if constexpr (std::is_same_v<T, std::complex<float>>)
   {
-    tabulate_tensor
-        = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-            expression.tabulate_tensor_complex64);
+    tabulate_tensor = reinterpret_cast<void (*)(
+        T*, const T*, const T*,
+        const typename impl::scalar_value_type<T>::value_type*, const int*,
+        const unsigned char*)>(expression.tabulate_tensor_complex64);
   }
-  else if constexpr (std::is_same<T, double>::value)
+  else if constexpr (std::is_same_v<T, double>)
     tabulate_tensor = expression.tabulate_tensor_float64;
-  else if constexpr (std::is_same<T, std::complex<double>>::value)
+  else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
-    tabulate_tensor
-        = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-            expression.tabulate_tensor_complex128);
+    tabulate_tensor = reinterpret_cast<void (*)(
+        T*, const T*, const T*,
+        const typename impl::scalar_value_type<T>::value_type*, const int*,
+        const unsigned char*)>(expression.tabulate_tensor_complex128);
   }
   else
   {
@@ -879,8 +960,8 @@ pack_coefficients(const Expression<T>& u,
     // Iterate over coefficients
     for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       impl::pack_coefficient_entity(
-          xtl::span(c), cstride, *coefficients[coeff], cell_info, cells,
-          [](std::int32_t entity) { return entity; }, offsets[coeff]);
+          xtl::span(c), cstride, *coefficients[coeff], cell_info, cells, 1,
+          [](auto entity) { return entity[0]; }, offsets[coeff]);
   }
   return {std::move(c), cstride};
 }

@@ -76,9 +76,9 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
   la::Vector<U> p(r);
 
   // Iterations of CG
-  double rnorm0 = r.squared_norm();
-  const double rtol2 = rtol * rtol;
-  double rnorm = rnorm0;
+  auto rnorm0 = la::squared_norm(r);
+  const auto rtol2 = rtol * rtol;
+  auto rnorm = rnorm0;
   int k = 0;
   while (k < kmax)
   {
@@ -97,9 +97,7 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
     axpy(r, -alpha, y, r);
 
     // Update residual norm
-    // Note: we use U for beta to support float, double, etc. U can be
-    // complex, even though the value will always be real
-    const double rnorm_new = r.squared_norm();
+    const auto rnorm_new = la::squared_norm(r);
     const U beta = rnorm_new / rnorm;
     rnorm = rnorm_new;
 
@@ -149,7 +147,10 @@ int main(int argc, char* argv[])
         [](auto&& x) {
           return 1 + xt::square(xt::row(x, 0)) + 2 * xt::square(xt::row(x, 1));
         });
-    std::vector<std::int32_t> facets = mesh::exterior_facet_indices(*mesh);
+
+    mesh->topology_mutable().create_connectivity(1, 2);
+    const std::vector<std::int32_t> facets
+        = mesh::exterior_facet_indices(mesh->topology());
     std::vector<std::int32_t> bdofs
         = fem::locate_dofs_topological({*V}, 1, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T>>(u_D, bdofs);
@@ -164,7 +165,7 @@ int main(int argc, char* argv[])
     dolfinx::fem::assemble_vector(b.mutable_array(), *M);
 
     // Communicate ghost values
-    b.scatter_rev(common::IndexMap::Mode::add);
+    b.scatter_rev(std::plus<T>());
 
     // Set BC dofs to zero (effectively zeroes columns of A)
     fem::set_bc(b.mutable_array(), {bc}, 0.0);
@@ -195,7 +196,7 @@ int main(int argc, char* argv[])
       fem::set_bc(y.mutable_array(), {bc}, 0.0);
 
       // Accumuate ghost values
-      y.scatter_rev(common::IndexMap::Mode::add);
+      y.scatter_rev(std::plus<T>());
 
       // Update ghost values
       y.scatter_fwd();

@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2018 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2022 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -23,28 +23,17 @@ using namespace dolfinx::fem;
 namespace
 {
 //-----------------------------------------------------------------------------
-template <typename T>
-std::vector<std::int32_t>
-remap_dofs(const std::vector<std::int32_t>& old_to_new,
-           const graph::AdjacencyList<T>& dofs_old)
-{
-  const std::vector<T>& _dofs_old = dofs_old.array();
-  std::vector<std::int32_t> dofmap(_dofs_old.size());
-  for (std::size_t i = 0; i < dofmap.size(); ++i)
-    dofmap[i] = old_to_new[_dofs_old[i]];
-  return dofmap;
-}
-//-----------------------------------------------------------------------------
 // Build a collapsed DofMap from a dofmap view. Extracts dofs and
-// doesn't build a new re-ordered dofmap
-fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
+// doesn't build a new re-ordered dofmap.
+fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
                                    const mesh::Topology& topology)
 {
   if (dofmap_view.element_dof_layout().block_size() > 1)
   {
     throw std::runtime_error(
-        "Cannot collapse dofmap with block size greater "
-        "than 1 from parent with block size of 1. Create new dofmap first.");
+        "Cannot collapse a dofmap view with block size greater "
+        "than 1 when the parent has a block size of 1. Create new dofmap "
+        "first.");
   }
 
   // Get topological dimension
@@ -52,85 +41,75 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   auto cells = topology.connectivity(tdim, 0);
   assert(cells);
 
-  // Build set of dofs that are in the new dofmap
+  // Build set of dofs that are in the new dofmap (un-blocked)
   std::vector<std::int32_t> dofs_view = dofmap_view.list().array();
   dolfinx::radix_sort(xtl::span(dofs_view));
   dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
                   dofs_view.end());
 
-  // Get block sizes
-  const int bs_view = dofmap_view.index_map_bs();
-
   // Compute sizes
   const std::int32_t num_owned_view = dofmap_view.index_map->size_local();
-  const auto it_unowned0 = std::lower_bound(dofs_view.begin(), dofs_view.end(),
-                                            num_owned_view * bs_view);
-  const std::size_t num_owned = std::distance(dofs_view.begin(), it_unowned0);
-  const std::size_t num_unowned = std::distance(it_unowned0, dofs_view.end());
 
-  // FIXME: We can avoid the MPI_Exscan by counting the offsets for the
-  // owned mesh entities
+  // Get block size
+  int bs_view = dofmap_view.index_map_bs();
 
-  // Get process offset for new dofmap
-  std::size_t offset = 0;
-  MPI_Exscan(&num_owned, &offset, 1, dolfinx::MPI::mpi_type<std::size_t>(),
-             MPI_SUM, comm);
+  const auto it = std::lower_bound(dofs_view.begin(), dofs_view.end(),
+                                   bs_view * num_owned_view);
 
-  // For owned dofs, compute new global index
-  std::vector<std::int64_t> global_index(dofmap_view.index_map->size_local(),
-                                         -1);
-  for (auto it = dofs_view.begin(); it != it_unowned0; ++it)
+  // Create sub-index map
+  std::shared_ptr<common::IndexMap> index_map;
+  std::vector<std::int32_t> ghost_new_to_old;
+  if (bs_view == 1)
   {
-    const std::size_t block = std::distance(dofs_view.begin(), it);
-    const std::int32_t block_parent = *it / bs_view;
-    global_index[block_parent] = block + offset;
+    xtl::span<std::int32_t> indices(dofs_view.data(),
+                                    std::distance(dofs_view.begin(), it));
+    auto [_index_map, gmap] = dofmap_view.index_map->create_submap(indices);
+    index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
+    ghost_new_to_old = std::move(gmap);
+  }
+  else
+  {
+    std::vector<std::int32_t> indices;
+    indices.reserve(dofs_view.size());
+    std::transform(dofs_view.begin(), it, std::back_inserter(indices),
+                   [bs_view](auto idx) { return idx / bs_view; });
+    indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
+    auto [_index_map, gmap] = dofmap_view.index_map->create_submap(indices);
+    index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
+    ghost_new_to_old = std::move(gmap);
   }
 
-  // Send new global indices for owned dofs to non-owning process, and
-  // receive new global indices from owner
-  std::vector<std::int64_t> global_index_remote(
-      dofmap_view.index_map->num_ghosts());
-  dofmap_view.index_map->scatter_fwd(
-      xtl::span<const std::int64_t>(global_index),
-      xtl::span<std::int64_t>(global_index_remote), 1);
-
-  // Get owning ranks (neighbour) for each ghost and map from
-  // neighbourhood rank to global rank
-  const std::vector<int> ghost_owner_old
-      = dofmap_view.index_map->ghost_owners();
-  const std::vector<int> neighbor_ranks = dolfinx::MPI::neighbors(
-      dofmap_view.index_map->comm(common::IndexMap::Direction::forward))[0];
-
-  // Compute ghosts for collapsed dofmap
-  std::vector<std::int64_t> ghosts(num_unowned);
-  std::vector<int> ghost_owners(num_unowned);
-  for (auto it = it_unowned0; it != dofs_view.end(); ++it)
+  // Create map from dof in view to new dof index
+  std::vector<std::int32_t> old_to_new(dofs_view.back() + bs_view, -1);
   {
-    const std::int32_t index = std::distance(it_unowned0, it);
-    const std::int32_t index_old = *it / bs_view - num_owned_view;
-    assert(global_index_remote[index_old] >= 0);
-    ghosts[index] = global_index_remote[index_old];
-    ghost_owners[index] = neighbor_ranks[ghost_owner_old[index_old]];
+    // old-to-new map for owned dofs
+    std::int32_t count = 0;
+    for (auto dof_old = dofs_view.begin(); dof_old != it; ++dof_old)
+      old_to_new[*dof_old] = count++;
+
+    // old-to-new map for ghost dofs
+    const std::int32_t local_size_new = index_map->size_local();
+    for (auto itp_old = ghost_new_to_old.begin();
+         itp_old != ghost_new_to_old.end(); ++itp_old)
+    {
+      std::int32_t map_pos_new
+          = local_size_new + std::distance(ghost_new_to_old.begin(), itp_old);
+      std::int32_t idx = bs_view * (num_owned_view + *itp_old);
+      for (int k = 0; k < bs_view; ++k)
+      {
+        assert(idx + k < (int)old_to_new.size());
+        old_to_new[idx + k] = map_pos_new;
+      }
+    }
   }
 
-  // Create new index map
-  std::vector<int> src_ranks = ghost_owners;
-  std::sort(src_ranks.begin(), src_ranks.end());
-  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
-                  src_ranks.end());
-  auto dest_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, src_ranks);
-  auto index_map = std::make_shared<common::IndexMap>(
-      comm, num_owned, dest_ranks, ghosts, ghost_owners);
-
-  // Create array from dofs in view to new dof indices
-  std::vector<std::int32_t> old_to_new(dofs_view.back() + 1, -1);
-  std::int32_t count = 0;
-  for (auto& dof : dofs_view)
-    old_to_new[dof] = count++;
-
-  // Build new dofmap
-  const graph::AdjacencyList<std::int32_t>& dof_array_view = dofmap_view.list();
-  std::vector<std::int32_t> dofmap = remap_dofs(old_to_new, dof_array_view);
+  // Map dofs to new collapsed indices for new dofmap
+  const std::vector<std::int32_t>& dof_array_view = dofmap_view.list().array();
+  std::vector<std::int32_t> dofmap;
+  dofmap.reserve(dof_array_view.size());
+  std::transform(dof_array_view.begin(), dof_array_view.end(),
+                 std::back_inserter(dofmap),
+                 [&old_to_new](auto idx_old) { return old_to_new[idx_old]; });
 
   // Dimension sanity checks
   assert((int)dofmap.size()
@@ -244,8 +223,8 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn) const
 {
   // Create new dofmap
-  auto create_submap = [](MPI_Comm comm, auto index_map_bs, auto& layout,
-                          auto& topology, auto& reorder_fn, auto& dmap)
+  auto create_subdofmap = [](MPI_Comm comm, auto index_map_bs, auto& layout,
+                             auto& topology, auto& reorder_fn, auto& dmap)
   {
     if (index_map_bs == 1 and layout.block_size() > 1)
     {
@@ -263,13 +242,13 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
     }
     else
     {
-      // Collapse dof map, without build and re-ordering from scratch
-      return build_collapsed_dofmap(comm, dmap, topology);
+      // Collapse dof map, without building and re-ordering from scratch
+      return build_collapsed_dofmap(dmap, topology);
     }
   };
 
-  DofMap dofmap_new = create_submap(comm, index_map_bs(), _element_dof_layout,
-                                    topology, reorder_fn, *this);
+  DofMap dofmap_new = create_subdofmap(
+      comm, index_map_bs(), _element_dof_layout, topology, reorder_fn, *this);
 
   // Build map from collapsed dof index to original dof index
   auto index_map_new = dofmap_new.index_map;

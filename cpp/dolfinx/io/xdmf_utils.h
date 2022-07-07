@@ -7,11 +7,11 @@
 #pragma once
 
 #include "HDF5Interface.h"
-#include "pugixml.hpp"
 #include <array>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <filesystem>
+#include <pugixml.hpp>
 #include <string>
 #include <utility>
 #include <vector>
