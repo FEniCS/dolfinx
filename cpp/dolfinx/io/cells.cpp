@@ -368,6 +368,7 @@ xt::xtensor<std::int64_t, 2>
 io::cells::compute_permutation(const xt::xtensor<std::int64_t, 2>& cells,
                                const std::vector<std::uint8_t>& p)
 {
+  LOG(INFO) << "IO permuting cells";
   xt::xtensor<std::int64_t, 2> cells_new(cells.shape());
   for (std::size_t c = 0; c < cells_new.shape(0); ++c)
   {
@@ -379,17 +380,15 @@ io::cells::compute_permutation(const xt::xtensor<std::int64_t, 2>& cells,
   return cells_new;
 }
 //-----------------------------------------------------------------------------
-std::int8_t io::cells::get_vtk_cell_type(const dolfinx::mesh::Mesh& mesh,
-                                         int dim)
+std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim)
 {
-  if (mesh.topology().cell_type() == mesh::CellType::prism)
+  if (cell == mesh::CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cell");
 
   // Get cell type
-  mesh::CellType cell_type
-      = mesh::cell_entity_type(mesh.topology().cell_type(), dim, 0);
+  mesh::CellType cell_type = mesh::cell_entity_type(cell, dim, 0);
 
-  // Determine VTK cell type (Using arbitrary Lagrange elements)
+  // Determine VTK cell type (arbitrary Lagrange elements)
   // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
   switch (cell_type)
   {

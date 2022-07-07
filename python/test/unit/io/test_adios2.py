@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import os
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -13,41 +13,15 @@ import ufl
 from dolfinx.common import has_adios2
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
-                          create_unit_square)
-from dolfinx_utils.test.fixtures import tempdir
+                          create_unit_square, GhostMode)
+from dolfinx.graph import create_adjacencylist
 
 from mpi4py import MPI
 
-assert (tempdir)
-
-
-@pytest.mark.skipif(MPI.COMM_WORLD.size > 1, reason="This test should only be run in serial.")
-@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-def test_second_order_fides(tempdir):
-    """Check that fides throws error on second order mesh"""
-    from dolfinx.cpp.io import FidesWriter
-    filename = os.path.join(tempdir, "mesh_fides.bp")
-    points = np.array([[0, 0, 0], [1, 0, 0], [0.5, 0, 0]], dtype=np.float64)
-    cells = np.array([[0, 1, 2]], dtype=np.int32)
-    cell = ufl.Cell("interval", geometric_dimension=points.shape[1])
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 2))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
-    with pytest.raises(RuntimeError):
-        FidesWriter(mesh.comm, filename, mesh)
-
-
-@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-def test_functions_from_different_meshes_fides(tempdir):
-    """Check that the underlying ADIOS2Writer catches sending in
-    functions on different meshes"""
-    from dolfinx.cpp.io import FidesWriter
-    filename = os.path.join(tempdir, "mesh_fides.bp")
-    mesh0 = create_unit_square(MPI.COMM_WORLD, 5, 5)
-    mesh1 = create_unit_square(MPI.COMM_WORLD, 10, 2)
-    u0 = Function(FunctionSpace(mesh0, ("Lagrange", 1)))
-    u1 = Function(FunctionSpace(mesh1, ("Lagrange", 1)))
-    with pytest.raises(RuntimeError):
-        FidesWriter(mesh0.comm, filename, [u0._cpp_object, u1._cpp_object])
+try:
+    from dolfinx.io import FidesWriter, VTXWriter
+except ImportError:
+    pytest.skip("Test require ADIOS2", allow_module_level=True)
 
 
 def generate_mesh(dim: int, simplex: bool, N: int = 3):
@@ -71,8 +45,7 @@ def generate_mesh(dim: int, simplex: bool, N: int = 3):
 @pytest.mark.parametrize("simplex", [True, False])
 def test_fides_mesh(tempdir, dim, simplex):
     """ Test writing of a single Fides mesh with changing geometry"""
-    from dolfinx.cpp.io import FidesWriter
-    filename = os.path.join(tempdir, "mesh_fides.bp")
+    filename = Path(tempdir, "mesh_fides.bp")
     mesh = generate_mesh(dim, simplex)
     with FidesWriter(mesh.comm, filename, mesh) as f:
         f.write(0.0)
@@ -83,28 +56,13 @@ def test_fides_mesh(tempdir, dim, simplex):
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
-def test_mixed_fides_functions(tempdir, dim, simplex):
-    """Test saving P2 and P1 functions with Fides"""
-    from dolfinx.cpp.io import FidesWriter
-    mesh = generate_mesh(dim, simplex)
-    v = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
-    q = Function(FunctionSpace(mesh, ("Lagrange", 1)))
-    filename = os.path.join(tempdir, "v.bp")
-    with pytest.raises(RuntimeError):
-        FidesWriter(mesh.comm, filename, [v._cpp_object, q._cpp_object])
-
-
-@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-@pytest.mark.parametrize("dim", [2, 3])
-@pytest.mark.parametrize("simplex", [True, False])
 def test_two_fides_functions(tempdir, dim, simplex):
     """Test saving two functions with Fides"""
-    from dolfinx.cpp.io import FidesWriter
     mesh = generate_mesh(dim, simplex)
     v = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)))
     q = Function(FunctionSpace(mesh, ("Lagrange", 1)))
-    filename = os.path.join(tempdir, "v.bp")
-    with FidesWriter(mesh.comm, filename, [v._cpp_object, q._cpp_object]) as f:
+    filename = Path(tempdir, "v.bp")
+    with FidesWriter(mesh.comm, filename, [v._cpp_object, q]) as f:
         f.write(0)
 
         def vel(x):
@@ -120,15 +78,28 @@ def test_two_fides_functions(tempdir, dim, simplex):
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
+def test_findes_single_function(tempdir, dim, simplex):
+    "Test saving a single first order Lagrange functions"
+    mesh = generate_mesh(dim, simplex)
+    v = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+    filename = Path(tempdir, "v.bp")
+    writer = FidesWriter(mesh.comm, filename, v)
+    writer.write(0)
+    writer.close()
+
+
+@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("simplex", [True, False])
 def test_fides_function_at_nodes(tempdir, dim, simplex):
     """Test saving P1 functions with Fides (with changing geometry)"""
-    from dolfinx.cpp.io import FidesWriter
     mesh = generate_mesh(dim, simplex)
     v = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)))
+    v.name = "v"
     q = Function(FunctionSpace(mesh, ("Lagrange", 1)))
-
-    filename = os.path.join(tempdir, "v.bp")
-    with FidesWriter(mesh.comm, filename, [v._cpp_object, q._cpp_object]) as f:
+    q.name = "q"
+    filename = Path(tempdir, "v.bp")
+    with FidesWriter(mesh.comm, filename, [v, q]) as f:
         for t in [0.1, 0.5, 1]:
             # Only change one function
             q.interpolate(lambda x: t * (x[0] - 0.5)**2)
@@ -145,8 +116,7 @@ def test_fides_function_at_nodes(tempdir, dim, simplex):
 @pytest.mark.skipif(MPI.COMM_WORLD.size > 1, reason="This test should only be run in serial.")
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 def test_second_order_vtx(tempdir):
-    from dolfinx.cpp.io import VTXWriter
-    filename = os.path.join(tempdir, "mesh_fides.bp")
+    filename = Path(tempdir, "mesh_fides.bp")
     points = np.array([[0, 0, 0], [1, 0, 0], [0.5, 0, 0]], dtype=np.float64)
     cells = np.array([[0, 1, 2]], dtype=np.int32)
     cell = ufl.Cell("interval", geometric_dimension=points.shape[1])
@@ -160,8 +130,7 @@ def test_second_order_vtx(tempdir):
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
 def test_vtx_mesh(tempdir, dim, simplex):
-    from dolfinx.cpp.io import VTXWriter
-    filename = os.path.join(tempdir, "mesh_vtx.bp")
+    filename = Path(tempdir, "mesh_vtx.bp")
     mesh = generate_mesh(dim, simplex)
     with VTXWriter(mesh.comm, filename, mesh) as f:
         f.write(0.0)
@@ -173,29 +142,45 @@ def test_vtx_mesh(tempdir, dim, simplex):
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
 def test_vtx_functions_fail(tempdir, dim, simplex):
-    "Test saving high order Lagrange functions"
-    from dolfinx.cpp.io import VTXWriter
+    "Test for error when elements differ"
     mesh = generate_mesh(dim, simplex)
     v = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
     w = Function(FunctionSpace(mesh, ("Lagrange", 1)))
-    filename = os.path.join(tempdir, "v.bp")
+    filename = Path(tempdir, "v.bp")
     with pytest.raises(RuntimeError):
-        VTXWriter(mesh.comm, filename, [v._cpp_object, w._cpp_object])
+        VTXWriter(mesh.comm, filename, [v, w])
+
+
+@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
+@pytest.mark.parametrize("simplex", [True, False])
+def test_vtx_different_meshes_function(tempdir, simplex):
+    "Test for error when functions do not share a mesh"
+    mesh = generate_mesh(2, simplex)
+    v = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+    mesh2 = generate_mesh(2, simplex)
+    w = Function(FunctionSpace(mesh2, ("Lagrange", 1)))
+    filename = Path(tempdir, "v.bp")
+    with pytest.raises(RuntimeError):
+        VTXWriter(mesh.comm, filename, [v, w])
 
 
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
-def test_vtx_different_meshes_function(tempdir, dim, simplex):
-    "Test saving  first order Lagrange functions"
-    from dolfinx.cpp.io import VTXWriter
+def test_vtx_single_function(tempdir, dim, simplex):
+    "Test saving a single first order Lagrange functions"
     mesh = generate_mesh(dim, simplex)
     v = Function(FunctionSpace(mesh, ("Lagrange", 1)))
-    mesh2 = generate_mesh(dim, simplex)
-    w = Function(FunctionSpace(mesh2, ("Lagrange", 1)))
-    filename = os.path.join(tempdir, "v.bp")
-    with pytest.raises(RuntimeError):
-        VTXWriter(mesh.comm, filename, [v._cpp_object, w._cpp_object])
+
+    filename = Path(tempdir, "v.bp")
+    writer = VTXWriter(mesh.comm, filename, v)
+    writer.write(0)
+    writer.close()
+
+    filename = Path(tempdir, "v2.bp")
+    writer = VTXWriter(mesh.comm, filename, v._cpp_object)
+    writer.write(0)
+    writer.close()
 
 
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
@@ -203,7 +188,6 @@ def test_vtx_different_meshes_function(tempdir, dim, simplex):
 @pytest.mark.parametrize("simplex", [True, False])
 def test_vtx_functions(tempdir, dim, simplex):
     "Test saving high order Lagrange functions"
-    from dolfinx.cpp.io import VTXWriter
     mesh = generate_mesh(dim, simplex)
     V = VectorFunctionSpace(mesh, ("DG", 2))
     v = Function(V)
@@ -220,8 +204,8 @@ def test_vtx_functions(tempdir, dim, simplex):
     w = Function(W)
     w.interpolate(lambda x: x[0] + x[1])
 
-    filename = os.path.join(tempdir, "v.bp")
-    f = VTXWriter(mesh.comm, filename, [v._cpp_object, w._cpp_object])
+    filename = Path(tempdir, "v.bp")
+    f = VTXWriter(mesh.comm, filename, [v, w])
 
     # Set two cells to 0
     for c in [0, 1]:
@@ -237,3 +221,51 @@ def test_vtx_functions(tempdir, dim, simplex):
         f.write(t)
 
     f.close()
+
+
+@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
+def test_save_vtkx_cell_point(tempdir):
+    """Test writing point-wise data"""
+    mesh = create_unit_square(MPI.COMM_WORLD, 8, 5)
+    P = ufl.FiniteElement("Discontinuous Lagrange", mesh.ufl_cell(), 0)
+
+    V = FunctionSpace(mesh, P)
+    u = Function(V)
+    u.interpolate(lambda x: 0.5 * x[0])
+    u.name = "A"
+
+    filename = Path(tempdir, "v.bp")
+    with pytest.raises(RuntimeError):
+        f = VTXWriter(mesh.comm, filename, [u])
+        f.write(0)
+        f.close()
+
+
+def test_empty_rank_mesh(tempdir):
+    """Test VTXWriter on mesh where some ranks have no cells"""
+    comm = MPI.COMM_WORLD
+    cell_type = CellType.triangle
+    domain = ufl.Mesh(
+        ufl.VectorElement("Lagrange", ufl.Cell(cell_type.name), 1))
+
+    def partitioner(comm, nparts, local_graph, num_ghost_nodes, ghosting):
+        """Leave cells on the current rank"""
+        dest = np.full(len(cells), comm.rank, dtype=np.int32)
+        return create_adjacencylist(dest)
+
+    if comm.rank == 0:
+        cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
+        cells = create_adjacencylist(cells)
+        x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]])
+    else:
+        cells = create_adjacencylist(np.empty((0, 3), dtype=np.int64))
+        x = np.empty((0, 2), dtype=np.float64)
+
+    mesh = create_mesh(comm, cells, x, domain, GhostMode.none, partitioner)
+
+    V = FunctionSpace(mesh, ("Lagrange", 1))
+    u = Function(V)
+
+    filename = Path(tempdir, "empty_rank_mesh.bp")
+    with VTXWriter(comm, filename, u) as f:
+        f.write(0.0)

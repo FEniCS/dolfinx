@@ -22,7 +22,7 @@
 namespace dolfinx::common
 {
 class IndexMap;
-}
+} // namespace dolfinx::common
 
 namespace dolfinx::la
 {
@@ -110,6 +110,7 @@ void scatter_local_vectors(
     Vec x, const std::vector<xtl::span<const PetscScalar>>& x_b,
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
+
 /// Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
 Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
@@ -176,7 +177,7 @@ public:
   /// Create holder of a PETSc Vec object/pointer. The Vec x object
   /// should already be created. If inc_ref_count is true, the reference
   /// counter of the Vec object will be increased. The Vec reference
-  /// count will always be decreased upon destruction of the the
+  /// count will always be decreased upon destruction of the
   /// PETScVector.
   ///
   /// @note Collective
@@ -283,18 +284,70 @@ public:
   /// into the matrix A (calls MatSetValuesLocal)
   /// @param[in] A The matrix to set values in
   /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
-  static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                           const std::int32_t*, const PetscScalar*)>
-  set_fn(Mat A, InsertMode mode);
+  static auto set_fn(Mat A, InsertMode mode)
+  {
+    return [A, mode, cache = std::vector<PetscInt>()](
+               const xtl::span<const std::int32_t>& rows,
+               const xtl::span<const std::int32_t>& cols,
+               const xtl::span<const PetscScalar>& vals) mutable -> int
+    {
+      PetscErrorCode ierr;
+#ifdef PETSC_USE_64BIT_INDICES
+      cache.resize(rows.size() + cols.size());
+      std::copy(rows.begin(), rows.end(), cache.begin());
+      std::copy(cols.begin(), cols.end(),
+                std::next(cache.begin(), rows.size()));
+      const PetscInt* _rows = cache.data();
+      const PetscInt* _cols = cache.data() + rows.size();
+      ierr = MatSetValuesLocal(A, rows.size(), _rows, cols.size(), _cols,
+                               vals.data(), mode);
+#else
+      ierr = MatSetValuesLocal(A, rows.size(), rows.data(), cols.size(),
+                               cols.data(), vals.data(), mode);
+#endif
+
+#ifndef NDEBUG
+      if (ierr != 0)
+        petsc::error(ierr, __FILE__, "MatSetValuesLocal");
+#endif
+      return ierr;
+    };
+  }
 
   /// Return a function with an interface for adding or inserting values
   /// into the matrix A using blocked indices
   /// (calls MatSetValuesBlockedLocal)
   /// @param[in] A The matrix to set values in
   /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
-  static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                           const std::int32_t*, const PetscScalar*)>
-  set_block_fn(Mat A, InsertMode mode);
+  static auto set_block_fn(Mat A, InsertMode mode)
+  {
+    return [A, mode, cache = std::vector<PetscInt>()](
+               const xtl::span<const std::int32_t>& rows,
+               const xtl::span<const std::int32_t>& cols,
+               const xtl::span<const PetscScalar>& vals) mutable -> int
+    {
+      PetscErrorCode ierr;
+#ifdef PETSC_USE_64BIT_INDICES
+      cache.resize(rows.size() + cols.size());
+      std::copy(rows.begin(), rows.end(), cache.begin());
+      std::copy(cols.begin(), cols.end(),
+                std::next(cache.begin(), rows.size()));
+      const PetscInt* _rows = cache.data();
+      const PetscInt* _cols = cache.data() + rows.size();
+      ierr = MatSetValuesBlockedLocal(A, rows.size(), _rows, cols.size(), _cols,
+                                      vals.data(), mode);
+#else
+      ierr = MatSetValuesBlockedLocal(A, rows.size(), rows.data(), cols.size(),
+                                      cols.data(), vals.data(), mode);
+#endif
+
+#ifndef NDEBUG
+      if (ierr != 0)
+        petsc::error(ierr, __FILE__, "MatSetValuesBlockedLocal");
+#endif
+      return ierr;
+    };
+  }
 
   /// Return a function with an interface for adding or inserting blocked
   /// values to the matrix A using non-blocked insertion (calls
@@ -304,9 +357,34 @@ public:
   /// @param[in] bs0 Block size for the matrix rows
   /// @param[in] bs1 Block size for the matrix columns
   /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
-  static std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                           const std::int32_t*, const PetscScalar*)>
-  set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode);
+  static auto set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
+  {
+    return [A, bs0, bs1, mode, cache0 = std::vector<PetscInt>(),
+            cache1 = std::vector<PetscInt>()](
+               const xtl::span<const std::int32_t>& rows,
+               const xtl::span<const std::int32_t>& cols,
+               const xtl::span<const PetscScalar>& vals) mutable -> int
+    {
+      PetscErrorCode ierr;
+      cache0.resize(bs0 * rows.size());
+      cache1.resize(bs1 * cols.size());
+      for (std::size_t i = 0; i < rows.size(); ++i)
+        for (int k = 0; k < bs0; ++k)
+          cache0[bs0 * i + k] = bs0 * rows[i] + k;
+
+      for (std::size_t i = 0; i < cols.size(); ++i)
+        for (int k = 0; k < bs1; ++k)
+          cache1[bs1 * i + k] = bs1 * cols[i] + k;
+
+      ierr = MatSetValuesLocal(A, cache0.size(), cache0.data(), cache1.size(),
+                               cache1.data(), vals.data(), mode);
+#ifndef NDEBUG
+      if (ierr != 0)
+        petsc::error(ierr, __FILE__, "MatSetValuesLocal");
+#endif
+      return ierr;
+    };
+  }
 
   /// Create holder for a PETSc Mat object from a sparsity pattern
   Matrix(MPI_Comm comm, const SparsityPattern& sp,
@@ -315,7 +393,7 @@ public:
   /// Create holder of a PETSc Mat object/pointer. The Mat A object
   /// should already be created. If inc_ref_count is true, the reference
   /// counter of the Mat will be increased. The Mat reference count will
-  /// always be decreased upon destruction of the the petsc::Matrix.
+  /// always be decreased upon destruction of the petsc::Matrix.
   Matrix(Mat A, bool inc_ref_count);
 
   // Copy constructor (deleted)

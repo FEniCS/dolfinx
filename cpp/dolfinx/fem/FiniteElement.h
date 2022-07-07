@@ -171,12 +171,12 @@ public:
   const std::vector<std::shared_ptr<const FiniteElement>>&
   sub_elements() const noexcept;
 
-  /// Return the topological dimension
-  int tdim() const noexcept;
-
   /// Extract sub finite element for component
   std::shared_ptr<const FiniteElement>
   extract_sub_element(const std::vector<int>& component) const;
+
+  /// Return underlying basix element (if it exists)
+  const basix::FiniteElement& basix_element() const;
 
   /// Get the map type used by the element
   basix::maps::type map_type() const;
@@ -188,6 +188,11 @@ public:
   /// elements.
   /// @return True if interpolation is an identity operation
   bool interpolation_ident() const noexcept;
+
+  /// Check if the push forward/pull back map from the values on reference to
+  /// the values on a physical cell for this element is the identity map.
+  /// @return True if the map is the identity
+  bool map_ident() const noexcept;
 
   /// Points on the reference cell at which an expression need to be
   /// evaluated in order to interpolate the expression in the finite
@@ -208,9 +213,10 @@ public:
   const xt::xtensor<double, 2>& interpolation_operator() const;
 
   /// Create a matrix that maps degrees of freedom from one element to
-  /// this element (interpolation)
+  /// this element (interpolation).
+  ///
   /// @param[in] from The element to interpolate from
-  /// @return Matrix operator that maps the 'from' degrees-of-freedom to
+  /// @return Matrix operator that maps the `from` degrees-of-freedom to
   /// the degrees-of-freedom of this element. Shape is (num_dofs of this
   /// element, num_dofs of `from`).
   /// @note The two elements must use the same mapping between the
@@ -676,7 +682,7 @@ private:
 
   mesh::CellType _cell_shape;
 
-  int _tdim, _space_dim;
+  int _space_dim;
 
   // List of sub-elements (if any)
   std::vector<std::shared_ptr<const FiniteElement>> _sub_elements;

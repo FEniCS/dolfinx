@@ -10,10 +10,11 @@
 #include "caster_petsc.h"
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/defines.h>
-#include <dolfinx/common/subsystem.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/timing.h>
 #include <dolfinx/common/utils.h>
 #include <memory>
@@ -44,11 +45,6 @@ void common(py::module& m)
 #endif
   m.attr("git_commit_hash") = dolfinx::git_commit_hash();
 
-  // dolfinx::common::IndexMap::Mode
-  py::enum_<dolfinx::common::IndexMap::Mode>(m, "ScatterMode")
-      .value("add", dolfinx::common::IndexMap::Mode::add)
-      .value("insert", dolfinx::common::IndexMap::Mode::insert);
-
   py::enum_<dolfinx::Table::Reduction>(m, "Reduction")
       .value("max", dolfinx::Table::Reduction::max)
       .value("min", dolfinx::Table::Reduction::min)
@@ -57,13 +53,37 @@ void common(py::module& m)
   // dolfinx::common::IndexMap
   py::class_<dolfinx::common::IndexMap,
              std::shared_ptr<dolfinx::common::IndexMap>>(m, "IndexMap")
-      .def(py::init([](const MPICommWrapper comm, std::int32_t local_size,
-                       const std::vector<int>& dest_ranks,
-                       const std::vector<std::int64_t>& ghosts,
-                       const std::vector<int>& ghost_owners) {
-        return std::make_shared<dolfinx::common::IndexMap>(
-            comm.get(), local_size, dest_ranks, ghosts, ghost_owners);
-      }))
+      .def(py::init(
+               [](const MPICommWrapper comm, std::int32_t local_size)
+               { return dolfinx::common::IndexMap(comm.get(), local_size); }),
+           py::arg("comm"), py::arg("local_size"))
+      .def(py::init(
+               [](const MPICommWrapper comm, std::int32_t local_size,
+                  const py::array_t<std::int64_t, py::array::c_style>& ghosts,
+                  const py::array_t<int, py::array::c_style>& ghost_owners)
+               {
+                 return dolfinx::common::IndexMap(comm.get(), local_size,
+                                                  ghosts, ghost_owners);
+               }),
+           py::arg("comm"), py::arg("local_size"), py::arg("ghosts"),
+           py::arg("ghost_owners"))
+      .def(py::init(
+               [](const MPICommWrapper comm, std::int32_t local_size,
+                  const std::array<py::array_t<int, py::array::c_style>, 2>&
+                      dest_src,
+                  const py::array_t<std::int64_t, py::array::c_style>& ghosts,
+                  const py::array_t<int, py::array::c_style>& ghost_owners)
+               {
+                 std::array<std::vector<int>, 2> ranks;
+                 ranks[0].assign(dest_src[0].data(),
+                                 dest_src[0].data() + dest_src[0].size());
+                 ranks[1].assign(dest_src[1].data(),
+                                 dest_src[1].data() + dest_src[1].size());
+                 return dolfinx::common::IndexMap(comm.get(), local_size, ranks,
+                                                  ghosts, ghost_owners);
+               }),
+           py::arg("comm"), py::arg("local_size"), py::arg("dest_src"),
+           py::arg("ghosts"), py::arg("ghost_owners"))
       .def_property_readonly("size_local",
                              &dolfinx::common::IndexMap::size_local)
       .def_property_readonly("size_global",
@@ -73,44 +93,52 @@ void common(py::module& m)
       .def_property_readonly("local_range",
                              &dolfinx::common::IndexMap::local_range,
                              "Range of indices owned by this map")
-      .def(
-          "ghost_owner_rank",
-          [](const dolfinx::common::IndexMap& self) {
-            return as_pyarray(self.ghost_owner_rank());
-          },
-          "Return owning process for each ghost index")
       .def_property_readonly(
           "ghosts",
-          [](const dolfinx::common::IndexMap& self) {
+          [](const dolfinx::common::IndexMap& self)
+          {
             const std::vector<std::int64_t>& ghosts = self.ghosts();
             return py::array_t<std::int64_t>(ghosts.size(), ghosts.data(),
                                              py::cast(self));
           },
           "Return list of ghost indices")
-      .def("global_indices", &dolfinx::common::IndexMap::global_indices)
-      .def("local_to_global",
-           [](const dolfinx::common::IndexMap& self,
-              const py::array_t<std::int32_t, py::array::c_style>& local) {
-             if (local.ndim() != 1)
-               throw std::runtime_error("Array of local indices must be 1D.");
-             py::array_t<std::int64_t> global(local.size());
-             self.local_to_global(
-                 local,
-                 xtl::span<std::int64_t>(global.mutable_data(), global.size()));
-             return global;
-           })
-      .def("create_submap",
-           [](const dolfinx::common::IndexMap& self,
-              const py::array_t<std::int32_t, py::array::c_style>& entities) {
-             auto [map, ghosts] = self.create_submap(entities);
-             return std::pair(std::move(map), as_pyarray(std::move(ghosts)));
-           });
+      .def_property_readonly("owners",
+                             [](const dolfinx::common::IndexMap& self)
+                             {
+                               const std::vector<int>& owners = self.owners();
+                               return py::array_t<int>(owners.size(),
+                                                       owners.data(),
+                                                       py::cast(self));
+                             })
+      .def(
+          "local_to_global",
+          [](const dolfinx::common::IndexMap& self,
+             const py::array_t<std::int32_t, py::array::c_style>& local)
+          {
+            if (local.ndim() != 1)
+              throw std::runtime_error("Array of local indices must be 1D.");
+            py::array_t<std::int64_t> global(local.size());
+            self.local_to_global(
+                local,
+                xtl::span<std::int64_t>(global.mutable_data(), global.size()));
+            return global;
+          },
+          py::arg("local"))
+      .def(
+          "create_submap",
+          [](const dolfinx::common::IndexMap& self,
+             const py::array_t<std::int32_t, py::array::c_style>& entities)
+          {
+            auto [map, ghosts] = self.create_submap(entities);
+            return std::pair(std::move(map), as_pyarray(std::move(ghosts)));
+          },
+          py::arg("entities"));
 
   // dolfinx::common::Timer
   py::class_<dolfinx::common::Timer, std::shared_ptr<dolfinx::common::Timer>>(
       m, "Timer", "Timer class")
       .def(py::init<>())
-      .def(py::init<std::string>())
+      .def(py::init<std::string>(), py::arg("task"))
       .def("start", &dolfinx::common::Timer::start, "Start timer")
       .def("stop", &dolfinx::common::Timer::stop, "Stop timer")
       .def("resume", &dolfinx::common::Timer::resume)
@@ -124,18 +152,25 @@ void common(py::module& m)
 
   m.def("timing", &dolfinx::timing);
 
-  m.def("list_timings",
-        [](const MPICommWrapper comm, std::vector<dolfinx::TimingType> type,
-           dolfinx::Table::Reduction reduction) {
-          std::set<dolfinx::TimingType> _type(type.begin(), type.end());
-          dolfinx::list_timings(comm.get(), _type, reduction);
-        });
+  m.def(
+      "list_timings",
+      [](const MPICommWrapper comm, std::vector<dolfinx::TimingType> type,
+         dolfinx::Table::Reduction reduction)
+      {
+        std::set<dolfinx::TimingType> _type(type.begin(), type.end());
+        dolfinx::list_timings(comm.get(), _type, reduction);
+      },
+      py::arg("comm"), py::arg("type"), py::arg("reduction"));
 
-  m.def("init_logging", [](std::vector<std::string> args) {
-    std::vector<char*> argv(args.size() + 1, nullptr);
-    for (std::size_t i = 0; i < args.size(); ++i)
-      argv[i] = const_cast<char*>(args[i].data());
-    dolfinx::common::subsystem::init_logging(args.size(), argv.data());
-  });
+  m.def(
+      "init_logging",
+      [](std::vector<std::string> args)
+      {
+        std::vector<char*> argv(args.size() + 1, nullptr);
+        for (std::size_t i = 0; i < args.size(); ++i)
+          argv[i] = const_cast<char*>(args[i].data());
+        dolfinx::init_logging(args.size(), argv.data());
+      },
+      py::arg("args"));
 }
 } // namespace dolfinx_wrappers

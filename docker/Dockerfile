@@ -42,26 +42,28 @@
 #
 
 
-ARG GMSH_VERSION=4_9_3
+ARG ADIOS2_VERSION=2.8.1
+ARG GMSH_VERSION=4_10_1
 ARG HDF5_SERIES=1.12
-ARG HDF5_PATCH=1
-ARG PYBIND11_VERSION=2.9.0
-ARG PETSC_VERSION=3.16.3
-ARG SLEPC_VERSION=3.16.1
-ARG ADIOS2_VERSION=2.7.1
-ARG PYVISTA_VERSION=0.33.2
-ARG NUMPY_VERSION=1.21.5
+ARG HDF5_PATCH=2
 ARG KAHIP_VERSION=3.14
-ARG XTENSOR_VERSION=0.24.0
+ARG NUMPY_VERSION=1.22.4
+ARG PYBIND11_VERSION=2.9.2
+ARG PETSC_VERSION=3.17.2
+ARG SLEPC_VERSION=3.17.1
+ARG PYVISTA_VERSION=0.34.2
+ARG XTENSOR_VERSION=0.24.2
 ARG XTL_VERSION=0.7.4
 
-ARG MPICH_VERSION=3.4.3
+ARG MPICH_VERSION=4.0.2
 ARG OPENMPI_SERIES=4.1
-ARG OPENMPI_PATCH=2
+ARG OPENMPI_PATCH=4
+# Used to set the correct PYTHONPATH for the real and complex install of DOLFINx
+ARG PYTHON_VERSION=3.10
 
 ########################################
 
-FROM ubuntu:21.10 as dev-env
+FROM ubuntu:22.04 as dev-env
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
@@ -91,7 +93,7 @@ ARG PETSC_SLEPC_DEBUGGING="no"
 
 # MPI variant. "mpich" or "openmpi".
 ARG MPI="mpich"
-ARG MPICH_CONFIGURE_OPTIONS="--with-device=ch3"
+ARG MPICH_CONFIGURE_OPTIONS="FCFLAGS=-fallow-argument-mismatch FFLAGS=-fallow-argument-mismatch --with-device=ch4:ofi"  # See https://github.com/pmodels/mpich/issues/5811
 
 # Number of build threads to use with make
 ARG BUILD_NP=2
@@ -121,16 +123,15 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libboost-timer-dev \
     liblapack-dev \
     libopenblas-dev \
-    llvm-9 \
+    libpugixml-dev \
     ninja-build \
     pkg-config \
     python3-dev \
-    python3-numpy \
     python3-pip \
-    python3-scipy \
     python3-setuptools && \
     #
     apt-get -y install \
+    catch2 \
     clang-format \
     doxygen \
     git \
@@ -154,7 +155,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 
 # Install MPI
 RUN if [ "$MPI" = "mpich" ]; then \
-    export FFLAGS=-fallow-argument-mismatch && \
     wget http://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
     tar xfz mpich-${MPICH_VERSION}.tar.gz  && \
     cd mpich-${MPICH_VERSION}  && \
@@ -171,28 +171,25 @@ RUN if [ "$MPI" = "mpich" ]; then \
     rm -rf /tmp/*
 
 # Install Python packages (via pip)
+# Install numpy via pip. Exclude binaries to avoid conflicts with libblas
+# (See issue #126 and #1305)
 # - First set of packages are required to build and run DOLFINx Python.
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
-# LLVM_CONFIG required on aarch64, should be removed long-term.
-RUN LLVM_CONFIG=/usr/bin/llvm-config-9 pip3 install --no-cache-dir cffi mpi4py numba && \
-    pip3 install --no-cache-dir cppimport flake8 isort pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
-
-# Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
-# (See issue #126 and #1305)
-RUN pip3 install --no-cache-dir --no-binary="numpy" numpy==${NUMPY_VERSION} --upgrade
+RUN pip3 install --no-binary="numpy" --no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scipy && \
+    pip3 install --no-cache-dir cppimport flake8 isort jupytext matplotlib mypy myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Install xtl, xtensor
-RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack/xtl.git && \
+RUN git clone -b ${XTL_VERSION} --single-branch --depth 1 https://github.com/xtensor-stack/xtl.git && \
     cd xtl && \
     cmake -G Ninja . && \
     ninja install && \
     cd ../ && \
-    git clone -b ${XTENSOR_VERSION} --single-branch https://github.com/xtensor-stack/xtensor.git && \
+    git clone -b ${XTENSOR_VERSION} --single-branch --depth 1 https://github.com/xtensor-stack/xtensor.git && \
     cd xtensor && \
     cmake -G Ninja . && \
     ninja install && \
-    rm -rf xtl xtensor
+    rm -rf /tmp/*
 
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
@@ -231,12 +228,13 @@ RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSI
     rm -rf /tmp/*
 
 # Install GMSH
-RUN git clone -b gmsh_${GMSH_VERSION} --single-branch https://gitlab.onelab.info/gmsh/gmsh.git && \
+RUN git clone -b gmsh_${GMSH_VERSION} --single-branch --depth 1 https://gitlab.onelab.info/gmsh/gmsh.git && \
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1  -DENABLE_OPENMP=1 -B build-dir -S gmsh && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     rm -rf /tmp/*
 
+# GMSH installs python library in /usr/local/lib, see: https://gitlab.onelab.info/gmsh/gmsh/-/issues/1414
 ENV PYTHONPATH=/usr/local/lib:$PYTHONPATH
 
 # Install PETSc and petsc4py with real and complex types
@@ -348,8 +346,8 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install SLEPc
-RUN wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
-    mkdir -p ${SLEPC_DIR} && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C ${SLEPC_DIR} --strip-components 1 && \
+RUN wget -nc --quiet https://gitlab.com/slepc/slepc/-/archive/v${SLEPC_VERSION}/slepc-v${SLEPC_VERSION}.tar.gz && \
+    mkdir -p ${SLEPC_DIR} && tar -xf slepc-v${SLEPC_VERSION}.tar.gz -C ${SLEPC_DIR} --strip-components 1 && \
     cd ${SLEPC_DIR} && \
     export PETSC_ARCH=linux-gnu-real-32 && \
     python3 ./configure && \
@@ -375,6 +373,8 @@ WORKDIR /root
 
 FROM dev-env as dolfinx-onbuild
 LABEL description="DOLFINx in 32-bit real and complex modes (onbuild)"
+
+ARG PYTHON_VERSION
 
 ADD dolfinx/docker/dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
 ADD dolfinx/docker/dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
@@ -419,7 +419,8 @@ ONBUILD RUN cd dolfinx && \
     PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} ../cpp && \
     ninja install && \
     cd ../python && \
-    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.8/dist-packages --no-dependencies . && \
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-real-32 pip3 install -v --target /usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir . && \
+    git clean -fdx && \
     cd ../ && \
     mkdir -p build-complex && \
     cd build-complex && \
@@ -427,12 +428,12 @@ ONBUILD RUN cd dolfinx && \
     ninja install && \
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
-    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies .
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install -v --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir .
 
 # Real by default.
 ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
     PETSC_ARCH=linux-gnu-real-32 \
-    PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
+    PYTHONPATH=/usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages:$PYTHONPATH \
     LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ONBUILD WORKDIR /root
@@ -445,6 +446,8 @@ FROM dolfinx-onbuild as intermediate
 
 FROM dev-env as dolfinx
 LABEL description="DOLFINx in 32-bit real and complex modes"
+
+ARG PYTHON_VERSION
 
 # This layer manually copies the build artifacts from intermediate into
 # dev-env to make the final image. This is a workaround for a well known
@@ -459,13 +462,15 @@ COPY --from=intermediate /root/.config /root/.config
 # dolfinx-onbuild so this must be repeated here.
 ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
     PETSC_ARCH=linux-gnu-real-32 \
-    PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
+    PYTHONPATH=/usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages:$PYTHONPATH \
     LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ########################################
 
 FROM dolfinx as lab
 LABEL description="DOLFINx Jupyter Lab"
+
+ARG PYVISTA_VERSION
 
 WORKDIR /root
 

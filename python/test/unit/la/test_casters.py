@@ -16,7 +16,6 @@ import dolfinx
 import dolfinx.pkgconfig
 from dolfinx.jit import mpi_jit_decorator
 from dolfinx.wrappers import get_include_path as pybind_inc
-from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 
 import petsc4py
 from mpi4py import MPI

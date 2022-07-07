@@ -1,14 +1,12 @@
-
 // Copyright (C) 2022 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <basix/e-lagrange.h>
-#include <basix/e-nedelec.h>
+#include <basix/finite-element.h>
 #include <cmath>
-#include <dolfinx/common/subsystem.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/utils.h>
@@ -17,6 +15,8 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/generation.h>
+#include <filesystem>
+#include <mpi.h>
 
 using namespace dolfinx;
 
@@ -25,12 +25,12 @@ using namespace dolfinx;
 // It also shows how to create a finite element using Basix.
 template <typename T>
 void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
-                        const std::string& filename)
+                        std::filesystem::path filename)
 {
   // Create a Basix continuous Lagrange element of degree 1
-  basix::FiniteElement e = basix::element::create_lagrange(
-      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1,
-      basix::element::lagrange_variant::equispaced, true);
+  basix::FiniteElement e = basix::create_element(
+      basix::element::family::P,
+      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1);
 
   // Create a scalar function space
   auto V = std::make_shared<fem::FunctionSpace>(
@@ -42,12 +42,12 @@ void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
   // Interpolate sin(2 \pi x[0]) in the scalar Lagrange finite element
   // space
   constexpr double PI = xt::numeric_constants<double>::PI;
-  u->interpolate([PI](auto& x) { return xt::sin(2 * PI * xt::row(x, 0)); });
+  u->interpolate([PI](auto&& x) { return xt::sin(2 * PI * xt::row(x, 0)); });
 
   // Write the function to a VTK file for visualisation, e.g. using
   // ParaView
-  io::VTKFile file(mesh->comm(), filename, "w");
-  file.write({*u}, 0.0);
+  io::VTKFile file(mesh->comm(), filename.replace_extension("pvd"), "w");
+  file.write<T>({*u}, 0.0);
 }
 
 // This function interpolations a function is a H(curl) finite element
@@ -56,11 +56,13 @@ void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
 // Lagrange finite element function to a VTX file for visualisation.
 template <typename T>
 void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
-                         [[maybe_unused]] const std::string& filename)
+                         [[maybe_unused]] std::filesystem::path filename)
 {
   // Create a Basix Nedelec (first kind) element of degree 2 (dim=6 on triangle)
-  basix::FiniteElement e = basix::element::create_nedelec(
-      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2, false);
+  basix::FiniteElement e = basix::create_element(
+      basix::element::family::N1E,
+      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2,
+      basix::element::lagrange_variant::legendre);
 
   // Create a Nedelec function space
   auto V = std::make_shared<fem::FunctionSpace>(
@@ -80,18 +82,16 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
 
   // Find cells with all vertices satisfying (0) x0 <= 0.5 and (1) x0 >= 0.5
   auto cells0 = mesh::locate_entities(
-      *mesh, 2, [](auto& x) { return xt::row(x, 0) <= 0.5; });
+      *mesh, 2, [](auto&& x) { return xt::row(x, 0) <= 0.5; });
   auto cells1 = mesh::locate_entities(
-      *mesh, 2, [](auto& x) { return xt::row(x, 0) >= 0.5; });
+      *mesh, 2, [](auto&& x) { return xt::row(x, 0) >= 0.5; });
 
   // Interpolation on the two sets of cells
+  u->interpolate([](auto&& x) -> xt::xtensor<T, 2>
+                 { return xt::view(x, xt::range(0, 2), xt::all()); },
+                 cells0);
   u->interpolate(
-      [](auto& x) -> xt::xtensor<T, 2> {
-        return xt::view(x, xt::range(0, 2), xt::all());
-      },
-      cells0);
-  u->interpolate(
-      [](auto& x) -> xt::xtensor<T, 2>
+      [](auto&& x) -> xt::xtensor<T, 2>
       {
         xt::xtensor<T, 2> v = xt::view(x, xt::range(0, 2), xt::all());
         xt::row(v, 0) += T(1);
@@ -100,15 +100,16 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
       cells1);
 
   // Nedelec spaces are not generally supported by visualisation tools.
-  // Simply evaluting a Nedelec function at cell vertices can
+  // Simply evaluating a Nedelec function at cell vertices can
   // mis-represent the function. However, we can represented a Nedelec
   // function exactly in a discontinuous Lagrange space which we can
   // then visualise. We do this here.
 
-  // First create a degree 1 vector-valued discontinuous Lagrange space:
-  basix::FiniteElement e_l = basix::element::create_lagrange(
-      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2,
-      basix::element::lagrange_variant::equispaced, true);
+  // First create a degree 2 vector-valued discontinuous Lagrange space
+  // (which contains the N2 space):
+  basix::FiniteElement e_l = basix::create_element(
+      basix::element::family::P,
+      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2, true);
 
   // Create a function space
   auto V_l = std::make_shared<fem::FunctionSpace>(
@@ -126,7 +127,7 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
   // component will appear continuous (continuous tangent component
   // between cells).
 #ifdef HAS_ADIOS2
-  io::VTXWriter outfile(mesh->comm(), filename, {u_l});
+  io::VTXWriter outfile(mesh->comm(), filename.replace_extension("bp"), {u_l});
   outfile.write(0.0);
   outfile.close();
 #endif
@@ -136,8 +137,8 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
 /// generated code
 int main(int argc, char* argv[])
 {
-  common::subsystem::init_logging(argc, argv);
-  common::subsystem::init_mpi(argc, argv);
+  dolfinx::init_logging(argc, argv);
+  MPI_Init(&argc, &argv);
 
   // The main body of the function is scoped with the curly braces to
   // ensure that all objects that depend on an MPI communicator are
@@ -146,21 +147,22 @@ int main(int argc, char* argv[])
     // Create a mesh. For what comes later in this demo we need to
     // ensure that a boundary between cells is located at x0=0.5
     auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
-        MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 32},
+        MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
         mesh::CellType::triangle, mesh::GhostMode::none));
 
     // Interpolate a function in a scalar Lagrange space and output the
     // result to file for visualisation
-    interpolate_scalar<double>(mesh, "u.pvd");
-    interpolate_scalar<std::complex<double>>(mesh, "u_complex.pvd");
+    interpolate_scalar<double>(mesh, "u");
+    interpolate_scalar<std::complex<double>>(mesh, "u_complex");
 
     // Interpolate a function in a H(curl) finite element space, and
     // then interpolate the H(curl) function in a discontinuous Lagrange
     // space for visualisation
-    interpolate_nedelec<double>(mesh, "u_nedelec.pvd");
-    interpolate_nedelec<std::complex<double>>(mesh, "u_nedelec_complex.pvd");
+    interpolate_nedelec<double>(mesh, "u_nedelec");
+    interpolate_nedelec<std::complex<double>>(mesh, "u_nedelec_complex");
   }
 
-  common::subsystem::finalize_mpi();
+  MPI_Finalize();
+
   return 0;
 }

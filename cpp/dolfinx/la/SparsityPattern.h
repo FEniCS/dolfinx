@@ -27,14 +27,18 @@ namespace dolfinx::la
 {
 
 /// This class provides a sparsity pattern data structure that can be
-/// used to initialize sparse matrices. After assembly, column indices are
-/// always sorted in increasing order. Ghost entries are kept after assembly.
-
+/// used to initialize sparse matrices. After assembly, column indices
+/// are always sorted in increasing order. Ghost entries are kept after
+/// assembly.
 class SparsityPattern
 {
 
 public:
   /// Create an empty sparsity pattern with specified dimensions
+  /// @param[in] comm The communicator that the pattenr is defined on
+  /// @param[in] maps The index maps describing the [0] row and [1]
+  /// column index ranges (up to a block size)
+  /// @param[in] bs The block sizes for the [0] row and [1] column maps
   SparsityPattern(
       MPI_Comm comm,
       const std::array<std::shared_ptr<const common::IndexMap>, 2>& maps,
@@ -96,28 +100,34 @@ public:
   /// including ghosts
   std::vector<std::int64_t> column_indices() const;
 
-  /// Compute IndexMap for columns in this SparsityPattern after assembly
-  /// @return IndexMap for all non-zero columns on this process,
-  /// including ghosts
+  /// Builds the index map for columns after assembly of the sparsity
+  /// pattern
+  /// @return Map for all non-zero columns on this process, including
+  /// ghosts
+  /// @todo Should this be compted and stored when finalising the
+  /// SparsityPattern?
   common::IndexMap column_index_map() const;
 
   /// Return index map block size for dimension dim
   int block_size(int dim) const;
 
-  /// Return total number of local nonzeros in the graph after assembly,
-  /// including ghost rows.
+  /// Number of nonzeros on this rank after assembly, including ghost
+  /// rows.
   std::int64_t num_nonzeros() const;
 
   /// Number of non-zeros in owned columns (diagonal block) on a given row
   /// @note Can also be used on ghost rows
   std::int32_t nnz_diag(std::int32_t row) const;
 
-  /// Number of non-zeros in unowned columns (off-diagonal block) on a given row
+  /// Number of non-zeros in unowned columns (off-diagonal block) on a
+  /// given row
   /// @note Can also be used on ghost rows
   std::int32_t nnz_off_diag(std::int32_t row) const;
 
-  /// Sparsity pattern graph after assembly. Uses local indices for the columns.
-  /// @note Column global indices can be obtained from column_index_map()
+  /// Sparsity pattern graph after assembly. Uses local indices for the
+  /// columns.
+  /// @note Column global indices can be obtained from
+  /// SparsityPattern::column_index_map()
   /// @note Includes ghost rows
   const graph::AdjacencyList<std::int32_t>& graph() const;
 

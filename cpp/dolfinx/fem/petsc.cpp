@@ -11,6 +11,8 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
+#include <functional>
+#include <petscistypes.h>
 #include <xtl/xspan.hpp>
 
 using namespace dolfinx;
@@ -98,23 +100,17 @@ Mat fem::petsc::create_matrix_block(
   {
     for (auto space : V[d])
     {
-      maps[d].push_back(
-          {*space->dofmap()->index_map.get(), space->dofmap()->index_map_bs()});
+      maps[d].emplace_back(*space->dofmap()->index_map,
+                           space->dofmap()->index_map_bs());
     }
   }
-
-  // FIXME: This is computed again inside the SparsityPattern
-  // constructor, but we also need to outside to build the PETSc
-  // local-to-global map. Compute outside and pass into SparsityPattern
-  // constructor.
-  auto [rank_offset, local_offset, ghosts, owner]
-      = common::stack_index_maps(maps[0]);
 
   // Create merged sparsity pattern
   std::vector<std::vector<const la::SparsityPattern*>> p(V[0].size());
   for (std::size_t row = 0; row < V[0].size(); ++row)
     for (std::size_t col = 0; col < V[1].size(); ++col)
       p[row].push_back(patterns[row][col].get());
+
   la::SparsityPattern pattern(mesh->comm(), p, maps, bs_dofs);
   pattern.assemble();
 
@@ -129,6 +125,17 @@ Mat fem::petsc::create_matrix_block(
   std::array<std::vector<PetscInt>, 2> _maps;
   for (int d = 0; d < 2; ++d)
   {
+    // FIXME: Index map concatenation has already been computed inside
+    // the SparsityPattern constructor, but we also need it here to
+    // build the PETSc local-to-global map. Compute outside and pass
+    // into SparsityPattern constructor.
+
+    // FIXME: avoid concatenating the same maps twice in case that V[0]
+    // == V[1].
+
+    // Concatenate the block index map in the row and column directions
+    auto [rank_offset, local_offset, ghosts, _]
+        = common::stack_index_maps(maps[d]);
     for (std::size_t f = 0; f < maps[d].size(); ++f)
     {
       const common::IndexMap& map = maps[d][f].first.get();
@@ -155,12 +162,11 @@ Mat fem::petsc::create_matrix_block(
   }
   else
   {
+
     ISLocalToGlobalMapping petsc_local_to_global1;
     ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[1].size(),
                                  _maps[1].data(), PETSC_COPY_VALUES,
                                  &petsc_local_to_global1);
-    MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
-                               petsc_local_to_global1);
     MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
                                petsc_local_to_global1);
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
@@ -230,20 +236,9 @@ Vec fem::petsc::create_vector_block(
   for (auto& sub_owner : ghost_new_owners)
     ghost_owners.insert(ghost_owners.end(), sub_owner.begin(), sub_owner.end());
 
-  std::vector<int> dest_ranks;
-  for (auto& map : maps)
-  {
-    const auto [_, ranks] = dolfinx::MPI::neighbors(
-        map.first.get().comm(common::IndexMap::Direction::forward));
-    dest_ranks.insert(dest_ranks.end(), ranks.begin(), ranks.end());
-  }
-  std::sort(dest_ranks.begin(), dest_ranks.end());
-  dest_ranks.erase(std::unique(dest_ranks.begin(), dest_ranks.end()),
-                   dest_ranks.end());
-
   // Create map for combined problem, and create vector
-  common::IndexMap index_map(maps[0].first.get().comm(), local_size, dest_ranks,
-                             ghosts, ghost_owners);
+  common::IndexMap index_map(maps[0].first.get().comm(), local_size, ghosts,
+                             ghost_owners);
 
   return la::petsc::create_vector(index_map, 1);
 }

@@ -5,7 +5,7 @@ namespace dolfinx
 /*! \namespace dolfinx::io
     \brief Support for file IO
 
-    Support IO to files for checkpointing and visualisation.
+    IO to files for checkpointing and visualisation.
 */
 }
 

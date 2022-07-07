@@ -7,11 +7,11 @@
 #pragma once
 
 #include "HDF5Interface.h"
-#include "pugixml.hpp"
-#include "utils.h"
 #include <array>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <filesystem>
+#include <pugixml.hpp>
 #include <string>
 #include <utility>
 #include <vector>
@@ -52,7 +52,8 @@ std::pair<std::string, int> get_cell_type(const pugi::xml_node& topology_node);
 // node
 std::array<std::string, 2> get_hdf5_paths(const pugi::xml_node& dataitem_node);
 
-std::string get_hdf5_filename(std::string xdmf_filename);
+std::filesystem::path
+get_hdf5_filename(const std::filesystem::path& xdmf_filename);
 
 /// Get dimensions from an XML DataSet node
 std::vector<std::int64_t> get_dataset_shape(const pugi::xml_node& dataset_node);
@@ -87,8 +88,10 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// triangle (using local indexing). Each vertex has a 'node' (geometry
 /// dof) index, and each node has a persistent input global index, so
 /// the triangle [gi0, gi1, gi2] could be identified with [v0, v1, v2].
+/// The data is flattened and the shape is `(num_entities,
+/// nodes_per_entity)`.
 /// @param[in] data Data associated with each entity in `entities`.
-/// @return (Cell-vertex connectivity of owned entities, associated
+/// @return (entity-vertex connectivity of owned entities, associated
 /// data (values) with each entity)
 /// @note This function involves parallel distribution and must be
 /// called collectively. Global input indices for entities which are not
@@ -97,9 +100,9 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// this identifies a triangle that is owned by rank1. It will be
 /// distributed and rank1 will receive (local) cell-vertex connectivity
 /// for this triangle.
-std::pair<xt::xtensor<std::int32_t, 2>, std::vector<std::int32_t>>
+std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
 distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
-                       const xt::xtensor<std::int64_t, 2>& entities,
+                       const xtl::span<const std::int64_t>& entities,
                        const xtl::span<const std::int32_t>& data);
 
 /// TODO: Document
@@ -148,11 +151,12 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
     data_item_node.append_attribute("Format") = "HDF";
 
     // Get name of HDF5 file, including path
-    const std::string hdf5_filename = HDF5Interface::get_filename(h5_id);
-    const std::string filename = dolfinx::io::get_filename(hdf5_filename);
+    const std::filesystem::path p = HDF5Interface::get_filename(h5_id);
+    const std::filesystem::path filename = p.filename().c_str();
 
     // Add HDF5 filename and HDF5 internal path to XML file
-    const std::string xdmf_path = filename + std::string(":") + h5_path;
+    const std::string xdmf_path
+        = filename.string() + std::string(":") + h5_path;
     data_item_node.append_child(pugi::node_pcdata).set_value(xdmf_path.c_str());
 
     // Compute data offset and range of values

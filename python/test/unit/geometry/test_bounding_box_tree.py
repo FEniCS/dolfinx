@@ -14,8 +14,8 @@ from dolfinx.geometry import (BoundingBoxTree, compute_closest_entity,
                               compute_distance_gjk, create_midpoint_tree)
 from dolfinx.mesh import (CellType, create_box, create_unit_cube,
                           create_unit_interval, create_unit_square,
-                          locate_entities, locate_entities_boundary)
-from dolfinx_utils.test.skips import skip_in_parallel
+                          exterior_facet_indices, locate_entities,
+                          locate_entities_boundary)
 
 from mpi4py import MPI
 
@@ -75,7 +75,7 @@ def find_colliding_cells(mesh, bbox):
 
 
 @pytest.mark.parametrize("padding", [True, False])
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_padded_bbox(padding):
     """Test collision between two meshes separated by a distance of
     epsilon, and check if padding the mesh creates a possible
@@ -131,7 +131,7 @@ def test_empty_tree():
     assert bbtree.num_bboxes == 0
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_compute_collisions_point_1d():
     N = 16
     p = np.array([0.3, 0, 0])
@@ -155,7 +155,7 @@ def test_compute_collisions_point_1d():
     assert np.allclose(cell_vertices, vertices)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("point", [np.array([0.52, 0, 0]),
                                    np.array([0.9, 0, 0])])
 def test_compute_collisions_tree_1d(point):
@@ -196,7 +196,7 @@ def test_compute_collisions_tree_1d(point):
     assert np.allclose(entities_B, cells_B)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("point", [np.array([0.52, 0.51, 0.0]),
                                    np.array([0.9, -0.9, 0.0])])
 def test_compute_collisions_tree_2d(point):
@@ -216,7 +216,7 @@ def test_compute_collisions_tree_2d(point):
     assert np.allclose(entities_B, cells_B)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("point", [np.array([0.52, 0.51, 0.3]),
                                    np.array([0.9, -0.9, 0.3])])
 def test_compute_collisions_tree_3d(point):
@@ -360,7 +360,8 @@ def test_compute_closest_sub_entity(dim):
 def test_surface_bbtree():
     """Test creation of BBTree on subset of entities(surface cells)"""
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
-    sf = _cpp.mesh.exterior_facet_indices(mesh)
+    mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+    sf = exterior_facet_indices(mesh.topology)
     tdim = mesh.topology.dim
     f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
     cells = [f_to_c.links(f)[0] for f in sf]
@@ -418,7 +419,7 @@ def test_sub_bbtree_box(ct, N):
     assert num_boxes < tree.num_bboxes
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_surface_bbtree_collision():
     """Compute collision between two meshes, where only one cell of each mesh are colliding"""
     tdim = 3
@@ -426,14 +427,16 @@ def test_surface_bbtree_collision():
     mesh2 = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron)
     mesh2.geometry.x[:, :] += np.array([0.9, 0.9, 0.9])
 
-    sf = _cpp.mesh.exterior_facet_indices(mesh1)
+    mesh1.topology.create_connectivity(mesh1.topology.dim - 1, mesh1.topology.dim)
+    sf = exterior_facet_indices(mesh1.topology)
     f_to_c = mesh1.topology.connectivity(tdim - 1, tdim)
 
     # Compute unique set of cells (some will be counted multiple times)
     cells = list(set([f_to_c.links(f)[0] for f in sf]))
     bbtree1 = BoundingBoxTree(mesh1, tdim, cells)
 
-    sf = _cpp.mesh.exterior_facet_indices(mesh2)
+    mesh2.topology.create_connectivity(mesh2.topology.dim - 1, mesh2.topology.dim)
+    sf = exterior_facet_indices(mesh2.topology)
     f_to_c = mesh2.topology.connectivity(tdim - 1, tdim)
     cells = list(set([f_to_c.links(f)[0] for f in sf]))
     bbtree2 = BoundingBoxTree(mesh2, tdim, cells)

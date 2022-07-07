@@ -27,7 +27,7 @@ jobs:
             cxx_compiler: icpx
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install Intel compilers
         run: |
@@ -44,11 +44,10 @@ jobs:
           python3 -m pip install git+https://github.com/FEniCS/basix.git
 
       - name: Clone FFCx
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: mscroggs/real-space
 
       - name: Install FFCx C interface
         run: |
@@ -60,7 +59,7 @@ jobs:
       - name: Configure DOLFInx C++
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_UFCX_PYTHON=off -B build -S cpp/
 
       - name: Build and install DOLFINx C++ library
         run: |
@@ -76,9 +75,9 @@ jobs:
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/unit/ -S build/test/unit/
-          cmake --build build/test/unit
-          cd build/test/unit
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S build/test/
+          cmake --build build/test
+          cd build/test
           ctest --output-on-failure -R unittests
           mpiexec -np 2 ctest --output-on-failure -R unittests
 

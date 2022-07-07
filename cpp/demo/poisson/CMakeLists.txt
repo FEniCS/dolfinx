@@ -22,8 +22,8 @@ if (PETSC_SCALAR_COMPLEX EQUAL 1)
 endif()
 add_custom_command(
   OUTPUT poisson.c
-  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.ufl ${SCALAR_TYPE}
-  VERBATIM DEPENDS poisson.ufl COMMENT "Compile poisson.ufl using FFCx")
+  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.py ${SCALAR_TYPE}
+  VERBATIM DEPENDS poisson.py COMMENT "Compile poisson.py using FFCx")
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 

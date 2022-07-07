@@ -11,7 +11,6 @@ import ufl
 from dolfinx.fem import FunctionSpace, form
 from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
                           create_unit_square, create_unit_interval)
-from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
 

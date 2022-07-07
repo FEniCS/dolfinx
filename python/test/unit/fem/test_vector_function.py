@@ -11,12 +11,11 @@ import pytest
 import ufl
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.mesh import create_mesh
-from dolfinx_utils.test.skips import skip_in_parallel
 
 from mpi4py import MPI
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('space_type', ["RT"])
 @pytest.mark.parametrize('order', [1, 2, 3, 4, 5])
 def test_div_conforming_triangle(space_type, order):
@@ -46,7 +45,7 @@ def test_div_conforming_triangle(space_type, order):
         assert np.allclose(i, j)
 
 
-@skip_in_parallel
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('space_type', ["RT"])
 @pytest.mark.parametrize('order', [1, 2, 3, 4, 5])
 def test_div_conforming_tetrahedron(space_type, order):
