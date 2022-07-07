@@ -432,15 +432,18 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
   {
     // If one of the elements has bs=1, Basix can figure out the size
     // of the matrix
-    return basix::compute_interpolation_operator(*from._element, *_element);
+    auto [op, shape]
+        = basix::compute_interpolation_operator(*from._element, *_element);
+    return xt::adapt(op, std::vector<std::size_t>{shape[0], shape[1]});
   }
   else if (_bs > 1 and from._bs == _bs)
   {
     // If bs != 1 for at least one element, then bs0 == bs1 for this
     // case
-    xt::xtensor<double, 2> i_m
+    auto [op, shape1]
         = basix::compute_interpolation_operator(*from._element, *_element);
-    std::array<std::size_t, 2> shape = {i_m.shape(0) * _bs, i_m.shape(1) * _bs};
+    auto i_m = xt::adapt(op, std::vector<std::size_t>{shape1[0], shape1[1]});
+    std::array<std::size_t, 2> shape = {shape1[0] * _bs, shape1[1] * _bs};
     xt::xtensor<double, 2> out = xt::zeros<double>(shape);
 
     // NOTE: Alternatively this operation could be implemented during
