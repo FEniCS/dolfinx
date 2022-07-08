@@ -8,9 +8,13 @@ import typing
 
 import numpy as np
 import numpy.typing as npt
+
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx.mesh import CellType
+from dolfinx.mesh import (CellType, Mesh, create_mesh,
+                          meshtags_from_entities, meshtags)
+
+from mpi4py import MPI as _MPI
 
 __all__ = ["cell_perm_array", "ufl_mesh"]
 
@@ -52,7 +56,7 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> typing.List[int]:
 
 
 if _has_gmsh:
-    __all__ += ["extract_topology_and_markers", "extract_geometry"]
+    __all__ += ["extract_topology_and_markers", "extract_geometry", "model_to_mesh", "read_from_msh"]
 
     def extract_topology_and_markers(model: gmsh.model, name: str = None):
         """Extract all entities tagged with a physical marker in the gmsh
@@ -117,7 +121,7 @@ if _has_gmsh:
 
         return topologies
 
-    def extract_geometry(model: gmsh.model, name: str = None):
+    def extract_geometry(model: gmsh.model, name: str = None) -> npt.NDArray[np.float64]:
         """Extract the mesh geometry from a gmsh model as an array of shape
         (num_nodes, 3), where the i-th row corresponds to the i-th node in the
         mesh.
@@ -146,6 +150,142 @@ if _has_gmsh:
         perm_sort = np.argsort(indices)
         assert np.all(indices[perm_sort] == np.arange(len(indices)))
         return points[perm_sort]
+
+    def model_to_mesh(model: gmsh.model, comm: _MPI.Comm, rank: int,
+                      gdim: int = 3) -> typing.Tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+        """
+        Given a GMSH model, take all physical entities of the highest topological dimension and
+        create the corresponding DOLFINx mesh.
+        NOTE: It is assumed that the gmsh model lives on a single rank, and is then read into DOLFINx on a
+        single process to be distributed. This means that this function should only be called once for large problems.
+        It is recommened to save the mesh and corresponding tags to XDMFFile after creation for efficient access.
+        Args:
+            comm: The MPI communicator to use for mesh creation
+            rank: The rank the GMSH model is initialized on
+            model: The GMSH model
+            gdim: Geometrical dimension of the mesh
+        Returns:
+            A triplet (mesh, cell_tags, facet_tags) where cell_tags contains the markers for the cells,
+            facet tags contains markers for facets if found in GMSH model.
+        """
+
+        if comm.rank == rank:
+            # Get mesh geometry
+            x = extract_geometry(model)
+
+            # Get mesh topology for each element
+            topologies = extract_topology_and_markers(model)
+
+            # Extract GMSH cell id, dimension of cell and number of nodes to cell for each
+            num_cell_types = len(topologies.keys())
+            cell_information = {}
+            cell_dimensions = np.zeros(num_cell_types, dtype=np.int32)
+            for i, element in enumerate(topologies.keys()):
+                properties = model.mesh.getElementProperties(element)
+                _, dim, _, num_nodes, _, _ = properties
+                cell_information[i] = {"id": element, "dim": dim,
+                                       "num_nodes": num_nodes}
+                cell_dimensions[i] = dim
+
+            # Sort elements by ascending dimension
+            perm_sort = np.argsort(cell_dimensions)
+
+            # Broadcast cell type data and geometric dimension
+            cell_id = cell_information[perm_sort[-1]]["id"]
+            tdim = cell_information[perm_sort[-1]]["dim"]
+            num_nodes = cell_information[perm_sort[-1]]["num_nodes"]
+            cell_id, num_nodes = comm.bcast([cell_id, num_nodes], root=rank)
+
+            # Check for facet data and broadcast relevant info if True
+            has_facet_data = False
+            if tdim - 1 in cell_dimensions:
+                has_facet_data = True
+            has_facet_data = comm.bcast(has_facet_data, root=rank)
+            if has_facet_data:
+                num_facet_nodes = comm.bcast(
+                    cell_information[perm_sort[-2]]["num_nodes"], root=rank)
+                gmsh_facet_id = cell_information[perm_sort[-2]]["id"]
+                marked_facets = np.asarray(
+                    topologies[gmsh_facet_id]["topology"], dtype=np.int64)
+                facet_values = np.asarray(
+                    topologies[gmsh_facet_id]["cell_data"], dtype=np.int32)
+
+            cells = np.asarray(
+                topologies[cell_id]["topology"], dtype=np.int64)
+            cell_values = np.asarray(
+                topologies[cell_id]["cell_data"], dtype=np.int32)
+
+        else:
+            cell_id, num_nodes = comm.bcast([None, None], root=rank)
+            cells, x = np.empty([0, num_nodes], dtype=np.int32), np.empty([0, gdim])
+            cell_values = np.empty((0,), dtype=np.int32)
+            has_facet_data = comm.bcast(None, root=rank)
+            if has_facet_data:
+                num_facet_nodes = comm.bcast(None, root=rank)
+                marked_facets = np.empty((0, num_facet_nodes), dtype=np.int32)
+                facet_values = np.empty((0,), dtype=np.int32)
+
+        # Create distributed mesh
+        ufl_domain = ufl_mesh(cell_id, gdim)
+        gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
+        cells = cells[:, gmsh_cell_perm]
+        mesh = create_mesh(comm, cells, x[:, :gdim], ufl_domain)
+
+        # Create MeshTags for cells
+        local_entities, local_values = _cpp.io.distribute_entity_data(
+            mesh, mesh.topology.dim, cells, cell_values)
+        mesh.topology.create_connectivity(mesh.topology.dim, 0)
+        adj = _cpp.graph.AdjacencyList_int32(local_entities)
+        ct = meshtags_from_entities(mesh, mesh.topology.dim,
+                                    adj, local_values.astype(np.int32))
+        ct.name = "Cell tags"
+
+        # Create MeshTags for facets
+        if has_facet_data:
+            # Permute facets from MSH to Dolfin-X ordering
+            # FIXME: This does not work for prism meshes
+            if mesh.topology.cell_type == CellType.prism or mesh.topology.cell_type == CellType.pyramid:
+                raise RuntimeError(f"Unsupported cell type {mesh.topology.cell_type}")
+            facet_type = _cpp.mesh.cell_entity_type(
+                _cpp.mesh.to_type(str(ufl_domain.ufl_cell())),
+                mesh.topology.dim - 1, 0)
+            gmsh_facet_perm = cell_perm_array(facet_type, num_facet_nodes)
+            marked_facets = marked_facets[:, gmsh_facet_perm]
+
+            local_entities, local_values = _cpp.io.distribute_entity_data(
+                mesh, mesh.topology.dim - 1, marked_facets, facet_values)
+            mesh.topology.create_connectivity(
+                mesh.topology.dim - 1, mesh.topology.dim)
+            adj = _cpp.graph.AdjacencyList_int32(local_entities)
+            ft = meshtags_from_entities(mesh, mesh.topology.dim - 1,
+                                        adj, local_values.astype(np.int32))
+            ft.name = "Facet tags"
+        else:
+            ft = meshtags(mesh, mesh.topology.dim - 1, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
+
+        return (mesh, ct, ft)
+
+    def read_from_msh(filename: str, comm: _MPI.Comm, rank: int = 0,
+                      gdim: int = 3) -> typing.Tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+        """
+        Reads a mesh from a msh-file and returns the distributed DOLFINx mesh and
+        cell and facet markers associated with physical groups in the msh file.
+        Args:
+            filename: Name of msh file
+            comm: The MPI communciator to initialize the mesh with
+            rank: Rank for `comm` responsible for reading the msh file
+            gdim: Geometrical dimension of the mesh
+        Returns:
+            A triplet (mesh, cell_tags, facet_tags) with meshtags for associated physical groups for cells and facets
+        """
+        if comm.rank == rank:
+            gmsh.initialize()
+            gmsh.model.add("Mesh from file")
+            gmsh.merge(filename)
+        output = model_to_mesh(gmsh.model, comm, rank, gdim=gdim)
+        if comm.rank == rank:
+            gmsh.finalize()
+        return output
 
     # Map from Gmsh cell type identifier (integer) to DOLFINx cell type and degree
     # http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
