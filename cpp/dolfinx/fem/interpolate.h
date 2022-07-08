@@ -247,23 +247,24 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   // Get interpolation operator
   const xt::xtensor<double, 2>& Pi_1 = element1->interpolation_operator();
 
-  namespace stdex = std::experimental;
-  using u_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-  using U_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-  using J_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-  using K_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+  // namespace stdex = std::experimental;
+  // using u_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+  // using U_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+  // using J_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+  // using K_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
 
-  // using xu_t = xt::xview<decltype(basis_reference0)&, std::size_t,
-  //                       xt::xall<std::size_t>, xt::xall<std::size_t>>;
-  // using xU_t = xt::xview<decltype(basis_reference0)&, std::size_t,
-  //                       xt::xall<std::size_t>, xt::xall<std::size_t>>;
+  using xu_t = xt::xview<decltype(basis_reference0)&, std::size_t,
+                         xt::xall<std::size_t>, xt::xall<std::size_t>>;
+  using xU_t = xt::xview<decltype(basis_reference0)&, std::size_t,
+                         xt::xall<std::size_t>, xt::xall<std::size_t>>;
   using xJ_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
                          xt::xall<std::size_t>>;
   using xK_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
                          xt::xall<std::size_t>>;
-  // auto push_forward_fn0 = element0->map_fn<u_t, U_t, J_t, K_t>();
-  auto push_forward_fn0
-      = element0->basix_element().map_fn<u_t, U_t, J_t, K_t>();
+
+  auto push_forward_fn0 = element0->map_fn<xu_t, xU_t, xJ_t, xK_t>();
+  // auto push_forward_fn0
+  //     = element0->basix_element().map_fn<u_t, U_t, J_t, K_t>();
 
   using u1_t = xt::xview<decltype(values0)&, std::size_t, xt::xall<std::size_t>,
                          xt::xall<std::size_t>>;
@@ -316,17 +317,19 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
       // double, stdex::dextents<std::size_t, 2>>;
       assert(basis_derivatives_reference0.shape(0) == 1);
 
-      u_t _u(basis0.data() + p * basis0.shape(1) * basis0.shape(2),
-             basis0.shape(1), basis0.shape(2));
-      U_t _U(basis_reference0.data()
-                 + p * basis_reference0.shape(1) * basis_reference0.shape(2),
-             basis_reference0.shape(1), basis_reference0.shape(2));
-      K_t _K(K.data() + p * K.shape(1) * K.shape(2), K.shape(1), K.shape(2));
-      J_t _J(J.data() + p * J.shape(1) * J.shape(2), J.shape(1), J.shape(2));
-      // auto _K = xt::view(K, p, xt::all(), xt::all());
-      // auto _J = xt::view(J, p, xt::all(), xt::all());
-      // auto _u = xt::view(basis0, p, xt::all(), xt::all());
-      // auto _U = xt::view(basis_reference0, p, xt::all(), xt::all());
+      // u_t _u(basis0.data() + p * basis0.shape(1) * basis0.shape(2),
+      //        basis0.shape(1), basis0.shape(2));
+      // U_t _U(basis_reference0.data()
+      //            + p * basis_reference0.shape(1) * basis_reference0.shape(2),
+      //        basis_reference0.shape(1), basis_reference0.shape(2));
+      // K_t _K(K.data() + p * K.shape(1) * K.shape(2), K.shape(1), K.shape(2));
+      // J_t _J(J.data() + p * J.shape(1) * J.shape(2), J.shape(1), J.shape(2));
+
+      auto _K = xt::view(K, p, xt::all(), xt::all());
+      auto _J = xt::view(J, p, xt::all(), xt::all());
+      auto _u = xt::view(basis0, p, xt::all(), xt::all());
+      auto _U = xt::view(basis_reference0, p, xt::all(), xt::all());
+
       push_forward_fn0(_u, _U, _J, detJ[p], _K);
     }
 
