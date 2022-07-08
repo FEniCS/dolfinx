@@ -555,11 +555,12 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
     // Get interpolation operator
     const xt::xtensor<double, 2>& Pi = element->interpolation_operator();
 
-    using U_t = xt::xview<decltype(reference_data)&, std::size_t,
-                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
-    using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
-                          xt::xall<std::size_t>>;
-    auto pull_back_fn = element->map_fn<U_t, U_t, J_t, J_t>();
+    namespace stdex = std::experimental;
+    using u_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 2>>;
+    using U_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
+    using J_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+    using K_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+    auto pull_back_fn = element->basix_element().map_fn<U_t, u_t, J_t, K_t>();
     for (std::size_t c = 0; c < cells.size(); ++c)
     {
       const std::int32_t cell = cells[c];
@@ -598,10 +599,15 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
         // Get element degrees of freedom for block
         for (std::size_t i = 0; i < X.shape(0); ++i)
         {
-          auto _K = xt::view(K, i, xt::all(), xt::all());
-          auto _J = xt::view(J, i, xt::all(), xt::all());
-          auto _u = xt::view(_vals, i, xt::all(), xt::all());
-          auto _U = xt::view(reference_data, i, xt::all(), xt::all());
+          u_t _u(_vals.data() + i * _vals.shape(1) * _vals.shape(2),
+                 _vals.shape(1), _vals.shape(2));
+          U_t _U(reference_data.data()
+                     + i * reference_data.shape(1) * reference_data.shape(2),
+                 reference_data.shape(1), reference_data.shape(2));
+          K_t _K(K.data() + i * K.shape(1) * K.shape(2), K.shape(1),
+                 K.shape(2));
+          J_t _J(J.data() + i * J.shape(1) * J.shape(2), J.shape(1),
+                 J.shape(2));
           pull_back_fn(_U, _u, _K, 1.0 / detJ[i], _J);
         }
 
