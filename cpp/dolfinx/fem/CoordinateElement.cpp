@@ -49,7 +49,9 @@ CoordinateElement::tabulate_shape(std::size_t nd, std::size_t num_points) const
 xt::xtensor<double, 4>
 CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X) const
 {
-  return _element->tabulate(n, X);
+  return _element->tabulate(n, X, {X.shape(0), X.shape(1)});
+  // return xt::adapt(data, std::vector<std::size_t>{shape[0], shape[1]});
+  // return _element->tabulate(n, X);
 }
 //--------------------------------------------------------------------------------
 void CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X,

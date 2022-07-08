@@ -154,7 +154,7 @@ public:
   std::function<void(O&, const P&, const Q&, double, const R&)> map_fn() const
   {
     assert(_element);
-    return _element->map_fn<O, P, Q, R>();
+    return _element->map_fn_old<O, P, Q, R>();
   }
 
   /// Get the number of sub elements (for a mixed or blocked element)
