@@ -230,7 +230,7 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   using J_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
   using K_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
   auto push_forward_fn0
-      = element0->basix_element().map_fn<nu_t, nU_t, nJ_t, nK_t>();
+      = element0->basix_element().map_fn<u_t, U_t, J_t, K_t>();
 
   // Basis values of Lagrange space unrolled for block size
   // (num_quadrature_points, Lagrange dof, value_size)
@@ -240,7 +240,7 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
       {X.shape(0), bs0 * dim0, (std::size_t)element1->value_size()});
 
   auto pull_back_fn1
-      = element1->basix_element().map_fn<nu_t, nU_t, nK_t, nJ_t>();
+      = element1->basix_element().map_fn<u_t, U_t, K_t, J_t>();
 
   xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, 3});
   xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});

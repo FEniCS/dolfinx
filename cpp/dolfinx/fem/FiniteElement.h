@@ -127,47 +127,6 @@ public:
   xt::xtensor<double, 4> tabulate(const xt::xtensor<double, 2>& X,
                                   int order) const;
 
-  /// Return a function that performs the appropriate
-  /// push-forward (pull-back) for the element type
-  ///
-  /// @tparam O The type that hold the computed pushed-forward
-  /// (pulled-back)  data (ndim==1)
-  /// @tparam P The type that hold the data to be pulled back (pushed
-  /// forwarded) (ndim==1)
-  /// @tparam Q The type that holds the Jacobian (inverse Jacobian)
-  /// matrix (ndim==2)
-  /// @tparam R The type that holds the inverse Jacobian (Jacobian)
-  /// matrix (ndim==2)
-  ///
-  /// @return A function that for a push-forward takes arguments
-  /// - `u` [out] The data on the physical cell after the
-  /// push-forward flattened with row-major layout, shape=(num_points,
-  /// value_size)
-  /// - `U` [in] The data on the reference cell physical field to push
-  /// forward, flattened with row-major layout, shape=(num_points,
-  /// ref_value_size)
-  /// - `J` [in] The Jacobian matrix of the map ,shape=(gdim, tdim)
-  /// - `detJ` [in] det(J)
-  /// - `K` [in] The inverse of the Jacobian matrix, shape=(tdim, gdim)
-  ///
-  /// For a pull-back the passed arguments should be:
-  /// - `U` [out] The data on the reference cell after the pull-back,
-  /// flattened with row-major layout, shape=(num_points, ref
-  /// value_size)
-  /// - `u` [in] The data on the physical cell that should be pulled
-  /// back , flattened with row-major layout, shape=(num_points,
-  /// value_size)
-  /// - `K` [in] The inverse oif the Jacobian matrix of the map,
-  /// shape=(tdim, gdim)
-  /// - `detJ_inv` [in] 1/det(J)
-  /// - `J` [in] The Jacobian matrix, shape=(gdim, tdim)
-  template <typename O, typename P, typename Q, typename R>
-  std::function<void(O&, const P&, const Q&, double, const R&)> map_fn() const
-  {
-    assert(_element);
-    return _element->map_fn_old<O, P, Q, R>();
-  }
-
   /// Get the number of sub elements (for a mixed or blocked element)
   /// @return The number of sub elements
   int num_sub_elements() const noexcept;
