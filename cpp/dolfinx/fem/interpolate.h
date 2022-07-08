@@ -21,6 +21,8 @@
 #include <xtensor/xview.hpp>
 #include <xtl/xspan.hpp>
 
+#include <xtensor/xio.hpp>
+
 namespace dolfinx::fem
 {
 template <typename T>
@@ -321,8 +323,8 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
       // double, stdex::dextents<std::size_t, 2>>;
       assert(basis_derivatives_reference0.shape(0) == 1);
 
-      u_t _unew(basis0.data() + p * basis0.shape(1) * basis0.shape(2),
-                basis0.shape(1), basis0.shape(2));
+      u_t _unew(basis0new.data() + p * basis0new.shape(1) * basis0new.shape(2),
+                basis0new.shape(1), basis0new.shape(2));
       U_t _Unew(basis_derivatives_reference0.data()
                     + p * basis_derivatives_reference0.shape(2)
                           * basis_derivatives_reference0.shape(3),
@@ -332,11 +334,20 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
       J_t _Jnew(J.data() + p * J.shape(1) * J.shape(2), J.shape(1), J.shape(2));
       push_forward_fn0_new(_unew, _Unew, _Jnew, detJ[p], _Knew);
 
-      // auto _K = xt::view(K, p, xt::all(), xt::all());
-      // auto _J = xt::view(J, p, xt::all(), xt::all());
-      // auto _u = xt::view(basis0, p, xt::all(), xt::all());
-      // auto _U = xt::view(basis_reference0, p, xt::all(), xt::all());
-      // push_forward_fn0(_u, _U, _J, detJ[p], _K);
+      auto _K = xt::view(K, p, xt::all(), xt::all());
+      auto _J = xt::view(J, p, xt::all(), xt::all());
+      auto _u = xt::view(basis0, p, xt::all(), xt::all());
+      auto _U = xt::view(basis_reference0, p, xt::all(), xt::all());
+      push_forward_fn0(_u, _U, _J, detJ[p], _K);
+
+      if (!xt::allclose(basis0new, basis0))
+      {
+        std::cout << "New" << std::endl;
+        std::cout << basis0new << std::endl;
+        std::cout << "Old" << std::endl;
+        std::cout << basis0 << std::endl;
+        throw std::runtime_error("mis-match");
+      }
     }
 
     // Copy expansion coefficients for v into local array
