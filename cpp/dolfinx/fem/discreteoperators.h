@@ -207,8 +207,8 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
       {1, X.shape(0), dim0, value_size_ref0});
   element0->tabulate(basis_derivatives_reference0, X, 0);
 
-  double rtol = 1e-14;
-  double atol = 1e-14;
+  constexpr double rtol = 1e-14;
+  constexpr double atol = 1e-14;
   auto inds = xt::isclose(basis_derivatives_reference0, 0.0, rtol, atol);
   xt::filtration(basis_derivatives_reference0, inds) = 0.0;
 
@@ -225,22 +225,12 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   bool interpolation_ident = element1->interpolation_ident();
 
   namespace stdex = std::experimental;
-  using nu_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
-  using nU_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 2>>;
-  using nJ_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-  using nK_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+  using u_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
+  using U_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 2>>;
+  using J_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+  using K_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
   auto push_forward_fn0
       = element0->basix_element().map_fn<nu_t, nU_t, nJ_t, nK_t>();
-
-  using u_t = xt::xview<decltype(basis_reference0)&, std::size_t,
-                        xt::xall<std::size_t>, xt::xall<std::size_t>>;
-  using U_t = xt::xview<decltype(basis_reference0)&, std::size_t,
-                        xt::xall<std::size_t>, xt::xall<std::size_t>>;
-  using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
-                        xt::xall<std::size_t>>;
-  using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
-                        xt::xall<std::size_t>>;
-  // auto push_forward_fn0 = element0->map_fn<u_t, U_t, J_t, K_t>();
 
   // Basis values of Lagrange space unrolled for block size
   // (num_quadrature_points, Lagrange dof, value_size)
@@ -249,10 +239,6 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   xt::xtensor<double, 3> mapped_values(
       {X.shape(0), bs0 * dim0, (std::size_t)element1->value_size()});
 
-  // using u1_t = xt::xview<decltype(basis_values)&, std::size_t,
-  //                        xt::xall<std::size_t>, xt::xall<std::size_t>>;
-  // using U1_t = xt::xview<decltype(mapped_values)&, std::size_t,
-  //                        xt::xall<std::size_t>, xt::xall<std::size_t>>;
   auto pull_back_fn1
       = element1->basix_element().map_fn<nu_t, nU_t, nK_t, nJ_t>();
 
@@ -305,20 +291,14 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
 
     for (std::size_t i = 0; i < basis0.shape(0); ++i)
     {
-      nu_t _u(basis0.data() + i * basis0.shape(1) * basis0.shape(2),
-              basis0.shape(1), basis0.shape(2));
-      nU_t _U(basis_reference0.data()
-                  + i * basis_reference0.shape(1) * basis_reference0.shape(2),
-              basis_reference0.shape(1), basis_reference0.shape(2));
-      nK_t _K(K.data() + i * K.shape(1) * K.shape(2), K.shape(1), K.shape(2));
-      nJ_t _J(J.data() + i * J.shape(1) * J.shape(2), J.shape(1), J.shape(2));
+      u_t _u(basis0.data() + i * basis0.shape(1) * basis0.shape(2),
+             basis0.shape(1), basis0.shape(2));
+      U_t _U(basis_reference0.data()
+                 + i * basis_reference0.shape(1) * basis_reference0.shape(2),
+             basis_reference0.shape(1), basis_reference0.shape(2));
+      K_t _K(K.data() + i * K.shape(1) * K.shape(2), K.shape(1), K.shape(2));
+      J_t _J(J.data() + i * J.shape(1) * J.shape(2), J.shape(1), J.shape(2));
       push_forward_fn0(_u, _U, _J, detJ[i], _K);
-
-      // auto _u = xt::view(basis0, i, xt::all(), xt::all());
-      // auto _U = xt::view(basis_reference0, i, xt::all(), xt::all());
-      // auto _K = xt::view(K, i, xt::all(), xt::all());
-      // auto _J = xt::view(J, i, xt::all(), xt::all());
-      // push_forward_fn0(_u, _U, _J, detJ[i], _K);
     }
 
     // Unroll basis function for input space for block size
@@ -331,19 +311,14 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
     // Pull back the physical values to the reference of output space
     for (std::size_t p = 0; p < basis_values.shape(0); ++p)
     {
-      nU_t _u(basis_values.data()
-                  + p * basis_values.shape(1) * basis_values.shape(2),
-              basis_values.shape(1), basis_values.shape(2));
-      nu_t _U(mapped_values.data()
-                  + p * mapped_values.shape(1) * mapped_values.shape(2),
-              mapped_values.shape(1), mapped_values.shape(2));
-      nK_t _K(K.data() + p * K.shape(1) * K.shape(2), K.shape(1), K.shape(2));
-      nJ_t _J(J.data() + p * J.shape(1) * J.shape(2), J.shape(1), J.shape(2));
-
-      // auto _u = xt::view(basis_values, p, xt::all(), xt::all());
-      // auto _U = xt::view(mapped_values, p, xt::all(), xt::all());
-      // auto _K = xt::view(K, p, xt::all(), xt::all());
-      // auto _J = xt::view(J, p, xt::all(), xt::all());
+      U_t _u(basis_values.data()
+                 + p * basis_values.shape(1) * basis_values.shape(2),
+             basis_values.shape(1), basis_values.shape(2));
+      u_t _U(mapped_values.data()
+                 + p * mapped_values.shape(1) * mapped_values.shape(2),
+             mapped_values.shape(1), mapped_values.shape(2));
+      K_t _K(K.data() + p * K.shape(1) * K.shape(2), K.shape(1), K.shape(2));
+      J_t _J(J.data() + p * J.shape(1) * J.shape(2), J.shape(1), J.shape(2));
       pull_back_fn1(_U, _u, _K, 1.0 / detJ[p], _J);
     }
 
