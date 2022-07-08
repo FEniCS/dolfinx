@@ -12,6 +12,7 @@
 #include <dolfinx/common/log.h>
 #include <functional>
 #include <ufcx.h>
+#include <xtensor/xadapt.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
