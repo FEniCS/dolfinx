@@ -229,15 +229,9 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   cmap.tabulate(1, X, phi);
   dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
 
-  // Evaluate v basis functions at reference interpolation points
-  xt::xtensor<double, 4> basis_derivatives_reference0(
-      {1, X.shape(0), dim0, value_size_ref0});
-  element0->tabulate(basis_derivatives_reference0, X, 0);
-
   // Create working arrays
   std::vector<T> local1(element1->space_dimension());
   std::vector<T> coeffs0(element0->space_dimension());
-  xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});
   xt::xtensor<double, 3> basis_reference0({X.shape(0), dim0, value_size_ref0});
   xt::xtensor<T, 3> values0({X.shape(0), 1, element1->value_size()});
   xt::xtensor<T, 3> mapped_values0({X.shape(0), 1, element1->value_size()});
@@ -276,6 +270,19 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
   auto pull_back_fn1 = element1->map_fn<U1_t, u1_t, xK_t, xJ_t>();
 
+  // Evaluate v basis functions at reference interpolation points
+  xt::xtensor<double, 4> basis_derivatives_reference0(
+      {1, X.shape(0), dim0, value_size_ref0});
+  element0->tabulate(basis_derivatives_reference0, X, 0);
+
+  // xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});
+  // xt::xtensor<double, 3> basis0new({X.shape(0), dim0, value_size0});
+
+  xt::xtensor<double, 3> basis0
+      = xt::zeros<double>({X.shape(0), dim0, value_size0});
+  xt::xtensor<double, 3> basis0new
+      = xt::zeros<double>({X.shape(0), dim0, value_size0});
+
   // Iterate over mesh and interpolate on each cell
   xtl::span<const T> array0 = u0.x()->array();
   xtl::span<T> array1 = u1.x()->mutable_array();
@@ -300,22 +307,31 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
       detJ[p] = cmap.compute_jacobian_determinant(_J);
     }
 
-    // Get evaluated basis on reference, apply DOF transformations, and
-    // push forward to physical element
-    basis_reference0 = xt::view(basis_derivatives_reference0, 0, xt::all(),
-                                xt::all(), xt::all());
+    // Get evaluated basis on reference
+    for (std::size_t k0 = 0; k0 < basis_derivatives_reference0.shape(1); ++k0)
+      for (std::size_t k1 = 0; k1 < basis_derivatives_reference0.shape(2); ++k1)
+        for (std::size_t k2 = 0; k2 < basis_derivatives_reference0.shape(3);
+             ++k2)
+          basis_reference0(k0, k1, k2)
+              = basis_derivatives_reference0(0, k0, k1, k2);
+    // basis_reference0 = xt::view(basis_derivatives_reference0, 0, xt::all(),
+    // xt::all(), xt::all());
+
+    // Apply DOF transformations
     for (std::size_t p = 0; p < X.shape(0); ++p)
     {
-      apply_dof_transformation0(xtl::span(basis_derivatives_reference0.data()
-                                              + p * dim0 * value_size_ref0,
-                                          dim0 * value_size_ref0),
-                                cell_info, c, value_size_ref0);
+      apply_dof_transformation0(
+          xtl::span<double>(basis_derivatives_reference0.data()
+                                + p * dim0 * value_size_ref0,
+                            dim0 * value_size_ref0),
+          cell_info, c, value_size_ref0);
     }
 
-    xt::xtensor<double, 3> basis0new({X.shape(0), dim0, value_size0});
-
+    // Push forward to physical element
+    // std::cout << "start" << std::endl;
     for (std::size_t p = 0; p < basis0.shape(0); ++p)
     {
+      // std::cout << "------------------------------: " << p << std::endl;
       // using u_t = stdex::mdspan<const double, stdex::dextents<std::size_t,
       // 2>>; using U_t = stdex::mdspan<double, stdex::dextents<std::size_t,
       // 2>>; using J_t = stdex::mdspan<const double,
@@ -325,11 +341,9 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
 
       u_t _unew(basis0new.data() + p * basis0new.shape(1) * basis0new.shape(2),
                 basis0new.shape(1), basis0new.shape(2));
-      U_t _Unew(basis_derivatives_reference0.data()
-                    + p * basis_derivatives_reference0.shape(2)
-                          * basis_derivatives_reference0.shape(3),
-                basis_derivatives_reference0.shape(2),
-                basis_derivatives_reference0.shape(3));
+      U_t _Unew(basis_reference0.data()
+                    + p * basis_reference0.shape(1) * basis_reference0.shape(2),
+                basis_reference0.shape(1), basis_reference0.shape(2));
       K_t _Knew(K.data() + p * K.shape(1) * K.shape(2), K.shape(1), K.shape(2));
       J_t _Jnew(J.data() + p * J.shape(1) * J.shape(2), J.shape(1), J.shape(2));
       push_forward_fn0_new(_unew, _Unew, _Jnew, detJ[p], _Knew);
@@ -339,15 +353,17 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
       auto _u = xt::view(basis0, p, xt::all(), xt::all());
       auto _U = xt::view(basis_reference0, p, xt::all(), xt::all());
       push_forward_fn0(_u, _U, _J, detJ[p], _K);
+    }
 
-      if (!xt::allclose(basis0new, basis0))
-      {
-        std::cout << "New" << std::endl;
-        std::cout << basis0new << std::endl;
-        std::cout << "Old" << std::endl;
-        std::cout << basis0 << std::endl;
-        throw std::runtime_error("mis-match");
-      }
+    if (!xt::allclose(basis0new, basis0))
+    {
+      std::cout << "New" << std::endl;
+      std::cout << basis0new << std::endl;
+      std::cout << "Old" << std::endl;
+      std::cout << basis0 << std::endl;
+      std::cout << "Diff" << std::endl;
+      std::cout << basis0 - basis0new << std::endl;
+      throw std::runtime_error("mis-match");
     }
 
     // Copy expansion coefficients for v into local array
