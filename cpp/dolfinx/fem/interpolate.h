@@ -228,9 +228,11 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
 
   // Evaluate v basis functions at reference interpolation points
-  xt::xtensor<double, 4> basis_derivatives_reference0(
-      {1, X.shape(0), dim0, value_size_ref0});
-  element0->tabulate(basis_derivatives_reference0, X, 0);
+  // xt::xtensor<double, 4> basis_derivatives_reference0(
+  //     {1, X.shape(0), dim0, value_size_ref0});
+  // element0->tabulate(basis_derivatives_reference0, X, 0);
+  const xt::xtensor<double, 4> basis_derivatives_reference0
+      = element0->tabulate(X, 0);
 
   // Create working arrays
   std::vector<T> local1(element1->space_dimension());
@@ -247,15 +249,22 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   // Get interpolation operator
   const xt::xtensor<double, 2>& Pi_1 = element1->interpolation_operator();
 
-  using u_t = xt::xview<decltype(basis_reference0)&, std::size_t,
-                        xt::xall<std::size_t>, xt::xall<std::size_t>>;
-  using U_t = xt::xview<decltype(basis_reference0)&, std::size_t,
-                        xt::xall<std::size_t>, xt::xall<std::size_t>>;
+  namespace stdex = std::experimental;
+  using _u_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+  using _U_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+  using _J_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+  using _K_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+  auto push_forward_fn0
+      = element0->basix_element().map_fn<_u_t, _U_t, _J_t, _K_t>();
+  // using u_t = xt::xview<decltype(basis_reference0)&, std::size_t,
+  //                       xt::xall<std::size_t>, xt::xall<std::size_t>>;
+  // using U_t = xt::xview<decltype(basis_reference0)&, std::size_t,
+  //                       xt::xall<std::size_t>, xt::xall<std::size_t>>;
   using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
                         xt::xall<std::size_t>>;
   using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
                         xt::xall<std::size_t>>;
-  auto push_forward_fn0 = element0->map_fn<u_t, U_t, J_t, K_t>();
+  // auto push_forward_fn0 = element0->map_fn<u_t, U_t, J_t, K_t>();
 
   using u1_t = xt::xview<decltype(values0)&, std::size_t, xt::xall<std::size_t>,
                          xt::xall<std::size_t>>;
@@ -289,8 +298,13 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
 
     // Get evaluated basis on reference, apply DOF transformations, and
     // push forward to physical element
-    basis_reference0 = xt::view(basis_derivatives_reference0, 0, xt::all(),
-                                xt::all(), xt::all());
+    for (std::size_t k0 = 0; k0 < basis_reference0.shape(0); ++k0)
+      for (std::size_t k1 = 0; k1 < basis_reference0.shape(1); ++k1)
+        for (std::size_t k2 = 0; k2 < basis_reference0.shape(2); ++k2)
+          basis_reference0(k0, k1, k2)
+              = basis_derivatives_reference0(0, k0, k1, k2);
+    // basis_reference0 = xt::view(basis_derivatives_reference0, 0, xt::all(),
+    //                             xt::all(), xt::all());
     for (std::size_t p = 0; p < X.shape(0); ++p)
     {
       apply_dof_transformation0(
@@ -301,11 +315,23 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
 
     for (std::size_t i = 0; i < basis0.shape(0); ++i)
     {
-      auto _K = xt::view(K, i, xt::all(), xt::all());
-      auto _J = xt::view(J, i, xt::all(), xt::all());
-      auto _u = xt::view(basis0, i, xt::all(), xt::all());
-      auto _U = xt::view(basis_reference0, i, xt::all(), xt::all());
-      push_forward_fn0(_u, _U, _J, detJ[i], _K);
+      _u_t _unew(basis0.data() + i * basis0.shape(1) * basis0.shape(2),
+                 basis0.shape(1), basis0.shape(2));
+      _U_t _Unew(basis_reference0.data()
+                     + i * basis_reference0.shape(1)
+                           * basis_reference0.shape(2),
+                 basis_reference0.shape(1), basis_reference0.shape(2));
+      _K_t _Knew(K.data() + i * K.shape(1) * K.shape(2), K.shape(1),
+                 K.shape(2));
+      _J_t _Jnew(J.data() + i * J.shape(1) * J.shape(2), J.shape(1),
+                 J.shape(2));
+      push_forward_fn0(_unew, _Unew, _Jnew, detJ[i], _Knew);
+
+      // auto _K = xt::view(K, i, xt::all(), xt::all());
+      // auto _J = xt::view(J, i, xt::all(), xt::all());
+      // auto _u = xt::view(basis0, i, xt::all(), xt::all());
+      // auto _U = xt::view(basis_reference0, i, xt::all(), xt::all());
+      // push_forward_fn0(_u, _U, _J, detJ[i], _K);
     }
 
     // Copy expansion coefficients for v into local array
