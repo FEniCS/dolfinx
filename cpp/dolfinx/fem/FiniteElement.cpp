@@ -334,6 +334,13 @@ void FiniteElement::tabulate(xt::xtensor<double, 4>& reference_values,
   reference_values = _element->tabulate(order, X, {X.shape(0), X.shape(1)});
 }
 //-----------------------------------------------------------------------------
+xt::xtensor<double, 4> FiniteElement::tabulate(const xt::xtensor<double, 2>& X,
+                                               int order) const
+{
+  assert(_element);
+  return _element->tabulate(order, X, {X.shape(0), X.shape(1)});
+}
+//-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept
 {
   return _sub_elements.size();

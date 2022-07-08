@@ -116,6 +116,17 @@ public:
   void tabulate(xt::xtensor<double, 4>& values, const xt::xtensor<double, 2>& X,
                 int order) const;
 
+  /// Evaluate all derivatives of the basis functions up to given order
+  /// at given points in reference cell
+  /// @param[in] X Two dimensional xtensor of shape [num_points,
+  /// geometric dimension] containing the points at the reference
+  /// element
+  /// @param[in] order The number of derivatives (up to and including
+  /// this order) to tabulate for
+  /// @return Basis function values
+  xt::xtensor<double, 4> tabulate(const xt::xtensor<double, 2>& X,
+                                  int order) const;
+
   /// Return a function that performs the appropriate
   /// push-forward (pull-back) for the element type
   ///
