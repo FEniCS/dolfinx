@@ -321,13 +321,13 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
       // double, stdex::dextents<std::size_t, 2>>;
       assert(basis_derivatives_reference0.shape(0) == 1);
 
-      u_t _unew(basis0new.data() + p * basis0new.shape(1) * basis0new.shape(2),
-             basis0new.shape(1), basis0new.shape(2));
+      u_t _unew(basis0.data() + p * basis0.shape(1) * basis0.shape(2),
+                basis0.shape(1), basis0.shape(2));
       U_t _Unew(basis_derivatives_reference0.data()
-                 + p * basis_derivatives_reference0.shape(2)
-                       * basis_derivatives_reference0.shape(3),
-             basis_derivatives_reference0.shape(2),
-             basis_derivatives_reference0.shape(3));
+                    + p * basis_derivatives_reference0.shape(2)
+                          * basis_derivatives_reference0.shape(3),
+                basis_derivatives_reference0.shape(2),
+                basis_derivatives_reference0.shape(3));
       K_t _Knew(K.data() + p * K.shape(1) * K.shape(2), K.shape(1), K.shape(2));
       J_t _Jnew(J.data() + p * J.shape(1) * J.shape(2), J.shape(1), J.shape(2));
       push_forward_fn0_new(_unew, _Unew, _Jnew, detJ[p], _Knew);
