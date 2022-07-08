@@ -133,7 +133,7 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
   // Check for "block structure". This should ultimately be replaced,
   // but keep for now to mimic existing code
   return ElementDofLayout(element_block_size, entity_dofs, entity_closure_dofs,
-                          parent_map, sub_doflayout, 0
+                          parent_map, sub_doflayout, ufcx_dofmap.num_global_support_dofs
                           );
 }
 //-----------------------------------------------------------------------------
