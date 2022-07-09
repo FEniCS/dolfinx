@@ -331,8 +331,7 @@ void FiniteElement::tabulate(xt::xtensor<double, 4>& reference_values,
                              const xt::xtensor<double, 2>& X, int order) const
 {
   assert(_element);
-  // reference_values = _element->tabulate(order, X);
-  reference_values = _element->tabulate(order, X, {X.shape(0), X.shape(1)});
+  _element->tabulate(order, X, reference_values);
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 4> FiniteElement::tabulate(const xt::xtensor<double, 2>& X,
@@ -444,7 +443,6 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
     auto [data, shape]
         = basix::compute_interpolation_operator(*from._element, *_element);
     return xt::adapt(data, std::vector<std::size_t>{shape[0], shape[1]});
-    // return basix::compute_interpolation_operator(*from._element, *_element);
   }
   else if (_bs > 1 and from._bs == _bs)
   {
@@ -453,8 +451,6 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
     auto [data, dshape]
         = basix::compute_interpolation_operator(*from._element, *_element);
     auto i_m = xt::adapt(data, std::vector<std::size_t>{dshape[0], dshape[1]});
-    // xt::xtensor<double, 2> i_m
-    //     = basix::compute_interpolation_operator(*from._element, *_element);
     std::array<std::size_t, 2> shape = {i_m.shape(0) * _bs, i_m.shape(1) * _bs};
     xt::xtensor<double, 2> out = xt::zeros<double>(shape);
 

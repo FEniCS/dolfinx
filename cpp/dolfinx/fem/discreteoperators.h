@@ -49,8 +49,8 @@ namespace dolfinx::fem
 /// @param[in] V1 A Nédélec (first kind) space to interpolate into
 /// @param[in] mat_set A functor that sets values in a matrix
 template <typename T, typename U>
-void discrete_gradient(const fem::FunctionSpace& V0,
-                       const fem::FunctionSpace& V1, U&& mat_set)
+void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
+                       U&& mat_set)
 {
   // Get mesh
   std::shared_ptr<const mesh::Mesh> mesh = V1.mesh();
@@ -143,8 +143,8 @@ void discrete_gradient(const fem::FunctionSpace& V0,
 /// @param[in] V1 The space to interpolate to
 /// @param[in] mat_set A functor that sets values in a matrix
 template <typename T, typename U>
-void interpolation_matrix(const fem::FunctionSpace& V0,
-                          const fem::FunctionSpace& V1, U&& mat_set)
+void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
+                          U&& mat_set)
 {
   // Get mesh
   auto mesh = V0.mesh();
@@ -189,7 +189,7 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   const std::size_t value_size1 = element1->value_size() / bs1;
 
   // Get geometry data
-  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+  const CoordinateElement& cmap = mesh->geometry().cmap();
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();

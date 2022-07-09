@@ -215,7 +215,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   const std::size_t value_size0 = element0->value_size() / bs0;
 
   // Get geometry data
-  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+  const CoordinateElement& cmap = mesh->geometry().cmap();
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
@@ -228,9 +228,6 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
 
   // Evaluate v basis functions at reference interpolation points
-  // xt::xtensor<double, 4> basis_derivatives_reference0(
-  //     {1, X.shape(0), dim0, value_size_ref0});
-  // element0->tabulate(basis_derivatives_reference0, X, 0);
   const xt::xtensor<double, 4> basis_derivatives_reference0
       = element0->tabulate(X, 0);
 
@@ -292,8 +289,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
         for (std::size_t k2 = 0; k2 < basis_reference0.shape(2); ++k2)
           basis_reference0(k0, k1, k2)
               = basis_derivatives_reference0(0, k0, k1, k2);
-    // basis_reference0 = xt::view(basis_derivatives_reference0, 0, xt::all(),
-    //                             xt::all(), xt::all());
+
     for (std::size_t p = 0; p < X.shape(0); ++p)
     {
       apply_dof_transformation0(
@@ -374,7 +370,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
 /// @return The coordinates in the physical space at which to evaluate
 /// an expression. The shape is (3, num_points) and storage is row-major.
 std::vector<double>
-interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
+interpolation_coords(const FiniteElement& element, const mesh::Mesh& mesh,
                      const xtl::span<const std::int32_t>& cells);
 
 /// Interpolate an expression f(x) in a finite element space
@@ -527,7 +523,7 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
       throw std::runtime_error("Interpolation data has the wrong shape.");
 
     // Get coordinate map
-    const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+    const CoordinateElement& cmap = mesh->geometry().cmap();
 
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -688,9 +684,9 @@ void interpolate(Function<T>& u, const Function<T>& v,
       assert(element1->block_size() == element0->block_size());
 
       // Get dofmaps
-      std::shared_ptr<const fem::DofMap> dofmap0 = v.function_space()->dofmap();
+      std::shared_ptr<const DofMap> dofmap0 = v.function_space()->dofmap();
       assert(dofmap0);
-      std::shared_ptr<const fem::DofMap> dofmap1 = u.function_space()->dofmap();
+      std::shared_ptr<const DofMap> dofmap1 = u.function_space()->dofmap();
       assert(dofmap1);
 
       xtl::span<T> u1_array = u.x()->mutable_array();

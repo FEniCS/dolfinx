@@ -390,10 +390,10 @@ public:
     auto pull_back_affine = [dphi_i](auto&& X, const auto& cell_geometry,
                                      auto&& J, auto&& K, const auto& x) mutable
     {
-      fem::CoordinateElement::compute_jacobian(dphi_i, cell_geometry, J);
-      fem::CoordinateElement::compute_jacobian_inverse(J, K);
-      fem::CoordinateElement::pull_back_affine(
-          X, K, fem::CoordinateElement::x0(cell_geometry), x);
+      CoordinateElement::compute_jacobian(dphi_i, cell_geometry, J);
+      CoordinateElement::compute_jacobian_inverse(J, K);
+      CoordinateElement::pull_back_affine(
+          X, K, CoordinateElement::x0(cell_geometry), x);
     };
 
     xt::xtensor<double, 2> dphi;
