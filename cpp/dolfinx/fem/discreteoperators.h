@@ -199,7 +199,7 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   const xt::xtensor<double, 2> X = element1->interpolation_points();
   xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, X.shape(0)));
   cmap.tabulate(1, X, phi);
-  xt::xtensor<double, 2> dphi
+  const xt::xtensor<double, 2> dphi
       = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
 
   // Evaluate V0 basis functions at reference interpolation points for V1
@@ -225,8 +225,8 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   bool interpolation_ident = element1->interpolation_ident();
 
   namespace stdex = std::experimental;
-  using u_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
-  using U_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 2>>;
+  using u_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+  using U_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
   using J_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
   using K_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
   auto push_forward_fn0
@@ -234,13 +234,12 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
 
   // Basis values of Lagrange space unrolled for block size
   // (num_quadrature_points, Lagrange dof, value_size)
-  xt::xtensor<double, 3> basis_values = xt::zeros<double>(
+  xt::xtensor<double, 3> basis_values(
       {X.shape(0), bs0 * dim0, (std::size_t)element1->value_size()});
   xt::xtensor<double, 3> mapped_values(
       {X.shape(0), bs0 * dim0, (std::size_t)element1->value_size()});
 
-  auto pull_back_fn1
-      = element1->basix_element().map_fn<u_t, U_t, K_t, J_t>();
+  auto pull_back_fn1 = element1->basix_element().map_fn<u_t, U_t, K_t, J_t>();
 
   xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, 3});
   xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});
@@ -322,8 +321,8 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
       pull_back_fn1(_U, _u, _K, 1.0 / detJ[p], _J);
     }
 
-    // Apply interpolation matrix to basis values of V0 at the interpolation
-    // points of V1
+    // Apply interpolation matrix to basis values of V0 at the
+    // interpolation points of V1
     if (interpolation_ident)
       _A.assign(xt::transpose(mapped_values, {0, 2, 1}));
     else
@@ -336,6 +335,7 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
           A[space_dim0 * j + i] = local1[j];
       }
     }
+
     apply_inverse_dof_transform1(A, cell_info, c, space_dim0);
     mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), A);
   }
