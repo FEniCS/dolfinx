@@ -28,17 +28,17 @@ def test_real_element(cell):
 
     element = ufl.FiniteElement("R", ufl_cell, 0)
     U = FunctionSpace(mesh, element)
-#    u = ufl.TrialFunction(U)
-#    v = ufl.TestFunction(U)
+    u = ufl.TrialFunction(U)
+    v = ufl.TestFunction(U)
 
-#    a = form(ufl.inner(u, v) * ufl.dx)
-#    A = dolfinx.fem.assemble_matrix(a)
-#    A.assemble()
-#    assert A.getSize()[0] == A.getSize()[1] == 1
+    a = form(ufl.inner(u, v) * ufl.dx)
+    A = dolfinx.fem.petsc.assemble_matrix(a)
+    A.assemble()
+    assert A.getSize()[0] == A.getSize()[1] == 1
 
-#    a = form(v * ufl.dx)
-#    A = dolfinx.fem.assemble_vector(a)
-#    assert len(A.array) == 1
+    a = form(v * ufl.dx)
+    A = dolfinx.fem.petsc.assemble_vector(a)
+    assert len(A.array) == 1
 
 
 @pytest.mark.parametrize("cell", ["interval", "triangle", "tetrahedron", "quadrilateral", "hexahedron"])
@@ -63,17 +63,17 @@ def test_mixed_real_element(cell):
     v2 = ufl.TestFunction(U2)
 
     a = form(ufl.inner(u, v) * ufl.dx + ufl.inner(s, t) * ufl.dx)
-    A = dolfinx.fem.assemble_matrix(a)
+    A = dolfinx.fem.petsc.assemble_matrix(a)
     A.assemble()
     a2 = form(ufl.inner(u2, v2) * ufl.dx)
-    A2 = dolfinx.fem.assemble_matrix(a2)
+    A2 = dolfinx.fem.petsc.assemble_matrix(a2)
     A2.assemble()
     assert A.getSize()[0] == A.getSize()[1] == A2.getSize()[0] + 1
 
     a = form(v * ufl.dx + t * ufl.dx)
-    A = dolfinx.fem.assemble_vector(a)
+    A = dolfinx.fem.petsc.assemble_vector(a)
     a2 = form(v2 * ufl.dx)
-    A2 = dolfinx.fem.assemble_vector(a2)
+    A2 = dolfinx.fem.petsc.assemble_vector(a2)
     assert len(A.array) == len(A2.array) + 1
 
 
@@ -98,6 +98,6 @@ def test_vector_real_element(cell):
     v = ufl.TestFunction(U)
 
     a = form(ufl.inner(u, v) * ufl.dx)
-    A = dolfinx.fem.assemble_matrix(a)
+    A = dolfinx.fem.petsc.assemble_matrix(a)
     A.assemble()
     assert A.getSize()[0] == A.getSize()[1] == dim
