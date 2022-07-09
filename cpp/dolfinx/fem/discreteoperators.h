@@ -234,7 +234,7 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
 
   // Basis values of Lagrange space unrolled for block size
   // (num_quadrature_points, Lagrange dof, value_size)
-  xt::xtensor<double, 3> basis_values(
+  xt::xtensor<double, 3> basis_values = xt::zeros<double>(
       {X.shape(0), bs0 * dim0, (std::size_t)element1->value_size()});
   xt::xtensor<double, 3> mapped_values(
       {X.shape(0), bs0 * dim0, (std::size_t)element1->value_size()});
