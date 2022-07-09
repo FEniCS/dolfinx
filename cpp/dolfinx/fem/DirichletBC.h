@@ -301,7 +301,7 @@ public:
 
   /// The function space to which boundary conditions are applied
   /// @return The function space
-  std::shared_ptr<const fem::FunctionSpace> function_space() const
+  std::shared_ptr<const FunctionSpace> function_space() const
   {
     return _function_space;
   }
