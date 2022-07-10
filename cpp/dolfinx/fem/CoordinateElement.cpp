@@ -9,6 +9,7 @@
 #include <cmath>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xnoalias.hpp>
 #include <xtensor/xview.hpp>
 
@@ -50,13 +51,15 @@ xt::xtensor<double, 4>
 CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X) const
 {
   assert(_element);
-  return _element->tabulate(n, X, {X.shape(0), X.shape(1)});
+  auto [tab, shape] = _element->tabulate(n, X, {X.shape(0), X.shape(1)});
+  return xt::adapt(tab, shape);
 }
 //--------------------------------------------------------------------------------
 void CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X,
                                  xt::xtensor<double, 4>& basis) const
 {
-  _element->tabulate(n, X, basis);
+  _element->tabulate(n, xtl::span(X), std::array{X.shape(0), X.shape(1)},
+                     xtl::span<double>(basis.data(), basis.size()));
 }
 //--------------------------------------------------------------------------------
 ElementDofLayout CoordinateElement::create_dof_layout() const
@@ -133,7 +136,7 @@ void CoordinateElement::pull_back_nonaffine(
     int k;
     for (k = 0; k < maxit; ++k)
     {
-      _element->tabulate(1, Xk, basis);
+      _element->tabulate(1, Xk, {1, tdim}, basis);
 
       // x = cell_geometry * phi
       auto phi = xt::view(basis, 0, 0, xt::all(), 0);
