@@ -58,6 +58,7 @@ CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X) const
 void CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X,
                                  xt::xtensor<double, 4>& basis) const
 {
+  assert(_element);
   _element->tabulate(n, xtl::span(X), std::array{X.shape(0), X.shape(1)},
                      xtl::span<double>(basis.data(), basis.size()));
 }
