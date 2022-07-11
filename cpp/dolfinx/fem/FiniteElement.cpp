@@ -344,18 +344,18 @@ int FiniteElement::space_dimension() const noexcept { return _space_dim; }
 int FiniteElement::value_size() const
 {
   return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
-                         std::multiplies<int>());
+                         std::multiplies{});
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::reference_value_size() const
 {
   return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
-                         std::multiplies<int>());
+                         std::multiplies{});
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::block_size() const noexcept { return _bs; }
 //-----------------------------------------------------------------------------
-xtl::span<const int> FiniteElement::value_shape() const noexcept
+xtl::span<const std::size_t> FiniteElement::value_shape() const noexcept
 {
   return _value_shape;
 }
