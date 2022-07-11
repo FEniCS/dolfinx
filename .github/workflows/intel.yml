@@ -41,8 +41,7 @@ jobs:
       - name: Install Basix
         run: |
           . /opt/intel/oneapi/setvars.sh
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
-
+          python3 -m pip install git+https://github.com/FEniCS/basix.git@garth/remove-xtensor-fe
       - name: Clone FFCx
         uses: actions/checkout@v3
         with:
