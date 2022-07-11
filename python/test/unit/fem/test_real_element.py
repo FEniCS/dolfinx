@@ -37,8 +37,8 @@ def test_real_element(cell):
     assert A.getSize()[0] == A.getSize()[1] == 1
 
     a = form(v * ufl.dx)
-    A = dolfinx.fem.petsc.assemble_vector(a)
-    assert len(A.array) == 1
+    L = dolfinx.fem.petsc.assemble_vector(a)
+    assert L.getSize() == 1
 
 
 @pytest.mark.parametrize("cell", ["interval", "triangle", "tetrahedron", "quadrilateral", "hexahedron"])
@@ -101,3 +101,8 @@ def test_vector_real_element(cell):
     A = dolfinx.fem.petsc.assemble_matrix(a)
     A.assemble()
     assert A.getSize()[0] == A.getSize()[1] == dim
+
+
+#@pytest.mark.parametrize("cell", ["interval", "triangle", "tetrahedron", "quadrilateral", "hexahedron"])
+#def test_mean_constraint():
+#    pass
