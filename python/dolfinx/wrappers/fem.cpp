@@ -791,7 +791,7 @@ void declare_form(py::module& m, const std::string& type)
                 for (auto& kernel_type : integrals)
                 {
                   // Set subdomain markers
-                  _integrals[kernel_type.first].second = nullptr;
+                  _integrals[kernel_type.first].second = kernel_type.second.second;
 
                   // Loop over each domain kernel
                   for (auto& kernel : kernel_type.second.first)
