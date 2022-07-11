@@ -6,12 +6,15 @@
 
 #include "FiniteElement.h"
 #include <algorithm>
+#include <array>
 #include <basix/finite-element.h>
 #include <basix/interpolation.h>
 #include <basix/polyset.h>
 #include <dolfinx/common/log.h>
 #include <functional>
 #include <ufcx.h>
+#include <utility>
+#include <vector>
 #include <xtensor/xadapt.hpp>
 
 using namespace dolfinx;
@@ -174,18 +177,29 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
     const int nderivs = ce->interpolation_nderivs;
     const std::size_t nderivs_dim = basix::polyset::nderivs(cell_type, nderivs);
 
-    xt::xtensor<double, 2> wcoeffs(
-        {static_cast<std::size_t>(ce->wcoeffs_rows),
-         static_cast<std::size_t>(ce->wcoeffs_cols)});
-    { // scope
+    namespace stdex = std::experimental;
+    using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+    using mdspan4_t = stdex::mdspan<double, stdex::dextents<std::size_t, 4>>;
+    using cmdspan2_t
+        = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+    using cmdspan4_t
+        = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
+
+    std::vector<double> wcoeffs_b(ce->wcoeffs_rows * ce->wcoeffs_cols);
+    mdspan2_t wcoeffs(wcoeffs_b.data(), ce->wcoeffs_rows, ce->wcoeffs_cols);
+    {
       int e = 0;
       for (int i = 0; i < ce->wcoeffs_rows; ++i)
         for (int j = 0; j < ce->wcoeffs_cols; ++j)
           wcoeffs(i, j) = ce->wcoeffs[e++];
     }
 
-    std::array<std::vector<xt::xtensor<double, 2>>, 4> x;
-    std::array<std::vector<xt::xtensor<double, 4>>, 4> M;
+    using array2_t = std::pair<std::vector<double>, std::array<std::size_t, 2>>;
+    using array4_t = std::pair<std::vector<double>, std::array<std::size_t, 4>>;
+    std::array<std::vector<array2_t>, 4> x;
+    std::array<std::vector<array4_t>, 4> M;
+    // std::array<std::vector<xt::xtensor<double, 2>>, 4> x;
+    // std::array<std::vector<xt::xtensor<double, 4>>, 4> M;
     { // scope
       int pt_n = 0;
       int p_e = 0;
@@ -200,8 +214,19 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
           const std::size_t npts = static_cast<std::size_t>(ce->npts[pt_n]);
           const std::size_t ndofs = static_cast<std::size_t>(ce->ndofs[pt_n]);
           ++pt_n;
-          xt::xtensor<double, 2> pts({npts, dim});
-          xt::xtensor<double, 4> mat({ndofs, value_size, npts, nderivs_dim});
+
+          auto& [pts_b, ptsshape] = x[d].emplace_back(
+              std::vector<double>(npts * dim), std::array{npts, dim});
+          mdspan2_t pts(pts_b.data(), ptsshape);
+
+          auto& [mat_b, matshape] = M[d].emplace_back(
+              std::vector<double>(ndofs * value_size * npts * nderivs_dim),
+              std::array{ndofs, value_size, npts, nderivs_dim});
+          mdspan4_t mat(mat_b.data(), matshape);
+
+          // xt::xtensor<double, 2> pts({npts, dim});
+          // xt::xtensor<double, 4> mat({ndofs, value_size, npts, nderivs_dim});
+
           for (std::size_t i = 0; i < npts; ++i)
             for (std::size_t j = 0; j < dim; ++j)
               pts(i, j) = ce->x[p_e++];
@@ -210,15 +235,25 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
               for (std::size_t k = 0; k < npts; ++k)
                 for (std::size_t l = 0; l < nderivs_dim; ++l)
                   mat(i, j, k, l) = ce->M[m_e++];
-          x[d].push_back(pts);
-          M[d].push_back(mat);
+          // x[d].push_back(pts);
+          // M[d].push_back(mat);
         }
       }
     }
 
+    std::array<std::vector<cmdspan2_t>, 4> _x;
+    for (std::size_t i = 0; i < x.size(); ++i)
+      for (std::size_t j = 0; j < x[i].size(); ++j)
+        _x[i].push_back(cmdspan2_t(x[i][j].first.data(), x[i][j].second));
+
+    std::array<std::vector<cmdspan4_t>, 4> _M;
+    for (std::size_t i = 0; i < M.size(); ++i)
+      for (std::size_t j = 0; j < M[i].size(); ++j)
+        _M[i].push_back(cmdspan4_t(M[i][j].first.data(), M[i][j].second));
+
     _element
         = std::make_unique<basix::FiniteElement>(basix::create_custom_element(
-            cell_type, value_shape, wcoeffs, x, M, nderivs,
+            cell_type, value_shape, wcoeffs, _x, _M, nderivs,
             static_cast<basix::maps::type>(ce->map_type), ce->discontinuous,
             ce->highest_complete_degree, ce->highest_degree));
   }
@@ -331,14 +366,17 @@ void FiniteElement::tabulate(xt::xtensor<double, 4>& reference_values,
                              const xt::xtensor<double, 2>& X, int order) const
 {
   assert(_element);
-  _element->tabulate(order, X, reference_values);
+  _element->tabulate(
+      order, xtl::span(X), std::array{X.shape(0), X.shape(1)},
+      xtl::span<double>(reference_values.data(), reference_values.size()));
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 4> FiniteElement::tabulate(const xt::xtensor<double, 2>& X,
                                                int order) const
 {
   assert(_element);
-  return _element->tabulate(order, X, {X.shape(0), X.shape(1)});
+  auto [tab, shape] = _element->tabulate(order, X, {X.shape(0), X.shape(1)});
+  return xt::adapt(tab, shape);
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept
@@ -402,7 +440,7 @@ bool FiniteElement::interpolation_ident() const noexcept
   return _element->interpolation_is_identity();
 }
 //-----------------------------------------------------------------------------
-const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
+xt::xtensor<double, 2> FiniteElement::interpolation_points() const
 {
   if (!_element)
   {
@@ -411,10 +449,11 @@ const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
         "this is a mixed element?");
   }
 
-  return _element->points();
+  auto& [x, shape] = _element->points();
+  return xt::adapt(x, shape);
 }
 //-----------------------------------------------------------------------------
-const xt::xtensor<double, 2>& FiniteElement::interpolation_operator() const
+xt::xtensor<double, 2> FiniteElement::interpolation_operator() const
 {
   if (!_element)
   {
@@ -422,7 +461,8 @@ const xt::xtensor<double, 2>& FiniteElement::interpolation_operator() const
                              "Cannot interpolate mixed elements directly.");
   }
 
-  return _element->interpolation_matrix();
+  auto& [im, shape] = _element->interpolation_matrix();
+  return xt::adapt(im, shape);
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 2>
