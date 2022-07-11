@@ -376,7 +376,8 @@ xt::xtensor<double, 4> FiniteElement::tabulate(const xt::xtensor<double, 2>& X,
 {
   assert(_element);
   auto [tab, shape] = _element->tabulate(order, X, {X.shape(0), X.shape(1)});
-  return xt::adapt(tab, shape);
+  return xt::adapt(
+      tab, std::vector<std::size_t>{shape[0], shape[1], shape[2], shape[3]});
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept
@@ -450,7 +451,7 @@ xt::xtensor<double, 2> FiniteElement::interpolation_points() const
   }
 
   auto& [x, shape] = _element->points();
-  return xt::adapt(x, shape);
+  return xt::adapt(x, std::vector<std::size_t>{shape[0], shape[1]});
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 2> FiniteElement::interpolation_operator() const
@@ -462,7 +463,7 @@ xt::xtensor<double, 2> FiniteElement::interpolation_operator() const
   }
 
   auto& [im, shape] = _element->interpolation_matrix();
-  return xt::adapt(im, shape);
+  return xt::adapt(im, std::vector<std::size_t>{shape[0], shape[1]});
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 2>

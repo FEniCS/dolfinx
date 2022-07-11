@@ -52,7 +52,8 @@ CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X) const
 {
   assert(_element);
   auto [tab, shape] = _element->tabulate(n, X, {X.shape(0), X.shape(1)});
-  return xt::adapt(tab, shape);
+  return xt::adapt(
+      tab, std::vector<std::size_t>{shape[0], shape[1], shape[2], shape[3]});
 }
 //--------------------------------------------------------------------------------
 void CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X,
