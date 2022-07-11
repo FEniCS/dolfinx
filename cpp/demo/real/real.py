@@ -1,7 +1,7 @@
-from ufl import FiniteElement, triangle, TrialFunction, TestFunction, dx
+from ufl import FiniteElement, triangle, TrialFunction, TestFunction, dx, VectorElement, inner
 
-element = FiniteElement("Real", triangle, 0)
+element = VectorElement("Real", triangle, 0, dim=5)
 u = TrialFunction(element)
 v = TestFunction(element)
 
-a = u*v*dx
+a = inner(u, v)*dx

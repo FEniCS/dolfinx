@@ -119,8 +119,9 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
                         + ufcx_sub_dofmap->num_element_support_dofs
                               * ufcx_sub_dofmap->block_size);
     }
-    else
+    else {
       offsets.push_back(offsets.back() + 1);
+    }
 
     std::vector<int> parent_map_sub(ufcx_sub_dofmap->num_element_support_dofs
                                     * ufcx_sub_dofmap->block_size);
@@ -144,7 +145,6 @@ fem::create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
                        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
                    const FiniteElement& element)
 {
-  std::cout << "aaa\n";
   // Create required mesh entities
   const int D = topology.dim();
   for (int d = 0; d < D; ++d)
@@ -163,14 +163,9 @@ fem::create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
     }
   }
 
-  std::cout << "bbb\n";
-
   auto [_index_map, bs, dofmap]
       = build_dofmap_data(comm, topology, layout, reorder_fn);
-  std::cout << "ccc\n";
   auto index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
-
-  std::cout << "ddd\n";
 
   // If the element's DOF transformations are permutations, permute the
   // DOF numbering on each cell
@@ -187,8 +182,6 @@ fem::create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
       unpermute_dofs(dofmap.links(cell), cell_info[cell]);
   }
-
-  std::cout << "zzz\n";
 
   return DofMap(layout, index_map, bs, std::move(dofmap), bs);
 }
