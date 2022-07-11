@@ -440,7 +440,7 @@ bool FiniteElement::interpolation_ident() const noexcept
   return _element->interpolation_is_identity();
 }
 //-----------------------------------------------------------------------------
-const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
+xt::xtensor<double, 2> FiniteElement::interpolation_points() const
 {
   if (!_element)
   {
@@ -449,10 +449,11 @@ const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
         "this is a mixed element?");
   }
 
-  return _element->points();
+  auto& [x, shape] = _element->points();
+  return xt::adapt(x, shape);
 }
 //-----------------------------------------------------------------------------
-const xt::xtensor<double, 2>& FiniteElement::interpolation_operator() const
+xt::xtensor<double, 2> FiniteElement::interpolation_operator() const
 {
   if (!_element)
   {
@@ -460,7 +461,8 @@ const xt::xtensor<double, 2>& FiniteElement::interpolation_operator() const
                              "Cannot interpolate mixed elements directly.");
   }
 
-  return _element->interpolation_matrix();
+  auto& [im, shape] = _element->interpolation_matrix();
+  return xt::adapt(im, shape);
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 2>

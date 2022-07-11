@@ -170,7 +170,7 @@ public:
   /// nodal positions. For other elements the points will typically be
   /// the quadrature points used to evaluate moment degrees of freedom.
   /// @return Points on the reference cell. Shape is (num_points, tdim).
-  const xt::xtensor<double, 2>& interpolation_points() const;
+  xt::xtensor<double, 2> interpolation_points() const;
 
   /// Interpolation operator (matrix) `Pi` that maps a function
   /// evaluated at the points provided by
@@ -180,7 +180,7 @@ public:
   /// `f_x` should be ordered.
   /// @return The interpolation operator `Pi`. Shape is (num_dofs,
   /// num_points*value_size)
-  const xt::xtensor<double, 2>& interpolation_operator() const;
+  xt::xtensor<double, 2> interpolation_operator() const;
 
   /// Create a matrix that maps degrees of freedom from one element to
   /// this element (interpolation).
