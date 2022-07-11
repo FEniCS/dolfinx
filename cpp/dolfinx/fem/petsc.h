@@ -47,14 +47,14 @@ Mat create_matrix(const Form<PetscScalar>& a,
 /// bilinear forms. The caller is responsible for destroying the Mat
 /// object.
 Mat create_matrix_block(
-    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
+    const std::vector<std::vector<const Form<PetscScalar>*>>& a,
     const std::string& type = std::string());
 
 /// Create nested (MatNest) matrix
 ///
 /// The caller is responsible for destroying the Mat object
 Mat create_matrix_nest(
-    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
+    const std::vector<std::vector<const Form<PetscScalar>*>>& a,
     const std::vector<std::vector<std::string>>& types);
 
 /// Initialise monolithic vector. Vector is not zeroed.
