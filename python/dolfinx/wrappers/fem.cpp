@@ -1024,7 +1024,7 @@ void fem(py::module& m)
       .def_property_readonly("value_shape",
                              [](const dolfinx::fem::FiniteElement& self)
                              {
-                               xtl::span<const int> shape = self.value_shape();
+                               xtl::span<const std::size_t> shape = self.value_shape();
                                return py::array_t(shape.size(), shape.data(),
                                                   py::none());
                              })
