@@ -31,11 +31,11 @@ Mat fem::petsc::create_matrix(const Form<PetscScalar>& a,
 }
 //-----------------------------------------------------------------------------
 Mat fem::petsc::create_matrix_block(
-    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
+    const std::vector<std::vector<const Form<PetscScalar>*>>& a,
     const std::string& type)
 {
   // Extract and check row/column ranges
-  std::array<std::vector<std::shared_ptr<const fem::FunctionSpace>>, 2> V
+  std::array<std::vector<std::shared_ptr<const FunctionSpace>>, 2> V
       = fem::common_function_spaces(extract_function_spaces(a));
   std::array<std::vector<int>, 2> bs_dofs;
   for (std::size_t i = 0; i < 2; ++i)
@@ -59,7 +59,7 @@ Mat fem::petsc::create_matrix_block(
           = {{V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
       const std::array bs = {V[0][row]->dofmap()->index_map_bs(),
                              V[1][col]->dofmap()->index_map_bs()};
-      if (const fem::Form<PetscScalar>* form = a[row][col]; form)
+      if (const Form<PetscScalar>* form = a[row][col]; form)
       {
         // Create sparsity pattern for block
         patterns[row].push_back(std::make_unique<la::SparsityPattern>(
@@ -68,7 +68,7 @@ Mat fem::petsc::create_matrix_block(
         // Build sparsity pattern for block
         assert(V[0][row]->dofmap());
         assert(V[1][col]->dofmap());
-        std::array<const std::reference_wrapper<const fem::DofMap>, 2> dofmaps{
+        std::array<const std::reference_wrapper<const DofMap>, 2> dofmaps{
             *V[0][row]->dofmap(), *V[1][col]->dofmap()};
         assert(patterns[row].back());
         auto& sp = patterns[row].back();
@@ -177,7 +177,7 @@ Mat fem::petsc::create_matrix_block(
 }
 //-----------------------------------------------------------------------------
 Mat fem::petsc::create_matrix_nest(
-    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
+    const std::vector<std::vector<const Form<PetscScalar>*>>& a,
     const std::vector<std::vector<std::string>>& types)
 {
   // Extract and check row/column ranges
@@ -196,7 +196,7 @@ Mat fem::petsc::create_matrix_nest(
   {
     for (int j = 0; j < cols; ++j)
     {
-      if (const fem::Form<PetscScalar>* form = a[i][j]; form)
+      if (const Form<PetscScalar>* form = a[i][j]; form)
         mats[i * cols + j] = create_matrix(*form, _types[i][j]);
     }
   }

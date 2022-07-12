@@ -32,10 +32,22 @@ class Constant;
 template <typename T>
 class Expression
 {
+  template <typename X, typename = void>
+  struct scalar_value_type
+  {
+    typedef X value_type;
+  };
+  template <typename X>
+  struct scalar_value_type<X, std::void_t<typename X::value_type>>
+  {
+    typedef typename X::value_type value_type;
+  };
+  using scalar_value_type_t = typename scalar_value_type<T>::value_type;
+
 public:
-  /// Create an Expression
+  /// @brief Create an Expression
   ///
-  /// Users should prefer the create_expression factory functions
+  /// @note Users should prefer the create_expression factory functions
   ///
   /// @param[in] coefficients Coefficients in the Expression
   /// @param[in] constants Constants in the Expression
@@ -49,8 +61,9 @@ public:
       const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const Constant<T>>>& constants,
       const xt::xtensor<double, 2>& X,
-      const std::function<void(T*, const T*, const T*, const double*,
-                               const int*, const uint8_t*)>
+      const std::function<void(T*, const T*, const T*,
+                               const scalar_value_type_t*, const int*,
+                               const uint8_t*)>
           fn,
       const std::vector<int>& value_shape,
       const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
@@ -66,8 +79,10 @@ public:
     if (argument_function_space and _mesh != argument_function_space->mesh())
       throw std::runtime_error("Incompatible mesh");
     if (!_mesh)
+    {
       throw std::runtime_error(
           "No mesh could be associated with the Expression.");
+    }
   }
 
   /// Move constructor
@@ -78,15 +93,14 @@ public:
 
   /// Get argument function space
   /// @return The argument function space, nullptr if there is no argument.
-  std::shared_ptr<const fem::FunctionSpace> argument_function_space() const
+  std::shared_ptr<const FunctionSpace> argument_function_space() const
   {
     return _argument_function_space;
   };
 
   /// Get coefficients
   /// @return Vector of attached coefficients
-  const std::vector<std::shared_ptr<const fem::Function<T>>>&
-  coefficients() const
+  const std::vector<std::shared_ptr<const Function<T>>>& coefficients() const
   {
     return _coefficients;
   }
@@ -95,7 +109,7 @@ public:
   /// @return Vector of attached constants with their names. Names are
   ///   used to set constants in user's c++ code. Index in the vector is
   ///   the position of the constant in the original (nonsimplified) form.
-  const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants() const
+  const std::vector<std::shared_ptr<const Constant<T>>>& constants() const
   {
     return _constants;
   }
@@ -138,7 +152,7 @@ public:
     xtl::span<const double> x_g = _mesh->geometry().x();
 
     // Create data structures used in evaluation
-    std::vector<double> coordinate_dofs(3 * num_dofs_g);
+    std::vector<scalar_value_type_t> coordinate_dofs(3 * num_dofs_g);
 
     int num_argument_dofs = 1;
     xtl::span<const std::uint32_t> cell_info;
@@ -199,8 +213,8 @@ public:
 
   /// Get function for tabulate_expression.
   /// @return fn Function to tabulate expression.
-  const std::function<void(T*, const T*, const T*, const double*, const int*,
-                           const uint8_t*)>&
+  const std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
+                           const int*, const uint8_t*)>&
   get_tabulate_expression() const
   {
     return _fn;
@@ -214,15 +228,15 @@ public:
   /// @return value_size
   int value_size() const
   {
-    return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
-                           std::multiplies<int>());
+    return std::reduce(_value_shape.begin(), _value_shape.end(), 1,
+                       std::multiplies{});
   }
 
   /// Get value shape
   /// @return value shape
   const std::vector<int>& value_shape() const { return _value_shape; }
 
-  /// Get evaluation points on reference cell
+  /// @brief Evaluation points on the reference cell
   /// @return Evaluation points
   const xt::xtensor<double, 2>& X() const { return _x_ref; }
 
@@ -231,17 +245,17 @@ public:
 
 private:
   // Function space for Argument
-  std::shared_ptr<const fem::FunctionSpace> _argument_function_space;
+  std::shared_ptr<const FunctionSpace> _argument_function_space;
 
   // Coefficients associated with the Expression
-  std::vector<std::shared_ptr<const fem::Function<T>>> _coefficients;
+  std::vector<std::shared_ptr<const Function<T>>> _coefficients;
 
   // Constants associated with the Expression
-  std::vector<std::shared_ptr<const fem::Constant<T>>> _constants;
+  std::vector<std::shared_ptr<const Constant<T>>> _constants;
 
   // Function to evaluate the Expression
-  std::function<void(T*, const T*, const T*, const double*, const int*,
-                     const uint8_t*)>
+  std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
+                     const int*, const uint8_t*)>
       _fn;
 
   // The mesh

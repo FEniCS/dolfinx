@@ -104,7 +104,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
       = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
         / dofmap_bs;
 
-  if constexpr (std::is_scalar<T>::value)
+  if constexpr (std::is_scalar_v<T>)
   {
     // ---- Real
     std::vector<T> data(num_dofs * num_comp, 0);
@@ -489,7 +489,7 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
   // Write each real and imaginary part of the function
   const std::uint32_t num_components = std::pow(3, rank);
   assert(data.size() % num_components == 0);
-  if constexpr (std::is_scalar<T>::value)
+  if constexpr (std::is_scalar_v<T>)
   {
     // ---- Real
     const std::string u_name = u.name;
