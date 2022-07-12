@@ -223,13 +223,13 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
 
     std::array<std::vector<cmdspan2_t>, 4> _x;
     for (std::size_t i = 0; i < x.size(); ++i)
-      for (auto& xij : x[i])
-        _x[i].push_back(cmdspan2_t(xij.first.data(), xij.second));
+      for (auto& [buffer, shape] : x[i])
+        _x[i].push_back(cmdspan2_t(buffer.data(), shape));
 
     std::array<std::vector<cmdspan4_t>, 4> _M;
     for (std::size_t i = 0; i < M.size(); ++i)
-      for (auto& Mij : M[i])
-        _M[i].push_back(cmdspan4_t(Mij.first.data(), Mij.second));
+      for (auto& [buffer, shape] : M[i])
+        _M[i].push_back(cmdspan4_t(buffer.data(), shape));
 
     std::vector<double> wcoeffs_b(ce->wcoeffs_rows * ce->wcoeffs_cols);
     cmdspan2_t wcoeffs(wcoeffs_b.data(), ce->wcoeffs_rows, ce->wcoeffs_cols);
