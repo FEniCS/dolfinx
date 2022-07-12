@@ -47,6 +47,7 @@
 #include <ufcx.h>
 #include <utility>
 #include <xtensor/xadapt.hpp>
+#include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
@@ -820,11 +821,28 @@ void declare_form(py::module& m, const std::string& type)
                       const dolfinx::fem::Function<T>>>& coefficients,
                   const std::vector<std::shared_ptr<
                       const dolfinx::fem::Constant<T>>>& constants,
-                  const std::map<dolfinx::fem::IntegralType,
-                                 const dolfinx::mesh::MeshTags<int>*>&
+                  const std::map<
+                      dolfinx::fem::IntegralType,
+                      const std::map<std::int32_t, std::vector<std::int32_t>>>&
                       subdomains,
                   const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
                {
+                 //  TODO Use py::array instead of std::vector?
+
+                 //  const std::map<
+                 //      dolfinx::fem::IntegralType,
+                 //      const std::map<std::int32_t,
+                 //      std::vector<std::int32_t>>> _subdomains;
+
+                 for (auto const& kvp : subdomains)
+                 {
+                   for (auto const& kvp2 : kvp.second)
+                   {
+                     std::cout << kvp2.first << " " << xt::adapt(kvp2.second)
+                               << "\n";
+                   }
+                 }
+
                  ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
                  return dolfinx::fem::create_form<T>(
                      *p, spaces, coefficients, constants, subdomains, mesh);
@@ -894,7 +912,8 @@ void declare_form(py::module& m, const std::string& type)
          const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
              constants,
          const std::map<dolfinx::fem::IntegralType,
-                        const dolfinx::mesh::MeshTags<int>*>& subdomains,
+                        const std::map<std::int32_t,
+                                       std::vector<std::int32_t>>>& subdomains,
          const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
       {
         ufcx_form* p = reinterpret_cast<ufcx_form*>(form);

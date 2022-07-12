@@ -148,11 +148,13 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
                                         ]._cpp_object for i in range(ufcx_form.num_coefficients)]
         constants = [c._cpp_object for c in form.constants()]
 
-        # Subdomain markers (possibly None for some dimensions)
-        subdomains = {_cpp.fem.IntegralType.cell: subdomains.get("cell"),
-                      _cpp.fem.IntegralType.exterior_facet: subdomains.get("exterior_facet"),
-                      _cpp.fem.IntegralType.interior_facet: subdomains.get("interior_facet"),
-                      _cpp.fem.IntegralType.vertex: subdomains.get("vertex")}
+        # TODO Convert meshtags to entities here
+
+        # Subdomain markers (possibly empty dictionary for some dimensions)
+        subdomains = {_cpp.fem.IntegralType.cell: subdomains.get("cell", {}),
+                      _cpp.fem.IntegralType.exterior_facet: subdomains.get("exterior_facet", {}),
+                      _cpp.fem.IntegralType.interior_facet: subdomains.get("interior_facet", {}),
+                      _cpp.fem.IntegralType.vertex: subdomains.get("vertex", {})}
 
         return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, code)
 

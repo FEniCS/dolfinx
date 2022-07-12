@@ -311,7 +311,7 @@ void fem::compute_integration_domains(const fem::IntegralType integral_type,
     for (auto c = tagged_entities.cbegin(); c != entity_end; ++c)
     {
       const std::size_t pos = std::distance(tagged_entities.cbegin(), c);
-      
+
       // if (auto it = integrals.find(tags[pos]); it != integrals.end())
       //   it->second.second.push_back(*c);
     }
