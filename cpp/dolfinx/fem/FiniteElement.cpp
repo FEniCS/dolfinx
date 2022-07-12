@@ -162,8 +162,8 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
 
   if (is_basix_custom_element(e))
   {
-    // Recreate the custom Basix element using information written into the
-    // generated code
+    // Recreate the custom Basix element using information written into
+    // the generated code
     ufcx_basix_custom_finite_element* ce = e.custom_element;
     const basix::cell::type cell_type
         = static_cast<basix::cell::type>(ce->cell_type);
@@ -176,16 +176,6 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
     const int nderivs = ce->interpolation_nderivs;
     const std::size_t nderivs_dim = basix::polyset::nderivs(cell_type, nderivs);
 
-    namespace stdex = std::experimental;
-    using cmdspan2_t
-        = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-    using cmdspan4_t
-        = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
-
-    std::vector<double> wcoeffs_b(ce->wcoeffs_rows * ce->wcoeffs_cols);
-    cmdspan2_t wcoeffs(wcoeffs_b.data(), ce->wcoeffs_rows, ce->wcoeffs_cols);
-    std::copy_n(ce->wcoeffs, wcoeffs_b.size(), wcoeffs_b.begin());
-
     using array2_t = std::pair<std::vector<double>, std::array<std::size_t, 2>>;
     using array4_t = std::pair<std::vector<double>, std::array<std::size_t, 4>>;
     std::array<std::vector<array2_t>, 4> x;
@@ -194,31 +184,42 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
       int pt_n = 0;
       int p_e = 0;
       int m_e = 0;
-      const std::size_t dim = basix::cell::topological_dimension(cell_type);
+      const std::size_t dim = static_cast<std::size_t>(
+          basix::cell::topological_dimension(cell_type));
       for (std::size_t d = 0; d <= dim; ++d)
       {
         const int num_entities = basix::cell::num_sub_entities(cell_type, d);
         for (int entity = 0; entity < num_entities; ++entity)
         {
-          const std::size_t npts = ce->npts[pt_n];
-          const std::size_t ndofs = ce->ndofs[pt_n];
-          ++pt_n;
+          std::size_t npts = ce->npts[pt_n + entity];
+          std::size_t ndofs = ce->ndofs[pt_n + entity];
 
           std::array pshape = {npts, dim};
-          auto& [pts_b, ps] = x[d].emplace_back(
-              std::vector<double>(pshape[0] * pshape[1]), pshape);
-          std::copy_n(ce->x + p_e, pts_b.size(), pts_b.begin());
-          p_e += pts_b.size();
+          auto& pts
+              = x[d].emplace_back(std::vector<double>(pshape[0] * pshape[1]),
+                                  pshape)
+                    .first;
+          std::copy_n(ce->x + p_e, pts.size(), pts.begin());
+          p_e += pts.size();
 
           std::array mshape = {ndofs, value_size, npts, nderivs_dim};
-          auto& [mat_b, ms] = M[d].emplace_back(
-              std::vector<double>(std::reduce(mshape.begin(), mshape.end())),
-              mshape);
-          std::copy_n(ce->M + m_e, mat_b.size(), mat_b.begin());
-          m_e += mat_b.size();
+          std::size_t msize
+              = std::reduce(mshape.begin(), mshape.end(), 1, std::multiplies{});
+          auto& mat
+              = M[d].emplace_back(std::vector<double>(msize), mshape).first;
+          std::copy_n(ce->M + m_e, mat.size(), mat.begin());
+          m_e += mat.size();
         }
+
+        pt_n += num_entities;
       }
     }
+
+    namespace stdex = std::experimental;
+    using cmdspan2_t
+        = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+    using cmdspan4_t
+        = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
 
     std::array<std::vector<cmdspan2_t>, 4> _x;
     for (std::size_t i = 0; i < x.size(); ++i)
@@ -229,6 +230,10 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
     for (std::size_t i = 0; i < M.size(); ++i)
       for (auto& Mij : M[i])
         _M[i].push_back(cmdspan4_t(Mij.first.data(), Mij.second));
+
+    std::vector<double> wcoeffs_b(ce->wcoeffs_rows * ce->wcoeffs_cols);
+    cmdspan2_t wcoeffs(wcoeffs_b.data(), ce->wcoeffs_rows, ce->wcoeffs_cols);
+    std::copy_n(ce->wcoeffs, wcoeffs_b.size(), wcoeffs_b.begin());
 
     _element
         = std::make_unique<basix::FiniteElement>(basix::create_custom_element(
