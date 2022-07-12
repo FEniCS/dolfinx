@@ -201,7 +201,8 @@ del _ufl_id
 
 
 class MeshTagsMetaClass:
-    def __init__(self, mesh: Mesh, dim: int, indices: np.ndarray, values: np.ndarray):
+    def __init__(self, mesh: Mesh, dim: int, indices: numpy.typing.NDArray[typing.Any],
+                 values: numpy.typing.NDArray[typing.Any]):
         """A distributed sparse matrix that uses compressed sparse row storage.
 
         Args:
@@ -272,7 +273,8 @@ def meshtags(mesh: Mesh, dim: int, indices: np.ndarray,
     return tags(mesh, dim, indices, values)
 
 
-def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32, values: np.ndarray):
+def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32,
+                           values: numpy.typing.NDArray[typing.Any]):
     """Create a MeshTags object that associates data with a subset of
     mesh entities, where the entities are defined by their vertices.
 
