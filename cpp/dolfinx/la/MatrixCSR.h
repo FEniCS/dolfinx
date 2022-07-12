@@ -184,8 +184,7 @@ public:
     xtl::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offset();
     _off_diagonal_offset.reserve(num_diag_nnz.size());
     std::transform(num_diag_nnz.begin(), num_diag_nnz.end(), _row_ptr.begin(),
-                   std::back_inserter(_off_diagonal_offset),
-                   std::plus<std::int32_t>());
+                   std::back_inserter(_off_diagonal_offset), std::plus{});
 
     // Some short-hand
     const std::array local_size
