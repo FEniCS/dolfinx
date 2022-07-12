@@ -649,7 +649,7 @@ xdmf_utils::distribute_entity_data(
 
     // TODO: Pack into one MPI call
     const int send_val_size = std::transform_reduce(
-        send_vals_owned.begin(), send_vals_owned.end(), 0, std::plus<int>(),
+        send_vals_owned.begin(), send_vals_owned.end(), 0, std::plus{},
         [](const std::vector<std::int32_t>& v) { return v.size(); });
     LOG(INFO) << "XDMF return entity and value data size:(" << send_val_size
               << ")";
