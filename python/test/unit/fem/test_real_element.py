@@ -74,7 +74,7 @@ def test_mixed_real_element(cell):
     A = dolfinx.fem.petsc.assemble_vector(a)
     a2 = form(v2 * ufl.dx)
     A2 = dolfinx.fem.petsc.assemble_vector(a2)
-    assert len(A.array) == len(A2.array) + 1
+    assert A.getSize() == A2.getSize() + 1
 
 
 @pytest.mark.parametrize("cell", ["interval", "triangle", "tetrahedron", "quadrilateral", "hexahedron"])

@@ -791,7 +791,7 @@ void declare_form(py::module& m, const std::string& type)
                 for (auto& kernel_type : integrals)
                 {
                   // Set subdomain markers
-                  _integrals[kernel_type.first].second = nullptr;
+                  _integrals[kernel_type.first].second = kernel_type.second.second;
 
                   // Loop over each domain kernel
                   for (auto& kernel : kernel_type.second.first)
@@ -1024,7 +1024,7 @@ void fem(py::module& m)
       .def_property_readonly("value_shape",
                              [](const dolfinx::fem::FiniteElement& self)
                              {
-                               xtl::span<const int> shape = self.value_shape();
+                               xtl::span<const std::size_t> shape = self.value_shape();
                                return py::array_t(shape.size(), shape.data(),
                                                   py::none());
                              })

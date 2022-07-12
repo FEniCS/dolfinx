@@ -97,7 +97,7 @@ public:
 
   /// Shape of the value space. The rank is the size of the
   /// `value_shape`.
-  xtl::span<const int> value_shape() const noexcept;
+  xtl::span<const std::size_t> value_shape() const noexcept;
 
   /// The finite element family
   /// @return The string of the finite element family
@@ -658,7 +658,7 @@ private:
   std::vector<std::shared_ptr<const FiniteElement>> _sub_elements;
 
   // Dimension of each value space
-  std::vector<int> _value_shape;
+  std::vector<std::size_t> _value_shape;
 
   // Block size for VectorElements and TensorElements. This gives the
   // number of DOFs co-located at each dof 'point'.
