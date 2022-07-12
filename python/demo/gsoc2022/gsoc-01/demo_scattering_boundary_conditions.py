@@ -42,13 +42,13 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
-from gmsh_helpers import gmsh_model_to_mesh
 from mesh_wire import generate_mesh_wire
 from utils import calculate_analytical_efficiencies
 
 import ufl
 from dolfinx import fem, plot
 from dolfinx.io import VTXWriter
+from dolfinx.io.gmshio import model_to_mesh
 from ufl import (FacetNormal, as_vector, conj, cross, curl, inner, lhs, rhs,
                  sqrt)
 
@@ -249,8 +249,8 @@ model = generate_mesh_wire(
     radius_wire, radius_dom, in_wire_size, on_wire_size, bkg_size,
     boundary_size, au_tag, bkg_tag, boundary_tag)
 
-mesh, cell_tags, facet_tags = gmsh_model_to_mesh(
-    model, cell_data=True, facet_data=True, gdim=2)
+mesh, cell_tags, facet_tags = model_to_mesh(
+    model, MPI.COMM_WORLD, 0, gdim=2)
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
 # -
@@ -529,66 +529,4 @@ V_normEsh = fem.FunctionSpace(mesh, lagr_el)
 norm_expr = fem.Expression(norm_func, V_normEsh.element.interpolation_points)
 normEsh = fem.Function(V_normEsh)
 normEsh.interpolate(norm_expr)
-# -
-
-# +
-# Calculation of analytical efficiencies
-q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
-    reps_au,
-    ieps_au,
-    n_bkg,
-    wl0,
-    radius_wire)
-
-# Vacuum impedance
-Z0 = np.sqrt(mu_0 / epsilon_0)
-
-# Magnetic field H
-Hh_3d = -1j * curl_2d(Esh) / Z0 / k0 / n_bkg
-
-Esh_3d = as_vector((Esh[0], Esh[1], 0))
-E_3d = as_vector((E[0], E[1], 0))
-
-# Intensity of the electromagnetic fields I0 = 0.5*E0**2/Z0
-# E0 = np.sqrt(ax**2 + ay**2) = 1, see background_electric_field
-I0 = 0.5 / Z0
-
-# Geometrical cross section of the wire
-gcs = 2 * radius_wire
-
-# Quantities for the calculation of efficiencies
-P = 0.5 * inner(cross(Esh_3d, conj(Hh_3d)), n_3d)
-Q = 0.5 * ieps_au * k0 * (inner(E_3d, E_3d)) / Z0 / n_bkg
-
-# Normalized efficiencies
-q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / gcs / I0).real
-# Sum results from all MPI processes
-q_abs_fenics = mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
-
-q_sca_fenics_proc = (fem.assemble_scalar(fem.form(P * dsbc)) / gcs / I0).real
-
-# Sum results from all MPI processes
-q_sca_fenics = mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
-
-q_ext_fenics = q_abs_fenics + q_sca_fenics
-
-err_abs = np.abs(q_abs_analyt - q_abs_fenics) / q_abs_analyt * 100
-err_sca = np.abs(q_sca_analyt - q_sca_fenics) / q_sca_analyt * 100
-err_ext = np.abs(q_ext_analyt - q_ext_fenics) / q_ext_analyt * 100
-
-if MPI.COMM_WORLD.rank == 0:
-
-    print()
-    print(f"The analytical absorption efficiency is {q_abs_analyt}")
-    print(f"The numerical absorption efficiency is {q_abs_fenics}")
-    print(f"The error is {err_abs}%")
-    print()
-    print(f"The analytical scattering efficiency is {q_sca_analyt}")
-    print(f"The numerical scattering efficiency is {q_sca_fenics}")
-    print(f"The error is {err_sca}%")
-    print()
-    print(f"The analytical extinction efficiency is {q_ext_analyt}")
-    print(f"The numerical extinction efficiency is {q_ext_fenics}")
-    print(f"The error is {err_ext}%")
-
 # -
