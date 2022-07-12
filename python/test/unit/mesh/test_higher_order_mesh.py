@@ -574,7 +574,7 @@ def test_gmsh_input_3d(order, cell_type):
     except ImportError:
         pytest.skip()
     if cell_type == CellType.hexahedron and order > 2:
-        pytest.xfail("GMSH permutation for order > 2 hexahedra not implemented in DOLFINx.")
+        pytest.xfail("Gmsh permutation for order > 2 hexahedra not implemented in DOLFINx.")
 
     res = 0.2
 
@@ -614,7 +614,7 @@ def test_gmsh_input_3d(order, cell_type):
         gmsh_cell_id = MPI.COMM_WORLD.bcast(gmsh.model.mesh.getElementType("hexahedron", order), root=0)
     gmsh.finalize()
 
-    # Permute the mesh topology from GMSH ordering to DOLFINx ordering
+    # Permute the mesh topology from Gmsh ordering to DOLFINx ordering
     domain = ufl_mesh(gmsh_cell_id, 3)
     cells = cells[:, cell_perm_array(cell_type, cells.shape[1])]
 

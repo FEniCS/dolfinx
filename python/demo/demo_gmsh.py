@@ -29,13 +29,14 @@ from mpi4py import MPI
 
 # -
 
-# Generate a mesh on each rank with the GMSH API, and create a DOLFINx
-# mesh on each rank with corresponding mesh tags for the cells of the mesh.
+# Generate a mesh on each rank with the Gmsh API, and create a DOLFINx
+# mesh on each rank with corresponding mesh tags for the cells of the
+# mesh.
 
 # +
 gmsh.initialize()
 
-# Choose if GMSH output is verbose
+# Choose if Gmsh output is verbose
 gmsh.option.setNumber("General.Terminal", 0)
 model = gmsh.model()
 model.add("Sphere")
@@ -45,7 +46,8 @@ sphere = model.occ.addSphere(0, 0, 0, 1, tag=1)
 # Synchronize OpenCascade representation with gmsh model
 model.occ.synchronize()
 
-# Add physical marker for cells. It is important to call this function after OpenCascade synchronization
+# Add physical marker for cells. It is important to call this function
+# after OpenCascade synchronization
 model.add_physical_group(3, [sphere])
 
 
@@ -66,7 +68,8 @@ with XDMFFile(msh.comm, f"out_gmsh/mesh_rank_{MPI.COMM_WORLD.rank}.xdmf", "w") a
 # -
 
 # Create a distributed (parallel) mesh with affine geometry. Generate
-# mesh on rank 0, then build a distributed mesh. Create mesh tags on exterior facets.
+# mesh on rank 0, then build a distributed mesh. Create mesh tags on
+# exterior facets.
 
 # +
 
@@ -149,6 +152,7 @@ if mesh_comm.rank == model_rank:
     # Generate
     model.add("Hexahedral mesh")
     model.setCurrent("Hexahedral mesh")
+
     # Recombine tetrahedrons to hexahedrons
     gmsh.option.setNumber("Mesh.RecombinationAlgorithm", 2)
     gmsh.option.setNumber("Mesh.RecombineAll", 2)
