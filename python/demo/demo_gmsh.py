@@ -12,7 +12,7 @@
 #
 # # Mesh generation with Gmsh
 #
-# Copyright (C) 2020 Garth N. Wells and Jørgen S. Dokken
+# Copyright (C) 2020-2022 Garth N. Wells and Jørgen S. Dokken
 
 # +
 import sys
@@ -23,53 +23,59 @@ except ImportError:
     print("This demo requires gmsh to be installed")
     sys.exit(0)
 
-import numpy as np
 
-from dolfinx.graph import create_adjacencylist
-from dolfinx.io import XDMFFile, distribute_entity_data, gmshio
-from dolfinx.mesh import CellType, create_mesh, meshtags_from_entities
-
+from dolfinx.io import XDMFFile, gmshio
 from mpi4py import MPI
 
 # -
 
-# Generate a mesh on each rank with the gmsh API, and create a DOLFINx
-# mesh on each rank.
+# Generate a mesh on each rank with the Gmsh API, and create a DOLFINx
+# mesh on each rank with corresponding mesh tags for the cells of the
+# mesh.
 
 # +
 gmsh.initialize()
+
+# Choose if Gmsh output is verbose
 gmsh.option.setNumber("General.Terminal", 0)
 model = gmsh.model()
 model.add("Sphere")
 model.setCurrent("Sphere")
-model.occ.addSphere(0, 0, 0, 1, tag=1)
+sphere = model.occ.addSphere(0, 0, 0, 1, tag=1)
 
-# Generate mesh
+# Synchronize OpenCascade representation with gmsh model
 model.occ.synchronize()
+
+# Add physical marker for cells. It is important to call this function
+# after OpenCascade synchronization
+model.add_physical_group(3, [sphere])
+
+
+# Generate the mesh
 model.mesh.generate(3)
 
+msh, cell_markers, facet_markers = gmshio.model_to_mesh(model, MPI.COMM_SELF, 0)
+msh.name = "Sphere"
+cell_markers.name = f"{msh.name}_cells"
+facet_markers.name = f"{msh.name}_facets"
 
-# Extract the mesh geometry from the GMSH model as a (num_nodes, 3) array,
-# where the i-th row corresponds to the i-th node in the mesh
-x = gmshio.extract_geometry(model, name="Sphere")
-
-# Extract cells from gmsh (Only interested in tetrahedrons)
-element_types, element_tags, node_tags = model.mesh.getElements(dim=3)
-assert len(element_types) == 1
-name, dim, order, num_nodes, local_coords, num_first_order_nodes = model.mesh.getElementProperties(element_types[0])
-cells = node_tags[0].reshape(-1, num_nodes) - 1
-
-msh = create_mesh(MPI.COMM_SELF, cells, x, gmshio.ufl_mesh(element_types[0], x.shape[1]))
-
-with XDMFFile(MPI.COMM_SELF, f"out_gmsh/mesh_rank_{MPI.COMM_WORLD.rank}.xdmf", "w") as file:
+with XDMFFile(msh.comm, f"out_gmsh/mesh_rank_{MPI.COMM_WORLD.rank}.xdmf", "w") as file:
     file.write_mesh(msh)
+    file.write_meshtags(cell_markers)
+    msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
+    file.write_meshtags(facet_markers)
+
 # -
 
 # Create a distributed (parallel) mesh with affine geometry. Generate
-# mesh on rank 0, then build a distributed mesh
+# mesh on rank 0, then build a distributed mesh. Create mesh tags on
+# exterior facets.
 
 # +
-if MPI.COMM_WORLD.rank == 0:
+
+mesh_comm = MPI.COMM_WORLD
+model_rank = 0
+if mesh_comm.rank == model_rank:
     # Generate a mesh
 
     model.add("Sphere minus box")
@@ -93,46 +99,26 @@ if MPI.COMM_WORLD.rank == 0:
 
     model.mesh.generate(3)
 
-    # Get mesh geometry from GMSH model
-    x = gmshio.extract_geometry(model, name="Sphere minus box")
-
-    # Broadcast cell type data and geometric dimension
-    gmsh_cell_id = MPI.COMM_WORLD.bcast(model.mesh.getElementType("tetrahedron", 1), root=0)
-
-    # Get mesh topology for all physically marked entities of dimension 0 to tdim
-    topologies = gmshio.extract_topology_and_markers(model, "Sphere minus box")
-    cells = topologies[gmsh_cell_id]["topology"]
-    cell_data = topologies[gmsh_cell_id]["cell_data"]
-    num_nodes = MPI.COMM_WORLD.bcast(cells.shape[1], root=0)
-    gmsh_facet_id = model.mesh.getElementType("triangle", 1)
-    marked_facets = topologies[gmsh_facet_id]["topology"].astype(np.int64)
-    facet_values = topologies[gmsh_facet_id]["cell_data"].astype(np.int32)
-else:
-    gmsh_cell_id = MPI.COMM_WORLD.bcast(None, root=0)
-    num_nodes = MPI.COMM_WORLD.bcast(None, root=0)
-    cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
-    marked_facets, facet_values = np.empty((0, 3), dtype=np.int64), np.empty((0,), dtype=np.int32)
-
-
-msh = create_mesh(MPI.COMM_WORLD, cells, x, gmshio.ufl_mesh(gmsh_cell_id, 3))
+msh, mt, ft = gmshio.model_to_mesh(model, mesh_comm, model_rank)
 msh.name = "ball_d1"
-entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
+mt.name = f"{msh.name}_cells"
+ft.name = f"{msh.name}_facets"
 
-msh.topology.create_connectivity(2, 0)
-mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), values)
-mt.name = "ball_d1_surface"
-
-with XDMFFile(MPI.COMM_WORLD, "out_gmsh/mesh.xdmf", "w") as file:
+with XDMFFile(msh.comm, "out_gmsh/mesh.xdmf", "w") as file:
     file.write_mesh(msh)
     msh.topology.create_connectivity(2, 3)
-    file.write_meshtags(mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='ball_d1']/Geometry")
+    file.write_meshtags(mt, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
+    file.write_meshtags(ft, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
 # -
 
 # Create a distributed (parallel) mesh with quadratic geometry. Generate
 # mesh on rank 0, then build a distributed mesh.
 
 # +
-if MPI.COMM_WORLD.rank == 0:
+
+mesh_comm = MPI.COMM_WORLD
+model_rank = 0
+if mesh_comm.rank == model_rank:
     # Using model.setCurrent(name) lets you change between models
     model.setCurrent("Sphere minus box")
 
@@ -142,54 +128,31 @@ if MPI.COMM_WORLD.rank == 0:
     model.mesh.setOrder(2)
     gmsh.option.setNumber("General.Terminal", 0)
 
-    # Sort mesh nodes according to their index in gmsh
-    x = gmshio.extract_geometry(model, model.getCurrent())
-
-    # Broadcast cell type data and geometric dimension
-    gmsh_cell_id = MPI.COMM_WORLD.bcast(model.mesh.getElementType("tetrahedron", 2), root=0)
-
-    # Get mesh topology for all entities entities with physical tags of dimension [0, tdim]
-    topologies = gmshio.extract_topology_and_markers(model, model.getCurrent())
-    cells = topologies[gmsh_cell_id]["topology"]
-    cell_data = topologies[gmsh_cell_id]["cell_data"]
-
-    num_nodes = MPI.COMM_WORLD.bcast(cells.shape[1], root=0)
-    gmsh_facet_id = model.mesh.getElementType("triangle", 2)
-    marked_facets = topologies[gmsh_facet_id]["topology"].astype(np.int64)
-    facet_values = topologies[gmsh_facet_id]["cell_data"].astype(np.int32)
-
-else:
-    gmsh_cell_id = MPI.COMM_WORLD.bcast(None, root=0)
-    num_nodes = MPI.COMM_WORLD.bcast(None, root=0)
-    cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
-    marked_facets, facet_values = np.empty((0, 6)).astype(np.int64), np.empty((0,)).astype(np.int32)
-
-# Permute the topology from GMSH to DOLFINx ordering
-domain = gmshio.ufl_mesh(gmsh_cell_id, 3)
-
-gmsh_tetra10 = gmshio.cell_perm_array(CellType.tetrahedron, 10)
-cells = cells[:, gmsh_tetra10]
-
-msh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
+msh, ct, ft = gmshio.model_to_mesh(model, mesh_comm, model_rank)
 msh.name = "ball_d2"
+ct.name = f"{msh.name}_cells"
+ft.name = f"{msh.name}_surface"
 
-# Permute also entities which are tagged
-gmsh_triangle6 = gmshio.cell_perm_array(CellType.triangle, 6)
-marked_facets = marked_facets[:, gmsh_triangle6]
 
-entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
-msh.topology.create_connectivity(2, 0)
-mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), values)
-mt.name = "ball_d2_surface"
-with XDMFFile(MPI.COMM_WORLD, "out_gmsh/mesh.xdmf", "a") as file:
+with XDMFFile(msh.comm, "out_gmsh/mesh.xdmf", "a") as file:
     file.write_mesh(msh)
-    msh.topology.create_connectivity(2, 3)
-    file.write_meshtags(mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='ball_d2']/Geometry")
+    file.write_meshtags(ct, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
+    file.write_meshtags(ft, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
 
-if MPI.COMM_WORLD.rank == 0:
-    # Generate a mesh with 2nd-order hexahedral cells using gmsh
+# -
+
+# Create a distributed (parallel) 2nd order hexahedral mesh. Generate
+# mesh on rank 0, then build a distributed mesh.
+
+# +
+
+model_rank = 0
+mesh_comm = MPI.COMM_WORLD
+if mesh_comm.rank == model_rank:
+    # Generate
     model.add("Hexahedral mesh")
     model.setCurrent("Hexahedral mesh")
+
     # Recombine tetrahedrons to hexahedrons
     gmsh.option.setNumber("Mesh.RecombinationAlgorithm", 2)
     gmsh.option.setNumber("Mesh.RecombineAll", 2)
@@ -220,46 +183,13 @@ if MPI.COMM_WORLD.rank == 0:
     model.addPhysicalGroup(3, volume_entities, tag=1)
     model.setPhysicalName(3, 1, "Mesh volume")
 
-    # Sort mesh nodes according to their index in gmsh
-    x = gmshio.extract_geometry(model, model.getCurrent())
-
-    # Broadcast cell type data and geometric dimension
-    gmsh_cell_id = MPI.COMM_WORLD.bcast(model.mesh.getElementType("hexahedron", 2), root=0)
-
-    # Get mesh data for dim (0, tdim) for all physical entities
-    topologies = gmshio.extract_topology_and_markers(model, model.getCurrent())
-    cells = topologies[gmsh_cell_id]["topology"]
-    cell_data = topologies[gmsh_cell_id]["cell_data"]
-
-    num_nodes = MPI.COMM_WORLD.bcast(cells.shape[1], root=0)
-    gmsh_facet_id = model.mesh.getElementType("quadrangle", 2)
-    marked_facets = topologies[gmsh_facet_id]["topology"].astype(np.int64)
-    facet_values = topologies[gmsh_facet_id]["cell_data"].astype(np.int32)
-    gmsh.finalize()
-
-    # Permute tagged entities
-    gmsh_quad9 = gmshio.cell_perm_array(CellType.quadrilateral, 9)
-    marked_facets = marked_facets[:, gmsh_quad9]
-else:
-    gmsh_cell_id = MPI.COMM_WORLD.bcast(None, root=0)
-    num_nodes = MPI.COMM_WORLD.bcast(None, root=0)
-    cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
-    marked_facets, facet_values = np.empty((0, 9)).astype(np.int64), np.empty((0,)).astype(np.int32)
-
-# Permute the mesh topology from GMSH ordering to DOLFINx ordering
-domain = gmshio.ufl_mesh(gmsh_cell_id, 3)
-gmsh_hex27 = gmshio.cell_perm_array(CellType.hexahedron, 27)
-cells = cells[:, gmsh_hex27]
-
-msh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
+msh, mt, ft = gmshio.model_to_mesh(gmsh.model, mesh_comm, model_rank)
 msh.name = "hex_d2"
+mt.name = f"{msh.name}_cells"
+ft.name = f"{msh.name}_surface"
 
-entities, values = distribute_entity_data(msh, 2, marked_facets, facet_values)
-msh.topology.create_connectivity(2, 0)
-mt = meshtags_from_entities(msh, 2, create_adjacencylist(entities), values)
-mt.name = "hex_d2_surface"
 
-with XDMFFile(MPI.COMM_WORLD, "out_gmsh/mesh.xdmf", "a") as file:
+with XDMFFile(msh.comm, "out_gmsh/mesh.xdmf", "a") as file:
     file.write_mesh(msh)
-    msh.topology.create_connectivity(2, 3)
-    file.write_meshtags(mt, geometry_xpath="/Xdmf/Domain/Grid[@Name='hex_d2']/Geometry")
+    file.write_meshtags(mt, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
+    file.write_meshtags(ft, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")

@@ -84,9 +84,9 @@ public:
 
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
   /// for a second-order tensor in 3D.
-  /// @note The return value of this function is equal to
+  /// @note The return value of this function is equivalent to
   /// `std::accumulate(value_shape().begin(), value_shape().end(), 1,
-  /// std::multiplies<int>())`.
+  /// std::multiplies{})`.
   /// @return The value size
   int value_size() const;
 
@@ -97,7 +97,7 @@ public:
 
   /// Shape of the value space. The rank is the size of the
   /// `value_shape`.
-  xtl::span<const int> value_shape() const noexcept;
+  xtl::span<const std::size_t> value_shape() const noexcept;
 
   /// The finite element family
   /// @return The string of the finite element family
@@ -170,7 +170,7 @@ public:
   /// nodal positions. For other elements the points will typically be
   /// the quadrature points used to evaluate moment degrees of freedom.
   /// @return Points on the reference cell. Shape is (num_points, tdim).
-  const xt::xtensor<double, 2>& interpolation_points() const;
+  xt::xtensor<double, 2> interpolation_points() const;
 
   /// Interpolation operator (matrix) `Pi` that maps a function
   /// evaluated at the points provided by
@@ -180,7 +180,7 @@ public:
   /// `f_x` should be ordered.
   /// @return The interpolation operator `Pi`. Shape is (num_dofs,
   /// num_points*value_size)
-  const xt::xtensor<double, 2>& interpolation_operator() const;
+  xt::xtensor<double, 2> interpolation_operator() const;
 
   /// Create a matrix that maps degrees of freedom from one element to
   /// this element (interpolation).
@@ -658,7 +658,7 @@ private:
   std::vector<std::shared_ptr<const FiniteElement>> _sub_elements;
 
   // Dimension of each value space
-  std::vector<int> _value_shape;
+  std::vector<std::size_t> _value_shape;
 
   // Block size for VectorElements and TensorElements. This gives the
   // number of DOFs co-located at each dof 'point'.

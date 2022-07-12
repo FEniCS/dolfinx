@@ -228,8 +228,8 @@ public:
   /// @return value_size
   int value_size() const
   {
-    return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
-                           std::multiplies<int>());
+    return std::reduce(_value_shape.begin(), _value_shape.end(), 1,
+                       std::multiplies{});
   }
 
   /// Get value shape

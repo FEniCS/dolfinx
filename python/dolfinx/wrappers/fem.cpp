@@ -414,8 +414,8 @@ void declare_objects(py::module& m, const std::string& type)
 
             // Compute value size
             auto vshape = element->value_shape();
-            std::size_t value_size = std::reduce(
-                std::begin(vshape), std::end(vshape), 1, std::multiplies<>());
+            std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
+                                                 1, std::multiplies{});
 
             std::function<void(T*, int, int, const double*)> f
                 = reinterpret_cast<void (*)(T*, int, int, const double*)>(addr);
@@ -791,7 +791,8 @@ void declare_form(py::module& m, const std::string& type)
                 for (auto& kernel_type : integrals)
                 {
                   // Set subdomain markers
-                  _integrals[kernel_type.first].second = nullptr;
+                  _integrals[kernel_type.first].second
+                      = kernel_type.second.second;
 
                   // Loop over each domain kernel
                   for (auto& kernel : kernel_type.second.first)
@@ -1015,23 +1016,19 @@ void fem(py::module& m)
       .def_property_readonly("num_sub_elements",
                              &dolfinx::fem::FiniteElement::num_sub_elements)
       .def_property_readonly(
-          "interpolation_points",
-          [](const dolfinx::fem::FiniteElement& self)
-          {
-            const xt::xtensor<double, 2>& x = self.interpolation_points();
-            return py::array_t<double>(x.shape(), x.data(), py::cast(self));
-          })
+          "interpolation_points", [](const dolfinx::fem::FiniteElement& self)
+          { return xt_as_pyarray(self.interpolation_points()); })
       .def_property_readonly("interpolation_ident",
                              &dolfinx::fem::FiniteElement::interpolation_ident)
       .def_property_readonly("space_dimension",
                              &dolfinx::fem::FiniteElement::space_dimension)
-      .def_property_readonly("value_shape",
-                             [](const dolfinx::fem::FiniteElement& self)
-                             {
-                               xtl::span<const int> shape = self.value_shape();
-                               return py::array_t(shape.size(), shape.data(),
-                                                  py::none());
-                             })
+      .def_property_readonly(
+          "value_shape",
+          [](const dolfinx::fem::FiniteElement& self)
+          {
+            xtl::span<const std::size_t> shape = self.value_shape();
+            return py::array_t(shape.size(), shape.data(), py::none());
+          })
       .def(
           "apply_dof_transformation",
           [](const dolfinx::fem::FiniteElement& self,
