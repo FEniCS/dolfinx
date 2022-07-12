@@ -26,9 +26,9 @@
 #include <utility>
 #include <vector>
 #include <xtensor/xadapt.hpp>
+#include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
-#include <xtensor/xio.hpp>
 
 /// @file utils.h
 /// @brief Functions supporting finite element method operations
@@ -380,6 +380,11 @@ Form<T> create_form(
 
     integral_data[IntegralType::exterior_facet].first.emplace_back(
         exterior_facet_integral_ids[i], k);
+
+    new_integral_data[IntegralType::exterior_facet]
+                     [exterior_facet_integral_ids[i]]
+        = {k, subdomains.at(IntegralType::exterior_facet)
+                  .at(exterior_facet_integral_ids[i])};
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }
@@ -424,6 +429,12 @@ Form<T> create_form(
 
     integral_data[IntegralType::interior_facet].first.emplace_back(
         interior_facet_integral_ids[i], k);
+
+    new_integral_data[IntegralType::interior_facet]
+                     [interior_facet_integral_ids[i]]
+        = {k, subdomains.at(IntegralType::interior_facet)
+                  .at(interior_facet_integral_ids[i])};
+
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }

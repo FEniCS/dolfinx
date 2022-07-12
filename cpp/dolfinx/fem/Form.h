@@ -129,56 +129,14 @@ public:
       case IntegralType::cell:
         _cell_integrals = integrals[type];
         break;
-      // case IntegralType::exterior_facet:
-      //   for (auto& integral : integral_type.second.first)
-      //   {
-      //     _exterior_facet_integrals.insert(
-      //         {integral.first, {integral.second, {}}});
-      //   }
-      //   break;
-      // case IntegralType::interior_facet:
-      //   for (auto& integral : integral_type.second.first)
-      //   {
-      //     _interior_facet_integrals.insert(
-      //         {integral.first, {integral.second, {}}});
-      //   }
-      //   break;
+      case IntegralType::exterior_facet:
+        _exterior_facet_integrals = integrals[type];
+        break;
+      case IntegralType::interior_facet:
+        _interior_facet_integrals = integrals[type];
+        break;
       }
     }
-
-    // // Store kernels, looping over integrals by domain type (dimension)
-    // for (auto& integral_type : integrals)
-    // {
-    //   const IntegralType type = integral_type.first;
-    //   // Loop over integrals kernels and set domains
-    //   switch (type)
-    //   {
-    //   case IntegralType::cell:
-    //     for (auto& integral : integral_type.second.first)
-    //       _cell_integrals.insert({integral.first, {integral.second, {}}});
-    //     break;
-    //   case IntegralType::exterior_facet:
-    //     for (auto& integral : integral_type.second.first)
-    //     {
-    //       _exterior_facet_integrals.insert(
-    //           {integral.first, {integral.second, {}}});
-    //     }
-    //     break;
-    //   case IntegralType::interior_facet:
-    //     for (auto& integral : integral_type.second.first)
-    //     {
-    //       _interior_facet_integrals.insert(
-    //           {integral.first, {integral.second, {}}});
-    //     }
-    //     break;
-    //   }
-
-    //   if (integral_type.second.second)
-    //   {
-    //     assert(_mesh == integral_type.second.second->mesh());
-    //     set_domains(type, *integral_type.second.second);
-    //   }
-    // }
 
     // // FIXME: do this neatly via a static function
     // // Set markers for default integrals
