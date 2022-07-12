@@ -99,7 +99,8 @@ public:
                    int, std::function<void(T*, const T*, const T*,
                                            const scalar_value_type_t*,
                                            const int*, const std::uint8_t*)>>>,
-               const mesh::MeshTags<int>*>>& integrals,
+               const std::map<std::int32_t, std::vector<std::int32_t>>>>&
+           integrals,
        const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
        const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
        bool needs_facet_permutations,
@@ -119,43 +120,43 @@ public:
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
 
-    // Store kernels, looping over integrals by domain type (dimension)
-    for (auto& integral_type : integrals)
-    {
-      const IntegralType type = integral_type.first;
-      // Loop over integrals kernels and set domains
-      switch (type)
-      {
-      case IntegralType::cell:
-        for (auto& integral : integral_type.second.first)
-          _cell_integrals.insert({integral.first, {integral.second, {}}});
-        break;
-      case IntegralType::exterior_facet:
-        for (auto& integral : integral_type.second.first)
-        {
-          _exterior_facet_integrals.insert(
-              {integral.first, {integral.second, {}}});
-        }
-        break;
-      case IntegralType::interior_facet:
-        for (auto& integral : integral_type.second.first)
-        {
-          _interior_facet_integrals.insert(
-              {integral.first, {integral.second, {}}});
-        }
-        break;
-      }
+    // // Store kernels, looping over integrals by domain type (dimension)
+    // for (auto& integral_type : integrals)
+    // {
+    //   const IntegralType type = integral_type.first;
+    //   // Loop over integrals kernels and set domains
+    //   switch (type)
+    //   {
+    //   case IntegralType::cell:
+    //     for (auto& integral : integral_type.second.first)
+    //       _cell_integrals.insert({integral.first, {integral.second, {}}});
+    //     break;
+    //   case IntegralType::exterior_facet:
+    //     for (auto& integral : integral_type.second.first)
+    //     {
+    //       _exterior_facet_integrals.insert(
+    //           {integral.first, {integral.second, {}}});
+    //     }
+    //     break;
+    //   case IntegralType::interior_facet:
+    //     for (auto& integral : integral_type.second.first)
+    //     {
+    //       _interior_facet_integrals.insert(
+    //           {integral.first, {integral.second, {}}});
+    //     }
+    //     break;
+    //   }
 
-      if (integral_type.second.second)
-      {
-        assert(_mesh == integral_type.second.second->mesh());
-        set_domains(type, *integral_type.second.second);
-      }
-    }
+    //   if (integral_type.second.second)
+    //   {
+    //     assert(_mesh == integral_type.second.second->mesh());
+    //     set_domains(type, *integral_type.second.second);
+    //   }
+    // }
 
-    // FIXME: do this neatly via a static function
-    // Set markers for default integrals
-    set_default_domains(*_mesh);
+    // // FIXME: do this neatly via a static function
+    // // Set markers for default integrals
+    // set_default_domains(*_mesh);
   }
 
   /// Copy constructor

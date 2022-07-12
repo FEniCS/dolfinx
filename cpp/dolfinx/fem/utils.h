@@ -274,8 +274,9 @@ Form<T> create_form(
       T*, const T*, const T*,
       const typename impl::scalar_value_type<T>::value_type*, const int*,
       const std::uint8_t*)>;
-  std::map<IntegralType, std::pair<std::vector<std::pair<int, kern>>,
-                                   const mesh::MeshTags<int>*>>
+  std::map<IntegralType,
+           std::pair<std::vector<std::pair<int, kern>>,
+                     const std::map<std::int32_t, std::vector<std::int32_t>>>>
       integral_data;
 
   bool needs_facet_permutations = false;
