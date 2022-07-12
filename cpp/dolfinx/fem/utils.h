@@ -279,6 +279,10 @@ Form<T> create_form(
                      const std::map<std::int32_t, std::vector<std::int32_t>>>>
       integral_data;
 
+  std::map<IntegralType,
+           std::map<int, std::pair<kern, std::vector<std::int32_t>>>>
+      new_integral_data;
+
   bool needs_facet_permutations = false;
 
   // Attach cell kernels
@@ -313,6 +317,9 @@ Form<T> create_form(
 
     integral_data[IntegralType::cell].first.emplace_back(cell_integral_ids[i],
                                                          k);
+    new_integral_data[IntegralType::cell][cell_integral_ids[i]]
+        = {k, subdomains.at(IntegralType::cell).at(cell_integral_ids[i])};
+
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }
@@ -321,8 +328,8 @@ Form<T> create_form(
   if (auto it = subdomains.find(IntegralType::cell);
       it != subdomains.end() and !cell_integral_ids.empty())
   {
-    // compute_integration_domains(*it->second);
-    // integral_data[IntegralType::cell].second = it->second;
+  //   // compute_integration_domains(*it->second);
+  //   // integral_data[IntegralType::cell].second = it->second;
   }
 
   // FIXME: Can facets be handled better?
