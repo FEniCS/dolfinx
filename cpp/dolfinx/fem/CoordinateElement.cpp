@@ -165,9 +165,9 @@ void CoordinateElement::pull_back_nonaffine(
                      [](double a, double b) { return a + b; });
 
       // Compute norm(dX)
-      if (auto dX_squared = std::transform_reduce(
-              dX.cbegin(), dX.cend(), 0.0, std::plus<double>(),
-              [](const auto v) { return v * v; });
+      if (auto dX_squared
+          = std::transform_reduce(dX.cbegin(), dX.cend(), 0.0, std::plus{},
+                                  [](auto v) { return v * v; });
           std::sqrt(dX_squared) < tol)
       {
         break;

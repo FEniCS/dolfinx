@@ -84,9 +84,9 @@ public:
 
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
   /// for a second-order tensor in 3D.
-  /// @note The return value of this function is equal to
+  /// @note The return value of this function is equivalent to
   /// `std::accumulate(value_shape().begin(), value_shape().end(), 1,
-  /// std::multiplies<int>())`.
+  /// std::multiplies{})`.
   /// @return The value size
   int value_size() const;
 

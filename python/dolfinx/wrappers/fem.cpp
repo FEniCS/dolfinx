@@ -414,8 +414,8 @@ void declare_objects(py::module& m, const std::string& type)
 
             // Compute value size
             auto vshape = element->value_shape();
-            std::size_t value_size = std::reduce(
-                std::begin(vshape), std::end(vshape), 1, std::multiplies<>());
+            std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
+                                                 1, std::multiplies{});
 
             std::function<void(T*, int, int, const double*)> f
                 = reinterpret_cast<void (*)(T*, int, int, const double*)>(addr);
