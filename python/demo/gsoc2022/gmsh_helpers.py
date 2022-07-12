@@ -11,8 +11,8 @@ import numpy
 from dolfinx.cpp.graph import AdjacencyList_int32
 from dolfinx.cpp.io import distribute_entity_data, perm_gmsh
 from dolfinx.cpp.mesh import cell_entity_type, to_type
-from dolfinx.io import (extract_gmsh_geometry,
-                        extract_gmsh_topology_and_markers, ufl_mesh_from_gmsh)
+from dolfinx.io.gmshio import (extract_geometry,
+                        extract_topology_and_markers, ufl_mesh)
 from dolfinx.mesh import create_mesh, meshtags_from_entities
 from mpi4py import MPI
 
@@ -64,10 +64,10 @@ def gmsh_model_to_mesh(model, cell_data=False, facet_data=False, gdim=None):
 
     if MPI.COMM_WORLD.rank == 0:
         # Get mesh geometry
-        x = extract_gmsh_geometry(model)
+        x = extract_geometry(model)
 
         # Get mesh topology for each element
-        topologies = extract_gmsh_topology_and_markers(model)
+        topologies = extract_topology_and_markers(model)
 
         # Get information about each cell type from the msh files
         num_cell_types = len(topologies.keys())
@@ -126,7 +126,7 @@ def gmsh_model_to_mesh(model, cell_data=False, facet_data=False, gdim=None):
             facet_values = numpy.empty((0,), dtype=numpy.int32)
 
     # Create distributed mesh
-    ufl_domain = ufl_mesh_from_gmsh(cell_id, gdim)
+    ufl_domain = ufl_mesh(cell_id, gdim)
     gmsh_cell_perm = perm_gmsh(to_type(str(ufl_domain.ufl_cell())), num_nodes)
     cells = cells[:, gmsh_cell_perm]
     mesh = create_mesh(MPI.COMM_WORLD, cells, x[:, :gdim], ufl_domain)
