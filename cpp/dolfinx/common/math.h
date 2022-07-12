@@ -238,8 +238,8 @@ void pinv(const U& A, V&& P)
   }
   else if (shape[1] == 1)
   {
-    auto res = std::transform_reduce(A.begin(), A.end(), 0., std::plus<T>(),
-                                     [](const auto v) { return v * v; });
+    auto res = std::transform_reduce(A.begin(), A.end(), 0., std::plus{},
+                                     [](auto v) { return v * v; });
     P = (1 / res) * xt::transpose(A);
   }
   else

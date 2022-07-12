@@ -217,7 +217,7 @@ T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
   xtl::span<const T> x_b = b.array().subspan(0, local_size);
 
   const T local = std::transform_reduce(
-      x_a.begin(), x_a.end(), x_b.begin(), static_cast<T>(0), std::plus<T>(),
+      x_a.begin(), x_a.end(), x_b.begin(), static_cast<T>(0), std::plus{},
       [](T a, T b) -> T
       {
         if constexpr (std::is_same<T, std::complex<double>>::value
