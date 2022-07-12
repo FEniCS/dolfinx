@@ -61,7 +61,7 @@ void CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X,
 {
   assert(_element);
   _element->tabulate(n, xtl::span(X), std::array{X.shape(0), X.shape(1)},
-                     xtl::span<double>(basis.data(), basis.size()));
+                     basis);
 }
 //--------------------------------------------------------------------------------
 ElementDofLayout CoordinateElement::create_dof_layout() const
