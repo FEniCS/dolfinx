@@ -74,6 +74,9 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 
 } // namespace impl
 
+void compute_integration_domains(const IntegralType integral_type,
+                                 const mesh::MeshTags<int>& meshtags);
+
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms
 ///
@@ -315,6 +318,7 @@ Form<T> create_form(
   if (auto it = subdomains.find(IntegralType::cell);
       it != subdomains.end() and !cell_integral_ids.empty())
   {
+    compute_integration_domains(*it->second);
     integral_data[IntegralType::cell].second = it->second;
   }
 

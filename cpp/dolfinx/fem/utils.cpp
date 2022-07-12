@@ -277,3 +277,46 @@ fem::FunctionSpace fem::create_functionspace(
           mesh->comm(), layout, mesh->topology(), reorder_fn, *element)));
 }
 //-----------------------------------------------------------------------------
+void fem::compute_integration_domains(const fem::IntegralType integral_type,
+                                      const mesh::MeshTags<int>& meshtags)
+{
+  // TODO Complete
+  std::cout << "compute_integration_domains\n";
+
+  std::map<int, std::vector<std::int32_t>> integrals;
+
+  std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
+  const mesh::Topology& topology = mesh->topology();
+  const int tdim = topology.dim();
+  int dim = integral_type == IntegralType::cell ? tdim : tdim - 1;
+  if (dim != meshtags.dim())
+  {
+    throw std::runtime_error("Invalid MeshTags dimension: "
+                             + std::to_string(meshtags.dim()));
+  }
+
+  // Get mesh tag data
+  const std::vector<int>& tags = meshtags.values();
+  const std::vector<std::int32_t>& tagged_entities = meshtags.indices();
+  assert(topology.index_map(dim));
+  const auto entity_end
+      = std::lower_bound(tagged_entities.begin(), tagged_entities.end(),
+                         topology.index_map(dim)->size_local());
+
+  switch (integral_type)
+  {
+  case fem::IntegralType::cell:
+  {
+    // For cell integrals use all markers (but not on ghost entities)
+    for (auto c = tagged_entities.cbegin(); c != entity_end; ++c)
+    {
+      const std::size_t pos = std::distance(tagged_entities.cbegin(), c);
+      
+      // if (auto it = integrals.find(tags[pos]); it != integrals.end())
+      //   it->second.second.push_back(*c);
+    }
+  }
+  break;
+  }
+}
+//-----------------------------------------------------------------------------
