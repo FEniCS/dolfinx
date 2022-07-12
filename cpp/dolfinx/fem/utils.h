@@ -28,6 +28,7 @@
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
+#include <xtensor/xio.hpp>
 
 /// @file utils.h
 /// @brief Functions supporting finite element method operations
@@ -328,8 +329,8 @@ Form<T> create_form(
   if (auto it = subdomains.find(IntegralType::cell);
       it != subdomains.end() and !cell_integral_ids.empty())
   {
-  //   // compute_integration_domains(*it->second);
-  //   // integral_data[IntegralType::cell].second = it->second;
+    //   // compute_integration_domains(*it->second);
+    //   // integral_data[IntegralType::cell].second = it->second;
   }
 
   // FIXME: Can facets be handled better?
@@ -434,7 +435,18 @@ Form<T> create_form(
     // integral_data[IntegralType::interior_facet].second = it->second;
   }
 
-  return Form<T>(spaces, integral_data, coefficients, constants,
+  // for (auto const& kvp : new_integral_data)
+  // {
+  //   for (auto const& kvp2 : kvp.second)
+  //   {
+  //     int id = kvp2.first;
+  //     std::vector ents = kvp2.second.second;
+
+  //     std::cout << id << " " << xt::adapt(ents) << "\n";
+  //   }
+  // }
+
+  return Form<T>(spaces, new_integral_data, coefficients, constants,
                  needs_facet_permutations, mesh);
 }
 

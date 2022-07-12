@@ -840,14 +840,14 @@ void declare_form(py::module& m, const std::string& type)
                  //      const std::map<std::int32_t,
                  //      std::vector<std::int32_t>>> _subdomains;
 
-                 for (auto const& kvp : subdomains)
-                 {
-                   for (auto const& kvp2 : kvp.second)
-                   {
-                     std::cout << kvp2.first << " " << xt::adapt(kvp2.second)
-                               << "\n";
-                   }
-                 }
+                //  for (auto const& kvp : subdomains)
+                //  {
+                //    for (auto const& kvp2 : kvp.second)
+                //    {
+                //      std::cout << kvp2.first << " " << xt::adapt(kvp2.second)
+                //                << "\n";
+                //    }
+                //  }
 
                  ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
                  return dolfinx::fem::create_form<T>(

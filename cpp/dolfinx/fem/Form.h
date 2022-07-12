@@ -92,14 +92,12 @@ public:
   /// extracted, e.g. for functionals
   Form(const std::vector<std::shared_ptr<const fem::FunctionSpace>>&
            function_spaces,
-       const std::map<
-           IntegralType,
-           std::pair<
-               std::vector<std::pair<
-                   int, std::function<void(T*, const T*, const T*,
-                                           const scalar_value_type_t*,
-                                           const int*, const std::uint8_t*)>>>,
-               const std::map<std::int32_t, std::vector<std::int32_t>>>>&
+       std::map<IntegralType,
+                std::map<int, std::pair<std::function<void(
+                                            T*, const T*, const T*,
+                                            const scalar_value_type_t*,
+                                            const int*, const std::uint8_t*)>,
+                                        std::vector<std::int32_t>>>>
            integrals,
        const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
        const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
@@ -119,6 +117,34 @@ public:
     }
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
+
+    // Store kernels, looping over integrals by type
+    // NOTE Could probably simplify Form by combining integral types
+    for (const auto& integral_type : integrals)
+    {
+      const IntegralType type = integral_type.first;
+      // Loop over integrals kernels and set domains
+      switch (type)
+      {
+      case IntegralType::cell:
+        _cell_integrals = integrals[type];
+        break;
+      // case IntegralType::exterior_facet:
+      //   for (auto& integral : integral_type.second.first)
+      //   {
+      //     _exterior_facet_integrals.insert(
+      //         {integral.first, {integral.second, {}}});
+      //   }
+      //   break;
+      // case IntegralType::interior_facet:
+      //   for (auto& integral : integral_type.second.first)
+      //   {
+      //     _interior_facet_integrals.insert(
+      //         {integral.first, {integral.second, {}}});
+      //   }
+      //   break;
+      }
+    }
 
     // // Store kernels, looping over integrals by domain type (dimension)
     // for (auto& integral_type : integrals)
