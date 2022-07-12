@@ -275,14 +275,10 @@ Form<T> create_form(
       T*, const T*, const T*,
       const typename impl::scalar_value_type<T>::value_type*, const int*,
       const std::uint8_t*)>;
-  std::map<IntegralType,
-           std::pair<std::vector<std::pair<int, kern>>,
-                     const std::map<std::int32_t, std::vector<std::int32_t>>>>
-      integral_data;
 
   std::map<IntegralType,
            std::map<int, std::pair<kern, std::vector<std::int32_t>>>>
-      new_integral_data;
+      integral_data;
 
   bool needs_facet_permutations = false;
 
@@ -316,9 +312,7 @@ Form<T> create_form(
     }
     assert(k);
 
-    integral_data[IntegralType::cell].first.emplace_back(cell_integral_ids[i],
-                                                         k);
-    new_integral_data[IntegralType::cell][cell_integral_ids[i]]
+    integral_data[IntegralType::cell][cell_integral_ids[i]]
         = {k, subdomains.at(IntegralType::cell).at(cell_integral_ids[i])};
 
     if (integral->needs_facet_permutations)
@@ -378,10 +372,7 @@ Form<T> create_form(
     }
     assert(k);
 
-    integral_data[IntegralType::exterior_facet].first.emplace_back(
-        exterior_facet_integral_ids[i], k);
-
-    new_integral_data[IntegralType::exterior_facet]
+    integral_data[IntegralType::exterior_facet]
                      [exterior_facet_integral_ids[i]]
         = {k, subdomains.at(IntegralType::exterior_facet)
                   .at(exterior_facet_integral_ids[i])};
@@ -427,10 +418,7 @@ Form<T> create_form(
     }
     assert(k);
 
-    integral_data[IntegralType::interior_facet].first.emplace_back(
-        interior_facet_integral_ids[i], k);
-
-    new_integral_data[IntegralType::interior_facet]
+    integral_data[IntegralType::interior_facet]
                      [interior_facet_integral_ids[i]]
         = {k, subdomains.at(IntegralType::interior_facet)
                   .at(interior_facet_integral_ids[i])};
@@ -446,7 +434,7 @@ Form<T> create_form(
     // integral_data[IntegralType::interior_facet].second = it->second;
   }
 
-  // for (auto const& kvp : new_integral_data)
+  // for (auto const& kvp : integral_data)
   // {
   //   for (auto const& kvp2 : kvp.second)
   //   {
@@ -457,7 +445,7 @@ Form<T> create_form(
   //   }
   // }
 
-  return Form<T>(spaces, new_integral_data, coefficients, constants,
+  return Form<T>(spaces, integral_data, coefficients, constants,
                  needs_facet_permutations, mesh);
 }
 

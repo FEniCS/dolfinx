@@ -138,8 +138,9 @@ public:
       }
     }
 
-    // // FIXME: do this neatly via a static function
-    // // Set markers for default integrals
+    // FIXME: do this neatly via a static function
+    // Set markers for default integrals
+    // TODO Do this in create_form?
     // set_default_domains(*_mesh);
   }
 
