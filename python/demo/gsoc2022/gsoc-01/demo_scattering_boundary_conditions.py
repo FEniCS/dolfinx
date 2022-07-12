@@ -48,7 +48,7 @@ import ufl
 from dolfinx import fem, plot
 from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
-from ufl import (as_vector, cross, curl, inner, lhs, rhs, sqrt)
+from ufl import (FacetNormal, as_vector, cross, curl, inner, lhs, rhs, sqrt)
 
 from mpi4py import MPI
 from petsc4py import PETSc
