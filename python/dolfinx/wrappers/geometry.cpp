@@ -15,9 +15,9 @@
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <span>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xtensor.hpp>
-#include <span>
 
 namespace py = pybind11;
 
