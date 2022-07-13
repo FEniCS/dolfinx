@@ -164,9 +164,12 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
             else subdomains.get("interior_facet")
 
         # Subdomain markers (possibly empty dictionary for some dimensions)
-        subdomains = {_cpp.fem.IntegralType.cell: cell_entities if cell_entities is not None else {},
-                      _cpp.fem.IntegralType.exterior_facet: ext_facet_entities if ext_facet_entities is not None else {},
-                      _cpp.fem.IntegralType.interior_facet: int_facet_entities if int_facet_entities is not None else {},
+        subdomains = {_cpp.fem.IntegralType.cell: cell_entities
+                      if cell_entities is not None else {},
+                      _cpp.fem.IntegralType.exterior_facet: ext_facet_entities
+                      if ext_facet_entities is not None else {},
+                      _cpp.fem.IntegralType.interior_facet: int_facet_entities
+                      if int_facet_entities is not None else {},
                       _cpp.fem.IntegralType.vertex: subdomains.get("vertex", {})}
 
         return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, code)
