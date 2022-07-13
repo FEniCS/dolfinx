@@ -357,35 +357,6 @@ private:
     return it->second.first;
   }
 
-  // Helper function to get a std::vector of (cell, local_facet) pairs
-  // corresponding to a given facet index.
-  // @param[in] f Facet index
-  // @param[in] f_to_c Facet to cell connectivity
-  // @param[in] c_to_f Cell to facet connectivity
-  // @return Vector of (cell, local_facet) pairs
-  template <int num_cells>
-  static std::array<std::array<std::int32_t, 2>, num_cells>
-  get_cell_local_facet_pairs(
-      std::int32_t f, const xtl::span<const std::int32_t>& cells,
-      const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f)
-  {
-    // Loop over cells sharing facet
-    assert(cells.size() == num_cells);
-    std::array<std::array<std::int32_t, 2>, num_cells> cell_local_facet_pairs;
-    for (int c = 0; c < num_cells; ++c)
-    {
-      // Get local index of facet with respect to the cell
-      std::int32_t cell = cells[c];
-      auto cell_facets = c_to_f.links(cell);
-      auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), f);
-      assert(facet_it != cell_facets.end());
-      int local_f = std::distance(cell_facets.begin(), facet_it);
-      cell_local_facet_pairs[c] = {cell, local_f};
-    }
-
-    return cell_local_facet_pairs;
-  }
-
   // Set cell domains
   template <typename iterator>
   void set_cell_domains(
@@ -444,8 +415,8 @@ private:
           {
             // There will only be one pair for an exterior facet integral
             const std::array<std::int32_t, 2> pair
-                = get_cell_local_facet_pairs<1>(*f, f_to_c->links(*f),
-                                                *c_to_f)[0];
+                = mesh::get_cell_local_facet_pairs<1>(*f, f_to_c->links(*f),
+                                                      *c_to_f)[0];
             it->second.second.insert(it->second.second.end(), pair.cbegin(),
                                      pair.cend());
           }
@@ -475,7 +446,8 @@ private:
         if (auto it = integrals.find(tags[pos]); it != integrals.end())
         {
           const std::array<std::array<std::int32_t, 2>, 2> pairs
-              = get_cell_local_facet_pairs<2>(*f, f_to_c->links(*f), *c_to_f);
+              = mesh::get_cell_local_facet_pairs<2>(*f, f_to_c->links(*f),
+                                                    *c_to_f);
           it->second.second.insert(it->second.second.end(), pairs[0].cbegin(),
                                    pairs[0].cend());
           it->second.second.insert(it->second.second.end(), pairs[1].cbegin(),
@@ -586,7 +558,8 @@ private:
         {
           // There will only be one pair for an exterior facet integral
           std::array<std::int32_t, 2> pair
-              = get_cell_local_facet_pairs<1>(f, f_to_c->links(f), *c_to_f)[0];
+              = mesh::get_cell_local_facet_pairs<1>(f, f_to_c->links(f),
+                                                    *c_to_f)[0];
           facets.insert(facets.end(), pair.cbegin(), pair.cend());
         }
       }
@@ -617,7 +590,8 @@ private:
           if (f_to_c->num_links(f) == 2)
           {
             const std::array<std::array<std::int32_t, 2>, 2> pairs
-                = get_cell_local_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
+                = mesh::get_cell_local_facet_pairs<2>(f, f_to_c->links(f),
+                                                      *c_to_f);
             facets.insert(facets.end(), pairs[0].cbegin(), pairs[0].cend());
             facets.insert(facets.end(), pairs[1].cbegin(), pairs[1].cend());
           }

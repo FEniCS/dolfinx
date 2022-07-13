@@ -147,4 +147,32 @@ std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>,
 create_submesh(const Mesh& mesh, int dim,
                const xtl::span<const std::int32_t>& entities);
 
+/// Helper function to get a std::vector of (cell, local_facet) pairs
+/// corresponding to a given facet index.
+/// @param[in] f Facet index
+/// @param[in] f_to_c Facet to cell connectivity
+/// @param[in] c_to_f Cell to facet connectivity
+/// @return Vector of (cell, local_facet) pairs
+template <int num_cells>
+static std::array<std::array<std::int32_t, 2>, num_cells>
+get_cell_local_facet_pairs(
+    std::int32_t f, const xtl::span<const std::int32_t>& cells,
+    const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f)
+{
+  // Loop over cells sharing facet
+  assert(cells.size() == num_cells);
+  std::array<std::array<std::int32_t, 2>, num_cells> cell_local_facet_pairs;
+  for (int c = 0; c < num_cells; ++c)
+  {
+    // Get local index of facet with respect to the cell
+    std::int32_t cell = cells[c];
+    auto cell_facets = c_to_f.links(cell);
+    auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), f);
+    assert(facet_it != cell_facets.end());
+    int local_f = std::distance(cell_facets.begin(), facet_it);
+    cell_local_facet_pairs[c] = {cell, local_f};
+  }
+
+  return cell_local_facet_pairs;
+}
 } // namespace dolfinx::mesh
