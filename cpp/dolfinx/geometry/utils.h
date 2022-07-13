@@ -127,4 +127,23 @@ graph::AdjacencyList<int> compute_colliding_cells(
     const mesh::Mesh& mesh,
     const graph::AdjacencyList<std::int32_t>& candidate_cells,
     const xt::xtensor<double, 2>& points);
+
+/// Given a set of points (local on each process) which process is colliding,
+/// using the GJK algorithm on cells to determine collisions.
+/// @param[in] mesh The mesh
+/// @param[in] points The points to check for collision (shape=(num_points, 3))
+/// @return Quadratuplet (src_owner, dest_owner, dest_points, dest_cells), where
+/// src_owner is a list of ranks corresponding to the input points. dest_owner
+/// is a list of ranks corresponding to dest_points, the points that this
+/// process owns. dest_cells contains the corresponding cell for each entry in
+/// dest_points.
+/// @note dest_owner is sorted
+/// @note Returns -1 if no colliding process is found
+/// @note dest_points is flattened row-major, shape (dest_owner.size(), 3)
+/// @note Only looks through cells owned by the process
+std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
+           std::vector<double>, std::vector<std::int32_t>>
+determine_point_ownership(const mesh::Mesh& mesh,
+                          const xt::xtensor<double, 2>& points);
+
 } // namespace dolfinx::geometry
