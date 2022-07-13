@@ -149,24 +149,24 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
                                         ]._cpp_object for i in range(ufcx_form.num_coefficients)]
         constants = [c._cpp_object for c in form.constants()]
 
-        # TODO Convert meshtags to entities here
+        # TODO Tidy this
         cell_entities = _cpp.fem.compute_integration_domains(
             _cpp.fem.IntegralType.cell, subdomains.get("cell")) \
             if isinstance(subdomains.get("cell"), dolfinx.mesh.MeshTagsMetaClass) \
-            else subdomains.get("cell", {})
+            else subdomains.get("cell")
         ext_facet_entities = _cpp.fem.compute_integration_domains(
             _cpp.fem.IntegralType.exterior_facet, subdomains.get("exterior_facet")) \
             if isinstance(subdomains.get("exterior_facet"), dolfinx.mesh.MeshTagsMetaClass) \
-            else subdomains.get("exterior_facet", {})
+            else subdomains.get("exterior_facet")
         int_facet_entities = _cpp.fem.compute_integration_domains(
             _cpp.fem.IntegralType.interior_facet, subdomains.get("interior_facet")) \
             if isinstance(subdomains.get("interior_facet"), dolfinx.mesh.MeshTagsMetaClass) \
-            else subdomains.get("interior_facet", {})
+            else subdomains.get("interior_facet")
 
         # Subdomain markers (possibly empty dictionary for some dimensions)
-        subdomains = {_cpp.fem.IntegralType.cell: cell_entities,
-                      _cpp.fem.IntegralType.exterior_facet: ext_facet_entities,
-                      _cpp.fem.IntegralType.interior_facet: int_facet_entities,
+        subdomains = {_cpp.fem.IntegralType.cell: cell_entities if cell_entities is not None else {},
+                      _cpp.fem.IntegralType.exterior_facet: ext_facet_entities if ext_facet_entities is not None else {},
+                      _cpp.fem.IntegralType.interior_facet: int_facet_entities if int_facet_entities is not None else {},
                       _cpp.fem.IntegralType.vertex: subdomains.get("vertex", {})}
 
         return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, code)
