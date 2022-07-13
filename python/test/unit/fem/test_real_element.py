@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import numpy as np
 import pytest
 
 import dolfinx
@@ -34,10 +35,12 @@ def test_real_element(cell):
     a = form(ufl.inner(u, v) * ufl.dx)
     A = dolfinx.fem.petsc.assemble_matrix(a)
     A.assemble()
+    assert np.isclose(A.convert("dense").getDenseArray(), 1.0)
     assert A.getSize()[0] == A.getSize()[1] == 1
 
     a = form(v * ufl.dx)
     L = dolfinx.fem.petsc.assemble_vector(a)
+    assert np.isclose(L, 1.0)
     assert L.getSize() == 1
 
 
@@ -83,6 +86,32 @@ def test_vector_real_element(cell):
     dolfinx_cell = getattr(CellType, cell)
     if cell == "interval":
         mesh = create_unit_interval(MPI.COMM_WORLD, 8, GhostMode.shared_facet)
+    elif cell.endswith("hedron"):
+        mesh = create_unit_cube(MPI.COMM_WORLD, 8, 4, 2, dolfinx_cell, GhostMode.shared_facet)
+    else:
+        mesh = create_unit_square(MPI.COMM_WORLD, 8, 4, dolfinx_cell, GhostMode.shared_facet)
+
+    dim = mesh.geometry.dim
+    real = ufl.FiniteElement("R", ufl_cell, 0)
+    element = ufl.VectorElement(real)
+    U = FunctionSpace(mesh, element)
+    u = ufl.TrialFunction(U)
+    v = ufl.TestFunction(U)
+    
+    a = form(ufl.inner(u, v) * ufl.dx)
+    A = dolfinx.fem.petsc.assemble_matrix(a)
+    A.assemble()
+    A_dense = A.convert("dense").getDenseArray()
+    assert A.getSize()[0] == A.getSize()[1] == dim
+    assert np.isclose(A_dense, np.identity(dim)).all()
+
+
+@pytest.mark.parametrize("cell", ["interval", "triangle", "tetrahedron", "quadrilateral", "hexahedron"])
+def test_real_as_coefficient(cell):
+    ufl_cell = getattr(ufl, cell)
+    dolfinx_cell = getattr(CellType, cell)
+    if cell == "interval":
+        mesh = create_unit_interval(MPI.COMM_WORLD, 8, GhostMode.shared_facet)
         dim = 1
     elif cell.endswith("hedron"):
         mesh = create_unit_cube(MPI.COMM_WORLD, 8, 4, 2, dolfinx_cell, GhostMode.shared_facet)
@@ -91,18 +120,13 @@ def test_vector_real_element(cell):
         mesh = create_unit_square(MPI.COMM_WORLD, 8, 4, dolfinx_cell, GhostMode.shared_facet)
         dim = 2
 
-    real = ufl.FiniteElement("R", ufl_cell, 0)
-    element = ufl.VectorElement(real)
-    U = FunctionSpace(mesh, element)
-    u = ufl.TrialFunction(U)
-    v = ufl.TestFunction(U)
+    real_element = ufl.FiniteElement("R", ufl_cell, 0)
+    Vr = FunctionSpace(mesh, real_element)
+    r = dolfinx.fem.Function(Vr)
+    r.x.array[:] = 6.0
 
-    a = form(ufl.inner(u, v) * ufl.dx)
-    A = dolfinx.fem.petsc.assemble_matrix(a)
-    A.assemble()
-    assert A.getSize()[0] == A.getSize()[1] == dim
-
-
-#@pytest.mark.parametrize("cell", ["interval", "triangle", "tetrahedron", "quadrilateral", "hexahedron"])
-#def test_mean_constraint():
-#    pass
+    dx = ufl.Measure("dx", mesh)
+    scaled_area = r*dx
+    #A = dolfinx.fem.assemble_scalar(form(scaled_area))
+    #assert(A == scaled_area)
+    
