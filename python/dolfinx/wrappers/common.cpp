@@ -21,6 +21,7 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -62,8 +63,8 @@ void common(py::module& m)
                   const py::array_t<std::int64_t, py::array::c_style>& ghosts,
                   const py::array_t<int, py::array::c_style>& ghost_owners)
                {
-                 return dolfinx::common::IndexMap(comm.get(), local_size,
-                                                  ghosts, ghost_owners);
+                 return dolfinx::common::IndexMap(
+                     comm.get(), local_size, std::span(ghosts), ghost_owners);
                }),
            py::arg("comm"), py::arg("local_size"), py::arg("ghosts"),
            py::arg("ghost_owners"))
@@ -119,7 +120,7 @@ void common(py::module& m)
               throw std::runtime_error("Array of local indices must be 1D.");
             py::array_t<std::int64_t> global(local.size());
             self.local_to_global(
-                local,
+                std::span(local),
                 std::span<std::int64_t>(global.mutable_data(), global.size()));
             return global;
           },
