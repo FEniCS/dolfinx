@@ -308,14 +308,45 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
   {
   case fem::IntegralType::cell:
   {
-    for (std::size_t i = 0; i < tagged_entities.size(); ++i)
+    for (auto it = tagged_entities.cbegin(); it != entity_end; ++it)
     {
-      integrals[tags[i]].push_back(tagged_entities[i]);
+      const std::size_t index = std::distance(tagged_entities.cbegin(), it);
+      integrals[tags[index]].push_back(*it);
     }
+    // for (std::size_t i = 0; i < tagged_entities.size(); ++i)
+    // {
+    //   integrals[tags[i]].push_back(tagged_entities[i]);
+    // }
   }
   break;
+  default:
+    mesh->topology_mutable().create_connectivity(dim, tdim);
+    mesh->topology_mutable().create_connectivity(tdim, dim);
+    auto f_to_c = topology.connectivity(tdim - 1, tdim);
+    assert(f_to_c);
+    auto c_to_f = topology.connectivity(tdim, tdim - 1);
+    assert(c_to_f);
+    switch (integral_type)
+    {
+    case IntegralType::exterior_facet:
+    {
+      // assert(topology.index_map(tdim - 1));
+      // const std::vector<std::int32_t> fwd_shared_facets
+      //     = topology.index_map(tdim)->overlapped()
+      //           ? std::vector<std::int32_t>()
+      //           : topology.index_map(tdim - 1)->shared_indices();
+      // for (std::size_t i = 0; i < )
+    }
+    break;
+    case IntegralType::interior_facet:
+    {
+    }
+    break;
+    default:
+      throw std::runtime_error(
+          "Cannot set domains. Integral type not supported.");
+    }
   }
-
   return integrals;
 }
 //-----------------------------------------------------------------------------
