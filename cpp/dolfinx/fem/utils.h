@@ -328,8 +328,12 @@ Form<T> create_form(
     }
     else
     {
-      integral_data[IntegralType::cell][id]
-          = {k, subdomains.at(IntegralType::cell).at(id)};
+      if (subdomains.at(IntegralType::cell).find(id)
+          != subdomains.at(IntegralType::cell).end())
+      {
+        integral_data[IntegralType::cell][id]
+            = {k, subdomains.at(IntegralType::cell).at(id)};
+      }
     }
 
     if (integral->needs_facet_permutations)
@@ -396,8 +400,12 @@ Form<T> create_form(
     }
     else
     {
-      integral_data[IntegralType::exterior_facet][id]
-          = {k, subdomains.at(IntegralType::exterior_facet).at(id)};
+      if (subdomains.at(IntegralType::exterior_facet).find(id)
+          != subdomains.at(IntegralType::exterior_facet).end())
+      {
+        integral_data[IntegralType::exterior_facet][id]
+            = {k, subdomains.at(IntegralType::exterior_facet).at(id)};
+      }
     }
 
     if (integral->needs_facet_permutations)
@@ -449,8 +457,12 @@ Form<T> create_form(
     }
     else
     {
-      integral_data[IntegralType::interior_facet][id]
-          = {k, subdomains.at(IntegralType::interior_facet).at(id)};
+      if (subdomains.at(IntegralType::interior_facet).find(id)
+          != subdomains.at(IntegralType::interior_facet).end())
+      {
+        integral_data[IntegralType::interior_facet][id]
+            = {k, subdomains.at(IntegralType::interior_facet).at(id)};
+      }
     }
 
     if (integral->needs_facet_permutations)
