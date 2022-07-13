@@ -19,6 +19,7 @@
 #include <functional>
 #include <memory>
 #include <set>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -27,7 +28,6 @@
 #include <vector>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
-#include <span>
 
 /// @file utils.h
 /// @brief Functions supporting finite element method operations

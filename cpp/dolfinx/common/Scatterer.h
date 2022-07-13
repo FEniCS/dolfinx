@@ -9,8 +9,8 @@
 #include "MPI.h"
 #include <algorithm>
 #include <mpi.h>
-#include <vector>
 #include <span>
+#include <vector>
 
 using namespace dolfinx;
 

@@ -6,9 +6,9 @@
 
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <span>
 #include <utility>
 #include <vector>
-#include <span>
 
 #pragma once
 

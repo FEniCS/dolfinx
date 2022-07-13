@@ -8,11 +8,11 @@
 
 #include <array>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <span>
 #include <vector>
 #include <xtensor/xfixed.hpp>
 #include <xtensor/xshape.hpp>
 #include <xtensor/xtensor.hpp>
-#include <span>
 
 namespace dolfinx::mesh
 {

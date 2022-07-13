@@ -7,8 +7,8 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
 #include <span>
+#include <vector>
 
 namespace dolfinx::mesh
 {

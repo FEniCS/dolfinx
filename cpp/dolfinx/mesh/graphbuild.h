@@ -8,9 +8,9 @@
 
 #include <cstdint>
 #include <mpi.h>
+#include <span>
 #include <tuple>
 #include <vector>
-#include <span>
 
 namespace dolfinx::graph
 {

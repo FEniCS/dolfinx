@@ -13,10 +13,10 @@
 #include <filesystem>
 #include <numeric>
 #include <pugixml.hpp>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
-#include <span>
 
 namespace pugi
 {

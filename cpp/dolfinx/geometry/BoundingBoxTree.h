@@ -8,9 +8,9 @@
 
 #include <array>
 #include <mpi.h>
+#include <span>
 #include <vector>
 #include <xtensor/xfixed.hpp>
-#include <span>
 
 namespace dolfinx::mesh
 {

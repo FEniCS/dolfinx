@@ -10,10 +10,10 @@
 #include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
+#include <span>
 #include <utility>
 #include <vector>
 #include <xtensor/xtensor.hpp>
-#include <span>
 
 namespace dolfinx::fem
 {

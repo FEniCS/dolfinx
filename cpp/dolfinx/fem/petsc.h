@@ -11,9 +11,9 @@
 #include <memory>
 #include <petscmat.h>
 #include <petscvec.h>
+#include <span>
 #include <utility>
 #include <vector>
-#include <span>
 
 namespace dolfinx::common
 {

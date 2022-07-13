@@ -10,9 +10,9 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
+#include <span>
 #include <vector>
 #include <xtensor/xtensor.hpp>
-#include <span>
 
 struct ufcx_finite_element;
 

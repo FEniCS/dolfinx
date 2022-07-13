@@ -18,12 +18,12 @@
 #include <functional>
 #include <memory>
 #include <numeric>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
-#include <span>
 
 namespace dolfinx::fem
 {

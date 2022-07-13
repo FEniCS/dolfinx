@@ -51,7 +51,7 @@ compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
   b[1] = b[0];
 
   // Compute min and max over vertices
-  for (const int local_vertex : vertex_indices)
+  for (int local_vertex : vertex_indices)
   {
     for (int j = 0; j < 3; ++j)
     {
@@ -121,8 +121,7 @@ int _build_from_leaf(
     const std::size_t axis = std::distance(
         b_diff.begin(), std::max_element(b_diff.begin(), b_diff.end()));
 
-    std::size_t partition = leaf_bboxes.size();
-    auto middle = std::next(leaf_bboxes.begin(), partition);
+    auto middle = std::next(leaf_bboxes.begin(), leaf_bboxes.size() / 2);
     std::nth_element(leaf_bboxes.begin(), middle, leaf_bboxes.end(),
                      [axis](auto& p0, auto& p1) -> bool
                      {
@@ -132,11 +131,10 @@ int _build_from_leaf(
                      });
 
     // Split bounding boxes into two groups and call recursively
-    std::array bbox{
-        _build_from_leaf(leaf_bboxes.first(partition), bboxes,
-                         bbox_coordinates),
-        _build_from_leaf(leaf_bboxes.last(leaf_bboxes.size() - partition),
-                         bboxes, bbox_coordinates)};
+    std::array bbox{_build_from_leaf(std::span(leaf_bboxes.begin(), middle),
+                                     bboxes, bbox_coordinates),
+                    _build_from_leaf(std::span(middle, leaf_bboxes.end()),
+                                     bboxes, bbox_coordinates)};
 
     // Store bounding box data. Note that root box will be added last.
     bboxes.push_back(bbox);
@@ -196,17 +194,16 @@ int _build_from_point(
   const std::size_t axis = std::distance(
       b_diff.begin(), std::max_element(b_diff.begin(), b_diff.end()));
 
-  const std::size_t partition = points.size() / 2;
-  auto middle = std::next(points.begin(), partition);
+  auto middle = std::next(points.begin(), points.size() / 2);
   std::nth_element(points.begin(), middle, points.end(),
                    [axis](auto& p0, auto&& p1) -> bool
                    { return p0.first[axis] < p1.first[axis]; });
 
   // Split bounding boxes into two groups and call recursively
-  std::array bbox{
-      _build_from_point(points.first(partition), bboxes, bbox_coordinates),
-      _build_from_point(points.last(points.size() - partition), bboxes,
-                        bbox_coordinates)};
+  std::array bbox{_build_from_point(std::span(points.begin(), middle), bboxes,
+                                    bbox_coordinates),
+                  _build_from_point(std::span(middle, points.end()), bboxes,
+                                    bbox_coordinates)};
 
   // Store bounding box data. Note that root box will be added last.
   bboxes.push_back(bbox);
@@ -283,7 +280,7 @@ BoundingBoxTree::BoundingBoxTree(
   }
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
-            << " nodes for " << num_leaves << " points.";
+            << " nodes for " << points.size() << " points.";
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(std::vector<std::int32_t>&& bboxes,

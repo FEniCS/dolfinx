@@ -15,12 +15,12 @@
 #include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
+#include <span>
 #include <vector>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xindex_view.hpp>
 #include <xtensor/xtensor.hpp>
-#include <span>
 
 namespace dolfinx::fem
 {

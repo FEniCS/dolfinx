@@ -11,11 +11,11 @@
 #include <cstdint>
 #include <dolfinx/common/Timer.h>
 #include <numeric>
+#include <span>
 #include <type_traits>
 #include <vector>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
-#include <span>
 
 namespace dolfinx
 {

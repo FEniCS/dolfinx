@@ -12,8 +12,8 @@
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
-#include <xtensor/xtensor.hpp>
 #include <span>
+#include <xtensor/xtensor.hpp>
 
 namespace basix
 {

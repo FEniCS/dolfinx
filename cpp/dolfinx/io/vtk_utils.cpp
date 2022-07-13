@@ -13,10 +13,10 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <span>
 #include <tuple>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xview.hpp>
-#include <span>
 
 using namespace dolfinx;
 

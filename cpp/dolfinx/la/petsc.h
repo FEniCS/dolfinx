@@ -15,9 +15,9 @@
 #include <petscmat.h>
 #include <petscoptions.h>
 #include <petscvec.h>
+#include <span>
 #include <string>
 #include <vector>
-#include <span>
 
 namespace dolfinx::common
 {

@@ -8,9 +8,9 @@
 
 #include <hdf5.h>
 #include <mpi.h>
+#include <span>
 #include <string>
 #include <xtensor/xtensor.hpp>
-#include <span>
 
 namespace pugi
 {

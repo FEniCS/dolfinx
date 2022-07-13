@@ -10,8 +10,8 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <memory>
-#include <vector>
 #include <span>
+#include <vector>
 
 namespace dolfinx::common
 {

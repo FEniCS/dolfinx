@@ -43,13 +43,13 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
+#include <span>
 #include <string>
 #include <ufcx.h>
 #include <utility>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
-#include <span>
 
 namespace py = pybind11;
 
@@ -942,10 +942,10 @@ void fem(py::module& m)
   declare_objects<std::complex<float>>(m, "complex64");
   declare_objects<std::complex<double>>(m, "complex128");
 
-  declare_form<double>(m, "float64");
   declare_form<float>(m, "float32");
-  declare_form<std::complex<double>>(m, "complex128");
+  declare_form<double>(m, "float64");
   declare_form<std::complex<float>>(m, "complex64");
+  declare_form<std::complex<double>>(m, "complex128");
 
   m.def(
       "create_sparsity_pattern",

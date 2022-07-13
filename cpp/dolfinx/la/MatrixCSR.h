@@ -12,9 +12,9 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <mpi.h>
 #include <numeric>
+#include <span>
 #include <utility>
 #include <vector>
-#include <span>
 
 namespace dolfinx::la
 {

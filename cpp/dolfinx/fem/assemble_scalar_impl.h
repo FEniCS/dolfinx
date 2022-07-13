@@ -69,8 +69,8 @@ template <typename T>
 T assemble_exterior_facets(
     const mesh::Mesh& mesh, const std::span<const std::int32_t>& facets,
     const std::function<void(T*, const T*, const T*,
-                             const scalar_value_type_t<T>*,
-                             const int*, const std::uint8_t*)>& fn,
+                             const scalar_value_type_t<T>*, const int*,
+                             const std::uint8_t*)>& fn,
     const std::span<const T>& constants, const std::span<const T>& coeffs,
     int cstride)
 {
@@ -114,8 +114,8 @@ template <typename T>
 T assemble_interior_facets(
     const mesh::Mesh& mesh, const std::span<const std::int32_t>& facets,
     const std::function<void(T*, const T*, const T*,
-                             const scalar_value_type_t<T>*,
-                             const int*, const std::uint8_t*)>& fn,
+                             const scalar_value_type_t<T>*, const int*,
+                             const std::uint8_t*)>& fn,
     const std::span<const T>& constants, const std::span<const T>& coeffs,
     int cstride, const std::span<const int>& offsets,
     const std::span<const std::uint8_t>& perms)

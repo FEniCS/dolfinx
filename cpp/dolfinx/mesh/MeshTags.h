@@ -17,9 +17,9 @@
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/io/cells.h>
 #include <memory>
+#include <span>
 #include <utility>
 #include <vector>
-#include <span>
 
 namespace dolfinx::mesh
 {

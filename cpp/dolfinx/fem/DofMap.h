@@ -17,9 +17,9 @@
 #include <functional>
 #include <memory>
 #include <mpi.h>
+#include <span>
 #include <utility>
 #include <vector>
-#include <span>
 
 namespace dolfinx::common
 {

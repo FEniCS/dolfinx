@@ -10,8 +10,8 @@
 #include <dolfinx/graph/partition.h>
 #include <functional>
 #include <mpi.h>
-#include <xtensor/xtensor.hpp>
 #include <span>
+#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::fem
 {

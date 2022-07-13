@@ -14,9 +14,9 @@
 #include <dolfinx/mesh/MeshTags.h>
 #include <hdf5.h>
 #include <pugixml.hpp>
+#include <span>
 #include <string>
 #include <vector>
-#include <span>
 
 namespace dolfinx
 {

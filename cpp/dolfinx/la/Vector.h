@@ -13,8 +13,8 @@
 #include <limits>
 #include <memory>
 #include <numeric>
-#include <vector>
 #include <span>
+#include <vector>
 
 namespace dolfinx::la
 {

@@ -11,8 +11,8 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <functional>
 #include <memory>
-#include <vector>
 #include <span>
+#include <vector>
 
 namespace dolfinx::common
 {

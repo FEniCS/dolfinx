@@ -13,12 +13,12 @@
 #include <array>
 #include <functional>
 #include <memory>
+#include <span>
 #include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
 #include <xtensor/xtensor.hpp>
-#include <span>
 
 namespace dolfinx::fem
 {
