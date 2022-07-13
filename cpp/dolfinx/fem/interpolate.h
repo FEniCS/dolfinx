@@ -19,6 +19,7 @@
 #include <functional>
 #include <numeric>
 #include <vector>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xarray.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
