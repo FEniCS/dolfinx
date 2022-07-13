@@ -61,6 +61,9 @@ TEST_CASE("Test argsort bitset")
   // Requiring equality of permutation vectors is not a good test, because
   // std::sort is not stable, so we compare the effect on the actual array.
   for (std::size_t i = 0; i < perm.size(); i++)
-    REQUIRE((std::span(arr.data() + shape1 * perm[i], shape1)
-             == std::span(arr.data() + shape1 * index[i], shape1)));
+  {
+    REQUIRE(std::equal(arr.data() + shape1 * perm[i],
+                       arr.data() + shape1 * perm[i] + shape1,
+                       arr.data() + shape1 * index[i]));
+  }
 }
