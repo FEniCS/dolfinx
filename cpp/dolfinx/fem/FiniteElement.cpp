@@ -12,6 +12,7 @@
 #include <basix/polyset.h>
 #include <dolfinx/common/log.h>
 #include <functional>
+#include <numeric>
 #include <ufcx.h>
 #include <utility>
 #include <vector>
@@ -161,45 +162,24 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
 
   if (is_basix_custom_element(e))
   {
-    // Recreate the custom Basix element using information written into the
-    // generated code
+    // Recreate the custom Basix element using information written into
+    // the generated code
     ufcx_basix_custom_finite_element* ce = e.custom_element;
     const basix::cell::type cell_type
         = static_cast<basix::cell::type>(ce->cell_type);
 
-    std::vector<std::size_t> value_shape(ce->value_shape_length);
-    std::size_t value_size = 1;
-    for (int i = 0; i < ce->value_shape_length; ++i)
-    {
-      value_shape[i] = ce->value_shape[i];
-      value_size *= ce->value_shape[i];
-    }
+    const std::vector<std::size_t> value_shape(
+        ce->value_shape, ce->value_shape + ce->value_shape_length);
+    const std::size_t value_size = std::reduce(
+        value_shape.begin(), value_shape.end(), 1, std::multiplies{});
+
     const int nderivs = ce->interpolation_nderivs;
     const std::size_t nderivs_dim = basix::polyset::nderivs(cell_type, nderivs);
-
-    namespace stdex = std::experimental;
-    using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-    using mdspan4_t = stdex::mdspan<double, stdex::dextents<std::size_t, 4>>;
-    using cmdspan2_t
-        = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-    using cmdspan4_t
-        = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
-
-    std::vector<double> wcoeffs_b(ce->wcoeffs_rows * ce->wcoeffs_cols);
-    mdspan2_t wcoeffs(wcoeffs_b.data(), ce->wcoeffs_rows, ce->wcoeffs_cols);
-    {
-      int e = 0;
-      for (int i = 0; i < ce->wcoeffs_rows; ++i)
-        for (int j = 0; j < ce->wcoeffs_cols; ++j)
-          wcoeffs(i, j) = ce->wcoeffs[e++];
-    }
 
     using array2_t = std::pair<std::vector<double>, std::array<std::size_t, 2>>;
     using array4_t = std::pair<std::vector<double>, std::array<std::size_t, 4>>;
     std::array<std::vector<array2_t>, 4> x;
     std::array<std::vector<array4_t>, 4> M;
-    // std::array<std::vector<xt::xtensor<double, 2>>, 4> x;
-    // std::array<std::vector<xt::xtensor<double, 4>>, 4> M;
     { // scope
       int pt_n = 0;
       int p_e = 0;
@@ -211,45 +191,49 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
         const int num_entities = basix::cell::num_sub_entities(cell_type, d);
         for (int entity = 0; entity < num_entities; ++entity)
         {
-          const std::size_t npts = static_cast<std::size_t>(ce->npts[pt_n]);
-          const std::size_t ndofs = static_cast<std::size_t>(ce->ndofs[pt_n]);
-          ++pt_n;
+          std::size_t npts = ce->npts[pt_n + entity];
+          std::size_t ndofs = ce->ndofs[pt_n + entity];
 
-          auto& [pts_b, ptsshape] = x[d].emplace_back(
-              std::vector<double>(npts * dim), std::array{npts, dim});
-          mdspan2_t pts(pts_b.data(), ptsshape);
+          std::array pshape = {npts, dim};
+          auto& pts
+              = x[d].emplace_back(std::vector<double>(pshape[0] * pshape[1]),
+                                  pshape)
+                    .first;
+          std::copy_n(ce->x + p_e, pts.size(), pts.begin());
+          p_e += pts.size();
 
-          auto& [mat_b, matshape] = M[d].emplace_back(
-              std::vector<double>(ndofs * value_size * npts * nderivs_dim),
-              std::array{ndofs, value_size, npts, nderivs_dim});
-          mdspan4_t mat(mat_b.data(), matshape);
-
-          // xt::xtensor<double, 2> pts({npts, dim});
-          // xt::xtensor<double, 4> mat({ndofs, value_size, npts, nderivs_dim});
-
-          for (std::size_t i = 0; i < npts; ++i)
-            for (std::size_t j = 0; j < dim; ++j)
-              pts(i, j) = ce->x[p_e++];
-          for (std::size_t i = 0; i < ndofs; ++i)
-            for (std::size_t j = 0; j < value_size; ++j)
-              for (std::size_t k = 0; k < npts; ++k)
-                for (std::size_t l = 0; l < nderivs_dim; ++l)
-                  mat(i, j, k, l) = ce->M[m_e++];
-          // x[d].push_back(pts);
-          // M[d].push_back(mat);
+          std::array mshape = {ndofs, value_size, npts, nderivs_dim};
+          std::size_t msize
+              = std::reduce(mshape.begin(), mshape.end(), 1, std::multiplies{});
+          auto& mat
+              = M[d].emplace_back(std::vector<double>(msize), mshape).first;
+          std::copy_n(ce->M + m_e, mat.size(), mat.begin());
+          m_e += mat.size();
         }
+
+        pt_n += num_entities;
       }
     }
 
+    namespace stdex = std::experimental;
+    using cmdspan2_t
+        = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+    using cmdspan4_t
+        = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
+
     std::array<std::vector<cmdspan2_t>, 4> _x;
     for (std::size_t i = 0; i < x.size(); ++i)
-      for (std::size_t j = 0; j < x[i].size(); ++j)
-        _x[i].push_back(cmdspan2_t(x[i][j].first.data(), x[i][j].second));
+      for (auto& [buffer, shape] : x[i])
+        _x[i].push_back(cmdspan2_t(buffer.data(), shape));
 
     std::array<std::vector<cmdspan4_t>, 4> _M;
     for (std::size_t i = 0; i < M.size(); ++i)
-      for (std::size_t j = 0; j < M[i].size(); ++j)
-        _M[i].push_back(cmdspan4_t(M[i][j].first.data(), M[i][j].second));
+      for (auto& [buffer, shape] : M[i])
+        _M[i].push_back(cmdspan4_t(buffer.data(), shape));
+
+    std::vector<double> wcoeffs_b(ce->wcoeffs_rows * ce->wcoeffs_cols);
+    cmdspan2_t wcoeffs(wcoeffs_b.data(), ce->wcoeffs_rows, ce->wcoeffs_cols);
+    std::copy_n(ce->wcoeffs, wcoeffs_b.size(), wcoeffs_b.begin());
 
     _element
         = std::make_unique<basix::FiniteElement>(basix::create_custom_element(
@@ -301,6 +285,7 @@ FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
   _needs_dof_permutations
       = !_element->dof_transformations_are_identity()
         and _element->dof_transformations_are_permutations();
+
   switch (_element->family())
   {
   case basix::element::family::P:
@@ -376,7 +361,8 @@ xt::xtensor<double, 4> FiniteElement::tabulate(const xt::xtensor<double, 2>& X,
 {
   assert(_element);
   auto [tab, shape] = _element->tabulate(order, X, {X.shape(0), X.shape(1)});
-  return xt::adapt(tab, shape);
+  return xt::adapt(
+      tab, std::vector<std::size_t>{shape[0], shape[1], shape[2], shape[3]});
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept
@@ -450,7 +436,7 @@ xt::xtensor<double, 2> FiniteElement::interpolation_points() const
   }
 
   auto& [x, shape] = _element->points();
-  return xt::adapt(x, shape);
+  return xt::adapt(x, std::vector<std::size_t>{shape[0], shape[1]});
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 2> FiniteElement::interpolation_operator() const
@@ -462,7 +448,7 @@ xt::xtensor<double, 2> FiniteElement::interpolation_operator() const
   }
 
   auto& [im, shape] = _element->interpolation_matrix();
-  return xt::adapt(im, shape);
+  return xt::adapt(im, std::vector<std::size_t>{shape[0], shape[1]});
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 2>

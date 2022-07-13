@@ -244,7 +244,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   std::vector<double> detJ(X.shape(0));
 
   // Get interpolation operator
-  const xt::xtensor<double, 2>& Pi_1 = element1->interpolation_operator();
+  const xt::xtensor<double, 2> Pi_1 = element1->interpolation_operator();
 
   namespace stdex = std::experimental;
   using u_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
@@ -512,7 +512,7 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
   else
   {
     // Get the interpolation points on the reference cells
-    const xt::xtensor<double, 2>& X = element->interpolation_points();
+    const xt::xtensor<double, 2> X = element->interpolation_points();
     if (X.shape(0) == 0)
     {
       throw std::runtime_error(

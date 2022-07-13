@@ -52,7 +52,8 @@ CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X) const
 {
   assert(_element);
   auto [tab, shape] = _element->tabulate(n, X, {X.shape(0), X.shape(1)});
-  return xt::adapt(tab, shape);
+  return xt::adapt(
+      tab, std::vector<std::size_t>{shape[0], shape[1], shape[2], shape[3]});
 }
 //--------------------------------------------------------------------------------
 void CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X,
@@ -60,7 +61,7 @@ void CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X,
 {
   assert(_element);
   _element->tabulate(n, xtl::span(X), std::array{X.shape(0), X.shape(1)},
-                     xtl::span<double>(basis.data(), basis.size()));
+                     basis);
 }
 //--------------------------------------------------------------------------------
 ElementDofLayout CoordinateElement::create_dof_layout() const
@@ -164,9 +165,9 @@ void CoordinateElement::pull_back_nonaffine(
                      [](double a, double b) { return a + b; });
 
       // Compute norm(dX)
-      if (auto dX_squared = std::transform_reduce(
-              dX.cbegin(), dX.cend(), 0.0, std::plus<double>(),
-              [](const auto v) { return v * v; });
+      if (auto dX_squared
+          = std::transform_reduce(dX.cbegin(), dX.cend(), 0.0, std::plus{},
+                                  [](auto v) { return v * v; });
           std::sqrt(dX_squared) < tol)
       {
         break;
