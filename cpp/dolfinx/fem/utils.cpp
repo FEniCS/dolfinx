@@ -277,8 +277,9 @@ fem::FunctionSpace fem::create_functionspace(
           mesh->comm(), layout, mesh->topology(), reorder_fn, *element)));
 }
 //-----------------------------------------------------------------------------
-void fem::compute_integration_domains(const fem::IntegralType integral_type,
-                                      const mesh::MeshTags<int>& meshtags)
+std::map<int, std::vector<std::int32_t>>
+fem::compute_integration_domains(const fem::IntegralType integral_type,
+                                 const mesh::MeshTags<int>& meshtags)
 {
   // TODO Complete
   std::cout << "compute_integration_domains\n";
@@ -307,16 +308,14 @@ void fem::compute_integration_domains(const fem::IntegralType integral_type,
   {
   case fem::IntegralType::cell:
   {
-    // For cell integrals use all markers (but not on ghost entities)
-    for (auto c = tagged_entities.cbegin(); c != entity_end; ++c)
+    for (std::size_t i = 0; i < tagged_entities.size(); ++i)
     {
-      const std::size_t pos = std::distance(tagged_entities.cbegin(), c);
-
-      // if (auto it = integrals.find(tags[pos]); it != integrals.end())
-      //   it->second.second.push_back(*c);
+      integrals[tags[i]].push_back(tagged_entities[i]);
     }
   }
   break;
   }
+
+  return integrals;
 }
 //-----------------------------------------------------------------------------

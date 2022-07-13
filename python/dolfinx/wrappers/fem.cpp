@@ -791,7 +791,8 @@ void declare_form(py::module& m, const std::string& type)
       //           std::map<dolfinx::fem::IntegralType,
       //                    std::pair<
       //                        std::vector<std::pair<int, kern>>,
-      //                        std::map<std::int32_t, std::vector<std::int32_t>>>>
+      //                        std::map<std::int32_t,
+      //                        std::vector<std::int32_t>>>>
       //               _integrals;
 
       //           // // Loop over kernel for each entity type
@@ -805,16 +806,18 @@ void declare_form(py::module& m, const std::string& type)
       //           //   {
       //           //     auto tabulate_tensor_ptr
       //           //         = (void (*)(T*, const T*, const T*,
-      //           //                     const typename geom_type<T>::value_type*,
+      //           //                     const typename
+      //           geom_type<T>::value_type*,
       //           //                     const int*, const std::uint8_t*))
       //           //               kernel.second.cast<std::uintptr_t>();
       //           //     _integrals[kernel_type.first].first.push_back(
       //           //         {kernel.first, tabulate_tensor_ptr});
       //           //   }
       //           // }
-      //           return dolfinx::fem::Form<T>(spaces, _integrals, coefficients,
-      //                                        constants, needs_permutation_data,
-      //                                        mesh);
+      //           return dolfinx::fem::Form<T>(spaces, _integrals,
+      //           coefficients,
+      //                                        constants,
+      //                                        needs_permutation_data, mesh);
       //         }),
       //     py::arg("spaces"), py::arg("integrals"), py::arg("coefficients"),
       //     py::arg("constants"), py::arg("need_permutation_data"),
@@ -840,14 +843,15 @@ void declare_form(py::module& m, const std::string& type)
                  //      const std::map<std::int32_t,
                  //      std::vector<std::int32_t>>> _subdomains;
 
-                //  for (auto const& kvp : subdomains)
-                //  {
-                //    for (auto const& kvp2 : kvp.second)
-                //    {
-                //      std::cout << kvp2.first << " " << xt::adapt(kvp2.second)
-                //                << "\n";
-                //    }
-                //  }
+                 //  for (auto const& kvp : subdomains)
+                 //  {
+                 //    for (auto const& kvp2 : kvp.second)
+                 //    {
+                 //      std::cout << kvp2.first << " " <<
+                 //      xt::adapt(kvp2.second)
+                 //                << "\n";
+                 //    }
+                 //  }
 
                  ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
                  return dolfinx::fem::create_form<T>(
@@ -1020,6 +1024,15 @@ void fem(py::module& m)
   m.def("transpose_dofmap", &dolfinx::fem::transpose_dofmap,
         "Build the index to (cell, local index) map from a "
         "dofmap ((cell, local index ) -> index).");
+  // TODO Where should this go?
+  m.def(
+      "compute_integration_domains",
+      [](const dolfinx::fem::IntegralType integral_type,
+         const dolfinx::mesh::MeshTags<int>& meshtags) {
+        return dolfinx::fem::compute_integration_domains(integral_type,
+                                                         meshtags);
+      },
+      py::arg("integral_type"), py::arg("meshtags"));
 
   // dolfinx::fem::FiniteElement
   py::class_<dolfinx::fem::FiniteElement,

@@ -22,6 +22,7 @@ import numpy as np
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import jit
+import dolfinx
 
 from petsc4py import PETSc
 
@@ -149,9 +150,12 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         constants = [c._cpp_object for c in form.constants()]
 
         # TODO Convert meshtags to entities here
+        cell_entities = _cpp.fem.compute_integration_domains(_cpp.fem.IntegralType.cell, subdomains.get("cell")) \
+            if isinstance(subdomains.get("cell"), dolfinx.mesh.MeshTagsMetaClass) \
+            else subdomains.get("cell", {})
 
         # Subdomain markers (possibly empty dictionary for some dimensions)
-        subdomains = {_cpp.fem.IntegralType.cell: subdomains.get("cell", {}),
+        subdomains = {_cpp.fem.IntegralType.cell: cell_entities,
                       _cpp.fem.IntegralType.exterior_facet: subdomains.get("exterior_facet", {}),
                       _cpp.fem.IntegralType.interior_facet: subdomains.get("interior_facet", {}),
                       _cpp.fem.IntegralType.vertex: subdomains.get("vertex", {})}

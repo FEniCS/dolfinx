@@ -75,8 +75,9 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 
 } // namespace impl
 
-void compute_integration_domains(const IntegralType integral_type,
-                                 const mesh::MeshTags<int>& meshtags);
+std::map<int, std::vector<std::int32_t>>
+compute_integration_domains(const IntegralType integral_type,
+                            const mesh::MeshTags<int>& meshtags);
 
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms
