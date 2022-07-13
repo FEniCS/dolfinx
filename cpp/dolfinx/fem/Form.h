@@ -90,7 +90,7 @@ public:
   /// @param[in] mesh The mesh of the domain. This is required when
   /// there are not argument functions from which the mesh can be
   /// extracted, e.g. for functionals
-  Form(const std::vector<std::shared_ptr<const fem::FunctionSpace>>&
+  Form(const std::vector<std::shared_ptr<const FunctionSpace>>&
            function_spaces,
        std::map<IntegralType,
                 std::map<int, std::pair<std::function<void(
@@ -99,15 +99,15 @@ public:
                                             const int*, const std::uint8_t*)>,
                                         std::vector<std::int32_t>>>>
            integrals,
-       const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
-       const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
+       const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+       const std::vector<std::shared_ptr<const Constant<T>>>& constants,
        bool needs_facet_permutations,
        const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
       : _function_spaces(function_spaces), _coefficients(coefficients),
         _constants(constants), _mesh(mesh),
         _needs_facet_permutations(needs_facet_permutations)
   {
-    // Extract _mesh from fem::FunctionSpace, and check they are the same
+    // Extract _mesh from FunctionSpace, and check they are the same
     if (!_mesh and !function_spaces.empty())
       _mesh = function_spaces[0]->mesh();
     for (const auto& V : function_spaces)
@@ -164,7 +164,7 @@ public:
 
   /// Return function spaces for all arguments
   /// @return Function spaces
-  const std::vector<std::shared_ptr<const fem::FunctionSpace>>&
+  const std::vector<std::shared_ptr<const FunctionSpace>>&
   function_spaces() const
   {
     return _function_spaces;
@@ -301,8 +301,7 @@ public:
   }
 
   /// Access coefficients
-  const std::vector<std::shared_ptr<const fem::Function<T>>>&
-  coefficients() const
+  const std::vector<std::shared_ptr<const Function<T>>>& coefficients() const
   {
     return _coefficients;
   }
@@ -328,7 +327,7 @@ public:
   }
 
   /// Access constants
-  const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants() const
+  const std::vector<std::shared_ptr<const Constant<T>>>& constants() const
   {
     return _constants;
   }
@@ -601,13 +600,13 @@ private:
   }
 
   // Function spaces (one for each argument)
-  std::vector<std::shared_ptr<const fem::FunctionSpace>> _function_spaces;
+  std::vector<std::shared_ptr<const FunctionSpace>> _function_spaces;
 
   // Form coefficients
-  std::vector<std::shared_ptr<const fem::Function<T>>> _coefficients;
+  std::vector<std::shared_ptr<const Function<T>>> _coefficients;
 
   // Constants associated with the Form
-  std::vector<std::shared_ptr<const fem::Constant<T>>> _constants;
+  std::vector<std::shared_ptr<const Constant<T>>> _constants;
 
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;

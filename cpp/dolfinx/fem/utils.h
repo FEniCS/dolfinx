@@ -862,12 +862,12 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
 
 /// @brief Create Expression from UFC
 template <typename T>
-fem::Expression<T> create_expression(
+Expression<T> create_expression(
     const ufcx_expression& expression,
-    const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
-    const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
+    const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+    const std::vector<std::shared_ptr<const Constant<T>>>& constants,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
-    const std::shared_ptr<const fem::FunctionSpace>& argument_function_space
+    const std::shared_ptr<const FunctionSpace>& argument_function_space
     = nullptr)
 {
   if (expression.rank > 0 and !argument_function_space)
@@ -915,25 +915,24 @@ fem::Expression<T> create_expression(
   }
   assert(tabulate_tensor);
 
-  return fem::Expression(coefficients, constants, points, tabulate_tensor,
-                         value_shape, mesh, argument_function_space);
+  return Expression(coefficients, constants, points, tabulate_tensor,
+                    value_shape, mesh, argument_function_space);
 }
 
 /// @brief Create Expression from UFC input (with named coefficients and
 /// constants)
 template <typename T>
-fem::Expression<T> create_expression(
+Expression<T> create_expression(
     const ufcx_expression& expression,
-    const std::map<std::string, std::shared_ptr<const fem::Function<T>>>&
+    const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
-    const std::map<std::string, std::shared_ptr<const fem::Constant<T>>>&
-        constants,
+    const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
-    const std::shared_ptr<const fem::FunctionSpace>& argument_function_space
+    const std::shared_ptr<const FunctionSpace>& argument_function_space
     = nullptr)
 {
   // Place coefficients in appropriate order
-  std::vector<std::shared_ptr<const fem::Function<T>>> coeff_map;
+  std::vector<std::shared_ptr<const Function<T>>> coeff_map;
   std::vector<std::string> coefficient_names;
   for (int i = 0; i < expression.num_coefficients; ++i)
     coefficient_names.push_back(expression.coefficient_names[i]);
@@ -950,7 +949,7 @@ fem::Expression<T> create_expression(
   }
 
   // Place constants in appropriate order
-  std::vector<std::shared_ptr<const fem::Constant<T>>> const_map;
+  std::vector<std::shared_ptr<const Constant<T>>> const_map;
   std::vector<std::string> constant_names;
   for (int i = 0; i < expression.num_constants; ++i)
     constant_names.push_back(expression.constant_names[i]);

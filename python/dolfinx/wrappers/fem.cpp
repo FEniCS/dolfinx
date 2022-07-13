@@ -415,8 +415,8 @@ void declare_objects(py::module& m, const std::string& type)
 
             // Compute value size
             auto vshape = element->value_shape();
-            std::size_t value_size = std::reduce(
-                std::begin(vshape), std::end(vshape), 1, std::multiplies<>());
+            std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
+                                                 1, std::multiplies{});
 
             std::function<void(T*, int, int, const double*)> f
                 = reinterpret_cast<void (*)(T*, int, int, const double*)>(addr);
@@ -764,7 +764,6 @@ void declare_form(py::module& m, const std::string& type)
   std::string pyclass_name_form = std::string("Form_") + type;
   py::class_<dolfinx::fem::Form<T>, std::shared_ptr<dolfinx::fem::Form<T>>>(
       m, pyclass_name_form.c_str(), "Variational form object")
-      // TODO Fix this and uncomment
       // .def(
       //     py::init(
       //         [](const std::vector<std::shared_ptr<
@@ -772,9 +771,7 @@ void declare_form(py::module& m, const std::string& type)
       //            const std::map<
       //                dolfinx::fem::IntegralType,
       //                std::pair<std::vector<std::pair<int, py::object>>,
-      //                          const std::map<std::int32_t,
-      //                                         std::vector<std::int32_t>>>>&
-      //                integrals,
+      //                          const dolfinx::mesh::MeshTags<int>*>>& integrals,
       //            const std::vector<std::shared_ptr<
       //                const dolfinx::fem::Function<T>>>& coefficients,
       //            const std::vector<std::shared_ptr<
@@ -782,42 +779,37 @@ void declare_form(py::module& m, const std::string& type)
       //            bool needs_permutation_data,
       //            const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
       //         {
-      //           // TODO Where does this set the meshtags/entities?
       //           using kern = std::function<void(
       //               T*, const T*, const T*,
       //               const typename geom_type<T>::value_type*, const int*,
       //               const std::uint8_t*)>;
-
       //           std::map<dolfinx::fem::IntegralType,
-      //                    std::pair<
-      //                        std::vector<std::pair<int, kern>>,
-      //                        std::map<std::int32_t,
-      //                        std::vector<std::int32_t>>>>
+      //                    std::pair<std::vector<std::pair<int, kern>>,
+      //                              const dolfinx::mesh::MeshTags<int>*>>
       //               _integrals;
 
-      //           // // Loop over kernel for each entity type
-      //           // for (auto& kernel_type : integrals)
-      //           // {
-      //           //   // Set subdomain markers
-      //           //   // _integrals[kernel_type.first].second = {};
+      //           // Loop over kernel for each entity type
+      //           for (auto& kernel_type : integrals)
+      //           {
+      //             // Set subdomain markers
+      //             _integrals[kernel_type.first].second
+      //                 = kernel_type.second.second;
 
-      //           //   // Loop over each domain kernel
-      //           //   for (auto& kernel : kernel_type.second.first)
-      //           //   {
-      //           //     auto tabulate_tensor_ptr
-      //           //         = (void (*)(T*, const T*, const T*,
-      //           //                     const typename
-      //           geom_type<T>::value_type*,
-      //           //                     const int*, const std::uint8_t*))
-      //           //               kernel.second.cast<std::uintptr_t>();
-      //           //     _integrals[kernel_type.first].first.push_back(
-      //           //         {kernel.first, tabulate_tensor_ptr});
-      //           //   }
-      //           // }
-      //           return dolfinx::fem::Form<T>(spaces, _integrals,
-      //           coefficients,
-      //                                        constants,
-      //                                        needs_permutation_data, mesh);
+      //             // Loop over each domain kernel
+      //             for (auto& kernel : kernel_type.second.first)
+      //             {
+      //               auto tabulate_tensor_ptr
+      //                   = (void (*)(T*, const T*, const T*,
+      //                               const typename geom_type<T>::value_type*,
+      //                               const int*, const std::uint8_t*))
+      //                         kernel.second.cast<std::uintptr_t>();
+      //               _integrals[kernel_type.first].first.push_back(
+      //                   {kernel.first, tabulate_tensor_ptr});
+      //             }
+      //           }
+      //           return dolfinx::fem::Form<T>(spaces, _integrals, coefficients,
+      //                                        constants, needs_permutation_data,
+      //                                        mesh);
       //         }),
       //     py::arg("spaces"), py::arg("integrals"), py::arg("coefficients"),
       //     py::arg("constants"), py::arg("need_permutation_data"),
@@ -1053,23 +1045,19 @@ void fem(py::module& m)
       .def_property_readonly("num_sub_elements",
                              &dolfinx::fem::FiniteElement::num_sub_elements)
       .def_property_readonly(
-          "interpolation_points",
-          [](const dolfinx::fem::FiniteElement& self)
-          {
-            const xt::xtensor<double, 2>& x = self.interpolation_points();
-            return py::array_t<double>(x.shape(), x.data(), py::cast(self));
-          })
+          "interpolation_points", [](const dolfinx::fem::FiniteElement& self)
+          { return xt_as_pyarray(self.interpolation_points()); })
       .def_property_readonly("interpolation_ident",
                              &dolfinx::fem::FiniteElement::interpolation_ident)
       .def_property_readonly("space_dimension",
                              &dolfinx::fem::FiniteElement::space_dimension)
-      .def_property_readonly("value_shape",
-                             [](const dolfinx::fem::FiniteElement& self)
-                             {
-                               xtl::span<const int> shape = self.value_shape();
-                               return py::array_t(shape.size(), shape.data(),
-                                                  py::none());
-                             })
+      .def_property_readonly(
+          "value_shape",
+          [](const dolfinx::fem::FiniteElement& self)
+          {
+            xtl::span<const std::size_t> shape = self.value_shape();
+            return py::array_t(shape.size(), shape.data(), py::none());
+          })
       .def(
           "apply_dof_transformation",
           [](const dolfinx::fem::FiniteElement& self,
