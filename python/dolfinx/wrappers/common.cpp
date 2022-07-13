@@ -64,7 +64,9 @@ void common(py::module& m)
                   const py::array_t<int, py::array::c_style>& ghost_owners)
                {
                  return dolfinx::common::IndexMap(
-                     comm.get(), local_size, std::span(ghosts), ghost_owners);
+                     comm.get(), local_size,
+                     std::span(ghosts.data(), ghosts.size()),
+                     std::span(ghost_owners.data(), ghost_owners.size()));
                }),
            py::arg("comm"), py::arg("local_size"), py::arg("ghosts"),
            py::arg("ghost_owners"))
@@ -80,8 +82,10 @@ void common(py::module& m)
                                  dest_src[0].data() + dest_src[0].size());
                  ranks[1].assign(dest_src[1].data(),
                                  dest_src[1].data() + dest_src[1].size());
-                 return dolfinx::common::IndexMap(comm.get(), local_size, ranks,
-                                                  ghosts, ghost_owners);
+                 return dolfinx::common::IndexMap(
+                     comm.get(), local_size, ranks,
+                     std::span(ghosts.data(), ghosts.size()),
+                     std::span(ghost_owners.data(), ghost_owners.size()));
                }),
            py::arg("comm"), py::arg("local_size"), py::arg("dest_src"),
            py::arg("ghosts"), py::arg("ghost_owners"))
@@ -120,7 +124,7 @@ void common(py::module& m)
               throw std::runtime_error("Array of local indices must be 1D.");
             py::array_t<std::int64_t> global(local.size());
             self.local_to_global(
-                std::span(local),
+                std::span(local.data(), local.size()),
                 std::span<std::int64_t>(global.mutable_data(), global.size()));
             return global;
           },
@@ -130,7 +134,8 @@ void common(py::module& m)
           [](const dolfinx::common::IndexMap& self,
              const py::array_t<std::int32_t, py::array::c_style>& entities)
           {
-            auto [map, ghosts] = self.create_submap(entities);
+            auto [map, ghosts] = self.create_submap(
+                std::span(entities.data(), entities.size()));
             return std::pair(std::move(map), as_pyarray(std::move(ghosts)));
           },
           py::arg("entities"));

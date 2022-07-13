@@ -352,7 +352,7 @@ void FiniteElement::tabulate(xt::xtensor<double, 4>& reference_values,
 {
   assert(_element);
   _element->tabulate(
-      order, std::span(X), std::array{X.shape(0), X.shape(1)},
+      order, std::span(X.data(), X.size()), std::array{X.shape(0), X.shape(1)},
       std::span<double>(reference_values.data(), reference_values.size()));
 }
 //-----------------------------------------------------------------------------
@@ -360,7 +360,8 @@ xt::xtensor<double, 4> FiniteElement::tabulate(const xt::xtensor<double, 2>& X,
                                                int order) const
 {
   assert(_element);
-  auto [tab, shape] = _element->tabulate(order, X, {X.shape(0), X.shape(1)});
+  auto [tab, shape] = _element->tabulate(order, std::span(X.data(), X.size()),
+                                         {X.shape(0), X.shape(1)});
   return xt::adapt(
       tab, std::vector<std::size_t>{shape[0], shape[1], shape[2], shape[3]});
 }
