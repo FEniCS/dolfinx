@@ -27,7 +27,7 @@ def test_real_element(cell):
     else:
         mesh = create_unit_square(MPI.COMM_WORLD, 8, 4, dolfinx_cell, GhostMode.shared_facet)
 
-    element = ufl.FiniteElement("R", ufl_cell, 0)
+    element = ufl.FiniteElement("Real", ufl_cell, 0)
     U = FunctionSpace(mesh, element)
     u = ufl.TrialFunction(U)
     v = ufl.TestFunction(U)
@@ -55,8 +55,8 @@ def test_mixed_real_element(cell):
     else:
         mesh = create_unit_square(MPI.COMM_WORLD, 8, 4, dolfinx_cell, GhostMode.shared_facet)
 
-    lagrange = ufl.FiniteElement("P", ufl_cell, 1)
-    real = ufl.FiniteElement("R", ufl_cell, 0)
+    lagrange = ufl.FiniteElement("Lagrange", ufl_cell, 1)
+    real = ufl.FiniteElement("Real", ufl_cell, 0)
     element = ufl.MixedElement(lagrange, real)
     U = FunctionSpace(mesh, element)
     U2 = FunctionSpace(mesh, lagrange)
@@ -92,7 +92,7 @@ def test_vector_real_element(cell):
         mesh = create_unit_square(MPI.COMM_WORLD, 8, 4, dolfinx_cell, GhostMode.shared_facet)
 
     dim = mesh.geometry.dim
-    real = ufl.FiniteElement("R", ufl_cell, 0)
+    real = ufl.FiniteElement("Real", ufl_cell, 0)
     element = ufl.VectorElement(real)
     U = FunctionSpace(mesh, element)
     u = ufl.TrialFunction(U)
@@ -107,7 +107,7 @@ def test_vector_real_element(cell):
 
 
 @pytest.mark.parametrize("cell", ["interval", "triangle", "tetrahedron", "quadrilateral", "hexahedron"])
-def test_real_as_coefficient(cell):
+def test_real_as_scalar_coefficient(cell):
     ufl_cell = getattr(ufl, cell)
     dolfinx_cell = getattr(CellType, cell)
     if cell == "interval":
@@ -120,7 +120,7 @@ def test_real_as_coefficient(cell):
         mesh = create_unit_square(MPI.COMM_WORLD, 8, 4, dolfinx_cell, GhostMode.shared_facet)
         dim = 2
 
-    real_element = ufl.FiniteElement("R", ufl_cell, 0)
+    real_element = ufl.FiniteElement("Real", ufl_cell, 0)
     Vr = FunctionSpace(mesh, real_element)
     r = dolfinx.fem.Function(Vr)
     r.x.array[:] = 6.0
@@ -129,3 +129,25 @@ def test_real_as_coefficient(cell):
     scaled_area = r * r * dx
     A = dolfinx.fem.assemble_scalar(form(scaled_area))
     assert(np.isclose(6.0**2, A))
+
+
+@pytest.mark.parametrize("cell", ["interval", "triangle", "tetrahedron", "quadrilateral", "hexahedron"])
+def test_real_as_vector_coefficient(cell):
+    ufl_cell = getattr(ufl, cell)
+    dolfinx_cell = getattr(CellType, cell)
+    if cell == "interval":
+        mesh = create_unit_interval(MPI.COMM_WORLD, 8, GhostMode.shared_facet)
+    elif cell.endswith("hedron"):
+        mesh = create_unit_cube(MPI.COMM_WORLD, 8, 4, 2, dolfinx_cell, GhostMode.shared_facet)
+    else:
+        mesh = create_unit_square(MPI.COMM_WORLD, 8, 4, dolfinx_cell, GhostMode.shared_facet)
+
+    real_element = ufl.VectorElement("Real", ufl_cell, 0, dim=4)
+    Vr = FunctionSpace(mesh, real_element)
+    r = dolfinx.fem.Function(Vr)
+    r.x.array[:] = [6.0, 3.0, 4.0, 2.0]
+
+    dx = ufl.Measure("dx", mesh)
+    inner_product = ufl.inner(r, r) * dx
+    A = dolfinx.fem.assemble_scalar(form(inner_product))
+    assert(np.isclose(np.dot(r.x.array[:], r.x.array[:]), A))
