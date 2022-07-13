@@ -150,7 +150,7 @@ create_submesh(const Mesh& mesh, int dim,
 /// Helper function to get a std::vector of (cell, local_facet) pairs
 /// corresponding to a given facet index.
 /// @param[in] f Facet index
-/// @param[in] f_to_c Facet to cell connectivity
+/// @param[in] cells The cells connected to the facet
 /// @param[in] c_to_f Cell to facet connectivity
 /// @return Vector of (cell, local_facet) pairs
 template <int num_cells>
