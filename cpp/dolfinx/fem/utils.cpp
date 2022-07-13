@@ -281,9 +281,6 @@ std::map<int, std::vector<std::int32_t>>
 fem::compute_integration_domains(const fem::IntegralType integral_type,
                                  const mesh::MeshTags<int>& meshtags)
 {
-  // TODO Complete
-  std::cout << "compute_integration_domains\n";
-
   std::map<int, std::vector<std::int32_t>> integrals;
 
   std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
