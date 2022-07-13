@@ -158,11 +158,15 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
             _cpp.fem.IntegralType.exterior_facet, subdomains.get("exterior_facet")) \
             if isinstance(subdomains.get("exterior_facet"), dolfinx.mesh.MeshTagsMetaClass) \
             else subdomains.get("exterior_facet", {})
+        int_facet_entities = _cpp.fem.compute_integration_domains(
+            _cpp.fem.IntegralType.interior_facet, subdomains.get("interior_facet")) \
+            if isinstance(subdomains.get("interior_facet"), dolfinx.mesh.MeshTagsMetaClass) \
+            else subdomains.get("interior_facet", {})
 
         # Subdomain markers (possibly empty dictionary for some dimensions)
         subdomains = {_cpp.fem.IntegralType.cell: cell_entities,
                       _cpp.fem.IntegralType.exterior_facet: ext_facet_entities,
-                      _cpp.fem.IntegralType.interior_facet: subdomains.get("interior_facet", {}),
+                      _cpp.fem.IntegralType.interior_facet: int_facet_entities,
                       _cpp.fem.IntegralType.vertex: subdomains.get("vertex", {})}
 
         return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, code)

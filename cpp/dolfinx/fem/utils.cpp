@@ -366,6 +366,21 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
     break;
     case IntegralType::interior_facet:
     {
+      for (auto f = tagged_entities.cbegin(); f != entity_end; ++f)
+      {
+        if (f_to_c->num_links(*f) == 2)
+        {
+          const std::size_t index = std::distance(tagged_entities.cbegin(), f);
+
+          const std::array<std::array<std::int32_t, 2>, 2> pairs
+              = mesh::get_cell_local_facet_pairs<2>(*f, f_to_c->links(*f),
+                                                    *c_to_f);
+          integrals[tags[index]].insert(integrals[tags[index]].end(),
+                                        pairs[0].cbegin(), pairs[0].cend());
+          integrals[tags[index]].insert(integrals[tags[index]].end(),
+                                        pairs[1].cbegin(), pairs[1].cend());
+        }
+      }
     }
     break;
     default:
