@@ -150,13 +150,18 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         constants = [c._cpp_object for c in form.constants()]
 
         # TODO Convert meshtags to entities here
-        cell_entities = _cpp.fem.compute_integration_domains(_cpp.fem.IntegralType.cell, subdomains.get("cell")) \
+        cell_entities = _cpp.fem.compute_integration_domains(
+            _cpp.fem.IntegralType.cell, subdomains.get("cell")) \
             if isinstance(subdomains.get("cell"), dolfinx.mesh.MeshTagsMetaClass) \
             else subdomains.get("cell", {})
+        ext_facet_entities = _cpp.fem.compute_integration_domains(
+            _cpp.fem.IntegralType.exterior_facet, subdomains.get("exterior_facet")) \
+            if isinstance(subdomains.get("exterior_facet"), dolfinx.mesh.MeshTagsMetaClass) \
+            else subdomains.get("exterior_facet", {})
 
         # Subdomain markers (possibly empty dictionary for some dimensions)
         subdomains = {_cpp.fem.IntegralType.cell: cell_entities,
-                      _cpp.fem.IntegralType.exterior_facet: subdomains.get("exterior_facet", {}),
+                      _cpp.fem.IntegralType.exterior_facet: ext_facet_entities,
                       _cpp.fem.IntegralType.interior_facet: subdomains.get("interior_facet", {}),
                       _cpp.fem.IntegralType.vertex: subdomains.get("vertex", {})}
 
