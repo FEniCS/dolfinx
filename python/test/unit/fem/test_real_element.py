@@ -97,7 +97,7 @@ def test_vector_real_element(cell):
     U = FunctionSpace(mesh, element)
     u = ufl.TrialFunction(U)
     v = ufl.TestFunction(U)
-    
+
     a = form(ufl.inner(u, v) * ufl.dx)
     A = dolfinx.fem.petsc.assemble_matrix(a)
     A.assemble()
@@ -126,7 +126,6 @@ def test_real_as_coefficient(cell):
     r.x.array[:] = 6.0
 
     dx = ufl.Measure("dx", mesh)
-    scaled_area = r*dx
-    #A = dolfinx.fem.assemble_scalar(form(scaled_area))
-    #assert(A == scaled_area)
-    
+    scaled_area = r * r * dx
+    A = dolfinx.fem.assemble_scalar(form(scaled_area))
+    assert(np.isclose(6.0**2, A))
