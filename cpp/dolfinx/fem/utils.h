@@ -312,8 +312,16 @@ Form<T> create_form(
     }
     assert(k);
 
-    integral_data[IntegralType::cell][cell_integral_ids[i]]
-        = {k, subdomains.at(IntegralType::cell).at(cell_integral_ids[i])};
+    const int id = cell_integral_ids[i];
+    if (id == -1)
+    {
+      integral_data[IntegralType::cell][id] = {k, {}};
+    }
+    else
+    {
+      integral_data[IntegralType::cell][id]
+          = {k, subdomains.at(IntegralType::cell).at(id)};
+    }
 
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
@@ -372,10 +380,17 @@ Form<T> create_form(
     }
     assert(k);
 
-    integral_data[IntegralType::exterior_facet]
-                     [exterior_facet_integral_ids[i]]
-        = {k, subdomains.at(IntegralType::exterior_facet)
-                  .at(exterior_facet_integral_ids[i])};
+    const int id = exterior_facet_integral_ids[i];
+    if (id == -1)
+    {
+      integral_data[IntegralType::exterior_facet][id] = {k, {}};
+    }
+    else
+    {
+      integral_data[IntegralType::exterior_facet][id]
+          = {k, subdomains.at(IntegralType::exterior_facet).at(id)};
+    }
+
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }
@@ -418,10 +433,16 @@ Form<T> create_form(
     }
     assert(k);
 
-    integral_data[IntegralType::interior_facet]
-                     [interior_facet_integral_ids[i]]
-        = {k, subdomains.at(IntegralType::interior_facet)
-                  .at(interior_facet_integral_ids[i])};
+    const int id = interior_facet_integral_ids[i];
+    if (id == -1)
+    {
+      integral_data[IntegralType::interior_facet][id] = {k, {}};
+    }
+    else
+    {
+      integral_data[IntegralType::interior_facet][id]
+          = {k, subdomains.at(IntegralType::interior_facet).at(id)};
+    }
 
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
