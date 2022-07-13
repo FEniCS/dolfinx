@@ -308,10 +308,10 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
   {
   case fem::IntegralType::cell:
   {
-    for (auto it = tagged_entities.cbegin(); it != entity_end; ++it)
+    for (auto c = tagged_entities.cbegin(); c != entity_end; ++c)
     {
-      const std::size_t index = std::distance(tagged_entities.cbegin(), it);
-      integrals[tags[index]].push_back(*it);
+      const std::size_t index = std::distance(tagged_entities.cbegin(), c);
+      integrals[tags[index]].push_back(*c);
     }
     // for (std::size_t i = 0; i < tagged_entities.size(); ++i)
     // {
@@ -330,12 +330,38 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
     {
     case IntegralType::exterior_facet:
     {
-      // assert(topology.index_map(tdim - 1));
-      // const std::vector<std::int32_t> fwd_shared_facets
-      //     = topology.index_map(tdim)->overlapped()
-      //           ? std::vector<std::int32_t>()
-      //           : topology.index_map(tdim - 1)->shared_indices();
-      // for (std::size_t i = 0; i < )
+      // When a mesh is not ghosted by cell, it is not straightforward
+      // to distinguish between (i) exterior facets and (ii) interior
+      // facets that are on a partition boundary. If there are no
+      // ghost cells, build a set of owned facts that are ghosted on
+      // another process to help determine if a facet is on an
+      // exterior boundary.
+      assert(topology.index_map(tdim - 1));
+      const std::vector<std::int32_t> fwd_shared_facets
+          = topology.index_map(tdim)->overlapped()
+                ? std::vector<std::int32_t>()
+                : topology.index_map(tdim - 1)->shared_indices();
+      for (auto f = tagged_entities.cbegin(); f != entity_end; ++f)
+      {
+        // // All "owned" facets connected to one cell, that are not
+        // // shared, should be external
+        // if (f_to_c->num_links(*f) == 1)
+        // {
+        //   if (!std::binary_search(fwd_shared_facets.begin(),
+        //                           fwd_shared_facets.end(), *f))
+        //   {
+        //     const std::size_t index
+        //         = std::distance(tagged_entities.cbegin(), f);
+
+        //     // There will only be one pair for an exterior facet integral
+        //     const std::array<std::int32_t, 2> pair
+        //         = get_cell_local_facet_pairs<1>(*f, f_to_c->links(*f),
+        //                                         *c_to_f)[0];
+        //     integrals[tags[index]].insert(integrals[tags[index]].end(),
+        //                                   pair.cbegin(), pair.cend());
+        //   }
+        // }
+      }
     }
     break;
     case IntegralType::interior_facet:
