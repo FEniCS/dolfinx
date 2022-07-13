@@ -75,6 +75,14 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 
 } // namespace impl
 
+/// @brief Given an integral type and meshtags, this function computes
+/// the entities that should be integrated over (i.e. local cell indices
+/// for cell integrals, local facets on the boundary as
+/// (cell, local facet index) pairs for exterior facet integrals etc.)
+/// @param[in] integral_type The integral type
+/// @param[in] meshtags The meshtags
+/// @return A map from the integral id to the entities in the integration
+/// domain
 std::map<int, std::vector<std::int32_t>>
 compute_integration_domains(const IntegralType integral_type,
                             const mesh::MeshTags<int>& meshtags);
