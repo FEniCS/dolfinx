@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
 
       // Compute action of A on x
       fem::pack_coefficients(*M, coeff);
-      fem::assemble_vector(y.mutable_array(), *M, xtl::span<const T>(constants),
+      fem::assemble_vector(y.mutable_array(), *M, std::span<const T>(constants),
                            fem::make_coefficients_span(coeff));
 
       // Set BC dofs to zero (effectively zeroes rows of A)

@@ -23,7 +23,7 @@ TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int32_t,
   std::generate_n(std::back_inserter(vec), vec_size, generator);
 
   // Sort vector using radix sort
-  dolfinx::radix_sort(xtl::span(vec));
+  dolfinx::radix_sort(std::span(vec));
 
   // Check if vector is sorted
   REQUIRE(std::is_sorted(vec.begin(), vec.end()));
@@ -61,6 +61,6 @@ TEST_CASE("Test argsort bitset")
   // Requiring equality of permutation vectors is not a good test, because
   // std::sort is not stable, so we compare the effect on the actual array.
   for (std::size_t i = 0; i < perm.size(); i++)
-    REQUIRE((xtl::span(arr.data() + shape1 * perm[i], shape1)
-             == xtl::span(arr.data() + shape1 * index[i], shape1)));
+    REQUIRE((std::span(arr.data() + shape1 * perm[i], shape1)
+             == std::span(arr.data() + shape1 * index[i], shape1)));
 }

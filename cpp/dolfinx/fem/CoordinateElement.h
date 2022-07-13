@@ -13,7 +13,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 #include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
+#include <span>
 
 namespace basix
 {
@@ -192,11 +192,11 @@ public:
                            double tol = 1.0e-8, int maxit = 10) const;
 
   /// Permutes a list of DOF numbers on a cell
-  void permute_dofs(const xtl::span<std::int32_t>& dofs,
+  void permute_dofs(const std::span<std::int32_t>& dofs,
                     std::uint32_t cell_perm) const;
 
   /// Reverses a DOF permutation
-  void unpermute_dofs(const xtl::span<std::int32_t>& dofs,
+  void unpermute_dofs(const std::span<std::int32_t>& dofs,
                       std::uint32_t cell_perm) const;
 
   /// Indicates whether the geometry DOF numbers on each cell need

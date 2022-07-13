@@ -60,7 +60,7 @@ void CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X,
                                  xt::xtensor<double, 4>& basis) const
 {
   assert(_element);
-  _element->tabulate(n, xtl::span(X), std::array{X.shape(0), X.shape(1)},
+  _element->tabulate(n, std::span(X), std::array{X.shape(0), X.shape(1)},
                      basis);
 }
 //--------------------------------------------------------------------------------
@@ -183,14 +183,14 @@ void CoordinateElement::pull_back_nonaffine(
   }
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::permute_dofs(const xtl::span<std::int32_t>& dofs,
+void CoordinateElement::permute_dofs(const std::span<std::int32_t>& dofs,
                                      std::uint32_t cell_perm) const
 {
   assert(_element);
   _element->permute_dofs(dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::unpermute_dofs(const xtl::span<std::int32_t>& dofs,
+void CoordinateElement::unpermute_dofs(const std::span<std::int32_t>& dofs,
                                        std::uint32_t cell_perm) const
 {
   assert(_element);

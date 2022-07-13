@@ -14,7 +14,7 @@
 #include <numeric>
 #include <utility>
 #include <vector>
-#include <xtl/xspan.hpp>
+#include <span>
 
 namespace dolfinx::la
 {
@@ -139,9 +139,9 @@ public:
   /// @todo clarify setting on non-owned enrties
   auto mat_set_values()
   {
-    return [&](const xtl::span<const std::int32_t>& rows,
-               const xtl::span<const std::int32_t>& cols,
-               const xtl::span<const T>& data) -> int
+    return [&](const std::span<const std::int32_t>& rows,
+               const std::span<const std::int32_t>& cols,
+               const std::span<const T>& data) -> int
     {
       this->set(data, rows, cols);
       return 0;
@@ -154,9 +154,9 @@ public:
   /// @return Function for inserting values into `A`
   auto mat_add_values()
   {
-    return [&](const xtl::span<const std::int32_t>& rows,
-               const xtl::span<const std::int32_t>& cols,
-               const xtl::span<const T>& data) -> int
+    return [&](const std::span<const std::int32_t>& rows,
+               const std::span<const std::int32_t>& cols,
+               const std::span<const T>& data) -> int
     {
       this->add(data, rows, cols);
       return 0;
@@ -181,7 +181,7 @@ public:
       throw std::runtime_error("Block size not yet supported");
 
     // Compute off-diagonal offset for each row
-    xtl::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offset();
+    std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offset();
     _off_diagonal_offset.reserve(num_diag_nnz.size());
     std::transform(num_diag_nnz.begin(), num_diag_nnz.end(), _row_ptr.begin(),
                    std::back_inserter(_off_diagonal_offset), std::plus{});
@@ -352,9 +352,9 @@ public:
   /// set in the matrix
   /// @param[in] rows The row indices of `x`
   /// @param[in] cols The column indices of `x`
-  void set(const xtl::span<const T>& x,
-           const xtl::span<const std::int32_t>& rows,
-           const xtl::span<const std::int32_t>& cols)
+  void set(const std::span<const T>& x,
+           const std::span<const std::int32_t>& rows,
+           const std::span<const std::int32_t>& cols)
   {
     impl::set_csr(_data, _cols, _row_ptr, x, rows, cols,
                   _index_maps[0]->size_local());
@@ -372,9 +372,9 @@ public:
   /// add to the matrix
   /// @param[in] rows The row indices of `x`
   /// @param[in] cols The column indices of `x`
-  void add(const xtl::span<const T>& x,
-           const xtl::span<const std::int32_t>& rows,
-           const xtl::span<const std::int32_t>& cols)
+  void add(const std::span<const T>& x,
+           const std::span<const std::int32_t>& rows,
+           const std::span<const std::int32_t>& cols)
   {
     impl::add_csr(_data, _cols, _row_ptr, x, rows, cols);
   }

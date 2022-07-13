@@ -23,7 +23,7 @@
 #include <vector>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
+#include <span>
 
 namespace dolfinx::fem
 {
@@ -119,8 +119,8 @@ public:
                                              V.dofmap()->index_map_bs());
 
     // Copy values into new vector
-    xtl::span<const T> x_old = _x->array();
-    xtl::span<T> x_new = x->mutable_array();
+    std::span<const T> x_old = _x->array();
+    std::span<T> x_new = x->mutable_array();
     for (std::size_t i = 0; i < map.size(); ++i)
     {
       assert((int)i < x_new.size());
@@ -148,7 +148,7 @@ public:
   /// @param[in] v The function to be interpolated
   /// @param[in] cells The cells to interpolate on
   void interpolate(const Function<T>& v,
-                   const xtl::span<const std::int32_t>& cells)
+                   const std::span<const std::int32_t>& cells)
   {
     fem::interpolate(*this, v, cells);
   }
@@ -174,7 +174,7 @@ public:
   /// @param[in] cells The cells to interpolate on
   void interpolate(
       const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
-      const xtl::span<const std::int32_t>& cells)
+      const std::span<const std::int32_t>& cells)
   {
     assert(_function_space);
     assert(_function_space->element());
@@ -233,7 +233,7 @@ public:
   /// with `u`.
   /// @param[in] cells The cells to interpolate on
   void interpolate(const Expression<T>& e,
-                   const xtl::span<const std::int32_t>& cells)
+                   const std::span<const std::int32_t>& cells)
   {
     // Check that spaces are compatible
     assert(_function_space);
@@ -302,7 +302,7 @@ public:
   /// for points with a negative cell index. This argument must be
   /// passed with the correct size.
   void eval(const xt::xtensor<double, 2>& x,
-            const xtl::span<const std::int32_t>& cells,
+            const std::span<const std::int32_t>& cells,
             xt::xtensor<T, 2>& u) const
   {
     if (cells.empty())
@@ -335,7 +335,7 @@ public:
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
     const std::size_t num_dofs_g = mesh->geometry().cmap().dim();
-    xtl::span<const double> x_g = mesh->geometry().x();
+    std::span<const double> x_g = mesh->geometry().x();
 
     // Get coordinate map
     const CoordinateElement& cmap = mesh->geometry().cmap();
@@ -366,11 +366,11 @@ public:
     assert(dofmap);
     const int bs_dof = dofmap->bs();
 
-    xtl::span<const std::uint32_t> cell_info;
+    std::span<const std::uint32_t> cell_info;
     if (element->needs_dof_transformations())
     {
       mesh->topology_mutable().create_entity_permutations();
-      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+      cell_info = std::span(mesh->topology().get_cell_permutation_info());
     }
 
     xt::xtensor<double, 2> coordinate_dofs
@@ -379,7 +379,7 @@ public:
 
     // Loop over points
     std::fill(u.data(), u.data() + u.size(), 0.0);
-    const xtl::span<const T>& _v = _x->array();
+    const std::span<const T>& _v = _x->array();
 
     // -- Lambda function for affine pull-backs
     xt::xtensor<double, 4> data(cmap.tabulate_shape(1, 1));
@@ -479,7 +479,7 @@ public:
       // Permute the reference values to account for the cell's
       // orientation
       apply_dof_transformation(
-          xtl::span(basis_derivatives_reference_values.data()
+          std::span(basis_derivatives_reference_values.data()
                         + p * num_basis_values,
                     num_basis_values),
           cell_info, cell_index, reference_value_size);
@@ -501,7 +501,7 @@ public:
       }
 
       // Get degrees of freedom for current cell
-      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
+      std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (int k = 0; k < bs_dof; ++k)
           coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];

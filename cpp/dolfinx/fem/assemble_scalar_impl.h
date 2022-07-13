@@ -24,12 +24,12 @@ namespace dolfinx::fem::impl
 /// Assemble functional over cells
 template <typename T>
 T assemble_cells(const mesh::Geometry& geometry,
-                 const xtl::span<const std::int32_t>& cells,
+                 const std::span<const std::int32_t>& cells,
                  const std::function<void(T*, const T*, const T*,
                                           const scalar_value_type_t<T>*,
                                           const int*, const std::uint8_t*)>& fn,
-                 const xtl::span<const T>& constants,
-                 const xtl::span<const T>& coeffs, int cstride)
+                 const std::span<const T>& constants,
+                 const std::span<const T>& coeffs, int cstride)
 {
   T value(0);
   if (cells.empty())
@@ -38,7 +38,7 @@ T assemble_cells(const mesh::Geometry& geometry,
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   const std::size_t num_dofs_g = geometry.cmap().dim();
-  xtl::span<const double> x_g = geometry.x();
+  std::span<const double> x_g = geometry.x();
 
   // Create data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
@@ -67,11 +67,11 @@ T assemble_cells(const mesh::Geometry& geometry,
 /// Execute kernel over exterior facets and accumulate result
 template <typename T>
 T assemble_exterior_facets(
-    const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& facets,
+    const mesh::Mesh& mesh, const std::span<const std::int32_t>& facets,
     const std::function<void(T*, const T*, const T*,
                              const scalar_value_type_t<T>*,
                              const int*, const std::uint8_t*)>& fn,
-    const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
+    const std::span<const T>& constants, const std::span<const T>& coeffs,
     int cstride)
 {
   T value(0);
@@ -81,7 +81,7 @@ T assemble_exterior_facets(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
-  xtl::span<const double> x_g = mesh.geometry().x();
+  std::span<const double> x_g = mesh.geometry().x();
 
   // Create data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
@@ -112,13 +112,13 @@ T assemble_exterior_facets(
 /// Assemble functional over interior facets
 template <typename T>
 T assemble_interior_facets(
-    const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& facets,
+    const mesh::Mesh& mesh, const std::span<const std::int32_t>& facets,
     const std::function<void(T*, const T*, const T*,
                              const scalar_value_type_t<T>*,
                              const int*, const std::uint8_t*)>& fn,
-    const xtl::span<const T>& constants, const xtl::span<const T>& coeffs,
-    int cstride, const xtl::span<const int>& offsets,
-    const xtl::span<const std::uint8_t>& perms)
+    const std::span<const T>& constants, const std::span<const T>& coeffs,
+    int cstride, const std::span<const int>& offsets,
+    const std::span<const std::uint8_t>& perms)
 {
   T value(0);
   if (facets.empty())
@@ -129,7 +129,7 @@ T assemble_interior_facets(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
-  xtl::span<const double> x_g = mesh.geometry().x();
+  std::span<const double> x_g = mesh.geometry().x();
 
   // Create data structures used in assembly
   xt::xtensor<scalar_value_type_t<T>, 3> coordinate_dofs({2, num_dofs_g, 3});
@@ -175,9 +175,9 @@ T assemble_interior_facets(
 /// Assemble functional into an scalar
 template <typename T>
 T assemble_scalar(
-    const fem::Form<T>& M, const xtl::span<const T>& constants,
+    const fem::Form<T>& M, const std::span<const T>& constants,
     const std::map<std::pair<IntegralType, int>,
-                   std::pair<xtl::span<const T>, int>>& coefficients)
+                   std::pair<std::span<const T>, int>>& coefficients)
 {
   std::shared_ptr<const mesh::Mesh> mesh = M.mesh();
   assert(mesh);

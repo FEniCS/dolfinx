@@ -67,12 +67,12 @@ struct geom_type<T, std::void_t<typename T::value_type>>
 
 template <typename T>
 std::map<std::pair<dolfinx::fem::IntegralType, int>,
-         std::pair<xtl::span<const T>, int>>
+         std::pair<std::span<const T>, int>>
 py_to_cpp_coeffs(const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                                 py::array_t<T, py::array::c_style>>& coeffs)
 {
   using Key_t = typename std::remove_reference_t<decltype(coeffs)>::key_type;
-  std::map<Key_t, std::pair<xtl::span<const T>, int>> c;
+  std::map<Key_t, std::pair<std::span<const T>, int>> c;
   std::transform(coeffs.cbegin(), coeffs.cend(), std::inserter(c, c.end()),
                  [](auto& e) -> typename decltype(c)::value_type {
                    return {e.first, {e.second, e.second.shape(1)}};
@@ -147,7 +147,7 @@ void declare_functions(py::module& m)
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         py::array_t<T, py::array::c_style>>& coefficients)
       {
-        dolfinx::fem::assemble_vector<T>(xtl::span(b.mutable_data(), b.size()),
+        dolfinx::fem::assemble_vector<T>(std::span(b.mutable_data(), b.size()),
                                          L, constants,
                                          py_to_cpp_coeffs(coefficients));
       },
@@ -171,7 +171,7 @@ void declare_functions(py::module& m)
                                    "supported with la::MatrixCSR.");
         }
         dolfinx::fem::assemble_matrix(A.mat_add_values(), a,
-                                      xtl::span(constants),
+                                      std::span(constants),
                                       py_to_cpp_coeffs(coefficients), bcs);
       },
       py::arg("A"), py::arg("a"), py::arg("constants"), py::arg("coeffs"),
@@ -194,9 +194,9 @@ void declare_functions(py::module& m)
          const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
              bcs)
       {
-        auto f = [&fin](const xtl::span<const std::int32_t>& rows,
-                        const xtl::span<const std::int32_t>& cols,
-                        const xtl::span<const T>& data)
+        auto f = [&fin](const std::span<const std::int32_t>& rows,
+                        const std::span<const std::int32_t>& cols,
+                        const std::span<const T>& data)
         {
           return fin(py::array(rows.size(), rows.data()),
                      py::array(cols.size(), cols.data()),
@@ -222,23 +222,23 @@ void declare_functions(py::module& m)
          const std::vector<py::array_t<T, py::array::c_style>>& x0,
          double scale)
       {
-        std::vector<xtl::span<const T>> _x0;
+        std::vector<std::span<const T>> _x0;
         for (const auto& x : x0)
           _x0.emplace_back(x.data(), x.size());
 
-        std::vector<xtl::span<const T>> _constants;
+        std::vector<std::span<const T>> _constants;
         std::transform(constants.cbegin(), constants.cend(),
                        std::back_inserter(_constants),
                        [](auto& c) { return c; });
 
         std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                             std::pair<xtl::span<const T>, int>>>
+                             std::pair<std::span<const T>, int>>>
             _coeffs;
         std::transform(coeffs.cbegin(), coeffs.cend(),
                        std::back_inserter(_coeffs),
                        [](auto& c) { return py_to_cpp_coeffs(c); });
 
-        dolfinx::fem::apply_lifting<T>(xtl::span(b.mutable_data(), b.size()), a,
+        dolfinx::fem::apply_lifting<T>(std::span(b.mutable_data(), b.size()), a,
                                        _constants, _coeffs, bcs1, _x0, scale);
       },
       py::arg("b"), py::arg("a"), py::arg("constants"), py::arg("coeffs"),
@@ -253,13 +253,13 @@ void declare_functions(py::module& m)
       {
         if (x0.ndim() == 0)
         {
-          dolfinx::fem::set_bc<T>(xtl::span(b.mutable_data(), b.size()), bcs,
+          dolfinx::fem::set_bc<T>(std::span(b.mutable_data(), b.size()), bcs,
                                   scale);
         }
         else if (x0.ndim() == 1)
         {
-          dolfinx::fem::set_bc<T>(xtl::span(b.mutable_data(), b.size()), bcs,
-                                  xtl::span(x0.data(), x0.shape(0)), scale);
+          dolfinx::fem::set_bc<T>(std::span(b.mutable_data(), b.size()), bcs,
+                                  std::span(x0.data(), x0.shape(0)), scale);
         }
         else
           throw std::runtime_error("Wrong array dimension.");
@@ -464,7 +464,7 @@ void declare_objects(py::module& m, const std::string& type)
             xt::xtensor<T, 2> _u(shape_u);
             std::copy_n(u.data(), u.size(), _u.data());
 
-            self.eval(_x, xtl::span(cells.data(), cells.size()), _u);
+            self.eval(_x, std::span(cells.data(), cells.size()), _u);
             std::copy_n(_u.data(), _u.size(), u.mutable_data());
           },
           py::arg("x"), py::arg("cells"), py::arg("values"),
@@ -541,7 +541,7 @@ void declare_objects(py::module& m, const std::string& type)
                     const_cast<T*>(values.data()), size, xt::no_ownership(),
                     std::array<std::size_t, 2>({(std::size_t)values.shape(0),
                                                 (std::size_t)values.shape(1)}));
-                self.eval(xtl::span(active_cells.data(), active_cells.size()),
+                self.eval(std::span(active_cells.data(), active_cells.size()),
                           _values);
               },
               py::arg("active_cells"), py::arg("values"))
@@ -624,14 +624,14 @@ void petsc_module(py::module& m)
           auto set_fn = dolfinx::la::petsc::Matrix::set_block_expand_fn(
               A, a.function_spaces()[0]->dofmap()->bs(),
               a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
-          dolfinx::fem::assemble_matrix(set_fn, a, xtl::span(constants),
+          dolfinx::fem::assemble_matrix(set_fn, a, std::span(constants),
                                         py_to_cpp_coeffs(coefficients), bcs);
         }
         else
         {
           dolfinx::fem::assemble_matrix(
               dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
-              xtl::span(constants), py_to_cpp_coeffs(coefficients), bcs);
+              std::span(constants), py_to_cpp_coeffs(coefficients), bcs);
         }
       },
       py::arg("A"), py::arg("a"), py::arg("constants"), py::arg("coeffs"),
@@ -654,9 +654,9 @@ void petsc_module(py::module& m)
               "Expected 1D arrays for boundary condition rows/columns");
         }
 
-        std::function<int(const xtl::span<const std::int32_t>&,
-                          const xtl::span<const std::int32_t>&,
-                          const xtl::span<const PetscScalar>&)>
+        std::function<int(const std::span<const std::int32_t>&,
+                          const std::span<const std::int32_t>&,
+                          const std::span<const PetscScalar>&)>
             set_fn;
         if (unrolled)
         {
@@ -667,7 +667,7 @@ void petsc_module(py::module& m)
         else
           set_fn = dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES);
 
-        dolfinx::fem::assemble_matrix(set_fn, a, xtl::span(constants),
+        dolfinx::fem::assemble_matrix(set_fn, a, std::span(constants),
                                       py_to_cpp_coeffs(coefficients), rows0,
                                       rows1);
       },
@@ -1026,7 +1026,7 @@ void fem(py::module& m)
           "value_shape",
           [](const dolfinx::fem::FiniteElement& self)
           {
-            xtl::span<const std::size_t> shape = self.value_shape();
+            std::span<const std::size_t> shape = self.value_shape();
             return py::array_t(shape.size(), shape.data(), py::none());
           })
       .def(
@@ -1035,7 +1035,7 @@ void fem(py::module& m)
              py::array_t<double, py::array::c_style>& x,
              std::uint32_t cell_permutation, int dim)
           {
-            self.apply_dof_transformation(xtl::span(x.mutable_data(), x.size()),
+            self.apply_dof_transformation(std::span(x.mutable_data(), x.size()),
                                           cell_permutation, dim);
           },
           py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
@@ -1087,7 +1087,7 @@ void fem(py::module& m)
           "cell_dofs",
           [](const dolfinx::fem::DofMap& self, int cell)
           {
-            xtl::span<const std::int32_t> dofs = self.cell_dofs(cell);
+            std::span<const std::int32_t> dofs = self.cell_dofs(cell);
             return py::array_t<std::int32_t>(dofs.size(), dofs.data(),
                                              py::cast(self));
           },
@@ -1188,7 +1188,7 @@ void fem(py::module& m)
           throw std::runtime_error("Expected two function spaces.");
         std::array<std::vector<std::int32_t>, 2> dofs
             = dolfinx::fem::locate_dofs_topological(
-                {V[0], V[1]}, dim, xtl::span(entities.data(), entities.size()),
+                {V[0], V[1]}, dim, std::span(entities.data(), entities.size()),
                 remote);
         return {as_pyarray(std::move(dofs[0])), as_pyarray(std::move(dofs[1]))};
       },
@@ -1201,7 +1201,7 @@ void fem(py::module& m)
          bool remote)
       {
         return as_pyarray(dolfinx::fem::locate_dofs_topological(
-            V, dim, xtl::span(entities.data(), entities.size()), remote));
+            V, dim, std::span(entities.data(), entities.size()), remote));
       },
       py::arg("V"), py::arg("dim"), py::arg("entities"),
       py::arg("remote") = true);

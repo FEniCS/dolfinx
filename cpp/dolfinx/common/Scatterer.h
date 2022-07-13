@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <mpi.h>
 #include <vector>
-#include <xtl/xspan.hpp>
+#include <span>
 
 using namespace dolfinx;
 
@@ -53,8 +53,8 @@ public:
   /// @param request The MPI request handle for tracking the status of
   /// the non-blocking communication
   template <typename T>
-  void scatter_fwd_begin(const xtl::span<const T>& send_buffer,
-                         const xtl::span<T>& recv_buffer,
+  void scatter_fwd_begin(const std::span<const T>& send_buffer,
+                         const std::span<T>& recv_buffer,
                          MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
@@ -96,14 +96,14 @@ public:
   /// @param[in] request The MPI request handle for tracking the status
   /// of the send
   template <typename T, typename Functor>
-  void scatter_fwd_begin(const xtl::span<const T>& local_data,
-                         xtl::span<T> local_buffer, xtl::span<T> remote_buffer,
+  void scatter_fwd_begin(const std::span<const T>& local_data,
+                         std::span<T> local_buffer, std::span<T> remote_buffer,
                          Functor pack_fn, MPI_Request& request) const
   {
     assert(local_buffer.size() == _local_inds.size());
     assert(remote_buffer.size() == _remote_inds.size());
     pack_fn(local_data, _local_inds, local_buffer);
-    scatter_fwd_begin(xtl::span<const T>(local_buffer), remote_buffer, request);
+    scatter_fwd_begin(std::span<const T>(local_buffer), remote_buffer, request);
   }
 
   /// @brief Complete a non-blocking send from the local owner to
@@ -126,8 +126,8 @@ public:
   /// @param[in] request The MPI request handle for tracking the status
   /// of the send
   template <typename T, typename Functor>
-  void scatter_fwd_end(const xtl::span<const T>& remote_buffer,
-                       xtl::span<T> remote_data, Functor unpack_fn,
+  void scatter_fwd_end(const std::span<const T>& remote_buffer,
+                       std::span<T> remote_data, Functor unpack_fn,
                        MPI_Request& request) const
   {
     assert(remote_buffer.size() == _remote_inds.size());
@@ -149,8 +149,8 @@ public:
   /// number of ghosts in the index map multiplied by the block size.
   /// The data for each index is blocked.
   template <typename T>
-  void scatter_fwd(const xtl::span<const T>& local_data,
-                   xtl::span<T> remote_data) const
+  void scatter_fwd(const std::span<const T>& local_data,
+                   std::span<T> remote_data) const
   {
     MPI_Request request;
     std::vector<T> local_buffer(local_buffer_size(), 0);
@@ -160,8 +160,8 @@ public:
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[i] = in[idx[i]];
     };
-    scatter_fwd_begin(local_data, xtl::span<T>(local_buffer),
-                      xtl::span<T>(remote_buffer), pack_fn, request);
+    scatter_fwd_begin(local_data, std::span<T>(local_buffer),
+                      std::span<T>(remote_buffer), pack_fn, request);
 
     auto unpack_fn = [](const auto& in, const auto& idx, auto& out, auto op)
     {
@@ -169,7 +169,7 @@ public:
         out[idx[i]] = op(out[idx[i]], in[i]);
     };
 
-    scatter_fwd_end(xtl::span<const T>(remote_buffer), remote_data, unpack_fn,
+    scatter_fwd_end(std::span<const T>(remote_buffer), remote_data, unpack_fn,
                     request);
   }
 
@@ -198,8 +198,8 @@ public:
   /// @param request The MPI request handle for tracking the status of
   /// the non-blocking communication
   template <typename T>
-  void scatter_rev_begin(const xtl::span<const T>& send_buffer,
-                         const xtl::span<T>& recv_buffer,
+  void scatter_rev_begin(const std::span<const T>& send_buffer,
+                         const std::span<T>& recv_buffer,
                          MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
@@ -250,14 +250,14 @@ public:
   /// @param request The MPI request handle for tracking the status of
   /// the non-blocking communication
   template <typename T, typename Functor>
-  void scatter_rev_begin(const xtl::span<const T>& remote_data,
-                         xtl::span<T> remote_buffer, xtl::span<T> local_buffer,
+  void scatter_rev_begin(const std::span<const T>& remote_data,
+                         std::span<T> remote_buffer, std::span<T> local_buffer,
                          Functor pack_fn, MPI_Request& request) const
   {
     assert(local_buffer.size() == _local_inds.size());
     assert(remote_buffer.size() == _remote_inds.size());
     pack_fn(remote_data, _remote_inds, remote_buffer);
-    scatter_rev_begin(xtl::span<const T>(remote_buffer), local_buffer, request);
+    scatter_rev_begin(std::span<const T>(remote_buffer), local_buffer, request);
   }
 
   /// @brief End the reverse scatter communication, and unpack the received
@@ -280,8 +280,8 @@ public:
   /// @param[in] request The handle used when calling
   /// Scatterer::scatter_rev_begin
   template <typename T, typename Functor, typename BinaryOp>
-  void scatter_rev_end(const xtl::span<const T>& local_buffer,
-                       xtl::span<T> local_data, Functor unpack_fn, BinaryOp op,
+  void scatter_rev_end(const std::span<const T>& local_buffer,
+                       std::span<T> local_data, Functor unpack_fn, BinaryOp op,
                        MPI_Request& request)
   {
     assert(local_buffer.size() == _local_inds.size());
@@ -295,8 +295,8 @@ public:
   /// @brief Scatter data associated with ghost indices to ranks that
   /// own the indices.
   template <typename T, typename BinaryOp>
-  void scatter_rev(xtl::span<T> local_data,
-                   const xtl::span<const T>& remote_data, BinaryOp op)
+  void scatter_rev(std::span<T> local_data,
+                   const std::span<const T>& remote_data, BinaryOp op)
   {
     std::vector<T> local_buffer(local_buffer_size(), 0);
     std::vector<T> remote_buffer(remote_buffer_size(), 0);
@@ -311,9 +311,9 @@ public:
         out[idx[i]] = op(out[idx[i]], in[i]);
     };
     MPI_Request request;
-    scatter_rev_begin(remote_data, xtl::span<T>(remote_buffer),
-                      xtl::span<T>(local_buffer), pack_fn, request);
-    scatter_rev_end(xtl::span<const T>(local_buffer), local_data, unpack_fn, op,
+    scatter_rev_begin(remote_data, std::span<T>(remote_buffer),
+                      std::span<T>(local_buffer), pack_fn, request);
+    scatter_rev_end(std::span<const T>(local_buffer), local_data, unpack_fn, op,
                     request);
   }
 

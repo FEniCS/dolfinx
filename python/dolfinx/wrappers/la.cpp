@@ -20,7 +20,7 @@
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include <xtl/xspan.hpp>
+#include <span>
 
 namespace py = pybind11;
 
@@ -61,7 +61,7 @@ void declare_objects(py::module& m, const std::string& type)
       .def_property_readonly("array",
                              [](dolfinx::la::Vector<T>& self)
                              {
-                               xtl::span<T> array = self.mutable_array();
+                               std::span<T> array = self.mutable_array();
                                return py::array_t<T>(array.size(), array.data(),
                                                      py::cast(self));
                              })
@@ -114,14 +114,14 @@ void declare_objects(py::module& m, const std::string& type)
       .def_property_readonly("data",
                              [](dolfinx::la::MatrixCSR<T>& self)
                              {
-                               xtl::span<T> array = self.values();
+                               std::span<T> array = self.values();
                                return py::array_t<T>(array.size(), array.data(),
                                                      py::cast(self));
                              })
       .def_property_readonly("indices",
                              [](dolfinx::la::MatrixCSR<T>& self)
                              {
-                               xtl::span<const std::int32_t> array
+                               std::span<const std::int32_t> array
                                    = self.cols();
                                return py::array_t<const std::int32_t>(
                                    array.size(), array.data(), py::cast(self));
@@ -129,7 +129,7 @@ void declare_objects(py::module& m, const std::string& type)
       .def_property_readonly("indptr",
                              [](dolfinx::la::MatrixCSR<T>& self)
                              {
-                               xtl::span<const std::int32_t> array
+                               std::span<const std::int32_t> array
                                    = self.row_ptr();
                                return py::array_t<const std::int32_t>(
                                    array.size(), array.data(), py::cast(self));
@@ -172,7 +172,7 @@ void petsc_module(py::module& m)
              std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
              maps)
       {
-        std::vector<xtl::span<const PetscScalar>> _x_b;
+        std::vector<std::span<const PetscScalar>> _x_b;
         for (auto& array : x_b)
           _x_b.emplace_back(array.data(), array.size());
         dolfinx::la::petsc::scatter_local_vectors(x, _x_b, maps);
@@ -258,8 +258,8 @@ void la(py::module& m)
              const py::array_t<std::int32_t, py::array::c_style>& rows,
              const py::array_t<std::int32_t, py::array::c_style>& cols)
           {
-            self.insert(xtl::span(rows.data(), rows.size()),
-                        xtl::span(cols.data(), cols.size()));
+            self.insert(std::span(rows.data(), rows.size()),
+                        std::span(cols.data(), cols.size()));
           },
           py::arg("rows"), py::arg("cols"))
       .def(

@@ -18,7 +18,7 @@
 #include <variant>
 #include <vector>
 #include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
+#include <span>
 
 namespace dolfinx::fem
 {
@@ -46,7 +46,7 @@ namespace dolfinx::fem
 /// with V.
 std::vector<std::int32_t>
 locate_dofs_topological(const FunctionSpace& V, int dim,
-                        const xtl::span<const std::int32_t>& entities,
+                        const std::span<const std::int32_t>& entities,
                         bool remote = true);
 
 /// Find degrees-of-freedom which belong to the provided mesh entities
@@ -74,7 +74,7 @@ locate_dofs_topological(const FunctionSpace& V, int dim,
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
     const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
-    int dim, const xtl::span<const std::int32_t>& entities, bool remote = true);
+    int dim, const std::span<const std::int32_t>& entities, bool remote = true);
 
 /// Finds degrees of freedom whose geometric coordinate is true for the
 /// provided marking function.
@@ -321,7 +321,7 @@ public:
   /// @return Sorted array of dof indices (unrolled) and index to the
   /// first entry in the dof index array that is not owned. Entries
   /// `dofs[:pos]` are owned and entries `dofs[pos:]` are ghosts.
-  std::pair<xtl::span<const std::int32_t>, std::int32_t> dof_indices() const
+  std::pair<std::span<const std::int32_t>, std::int32_t> dof_indices() const
   {
     return {_dofs0, _owned_indices0};
   }
@@ -337,14 +337,14 @@ public:
   /// of the array @p x should be equal to the number of dofs owned by
   /// this rank.
   /// @param[in] scale The scaling value to apply
-  void set(xtl::span<T> x, double scale = 1.0) const
+  void set(std::span<T> x, double scale = 1.0) const
   {
     if (std::holds_alternative<std::shared_ptr<const Function<T>>>(_g))
     {
       auto g = std::get<std::shared_ptr<const Function<T>>>(_g);
       assert(g);
-      xtl::span<const T> values = g->x()->array();
-      auto dofs1_g = _dofs1_g.empty() ? xtl::span(_dofs0) : xtl::span(_dofs1_g);
+      std::span<const T> values = g->x()->array();
+      auto dofs1_g = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
       std::int32_t x_size = x.size();
       for (std::size_t i = 0; i < _dofs0.size(); ++i)
       {
@@ -374,16 +374,16 @@ public:
   /// @param[in] x The array in which to set `scale * (x0 - x_bc)`
   /// @param[in] x0 The array used in compute the value to set
   /// @param[in] scale The scaling value to apply
-  void set(xtl::span<T> x, const xtl::span<const T>& x0,
+  void set(std::span<T> x, const std::span<const T>& x0,
            double scale = 1.0) const
   {
     if (std::holds_alternative<std::shared_ptr<const Function<T>>>(_g))
     {
       auto g = std::get<std::shared_ptr<const Function<T>>>(_g);
       assert(g);
-      xtl::span<const T> values = g->x()->array();
+      std::span<const T> values = g->x()->array();
       assert(x.size() <= x0.size());
-      auto dofs1_g = _dofs1_g.empty() ? xtl::span(_dofs0) : xtl::span(_dofs1_g);
+      auto dofs1_g = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
       std::int32_t x_size = x.size();
       for (std::size_t i = 0; i < _dofs0.size(); ++i)
       {
@@ -416,14 +416,14 @@ public:
   /// @param[out] values The array in which to set the dof values.
   /// The array must be at least as long as the array associated with V1
   /// (the space of the function that provides the dof values)
-  void dof_values(xtl::span<T> values) const
+  void dof_values(std::span<T> values) const
   {
     if (std::holds_alternative<std::shared_ptr<const Function<T>>>(_g))
     {
       auto g = std::get<std::shared_ptr<const Function<T>>>(_g);
       assert(g);
-      xtl::span<const T> g_values = g->x()->array();
-      auto dofs1_g = _dofs1_g.empty() ? xtl::span(_dofs0) : xtl::span(_dofs1_g);
+      std::span<const T> g_values = g->x()->array();
+      auto dofs1_g = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
       for (std::size_t i = 0; i < dofs1_g.size(); ++i)
         values[_dofs0[i]] = g_values[dofs1_g[i]];
     }
@@ -444,7 +444,7 @@ public:
   /// V0 had a boundary condition applied, i.e. dofs which are fixed by
   /// a boundary condition. Other entries in @p markers are left
   /// unchanged.
-  void mark_dofs(const xtl::span<std::int8_t>& markers) const
+  void mark_dofs(const std::span<std::int8_t>& markers) const
   {
     for (std::size_t i = 0; i < _dofs0.size(); ++i)
     {

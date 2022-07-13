@@ -11,7 +11,7 @@
 #include <dolfinx/common/MPI.h>
 #include <memory>
 #include <vector>
-#include <xtl/xspan.hpp>
+#include <span>
 
 namespace dolfinx::common
 {
@@ -181,8 +181,8 @@ private:
 /// @return A distributed mesh topology
 Topology
 create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-                const xtl::span<const std::int64_t>& original_cell_index,
-                const xtl::span<const int>& ghost_owners,
+                const std::span<const std::int64_t>& original_cell_index,
+                const std::span<const int>& ghost_owners,
                 const CellType& cell_type, GhostMode ghost_mode);
 
 /// @brief Get entity indices for entities defined by their vertices.

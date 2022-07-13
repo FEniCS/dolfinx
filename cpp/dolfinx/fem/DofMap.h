@@ -19,7 +19,7 @@
 #include <mpi.h>
 #include <utility>
 #include <vector>
-#include <xtl/xspan.hpp>
+#include <span>
 
 namespace dolfinx::common
 {
@@ -119,7 +119,7 @@ public:
   /// @param[in] cell The cell index
   /// @return Local-global dof map for the cell (using process-local
   /// indices)
-  xtl::span<const std::int32_t> cell_dofs(int cell) const
+  std::span<const std::int32_t> cell_dofs(int cell) const
   {
     return _dofmap.links(cell);
   }

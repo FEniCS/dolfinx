@@ -12,7 +12,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
-#include <xtl/xspan.hpp>
+#include <span>
 
 namespace dolfinx::common
 {
@@ -80,14 +80,14 @@ public:
   ///
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
-  xtl::span<const double> x() const;
+  std::span<const double> x() const;
 
   /// @brief Access geometry degrees-of-freedom data (non-const
   /// version).
   ///
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
-  xtl::span<double> x();
+  std::span<double> x();
 
   /// @brief The element that describes the geometry map.
   ///
@@ -141,7 +141,7 @@ mesh::Geometry
 create_geometry(MPI_Comm comm, const Topology& topology,
                 const fem::CoordinateElement& element,
                 const graph::AdjacencyList<std::int64_t>& cells,
-                const xtl::span<const double>& x, int dim,
+                const std::span<const double>& x, int dim,
                 const std::function<std::vector<int>(
                     const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
                 = nullptr);

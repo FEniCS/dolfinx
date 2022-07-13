@@ -43,7 +43,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 
   // Build set of dofs that are in the new dofmap (un-blocked)
   std::vector<std::int32_t> dofs_view = dofmap_view.list().array();
-  dolfinx::radix_sort(xtl::span(dofs_view));
+  dolfinx::radix_sort(std::span(dofs_view));
   dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
                   dofs_view.end());
 
@@ -61,7 +61,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   std::vector<std::int32_t> ghost_new_to_old;
   if (bs_view == 1)
   {
-    xtl::span<std::int32_t> indices(dofs_view.data(),
+    std::span<std::int32_t> indices(dofs_view.data(),
                                     std::distance(dofs_view.begin(), it));
     auto [_index_map, gmap] = dofmap_view.index_map->create_submap(indices);
     index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
@@ -263,8 +263,8 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
   const int bs = dofmap_new.bs();
   for (int c = 0; c < cells->num_nodes(); ++c)
   {
-    xtl::span<const std::int32_t> cell_dofs_view = this->cell_dofs(c);
-    xtl::span<const std::int32_t> cell_dofs = dofmap_new.cell_dofs(c);
+    std::span<const std::int32_t> cell_dofs_view = this->cell_dofs(c);
+    std::span<const std::int32_t> cell_dofs = dofmap_new.cell_dofs(c);
     for (std::size_t i = 0; i < cell_dofs.size(); ++i)
     {
       for (int k = 0; k < bs; ++k)

@@ -66,9 +66,9 @@ assemble_csr(const dolfinx::fem::Form<T>& a,
 {
   std::vector<Eigen::Triplet<T>> triplets;
   auto mat_add
-      = [&triplets](const xtl::span<const std::int32_t>& rows,
-                    const xtl::span<const std::int32_t>& cols,
-                    const xtl::span<const T>& v)
+      = [&triplets](const std::span<const std::int32_t>& rows,
+                    const std::span<const std::int32_t>& cols,
+                    const std::span<const T>& v)
     {
       for (std::size_t i = 0; i < rows.size(); ++i)
         for (std::size_t j = 0; j < cols.size(); ++j)

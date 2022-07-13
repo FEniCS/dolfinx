@@ -8,7 +8,7 @@
 
 #include <array>
 #include <functional>
-#include <xtl/xspan.hpp>
+#include <span>
 
 namespace dolfinx::la
 {
@@ -48,7 +48,7 @@ void cells(
 /// pattern
 /// @note The sparsity pattern is not finalised
 void cells(
-    la::SparsityPattern& pattern, const xtl::span<const std::int32_t>& cells,
+    la::SparsityPattern& pattern, const std::span<const std::int32_t>& cells,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps);
 
 /// @brief Iterate over interior facets and insert entries into sparsity
@@ -74,7 +74,7 @@ void interior_facets(
 /// pattern
 /// @note The sparsity pattern is not finalised
 void interior_facets(
-    la::SparsityPattern& pattern, const xtl::span<const std::int32_t>& facets,
+    la::SparsityPattern& pattern, const std::span<const std::int32_t>& facets,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps);
 
 /// @brief Iterate over exterior facets and insert entries into sparsity
@@ -99,7 +99,7 @@ void exterior_facets(
 /// pattern
 /// @note The sparsity pattern is not finalised
 void exterior_facets(
-    la::SparsityPattern& pattern, const xtl::span<const std::int32_t>& facets,
+    la::SparsityPattern& pattern, const std::span<const std::int32_t>& facets,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps);
 
 } // namespace sparsitybuild
