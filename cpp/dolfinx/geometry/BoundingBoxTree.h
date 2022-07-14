@@ -8,9 +8,9 @@
 
 #include <array>
 #include <mpi.h>
+#include <span>
 #include <vector>
 #include <xtensor/xfixed.hpp>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::mesh
 {
@@ -36,7 +36,7 @@ public:
   /// @param[in] padding A float perscribing how much the bounding box
   /// of each entity should be padded
   BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
-                  const xtl::span<const std::int32_t>& entities,
+                  const std::span<const std::int32_t>& entities,
                   double padding = 0);
 
   /// Constructor

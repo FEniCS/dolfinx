@@ -145,7 +145,7 @@ Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>>
 create_submesh(const Mesh& mesh, int dim,
-               const xtl::span<const std::int32_t>& entities);
+               const std::span<const std::int32_t>& entities);
 
 /// Helper function to get a std::vector of (cell, local_facet) pairs
 /// corresponding to a given facet index.
@@ -156,7 +156,7 @@ create_submesh(const Mesh& mesh, int dim,
 template <int num_cells>
 static std::array<std::array<std::int32_t, 2>, num_cells>
 get_cell_local_facet_pairs(
-    std::int32_t f, const xtl::span<const std::int32_t>& cells,
+    std::int32_t f, const std::span<const std::int32_t>& cells,
     const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f)
 {
   // Loop over cells sharing facet

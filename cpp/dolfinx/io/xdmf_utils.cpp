@@ -109,7 +109,7 @@ xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get coordinates for all points in cell
-    xtl::span<const std::int32_t> dofs = x_dofmap.links(c);
+    std::span<const std::int32_t> dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
       cells[dofs[i]] = c;
   }
@@ -210,7 +210,7 @@ std::vector<Scalar> _get_cell_data_values(const fem::Function<Scalar>& u)
 
   // Get values
   std::vector<Scalar> values(dof_set.size());
-  xtl::span<const Scalar> _u = u.x()->array();
+  std::span<const Scalar> _u = u.x()->array();
   for (std::size_t i = 0; i < dof_set.size(); ++i)
     values[i] = _u[dof_set[i]];
 
@@ -446,8 +446,8 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
 xdmf_utils::distribute_entity_data(
     const mesh::Mesh& mesh, int entity_dim,
-    const xtl::span<const std::int64_t>& entities,
-    const xtl::span<const std::int32_t>& data)
+    const std::span<const std::int64_t>& entities,
+    const std::span<const std::int32_t>& data)
 {
   LOG(INFO) << "XDMF distribute entity data";
 
@@ -519,8 +519,8 @@ xdmf_utils::distribute_entity_data(
 
   auto postmaster_global_ent_sendrecv
       = [&cell_vertex_dofs](const mesh::Mesh& mesh, int entity_dim,
-                            const xtl::span<const std::int64_t>& entities,
-                            const xtl::span<const std::int32_t>& data)
+                            const std::span<const std::int64_t>& entities,
+                            const std::span<const std::int32_t>& data)
   {
     const MPI_Comm comm = mesh.comm();
     const int comm_size = dolfinx::MPI::size(comm);
@@ -567,7 +567,7 @@ xdmf_utils::distribute_entity_data(
     std::vector<std::vector<std::int32_t>> data_send(comm_size);
     for (std::size_t e = 0; e < shape_e_0; ++e)
     {
-      xtl::span<std::int64_t> entity(entities_vertices.data()
+      std::span<std::int64_t> entity(entities_vertices.data()
                                          + e * num_vert_per_entity,
                                      num_vert_per_entity);
       std::sort(entity.begin(), entity.end());
@@ -634,7 +634,7 @@ xdmf_utils::distribute_entity_data(
     assert(_data_recv.size() == shape0);
     for (std::size_t e = 0; e < shape0; ++e)
     {
-      xtl::span e_recv(entities_recv.array().data() + e * shape1, shape1);
+      std::span e_recv(entities_recv.array().data() + e * shape1, shape1);
 
       // Find ranks that have node0
       auto [it0, it1] = node_to_rank.equal_range(e_recv.front());
