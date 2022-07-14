@@ -238,11 +238,7 @@ void geometry(py::module& m)
       .def(
           "get_bbox",
           [](const dolfinx::geometry::BoundingBoxTree& self,
-             const std::size_t i)
-          {
-            xt::xtensor<double, 2> bbox = self.get_bbox(i);
-            return xt_as_pyarray(std::move(bbox));
-          },
+             const std::size_t i) { return self.get_bbox(i); },
           py::arg("i"))
       .def("__repr__", &dolfinx::geometry::BoundingBoxTree::str)
       .def(
