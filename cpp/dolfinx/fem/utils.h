@@ -26,7 +26,6 @@
 #include <utility>
 #include <vector>
 #include <xtensor/xadapt.hpp>
-#include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtl/xspan.hpp>
 
@@ -341,14 +340,6 @@ create_form(const ufcx_form& ufcx_form,
       needs_facet_permutations = true;
   }
 
-  // Attach cell subdomain data
-  if (auto it = subdomains.find(IntegralType::cell);
-      it != subdomains.end() and !cell_integral_ids.empty())
-  {
-    //   // compute_integration_domains(*it->second);
-    //   // integral_data[IntegralType::cell].second = it->second;
-  }
-
   // FIXME: Can facets be handled better?
 
   // Create facets, if required
@@ -413,13 +404,6 @@ create_form(const ufcx_form& ufcx_form,
       needs_facet_permutations = true;
   }
 
-  // Attach exterior facet subdomain data
-  if (auto it = subdomains.find(IntegralType::exterior_facet);
-      it != subdomains.end() and !exterior_facet_integral_ids.empty())
-  {
-    // integral_data[IntegralType::exterior_facet].second = it->second;
-  }
-
   // Attach interior facet kernels
   std::vector<int> interior_facet_integral_ids(
       ufcx_form.integral_ids(interior_facet),
@@ -469,24 +453,6 @@ create_form(const ufcx_form& ufcx_form,
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }
-
-  // Attach interior facet subdomain data
-  if (auto it = subdomains.find(IntegralType::interior_facet);
-      it != subdomains.end() and !interior_facet_integral_ids.empty())
-  {
-    // integral_data[IntegralType::interior_facet].second = it->second;
-  }
-
-  // for (auto const& kvp : integral_data)
-  // {
-  //   for (auto const& kvp2 : kvp.second)
-  //   {
-  //     int id = kvp2.first;
-  //     std::vector ents = kvp2.second.second;
-
-  //     std::cout << id << " " << xt::adapt(ents) << "\n";
-  //   }
-  // }
 
   return Form<T>(spaces, integral_data, coefficients, constants,
                  needs_facet_permutations, mesh);
