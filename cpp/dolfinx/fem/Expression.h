@@ -93,15 +93,14 @@ public:
 
   /// Get argument function space
   /// @return The argument function space, nullptr if there is no argument.
-  std::shared_ptr<const fem::FunctionSpace> argument_function_space() const
+  std::shared_ptr<const FunctionSpace> argument_function_space() const
   {
     return _argument_function_space;
   };
 
   /// Get coefficients
   /// @return Vector of attached coefficients
-  const std::vector<std::shared_ptr<const fem::Function<T>>>&
-  coefficients() const
+  const std::vector<std::shared_ptr<const Function<T>>>& coefficients() const
   {
     return _coefficients;
   }
@@ -110,7 +109,7 @@ public:
   /// @return Vector of attached constants with their names. Names are
   ///   used to set constants in user's c++ code. Index in the vector is
   ///   the position of the constant in the original (nonsimplified) form.
-  const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants() const
+  const std::vector<std::shared_ptr<const Constant<T>>>& constants() const
   {
     return _constants;
   }
@@ -229,8 +228,8 @@ public:
   /// @return value_size
   int value_size() const
   {
-    return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
-                           std::multiplies<int>());
+    return std::reduce(_value_shape.begin(), _value_shape.end(), 1,
+                       std::multiplies{});
   }
 
   /// Get value shape
@@ -246,13 +245,13 @@ public:
 
 private:
   // Function space for Argument
-  std::shared_ptr<const fem::FunctionSpace> _argument_function_space;
+  std::shared_ptr<const FunctionSpace> _argument_function_space;
 
   // Coefficients associated with the Expression
-  std::vector<std::shared_ptr<const fem::Function<T>>> _coefficients;
+  std::vector<std::shared_ptr<const Function<T>>> _coefficients;
 
   // Constants associated with the Expression
-  std::vector<std::shared_ptr<const fem::Constant<T>>> _constants;
+  std::vector<std::shared_ptr<const Constant<T>>> _constants;
 
   // Function to evaluate the Expression
   std::function<void(T*, const T*, const T*, const scalar_value_type_t*,

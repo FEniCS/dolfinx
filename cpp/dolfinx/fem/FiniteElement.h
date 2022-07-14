@@ -84,9 +84,9 @@ public:
 
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
   /// for a second-order tensor in 3D.
-  /// @note The return value of this function is equal to
+  /// @note The return value of this function is equivalent to
   /// `std::accumulate(value_shape().begin(), value_shape().end(), 1,
-  /// std::multiplies<int>())`.
+  /// std::multiplies{})`.
   /// @return The value size
   int value_size() const;
 
@@ -97,7 +97,7 @@ public:
 
   /// Shape of the value space. The rank is the size of the
   /// `value_shape`.
-  xtl::span<const int> value_shape() const noexcept;
+  xtl::span<const std::size_t> value_shape() const noexcept;
 
   /// The finite element family
   /// @return The string of the finite element family
@@ -116,46 +116,16 @@ public:
   void tabulate(xt::xtensor<double, 4>& values, const xt::xtensor<double, 2>& X,
                 int order) const;
 
-  /// Return a function that performs the appropriate
-  /// push-forward (pull-back) for the element type
-  ///
-  /// @tparam O The type that hold the computed pushed-forward
-  /// (pulled-back)  data (ndim==1)
-  /// @tparam P The type that hold the data to be pulled back (pushed
-  /// forwarded) (ndim==1)
-  /// @tparam Q The type that holds the Jacobian (inverse Jacobian)
-  /// matrix (ndim==2)
-  /// @tparam R The type that holds the inverse Jacobian (Jacobian)
-  /// matrix (ndim==2)
-  ///
-  /// @return A function that for a push-forward takes arguments
-  /// - `u` [out] The data on the physical cell after the
-  /// push-forward flattened with row-major layout, shape=(num_points,
-  /// value_size)
-  /// - `U` [in] The data on the reference cell physical field to push
-  /// forward, flattened with row-major layout, shape=(num_points,
-  /// ref_value_size)
-  /// - `J` [in] The Jacobian matrix of the map ,shape=(gdim, tdim)
-  /// - `detJ` [in] det(J)
-  /// - `K` [in] The inverse of the Jacobian matrix, shape=(tdim, gdim)
-  ///
-  /// For a pull-back the passed arguments should be:
-  /// - `U` [out] The data on the reference cell after the pull-back,
-  /// flattened with row-major layout, shape=(num_points, ref
-  /// value_size)
-  /// - `u` [in] The data on the physical cell that should be pulled
-  /// back , flattened with row-major layout, shape=(num_points,
-  /// value_size)
-  /// - `K` [in] The inverse oif the Jacobian matrix of the map,
-  /// shape=(tdim, gdim)
-  /// - `detJ_inv` [in] 1/det(J)
-  /// - `J` [in] The Jacobian matrix, shape=(gdim, tdim)
-  template <typename O, typename P, typename Q, typename R>
-  std::function<void(O&, const P&, const Q&, double, const R&)> map_fn() const
-  {
-    assert(_element);
-    return _element->map_fn<O, P, Q, R>();
-  }
+  /// Evaluate all derivatives of the basis functions up to given order
+  /// at given points in reference cell
+  /// @param[in] X Two dimensional xtensor of shape [num_points,
+  /// geometric dimension] containing the points at the reference
+  /// element
+  /// @param[in] order The number of derivatives (up to and including
+  /// this order) to tabulate for
+  /// @return Basis function values
+  xt::xtensor<double, 4> tabulate(const xt::xtensor<double, 2>& X,
+                                  int order) const;
 
   /// Get the number of sub elements (for a mixed or blocked element)
   /// @return The number of sub elements
@@ -200,7 +170,7 @@ public:
   /// nodal positions. For other elements the points will typically be
   /// the quadrature points used to evaluate moment degrees of freedom.
   /// @return Points on the reference cell. Shape is (num_points, tdim).
-  const xt::xtensor<double, 2>& interpolation_points() const;
+  xt::xtensor<double, 2> interpolation_points() const;
 
   /// Interpolation operator (matrix) `Pi` that maps a function
   /// evaluated at the points provided by
@@ -210,7 +180,7 @@ public:
   /// `f_x` should be ordered.
   /// @return The interpolation operator `Pi`. Shape is (num_dofs,
   /// num_points*value_size)
-  const xt::xtensor<double, 2>& interpolation_operator() const;
+  xt::xtensor<double, 2> interpolation_operator() const;
 
   /// Create a matrix that maps degrees of freedom from one element to
   /// this element (interpolation).
@@ -688,7 +658,7 @@ private:
   std::vector<std::shared_ptr<const FiniteElement>> _sub_elements;
 
   // Dimension of each value space
-  std::vector<int> _value_shape;
+  std::vector<std::size_t> _value_shape;
 
   // Block size for VectorElements and TensorElements. This gives the
   // number of DOFs co-located at each dof 'point'.

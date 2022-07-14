@@ -122,7 +122,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   ElementDofLayout element_dof_layout = dofmap_view.element_dof_layout().copy();
 
   // Create new dofmap and return
-  return fem::DofMap(
+  return DofMap(
       std::move(element_dof_layout), index_map, 1,
       graph::regular_adjacency_list(std::move(dofmap), cell_dimension), 1);
 }
@@ -234,8 +234,8 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
       // Create new element dof layout and reset parent
       ElementDofLayout collapsed_dof_layout = layout.copy();
 
-      auto [_index_map, bs, dofmap] = fem::build_dofmap_data(
-          comm, topology, collapsed_dof_layout, reorder_fn);
+      auto [_index_map, bs, dofmap]
+          = build_dofmap_data(comm, topology, collapsed_dof_layout, reorder_fn);
       auto index_map
           = std::make_shared<common::IndexMap>(std::move(_index_map));
       return DofMap(layout, index_map, bs, std::move(dofmap), bs);
