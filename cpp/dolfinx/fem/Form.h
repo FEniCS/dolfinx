@@ -91,13 +91,13 @@ public:
   /// there are not argument functions from which the mesh can be
   /// extracted, e.g. for functionals
   Form(const std::vector<std::shared_ptr<const FunctionSpace>>& function_spaces,
-       const std::map<IntegralType,
-                std::map<int, std::pair<std::function<void(
-                                            T*, const T*, const T*,
+       const std::map<
+           IntegralType,
+           std::map<int, std::pair<std::function<
+                                       void(T*, const T*, const T*,
                                             const scalar_value_type_t*,
                                             const int*, const std::uint8_t*)>,
-                                        std::vector<std::int32_t>>>>&
-           integrals,
+                                   std::vector<std::int32_t>>>>& integrals,
        const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
        const std::vector<std::shared_ptr<const Constant<T>>>& constants,
        bool needs_facet_permutations,
