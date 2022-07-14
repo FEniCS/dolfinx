@@ -163,9 +163,12 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
                 raise RuntimeError(f"Cannot compute integration domains for subdomain {subdomain}")
 
         # Subdomain markers (possibly empty dictionary for some dimensions)
-        subdomains = {_cpp.fem.IntegralType.cell: get_integration_domains(_cpp.fem.IntegralType.cell, subdomains),
-                      _cpp.fem.IntegralType.exterior_facet: get_integration_domains(_cpp.fem.IntegralType.exterior_facet, subdomains),
-                      _cpp.fem.IntegralType.interior_facet: get_integration_domains(_cpp.fem.IntegralType.interior_facet, subdomains),
+        subdomains = {_cpp.fem.IntegralType.cell:
+                      get_integration_domains(_cpp.fem.IntegralType.cell, subdomains),
+                      _cpp.fem.IntegralType.exterior_facet:
+                      get_integration_domains(_cpp.fem.IntegralType.exterior_facet, subdomains),
+                      _cpp.fem.IntegralType.interior_facet:
+                      get_integration_domains(_cpp.fem.IntegralType.interior_facet, subdomains),
                       _cpp.fem.IntegralType.vertex: subdomains.get("vertex", {})}
 
         return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, code)
