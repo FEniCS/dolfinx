@@ -310,10 +310,6 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
       const std::size_t index = std::distance(tagged_entities.cbegin(), c);
       integrals[tags[index]].push_back(*c);
     }
-    // for (std::size_t i = 0; i < tagged_entities.size(); ++i)
-    // {
-    //   integrals[tags[i]].push_back(tagged_entities[i]);
-    // }
   }
   break;
   default:
