@@ -764,50 +764,51 @@ void declare_form(py::module& m, const std::string& type)
   std::string pyclass_name_form = std::string("Form_") + type;
   py::class_<dolfinx::fem::Form<T>, std::shared_ptr<dolfinx::fem::Form<T>>>(
       m, pyclass_name_form.c_str(), "Variational form object")
-      .def(py::init(
-               [](const std::vector<std::shared_ptr<
-                      const dolfinx::fem::FunctionSpace>>& spaces,
-                  const std::map<
-                      dolfinx::fem::IntegralType,
-                      std::map<int, std::pair<py::object,
-                                              std::vector<std::int32_t>>>>&
-                      integrals,
-                  const std::vector<std::shared_ptr<
-                      const dolfinx::fem::Function<T>>>& coefficients,
-                  const std::vector<std::shared_ptr<
-                      const dolfinx::fem::Constant<T>>>& constants,
-                  bool needs_permutation_data,
-                  const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
-               {
-                 using kern = std::function<void(
-                     T*, const T*, const T*,
-                     const typename geom_type<T>::value_type*, const int*,
-                     const std::uint8_t*)>;
-                 std::map<
+      .def(
+          py::init(
+              [](const std::vector<std::shared_ptr<
+                     const dolfinx::fem::FunctionSpace>>& spaces,
+                 const std::map<
                      dolfinx::fem::IntegralType,
-                     std::map<int, std::pair<kern, std::vector<std::int32_t>>>>
-                     _integrals;
+                     std::map<int, std::pair<py::object,
+                                             const std::vector<std::int32_t>>>>&
+                     integrals,
+                 const std::vector<std::shared_ptr<
+                     const dolfinx::fem::Function<T>>>& coefficients,
+                 const std::vector<std::shared_ptr<
+                     const dolfinx::fem::Constant<T>>>& constants,
+                 bool needs_permutation_data,
+                 const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
+              {
+                using kern = std::function<void(
+                    T*, const T*, const T*,
+                    const typename geom_type<T>::value_type*, const int*,
+                    const std::uint8_t*)>;
+                std::map<
+                    dolfinx::fem::IntegralType,
+                    std::map<int, std::pair<kern, std::vector<std::int32_t>>>>
+                    _integrals;
 
-                 for (auto& kernel_type : integrals)
-                 {
-                   for (auto& kernel : kernel_type.second)
-                   {
-                     auto tabulate_tensor_ptr
-                         = (void (*)(T*, const T*, const T*,
-                                     const typename geom_type<T>::value_type*,
-                                     const int*, const std::uint8_t*))
-                               kernel.second.first.cast<std::uintptr_t>();
-                     _integrals[kernel_type.first][kernel.first]
-                         = {tabulate_tensor_ptr, {kernel.second.second}};
-                   }
-                 }
-                 return dolfinx::fem::Form<T>(spaces, _integrals, coefficients,
-                                              constants, needs_permutation_data,
-                                              mesh);
-               }),
-           py::arg("spaces"), py::arg("integrals"), py::arg("coefficients"),
-           py::arg("constants"), py::arg("need_permutation_data"),
-           py::arg("mesh") = py::none())
+                for (auto& kernel_type : integrals)
+                {
+                  for (auto& kernel : kernel_type.second)
+                  {
+                    auto tabulate_tensor_ptr
+                        = (void (*)(T*, const T*, const T*,
+                                    const typename geom_type<T>::value_type*,
+                                    const int*, const std::uint8_t*))
+                              kernel.second.first.cast<std::uintptr_t>();
+                    _integrals[kernel_type.first][kernel.first]
+                        = {tabulate_tensor_ptr, {kernel.second.second}};
+                  }
+                }
+                return dolfinx::fem::Form<T>(spaces, _integrals, coefficients,
+                                             constants, needs_permutation_data,
+                                             mesh);
+              }),
+          py::arg("spaces"), py::arg("integrals"), py::arg("coefficients"),
+          py::arg("constants"), py::arg("need_permutation_data"),
+          py::arg("mesh") = py::none())
       .def(py::init(
                [](std::uintptr_t form,
                   const std::vector<std::shared_ptr<
