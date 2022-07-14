@@ -18,6 +18,7 @@ from mpi4py import MPI
 
 @pytest.mark.parametrize("cell", ["interval", "triangle", "tetrahedron", "quadrilateral", "hexahedron"])
 def test_real_element(cell):
+    """Tests that assembly of the inner product on a Real space induces 1"""
     ufl_cell = getattr(ufl, cell)
     dolfinx_cell = getattr(CellType, cell)
     if cell == "interval":
@@ -32,6 +33,7 @@ def test_real_element(cell):
     u = ufl.TrialFunction(U)
     v = ufl.TestFunction(U)
 
+    # Note that the measure = vol(\Omega) = 1
     a = form(ufl.inner(u, v) * ufl.dx)
     A = dolfinx.fem.petsc.assemble_matrix(a)
     A.assemble()
@@ -45,7 +47,7 @@ def test_real_element(cell):
 
 
 @pytest.mark.parametrize("cell", ["interval", "triangle", "tetrahedron", "quadrilateral", "hexahedron"])
-def test_mixed_real_element(cell):
+def test_dofmap_sizes_mixed_real_element(cell):
     ufl_cell = getattr(ufl, cell)
     dolfinx_cell = getattr(CellType, cell)
     if cell == "interval":
@@ -82,6 +84,7 @@ def test_mixed_real_element(cell):
 
 @pytest.mark.parametrize("cell", ["interval", "triangle", "tetrahedron", "quadrilateral", "hexahedron"])
 def test_vector_real_element(cell):
+    """Tests that assembly of the inner product on vector reals induces the identity matrix"""
     ufl_cell = getattr(ufl, cell)
     dolfinx_cell = getattr(CellType, cell)
     if cell == "interval":
@@ -98,6 +101,7 @@ def test_vector_real_element(cell):
     u = ufl.TrialFunction(U)
     v = ufl.TestFunction(U)
 
+    # Note that the measure = vol(\Omega) = 1
     a = form(ufl.inner(u, v) * ufl.dx)
     A = dolfinx.fem.petsc.assemble_matrix(a)
     A.assemble()
@@ -108,6 +112,7 @@ def test_vector_real_element(cell):
 
 @pytest.mark.parametrize("cell", ["interval", "triangle", "tetrahedron", "quadrilateral", "hexahedron"])
 def test_real_as_scalar_coefficient(cell):
+    """Tests scalar multiplication with scalar real"""
     ufl_cell = getattr(ufl, cell)
     dolfinx_cell = getattr(CellType, cell)
     if cell == "interval":
@@ -133,6 +138,8 @@ def test_real_as_scalar_coefficient(cell):
 
 @pytest.mark.parametrize("cell", ["interval", "triangle", "tetrahedron", "quadrilateral", "hexahedron"])
 def test_real_as_vector_coefficient(cell):
+    """Tests that the Euclidean inner product is calculated on a vector space
+    of reals (i.e. R^d)"""
     ufl_cell = getattr(ufl, cell)
     dolfinx_cell = getattr(CellType, cell)
     if cell == "interval":
@@ -148,6 +155,38 @@ def test_real_as_vector_coefficient(cell):
     r.x.array[:] = [6.0, 3.0, 4.0, 2.0]
 
     dx = ufl.Measure("dx", mesh)
-    inner_product = ufl.inner(r, r) * dx
-    A = dolfinx.fem.assemble_scalar(form(inner_product))
+    inner_product = form(ufl.inner(r, r) * dx)
+    A = dolfinx.fem.assemble_scalar(inner_product)
     assert(np.isclose(np.dot(r.x.array[:], r.x.array[:]), A))
+
+
+def test_pure_neumann_constrained_with_real():
+    """Equivalent to the classic FEniCS pure Neumann Poisson demo"""
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, CellType.triangle, GhostMode.shared_facet)
+
+    element = ufl.MixedElement(ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1),
+                               ufl.FiniteElement("Real", mesh.ufl_cell(), 0))
+
+    V = FunctionSpace(mesh, element)
+    u, c = ufl.TrialFunctions(V)
+    v, d = ufl.TestFunctions(V)
+
+    dx = ufl.Measure("dx", mesh)
+    ds = ufl.Measure("ds", mesh)
+
+    a = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx + ufl.inner(c, v) * dx + ufl.inner(u, d) * dx
+    x = ufl.SpatialCoordinate(mesh)
+    f = 10.0 * ufl.exp(-(x[0] - 0.5)**2 + (x[1] - 0.5)**2 / -0.02)
+    g = -ufl.sin(5.0 * x[0])
+    L = ufl.inner(g, v) * ds + ufl.inner(f, v) * dx
+
+    problem = dolfinx.fem.petsc.LinearProblem(a, L)
+    w_h = problem.solve()
+    w_h = dolfinx.fem.Function(V)
+    u, c = ufl.split(w_h)
+
+    # Check necessary condition for existence
+    # (f - c)*dx should be equal to -g*ds?
+    interior_data = dolfinx.fem.assemble_scalar(form((f - c) * dx))
+    exterior_data = dolfinx.fem.assemble_scalar(form(-g * ds))
+    assert np.isclose(interior_data, exterior_data)
