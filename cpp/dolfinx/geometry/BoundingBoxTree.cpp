@@ -268,11 +268,9 @@ BoundingBoxTree::BoundingBoxTree(
     std::vector<std::pair<std::array<double, 3>, std::int32_t>> points)
     : _tdim(0)
 {
-  const std::int32_t num_leaves = points.size();
-
   // Recursively build the bounding box tree from the leaves
   std::vector<std::array<int, 2>> bboxes;
-  if (num_leaves > 0)
+  if (!points.empty())
   {
     _build_from_point(std::span(points), bboxes, _bbox_coordinates);
     _bboxes.resize(2 * bboxes.size());
@@ -300,7 +298,7 @@ BoundingBoxTree BoundingBoxTree::create_global_tree(MPI_Comm comm) const
   const int mpi_size = dolfinx::MPI::size(comm);
 
   // Send root node coordinates to all processes
-  std::vector<double> send_bbox(6, 0.0);
+  std::array<double, 6> send_bbox = {0, 0, 0, 0, 0, 0};
   if (num_bboxes() > 0)
     std::copy_n(std::prev(_bbox_coordinates.end(), 6), 6, send_bbox.begin());
   std::vector<double> recv_bbox(mpi_size * 6);
