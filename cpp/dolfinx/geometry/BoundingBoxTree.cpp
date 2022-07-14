@@ -131,10 +131,12 @@ int _build_from_leaf(
                      });
 
     // Split bounding boxes into two groups and call recursively
-    std::array bbox{_build_from_leaf(std::span(leaf_bboxes.begin(), middle),
-                                     bboxes, bbox_coordinates),
-                    _build_from_leaf(std::span(middle, leaf_bboxes.end()),
-                                     bboxes, bbox_coordinates)};
+    assert(!leaf_bboxes.empty());
+    std::size_t part = leaf_bboxes.size() / 2;
+    std::array bbox{
+        _build_from_leaf(leaf_bboxes.first(part), bboxes, bbox_coordinates),
+        _build_from_leaf(leaf_bboxes.last(leaf_bboxes.size() - part), bboxes,
+                         bbox_coordinates)};
 
     // Store bounding box data. Note that root box will be added last.
     bboxes.push_back(bbox);
@@ -200,10 +202,12 @@ int _build_from_point(
                    { return p0.first[axis] < p1.first[axis]; });
 
   // Split bounding boxes into two groups and call recursively
-  std::array bbox{_build_from_point(std::span(points.begin(), middle), bboxes,
-                                    bbox_coordinates),
-                  _build_from_point(std::span(middle, points.end()), bboxes,
-                                    bbox_coordinates)};
+  assert(!points.empty());
+  std::size_t part = points.size() / 2;
+  std::array bbox{
+      _build_from_point(points.first(part), bboxes, bbox_coordinates),
+      _build_from_point(points.last(points.size() - part), bboxes,
+                        bbox_coordinates)};
 
   // Store bounding box data. Note that root box will be added last.
   bboxes.push_back(bbox);
