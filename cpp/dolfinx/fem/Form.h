@@ -90,14 +90,13 @@ public:
   /// @param[in] mesh The mesh of the domain. This is required when
   /// there are not argument functions from which the mesh can be
   /// extracted, e.g. for functionals
-  Form(const std::vector<std::shared_ptr<const FunctionSpace>>&
-           function_spaces,
-       std::map<IntegralType,
+  Form(const std::vector<std::shared_ptr<const FunctionSpace>>& function_spaces,
+       const std::map<IntegralType,
                 std::map<int, std::pair<std::function<void(
                                             T*, const T*, const T*,
                                             const scalar_value_type_t*,
                                             const int*, const std::uint8_t*)>,
-                                        std::vector<std::int32_t>>>>
+                                        std::vector<std::int32_t>>>>&
            integrals,
        const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
        const std::vector<std::shared_ptr<const Constant<T>>>& constants,
@@ -127,13 +126,13 @@ public:
       switch (type)
       {
       case IntegralType::cell:
-        _cell_integrals = integrals[type];
+        _cell_integrals = integrals.at(type);
         break;
       case IntegralType::exterior_facet:
-        _exterior_facet_integrals = integrals[type];
+        _exterior_facet_integrals = integrals.at(type);
         break;
       case IntegralType::interior_facet:
-        _interior_facet_integrals = integrals[type];
+        _interior_facet_integrals = integrals.at(type);
         break;
       }
     }
