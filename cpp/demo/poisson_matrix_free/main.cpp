@@ -45,7 +45,7 @@ template <typename U>
 void axpy(la::Vector<U>& r, U alpha, const la::Vector<U>& x,
           const la::Vector<U>& y)
 {
-  std::transform(x.array().cbegin(), x.array().cend(), y.array().cbegin(),
+  std::transform(x.array().begin(), x.array().end(), y.array().begin(),
                  r.mutable_array().begin(),
                  [alpha](auto x, auto y) { return alpha * x + y; });
 }
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
 
       // Compute action of A on x
       fem::pack_coefficients(*M, coeff);
-      fem::assemble_vector(y.mutable_array(), *M, xtl::span<const T>(constants),
+      fem::assemble_vector(y.mutable_array(), *M, std::span<const T>(constants),
                            fem::make_coefficients_span(coeff));
 
       // Set BC dofs to zero (effectively zeroes rows of A)

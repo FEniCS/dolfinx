@@ -131,7 +131,7 @@ graph::build::distribute(MPI_Comm comm,
       const std::array<int, 3>& dest_data = dest_to_index[i];
       const std::size_t pos = dest_data[1];
 
-      xtl::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
+      std::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
       auto row = list.links(pos);
       std::copy(row.begin(), row.end(), b.begin());
 
@@ -181,7 +181,7 @@ graph::build::distribute(MPI_Comm comm,
     const int src_rank = src[p];
     for (std::int32_t i = recv_disp[p]; i < recv_disp[p + 1]; ++i)
     {
-      xtl::span row(recv_buffer.data() + i * buffer_shape1, buffer_shape1);
+      std::span row(recv_buffer.data() + i * buffer_shape1, buffer_shape1);
       auto info = row.last(3);
       std::size_t num_edges = info[0];
       int owner = info[1];
@@ -225,9 +225,9 @@ graph::build::distribute(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> graph::build::compute_ghost_indices(
-    MPI_Comm comm, const xtl::span<const std::int64_t>& owned_indices,
-    const xtl::span<const std::int64_t>& ghost_indices,
-    const xtl::span<const int>& ghost_owners)
+    MPI_Comm comm, const std::span<const std::int64_t>& owned_indices,
+    const std::span<const std::int64_t>& ghost_indices,
+    const std::span<const int>& ghost_owners)
 {
   LOG(INFO) << "Compute ghost indices";
 
@@ -405,8 +405,8 @@ std::vector<std::int64_t> graph::build::compute_local_to_global_links(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> graph::build::compute_local_to_local(
-    const xtl::span<const std::int64_t>& local0_to_global,
-    const xtl::span<const std::int64_t>& local1_to_global)
+    const std::span<const std::int64_t>& local0_to_global,
+    const std::span<const std::int64_t>& local1_to_global)
 {
   common::Timer timer("Compute local-to-local map");
   assert(local0_to_global.size() == local1_to_global.size());

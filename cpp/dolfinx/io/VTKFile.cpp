@@ -20,12 +20,12 @@
 #include <filesystem>
 #include <iterator>
 #include <pugixml.hpp>
+#include <span>
 #include <sstream>
 #include <string>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xcomplex.hpp>
 #include <xtensor/xview.hpp>
-#include <xtl/xspan.hpp>
 
 using namespace dolfinx;
 
@@ -131,7 +131,7 @@ void add_pvtu_mesh(pugi::xml_node& node)
 /// @param[in,out] data_node The XML node to add data to
 template <typename T>
 void add_data_float(const std::string& name, int rank,
-                    const xtl::span<const T>& values, pugi::xml_node& node)
+                    const std::span<const T>& values, pugi::xml_node& node)
 {
   static_assert(std::is_floating_point_v<T>, "Scalar must be a float");
 
@@ -163,7 +163,7 @@ void add_data_float(const std::string& name, int rank,
 /// @param[in,out] data_node The XML node to add data to
 template <typename T>
 void add_data(const std::string& name, int rank,
-              const xtl::span<const T>& values, pugi::xml_node& node)
+              const std::span<const T>& values, pugi::xml_node& node)
 {
   if constexpr (std::is_scalar_v<T>)
     add_data_float(name, rank, values, node);
@@ -172,13 +172,13 @@ void add_data(const std::string& name, int rank,
     using U = typename T::value_type;
     std::vector<U> v(values.size());
 
-    std::transform(values.cbegin(), values.cend(), v.begin(),
+    std::transform(values.begin(), values.end(), v.begin(),
                    [](auto x) { return x.real(); });
-    add_data_float(name + field_ext[0], rank, xtl::span<const U>(v), node);
+    add_data_float(name + field_ext[0], rank, std::span<const U>(v), node);
 
-    std::transform(values.cbegin(), values.cend(), v.begin(),
+    std::transform(values.begin(), values.end(), v.begin(),
                    [](auto x) { return x.imag(); });
-    add_data_float(name + field_ext[1], rank, xtl::span<const U>(v), node);
+    add_data_float(name + field_ext[1], rank, std::span<const U>(v), node);
   }
 }
 //----------------------------------------------------------------------------
@@ -195,8 +195,8 @@ void add_data(const std::string& name, int rank,
 /// @param[in] tdim Topological dimension of the cells
 /// @param[in,out] piece_node The XML node to add data to
 void add_mesh(const xt::xtensor<double, 2>& x,
-              const xtl::span<const std::int64_t> x_id,
-              const xtl::span<const std::uint8_t> x_ghost,
+              const std::span<const std::int64_t> x_id,
+              const std::span<const std::uint8_t> x_ghost,
               const xt::xtensor<std::int64_t, 2>& cells,
               const common::IndexMap& cellmap, mesh::CellType celltype,
               int tdim, pugi::xml_node& piece_node)
@@ -479,13 +479,13 @@ void write_function(
       auto u_vector = _u.get().x()->array();
       for (std::size_t c = 0; c < cells.shape(0); ++c)
       {
-        xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+        std::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
         for (std::size_t i = 0; i < dofs.size(); ++i)
           for (int k = 0; k < bs; ++k)
             data[num_comp * c + k] = u_vector[bs * dofs[i] + k];
       }
 
-      add_data(_u.get().name, rank, xtl::span<const T>(data), data_node);
+      add_data(_u.get().name, rank, std::span<const T>(data), data_node);
     }
     else
     {
@@ -497,7 +497,7 @@ void write_function(
       // Function to pack data to 3D with 'zero' padding, typically when
       // a Function is 2D
       auto pad_data
-          = [num_comp](const fem::FunctionSpace& V, const xtl::span<const T>& u)
+          = [num_comp](const fem::FunctionSpace& V, const std::span<const T>& u)
       {
         auto dofmap = V.dofmap();
         int bs = dofmap->bs();
@@ -508,7 +508,7 @@ void write_function(
         std::vector<T> data(num_dofs_block * num_comp, 0);
         for (int i = 0; i < num_dofs_block; ++i)
         {
-          std::copy_n(std::next(u.cbegin(), i * map_bs), map_bs,
+          std::copy_n(std::next(u.begin(), i * map_bs), map_bs,
                       std::next(data.begin(), i * num_comp));
         }
 
@@ -524,7 +524,7 @@ void write_function(
         {
           // Pad with zeros and then add
           auto data = pad_data(*V, _u.get().x()->array());
-          add_data(_u.get().name, rank, xtl::span<const T>(data), data_node);
+          add_data(_u.get().name, rank, std::span<const T>(data), data_node);
         }
       }
       else if (*element == *element0)
@@ -543,8 +543,8 @@ void write_function(
         std::vector<T> u(u_vector.size());
         for (std::size_t c = 0; c < cells.shape(0); ++c)
         {
-          xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
-          xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+          std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
+          std::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
           for (std::size_t i = 0; i < dofs0.size(); ++i)
           {
             for (int k = 0; k < bs; ++k)
@@ -558,12 +558,12 @@ void write_function(
 
         // Pack/add data
         if (mesh0->geometry().dim() == 3)
-          add_data(_u.get().name, rank, xtl::span<const T>(u), data_node);
+          add_data(_u.get().name, rank, std::span<const T>(u), data_node);
         else
         {
           // Pad with zeros and then add
           auto data = pad_data(*V, _u.get().x()->array());
-          add_data(_u.get().name, rank, xtl::span<const T>(data), data_node);
+          add_data(_u.get().name, rank, std::span<const T>(data), data_node);
         }
       }
       else

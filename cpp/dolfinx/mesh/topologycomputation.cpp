@@ -99,9 +99,9 @@ int get_ownership(const U& processes, const V& vertices)
 std::tuple<std::vector<int>, common::IndexMap>
 get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
                    const common::IndexMap& vertex_map,
-                   const xtl::span<const std::int32_t>& entity_list,
+                   const std::span<const std::int32_t>& entity_list,
                    int num_vertices_per_e, int num_entities_per_cell,
-                   const xtl::span<const std::int32_t>& entity_index)
+                   const std::span<const std::int32_t>& entity_index)
 {
   // entity_list contains all the entities for all the cells, listed as
   // local vertex indices, and entity_index contains the initial
@@ -190,7 +190,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
     {
       // Get entity vertices
       std::size_t pos = std::distance(entity_index.begin(), entity_idx);
-      xtl::span entity
+      std::span entity
           = entity_list.subspan(pos * num_vertices_per_e, num_vertices_per_e);
 
       // Build list of ranks that share vertices of the entity, and sort
@@ -315,7 +315,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
     // Loop over received entities (defined by array of entity vertices)
     for (int j = recv_disp[r]; j < recv_disp[r + 1]; j += num_vertices_per_e)
     {
-      xtl::span<const std::int64_t> entity(recv_data.data() + j,
+      std::span<const std::int64_t> entity(recv_data.data() + j,
                                            num_vertices_per_e);
       auto it = std::lower_bound(
           perm.begin(), perm.end(), entity,
@@ -330,7 +330,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
       if (it != perm.end())
       {
         auto offset = (*it) * (num_vertices_per_e + 1);
-        xtl::span<const std::int64_t> e(entity_to_local_idx.data() + offset,
+        std::span<const std::int64_t> e(entity_to_local_idx.data() + offset,
                                         num_vertices_per_e + 1);
         if (std::equal(e.begin(), std::prev(e.end()), entity.begin()))
         {
@@ -469,7 +469,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
 
   // Create map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
-  std::transform(entity_index.cbegin(), entity_index.cend(),
+  std::transform(entity_index.begin(), entity_index.end(),
                  new_entity_index.begin(),
                  [&local_index](auto index) { return local_index[index]; });
 
@@ -564,7 +564,7 @@ compute_entities_by_key_matching(
     {
       // First entity in new index range
       std::size_t offset = (*it) * max_vertices_per_entity;
-      xtl::span e0(entity_list_sorted.data() + offset, max_vertices_per_entity);
+      std::span e0(entity_list_sorted.data() + offset, max_vertices_per_entity);
 
       // Find iterator to next entity
       auto it1 = std::find_if_not(
@@ -572,7 +572,7 @@ compute_entities_by_key_matching(
           [e0, &entity_list_sorted, max_vertices_per_entity](auto idx) -> bool
           {
             std::size_t offset = idx * max_vertices_per_entity;
-            return std::equal(e0.cbegin(), e0.cend(),
+            return std::equal(e0.begin(), e0.end(),
                               std::next(entity_list_sorted.begin(), offset));
           });
 
@@ -696,7 +696,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
   std::array<std::int32_t, 2> key;
   for (int e = 0; e < c_d1_0.num_nodes(); ++e)
   {
-    xtl::span<const std::int32_t> v = c_d1_0.links(e);
+    std::span<const std::int32_t> v = c_d1_0.links(e);
     assert(v.size() == key.size());
     std::partial_sort_copy(v.begin(), v.end(), key.begin(), key.end());
     edge_to_index.insert({key, e});

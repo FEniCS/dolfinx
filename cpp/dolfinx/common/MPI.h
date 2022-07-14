@@ -15,10 +15,10 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <numeric>
 #include <set>
+#include <span>
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>
@@ -147,7 +147,7 @@ constexpr int index_owner(int size, std::size_t index, std::size_t N)
 /// @param[in] edges Edges (ranks) from this rank (the caller).
 /// @return Ranks that have defined edges from them to this rank.
 std::vector<int> compute_graph_edges_pcx(MPI_Comm comm,
-                                         const xtl::span<const int>& edges);
+                                         const std::span<const int>& edges);
 
 /// @brief Determine incoming graph edges using the NBX consensus
 /// algorithm.
@@ -174,7 +174,7 @@ std::vector<int> compute_graph_edges_pcx(MPI_Comm comm,
 /// @param[in] edges Edges (ranks) from this rank (the caller).
 /// @return Ranks that have defined edges from them to this rank.
 std::vector<int> compute_graph_edges_nbx(MPI_Comm comm,
-                                         const xtl::span<const int>& edges);
+                                         const std::span<const int>& edges);
 
 /// @brief Distribute row data to 'post office' ranks.
 ///
@@ -197,7 +197,7 @@ std::vector<int> compute_graph_edges_nbx(MPI_Comm comm,
 /// for which the calling process is the post office
 template <typename T>
 std::pair<std::vector<std::int32_t>, std::vector<T>>
-distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x,
+distribute_to_postoffice(MPI_Comm comm, const std::span<const T>& x,
                          std::array<std::int64_t, 2> shape,
                          std::int64_t rank_offset);
 
@@ -224,8 +224,8 @@ distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x,
 /// @pre `shape1 > 0`
 template <typename T>
 std::vector<T> distribute_from_postoffice(
-    MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
-    const xtl::span<const T>& x, std::array<std::int64_t, 2> shape,
+    MPI_Comm comm, const std::span<const std::int64_t>& indices,
+    const std::span<const T>& x, std::array<std::int64_t, 2> shape,
     std::int64_t rank_offset);
 
 /// @brief Distribute rows of a rectangular data array to ranks where
@@ -253,8 +253,8 @@ std::vector<T> distribute_from_postoffice(
 /// @pre `shape1 > 0`
 template <typename T>
 std::vector<T> distribute_data(MPI_Comm comm,
-                               const xtl::span<const std::int64_t>& indices,
-                               const xtl::span<const T>& x, int shape1);
+                               const std::span<const std::int64_t>& indices,
+                               const std::span<const T>& x, int shape1);
 
 template <typename T>
 struct dependent_false : std::false_type
@@ -299,7 +299,7 @@ constexpr MPI_Datatype mpi_type()
 //---------------------------------------------------------------------------
 template <typename T>
 std::pair<std::vector<std::int32_t>, std::vector<T>>
-distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x,
+distribute_to_postoffice(MPI_Comm comm, const std::span<const T>& x,
                          std::array<std::int64_t, 2> shape,
                          std::int64_t rank_offset)
 {
@@ -441,8 +441,8 @@ distribute_to_postoffice(MPI_Comm comm, const xtl::span<const T>& x,
 //---------------------------------------------------------------------------
 template <typename T>
 std::vector<T> distribute_from_postoffice(
-    MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
-    const xtl::span<const T>& x, std::array<std::int64_t, 2> shape,
+    MPI_Comm comm, const std::span<const std::int64_t>& indices,
+    const std::span<const T>& x, std::array<std::int64_t, 2> shape,
     std::int64_t rank_offset)
 {
   common::Timer timer("Distribute row-wise data (scalable)");
@@ -644,8 +644,8 @@ std::vector<T> distribute_from_postoffice(
 //---------------------------------------------------------------------------
 template <typename T>
 std::vector<T> distribute_data(MPI_Comm comm,
-                               const xtl::span<const std::int64_t>& indices,
-                               const xtl::span<const T>& x, int shape1)
+                               const std::span<const std::int64_t>& indices,
+                               const std::span<const T>& x, int shape1)
 {
   assert(shape1 > 0);
   assert(x.size() % shape1 == 0);
