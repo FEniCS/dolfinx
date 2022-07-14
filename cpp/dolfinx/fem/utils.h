@@ -239,15 +239,15 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] subdomains Subdomain markers
 /// @param[in] mesh The mesh of the domain
 template <typename T>
-Form<T> create_form(
-    const ufcx_form& ufcx_form,
-    const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
-    const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
-    const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType,
-                   const std::map<std::int32_t, std::vector<std::int32_t>>>&
-        subdomains,
-    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+Form<T>
+create_form(const ufcx_form& ufcx_form,
+            const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
+            const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+            const std::vector<std::shared_ptr<const Constant<T>>>& constants,
+            const std::map<IntegralType,
+                           std::map<std::int32_t, std::vector<std::int32_t>>>&
+                subdomains,
+            const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   if (ufcx_form.rank != (int)spaces.size())
     throw std::runtime_error("Wrong number of argument spaces for Form.");
@@ -508,7 +508,7 @@ Form<T> create_form(
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::map<IntegralType,
-                   const std::map<std::int32_t, std::vector<std::int32_t>>>&
+                   std::map<std::int32_t, std::vector<std::int32_t>>>&
         subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
@@ -557,7 +557,7 @@ Form<T> create_form(
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::map<IntegralType,
-                   const std::map<std::int32_t, std::vector<std::int32_t>>>&
+                   std::map<std::int32_t, std::vector<std::int32_t>>>&
         subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
