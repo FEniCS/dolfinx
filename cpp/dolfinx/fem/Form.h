@@ -122,7 +122,8 @@ public:
     for (const auto& integral_type : integrals)
     {
       const IntegralType type = integral_type.first;
-      // Loop over integrals kernels and set domains
+      // Loop over integrals kernels and set domains (intentially copying
+      // the domain data)
       switch (type)
       {
       case IntegralType::cell:

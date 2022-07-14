@@ -797,6 +797,7 @@ void declare_form(py::module& m, const std::string& type)
                                      const typename geom_type<T>::value_type*,
                                      const int*, const std::uint8_t*))
                                kernel.second.first.cast<std::uintptr_t>();
+                     // FIXME Avoid this copy
                      _integrals[kernel_type.first][kernel.first]
                          = {tabulate_tensor_ptr, {kernel.second.second}};
                    }
