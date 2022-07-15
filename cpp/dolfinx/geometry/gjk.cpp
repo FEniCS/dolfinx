@@ -170,16 +170,17 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
   }
 }
 //----------------------------------------------------------------------------
-// Support function, finds point p in bd which maximises p.v
-xt::xtensor_fixed<double, xt::xshape<3>>
-support(const xt::xtensor<double, 2>& bd,
-        const xt::xtensor_fixed<double, xt::xshape<3>>& v)
+// Helper function, finds point p in bd which maximises p.v
+std::array<double, 3> support(const xt::xtensor<double, 2>& bd,
+                              const std::array<double, 3>& v)
 {
   int i = 0;
-  double qmax = xt::sum(xt::row(bd, 0) * v)();
+  // double qmax = xt::sum(xt::row(bd, 0) * v)();
+  double qmax = bd(0, 0) * v[0] + bd(0, 1) * v[1] + bd(0, 2) * v[2];
   for (std::size_t m = 1; m < bd.shape(0); ++m)
   {
-    double q = xt::sum(xt::row(bd, m) * v)();
+    // double q = xt::sum(xt::row(bd, m) * v)();
+    double q = bd(m, 0) * v[0] + bd(m, 1) * v[1] + bd(m, 2) * v[2];
     if (q > qmax)
     {
       qmax = q;
@@ -187,7 +188,8 @@ support(const xt::xtensor<double, 2>& bd,
     }
   }
 
-  return xt::row(bd, i);
+  return {bd(i, 0), bd(i, 1), bd(i, 2)};
+  // return xt::row(bd, i);
 }
 } // namespace
 //----------------------------------------------------------------------------
@@ -213,8 +215,13 @@ geometry::compute_distance_gjk(const xt::xtensor<double, 2>& p,
   for (k = 0; k < maxk; ++k)
   {
     // Support function
+    // const xt::xtensor_fixed<double, xt::xshape<3>> w
+    //     = support(p, -v) - support(q, v);
+
+    std::array w1 = support(p, {-v[0], -v[1], -v[2]});
+    std::array w0 = support(q, {v[0], v[1], v[2]});
     const xt::xtensor_fixed<double, xt::xshape<3>> w
-        = support(p, -v) - support(q, v);
+        = {w1[0] - w0[0], w1[1] - w0[1], w1[2] - w0[2]};
 
     // Break if any existing points are the same as w
     assert(s.shape(1) == 3);
