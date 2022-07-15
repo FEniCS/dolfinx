@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <mpi.h>
 #include <span>
+#include <string>
 #include <vector>
 
 namespace dolfinx::mesh
