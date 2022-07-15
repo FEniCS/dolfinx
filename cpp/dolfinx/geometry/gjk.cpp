@@ -6,8 +6,8 @@
 
 #include "gjk.h"
 #include <dolfinx/common/math.h>
+#include <numeric>
 #include <stdexcept>
-#include <tuple>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xfixed.hpp>
@@ -24,49 +24,66 @@ namespace
 // Find the resulting sub-simplex of the input simplex which is nearest to the
 // origin. Also, return the shortest vector from the origin to the resulting
 // simplex.
-std::pair<xt::xtensor<double, 2>, xt::xtensor_fixed<double, xt::xshape<3>>>
-nearest_simplex(const xt::xtensor<double, 2>& s)
+std::pair<std::vector<double>, std::array<double, 3>>
+nearest_simplex(const std::span<const double>& ss)
 {
-  assert(s.shape(1) == 3);
+  auto s = xt::adapt(ss.data(), ss.size(), xt::no_ownership(),
+                     std::vector<std::size_t>{ss.size() / 3, 3});
+
+  assert(ss.size() % 3 == 0);
   const std::size_t s_rows = s.shape(0);
   switch (s_rows)
   {
   case 2:
   {
-    auto s0 = xt::row(s, 0);
-    auto s1 = xt::row(s, 1);
-    // const double lm = -xt::sum(s0 * (s1 - s0))() / xt::norm_sq(s1 - s0)();
-    std::array ds = {s1[0] - s0[0], s1[1] - s0[1], (s1[2] - s0[2])};
+    auto s0 = ss.subspan(0, 3);
+    auto s1 = ss.subspan(3, 3);
+    std::array ds = {s1[0] - s0[0], s1[1] - s0[1], s1[2] - s0[2]};
     const double lm = -(s0[0] * ds[0] + s[1] * ds[1] + s[2] * ds[2])
                       / (ds[0] * ds[0] + ds[1] * ds[1] + ds[2] * ds[2]);
     if (lm >= 0.0 and lm <= 1.0)
     {
       // The origin is between A and B
-      // auto v = s0 + lm * (s1 - s0);
-      xt::xtensor_fixed<double, xt::xshape<3>> v
+      // v = s0 + lm * (s1 - s0);
+      std::array<double, 3> v
           = {s0[0] + lm * ds[0], s0[1] + lm * ds[1], s0[2] + lm * ds[2]};
-      return {s, v};
+      return {std::vector<double>(ss.begin(), ss.end()), v};
     }
 
     if (lm < 0.0)
-      return {xt::reshape_view(s0, {1, 3}), s0};
+      return {std::vector<double>(s0.begin(), s0.end()), {s0[0], s0[1], s0[2]}};
     else
-      return {xt::reshape_view(s1, {1, 3}), s1};
+      return {std::vector<double>(s1.begin(), s1.end()), {s1[0], s1[1], s1[2]}};
   }
   case 3:
   {
-    const auto a = xt::row(s, 0);
-    const auto b = xt::row(s, 1);
-    const auto c = xt::row(s, 2);
-    const double ab2 = xt::norm_sq(a - b)();
-    const double ac2 = xt::norm_sq(a - c)();
-    const double bc2 = xt::norm_sq(b - c)();
-    const xt::xtensor_fixed<double, xt::xshape<3>> lm
-        = {xt::sum(a * (a - b))() / ab2, xt::sum(a * (a - c))() / ac2,
-           xt::sum(b * (b - c))() / bc2};
+    auto a = ss.subspan(0, 3);
+    auto b = ss.subspan(3, 3);
+    auto c = ss.subspan(6, 3);
+    auto length = [](auto& x, auto& y)
+    {
+      return std::transform_reduce(
+          x.begin(), x.end(), y.begin(), 0.0, std::plus{},
+          [](auto x, auto y) { return (x - y) * (x - y); });
+    };
+    const double ab2 = length(a, b);
+    const double ac2 = length(a, c);
+    const double bc2 = length(b, c);
+
+    auto helper = [](auto& x, auto& y)
+    {
+      return std::transform_reduce(x.begin(), x.end(), y.begin(), 0.0,
+                                   std::plus{},
+                                   [](auto x, auto y) { return x * (x - y); });
+    };
+    const std::array<double, 3> lm
+        = {helper(a, b) / ab2, helper(a, c) / ac2, helper(b, c) / bc2};
+
+    double caba = 0;
+    for (std::size_t i = 0; i < 3; ++i)
+      caba += (c[i] - a[i]) * (b[i] - a[i]);
 
     // Calculate triangle ABC
-    const double caba = xt::sum((c - a) * (b - a))();
     const double c2 = 1 - caba * caba / (ab2 * ac2);
     const double lbb = (lm[0] - lm[1] * caba / ab2) / c2;
     const double lcc = (lm[1] - lm[0] * caba / ac2) / c2;
@@ -75,45 +92,61 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
     if (lbb >= 0.0 and lcc >= 0.0 and (lbb + lcc) <= 1.0)
     {
       // Calculate intersection more accurately
-      auto v = math::cross(c - a, b - a);
+      // auto v = math::cross(c - a, b - a);
+
+      std::array<double, 3> dx0 = {c[0] - a[0], c[1] - a[1], c[2] - a[2]};
+      std::array<double, 3> dx1 = {b[0] - a[0], b[1] - a[1], b[2] - a[2]};
+      std::array<double, 3> v = math::cross_new(dx0, dx1);
 
       // Barycentre of triangle
-      auto p = (a + b + c) / 3.0;
+      std::array<double, 3> p
+          = {(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3,
+             (a[2] + b[2] + c[2]) / 3};
 
-      // Renormalise n in plane of ABC
-      v *= xt::sum(v * p) / xt::norm_sq(v);
-      return {std::move(s), v};
+      double sum = v[0] * p[0] + v[1] * p[1] + v[2] * p[2];
+      double vnorm2 = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
+      for (std::size_t i = 0; i < 3; ++i)
+        v[i] *= sum / vnorm2;
+
+      return {std::vector<double>(ss.begin(), ss.end()), v};
     }
 
     // Get closest point
     std::size_t i = xt::argmin(xt::norm_sq(s, {1}))();
-    xt::xtensor_fixed<double, xt::xshape<3>> vmin = xt::row(s, i);
-    double qmin = xt::norm_sq(vmin)();
+    std::array<double, 3> vmin = {s(i, 0), s(i, 1), s(i, 2)};
+    double qmin = 0;
+    for (std::size_t k = 0; k < 3; ++k)
+      qmin += vmin[k] * vmin[k];
 
-    xt::xtensor<double, 2> smin({1, 3});
-    xt::row(smin, 0) = vmin;
+    std::vector<double> smin = {vmin[0], vmin[1], vmin[2]};
 
     // Check if edges are closer
     constexpr const int f[3][2] = {{0, 1}, {0, 2}, {1, 2}};
     for (std::size_t i = 0; i < s_rows; ++i)
     {
-      auto s0 = xt::row(s, f[i][0]);
-      auto s1 = xt::row(s, f[i][1]);
+      auto s0 = ss.subspan(3 * f[i][0], 3);
+      auto s1 = ss.subspan(3 * f[i][1], 3);
       if (lm[i] > 0 and lm[i] < 1)
       {
-        auto v = s0 + lm[i] * (s1 - s0);
-        const double qnorm = xt::norm_sq(v)();
+        std::array<double, 3> v;
+        for (std::size_t k = 0; k < 3; ++k)
+          v[k] = s0[k] + lm[i] * (s1[k] - s0[k]);
+        double qnorm = 0;
+        for (std::size_t k = 0; k < 3; ++k)
+          qnorm += v[k] * v[k];
         if (qnorm < qmin)
         {
-          vmin = v;
+          std::copy(v.begin(), v.end(), vmin.begin());
           qmin = qnorm;
-          smin.resize({2, 3});
-          xt::row(smin, 0) = s0;
-          xt::row(smin, 1) = s1;
+          smin.resize(2 * 3);
+          std::span<double, 3> smin0(smin.data(), 3);
+          std::copy(s0.begin(), s0.end(), smin0.begin());
+          std::span<double, 3> smin1(smin.data() + 3, 3);
+          std::copy(s1.begin(), s1.end(), smin1.begin());
         }
       }
     }
-    return {std::move(smin), vmin};
+    return {std::move(smin), {vmin[0], vmin[1], vmin[2]}};
   }
   case 4:
   {
@@ -138,14 +171,14 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
     if (f_inside[1] and f_inside[2] and f_inside[3])
     {
       if (f_inside[0]) // The origin is inside the tetrahedron
-        return {s, xt::zeros<double>({3})};
+        return {std::vector<double>(ss.begin(), ss.end()), {0, 0, 0}};
       else // The origin projection P faces BCD
-        return nearest_simplex(xt::view(s, xt::range(0, 3), xt::all()));
+        return nearest_simplex(ss.subspan(0, 3 * 3));
     }
 
-    // Test ACD, ABD and/or ABC.
-    xt::xtensor<double, 2> smin;
-    xt::xtensor_fixed<double, xt::xshape<3>> vmin = xt::zeros<double>({3});
+    // Test ACD, ABD and/or ABC
+    std::vector<double> smin;
+    std::array<double, 3> vmin = {0, 0, 0};
     constexpr int facets[3][3] = {{0, 1, 3}, {0, 2, 3}, {1, 2, 3}};
     double qmin = std::numeric_limits<double>::max();
     for (int i = 0; i < 3; ++i)
@@ -158,7 +191,7 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
         xt::row(M, 2) = xt::row(s, facets[i][2]);
 
         const auto [snew, v] = nearest_simplex(M);
-        const double q = xt::norm_sq(v)();
+        double q = std::transform_reduce(v.begin(), v.end(), v.begin(), 0);
         if (q < qmin)
         {
           qmin = q;
@@ -167,12 +200,10 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
         }
       }
     }
-    return {std::move(smin), vmin};
+    return {std::move(smin), {vmin[0], vmin[1], vmin[2]}};
   }
   default:
-  {
     throw std::runtime_error("Number of rows defining simplex not supported.");
-  }
   }
 }
 //----------------------------------------------------------------------------

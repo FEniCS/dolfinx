@@ -128,7 +128,8 @@ private:
 /// @param[in] topology The mesh topology
 /// @param[in] element The element that defines the geometry map for
 /// each cell
-/// @param[in] cells The mesh cells, including higher-ordder geometry 'nodes'
+/// @param[in] cells The mesh cells, including higher-order geometry
+/// 'nodes'
 /// @param[in] x The node coordinates (row-major, with shape
 /// `(num_nodes, dim)`. The global index of each node is `i +
 /// rank_offset`, where `i` is the local row index in `x` and

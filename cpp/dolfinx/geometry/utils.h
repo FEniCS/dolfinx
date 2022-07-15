@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <span>
 #include <vector>
