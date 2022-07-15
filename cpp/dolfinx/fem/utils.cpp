@@ -378,7 +378,7 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
     break;
     default:
       throw std::runtime_error(
-          "Cannot set domains. Integral type not supported.");
+          "Cannot compute integration domains. Integral type not supported.");
     }
   }
   return integrals;
