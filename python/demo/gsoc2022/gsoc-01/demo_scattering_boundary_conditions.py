@@ -48,7 +48,7 @@ import ufl
 from dolfinx import fem, plot
 from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
-from ufl import (FacetNormal, as_vector, cross, curl, inner, lhs, rhs, sqrt)
+from ufl import FacetNormal, as_vector, cross, curl, inner, lhs, rhs, sqrt
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -256,17 +256,18 @@ MPI.COMM_WORLD.barrier()
 # Let's have a visual check of the mesh by plotting it with PyVista:
 
 # +
-topology, cell_types, geometry = plot.create_vtk_mesh(mesh, 2)
-grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
-pyvista.set_jupyter_backend("pythreejs")
-plotter = pyvista.Plotter()
-plotter.add_mesh(grid, show_edges=True)
-plotter.view_xy()
-if not pyvista.OFF_SCREEN:
-    plotter.show()
-else:
-    pyvista.start_xvfb()
-    figure = plotter.screenshot("wire_mesh.png")
+if have_pyvista:
+    topology, cell_types, geometry = plot.create_vtk_mesh(mesh, 2)
+    grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
+    pyvista.set_jupyter_backend("pythreejs")
+    plotter = pyvista.Plotter()
+    plotter.add_mesh(grid, show_edges=True)
+    plotter.view_xy()
+    if not pyvista.OFF_SCREEN:
+        plotter.show()
+    else:
+        pyvista.start_xvfb()
+        figure = plotter.screenshot("wire_mesh.png")
 # -
 
 # Now we define some other problem specific parameters:
@@ -475,27 +476,28 @@ with VTXWriter(MPI.COMM_WORLD, "Esh.bp", Esh_dg) as f:
 # DOLFINx demo.
 
 # +
-V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
-V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
-Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
-Esh_values[:, :mesh.topology.dim] = \
-    Esh_dg.x.array.reshape(V_x.shape[0], mesh.topology.dim).real
+if have_pyvista:
+    V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
+    V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
+    Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
+    Esh_values[:, :mesh.topology.dim] = \
+        Esh_dg.x.array.reshape(V_x.shape[0], mesh.topology.dim).real
 
-V_grid.point_data["u"] = Esh_values
+    V_grid.point_data["u"] = Esh_values
 
-pyvista.set_jupyter_backend("pythreejs")
-plotter = pyvista.Plotter()
+    pyvista.set_jupyter_backend("pythreejs")
+    plotter = pyvista.Plotter()
 
-plotter.add_text("magnitude", font_size=12, color="black")
-plotter.add_mesh(V_grid.copy(), show_edges=True)
-plotter.view_xy()
-plotter.link_views()
+    plotter.add_text("magnitude", font_size=12, color="black")
+    plotter.add_mesh(V_grid.copy(), show_edges=True)
+    plotter.view_xy()
+    plotter.link_views()
 
-if not pyvista.OFF_SCREEN:
-    plotter.show()
-else:
-    pyvista.start_xvfb()
-    plotter.screenshot("Esh.png", window_size=[800, 800])
+    if not pyvista.OFF_SCREEN:
+        plotter.show()
+    else:
+        pyvista.start_xvfb()
+        plotter.screenshot("Esh.png", window_size=[800, 800])
 # -
 
 # Next we can calculate the total electric field
