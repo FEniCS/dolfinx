@@ -65,7 +65,7 @@ C++ core
 
 .. rubric:: Required
 
-- C++ compiler (supporting the C++17 standard)
+- C++ compiler (supporting the C++20 standard)
 - `Boost <http://www.boost.org>`_, with the following compiled Boost
   components
 

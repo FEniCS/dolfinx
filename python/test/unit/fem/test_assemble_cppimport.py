@@ -42,7 +42,7 @@ def test_eigen_assembly(tempdir):  # noqa: F811
 setup_pybind11(cfg)
 cfg['include_dirs'] = {dolfinx_pc["include_dirs"] + [petsc4py.get_include()]
   + [pybind11.get_include()] + [str(pybind_inc())] + eigen_dir}
-cfg['compiler_args'] = ["-std=c++17", "-Wno-comment"]
+cfg['compiler_args'] = ["-std=c++20", "-Wno-comment"]
 cfg['libraries'] = {dolfinx_pc["libraries"]}
 cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
 %>
@@ -66,9 +66,9 @@ assemble_csr(const dolfinx::fem::Form<T>& a,
 {
   std::vector<Eigen::Triplet<T>> triplets;
   auto mat_add
-      = [&triplets](const xtl::span<const std::int32_t>& rows,
-                    const xtl::span<const std::int32_t>& cols,
-                    const xtl::span<const T>& v)
+      = [&triplets](const std::span<const std::int32_t>& rows,
+                    const std::span<const std::int32_t>& cols,
+                    const std::span<const T>& v)
     {
       for (std::size_t i = 0; i < rows.size(); ++i)
         for (std::size_t j = 0; j < cols.size(); ++j)
