@@ -1,8 +1,13 @@
 import sys
 
-import gmsh
-from mpi4py import MPI
+try:
+    import gmsh
+except ModuleNotFoundError:
+    print("This demo requires gmsh to be installed")
+    sys.exit(0)
 from numpy import pi
+
+from mpi4py import MPI
 
 
 def generate_mesh_wire(radius_wire, radius_dom, in_wire_size, on_wire_size,
