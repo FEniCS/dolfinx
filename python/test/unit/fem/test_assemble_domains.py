@@ -279,11 +279,9 @@ def test_manual_integration_domains():
 
     # Create forms and assemble
     a, L = create_forms(dx_mt, ds_mt, dS_mt)
-    A = assemble_matrix(a)
-    A.assemble()
-    A_mt_norm = A.norm()
-    b = assemble_vector(L)
-    b_mt_norm = b.norm()
+    A_mt = assemble_matrix(a)
+    A_mt.assemble()
+    b_mt = assemble_vector(L)
 
     # Manually specify cells to integrate over (removing ghosts
     # to give same result as above)
@@ -311,7 +309,6 @@ def test_manual_integration_domains():
     for f in marked_int_facets:
         if f >= facet_map.size_local or len(f_to_c.links(f)) != 2:
             continue
-
         c_0, c_1 = f_to_c.links(f)[0], f_to_c.links(f)[1]
         local_f_0 = np.where(c_to_f.links(c_0) == f)[0][0]
         local_f_1 = np.where(c_to_f.links(c_1) == f)[0][0]
@@ -329,9 +326,7 @@ def test_manual_integration_domains():
     a, L = create_forms(dx_manual, ds_manual, dS_manual)
     A = assemble_matrix(a)
     A.assemble()
-    A_norm = A.norm()
     b = assemble_vector(L)
-    b_norm = b.norm()
 
-    assert(np.isclose(b_norm, b_mt_norm))
-    assert(np.isclose(A_norm, A_mt_norm))
+    assert(np.isclose((A - A_mt).norm(), 0.0))
+    assert(np.isclose((b - b_mt).norm(), 0.0))
