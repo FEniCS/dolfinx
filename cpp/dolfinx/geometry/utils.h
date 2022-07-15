@@ -10,7 +10,6 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <span>
 #include <vector>
-#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::mesh
 {
@@ -79,9 +78,10 @@ compute_squared_distance_bbox(const std::array<std::array<double, 3>, 2>& b,
 /// @param[in] entities The list of entities (local to process)
 /// @param[in] points The set of points (shape=(num_points, 3)), using row-major
 /// storage
-/// @return An array of vectors where the ith row is the shortest vector
-/// from the ith entity and the ith point
-xt::xtensor<double, 2>
+/// @return An array of vectors (shape=(num_points, 3)) where the ith
+/// row is the shortest vector between the ith entity and the ith point.
+/// Storage is row-major.
+std::vector<double>
 shortest_vector(const mesh::Mesh& mesh, int dim,
                 const std::span<const std::int32_t>& entities,
                 const std::span<const double>& points);
@@ -98,7 +98,7 @@ shortest_vector(const mesh::Mesh& mesh, int dim,
 /// @param[in] points The set points from which to computed the shortest
 /// (shape=(num_points, 3)). Storage is row-major.
 /// @return Squared shortest distance from points[i] to entities[i]
-xt::xtensor<double, 1>
+std::vector<double>
 squared_distance(const mesh::Mesh& mesh, int dim,
                  const std::span<const std::int32_t>& entities,
                  const std::span<const double>& points);

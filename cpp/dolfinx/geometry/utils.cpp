@@ -13,8 +13,6 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xnorm.hpp>
 
 using namespace dolfinx;
 
@@ -31,15 +29,14 @@ constexpr bool is_leaf(const std::array<int, 2>& bbox)
 /// A point `x` is inside a bounding box `b` if each component of its
 /// coordinates lies within the range `[b(0,i), b(1,i)]` that defines the bounds
 /// of the bounding box, b(0,i) <= x[i] <= b(1,i) for i = 0, 1, 2
-bool point_in_bbox(const std::array<std::array<double, 3>, 2>& b,
-                   const std::array<double, 3>& x)
+constexpr bool point_in_bbox(const std::array<std::array<double, 3>, 2>& b,
+                             const std::array<double, 3>& x)
 {
   constexpr double rtol = 1e-14;
-  double eps;
   bool in = true;
   for (int i = 0; i < 3; i++)
   {
-    eps = rtol * (b[1][i] - b[0][i]);
+    double eps = rtol * (b[1][i] - b[0][i]);
     in &= x[i] >= (b[0][i] - eps);
     in &= x[i] <= (b[1][i] + eps);
   }
@@ -50,15 +47,14 @@ bool point_in_bbox(const std::array<std::array<double, 3>, 2>& b,
 /// A bounding box "a" is contained inside another bounding box "b", if each
 /// of its intervals [a(0,i), a(1,i)] is contained in [b(0,i), b(1,i)],
 /// a(0,i) <= b(1, i) and a(1,i) >= b(0, i)
-bool bbox_in_bbox(const std::array<std::array<double, 3>, 2>& a,
-                  const std::array<std::array<double, 3>, 2>& b)
+constexpr bool bbox_in_bbox(const std::array<std::array<double, 3>, 2>& a,
+                            const std::array<std::array<double, 3>, 2>& b)
 {
   constexpr double rtol = 1e-14;
-  double eps;
   bool in = true;
   for (int i = 0; i < 3; i++)
   {
-    eps = rtol * (b[1][i] - b[0][i]);
+    double eps = rtol * (b[1][i] - b[0][i]);
     in &= a[1][i] >= (b[0][i] - eps);
     in &= a[0][i] <= (b[1][i] + eps);
   }
@@ -94,7 +90,8 @@ std::pair<std::int32_t, double> _compute_closest_entity(
       {
         r2 = geometry::squared_distance(mesh, tree.tdim(),
                                         std::span(&bbox[1], 1),
-                                        {{point[0], point[1], point[2]}})[0];
+                                        {{point[0], point[1], point[2]}})
+                 .front();
       }
     }
 
@@ -376,7 +373,7 @@ double geometry::compute_squared_distance_bbox(
                                  });
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2>
+std::vector<double>
 geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
                           const std::span<const std::int32_t>& entities,
                           const std::span<const double>& points)
@@ -445,16 +442,20 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
     }
   }
 
-  return xt::adapt(shortest_vectors,
-                   std::vector<std::size_t>{entities.size(), 3});
+  return shortest_vectors;
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 1>
+std::vector<double>
 geometry::squared_distance(const mesh::Mesh& mesh, int dim,
                            const std::span<const std::int32_t>& entities,
                            const std::span<const double>& points)
 {
-  return xt::norm_sq(shortest_vector(mesh, dim, entities, points), {1});
+  std::vector<double> v = shortest_vector(mesh, dim, entities, points);
+  std::vector<double> d(v.size() / 3, 0);
+  for (std::size_t i = 0; i < d.size(); ++i)
+    for (std::size_t j = 0; j < 3; ++j)
+      d[i] += v[3 * i + j] * v[3 * i + j];
+  return d;
 }
 //-------------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t> geometry::compute_colliding_cells(
@@ -475,7 +476,7 @@ graph::AdjacencyList<std::int32_t> geometry::compute_colliding_cells(
       for (std::size_t k = 0; k < 3; ++k)
         _point[3 * j + k] = points[3 * i + k];
 
-    xt::xtensor<double, 1> distances_sq
+    std::vector<double> distances_sq
         = geometry::squared_distance(mesh, tdim, cells, _point);
     for (std::size_t j = 0; j < cells.size(); j++)
       if (distances_sq[j] < eps2)

@@ -167,7 +167,7 @@ void geometry(py::module& m)
         else
           throw std::runtime_error("Array has wrong ndim.");
 
-        return xt_as_pyarray(
+        return as_pyarray(
             dolfinx::geometry::squared_distance(mesh, dim, indices, _p));
       },
       py::arg("mesh"), py::arg("dim"), py::arg("indices"), py::arg("points"));
