@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 #include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
+#include <span>
 
 namespace dolfinx::graph
 {
@@ -128,9 +128,9 @@ public:
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   /// AdjacencyList::num_links(node).
-  xtl::span<T> links(int node)
+  std::span<T> links(int node)
   {
-    return xtl::span<T>(_array.data() + _offsets[node],
+    return std::span<T>(_array.data() + _offsets[node],
                         _offsets[node + 1] - _offsets[node]);
   }
 
@@ -138,9 +138,9 @@ public:
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   /// AdjacencyList:num_links(node).
-  xtl::span<const T> links(int node) const
+  std::span<const T> links(int node) const
   {
-    return xtl::span<const T>(_array.data() + _offsets[node],
+    return std::span<const T>(_array.data() + _offsets[node],
                               _offsets[node + 1] - _offsets[node]);
   }
 

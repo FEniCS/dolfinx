@@ -6,9 +6,9 @@
 
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <span>
 #include <utility>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 #pragma once
 
@@ -67,7 +67,7 @@ refine(const mesh::Mesh& mesh, bool redistribute, RefinementOptions options);
 /// returned.
 /// @return New Mesh and optional parent cell index, parent facet indices
 std::tuple<mesh::Mesh, std::vector<std::int32_t>, std::vector<std::int8_t>>
-refine(const mesh::Mesh& mesh, const xtl::span<const std::int32_t>& edges,
+refine(const mesh::Mesh& mesh, const std::span<const std::int32_t>& edges,
        bool redistribute, RefinementOptions options);
 
 /// Refine mesh returning new mesh data.
@@ -95,7 +95,7 @@ compute_refinement_data(const mesh::Mesh& mesh, RefinementOptions options);
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>, std::vector<std::int8_t>>
 compute_refinement_data(const mesh::Mesh& mesh,
-                        const xtl::span<const std::int32_t>& edges,
+                        const std::span<const std::int32_t>& edges,
                         RefinementOptions options);
 
 } // namespace plaza

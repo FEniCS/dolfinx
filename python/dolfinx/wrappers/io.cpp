@@ -37,45 +37,50 @@ void io(py::module& m)
 {
   // dolfinx::io::cell vtk cell type converter
   m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type,
-        "Get VTK cell identifier");
+        py::arg("cell"), py::arg("dim"), "Get VTK cell identifier");
 
   m.def(
       "extract_vtk_connectivity",
       [](const dolfinx::mesh::Mesh& mesh)
       { return xt_as_pyarray(dolfinx::io::extract_vtk_connectivity(mesh)); },
+      py::arg("mesh"),
       "Extract the mesh topology with VTK ordering using geometry indices");
 
   // dolfinx::io::cell permutation functions
-  m.def("perm_vtk", &dolfinx::io::cells::perm_vtk,
+  m.def("perm_vtk", &dolfinx::io::cells::perm_vtk, py::arg("type"),
+        py::arg("num_nodes"),
         "Permutation array to map from VTK to DOLFINx node ordering");
-  m.def("perm_gmsh", &dolfinx::io::cells::perm_gmsh,
+  m.def("perm_gmsh", &dolfinx::io::cells::perm_gmsh, py::arg("type"),
+        py::arg("num_nodes"),
         "Permutation array to map from Gmsh to DOLFINx node ordering");
 
   // TODO: Template for different values dtypes
-  m.def("distribute_entity_data",
-        [](const dolfinx::mesh::Mesh& mesh, int entity_dim,
-           const py::array_t<std::int64_t, py::array::c_style>& entities,
-           const py::array_t<std::int32_t, py::array::c_style>& values)
-        {
-          assert(entities.ndim() == 2);
-          assert(values.ndim() == 1);
-          assert(entities.shape(0) == values.shape(0));
-          std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-              entities_values = dolfinx::io::xdmf_utils::distribute_entity_data(
-                  mesh, entity_dim, xtl::span(entities.data(), entities.size()),
-                  xtl::span(values.data(), values.size()));
+  m.def(
+      "distribute_entity_data",
+      [](const dolfinx::mesh::Mesh& mesh, int entity_dim,
+         const py::array_t<std::int64_t, py::array::c_style>& entities,
+         const py::array_t<std::int32_t, py::array::c_style>& values)
+      {
+        assert(entities.ndim() == 2);
+        assert(values.ndim() == 1);
+        assert(entities.shape(0) == values.shape(0));
+        std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
+            entities_values = dolfinx::io::xdmf_utils::distribute_entity_data(
+                mesh, entity_dim, std::span(entities.data(), entities.size()),
+                std::span(values.data(), values.size()));
 
-          std::size_t num_vert_per_entity = dolfinx::mesh::cell_num_entities(
-              dolfinx::mesh::cell_entity_type(mesh.topology().cell_type(),
-                                              entity_dim, 0),
-              0);
-          std::array shape_e
-              = {entities_values.first.size() / num_vert_per_entity,
-                 num_vert_per_entity};
-          return std::pair(
-              as_pyarray(std::move(entities_values.first), shape_e),
-              as_pyarray(std::move(entities_values.second)));
-        });
+        std::size_t num_vert_per_entity = dolfinx::mesh::cell_num_entities(
+            dolfinx::mesh::cell_entity_type(mesh.topology().cell_type(),
+                                            entity_dim, 0),
+            0);
+        std::array shape_e
+            = {entities_values.first.size() / num_vert_per_entity,
+               num_vert_per_entity};
+        return std::pair(as_pyarray(std::move(entities_values.first), shape_e),
+                         as_pyarray(std::move(entities_values.second)));
+      },
+      py::arg("mesh"), py::arg("entity_dim"), py::arg("entities"),
+      py::arg("values"));
 
   // dolfinx::io::XDMFFile
   py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>
@@ -173,49 +178,61 @@ void io(py::module& m)
              std::shared_ptr<dolfinx::io::FidesWriter>>(m, pyclass_name.c_str(),
                                                         "FidesWriter object")
       .def(py::init(
-          [](const MPICommWrapper comm, const std::filesystem::path& filename,
-             std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
-          {
-            return std::make_unique<dolfinx::io::FidesWriter>(comm.get(),
-                                                              filename, mesh);
-          }))
+               [](const MPICommWrapper comm,
+                  const std::filesystem::path& filename,
+                  std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
+               {
+                 return std::make_unique<dolfinx::io::FidesWriter>(
+                     comm.get(), filename, mesh);
+               }),
+           py::arg("comm"), py::arg("filename"), py::arg("mesh"))
       .def(py::init(
-          [](const MPICommWrapper comm, const std::filesystem::path& filename,
-             const std::vector<std::variant<
-                 std::shared_ptr<const dolfinx::fem::Function<double>>,
-                 std::shared_ptr<
-                     const dolfinx::fem::Function<std::complex<double>>>>>& u)
-          {
-            return std::make_unique<dolfinx::io::FidesWriter>(comm.get(),
-                                                              filename, u);
-          }))
+               [](const MPICommWrapper comm,
+                  const std::filesystem::path& filename,
+                  const std::vector<std::variant<
+                      std::shared_ptr<const dolfinx::fem::Function<double>>,
+                      std::shared_ptr<const dolfinx::fem::Function<
+                          std::complex<double>>>>>& u)
+               {
+                 return std::make_unique<dolfinx::io::FidesWriter>(comm.get(),
+                                                                   filename, u);
+               }),
+           py::arg("comm"), py::arg("filename"), py::arg("u"))
       .def("close", [](dolfinx::io::FidesWriter& self) { self.close(); })
-      .def("write",
-           [](dolfinx::io::FidesWriter& self, double t) { self.write(t); });
+      .def(
+          "write",
+          [](dolfinx::io::FidesWriter& self, double t) { self.write(t); },
+          py::arg("t"));
 
   // dolfinx::io::VTXWriter
   pyclass_name = std::string("VTXWriter");
   py::class_<dolfinx::io::VTXWriter, std::shared_ptr<dolfinx::io::VTXWriter>>(
       m, pyclass_name.c_str(), "VTXWriter object")
       .def(py::init(
-          [](const MPICommWrapper comm, const std::filesystem::path& filename,
-             std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
-          {
-            return std::make_unique<dolfinx::io::VTXWriter>(comm.get(),
-                                                            filename, mesh);
-          }))
+               [](const MPICommWrapper comm,
+                  const std::filesystem::path& filename,
+                  std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
+               {
+                 return std::make_unique<dolfinx::io::VTXWriter>(
+                     comm.get(), filename, mesh);
+               }),
+           py::arg("comm"), py::arg("filename"), py::arg("mesh"))
       .def(py::init(
-          [](const MPICommWrapper comm, const std::filesystem::path& filename,
-             const std::vector<std::variant<
-                 std::shared_ptr<const dolfinx::fem::Function<double>>,
-                 std::shared_ptr<
-                     const dolfinx::fem::Function<std::complex<double>>>>>& u) {
-            return std::make_unique<dolfinx::io::VTXWriter>(comm.get(),
-                                                            filename, u);
-          }))
+               [](const MPICommWrapper comm,
+                  const std::filesystem::path& filename,
+                  const std::vector<std::variant<
+                      std::shared_ptr<const dolfinx::fem::Function<double>>,
+                      std::shared_ptr<const dolfinx::fem::Function<
+                          std::complex<double>>>>>& u) {
+                 return std::make_unique<dolfinx::io::VTXWriter>(comm.get(),
+                                                                 filename, u);
+               }),
+           py::arg("comm"), py::arg("filename"), py::arg("u"))
       .def("close", [](dolfinx::io::VTXWriter& self) { self.close(); })
-      .def("write",
-           [](dolfinx::io::VTXWriter& self, double t) { self.write(t); });
+      .def(
+          "write",
+          [](dolfinx::io::VTXWriter& self, double t) { self.write(t); },
+          py::arg("t"));
 
 #endif
 }

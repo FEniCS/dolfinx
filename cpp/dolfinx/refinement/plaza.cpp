@@ -324,9 +324,9 @@ face_long_edge(const mesh::Mesh& mesh)
     const std::size_t local1 = std::distance(cell_vertices.begin(), it1);
 
     auto x_dofs = x_dofmap.links(cells.front());
-    xtl::span<const double, 3> x0(
+    std::span<const double, 3> x0(
         mesh.geometry().x().data() + 3 * x_dofs[local0], 3);
-    xtl::span<const double, 3> x1(
+    std::span<const double, 3> x1(
         mesh.geometry().x().data() + 3 * x_dofs[local1], 3);
 
     // Compute length of edge between vertex x0 and x1
@@ -645,7 +645,7 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute,
 //-----------------------------------------------------------------------------
 std::tuple<mesh::Mesh, std::vector<std::int32_t>, std::vector<std::int8_t>>
 plaza::refine(const mesh::Mesh& mesh,
-              const xtl::span<const std::int32_t>& edges, bool redistribute,
+              const std::span<const std::int32_t>& edges, bool redistribute,
               RefinementOptions options)
 {
 
@@ -735,7 +735,7 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
 std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
            std::vector<std::int32_t>, std::vector<std::int8_t>>
 plaza::compute_refinement_data(const mesh::Mesh& mesh,
-                               const xtl::span<const std::int32_t>& edges,
+                               const std::span<const std::int32_t>& edges,
                                RefinementOptions options)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle

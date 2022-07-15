@@ -97,7 +97,7 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
       if (r2 <= R2)
       {
         r2 = geometry::squared_distance(mesh, tree.tdim(),
-                                        xtl::span(&bbox[1], 1),
+                                        std::span(&bbox[1], 1),
                                         xt::reshape_view(point, {1, 3}))[0];
       }
     }
@@ -245,7 +245,7 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
 //-----------------------------------------------------------------------------
 geometry::BoundingBoxTree
 geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
-                               const xtl::span<const std::int32_t>& entities)
+                               const std::span<const std::int32_t>& entities)
 {
   LOG(INFO) << "Building point search tree to accelerate distance queries for "
                "a given topological dimension and subset of entities.";
@@ -370,13 +370,13 @@ double geometry::compute_squared_distance_bbox(
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 2>
 geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
-                          const xtl::span<const std::int32_t>& entities,
+                          const std::span<const std::int32_t>& entities,
                           const xt::xtensor<double, 2>& points)
 {
   assert(points.shape(1) == 3);
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
-  xtl::span<const double> geom_dofs = geometry.x();
+  std::span<const double> geom_dofs = geometry.x();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   xt::xtensor<double, 2> shortest_vectors({entities.size(), 3});
   if (dim == tdim)
@@ -441,7 +441,7 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 1>
 geometry::squared_distance(const mesh::Mesh& mesh, int dim,
-                           const xtl::span<const std::int32_t>& entities,
+                           const std::span<const std::int32_t>& entities,
                            const xt::xtensor<double, 2>& points)
 {
   return xt::norm_sq(shortest_vector(mesh, dim, entities, points), {1});

@@ -13,19 +13,21 @@
 #include "Expression.h"
 #include "Form.h"
 #include "Function.h"
+#include "sparsitybuild.h"
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
 #include <set>
+#include <span>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <ufcx.h>
 #include <utility>
 #include <vector>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
 
 /// @file utils.h
 /// @brief Functions supporting finite element method operations
@@ -49,6 +51,28 @@ class Topology;
 namespace dolfinx::fem
 {
 class FunctionSpace;
+
+namespace impl
+{
+/// @private These structs are used to get the float/value type from a
+/// template argument, including support for complex types
+template <typename T, typename = void>
+struct scalar_value_type
+{
+  /// @internal
+  typedef T value_type;
+};
+/// @private
+template <typename T>
+struct scalar_value_type<T, std::void_t<typename T::value_type>>
+{
+  typedef typename T::value_type value_type;
+};
+/// @private Convenience typedef
+template <typename T>
+using scalar_value_type_t = typename scalar_value_type<T>::value_type;
+
+} // namespace impl
 
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms
@@ -123,6 +147,14 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
   }
 
+  common::Timer t0("Build sparsity");
+
+  // Get common::IndexMaps for each dimension
+  const std::array index_maps{dofmaps[0].get().index_map,
+                              dofmaps[1].get().index_map};
+  const std::array bs
+      = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};
+
   auto cell_map_0 = a.cell_to_cell_map(*a.function_spaces().at(0));
   auto cell_map_1 = a.cell_to_cell_map(*a.function_spaces().at(1));
   std::array<const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>
@@ -133,8 +165,44 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
   std::array<const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>
       facet_maps = {facet_map_0, facet_map_1};
 
-  return create_sparsity_pattern(mesh->topology(), dofmaps, types, cell_maps,
-                                 facet_maps);
+  // Create and build sparsity pattern
+  la::SparsityPattern pattern(mesh->comm(), index_maps, bs);
+  for (auto type : types)
+  {
+    std::vector<int> ids = a.integral_ids(type);
+    switch (type)
+    {
+    case IntegralType::cell:
+      for (int id : ids)
+      {
+        const std::vector<std::int32_t>& cells = a.cell_domains(id);
+        sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}}, cell_maps);
+      }
+      break;
+    case IntegralType::interior_facet:
+      for (int id : ids)
+      {
+        const std::vector<std::int32_t>& facets = a.interior_facet_domains(id);
+        sparsitybuild::interior_facets(pattern, facets,
+                                       {{dofmaps[0], dofmaps[1]}});
+      }
+      break;
+    case IntegralType::exterior_facet:
+      for (int id : ids)
+      {
+        const std::vector<std::int32_t>& facets = a.exterior_facet_domains(id);
+        sparsitybuild::exterior_facets(pattern, facets,
+                                       {{dofmaps[0], dofmaps[1]}}, facet_maps);
+      }
+      break;
+    default:
+      throw std::runtime_error("Unsupported integral type");
+    }
+  }
+
+  t0.stop();
+
+  return pattern;
 }
 
 /// Create an ElementDofLayout from a ufcx_dofmap
@@ -219,8 +287,10 @@ Form<T> create_form(
 
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
-  using kern = std::function<void(T*, const T*, const T*, const double*,
-                                  const int*, const std::uint8_t*)>;
+  using kern = std::function<void(
+      T*, const T*, const T*,
+      const typename impl::scalar_value_type<T>::value_type*, const int*,
+      const std::uint8_t*)>;
   std::map<IntegralType, std::pair<std::vector<std::pair<int, kern>>,
                                    const mesh::MeshTags<int>*>>
       integral_data;
@@ -237,21 +307,23 @@ Form<T> create_form(
     assert(integral);
 
     kern k = nullptr;
-    if constexpr (std::is_same<T, float>::value)
+    if constexpr (std::is_same_v<T, float>)
       k = integral->tabulate_tensor_float32;
-    else if constexpr (std::is_same<T, std::complex<float>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<float>>)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex64);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
-    else if constexpr (std::is_same<T, double>::value)
+    else if constexpr (std::is_same_v<T, double>)
       k = integral->tabulate_tensor_float64;
-    else if constexpr (std::is_same<T, std::complex<double>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<double>>)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex128);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex128);
     }
     assert(k);
 
@@ -293,21 +365,23 @@ Form<T> create_form(
     assert(integral);
 
     kern k = nullptr;
-    if constexpr (std::is_same<T, float>::value)
+    if constexpr (std::is_same_v<T, float>)
       k = integral->tabulate_tensor_float32;
-    else if constexpr (std::is_same<T, std::complex<float>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<float>>)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex64);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
-    else if constexpr (std::is_same<T, double>::value)
+    else if constexpr (std::is_same_v<T, double>)
       k = integral->tabulate_tensor_float64;
-    else if constexpr (std::is_same<T, std::complex<double>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<double>>)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex128);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex128);
     }
     assert(k);
 
@@ -335,21 +409,23 @@ Form<T> create_form(
     assert(integral);
 
     kern k = nullptr;
-    if constexpr (std::is_same<T, float>::value)
+    if constexpr (std::is_same_v<T, float>)
       k = integral->tabulate_tensor_float32;
-    else if constexpr (std::is_same<T, std::complex<float>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<float>>)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex64);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex64);
     }
-    else if constexpr (std::is_same<T, double>::value)
+    else if constexpr (std::is_same_v<T, double>)
       k = integral->tabulate_tensor_float64;
-    else if constexpr (std::is_same<T, std::complex<double>>::value)
+    else if constexpr (std::is_same_v<T, std::complex<double>>)
     {
-      k = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-          integral->tabulate_tensor_complex128);
+      k = reinterpret_cast<void (*)(
+          T*, const T*, const T*,
+          const typename impl::scalar_value_type<T>::value_type*, const int*,
+          const unsigned char*)>(integral->tabulate_tensor_complex128);
     }
     assert(k);
 
@@ -482,15 +558,15 @@ namespace impl
 {
 /// @private
 template <typename T>
-xtl::span<const std::uint32_t>
+std::span<const std::uint32_t>
 get_cell_orientation_info(const Function<T>& coefficient)
 {
-  xtl::span<const std::uint32_t> cell_info;
+  std::span<const std::uint32_t> cell_info;
   if (coefficient.function_space()->element()->needs_dof_transformations())
   {
     auto mesh = coefficient.function_space()->mesh();
     mesh->topology_mutable().create_entity_permutations();
-    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    cell_info = std::span(mesh->topology().get_cell_permutation_info());
   }
 
   return cell_info;
@@ -498,9 +574,9 @@ get_cell_orientation_info(const Function<T>& coefficient)
 
 // Pack a single coefficient for a single cell
 template <typename T, int _bs, typename Functor>
-static inline void pack(const xtl::span<T>& coeffs, std::int32_t cell, int bs,
-                        const xtl::span<const T>& v,
-                        const xtl::span<const std::uint32_t>& cell_info,
+static inline void pack(const std::span<T>& coeffs, std::int32_t cell, int bs,
+                        const std::span<const T>& v,
+                        const std::span<const std::uint32_t>& cell_info,
                         const DofMap& dofmap, Functor transform)
 {
   auto dofs = dofmap.cell_dofs(cell);
@@ -540,15 +616,15 @@ static inline void pack(const xtl::span<T>& coeffs, std::int32_t cell, int bs,
 /// `std::function<std::int32_t(E::value_type)>`)
 /// @param[in] offset The offset for c
 template <typename T, typename Functor>
-void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
+void pack_coefficient_entity(const std::span<T>& c, int cstride,
                              const Function<T>& u,
-                             const xtl::span<const std::uint32_t>& cell_info,
-                             const xtl::span<const std::int32_t>& entities,
+                             const std::span<const std::uint32_t>& cell_info,
+                             const std::span<const std::int32_t>& entities,
                              std::size_t estride, Functor fetch_cells,
                              std::int32_t offset)
 {
   // Read data from coefficient "u"
-  const xtl::span<const T>& v = u.x()->array();
+  const std::span<const T>& v = u.x()->array();
   const DofMap& dofmap = *u.function_space()->dofmap();
   std::shared_ptr<const FiniteElement> element = u.function_space()->element();
   int space_dim = element->space_dimension();
@@ -671,7 +747,7 @@ allocate_coefficient_storage(const Form<T>& form)
 /// @param[in] cstride The coefficient stride
 template <typename T>
 void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
-                       const xtl::span<T>& c, int cstride)
+                       const std::span<T>& c, int cstride)
 {
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const Function<T>>>& coefficients
@@ -691,7 +767,7 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
         auto fetch_cell
             = form.cell_to_cell_map(*coefficients[coeff]->function_space());
         // Get cell info for coefficient (with respect to coefficient mesh)
-        xtl::span<const std::uint32_t> cell_info
+        std::span<const std::uint32_t> cell_info
             = impl::get_cell_orientation_info(*coefficients[coeff]);
         impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
                                       cell_info, cells, 1, fetch_cell,
@@ -709,7 +785,7 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
         // Create lambda function fetching cell index from exterior facet entity
         auto fetch_cell
             = form.facet_to_cell_map(*coefficients[coeff]->function_space());
-        xtl::span<const std::uint32_t> cell_info
+        std::span<const std::uint32_t> cell_info
             = impl::get_cell_orientation_info(*coefficients[coeff]);
         impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
                                       cell_info, facets, 2, fetch_cell,
@@ -728,7 +804,7 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
-        xtl::span<const std::uint32_t> cell_info
+        std::span<const std::uint32_t> cell_info
             = impl::get_cell_orientation_info(*coefficients[coeff]);
         // Pack coefficient ['+']
         impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
@@ -750,12 +826,12 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
 
 /// @brief Create Expression from UFC
 template <typename T>
-fem::Expression<T> create_expression(
+Expression<T> create_expression(
     const ufcx_expression& expression,
-    const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
-    const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
+    const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+    const std::vector<std::shared_ptr<const Constant<T>>>& constants,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
-    const std::shared_ptr<const fem::FunctionSpace>& argument_function_space
+    const std::shared_ptr<const FunctionSpace>& argument_function_space
     = nullptr)
 {
   if (expression.rank > 0 and !argument_function_space)
@@ -775,26 +851,27 @@ fem::Expression<T> create_expression(
   for (int i = 0; i < expression.num_components; ++i)
     value_shape.push_back(expression.value_shape[i]);
 
-  std::function<void(T*, const T*, const T*, const double*, const int*,
-                     const std::uint8_t*)>
+  std::function<void(T*, const T*, const T*,
+                     const typename impl::scalar_value_type<T>::value_type*,
+                     const int*, const std::uint8_t*)>
       tabulate_tensor = nullptr;
-  if constexpr (std::is_same<T, float>::value)
+  if constexpr (std::is_same_v<T, float>)
     tabulate_tensor = expression.tabulate_tensor_float32;
-  else if constexpr (std::is_same<T, std::complex<float>>::value)
+  else if constexpr (std::is_same_v<T, std::complex<float>>)
   {
-    tabulate_tensor
-        = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-            expression.tabulate_tensor_complex64);
+    tabulate_tensor = reinterpret_cast<void (*)(
+        T*, const T*, const T*,
+        const typename impl::scalar_value_type<T>::value_type*, const int*,
+        const unsigned char*)>(expression.tabulate_tensor_complex64);
   }
-  else if constexpr (std::is_same<T, double>::value)
+  else if constexpr (std::is_same_v<T, double>)
     tabulate_tensor = expression.tabulate_tensor_float64;
-  else if constexpr (std::is_same<T, std::complex<double>>::value)
+  else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
-    tabulate_tensor
-        = reinterpret_cast<void (*)(T*, const T*, const T*, const double*,
-                                    const int*, const unsigned char*)>(
-            expression.tabulate_tensor_complex128);
+    tabulate_tensor = reinterpret_cast<void (*)(
+        T*, const T*, const T*,
+        const typename impl::scalar_value_type<T>::value_type*, const int*,
+        const unsigned char*)>(expression.tabulate_tensor_complex128);
   }
   else
   {
@@ -802,25 +879,24 @@ fem::Expression<T> create_expression(
   }
   assert(tabulate_tensor);
 
-  return fem::Expression(coefficients, constants, points, tabulate_tensor,
-                         value_shape, mesh, argument_function_space);
+  return Expression(coefficients, constants, points, tabulate_tensor,
+                    value_shape, mesh, argument_function_space);
 }
 
 /// @brief Create Expression from UFC input (with named coefficients and
 /// constants)
 template <typename T>
-fem::Expression<T> create_expression(
+Expression<T> create_expression(
     const ufcx_expression& expression,
-    const std::map<std::string, std::shared_ptr<const fem::Function<T>>>&
+    const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
-    const std::map<std::string, std::shared_ptr<const fem::Constant<T>>>&
-        constants,
+    const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
-    const std::shared_ptr<const fem::FunctionSpace>& argument_function_space
+    const std::shared_ptr<const FunctionSpace>& argument_function_space
     = nullptr)
 {
   // Place coefficients in appropriate order
-  std::vector<std::shared_ptr<const fem::Function<T>>> coeff_map;
+  std::vector<std::shared_ptr<const Function<T>>> coeff_map;
   std::vector<std::string> coefficient_names;
   for (int i = 0; i < expression.num_coefficients; ++i)
     coefficient_names.push_back(expression.coefficient_names[i]);
@@ -837,7 +913,7 @@ fem::Expression<T> create_expression(
   }
 
   // Place constants in appropriate order
-  std::vector<std::shared_ptr<const fem::Constant<T>>> const_map;
+  std::vector<std::shared_ptr<const Constant<T>>> const_map;
   std::vector<std::string> constant_names;
   for (int i = 0; i < expression.num_constants; ++i)
     constant_names.push_back(expression.constant_names[i]);
@@ -880,7 +956,7 @@ void pack_coefficients(const Form<T>& form,
 template <typename T>
 std::pair<std::vector<T>, int>
 pack_coefficients(const Expression<T>& u,
-                  const xtl::span<const std::int32_t>& cells)
+                  const std::span<const std::int32_t>& cells)
 {
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const Function<T>>>& coefficients
@@ -895,10 +971,10 @@ pack_coefficients(const Expression<T>& u,
     // Iterate over coefficients
     for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
     {
-      xtl::span<const std::uint32_t> cell_info
+      std::span<const std::uint32_t> cell_info
           = impl::get_cell_orientation_info(*coefficients[coeff]);
       impl::pack_coefficient_entity(
-          xtl::span(c), cstride, *coefficients[coeff], cell_info, cells, 1,
+          std::span(c), cstride, *coefficients[coeff], cell_info, cells, 1,
           [](auto entity) { return entity[0]; }, offsets[coeff]);
     }
   }

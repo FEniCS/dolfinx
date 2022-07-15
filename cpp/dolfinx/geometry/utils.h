@@ -8,11 +8,11 @@
 
 #include <array>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <span>
 #include <vector>
 #include <xtensor/xfixed.hpp>
 #include <xtensor/xshape.hpp>
 #include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::mesh
 {
@@ -31,7 +31,7 @@ class BoundingBoxTree;
 /// @return Bounding box tree for midpoints of mesh entities
 BoundingBoxTree
 create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
-                     const xtl::span<const std::int32_t>& entity_indices);
+                     const std::span<const std::int32_t>& entity_indices);
 
 /// Compute all collisions between two BoundingBoxTrees (local to
 /// process)
@@ -82,7 +82,7 @@ double compute_squared_distance_bbox(
 /// from the ith entity and the ith point
 xt::xtensor<double, 2>
 shortest_vector(const mesh::Mesh& mesh, int dim,
-                const xtl::span<const std::int32_t>& entities,
+                const std::span<const std::int32_t>& entities,
                 const xt::xtensor<double, 2>& points);
 
 /// Compute the squared distance between a point and a mesh entity. The
@@ -99,7 +99,7 @@ shortest_vector(const mesh::Mesh& mesh, int dim,
 /// @return Squared shortest distance from points[i] to entities[i]
 xt::xtensor<double, 1>
 squared_distance(const mesh::Mesh& mesh, int dim,
-                 const xtl::span<const std::int32_t>& entities,
+                 const std::span<const std::int32_t>& entities,
                  const xt::xtensor<double, 2>& points);
 
 /// From a Mesh, find which cells collide with a set of points.

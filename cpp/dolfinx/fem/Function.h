@@ -18,12 +18,12 @@
 #include <functional>
 #include <memory>
 #include <numeric>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
 {
@@ -119,8 +119,8 @@ public:
                                              V.dofmap()->index_map_bs());
 
     // Copy values into new vector
-    xtl::span<const T> x_old = _x->array();
-    xtl::span<T> x_new = x->mutable_array();
+    std::span<const T> x_old = _x->array();
+    std::span<T> x_new = x->mutable_array();
     for (std::size_t i = 0; i < map.size(); ++i)
     {
       assert((int)i < x_new.size());
@@ -148,7 +148,7 @@ public:
   /// @param[in] v The function to be interpolated
   /// @param[in] cells The cells to interpolate on
   void interpolate(const Function<T>& v,
-                   const xtl::span<const std::int32_t>& cells)
+                   const std::span<const std::int32_t>& cells)
   {
     fem::interpolate(*this, v, cells);
   }
@@ -174,7 +174,7 @@ public:
   /// @param[in] cells The cells to interpolate on
   void interpolate(
       const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
-      const xtl::span<const std::int32_t>& cells)
+      const std::span<const std::int32_t>& cells)
   {
     assert(_function_space);
     assert(_function_space->element());
@@ -233,7 +233,7 @@ public:
   /// with `u`.
   /// @param[in] cells The cells to interpolate on
   void interpolate(const Expression<T>& e,
-                   const xtl::span<const std::int32_t>& cells)
+                   const std::span<const std::int32_t>& cells)
   {
     // Check that spaces are compatible
     assert(_function_space);
@@ -302,7 +302,7 @@ public:
   /// for points with a negative cell index. This argument must be
   /// passed with the correct size.
   void eval(const xt::xtensor<double, 2>& x,
-            const xtl::span<const std::int32_t>& cells,
+            const std::span<const std::int32_t>& cells,
             xt::xtensor<T, 2>& u) const
   {
     if (cells.empty())
@@ -335,15 +335,13 @@ public:
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
     const std::size_t num_dofs_g = mesh->geometry().cmap().dim();
-    xtl::span<const double> x_g = mesh->geometry().x();
+    std::span<const double> x_g = mesh->geometry().x();
 
     // Get coordinate map
-    const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+    const CoordinateElement& cmap = mesh->geometry().cmap();
 
     // Get element
-    assert(_function_space->element());
-    std::shared_ptr<const fem::FiniteElement> element
-        = _function_space->element();
+    std::shared_ptr<const FiniteElement> element = _function_space->element();
     assert(element);
     const int bs_element = element->block_size();
     const std::size_t reference_value_size
@@ -351,8 +349,8 @@ public:
     const std::size_t value_size = element->value_size() / bs_element;
     const std::size_t space_dimension = element->space_dimension() / bs_element;
 
-    // If the space has sub elements, concatenate the evaluations on the sub
-    // elements
+    // If the space has sub elements, concatenate the evaluations on the
+    // sub elements
     const int num_sub_elements = element->num_sub_elements();
     if (num_sub_elements > 1 and num_sub_elements != bs_element)
     {
@@ -364,15 +362,15 @@ public:
     std::vector<T> coefficients(space_dimension * bs_element);
 
     // Get dofmap
-    std::shared_ptr<const fem::DofMap> dofmap = _function_space->dofmap();
+    std::shared_ptr<const DofMap> dofmap = _function_space->dofmap();
     assert(dofmap);
     const int bs_dof = dofmap->bs();
 
-    xtl::span<const std::uint32_t> cell_info;
+    std::span<const std::uint32_t> cell_info;
     if (element->needs_dof_transformations())
     {
       mesh->topology_mutable().create_entity_permutations();
-      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+      cell_info = std::span(mesh->topology().get_cell_permutation_info());
     }
 
     xt::xtensor<double, 2> coordinate_dofs
@@ -381,7 +379,7 @@ public:
 
     // Loop over points
     std::fill(u.data(), u.data() + u.size(), 0.0);
-    const xtl::span<const T>& _v = _x->array();
+    const std::span<const T>& _v = _x->array();
 
     // -- Lambda function for affine pull-backs
     xt::xtensor<double, 4> data(cmap.tabulate_shape(1, 1));
@@ -392,23 +390,24 @@ public:
     auto pull_back_affine = [dphi_i](auto&& X, const auto& cell_geometry,
                                      auto&& J, auto&& K, const auto& x) mutable
     {
-      fem::CoordinateElement::compute_jacobian(dphi_i, cell_geometry, J);
-      fem::CoordinateElement::compute_jacobian_inverse(J, K);
-      fem::CoordinateElement::pull_back_affine(
-          X, K, fem::CoordinateElement::x0(cell_geometry), x);
+      CoordinateElement::compute_jacobian(dphi_i, cell_geometry, J);
+      CoordinateElement::compute_jacobian_inverse(J, K);
+      CoordinateElement::pull_back_affine(
+          X, K, CoordinateElement::x0(cell_geometry), x);
     };
 
     xt::xtensor<double, 2> dphi;
     xt::xtensor<double, 2> X({x.shape(0), tdim});
     xt::xtensor<double, 3> J = xt::zeros<double>({x.shape(0), gdim, tdim});
     xt::xtensor<double, 3> K = xt::zeros<double>({x.shape(0), tdim, gdim});
-    xt::xtensor<double, 1> detJ = xt::zeros<double>({x.shape(0)});
+    std::vector<double> detJ(x.shape(0));
     xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, 1));
 
     xt::xtensor<double, 2> _Xp({1, tdim});
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
       const int cell_index = cells[p];
+
       // Skip negative cell indices
       if (cell_index < 0)
         continue;
@@ -428,76 +427,81 @@ public:
 
       auto _J = xt::view(J, p, xt::all(), xt::all());
       auto _K = xt::view(K, p, xt::all(), xt::all());
+
       // Compute reference coordinates X, and J, detJ and K
       if (cmap.is_affine())
       {
         pull_back_affine(_Xp, coordinate_dofs, _J, _K, xp);
-        detJ[p]
-            = dolfinx::fem::CoordinateElement::compute_jacobian_determinant(_J);
+        detJ[p] = CoordinateElement::compute_jacobian_determinant(_J);
       }
       else
       {
         cmap.pull_back_nonaffine(_Xp, xp, coordinate_dofs);
         cmap.tabulate(1, _Xp, phi);
         dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
-        dolfinx::fem::CoordinateElement::compute_jacobian(dphi, coordinate_dofs,
-                                                          _J);
-        dolfinx::fem::CoordinateElement::compute_jacobian_inverse(_J, _K);
-        detJ[p]
-            = dolfinx::fem::CoordinateElement::compute_jacobian_determinant(_J);
+        CoordinateElement::compute_jacobian(dphi, coordinate_dofs, _J);
+        CoordinateElement::compute_jacobian_inverse(_J, _K);
+        detJ[p] = CoordinateElement::compute_jacobian_determinant(_J);
       }
-      xt::row(X, p) = xt::row(_Xp, 0);
+
+      for (std::size_t j = 0; j < X.shape(1); ++j)
+        X(p, j) = _Xp(0, j);
     }
 
     // Prepare basis function data structures
     xt::xtensor<double, 4> basis_derivatives_reference_values(
         {1, x.shape(0), space_dimension, reference_value_size});
-    xt::xtensor<double, 3> basis_values(
-        {static_cast<std::size_t>(1), space_dimension, value_size});
+    xt::xtensor<double, 2> basis_values({space_dimension, value_size});
 
     // Compute basis on reference element
     element->tabulate(basis_derivatives_reference_values, X, 0);
 
-    using u_t = xt::xview<decltype(basis_values)&, std::size_t,
-                          xt::xall<std::size_t>, xt::xall<std::size_t>>;
-    using U_t
-        = xt::xview<decltype(basis_derivatives_reference_values)&, std::size_t,
-                    std::size_t, xt::xall<std::size_t>, xt::xall<std::size_t>>;
-    using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
-                          xt::xall<std::size_t>>;
-    using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
-                          xt::xall<std::size_t>>;
-    auto push_forward_fn = element->map_fn<u_t, U_t, J_t, K_t>();
-    const std::function<void(const xtl::span<double>&,
-                             const xtl::span<const std::uint32_t>&,
-                             std::int32_t, int)>
-        apply_dof_transformation
+    namespace stdex = std::experimental;
+    using xu_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+    using xU_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+    using xJ_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+    using xK_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+    auto push_forward_fn
+        = element->basix_element().map_fn<xu_t, xU_t, xJ_t, xK_t>();
+
+    auto apply_dof_transformation
         = element->get_dof_transformation_function<double>();
     const std::size_t num_basis_values = space_dimension * reference_value_size;
 
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
       const int cell_index = cells[p];
+
       // Skip negative cell indices
       if (cell_index < 0)
         continue;
 
-      // Permute the reference values to account for the cell's orientation
+      // Permute the reference values to account for the cell's
+      // orientation
       apply_dof_transformation(
-          xtl::span(basis_derivatives_reference_values.data()
+          std::span(basis_derivatives_reference_values.data()
                         + p * num_basis_values,
                     num_basis_values),
           cell_info, cell_index, reference_value_size);
 
-      auto _K = xt::view(K, p, xt::all(), xt::all());
-      auto _J = xt::view(J, p, xt::all(), xt::all());
-      auto _U = xt::view(basis_derivatives_reference_values, (std::size_t)0, p,
-                         xt::all(), xt::all());
-      auto _u = xt::view(basis_values, (std::size_t)0, xt::all(), xt::all());
-      push_forward_fn(_u, _U, _J, detJ[p], _K);
+      {
+        assert(basis_values.dimension() == 2);
+        assert(basis_derivatives_reference_values.dimension() == 4);
+
+        xu_t _u(basis_values.data(), basis_values.shape(0),
+                basis_values.shape(1));
+        xU_t _U(basis_derivatives_reference_values.data()
+                    + p * basis_derivatives_reference_values.shape(2)
+                          * basis_derivatives_reference_values.shape(3),
+                basis_derivatives_reference_values.shape(2),
+                basis_derivatives_reference_values.shape(3));
+        xK_t _K(K.data() + p * K.shape(1) * K.shape(2), K.shape(1), K.shape(2));
+        xJ_t _J(J.data() + p * J.shape(1) * J.shape(2), J.shape(1), J.shape(2));
+        push_forward_fn(_u, _U, _J, detJ[p], _K);
+      }
 
       // Get degrees of freedom for current cell
-      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
+      std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (int k = 0; k < bs_dof; ++k)
           coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
@@ -511,7 +515,7 @@ public:
           for (std::size_t j = 0; j < value_size; ++j)
           {
             u_row[j * bs_element + k]
-                += coefficients[bs_element * i + k] * basis_values(0, i, j);
+                += coefficients[bs_element * i + k] * basis_values(i, j);
           }
         }
       }

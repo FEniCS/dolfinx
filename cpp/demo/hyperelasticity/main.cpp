@@ -60,7 +60,7 @@ public:
     return [&](const Vec x, Vec)
     {
       // Assemble b and update ghosts
-      xtl::span<T> b(_b.mutable_array());
+      std::span<T> b(_b.mutable_array());
       std::fill(b.begin(), b.end(), 0.0);
       fem::assemble_vector<T>(b, *_l);
       VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
@@ -73,7 +73,7 @@ public:
       VecGetSize(x_local, &n);
       const T* array = nullptr;
       VecGetArrayRead(x_local, &array);
-      fem::set_bc<T>(b, _bcs, xtl::span<const T>(array, n), -1.0);
+      fem::set_bc<T>(b, _bcs, std::span<const T>(array, n), -1.0);
       VecRestoreArrayRead(x, &array);
     };
   }

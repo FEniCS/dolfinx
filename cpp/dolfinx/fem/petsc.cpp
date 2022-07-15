@@ -13,7 +13,7 @@
 #include <dolfinx/la/petsc.h>
 #include <functional>
 #include <petscistypes.h>
-#include <xtl/xspan.hpp>
+#include <span>
 
 using namespace dolfinx;
 
@@ -31,11 +31,11 @@ Mat fem::petsc::create_matrix(const Form<PetscScalar>& a,
 }
 //-----------------------------------------------------------------------------
 Mat fem::petsc::create_matrix_block(
-    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
+    const std::vector<std::vector<const Form<PetscScalar>*>>& a,
     const std::string& type)
 {
   // Extract and check row/column ranges
-  std::array<std::vector<std::shared_ptr<const fem::FunctionSpace>>, 2> V
+  std::array<std::vector<std::shared_ptr<const FunctionSpace>>, 2> V
       = fem::common_function_spaces(extract_function_spaces(a));
   std::array<std::vector<int>, 2> bs_dofs;
   for (std::size_t i = 0; i < 2; ++i)
@@ -55,7 +55,7 @@ Mat fem::petsc::create_matrix_block(
     {
       const std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
           = {{V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
-      if (const fem::Form<PetscScalar>* form = a[row][col]; form)
+      if (const Form<PetscScalar>* form = a[row][col]; form)
       {
         // FIXME Check this!
         patterns[row].push_back(std::make_unique<la::SparsityPattern>(
@@ -151,7 +151,7 @@ Mat fem::petsc::create_matrix_block(
 }
 //-----------------------------------------------------------------------------
 Mat fem::petsc::create_matrix_nest(
-    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
+    const std::vector<std::vector<const Form<PetscScalar>*>>& a,
     const std::vector<std::vector<std::string>>& types)
 {
   // Extract and check row/column ranges
@@ -170,7 +170,7 @@ Mat fem::petsc::create_matrix_nest(
   {
     for (int j = 0; j < cols; ++j)
     {
-      if (const fem::Form<PetscScalar>* form = a[i][j]; form)
+      if (const Form<PetscScalar>* form = a[i][j]; form)
         mats[i * cols + j] = create_matrix(*form, _types[i][j]);
     }
   }
@@ -241,9 +241,9 @@ Vec fem::petsc::create_vector_nest(
 //-----------------------------------------------------------------------------
 void fem::petsc::assemble_vector(
     Vec b, const Form<PetscScalar>& L,
-    const xtl::span<const PetscScalar>& constants,
+    const std::span<const PetscScalar>& constants,
     const std::map<std::pair<IntegralType, int>,
-                   std::pair<xtl::span<const PetscScalar>, int>>& coeffs)
+                   std::pair<std::span<const PetscScalar>, int>>& coeffs)
 {
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);
@@ -251,7 +251,7 @@ void fem::petsc::assemble_vector(
   VecGetSize(b_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b_local, &array);
-  xtl::span<PetscScalar> _b(array, n);
+  std::span<PetscScalar> _b(array, n);
   fem::assemble_vector<PetscScalar>(_b, L, constants, coeffs);
   VecRestoreArray(b_local, &array);
   VecGhostRestoreLocalForm(b, &b_local);
@@ -265,7 +265,7 @@ void fem::petsc::assemble_vector(Vec b, const Form<PetscScalar>& L)
   VecGetSize(b_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b_local, &array);
-  xtl::span<PetscScalar> _b(array, n);
+  std::span<PetscScalar> _b(array, n);
   fem::assemble_vector<PetscScalar>(_b, L);
   VecRestoreArray(b_local, &array);
   VecGhostRestoreLocalForm(b, &b_local);
@@ -273,9 +273,9 @@ void fem::petsc::assemble_vector(Vec b, const Form<PetscScalar>& L)
 //-----------------------------------------------------------------------------
 void fem::petsc::apply_lifting(
     Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
-    const std::vector<xtl::span<const PetscScalar>>& constants,
+    const std::vector<std::span<const PetscScalar>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
-                               std::pair<xtl::span<const PetscScalar>, int>>>&
+                               std::pair<std::span<const PetscScalar>, int>>>&
         coeffs,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
@@ -287,13 +287,13 @@ void fem::petsc::apply_lifting(
   VecGetSize(b_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b_local, &array);
-  xtl::span<PetscScalar> _b(array, n);
+  std::span<PetscScalar> _b(array, n);
 
   if (x0.empty())
     fem::apply_lifting<PetscScalar>(_b, a, constants, coeffs, bcs1, {}, scale);
   else
   {
-    std::vector<xtl::span<const PetscScalar>> x0_ref;
+    std::vector<std::span<const PetscScalar>> x0_ref;
     std::vector<Vec> x0_local(a.size());
     std::vector<const PetscScalar*> x0_array(a.size());
     for (std::size_t i = 0; i < a.size(); ++i)
@@ -333,13 +333,13 @@ void fem::petsc::apply_lifting(
   VecGetSize(b_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b_local, &array);
-  xtl::span<PetscScalar> _b(array, n);
+  std::span<PetscScalar> _b(array, n);
 
   if (x0.empty())
     fem::apply_lifting<PetscScalar>(_b, a, bcs1, {}, scale);
   else
   {
-    std::vector<xtl::span<const PetscScalar>> x0_ref;
+    std::vector<std::span<const PetscScalar>> x0_ref;
     std::vector<Vec> x0_local(a.size());
     std::vector<const PetscScalar*> x0_array(a.size());
     for (std::size_t i = 0; i < a.size(); ++i)
@@ -375,7 +375,7 @@ void fem::petsc::set_bc(
   VecGetLocalSize(b, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b, &array);
-  xtl::span<PetscScalar> _b(array, n);
+  std::span<PetscScalar> _b(array, n);
   if (x0)
   {
     Vec x0_local;
@@ -384,7 +384,7 @@ void fem::petsc::set_bc(
     VecGetSize(x0_local, &n);
     const PetscScalar* array = nullptr;
     VecGetArrayRead(x0_local, &array);
-    xtl::span<const PetscScalar> _x0(array, n);
+    std::span<const PetscScalar> _x0(array, n);
     fem::set_bc<PetscScalar>(_b, bcs, _x0, scale);
     VecRestoreArrayRead(x0_local, &array);
     VecGhostRestoreLocalForm(x0, &x0_local);

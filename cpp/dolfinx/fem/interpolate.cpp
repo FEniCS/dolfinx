@@ -14,16 +14,15 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 std::vector<double>
-fem::interpolation_coords(const fem::FiniteElement& element,
-                          const mesh::Mesh& mesh,
-                          const xtl::span<const std::int32_t>& cells)
+fem::interpolation_coords(const FiniteElement& element, const mesh::Mesh& mesh,
+                          const std::span<const std::int32_t>& cells)
 {
   // Get mesh geometry data and the element coordinate map
   const std::size_t gdim = mesh.geometry().dim();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
-  xtl::span<const double> x_g = mesh.geometry().x();
-  const fem::CoordinateElement& cmap = mesh.geometry().cmap();
+  std::span<const double> x_g = mesh.geometry().x();
+  const CoordinateElement& cmap = mesh.geometry().cmap();
   const std::size_t num_dofs_g = cmap.dim();
 
   // Get the interpolation points on the reference cells
