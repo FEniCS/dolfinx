@@ -8,6 +8,7 @@
 #include <dolfinx/common/math.h>
 #include <stdexcept>
 #include <tuple>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xfixed.hpp>
 #include <xtensor/xnorm.hpp>
@@ -34,11 +35,16 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
   {
     auto s0 = xt::row(s, 0);
     auto s1 = xt::row(s, 1);
-    const double lm = -xt::sum(s0 * (s1 - s0))() / xt::norm_sq(s1 - s0)();
+    // const double lm = -xt::sum(s0 * (s1 - s0))() / xt::norm_sq(s1 - s0)();
+    std::array ds = {s1[0] - s0[0], s1[1] - s0[1], (s1[2] - s0[2])};
+    const double lm = -(s0[0] * ds[0] + s[1] * ds[1] + s[2] * ds[2])
+                      / (ds[0] * ds[0] + ds[1] * ds[1] + ds[2] * ds[2]);
     if (lm >= 0.0 and lm <= 1.0)
     {
       // The origin is between A and B
-      auto v = s0 + lm * (s1 - s0);
+      // auto v = s0 + lm * (s1 - s0);
+      xt::xtensor_fixed<double, xt::xshape<3>> v
+          = {s0[0] + lm * ds[0], s0[1] + lm * ds[1], s0[2] + lm * ds[2]};
       return {s, v};
     }
 
@@ -171,16 +177,16 @@ nearest_simplex(const xt::xtensor<double, 2>& s)
 }
 //----------------------------------------------------------------------------
 // Helper function, finds point p in bd which maximises p.v
-std::array<double, 3> support(const xt::xtensor<double, 2>& bd,
+std::array<double, 3> support(const std::span<const double>& bd,
                               const std::array<double, 3>& v)
 {
   int i = 0;
   // double qmax = xt::sum(xt::row(bd, 0) * v)();
-  double qmax = bd(0, 0) * v[0] + bd(0, 1) * v[1] + bd(0, 2) * v[2];
-  for (std::size_t m = 1; m < bd.shape(0); ++m)
+  double qmax = bd[0] * v[0] + bd[1] * v[1] + bd[2] * v[2];
+  for (std::size_t m = 1; m < bd.size() / 3; ++m)
   {
     // double q = xt::sum(xt::row(bd, m) * v)();
-    double q = bd(m, 0) * v[0] + bd(m, 1) * v[1] + bd(m, 2) * v[2];
+    double q = bd[3 * m] * v[0] + bd[3 * m + 1] * v[1] + bd[3 * m + 2] * v[2];
     if (q > qmax)
     {
       qmax = q;
@@ -188,17 +194,17 @@ std::array<double, 3> support(const xt::xtensor<double, 2>& bd,
     }
   }
 
-  return {bd(i, 0), bd(i, 1), bd(i, 2)};
+  return {bd[3 * i], bd[3 * i + 1], bd[3 * i + 2]};
   // return xt::row(bd, i);
 }
 } // namespace
 //----------------------------------------------------------------------------
-xt::xtensor_fixed<double, xt::xshape<3>>
-geometry::compute_distance_gjk(const xt::xtensor<double, 2>& p,
-                               const xt::xtensor<double, 2>& q)
+std::array<double, 3>
+geometry::compute_distance_gjk(const std::span<const double>& p,
+                               const std::span<const double>& q)
 {
-  assert(p.shape(1) == 3);
-  assert(q.shape(1) == 3);
+  assert(p.size() % 3 == 0);
+  assert(q.size() % 3 == 0);
 
   constexpr int maxk = 10; // Maximum number of iterations of the GJK algorithm
 
@@ -206,51 +212,48 @@ geometry::compute_distance_gjk(const xt::xtensor<double, 2>& p,
   constexpr double eps = 1e-12;
 
   // Initialise vector and simplex
-  xt::xtensor_fixed<double, xt::xshape<3>> v = xt::row(p, 0) - xt::row(q, 0);
-  xt::xtensor<double, 2> s({1, 3});
-  xt::row(s, 0) = v;
+  std::array<double, 3> v = {p[0] - q[0], p[1] - q[1], p[2] - q[2]};
+  std::vector<double> s = {v[0], v[1], v[2]};
 
   // Begin GJK iteration
   int k;
   for (k = 0; k < maxk; ++k)
   {
     // Support function
-    // const xt::xtensor_fixed<double, xt::xshape<3>> w
-    //     = support(p, -v) - support(q, v);
-
     std::array w1 = support(p, {-v[0], -v[1], -v[2]});
     std::array w0 = support(q, {v[0], v[1], v[2]});
-    const xt::xtensor_fixed<double, xt::xshape<3>> w
-        = {w1[0] - w0[0], w1[1] - w0[1], w1[2] - w0[2]};
+    const std::array w = {w1[0] - w0[0], w1[1] - w0[1], w1[2] - w0[2]};
 
     // Break if any existing points are the same as w
-    assert(s.shape(1) == 3);
+    assert(s.size() % 3 == 0);
     std::size_t m;
-    for (m = 0; m < s.shape(0); ++m)
+    for (m = 0; m < s.size() / 3; ++m)
     {
-      if (xt::row(s, m) == w)
+      auto it = std::next(s.begin(), 3 * m);
+      if (std::equal(it, std::next(it, 3), w.begin(), w.end()))
         break;
     }
 
-    if (m != s.shape(0))
+    if (m != s.size() / 3)
       break;
 
     // 1st exit condition (v - w).v = 0
-    const double vnorm2 = xt::norm_sq(v)();
-    const double vw = vnorm2 - xt::sum(v * w)();
+    const double vnorm2 = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
+    const double vw = vnorm2 - (v[0] * w[0] + v[1] * w[1] + v[2] * w[2]);
     if (vw < (eps * vnorm2) or vw < eps)
       break;
 
     // Add new vertex to simplex
-    s = xt::vstack(xt::xtuple(s, xt::reshape_view(w, {1, 3})));
-    assert(s.shape(1) == 3);
+    s.insert(s.end(), w.begin(), w.end());
 
     // Find nearest subset of simplex
-    std::tie(s, v) = nearest_simplex(s);
-    assert(s.shape(1) == 3);
+    auto swrap = xt::adapt(s, std::vector<std::size_t>{s.size() / 3, 3});
+    auto [snew, vnew] = nearest_simplex(swrap);
+    s.assign(snew.data(), snew.data() + snew.size());
+    v = {vnew[0], vnew[1], vnew[2]};
 
     // 2nd exit condition - intersecting or touching
-    if (xt::norm_sq(v)() < eps * eps)
+    if ((v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) < eps * eps)
       break;
   }
 

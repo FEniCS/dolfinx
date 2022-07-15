@@ -405,8 +405,11 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
           nodes(i, j) = geom_dofs[pos + j];
       }
 
-      xt::row(shortest_vectors, e) = geometry::compute_distance_gjk(
+      std::array<double, 3> d = geometry::compute_distance_gjk(
           {{points[3 * e + 0], points[2 * e + 1], points[3 * e + 2]}}, nodes);
+      shortest_vectors(e, 0) = d[0];
+      shortest_vectors(e, 1) = d[1];
+      shortest_vectors(e, 2) = d[2];
     }
   }
   else
@@ -444,8 +447,11 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
           nodes(i, j) = geom_dofs[pos + j];
       }
 
-      xt::row(shortest_vectors, e) = compute_distance_gjk(
+      std::array<double, 3> d = compute_distance_gjk(
           {{points[3 * e + 0], points[2 * e + 1], points[3 * e + 2]}}, nodes);
+      shortest_vectors(e, 0) = d[0];
+      shortest_vectors(e, 1) = d[1];
+      shortest_vectors(e, 2) = d[2];
     }
   }
 

@@ -105,22 +105,20 @@ void geometry(py::module& m)
       {
         const std::size_t p_s0 = p.ndim() == 1 ? 1 : p.shape(0);
         const std::size_t q_s0 = q.ndim() == 1 ? 1 : q.shape(0);
-        xt::xtensor<double, 2> _p
-            = xt::zeros<double>({p_s0, static_cast<std::size_t>(3)});
-        xt::xtensor<double, 2> _q
-            = xt::zeros<double>({q_s0, static_cast<std::size_t>(3)});
+        std::vector<double> _p(3 * p_s0);
+        std::vector<double> _q(3 * q_s0);
 
         auto px = p.unchecked();
         if (px.ndim() == 1)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
-            _p(0, i) = px(i);
+            _p[i] = px(i);
         }
         else if (px.ndim() == 2)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
             for (py::ssize_t j = 0; j < px.shape(1); j++)
-              _p(i, j) = px(i, j);
+              _p[3 * i + j] = px(i, j);
         }
         else
           throw std::runtime_error("Array has wrong ndim.");
@@ -129,20 +127,20 @@ void geometry(py::module& m)
         if (qx.ndim() == 1)
         {
           for (py::ssize_t i = 0; i < qx.shape(0); i++)
-            _q(0, i) = qx(i);
+            _q[i] = qx(i);
         }
         else if (qx.ndim() == 2)
         {
           for (py::ssize_t i = 0; i < qx.shape(0); i++)
             for (py::ssize_t j = 0; j < qx.shape(1); j++)
-              _q(i, j) = qx(i, j);
+              _q[3 * i + j] = qx(i, j);
         }
         else
           throw std::runtime_error("Array has wrong ndim.");
 
-        const xt::xtensor_fixed<double, xt::xshape<3>> d
+        const std::array<double, 3> d
             = dolfinx::geometry::compute_distance_gjk(_p, _q);
-        return py::array_t<double>(d.shape(), d.data());
+        return py::array_t<double>(3, d.data());
       },
       py::arg("p"), py::arg("q"));
 
