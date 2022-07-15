@@ -227,9 +227,6 @@ def test_manual_integration_domains():
     """Test that specifying integration domains manually i.e.
     by passing a list of cell indices or (cell, local facet) pairs
     to form gives the same result as the usual approach of tagging"""
-
-    # TODO Add multiple domains for each integral type and miss one
-
     n = 4
     msh = create_unit_square(MPI.COMM_WORLD, n, n)
 
@@ -241,12 +238,12 @@ def test_manual_integration_domains():
     tdim = msh.topology.dim
     cell_map = msh.topology.index_map(tdim)
     num_cells = cell_map.size_local + cell_map.num_ghosts
-    indices = np.arange(0, num_cells)
-    values = np.zeros_like(indices, dtype=np.intc)
+    cell_indices = np.arange(0, num_cells)
+    cell_values = np.zeros_like(cell_indices, dtype=np.intc)
     marked_cells = locate_entities(
         msh, tdim, lambda x: x[0] < 0.75)
-    values[marked_cells] = 7
-    mt = meshtags(msh, tdim, indices, values)
+    cell_values[marked_cells] = 7
+    mt_cells = meshtags(msh, tdim, cell_indices, cell_values)
 
     # Create meshtags to mark some exterior facets
     msh.topology.create_entities(tdim - 1)
@@ -266,24 +263,27 @@ def test_manual_integration_domains():
     mt_facets = meshtags(msh, tdim - 1, facet_indices, facet_values)
 
     # Create measures
-    dx_mt = ufl.Measure("dx", subdomain_data=mt, domain=msh)
+    dx_mt = ufl.Measure("dx", subdomain_data=mt_cells, domain=msh)
     ds_mt = ufl.Measure("ds", subdomain_data=mt_facets, domain=msh)
     dS_mt = ufl.Measure("dS", subdomain_data=mt_facets, domain=msh)
 
     g = Function(V)
     g.interpolate(lambda x: x[1]**2)
 
-    # Create a forms and assemble
-    L = form(ufl.inner(g, v) * (dx_mt(0) + dx_mt(7) + ds_mt(6))
-             + ufl.inner(g, v("+") + v("-")) * dS_mt(3))
-    b = assemble_vector(L)
-    b_mt_norm = b.norm()
+    def create_forms(dx, ds, dS):
+        a = form(ufl.inner(g * u, v) * (dx(0) + dx(7) + ds(6))
+                 + ufl.inner(g * u("+"), v("+") + v("-")) * dS(3))
+        L = form(ufl.inner(g, v) * (dx(0) + dx(7) + ds(6))
+                 + ufl.inner(g, v("+") + v("-")) * dS(3))
+        return (a, L)
 
-    a = form(ufl.inner(g * u, v) * (dx_mt(0) + dx_mt(7) + ds_mt(6))
-             + ufl.inner(g * u("+"), v("+") + v("-")) * dS_mt(3))
+    # Create forms and assemble
+    a, L = create_forms(dx_mt, ds_mt, dS_mt)
     A = assemble_matrix(a)
     A.assemble()
     A_mt_norm = A.norm()
+    b = assemble_vector(L)
+    b_mt_norm = b.norm()
 
     # Manually specify cells to integrate over (need to remove ghosts
     # to give same result as above)
@@ -318,12 +318,12 @@ def test_manual_integration_domains():
         int_facet_domain.append(local_f_1)
 
     # Create measures
-    cell_domains = {0: [indices[i] for i in range(num_cells)
-                        if indices[i] < cell_map.size_local
-                        and values[i] == 0],
-                    7: [indices[i] for i in range(num_cells)
-                        if indices[i] < cell_map.size_local
-                        and values[i] == 7]}
+    cell_domains = {0: [cell_indices[i] for i in range(num_cells)
+                        if cell_indices[i] < cell_map.size_local
+                        and cell_values[i] == 0],
+                    7: [cell_indices[i] for i in range(num_cells)
+                        if cell_indices[i] < cell_map.size_local
+                        and cell_values[i] == 7]}
     dx_manual = ufl.Measure("dx", subdomain_data=cell_domains, domain=msh)
 
     ext_facet_domains = {6: ext_facet_domain}
@@ -333,20 +333,12 @@ def test_manual_integration_domains():
     dS_manual = ufl.Measure("dS", subdomain_data=int_facet_domains, domain=msh)
 
     # Assemble forms and check
-    L = form(ufl.inner(g, v) * (dx_manual(0) + dx_manual(7) + ds_manual(6))
-             + ufl.inner(g, v("+") + v("-")) * dS_manual(3))
+    a, L = create_forms(dx_manual, ds_manual, dS_manual)
+    A = assemble_matrix(a)
+    A.assemble()
+    A_norm = A.norm()
     b = assemble_vector(L)
     b_norm = b.norm()
 
     assert(np.isclose(b_norm, b_mt_norm))
-
-    a = form(ufl.inner(g * u, v) * (dx_manual(0) + dx_manual(7) + ds_manual(6))
-             + ufl.inner(g * u("+"), v("+") + v("-")) * dS_manual(3))
-    A = assemble_matrix(a)
-    A.assemble()
-    A_norm = A.norm()
-
     assert(np.isclose(A_norm, A_mt_norm))
-
-
-test_manual_integration_domains()
