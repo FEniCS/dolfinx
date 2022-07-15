@@ -48,7 +48,6 @@
 #include <ufcx.h>
 #include <utility>
 #include <xtensor/xadapt.hpp>
-#include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
@@ -790,6 +789,7 @@ void declare_form(py::module& m, const std::string& type)
                   bool needs_permutation_data,
                   const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
                {
+                 //  FIXME Use py::array in integrals instead of std::vector?
                  using kern = std::function<void(
                      T*, const T*, const T*,
                      const typename geom_type<T>::value_type*, const int*,
@@ -834,7 +834,7 @@ void declare_form(py::module& m, const std::string& type)
                       subdomains,
                   const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
                {
-                 //  TODO Use py::array instead of std::vector?
+                 // FIXME Use py::array instead of std::vector?
                  ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
                  return dolfinx::fem::create_form<T>(
                      *p, spaces, coefficients, constants, subdomains, mesh);
@@ -908,6 +908,7 @@ void declare_form(py::module& m, const std::string& type)
              subdomains,
          const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
       {
+        // FIXME Use py::array in integrals instead of std::vector?
         ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
         return dolfinx::fem::create_form<T>(*p, spaces, coefficients, constants,
                                             subdomains, mesh);
@@ -1006,7 +1007,7 @@ void fem(py::module& m)
   m.def("transpose_dofmap", &dolfinx::fem::transpose_dofmap,
         "Build the index to (cell, local index) map from a "
         "dofmap ((cell, local index ) -> index).");
-  // TODO Where should this go?
+  // FIXME Where is the best place to put this?
   m.def(
       "compute_integration_domains",
       [](const dolfinx::fem::IntegralType integral_type,
