@@ -15,7 +15,6 @@
 #include <dolfinx/mesh/utils.h>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xnorm.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
@@ -85,8 +84,6 @@ std::pair<std::int32_t, double> _compute_closest_entity(
       for (std::size_t k = 0; k < 3; ++k)
         diff[k] -= point[k];
       r2 = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
-      // diff -= point;
-      // r2 = xt::norm_sq(diff)();
     }
     else
     {
@@ -339,9 +336,6 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
           midpoint_tree,
           {points[3 * i + 0], points[3 * i + 1], points[3 * i + 2]},
           midpoint_tree.num_bboxes() - 1, mesh, initial_entity, R2);
-      // const auto [m_index, m_distance2] = _compute_closest_entity(
-      //     midpoint_tree, xt::reshape_view(xt::row(points, i), {1, 3}),
-      //     midpoint_tree.num_bboxes() - 1, mesh, initial_entity, R2);
 
       // Use a recursive search through the bounding box tree to
       // determine which entity is actually closest.
@@ -391,25 +385,23 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
   const mesh::Geometry& geometry = mesh.geometry();
   std::span<const double> geom_dofs = geometry.x();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  xt::xtensor<double, 2> shortest_vectors({entities.size(), 3});
+  std::vector<double> shortest_vectors(3 * entities.size());
   if (dim == tdim)
   {
     for (std::size_t e = 0; e < entities.size(); e++)
     {
       auto dofs = x_dofmap.links(entities[e]);
-      xt::xtensor<double, 2> nodes({dofs.size(), 3});
+      std::vector<double> nodes(3 * dofs.size());
       for (std::size_t i = 0; i < dofs.size(); ++i)
       {
         const int pos = 3 * dofs[i];
         for (std::size_t j = 0; j < 3; ++j)
-          nodes(i, j) = geom_dofs[pos + j];
+          nodes[3 * i + j] = geom_dofs[pos + j];
       }
 
-      std::array<double, 3> d = geometry::compute_distance_gjk(
-          {{points[3 * e + 0], points[2 * e + 1], points[3 * e + 2]}}, nodes);
-      shortest_vectors(e, 0) = d[0];
-      shortest_vectors(e, 1) = d[1];
-      shortest_vectors(e, 2) = d[2];
+      std::array<double, 3> d
+          = geometry::compute_distance_gjk(points.subspan(3 * e, 3), nodes);
+      std::copy(d.begin(), d.end(), std::next(shortest_vectors.begin(), 3 * e));
     }
   }
   else
@@ -439,23 +431,22 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
       const std::vector<int> entity_dofs
           = geometry.cmap().create_dof_layout().entity_closure_dofs(
               dim, local_cell_entity);
-      xt::xtensor<double, 2> nodes({entity_dofs.size(), 3});
+      std::vector<double> nodes(3 * entity_dofs.size());
       for (std::size_t i = 0; i < entity_dofs.size(); i++)
       {
         const int pos = 3 * dofs[entity_dofs[i]];
         for (std::size_t j = 0; j < 3; ++j)
-          nodes(i, j) = geom_dofs[pos + j];
+          nodes[3 * i + j] = geom_dofs[pos + j];
       }
 
-      std::array<double, 3> d = compute_distance_gjk(
-          {{points[3 * e + 0], points[2 * e + 1], points[3 * e + 2]}}, nodes);
-      shortest_vectors(e, 0) = d[0];
-      shortest_vectors(e, 1) = d[1];
-      shortest_vectors(e, 2) = d[2];
+      std::array<double, 3> d
+          = compute_distance_gjk(points.subspan(3 * e, 3), nodes);
+      std::copy(d.begin(), d.end(), std::next(shortest_vectors.begin(), 3 * e));
     }
   }
 
-  return shortest_vectors;
+  return xt::adapt(shortest_vectors,
+                   std::vector<std::size_t>{entities.size(), 3});
 }
 //-----------------------------------------------------------------------------
 xt::xtensor<double, 1>
@@ -479,10 +470,10 @@ graph::AdjacencyList<std::int32_t> geometry::compute_colliding_cells(
   for (std::int32_t i = 0; i < candidate_cells.num_nodes(); i++)
   {
     auto cells = candidate_cells.links(i);
-    xt::xtensor<double, 2> _point({cells.size(), 3});
+    std::vector<double> _point(3 * cells.size());
     for (std::size_t j = 0; j < cells.size(); ++j)
       for (std::size_t k = 0; k < 3; ++k)
-        _point(j, k) = points[3 * i + k];
+        _point[3 * j + k] = points[3 * i + k];
 
     xt::xtensor<double, 1> distances_sq
         = geometry::squared_distance(mesh, tdim, cells, _point);
