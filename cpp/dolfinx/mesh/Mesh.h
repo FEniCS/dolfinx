@@ -145,6 +145,6 @@ Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>>
 create_submesh(const Mesh& mesh, int dim,
-               const xtl::span<const std::int32_t>& entities);
+               const std::span<const std::int32_t>& entities);
 
 } // namespace dolfinx::mesh

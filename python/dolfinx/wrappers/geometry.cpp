@@ -15,9 +15,9 @@
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <span>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
 
 namespace py = pybind11;
 
@@ -32,7 +32,7 @@ void geometry(py::module& m)
       {
         return dolfinx::geometry::create_midpoint_tree(
             mesh, tdim,
-            xtl::span<const std::int32_t>(entities.data(), entities.size()));
+            std::span<const std::int32_t>(entities.data(), entities.size()));
       },
       py::arg("mesh"), py::arg("tdim"), py::arg("entities"));
 
@@ -227,7 +227,7 @@ void geometry(py::module& m)
                {
                  return dolfinx::geometry::BoundingBoxTree(
                      mesh, dim,
-                     xtl::span<const std::int32_t>(entities.data(),
+                     std::span<const std::int32_t>(entities.data(),
                                                    entities.size()),
                      padding);
                }),

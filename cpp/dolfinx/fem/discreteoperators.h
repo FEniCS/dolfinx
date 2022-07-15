@@ -15,12 +15,12 @@
 #include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
+#include <span>
 #include <vector>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xindex_view.hpp>
 #include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
 {
@@ -160,12 +160,12 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
   std::shared_ptr<const FiniteElement> element1 = V1.element();
   assert(element1);
 
-  xtl::span<const std::uint32_t> cell_info;
+  std::span<const std::uint32_t> cell_info;
   if (element1->needs_dof_transformations()
       or element0->needs_dof_transformations())
   {
     mesh->topology_mutable().create_entity_permutations();
-    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    cell_info = std::span(mesh->topology().get_cell_permutation_info());
   }
 
   // Get dofmaps
@@ -193,7 +193,7 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
-  xtl::span<const double> x_g = mesh->geometry().x();
+  std::span<const double> x_g = mesh->geometry().x();
 
   // Evaluate coordinate map basis at reference interpolation points
   const xt::xtensor<double, 2> X = element1->interpolation_points();
@@ -283,7 +283,7 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
     for (std::size_t p = 0; p < X.shape(0); ++p)
     {
       apply_dof_transformation0(
-          xtl::span(basis_reference0.data() + p * dim0 * value_size_ref0,
+          std::span(basis_reference0.data() + p * dim0 * value_size_ref0,
                     dim0 * value_size_ref0),
           cell_info, c, value_size_ref0);
     }

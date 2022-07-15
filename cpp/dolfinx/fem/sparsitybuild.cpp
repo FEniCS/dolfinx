@@ -30,7 +30,7 @@ void sparsitybuild::cells(
 }
 //-----------------------------------------------------------------------------
 void sparsitybuild::cells(
-    la::SparsityPattern& pattern, const xtl::span<const std::int32_t>& cells,
+    la::SparsityPattern& pattern, const std::span<const std::int32_t>& cells,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps)
 {
   for (std::int32_t c : cells)
@@ -87,7 +87,7 @@ void sparsitybuild::interior_facets(
 }
 //-----------------------------------------------------------------------------
 void sparsitybuild::interior_facets(
-    la::SparsityPattern& pattern, const xtl::span<const std::int32_t>& facets,
+    la::SparsityPattern& pattern, const std::span<const std::int32_t>& facets,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps)
 {
   std::array<std::vector<std::int32_t>, 2> macro_dofs;
@@ -139,7 +139,7 @@ void sparsitybuild::exterior_facets(
 }
 //-----------------------------------------------------------------------------
 void sparsitybuild::exterior_facets(
-    la::SparsityPattern& pattern, const xtl::span<const std::int32_t>& facets,
+    la::SparsityPattern& pattern, const std::span<const std::int32_t>& facets,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps)
 {
   for (std::size_t index = 0; index < facets.size(); index += 2)
