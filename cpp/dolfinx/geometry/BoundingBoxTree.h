@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <cassert>
 #include <cstdint>
 #include <mpi.h>
 #include <span>
