@@ -8,38 +8,28 @@
 #include <dolfinx/common/math.h>
 #include <numeric>
 #include <stdexcept>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xbuilder.hpp>
-#include <xtensor/xfixed.hpp>
-#include <xtensor/xnorm.hpp>
-#include <xtensor/xsort.hpp>
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
 namespace
 {
 
-// Find the resulting sub-simplex of the input simplex which is nearest to the
-// origin. Also, return the shortest vector from the origin to the resulting
-// simplex.
+// Find the resulting sub-simplex of the input simplex which is nearest
+// to the origin. Also, return the shortest vector from the origin to
+// the resulting simplex.
 std::pair<std::vector<double>, std::array<double, 3>>
-nearest_simplex(const std::span<const double>& ss)
+nearest_simplex(const std::span<const double>& s)
 {
-  auto s = xt::adapt(ss.data(), ss.size(), xt::no_ownership(),
-                     std::vector<std::size_t>{ss.size() / 3, 3});
-
-  assert(ss.size() % 3 == 0);
-  const std::size_t s_rows = s.shape(0);
+  assert(s.size() % 3 == 0);
+  const std::size_t s_rows = s.size() / 3;
   switch (s_rows)
   {
   case 2:
   {
-    auto s0 = ss.subspan(0, 3);
-    auto s1 = ss.subspan(3, 3);
+    auto s0 = s.subspan(0, 3);
+    auto s1 = s.subspan(3, 3);
     std::array ds = {s1[0] - s0[0], s1[1] - s0[1], s1[2] - s0[2]};
-    const double lm = -(s0[0] * ds[0] + s[1] * ds[1] + s[2] * ds[2])
+    const double lm = -(s0[0] * ds[0] + s0[1] * ds[1] + s0[2] * ds[2])
                       / (ds[0] * ds[0] + ds[1] * ds[1] + ds[2] * ds[2]);
     if (lm >= 0.0 and lm <= 1.0)
     {
@@ -47,7 +37,7 @@ nearest_simplex(const std::span<const double>& ss)
       // v = s0 + lm * (s1 - s0);
       std::array<double, 3> v
           = {s0[0] + lm * ds[0], s0[1] + lm * ds[1], s0[2] + lm * ds[2]};
-      return {std::vector<double>(ss.begin(), ss.end()), v};
+      return {std::vector<double>(s.begin(), s.end()), v};
     }
 
     if (lm < 0.0)
@@ -57,9 +47,9 @@ nearest_simplex(const std::span<const double>& ss)
   }
   case 3:
   {
-    auto a = ss.subspan(0, 3);
-    auto b = ss.subspan(3, 3);
-    auto c = ss.subspan(6, 3);
+    auto a = s.subspan(0, 3);
+    auto b = s.subspan(3, 3);
+    auto c = s.subspan(6, 3);
     auto length = [](auto& x, auto& y)
     {
       return std::transform_reduce(
@@ -92,8 +82,7 @@ nearest_simplex(const std::span<const double>& ss)
     if (lbb >= 0.0 and lcc >= 0.0 and (lbb + lcc) <= 1.0)
     {
       // Calculate intersection more accurately
-      // auto v = math::cross(c - a, b - a);
-
+      // v = (c - a)  x (b - a)
       std::array<double, 3> dx0 = {c[0] - a[0], c[1] - a[1], c[2] - a[2]};
       std::array<double, 3> dx1 = {b[0] - a[0], b[1] - a[1], b[2] - a[2]};
       std::array<double, 3> v = math::cross_new(dx0, dx1);
@@ -108,12 +97,27 @@ nearest_simplex(const std::span<const double>& ss)
       for (std::size_t i = 0; i < 3; ++i)
         v[i] *= sum / vnorm2;
 
-      return {std::vector<double>(ss.begin(), ss.end()), v};
+      return {std::vector<double>(s.begin(), s.end()), v};
     }
 
     // Get closest point
-    std::size_t i = xt::argmin(xt::norm_sq(s, {1}))();
-    std::array<double, 3> vmin = {s(i, 0), s(i, 1), s(i, 2)};
+    std::size_t pos = 0;
+    {
+      double norm0 = std::numeric_limits<double>::max();
+      for (std::size_t i = 0; i < s.size(); i += 3)
+      {
+        double norm = 0.0;
+        for (std::size_t k = i; k < i + 3; ++k)
+          norm += s[k] * s[k];
+        if (norm < norm0)
+        {
+          pos = i / 3;
+          norm0 = norm;
+        }
+      }
+    }
+
+    std::array vmin = {s[3 * pos], s[3 * pos + 1], s[3 * pos + 2]};
     double qmin = 0;
     for (std::size_t k = 0; k < 3; ++k)
       qmin += vmin[k] * vmin[k];
@@ -124,8 +128,8 @@ nearest_simplex(const std::span<const double>& ss)
     constexpr const int f[3][2] = {{0, 1}, {0, 2}, {1, 2}};
     for (std::size_t i = 0; i < s_rows; ++i)
     {
-      auto s0 = ss.subspan(3 * f[i][0], 3);
-      auto s1 = ss.subspan(3 * f[i][1], 3);
+      auto s0 = s.subspan(3 * f[i][0], 3);
+      auto s1 = s.subspan(3 * f[i][1], 3);
       if (lm[i] > 0 and lm[i] < 1)
       {
         std::array<double, 3> v;
@@ -146,24 +150,24 @@ nearest_simplex(const std::span<const double>& ss)
         }
       }
     }
-    return {std::move(smin), {vmin[0], vmin[1], vmin[2]}};
+    return {std::move(smin), vmin};
   }
   case 4:
   {
-    auto s0 = xt::row(s, 0);
-    auto s1 = xt::row(s, 1);
-    auto s2 = xt::row(s, 2);
-    auto s3 = xt::row(s, 3);
-    auto W1 = math::cross(s0, s1);
-    auto W2 = math::cross(s2, s3);
+    auto s0 = s.subspan(0, 3);
+    auto s1 = s.subspan(3, 3);
+    auto s2 = s.subspan(6, 3);
+    auto s3 = s.subspan(9, 3);
+    auto W1 = math::cross_new(s0, s1);
+    auto W2 = math::cross_new(s2, s3);
 
-    xt::xtensor_fixed<double, xt::xshape<4>> B;
-    B[0] = xt::sum(s2 * W1)();
-    B[1] = -xt::sum(s3 * W1)();
-    B[2] = xt::sum(s0 * W2)();
-    B[3] = -xt::sum(s1 * W2)();
+    std::array<double, 4> B;
+    B[0] = std::transform_reduce(s2.begin(), s2.end(), W1.begin(), 0.0);
+    B[1] = -std::transform_reduce(s3.begin(), s3.end(), W1.begin(), 0.0);
+    B[2] = std::transform_reduce(s0.begin(), s0.end(), W2.begin(), 0.0);
+    B[3] = -std::transform_reduce(s1.begin(), s1.end(), W2.begin(), 0.0);
 
-    const bool signDetM = std::signbit(xt::sum(B)());
+    const bool signDetM = std::signbit(std::reduce(B.begin(), B.end(), 0.0));
     std::array<bool, 4> f_inside;
     for (int i = 0; i < 4; ++i)
       f_inside[i] = (std::signbit(B[i]) == signDetM);
@@ -171,9 +175,9 @@ nearest_simplex(const std::span<const double>& ss)
     if (f_inside[1] and f_inside[2] and f_inside[3])
     {
       if (f_inside[0]) // The origin is inside the tetrahedron
-        return {std::vector<double>(ss.begin(), ss.end()), {0, 0, 0}};
+        return {std::vector<double>(s.begin(), s.end()), {0, 0, 0}};
       else // The origin projection P faces BCD
-        return nearest_simplex(ss.subspan(0, 3 * 3));
+        return nearest_simplex(s.subspan(0, 3 * 3));
     }
 
     // Test ACD, ABD and/or ABC
@@ -181,14 +185,16 @@ nearest_simplex(const std::span<const double>& ss)
     std::array<double, 3> vmin = {0, 0, 0};
     constexpr int facets[3][3] = {{0, 1, 3}, {0, 2, 3}, {1, 2, 3}};
     double qmin = std::numeric_limits<double>::max();
+    std::vector<double> M(9);
     for (int i = 0; i < 3; ++i)
     {
       if (f_inside[i + 1] == false)
       {
-        xt::xtensor_fixed<double, xt::xshape<3, 3>> M;
-        xt::row(M, 0) = xt::row(s, facets[i][0]);
-        xt::row(M, 1) = xt::row(s, facets[i][1]);
-        xt::row(M, 2) = xt::row(s, facets[i][2]);
+        std::copy_n(std::next(s.begin(), 3 * facets[i][0]), 3, M.begin());
+        std::copy_n(std::next(s.begin(), 3 * facets[i][1]), 3,
+                    std::next(M.begin(), 3));
+        std::copy_n(std::next(s.begin(), 3 * facets[i][2]), 3,
+                    std::next(M.begin(), 6));
 
         const auto [snew, v] = nearest_simplex(M);
         double q = std::transform_reduce(v.begin(), v.end(), v.begin(), 0);
@@ -200,7 +206,7 @@ nearest_simplex(const std::span<const double>& ss)
         }
       }
     }
-    return {std::move(smin), {vmin[0], vmin[1], vmin[2]}};
+    return {smin, vmin};
   }
   default:
     throw std::runtime_error("Number of rows defining simplex not supported.");
@@ -212,11 +218,10 @@ std::array<double, 3> support(const std::span<const double>& bd,
                               const std::array<double, 3>& v)
 {
   int i = 0;
-  // double qmax = xt::sum(xt::row(bd, 0) * v)();
   double qmax = bd[0] * v[0] + bd[1] * v[1] + bd[2] * v[2];
   for (std::size_t m = 1; m < bd.size() / 3; ++m)
   {
-    // double q = xt::sum(xt::row(bd, m) * v)();
+    // q = xt::sum(xt::row(bd, m) * v)();
     double q = bd[3 * m] * v[0] + bd[3 * m + 1] * v[1] + bd[3 * m + 2] * v[2];
     if (q > qmax)
     {
@@ -226,7 +231,6 @@ std::array<double, 3> support(const std::span<const double>& bd,
   }
 
   return {bd[3 * i], bd[3 * i + 1], bd[3 * i + 2]};
-  // return xt::row(bd, i);
 }
 } // namespace
 //----------------------------------------------------------------------------
@@ -278,8 +282,7 @@ geometry::compute_distance_gjk(const std::span<const double>& p,
     s.insert(s.end(), w.begin(), w.end());
 
     // Find nearest subset of simplex
-    auto swrap = xt::adapt(s, std::vector<std::size_t>{s.size() / 3, 3});
-    auto [snew, vnew] = nearest_simplex(swrap);
+    auto [snew, vnew] = nearest_simplex(s);
     s.assign(snew.data(), snew.data() + snew.size());
     v = {vnew[0], vnew[1], vnew[2]};
 
