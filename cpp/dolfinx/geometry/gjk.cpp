@@ -14,9 +14,9 @@ using namespace dolfinx;
 namespace
 {
 
-// Find the resulting sub-simplex of the input simplex which is nearest
-// to the origin. Also, return the shortest vector from the origin to
-// the resulting simplex.
+/// @brief Find the resulting sub-simplex of the input simplex which is
+/// nearest to the origin. Also, return the shortest vector from the
+/// origin to the resulting simplex.
 std::pair<std::vector<double>, std::array<double, 3>>
 nearest_simplex(const std::span<const double>& s)
 {
@@ -215,7 +215,8 @@ nearest_simplex(const std::span<const double>& s)
   }
 }
 //----------------------------------------------------------------------------
-// Helper function, finds point p in bd which maximises p.v
+
+/// @brief 'support' function, finds point p in bd which maximises p.v
 std::array<double, 3> support(const std::span<const double>& bd,
                               const std::array<double, 3>& v)
 {
@@ -223,7 +224,6 @@ std::array<double, 3> support(const std::span<const double>& bd,
   double qmax = bd[0] * v[0] + bd[1] * v[1] + bd[2] * v[2];
   for (std::size_t m = 1; m < bd.size() / 3; ++m)
   {
-    // q = xt::sum(xt::row(bd, m) * v)();
     double q = bd[3 * m] * v[0] + bd[3 * m + 1] * v[1] + bd[3 * m + 2] * v[2];
     if (q > qmax)
     {
