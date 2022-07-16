@@ -87,7 +87,7 @@ nearest_simplex(const std::span<const double>& s)
       // v = (c - a)  x (b - a)
       std::array<double, 3> dx0 = {c[0] - a[0], c[1] - a[1], c[2] - a[2]};
       std::array<double, 3> dx1 = {b[0] - a[0], b[1] - a[1], b[2] - a[2]};
-      std::array<double, 3> v = math::cross_new(dx0, dx1);
+      std::array<double, 3> v = math::cross(dx0, dx1);
 
       // Barycentre of triangle
       std::array<double, 3> p
@@ -160,8 +160,8 @@ nearest_simplex(const std::span<const double>& s)
     auto s1 = s.subspan(3, 3);
     auto s2 = s.subspan(6, 3);
     auto s3 = s.subspan(9, 3);
-    auto W1 = math::cross_new(s0, s1);
-    auto W2 = math::cross_new(s2, s3);
+    auto W1 = math::cross(s0, s1);
+    auto W2 = math::cross(s2, s3);
 
     std::array<double, 4> B;
     B[0] = std::transform_reduce(s2.begin(), s2.end(), W1.begin(), 0.0);
