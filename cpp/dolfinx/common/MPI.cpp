@@ -7,6 +7,7 @@
 #include "MPI.h"
 #include <algorithm>
 #include <dolfinx/common/log.h>
+#include <iostream>
 
 //-----------------------------------------------------------------------------
 dolfinx::MPI::Comm::Comm(MPI_Comm comm, bool duplicate)

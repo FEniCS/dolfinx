@@ -18,6 +18,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <functional>
 #include <iterator>
+#include <span>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -268,7 +269,11 @@ void assemble_interior_facets(
   std::span<const double> x_g = mesh.geometry().x();
 
   // Data structures used in assembly
-  xt::xtensor<scalar_value_type_t<T>, 3> coordinate_dofs({2, num_dofs_g, 3});
+  using X = scalar_value_type_t<T>;
+  std::vector<X> coordinate_dofs(2 * num_dofs_g * 3);
+  std::span<X> cdofs0(coordinate_dofs.data(), num_dofs_g * 3);
+  std::span<X> cdofs1(coordinate_dofs.data() + num_dofs_g * 3, num_dofs_g * 3);
+
   std::vector<T> Ae, be;
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == cstride);
@@ -289,16 +294,14 @@ void assemble_interior_facets(
     auto x_dofs0 = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      common::impl::copy_N<3>(
-          std::next(x_g.begin(), 3 * x_dofs0[i]),
-          xt::view(coordinate_dofs, 0, i, xt::all()).begin());
+      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs0[i]),
+                              std::next(cdofs0.begin(), 3 * i));
     }
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
-      common::impl::copy_N<3>(
-          std::next(x_g.begin(), 3 * x_dofs1[i]),
-          xt::view(coordinate_dofs, 1, i, xt::all()).begin());
+      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs1[i]),
+                              std::next(cdofs1.begin(), 3 * i));
     }
 
     // Get dof maps for cells and pack

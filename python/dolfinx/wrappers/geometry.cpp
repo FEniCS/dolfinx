@@ -16,8 +16,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <span>
-#include <xtensor/xbuilder.hpp>
-#include <xtensor/xtensor.hpp>
 
 namespace py = pybind11;
 
@@ -44,19 +42,18 @@ void geometry(py::module& m)
          const py::array_t<double, py::array::c_style>& points)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-        xt::xtensor<double, 2> p
-            = xt::zeros<double>({p_s0, static_cast<std::size_t>(3)});
+        std::vector<double> p(3 * p_s0);
         auto px = points.unchecked();
         if (px.ndim() == 1)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
-            p(0, i) = px(i);
+            p[i] = px(i);
         }
         else if (px.ndim() == 2)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
             for (py::ssize_t j = 0; j < px.shape(1); j++)
-              p(i, j) = px(i, j);
+              p[3 * i + j] = px(i, j);
         }
         else
           throw std::runtime_error("Array has wrong ndim.");
@@ -73,19 +70,18 @@ void geometry(py::module& m)
          const py::array_t<double>& points)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-        xt::xtensor<double, 2> _p
-            = xt::zeros<double>({p_s0, static_cast<std::size_t>(3)});
+        std::vector<double> _p(3 * p_s0);
         auto px = points.unchecked();
         if (px.ndim() == 1)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
-            _p(0, i) = px(i);
+            _p[i] = px(i);
         }
         else if (px.ndim() == 2)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
             for (py::ssize_t j = 0; j < px.shape(1); j++)
-              _p(i, j) = px(i, j);
+              _p[3 * i + j] = px(i, j);
         }
         else
           throw std::runtime_error("Array has wrong ndim.");
@@ -150,19 +146,18 @@ void geometry(py::module& m)
          std::vector<std::int32_t> indices, const py::array_t<double>& points)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-        xt::xtensor<double, 2> _p
-            = xt::zeros<double>({p_s0, static_cast<std::size_t>(3)});
+        std::vector<double> _p(3 * p_s0);
         auto px = points.unchecked();
         if (px.ndim() == 1)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
-            _p(0, i) = px(i);
+            _p[i] = px(i);
         }
         else if (px.ndim() == 2)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
             for (py::ssize_t j = 0; j < px.shape(1); j++)
-              _p(i, j) = px(i, j);
+              _p[3 * i + j] = px(i, j);
         }
         else
           throw std::runtime_error("Array has wrong ndim.");
@@ -181,14 +176,14 @@ void geometry(py::module& m)
       {
         const int gdim = mesh.geometry().dim();
         std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-        xt::xtensor<double, 2> _p = xt::zeros<double>({p_s0, std::size_t(3)});
+        std::vector<double> _p(3 * p_s0);
         auto px = points.unchecked();
         if (gdim > 1 and px.ndim() == 1)
         {
           // Single point in 2D/3D
           assert(px.shape(0) <= 3);
           for (py::ssize_t i = 0; i < px.shape(0); i++)
-            _p(0, i) = px(i);
+            _p[0] = px(i);
           auto cells = dolfinx::geometry::compute_colliding_cells(
               mesh, candidate_cells, _p);
           return py::array_t<std::int32_t>(cells.array().size(),
@@ -198,13 +193,13 @@ void geometry(py::module& m)
         {
           // 1D problem
           for (py::ssize_t i = 0; i < px.shape(0); i++)
-            _p(i, 0) = px(i);
+            _p[3 * i] = px(i);
         }
         else if (px.ndim() == 2)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
             for (py::ssize_t j = 0; j < px.shape(1); j++)
-              _p(i, j) = px(i, j);
+              _p[3 * i + j] = px(i, j);
         }
         else
           throw std::runtime_error("Array has wrong ndim.");

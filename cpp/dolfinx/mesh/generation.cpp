@@ -123,23 +123,29 @@ mesh::Mesh build_tet(MPI_Comm comm,
     const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
 
     // Note that v0 < v1 < v2 < v3 < vmid
-    xt::xtensor_fixed<std::int64_t, xt::xshape<6, 4>> c
-        = {{v0, v1, v3, v7}, {v0, v1, v7, v5}, {v0, v5, v7, v4},
-           {v0, v3, v2, v7}, {v0, v6, v4, v7}, {v0, v2, v6, v7}};
+    std::array<std::int64_t, 24> c
+        = {v0, v1, v3, v7, v0, v1, v7, v5, v0, v5, v7, v4,
+           v0, v3, v2, v7, v0, v6, v4, v7, v0, v2, v6, v7};
+    // xt::xtensor_fixed<std::int64_t, xt::xshape<6, 4>> c
+    //     = {{v0, v1, v3, v7}, {v0, v1, v7, v5}, {v0, v5, v7, v4},
+    //        {v0, v3, v2, v7}, {v0, v6, v4, v7}, {v0, v2, v6, v7}};
     std::size_t offset = 6 * (i - range_c[0]);
 
     // Note: we would like to assign to a view, but this does not work
     // correctly with the Intel icpx compiler
     // xt::view(cells, xt::range(offset, offset + 6), xt::all()) = c;
-    auto _cell = xt::view(cells, xt::range(offset, offset + 6), xt::all());
-    _cell.assign(c);
+    // auto _cell = xt::view(cells, xt::range(offset, offset + 6), xt::all());
+    // _cell.assign(c);
+    std::copy(c.begin(), c.end(), std::next(cells.begin(), 4 * offset));
   }
+
+  // t::xtensor<std::int64_t, 2> cells({6 * cell_range, 4});
 
   fem::CoordinateElement element(CellType::tetrahedron, 1);
   auto [data, offset] = graph::create_adjacency_data(cells);
   return create_mesh(
-      comm,
-      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
+      comm, graph::regular_adjacency_list(std::move(data), 4),
+      // graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
       element, geom, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
