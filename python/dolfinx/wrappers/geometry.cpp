@@ -183,7 +183,7 @@ void geometry(py::module& m)
           // Single point in 2D/3D
           assert(px.shape(0) <= 3);
           for (py::ssize_t i = 0; i < px.shape(0); i++)
-            _p[0] = px(i);
+            _p[i] = px(i);
           auto cells = dolfinx::geometry::compute_colliding_cells(
               mesh, candidate_cells, _p);
           return py::array_t<std::int32_t>(cells.array().size(),
