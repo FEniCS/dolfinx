@@ -108,9 +108,8 @@ nearest_simplex(const std::span<const double>& s)
       double norm0 = std::numeric_limits<double>::max();
       for (std::size_t i = 0; i < s.size(); i += 3)
       {
-        double norm = 0.0;
-        for (std::size_t k = i; k < i + 3; ++k)
-          norm += s[k] * s[k];
+        std::span<const double, 3> p(s.data() + i, 3);
+        double norm = p[0] * p[0] + p[1] * p[1] + p[2] * p[2];
         if (norm < norm0)
         {
           pos = i / 3;
