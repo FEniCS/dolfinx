@@ -133,7 +133,8 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
 
 //-----------------------------------------------------------------------------
 std::tuple<xt::xtensor<double, 2>, std::vector<std::int64_t>,
-           std::vector<std::uint8_t>, xt::xtensor<std::int32_t, 2>>
+           std::vector<std::uint8_t>, std::vector<std::int32_t>,
+           std::array<std::size_t, 2>>
 io::vtk_mesh_from_space(const fem::FunctionSpace& V)
 {
   auto mesh = V.mesh();
@@ -159,19 +160,20 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
 
   // Extract topology for all local cells as
   // [v0_0, ...., v0_N0, v1_0, ...., v1_N1, ....]
-  xt::xtensor<std::int32_t, 2> vtk_topology({num_cells, num_nodes});
-  for (std::size_t c = 0; c < num_cells; ++c)
+  std::array<std::size_t, 2> shape = {num_cells, num_nodes};
+  std::vector<std::int32_t> vtk_topology(shape[0] * shape[1]);
+  for (std::size_t c = 0; c < shape[0]; ++c)
   {
     auto dofs = dofmap->cell_dofs(c);
     for (std::size_t i = 0; i < dofs.size(); ++i)
-      vtk_topology(c, i) = dofs[vtkmap[i]];
+      vtk_topology[c * shape[1] + i] = dofs[vtkmap[i]];
   }
 
   return {std::move(x), std::move(x_id), std::move(x_ghost),
-          std::move(vtk_topology)};
+          std::move(vtk_topology), shape};
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<std::int64_t, 2>
+std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
 io::extract_vtk_connectivity(const mesh::Mesh& mesh)
 {
   // Get DOLFINx to VTK permutation
@@ -190,15 +192,16 @@ io::extract_vtk_connectivity(const mesh::Mesh& mesh)
   // Build mesh connectivity
 
   // Loop over cells
-  xt::xtensor<std::int64_t, 2> topology({num_cells, num_nodes});
+  std::array<std::size_t, 2> shape = {num_cells, num_nodes};
+  std::vector<std::int64_t> topology(shape[0] * shape[1]);
   for (std::size_t c = 0; c < num_cells; ++c)
   {
     // For each cell, get the 'nodes' and place in VTK order
     auto dofs_x = dofmap_x.links(c);
     for (std::size_t i = 0; i < dofs_x.size(); ++i)
-      topology(c, i) = dofs_x[vtkmap[i]];
+      topology[c * shape[1] + i] = dofs_x[vtkmap[i]];
   }
 
-  return topology;
+  return {std::move(topology), shape};
 }
 //-----------------------------------------------------------------------------

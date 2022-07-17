@@ -183,10 +183,17 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   // Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
   // etc, is the node index
-  xt::xtensor<std::int64_t, 2> cells({num_cells, num_nodes + 1});
-  xt::view(cells, xt::all(), xt::xrange(std::size_t(1), cells.shape(1)))
-      = io::extract_vtk_connectivity(mesh);
-  xt::view(cells, xt::all(), 0) = num_nodes;
+  const auto [vtkcells, shape] = io::extract_vtk_connectivity(mesh);
+  std::vector<std::int64_t> cells(shape[0] * (shape[1] + 1), shape[1]);
+  for (std::size_t c = 0; c < shape[0]; ++c)
+  {
+    std::copy_n(std::next(vtkcells.begin(), c * shape[1]), shape[1],
+                std::next(cells.begin(), c * (shape[1] + 1)));
+  }
+  // xt::xtensor<std::int64_t, 2> cells({num_cells, num_nodes + 1});
+  // xt::view(cells, xt::all(), xt::xrange(std::size_t(1), cells.shape(1)))
+  //     = io::extract_vtk_connectivity(mesh);
+  // xt::view(cells, xt::all(), 0) = num_nodes;
 
   // Put topology (nodes)
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
@@ -223,7 +230,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   const int tdim = mesh->topology().dim();
 
   // Get a VTK mesh with points at the 'nodes'
-  const auto [x, x_id, x_ghost, vtk] = io::vtk_mesh_from_space(V);
+  auto [x, x_id, x_ghost, vtk, vtkshape] = io::vtk_mesh_from_space(V);
 
   std::uint32_t num_dofs = x.shape(0);
   std::uint32_t num_cells = mesh->topology().index_map(tdim)->size_local();
@@ -231,15 +238,21 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   // -- Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
   // etc, is the node index.
-  std::vector<std::size_t> shape = {num_cells, vtk.shape(1) + 1};
+  std::vector<std::size_t> shape = {num_cells, vtkshape[1] + 1};
 
   // Create vector, setting all entries to nodes per cell (vtk.shape(1))
-  std::vector<std::uint64_t> vtk_topology(shape[0] * shape[1], vtk.shape(1));
+  std::vector<std::uint64_t> vtk_topology(shape[0] * shape[1], vtkshape[1]);
 
   // Set the [v0_0,...., v0_N0, v1_0,...., v1_N1,....] data
-  auto _vtk = xt::adapt(vtk_topology, shape);
-  xt::view(_vtk, xt::all(), xt::range(1, _vtk.shape(1)))
-      = xt::view(vtk, xt::range(0, num_cells, xt::all()));
+  // auto _vtk = xt::adapt(vtk_topology, shape);
+  // xt::view(_vtk, xt::all(), xt::range(1, _vtk.shape(1)))
+  //     = xt::view(vtk, xt::range(0, num_cells, xt::all()));
+  std::vector<std::int64_t> cells(shape[0] * (shape[1] + 1), shape[1]);
+  for (std::size_t c = 0; c < shape[0]; ++c)
+  {
+    std::copy_n(std::next(vtk.begin(), c * vtkshape[1]), vtkshape[1],
+                std::next(vtk_topology.begin(), c * shape[1]));
+  }
 
   // Define ADIOS2 variables for geometry, topology, celltypes and
   // corresponding VTK data
@@ -247,7 +260,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
       = define_variable<double>(io, "geometry", {}, {}, {num_dofs, 3});
   adios2::Variable<std::uint64_t> local_topology
       = define_variable<std::uint64_t>(io, "connectivity", {}, {},
-                                       {num_cells, vtk.shape(1) + 1});
+                                       {num_cells, vtkshape[1] + 1});
   adios2::Variable<std::uint32_t> cell_type
       = define_variable<std::uint32_t>(io, "types");
   adios2::Variable<std::uint32_t> vertices = define_variable<std::uint32_t>(
@@ -548,7 +561,9 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
   const int tdim = topology.dim();
   const std::int32_t num_cells = topology.index_map(tdim)->size_local();
   const int num_nodes = geometry.cmap().dim();
-  const xt::xtensor<std::int64_t, 2> cells = extract_vtk_connectivity(mesh);
+
+  const auto [cells, shape] = io::extract_vtk_connectivity(mesh);
+  // const xt::xtensor<std::int64_t, 2> cells = extract_vtk_connectivity(mesh);
 
   // "Put" topology data in the result in the ADIOS2 file
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(

@@ -414,10 +414,14 @@ void write_function(
   xt::xtensor<double, 2> x;
   std::vector<std::int64_t> x_id;
   std::vector<std::uint8_t> x_ghost;
-  xt::xtensor<std::int32_t, 2> cells;
+  // xt::xtensor<std::int32_t, 2> cells;
+  std::vector<std::int32_t> cells;
+  std::array<std::size_t, 2> cshape;
   if (is_cellwise(*V0))
   {
-    cells = io::extract_vtk_connectivity(*mesh0);
+    std::vector<std::int64_t> tmp;
+    std::tie(tmp, cshape) = io::extract_vtk_connectivity(*mesh0);
+    cells.assign(tmp.begin(), tmp.end());
     const mesh::Geometry& geometry = mesh0->geometry();
     x = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
                   std::vector({geometry.x().size() / 3, std::size_t(3)}));
@@ -428,16 +432,18 @@ void write_function(
     std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
   }
   else
-    std::tie(x, x_id, x_ghost, cells) = io::vtk_mesh_from_space(*V0);
+    std::tie(x, x_id, x_ghost, cells, cshape) = io::vtk_mesh_from_space(*V0);
+
+  auto _cells = xt::adapt(cells, std::vector{cshape[0], cshape[1]});
 
   // Add "Piece" node and required metadata
   pugi::xml_node piece_node = grid_node_vtu.append_child("Piece");
   piece_node.append_attribute("NumberOfPoints") = x.shape(0);
-  piece_node.append_attribute("NumberOfCells") = cells.shape(0);
+  piece_node.append_attribute("NumberOfCells") = cshape[0];
 
   // Add mesh data to "Piece" node
   int tdim = mesh0->topology().dim();
-  add_mesh(x, x_id, x_ghost, cells, *mesh0->topology().index_map(tdim),
+  add_mesh(x, x_id, x_ghost, _cells, *mesh0->topology().index_map(tdim),
            mesh0->topology().cell_type(), mesh0->topology().dim(), piece_node);
 
   // FIXME: is this actually setting the first?
@@ -475,9 +481,9 @@ void write_function(
       assert(!data_node.empty());
       auto dofmap = V->dofmap();
       int bs = dofmap->bs();
-      std::vector<T> data(cells.shape(0) * num_comp, 0);
+      std::vector<T> data(cshape[0] * num_comp, 0);
       auto u_vector = _u.get().x()->array();
-      for (std::size_t c = 0; c < cells.shape(0); ++c)
+      for (std::size_t c = 0; c < cshape[0]; ++c)
       {
         std::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
         for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -541,7 +547,7 @@ void write_function(
         // Interpolate on each cell
         auto u_vector = _u.get().x()->array();
         std::vector<T> u(u_vector.size());
-        for (std::size_t c = 0; c < cells.shape(0); ++c)
+        for (std::size_t c = 0; c < cshape[0]; ++c)
         {
           std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
           std::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
@@ -765,13 +771,15 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
   piece_node.append_attribute("NumberOfCells") = num_cells;
 
   // Add mesh data to "Piece" node
-  xt::xtensor<std::int64_t, 2> cells = extract_vtk_connectivity(mesh);
+  const auto [cells, cshape] = extract_vtk_connectivity(mesh);
+  auto _cells = xt::adapt(cells, std::vector{cshape[0], cshape[1]});
+
   xt::xtensor<double, 2> x
       = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
                   std::vector({geometry.x().size() / 3, std::size_t(3)}));
   std::vector<std::uint8_t> x_ghost(x.shape(0), 0);
   std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
-  add_mesh(x, geometry.input_global_indices(), x_ghost, cells,
+  add_mesh(x, geometry.input_global_indices(), x_ghost, _cells,
            *topology.index_map(tdim), topology.cell_type(), topology.dim(),
            piece_node);
 
