@@ -15,7 +15,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <span>
 #include <tuple>
-#include <xtensor/xbuilder.hpp>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xview.hpp>
 
 using namespace dolfinx;
@@ -132,9 +132,9 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::tuple<xt::xtensor<double, 2>, std::vector<std::int64_t>,
-           std::vector<std::uint8_t>, std::vector<std::int32_t>,
-           std::array<std::size_t, 2>>
+std::tuple<std::vector<double>, std::array<std::size_t, 2>,
+           std::vector<std::int64_t>, std::vector<std::uint8_t>,
+           std::vector<std::int32_t>, std::array<std::size_t, 2>>
 io::vtk_mesh_from_space(const fem::FunctionSpace& V)
 {
   auto mesh = V.mesh();
@@ -145,7 +145,9 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
   if (V.element()->is_mixed())
     throw std::runtime_error("Can create VTK mesh from a mixed element");
 
-  const auto [x, x_id, x_ghost] = tabulate_lagrange_dof_coordinates(V);
+  const auto [_x, x_id, x_ghost] = tabulate_lagrange_dof_coordinates(V);
+  std::array<std::size_t, 2> xshape = {_x.shape(0), _x.shape(1)};
+  std::vector<double> x(_x.data(), _x.data() + _x.size());
   auto map = mesh->topology().index_map(tdim);
   const std::size_t num_cells = map->size_local() + map->num_ghosts();
 
@@ -169,8 +171,12 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
       vtk_topology[c * shape[1] + i] = dofs[vtkmap[i]];
   }
 
-  return {std::move(x), std::move(x_id), std::move(x_ghost),
-          std::move(vtk_topology), shape};
+  return {std::move(x),
+          xshape,
+          std::move(x_id),
+          std::move(x_ghost),
+          std::move(vtk_topology),
+          shape};
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>

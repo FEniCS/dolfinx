@@ -411,7 +411,8 @@ void write_function(
   pugi::xml_node grid_node_vtu = vtk_node_vtu.append_child("UnstructuredGrid");
 
   // Build mesh data using first FunctionSpace
-  xt::xtensor<double, 2> x;
+  std::vector<double> x;
+  std::array<std::size_t, 2> xshape;
   std::vector<std::int64_t> x_id;
   std::vector<std::uint8_t> x_ghost;
   // xt::xtensor<std::int32_t, 2> cells;
@@ -423,27 +424,29 @@ void write_function(
     std::tie(tmp, cshape) = io::extract_vtk_connectivity(*mesh0);
     cells.assign(tmp.begin(), tmp.end());
     const mesh::Geometry& geometry = mesh0->geometry();
-    x = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
-                  std::vector({geometry.x().size() / 3, std::size_t(3)}));
+    x.assign(geometry.x().begin(), geometry.x().end());
+    xshape = {geometry.x().size() / 3, 3};
     x_id = geometry.input_global_indices();
     auto xmap = geometry.index_map();
     assert(xmap);
-    x_ghost.resize(x.shape(0), 0);
+    x_ghost.resize(xshape[0], 0);
     std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
   }
   else
-    std::tie(x, x_id, x_ghost, cells, cshape) = io::vtk_mesh_from_space(*V0);
+    std::tie(x, xshape, x_id, x_ghost, cells, cshape)
+        = io::vtk_mesh_from_space(*V0);
 
   auto _cells = xt::adapt(cells, std::vector{cshape[0], cshape[1]});
 
   // Add "Piece" node and required metadata
   pugi::xml_node piece_node = grid_node_vtu.append_child("Piece");
-  piece_node.append_attribute("NumberOfPoints") = x.shape(0);
+  piece_node.append_attribute("NumberOfPoints") = xshape[0];
   piece_node.append_attribute("NumberOfCells") = cshape[0];
 
   // Add mesh data to "Piece" node
   int tdim = mesh0->topology().dim();
-  add_mesh(x, x_id, x_ghost, _cells, *mesh0->topology().index_map(tdim),
+  auto _x = xt::adapt(x, std::vector<std::size_t>{xshape[0], xshape[1]});
+  add_mesh(_x, x_id, x_ghost, _cells, *mesh0->topology().index_map(tdim),
            mesh0->topology().cell_type(), mesh0->topology().dim(), piece_node);
 
   // FIXME: is this actually setting the first?
