@@ -8,6 +8,7 @@
 #include "sort.h"
 #include <algorithm>
 #include <functional>
+#include <map>
 #include <numeric>
 
 using namespace dolfinx;

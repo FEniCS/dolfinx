@@ -236,7 +236,11 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
   const xt::xtensor<double, 2> x = XDMFFile::read_geometry_data(name, xpath);
 
   // Create mesh
-  auto [data, offset] = graph::create_adjacency_data(cells);
+  std::vector<std::int64_t> data(cells.data(), cells.data() + cells.size());
+  std::vector<std::int32_t> offset(cells.shape(0) + 1, 0);
+  for (std::size_t i = 0; i < cells.shape(0); ++i)
+    offset[i + 1] = offset[i] + cells.shape(1);
+
   graph::AdjacencyList<std::int64_t> cells_adj(std::move(data),
                                                std::move(offset));
 

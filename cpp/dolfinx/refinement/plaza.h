@@ -7,8 +7,10 @@
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <span>
+#include <tuple>
 #include <utility>
 #include <vector>
+#include <xtensor/xtensor.hpp>
 
 #pragma once
 
