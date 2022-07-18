@@ -12,6 +12,7 @@
 #include "graphbuild.h"
 #include "topologycomputation.h"
 #include "utils.h"
+#include <common/Scatterer.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/CoordinateElement.h>
@@ -20,6 +21,7 @@
 #include <dolfinx/graph/partition.h>
 #include <memory>
 #include <xtensor/xadapt.hpp>
+#include <xtensor/xio.hpp>
 #include <xtensor/xsort.hpp>
 #include <xtensor/xview.hpp>
 
@@ -263,7 +265,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // dimension, add ghost entities to the submesh. If not, do not add
   // ghost entities, because in general, not all expected ghost entities
   // would be present.
-  if (mesh.topology().dim() == dim)
+  if (true)
   {
     // TODO Call dolfinx::common::get_owned_indices here? Do we want to
     // support `entities` possibly haveing a ghost on one process that is
@@ -319,6 +321,46 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     }
     submesh_e_to_v_offsets.push_back(submesh_e_to_v_vec.size());
   }
+
+  if (!(mesh.topology().dim() == dim))
+  {
+    std::vector<std::int64_t> submesh_e_to_global_v_vec(
+        submesh_e_to_v_vec.size(), 0);
+    submesh_vertex_index_map->local_to_global(submesh_e_to_v_vec,
+                                              submesh_e_to_global_v_vec);
+
+    // TODO Don't hardcode blocksize
+    common::Scatterer scatterer(*submesh_entity_index_map, 2);
+    std::vector<std::int64_t> owned_vertices(
+        submesh_e_to_global_v_vec.begin(),
+        submesh_e_to_global_v_vec.begin()
+            + 2 * submesh_entity_index_map->size_local());
+    std::vector<std::int64_t> ghost_vertices(
+        2 * submesh_entity_index_map->num_ghosts(), 0);
+
+    scatterer.scatter_fwd(std::span<const std::int64_t>(owned_vertices),
+                          std::span<std::int64_t>(ghost_vertices));
+
+    std::span<std::int32_t> ghost_vertices_local(
+        submesh_e_to_v_vec.begin() + 2 * submesh_entity_index_map->size_local(),
+        submesh_e_to_v_vec.end());
+
+    const int rank = MPI::rank(MPI_COMM_WORLD);
+    std::stringstream ss;
+    ss << "rank: " << rank << "\n";
+    ss << "local_vertices = " << xt::adapt(owned_vertices) << "\n";
+    ss << "ghost_vertices = " << xt::adapt(ghost_vertices) << "\n";
+    // ss << "ghost_vertices_local = " << xt::adapt(ghost_vertices_local) <<
+    // "\n";
+    ss << "submesh_e_to_v_vec = " << xt::adapt(submesh_e_to_v_vec) << "\n";
+
+    // submesh_vertex_index_map->global_to_local(ghost_vertices,
+    //                                           ghost_vertices_local);
+
+    ss << "submesh_e_to_v_vec = " << xt::adapt(submesh_e_to_v_vec) << "\n";
+    std::cout << ss.str() << "\n";
+  }
+
   auto submesh_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(submesh_e_to_v_vec), std::move(submesh_e_to_v_offsets));
 
