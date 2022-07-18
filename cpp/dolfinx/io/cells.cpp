@@ -10,7 +10,6 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <numeric>
 #include <stdexcept>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 namespace
@@ -364,17 +363,19 @@ io::cells::transpose(const std::vector<std::uint8_t>& map)
   return transpose;
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<std::int64_t, 2>
-io::cells::compute_permutation(const xt::xtensor<std::int64_t, 2>& cells,
-                               const std::vector<std::uint8_t>& p)
+std::vector<std::int64_t>
+io::cells::apply_permutation(const std::span<const std::int64_t>& cells,
+                             std::array<std::size_t, 2> shape,
+                             const std::span<const std::uint8_t>& p)
 {
   LOG(INFO) << "IO permuting cells";
-  xt::xtensor<std::int64_t, 2> cells_new(cells.shape());
-  for (std::size_t c = 0; c < cells_new.shape(0); ++c)
+  assert(cells.size() == shape[0] * shape[1]);
+  std::vector<std::int64_t> cells_new(cells.size());
+  for (std::size_t c = 0; c < shape[0]; ++c)
   {
-    auto cell = xt::row(cells, c);
-    auto cell_new = xt::row(cells_new, c);
-    for (std::size_t i = 0; i < cell_new.shape(0); ++i)
+    auto cell = cells.subspan(c * shape[1], shape[1]);
+    std::span cell_new(cells_new.data() + c * shape[1], shape[1]);
+    for (std::size_t i = 0; i < shape[1]; ++i)
       cell_new[i] = cell[p[i]];
   }
   return cells_new;

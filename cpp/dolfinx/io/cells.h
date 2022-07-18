@@ -6,10 +6,11 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
+#include <span>
 #include <vector>
-#include <xtensor/xtensor.hpp>
 
 /// Functions for the re-ordering of input mesh topology to the DOLFINx
 /// ordering, and transpose orderings for file output.
@@ -111,9 +112,13 @@ std::vector<std::uint8_t> transpose(const std::vector<std::uint8_t>& map);
 /// where `a_p` is the permuted array
 /// @return Permuted cell topology, where for a cell `v_new[i] =
 /// v_old[map[i]]`
-xt::xtensor<std::int64_t, 2>
-compute_permutation(const xt::xtensor<std::int64_t, 2>& cells,
-                    const std::vector<std::uint8_t>& p);
+// xt::xtensor<std::int64_t, 2>
+// compute_permutation(const xt::xtensor<std::int64_t, 2>& cells,
+//                     const std::vector<std::uint8_t>& p);
+std::vector<std::int64_t>
+apply_permutation(const std::span<const std::int64_t>& cells,
+                  std::array<std::size_t, 2> shape,
+                  const std::span<const std::uint8_t>& p);
 
 /// Get VTK cell identifier
 /// @param[in] cell The cell type
