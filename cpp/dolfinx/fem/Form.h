@@ -373,8 +373,7 @@ public:
   /// that the function space is defined over.
   /// @param[in] function_space The function space
   /// @return The map
-  // TODO Rename
-  // TODO Use span const xtl::span<const std::int32_t>&
+  // TODO User could provide this directly, rather than entity maps
   std::function<std::int32_t(const xtl::span<const std::int32_t>&)>
   cell_to_cell_map(const FunctionSpace& function_space) const
   {
@@ -396,7 +395,7 @@ public:
   /// that the function space is defined over.
   /// @param[in] function_space The function space
   /// @return The map
-  // TODO Rename
+  // TODO User could provide this directly, rather than entity maps
   std::function<std::int32_t(const xtl::span<const std::int32_t>&)>
   facet_to_cell_map(const FunctionSpace& function_space) const
   {
