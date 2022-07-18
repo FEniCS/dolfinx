@@ -389,6 +389,8 @@ template <typename T>
 void interpolate(Function<T>& u, const xt::xarray<T>& f,
                  const std::span<const std::int32_t>& cells)
 {
+  // NOTE: Some communication has temporarily been added to this
+  // function. A fix so this isn't required is in progress
   const std::shared_ptr<const FiniteElement> element
       = u.function_space()->element();
   assert(element);
