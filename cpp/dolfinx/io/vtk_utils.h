@@ -41,7 +41,7 @@ namespace io
 /// -# cell shape (shape={num_cells, nodes_per_cell)})
 std::tuple<std::vector<double>, std::array<std::size_t, 2>,
            std::vector<std::int64_t>, std::vector<std::uint8_t>,
-           std::vector<std::int32_t>, std::array<std::size_t, 2>>
+           std::vector<std::int64_t>, std::array<std::size_t, 2>>
 vtk_mesh_from_space(const fem::FunctionSpace& V);
 
 /// Extract the cell topology (connectivity) in VTK ordering for all

@@ -136,7 +136,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<double>, std::array<std::size_t, 2>,
            std::vector<std::int64_t>, std::vector<std::uint8_t>,
-           std::vector<std::int32_t>, std::array<std::size_t, 2>>
+           std::vector<std::int64_t>, std::array<std::size_t, 2>>
 io::vtk_mesh_from_space(const fem::FunctionSpace& V)
 {
   auto mesh = V.mesh();
@@ -163,7 +163,7 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
   // Extract topology for all local cells as
   // [v0_0, ...., v0_N0, v1_0, ...., v1_N1, ....]
   std::array<std::size_t, 2> shape = {num_cells, num_nodes};
-  std::vector<std::int32_t> vtk_topology(shape[0] * shape[1]);
+  std::vector<std::int64_t> vtk_topology(shape[0] * shape[1]);
   for (std::size_t c = 0; c < shape[0]; ++c)
   {
     auto dofs = dofmap->cell_dofs(c);

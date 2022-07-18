@@ -23,9 +23,6 @@
 #include <span>
 #include <sstream>
 #include <string>
-#include <xtensor/xbuilder.hpp>
-#include <xtensor/xcomplex.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
@@ -199,7 +196,8 @@ void add_mesh(const std::span<const double>& x,
               std::array<std::size_t, 2> /*xshape*/,
               const std::span<const std::int64_t> x_id,
               const std::span<const std::uint8_t> x_ghost,
-              const xt::xtensor<std::int64_t, 2>& cells,
+              const std::span<const std::int64_t>& cells,
+              std::array<std::size_t, 2> cshape,
               const common::IndexMap& cellmap, mesh::CellType celltype,
               int tdim, pugi::xml_node& piece_node)
 {
@@ -234,8 +232,8 @@ void add_mesh(const std::span<const double>& x,
   offsets_node.append_attribute("format") = "ascii";
   {
     std::stringstream ss;
-    int num_nodes = cells.shape(1);
-    for (std::size_t i = 0; i < cells.shape(0); ++i)
+    int num_nodes = cshape[1];
+    for (std::size_t i = 0; i < cshape[0]; ++i)
       ss << (i + 1) * num_nodes << " ";
     offsets_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
   }
@@ -247,7 +245,7 @@ void add_mesh(const std::span<const double>& x,
   int vtk_celltype = io::cells::get_vtk_cell_type(celltype, tdim);
   {
     std::stringstream ss;
-    for (std::size_t c = 0; c < cells.shape(0); ++c)
+    for (std::size_t c = 0; c < cshape[0]; ++c)
       ss << vtk_celltype << " ";
     type_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
   }
@@ -265,7 +263,7 @@ void add_mesh(const std::span<const double>& x,
     std::stringstream ss;
     for (std::int32_t c = 0; c < cellmap.size_local(); ++c)
       ss << 0 << " ";
-    for (std::size_t c = cellmap.size_local(); c < cells.shape(0); ++c)
+    for (std::size_t c = cellmap.size_local(); c < cshape[0]; ++c)
       ss << 1 << " ";
     ghost_cell_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
   }
@@ -417,7 +415,7 @@ void write_function(
   std::array<std::size_t, 2> xshape;
   std::vector<std::int64_t> x_id;
   std::vector<std::uint8_t> x_ghost;
-  std::vector<std::int32_t> cells;
+  std::vector<std::int64_t> cells;
   std::array<std::size_t, 2> cshape;
   if (is_cellwise(*V0))
   {
@@ -437,8 +435,6 @@ void write_function(
     std::tie(x, xshape, x_id, x_ghost, cells, cshape)
         = io::vtk_mesh_from_space(*V0);
 
-  auto _cells = xt::adapt(cells, std::vector{cshape[0], cshape[1]});
-
   // Add "Piece" node and required metadata
   pugi::xml_node piece_node = grid_node_vtu.append_child("Piece");
   piece_node.append_attribute("NumberOfPoints") = xshape[0];
@@ -446,8 +442,9 @@ void write_function(
 
   // Add mesh data to "Piece" node
   int tdim = mesh0->topology().dim();
-  add_mesh(x, xshape, x_id, x_ghost, _cells, *mesh0->topology().index_map(tdim),
-           mesh0->topology().cell_type(), mesh0->topology().dim(), piece_node);
+  add_mesh(x, xshape, x_id, x_ghost, cells, cshape,
+           *mesh0->topology().index_map(tdim), mesh0->topology().cell_type(),
+           mesh0->topology().dim(), piece_node);
 
   // FIXME: is this actually setting the first?
   // Set last scalar/vector/tensor Functions in u to be the 'active'
@@ -775,13 +772,11 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
 
   // Add mesh data to "Piece" node
   const auto [cells, cshape] = extract_vtk_connectivity(mesh);
-  auto _cells = xt::adapt(cells, std::vector{cshape[0], cshape[1]});
-
   std::array<std::size_t, 2> xshape = {geometry.x().size() / 3, 3};
   std::vector<std::uint8_t> x_ghost(xshape[0], 0);
   std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
   add_mesh(geometry.x(), xshape, geometry.input_global_indices(), x_ghost,
-           _cells, *topology.index_map(tdim), topology.cell_type(),
+           cells, cshape, *topology.index_map(tdim), topology.cell_type(),
            topology.dim(), piece_node);
 
   // Create filepath for a .vtu file
