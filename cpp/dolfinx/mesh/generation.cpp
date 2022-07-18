@@ -11,6 +11,7 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <vector>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
@@ -19,9 +20,9 @@ using namespace dolfinx::mesh;
 namespace
 {
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2>
-create_geom(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
-            std::array<std::size_t, 3> n)
+std::vector<double> create_geom(MPI_Comm comm,
+                                const std::array<std::array<double, 3>, 2>& p,
+                                std::array<std::size_t, 3> n)
 {
   // Extract data
   const std::array<double, 3> p0 = p[0];
@@ -66,8 +67,7 @@ create_geom(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
         "BoxMesh has non-positive number of vertices in some dimension");
   }
 
-  xt::xtensor<double, 2> geom(
-      {static_cast<std::size_t>(range_p[1] - range_p[0]), 3});
+  std::vector<double> geom((range_p[1] - range_p[0]) * 3);
   const std::int64_t sqxy = (nx + 1) * (ny + 1);
   std::array<double, 3> point;
   for (std::int64_t v = range_p[0]; v < range_p[1]; ++v)
@@ -81,7 +81,7 @@ create_geom(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
     const double x = a + ab * static_cast<double>(ix);
     point = {x, y, z};
     for (std::size_t i = 0; i < 3; i++)
-      geom(v - range_p[0], i) = point[i];
+      geom[3 * (v - range_p[0]) + i] = point[i];
   }
 
   return geom;
@@ -94,7 +94,7 @@ mesh::Mesh build_tet(MPI_Comm comm,
 {
   common::Timer timer("Build BoxMesh");
 
-  xt::xtensor<double, 2> geom = create_geom(comm, p, n);
+  std::vector<double> geom = create_geom(comm, p, n);
 
   const std::int64_t nx = n[0];
   const std::int64_t ny = n[1];
@@ -130,9 +130,11 @@ mesh::Mesh build_tet(MPI_Comm comm,
     std::copy(c.begin(), c.end(), std::next(cells.begin(), 4 * offset));
   }
 
+  auto _geom = xt::adapt(geom, std::vector<std::size_t>{geom.size() / 3, 3});
+
   fem::CoordinateElement element(CellType::tetrahedron, 1);
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 4),
-                     element, geom, ghost_mode, partitioner);
+                     element, _geom, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_hex(MPI_Comm comm,
@@ -140,7 +142,7 @@ mesh::Mesh build_hex(MPI_Comm comm,
                      std::array<std::size_t, 3> n, GhostMode ghost_mode,
                      const CellPartitionFunction& partitioner)
 {
-  xt::xtensor<double, 2> geom = create_geom(comm, p, n);
+  std::vector<double> geom = create_geom(comm, p, n);
 
   const std::int64_t nx = n[0];
   const std::int64_t ny = n[1];
@@ -173,9 +175,10 @@ mesh::Mesh build_hex(MPI_Comm comm,
               std::next(cells.begin(), (i - range_c[0]) * 8));
   }
 
+  auto _geom = xt::adapt(geom, std::vector<std::size_t>{geom.size() / 3, 3});
   fem::CoordinateElement element(CellType::hexahedron, 1);
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 8),
-                     element, geom, ghost_mode, partitioner);
+                     element, _geom, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_prism(MPI_Comm comm,
@@ -183,7 +186,7 @@ mesh::Mesh build_prism(MPI_Comm comm,
                        std::array<std::size_t, 3> n, GhostMode ghost_mode,
                        const CellPartitionFunction& partitioner)
 {
-  xt::xtensor<double, 2> geom = create_geom(comm, p, n);
+  std::vector<double> geom = create_geom(comm, p, n);
 
   const std::int64_t nx = n[0];
   const std::int64_t ny = n[1];
@@ -220,9 +223,10 @@ mesh::Mesh build_prism(MPI_Comm comm,
               std::next(cells.begin(), 6 * ((i - range_c[0]) * 2 + 1)));
   }
 
+  auto _geom = xt::adapt(geom, std::vector<std::size_t>{geom.size() / 3, 3});
   fem::CoordinateElement element(CellType::prism, 1);
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 6),
-                     element, geom, ghost_mode, partitioner);
+                     element, _geom, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
 
