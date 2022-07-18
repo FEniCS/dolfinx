@@ -368,8 +368,10 @@ io::cells::apply_permutation(const std::span<const std::int64_t>& cells,
                              std::array<std::size_t, 2> shape,
                              const std::span<const std::uint8_t>& p)
 {
-  LOG(INFO) << "IO permuting cells";
   assert(cells.size() == shape[0] * shape[1]);
+  assert(shape[1] == p.size());
+
+  LOG(INFO) << "IO permuting cells";
   std::vector<std::int64_t> cells_new(cells.size());
   for (std::size_t c = 0; c < shape[0]; ++c)
   {
