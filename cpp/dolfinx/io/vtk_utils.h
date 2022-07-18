@@ -25,9 +25,11 @@ class Mesh;
 
 namespace io
 {
-/// Given a FunctionSpace, create a topology and geometry based on the
-/// dof coordinates
+/// @brief Given a FunctionSpace, create a topology and geometry based
+/// on the dof coordinates.
+///
 /// @pre `V` must be a (discontinuous) Lagrange space
+///
 /// @param[in] V The function space
 /// @returns Mesh data
 /// -# node coordinates (shape={num_nodes, 3}), row-major storage

@@ -24,16 +24,17 @@ namespace
 {
 /// Tabulate the coordinate for every 'node' in a Lagrange function
 /// space.
+/// @pre `V` must be (discontinuous) Lagrange and must not be a subspace
 /// @param[in] V The function space
 /// @return Mesh coordinate data
 /// -# Node coordinates (shape={num_dofs, 3}) where the ith row
 /// corresponds to the coordinate of the ith dof in `V` (local to
 /// process)
+/// -# Node coordinates shape
 /// -# Unique global index for each node
 /// -# ghost index for each node (0=non-ghost, 1=ghost)
-/// @pre `V` must be (discontinuous) Lagrange and must not be a subspace
-std::tuple<xt::xtensor<double, 2>, std::vector<std::int64_t>,
-           std::vector<std::uint8_t>>
+std::tuple<std::vector<double>, std::array<std::size_t, 2>,
+           std::vector<std::int64_t>, std::vector<std::uint8_t>>
 tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
 {
   auto mesh = V.mesh();
@@ -54,7 +55,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
   assert(element);
   const int e_bs = element->block_size();
   const std::size_t scalar_dofs = element->space_dimension() / e_bs;
-  const std::int32_t num_nodes
+  const std::size_t num_nodes
       = index_map_bs * (map_dofs->size_local() + map_dofs->num_ghosts())
         / dofmap_bs;
 
@@ -88,7 +89,8 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
   const std::int32_t num_cells = map->size_local() + map->num_ghosts();
   xt::xtensor<double, 2> x = xt::zeros<double>({scalar_dofs, gdim});
   xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
-  xt::xtensor<double, 2> coords = xt::zeros<double>({num_nodes, 3});
+  std::vector<double> coords(num_nodes * 3, 0.0);
+  std::array<std::size_t, 2> cshape = {num_nodes, 3};
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Extract cell geometry
@@ -111,7 +113,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
     {
       std::int32_t dof = dofs[i];
       for (std::size_t j = 0; j < gdim; ++j)
-        coords(dof, j) = x(i, j);
+        coords[3 * dof + j] = x(i, j);
     }
   }
 
@@ -127,7 +129,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
   std::vector<std::uint8_t> id_ghost(num_nodes, 0);
   std::fill(std::next(id_ghost.begin(), size_local), id_ghost.end(), 1);
 
-  return {std::move(coords), std::move(x_id), std::move(id_ghost)};
+  return {std::move(coords), cshape, std::move(x_id), std::move(id_ghost)};
 }
 } // namespace
 
@@ -145,9 +147,7 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
   if (V.element()->is_mixed())
     throw std::runtime_error("Can create VTK mesh from a mixed element");
 
-  const auto [_x, x_id, x_ghost] = tabulate_lagrange_dof_coordinates(V);
-  std::array<std::size_t, 2> xshape = {_x.shape(0), _x.shape(1)};
-  std::vector<double> x(_x.data(), _x.data() + _x.size());
+  const auto [x, xshape, x_id, x_ghost] = tabulate_lagrange_dof_coordinates(V);
   auto map = mesh->topology().index_map(tdim);
   const std::size_t num_cells = map->size_local() + map->num_ghosts();
 

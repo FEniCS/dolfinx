@@ -415,7 +415,6 @@ void write_function(
   std::array<std::size_t, 2> xshape;
   std::vector<std::int64_t> x_id;
   std::vector<std::uint8_t> x_ghost;
-  // xt::xtensor<std::int32_t, 2> cells;
   std::vector<std::int32_t> cells;
   std::array<std::size_t, 2> cshape;
   if (is_cellwise(*V0))
