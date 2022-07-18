@@ -54,6 +54,8 @@ void cells(
 /// @param[in] dofmaps The dofmap to use in building the sparsity
 /// pattern
 /// @note The sparsity pattern is not finalised
+/// @param[in] cell_maps Maps from the cells in the integration domain to
+/// the cells in each function space in the form.
 void cells(
     la::SparsityPattern& pattern, const std::span<const std::int32_t>& cells,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps,
@@ -115,6 +117,9 @@ void exterior_facets(
 /// @param[in] facets The facets as (cell, local_index) pairs
 /// @param[in] dofmaps The dofmap to use in building the sparsity
 /// pattern
+/// @param[in] facet_maps Maps from the facets as (cell, local_index)
+/// pairs in the integration domain to the cells in each function
+/// space in the form.
 /// @note The sparsity pattern is not finalised
 void exterior_facets(
     la::SparsityPattern& pattern, const std::span<const std::int32_t>& facets,
