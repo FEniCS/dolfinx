@@ -354,8 +354,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     // "\n";
     ss << "submesh_e_to_v_vec = " << xt::adapt(submesh_e_to_v_vec) << "\n";
 
-    // submesh_vertex_index_map->global_to_local(ghost_vertices,
-    //                                           ghost_vertices_local);
+    submesh_vertex_index_map->global_to_local(ghost_vertices,
+                                              ghost_vertices_local);
 
     ss << "submesh_e_to_v_vec = " << xt::adapt(submesh_e_to_v_vec) << "\n";
     std::cout << ss.str() << "\n";
