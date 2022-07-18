@@ -185,7 +185,8 @@ void add_data(const std::string& name, int rank,
 
 /// Add mesh geometry and topology data to a pugixml node. This function
 /// adds the Points and Cells nodes to the input node.
-/// @param[in] x Coordinates of the points
+/// @param[in] x Coordinates of the points, row-major storage
+/// @param[in] xshape The shape of `x`
 /// @param[in] x_id Unique global index for each point
 /// @param[in] x_ghost Flag indicating if a point is a owned (0) or is a
 /// ghost (1)
@@ -194,7 +195,8 @@ void add_data(const std::string& name, int rank,
 /// @param[in] celltype The cell type
 /// @param[in] tdim Topological dimension of the cells
 /// @param[in,out] piece_node The XML node to add data to
-void add_mesh(const xt::xtensor<double, 2>& x,
+void add_mesh(const std::span<const double>& x,
+              std::array<std::size_t, 2> /*xshape*/,
               const std::span<const std::int64_t> x_id,
               const std::span<const std::uint8_t> x_ghost,
               const xt::xtensor<std::int64_t, 2>& cells,
@@ -444,8 +446,7 @@ void write_function(
 
   // Add mesh data to "Piece" node
   int tdim = mesh0->topology().dim();
-  auto _x = xt::adapt(x, std::vector<std::size_t>{xshape[0], xshape[1]});
-  add_mesh(_x, x_id, x_ghost, _cells, *mesh0->topology().index_map(tdim),
+  add_mesh(x, xshape, x_id, x_ghost, _cells, *mesh0->topology().index_map(tdim),
            mesh0->topology().cell_type(), mesh0->topology().dim(), piece_node);
 
   // FIXME: is this actually setting the first?
@@ -776,14 +777,12 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
   const auto [cells, cshape] = extract_vtk_connectivity(mesh);
   auto _cells = xt::adapt(cells, std::vector{cshape[0], cshape[1]});
 
-  xt::xtensor<double, 2> x
-      = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
-                  std::vector({geometry.x().size() / 3, std::size_t(3)}));
-  std::vector<std::uint8_t> x_ghost(x.shape(0), 0);
+  std::array<std::size_t, 2> xshape = {geometry.x().size() / 3, 3};
+  std::vector<std::uint8_t> x_ghost(xshape[0], 0);
   std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
-  add_mesh(x, geometry.input_global_indices(), x_ghost, _cells,
-           *topology.index_map(tdim), topology.cell_type(), topology.dim(),
-           piece_node);
+  add_mesh(geometry.x(), xshape, geometry.input_global_indices(), x_ghost,
+           _cells, *topology.index_map(tdim), topology.cell_type(),
+           topology.dim(), piece_node);
 
   // Create filepath for a .vtu file
   auto create_vtu_path = [file_root = _filename.parent_path(),
