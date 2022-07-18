@@ -21,7 +21,6 @@
 #include <dolfinx/mesh/utils.h>
 #include <pugixml.hpp>
 #include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -190,10 +189,6 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
     std::copy_n(std::next(vtkcells.begin(), c * shape[1]), shape[1],
                 std::next(cells.begin(), c * (shape[1] + 1)));
   }
-  // xt::xtensor<std::int64_t, 2> cells({num_cells, num_nodes + 1});
-  // xt::view(cells, xt::all(), xt::xrange(std::size_t(1), cells.shape(1)))
-  //     = io::extract_vtk_connectivity(mesh);
-  // xt::view(cells, xt::all(), 0) = num_nodes;
 
   // Put topology (nodes)
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
@@ -244,9 +239,6 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   std::vector<std::uint64_t> vtk_topology(shape[0] * shape[1], vtkshape[1]);
 
   // Set the [v0_0,...., v0_N0, v1_0,...., v1_N1,....] data
-  // auto _vtk = xt::adapt(vtk_topology, shape);
-  // xt::view(_vtk, xt::all(), xt::range(1, _vtk.shape(1)))
-  //     = xt::view(vtk, xt::range(0, num_cells, xt::all()));
   std::vector<std::int64_t> cells(shape[0] * (shape[1] + 1), shape[1]);
   for (std::size_t c = 0; c < shape[0]; ++c)
   {
@@ -561,9 +553,7 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
   const int tdim = topology.dim();
   const std::int32_t num_cells = topology.index_map(tdim)->size_local();
   const int num_nodes = geometry.cmap().dim();
-
   const auto [cells, shape] = io::extract_vtk_connectivity(mesh);
-  // const xt::xtensor<std::int64_t, 2> cells = extract_vtk_connectivity(mesh);
 
   // "Put" topology data in the result in the ADIOS2 file
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
