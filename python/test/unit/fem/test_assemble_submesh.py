@@ -301,7 +301,7 @@ def test_mixed_codim_0_assembly_coeffs(d, n, k, space, ghost_mode,
     assert(np.isclose(s_sm, s_m))
 
 
-def unit_norm(d, n, space, k, ghost_mode):
+def compute_expected_norms(d, n, space, k, ghost_mode):
     """A helper function to assemble some forms on the unit square for
     testing."""
     if d == 2:
@@ -436,7 +436,7 @@ def test_mixed_codim_0_assembly_0(d, n, k, space, ghost_mode,
                   mode=PETSc.ScatterMode.REVERSE)
 
     # Compute expected norms and compare
-    A_expected_norm, b_expected_norm = unit_norm(
+    A_expected_norm, b_expected_norm = compute_expected_norms(
         d, n, space, k, ghost_mode)
     assert(np.isclose(A.norm(), A_expected_norm))
     assert(np.isclose(b.norm(), b_expected_norm))
@@ -510,7 +510,7 @@ def test_mixed_codim_0_assembly_1(d, n, k, space, ghost_mode, random_ordering):
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
 
-    A_expected_norm, b_expected_norm = unit_norm(
+    A_expected_norm, b_expected_norm = compute_expected_norms(
         d, n, space, k, ghost_mode)
     assert(np.isclose(A.norm(), A_expected_norm))
     assert(np.isclose(b.norm(), b_expected_norm))
