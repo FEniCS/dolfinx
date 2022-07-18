@@ -55,7 +55,7 @@ mesh::extract_topology(const CellType& cell_type,
 }
 //-----------------------------------------------------------------------------
 std::vector<double> mesh::h(const Mesh& mesh,
-                            const xtl::span<const std::int32_t>& entities,
+                            const std::span<const std::int32_t>& entities,
                             int dim)
 {
   if (entities.empty())
@@ -70,7 +70,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   const std::size_t num_vertices = vertex_xdofs.size() / entities.size();
 
   // Get the  geometry coordinate
-  const xtl::span<const double> x = mesh.geometry().x();
+  const std::span<const double> x = mesh.geometry().x();
 
   // Function to compute the length of (p0 - p1)
   auto delta_norm = [](const auto& p0, const auto& p1)
@@ -87,16 +87,16 @@ std::vector<double> mesh::h(const Mesh& mesh,
   for (std::size_t e = 0; e < entities.size(); ++e)
   {
     // Get geometry 'dof' for each vertex of entity e
-    xtl::span<const std::int32_t> e_vertices(
+    std::span<const std::int32_t> e_vertices(
         vertex_xdofs.data() + e * num_vertices, num_vertices);
 
     // Compute maximum distance between any two vertices
     for (std::size_t i = 0; i < e_vertices.size(); ++i)
     {
-      xtl::span<const double, 3> p0(x.data() + 3 * e_vertices[i], 3);
+      std::span<const double, 3> p0(x.data() + 3 * e_vertices[i], 3);
       for (std::size_t j = i + 1; j < e_vertices.size(); ++j)
       {
-        xtl::span<const double, 3> p1(x.data() + 3 * e_vertices[j], 3);
+        std::span<const double, 3> p1(x.data() + 3 * e_vertices[j], 3);
         h[e] = std::max(h[e], delta_norm(p0, p1));
       }
     }
@@ -107,7 +107,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 std::vector<double>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim,
-                   const xtl::span<const std::int32_t>& entities)
+                   const std::span<const std::int32_t>& entities)
 {
   if (entities.empty())
     return std::vector<double>();
@@ -119,7 +119,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   const CellType type = cell_entity_type(mesh.topology().cell_type(), dim, 0);
 
   // Find geometry nodes for topology entities
-  xtl::span<const double> x = mesh.geometry().x();
+  std::span<const double> x = mesh.geometry().x();
 
   // Orient cells if they are tetrahedron
   bool orient = false;
@@ -143,8 +143,8 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
       std::array vertices{geometry_entities[i * shape1],
                           geometry_entities[i * shape1 + 1]};
       std::array p
-          = {xtl::span<const double, 3>(x.data() + 3 * vertices[0], 3),
-             xtl::span<const double, 3>(x.data() + 3 * vertices[1], 3)};
+          = {std::span<const double, 3>(x.data() + 3 * vertices[0], 3),
+             std::span<const double, 3>(x.data() + 3 * vertices[1], 3)};
 
       // Define normal by rotating tangent counter-clockwise
       std::array<double, 3> t;
@@ -152,7 +152,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                      [](auto x, auto y) { return x - y; });
 
       double norm = std::sqrt(t[0] * t[0] + t[1] * t[1]);
-      xtl::span<double, 3> ni(n.data() + 3 * i, 3);
+      std::span<double, 3> ni(n.data() + 3 * i, 3);
       ni[0] = -t[1] / norm;
       ni[1] = t[0] / norm;
       ni[2] = 0.0;
@@ -168,9 +168,9 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                              geometry_entities[i * shape1 + 1],
                              geometry_entities[i * shape1 + 2]};
       std::array p
-          = {xtl::span<const double, 3>(x.data() + 3 * vertices[0], 3),
-             xtl::span<const double, 3>(x.data() + 3 * vertices[1], 3),
-             xtl::span<const double, 3>(x.data() + 3 * vertices[2], 3)};
+          = {std::span<const double, 3>(x.data() + 3 * vertices[0], 3),
+             std::span<const double, 3>(x.data() + 3 * vertices[1], 3),
+             std::span<const double, 3>(x.data() + 3 * vertices[2], 3)};
 
       // Compute (p1 - p0) and (p2 - p0)
       std::array<double, 3> dp1, dp2;
@@ -180,7 +180,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                      [](auto x, auto y) { return x - y; });
 
       // Define cell normal via cross product of first two edges
-      std::array<double, 3> ni = math::cross_new(dp1, dp2);
+      std::array<double, 3> ni = math::cross(dp1, dp2);
       double norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
       std::transform(ni.begin(), ni.end(), std::next(n.begin(), 3 * i),
                      [norm](auto x) { return x / norm; });
@@ -197,9 +197,9 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                              geometry_entities[i * shape1 + 1],
                              geometry_entities[i * shape1 + 2]};
       std::array p
-          = {xtl::span<const double, 3>(x.data() + 3 * vertices[0], 3),
-             xtl::span<const double, 3>(x.data() + 3 * vertices[1], 3),
-             xtl::span<const double, 3>(x.data() + 3 * vertices[2], 3)};
+          = {std::span<const double, 3>(x.data() + 3 * vertices[0], 3),
+             std::span<const double, 3>(x.data() + 3 * vertices[1], 3),
+             std::span<const double, 3>(x.data() + 3 * vertices[2], 3)};
 
       // Compute (p1 - p0) and (p2 - p0)
       std::array<double, 3> dp1, dp2;
@@ -209,7 +209,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                      [](auto x, auto y) { return x - y; });
 
       // Define cell normal via cross product of first two edges
-      std::array<double, 3> ni = math::cross_new(dp1, dp2);
+      std::array<double, 3> ni = math::cross(dp1, dp2);
       double norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
       std::transform(ni.begin(), ni.end(), std::next(n.begin(), 3 * i),
                      [norm](auto x) { return x / norm; });
@@ -224,12 +224,12 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 //-----------------------------------------------------------------------------
 std::vector<double>
 mesh::compute_midpoints(const Mesh& mesh, int dim,
-                        const xtl::span<const std::int32_t>& entities)
+                        const std::span<const std::int32_t>& entities)
 {
   if (entities.empty())
     return std::vector<double>();
 
-  xtl::span<const double> x = mesh.geometry().x();
+  std::span<const double> x = mesh.geometry().x();
 
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
@@ -240,11 +240,11 @@ mesh::compute_midpoints(const Mesh& mesh, int dim,
   std::vector<double> x_mid(entities.size() * 3, 0);
   for (std::size_t e = 0; e < entities.size(); ++e)
   {
-    xtl::span<double, 3> p(x_mid.data() + 3 * e, 3);
-    xtl::span<const std::int32_t> rows(e_to_g.data() + e * shape1, shape1);
+    std::span<double, 3> p(x_mid.data() + 3 * e, 3);
+    std::span<const std::int32_t> rows(e_to_g.data() + e * shape1, shape1);
     for (auto row : rows)
     {
-      xtl::span<const double, 3> xg(x.data() + 3 * row, 3);
+      std::span<const double, 3> xg(x.data() + 3 * row, 3);
       std::transform(p.begin(), p.end(), xg.begin(), p.begin(),
                      [size = rows.size()](auto x, auto y)
                      { return x + y / size; });
@@ -284,7 +284,7 @@ std::vector<std::int32_t> mesh::locate_entities(
   }
 
   // Pack coordinates of vertices
-  xtl::span<const double> x_nodes = mesh.geometry().x();
+  std::span<const double> x_nodes = mesh.geometry().x();
   xt::xtensor<double, 2> x_vertices({3, vertex_to_node.size()});
   for (std::size_t i = 0; i < vertex_to_node.size(); ++i)
   {
@@ -375,7 +375,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 
   // Get geometry data
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  xtl::span<const double> x_nodes = mesh.geometry().x();
+  std::span<const double> x_nodes = mesh.geometry().x();
 
   // Get all vertex 'node' indices
   auto v_to_c = topology.connectivity(0, tdim);
@@ -437,7 +437,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 mesh::entities_to_geometry(const Mesh& mesh, int dim,
-                           const xtl::span<const std::int32_t>& entities,
+                           const std::span<const std::int32_t>& entities,
                            bool orient)
 {
   CellType cell_type = mesh.topology().cell_type();
@@ -580,7 +580,7 @@ mesh::create_cell_partitioner(const graph::partition_fn& partfn)
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 mesh::compute_incident_entities(const Mesh& mesh,
-                                const xtl::span<const std::int32_t>& entities,
+                                const std::span<const std::int32_t>& entities,
                                 int d0, int d1)
 {
   auto map0 = mesh.topology().index_map(d0);

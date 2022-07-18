@@ -10,10 +10,10 @@
 #include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
+#include <span>
 #include <utility>
 #include <vector>
 #include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
 {
@@ -93,15 +93,14 @@ public:
 
   /// Get argument function space
   /// @return The argument function space, nullptr if there is no argument.
-  std::shared_ptr<const fem::FunctionSpace> argument_function_space() const
+  std::shared_ptr<const FunctionSpace> argument_function_space() const
   {
     return _argument_function_space;
   };
 
   /// Get coefficients
   /// @return Vector of attached coefficients
-  const std::vector<std::shared_ptr<const fem::Function<T>>>&
-  coefficients() const
+  const std::vector<std::shared_ptr<const Function<T>>>& coefficients() const
   {
     return _coefficients;
   }
@@ -110,7 +109,7 @@ public:
   /// @return Vector of attached constants with their names. Names are
   ///   used to set constants in user's c++ code. Index in the vector is
   ///   the position of the constant in the original (nonsimplified) form.
-  const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants() const
+  const std::vector<std::shared_ptr<const Constant<T>>>& constants() const
   {
     return _constants;
   }
@@ -136,7 +135,7 @@ public:
   /// is responsible for correct sizing which should be (num_cells,
   /// num_points * value_size * num_all_argument_dofs columns).
   template <typename U>
-  void eval(const xtl::span<const std::int32_t>& cells, U& values) const
+  void eval(const std::span<const std::int32_t>& cells, U& values) const
   {
     // Extract data from Expression
     assert(_mesh);
@@ -150,18 +149,18 @@ public:
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = _mesh->geometry().dofmap();
     const std::size_t num_dofs_g = _mesh->geometry().cmap().dim();
-    xtl::span<const double> x_g = _mesh->geometry().x();
+    std::span<const double> x_g = _mesh->geometry().x();
 
     // Create data structures used in evaluation
     std::vector<scalar_value_type_t> coordinate_dofs(3 * num_dofs_g);
 
     int num_argument_dofs = 1;
-    xtl::span<const std::uint32_t> cell_info;
-    std::function<void(const xtl::span<T>&,
-                       const xtl::span<const std::uint32_t>&, std::int32_t,
+    std::span<const std::uint32_t> cell_info;
+    std::function<void(const std::span<T>&,
+                       const std::span<const std::uint32_t>&, std::int32_t,
                        int)>
         dof_transform_to_transpose
-        = [](const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
+        = [](const std::span<T>&, const std::span<const std::uint32_t>&,
              std::int32_t, int)
     {
       // Do nothing
@@ -177,7 +176,7 @@ public:
       if (element->needs_dof_transformations())
       {
         _mesh->topology_mutable().create_entity_permutations();
-        cell_info = xtl::span(_mesh->topology().get_cell_permutation_info());
+        cell_info = std::span(_mesh->topology().get_cell_permutation_info());
         dof_transform_to_transpose
             = element
                   ->template get_dof_transformation_to_transpose_function<T>();
@@ -186,7 +185,7 @@ public:
 
     const int size0 = _x_ref.shape(0) * value_size();
     std::vector<T> values_local(size0 * num_argument_dofs, 0);
-    const xtl::span<T> _values_local(values_local);
+    const std::span<T> _values_local(values_local);
 
     // Iterate over cells and 'assemble' into values
     for (std::size_t c = 0; c < cells.size(); ++c)
@@ -229,8 +228,8 @@ public:
   /// @return value_size
   int value_size() const
   {
-    return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
-                           std::multiplies<int>());
+    return std::reduce(_value_shape.begin(), _value_shape.end(), 1,
+                       std::multiplies{});
   }
 
   /// Get value shape
@@ -246,13 +245,13 @@ public:
 
 private:
   // Function space for Argument
-  std::shared_ptr<const fem::FunctionSpace> _argument_function_space;
+  std::shared_ptr<const FunctionSpace> _argument_function_space;
 
   // Coefficients associated with the Expression
-  std::vector<std::shared_ptr<const fem::Function<T>>> _coefficients;
+  std::vector<std::shared_ptr<const Function<T>>> _coefficients;
 
   // Constants associated with the Expression
-  std::vector<std::shared_ptr<const fem::Constant<T>>> _constants;
+  std::vector<std::shared_ptr<const Constant<T>>> _constants;
 
   // Function to evaluate the Expression
   std::function<void(T*, const T*, const T*, const scalar_value_type_t*,

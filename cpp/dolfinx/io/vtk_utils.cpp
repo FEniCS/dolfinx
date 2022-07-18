@@ -13,10 +13,10 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <span>
 #include <tuple>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xview.hpp>
-#include <xtl/xspan.hpp>
 
 using namespace dolfinx;
 
@@ -66,14 +66,14 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& dofmap_x
       = mesh->geometry().dofmap();
-  xtl::span<const double> x_g = mesh->geometry().x();
+  std::span<const double> x_g = mesh->geometry().x();
   const std::size_t num_dofs_g = cmap.dim();
 
-  xtl::span<const std::uint32_t> cell_info;
+  std::span<const std::uint32_t> cell_info;
   if (element->needs_dof_transformations())
   {
     mesh->topology_mutable().create_entity_permutations();
-    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    cell_info = std::span(mesh->topology().get_cell_permutation_info());
   }
   const auto apply_dof_transformation
       = element->get_dof_transformation_function<double>();
@@ -101,8 +101,8 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
 
     // Tabulate dof coordinates on cell
     cmap.push_forward(x, coordinate_dofs, phi);
-    apply_dof_transformation(xtl::span(x.data(), x.size()),
-                             xtl::span(cell_info.data(), cell_info.size()), c,
+    apply_dof_transformation(std::span(x.data(), x.size()),
+                             std::span(cell_info.data(), cell_info.size()), c,
                              x.shape(1));
 
     // Copy dof coordinates into vector

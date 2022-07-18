@@ -7,8 +7,8 @@
 #pragma once
 
 #include <cstdint>
+#include <span>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::mesh
 {
@@ -37,7 +37,7 @@ mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute = true);
 /// refined mesh if mesh is a distributed mesh.
 /// @return A locally refined mesh
 mesh::Mesh refine(const mesh::Mesh& mesh,
-                  const xtl::span<const std::int32_t>& edges,
+                  const std::span<const std::int32_t>& edges,
                   bool redistribute = true);
 
 } // namespace dolfinx::refinement

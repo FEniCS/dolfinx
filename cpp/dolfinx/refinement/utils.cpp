@@ -55,7 +55,7 @@ std::int64_t local_to_global(std::int32_t local_index,
 /// @param Mesh
 /// @param local_edge_to_new_vertex
 /// @return array of points
-xt::xtensor<double, 2> create_new_geometry(
+std::pair<std::vector<double>, std::array<std::size_t, 2>> create_new_geometry(
     const mesh::Mesh& mesh,
     const std::map<std::int32_t, std::int64_t>& local_edge_to_new_vertex)
 {
@@ -85,18 +85,18 @@ xt::xtensor<double, 2> create_new_geometry(
   }
 
   // Copy over existing mesh vertices
-  xtl::span<const double> x_g = mesh.geometry().x();
+  std::span<const double> x_g = mesh.geometry().x();
   const std::size_t gdim = mesh.geometry().dim();
   const std::size_t num_vertices = map_v->size_local();
   const std::size_t num_new_vertices = local_edge_to_new_vertex.size();
-  xt::xtensor<double, 2> new_vertex_coordinates(
-      {num_vertices + num_new_vertices, gdim});
 
+  std::array<std::size_t, 2> shape = {num_vertices + num_new_vertices, gdim};
+  std::vector<double> new_vertex_coords(shape[0] * shape[1]);
   for (std::size_t v = 0; v < num_vertices; ++v)
   {
-    const int pos = 3 * vertex_to_x[v];
+    std::size_t pos = 3 * vertex_to_x[v];
     for (std::size_t j = 0; j < gdim; ++j)
-      new_vertex_coordinates(v, j) = x_g[pos + j];
+      new_vertex_coords[gdim * v + j] = x_g[pos + j];
   }
 
   // Compute new vertices
@@ -110,13 +110,12 @@ xt::xtensor<double, 2> create_new_geometry(
     // Compute midpoint of each edge (padded to 3D)
     const std::vector<double> midpoints
         = mesh::compute_midpoints(mesh, 1, edges);
-
     for (std::size_t i = 0; i < num_new_vertices; ++i)
       for (std::size_t j = 0; j < gdim; ++j)
-        new_vertex_coordinates(num_vertices + i, j) = midpoints[3 * i + j];
+        new_vertex_coords[gdim * (num_vertices + i) + j] = midpoints[3 * i + j];
   }
 
-  return new_vertex_coordinates;
+  return {std::move(new_vertex_coords), shape};
 }
 } // namespace
 
@@ -177,7 +176,8 @@ void refinement::update_logical_edgefunction(
   }
 }
 //-----------------------------------------------------------------------------
-std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
+std::tuple<std::map<std::int32_t, std::int64_t>, std::vector<double>,
+           std::array<std::size_t, 2>>
 refinement::create_new_vertices(MPI_Comm neighbor_comm,
                                 const graph::AdjacencyList<int>& shared_edges,
                                 const mesh::Mesh& mesh,
@@ -209,7 +209,7 @@ refinement::create_new_vertices(MPI_Comm neighbor_comm,
                 [global_offset](auto& e) { e.second += global_offset; });
 
   // Create actual points
-  xt::xtensor<double, 2> new_vertex_coordinates
+  auto [new_vertex_coords, xshape]
       = create_new_geometry(mesh, local_edge_to_new_vertex);
 
   // If they are shared, then the new global vertex index needs to be
@@ -292,8 +292,8 @@ refinement::create_new_vertices(MPI_Comm neighbor_comm,
     assert(it.second);
   }
 
-  return {std::move(local_edge_to_new_vertex),
-          std::move(new_vertex_coordinates)};
+  return {std::move(local_edge_to_new_vertex), std::move(new_vertex_coords),
+          xshape};
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh

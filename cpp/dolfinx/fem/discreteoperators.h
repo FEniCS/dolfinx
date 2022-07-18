@@ -15,12 +15,12 @@
 #include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
+#include <span>
 #include <vector>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xindex_view.hpp>
 #include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
 {
@@ -49,8 +49,8 @@ namespace dolfinx::fem
 /// @param[in] V1 A Nédélec (first kind) space to interpolate into
 /// @param[in] mat_set A functor that sets values in a matrix
 template <typename T, typename U>
-void discrete_gradient(const fem::FunctionSpace& V0,
-                       const fem::FunctionSpace& V1, U&& mat_set)
+void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
+                       U&& mat_set)
 {
   // Get mesh
   std::shared_ptr<const mesh::Mesh> mesh = V1.mesh();
@@ -143,8 +143,8 @@ void discrete_gradient(const fem::FunctionSpace& V0,
 /// @param[in] V1 The space to interpolate to
 /// @param[in] mat_set A functor that sets values in a matrix
 template <typename T, typename U>
-void interpolation_matrix(const fem::FunctionSpace& V0,
-                          const fem::FunctionSpace& V1, U&& mat_set)
+void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
+                          U&& mat_set)
 {
   // Get mesh
   auto mesh = V0.mesh();
@@ -160,12 +160,12 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   std::shared_ptr<const FiniteElement> element1 = V1.element();
   assert(element1);
 
-  xtl::span<const std::uint32_t> cell_info;
+  std::span<const std::uint32_t> cell_info;
   if (element1->needs_dof_transformations()
       or element0->needs_dof_transformations())
   {
     mesh->topology_mutable().create_entity_permutations();
-    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    cell_info = std::span(mesh->topology().get_cell_permutation_info());
   }
 
   // Get dofmaps
@@ -189,17 +189,17 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   const std::size_t value_size1 = element1->value_size() / bs1;
 
   // Get geometry data
-  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+  const CoordinateElement& cmap = mesh->geometry().cmap();
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
-  xtl::span<const double> x_g = mesh->geometry().x();
+  std::span<const double> x_g = mesh->geometry().x();
 
   // Evaluate coordinate map basis at reference interpolation points
   const xt::xtensor<double, 2> X = element1->interpolation_points();
   xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, X.shape(0)));
   cmap.tabulate(1, X, phi);
-  xt::xtensor<double, 2> dphi
+  const xt::xtensor<double, 2> dphi
       = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
 
   // Evaluate V0 basis functions at reference interpolation points for V1
@@ -207,8 +207,8 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
       {1, X.shape(0), dim0, value_size_ref0});
   element0->tabulate(basis_derivatives_reference0, X, 0);
 
-  double rtol = 1e-14;
-  double atol = 1e-14;
+  constexpr double rtol = 1e-14;
+  constexpr double atol = 1e-14;
   auto inds = xt::isclose(basis_derivatives_reference0, 0.0, rtol, atol);
   xt::filtration(basis_derivatives_reference0, inds) = 0.0;
 
@@ -224,15 +224,13 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   const xt::xtensor<double, 2>& Pi_1 = element1->interpolation_operator();
   bool interpolation_ident = element1->interpolation_ident();
 
-  using u_t = xt::xview<decltype(basis_reference0)&, std::size_t,
-                        xt::xall<std::size_t>, xt::xall<std::size_t>>;
-  using U_t = xt::xview<decltype(basis_reference0)&, std::size_t,
-                        xt::xall<std::size_t>, xt::xall<std::size_t>>;
-  using J_t = xt::xview<decltype(J)&, std::size_t, xt::xall<std::size_t>,
-                        xt::xall<std::size_t>>;
-  using K_t = xt::xview<decltype(K)&, std::size_t, xt::xall<std::size_t>,
-                        xt::xall<std::size_t>>;
-  auto push_forward_fn0 = element0->map_fn<u_t, U_t, J_t, K_t>();
+  namespace stdex = std::experimental;
+  using u_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+  using U_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+  using J_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+  using K_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+  auto push_forward_fn0
+      = element0->basix_element().map_fn<u_t, U_t, J_t, K_t>();
 
   // Basis values of Lagrange space unrolled for block size
   // (num_quadrature_points, Lagrange dof, value_size)
@@ -241,11 +239,7 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
   xt::xtensor<double, 3> mapped_values(
       {X.shape(0), bs0 * dim0, (std::size_t)element1->value_size()});
 
-  using u1_t = xt::xview<decltype(basis_values)&, std::size_t,
-                         xt::xall<std::size_t>, xt::xall<std::size_t>>;
-  using U1_t = xt::xview<decltype(mapped_values)&, std::size_t,
-                         xt::xall<std::size_t>, xt::xall<std::size_t>>;
-  auto pull_back_fn1 = element1->map_fn<U1_t, u1_t, K_t, J_t>();
+  auto pull_back_fn1 = element1->basix_element().map_fn<u_t, U_t, K_t, J_t>();
 
   xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, 3});
   xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});
@@ -289,17 +283,20 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
     for (std::size_t p = 0; p < X.shape(0); ++p)
     {
       apply_dof_transformation0(
-          xtl::span(basis_reference0.data() + p * dim0 * value_size_ref0,
+          std::span(basis_reference0.data() + p * dim0 * value_size_ref0,
                     dim0 * value_size_ref0),
           cell_info, c, value_size_ref0);
     }
 
     for (std::size_t i = 0; i < basis0.shape(0); ++i)
     {
-      auto _K = xt::view(K, i, xt::all(), xt::all());
-      auto _J = xt::view(J, i, xt::all(), xt::all());
-      auto _u = xt::view(basis0, i, xt::all(), xt::all());
-      auto _U = xt::view(basis_reference0, i, xt::all(), xt::all());
+      u_t _u(basis0.data() + i * basis0.shape(1) * basis0.shape(2),
+             basis0.shape(1), basis0.shape(2));
+      U_t _U(basis_reference0.data()
+                 + i * basis_reference0.shape(1) * basis_reference0.shape(2),
+             basis_reference0.shape(1), basis_reference0.shape(2));
+      K_t _K(K.data() + i * K.shape(1) * K.shape(2), K.shape(1), K.shape(2));
+      J_t _J(J.data() + i * J.shape(1) * J.shape(2), J.shape(1), J.shape(2));
       push_forward_fn0(_u, _U, _J, detJ[i], _K);
     }
 
@@ -313,15 +310,19 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
     // Pull back the physical values to the reference of output space
     for (std::size_t p = 0; p < basis_values.shape(0); ++p)
     {
-      auto _K = xt::view(K, p, xt::all(), xt::all());
-      auto _J = xt::view(J, p, xt::all(), xt::all());
-      auto _u = xt::view(basis_values, p, xt::all(), xt::all());
-      auto _U = xt::view(mapped_values, p, xt::all(), xt::all());
+      U_t _u(basis_values.data()
+                 + p * basis_values.shape(1) * basis_values.shape(2),
+             basis_values.shape(1), basis_values.shape(2));
+      u_t _U(mapped_values.data()
+                 + p * mapped_values.shape(1) * mapped_values.shape(2),
+             mapped_values.shape(1), mapped_values.shape(2));
+      K_t _K(K.data() + p * K.shape(1) * K.shape(2), K.shape(1), K.shape(2));
+      J_t _J(J.data() + p * J.shape(1) * J.shape(2), J.shape(1), J.shape(2));
       pull_back_fn1(_U, _u, _K, 1.0 / detJ[p], _J);
     }
 
-    // Apply interpolation matrix to basis values of V0 at the interpolation
-    // points of V1
+    // Apply interpolation matrix to basis values of V0 at the
+    // interpolation points of V1
     if (interpolation_ident)
       _A.assign(xt::transpose(mapped_values, {0, 2, 1}));
     else
@@ -334,6 +335,7 @@ void interpolation_matrix(const fem::FunctionSpace& V0,
           A[space_dim0 * j + i] = local1[j];
       }
     }
+
     apply_inverse_dof_transform1(A, cell_info, c, space_dim0);
     mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), A);
   }
