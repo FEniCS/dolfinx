@@ -14,8 +14,6 @@
 #include <span>
 #include <type_traits>
 #include <vector>
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
 
 namespace dolfinx
 {

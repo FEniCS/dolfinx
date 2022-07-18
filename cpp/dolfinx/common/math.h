@@ -20,21 +20,7 @@ namespace dolfinx::math
 /// @param v The second vector. It must has size 3.
 /// @return The cross product `u x v`. The type will be the same as `u`.
 template <typename U, typename V>
-std::array<typename U::value_type, 3> cross_new(const U& u, const V& v)
-{
-  assert(u.size() == 3);
-  assert(v.size() == 3);
-  return {u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2],
-          u[0] * v[1] - u[1] * v[0]};
-}
-
-/// Compute the cross product u x v
-/// @param u The first vector. It must has size 3.
-/// @param v The second vector. It must has size 3.
-/// @return The cross product `u x v`. The type will be the same as `u`.
-template <typename U, typename V>
-xt::xtensor_fixed<typename U::value_type, xt::xshape<3>> cross(const U& u,
-                                                               const V& v)
+std::array<typename U::value_type, 3> cross(const U& u, const V& v)
 {
   assert(u.size() == 3);
   assert(v.size() == 3);

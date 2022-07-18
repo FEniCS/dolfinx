@@ -100,10 +100,12 @@ def test_overlapping_bcs():
 
 
 @pytest.mark.parametrize('mesh_factory',
-                         [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-                          (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
-                          (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
-                          (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
+                         [
+                             (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
+                             (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
+                             (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
+                             (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
+                         ])
 def test_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with a constant yields the same
     result as setting it with a function"""
