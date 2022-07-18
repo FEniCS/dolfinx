@@ -330,19 +330,21 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                                               submesh_e_to_global_v_vec);
 
     // TODO Don't hardcode blocksize
-    common::Scatterer scatterer(*submesh_entity_index_map, 2);
+    common::Scatterer scatterer(*submesh_entity_index_map,
+                                num_vertices_per_entity);
     std::vector<std::int64_t> owned_vertices(
         submesh_e_to_global_v_vec.begin(),
         submesh_e_to_global_v_vec.begin()
-            + 2 * submesh_entity_index_map->size_local());
+            + num_vertices_per_entity * submesh_entity_index_map->size_local());
     std::vector<std::int64_t> ghost_vertices(
-        2 * submesh_entity_index_map->num_ghosts(), 0);
+        num_vertices_per_entity * submesh_entity_index_map->num_ghosts(), 0);
 
     scatterer.scatter_fwd(std::span<const std::int64_t>(owned_vertices),
                           std::span<std::int64_t>(ghost_vertices));
 
     std::span<std::int32_t> ghost_vertices_local(
-        submesh_e_to_v_vec.begin() + 2 * submesh_entity_index_map->size_local(),
+        submesh_e_to_v_vec.begin()
+            + num_vertices_per_entity * submesh_entity_index_map->size_local(),
         submesh_e_to_v_vec.end());
 
     const int rank = MPI::rank(MPI_COMM_WORLD);
