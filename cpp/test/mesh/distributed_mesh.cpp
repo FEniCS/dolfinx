@@ -70,24 +70,26 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
     io::XDMFFile infile(subset_comm, "mesh.xdmf", "r");
     cells = infile.read_topology_data("mesh");
     x = infile.read_geometry_data("mesh");
-    auto [data, offsets] = graph::create_adjacency_data(cells);
 
     int nparts = mpi_size;
     const int tdim = mesh::cell_dim(mesh::CellType::triangle);
     dest = partitioner(
         subset_comm, nparts, tdim,
-        graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offsets)),
+        graph::regular_adjacency_list(
+            std::vector(cells.data(), cells.data() + cells.size()),
+            cells.shape(1)),
         mesh::GhostMode::shared_facet);
   }
   CHECK(x.shape(1) == 2);
 
-  auto [data, offsets] = graph::create_adjacency_data(cells);
-  graph::AdjacencyList<std::int64_t> cells_topology(std::move(data),
-                                                    std::move(offsets));
-
   // Distribute cells to destination ranks
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
-      = graph::build::distribute(mpi_comm, cells_topology, dest);
+      = graph::build::distribute(
+          mpi_comm,
+          graph::regular_adjacency_list(
+              std::vector(cells.data(), cells.data() + cells.size()),
+              cells.shape(1)),
+          dest);
 
   // FIXME: improve way to find 'external' vertices
   // Count the connections of all vertices on owned cells. If there are 6

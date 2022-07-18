@@ -91,7 +91,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
 {
   // Get function data array and information about layout
   assert(u.x());
-  xtl::span<const T> u_vector = u.x()->array();
+  std::span<const T> u_vector = u.x()->array();
   const int rank = u.function_space()->element()->value_shape().size();
   const std::uint32_t num_comp = std::pow(3, rank);
   std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
@@ -104,7 +104,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
       = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
         / dofmap_bs;
 
-  if constexpr (std::is_scalar<T>::value)
+  if constexpr (std::is_scalar_v<T>)
   {
     // ---- Real
     std::vector<T> data(num_dofs * num_comp, 0);
@@ -471,14 +471,14 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
 
   // Get vertex data. If the mesh and function dofmaps are the same we
   // can work directly with the dof array.
-  xtl::span<const T> data;
+  std::span<const T> data;
   std::vector<T> _data;
   if (mesh->geometry().dofmap() == dofmap->list() and !need_padding)
     data = u.x()->array();
   else
   {
     _data = pack_function_data(u);
-    data = xtl::span<const T>(_data);
+    data = std::span<const T>(_data);
   }
 
   auto vertex_map = mesh->topology().index_map(0);
@@ -489,7 +489,7 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
   // Write each real and imaginary part of the function
   const std::uint32_t num_components = std::pow(3, rank);
   assert(data.size() % num_components == 0);
-  if constexpr (std::is_scalar<T>::value)
+  if constexpr (std::is_scalar_v<T>)
   {
     // ---- Real
     const std::string u_name = u.name;
@@ -509,13 +509,13 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
 
     adios2::Variable<U> local_output_r = define_variable<U>(
         io, u.name + field_ext[0], {}, {}, {num_vertices, num_components});
-    std::transform(data.cbegin(), data.cend(), data_real.begin(),
+    std::transform(data.begin(), data.end(), data_real.begin(),
                    [](auto& x) -> U { return std::real(x); });
     engine.Put<U>(local_output_r, data_real.data());
 
     adios2::Variable<U> local_output_c = define_variable<U>(
         io, u.name + field_ext[1], {}, {}, {num_vertices, num_components});
-    std::transform(data.cbegin(), data.cend(), data_imag.begin(),
+    std::transform(data.begin(), data.end(), data_imag.begin(),
                    [](auto& x) -> U { return std::imag(x); });
     engine.Put<U>(local_output_c, data_imag.data());
     engine.PerformPuts();

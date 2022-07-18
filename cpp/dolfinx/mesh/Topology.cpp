@@ -41,8 +41,8 @@ namespace
 /// `edges`.
 /// @return Out edge ranks.
 /// @pre `edges` must be sorted.
-std::vector<int> find_out_edges(MPI_Comm comm, xtl::span<const int> edges,
-                                xtl::span<const int> in_edges)
+std::vector<int> find_out_edges(MPI_Comm comm, std::span<const int> edges,
+                                std::span<const int> in_edges)
 {
   std::vector<int> in_edges_neigh;
   in_edges_neigh.reserve(in_edges.size());
@@ -89,7 +89,7 @@ std::vector<int> find_out_edges(MPI_Comm comm, xtl::span<const int> edges,
 /// indices. The owner rank is the first as the first in the of ranks.
 graph::AdjacencyList<int>
 determine_sharing_ranks(MPI_Comm comm,
-                        const xtl::span<const std::int64_t>& indices)
+                        const std::span<const std::int64_t>& indices)
 {
   common::Timer timer("Topology: determine shared index ownership");
 
@@ -317,7 +317,7 @@ determine_sharing_ranks(MPI_Comm comm,
       const std::size_t d = std::distance(recv_buffer1.begin(), it);
       std::int64_t num_ranks = *it;
 
-      xtl::span ranks(recv_buffer1.data() + d + 1, num_ranks);
+      std::span ranks(recv_buffer1.data() + d + 1, num_ranks);
       data.insert(data.end(), ranks.begin(), ranks.end());
       graph_offsets.push_back(graph_offsets.back() + num_ranks);
 
@@ -355,7 +355,7 @@ vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
   std::vector<std::int64_t> local_vertex_set(
       cells.array().begin(),
       std::next(cells.array().begin(), cells.offsets()[num_local_cells]));
-  dolfinx::radix_sort(xtl::span(local_vertex_set));
+  dolfinx::radix_sort(std::span(local_vertex_set));
   local_vertex_set.erase(
       std::unique(local_vertex_set.begin(), local_vertex_set.end()),
       local_vertex_set.end());
@@ -364,7 +364,7 @@ vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
   std::vector<std::int64_t> ghost_vertex_set(
       std::next(cells.array().begin(), cells.offsets()[num_local_cells]),
       cells.array().end());
-  dolfinx::radix_sort(xtl::span(ghost_vertex_set));
+  dolfinx::radix_sort(std::span(ghost_vertex_set));
   ghost_vertex_set.erase(
       std::unique(ghost_vertex_set.begin(), ghost_vertex_set.end()),
       ghost_vertex_set.end());
@@ -417,11 +417,11 @@ vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
 /// 2. New global index
 /// 3. MPI rank of the owner
 std::vector<std::int64_t>
-exchange_indexing(MPI_Comm comm, const xtl::span<const std::int64_t>& indices,
+exchange_indexing(MPI_Comm comm, const std::span<const std::int64_t>& indices,
                   const graph::AdjacencyList<int>& index_to_ranks,
                   std::int64_t offset,
-                  const xtl::span<const std::int64_t>& global_indices,
-                  const xtl::span<const std::int32_t>& local_indices)
+                  const std::span<const std::int64_t>& global_indices,
+                  const std::span<const std::int32_t>& local_indices)
 {
   const int mpi_rank = dolfinx::MPI::rank(comm);
 
@@ -553,10 +553,10 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
     const common::IndexMap& map0,
     const graph::AdjacencyList<std::int64_t>& entities0, int nlocal1,
     std::int64_t offset1,
-    const xtl::span<const std::pair<std::int64_t, std::int32_t>>&
+    const std::span<const std::pair<std::int64_t, std::int32_t>>&
         global_local_entities1,
-    const xtl::span<const std::int64_t>& ghost_entities1,
-    const xtl::span<const int>& ghost_owners1)
+    const std::span<const std::int64_t>& ghost_entities1,
+    const std::span<const int>& ghost_owners1)
 {
   // Receive index of ghost vertices that are not on the process
   // ('true') boundary from the owner of ghost cells.
@@ -740,7 +740,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
 /// @param[in] global_to_local Sorted array of (global, local) indices.
 graph::AdjacencyList<std::int32_t> convert_to_local_indexing(
     const graph::AdjacencyList<std::int64_t>& g, std::size_t num_local_nodes,
-    const xtl::span<const std::pair<std::int64_t, std::int32_t>>&
+    const std::span<const std::pair<std::int64_t, std::int32_t>>&
         global_to_local)
 {
   std::vector<std::int32_t> offsets(
@@ -916,8 +916,8 @@ MPI_Comm Topology::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------
 Topology mesh::create_topology(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-    const xtl::span<const std::int64_t>& original_cell_index,
-    const xtl::span<const int>& ghost_owners, const CellType& cell_type,
+    const std::span<const std::int64_t>& original_cell_index,
+    const std::span<const int>& ghost_owners, const CellType& cell_type,
     GhostMode ghost_mode, const std::vector<std::int64_t>& unknown_vertices)
 {
   common::Timer timer("Topology: create");
@@ -964,12 +964,12 @@ Topology mesh::create_topology(
       else
         unowned_vertices.push_back(global_index);
     }
-    dolfinx::radix_sort(xtl::span(unowned_vertices));
+    dolfinx::radix_sort(std::span(unowned_vertices));
 
     // Add owned but shared vertices to owned_vertices, and sort
     owned_vertices.insert(owned_vertices.end(), owned_shared_vertices.begin(),
                           owned_shared_vertices.end());
-    dolfinx::radix_sort(xtl::span(owned_vertices));
+    dolfinx::radix_sort(std::span(owned_vertices));
   }
 
   // Number all owned vertices, iterating over vertices cell-wise
@@ -1007,17 +1007,17 @@ Topology mesh::create_topology(
   else
   {
     // Get global indices of ghost cells
-    xtl::span cell_idx(original_cell_index);
+    std::span cell_idx(original_cell_index);
     const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
         comm, cell_idx.first(cells.num_nodes() - ghost_owners.size()),
-        xtl::span(original_cell_index).last(ghost_owners.size()), ghost_owners);
+        std::span(original_cell_index).last(ghost_owners.size()), ghost_owners);
 
     // Build list of owner ranks for vertices on the 'true boundary'
     // between processes. This is a superset of the ranks that own ghost
     // cells.
     std::vector<int> ranks(global_vertex_to_ranks.array().begin(),
                            global_vertex_to_ranks.array().end());
-    dolfinx::radix_sort(xtl::span(ranks));
+    dolfinx::radix_sort(std::span(ranks));
     ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
 
     // List of ranks that own cells that are ghosts on this rank
@@ -1169,7 +1169,7 @@ Topology mesh::create_topology(
     // Build list of ranks that own vertices that are ghosted by this
     // rank (out edges)
     std::vector<int> src = ghost_vertex_owners;
-    dolfinx::radix_sort(xtl::span(src));
+    dolfinx::radix_sort(std::span(src));
     src.erase(std::unique(src.begin(), src.end()), src.end());
     dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
   }

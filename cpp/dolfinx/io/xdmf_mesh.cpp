@@ -21,7 +21,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   const std::string path_prefix,
                                   const mesh::Topology& topology,
                                   const mesh::Geometry& geometry, int dim,
-                                  const xtl::span<const std::int32_t>& entities)
+                                  const std::span<const std::int32_t>& entities)
 {
   LOG(INFO) << "Adding topology data to node \"" << xml_node.path('/') << "\"";
 
@@ -170,7 +170,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
   const int width = (gdim == 1) ? 2 : gdim;
 
-  xtl::span<const double> _x = geometry.x();
+  std::span<const double> _x = geometry.x();
 
   int num_values = num_points_local * width;
   std::vector<double> x(num_values, 0.0);
@@ -224,7 +224,7 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
 
   add_topology_data(comm, grid_node, h5_id, path_prefix, mesh.topology(),
                     mesh.geometry(), tdim,
-                    xtl::span<std::int32_t>(cells.data(), num_cells));
+                    std::span<std::int32_t>(cells.data(), num_cells));
 
   // Add geometry node and attributes (including writing data)
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());

@@ -236,7 +236,11 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
   const xt::xtensor<double, 2> x = XDMFFile::read_geometry_data(name, xpath);
 
   // Create mesh
-  auto [data, offset] = graph::create_adjacency_data(cells);
+  std::vector<std::int64_t> data(cells.data(), cells.data() + cells.size());
+  std::vector<std::int32_t> offset(cells.shape(0) + 1, 0);
+  for (std::size_t i = 0; i < cells.shape(0); ++i)
+    offset[i + 1] = offset[i] + cells.shape(1);
+
   graph::AdjacencyList<std::int64_t> cells_adj(std::move(data),
                                                std::move(offset));
 
@@ -348,7 +352,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
       entities_values = xdmf_utils::distribute_entity_data(
           *mesh, mesh::cell_dim(cell_type),
-          xtl::span(entities1.data(), entities1.size()), values);
+          std::span(entities1.data(), entities1.size()), values);
 
   LOG(INFO) << "XDMF create meshtags";
   const std::size_t num_vertices_per_entity = mesh::cell_num_entities(
@@ -360,7 +364,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
                                       num_vertices_per_entity);
   mesh::MeshTags meshtags = mesh::create_meshtags(
       mesh, mesh::cell_dim(cell_type), entities_adj,
-      xtl::span<const std::int32_t>(entities_values.second));
+      std::span<const std::int32_t>(entities_values.second));
   meshtags.name = name;
 
   return meshtags;

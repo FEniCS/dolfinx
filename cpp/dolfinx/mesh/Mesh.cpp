@@ -32,7 +32,7 @@ namespace
 template <typename T>
 graph::AdjacencyList<T>
 reorder_list(const graph::AdjacencyList<T>& list,
-             const xtl::span<const std::int32_t>& nodemap)
+             const std::span<const std::int32_t>& nodemap)
 {
   // Copy existing data to keep ghost values (not reordered)
   std::vector<T> data(list.array());
@@ -133,10 +133,10 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 
     auto [graph, unmatched_facets, max_v, facet_attached_cells]
         = build_local_dual_graph(
-            xtl::span<const std::int64_t>(
+            std::span<const std::int64_t>(
                 cells_extracted.array().data(),
                 cells_extracted.offsets()[num_owned_cells]),
-            xtl::span<const std::int32_t>(cells_extracted.offsets().data(),
+            std::span<const std::int32_t>(cells_extracted.offsets().data(),
                                           num_owned_cells + 1),
             tdim);
 
@@ -220,7 +220,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>>
 mesh::create_submesh(const Mesh& mesh, int dim,
-                     const xtl::span<const std::int32_t>& entities)
+                     const std::span<const std::int32_t>& entities)
 {
   // -- Submesh topology
 
@@ -322,7 +322,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   submesh_e_to_v_offsets.reserve(submesh_to_mesh_entity_map.size() + 1);
   for (std::int32_t e : submesh_to_mesh_entity_map)
   {
-    xtl::span<const std::int32_t> vertices = mesh_e_to_v->links(e);
+    std::span<const std::int32_t> vertices = mesh_e_to_v->links(e);
     for (std::int32_t v : vertices)
     {
       auto it = std::find(submesh_to_mesh_vertex_map.begin(),
@@ -388,7 +388,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   }
 
   // Create submesh geometry coordinates
-  xtl::span<const double> mesh_x = mesh.geometry().x();
+  std::span<const double> mesh_x = mesh.geometry().x();
   const int submesh_num_x_dofs = submesh_to_mesh_x_dof_map.size();
   std::vector<double> submesh_x(3 * submesh_num_x_dofs);
   for (int i = 0; i < submesh_num_x_dofs; ++i)
