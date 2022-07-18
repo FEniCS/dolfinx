@@ -347,7 +347,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
 
   // Permute entities from VTK to DOLFINx ordering
   std::vector<std::int64_t> entities1 = io::cells::apply_permutation(
-      std::span(entities.data(), entities.shape(0) * entities.shape(1)),
+      std::span(entities.data(), entities.size()),
       {entities.shape(0), entities.shape(1)},
       io::cells::perm_vtk(cell_type, entities.shape(1)));
 
