@@ -396,8 +396,6 @@ public:
 
     // -- Lambda function for affine pull-backs
     xt::xtensor<double, 4> data(cmap.tabulate_shape(1, 1));
-    // const xt::xtensor<double, 2> X0(xt::zeros<double>({std::size_t(1),
-    // tdim}));
     cmap.tabulate(1, std::vector<double>(tdim), {1, tdim}, data);
     const xt::xtensor<double, 2> dphi_i
         = xt::view(data, xt::range(1, tdim + 1), 0, xt::all(), 0);
@@ -522,14 +520,13 @@ public:
           coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
 
       // Compute expansion
-      auto u_row = xt::row(u, p);
       for (int k = 0; k < bs_element; ++k)
       {
         for (std::size_t i = 0; i < space_dimension; ++i)
         {
           for (std::size_t j = 0; j < value_size; ++j)
           {
-            u_row[j * bs_element + k]
+            u(p, j * bs_element + k)
                 += coefficients[bs_element * i + k] * basis_values(i, j);
           }
         }

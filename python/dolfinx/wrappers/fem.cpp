@@ -1136,7 +1136,7 @@ void fem(py::module& m)
                                xt::no_ownership(), s_g);
 
             xt::xtensor<double, 4> _phi(self.tabulate_shape(0, s_x[0]));
-            self.tabulate(0, X, s_x, _phi);
+            self.tabulate(0, std::span(X), s_x, _phi);
             xt::xtensor<double, 2> phi({_phi.shape(1), _phi.shape(2)});
             for (std::size_t i = 0; i < phi.shape(0); ++i)
               for (std::size_t j = 0; j < phi.shape(1); ++j)

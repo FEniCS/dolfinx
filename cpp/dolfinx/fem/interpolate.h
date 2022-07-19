@@ -39,7 +39,7 @@ namespace impl
 /// @param[in] bs The block size
 template <typename U, typename V, typename T>
 void interpolation_apply_new(const U& Pi, const V& data, std::vector<T>& coeffs,
-                         int bs)
+                             int bs)
 {
   // Compute coefficients = Pi * x (matrix-vector multiply)
   if (bs == 1)
@@ -264,15 +264,24 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   const std::size_t num_dofs_g = cmap.dim();
   std::span<const double> x_g = mesh->geometry().x();
 
-  // Evaluate coordinate map basis at reference interpolation points
-  xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, Xshape[0]));
-  xt::xtensor<double, 2> dphi;
-  cmap.tabulate(1, X, Xshape, phi);
-  dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
-
   namespace stdex = std::experimental;
+  using cmdspan2_t
+      = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
   using cmdspan4_t
       = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
+  using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+  using mdspan3_t = stdex::mdspan<double, stdex::dextents<std::size_t, 3>>;
+  using mdspan3T_t = stdex::mdspan<T, stdex::dextents<std::size_t, 3>>;
+
+  // Evaluate coordinate map basis at reference interpolation points
+  const std::array<std::size_t, 4> phi_shape
+      = cmap.tabulate_shape(1, Xshape[0]);
+  std::vector<double> phi_b(
+      std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+  cmdspan4_t phi(phi_b.data(), phi_shape);
+  cmap.tabulate(1, X, Xshape, phi_b);
+  auto dphi
+      = stdex::submdspan(phi, std::pair(1, tdim + 1), 0, stdex::full_extent, 0);
 
   // Evaluate v basis functions at reference interpolation points
   const auto [_basis_derivatives_reference0, b0shape]
@@ -283,18 +292,33 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   // Create working arrays
   std::vector<T> local1(element1->space_dimension());
   std::vector<T> coeffs0(element0->space_dimension());
-  xt::xtensor<double, 3> basis0({Xshape[0], dim0, value_size0});
-  xt::xtensor<double, 3> basis_reference0({Xshape[0], dim0, value_size_ref0});
-  xt::xtensor<T, 3> values0({Xshape[0], 1, element1->value_size()});
-  xt::xtensor<T, 3> mapped_values0({Xshape[0], 1, element1->value_size()});
-  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
-  xt::xtensor<double, 3> J({Xshape[0], gdim, tdim});
-  xt::xtensor<double, 3> K({Xshape[0], tdim, gdim});
+
+  std::vector<double> basis0_b(Xshape[0] * dim0 * value_size0);
+  mdspan3_t basis0(basis0_b.data(), Xshape[0], dim0, value_size0);
+
+  std::vector<double> basis_reference0_b(Xshape[0] * dim0 * value_size_ref0);
+  mdspan3_t basis_reference0(basis_reference0_b.data(), Xshape[0], dim0,
+                             value_size_ref0);
+
+  std::vector<T> values0_b(Xshape[0] * 1 * element1->value_size());
+  mdspan3T_t values0(values0_b.data(), Xshape[0], 1, element1->value_size());
+
+  std::vector<T> mapped_values_b(Xshape[0] * 1 * element1->value_size());
+  mdspan3T_t mapped_values0(mapped_values_b.data(), Xshape[0], 1,
+                            element1->value_size());
+
+  std::vector<double> coordinate_dofs_b(num_dofs_g * gdim);
+  mdspan2_t coordinate_dofs(coordinate_dofs_b.data(), num_dofs_g, gdim);
+
+  std::vector<double> J_b(Xshape[0] * gdim * tdim);
+  mdspan3_t J(J_b.data(), Xshape[0], gdim, tdim);
+  std::vector<double> K_b(Xshape[0] * tdim * gdim);
+  mdspan3_t K(K_b.data(), Xshape[0], tdim, gdim);
   std::vector<double> detJ(Xshape[0]);
 
   // Get interpolation operator
   const auto [_Pi_1, pi_shape] = element1->interpolation_operator();
-  auto Pi_1 = xt::adapt(_Pi_1, pi_shape);
+  cmdspan2_t Pi_1(_Pi_1.data(), pi_shape);
 
   using u_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
   using U_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
@@ -322,40 +346,40 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
     }
 
     // Compute Jacobians and reference points for current cell
-    J.fill(0);
+    std::fill(J_b.begin(), J_b.end(), 0);
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
-      auto _J = xt::view(J, p, xt::all(), xt::all());
-      cmap.compute_jacobian(dphi, coordinate_dofs, _J);
-      cmap.compute_jacobian_inverse(_J, xt::view(K, p, xt::all(), xt::all()));
-      detJ[p] = cmap.compute_jacobian_determinant(_J);
+      auto _J = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
+      cmap.compute_jacobian_new(dphi, coordinate_dofs, _J);
+      auto _K = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
+      cmap.compute_jacobian_inverse_new(_J, _K);
+      detJ[p] = cmap.compute_jacobian_determinant_new(_J);
     }
 
-    // Get evaluated basis on reference, apply DOF transformations, and
+    // Copy evaluated basis on reference, apply DOF transformations, and
     // push forward to physical element
-    for (std::size_t k0 = 0; k0 < basis_reference0.shape(0); ++k0)
-      for (std::size_t k1 = 0; k1 < basis_reference0.shape(1); ++k1)
-        for (std::size_t k2 = 0; k2 < basis_reference0.shape(2); ++k2)
+    for (std::size_t k0 = 0; k0 < basis_reference0.extent(0); ++k0)
+      for (std::size_t k1 = 0; k1 < basis_reference0.extent(1); ++k1)
+        for (std::size_t k2 = 0; k2 < basis_reference0.extent(2); ++k2)
           basis_reference0(k0, k1, k2)
               = basis_derivatives_reference0(0, k0, k1, k2);
 
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       apply_dof_transformation0(
-          std::span(basis_reference0.data() + p * dim0 * value_size_ref0,
+          std::span(basis_reference0_b.data() + p * dim0 * value_size_ref0,
                     dim0 * value_size_ref0),
           cell_info, c, value_size_ref0);
     }
 
-    for (std::size_t i = 0; i < basis0.shape(0); ++i)
+    for (std::size_t i = 0; i < basis0.extent(0); ++i)
     {
-      u_t _u(basis0.data() + i * basis0.shape(1) * basis0.shape(2),
-             basis0.shape(1), basis0.shape(2));
-      U_t _U(basis_reference0.data()
-                 + i * basis_reference0.shape(1) * basis_reference0.shape(2),
-             basis_reference0.shape(1), basis_reference0.shape(2));
-      K_t _K(K.data() + i * K.shape(1) * K.shape(2), K.shape(1), K.shape(2));
-      J_t _J(J.data() + i * J.shape(1) * J.shape(2), J.shape(1), J.shape(2));
+      auto _u
+          = stdex::submdspan(basis0, i, stdex::full_extent, stdex::full_extent);
+      auto _U = stdex::submdspan(basis_reference0, i, stdex::full_extent,
+                                 stdex::full_extent);
+      auto _K = stdex::submdspan(K, i, stdex::full_extent, stdex::full_extent);
+      auto _J = stdex::submdspan(J, i, stdex::full_extent, stdex::full_extent);
       push_forward_fn0(_u, _U, _J, detJ[i], _K);
     }
 
@@ -382,20 +406,20 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
     }
 
     // Pull back the physical values to the u reference
-    for (std::size_t i = 0; i < values0.shape(0); ++i)
+    for (std::size_t i = 0; i < values0.extent(0); ++i)
     {
-      v_t _v(values0.data() + i * values0.shape(1) * values0.shape(2),
-             values0.shape(1), values0.shape(2));
-      V_t _V(mapped_values0.data()
-                 + i * mapped_values0.shape(1) * mapped_values0.shape(2),
-             mapped_values0.shape(1), mapped_values0.shape(2));
-      K_t _K(K.data() + i * K.shape(1) * K.shape(2), K.shape(1), K.shape(2));
-      J_t _J(J.data() + i * J.shape(1) * J.shape(2), J.shape(1), J.shape(2));
-      pull_back_fn1(_V, _v, _K, 1.0 / detJ[i], _J);
+      auto _u = stdex::submdspan(values0, i, stdex::full_extent,
+                                 stdex::full_extent);
+      auto _U = stdex::submdspan(mapped_values0, i, stdex::full_extent,
+                                 stdex::full_extent);
+      auto _K = stdex::submdspan(K, i, stdex::full_extent, stdex::full_extent);
+      auto _J = stdex::submdspan(J, i, stdex::full_extent, stdex::full_extent);
+      pull_back_fn1(_U, _u, _K, 1.0 / detJ[i], _J);
     }
 
-    auto _mapped_values0 = xt::view(mapped_values0, xt::all(), 0, xt::all());
-    interpolation_apply(Pi_1, _mapped_values0, local1, bs1);
+    auto values = stdex::submdspan(mapped_values0, stdex::full_extent, 0,
+                                   stdex::full_extent);
+    interpolation_apply_new(Pi_1, values, local1, bs1);
     apply_inverse_dof_transform1(local1, cell_info, c, 1);
 
     // Copy local coefficients to the correct position in u dof array
@@ -601,9 +625,6 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
       for (std::size_t j = 0; j < dphi.shape(1); ++j)
         for (std::size_t k = 0; k < dphi.shape(2); ++k)
           dphi(i, j, k) = phi(i + 1, j, k, 0);
-    // xt::xtensor<double, 3> dphi
-    //     = xt::view(cmap.tabulate(1, xt::adapt(X, Xshape)),
-    //                xt::range(1, tdim + 1), xt::all(), xt::all(), 0);
 
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
