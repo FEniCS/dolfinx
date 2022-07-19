@@ -42,7 +42,10 @@ void io(py::module& m)
   m.def(
       "extract_vtk_connectivity",
       [](const dolfinx::mesh::Mesh& mesh)
-      { return xt_as_pyarray(dolfinx::io::extract_vtk_connectivity(mesh)); },
+      {
+        auto [cells, shape] = dolfinx::io::extract_vtk_connectivity(mesh);
+        return as_pyarray(std::move(cells), shape);
+      },
       py::arg("mesh"),
       "Extract the mesh topology with VTK ordering using geometry indices");
 
