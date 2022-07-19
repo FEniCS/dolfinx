@@ -111,7 +111,8 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
   // Build the element interpolation matrix
   std::vector<T> Ab(e1->space_dimension() * ndofs0);
   {
-    mdspan2_t A(Ab.data(), e1->space_dimension(), ndofs0);
+    stdex::mdspan<T, stdex::dextents<std::size_t, 2>> A(
+        Ab.data(), e1->space_dimension(), ndofs0);
     const auto [Pi, shape] = e1->interpolation_operator();
     cmdspan2_t _Pi(Pi.data(), shape);
     math::dot_new(_Pi, dphi_reshaped, A);
