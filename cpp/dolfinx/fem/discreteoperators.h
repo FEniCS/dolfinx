@@ -199,7 +199,7 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
   // Evaluate coordinate map basis at reference interpolation points
   const auto [X, Xshape] = element1->interpolation_points();
   xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, Xshape[0]));
-  cmap.tabulate(1, xt::adapt(X, Xshape), phi);
+  cmap.tabulate(1, X, Xshape, phi);
   const xt::xtensor<double, 2> dphi
       = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
 

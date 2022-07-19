@@ -396,8 +396,9 @@ public:
 
     // -- Lambda function for affine pull-backs
     xt::xtensor<double, 4> data(cmap.tabulate_shape(1, 1));
-    const xt::xtensor<double, 2> X0(xt::zeros<double>({std::size_t(1), tdim}));
-    cmap.tabulate(1, X0, data);
+    // const xt::xtensor<double, 2> X0(xt::zeros<double>({std::size_t(1),
+    // tdim}));
+    cmap.tabulate(1, std::vector<double>(tdim), {1, tdim}, data);
     const xt::xtensor<double, 2> dphi_i
         = xt::view(data, xt::range(1, tdim + 1), 0, xt::all(), 0);
     auto pull_back_affine = [dphi_i](auto&& X, const auto& cell_geometry,
@@ -450,7 +451,7 @@ public:
       else
       {
         cmap.pull_back_nonaffine(_Xp, xp, coordinate_dofs);
-        cmap.tabulate(1, _Xp, phi);
+        cmap.tabulate(1, _Xp, {_Xp.shape(0), _Xp.shape(1)}, phi);
         dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
         CoordinateElement::compute_jacobian(dphi, coordinate_dofs, _J);
         CoordinateElement::compute_jacobian_inverse(_J, _K);

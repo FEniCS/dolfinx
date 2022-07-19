@@ -48,6 +48,7 @@
 #include <ufcx.h>
 #include <utility>
 #include <xtensor/xadapt.hpp>
+#include <xtensor/xbuilder.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
@@ -1127,24 +1128,22 @@ void fem(py::module& m)
           {
             std::array<std::size_t, 2> s_x;
             std::copy_n(X.shape(), 2, s_x.begin());
-            auto _X = xt::adapt(X.data(), X.size(), xt::no_ownership(), s_x);
+            // auto _X = xt::adapt(X.data(), X.size(), xt::no_ownership(), s_x);
 
             std::array<std::size_t, 2> s_g;
             std::copy_n(cell_geometry.shape(), 2, s_g.begin());
             auto g = xt::adapt(cell_geometry.data(), cell_geometry.size(),
                                xt::no_ownership(), s_g);
 
-            xt::xtensor<double, 2> x = xt::empty<double>(
-                {_X.shape(0), std::size_t(cell_geometry.shape(1))});
-            // const xt::xtensor<double, 2> phi
-            //     = xt::view(self.tabulate(0, _X), 0, xt::all(), xt::all(), 0);
             xt::xtensor<double, 4> _phi(self.tabulate_shape(0, s_x[0]));
-            self.tabulate(0, _X, _phi);
+            self.tabulate(0, X, s_x, _phi);
             xt::xtensor<double, 2> phi({_phi.shape(1), _phi.shape(2)});
             for (std::size_t i = 0; i < phi.shape(0); ++i)
               for (std::size_t j = 0; j < phi.shape(1); ++j)
                 phi(i, j) = _phi(0, i, j, 0);
 
+            xt::xtensor<double, 2> x = xt::empty<double>(
+                {std::size_t(X.shape(0)), std::size_t(cell_geometry.shape(1))});
             self.push_forward(x, g, phi);
             return xt_as_pyarray(std::move(x));
           },
@@ -1175,9 +1174,9 @@ void fem(py::module& m)
               xt::xtensor<double, 2> J = xt::zeros<double>({gdim, tdim});
               xt::xtensor<double, 2> K = xt::zeros<double>({tdim, gdim});
               xt::xtensor<double, 4> data(self.tabulate_shape(1, 1));
-              const xt::xtensor<double, 2> X0
-                  = xt::zeros<double>({std::size_t(1), tdim});
-              self.tabulate(1, X0, data);
+              //   const xt::xtensor<double, 2> X0
+              //       = xt::zeros<double>({std::size_t(1), tdim});
+              self.tabulate(1, std::vector<double>(tdim), {1, tdim}, data);
               xt::xtensor<double, 2> dphi
                   = xt::view(data, xt::range(1, tdim + 1), 0, xt::all(), 0);
               self.compute_jacobian(dphi, g, J);

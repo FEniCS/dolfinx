@@ -7,7 +7,9 @@
 #pragma once
 
 #include "ElementDofLayout.h"
+#include <array>
 #include <basix/element-families.h>
+#include <basix/mdspan.hpp>
 #include <cstdint>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -78,11 +80,45 @@ public:
   /// compute. Use 0 for the basis functions only.
   /// @param[in] X The points at which to compute the basis functions.
   /// The shape of X is (number of points, geometric dimension).
+  /// @param[in] shape The shape of `X`.
   /// @param[out] basis The array to fill with the basis function
   /// values. The shape can be computed using
   /// `FiniteElement::tabulate_shape`
-  void tabulate(int nd, const xt::xtensor<double, 2>& X,
-                xt::xtensor<double, 4>& basis) const;
+  void tabulate(int nd, std::span<const double> X,
+                std::array<std::size_t, 2> shape,
+                std::span<double> basis) const;
+
+  /// Compute Jacobian for a cell with given geometry using the
+  /// basis functions and first order derivatives.
+  /// @param[in] dphi Derivatives of the basis functions (shape=(tdim,
+  /// num geometry nodes))
+  /// @param shape0 Shape of `dphi`
+  /// @param[in] cell_geometry The cell nodes coordinates (shape=(num
+  /// geometry nodes, gdim))
+  /// @param shape0=1 Shape of `cell_geometry`
+  /// @param[out] J The Jacobian. It must have shape=(gdim, tdim) and
+  /// must initialized to zero
+  template <typename U, typename V, typename W>
+  static void compute_jacobian(const U& dphi, std::array<std::size_t, 2> shape0,
+                               const V& cell_geometry,
+                               std::array<std::size_t, 2> shape1, W&& J)
+  {
+    math::dot(cell_geometry, shape0, dphi, shape1, J, true);
+  }
+
+  /// Compute Jacobian for a cell with given geometry using the
+  /// basis functions and first order derivatives.
+  /// @param[in] dphi Derivatives of the basis functions (shape=(tdim,
+  /// num geometry nodes))
+  /// @param[in] cell_geometry The cell nodes coordinates (shape=(num
+  /// geometry nodes, gdim))
+  /// @param[out] J The Jacobian. It must have shape=(gdim, tdim) and
+  /// must initialized to zero
+  template <typename U, typename V, typename W>
+  static void compute_jacobian_new(const U& dphi, const V& cell_geometry, W&& J)
+  {
+    math::dot_new(cell_geometry, dphi, J, true);
+  }
 
   /// Compute Jacobian for a cell with given geometry using the
   /// basis functions and first order derivatives.
@@ -102,6 +138,20 @@ public:
   /// @param[in] J The Jacobian (shape=(gdim, tdim))
   /// @param[out] K The Jacobian (shape=(tdim, gdim))
   template <typename U, typename V>
+  static void compute_jacobian_inverse_new(const U& J, V&& K)
+  {
+    const int gdim = J.extent(1);
+    const int tdim = K.extent(1);
+    if (gdim == tdim)
+      math::inv_new(J, K);
+    else
+      math::pinv_new(J, K);
+  }
+
+  /// Compute the inverse of the Jacobian
+  /// @param[in] J The Jacobian (shape=(gdim, tdim))
+  /// @param[out] K The Jacobian (shape=(tdim, gdim))
+  template <typename U, typename V>
   static void compute_jacobian_inverse(const U& J, V&& K)
   {
     const int gdim = J.shape(1);
@@ -110,6 +160,27 @@ public:
       math::inv(J, K);
     else
       math::pinv(J, K);
+  }
+
+  /// Compute the determinant of the Jacobian
+  /// @param[in] J Jacobian (shape=(gdim, tdim))
+  /// @return Determinant of `J`
+  template <typename U>
+  static double compute_jacobian_determinant_new(const U& J)
+  {
+    if (J.extent(0) == J.extent(1))
+      return math::det_new(J);
+    else
+    {
+      throw std::runtime_error("Not supported yet");
+      // using T = typename U::value_type;
+      // std::vector<double> Bb(J.extent(0)* J.extent(1));
+
+      // auto B = xt::transpose(J);
+      // xt::xtensor<T, 2> BA = xt::zeros<T>({B.shape(0), J.shape(1)});
+      // math::dot(B, J, BA);
+      // return std::sqrt(math::det(BA));
+    }
   }
 
   /// Compute the determinant of the Jacobian
@@ -142,6 +213,17 @@ public:
                            const xt::xtensor<double, 2>& cell_geometry,
                            const xt::xtensor<double, 2>& phi);
 
+  /// Compute physical coordinates x for points X  in the reference
+  /// configuration
+  /// @param[in,out] x The physical coordinates of the reference points X
+  /// @param[in] cell_geometry The cell node coordinates (physical)
+  /// @param[in] phi Tabulated basis functions at reference points X
+  template <typename U, typename V, typename W>
+  static void push_forward_new(U&& x, const V& cell_geometry, const W& phi)
+  {
+    math::dot_new(phi, cell_geometry, x);
+  }
+
   /// @brief Compute the physical coordinate of the reference point
   /// `X=(0, 0, 0)`
   /// @param[in] cell_geometry The cell nodes coordinates (shape=(num
@@ -160,10 +242,61 @@ public:
   /// @param[in] x0 The physical coordinate of reference coordinate X0=(0, 0,
   /// 0).
   /// @param[in] x The physical coordinates (shape=(num_points, gdim))
+  template <typename U, typename V, typename W>
+  static void pull_back_affine_new(U&& X, const V& K,
+                                   const std::array<double, 3>& x0, const W& x)
+  {
+    assert(X.extent(0) == x.extent(0));
+    assert(X.extent(1) == K.extent(0));
+    assert(x.extent(1) == K.extent(1));
+    for (std::size_t i = 0; i < X.extent(0); ++i)
+      for (std::size_t j = 0; j < X.extent(0); ++j)
+        X(i, j) = 0;
+
+    // Calculate X for each point
+    for (std::size_t p = 0; p < x.extent(0); ++p)
+      for (std::size_t i = 0; i < K.extent(0); ++i)
+        for (std::size_t j = 0; j < K.extent(1); ++j)
+          X(p, i) += K(i, j) * (x(p, j) - x0[j]);
+  }
+
+  /// Compute reference coordinates X for physical coordinates x for an
+  /// affine map. For the affine case, `x = J X + x0`, and this function
+  /// computes `X = K(x -x0)` where `K = J^{-1}`.
+  /// @param[out] X The reference coordinates to compute
+  /// (shape=(num_points, tdim))
+  /// @param[in] K The inverse of the geometry Jacobian (shape=(tdim,
+  /// gdim))
+  /// @param[in] x0 The physical coordinate of reference coordinate X0=(0, 0,
+  /// 0).
+  /// @param[in] x The physical coordinates (shape=(num_points, gdim))
   static void pull_back_affine(xt::xtensor<double, 2>& X,
                                const xt::xtensor<double, 2>& K,
                                const std::array<double, 3>& x0,
                                const xt::xtensor<double, 2>& x);
+
+  // namespace stdex = std::experimental;
+  using mdspan2_t
+      = std::experimental::mdspan<double,
+                                  std::experimental::dextents<std::size_t, 2>>;
+  using cmdspan2_t
+      = std::experimental::mdspan<const double,
+                                  std::experimental::dextents<std::size_t, 2>>;
+
+  /// Compute reference coordinates X for physical coordinates x for a
+  /// non-affine map.
+  /// @param [in,out] X The reference coordinates to compute (shape=(num_points,
+  /// tdim))
+  /// @param [in] x The physical coordinates (shape=(num_points, gdim))
+  /// @param [in] cell_geometry The cell nodes coordinates (shape=(num
+  /// geometry nodes, gdim))
+  /// @param [in] tol Tolerance for termination of Newton method.
+  /// @param [in] maxit Maximum number of Newton iterations
+  /// @note If convergence is not achieved within maxit, the function throws a
+  /// run-time error.
+  void pull_back_nonaffine_new(mdspan2_t X, cmdspan2_t x,
+                               cmdspan2_t cell_geometry, double tol = 1.0e-8,
+                               int maxit = 10) const;
 
   /// Compute reference coordinates X for physical coordinates x for a
   /// non-affine map.

@@ -225,7 +225,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   // Evaluate coordinate map basis at reference interpolation points
   xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, Xshape[0]));
   xt::xtensor<double, 2> dphi;
-  cmap.tabulate(1, xt::adapt(X, Xshape), phi);
+  cmap.tabulate(1, X, Xshape, phi);
   dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
 
   namespace stdex = std::experimental;
@@ -553,7 +553,7 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
 
     // Tabulate 1st order derivatives of shape functions at interpolation coords
     xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, Xshape[0]));
-    cmap.tabulate(1, xt::adapt(X, Xshape), phi);
+    cmap.tabulate(1, X, Xshape, phi);
     xt::xtensor<double, 3> dphi({tdim, phi.shape(1), phi.shape(2)});
     for (std::size_t i = 0; i < tdim; ++i)
       for (std::size_t j = 0; j < dphi.shape(1); ++j)

@@ -199,7 +199,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
       = _element->get_dof_transformation_function<double>();
 
   xt::xtensor<double, 4> _phi(cmap.tabulate_shape(0, Xshape[0]));
-  cmap.tabulate(0, xt::adapt(X, Xshape), _phi);
+  cmap.tabulate(0, X, Xshape, _phi);
   xt::xtensor<double, 2> phi({_phi.shape(1), _phi.shape(2)});
   for (std::size_t i = 0; i < phi.shape(0); ++i)
     for (std::size_t j = 0; j < phi.shape(1); ++j)
