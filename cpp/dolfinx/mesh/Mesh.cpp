@@ -347,20 +347,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
             + num_vertices_per_entity * submesh_entity_index_map->size_local(),
         submesh_e_to_v_vec.end());
 
-    const int rank = MPI::rank(MPI_COMM_WORLD);
-    std::stringstream ss;
-    ss << "rank: " << rank << "\n";
-    ss << "local_vertices = " << xt::adapt(owned_vertices) << "\n";
-    ss << "ghost_vertices = " << xt::adapt(ghost_vertices) << "\n";
-    // ss << "ghost_vertices_local = " << xt::adapt(ghost_vertices_local) <<
-    // "\n";
-    ss << "submesh_e_to_v_vec = " << xt::adapt(submesh_e_to_v_vec) << "\n";
-
     submesh_vertex_index_map->global_to_local(ghost_vertices,
                                               ghost_vertices_local);
-
-    ss << "submesh_e_to_v_vec = " << xt::adapt(submesh_e_to_v_vec) << "\n";
-    std::cout << ss.str() << "\n";
   }
 
   auto submesh_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
@@ -461,26 +449,14 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   if (!(mesh.topology().dim() == dim))
   {
-    const int rank = MPI::rank(MPI_COMM_WORLD);
-    std::stringstream ss;
-    ss << "rank: " << rank << "\n";
-
-    // ss << "submesh_x_dof_index_map->size_local() = "
-    //    << submesh_x_dof_index_map->size_local() << "\n";
-    // ss << "submesh_x_dof_index_map->num_ghosts() = "
-    //    << submesh_x_dof_index_map->num_ghosts() << "\n";
-
     std::vector<std::int64_t> submesh_xdofmap_global_vec(
         submesh_x_dofmap_vec.size(), 0);
     submesh_x_dof_index_map->local_to_global(submesh_x_dofmap_vec,
                                              submesh_xdofmap_global_vec);
 
-    // ss << "submesh_xdofmap_global_vec = "
-    //    << xt::adapt(submesh_xdofmap_global_vec) << "\n";
-
     const int x_dofs_per_entity = submesh_coord_ele.dim();
 
-    // // TODO Don't hardcode blocksize
+    // TODO Don't hardcode blocksize
     common::Scatterer scatterer(*submesh_entity_index_map, x_dofs_per_entity);
     std::vector<std::int64_t> owned_x_dofs(
         submesh_xdofmap_global_vec.begin(),
@@ -489,27 +465,15 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     std::vector<std::int64_t> ghost_x_dofs(
         x_dofs_per_entity * submesh_entity_index_map->num_ghosts(), 0);
 
-    // ss << "owned_x_dofs = " << xt::adapt(owned_x_dofs) << "\n";
-    // ss << "ghost_x_dofs = " << xt::adapt(ghost_x_dofs) << "\n";
-
     scatterer.scatter_fwd(std::span<const std::int64_t>(owned_x_dofs),
                           std::span<std::int64_t>(ghost_x_dofs));
 
     std::span<std::int32_t> ghost_x_dofs_local(
-        submesh_x_dofmap_vec.begin() + x_dofs_per_entity *
-        submesh_entity_index_map->size_local(), submesh_x_dofmap_vec.end());
+        submesh_x_dofmap_vec.begin()
+            + x_dofs_per_entity * submesh_entity_index_map->size_local(),
+        submesh_x_dofmap_vec.end());
 
-    ss << "owned_x_dofs = " << xt::adapt(owned_x_dofs) << "\n";
-    ss << "ghost_x_dofs = " << xt::adapt(ghost_x_dofs) << "\n";
-    ss << "submesh_x_dofmap_vec = " << xt::adapt(submesh_x_dofmap_vec) <<
-    "\n";
-
-    submesh_x_dof_index_map->global_to_local(ghost_x_dofs,
-                                              ghost_x_dofs_local);
-
-    ss << "submesh_x_dofmap_vec = " << xt::adapt(submesh_x_dofmap_vec) <<
-    "\n";
-    std::cout << ss.str() << "\n";
+    submesh_x_dof_index_map->global_to_local(ghost_x_dofs, ghost_x_dofs_local);
   }
 
   graph::AdjacencyList<std::int32_t> submesh_x_dofmap(
