@@ -358,7 +358,8 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
     // interpolation points of V1
     if (interpolation_ident)
     {
-      mdspan3_t A(Ab.data(), Xshape[0], e1->value_size(), space_dim0);
+      stdex::mdspan<T, stdex::dextents<std::size_t, 3>> A(
+          Ab.data(), Xshape[0], e1->value_size(), space_dim0);
       for (std::size_t i = 0; i < mapped_values.extent(0); ++i)
         for (std::size_t j = 0; j < mapped_values.extent(1); ++j)
           for (std::size_t k = 0; k < mapped_values.extent(2); ++k)
