@@ -92,10 +92,10 @@ public:
   /// basis functions and first order derivatives.
   /// @param[in] dphi Derivatives of the basis functions (shape=(tdim,
   /// num geometry nodes))
-  /// @param shape0 Shape of `dphi`
+  /// @param[in] shape0 Shape of `dphi`
   /// @param[in] cell_geometry The cell nodes coordinates (shape=(num
   /// geometry nodes, gdim))
-  /// @param shape0=1 Shape of `cell_geometry`
+  /// @param[in] shape1 Shape of `cell_geometry`
   /// @param[out] J The Jacobian. It must have shape=(gdim, tdim) and
   /// must initialized to zero
   template <typename U, typename V, typename W>
@@ -275,10 +275,11 @@ public:
                                const std::array<double, 3>& x0,
                                const xt::xtensor<double, 2>& x);
 
-  // namespace stdex = std::experimental;
+  /// mdspan typedef
   using mdspan2_t
       = std::experimental::mdspan<double,
                                   std::experimental::dextents<std::size_t, 2>>;
+  /// mdspan typedef
   using cmdspan2_t
       = std::experimental::mdspan<const double,
                                   std::experimental::dextents<std::size_t, 2>>;

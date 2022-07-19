@@ -258,9 +258,11 @@ void inv(const U& A, V&& B)
 }
 
 /// Compute C += A * B
-/// @param[in] A Input matrix
-/// @param[in] B Input matrix
-/// @param[in, out] C Filled to be C += A * B
+/// @param[in] A Input matrix as flat array (row-major storage)
+/// @param[in] shapeA Shape of `A`
+/// @param[in] B Input matrix as flat array (row-major storage)
+/// @param[in] shapeB Shape of `B`
+/// @param[in, out] C as flat array, filled to be C += A * B
 /// @param[in] transpose Computes C += A^T * B^T if false, otherwise
 /// computed C += A^T * B^T
 template <typename U, typename V, typename P>
