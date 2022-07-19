@@ -564,9 +564,8 @@ void declare_objects(py::module& m, const std::string& type)
           .def_property_readonly("X",
                                  [](const dolfinx::fem::Expression<T>& self)
                                  {
-                                   return py::array_t<double>(self.X().shape(),
-                                                              self.X().data(),
-                                                              py::cast(self));
+                                   auto [X, shape] = self.X();
+                                   return dolfinx_wrappers::as_pyarray(std::move(X), shape);
                                  });
 
   std::string pymethod_create_expression
@@ -1026,9 +1025,12 @@ void fem(py::module& m)
                              py::return_value_policy::reference_internal)
       .def_property_readonly("num_sub_elements",
                              &dolfinx::fem::FiniteElement::num_sub_elements)
-      .def_property_readonly(
-          "interpolation_points", [](const dolfinx::fem::FiniteElement& self)
-          { return xt_as_pyarray(self.interpolation_points()); })
+      .def_property_readonly("interpolation_points",
+                             [](const dolfinx::fem::FiniteElement& self)
+                             {
+                               auto [X, shape] = self.interpolation_points();
+                               return as_pyarray(std::move(X), shape);
+                             })
       .def_property_readonly("interpolation_ident",
                              &dolfinx::fem::FiniteElement::interpolation_ident)
       .def_property_readonly("space_dimension",

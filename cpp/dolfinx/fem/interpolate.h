@@ -202,7 +202,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   auto dofmap0 = V0->dofmap();
   auto dofmap1 = V1->dofmap();
 
-  const xt::xtensor<double, 2> X = element1->interpolation_points();
+  const auto [X, Xshape] = element1->interpolation_points();
 
   // Get block sizes and dof transformation operators
   const int bs0 = element0->block_size();
@@ -225,33 +225,40 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   std::span<const double> x_g = mesh->geometry().x();
 
   // Evaluate coordinate map basis at reference interpolation points
-  xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, X.shape(0)));
+  xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, Xshape[0]));
   xt::xtensor<double, 2> dphi;
-  cmap.tabulate(1, X, phi);
+  cmap.tabulate(1, xt::adapt(X, Xshape), phi);
   dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
 
+  namespace stdex = std::experimental;
+  using cmdspan4_t
+      = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
+
   // Evaluate v basis functions at reference interpolation points
-  const xt::xtensor<double, 4> basis_derivatives_reference0
-      = element0->tabulate(X, 0);
+  // const xt::xtensor<double, 4> basis_derivatives_reference0
+  //     = element0->tabulate(X, 0);
+  const auto [_basis_derivatives_reference0, b0shape]
+      = element0->tabulate(X, Xshape, 0);
+  cmdspan4_t basis_derivatives_reference0(_basis_derivatives_reference0.data(),
+                                          b0shape);
 
   // Create working arrays
   std::vector<T> local1(element1->space_dimension());
   std::vector<T> coeffs0(element0->space_dimension());
-  xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});
-  xt::xtensor<double, 3> basis_reference0({X.shape(0), dim0, value_size_ref0});
-  xt::xtensor<T, 3> values0({X.shape(0), 1, element1->value_size()});
-  xt::xtensor<T, 3> mapped_values0({X.shape(0), 1, element1->value_size()});
+  xt::xtensor<double, 3> basis0({Xshape[0], dim0, value_size0});
+  xt::xtensor<double, 3> basis_reference0({Xshape[0], dim0, value_size_ref0});
+  xt::xtensor<T, 3> values0({Xshape[0], 1, element1->value_size()});
+  xt::xtensor<T, 3> mapped_values0({Xshape[0], 1, element1->value_size()});
   xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
-  xt::xtensor<double, 3> J({X.shape(0), gdim, tdim});
-  xt::xtensor<double, 3> K({X.shape(0), tdim, gdim});
-  std::vector<double> detJ(X.shape(0));
+  xt::xtensor<double, 3> J({Xshape[0], gdim, tdim});
+  xt::xtensor<double, 3> K({Xshape[0], tdim, gdim});
+  std::vector<double> detJ(Xshape[0]);
 
   // Get interpolation operator
   // const xt::xtensor<double, 2> Pi_1 = element1->interpolation_operator();
   const auto [_Pi_1, pi_shape] = element1->interpolation_operator();
   auto Pi_1 = xt::adapt(_Pi_1, pi_shape);
 
-  namespace stdex = std::experimental;
   using u_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
   using U_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
   using J_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
@@ -279,7 +286,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
 
     // Compute Jacobians and reference points for current cell
     J.fill(0);
-    for (std::size_t p = 0; p < X.shape(0); ++p)
+    for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       auto _J = xt::view(J, p, xt::all(), xt::all());
       cmap.compute_jacobian(dphi, coordinate_dofs, _J);
@@ -295,7 +302,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
           basis_reference0(k0, k1, k2)
               = basis_derivatives_reference0(0, k0, k1, k2);
 
-    for (std::size_t p = 0; p < X.shape(0); ++p)
+    for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       apply_dof_transformation0(
           std::span(basis_reference0.data() + p * dim0 * value_size_ref0,
@@ -323,7 +330,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
         coeffs0[dof_bs0 * i + k] = array0[dof_bs0 * dofs0[i] + k];
 
     // Evaluate v at the interpolation points (physical space values)
-    for (std::size_t p = 0; p < X.shape(0); ++p)
+    for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       for (int k = 0; k < bs0; ++k)
       {
@@ -520,14 +527,14 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
   else
   {
     // Get the interpolation points on the reference cells
-    const xt::xtensor<double, 2> X = element->interpolation_points();
-    if (X.shape(0) == 0)
+    const auto [X, Xshape] = element->interpolation_points();
+    if (X.empty())
     {
       throw std::runtime_error(
           "Interpolation into this space is not yet supported.");
     }
 
-    if (f.shape(1) != cells.size() * X.shape(0))
+    if (f.shape(1) != cells.size() * Xshape[0])
       throw std::runtime_error("Interpolation data has the wrong shape.");
 
     // Get coordinate map
@@ -540,19 +547,20 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
     std::span<const double> x_g = mesh->geometry().x();
 
     // Create data structures for Jacobian info
-    xt::xtensor<double, 3> J = xt::empty<double>({int(X.shape(0)), gdim, tdim});
-    xt::xtensor<double, 3> K = xt::empty<double>({int(X.shape(0)), tdim, gdim});
-    xt::xtensor<double, 1> detJ = xt::empty<double>({X.shape(0)});
+    xt::xtensor<double, 3> J = xt::empty<double>({int(Xshape[0]), gdim, tdim});
+    xt::xtensor<double, 3> K = xt::empty<double>({int(Xshape[0]), tdim, gdim});
+    xt::xtensor<double, 1> detJ = xt::empty<double>({Xshape[0]});
 
     xt::xtensor<double, 2> coordinate_dofs
         = xt::empty<double>({num_dofs_g, gdim});
 
-    xt::xtensor<T, 3> reference_data({X.shape(0), 1, value_size});
-    xt::xtensor<T, 3> _vals({X.shape(0), 1, value_size});
+    xt::xtensor<T, 3> reference_data({Xshape[0], 1, value_size});
+    xt::xtensor<T, 3> _vals({Xshape[0], 1, value_size});
 
     // Tabulate 1st order derivatives of shape functions at interpolation coords
-    xt::xtensor<double, 3> dphi = xt::view(
-        cmap.tabulate(1, X), xt::range(1, tdim + 1), xt::all(), xt::all(), 0);
+    xt::xtensor<double, 3> dphi
+        = xt::view(cmap.tabulate(1, xt::adapt(X, Xshape)),
+                   xt::range(1, tdim + 1), xt::all(), xt::all(), 0);
 
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -585,7 +593,7 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
 
       // Compute J, detJ and K
       J.fill(0);
-      for (std::size_t p = 0; p < X.shape(0); ++p)
+      for (std::size_t p = 0; p < Xshape[0]; ++p)
       {
         cmap.compute_jacobian(xt::view(dphi, xt::all(), p, xt::all()),
                               coordinate_dofs,
@@ -603,12 +611,12 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
         for (int m = 0; m < value_size; ++m)
         {
           std::copy_n(std::next(_f.begin(), f_shape1 * (k * value_size + m)
-                                                + c * X.shape(0)),
-                      X.shape(0), xt::view(_vals, xt::all(), 0, m).begin());
+                                                + c * Xshape[0]),
+                      Xshape[0], xt::view(_vals, xt::all(), 0, m).begin());
         }
 
         // Get element degrees of freedom for block
-        for (std::size_t i = 0; i < X.shape(0); ++i)
+        for (std::size_t i = 0; i < Xshape[0]; ++i)
         {
           u_t _u(_vals.data() + i * _vals.shape(1) * _vals.shape(2),
                  _vals.shape(1), _vals.shape(2));

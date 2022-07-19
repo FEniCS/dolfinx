@@ -161,7 +161,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
     throw std::runtime_error("Cannot evaluate dof coordinates - this element "
                              "does not have pointwise evaluation.");
   }
-  const xt::xtensor<double, 2>& X = _element->interpolation_points();
+  const auto [X, Xshape] = _element->interpolation_points();
 
   // Get coordinate map
   const CoordinateElement& cmap = _mesh->geometry().cmap();
@@ -198,8 +198,8 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
       apply_dof_transformation
       = _element->get_dof_transformation_function<double>();
 
-  const xt::xtensor<double, 2> phi
-      = xt::view(cmap.tabulate(0, X), 0, xt::all(), xt::all(), 0);
+  const xt::xtensor<double, 2> phi = xt::view(
+      cmap.tabulate(0, xt::adapt(X, Xshape)), 0, xt::all(), xt::all(), 0);
 
   for (int c = 0; c < num_cells; ++c)
   {

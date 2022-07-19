@@ -61,7 +61,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
 
   // Get the dof coordinates on the reference element and the  mesh
   // coordinate map
-  const xt::xtensor<double, 2>& X = element->interpolation_points();
+  const auto [X, Xshape] = element->interpolation_points();
   const fem::CoordinateElement& cmap = mesh->geometry().cmap();
 
   // Prepare cell geometry
@@ -80,8 +80,8 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
       = element->get_dof_transformation_function<double>();
 
   // Tabulate basis functions at node reference coordinates
-  const xt::xtensor<double, 2> phi
-      = xt::view(cmap.tabulate(0, X), 0, xt::all(), xt::all(), 0);
+  const xt::xtensor<double, 2> phi = xt::view(
+      cmap.tabulate(0, xt::adapt(X, Xshape)), 0, xt::all(), xt::all(), 0);
 
   // Loop over cells and tabulate dofs
   auto map = mesh->topology().index_map(tdim);

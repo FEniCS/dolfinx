@@ -111,21 +111,24 @@ public:
   /// @param[in] X Two dimensional xtensor of shape [num_points,
   /// geometric dimension] containing the points at the reference
   /// element
+  /// @param[in] shape
   /// @param[in] order The number of derivatives (up to and including
   /// this order) to tabulate for
-  void tabulate(xt::xtensor<double, 4>& values, const xt::xtensor<double, 2>& X,
-                int order) const;
+  void tabulate(std::span<double> values, std::span<const double> X,
+                std::array<std::size_t, 2> shape, int order) const;
 
   /// Evaluate all derivatives of the basis functions up to given order
   /// at given points in reference cell
   /// @param[in] X Two dimensional xtensor of shape [num_points,
   /// geometric dimension] containing the points at the reference
   /// element
+  /// @param[in] shape
   /// @param[in] order The number of derivatives (up to and including
   /// this order) to tabulate for
   /// @return Basis function values
-  xt::xtensor<double, 4> tabulate(const xt::xtensor<double, 2>& X,
-                                  int order) const;
+  std::pair<std::vector<double>, std::array<std::size_t, 4>>
+  tabulate(std::span<const double> X, std::array<std::size_t, 2> shape,
+           int order) const;
 
   /// Get the number of sub elements (for a mixed or blocked element)
   /// @return The number of sub elements
@@ -170,7 +173,8 @@ public:
   /// nodal positions. For other elements the points will typically be
   /// the quadrature points used to evaluate moment degrees of freedom.
   /// @return Points on the reference cell. Shape is (num_points, tdim).
-  xt::xtensor<double, 2> interpolation_points() const;
+  std::pair<std::vector<double>, std::array<std::size_t, 2>>
+  interpolation_points() const;
 
   /// Interpolation operator (matrix) `Pi` that maps a function
   /// evaluated at the points provided by

@@ -7,6 +7,7 @@
 #pragma once
 
 #include "Function.h"
+#include <array>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
@@ -70,7 +71,9 @@ public:
       const std::shared_ptr<const FunctionSpace> argument_function_space
       = nullptr)
       : _coefficients(coefficients), _constants(constants), _mesh(mesh),
-        _x_ref(X), _fn(fn), _value_shape(value_shape),
+        _x_ref(std::vector<double>(X.data(), X.data() + X.size()),
+               {X.shape(0), X.shape(1)}),
+        _fn(fn), _value_shape(value_shape),
         _argument_function_space(argument_function_space)
   {
     // Extract mesh from argument's function space
@@ -183,7 +186,7 @@ public:
       }
     }
 
-    const int size0 = _x_ref.shape(0) * value_size();
+    const int size0 = _x_ref.second[0] * value_size();
     std::vector<T> values_local(size0 * num_argument_dofs, 0);
     const std::span<T> _values_local(values_local);
 
@@ -238,7 +241,10 @@ public:
 
   /// @brief Evaluation points on the reference cell
   /// @return Evaluation points
-  const xt::xtensor<double, 2>& X() const { return _x_ref; }
+  std::pair<std::vector<double>, std::array<std::size_t, 2>> X() const
+  {
+    return _x_ref;
+  }
 
   /// Scalar type (T)
   using scalar_type = T;
@@ -265,6 +271,6 @@ private:
   std::vector<int> _value_shape;
 
   // Evaluation points on reference cell. Synonymous with X in public interface.
-  xt::xtensor<double, 2> _x_ref;
+  std::pair<std::vector<double>, std::array<std::size_t, 2>> _x_ref;
 };
 } // namespace dolfinx::fem

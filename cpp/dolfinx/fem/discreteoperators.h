@@ -74,15 +74,15 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
     throw std::runtime_error("Block size is greather than 1 for V1.");
 
   // Get V0 (H(curl)) space interpolation points
-  const xt::xtensor<double, 2> X = e1->interpolation_points();
+  const auto [X, Xshape] = e1->interpolation_points();
 
   // Tabulate first order derivatives of Lagrange space at H(curl)
   // interpolation points
   const int ndofs0 = e0->space_dimension();
   const int tdim = mesh->topology().dim();
   xt::xtensor<double, 4> phi0
-      = xt::empty<double>({tdim + 1, int(X.shape(0)), ndofs0, 1});
-  e0->tabulate(phi0, X, 1);
+      = xt::empty<double>({tdim + 1, int(Xshape[0]), ndofs0, 1});
+  e0->tabulate(phi0, X, Xshape, 1);
 
   // Reshape lagrange basis derivatives as a matrix of shape (tdim *
   // num_points, num_dofs_per_cell)
@@ -197,16 +197,16 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
   std::span<const double> x_g = mesh->geometry().x();
 
   // Evaluate coordinate map basis at reference interpolation points
-  const xt::xtensor<double, 2> X = element1->interpolation_points();
-  xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, X.shape(0)));
-  cmap.tabulate(1, X, phi);
+  const auto [X, Xshape] = element1->interpolation_points();
+  xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, Xshape[0]));
+  cmap.tabulate(1, xt::adapt(X, Xshape), phi);
   const xt::xtensor<double, 2> dphi
       = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
 
   // Evaluate V0 basis functions at reference interpolation points for V1
   xt::xtensor<double, 4> basis_derivatives_reference0(
-      {1, X.shape(0), dim0, value_size_ref0});
-  element0->tabulate(basis_derivatives_reference0, X, 0);
+      {1, Xshape[0], dim0, value_size_ref0});
+  element0->tabulate(basis_derivatives_reference0, X, Xshape, 0);
 
   constexpr double rtol = 1e-14;
   constexpr double atol = 1e-14;
@@ -214,10 +214,10 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
   xt::filtration(basis_derivatives_reference0, inds) = 0.0;
 
   // Create working arrays
-  xt::xtensor<double, 3> basis_reference0({X.shape(0), dim0, value_size_ref0});
-  xt::xtensor<double, 3> J({X.shape(0), gdim, tdim});
-  xt::xtensor<double, 3> K({X.shape(0), tdim, gdim});
-  std::vector<double> detJ(X.shape(0));
+  xt::xtensor<double, 3> basis_reference0({Xshape[0], dim0, value_size_ref0});
+  xt::xtensor<double, 3> J({Xshape[0], gdim, tdim});
+  xt::xtensor<double, 3> K({Xshape[0], tdim, gdim});
+  std::vector<double> detJ(Xshape[0]);
 
   // Get the interpolation operator (matrix) `Pi` that maps a function
   // evaluated at the interpolation points to the element degrees of
@@ -239,19 +239,19 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
   // Basis values of Lagrange space unrolled for block size
   // (num_quadrature_points, Lagrange dof, value_size)
   xt::xtensor<double, 3> basis_values = xt::zeros<double>(
-      {X.shape(0), bs0 * dim0, (std::size_t)element1->value_size()});
+      {Xshape[0], bs0 * dim0, (std::size_t)element1->value_size()});
   xt::xtensor<double, 3> mapped_values(
-      {X.shape(0), bs0 * dim0, (std::size_t)element1->value_size()});
+      {Xshape[0], bs0 * dim0, (std::size_t)element1->value_size()});
 
   auto pull_back_fn1 = element1->basix_element().map_fn<u_t, U_t, K_t, J_t>();
 
   xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, 3});
-  xt::xtensor<double, 3> basis0({X.shape(0), dim0, value_size0});
+  xt::xtensor<double, 3> basis0({Xshape[0], dim0, value_size0});
   std::vector<T> A(space_dim0 * space_dim1);
   std::vector<T> local1(space_dim1);
 
   std::vector<std::size_t> shape
-      = {X.shape(0), (std::size_t)element1->value_size(), space_dim0};
+      = {Xshape[0], (std::size_t)element1->value_size(), space_dim0};
   auto _A = xt::adapt(A, shape);
 
   // Iterate over mesh and interpolate on each cell
@@ -272,7 +272,7 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
 
     // Compute Jacobians and reference points for current cell
     J.fill(0);
-    for (std::size_t p = 0; p < X.shape(0); ++p)
+    for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       auto _J = xt::view(J, p, xt::all(), xt::all());
       cmap.compute_jacobian(dphi, _coordinate_dofs, _J);
@@ -284,7 +284,7 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
     // push forward to physical element
     basis_reference0 = xt::view(basis_derivatives_reference0, 0, xt::all(),
                                 xt::all(), xt::all());
-    for (std::size_t p = 0; p < X.shape(0); ++p)
+    for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       apply_dof_transformation0(
           std::span(basis_reference0.data() + p * dim0 * value_size_ref0,
@@ -305,7 +305,7 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
     }
 
     // Unroll basis function for input space for block size
-    for (std::size_t p = 0; p < X.shape(0); ++p)
+    for (std::size_t p = 0; p < Xshape[0]; ++p)
       for (std::size_t i = 0; i < dim0; ++i)
         for (std::size_t j = 0; j < value_size0; ++j)
           for (int k = 0; k < bs0; ++k)

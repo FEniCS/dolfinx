@@ -347,23 +347,20 @@ std::span<const std::size_t> FiniteElement::value_shape() const noexcept
 //-----------------------------------------------------------------------------
 std::string FiniteElement::family() const noexcept { return _family; }
 //-----------------------------------------------------------------------------
-void FiniteElement::tabulate(xt::xtensor<double, 4>& reference_values,
-                             const xt::xtensor<double, 2>& X, int order) const
+void FiniteElement::tabulate(std::span<double> values,
+                             std::span<const double> X,
+                             std::array<std::size_t, 2> shape, int order) const
 {
   assert(_element);
-  _element->tabulate(
-      order, std::span(X.data(), X.size()), std::array{X.shape(0), X.shape(1)},
-      std::span<double>(reference_values.data(), reference_values.size()));
+  _element->tabulate(order, X, shape, values);
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 4> FiniteElement::tabulate(const xt::xtensor<double, 2>& X,
-                                               int order) const
+std::pair<std::vector<double>, std::array<std::size_t, 4>>
+FiniteElement::tabulate(std::span<const double> X,
+                        std::array<std::size_t, 2> shape, int order) const
 {
   assert(_element);
-  auto [tab, shape] = _element->tabulate(order, std::span(X.data(), X.size()),
-                                         {X.shape(0), X.shape(1)});
-  return xt::adapt(
-      tab, std::vector<std::size_t>{shape[0], shape[1], shape[2], shape[3]});
+  return _element->tabulate(order, X, shape);
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept
@@ -427,7 +424,8 @@ bool FiniteElement::interpolation_ident() const noexcept
   return _element->interpolation_is_identity();
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2> FiniteElement::interpolation_points() const
+std::pair<std::vector<double>, std::array<std::size_t, 2>>
+FiniteElement::interpolation_points() const
 {
   if (!_element)
   {
@@ -436,8 +434,7 @@ xt::xtensor<double, 2> FiniteElement::interpolation_points() const
         "this is a mixed element?");
   }
 
-  auto& [x, shape] = _element->points();
-  return xt::adapt(x, std::vector<std::size_t>{shape[0], shape[1]});
+  return _element->points();
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::array<std::size_t, 2>>
