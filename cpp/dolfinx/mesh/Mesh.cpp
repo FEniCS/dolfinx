@@ -453,6 +453,12 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     submesh_x_dofmap_offsets.push_back(submesh_x_dofmap_vec.size());
   }
 
+  // Create submesh coordinate element
+  CellType submesh_coord_cell
+      = cell_entity_type(mesh.geometry().cmap().cell_shape(), dim, 0);
+  auto submesh_coord_ele = fem::CoordinateElement(
+      submesh_coord_cell, mesh.geometry().cmap().degree());
+
   if (!(mesh.topology().dim() == dim))
   {
     const int rank = MPI::rank(MPI_COMM_WORLD);
@@ -472,14 +478,16 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     // ss << "submesh_xdofmap_global_vec = "
     //    << xt::adapt(submesh_xdofmap_global_vec) << "\n";
 
+    const int x_dofs_per_entity = submesh_coord_ele.dim();
+
     // // TODO Don't hardcode blocksize
-    common::Scatterer scatterer(*submesh_entity_index_map, 2);
+    common::Scatterer scatterer(*submesh_entity_index_map, x_dofs_per_entity);
     std::vector<std::int64_t> owned_x_dofs(
         submesh_xdofmap_global_vec.begin(),
         submesh_xdofmap_global_vec.begin()
-            + 2 * submesh_entity_index_map->size_local());
+            + x_dofs_per_entity * submesh_entity_index_map->size_local());
     std::vector<std::int64_t> ghost_x_dofs(
-        2 * submesh_entity_index_map->num_ghosts(), 0);
+        x_dofs_per_entity * submesh_entity_index_map->num_ghosts(), 0);
 
     // ss << "owned_x_dofs = " << xt::adapt(owned_x_dofs) << "\n";
     // ss << "ghost_x_dofs = " << xt::adapt(ghost_x_dofs) << "\n";
@@ -488,7 +496,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                           std::span<std::int64_t>(ghost_x_dofs));
 
     std::span<std::int32_t> ghost_x_dofs_local(
-        submesh_x_dofmap_vec.begin() + 2 *
+        submesh_x_dofmap_vec.begin() + x_dofs_per_entity *
         submesh_entity_index_map->size_local(), submesh_x_dofmap_vec.end());
 
     ss << "owned_x_dofs = " << xt::adapt(owned_x_dofs) << "\n";
@@ -506,12 +514,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   graph::AdjacencyList<std::int32_t> submesh_x_dofmap(
       std::move(submesh_x_dofmap_vec), std::move(submesh_x_dofmap_offsets));
-
-  // Create submesh coordinate element
-  CellType submesh_coord_cell
-      = cell_entity_type(mesh.geometry().cmap().cell_shape(), dim, 0);
-  auto submesh_coord_ele = fem::CoordinateElement(
-      submesh_coord_cell, mesh.geometry().cmap().degree());
 
   // Submesh geometry input_global_indices
   // TODO Check this
