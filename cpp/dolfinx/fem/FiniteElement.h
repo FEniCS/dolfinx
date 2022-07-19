@@ -180,7 +180,8 @@ public:
   /// `f_x` should be ordered.
   /// @return The interpolation operator `Pi`. Shape is (num_dofs,
   /// num_points*value_size)
-  xt::xtensor<double, 2> interpolation_operator() const;
+  std::pair<std::vector<double>, std::array<std::size_t, 2>>
+  interpolation_operator() const;
 
   /// Create a matrix that maps degrees of freedom from one element to
   /// this element (interpolation).
@@ -192,7 +193,7 @@ public:
   /// @note The two elements must use the same mapping between the
   /// reference and physical cells
   /// @note Does not support mixed elements
-  xt::xtensor<double, 2>
+  std::pair<std::vector<double>, std::array<std::size_t, 2>>
   create_interpolation_operator(const FiniteElement& from) const;
 
   /// Check if DOF transformations are needed for this element.

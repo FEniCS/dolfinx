@@ -110,8 +110,9 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
   std::vector<T> A(e1->space_dimension() * ndofs0);
   {
     auto _A = xt::adapt(A, std::vector<int>{e1->space_dimension(), ndofs0});
-    const xt::xtensor<double, 2> Pi = e1->interpolation_operator();
-    math::dot(Pi, dphi_reshaped, _A);
+    const auto [Pi, shape] = e1->interpolation_operator();
+    auto _Pi = xt::adapt(Pi, shape);
+    math::dot(_Pi, dphi_reshaped, _A);
   }
 
   // Insert local interpolation matrix for each cell
@@ -221,7 +222,10 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
   // Get the interpolation operator (matrix) `Pi` that maps a function
   // evaluated at the interpolation points to the element degrees of
   // freedom, i.e. dofs = Pi f_x
-  const xt::xtensor<double, 2>& Pi_1 = element1->interpolation_operator();
+  // const xt::xtensor<double, 2>& Pi_1 = element1->interpolation_operator();
+  const auto [_Pi_1, pi_shape] = element1->interpolation_operator();
+  auto Pi_1 = xt::adapt(_Pi_1, pi_shape);
+
   bool interpolation_ident = element1->interpolation_ident();
 
   namespace stdex = std::experimental;

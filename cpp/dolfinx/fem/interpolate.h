@@ -17,6 +17,7 @@
 #include <numeric>
 #include <span>
 #include <vector>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xarray.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
@@ -114,10 +115,6 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0,
   auto dofmap1 = V1->dofmap();
   auto dofmap0 = V0->dofmap();
 
-  // Create interpolation operator
-  const xt::xtensor<double, 2> i_m
-      = element1->create_interpolation_operator(*element0);
-
   // Get block sizes and dof transformation operators
   const int bs1 = dofmap1->bs();
   const int bs0 = dofmap0->bs();
@@ -129,6 +126,12 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0,
   // Creat working array
   std::vector<T> local0(element0->space_dimension());
   std::vector<T> local1(element1->space_dimension());
+
+  // Create interpolation operator
+  const auto [i_m, im_shape]
+      = element1->create_interpolation_operator(*element0);
+  // const xt::xtensor<double, 2> i_m
+  //     = element1->create_interpolation_operator(*element0);
 
   // Iterate over mesh and interpolate on each cell
   for (auto c : cells)
@@ -143,9 +146,9 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0,
     // FIXME: Get compile-time ranges from Basix
     // Apply interpolation operator
     std::fill(local1.begin(), local1.end(), 0);
-    for (std::size_t i = 0; i < i_m.shape(0); ++i)
-      for (std::size_t j = 0; j < i_m.shape(1); ++j)
-        local1[i] += i_m(i, j) * local0[j];
+    for (std::size_t i = 0; i < im_shape[0]; ++i)
+      for (std::size_t j = 0; j < im_shape[1]; ++j)
+        local1[i] += i_m[im_shape[1] * i + j] * local0[j];
 
     apply_inverse_dof_transform(local1, cell_info, c, 1);
 
@@ -244,7 +247,9 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   std::vector<double> detJ(X.shape(0));
 
   // Get interpolation operator
-  const xt::xtensor<double, 2> Pi_1 = element1->interpolation_operator();
+  // const xt::xtensor<double, 2> Pi_1 = element1->interpolation_operator();
+  const auto [_Pi_1, pi_shape] = element1->interpolation_operator();
+  auto Pi_1 = xt::adapt(_Pi_1, pi_shape);
 
   namespace stdex = std::experimental;
   using u_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
@@ -479,7 +484,10 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
       throw std::runtime_error("Interpolation data has the wrong shape.");
 
     // Get interpolation operator
-    const xt::xtensor<double, 2>& Pi = element->interpolation_operator();
+    // const xt::xtensor<double, 2>& Pi = element->interpolation_operator();
+    const auto [_Pi, pi_shape] = element->interpolation_operator();
+    auto Pi = xt::adapt(_Pi, pi_shape);
+
     const std::size_t num_interp_points = Pi.shape(1);
     assert(Pi.shape(0) == num_scalar_dofs);
 
@@ -553,7 +561,9 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
         = element->get_dof_transformation_function<T>(true, true);
 
     // Get interpolation operator
-    const xt::xtensor<double, 2>& Pi = element->interpolation_operator();
+    // const xt::xtensor<double, 2>& Pi = element->interpolation_operator();
+    const auto [_Pi, pi_shape] = element->interpolation_operator();
+    auto Pi = xt::adapt(_Pi, pi_shape);
 
     namespace stdex = std::experimental;
     using u_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 2>>;
