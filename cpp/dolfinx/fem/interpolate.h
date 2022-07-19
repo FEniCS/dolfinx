@@ -38,6 +38,48 @@ namespace impl
 /// @param[out] coeffs The degrees of freedom to compute
 /// @param[in] bs The block size
 template <typename U, typename V, typename T>
+void interpolation_apply_new(const U& Pi, const V& data, std::vector<T>& coeffs,
+                         int bs)
+{
+  // Compute coefficients = Pi * x (matrix-vector multiply)
+  if (bs == 1)
+  {
+    assert(data.extent(0) * data.extent(1) == Pi.extent(1));
+    for (std::size_t i = 0; i < Pi.extent(0); ++i)
+    {
+      coeffs[i] = 0.0;
+      for (std::size_t k = 0; k < data.extent(1); ++k)
+        for (std::size_t j = 0; j < data.extent(0); ++j)
+          coeffs[i] += Pi(i, k * data.extent(0) + j) * data(j, k);
+    }
+  }
+  else
+  {
+    const std::size_t cols = Pi.extent(1);
+    assert(data.extent(0) == Pi.extent(1));
+    assert(data.extent(1) == bs);
+    for (int k = 0; k < bs; ++k)
+    {
+      for (std::size_t i = 0; i < Pi.extent(0); ++i)
+      {
+        T acc = 0;
+        for (std::size_t j = 0; j < cols; ++j)
+          acc += Pi(i, j) * data(j, k);
+        coeffs[bs * i + k] = acc;
+      }
+    }
+  }
+}
+
+/// Apply interpolation operator Pi to data to evaluate the dof
+/// coefficients
+/// @param[in] Pi The interpolation matrix (shape = (num dofs,
+/// num_points * value_size))
+/// @param[in] data Function evaluations, by point, e.g. (f0(x0),
+/// f1(x0), f0(x1), f1(x1), ...)
+/// @param[out] coeffs The degrees of freedom to compute
+/// @param[in] bs The block size
+template <typename U, typename V, typename T>
 void interpolation_apply(const U& Pi, const V& data, std::vector<T>& coeffs,
                          int bs)
 {
