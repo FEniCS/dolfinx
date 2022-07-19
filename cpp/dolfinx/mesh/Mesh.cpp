@@ -322,6 +322,11 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     submesh_e_to_v_offsets.push_back(submesh_e_to_v_vec.size());
   }
 
+  // If codim != 0, the process owning the entities should send the
+  // entity to vertex map to process ghosting the entities to ensure
+  // that the submesh ghost cells are orientated consistently. If
+  // codim = 1, the mesh should have been created so that this is the
+  // case (TODO double check this)
   if (!(mesh.topology().dim() == dim))
   {
     std::vector<std::int64_t> submesh_e_to_global_v_vec(
@@ -329,18 +334,18 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     submesh_vertex_index_map->local_to_global(submesh_e_to_v_vec,
                                               submesh_e_to_global_v_vec);
 
-    // TODO Don't hardcode blocksize
     common::Scatterer scatterer(*submesh_entity_index_map,
                                 num_vertices_per_entity);
-    std::vector<std::int64_t> owned_vertices(
-        submesh_e_to_global_v_vec.begin(),
-        submesh_e_to_global_v_vec.begin()
-            + num_vertices_per_entity * submesh_entity_index_map->size_local());
     std::vector<std::int64_t> ghost_vertices(
         num_vertices_per_entity * submesh_entity_index_map->num_ghosts(), 0);
 
-    scatterer.scatter_fwd(std::span<const std::int64_t>(owned_vertices),
-                          std::span<std::int64_t>(ghost_vertices));
+    scatterer.scatter_fwd(
+        std::span<const std::int64_t>(
+            submesh_e_to_global_v_vec.begin(),
+            submesh_e_to_global_v_vec.begin()
+                + num_vertices_per_entity
+                      * submesh_entity_index_map->size_local()),
+        std::span<std::int64_t>(ghost_vertices));
 
     std::span<std::int32_t> ghost_vertices_local(
         submesh_e_to_v_vec.begin()
@@ -447,6 +452,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   auto submesh_coord_ele = fem::CoordinateElement(
       submesh_coord_cell, mesh.geometry().cmap().degree());
 
+  // Same communication as for the topology is also needed for the
+  // geometry
   if (!(mesh.topology().dim() == dim))
   {
     std::vector<std::int64_t> submesh_xdofmap_global_vec(
@@ -458,15 +465,15 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
     // TODO Don't hardcode blocksize
     common::Scatterer scatterer(*submesh_entity_index_map, x_dofs_per_entity);
-    std::vector<std::int64_t> owned_x_dofs(
-        submesh_xdofmap_global_vec.begin(),
-        submesh_xdofmap_global_vec.begin()
-            + x_dofs_per_entity * submesh_entity_index_map->size_local());
     std::vector<std::int64_t> ghost_x_dofs(
         x_dofs_per_entity * submesh_entity_index_map->num_ghosts(), 0);
 
-    scatterer.scatter_fwd(std::span<const std::int64_t>(owned_x_dofs),
-                          std::span<std::int64_t>(ghost_x_dofs));
+    scatterer.scatter_fwd(
+        std::span<const std::int64_t>(
+            submesh_xdofmap_global_vec.begin(),
+            submesh_xdofmap_global_vec.begin()
+                + x_dofs_per_entity * submesh_entity_index_map->size_local()),
+        std::span<std::int64_t>(ghost_x_dofs));
 
     std::span<std::int32_t> ghost_x_dofs_local(
         submesh_x_dofmap_vec.begin()
