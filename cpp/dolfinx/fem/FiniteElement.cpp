@@ -16,7 +16,6 @@
 #include <ufcx.h>
 #include <utility>
 #include <vector>
-#include <xtensor/xadapt.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -472,10 +471,7 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
     // case
     const auto [data, dshape]
         = basix::compute_interpolation_operator(*from._element, *_element);
-    // auto i_m = xt::adapt(data, std::vector<std::size_t>{dshape[0],
-    // dshape[1]});
     std::array<std::size_t, 2> shape = {dshape[0] * _bs, dshape[1] * _bs};
-    // xt::xtensor<double, 2> out = xt::zeros<double>(shape);
     std::vector<double> out(shape[0] * shape[1]);
 
     // NOTE: Alternatively this operation could be implemented during

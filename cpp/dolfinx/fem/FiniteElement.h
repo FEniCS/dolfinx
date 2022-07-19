@@ -6,13 +6,14 @@
 
 #pragma once
 
+#include <array>
 #include <basix/finite-element.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
 #include <span>
+#include <utility>
 #include <vector>
-#include <xtensor/xtensor.hpp>
 
 struct ufcx_finite_element;
 
@@ -103,15 +104,15 @@ public:
   /// @return The string of the finite element family
   std::string family() const noexcept;
 
-  /// Evaluate all derivatives of the basis functions up to given order
-  /// at given points in reference cell
-  /// @param[in,out] values Four dimensional xtensor that will be filled
-  /// with the tabulated values. Should be of shape {num_derivatives,
-  /// num_points, num_dofs, reference_value_size}
-  /// @param[in] X Two dimensional xtensor of shape [num_points,
-  /// geometric dimension] containing the points at the reference
-  /// element
-  /// @param[in] shape
+  /// @brief Evaluate derivatives of the basis functions up to given order
+  /// at points in the reference cell.
+  /// @param[in,out] values Array that will be filled with the tabulated
+  /// basis values. Must have shape `(num_derivatives, num_points,
+  /// num_dofs, reference_value_size)` (row-major storage)
+  /// @param[in] X The reference coordinates at which to evaluate the
+  /// basis functions. Shape is `(num_points, geometric dimension)`
+  /// (row-major storage)
+  /// @param[in] shape The shape of `X`
   /// @param[in] order The number of derivatives (up to and including
   /// this order) to tabulate for
   void tabulate(std::span<double> values, std::span<const double> X,
@@ -119,18 +120,18 @@ public:
 
   /// Evaluate all derivatives of the basis functions up to given order
   /// at given points in reference cell
-  /// @param[in] X Two dimensional xtensor of shape [num_points,
-  /// geometric dimension] containing the points at the reference
-  /// element
-  /// @param[in] shape
+  /// @param[in] X The reference coordinates at which to evaluate the
+  /// basis functions. Shape is `(num_points, geometric dimension)`
+  /// (row-major storage)
+  /// @param[in] shape The shape of `X`
   /// @param[in] order The number of derivatives (up to and including
   /// this order) to tabulate for
-  /// @return Basis function values
+  /// @return Basis function values and array shape (row-major storage)
   std::pair<std::vector<double>, std::array<std::size_t, 4>>
   tabulate(std::span<const double> X, std::array<std::size_t, 2> shape,
            int order) const;
 
-  /// Get the number of sub elements (for a mixed or blocked element)
+  /// @brief Number of sub elements (for a mixed or blocked element)
   /// @return The number of sub elements
   int num_sub_elements() const noexcept;
 

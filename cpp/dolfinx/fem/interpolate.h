@@ -130,8 +130,6 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0,
   // Create interpolation operator
   const auto [i_m, im_shape]
       = element1->create_interpolation_operator(*element0);
-  // const xt::xtensor<double, 2> i_m
-  //     = element1->create_interpolation_operator(*element0);
 
   // Iterate over mesh and interpolate on each cell
   for (auto c : cells)
@@ -235,8 +233,6 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
       = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
 
   // Evaluate v basis functions at reference interpolation points
-  // const xt::xtensor<double, 4> basis_derivatives_reference0
-  //     = element0->tabulate(X, 0);
   const auto [_basis_derivatives_reference0, b0shape]
       = element0->tabulate(X, Xshape, 0);
   cmdspan4_t basis_derivatives_reference0(_basis_derivatives_reference0.data(),
@@ -255,7 +251,6 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   std::vector<double> detJ(Xshape[0]);
 
   // Get interpolation operator
-  // const xt::xtensor<double, 2> Pi_1 = element1->interpolation_operator();
   const auto [_Pi_1, pi_shape] = element1->interpolation_operator();
   auto Pi_1 = xt::adapt(_Pi_1, pi_shape);
 
@@ -491,7 +486,6 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
       throw std::runtime_error("Interpolation data has the wrong shape.");
 
     // Get interpolation operator
-    // const xt::xtensor<double, 2>& Pi = element->interpolation_operator();
     const auto [_Pi, pi_shape] = element->interpolation_operator();
     auto Pi = xt::adapt(_Pi, pi_shape);
 
@@ -569,7 +563,6 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
         = element->get_dof_transformation_function<T>(true, true);
 
     // Get interpolation operator
-    // const xt::xtensor<double, 2>& Pi = element->interpolation_operator();
     const auto [_Pi, pi_shape] = element->interpolation_operator();
     auto Pi = xt::adapt(_Pi, pi_shape);
 

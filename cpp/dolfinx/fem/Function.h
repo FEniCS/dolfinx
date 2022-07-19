@@ -248,12 +248,25 @@ public:
           "Function value size not equal to Expression value size");
     }
 
-    // if (!xt::allclose(e.X(),
-    //                   _function_space->element()->interpolation_points()))
-    // {
-    //   throw std::runtime_error("Function element interpolation points not "
-    //                            "equal to Expression interpolation points");
-    // }
+    {
+      // Compatibility check
+      auto [X0, shape0] = e.X();
+      auto [X1, shape1] = _function_space->element()->interpolation_points();
+      if (shape0 != shape1)
+      {
+        throw std::runtime_error(
+            "Function element interpolation points has different shape to "
+            "Expression interpolation points");
+      }
+      for (std::size_t i = 0; i < X0.size(); ++i)
+      {
+        if (std::abs(X0[i] - X1[i]) > 1.0e-10)
+        {
+          throw std::runtime_error("Function element interpolation points not "
+                                   "equal to Expression interpolation points");
+        }
+      }
+    }
 
     // Array to hold evaluted Expression
     std::size_t num_cells = cells.size();
@@ -454,7 +467,6 @@ public:
     xt::xtensor<double, 2> basis_values({space_dimension, value_size});
 
     // Compute basis on reference element
-    // element->tabulate(basis_derivatives_reference_values, X, 0);
     element->tabulate(basis_derivatives_reference_values, X,
                       {X.shape(0), X.shape(1)}, 0);
 

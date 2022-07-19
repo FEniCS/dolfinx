@@ -152,8 +152,8 @@ public:
                            const xt::xtensor<double, 2>& cell_geometry,
                            const xt::xtensor<double, 2>& phi);
 
-  /// Compute the physical coordinate of the reference point X=(0 , 0,
-  /// 0)
+  /// @brief Compute the physical coordinate of the reference point
+  /// `X=(0, 0, 0)`
   /// @param[in] cell_geometry The cell nodes coordinates (shape=(num
   /// geometry nodes, gdim))
   /// @return Physical coordinate of the X=(0, 0, 0)
