@@ -329,16 +329,18 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // case (TODO double check this)
   if (!(mesh.topology().dim() == dim))
   {
+    // Convert submesh_e_to_v_vec from local to global vertex numbering
     std::vector<std::int64_t> submesh_e_to_global_v_vec(
         submesh_e_to_v_vec.size(), 0);
     submesh_vertex_index_map->local_to_global(submesh_e_to_v_vec,
                                               submesh_e_to_global_v_vec);
 
+    // Scatter forward to send global vertices of owned entity vertices
+    // to ghost entities
     common::Scatterer scatterer(*submesh_entity_index_map,
                                 num_vertices_per_entity);
     std::vector<std::int64_t> ghost_vertices(
         num_vertices_per_entity * submesh_entity_index_map->num_ghosts(), 0);
-
     scatterer.scatter_fwd(
         std::span<const std::int64_t>(
             submesh_e_to_global_v_vec.begin(),
@@ -347,11 +349,12 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                       * submesh_entity_index_map->size_local()),
         std::span<std::int64_t>(ghost_vertices));
 
+    // Convert received global vertices back to local numbering and overwrite
+    // ghosts in submesh_e_to_v_vec
     std::span<std::int32_t> ghost_vertices_local(
         submesh_e_to_v_vec.begin()
             + num_vertices_per_entity * submesh_entity_index_map->size_local(),
         submesh_e_to_v_vec.end());
-
     submesh_vertex_index_map->global_to_local(ghost_vertices,
                                               ghost_vertices_local);
   }
