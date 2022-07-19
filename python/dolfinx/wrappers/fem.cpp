@@ -565,7 +565,8 @@ void declare_objects(py::module& m, const std::string& type)
                                  [](const dolfinx::fem::Expression<T>& self)
                                  {
                                    auto [X, shape] = self.X();
-                                   return dolfinx_wrappers::as_pyarray(std::move(X), shape);
+                                   return dolfinx_wrappers::as_pyarray(
+                                       std::move(X), shape);
                                  });
 
   std::string pymethod_create_expression
@@ -1135,8 +1136,14 @@ void fem(py::module& m)
 
             xt::xtensor<double, 2> x = xt::empty<double>(
                 {_X.shape(0), std::size_t(cell_geometry.shape(1))});
-            const xt::xtensor<double, 2> phi
-                = xt::view(self.tabulate(0, _X), 0, xt::all(), xt::all(), 0);
+            // const xt::xtensor<double, 2> phi
+            //     = xt::view(self.tabulate(0, _X), 0, xt::all(), xt::all(), 0);
+            xt::xtensor<double, 4> _phi(self.tabulate_shape(0, s_x[0]));
+            self.tabulate(0, _X, _phi);
+            xt::xtensor<double, 2> phi({_phi.shape(1), _phi.shape(2)});
+            for (std::size_t i = 0; i < phi.shape(0); ++i)
+              for (std::size_t j = 0; j < phi.shape(1); ++j)
+                phi(i, j) = _phi(0, i, j, 0);
 
             self.push_forward(x, g, phi);
             return xt_as_pyarray(std::move(x));

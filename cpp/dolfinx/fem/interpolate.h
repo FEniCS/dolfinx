@@ -552,9 +552,16 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
     xt::xtensor<T, 3> _vals({Xshape[0], 1, value_size});
 
     // Tabulate 1st order derivatives of shape functions at interpolation coords
-    xt::xtensor<double, 3> dphi
-        = xt::view(cmap.tabulate(1, xt::adapt(X, Xshape)),
-                   xt::range(1, tdim + 1), xt::all(), xt::all(), 0);
+    xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, Xshape[0]));
+    cmap.tabulate(1, xt::adapt(X, Xshape), phi);
+    xt::xtensor<double, 3> dphi({tdim, phi.shape(1), phi.shape(2)});
+    for (std::size_t i = 0; i < tdim; ++i)
+      for (std::size_t j = 0; j < dphi.shape(1); ++j)
+        for (std::size_t k = 0; k < dphi.shape(2); ++k)
+          dphi(i, j, k) = phi(i + 1, j, k, 0);
+    // xt::xtensor<double, 3> dphi
+    //     = xt::view(cmap.tabulate(1, xt::adapt(X, Xshape)),
+    //                xt::range(1, tdim + 1), xt::all(), xt::all(), 0);
 
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
