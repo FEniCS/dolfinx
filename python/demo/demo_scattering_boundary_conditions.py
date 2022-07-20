@@ -42,7 +42,7 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
-from mesh_wire import generate_mesh_wire
+from data.mesh_wire import generate_mesh_wire
 
 import ufl
 from dolfinx import fem, plot
