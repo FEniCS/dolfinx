@@ -346,7 +346,7 @@ determine_sharing_ranks(MPI_Comm comm,
 std::array<std::vector<std::int64_t>, 2>
 vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
                         int num_local_cells,
-                        const std::vector<std::int64_t>& unknown_vertices)
+                        const std::vector<std::int64_t>& boundary_vertices)
 {
   common::Timer timer("Topology: determine vertex ownership groups (owned, "
                       "undetermined, unowned)");
@@ -373,7 +373,7 @@ vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
   // therefore owned by this rank
   std::vector<std::int64_t> owned_vertices;
   std::set_difference(local_vertex_set.begin(), local_vertex_set.end(),
-                      unknown_vertices.begin(), unknown_vertices.end(),
+                      boundary_vertices.begin(), boundary_vertices.end(),
                       std::back_inserter(owned_vertices));
 
   // Build difference 2: Vertices attached only to ghost cells, and
@@ -383,10 +383,11 @@ vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
                       local_vertex_set.begin(), local_vertex_set.end(),
                       std::back_inserter(unowned_vertices));
 
-  // No vertices in unowned should also be in unknown...
+  // Sanity check
+  // No vertices in unowned should also be in boundary...
   std::vector<std::int64_t> unowned_vertices_in_error;
   std::set_intersection(unowned_vertices.begin(), unowned_vertices.end(),
-                        unknown_vertices.begin(), unknown_vertices.end(),
+                        boundary_vertices.begin(), boundary_vertices.end(),
                         std::back_inserter(unowned_vertices_in_error));
 
   if (unowned_vertices_in_error.size() > 0)
@@ -918,7 +919,7 @@ Topology mesh::create_topology(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
     const std::span<const std::int64_t>& original_cell_index,
     const std::span<const int>& ghost_owners, const CellType& cell_type,
-    GhostMode ghost_mode, const std::vector<std::int64_t>& unknown_vertices)
+    GhostMode ghost_mode, const std::vector<std::int64_t>& boundary_vertices)
 {
   common::Timer timer("Topology: create");
 
@@ -937,26 +938,26 @@ Topology mesh::create_topology(
   // Create sets of owned and not-owned vertices from the cell ownership, and
   // the list of "unknown vertices" whose ownership needs to be determined.
   auto [owned_vertices, unowned_vertices]
-      = vertex_ownership_groups(cells, num_local_cells, unknown_vertices);
+      = vertex_ownership_groups(cells, num_local_cells, boundary_vertices);
 
   // For each vertex whose ownership needs determining, find the sharing
   // ranks. The first index in the list of ranks for a vertex the owner
   // (as determined by determine_sharing_ranks).
   const graph::AdjacencyList<int> global_vertex_to_ranks
-      = determine_sharing_ranks(comm, unknown_vertices);
+      = determine_sharing_ranks(comm, boundary_vertices);
 
   // Iterate over vertices that have 'unknown' ownership, and if flagged
   // as owned by determine_sharing_ranks update ownership status
   {
     const int mpi_rank = dolfinx::MPI::rank(comm);
     std::vector<std::int64_t> owned_shared_vertices;
-    for (std::size_t i = 0; i < unknown_vertices.size(); ++i)
+    for (std::size_t i = 0; i < boundary_vertices.size(); ++i)
     {
       // Vertex is shared and owned by this rank if the first sharing rank
       // is my rank
       auto ranks = global_vertex_to_ranks.links(i);
       assert(!ranks.empty());
-      if (std::int64_t global_index = unknown_vertices[i];
+      if (std::int64_t global_index = boundary_vertices[i];
           ranks.front() == mpi_rank)
       {
         owned_shared_vertices.push_back(global_index);
@@ -1042,7 +1043,7 @@ Topology mesh::create_topology(
   // rank)) data with neighbours (for vertices on 'true domain
   // boundary')
   const std::vector<std::int64_t> unowned_vertex_data = exchange_indexing(
-      comm, unknown_vertices, global_vertex_to_ranks, global_offset_v,
+      comm, boundary_vertices, global_vertex_to_ranks, global_offset_v,
       owned_vertices, local_vertex_indices);
   assert(unowned_vertex_data.size() % 3 == 0);
 

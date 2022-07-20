@@ -155,22 +155,22 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // -- Create Topology
 
     // Boundary vertices are marked as unknown
-    std::vector<std::int64_t> unknown_vertices(unmatched_facets);
-    std::sort(unknown_vertices.begin(), unknown_vertices.end());
-    unknown_vertices.erase(
-        std::unique(unknown_vertices.begin(), unknown_vertices.end()),
-        unknown_vertices.end());
+    std::vector<std::int64_t> boundary_vertices(unmatched_facets);
+    std::sort(boundary_vertices.begin(), boundary_vertices.end());
+    boundary_vertices.erase(
+        std::unique(boundary_vertices.begin(), boundary_vertices.end()),
+        boundary_vertices.end());
 
     // Remove -1 if it occurs in boundary vertices (may occur in mixed topology)
-    if (unknown_vertices.size() > 0 and unknown_vertices[0] == -1)
-      unknown_vertices.erase(unknown_vertices.begin());
+    if (boundary_vertices.size() > 0 and boundary_vertices[0] == -1)
+      boundary_vertices.erase(boundary_vertices.begin());
 
     // Create cells and vertices with the ghosting requested. Input
     // topology includes cells shared via facet, but ghosts will be
     // removed later if not required by ghost_mode.
     return std::pair{create_topology(comm, cells_extracted, original_cell_index,
                                      ghost_owners, element.cell_shape(),
-                                     ghost_mode, unknown_vertices),
+                                     ghost_mode, boundary_vertices),
                      std::move(cell_nodes)};
   };
 
