@@ -62,18 +62,6 @@ ElementDofLayout CoordinateElement::create_dof_layout() const
                           _element->entity_closure_dofs(), {}, {});
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::push_forward(
-    xt::xtensor<double, 2>& x, const xt::xtensor<double, 2>& cell_geometry,
-    const xt::xtensor<double, 2>& phi)
-{
-  assert(phi.shape(1) == cell_geometry.shape(0));
-
-  // Compute physical coordinates
-  // x = phi * cell_geometry;
-  x.fill(0);
-  math::dot(phi, cell_geometry, x);
-}
-//-----------------------------------------------------------------------------
 void CoordinateElement::pull_back_nonaffine_new(mdspan2_t X, cmdspan2_t x,
                                                 cmdspan2_t cell_geometry,
                                                 double tol, int maxit) const

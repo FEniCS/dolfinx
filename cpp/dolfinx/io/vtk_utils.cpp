@@ -79,22 +79,29 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
   const auto apply_dof_transformation
       = element->get_dof_transformation_function<double>();
 
+  namespace stdex = std::experimental;
+  using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+  using cmdspan4_t = stdex::mdspan<double, stdex::dextents<std::size_t, 4>>;
+
   // Tabulate basis functions at node reference coordinates
-  xt::xtensor<double, 4> _phi(cmap.tabulate_shape(0, Xshape[0]));
-  cmap.tabulate(0, X, Xshape, _phi);
-  xt::xtensor<double, 2> phi({_phi.shape(1), _phi.shape(2)});
-  for (std::size_t i = 0; i < phi.shape(0); ++i)
-    for (std::size_t j = 0; j < phi.shape(1); ++j)
-      phi(i, j) = _phi(0, i, j, 0);
-  // const xt::xtensor<double, 2> phi = xt::view(
-  //     cmap.tabulate(0, xt::adapt(X, Xshape)), 0, xt::all(), xt::all(), 0);
+  const std::array<std::size_t, 4> phi_shape
+      = cmap.tabulate_shape(0, Xshape[0]);
+  std::vector<double> phi_b(
+      std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+  cmdspan4_t phi_full(phi_b.data(), phi_shape);
+  cmap.tabulate(0, X, Xshape, phi_b);
+  auto phi = stdex::submdspan(phi_full, 0, stdex::full_extent,
+                              stdex::full_extent, 0);
 
   // Loop over cells and tabulate dofs
   auto map = mesh->topology().index_map(tdim);
   assert(map);
   const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-  xt::xtensor<double, 2> x = xt::zeros<double>({scalar_dofs, gdim});
-  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
+  std::vector<double> x_b(scalar_dofs * gdim);
+  mdspan2_t x(x_b.data(), scalar_dofs, gdim);
+  std::vector<double> coordinate_dofs_b(num_dofs_g * gdim);
+  mdspan2_t coordinate_dofs(coordinate_dofs_b.data(), num_dofs_g, gdim);
+
   std::vector<double> coords(num_nodes * 3, 0.0);
   std::array<std::size_t, 2> cshape = {num_nodes, 3};
   for (std::int32_t c = 0; c < num_cells; ++c)
@@ -102,16 +109,13 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
     // Extract cell geometry
     auto dofs_x = dofmap_x.links(c);
     for (std::size_t i = 0; i < dofs_x.size(); ++i)
-    {
-      std::copy_n(std::next(x_g.begin(), 3 * dofs_x[i]), gdim,
-                  std::next(coordinate_dofs.begin(), i * gdim));
-    }
+      for (std::size_t j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g[3 * dofs_x[i] + j];
 
     // Tabulate dof coordinates on cell
-    cmap.push_forward(x, coordinate_dofs, phi);
-    apply_dof_transformation(std::span(x.data(), x.size()),
-                             std::span(cell_info.data(), cell_info.size()), c,
-                             x.shape(1));
+    cmap.push_forward_new(x, coordinate_dofs, phi);
+    apply_dof_transformation(x_b, std::span(cell_info.data(), cell_info.size()),
+                             c, x.extent(1));
 
     // Copy dof coordinates into vector
     auto dofs = dofmap->cell_dofs(c);

@@ -218,18 +218,14 @@ public:
   /// @param[in,out] x The physical coordinates of the reference points X
   /// @param[in] cell_geometry The cell node coordinates (physical)
   /// @param[in] phi Tabulated basis functions at reference points X
-  static void push_forward(xt::xtensor<double, 2>& x,
-                           const xt::xtensor<double, 2>& cell_geometry,
-                           const xt::xtensor<double, 2>& phi);
-
-  /// Compute physical coordinates x for points X  in the reference
-  /// configuration
-  /// @param[in,out] x The physical coordinates of the reference points X
-  /// @param[in] cell_geometry The cell node coordinates (physical)
-  /// @param[in] phi Tabulated basis functions at reference points X
   template <typename U, typename V, typename W>
   static void push_forward_new(U&& x, const V& cell_geometry, const W& phi)
   {
+    for (std::size_t i = 0; i < x.extent(0); ++i)
+      for (std::size_t j = 0; j < x.extent(1); ++j)
+        x(i, j) = 0;
+
+    // Compute x = phi * cell_geometry;
     math::dot_new(phi, cell_geometry, x);
   }
 

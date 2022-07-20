@@ -1124,28 +1124,36 @@ void fem(py::module& m)
           "push_forward",
           [](const dolfinx::fem::CoordinateElement& self,
              const py::array_t<double, py::array::c_style>& X,
-             const py::array_t<double, py::array::c_style>& cell_geometry)
+             const py::array_t<double, py::array::c_style>& cell)
           {
-            std::array<std::size_t, 2> s_x;
-            std::copy_n(X.shape(), 2, s_x.begin());
-            // auto _X = xt::adapt(X.data(), X.size(), xt::no_ownership(), s_x);
+            namespace stdex = std::experimental;
+            using mdspan2_t
+                = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+            using cmdspan2_t
+                = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+            using cmdspan4_t
+                = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
 
-            std::array<std::size_t, 2> s_g;
-            std::copy_n(cell_geometry.shape(), 2, s_g.begin());
-            auto g = xt::adapt(cell_geometry.data(), cell_geometry.size(),
-                               xt::no_ownership(), s_g);
+            std::array<std::size_t, 2> Xshape
+                = {(std::size_t)X.shape(0), (std::size_t)X.shape(1)};
 
-            xt::xtensor<double, 4> _phi(self.tabulate_shape(0, s_x[0]));
-            self.tabulate(0, std::span(X.data(), X.size()), s_x, _phi);
-            xt::xtensor<double, 2> phi({_phi.shape(1), _phi.shape(2)});
-            for (std::size_t i = 0; i < phi.shape(0); ++i)
-              for (std::size_t j = 0; j < phi.shape(1); ++j)
-                phi(i, j) = _phi(0, i, j, 0);
+            std::array<std::size_t, 4> phi_shape
+                = self.tabulate_shape(0, X.shape(0));
+            std::vector<double> phi_b(std::reduce(
+                phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+            cmdspan4_t phi_full(phi_b.data(), phi_shape);
+            self.tabulate(0, std::span(X.data(), X.size()), Xshape, phi_b);
+            auto phi = stdex::submdspan(phi_full, 0, stdex::full_extent,
+                                        stdex::full_extent, 0);
 
-            xt::xtensor<double, 2> x = xt::empty<double>(
-                {std::size_t(X.shape(0)), std::size_t(cell_geometry.shape(1))});
-            self.push_forward(x, g, phi);
-            return xt_as_pyarray(std::move(x));
+            std::array<std::size_t, 2> shape
+                = {(std::size_t)X.shape(0), (std::size_t)cell.shape(1)};
+            std::vector<double> xb(shape[0] * shape[1]);
+            self.push_forward_new(
+                mdspan2_t(xb.data(), shape),
+                cmdspan2_t(cell.data(), cell.shape(0), cell.shape(1)), phi);
+
+            return as_pyarray(std::move(xb), shape);
           },
           py::arg("X"), py::arg("cell_geometry"))
       .def(
