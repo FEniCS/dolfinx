@@ -464,13 +464,13 @@ public:
       // Compute reference coordinates X, and J, detJ and K
       if (cmap.is_affine())
       {
-        CoordinateElement::compute_jacobian_new(dphi0, coord_dofs, _J);
-        CoordinateElement::compute_jacobian_inverse_new(_J, _K);
+        CoordinateElement::compute_jacobian(dphi0, coord_dofs, _J);
+        CoordinateElement::compute_jacobian_inverse(_J, _K);
         std::array<double, 3> x0 = {0, 0, 0};
         for (std::size_t i = 0; i < coord_dofs.extent(1); ++i)
           x0[i] += coord_dofs(0, i);
         CoordinateElement::pull_back_affine_new(Xp, _K, x0, xp);
-        detJ[p] = CoordinateElement::compute_jacobian_determinant_new(_J);
+        detJ[p] = CoordinateElement::compute_jacobian_determinant(_J);
       }
       else
       {
@@ -478,9 +478,9 @@ public:
         cmap.pull_back_nonaffine_new(Xp, xp, coord_dofs);
 
         cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
-        CoordinateElement::compute_jacobian_new(dphi, coord_dofs, _J);
-        CoordinateElement::compute_jacobian_inverse_new(_J, _K);
-        detJ[p] = CoordinateElement::compute_jacobian_determinant_new(_J);
+        CoordinateElement::compute_jacobian(dphi, coord_dofs, _J);
+        CoordinateElement::compute_jacobian_inverse(_J, _K);
+        detJ[p] = CoordinateElement::compute_jacobian_determinant(_J);
       }
 
       for (std::size_t j = 0; j < X.extent(1); ++j)

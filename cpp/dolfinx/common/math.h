@@ -84,7 +84,7 @@ auto det(const T* A, std::array<std::size_t, 2> shape)
 /// @param[in] A The matrix tp compute the determinant of
 /// @return The determinate of @p A
 template <typename Matrix>
-auto det_new(const Matrix& A)
+auto det(const Matrix& A)
 {
   using value_type = typename Matrix::value_type;
   assert(A.extent(0) == A.extent(1));
@@ -122,7 +122,7 @@ auto det_new(const Matrix& A)
 /// same shape as @p A.
 /// @warning This function does not check if A is invertible
 template <typename U, typename V>
-void inv_new(const U& A, V&& B)
+void inv(const U& A, V&& B)
 {
   using value_type = typename U::value_type;
   const std::size_t nrows = A.extent(0);
@@ -133,7 +133,7 @@ void inv_new(const U& A, V&& B)
     break;
   case 2:
   {
-    value_type idet = 1. / det_new(A);
+    value_type idet = 1. / det(A);
     B(0, 0) = idet * A(1, 1);
     B(0, 1) = -idet * A(0, 1);
     B(1, 0) = -idet * A(1, 0);
@@ -169,43 +169,13 @@ void inv_new(const U& A, V&& B)
 }
 
 /// Compute C += A * B
-/// @param[in] A Input matrix as flat array (row-major storage)
-/// @param[in] shapeA Shape of `A`
-/// @param[in] B Input matrix as flat array (row-major storage)
-/// @param[in] shapeB Shape of `B`
-/// @param[in, out] C as flat array, filled to be C += A * B
-/// @param[in] transpose Computes C += A^T * B^T if false, otherwise
-/// computed C += A^T * B^T
-template <typename U, typename V, typename P>
-void dot(const U& A, std::array<std::size_t, 2> shapeA, const V& B,
-         std::array<std::size_t, 2> shapeB, P&& C, bool transpose = false)
-{
-  if (transpose)
-  {
-    assert(shapeA[0] == shapeB[1]);
-    for (std::size_t i = 0; i < shapeA[1]; ++i)
-      for (std::size_t j = 0; j < shapeB[0]; ++j)
-        for (std::size_t k = 0; k < shapeA[0]; ++k)
-          C[i * shapeB[0] + j] += A[k * shapeA[1] + i] * B[j * shapeB[1] + k];
-  }
-  else
-  {
-    assert(shapeA[1] == shapeB[0]);
-    for (std::size_t i = 0; i < shapeA[0]; ++i)
-      for (std::size_t j = 0; j < shapeB[1]; ++j)
-        for (std::size_t k = 0; k < shapeA[1]; ++k)
-          C[i * shapeB[1] + j] += A[i * shapeA[1] + k] * B[k * shapeB[1] + j];
-  }
-}
-
-/// Compute C += A * B
 /// @param[in] A Input matrix
 /// @param[in] B Input matrix
 /// @param[in, out] C Filled to be C += A * B
 /// @param[in] transpose Computes C += A^T * B^T if false, otherwise
 /// computed C += A^T * B^T
 template <typename U, typename V, typename P>
-void dot_new(const U& A, const V& B, P&& C, bool transpose = false)
+void dot(const U& A, const V& B, P&& C, bool transpose = false)
 {
   if (transpose)
   {
@@ -225,33 +195,6 @@ void dot_new(const U& A, const V& B, P&& C, bool transpose = false)
   }
 }
 
-/// Compute C += A * B
-/// @param[in] A Input matrix
-/// @param[in] B Input matrix
-/// @param[in, out] C Filled to be C += A * B
-/// @param[in] transpose Computes C += A^T * B^T if false, otherwise
-/// computed C += A^T * B^T
-template <typename U, typename V, typename P>
-void dot(const U& A, const V& B, P&& C, bool transpose = false)
-{
-  if (transpose)
-  {
-    assert(A.shape(0) == B.shape(1));
-    for (std::size_t i = 0; i < A.shape(1); i++)
-      for (std::size_t j = 0; j < B.shape(0); j++)
-        for (std::size_t k = 0; k < A.shape(0); k++)
-          C(i, j) += A(k, i) * B(j, k);
-  }
-  else
-  {
-    assert(A.shape(1) == B.shape(0));
-    for (std::size_t i = 0; i < A.shape(0); i++)
-      for (std::size_t j = 0; j < B.shape(1); j++)
-        for (std::size_t k = 0; k < A.shape(1); k++)
-          C(i, j) += A(i, k) * B(k, j);
-  }
-}
-
 /// @brief Compute the left pseudo inverse of a rectangular matrix `A`
 /// (3x2, 3x1, or 2x1), such that pinv(A) * A = I.
 /// @param[in] A The matrix to the compute the pseudo inverse of.
@@ -259,7 +202,7 @@ void dot(const U& A, const V& B, P&& C, bool transpose = false)
 /// with a size which is the transpose of the size of `A`.
 /// @pre The matrix `A` must be full rank
 template <typename U, typename V>
-void pinv_new(const U& A, V&& P)
+void pinv(const U& A, V&& P)
 {
   assert(A.extent(0) > A.extent(1));
   assert(P.extent(1) == A.extent(0));
@@ -284,9 +227,9 @@ void pinv_new(const U& A, V&& P)
         P(i, j) = 0;
 
     // pinv(A) = (A^T * A)^-1 * A^T
-    dolfinx::math::dot_new(AT, A, ATA);
-    dolfinx::math::inv_new(ATA, Inv);
-    dolfinx::math::dot_new(Inv, AT, P);
+    dolfinx::math::dot(AT, A, ATA);
+    dolfinx::math::inv(ATA, Inv);
+    dolfinx::math::dot(Inv, AT, P);
   }
   else if (A.extent(1) == 1)
   {

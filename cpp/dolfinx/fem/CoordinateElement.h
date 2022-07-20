@@ -96,33 +96,33 @@ public:
   /// @param[out] J The Jacobian. It must have shape=(gdim, tdim) and
   /// must initialized to zero
   template <typename U, typename V, typename W>
-  static void compute_jacobian_new(const U& dphi, const V& cell_geometry, W&& J)
+  static void compute_jacobian(const U& dphi, const V& cell_geometry, W&& J)
   {
-    math::dot_new(cell_geometry, dphi, J, true);
+    math::dot(cell_geometry, dphi, J, true);
   }
 
   /// Compute the inverse of the Jacobian
   /// @param[in] J The Jacobian (shape=(gdim, tdim))
   /// @param[out] K The Jacobian (shape=(tdim, gdim))
   template <typename U, typename V>
-  static void compute_jacobian_inverse_new(const U& J, V&& K)
+  static void compute_jacobian_inverse(const U& J, V&& K)
   {
     const int gdim = J.extent(1);
     const int tdim = K.extent(1);
     if (gdim == tdim)
-      math::inv_new(J, K);
+      math::inv(J, K);
     else
-      math::pinv_new(J, K);
+      math::pinv(J, K);
   }
 
   /// Compute the determinant of the Jacobian
   /// @param[in] J Jacobian (shape=(gdim, tdim))
   /// @return Determinant of `J`
   template <typename U>
-  static double compute_jacobian_determinant_new(const U& J)
+  static double compute_jacobian_determinant(const U& J)
   {
     if (J.extent(0) == J.extent(1))
-      return math::det_new(J);
+      return math::det(J);
     else
     {
       // TODO: pass buffers for B and BA
@@ -139,8 +139,8 @@ public:
       std::vector<T> BAb(B.extent(0) * J.extent(1));
       stdex::mdspan<T, stdex::dextents<std::size_t, 2>> BA(
           BAb.data(), B.extent(0), J.extent(1));
-      math::dot_new(B, J, BA);
-      return std::sqrt(math::det_new(BA));
+      math::dot(B, J, BA);
+      return std::sqrt(math::det(BA));
     }
   }
 
@@ -160,7 +160,7 @@ public:
         x(i, j) = 0;
 
     // Compute x = phi * cell_geometry;
-    math::dot_new(phi, cell_geometry, x);
+    math::dot(phi, cell_geometry, x);
   }
 
   /// Compute reference coordinates X for physical coordinates x for an

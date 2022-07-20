@@ -120,8 +120,8 @@ void CoordinateElement::pull_back_nonaffine_new(mdspan2_t X, cmdspan2_t x,
         for (std::size_t j = 0; j < basis.extent(2); ++j)
           dphi(i, j) = basis(i + 1, 0, j, 0);
 
-      compute_jacobian_new(dphi, cell_geometry, J);
-      compute_jacobian_inverse_new(J, K);
+      compute_jacobian(dphi, cell_geometry, J);
+      compute_jacobian_inverse(J, K);
 
       // Compute dX = K * (x_p - x_k)
       std::fill(dX.begin(), dX.end(), 0);

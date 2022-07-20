@@ -347,10 +347,10 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       auto _J = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
-      cmap.compute_jacobian_new(dphi, coord_dofs, _J);
+      cmap.compute_jacobian(dphi, coord_dofs, _J);
       auto _K = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
-      cmap.compute_jacobian_inverse_new(_J, _K);
-      detJ[p] = cmap.compute_jacobian_determinant_new(_J);
+      cmap.compute_jacobian_inverse(_J, _K);
+      detJ[p] = cmap.compute_jacobian_determinant(_J);
     }
 
     // Copy evaluated basis on reference, apply DOF transformations, and
@@ -674,11 +674,11 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
             = stdex::submdspan(dphi, stdex::full_extent, p, stdex::full_extent);
         auto _J
             = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
-        cmap.compute_jacobian_new(_dphi, coord_dofs, _J);
+        cmap.compute_jacobian(_dphi, coord_dofs, _J);
         auto _K
             = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
-        cmap.compute_jacobian_inverse_new(_J, _K);
-        detJ[p] = cmap.compute_jacobian_determinant_new(_J);
+        cmap.compute_jacobian_inverse(_J, _K);
+        detJ[p] = cmap.compute_jacobian_determinant(_J);
       }
 
       std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);

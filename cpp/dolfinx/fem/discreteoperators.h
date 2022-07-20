@@ -115,7 +115,7 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
         Ab.data(), e1->space_dimension(), ndofs0);
     const auto [Pi, shape] = e1->interpolation_operator();
     cmdspan2_t _Pi(Pi.data(), shape);
-    math::dot_new(_Pi, dphi_reshaped, A);
+    math::dot(_Pi, dphi_reshaped, A);
   }
 
   // Insert local interpolation matrix for each cell
@@ -302,10 +302,10 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       auto _J = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
-      cmap.compute_jacobian_new(dphi, coord_dofs, _J);
+      cmap.compute_jacobian(dphi, coord_dofs, _J);
       auto _K = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
-      cmap.compute_jacobian_inverse_new(_J, _K);
-      detJ[p] = cmap.compute_jacobian_determinant_new(_J);
+      cmap.compute_jacobian_inverse(_J, _K);
+      detJ[p] = cmap.compute_jacobian_determinant(_J);
     }
 
     // Copy evaluated basis on reference, apply DOF transformations, and

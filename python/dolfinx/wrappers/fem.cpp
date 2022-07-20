@@ -1196,8 +1196,8 @@ void fem(py::module& m)
               auto dphi = stdex::submdspan(phi, std::pair(1, tdim + 1), 0,
                                            stdex::full_extent, 0);
 
-              self.compute_jacobian_new(dphi, g, J);
-              self.compute_jacobian_inverse_new(J, K);
+              self.compute_jacobian(dphi, g, J);
+              self.compute_jacobian_inverse(J, K);
               std::array<double, 3> x0 = {0, 0, 0};
               for (std::size_t i = 0; i < g.extent(1); ++i)
                 x0[i] += g(0, i);
