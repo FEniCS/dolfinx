@@ -180,7 +180,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                      [](auto x, auto y) { return x - y; });
 
       // Define cell normal via cross product of first two edges
-      std::array<double, 3> ni = math::cross_new(dp1, dp2);
+      std::array<double, 3> ni = math::cross(dp1, dp2);
       double norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
       std::transform(ni.begin(), ni.end(), std::next(n.begin(), 3 * i),
                      [norm](auto x) { return x / norm; });
@@ -209,7 +209,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
                      [](auto x, auto y) { return x - y; });
 
       // Define cell normal via cross product of first two edges
-      std::array<double, 3> ni = math::cross_new(dp1, dp2);
+      std::array<double, 3> ni = math::cross(dp1, dp2);
       double norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
       std::transform(ni.begin(), ni.end(), std::next(n.begin(), 3 * i),
                      [norm](auto x) { return x / norm; });

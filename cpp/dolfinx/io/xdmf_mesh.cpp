@@ -11,6 +11,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <pugixml.hpp>
+#include <xtensor/xadapt.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -304,18 +305,11 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
       = xdmf_read::get_dataset<std::int64_t>(comm, topology_data_node, h5_id);
   const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
 
-  std::array<std::size_t, 2> shape = {num_local_cells, npoint_per_cell};
-
-  // The below should work, but misbehaves with the Intel icpx compiler
-  // auto cells_vtk = xt::adapt(topology_data.data(), topology_data.size(),
-  //                            xt::no_ownership(), shape);
-
-  // Explicitly copy to an xtensor
-  xt::xtensor<std::int64_t, 2> cells_vtk = xt::empty<std::int64_t>(shape);
-  std::copy(topology_data.begin(), topology_data.end(), cells_vtk.begin());
-
   //  Permute cells from VTK to DOLFINx ordering
-  return io::cells::compute_permutation(
-      cells_vtk, io::cells::perm_vtk(cell_type, cells_vtk.shape(1)));
+  std::array<std::size_t, 2> shape = {num_local_cells, npoint_per_cell};
+  std::vector<std::int64_t> cells = io::cells::apply_permutation(
+      topology_data, shape, io::cells::perm_vtk(cell_type, shape[1]));
+
+  return xt::adapt(cells, std::vector<std::size_t>{shape[0], shape[1]});
 }
 //----------------------------------------------------------------------------

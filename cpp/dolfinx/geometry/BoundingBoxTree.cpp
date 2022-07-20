@@ -362,14 +362,14 @@ void BoundingBoxTree::tree_print(std::stringstream& s, int i) const
   }
 }
 //-----------------------------------------------------------------------------
-xt::xtensor_fixed<double, xt::xshape<2, 3>>
+std::array<std::array<double, 3>, 2>
 BoundingBoxTree::get_bbox(std::size_t node) const
 {
-  xt::xtensor_fixed<double, xt::xshape<2, 3>> x;
+  std::array<std::array<double, 3>, 2> x;
   common::impl::copy_N<3>(std::next(_bbox_coordinates.begin(), 6 * node),
-                          x.begin());
+                          x[0].begin());
   common::impl::copy_N<3>(std::next(_bbox_coordinates.begin(), 6 * node + 3),
-                          std::next(x.begin(), 3));
+                          x[1].begin());
   return x;
 }
 //-----------------------------------------------------------------------------

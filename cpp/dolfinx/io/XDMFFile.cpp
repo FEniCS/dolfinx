@@ -236,7 +236,11 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
   const xt::xtensor<double, 2> x = XDMFFile::read_geometry_data(name, xpath);
 
   // Create mesh
-  auto [data, offset] = graph::create_adjacency_data(cells);
+  std::vector<std::int64_t> data(cells.data(), cells.data() + cells.size());
+  std::vector<std::int32_t> offset(cells.shape(0) + 1, 0);
+  for (std::size_t i = 0; i < cells.shape(0); ++i)
+    offset[i + 1] = offset[i] + cells.shape(1);
+
   graph::AdjacencyList<std::int64_t> cells_adj(std::move(data),
                                                std::move(offset));
 
@@ -342,8 +346,10 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
 
   // Permute entities from VTK to DOLFINx ordering
-  xt::xtensor<std::int64_t, 2> entities1 = io::cells::compute_permutation(
-      entities, io::cells::perm_vtk(cell_type, entities.shape(1)));
+  std::vector<std::int64_t> entities1 = io::cells::apply_permutation(
+      std::span(entities.data(), entities.size()),
+      {entities.shape(0), entities.shape(1)},
+      io::cells::perm_vtk(cell_type, entities.shape(1)));
 
   std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
       entities_values = xdmf_utils::distribute_entity_data(
