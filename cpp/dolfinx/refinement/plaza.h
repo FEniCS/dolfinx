@@ -7,8 +7,10 @@
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <span>
+#include <tuple>
 #include <utility>
 #include <vector>
+#include <xtensor/xtensor.hpp>
 
 #pragma once
 
@@ -76,10 +78,12 @@ refine(const mesh::Mesh& mesh, const std::span<const std::int32_t>& edges,
 /// @param[in] options RefinementOptions enum to choose the computation of
 /// parent facets, parent cells. If an option is unselected, an empty list is
 /// returned.
-/// @return New mesh data: cell topology, vertex coordinates, and optional
-/// parent cell index, and parent facet indices.
-std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>, std::vector<std::int8_t>>
+/// @return New mesh data: cell topology, vertex coordinates, vertex
+/// coordinates shape,  and optional parent cell index, and parent facet
+/// indices.
+std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<double>,
+           std::array<std::size_t, 2>, std::vector<std::int32_t>,
+           std::vector<std::int8_t>>
 compute_refinement_data(const mesh::Mesh& mesh, RefinementOptions options);
 
 /// Refine with markers returning new mesh data.
@@ -92,8 +96,9 @@ compute_refinement_data(const mesh::Mesh& mesh, RefinementOptions options);
 /// returned.
 /// @return New mesh data: cell topology, vertex coordinates and parent
 /// cell index, and stored parent facet indices (if requested).
-std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>, std::vector<std::int8_t>>
+std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<double>,
+           std::array<std::size_t, 2>, std::vector<std::int32_t>,
+           std::vector<std::int8_t>>
 compute_refinement_data(const mesh::Mesh& mesh,
                         const std::span<const std::int32_t>& edges,
                         RefinementOptions options);

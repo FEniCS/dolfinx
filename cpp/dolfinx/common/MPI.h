@@ -16,6 +16,7 @@
 #include <numeric>
 #include <set>
 #include <span>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
