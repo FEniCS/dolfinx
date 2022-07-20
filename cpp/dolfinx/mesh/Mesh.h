@@ -147,7 +147,7 @@ std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>,
 create_submesh(const Mesh& mesh, int dim,
                const std::span<const std::int32_t>& entities);
 
-/// Helper function to get a std::vector of (cell, local_facet) pairs
+/// Helper function to get a list of (cell, local_facet) pairs
 /// corresponding to a given facet index.
 /// @param[in] f Facet index
 /// @param[in] cells The cells connected to the facet
