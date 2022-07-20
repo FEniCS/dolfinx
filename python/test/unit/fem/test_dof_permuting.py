@@ -217,7 +217,7 @@ def random_evaluation_mesh(cell_type):
 )
 @pytest.mark.parametrize('space_order', range(1, 4))
 def test_evaluation(cell_type, space_type, space_order):
-    if cell_type == "hexahedron" and space_order >= 3:
+    if cell_type == "hexahedron" and space_order > 3:
         pytest.skip("Skipping expensive test on hexahedron")
 
     random.seed(4)

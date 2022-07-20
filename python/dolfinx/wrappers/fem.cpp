@@ -1158,35 +1158,47 @@ void fem(py::module& m)
             const std::size_t gdim = x.shape(1);
             const std::size_t tdim = dolfinx::mesh::cell_dim(self.cell_shape());
 
-            xt::xtensor<double, 2> X = xt::empty<double>({num_points, tdim});
+            namespace stdex = std::experimental;
+            using mdspan2_t
+                = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+            using cmdspan2_t
+                = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+            using cmdspan4_t
+                = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
 
-            std::array<std::size_t, 2> s_x;
-            std::copy_n(x.shape(), 2, s_x.begin());
-            auto _x = xt::adapt(x.data(), x.size(), xt::no_ownership(), s_x);
-
-            std::array<std::size_t, 2> s_g;
-            std::copy_n(cell_geometry.shape(), 2, s_g.begin());
-            auto g = xt::adapt(cell_geometry.data(), cell_geometry.size(),
-                               xt::no_ownership(), s_g);
+            std::vector<double> Xb(num_points * tdim);
+            mdspan2_t X(Xb.data(), num_points, tdim);
+            cmdspan2_t _x(x.data(), x.shape(0), x.shape(1));
+            cmdspan2_t g(cell_geometry.data(), cell_geometry.shape(0),
+                         cell_geometry.shape(1));
 
             if (self.is_affine())
             {
-              xt::xtensor<double, 2> J = xt::zeros<double>({gdim, tdim});
-              xt::xtensor<double, 2> K = xt::zeros<double>({tdim, gdim});
-              xt::xtensor<double, 4> data(self.tabulate_shape(1, 1));
-              //   const xt::xtensor<double, 2> X0
-              //       = xt::zeros<double>({std::size_t(1), tdim});
-              self.tabulate(1, std::vector<double>(tdim), {1, tdim}, data);
-              xt::xtensor<double, 2> dphi
-                  = xt::view(data, xt::range(1, tdim + 1), 0, xt::all(), 0);
-              self.compute_jacobian(dphi, g, J);
-              self.compute_jacobian_inverse(J, K);
-              self.pull_back_affine(X, K, self.x0(g), _x);
+              std::vector<double> J_b(gdim * tdim);
+              mdspan2_t J(J_b.data(), gdim, tdim);
+              std::vector<double> K_b(tdim * gdim);
+              mdspan2_t K(K_b.data(), tdim, gdim);
+
+              std::array<std::size_t, 4> phi_shape = self.tabulate_shape(1, 1);
+              std::vector<double> phi_b(std::reduce(
+                  phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+              cmdspan4_t phi(phi_b.data(), phi_shape);
+
+              self.tabulate(1, std::vector<double>(tdim), {1, tdim}, phi_b);
+              auto dphi = stdex::submdspan(phi, std::pair(1, tdim + 1), 0,
+                                           stdex::full_extent, 0);
+
+              self.compute_jacobian_new(dphi, g, J);
+              self.compute_jacobian_inverse_new(J, K);
+              std::array<double, 3> x0 = {0, 0, 0};
+              for (std::size_t i = 0; i < g.extent(1); ++i)
+                x0[i] += g(0, i);
+              self.pull_back_affine_new(X, K, x0, _x);
             }
             else
-              self.pull_back_nonaffine(X, _x, g);
+              self.pull_back_nonaffine_new(X, _x, g);
 
-            return xt_as_pyarray(std::move(X));
+            return as_pyarray(std::move(Xb), std::array{num_points, tdim});
           },
           py::arg("x"), py::arg("cell_geometry"));
 

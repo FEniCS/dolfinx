@@ -74,32 +74,6 @@ void CoordinateElement::push_forward(
   math::dot(phi, cell_geometry, x);
 }
 //-----------------------------------------------------------------------------
-std::array<double, 3>
-CoordinateElement::x0(const xt::xtensor<double, 2>& cell_geometry)
-{
-  std::array<double, 3> x0 = {0, 0, 0};
-  for (std::size_t i = 0; i < cell_geometry.shape(1); ++i)
-    x0[i] += cell_geometry(0, i);
-  return x0;
-}
-//-----------------------------------------------------------------------------
-void CoordinateElement::pull_back_affine(xt::xtensor<double, 2>& X,
-                                         const xt::xtensor<double, 2>& K,
-                                         const std::array<double, 3>& x0,
-                                         const xt::xtensor<double, 2>& x)
-{
-  assert(X.shape(0) == x.shape(0));
-  assert(X.shape(1) == K.shape(0));
-  assert(x.shape(1) == K.shape(1));
-
-  // Calculate X for each point
-  X.fill(0.0);
-  for (std::size_t p = 0; p < x.shape(0); ++p)
-    for (std::size_t i = 0; i < K.shape(0); ++i)
-      for (std::size_t j = 0; j < K.shape(1); ++j)
-        X(p, i) += K(i, j) * (x(p, j) - x0[j]);
-}
-//-----------------------------------------------------------------------------
 void CoordinateElement::pull_back_nonaffine_new(mdspan2_t X, cmdspan2_t x,
                                                 cmdspan2_t cell_geometry,
                                                 double tol, int maxit) const
@@ -194,80 +168,6 @@ void CoordinateElement::pull_back_nonaffine_new(mdspan2_t X, cmdspan2_t x,
 
     std::copy(Xk_b.cbegin(), std::next(Xk_b.cbegin(), tdim),
               X.data_handle() + p * tdim);
-    if (k == maxit)
-    {
-      throw std::runtime_error(
-          "Newton method failed to converge for non-affine geometry");
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-void CoordinateElement::pull_back_nonaffine(
-    xt::xtensor<double, 2>& X, const xt::xtensor<double, 2>& x,
-    const xt::xtensor<double, 2>& cell_geometry, double tol, int maxit) const
-{
-  // Number of points
-  std::size_t num_points = x.shape(0);
-  if (num_points == 0)
-    return;
-
-  const std::size_t tdim = mesh::cell_dim(this->cell_shape());
-  const std::size_t gdim = x.shape(1);
-  const std::size_t num_xnodes = cell_geometry.shape(0);
-  assert(cell_geometry.shape(1) == gdim);
-  assert(X.shape(0) == num_points);
-  assert(X.shape(1) == tdim);
-
-  xt::xtensor<double, 2> dphi({tdim, num_xnodes});
-  xt::xtensor<double, 2> Xk({1, tdim});
-  std::array<double, 3> xk = {0, 0, 0};
-  xt::xtensor<double, 1> dX = xt::empty<double>({tdim});
-  xt::xtensor<double, 2> J({gdim, tdim});
-  xt::xtensor<double, 2> K({tdim, gdim});
-  xt::xtensor<double, 4> basis(_element->tabulate_shape(1, 1));
-  for (std::size_t p = 0; p < num_points; ++p)
-  {
-    std::fill(Xk.begin(), Xk.end(), 0.0);
-    int k;
-    for (k = 0; k < maxit; ++k)
-    {
-      _element->tabulate(1, std::span(Xk.data(), Xk.size()), {1, tdim}, basis);
-
-      // x = cell_geometry * phi
-      auto phi = xt::view(basis, 0, 0, xt::all(), 0);
-      std::fill(xk.begin(), xk.end(), 0.0);
-      for (std::size_t i = 0; i < cell_geometry.shape(0); ++i)
-        for (std::size_t j = 0; j < cell_geometry.shape(1); ++j)
-          xk[j] += cell_geometry(i, j) * phi[i];
-
-      // Compute Jacobian, its inverse and determinant
-      std::fill(J.begin(), J.end(), 0.0);
-      dphi = xt::view(basis, xt::range(1, tdim + 1), 0, xt::all(), 0);
-      compute_jacobian(dphi, cell_geometry, J);
-      compute_jacobian_inverse(J, K);
-
-      // Compute dX = K * (x_p - x_k)
-      std::fill(dX.begin(), dX.end(), 0);
-      auto x_p = xt::row(x, p);
-      for (std::size_t i = 0; i < K.shape(0); ++i)
-        for (std::size_t j = 0; j < K.shape(1); ++j)
-          dX[i] += K(i, j) * (x_p[j] - xk[j]);
-
-      // Compute Xk += dX
-      std::transform(dX.cbegin(), dX.cend(), Xk.cbegin(), Xk.begin(),
-                     [](double a, double b) { return a + b; });
-
-      // Compute norm(dX)
-      if (auto dX_squared
-          = std::transform_reduce(dX.cbegin(), dX.cend(), 0.0, std::plus{},
-                                  [](auto v) { return v * v; });
-          std::sqrt(dX_squared) < tol)
-      {
-        break;
-      }
-    }
-    std::copy(Xk.cbegin(), std::next(Xk.cbegin(), tdim),
-              std::next(X.begin(), p * tdim));
     if (k == maxit)
     {
       throw std::runtime_error(

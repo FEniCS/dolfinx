@@ -233,14 +233,6 @@ public:
     math::dot_new(phi, cell_geometry, x);
   }
 
-  /// @brief Compute the physical coordinate of the reference point
-  /// `X=(0, 0, 0)`
-  /// @param[in] cell_geometry The cell nodes coordinates (shape=(num
-  /// geometry nodes, gdim))
-  /// @return Physical coordinate of the X=(0, 0, 0)
-  /// @note Assumes that x0 is given by cell_geometry(0, i)
-  static std::array<double, 3> x0(const xt::xtensor<double, 2>& cell_geometry);
-
   /// Compute reference coordinates X for physical coordinates x for an
   /// affine map. For the affine case, `x = J X + x0`, and this function
   /// computes `X = K(x -x0)` where `K = J^{-1}`.
@@ -269,21 +261,6 @@ public:
           X(p, i) += K(i, j) * (x(p, j) - x0[j]);
   }
 
-  /// Compute reference coordinates X for physical coordinates x for an
-  /// affine map. For the affine case, `x = J X + x0`, and this function
-  /// computes `X = K(x -x0)` where `K = J^{-1}`.
-  /// @param[out] X The reference coordinates to compute
-  /// (shape=(num_points, tdim))
-  /// @param[in] K The inverse of the geometry Jacobian (shape=(tdim,
-  /// gdim))
-  /// @param[in] x0 The physical coordinate of reference coordinate X0=(0, 0,
-  /// 0).
-  /// @param[in] x The physical coordinates (shape=(num_points, gdim))
-  static void pull_back_affine(xt::xtensor<double, 2>& X,
-                               const xt::xtensor<double, 2>& K,
-                               const std::array<double, 3>& x0,
-                               const xt::xtensor<double, 2>& x);
-
   /// mdspan typedef
   using mdspan2_t
       = std::experimental::mdspan<double,
@@ -295,34 +272,18 @@ public:
 
   /// Compute reference coordinates X for physical coordinates x for a
   /// non-affine map.
-  /// @param [in,out] X The reference coordinates to compute (shape=(num_points,
-  /// tdim))
-  /// @param [in] x The physical coordinates (shape=(num_points, gdim))
+  /// @param [in,out] X The reference coordinates to compute
+  /// (shape=`(num_points, tdim)`)
+  /// @param [in] x The physical coordinates (shape=`(num_points, gdim)`)
   /// @param [in] cell_geometry The cell nodes coordinates (shape=(num
   /// geometry nodes, gdim))
   /// @param [in] tol Tolerance for termination of Newton method.
   /// @param [in] maxit Maximum number of Newton iterations
-  /// @note If convergence is not achieved within maxit, the function throws a
-  /// run-time error.
+  /// @note If convergence is not achieved within maxit, the function
+  /// throws a runtime error.
   void pull_back_nonaffine_new(mdspan2_t X, cmdspan2_t x,
                                cmdspan2_t cell_geometry, double tol = 1.0e-8,
                                int maxit = 10) const;
-
-  /// Compute reference coordinates X for physical coordinates x for a
-  /// non-affine map.
-  /// @param [in,out] X The reference coordinates to compute (shape=(num_points,
-  /// tdim))
-  /// @param [in] x The physical coordinates (shape=(num_points, gdim))
-  /// @param [in] cell_geometry The cell nodes coordinates (shape=(num
-  /// geometry nodes, gdim))
-  /// @param [in] tol Tolerance for termination of Newton method.
-  /// @param [in] maxit Maximum number of Newton iterations
-  /// @note If convergence is not achieved within maxit, the function throws a
-  /// run-time error.
-  void pull_back_nonaffine(xt::xtensor<double, 2>& X,
-                           const xt::xtensor<double, 2>& x,
-                           const xt::xtensor<double, 2>& cell_geometry,
-                           double tol = 1.0e-8, int maxit = 10) const;
 
   /// Permutes a list of DOF numbers on a cell
   void permute_dofs(const std::span<std::int32_t>& dofs,

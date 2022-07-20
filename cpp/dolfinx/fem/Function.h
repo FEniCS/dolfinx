@@ -477,7 +477,7 @@ public:
         // Pull-back physical point xp to reference coordinate Xp
         cmap.pull_back_nonaffine_new(Xp, xp, coord_dofs);
 
-        cmap.tabulate(1, Xpb, {1, tdim}, phi_b);
+        cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
         CoordinateElement::compute_jacobian_new(dphi, coord_dofs, _J);
         CoordinateElement::compute_jacobian_inverse_new(_J, _K);
         detJ[p] = CoordinateElement::compute_jacobian_determinant_new(_J);
@@ -510,6 +510,8 @@ public:
     auto apply_dof_transformation
         = element->get_dof_transformation_function<double>();
     const std::size_t num_basis_values = space_dimension * reference_value_size;
+
+    // std::cout << "Eval 5" << std::endl;
 
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
