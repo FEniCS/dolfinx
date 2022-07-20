@@ -24,7 +24,6 @@
 #include <vector>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
 
 namespace dolfinx::fem
 {
@@ -305,10 +304,10 @@ public:
     interpolate(e, cells);
   }
 
-  /// Evaluate the Function at points
+  /// @brief Evaluate the Function at points.
   ///
   /// @param[in] x The coordinates of the points. It has shape
-  /// (num_points, 3).
+  /// (num_points, 3) and storage is row-major.
   /// @param[in] cells An array of cell indices. cells[i] is the index
   /// of the cell that contains the point x(i). Negative cell indices
   /// can be passed, and the corresponding point will be ignored.
@@ -319,8 +318,6 @@ public:
             const std::span<const std::int32_t>& cells,
             xt::xtensor<T, 2>& u) const
   {
-    // std::cout << "Eval 0" << std::endl;
-
     if (cells.empty())
       return;
 
@@ -338,8 +335,6 @@ public:
           "Length of array for Function values must be the "
           "same as the number of points.");
     }
-
-    // std::cout << "Eval 1" << std::endl;
 
     // Get mesh
     assert(_function_space);
@@ -376,8 +371,6 @@ public:
                                "elements. Extract subspaces.");
     }
 
-    // std::cout << "Eval 2" << std::endl;
-
     // Create work vector for expansion coefficients
     std::vector<T> coefficients(space_dimension * bs_element);
 
@@ -394,32 +387,22 @@ public:
     }
 
     namespace stdex = std::experimental;
-    // using cmdspan2_t
-    //     = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
     using cmdspan4_t
         = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
     using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
     using mdspan3_t = stdex::mdspan<double, stdex::dextents<std::size_t, 3>>;
 
-    xt::xtensor<double, 2> coordinate_dofs
-        = xt::zeros<double>({num_dofs_g, gdim});
     std::vector<double> coord_dofs_b(num_dofs_g * gdim);
     mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
-
-    xt::xtensor<double, 2> xp = xt::zeros<double>({std::size_t(1), gdim});
     std::vector<double> xp_b(1 * gdim);
-    mdspan2_t xp_new(xp_b.data(), 1, gdim);
+    mdspan2_t xp(xp_b.data(), 1, gdim);
 
     // Loop over points
     std::fill(u.data(), u.data() + u.size(), 0.0);
     const std::span<const T>& _v = _x->array();
 
-    // -- Lambda function for affine pull-backs
-    xt::xtensor<double, 4> data(cmap.tabulate_shape(1, 1));
-    cmap.tabulate(1, std::vector<double>(tdim), {1, tdim}, data);
-    const xt::xtensor<double, 2> dphi_i
-        = xt::view(data, xt::range(1, tdim + 1), 0, xt::all(), 0);
-
+    // Evaluate geometry basis at point (0, 0, 0) on the reference cell.
+    // Used in affine case.
     std::array<std::size_t, 4> phi0_shape = cmap.tabulate_shape(1, 1);
     std::vector<double> phi0_b(std::reduce(phi0_shape.begin(), phi0_shape.end(),
                                            1, std::multiplies{}));
@@ -428,62 +411,29 @@ public:
     auto dphi0 = stdex::submdspan(phi0, std::pair(1, tdim + 1), 0,
                                   stdex::full_extent, 0);
 
-    auto pull_back_affine = [dphi_i](auto&& X, const auto& cell_geometry,
-                                     auto&& J, auto&& K, const auto& x) mutable
-    {
-      CoordinateElement::compute_jacobian(dphi_i, cell_geometry, J);
-      CoordinateElement::compute_jacobian_inverse(J, K);
-      CoordinateElement::pull_back_affine(
-          X, K, CoordinateElement::x0(cell_geometry), x);
-    };
-
-    // auto pull_back_affine_new
-    //     = [dphi0](auto&& X, const auto& cell_geometry, auto&& J, auto&& K,
-    //               const auto& x) mutable
-    // {
-    //   CoordinateElement::compute_jacobian_new(dphi0, cell_geometry, J);
-    //   CoordinateElement::compute_jacobian_inverse_new(J, K);
-
-    //   std::array<double, 3> x0 = {0, 0, 0};
-    //   for (std::size_t i = 0; i < cell_geometry.extent(1); ++i)
-    //     x0[i] += cell_geometry(0, i);
-
-    //   CoordinateElement::pull_back_affine_new(X, K, x0, x);
-    // };
-
-    xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, 1));
+    // Data structure for evaluating geometry basis at specific points.
+    // Used in non-affine case.
     std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, 1);
     std::vector<double> phi_b(
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
-    cmdspan4_t phi_new(phi_b.data(), phi_shape);
-    auto dphi_new = stdex::submdspan(phi_new, std::pair(1, tdim + 1), 0,
-                                     stdex::full_extent, 0);
+    cmdspan4_t phi(phi_b.data(), phi_shape);
+    auto dphi = stdex::submdspan(phi, std::pair(1, tdim + 1), 0,
+                                 stdex::full_extent, 0);
 
-    xt::xtensor<double, 2> dphi;
-
-    xt::xtensor<double, 2> X({x.shape(0), tdim});
+    // Reference coordinates for each point
     std::vector<double> Xb(x.shape(0) * tdim);
-    mdspan2_t X_new(Xb.data(), x.shape(0), tdim);
+    mdspan2_t X(Xb.data(), x.shape(0), tdim);
 
-    xt::xtensor<double, 3> J = xt::zeros<double>({x.shape(0), gdim, tdim});
-    xt::xtensor<double, 3> K = xt::zeros<double>({x.shape(0), tdim, gdim});
+    // Geometry data at each point
+    std::vector<double> J_b(x.shape(0) * gdim * tdim);
+    mdspan3_t J(J_b.data(), x.shape(0), gdim, tdim);
+    std::vector<double> K_b(x.shape(0) * tdim * gdim);
+    mdspan3_t K(K_b.data(), x.shape(0), tdim, gdim);
     std::vector<double> detJ(x.shape(0));
 
-    std::vector<double> J_b(x.shape(0) * gdim * tdim);
-    mdspan3_t J_new(J_b.data(), x.shape(0), gdim, tdim);
-    std::vector<double> K_b(x.shape(0) * tdim * gdim);
-    mdspan3_t K_new(K_b.data(), x.shape(0), tdim, gdim);
-    std::vector<double> detJ_new(x.shape(0));
-
-    xt::xtensor<double, 2> _Xp({1, tdim});
-    std::vector<double> _Xpb(1 * tdim);
-    mdspan2_t _Xp_new(_Xpb.data(), 1, tdim);
-
-    // std::cout << "Eval 3" << std::endl;
-
+    // Prepare geometry data in each cell
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
-      // std::cout << "Eval 4p" << std::endl;
       const int cell_index = cells[p];
 
       // Skip negative cell indices
@@ -497,130 +447,59 @@ public:
       {
         const int pos = 3 * x_dofs[i];
         for (std::size_t j = 0; j < gdim; ++j)
-          coordinate_dofs(i, j) = x_g[pos + j];
-        for (std::size_t j = 0; j < gdim; ++j)
           coord_dofs(i, j) = x_g[pos + j];
       }
 
-      // std::cout << "Eval 5p" << std::endl;
-
       for (std::size_t j = 0; j < gdim; ++j)
         xp(0, j) = x(p, j);
-      for (std::size_t j = 0; j < gdim; ++j)
-        xp_new(0, j) = x(p, j);
 
-      auto _J = xt::view(J, p, xt::all(), xt::all());
-      auto _K = xt::view(K, p, xt::all(), xt::all());
+      auto _J = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
+      auto _K = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
 
-      auto _J_new
-          = stdex::submdspan(J_new, p, stdex::full_extent, stdex::full_extent);
-      auto _K_new
-          = stdex::submdspan(K_new, p, stdex::full_extent, stdex::full_extent);
+      std::array<double, 3> Xpb = {0, 0, 0};
+      stdex::mdspan<double,
+                    stdex::extents<std::size_t, 1, stdex::dynamic_extent>>
+          Xp(Xpb.data(), 1, tdim);
 
       // Compute reference coordinates X, and J, detJ and K
       if (cmap.is_affine())
       {
-        // std::cout << "Eval 6p" << std::endl;
-        // std::cout << "Affine" << std::endl;
-
-        pull_back_affine(_Xp, coordinate_dofs, _J, _K, xp);
-        detJ[p] = CoordinateElement::compute_jacobian_determinant(_J);
-
-        // pull_back_affine_new(_Xp_new, coord_dofs, _J_new, _K_new, xp_new);
-        // std::cout << "Eval 6pi" << std::endl;
-        CoordinateElement::compute_jacobian_new(dphi0, coord_dofs, _J_new);
-        // std::cout << "Eval 6pii" << std::endl;
-        CoordinateElement::compute_jacobian_inverse_new(_J_new, _K_new);
+        CoordinateElement::compute_jacobian_new(dphi0, coord_dofs, _J);
+        CoordinateElement::compute_jacobian_inverse_new(_J, _K);
         std::array<double, 3> x0 = {0, 0, 0};
         for (std::size_t i = 0; i < coord_dofs.extent(1); ++i)
           x0[i] += coord_dofs(0, i);
-        // std::cout << "Eval 6piii" << std::endl;
-        CoordinateElement::pull_back_affine_new(_Xp_new, _K_new, x0, xp_new);
-
-        // std::cout << "J" << std::endl;
-        // for (std::size_t k0 = 0; k0 < _J.shape(0); ++k0)
-        //   for (std::size_t k1 = 0; k1 < _J.shape(1); ++k1)
-        //     std::cout << _J(k0, k1) << ", " << _J_new(k0, k1) << std::endl;
-
-        detJ_new[p]
-            = CoordinateElement::compute_jacobian_determinant_new(_J_new);
-
-        // std::cout << "J" << std::endl;
-        // for (std::size_t k0 = 0; k0 < _J.shape(0); ++k0)
-        //   for (std::size_t k1 = 0; k1 < _J.shape(1); ++k1)
-        //     std::cout << _J(k0, k1) << ", " << _J_new(k0, k1) << std::endl;
-
-        // std::cout << "K" << std::endl;
-        // for (std::size_t k0 = 0; k0 < _K.shape(0); ++k0)
-        //   for (std::size_t k1 = 0; k1 < _K.shape(1); ++k1)
-        //     std::cout << _K(k0, k1) << ", " << _K_new(k0, k1) << std::endl;
-
-        // std::cout << "Xp" << std::endl;
-        // for (std::size_t k0 = 0; k0 < _Xp.shape(0); ++k0)
-        //   for (std::size_t k1 = 0; k1 < _Xp.shape(1); ++k1)
-        //     std::cout << _Xp(k0, k1) << ", " << _Xp_new(k0, k1) << std::endl;
-
-        // std::cout << "det: " << detJ[p] << ", " << detJ_new[p] << std::endl;
+        CoordinateElement::pull_back_affine_new(Xp, _K, x0, xp);
+        detJ[p] = CoordinateElement::compute_jacobian_determinant_new(_J);
       }
       else
       {
-        // std::cout << "Eval 7p" << std::endl;
-        // std::cout << "Non-Affine" << std::endl;
+        // Pull-back physical point xp to reference coordinate Xp
+        cmap.pull_back_nonaffine_new(Xp, xp, coord_dofs);
 
-        cmap.pull_back_nonaffine(_Xp, xp, coordinate_dofs);
-        cmap.tabulate(1, _Xp, {_Xp.shape(0), _Xp.shape(1)}, phi);
-        dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
-        CoordinateElement::compute_jacobian(dphi, coordinate_dofs, _J);
-        CoordinateElement::compute_jacobian_inverse(_J, _K);
-        detJ[p] = CoordinateElement::compute_jacobian_determinant(_J);
-
-        cmap.pull_back_nonaffine_new(_Xp_new, xp_new, coord_dofs);
-        cmap.tabulate(1, _Xpb, {_Xp_new.extent(0), _Xp_new.extent(1)}, phi_b);
-        // dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
-        CoordinateElement::compute_jacobian_new(dphi_new, coord_dofs, _J_new);
-        CoordinateElement::compute_jacobian_inverse_new(_J_new, _K_new);
-        detJ_new[p]
-            = CoordinateElement::compute_jacobian_determinant_new(_J_new);
+        cmap.tabulate(1, Xpb, {1, tdim}, phi_b);
+        CoordinateElement::compute_jacobian_new(dphi, coord_dofs, _J);
+        CoordinateElement::compute_jacobian_inverse_new(_J, _K);
+        detJ[p] = CoordinateElement::compute_jacobian_determinant_new(_J);
       }
 
-      // std::cout << "Eval 8p" << std::endl;
-
-      for (std::size_t j = 0; j < X.shape(1); ++j)
-        X(p, j) = _Xp(0, j);
-      for (std::size_t j = 0; j < X_new.extent(1); ++j)
-        X_new(p, j) = _Xp_new(0, j);
+      for (std::size_t j = 0; j < X.extent(1); ++j)
+        X(p, j) = Xpb[j];
     }
 
     // Prepare basis function data structures
-    xt::xtensor<double, 4> basis_derivatives_reference_values(
-        {1, x.shape(0), space_dimension, reference_value_size});
-    xt::xtensor<double, 2> basis_values({space_dimension, value_size});
-
     std::vector<double> basis_derivatives_reference_values_b(
         1 * x.shape(0) * space_dimension * reference_value_size);
-    cmdspan4_t basis_derivatives_reference_values_new(
+    cmdspan4_t basis_derivatives_reference_values(
         basis_derivatives_reference_values_b.data(), 1, x.shape(0),
         space_dimension, reference_value_size);
-
     std::vector<double> basis_values_b(space_dimension * value_size);
-    mdspan2_t basis_values_new(basis_values_b.data(), space_dimension,
-                               value_size);
+    mdspan2_t basis_values(basis_values_b.data(), space_dimension, value_size);
 
     // Compute basis on reference element
-    element->tabulate(basis_derivatives_reference_values, X,
-                      {X.shape(0), X.shape(1)}, 0);
     element->tabulate(basis_derivatives_reference_values_b, Xb,
-                      {X_new.extent(0), X_new.extent(1)}, 0);
+                      {X.extent(0), X.extent(1)}, 0);
 
-    // std::cout << "Eval 9" << std::endl;
-
-    // std::cout << "basis function ref" << std::endl;
-    // for (std::size_t i = 0; i < basis_derivatives_reference_values_b.size();
-    //      ++i)
-    //   std::cout << *(basis_derivatives_reference_values.data() + i) << ", "
-    //             << basis_derivatives_reference_values_b[i] << std::endl;
-
-    namespace stdex = std::experimental;
     using xu_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
     using xU_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
     using xJ_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
@@ -643,40 +522,21 @@ public:
       // Permute the reference values to account for the cell's
       // orientation
       apply_dof_transformation(
-          std::span(basis_derivatives_reference_values.data()
-                        + p * num_basis_values,
-                    num_basis_values),
-          cell_info, cell_index, reference_value_size);
-
-      apply_dof_transformation(
           std::span(basis_derivatives_reference_values_b.data()
                         + p * num_basis_values,
                     num_basis_values),
           cell_info, cell_index, reference_value_size);
 
       {
-        assert(basis_values.dimension() == 2);
-        assert(basis_derivatives_reference_values.dimension() == 4);
-
-        xu_t _u(basis_values.data(), basis_values.shape(0),
-                basis_values.shape(1));
-        xU_t _U(basis_derivatives_reference_values.data()
-                    + p * basis_derivatives_reference_values.shape(2)
-                          * basis_derivatives_reference_values.shape(3),
-                basis_derivatives_reference_values.shape(2),
-                basis_derivatives_reference_values.shape(3));
-        xK_t _K(K.data() + p * K.shape(1) * K.shape(2), K.shape(1), K.shape(2));
-        xJ_t _J(J.data() + p * J.shape(1) * J.shape(2), J.shape(1), J.shape(2));
-        push_forward_fn(_u, _U, _J, detJ[p], _K);
-
-        auto _U_new
-            = stdex::submdspan(basis_derivatives_reference_values_new, 0, p,
-                               stdex::full_extent, stdex::full_extent);
-        auto _J_new = stdex::submdspan(J_new, p, stdex::full_extent,
-                                       stdex::full_extent);
-        auto _K_new = stdex::submdspan(K_new, p, stdex::full_extent,
-                                       stdex::full_extent);
-        push_forward_fn(basis_values_new, _U_new, _J_new, detJ_new[p], _K_new);
+        // assert(basis_values.dimension() == 2);
+        // assert(basis_derivatives_reference_values.dimension() == 4);
+        auto _U = stdex::submdspan(basis_derivatives_reference_values, 0, p,
+                                   stdex::full_extent, stdex::full_extent);
+        auto _J
+            = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
+        auto _K
+            = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
+        push_forward_fn(basis_values, _U, _J, detJ[p], _K);
       }
 
       // Get degrees of freedom for current cell
@@ -692,10 +552,8 @@ public:
         {
           for (std::size_t j = 0; j < value_size; ++j)
           {
-            // u(p, j * bs_element + k)
-            //     += coefficients[bs_element * i + k] * basis_values(i, j);
             u(p, j * bs_element + k)
-                += coefficients[bs_element * i + k] * basis_values_new(i, j);
+                += coefficients[bs_element * i + k] * basis_values(i, j);
           }
         }
       }
