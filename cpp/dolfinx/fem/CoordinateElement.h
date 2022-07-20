@@ -15,7 +15,6 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 #include <span>
-#include <xtensor/xtensor.hpp>
 
 namespace basix
 {
@@ -92,24 +91,6 @@ public:
   /// basis functions and first order derivatives.
   /// @param[in] dphi Derivatives of the basis functions (shape=(tdim,
   /// num geometry nodes))
-  /// @param[in] shape0 Shape of `dphi`
-  /// @param[in] cell_geometry The cell nodes coordinates (shape=(num
-  /// geometry nodes, gdim))
-  /// @param[in] shape1 Shape of `cell_geometry`
-  /// @param[out] J The Jacobian. It must have shape=(gdim, tdim) and
-  /// must initialized to zero
-  template <typename U, typename V, typename W>
-  static void compute_jacobian(const U& dphi, std::array<std::size_t, 2> shape0,
-                               const V& cell_geometry,
-                               std::array<std::size_t, 2> shape1, W&& J)
-  {
-    math::dot(cell_geometry, shape0, dphi, shape1, J, true);
-  }
-
-  /// Compute Jacobian for a cell with given geometry using the
-  /// basis functions and first order derivatives.
-  /// @param[in] dphi Derivatives of the basis functions (shape=(tdim,
-  /// num geometry nodes))
   /// @param[in] cell_geometry The cell nodes coordinates (shape=(num
   /// geometry nodes, gdim))
   /// @param[out] J The Jacobian. It must have shape=(gdim, tdim) and
@@ -118,20 +99,6 @@ public:
   static void compute_jacobian_new(const U& dphi, const V& cell_geometry, W&& J)
   {
     math::dot_new(cell_geometry, dphi, J, true);
-  }
-
-  /// Compute Jacobian for a cell with given geometry using the
-  /// basis functions and first order derivatives.
-  /// @param[in] dphi Derivatives of the basis functions (shape=(tdim,
-  /// num geometry nodes))
-  /// @param[in] cell_geometry The cell nodes coordinates (shape=(num
-  /// geometry nodes, gdim))
-  /// @param[out] J The Jacobian. It must have shape=(gdim, tdim) and
-  /// must initialized to zero
-  template <typename U, typename V, typename W>
-  static void compute_jacobian(const U& dphi, const V& cell_geometry, W&& J)
-  {
-    math::dot(cell_geometry, dphi, J, true);
   }
 
   /// Compute the inverse of the Jacobian
@@ -148,20 +115,6 @@ public:
       math::pinv_new(J, K);
   }
 
-  /// Compute the inverse of the Jacobian
-  /// @param[in] J The Jacobian (shape=(gdim, tdim))
-  /// @param[out] K The Jacobian (shape=(tdim, gdim))
-  template <typename U, typename V>
-  static void compute_jacobian_inverse(const U& J, V&& K)
-  {
-    const int gdim = J.shape(1);
-    const int tdim = K.shape(1);
-    if (gdim == tdim)
-      math::inv(J, K);
-    else
-      math::pinv(J, K);
-  }
-
   /// Compute the determinant of the Jacobian
   /// @param[in] J Jacobian (shape=(gdim, tdim))
   /// @return Determinant of `J`
@@ -174,7 +127,6 @@ public:
     {
       // TODO: pass buffers for B and BA
 
-      // throw std::runtime_error("Not supported yet");
       using T = typename U::element_type;
       std::vector<double> Bb(J.extent(0) * J.extent(1));
       namespace stdex = std::experimental;
@@ -189,24 +141,6 @@ public:
           BAb.data(), B.extent(0), J.extent(1));
       math::dot_new(B, J, BA);
       return std::sqrt(math::det_new(BA));
-    }
-  }
-
-  /// Compute the determinant of the Jacobian
-  /// @param[in] J Jacobian (shape=(gdim, tdim))
-  /// @return Determinant of `J`
-  template <typename U>
-  static double compute_jacobian_determinant(const U& J)
-  {
-    if (J.shape(0) == J.shape(1))
-      return math::det(J);
-    else
-    {
-      using T = typename U::value_type;
-      auto B = xt::transpose(J);
-      xt::xtensor<T, 2> BA = xt::zeros<T>({B.shape(0), J.shape(1)});
-      math::dot(B, J, BA);
-      return std::sqrt(math::det(BA));
     }
   }
 

@@ -9,9 +9,6 @@
 #include <cmath>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xnoalias.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -78,31 +75,25 @@ void CoordinateElement::pull_back_nonaffine_new(mdspan2_t X, cmdspan2_t x,
   assert(X.extent(0) == num_points);
   assert(X.extent(1) == tdim);
 
-  // xt::xtensor<double, 2> dphi({tdim, num_xnodes});
   std::vector<double> dphi_b(tdim * num_xnodes);
   mdspan2_t dphi(dphi_b.data(), tdim, num_xnodes);
 
-  // xt::xtensor<double, 2> Xk({1, tdim});
   std::vector<double> Xk_b(tdim);
   mdspan2_t Xk(Xk_b.data(), 1, tdim);
 
   std::array<double, 3> xk = {0, 0, 0};
 
-  // xt::xtensor<double, 1> dX = xt::empty<double>({tdim});
   std::vector<double> dX(tdim);
 
-  // xt::xtensor<double, 2> J({gdim, tdim});
   std::vector<double> J_b(gdim * tdim);
   mdspan2_t J(J_b.data(), gdim, tdim);
 
-  // xt::xtensor<double, 2> K({tdim, gdim});
   std::vector<double> K_b(tdim * gdim);
   mdspan2_t K(K_b.data(), tdim, gdim);
 
   namespace stdex = std::experimental;
   using mdspan4_t = stdex::mdspan<double, stdex::dextents<std::size_t, 4>>;
 
-  // xt::xtensor<double, 4> basis(_element->tabulate_shape(1, 1));
   const std::array<std::size_t, 4> bsize = _element->tabulate_shape(1, 1);
   std::vector<double> basis_b(
       std::reduce(bsize.begin(), bsize.end(), 1, std::multiplies{}));
@@ -118,7 +109,6 @@ void CoordinateElement::pull_back_nonaffine_new(mdspan2_t X, cmdspan2_t x,
       _element->tabulate(1, Xk_b, {1, tdim}, basis_b);
 
       // x = cell_geometry * phi
-      // auto phi = xt::view(basis, 0, 0, xt::all(), 0);
       std::fill(xk.begin(), xk.end(), 0.0);
       for (std::size_t i = 0; i < cell_geometry.extent(0); ++i)
         for (std::size_t j = 0; j < cell_geometry.extent(1); ++j)
@@ -126,7 +116,6 @@ void CoordinateElement::pull_back_nonaffine_new(mdspan2_t X, cmdspan2_t x,
 
       // Compute Jacobian, its inverse and determinant
       std::fill(J_b.begin(), J_b.end(), 0.0);
-      // dphi = xt::view(basis, xt::range(1, tdim + 1), 0, xt::all(), 0);
       for (std::size_t i = 0; i < tdim; ++i)
         for (std::size_t j = 0; j < basis.extent(2); ++j)
           dphi(i, j) = basis(i + 1, 0, j, 0);
