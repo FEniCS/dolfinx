@@ -172,14 +172,23 @@ public:
       return math::det_new(J);
     else
     {
-      throw std::runtime_error("Not supported yet");
-      // using T = typename U::value_type;
-      // std::vector<double> Bb(J.extent(0)* J.extent(1));
+      // TODO: pass buffers for B and BA
 
-      // auto B = xt::transpose(J);
-      // xt::xtensor<T, 2> BA = xt::zeros<T>({B.shape(0), J.shape(1)});
-      // math::dot(B, J, BA);
-      // return std::sqrt(math::det(BA));
+      // throw std::runtime_error("Not supported yet");
+      using T = typename U::element_type;
+      std::vector<double> Bb(J.extent(0) * J.extent(1));
+      namespace stdex = std::experimental;
+      stdex::mdspan<T, stdex::dextents<std::size_t, 2>> B(
+          Bb.data(), J.extent(1), J.extent(0));
+      for (std::size_t i = 0; i < B.extent(0); ++i)
+        for (std::size_t j = 0; j < B.extent(1); ++j)
+          B(i, j) = J(j, i);
+
+      std::vector<T> BAb(B.extent(0) * J.extent(1));
+      stdex::mdspan<T, stdex::dextents<std::size_t, 2>> BA(
+          BAb.data(), B.extent(0), J.extent(1));
+      math::dot_new(B, J, BA);
+      return std::sqrt(math::det_new(BA));
     }
   }
 
@@ -250,7 +259,7 @@ public:
     assert(X.extent(1) == K.extent(0));
     assert(x.extent(1) == K.extent(1));
     for (std::size_t i = 0; i < X.extent(0); ++i)
-      for (std::size_t j = 0; j < X.extent(0); ++j)
+      for (std::size_t j = 0; j < X.extent(1); ++j)
         X(i, j) = 0;
 
     // Calculate X for each point

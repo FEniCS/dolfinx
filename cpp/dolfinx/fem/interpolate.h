@@ -17,10 +17,7 @@
 #include <numeric>
 #include <span>
 #include <vector>
-#include <xtensor/xadapt.hpp>
 #include <xtensor/xarray.hpp>
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
 
 namespace dolfinx::fem
 {
@@ -307,8 +304,8 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   mdspan3T_t mapped_values0(mapped_values_b.data(), Xshape[0], 1,
                             element1->value_size());
 
-  std::vector<double> coordinate_dofs_b(num_dofs_g * gdim);
-  mdspan2_t coordinate_dofs(coordinate_dofs_b.data(), num_dofs_g, gdim);
+  std::vector<double> coord_dofs_b(num_dofs_g * gdim);
+  mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
 
   std::vector<double> J_b(Xshape[0] * gdim * tdim);
   mdspan3_t J(J_b.data(), Xshape[0], gdim, tdim);
@@ -342,7 +339,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
     {
       const int pos = 3 * x_dofs[i];
       for (std::size_t j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g[pos + j];
+        coord_dofs(i, j) = x_g[pos + j];
     }
 
     // Compute Jacobians and reference points for current cell
@@ -350,7 +347,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       auto _J = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
-      cmap.compute_jacobian_new(dphi, coordinate_dofs, _J);
+      cmap.compute_jacobian_new(dphi, coord_dofs, _J);
       auto _K = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
       cmap.compute_jacobian_inverse_new(_J, _K);
       detJ[p] = cmap.compute_jacobian_determinant_new(_J);
@@ -461,6 +458,14 @@ template <typename T>
 void interpolate(Function<T>& u, const xt::xarray<T>& f,
                  const std::span<const std::int32_t>& cells)
 {
+  namespace stdex = std::experimental;
+  using cmdspan2_t
+      = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+  using cmdspan4_t
+      = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
+  using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+  using mdspan3_t = stdex::mdspan<double, stdex::dextents<std::size_t, 3>>;
+
   const std::shared_ptr<const FiniteElement> element
       = u.function_space()->element();
   assert(element);
@@ -553,16 +558,17 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
 
     // Get interpolation operator
     const auto [_Pi, pi_shape] = element->interpolation_operator();
-    auto Pi = xt::adapt(_Pi, pi_shape);
-
-    const std::size_t num_interp_points = Pi.shape(1);
-    assert(Pi.shape(0) == num_scalar_dofs);
+    cmdspan2_t Pi(_Pi.data(), pi_shape);
+    const std::size_t num_interp_points = Pi.extent(1);
+    assert(Pi.extent(0) == num_scalar_dofs);
 
     auto apply_inv_transpose_dof_transformation
         = element->get_dof_transformation_function<T>(true, true, true);
 
     // Loop over cells
-    xt::xtensor<T, 2> reference_data({num_interp_points, 1});
+    std::vector<T> reference_data_b(num_interp_points);
+    stdex::mdspan<T, stdex::extents<std::size_t, stdex::dynamic_extent, 1>>
+        reference_data(reference_data_b.data(), num_interp_points, 1);
     for (std::size_t c = 0; c < cells.size(); ++c)
     {
       const std::int32_t cell = cells[c];
@@ -570,10 +576,8 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
       for (int k = 0; k < element_bs; ++k)
       {
         std::copy_n(std::next(_f.begin(), k * f_shape1 + c * num_interp_points),
-                    num_interp_points, reference_data.begin());
-
-        impl::interpolation_apply(Pi, reference_data, _coeffs, element_bs);
-
+                    num_interp_points, reference_data_b.begin());
+        impl::interpolation_apply_new(Pi, reference_data, _coeffs, element_bs);
         apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
@@ -607,24 +611,32 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
     std::span<const double> x_g = mesh->geometry().x();
 
     // Create data structures for Jacobian info
-    xt::xtensor<double, 3> J = xt::empty<double>({int(Xshape[0]), gdim, tdim});
-    xt::xtensor<double, 3> K = xt::empty<double>({int(Xshape[0]), tdim, gdim});
-    xt::xtensor<double, 1> detJ = xt::empty<double>({Xshape[0]});
+    std::vector<double> J_b(Xshape[0] * gdim * tdim);
+    mdspan3_t J(J_b.data(), Xshape[0], gdim, tdim);
+    std::vector<double> K_b(Xshape[0] * tdim * gdim);
+    mdspan3_t K(K_b.data(), Xshape[0], tdim, gdim);
+    std::vector<double> detJ(Xshape[0]);
 
-    xt::xtensor<double, 2> coordinate_dofs
-        = xt::empty<double>({num_dofs_g, gdim});
+    std::vector<double> coord_dofs_b(num_dofs_g * 3);
+    mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
 
-    xt::xtensor<T, 3> reference_data({Xshape[0], 1, value_size});
-    xt::xtensor<T, 3> _vals({Xshape[0], 1, value_size});
+    std::vector<T> reference_data_b(Xshape[0] * 1 * value_size);
+    stdex::mdspan<T, stdex::dextents<std::size_t, 3>> reference_data(
+        reference_data_b.data(), Xshape[0], 1, value_size);
 
-    // Tabulate 1st order derivatives of shape functions at interpolation coords
-    xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, Xshape[0]));
-    cmap.tabulate(1, X, Xshape, phi);
-    xt::xtensor<double, 3> dphi({tdim, phi.shape(1), phi.shape(2)});
-    for (std::size_t i = 0; i < tdim; ++i)
-      for (std::size_t j = 0; j < dphi.shape(1); ++j)
-        for (std::size_t k = 0; k < dphi.shape(2); ++k)
-          dphi(i, j, k) = phi(i + 1, j, k, 0);
+    std::vector<T> _vals_b(Xshape[0] * 1 * value_size);
+    stdex::mdspan<T, stdex::dextents<std::size_t, 3>> _vals(
+        _vals_b.data(), Xshape[0], 1, value_size);
+
+    // Tabulate 1st derivative of shape functions at interpolation
+    // coords
+    std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, Xshape[0]);
+    std::vector<double> phi_b(
+        std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+    cmdspan4_t phi(phi_b.data(), phi_shape);
+    cmap.tabulate(1, X, Xshape, phi_b);
+    auto dphi = stdex::submdspan(phi, std::pair(1, tdim + 1),
+                                 stdex::full_extent, stdex::full_extent, 0);
 
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -634,7 +646,7 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
 
     // Get interpolation operator
     const auto [_Pi, pi_shape] = element->interpolation_operator();
-    auto Pi = xt::adapt(_Pi, pi_shape);
+    cmdspan2_t Pi(_Pi.data(), pi_shape);
 
     namespace stdex = std::experimental;
     using u_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 2>>;
@@ -651,20 +663,22 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
       {
         const int pos = 3 * x_dofs[i];
         for (int j = 0; j < gdim; ++j)
-          coordinate_dofs(i, j) = x_g[pos + j];
+          coord_dofs(i, j) = x_g[pos + j];
       }
 
       // Compute J, detJ and K
-      J.fill(0);
+      std::fill(J_b.begin(), J_b.end(), 0);
       for (std::size_t p = 0; p < Xshape[0]; ++p)
       {
-        cmap.compute_jacobian(xt::view(dphi, xt::all(), p, xt::all()),
-                              coordinate_dofs,
-                              xt::view(J, p, xt::all(), xt::all()));
-        cmap.compute_jacobian_inverse(xt::view(J, p, xt::all(), xt::all()),
-                                      xt::view(K, p, xt::all(), xt::all()));
-        detJ[p] = cmap.compute_jacobian_determinant(
-            xt::view(J, p, xt::all(), xt::all()));
+        auto _dphi
+            = stdex::submdspan(dphi, stdex::full_extent, p, stdex::full_extent);
+        auto _J
+            = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
+        cmap.compute_jacobian_new(_dphi, coord_dofs, _J);
+        auto _K
+            = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
+        cmap.compute_jacobian_inverse_new(_J, _K);
+        detJ[p] = cmap.compute_jacobian_determinant_new(_J);
       }
 
       std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
@@ -673,28 +687,30 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
         // Extract computed expression values for element block k
         for (int m = 0; m < value_size; ++m)
         {
-          std::copy_n(std::next(_f.begin(), f_shape1 * (k * value_size + m)
-                                                + c * Xshape[0]),
-                      Xshape[0], xt::view(_vals, xt::all(), 0, m).begin());
+          for (std::size_t k0 = 0; k0 < Xshape[0]; ++k0)
+          {
+            _vals(k0, 0, m)
+                = _f[f_shape1 * (k * value_size + m) + c * Xshape[0] + k0];
+          }
         }
 
         // Get element degrees of freedom for block
         for (std::size_t i = 0; i < Xshape[0]; ++i)
         {
-          u_t _u(_vals.data() + i * _vals.shape(1) * _vals.shape(2),
-                 _vals.shape(1), _vals.shape(2));
-          U_t _U(reference_data.data()
-                     + i * reference_data.shape(1) * reference_data.shape(2),
-                 reference_data.shape(1), reference_data.shape(2));
-          K_t _K(K.data() + i * K.shape(1) * K.shape(2), K.shape(1),
-                 K.shape(2));
-          J_t _J(J.data() + i * J.shape(1) * J.shape(2), J.shape(1),
-                 J.shape(2));
+          auto _u = stdex::submdspan(_vals, i, stdex::full_extent,
+                                     stdex::full_extent);
+          auto _U = stdex::submdspan(reference_data, i, stdex::full_extent,
+                                     stdex::full_extent);
+          auto _K
+              = stdex::submdspan(K, i, stdex::full_extent, stdex::full_extent);
+          auto _J
+              = stdex::submdspan(J, i, stdex::full_extent, stdex::full_extent);
           pull_back_fn(_U, _u, _K, 1.0 / detJ[i], _J);
         }
 
-        auto ref_data = xt::view(reference_data, xt::all(), 0, xt::all());
-        impl::interpolation_apply(Pi, ref_data, _coeffs, element_bs);
+        auto ref_data = stdex::submdspan(reference_data, stdex::full_extent, 0,
+                                         stdex::full_extent);
+        impl::interpolation_apply_new(Pi, ref_data, _coeffs, element_bs);
         apply_inverse_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
 
         // Copy interpolation dofs into coefficient vector

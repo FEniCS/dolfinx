@@ -227,12 +227,11 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
   e0->tabulate(basis_derivatives_reference0_b, X, Xshape, 0);
 
   // Clamp values
-  constexpr double atol = 1e-14;
-  for (std::size_t i = 0; i < basis_derivatives_reference0_b.size(); ++i)
-  {
-    if (std::abs(basis_derivatives_reference0_b[i]) < atol)
-      basis_derivatives_reference0_b[i] = 0.0;
-  }
+  std::transform(basis_derivatives_reference0_b.begin(),
+                 basis_derivatives_reference0_b.end(),
+                 basis_derivatives_reference0_b.begin(),
+                 [atol = 1e-14](auto x)
+                 { return std::abs(x) < atol ? 0.0 : x; });
 
   // Create working arrays
   std::vector<double> basis_reference0_b(Xshape[0] * dim0 * value_size_ref0);

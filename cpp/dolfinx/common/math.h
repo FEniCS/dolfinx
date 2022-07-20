@@ -341,12 +341,12 @@ void dot(const U& A, const V& B, P&& C, bool transpose = false)
   }
 }
 
-/// Compute the left pseudo inverse of a rectangular matrix A (3x2, 3x1,
-/// or 2x1), such that pinv(A) * A = I
+/// @brief Compute the left pseudo inverse of a rectangular matrix `A`
+/// (3x2, 3x1, or 2x1), such that pinv(A) * A = I.
 /// @param[in] A The matrix to the compute the pseudo inverse of.
-/// @param[out] P The pseudo inverse of @p A. It must be pre-allocated
-/// with a size which is the transpose of the size of @p A.
-/// @warning The matrix @p A should be full rank
+/// @param[out] P The pseudo inverse of `A`. It must be pre-allocated
+/// with a size which is the transpose of the size of `A`.
+/// @pre The matrix `A` must be full rank
 template <typename U, typename V>
 void pinv_new(const U& A, V&& P)
 {
@@ -356,17 +356,15 @@ void pinv_new(const U& A, V&& P)
   using T = typename U::value_type;
   if (A.extent(1) == 2)
   {
-    // xt::xtensor_fixed<T, xt::xshape<2, 3>> AT;
-    // xt::xtensor_fixed<T, xt::xshape<2, 2>> ATA;
-    // xt::xtensor_fixed<T, xt::xshape<2, 2>> Inv;
     namespace stdex = std::experimental;
-    using mdspan2_t = stdex::mdspan<T, stdex::extents<std::size_t, 2, 3>>;
-    std::array<T, 6> ATb, ATAb, Invb;
-    mdspan2_t AT(ATb.data(), 2, 3);
-    mdspan2_t ATA(ATAb.data(), 2, 3);
-    mdspan2_t Inv(Invb.data(), 2, 3);
-    for (std::size_t i = 0; i < 2; ++i)
-      for (std::size_t j = 0; j < 3; ++j)
+    std::array<T, 6> ATb;
+    std::array<T, 4> ATAb, Invb;
+    stdex::mdspan<T, stdex::extents<std::size_t, 2, 3>> AT(ATb.data(), 2, 3);
+    stdex::mdspan<T, stdex::extents<std::size_t, 2, 2>> ATA(ATAb.data(), 2, 2);
+    stdex::mdspan<T, stdex::extents<std::size_t, 2, 2>> Inv(Invb.data(), 2, 2);
+
+    for (std::size_t i = 0; i < AT.extent(0); ++i)
+      for (std::size_t j = 0; j < AT.extent(1); ++j)
         AT(i, j) = A(j, i);
 
     std::fill(ATAb.begin(), ATAb.end(), 0.0);
@@ -384,13 +382,11 @@ void pinv_new(const U& A, V&& P)
     T res = 0;
     for (std::size_t i = 0; i < A.extent(0); ++i)
       for (std::size_t j = 0; j < A.extent(1); ++j)
-        res += A(i, j);
-    // auto res = std::transform_reduce(A.begin(), A.end(), 0., std::plus{},
-    //                                  [](auto v) { return v * v; });
+        res += A(i, j) * A(i, j);
+
     for (std::size_t i = 0; i < A.extent(0); ++i)
       for (std::size_t j = 0; j < A.extent(1); ++j)
         P(j, i) = (1 / res) * A(i, j);
-    // P = (1 / res) * xt::transpose(A);
   }
   else
   {
