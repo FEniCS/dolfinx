@@ -15,9 +15,9 @@
 #include <petscmat.h>
 #include <petscoptions.h>
 #include <petscvec.h>
+#include <span>
 #include <string>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::common
 {
@@ -42,7 +42,7 @@ void error(int error_code, std::string filename, std::string petsc_function);
 /// @return Array of PETSc vectors
 std::vector<Vec>
 create_vectors(MPI_Comm comm,
-               const std::vector<xtl::span<const PetscScalar>>& x);
+               const std::vector<std::span<const PetscScalar>>& x);
 
 /// Create a ghosted PETSc Vec
 /// @note Caller is responsible for destroying the returned object
@@ -60,7 +60,7 @@ Vec create_vector(const common::IndexMap& map, int bs);
 /// `bs * (range[1] - range[0])`.
 /// @returns A PETSc Vec
 Vec create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
-                  const xtl::span<const std::int64_t>& ghosts, int bs);
+                  const std::span<const std::int64_t>& ghosts, int bs);
 
 /// Create a PETSc Vec that wraps the data in an array
 /// @param[in] map The index map that describes the parallel layout of
@@ -72,7 +72,7 @@ Vec create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
 /// @note The caller should call VecDestroy to free the return PETSc
 /// vector
 Vec create_vector_wrap(const common::IndexMap& map, int bs,
-                       const xtl::span<const PetscScalar>& x);
+                       const std::span<const PetscScalar>& x);
 
 /// Create a PETSc Vec that wraps the data in an array
 /// @param[in] x The vector to be wrapped
@@ -107,7 +107,7 @@ std::vector<std::vector<PetscScalar>> get_local_vectors(
 
 /// Scatter local vectors to Vec
 void scatter_local_vectors(
-    Vec x, const std::vector<xtl::span<const PetscScalar>>& x_b,
+    Vec x, const std::vector<std::span<const PetscScalar>>& x_b,
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
@@ -121,7 +121,7 @@ Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
 /// @param [in] comm The MPI communicator
 /// @param[in] basis The nullspace basis vectors
 /// @return A PETSc nullspace object
-MatNullSpace create_nullspace(MPI_Comm comm, const xtl::span<const Vec>& basis);
+MatNullSpace create_nullspace(MPI_Comm comm, const std::span<const Vec>& basis);
 
 /// These class provides static functions that permit users to set and
 /// retrieve PETSc options via the PETSc option/parameter system. The
@@ -287,9 +287,9 @@ public:
   static auto set_fn(Mat A, InsertMode mode)
   {
     return [A, mode, cache = std::vector<PetscInt>()](
-               const xtl::span<const std::int32_t>& rows,
-               const xtl::span<const std::int32_t>& cols,
-               const xtl::span<const PetscScalar>& vals) mutable -> int
+               const std::span<const std::int32_t>& rows,
+               const std::span<const std::int32_t>& cols,
+               const std::span<const PetscScalar>& vals) mutable -> int
     {
       PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
@@ -322,9 +322,9 @@ public:
   static auto set_block_fn(Mat A, InsertMode mode)
   {
     return [A, mode, cache = std::vector<PetscInt>()](
-               const xtl::span<const std::int32_t>& rows,
-               const xtl::span<const std::int32_t>& cols,
-               const xtl::span<const PetscScalar>& vals) mutable -> int
+               const std::span<const std::int32_t>& rows,
+               const std::span<const std::int32_t>& cols,
+               const std::span<const PetscScalar>& vals) mutable -> int
     {
       PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
@@ -361,9 +361,9 @@ public:
   {
     return [A, bs0, bs1, mode, cache0 = std::vector<PetscInt>(),
             cache1 = std::vector<PetscInt>()](
-               const xtl::span<const std::int32_t>& rows,
-               const xtl::span<const std::int32_t>& cols,
-               const xtl::span<const PetscScalar>& vals) mutable -> int
+               const std::span<const std::int32_t>& rows,
+               const std::span<const std::int32_t>& cols,
+               const std::span<const PetscScalar>& vals) mutable -> int
     {
       PetscErrorCode ierr;
       cache0.resize(bs0 * rows.size());

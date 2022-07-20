@@ -13,10 +13,10 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <span>
 #include <tuple>
-#include <xtensor/xbuilder.hpp>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xview.hpp>
-#include <xtl/xspan.hpp>
 
 using namespace dolfinx;
 
@@ -24,16 +24,17 @@ namespace
 {
 /// Tabulate the coordinate for every 'node' in a Lagrange function
 /// space.
+/// @pre `V` must be (discontinuous) Lagrange and must not be a subspace
 /// @param[in] V The function space
 /// @return Mesh coordinate data
 /// -# Node coordinates (shape={num_dofs, 3}) where the ith row
 /// corresponds to the coordinate of the ith dof in `V` (local to
 /// process)
+/// -# Node coordinates shape
 /// -# Unique global index for each node
 /// -# ghost index for each node (0=non-ghost, 1=ghost)
-/// @pre `V` must be (discontinuous) Lagrange and must not be a subspace
-std::tuple<xt::xtensor<double, 2>, std::vector<std::int64_t>,
-           std::vector<std::uint8_t>>
+std::tuple<std::vector<double>, std::array<std::size_t, 2>,
+           std::vector<std::int64_t>, std::vector<std::uint8_t>>
 tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
 {
   auto mesh = V.mesh();
@@ -54,7 +55,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
   assert(element);
   const int e_bs = element->block_size();
   const std::size_t scalar_dofs = element->space_dimension() / e_bs;
-  const std::int32_t num_nodes
+  const std::size_t num_nodes
       = index_map_bs * (map_dofs->size_local() + map_dofs->num_ghosts())
         / dofmap_bs;
 
@@ -66,14 +67,14 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& dofmap_x
       = mesh->geometry().dofmap();
-  xtl::span<const double> x_g = mesh->geometry().x();
+  std::span<const double> x_g = mesh->geometry().x();
   const std::size_t num_dofs_g = cmap.dim();
 
-  xtl::span<const std::uint32_t> cell_info;
+  std::span<const std::uint32_t> cell_info;
   if (element->needs_dof_transformations())
   {
     mesh->topology_mutable().create_entity_permutations();
-    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    cell_info = std::span(mesh->topology().get_cell_permutation_info());
   }
   const auto apply_dof_transformation
       = element->get_dof_transformation_function<double>();
@@ -88,7 +89,8 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
   const std::int32_t num_cells = map->size_local() + map->num_ghosts();
   xt::xtensor<double, 2> x = xt::zeros<double>({scalar_dofs, gdim});
   xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
-  xt::xtensor<double, 2> coords = xt::zeros<double>({num_nodes, 3});
+  std::vector<double> coords(num_nodes * 3, 0.0);
+  std::array<std::size_t, 2> cshape = {num_nodes, 3};
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Extract cell geometry
@@ -101,8 +103,8 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
 
     // Tabulate dof coordinates on cell
     cmap.push_forward(x, coordinate_dofs, phi);
-    apply_dof_transformation(xtl::span(x.data(), x.size()),
-                             xtl::span(cell_info.data(), cell_info.size()), c,
+    apply_dof_transformation(std::span(x.data(), x.size()),
+                             std::span(cell_info.data(), cell_info.size()), c,
                              x.shape(1));
 
     // Copy dof coordinates into vector
@@ -111,7 +113,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
     {
       std::int32_t dof = dofs[i];
       for (std::size_t j = 0; j < gdim; ++j)
-        coords(dof, j) = x(i, j);
+        coords[3 * dof + j] = x(i, j);
     }
   }
 
@@ -127,13 +129,14 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
   std::vector<std::uint8_t> id_ghost(num_nodes, 0);
   std::fill(std::next(id_ghost.begin(), size_local), id_ghost.end(), 1);
 
-  return {std::move(coords), std::move(x_id), std::move(id_ghost)};
+  return {std::move(coords), cshape, std::move(x_id), std::move(id_ghost)};
 }
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::tuple<xt::xtensor<double, 2>, std::vector<std::int64_t>,
-           std::vector<std::uint8_t>, xt::xtensor<std::int32_t, 2>>
+std::tuple<std::vector<double>, std::array<std::size_t, 2>,
+           std::vector<std::int64_t>, std::vector<std::uint8_t>,
+           std::vector<std::int64_t>, std::array<std::size_t, 2>>
 io::vtk_mesh_from_space(const fem::FunctionSpace& V)
 {
   auto mesh = V.mesh();
@@ -144,7 +147,7 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
   if (V.element()->is_mixed())
     throw std::runtime_error("Can create VTK mesh from a mixed element");
 
-  const auto [x, x_id, x_ghost] = tabulate_lagrange_dof_coordinates(V);
+  const auto [x, xshape, x_id, x_ghost] = tabulate_lagrange_dof_coordinates(V);
   auto map = mesh->topology().index_map(tdim);
   const std::size_t num_cells = map->size_local() + map->num_ghosts();
 
@@ -159,19 +162,24 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
 
   // Extract topology for all local cells as
   // [v0_0, ...., v0_N0, v1_0, ...., v1_N1, ....]
-  xt::xtensor<std::int32_t, 2> vtk_topology({num_cells, num_nodes});
-  for (std::size_t c = 0; c < num_cells; ++c)
+  std::array<std::size_t, 2> shape = {num_cells, num_nodes};
+  std::vector<std::int64_t> vtk_topology(shape[0] * shape[1]);
+  for (std::size_t c = 0; c < shape[0]; ++c)
   {
     auto dofs = dofmap->cell_dofs(c);
     for (std::size_t i = 0; i < dofs.size(); ++i)
-      vtk_topology(c, i) = dofs[vtkmap[i]];
+      vtk_topology[c * shape[1] + i] = dofs[vtkmap[i]];
   }
 
-  return {std::move(x), std::move(x_id), std::move(x_ghost),
-          std::move(vtk_topology)};
+  return {std::move(x),
+          xshape,
+          std::move(x_id),
+          std::move(x_ghost),
+          std::move(vtk_topology),
+          shape};
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<std::int64_t, 2>
+std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
 io::extract_vtk_connectivity(const mesh::Mesh& mesh)
 {
   // Get DOLFINx to VTK permutation
@@ -190,15 +198,16 @@ io::extract_vtk_connectivity(const mesh::Mesh& mesh)
   // Build mesh connectivity
 
   // Loop over cells
-  xt::xtensor<std::int64_t, 2> topology({num_cells, num_nodes});
+  std::array<std::size_t, 2> shape = {num_cells, num_nodes};
+  std::vector<std::int64_t> topology(shape[0] * shape[1]);
   for (std::size_t c = 0; c < num_cells; ++c)
   {
     // For each cell, get the 'nodes' and place in VTK order
     auto dofs_x = dofmap_x.links(c);
     for (std::size_t i = 0; i < dofs_x.size(); ++i)
-      topology(c, i) = dofs_x[vtkmap[i]];
+      topology[c * shape[1] + i] = dofs_x[vtkmap[i]];
   }
 
-  return topology;
+  return {std::move(topology), shape};
 }
 //-----------------------------------------------------------------------------

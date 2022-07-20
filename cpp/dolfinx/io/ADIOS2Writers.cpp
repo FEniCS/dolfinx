@@ -21,7 +21,6 @@
 #include <dolfinx/mesh/utils.h>
 #include <pugixml.hpp>
 #include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -91,7 +90,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
 {
   // Get function data array and information about layout
   assert(u.x());
-  xtl::span<const T> u_vector = u.x()->array();
+  std::span<const T> u_vector = u.x()->array();
   const int rank = u.function_space()->element()->value_shape().size();
   const std::uint32_t num_comp = std::pow(3, rank);
   std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
@@ -104,7 +103,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
       = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
         / dofmap_bs;
 
-  if constexpr (std::is_scalar<T>::value)
+  if constexpr (std::is_scalar_v<T>)
   {
     // ---- Real
     std::vector<T> data(num_dofs * num_comp, 0);
@@ -183,10 +182,13 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   // Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
   // etc, is the node index
-  xt::xtensor<std::int64_t, 2> cells({num_cells, num_nodes + 1});
-  xt::view(cells, xt::all(), xt::xrange(std::size_t(1), cells.shape(1)))
-      = io::extract_vtk_connectivity(mesh);
-  xt::view(cells, xt::all(), 0) = num_nodes;
+  const auto [vtkcells, shape] = io::extract_vtk_connectivity(mesh);
+  std::vector<std::int64_t> cells(shape[0] * (shape[1] + 1), shape[1]);
+  for (std::size_t c = 0; c < shape[0]; ++c)
+  {
+    std::copy_n(std::next(vtkcells.begin(), c * shape[1]), shape[1],
+                std::next(cells.begin(), c * (shape[1] + 1)));
+  }
 
   // Put topology (nodes)
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
@@ -223,23 +225,26 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   const int tdim = mesh->topology().dim();
 
   // Get a VTK mesh with points at the 'nodes'
-  const auto [x, x_id, x_ghost, vtk] = io::vtk_mesh_from_space(V);
+  auto [x, xshape, x_id, x_ghost, vtk, vtkshape] = io::vtk_mesh_from_space(V);
 
-  std::uint32_t num_dofs = x.shape(0);
+  std::uint32_t num_dofs = xshape[0];
   std::uint32_t num_cells = mesh->topology().index_map(tdim)->size_local();
 
   // -- Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
   // etc, is the node index.
-  std::vector<std::size_t> shape = {num_cells, vtk.shape(1) + 1};
+  std::vector<std::size_t> shape = {num_cells, vtkshape[1] + 1};
 
   // Create vector, setting all entries to nodes per cell (vtk.shape(1))
-  std::vector<std::uint64_t> vtk_topology(shape[0] * shape[1], vtk.shape(1));
+  std::vector<std::uint64_t> vtk_topology(shape[0] * shape[1], vtkshape[1]);
 
   // Set the [v0_0,...., v0_N0, v1_0,...., v1_N1,....] data
-  auto _vtk = xt::adapt(vtk_topology, shape);
-  xt::view(_vtk, xt::all(), xt::range(1, _vtk.shape(1)))
-      = xt::view(vtk, xt::range(0, num_cells, xt::all()));
+  std::vector<std::int64_t> cells(shape[0] * (shape[1] + 1), shape[1]);
+  for (std::size_t c = 0; c < shape[0]; ++c)
+  {
+    std::copy_n(std::next(vtk.begin(), c * vtkshape[1]), vtkshape[1],
+                std::next(vtk_topology.begin(), c * shape[1]));
+  }
 
   // Define ADIOS2 variables for geometry, topology, celltypes and
   // corresponding VTK data
@@ -247,7 +252,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
       = define_variable<double>(io, "geometry", {}, {}, {num_dofs, 3});
   adios2::Variable<std::uint64_t> local_topology
       = define_variable<std::uint64_t>(io, "connectivity", {}, {},
-                                       {num_cells, vtk.shape(1) + 1});
+                                       {num_cells, vtkshape[1] + 1});
   adios2::Variable<std::uint32_t> cell_type
       = define_variable<std::uint32_t>(io, "types");
   adios2::Variable<std::uint32_t> vertices = define_variable<std::uint32_t>(
@@ -471,14 +476,14 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
 
   // Get vertex data. If the mesh and function dofmaps are the same we
   // can work directly with the dof array.
-  xtl::span<const T> data;
+  std::span<const T> data;
   std::vector<T> _data;
   if (mesh->geometry().dofmap() == dofmap->list() and !need_padding)
     data = u.x()->array();
   else
   {
     _data = pack_function_data(u);
-    data = xtl::span<const T>(_data);
+    data = std::span<const T>(_data);
   }
 
   auto vertex_map = mesh->topology().index_map(0);
@@ -489,7 +494,7 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
   // Write each real and imaginary part of the function
   const std::uint32_t num_components = std::pow(3, rank);
   assert(data.size() % num_components == 0);
-  if constexpr (std::is_scalar<T>::value)
+  if constexpr (std::is_scalar_v<T>)
   {
     // ---- Real
     const std::string u_name = u.name;
@@ -509,13 +514,13 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
 
     adios2::Variable<U> local_output_r = define_variable<U>(
         io, u.name + field_ext[0], {}, {}, {num_vertices, num_components});
-    std::transform(data.cbegin(), data.cend(), data_real.begin(),
+    std::transform(data.begin(), data.end(), data_real.begin(),
                    [](auto& x) -> U { return std::real(x); });
     engine.Put<U>(local_output_r, data_real.data());
 
     adios2::Variable<U> local_output_c = define_variable<U>(
         io, u.name + field_ext[1], {}, {}, {num_vertices, num_components});
-    std::transform(data.cbegin(), data.cend(), data_imag.begin(),
+    std::transform(data.begin(), data.end(), data_imag.begin(),
                    [](auto& x) -> U { return std::imag(x); });
     engine.Put<U>(local_output_c, data_imag.data());
     engine.PerformPuts();
@@ -548,7 +553,7 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
   const int tdim = topology.dim();
   const std::int32_t num_cells = topology.index_map(tdim)->size_local();
   const int num_nodes = geometry.cmap().dim();
-  const xt::xtensor<std::int64_t, 2> cells = extract_vtk_connectivity(mesh);
+  const auto [cells, shape] = io::extract_vtk_connectivity(mesh);
 
   // "Put" topology data in the result in the ADIOS2 file
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(

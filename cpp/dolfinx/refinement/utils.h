@@ -6,13 +6,16 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <memory>
 #include <set>
+#include <tuple>
 #include <vector>
+#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::mesh
 {
@@ -54,8 +57,10 @@ void update_logical_edgefunction(
 /// @param[in] mesh Existing mesh
 /// @param[in] marked_edges
 /// @return (0) map from local edge index to new vertex global index,
-/// and (1) the coordinates of the new vertices
-std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
+/// (1) the coordinates of the new vertices (row-major storage) and (2)
+/// the shape of the new coordinates.
+std::tuple<std::map<std::int32_t, std::int64_t>, std::vector<double>,
+           std::array<std::size_t, 2>>
 create_new_vertices(MPI_Comm neighbor_comm,
                     const graph::AdjacencyList<int>& shared_edges,
                     const mesh::Mesh& mesh,
@@ -89,29 +94,32 @@ mesh::Mesh partition(const mesh::Mesh& old_mesh,
 std::vector<std::int64_t> adjust_indices(const common::IndexMap& map,
                                          std::int32_t n);
 
-/// Transfer facet MeshTags from coarse mesh to refined mesh
-/// @note The refined mesh must not have been redistributed during refinement
+/// @brief Transfer facet MeshTags from coarse mesh to refined mesh
+/// @note The refined mesh must not have been redistributed during
+/// refinement
 /// @note GhostMode must be GhostMode.none
-/// @param[in] parent_meshtag Facet MeshTags on parent mesh
+/// @param[in] meshtag Facet tags on parent mesh
 /// @param[in] refined_mesh Refined mesh based on parent mesh
-/// @param[in] parent_cell Parent cell of each cell in refined mesh
-/// @param[in] parent_facet Local facets of parent in each cell in refined mesh
-/// @return MeshTags on refined mesh, values copied over from coarse mesh
+/// @param[in] cell Parent cell of each cell in refined mesh
+/// @param[in] facet Local facets of parent in each cell in refined mesh
+/// @return MeshTags on refined mesh
 mesh::MeshTags<std::int32_t>
-transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& parent_meshtag,
-                       const mesh::Mesh& refined_mesh,
-                       const std::vector<std::int32_t>& parent_cell,
-                       const std::vector<std::int8_t>& parent_facet);
+transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& meshtag,
+                       std::shared_ptr<const mesh::Mesh> refined_mesh,
+                       const std::vector<std::int32_t>& cell,
+                       const std::vector<std::int8_t>& facet);
 
-/// Transfer cell MeshTags from coarse mesh to refined mesh
-/// @note The refined mesh must not have been redistributed during refinement
+/// @brief Transfer cell MeshTags from coarse mesh to refined mesh
+/// @note The refined mesh must not have been redistributed during
+/// refinement
 /// @note GhostMode must be GhostMode.none
 /// @param[in] parent_meshtag Cell MeshTags on parent mesh
 /// @param[in] refined_mesh Refined mesh based on parent mesh
 /// @param[in] parent_cell Parent cell of each cell in refined mesh
-/// @return MeshTags on refined mesh, values copied over from coarse mesh
+/// @return MeshTags on refined mesh, values copied over from coarse
+/// mesh
 mesh::MeshTags<std::int32_t>
 transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& parent_meshtag,
-                      const mesh::Mesh& refined_mesh,
+                      std::shared_ptr<const mesh::Mesh> refined_mesh,
                       const std::vector<std::int32_t>& parent_cell);
 } // namespace dolfinx::refinement
