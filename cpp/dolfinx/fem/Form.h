@@ -118,23 +118,20 @@ public:
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
 
-    // Store kernels, looping over integrals by type
+    // Set integral data (intentially copying)
     // NOTE Could probably simplify Form by combining integral types
-    for (const auto& integral_type : integrals)
+    for (const auto& [type, integral] : integrals)
     {
-      const IntegralType type = integral_type.first;
-      // Loop over integrals kernels and set domains (intentially copying
-      // the domain data)
       switch (type)
       {
       case IntegralType::cell:
-        _cell_integrals = integrals.at(type);
+        _cell_integrals = integral;
         break;
       case IntegralType::exterior_facet:
-        _exterior_facet_integrals = integrals.at(type);
+        _exterior_facet_integrals = integral;
         break;
       case IntegralType::interior_facet:
-        _interior_facet_integrals = integrals.at(type);
+        _interior_facet_integrals = integral;
         break;
       }
     }
