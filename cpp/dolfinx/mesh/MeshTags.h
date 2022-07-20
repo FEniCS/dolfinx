@@ -17,9 +17,9 @@
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/io/cells.h>
 #include <memory>
+#include <span>
 #include <utility>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::mesh
 {
@@ -135,7 +135,7 @@ private:
 template <typename T>
 MeshTags<T> create_meshtags(const std::shared_ptr<const Mesh>& mesh, int dim,
                             const graph::AdjacencyList<std::int32_t>& entities,
-                            const xtl::span<const T>& values)
+                            const std::span<const T>& values)
 {
   LOG(INFO)
       << "Building MeshTags object from tagged entities (defined by vertices).";

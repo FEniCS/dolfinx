@@ -7,10 +7,12 @@
 #pragma once
 
 #include <array>
+#include <cassert>
+#include <cstdint>
 #include <mpi.h>
+#include <span>
+#include <string>
 #include <vector>
-#include <xtensor/xfixed.hpp>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::mesh
 {
@@ -22,7 +24,6 @@ namespace dolfinx::geometry
 
 /// Axis-Aligned bounding box binary tree. It is used to find entities
 /// in a collection (often a mesh::Mesh).
-
 class BoundingBoxTree
 {
 
@@ -36,7 +37,7 @@ public:
   /// @param[in] padding A float perscribing how much the bounding box
   /// of each entity should be padded
   BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
-                  const xtl::span<const std::int32_t>& entities,
+                  const std::span<const std::int32_t>& entities,
                   double padding = 0);
 
   /// Constructor
@@ -71,7 +72,7 @@ public:
   /// @param[in] node The bounding box node index
   /// @return The bounding box where [0] is the lower corner and [1] is
   /// the upper corner
-  xt::xtensor_fixed<double, xt::xshape<2, 3>> get_bbox(std::size_t node) const;
+  std::array<std::array<double, 3>, 2> get_bbox(std::size_t node) const;
 
   /// Compute a global bounding tree (collective on comm)
   /// This can be used to find which process a point might have a

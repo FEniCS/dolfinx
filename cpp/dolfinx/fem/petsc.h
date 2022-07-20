@@ -11,9 +11,9 @@
 #include <memory>
 #include <petscmat.h>
 #include <petscvec.h>
+#include <span>
 #include <utility>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::common
 {
@@ -84,9 +84,9 @@ Vec create_vector_nest(
 /// @param[in] coeffs The coefficients that appear in `L`
 void assemble_vector(
     Vec b, const Form<PetscScalar>& L,
-    const xtl::span<const PetscScalar>& constants,
+    const std::span<const PetscScalar>& constants,
     const std::map<std::pair<IntegralType, int>,
-                   std::pair<xtl::span<const PetscScalar>, int>>& coeffs);
+                   std::pair<std::span<const PetscScalar>, int>>& coeffs);
 
 /// Assemble linear form into an already allocated PETSc vector. Ghost
 /// contributions are not accumulated (not sent to owner). Caller is
@@ -119,9 +119,9 @@ void assemble_vector(Vec b, const Form<PetscScalar>& L);
 /// is responsible for calling VecGhostUpdateBegin/End.
 void apply_lifting(
     Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
-    const std::vector<xtl::span<const PetscScalar>>& constants,
+    const std::vector<std::span<const PetscScalar>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
-                               std::pair<xtl::span<const PetscScalar>, int>>>&
+                               std::pair<std::span<const PetscScalar>, int>>>&
         coeffs,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,

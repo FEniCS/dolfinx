@@ -170,7 +170,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = _mesh->geometry().dofmap();
   const std::size_t num_dofs_g = _mesh->geometry().cmap().dim();
-  xtl::span<const double> x_g = _mesh->geometry().x();
+  std::span<const double> x_g = _mesh->geometry().x();
 
   // Array to hold coordinates to return
   const std::size_t shape_c0 = transpose ? 3 : num_dofs;
@@ -185,15 +185,15 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   assert(map);
   const int num_cells = map->size_local() + map->num_ghosts();
 
-  xtl::span<const std::uint32_t> cell_info;
+  std::span<const std::uint32_t> cell_info;
   if (_element->needs_dof_transformations())
   {
     _mesh->topology_mutable().create_entity_permutations();
-    cell_info = xtl::span(_mesh->topology().get_cell_permutation_info());
+    cell_info = std::span(_mesh->topology().get_cell_permutation_info());
   }
 
-  const std::function<void(const xtl::span<double>&,
-                           const xtl::span<const std::uint32_t>&, std::int32_t,
+  const std::function<void(const std::span<double>&,
+                           const std::span<const std::uint32_t>&, std::int32_t,
                            int)>
       apply_dof_transformation
       = _element->get_dof_transformation_function<double>();
@@ -213,8 +213,8 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 
     // Tabulate dof coordinates on cell
     cmap.push_forward(x, coordinate_dofs, phi);
-    apply_dof_transformation(xtl::span(x.data(), x.size()),
-                             xtl::span(cell_info.data(), cell_info.size()), c,
+    apply_dof_transformation(std::span(x.data(), x.size()),
+                             std::span(cell_info.data(), cell_info.size()), c,
                              x.shape(1));
 
     // Get cell dofmap

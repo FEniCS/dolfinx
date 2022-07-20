@@ -6,13 +6,16 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <memory>
 #include <set>
+#include <tuple>
 #include <vector>
+#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::mesh
 {
@@ -54,8 +57,10 @@ void update_logical_edgefunction(
 /// @param[in] mesh Existing mesh
 /// @param[in] marked_edges
 /// @return (0) map from local edge index to new vertex global index,
-/// and (1) the coordinates of the new vertices
-std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
+/// (1) the coordinates of the new vertices (row-major storage) and (2)
+/// the shape of the new coordinates.
+std::tuple<std::map<std::int32_t, std::int64_t>, std::vector<double>,
+           std::array<std::size_t, 2>>
 create_new_vertices(MPI_Comm neighbor_comm,
                     const graph::AdjacencyList<int>& shared_edges,
                     const mesh::Mesh& mesh,

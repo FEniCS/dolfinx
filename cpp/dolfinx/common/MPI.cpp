@@ -7,6 +7,7 @@
 #include "MPI.h"
 #include <algorithm>
 #include <dolfinx/common/log.h>
+#include <iostream>
 
 //-----------------------------------------------------------------------------
 dolfinx::MPI::Comm::Comm(MPI_Comm comm, bool duplicate)
@@ -89,7 +90,7 @@ int dolfinx::MPI::size(const MPI_Comm comm)
 //-----------------------------------------------------------------------------
 std::vector<int>
 dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm,
-                                      const xtl::span<const int>& edges)
+                                      const std::span<const int>& edges)
 {
   LOG(INFO)
       << "Computing communicaton graph edges (using PCX algorithm). Number "
@@ -149,7 +150,7 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 std::vector<int>
 dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
-                                      const xtl::span<const int>& edges)
+                                      const std::span<const int>& edges)
 {
   LOG(INFO)
       << "Computing communicaton graph edges (using NBX algorithm). Number "

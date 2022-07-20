@@ -51,7 +51,8 @@ xt::xtensor<double, 4>
 CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X) const
 {
   assert(_element);
-  auto [tab, shape] = _element->tabulate(n, X, {X.shape(0), X.shape(1)});
+  auto [tab, shape] = _element->tabulate(n, std::span(X.data(), X.size()),
+                                         {X.shape(0), X.shape(1)});
   return xt::adapt(
       tab, std::vector<std::size_t>{shape[0], shape[1], shape[2], shape[3]});
 }
@@ -60,8 +61,8 @@ void CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X,
                                  xt::xtensor<double, 4>& basis) const
 {
   assert(_element);
-  _element->tabulate(n, xtl::span(X), std::array{X.shape(0), X.shape(1)},
-                     basis);
+  _element->tabulate(n, std::span(X.data(), X.size()),
+                     std::array{X.shape(0), X.shape(1)}, basis);
 }
 //--------------------------------------------------------------------------------
 ElementDofLayout CoordinateElement::create_dof_layout() const
@@ -138,7 +139,7 @@ void CoordinateElement::pull_back_nonaffine(
     int k;
     for (k = 0; k < maxit; ++k)
     {
-      _element->tabulate(1, Xk, {1, tdim}, basis);
+      _element->tabulate(1, std::span(Xk.data(), Xk.size()), {1, tdim}, basis);
 
       // x = cell_geometry * phi
       auto phi = xt::view(basis, 0, 0, xt::all(), 0);
@@ -183,14 +184,14 @@ void CoordinateElement::pull_back_nonaffine(
   }
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::permute_dofs(const xtl::span<std::int32_t>& dofs,
+void CoordinateElement::permute_dofs(const std::span<std::int32_t>& dofs,
                                      std::uint32_t cell_perm) const
 {
   assert(_element);
   _element->permute_dofs(dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::unpermute_dofs(const xtl::span<std::int32_t>& dofs,
+void CoordinateElement::unpermute_dofs(const std::span<std::int32_t>& dofs,
                                        std::uint32_t cell_perm) const
 {
   assert(_element);
