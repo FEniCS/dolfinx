@@ -152,7 +152,7 @@ create_submesh(const Mesh& mesh, int dim,
 /// @param[in] f Facet index
 /// @param[in] cells The cells connected to the facet
 /// @param[in] c_to_f Cell to facet connectivity
-/// @return Vector of (cell, local_facet) pairs
+/// @return List of (cell, local_facet) pairs
 template <int num_cells>
 static std::array<std::array<std::int32_t, 2>, num_cells>
 get_cell_local_facet_pairs(
