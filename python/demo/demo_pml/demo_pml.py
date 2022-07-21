@@ -215,7 +215,7 @@ q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / gcs / I0).real
 
 q_abs_fenics = mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
-err_abs = np.abs(q_abs_analyt - q_abs_fenics) / q_abs_analyt * 100
+err_abs = np.abs(q_abs_analyt - q_abs_fenics) / q_abs_analyt
 
 # Check if error is less than 1%
 assert err_abs < 0.01
@@ -225,6 +225,6 @@ if MPI.COMM_WORLD.rank == 0:
     print()
     print(f"The analytical absorption efficiency is {q_abs_analyt}")
     print(f"The numerical absorption efficiency is {q_abs_fenics}")
-    print(f"The error is {err_abs}%")
+    print(f"The error is {err_abs*100}%")
     print()
 # -
