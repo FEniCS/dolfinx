@@ -813,6 +813,16 @@ void M2MInterpolator::interpolate(Function<T>& u, const Function<T>& v,
   // interpolating function
   const std::vector<double> x_v = fem::interpolation_coords(
       *u.function_space()->element(), *u.function_space()->mesh(), cells);
+  std::vector<double> x_t;
+  x_t.reserve(x_v.size());
+  for (std::int32_t i = 0; i < x_v.size() / 3; ++i)
+  {
+    for (int j = 0; j < 3; ++j)
+    {
+      x_t.push_back(x_v[j * x_v.size() / 3 + i]);
+    }
+  }
+
   std::vector<std::size_t> shape = {3, x_v.size() / 3};
   const xt::xtensor<double, 2> x = xt::adapt(x_v, shape);
 
@@ -828,7 +838,7 @@ void M2MInterpolator::interpolate(Function<T>& u, const Function<T>& v,
 
       // Get the list of processes that might be able to evaluate each point
       collisions = std::make_unique<graph::AdjacencyList<std::int32_t>>(
-          dolfinx::geometry::compute_collisions(globalBB, xt::transpose(x)));
+          dolfinx::geometry::compute_collisions(globalBB, x_t));
 
       // Compute which points need to be sent to which process
       pointsToSend.resize(nProcs);
