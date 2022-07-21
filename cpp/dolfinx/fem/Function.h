@@ -308,12 +308,14 @@ public:
   ///
   /// @param[in] x The coordinates of the points. It has shape
   /// (num_points, 3) and storage is row-major.
+  /// @param[in] xshape The shape of `x`.
   /// @param[in] cells An array of cell indices. cells[i] is the index
   /// of the cell that contains the point x(i). Negative cell indices
   /// can be passed, and the corresponding point will be ignored.
   /// @param[out] u The values at the points. Values are not computed
   /// for points with a negative cell index. This argument must be
-  /// passed with the correct size.
+  /// passed with the correct size. Storage is row-major.
+  /// @param[in] ushape The shape of `u`.
   void eval(std::span<const double> x, std::array<std::size_t, 2> xshape,
             std::span<const std::int32_t> cells, std::span<T> u,
             std::array<std::size_t, 2> ushape) const

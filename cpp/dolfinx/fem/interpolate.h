@@ -440,9 +440,9 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
 /// interpolation coordinates for
 /// @return The coordinates in the physical space at which to evaluate
 /// an expression. The shape is (3, num_points) and storage is row-major.
-std::vector<double>
-interpolation_coords(const FiniteElement& element, const mesh::Mesh& mesh,
-                     const std::span<const std::int32_t>& cells);
+std::vector<double> interpolation_coords(const FiniteElement& element,
+                                         const mesh::Mesh& mesh,
+                                         std::span<const std::int32_t> cells);
 
 /// Interpolate an expression f(x) in a finite element space
 ///
@@ -457,7 +457,7 @@ interpolation_coords(const FiniteElement& element, const mesh::Mesh& mesh,
 /// fem::interpolation_coords.
 template <typename T>
 void interpolate(Function<T>& u, const xt::xarray<T>& f,
-                 const std::span<const std::int32_t>& cells)
+                 std::span<const std::int32_t> cells)
 {
   namespace stdex = std::experimental;
   using cmdspan2_t

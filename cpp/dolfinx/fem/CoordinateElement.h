@@ -117,7 +117,7 @@ public:
 
   /// Compute the determinant of the Jacobian
   /// @param[in] J Jacobian (shape=(gdim, tdim))
-  /// @param[in] w Working memory, required when gdim \ne tdim. Size
+  /// @param[in] w Working memory, required when gdim != tdim. Size
   /// must be at least 2 * gdim * tdim.
   /// @return Determinant of `J`
   template <typename U>

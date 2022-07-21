@@ -15,7 +15,7 @@ using namespace dolfinx;
 //-----------------------------------------------------------------------------
 std::vector<double>
 fem::interpolation_coords(const FiniteElement& element, const mesh::Mesh& mesh,
-                          const std::span<const std::int32_t>& cells)
+                          std::span<const std::int32_t> cells)
 {
   // Get mesh geometry data and the element coordinate map
   const std::size_t gdim = mesh.geometry().dim();
@@ -33,9 +33,6 @@ fem::interpolation_coords(const FiniteElement& element, const mesh::Mesh& mesh,
   for (std::size_t i = 0; i < phi.shape(0); ++i)
     for (std::size_t j = 0; j < phi.shape(1); ++j)
       phi(i, j) = _phi(0, i, j, 0);
-
-  // const xt::xtensor<double, 2> phi = xt::view(
-  //     cmap.tabulate(0, xt::adapt(X, Xshape)), 0, xt::all(), xt::all(), 0);
 
   // Push reference coordinates (X) forward to the physical coordinates
   // (x) for each cell
