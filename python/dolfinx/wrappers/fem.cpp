@@ -1138,7 +1138,7 @@ void fem(py::module& m)
             std::array<std::size_t, 2> shape
                 = {(std::size_t)X.shape(0), (std::size_t)cell.shape(1)};
             std::vector<double> xb(shape[0] * shape[1]);
-            self.push_forward_new(
+            self.push_forward(
                 mdspan2_t(xb.data(), shape),
                 cmdspan2_t(cell.data(), cell.shape(0), cell.shape(1)), phi);
 
@@ -1190,10 +1190,10 @@ void fem(py::module& m)
               std::array<double, 3> x0 = {0, 0, 0};
               for (std::size_t i = 0; i < g.extent(1); ++i)
                 x0[i] += g(0, i);
-              self.pull_back_affine_new(X, K, x0, _x);
+              self.pull_back_affine(X, K, x0, _x);
             }
             else
-              self.pull_back_nonaffine_new(X, _x, g);
+              self.pull_back_nonaffine(X, _x, g);
 
             return as_pyarray(std::move(Xb), std::array{num_points, tdim});
           },

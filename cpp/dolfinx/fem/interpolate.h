@@ -476,6 +476,9 @@ void interpolate(Function<T>& u, std::span<const T> f,
   // is a point evaluation
   if (element->interpolation_ident())
   {
+    // Point evaluation element *and* the geometric map is the identity,
+    // e.g. not Piola mapped
+
     if (!element->map_ident())
       throw std::runtime_error("Element does not have identity map.");
 
@@ -505,6 +508,9 @@ void interpolate(Function<T>& u, std::span<const T> f,
   }
   else if (element->map_ident())
   {
+    // Not a point evaluation, but the geometric map is the identity,
+    // e.g. not Piola mapped
+
     if (_f.extent(0) != 1)
       throw std::runtime_error("Interpolation data has the wrong shape.");
 
@@ -518,9 +524,9 @@ void interpolate(Function<T>& u, std::span<const T> f,
         = element->get_dof_transformation_function<T>(true, true, true);
 
     // Loop over cells
-    std::vector<T> reference_data_b(num_interp_points);
+    std::vector<T> ref_data_b(num_interp_points);
     stdex::mdspan<T, stdex::extents<std::size_t, stdex::dynamic_extent, 1>>
-        reference_data(reference_data_b.data(), num_interp_points, 1);
+        ref_data(ref_data_b.data(), num_interp_points, 1);
     for (std::size_t c = 0; c < cells.size(); ++c)
     {
       const std::int32_t cell = cells[c];
@@ -528,9 +534,8 @@ void interpolate(Function<T>& u, std::span<const T> f,
       for (int k = 0; k < element_bs; ++k)
       {
         std::copy_n(std::next(f.begin(), k * f_shape1 + c * num_interp_points),
-                    num_interp_points, reference_data_b.begin());
-        impl::interpolation_apply(Pi, reference_data, std::span(_coeffs),
-                                  element_bs);
+                    num_interp_points, ref_data_b.begin());
+        impl::interpolation_apply(Pi, ref_data, std::span(_coeffs), element_bs);
         apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
@@ -574,9 +579,9 @@ void interpolate(Function<T>& u, std::span<const T> f,
     std::vector<double> coord_dofs_b(num_dofs_g * 3);
     mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
 
-    std::vector<T> reference_data_b(Xshape[0] * 1 * value_size);
-    stdex::mdspan<T, stdex::dextents<std::size_t, 3>> reference_data(
-        reference_data_b.data(), Xshape[0], 1, value_size);
+    std::vector<T> ref_data_b(Xshape[0] * 1 * value_size);
+    stdex::mdspan<T, stdex::dextents<std::size_t, 3>> ref_data(
+        ref_data_b.data(), Xshape[0], 1, value_size);
 
     std::vector<T> _vals_b(Xshape[0] * 1 * value_size);
     stdex::mdspan<T, stdex::dextents<std::size_t, 3>> _vals(
@@ -653,7 +658,7 @@ void interpolate(Function<T>& u, std::span<const T> f,
         {
           auto _u = stdex::submdspan(_vals, i, stdex::full_extent,
                                      stdex::full_extent);
-          auto _U = stdex::submdspan(reference_data, i, stdex::full_extent,
+          auto _U = stdex::submdspan(ref_data, i, stdex::full_extent,
                                      stdex::full_extent);
           auto _K
               = stdex::submdspan(K, i, stdex::full_extent, stdex::full_extent);
@@ -662,9 +667,9 @@ void interpolate(Function<T>& u, std::span<const T> f,
           pull_back_fn(_U, _u, _K, 1.0 / detJ[i], _J);
         }
 
-        auto ref_data = stdex::submdspan(reference_data, stdex::full_extent, 0,
-                                         stdex::full_extent);
-        impl::interpolation_apply(Pi, ref_data, std::span(_coeffs), element_bs);
+        auto ref = stdex::submdspan(ref_data, stdex::full_extent, 0,
+                                    stdex::full_extent);
+        impl::interpolation_apply(Pi, ref, std::span(_coeffs), element_bs);
         apply_inverse_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
 
         // Copy interpolation dofs into coefficient vector

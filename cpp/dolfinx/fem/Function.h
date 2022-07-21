@@ -482,14 +482,14 @@ public:
         std::array<double, 3> x0 = {0, 0, 0};
         for (std::size_t i = 0; i < coord_dofs.extent(1); ++i)
           x0[i] += coord_dofs(0, i);
-        CoordinateElement::pull_back_affine_new(Xp, _K, x0, xp);
+        CoordinateElement::pull_back_affine(Xp, _K, x0, xp);
         detJ[p]
             = CoordinateElement::compute_jacobian_determinant(_J, det_scratch);
       }
       else
       {
         // Pull-back physical point xp to reference coordinate Xp
-        cmap.pull_back_nonaffine_new(Xp, xp, coord_dofs);
+        cmap.pull_back_nonaffine(Xp, xp, coord_dofs);
 
         cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
         CoordinateElement::compute_jacobian(dphi, coord_dofs, _J);

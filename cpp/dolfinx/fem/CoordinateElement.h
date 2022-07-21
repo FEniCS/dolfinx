@@ -157,7 +157,7 @@ public:
   /// @param[in] cell_geometry The cell node coordinates (physical)
   /// @param[in] phi Tabulated basis functions at reference points X
   template <typename U, typename V, typename W>
-  static void push_forward_new(U&& x, const V& cell_geometry, const W& phi)
+  static void push_forward(U&& x, const V& cell_geometry, const W& phi)
   {
     for (std::size_t i = 0; i < x.extent(0); ++i)
       for (std::size_t j = 0; j < x.extent(1); ++j)
@@ -178,8 +178,8 @@ public:
   /// 0).
   /// @param[in] x The physical coordinates (shape=(num_points, gdim))
   template <typename U, typename V, typename W>
-  static void pull_back_affine_new(U&& X, const V& K,
-                                   const std::array<double, 3>& x0, const W& x)
+  static void pull_back_affine(U&& X, const V& K,
+                               const std::array<double, 3>& x0, const W& x)
   {
     assert(X.extent(0) == x.extent(0));
     assert(X.extent(1) == K.extent(0));
@@ -215,7 +215,7 @@ public:
   /// @param [in] maxit Maximum number of Newton iterations
   /// @note If convergence is not achieved within maxit, the function
   /// throws a runtime error.
-  void pull_back_nonaffine_new(mdspan2_t X, cmdspan2_t x,
+  void pull_back_nonaffine(mdspan2_t X, cmdspan2_t x,
                                cmdspan2_t cell_geometry, double tol = 1.0e-8,
                                int maxit = 10) const;
 

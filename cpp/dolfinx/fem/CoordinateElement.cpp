@@ -59,9 +59,9 @@ ElementDofLayout CoordinateElement::create_dof_layout() const
                           _element->entity_closure_dofs(), {}, {});
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::pull_back_nonaffine_new(mdspan2_t X, cmdspan2_t x,
-                                                cmdspan2_t cell_geometry,
-                                                double tol, int maxit) const
+void CoordinateElement::pull_back_nonaffine(mdspan2_t X, cmdspan2_t x,
+                                            cmdspan2_t cell_geometry,
+                                            double tol, int maxit) const
 {
   // Number of points
   std::size_t num_points = x.extent(0);
