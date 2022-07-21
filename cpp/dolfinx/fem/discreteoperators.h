@@ -209,6 +209,8 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
       = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
   using mdspan3_t = stdex::mdspan<double, stdex::dextents<std::size_t, 3>>;
 
+  // TODO: the below has a bug - for non-affine maps the basis needs to
+  // be evaluated at every point
   // Evaluate coordinate map basis at reference interpolation points
   const auto [X, Xshape] = e1->interpolation_points();
   std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, Xshape[0]);
@@ -271,9 +273,9 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
 
   auto pull_back_fn1 = e1->basix_element().map_fn<u_t, U_t, K_t, J_t>();
 
-  std::vector<double> coordinate_dofs_b(num_dofs_g * 3);
+  std::vector<double> coord_dofs_b(num_dofs_g * gdim);
   stdex::mdspan<double, stdex::extents<std::size_t, stdex::dynamic_extent, 3>>
-      coordinate_dofs(coordinate_dofs_b.data(), num_dofs_g, 3);
+      coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
   std::vector<double> basis0_b(Xshape[0] * dim0 * value_size0);
   mdspan3_t basis0(basis0_b.data(), Xshape[0], dim0, value_size0);
 
@@ -285,17 +287,14 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
   auto cell_map = mesh->topology().index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local();
-  auto coord_dofs = stdex::submdspan(coordinate_dofs, stdex::full_extent,
-                                     std::pair(0, gdim));
-
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get cell geometry (coordinate dofs)
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
-                              std::next(coordinate_dofs_b.begin(), 3 * i));
+      for (std::size_t j = 0; j < gdim; ++j)
+        coord_dofs(i, j) = x_g[3 * x_dofs[i] + j];
     }
 
     // Compute Jacobians and reference points for current cell

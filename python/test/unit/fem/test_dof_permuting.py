@@ -126,7 +126,7 @@ def test_dof_positions(cell_type, space_type):
     entities = {i: {} for i in range(1, tdim)}
     for cell in range(coord_dofs.num_nodes):
         # Push coordinates forward
-        X = V.element.interpolation_points
+        X = V.element.interpolation_points()
         xg = x_g[coord_dofs.links(cell), :tdim]
         x = cmap.push_forward(X, xg)
 
