@@ -131,7 +131,7 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
   }
 }
 
-/// @brief Assemble an interpolation operator matrix
+/// @brief Assemble an interpolation operator matrix.
 ///
 /// The interpolation operator \f$A\f$ interpolates a function in the
 /// space \f$V_0\f$ into a space \f$V_1\f$. If \f$u_0\f$ is the

@@ -110,7 +110,7 @@ public:
   /// basis values. Must have shape `(num_derivatives, num_points,
   /// num_dofs, reference_value_size)` (row-major storage)
   /// @param[in] X The reference coordinates at which to evaluate the
-  /// basis functions. Shape is `(num_points, geometric dimension)`
+  /// basis functions. Shape is `(num_points, topological dimension)`
   /// (row-major storage)
   /// @param[in] shape The shape of `X`
   /// @param[in] order The number of derivatives (up to and including
@@ -121,7 +121,7 @@ public:
   /// Evaluate all derivatives of the basis functions up to given order
   /// at given points in reference cell
   /// @param[in] X The reference coordinates at which to evaluate the
-  /// basis functions. Shape is `(num_points, geometric dimension)`
+  /// basis functions. Shape is `(num_points, topological dimension)`
   /// (row-major storage)
   /// @param[in] shape The shape of `X`
   /// @param[in] order The number of derivatives (up to and including
@@ -168,12 +168,16 @@ public:
   /// @return True if the map is the identity
   bool map_ident() const noexcept;
 
-  /// Points on the reference cell at which an expression need to be
-  /// evaluated in order to interpolate the expression in the finite
-  /// element space. For Lagrange elements the points will just be the
+  /// @brief Points on the reference cell at which an expression need to
+  /// be evaluated in order to interpolate the expression in the finite
+  /// element space.
+  ///
+  /// For Lagrange elements the points will just be the
   /// nodal positions. For other elements the points will typically be
   /// the quadrature points used to evaluate moment degrees of freedom.
-  /// @return Points on the reference cell. Shape is (num_points, tdim).
+  /// @return Interpolation point coordinates on the reference cell,
+  /// returning the (0) coordinates data (row-major) storage and (1) the
+  /// shape `(num_points, tdim)`.
   std::pair<std::vector<double>, std::array<std::size_t, 2>>
   interpolation_points() const;
 
@@ -183,29 +187,32 @@ public:
   /// freedom, i.e. dofs = Pi f_x. See the Basix documentation for
   /// basix::FiniteElement::interpolation_matrix for how the data in
   /// `f_x` should be ordered.
-  /// @return The interpolation operator `Pi`. Shape is (num_dofs,
-  /// num_points*value_size)
+  /// @return The interpolation operator `Pi`, returning the data for
+  /// `Pi` (row-major storage) and the shape `(num_dofs, num_points *
+  /// value_size)`
   std::pair<std::vector<double>, std::array<std::size_t, 2>>
   interpolation_operator() const;
 
-  /// Create a matrix that maps degrees of freedom from one element to
-  /// this element (interpolation).
+  /// @brief Create a matrix that maps degrees of freedom from one
+  /// element to this element (interpolation).
   ///
   /// @param[in] from The element to interpolate from
   /// @return Matrix operator that maps the `from` degrees-of-freedom to
-  /// the degrees-of-freedom of this element. Shape is (num_dofs of this
-  /// element, num_dofs of `from`).
-  /// @note The two elements must use the same mapping between the
+  /// the degrees-of-freedom of this element. The (0) matrix data
+  /// (row-major storage) and (1) the shape (num_dofs of `this` element,
+  /// num_dofs of `from`) are returned.
+  ///
+  /// @pre The two elements must use the same mapping between the
   /// reference and physical cells
   /// @note Does not support mixed elements
   std::pair<std::vector<double>, std::array<std::size_t, 2>>
   create_interpolation_operator(const FiniteElement& from) const;
 
-  /// Check if DOF transformations are needed for this element.
+  /// @brief Check if DOF transformations are needed for this element.
   ///
   /// DOF transformations will be needed for elements which might not be
   /// continuous when two neighbouring cells disagree on the orientation
-  /// of a shared subentity, and when this cannot be corrected for by
+  /// of a shared sub-entity, and when this cannot be corrected for by
   /// permuting the DOF numbering in the dofmap.
   ///
   /// For example, Raviart-Thomas elements will need DOF
@@ -216,7 +223,7 @@ public:
   /// @return True if DOF transformations are required
   bool needs_dof_transformations() const noexcept;
 
-  /// Check if DOF permutations are needed for this element.
+  /// @brief Check if DOF permutations are needed for this element.
   ///
   /// DOF permutations will be needed for elements which might not be
   /// continuous when two neighbouring cells disagree on the orientation
@@ -224,8 +231,8 @@ public:
   /// permuting the DOF numbering in the dofmap.
   ///
   /// For example, higher order Lagrange elements will need DOF
-  /// permutations, as the arrangement of DOFs on a shared subentity may
-  /// be different from the point of view of neighbouring cells, and
+  /// permutations, as the arrangement of DOFs on a shared sub-entity
+  /// may be different from the point of view of neighbouring cells, and
   /// this can be corrected for by permuting the DOF numbers on each
   /// cell.
   ///
