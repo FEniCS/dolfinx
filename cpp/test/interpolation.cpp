@@ -67,8 +67,8 @@ void test_interpolation_different_meshes()
   uR_ex->interpolate(fun);
 
   const PetscReal diffNorm = std::sqrt(std::transform_reduce(
-      uR->x()->array().cbegin(), uR->x()->array().cend(),
-      uR_ex->x()->array().cbegin(), static_cast<PetscReal>(0), std::plus<>(),
+      uR->x()->array().begin(), uR->x()->array().end(),
+      uR_ex->x()->array().begin(), static_cast<PetscReal>(0), std::plus<>(),
       [](const auto& a, const auto& b)
       { return std::real((a - b) * std::conj(a - b)); }));
 
