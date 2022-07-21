@@ -49,6 +49,9 @@ class BackgroundElectricField:
 
         return (-ax * np.exp(1j * phi), ay * np.exp(1j * phi))
 
+def curl_2d(a):
+
+    return as_vector((0, 0, a[1].dx(0)- a[0].dx(1)))
 
 def pml_coordinates(x, alpha, k0, l_dom, l_pml):
 
