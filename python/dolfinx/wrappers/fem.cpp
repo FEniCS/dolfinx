@@ -456,7 +456,7 @@ void declare_objects(py::module& m, const std::string& type)
              py::array_t<T, py::array::c_style>& u)
           {
             // TODO: handle 1d case
-            self.eval( std::span(x.data(), x.size()),
+            self.eval(std::span(x.data(), x.size()),
                       {static_cast<std::size_t>(x.shape(0)),
                        static_cast<std::size_t>(x.shape(1))},
                       std::span(cells.data(), cells.size()),
@@ -517,9 +517,10 @@ void declare_objects(py::module& m, const std::string& type)
                         = (void (*)(T*, const T*, const T*,
                                     const typename geom_type<T>::value_type*,
                                     const int*, const std::uint8_t*))fn_addr;
-                    auto _x_ref = xt::adapt(X.data(), {X.shape(0), X.shape(1)});
                     return dolfinx::fem::Expression<T>(
-                        coefficients, constants, _x_ref,
+                        coefficients, constants, std::span(X.data(), X.size()),
+                        {static_cast<std::size_t>(X.shape(0)),
+                         static_cast<std::size_t>(X.shape(1))},
                         tabulate_expression_ptr, value_shape, mesh,
                         argument_function_space);
                   }),
