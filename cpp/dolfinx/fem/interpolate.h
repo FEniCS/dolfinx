@@ -815,7 +815,7 @@ void M2MInterpolator::interpolate(Function<T>& u, const Function<T>& v,
       *u.function_space()->element(), *u.function_space()->mesh(), cells);
   std::vector<double> x_t;
   x_t.reserve(x_v.size());
-  for (std::int32_t i = 0; i < x_v.size() / 3; ++i)
+  for (decltype(x_v.size()) i = 0; i < x_v.size() / 3; ++i)
   {
     for (int j = 0; j < 3; ++j)
     {
