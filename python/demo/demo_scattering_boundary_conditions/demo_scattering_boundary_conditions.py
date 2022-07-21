@@ -200,7 +200,6 @@ def curl_2d(a):
     
     return as_vector((0, 0, a[1].dx(0) - a[0].dx(1)))
 
-
 # -
 
 # Next we define some mesh specific parameters
@@ -318,9 +317,7 @@ v_3d = as_vector((v[0], v[1], 0))
 # Measures for subdomains
 dx = ufl.Measure("dx", mesh, subdomain_data=cell_tags)
 ds = ufl.Measure("ds", mesh, subdomain_data=facet_tags)
-dAu = dx(au_tag)
-dBkg = dx(bkg_tag)
-dDom = dAu + dBkg
+dDom = dx((au_tag, bkg_tag))
 dsbc = ds(boundary_tag)
 
 # Normal to the boundary
@@ -340,7 +337,7 @@ n_3d = as_vector((n[0], n[1], 0))
 # Definition of relative permittivity for Au @400nm
 reps_au = -1.0782
 ieps_au = 5.8089
-eps_au = reps_au + ieps_au * 1j
+eps_au = -1.0782 + 1j*5.8089
 # -
 
 # We want to define a space function for the permittivity
@@ -355,7 +352,7 @@ eps = fem.Function(D)
 au_cells = cell_tags.find(au_tag)
 bkg_cells = cell_tags.find(bkg_tag)
 eps.x.array[au_cells] = np.full_like(
-    au_cells, reps_au + ieps_au * 1j, dtype=np.complex128)
+    au_cells, eps_au, dtype=np.complex128)
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
 eps.x.scatter_forward()
 # -
@@ -464,7 +461,7 @@ V_dg = fem.VectorFunctionSpace(mesh, ("DG", 3))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 
-with VTXWriter(MPI.COMM_WORLD, "Esh.bp", Esh_dg) as f:
+with VTXWriter(mesh.comm, "Esh.bp", Esh_dg) as f:
     f.write(0.0)
 # -
 
@@ -509,7 +506,7 @@ E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
 E_dg = fem.Function(V_dg)
 E_dg.interpolate(E)
 
-with VTXWriter(MPI.COMM_WORLD, "E.bp", E_dg) as f:
+with VTXWriter(mesh.comm, "E.bp", E_dg) as f:
     f.write(0.0)
 # -
 
