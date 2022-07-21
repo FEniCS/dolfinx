@@ -311,15 +311,18 @@ public:
   /// @param[in] cells An array of cell indices. cells[i] is the index
   /// of the cell that contains the point x(i). Negative cell indices
   /// can be passed, and the corresponding point will be ignored.
-  /// @param[in,out] u The values at the points. Values are not computed
+  /// @param[out] u The values at the points. Values are not computed
   /// for points with a negative cell index. This argument must be
   /// passed with the correct size.
   void eval(std::span<const double> x, std::array<std::size_t, 2> xshape,
-            const std::span<const std::int32_t>& cells,
-            xt::xtensor<T, 2>& u) const
+            std::span<const std::int32_t> cells, std::span<T> u,
+            std::array<std::size_t, 2> ushape) const
   {
     if (cells.empty())
       return;
+
+    assert(x.size() == xshape[0] * xshape[1]);
+    assert(u.size() == ushape[0] * ushape[1]);
 
     // TODO: This could be easily made more efficient by exploiting points
     // being ordered by the cell to which they belong.
@@ -329,7 +332,7 @@ public:
       throw std::runtime_error(
           "Number of points and number of cells must be equal.");
     }
-    if (xshape[0] != u.shape(0))
+    if (xshape[0] != ushape[0])
     {
       throw std::runtime_error(
           "Length of array for Function values must be the "
@@ -557,7 +560,7 @@ public:
         {
           for (std::size_t j = 0; j < value_size; ++j)
           {
-            u(p, j * bs_element + k)
+            u[p * ushape[1] + (j * bs_element + k)]
                 += coefficients[bs_element * i + k] * basis_values(i, j);
           }
         }

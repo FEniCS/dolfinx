@@ -50,7 +50,6 @@
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
 
 namespace py = pybind11;
 
@@ -457,22 +456,13 @@ void declare_objects(py::module& m, const std::string& type)
              py::array_t<T, py::array::c_style>& u)
           {
             // TODO: handle 1d case
-
-            std::array<std::size_t, 2> shape_u;
-            std::copy_n(u.shape(), 2, shape_u.begin());
-
-            // The below should work, but misbehaves with the Intel
-            // icpx compiler
-            // xt::xtensor<T, 2> _u = xt::adapt(u.mutable_data(), u.size(),
-            //                                  xt::no_ownership(), shape_u);
-            xt::xtensor<T, 2> _u(shape_u);
-            std::copy_n(u.data(), u.size(), _u.data());
-ƒ
             self.eval(x,
                       {static_cast<std::size_t>(x.shape(0)),
                        static_cast<std::size_t>(x.shape(1))},
-                      std::span(cells.data(), cells.size()), _u);
-            std::copy_n(_u.data(), _u.size(), u.mutable_data());
+                      std::span(cells.data(), cells.size()),
+                      std::span(u.mutable_data(), u.size()),
+                      {static_cast<std::size_t>(u.shape(0)),
+                       static_cast<std::size_t>(u.shape(1))});
           },
           py::arg("x"), py::arg("cells"), py::arg("values"),
           "Evaluate Function")

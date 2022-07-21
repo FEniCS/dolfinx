@@ -109,8 +109,9 @@ xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
       cells[dofs[i]] = c;
   }
 
-  u.eval(mesh->geometry().x(), {mesh->geometry().x().size() / 3, 3}, cells,
-         point_values);
+  std::size_t num_points = mesh->geometry().x().size() / 3;
+  u.eval(mesh->geometry().x(), {num_points, 3}, cells, point_values,
+         {num_points, value_size_loc});
 
   return point_values;
 }
