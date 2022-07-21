@@ -412,6 +412,7 @@ std::vector<double> interpolation_coords(const FiniteElement& element,
 /// fem::interpolation_coords should be the same element as associated
 /// with `u`. The shape of `f` should be (value_size, num_points), with
 /// row-major storage.
+/// @param[in] fshape The shape of `f`.
 /// @param[in] cells Indices of the cells in the mesh on which to
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
