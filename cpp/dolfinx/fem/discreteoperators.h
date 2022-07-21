@@ -201,6 +201,7 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
   std::span<const double> x_g = mesh->geometry().x();
 
   namespace stdex = std::experimental;
+  using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
   using cmdspan2_t
       = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
   using cmdspan3_t
@@ -276,8 +277,7 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
   auto pull_back_fn1 = e1->basix_element().map_fn<u_t, U_t, K_t, J_t>();
 
   std::vector<double> coord_dofs_b(num_dofs_g * gdim);
-  stdex::mdspan<double, stdex::extents<std::size_t, stdex::dynamic_extent, 3>>
-      coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
+  mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
   std::vector<double> basis0_b(Xshape[0] * dim0 * value_size0);
   mdspan3_t basis0(basis0_b.data(), Xshape[0], dim0, value_size0);
 
