@@ -176,8 +176,6 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(
       celltype_variable, cells::get_vtk_cell_type(topology.cell_type(), tdim));
 
-  const std::uint32_t num_nodes = geometry.cmap().dim();
-
   // Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
   // etc, is the node index
