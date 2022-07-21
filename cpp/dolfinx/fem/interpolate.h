@@ -577,7 +577,7 @@ void interpolate(Function<T>& u, std::span<const T> f,
     std::vector<double> detJ(Xshape[0]);
     std::vector<double> det_scratch(2 * gdim * tdim);
 
-    std::vector<double> coord_dofs_b(num_dofs_g * 3);
+    std::vector<double> coord_dofs_b(num_dofs_g * gdim);
     mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
 
     std::vector<T> ref_data_b(Xshape[0] * 1 * value_size);
