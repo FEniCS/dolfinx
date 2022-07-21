@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.special import h2vp, hankel2, jv, jvp
 
-def calculate_analytical_efficiencies(reps, ieps, n_bkg, wl0, radius_wire):
+def calculate_analytical_efficiencies(eps, n_bkg, wl0, radius_wire):
 
     def a_coeff(nu, m, alpha):
 
@@ -18,7 +18,8 @@ def calculate_analytical_efficiencies(reps, ieps, n_bkg, wl0, radius_wire):
 
         return a_nu_num / a_nu_den
 
-    m = np.sqrt(reps - 1j * ieps) / n_bkg
+    eps_conj = np.conj(eps)
+    m = np.sqrt(eps_conj) / n_bkg
 
     alpha = 2 * np.pi * radius_wire / wl0 * n_bkg
     c = 2 / alpha
