@@ -34,7 +34,7 @@ namespace impl
 /// @param[out] coeffs The degrees of freedom to compute
 /// @param[in] bs The block size
 template <typename U, typename V, typename T>
-void interpolation_apply(const U& Pi, const V& data, std::vector<T>& coeffs,
+void interpolation_apply(const U& Pi, const V& data, std::span<T> coeffs,
                          int bs)
 {
   static_assert(U::rank() == 2, "Must be rank 2");
@@ -82,7 +82,7 @@ void interpolation_apply(const U& Pi, const V& data, std::vector<T>& coeffs,
 /// by the function.
 template <typename T>
 void interpolate_same_map(Function<T>& u1, const Function<T>& u0,
-                          const std::span<const std::int32_t>& cells)
+                          std::span<const std::int32_t> cells)
 {
   auto V0 = u0.function_space();
   assert(V0);
@@ -167,7 +167,7 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0,
 /// not checked by the function.
 template <typename T>
 void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
-                                  const std::span<const std::int32_t>& cells)
+                                  std::span<const std::int32_t> cells)
 {
   // Get mesh
   auto V0 = u0.function_space();
@@ -377,7 +377,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
 
     auto values = stdex::submdspan(mapped_values0, stdex::full_extent, 0,
                                    stdex::full_extent);
-    interpolation_apply(Pi_1, values, local1, bs1);
+    interpolation_apply(Pi_1, values, std::span(local1), bs1);
     apply_inverse_dof_transform1(local1, cell_info, c, 1);
 
     // Copy local coefficients to the correct position in u dof array
@@ -391,7 +391,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
 } // namespace impl
 
 /// Compute the evaluation points in the physical space at which an
-/// expression should be computed to interpolate it in a finite elemenet
+/// expression should be computed to interpolate it in a finite element
 /// space.
 ///
 /// @param[in] element The element to be interpolated into
@@ -415,9 +415,6 @@ std::vector<double> interpolation_coords(const FiniteElement& element,
 /// @param[in] cells Indices of the cells in the mesh on which to
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
-// template <typename T>
-// void interpolate(Function<T>& u, const xt::xarray<T>& f,
-//                  std::span<const std::int32_t> cells)
 template <typename T>
 void interpolate(Function<T>& u, std::span<const T> f,
                  std::span<const std::int32_t> cells)
@@ -456,25 +453,11 @@ void interpolate(Function<T>& u, std::span<const T> f,
     cell_info = std::span(mesh->topology().get_cell_permutation_info());
   }
 
-  // if (f.dimension() == 1)
-  // {
-  //   if (element->value_size() != 1)
-  //     throw std::runtime_error("Interpolation data has the wrong
-  //     shape/size.");
-  // }
-  // else if (f.dimension() == 2)
-  // {
-  //   if (f.shape(0) != element->value_size())
-  //     throw std::runtime_error("Interpolation data has the wrong
-  //     shape/size.");
-  // }
-  // else
-  //   throw std::runtime_error("Interpolation data has wrong shape.");
-
-  // const std::span<const T> _f(f.data(), f.size());
   const std::size_t f_shape1 = f.size() / element->value_size();
   stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> _f(
       f.data(), element->value_size(), f.size() / element->value_size());
+  if (_f.extent(1) != cells.size())
+    throw std::runtime_error("Interpolation data has wrong shape.");
 
   // Get dofmap
   const auto dofmap = u.function_space()->dofmap();
@@ -521,8 +504,8 @@ void interpolate(Function<T>& u, std::span<const T> f,
   }
   else if (element->map_ident())
   {
-    // if (f.dimension() != 1)
-    //   throw std::runtime_error("Interpolation data has the wrong shape.");
+    if (f.extent(0) != 1)
+      throw std::runtime_error("Interpolation data has the wrong shape.");
 
     // Get interpolation operator
     const auto [_Pi, pi_shape] = element->interpolation_operator();
@@ -545,7 +528,8 @@ void interpolate(Function<T>& u, std::span<const T> f,
       {
         std::copy_n(std::next(f.begin(), k * f_shape1 + c * num_interp_points),
                     num_interp_points, reference_data_b.begin());
-        impl::interpolation_apply(Pi, reference_data, _coeffs, element_bs);
+        impl::interpolation_apply(Pi, reference_data, std::span(_coeffs),
+                                  element_bs);
         apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
@@ -679,7 +663,7 @@ void interpolate(Function<T>& u, std::span<const T> f,
 
         auto ref_data = stdex::submdspan(reference_data, stdex::full_extent, 0,
                                          stdex::full_extent);
-        impl::interpolation_apply(Pi, ref_data, _coeffs, element_bs);
+        impl::interpolation_apply(Pi, ref_data, std::span(_coeffs), element_bs);
         apply_inverse_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
 
         // Copy interpolation dofs into coefficient vector

@@ -147,8 +147,7 @@ public:
   /// Interpolate a Function
   /// @param[in] v The function to be interpolated
   /// @param[in] cells The cells to interpolate on
-  void interpolate(const Function<T>& v,
-                   const std::span<const std::int32_t>& cells)
+  void interpolate(const Function<T>& v, std::span<const std::int32_t> cells)
   {
     fem::interpolate(*this, v, cells);
   }
@@ -174,7 +173,7 @@ public:
   /// @param[in] cells The cells to interpolate on
   void interpolate(
       const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
-      const std::span<const std::int32_t>& cells)
+      std::span<const std::int32_t> cells)
   {
     assert(_function_space);
     assert(_function_space->element());
@@ -232,8 +231,7 @@ public:
   /// `FiniteElement::interpolation_points()` for the element associated
   /// with `u`.
   /// @param[in] cells The cells to interpolate on
-  void interpolate(const Expression<T>& e,
-                   const std::span<const std::int32_t>& cells)
+  void interpolate(const Expression<T>& e, std::span<const std::int32_t> cells)
   {
     // Check that spaces are compatible
     assert(_function_space);
