@@ -42,13 +42,15 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
+from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from mesh_wire import generate_mesh_wire
 
 import ufl
 from dolfinx import fem, plot
 from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
-from ufl import FacetNormal, as_vector, cross, curl, inner, lhs, rhs, sqrt
+from ufl import (FacetNormal, as_vector, conj, cross, curl, inner, lhs, rhs,
+                 sqrt)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -197,12 +199,13 @@ def radial_distance(x):
 
 def curl_2d(a):
     """Returns the curl of two 2D vectors as a 3D vector"""
-    
+
     return as_vector((0, 0, a[1].dx(0) - a[0].dx(1)))
 
 # -
 
 # Next we define some mesh specific parameters
+
 
 # +
 # Constant definition
@@ -337,7 +340,7 @@ n_3d = as_vector((n[0], n[1], 0))
 # Definition of relative permittivity for Au @400nm
 reps_au = -1.0782
 ieps_au = 5.8089
-eps_au = -1.0782 + 1j*5.8089
+eps_au = -1.0782 + 1j * 5.8089
 # -
 
 # We want to define a space function for the permittivity
@@ -525,4 +528,76 @@ V_normEsh = fem.FunctionSpace(mesh, lagr_el)
 norm_expr = fem.Expression(norm_func, V_normEsh.element.interpolation_points)
 normEsh = fem.Function(V_normEsh)
 normEsh.interpolate(norm_expr)
+# -
+
+# +
+# Calculation of analytical efficiencies
+q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
+    eps_au,
+    n_bkg,
+    wl0,
+    radius_wire)
+
+# Vacuum impedance
+Z0 = np.sqrt(mu_0 / epsilon_0)
+
+# Magnetic field H
+Hh_3d = -1j * curl_2d(Esh) / Z0 / k0 / n_bkg
+
+Esh_3d = as_vector((Esh[0], Esh[1], 0))
+E_3d = as_vector((E[0], E[1], 0))
+
+# Intensity of the electromagnetic fields I0 = 0.5*E0**2/Z0
+# E0 = np.sqrt(ax**2 + ay**2) = 1, see background_electric_field
+I0 = 0.5 / Z0
+
+# Geometrical cross section of the wire
+gcs = 2 * radius_wire
+
+# Quantities for the calculation of efficiencies
+P = 0.5 * inner(cross(Esh_3d, conj(Hh_3d)), n_3d)
+Q = 0.5 * ieps_au * k0 * (inner(E_3d, E_3d)) / Z0 / n_bkg
+
+# Define integration domain for the wire
+dAu = dx(au_tag)
+
+# Normalized absorption efficiency
+q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / gcs / I0).real
+# Sum results from all MPI processes
+q_abs_fenics = mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+
+# Normalized scattering efficiency
+q_sca_fenics_proc = (fem.assemble_scalar(fem.form(P * dsbc)) / gcs / I0).real
+
+# Sum results from all MPI processes
+q_sca_fenics = mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
+
+# Extinction efficiency
+q_ext_fenics = q_abs_fenics + q_sca_fenics
+
+# Error calculation
+err_abs = np.abs(q_abs_analyt - q_abs_fenics) / q_abs_analyt
+err_sca = np.abs(q_sca_analyt - q_sca_fenics) / q_sca_analyt
+err_ext = np.abs(q_ext_analyt - q_ext_fenics) / q_ext_analyt
+
+# Check if errors are smaller than 1%
+assert err_abs < 0.01
+assert err_sca < 0.01
+assert err_ext < 0.01
+
+if MPI.COMM_WORLD.rank == 0:
+
+    print()
+    print(f"The analytical absorption efficiency is {q_abs_analyt}")
+    print(f"The numerical absorption efficiency is {q_abs_fenics}")
+    print(f"The error is {err_abs*100}%")
+    print()
+    print(f"The analytical scattering efficiency is {q_sca_analyt}")
+    print(f"The numerical scattering efficiency is {q_sca_fenics}")
+    print(f"The error is {err_sca*100}%")
+    print()
+    print(f"The analytical extinction efficiency is {q_ext_analyt}")
+    print(f"The numerical extinction efficiency is {q_ext_fenics}")
+    print(f"The error is {err_ext*100}%")
+
 # -
