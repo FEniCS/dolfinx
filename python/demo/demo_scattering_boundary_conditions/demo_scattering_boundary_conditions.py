@@ -42,7 +42,7 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
-from data.mesh_wire import generate_mesh_wire
+from mesh_wire import generate_mesh_wire
 
 import ufl
 from dolfinx import fem, plot
@@ -197,9 +197,8 @@ def radial_distance(x):
 
 def curl_2d(a):
     """Returns the curl of two 2D vectors as a 3D vector"""
-    ay_x = a[1].dx(0)
-    ax_y = a[0].dx(1)
-    return as_vector((0, 0, ay_x - ax_y))
+    
+    return as_vector((0, 0, a[1].dx(0) - a[0].dx(1)))
 
 
 # -
