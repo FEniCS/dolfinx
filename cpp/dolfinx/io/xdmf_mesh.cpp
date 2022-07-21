@@ -279,7 +279,7 @@ xt::xtensor<double, 2> xdmf_mesh::read_geometry_data(MPI_Comm comm,
   return x;
 }
 //----------------------------------------------------------------------------
-xt::xtensor<std::int64_t, 2>
+std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
 xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
                               const pugi::xml_node& node)
 {
@@ -310,6 +310,6 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
   std::vector<std::int64_t> cells = io::cells::apply_permutation(
       topology_data, shape, io::cells::perm_vtk(cell_type, shape[1]));
 
-  return xt::adapt(cells, std::vector<std::size_t>{shape[0], shape[1]});
+  return {std::move(cells), shape};
 }
 //----------------------------------------------------------------------------

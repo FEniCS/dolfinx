@@ -66,9 +66,9 @@ xt::xtensor<double, 2> read_geometry_data(MPI_Comm comm, const hid_t h5_id,
 
 /// Read Topology data
 /// @returns ((cell type, degree), topology)
-xt::xtensor<std::int64_t, 2> read_topology_data(MPI_Comm comm,
-                                                const hid_t h5_id,
-                                                const pugi::xml_node& node);
+std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
+read_topology_data(MPI_Comm comm, const hid_t h5_id,
+                   const pugi::xml_node& node);
 
 } // namespace io::xdmf_mesh
 } // namespace dolfinx

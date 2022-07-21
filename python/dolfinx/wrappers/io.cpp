@@ -116,7 +116,10 @@ void io(py::module& m)
           "read_topology_data",
           [](dolfinx::io::XDMFFile& self, const std::string& name,
              const std::string& xpath)
-          { return xt_as_pyarray(self.read_topology_data(name, xpath)); },
+          {
+            auto [cells, shape] = self.read_topology_data(name, xpath);
+            return as_pyarray(std::move(cells), shape);
+          },
           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def(
           "read_geometry_data",
