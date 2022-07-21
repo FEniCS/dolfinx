@@ -15,7 +15,6 @@
 #include <set>
 #include <tuple>
 #include <vector>
-#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::mesh
 {
@@ -71,13 +70,15 @@ create_new_vertices(MPI_Comm neighbor_comm,
 /// @param[in] old_mesh
 /// @param[in] cell_topology Topology of cells, (vertex indices)
 /// @param[in] new_vertex_coordinates
+/// @param[in] xhsape
 /// @param[in] redistribute Call graph partitioner if true
 /// @param[in] ghost_mode None or shared_facet
 /// @return New mesh
 mesh::Mesh partition(const mesh::Mesh& old_mesh,
                      const graph::AdjacencyList<std::int64_t>& cell_topology,
-                     const xt::xtensor<double, 2>& new_vertex_coordinates,
-                     bool redistribute, mesh::GhostMode ghost_mode);
+                     std::span<const double> new_vertex_coordinates,
+                     std::array<std::size_t, 2> xshape, bool redistribute,
+                     mesh::GhostMode ghost_mode);
 
 /// @todo Fix docstring. It is unclear.
 ///

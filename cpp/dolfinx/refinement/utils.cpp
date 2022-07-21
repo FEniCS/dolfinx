@@ -20,11 +20,8 @@
 #include <memory>
 #include <mpi.h>
 #include <vector>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
-using namespace xt::placeholders;
 
 namespace
 {
@@ -299,19 +296,15 @@ refinement::create_new_vertices(MPI_Comm neighbor_comm,
 mesh::Mesh
 refinement::partition(const mesh::Mesh& old_mesh,
                       const graph::AdjacencyList<std::int64_t>& cell_topology,
-                      const xt::xtensor<double, 2>& new_vertex_coordinates,
-                      bool redistribute, mesh::GhostMode gm)
+                      std::span<const double> new_vertex_coordinates,
+                      std::array<std::size_t, 2> xshape, bool redistribute,
+                      mesh::GhostMode gm)
 {
   if (redistribute)
   {
-    // xt::xtensor<double, 2> new_coords(new_vertex_coordinates);
-    std::vector<double> x(new_vertex_coordinates.data(),
-                          new_vertex_coordinates.data()
-                              + new_vertex_coordinates.size());
-    std::array<std::size_t, 2> xshape
-        = {new_vertex_coordinates.shape(0), new_vertex_coordinates.shape(1)};
     return mesh::create_mesh(old_mesh.comm(), cell_topology,
-                             old_mesh.geometry().cmap(), x, xshape, gm);
+                             old_mesh.geometry().cmap(), new_vertex_coordinates,
+                             xshape, gm);
   }
 
   auto partitioner = [](MPI_Comm comm, int, int tdim,
@@ -372,15 +365,9 @@ refinement::partition(const mesh::Mesh& old_mesh,
                                               std::move(dest_offsets));
   };
 
-  std::vector<double> x(new_vertex_coordinates.data(),
-                        new_vertex_coordinates.data()
-                            + new_vertex_coordinates.size());
-  std::array<std::size_t, 2> xshape
-      = {new_vertex_coordinates.shape(0), new_vertex_coordinates.shape(1)};
-
   return mesh::create_mesh(old_mesh.comm(), cell_topology,
-                           old_mesh.geometry().cmap(), x, xshape, gm,
-                           partitioner);
+                           old_mesh.geometry().cmap(), new_vertex_coordinates,
+                           xshape, gm, partitioner);
 }
 //-----------------------------------------------------------------------------
 

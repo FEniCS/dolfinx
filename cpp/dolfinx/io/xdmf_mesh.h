@@ -10,7 +10,6 @@
 #include <mpi.h>
 #include <span>
 #include <string>
-#include <xtensor/xtensor.hpp>
 
 namespace pugi
 {

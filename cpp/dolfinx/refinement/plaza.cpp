@@ -17,8 +17,6 @@
 #include <map>
 #include <numeric>
 #include <vector>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::refinement;
@@ -640,9 +638,8 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute,
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
-  auto coords = xt::adapt(new_vertex_coords,
-                          std::vector<std::size_t>{xshape[0], xshape[1]});
-  return {partition(mesh, cell_adj, coords, redistribute, ghost_mode),
+  return {partition(mesh, cell_adj, std::span(new_vertex_coords), xshape,
+                    redistribute, ghost_mode),
           std::move(parent_cell), std::move(parent_facet)};
 }
 //-----------------------------------------------------------------------------
@@ -676,9 +673,8 @@ plaza::refine(const mesh::Mesh& mesh,
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
-  auto coords = xt::adapt(new_vertex_coords,
-                          std::vector<std::size_t>{xshape[0], xshape[1]});
-  return {partition(mesh, cell_adj, coords, redistribute, ghost_mode),
+  return {partition(mesh, cell_adj, new_vertex_coords, xshape, redistribute,
+                    ghost_mode),
           std::move(parent_cell), std::move(parent_facet)};
 }
 //------------------------------------------------------------------------------
