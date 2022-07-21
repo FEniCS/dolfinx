@@ -54,7 +54,7 @@ public:
   /// @param[in] mesh
   /// @param[in] X points on reference cell, shape=(number of points,
   /// tdim) and storage is row-major.
-  /// @param[in] xshape Shape of `X`.
+  /// @param[in] Xshape Shape of `X`.
   /// @param[in] fn function for tabulating expression
   /// @param[in] value_shape shape of expression evaluated at single point
   /// @param[in] argument_function_space Function space for Argument
