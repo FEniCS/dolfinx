@@ -242,6 +242,7 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
   std::vector<double> K_b(Xshape[0] * tdim * gdim);
   mdspan3_t K(K_b.data(), Xshape[0], tdim, gdim);
   std::vector<double> detJ(Xshape[0]);
+  std::vector<double> det_scratch(2 * tdim * gdim);
 
   // Get the interpolation operator (matrix) `Pi` that maps a function
   // evaluated at the interpolation points to the element degrees of
@@ -305,7 +306,7 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
       cmap.compute_jacobian(dphi, coord_dofs, _J);
       auto _K = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
       cmap.compute_jacobian_inverse(_J, _K);
-      detJ[p] = cmap.compute_jacobian_determinant(_J);
+      detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
     }
 
     // Copy evaluated basis on reference, apply DOF transformations, and

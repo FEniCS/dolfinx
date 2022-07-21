@@ -314,7 +314,7 @@ public:
   /// @param[in,out] u The values at the points. Values are not computed
   /// for points with a negative cell index. This argument must be
   /// passed with the correct size.
-  void eval(const xt::xtensor<double, 2>& x,
+  void eval(std::span<const double> x, std::array<std::size_t, 2> xshape,
             const std::span<const std::int32_t>& cells,
             xt::xtensor<T, 2>& u) const
   {
@@ -324,12 +324,12 @@ public:
     // TODO: This could be easily made more efficient by exploiting points
     // being ordered by the cell to which they belong.
 
-    if (x.shape(0) != cells.size())
+    if (xshape[0] != cells.size())
     {
       throw std::runtime_error(
           "Number of points and number of cells must be equal.");
     }
-    if (x.shape(0) != u.shape(0))
+    if (xshape[0] != u.shape(0))
     {
       throw std::runtime_error(
           "Length of array for Function values must be the "
@@ -421,15 +421,16 @@ public:
                                  stdex::full_extent, 0);
 
     // Reference coordinates for each point
-    std::vector<double> Xb(x.shape(0) * tdim);
-    mdspan2_t X(Xb.data(), x.shape(0), tdim);
+    std::vector<double> Xb(xshape[0] * tdim);
+    mdspan2_t X(Xb.data(), xshape[0], tdim);
 
     // Geometry data at each point
-    std::vector<double> J_b(x.shape(0) * gdim * tdim);
-    mdspan3_t J(J_b.data(), x.shape(0), gdim, tdim);
-    std::vector<double> K_b(x.shape(0) * tdim * gdim);
-    mdspan3_t K(K_b.data(), x.shape(0), tdim, gdim);
-    std::vector<double> detJ(x.shape(0));
+    std::vector<double> J_b(xshape[0] * gdim * tdim);
+    mdspan3_t J(J_b.data(), xshape[0], gdim, tdim);
+    std::vector<double> K_b(xshape[0] * tdim * gdim);
+    mdspan3_t K(K_b.data(), xshape[0], tdim, gdim);
+    std::vector<double> detJ(xshape[0]);
+    std::vector<double> det_scratch(2 * gdim * tdim);
 
     // Prepare geometry data in each cell
     for (std::size_t p = 0; p < cells.size(); ++p)
@@ -451,7 +452,7 @@ public:
       }
 
       for (std::size_t j = 0; j < gdim; ++j)
-        xp(0, j) = x(p, j);
+        xp(0, j) = x[p * xshape[1] + j];
 
       auto _J = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
       auto _K = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
@@ -470,7 +471,8 @@ public:
         for (std::size_t i = 0; i < coord_dofs.extent(1); ++i)
           x0[i] += coord_dofs(0, i);
         CoordinateElement::pull_back_affine_new(Xp, _K, x0, xp);
-        detJ[p] = CoordinateElement::compute_jacobian_determinant(_J);
+        detJ[p]
+            = CoordinateElement::compute_jacobian_determinant(_J, det_scratch);
       }
       else
       {
@@ -480,7 +482,8 @@ public:
         cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
         CoordinateElement::compute_jacobian(dphi, coord_dofs, _J);
         CoordinateElement::compute_jacobian_inverse(_J, _K);
-        detJ[p] = CoordinateElement::compute_jacobian_determinant(_J);
+        detJ[p]
+            = CoordinateElement::compute_jacobian_determinant(_J, det_scratch);
       }
 
       for (std::size_t j = 0; j < X.extent(1); ++j)
@@ -489,9 +492,9 @@ public:
 
     // Prepare basis function data structures
     std::vector<double> basis_derivatives_reference_values_b(
-        1 * x.shape(0) * space_dimension * reference_value_size);
+        1 * xshape[0] * space_dimension * reference_value_size);
     cmdspan4_t basis_derivatives_reference_values(
-        basis_derivatives_reference_values_b.data(), 1, x.shape(0),
+        basis_derivatives_reference_values_b.data(), 1, xshape[0],
         space_dimension, reference_value_size);
     std::vector<double> basis_values_b(space_dimension * value_size);
     mdspan2_t basis_values(basis_values_b.data(), space_dimension, value_size);

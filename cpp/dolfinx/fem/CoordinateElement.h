@@ -117,28 +117,36 @@ public:
 
   /// Compute the determinant of the Jacobian
   /// @param[in] J Jacobian (shape=(gdim, tdim))
+  /// @param[in] w Working memory, required when gdim \ne tdim. Size
+  /// must be at least 2 * gdim * tdim.
   /// @return Determinant of `J`
   template <typename U>
-  static double compute_jacobian_determinant(const U& J)
+  static double
+  compute_jacobian_determinant(const U& J, std::span<typename U::value_type> w)
   {
+    static_assert(U::rank() == 2, "Must be rank 2");
+
     if (J.extent(0) == J.extent(1))
       return math::det(J);
     else
     {
       // TODO: pass buffers for B and BA
+      assert(w.size() >= 2 * J.extent(0) * J.extent(1));
 
       using T = typename U::element_type;
-      std::vector<double> Bb(J.extent(0) * J.extent(1));
+      // std::vector<double> Bb(J.extent(0) * J.extent(1));
       namespace stdex = std::experimental;
-      stdex::mdspan<T, stdex::dextents<std::size_t, 2>> B(
-          Bb.data(), J.extent(1), J.extent(0));
+      stdex::mdspan<T, stdex::dextents<std::size_t, 2>> B(w.data(), J.extent(1),
+                                                          J.extent(0));
       for (std::size_t i = 0; i < B.extent(0); ++i)
         for (std::size_t j = 0; j < B.extent(1); ++j)
           B(i, j) = J(j, i);
 
       std::vector<T> BAb(B.extent(0) * J.extent(1));
       stdex::mdspan<T, stdex::dextents<std::size_t, 2>> BA(
-          BAb.data(), B.extent(0), J.extent(1));
+          w.data() + J.extent(0) * J.extent(1), B.extent(0), J.extent(1));
+      // stdex::mdspan<T, stdex::dextents<std::size_t, 2>> BA(
+      //     BAb.data(), B.extent(0), J.extent(1));
       math::dot(B, J, BA);
       return std::sqrt(math::det(BA));
     }

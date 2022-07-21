@@ -9,9 +9,8 @@
 #include <array>
 #include <basix/mdspan.hpp>
 #include <cmath>
+#include <string>
 #include <type_traits>
-#include <xtensor/xfixed.hpp>
-#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::math
 {
@@ -63,7 +62,6 @@ auto det(const T* A, std::array<std::size_t, 2> shape)
   {
     // Leibniz formula combined with Kahan’s method for accurate
     // computation of 3 x 3 determinants
-
     T w0 = difference_of_products(A[3 + 1], A[3 + 2], A[3 * 2 + 1],
                                   A[2 * 3 + 2]);
     T w1 = difference_of_products(A[3], A[3 + 2], A[3 * 2], A[3 * 2 + 2]);
@@ -84,12 +82,12 @@ auto det(const T* A, std::array<std::size_t, 2> shape)
 /// @param[in] A The matrix tp compute the determinant of
 /// @return The determinate of @p A
 template <typename Matrix>
-auto det(const Matrix& A)
+auto det(Matrix A)
 {
-  using value_type = typename Matrix::value_type;
+  static_assert(Matrix::rank() == 2, "Must be rank 2");
   assert(A.extent(0) == A.extent(1));
-  // assert(A.dimension() == 2);
 
+  using value_type = typename Matrix::value_type;
   const int nrows = A.extent(0);
   switch (nrows)
   {
@@ -122,8 +120,11 @@ auto det(const Matrix& A)
 /// same shape as @p A.
 /// @warning This function does not check if A is invertible
 template <typename U, typename V>
-void inv(const U& A, V&& B)
+void inv(U A, V B)
 {
+  static_assert(U::rank() == 2, "Must be rank 2");
+  static_assert(V::rank() == 2, "Must be rank 2");
+
   using value_type = typename U::value_type;
   const std::size_t nrows = A.extent(0);
   switch (nrows)
@@ -175,8 +176,12 @@ void inv(const U& A, V&& B)
 /// @param[in] transpose Computes C += A^T * B^T if false, otherwise
 /// computed C += A^T * B^T
 template <typename U, typename V, typename P>
-void dot(const U& A, const V& B, P&& C, bool transpose = false)
+void dot(U A, V B, P C, bool transpose = false)
 {
+  static_assert(U::rank() == 2, "Must be rank 2");
+  static_assert(V::rank() == 2, "Must be rank 2");
+  static_assert(P::rank() == 2, "Must be rank 2");
+
   if (transpose)
   {
     assert(A.extent(0) == B.extent(1));
@@ -202,8 +207,11 @@ void dot(const U& A, const V& B, P&& C, bool transpose = false)
 /// with a size which is the transpose of the size of `A`.
 /// @pre The matrix `A` must be full rank
 template <typename U, typename V>
-void pinv(const U& A, V&& P)
+void pinv(U A, V P)
 {
+  static_assert(U::rank() == 2, "Must be rank 2");
+  static_assert(V::rank() == 2, "Must be rank 2");
+
   assert(A.extent(0) > A.extent(1));
   assert(P.extent(1) == A.extent(0));
   assert(P.extent(0) == A.extent(1));

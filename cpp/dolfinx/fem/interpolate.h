@@ -312,6 +312,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   std::vector<double> K_b(Xshape[0] * tdim * gdim);
   mdspan3_t K(K_b.data(), Xshape[0], tdim, gdim);
   std::vector<double> detJ(Xshape[0]);
+  std::vector<double> det_scratch(2 * gdim * tdim);
 
   // Get interpolation operator
   const auto [_Pi_1, pi_shape] = element1->interpolation_operator();
@@ -350,7 +351,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
       cmap.compute_jacobian(dphi, coord_dofs, _J);
       auto _K = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
       cmap.compute_jacobian_inverse(_J, _K);
-      detJ[p] = cmap.compute_jacobian_determinant(_J);
+      detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
     }
 
     // Copy evaluated basis on reference, apply DOF transformations, and
@@ -616,6 +617,7 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
     std::vector<double> K_b(Xshape[0] * tdim * gdim);
     mdspan3_t K(K_b.data(), Xshape[0], tdim, gdim);
     std::vector<double> detJ(Xshape[0]);
+    std::vector<double> det_scratch(2 * gdim * tdim);
 
     std::vector<double> coord_dofs_b(num_dofs_g * 3);
     mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
@@ -678,7 +680,7 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
         auto _K
             = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
         cmap.compute_jacobian_inverse(_J, _K);
-        detJ[p] = cmap.compute_jacobian_determinant(_J);
+        detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
       }
 
       std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);

@@ -458,10 +458,6 @@ void declare_objects(py::module& m, const std::string& type)
           {
             // TODO: handle 1d case
 
-            std::vector<std::size_t> shape_x(x.shape(), x.shape() + 2);
-            auto _x
-                = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape_x);
-
             std::array<std::size_t, 2> shape_u;
             std::copy_n(u.shape(), 2, shape_u.begin());
 
@@ -471,8 +467,11 @@ void declare_objects(py::module& m, const std::string& type)
             //                                  xt::no_ownership(), shape_u);
             xt::xtensor<T, 2> _u(shape_u);
             std::copy_n(u.data(), u.size(), _u.data());
-
-            self.eval(_x, std::span(cells.data(), cells.size()), _u);
+ƒ
+            self.eval(x,
+                      {static_cast<std::size_t>(x.shape(0)),
+                       static_cast<std::size_t>(x.shape(1))},
+                      std::span(cells.data(), cells.size()), _u);
             std::copy_n(_u.data(), _u.size(), u.mutable_data());
           },
           py::arg("x"), py::arg("cells"), py::arg("values"),
