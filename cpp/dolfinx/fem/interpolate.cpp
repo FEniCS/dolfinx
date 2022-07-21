@@ -27,12 +27,18 @@ fem::interpolation_coords(const FiniteElement& element, const mesh::Mesh& mesh,
 
   // Get the interpolation points on the reference cells
   const auto [X, Xshape] = element.interpolation_points();
-  xt::xtensor<double, 4> _phi(cmap.tabulate_shape(0, Xshape[0]));
-  cmap.tabulate(0, X, Xshape, _phi);
-  xt::xtensor<double, 2> phi({_phi.shape(1), _phi.shape(2)});
-  for (std::size_t i = 0; i < phi.shape(0); ++i)
-    for (std::size_t j = 0; j < phi.shape(1); ++j)
-      phi(i, j) = _phi(0, i, j, 0);
+
+  // Evaluate coordinate element basis at reference points
+  namespace stdex = std::experimental;
+  using cmdspan4_t
+      = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
+  std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(0, Xshape[0]);
+  std::vector<double> phi_b(
+      std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+  cmdspan4_t phi_full(phi_b.data(), phi_shape);
+  cmap.tabulate(0, X, Xshape, phi_b);
+  auto phi = stdex::submdspan(phi_full, 0, stdex::full_extent,
+                              stdex::full_extent, 0);
 
   // Push reference coordinates (X) forward to the physical coordinates
   // (x) for each cell

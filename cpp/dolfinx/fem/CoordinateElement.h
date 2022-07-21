@@ -134,19 +134,16 @@ public:
       assert(w.size() >= 2 * J.extent(0) * J.extent(1));
 
       using T = typename U::element_type;
-      // std::vector<double> Bb(J.extent(0) * J.extent(1));
       namespace stdex = std::experimental;
       stdex::mdspan<T, stdex::dextents<std::size_t, 2>> B(w.data(), J.extent(1),
                                                           J.extent(0));
+      stdex::mdspan<T, stdex::dextents<std::size_t, 2>> BA(
+          w.data() + J.extent(0) * J.extent(1), B.extent(0), J.extent(1));
+
       for (std::size_t i = 0; i < B.extent(0); ++i)
         for (std::size_t j = 0; j < B.extent(1); ++j)
           B(i, j) = J(j, i);
 
-      std::vector<T> BAb(B.extent(0) * J.extent(1));
-      stdex::mdspan<T, stdex::dextents<std::size_t, 2>> BA(
-          w.data() + J.extent(0) * J.extent(1), B.extent(0), J.extent(1));
-      // stdex::mdspan<T, stdex::dextents<std::size_t, 2>> BA(
-      //     BAb.data(), B.extent(0), J.extent(1));
       math::dot(B, J, BA);
       return std::sqrt(math::det(BA));
     }
