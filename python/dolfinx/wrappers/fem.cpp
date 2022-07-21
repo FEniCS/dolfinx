@@ -542,12 +542,12 @@ void declare_objects(py::module& m, const std::string& type)
                           _values);
               },
               py::arg("active_cells"), py::arg("values"))
-          .def("X", [](const dolfinx::fem::Expression<T>& self)
-                                 {
-                                   auto [X, shape] = self.X();
-                                   return dolfinx_wrappers::as_pyarray(
-                                       std::move(X), shape);
-                                 })
+          .def("X",
+               [](const dolfinx::fem::Expression<T>& self)
+               {
+                 auto [X, shape] = self.X();
+                 return dolfinx_wrappers::as_pyarray(std::move(X), shape);
+               })
           .def_property_readonly("dtype",
                                  [](const dolfinx::fem::Expression<T>& self)
                                  { return py::dtype::of<T>(); })

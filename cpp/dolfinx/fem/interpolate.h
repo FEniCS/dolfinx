@@ -303,6 +303,10 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
         coord_dofs(i, j) = x_g[pos + j];
     }
 
+    // TODO: the below has a bug for non-affine cells - the geometry
+    // basis should be evaluated at every point. See
+    // https://github.com/FEniCS/dolfinx/issues/2275.
+
     // Compute Jacobians and reference points for current cell
     std::fill(J_b.begin(), J_b.end(), 0);
     for (std::size_t p = 0; p < Xshape[0]; ++p)

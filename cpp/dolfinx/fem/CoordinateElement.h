@@ -153,9 +153,9 @@ public:
 
   /// Compute physical coordinates x for points X  in the reference
   /// configuration
-  /// @param[in,out] x The physical coordinates of the reference points X
-  /// @param[in] cell_geometry The cell node coordinates (physical)
-  /// @param[in] phi Tabulated basis functions at reference points X
+  /// @param[in,out] x The physical coordinates of the reference points X (rank 2)
+  /// @param[in] cell_geometry The cell node physical coordinates (rank 2)
+  /// @param[in] phi Tabulated basis functions at reference points X (rank 2)
   template <typename U, typename V, typename W>
   static void push_forward(U&& x, const V& cell_geometry, const W& phi)
   {

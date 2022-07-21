@@ -210,7 +210,9 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
   using mdspan3_t = stdex::mdspan<double, stdex::dextents<std::size_t, 3>>;
 
   // TODO: the below has a bug - for non-affine maps the basis needs to
-  // be evaluated at every point
+  // be evaluated at every point. See
+  // https://github.com/FEniCS/dolfinx/issues/2275.
+
   // Evaluate coordinate map basis at reference interpolation points
   const auto [X, Xshape] = e1->interpolation_points();
   std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, Xshape[0]);
