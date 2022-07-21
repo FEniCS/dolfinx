@@ -417,6 +417,7 @@ std::vector<double> interpolation_coords(const FiniteElement& element,
 /// fem::interpolation_coords.
 template <typename T>
 void interpolate(Function<T>& u, std::span<const T> f,
+                 std::array<std::size_t, 2> fshape,
                  std::span<const std::int32_t> cells)
 {
   namespace stdex = std::experimental;
@@ -438,6 +439,9 @@ void interpolate(Function<T>& u, std::span<const T> f,
                              "Interpolate into subspaces.");
   }
 
+  if (fshape[0] != element->value_size())
+    throw std::runtime_error("Interpolation data has the wrong shape/size.");
+
   // Get mesh
   assert(u.function_space());
   auto mesh = u.function_space()->mesh();
@@ -454,10 +458,7 @@ void interpolate(Function<T>& u, std::span<const T> f,
   }
 
   const std::size_t f_shape1 = f.size() / element->value_size();
-  stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> _f(
-      f.data(), element->value_size(), f.size() / element->value_size());
-  if (_f.extent(1) != cells.size())
-    throw std::runtime_error("Interpolation data has wrong shape.");
+  stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> _f(f.data(), fshape);
 
   // Get dofmap
   const auto dofmap = u.function_space()->dofmap();

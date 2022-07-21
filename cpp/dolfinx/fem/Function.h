@@ -182,6 +182,7 @@ public:
         *_function_space->element(), *_function_space->mesh(), cells);
     auto _x = xt::adapt(x, std::vector<std::size_t>{3, x.size() / 3});
     auto fx = f(_x);
+    assert(fx.dimension() <= 2);
     if (int vs = _function_space->element()->value_size();
         vs == 1 and fx.dimension() == 1)
     {
@@ -206,7 +207,14 @@ public:
       }
     }
 
-    fem::interpolate(*this, std::span<const T>(fx.data(), fx.size()), cells);
+    std::array<std::size_t, 2> fshape;
+    if (fx.dimension() == 1)
+      fshape = {1, fx.shape(0)};
+    else
+      fshape = {fx.shape(0), fx.shape(1)};
+
+    fem::interpolate(*this, std::span<const T>(fx.data(), fx.size()), fshape,
+                     cells);
   }
 
   /// Interpolate an expression function on the whole domain
@@ -284,7 +292,8 @@ public:
                                         {value_size, num_cells * num_points});
 
     // Interpolate values into appropriate space
-    fem::interpolate(*this, std::span<const T>(_f.data(), _f.size()), cells);
+    fem::interpolate(*this, std::span<const T>(_f.data(), _f.size()),
+                     {_f.shape(0), _f.shape(1)}, cells);
   }
 
   /// Interpolate an Expression (based on UFL) on all cells
