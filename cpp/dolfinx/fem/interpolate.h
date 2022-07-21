@@ -439,7 +439,7 @@ void interpolate(Function<T>& u, std::span<const T> f,
                              "Interpolate into subspaces.");
   }
 
-  if (fshape[0] != element->value_size())
+  if (fshape[0] != (std::size_t)element->value_size())
     throw std::runtime_error("Interpolation data has the wrong shape/size.");
 
   // Get mesh
