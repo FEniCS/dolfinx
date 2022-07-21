@@ -621,10 +621,8 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute,
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    auto coords = xt::adapt(new_vertex_coords,
-                            std::vector<std::size_t>{xshape[0], xshape[1]});
     return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
-                              coords, mesh::GhostMode::none),
+                              new_vertex_coords, xshape, mesh::GhostMode::none),
             std::move(parent_cell), std::move(parent_facet)};
   }
 
@@ -659,10 +657,8 @@ plaza::refine(const mesh::Mesh& mesh,
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    auto coords = xt::adapt(new_vertex_coords,
-                            std::vector<std::size_t>{xshape[0], xshape[1]});
     return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
-                              coords, mesh::GhostMode::none),
+                              new_vertex_coords, xshape, mesh::GhostMode::none),
             std::move(parent_cell), std::move(parent_facet)};
   }
 

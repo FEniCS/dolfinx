@@ -63,33 +63,12 @@ reorder_list(const graph::AdjacencyList<T>& list,
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        const fem::CoordinateElement& element,
-                       const xt::xtensor<double, 2>& x,
-                       mesh::GhostMode ghost_mode)
-{
-  return create_mesh(comm, cells, element, x, ghost_mode,
-                     create_cell_partitioner());
-}
-//-----------------------------------------------------------------------------
-Mesh mesh::create_mesh(MPI_Comm comm,
-                       const graph::AdjacencyList<std::int64_t>& cells,
-                       const fem::CoordinateElement& element,
                        std::span<const double> x,
                        std::array<std::size_t, 2> xshape,
                        mesh::GhostMode ghost_mode)
 {
   return create_mesh(comm, cells, element, x, xshape, ghost_mode,
                      create_cell_partitioner());
-}
-//-----------------------------------------------------------------------------
-Mesh mesh::create_mesh(MPI_Comm comm,
-                       const graph::AdjacencyList<std::int64_t>& cells,
-                       const fem::CoordinateElement& element,
-                       const xt::xtensor<double, 2>& x,
-                       mesh::GhostMode ghost_mode,
-                       const mesh::CellPartitionFunction& cell_partitioner)
-{
-  return create_mesh(comm, cells, element, x, {x.shape(0), x.shape(1)},
-                     ghost_mode, cell_partitioner);
 }
 //-----------------------------------------------------------------------------
 Mesh mesh::create_mesh(MPI_Comm comm,

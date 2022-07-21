@@ -130,11 +130,10 @@ mesh::Mesh build_tet(MPI_Comm comm,
     std::copy(c.begin(), c.end(), std::next(cells.begin(), 4 * offset));
   }
 
-  auto _geom = xt::adapt(geom, std::vector<std::size_t>{geom.size() / 3, 3});
-
   fem::CoordinateElement element(CellType::tetrahedron, 1);
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 4),
-                     element, _geom, ghost_mode, partitioner);
+                     element, geom, {geom.size() / 3, 3}, ghost_mode,
+                     partitioner);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_hex(MPI_Comm comm,
@@ -175,10 +174,10 @@ mesh::Mesh build_hex(MPI_Comm comm,
               std::next(cells.begin(), (i - range_c[0]) * 8));
   }
 
-  auto _geom = xt::adapt(geom, std::vector<std::size_t>{geom.size() / 3, 3});
   fem::CoordinateElement element(CellType::hexahedron, 1);
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 8),
-                     element, _geom, ghost_mode, partitioner);
+                     element, geom, {geom.size() / 3, 3}, ghost_mode,
+                     partitioner);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_prism(MPI_Comm comm,
@@ -223,10 +222,10 @@ mesh::Mesh build_prism(MPI_Comm comm,
               std::next(cells.begin(), 6 * ((i - range_c[0]) * 2 + 1)));
   }
 
-  auto _geom = xt::adapt(geom, std::vector<std::size_t>{geom.size() / 3, 3});
   fem::CoordinateElement element(CellType::prism, 1);
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 6),
-                     element, _geom, ghost_mode, partitioner);
+                     element, geom, {geom.size() / 3, 3}, ghost_mode,
+                     partitioner);
 }
 //-----------------------------------------------------------------------------
 
@@ -262,10 +261,9 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
   // Receive mesh according to parallel policy
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    xt::xtensor<double, 2> geom({0, 1});
     return create_mesh(
         comm, graph::regular_adjacency_list(std::vector<std::int64_t>(), 2),
-        element, geom, ghost_mode, partitioner);
+        element, std::vector<double>(), {0, 1}, ghost_mode, partitioner);
   }
 
   const double a = x[0];
@@ -288,9 +286,9 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
     throw std::runtime_error("Number of points on interval must be at least 1");
 
   // Create vertices
-  xt::xtensor<double, 2> geom({(nx + 1), 1});
+  std::vector<double> geom(nx + 1);
   for (std::size_t ix = 0; ix <= nx; ix++)
-    geom(ix, 0) = a + ab * static_cast<double>(ix);
+    geom[ix] = a + ab * static_cast<double>(ix);
 
   // Create intervals
   std::vector<std::int64_t> cells(nx * 2);
@@ -299,7 +297,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
       cells[2 * ix + j] = ix + j;
 
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 2),
-                     element, geom, ghost_mode, partitioner);
+                     element, geom, {geom.size(), 1}, ghost_mode, partitioner);
 }
 } // namespace
 
@@ -325,10 +323,9 @@ mesh::Mesh build_tri(MPI_Comm comm,
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    xt::xtensor<double, 2> geom({0, 2});
     return create_mesh(
         comm, graph::regular_adjacency_list(std::vector<std::int64_t>(), 3),
-        element, geom, ghost_mode, partitioner);
+        element, std::vector<double>(), {0, 2}, ghost_mode, partitioner);
   }
 
   const std::array<double, 2> p0 = p[0];
@@ -376,7 +373,7 @@ mesh::Mesh build_tri(MPI_Comm comm,
     nc = 2 * nx * ny;
   }
 
-  xt::xtensor<double, 2> geom({nv, 2});
+  std::vector<double> geom(nv * 2);
   std::vector<std::int64_t> cells(nc * 3);
 
   // Create main vertices
@@ -386,8 +383,8 @@ mesh::Mesh build_tri(MPI_Comm comm,
     const double x1 = c + cd * static_cast<double>(iy);
     for (std::size_t ix = 0; ix <= nx; ix++)
     {
-      geom(vertex, 0) = a + ab * static_cast<double>(ix);
-      geom(vertex, 1) = x1;
+      geom[2 * vertex + 0] = a + ab * static_cast<double>(ix);
+      geom[2 * vertex + 1] = x1;
       ++vertex;
     }
   }
@@ -401,8 +398,8 @@ mesh::Mesh build_tri(MPI_Comm comm,
       const double x1 = c + cd * (static_cast<double>(iy) + 0.5);
       for (std::size_t ix = 0; ix < nx; ix++)
       {
-        geom(vertex, 0) = a + ab * (static_cast<double>(ix) + 0.5);
-        geom(vertex, 1) = x1;
+        geom[2 * vertex + 0] = a + ab * (static_cast<double>(ix) + 0.5);
+        geom[2 * vertex + 1] = x1;
         ++vertex;
       }
     }
@@ -498,7 +495,8 @@ mesh::Mesh build_tri(MPI_Comm comm,
   }
 
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 3),
-                     element, geom, ghost_mode, partitioner);
+                     element, geom, {geom.size() / 2, 2}, ghost_mode,
+                     partitioner);
 }
 
 //-----------------------------------------------------------------------------
@@ -512,10 +510,9 @@ mesh::Mesh build_quad(MPI_Comm comm,
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    xt::xtensor<double, 2> geom({0, 2});
     return create_mesh(
         comm, graph::regular_adjacency_list(std::vector<std::int64_t>(), 4),
-        element, geom, ghost_mode, partitioner);
+        element, std::vector<double>(), {0, 2}, ghost_mode, partitioner);
   }
 
   const std::size_t nx = n[0];
@@ -530,15 +527,15 @@ mesh::Mesh build_quad(MPI_Comm comm,
   const double cd = (d - c) / static_cast<double>(ny);
 
   // Create vertices
-  xt::xtensor<double, 2> geom({(nx + 1) * (ny + 1), 2});
+  std::vector<double> geom((nx + 1) * (ny + 1) * 2);
   std::size_t vertex = 0;
   for (std::size_t ix = 0; ix <= nx; ix++)
   {
     double x0 = a + ab * static_cast<double>(ix);
     for (std::size_t iy = 0; iy <= ny; iy++)
     {
-      geom(vertex, 0) = x0;
-      geom(vertex, 1) = c + cd * static_cast<double>(iy);
+      geom[2 * vertex + 0] = x0;
+      geom[2 * vertex + 1] = c + cd * static_cast<double>(iy);
       ++vertex;
     }
   }
@@ -558,7 +555,8 @@ mesh::Mesh build_quad(MPI_Comm comm,
   }
 
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 4),
-                     element, geom, ghost_mode, partitioner);
+                     element, geom, {geom.size() / 2, 2}, ghost_mode,
+                     partitioner);
 }
 } // namespace
 

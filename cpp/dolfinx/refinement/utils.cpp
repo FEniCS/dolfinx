@@ -304,9 +304,14 @@ refinement::partition(const mesh::Mesh& old_mesh,
 {
   if (redistribute)
   {
-    xt::xtensor<double, 2> new_coords(new_vertex_coordinates);
+    // xt::xtensor<double, 2> new_coords(new_vertex_coordinates);
+    std::vector<double> x(new_vertex_coordinates.data(),
+                          new_vertex_coordinates.data()
+                              + new_vertex_coordinates.size());
+    std::array<std::size_t, 2> xshape
+        = {new_vertex_coordinates.shape(0), new_vertex_coordinates.shape(1)};
     return mesh::create_mesh(old_mesh.comm(), cell_topology,
-                             old_mesh.geometry().cmap(), new_coords, gm);
+                             old_mesh.geometry().cmap(), x, xshape, gm);
   }
 
   auto partitioner = [](MPI_Comm comm, int, int tdim,
@@ -367,9 +372,15 @@ refinement::partition(const mesh::Mesh& old_mesh,
                                               std::move(dest_offsets));
   };
 
+  std::vector<double> x(new_vertex_coordinates.data(),
+                        new_vertex_coordinates.data()
+                            + new_vertex_coordinates.size());
+  std::array<std::size_t, 2> xshape
+      = {new_vertex_coordinates.shape(0), new_vertex_coordinates.shape(1)};
+
   return mesh::create_mesh(old_mesh.comm(), cell_topology,
-                           old_mesh.geometry().cmap(), new_vertex_coordinates,
-                           gm, partitioner);
+                           old_mesh.geometry().cmap(), x, xshape, gm,
+                           partitioner);
 }
 //-----------------------------------------------------------------------------
 
