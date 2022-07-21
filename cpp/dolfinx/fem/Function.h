@@ -207,7 +207,7 @@ public:
       }
     }
 
-    fem::interpolate(*this, fx, cells);
+    fem::interpolate(*this, std::span<const T>(fx.data(), fx.size()), cells);
   }
 
   /// Interpolate an expression function on the whole domain
@@ -286,7 +286,7 @@ public:
                                         {value_size, num_cells * num_points});
 
     // Interpolate values into appropriate space
-    fem::interpolate(*this, _f, cells);
+    fem::interpolate(*this, std::span<const T>(_f.data(), _f.size()), cells);
   }
 
   /// Interpolate an Expression (based on UFL) on all cells

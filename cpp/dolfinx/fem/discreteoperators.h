@@ -371,7 +371,7 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
       {
         auto values = stdex::submdspan(mapped_values, stdex::full_extent, i,
                                        stdex::full_extent);
-        impl::interpolation_apply_new(Pi_1, values, local1, bs1);
+        impl::interpolation_apply(Pi_1, values, local1, bs1);
         for (std::size_t j = 0; j < local1.size(); j++)
           Ab[space_dim0 * j + i] = local1[j];
       }

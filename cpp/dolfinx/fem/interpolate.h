@@ -17,7 +17,6 @@
 #include <numeric>
 #include <span>
 #include <vector>
-#include <xtensor/xarray.hpp>
 
 namespace dolfinx::fem
 {
@@ -26,7 +25,7 @@ class Function;
 
 namespace impl
 {
-/// Apply interpolation operator Pi to data to evaluate the dof
+/// @brief Apply interpolation operator Pi to data to evaluate the dof
 /// coefficients
 /// @param[in] Pi The interpolation matrix (shape = (num dofs,
 /// num_points * value_size))
@@ -35,9 +34,12 @@ namespace impl
 /// @param[out] coeffs The degrees of freedom to compute
 /// @param[in] bs The block size
 template <typename U, typename V, typename T>
-void interpolation_apply_new(const U& Pi, const V& data, std::vector<T>& coeffs,
-                             int bs)
+void interpolation_apply(const U& Pi, const V& data, std::vector<T>& coeffs,
+                         int bs)
 {
+  static_assert(U::rank() == 2, "Must be rank 2");
+  static_assert(V::rank() == 2, "Must be rank 2");
+
   // Compute coefficients = Pi * x (matrix-vector multiply)
   if (bs == 1)
   {
@@ -58,48 +60,6 @@ void interpolation_apply_new(const U& Pi, const V& data, std::vector<T>& coeffs,
     for (int k = 0; k < bs; ++k)
     {
       for (std::size_t i = 0; i < Pi.extent(0); ++i)
-      {
-        T acc = 0;
-        for (std::size_t j = 0; j < cols; ++j)
-          acc += Pi(i, j) * data(j, k);
-        coeffs[bs * i + k] = acc;
-      }
-    }
-  }
-}
-
-/// Apply interpolation operator Pi to data to evaluate the dof
-/// coefficients
-/// @param[in] Pi The interpolation matrix (shape = (num dofs,
-/// num_points * value_size))
-/// @param[in] data Function evaluations, by point, e.g. (f0(x0),
-/// f1(x0), f0(x1), f1(x1), ...)
-/// @param[out] coeffs The degrees of freedom to compute
-/// @param[in] bs The block size
-template <typename U, typename V, typename T>
-void interpolation_apply(const U& Pi, const V& data, std::vector<T>& coeffs,
-                         int bs)
-{
-  // Compute coefficients = Pi * x (matrix-vector multiply)
-  if (bs == 1)
-  {
-    assert(data.shape(0) * data.shape(1) == Pi.shape(1));
-    for (std::size_t i = 0; i < Pi.shape(0); ++i)
-    {
-      coeffs[i] = 0.0;
-      for (std::size_t k = 0; k < data.shape(1); ++k)
-        for (std::size_t j = 0; j < data.shape(0); ++j)
-          coeffs[i] += Pi(i, k * data.shape(0) + j) * data(j, k);
-    }
-  }
-  else
-  {
-    const std::size_t cols = Pi.shape(1);
-    assert(data.shape(0) == Pi.shape(1));
-    assert(data.shape(1) == bs);
-    for (int k = 0; k < bs; ++k)
-    {
-      for (std::size_t i = 0; i < Pi.shape(0); ++i)
       {
         T acc = 0;
         for (std::size_t j = 0; j < cols; ++j)
@@ -417,7 +377,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
 
     auto values = stdex::submdspan(mapped_values0, stdex::full_extent, 0,
                                    stdex::full_extent);
-    interpolation_apply_new(Pi_1, values, local1, bs1);
+    interpolation_apply(Pi_1, values, local1, bs1);
     apply_inverse_dof_transform1(local1, cell_info, c, 1);
 
     // Copy local coefficients to the correct position in u dof array
@@ -450,13 +410,16 @@ std::vector<double> interpolation_coords(const FiniteElement& element,
 /// @param[in] f Evaluation of the function `f(x)` at the physical
 /// points `x` given by fem::interpolation_coords. The element used in
 /// fem::interpolation_coords should be the same element as associated
-/// with `u`. The shape of `f` should be (value_size, num_points), or if
-/// value_size=1 the shape can be (num_points,).
+/// with `u`. The shape of `f` should be (value_size, num_points), with
+/// row-major storage.
 /// @param[in] cells Indices of the cells in the mesh on which to
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
+// template <typename T>
+// void interpolate(Function<T>& u, const xt::xarray<T>& f,
+//                  std::span<const std::int32_t> cells)
 template <typename T>
-void interpolate(Function<T>& u, const xt::xarray<T>& f,
+void interpolate(Function<T>& u, std::span<const T> f,
                  std::span<const std::int32_t> cells)
 {
   namespace stdex = std::experimental;
@@ -493,21 +456,25 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
     cell_info = std::span(mesh->topology().get_cell_permutation_info());
   }
 
-  if (f.dimension() == 1)
-  {
-    if (element->value_size() != 1)
-      throw std::runtime_error("Interpolation data has the wrong shape/size.");
-  }
-  else if (f.dimension() == 2)
-  {
-    if (f.shape(0) != element->value_size())
-      throw std::runtime_error("Interpolation data has the wrong shape/size.");
-  }
-  else
-    throw std::runtime_error("Interpolation data has wrong shape.");
+  // if (f.dimension() == 1)
+  // {
+  //   if (element->value_size() != 1)
+  //     throw std::runtime_error("Interpolation data has the wrong
+  //     shape/size.");
+  // }
+  // else if (f.dimension() == 2)
+  // {
+  //   if (f.shape(0) != element->value_size())
+  //     throw std::runtime_error("Interpolation data has the wrong
+  //     shape/size.");
+  // }
+  // else
+  //   throw std::runtime_error("Interpolation data has wrong shape.");
 
-  const std::span<const T> _f(f.data(), f.size());
-  const std::size_t f_shape1 = _f.size() / element->value_size();
+  // const std::span<const T> _f(f.data(), f.size());
+  const std::size_t f_shape1 = f.size() / element->value_size();
+  stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> _f(
+      f.data(), element->value_size(), f.size() / element->value_size());
 
   // Get dofmap
   const auto dofmap = u.function_space()->dofmap();
@@ -540,7 +507,7 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
       {
         // num_scalar_dofs is the number of interpolation points per
         // cell in this case (interpolation matrix is identity)
-        std::copy_n(std::next(_f.begin(), k * f_shape1 + c * num_scalar_dofs),
+        std::copy_n(std::next(f.begin(), k * f_shape1 + c * num_scalar_dofs),
                     num_scalar_dofs, _coeffs.begin());
         apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
@@ -554,8 +521,8 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
   }
   else if (element->map_ident())
   {
-    if (f.dimension() != 1)
-      throw std::runtime_error("Interpolation data has the wrong shape.");
+    // if (f.dimension() != 1)
+    //   throw std::runtime_error("Interpolation data has the wrong shape.");
 
     // Get interpolation operator
     const auto [_Pi, pi_shape] = element->interpolation_operator();
@@ -576,9 +543,9 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
       std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
       for (int k = 0; k < element_bs; ++k)
       {
-        std::copy_n(std::next(_f.begin(), k * f_shape1 + c * num_interp_points),
+        std::copy_n(std::next(f.begin(), k * f_shape1 + c * num_interp_points),
                     num_interp_points, reference_data_b.begin());
-        impl::interpolation_apply_new(Pi, reference_data, _coeffs, element_bs);
+        impl::interpolation_apply(Pi, reference_data, _coeffs, element_bs);
         apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
@@ -599,7 +566,7 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
           "Interpolation into this space is not yet supported.");
     }
 
-    if (f.shape(1) != cells.size() * Xshape[0])
+    if (_f.extent(1) != cells.size() * Xshape[0])
       throw std::runtime_error("Interpolation data has the wrong shape.");
 
     // Get coordinate map
@@ -692,7 +659,7 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
           for (std::size_t k0 = 0; k0 < Xshape[0]; ++k0)
           {
             _vals(k0, 0, m)
-                = _f[f_shape1 * (k * value_size + m) + c * Xshape[0] + k0];
+                = f[f_shape1 * (k * value_size + m) + c * Xshape[0] + k0];
           }
         }
 
@@ -712,7 +679,7 @@ void interpolate(Function<T>& u, const xt::xarray<T>& f,
 
         auto ref_data = stdex::submdspan(reference_data, stdex::full_extent, 0,
                                          stdex::full_extent);
-        impl::interpolation_apply_new(Pi, ref_data, _coeffs, element_bs);
+        impl::interpolation_apply(Pi, ref_data, _coeffs, element_bs);
         apply_inverse_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
 
         // Copy interpolation dofs into coefficient vector

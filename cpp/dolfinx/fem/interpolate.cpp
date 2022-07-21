@@ -8,7 +8,6 @@
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include <dolfinx/mesh/Mesh.h>
-#include <xtensor/xbuilder.hpp>
 
 using namespace dolfinx;
 
