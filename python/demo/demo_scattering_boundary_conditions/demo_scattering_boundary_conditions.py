@@ -256,7 +256,6 @@ MPI.COMM_WORLD.barrier()
 
 # Let's have a visual check of the mesh by plotting it with PyVista:
 
-# +
 if have_pyvista:
     topology, cell_types, geometry = plot.create_vtk_mesh(mesh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
@@ -269,29 +268,24 @@ if have_pyvista:
     else:
         pyvista.start_xvfb()
         figure = plotter.screenshot("wire_mesh.png")
-# -
 
 # Now we define some other problem specific parameters:
 
-# +
 wl0 = 0.4 * um  # Wavelength of the background field
 n_bkg = 1.33  # Background refractive index
 eps_bkg = n_bkg**2  # Background relative permittivity
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
 deg = np.pi / 180
 theta = 45 * deg  # Angle of incidence of the background field
-# -
 
 # And then the function space used for the electric field.
 # We will use a 3rd order
 # [Nedelec (first kind)](https://defelement.com/elements/nedelec1.html)
 # element:
 
-# +
 degree = 3
 curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), degree)
 V = fem.FunctionSpace(mesh, curl_el)
-# -
 
 # Next, we can interpolate $\mathbf{E}_b$ into the function space $V$:
 
@@ -336,19 +330,16 @@ n_3d = as_vector((n[0], n[1], 0))
 # https://refractiveindex.info/?shelf=main&book=Au&page=Olmon-sc
 # )):
 
-# +
 # Definition of relative permittivity for Au @400nm
 reps_au = -1.0782
 ieps_au = 5.8089
 eps_au = -1.0782 + 1j * 5.8089
-# -
 
 # We want to define a space function for the permittivity
 # $\varepsilon$ that takes the value of the gold permittivity $\varepsilon_m$
 # for cells inside the wire, while it takes the value of the
 # background permittivity otherwise:
 
-# +
 # Definition of the relative permittivity over the whole domain
 D = fem.FunctionSpace(mesh, ("DG", 0))
 eps = fem.Function(D)
@@ -358,7 +349,6 @@ eps.x.array[au_cells] = np.full_like(
     au_cells, eps_au, dtype=np.complex128)
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
 eps.x.scatter_forward()
-# -
 
 # It is time to solve our problem, and therefore we need to find
 # the weak form of the Maxwell's equation plus the scattering
@@ -432,14 +422,12 @@ eps.x.scatter_forward()
 #
 # We can implement such equation in DOLFINx in the following way:
 
-# +
 # Weak form
 F = - inner(curl(Es), curl(v)) * dDom \
     + eps * k0 ** 2 * inner(Es, v) * dDom \
     + k0 ** 2 * (eps - eps_bkg) * inner(Eb, v) * dDom \
     + (1j * k0 * n_bkg + 1 / (2 * r)) \
     * inner(cross(Es_3d, n_3d), cross(v_3d, n_3d)) * dsbc
-# -
 
 # We can then split the weak form into its left-hand and right-hand side
 # and solve the problem, by storing the scattered field $\mathbf{E}_s$ in
@@ -474,7 +462,6 @@ with VTXWriter(mesh.comm, "Esh.bp", Esh_dg) as f:
 # https://docs.fenicsproject.org/dolfinx/main/python/demos/demo_interpolation-io.html)
 # DOLFINx demo.
 
-# +
 if have_pyvista:
     V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
@@ -497,7 +484,6 @@ if have_pyvista:
     else:
         pyvista.start_xvfb()
         plotter.screenshot("Esh.png", window_size=[800, 800])
-# -
 
 # Next we can calculate the total electric field
 # $\mathbf{E}=\mathbf{E}_s+\mathbf{E}_b$ and save it:
@@ -530,7 +516,13 @@ normEsh = fem.Function(V_normEsh)
 normEsh.interpolate(norm_expr)
 # -
 
-# +
+# Now we can validate our formulation by calculating the so-called
+# absorption, scattering and extinction efficiencies, which are
+# quantities that define how much light is absorbed and scattered
+# by the wire. First of all, we calculate the analytical efficiencies
+# with the `calculate_analytical_efficiencies` function defined in a
+# separate file:
+
 # Calculation of analytical efficiencies
 q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
     eps_au,
@@ -538,11 +530,46 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
     wl0,
     radius_wire)
 
+# Now we can calculate the numerical efficiencies. The formula for the
+# absorption, scattering and extinction are:
+#
+# $$
+# \begin{align}
+# & Q_{abs} = \operatorname{Re}\left(\int_{\Omega_{m}} \frac{1}{2}
+#   \frac{\operatorname{Im}(\varepsilon_m)k_0}{Z_0n_b}
+#   \mathbf{E}\cdot\hat{\mathbf{E}}dx\right) \\
+# & Q_{sca} = \operatorname{Re}\left(\int_{\partial\Omega} \frac{1}{2}
+#   \left(\mathbf{E}_s\times\bar{\mathbf{H}}_s\right)
+#   \cdot\mathbf{n}ds\right)\\ \\
+# & Q_{ext} = Q_{abs} + Q_{sca}, \\
+# \end{align}
+# $$
+#
+# with $Z_0 = \sqrt{\frac{\mu_0}{\varepsilon_0}}$ being the
+# vacuum impedance, and $\mathbf{H}_s =
+# -j\frac{1}{Z_0k_0n_b}\nabla\times\mathbf{E}_s$ being
+# the scattered magnetic field.
+# We can then normalize these values over the intensity of
+# the electromagnetic field $I_0$ and the geometrical cross
+# section of the wire,
+# $\sigma_{gcs} = 2r_w$:
+#
+# $$
+# \begin{align}
+# & q_{abs} = \frac{Q_{abs}}{I_0\sigma_{gcs}} \\
+# & q_{sca} = \frac{Q_{sca}}{I_0\sigma_{gcs}} \\
+# & q_{ext} = q_{abs} + q_{sca}, \\
+# \end{align}
+# $$
+#
+# In FEniCSx, we can calculate these values in the following way:
+
+# +
 # Vacuum impedance
 Z0 = np.sqrt(mu_0 / epsilon_0)
 
 # Magnetic field H
-Hh_3d = -1j * curl_2d(Esh) / Z0 / k0 / n_bkg
+Hsh_3d = -1j * curl_2d(Esh) / Z0 / k0 / n_bkg
 
 Esh_3d = as_vector((Esh[0], Esh[1], 0))
 E_3d = as_vector((E[0], E[1], 0))
@@ -555,7 +582,7 @@ I0 = 0.5 / Z0
 gcs = 2 * radius_wire
 
 # Quantities for the calculation of efficiencies
-P = 0.5 * inner(cross(Esh_3d, conj(Hh_3d)), n_3d)
+P = 0.5 * inner(cross(Esh_3d, conj(Hsh_3d)), n_3d)
 Q = 0.5 * ieps_au * k0 * (inner(E_3d, E_3d)) / Z0 / n_bkg
 
 # Define integration domain for the wire
@@ -599,5 +626,3 @@ if MPI.COMM_WORLD.rank == 0:
     print(f"The analytical extinction efficiency is {q_ext_analyt}")
     print(f"The numerical extinction efficiency is {q_ext_fenics}")
     print(f"The error is {err_ext*100}%")
-
-# -

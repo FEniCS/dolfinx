@@ -1,4 +1,5 @@
 # # Calculation of analytical efficiencies
+#
 # This file contains a function for the calculation of the absorption,
 # scattering and extinction efficiencies of a wire being
 # hit normally by a TM-polarized electromagnetic wave. The formula
@@ -7,17 +8,18 @@
 # Milton Kerker, "The Scattering of Light and Other Electromagnetic
 # Radiation", Chapter 6, Elsevier, 1969.
 #
-# Equations
+# ## Implementation
+#
 # First of all, let's define the parameters of the problem:
 #
 # - $n = \sqrt{\varepsilon}$: refractive index of the wire,
 # - $n_b$: refractive index of the background medium,
 # - $m = n/n_b$: relative refractive index of the wire,
 # - $\lambda_0$: wavelength of the electromagnetic wave,
-# - $r$: radius of the cross-section of the wire,
-# - $\alpha = 2\pi r n_b/\lambda_0$.
+# - $r_w$: radius of the cross-section of the wire,
+# - $\alpha = 2\pi r_w n_b/\lambda_0$.
 #
-# Now, let's define the scattering coefficients $a_l$ as:
+# Now, let's define the $a_l$ coefficients as:
 #
 # $$
 # \begin{equation}
@@ -49,14 +51,11 @@
 # \end{align}
 # $$
 #
-# ## Implementation
+#
 # The modules that will be used are imported:
 
-# +
 import numpy as np
 from scipy.special import h2vp, hankel2, jv, jvp
-
-# -
 
 # The functions that we import from `scipy.special` correspond to:
 #
@@ -68,18 +67,16 @@ from scipy.special import h2vp, hankel2, jv, jvp
 # Next, we define a function for calculating the analytical efficiencies
 # in Python. The inputs of the function are:
 #
-# - `reps` ⟷ $\operatorname{Re}(\varepsilon)$,
-# - `ieps` ⟷ $\operatorname{Im}(\varepsilon)$,
+# - `eps` ⟷ $\varepsilon$,
 # - `n_bkg` ⟷ $n_b$,
 # - `wl0` ⟷ $\lambda_0$,
-# - `radius_wire` ⟷ $r$.
+# - `radius_wire` ⟷ $r_w$.
 #
 # We also define a nested function for the calculation of $a_l$. For the
 # final calculation of the efficiencies, the summation over the different
 # orders of the Bessel functions is truncated at $\nu=50$.
 
 
-# +
 def calculate_analytical_efficiencies(eps, n_bkg, wl0, radius_wire):
 
     def a_coeff(nu, m, alpha):
@@ -119,4 +116,3 @@ def calculate_analytical_efficiencies(eps, n_bkg, wl0, radius_wire):
     q_abs = q_ext - q_sca
 
     return q_abs, q_sca, q_ext
-# -
