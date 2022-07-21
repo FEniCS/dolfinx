@@ -151,9 +151,10 @@ public:
   /// Compute and return the dof layout
   ElementDofLayout create_dof_layout() const;
 
-  /// Compute physical coordinates x for points X  in the reference
-  /// configuration
-  /// @param[in,out] x The physical coordinates of the reference points X (rank 2)
+  /// @brief Compute physical coordinates x for points X  in the
+  /// reference configuration
+  /// @param[in,out] x The physical coordinates of the reference points
+  /// X (rank 2)
   /// @param[in] cell_geometry The cell node physical coordinates (rank 2)
   /// @param[in] phi Tabulated basis functions at reference points X (rank 2)
   template <typename U, typename V, typename W>
@@ -215,9 +216,8 @@ public:
   /// @param [in] maxit Maximum number of Newton iterations
   /// @note If convergence is not achieved within maxit, the function
   /// throws a runtime error.
-  void pull_back_nonaffine(mdspan2_t X, cmdspan2_t x,
-                               cmdspan2_t cell_geometry, double tol = 1.0e-8,
-                               int maxit = 10) const;
+  void pull_back_nonaffine(mdspan2_t X, cmdspan2_t x, cmdspan2_t cell_geometry,
+                           double tol = 1.0e-8, int maxit = 10) const;
 
   /// Permutes a list of DOF numbers on a cell
   void permute_dofs(const std::span<std::int32_t>& dofs,
