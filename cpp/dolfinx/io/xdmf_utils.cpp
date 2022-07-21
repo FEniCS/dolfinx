@@ -100,7 +100,9 @@ xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
   assert(map);
   const std::int32_t num_cells = map->size_local() + map->num_ghosts();
 
-  std::vector<std::int32_t> cells(mesh->geometry().x().size(), -1);
+  const std::size_t num_points = mesh->geometry().x().size() / 3;
+
+  std::vector<std::int32_t> cells(num_points, -1);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get coordinates for all points in cell
@@ -109,7 +111,6 @@ xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
       cells[dofs[i]] = c;
   }
 
-  std::size_t num_points = mesh->geometry().x().size() / 3;
   u.eval(mesh->geometry().x(), {num_points, 3}, cells, point_values,
          {num_points, value_size_loc});
 
