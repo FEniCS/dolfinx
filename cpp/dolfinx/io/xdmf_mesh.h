@@ -61,8 +61,9 @@ void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
 /// Read Geometry data
 /// @returns geometry
-xt::xtensor<double, 2> read_geometry_data(MPI_Comm comm, const hid_t h5_id,
-                                          const pugi::xml_node& node);
+std::pair<std::vector<double>, std::array<std::size_t, 2>>
+read_geometry_data(MPI_Comm comm, const hid_t h5_id,
+                   const pugi::xml_node& node);
 
 /// Read Topology data
 /// @returns ((cell type, degree), topology)

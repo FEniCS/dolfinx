@@ -119,9 +119,9 @@ public:
   /// @param[in] name Name of the mesh (Grid)
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return points on each process
-  xt::xtensor<double, 2> read_geometry_data(const std::string name,
-                                            const std::string xpath
-                                            = "/Xdmf/Domain") const;
+  std::pair<std::vector<double>, std::array<std::size_t, 2>>
+  read_geometry_data(const std::string name,
+                     const std::string xpath = "/Xdmf/Domain") const;
 
   /// Read information about cell type
   /// @param[in] grid_name Name of Grid for which cell type is needed

@@ -231,9 +231,9 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
 }
 //----------------------------------------------------------------------------
-xt::xtensor<double, 2> xdmf_mesh::read_geometry_data(MPI_Comm comm,
-                                                     const hid_t h5_id,
-                                                     const pugi::xml_node& node)
+std::pair<std::vector<double>, std::array<std::size_t, 2>>
+xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
+                              const pugi::xml_node& node)
 {
   // Get geometry node
   pugi::xml_node geometry_node = node.child("Geometry");
@@ -269,14 +269,7 @@ xt::xtensor<double, 2> xdmf_mesh::read_geometry_data(MPI_Comm comm,
   const std::size_t num_local_nodes = geometry_data.size() / gdim;
   std::array<std::size_t, 2> shape = {num_local_nodes, gdim};
 
-  // The below should work, but misbehaves with the Intel icpx compiler
-  // return xt::adapt(geometry_data.data(), geometry_data.size(),
-  //                  xt::no_ownership(), shape);
-
-  // Explicitly copy to an xtensor
-  xt::xtensor<double, 2> x = xt::empty<double>(shape);
-  std::copy(geometry_data.begin(), geometry_data.end(), x.begin());
-  return x;
+  return {std::move(geometry_data), shape};
 }
 //----------------------------------------------------------------------------
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>

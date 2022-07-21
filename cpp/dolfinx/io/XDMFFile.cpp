@@ -232,7 +232,7 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
 {
   // Read mesh data
   auto [cells, cshape] = XDMFFile::read_topology_data(name, xpath);
-  const xt::xtensor<double, 2> x = XDMFFile::read_geometry_data(name, xpath);
+  auto [x, xshape] = XDMFFile::read_geometry_data(name, xpath);
 
   // Create mesh
   std::vector<std::int32_t> offset(cshape[0] + 1, 0);
@@ -243,7 +243,7 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
                                                std::move(offset));
 
   mesh::Mesh mesh
-      = mesh::create_mesh(_comm.comm(), cells_adj, element, x, mode);
+      = mesh::create_mesh(_comm.comm(), cells_adj, element, x, xshape, mode);
   mesh.name = name;
   return mesh;
 }
@@ -265,7 +265,7 @@ XDMFFile::read_topology_data(const std::string name,
   return xdmf_mesh::read_topology_data(_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2>
+std::pair<std::vector<double>, std::array<std::size_t, 2>>
 XDMFFile::read_geometry_data(const std::string name,
                              const std::string xpath) const
 {
