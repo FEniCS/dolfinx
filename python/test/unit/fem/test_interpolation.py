@@ -434,7 +434,7 @@ def test_nedelec_spatial(order, dim):
     # The expression (x,y,z) is contained in the N1curl function space
     # order>1
     f_ex = x
-    f = Expression(f_ex, V.element.interpolation_points)
+    f = Expression(f_ex, V.element.interpolation_points())
     u.interpolate(f)
     assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(u - f_ex, u - f_ex) * ufl.dx))), 0)
 
@@ -442,7 +442,7 @@ def test_nedelec_spatial(order, dim):
     # order
     V2 = FunctionSpace(mesh, ("N2curl", 1))
     w = Function(V2)
-    f2 = Expression(f_ex, V2.element.interpolation_points)
+    f2 = Expression(f_ex, V2.element.interpolation_points())
     w.interpolate(f2)
     assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(w - f_ex, w - f_ex) * ufl.dx))), 0)
 
@@ -464,7 +464,7 @@ def test_vector_interpolation_spatial(order, dim, affine):
 
     # The expression (x,y,z)^n is contained in space
     f = ufl.as_vector([x[i]**order for i in range(dim)])
-    u.interpolate(Expression(f, V.element.interpolation_points))
+    u.interpolate(Expression(f, V.element.interpolation_points()))
     assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(u - f, u - f) * ufl.dx))), 0)
 
 
@@ -481,7 +481,7 @@ def test_2D_lagrange_to_curl(order):
     u1.interpolate(lambda x: x[0])
 
     f = ufl.as_vector((u0, u1))
-    f_expr = Expression(f, V.element.interpolation_points)
+    f_expr = Expression(f, V.element.interpolation_points())
     u.interpolate(f_expr)
     x = ufl.SpatialCoordinate(mesh)
     f_ex = ufl.as_vector((-x[1], x[0]))
@@ -498,7 +498,7 @@ def test_de_rahm_2D(order):
     g = ufl.grad(w)
     Q = FunctionSpace(mesh, ("N2curl", order - 1))
     q = Function(Q)
-    q.interpolate(Expression(g, Q.element.interpolation_points))
+    q.interpolate(Expression(g, Q.element.interpolation_points()))
 
     x = ufl.SpatialCoordinate(mesh)
     g_ex = ufl.as_vector((1 + x[1], 4 * x[1] + x[0]))
@@ -510,7 +510,7 @@ def test_de_rahm_2D(order):
     def curl2D(u):
         return ufl.as_vector((ufl.Dx(u[1], 0), - ufl.Dx(u[0], 1)))
 
-    v.interpolate(Expression(curl2D(ufl.grad(w)), V.element.interpolation_points))
+    v.interpolate(Expression(curl2D(ufl.grad(w)), V.element.interpolation_points()))
     h_ex = ufl.as_vector((1, -1))
     assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(v - h_ex, v - h_ex) * ufl.dx))), 0)
 
@@ -535,7 +535,7 @@ def test_interpolate_subset(order, dim, affine):
 
     x = ufl.SpatialCoordinate(mesh)
     f = x[1]**order
-    expr = Expression(f, V.element.interpolation_points)
+    expr = Expression(f, V.element.interpolation_points())
     u.interpolate(expr, cells_local)
     mt = meshtags(mesh, mesh.topology.dim, cells_local, np.ones(cells_local.size, dtype=np.int32))
     dx = ufl.Measure("dx", domain=mesh, subdomain_data=mt)
