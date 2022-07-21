@@ -504,7 +504,7 @@ void interpolate(Function<T>& u, std::span<const T> f,
   }
   else if (element->map_ident())
   {
-    if (f.extent(0) != 1)
+    if (_f.extent(0) != 1)
       throw std::runtime_error("Interpolation data has the wrong shape.");
 
     // Get interpolation operator
