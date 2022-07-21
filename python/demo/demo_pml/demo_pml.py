@@ -49,23 +49,18 @@ class BackgroundElectricField:
 
         return (-ax * np.exp(1j * phi), ay * np.exp(1j * phi))
 
+
 def curl_2d(a):
 
-    return as_vector((0, 0, a[1].dx(0)- a[0].dx(1)))
+    return as_vector((0, 0, a[1].dx(0) - a[0].dx(1)))
+
 
 def pml_coordinates(x, alpha, k0, l_dom, l_pml):
 
-    # Define boolean functions for the PML regions
-    inside_pml_x = (ufl.sign(ufl.sign(x[0]) * x[0] - l_dom / 2) + 1) / 2
-    inside_pml_y = (ufl.sign(ufl.sign(x[1]) * x[1] - l_dom / 2) + 1) / 2
+    inside_pml = [(ufl.sign(ufl.sign(x[i]) * x[i] - l_dom / 2) + 1) / 2 for i in range(len(x))]
 
-    # Define the coordinate transformation for PML regions
-    x_pml = x[0] + 1j * alpha / k0 * x[0] * (ufl.sign(x[0]) * x[0] - l_dom / 2) / \
-        (l_pml / 2 - l_dom / 2)**2 * inside_pml_x
-    y_pml = x[1] + 1j * alpha / k0 * x[1] * (ufl.sign(x[1]) * x[1] - l_dom / 2) / \
-        (l_pml / 2 - l_dom / 2)**2 * inside_pml_y
-
-    return as_vector((x_pml, y_pml))
+    return as_vector([x[i] + 1j * alpha / k0 * x[i] * (ufl.sign(x[i]) * x[i] - l_dom / 2) / 
+                    (l_pml / 2 - l_dom / 2)**2 * inside_pml[i] for i in range(len(x))])
 
 
 um = 10**-6  # micron
