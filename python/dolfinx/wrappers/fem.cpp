@@ -456,7 +456,7 @@ void declare_objects(py::module& m, const std::string& type)
              py::array_t<T, py::array::c_style>& u)
           {
             // TODO: handle 1d case
-            self.eval(x,
+            self.eval( std::span(x.data(), x.size()),
                       {static_cast<std::size_t>(x.shape(0)),
                        static_cast<std::size_t>(x.shape(1))},
                       std::span(cells.data(), cells.size()),
