@@ -125,7 +125,6 @@ public:
   compute_jacobian_determinant(const U& J, std::span<typename U::value_type> w)
   {
     static_assert(U::rank() == 2, "Must be rank 2");
-
     if (J.extent(0) == J.extent(1))
       return math::det(J);
     else
@@ -135,10 +134,10 @@ public:
 
       using T = typename U::element_type;
       namespace stdex = std::experimental;
-      stdex::mdspan<T, stdex::dextents<std::size_t, 2>> B(w.data(), J.extent(1),
-                                                          J.extent(0));
-      stdex::mdspan<T, stdex::dextents<std::size_t, 2>> BA(
-          w.data() + J.extent(0) * J.extent(1), B.extent(0), J.extent(1));
+      using mdspan2_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
+      mdspan2_t B(w.data(), J.extent(1), J.extent(0));
+      mdspan2_t BA(w.data() + J.extent(0) * J.extent(1), B.extent(0),
+                   J.extent(1));
 
       for (std::size_t i = 0; i < B.extent(0); ++i)
         for (std::size_t j = 0; j < B.extent(1); ++j)

@@ -519,8 +519,6 @@ public:
         = element->get_dof_transformation_function<double>();
     const std::size_t num_basis_values = space_dimension * reference_value_size;
 
-    // std::cout << "Eval 5" << std::endl;
-
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
       const int cell_index = cells[p];
@@ -538,8 +536,6 @@ public:
           cell_info, cell_index, reference_value_size);
 
       {
-        // assert(basis_values.dimension() == 2);
-        // assert(basis_derivatives_reference_values.dimension() == 4);
         auto _U = stdex::submdspan(basis_derivatives_reference_values, 0, p,
                                    stdex::full_extent, stdex::full_extent);
         auto _J
