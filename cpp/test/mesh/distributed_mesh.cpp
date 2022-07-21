@@ -63,7 +63,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   std::vector<double> x;
   std::array<std::size_t, 2> xshape = {0, 2};
   std::vector<std::int64_t> cells;
-  std::array<std::size_t, 2> cshape;
+  std::array<std::size_t, 2> cshape = {0, 3};
   graph::AdjacencyList<std::int32_t> dest(0);
   if (subset_comm != MPI_COMM_NULL)
   {
@@ -73,18 +73,16 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 
     int nparts = mpi_size;
     const int tdim = mesh::cell_dim(mesh::CellType::triangle);
-    dest = partitioner(
-        subset_comm, nparts, tdim,
-        graph::regular_adjacency_list(std::move(cells), cshape[1]),
-        mesh::GhostMode::shared_facet);
+    dest = partitioner(subset_comm, nparts, tdim,
+                       graph::regular_adjacency_list(cells, cshape[1]),
+                       mesh::GhostMode::shared_facet);
   }
   CHECK(xshape[1] == 2);
 
   // Distribute cells to destination ranks
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
       = graph::build::distribute(
-          mpi_comm, graph::regular_adjacency_list(std::move(cells), cshape[1]),
-          dest);
+          mpi_comm, graph::regular_adjacency_list(cells, cshape[1]), dest);
 
   mesh::Topology topology = mesh::create_topology(
       mpi_comm, cell_nodes, original_cell_index, ghost_owners,
