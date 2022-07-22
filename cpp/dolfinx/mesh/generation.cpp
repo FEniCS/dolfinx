@@ -11,8 +11,6 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <vector>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;

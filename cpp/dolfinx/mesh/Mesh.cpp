@@ -19,9 +19,6 @@
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <memory>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xsort.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;

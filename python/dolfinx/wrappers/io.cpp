@@ -26,7 +26,6 @@
 #include <pybind11/stl/filesystem.h>
 #include <string>
 #include <vector>
-#include <xtensor/xadapt.hpp>
 
 namespace py = pybind11;
 
