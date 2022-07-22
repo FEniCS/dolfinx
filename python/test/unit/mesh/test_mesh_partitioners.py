@@ -14,7 +14,7 @@ import dolfinx.graph
 import ufl
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, compute_midpoints, create_box,
-                          create_cell_partitioner, create_mesh)
+                          create_rectangle, create_cell_partitioner, create_mesh)
 
 from mpi4py import MPI
 
@@ -101,3 +101,46 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     assert num_cells > 0
     assert np.all(cell_midpoints[:, 0] >= mpi_comm.rank)
     assert np.all(cell_midpoints[:, 0] <= mpi_comm.rank + 1)
+
+
+def test_assymetric_partitioner():
+    mpi_comm = MPI.COMM_WORLD
+    n = mpi_comm.Get_size()
+    r = mpi_comm.Get_rank()
+    cell = ufl.Cell("triangle")
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 1))
+
+    # Create a simple triangle mesh with a strip on each process
+    topo = []
+    for i in range(10):
+        j = i * (n + 1) + r
+        k = (i + 1) * (n + 1) + r
+        topo += [[j, j + 1, k]]
+        topo += [[j + 1, k, k + 1]]
+
+    topo = np.array(topo, dtype=int)
+
+    # Dummy geometry
+    if r == 0:
+        x = np.zeros((11 * (n + 1), 3), dtype=np.float64)
+    else:
+        x = np.zeros((0, 3), dtype=np.float64)
+
+    # Send cells to self, and if on process zero, also send to process 1.
+    def partitioner(comm, n, m, topo, ghost_mode):
+        r = comm.Get_rank()
+        dests = []
+        offsets = [0]
+        for i in range(topo.num_nodes):
+            dests.append(r)
+            if r == 0:
+                dests.append(1 - r)
+            offsets.append(len(dests))
+
+        dests = np.array(dests, dtype=np.int32)
+        offsets = np.array(offsets, dtype=np.int32)
+        return dolfinx.cpp.graph.AdjacencyList_int32(dests, offsets)
+
+    ghost_mode = GhostMode.shared_facet
+    new_mesh = create_mesh(mpi_comm, topo, x, domain, ghost_mode, partitioner)
+    print(r, new_mesh.topology.index_map(2).num_ghosts)
