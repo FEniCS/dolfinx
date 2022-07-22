@@ -159,6 +159,8 @@ class Expression:
             argument_space_dimension = 1
         else:
             argument_space_dimension = self.argument_function_space.element.space_dimension
+        print(self.X)
+        print(type(self.X))
         values_shape = (_cells.shape[0], self.X.shape[0] * self.value_size * argument_space_dimension)
 
         # Allocate memory for result if u was not provided
@@ -182,7 +184,7 @@ class Expression:
     @property
     def X(self) -> np.ndarray:
         """Evaluation points on the reference cell"""
-        return self._cpp_object.X
+        return self._cpp_object.X()
 
     @property
     def value_size(self) -> int:
