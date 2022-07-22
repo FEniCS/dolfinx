@@ -20,6 +20,26 @@
 #include <span>
 #include <vector>
 
+namespace dolfinx::fem
+{
+template <typename T>
+class Function;
+
+/// Compute the evaluation points in the physical space at which an
+/// expression should be computed to interpolate it in a finite element
+/// space.
+///
+/// @param[in] element The element to be interpolated into
+/// @param[in] mesh The domain
+/// @param[in] cells Indices of the cells in the mesh to compute
+/// interpolation coordinates for
+/// @return The coordinates in the physical space at which to evaluate
+/// an expression. The shape is (3, num_points) and storage is row-major.
+std::vector<double>
+interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
+                     std::span<const std::int32_t> cells);
+}
+
 namespace
 {
 
@@ -162,20 +182,6 @@ namespace dolfinx::fem
 template <typename T>
 class Function;
 
-/// Compute the evaluation points in the physical space at which an
-/// expression should be computed to interpolate it in a finite element
-/// space.
-///
-/// @param[in] element The element to be interpolated into
-/// @param[in] mesh The domain
-/// @param[in] cells Indices of the cells in the mesh to compute
-/// interpolation coordinates for
-/// @return The coordinates in the physical space at which to evaluate
-/// an expression. The shape is (3, num_points) and storage is row-major.
-std::vector<double>
-interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
-                     const xtl::span<const std::int32_t>& cells);
-
 /// Interpolate an expression f(x) in a finite element space
 ///
 /// @param[out] u The function to interpolate into
@@ -189,7 +195,7 @@ interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
 /// fem::interpolation_coords.
 template <typename T>
 void interpolate(Function<T>& u, const xt::xarray<T>& f,
-                 const xtl::span<const std::int32_t>& cells);
+                 const std::span<const std::int32_t>& cells);
 
 namespace impl
 {
@@ -567,7 +573,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
 /// @param[in] cells List of cell indices to interpolate on
 template <typename T>
 void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
-                                    const xtl::span<const std::int32_t>& cells)
+                                    std::span<const std::int32_t> cells)
 {
   assert(u.function_space());
   assert(v.function_space());
@@ -646,20 +652,6 @@ void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
 }
 
 } // namespace impl
-
-/// Compute the evaluation points in the physical space at which an
-/// expression should be computed to interpolate it in a finite element
-/// space.
-///
-/// @param[in] element The element to be interpolated into
-/// @param[in] mesh The domain
-/// @param[in] cells Indices of the cells in the mesh to compute
-/// interpolation coordinates for
-/// @return The coordinates in the physical space at which to evaluate
-/// an expression. The shape is (3, num_points) and storage is row-major.
-std::vector<double> interpolation_coords(const FiniteElement& element,
-                                         const mesh::Mesh& mesh,
-                                         std::span<const std::int32_t> cells);
 
 /// Interpolate an expression f(x) in a finite element space
 ///
@@ -958,7 +950,7 @@ template <typename T>
 void interpolate(
     Function<T>& u,
     const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
-    const xt::xtensor<double, 2>& x, const xtl::span<const std::int32_t>& cells)
+    const xt::xtensor<double, 2>& x, const std::span<const std::int32_t>& cells)
 {
   // Evaluate function at physical points. The returned array has a
   // number of rows equal to the number of components of the function,
