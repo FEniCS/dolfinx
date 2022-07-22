@@ -6,8 +6,6 @@
 
 #include <catch2/catch.hpp>
 #include <dolfinx/common/sort.h>
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
 
 TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int32_t,
                    std::int64_t)
