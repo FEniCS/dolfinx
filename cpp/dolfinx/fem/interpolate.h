@@ -44,7 +44,7 @@ public:
   /// Interpolate a function on a list of cells
   template <typename T>
   void interpolate(Function<T>& u, const Function<T>& v,
-                          const xtl::span<const std::int32_t>& cells);
+                   const std::span<const std::int32_t>& cells);
 
   /// Force recomputation of all intermediate data structures when
   /// interpolation is called next.
@@ -853,7 +853,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
 
 template <typename T>
 void M2MInterpolator::interpolate(Function<T>& u, const Function<T>& v,
-                                  const xtl::span<const std::int32_t>& cells)
+                                  const std::span<const std::int32_t>& cells)
 {
   assert(u.function_space());
   assert(v.function_space());
@@ -1012,7 +1012,7 @@ void M2MInterpolator::interpolate(Function<T>& u, const Function<T>& v,
 
       // Each process will now check at which points it can evaluate
       // the interpolating function, and note that down in evaluationCells
-      evaluationCells.resize(pointsToReceive.size() / 3, -1);
+      evaluationCells.resize(nPointsToReceive / 3, -1);
 
       const auto connectivity = v.function_space()->mesh()->geometry().dofmap();
       const auto xv = v.function_space()->mesh()->geometry().x();
@@ -1093,9 +1093,7 @@ void M2MInterpolator::interpolate(Function<T>& u, const Function<T>& v,
   MPI_Win_fence(0, window);
   MPI_Win_free(&window);
 
-  xt::xarray<T> myVals(
-      {x.shape(1), static_cast<decltype(x.shape(1))>(value_size)},
-      static_cast<T>(0));
+  std::vector<T> myVals(x.shape(1) * value_size, static_cast<T>(0));
 
   // Auxiliary counters to keep track of which values correspond to which
   // point
@@ -1111,9 +1109,9 @@ void M2MInterpolator::interpolate(Function<T>& u, const Function<T>& v,
       for (int j = 0; j < value_size; ++j)
       {
         // If the value is zero, get a value
-        if (myVals(i, j) == static_cast<T>(0))
+        if (myVals[j * x.shape(1) + i] == static_cast<T>(0))
         {
-          myVals(i, j) = valuesToRetrieve(
+          myVals[j * x.shape(1) + i] = valuesToRetrieve(
               retrievingOffsets[p] / value_size + scanningProgress[p], j);
         }
       }
@@ -1123,18 +1121,8 @@ void M2MInterpolator::interpolate(Function<T>& u, const Function<T>& v,
   }
 
   // Finally, interpolate using the computed values
-  std::vector<T> myVals_t;
-  myVals_t.reserve(myVals.size());
-  for (decltype(myVals.size()) i = 0; i < myVals.size() / value_size; ++i)
-  {
-    for (int j = 0; j < value_size; ++j)
-    {
-      myVals_t.push_back(myVals[j * myVals.size() / value_size + i]);
-    }
-  }
-  std::span<const T> myVals_t_s(myVals_t.cbegin(), myVals_t.cend());
-  fem::interpolate(u, myVals_t_s, {value_size, myVals.size() / value_size},
-                   cells);
+  fem::interpolate(u, std::span<const T>(myVals.cbegin(), myVals.cend()),
+                   {value_size, x.shape(1)}, cells);
 }
 
 template <typename T>
