@@ -159,12 +159,8 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
                 try:
                     return _cpp.fem.compute_integration_domains(
                         integral_type, subdomain)
-            elif isinstance(subdomain, dict):
-                return subdomain
-            elif subdomain is None:
-                return {}
-            else:
-                raise RuntimeError(f"Cannot compute integration domains for subdomain {subdomain}")
+                except TypeError:
+                    return subdomain
 
         # Subdomain markers (possibly empty dictionary for some dimensions)
         subdomains = {_cpp.fem.IntegralType.cell:
