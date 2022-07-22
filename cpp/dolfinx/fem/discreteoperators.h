@@ -221,8 +221,6 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
       std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
   cmdspan4_t phi(phi_b.data(), phi_shape);
   cmap.tabulate(1, X, Xshape, phi_b);
-  auto dphi
-      = stdex::submdspan(phi, std::pair(1, tdim + 1), 0, stdex::full_extent, 0);
 
   // Evaluate V0 basis functions at reference interpolation points for V1
   std::vector<double> basis_derivatives_reference0_b(Xshape[0] * dim0
@@ -303,6 +301,8 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
     std::fill(J_b.begin(), J_b.end(), 0);
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
+      auto dphi = stdex::submdspan(phi, std::pair(1, tdim + 1), p,
+                                   stdex::full_extent, 0);
       auto _J = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
       cmap.compute_jacobian(dphi, coord_dofs, _J);
       auto _K = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);

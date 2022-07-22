@@ -419,6 +419,28 @@ def test_interpolation_non_affine():
     assert np.isclose(s, 0)
 
 
+@pytest.mark.skip_in_parallel
+def test_interpolation_non_affine_nonmatching_maps():
+    points = np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0],
+                       [0, 0, 3], [1, 0, 3], [0, 2, 3], [1, 2, 3],
+                       [0.5, 0, 0], [0, 1, 0], [0, 0, 1.5], [1, 1, 0],
+                       [1, 0, 1.5], [0.5, 2, 0], [0, 2, 1.5], [1, 2, 1.5],
+                       [0.5, 0, 3], [0, 1, 3], [1, 1, 3], [0.5, 2, 3],
+                       [0.5, 1, 0], [0.5, -0.1, 1.5], [0, 1, 1.5], [1, 1, 1.5],
+                       [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=np.float64)
+
+    cells = np.array([range(len(points))], dtype=np.int32)
+    cell_type = CellType.hexahedron
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 2))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    W = VectorFunctionSpace(mesh, ("DG", 1))
+    V = FunctionSpace(mesh, ("NCE", 4))
+    w, v = Function(W), Function(V)
+    w.interpolate(lambda x: x)
+    v.interpolate(w)
+    s = assemble_scalar(form(ufl.inner(w - v, w - v) * ufl.dx))
+
+
 @pytest.mark.parametrize("order", [2, 3, 4])
 @pytest.mark.parametrize("dim", [2, 3])
 def test_nedelec_spatial(order, dim):
