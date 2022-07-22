@@ -15,8 +15,6 @@
 #include <dolfinx/mesh/Topology.h>
 #include <span>
 #include <tuple>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
