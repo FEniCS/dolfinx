@@ -296,15 +296,15 @@ refinement::create_new_vertices(MPI_Comm neighbor_comm,
 mesh::Mesh
 refinement::partition(const mesh::Mesh& old_mesh,
                       const graph::AdjacencyList<std::int64_t>& cell_topology,
-                      std::span<const double> new_vertex_coordinates,
+                      std::span<const double> new_coords,
                       std::array<std::size_t, 2> xshape, bool redistribute,
                       mesh::GhostMode gm)
 {
   if (redistribute)
   {
     return mesh::create_mesh(old_mesh.comm(), cell_topology,
-                             old_mesh.geometry().cmap(), new_vertex_coordinates,
-                             xshape, gm);
+                             old_mesh.geometry().cmap(), new_coords, xshape,
+                             gm);
   }
 
   auto partitioner = [](MPI_Comm comm, int, int tdim,
@@ -366,8 +366,8 @@ refinement::partition(const mesh::Mesh& old_mesh,
   };
 
   return mesh::create_mesh(old_mesh.comm(), cell_topology,
-                           old_mesh.geometry().cmap(), new_vertex_coordinates,
-                           xshape, gm, partitioner);
+                           old_mesh.geometry().cmap(), new_coords, xshape, gm,
+                           partitioner);
 }
 //-----------------------------------------------------------------------------
 

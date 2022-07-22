@@ -69,14 +69,14 @@ create_new_vertices(MPI_Comm neighbor_comm,
 /// processes
 /// @param[in] old_mesh
 /// @param[in] cell_topology Topology of cells, (vertex indices)
-/// @param[in] new_vertex_coordinates New coordinates, row-major storage
-/// @param[in] xshape The shape of `new_vertex_coordinates`
+/// @param[in] new_coords New coordinates, row-major storage
+/// @param[in] xshape The shape of `new_coords`
 /// @param[in] redistribute Call graph partitioner if true
 /// @param[in] ghost_mode None or shared_facet
 /// @return New mesh
 mesh::Mesh partition(const mesh::Mesh& old_mesh,
                      const graph::AdjacencyList<std::int64_t>& cell_topology,
-                     std::span<const double> new_vertex_coordinates,
+                     std::span<const double> new_coords,
                      std::array<std::size_t, 2> xshape, bool redistribute,
                      mesh::GhostMode ghost_mode);
 

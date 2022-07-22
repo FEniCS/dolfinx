@@ -614,13 +614,13 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute,
               RefinementOptions options)
 {
 
-  auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
-      = plaza::compute_refinement_data(mesh, options);
+  auto [cell_adj, new_coords, xshape, parent_cell, parent_facet]
+      = compute_refinement_data(mesh, options);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
     return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
-                              new_vertex_coords, xshape, mesh::GhostMode::none),
+                              new_coords, xshape, mesh::GhostMode::none),
             std::move(parent_cell), std::move(parent_facet)};
   }
 
@@ -638,8 +638,8 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute,
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
-  return {partition(mesh, cell_adj, std::span(new_vertex_coords), xshape,
-                    redistribute, ghost_mode),
+  return {partition(mesh, cell_adj, std::span(new_coords), xshape, redistribute,
+                    ghost_mode),
           std::move(parent_cell), std::move(parent_facet)};
 }
 //-----------------------------------------------------------------------------
@@ -650,7 +650,7 @@ plaza::refine(const mesh::Mesh& mesh,
 {
 
   auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
-      = plaza::compute_refinement_data(mesh, edges, options);
+      = compute_refinement_data(mesh, edges, options);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
