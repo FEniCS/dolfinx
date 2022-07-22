@@ -22,7 +22,7 @@
 #include <filesystem>
 #include <map>
 #include <pugixml.hpp>
-#include <xtensor/xtensor.hpp>
+#include <vector>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -74,7 +74,8 @@ graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
 /// @warning This function will be removed soon. Use interpolation
 /// instead.
 template <typename T>
-xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
+std::pair<std::vector<T>, std::array<std::size_t, 2>>
+compute_point_values(const fem::Function<T>& u)
 {
   auto V = u.function_space();
   assert(V);
@@ -86,8 +87,8 @@ xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
   const std::size_t value_size_loc = V->element()->value_size();
 
   // Resize Array for holding point values
-  xt::xtensor<T, 2> point_values
-      = xt::zeros<T>({mesh->geometry().x().size() / 3, value_size_loc});
+  std::vector<T> point_values((mesh->geometry().x().size() / 3)
+                              * value_size_loc);
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -114,7 +115,7 @@ xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
   u.eval(mesh->geometry().x(), {num_points, 3}, cells, point_values,
          {num_points, value_size_loc});
 
-  return point_values;
+  return {std::move(point_values), {num_points, value_size_loc}};
 }
 
 //-----------------------------------------------------------------------------
@@ -137,13 +138,13 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
 {
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
-  const xt::xtensor<Scalar, 2> data_values = compute_point_values(u);
+  const auto [data_values, dshape] = compute_point_values(u);
 
   const int width = get_padded_width(*u.function_space()->element());
   assert(mesh->geometry().index_map());
   const std::size_t num_local_points
       = mesh->geometry().index_map()->size_local();
-  assert(data_values.shape(0) >= num_local_points);
+  assert(dshape[0] >= num_local_points);
 
   // FIXME: Unpick the below code for the new layout of data from
   //        GenericFunction::compute_vertex_values
@@ -159,15 +160,15 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
       {
         int tensor_2d_offset
             = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
-        _data_values[i * width + j + tensor_2d_offset] = data_values(i, j);
+        _data_values[i * width + j + tensor_2d_offset]
+            = data_values[i * dshape[1] + j];
       }
     }
   }
   else
   {
     _data_values = std::vector<Scalar>(
-        data_values.data(),
-        data_values.data() + num_local_points * data_values.shape(1));
+        data_values.data(), data_values.data() + num_local_points * dshape[1]);
   }
 
   return _data_values;
