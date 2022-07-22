@@ -331,8 +331,6 @@ n_3d = as_vector((n[0], n[1], 0))
 # )):
 
 # Definition of relative permittivity for Au @400nm
-reps_au = -1.0782
-ieps_au = 5.8089
 eps_au = -1.0782 + 1j * 5.8089
 
 # We want to define a space function for the permittivity
@@ -583,7 +581,7 @@ gcs = 2 * radius_wire
 
 # Quantities for the calculation of efficiencies
 P = 0.5 * inner(cross(Esh_3d, conj(Hsh_3d)), n_3d)
-Q = 0.5 * ieps_au * k0 * (inner(E_3d, E_3d)) / Z0 / n_bkg
+Q = 0.5 * np.imag(eps_au) * k0 * (inner(E_3d, E_3d)) / Z0 / n_bkg
 
 # Define integration domain for the wire
 dAu = dx(au_tag)
