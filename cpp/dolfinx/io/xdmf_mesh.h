@@ -6,10 +6,13 @@
 
 #pragma once
 
+#include <array>
 #include <hdf5.h>
 #include <mpi.h>
 #include <span>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace pugi
 {

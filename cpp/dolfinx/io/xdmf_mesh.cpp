@@ -11,7 +11,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <pugixml.hpp>
-#include <xtensor/xadapt.hpp>
+#include <vector>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
