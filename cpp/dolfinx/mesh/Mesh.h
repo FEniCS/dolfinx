@@ -147,12 +147,14 @@ std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>,
 create_submesh(const Mesh& mesh, int dim,
                const std::span<const std::int32_t>& entities);
 
-/// Helper function to get a list of (cell, local_facet) pairs
-/// corresponding to a given facet index.
-/// @param[in] f Facet index
-/// @param[in] cells The cells connected to the facet
-/// @param[in] c_to_f Cell to facet connectivity
-/// @return List of (cell, local_facet) pairs
+/// Helper function to get the (cell, local facet index) pairs
+/// for a given facet. There is one pair for exterior facets,
+/// and two pairs for interior facets.
+/// @param[in] f The facet index
+/// @param[in] cells The cell(s) connected to the facet
+/// @param[in] c_to_f The cell to facet connectivity for the mesh
+/// @return List of (cell, local facet index) pairs corresponding
+/// to the facet.
 template <std::int32_t num_cells>
 static std::array<std::array<std::int32_t, 2>, num_cells>
 get_cell_local_facet_pairs(
