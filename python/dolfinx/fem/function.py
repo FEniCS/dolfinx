@@ -180,7 +180,7 @@ class Expression:
         return self._ufl_expression
 
     @property
-    def X(self) -> np.ndarray:
+    def X(self) -> typing.Callable[[], np.ndarray]:
         """Evaluation points on the reference cell"""
         return self._cpp_object.X
 
