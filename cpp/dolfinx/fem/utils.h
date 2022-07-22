@@ -14,6 +14,7 @@
 #include "Form.h"
 #include "Function.h"
 #include "sparsitybuild.h"
+#include <array>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -26,8 +27,6 @@
 #include <ufcx.h>
 #include <utility>
 #include <vector>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xtensor.hpp>
 
 /// @file utils.h
 /// @brief Functions supporting finite element method operations
@@ -840,12 +839,12 @@ Expression<T> create_expression(
         "Expression has Argument but no Argument function space was provided.");
   }
 
-  const int size = expression.num_points * expression.topological_dimension;
-  const xt::xtensor<double, 2> points = xt::adapt(
-      expression.points, size, xt::no_ownership(),
-      std::vector<std::size_t>(
-          {static_cast<std::size_t>(expression.num_points),
-           static_cast<std::size_t>(expression.topological_dimension)}));
+  const std::size_t size
+      = expression.num_points * expression.topological_dimension;
+  std::span<const double> X(expression.points, size);
+  std::array<std::size_t, 2> Xshape
+      = {static_cast<std::size_t>(expression.num_points),
+         static_cast<std::size_t>(expression.topological_dimension)};
 
   std::vector<int> value_shape;
   for (int i = 0; i < expression.num_components; ++i)
@@ -879,7 +878,7 @@ Expression<T> create_expression(
   }
   assert(tabulate_tensor);
 
-  return Expression(coefficients, constants, points, tabulate_tensor,
+  return Expression(coefficients, constants, X, Xshape, tabulate_tensor,
                     value_shape, mesh, argument_function_space);
 }
 

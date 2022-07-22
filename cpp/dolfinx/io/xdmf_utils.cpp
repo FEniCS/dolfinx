@@ -22,7 +22,6 @@
 #include <filesystem>
 #include <map>
 #include <pugixml.hpp>
-#include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
@@ -94,10 +93,6 @@ xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const int num_dofs_g = mesh->geometry().cmap().dim();
-  const auto x_g
-      = xt::adapt(mesh->geometry().x().data(), mesh->geometry().x().size(),
-                  xt::no_ownership(),
-                  std::vector{mesh->geometry().x().size() / 3, std::size_t(3)});
 
   // Interpolate point values on each cell (using last computed value if
   // not continuous, e.g. discontinuous Galerkin methods)
@@ -105,7 +100,9 @@ xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
   assert(map);
   const std::int32_t num_cells = map->size_local() + map->num_ghosts();
 
-  std::vector<std::int32_t> cells(x_g.shape(0), -1);
+  const std::size_t num_points = mesh->geometry().x().size() / 3;
+
+  std::vector<std::int32_t> cells(num_points, -1);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get coordinates for all points in cell
@@ -114,7 +111,8 @@ xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
       cells[dofs[i]] = c;
   }
 
-  u.eval(x_g, cells, point_values);
+  u.eval(mesh->geometry().x(), {num_points, 3}, cells, point_values,
+         {num_points, value_size_loc});
 
   return point_values;
 }
