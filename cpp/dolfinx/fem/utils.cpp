@@ -337,8 +337,10 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
           const std::array<std::int32_t, 2> pair
               = mesh::get_cell_local_facet_pairs<1>(*f, f_to_c->links(*f),
                                                     *c_to_f)[0];
-          integrals[tags[index]].insert(integrals[tags[index]].end(),
-                                        pair.cbegin(), pair.cend());
+          std::vector<std::int32_t>& integration_entities
+              = integrals[tags[index]];
+          integration_entities.insert(integration_entities.end(), pair.cbegin(),
+                                      pair.cend());
         }
       }
     }
@@ -354,10 +356,12 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
           const std::array<std::array<std::int32_t, 2>, 2> pairs
               = mesh::get_cell_local_facet_pairs<2>(*f, f_to_c->links(*f),
                                                     *c_to_f);
-          integrals[tags[index]].insert(integrals[tags[index]].end(),
-                                        pairs[0].cbegin(), pairs[0].cend());
-          integrals[tags[index]].insert(integrals[tags[index]].end(),
-                                        pairs[1].cbegin(), pairs[1].cend());
+          std::vector<std::int32_t>& integration_entities
+              = integrals[tags[index]];
+          integration_entities.insert(integration_entities.end(),
+                                      pairs[0].cbegin(), pairs[0].cend());
+          integration_entities.insert(integration_entities.end(),
+                                      pairs[1].cbegin(), pairs[1].cend());
         }
       }
     }
