@@ -69,8 +69,8 @@ create_new_vertices(MPI_Comm neighbor_comm,
 /// processes
 /// @param[in] old_mesh
 /// @param[in] cell_topology Topology of cells, (vertex indices)
-/// @param[in] new_vertex_coordinates
-/// @param[in] xhsape
+/// @param[in] new_vertex_coordinates New coordinates, row-major storage
+/// @param[in] xshape The shape of `new_vertex_coordinates`
 /// @param[in] redistribute Call graph partitioner if true
 /// @param[in] ghost_mode None or shared_facet
 /// @return New mesh
