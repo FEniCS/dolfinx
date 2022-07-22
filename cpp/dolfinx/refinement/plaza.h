@@ -10,7 +10,6 @@
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <xtensor/xtensor.hpp>
 
 #pragma once
 
