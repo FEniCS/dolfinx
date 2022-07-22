@@ -149,7 +149,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
                                         ]._cpp_object for i in range(ufcx_form.num_coefficients)]
         constants = [c._cpp_object for c in form.constants()]
 
-        # NOTE Could remove this and let the user convert mashtags by calling
+        # NOTE Could remove this and let the user convert meshtags by calling
         # compute_integration_domains themselves
         def get_integration_domains(integral_type, subdomains):
             subdomain = subdomains.get(integral_type.name)
