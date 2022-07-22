@@ -14,20 +14,19 @@
 #include "Form.h"
 #include "Function.h"
 #include "sparsitybuild.h"
+#include <array>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
 #include <set>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <ufcx.h>
 #include <utility>
 #include <vector>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
 
 /// @file utils.h
 /// @brief Functions supporting finite element method operations
@@ -536,7 +535,7 @@ namespace impl
 {
 /// @private
 template <typename T>
-xtl::span<const std::uint32_t> get_cell_orientation_info(
+std::span<const std::uint32_t> get_cell_orientation_info(
     const std::vector<std::shared_ptr<const Function<T>>>& coefficients)
 {
   bool needs_dof_transformations = false;
@@ -551,12 +550,12 @@ xtl::span<const std::uint32_t> get_cell_orientation_info(
     }
   }
 
-  xtl::span<const std::uint32_t> cell_info;
+  std::span<const std::uint32_t> cell_info;
   if (needs_dof_transformations)
   {
     auto mesh = coefficients.front()->function_space()->mesh();
     mesh->topology_mutable().create_entity_permutations();
-    cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+    cell_info = std::span(mesh->topology().get_cell_permutation_info());
   }
 
   return cell_info;
@@ -564,9 +563,9 @@ xtl::span<const std::uint32_t> get_cell_orientation_info(
 
 // Pack a single coefficient for a single cell
 template <typename T, int _bs, typename Functor>
-static inline void pack(const xtl::span<T>& coeffs, std::int32_t cell, int bs,
-                        const xtl::span<const T>& v,
-                        const xtl::span<const std::uint32_t>& cell_info,
+static inline void pack(const std::span<T>& coeffs, std::int32_t cell, int bs,
+                        const std::span<const T>& v,
+                        const std::span<const std::uint32_t>& cell_info,
                         const DofMap& dofmap, Functor transform)
 {
   auto dofs = dofmap.cell_dofs(cell);
@@ -606,15 +605,15 @@ static inline void pack(const xtl::span<T>& coeffs, std::int32_t cell, int bs,
 /// `std::function<std::int32_t(E::value_type)>`)
 /// @param[in] offset The offset for c
 template <typename T, typename Functor>
-void pack_coefficient_entity(const xtl::span<T>& c, int cstride,
+void pack_coefficient_entity(const std::span<T>& c, int cstride,
                              const Function<T>& u,
-                             const xtl::span<const std::uint32_t>& cell_info,
-                             const xtl::span<const std::int32_t>& entities,
+                             const std::span<const std::uint32_t>& cell_info,
+                             const std::span<const std::int32_t>& entities,
                              std::size_t estride, Functor fetch_cells,
                              std::int32_t offset)
 {
   // Read data from coefficient "u"
-  const xtl::span<const T>& v = u.x()->array();
+  const std::span<const T>& v = u.x()->array();
   const DofMap& dofmap = *u.function_space()->dofmap();
   std::shared_ptr<const FiniteElement> element = u.function_space()->element();
   int space_dim = element->space_dimension();
@@ -737,7 +736,7 @@ allocate_coefficient_storage(const Form<T>& form)
 /// @param[in] cstride The coefficient stride
 template <typename T>
 void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
-                       const xtl::span<T>& c, int cstride)
+                       const std::span<T>& c, int cstride)
 {
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const Function<T>>>& coefficients
@@ -746,7 +745,7 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
 
   if (!coefficients.empty())
   {
-    xtl::span<const std::uint32_t> cell_info
+    std::span<const std::uint32_t> cell_info
         = impl::get_cell_orientation_info(coefficients);
 
     switch (integral_type)
@@ -825,12 +824,12 @@ Expression<T> create_expression(
         "Expression has Argument but no Argument function space was provided.");
   }
 
-  const int size = expression.num_points * expression.topological_dimension;
-  const xt::xtensor<double, 2> points = xt::adapt(
-      expression.points, size, xt::no_ownership(),
-      std::vector<std::size_t>(
-          {static_cast<std::size_t>(expression.num_points),
-           static_cast<std::size_t>(expression.topological_dimension)}));
+  const std::size_t size
+      = expression.num_points * expression.topological_dimension;
+  std::span<const double> X(expression.points, size);
+  std::array<std::size_t, 2> Xshape
+      = {static_cast<std::size_t>(expression.num_points),
+         static_cast<std::size_t>(expression.topological_dimension)};
 
   std::vector<int> value_shape;
   for (int i = 0; i < expression.num_components; ++i)
@@ -864,7 +863,7 @@ Expression<T> create_expression(
   }
   assert(tabulate_tensor);
 
-  return Expression(coefficients, constants, points, tabulate_tensor,
+  return Expression(coefficients, constants, X, Xshape, tabulate_tensor,
                     value_shape, mesh, argument_function_space);
 }
 
@@ -941,7 +940,7 @@ void pack_coefficients(const Form<T>& form,
 template <typename T>
 std::pair<std::vector<T>, int>
 pack_coefficients(const Expression<T>& u,
-                  const xtl::span<const std::int32_t>& cells)
+                  const std::span<const std::int32_t>& cells)
 {
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const Function<T>>>& coefficients
@@ -953,13 +952,13 @@ pack_coefficients(const Expression<T>& u,
   std::vector<T> c(cells.size() * offsets.back());
   if (!coefficients.empty())
   {
-    xtl::span<const std::uint32_t> cell_info
+    std::span<const std::uint32_t> cell_info
         = impl::get_cell_orientation_info(coefficients);
 
     // Iterate over coefficients
     for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       impl::pack_coefficient_entity(
-          xtl::span(c), cstride, *coefficients[coeff], cell_info, cells, 1,
+          std::span(c), cstride, *coefficients[coeff], cell_info, cells, 1,
           [](auto entity) { return entity[0]; }, offsets[coeff]);
   }
   return {std::move(c), cstride};

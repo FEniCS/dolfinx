@@ -8,9 +8,9 @@
 
 #include <hdf5.h>
 #include <mpi.h>
+#include <span>
 #include <string>
 #include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
 
 namespace pugi
 {
@@ -52,7 +52,7 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                        const hid_t h5_id, const std::string path_prefix,
                        const mesh::Topology& topology,
                        const mesh::Geometry& geometry, int cell_dim,
-                       const xtl::span<const std::int32_t>& entities);
+                       const std::span<const std::int32_t>& entities);
 
 /// Add Geometry xml node
 void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,

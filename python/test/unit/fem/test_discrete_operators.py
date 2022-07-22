@@ -77,7 +77,7 @@ def test_gradient_interpolation(cell_type, p, q):
     u = Function(V)
     u.interpolate(lambda x: 2 * x[0]**p + 3 * x[1]**p)
 
-    grad_u = Expression(ufl.grad(u), W.element.interpolation_points)
+    grad_u = Expression(ufl.grad(u), W.element.interpolation_points())
     w_expr = Function(W)
     w_expr.interpolate(grad_u)
 
@@ -92,10 +92,12 @@ def test_gradient_interpolation(cell_type, p, q):
 @pytest.mark.parametrize("p", range(1, 4))
 @pytest.mark.parametrize("q", range(1, 4))
 @pytest.mark.parametrize("from_lagrange", [True, False])
-@pytest.mark.parametrize("cell_type", [CellType.quadrilateral,
-                                       CellType.triangle,
-                                       CellType.tetrahedron,
-                                       CellType.hexahedron])
+@pytest.mark.parametrize("cell_type", [
+    CellType.quadrilateral,
+    CellType.triangle,
+    CellType.tetrahedron,
+    CellType.hexahedron
+])
 def test_interpolation_matrix(cell_type, p, q, from_lagrange):
     """Test that discrete interpolation matrix yields the same result as interpolation."""
 

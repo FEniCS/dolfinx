@@ -18,12 +18,12 @@
 #include <functional>
 #include <memory>
 #include <numeric>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
 {
@@ -119,8 +119,8 @@ public:
                                              V.dofmap()->index_map_bs());
 
     // Copy values into new vector
-    xtl::span<const T> x_old = _x->array();
-    xtl::span<T> x_new = x->mutable_array();
+    std::span<const T> x_old = _x->array();
+    std::span<T> x_new = x->mutable_array();
     for (std::size_t i = 0; i < map.size(); ++i)
     {
       assert((int)i < x_new.size());
@@ -147,8 +147,7 @@ public:
   /// Interpolate a Function
   /// @param[in] v The function to be interpolated
   /// @param[in] cells The cells to interpolate on
-  void interpolate(const Function<T>& v,
-                   const xtl::span<const std::int32_t>& cells)
+  void interpolate(const Function<T>& v, std::span<const std::int32_t> cells)
   {
     fem::interpolate(*this, v, cells);
   }
@@ -174,7 +173,7 @@ public:
   /// @param[in] cells The cells to interpolate on
   void interpolate(
       const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
-      const xtl::span<const std::int32_t>& cells)
+      std::span<const std::int32_t> cells)
   {
     assert(_function_space);
     assert(_function_space->element());
@@ -183,6 +182,7 @@ public:
         *_function_space->element(), *_function_space->mesh(), cells);
     auto _x = xt::adapt(x, std::vector<std::size_t>{3, x.size() / 3});
     auto fx = f(_x);
+    assert(fx.dimension() <= 2);
     if (int vs = _function_space->element()->value_size();
         vs == 1 and fx.dimension() == 1)
     {
@@ -207,7 +207,14 @@ public:
       }
     }
 
-    fem::interpolate(*this, fx, cells);
+    std::array<std::size_t, 2> fshape;
+    if (fx.dimension() == 1)
+      fshape = {1, fx.shape(0)};
+    else
+      fshape = {fx.shape(0), fx.shape(1)};
+
+    fem::interpolate(*this, std::span<const T>(fx.data(), fx.size()), fshape,
+                     cells);
   }
 
   /// Interpolate an expression function on the whole domain
@@ -232,8 +239,7 @@ public:
   /// `FiniteElement::interpolation_points()` for the element associated
   /// with `u`.
   /// @param[in] cells The cells to interpolate on
-  void interpolate(const Expression<T>& e,
-                   const xtl::span<const std::int32_t>& cells)
+  void interpolate(const Expression<T>& e, std::span<const std::int32_t> cells)
   {
     // Check that spaces are compatible
     assert(_function_space);
@@ -248,16 +254,29 @@ public:
           "Function value size not equal to Expression value size");
     }
 
-    if (!xt::allclose(e.X(),
-                      _function_space->element()->interpolation_points()))
     {
-      throw std::runtime_error("Function element interpolation points not "
-                               "equal to Expression interpolation points");
+      // Compatibility check
+      auto [X0, shape0] = e.X();
+      auto [X1, shape1] = _function_space->element()->interpolation_points();
+      if (shape0 != shape1)
+      {
+        throw std::runtime_error(
+            "Function element interpolation points has different shape to "
+            "Expression interpolation points");
+      }
+      for (std::size_t i = 0; i < X0.size(); ++i)
+      {
+        if (std::abs(X0[i] - X1[i]) > 1.0e-10)
+        {
+          throw std::runtime_error("Function element interpolation points not "
+                                   "equal to Expression interpolation points");
+        }
+      }
     }
 
     // Array to hold evaluted Expression
     std::size_t num_cells = cells.size();
-    std::size_t num_points = e.X().shape(0);
+    std::size_t num_points = e.X().second[0];
     xt::xtensor<T, 3> f({num_cells, num_points, value_size});
 
     // Evaluate Expression at points
@@ -273,7 +292,8 @@ public:
                                         {value_size, num_cells * num_points});
 
     // Interpolate values into appropriate space
-    fem::interpolate(*this, _f, cells);
+    fem::interpolate(*this, std::span<const T>(_f.data(), _f.size()),
+                     {_f.shape(0), _f.shape(1)}, cells);
   }
 
   /// Interpolate an Expression (based on UFL) on all cells
@@ -291,32 +311,37 @@ public:
     interpolate(e, cells);
   }
 
-  /// Evaluate the Function at points
+  /// @brief Evaluate the Function at points.
   ///
   /// @param[in] x The coordinates of the points. It has shape
-  /// (num_points, 3).
+  /// (num_points, 3) and storage is row-major.
+  /// @param[in] xshape The shape of `x`.
   /// @param[in] cells An array of cell indices. cells[i] is the index
   /// of the cell that contains the point x(i). Negative cell indices
   /// can be passed, and the corresponding point will be ignored.
-  /// @param[in,out] u The values at the points. Values are not computed
+  /// @param[out] u The values at the points. Values are not computed
   /// for points with a negative cell index. This argument must be
-  /// passed with the correct size.
-  void eval(const xt::xtensor<double, 2>& x,
-            const xtl::span<const std::int32_t>& cells,
-            xt::xtensor<T, 2>& u) const
+  /// passed with the correct size. Storage is row-major.
+  /// @param[in] ushape The shape of `u`.
+  void eval(std::span<const double> x, std::array<std::size_t, 2> xshape,
+            std::span<const std::int32_t> cells, std::span<T> u,
+            std::array<std::size_t, 2> ushape) const
   {
     if (cells.empty())
       return;
 
+    assert(x.size() == xshape[0] * xshape[1]);
+    assert(u.size() == ushape[0] * ushape[1]);
+
     // TODO: This could be easily made more efficient by exploiting points
     // being ordered by the cell to which they belong.
 
-    if (x.shape(0) != cells.size())
+    if (xshape[0] != cells.size())
     {
       throw std::runtime_error(
           "Number of points and number of cells must be equal.");
     }
-    if (x.shape(0) != u.shape(0))
+    if (xshape[0] != ushape[0])
     {
       throw std::runtime_error(
           "Length of array for Function values must be the "
@@ -335,7 +360,7 @@ public:
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
     const std::size_t num_dofs_g = mesh->geometry().cmap().dim();
-    xtl::span<const double> x_g = mesh->geometry().x();
+    std::span<const double> x_g = mesh->geometry().x();
 
     // Get coordinate map
     const CoordinateElement& cmap = mesh->geometry().cmap();
@@ -366,44 +391,60 @@ public:
     assert(dofmap);
     const int bs_dof = dofmap->bs();
 
-    xtl::span<const std::uint32_t> cell_info;
+    std::span<const std::uint32_t> cell_info;
     if (element->needs_dof_transformations())
     {
       mesh->topology_mutable().create_entity_permutations();
-      cell_info = xtl::span(mesh->topology().get_cell_permutation_info());
+      cell_info = std::span(mesh->topology().get_cell_permutation_info());
     }
 
-    xt::xtensor<double, 2> coordinate_dofs
-        = xt::zeros<double>({num_dofs_g, gdim});
-    xt::xtensor<double, 2> xp = xt::zeros<double>({std::size_t(1), gdim});
+    namespace stdex = std::experimental;
+    using cmdspan4_t
+        = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
+    using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+    using mdspan3_t = stdex::mdspan<double, stdex::dextents<std::size_t, 3>>;
+
+    std::vector<double> coord_dofs_b(num_dofs_g * gdim);
+    mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
+    std::vector<double> xp_b(1 * gdim);
+    mdspan2_t xp(xp_b.data(), 1, gdim);
 
     // Loop over points
     std::fill(u.data(), u.data() + u.size(), 0.0);
-    const xtl::span<const T>& _v = _x->array();
+    const std::span<const T>& _v = _x->array();
 
-    // -- Lambda function for affine pull-backs
-    xt::xtensor<double, 4> data(cmap.tabulate_shape(1, 1));
-    const xt::xtensor<double, 2> X0(xt::zeros<double>({std::size_t(1), tdim}));
-    cmap.tabulate(1, X0, data);
-    const xt::xtensor<double, 2> dphi_i
-        = xt::view(data, xt::range(1, tdim + 1), 0, xt::all(), 0);
-    auto pull_back_affine = [dphi_i](auto&& X, const auto& cell_geometry,
-                                     auto&& J, auto&& K, const auto& x) mutable
-    {
-      CoordinateElement::compute_jacobian(dphi_i, cell_geometry, J);
-      CoordinateElement::compute_jacobian_inverse(J, K);
-      CoordinateElement::pull_back_affine(
-          X, K, CoordinateElement::x0(cell_geometry), x);
-    };
+    // Evaluate geometry basis at point (0, 0, 0) on the reference cell.
+    // Used in affine case.
+    std::array<std::size_t, 4> phi0_shape = cmap.tabulate_shape(1, 1);
+    std::vector<double> phi0_b(std::reduce(phi0_shape.begin(), phi0_shape.end(),
+                                           1, std::multiplies{}));
+    cmdspan4_t phi0(phi0_b.data(), phi0_shape);
+    cmap.tabulate(1, std::vector<double>(tdim), {1, tdim}, phi0_b);
+    auto dphi0 = stdex::submdspan(phi0, std::pair(1, tdim + 1), 0,
+                                  stdex::full_extent, 0);
 
-    xt::xtensor<double, 2> dphi;
-    xt::xtensor<double, 2> X({x.shape(0), tdim});
-    xt::xtensor<double, 3> J = xt::zeros<double>({x.shape(0), gdim, tdim});
-    xt::xtensor<double, 3> K = xt::zeros<double>({x.shape(0), tdim, gdim});
-    std::vector<double> detJ(x.shape(0));
-    xt::xtensor<double, 4> phi(cmap.tabulate_shape(1, 1));
+    // Data structure for evaluating geometry basis at specific points.
+    // Used in non-affine case.
+    std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, 1);
+    std::vector<double> phi_b(
+        std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+    cmdspan4_t phi(phi_b.data(), phi_shape);
+    auto dphi = stdex::submdspan(phi, std::pair(1, tdim + 1), 0,
+                                 stdex::full_extent, 0);
 
-    xt::xtensor<double, 2> _Xp({1, tdim});
+    // Reference coordinates for each point
+    std::vector<double> Xb(xshape[0] * tdim);
+    mdspan2_t X(Xb.data(), xshape[0], tdim);
+
+    // Geometry data at each point
+    std::vector<double> J_b(xshape[0] * gdim * tdim);
+    mdspan3_t J(J_b.data(), xshape[0], gdim, tdim);
+    std::vector<double> K_b(xshape[0] * tdim * gdim);
+    mdspan3_t K(K_b.data(), xshape[0], tdim, gdim);
+    std::vector<double> detJ(xshape[0]);
+    std::vector<double> det_scratch(2 * gdim * tdim);
+
+    // Prepare geometry data in each cell
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
       const int cell_index = cells[p];
@@ -419,44 +460,61 @@ public:
       {
         const int pos = 3 * x_dofs[i];
         for (std::size_t j = 0; j < gdim; ++j)
-          coordinate_dofs(i, j) = x_g[pos + j];
+          coord_dofs(i, j) = x_g[pos + j];
       }
 
       for (std::size_t j = 0; j < gdim; ++j)
-        xp(0, j) = x(p, j);
+        xp(0, j) = x[p * xshape[1] + j];
 
-      auto _J = xt::view(J, p, xt::all(), xt::all());
-      auto _K = xt::view(K, p, xt::all(), xt::all());
+      auto _J = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
+      auto _K = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
+
+      std::array<double, 3> Xpb = {0, 0, 0};
+      stdex::mdspan<double,
+                    stdex::extents<std::size_t, 1, stdex::dynamic_extent>>
+          Xp(Xpb.data(), 1, tdim);
 
       // Compute reference coordinates X, and J, detJ and K
       if (cmap.is_affine())
       {
-        pull_back_affine(_Xp, coordinate_dofs, _J, _K, xp);
-        detJ[p] = CoordinateElement::compute_jacobian_determinant(_J);
+        CoordinateElement::compute_jacobian(dphi0, coord_dofs, _J);
+        CoordinateElement::compute_jacobian_inverse(_J, _K);
+        std::array<double, 3> x0 = {0, 0, 0};
+        for (std::size_t i = 0; i < coord_dofs.extent(1); ++i)
+          x0[i] += coord_dofs(0, i);
+        CoordinateElement::pull_back_affine(Xp, _K, x0, xp);
+        detJ[p]
+            = CoordinateElement::compute_jacobian_determinant(_J, det_scratch);
       }
       else
       {
-        cmap.pull_back_nonaffine(_Xp, xp, coordinate_dofs);
-        cmap.tabulate(1, _Xp, phi);
-        dphi = xt::view(phi, xt::range(1, tdim + 1), 0, xt::all(), 0);
-        CoordinateElement::compute_jacobian(dphi, coordinate_dofs, _J);
+        // Pull-back physical point xp to reference coordinate Xp
+        cmap.pull_back_nonaffine(Xp, xp, coord_dofs);
+
+        cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
+        CoordinateElement::compute_jacobian(dphi, coord_dofs, _J);
         CoordinateElement::compute_jacobian_inverse(_J, _K);
-        detJ[p] = CoordinateElement::compute_jacobian_determinant(_J);
+        detJ[p]
+            = CoordinateElement::compute_jacobian_determinant(_J, det_scratch);
       }
 
-      for (std::size_t j = 0; j < X.shape(1); ++j)
-        X(p, j) = _Xp(0, j);
+      for (std::size_t j = 0; j < X.extent(1); ++j)
+        X(p, j) = Xpb[j];
     }
 
     // Prepare basis function data structures
-    xt::xtensor<double, 4> basis_derivatives_reference_values(
-        {1, x.shape(0), space_dimension, reference_value_size});
-    xt::xtensor<double, 2> basis_values({space_dimension, value_size});
+    std::vector<double> basis_derivatives_reference_values_b(
+        1 * xshape[0] * space_dimension * reference_value_size);
+    cmdspan4_t basis_derivatives_reference_values(
+        basis_derivatives_reference_values_b.data(), 1, xshape[0],
+        space_dimension, reference_value_size);
+    std::vector<double> basis_values_b(space_dimension * value_size);
+    mdspan2_t basis_values(basis_values_b.data(), space_dimension, value_size);
 
     // Compute basis on reference element
-    element->tabulate(basis_derivatives_reference_values, X, 0);
+    element->tabulate(basis_derivatives_reference_values_b, Xb,
+                      {X.extent(0), X.extent(1)}, 0);
 
-    namespace stdex = std::experimental;
     using xu_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
     using xU_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
     using xJ_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
@@ -479,42 +537,35 @@ public:
       // Permute the reference values to account for the cell's
       // orientation
       apply_dof_transformation(
-          xtl::span(basis_derivatives_reference_values.data()
+          std::span(basis_derivatives_reference_values_b.data()
                         + p * num_basis_values,
                     num_basis_values),
           cell_info, cell_index, reference_value_size);
 
       {
-        assert(basis_values.dimension() == 2);
-        assert(basis_derivatives_reference_values.dimension() == 4);
-
-        xu_t _u(basis_values.data(), basis_values.shape(0),
-                basis_values.shape(1));
-        xU_t _U(basis_derivatives_reference_values.data()
-                    + p * basis_derivatives_reference_values.shape(2)
-                          * basis_derivatives_reference_values.shape(3),
-                basis_derivatives_reference_values.shape(2),
-                basis_derivatives_reference_values.shape(3));
-        xK_t _K(K.data() + p * K.shape(1) * K.shape(2), K.shape(1), K.shape(2));
-        xJ_t _J(J.data() + p * J.shape(1) * J.shape(2), J.shape(1), J.shape(2));
-        push_forward_fn(_u, _U, _J, detJ[p], _K);
+        auto _U = stdex::submdspan(basis_derivatives_reference_values, 0, p,
+                                   stdex::full_extent, stdex::full_extent);
+        auto _J
+            = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
+        auto _K
+            = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
+        push_forward_fn(basis_values, _U, _J, detJ[p], _K);
       }
 
       // Get degrees of freedom for current cell
-      xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
+      std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (int k = 0; k < bs_dof; ++k)
           coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
 
       // Compute expansion
-      auto u_row = xt::row(u, p);
       for (int k = 0; k < bs_element; ++k)
       {
         for (std::size_t i = 0; i < space_dimension; ++i)
         {
           for (std::size_t j = 0; j < value_size; ++j)
           {
-            u_row[j * bs_element + k]
+            u[p * ushape[1] + (j * bs_element + k)]
                 += coefficients[bs_element * i + k] * basis_values(i, j);
           }
         }

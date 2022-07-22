@@ -34,7 +34,7 @@ namespace
 /// @returns A list of (cell_index, entity_index) pairs for each input entity
 std::vector<std::pair<std::int32_t, int>>
 find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
-                        const xtl::span<const std::int32_t>& entities,
+                        const std::span<const std::int32_t>& entities,
                         const int dim)
 {
   // Initialise entity-cell connectivity
@@ -77,7 +77,7 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
 /// this rank
 std::vector<std::int32_t>
 get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
-                const xtl::span<const std::int32_t>& dofs_local)
+                const std::span<const std::int32_t>& dofs_local)
 {
   int num_neighbors(-1);
   {
@@ -108,7 +108,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
     // Convert dofs indices to 'block' map indices
     std::vector<std::int32_t> dofs_local_m;
     dofs_local_m.reserve(dofs_local.size());
-    std::transform(dofs_local.cbegin(), dofs_local.cend(),
+    std::transform(dofs_local.begin(), dofs_local.end(),
                    std::back_inserter(dofs_local_m),
                    [bs_map](auto dof) { return dof / bs_map; });
 
@@ -116,8 +116,8 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
     map.local_to_global(dofs_local_m, dofs_global);
 
     // Add offset
-    std::transform(dofs_global.cbegin(), dofs_global.cend(),
-                   dofs_local.cbegin(), dofs_global.begin(),
+    std::transform(dofs_global.begin(), dofs_global.end(), dofs_local.begin(),
+                   dofs_global.begin(),
                    [bs_map](auto global_block, auto local_dof)
                    { return bs_map * global_block + (local_dof % bs_map); });
   }
@@ -180,7 +180,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 fem::locate_dofs_topological(const FunctionSpace& V, int dim,
-                             const xtl::span<const std::int32_t>& entities,
+                             const std::span<const std::int32_t>& entities,
                              bool remote)
 {
   assert(V.dofmap());
@@ -231,7 +231,7 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
     {
       // Get cell dofmap and loop over facet dofs and 'unpack' blocked
       // dofs
-      xtl::span<const std::int32_t> cell_dofs = dofmap->cell_dofs(cell);
+      std::span<const std::int32_t> cell_dofs = dofmap->cell_dofs(cell);
       for (int index : entity_dofs[entity_local_index])
       {
         for (int k = 0; k < element_bs; ++k)
@@ -294,7 +294,7 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
-    const int dim, const xtl::span<const std::int32_t>& entities, bool remote)
+    const int dim, const std::span<const std::int32_t>& entities, bool remote)
 {
   const FunctionSpace& V0 = V.at(0).get();
   const FunctionSpace& V1 = V.at(1).get();
@@ -351,8 +351,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   for (auto [cell, entity_local_index] : entity_indices)
   {
     // Get cell dofmap
-    xtl::span<const std::int32_t> cell_dofs0 = dofmap0->cell_dofs(cell);
-    xtl::span<const std::int32_t> cell_dofs1 = dofmap1->cell_dofs(cell);
+    std::span<const std::int32_t> cell_dofs0 = dofmap0->cell_dofs(cell);
+    std::span<const std::int32_t> cell_dofs1 = dofmap1->cell_dofs(cell);
     assert(bs[0] * cell_dofs0.size() == bs[1] * cell_dofs1.size());
 
     // Loop over facet dofs and 'unpack' blocked dofs
