@@ -153,10 +153,12 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         # compute_integration_domains themselves
         def get_integration_domains(integral_type, subdomains):
             subdomain = subdomains.get(integral_type.name)
-            if isinstance(subdomain, dolfinx.mesh.MeshTagsMetaClass) \
-                    or isinstance(subdomain, dolfinx.cpp.mesh.MeshTags_int32):
-                return _cpp.fem.compute_integration_domains(
-                    integral_type, subdomain)
+            if subdomain is None:
+                return {}
+            else:
+                try:
+                    return _cpp.fem.compute_integration_domains(
+                        integral_type, subdomain)
             elif isinstance(subdomain, dict):
                 return subdomain
             elif subdomain is None:
