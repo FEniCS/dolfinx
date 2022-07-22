@@ -439,6 +439,7 @@ def test_interpolation_non_affine_nonmatching_maps():
     w.interpolate(lambda x: x)
     v.interpolate(w)
     s = assemble_scalar(form(ufl.inner(w - v, w - v) * ufl.dx))
+    assert np.isclose(s, 0)
 
 
 @pytest.mark.parametrize("order", [2, 3, 4])
