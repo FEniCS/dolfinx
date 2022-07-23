@@ -42,16 +42,16 @@
 #
 
 
-ARG ADIOS2_VERSION=2.8.1
+ARG ADIOS2_VERSION=2.8.2
 ARG GMSH_VERSION=4_10_1
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=2
 ARG KAHIP_VERSION=3.14
 ARG NUMPY_VERSION=1.22.4
-ARG PYBIND11_VERSION=2.9.2
-ARG PETSC_VERSION=3.17.2
+ARG PYBIND11_VERSION=2.10.0
+ARG PETSC_VERSION=3.17.3
 ARG SLEPC_VERSION=3.17.1
-ARG PYVISTA_VERSION=0.34.2
+ARG PYVISTA_VERSION=0.35.2
 ARG XTENSOR_VERSION=0.24.2
 ARG XTL_VERSION=0.7.4
 
@@ -482,13 +482,10 @@ RUN apt-get -qq update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# pyvista dependencies from pip. Only compatible with x86-64 (amd64).
-# matplotlib improves plotting quality with better color maps and properly rendering colorbars.
-RUN dpkgArch="$(dpkg --print-architecture)"; \
-    case "$dpkgArch" in amd64) \
-    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
-    esac; \
-    pip3 install --no-cache-dir matplotlib
+# pyvista dependencies from pip.
+# matplotlib improves plotting quality with better color maps and
+# properly rendering colorbars.
+RUN pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} matplotlib
 
 # Jupyter Notebook kernel specification for complex build DOLFINx
 ADD dolfinx/docker/complex-kernel.json /usr/local/share/jupyter/kernels/python3-complex/kernel.json
