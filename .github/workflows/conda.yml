@@ -23,7 +23,7 @@ jobs:
         run: conda update conda
 
       - name: Install DOLFINx (py3-9)
-        run: conda -y create -n env3-9 -c conda-forge python=3.10 fenics-dolfinx mpich
+        run: conda create -n env3-9 -c conda-forge python=3.10 fenics-dolfinx mpich
       - name: Test  (py3-9)
         run: |
           conda activate env3-9
@@ -31,7 +31,7 @@ jobs:
           mpirun -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
 
       - name: Install DOLFINx (py3-10)
-        run: conda -y create -n env3-10 -c conda-forge python=3.10 fenics-dolfinx mpich
+        run: conda create -n env3-10 -c conda-forge python=3.10 fenics-dolfinx mpich
       - name: Test  (py3-10)
         run: |
           conda activate env3-10
