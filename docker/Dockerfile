@@ -42,16 +42,16 @@
 #
 
 
-ARG ADIOS2_VERSION=2.8.2
-ARG GMSH_VERSION=4_10_5
+ARG ADIOS2_VERSION=2.8.1
+ARG GMSH_VERSION=4_10_1
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=2
 ARG KAHIP_VERSION=3.14
 ARG NUMPY_VERSION=1.22.4
-ARG PYBIND11_VERSION=2.10.0
-ARG PETSC_VERSION=3.17.3
+ARG PYBIND11_VERSION=2.9.2
+ARG PETSC_VERSION=3.17.2
 ARG SLEPC_VERSION=3.17.1
-ARG PYVISTA_VERSION=0.35.2
+ARG PYVISTA_VERSION=0.34.2
 ARG XTENSOR_VERSION=0.24.2
 ARG XTL_VERSION=0.7.4
 
@@ -202,10 +202,21 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
 # Install HDF5
 RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
     tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -HDF5_ENABLE_PARALLEL=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
-    cmake --build build-dir && \
-    cmake --install build-dir && \
+    cd hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
+    ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
+    make -j${BUILD_NP} install && \
     rm -rf /tmp/*
+
+# HDF5 CMake build broken, see
+# https://github.com/HDFGroup/hdf5/issues/969,
+# https://github.com/HDFGroup/hdf5/pull/1089
+# RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+#    tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+#     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -HDF5_ENABLE_PARALLEL=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
+#     cmake --build build-dir && \ARG BUILD_NP=2
+
+#     cmake --install build-dir && \
+#     rm -rf /tmp/*
 
 # Install ADIOS2
 RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
@@ -223,8 +234,7 @@ RUN git clone -b gmsh_${GMSH_VERSION} --single-branch --depth 1 https://gitlab.o
     cmake --install build-dir && \
     rm -rf /tmp/*
 
-# GMSH installs python library in /usr/local/lib, see:
-# https://gitlab.onelab.info/gmsh/gmsh/-/issues/1414
+# GMSH installs python library in /usr/local/lib, see: https://gitlab.onelab.info/gmsh/gmsh/-/issues/1414
 ENV PYTHONPATH=/usr/local/lib:$PYTHONPATH
 
 # Install PETSc and petsc4py with real and complex types
@@ -381,13 +391,13 @@ ONBUILD ADD ufl/ /src/ufl/
 ONBUILD ADD ffcx/ /src/ffcx/
 ONBUILD ADD dolfinx/ /src/dolfinx/
 
-# These files are empty by default, i.e. they do nothing. The user can
-# set them at build time if they wish.
+# These files are empty by default, i.e. they do nothing.
+# The user can set them at build time if they wish.
 ONBUILD ADD dolfinx/docker/dolfinx_jit_parameters.json /root/.config/dolfinx/dolfinx_jit_parameters.json
 ONBUILD ADD dolfinx/docker/ffcx_parameters.json /root/.config/ffcx/ffcx_parameters.json
 
-# The following ARGS are used in the DOLFINx layer. They are safe
-# defaults.
+# The following ARGS are used in the DOLFINx layer.
+# They are safe defaults.
 # CMake build type for DOLFINx C++ build. See CMake documentation.
 ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="RelWithDebInfo"
 # Extra CMake C++ compiler flags for DOLFINx C++ build.
@@ -448,8 +458,8 @@ COPY --from=intermediate /usr/local /usr/local
 COPY --from=intermediate /root/.config /root/.config
 
 # Real by default.
-# Note that because we inherit from dev-env we do not inherit these ENV
-# from dolfinx-onbuild so this must be repeated here.
+# Note that because we inherit from dev-env we do not inherit these ENV from
+# dolfinx-onbuild so this must be repeated here.
 ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
     PETSC_ARCH=linux-gnu-real-32 \
     PYTHONPATH=/usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages:$PYTHONPATH \
@@ -472,10 +482,8 @@ RUN apt-get -qq update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# pyvista dependencies from pip. matplotlib improves plotting quality
-# with better color maps and properly rendering colorbars.
-# Note: pyvista requires (py)vtk, but vtk on PyPI does not support
-# linux/arm64, so pyvista cannot be installed for arm64.
+# pyvista dependencies from pip. Only compatible with x86-64 (amd64).
+# matplotlib improves plotting quality with better color maps and properly rendering colorbars.
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
     pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
