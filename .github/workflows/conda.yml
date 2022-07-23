@@ -31,6 +31,5 @@ jobs:
       - name: Update conda
         run: conda update conda
 
-    steps:
       - name: Install DOLFINx
         run: conda install -c conda-forge fenics-dolfinx mpich pyvista
