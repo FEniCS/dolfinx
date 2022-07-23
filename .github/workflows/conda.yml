@@ -28,6 +28,9 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Upddate conda
-        run: |
-          conda update conda
+      - name: Update conda
+        run: conda update conda
+
+    steps:
+      - name: Install DOLFINx
+        run: onda install -c conda-forge fenics-dolfinx mpich pyvista
