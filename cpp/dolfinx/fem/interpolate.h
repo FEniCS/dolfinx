@@ -19,6 +19,8 @@
 #include <numeric>
 #include <span>
 #include <vector>
+#include<xtensor/xadapt.hpp>
+#include<xtensor/xio.hpp>
 
 namespace dolfinx::fem
 {
@@ -182,20 +184,6 @@ namespace dolfinx::fem
 template <typename T>
 class Function;
 
-/// Interpolate an expression f(x) in a finite element space
-///
-/// @param[out] u The function to interpolate into
-/// @param[in] f Evaluation of the function `f(x)` at the physical
-/// points `x` given by fem::interpolation_coords. The element used in
-/// fem::interpolation_coords should be the same element as associated
-/// with `u`. The shape of `f` should be (value_size, num_points), or if
-/// value_size=1 the shape can be (num_points,).
-/// @param[in] cells Indices of the cells in the mesh on which to
-/// interpolate. Should be the same as the list used when calling
-/// fem::interpolation_coords.
-template <typename T>
-void interpolate(Function<T>& u, const xt::xarray<T>& f,
-                 const std::span<const std::int32_t>& cells);
 
 namespace impl
 {
@@ -567,90 +555,6 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   }
 }
 //----------------------------------------------------------------------------
-/// Interpolate from one finite element Function to another
-/// @param[in,out] u The function to interpolate into
-/// @param[in] v The function to be interpolated
-/// @param[in] cells List of cell indices to interpolate on
-template <typename T>
-void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
-                                    std::span<const std::int32_t> cells)
-{
-  assert(u.function_space());
-  assert(v.function_space());
-
-  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
-  std::shared_ptr<const mesh::Mesh> mesh_v = v.function_space()->mesh();
-
-  assert(mesh);
-
-  int result;
-  MPI_Comm_compare(mesh->comm(), mesh_v->comm(), &result);
-
-  if (result == MPI_UNEQUAL)
-    throw std::runtime_error("Interpolation on different meshes is only "
-                             "supported with the same communicator.");
-
-  MPI_Comm comm = mesh->comm();
-  const int tdim = mesh->topology().dim();
-  const auto cell_map = mesh->topology().index_map(tdim);
-
-  std::shared_ptr<const FiniteElement> element_u
-      = u.function_space()->element();
-  const std::size_t value_size = element_u->value_size();
-
-  // Collect all the points at which values are needed to define the
-  // interpolating function
-  std::vector<double> x;
-  {
-    const std::vector<double> coords_b
-        = fem::interpolation_coords(*element_u, *mesh, cells);
-
-    namespace stdex = std::experimental;
-    using cmdspan2_t
-        = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-    using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-    cmdspan2_t coords(coords_b.data(), 3, coords_b.size() / 3);
-    // Transpose interpolation coords
-    x.resize(coords.size());
-    mdspan2_t _x(x.data(), coords_b.size() / 3, 3);
-    for (std::size_t i = 0; i < coords.extent(0); ++i)
-      for (std::size_t j = 0; j < 3; ++j)
-        _x(j, i) = coords(i, j);
-  }
-
-  // Determine ownership of each point
-  auto [dest_ranks, src_ranks, received_points, evaluation_cells]
-      = dolfinx::geometry::determine_point_ownership(*mesh_v, x);
-
-  // Evaluate the interpolating function where possible
-  std::vector<T> send_values(received_points.size() / 3 * value_size);
-  v.eval(received_points, {received_points.size() / 3, (std::size_t)3},
-         evaluation_cells, send_values,
-         {received_points.size() / 3, (std::size_t)value_size});
-
-  // Send values back to owning process
-  std::array<std::size_t, 2> v_shape = {src_ranks.size(), value_size};
-  std::vector<T> values_b(dest_ranks.size() * value_size);
-  send_back_values(comm, src_ranks, dest_ranks, std::span<const T>(send_values),
-                   v_shape, std::span<T>(values_b));
-
-  // Transpose received data
-  namespace stdex = std::experimental;
-  stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> values(
-      values_b.data(), dest_ranks.size(), value_size);
-
-  xt::xarray<T> valuesT_b({v_shape[1], v_shape[0]});
-  stdex::mdspan<T, stdex::dextents<std::size_t, 2>> valuesT(
-      valuesT_b.data(), values.extent(1), values.extent(0));
-
-  for (std::size_t i = 0; i < values.extent(0); ++i)
-    for (std::size_t j = 0; j < values.extent(1); ++j)
-      valuesT(j, i) = values(i, j);
-
-  // Call local interpolation operator
-  fem::interpolate(u, valuesT_b, cells);
-}
-
 } // namespace impl
 
 /// Interpolate an expression f(x) in a finite element space
@@ -934,30 +838,93 @@ void interpolate(Function<T>& u, std::span<const T> f,
     }
   }
 }
-//----------------------------------------------------------------------------
-/// Interpolate an expression in a finite element space
-///
-/// @param[out] u The function to interpolate into
-/// @param[in] f The expression to be interpolated
-/// @param[in] x The points at which f should be evaluated, as computed
-/// by fem::interpolation_coords. The element used in
-/// fem::interpolation_coords should be the same element as associated
-/// with u.
-/// @param[in] cells Indices of the cells in the mesh on which to
-/// interpolate. Should be the same as the list used when calling
-/// fem::interpolation_coords.
+
+namespace impl{
+
+/// Interpolate from one finite element Function to another
+/// @param[in,out] u The function to interpolate into
+/// @param[in] v The function to be interpolated
+/// @param[in] cells List of cell indices to interpolate on
 template <typename T>
-void interpolate(
-    Function<T>& u,
-    const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
-    const xt::xtensor<double, 2>& x, const std::span<const std::int32_t>& cells)
+void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
+                                    std::span<const std::int32_t> cells)
 {
-  // Evaluate function at physical points. The returned array has a
-  // number of rows equal to the number of components of the function,
-  // and the number of columns is equal to the number of evaluation
-  // points.
-  xt::xarray<T> values = f(x);
-  interpolate(u, values, cells);
+  assert(u.function_space());
+  assert(v.function_space());
+
+  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
+  std::shared_ptr<const mesh::Mesh> mesh_v = v.function_space()->mesh();
+
+  assert(mesh);
+
+  int result;
+  MPI_Comm_compare(mesh->comm(), mesh_v->comm(), &result);
+
+  if (result == MPI_UNEQUAL)
+    throw std::runtime_error("Interpolation on different meshes is only "
+                             "supported with the same communicator.");
+
+  MPI_Comm comm = mesh->comm();
+  const int tdim = mesh->topology().dim();
+  const auto cell_map = mesh->topology().index_map(tdim);
+
+  std::shared_ptr<const FiniteElement> element_u
+      = u.function_space()->element();
+  const std::size_t value_size = element_u->value_size();
+
+  // Collect all the points at which values are needed to define the
+  // interpolating function
+  std::vector<double> x;
+  {
+    const std::vector<double> coords_b
+        = fem::interpolation_coords(*element_u, *mesh, cells);
+
+    namespace stdex = std::experimental;
+    using cmdspan2_t
+        = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+    using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+    cmdspan2_t coords(coords_b.data(), 3, coords_b.size() / 3);
+    // Transpose interpolation coords
+    x.resize(coords.size());
+    mdspan2_t _x(x.data(), coords_b.size() / 3, 3);
+    for (std::size_t i = 0; i < coords.extent(0); ++i)
+      for (std::size_t j = 0; j < 3; ++j)
+        _x(j, i) = coords(i, j);
+  }
+
+  // Determine ownership of each point
+  auto [dest_ranks, src_ranks, received_points, evaluation_cells]
+      = dolfinx::geometry::determine_point_ownership(*mesh_v, x);
+
+  // Evaluate the interpolating function where possible
+  std::vector<T> send_values(received_points.size() / 3 * value_size);
+  v.eval(received_points, {received_points.size() / 3, (std::size_t)3},
+         evaluation_cells, send_values,
+         {received_points.size() / 3, (std::size_t)value_size});
+
+  // Send values back to owning process
+  std::array<std::size_t, 2> v_shape = {src_ranks.size(), value_size};
+  std::vector<T> values_b(dest_ranks.size() * value_size);
+  send_back_values(comm, src_ranks, dest_ranks, std::span<const T>(send_values),
+                   v_shape, std::span<T>(values_b));
+
+  // Transpose received data
+  namespace stdex = std::experimental;
+  stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> values(
+      values_b.data(), dest_ranks.size(), value_size);
+
+  std::vector<T> valuesT_b(v_shape[1]*v_shape[0]);
+  stdex::mdspan<T, stdex::dextents<std::size_t, 2>> valuesT(
+      valuesT_b.data(), values.extent(1), values.extent(0));
+
+  for (std::size_t i = 0; i < values.extent(0); ++i)
+    for (std::size_t j = 0; j < values.extent(1); ++j)
+      valuesT(j, i) = values(i, j);
+  std::cout << xt::adapt(valuesT_b) << "\n";
+  // Call local interpolation operator
+  fem::interpolate<T>(u, std::span(valuesT_b.data(), valuesT_b.size()), {valuesT.extent(0), valuesT.extent(1)}, cells);
+}
+
 }
 //----------------------------------------------------------------------------
 /// Interpolate from one finite element Function to another one
