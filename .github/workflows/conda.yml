@@ -11,7 +11,7 @@ on:
 
 jobs:
   conda-install:
-    name: Test conda install
+    name: Conda install and test
     strategy:
       matrix:
         os: [ubuntu-22.04, macos-12]
@@ -39,7 +39,7 @@ jobs:
           conda run -n env3-10 mpirun -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
 
       - name: Install DOLFINx (py3-10, petsc-complex)
-        run: conda -y create -n env3-10-complex -c conda-forge python=3.10 fenics-dolfinx petsc=*=complex* mpich
+        run: conda create -n env3-10-complex -c conda-forge python=3.10 fenics-dolfinx petsc=*=complex* mpich
       - name: Test  (py3-10-complex)
         run: |
           conda run -n env3-10-complex python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
