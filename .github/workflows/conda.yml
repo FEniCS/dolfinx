@@ -17,6 +17,7 @@ jobs:
         os: [ubuntu-22.04, macos-12]
       fail-fast: false
     runs-on: ${{ matrix.os }}
+    shell: bash
 
     steps:
       - name: Update conda
