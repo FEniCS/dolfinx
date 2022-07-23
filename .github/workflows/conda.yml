@@ -33,4 +33,4 @@ jobs:
 
     steps:
       - name: Install DOLFINx
-        run: onda install -c conda-forge fenics-dolfinx mpich pyvista
+        run: conda install -c conda-forge fenics-dolfinx mpich pyvista
