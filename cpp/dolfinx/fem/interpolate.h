@@ -19,8 +19,6 @@
 #include <numeric>
 #include <span>
 #include <vector>
-#include<xtensor/xadapt.hpp>
-#include<xtensor/xio.hpp>
 
 namespace dolfinx::fem
 {
@@ -37,10 +35,10 @@ class Function;
 /// interpolation coordinates for
 /// @return The coordinates in the physical space at which to evaluate
 /// an expression. The shape is (3, num_points) and storage is row-major.
-std::vector<double>
-interpolation_coords(const fem::FiniteElement& element, const mesh::Mesh& mesh,
-                     std::span<const std::int32_t> cells);
-}
+std::vector<double> interpolation_coords(const fem::FiniteElement& element,
+                                         const mesh::Mesh& mesh,
+                                         std::span<const std::int32_t> cells);
+} // namespace dolfinx::fem
 
 namespace
 {
@@ -183,7 +181,6 @@ namespace dolfinx::fem
 {
 template <typename T>
 class Function;
-
 
 namespace impl
 {
@@ -839,7 +836,8 @@ void interpolate(Function<T>& u, std::span<const T> f,
   }
 }
 
-namespace impl{
+namespace impl
+{
 
 /// Interpolate from one finite element Function to another
 /// @param[in,out] u The function to interpolate into
@@ -887,8 +885,8 @@ void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
     // Transpose interpolation coords
     x.resize(coords.size());
     mdspan2_t _x(x.data(), coords_b.size() / 3, 3);
-    for (std::size_t i = 0; i < coords.extent(0); ++i)
-      for (std::size_t j = 0; j < 3; ++j)
+    for (std::size_t j = 0; j < coords.extent(1); ++j)
+      for (std::size_t i = 0; i < 3; ++i)
         _x(j, i) = coords(i, j);
   }
 
@@ -913,19 +911,20 @@ void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
   stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> values(
       values_b.data(), dest_ranks.size(), value_size);
 
-  std::vector<T> valuesT_b(v_shape[1]*v_shape[0]);
+  std::vector<T> valuesT_b(v_shape[1] * v_shape[0]);
   stdex::mdspan<T, stdex::dextents<std::size_t, 2>> valuesT(
       valuesT_b.data(), values.extent(1), values.extent(0));
 
   for (std::size_t i = 0; i < values.extent(0); ++i)
     for (std::size_t j = 0; j < values.extent(1); ++j)
       valuesT(j, i) = values(i, j);
-  std::cout << xt::adapt(valuesT_b) << "\n";
+
   // Call local interpolation operator
-  fem::interpolate<T>(u, std::span(valuesT_b.data(), valuesT_b.size()), {valuesT.extent(0), valuesT.extent(1)}, cells);
+  fem::interpolate<T>(u, std::span(valuesT_b.data(), valuesT_b.size()),
+                      {valuesT.extent(0), valuesT.extent(1)}, cells);
 }
 
-}
+} // namespace impl
 //----------------------------------------------------------------------------
 /// Interpolate from one finite element Function to another one
 /// @param[out] u The function to interpolate into
@@ -933,7 +932,7 @@ void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
 /// @param[in] cells List of cell indices to interpolate on
 template <typename T>
 void interpolate(Function<T>& u, const Function<T>& v,
-                std::span<const std::int32_t> cells)
+                 std::span<const std::int32_t> cells)
 {
   assert(u.function_space());
   assert(v.function_space());
@@ -1001,13 +1000,13 @@ void interpolate(Function<T>& u, const Function<T>& v,
           assert(bs0 * dofs0.size() == bs1 * dofs1.size());
           for (std::size_t i = 0; i < dofs0.size(); ++i)
           {
-              for (int k = 0; k < bs0; ++k)
-              {
-                int index = bs0 * i + k;
-                std::div_t dv1 = std::div(index, bs1);
-                u1_array[bs1 * dofs1[dv1.quot] + dv1.rem]
-                    = u0_array[bs0 * dofs0[i] + k];
-              }
+            for (int k = 0; k < bs0; ++k)
+            {
+              int index = bs0 * i + k;
+              std::div_t dv1 = std::div(index, bs1);
+              u1_array[bs1 * dofs1[dv1.quot] + dv1.rem]
+                  = u0_array[bs0 * dofs0[i] + k];
+            }
           }
         }
       }
