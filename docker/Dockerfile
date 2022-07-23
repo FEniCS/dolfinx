@@ -474,7 +474,13 @@ RUN apt-get -qq update && \
 
 # pyvista dependencies from pip. matplotlib improves plotting quality
 # with better color maps and properly rendering colorbars.
-RUN pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} matplotlib
+# Note: pyvista requires (py)vtk, but vtk on PyPI does not support
+# linux/arm64, so pyvista cannot be installed for arm64.
+RUN dpkgArch="$(dpkg --print-architecture)"; \
+    case "$dpkgArch" in amd64) \
+    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
+    esac; \
+    pip3 install --no-cache-dir matplotlib
 
 # Jupyter Notebook kernel specification for complex build DOLFINx
 ADD dolfinx/docker/complex-kernel.json /usr/local/share/jupyter/kernels/python3-complex/kernel.json
