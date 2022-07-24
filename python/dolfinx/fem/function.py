@@ -314,6 +314,7 @@ class Function(ufl.Coefficient):
         """
         @singledispatch
         def _interpolate(u, cells):
+            """Interpolate a fem.Function"""
             try:
                 self._cpp_object.interpolate(u._cpp_object, cells)
             except AttributeError:
@@ -321,6 +322,7 @@ class Function(ufl.Coefficient):
 
         @_interpolate.register(int)
         def _(u_ptr, cells):
+            """Interpolate using a pointer to a function f(x)"""
             self._cpp_object.interpolate_ptr(u_ptr, cells)
 
         @_interpolate.register(Expression)
@@ -333,7 +335,13 @@ class Function(ufl.Coefficient):
             map = mesh.topology.index_map(mesh.topology.dim)
             cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
 
-        _interpolate(u, cells)
+        try:
+            # u is a Function or Expression (or pointer to one)
+            _interpolate(u, cells)
+        except TypeError:
+            # u is callable
+            x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh, cells)
+            self.interpolate(u(x), cells)
 
     def copy(self) -> Function:
         """Return a copy of the Function. The FunctionSpace is shared and the
