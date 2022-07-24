@@ -40,7 +40,7 @@ std::vector<double> interpolation_coords(const fem::FiniteElement& element,
                                          std::span<const std::int32_t> cells);
 namespace impl
 {
-/// @brief Scatter data into potentially non-contiguous memory
+/// @brief Scatter data into non-contiguous memory
 ///
 /// Scatter blocked data `send_values` to its
 /// corresponding src_rank and insert the data into `recv_values`.
@@ -56,7 +56,7 @@ namespace impl
 /// (src_ranks.size(), block_size). Storage is row-major.
 /// @param[in] s_shape Shape of send_values
 /// @param[in,out] recv_values Array to fill with values  Shape
-/// (dest_ranks.size(), s_shape[1]). Storage is row-major.
+/// (dest_ranks.size(), block_size). Storage is row-major.
 /// @pre It is required that src_ranks are sorted.
 /// @note dest_ranks can contain repeated entries
 /// @note dest_ranks might contain -1 (no process owns the point)
