@@ -205,7 +205,7 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
 # found.
 RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
     tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -HDF5_ENABLE_PARALLEL=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
+    CC=mpicc cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -HDF5_ENABLE_PARALLEL=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     rm -rf /tmp/*
