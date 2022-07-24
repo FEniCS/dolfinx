@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Garth N. Wells, Igor A. Baratta, Massimiliano Leoni
+// Copyright (C) 2020-2022 Garth N. Wells, Igor A. Baratta, Massimiliano Leoni
 // and Jørgen S.Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -38,116 +38,118 @@ class Function;
 std::vector<double> interpolation_coords(const fem::FiniteElement& element,
                                          const mesh::Mesh& mesh,
                                          std::span<const std::int32_t> cells);
-} // namespace dolfinx::fem
-
-namespace
+namespace impl
 {
-
-/// @brief Send data from a set of processes to another set using neighborhod
-/// communicators.
+/// @brief Scatter data into potentially non-contiguous memory
 ///
-/// The data to send is structured as (src_ranks.size(), value_size), where the
-/// ith row of `send_data` is sent to the process with rank `src_ranks[i]`. The
-/// ranks are using the ranks of the input communicator `comm`.
-// If the j-th dest rank is -1, then
-// `recv_values[j*value_size:(j+1)*value_size]) = 0.
+/// Scatter blocked data `send_values` to its
+/// corresponding src_rank and insert the data into `recv_values`.
+/// The insert location in `recv_values` is determined by `dest_ranks`.
+/// If the j-th dest rank is -1, then
+/// `recv_values[j*block_size:(j+1)*block_size]) = 0.
 ///
 /// @param[in] comm The mpi communicator
 /// @param[in] src_ranks The rank owning the values of each row in send_values
-/// @note It is assumed that src_ranks are already sorted.
 /// @param[in] dest_ranks List of ranks receiving data. Size of array is how
-/// many values we are receiving (not unrolled for value_size).
-/// @note dest_ranks can contain repeated entries
-/// @note dest_ranks might contain -1 (no process owns the point)
+/// many values we are receiving (not unrolled for blcok_size).
 /// @param[in] send_values The values to send back to owner. Shape
-/// (src_ranks.size(), value_size). Storage is row-major.
+/// (src_ranks.size(), block_size). Storage is row-major.
 /// @param[in] s_shape Shape of send_values
 /// @param[in,out] recv_values Array to fill with values  Shape
 /// (dest_ranks.size(), s_shape[1]). Storage is row-major.
+/// @pre It is required that src_ranks are sorted.
+/// @note dest_ranks can contain repeated entries
+/// @note dest_ranks might contain -1 (no process owns the point)
 template <typename T>
-void send_back_values(const MPI_Comm& comm,
-                      const std::vector<std::int32_t>& src_ranks,
-                      const std::vector<std::int32_t>& dest_ranks,
-                      std::span<const T> send_values,
-                      const std::array<std::size_t, 2>& s_shape,
-                      std::span<T> recv_values)
+void scatter_values(const MPI_Comm& comm,
+                    std::span<const std::int32_t> src_ranks,
+                    std::span<const std::int32_t> dest_ranks,
+                    std::span<const T> send_values,
+                    const std::array<std::size_t, 2>& s_shape,
+                    std::span<T> recv_values)
 {
-  const std::size_t value_size = s_shape[1];
-  assert(src_ranks.size() * value_size == send_values.size());
-  assert(recv_values.size() == dest_ranks.size() * value_size);
+  const std::size_t block_size = s_shape[1];
+  assert(src_ranks.size() * block_size == send_values.size());
+  assert(recv_values.size() == dest_ranks.size() * block_size);
 
-  // Create neighborhood communicator from send back
-  // values to requesting processes
-  // NOTE: source rank is already sorted
-  std::vector<std::int32_t> out_ranks(src_ranks);
+  // Build unique set of the sorted src_ranks
+  std::vector<std::int32_t> out_ranks(src_ranks.size());
+  out_ranks.assign(src_ranks.begin(), src_ranks.end());
   out_ranks.erase(std::unique(out_ranks.begin(), out_ranks.end()),
                   out_ranks.end());
   out_ranks.reserve(out_ranks.size() + 1);
 
-  // Strip dest ranks for all -1 entries
+  // Remove negative entries from dest_ranks
   std::vector<std::int32_t> in_ranks;
   in_ranks.reserve(dest_ranks.size());
-  std::vector<std::int32_t> rank_mapping;
-  rank_mapping.reserve(dest_ranks.size());
-  for (std::size_t i = 0; i < dest_ranks.size(); ++i)
-  {
-    if (const std::int32_t rank = dest_ranks[i]; rank >= 0)
-    {
-      rank_mapping.push_back(i);
-      in_ranks.push_back(rank);
-    }
-  }
+  std::copy_if(dest_ranks.begin(), dest_ranks.end(),
+               std::back_inserter(in_ranks),
+               [](auto rank) { return rank >= 0; });
 
-  // Create unique set of sorted in ranks
+  // Create unique set of sorted in-ranks
   std::sort(in_ranks.begin(), in_ranks.end());
   in_ranks.erase(std::unique(in_ranks.begin(), in_ranks.end()), in_ranks.end());
   in_ranks.reserve(in_ranks.size() + 1);
 
-  // Create communicator from processes with dof values to the processes
-  // owning the dofs
+  // Create neighborhood communicator
   MPI_Comm reverse_comm;
   MPI_Dist_graph_create_adjacent(
       comm, in_ranks.size(), in_ranks.data(), MPI_UNWEIGHTED, out_ranks.size(),
       out_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &reverse_comm);
 
-  // Compute map from incoming value to local point index
-  std::vector<std::int32_t> unpack_map;
+  std::vector<std::int32_t> comm_to_output;
   std::vector<std::int32_t> recv_sizes(in_ranks.size());
   recv_sizes.reserve(1);
   std::vector<std::int32_t> recv_offsets(in_ranks.size() + 1, 0);
   {
+    // Build map from parent to neighborhood communicator ranks
     std::map<std::int32_t, std::int32_t> rank_to_neighbor;
     for (std::size_t i = 0; i < in_ranks.size(); i++)
       rank_to_neighbor[in_ranks[i]] = i;
-    for (std::size_t i = 0; i < rank_mapping.size(); i++)
-    {
-      const int inc_rank = dest_ranks[rank_mapping[i]];
-      const int neighbor = rank_to_neighbor[inc_rank];
-      recv_sizes[neighbor] += value_size;
-    }
+
+    // Compute receive sizes
+    std::for_each(
+        dest_ranks.begin(), dest_ranks.end(),
+        [&dest_ranks, &rank_to_neighbor, &recv_sizes, block_size](auto rank)
+        {
+          if (rank >= 0)
+          {
+            const int neighbor = rank_to_neighbor[rank];
+            recv_sizes[neighbor] += block_size;
+          }
+        });
+
     // Compute receiving offsets
-    std::vector<std::int32_t> recv_counter(recv_sizes.size(), 0);
     std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                      std::next(recv_offsets.begin(), 1));
-    unpack_map.resize(recv_offsets.back() / value_size);
-    for (std::size_t i = 0; i < rank_mapping.size(); i++)
+
+    // Compute map from receiving values to position in recv_values
+    comm_to_output.resize(recv_offsets.back() / block_size);
+    std::vector<std::int32_t> recv_counter(recv_sizes.size(), 0);
+    for (std::size_t i = 0; i < dest_ranks.size(); ++i)
     {
-      const int inc_rank = dest_ranks[rank_mapping[i]];
-      const int neighbor = rank_to_neighbor[inc_rank];
-      int pos = recv_offsets[neighbor] + recv_counter[neighbor];
-      unpack_map[pos / value_size] = rank_mapping[i];
-      recv_counter[neighbor] += value_size;
+      if (const std::int32_t rank = dest_ranks[i]; rank >= 0)
+      {
+        const int neighbor = rank_to_neighbor[rank];
+        int insert_pos = recv_offsets[neighbor] + recv_counter[neighbor];
+        comm_to_output[insert_pos / block_size] = i * block_size;
+        recv_counter[neighbor] += block_size;
+      }
     }
   }
-  // Compute map from global mpi rank to neigbor rank for outgoing data
+
   std::vector<std::int32_t> send_sizes(out_ranks.size());
   send_sizes.reserve(1);
   {
+    // Compute map from parent mpi rank to neigbor rank for outgoing data
     std::map<std::int32_t, std::int32_t> rank_to_neighbor;
     for (std::size_t i = 0; i < out_ranks.size(); i++)
       rank_to_neighbor[out_ranks[i]] = i;
-    for (std::size_t i = 0; i < src_ranks.size(); i++)
-      send_sizes[rank_to_neighbor[src_ranks[i]]] += value_size;
+
+    // Compute send sizes
+    std::for_each(src_ranks.begin(), src_ranks.end(),
+                  [&rank_to_neighbor, &send_sizes, block_size](auto rank)
+                  { send_sizes[rank_to_neighbor[rank]] += block_size; });
   }
 
   // Compute sending offsets
@@ -155,35 +157,26 @@ void send_back_values(const MPI_Comm& comm,
   std::partial_sum(send_sizes.begin(), send_sizes.end(),
                    std::next(send_offsets.begin(), 1));
 
-  // Send values back to interpolating mesh
+  std::stringstream cc;
+  // Send values to dest ranks
   std::vector<T> values(recv_offsets.back());
-  values.reserve(values.size() + 1);
-
+  values.reserve(1);
   MPI_Neighbor_alltoallv(send_values.data(), send_sizes.data(),
                          send_offsets.data(), dolfinx::MPI::mpi_type<T>(),
                          values.data(), recv_sizes.data(), recv_offsets.data(),
                          dolfinx::MPI::mpi_type<T>(), reverse_comm);
   MPI_Comm_free(&reverse_comm);
 
-  // Fill in values for interpolation points on local process
+  // Insert values received from neighborhood communicator in output span
   std::fill(recv_values.begin(), recv_values.end(), T(0));
-  for (std::size_t i = 0; i < unpack_map.size(); i++)
+  for (std::size_t i = 0; i < comm_to_output.size(); i++)
   {
-    auto vals = std::next(recv_values.begin(), unpack_map[i] * value_size);
-    auto vals_from = std::next(values.begin(), i * value_size);
-    std::copy_n(vals_from, value_size, vals);
+    auto vals = std::next(recv_values.begin(), comm_to_output[i]);
+    auto vals_from = std::next(values.begin(), i * block_size);
+    std::copy_n(vals_from, block_size, vals);
   }
 };
 
-} // namespace
-
-namespace dolfinx::fem
-{
-template <typename T>
-class Function;
-
-namespace impl
-{
 /// @brief Apply interpolation operator Pi to data to evaluate the dof
 /// coefficients
 /// @param[in] Pi The interpolation matrix (shape = (num dofs,
@@ -903,18 +896,18 @@ void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
   // Send values back to owning process
   std::array<std::size_t, 2> v_shape = {src_ranks.size(), value_size};
   std::vector<T> values_b(dest_ranks.size() * value_size);
-  send_back_values(comm, src_ranks, dest_ranks, std::span<const T>(send_values),
-                   v_shape, std::span<T>(values_b));
+  impl::scatter_values(comm, src_ranks, dest_ranks,
+                       std::span<const T>(send_values), v_shape,
+                       std::span<T>(values_b));
 
   // Transpose received data
   namespace stdex = std::experimental;
   stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> values(
       values_b.data(), dest_ranks.size(), value_size);
 
-  std::vector<T> valuesT_b(v_shape[1] * v_shape[0]);
+  std::vector<T> valuesT_b(value_size * dest_ranks.size());
   stdex::mdspan<T, stdex::dextents<std::size_t, 2>> valuesT(
-      valuesT_b.data(), values.extent(1), values.extent(0));
-
+      valuesT_b.data(), value_size, dest_ranks.size());
   for (std::size_t i = 0; i < values.extent(0); ++i)
     for (std::size_t j = 0; j < values.extent(1); ++j)
       valuesT(j, i) = values(i, j);
