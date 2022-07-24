@@ -174,15 +174,14 @@ class Expression:
 
         return values
 
+    def X(self) -> np.ndarray:
+        """Evaluation points on the reference cell"""
+        return self._cpp_object.X()
+
     @property
     def ufl_expression(self):
         """Original UFL Expression"""
         return self._ufl_expression
-
-    @property
-    def X(self) -> np.ndarray:
-        """Evaluation points on the reference cell"""
-        return self._cpp_object.X
 
     @property
     def value_size(self) -> int:
