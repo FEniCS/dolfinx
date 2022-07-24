@@ -237,8 +237,6 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
       std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
   cmdspan4_t phi(phi_b.data(), phi_shape);
   cmap.tabulate(1, X, Xshape, phi_b);
-  auto dphi
-      = stdex::submdspan(phi, std::pair(1, tdim + 1), 0, stdex::full_extent, 0);
 
   // Evaluate v basis functions at reference interpolation points
   const auto [_basis_derivatives_reference0, b0shape]
@@ -303,14 +301,13 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
         coord_dofs(i, j) = x_g[pos + j];
     }
 
-    // TODO: the below has a bug for non-affine cells - the geometry
-    // basis should be evaluated at every point. See
-    // https://github.com/FEniCS/dolfinx/issues/2275.
-
     // Compute Jacobians and reference points for current cell
     std::fill(J_b.begin(), J_b.end(), 0);
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
+      auto dphi = stdex::submdspan(phi, std::pair(1, tdim + 1), p,
+                                   stdex::full_extent, 0);
+
       auto _J = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
       cmap.compute_jacobian(dphi, coord_dofs, _J);
       auto _K = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
