@@ -201,23 +201,23 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
     rm -rf /tmp/*
 
 # Install HDF5
-RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-    tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-    cd hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
-    ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
-    make -j${BUILD_NP} install && \
-    rm -rf /tmp/*
+# RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+#     tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+#     cd hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
+#     ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
+#     make -j${BUILD_NP} install && \
+#     rm -rf /tmp/*
 
 # Note: HDF5 CMake install has numerous bugs and inconsistencies. Test carefully.
 # HDF5 overides CMAKE_INSTALL_PREFIX by default, hence it is set
 # below to ensure that HDF5 is installed into a path where it can be
 # found.
-# RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-#     tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-#     CC=mpicc cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DHDF5_ENABLE_PARALLEL=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
-#     cmake --build build-dir && \
-#     cmake --install build-dir && \
-#     rm -rf /tmp/*
+RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+    tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+    CC=mpicc cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DHDF5_ENABLE_PARALLEL=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    rm -rf /tmp/*
 
 # Install ADIOS2
 RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
