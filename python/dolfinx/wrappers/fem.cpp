@@ -309,8 +309,8 @@ void declare_objects(py::module& m, const std::string& type)
                 std::transform(g.strides(), g.strides() + g.ndim(),
                                std::back_inserter(strides),
                                [](auto s) { return s / sizeof(T); });
-                std::vector<std::size_t> shape(g.shape(), g.shape() +
-                g.ndim()); auto _g = xt::adapt(g.data(), g.size(),
+                std::vector<std::size_t> shape(g.shape(), g.shape() + g.ndim());
+                auto _g = xt::adapt(g.data(), g.size(),
                 xt::no_ownership(),
                                     shape, strides);
                 return dolfinx::fem::DirichletBC<T>(

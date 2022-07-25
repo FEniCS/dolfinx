@@ -164,12 +164,13 @@ private:
 /// @brief Construct a constant degree (valency) adjacency list.
 ///
 /// A constant degree graph has the same number of edges for every node.
+///
 /// @param [in] data Adjacency array
 /// @param [in] degree The number of (outgoing) edges for each node
 /// @return An adjacency list
 template <typename U>
-AdjacencyList<typename U::value_type> regular_adjacency_list(U&& data,
-                                                             int degree)
+AdjacencyList<typename std::decay_t<U>::value_type>
+regular_adjacency_list(U&& data, int degree)
 {
   if (degree == 0 and !data.empty())
   {
@@ -187,8 +188,8 @@ AdjacencyList<typename U::value_type> regular_adjacency_list(U&& data,
   std::vector<std::int32_t> offsets(num_nodes + 1, 0);
   for (std::size_t i = 1; i < offsets.size(); ++i)
     offsets[i] = offsets[i - 1] + degree;
-  return AdjacencyList<typename U::value_type>(std::forward<U>(data),
-                                               std::move(offsets));
+  return AdjacencyList<typename std::decay_t<U>::value_type>(
+      std::forward<U>(data), std::move(offsets));
 }
 
 } // namespace dolfinx::graph

@@ -123,16 +123,19 @@ private:
 /// @param[in] element The coordinate element that describes the
 /// geometric mapping for cells
 /// @param[in] x The coordinates of mesh nodes
+/// @param[in] xshape The shape of `x`
 /// @param[in] ghost_mode The requested type of cell ghosting/overlap
 /// @return A distributed Mesh.
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
-                 const xt::xtensor<double, 2>& x, GhostMode ghost_mode);
+                 std::span<const double> x, std::array<std::size_t, 2> xshape,
+                 GhostMode ghost_mode);
 
 /// Create a mesh using a provided mesh partitioning function
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
-                 const xt::xtensor<double, 2>& x, GhostMode ghost_mode,
+                 std::span<const double> x, std::array<std::size_t, 2> xshape,
+                 GhostMode ghost_mode,
                  const CellPartitionFunction& cell_partitioner);
 
 /// Create a new mesh consisting of a subset of entities in a mesh.
