@@ -92,10 +92,11 @@ ARG PETSC_SLEPC_DEBUGGING="no"
 
 # MPI variant. "mpich" or "openmpi".
 ARG MPI="mpich"
-ARG MPICH_CONFIGURE_OPTIONS="FCFLAGS=-fallow-argument-mismatch FFLAGS=-fallow-argument-mismatch --with-device=ch4:ofi"  # See https://github.com/pmodels/mpich/issues/5811
+# See https://github.com/pmodels/mpich/issues/5811
+ARG MPICH_CONFIGURE_OPTIONS="FCFLAGS=-fallow-argument-mismatch FFLAGS=-fallow-argument-mismatch --with-device=ch4:ofi"
 
 # Number of build threads to use with make
-ARG BUILD_NP=2
+ARG BUILD_NP=3
 
 WORKDIR /tmp
 
