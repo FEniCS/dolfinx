@@ -129,7 +129,6 @@ public:
       return math::det(J);
     else
     {
-      // TODO: pass buffers for B and BA
       assert(w.size() >= 2 * J.extent(0) * J.extent(1));
 
       using T = typename U::element_type;
@@ -143,6 +142,11 @@ public:
         for (std::size_t j = 0; j < B.extent(1); ++j)
           B(i, j) = J(j, i);
 
+      // Zero working memory of BA
+      std::fill(std::next(w.begin(), J.extent(0) * J.extent(1)),
+                std::next(w.begin(), J.extent(0) * J.extent(1)
+                                         + B.extent(0) * J.extent(1)),
+                0);
       math::dot(B, J, BA);
       return std::sqrt(math::det(BA));
     }
