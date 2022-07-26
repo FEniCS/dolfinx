@@ -48,7 +48,6 @@
 #include <ufcx.h>
 #include <utility>
 #include <xtensor/xadapt.hpp>
-#include <xtensor/xbuilder.hpp>
 #include <xtensor/xtensor.hpp>
 
 namespace py = pybind11;
@@ -429,19 +428,22 @@ void declare_objects(py::module& m, const std::string& type)
             std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
                                                  1, std::multiplies{});
 
+            assert(self.function_space()->mesh());
+            const auto x = dolfinx::fem::interpolation_coords(
+                *element, *self.function_space()->mesh(),
+                std::span(cells.data(), cells.size()));
+
+            std::array<std::size_t, 2> shape = {value_size, x.size() / 3};
+            std::vector<T> values(shape[0] * shape[1]);
             std::function<void(T*, int, int, const double*)> f
                 = reinterpret_cast<void (*)(T*, int, int, const double*)>(addr);
-            auto _f = [&f, value_size](const xt::xtensor<double, 2>& x)
-            {
-              xt::xarray<T> values = xt::empty<T>({value_size, x.shape(1)});
-              f(values.data(), values.shape(1), values.shape(0), x.data());
-              return values;
-            };
+            f(values.data(), shape[1], shape[0], x.data());
 
-            self.interpolate(_f, std::span(cells.data(), cells.size()));
+            dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
+                                      std::span(cells.data(), cells.size()));
           },
           py::arg("f"), py::arg("cells"),
-          "Interpolate using a pointer to an Expression with a C signature")
+          "Interpolate using a pointer to an expression with a C signature")
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T>& self,
