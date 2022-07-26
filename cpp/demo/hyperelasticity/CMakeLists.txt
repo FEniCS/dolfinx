@@ -7,8 +7,8 @@ cmake_minimum_required(VERSION 3.16)
 set(PROJECT_NAME demo_hyperelasticity)
 project(${PROJECT_NAME} LANGUAGES C CXX)
 
-# Set C++17 standard
-set(CMAKE_CXX_STANDARD 17)
+# Set C++20 standard
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -26,7 +26,7 @@ else()
     VERBATIM DEPENDS hyperelasticity.py COMMENT "Compile hyperelasticity.py using FFCx")
 
   set(CMAKE_INCLUDE_CURRENT_DIR ON)
-  
+
   add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/hyperelasticity.c)
   target_link_libraries(${PROJECT_NAME} dolfinx)
 

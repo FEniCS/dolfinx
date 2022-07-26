@@ -58,7 +58,7 @@ void refinement(py::module& m)
       {
         assert(edges.ndim() == 1);
         return dolfinx::refinement::refine(
-            mesh, xtl::span(edges.data(), edges.size()), redistribute);
+            mesh, std::span(edges.data(), edges.size()), redistribute);
       },
       py::arg("mesh"), py::arg("edges"), py::arg("redistribute") = true);
 }

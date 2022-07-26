@@ -28,8 +28,8 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <span>
 #include <xtensor/xadapt.hpp>
-#include <xtl/xspan.hpp>
 
 namespace py = pybind11;
 
@@ -133,7 +133,7 @@ void declare_meshtags(py::module& m, std::string type)
            const py::array_t<T, py::array::c_style>& values)
         {
           return dolfinx::mesh::create_meshtags(
-              mesh, dim, entities, xtl::span(values.data(), values.size()));
+              mesh, dim, entities, std::span(values.data(), values.size()));
         });
 }
 
@@ -167,7 +167,7 @@ void mesh(py::module& m)
          const py::array_t<std::int32_t, py::array::c_style>& entities)
       {
         std::vector<double> n = dolfinx::mesh::cell_normals(
-            mesh, dim, xtl::span(entities.data(), entities.size()));
+            mesh, dim, std::span(entities.data(), entities.size()));
         return as_pyarray(std::move(n),
                           std::array<std::size_t, 2>{n.size() / 3, 3});
       },
@@ -183,7 +183,7 @@ void mesh(py::module& m)
          const py::array_t<std::int32_t, py::array::c_style>& entities)
       {
         return as_pyarray(dolfinx::mesh::h(
-            mesh, xtl::span(entities.data(), entities.size()), dim));
+            mesh, std::span(entities.data(), entities.size()), dim));
       },
       py::arg("mesh"), py::arg("dim"), py::arg("entities"),
       "Compute maximum distance between any two vertices.");
@@ -194,7 +194,7 @@ void mesh(py::module& m)
          py::array_t<std::int32_t, py::array::c_style> entities)
       {
         std::vector<double> x = dolfinx::mesh::compute_midpoints(
-            mesh, dim, xtl::span(entities.data(), entities.size()));
+            mesh, dim, std::span(entities.data(), entities.size()));
         std::array<std::size_t, 2> shape = {(std::size_t)entities.size(), 3};
         return as_pyarray(std::move(x), shape);
       },
@@ -235,8 +235,11 @@ void mesh(py::module& m)
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape()[1];
         std::vector shape{std::size_t(x.shape(0)), shape1};
         auto _x = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
-        return dolfinx::mesh::create_mesh(comm.get(), cells, element, _x,
-                                          ghost_mode, partitioner_wrapper);
+        return dolfinx::mesh::create_mesh(
+            comm.get(), cells, element, std::span(x.data(), x.size()),
+            {static_cast<std::size_t>(x.shape(0)),
+             static_cast<std::size_t>(x.shape(1))},
+            ghost_mode, partitioner_wrapper);
       },
       py::arg("comm"), py::arg("cells"), py::arg("element"), py::arg("x"),
       py::arg("ghost_mode"), py::arg("partitioner"),
@@ -248,7 +251,7 @@ void mesh(py::module& m)
          const py::array_t<std::int32_t, py::array::c_style>& entities)
       {
         return dolfinx::mesh::create_submesh(
-            mesh, dim, xtl::span(entities.data(), entities.size()));
+            mesh, dim, std::span(entities.data(), entities.size()));
       },
       py::arg("mesh"), py::arg("dim"), py::arg("entities"));
 
@@ -438,8 +441,8 @@ void mesh(py::module& m)
       [](const dolfinx::mesh::Mesh& mesh, int dim,
          py::array_t<std::int32_t, py::array::c_style> entities, bool orient)
       {
-        std::vector<std::int32_t> idx
-            = dolfinx::mesh::entities_to_geometry(mesh, dim, entities, orient);
+        std::vector<std::int32_t> idx = dolfinx::mesh::entities_to_geometry(
+            mesh, dim, std::span(entities.data(), entities.size()), orient);
         dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
         std::size_t num_vertices = dolfinx::mesh::num_cell_vertices(
             cell_entity_type(cell_type, dim, 0));
@@ -459,7 +462,7 @@ void mesh(py::module& m)
          py::array_t<std::int32_t, py::array::c_style> entities, int d0, int d1)
       {
         return as_pyarray(dolfinx::mesh::compute_incident_entities(
-            mesh, xtl::span(entities.data(), entities.size()), d0, d1));
+            mesh, std::span(entities.data(), entities.size()), d0, d1));
       },
       py::arg("mesh"), py::arg("entities"), py::arg("d0"), py::arg("d1"));
 

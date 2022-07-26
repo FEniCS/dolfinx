@@ -159,7 +159,7 @@ class Expression:
             argument_space_dimension = 1
         else:
             argument_space_dimension = self.argument_function_space.element.space_dimension
-        values_shape = (_cells.shape[0], self.X.shape[0] * self.value_size * argument_space_dimension)
+        values_shape = (_cells.shape[0], self.X().shape[0] * self.value_size * argument_space_dimension)
 
         # Allocate memory for result if u was not provided
         if values is None:
@@ -174,15 +174,14 @@ class Expression:
 
         return values
 
+    def X(self) -> np.ndarray:
+        """Evaluation points on the reference cell"""
+        return self._cpp_object.X()
+
     @property
     def ufl_expression(self):
         """Original UFL Expression"""
         return self._ufl_expression
-
-    @property
-    def X(self) -> np.ndarray:
-        """Evaluation points on the reference cell"""
-        return self._cpp_object.X
 
     @property
     def value_size(self) -> int:

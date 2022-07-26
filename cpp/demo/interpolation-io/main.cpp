@@ -17,6 +17,8 @@
 #include <dolfinx/mesh/generation.h>
 #include <filesystem>
 #include <mpi.h>
+#include <numbers>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
@@ -41,7 +43,7 @@ void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
 
   // Interpolate sin(2 \pi x[0]) in the scalar Lagrange finite element
   // space
-  constexpr double PI = xt::numeric_constants<double>::PI;
+  constexpr double PI = std::numbers::pi;
   u->interpolate([PI](auto&& x) { return xt::sin(2 * PI * xt::row(x, 0)); });
 
   // Write the function to a VTK file for visualisation, e.g. using

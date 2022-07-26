@@ -15,10 +15,6 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xfixed.hpp>
-#include <xtensor/xnorm.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
@@ -35,17 +31,16 @@ constexpr bool is_leaf(const std::array<int, 2>& bbox)
 /// A point `x` is inside a bounding box `b` if each component of its
 /// coordinates lies within the range `[b(0,i), b(1,i)]` that defines the bounds
 /// of the bounding box, b(0,i) <= x[i] <= b(1,i) for i = 0, 1, 2
-bool point_in_bbox(const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
-                   const xt::xtensor_fixed<double, xt::xshape<3>>& x)
+constexpr bool point_in_bbox(const std::array<std::array<double, 3>, 2>& b,
+                             const std::array<double, 3>& x)
 {
   constexpr double rtol = 1e-14;
-  double eps;
   bool in = true;
   for (int i = 0; i < 3; i++)
   {
-    eps = rtol * (b(1, i) - b(0, i));
-    in &= x[i] >= (b(0, i) - eps);
-    in &= x[i] <= (b(1, i) + eps);
+    double eps = rtol * (b[1][i] - b[0][i]);
+    in &= x[i] >= (b[0][i] - eps);
+    in &= x[i] <= (b[1][i] + eps);
   }
 
   return in;
@@ -54,29 +49,25 @@ bool point_in_bbox(const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
 /// A bounding box "a" is contained inside another bounding box "b", if each
 /// of its intervals [a(0,i), a(1,i)] is contained in [b(0,i), b(1,i)],
 /// a(0,i) <= b(1, i) and a(1,i) >= b(0, i)
-bool bbox_in_bbox(const xt::xtensor_fixed<double, xt::xshape<2, 3>>& a,
-                  const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b)
+constexpr bool bbox_in_bbox(const std::array<std::array<double, 3>, 2>& a,
+                            const std::array<std::array<double, 3>, 2>& b)
 {
   constexpr double rtol = 1e-14;
-  double eps;
   bool in = true;
-
   for (int i = 0; i < 3; i++)
   {
-    eps = rtol * (b(1, i) - b(0, i));
-    in &= a(1, i) >= (b(0, i) - eps);
-    in &= a(0, i) <= (b(1, i) + eps);
+    double eps = rtol * (b[1][i] - b[0][i]);
+    in &= a[1][i] >= (b[0][i] - eps);
+    in &= a[0][i] <= (b[1][i] + eps);
   }
 
   return in;
 }
 //-----------------------------------------------------------------------------
 // Compute closest entity {closest_entity, R2} (recursive)
-std::pair<std::int32_t, double>
-_compute_closest_entity(const geometry::BoundingBoxTree& tree,
-                        const xt::xtensor_fixed<double, xt::xshape<3>>& point,
-                        int node, const mesh::Mesh& mesh,
-                        std::int32_t closest_entity, double R2)
+std::pair<std::int32_t, double> _compute_closest_entity(
+    const geometry::BoundingBoxTree& tree, const std::array<double, 3>& point,
+    int node, const mesh::Mesh& mesh, std::int32_t closest_entity, double R2)
 {
   // Get children of current bounding box node (child_1 denotes entity
   // index for leaves)
@@ -87,10 +78,10 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
     // If point cloud tree the exact distance is easy to compute
     if (tree.tdim() == 0)
     {
-      xt::xtensor_fixed<double, xt::xshape<3>> diff
-          = xt::row(tree.get_bbox(node), 0);
-      diff -= point;
-      r2 = xt::norm_sq(diff)();
+      std::array<double, 3> diff = tree.get_bbox(node)[0];
+      for (std::size_t k = 0; k < 3; ++k)
+        diff[k] -= point[k];
+      r2 = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
     }
     else
     {
@@ -100,8 +91,9 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
       if (r2 <= R2)
       {
         r2 = geometry::squared_distance(mesh, tree.tdim(),
-                                        xtl::span(&bbox[1], 1),
-                                        xt::reshape_view(point, {1, 3}))[0];
+                                        std::span(&bbox[1], 1),
+                                        {{point[0], point[1], point[2]}})
+                 .front();
       }
     }
 
@@ -136,10 +128,9 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
 /// @param[in] tree The bounding box tree
 /// @param[in] points The points (shape=(num_points, 3))
 /// @param[in, out] entities The list of colliding entities (local to process)
-void _compute_collisions_point(
-    const geometry::BoundingBoxTree& tree,
-    const xt::xtensor_fixed<double, xt::xshape<3>>& p,
-    std::vector<int>& entities)
+void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
+                               const std::array<double, 3>& p,
+                               std::vector<int>& entities)
 {
   std::deque<std::int32_t> stack;
   int next = tree.num_bboxes() - 1;
@@ -248,7 +239,7 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
 //-----------------------------------------------------------------------------
 geometry::BoundingBoxTree
 geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
-                               const xtl::span<const std::int32_t>& entities)
+                               const std::span<const std::int32_t>& entities)
 {
   LOG(INFO) << "Building point search tree to accelerate distance queries for "
                "a given topological dimension and subset of entities.";
@@ -285,15 +276,17 @@ geometry::compute_collisions(const BoundingBoxTree& tree0,
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
 geometry::compute_collisions(const BoundingBoxTree& tree,
-                             const xt::xtensor<double, 2>& points)
+                             const std::span<const double>& points)
 {
   if (tree.num_bboxes() > 0)
   {
-    std::vector<std::int32_t> entities, offsets(points.shape(0) + 1, 0);
-    entities.reserve(points.shape(0));
-    for (std::size_t p = 0; p < points.shape(0); ++p)
+    std::vector<std::int32_t> entities, offsets(points.size() / 3 + 1, 0);
+    entities.reserve(points.size() / 3);
+    for (std::size_t p = 0; p < points.size() / 3; ++p)
     {
-      _compute_collisions_point(tree, xt::row(points, p), entities);
+      _compute_collisions_point(
+          tree, {points[3 * p + 0], points[3 * p + 1], points[3 * p + 2]},
+          entities);
       offsets[p + 1] = entities.size();
     }
 
@@ -304,25 +297,24 @@ geometry::compute_collisions(const BoundingBoxTree& tree,
   {
     return graph::AdjacencyList<std::int32_t>(
         std::vector<std::int32_t>(),
-        std::vector<std::int32_t>(points.shape(0) + 1, 0));
+        std::vector<std::int32_t>(points.size() / 3 + 1, 0));
   }
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> geometry::compute_closest_entity(
     const BoundingBoxTree& tree, const BoundingBoxTree& midpoint_tree,
-    const mesh::Mesh& mesh, const xt::xtensor<double, 2>& points)
+    const mesh::Mesh& mesh, const std::span<const double>& points)
 {
-  assert(points.shape(1) == 3);
   if (tree.num_bboxes() == 0)
-    return std::vector<std::int32_t>(points.shape(0), -1);
+    return std::vector<std::int32_t>(points.size() / 3, -1);
   else
   {
     double R2;
     double initial_entity;
     std::array<int, 2> leaves;
     std::vector<std::int32_t> entities;
-    entities.reserve(points.shape(0));
-    for (std::size_t i = 0; i < points.shape(0); i++)
+    entities.reserve(points.size() / 3);
+    for (std::size_t i = 0; i < points.size() / 3; ++i)
     {
       // Use midpoint tree to find initial closest entity to the point.
       // Start by using a leaf node as the initial guess for the input
@@ -330,17 +322,18 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       leaves = midpoint_tree.bbox(0);
       assert(is_leaf(leaves));
       initial_entity = leaves[0];
-      xt::xtensor_fixed<double, xt::xshape<3>> diff
-          = xt::row(midpoint_tree.get_bbox(0), 0);
-      diff -= xt::row(points, i);
-      R2 = xt::norm_sq(diff)();
+      std::array<double, 3> diff = midpoint_tree.get_bbox(0)[0];
+      for (std::size_t k = 0; k < 3; ++k)
+        diff[k] -= points[3 * i + k];
+      R2 = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
 
       // Use a recursive search through the bounding box tree
       // to find determine the entity with the closest midpoint.
       // As the midpoint tree only consist of points, the distance
       // queries are lightweight.
       const auto [m_index, m_distance2] = _compute_closest_entity(
-          midpoint_tree, xt::reshape_view(xt::row(points, i), {1, 3}),
+          midpoint_tree,
+          {points[3 * i + 0], points[3 * i + 1], points[3 * i + 2]},
           midpoint_tree.num_bboxes() - 1, mesh, initial_entity, R2);
 
       // Use a recursive search through the bounding box tree to
@@ -349,7 +342,7 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       // the distance from the midpoint to the point of interest as the
       // initial search radius.
       const auto [index, distance2] = _compute_closest_entity(
-          tree, xt::reshape_view(xt::row(points, i), {1, 3}),
+          tree, {points[3 * i + 0], points[3 * i + 1], points[3 * i + 2]},
           tree.num_bboxes() - 1, mesh, m_index, m_distance2);
 
       entities.push_back(index);
@@ -361,42 +354,53 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
 
 //-----------------------------------------------------------------------------
 double geometry::compute_squared_distance_bbox(
-    const xt::xtensor_fixed<double, xt::xshape<2, 3>>& b,
-    const xt::xtensor_fixed<double, xt::xshape<3>>& x)
+    const std::array<std::array<double, 3>, 2>& b,
+    const std::array<double, 3>& x)
 {
-  const xt::xtensor_fixed<double, xt::xshape<3>> d0 = x - xt::row(b, 0);
-  const xt::xtensor_fixed<double, xt::xshape<3>> d1 = x - xt::row(b, 1);
-  auto _d0 = xt::where(d0 > 0.0, 0, d0);
-  auto _d1 = xt::where(d1 < 0.0, 0, d1);
-  return xt::norm_sq(_d0)() + xt::norm_sq(_d1)();
+  auto& b0 = b[0];
+  auto& b1 = b[1];
+  return std::transform_reduce(x.begin(), x.end(), b0.begin(), 0.0,
+                               std::plus<>{},
+                               [](auto x, auto b)
+                               {
+                                 auto dx = x - b;
+                                 return dx > 0 ? 0 : dx * dx;
+                               })
+         + std::transform_reduce(x.begin(), x.end(), b1.begin(), 0.0,
+                                 std::plus<>{},
+                                 [](auto x, auto b)
+                                 {
+                                   auto dx = x - b;
+                                   return dx < 0 ? 0 : dx * dx;
+                                 });
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2>
+std::vector<double>
 geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
-                          const xtl::span<const std::int32_t>& entities,
-                          const xt::xtensor<double, 2>& points)
+                          const std::span<const std::int32_t>& entities,
+                          const std::span<const double>& points)
 {
-  assert(points.shape(1) == 3);
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
-  xtl::span<const double> geom_dofs = geometry.x();
+  std::span<const double> geom_dofs = geometry.x();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  xt::xtensor<double, 2> shortest_vectors({entities.size(), 3});
+  std::vector<double> shortest_vectors(3 * entities.size());
   if (dim == tdim)
   {
     for (std::size_t e = 0; e < entities.size(); e++)
     {
       auto dofs = x_dofmap.links(entities[e]);
-      xt::xtensor<double, 2> nodes({dofs.size(), 3});
+      std::vector<double> nodes(3 * dofs.size());
       for (std::size_t i = 0; i < dofs.size(); ++i)
       {
         const int pos = 3 * dofs[i];
         for (std::size_t j = 0; j < 3; ++j)
-          nodes(i, j) = geom_dofs[pos + j];
+          nodes[3 * i + j] = geom_dofs[pos + j];
       }
 
-      xt::row(shortest_vectors, e) = geometry::compute_distance_gjk(
-          xt::reshape_view(xt::row(points, e), {1, 3}), nodes);
+      std::array<double, 3> d
+          = geometry::compute_distance_gjk(points.subspan(3 * e, 3), nodes);
+      std::copy(d.begin(), d.end(), std::next(shortest_vectors.begin(), 3 * e));
     }
   }
   else
@@ -426,34 +430,40 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
       const std::vector<int> entity_dofs
           = geometry.cmap().create_dof_layout().entity_closure_dofs(
               dim, local_cell_entity);
-      xt::xtensor<double, 2> nodes({entity_dofs.size(), 3});
+      std::vector<double> nodes(3 * entity_dofs.size());
       for (std::size_t i = 0; i < entity_dofs.size(); i++)
       {
         const int pos = 3 * dofs[entity_dofs[i]];
         for (std::size_t j = 0; j < 3; ++j)
-          nodes(i, j) = geom_dofs[pos + j];
+          nodes[3 * i + j] = geom_dofs[pos + j];
       }
 
-      xt::row(shortest_vectors, e) = compute_distance_gjk(
-          xt::reshape_view(xt::row(points, e), {1, 3}), nodes);
+      std::array<double, 3> d
+          = compute_distance_gjk(points.subspan(3 * e, 3), nodes);
+      std::copy(d.begin(), d.end(), std::next(shortest_vectors.begin(), 3 * e));
     }
   }
 
   return shortest_vectors;
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 1>
+std::vector<double>
 geometry::squared_distance(const mesh::Mesh& mesh, int dim,
-                           const xtl::span<const std::int32_t>& entities,
-                           const xt::xtensor<double, 2>& points)
+                           const std::span<const std::int32_t>& entities,
+                           const std::span<const double>& points)
 {
-  return xt::norm_sq(shortest_vector(mesh, dim, entities, points), {1});
+  std::vector<double> v = shortest_vector(mesh, dim, entities, points);
+  std::vector<double> d(v.size() / 3, 0);
+  for (std::size_t i = 0; i < d.size(); ++i)
+    for (std::size_t j = 0; j < 3; ++j)
+      d[i] += v[3 * i + j] * v[3 * i + j];
+  return d;
 }
 //-------------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t> geometry::compute_colliding_cells(
     const mesh::Mesh& mesh,
     const graph::AdjacencyList<std::int32_t>& candidate_cells,
-    const xt::xtensor<double, 2>& points)
+    const std::span<const double>& points)
 {
   std::vector<std::int32_t> offsets = {0};
   offsets.reserve(candidate_cells.num_nodes() + 1);
@@ -463,11 +473,12 @@ graph::AdjacencyList<std::int32_t> geometry::compute_colliding_cells(
   for (std::int32_t i = 0; i < candidate_cells.num_nodes(); i++)
   {
     auto cells = candidate_cells.links(i);
-    xt::xtensor<double, 2> _point({cells.size(), 3});
-    for (std::size_t j = 0; j < cells.size(); j++)
-      xt::row(_point, j) = xt::row(points, i);
+    std::vector<double> _point(3 * cells.size());
+    for (std::size_t j = 0; j < cells.size(); ++j)
+      for (std::size_t k = 0; k < 3; ++k)
+        _point[3 * j + k] = points[3 * i + k];
 
-    xt::xtensor<double, 1> distances_sq
+    std::vector<double> distances_sq
         = geometry::squared_distance(mesh, tdim, cells, _point);
     for (std::size_t j = 0; j < cells.size(); j++)
       if (distances_sq[j] < eps2)
@@ -482,7 +493,7 @@ graph::AdjacencyList<std::int32_t> geometry::compute_colliding_cells(
 //-------------------------------------------------------------------------------
 int geometry::compute_first_colliding_cell(
     const mesh::Mesh& mesh, const geometry::BoundingBoxTree& tree,
-    const xt::xtensor_fixed<double, xt::xshape<3>>& point)
+    const std::array<double, 3>& point)
 {
   // Compute colliding bounding boxes(cell candidates)
   std::vector<std::int32_t> cell_candidates;
@@ -494,20 +505,18 @@ int geometry::compute_first_colliding_cell(
   {
     constexpr double eps2 = 1e-20;
     const mesh::Geometry& geometry = mesh.geometry();
-    xtl::span<const double> geom_dofs = geometry.x();
+    std::span<const double> geom_dofs = geometry.x();
     const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
     const std::size_t num_nodes = geometry.cmap().dim();
-    xt::xtensor<double, 2> coordinate_dofs({num_nodes, std::size_t(3)});
+    std::vector<double> coordinate_dofs(num_nodes * 3);
     for (auto cell : cell_candidates)
     {
       auto dofs = x_dofmap.links(cell);
       for (std::size_t i = 0; i < num_nodes; ++i)
         common::impl::copy_N<3>(std::next(geom_dofs.begin(), 3 * dofs[i]),
                                 std::next(coordinate_dofs.begin(), 3 * i));
-      // Fix
-      xt::xtensor_fixed<double, xt::xshape<3>> shortest_vector
-          = geometry::compute_distance_gjk(xt::reshape_view(point, {1, 3}),
-                                           coordinate_dofs);
+      std::array<double, 3> shortest_vector
+          = geometry::compute_distance_gjk(point, coordinate_dofs);
       double norm = 0;
       std::for_each(shortest_vector.cbegin(), shortest_vector.cend(),
                     [&norm](const double e) { norm += std::pow(e, 2); });
@@ -523,7 +532,7 @@ int geometry::compute_first_colliding_cell(
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<double>, std::vector<std::int32_t>>
 geometry::determine_point_ownership(const mesh::Mesh& mesh,
-                                    const xt::xtensor<double, 2>& points)
+                                    std::span<const double> points)
 {
   const MPI_Comm& comm = mesh.comm();
 
@@ -570,7 +579,7 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
 
   // Count the number of points to send per neighbor process
   std::vector<std::int32_t> send_sizes(out_ranks.size());
-  for (std::size_t i = 0; i < points.shape(0); ++i)
+  for (std::size_t i = 0; i < points.size() / 3; ++i)
     for (const auto& p : collisions.links(i))
       send_sizes[rank_to_neighbor[p]] += 3;
 
@@ -592,16 +601,15 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
   std::vector<std::int32_t> counter(send_sizes.size(), 0);
   // unpack map: [index in adj list][pos in x]
   std::vector<std::int32_t> unpack_map(send_offsets.back() / 3);
-  for (std::size_t i = 0; i < points.shape(0); ++i)
+  for (std::size_t i = 0; i < points.size(); i += 3)
   {
-    const auto point = xt::row(points, i);
-    for (const auto& p : collisions.links(i))
+    for (const auto& p : collisions.links(i / 3))
     {
       int neighbor = rank_to_neighbor[p];
       int pos = send_offsets[neighbor] + counter[neighbor];
       auto it = std::next(send_data.begin(), pos);
-      std::copy(point.begin(), point.end(), it);
-      unpack_map[pos / 3] = i;
+      dolfinx::common::impl::copy_N<3>(std::next(points.begin(), i), it);
+      unpack_map[pos / 3] = i / 3;
       counter[neighbor] += 3;
     }
   }
@@ -611,8 +619,7 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                    std::next(recv_offsets.begin(), 1));
 
-  xt::xtensor<double, 2> received_points(
-      {std::size_t(recv_offsets.back() / 3), 3});
+  std::vector<double> received_points((std::size_t)recv_offsets.back());
   MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
                          send_offsets.data(), MPI_DOUBLE,
                          received_points.data(), recv_sizes.data(),
@@ -620,14 +627,19 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
 
   // Each process checks which points collides with a cell on the process
   const int rank = dolfinx::MPI::rank(comm);
-  std::vector<std::int32_t> cell_indicator(received_points.shape(0));
-  std::vector<std::int32_t> colliding_cells(received_points.shape(0));
-  for (std::size_t p = 0; p < received_points.shape(0); ++p)
+  std::vector<std::int32_t> cell_indicator(received_points.size() / 3);
+  std::vector<std::int32_t> colliding_cells(received_points.size() / 3);
+  for (std::size_t p = 0; p < received_points.size(); p += 3)
   {
-    const int colliding_cell = geometry::compute_first_colliding_cell(
-        mesh, bb, xt::row(received_points, p));
-    cell_indicator[p] = (colliding_cell >= 0) ? rank : -1;
-    colliding_cells[p] = colliding_cell;
+    // NOTE: Aim to remove this by using span, see:
+    // https://github.com/FEniCS/dolfinx/issues/2284
+    std::array<double, 3> point;
+    dolfinx::common::impl::copy_N<3>(std::next(received_points.begin(), p),
+                                     point.begin());
+    const int colliding_cell
+        = geometry::compute_first_colliding_cell(mesh, bb, point);
+    cell_indicator[p / 3] = (colliding_cell >= 0) ? rank : -1;
+    colliding_cells[p / 3] = colliding_cell;
   }
   // Create neighborhood communicator in the reverse direction: send back col to
   // requesting processes
@@ -661,7 +673,7 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
       recv_sizes.data(), recv_offsets.data(),
       dolfinx::MPI::mpi_type<std::int32_t>(), reverse_comm);
 
-  std::vector<std::int32_t> point_owners(points.shape(0), -1);
+  std::vector<std::int32_t> point_owners(points.size() / 3, -1);
   for (std::size_t i = 0; i < unpack_map.size(); i++)
   {
     const std::int32_t pos = unpack_map[i];
@@ -676,7 +688,7 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
   // Pack ownership data
   std::vector<std::int32_t> send_owners(send_offsets.back());
   std::fill(counter.begin(), counter.end(), 0);
-  for (std::size_t i = 0; i < points.shape(0); ++i)
+  for (std::size_t i = 0; i < points.size() / 3; ++i)
   {
     for (const auto& p : collisions.links(i))
     {
@@ -706,9 +718,9 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
       if (rank == dest_ranks[j])
       {
         owned_recv_ranks.push_back(in_ranks[i]);
-        auto point = xt::row(received_points, j);
-        owned_recv_points.insert(owned_recv_points.end(), point.cbegin(),
-                                 point.cend());
+        owned_recv_points.insert(
+            owned_recv_points.end(), std::next(received_points.cbegin(), 3 * j),
+            std::next(received_points.cbegin(), 3 * (j + 1)));
         owned_recv_cells.push_back(colliding_cells[j]);
       }
     }

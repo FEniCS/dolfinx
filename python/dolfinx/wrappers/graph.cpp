@@ -67,7 +67,7 @@ void declare_adjacency_list(py::module& m, std::string type)
           "links",
           [](const dolfinx::graph::AdjacencyList<T>& self, int i)
           {
-            xtl::span<const T> link = self.links(i);
+            std::span<const T> link = self.links(i);
             return py::array_t<T>(link.size(), link.data(), py::cast(self));
           },
           py::arg("i"), "Links (edges) of a node")
