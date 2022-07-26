@@ -138,7 +138,7 @@ jobs:
         run: python3 -m pip -v install --global-option build --global-option --debug python/
       - name: Build Python interface documentation
         run: |
-          python3 -m pip sphinx==5.0.2
+          python3 -m pip install sphinx==5.0.2
           cd python/doc
           make html
 
