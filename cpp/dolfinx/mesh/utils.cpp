@@ -138,7 +138,7 @@ compute_vertex_coords_boundary(const mesh::Mesh& mesh, int dim,
     const std::int32_t v = vertices[i];
 
     // Get first cell and find position
-    const int c = v_to_c->links(v)[0];
+    const int c = v_to_c->links(v).front();
     auto vertices = c_to_v->links(c);
     auto it = std::find(vertices.begin(), vertices.end(), v);
     assert(it != vertices.end());
