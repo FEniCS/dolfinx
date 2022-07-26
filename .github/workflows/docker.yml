@@ -15,7 +15,7 @@ on:
     inputs:
       tag_prefix:
         description: "tag prefix for docker images"
-        default: "latest"
+        default: "nightly"
         type: string
 
       dolfinx_ref:
@@ -89,7 +89,7 @@ jobs:
         id: tag_name
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-latest}"
+          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-nightly}"
       - name: Log into the Dockerhub registry
         run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
       - name: Build the Docker image
@@ -124,7 +124,7 @@ jobs:
         id: tag_name
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-latest}"
+          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-nightly}"
       - name: Build the Docker image
         run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG} docker/
       - name: Cleanup
@@ -155,7 +155,7 @@ jobs:
         id: tag_name
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-latest}"
+          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-nightly}"
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Build the Docker image
@@ -176,7 +176,7 @@ jobs:
         id: tag_name
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-latest}"
+          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-nightly}"
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push multiarch images
@@ -218,7 +218,7 @@ jobs:
         id: tag_name
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-latest}"
+          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-nightly}"
       - name: Get git refs
         id: refs
         run: |
@@ -301,7 +301,7 @@ jobs:
         id: tag_name
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-latest}"
+          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-nightly}"
       - name: Log into the DockerHub registry
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Push multiarch images

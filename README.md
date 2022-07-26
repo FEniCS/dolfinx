@@ -65,8 +65,8 @@ comprehensive instructions.
 
 ## conda
 
-To install the Python interface, with pyvista support for visualisation,
-using [conda](https://conda.io):
+To install the latest stable release of the Python interface, with pyvista support for
+visualisation, using [conda](https://conda.io):
 ```shell
 conda install -c conda-forge fenics-dolfinx mpich pyvista
 ```
@@ -82,9 +82,14 @@ recipe is hosted on
 
 ## Docker images
 
+A Docker image with the latest stable release of DOLFINx:
+```shell
+docker run -ti dolfinx/dolfinx:stable
+```
+
 A Docker image with DOLFINx built nightly:
 ```shell
-docker run -ti dolfinx/dolfinx:latest
+docker run -ti dolfinx/dolfinx:nightly
 ```
 
 To switch between real and complex builds of DOLFINx/PETSc.
@@ -93,20 +98,21 @@ source /usr/local/bin/dolfinx-complex-mode
 source /usr/local/bin/dolfinx-real-mode
 ```
 
-A Jupyter Lab environment with DOLFINx built nightly:
+A Jupyter Lab environment with the latest stable release of DOLFINx:
 ```shell
-docker run --init -ti -p 8888:8888 dolfinx/lab:latest  # Access at http://localhost:8888
+docker run --init -ti -p 8888:8888 dolfinx/lab:stable  # Access at http://localhost:8888
 ```
 
 A development image with all of the dependencies required
 to build DOLFINx:
 ```shell
-docker run -ti dolfinx/dev-env:latest
+docker run -ti dolfinx/dev-env:nightly
 ```
 
 All Docker images support arm64 and amd64 architectures.
 
-For more information, see https://hub.docker.com/u/dolfinx
+For a full list of tags, including versioned images, see
+https://hub.docker.com/u/dolfinx
 
 
 ## License
