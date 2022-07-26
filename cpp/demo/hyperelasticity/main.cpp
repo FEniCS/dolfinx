@@ -180,8 +180,9 @@ int main(int argc, char* argv[])
                                        [](auto&& x) -> xt::xtensor<bool, 1> {
                                          return xt::isclose(xt::row(x, 0), 1.0);
                                        });
+
     auto bcs = std::vector{
-        std::make_shared<const fem::DirichletBC<T>>(xt::xarray<T>{0, 0, 0},
+        std::make_shared<const fem::DirichletBC<T>>(std::vector<T>{0, 0, 0},
                                                     bdofs_left, V),
         std::make_shared<const fem::DirichletBC<T>>(u_rotation, bdofs_right)};
 

@@ -186,7 +186,7 @@ public:
   template <typename S, typename U,
             typename = std::enable_if_t<
                 std::is_convertible_v<
-                    S, T> or std::is_convertible_v<S, xt::xarray<T>>>>
+                    S, T> or std::is_convertible_v<S, std::span<const T>>>>
   DirichletBC(const S& g, U&& dofs,
               const std::shared_ptr<const FunctionSpace>& V)
       : DirichletBC(std::make_shared<Constant<T>>(g), dofs, V)

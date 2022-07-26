@@ -480,10 +480,10 @@ void declare_objects(py::module& m, const std::string& type)
       .def(py::init(
                [](const py::array_t<T, py::array::c_style>& c)
                {
-                 std::vector<std::size_t> s;
-                 std::copy_n(c.shape(), c.ndim(), std::back_inserter(s));
-                 return dolfinx::fem::Constant<T>(
-                     xt::adapt(c.data(), c.size(), xt::no_ownership(), s));
+                 std::vector<std::size_t> shape;
+                 std::copy_n(c.shape(), c.ndim(), std::back_inserter(shape));
+                 return dolfinx::fem::Constant<T>(std::span(c.data(), c.size()),
+                                                  shape);
                }),
            py::arg("c").noconvert(), "Create a constant from a value array")
       .def_property_readonly("dtype", [](const dolfinx::fem::Constant<T>& self)
