@@ -429,7 +429,7 @@ void declare_objects(py::module& m, const std::string& type)
                                                  1, std::multiplies{});
 
             assert(self.function_space()->mesh());
-            const auto x = dolfinx::fem::interpolation_coords(
+            const std::vector<double> x = dolfinx::fem::interpolation_coords(
                 *element, *self.function_space()->mesh(),
                 std::span(cells.data(), cells.size()));
 
@@ -442,7 +442,7 @@ void declare_objects(py::module& m, const std::string& type)
             dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
                                       std::span(cells.data(), cells.size()));
           },
-          py::arg("f"), py::arg("cells"),
+          py::arg("f_ptr"), py::arg("cells"),
           "Interpolate using a pointer to an expression with a C signature")
       .def(
           "interpolate",

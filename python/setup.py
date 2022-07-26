@@ -13,6 +13,7 @@ if sys.version_info < (3, 8):
 VERSION = "0.4.2.dev0"
 
 REQUIREMENTS = [
+    "cffi",
     "numpy>=1.21",
     "mpi4py",
     "petsc4py",
@@ -45,10 +46,10 @@ class CMakeBuild(build_ext):
                       f'-DPython3_LIBRARIES={sysconfig.get_config_var("LIBDEST")}',
                       f'-DPython3_INCLUDE_DIRS={sysconfig.get_config_var("INCLUDEPY")}']
 
-        cfg = 'Debug'
+        cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
         cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-        build_args += ['--', '-j']
+        build_args += ['--', '-j3']
 
         env = os.environ.copy()
         import pybind11
