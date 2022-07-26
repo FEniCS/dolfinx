@@ -25,7 +25,7 @@ public:
 
   /// @brief Create a rank-1 (vector-valued) constant
   /// @param[in] c Value of the constant
-  Constant(std::span<const T> c)
+  explicit Constant(std::span<const T> c)
       : Constant(c, std::vector<std::size_t>{c.size()})
   {
   }

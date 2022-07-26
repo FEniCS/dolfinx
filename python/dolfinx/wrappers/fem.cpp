@@ -290,31 +290,16 @@ void declare_objects(py::module& m, const std::string& type)
   dirichletbc
       .def(
           py::init(
-              [](T g, const py::array_t<std::int32_t, py::array::c_style>& dofs,
-                 const std::shared_ptr<const dolfinx::fem::FunctionSpace>& V)
-              {
-                return dolfinx::fem::DirichletBC<T>(
-                    g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
-              }),
-          py::arg("g"), py::arg("dofs").noconvert(), py::arg("V"))
-      .def(
-          py::init(
-              [](const py::array_t<T>& g,
+              [](const py::array_t<T, py::array::c_style>& g,
                  const py::array_t<std::int32_t, py::array::c_style>& dofs,
                  const std::shared_ptr<const dolfinx::fem::FunctionSpace>& V)
               {
                 if (dofs.ndim() != 1)
                   throw std::runtime_error("Wrong number of dims");
-                std::vector<std::size_t> strides;
-                std::transform(g.strides(), g.strides() + g.ndim(),
-                               std::back_inserter(strides),
-                               [](auto s) { return s / sizeof(T); });
                 std::vector<std::size_t> shape(g.shape(), g.shape() + g.ndim());
-                auto _g = xt::adapt(g.data(), g.size(),
-                xt::no_ownership(),
-                                    shape, strides);
+                auto _g  = std::make_shared<dolfinx::fem::Constant<T>>(std::span(g.data(), g.size()), shape);
                 return dolfinx::fem::DirichletBC<T>(
-                    _g, std::vector(dofs.data(), dofs.data() + dofs.size()),
+                   _g, std::vector(dofs.data(), dofs.data() + dofs.size()),
                     V);
               }),
           py::arg("g").noconvert(), py::arg("dofs").noconvert(),
@@ -475,13 +460,11 @@ void declare_objects(py::module& m, const std::string& type)
              std::shared_ptr<dolfinx::fem::Constant<T>>>(
       m, pyclass_name_constant.c_str(),
       "Value constant with respect to integration domain")
-      .def(py::init([](T c) { return dolfinx::fem::Constant<T>(c); }),
-           py::arg("c").noconvert(), "Create a constant from a scalar")
       .def(py::init(
                [](const py::array_t<T, py::array::c_style>& c)
                {
-                 std::vector<std::size_t> shape;
-                 std::copy_n(c.shape(), c.ndim(), std::back_inserter(shape));
+                 std::vector<std::size_t> shape(c.shape(),
+                                                c.shape() + c.ndim());
                  return dolfinx::fem::Constant<T>(std::span(c.data(), c.size()),
                                                   shape);
                }),
