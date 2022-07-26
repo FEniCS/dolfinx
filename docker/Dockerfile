@@ -482,8 +482,8 @@ RUN apt-get -qq update && \
 # available on pypi for linux/arm64.
 # matplotlib improves plotting quality with better color maps and
 # properly rendering colorbars.
-# pythreejs and ipygany are the two backends of pyvista not requiring a framebuffer,
-# and is therefore preferred in notebooks
+# pythreejs and ipygany are two backends of pyvista not requiring a framebuffer,
+# and are therefore preferred in notebooks
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
     pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} && \
