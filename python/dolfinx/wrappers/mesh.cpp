@@ -235,8 +235,11 @@ void mesh(py::module& m)
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape()[1];
         std::vector shape{std::size_t(x.shape(0)), shape1};
         auto _x = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
-        return dolfinx::mesh::create_mesh(comm.get(), cells, element, _x,
-                                          ghost_mode, partitioner_wrapper);
+        return dolfinx::mesh::create_mesh(
+            comm.get(), cells, element, std::span(x.data(), x.size()),
+            {static_cast<std::size_t>(x.shape(0)),
+             static_cast<std::size_t>(x.shape(1))},
+            ghost_mode, partitioner_wrapper);
       },
       py::arg("comm"), py::arg("cells"), py::arg("element"), py::arg("x"),
       py::arg("ghost_mode"), py::arg("partitioner"),

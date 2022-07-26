@@ -20,7 +20,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
 #include <pugixml.hpp>
-#include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
