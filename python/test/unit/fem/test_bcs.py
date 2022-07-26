@@ -196,11 +196,10 @@ def test_constant_bc():
     assert bc1.value.value.shape == (tdim,)
     assert (bc1.value.value == [1.0 + 2.2j, 3.0 + 2.2j]).all()
 
-
     bc2 = dirichletbc(np.array([[1.0, 3.0], [3.0, -2.0]], dtype=np.float32), boundary_dofs2, V2)
     assert bc2.value.value.dtype == np.float32
     assert bc2.value.value.shape == (tdim, tdim)
-    assert (bc2.value.value ==[[1.0, 3.0], [3.0, -2.0]]).all()
+    assert (bc2.value.value == [[1.0, 3.0], [3.0, -2.0]]).all()
 
 
 @pytest.mark.parametrize(
