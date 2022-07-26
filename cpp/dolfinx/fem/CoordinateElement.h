@@ -7,6 +7,7 @@
 #pragma once
 
 #include "ElementDofLayout.h"
+#include <algorithm>
 #include <array>
 #include <basix/element-families.h>
 #include <basix/mdspan.hpp>
@@ -143,10 +144,7 @@ public:
           B(i, j) = J(j, i);
 
       // Zero working memory of BA
-      std::fill(std::next(w.begin(), J.extent(0) * J.extent(1)),
-                std::next(w.begin(), J.extent(0) * J.extent(1)
-                                         + B.extent(0) * J.extent(1)),
-                0);
+      std::fill_n(BA.data_handle(), BA.size(), 0);
       math::dot(B, J, BA);
       return std::sqrt(math::det(BA));
     }
