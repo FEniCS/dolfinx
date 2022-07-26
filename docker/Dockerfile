@@ -482,11 +482,18 @@ RUN apt-get -qq update && \
 # available on pypi for linux/arm64.
 # matplotlib improves plotting quality with better color maps and
 # properly rendering colorbars.
+# pythreejs and ipygany are two backends of pyvista not requiring a framebuffer,
+# and are therefore preferred in notebooks
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
-    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
-    esac; \
-    pip3 install --no-cache-dir matplotlib
+    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} && \
+    pip3 install --no-cache-dir matplotlib && \
+    pip3 install --no-cache-dir pythreejs ipygany && \
+    pip3 cache purge ;; \
+    esac;
+
+# Enable ipygany in jupyter
+RUN jupyter nbextension enable --py --sys-prefix ipygany
 
 # Jupyter Notebook kernel specification for complex build DOLFINx
 ADD dolfinx/docker/complex-kernel.json /usr/local/share/jupyter/kernels/python3-complex/kernel.json
