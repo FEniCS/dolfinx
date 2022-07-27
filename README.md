@@ -75,6 +75,10 @@ conda is distributed with [Anaconda](https://www.anaconda.com/) and
 recipe is hosted on
 [conda-forge](https://github.com/conda-forge/fenics-dolfinx-feedstock).
 
+| Name | Downloads | Version | Platforms |
+| --- | --- | --- | --- |
+| [![Conda Recipe](https://img.shields.io/badge/recipe-fenics--dolfinx-green.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/fenics-dolfinx.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/fenics-dolfinx.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/fenics-dolfinx.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) |
+
 > **Note**
 > Windows packages are not available. This is due to some DOLFINx
 > dependencies not supporting Windows.
