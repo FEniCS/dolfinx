@@ -79,7 +79,7 @@ jobs:
           python3 -m isort --check dolfinx
           python3 -m isort --check demo
           python3 -m isort --check test
-      - name: mypy checks (non-blocking)
+      - name: mypy checks
         run: |
           cd python/
           mypy dolfinx
