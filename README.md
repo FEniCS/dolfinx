@@ -89,11 +89,6 @@ A Docker image with the latest stable release of DOLFINx:
 docker run -ti dolfinx/dolfinx:stable
 ```
 
-A Docker image with DOLFINx built nightly:
-```shell
-docker run -ti dolfinx/dolfinx:nightly
-```
-
 To switch between real and complex builds of DOLFINx/PETSc.
 ```shell
 source /usr/local/bin/dolfinx-complex-mode
@@ -105,8 +100,19 @@ A Jupyter Lab environment with the latest stable release of DOLFINx:
 docker run --init -ti -p 8888:8888 dolfinx/lab:stable  # Access at http://localhost:8888
 ```
 
+A Docker image with DOLFINx built nightly:
+```shell
+docker run -ti dolfinx/dolfinx:nightly
+```
+
 A development image with all of the dependencies required
-to build DOLFINx:
+to build the latest stable release of DOLFINx:
+```shell
+docker run -ti dolfinx/dev-env:stable
+```
+
+A development image with all of the dependencies required
+to build the `main` branch of DOLFINx:
 ```shell
 docker run -ti dolfinx/dev-env:nightly
 ```
