@@ -49,7 +49,6 @@
 #include <utility>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
 
 namespace py = pybind11;
 
@@ -309,8 +308,8 @@ void declare_objects(py::module& m, const std::string& type)
                 std::transform(g.strides(), g.strides() + g.ndim(),
                                std::back_inserter(strides),
                                [](auto s) { return s / sizeof(T); });
-                std::vector<std::size_t> shape(g.shape(), g.shape() +
-                g.ndim()); auto _g = xt::adapt(g.data(), g.size(),
+                std::vector<std::size_t> shape(g.shape(), g.shape() + g.ndim());
+                auto _g = xt::adapt(g.data(), g.size(),
                 xt::no_ownership(),
                                     shape, strides);
                 return dolfinx::fem::DirichletBC<T>(
@@ -386,21 +385,26 @@ void declare_objects(py::module& m, const std::string& type)
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T>& self,
-             const std::function<py::array_t<T>(const py::array_t<double>&)>& f,
+             const py::array_t<T, py::array::c_style>& f,
              const py::array_t<std::int32_t, py::array::c_style>& cells)
           {
-            auto _f = [&f](const xt::xtensor<double, 2>& x) -> xt::xarray<T>
+            if (f.ndim() == 1)
             {
-              auto strides = x.strides();
-              std::transform(strides.begin(), strides.end(), strides.begin(),
-                             [](auto s) { return s * sizeof(double); });
-              py::array_t _x(x.shape(), strides, x.data(), py::none());
-              py::array_t v = f(_x);
-              std::vector<std::size_t> shape;
-              std::copy_n(v.shape(), v.ndim(), std::back_inserter(shape));
-              return xt::adapt(v.data(), shape);
-            };
-            self.interpolate(_f, std::span(cells.data(), cells.size()));
+              std::array<std::size_t, 2> fshape
+                  = {1, static_cast<std::size_t>(f.shape(0))};
+              dolfinx::fem::interpolate(self, std::span(f.data(), f.size()),
+                                        fshape,
+                                        std::span(cells.data(), cells.size()));
+            }
+            else
+            {
+              std::array<std::size_t, 2> fshape
+                  = {static_cast<std::size_t>(f.shape(0)),
+                     static_cast<std::size_t>(f.shape(1))};
+              dolfinx::fem::interpolate(self, std::span(f.data(), f.size()),
+                                        fshape,
+                                        std::span(cells.data(), cells.size()));
+            }
           },
           py::arg("f"), py::arg("cells"), "Interpolate an expression function")
       .def(
@@ -424,19 +428,22 @@ void declare_objects(py::module& m, const std::string& type)
             std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
                                                  1, std::multiplies{});
 
+            assert(self.function_space()->mesh());
+            const std::vector<double> x = dolfinx::fem::interpolation_coords(
+                *element, *self.function_space()->mesh(),
+                std::span(cells.data(), cells.size()));
+
+            std::array<std::size_t, 2> shape = {value_size, x.size() / 3};
+            std::vector<T> values(shape[0] * shape[1]);
             std::function<void(T*, int, int, const double*)> f
                 = reinterpret_cast<void (*)(T*, int, int, const double*)>(addr);
-            auto _f = [&f, value_size](const xt::xtensor<double, 2>& x)
-            {
-              xt::xarray<T> values = xt::empty<T>({value_size, x.shape(1)});
-              f(values.data(), values.shape(1), values.shape(0), x.data());
-              return values;
-            };
+            f(values.data(), shape[1], shape[0], x.data());
 
-            self.interpolate(_f, std::span(cells.data(), cells.size()));
+            dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
+                                      std::span(cells.data(), cells.size()));
           },
-          py::arg("f"), py::arg("cells"),
-          "Interpolate using a pointer to an Expression with a C signature")
+          py::arg("f_ptr"), py::arg("cells"),
+          "Interpolate using a pointer to an expression with a C signature")
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T>& self,
@@ -456,23 +463,13 @@ void declare_objects(py::module& m, const std::string& type)
              py::array_t<T, py::array::c_style>& u)
           {
             // TODO: handle 1d case
-
-            std::vector<std::size_t> shape_x(x.shape(), x.shape() + 2);
-            auto _x
-                = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape_x);
-
-            std::array<std::size_t, 2> shape_u;
-            std::copy_n(u.shape(), 2, shape_u.begin());
-
-            // The below should work, but misbehaves with the Intel
-            // icpx compiler
-            // xt::xtensor<T, 2> _u = xt::adapt(u.mutable_data(), u.size(),
-            //                                  xt::no_ownership(), shape_u);
-            xt::xtensor<T, 2> _u(shape_u);
-            std::copy_n(u.data(), u.size(), _u.data());
-
-            self.eval(_x, std::span(cells.data(), cells.size()), _u);
-            std::copy_n(_u.data(), _u.size(), u.mutable_data());
+            self.eval(std::span(x.data(), x.size()),
+                      {static_cast<std::size_t>(x.shape(0)),
+                       static_cast<std::size_t>(x.shape(1))},
+                      std::span(cells.data(), cells.size()),
+                      std::span(u.mutable_data(), u.size()),
+                      {static_cast<std::size_t>(u.shape(0)),
+                       static_cast<std::size_t>(u.shape(1))});
           },
           py::arg("x"), py::arg("cells"), py::arg("values"),
           "Evaluate Function")
@@ -510,37 +507,37 @@ void declare_objects(py::module& m, const std::string& type)
       class_<dolfinx::fem::Expression<T>,
              std::shared_ptr<dolfinx::fem::Expression<T>>>(
           m, pyclass_name_expr.c_str(), "An Expression")
-          .def(
-              py::init(
-                  [](const std::vector<std::shared_ptr<
-                         const dolfinx::fem::Function<T>>>& coefficients,
-                     const std::vector<std::shared_ptr<
-                         const dolfinx::fem::Constant<T>>>& constants,
-                     const py::array_t<double, py::array::c_style>& X,
-                     std::uintptr_t fn_addr,
-                     const std::vector<int>& value_shape,
-                     const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
-                     const std::shared_ptr<const dolfinx::fem::FunctionSpace>&
-                         argument_function_space)
-                  {
-                    auto tabulate_expression_ptr
-                        = (void (*)(T*, const T*, const T*,
-                                    const typename geom_type<T>::value_type*,
-                                    const int*, const std::uint8_t*))fn_addr;
-                    auto _x_ref = xt::adapt(X.data(), {X.shape(0), X.shape(1)});
-                    return dolfinx::fem::Expression<T>(
-                        coefficients, constants, _x_ref,
-                        tabulate_expression_ptr, value_shape, mesh,
-                        argument_function_space);
-                  }),
-              py::arg("coefficients"), py::arg("constants"), py::arg("X"),
-              py::arg("fn"), py::arg("value_shape"), py::arg("mesh"),
-              py::arg("argument_function_space"))
+          .def(py::init(
+                   [](const std::vector<std::shared_ptr<
+                          const dolfinx::fem::Function<T>>>& coefficients,
+                      const std::vector<std::shared_ptr<
+                          const dolfinx::fem::Constant<T>>>& constants,
+                      const py::array_t<double, py::array::c_style>& X,
+                      std::uintptr_t fn_addr,
+                      const std::vector<int>& value_shape,
+                      const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
+                      const std::shared_ptr<const dolfinx::fem::FunctionSpace>&
+                          argument_function_space)
+                   {
+                     auto tabulate_expression_ptr
+                         = (void (*)(T*, const T*, const T*,
+                                     const typename geom_type<T>::value_type*,
+                                     const int*, const std::uint8_t*))fn_addr;
+                     return dolfinx::fem::Expression<T>(
+                         coefficients, constants, std::span(X.data(), X.size()),
+                         {static_cast<std::size_t>(X.shape(0)),
+                          static_cast<std::size_t>(X.shape(1))},
+                         tabulate_expression_ptr, value_shape, mesh,
+                         argument_function_space);
+                   }),
+               py::arg("coefficients"), py::arg("constants"), py::arg("X"),
+               py::arg("fn"), py::arg("value_shape"), py::arg("mesh"),
+               py::arg("argument_function_space"))
           .def(
               "eval",
               [](const dolfinx::fem::Expression<T>& self,
-                 const py::
-                     array_t<std::int32_t, py::array::c_style>& active_cells,
+                 const py::array_t<std::int32_t,
+                                   py::array::c_style>& active_cells,
                  py::array_t<T, py::array::c_style>& values)
               {
                 const int size = values.shape(0) * values.shape(1);
@@ -552,6 +549,12 @@ void declare_objects(py::module& m, const std::string& type)
                           _values);
               },
               py::arg("active_cells"), py::arg("values"))
+          .def("X",
+               [](const dolfinx::fem::Expression<T>& self)
+               {
+                 auto [X, shape] = self.X();
+                 return dolfinx_wrappers::as_pyarray(std::move(X), shape);
+               })
           .def_property_readonly("dtype",
                                  [](const dolfinx::fem::Expression<T>& self)
                                  { return py::dtype::of<T>(); })
@@ -559,15 +562,7 @@ void declare_objects(py::module& m, const std::string& type)
           .def_property_readonly("value_size",
                                  &dolfinx::fem::Expression<T>::value_size)
           .def_property_readonly("value_shape",
-                                 &dolfinx::
-                                     fem::Expression<T>::value_shape)
-          .def_property_readonly("X",
-                                 [](const dolfinx::fem::Expression<T>& self)
-                                 {
-                                   return py::array_t<double>(self.X().shape(),
-                                                              self.X().data(),
-                                                              py::cast(self));
-                                 });
+                                 &dolfinx::fem::Expression<T>::value_shape);
 
   std::string pymethod_create_expression
       = std::string("create_expression_") + type;
@@ -1026,9 +1021,12 @@ void fem(py::module& m)
                              py::return_value_policy::reference_internal)
       .def_property_readonly("num_sub_elements",
                              &dolfinx::fem::FiniteElement::num_sub_elements)
-      .def_property_readonly(
-          "interpolation_points", [](const dolfinx::fem::FiniteElement& self)
-          { return xt_as_pyarray(self.interpolation_points()); })
+      .def("interpolation_points",
+           [](const dolfinx::fem::FiniteElement& self)
+           {
+             auto [X, shape] = self.interpolation_points();
+             return as_pyarray(std::move(X), shape);
+           })
       .def_property_readonly("interpolation_ident",
                              &dolfinx::fem::FiniteElement::interpolation_ident)
       .def_property_readonly("space_dimension",
@@ -1120,24 +1118,36 @@ void fem(py::module& m)
           "push_forward",
           [](const dolfinx::fem::CoordinateElement& self,
              const py::array_t<double, py::array::c_style>& X,
-             const py::array_t<double, py::array::c_style>& cell_geometry)
+             const py::array_t<double, py::array::c_style>& cell)
           {
-            std::array<std::size_t, 2> s_x;
-            std::copy_n(X.shape(), 2, s_x.begin());
-            auto _X = xt::adapt(X.data(), X.size(), xt::no_ownership(), s_x);
+            namespace stdex = std::experimental;
+            using mdspan2_t
+                = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+            using cmdspan2_t
+                = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+            using cmdspan4_t
+                = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
 
-            std::array<std::size_t, 2> s_g;
-            std::copy_n(cell_geometry.shape(), 2, s_g.begin());
-            auto g = xt::adapt(cell_geometry.data(), cell_geometry.size(),
-                               xt::no_ownership(), s_g);
+            std::array<std::size_t, 2> Xshape
+                = {(std::size_t)X.shape(0), (std::size_t)X.shape(1)};
 
-            xt::xtensor<double, 2> x = xt::empty<double>(
-                {_X.shape(0), std::size_t(cell_geometry.shape(1))});
-            const xt::xtensor<double, 2> phi
-                = xt::view(self.tabulate(0, _X), 0, xt::all(), xt::all(), 0);
+            std::array<std::size_t, 4> phi_shape
+                = self.tabulate_shape(0, X.shape(0));
+            std::vector<double> phi_b(std::reduce(
+                phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+            cmdspan4_t phi_full(phi_b.data(), phi_shape);
+            self.tabulate(0, std::span(X.data(), X.size()), Xshape, phi_b);
+            auto phi = stdex::submdspan(phi_full, 0, stdex::full_extent,
+                                        stdex::full_extent, 0);
 
-            self.push_forward(x, g, phi);
-            return xt_as_pyarray(std::move(x));
+            std::array<std::size_t, 2> shape
+                = {(std::size_t)X.shape(0), (std::size_t)cell.shape(1)};
+            std::vector<double> xb(shape[0] * shape[1]);
+            self.push_forward(
+                mdspan2_t(xb.data(), shape),
+                cmdspan2_t(cell.data(), cell.shape(0), cell.shape(1)), phi);
+
+            return as_pyarray(std::move(xb), shape);
           },
           py::arg("X"), py::arg("cell_geometry"))
       .def(
@@ -1150,35 +1160,47 @@ void fem(py::module& m)
             const std::size_t gdim = x.shape(1);
             const std::size_t tdim = dolfinx::mesh::cell_dim(self.cell_shape());
 
-            xt::xtensor<double, 2> X = xt::empty<double>({num_points, tdim});
+            namespace stdex = std::experimental;
+            using mdspan2_t
+                = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+            using cmdspan2_t
+                = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+            using cmdspan4_t
+                = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
 
-            std::array<std::size_t, 2> s_x;
-            std::copy_n(x.shape(), 2, s_x.begin());
-            auto _x = xt::adapt(x.data(), x.size(), xt::no_ownership(), s_x);
-
-            std::array<std::size_t, 2> s_g;
-            std::copy_n(cell_geometry.shape(), 2, s_g.begin());
-            auto g = xt::adapt(cell_geometry.data(), cell_geometry.size(),
-                               xt::no_ownership(), s_g);
+            std::vector<double> Xb(num_points * tdim);
+            mdspan2_t X(Xb.data(), num_points, tdim);
+            cmdspan2_t _x(x.data(), x.shape(0), x.shape(1));
+            cmdspan2_t g(cell_geometry.data(), cell_geometry.shape(0),
+                         cell_geometry.shape(1));
 
             if (self.is_affine())
             {
-              xt::xtensor<double, 2> J = xt::zeros<double>({gdim, tdim});
-              xt::xtensor<double, 2> K = xt::zeros<double>({tdim, gdim});
-              xt::xtensor<double, 4> data(self.tabulate_shape(1, 1));
-              const xt::xtensor<double, 2> X0
-                  = xt::zeros<double>({std::size_t(1), tdim});
-              self.tabulate(1, X0, data);
-              xt::xtensor<double, 2> dphi
-                  = xt::view(data, xt::range(1, tdim + 1), 0, xt::all(), 0);
+              std::vector<double> J_b(gdim * tdim);
+              mdspan2_t J(J_b.data(), gdim, tdim);
+              std::vector<double> K_b(tdim * gdim);
+              mdspan2_t K(K_b.data(), tdim, gdim);
+
+              std::array<std::size_t, 4> phi_shape = self.tabulate_shape(1, 1);
+              std::vector<double> phi_b(std::reduce(
+                  phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+              cmdspan4_t phi(phi_b.data(), phi_shape);
+
+              self.tabulate(1, std::vector<double>(tdim), {1, tdim}, phi_b);
+              auto dphi = stdex::submdspan(phi, std::pair(1, tdim + 1), 0,
+                                           stdex::full_extent, 0);
+
               self.compute_jacobian(dphi, g, J);
               self.compute_jacobian_inverse(J, K);
-              self.pull_back_affine(X, K, self.x0(g), _x);
+              std::array<double, 3> x0 = {0, 0, 0};
+              for (std::size_t i = 0; i < g.extent(1); ++i)
+                x0[i] += g(0, i);
+              self.pull_back_affine(X, K, x0, _x);
             }
             else
               self.pull_back_nonaffine(X, _x, g);
 
-            return xt_as_pyarray(std::move(X));
+            return as_pyarray(std::move(Xb), std::array{num_points, tdim});
           },
           py::arg("x"), py::arg("cell_geometry"));
 
@@ -1263,6 +1285,18 @@ void fem(py::module& m)
         return as_pyarray(dolfinx::fem::locate_dofs_geometrical(V, _marker));
       },
       py::arg("V"), py::arg("marker"));
+
+  m.def(
+      "interpolation_coords",
+      [](const dolfinx::fem::FiniteElement& e, const dolfinx::mesh::Mesh& mesh,
+         py::array_t<std::int32_t, py::array::c_style> cells)
+      {
+        std::vector<double> x = dolfinx::fem::interpolation_coords(
+            e, mesh, std::span(cells.data(), cells.size()));
+        return as_pyarray(std::move(x),
+                          std::array<std::size_t, 2>{3, x.size() / 3});
+      },
+      py::arg("element"), py::arg("V"), py::arg("cells"));
 
   // dolfinx::fem::FunctionSpace
   py::class_<dolfinx::fem::FunctionSpace,
