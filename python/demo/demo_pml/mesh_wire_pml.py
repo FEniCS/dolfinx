@@ -16,22 +16,22 @@ def generate_mesh_wire(radius_wire, l_dom, l_pml, in_wire_size, on_wire_size,
         # A dummy boundary is added for setting a finer mesh
         gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_wire * 0.8,
                                  angle1=0.0, angle2=2 * pi, tag=1)
-        
+
         gmsh.model.occ.addCurveLoop([1], tag=1)
         gmsh.model.occ.addPlaneSurface([1], tag=1)
-        
+
         gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_wire,
                                  angle1=0, angle2=2 * pi, tag=2)
 
         gmsh.model.occ.addCurveLoop([2], tag=2)
         gmsh.model.occ.addPlaneSurface([2, 1], tag=2)
-        
-        gmsh.model.occ.addRectangle(-l_dom/2, -l_dom/2, 0, l_dom, l_dom)
-        gmsh.model.occ.addRectangle(-l_pml/2, -l_pml/2, 0, l_pml, l_pml)
-    
+
+        gmsh.model.occ.addRectangle(-l_dom / 2, -l_dom / 2, 0, l_dom, l_dom)
+        gmsh.model.occ.addRectangle(-l_pml / 2, -l_pml / 2, 0, l_pml, l_pml)
+
         gmsh.model.occ.remove(dimTags=[(2, 3)], recursive=False)
         gmsh.model.occ.remove(dimTags=[(2, 4)], recursive=False)
-        
+
         gmsh.model.occ.addPlaneSurface([3, 2], tag=3)
 
         gmsh.model.occ.addPlaneSurface([4, 3], tag=4)
@@ -51,7 +51,3 @@ def generate_mesh_wire(radius_wire, l_dom, l_pml, in_wire_size, on_wire_size,
         gmsh.model.mesh.generate(2)
 
         return gmsh.model
-
-if __name__ == "__main__":
-
-    generate_mesh_wire(radius_wire=0.5, l_dom=2, l_pml=3, in_wire_size=0.1, on_wire_size=0.1, bkg_size=0.5, pml_size=0.5, au_tag=1, bkg_tag=2, pml_tag=3)

@@ -1,4 +1,19 @@
+# # Scattering from a wire with a perfectly matched layer
+# This demo is implemented in three files: one for the mesh
+# generation with gmsh, one for the calculation of analytical efficiencies,
+# and one for the variational forms and the solver. It illustrates how to:
+#
+# - Use complex quantities in FEniCSx
+# - Setup and solve Maxwell's equations
+# - Implement (rectangular) perfectly matched layers
+#
+# ## Equations, problem definition and implementation
+#
+# First of all, let's import the modules that will be used:
+
+# +
 import sys
+from matplotlib.cbook import to_filehandle
 
 try:
     import gmsh
@@ -26,10 +41,64 @@ from ufl import (FacetNormal, algebra, as_matrix, as_vector, cross, curl, det,
 from mpi4py import MPI
 from petsc4py import PETSc
 
+# -
+
+# Since we want to solve time-harmonic Maxwell's equation, we need to
+# specify that the demo should only be executed with DOLFINx complex mode,
+# otherwise it would not work:
+
 if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
     exit(0)
 
+# Now, let's consider an infinite metallic wire immersed in
+# a background medium (e.g. vacuum or water). Let's now
+# consider the plane cutting the wire perpendicularly to
+# its axis at a generic point. Such plane $\Omega=\Omega_{m}
+# \cup\Omega_{b}$ is formed by the cross-section
+# of the wire $\Omega_m$ and the background medium
+# $\Omega_{b}$ surrounding the wire. We want to calculate
+# the electric field $\mathbf{E}_s$ scattered by the wire
+# when a background wave $\mathbf{E}_b$ impinges on it.
+# We will consider a background plane wave at $\lambda_0$
+# wavelength, that can be written analytically as:
+#
+# $$
+# \mathbf{E}_b = \exp(\mathbf{k}\cdot\mathbf{r})\hat{\mathbf{u}}_p
+# $$
+#
+# with $\mathbf{k} = \frac{2\pi}{\lambda_0}n_b\hat{\mathbf{u}}_k$
+# being the wavevector of the
+# plane wave, pointing along the propagation direction,
+# with $\hat{\mathbf{u}}_p$ being the
+# polarization direction, and with $\mathbf{r}$ being a
+# point in $\Omega$.
+# We will only consider $\hat{\mathbf{u}}_k$ and $\hat{\mathbf{u}}_p$
+# with components belonging
+# to the $\Omega$ domain and perpendicular to each other,
+# i.e. $\hat{\mathbf{u}}_k \perp \hat{\mathbf{u}}_p$
+# (transversality condition of plane waves).
+# If we call $x$ and $y$ the horizontal
+# and vertical axis in our $\Omega$ domain,
+# and by defining $k_x = n_bk_0\cos\theta$ and
+# $k_y = n_bk_0\sin\theta$, with $\theta$ being the angle
+# defined by the propagation direction $\hat{\mathbf{u}}_k$
+# and the horizontal axis $\hat{\mathbf{u}}_x$,
+# we can write more explicitly:
+#
+# $$
+# \mathbf{E}_b = -\sin\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
+# + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y
+# $$
+#
+# The `BackgroundElectricField` class below implements such function.
+# The inputs to the function are the angle $\theta$, the background
+# refractive index $n_b$ and the vacuum wavevector $k_0$. The
+# function returns the expression $ \mathbf{E}_b = -\sin
+# \theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
+# + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y$.
+
+# +
 
 class BackgroundElectricField:
 
@@ -49,6 +118,61 @@ class BackgroundElectricField:
 
         return (-ax * np.exp(1j * phi), ay * np.exp(1j * phi))
 
+# -
+
+# Now, let's consider an infinite metallic wire immersed in
+# a background medium (e.g. vacuum or water). Let's now
+# consider the plane cutting the wire perpendicularly to
+# its axis at a generic point. Such plane $\Omega=\Omega_{m}
+# \cup\Omega_{b}$ is formed by the cross-section
+# of the wire $\Omega_m$ and the background medium
+# $\Omega_{b}$ surrounding the wire. Let's consider
+# just the portion of this plane delimited by an external
+# circular boundary $\partial \Omega$. We want to calculate
+# the electric field $\mathbf{E}_s$ scattered by the wire
+# when a background wave $\mathbf{E}_b$ impinges on it.
+# We will consider a background plane wave at $\lambda_0$
+# wavelength, that can be written analytically as:
+#
+# $$
+# \mathbf{E}_b = \exp(\mathbf{k}\cdot\mathbf{r})\hat{\mathbf{u}}_p
+# $$
+#
+# with $\mathbf{k} = \frac{2\pi}{\lambda_0}n_b\hat{\mathbf{u}}_k$
+# being the wavevector of the
+# plane wave, pointing along the propagation direction,
+# with $\hat{\mathbf{u}}_p$ being the
+# polarization direction, and with $\mathbf{r}$ being a
+# point in $\Omega$.
+# We will only consider $\hat{\mathbf{u}}_k$ and $\hat{\mathbf{u}}_p$
+# with components belonging
+# to the $\Omega$ domain and perpendicular to each other,
+# i.e. $\hat{\mathbf{u}}_k \perp \hat{\mathbf{u}}_p$
+# (transversality condition of plane waves).
+# If we call $x$ and $y$ the horizontal
+# and vertical axis in our $\Omega$ domain,
+# and by defining $k_x = n_bk_0\cos\theta$ and
+# $k_y = n_bk_0\sin\theta$, with $\theta$ being the angle
+# defined by the propagation direction $\hat{\mathbf{u}}_k$
+# and the horizontal axis $\hat{\mathbf{u}}_x$,
+# we can write more explicitly:
+#
+# $$
+# \mathbf{E}_b = -\sin\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
+# + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y
+# $$
+#
+# The `BackgroundElectricField` class below implements such function.
+# The inputs to the function are the angle $\theta$, the background
+# refractive index $n_b$ and the vacuum wavevector $k_0$. The
+# function returns the expression $ \mathbf{E}_b = -\sin
+# \theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
+# + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y$.
+# To solve the problem within a finite computational domain, we need
+# to add further mathematical constraints to our problem. A possible
+# solution is to use a perfectly matched layer (or PML), which is a
+# reflectionless layer surrounding our physical domain that 
+# gradually absorbs waves impinging on it. Even though 
 
 def curl_2d(a):
 
@@ -61,6 +185,7 @@ def pml_coordinates(x, alpha, k0, l_dom, l_pml):
 
     return as_vector([x[i] + 1j * alpha / k0 * x[i] * (ufl.sign(x[i]) * x[i] - l_dom / 2) / 
                     (l_pml / 2 - l_dom / 2)**2 * inside_pml[i] for i in range(len(x))])
+
 
 
 um = 10**-6  # micron
@@ -222,4 +347,3 @@ if MPI.COMM_WORLD.rank == 0:
     print(f"The numerical absorption efficiency is {q_abs_fenics}")
     print(f"The error is {err_abs*100}%")
     print()
-# -
