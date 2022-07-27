@@ -339,6 +339,7 @@ class Function(ufl.Coefficient):
             _interpolate(u, cells)
         except TypeError:
             # u is callable
+            assert isinstance(u, typing.Callable)
             x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh, cells)
             self.interpolate(u(x), cells)
 
