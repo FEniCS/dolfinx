@@ -12,6 +12,8 @@ import typing
 import numpy as np
 import numpy.typing
 
+import basix
+import basix.ufl_wrapper
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
@@ -183,7 +185,8 @@ def create_submesh(mesh, dim, entities):
     submesh_ufl_cell = ufl.Cell(submesh.topology.cell_name(),
                                 geometric_dimension=submesh.geometry.dim)
     # FIXME Don't hard code degree (and maybe Lagrange?)
-    submesh_domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell=submesh_ufl_cell, degree=1))
+    submesh_domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
+        "Lagrange", submesh_ufl_cell.cellname(), 1, basix.LagrangeVariant.equispaced))
     return (Mesh.from_cpp(submesh, submesh_domain), entity_map, vertex_map, geom_map)
 
 
@@ -320,7 +323,8 @@ def create_interval(comm: _MPI.Comm, nx: int, points: numpy.typing.ArrayLike, gh
         An interval mesh
 
     """
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", "interval", 1))
+    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
+        "Lagrange", "interval", 1, basix.LagrangeVariant.equispaced))
     mesh = _cpp.mesh.create_interval(comm, nx, points, ghost_mode, partitioner)
     return Mesh.from_cpp(mesh, domain)
 
@@ -368,7 +372,8 @@ def create_rectangle(comm: _MPI.Comm, points: numpy.typing.ArrayLike, n: numpy.t
         A mesh of a rectangle
 
     """
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
+    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
+        "Lagrange", cell_type.name, 1, basix.LagrangeVariant.equispaced))
     mesh = _cpp.mesh.create_rectangle(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
     return Mesh.from_cpp(mesh, domain)
 
@@ -418,7 +423,8 @@ def create_box(comm: _MPI.Comm, points: typing.List[numpy.typing.ArrayLike], n: 
         A mesh of a box domain
 
     """
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
+    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
+        "Lagrange", cell_type.name, 1, basix.LagrangeVariant.equispaced))
     mesh = _cpp.mesh.create_box(comm, points, n, cell_type, ghost_mode, partitioner)
     return Mesh.from_cpp(mesh, domain)
 
