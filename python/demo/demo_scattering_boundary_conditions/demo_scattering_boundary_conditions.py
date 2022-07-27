@@ -290,10 +290,6 @@ V = fem.FunctionSpace(mesh, curl_el)
 # Next, we can interpolate $\mathbf{E}_b$ into the function space $V$:
 
 # +
-degree = 3
-curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), degree)
-V = fem.FunctionSpace(mesh, curl_el)
-
 f = BackgroundElectricField(theta, n_bkg, k0)
 Eb = fem.Function(V)
 Eb.interpolate(f.eval)
