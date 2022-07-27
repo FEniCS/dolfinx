@@ -243,9 +243,47 @@ degree = 3
 curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), degree)
 V = fem.FunctionSpace(mesh, curl_el)
 
+# Next, we can interpolate $\mathbf{E}_b$ into the function space $V$:
+
 f = BackgroundElectricField(theta, n_bkg, k0)
 Eb = fem.Function(V)
 Eb.interpolate(f.eval)
+
+# Definition of Trial and Test functions
+Es = ufl.TrialFunction(V)
+v = ufl.TestFunction(V)
+
+# Measures for subdomains
+dx = ufl.Measure("dx", mesh, subdomain_data=cell_tags)
+dDom = dx((au_tag, bkg_tag))
+dPml = dx(pml_tag)
+
+
+# Now it is the turn of the permittivity $\varepsilon$.
+# First of all let's define the relative permittivity $\varepsilon_m$
+# of the gold wire at $400nm$ (data taken from
+# [*Olmon et al. 2012*](https://doi.org/10.1103/PhysRevB.86.235147)
+# , and for a quick reference have a look at [refractiveindex.info](
+# https://refractiveindex.info/?shelf=main&book=Au&page=Olmon-sc
+# )):
+
+# Definition of relative permittivity for Au @400nm
+eps_au = -1.0782 + 1j * 5.8089
+
+
+# We want to define a space function for the permittivity
+# $\varepsilon$ that takes the value of the gold permittivity $\varepsilon_m$
+# for cells inside the wire, while it takes the value of the
+# background permittivity otherwise:
+
+D = fem.FunctionSpace(mesh, ("DG", 0))
+eps = fem.Function(D)
+au_cells = cell_tags.find(au_tag)
+bkg_cells = cell_tags.find(bkg_tag)
+eps.x.array[au_cells] = np.full_like(
+    au_cells, eps_au, dtype=np.complex128)
+eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
+eps.x.scatter_forward()
 
 x = ufl.SpatialCoordinate(mesh)
 
@@ -263,34 +301,13 @@ pml_matrix = det(J_pml) * A_pml * transpose(A_pml)
 eps_pml = eps_bkg * pml_matrix
 mu_pml = inv(pml_matrix)
 
-Es = ufl.TrialFunction(V)
-v = ufl.TestFunction(V)
-
 Es_3d = as_vector((Es[0], Es[1], 0))
 v_3d = as_vector((v[0], v[1], 0))
 
-dx = ufl.Measure("dx", mesh, subdomain_data=cell_tags)
-dDom = dx((au_tag, bkg_tag))
-dPml = dx(pml_tag)
-
-eps_au = -1.0782 + 1j * 5.8089
-
-D = fem.FunctionSpace(mesh, ("DG", 0))
-eps = fem.Function(D)
-au_cells = cell_tags.find(au_tag)
-bkg_cells = cell_tags.find(bkg_tag)
-eps.x.array[au_cells] = np.full_like(
-    au_cells, eps_au, dtype=np.complex128)
-eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
-eps.x.scatter_forward()
-
-curl_Es = as_vector((0, 0, Es[1].dx(0) - Es[0].dx(1)))
-curl_v = as_vector((0, 0, v[1].dx(0) - v[0].dx(1)))
-
-F = - inner(curl_Es, curl_v) * dDom \
+F = - inner(curl_2d(Es), curl_2d(v)) * dDom \
     + eps * k0 ** 2 * inner(Es, v) * dDom \
     + k0 ** 2 * (eps - eps_bkg) * inner(Eb, v) * dDom \
-    - inner(mu_pml * curl_Es, curl_v) * dPml \
+    - inner(mu_pml * curl_2d(Es), curl_2d(v)) * dPml \
     + k0 ** 2 * inner(eps_pml * Es_3d, v_3d) * dPml
 
 a, L = lhs(F), rhs(F)
