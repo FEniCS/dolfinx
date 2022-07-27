@@ -493,11 +493,9 @@ RUN dpkgArch="$(dpkg --print-architecture)"; \
     pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} && \
     pip3 install --no-cache-dir matplotlib && \
     pip3 install --no-cache-dir pythreejs ipygany && \
-    pip3 cache purge ;; \
+    pip3 cache purge && \
+    jupyter nbextension enable --py --sys-prefix ipygany ;; \
     esac;
-
-# Enable ipygany in jupyter
-RUN jupyter nbextension enable --py --sys-prefix ipygany
 
 # Jupyter Notebook kernel specification for complex build DOLFINx
 ADD dolfinx/docker/complex-kernel.json /usr/local/share/jupyter/kernels/python3-complex/kernel.json
