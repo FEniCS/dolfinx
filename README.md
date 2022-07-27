@@ -101,7 +101,7 @@ apt update
 apt install fenics-dolfinx
 ```
 
-When a version of DOLFINx is released we aim to provide a current build for the
+When a version of DOLFINx is released we aim to provide a build for the
 latest stable version of Ubuntu. All other versions are provided on a
 best-effort basis.
 
