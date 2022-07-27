@@ -135,13 +135,13 @@ docker run -ti dolfinx/dolfinx:nightly
 ```
 
 A development image with all of the dependencies required
-to build the latest stable release of DOLFINx:
+to build the latest stable release of the FEniCSx components:
 ```shell
 docker run -ti dolfinx/dev-env:stable
 ```
 
 A development image with all of the dependencies required
-to build the `main` branch of DOLFINx:
+to build the `main` branch of the FEniCSx components:
 ```shell
 docker run -ti dolfinx/dev-env:nightly
 ```
