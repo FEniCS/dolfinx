@@ -243,7 +243,7 @@ degree = 3
 curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), degree)
 V = fem.FunctionSpace(mesh, curl_el)
 
-# Next, we can interpolate $\mathbf{E}_b$ into the function space $V$:
+# Next, we interpolate $\mathbf{E}_b$ into the function space $V$:
 
 f = BackgroundElectricField(theta, n_bkg, k0)
 Eb = fem.Function(V)
@@ -284,6 +284,9 @@ eps.x.array[au_cells] = np.full_like(
     au_cells, eps_au, dtype=np.complex128)
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
 eps.x.scatter_forward()
+
+# Now we need to define our weak form in DOLFINx. For the PML,
+# we can 
 
 x = ufl.SpatialCoordinate(mesh)
 
