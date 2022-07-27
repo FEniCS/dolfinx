@@ -46,7 +46,9 @@ pip install .
 For detailed instructions, see
 https://docs.fenicsproject.org/dolfinx/main/python/installation.
 
-### conda
+### Binary
+
+#### conda
 
 Conda is the recommended install method for most regular users.
 
@@ -68,7 +70,7 @@ recipe is hosted on
 > Windows packages are not available. This is due to some DOLFINx
 > dependencies not supporting Windows.
 
-### Spack
+#### Spack
 
 Spack is recommended for building DOLFINx on HPC systems.
 
@@ -86,7 +88,7 @@ spack install
 See the Spack [documentation](https://spack.readthedocs.io/) for
 comprehensive instructions.
 
-### Ubuntu packages
+#### Ubuntu packages
 
 The [Ubuntu
 PPA](https://launchpad.net/~fenics-packages/+archive/ubuntu/fenics) contains
@@ -99,17 +101,17 @@ apt update
 apt install fenics-dolfinx
 ```
 
-When DOLFINx is released we aim to provide a binary build for the
+When a version of DOLFINx is released we aim to provide a current build for the
 latest stable version of Ubuntu. All other versions are provided on a
 best-effort basis.
 
-### Debian packages
+#### Debian packages
 
 DOLFINx has been included with [various
 versions](https://packages.debian.org/search?keywords=python3-dolfinx&searchon=names&exact=1&suite=all&section=all)
 of Debian.
 
-### Docker images
+#### Docker images
 
 A Docker image with the latest stable release of DOLFINx:
 ```shell
