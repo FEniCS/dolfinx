@@ -174,8 +174,6 @@ public:
               const std::shared_ptr<const FunctionSpace>& V)
       : DirichletBC(std::make_shared<Constant<T>>(g), dofs, V)
   {
-    auto foo = std::make_shared<Constant<T>>(g);
-    std::cout << "Calling casting version: " << g.shape.size() << std::endl;
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
