@@ -11,9 +11,9 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <functional>
 #include <mpi.h>
+#include <span>
 #include <utility>
 #include <vector>
-#include <span>
 
 #include <iostream>
 

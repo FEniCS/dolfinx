@@ -16,7 +16,6 @@
 #include <ufcx.h>
 #include <utility>
 #include <vector>
-#include <xtensor/xadapt.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -347,23 +346,20 @@ std::span<const std::size_t> FiniteElement::value_shape() const noexcept
 //-----------------------------------------------------------------------------
 std::string FiniteElement::family() const noexcept { return _family; }
 //-----------------------------------------------------------------------------
-void FiniteElement::tabulate(xt::xtensor<double, 4>& reference_values,
-                             const xt::xtensor<double, 2>& X, int order) const
+void FiniteElement::tabulate(std::span<double> values,
+                             std::span<const double> X,
+                             std::array<std::size_t, 2> shape, int order) const
 {
   assert(_element);
-  _element->tabulate(
-      order, std::span(X.data(), X.size()), std::array{X.shape(0), X.shape(1)},
-      std::span<double>(reference_values.data(), reference_values.size()));
+  _element->tabulate(order, X, shape, values);
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 4> FiniteElement::tabulate(const xt::xtensor<double, 2>& X,
-                                               int order) const
+std::pair<std::vector<double>, std::array<std::size_t, 4>>
+FiniteElement::tabulate(std::span<const double> X,
+                        std::array<std::size_t, 2> shape, int order) const
 {
   assert(_element);
-  auto [tab, shape] = _element->tabulate(order, std::span(X.data(), X.size()),
-                                         {X.shape(0), X.shape(1)});
-  return xt::adapt(
-      tab, std::vector<std::size_t>{shape[0], shape[1], shape[2], shape[3]});
+  return _element->tabulate(order, X, shape);
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept
@@ -427,7 +423,8 @@ bool FiniteElement::interpolation_ident() const noexcept
   return _element->interpolation_is_identity();
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2> FiniteElement::interpolation_points() const
+std::pair<std::vector<double>, std::array<std::size_t, 2>>
+FiniteElement::interpolation_points() const
 {
   if (!_element)
   {
@@ -436,11 +433,11 @@ xt::xtensor<double, 2> FiniteElement::interpolation_points() const
         "this is a mixed element?");
   }
 
-  auto& [x, shape] = _element->points();
-  return xt::adapt(x, std::vector<std::size_t>{shape[0], shape[1]});
+  return _element->points();
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2> FiniteElement::interpolation_operator() const
+std::pair<std::vector<double>, std::array<std::size_t, 2>>
+FiniteElement::interpolation_operator() const
 {
   if (!_element)
   {
@@ -448,11 +445,10 @@ xt::xtensor<double, 2> FiniteElement::interpolation_operator() const
                              "Cannot interpolate mixed elements directly.");
   }
 
-  auto& [im, shape] = _element->interpolation_matrix();
-  return xt::adapt(im, std::vector<std::size_t>{shape[0], shape[1]});
+  return _element->interpolation_matrix();
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2>
+std::pair<std::vector<double>, std::array<std::size_t, 2>>
 FiniteElement::create_interpolation_operator(const FiniteElement& from) const
 {
   assert(_element);
@@ -467,28 +463,26 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
   {
     // If one of the elements has bs=1, Basix can figure out the size
     // of the matrix
-    auto [data, shape]
-        = basix::compute_interpolation_operator(*from._element, *_element);
-    return xt::adapt(data, std::vector<std::size_t>{shape[0], shape[1]});
+    return basix::compute_interpolation_operator(*from._element, *_element);
   }
   else if (_bs > 1 and from._bs == _bs)
   {
     // If bs != 1 for at least one element, then bs0 == bs1 for this
     // case
-    auto [data, dshape]
+    const auto [data, dshape]
         = basix::compute_interpolation_operator(*from._element, *_element);
-    auto i_m = xt::adapt(data, std::vector<std::size_t>{dshape[0], dshape[1]});
-    std::array<std::size_t, 2> shape = {i_m.shape(0) * _bs, i_m.shape(1) * _bs};
-    xt::xtensor<double, 2> out = xt::zeros<double>(shape);
+    std::array<std::size_t, 2> shape = {dshape[0] * _bs, dshape[1] * _bs};
+    std::vector<double> out(shape[0] * shape[1]);
 
     // NOTE: Alternatively this operation could be implemented during
     // matvec with the original matrix
-    for (std::size_t i = 0; i < i_m.shape(0); ++i)
-      for (std::size_t j = 0; j < i_m.shape(1); ++j)
+    for (std::size_t i = 0; i < dshape[0]; ++i)
+      for (std::size_t j = 0; j < dshape[1]; ++j)
         for (int k = 0; k < _bs; ++k)
-          out(i * _bs + k, j * _bs + k) = i_m(i, j);
+          out[shape[1] * (i * _bs + k) + (j * _bs + k)]
+              = data[dshape[1] * i + j];
 
-    return out;
+    return {std::move(out), shape};
   }
   else
   {
