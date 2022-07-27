@@ -46,7 +46,7 @@ pip install .
 For detailed instructions, see
 https://docs.fenicsproject.org/dolfinx/main/python/installation.
 
-## conda
+### conda
 
 To install the latest stable release of the Python interface, with pyvista support for
 visualisation, using [conda](https://conda.io):
@@ -82,7 +82,7 @@ spack install
 See the Spack [documentation](https://spack.readthedocs.io/) for
 comprehensive instructions.
 
-## Docker images
+### Docker images
 
 A Docker image with the latest stable release of DOLFINx:
 ```shell
