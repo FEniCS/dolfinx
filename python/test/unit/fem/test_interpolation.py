@@ -7,14 +7,15 @@
 
 import random
 
+import numba
 import numpy as np
 import pytest
 
 import ufl
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
-from dolfinx.mesh import (CellType, meshtags, create_mesh, create_unit_cube,
-                          create_unit_square, locate_entities)
+from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
+                          create_unit_square, locate_entities, meshtags)
 
 from mpi4py import MPI
 
@@ -565,3 +566,21 @@ def test_interpolate_subset(order, dim, affine):
     assert np.isclose(np.abs(form(assemble_scalar(form(ufl.inner(u - f, u - f) * dx(1))))), 0)
     integral = mesh.comm.allreduce(assemble_scalar(form(u * dx)), op=MPI.SUM)
     assert np.isclose(integral, 1 / (order + 1) * 0.5**(order + 1), 0)
+
+
+def test_interpolate_callable():
+    """Test interpolation with callables"""
+    mesh = create_unit_square(MPI.COMM_WORLD, 2, 1)
+    V = FunctionSpace(mesh, ("Lagrange", 2))
+    u0, u1 = Function(V), Function(V)
+
+    @numba.njit
+    def f(x):
+        return x[0]
+
+    u0.interpolate(lambda x: x[0])
+    u1.interpolate(f)
+    assert np.allclose(u0.x.array, u1.x.array)
+
+    with pytest.raises(RuntimeError):
+        u0.interpolate(lambda x: np.vstack([x[0], x[1]]))
