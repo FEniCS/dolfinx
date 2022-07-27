@@ -1,4 +1,4 @@
-# # Scattering from a wire with a perfectly matched layer
+# # Scattering from a wire with perfectly matched layer condition
 # This demo is implemented in three files: one for the mesh
 # generation with gmsh, one for the calculation of analytical efficiencies,
 # and one for the variational forms and the solver. It illustrates how to:
@@ -61,7 +61,7 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # the electric field $\mathbf{E}_s$ scattered by the wire
 # when a background wave $\mathbf{E}_b$ impinges on it.
 # We will consider a background plane wave at $\lambda_0$
-# wavelength, that can be written analytically as:
+# wavelength, which can be written analytically as:
 #
 # $$
 # \mathbf{E}_b = \exp(\mathbf{k}\cdot\mathbf{r})\hat{\mathbf{u}}_p
@@ -120,59 +120,7 @@ class BackgroundElectricField:
 
 # -
 
-# Now, let's consider an infinite metallic wire immersed in
-# a background medium (e.g. vacuum or water). Let's now
-# consider the plane cutting the wire perpendicularly to
-# its axis at a generic point. Such plane $\Omega=\Omega_{m}
-# \cup\Omega_{b}$ is formed by the cross-section
-# of the wire $\Omega_m$ and the background medium
-# $\Omega_{b}$ surrounding the wire. Let's consider
-# just the portion of this plane delimited by an external
-# circular boundary $\partial \Omega$. We want to calculate
-# the electric field $\mathbf{E}_s$ scattered by the wire
-# when a background wave $\mathbf{E}_b$ impinges on it.
-# We will consider a background plane wave at $\lambda_0$
-# wavelength, that can be written analytically as:
 #
-# $$
-# \mathbf{E}_b = \exp(\mathbf{k}\cdot\mathbf{r})\hat{\mathbf{u}}_p
-# $$
-#
-# with $\mathbf{k} = \frac{2\pi}{\lambda_0}n_b\hat{\mathbf{u}}_k$
-# being the wavevector of the
-# plane wave, pointing along the propagation direction,
-# with $\hat{\mathbf{u}}_p$ being the
-# polarization direction, and with $\mathbf{r}$ being a
-# point in $\Omega$.
-# We will only consider $\hat{\mathbf{u}}_k$ and $\hat{\mathbf{u}}_p$
-# with components belonging
-# to the $\Omega$ domain and perpendicular to each other,
-# i.e. $\hat{\mathbf{u}}_k \perp \hat{\mathbf{u}}_p$
-# (transversality condition of plane waves).
-# If we call $x$ and $y$ the horizontal
-# and vertical axis in our $\Omega$ domain,
-# and by defining $k_x = n_bk_0\cos\theta$ and
-# $k_y = n_bk_0\sin\theta$, with $\theta$ being the angle
-# defined by the propagation direction $\hat{\mathbf{u}}_k$
-# and the horizontal axis $\hat{\mathbf{u}}_x$,
-# we can write more explicitly:
-#
-# $$
-# \mathbf{E}_b = -\sin\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
-# + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y
-# $$
-#
-# The `BackgroundElectricField` class below implements such function.
-# The inputs to the function are the angle $\theta$, the background
-# refractive index $n_b$ and the vacuum wavevector $k_0$. The
-# function returns the expression $ \mathbf{E}_b = -\sin
-# \theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
-# + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y$.
-# To solve the problem within a finite computational domain, we need
-# to add further mathematical constraints to our problem. A possible
-# solution is to use a perfectly matched layer (or PML), which is a
-# reflectionless layer surrounding our physical domain that 
-# gradually absorbs waves impinging on it. Even though 
 
 def curl_2d(a):
 
