@@ -120,12 +120,36 @@ class BackgroundElectricField:
 
 # -
 
-#
+# Let's now define the $\nabla\times$ operator for 2d vector, since
+# we will use it later:
+
+# +
 
 def curl_2d(a):
 
     return as_vector((0, 0, a[1].dx(0) - a[0].dx(1)))
 
+# -
+
+# As said before, we are going to implement a perfectly matched layer (PML)
+# in this problem. PMLs are reflectionless layers surrounding the 
+# domain that gradually absorb waves impinging on them, and
+# therefore are used for truncating the domain. To implement them, we
+# can use a complex transformation of coordinate in the PML domain. For
+# squared PML we can define this transformation as:
+#
+# \begin{align}
+# & x^\prime= x\left\{1-j\frac{\alpha}{k_0}\left[\frac{|x|-l_{dom}/2}
+# {(l_{pml}/2 - l_{dom}/2)^2}\right] \right\}\\
+# & y^\prime= y\left\{1-j\frac{\alpha}{k_0}\left[\frac{|y|-l_{dom}/2}
+# {(l_{pml}/2 - l_{dom}/2)^2}\right] \right\}\\
+# \end{align}
+#
+# with $l_{dom}$ and $l_{pml}$ being the lengths of the domain 
+# without and with PML, respectively, and with $\alpha$ being a parameter
+# that tunes the absorption within the PML (the greater the $\alpha$,
+# the faster the absorption). In DOLFINx, we can define this
+# coordinate transformation in the following way:
 
 def pml_coordinates(x, alpha, k0, l_dom, l_pml):
 
@@ -135,6 +159,10 @@ def pml_coordinates(x, alpha, k0, l_dom, l_pml):
                     (l_pml / 2 - l_dom / 2)**2 * inside_pml[i] for i in range(len(x))])
 
 
+# The `inside_pml` function is a boolean that switch on the transformation
+# inside the PML region.
+#
+# Next we define some mesh specific parameters:
 
 um = 10**-6  # micron
 nm = um * 10**-3  # nanometer
@@ -167,6 +195,9 @@ bkg_tag = 2
 pml_tag = 3
 # -
 
+# We generate the mesh using GMSH and convert it to a
+# `dolfinx.mesh.Mesh`.
+
 model = generate_mesh_wire(
     radius_wire, l_dom, l_pml, in_wire_size, on_wire_size, bkg_size,
     pml_size, au_tag, bkg_tag, pml_tag)
@@ -178,12 +209,35 @@ gmsh.finalize()
 MPI.COMM_WORLD.barrier()
 # -
 
+# Let's have a visual check of the mesh by plotting it with PyVista:
+
+if have_pyvista:
+    topology, cell_types, geometry = plot.create_vtk_mesh(mesh, 2)
+    grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
+    pyvista.set_jupyter_backend("pythreejs")
+    plotter = pyvista.Plotter()
+    plotter.add_mesh(grid, show_edges=True)
+    plotter.view_xy()
+    if not pyvista.OFF_SCREEN:
+        plotter.show()
+    else:
+        pyvista.start_xvfb()
+        figure = plotter.screenshot("wire_mesh.png")
+
+# Now we define some other problem specific parameters:
+
 wl0 = 0.4 * um  # Wavelength of the background field
 n_bkg = 1  # Background refractive index
 eps_bkg = n_bkg**2  # Background relative permittivity
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
 deg = np.pi / 180
 theta = 0 * deg  # Angle of incidence of the background field
+
+# And then the function space used for the electric field.
+# We will use a 3rd order
+# [Nedelec (first kind)](https://defelement.com/elements/nedelec1.html)
+# element:
+#
 
 degree = 3
 curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), degree)
