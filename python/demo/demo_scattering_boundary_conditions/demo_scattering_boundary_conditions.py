@@ -505,7 +505,7 @@ with VTXWriter(mesh.comm, "E.bp", E_dg) as f:
 lagr_el = ufl.FiniteElement("CG", mesh.ufl_cell(), 2)
 norm_func = sqrt(inner(Esh, Esh))
 V_normEsh = fem.FunctionSpace(mesh, lagr_el)
-norm_expr = fem.Expression(norm_func, V_normEsh.element.interpolation_points)
+norm_expr = fem.Expression(norm_func, V_normEsh.element.interpolation_points())
 normEsh = fem.Function(V_normEsh)
 normEsh.interpolate(norm_expr)
 # -
