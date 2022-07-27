@@ -48,7 +48,6 @@
 #include <ufcx.h>
 #include <utility>
 #include <xtensor/xadapt.hpp>
-#include <xtensor/xbuilder.hpp>
 #include <xtensor/xtensor.hpp>
 
 namespace py = pybind11;
@@ -371,21 +370,26 @@ void declare_objects(py::module& m, const std::string& type)
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T>& self,
-             const std::function<py::array_t<T>(const py::array_t<double>&)>& f,
+             const py::array_t<T, py::array::c_style>& f,
              const py::array_t<std::int32_t, py::array::c_style>& cells)
           {
-            auto _f = [&f](const xt::xtensor<double, 2>& x) -> xt::xarray<T>
+            if (f.ndim() == 1)
             {
-              auto strides = x.strides();
-              std::transform(strides.begin(), strides.end(), strides.begin(),
-                             [](auto s) { return s * sizeof(double); });
-              py::array_t _x(x.shape(), strides, x.data(), py::none());
-              py::array_t v = f(_x);
-              std::vector<std::size_t> shape;
-              std::copy_n(v.shape(), v.ndim(), std::back_inserter(shape));
-              return xt::adapt(v.data(), shape);
-            };
-            self.interpolate(_f, std::span(cells.data(), cells.size()));
+              std::array<std::size_t, 2> fshape
+                  = {1, static_cast<std::size_t>(f.shape(0))};
+              dolfinx::fem::interpolate(self, std::span(f.data(), f.size()),
+                                        fshape,
+                                        std::span(cells.data(), cells.size()));
+            }
+            else
+            {
+              std::array<std::size_t, 2> fshape
+                  = {static_cast<std::size_t>(f.shape(0)),
+                     static_cast<std::size_t>(f.shape(1))};
+              dolfinx::fem::interpolate(self, std::span(f.data(), f.size()),
+                                        fshape,
+                                        std::span(cells.data(), cells.size()));
+            }
           },
           py::arg("f"), py::arg("cells"), "Interpolate an expression function")
       .def(
@@ -409,19 +413,22 @@ void declare_objects(py::module& m, const std::string& type)
             std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
                                                  1, std::multiplies{});
 
+            assert(self.function_space()->mesh());
+            const std::vector<double> x = dolfinx::fem::interpolation_coords(
+                *element, *self.function_space()->mesh(),
+                std::span(cells.data(), cells.size()));
+
+            std::array<std::size_t, 2> shape = {value_size, x.size() / 3};
+            std::vector<T> values(shape[0] * shape[1]);
             std::function<void(T*, int, int, const double*)> f
                 = reinterpret_cast<void (*)(T*, int, int, const double*)>(addr);
-            auto _f = [&f, value_size](const xt::xtensor<double, 2>& x)
-            {
-              xt::xarray<T> values = xt::empty<T>({value_size, x.shape(1)});
-              f(values.data(), values.shape(1), values.shape(0), x.data());
-              return values;
-            };
+            f(values.data(), shape[1], shape[0], x.data());
 
-            self.interpolate(_f, std::span(cells.data(), cells.size()));
+            dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
+                                      std::span(cells.data(), cells.size()));
           },
-          py::arg("f"), py::arg("cells"),
-          "Interpolate using a pointer to an Expression with a C signature")
+          py::arg("f_ptr"), py::arg("cells"),
+          "Interpolate using a pointer to an expression with a C signature")
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T>& self,
@@ -1261,6 +1268,18 @@ void fem(py::module& m)
         return as_pyarray(dolfinx::fem::locate_dofs_geometrical(V, _marker));
       },
       py::arg("V"), py::arg("marker"));
+
+  m.def(
+      "interpolation_coords",
+      [](const dolfinx::fem::FiniteElement& e, const dolfinx::mesh::Mesh& mesh,
+         py::array_t<std::int32_t, py::array::c_style> cells)
+      {
+        std::vector<double> x = dolfinx::fem::interpolation_coords(
+            e, mesh, std::span(cells.data(), cells.size()));
+        return as_pyarray(std::move(x),
+                          std::array<std::size_t, 2>{3, x.size() / 3});
+      },
+      py::arg("element"), py::arg("V"), py::arg("cells"));
 
   // dolfinx::fem::FunctionSpace
   py::class_<dolfinx::fem::FunctionSpace,
