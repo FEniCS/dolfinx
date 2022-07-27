@@ -21,7 +21,6 @@
 #include <stdexcept>
 #include <vector>
 #include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 

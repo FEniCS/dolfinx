@@ -6,17 +6,21 @@
 # Garth N. Wells <gnw20@cam.ac.uk>
 # Jan Blechta <blechta@karlin.mff.cuni.cz>
 #
+# To run the latest stable build:
+#
+#    docker run -ti dolfinx/dolfinx:stable
+#
 # To run a nightly build:
 #
-#    docker run -ti dolfinx/dolfinx:latest
+#    docker run -ti dolfinx/dolfinx:nightly
 #
 # To run a Jupyter lab session:
 #
-#    docker run --init -p 8888:8888 dolfinx/lab:latest
+#    docker run --init -p 8888:8888 dolfinx/lab:stable
 #
 # To run and share the current host directory with the container:
 #
-#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab:latest
+#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab:stable
 #
 # To build from source, first checkout the DOLFINx, FFCx, Basix and UFL
 # repositories into the working directory, e.g.:
