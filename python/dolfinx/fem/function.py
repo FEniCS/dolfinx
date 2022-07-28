@@ -448,7 +448,8 @@ class FunctionSpace(ufl.FunctionSpace):
                 super().__init__(mesh.ufl_domain(), element)
             else:
                 e = ElementMetaData(*element)
-                ufl_element = basix.ufl_wrapper.create_element(e.family, mesh.ufl_cell().cellname(), e.degree)
+                ufl_element = basix.ufl_wrapper.create_element(
+                    e.family, mesh.ufl_cell().cellname(), e.degree, gdim=mesh.ufl_cell().geometric_dimension())
                 super().__init__(mesh.ufl_domain(), ufl_element)
 
             # Compile dofmap and element and create DOLFIN objects

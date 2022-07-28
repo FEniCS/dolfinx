@@ -186,7 +186,8 @@ def create_submesh(mesh, dim, entities):
                                 geometric_dimension=submesh.geometry.dim)
     # FIXME Don't hard code degree (and maybe Lagrange?)
     submesh_domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
-        "Lagrange", submesh_ufl_cell.cellname(), 1, basix.LagrangeVariant.equispaced, dim=submesh.geometry.dim))
+        "Lagrange", submesh_ufl_cell.cellname(), 1, basix.LagrangeVariant.equispaced, dim=submesh.geometry.dim,
+        gdim=submesh.geometry.dim))
     return (Mesh.from_cpp(submesh, submesh_domain), entity_map, vertex_map, geom_map)
 
 
