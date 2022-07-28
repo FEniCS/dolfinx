@@ -85,7 +85,7 @@ jobs:
           cmake --build build
           cmake --install build
 
-      - name: Build DOLFINx Python interface
+      - name: Build and install DOLFINx Python interface
         run: |
           source fenicsx/bin/activate
           cd dolfinx
