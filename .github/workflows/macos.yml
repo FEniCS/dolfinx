@@ -16,14 +16,14 @@ jobs:
       matrix:
         os: [macos-12, macos-11]
       fail-fast: false
-      runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
 
-      steps:
-        - name: Install Homebrew dependencies
-          run: |
-            brew install boost cmake petsc hdf5-mpi open-mpi openblas pkg-config pugixml python@3.10 xtensor
+    steps:
+      - name: Install Homebrew dependencies
+        run: |
+          brew install boost cmake petsc hdf5-mpi open-mpi openblas pkg-config pugixml python@3.10 xtensor
 
-        - name: Update setuptools and pip
-          run: |
-            python3.10 -m pip install --upgrade setuptools
-            python3.10 -m pip install --upgrade pip
+      - name: Update setuptools and pip
+        run: |
+          python3.10 -m pip install --upgrade setuptools
+          python3.10 -m pip install --upgrade pip
