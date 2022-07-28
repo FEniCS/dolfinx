@@ -43,9 +43,10 @@ def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
     """
     shape, degree = _gmsh_to_cells[gmsh_cell]
     cell = ufl.Cell(shape, geometric_dimension=gdim)
-    scalar_element = basix.ufl_wrapper.create_element(
-        "Lagrange", cell.cellname(), degree, basix.LagrangeVariant.equispaced)
-    return ufl.Mesh(basix.ufl_wrapper.VectorElement(scalar_element))
+
+    element = basix.ufl_wrapper.create_vector_element(
+        "Lagrange", cell.cellname(), degree, basix.LagrangeVariant.equispaced, dim=gdim)
+    return ufl.Mesh(element)
 
 
 def cell_perm_array(cell_type: CellType, num_nodes: int) -> typing.List[int]:
