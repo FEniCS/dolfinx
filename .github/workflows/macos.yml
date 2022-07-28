@@ -21,9 +21,39 @@ jobs:
     steps:
       - name: Install Homebrew dependencies
         run: |
-          brew install boost cmake petsc hdf5-mpi open-mpi openblas pkg-config pugixml python@3.10 xtensor
+          brew install boost cmake hdf5-mpi open-mpi pkg-config pugixml python@3.10 xtensor # FEniCS
+          brew install bison flex # PETSc
 
-      - name: Update setuptools and pip
+      - name: Install minimal PETSc
         run: |
-          python3.10 -m pip install --upgrade setuptools
-          python3.10 -m pip install --upgrade pip
+          python3 ./configure \
+          --with-prefix=$HOME/petsc \
+          --with-64-bit-indices=no \
+          --with-debugging=no \
+          --with-fortran-bindings=no \
+          --with-scalar-type=real \
+          --with-shared-libraries \
+          --download-metis \
+          --download-ptscotch \
+          --with-scalar-type=real
+          make all
+          make install
+
+      - name: Create virtualenv
+        run: |
+          python3.10 -m venv create fenicsx
+          source fenicsx/bin/activate
+          echo "VIRTUAL ENV:" $VIRTUAL_ENV
+
+      - name: Install Python dependencies 
+          source fenicsx/bin/activate
+          python -m pip install --upgrade setuptools
+          python -m pip install --upgrade pip
+          python -m pip install numpy pybind11
+          PETSC_DIR=$HOME/petsc PETSC_ARCH=arch-darwin-c-opt python -m pip install petsc4py
+          python -m pip install mpi4py
+
+      - name: Install Basix
+        run: |
+          source fenicsx/bin/activate
+          python -m pip install git+https://github.com/FEniCS/basix.git
