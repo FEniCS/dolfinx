@@ -48,9 +48,14 @@ https://docs.fenicsproject.org/dolfinx/main/python/installation.
 
 ### Binary
 
+#### Operating System Recommendations
+- Mac OS: use [conda](#conda).
+- Linux: use [apt](#ubuntu-packages) ([Ubuntu](#ubuntu-packages)/[Debian](#debian-packages)), [docker](#docker-images) or [conda](#conda). See also [Spack](#spack).
+- Windows: use [docker](#docker-images), or install Microsoft's [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and use [Ubuntu](#ubuntu-packages).
+
 #### conda
 
-Conda is the recommended install method for most regular users.
+Conda is the recommended install method for Mac OS users. Linux users may also use it.
 
 To install the latest stable release of the Python interface, with pyvista support for
 visualisation, using [conda](https://conda.io):
@@ -98,7 +103,7 @@ To install:
 ```
 add-apt-repository ppa:fenics-packages/fenics
 apt update
-apt install fenics-dolfinx
+apt install fenicsx
 ```
 
 When a version of DOLFINx is released we aim to provide a build for the
@@ -107,9 +112,9 @@ best-effort basis.
 
 #### Debian packages
 
-DOLFINx has been included with [various
+[DOLFINx](https://tracker.debian.org/pkg/fenics-dolfinx) has been included with [various
 versions](https://packages.debian.org/search?keywords=python3-dolfinx&searchon=names&exact=1&suite=all&section=all)
-of Debian.
+of Debian. Install with `apt-get install fenicsx`.
 
 #### Docker images
 
