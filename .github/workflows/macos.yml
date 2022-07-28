@@ -23,11 +23,15 @@ jobs:
         run: |
           brew install boost cmake hdf5-mpi open-mpi pkg-config pugixml python@3.10 xtensor # FEniCS
           brew install bison flex # PETSc
+          brew list
 
       - name: Install minimal PETSc
         run: |
+          curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.17.3.tar.gz
+          mkdir petsc
+          tar -xf petsc-lite-3.17.3.tar.gz -C petsc --strip-components=1
+          cd petsc
           python3 ./configure \
-          --with-prefix=$HOME/petsc \
           --with-64-bit-indices=no \
           --with-debugging=no \
           --with-fortran-bindings=no \
@@ -37,7 +41,6 @@ jobs:
           --download-ptscotch \
           --with-scalar-type=real
           make all
-          make install
 
       - name: Create virtualenv
         run: |
@@ -51,7 +54,7 @@ jobs:
           python -m pip install --upgrade setuptools
           python -m pip install --upgrade pip
           python -m pip install numpy pybind11
-          PETSC_DIR=$HOME/petsc PETSC_ARCH=arch-darwin-c-opt python -m pip install petsc4py
+          PETSC_DIR=$PWD/petsc PETSC_ARCH=arch-darwin-c-opt python -m pip install petsc4py
           python -m pip install mpi4py
 
       - name: Install Basix
