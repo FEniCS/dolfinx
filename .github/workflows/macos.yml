@@ -1,0 +1,29 @@
+name: MacOS build
+
+on:
+  push:
+    branches:
+      - "jhale/macos-homebrew-build"
+  schedule:
+    # '*' is a special character in YAML, so string must be quoted
+    - cron: "0 4 * * WED"
+  workflow_dispatch: ~
+
+jobs:
+  mac-os-build:
+    name: MacOS Homebrew install and test
+    strategy:
+      matrix:
+        os: [macos-12, macos-11]
+      fail-fast: false
+      runs-on: ${{ matrix.os }}
+
+      steps:
+        - name: Install Homebrew dependencies
+          run: |
+            brew install boost cmake petsc hdf5-mpi open-mpi openblas pkg-config pugixml python@3.10 xtensor
+
+        - name: Update setuptools and pip
+          run: |
+            python3.10 -m pip install --upgrade setuptools
+            python3.10 -m pip install --upgrade pip
