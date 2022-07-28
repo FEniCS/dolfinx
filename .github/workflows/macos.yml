@@ -79,8 +79,9 @@ jobs:
           python -m pip install git+https://github.com/FEniCS/ffcx.git
     
       - uses: actions/checkout@v3
-        path: dolfinx
-        ref: main
+        with:
+          path: dolfinx
+          ref: main
         
       - name: Build and install DOLFINx C++ library
         run: |
