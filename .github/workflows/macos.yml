@@ -21,9 +21,9 @@ jobs:
     steps:
       - name: Install Homebrew dependencies
         run: |
-          brew install boost cmake hdf5-mpi open-mpi pkg-config pugixml python@3.10 xtensor # FEniCS
+          brew install boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python@3.10 xtensor # FEniCS
           brew install bison flex # PETSc
-          brew list
+          brew list --versions
 
       - name: Install minimal PETSc
         run: |
@@ -37,9 +37,10 @@ jobs:
           --with-fortran-bindings=no \
           --with-scalar-type=real \
           --with-shared-libraries \
+          --with-scalar-type=real \
+          --with-make-np=3 \
           --download-metis \
           --download-ptscotch \
-          --with-scalar-type=real
           make all
 
       - name: Create virtualenv
@@ -54,10 +55,38 @@ jobs:
           python -m pip install --upgrade setuptools
           python -m pip install --upgrade pip
           python -m pip install numpy pybind11
-          PETSC_DIR=$PWD/petsc PETSC_ARCH=arch-darwin-c-opt python -m pip install petsc4py
-          python -m pip install mpi4py
+          python -m pip -v install mpi4py
+          PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt python -m pip install -v petsc4py
 
       - name: Install Basix
         run: |
           source fenicsx/bin/activate
           python -m pip install git+https://github.com/FEniCS/basix.git
+      
+      - name: Install UFL
+        run: |
+          source fenicsx/bin/activate
+          python -m pip install git+https://github.com/FEniCS/ufl.git
+      
+      - name: Install FFCx
+        run: |
+          source fenicsx/bin/activate
+          python -m pip install git+https://github.com/FEniCS/ffcx.git
+    
+      - uses: actions/checkout@v3
+        path: dolfinx
+        ref: main
+        
+      - name: Build and install DOLFINx C++ library
+        run: |
+          source fenicsx/bin/activate
+          cd dolfinx
+          cmake -G Ninja -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/fenicsx -B build -S cpp/
+          cmake --build build
+          cmake --install build
+
+      - name: Build DOLFINx Python interface
+        run: |
+          source fenicsx/bin/activate
+          cd dolfinx
+          python -m pip -v install python/ 
