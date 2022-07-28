@@ -11,7 +11,7 @@ jobs:
     name: Build
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    container: fenicsproject/test-env:latest-mpich
+    container: fenicsproject/test-env:nightly-mpich
     env:
       SONAR_SCANNER_VERSION:
         4.6.2.2472 # Find the latest version at:
