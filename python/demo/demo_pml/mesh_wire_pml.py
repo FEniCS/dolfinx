@@ -5,8 +5,9 @@ from mpi4py import MPI
 from numpy import pi
 
 
-def generate_mesh_wire(radius_wire, l_dom, l_pml, in_wire_size, on_wire_size,
-                       bkg_size, pml_size, au_tag, bkg_tag, pml_tag):
+def generate_mesh_wire(radius_wire, l_dom, l_pml, 
+                       in_wire_size, on_wire_size, bkg_size, pml_size, 
+                       au_tag, bkg_tag, pml_tag, scatt_tag):
 
     gmsh.initialize(sys.argv)
     if MPI.COMM_WORLD.rank == 0:
@@ -40,8 +41,8 @@ def generate_mesh_wire(radius_wire, l_dom, l_pml, in_wire_size, on_wire_size,
 
         gmsh.model.addPhysicalGroup(2, [1, 2], tag=au_tag)
         gmsh.model.addPhysicalGroup(2, [3], tag=bkg_tag)
-
         gmsh.model.addPhysicalGroup(2, [4], tag=pml_tag)
+        gmsh.model.addPhysicalGroup(1, [2], tag=scatt_tag)
 
         gmsh.model.mesh.setSize([(0, 1)], size=in_wire_size)
         gmsh.model.mesh.setSize([(0, 2)], size=on_wire_size)
