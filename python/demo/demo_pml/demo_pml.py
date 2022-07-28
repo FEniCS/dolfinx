@@ -31,6 +31,7 @@ except ModuleNotFoundError:
     have_pyvista = False
 from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from mesh_wire_pml import generate_mesh_wire
+from functools import partial
 
 import ufl
 from dolfinx import fem, plot
@@ -104,22 +105,14 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 
 # +
 
+def background_field(theta, n_b, k0, x):
 
-class BackgroundElectricField:
-
-    def __init__(self, theta, n_b, k0):
-        self.theta = theta
-        self.k0 = k0
-        self.n_b = n_b
-
-    def eval(self, x):
-
-        kx = self.n_b * self.k0 * np.cos(self.theta)
-        ky = self.n_b * self.k0 * np.sin(self.theta)
+        kx = n_b * k0 * np.cos(theta)
+        ky = n_b * k0 * np.sin(theta)
         phi = kx * x[0] + ky * x[1]
 
-        ax = np.sin(self.theta)
-        ay = np.cos(self.theta)
+        ax = np.sin(theta)
+        ay = np.cos(theta)
 
         return (-ax * np.exp(1j * phi), ay * np.exp(1j * phi))
 
@@ -208,7 +201,7 @@ scatt_tag = 4
 
 # +
 model = generate_mesh_wire(
-    radius_wire, l_dom, l_pml, in_wire_size, on_wire_size, bkg_size,
+    radius_wire, l_dom, l_pml, in_wire_size, on_wire_size, bkg_size, 0.8*bkg_size,
     pml_size, au_tag, bkg_tag, pml_tag, scatt_tag)
 
 mesh, cell_tags, facet_tags = model_to_mesh(
@@ -255,9 +248,9 @@ V = fem.FunctionSpace(mesh, curl_el)
 # Next, we interpolate $\mathbf{E}_b$ into the function space $V$:
 
 # +
-f = BackgroundElectricField(theta, n_bkg, k0)
 Eb = fem.Function(V)
-Eb.interpolate(f.eval)
+f = partial(background_field, theta, n_bkg, k0)
+Eb.interpolate(f)
 
 # Definition of Trial and Test functions
 Es = ufl.TrialFunction(V)
@@ -539,7 +532,7 @@ q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / gcs / I0).real
 q_abs_fenics = mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
-q_sca_fenics_proc = (fem.assemble_scalar(fem.form(P('-') * dScatt)) / gcs / I0).real
+q_sca_fenics_proc = (fem.assemble_scalar(fem.form(P('+') * dScatt)) / gcs / I0).real
 
 # Sum results from all MPI processes
 q_sca_fenics = mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
