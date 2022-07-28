@@ -157,9 +157,6 @@ class XDMFFile(_cpp.io.XDMFFile):
         cells = super().read_topology_data(name, xpath)
         x = super().read_geometry_data(name, xpath)
 
-        # Construct the geometry map
-        cell = ufl.Cell(cell_shape.name, geometric_dimension=x.shape[1])
-
         # Build the mesh
         cmap = _cpp.fem.CoordinateElement(cell_shape, cell_degree)
         mesh = _cpp.mesh.create_mesh(self.comm(), _cpp.graph.AdjacencyList_int64(cells),
@@ -167,7 +164,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         mesh.name = name
 
         domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
-            "Lagrange", cell.cellname(), cell_degree, basix.LagrangeVariant.equispaced))
+            "Lagrange", cell_shape.name, cell_degree, basix.LagrangeVariant.equispaced, dim=x.shape[1]))
         return Mesh.from_cpp(mesh, domain)
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
