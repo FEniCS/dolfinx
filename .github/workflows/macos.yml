@@ -18,7 +18,12 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.os }}
 
-    steps:
+    steps:      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+      
       - name: Install Homebrew dependencies
         run: |
           brew install boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python@3.10 xtensor # FEniCS
@@ -31,7 +36,7 @@ jobs:
           mkdir petsc
           tar -xf petsc-lite-3.17.3.tar.gz -C petsc --strip-components=1
           cd petsc
-          python3 ./configure \
+          python ./configure \
           --with-64-bit-indices=no \
           --with-debugging=no \
           --with-fortran-bindings=no \
@@ -45,7 +50,7 @@ jobs:
 
       - name: Create virtualenv
         run: |
-          python3.10 -m venv create fenicsx
+          python -m venv create fenicsx
           source fenicsx/bin/activate
           echo "VIRTUAL ENV:" $VIRTUAL_ENV
 
