@@ -56,18 +56,10 @@ jobs:
         run: |
           python -m venv create fenicsx
           source fenicsx/bin/activate
-          echo "VIRTUAL ENV:" $VIRTUAL_ENV
-          echo '$(which python):' $(which python)
-
-      - name: Install Python dependencies
-        run: |
-          source fenicsx/bin/activate
           python -m pip install --upgrade setuptools
           python -m pip install --upgrade pip
-          python -m pip install numpy pybind11
-          python -m pip -v install mpi4py
-          python -m pip -v install numba
-          PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt python -m pip install -v petsc4py
+          echo "VIRTUAL ENV:" $VIRTUAL_ENV
+          echo '$(which python):' $(which python)
 
       - name: Install Basix
         run: |
