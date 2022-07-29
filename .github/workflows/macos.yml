@@ -46,7 +46,7 @@ jobs:
           --with-scalar-type=real \
           --with-make-np=3 \
           --download-metis \
-          --download-ptscotch \
+          --download-ptscotch
           make all
 
       - name: Create virtualenv
@@ -88,6 +88,7 @@ jobs:
         run: |
           source fenicsx/bin/activate
           cd dolfinx
+          PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt \
           cmake -G Ninja -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/fenicsx -B build -S cpp/
           cmake --build build
           cmake --install build
