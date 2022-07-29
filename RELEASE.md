@@ -30,15 +30,15 @@ UFL still runs on the year-based release scheme.
 
 1. Merge `main` into `release` resolving all conflicts in favour of `main`.
 
-  git merge -Xtheirs main
+       git merge -Xtheirs main
 
 2. Update version numbers, e.g.
 
-  python3 update_versions.py -v 0.5.0
+       python3 update_versions.py -v 0.5.0
 
 3. Inspect automatic version updates.
 
-  git diff
+       git diff
 
 4. Commit and push.
 
@@ -48,7 +48,7 @@ UFL still runs on the year-based release scheme.
 
 1. Merge `main` into `release` resolving all conflicts in favour of `main`.
 
-  git merge -Xtheirs main
+       git merge -Xtheirs main
 
 2. Update the version number in `setup.cfg`, e.g. `2022.2.0`.
 
@@ -60,7 +60,7 @@ UFL still runs on the year-based release scheme.
 
 1. Merge `main` into `release` resolving all conflicts in favour of `main`.
 
-  git merge -Xtheirs main
+       git merge -Xtheirs main
 
 2. Update the version number in `setup.cfg`, e.g. `0.5.0`.
 
@@ -78,7 +78,7 @@ UFL still runs on the year-based release scheme.
 
 1. Merge `main` into `release` resolving all conflicts in favour of `main`.
 
-  git merge -Xtheirs main
+       git merge -Xtheirs main
 
 2. In `cpp/CMakeLists.txt` change the version number near the top of the file,
    e.g. `0.5.0`.
