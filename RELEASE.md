@@ -12,7 +12,7 @@ The release proceeds in a bottom up manner (Basix, UFL, FFCx, DOLFINx).
 GitHub Releases and pypa packages cannot be deleted and should be made a number
 of days after the creation of git tags so that errors can be fixed.
 
-The process is consists of the following steps:
+The release process consists of the following steps:
 
 1. Update version numbers and dependencies on the `release` branches.
 2. Run integration tests, ensuring that the `release` branches work together.
