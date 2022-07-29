@@ -6,6 +6,8 @@ Check out all of the FEniCSx components on the `release` branch.
 
 Check that all CIs on `main` are running green.
 
+Check that the `main` documentation looks reasonable https://docs.fenicsproject.org.
+
 The release proceeds in a bottom up manner (Basix, UFL, FFCx, DOLFINx).
 GitHub Releases and pypa packages cannot be deleted and should be made a number
 of days after the creation of git tags so that errors can be fixed.
@@ -117,24 +119,66 @@ Full stack: https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml
 
 ## Tagging
 
+Make appropriate version tags in each repository. UFL does not use the v prefix.
+
+    git tag v0.5.0
+    git push --tags origin
 
 ## Artifacts
 
 ### Documentation
 
-### pypa 
+Documentation should be pushed automatically to `FEniCS/docs` on the creation
+of tags. You will need to manually update the `README.md`.
 
 ### Docker containers
 
+Run the workflow at https://github.com/FEniCS/dolfinx/actions/workflows/docker.yml
+
+Tag prefix should be e.g. `v0.5.0`.
+
+Git refs should be appropriate tags for each component.
+
+### pypa
+
+Wheels can be made using the following actions:
+
+https://github.com/FEniCS/basix/actions/workflows/build-wheels.yml
+https://github.com/FEniCS/ufl/actions/workflows/build-wheels.yml
+https://github.com/FEniCS/ffcx/actions/workflows/build-wheels.yml
+
+Both the workflow and the ref should be set to the appropriate tags for each
+component.
+
+It is recommended to first build without publishing, then to test pypa, then to
+the real pypa. Publishing to pypa cannot be revoked.
+
+The DOLFINx wheel builder is experimental.
+
 ### GitHub releases
+
+Releases can be made at the following links using the appropriate tag. The
+automatic release notes should be checked. The release notes can still be
+edited after the release is finalised.
+
+https://github.com/FEniCS/basix/releases/new
+https://github.com/FEniCS/ufl/releases/new
+https://github.com/FEniCS/ffcx/releases/new
+https://github.com/FEniCS/dolfinx/releases/new
 
 ## Post-release
 
-1. Did you make any changes on release that should be ported back onto main?
+Check for any changes on `release` that should be ported back onto `main`.
 
    git checkout main
    git diff release
 
+Bump the version numbers on the `main` branch.
+
 ### Ubuntu
 
-### conda 
+Contact Drew Parsons.
+
+### conda
+
+Contact @minrk.
