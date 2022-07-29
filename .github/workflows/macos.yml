@@ -22,10 +22,10 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10
+          python-version: '3.10'
       
       - name: Install Homebrew dependencies
-        run: |
+       run: |
           brew install boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python@3.10 xtensor # FEniCS
           brew install bison flex # PETSc
           brew list --versions
