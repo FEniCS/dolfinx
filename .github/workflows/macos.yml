@@ -20,16 +20,19 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
+      # Some of these dependencies (e.g. python@3.10) are already installed in the GH action
+      # runner but included here for completeness
       - name: Install Homebrew dependencies
         run: |
           brew install boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python@3.10 xtensor # FEniCS
           brew install bison flex # PETSc
           brew list --versions
+      
+      # This 'activates' Python 3.10 from Homebrew
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
       - name: Install minimal PETSc
         run: |
@@ -54,6 +57,7 @@ jobs:
           python -m venv create fenicsx
           source fenicsx/bin/activate
           echo "VIRTUAL ENV:" $VIRTUAL_ENV
+          echo '$(which python):' $(which python)
 
       - name: Install Python dependencies
         run: |
@@ -90,7 +94,7 @@ jobs:
           source fenicsx/bin/activate
           cd dolfinx
           PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt \
-          cmake -G Ninja -DPYTHON3_EXECUTABLE=$(which python) -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/fenicsx -B build -S cpp/
+          cmake -G Ninja -DPYTHON_EXECUTABLE=$(which python) -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/fenicsx -B build -S cpp/
           cmake --build build
           cmake --install build
 
