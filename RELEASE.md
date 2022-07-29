@@ -135,8 +135,8 @@ of tags. You will need to manually update the `README.md`.
 
 Run the workflow at https://github.com/FEniCS/dolfinx/actions/workflows/docker.yml
 
-Tag prefix should be e.g. `v0.5.0`. Git refs should be appropriate tags for
-each component.
+Tag prefix should be the same as the DOLFINx release e.g. `v0.5.0`. 
+Git refs should be appropriate tags for each component.
 
 Tagged Docker images will be pushed to Dockerhub.
 
@@ -157,7 +157,9 @@ provided binaries. `regclient` can properly handle copying multi-architecture im
 Wheels can be made using the following actions:
 
 https://github.com/FEniCS/basix/actions/workflows/build-wheels.yml
+
 https://github.com/FEniCS/ufl/actions/workflows/build-wheels.yml
+
 https://github.com/FEniCS/ffcx/actions/workflows/build-wheels.yml
 
 Both the workflow and the ref should be set to the appropriate tags for each
@@ -181,8 +183,11 @@ automatic release notes should be checked. The release notes can still be
 edited after the release is finalised.
 
 https://github.com/FEniCS/basix/releases/new
+
 https://github.com/FEniCS/ufl/releases/new
+
 https://github.com/FEniCS/ffcx/releases/new
+
 https://github.com/FEniCS/dolfinx/releases/new
 
 ## Post-release
