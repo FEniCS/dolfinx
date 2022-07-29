@@ -1,13 +1,14 @@
 import sys
 
 import gmsh
-from mpi4py import MPI
 from numpy import pi
 
+from mpi4py import MPI
 
-def generate_mesh_wire(radius_wire, l_dom, l_pml, 
-                       in_wire_size, on_wire_size, bkg_size, scatt_size, pml_size, 
-                       au_tag, bkg_tag, pml_tag, scatt_tag):
+
+def generate_mesh_wire(radius_wire, l_dom, l_pml,
+                       in_wire_size, on_wire_size, bkg_size, scatt_size, 
+                       pml_size, au_tag, bkg_tag, pml_tag, scatt_tag):
 
     gmsh.initialize(sys.argv)
     if MPI.COMM_WORLD.rank == 0:
@@ -27,12 +28,12 @@ def generate_mesh_wire(radius_wire, l_dom, l_pml,
         gmsh.model.occ.addCurveLoop([2], tag=2)
         gmsh.model.occ.addPlaneSurface([2, 1], tag=2)
 
-        gmsh.model.occ.addCircle(0.0, 0.0, 0.0, 0.8*l_dom/2,
+        gmsh.model.occ.addCircle(0.0, 0.0, 0.0, 0.8 * l_dom / 2,
                                  angle1=0, angle2=2 * pi, tag=3)
 
         gmsh.model.occ.addCurveLoop([3], tag=3)
         gmsh.model.occ.addPlaneSurface([3, 2], tag=3)
-        
+
         gmsh.model.occ.addRectangle(-l_dom / 2, -l_dom / 2, 0, l_dom, l_dom)
         gmsh.model.occ.addRectangle(-l_pml / 2, -l_pml / 2, 0, l_pml, l_pml)
 
@@ -40,9 +41,9 @@ def generate_mesh_wire(radius_wire, l_dom, l_pml,
         gmsh.model.occ.remove(dimTags=[(2, 5)], recursive=False)
 
         gmsh.model.occ.addPlaneSurface([4, 3], tag=4)
-        
+
         gmsh.model.occ.addPlaneSurface([5, 4], tag=5)
-        
+
         gmsh.model.occ.synchronize()
 
         gmsh.model.addPhysicalGroup(2, [1, 2], tag=au_tag)

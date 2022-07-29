@@ -29,9 +29,10 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
+from functools import partial
+
 from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from mesh_wire_pml import generate_mesh_wire
-from functools import partial
 
 import ufl
 from dolfinx import fem, plot
@@ -105,16 +106,17 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 
 # +
 
+
 def background_field(theta, n_b, k0, x):
 
-        kx = n_b * k0 * np.cos(theta)
-        ky = n_b * k0 * np.sin(theta)
-        phi = kx * x[0] + ky * x[1]
+    kx = n_b * k0 * np.cos(theta)
+    ky = n_b * k0 * np.sin(theta)
+    phi = kx * x[0] + ky * x[1]
 
-        ax = np.sin(theta)
-        ay = np.cos(theta)
+    ax = np.sin(theta)
+    ay = np.cos(theta)
 
-        return (-ax * np.exp(1j * phi), ay * np.exp(1j * phi))
+    return (-ax * np.exp(1j * phi), ay * np.exp(1j * phi))
 
 # -
 
@@ -201,7 +203,7 @@ scatt_tag = 4
 
 # +
 model = generate_mesh_wire(
-    radius_wire, l_dom, l_pml, in_wire_size, on_wire_size, bkg_size, 0.8*bkg_size,
+    radius_wire, l_dom, l_pml, in_wire_size, on_wire_size, bkg_size, 0.8 * bkg_size,
     pml_size, au_tag, bkg_tag, pml_tag, scatt_tag)
 
 mesh, cell_tags, facet_tags = model_to_mesh(
