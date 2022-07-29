@@ -135,9 +135,22 @@ of tags. You will need to manually update the `README.md`.
 
 Run the workflow at https://github.com/FEniCS/dolfinx/actions/workflows/docker.yml
 
-Tag prefix should be e.g. `v0.5.0`.
+Tag prefix should be e.g. `v0.5.0`. Git refs should be appropriate tags for
+each component.
 
-Git refs should be appropriate tags for each component.
+Tagged Docker images will be pushed to Dockerhub.
+
+    docker run -ti dolfinx/dolfinx:v0.5.0
+
+Do *not* update the `stable` tag using `docker pull` and `docker push`. Instead,
+install the `regclient` utility https://github.com/regclient/regclient using the
+provided binaries. `regclient` can properly handle copying multi-architecture images.
+
+    regctl registry login docker.io
+    regctl image copy dolfinx/dolfinx:<tag> dolfinx:dolfinx:stable 
+    regctl image copy dolfinx/lab:<tag> dolfinx/lab:stable 
+    regctl image copy dolfinx/dev-env:<tag> dolfinx/dev-env:stable 
+    regctl image copy dolfinx/dolfinx-onbuild:<tag> dolfinx/dolfinx-onbuild:stable
 
 ### pypa
 
@@ -154,6 +167,12 @@ It is recommended to first build without publishing, then to test pypa, then to
 the real pypa. Publishing to pypa cannot be revoked.
 
 The DOLFINx wheel builder is experimental.
+
+### Mistakes
+
+During the course of making a release mistakes can be fixed by deleting tags.
+After GitHub releases or pypa packages are pushed you must create .post0 tags
+or make minor version bumps.
 
 ### GitHub releases
 
