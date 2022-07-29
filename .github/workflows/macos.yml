@@ -62,6 +62,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install numpy pybind11
           python -m pip -v install mpi4py
+          python -m pip -v install numba
           PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt python -m pip install -v petsc4py
 
       - name: Install Basix
@@ -89,7 +90,7 @@ jobs:
           source fenicsx/bin/activate
           cd dolfinx
           PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt \
-          cmake -G Ninja -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/fenicsx -B build -S cpp/
+          cmake -G Ninja -DPYTHON3_EXECUTABLE=$(which python) -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/fenicsx -B build -S cpp/
           cmake --build build
           cmake --install build
 
@@ -98,3 +99,9 @@ jobs:
           source fenicsx/bin/activate
           cd dolfinx
           python -m pip -v install python/
+
+      - name: Basic test
+        run: |
+          source fenicsx/bin/activate
+          python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          mpirun -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
