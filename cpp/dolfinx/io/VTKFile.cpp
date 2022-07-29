@@ -6,7 +6,6 @@
 
 #include "VTKFile.h"
 #include "cells.h"
-#include "pugixml.hpp"
 #include "vtk_utils.h"
 #include "xdmf_utils.h"
 #include <dolfinx/common/IndexMap.h>
@@ -20,12 +19,10 @@
 #include <dolfinx/mesh/Topology.h>
 #include <filesystem>
 #include <iterator>
+#include <pugixml.hpp>
+#include <span>
 #include <sstream>
 #include <string>
-#include <xtensor/xbuilder.hpp>
-#include <xtensor/xcomplex.hpp>
-#include <xtensor/xview.hpp>
-#include <xtl/xspan.hpp>
 
 using namespace dolfinx;
 
@@ -131,7 +128,7 @@ void add_pvtu_mesh(pugi::xml_node& node)
 /// @param[in,out] data_node The XML node to add data to
 template <typename T>
 void add_data_float(const std::string& name, int rank,
-                    const xtl::span<const T>& values, pugi::xml_node& node)
+                    const std::span<const T>& values, pugi::xml_node& node)
 {
   static_assert(std::is_floating_point_v<T>, "Scalar must be a float");
 
@@ -163,29 +160,30 @@ void add_data_float(const std::string& name, int rank,
 /// @param[in,out] data_node The XML node to add data to
 template <typename T>
 void add_data(const std::string& name, int rank,
-              const xtl::span<const T>& values, pugi::xml_node& node)
+              const std::span<const T>& values, pugi::xml_node& node)
 {
-  if constexpr (std::is_scalar<T>::value)
+  if constexpr (std::is_scalar_v<T>)
     add_data_float(name, rank, values, node);
   else
   {
     using U = typename T::value_type;
     std::vector<U> v(values.size());
 
-    std::transform(values.cbegin(), values.cend(), v.begin(),
+    std::transform(values.begin(), values.end(), v.begin(),
                    [](auto x) { return x.real(); });
-    add_data_float(name + field_ext[0], rank, xtl::span<const U>(v), node);
+    add_data_float(name + field_ext[0], rank, std::span<const U>(v), node);
 
-    std::transform(values.cbegin(), values.cend(), v.begin(),
+    std::transform(values.begin(), values.end(), v.begin(),
                    [](auto x) { return x.imag(); });
-    add_data_float(name + field_ext[1], rank, xtl::span<const U>(v), node);
+    add_data_float(name + field_ext[1], rank, std::span<const U>(v), node);
   }
 }
 //----------------------------------------------------------------------------
 
 /// Add mesh geometry and topology data to a pugixml node. This function
 /// adds the Points and Cells nodes to the input node.
-/// @param[in] x Coordinates of the points
+/// @param[in] x Coordinates of the points, row-major storage
+/// @param[in] xshape The shape of `x`
 /// @param[in] x_id Unique global index for each point
 /// @param[in] x_ghost Flag indicating if a point is a owned (0) or is a
 /// ghost (1)
@@ -194,10 +192,12 @@ void add_data(const std::string& name, int rank,
 /// @param[in] celltype The cell type
 /// @param[in] tdim Topological dimension of the cells
 /// @param[in,out] piece_node The XML node to add data to
-void add_mesh(const xt::xtensor<double, 2>& x,
-              const xtl::span<const std::int64_t> x_id,
-              const xtl::span<const std::uint8_t> x_ghost,
-              const xt::xtensor<std::int64_t, 2>& cells,
+void add_mesh(const std::span<const double>& x,
+              std::array<std::size_t, 2> /*xshape*/,
+              const std::span<const std::int64_t> x_id,
+              const std::span<const std::uint8_t> x_ghost,
+              const std::span<const std::int64_t>& cells,
+              std::array<std::size_t, 2> cshape,
               const common::IndexMap& cellmap, mesh::CellType celltype,
               int tdim, pugi::xml_node& piece_node)
 {
@@ -232,8 +232,8 @@ void add_mesh(const xt::xtensor<double, 2>& x,
   offsets_node.append_attribute("format") = "ascii";
   {
     std::stringstream ss;
-    int num_nodes = cells.shape(1);
-    for (std::size_t i = 0; i < cells.shape(0); ++i)
+    int num_nodes = cshape[1];
+    for (std::size_t i = 0; i < cshape[0]; ++i)
       ss << (i + 1) * num_nodes << " ";
     offsets_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
   }
@@ -245,7 +245,7 @@ void add_mesh(const xt::xtensor<double, 2>& x,
   int vtk_celltype = io::cells::get_vtk_cell_type(celltype, tdim);
   {
     std::stringstream ss;
-    for (std::size_t c = 0; c < cells.shape(0); ++c)
+    for (std::size_t c = 0; c < cshape[0]; ++c)
       ss << vtk_celltype << " ";
     type_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
   }
@@ -263,7 +263,7 @@ void add_mesh(const xt::xtensor<double, 2>& x,
     std::stringstream ss;
     for (std::int32_t c = 0; c < cellmap.size_local(); ++c)
       ss << 0 << " ";
-    for (std::size_t c = cellmap.size_local(); c < cells.shape(0); ++c)
+    for (std::size_t c = cellmap.size_local(); c < cshape[0]; ++c)
       ss << 1 << " ";
     ghost_cell_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
   }
@@ -411,34 +411,40 @@ void write_function(
   pugi::xml_node grid_node_vtu = vtk_node_vtu.append_child("UnstructuredGrid");
 
   // Build mesh data using first FunctionSpace
-  xt::xtensor<double, 2> x;
+  std::vector<double> x;
+  std::array<std::size_t, 2> xshape;
   std::vector<std::int64_t> x_id;
   std::vector<std::uint8_t> x_ghost;
-  xt::xtensor<std::int32_t, 2> cells;
+  std::vector<std::int64_t> cells;
+  std::array<std::size_t, 2> cshape;
   if (is_cellwise(*V0))
   {
-    cells = io::extract_vtk_connectivity(*mesh0);
+    std::vector<std::int64_t> tmp;
+    std::tie(tmp, cshape) = io::extract_vtk_connectivity(*mesh0);
+    cells.assign(tmp.begin(), tmp.end());
     const mesh::Geometry& geometry = mesh0->geometry();
-    x = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
-                  std::vector({geometry.x().size() / 3, std::size_t(3)}));
+    x.assign(geometry.x().begin(), geometry.x().end());
+    xshape = {geometry.x().size() / 3, 3};
     x_id = geometry.input_global_indices();
     auto xmap = geometry.index_map();
     assert(xmap);
-    x_ghost.resize(x.shape(0), 0);
+    x_ghost.resize(xshape[0], 0);
     std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
   }
   else
-    std::tie(x, x_id, x_ghost, cells) = io::vtk_mesh_from_space(*V0);
+    std::tie(x, xshape, x_id, x_ghost, cells, cshape)
+        = io::vtk_mesh_from_space(*V0);
 
   // Add "Piece" node and required metadata
   pugi::xml_node piece_node = grid_node_vtu.append_child("Piece");
-  piece_node.append_attribute("NumberOfPoints") = x.shape(0);
-  piece_node.append_attribute("NumberOfCells") = cells.shape(0);
+  piece_node.append_attribute("NumberOfPoints") = xshape[0];
+  piece_node.append_attribute("NumberOfCells") = cshape[0];
 
   // Add mesh data to "Piece" node
   int tdim = mesh0->topology().dim();
-  add_mesh(x, x_id, x_ghost, cells, *mesh0->topology().index_map(tdim),
-           mesh0->topology().cell_type(), mesh0->topology().dim(), piece_node);
+  add_mesh(x, xshape, x_id, x_ghost, cells, cshape,
+           *mesh0->topology().index_map(tdim), mesh0->topology().cell_type(),
+           mesh0->topology().dim(), piece_node);
 
   // FIXME: is this actually setting the first?
   // Set last scalar/vector/tensor Functions in u to be the 'active'
@@ -475,17 +481,17 @@ void write_function(
       assert(!data_node.empty());
       auto dofmap = V->dofmap();
       int bs = dofmap->bs();
-      std::vector<T> data(cells.shape(0) * num_comp, 0);
+      std::vector<T> data(cshape[0] * num_comp, 0);
       auto u_vector = _u.get().x()->array();
-      for (std::size_t c = 0; c < cells.shape(0); ++c)
+      for (std::size_t c = 0; c < cshape[0]; ++c)
       {
-        xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+        std::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
         for (std::size_t i = 0; i < dofs.size(); ++i)
           for (int k = 0; k < bs; ++k)
             data[num_comp * c + k] = u_vector[bs * dofs[i] + k];
       }
 
-      add_data(_u.get().name, rank, xtl::span<const T>(data), data_node);
+      add_data(_u.get().name, rank, std::span<const T>(data), data_node);
     }
     else
     {
@@ -497,7 +503,7 @@ void write_function(
       // Function to pack data to 3D with 'zero' padding, typically when
       // a Function is 2D
       auto pad_data
-          = [num_comp](const fem::FunctionSpace& V, const xtl::span<const T>& u)
+          = [num_comp](const fem::FunctionSpace& V, const std::span<const T>& u)
       {
         auto dofmap = V.dofmap();
         int bs = dofmap->bs();
@@ -508,7 +514,7 @@ void write_function(
         std::vector<T> data(num_dofs_block * num_comp, 0);
         for (int i = 0; i < num_dofs_block; ++i)
         {
-          std::copy_n(std::next(u.cbegin(), i * map_bs), map_bs,
+          std::copy_n(std::next(u.begin(), i * map_bs), map_bs,
                       std::next(data.begin(), i * num_comp));
         }
 
@@ -524,7 +530,7 @@ void write_function(
         {
           // Pad with zeros and then add
           auto data = pad_data(*V, _u.get().x()->array());
-          add_data(_u.get().name, rank, xtl::span<const T>(data), data_node);
+          add_data(_u.get().name, rank, std::span<const T>(data), data_node);
         }
       }
       else if (*element == *element0)
@@ -541,10 +547,10 @@ void write_function(
         // Interpolate on each cell
         auto u_vector = _u.get().x()->array();
         std::vector<T> u(u_vector.size());
-        for (std::size_t c = 0; c < cells.shape(0); ++c)
+        for (std::size_t c = 0; c < cshape[0]; ++c)
         {
-          xtl::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
-          xtl::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+          std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
+          std::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
           for (std::size_t i = 0; i < dofs0.size(); ++i)
           {
             for (int k = 0; k < bs; ++k)
@@ -558,12 +564,12 @@ void write_function(
 
         // Pack/add data
         if (mesh0->geometry().dim() == 3)
-          add_data(_u.get().name, rank, xtl::span<const T>(u), data_node);
+          add_data(_u.get().name, rank, std::span<const T>(u), data_node);
         else
         {
           // Pad with zeros and then add
           auto data = pad_data(*V, _u.get().x()->array());
-          add_data(_u.get().name, rank, xtl::span<const T>(data), data_node);
+          add_data(_u.get().name, rank, std::span<const T>(data), data_node);
         }
       }
       else
@@ -765,15 +771,13 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
   piece_node.append_attribute("NumberOfCells") = num_cells;
 
   // Add mesh data to "Piece" node
-  xt::xtensor<std::int64_t, 2> cells = extract_vtk_connectivity(mesh);
-  xt::xtensor<double, 2> x
-      = xt::adapt(geometry.x().data(), geometry.x().size(), xt::no_ownership(),
-                  std::vector({geometry.x().size() / 3, std::size_t(3)}));
-  std::vector<std::uint8_t> x_ghost(x.shape(0), 0);
+  const auto [cells, cshape] = extract_vtk_connectivity(mesh);
+  std::array<std::size_t, 2> xshape = {geometry.x().size() / 3, 3};
+  std::vector<std::uint8_t> x_ghost(xshape[0], 0);
   std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
-  add_mesh(x, geometry.input_global_indices(), x_ghost, cells,
-           *topology.index_map(tdim), topology.cell_type(), topology.dim(),
-           piece_node);
+  add_mesh(geometry.x(), xshape, geometry.input_global_indices(), x_ghost,
+           cells, cshape, *topology.index_map(tdim), topology.cell_type(),
+           topology.dim(), piece_node);
 
   // Create filepath for a .vtu file
   auto create_vtu_path = [file_root = _filename.parent_path(),

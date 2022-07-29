@@ -12,7 +12,6 @@
 #include <map>
 #include <memory>
 #include <vector>
-#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::mesh
 {
@@ -79,12 +78,12 @@ public:
   ///
   /// @todo Remove - see function in interpolate.h
   /// @param[in] transpose If false the returned data has shape
-  /// `(num_points, gdim)`, otherwise it is transposed and has shape
-  /// `(gdim, num_points)`
+  /// `(num_points, 3)`, otherwise it is transposed and has shape `(3,
+  /// num_points)`.
   /// @return The dof coordinates `[([x0, y0, z0], [x1, y1, z1], ...)`
-  /// if @p transpose is false, and otherwise the returned data is
-  /// transposed.
-  xt::xtensor<double, 2> tabulate_dof_coordinates(bool transpose) const;
+  /// if `transpose` is false, and otherwise the returned data is
+  /// transposed. Storage is row-major.
+  std::vector<double> tabulate_dof_coordinates(bool transpose) const;
 
   /// The mesh
   std::shared_ptr<const mesh::Mesh> mesh() const;

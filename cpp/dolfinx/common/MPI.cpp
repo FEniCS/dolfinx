@@ -7,6 +7,7 @@
 #include "MPI.h"
 #include <algorithm>
 #include <dolfinx/common/log.h>
+#include <iostream>
 
 //-----------------------------------------------------------------------------
 dolfinx::MPI::Comm::Comm(MPI_Comm comm, bool duplicate)
@@ -89,7 +90,7 @@ int dolfinx::MPI::size(const MPI_Comm comm)
 //-----------------------------------------------------------------------------
 std::vector<int>
 dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm,
-                                      const xtl::span<const int>& edges)
+                                      const std::span<const int>& edges)
 {
   LOG(INFO)
       << "Computing communicaton graph edges (using PCX algorithm). Number "
@@ -149,7 +150,7 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 std::vector<int>
 dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
-                                      const xtl::span<const int>& edges)
+                                      const std::span<const int>& edges)
 {
   LOG(INFO)
       << "Computing communicaton graph edges (using NBX algorithm). Number "
@@ -219,24 +220,5 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
             << other_ranks.size();
 
   return other_ranks;
-}
-//-----------------------------------------------------------------------------
-std::array<std::vector<int>, 2> dolfinx::MPI::neighbors(MPI_Comm comm)
-{
-  LOG(INFO)
-      << "Getting source/destination edges for neighborhood MPI communicator.";
-
-  int status;
-  MPI_Topo_test(comm, &status);
-  assert(status != MPI_UNDEFINED);
-
-  // Get list of neighbors
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(comm, &indegree, &outdegree, &weighted);
-  std::vector<int> sources(indegree), destinations(outdegree);
-  MPI_Dist_graph_neighbors(comm, indegree, sources.data(), MPI_UNWEIGHTED,
-                           outdegree, destinations.data(), MPI_UNWEIGHTED);
-
-  return {std::move(sources), std::move(destinations)};
 }
 //-----------------------------------------------------------------------------

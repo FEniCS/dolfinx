@@ -4,9 +4,9 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the FunctionSpace class"""
-
 import pytest
 
+import basix.finite_element
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import create_unit_cube
 from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
@@ -112,7 +112,7 @@ def test_sub(Q, W):
     assert W.element.num_sub_elements == X.element.num_sub_elements
     assert W.element.space_dimension == X.element.space_dimension
     assert W.element.value_shape == X.element.value_shape
-    assert W.element.interpolation_points.shape == X.element.interpolation_points.shape
+    assert W.element.interpolation_points().shape == X.element.interpolation_points().shape
     assert W.element == X.element
 
 
@@ -222,3 +222,13 @@ def test_cell_mismatch(mesh):
     element = FiniteElement("P", triangle, 1)
     with pytest.raises(UFLException):
         FunctionSpace(mesh, element)
+
+
+def test_basix_element(V, W, Q, V2):
+    for V_ in (V, W, V2):
+        e = V_.element.basix_element
+        assert isinstance(e, basix.finite_element.FiniteElement)
+
+    # Mixed spaces do not yet return a basix element
+    with pytest.raises(RuntimeError):
+        e = Q.element.basix_element

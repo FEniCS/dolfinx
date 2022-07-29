@@ -16,8 +16,8 @@ from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import (CellType, compute_boundary_facets, create_rectangle,
-                          create_unit_cube, create_unit_square,
+from dolfinx.mesh import (CellType, create_rectangle, create_unit_cube,
+                          create_unit_square, exterior_facet_indices,
                           locate_entities_boundary)
 from ufl import (CellDiameter, FacetNormal, SpatialCoordinate, TestFunction,
                  TrialFunction, avg, div, ds, dS, dx, grad, inner, jump)
@@ -55,7 +55,7 @@ def run_scalar_test(mesh, V, degree):
     # Create Dirichlet boundary condition
     facetdim = mesh.topology.dim - 1
     mesh.topology.create_connectivity(facetdim, mesh.topology.dim)
-    bndry_facets = np.where(np.array(compute_boundary_facets(mesh.topology)) == 1)[0]
+    bndry_facets = exterior_facet_indices(mesh.topology)
     bdofs = locate_dofs_topological(V, facetdim, bndry_facets)
     bc = dirichletbc(u_bc, bdofs)
 

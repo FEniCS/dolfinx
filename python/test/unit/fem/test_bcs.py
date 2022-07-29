@@ -9,8 +9,9 @@ import pytest
 
 import ufl
 from dolfinx.fem import (Constant, Function, FunctionSpace,
-                         VectorFunctionSpace, dirichletbc, form,
-                         locate_dofs_geometrical, locate_dofs_topological)
+                         TensorFunctionSpace, VectorFunctionSpace, dirichletbc,
+                         form, locate_dofs_geometrical,
+                         locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                create_matrix, create_vector, set_bc)
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_square,
@@ -99,11 +100,42 @@ def test_overlapping_bcs():
             assert b_loc[dof_corner[0]] == 123.456
 
 
+def test_constant_bc_constructions():
+    """Test construction from constant values"""
+    msh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    V0 = FunctionSpace(msh, ("Lagrange", 1))
+    V1 = VectorFunctionSpace(msh, ("Lagrange", 1))
+    V2 = TensorFunctionSpace(msh, ("Lagrange", 1))
+
+    tdim = msh.topology.dim
+    boundary_facets = locate_entities_boundary(msh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
+    boundary_dofs0 = locate_dofs_topological(V0, tdim - 1, boundary_facets)
+    boundary_dofs1 = locate_dofs_topological(V1, tdim - 1, boundary_facets)
+    boundary_dofs2 = locate_dofs_topological(V2, tdim - 1, boundary_facets)
+
+    bc0 = dirichletbc(1.0 + 2.2j, boundary_dofs0, V0)
+    assert bc0.value.value.dtype == np.complex128
+    assert bc0.value.value.shape == tuple()
+    assert bc0.value.value == 1.0 + 2.2j
+
+    bc1 = dirichletbc(np.array([1.0 + 2.2j, 3.0 + 2.2j], dtype=np.complex128), boundary_dofs1, V1)
+    assert bc1.value.value.dtype == np.complex128
+    assert bc1.value.value.shape == (tdim,)
+    assert (bc1.value.value == [1.0 + 2.2j, 3.0 + 2.2j]).all()
+
+    bc2 = dirichletbc(np.array([[1.0, 3.0], [3.0, -2.0]], dtype=np.float32), boundary_dofs2, V2)
+    assert bc2.value.value.dtype == np.float32
+    assert bc2.value.value.shape == (tdim, tdim)
+    assert (bc2.value.value == [[1.0, 3.0], [3.0, -2.0]]).all()
+
+
 @pytest.mark.parametrize('mesh_factory',
-                         [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-                          (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
-                          (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
-                          (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
+                         [
+                             (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
+                             (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
+                             (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
+                             (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
+                         ])
 def test_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with a constant yields the same
     result as setting it with a function"""
@@ -256,7 +288,7 @@ def test_mixed_blocked_constant():
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
     TH = ufl.MixedElement([ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1),
-                          ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)])
+                           ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)])
     W = FunctionSpace(mesh, TH)
     u = Function(W)
     c0 = PETSc.ScalarType(3)
