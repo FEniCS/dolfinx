@@ -172,8 +172,11 @@ The DOLFINx wheel builder is experimental.
 
 ### Mistakes
 
-During the course of making a release mistakes can be fixed by deleting tags.
-After GitHub releases or pypa packages are pushed you must create .post0 tags
+Aside from version numbering changes, it is easier to merge changes onto `main`
+and then cherry-pick or merge back onto `release`.
+
+If a mistake is noticed soon after making a tag then you can delete the tag and
+recreate it. After GitHub releases or pypa packages are pushed you must create .post0 tags
 or make minor version bumps.
 
 ### GitHub releases
@@ -194,8 +197,8 @@ https://github.com/FEniCS/dolfinx/releases/new
 
 Check for any changes on `release` that should be ported back onto `main`.
 
-   git checkout main
-   git diff release
+     git checkout main
+     git diff release
 
 Bump the version numbers on the `main` branch.
 
