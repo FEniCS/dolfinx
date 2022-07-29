@@ -1,3 +1,4 @@
+---
 name: MacOS build
 
 on:
@@ -18,14 +19,14 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.os }}
 
-    steps:      
+    steps:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      
+
       - name: Install Homebrew dependencies
-       run: |
+        run: |
           brew install boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python@3.10 xtensor # FEniCS
           brew install bison flex # PETSc
           brew list --versions
@@ -67,22 +68,22 @@ jobs:
         run: |
           source fenicsx/bin/activate
           python -m pip install git+https://github.com/FEniCS/basix.git
-      
+
       - name: Install UFL
         run: |
           source fenicsx/bin/activate
           python -m pip install git+https://github.com/FEniCS/ufl.git
-      
+
       - name: Install FFCx
         run: |
           source fenicsx/bin/activate
           python -m pip install git+https://github.com/FEniCS/ffcx.git
-    
+
       - uses: actions/checkout@v3
         with:
           path: dolfinx
           ref: main
-        
+
       - name: Build and install DOLFINx C++ library
         run: |
           source fenicsx/bin/activate
@@ -95,4 +96,4 @@ jobs:
         run: |
           source fenicsx/bin/activate
           cd dolfinx
-          python -m pip -v install python/ 
+          python -m pip -v install python/
