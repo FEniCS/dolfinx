@@ -48,12 +48,12 @@ except ModuleNotFoundError:
 from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from mesh_wire import generate_mesh_wire
 
-import ufl
 from dolfinx import fem, plot
 from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
-from ufl import (FacetNormal, as_vector, conj, cross, curl, inner, lhs, rhs,
-                 sqrt)
+from ufl import (FacetNormal, FiniteElement, Measure, SpatialCoordinate,
+                 TestFunction, TrialFunction, as_vector, conj, cross, curl,
+                 inner, lhs, rhs, sqrt)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -197,7 +197,7 @@ class BackgroundElectricField:
 # +
 def radial_distance(x):
     """Returns the radial distance from the origin"""
-    return ufl.sqrt(x[0]**2 + x[1]**2)
+    return sqrt(x[0]**2 + x[1]**2)
 
 
 def curl_2d(a):
@@ -290,7 +290,7 @@ theta = 45 * deg  # Angle of incidence of the background field
 # element:
 
 degree = 3
-curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), degree)
+curl_el = FiniteElement("N1curl", mesh.ufl_cell(), degree)
 V = fem.FunctionSpace(mesh, curl_el)
 
 # Next, we can interpolate $\mathbf{E}_b$ into the function space $V$:
@@ -302,20 +302,20 @@ Eb.interpolate(f.eval)
 
 
 # Function r = radial distance from the (0, 0) point
-x = ufl.SpatialCoordinate(mesh)
+x = SpatialCoordinate(mesh)
 r = radial_distance(x)
 
 # Definition of Trial and Test functions
-Es = ufl.TrialFunction(V)
-v = ufl.TestFunction(V)
+Es = TrialFunction(V)
+v = TestFunction(V)
 
 # Definition of 3d fields for cross and curl operations
 Es_3d = as_vector((Es[0], Es[1], 0))
 v_3d = as_vector((v[0], v[1], 0))
 
 # Measures for subdomains
-dx = ufl.Measure("dx", mesh, subdomain_data=cell_tags)
-ds = ufl.Measure("ds", mesh, subdomain_data=facet_tags)
+dx = Measure("dx", mesh, subdomain_data=cell_tags)
+ds = Measure("ds", mesh, subdomain_data=facet_tags)
 dDom = dx((au_tag, bkg_tag))
 dsbc = ds(boundary_tag)
 
@@ -508,7 +508,7 @@ with VTXWriter(mesh.comm, "E.bp", E_dg) as f:
 # which in DOLFINx can be retrieved in this way:
 
 # ||E||
-lagr_el = ufl.FiniteElement("CG", mesh.ufl_cell(), 2)
+lagr_el = FiniteElement("CG", mesh.ufl_cell(), 2)
 norm_func = sqrt(inner(Esh, Esh))
 V_normEsh = fem.FunctionSpace(mesh, lagr_el)
 norm_expr = fem.Expression(norm_func, V_normEsh.element.interpolation_points())
