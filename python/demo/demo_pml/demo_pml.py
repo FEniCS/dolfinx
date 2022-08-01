@@ -38,10 +38,10 @@ from mesh_wire_pml import generate_mesh_wire
 from dolfinx import fem, plot
 from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
-from ufl import (FacetNormal, algebra, as_matrix, as_vector, conj, cross,
-                 det, grad, inner, inv, lhs, rhs, sqrt, transpose, sign,
-                 TestFunction, TrialFunction, SpatialCoordinate, Measure,
-                 FiniteElement)
+from ufl import (FacetNormal, FiniteElement, Measure, SpatialCoordinate,
+                 TestFunction, TrialFunction, algebra, as_matrix, as_vector,
+                 conj, cross, det, grad, inner, inv, lhs, rhs, sign, sqrt,
+                 transpose)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -543,7 +543,7 @@ q_abs_fenics = mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
 q_sca_fenics_proc = (fem.assemble_scalar(
-    fem.form(P('+') * dScatt)) / gcs / I0).real
+    fem.form((P('+') - P('-')) / 2 * dScatt)) / gcs / I0).real
 
 # Sum results from all MPI processes
 q_sca_fenics = mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
