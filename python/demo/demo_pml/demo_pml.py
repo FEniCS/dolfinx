@@ -17,8 +17,6 @@
 # +
 import sys
 
-from matplotlib.cbook import to_filehandle
-
 try:
     import gmsh
 except ModuleNotFoundError:
@@ -160,9 +158,9 @@ def pml_coordinates(x, alpha, k0, l_dom, l_pml):
     inside_pml = [(sign(algebra.Abs(x[i]) - l_dom / 2) + 1) / 2
                   for i in range(len(x))]
 
-    return as_vector([x[i] + 1j * alpha / k0 * x[i] *
-                      (algebra.Abs(x[i]) - l_dom / 2) /
-                      (l_pml / 2 - l_dom / 2)**2 * inside_pml[i]
+    return as_vector([x[i] + 1j * alpha / k0 * x[i]
+                     * (algebra.Abs(x[i]) - l_dom / 2)
+                      / (l_pml / 2 - l_dom / 2)**2 * inside_pml[i]
                       for i in range(len(x))])
 
 
