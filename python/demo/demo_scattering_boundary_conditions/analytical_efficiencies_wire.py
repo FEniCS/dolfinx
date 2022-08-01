@@ -1,5 +1,7 @@
 # # Calculation of analytical efficiencies
 #
+# Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
+#
 # This file contains a function for the calculation of the absorption,
 # scattering and extinction efficiencies of a wire being
 # hit normally by a TM-polarized electromagnetic wave. The formula

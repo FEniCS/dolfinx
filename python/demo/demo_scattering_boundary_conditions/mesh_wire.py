@@ -1,3 +1,5 @@
+# Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
+
 import sys
 
 try:

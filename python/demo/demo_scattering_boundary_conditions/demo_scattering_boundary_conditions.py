@@ -14,6 +14,9 @@
 # ---
 
 # # Scattering from a wire with scattering boundary conditions
+#
+# Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
+#
 # This demo is implemented in two files: one for the mesh
 # generation with gmsh, and one for the variational forms
 # and the solver. It illustrates how to:
@@ -261,13 +264,16 @@ if have_pyvista:
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     pyvista.set_jupyter_backend("pythreejs")
     plotter = pyvista.Plotter()
+    num_local_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    grid.cell_data["Marker"] = cell_tags.values[cell_tags.indices < num_local_cells]
+    grid.set_active_scalars("Marker")
     plotter.add_mesh(grid, show_edges=True)
     plotter.view_xy()
     if not pyvista.OFF_SCREEN:
         plotter.show()
     else:
         pyvista.start_xvfb()
-        figure = plotter.screenshot("wire_mesh.png")
+        figure = plotter.screenshot("wire_mesh.png", window_size=[8000, 8000])
 
 # Now we define some other problem specific parameters:
 
