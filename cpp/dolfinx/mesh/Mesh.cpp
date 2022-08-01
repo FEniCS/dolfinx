@@ -19,9 +19,6 @@
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <memory>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xsort.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -63,17 +60,19 @@ reorder_list(const graph::AdjacencyList<T>& list,
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        const fem::CoordinateElement& element,
-                       const xt::xtensor<double, 2>& x,
+                       std::span<const double> x,
+                       std::array<std::size_t, 2> xshape,
                        mesh::GhostMode ghost_mode)
 {
-  return create_mesh(comm, cells, element, x, ghost_mode,
+  return create_mesh(comm, cells, element, x, xshape, ghost_mode,
                      create_cell_partitioner());
 }
 //-----------------------------------------------------------------------------
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        const fem::CoordinateElement& element,
-                       const xt::xtensor<double, 2>& x,
+                       std::span<const double> x,
+                       std::array<std::size_t, 2> xshape,
                        mesh::GhostMode ghost_mode,
                        const mesh::CellPartitionFunction& cell_partitioner)
 {
@@ -196,8 +195,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   }
 
   // Function top build geometry. Used to scope memory operations.
-  auto build_geometry
-      = [](auto comm, auto& cell_nodes, auto& topology, auto& element, auto& x)
+  auto build_geometry = [](auto comm, auto& cell_nodes, auto& topology,
+                           auto& element, auto& x, auto xshape1)
   {
     int tdim = topology.dim();
     int num_cells = topology.index_map(tdim)->size_local()
@@ -210,10 +209,11 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     if (element.needs_dof_permutations())
       topology.create_entity_permutations();
 
-    return create_geometry(comm, topology, element, cell_nodes, x, x.shape(1));
+    return create_geometry(comm, topology, element, cell_nodes, x, xshape1);
   };
 
-  Geometry geometry = build_geometry(comm, cell_nodes, topology, element, x);
+  Geometry geometry
+      = build_geometry(comm, cell_nodes, topology, element, x, xshape[1]);
   return Mesh(comm, std::move(topology), std::move(geometry));
 }
 //-----------------------------------------------------------------------------

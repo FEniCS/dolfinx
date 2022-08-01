@@ -18,6 +18,7 @@
 #include <filesystem>
 #include <mpi.h>
 #include <numbers>
+#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
