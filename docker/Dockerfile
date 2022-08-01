@@ -6,17 +6,21 @@
 # Garth N. Wells <gnw20@cam.ac.uk>
 # Jan Blechta <blechta@karlin.mff.cuni.cz>
 #
+# To run the latest stable build:
+#
+#    docker run -ti dolfinx/dolfinx:stable
+#
 # To run a nightly build:
 #
-#    docker run -ti dolfinx/dolfinx:latest
+#    docker run -ti dolfinx/dolfinx:nightly
 #
 # To run a Jupyter lab session:
 #
-#    docker run --init -p 8888:8888 dolfinx/lab:latest
+#    docker run --init -p 8888:8888 dolfinx/lab:stable
 #
 # To run and share the current host directory with the container:
 #
-#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab:latest
+#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab:stable
 #
 # To build from source, first checkout the DOLFINx, FFCx, Basix and UFL
 # repositories into the working directory, e.g.:
@@ -482,11 +486,16 @@ RUN apt-get -qq update && \
 # available on pypi for linux/arm64.
 # matplotlib improves plotting quality with better color maps and
 # properly rendering colorbars.
+# pythreejs and ipygany are two backends of pyvista not requiring a framebuffer,
+# and are therefore preferred in notebooks
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
-    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
-    esac; \
-    pip3 install --no-cache-dir matplotlib
+    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} && \
+    pip3 install --no-cache-dir matplotlib && \
+    pip3 install --no-cache-dir pythreejs ipygany && \
+    pip3 cache purge && \
+    jupyter nbextension enable --py --sys-prefix ipygany ;; \
+    esac;
 
 # Jupyter Notebook kernel specification for complex build DOLFINx
 ADD dolfinx/docker/complex-kernel.json /usr/local/share/jupyter/kernels/python3-complex/kernel.json

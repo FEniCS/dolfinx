@@ -228,7 +228,7 @@ def test_cffi_expression(V):
     {
       /* x0 + x1 */
       for (int i = 0; i < num_points; ++i)
-        values[i  + 0] = x[i] + x[i + num_points];
+        values[i] = x[i] + x[i + num_points];
     }
     """
     module = "_expr_eval" + str(MPI.COMM_WORLD.rank)
