@@ -1,4 +1,7 @@
 # # Scattering from a wire with perfectly matched layer condition
+#
+# Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
+#
 # This demo is implemented in three files: one for the mesh
 # generation with gmsh, one for the calculation of analytical efficiencies,
 # and one for the variational forms and the solver. It illustrates how to:
@@ -34,12 +37,13 @@ from functools import partial
 from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from mesh_wire_pml import generate_mesh_wire
 
-import ufl
 from dolfinx import fem, plot
 from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
-from ufl import (FacetNormal, algebra, as_matrix, as_vector, conj, cross, curl,
-                 det, grad, inner, inv, lhs, rhs, sqrt, transpose)
+from ufl import (FacetNormal, algebra, as_matrix, as_vector, conj, cross,
+                 det, grad, inner, inv, lhs, rhs, sqrt, transpose, sign,
+                 TestFunction, TrialFunction, SpatialCoordinate, Measure,
+                 FiniteElement)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -153,10 +157,13 @@ def curl_2d(a):
 
 def pml_coordinates(x, alpha, k0, l_dom, l_pml):
 
-    inside_pml = [(ufl.sign(ufl.sign(x[i]) * x[i] - l_dom / 2) + 1) / 2 for i in range(len(x))]
+    inside_pml = [(sign(algebra.Abs(x[i]) - l_dom / 2) + 1) / 2
+                  for i in range(len(x))]
 
-    return as_vector([x[i] + 1j * alpha / k0 * x[i] * (ufl.sign(x[i]) * x[i] - l_dom / 2)
-                      / (l_pml / 2 - l_dom / 2)**2 * inside_pml[i] for i in range(len(x))])
+    return as_vector([x[i] + 1j * alpha / k0 * x[i] *
+                      (algebra.Abs(x[i]) - l_dom / 2) /
+                      (l_pml / 2 - l_dom / 2)**2 * inside_pml[i]
+                      for i in range(len(x))])
 
 
 # The `inside_pml` function is a boolean that switch on the transformation
@@ -203,8 +210,9 @@ scatt_tag = 4
 
 # +
 model = generate_mesh_wire(
-    radius_wire, l_dom, l_pml, in_wire_size, on_wire_size, bkg_size, 0.8 * bkg_size,
-    pml_size, au_tag, bkg_tag, pml_tag, scatt_tag)
+    radius_wire, l_dom, l_pml,
+    in_wire_size, on_wire_size, bkg_size, 0.8 * bkg_size, pml_size,
+    au_tag, bkg_tag, pml_tag, scatt_tag)
 
 mesh, cell_tags, facet_tags = model_to_mesh(
     model, MPI.COMM_WORLD, 0, gdim=2)
@@ -244,7 +252,7 @@ theta = 0 * deg  # Angle of incidence of the background field
 #
 
 degree = 3
-curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), degree)
+curl_el = FiniteElement("N1curl", mesh.ufl_cell(), degree)
 V = fem.FunctionSpace(mesh, curl_el)
 
 # Next, we interpolate $\mathbf{E}_b$ into the function space $V$:
@@ -255,15 +263,15 @@ f = partial(background_field, theta, n_bkg, k0)
 Eb.interpolate(f)
 
 # Definition of Trial and Test functions
-Es = ufl.TrialFunction(V)
-v = ufl.TestFunction(V)
+Es = TrialFunction(V)
+v = TestFunction(V)
 
 # Definition of 3d fields
 Es_3d = as_vector((Es[0], Es[1], 0))
 v_3d = as_vector((v[0], v[1], 0))
 
 # Measures for subdomains
-dx = ufl.Measure("dx", mesh, subdomain_data=cell_tags)
+dx = Measure("dx", mesh, subdomain_data=cell_tags)
 dDom = dx((au_tag, bkg_tag))
 dPml = dx(pml_tag)
 # -
@@ -331,7 +339,7 @@ eps.x.scatter_forward()
 # the `ufl.grad` operator on our PML coordinates:
 
 # +
-x = ufl.SpatialCoordinate(mesh)
+x = SpatialCoordinate(mesh)
 
 alpha = 1
 x_pml = pml_coordinates(x, alpha, k0, l_dom, l_pml)
@@ -351,7 +359,9 @@ J_pml = as_matrix(((J_pml[0, 0], 0, 0),
 # Finally, $\boldsymbol{\varepsilon}_{pml}$ and
 # $\boldsymbol{\mu}_{pml}$ can be calculated with
 # the following formula (from
-# [Ward & Pendry, 1996](https://www.tandfonline.com/doi/abs/10.1080/09500349608232782)):
+# [Ward & Pendry, 1996](
+# https://www.tandfonline.com/doi/abs/10.1080/09500349608232782):
+# )
 #
 # $$
 # \begin{align}
@@ -474,7 +484,7 @@ with VTXWriter(mesh.comm, "E.bp", E_dg) as f:
 # which in DOLFINx can be retrieved in this way:
 
 # ||E||
-lagr_el = ufl.FiniteElement("CG", mesh.ufl_cell(), 2)
+lagr_el = FiniteElement("CG", mesh.ufl_cell(), 2)
 norm_func = sqrt(inner(Esh, Esh))
 V_normEsh = fem.FunctionSpace(mesh, lagr_el)
 norm_expr = fem.Expression(norm_func, V_normEsh.element.interpolation_points())
@@ -525,7 +535,7 @@ Q = 0.5 * eps_au.imag * k0 * (inner(E_3d, E_3d)) / Z0 / n_bkg
 dAu = dx(au_tag)
 
 # Define integration domain for the boundary
-dS = ufl.Measure("dS", mesh, subdomain_data=facet_tags)
+dS = Measure("dS", mesh, subdomain_data=facet_tags)
 dScatt = dS(scatt_tag)
 
 # Normalized absorption efficiency
@@ -534,7 +544,8 @@ q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / gcs / I0).real
 q_abs_fenics = mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
-q_sca_fenics_proc = (fem.assemble_scalar(fem.form(P('+') * dScatt)) / gcs / I0).real
+q_sca_fenics_proc = (fem.assemble_scalar(
+    fem.form(P('+') * dScatt)) / gcs / I0).real
 
 # Sum results from all MPI processes
 q_sca_fenics = mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)

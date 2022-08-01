@@ -1,3 +1,5 @@
+# Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
+
 import sys
 
 import gmsh
@@ -7,7 +9,7 @@ from mpi4py import MPI
 
 
 def generate_mesh_wire(radius_wire, l_dom, l_pml,
-                       in_wire_size, on_wire_size, bkg_size, scatt_size, 
+                       in_wire_size, on_wire_size, bkg_size, scatt_size,
                        pml_size, au_tag, bkg_tag, pml_tag, scatt_tag):
 
     gmsh.initialize(sys.argv)
