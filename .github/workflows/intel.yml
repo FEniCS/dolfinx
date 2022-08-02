@@ -47,6 +47,7 @@ jobs:
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
+          ref: sarah/replace-parameters-options
 
       - name: Install FFCx C interface
         run: |
