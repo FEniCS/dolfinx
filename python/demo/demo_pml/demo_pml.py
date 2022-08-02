@@ -178,8 +178,8 @@ mu_0 = 4 * np.pi * 10**-7
 
 # Radius of the wire and of the boundary of the domain
 radius_wire = 0.05 * um
-l_dom = 0.4 * um
-l_pml = 0.6 * um
+l_dom = 0.8 * um
+l_pml = 1 * um
 
 # The smaller the mesh_factor, the finer is the mesh
 mesh_factor = 1
