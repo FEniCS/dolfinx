@@ -17,7 +17,7 @@ def generate_mesh_wire(radius_wire, l_dom, l_pml,
 
         gmsh.model.add("nanowire")
 
-        # A dummy boundary is added for setting a finer mesh
+        # A dummy circle for setting a finer mesh
         gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_wire * 0.8,
                                  angle1=0.0, angle2=2 * pi, tag=1)
 
@@ -30,6 +30,7 @@ def generate_mesh_wire(radius_wire, l_dom, l_pml,
         gmsh.model.occ.addCurveLoop([2], tag=2)
         gmsh.model.occ.addPlaneSurface([2, 1], tag=2)
 
+        # A dummy circle for the calculation of the scattering efficiency
         gmsh.model.occ.addCircle(0.0, 0.0, 0.0, 0.8 * l_dom / 2,
                                  angle1=0, angle2=2 * pi, tag=3)
 

@@ -135,7 +135,7 @@ def curl_2d(a):
 # -
 
 # As said before, we are going to implement a perfectly matched layer (PML)
-# in this problem. To do that, we
+# for this problem. To do that, we
 # can use a complex transformation of coordinates in the PML domain. For
 # squared PML we can define this transformation as:
 #
@@ -164,8 +164,8 @@ def pml_coordinates(x, alpha, k0, l_dom, l_pml):
                       for i in range(len(x))])
 
 
-# The `inside_pml` function is a boolean that switch on the transformation
-# inside the PML region.
+# The `inside_pml` function is a boolean that switch on the coordinate 
+# transformation inside the PML region.
 #
 # Next we define some mesh specific parameters:
 
@@ -219,20 +219,26 @@ gmsh.finalize()
 MPI.COMM_WORLD.barrier()
 # -
 
-# Let's have a visual check of the mesh by plotting it with PyVista:
+# Let's have a visual check of the mesh and of the subdomains
+# by plotting them with PyVista:
 
 if have_pyvista:
     topology, cell_types, geometry = plot.create_vtk_mesh(mesh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     pyvista.set_jupyter_backend("pythreejs")
     plotter = pyvista.Plotter()
+    num_local_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    grid.cell_data["Marker"] = \
+        cell_tags.values[cell_tags.indices < num_local_cells]
+    grid.set_active_scalars("Marker")
     plotter.add_mesh(grid, show_edges=True)
     plotter.view_xy()
     if not pyvista.OFF_SCREEN:
         plotter.show()
     else:
         pyvista.start_xvfb()
-        figure = plotter.screenshot("wire_mesh.png")
+        figure = plotter.screenshot("wire_mesh_pml.png",
+                                    window_size=[800, 800])
 
 # Now we define some other problem specific parameters:
 
@@ -253,7 +259,8 @@ degree = 3
 curl_el = FiniteElement("N1curl", mesh.ufl_cell(), degree)
 V = fem.FunctionSpace(mesh, curl_el)
 
-# Next, we interpolate $\mathbf{E}_b$ into the function space $V$:
+# Next, we interpolate $\mathbf{E}_b$ into the function space $V$, define our
+# trial and test function, and the integration domains:
 
 # +
 Eb = fem.Function(V)
@@ -274,8 +281,7 @@ dDom = dx((au_tag, bkg_tag))
 dPml = dx(pml_tag)
 # -
 
-# Now it is the turn of the permittivity $\varepsilon$.
-# First of all let's define the relative permittivity $\varepsilon_m$
+# Let's now define the relative permittivity $\varepsilon_m$
 # of the gold wire at $400nm$ (data taken from
 # [*Olmon et al. 2012*](https://doi.org/10.1103/PhysRevB.86.235147)
 # , and for a quick reference have a look at [refractiveindex.info](
@@ -286,10 +292,10 @@ dPml = dx(pml_tag)
 eps_au = -1.0782 + 1j * 5.8089
 
 
-# We want to define a space function for the permittivity
-# $\varepsilon$ that takes the value of the gold permittivity $\varepsilon_m$
+# We can now define a space function for the permittivity
+# $\varepsilon$ that takes the value $\varepsilon_m$
 # for cells inside the wire, while it takes the value of the
-# background permittivity otherwise:
+# background permittivity $\varepsilon_b$ in the background region:
 
 D = fem.FunctionSpace(mesh, ("DG", 0))
 eps = fem.Function(D)
@@ -532,7 +538,7 @@ Q = 0.5 * eps_au.imag * k0 * (inner(E_3d, E_3d)) / Z0 / n_bkg
 # Define integration domain for the wire
 dAu = dx(au_tag)
 
-# Define integration domain for the boundary
+# Define integration facet for the scattering efficiency
 dS = Measure("dS", mesh, subdomain_data=facet_tags)
 dScatt = dS(scatt_tag)
 
