@@ -13,7 +13,7 @@ on:
     inputs:
       ffcx_ref:
         description: "FFCx branch or tag"
-        default: "sarah/replace-parameters-options"
+        default: "main"
         type: string
       basix_ref:
         description: "Basix branch or tag"
@@ -56,7 +56,7 @@ jobs:
         run: |
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
           python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@sarah/replace-parameters-options
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
