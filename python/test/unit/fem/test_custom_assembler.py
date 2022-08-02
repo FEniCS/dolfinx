@@ -353,7 +353,7 @@ def test_custom_mesh_loop_rank1():
     ffcxtype = "double _Complex" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "double"
     b3 = Function(V)
     ufcx_form, module, code = dolfinx.jit.ffcx_jit(
-        mesh.comm, L, form_compiler_params={"scalar_type": ffcxtype})
+        mesh.comm, L, form_compiler_opts={"scalar_type": ffcxtype})
 
     nptype = "complex128" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "float64"
     # First 0 for "cell" integrals, second 0 for the first one, i.e. default domain
