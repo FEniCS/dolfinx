@@ -18,6 +18,8 @@ using namespace dolfinx;
 
 namespace
 {
+template <std::size_t A, std::size_t B>
+using AB_span = stdex::mdspan<double, stdex::extents<std::size_t, A, B>>;
 //-----------------------------------------------------------------------------
 // Check whether bounding box is a leaf node
 constexpr bool is_leaf(const std::array<int, 2>& bbox)
@@ -29,16 +31,15 @@ constexpr bool is_leaf(const std::array<int, 2>& bbox)
 /// A point `x` is inside a bounding box `b` if each component of its
 /// coordinates lies within the range `[b(0,i), b(1,i)]` that defines the bounds
 /// of the bounding box, b(0,i) <= x[i] <= b(1,i) for i = 0, 1, 2
-constexpr bool point_in_bbox(const std::array<std::array<double, 3>, 2>& b,
-                             const std::array<double, 3>& x)
+constexpr bool point_in_bbox(AB_span<2, 3> b, const std::array<double, 3>& x)
 {
   constexpr double rtol = 1e-14;
   bool in = true;
   for (int i = 0; i < 3; i++)
   {
-    double eps = rtol * (b[1][i] - b[0][i]);
-    in &= x[i] >= (b[0][i] - eps);
-    in &= x[i] <= (b[1][i] + eps);
+    double eps = rtol * (b(1, i) - b(0, i));
+    in &= x[i] >= (b(0, i) - eps);
+    in &= x[i] <= (b(1, i) + eps);
   }
 
   return in;
@@ -47,16 +48,15 @@ constexpr bool point_in_bbox(const std::array<std::array<double, 3>, 2>& b,
 /// A bounding box "a" is contained inside another bounding box "b", if each
 /// of its intervals [a(0,i), a(1,i)] is contained in [b(0,i), b(1,i)],
 /// a(0,i) <= b(1, i) and a(1,i) >= b(0, i)
-constexpr bool bbox_in_bbox(const std::array<std::array<double, 3>, 2>& a,
-                            const std::array<std::array<double, 3>, 2>& b)
+constexpr bool bbox_in_bbox(AB_span<2, 3> a, AB_span<2, 3> b)
 {
   constexpr double rtol = 1e-14;
   bool in = true;
   for (int i = 0; i < 3; i++)
   {
-    double eps = rtol * (b[1][i] - b[0][i]);
-    in &= a[1][i] >= (b[0][i] - eps);
-    in &= a[0][i] <= (b[1][i] + eps);
+    double eps = rtol * (b(1, i) - b(0, i));
+    in &= a(1, i) >= (b(0, i) - eps);
+    in &= a(0, i) <= (b(1, i) + eps);
   }
 
   return in;
@@ -76,7 +76,8 @@ std::pair<std::int32_t, double> _compute_closest_entity(
     // If point cloud tree the exact distance is easy to compute
     if (tree.tdim() == 0)
     {
-      std::array<double, 3> diff = tree.get_bbox(node)[0];
+      auto diff = stdex::submdspan(AB_span<2, 3>(tree.get_bbox(node).data()), 0,
+                                   stdex::full_extent);
       for (std::size_t k = 0; k < 3; ++k)
         diff[k] -= point[k];
       r2 = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
@@ -146,8 +147,10 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
     else
     {
       // Check whether the point collides with child nodes (left and right)
-      bool left = point_in_bbox(tree.get_bbox(bbox[0]), p);
-      bool right = point_in_bbox(tree.get_bbox(bbox[1]), p);
+      AB_span<2, 3> bleft(tree.get_bbox(bbox[0]).data());
+      AB_span<2, 3> bright(tree.get_bbox(bbox[1]).data());
+      bool left = point_in_bbox(bleft, p);
+      bool right = point_in_bbox(bright, p);
       if (left && right)
       {
         // If the point collides with both child nodes, add the right node to
@@ -184,7 +187,8 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
                               std::vector<std::array<int, 2>>& entities)
 {
   // If bounding boxes don't collide, then don't search further
-  if (!bbox_in_bbox(A.get_bbox(node_A), B.get_bbox(node_B)))
+  if (!bbox_in_bbox(AB_span<2, 3>(A.get_bbox(node_A).data()),
+                    AB_span<2, 3>(B.get_bbox(node_B).data())))
     return;
 
   // Get bounding boxes for current nodes
@@ -320,7 +324,9 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       leaves = midpoint_tree.bbox(0);
       assert(is_leaf(leaves));
       initial_entity = leaves[0];
-      std::array<double, 3> diff = midpoint_tree.get_bbox(0)[0];
+      auto diff
+          = stdex::submdspan(AB_span<2, 3>(midpoint_tree.get_bbox(0).data()), 0,
+                             stdex::full_extent);
       for (std::size_t k = 0; k < 3; ++k)
         diff[k] -= points[3 * i + k];
       R2 = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
@@ -351,20 +357,17 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
 }
 
 //-----------------------------------------------------------------------------
-double geometry::compute_squared_distance_bbox(
-    const std::array<std::array<double, 3>, 2>& b,
-    const std::array<double, 3>& x)
+double geometry::compute_squared_distance_bbox(const std::array<double, 6>& b,
+                                               const std::array<double, 3>& x)
 {
-  auto& b0 = b[0];
-  auto& b1 = b[1];
-  return std::transform_reduce(x.begin(), x.end(), b0.begin(), 0.0,
+  return std::transform_reduce(x.begin(), x.end(), b.begin(), 0.0,
                                std::plus<>{},
                                [](auto x, auto b)
                                {
                                  auto dx = x - b;
                                  return dx > 0 ? 0 : dx * dx;
                                })
-         + std::transform_reduce(x.begin(), x.end(), b1.begin(), 0.0,
+         + std::transform_reduce(x.begin(), x.end(), std::next(b.begin(), 3), 0.0,
                                  std::plus<>{},
                                  [](auto x, auto b)
                                  {

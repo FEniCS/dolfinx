@@ -7,12 +7,14 @@
 #pragma once
 
 #include <array>
+#include <basix/mdspan.hpp>
 #include <cassert>
 #include <cstdint>
 #include <mpi.h>
 #include <span>
 #include <string>
 #include <vector>
+namespace stdex = std::experimental;
 
 namespace dolfinx::mesh
 {
@@ -21,6 +23,9 @@ class Mesh;
 
 namespace dolfinx::geometry
 {
+template <std::size_t A, std::size_t B>
+using AB_span = stdex::mdspan<double, stdex::extents<std::size_t, A, B>>;
+
 
 /// Axis-Aligned bounding box binary tree. It is used to find entities
 /// in a collection (often a mesh::Mesh).
@@ -72,7 +77,7 @@ public:
   /// @param[in] node The bounding box node index
   /// @return The bounding box where [0] is the lower corner and [1] is
   /// the upper corner
-  std::array<std::array<double, 3>, 2> get_bbox(std::size_t node) const;
+  std::array<double, 6> get_bbox(std::size_t node) const;
 
   /// Compute a global bounding tree (collective on comm)
   /// This can be used to find which process a point might have a
