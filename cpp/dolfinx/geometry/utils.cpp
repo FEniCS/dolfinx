@@ -15,11 +15,8 @@
 #include <dolfinx/mesh/utils.h>
 
 using namespace dolfinx;
-
 namespace
 {
-template <std::size_t A, std::size_t B>
-using AB_span = stdex::mdspan<double, stdex::extents<std::size_t, A, B>>;
 //-----------------------------------------------------------------------------
 // Check whether bounding box is a leaf node
 constexpr bool is_leaf(const std::array<int, 2>& bbox)

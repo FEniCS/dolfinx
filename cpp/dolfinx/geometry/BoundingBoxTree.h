@@ -16,6 +16,8 @@
 #include <vector>
 namespace stdex = std::experimental;
 
+template <std::size_t A, std::size_t B>
+using AB_span = stdex::mdspan<double, stdex::extents<std::size_t, A, B>>;
 namespace dolfinx::mesh
 {
 class Mesh;
@@ -23,9 +25,6 @@ class Mesh;
 
 namespace dolfinx::geometry
 {
-template <std::size_t A, std::size_t B>
-using AB_span = stdex::mdspan<double, stdex::extents<std::size_t, A, B>>;
-
 
 /// Axis-Aligned bounding box binary tree. It is used to find entities
 /// in a collection (often a mesh::Mesh).

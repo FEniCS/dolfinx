@@ -231,7 +231,15 @@ void geometry(py::module& m)
       .def(
           "get_bbox",
           [](const dolfinx::geometry::BoundingBoxTree& self,
-             const std::size_t i) { return self.get_bbox(i); },
+             const std::size_t i)
+          {
+            std::array<double, 6> bbox = self.get_bbox(i);
+            std::array<std::size_t, 2> shape = {2, 3};
+            std::vector<double> bbox_out(6);
+            for (int i = 0; i < 6; ++i)
+              bbox_out[i] = bbox[i];
+            return dolfinx_wrappers::as_pyarray(std::move(bbox_out), shape);
+          },
           py::arg("i"))
       .def("__repr__", &dolfinx::geometry::BoundingBoxTree::str)
       .def(
