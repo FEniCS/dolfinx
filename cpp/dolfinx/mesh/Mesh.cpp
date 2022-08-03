@@ -223,8 +223,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Create submesh vertex index map
   std::pair<common::IndexMap, std::vector<int32_t>>
-      submesh_vertex_index_map_pair
-      = mesh_vertex_index_map->create_submap(submesh_owned_vertices);
+      submesh_vertex_index_map_pair = mesh_vertex_index_map->create_submap(
+          submesh_owned_vertices, submesh_vertices);
   auto submesh_vertex_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_vertex_index_map_pair.first));
 

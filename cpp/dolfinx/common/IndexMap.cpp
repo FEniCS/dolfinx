@@ -602,6 +602,173 @@ IndexMap::create_submap(const std::span<const std::int32_t>& indices) const
   }
 }
 //-----------------------------------------------------------------------------
+std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
+    const std::span<const std::int32_t>& indices,
+    const std::span<const std::int32_t>& connected_indices) const
+{
+  if (!indices.empty() and indices.back() >= this->size_local())
+  {
+    throw std::runtime_error(
+        "Unowned index detected when creating sub-IndexMap");
+  }
+
+  // --- Step 1: Compute new offset for this rank
+
+  std::int64_t local_size_new = indices.size();
+  std::int64_t offset_new = 0;
+  MPI_Request request_offset;
+  MPI_Iexscan(&local_size_new, &offset_new, 1, MPI_INT64_T, MPI_SUM,
+              _comm.comm(), &request_offset);
+
+  // --- Step 2: Send ghost indices to owning rank
+
+  // Build list of src ranks (ranks that own ghosts)
+  std::vector<int> src = this->owners();
+  std::sort(src.begin(), src.end());
+  src.erase(std::unique(src.begin(), src.end()), src.end());
+
+  // Determine destination ranks (ranks that ghost my indices), and sort
+  std::vector<int> dest
+      = dolfinx::MPI::compute_graph_edges_nbx(this->comm(), src);
+  std::sort(dest.begin(), dest.end());
+
+  std::vector<std::int64_t> recv_indices;
+  std::vector<std::size_t> ghost_buffer_pos;
+  std::vector<int> send_disp, recv_disp;
+  std::vector<std::int32_t> send_sizes, recv_sizes;
+  {
+    // Create neighbourhood comm (ghost -> owner)
+    MPI_Comm comm0;
+    MPI_Dist_graph_create_adjacent(
+        _comm.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
+        src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+
+    // Pack ghosts indices
+    std::vector<std::vector<std::int64_t>> send_data(src.size());
+    std::vector<std::vector<std::size_t>> pos_to_ghost(src.size());
+    for (std::size_t i = 0; i < _ghosts.size(); ++i)
+    {
+      auto it = std::lower_bound(src.begin(), src.end(), _owners[i]);
+      assert(it != src.end() and *it == _owners[i]);
+      int r = std::distance(src.begin(), it);
+      send_data[r].push_back(_ghosts[i]);
+      pos_to_ghost[r].push_back(i);
+    }
+
+    // Count number of ghosts per dest
+    std::transform(send_data.begin(), send_data.end(),
+                   std::back_inserter(send_sizes),
+                   [](auto& d) { return d.size(); });
+
+    // Build send buffer and ghost position to send buffer position
+    std::vector<std::int64_t> send_indices;
+    for (auto& d : send_data)
+      send_indices.insert(send_indices.end(), d.begin(), d.end());
+    for (auto& p : pos_to_ghost)
+      ghost_buffer_pos.insert(ghost_buffer_pos.end(), p.begin(), p.end());
+
+    // Send how many indices I ghost to each owner, and receive how many
+    // of my indices other ranks ghost
+    recv_sizes.resize(dest.size(), 0);
+    send_sizes.reserve(1);
+    recv_sizes.reserve(1);
+    MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT32_T, recv_sizes.data(),
+                          1, MPI_INT32_T, comm0);
+
+    // Prepare displacement vectors
+    send_disp.resize(src.size() + 1, 0);
+    recv_disp.resize(dest.size() + 1, 0);
+    std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                     std::next(send_disp.begin()));
+    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                     std::next(recv_disp.begin()));
+
+    // Send ghost indices to owner, and receive indices
+    recv_indices.resize(recv_disp.back());
+    MPI_Neighbor_alltoallv(send_indices.data(), send_sizes.data(),
+                           send_disp.data(), MPI_INT64_T, recv_indices.data(),
+                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                           comm0);
+
+    MPI_Comm_free(&comm0);
+  }
+
+  MPI_Wait(&request_offset, MPI_STATUS_IGNORE);
+
+  // --- Step 3: Check which received indexes (all of which I should
+  // own) are in the submap
+
+  // Build array for each received ghost that (i) contains the new
+  // submap index if it is retained, or (ii) set to -1 if it is not
+  // retained.
+  std::vector<std::int64_t> send_gidx;
+  send_gidx.reserve(recv_indices.size());
+  for (auto idx : recv_indices)
+  {
+    assert(idx - _local_range[0] >= 0);
+    assert(idx - _local_range[0] < _local_range[1]);
+    std::int32_t idx_local = idx - _local_range[0];
+
+    // Could avoid search by creating look-up array
+    auto it = std::lower_bound(indices.begin(), indices.end(), idx_local);
+    if (it != indices.end() and *it == idx_local)
+    {
+      std::size_t idx_local_new = std::distance(indices.begin(), it);
+      send_gidx.push_back(idx_local_new + offset_new);
+    }
+    else
+      send_gidx.push_back(-1);
+  }
+
+  // --- Step 4: Send new global indices from owner back to ranks that
+  // ghost the index
+
+  // Create neighbourhood comm (owner -> ghost)
+  MPI_Comm comm1;
+  MPI_Dist_graph_create_adjacent(_comm.comm(), src.size(), src.data(),
+                                 MPI_UNWEIGHTED, dest.size(), dest.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+
+  // Send index markers to ghosting ranks
+  std::vector<std::int64_t> recv_gidx(send_disp.back());
+  MPI_Neighbor_alltoallv(send_gidx.data(), recv_sizes.data(), recv_disp.data(),
+                         MPI_INT64_T, recv_gidx.data(), send_sizes.data(),
+                         send_disp.data(), MPI_INT64_T, comm1);
+
+  MPI_Comm_free(&comm1);
+
+  // --- Step 5: Unpack received data
+
+  std::vector<std::int64_t> ghosts;
+  std::vector<int> src_ranks;
+  std::vector<std::int32_t> new_to_old_ghost;
+  for (std::size_t i = 0; i < send_disp.size() - 1; ++i)
+  {
+    for (int j = send_disp[i]; j < send_disp[i + 1]; ++j)
+    {
+      if (std::int64_t idx = recv_gidx[j]; idx >= 0)
+      {
+        std::size_t p = ghost_buffer_pos[j];
+        ghosts.push_back(idx);
+        src_ranks.push_back(src[i]);
+        new_to_old_ghost.push_back(p);
+      }
+    }
+  }
+
+  if (_overlapping)
+  {
+    return {IndexMap(_comm.comm(), local_size_new, ghosts, src_ranks),
+            std::move(new_to_old_ghost)};
+  }
+  else
+  {
+    assert(new_to_old_ghost.empty());
+    return {IndexMap(_comm.comm(), local_size_new),
+            std::vector<std::int32_t>()};
+  }
+}
+//-----------------------------------------------------------------------------
 graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
 {
   const std::int64_t offset = _local_range[0];
