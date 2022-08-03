@@ -76,7 +76,8 @@ std::pair<std::int32_t, double> _compute_closest_entity(
     // If point cloud tree the exact distance is easy to compute
     if (tree.tdim() == 0)
     {
-      auto diff = stdex::submdspan(AB_span<2, 3>(tree.get_bbox(node).data()), 0,
+      std::array<double, 6> bbox_coord = tree.get_bbox(node);
+      auto diff = stdex::submdspan(AB_span<2, 3>(bbox_coord.data()), 0,
                                    stdex::full_extent);
       for (std::size_t k = 0; k < 3; ++k)
         diff[k] -= point[k];
@@ -324,9 +325,9 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       leaves = midpoint_tree.bbox(0);
       assert(is_leaf(leaves));
       initial_entity = leaves[0];
-      auto diff
-          = stdex::submdspan(AB_span<2, 3>(midpoint_tree.get_bbox(0).data()), 0,
-                             stdex::full_extent);
+      std::array<double, 6> bbox_coord = midpoint_tree.get_bbox(0);
+      auto diff = stdex::submdspan(AB_span<2, 3>(bbox_coord.data()), 0,
+                                   stdex::full_extent);
       for (std::size_t k = 0; k < 3; ++k)
         diff[k] -= points[3 * i + k];
       R2 = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
@@ -367,8 +368,8 @@ double geometry::compute_squared_distance_bbox(const std::array<double, 6>& b,
                                  auto dx = x - b;
                                  return dx > 0 ? 0 : dx * dx;
                                })
-         + std::transform_reduce(x.begin(), x.end(), std::next(b.begin(), 3), 0.0,
-                                 std::plus<>{},
+         + std::transform_reduce(x.begin(), x.end(), std::next(b.begin(), 3),
+                                 0.0, std::plus<>{},
                                  [](auto x, auto b)
                                  {
                                    auto dx = x - b;
