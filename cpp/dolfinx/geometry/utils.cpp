@@ -15,6 +15,7 @@
 #include <dolfinx/mesh/utils.h>
 
 using namespace dolfinx;
+
 namespace
 {
 //-----------------------------------------------------------------------------
@@ -145,10 +146,10 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
     else
     {
       // Check whether the point collides with child nodes (left and right)
-      AB_span<2, 3> bleft(tree.get_bbox(bbox[0]).data());
-      AB_span<2, 3> bright(tree.get_bbox(bbox[1]).data());
-      bool left = point_in_bbox(bleft, p);
-      bool right = point_in_bbox(bright, p);
+      std::array<double, 6> bleft = tree.get_bbox(bbox[0]);
+      std::array<double, 6> bright = tree.get_bbox(bbox[1]);
+      bool left = point_in_bbox(AB_span<2, 3>(bleft.data()), p);
+      bool right = point_in_bbox(AB_span<2, 3>(bright.data()), p);
       if (left && right)
       {
         // If the point collides with both child nodes, add the right node to
