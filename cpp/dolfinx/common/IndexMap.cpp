@@ -618,14 +618,6 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
         "Unowned index detected when creating sub-IndexMap");
   }
 
-  // --- Step 1: Compute new offset for this rank
-
-  std::int64_t local_size_new = indices.size();
-  std::int64_t offset_new = 0;
-  MPI_Request request_offset;
-  MPI_Iexscan(&local_size_new, &offset_new, 1, MPI_INT64_T, MPI_SUM,
-              _comm.comm(), &request_offset);
-
   // --- Step 2: Send ghost indices to owning rank
 
   // Build list of src ranks (ranks that own ghosts)
@@ -699,6 +691,13 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
     MPI_Comm_free(&comm0);
   }
 
+  // --- Step 1: Compute new offset for this rank
+
+  std::int64_t local_size_new = indices.size();
+  std::int64_t offset_new = 0;
+  MPI_Request request_offset;
+  MPI_Iexscan(&local_size_new, &offset_new, 1, MPI_INT64_T, MPI_SUM,
+              _comm.comm(), &request_offset);
   MPI_Wait(&request_offset, MPI_STATUS_IGNORE);
 
   // --- Step 3: Check which received indexes (all of which I should
