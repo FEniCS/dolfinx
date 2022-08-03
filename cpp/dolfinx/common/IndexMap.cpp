@@ -11,6 +11,8 @@
 #include <map>
 #include <numeric>
 
+#include <iostream>
+
 using namespace dolfinx;
 using namespace dolfinx::common;
 
@@ -606,6 +608,10 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
     const std::span<const std::int32_t>& indices,
     const std::span<const std::int32_t>& connected_indices) const
 {
+  const int rank = MPI::rank(comm());
+  std::stringstream ss;
+  ss << "rank " << rank << ":\n";
+
   if (!indices.empty() and indices.back() >= this->size_local())
   {
     throw std::runtime_error(
@@ -755,6 +761,8 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
       }
     }
   }
+
+  std::cout << ss.str() << "\n";
 
   if (_overlapping)
   {
