@@ -9,7 +9,7 @@ from mpi4py import MPI
 
 
 def generate_mesh_wire(radius_wire, l_dom, l_pml,
-                       in_wire_size, on_wire_size, bkg_size, scatt_size,
+                       in_wire_size, on_wire_size, scatt_size,
                        pml_size, au_tag, bkg_tag, pml_tag, scatt_tag):
 
     gmsh.initialize(sys.argv)
@@ -38,28 +38,36 @@ def generate_mesh_wire(radius_wire, l_dom, l_pml,
         gmsh.model.occ.addPlaneSurface([3, 2], tag=3)
 
         gmsh.model.occ.addRectangle(-l_dom / 2, -l_dom / 2, 0, l_dom, l_dom)
-        gmsh.model.occ.addRectangle(-l_pml / 2, -l_pml / 2, 0, l_pml, l_pml)
-
+        
         gmsh.model.occ.remove(dimTags=[(2, 4)], recursive=False)
-        gmsh.model.occ.remove(dimTags=[(2, 5)], recursive=False)
-
+        
         gmsh.model.occ.addPlaneSurface([4, 3], tag=4)
+        
+        delta_pml = (l_pml - l_dom)/2
 
-        gmsh.model.occ.addPlaneSurface([5, 4], tag=5)
+        gmsh.model.occ.addRectangle(-l_pml/2, l_dom/2, 0, delta_pml, delta_pml)
+        gmsh.model.occ.addRectangle(-l_pml/2, -l_pml/2, 0, delta_pml, delta_pml)
+        gmsh.model.occ.addRectangle(l_dom/2, l_dom/2, 0, delta_pml, delta_pml)
+        gmsh.model.occ.addRectangle(l_dom/2, -l_pml/2, 0, delta_pml, delta_pml)
+
+        gmsh.model.occ.addRectangle(-l_dom / 2, l_dom / 2, 0, l_dom, delta_pml)
+        gmsh.model.occ.addRectangle(-l_dom / 2, -l_pml / 2, 0, l_dom, delta_pml)
+        gmsh.model.occ.addRectangle(-l_pml / 2, -l_dom / 2, 0, delta_pml, l_dom)
+        gmsh.model.occ.addRectangle(l_dom / 2, -l_dom / 2, 0, delta_pml, l_dom)
 
         gmsh.model.occ.synchronize()
 
         gmsh.model.addPhysicalGroup(2, [1, 2], tag=au_tag)
         gmsh.model.addPhysicalGroup(2, [3, 4], tag=bkg_tag)
-        gmsh.model.addPhysicalGroup(2, [5], tag=pml_tag)
+        gmsh.model.addPhysicalGroup(2, [x for x in range(5, 13)], tag=pml_tag)
         gmsh.model.addPhysicalGroup(1, [3], tag=scatt_tag)
 
         gmsh.model.mesh.setSize([(0, 1)], size=in_wire_size)
         gmsh.model.mesh.setSize([(0, 2)], size=on_wire_size)
         gmsh.model.mesh.setSize([(0, 3)], size=scatt_size)
-        gmsh.model.mesh.setSize([(0, x) for x in range(4, 8)], size=bkg_size)
-        gmsh.model.mesh.setSize([(0, x) for x in range(8, 12)], size=pml_size)
+        gmsh.model.mesh.setSize([(0, x) for x in range(4, 40)], size=pml_size)
 
         gmsh.model.mesh.generate(2)
+        gmsh.write("mesh.msh")
 
         return gmsh.model

@@ -171,7 +171,7 @@ def pml_coordinates(x, alpha, k0, l_dom, l_pml):
 
 # +
 # Constants
-um = 10**-6  # micron
+um = 1  # micron
 nm = um * 10**-3  # nanometer
 epsilon_0 = 8.8541878128 * 10**-12
 mu_0 = 4 * np.pi * 10**-7
@@ -191,10 +191,10 @@ in_wire_size = mesh_factor * 6 * nm
 on_wire_size = mesh_factor * 3 * nm
 
 # Mesh size in the background
-bkg_size = mesh_factor * 20 * nm
+scatt_size = mesh_factor * 15 * nm
 
 # Mesh size at the boundary
-pml_size = mesh_factor * 20 * nm
+pml_size = mesh_factor * 15 * nm
 
 # Tags for the subdomains
 au_tag = 1
@@ -209,7 +209,7 @@ scatt_tag = 4
 # +
 model = generate_mesh_wire(
     radius_wire, l_dom, l_pml,
-    in_wire_size, on_wire_size, bkg_size, 0.8 * bkg_size, pml_size,
+    in_wire_size, on_wire_size, scatt_size, pml_size,
     au_tag, bkg_tag, pml_tag, scatt_tag)
 
 mesh, cell_tags, facet_tags = model_to_mesh(
