@@ -711,6 +711,26 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
   ss << "ghost_send_indices = " << xt::adapt(ghost_send_indices) << "\n";
   ss << "ghost_recv_indices = " << xt::adapt(ghost_recv_indices) << "\n";
 
+  std::vector<std::int32_t> owned_connected_indices;
+  std::vector<std::int32_t> owned_unconnected_indices;
+  for (std::int32_t index : indices)
+  {
+    if (std::find(connected_indices.begin(), connected_indices.end(), index)
+        != connected_indices.end())
+    {
+      owned_connected_indices.push_back(index);
+    }
+    else
+    {
+      owned_unconnected_indices.push_back(index);
+    }
+  }
+
+  ss << "owned_connected_indices = " << xt::adapt(owned_connected_indices)
+     << "\n";
+  ss << "owned_unconnected_indices = " << xt::adapt(owned_unconnected_indices)
+     << "\n";
+
   // --- Step 1: Compute new offset for this rank
 
   std::int64_t local_size_new = indices.size();
