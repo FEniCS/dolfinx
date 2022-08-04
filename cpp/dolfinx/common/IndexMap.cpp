@@ -645,12 +645,13 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
       = dolfinx::MPI::compute_graph_edges_nbx(this->comm(), src);
   std::sort(dest.begin(), dest.end());
 
-  std::vector<std::int64_t> send_indices;
-  // recv_indices will contain indices ghosted by other process
-  std::vector<std::int64_t> recv_indices;
+  // Ghost indices on this process
+  std::vector<std::int64_t> ghost_send_indices;
+  //  Indices owned by this process that are ghosted by other processes
+  std::vector<std::int64_t> ghost_recv_indices;
   std::vector<std::size_t> ghost_buffer_pos;
-  std::vector<int> send_disp, recv_disp;
-  std::vector<std::int32_t> send_sizes, recv_sizes;
+  std::vector<int> ghost_send_disp, ghost_recv_disp;
+  std::vector<std::int32_t> ghost_send_sizes, ghost_recv_sizes;
   {
     // Create neighbourhood comm (ghost -> owner)
     MPI_Comm comm0;
@@ -672,43 +673,43 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
 
     // Count number of ghosts per dest
     std::transform(send_data.begin(), send_data.end(),
-                   std::back_inserter(send_sizes),
+                   std::back_inserter(ghost_send_sizes),
                    [](auto& d) { return d.size(); });
 
     // Build send buffer and ghost position to send buffer position
     for (auto& d : send_data)
-      send_indices.insert(send_indices.end(), d.begin(), d.end());
+      ghost_send_indices.insert(ghost_send_indices.end(), d.begin(), d.end());
     for (auto& p : pos_to_ghost)
       ghost_buffer_pos.insert(ghost_buffer_pos.end(), p.begin(), p.end());
 
     // Send how many indices I ghost to each owner, and receive how many
     // of my indices other ranks ghost
-    recv_sizes.resize(dest.size(), 0);
-    send_sizes.reserve(1);
-    recv_sizes.reserve(1);
-    MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT32_T, recv_sizes.data(),
-                          1, MPI_INT32_T, comm0);
+    ghost_recv_sizes.resize(dest.size(), 0);
+    ghost_send_sizes.reserve(1);
+    ghost_recv_sizes.reserve(1);
+    MPI_Neighbor_alltoall(ghost_send_sizes.data(), 1, MPI_INT32_T,
+                          ghost_recv_sizes.data(), 1, MPI_INT32_T, comm0);
 
     // Prepare displacement vectors
-    send_disp.resize(src.size() + 1, 0);
-    recv_disp.resize(dest.size() + 1, 0);
-    std::partial_sum(send_sizes.begin(), send_sizes.end(),
-                     std::next(send_disp.begin()));
-    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                     std::next(recv_disp.begin()));
+    ghost_send_disp.resize(src.size() + 1, 0);
+    ghost_recv_disp.resize(dest.size() + 1, 0);
+    std::partial_sum(ghost_send_sizes.begin(), ghost_send_sizes.end(),
+                     std::next(ghost_send_disp.begin()));
+    std::partial_sum(ghost_recv_sizes.begin(), ghost_recv_sizes.end(),
+                     std::next(ghost_recv_disp.begin()));
 
     // Send ghost indices to owner, and receive indices
-    recv_indices.resize(recv_disp.back());
-    MPI_Neighbor_alltoallv(send_indices.data(), send_sizes.data(),
-                           send_disp.data(), MPI_INT64_T, recv_indices.data(),
-                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
-                           comm0);
+    ghost_recv_indices.resize(ghost_recv_disp.back());
+    MPI_Neighbor_alltoallv(ghost_send_indices.data(), ghost_send_sizes.data(),
+                           ghost_send_disp.data(), MPI_INT64_T,
+                           ghost_recv_indices.data(), ghost_recv_sizes.data(),
+                           ghost_recv_disp.data(), MPI_INT64_T, comm0);
 
     MPI_Comm_free(&comm0);
   }
 
-  ss << "send_indices = " << xt::adapt(send_indices) << "\n";
-  ss << "recv_indices = " << xt::adapt(recv_indices) << "\n";
+  ss << "ghost_send_indices = " << xt::adapt(ghost_send_indices) << "\n";
+  ss << "ghost_recv_indices = " << xt::adapt(ghost_recv_indices) << "\n";
 
   // --- Step 1: Compute new offset for this rank
 
@@ -726,8 +727,8 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
   // submap index if it is retained, or (ii) set to -1 if it is not
   // retained.
   std::vector<std::int64_t> send_gidx;
-  send_gidx.reserve(recv_indices.size());
-  for (auto idx : recv_indices)
+  send_gidx.reserve(ghost_recv_indices.size());
+  for (auto idx : ghost_recv_indices)
   {
     assert(idx - _local_range[0] >= 0);
     assert(idx - _local_range[0] < _local_range[1]);
@@ -756,10 +757,11 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
                                  MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
 
   // Send index markers to ghosting ranks
-  std::vector<std::int64_t> recv_gidx(send_disp.back());
-  MPI_Neighbor_alltoallv(send_gidx.data(), recv_sizes.data(), recv_disp.data(),
-                         MPI_INT64_T, recv_gidx.data(), send_sizes.data(),
-                         send_disp.data(), MPI_INT64_T, comm1);
+  std::vector<std::int64_t> recv_gidx(ghost_send_disp.back());
+  MPI_Neighbor_alltoallv(send_gidx.data(), ghost_recv_sizes.data(),
+                         ghost_recv_disp.data(), MPI_INT64_T, recv_gidx.data(),
+                         ghost_send_sizes.data(), ghost_send_disp.data(),
+                         MPI_INT64_T, comm1);
 
   MPI_Comm_free(&comm1);
 
@@ -774,14 +776,14 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
   std::vector<std::int64_t> ghosts;
   std::vector<int> src_ranks;
   std::vector<std::int32_t> new_to_old_ghost;
-  for (std::size_t i = 0; i < send_disp.size() - 1; ++i)
+  for (std::size_t i = 0; i < ghost_send_disp.size() - 1; ++i)
   {
-    for (int j = send_disp[i]; j < send_disp[i + 1]; ++j)
+    for (int j = ghost_send_disp[i]; j < ghost_send_disp[i + 1]; ++j)
     {
       if (std::int64_t idx = recv_gidx[j];
           idx >= 0
           and std::find(connected_indices_global.begin(),
-                        connected_indices_global.end(), send_indices[j])
+                        connected_indices_global.end(), ghost_send_indices[j])
                   != connected_indices_global.end())
       {
         std::size_t p = ghost_buffer_pos[j];
