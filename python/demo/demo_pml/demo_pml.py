@@ -35,8 +35,7 @@ from functools import partial
 from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from mesh_wire_pml import generate_mesh_wire
 
-import dolfinx
-from dolfinx import fem, plot
+from dolfinx import fem, mesh, plot
 from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
 from ufl import (FacetNormal, FiniteElement, Measure, SpatialCoordinate,
@@ -152,11 +151,11 @@ def curl_2d(a):
 def pml_coordinates(x, alpha, k0, l_dom, l_pml):
 
     return (x + 1j * alpha / k0 * x
-                     * (algebra.Abs(x) - l_dom / 2)
-                      / (l_pml / 2 - l_dom / 2)**2)
+            * (algebra.Abs(x) - l_dom / 2)
+            / (l_pml / 2 - l_dom / 2)**2)
 
 
-# The `inside_pml` function is a boolean that switch on the coordinate 
+# The `inside_pml` function is a boolean that switch on the coordinate
 # transformation inside the PML region.
 #
 # Next we define some mesh specific parameters:
@@ -204,7 +203,7 @@ model = generate_mesh_wire(
     in_wire_size, on_wire_size, scatt_size, pml_size,
     au_tag, bkg_tag, pml_tag, scatt_tag)
 
-mesh, cell_tags, facet_tags = model_to_mesh(
+domain, cell_tags, facet_tags = model_to_mesh(
     model, MPI.COMM_WORLD, 0, gdim=2)
 
 gmsh.finalize()
@@ -215,11 +214,11 @@ MPI.COMM_WORLD.barrier()
 # by plotting them with PyVista:
 
 if have_pyvista:
-    topology, cell_types, geometry = plot.create_vtk_mesh(mesh, 2)
+    topology, cell_types, geometry = plot.create_vtk_mesh(domain, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     pyvista.set_jupyter_backend("pythreejs")
     plotter = pyvista.Plotter()
-    num_local_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    num_local_cells = domain.topology.index_map(domain.topology.dim).size_local
     grid.cell_data["Marker"] = \
         cell_tags.values[cell_tags.indices < num_local_cells]
     grid.set_active_scalars("Marker")
@@ -248,8 +247,8 @@ theta = 0 * deg  # Angle of incidence of the background field
 #
 
 degree = 3
-curl_el = FiniteElement("N1curl", mesh.ufl_cell(), degree)
-V = fem.FunctionSpace(mesh, curl_el)
+curl_el = FiniteElement("N1curl", domain.ufl_cell(), degree)
+V = fem.FunctionSpace(domain, curl_el)
 
 # Next, we interpolate $\mathbf{E}_b$ into the function space $V$, define our
 # trial and test function, and the integration domains:
@@ -268,7 +267,7 @@ Es_3d = as_vector((Es[0], Es[1], 0))
 v_3d = as_vector((v[0], v[1], 0))
 
 # Measures for subdomains
-dx = Measure("dx", mesh, subdomain_data=cell_tags)
+dx = Measure("dx", domain, subdomain_data=cell_tags)
 dDom = dx((au_tag, bkg_tag))
 dPml_xy = dx(pml_tag)
 dPml_x = dx(pml_tag + 1)
@@ -291,7 +290,7 @@ eps_au = -1.0782 + 1j * 5.8089
 # for cells inside the wire, while it takes the value of the
 # background permittivity $\varepsilon_b$ in the background region:
 
-D = fem.FunctionSpace(mesh, ("DG", 0))
+D = fem.FunctionSpace(domain, ("DG", 0))
 eps = fem.Function(D)
 au_cells = cell_tags.find(au_tag)
 bkg_cells = cell_tags.find(bkg_tag)
@@ -337,17 +336,18 @@ eps.x.scatter_forward()
 # the `ufl.grad` operator on our PML coordinates:
 
 # +
-x = SpatialCoordinate(mesh)
+x = SpatialCoordinate(domain)
 alpha = 1
 x_pml = as_vector((pml_coordinates(x[0], alpha, k0, l_dom, l_pml), x[1]))
 y_pml = as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 xy_pml = as_vector((pml_coordinates(x[0], alpha, k0, l_dom, l_pml),
                     pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 
+
 def create_eps_mu(pml):
 
     J = grad(pml)
-    
+
     # Transform the 2x2 Jacobian into a 3x3 matrix.
     J = as_matrix(((J[0, 0], 0, 0),
                    (0, J[1, 1], 0),
@@ -357,6 +357,7 @@ def create_eps_mu(pml):
     eps = det(J) * A * eps_bkg * transpose(A)
     mu = inv(det(J) * A * 1 * transpose(A))
     return eps, mu
+
 
 eps_x, mu_x = create_eps_mu(x_pml)
 eps_y, mu_y = create_eps_mu(y_pml)
@@ -431,11 +432,11 @@ Esh = problem.solve()
 # function as a .bp folder:
 
 # +
-V_dg = fem.VectorFunctionSpace(mesh, ("DG", degree))
+V_dg = fem.VectorFunctionSpace(domain, ("DG", degree))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 
-with VTXWriter(mesh.comm, "Esh.bp", Esh_dg) as f:
+with VTXWriter(domain.comm, "Esh.bp", Esh_dg) as f:
     f.write(0.0)
 # -
 
@@ -449,8 +450,8 @@ if have_pyvista:
     V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
-    Esh_values[:, :mesh.topology.dim] = \
-        Esh_dg.x.array.reshape(V_x.shape[0], mesh.topology.dim).real
+    Esh_values[:, :domain.topology.dim] = \
+        Esh_dg.x.array.reshape(V_x.shape[0], domain.topology.dim).real
 
     V_grid.point_data["u"] = Esh_values
 
@@ -478,7 +479,7 @@ E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
 E_dg = fem.Function(V_dg)
 E_dg.interpolate(E)
 
-with VTXWriter(mesh.comm, "E.bp", E_dg) as f:
+with VTXWriter(domain.comm, "E.bp", E_dg) as f:
     f.write(0.0)
 # -
 
@@ -491,9 +492,9 @@ with VTXWriter(mesh.comm, "E.bp", E_dg) as f:
 # which in DOLFINx can be retrieved in this way:
 
 # ||E||
-lagr_el = FiniteElement("CG", mesh.ufl_cell(), 2)
+lagr_el = FiniteElement("CG", domain.ufl_cell(), 2)
 norm_func = sqrt(inner(Esh, Esh))
-V_normEsh = fem.FunctionSpace(mesh, lagr_el)
+V_normEsh = fem.FunctionSpace(domain, lagr_el)
 norm_expr = fem.Expression(norm_func, V_normEsh.element.interpolation_points())
 normEsh = fem.Function(V_normEsh)
 normEsh.interpolate(norm_expr)
@@ -531,16 +532,17 @@ I0 = 0.5 / Z0
 # Geometrical cross section of the wire
 gcs = 2 * radius_wire
 
-n = FacetNormal(mesh)
+n = FacetNormal(domain)
 n_3d = as_vector((n[0], n[1], 0))
 
 marker = fem.Function(D)
 scatt_facets = facet_tags.find(scatt_tag)
-incident_cells = dolfinx.mesh.compute_incident_entities(mesh, scatt_facets, mesh.topology.dim - 1, mesh.topology.dim)
+incident_cells = mesh.compute_incident_entities(domain, scatt_facets,
+                                                domain.topology.dim - 1, domain.topology.dim)
 
-midpoints = dolfinx.mesh.compute_midpoints(mesh, mesh.topology.dim, incident_cells)
-inner_cells = incident_cells[(midpoints[:, 0]**2 + 
-                              midpoints[:, 1]**2) < (0.8 * l_dom/2)**2]
+midpoints = mesh.compute_midpoints(domain, domain.topology.dim, incident_cells)
+inner_cells = incident_cells[(midpoints[:, 0]**2
+                              + midpoints[:, 1]**2) < (0.8 * l_dom / 2)**2]
 
 marker.x.array[inner_cells] = 1
 
@@ -552,19 +554,19 @@ Q = 0.5 * eps_au.imag * k0 * (inner(E_3d, E_3d)) / Z0 / n_bkg
 dAu = dx(au_tag)
 
 # Define integration facet for the scattering efficiency
-dS = Measure("dS", mesh, subdomain_data=facet_tags)
+dS = Measure("dS", domain, subdomain_data=facet_tags)
 
 # Normalized absorption efficiency
 q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / gcs / I0).real
 # Sum results from all MPI processes
-q_abs_fenics = mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+q_abs_fenics = domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
 q_sca_fenics_proc = (fem.assemble_scalar(
     fem.form((P('+') + P('-')) * dS(scatt_tag))) / gcs / I0).real
 
 # Sum results from all MPI processes
-q_sca_fenics = mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
+q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
 # Extinction efficiency
 q_ext_fenics = q_abs_fenics + q_sca_fenics
