@@ -151,13 +151,9 @@ def curl_2d(a):
 
 def pml_coordinates(x, alpha, k0, l_dom, l_pml):
 
-    inside_pml = [(sign(algebra.Abs(x[i]) - l_dom / 2) + 1) / 2
-                  for i in range(len(x))]
-
-    return as_vector([x[i] + 1j * alpha / k0 * x[i]
-                     * (algebra.Abs(x[i]) - l_dom / 2)
-                      / (l_pml / 2 - l_dom / 2)**2 * inside_pml[i]
-                      for i in range(len(x))])
+    return (x + 1j * alpha / k0 * x
+                     * (algebra.Abs(x) - l_dom / 2)
+                      / (l_pml / 2 - l_dom / 2)**2)
 
 
 # The `inside_pml` function is a boolean that switch on the coordinate 
@@ -274,7 +270,9 @@ v_3d = as_vector((v[0], v[1], 0))
 # Measures for subdomains
 dx = Measure("dx", mesh, subdomain_data=cell_tags)
 dDom = dx((au_tag, bkg_tag))
-dPml = dx((pml_tag, pml_tag + 1, pml_tag + 2))
+dPml_xy = dx(pml_tag)
+dPml_x = dx(pml_tag + 2)
+dPml_y = dx(pml_tag + 1)
 # -
 
 # Let's now define the relative permittivity $\varepsilon_m$
@@ -340,21 +338,30 @@ eps.x.scatter_forward()
 
 # +
 x = SpatialCoordinate(mesh)
-
 alpha = 1
-x_pml = pml_coordinates(x, alpha, k0, l_dom, l_pml)
-J_pml = grad(x_pml)
-# -
+x_pml = as_vector((pml_coordinates(x[0], alpha, k0, l_dom, l_pml), x[1]))
+y_pml = as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
+xy_pml = as_vector((pml_coordinates(x[0], alpha, k0, l_dom, l_pml),
+                    pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 
-# Since our mesh is 2D, the `ufl.grad` operator will
-# only act on the first two coordinates, giving back
-# a $2\times2$ matrix. Therefore we need to manually
-# expand our Jacobian into a $3\times3$ matrix:
+def create_eps_mu(pml):
 
-# Transform the 2x2 Jacobian into a 3x3 matrix.
-J_pml = as_matrix(((J_pml[0, 0], 0, 0),
-                   (0, J_pml[1, 1], 0),
+    J = grad(pml)
+    
+    # Transform the 2x2 Jacobian into a 3x3 matrix.
+    J = as_matrix(((J[0, 0], 0, 0),
+                   (0, J[1, 1], 0),
                    (0, 0, 1)))
+
+    A = inv(J)
+    eps = det(J) * A * eps_bkg * transpose(A)
+    mu = inv(det(J) * A * 1 * transpose(A))
+    return eps, mu
+
+eps_x, mu_x = create_eps_mu(x_pml)
+eps_y, mu_y = create_eps_mu(y_pml)
+eps_xy, mu_xy = create_eps_mu(xy_pml)
+# -
 
 # Finally, $\boldsymbol{\varepsilon}_{pml}$ and
 # $\boldsymbol{\mu}_{pml}$ can be calculated with
@@ -374,10 +381,6 @@ J_pml = as_matrix(((J_pml[0, 0], 0, 0),
 #
 # with $A^{-1}=\operatorname{det}(\mathbf{J})$. In DOLFINX,
 # we can implement these formula in this way:
-
-A_pml = inv(J_pml)
-eps_pml = det(J_pml) * A_pml * eps_bkg * transpose(A_pml)
-mu_pml = inv(det(J_pml) * A_pml * 1 * transpose(A_pml))
 
 # The final weak form in the PML region is:
 #
@@ -408,8 +411,12 @@ mu_pml = inv(det(J_pml) * A_pml * 1 * transpose(A_pml))
 F = - inner(curl_2d(Es), curl_2d(v)) * dDom \
     + eps * k0 ** 2 * inner(Es, v) * dDom \
     + k0 ** 2 * (eps - eps_bkg) * inner(Eb, v) * dDom \
-    - inner(mu_pml * curl_2d(Es), curl_2d(v)) * dPml \
-    + k0 ** 2 * inner(eps_pml * Es_3d, v_3d) * dPml
+    - inner(mu_x * curl_2d(Es), curl_2d(v)) * dPml_x \
+    - inner(mu_y * curl_2d(Es), curl_2d(v)) * dPml_y \
+    - inner(mu_xy * curl_2d(Es), curl_2d(v)) * dPml_xy \
+    + k0 ** 2 * inner(eps_x * Es_3d, v_3d) * dPml_x \
+    + k0 ** 2 * inner(eps_y * Es_3d, v_3d) * dPml_y \
+    + k0 ** 2 * inner(eps_xy * Es_3d, v_3d) * dPml_xy
 
 a, L = lhs(F), rhs(F)
 
