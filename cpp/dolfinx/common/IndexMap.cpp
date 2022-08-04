@@ -606,7 +606,9 @@ IndexMap::create_submap(const std::span<const std::int32_t>& indices) const
   }
 }
 //-----------------------------------------------------------------------------
-std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
+std::pair<std::vector<std::int32_t>,
+          std::pair<IndexMap, std::vector<std::int32_t>>>
+IndexMap::create_submap(
     const std::span<const std::int32_t>& indices,
     const std::span<const std::int32_t>& connected_indices) const
 {
@@ -916,14 +918,17 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
 
   if (_overlapping)
   {
-    return {IndexMap(_comm.comm(), local_size_new, ghosts, src_ranks),
-            std::move(new_to_old_ghost)};
+    return std::make_pair(std::move(owned_connected_indices),
+                          std::make_pair(IndexMap(_comm.comm(), local_size_new,
+                                                  ghosts, src_ranks),
+                                         std::move(new_to_old_ghost)));
   }
   else
   {
     assert(new_to_old_ghost.empty());
-    return {IndexMap(_comm.comm(), local_size_new),
-            std::vector<std::int32_t>()};
+    return std::make_pair(std::move(owned_connected_indices),
+                          std::make_pair(IndexMap(_comm.comm(), local_size_new),
+                                         std::vector<std::int32_t>()));
   }
 }
 //-----------------------------------------------------------------------------

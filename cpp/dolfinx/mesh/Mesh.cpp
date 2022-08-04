@@ -217,14 +217,12 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // Get the vertices in the submesh owned by this process
   auto mesh_vertex_index_map = mesh.topology().index_map(0);
   assert(mesh_vertex_index_map);
-  std::vector<int32_t> submesh_owned_vertices
-      = dolfinx::common::compute_owned_indices(submesh_vertices,
-                                               *mesh_vertex_index_map);
+  std::vector<int32_t> submap_vertices = dolfinx::common::compute_owned_indices(
+      submesh_vertices, *mesh_vertex_index_map);
 
   // Create submesh vertex index map
-  std::pair<common::IndexMap, std::vector<int32_t>>
-      submesh_vertex_index_map_pair = mesh_vertex_index_map->create_submap(
-          submesh_owned_vertices, submesh_vertices);
+  auto [submesh_owned_vertices, submesh_vertex_index_map_pair]
+      = mesh_vertex_index_map->create_submap(submap_vertices, submesh_vertices);
   auto submesh_vertex_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_vertex_index_map_pair.first));
 
