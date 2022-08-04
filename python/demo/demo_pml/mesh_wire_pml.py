@@ -36,57 +36,88 @@ def generate_mesh_wire(radius_wire, l_dom, l_pml,
         gmsh.model.occ.addCurveLoop([c3], tag=c3)
         gmsh.model.occ.addPlaneSurface([c3], tag=c3)
 
-        r0 = gmsh.model.occ.addRectangle(-l_dom / 2, -l_dom / 2, 0, l_dom, l_dom)
-        inclusive_rectangle, _ = gmsh.model.occ.fragment([(dim, r0)], [(dim, c3)])
+        r0 = gmsh.model.occ.addRectangle(-l_dom / 2, -l_dom / 2, 0,
+                                         l_dom, l_dom)
+        inclusive_rectangle, _ = gmsh.model.occ.fragment([(dim, r0)],
+                                                         [(dim, c3)])
 
         delta_pml = (l_pml - l_dom) / 2
 
-        separate_rectangle, _ = gmsh.model.occ.cut(inclusive_rectangle, wire, removeTool=False)
+        separate_rectangle, _ = gmsh.model.occ.cut(inclusive_rectangle, wire,
+                                                   removeTool=False)
         _, physical_domain = gmsh.model.occ.fragment(separate_rectangle, wire)
 
-        bkg_tags = [tag[0] for tag in physical_domain[:len(separate_rectangle)]]
-        wire_tags = [tag[0] for tag in physical_domain[len(
-            separate_rectangle):len(inclusive_rectangle) + len(wire)]]
+        bkg_tags = [tag[0] for tag in
+                    physical_domain[:len(separate_rectangle)]]
+
+        wire_tags = [tag[0] for tag in
+                     physical_domain[len(separate_rectangle):
+                                     len(inclusive_rectangle) + len(wire)]]
 
         # Corner PMLS
-        pml1 = gmsh.model.occ.addRectangle(-l_pml / 2, l_dom / 2, 0, delta_pml, delta_pml)
-        pml2 = gmsh.model.occ.addRectangle(-l_pml / 2, -l_pml / 2, 0, delta_pml, delta_pml)
-        pml3 = gmsh.model.occ.addRectangle(l_dom / 2, l_dom / 2, 0, delta_pml, delta_pml)
-        pml4 = gmsh.model.occ.addRectangle(l_dom / 2, -l_pml / 2, 0, delta_pml, delta_pml)
+        pml1 = gmsh.model.occ.addRectangle(-l_pml / 2, l_dom / 2, 0,
+                                           delta_pml, delta_pml)
+        pml2 = gmsh.model.occ.addRectangle(-l_pml / 2, -l_pml / 2, 0,
+                                           delta_pml, delta_pml)
+        pml3 = gmsh.model.occ.addRectangle(l_dom / 2, l_dom / 2, 0,
+                                           delta_pml, delta_pml)
+        pml4 = gmsh.model.occ.addRectangle(l_dom / 2, -l_pml / 2, 0,
+                                           delta_pml, delta_pml)
+
         corner_pmls = [(dim, pml1), (dim, pml2), (dim, pml3), (dim, pml4)]
         # X pmls
-        pml5 = gmsh.model.occ.addRectangle(-l_pml / 2, -l_dom / 2, 0, delta_pml, l_dom)
-        pml6 = gmsh.model.occ.addRectangle(l_dom / 2, -l_dom / 2, 0, delta_pml, l_dom)
+        pml5 = gmsh.model.occ.addRectangle(-l_pml / 2, -l_dom / 2, 0,
+                                           delta_pml, l_dom)
+        pml6 = gmsh.model.occ.addRectangle(l_dom / 2, -l_dom / 2, 0,
+                                           delta_pml, l_dom)
+
         x_pmls = [(dim, pml5), (dim, pml6)]
         # Y pmls
-        pml7 = gmsh.model.occ.addRectangle(-l_dom / 2, l_dom / 2, 0, l_dom, delta_pml)
-        pml8 = gmsh.model.occ.addRectangle(-l_dom / 2, -l_pml / 2, 0, l_dom, delta_pml)
+        pml7 = gmsh.model.occ.addRectangle(-l_dom / 2, l_dom / 2, 0,
+                                           l_dom, delta_pml)
+        pml8 = gmsh.model.occ.addRectangle(-l_dom / 2, -l_pml / 2, 0,
+                                           l_dom, delta_pml)
         y_pmls = [(dim, pml7), (dim, pml8)]
-        _, surface_map = gmsh.model.occ.fragment(bkg_tags + wire_tags, corner_pmls + x_pmls + y_pmls)
+        _, surface_map = gmsh.model.occ.fragment(bkg_tags + wire_tags,
+                                                 corner_pmls + x_pmls + y_pmls)
 
         gmsh.model.occ.synchronize()
 
         bkg_group = [tag[0][1] for tag in surface_map[:len(bkg_tags)]]
         gmsh.model.addPhysicalGroup(dim, bkg_group, tag=bkg_tag)
-        wire_group = [tag[0][1] for tag in surface_map[len(bkg_tags):len(bkg_tags + wire_tags)]]
+        wire_group = [tag[0][1] for tag in
+                      surface_map[len(bkg_tags):
+                                  len(bkg_tags + wire_tags)]]
+
         gmsh.model.addPhysicalGroup(dim, wire_group, tag=au_tag)
 
         corner_group = [tag[0][1]
-                        for tag in surface_map[len(bkg_tags + wire_tags):len(bkg_tags + wire_tags + corner_pmls)]]
+                        for tag in
+                        surface_map[len(bkg_tags + wire_tags):
+                                    len(bkg_tags + wire_tags + corner_pmls)]]
         gmsh.model.addPhysicalGroup(dim, corner_group, tag=pml_tag)
 
         x_group = [tag[0][1]
-                   for tag in surface_map[len(bkg_tags + wire_tags + corner_pmls):len(bkg_tags + wire_tags + corner_pmls + x_pmls)]]
+                   for tag in
+                   surface_map[
+                    len(bkg_tags + wire_tags + corner_pmls):
+                    len(bkg_tags + wire_tags + corner_pmls + x_pmls)]]
+
         gmsh.model.addPhysicalGroup(dim, x_group, tag=pml_tag + 1)
 
         y_group = [tag[0][1]
-                   for tag in surface_map[len(bkg_tags + wire_tags + corner_pmls + x_pmls):len(bkg_tags + wire_tags + corner_pmls + x_pmls + y_pmls)]]
+                   for tag in 
+                   surface_map[
+                    len(bkg_tags + wire_tags + corner_pmls + x_pmls):
+                    len(bkg_tags + wire_tags + corner_pmls + x_pmls + y_pmls)]]
+
         gmsh.model.addPhysicalGroup(dim, y_group, tag=pml_tag + 2)
 
         # Marker interior surface in bkg group
         boundaries = []
         for tag in bkg_group:
-            boundary_pairs = gmsh.model.get_boundary([(dim, tag)], oriented=False)
+            boundary_pairs = gmsh.model.get_boundary([(dim, tag)], 
+                                                     oriented=False)
             boundaries.append([pair[1] for pair in boundary_pairs])
         interior_boundary = reduce(intersect1d, boundaries)
         gmsh.model.addPhysicalGroup(dim - 1, interior_boundary, tag=scatt_tag)

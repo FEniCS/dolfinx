@@ -99,7 +99,6 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y
 # $$
 #
-# The `BackgroundElectricField` class below implemeprint(fem.assemble_scalar(fem.form(1*ds(domain=mesh))))$.
 
 # +
 
@@ -538,7 +537,8 @@ n_3d = as_vector((n[0], n[1], 0))
 marker = fem.Function(D)
 scatt_facets = facet_tags.find(scatt_tag)
 incident_cells = mesh.compute_incident_entities(domain, scatt_facets,
-                                                domain.topology.dim - 1, domain.topology.dim)
+                                                domain.topology.dim - 1,
+                                                domain.topology.dim)
 
 midpoints = mesh.compute_midpoints(domain, domain.topology.dim, incident_cells)
 inner_cells = incident_cells[(midpoints[:, 0]**2
