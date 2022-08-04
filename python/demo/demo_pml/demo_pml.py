@@ -535,8 +535,6 @@ midpoints = dolfinx.mesh.compute_midpoints(mesh, mesh.topology.dim, incident_cel
 inner_cells = incident_cells[(midpoints[:, 0]**2 + 
                               midpoints[:, 1]**2) < (0.8 * l_dom/2)**2]
 
-print(incident_cells)
-print(midpoints)
 marker.x.array[inner_cells] = 1
 
 # Quantities for the calculation of efficiencies
@@ -548,7 +546,6 @@ dAu = dx(au_tag)
 
 # Define integration facet for the scattering efficiency
 dS = Measure("dS", mesh, subdomain_data=facet_tags)
-dScatt = dS(scatt_tag)
 
 # Normalized absorption efficiency
 q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / gcs / I0).real
@@ -557,7 +554,7 @@ q_abs_fenics = mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
 q_sca_fenics_proc = (fem.assemble_scalar(
-    fem.form((P('+') + P('-')) * dScatt)) / gcs / I0).real
+    fem.form((P('+') + P('-')) * dS(scatt_tag))) / gcs / I0).real
 
 # Sum results from all MPI processes
 q_sca_fenics = mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
