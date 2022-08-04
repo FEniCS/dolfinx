@@ -99,6 +99,8 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y
 # $$
 #
+# The function `background_field` below implements this analytical
+# formula:
 
 # +
 
@@ -154,9 +156,6 @@ def pml_coordinates(x, alpha, k0, l_dom, l_pml):
             / (l_pml / 2 - l_dom / 2)**2)
 
 
-# The `inside_pml` function is a boolean that switch on the coordinate
-# transformation inside the PML region.
-#
 # Next we define some mesh specific parameters:
 
 # +
@@ -230,6 +229,10 @@ if have_pyvista:
         figure = plotter.screenshot("wire_mesh_pml.png",
                                     window_size=[800, 800])
 
+# In the image, we can distinguish 5 different subdomains: one for the gold
+# wire (`au_tag`), one for the background (`bkg_tag`), one for the
+# PML corners (`pml_tag`), one for the PML rectangles along $x$
+# (`pml_tag + 1`), and one for the PML rectangles along $y$ (`pml_tag + 2`).
 # Now we define some other problem specific parameters:
 
 wl0 = 0.4 * um  # Wavelength of the background field
