@@ -633,6 +633,10 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
         "Unowned index detected when creating sub-IndexMap");
   }
 
+  std::vector<std::int64_t> connected_indices_global(connected_indices.size(),
+                                                     0);
+  local_to_global(connected_indices, connected_indices_global);
+
   // --- Step 2: Send ghost indices to owning rank
 
   // Build list of src ranks (ranks that own ghosts)
@@ -647,8 +651,10 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
 
   // Ghost indices on this process
   std::vector<std::int64_t> ghost_send_indices;
+  std::vector<std::int32_t> ghost_connected_send_indices;
   //  Indices owned by this process that are ghosted by other processes
   std::vector<std::int64_t> ghost_recv_indices;
+  std::vector<std::int32_t> ghost_connected_recv_indices;
   std::vector<std::size_t> ghost_buffer_pos;
   std::vector<int> ghost_send_disp, ghost_recv_disp;
   std::vector<std::int32_t> ghost_send_sizes, ghost_recv_sizes;
@@ -681,6 +687,13 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
       ghost_send_indices.insert(ghost_send_indices.end(), d.begin(), d.end());
     for (auto& p : pos_to_ghost)
       ghost_buffer_pos.insert(ghost_buffer_pos.end(), p.begin(), p.end());
+    for (std::int64_t ghost_index : ghost_send_indices)
+    {
+      ghost_connected_send_indices.push_back(
+          std::find(connected_indices_global.begin(),
+                    connected_indices_global.end(), ghost_index)
+          != connected_indices_global.end());
+    }
 
     // Send how many indices I ghost to each owner, and receive how many
     // of my indices other ranks ghost
@@ -705,8 +718,20 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
                            ghost_recv_indices.data(), ghost_recv_sizes.data(),
                            ghost_recv_disp.data(), MPI_INT64_T, comm0);
 
+    ghost_connected_recv_indices.resize(ghost_recv_disp.back());
+    MPI_Neighbor_alltoallv(ghost_connected_send_indices.data(),
+                           ghost_send_sizes.data(), ghost_send_disp.data(),
+                           MPI_INT32_T, ghost_connected_recv_indices.data(),
+                           ghost_recv_sizes.data(), ghost_recv_disp.data(),
+                           MPI_INT32_T, comm0);
+
     MPI_Comm_free(&comm0);
   }
+
+  ss << "ghost_connected_send_indices = "
+     << xt::adapt(ghost_connected_send_indices) << "\n";
+  ss << "ghost_connected_recv_indices = "
+     << xt::adapt(ghost_connected_recv_indices) << "\n";
 
   ss << "ghost_send_indices = " << xt::adapt(ghost_send_indices) << "\n";
   ss << "ghost_recv_indices = " << xt::adapt(ghost_recv_indices) << "\n";
@@ -788,10 +813,6 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
   ss << "recv_gidx = " << xt::adapt(recv_gidx) << "\n";
 
   // --- Step 5: Unpack received data
-
-  std::vector<std::int64_t> connected_indices_global(connected_indices.size(),
-                                                     0);
-  local_to_global(connected_indices, connected_indices_global);
 
   std::vector<std::int64_t> ghosts;
   std::vector<int> src_ranks;
