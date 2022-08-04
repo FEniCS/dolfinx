@@ -35,6 +35,7 @@ from functools import partial
 from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from mesh_wire_pml import generate_mesh_wire
 
+import dolfinx
 from dolfinx import fem, plot
 from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
@@ -99,12 +100,7 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y
 # $$
 #
-# The `BackgroundElectricField` class below implements such function.
-# The inputs to the function are the angle $\theta$, the background
-# refractive index $n_b$ and the vacuum wavevector $k_0$. The
-# function returns the expression $ \mathbf{E}_b = -\sin
-# \theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
-# + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y$.
+# The `BackgroundElectricField` class below implemeprint(fem.assemble_scalar(fem.form(1*ds(domain=mesh))))$.
 
 # +
 
@@ -199,8 +195,8 @@ pml_size = mesh_factor * 15 * nm
 # Tags for the subdomains
 au_tag = 1
 bkg_tag = 2
-pml_tag = 3
-scatt_tag = 4
+scatt_tag = 3
+pml_tag = 4
 # -
 
 # We generate the mesh using GMSH and convert it to a
@@ -278,7 +274,7 @@ v_3d = as_vector((v[0], v[1], 0))
 # Measures for subdomains
 dx = Measure("dx", mesh, subdomain_data=cell_tags)
 dDom = dx((au_tag, bkg_tag))
-dPml = dx(pml_tag)
+dPml = dx((pml_tag, pml_tag + 1, pml_tag + 2))
 # -
 
 # Let's now define the relative permittivity $\varepsilon_m$
@@ -531,8 +527,20 @@ gcs = 2 * radius_wire
 n = FacetNormal(mesh)
 n_3d = as_vector((n[0], n[1], 0))
 
+marker = fem.Function(D)
+scatt_facets = facet_tags.find(scatt_tag)
+incident_cells = dolfinx.mesh.compute_incident_entities(mesh, scatt_facets, mesh.topology.dim - 1, mesh.topology.dim)
+
+midpoints = dolfinx.mesh.compute_midpoints(mesh, mesh.topology.dim, incident_cells)
+inner_cells = incident_cells[(midpoints[:, 0]**2 + 
+                              midpoints[:, 1]**2) < (0.8 * l_dom/2)**2]
+
+print(incident_cells)
+print(midpoints)
+marker.x.array[inner_cells] = 1
+
 # Quantities for the calculation of efficiencies
-P = 0.5 * inner(cross(Esh_3d, conj(Hsh_3d)), n_3d)
+P = 0.5 * inner(cross(Esh_3d, conj(Hsh_3d)), n_3d) * marker
 Q = 0.5 * eps_au.imag * k0 * (inner(E_3d, E_3d)) / Z0 / n_bkg
 
 # Define integration domain for the wire
@@ -549,7 +557,7 @@ q_abs_fenics = mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
 q_sca_fenics_proc = (fem.assemble_scalar(
-    fem.form((P('+') - P('-')) / 2 * dScatt)) / gcs / I0).real
+    fem.form((P('+') + P('-')) * dScatt)) / gcs / I0).real
 
 # Sum results from all MPI processes
 q_sca_fenics = mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
