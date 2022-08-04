@@ -637,6 +637,26 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
                                                      0);
   local_to_global(connected_indices, connected_indices_global);
 
+  std::vector<std::int32_t> owned_connected_indices;
+  std::vector<std::int32_t> owned_unconnected_indices;
+  for (std::int32_t index : indices)
+  {
+    if (std::find(connected_indices.begin(), connected_indices.end(), index)
+        != connected_indices.end())
+    {
+      owned_connected_indices.push_back(index);
+    }
+    else
+    {
+      owned_unconnected_indices.push_back(index);
+    }
+  }
+
+  ss << "owned_connected_indices = " << xt::adapt(owned_connected_indices)
+     << "\n";
+  ss << "owned_unconnected_indices = " << xt::adapt(owned_unconnected_indices)
+     << "\n";
+
   // --- Step 2: Send ghost indices to owning rank
 
   // Build list of src ranks (ranks that own ghosts)
@@ -734,26 +754,6 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
   ss << "ghost_indices_recv = " << xt::adapt(ghost_indices_recv) << "\n";
   ss << "ghost_connected_indices_recv = "
      << xt::adapt(ghost_connected_indices_recv) << "\n";
-
-  std::vector<std::int32_t> owned_connected_indices;
-  std::vector<std::int32_t> owned_unconnected_indices;
-  for (std::int32_t index : indices)
-  {
-    if (std::find(connected_indices.begin(), connected_indices.end(), index)
-        != connected_indices.end())
-    {
-      owned_connected_indices.push_back(index);
-    }
-    else
-    {
-      owned_unconnected_indices.push_back(index);
-    }
-  }
-
-  ss << "owned_connected_indices = " << xt::adapt(owned_connected_indices)
-     << "\n";
-  ss << "owned_unconnected_indices = " << xt::adapt(owned_unconnected_indices)
-     << "\n";
 
   // --- Step 1: Compute new offset for this rank
 
