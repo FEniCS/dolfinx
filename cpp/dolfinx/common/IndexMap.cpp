@@ -830,12 +830,19 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
 
   // --- Step 1: Compute new offset for this rank
 
-  std::int64_t local_size_new = indices.size();
+  std::int64_t local_size_new = indices.size() + num_ghosts_to_take_ownership
+                                - owned_unconnected_indices.size();
   std::int64_t offset_new = 0;
   MPI_Request request_offset;
   MPI_Iexscan(&local_size_new, &offset_new, 1, MPI_INT64_T, MPI_SUM,
               _comm.comm(), &request_offset);
   MPI_Wait(&request_offset, MPI_STATUS_IGNORE);
+
+  // TODO Add indices to take ownership to owned_connected_indices
+  if (rank == 2)
+  {
+    owned_connected_indices.push_back(6);
+  }
 
   // --- Step 3: Check which received indexes (all of which I should
   // own) are in the submap
@@ -852,10 +859,12 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
     std::int32_t idx_local = idx - _local_range[0];
 
     // Could avoid search by creating look-up array
-    auto it = std::lower_bound(indices.begin(), indices.end(), idx_local);
-    if (it != indices.end() and *it == idx_local)
+    auto it = std::lower_bound(owned_connected_indices.begin(),
+                               owned_connected_indices.end(), idx_local);
+    if (it != owned_connected_indices.end() and *it == idx_local)
     {
-      std::size_t idx_local_new = std::distance(indices.begin(), it);
+      std::size_t idx_local_new
+          = std::distance(owned_connected_indices.begin(), it);
       send_gidx.push_back(idx_local_new + offset_new);
     }
     else
@@ -895,7 +904,7 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
       {
         std::size_t p = ghost_buffer_pos[j];
         ghosts.push_back(idx);
-        src_ranks.push_back(src[i]);
+        src_ranks.push_back(new_owners_recv[j]);
         new_to_old_ghost.push_back(p);
       }
     }
