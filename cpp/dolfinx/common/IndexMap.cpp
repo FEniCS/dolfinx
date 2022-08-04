@@ -822,6 +822,12 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
 
   ss << "new_owners_recv = " << xt::adapt(new_owners_recv) << "\n";
 
+  int num_ghosts_to_take_ownership
+      = std::count(new_owners_recv.begin(), new_owners_recv.end(), rank);
+
+  ss << "num_ghosts_to_take_ownership = " << num_ghosts_to_take_ownership
+     << "\n";
+
   // --- Step 1: Compute new offset for this rank
 
   std::int64_t local_size_new = indices.size();
