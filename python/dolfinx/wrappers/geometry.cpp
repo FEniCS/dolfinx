@@ -94,7 +94,7 @@ void geometry(py::module& m)
       [](const dolfinx::geometry::BoundingBoxTree& treeA,
          const dolfinx::geometry::BoundingBoxTree& treeB)
       {
-        const std::vector<std::int32_t>& coll
+        std::vector<std::int32_t> coll
             = dolfinx::geometry::compute_collisions(treeA, treeB);
 
         std::array<py::ssize_t, 2> shape = {py::ssize_t(coll.size() / 2), 2};
