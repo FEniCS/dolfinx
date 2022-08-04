@@ -12,6 +12,8 @@
 #include <numeric>
 
 #include <iostream>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xio.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::common;
@@ -612,6 +614,19 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
   std::stringstream ss;
   ss << "rank " << rank << ":\n";
 
+  ss << "indices = {";
+  for (auto index : indices)
+  {
+    ss << index << " ";
+  }
+  ss << "}\n";
+  ss << "connected_indices = {";
+  for (auto index : connected_indices)
+  {
+    ss << index << " ";
+  }
+  ss << "}\n";
+
   if (!indices.empty() and indices.back() >= this->size_local())
   {
     throw std::runtime_error(
@@ -630,6 +645,7 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
       = dolfinx::MPI::compute_graph_edges_nbx(this->comm(), src);
   std::sort(dest.begin(), dest.end());
 
+  // recv_indices will contain indices ghosted by other process
   std::vector<std::int64_t> recv_indices;
   std::vector<std::size_t> ghost_buffer_pos;
   std::vector<int> send_disp, recv_disp;
@@ -690,6 +706,8 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
 
     MPI_Comm_free(&comm0);
   }
+
+  ss << "recv_indices = " << xt::adapt(recv_indices) << "\n";
 
   // --- Step 1: Compute new offset for this rank
 
