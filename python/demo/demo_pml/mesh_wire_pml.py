@@ -55,12 +55,12 @@ def generate_mesh_wire(radius_wire, l_dom, l_pml,
         pml4 = gmsh.model.occ.addRectangle(l_dom / 2, -l_pml / 2, 0, delta_pml, delta_pml)
         corner_pmls = [(dim, pml1), (dim, pml2), (dim, pml3), (dim, pml4)]
         # X pmls
-        pml5 = gmsh.model.occ.addRectangle(-l_dom / 2, l_dom / 2, 0, l_dom, delta_pml)
-        pml6 = gmsh.model.occ.addRectangle(-l_dom / 2, -l_pml / 2, 0, l_dom, delta_pml)
+        pml5 = gmsh.model.occ.addRectangle(-l_pml / 2, -l_dom / 2, 0, delta_pml, l_dom)
+        pml6 = gmsh.model.occ.addRectangle(l_dom / 2, -l_dom / 2, 0, delta_pml, l_dom)
         x_pmls = [(dim, pml5), (dim, pml6)]
         # Y pmls
-        pml7 = gmsh.model.occ.addRectangle(-l_pml / 2, -l_dom / 2, 0, delta_pml, l_dom)
-        pml8 = gmsh.model.occ.addRectangle(l_dom / 2, -l_dom / 2, 0, delta_pml, l_dom)
+        pml7 = gmsh.model.occ.addRectangle(-l_dom / 2, l_dom / 2, 0, l_dom, delta_pml)
+        pml8 = gmsh.model.occ.addRectangle(-l_dom / 2, -l_pml / 2, 0, l_dom, delta_pml)
         y_pmls = [(dim, pml7), (dim, pml8)]
         _, surface_map = gmsh.model.occ.fragment(bkg_tags + wire_tags, corner_pmls + x_pmls + y_pmls)
 

@@ -271,8 +271,8 @@ v_3d = as_vector((v[0], v[1], 0))
 dx = Measure("dx", mesh, subdomain_data=cell_tags)
 dDom = dx((au_tag, bkg_tag))
 dPml_xy = dx(pml_tag)
-dPml_x = dx(pml_tag + 2)
-dPml_y = dx(pml_tag + 1)
+dPml_x = dx(pml_tag + 1)
+dPml_y = dx(pml_tag + 2)
 # -
 
 # Let's now define the relative permittivity $\varepsilon_m$
