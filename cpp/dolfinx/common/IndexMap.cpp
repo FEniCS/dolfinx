@@ -645,6 +645,7 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
       = dolfinx::MPI::compute_graph_edges_nbx(this->comm(), src);
   std::sort(dest.begin(), dest.end());
 
+  std::vector<std::int64_t> send_indices;
   // recv_indices will contain indices ghosted by other process
   std::vector<std::int64_t> recv_indices;
   std::vector<std::size_t> ghost_buffer_pos;
@@ -675,7 +676,6 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
                    [](auto& d) { return d.size(); });
 
     // Build send buffer and ghost position to send buffer position
-    std::vector<std::int64_t> send_indices;
     for (auto& d : send_data)
       send_indices.insert(send_indices.end(), d.begin(), d.end());
     for (auto& p : pos_to_ghost)
@@ -707,6 +707,7 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
     MPI_Comm_free(&comm0);
   }
 
+  ss << "send_indices = " << xt::adapt(send_indices) << "\n";
   ss << "recv_indices = " << xt::adapt(recv_indices) << "\n";
 
   // --- Step 1: Compute new offset for this rank
@@ -743,6 +744,8 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
       send_gidx.push_back(-1);
   }
 
+  ss << "send_gidx = " << xt::adapt(send_gidx) << "\n";
+
   // --- Step 4: Send new global indices from owner back to ranks that
   // ghost the index
 
@@ -760,7 +763,13 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
 
   MPI_Comm_free(&comm1);
 
+  ss << "recv_gidx = " << xt::adapt(recv_gidx) << "\n";
+
   // --- Step 5: Unpack received data
+
+  std::vector<std::int64_t> connected_indices_global(connected_indices.size(),
+                                                     0);
+  local_to_global(connected_indices, connected_indices_global);
 
   std::vector<std::int64_t> ghosts;
   std::vector<int> src_ranks;
@@ -769,7 +778,11 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
   {
     for (int j = send_disp[i]; j < send_disp[i + 1]; ++j)
     {
-      if (std::int64_t idx = recv_gidx[j]; idx >= 0)
+      if (std::int64_t idx = recv_gidx[j];
+          idx >= 0
+          and std::find(connected_indices_global.begin(),
+                        connected_indices_global.end(), send_indices[j])
+                  != connected_indices_global.end())
       {
         std::size_t p = ghost_buffer_pos[j];
         ghosts.push_back(idx);
@@ -778,6 +791,8 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
       }
     }
   }
+
+  ss << "ghosts = " << xt::adapt(ghosts) << "\n";
 
   std::cout << ss.str() << "\n";
 
