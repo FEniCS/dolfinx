@@ -650,11 +650,11 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
   std::sort(dest.begin(), dest.end());
 
   // Ghost indices on this process
-  std::vector<std::int64_t> ghost_send_indices;
-  std::vector<std::int32_t> ghost_connected_send_indices;
+  std::vector<std::int64_t> ghost_indices_send;
+  std::vector<std::int32_t> ghost_connected_indices_send;
   //  Indices owned by this process that are ghosted by other processes
-  std::vector<std::int64_t> ghost_recv_indices;
-  std::vector<std::int32_t> ghost_connected_recv_indices;
+  std::vector<std::int64_t> ghost_indices_recv;
+  std::vector<std::int32_t> ghost_connected_indices_recv;
   std::vector<std::size_t> ghost_buffer_pos;
   std::vector<int> ghost_send_disp, ghost_recv_disp;
   std::vector<std::int32_t> ghost_send_sizes, ghost_recv_sizes;
@@ -684,12 +684,12 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
 
     // Build send buffer and ghost position to send buffer position
     for (auto& d : send_data)
-      ghost_send_indices.insert(ghost_send_indices.end(), d.begin(), d.end());
+      ghost_indices_send.insert(ghost_indices_send.end(), d.begin(), d.end());
     for (auto& p : pos_to_ghost)
       ghost_buffer_pos.insert(ghost_buffer_pos.end(), p.begin(), p.end());
-    for (std::int64_t ghost_index : ghost_send_indices)
+    for (std::int64_t ghost_index : ghost_indices_send)
     {
-      ghost_connected_send_indices.push_back(
+      ghost_connected_indices_send.push_back(
           std::find(connected_indices_global.begin(),
                     connected_indices_global.end(), ghost_index)
           != connected_indices_global.end());
@@ -712,29 +712,28 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
                      std::next(ghost_recv_disp.begin()));
 
     // Send ghost indices to owner, and receive indices
-    ghost_recv_indices.resize(ghost_recv_disp.back());
-    MPI_Neighbor_alltoallv(ghost_send_indices.data(), ghost_send_sizes.data(),
+    ghost_indices_recv.resize(ghost_recv_disp.back());
+    MPI_Neighbor_alltoallv(ghost_indices_send.data(), ghost_send_sizes.data(),
                            ghost_send_disp.data(), MPI_INT64_T,
-                           ghost_recv_indices.data(), ghost_recv_sizes.data(),
+                           ghost_indices_recv.data(), ghost_recv_sizes.data(),
                            ghost_recv_disp.data(), MPI_INT64_T, comm0);
 
-    ghost_connected_recv_indices.resize(ghost_recv_disp.back());
-    MPI_Neighbor_alltoallv(ghost_connected_send_indices.data(),
+    ghost_connected_indices_recv.resize(ghost_recv_disp.back());
+    MPI_Neighbor_alltoallv(ghost_connected_indices_send.data(),
                            ghost_send_sizes.data(), ghost_send_disp.data(),
-                           MPI_INT32_T, ghost_connected_recv_indices.data(),
+                           MPI_INT32_T, ghost_connected_indices_recv.data(),
                            ghost_recv_sizes.data(), ghost_recv_disp.data(),
                            MPI_INT32_T, comm0);
 
     MPI_Comm_free(&comm0);
   }
 
-  ss << "ghost_connected_send_indices = "
-     << xt::adapt(ghost_connected_send_indices) << "\n";
-  ss << "ghost_connected_recv_indices = "
-     << xt::adapt(ghost_connected_recv_indices) << "\n";
-
-  ss << "ghost_send_indices = " << xt::adapt(ghost_send_indices) << "\n";
-  ss << "ghost_recv_indices = " << xt::adapt(ghost_recv_indices) << "\n";
+  ss << "ghost_indices_send = " << xt::adapt(ghost_indices_send) << "\n";
+  ss << "ghost_connected_indices_send = "
+     << xt::adapt(ghost_connected_indices_send) << "\n";
+  ss << "ghost_indices_recv = " << xt::adapt(ghost_indices_recv) << "\n";
+  ss << "ghost_connected_indices_recv = "
+     << xt::adapt(ghost_connected_indices_recv) << "\n";
 
   std::vector<std::int32_t> owned_connected_indices;
   std::vector<std::int32_t> owned_unconnected_indices;
@@ -772,8 +771,8 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
   // submap index if it is retained, or (ii) set to -1 if it is not
   // retained.
   std::vector<std::int64_t> send_gidx;
-  send_gidx.reserve(ghost_recv_indices.size());
-  for (auto idx : ghost_recv_indices)
+  send_gidx.reserve(ghost_indices_recv.size());
+  for (auto idx : ghost_indices_recv)
   {
     assert(idx - _local_range[0] >= 0);
     assert(idx - _local_range[0] < _local_range[1]);
@@ -824,7 +823,7 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
       if (std::int64_t idx = recv_gidx[j];
           idx >= 0
           and std::find(connected_indices_global.begin(),
-                        connected_indices_global.end(), ghost_send_indices[j])
+                        connected_indices_global.end(), ghost_indices_send[j])
                   != connected_indices_global.end())
       {
         std::size_t p = ghost_buffer_pos[j];
