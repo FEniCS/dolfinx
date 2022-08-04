@@ -808,6 +808,20 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
 
   ss << "new_owners_send = " << xt::adapt(new_owners_send) << "\n";
 
+  // Create neighbourhood comm (owner -> ghost)
+  MPI_Comm comm1;
+  MPI_Dist_graph_create_adjacent(_comm.comm(), src.size(), src.data(),
+                                 MPI_UNWEIGHTED, dest.size(), dest.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+
+  std::vector<std::int32_t> new_owners_recv(ghost_send_disp.back());
+  MPI_Neighbor_alltoallv(new_owners_send.data(), ghost_recv_sizes.data(),
+                         ghost_recv_disp.data(), MPI_INT32_T,
+                         new_owners_recv.data(), ghost_send_sizes.data(),
+                         ghost_send_disp.data(), MPI_INT32_T, comm1);
+
+  ss << "new_owners_recv = " << xt::adapt(new_owners_recv) << "\n";
+
   // --- Step 1: Compute new offset for this rank
 
   std::int64_t local_size_new = indices.size();
@@ -846,12 +860,6 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
 
   // --- Step 4: Send new global indices from owner back to ranks that
   // ghost the index
-
-  // Create neighbourhood comm (owner -> ghost)
-  MPI_Comm comm1;
-  MPI_Dist_graph_create_adjacent(_comm.comm(), src.size(), src.data(),
-                                 MPI_UNWEIGHTED, dest.size(), dest.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
 
   // Send index markers to ghosting ranks
   std::vector<std::int64_t> recv_gidx(ghost_send_disp.back());
