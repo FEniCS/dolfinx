@@ -5,7 +5,7 @@ from mpi4py import MPI
 from slepc4py import SLEPc
 import numpy as np
 
-domain = dolfinx.mesh.create_rectangle(MPI.COMM_WORLD, [[0, 0], [np.pi, np.pi]], [60, 60], dolfinx.mesh.CellType.triangle)
+domain = dolfinx.mesh.create_rectangle(MPI.COMM_WORLD, [[0, 0], [np.pi, np.pi]], [100, 100], dolfinx.mesh.CellType.triangle)
 domain.topology.create_connectivity(domain.topology.dim-1, domain.topology.dim)
 
 N1curl = ufl.FiniteElement("N1curl", domain.ufl_cell(), 2)
