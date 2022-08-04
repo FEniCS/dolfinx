@@ -755,6 +755,59 @@ std::pair<IndexMap, std::vector<std::int32_t>> IndexMap::create_submap(
   ss << "ghost_connected_indices_recv = "
      << xt::adapt(ghost_connected_indices_recv) << "\n";
 
+  // std::vector
+  // std::vector<std::int64_t> owned_unconnected_indices_global;
+  // local_to_global(owned_unconnected_indices,
+  // owned_unconnected_indices_global); for (std::int64_t index :
+  // owned_unconnected_indices_global)
+  // {
+
+  // }
+  // std::vector<std::vector<std::int32_t>> possible_new_owners(
+  //     owned_unconnected_indices.size());
+  // for (int i = 0; i < owned_connected_indices.size(); ++i)
+  // {
+
+  // }
+
+  // Who now owns each of my ghosted vertices (-1 if not in submesh)
+  // 0: {-1, 2, -1}
+  // 1: {-1, -1, -1}
+  // 2: {2, 2, 2, 2}
+  // 3: {3, 3}
+
+  std::vector<std::int32_t> new_owners_send;
+  new_owners_send.reserve(ghost_indices_recv.size());
+  for (int i = 0; i < ghost_indices_recv.size(); ++i)
+  {
+    std::int64_t global_index = ghost_indices_recv[i];
+    assert(global_index - _local_range[0] >= 0);
+    assert(global_index - _local_range[0] < _local_range[1]);
+    std::int32_t local_index = global_index - _local_range[0];
+
+    auto it = std::lower_bound(indices.begin(), indices.end(), local_index);
+    if (it != indices.end() and *it == local_index)
+    {
+      auto it_2 = std::lower_bound(connected_indices.begin(),
+                                   connected_indices.end(), local_index);
+      if (it_2 != connected_indices.end() and *it_2 == local_index)
+      {
+        new_owners_send.push_back(rank);
+      }
+      else
+      {
+        // TODO FIXME COMPUTE NEW OWNER
+        new_owners_send.push_back(2);
+      }
+    }
+    else
+    {
+      new_owners_send.push_back(-1);
+    }
+  }
+
+  ss << "new_owners_send = " << xt::adapt(new_owners_send) << "\n";
+
   // --- Step 1: Compute new offset for this rank
 
   std::int64_t local_size_new = indices.size();
