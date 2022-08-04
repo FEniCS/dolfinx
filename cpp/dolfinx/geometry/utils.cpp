@@ -1,5 +1,5 @@
-// Copyright (C) 2006-2021 Chris N. Richardson, Anders Logg, Garth N. Wells and
-// Jørgen S. Dokken
+// Copyright (C) 2006-2022 Chris N. Richardson, Anders Logg, Garth N. Wells,
+// Jørgen S. Dokken, Sarah Roggendorf
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -182,8 +182,7 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
 // Compute collisions with tree (recursive)
 void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
                               const geometry::BoundingBoxTree& B, int node_A,
-                              int node_B,
-                              std::vector<std::array<int, 2>>& entities)
+                              int node_B, std::vector<int>& entities)
 {
   // If bounding boxes don't collide, then don't search further
   if (!bbox_in_bbox(AB_span<2, 3>(A.get_bbox(node_A).data()),
@@ -201,7 +200,8 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
   {
     // If both boxes are leaves (which we know collide), then add them
     // child_1 denotes entity for leaves
-    entities.push_back({bbox_A[1], bbox_B[1]});
+    entities.push_back(bbox_A[1]);
+    entities.push_back(bbox_B[1]);
   }
   else if (is_leaf_A)
   {
@@ -260,12 +260,11 @@ geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
   return geometry::BoundingBoxTree(points);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::array<int, 2>>
-geometry::compute_collisions(const BoundingBoxTree& tree0,
-                             const BoundingBoxTree& tree1)
+std::vector<int> geometry::compute_collisions(const BoundingBoxTree& tree0,
+                                              const BoundingBoxTree& tree1)
 {
   // Call recursive find function
-  std::vector<std::array<int, 2>> entities;
+  std::vector<int> entities;
   if (tree0.num_bboxes() > 0 and tree1.num_bboxes() > 0)
   {
     _compute_collisions_tree(tree0, tree1, tree0.num_bboxes() - 1,

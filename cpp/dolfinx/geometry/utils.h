@@ -35,9 +35,10 @@ create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
 /// process)
 /// @param[in] tree0 First BoundingBoxTree
 /// @param[in] tree1 Second BoundingBoxTree
-/// @return List of pairs of intersecting box indices from each tree
-std::vector<std::array<int, 2>>
-compute_collisions(const BoundingBoxTree& tree0, const BoundingBoxTree& tree1);
+/// @return List of pairs of intersecting box indices from each tree, flattened
+/// as a vector of size num_intersections*2
+std::vector<int> compute_collisions(const BoundingBoxTree& tree0,
+                                    const BoundingBoxTree& tree1);
 
 /// Compute all collisions between bounding boxes and for a set of
 /// points

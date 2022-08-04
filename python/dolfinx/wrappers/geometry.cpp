@@ -89,11 +89,18 @@ void geometry(py::module& m)
         return dolfinx::geometry::compute_collisions(tree, _p);
       },
       py::arg("tree"), py::arg("points"));
-  m.def("compute_collisions",
-        py::overload_cast<const dolfinx::geometry::BoundingBoxTree&,
-                          const dolfinx::geometry::BoundingBoxTree&>(
-            &dolfinx::geometry::compute_collisions),
-        py::arg("tree0"), py::arg("tree1"));
+  m.def(
+      "compute_collisions",
+      [](const dolfinx::geometry::BoundingBoxTree& treeA,
+         const dolfinx::geometry::BoundingBoxTree& treeB)
+      {
+        const std::vector<std::int32_t>& coll
+            = dolfinx::geometry::compute_collisions(treeA, treeB);
+
+        std::array<py::ssize_t, 2> shape = {py::ssize_t(coll.size() / 2), 2};
+        return as_pyarray(std::move(coll), shape);
+      },
+      py::arg("tree0"), py::arg("tree1"));
 
   m.def(
       "compute_distance_gjk",

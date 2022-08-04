@@ -1,5 +1,5 @@
-// Copyright (C) 2013-2021 Chris N. Richardson, Anders Logg, Garth N. Wells and
-// Jørgen S. Dokken
+// Copyright (C) 2013-2022 Chris N. Richardson, Anders Logg, Garth N. Wells,
+// Jørgen S. Dokken, Sarah Roggendorf
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -88,8 +88,7 @@ std::array<double, 6> compute_bbox_of_bboxes(
 //------------------------------------------------------------------------------
 int _build_from_leaf(
     std::span<std::pair<std::array<double, 6>, std::int32_t>> leaf_bboxes,
-    std::vector<std::array<int, 2>>& bboxes,
-    std::vector<double>& bbox_coordinates)
+    std::vector<int>& bboxes, std::vector<double>& bbox_coordinates)
 {
   if (leaf_bboxes.size() == 1)
   {
@@ -99,12 +98,13 @@ int _build_from_leaf(
     const auto [b, entity_index] = leaf_bboxes[0];
 
     // Store bounding box data
-    bboxes.push_back({entity_index, entity_index});
+    bboxes.push_back(entity_index);
+    bboxes.push_back(entity_index);
     bbox_coordinates.insert(bbox_coordinates.end(), b.begin(),
                             std::next(b.begin(), 3));
     bbox_coordinates.insert(bbox_coordinates.end(), std::next(b.begin(), 3),
                             b.end());
-    return bboxes.size() - 1;
+    return bboxes.size() / 2 - 1;
   }
   else
   {
@@ -132,42 +132,34 @@ int _build_from_leaf(
     // Split bounding boxes into two groups and call recursively
     assert(!leaf_bboxes.empty());
     std::size_t part = leaf_bboxes.size() / 2;
-    std::array bbox{
-        _build_from_leaf(leaf_bboxes.first(part), bboxes, bbox_coordinates),
-        _build_from_leaf(leaf_bboxes.last(leaf_bboxes.size() - part), bboxes,
-                         bbox_coordinates)};
+    int bbox0
+        = _build_from_leaf(leaf_bboxes.first(part), bboxes, bbox_coordinates);
+    int bbox1 = _build_from_leaf(leaf_bboxes.last(leaf_bboxes.size() - part),
+                                 bboxes, bbox_coordinates);
 
     // Store bounding box data. Note that root box will be added last.
-    bboxes.push_back(bbox);
+    bboxes.push_back(bbox0);
+    bboxes.push_back(bbox1);
     bbox_coordinates.insert(bbox_coordinates.end(), b.begin(),
                             std::next(b.begin(), 3));
     bbox_coordinates.insert(bbox_coordinates.end(), std::next(b.begin(), 3),
                             b.end());
-    return bboxes.size() - 1;
+    return bboxes.size() / 2 - 1;
   }
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int32_t>, std::vector<double>> build_from_leaf(
     std::vector<std::pair<std::array<double, 6>, std::int32_t>> leaf_bboxes)
 {
-  std::vector<std::array<std::int32_t, 2>> bboxes;
+  std::vector<std::int32_t> bboxes;
   std::vector<double> bbox_coordinates;
   _build_from_leaf(leaf_bboxes, bboxes, bbox_coordinates);
-
-  std::vector<std::int32_t> bbox_array(2 * bboxes.size());
-  for (std::size_t i = 0; i < bboxes.size(); ++i)
-  {
-    bbox_array[2 * i] = bboxes[i][0];
-    bbox_array[2 * i + 1] = bboxes[i][1];
-  }
-
-  return {std::move(bbox_array), std::move(bbox_coordinates)};
+  return {std::move(bboxes), std::move(bbox_coordinates)};
 }
 //-----------------------------------------------------------------------------
 int _build_from_point(
     std::span<std::pair<std::array<double, 3>, std::int32_t>> points,
-    std::vector<std::array<std::int32_t, 2>>& bboxes,
-    std::vector<double>& bbox_coordinates)
+    std::vector<std::int32_t>& bboxes, std::vector<double>& bbox_coordinates)
 {
   // Reached leaf
   if (points.size() == 1)
@@ -176,12 +168,13 @@ int _build_from_point(
 
     // Index of entity contained in leaf
     const std::int32_t c1 = points[0].second;
-    bboxes.push_back({c1, c1});
+    bboxes.push_back(c1);
+    bboxes.push_back(c1);
     bbox_coordinates.insert(bbox_coordinates.end(), points[0].first.begin(),
                             points[0].first.end());
     bbox_coordinates.insert(bbox_coordinates.end(), points[0].first.begin(),
                             points[0].first.end());
-    return bboxes.size() - 1;
+    return bboxes.size() / 2 - 1;
   }
 
   // Compute bounding box of all points
@@ -204,16 +197,17 @@ int _build_from_point(
   // Split bounding boxes into two groups and call recursively
   assert(!points.empty());
   std::size_t part = points.size() / 2;
-  std::array bbox{
-      _build_from_point(points.first(part), bboxes, bbox_coordinates),
-      _build_from_point(points.last(points.size() - part), bboxes,
-                        bbox_coordinates)};
+  std::int32_t bbox0
+      = _build_from_point(points.first(part), bboxes, bbox_coordinates);
+  std::int32_t bbox1 = _build_from_point(points.last(points.size() - part),
+                                          bboxes, bbox_coordinates);
 
   // Store bounding box data. Note that root box will be added last.
-  bboxes.push_back(bbox);
+  bboxes.push_back(bbox0);
+  bboxes.push_back(bbox1);
   bbox_coordinates.insert(bbox_coordinates.end(), b0.begin(), b0.end());
   bbox_coordinates.insert(bbox_coordinates.end(), b1.begin(), b1.end());
-  return bboxes.size() - 1;
+  return bboxes.size() / 2 - 1;
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -267,16 +261,10 @@ BoundingBoxTree::BoundingBoxTree(
     : _tdim(0)
 {
   // Recursively build the bounding box tree from the leaves
-  std::vector<std::array<int, 2>> bboxes;
   if (!points.empty())
   {
-    _build_from_point(std::span(points), bboxes, _bbox_coordinates);
-    _bboxes.resize(2 * bboxes.size());
-    for (std::size_t i = 0; i < bboxes.size(); ++i)
-    {
-      _bboxes[2 * i] = bboxes[i][0];
-      _bboxes[2 * i + 1] = bboxes[i][1];
-    }
+    _bboxes.clear();
+    _build_from_point(std::span(points), _bboxes, _bbox_coordinates);
   }
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()

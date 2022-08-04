@@ -74,8 +74,8 @@ public:
 
   /// Return bounding box coordinates for a given node in the tree
   /// @param[in] node The bounding box node index
-  /// @return The bounding box where [0] is the lower corner and [1] is
-  /// the upper corner
+  /// @return The bounding box [:3] contains the lower corner and [3:] the upper
+  /// corner
   std::array<double, 6> get_bbox(std::size_t node) const;
 
   /// Compute a global bounding tree (collective on comm)
