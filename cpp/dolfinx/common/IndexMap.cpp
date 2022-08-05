@@ -785,10 +785,10 @@ IndexMap::create_submap(
   std::map<std::int64_t, std::vector<std::int32_t>> new_owners;
   for (std::size_t i = 0; i < ghost_recv_disp.size() - 1; ++i)
   {
-    ss << "   i = " << i << "\n";
+    // ss << "   i = " << i << "\n";
     for (int j = ghost_recv_disp[i]; j < ghost_recv_disp[i + 1]; ++j)
     {
-      ss << "   j = " << j << "\n";
+      // ss << "   j = " << j << "\n";
       std::int64_t global_index = ghost_indices_recv[j];
       if (ghost_connected_indices_recv[j] == 1)
       {
@@ -824,8 +824,9 @@ IndexMap::create_submap(
       }
       else
       {
-        // TODO FIXME COMPUTE NEW OWNER
-        new_owners_send.push_back(2);
+        std::vector<std::int32_t>& possible_owners = new_owners.at(global_index);
+        assert(possible_owners.size() > 0);
+        new_owners_send.push_back(possible_owners[0]);
       }
     }
     else
