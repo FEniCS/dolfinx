@@ -824,7 +824,8 @@ IndexMap::create_submap(
       }
       else
       {
-        std::vector<std::int32_t>& possible_owners = new_owners.at(global_index);
+        std::vector<std::int32_t>& possible_owners
+            = new_owners.at(global_index);
         assert(possible_owners.size() > 0);
         new_owners_send.push_back(possible_owners[0]);
       }
