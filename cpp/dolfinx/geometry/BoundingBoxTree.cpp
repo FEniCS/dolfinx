@@ -16,7 +16,6 @@
 
 using namespace dolfinx;
 using namespace dolfinx::geometry;
-namespace stdex = std::experimental;
 
 namespace
 {
@@ -47,18 +46,20 @@ std::array<double, 6> compute_bbox_of_entity(const mesh::Mesh& mesh, int dim,
       = mesh::entities_to_geometry(mesh, dim, entity, false);
 
   std::array<double, 6> b;
+  auto b0 = std::span(b).subspan(0, 3);
+  auto b1 = std::span(b).subspan(3, 6);
   common::impl::copy_N<3>(std::next(xg.begin(), 3 * vertex_indices.front()),
-                          b.begin());
+                          b0.begin());
   common::impl::copy_N<3>(std::next(xg.begin(), 3 * vertex_indices.front()),
-                          std::next(b.begin(), 3));
-  AB_span<2, 3> bsp(b.data());
+                          b1.begin());
+
   // Compute min and max over vertices
   for (int local_vertex : vertex_indices)
   {
     for (int j = 0; j < 3; ++j)
     {
-      bsp(0, j) = std::min(bsp(0, j), xg[3 * local_vertex + j]);
-      bsp(1, j) = std::max(bsp(1, j), xg[3 * local_vertex + j]);
+      b0[j] = std::min(b0[j], xg[3 * local_vertex + j]);
+      b1[j] = std::max(b1[j], xg[3 * local_vertex + j]);
     }
   }
 
@@ -122,10 +123,8 @@ int _build_from_leaf(
     std::nth_element(leaf_bboxes.begin(), middle, leaf_bboxes.end(),
                      [axis](auto& p0, auto& p1) -> bool
                      {
-                       AB_span<2, 3> p0sp(p0.first.data());
-                       AB_span<2, 3> p1sp(p1.first.data());
-                       double x0 = p0sp(0, axis) + p0sp(1, axis);
-                       double x1 = p1sp(0, axis) + p1sp(1, axis);
+                       double x0 = p0.first[axis] + p0.first[3 + axis];
+                       double x1 = p1.first[axis] + p1.first[3 + axis];
                        return x0 < x1;
                      });
 
@@ -200,7 +199,7 @@ int _build_from_point(
   std::int32_t bbox0
       = _build_from_point(points.first(part), bboxes, bbox_coordinates);
   std::int32_t bbox1 = _build_from_point(points.last(points.size() - part),
-                                          bboxes, bbox_coordinates);
+                                         bboxes, bbox_coordinates);
 
   // Store bounding box data. Note that root box will be added last.
   bboxes.push_back(bbox0);

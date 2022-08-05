@@ -29,15 +29,18 @@ constexpr bool is_leaf(const std::array<int, 2>& bbox)
 /// A point `x` is inside a bounding box `b` if each component of its
 /// coordinates lies within the range `[b(0,i), b(1,i)]` that defines the bounds
 /// of the bounding box, b(0,i) <= x[i] <= b(1,i) for i = 0, 1, 2
-constexpr bool point_in_bbox(AB_span<2, 3> b, const std::array<double, 3>& x)
+constexpr bool point_in_bbox(std::span<double, 6> b,
+                             const std::array<double, 3>& x)
 {
   constexpr double rtol = 1e-14;
   bool in = true;
+  auto b0 = b.subspan(0, 3);
+  auto b1 = b.subspan(3, 6);
   for (int i = 0; i < 3; i++)
   {
-    double eps = rtol * (b(1, i) - b(0, i));
-    in &= x[i] >= (b(0, i) - eps);
-    in &= x[i] <= (b(1, i) + eps);
+    double eps = rtol * (b1[i] - b0[i]);
+    in &= x[i] >= (b0[i] - eps);
+    in &= x[i] <= (b1[i] + eps);
   }
 
   return in;
@@ -46,15 +49,19 @@ constexpr bool point_in_bbox(AB_span<2, 3> b, const std::array<double, 3>& x)
 /// A bounding box "a" is contained inside another bounding box "b", if each
 /// of its intervals [a(0,i), a(1,i)] is contained in [b(0,i), b(1,i)],
 /// a(0,i) <= b(1, i) and a(1,i) >= b(0, i)
-constexpr bool bbox_in_bbox(AB_span<2, 3> a, AB_span<2, 3> b)
+constexpr bool bbox_in_bbox(std::span<double, 6> a, std::span<double, 6> b)
 {
   constexpr double rtol = 1e-14;
   bool in = true;
+  auto a0 = a.subspan(0, 3);
+  auto a1 = a.subspan(3, 6);
+  auto b0 = b.subspan(0, 3);
+  auto b1 = b.subspan(3, 6);
   for (int i = 0; i < 3; i++)
   {
-    double eps = rtol * (b(1, i) - b(0, i));
-    in &= a(1, i) >= (b(0, i) - eps);
-    in &= a(0, i) <= (b(1, i) + eps);
+    double eps = rtol * (b1[i] - b0[i]);
+    in &= a1[i] >= (b0[i] - eps);
+    in &= a0[i] <= (b1[i] + eps);
   }
 
   return in;
@@ -75,8 +82,8 @@ std::pair<std::int32_t, double> _compute_closest_entity(
     if (tree.tdim() == 0)
     {
       std::array<double, 6> bbox_coord = tree.get_bbox(node);
-      auto diff = stdex::submdspan(AB_span<2, 3>(bbox_coord.data()), 0,
-                                   stdex::full_extent);
+      auto diff = std::span(bbox_coord).subspan(0, 3);
+
       for (std::size_t k = 0; k < 3; ++k)
         diff[k] -= point[k];
       r2 = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
@@ -148,8 +155,8 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
       // Check whether the point collides with child nodes (left and right)
       std::array<double, 6> bleft = tree.get_bbox(bbox[0]);
       std::array<double, 6> bright = tree.get_bbox(bbox[1]);
-      bool left = point_in_bbox(AB_span<2, 3>(bleft.data()), p);
-      bool right = point_in_bbox(AB_span<2, 3>(bright.data()), p);
+      bool left = point_in_bbox(std::span(bleft), p);
+      bool right = point_in_bbox(std::span(bright), p);
       if (left && right)
       {
         // If the point collides with both child nodes, add the right node to
@@ -185,8 +192,9 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
                               int node_B, std::vector<int>& entities)
 {
   // If bounding boxes don't collide, then don't search further
-  if (!bbox_in_bbox(AB_span<2, 3>(A.get_bbox(node_A).data()),
-                    AB_span<2, 3>(B.get_bbox(node_B).data())))
+  std::array<double, 6> a = A.get_bbox(node_A);
+  std::array<double, 6> b = B.get_bbox(node_B);
+  if (!bbox_in_bbox(std::span(a), std::span(b)))
     return;
 
   // Get bounding boxes for current nodes
@@ -323,8 +331,7 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       assert(is_leaf(leaves));
       initial_entity = leaves[0];
       std::array<double, 6> bbox_coord = midpoint_tree.get_bbox(0);
-      auto diff = stdex::submdspan(AB_span<2, 3>(bbox_coord.data()), 0,
-                                   stdex::full_extent);
+      auto diff = std::span(bbox_coord).subspan(0, 3);
       for (std::size_t k = 0; k < 3; ++k)
         diff[k] -= points[3 * i + k];
       R2 = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];

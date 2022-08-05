@@ -7,17 +7,13 @@
 #pragma once
 
 #include <array>
-#include <basix/mdspan.hpp>
 #include <cassert>
 #include <cstdint>
 #include <mpi.h>
 #include <span>
 #include <string>
 #include <vector>
-namespace stdex = std::experimental;
 
-template <std::size_t A, std::size_t B>
-using AB_span = stdex::mdspan<double, stdex::extents<std::size_t, A, B>>;
 namespace dolfinx::mesh
 {
 class Mesh;
