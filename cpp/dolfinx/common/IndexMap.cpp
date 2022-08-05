@@ -680,75 +680,74 @@ IndexMap::create_submap(
   std::vector<std::size_t> ghost_buffer_pos;
   std::vector<int> ghost_send_disp, ghost_recv_disp;
   std::vector<std::int32_t> ghost_send_sizes, ghost_recv_sizes;
+
+  // Create neighbourhood comm (ghost -> owner)
+  MPI_Comm comm0;
+  MPI_Dist_graph_create_adjacent(
+      _comm.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
+      src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+
+  // Pack ghosts indices
+  std::vector<std::vector<std::int64_t>> send_data(src.size());
+  std::vector<std::vector<std::size_t>> pos_to_ghost(src.size());
+  for (std::size_t i = 0; i < _ghosts.size(); ++i)
   {
-    // Create neighbourhood comm (ghost -> owner)
-    MPI_Comm comm0;
-    MPI_Dist_graph_create_adjacent(
-        _comm.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
-        src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
-
-    // Pack ghosts indices
-    std::vector<std::vector<std::int64_t>> send_data(src.size());
-    std::vector<std::vector<std::size_t>> pos_to_ghost(src.size());
-    for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    {
-      auto it = std::lower_bound(src.begin(), src.end(), _owners[i]);
-      assert(it != src.end() and *it == _owners[i]);
-      int r = std::distance(src.begin(), it);
-      send_data[r].push_back(_ghosts[i]);
-      pos_to_ghost[r].push_back(i);
-    }
-
-    // Count number of ghosts per dest
-    std::transform(send_data.begin(), send_data.end(),
-                   std::back_inserter(ghost_send_sizes),
-                   [](auto& d) { return d.size(); });
-
-    // Build send buffer and ghost position to send buffer position
-    for (auto& d : send_data)
-      ghost_indices_send.insert(ghost_indices_send.end(), d.begin(), d.end());
-    for (auto& p : pos_to_ghost)
-      ghost_buffer_pos.insert(ghost_buffer_pos.end(), p.begin(), p.end());
-    for (std::int64_t ghost_index : ghost_indices_send)
-    {
-      ghost_connected_indices_send.push_back(
-          std::find(connected_indices_global.begin(),
-                    connected_indices_global.end(), ghost_index)
-          != connected_indices_global.end());
-    }
-
-    // Send how many indices I ghost to each owner, and receive how many
-    // of my indices other ranks ghost
-    ghost_recv_sizes.resize(dest.size(), 0);
-    ghost_send_sizes.reserve(1);
-    ghost_recv_sizes.reserve(1);
-    MPI_Neighbor_alltoall(ghost_send_sizes.data(), 1, MPI_INT32_T,
-                          ghost_recv_sizes.data(), 1, MPI_INT32_T, comm0);
-
-    // Prepare displacement vectors
-    ghost_send_disp.resize(src.size() + 1, 0);
-    ghost_recv_disp.resize(dest.size() + 1, 0);
-    std::partial_sum(ghost_send_sizes.begin(), ghost_send_sizes.end(),
-                     std::next(ghost_send_disp.begin()));
-    std::partial_sum(ghost_recv_sizes.begin(), ghost_recv_sizes.end(),
-                     std::next(ghost_recv_disp.begin()));
-
-    // Send ghost indices to owner, and receive indices
-    ghost_indices_recv.resize(ghost_recv_disp.back());
-    MPI_Neighbor_alltoallv(ghost_indices_send.data(), ghost_send_sizes.data(),
-                           ghost_send_disp.data(), MPI_INT64_T,
-                           ghost_indices_recv.data(), ghost_recv_sizes.data(),
-                           ghost_recv_disp.data(), MPI_INT64_T, comm0);
-
-    ghost_connected_indices_recv.resize(ghost_recv_disp.back());
-    MPI_Neighbor_alltoallv(ghost_connected_indices_send.data(),
-                           ghost_send_sizes.data(), ghost_send_disp.data(),
-                           MPI_INT32_T, ghost_connected_indices_recv.data(),
-                           ghost_recv_sizes.data(), ghost_recv_disp.data(),
-                           MPI_INT32_T, comm0);
-
-    MPI_Comm_free(&comm0);
+    auto it = std::lower_bound(src.begin(), src.end(), _owners[i]);
+    assert(it != src.end() and *it == _owners[i]);
+    int r = std::distance(src.begin(), it);
+    send_data[r].push_back(_ghosts[i]);
+    pos_to_ghost[r].push_back(i);
   }
+
+  // Count number of ghosts per dest
+  std::transform(send_data.begin(), send_data.end(),
+                  std::back_inserter(ghost_send_sizes),
+                  [](auto& d) { return d.size(); });
+
+  // Build send buffer and ghost position to send buffer position
+  for (auto& d : send_data)
+    ghost_indices_send.insert(ghost_indices_send.end(), d.begin(), d.end());
+  for (auto& p : pos_to_ghost)
+    ghost_buffer_pos.insert(ghost_buffer_pos.end(), p.begin(), p.end());
+  for (std::int64_t ghost_index : ghost_indices_send)
+  {
+    ghost_connected_indices_send.push_back(
+        std::find(connected_indices_global.begin(),
+                  connected_indices_global.end(), ghost_index)
+        != connected_indices_global.end());
+  }
+
+  // Send how many indices I ghost to each owner, and receive how many
+  // of my indices other ranks ghost
+  ghost_recv_sizes.resize(dest.size(), 0);
+  ghost_send_sizes.reserve(1);
+  ghost_recv_sizes.reserve(1);
+  MPI_Neighbor_alltoall(ghost_send_sizes.data(), 1, MPI_INT32_T,
+                        ghost_recv_sizes.data(), 1, MPI_INT32_T, comm0);
+
+  // Prepare displacement vectors
+  ghost_send_disp.resize(src.size() + 1, 0);
+  ghost_recv_disp.resize(dest.size() + 1, 0);
+  std::partial_sum(ghost_send_sizes.begin(), ghost_send_sizes.end(),
+                    std::next(ghost_send_disp.begin()));
+  std::partial_sum(ghost_recv_sizes.begin(), ghost_recv_sizes.end(),
+                    std::next(ghost_recv_disp.begin()));
+
+  // Send ghost indices to owner, and receive indices
+  ghost_indices_recv.resize(ghost_recv_disp.back());
+  MPI_Neighbor_alltoallv(ghost_indices_send.data(), ghost_send_sizes.data(),
+                          ghost_send_disp.data(), MPI_INT64_T,
+                          ghost_indices_recv.data(), ghost_recv_sizes.data(),
+                          ghost_recv_disp.data(), MPI_INT64_T, comm0);
+
+  ghost_connected_indices_recv.resize(ghost_recv_disp.back());
+  MPI_Neighbor_alltoallv(ghost_connected_indices_send.data(),
+                          ghost_send_sizes.data(), ghost_send_disp.data(),
+                          MPI_INT32_T, ghost_connected_indices_recv.data(),
+                          ghost_recv_sizes.data(), ghost_recv_disp.data(),
+                          MPI_INT32_T, comm0);
+
+  MPI_Comm_free(&comm0);
 
   ss << "ghost_indices_send = " << xt::adapt(ghost_indices_send) << "\n";
   ss << "ghost_connected_indices_send = "
@@ -877,6 +876,9 @@ IndexMap::create_submap(
       owned_connected_indices.push_back(ghost_indices_send_local[i]);
     }
   }
+
+  // TODO Tell previous owner what the new global index is
+
 
   // --- Step 3: Check which received indexes (all of which I should
   // own) are in the submap
