@@ -782,7 +782,7 @@ IndexMap::create_submap(
   ss << "dest = " << xt::adapt(dest) << "\n";
 
   // TODO Try to replace map
-  std::map<std::int64_t, std::vector<std::int32_t>> new_owners;
+  std::map<std::int64_t, std::vector<std::int32_t>> possible_new_owners;
   for (std::size_t i = 0; i < ghost_recv_disp.size() - 1; ++i)
   {
     // ss << "   i = " << i << "\n";
@@ -792,13 +792,13 @@ IndexMap::create_submap(
       std::int64_t global_index = ghost_indices_recv[j];
       if (ghost_connected_indices_recv[j] == 1)
       {
-        new_owners[global_index].push_back(src[i]);
+        possible_new_owners[global_index].push_back(src[i]);
       }
     }
   }
 
-  ss << "new_owners = \n";
-  for (auto& [global_index, processes] : new_owners)
+  ss << "possible_new_owners = \n";
+  for (auto& [global_index, processes] : possible_new_owners)
   {
     ss << "   global_index  = " << global_index
        << "   processes = " << xt::adapt(processes) << "\n";
@@ -825,7 +825,7 @@ IndexMap::create_submap(
       else
       {
         std::vector<std::int32_t>& possible_owners
-            = new_owners.at(global_index);
+            = possible_new_owners.at(global_index);
         assert(possible_owners.size() > 0);
         new_owners_send.push_back(possible_owners[0]);
       }
