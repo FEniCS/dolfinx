@@ -20,6 +20,9 @@
 #include <dolfinx/graph/partition.h>
 #include <memory>
 
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xio.hpp>
+
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
@@ -208,6 +211,9 @@ std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>,
 mesh::create_submesh(const Mesh& mesh, int dim,
                      const std::span<const std::int32_t>& entities)
 {
+  const int rank = MPI::rank(MPI_COMM_WORLD);
+  std::stringstream ss;
+  ss << "rank " << rank << ":\n";
   // -- Submesh topology
 
   // Get the verticies in the submesh
@@ -228,6 +234,9 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   auto submesh_vertex_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_vertex_index_map_pair.first));
 
+  ss << "submesh_vertex_index_map_pair.second = "
+     << xt::adapt(submesh_vertex_index_map_pair.second) << "\n";
+
   // Create a map from the (local) vertices in the submesh to the
   // (local) vertices in the mesh
   std::vector<int32_t> submesh_to_mesh_vertex_map(
@@ -241,6 +250,9 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                  [size_local = mesh_vertex_index_map->size_local()](
                      std::int32_t vertex_index)
                  { return size_local + vertex_index; });
+
+  ss << "submesh_to_mesh_vertex_map = " << xt::adapt(submesh_to_mesh_vertex_map)
+     << "\n";
 
   // Get the entities in the submesh that are owned by this process
   auto mesh_entity_index_map = mesh.topology().index_map(dim);
@@ -313,6 +325,11 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     {
       auto it = std::find(submesh_to_mesh_vertex_map.begin(),
                           submesh_to_mesh_vertex_map.end(), v);
+      if (it == submesh_to_mesh_vertex_map.end())
+      {
+        ss << "v = " << v << "\n";
+        std::cout << ss.str() << "\n";
+      }
       assert(it != submesh_to_mesh_vertex_map.end());
       submesh_e_to_v_vec.push_back(
           std::distance(submesh_to_mesh_vertex_map.begin(), it));

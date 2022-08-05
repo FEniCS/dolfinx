@@ -792,7 +792,7 @@ IndexMap::create_submap(
       std::int64_t global_index = ghost_indices_recv[j];
       if (ghost_connected_indices_recv[j] == 1)
       {
-        possible_new_owners[global_index].push_back(src[i]);
+        possible_new_owners[global_index].push_back(dest[i]);
       }
     }
   }
