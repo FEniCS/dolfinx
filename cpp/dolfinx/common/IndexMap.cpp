@@ -868,10 +868,14 @@ IndexMap::create_submap(
               _comm.comm(), &request_offset);
   MPI_Wait(&request_offset, MPI_STATUS_IGNORE);
 
-  // TODO Add indices to take ownership to owned_connected_indices
-  if (rank == 2)
+  std::vector<std::int32_t> ghost_indices_send_local(ghost_indices_send.size());
+  global_to_local(ghost_indices_send, ghost_indices_send_local);
+  for (int i = 0; i < ghost_indices_send.size(); ++i)
   {
-    owned_connected_indices.push_back(6);
+    if (new_owners_recv[i] == rank)
+    {
+      owned_connected_indices.push_back(ghost_indices_send_local[i]);
+    }
   }
 
   // --- Step 3: Check which received indexes (all of which I should
