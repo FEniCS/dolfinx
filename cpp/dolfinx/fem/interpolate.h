@@ -961,7 +961,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
             "Interpolation: elements have different value dimensions");
       }
 
-      if (*element1 == *element0)
+      if (element1 == element0 or *element1 == *element0)
       {
         // Same element, different dofmaps (or just a subset of cells)
 

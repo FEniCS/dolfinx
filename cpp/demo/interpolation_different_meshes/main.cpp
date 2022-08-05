@@ -24,11 +24,11 @@ int main(int argc, char* argv[])
 
     // Create a tetrahedral mesh
     auto mesh_tet = std::make_shared<mesh::Mesh>(
-        mesh::create_box(comm, {{{0, 0, 0}, {1, 1, 1}}}, {50, 50, 50},
+        mesh::create_box(comm, {{{0, 0, 0}, {1, 1, 1}}}, {10, 10, 10},
                          mesh::CellType::tetrahedron, mesh::GhostMode::none));
     // Create a hexahedral mesh
     auto mesh_hex = std::make_shared<mesh::Mesh>(
-        mesh::create_box(comm, {{{0, 0, 0}, {1, 1, 1}}}, {47, 49, 33},
+        mesh::create_box(comm, {{{0, 0, 0}, {1, 1, 1}}}, {9, 8, 7},
                          mesh::CellType::hexahedron, mesh::GhostMode::none));
 
     basix::FiniteElement eL = basix::element::create_lagrange(
@@ -49,12 +49,9 @@ int main(int argc, char* argv[])
     auto fun = [](auto& x)
     {
       auto r = xt::zeros_like(x);
-      for (std::size_t i = 0; i < x.shape(1); ++i)
-      {
-        r(0, i) = std::cos(10 * x(0, i)) * std::sin(10 * x(2, i));
-        r(1, i) = std::sin(10 * x(0, i)) * std::sin(10 * x(2, i));
-        r(2, i) = std::cos(10 * x(0, i)) * std::cos(10 * x(2, i));
-      }
+      xt::row(r, 0) = xt::cos(10 * xt::row(x, 0)) * xt::sin(10 * xt::row(x, 2));
+      xt::row(r, 1) = xt::sin(10 * xt::row(x, 0)) * xt::sin(10 * xt::row(x, 2));
+      xt::row(r, 2) = xt::cos(10 * xt::row(x, 0)) * xt::cos(10 * xt::row(x, 2));
       return r;
     };
 
@@ -62,10 +59,10 @@ int main(int argc, char* argv[])
     u_hex->interpolate(*u_tet);
 
 #ifdef HAS_ADIOS2
-    io::VTXWriter write_tet(mesh_tet->comm(), "u_tet.bp", {u_tet});
+    io::VTXWriter write_tet(mesh_tet->comm(), "u_tet.vtx", {u_tet});
     write_tet.write(0.0);
 
-    io::VTXWriter write_hex(mesh_hex->comm(), "u_hex.bp", {u_hex});
+    io::VTXWriter write_hex(mesh_hex->comm(), "u_hex.vtx", {u_hex});
     write_hex.write(0.0);
 #endif
   }

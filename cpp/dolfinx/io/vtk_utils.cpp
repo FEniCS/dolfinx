@@ -153,7 +153,7 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
 
   assert(V.element());
   if (V.element()->is_mixed())
-    throw std::runtime_error("Can create VTK mesh from a mixed element");
+    throw std::runtime_error("Can't create VTK mesh from a mixed element");
 
   const auto [x, xshape, x_id, x_ghost] = tabulate_lagrange_dof_coordinates(V);
   auto map = mesh->topology().index_map(tdim);

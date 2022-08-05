@@ -513,8 +513,10 @@ int geometry::compute_first_colliding_cell(
     {
       auto dofs = x_dofmap.links(cell);
       for (std::size_t i = 0; i < num_nodes; ++i)
+      {
         common::impl::copy_N<3>(std::next(geom_dofs.begin(), 3 * dofs[i]),
                                 std::next(coordinate_dofs.begin(), 3 * i));
+      }
       std::array<double, 3> shortest_vector
           = geometry::compute_distance_gjk(point, coordinate_dofs);
       double norm = 0;
