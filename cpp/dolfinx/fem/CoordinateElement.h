@@ -7,6 +7,7 @@
 #pragma once
 
 #include "ElementDofLayout.h"
+#include <algorithm>
 #include <array>
 #include <basix/element-families.h>
 #include <basix/mdspan.hpp>
@@ -129,7 +130,6 @@ public:
       return math::det(J);
     else
     {
-      // TODO: pass buffers for B and BA
       assert(w.size() >= 2 * J.extent(0) * J.extent(1));
 
       using T = typename U::element_type;
@@ -143,6 +143,8 @@ public:
         for (std::size_t j = 0; j < B.extent(1); ++j)
           B(i, j) = J(j, i);
 
+      // Zero working memory of BA
+      std::fill_n(BA.data_handle(), BA.size(), 0);
       math::dot(B, J, BA);
       return std::sqrt(math::det(BA));
     }
