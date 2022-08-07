@@ -569,6 +569,8 @@ def test_interpolate_subset(order, dim, affine):
     assert np.isclose(integral, 1 / (order + 1) * 0.5**(order + 1), 0)
 
 
+# TODO Rename this when https://github.com/FEniCS/dolfinx/tree/jpdean/submesh_vertex_fix_4
+# is merged
 @pytest.mark.parametrize("n", [1, 6, 11])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
