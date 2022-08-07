@@ -977,10 +977,7 @@ IndexMap::create_submap(
           and std::find(connected_indices_global.begin(),
                         connected_indices_global.end(), ghost_indices_send[j])
                   != connected_indices_global.end()
-          and std::find(send_gidx_to_original_owner.begin(),
-                        send_gidx_to_original_owner.end(),
-                        ghost_indices_send[j])
-                  == send_gidx_to_original_owner.end())
+          and idx != send_gidx_to_original_owner[j])
       {
         std::size_t p = ghost_buffer_pos[j];
         ghosts.push_back(idx);
