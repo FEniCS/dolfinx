@@ -422,9 +422,6 @@ void interpolate(Function<T>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
                  std::span<const std::int32_t> cells)
 {
-  // NOTE: Some communication has temporarily been added to this
-  // function. A fix so this isn't required is in progress
-
   namespace stdex = std::experimental;
   using cmdspan2_t
       = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
@@ -474,7 +471,7 @@ void interpolate(Function<T>& u, std::span<const T> f,
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
 
-  xtl::span<T> coeffs = u.x()->mutable_array();
+  std::span<T> coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
 
   // This assumes that any element with an identity interpolation matrix
