@@ -573,31 +573,24 @@ def test_interpolate_subset(order, dim, affine):
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
 def test_dof_without_cell(n, ghost_mode):
-    """Test that interpolating a function on a mesh where some dofs
-    owned by this process don't belong to a cell on this process
-    gives the expected result"""
-    # Currently it is not possible to partition a mesh so that a vertex
-    # doesn't belong to a cell, so use create submesh.
-    square_mesh = create_unit_square(
+    mesh = create_unit_square(
         MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
-    rect_mesh = create_rectangle(
+    mesh_1 = create_rectangle(
         MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
         ghost_mode=ghost_mode)
 
-    # Create a unit square submesh from the rectangle mesh
-    edim = rect_mesh.topology.dim
-    entities = locate_entities(rect_mesh, edim, lambda x: x[0] <= 1.0)
-    submesh = create_submesh(rect_mesh, edim, entities)[0]
+    edim = mesh_1.topology.dim
+    entities = locate_entities(mesh_1, edim, lambda x: x[0] <= 1.0)
+    submesh = create_submesh(mesh_1, edim, entities)[0]
 
     element = ("Lagrange", 1)
-    V_mesh = FunctionSpace(square_mesh, element)
+
+    V_mesh = FunctionSpace(mesh, element)
     V_submesh = FunctionSpace(submesh, element)
 
     def f_expr(x):
         return x[0]**2
 
-    # Interpolate on the unit square mesh and unit square submesh and
-    # check the result is the same
     f_mesh = Function(V_mesh)
     f_mesh.interpolate(f_expr)
     f_mesh.x.scatter_forward()

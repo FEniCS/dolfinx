@@ -475,9 +475,10 @@ void interpolate(Function<T>& u, std::span<const T> f,
   const int num_scalar_dofs = element->space_dimension() / element_bs;
   const int value_size = element->value_size() / element_bs;
 
-  // Create a copy of the function's vector to work with. The values are
-  // initialised to NAN so that only the correct values are copied back
-  // into the original vector later
+  // Create temporary vector to work with and set all values to NAN so
+  // we know which values need to be copied, so that old data does not
+  // interfere for ghosts that do not belong to a cell when ghost
+  // values are communicated to owners
   la::Vector temp_x(*u.x());
   temp_x.set(NAN);
   std::span<T> coeffs = temp_x.mutable_array();
@@ -697,7 +698,7 @@ void interpolate(Function<T>& u, std::span<const T> f,
 
   // If there are owned dofs on this process that do not belong to a cell on
   // this process, their values will not have been set by the above. Hence,
-  // communicate the values of ghost dofs to their owners.
+  // communicate the values of ghost dofs back to their owners.
   temp_x.scatter_rev(
       [](auto a, auto b)
       {
@@ -707,7 +708,6 @@ void interpolate(Function<T>& u, std::span<const T> f,
           return a;
       });
 
-  // Copy the data back to the original vector
   // FIXME See if this can be done with something like a copy_if
   for (int i = 0; i < temp_x.array().size(); ++i)
   {
