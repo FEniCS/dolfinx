@@ -939,6 +939,10 @@ IndexMap::create_submap(
           = std::distance(owned_connected_indices.begin(), it);
       send_gidx.push_back(idx_local_new + offset_new);
     }
+    else if (ownership_change_global_map.contains(idx))
+    {
+      send_gidx.push_back(ownership_change_global_map.at(idx));
+    }
     else
       send_gidx.push_back(-1);
   }
@@ -972,7 +976,11 @@ IndexMap::create_submap(
           idx >= 0
           and std::find(connected_indices_global.begin(),
                         connected_indices_global.end(), ghost_indices_send[j])
-                  != connected_indices_global.end())
+                  != connected_indices_global.end()
+          and std::find(send_gidx_to_original_owner.begin(),
+                        send_gidx_to_original_owner.end(),
+                        ghost_indices_send[j])
+                  == send_gidx_to_original_owner.end())
       {
         std::size_t p = ghost_buffer_pos[j];
         ghosts.push_back(idx);
