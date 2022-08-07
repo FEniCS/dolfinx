@@ -16,7 +16,6 @@ if typing.TYPE_CHECKING:
     from dolfinx.fem import function
     from dolfinx.mesh import Mesh
 
-import cffi
 import numpy as np
 
 import ufl
@@ -29,7 +28,7 @@ from petsc4py import PETSc
 class FormMetaClass:
     def __init__(self, form, V: list[_cpp.fem.FunctionSpace], coeffs, constants,
                  subdomains: dict[_cpp.mesh.MeshTags_int32, typing.Union[None, typing.Any]], mesh: _cpp.mesh.Mesh,
-                 entity_maps: dict[_cpp.mesh.Mesh, list], code):
+                 entity_maps: dict[_cpp.mesh.Mesh, list], ffi, code):
         """A finite element form
 
         Notes:
@@ -50,7 +49,6 @@ class FormMetaClass:
         """
         self._code = code
         self._ufcx_form = form
-        ffi = cffi.FFI()
         super().__init__(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_form)),
                          V, coeffs, constants, subdomains, mesh, entity_maps)  # type: ignore
 
@@ -157,8 +155,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
                       _cpp.fem.IntegralType.interior_facet: subdomains.get("interior_facet"),
                       _cpp.fem.IntegralType.vertex: subdomains.get("vertex")}
 
-        return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh,
-                       entity_maps, code)
+        return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, entity_maps, module.ffi, code)
 
     def _create_form(form):
         """Recursively convert ufl.Forms to dolfinx.fem.Form, otherwise

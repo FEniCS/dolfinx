@@ -7,15 +7,16 @@
 
 import random
 
+import numba
 import numpy as np
 import pytest
 
 import ufl
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
-from dolfinx.mesh import (CellType, meshtags, create_mesh, create_unit_cube,
-                          create_unit_square, locate_entities, GhostMode,
-                          create_rectangle, create_submesh)
+from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
+                          create_unit_square, locate_entities, meshtags,
+                          GhostMode, create_rectangle, create_submesh)
 
 from mpi4py import MPI
 
@@ -606,3 +607,21 @@ def test_dof_without_cell(n, ghost_mode):
     f_mesh.x.scatter_forward()
 
     assert(np.isclose(f_mesh.vector.norm(), f_submesh.vector.norm()))
+
+
+def test_interpolate_callable():
+    """Test interpolation with callables"""
+    mesh = create_unit_square(MPI.COMM_WORLD, 2, 1)
+    V = FunctionSpace(mesh, ("Lagrange", 2))
+    u0, u1 = Function(V), Function(V)
+
+    @numba.njit
+    def f(x):
+        return x[0]
+
+    u0.interpolate(lambda x: x[0])
+    u1.interpolate(f)
+    assert np.allclose(u0.x.array, u1.x.array)
+
+    with pytest.raises(RuntimeError):
+        u0.interpolate(lambda x: np.vstack([x[0], x[1]]))

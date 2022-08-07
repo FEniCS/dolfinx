@@ -28,7 +28,7 @@ jobs:
   build:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
     runs-on: ubuntu-20.04
-    container: fenicsproject/test-env:latest-openmpi
+    container: fenicsproject/test-env:nightly-openmpi
 
     env:
       CC: clang
@@ -79,9 +79,9 @@ jobs:
           python3 -m isort --check dolfinx
           python3 -m isort --check demo
           python3 -m isort --check test
-      - name: mypy checks (non-blocking)
-        continue-on-error: true
+      - name: mypy checks
         run: |
+          python3 -m pip install types-setuptools
           cd python/
           mypy dolfinx
           mypy demo
