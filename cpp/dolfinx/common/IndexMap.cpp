@@ -683,9 +683,9 @@ IndexMap::create_submap(
 
   // Create neighbourhood comm (ghost -> owner)
   MPI_Comm comm0;
-  MPI_Dist_graph_create_adjacent(
-      _comm.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
-      src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+  MPI_Dist_graph_create_adjacent(_comm.comm(), dest.size(), dest.data(),
+                                 MPI_UNWEIGHTED, src.size(), src.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
 
   // Pack ghosts indices
   std::vector<std::vector<std::int64_t>> send_data(src.size());
@@ -701,8 +701,8 @@ IndexMap::create_submap(
 
   // Count number of ghosts per dest
   std::transform(send_data.begin(), send_data.end(),
-                  std::back_inserter(ghost_send_sizes),
-                  [](auto& d) { return d.size(); });
+                 std::back_inserter(ghost_send_sizes),
+                 [](auto& d) { return d.size(); });
 
   // Build send buffer and ghost position to send buffer position
   for (auto& d : send_data)
@@ -729,25 +729,22 @@ IndexMap::create_submap(
   ghost_send_disp.resize(src.size() + 1, 0);
   ghost_recv_disp.resize(dest.size() + 1, 0);
   std::partial_sum(ghost_send_sizes.begin(), ghost_send_sizes.end(),
-                    std::next(ghost_send_disp.begin()));
+                   std::next(ghost_send_disp.begin()));
   std::partial_sum(ghost_recv_sizes.begin(), ghost_recv_sizes.end(),
-                    std::next(ghost_recv_disp.begin()));
+                   std::next(ghost_recv_disp.begin()));
 
   // Send ghost indices to owner, and receive indices
   ghost_indices_recv.resize(ghost_recv_disp.back());
   MPI_Neighbor_alltoallv(ghost_indices_send.data(), ghost_send_sizes.data(),
-                          ghost_send_disp.data(), MPI_INT64_T,
-                          ghost_indices_recv.data(), ghost_recv_sizes.data(),
-                          ghost_recv_disp.data(), MPI_INT64_T, comm0);
+                         ghost_send_disp.data(), MPI_INT64_T,
+                         ghost_indices_recv.data(), ghost_recv_sizes.data(),
+                         ghost_recv_disp.data(), MPI_INT64_T, comm0);
 
   ghost_connected_indices_recv.resize(ghost_recv_disp.back());
-  MPI_Neighbor_alltoallv(ghost_connected_indices_send.data(),
-                          ghost_send_sizes.data(), ghost_send_disp.data(),
-                          MPI_INT32_T, ghost_connected_indices_recv.data(),
-                          ghost_recv_sizes.data(), ghost_recv_disp.data(),
-                          MPI_INT32_T, comm0);
-
-  MPI_Comm_free(&comm0);
+  MPI_Neighbor_alltoallv(
+      ghost_connected_indices_send.data(), ghost_send_sizes.data(),
+      ghost_send_disp.data(), MPI_INT32_T, ghost_connected_indices_recv.data(),
+      ghost_recv_sizes.data(), ghost_recv_disp.data(), MPI_INT32_T, comm0);
 
   ss << "ghost_indices_send = " << xt::adapt(ghost_indices_send) << "\n";
   ss << "ghost_connected_indices_send = "
@@ -878,7 +875,35 @@ IndexMap::create_submap(
   }
 
   // TODO Tell previous owner what the new global index is
+  std::vector<std::int64_t> send_gidx_to_original_owner;
+  for (int i = 0; i < ghost_indices_send.size(); ++i)
+  {
+    if (new_owners_recv[i] == rank)
+    {
+      auto it = std::find(owned_connected_indices.begin(),
+                          owned_connected_indices.end(),
+                          ghost_indices_send_local[i]);
+      int new_local_idx = std::distance(owned_connected_indices.begin(), it);
+      send_gidx_to_original_owner.push_back(new_local_idx + offset_new);
+    }
+    else
+    {
+      send_gidx_to_original_owner.push_back(-1);
+    }
+  }
 
+  std::vector<std::int64_t> recv_gidx_to_original_owner(ghost_recv_disp.back());
+  MPI_Neighbor_alltoallv(
+      send_gidx_to_original_owner.data(), ghost_send_sizes.data(),
+      ghost_send_disp.data(), MPI_INT64_T, recv_gidx_to_original_owner.data(),
+      ghost_recv_sizes.data(), ghost_recv_disp.data(), MPI_INT64_T, comm0);
+  MPI_Comm_free(&comm0);
+
+  ss << "send_gidx_to_original_owner = "
+     << xt::adapt(send_gidx_to_original_owner) << "\n";
+
+  ss << "recv_gidx_to_original_owner = "
+     << xt::adapt(recv_gidx_to_original_owner) << "\n";
 
   // --- Step 3: Check which received indexes (all of which I should
   // own) are in the submap
