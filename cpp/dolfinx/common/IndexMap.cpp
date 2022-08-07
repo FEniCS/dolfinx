@@ -905,6 +905,17 @@ IndexMap::create_submap(
   ss << "recv_gidx_to_original_owner = "
      << xt::adapt(recv_gidx_to_original_owner) << "\n";
 
+  // Global to new global map for indices whose ownership needs changing
+  std::map<std::int64_t, std::int64_t> ownership_change_global_map;
+  for (int i = 0; i < ghost_indices_recv.size(); ++i)
+  {
+    if (recv_gidx_to_original_owner[i] != -1)
+    {
+      ownership_change_global_map[ghost_indices_recv[i]]
+          = recv_gidx_to_original_owner[i];
+    }
+  }
+
   // --- Step 3: Check which received indexes (all of which I should
   // own) are in the submap
 
