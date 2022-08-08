@@ -12,7 +12,6 @@
 #include "Function.h"
 #include "FunctionSpace.h"
 #include "dofmapbuilder.h"
-#include "sparsitybuild.h"
 #include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
@@ -176,7 +175,7 @@ fem::create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
 
-    const std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>
+    const std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
         unpermute_dofs = element.get_dof_permutation_function(true, true);
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
       unpermute_dofs(dofmap.links(cell), cell_info[cell]);

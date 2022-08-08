@@ -15,9 +15,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <vector>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -161,7 +158,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
     throw std::runtime_error("Cannot evaluate dof coordinates - this element "
                              "does not have pointwise evaluation.");
   }
-  const xt::xtensor<double, 2>& X = _element->interpolation_points();
+  const auto [X, Xshape] = _element->interpolation_points();
 
   // Get coordinate map
   const CoordinateElement& cmap = _mesh->geometry().cmap();
@@ -170,52 +167,60 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = _mesh->geometry().dofmap();
   const std::size_t num_dofs_g = _mesh->geometry().cmap().dim();
-  xtl::span<const double> x_g = _mesh->geometry().x();
+  std::span<const double> x_g = _mesh->geometry().x();
 
   // Array to hold coordinates to return
   const std::size_t shape_c0 = transpose ? 3 : num_dofs;
   const std::size_t shape_c1 = transpose ? num_dofs : 3;
   std::vector<double> coords(shape_c0 * shape_c1, 0);
 
+  namespace stdex = std::experimental;
+  using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+  using cmdspan4_t
+      = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
+
   // Loop over cells and tabulate dofs
-  xt::xtensor<double, 2> x = xt::zeros<double>({scalar_dofs, gdim});
-  xt::xtensor<double, 2> coordinate_dofs({num_dofs_g, gdim});
+  std::vector<double> x_b(scalar_dofs * gdim);
+  mdspan2_t x(x_b.data(), scalar_dofs, gdim);
+
+  std::vector<double> coordinate_dofs_b(num_dofs_g * gdim);
+  mdspan2_t coordinate_dofs(coordinate_dofs_b.data(), num_dofs_g, gdim);
 
   auto map = _mesh->topology().index_map(tdim);
   assert(map);
   const int num_cells = map->size_local() + map->num_ghosts();
 
-  xtl::span<const std::uint32_t> cell_info;
+  std::span<const std::uint32_t> cell_info;
   if (_element->needs_dof_transformations())
   {
     _mesh->topology_mutable().create_entity_permutations();
-    cell_info = xtl::span(_mesh->topology().get_cell_permutation_info());
+    cell_info = std::span(_mesh->topology().get_cell_permutation_info());
   }
 
-  const std::function<void(const xtl::span<double>&,
-                           const xtl::span<const std::uint32_t>&, std::int32_t,
-                           int)>
-      apply_dof_transformation
+  auto apply_dof_transformation
       = _element->get_dof_transformation_function<double>();
 
-  const xt::xtensor<double, 2> phi
-      = xt::view(cmap.tabulate(0, X), 0, xt::all(), xt::all(), 0);
+  const std::array<std::size_t, 4> phi_shape
+      = cmap.tabulate_shape(0, Xshape[0]);
+  std::vector<double> phi_b(
+      std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+  cmdspan4_t phi_full(phi_b.data(), phi_shape);
+  cmap.tabulate(0, X, Xshape, phi_b);
+  auto phi = stdex::submdspan(phi_full, 0, stdex::full_extent,
+                              stdex::full_extent, 0);
 
   for (int c = 0; c < num_cells; ++c)
   {
     // Extract cell geometry
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
-    {
-      std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), gdim,
-                  std::next(coordinate_dofs.begin(), i * gdim));
-    }
+      for (std::size_t j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g[3 * x_dofs[i] + j];
 
     // Tabulate dof coordinates on cell
     cmap.push_forward(x, coordinate_dofs, phi);
-    apply_dof_transformation(xtl::span(x.data(), x.size()),
-                             xtl::span(cell_info.data(), cell_info.size()), c,
-                             x.shape(1));
+    apply_dof_transformation(x_b, std::span(cell_info.data(), cell_info.size()),
+                             c, x.extent(1));
 
     // Get cell dofmap
     auto dofs = _dofmap->cell_dofs(c);

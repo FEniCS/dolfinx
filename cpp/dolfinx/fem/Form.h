@@ -61,6 +61,18 @@ enum class IntegralType : std::int8_t
 template <typename T>
 class Form
 {
+  template <typename X, typename = void>
+  struct scalar_value_type
+  {
+    typedef X value_type;
+  };
+  template <typename X>
+  struct scalar_value_type<X, std::void_t<typename X::value_type>>
+  {
+    typedef typename X::value_type value_type;
+  };
+  using scalar_value_type_t = typename scalar_value_type<T>::value_type;
+
 public:
   /// @brief Create a finite element form.
   ///
@@ -78,25 +90,24 @@ public:
   /// @param[in] mesh The mesh of the domain. This is required when
   /// there are not argument functions from which the mesh can be
   /// extracted, e.g. for functionals
-  Form(
-      const std::vector<std::shared_ptr<const fem::FunctionSpace>>&
-          function_spaces,
-      const std::map<
-          IntegralType,
-          std::pair<
-              std::vector<std::pair<
-                  int, std::function<void(T*, const T*, const T*, const double*,
-                                          const int*, const std::uint8_t*)>>>,
-              const mesh::MeshTags<int>*>>& integrals,
-      const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
-      const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
-      bool needs_facet_permutations,
-      const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+  Form(const std::vector<std::shared_ptr<const FunctionSpace>>& function_spaces,
+       const std::map<
+           IntegralType,
+           std::pair<
+               std::vector<std::pair<
+                   int, std::function<void(T*, const T*, const T*,
+                                           const scalar_value_type_t*,
+                                           const int*, const std::uint8_t*)>>>,
+               const mesh::MeshTags<int>*>>& integrals,
+       const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+       const std::vector<std::shared_ptr<const Constant<T>>>& constants,
+       bool needs_facet_permutations,
+       const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
       : _function_spaces(function_spaces), _coefficients(coefficients),
         _constants(constants), _mesh(mesh),
         _needs_facet_permutations(needs_facet_permutations)
   {
-    // Extract _mesh from fem::FunctionSpace, and check they are the same
+    // Extract _mesh from FunctionSpace, and check they are the same
     if (!_mesh and !function_spaces.empty())
       _mesh = function_spaces[0]->mesh();
     // HACK Disabled this check to allow facet spaces to be created. TODO Add new
@@ -169,7 +180,7 @@ public:
 
   /// Return function spaces for all arguments
   /// @return Function spaces
-  const std::vector<std::shared_ptr<const fem::FunctionSpace>>&
+  const std::vector<std::shared_ptr<const FunctionSpace>>&
   function_spaces() const
   {
     return _function_spaces;
@@ -180,8 +191,8 @@ public:
   /// @param[in] type Integral type
   /// @param[in] i Domain index
   /// @return Function to call for tabulate_tensor
-  const std::function<void(T*, const T*, const T*, const double*, const int*,
-                           const std::uint8_t*)>&
+  const std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
+                           const int*, const std::uint8_t*)>&
   kernel(IntegralType type, int i) const
   {
     switch (type)
@@ -306,8 +317,7 @@ public:
   }
 
   /// Access coefficients
-  const std::vector<std::shared_ptr<const fem::Function<T>>>&
-  coefficients() const
+  const std::vector<std::shared_ptr<const Function<T>>>& coefficients() const
   {
     return _coefficients;
   }
@@ -333,7 +343,7 @@ public:
   }
 
   /// Access constants
-  const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants() const
+  const std::vector<std::shared_ptr<const Constant<T>>>& constants() const
   {
     return _constants;
   }
@@ -342,8 +352,9 @@ public:
   using scalar_type = T;
 
 private:
-  using kern = std::function<void(T*, const T*, const T*, const double*,
-                                  const int*, const std::uint8_t*)>;
+  using kern
+      = std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
+                           const int*, const std::uint8_t*)>;
 
   // Helper function to get the kernel for integral i from a map
   // of integrals i.e. from _cell_integrals
@@ -351,8 +362,8 @@ private:
   // @param[in] i Domain index
   // @return Function to call for tabulate_tensor
   template <typename U>
-  const std::function<void(T*, const T*, const T*, const double*, const int*,
-                           const std::uint8_t*)>&
+  const std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
+                           const int*, const std::uint8_t*)>&
   get_kernel_from_integrals(const U& integrals, int i) const
   {
     auto it = integrals.find(i);
@@ -370,7 +381,7 @@ private:
   template <int num_cells>
   static std::array<std::array<std::int32_t, 2>, num_cells>
   get_cell_local_facet_pairs(
-      std::int32_t f, const xtl::span<const std::int32_t>& cells,
+      std::int32_t f, const std::span<const std::int32_t>& cells,
       const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f)
   {
     // Loop over cells sharing facet
@@ -631,13 +642,13 @@ private:
   }
 
   // Function spaces (one for each argument)
-  std::vector<std::shared_ptr<const fem::FunctionSpace>> _function_spaces;
+  std::vector<std::shared_ptr<const FunctionSpace>> _function_spaces;
 
   // Form coefficients
-  std::vector<std::shared_ptr<const fem::Function<T>>> _coefficients;
+  std::vector<std::shared_ptr<const Function<T>>> _coefficients;
 
   // Constants associated with the Form
-  std::vector<std::shared_ptr<const fem::Constant<T>>> _constants;
+  std::vector<std::shared_ptr<const Constant<T>>> _constants;
 
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;

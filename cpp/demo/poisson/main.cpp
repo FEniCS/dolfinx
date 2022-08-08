@@ -179,8 +179,8 @@ int main(int argc, char* argv[])
           return 10 * xt::exp(-(dx) / 0.02);
         });
 
-    g->interpolate(
-        [](auto&& x) -> xt::xarray<T> { return xt::sin(5 * xt::row(x, 0)); });
+    g->interpolate([](auto&& x) -> xt::xarray<T>
+                   { return xt::sin(5 * xt::row(x, 0)); });
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a

@@ -10,7 +10,6 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/la/Vector.h>
-#include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
 
