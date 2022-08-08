@@ -146,6 +146,7 @@ public:
 
   /// @brief Write data with a given time
   /// @param[in] t The time step
+  /// @param[in] writeMesh True to save the mesh at this time, false otherwise
   void write(double t, bool writeMesh = true);
 };
 
