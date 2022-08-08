@@ -146,7 +146,7 @@ public:
 
   /// @brief Write data with a given time
   /// @param[in] t The time step
-  void write(double t);
+  void write(double t, bool writeMesh = true);
 };
 
 /// @brief Writer for meshes and functions using the ADIOS2 VTX format, see

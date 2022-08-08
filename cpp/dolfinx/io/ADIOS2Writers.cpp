@@ -777,7 +777,7 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
   fides_initialize_function_attributes(*_io, u);
 }
 //-----------------------------------------------------------------------------
-void FidesWriter::write(double t)
+void FidesWriter::write(double t, bool writeMesh)
 {
   assert(_io);
   assert(_engine);
@@ -786,7 +786,10 @@ void FidesWriter::write(double t)
   adios2::Variable<double> var_step = define_variable<double>(*_io, "step");
   _engine->Put<double>(var_step, t);
 
-  fides_write_mesh(*_io, *_engine, *_mesh);
+  if (writeMesh)
+  {
+    fides_write_mesh(*_io, *_engine, *_mesh);
+  }
   for (auto& v : _u)
     std::visit([&](const auto& u) { fides_write_data(*_io, *_engine, *u); }, v);
 
