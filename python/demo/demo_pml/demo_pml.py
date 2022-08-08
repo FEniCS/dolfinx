@@ -131,14 +131,12 @@ def curl_2d(a):
 # -
 
 # As said before, we are going to implement a perfectly matched layer (PML)
-# for this problem. To do that, we
-# can use a complex transformation of coordinates in the PML domain. For
-# squared PML we can define this transformation as:
+# for this problem. What a PML does is to gradually absorb waves impinging
+# them. Mathematically, this effect can be embedded by using a complex
+# coordinate system of this kind:
 #
 # \begin{align}
 # & x^\prime= x\left\{1-j\frac{\alpha}{k_0}\left[\frac{|x|-l_{dom}/2}
-# {(l_{pml}/2 - l_{dom}/2)^2}\right] \right\}\\
-# & y^\prime= y\left\{1-j\frac{\alpha}{k_0}\left[\frac{|y|-l_{dom}/2}
 # {(l_{pml}/2 - l_{dom}/2)^2}\right] \right\}\\
 # \end{align}
 #
@@ -230,9 +228,23 @@ if have_pyvista:
                                     window_size=[800, 800])
 
 # In the image, we can distinguish 5 different subdomains: one for the gold
-# wire (`au_tag`), one for the background (`bkg_tag`), one for the
+# wire (`au_tag`), one for the background medium (`bkg_tag`), one for the
 # PML corners (`pml_tag`), one for the PML rectangles along $x$
 # (`pml_tag + 1`), and one for the PML rectangles along $y$ (`pml_tag + 2`).
+# These different PML regions have different coordinate transformation,
+# as specified here below:
+#
+# \begin{align}
+# \text{PML corners} \rightarrow \mathbf{r}^\prime & = (x^\prime, y^\prime), \\
+# \text{PML rectangles along x} \rightarrow
+#                                       \mathbf{r}^\prime & = (x^\prime, y), \\
+# \text{PML rectangles along y} \rightarrow
+#                                       \mathbf{r}^\prime & = (x, y^\prime),
+# \end{align}
+#
+# where $x^\prime$ and $y^\prime$ are our complex coordinates
+# as defined before.
+#
 # Now we define some other problem specific parameters:
 
 wl0 = 0.4 * um  # Wavelength of the background field
@@ -301,11 +313,30 @@ eps.x.array[au_cells] = np.full_like(
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
 eps.x.scatter_forward()
 
-# Now we need to define our weak form in DOLFINx. For the PML,
-# we can express the complex transformation of coordinates as
-# a material transformation within the PML region. More
-# specifically, the PML can be expressed as a material
-# having anisotropic, inhomogeneous and complex permittivity
+# Now we need to define our weak form in DOLFINx.
+# Let's write the PML weak form first. As a first step,
+# we can define our new complex coordinates as:
+
+# +
+x = SpatialCoordinate(domain)
+alpha = 1
+
+# PML corners
+xy_pml = as_vector((pml_coordinates(x[0], alpha, k0, l_dom, l_pml),
+                    pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
+
+# PML rectangles along x
+x_pml = as_vector((pml_coordinates(x[0], alpha, k0, l_dom, l_pml), x[1]))
+
+# PML rectangles along y
+y_pml = as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
+
+# -
+
+# We can then express this coordinate systems as
+# a material transformation within the PML region. In other words,
+# the PML region can be interpreted as a material
+# having, in general, anisotropic, inhomogeneous and complex permittivity
 # $\boldsymbol{\varepsilon}_{pml}$ and
 # permeability $\boldsymbol{\mu}_{pml}$. To do this, we need
 # to calculate the Jacobian of the coordinate transformation:
@@ -334,16 +365,32 @@ eps.x.scatter_forward()
 # \end{array}\right]
 # $$
 #
-# In DOLFINx, we can do this operation by applying
-# the `ufl.grad` operator on our PML coordinates:
+# Then, our $\boldsymbol{\varepsilon}_{pml}$ and
+# $\boldsymbol{\mu}_{pml}$ can be calculated with
+# the following formula, from
+# [Ward & Pendry, 1996](
+# https://www.tandfonline.com/doi/abs/10.1080/09500349608232782):
+#
+# $$
+# \begin{align}
+# & {\boldsymbol{\varepsilon}_{pml}}^\prime =
+# A^{-1} \mathbf{A} {\boldsymbol{\varepsilon}_b}\mathbf{A}^{T},\\
+# & {\boldsymbol{\mu}_{pml}}^\prime =
+# A^{-1} \mathbf{A} {\boldsymbol{\mu}_b}\mathbf{A}^{T},
+# \end{align}
+# $$
+#
+# with $A^{-1}=\operatorname{det}(\mathbf{J})$.
+#
+# In DOLFINx, we use
+# `ufl.grad` to calculate the Jacobian of our
+# coordinate transformation for the different PML regions,
+# and then we can implement this Jacobian for
+# calculating $\boldsymbol{\varepsilon}_{pml}$
+# and $\boldsymbol{\mu}_{pml}$. The here below function
+# named `create_eps_mu()` serves this purpose:
 
 # +
-x = SpatialCoordinate(domain)
-alpha = 1
-x_pml = as_vector((pml_coordinates(x[0], alpha, k0, l_dom, l_pml), x[1]))
-y_pml = as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
-xy_pml = as_vector((pml_coordinates(x[0], alpha, k0, l_dom, l_pml),
-                    pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 
 
 def create_eps_mu(pml):
@@ -365,25 +412,6 @@ eps_x, mu_x = create_eps_mu(x_pml)
 eps_y, mu_y = create_eps_mu(y_pml)
 eps_xy, mu_xy = create_eps_mu(xy_pml)
 # -
-
-# Finally, $\boldsymbol{\varepsilon}_{pml}$ and
-# $\boldsymbol{\mu}_{pml}$ can be calculated with
-# the following formula (from
-# [Ward & Pendry, 1996](
-# https://www.tandfonline.com/doi/abs/10.1080/09500349608232782):
-# )
-#
-# $$
-# \begin{align}
-# & {\boldsymbol{\varepsilon}_{pml}}^\prime =
-# A^{-1} \mathbf{A} {\boldsymbol{\varepsilon}_b}\mathbf{A}^{T},\\
-# & {\boldsymbol{\mu}_{pml}}^\prime =
-# A^{-1} \mathbf{A} {\boldsymbol{\mu}_b}\mathbf{A}^{T},
-# \end{align}
-# $$
-#
-# with $A^{-1}=\operatorname{det}(\mathbf{J})$. In DOLFINX,
-# we can implement these formula in this way:
 
 # The final weak form in the PML region is:
 #
@@ -407,7 +435,7 @@ eps_xy, mu_xy = create_eps_mu(xy_pml)
 # \end{align}
 # $$
 #
-# We can now define the weak form in DOLFINx and solve the problem:
+# Let's solve this equation in DOLFINx:
 
 # +
 # Definition of the weak form
