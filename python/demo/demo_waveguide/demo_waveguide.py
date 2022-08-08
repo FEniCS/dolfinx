@@ -38,7 +38,7 @@ st = eps.getST()
 st.setType(SLEPc.ST.Type.SINVERT)
 eps.setWhichEigenpairs(SLEPc.EPS.Which.TARGET_MAGNITUDE)
 eps.setTarget(5.5)
-eps.setDimensions(20)
+eps.setDimensions(40)
 eps.solve()
 
 vals = [(i, eps.getEigenvalue(i)) for i in range(eps.getConverged()) if not
@@ -55,6 +55,8 @@ for i, _ in vals:
     print(f"eigenvalue: {eps.getEigenpair(i, E.vector).real:.12f}")
     E.name = f"E-{j:03d}-{eps.getEigenpair(i, E.vector).real:.4f}"
     j += 1
+
+    E.x.scatter_forward()
 
     V_dg = dolfinx.fem.VectorFunctionSpace(domain, ("DG", 2))
     E_dg = dolfinx.fem.Function(V_dg)
