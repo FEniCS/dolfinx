@@ -5,10 +5,10 @@ from mpi4py import MPI
 from slepc4py import SLEPc
 import numpy as np
 
-domain = dolfinx.mesh.create_rectangle(MPI.COMM_WORLD, [[0, 0], [np.pi, np.pi]], [100, 100], dolfinx.mesh.CellType.triangle)
+domain = dolfinx.mesh.create_rectangle(MPI.COMM_WORLD, [[0, 0], [np.pi, np.pi]], [200, 200], dolfinx.mesh.CellType.triangle)
 domain.topology.create_connectivity(domain.topology.dim-1, domain.topology.dim)
 
-N1curl = ufl.FiniteElement("N1curl", domain.ufl_cell(), 2)
+N1curl = ufl.FiniteElement("N1curl", domain.ufl_cell(), 3)
 V = dolfinx.fem.FunctionSpace(domain, N1curl)
 
 u = ufl.TrialFunction(V)
@@ -38,11 +38,11 @@ st = eps.getST()
 st.setType(SLEPc.ST.Type.SINVERT)
 eps.setWhichEigenpairs(SLEPc.EPS.Which.TARGET_MAGNITUDE)
 eps.setTarget(5.5)
-eps.setDimensions(40)
+eps.setDimensions(12)
 eps.solve()
 
 vals = [(i, eps.getEigenvalue(i)) for i in range(eps.getConverged()) if not
-        (np.isclose(eps.getEigenvalue(i), 1) or np.isclose(eps.getEigenvalue(i), 0))]
+        (np.isclose(eps.getEigenvalue(i), 0))]
 
 vals.sort(key=lambda x: x[1].real)
 
@@ -58,7 +58,7 @@ for i, _ in vals:
 
     E.x.scatter_forward()
 
-    V_dg = dolfinx.fem.VectorFunctionSpace(domain, ("DG", 2))
+    V_dg = dolfinx.fem.VectorFunctionSpace(domain, ("DG", 3))
     E_dg = dolfinx.fem.Function(V_dg)
     E_dg.interpolate(E)
     padded_j = str(j).zfill(3)
