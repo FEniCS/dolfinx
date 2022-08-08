@@ -21,7 +21,6 @@ import numpy as np
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import jit
-import dolfinx
 
 from petsc4py import PETSc
 
