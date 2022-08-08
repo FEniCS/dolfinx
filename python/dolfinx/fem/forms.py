@@ -132,7 +132,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         for integral_type, data in sd.get(domain).items():
             # Check that the subdomain data for each integral of this type is
             # the same
-            assert(all([id(d) == id(data[0]) for d in data]))
+            assert all([id(d) == id(data[0]) for d in data])
             subdomains[integral_type] = data[0]
 
         mesh = domain.ufl_cargo()
