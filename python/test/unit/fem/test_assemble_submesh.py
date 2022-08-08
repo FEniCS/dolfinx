@@ -156,9 +156,9 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     A_square_mesh, b_square_mesh, s_square_mesh = assemble_forms_0(
         square_mesh, space, k)
 
-    assert(np.isclose(A_submesh.norm(), A_square_mesh.norm()))
-    assert(np.isclose(b_submesh.norm(), b_square_mesh.norm()))
-    assert(np.isclose(s_submesh, s_square_mesh))
+    assert np.isclose(A_submesh.norm(), A_square_mesh.norm())
+    assert np.isclose(b_submesh.norm(), b_square_mesh.norm())
+    assert np.isclose(s_submesh, s_square_mesh)
 
 
 def assemble_forms_1(comm, f, g, h, u, v, dx, ds, bc, entity_maps={}):
@@ -296,9 +296,9 @@ def test_mixed_codim_0_assembly_coeffs(d, n, k, space, ghost_mode,
     A_m, b_m, s_m = assemble_forms_1(
         mesh_0.comm, f_m, g_m, h_m, u_m, v_m, ufl.dx, ufl.ds, bc)
 
-    assert(np.isclose(A_sm.norm(), A_m.norm()))
-    assert(np.isclose(b_sm.norm(), b_m.norm()))
-    assert(np.isclose(s_sm, s_m))
+    assert np.isclose(A_sm.norm(), A_m.norm())
+    assert np.isclose(b_sm.norm(), b_m.norm())
+    assert np.isclose(s_sm, s_m)
 
 
 def compute_expected_norms(d, n, space, k, ghost_mode):
@@ -438,8 +438,8 @@ def test_mixed_codim_0_assembly_0(d, n, k, space, ghost_mode,
     # Compute expected norms and compare
     A_expected_norm, b_expected_norm = compute_expected_norms(
         d, n, space, k, ghost_mode)
-    assert(np.isclose(A.norm(), A_expected_norm))
-    assert(np.isclose(b.norm(), b_expected_norm))
+    assert np.isclose(A.norm(), A_expected_norm)
+    assert np.isclose(b.norm(), b_expected_norm)
 
 
 @pytest.mark.parametrize("d", [2, 3])
@@ -512,8 +512,8 @@ def test_mixed_codim_0_assembly_1(d, n, k, space, ghost_mode, random_ordering):
 
     A_expected_norm, b_expected_norm = compute_expected_norms(
         d, n, space, k, ghost_mode)
-    assert(np.isclose(A.norm(), A_expected_norm))
-    assert(np.isclose(b.norm(), b_expected_norm))
+    assert np.isclose(A.norm(), A_expected_norm)
+    assert np.isclose(b.norm(), b_expected_norm)
 
 
 @pytest.mark.parametrize("d", [2, 3])
@@ -589,7 +589,7 @@ def test_codim_1_coeffs(d, n, k, space, ghost_mode, random_ordering):
     A = fem.petsc.assemble_matrix(a)
     A.assemble()
     A_expected_norm = A.norm()
-    assert(np.isclose(A_norm, A_expected_norm))
+    assert np.isclose(A_norm, A_expected_norm)
 
     # Assemble a vector and compare
     L = fem.form(ufl.inner(f, v) * ds,
@@ -600,7 +600,7 @@ def test_codim_1_coeffs(d, n, k, space, ghost_mode, random_ordering):
     L = fem.form(ufl.inner(f_m, v) * ds)
     b = fem.petsc.assemble_vector(L)
     b_expected_norm = b.norm()
-    assert(np.isclose(b_norm, b_expected_norm))
+    assert np.isclose(b_norm, b_expected_norm)
 
     # Assemble a scalar and compare
     M = fem.form(f * ds,
@@ -609,7 +609,7 @@ def test_codim_1_coeffs(d, n, k, space, ghost_mode, random_ordering):
 
     M = fem.form(f_m * ds)
     s_expected = mesh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
-    assert(np.isclose(s, s_expected))
+    assert np.isclose(s, s_expected)
 
 
 @pytest.mark.parametrize("d", [2, 3])
@@ -681,7 +681,7 @@ def test_codim_1_assembly(d, n, k, space, ghost_mode, random_ordering):
     A_2 = fem.petsc.assemble_matrix(a_2)
     A_2.assemble()
 
-    assert(np.isclose(A.norm(), A_2.norm()))
+    assert np.isclose(A.norm(), A_2.norm())
 
     f = fem.Function(V_m)
     f.interpolate(lambda x: np.cos(np.pi * x[0]))
@@ -693,7 +693,7 @@ def test_codim_1_assembly(d, n, k, space, ghost_mode, random_ordering):
     L_2 = fem.form(ufl.inner(f, v_m) * ds)
     b_2 = fem.petsc.assemble_vector(L_2)
 
-    assert(np.isclose(b.norm(), b_2.norm()))
+    assert np.isclose(b.norm(), b_2.norm())
 
 
 @pytest.mark.parametrize("random_ordering", [False, True])
@@ -750,5 +750,5 @@ def test_assemble_block(random_ordering):
     b = fem.petsc.assemble_vector_block(L, a, bcs=[bc])
 
     # TODO Check value
-    assert(np.isclose(A.norm(), 3.0026030373660784))
-    assert(np.isclose(b.norm(), 1.4361406616345072))
+    assert np.isclose(A.norm(), 3.0026030373660784)
+    assert np.isclose(b.norm(), 1.4361406616345072)
