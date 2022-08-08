@@ -601,7 +601,7 @@ def test_dof_without_cell(n, ghost_mode):
     f_submesh.interpolate(f_expr)
     f_mesh.x.scatter_forward()
 
-    assert(np.isclose(f_mesh.vector.norm(), f_submesh.vector.norm()))
+    assert np.isclose(f_mesh.vector.norm(), f_submesh.vector.norm())
 
 
 def test_interpolate_callable():
