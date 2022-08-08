@@ -802,7 +802,7 @@ IndexMap::create_submap(
 
   std::vector<std::int32_t> new_owners_send;
   new_owners_send.reserve(ghost_indices_recv.size());
-  for (int i = 0; i < ghost_indices_recv.size(); ++i)
+  for (std::size_t i = 0; i < ghost_indices_recv.size(); ++i)
   {
     std::int64_t global_index = ghost_indices_recv[i];
     assert(global_index - _local_range[0] >= 0);
@@ -866,7 +866,7 @@ IndexMap::create_submap(
 
   std::vector<std::int32_t> ghost_indices_send_local(ghost_indices_send.size());
   global_to_local(ghost_indices_send, ghost_indices_send_local);
-  for (int i = 0; i < ghost_indices_send.size(); ++i)
+  for (std::size_t i = 0; i < ghost_indices_send.size(); ++i)
   {
     if (new_owners_recv[i] == rank)
     {
@@ -876,7 +876,7 @@ IndexMap::create_submap(
 
   // TODO Tell previous owner what the new global index is
   std::vector<std::int64_t> send_gidx_to_original_owner;
-  for (int i = 0; i < ghost_indices_send.size(); ++i)
+  for (std::size_t i = 0; i < ghost_indices_send.size(); ++i)
   {
     if (new_owners_recv[i] == rank)
     {
@@ -907,7 +907,7 @@ IndexMap::create_submap(
 
   // Global to new global map for indices whose ownership needs changing
   std::map<std::int64_t, std::int64_t> ownership_change_global_map;
-  for (int i = 0; i < ghost_indices_recv.size(); ++i)
+  for (std::size_t i = 0; i < ghost_indices_recv.size(); ++i)
   {
     if (recv_gidx_to_original_owner[i] != -1)
     {
