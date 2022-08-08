@@ -328,5 +328,5 @@ def test_manual_integration_domains():
     A.assemble()
     b = assemble_vector(L)
 
-    assert(np.isclose((A - A_mt).norm(), 0.0))
-    assert(np.isclose((b - b_mt).norm(), 0.0))
+    assert np.isclose((A - A_mt).norm(), 0.0)
+    assert np.isclose((b - b_mt).norm(), 0.0)
