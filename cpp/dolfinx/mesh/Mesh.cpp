@@ -19,9 +19,6 @@
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <memory>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xsort.hpp>
-#include <xtensor/xview.hpp>
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
@@ -31,7 +28,7 @@ namespace
 template <typename T>
 graph::AdjacencyList<T>
 reorder_list(const graph::AdjacencyList<T>& list,
-             const xtl::span<const std::int32_t>& nodemap)
+             const std::span<const std::int32_t>& nodemap)
 {
   // Copy existing data to keep ghost values (not reordered)
   std::vector<T> data(list.array());
@@ -62,17 +59,19 @@ reorder_list(const graph::AdjacencyList<T>& list,
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        const fem::CoordinateElement& element,
-                       const xt::xtensor<double, 2>& x,
+                       std::span<const double> x,
+                       std::array<std::size_t, 2> xshape,
                        mesh::GhostMode ghost_mode)
 {
-  return create_mesh(comm, cells, element, x, ghost_mode,
+  return create_mesh(comm, cells, element, x, xshape, ghost_mode,
                      create_cell_partitioner());
 }
 //-----------------------------------------------------------------------------
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        const fem::CoordinateElement& element,
-                       const xt::xtensor<double, 2>& x,
+                       std::span<const double> x,
+                       std::array<std::size_t, 2> xshape,
                        mesh::GhostMode ghost_mode,
                        const mesh::CellPartitionFunction& cell_partitioner)
 {
@@ -131,10 +130,10 @@ Mesh mesh::create_mesh(MPI_Comm comm,
         = cells_extracted.num_nodes() - ghost_owners.size();
     const std::vector<int> remap
         = graph::reorder_gps(std::get<0>(build_local_dual_graph(
-            xtl::span<const std::int64_t>(
+            std::span<const std::int64_t>(
                 cells_extracted.array().data(),
                 cells_extracted.offsets()[num_owned_cells]),
-            xtl::span<const std::int32_t>(cells_extracted.offsets().data(),
+            std::span<const std::int32_t>(cells_extracted.offsets().data(),
                                           num_owned_cells + 1),
             tdim)));
 
@@ -181,8 +180,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   }
 
   // Function top build geometry. Used to scope memory operations.
-  auto build_geometry
-      = [](auto comm, auto& cell_nodes, auto& topology, auto& element, auto& x)
+  auto build_geometry = [](auto comm, auto& cell_nodes, auto& topology,
+                           auto& element, auto& x, auto xshape1)
   {
     int tdim = topology.dim();
     int num_cells = topology.index_map(tdim)->size_local()
@@ -195,17 +194,18 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     if (element.needs_dof_permutations())
       topology.create_entity_permutations();
 
-    return create_geometry(comm, topology, element, cell_nodes, x, x.shape(1));
+    return create_geometry(comm, topology, element, cell_nodes, x, xshape1);
   };
 
-  Geometry geometry = build_geometry(comm, cell_nodes, topology, element, x);
+  Geometry geometry
+      = build_geometry(comm, cell_nodes, topology, element, x, xshape[1]);
   return Mesh(comm, std::move(topology), std::move(geometry));
 }
 //-----------------------------------------------------------------------------
 std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>>
 mesh::create_submesh(const Mesh& mesh, int dim,
-                     const xtl::span<const std::int32_t>& entities)
+                     const std::span<const std::int32_t>& entities)
 {
   // -- Submesh topology
   const mesh::Topology& topology = mesh.topology();
@@ -307,7 +307,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   submesh_e_to_v_offsets.reserve(submesh_to_mesh_entity_map.size() + 1);
   for (std::int32_t e : submesh_to_mesh_entity_map)
   {
-    xtl::span<const std::int32_t> vertices = mesh_e_to_v->links(e);
+    std::span<const std::int32_t> vertices = mesh_e_to_v->links(e);
     for (std::int32_t v : vertices)
     {
       auto it = std::find(submesh_to_mesh_vertex_map.begin(),
@@ -412,7 +412,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   }
 
   // Create submesh geometry coordinates
-  xtl::span<const double> mesh_x = geometry.x();
+  std::span<const double> mesh_x = mesh.geometry().x();
   const int submesh_num_x_dofs = submesh_to_mesh_x_dof_map.size();
   std::vector<double> submesh_x(3 * submesh_num_x_dofs);
   for (int i = 0; i < submesh_num_x_dofs; ++i)

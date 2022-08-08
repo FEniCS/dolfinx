@@ -6,11 +6,13 @@
 
 #pragma once
 
+#include <array>
 #include <hdf5.h>
 #include <mpi.h>
+#include <span>
 #include <string>
-#include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
+#include <utility>
+#include <vector>
 
 namespace pugi
 {
@@ -52,23 +54,32 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                        const hid_t h5_id, const std::string path_prefix,
                        const mesh::Topology& topology,
                        const mesh::Geometry& geometry, int cell_dim,
-                       const xtl::span<const std::int32_t>& entities);
+                       const std::span<const std::int32_t>& entities);
 
 /// Add Geometry xml node
 void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                        const hid_t h5_id, const std::string path_prefix,
                        const mesh::Geometry& geometry);
 
-/// Read Geometry data
-/// @returns geometry
-xt::xtensor<double, 2> read_geometry_data(MPI_Comm comm, const hid_t h5_id,
-                                          const pugi::xml_node& node);
+/// @brief Read geometry (coordinate) data.
+///
+/// @returns The coordinates of each 'node'. The returned data is (0) an
+/// array holding the coordinates (row-major storage) and (1) the shape
+/// of the coordinate array. The shape is `(num_nodes, geometric
+/// dimension)`.
+std::pair<std::vector<double>, std::array<std::size_t, 2>>
+read_geometry_data(MPI_Comm comm, const hid_t h5_id,
+                   const pugi::xml_node& node);
 
-/// Read Topology data
-/// @returns ((cell type, degree), topology)
-xt::xtensor<std::int64_t, 2> read_topology_data(MPI_Comm comm,
-                                                const hid_t h5_id,
-                                                const pugi::xml_node& node);
+/// @brief Read topology (cell connectivity) data.
+///
+/// @returns Mesh topology in DOLFINx ordering, where data row `i` lists
+/// the 'nodes' of cell `i`. The returned data is (0) an array holding
+/// the topology data (row-major storage) and (1) the shape of the
+/// topology array. The shape is `(num_cells, num_nodes_per_cell)`
+std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
+read_topology_data(MPI_Comm comm, const hid_t h5_id,
+                   const pugi::xml_node& node);
 
 } // namespace io::xdmf_mesh
 } // namespace dolfinx

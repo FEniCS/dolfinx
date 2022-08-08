@@ -13,6 +13,7 @@ if sys.version_info < (3, 8):
 VERSION = "0.4.2.dev0"
 
 REQUIREMENTS = [
+    "cffi",
     "numpy>=1.21",
     "mpi4py",
     "petsc4py",
@@ -69,6 +70,7 @@ setup(name='fenics-dolfinx',
       long_description='',
       packages=["dolfinx",
                 "dolfinx.fem",
+                "dolfinx.io",
                 "dolfinx.nls",
                 "dolfinx.wrappers"],
       package_data={'dolfinx.wrappers': ['*.h'], 'dolfinx': ['py.typed'],
