@@ -26,7 +26,6 @@
 #include <pybind11/stl/filesystem.h>
 #include <string>
 #include <vector>
-#include <xtensor/xadapt.hpp>
 
 namespace py = pybind11;
 
@@ -42,7 +41,10 @@ void io(py::module& m)
   m.def(
       "extract_vtk_connectivity",
       [](const dolfinx::mesh::Mesh& mesh)
-      { return xt_as_pyarray(dolfinx::io::extract_vtk_connectivity(mesh)); },
+      {
+        auto [cells, shape] = dolfinx::io::extract_vtk_connectivity(mesh);
+        return as_pyarray(std::move(cells), shape);
+      },
       py::arg("mesh"),
       "Extract the mesh topology with VTK ordering using geometry indices");
 
@@ -113,13 +115,19 @@ void io(py::module& m)
           "read_topology_data",
           [](dolfinx::io::XDMFFile& self, const std::string& name,
              const std::string& xpath)
-          { return xt_as_pyarray(self.read_topology_data(name, xpath)); },
+          {
+            auto [cells, shape] = self.read_topology_data(name, xpath);
+            return as_pyarray(std::move(cells), shape);
+          },
           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def(
           "read_geometry_data",
           [](dolfinx::io::XDMFFile& self, const std::string& name,
              const std::string& xpath)
-          { return xt_as_pyarray(self.read_geometry_data(name, xpath)); },
+          {
+            auto [x, shape] = self.read_geometry_data(name, xpath);
+            return as_pyarray(std::move(x), shape);
+          },
           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("read_geometry_data", &dolfinx::io::XDMFFile::read_geometry_data,
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")

@@ -283,7 +283,7 @@ geometry::compute_collisions(const BoundingBoxTree& tree,
     for (std::size_t p = 0; p < points.size() / 3; ++p)
     {
       _compute_collisions_point(
-          tree, {points[3 * p + 0], points[2 * p + 1], points[3 * p + 2]},
+          tree, {points[3 * p + 0], points[3 * p + 1], points[3 * p + 2]},
           entities);
       offsets[p + 1] = entities.size();
     }

@@ -6,17 +6,21 @@
 # Garth N. Wells <gnw20@cam.ac.uk>
 # Jan Blechta <blechta@karlin.mff.cuni.cz>
 #
+# To run the latest stable build:
+#
+#    docker run -ti dolfinx/dolfinx:stable
+#
 # To run a nightly build:
 #
-#    docker run -ti dolfinx/dolfinx:latest
+#    docker run -ti dolfinx/dolfinx:nightly
 #
 # To run a Jupyter lab session:
 #
-#    docker run --init -p 8888:8888 dolfinx/lab:latest
+#    docker run --init -p 8888:8888 dolfinx/lab:stable
 #
 # To run and share the current host directory with the container:
 #
-#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab:latest
+#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab:stable
 #
 # To build from source, first checkout the DOLFINx, FFCx, Basix and UFL
 # repositories into the working directory, e.g.:
@@ -42,23 +46,24 @@
 #
 
 
-ARG ADIOS2_VERSION=2.8.1
+ARG ADIOS2_VERSION=2.8.2
 ARG GMSH_VERSION=4_10_1
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=2
 ARG KAHIP_VERSION=3.14
 ARG NUMPY_VERSION=1.22.4
-ARG PYBIND11_VERSION=2.9.2
-ARG PETSC_VERSION=3.17.2
+ARG PYBIND11_VERSION=2.10.0
+ARG PETSC_VERSION=3.17.3
 ARG SLEPC_VERSION=3.17.1
-ARG PYVISTA_VERSION=0.34.2
+ARG PYVISTA_VERSION=0.35.2
 ARG XTENSOR_VERSION=0.24.2
 ARG XTL_VERSION=0.7.4
 
 ARG MPICH_VERSION=4.0.2
 ARG OPENMPI_SERIES=4.1
 ARG OPENMPI_PATCH=4
-# Used to set the correct PYTHONPATH for the real and complex install of DOLFINx
+# Used to set the correct PYTHONPATH for the real and complex install of
+# DOLFINx
 ARG PYTHON_VERSION=3.10
 
 ########################################
@@ -86,17 +91,16 @@ ARG OPENMPI_PATCH
 # They are safe defaults. They can be overridden by the user.
 # Compiler optimisation flags for SLEPc and PETSc, all languages.
 ARG PETSC_SLEPC_OPTFLAGS="-O2"
-# PETSc and SLEPc number of make processes (--with-make-np)
-ARG PETSC_SLEPC_MAKE_NP=2
 # Turn on PETSc and SLEPc debugging. "yes" or "no".
 ARG PETSC_SLEPC_DEBUGGING="no"
 
 # MPI variant. "mpich" or "openmpi".
 ARG MPI="mpich"
-ARG MPICH_CONFIGURE_OPTIONS="FCFLAGS=-fallow-argument-mismatch FFLAGS=-fallow-argument-mismatch --with-device=ch4:ofi"  # See https://github.com/pmodels/mpich/issues/5811
+# See https://github.com/pmodels/mpich/issues/5811
+ARG MPICH_CONFIGURE_OPTIONS="FCFLAGS=-fallow-argument-mismatch FFLAGS=-fallow-argument-mismatch --with-device=ch4:ofi"
 
 # Number of build threads to use with make
-ARG BUILD_NP=2
+ARG BUILD_NP=3
 
 WORKDIR /tmp
 
@@ -200,23 +204,23 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
     rm -rf /tmp/*
 
 # Install HDF5
+# RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+#     tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+#     cd hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
+#     ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
+#     make -j${BUILD_NP} install && \
+#     rm -rf /tmp/*
+
+# Note: HDF5 CMake install has numerous bugs and inconsistencies. Test carefully.
+# HDF5 overides CMAKE_INSTALL_PREFIX by default, hence it is set
+# below to ensure that HDF5 is installed into a path where it can be
+# found.
 RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
     tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-    cd hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
-    ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
-    make -j${BUILD_NP} install && \
+    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DHDF5_ENABLE_PARALLEL=on -DHDF5_ENABLE_Z_LIB_SUPPORT=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
     rm -rf /tmp/*
-
-# HDF5 CMake build broken, see
-# https://github.com/HDFGroup/hdf5/issues/969,
-# https://github.com/HDFGroup/hdf5/pull/1089
-# RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-#    tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-#     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -HDF5_ENABLE_PARALLEL=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
-#     cmake --build build-dir && \ARG BUILD_NP=2
-
-#     cmake --install build-dir && \
-#     rm -rf /tmp/*
 
 # Install ADIOS2
 RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
@@ -250,7 +254,6 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -272,7 +275,6 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -293,7 +295,6 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=yes \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -312,7 +313,6 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=yes \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -482,13 +482,20 @@ RUN apt-get -qq update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# pyvista dependencies from pip. Only compatible with x86-64 (amd64).
-# matplotlib improves plotting quality with better color maps and properly rendering colorbars.
+# Install pyvista from PyPI. pyvisa depends on (py)vtk), but vtk is not
+# available on pypi for linux/arm64.
+# matplotlib improves plotting quality with better color maps and
+# properly rendering colorbars.
+# pythreejs and ipygany are two backends of pyvista not requiring a framebuffer,
+# and are therefore preferred in notebooks
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
-    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
-    esac; \
-    pip3 install --no-cache-dir matplotlib
+    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} && \
+    pip3 install --no-cache-dir matplotlib && \
+    pip3 install --no-cache-dir pythreejs ipygany && \
+    pip3 cache purge && \
+    jupyter nbextension enable --py --sys-prefix ipygany ;; \
+    esac;
 
 # Jupyter Notebook kernel specification for complex build DOLFINx
 ADD dolfinx/docker/complex-kernel.json /usr/local/share/jupyter/kernels/python3-complex/kernel.json

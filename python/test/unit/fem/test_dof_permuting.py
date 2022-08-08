@@ -126,7 +126,7 @@ def test_dof_positions(cell_type, space_type):
     entities = {i: {} for i in range(1, tdim)}
     for cell in range(coord_dofs.num_nodes):
         # Push coordinates forward
-        X = V.element.interpolation_points
+        X = V.element.interpolation_points()
         xg = x_g[coord_dofs.links(cell), :tdim]
         x = cmap.push_forward(X, xg)
 
@@ -217,7 +217,7 @@ def random_evaluation_mesh(cell_type):
 )
 @pytest.mark.parametrize('space_order', range(1, 4))
 def test_evaluation(cell_type, space_type, space_order):
-    if cell_type == "hexahedron" and space_order >= 3:
+    if cell_type == "hexahedron" and space_order > 3:
         pytest.skip("Skipping expensive test on hexahedron")
 
     random.seed(4)
