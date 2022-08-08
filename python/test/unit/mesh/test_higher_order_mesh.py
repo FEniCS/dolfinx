@@ -43,6 +43,7 @@ def check_cell_volume(points, cell, domain, volume):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 5))
 def test_submesh(order):
+    # Generate a single cell higher order mesh
     points = []
     points += [[i / order, j / order, 0] for j in range(order + 1)
                for i in range(order + 1 - j)]
@@ -102,6 +103,10 @@ def test_submesh(order):
     md = {"quadrature_degree": 10}
     measures = (ufl.ds(mesh, metadata=md), ufl.dx(mesh, metadata=md))
     dimensions = (mesh.topology.dim - 1, mesh.topology.dim)
+    # Check that creating a submesh of single cell mesh, consisting of:
+    # 1. The cell
+    # 2. The facets of the cell
+    # Gives the correct computation of: volume (case 1) or surface area (case 2)
     for dim, dC in zip(dimensions, measures):
         # Integrate on original mesh
         value = assemble_scalar(form(1 * dC))
