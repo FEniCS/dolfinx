@@ -103,7 +103,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     assert np.all(cell_midpoints[:, 0] <= mpi_comm.rank + 1)
 
 
-def test_assymetric_partitioner():
+def test_asymmetric_partitioner():
     mpi_comm = MPI.COMM_WORLD
     n = mpi_comm.Get_size()
     r = mpi_comm.Get_rank()
@@ -129,12 +129,13 @@ def test_assymetric_partitioner():
     # Send cells to self, and if on process zero, also send to process 1.
     def partitioner(comm, n, m, topo, ghost_mode):
         r = comm.Get_rank()
+        n = comm.Get_size()
         dests = []
         offsets = [0]
         for i in range(topo.num_nodes):
             dests.append(r)
-            if r == 0:
-                dests.append(1 - r)
+            if r == 0 and n > 1:
+                dests.append(1)
             offsets.append(len(dests))
 
         dests = np.array(dests, dtype=np.int32)
