@@ -109,6 +109,19 @@ public:
     return {_bboxes[2 * node], _bboxes[2 * node + 1]};
   }
 
+  /// Get bounding box child nodes
+  ///
+  /// @param[in] node The bounding box node index
+  /// @return The indices of the two child nodes. If @p node is a leaf
+  /// nodes, then the values in the returned array are equal and
+  /// correspond to the index of the entity that the leaf node bounds,
+  /// e.g. the index of the cell that it bounds.
+  std::span<const int, 2> bbox_span(std::size_t node) const
+  {
+    assert(2 * node + 1 < _bboxes.size());
+    return std::span<const int, 2>(_bboxes.data() + 2 * node, 2);
+  }
+
 private:
   // Constructor
   BoundingBoxTree(std::vector<std::int32_t>&& bboxes,

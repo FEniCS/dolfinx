@@ -72,7 +72,7 @@ std::array<double, 6> compute_bbox_of_bboxes(
         leaf_bboxes)
 {
   // Compute min and max over remaining boxes
-  std::array<double, 6> b = leaf_bboxes[0].first;
+  std::array<double, 6> b = leaf_bboxes.front().first;
 
   for (auto& box : leaf_bboxes)
   {

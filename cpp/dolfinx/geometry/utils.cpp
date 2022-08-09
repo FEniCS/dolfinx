@@ -20,7 +20,7 @@ namespace
 {
 //-----------------------------------------------------------------------------
 // Check whether bounding box is a leaf node
-constexpr bool is_leaf(const std::array<int, 2>& bbox)
+constexpr bool is_leaf(std::span<const int, 2> bbox)
 {
   // Leaf nodes are marked by setting child_0 equal to child_1
   return bbox[0] == bbox[1];
@@ -78,7 +78,7 @@ std::pair<std::int32_t, double> _compute_closest_entity(
 {
   // Get children of current bounding box node (child_1 denotes entity
   // index for leaves)
-  const std::array bbox = tree.bbox(node);
+  std::span<const int, 2> bbox = tree.bbox_span(node);
   double r2;
   if (is_leaf(bbox))
   {
@@ -99,8 +99,7 @@ std::pair<std::int32_t, double> _compute_closest_entity(
       // obtain exact distance to the convex hull of the entity
       if (r2 <= R2)
       {
-        r2 = geometry::squared_distance(mesh, tree.tdim(),
-                                        std::span(&bbox[1], 1),
+        r2 = geometry::squared_distance(mesh, tree.tdim(), bbox.subspan(1, 1),
                                         {{point[0], point[1], point[2]}})
                  .front();
       }
@@ -147,7 +146,7 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
 
   while (next != -1)
   {
-    std::array bbox = tree.bbox(next);
+    std::span<const int, 2> bbox = tree.bbox_span(next);
     next = -1;
 
     if (is_leaf(bbox))
@@ -199,8 +198,8 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
     return;
 
   // Get bounding boxes for current nodes
-  const std::array bbox_A = A.bbox(node_A);
-  const std::array bbox_B = B.bbox(node_B);
+  std::span<const int, 2> bbox_A = A.bbox_span(node_A);
+  std::span<const int, 2> bbox_B = B.bbox_span(node_B);
 
   // Check whether we've reached a leaf in A or B
   const bool is_leaf_A = is_leaf(bbox_A);
