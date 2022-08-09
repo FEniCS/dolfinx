@@ -76,11 +76,11 @@ std::array<double, 6> compute_bbox_of_bboxes(
 
   for (auto& box : leaf_bboxes)
   {
-    std::transform(box.first.begin(), std::next(box.first.begin(), 3),
-                   b.begin(), b.begin(),
+    std::transform(box.first.cbegin(), std::next(box.first.cbegin(), 3),
+                   b.cbegin(), b.begin(),
                    [](double a, double b) { return std::min(a, b); });
-    std::transform(std::next(box.first.begin(), 3), box.first.end(),
-                   std::next(b.begin(), 3), std::next(b.begin(), 3),
+    std::transform(std::next(box.first.cbegin(), 3), box.first.cend(),
+                   std::next(b.cbegin(), 3), std::next(b.begin(), 3),
                    [](double a, double b) { return std::max(a, b); });
   }
 
@@ -96,15 +96,12 @@ int _build_from_leaf(
     // Reached leaf
 
     // Get bounding box coordinates for leaf
-    const auto [b, entity_index] = leaf_bboxes[0];
+    const auto [b, entity_index] = leaf_bboxes.front();
 
     // Store bounding box data
     bboxes.push_back(entity_index);
     bboxes.push_back(entity_index);
-    bbox_coordinates.insert(bbox_coordinates.end(), b.begin(),
-                            std::next(b.begin(), 3));
-    bbox_coordinates.insert(bbox_coordinates.end(), std::next(b.begin(), 3),
-                            b.end());
+    common::impl::copy_N<6>(b.begin(), std::back_inserter(bbox_coordinates));
     return bboxes.size() / 2 - 1;
   }
   else
@@ -114,8 +111,8 @@ int _build_from_leaf(
 
     // Sort bounding boxes along longest axis
     std::array<double, 3> b_diff;
-    std::transform(std::next(b.begin(), 3), b.end(), b.begin(), b_diff.begin(),
-                   std::minus<double>());
+    std::transform(std::next(b.cbegin(), 3), b.cend(), b.cbegin(),
+                   b_diff.begin(), std::minus<double>());
     const std::size_t axis = std::distance(
         b_diff.begin(), std::max_element(b_diff.begin(), b_diff.end()));
 
@@ -139,10 +136,7 @@ int _build_from_leaf(
     // Store bounding box data. Note that root box will be added last.
     bboxes.push_back(bbox0);
     bboxes.push_back(bbox1);
-    bbox_coordinates.insert(bbox_coordinates.end(), b.begin(),
-                            std::next(b.begin(), 3));
-    bbox_coordinates.insert(bbox_coordinates.end(), std::next(b.begin(), 3),
-                            b.end());
+    common::impl::copy_N<6>(b.begin(), std::back_inserter(bbox_coordinates));
     return bboxes.size() / 2 - 1;
   }
 }
@@ -240,7 +234,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
   for (std::int32_t e : entities)
   {
     std::array<double, 6> b = compute_bbox_of_entity(mesh, tdim, e);
-    std::transform(b.begin(), std::next(b.begin(), 3), b.begin(),
+    std::transform(b.cbegin(), std::next(b.cbegin(), 3), b.begin(),
                    [padding](double x) { return x - padding; });
     std::transform(std::next(b.begin(), 3), b.end(), std::next(b.begin(), 3),
                    [padding](double& x) { return x + padding; });
@@ -294,10 +288,9 @@ BoundingBoxTree BoundingBoxTree::create_global_tree(MPI_Comm comm) const
       mpi_size);
   for (std::size_t i = 0; i < _recv_bbox.size(); ++i)
   {
-    common::impl::copy_N<3>(std::next(recv_bbox.begin(), 6 * i),
+    common::impl::copy_N<6>(std::next(recv_bbox.begin(), 6 * i),
                             _recv_bbox[i].first.begin());
-    common::impl::copy_N<3>(std::next(recv_bbox.begin(), 6 * i + 3),
-                            std::next(_recv_bbox[i].first.begin(), 3));
+
     _recv_bbox[i].second = i;
   }
 
@@ -347,13 +340,19 @@ void BoundingBoxTree::tree_print(std::stringstream& s, int i) const
   }
 }
 //-----------------------------------------------------------------------------
-std::array<double, 6> BoundingBoxTree::get_bbox(std::size_t node) const
+std::span<const double> BoundingBoxTree::get_bbox(std::size_t node) const
+{
+  const std::span<const double> coords
+      = std::span(_bbox_coordinates.data(), _bbox_coordinates.size());
+  return coords.subspan(6 * node, 6);
+}
+//-----------------------------------------------------------------------------
+std::array<double, 6> BoundingBoxTree::copy_bbox(std::size_t node) const
 {
   std::array<double, 6> x;
-  common::impl::copy_N<3>(std::next(_bbox_coordinates.begin(), 6 * node),
+  common::impl::copy_N<6>(std::next(_bbox_coordinates.begin(), 6 * node),
                           x.begin());
-  common::impl::copy_N<3>(std::next(_bbox_coordinates.begin(), 6 * node + 3),
-                          std::next(x.begin(), 3));
+
   return x;
 }
 //-----------------------------------------------------------------------------

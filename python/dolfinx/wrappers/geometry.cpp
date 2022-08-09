@@ -6,6 +6,7 @@
 
 #include "array.h"
 #include "caster_mpi.h"
+#include <dolfinx/common/utils.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/gjk.h>
 #include <dolfinx/geometry/utils.h>
@@ -240,11 +241,10 @@ void geometry(py::module& m)
           [](const dolfinx::geometry::BoundingBoxTree& self,
              const std::size_t i)
           {
-            std::array<double, 6> bbox = self.get_bbox(i);
+            std::span<const double> bbox = self.get_bbox(i);
             std::array<std::size_t, 2> shape = {2, 3};
             std::vector<double> bbox_out(6);
-            for (int i = 0; i < 6; ++i)
-              bbox_out[i] = bbox[i];
+            dolfinx::common::impl::copy_N<6>(bbox.begin(), bbox_out.begin());
             return dolfinx_wrappers::as_pyarray(std::move(bbox_out), shape);
           },
           py::arg("i"))

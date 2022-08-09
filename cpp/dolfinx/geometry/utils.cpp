@@ -29,9 +29,10 @@ constexpr bool is_leaf(const std::array<int, 2>& bbox)
 /// A point `x` is inside a bounding box `b` if each component of its
 /// coordinates lies within the range `[b(0,i), b(1,i)]` that defines the bounds
 /// of the bounding box, b(0,i) <= x[i] <= b(1,i) for i = 0, 1, 2
-constexpr bool point_in_bbox(std::span<double, 6> b,
+constexpr bool point_in_bbox(std::span<const double> b,
                              const std::array<double, 3>& x)
 {
+  assert(b.size() == 6);
   constexpr double rtol = 1e-14;
   bool in = true;
   auto b0 = b.subspan(0, 3);
@@ -49,8 +50,11 @@ constexpr bool point_in_bbox(std::span<double, 6> b,
 /// A bounding box "a" is contained inside another bounding box "b", if each
 /// of its intervals [a(0,i), a(1,i)] is contained in [b(0,i), b(1,i)],
 /// a(0,i) <= b(1, i) and a(1,i) >= b(0, i)
-constexpr bool bbox_in_bbox(std::span<double, 6> a, std::span<double, 6> b)
+constexpr bool bbox_in_bbox(std::span<const double> a,
+                            std::span<const double> b)
 {
+  assert(b.size() == 6);
+  assert(a.size() == 6);
   constexpr double rtol = 1e-14;
   bool in = true;
   auto a0 = a.subspan(0, 3);
@@ -81,7 +85,7 @@ std::pair<std::int32_t, double> _compute_closest_entity(
     // If point cloud tree the exact distance is easy to compute
     if (tree.tdim() == 0)
     {
-      std::array<double, 6> bbox_coord = tree.get_bbox(node);
+      std::array<double, 6> bbox_coord = tree.copy_bbox(node);
       auto diff = std::span(bbox_coord).subspan(0, 3);
 
       for (std::size_t k = 0; k < 3; ++k)
@@ -114,7 +118,8 @@ std::pair<std::int32_t, double> _compute_closest_entity(
   else
   {
     // If bounding box is outside radius, then don't search further
-    r2 = geometry::compute_squared_distance_bbox(tree.get_bbox(node), point);
+    r2 = geometry::compute_squared_distance_bbox(std::span(tree.get_bbox(node)),
+                                                 point);
     if (r2 > R2)
       return {closest_entity, R2};
 
@@ -153,10 +158,8 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
     else
     {
       // Check whether the point collides with child nodes (left and right)
-      std::array<double, 6> bleft = tree.get_bbox(bbox[0]);
-      std::array<double, 6> bright = tree.get_bbox(bbox[1]);
-      bool left = point_in_bbox(std::span(bleft), p);
-      bool right = point_in_bbox(std::span(bright), p);
+      bool left = point_in_bbox(tree.get_bbox(bbox[0]), p);
+      bool right = point_in_bbox(tree.get_bbox(bbox[1]), p);
       if (left && right)
       {
         // If the point collides with both child nodes, add the right node to
@@ -192,9 +195,7 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
                               int node_B, std::vector<int>& entities)
 {
   // If bounding boxes don't collide, then don't search further
-  std::array<double, 6> a = A.get_bbox(node_A);
-  std::array<double, 6> b = B.get_bbox(node_B);
-  if (!bbox_in_bbox(std::span(a), std::span(b)))
+  if (!bbox_in_bbox(A.get_bbox(node_A), B.get_bbox(node_B)))
     return;
 
   // Get bounding boxes for current nodes
@@ -330,7 +331,7 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       leaves = midpoint_tree.bbox(0);
       assert(is_leaf(leaves));
       initial_entity = leaves[0];
-      std::array<double, 6> bbox_coord = midpoint_tree.get_bbox(0);
+      std::array<double, 6> bbox_coord = midpoint_tree.copy_bbox(0);
       auto diff = std::span(bbox_coord).subspan(0, 3);
       for (std::size_t k = 0; k < 3; ++k)
         diff[k] -= points[3 * i + k];
@@ -362,18 +363,22 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
 }
 
 //-----------------------------------------------------------------------------
-double geometry::compute_squared_distance_bbox(const std::array<double, 6>& b,
+double geometry::compute_squared_distance_bbox(std::span<const double> b,
                                                const std::array<double, 3>& x)
 {
-  return std::transform_reduce(x.begin(), x.end(), b.begin(), 0.0,
+  assert(b.size() == 6);
+  auto b0 = b.subspan(0, 3);
+  auto b1 = b.subspan(3, 6);
+
+  return std::transform_reduce(x.begin(), x.end(), b0.begin(), 0.0,
                                std::plus<>{},
                                [](auto x, auto b)
                                {
                                  auto dx = x - b;
                                  return dx > 0 ? 0 : dx * dx;
                                })
-         + std::transform_reduce(x.begin(), x.end(), std::next(b.begin(), 3),
-                                 0.0, std::plus<>{},
+         + std::transform_reduce(x.begin(), x.end(), b1.begin(), 0.0,
+                                 std::plus<>{},
                                  [](auto x, auto b)
                                  {
                                    auto dx = x - b;
