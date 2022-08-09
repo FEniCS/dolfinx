@@ -14,7 +14,7 @@ import dolfinx.graph
 import ufl
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, compute_midpoints, create_box,
-                          create_rectangle, create_cell_partitioner, create_mesh)
+                          create_cell_partitioner, create_mesh)
 
 from mpi4py import MPI
 
