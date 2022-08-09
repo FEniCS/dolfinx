@@ -60,36 +60,29 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   fem::CoordinateElement cmap(e);
 
   // read mesh data
-  xt::xtensor<double, 2> x({0, 2});
-  xt::xtensor<std::int64_t, 2> cells(
-      {0, static_cast<std::size_t>(
-              mesh::num_cell_vertices(mesh::CellType::triangle))});
+  std::vector<double> x;
+  std::array<std::size_t, 2> xshape = {0, 2};
+  std::vector<std::int64_t> cells;
+  std::array<std::size_t, 2> cshape = {0, 3};
   graph::AdjacencyList<std::int32_t> dest(0);
   if (subset_comm != MPI_COMM_NULL)
   {
     io::XDMFFile infile(subset_comm, "mesh.xdmf", "r");
-    cells = infile.read_topology_data("mesh");
-    x = infile.read_geometry_data("mesh");
+    std::tie(cells, cshape) = infile.read_topology_data("mesh");
+    std::tie(x, xshape) = infile.read_geometry_data("mesh");
 
     int nparts = mpi_size;
     const int tdim = mesh::cell_dim(mesh::CellType::triangle);
-    dest = partitioner(
-        subset_comm, nparts, tdim,
-        graph::regular_adjacency_list(
-            std::vector(cells.data(), cells.data() + cells.size()),
-            cells.shape(1)),
-        mesh::GhostMode::shared_facet);
+    dest = partitioner(subset_comm, nparts, tdim,
+                       graph::regular_adjacency_list(cells, cshape[1]),
+                       mesh::GhostMode::shared_facet);
   }
-  CHECK(x.shape(1) == 2);
+  CHECK(xshape[1] == 2);
 
   // Distribute cells to destination ranks
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
       = graph::build::distribute(
-          mpi_comm,
-          graph::regular_adjacency_list(
-              std::vector(cells.data(), cells.data() + cells.size()),
-              cells.shape(1)),
-          dest);
+          mpi_comm, graph::regular_adjacency_list(cells, cshape[1]), dest);
 
   // FIXME: improve way to find 'external' vertices
   // Count the connections of all vertices on owned cells. If there are 6
@@ -125,7 +118,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   int tdim = topology.dim();
 
   mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, cmap,
-                                                  cell_nodes, x, x.shape(1));
+                                                  cell_nodes, x, xshape[1]);
 
   auto mesh = std::make_shared<mesh::Mesh>(mpi_comm, std::move(topology),
                                            std::move(geometry));
