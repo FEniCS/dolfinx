@@ -70,8 +70,8 @@ std::vector<std::int32_t> compute_closest_entity(
 /// @param[in] x A point
 /// @return The shortest distance between the bounding box `b` and the
 /// point `x`. Returns zero if `x` is inside box.
-double compute_squared_distance_bbox(std::span<const double> b,
-                                     const std::array<double, 3>& x);
+double compute_squared_distance_bbox(std::span<const double, 6> b,
+                                     std::span<const double, 3> x);
 
 /// Compute the shortest vector from a mesh entity to a point
 /// @param[in] mesh The mesh

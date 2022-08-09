@@ -78,7 +78,7 @@ public:
   /// @param[in] node The bounding box node index
   /// @return The bounding box (lower_corner, upper_corner) as a subspan of the
   /// bounding box coordinates. Shape (2,3). Flattened row-major.
-  std::span<const double> get_bbox(std::size_t node) const;
+  std::span<const double, 6> get_bbox(std::size_t node) const;
 
   /// Compute a global bounding tree (collective on comm)
   /// This can be used to find which process a point might have a

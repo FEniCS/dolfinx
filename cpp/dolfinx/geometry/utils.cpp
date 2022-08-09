@@ -29,8 +29,8 @@ constexpr bool is_leaf(const std::array<int, 2>& bbox)
 /// A point `x` is inside a bounding box `b` if each component of its
 /// coordinates lies within the range `[b(0,i), b(1,i)]` that defines the bounds
 /// of the bounding box, b(0,i) <= x[i] <= b(1,i) for i = 0, 1, 2
-constexpr bool point_in_bbox(std::span<const double> b,
-                             const std::array<double, 3>& x)
+constexpr bool point_in_bbox(std::span<const double, 6> b,
+                             std::span<const double, 3> x)
 {
   assert(b.size() == 6);
   constexpr double rtol = 1e-14;
@@ -73,7 +73,7 @@ constexpr bool bbox_in_bbox(std::span<const double> a,
 //-----------------------------------------------------------------------------
 // Compute closest entity {closest_entity, R2} (recursive)
 std::pair<std::int32_t, double> _compute_closest_entity(
-    const geometry::BoundingBoxTree& tree, const std::array<double, 3>& point,
+    const geometry::BoundingBoxTree& tree, std::span<const double, 3> point,
     int node, const mesh::Mesh& mesh, std::int32_t closest_entity, double R2)
 {
   // Get children of current bounding box node (child_1 denotes entity
@@ -139,7 +139,7 @@ std::pair<std::int32_t, double> _compute_closest_entity(
 /// @param[in] points The points (shape=(num_points, 3))
 /// @param[in, out] entities The list of colliding entities (local to process)
 void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
-                               const std::array<double, 3>& p,
+                               std::span<const double, 3> p,
                                std::vector<int>& entities)
 {
   std::deque<std::int32_t> stack;
@@ -294,8 +294,7 @@ geometry::compute_collisions(const BoundingBoxTree& tree,
     for (std::size_t p = 0; p < points.size() / 3; ++p)
     {
       _compute_collisions_point(
-          tree, {points[3 * p + 0], points[3 * p + 1], points[3 * p + 2]},
-          entities);
+          tree, std::span<const double, 3>(points.data() + 3 * p, 3), entities);
       offsets[p + 1] = entities.size();
     }
 
@@ -342,8 +341,7 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       // As the midpoint tree only consist of points, the distance
       // queries are lightweight.
       const auto [m_index, m_distance2] = _compute_closest_entity(
-          midpoint_tree,
-          {points[3 * i + 0], points[3 * i + 1], points[3 * i + 2]},
+          midpoint_tree, std::span<const double, 3>(points.data() + 3 * i, 3),
           midpoint_tree.num_bboxes() - 1, mesh, initial_entity, R2);
 
       // Use a recursive search through the bounding box tree to
@@ -352,7 +350,7 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       // the distance from the midpoint to the point of interest as the
       // initial search radius.
       const auto [index, distance2] = _compute_closest_entity(
-          tree, {points[3 * i + 0], points[3 * i + 1], points[3 * i + 2]},
+          tree, std::span<const double, 3>(points.data() + 3 * i, 3),
           tree.num_bboxes() - 1, mesh, m_index, m_distance2);
 
       entities.push_back(index);
@@ -363,8 +361,8 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
 }
 
 //-----------------------------------------------------------------------------
-double geometry::compute_squared_distance_bbox(std::span<const double> b,
-                                               const std::array<double, 3>& x)
+double geometry::compute_squared_distance_bbox(std::span<const double, 6> b,
+                                               std::span<const double, 3> x)
 {
   assert(b.size() == 6);
   auto b0 = b.subspan(0, 3);
