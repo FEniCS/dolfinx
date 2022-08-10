@@ -530,9 +530,8 @@ void interpolate(Function<T>& u, std::span<const T> f,
       std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
       for (int k = 0; k < element_bs; ++k)
       {
-        std::copy_n(
-            std::next(f.begin(), k * f_shape1 + c * num_interp_points),
-            num_interp_points, ref_data_b.begin());
+        std::copy_n(std::next(f.begin(), k * f_shape1 + c * num_interp_points),
+                    num_interp_points, ref_data_b.begin());
         impl::interpolation_apply(Pi, ref_data, std::span(_coeffs), 1);
         apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
