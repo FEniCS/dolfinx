@@ -1,20 +1,20 @@
-# # Scattering from a wire with perfectly matched layer condition
-#
-# Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
-#
-# This demo is implemented in three files: one for the mesh
-# generation with gmsh, one for the calculation of analytical efficiencies,
-# and one for the variational forms and the solver. It illustrates how to:
-#
-# - Use complex quantities in FEniCSx
-# - Setup and solve Maxwell's equations
-# - Implement (rectangular) perfectly matched layers
-#
-# ## Equations, problem definition and implementation
-#
-# First of all, let's import the modules that will be used:
+# Scattering from a wire with perfectly matched layer condition
 
-# +
+Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
+
+This demo is implemented in three files: one for the mesh
+generation with gmsh, one for the calculation of analytical efficiencies,
+and one for the variational forms and the solver. It illustrates how to:
+
+- Use complex quantities in FEniCSx
+- Setup and solve Maxwell's equations
+- Implement (rectangular) perfectly matched layers
+
+## Equations, problem definition and implementation
+
+First of all, let's import the modules that will be used:
+
+```python
 import sys
 
 try:
@@ -46,63 +46,65 @@ from ufl import (FacetNormal, FiniteElement, Measure, SpatialCoordinate,
 from mpi4py import MPI
 from petsc4py import PETSc
 
-# -
+```
 
-# Since we want to solve time-harmonic Maxwell's equation, we need to
-# specify that the demo should only be executed with DOLFINx complex mode,
-# otherwise it would not work:
+Since we want to solve time-harmonic Maxwell's equation, we need to
+specify that the demo should only be executed with DOLFINx complex mode,
+otherwise it would not work:
 
+```python
 if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
     exit(0)
+```
 
-# Now, let's consider an infinite metallic wire immersed in
-# a background medium (e.g. vacuum or water). Let's now
-# consider the plane cutting the wire perpendicularly to
-# its axis at a generic point. Such plane $\Omega=\Omega_{m}
-# \cup\Omega_{b}\cup\Omega_{pml}$ is formed by the cross-section
-# of the wire $\Omega_m$, the background medium
-# $\Omega_{b}$ surrounding the wire, and a squared perfectly
-# matched layer (PML) surrounding the domains. PMLs are
-# reflectionless layers that gradually absorb waves impinging
-# on them, therefore allowing us to truncate the domain size.
-# We want to calculate the electric field $\mathbf{E}_s$
-# scattered by the wire when a background wave $\mathbf{E}_b$
-# impinges on it. We will consider a background plane wave at
-# $\lambda_0$ wavelength, which can be written analytically as:
-#
-# $$
-# \mathbf{E}_b = \exp(\mathbf{k}\cdot\mathbf{r})\hat{\mathbf{u}}_p
-# $$
-#
-# with $\mathbf{k} = \frac{2\pi}{\lambda_0}n_b\hat{\mathbf{u}}_k$
-# being the wavevector of the
-# plane wave, pointing along the propagation direction,
-# with $\hat{\mathbf{u}}_p$ being the
-# polarization direction, and with $\mathbf{r}$ being a
-# point in $\Omega$.
-# We will only consider $\hat{\mathbf{u}}_k$ and $\hat{\mathbf{u}}_p$
-# with components belonging
-# to the $\Omega$ domain and perpendicular to each other,
-# i.e. $\hat{\mathbf{u}}_k \perp \hat{\mathbf{u}}_p$
-# (transversality condition of plane waves).
-# If we call $x$ and $y$ the horizontal
-# and vertical axis in our $\Omega$ domain,
-# and by defining $k_x = n_bk_0\cos\theta$ and
-# $k_y = n_bk_0\sin\theta$, with $\theta$ being the angle
-# defined by the propagation direction $\hat{\mathbf{u}}_k$
-# and the horizontal axis $\hat{\mathbf{u}}_x$,
-# we can write more explicitly:
-#
-# $$
-# \mathbf{E}_b = -\sin\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
-# + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y
-# $$
-#
-# The function `background_field` below implements this analytical
-# formula:
+Now, let's consider an infinite metallic wire immersed in
+a background medium (e.g. vacuum or water). Let's now
+consider the plane cutting the wire perpendicularly to
+its axis at a generic point. Such plane $\Omega=\Omega_{m}
+\cup\Omega_{b}\cup\Omega_{pml}$ is formed by the cross-section
+of the wire $\Omega_m$, the background medium
+$\Omega_{b}$ surrounding the wire, and a squared perfectly
+matched layer (PML) surrounding the domains. PMLs are
+reflectionless layers that gradually absorb waves impinging
+on them, therefore allowing us to truncate the domain size.
+We want to calculate the electric field $\mathbf{E}_s$
+scattered by the wire when a background wave $\mathbf{E}_b$
+impinges on it. We will consider a background plane wave at
+$\lambda_0$ wavelength, which can be written analytically as:
 
-# +
+$$
+\mathbf{E}_b = \exp(\mathbf{k}\cdot\mathbf{r})\hat{\mathbf{u}}_p
+$$
+
+with $\mathbf{k} = \frac{2\pi}{\lambda_0}n_b\hat{\mathbf{u}}_k$
+being the wavevector of the
+plane wave, pointing along the propagation direction,
+with $\hat{\mathbf{u}}_p$ being the
+polarization direction, and with $\mathbf{r}$ being a
+point in $\Omega$.
+We will only consider $\hat{\mathbf{u}}_k$ and $\hat{\mathbf{u}}_p$
+with components belonging
+to the $\Omega$ domain and perpendicular to each other,
+i.e. $\hat{\mathbf{u}}_k \perp \hat{\mathbf{u}}_p$
+(transversality condition of plane waves).
+If we call $x$ and $y$ the horizontal
+and vertical axis in our $\Omega$ domain,
+and by defining $k_x = n_bk_0\cos\theta$ and
+$k_y = n_bk_0\sin\theta$, with $\theta$ being the angle
+defined by the propagation direction $\hat{\mathbf{u}}_k$
+and the horizontal axis $\hat{\mathbf{u}}_x$,
+we can write more explicitly:
+
+$$
+\mathbf{E}_b = -\sin\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
++ \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y
+$$
+
+The function `background_field` below implements this analytical
+formula:
+
+```python
 
 
 def background_field(theta, n_b, k0, x):
@@ -116,47 +118,48 @@ def background_field(theta, n_b, k0, x):
 
     return (-ax * np.exp(1j * phi), ay * np.exp(1j * phi))
 
-# -
+```
 
-# Let's now define the $\nabla\times$ operator for 2d vector, since
-# we will use it later:
+Let's now define the $\nabla\times$ operator for 2d vector, since
+we will use it later:
 
-# +
+```python
 
 
 def curl_2d(a):
 
     return as_vector((0, 0, a[1].dx(0) - a[0].dx(1)))
 
-# -
+```
 
-# As said before, we are going to implement a perfectly matched layer (PML)
-# for this problem. What a PML does is to gradually absorb waves impinging
-# them. Mathematically, this effect can be embedded by using a complex
-# coordinate system of this kind:
-#
-# \begin{align}
-# & x^\prime= x\left\{1-j\frac{\alpha}{k_0}\left[\frac{|x|-l_{dom}/2}
-# {(l_{pml}/2 - l_{dom}/2)^2}\right] \right\}\\
-# \end{align}
-#
-# with $l_{dom}$ and $l_{pml}$ being the lengths of the domain
-# without and with PML, respectively, and with $\alpha$ being a parameter
-# that tunes the absorption within the PML (the greater the $\alpha$,
-# the faster the absorption). In DOLFINx, we can define this
-# coordinate transformation in the following way:
+As said before, we are going to implement a perfectly matched layer (PML)
+for this problem. What a PML does is to gradually absorb waves impinging
+them. Mathematically, this effect can be embedded by using a complex
+coordinate system of this kind:
+
+\begin{align}
+& x^\prime= x\left\{1-j\frac{\alpha}{k_0}\left[\frac{|x|-l_{dom}/2}
+{(l_{pml}/2 - l_{dom}/2)^2}\right] \right\}\\
+\end{align}
+
+with $l_{dom}$ and $l_{pml}$ being the lengths of the domain
+without and with PML, respectively, and with $\alpha$ being a parameter
+that tunes the absorption within the PML (the greater the $\alpha$,
+the faster the absorption). In DOLFINx, we can define this
+coordinate transformation in the following way:
 
 
+```python
 def pml_coordinates(x, alpha, k0, l_dom, l_pml):
 
     return (x + 1j * alpha / k0 * x
             * (algebra.Abs(x) - l_dom / 2)
             / (l_pml / 2 - l_dom / 2)**2)
+```
 
+Next we define some mesh specific parameters:
 
-# Next we define some mesh specific parameters:
-
-# +
+```python
 # Constants
 um = 1  # micron
 nm = um * 10**-3  # nanometer
@@ -188,12 +191,12 @@ au_tag = 1
 bkg_tag = 2
 scatt_tag = 3
 pml_tag = 4
-# -
+```
 
-# We generate the mesh using GMSH and convert it to a
-# `dolfinx.mesh.Mesh`.
+We generate the mesh using GMSH and convert it to a
+`dolfinx.mesh.Mesh`.
 
-# +
+```python
 model = generate_mesh_wire(
     radius_wire, l_dom, l_pml,
     in_wire_size, on_wire_size, scatt_size, pml_size,
@@ -204,11 +207,12 @@ domain, cell_tags, facet_tags = model_to_mesh(
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
-# -
+```
 
-# Let's have a visual check of the mesh and of the subdomains
-# by plotting them with PyVista:
+Let's have a visual check of the mesh and of the subdomains
+by plotting them with PyVista:
 
+```python
 if have_pyvista:
     topology, cell_types, geometry = plot.create_vtk_mesh(domain, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
@@ -226,48 +230,53 @@ if have_pyvista:
         pyvista.start_xvfb()
         figure = plotter.screenshot("wire_mesh_pml.png",
                                     window_size=[800, 800])
+```
 
-# In the image, we can distinguish 5 different subdomains: one for the gold
-# wire (`au_tag`), one for the background medium (`bkg_tag`), one for the
-# PML corners (`pml_tag`), one for the PML rectangles along $x$
-# (`pml_tag + 1`), and one for the PML rectangles along $y$ (`pml_tag + 2`).
-# These different PML regions have different coordinate transformation,
-# as specified here below:
-#
-# \begin{align}
-# \text{PML corners} \rightarrow \mathbf{r}^\prime & = (x^\prime, y^\prime) \\
-# \text{PML rectangles along x} \rightarrow
-#                                       \mathbf{r}^\prime & = (x^\prime, y) \\
-# \text{PML rectangles along y} \rightarrow
-#                                       \mathbf{r}^\prime & = (x, y^\prime)
-# \end{align}
-#
-# where $x^\prime$ and $y^\prime$ are our complex coordinates
-# as defined before.
-#
-# Now we define some other problem specific parameters:
+In the image, we can distinguish 5 different subdomains: one for the gold
+wire (`au_tag`), one for the background medium (`bkg_tag`), one for the
+PML corners (`pml_tag`), one for the PML rectangles along $x$
+(`pml_tag + 1`), and one for the PML rectangles along $y$ (`pml_tag + 2`).
+These different PML regions have different coordinate transformation,
+as specified here below:
 
+\begin{align}
+\text{PML corners} \rightarrow \mathbf{r}^\prime & = (x^\prime, y^\prime) \\
+\text{PML rectangles along x} \rightarrow
+                                      \mathbf{r}^\prime & = (x^\prime, y) \\
+\text{PML rectangles along y} \rightarrow
+                                      \mathbf{r}^\prime & = (x, y^\prime)
+\end{align}
+
+where $x^\prime$ and $y^\prime$ are our complex coordinates
+as defined before.
+
+Now we define some other problem specific parameters:
+
+```python
 wl0 = 0.4 * um  # Wavelength of the background field
 n_bkg = 1  # Background refractive index
 eps_bkg = n_bkg**2  # Background relative permittivity
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
 deg = np.pi / 180
 theta = 0 * deg  # Angle of incidence of the background field
+```
 
-# And then the function space used for the electric field.
-# We will use a 3rd order
-# [Nedelec (first kind)](https://defelement.com/elements/nedelec1.html)
-# element:
-#
+And then the function space used for the electric field.
+We will use a 3rd order
+[Nedelec (first kind)](https://defelement.com/elements/nedelec1.html)
+element:
 
+
+```python
 degree = 3
 curl_el = FiniteElement("N1curl", domain.ufl_cell(), degree)
 V = fem.FunctionSpace(domain, curl_el)
+```
 
-# Next, we interpolate $\mathbf{E}_b$ into the function space $V$, define our
-# trial and test function, and the integration domains:
+Next, we interpolate $\mathbf{E}_b$ into the function space $V$, define our
+trial and test function, and the integration domains:
 
-# +
+```python
 Eb = fem.Function(V)
 f = partial(background_field, theta, n_bkg, k0)
 Eb.interpolate(f)
@@ -286,24 +295,27 @@ dDom = dx((au_tag, bkg_tag))
 dPml_xy = dx(pml_tag)
 dPml_x = dx(pml_tag + 1)
 dPml_y = dx(pml_tag + 2)
-# -
+```
 
-# Let's now define the relative permittivity $\varepsilon_m$
-# of the gold wire at $400nm$ (data taken from
-# [*Olmon et al. 2012*](https://doi.org/10.1103/PhysRevB.86.235147)
-# , and for a quick reference have a look at [refractiveindex.info](
-# https://refractiveindex.info/?shelf=main&book=Au&page=Olmon-sc
-# )):
+Let's now define the relative permittivity $\varepsilon_m$
+of the gold wire at $400nm$ (data taken from
+[*Olmon et al. 2012*](https://doi.org/10.1103/PhysRevB.86.235147)
+, and for a quick reference have a look at [refractiveindex.info](
+https://refractiveindex.info/?shelf=main&book=Au&page=Olmon-sc
+)):
 
+```python
 # Definition of relative permittivity for Au @400nm
 eps_au = -1.0782 + 1j * 5.8089
+```
 
 
-# We can now define a space function for the permittivity
-# $\varepsilon$ that takes the value $\varepsilon_m$
-# for cells inside the wire, while it takes the value of the
-# background permittivity $\varepsilon_b$ in the background region:
+We can now define a space function for the permittivity
+$\varepsilon$ that takes the value $\varepsilon_m$
+for cells inside the wire, while it takes the value of the
+background permittivity $\varepsilon_b$ in the background region:
 
+```python
 D = fem.FunctionSpace(domain, ("DG", 0))
 eps = fem.Function(D)
 au_cells = cell_tags.find(au_tag)
@@ -312,12 +324,13 @@ eps.x.array[au_cells] = np.full_like(
     au_cells, eps_au, dtype=np.complex128)
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
 eps.x.scatter_forward()
+```
 
-# Now we need to define our weak form in DOLFINx.
-# Let's write the PML weak form first. As a first step,
-# we can define our new complex coordinates as:
+Now we need to define our weak form in DOLFINx.
+Let's write the PML weak form first. As a first step,
+we can define our new complex coordinates as:
 
-# +
+```python
 x = SpatialCoordinate(domain)
 alpha = 1
 
@@ -331,66 +344,66 @@ x_pml = as_vector((pml_coordinates(x[0], alpha, k0, l_dom, l_pml), x[1]))
 # PML rectangles along y
 y_pml = as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 
-# -
+```
 
-# We can then express this coordinate systems as
-# a material transformation within the PML region. In other words,
-# the PML region can be interpreted as a material
-# having, in general, anisotropic, inhomogeneous and complex permittivity
-# $\boldsymbol{\varepsilon}_{pml}$ and
-# permeability $\boldsymbol{\mu}_{pml}$. To do this, we need
-# to calculate the Jacobian of the coordinate transformation:
-#
-# $$
-# \mathbf{J}=\mathbf{A}^{-1}= \nabla\boldsymbol{x}^
-# \prime(\boldsymbol{x}) =
-# \left[\begin{array}{ccc}
-# \frac{\partial x^{\prime}}{\partial x} &
-# \frac{\partial y^{\prime}}{\partial x} &
-# \frac{\partial z^{\prime}}{\partial x} \\
-# \frac{\partial x^{\prime}}{\partial y} &
-# \frac{\partial y^{\prime}}{\partial y} &
-# \frac{\partial z^{\prime}}{\partial y} \\
-# \frac{\partial x^{\prime}}{\partial z} &
-# \frac{\partial y^{\prime}}{\partial z} &
-# \frac{\partial z^{\prime}}{\partial z}
-# \end{array}\right]=\left[\begin{array}{ccc}
-# \frac{\partial x^{\prime}}{\partial x} & 0 & 0 \\
-# 0 & \frac{\partial y^{\prime}}{\partial y} & 0 \\
-# 0 & 0 & \frac{\partial z^{\prime}}{\partial z}
-# \end{array}\right]=\left[\begin{array}{ccc}
-# J_{11} & 0 & 0 \\
-# 0 & J_{22} & 0 \\
-# 0 & 0 & 1
-# \end{array}\right]
-# $$
-#
-# Then, our $\boldsymbol{\varepsilon}_{pml}$ and
-# $\boldsymbol{\mu}_{pml}$ can be calculated with
-# the following formula, from
-# [Ward & Pendry, 1996](
-# https://www.tandfonline.com/doi/abs/10.1080/09500349608232782):
-#
-# $$
-# \begin{align}
-# & {\boldsymbol{\varepsilon}_{pml}}^\prime =
-# A^{-1} \mathbf{A} {\boldsymbol{\varepsilon}_b}\mathbf{A}^{T},\\
-# & {\boldsymbol{\mu}_{pml}}^\prime =
-# A^{-1} \mathbf{A} {\boldsymbol{\mu}_b}\mathbf{A}^{T},
-# \end{align}
-# $$
-#
-# with $A^{-1}=\operatorname{det}(\mathbf{J})$.
-#
-# In DOLFINx, we use
-# `ufl.grad` to calculate the Jacobian of our
-# coordinate transformation for the different PML regions,
-# and then we can implement this Jacobian for
-# calculating $\boldsymbol{\varepsilon}_{pml}$
-# and $\boldsymbol{\mu}_{pml}$. The here below function
-# named `create_eps_mu()` serves this purpose:
+We can then express this coordinate systems as
+a material transformation within the PML region. In other words,
+the PML region can be interpreted as a material
+having, in general, anisotropic, inhomogeneous and complex permittivity
+$\boldsymbol{\varepsilon}_{pml}$ and
+permeability $\boldsymbol{\mu}_{pml}$. To do this, we need
+to calculate the Jacobian of the coordinate transformation:
 
-# +
+$$
+\mathbf{J}=\mathbf{A}^{-1}= \nabla\boldsymbol{x}^
+\prime(\boldsymbol{x}) =
+\left[\begin{array}{ccc}
+\frac{\partial x^{\prime}}{\partial x} &
+\frac{\partial y^{\prime}}{\partial x} &
+\frac{\partial z^{\prime}}{\partial x} \\
+\frac{\partial x^{\prime}}{\partial y} &
+\frac{\partial y^{\prime}}{\partial y} &
+\frac{\partial z^{\prime}}{\partial y} \\
+\frac{\partial x^{\prime}}{\partial z} &
+\frac{\partial y^{\prime}}{\partial z} &
+\frac{\partial z^{\prime}}{\partial z}
+\end{array}\right]=\left[\begin{array}{ccc}
+\frac{\partial x^{\prime}}{\partial x} & 0 & 0 \\
+0 & \frac{\partial y^{\prime}}{\partial y} & 0 \\
+0 & 0 & \frac{\partial z^{\prime}}{\partial z}
+\end{array}\right]=\left[\begin{array}{ccc}
+J_{11} & 0 & 0 \\
+0 & J_{22} & 0 \\
+0 & 0 & 1
+\end{array}\right]
+$$
+
+Then, our $\boldsymbol{\varepsilon}_{pml}$ and
+$\boldsymbol{\mu}_{pml}$ can be calculated with
+the following formula, from
+[Ward & Pendry, 1996](
+https://www.tandfonline.com/doi/abs/10.1080/09500349608232782):
+
+$$
+\begin{align}
+& {\boldsymbol{\varepsilon}_{pml}}^\prime =
+A^{-1} \mathbf{A} {\boldsymbol{\varepsilon}_b}\mathbf{A}^{T},\\
+& {\boldsymbol{\mu}_{pml}}^\prime =
+A^{-1} \mathbf{A} {\boldsymbol{\mu}_b}\mathbf{A}^{T},
+\end{align}
+$$
+
+with $A^{-1}=\operatorname{det}(\mathbf{J})$.
+
+In DOLFINx, we use
+`ufl.grad` to calculate the Jacobian of our
+coordinate transformation for the different PML regions,
+and then we can implement this Jacobian for
+calculating $\boldsymbol{\varepsilon}_{pml}$
+and $\boldsymbol{\mu}_{pml}$. The here below function
+named `create_eps_mu()` serves this purpose:
+
+```python
 
 
 def create_eps_mu(pml):
@@ -411,33 +424,35 @@ def create_eps_mu(pml):
 eps_x, mu_x = create_eps_mu(x_pml)
 eps_y, mu_y = create_eps_mu(y_pml)
 eps_xy, mu_xy = create_eps_mu(xy_pml)
-# -
+```
 
-# The final weak form in the PML region is:
-#
-# $$
-# \int_{\Omega_{pml}}\left[\boldsymbol{\mu}_{pml} \nabla \times \mathbf{E}
-# \right]\cdot \nabla \times \bar{\mathbf{v}}-k_{0}^{2}
-# \left[\boldsymbol{\varepsilon}_{pml} \mathbf{E} \right]\cdot
-# \bar{\mathbf{v}}~ d x=0,
-# $$
-#
-#
-# while in the rest of the domain is:
-#
-# $$
-# \begin{align}
-# & \int_{\Omega_m\cup\Omega_b}-(\nabla \times \mathbf{E}_s)
-# \cdot (\nabla \times \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2}
-# \mathbf{E}_s \cdot \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}
-# -\varepsilon_b\right)\mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x.
-# = 0.
-# \end{align}
-# $$
-#
-# Let's solve this equation in DOLFINx:
+<!-- #region -->
+The final weak form in the PML region is:
 
-# +
+$$
+\int_{\Omega_{pml}}\left[\boldsymbol{\mu}_{pml} \nabla \times \mathbf{E}
+\right]\cdot \nabla \times \bar{\mathbf{v}}-k_{0}^{2}
+\left[\boldsymbol{\varepsilon}_{pml} \mathbf{E} \right]\cdot
+\bar{\mathbf{v}}~ d x=0,
+$$
+
+
+while in the rest of the domain is:
+
+$$
+\begin{align}
+& \int_{\Omega_m\cup\Omega_b}-(\nabla \times \mathbf{E}_s)
+\cdot (\nabla \times \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2}
+\mathbf{E}_s \cdot \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}
+-\varepsilon_b\right)\mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x.
+= 0.
+\end{align}
+$$
+
+Let's solve this equation in DOLFINx:
+<!-- #endregion -->
+
+```python
 # Definition of the weak form
 F = - inner(curl_2d(Es), curl_2d(v)) * dDom \
     + eps * k0 ** 2 * inner(Es, v) * dDom \
@@ -454,28 +469,29 @@ a, L = lhs(F), rhs(F)
 problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={
                                   "ksp_type": "preonly", "pc_type": "lu"})
 Esh = problem.solve()
-# -
+```
 
-# Let's now save the solution in a VTK file. In order to do so,
-# we need to interpolate our solution discretized with Nedelec elements
-# into a discontinuous lagrange space, and then we can save the interpolated
-# function as a .bp folder:
+Let's now save the solution in a VTK file. In order to do so,
+we need to interpolate our solution discretized with Nedelec elements
+into a discontinuous lagrange space, and then we can save the interpolated
+function as a .bp folder:
 
-# +
+```python
 V_dg = fem.VectorFunctionSpace(domain, ("DG", degree))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 
 with VTXWriter(domain.comm, "Esh.bp", Esh_dg) as f:
     f.write(0.0)
-# -
+```
 
-# For a quick visualization we can use PyVista, as done for the mesh.
-# For more information about saving and visualizing vector fields
-# discretized with Nedelec elements, check [this](
-# https://docs.fenicsproject.org/dolfinx/main/python/demos/demo_interpolation-io.html)
-# DOLFINx demo.
+For a quick visualization we can use PyVista, as done for the mesh.
+For more information about saving and visualizing vector fields
+discretized with Nedelec elements, check [this](
+https://docs.fenicsproject.org/dolfinx/main/python/demos/demo_interpolation-io.html)
+DOLFINx demo.
 
+```python
 if have_pyvista:
     V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
@@ -498,11 +514,12 @@ if have_pyvista:
     else:
         pyvista.start_xvfb()
         plotter.screenshot("Esh.png", window_size=[800, 800])
+```
 
-# Next we can calculate the total electric field
-# $\mathbf{E}=\mathbf{E}_s+\mathbf{E}_b$ and save it:
+Next we can calculate the total electric field
+$\mathbf{E}=\mathbf{E}_s+\mathbf{E}_b$ and save it:
 
-# +
+```python
 E = fem.Function(V)
 E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
 
@@ -511,16 +528,17 @@ E_dg.interpolate(E)
 
 with VTXWriter(domain.comm, "E.bp", E_dg) as f:
     f.write(0.0)
-# -
+```
 
-# Often it is useful to calculate the norm of the electric field:
-#
-# $$
-# ||\mathbf{E}_s|| = \sqrt{\mathbf{E}_s\cdot\bar{\mathbf{E}}_s}
-# $$
-#
-# which in DOLFINx can be retrieved in this way:
+Often it is useful to calculate the norm of the electric field:
 
+$$
+||\mathbf{E}_s|| = \sqrt{\mathbf{E}_s\cdot\bar{\mathbf{E}}_s}
+$$
+
+which in DOLFINx can be retrieved in this way:
+
+```python
 # ||E||
 lagr_el = FiniteElement("CG", domain.ufl_cell(), 2)
 norm_func = sqrt(inner(Esh, Esh))
@@ -528,24 +546,27 @@ V_normEsh = fem.FunctionSpace(domain, lagr_el)
 norm_expr = fem.Expression(norm_func, V_normEsh.element.interpolation_points())
 normEsh = fem.Function(V_normEsh)
 normEsh.interpolate(norm_expr)
+```
 
-# Now we can validate our formulation by calculating the so-called
-# absorption, scattering and extinction efficiencies, which are
-# quantities that define how much light is absorbed and scattered
-# by the wire. First of all, we calculate the analytical efficiencies
-# with the `calculate_analytical_efficiencies` function defined in a
-# separate file:
+Now we can validate our formulation by calculating the so-called
+absorption, scattering and extinction efficiencies, which are
+quantities that define how much light is absorbed and scattered
+by the wire. First of all, we calculate the analytical efficiencies
+with the `calculate_analytical_efficiencies` function defined in a
+separate file:
 
+```python
 q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
     eps_au,
     n_bkg,
     wl0,
     radius_wire)
+```
 
-# Now we can calculate the numerical efficiencies. The full mathematical
-# procedure is provided in (cite the first demo)
+Now we can calculate the numerical efficiencies. The full mathematical
+procedure is provided in (cite the first demo)
 
-# +
+```python
 # Vacuum impedance
 Z0 = np.sqrt(mu_0 / epsilon_0)
 
@@ -622,9 +643,11 @@ if MPI.COMM_WORLD.rank == 0:
     print(f"The analytical extinction efficiency is {q_ext_analyt}")
     print(f"The numerical extinction efficiency is {q_ext_fenics}")
     print(f"The error is {err_ext*100}%")
-# -
+```
 
+```python
 # Check if errors are smaller than 1%
 assert err_abs < 0.01
 assert err_sca < 0.01
 assert err_ext < 0.01
+```
