@@ -513,39 +513,48 @@ void interpolate(Function<T>& u, std::span<const T> f,
     // Not a point evaluation, but the geometric map is the identity,
     // e.g. not Piola mapped
 
-    if (_f.extent(0) != 1)
-      throw std::runtime_error("Interpolation data has the wrong shape.");
-
-    // Get interpolation operator
-    const auto [_Pi, pi_shape] = element->interpolation_operator();
-    cmdspan2_t Pi(_Pi.data(), pi_shape);
-    const std::size_t num_interp_points = Pi.extent(1);
-    assert(Pi.extent(0) == num_scalar_dofs);
-
-    auto apply_inv_transpose_dof_transformation
-        = element->get_dof_transformation_function<T>(true, true, true);
-
-    // Loop over cells
-    std::vector<T> ref_data_b(num_interp_points);
-    stdex::mdspan<T, stdex::extents<std::size_t, stdex::dynamic_extent, 1>>
-        ref_data(ref_data_b.data(), num_interp_points, 1);
-    for (std::size_t c = 0; c < cells.size(); ++c)
+    if (_f.extent(0) == 1)
     {
-      const std::int32_t cell = cells[c];
-      std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
-      for (int k = 0; k < element_bs; ++k)
+      // Element is scalar-valued
+
+      // Get interpolation operator
+      const auto [_Pi, pi_shape] = element->interpolation_operator();
+      cmdspan2_t Pi(_Pi.data(), pi_shape);
+      const std::size_t num_interp_points = Pi.extent(1);
+      assert(Pi.extent(0) == num_scalar_dofs);
+
+      auto apply_inv_transpose_dof_transformation
+          = element->get_dof_transformation_function<T>(true, true, true);
+
+      // Loop over cells
+      std::vector<T> ref_data_b(num_interp_points);
+      stdex::mdspan<T, stdex::extents<std::size_t, stdex::dynamic_extent, 1>>
+          ref_data(ref_data_b.data(), num_interp_points, 1);
+      for (std::size_t c = 0; c < cells.size(); ++c)
       {
-        std::copy_n(std::next(f.begin(), k * f_shape1 + c * num_interp_points),
-                    num_interp_points, ref_data_b.begin());
-        impl::interpolation_apply(Pi, ref_data, std::span(_coeffs), element_bs);
-        apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
-        for (int i = 0; i < num_scalar_dofs; ++i)
+        const std::int32_t cell = cells[c];
+        std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
+        for (int k = 0; k < element_bs; ++k)
         {
-          const int dof = i * element_bs + k;
-          std::div_t pos = std::div(dof, dofmap_bs);
-          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+          std::copy_n(
+              std::next(f.begin(), k * f_shape1 + c * num_interp_points),
+              num_interp_points, ref_data_b.begin());
+          impl::interpolation_apply(Pi, ref_data, std::span(_coeffs),
+                                    element_bs);
+          apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
+          for (int i = 0; i < num_scalar_dofs; ++i)
+          {
+            const int dof = i * element_bs + k;
+            std::div_t pos = std::div(dof, dofmap_bs);
+            coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+          }
         }
       }
+    }
+    else
+    {
+      throw std::runtime_error(
+          "Interpolation into this space is not yet supported.");
     }
   }
   else
