@@ -599,7 +599,7 @@ def test_interpolate_callable():
     ufl.FiniteElement("S", "quadrilateral", 2),
     ufl.FiniteElement("S", "quadrilateral", 3),
     ufl.EnrichedElement(ufl.FiniteElement("P", "triangle", 1), ufl.FiniteElement("Bubble", "triangle", 3)),
-    basix.ufl_wrapper.create_enriched_element([
+    basix.ufl_wrapper._create_enriched_element([
         basix.ufl_wrapper.create_element("P", "quadrilateral", 1),
         basix.ufl_wrapper.create_element("Bubble", "quadrilateral", 2)]),
 ])
