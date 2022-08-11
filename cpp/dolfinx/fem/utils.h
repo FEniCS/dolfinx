@@ -638,6 +638,7 @@ void pack_coefficient_entity(const std::span<T>& c, int cstride,
     {
       auto entity = entities.subspan(e, estride);
       std::int32_t cell = fetch_cells(entity);
+      assert(cell >= 0);
       auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
       pack<T, 1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
@@ -647,6 +648,7 @@ void pack_coefficient_entity(const std::span<T>& c, int cstride,
     {
       auto entity = entities.subspan(e, estride);
       std::int32_t cell = fetch_cells(entity);
+      assert(cell >= 0);
       auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
       pack<T, 2>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
@@ -656,6 +658,7 @@ void pack_coefficient_entity(const std::span<T>& c, int cstride,
     {
       auto entity = entities.subspan(e, estride);
       std::int32_t cell = fetch_cells(entity);
+      assert(cell >= 0);
       auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
       pack<T, 3>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
@@ -665,6 +668,7 @@ void pack_coefficient_entity(const std::span<T>& c, int cstride,
     {
       auto entity = entities.subspan(e, estride);
       std::int32_t cell = fetch_cells(entity);
+      assert(cell >= 0);
       auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
       pack<T, -1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
