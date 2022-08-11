@@ -623,40 +623,33 @@ def test_custom_vector_element():
     """Test interpolation into an element with a value size that uses an identity map."""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
 
-    wcoeffs = np.eye(20)
-
-    pts, wts = basix.make_quadrature(basix.CellType.triangle, 6)
+    wcoeffs = np.eye(6)
 
     x = [[], [], [], []]
     x[0].append(np.array([[0., 0.]]))
     x[0].append(np.array([[1., 0.]]))
     x[0].append(np.array([[0., 1.]]))
-    x[1].append(np.array([[p[0], 1 - p[0]] for p in pts]))
-    x[1].append(np.array([[0., p[0]] for p in pts]))
-    x[1].append(np.array([[p[0], 0.] for p in pts]))
-    x[2].append(np.array([[1/3, 1/3]]))
+    for _ in range(3):
+        x[1].append(np.zeros((0, 2)))
+    x[2].append(np.zeros((0, 2)))
 
     M = [[], [], [], []]
     for _ in range(3):
         M[0].append(np.array([[[[1.]], [[0.]]], [[[0.]], [[1.]]]]))
     for _ in range(3):
-        M[1].append(np.array([
-            [[[w * p[0]] for p, w in zip(pts, wts)], [[0.] for w in wts]],
-            [[[w * p[0] ** 2] for p, w in zip(pts, wts)], [[0.] for w in wts]],
-            [[[0.] for w in wts], [[w * p[0]] for p, w in zip(pts, wts)]],
-            [[[0.] for w in wts], [[w * p[0] ** 3] for p, w in zip(pts, wts)]]]))
-    M[2].append(np.array([[[[1.]], [[0.]]], [[[0.]], [[1.]]]]))
+        M[1].append(np.zeros((0, 2, 0, 1)))
+    M[2].append(np.zeros((0, 2, 0, 1)))
 
     element = basix.create_custom_element(
-        basix.CellType.triangle, [2], wcoeffs, x, M, 0, basix.MapType.identity, False, 3, 3)
+        basix.CellType.triangle, [2], wcoeffs, x, M, 0, basix.MapType.identity, False, 1, 1)
 
     V = FunctionSpace(mesh, basix.ufl_wrapper.BasixElement(element))
-    W = VectorFunctionSpace(mesh, ("Lagrange", 2))
+    W = VectorFunctionSpace(mesh, ("Lagrange", 1))
 
     v = Function(V)
-    v.interpolate(lambda x: (x[0] ** 2, x[1] ** 3))
+    v.interpolate(lambda x: (x[0], x[1]))
 
-    w = Function(V)
-    w.interpolate(lambda x: (x[0] ** 2, x[1] ** 3))
+    w = Function(W)
+    w.interpolate(lambda x: (x[0], x[1]))
 
     assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(v - w, v - w) * ufl.dx))), 0)
