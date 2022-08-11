@@ -515,7 +515,7 @@ void interpolate(Function<T>& u, std::span<const T> f,
     if (element_vs > 1 && element_bs > 1)
     {
       throw std::runtime_error(
-          "Interpolation on different meshes not supported (yet).");
+          "Interpolation into this element not supported.");
     }
 
     // Get interpolation operator
