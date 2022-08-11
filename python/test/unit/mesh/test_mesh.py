@@ -603,6 +603,10 @@ def compute_num_boundary_facets(mesh):
     mesh.topology.create_entities(tdim - 1)
     mesh.topology.create_connectivity(tdim - 1, tdim)
 
+    print('topo(1) = ', mesh.topology.index_map(1).size_local,
+          mesh.topology.index_map(1).num_ghosts, mesh.topology.index_map(1).ghosts)
+    print('exterior = ', exterior_facet_indices(mesh.topology))
+
     # Compute number of owned facets on the boundary
     num_owned_boundary_facets = len(exterior_facet_indices(mesh.topology))
 
@@ -652,16 +656,19 @@ def test_submesh_codim_0_boundary_facets(n, d, ghost_mode):
     assert compute_num_boundary_facets(submesh) == expected_num_boundary_facets
 
 
-@pytest.mark.parametrize("n", [2, 5])
+@pytest.mark.parametrize("n", [2, ])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
-                                        GhostMode.shared_facet])
+                                        ])
 def test_submesh_codim_1_boundary_facets(n, ghost_mode):
     """Test that the correct number of boundary facets are computed
     for a submesh of codim 1"""
     mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
     edim = mesh.topology.dim - 1
     entities = locate_entities_boundary(mesh, edim, lambda x: np.isclose(x[2], 0.0))
+    print(entities)
     submesh = create_submesh(mesh, edim, entities)[0]
+
+    print("num ghosts = ", submesh.topology.index_map(2).num_ghosts)
 
     expected_num_boundary_facets = 4 * n
     assert compute_num_boundary_facets(submesh) == expected_num_boundary_facets

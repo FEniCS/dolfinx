@@ -126,16 +126,15 @@ def test_asymmetric_partitioner():
     else:
         x = np.zeros((0, 3), dtype=np.float64)
 
-    # Send cells to self, and if on process zero, also send to process 1.
+    # Send cells to self, and if on process 1, also send to process 0.
     def partitioner(comm, n, m, topo, ghost_mode):
         r = comm.Get_rank()
-        n = comm.Get_size()
         dests = []
         offsets = [0]
         for i in range(topo.num_nodes):
             dests.append(r)
-            if r == 0 and n > 1:
-                dests.append(1)
+            if r == 1:
+                dests.append(0)
             offsets.append(len(dests))
 
         dests = np.array(dests, dtype=np.int32)
