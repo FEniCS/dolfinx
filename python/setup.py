@@ -10,7 +10,7 @@ if sys.version_info < (3, 8):
     print("Python 3.8 or higher required, please upgrade.")
     sys.exit(1)
 
-VERSION = "0.4.2.dev0"
+VERSION = "0.5.1.dev0"
 
 REQUIREMENTS = [
     "cffi",
