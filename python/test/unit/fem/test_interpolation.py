@@ -647,9 +647,8 @@ def test_custom_vector_element():
     W = VectorFunctionSpace(mesh, ("Lagrange", 1))
 
     v = Function(V)
-    v.interpolate(lambda x: (x[0], x[1]))
-
     w = Function(W)
+    v.interpolate(lambda x: (x[0], x[1]))
     w.interpolate(lambda x: (x[0], x[1]))
 
     assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(v - w, v - w) * ufl.dx))), 0)

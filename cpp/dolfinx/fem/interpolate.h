@@ -510,6 +510,14 @@ void interpolate(Function<T>& u, std::span<const T> f,
     // Not a point evaluation, but the geometric map is the identity,
     // e.g. not Piola mapped
 
+    const int element_vs = element->value_size() / element_bs;
+
+    if (element_vs > 1 && element_bs > 1)
+    {
+      throw std::runtime_error(
+          "Interpolation on different meshes not supported (yet).");
+    }
+
     // Get interpolation operator
     const auto [_Pi, pi_shape] = element->interpolation_operator();
     cmdspan2_t Pi(_Pi.data(), pi_shape);
@@ -530,8 +538,17 @@ void interpolate(Function<T>& u, std::span<const T> f,
       std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
       for (int k = 0; k < element_bs; ++k)
       {
-        std::copy_n(std::next(f.begin(), k * f_shape1 + c * num_interp_points),
-                    num_interp_points, ref_data_b.begin());
+        for (int i = 0; i < 6; ++i)
+          ref_data_b[i] = -1;
+        for (int i = 0; i < element_vs; ++i)
+        {
+          std::copy_n(
+              std::next(f.begin(), (i + k) * f_shape1
+                                       + c * num_interp_points / element_vs),
+              num_interp_points / element_vs,
+              std::next(ref_data_b.begin(),
+                        i * num_interp_points / element_vs));
+        }
         impl::interpolation_apply(Pi, ref_data, std::span(_coeffs), 1);
         apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
