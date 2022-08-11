@@ -531,15 +531,12 @@ void interpolate(Function<T>& u, std::span<const T> f,
     std::vector<T> ref_data_b(num_interp_points);
     stdex::mdspan<T, stdex::extents<std::size_t, stdex::dynamic_extent, 1>>
         ref_data(ref_data_b.data(), num_interp_points, 1);
-
     for (std::size_t c = 0; c < cells.size(); ++c)
     {
       const std::int32_t cell = cells[c];
       std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
       for (int k = 0; k < element_bs; ++k)
       {
-        for (int i = 0; i < 6; ++i)
-          ref_data_b[i] = -1;
         for (int i = 0; i < element_vs; ++i)
         {
           std::copy_n(
