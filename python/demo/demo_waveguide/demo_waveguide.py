@@ -5,7 +5,7 @@ from mpi4py import MPI
 from slepc4py import SLEPc
 import numpy as np
 
-domain = dolfinx.mesh.create_rectangle(MPI.COMM_WORLD, [[0, 0], [np.pi, np.pi]], [200, 200], dolfinx.mesh.CellType.triangle)
+domain = dolfinx.mesh.create_rectangle(MPI.COMM_WORLD, [[0, 0], [np.pi, np.pi]], [40, 400], dolfinx.mesh.CellType.triangle)
 domain.topology.create_connectivity(domain.topology.dim-1, domain.topology.dim)
 
 N1curl = ufl.FiniteElement("N1curl", domain.ufl_cell(), 3)
@@ -33,12 +33,13 @@ B.assemble()
 
 eps = SLEPc.EPS().create(MPI.COMM_WORLD)
 eps.setOperators(A, B)
+eps.setProblemType(SLEPc.EPS.ProblemType.GHEP)
 eps.setType(SLEPc.EPS.Type.KRYLOVSCHUR)
 st = eps.getST()
 st.setType(SLEPc.ST.Type.SINVERT)
 eps.setWhichEigenpairs(SLEPc.EPS.Which.TARGET_MAGNITUDE)
 eps.setTarget(5.5)
-eps.setDimensions(12)
+eps.setDimensions(nev = 12)
 eps.solve()
 
 vals = [(i, eps.getEigenvalue(i)) for i in range(eps.getConverged()) if not
@@ -52,6 +53,8 @@ E = dolfinx.fem.Function(V)
 for i, _ in vals:
     
     e = eps.getEigenpair(i, E.vector).real
+    error = eps.computeError(i, SLEPc.EPS.ErrorType.RELATIVE)
+    print(error)
     print(f"eigenvalue: {eps.getEigenpair(i, E.vector).real:.12f}")
     E.name = f"E-{j:03d}-{eps.getEigenpair(i, E.vector).real:.4f}"
     j += 1
