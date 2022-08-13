@@ -123,33 +123,18 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
 
   //---------
   // Set ghost status array values
-  // 1 = entities that are only in local cells (i.e. owned)
-  // 2 = entities that are only in ghost cells (i.e. not owned)
-  // 3 = entities with ownership that needs deciding (used also for
-  // un-ghosted case)
-  std::vector<int> ghost_status(entity_count, 0);
+  // 0 = entities that are only in ghost cells (i.e. definitely not owned)
+  // 1 = entities with local ownership or ownership that needs deciding
+  std::vector<std::int8_t> ghost_status(entity_count, 0);
+
+  const std::int32_t ghost_offset
+      = cell_map.size_local() * num_entities_per_cell;
+
+  // Tag all entities in local cells with 1
+  for (int i = 0; i < ghost_offset; ++i)
   {
-    if (cell_map.num_ghosts() == 0)
-      std::fill(ghost_status.begin(), ghost_status.end(), 3);
-    else
-    {
-      const std::int32_t ghost_offset
-          = cell_map.size_local() * num_entities_per_cell;
-
-      // Tag all entities in local cells with 1
-      for (int i = 0; i < ghost_offset; ++i)
-      {
-        const std::int32_t idx = entity_index[i];
-        ghost_status[idx] = 1;
-      }
-
-      // Set entities in ghost cells to 2 (purely ghost) or 3 (border)
-      for (std::size_t i = ghost_offset; i < entity_index.size(); ++i)
-      {
-        const std::int32_t idx = entity_index[i];
-        ghost_status[idx] = ghost_status[idx] | 2;
-      }
-    }
+    const std::int32_t idx = entity_index[i];
+    ghost_status[idx] = 1;
   }
 
   //---------
@@ -218,7 +203,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
           entity_to_local_idx.push_back(*entity_idx);
 
           // Only send entities that are not known to be ghosts
-          if (ghost_status[*entity_idx] != 2)
+          if (ghost_status[*entity_idx] != 0)
           {
             auto itr_local = std::lower_bound(ranks.begin(), ranks.end(), *it);
             assert(itr_local != ranks.end() and *itr_local == *it);
@@ -377,8 +362,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
         continue;
 
       // Definitely local
-      if (auto ranks = shared_entities.links(i);
-          ghost_status[i] == 1 or ranks.empty())
+      if (auto ranks = shared_entities.links(i); ranks.empty())
       {
         local_index[i] = c++;
       }

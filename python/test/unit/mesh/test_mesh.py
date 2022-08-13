@@ -603,8 +603,8 @@ def compute_num_boundary_facets(mesh):
     mesh.topology.create_entities(tdim - 1)
     mesh.topology.create_connectivity(tdim - 1, tdim)
 
-    print('topo(1) = ', mesh.topology.index_map(1).size_local,
-          mesh.topology.index_map(1).num_ghosts, mesh.topology.index_map(1).ghosts)
+    # print('topo(1) = ', mesh.topology.index_map(1).size_local,
+    #       mesh.topology.index_map(1).num_ghosts, mesh.topology.index_map(1).ghosts)
     print('exterior = ', exterior_facet_indices(mesh.topology))
 
     # Compute number of owned facets on the boundary
