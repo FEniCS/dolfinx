@@ -355,10 +355,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
     // Index non-ghost entities
     for (int i = 0; i < entity_count; ++i)
     {
-      assert(ghost_status[i] > 0);
-
       // Definitely ghost
-      if (ghost_status[i] == 2)
+      if (ghost_status[i] == 0)
         continue;
 
       // Definitely local
