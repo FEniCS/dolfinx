@@ -573,31 +573,25 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
   auto facet_map = topology.index_map(tdim - 1);
   if (!facet_map)
     throw std::runtime_error("Facets have not been computed.");
-  auto cell_map = topology.index_map(tdim);
-  assert(cell_map);
 
-  const std::vector<std::int32_t>& interprocess_facets
-      = topology.interprocess_facets();
-
-  // Find all owned facets (not ghost) with only one attached cell,
-  // which are also not on a process boundary
+  // Find all owned facets (not ghost) with only one attached cell
   const int num_facets = facet_map->size_local();
   auto f_to_c = topology.connectivity(tdim - 1, tdim);
   assert(f_to_c);
   std::vector<std::int32_t> facets;
   for (std::int32_t f = 0; f < num_facets; ++f)
   {
-    if (f_to_c->num_links(f) == 1
-        and !std::binary_search(interprocess_facets.begin(),
-                                interprocess_facets.end(), f))
-    {
+    if (f_to_c->num_links(f) == 1)
       facets.push_back(f);
-    }
   }
 
-  // FIXME: maybe use std::set_difference to remove interprocess_facets?
-
-  return facets;
+  // Remove facets on internal inter-process boundary
+  const std::vector<std::int32_t>& interprocess_facets
+      = topology.interprocess_facets();
+  std::vector<std::int32_t> bfacets;
+  std::set_difference(facets.begin(), facets.end(), interprocess_facets.begin(),
+                      interprocess_facets.end(), std::back_inserter(bfacets));
+  return bfacets;
 }
 //------------------------------------------------------------------------------
 mesh::CellPartitionFunction
