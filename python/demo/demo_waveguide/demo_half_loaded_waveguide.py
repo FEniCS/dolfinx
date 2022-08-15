@@ -10,16 +10,16 @@ from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
 
 l = 1
-b = 0.5
-d = 0.25
+b = 0.5*l
+d = 0.5*b
 
 domain = create_rectangle(MPI.COMM_WORLD, [[0, 0], [l, b]], [
-    80, 40], CellType.triangle)
+    300, 200], CellType.triangle)
 
 domain.topology.create_connectivity(domain.topology.dim - 1, domain.topology.dim)
 
 eps_v = 1
-eps_d = 1
+eps_d = 4
 
 
 def Omega_d(x):
@@ -28,7 +28,6 @@ def Omega_d(x):
 
 def Omega_v(x):
     return x[1] >= d
-
 
 D = fem.FunctionSpace(domain, ("DG", 0))
 eps = fem.Function(D)
@@ -41,7 +40,7 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
 
 c0 = 3 * 10**8  # m/s
 MHz = 10**6
-f0 = 350 * MHz
+f0 = 340 * MHz
 k0 = 2 * np.pi * c0 / f0
 
 N1curl = ufl.FiniteElement("N1curl", domain.ufl_cell(), 3)
@@ -80,9 +79,9 @@ eps.setOperators(A, B)
 eps.setType(SLEPc.EPS.Type.KRYLOVSCHUR)
 st = eps.getST()
 st.setType(SLEPc.ST.Type.SINVERT)
-eps.setWhichEigenpairs(SLEPc.EPS.Which.SMALLEST_MAGNITUDE)
-#eps.setTarget(-k0**2)
-#eps.setDimensions(nev=5)
+eps.setWhichEigenpairs(SLEPc.EPS.Which.TARGET_REAL)
+eps.setTarget((0*k0)**2)
+eps.setDimensions(nev=4)
 eps.solve()
 
 vals = [(i, eps.getEigenvalue(i)) for i in range(eps.getConverged()) if not
@@ -99,7 +98,7 @@ for i, _ in vals:
     e = eps.getEigenpair(i, E.vector).real
     error = eps.computeError(i, SLEPc.EPS.ErrorType.RELATIVE)
     print(f"error: {error}")
-    print(f"eigenvalue: {np.sqrt(-eps.getEigenpair(i, E.vector))/k0:.12f}")
+    print(f"eigenvalue: {np.sqrt(eps.getEigenpair(i, E.vector))/k0:.12f}")
     E.name = f"E-{j:03d}-{eps.getEigenpair(i, E.vector).real:.4f}"
     j += 1
 
