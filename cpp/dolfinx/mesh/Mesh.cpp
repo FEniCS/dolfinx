@@ -182,16 +182,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   for (int e = 1; e < tdim; ++e)
   {
     if (dof_layout.num_entity_dofs(e) > 0)
-    {
-      auto [cell_entity, entity_vertex, index_map]
-          = compute_entities(comm, topology, e);
-      if (cell_entity)
-        topology.set_connectivity(cell_entity, tdim, e);
-      if (entity_vertex)
-        topology.set_connectivity(entity_vertex, e, 0);
-      if (index_map)
-        topology.set_index_map(e, index_map);
-    }
+      topology.create_entities(e);
   }
 
   // Function top build geometry. Used to scope memory operations.

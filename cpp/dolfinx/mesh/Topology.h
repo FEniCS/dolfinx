@@ -131,6 +131,11 @@ public:
   /// Compute entity permutations and reflections
   void create_entity_permutations();
 
+  const std::vector<std::int32_t>& boundary_facets() const
+  {
+    return _boundary_facets;
+  }
+
   /// Original cell index
   std::vector<std::int64_t> original_cell_index;
 
@@ -160,6 +165,9 @@ private:
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
   std::vector<std::uint32_t> _cell_permutations;
+
+  // List of facets that are on the inter-process boundary
+  std::vector<std::int32_t> _boundary_facets;
 };
 
 /// @brief Create a distributed mesh topology.

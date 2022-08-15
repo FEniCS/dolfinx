@@ -802,7 +802,7 @@ std::int32_t Topology::create_entities(int dim)
     return -1;
 
   // Create local entities
-  const auto [cell_entity, entity_vertex, index_map]
+  const auto [cell_entity, entity_vertex, index_map, boundary_facets]
       = compute_entities(_comm.comm(), *this, dim);
 
   if (cell_entity)
@@ -814,6 +814,13 @@ std::int32_t Topology::create_entities(int dim)
 
   assert(index_map);
   this->set_index_map(dim, index_map);
+
+  // Store boundary facets
+  if (dim == this->dim() - 1)
+  {
+    std::sort(_boundary_facets.begin(), _boundary_facets.end());
+    _boundary_facets = std::move(boundary_facets);
+  }
 
   return index_map->size_local();
 }

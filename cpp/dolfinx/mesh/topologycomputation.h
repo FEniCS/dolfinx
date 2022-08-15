@@ -11,6 +11,7 @@
 #include <memory>
 #include <mpi.h>
 #include <tuple>
+#include <vector>
 
 namespace dolfinx::common
 {
@@ -38,7 +39,7 @@ class Topology;
 /// {nullptr, nullptr, nullptr} is returned.
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-           std::shared_ptr<common::IndexMap>>
+           std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
 compute_entities(MPI_Comm comm, const Topology& topology, int dim);
 
 /// Compute connectivity (d0 -> d1) for given pair of topological
