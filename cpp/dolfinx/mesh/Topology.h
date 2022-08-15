@@ -131,6 +131,7 @@ public:
   /// Compute entity permutations and reflections
   void create_entity_permutations();
 
+  /// List of inter-process facets, if facet topology has been computed
   const std::vector<std::int32_t>& boundary_facets() const
   {
     return _boundary_facets;
