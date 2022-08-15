@@ -595,10 +595,6 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
     }
   }
 
-  auto r = std::ranges::views::iota(0, num_facets);
-  std::ranges::copy_if(r.begin(), r.end(), std::back_inserter(facets),
-                       [&f_to_c](int f) { return f_to_c->num_links(f) == 1; });
-
   // FIXME: maybe use std::set_difference to remove interprocess_facets?
 
   return facets;
