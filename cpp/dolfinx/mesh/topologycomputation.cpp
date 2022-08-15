@@ -348,7 +348,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
   // Determine ownership of shared entities
 
   std::vector<std::int32_t> local_index(entity_count, -1);
-  std::vector<std::int32_t> interprocess_facets;
+  std::vector<std::int32_t> interprocess_entities;
   std::int32_t num_local;
   {
     std::int32_t c = 0;
@@ -368,7 +368,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
       else
       {
         // Shared with another process
-        interprocess_facets.push_back(i);
+        interprocess_entities.push_back(i);
         auto vertices = shared_entities_v.links(i);
         assert(!vertices.empty());
         int owner_rank = get_ownership(ranks, vertices);
@@ -386,9 +386,9 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
                    [&c](auto index) { return index == -1 ? c++ : index; });
     assert(c == entity_count);
 
-    // Convert boundary entities to local_index
-    std::transform(interprocess_facets.cbegin(), interprocess_facets.cend(),
-                   interprocess_facets.begin(),
+    // Convert interprocess entities to local_index
+    std::transform(interprocess_entities.cbegin(), interprocess_entities.cend(),
+                   interprocess_entities.begin(),
                    [&local_index](std::int32_t i) { return local_index[i]; });
   }
 
@@ -464,7 +464,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
                  [&local_index](auto index) { return local_index[index]; });
 
   return {std::move(new_entity_index), std::move(index_map),
-          std::move(interprocess_facets)};
+          std::move(interprocess_entities)};
 }
 //-----------------------------------------------------------------------------
 
@@ -582,7 +582,7 @@ compute_entities_by_key_matching(
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
-  auto [local_index, index_map, interprocess_facets] = get_local_indexing(
+  auto [local_index, index_map, interprocess_entities] = get_local_indexing(
       comm, cell_index_map, vertex_index_map, entity_list,
       max_vertices_per_entity, num_entities_per_cell, entity_index);
 
@@ -624,7 +624,7 @@ compute_entities_by_key_matching(
                                         std::move(offsets_ce));
 
   return {std::move(ce), std::move(ev), std::move(index_map),
-          std::move(interprocess_facets)};
+          std::move(interprocess_entities)};
 }
 //-----------------------------------------------------------------------------
 

@@ -802,7 +802,7 @@ std::int32_t Topology::create_entities(int dim)
     return -1;
 
   // Create local entities
-  const auto [cell_entity, entity_vertex, index_map, interprocess_facets]
+  const auto [cell_entity, entity_vertex, index_map, interprocess_entities]
       = compute_entities(_comm.comm(), *this, dim);
 
   if (cell_entity)
@@ -818,7 +818,7 @@ std::int32_t Topology::create_entities(int dim)
   // Store boundary facets
   if (dim == this->dim() - 1)
   {
-    _interprocess_facets = std::move(interprocess_facets);
+    _interprocess_facets = std::move(interprocess_entities);
     std::sort(_interprocess_facets.begin(), _interprocess_facets.end());
   }
 
