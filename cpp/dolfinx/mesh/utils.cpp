@@ -588,10 +588,11 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
   // Remove facets on internal inter-process boundary
   const std::vector<std::int32_t>& interprocess_facets
       = topology.interprocess_facets();
-  std::vector<std::int32_t> bfacets;
+  std::vector<std::int32_t> ext_facets;
   std::set_difference(facets.begin(), facets.end(), interprocess_facets.begin(),
-                      interprocess_facets.end(), std::back_inserter(bfacets));
-  return bfacets;
+                      interprocess_facets.end(),
+                      std::back_inserter(ext_facets));
+  return ext_facets;
 }
 //------------------------------------------------------------------------------
 mesh::CellPartitionFunction
