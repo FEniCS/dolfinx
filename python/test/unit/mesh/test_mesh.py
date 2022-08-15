@@ -656,7 +656,6 @@ def test_submesh_codim_0_boundary_facets(n, d, ghost_mode):
     assert compute_num_boundary_facets(submesh) == expected_num_boundary_facets
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize("n", [2, 5])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         ])

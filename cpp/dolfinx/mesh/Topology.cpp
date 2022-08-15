@@ -818,8 +818,8 @@ std::int32_t Topology::create_entities(int dim)
   // Store boundary facets
   if (dim == this->dim() - 1)
   {
-    std::sort(_boundary_facets.begin(), _boundary_facets.end());
     _boundary_facets = std::move(boundary_facets);
+    std::sort(_boundary_facets.begin(), _boundary_facets.end());
   }
 
   return index_map->size_local();

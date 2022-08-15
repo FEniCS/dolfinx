@@ -578,8 +578,9 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
 
   // Only need to consider shared facets when there are no ghost cells
   const std::vector<std::int32_t> fwd_shared_facets
-      = cell_map->overlapped() ? std::vector<std::int32_t>()
-                               : facet_map->shared_indices();
+      = topology.boundary_facets();
+  // = cell_map->overlapped() ? std::vector<std::int32_t>()
+  //                          : facet_map->shared_indices();
 
   // Find all owned facets (not ghost) with only one attached cell,
   // which are also not shared forward (ghost on another process)
