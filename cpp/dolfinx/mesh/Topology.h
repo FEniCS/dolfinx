@@ -132,10 +132,7 @@ public:
   void create_entity_permutations();
 
   /// List of inter-process facets, if facet topology has been computed
-  const std::vector<std::int32_t>& boundary_facets() const
-  {
-    return _boundary_facets;
-  }
+  const std::vector<std::int32_t>& interprocess_facets() const;
 
   /// Original cell index
   std::vector<std::int64_t> original_cell_index;
@@ -168,7 +165,7 @@ private:
   std::vector<std::uint32_t> _cell_permutations;
 
   // List of facets that are on the inter-process boundary
-  std::vector<std::int32_t> _boundary_facets;
+  std::vector<std::int32_t> _interprocess_facets;
 };
 
 /// @brief Create a distributed mesh topology.

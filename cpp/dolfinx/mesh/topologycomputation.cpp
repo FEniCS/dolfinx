@@ -348,7 +348,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
   // Determine ownership of shared entities
 
   std::vector<std::int32_t> local_index(entity_count, -1);
-  std::vector<std::int32_t> boundary_facets;
+  std::vector<std::int32_t> interprocess_facets;
   std::int32_t num_local;
   {
     std::int32_t c = 0;
@@ -368,7 +368,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
       else
       {
         // Shared with another process
-        boundary_facets.push_back(i);
+        interprocess_facets.push_back(i);
         auto vertices = shared_entities_v.links(i);
         assert(!vertices.empty());
         int owner_rank = get_ownership(ranks, vertices);
@@ -387,8 +387,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
     assert(c == entity_count);
 
     // Convert boundary entities to local_index
-    std::transform(boundary_facets.cbegin(), boundary_facets.cend(),
-                   boundary_facets.begin(),
+    std::transform(interprocess_facets.cbegin(), interprocess_facets.cend(),
+                   interprocess_facets.begin(),
                    [&local_index](std::int32_t i) { return local_index[i]; });
   }
 
@@ -464,7 +464,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
                  [&local_index](auto index) { return local_index[index]; });
 
   return {std::move(new_entity_index), std::move(index_map),
-          std::move(boundary_facets)};
+          std::move(interprocess_facets)};
 }
 //-----------------------------------------------------------------------------
 
@@ -582,7 +582,7 @@ compute_entities_by_key_matching(
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
-  auto [local_index, index_map, boundary_facets] = get_local_indexing(
+  auto [local_index, index_map, interprocess_facets] = get_local_indexing(
       comm, cell_index_map, vertex_index_map, entity_list,
       max_vertices_per_entity, num_entities_per_cell, entity_index);
 
@@ -624,7 +624,7 @@ compute_entities_by_key_matching(
                                         std::move(offsets_ce));
 
   return {std::move(ce), std::move(ev), std::move(index_map),
-          std::move(boundary_facets)};
+          std::move(interprocess_facets)};
 }
 //-----------------------------------------------------------------------------
 
@@ -765,12 +765,13 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
   assert(vertex_map);
   auto cell_map = topology.index_map(tdim);
   assert(cell_map);
-  auto [d0, d1, d2, boundary_facets] = compute_entities_by_key_matching(
+  auto [d0, d1, im, interprocess_facets] = compute_entities_by_key_matching(
       comm, *cells, *vertex_map, *cell_map, topology.cell_type(), dim);
 
   return {std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d0)),
           std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d1)),
-          std::make_shared<common::IndexMap>(std::move(d2)), boundary_facets};
+          std::make_shared<common::IndexMap>(std::move(im)),
+          std::move(interprocess_facets)};
 }
 //-----------------------------------------------------------------------------
 std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>

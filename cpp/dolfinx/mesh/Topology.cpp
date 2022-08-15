@@ -802,7 +802,7 @@ std::int32_t Topology::create_entities(int dim)
     return -1;
 
   // Create local entities
-  const auto [cell_entity, entity_vertex, index_map, boundary_facets]
+  const auto [cell_entity, entity_vertex, index_map, interprocess_facets]
       = compute_entities(_comm.comm(), *this, dim);
 
   if (cell_entity)
@@ -818,8 +818,8 @@ std::int32_t Topology::create_entities(int dim)
   // Store boundary facets
   if (dim == this->dim() - 1)
   {
-    _boundary_facets = std::move(boundary_facets);
-    std::sort(_boundary_facets.begin(), _boundary_facets.end());
+    _interprocess_facets = std::move(interprocess_facets);
+    std::sort(_interprocess_facets.begin(), _interprocess_facets.end());
   }
 
   return index_map->size_local();
@@ -916,6 +916,11 @@ const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
   }
 
   return _facet_permutations;
+}
+//-----------------------------------------------------------------------------
+const std::vector<std::int32_t>& Topology::interprocess_facets() const
+{
+  return _interprocess_facets;
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const noexcept { return _cell_type; }

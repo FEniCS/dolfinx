@@ -577,10 +577,10 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
   assert(cell_map);
 
   const std::vector<std::int32_t>& interprocess_facets
-      = topology.boundary_facets();
+      = topology.interprocess_facets();
 
   // Find all owned facets (not ghost) with only one attached cell,
-  // which are also not shared forward (ghost on another process)
+  // which are also not on a process boundary
   const int num_facets = facet_map->size_local();
   auto f_to_c = topology.connectivity(tdim - 1, tdim);
   assert(f_to_c);
@@ -594,6 +594,12 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
       facets.push_back(f);
     }
   }
+
+  auto r = std::ranges::views::iota(0, num_facets);
+  std::ranges::copy_if(r.begin(), r.end(), std::back_inserter(facets),
+                       [&f_to_c](int f) { return f_to_c->num_links(f) == 1; });
+
+  // FIXME: maybe use std::set_difference to remove interprocess_facets?
 
   return facets;
 }
