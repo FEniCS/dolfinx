@@ -1,4 +1,5 @@
 import os
+import shlex
 import subprocess
 import sys
 import sysconfig
@@ -41,6 +42,7 @@ class CMakeBuild(build_ext):
 
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
+        cmake_args = shlex.split(os.environ.get("CMAKE_ARGS", ""))
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPython3_EXECUTABLE=' + sys.executable,
                       f'-DPython3_LIBRARIES={sysconfig.get_config_var("LIBDEST")}',
@@ -49,9 +51,12 @@ class CMakeBuild(build_ext):
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
         cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-        build_args += ['--', '-j3']
 
         env = os.environ.copy()
+        # default to 3 build threads
+        if "CMAKE_BUILD_PARALLEL_LEVEL" not in env:
+            env["CMAKE_BUILD_PARALLEL_LEVEL"] = "3"
+
         import pybind11
         env['pybind11_DIR'] = pybind11.get_cmake_dir()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
