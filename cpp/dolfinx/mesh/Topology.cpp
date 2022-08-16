@@ -26,53 +26,6 @@ namespace
 {
 
 //-----------------------------------------------------------------------------
-
-/// @brief Compute out-edges on a symmetric neighbourhood communicator.
-///
-/// This function finds out-edges on a neighbourhood communicator. The
-/// communicator neighbourhood must contain all in- and out-edges. The
-/// neighbourhood discovery uses MPI_Neighbor_alltoall; the function is
-/// therefore appropriate for when the  neighbourhood size is 'small'.
-///
-/// @param[in] comm A communicator with a symmetric neighbourhood.
-/// @param[in] edges The edges (neighbour ranks) for the neighbourhood
-/// communicator.
-/// @param[in] in_edges Direct edges (ranks). Must be a subset of
-/// `edges`.
-/// @return Out edge ranks.
-/// @pre `edges` must be sorted.
-std::vector<int> find_out_edges(MPI_Comm comm, std::span<const int> edges,
-                                std::span<const int> in_edges)
-{
-  std::vector<int> in_edges_neigh;
-  in_edges_neigh.reserve(in_edges.size());
-  for (int r : in_edges)
-  {
-    auto it = std::lower_bound(edges.begin(), edges.end(), r);
-    assert(it != edges.end() and *it == r);
-    std::size_t rank_neigh = std::distance(edges.begin(), it);
-    in_edges_neigh.push_back(rank_neigh);
-  }
-  std::vector<std::uint8_t> edge_count_send(edges.size(), 0);
-  std::for_each(in_edges_neigh.cbegin(), in_edges_neigh.cend(),
-                [&edge_count_send](auto e) { edge_count_send[e] = 1; });
-
-  std::vector<std::uint8_t> edge_count_recv(edge_count_send.size());
-  edge_count_send.reserve(1);
-  edge_count_recv.reserve(1);
-  MPI_Neighbor_alltoall(edge_count_send.data(), 1, MPI_UINT8_T,
-                        edge_count_recv.data(), 1, MPI_UINT8_T, comm);
-
-  std::vector<int> out_edges;
-  for (std::size_t i = 0; i < edge_count_recv.size(); ++i)
-    if (edge_count_recv[i] > 0)
-      out_edges.push_back(edges[i]);
-
-  return out_edges;
-}
-
-//-----------------------------------------------------------------------------
-
 /// @brief Determine owner and sharing ranks sharing an index.
 ///
 /// @note Collective
@@ -521,7 +474,7 @@ exchange_indexing(MPI_Comm comm, const std::span<const std::int64_t>& indices,
 }
 //---------------------------------------------------------------------
 
-/// @brief Send and receive vertex indicies and owning ranks for
+/// @brief Send and receive vertex indices and owning ranks for
 /// vertices that lie in the ghost cell region.
 ///
 /// Vertices that are attached to ghost cells but which are not attached
@@ -947,8 +900,8 @@ Topology mesh::create_topology(
 
   const std::int32_t num_local_cells = cells.num_nodes() - ghost_owners.size();
 
-  // Create sets of owned and not-owned vertices from the cell ownership, and
-  // the list of "unknown vertices" whose ownership needs to be determined.
+  // Create sets of owned and unowned vertices from the cell ownership
+  // and the list of boundary vertices
   auto [owned_vertices, unowned_vertices]
       = vertex_ownership_groups(cells, num_local_cells, boundary_vertices);
 
@@ -1012,8 +965,7 @@ Topology mesh::create_topology(
     MPI_Exscan(&nlocal, &global_offset_v, 1, MPI_INT64_T, MPI_SUM, comm);
   }
 
-  // Create an index map for cells. We do it here because we can find
-  // src ranks for the cell index map using comm0.
+  // Create an index map for cells
   std::shared_ptr<common::IndexMap> index_map_c;
   if (ghost_mode == GhostMode::none)
     index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells);
@@ -1024,28 +976,6 @@ Topology mesh::create_topology(
     const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
         comm, cell_idx.first(cells.num_nodes() - ghost_owners.size()),
         std::span(original_cell_index).last(ghost_owners.size()), ghost_owners);
-
-    // Build list of owner ranks for vertices on the 'true boundary'
-    // between processes. This is a superset of the ranks that own ghost
-    // cells.
-    std::vector<int> ranks(global_vertex_to_ranks.array().begin(),
-                           global_vertex_to_ranks.array().end());
-    dolfinx::radix_sort(std::span(ranks));
-    ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
-
-    // List of ranks that own cells that are ghosts on this rank
-    std::vector<int> src(ghost_owners.begin(), ghost_owners.end());
-    std::sort(src.begin(), src.end());
-    src.erase(std::unique(src.begin(), src.end()), src.end());
-
-    // Determine dest ranks for cells, i.e. ranks that ghost cells that
-    // this ranks owns, on the 'ranks' sub-communicator
-    MPI_Comm comm0;
-    MPI_Dist_graph_create_adjacent(
-        comm, ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
-        ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
-    std::vector<int> dest = find_out_edges(comm0, ranks, src);
-    MPI_Comm_free(&comm0);
 
     index_map_c = std::make_shared<common::IndexMap>(
         comm, num_local_cells, cell_ghost_indices, ghost_owners);
