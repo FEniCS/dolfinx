@@ -150,7 +150,7 @@ def create_tnt_quad(degree):
     # Edges
     pts, wts = basix.make_quadrature(basix.CellType.interval, 2 * degree)
     poly = basix.tabulate_polynomials(basix.PolynomialType.legendre, basix.CellType.interval, degree - 1, pts)
-    edge_ndofs = poly.shape[1]
+    edge_ndofs = poly.shape[0]
     for e in topology[1]:
         v0 = geometry[e[0]]
         v1 = geometry[e[1]]
