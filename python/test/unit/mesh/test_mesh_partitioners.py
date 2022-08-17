@@ -144,4 +144,6 @@ def test_asymmetric_partitioner():
     ghost_mode = GhostMode.shared_facet
     new_mesh = create_mesh(mpi_comm, topo, x, domain, ghost_mode, partitioner)
     if (r == 0 and n > 1):
-        assert (new_mesh.topology.index_map(2).num_ghosts == 20)
+        assert new_mesh.topology.index_map(2).num_ghosts == 20
+    else:
+        assert new_mesh.topology.index_map(2).num_ghosts == 0
