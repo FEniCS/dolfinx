@@ -31,7 +31,7 @@ namespace
 /// @note Collective
 ///
 /// Indices are sent to a 'post office' rank, which uses a
-/// (deterministic) random number generator to determine which ranks is
+/// (deterministic) random number generator to determine which rank is
 /// the 'owner'. This information is sent back to the ranks who sent the
 /// index to the post office.
 ///
@@ -906,7 +906,7 @@ Topology mesh::create_topology(
       = vertex_ownership_groups(cells, num_local_cells, boundary_vertices);
 
   // For each vertex whose ownership needs determining, find the sharing
-  // ranks. The first index in the list of ranks for a vertex the owner
+  // ranks. The first index in the list of ranks for a vertex is the owner
   // (as determined by determine_sharing_ranks).
   const graph::AdjacencyList<int> global_vertex_to_ranks
       = determine_sharing_ranks(comm, boundary_vertices);
