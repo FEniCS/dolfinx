@@ -43,15 +43,18 @@ from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
 # -
 
-# Let's now define our domain. It is a rectangular domain  with length $l$ and height $b = l/2$, while the dielectric fills the lower-half of the domain, with a height of $d=b/2$.
+# Let's now define our domain. It is a rectangular domain  with length $l$ and height $h = l/2$, while the dielectric fills the lower-half of the domain, with a height of $d=b/2$.
 
 # +
 l = 1
-b = 0.5*l
-d = 0.5*b
+h = 0.45*l
+d = 0.5*h
 
-domain = create_rectangle(MPI.COMM_WORLD, [[0, 0], [l, b]], [
-    300, 200], CellType.triangle)
+nx = 300
+ny = int(0.4*nx)
+
+domain = create_rectangle(MPI.COMM_WORLD, [[0, 0], [l, h]], [
+    nx, ny], CellType.triangle)
 
 domain.topology.create_connectivity(domain.topology.dim - 1, domain.topology.dim)
 # -
@@ -61,7 +64,7 @@ domain.topology.create_connectivity(domain.topology.dim - 1, domain.topology.dim
 
 # +
 eps_v = 1
-eps_d = 4
+eps_d = 1
 
 def Omega_d(x):
     return x[1] <= d
@@ -139,11 +142,13 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
 
 c0 = 3 * 10**8  # m/s
 MHz = 10**6 # Hz
-f0 = 340 * MHz
+f0 = 200 * MHz
 k0 = 2 * np.pi * c0 / f0
+print(k0)
 
 # We need to specify our elements. For $\mathbf{e}_t$ we can use the Nedelec elements, while for $e_z$ we can use the Lagrange elements. In DOLFINx, this hybrid formulation is implemented with `MixedElement`:
 
+degree = 2
 N1curl = ufl.FiniteElement("N1curl", domain.ufl_cell(), 2)
 H1 = ufl.FiniteElement("Lagrange", domain.ufl_cell(), 2)
 V = fem.FunctionSpace(domain, ufl.MixedElement(N1curl, H1))
@@ -212,7 +217,7 @@ eps.setProblemType(SLEPc.EPS.ProblemType.GNHEP)
 # solution and the maximum number of iterations:
 
 eps.setTolerances(tol = 1e-10, 
-                  max_it = 10)
+                  max_it = 100)
 
 # Now we need to set the eigensolver for our problem, which is the algorithm we want to use to find the eigenvalues and the eigenvectors. SLEPc offers different methods, and also wrappers to external libraries. Some of these methods are only suitable for Hermitian or Generalized Hermitian problems and/or for eigenvalues in a certain portion of the spectrum. However, the choice of the method is a technical discussion that is out of the scope of this demo. For our problem, we will use the default Krylov-Schur method, which we can set by calling the `setType` function:
 
@@ -227,8 +232,8 @@ eps.setType(SLEPc.EPS.Type.KRYLOVSCHUR)
 # +
 # Get ST context from eps
 st = eps.getST()
-
-# Set shift-and-invert transformation
+#
+## Set shift-and-invert transformation
 st.setType(SLEPc.ST.Type.SINVERT)
 # -
 
@@ -242,21 +247,40 @@ st.setType(SLEPc.ST.Type.SINVERT)
 # by using the `setTarget` function:
 
 eps.setWhichEigenpairs(SLEPc.EPS.Which.TARGET_REAL)
-eps.setTarget(-(1.5*k0)**2)
+eps.setTarget(-(0.6*k0)**2)
 
 # Then, we need to define the number of eigenvalues we want to calculate.
 # We can do this with the `setDimensions` function, where we specify a
 # number of $4$ eigenvalues:
 
-eps.setDimensions(nev=5)
+nev = 6
+ncv = 20*nev
+eps.setDimensions(nev=nev, ncv=ncv)
 eps.setFromOptions()
 
 # We can finally solve the problem and get the solutions
 
 # +
+
+harmonic_numbers = [(i, j) for i in range(4) for j in range(4)][1:]
+kz_list = []
+
+for m, n in harmonic_numbers:
+    kz_exact = np.sqrt(k0**2 - (np.pi*m/l)**2 - (np.pi*n/h)**2 + 0j).real
+    kz_list.append(kz_exact/k0)
+
+kz_list, harmonic_numbers = zip(*sorted(zip(kz_list, harmonic_numbers)))
+
+for i, val in enumerate(kz_list):
+    if val != 0:
+        print()
+        print(f"harmonic couple: {harmonic_numbers[i][0]},{harmonic_numbers[i][1]}")
+        print(f"kz/k0: {kz_list[i]}")
+        print()
+
 eps.solve()
 
-vals = [(i, eps.getEigenvalue(i)) for i in range(eps.getConverged())]
+vals = [(i, np.sqrt(-eps.getEigenvalue(i))) for i in range(eps.getConverged())]
 
 vals.sort(key=lambda x: x[1].real)
 
@@ -269,24 +293,26 @@ for i, _ in vals:
     error = eps.computeError(i, SLEPc.EPS.ErrorType.RELATIVE)
     
     kz = np.sqrt(-eignvl)
-    print()
-    print(f"error: {error}")
-    print(f"kz/k0: {kz/k0:.12f}")
-    print()
-    
-    eh.name = f"E-{j:03d}-{kz/k0:.4f}"
-    j += 1
 
-    eh.x.scatter_forward()
+    if error < 1e-10:
+        print()
+        print(f"error: {error}")
+        print(f"kz/k0: {kz/k0:.12f}")
+        print()
+        
+        eh.name = f"E-{j:03d}-{kz/k0:.4f}"
+        j += 1
 
-    eth, ezh = eh.split()
-    V_dg = fem.VectorFunctionSpace(domain, ("DG", 2))
-    E_dg = fem.Function(V_dg)
-    E_dg.interpolate(eth)
-    padded_j = str(j).zfill(3)
-    padded_e = str(eignvl).zfill(3)
-    with io.VTXWriter(domain.comm, f"sols/E_{padded_j}_eigen{(kz/k0).real:.5f}.bp", E_dg) as f:
-        f.write(0.0)
+        eh.x.scatter_forward()
+
+        eth, ezh = eh.split()
+        V_dg = fem.VectorFunctionSpace(domain, ("DG", 2))
+        E_dg = fem.Function(V_dg)
+        E_dg.interpolate(eth)
+        padded_j = str(j).zfill(3)
+        padded_e = str(eignvl).zfill(3)
+        with io.VTXWriter(domain.comm, f"sols/E_{padded_j}_eigen{(kz/k0).real:.5f}.bp", E_dg) as f:
+            f.write(0.0)
 # -
 
 # ## Analytical solutions
@@ -307,7 +333,7 @@ for i, _ in vals:
 # \begin{cases}
 # &k_{x 1}{ }^{2}+\left(\frac{n \pi}{b}\right)^{2}+k_{z}{ }^{2}=k_{1}^{2}=\omega^{2} \varepsilon_{1} \\
 # &k_{x 2}{ }^{2}+\left(\frac{n \pi}{b}\right)^{2}+k_{z}{ }^{2}=k_{2}{ }^{2}=\omega^{2} \varepsilon_{2} \\
-# & k_{x 1} \cot k_{x 1} d=-k_{x 2}\mu_{2} \cot \left[k_{x 2}(a-d)\right]
+# & k_{x 1} \cot k_{x 1} d=-k_{x 2} \cot \left[k_{x 2}(a-d)\right]
 # \end{cases}
 # \end{aligned}
 # $$
