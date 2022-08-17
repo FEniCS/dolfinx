@@ -336,6 +336,7 @@ vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
                       local_vertex_set.begin(), local_vertex_set.end(),
                       std::back_inserter(unowned_vertices));
 
+  // TODO Check this in debug mode only?
   // Sanity check
   // No vertices in unowned should also be in boundary...
   std::vector<std::int64_t> unowned_vertices_in_error;
