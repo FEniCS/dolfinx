@@ -968,19 +968,15 @@ Topology mesh::create_topology(
 
   // Create an index map for cells
   std::shared_ptr<common::IndexMap> index_map_c;
-  if (ghost_mode == GhostMode::none)
-    index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells);
-  else
-  {
-    // Get global indices of ghost cells
-    std::span cell_idx(original_cell_index);
-    const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
-        comm, cell_idx.first(cells.num_nodes() - ghost_owners.size()),
-        std::span(original_cell_index).last(ghost_owners.size()), ghost_owners);
 
-    index_map_c = std::make_shared<common::IndexMap>(
-        comm, num_local_cells, cell_ghost_indices, ghost_owners);
-  }
+  // Get global indices of ghost cells
+  std::span cell_idx(original_cell_index);
+  const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
+      comm, cell_idx.first(cells.num_nodes() - ghost_owners.size()),
+      std::span(original_cell_index).last(ghost_owners.size()), ghost_owners);
+
+  index_map_c = std::make_shared<common::IndexMap>(
+      comm, num_local_cells, cell_ghost_indices, ghost_owners);
 
   // Send and receive  ((input vertex index) -> (new global index, owner
   // rank)) data with neighbours (for vertices on 'true domain
