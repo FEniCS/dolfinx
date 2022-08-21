@@ -99,14 +99,12 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // it is just the identity
 
     // Compute the destination rank for cells on this process via graph
-    // partitioning. Always get the ghost cells via facet, though these
-    // may be discarded later.
+    // partitioning.
     const int size = dolfinx::MPI::size(comm);
     const int tdim = cell_dim(element.cell_shape());
     const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
         comm, size, tdim,
-        extract_topology(element.cell_shape(), dof_layout, cells),
-        GhostMode::shared_facet);
+        extract_topology(element.cell_shape(), dof_layout, cells), ghost_mode);
 
     // -- Distribute cells (topology, includes higher-order 'nodes')
 
@@ -185,26 +183,11 @@ Mesh mesh::create_mesh(MPI_Comm comm,
       topology.create_entities(e);
   }
 
-  // Function top build geometry. Used to scope memory operations.
-  auto build_geometry = [](auto comm, auto& cell_nodes, auto& topology,
-                           auto& element, auto& x, auto xshape1)
-  {
-    int tdim = topology.dim();
-    int num_cells = topology.index_map(tdim)->size_local()
-                    + topology.index_map(tdim)->num_ghosts();
-
-    // Remove ghost cells from geometry data, if not required
-    cell_nodes.offsets().resize(num_cells + 1);
-    cell_nodes.array().resize(cell_nodes.offsets().back());
-
-    if (element.needs_dof_permutations())
-      topology.create_entity_permutations();
-
-    return create_geometry(comm, topology, element, cell_nodes, x, xshape1);
-  };
+  if (element.needs_dof_permutations())
+    topology.create_entity_permutations();
 
   Geometry geometry
-      = build_geometry(comm, cell_nodes, topology, element, x, xshape[1]);
+      = create_geometry(comm, topology, element, cell_nodes, x, xshape[1]);
   return Mesh(comm, std::move(topology), std::move(geometry));
 }
 //-----------------------------------------------------------------------------

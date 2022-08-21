@@ -439,7 +439,7 @@ distribute_to_postoffice(MPI_Comm comm, const std::span<const T>& x,
                  index_local.begin(), [r0](auto idx) { return idx - r0; });
 
   return {index_local, recv_buffer_data};
-};
+}
 //---------------------------------------------------------------------------
 template <typename T>
 std::vector<T> distribute_from_postoffice(
