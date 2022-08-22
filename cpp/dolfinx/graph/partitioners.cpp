@@ -522,6 +522,9 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
     LOG(INFO) << "Compute graph partition using ParMETIS";
     common::Timer timer("Compute graph partition (ParMETIS)");
 
+    
+    std::cout << "ParMETIS\n";
+
     if (nparts == 1 and dolfinx::MPI::size(comm) == 1)
     {
       // Nothing to be partitioned
@@ -578,6 +581,8 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
 
     if (ghosting and graph.num_nodes() > 0)
     {
+
+    std::cout << "Ghosting\n";
       // FIXME: Is it implicit the the first entry is the owner?
       graph::AdjacencyList<int> dest
           = compute_destination_ranks(pcomm, graph, node_disp, part);
@@ -588,6 +593,8 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
     else
     {
       MPI_Comm_free(&pcomm);
+
+    std::cout << "No ghosting\n";
       return regular_adjacency_list(std::vector<int>(part.begin(), part.end()),
                                     1);
     }

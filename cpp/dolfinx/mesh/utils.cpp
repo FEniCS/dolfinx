@@ -606,6 +606,7 @@ mesh::create_cell_partitioner(const graph::partition_fn& partfn)
   {
     LOG(INFO) << "Compute partition of cells across ranks";
 
+    std::cout << "Create dual graph\n";
     // Compute distributed dual graph (for the cells on this process)
     const graph::AdjacencyList<std::int64_t> dual_graph
         = build_dual_graph(comm, cells, tdim);
@@ -613,6 +614,7 @@ mesh::create_cell_partitioner(const graph::partition_fn& partfn)
     // Just flag any kind of ghosting for now
     bool ghosting = (ghost_mode != GhostMode::none);
 
+    std::cout << "Call partitioner\n";
     // Compute partition
     return partfn(comm, nparts, dual_graph, ghosting);
   };
