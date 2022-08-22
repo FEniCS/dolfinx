@@ -42,7 +42,6 @@ reorder_list(const graph::AdjacencyList<T>& list,
   for (std::size_t n = nodemap.size(); n < (std::size_t)list.num_nodes(); ++n)
     offsets[n + 1] = list.num_links(n);
   std::partial_sum(offsets.begin(), offsets.end(), offsets.begin());
-  std::cout << "list new\n";
   graph::AdjacencyList<T> list_new(std::move(data), std::move(offsets));
 
   for (std::size_t n = 0; n < nodemap.size(); ++n)
@@ -103,11 +102,9 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // partitioning.
     const int size = dolfinx::MPI::size(comm);
     const int tdim = cell_dim(element.cell_shape());
-    std::cout << "cell partitioner\n";
     const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
         comm, size, tdim,
         extract_topology(element.cell_shape(), dof_layout, cells), ghost_mode);
-    std::cout << "cell partitioner done\n";
 
     // -- Distribute cells (topology, includes higher-order 'nodes')
 
@@ -122,12 +119,9 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 
     // Extract cell 'topology', i.e. extract the vertices for each cell
     // and discard any 'higher-order' nodes
-    std::cout << "extract topology\n";
 
     graph::AdjacencyList<std::int64_t> cells_extracted
         = extract_topology(element.cell_shape(), dof_layout, cell_nodes);
-
-    std::cout << "extract done\n";
 
     // -- Re-order cells
 

@@ -316,8 +316,6 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     LOG(INFO) << "Compute graph partition using PT-SCOTCH";
     common::Timer timer("Compute graph partition (SCOTCH)");
 
-    std::cout << "SCOTCH\n";
-
     std::int64_t offset_global = 0;
     const std::int64_t num_owned = graph.num_nodes();
     MPI_Request request_offset_scan;
@@ -497,8 +495,6 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     }
     else
     {
-      std::cout << "SOTCH no ghstig\n";
-
       offsets.resize(graph.num_nodes() + 1);
       std::iota(offsets.begin(), offsets.end(), 0);
       dests = std::vector<std::int32_t>(
@@ -509,8 +505,6 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     // Clean up SCOTCH objects
     SCOTCH_dgraphExit(&dgrafdat);
     SCOTCH_stratExit(&strat);
-
-    std::cout << "scotch  " << dests.size() << " " << offsets.back() << "\n";
 
     return graph::AdjacencyList<std::int32_t>(std::move(dests),
                                               std::move(offsets));
@@ -528,8 +522,6 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
   {
     LOG(INFO) << "Compute graph partition using ParMETIS";
     common::Timer timer("Compute graph partition (ParMETIS)");
-
-    std::cout << "ParMETIS\n";
 
     if (nparts == 1 and dolfinx::MPI::size(comm) == 1)
     {
@@ -587,8 +579,6 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
 
     if (ghosting and graph.num_nodes() > 0)
     {
-
-      std::cout << "Ghosting\n";
       // FIXME: Is it implicit the the first entry is the owner?
       graph::AdjacencyList<int> dest
           = compute_destination_ranks(pcomm, graph, node_disp, part);
@@ -599,8 +589,6 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
     else
     {
       MPI_Comm_free(&pcomm);
-
-      std::cout << "No ghosting\n";
       return regular_adjacency_list(std::vector<int>(part.begin(), part.end()),
                                     1);
     }

@@ -22,9 +22,9 @@ graph::partition_graph(MPI_Comm comm, int nparts,
                        const AdjacencyList<std::int64_t>& local_graph,
                        bool ghosting)
 {
-// #if HAS_PARMETIS
-//   return graph::parmetis::partitioner()(comm, nparts, local_graph, ghosting);
-#if HAS_PTSCOTCH
+#if HAS_PARMETIS
+  return graph::parmetis::partitioner()(comm, nparts, local_graph, ghosting);
+#elif HAS_PTSCOTCH
   return graph::scotch::partitioner()(comm, nparts, local_graph, ghosting);
 #elif HAS_KAHIP
   return graph::kahip::partitioner()(comm, nparts, local_graph, ghosting);
@@ -238,8 +238,6 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   MPI_Iexscan(&num_local, &offset_local, 1, MPI_INT64_T, MPI_SUM, comm,
               &request_offset_scan);
 
-  std::cout << "nlocal cells = " << num_local << "\n";
-
   // Find out how many ghosts are on each neighboring process
   std::vector<int> ghost_index_count;
   std::vector<int> neighbors;
@@ -261,8 +259,6 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
       ++ghost_index_count[it->second];
     }
   }
-
-  std::cout << "p2 neighbor = " << proc_to_neighbor.size() << "\n";
 
   MPI_Comm neighbor_comm_fwd, neighbor_comm_rev;
 
@@ -307,9 +303,6 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   MPI_Neighbor_alltoall(ghost_index_count.data(), 1, MPI_INT, recv_sizes.data(),
                         1, MPI_INT, neighbor_comm_fwd);
 
-  std::cout << "ghost index count (size) = " << ghost_index_count.size()
-            << "\n";
-
   std::vector<int> recv_offsets = {0};
   recv_offsets.reserve(recv_sizes.size() + 1);
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
@@ -326,8 +319,6 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
 
   std::vector<std::array<std::int64_t, 2>> old_to_new;
   old_to_new.reserve(owned_indices.size());
-
-  std::cout << "owned indices = " << owned_indices.size() << "\n";
 
   for (auto idx : owned_indices)
   {
