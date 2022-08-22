@@ -147,7 +147,7 @@ k0 = 2 * np.pi * c0 / f0
 
 # We need to specify our elements. For $\mathbf{e}_t$ we can use the Nedelec elements, while for $e_z$ we can use the Lagrange elements. In DOLFINx, this hybrid formulation is implemented with `MixedElement`:
 
-degree = 2
+degree = 3
 N1curl = ufl.FiniteElement("RTCE", domain.ufl_cell(), degree)
 H1 = ufl.FiniteElement("Lagrange", domain.ufl_cell(), degree)
 V = fem.FunctionSpace(domain, ufl.MixedElement(N1curl, H1))
@@ -208,7 +208,7 @@ eps.setTolerances(tol = 1e-10,
 
 # Now we need to set the eigensolver for our problem, which is the algorithm we want to use to find the eigenvalues and the eigenvectors. SLEPc offers different methods, and also wrappers to external libraries. Some of these methods are only suitable for Hermitian or Generalized Hermitian problems and/or for eigenvalues in a certain portion of the spectrum. However, the choice of the method is a technical discussion that is out of the scope of this demo. For our problem, we will use the default Krylov-Schur method, which we can set by calling the `setType` function:
 
-eps.setType(SLEPc.EPS.Type.KRYLOVSCHUR)
+eps.setType(SLEPc.EPS.Type.JD)
 
 # Now we need to specify the spectral transformation we want to use
 # to solve this problem. Spectral transormation are operators applied
@@ -220,7 +220,7 @@ eps.setType(SLEPc.EPS.Type.KRYLOVSCHUR)
 st = eps.getST()
 ##
 ### Set shift-and-invert transformation
-st.setType(SLEPc.ST.Type.SINVERT)
+st.setType(SLEPc.ST.Type.PRECOND)
 
 # Now we need to define a target eigenvalue for our problem. In particular, we want
 # to find those $k_z$ with a real part near to $1.5k_0$ (since at page 658 of the [FEniCS book](https://fenicsproject.org/pub/book/book/fenics-book-2011-06-14.pdf)
@@ -231,8 +231,8 @@ st.setType(SLEPc.ST.Type.SINVERT)
 # the target value for the real part is $-(1.5k_0)^2$ (remember that $\lambda = -k_z^2$),
 # by using the `setTarget` function:
 
-eps.setWhichEigenpairs(SLEPc.EPS.Which.TARGET_REAL)
-eps.setTarget(-(0.5*k0)**2)
+eps.setWhichEigenpairs(SLEPc.EPS.Which.SMALLEST_REAL)
+eps.setTarget(-(0.08*k0)**2)
 
 # Then, we need to define the number of eigenvalues we want to calculate.
 # We can do this with the `setDimensions` function, where we specify a
@@ -240,7 +240,7 @@ eps.setTarget(-(0.5*k0)**2)
 
 nev = 6
 ncv = 20*nev
-eps.setDimensions(nev=nev, ncv=ncv)
+#eps.setDimensions(nev=nev, ncv=ncv)
 eps.setFromOptions()
 
 # We can finally solve the problem and get the solutions
@@ -264,7 +264,6 @@ for i, val in enumerate(kz_list):
 
 eps.solve()
 
-print(eps.getIterationNumber())
 vals = [(i, np.sqrt(-eps.getEigenvalue(i))) for i in range(eps.getConverged())]
 
 vals.sort(key=lambda x: x[1].real)
