@@ -22,9 +22,9 @@ graph::partition_graph(MPI_Comm comm, int nparts,
                        const AdjacencyList<std::int64_t>& local_graph,
                        bool ghosting)
 {
-#if HAS_PARMETIS
-  return graph::parmetis::partitioner()(comm, nparts, local_graph, ghosting);
-#elif HAS_PTSCOTCH
+// #if HAS_PARMETIS
+//   return graph::parmetis::partitioner()(comm, nparts, local_graph, ghosting);
+#if HAS_PTSCOTCH
   return graph::scotch::partitioner()(comm, nparts, local_graph, ghosting);
 #elif HAS_KAHIP
   return graph::kahip::partitioner()(comm, nparts, local_graph, ghosting);
