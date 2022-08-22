@@ -20,7 +20,7 @@ using namespace dolfinx;
 namespace
 {
 
-constexpr int N = 4;
+constexpr int N = 8;
 
 void create_mesh_file()
 {
@@ -84,9 +84,37 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
       = graph::build::distribute(
           mpi_comm, graph::regular_adjacency_list(cells, cshape[1]), dest);
 
+  // FIXME: improve way to find 'external' vertices
+  // Count the connections of all vertices on owned cells. If there are 6
+  // connections (on a regular triangular mesh) then it is 'internal'.
+  int num_local_cells = cell_nodes.num_nodes() - ghost_owners.size();
+  int ghost_offset = cell_nodes.offsets()[num_local_cells];
+  std::vector<std::int64_t> external_vertices(
+      cell_nodes.array().begin(), cell_nodes.array().begin() + ghost_offset);
+  std::sort(external_vertices.begin(), external_vertices.end());
+  std::vector<int> counts;
+  auto it = external_vertices.begin();
+  while (it != external_vertices.end())
+  {
+    auto it2 = std::find_if(it, external_vertices.end(),
+                            [&](std::int64_t val) { return (val != *it); });
+    counts.push_back(std::distance(it, it2));
+    it = it2;
+  }
+  external_vertices.erase(
+      std::unique(external_vertices.begin(), external_vertices.end()),
+      external_vertices.end());
+  for (std::size_t i = 0; i < counts.size(); ++i)
+    if (counts[i] == 6)
+      external_vertices[i] = -1;
+  std::sort(external_vertices.begin(), external_vertices.end());
+  it = std::find_if(external_vertices.begin(), external_vertices.end(),
+                    [](std::int64_t i) { return (i != -1); });
+  external_vertices.erase(external_vertices.begin(), it);
+
   mesh::Topology topology = mesh::create_topology(
       mpi_comm, cell_nodes, original_cell_index, ghost_owners,
-      cmap.cell_shape(), mesh::GhostMode::shared_facet);
+      cmap.cell_shape(), mesh::GhostMode::shared_facet, external_vertices);
   int tdim = topology.dim();
 
   mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, cmap,
@@ -128,19 +156,18 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
     mesh::CellPartitionFunction kahip
         = [&](MPI_Comm comm, int nparts, int tdim,
               const graph::AdjacencyList<std::int64_t>& cells,
-              mesh::GhostMode ghost_mode)
-    {
-      LOG(INFO) << "Compute partition of cells across ranks (KaHIP).";
-      // Compute distributed dual graph (for the cells on this process)
-      const graph::AdjacencyList<std::int64_t> dual_graph
-          = mesh::build_dual_graph(comm, cells, tdim);
+              mesh::GhostMode ghost_mode) {
+            LOG(INFO) << "Compute partition of cells across ranks (KaHIP).";
+            // Compute distributed dual graph (for the cells on this process)
+            const graph::AdjacencyList<std::int64_t> dual_graph
+                = mesh::build_dual_graph(comm, cells, tdim);
 
-      // Just flag any kind of ghosting for now
-      bool ghosting = (ghost_mode != mesh::GhostMode::none);
+            // Just flag any kind of ghosting for now
+            bool ghosting = (ghost_mode != mesh::GhostMode::none);
 
-      // Compute partition
-      return partfn(comm, nparts, dual_graph, ghosting);
-    };
+            // Compute partition
+            return partfn(comm, nparts, dual_graph, ghosting);
+          };
 
     CHECK_NOTHROW(test_distributed_mesh(kahip));
   }
