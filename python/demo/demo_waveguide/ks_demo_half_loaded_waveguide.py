@@ -52,23 +52,23 @@ c0 = 3 * 10**8  # m/s
 MHz = 10**6 # Hz
 f0 = 200 * MHz
 k0 = 2 * np.pi * c0 / f0
-degree = 1
+degree = 2
 
-tol = 1e-10
+tol = 1e-4
 max_it = 100
 
 problem_type = SLEPc.EPS.Type.KRYLOVSCHUR
 st_type = SLEPc.ST.Type.SINVERT
 which_ep = SLEPc.EPS.Which.TARGET_REAL
 target = -(0.1*k0)**2
-nev = 6
-ncv = 20*nev
+nev = 200
+mpd = 0.8*nev
 
 l = 1
 h = 0.45*l
 d = 0.5*h
 
-nx = 300
+nx = 350
 ny = int(0.4*nx)
 
 domain = create_rectangle(MPI.COMM_WORLD, [[0, 0], [l, h]], [
@@ -250,7 +250,9 @@ eps.setTarget(target)
 # We can do this with the `setDimensions` function, where we specify a
 # number of $4$ eigenvalues:
 
-eps.setDimensions(nev=nev, ncv=ncv)
+#eps.setDimensions(nev=nev, ncv=ncv)
+eps.setDimensions(nev=nev, mpd=mpd)
+#eps.setMonitor(eps.EPS_MONITOR)
 eps.setFromOptions()
 
 # We can finally solve the problem and get the solutions
@@ -273,6 +275,8 @@ for i, val in enumerate(kz_list):
         print()
 
 eps.solve()
+eps.view()
+eps.errorView()
 
 vals = [(i, np.sqrt(-eps.getEigenvalue(i))) for i in range(eps.getConverged())]
 
