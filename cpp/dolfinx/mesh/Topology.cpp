@@ -1008,7 +1008,7 @@ Topology mesh::create_topology(
       ghost_vertex_owners.push_back(unowned_vertex_data[i + 2]); // Owning rank
     }
 
-    if (ghost_mode != GhostMode::none)
+    //  if (ghost_mode != GhostMode::none)
     {
       // TODO: avoid building global_to_local_vertices
       std::vector<std::pair<std::int64_t, std::int32_t>>
@@ -1079,8 +1079,8 @@ Topology mesh::create_topology(
                  { return std::pair<std::int64_t, std::int32_t>(idx0, idx1); });
   std::sort(global_to_local_vertices.begin(), global_to_local_vertices.end());
 
-  const std::size_t num_local_nodes
-      = ghost_mode == GhostMode::none ? num_local_cells : cells.num_nodes();
+  const std::size_t num_local_nodes = cells.num_nodes();
+  //      = ghost_mode == GhostMode::none ? num_local_cells : cells.num_nodes();
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells_local_idx
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           convert_to_local_indexing(cells, num_local_nodes,
