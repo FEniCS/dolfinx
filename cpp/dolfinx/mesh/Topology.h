@@ -26,7 +26,6 @@ class AdjacencyList;
 
 namespace dolfinx::mesh
 {
-enum class GhostMode : int;
 enum class CellType;
 
 /// @brief Topology stores the topology of a mesh, consisting of mesh
@@ -191,7 +190,7 @@ Topology
 create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                 const std::span<const std::int64_t>& original_cell_index,
                 const std::span<const int>& ghost_owners,
-                const CellType& cell_type, GhostMode ghost_mode,
+                const CellType& cell_type,
                 const std::vector<std::int64_t>& boundary_vertices);
 
 /// @brief Get entity indices for entities defined by their vertices.

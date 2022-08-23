@@ -114,7 +114,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 
   mesh::Topology topology = mesh::create_topology(
       mpi_comm, cell_nodes, original_cell_index, ghost_owners,
-      cmap.cell_shape(), mesh::GhostMode::shared_facet, external_vertices);
+      cmap.cell_shape(), external_vertices);
   int tdim = topology.dim();
 
   mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, cmap,
@@ -156,18 +156,19 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
     mesh::CellPartitionFunction kahip
         = [&](MPI_Comm comm, int nparts, int tdim,
               const graph::AdjacencyList<std::int64_t>& cells,
-              mesh::GhostMode ghost_mode) {
-            LOG(INFO) << "Compute partition of cells across ranks (KaHIP).";
-            // Compute distributed dual graph (for the cells on this process)
-            const graph::AdjacencyList<std::int64_t> dual_graph
-                = mesh::build_dual_graph(comm, cells, tdim);
+              mesh::GhostMode ghost_mode)
+    {
+      LOG(INFO) << "Compute partition of cells across ranks (KaHIP).";
+      // Compute distributed dual graph (for the cells on this process)
+      const graph::AdjacencyList<std::int64_t> dual_graph
+          = mesh::build_dual_graph(comm, cells, tdim);
 
-            // Just flag any kind of ghosting for now
-            bool ghosting = (ghost_mode != mesh::GhostMode::none);
+      // Just flag any kind of ghosting for now
+      bool ghosting = (ghost_mode != mesh::GhostMode::none);
 
-            // Compute partition
-            return partfn(comm, nparts, dual_graph, ghosting);
-          };
+      // Compute partition
+      return partfn(comm, nparts, dual_graph, ghosting);
+    };
 
     CHECK_NOTHROW(test_distributed_mesh(kahip));
   }

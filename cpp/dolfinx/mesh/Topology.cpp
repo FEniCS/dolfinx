@@ -885,7 +885,7 @@ Topology mesh::create_topology(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
     const std::span<const std::int64_t>& original_cell_index,
     const std::span<const int>& ghost_owners, const CellType& cell_type,
-    GhostMode, const std::vector<std::int64_t>& boundary_vertices)
+    const std::vector<std::int64_t>& boundary_vertices)
 {
   common::Timer timer("Topology: create");
 

@@ -168,7 +168,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // removed later if not required by ghost_mode.
     return std::pair{create_topology(comm, cells_extracted, original_cell_index,
                                      ghost_owners, element.cell_shape(),
-                                     ghost_mode, boundary_vertices),
+                                     boundary_vertices),
                      std::move(cell_nodes)};
   };
 
