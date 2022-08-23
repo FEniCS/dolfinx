@@ -64,8 +64,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                        std::array<std::size_t, 2> xshape,
                        mesh::GhostMode ghost_mode)
 {
-  return create_mesh(comm, cells, element, x, xshape, ghost_mode,
-                     create_cell_partitioner());
+  return create_mesh(comm, cells, element, x, xshape,
+                     create_cell_partitioner(ghost_mode));
 }
 //-----------------------------------------------------------------------------
 Mesh mesh::create_mesh(MPI_Comm comm,
@@ -73,17 +73,13 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                        const fem::CoordinateElement& element,
                        std::span<const double> x,
                        std::array<std::size_t, 2> xshape,
-                       mesh::GhostMode ghost_mode,
                        const mesh::CellPartitionFunction& cell_partitioner)
 {
-  if (ghost_mode == GhostMode::shared_vertex)
-    throw std::runtime_error("Ghost mode via vertex currently disabled.");
-
   const fem::ElementDofLayout dof_layout = element.create_dof_layout();
 
   // Function top build geometry. Used to scope memory operations.
   auto build_topology = [](auto comm, auto& element, auto& dof_layout,
-                           auto& cells, auto ghost_mode, auto& cell_partitioner)
+                           auto& cells, auto& cell_partitioner)
   {
     // -- Partition topology
 
@@ -104,7 +100,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     const int tdim = cell_dim(element.cell_shape());
     const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
         comm, size, tdim,
-        extract_topology(element.cell_shape(), dof_layout, cells), ghost_mode);
+        extract_topology(element.cell_shape(), dof_layout, cells));
 
     // -- Distribute cells (topology, includes higher-order 'nodes')
 
@@ -172,8 +168,8 @@ Mesh mesh::create_mesh(MPI_Comm comm,
                      std::move(cell_nodes)};
   };
 
-  auto [topology, cell_nodes] = build_topology(comm, element, dof_layout, cells,
-                                               ghost_mode, cell_partitioner);
+  auto [topology, cell_nodes]
+      = build_topology(comm, element, dof_layout, cells, cell_partitioner);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)

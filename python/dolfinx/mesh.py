@@ -170,10 +170,10 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
     cell_degree = ufl_element.degree()
     cmap = _cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree)
     try:
-        mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, ghost_mode, partitioner)
+        mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, partitioner)
     except TypeError:
         mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(np.cast['int64'](cells)),
-                                     cmap, x, ghost_mode, partitioner)
+                                     cmap, x, partitioner)
     domain._ufl_cargo = mesh
     return Mesh.from_cpp(mesh, domain)
 
