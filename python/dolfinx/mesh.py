@@ -375,7 +375,7 @@ def create_rectangle(comm: _MPI.Comm, points: numpy.typing.ArrayLike, n: numpy.t
 
     """
     if partitioner is None:
-        partitioner=_cpp.mesh.create_cell_partitioner(ghost_mode)
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
     mesh = _cpp.mesh.create_rectangle(comm, points, n, cell_type, partitioner, diagonal)
     return Mesh.from_cpp(mesh, domain)
@@ -429,7 +429,7 @@ def create_box(comm: _MPI.Comm, points: typing.List[numpy.typing.ArrayLike], n: 
 
     """
     if partitioner is None:
-        partitioner=_cpp.mesh.create_cell_partitioner(ghost_mode)
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
     mesh = _cpp.mesh.create_box(comm, points, n, cell_type, partitioner)
     return Mesh.from_cpp(mesh, domain)
