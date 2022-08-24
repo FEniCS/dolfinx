@@ -248,7 +248,7 @@ def test_empty_rank_mesh(tempdir):
     domain = ufl.Mesh(
         ufl.VectorElement("Lagrange", ufl.Cell(cell_type.name), 1))
 
-    def partitioner(comm, nparts, local_graph, num_ghost_nodes, ghosting):
+    def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the current rank"""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
         return create_adjacencylist(dest)

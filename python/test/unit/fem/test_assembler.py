@@ -890,7 +890,7 @@ def test_assemble_empty_rank_mesh():
     cell_type = CellType.triangle
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", ufl.Cell(cell_type.name), 1))
 
-    def partitioner(comm, nparts, local_graph, num_ghost_nodes, ghosting):
+    def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the curent rank"""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
         return graph.create_adjacencylist(dest)

@@ -115,8 +115,8 @@ def mesh_2d():
     mesh2d = create_rectangle(
         MPI.COMM_WORLD, [np.array([0.0, 0.0]),
                          np.array([1., 1.])], [1, 1],
-        CellType.triangle, GhostMode.none,
-        create_cell_partitioner(), DiagonalType.left)
+        CellType.triangle, GhostMode.none, 
+        create_cell_partitioner(GhostMode.none), DiagonalType.left)
     i1 = np.where((mesh2d.geometry.x
                    == (1, 1, 0)).all(axis=1))[0][0]
     mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
@@ -539,7 +539,7 @@ def test_empty_rank_mesh():
     tdim = 2
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", ufl.Cell(cell_type.name), 1))
 
-    def partitioner(comm, nparts, local_graph, num_ghost_nodes, ghosting):
+    def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the curent rank"""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
         return graph.create_adjacencylist(dest)
