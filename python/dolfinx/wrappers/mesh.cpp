@@ -369,10 +369,10 @@ void mesh(py::module& m)
           MPICommWrapper, int, int,
           const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
   m.def("create_cell_partitioner",
-        []() -> PythonCellPartitionFunction
+        [](dolfinx::mesh::GhostMode gm) -> PythonCellPartitionFunction
         {
           return create_cell_partitioner_py(
-              dolfinx::mesh::create_cell_partitioner());
+              dolfinx::mesh::create_cell_partitioner(gm));
         });
   m.def(
       "create_cell_partitioner",
@@ -483,7 +483,6 @@ void mesh(py::module& m)
       [](const MPICommWrapper comm,
          const std::array<std::array<double, 2>, 2>& p,
          std::array<std::size_t, 2> n, dolfinx::mesh::CellType celltype,
-         dolfinx::mesh::GhostMode ghost_mode,
          const PythonCellPartitionFunction& partitioner,
          dolfinx::mesh::DiagonalType diagonal)
       {
@@ -492,14 +491,13 @@ void mesh(py::module& m)
             create_cell_partitioner_cpp(partitioner), diagonal);
       },
       py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("celltype"),
-      py::arg("ghost_mode"), py::arg("partitioner"), py::arg("diagonal"));
+      py::arg("partitioner"), py::arg("diagonal"));
 
   m.def(
       "create_box",
       [](const MPICommWrapper comm,
          const std::array<std::array<double, 3>, 2>& p,
          std::array<std::size_t, 3> n, dolfinx::mesh::CellType celltype,
-         dolfinx::mesh::GhostMode ghost_mode,
          const PythonCellPartitionFunction& partitioner)
       {
         return dolfinx::mesh::create_box(
@@ -507,6 +505,6 @@ void mesh(py::module& m)
             create_cell_partitioner_cpp(partitioner));
       },
       py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("celltype"),
-      py::arg("ghost_mode"), py::arg("partitioner"));
+      py::arg("partitioner"));
 }
 } // namespace dolfinx_wrappers

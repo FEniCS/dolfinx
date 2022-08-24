@@ -149,7 +149,7 @@ def refine(mesh: Mesh, edges: np.ndarray = None, redistribute: bool = True) -> M
 
 def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.AdjacencyList_int64],
                 x: np.ndarray, domain: ufl.Mesh, ghost_mode=GhostMode.shared_facet,
-                partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
+                partitioner=None) -> Mesh:
     """
     Create a mesh from topology and geometry arrays
 
@@ -165,6 +165,8 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
         A new mesh
 
     """
+    if partitioner is None:
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     ufl_element = domain.ufl_coordinate_element()
     cell_shape = ufl_element.cell().cellname()
     cell_degree = ufl_element.degree()
@@ -304,7 +306,7 @@ def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyL
 
 
 def create_interval(comm: _MPI.Comm, nx: int, points: numpy.typing.ArrayLike, ghost_mode=GhostMode.shared_facet,
-                    partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
+                    partitioner=None) -> Mesh:
     """Create an interval mesh
 
     Args:
@@ -320,13 +322,15 @@ def create_interval(comm: _MPI.Comm, nx: int, points: numpy.typing.ArrayLike, gh
         An interval mesh
 
     """
+    if partitioner is None:
+        partitioner = _cpp.mesh.create_cell_partitioner()
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "interval", 1))
     mesh = _cpp.mesh.create_interval(comm, nx, points, ghost_mode, partitioner)
     return Mesh.from_cpp(mesh, domain)
 
 
 def create_unit_interval(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_facet,
-                         partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
+                         partitioner=None) -> Mesh:
     """Create a mesh on the unit interval
 
     Args:
@@ -342,12 +346,14 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_f
         A unit interval mesh with end points at 0 and 1
 
     """
+    if partitioner is None:
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     return create_interval(comm, nx, [0.0, 1.0], ghost_mode, partitioner)
 
 
 def create_rectangle(comm: _MPI.Comm, points: numpy.typing.ArrayLike, n: numpy.typing.ArrayLike,
                      cell_type=CellType.triangle, ghost_mode=GhostMode.shared_facet,
-                     partitioner=_cpp.mesh.create_cell_partitioner(),
+                     partitioner=None,
                      diagonal: DiagonalType = DiagonalType.right) -> Mesh:
     """Create rectangle mesh
 
@@ -368,13 +374,15 @@ def create_rectangle(comm: _MPI.Comm, points: numpy.typing.ArrayLike, n: numpy.t
         A mesh of a rectangle
 
     """
+    if partitioner is None:
+        partitioner=_cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
-    mesh = _cpp.mesh.create_rectangle(comm, points, n, cell_type, ghost_mode, partitioner, diagonal)
+    mesh = _cpp.mesh.create_rectangle(comm, points, n, cell_type, partitioner, diagonal)
     return Mesh.from_cpp(mesh, domain)
 
 
 def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.triangle,
-                       ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner(),
+                       ghost_mode=GhostMode.shared_facet, partitioner=None,
                        diagonal: DiagonalType = DiagonalType.right) -> Mesh:
     """Create a mesh of a unit square
 
@@ -393,6 +401,8 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
         A mesh of a square with corners at (0, 0) and (1, 1)
 
     """
+    if partitioner is None:
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     return create_rectangle(comm, [np.array([0.0, 0.0]),
                                    np.array([1.0, 1.0])], [nx, ny], cell_type, ghost_mode,
                             partitioner, diagonal)
@@ -401,7 +411,7 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
 def create_box(comm: _MPI.Comm, points: typing.List[numpy.typing.ArrayLike], n: list,
                cell_type=CellType.tetrahedron,
                ghost_mode=GhostMode.shared_facet,
-               partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
+               partitioner=None) -> Mesh:
     """Create box mesh
 
     Args:
@@ -418,13 +428,15 @@ def create_box(comm: _MPI.Comm, points: typing.List[numpy.typing.ArrayLike], n: 
         A mesh of a box domain
 
     """
+    if partitioner is None:
+        partitioner=_cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
-    mesh = _cpp.mesh.create_box(comm, points, n, cell_type, ghost_mode, partitioner)
+    mesh = _cpp.mesh.create_box(comm, points, n, cell_type, partitioner)
     return Mesh.from_cpp(mesh, domain)
 
 
 def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellType.tetrahedron,
-                     ghost_mode=GhostMode.shared_facet, partitioner=_cpp.mesh.create_cell_partitioner()) -> Mesh:
+                     ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
     """Create a mesh of a unit cube
 
     Args:
@@ -442,5 +454,7 @@ def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellT
         and (1, 1, 1)
 
     """
+    if partitioner is None:
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     return create_box(comm, [np.array([0.0, 0.0, 0.0]), np.array(
         [1.0, 1.0, 1.0])], [nx, ny, nz], cell_type, ghost_mode, partitioner)
