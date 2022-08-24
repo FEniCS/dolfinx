@@ -105,9 +105,10 @@ void spmv(la::MatrixCSR<T>& A, la::Vector<T>& x, la::Vector<T>& y)
 void test_matrix_apply()
 {
   MPI_Comm comm = MPI_COMM_WORLD;
+  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
   auto mesh = std::make_shared<mesh::Mesh>(
       mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
-                       mesh::CellType::tetrahedron, mesh::GhostMode::none));
+                       mesh::CellType::tetrahedron, part));
 
   auto V = std::make_shared<fem::FunctionSpace>(
       fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));

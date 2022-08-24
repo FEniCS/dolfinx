@@ -25,9 +25,10 @@ constexpr int N = 8;
 void create_mesh_file()
 {
   // Create mesh using all processes and save xdmf
-  auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
-      MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {N, N},
-      mesh::CellType::triangle, mesh::GhostMode::shared_facet));
+  auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
+  auto mesh = std::make_shared<mesh::Mesh>(
+      mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {N, N},
+                             mesh::CellType::triangle, part));
 
   // Save mesh in XDMF format
   io::XDMFFile file(MPI_COMM_WORLD, "mesh.xdmf", "w");
@@ -74,8 +75,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
     int nparts = mpi_size;
     const int tdim = mesh::cell_dim(mesh::CellType::triangle);
     dest = partitioner(subset_comm, nparts, tdim,
-                       graph::regular_adjacency_list(cells, cshape[1]),
-                       mesh::GhostMode::shared_facet);
+                       graph::regular_adjacency_list(cells, cshape[1]));
   }
   CHECK(xshape[1] == 2);
 
@@ -177,7 +177,8 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
   SECTION("parmetis")
   {
     auto partfn = graph::parmetis::partitioner();
-    CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(partfn)));
+    CHECK_NOTHROW(test_distributed_mesh(
+        mesh::create_cell_partitioner(mesh::GhostMode::none, partfn)));
   }
 #endif
 }
