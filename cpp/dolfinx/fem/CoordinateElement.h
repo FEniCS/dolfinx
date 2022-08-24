@@ -108,8 +108,8 @@ public:
   template <typename U, typename V>
   static void compute_jacobian_inverse(const U& J, V&& K)
   {
-    const int gdim = J.extent(1);
-    const int tdim = K.extent(1);
+    const int gdim = J.extent(0);
+    const int tdim = K.extent(0);
     if (gdim == tdim)
       math::inv(J, K);
     else
