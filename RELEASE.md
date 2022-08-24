@@ -147,7 +147,7 @@ install the `regclient` utility https://github.com/regclient/regclient using the
 provided binaries. `regclient` can properly handle copying multi-architecture images.
 
     regctl registry login docker.io
-    regctl image copy dolfinx/dolfinx:<tag> dolfinx:dolfinx:stable 
+    regctl image copy dolfinx/dolfinx:<tag> dolfinx/dolfinx:stable 
     regctl image copy dolfinx/lab:<tag> dolfinx/lab:stable 
     regctl image copy dolfinx/dev-env:<tag> dolfinx/dev-env:stable 
     regctl image copy dolfinx/dolfinx-onbuild:<tag> dolfinx/dolfinx-onbuild:stable
