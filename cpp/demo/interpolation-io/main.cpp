@@ -150,7 +150,8 @@ int main(int argc, char* argv[])
     // ensure that a boundary between cells is located at x0=0.5
     auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
         MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
-        mesh::CellType::triangle, mesh::GhostMode::none));
+        mesh::CellType::triangle,
+        mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
     // Interpolate a function in a scalar Lagrange space and output the
     // result to file for visualisation
