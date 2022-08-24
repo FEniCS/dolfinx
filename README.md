@@ -5,6 +5,7 @@
 [![Actions Docker images](https://github.com/FEniCS/dolfinx/actions/workflows/docker.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/docker.yml)
 [![Actions Spack build](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml)
 [![Actions Conda install](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml)
+[![Actions MacOS/Homebrew install](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml)
 
 DOLFINx is the computational environment of
 [FEniCSx](https://fenicsproject.org) and implements the FEniCS Problem
@@ -156,6 +157,10 @@ All Docker images support arm64 and amd64 architectures.
 For a full list of tags, including versioned images, see
 https://hub.docker.com/u/dolfinx
 
+## Contributing
+
+Information about how to contribute to DOLFINx can be found
+[here](CONTRIBUTING.md).
 
 ## License
 

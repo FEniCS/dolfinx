@@ -129,14 +129,17 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // Build local dual graph for owned cells to apply re-ordering to
     const std::int32_t num_owned_cells
         = cells_extracted.num_nodes() - ghost_owners.size();
-    const std::vector<int> remap
-        = graph::reorder_gps(std::get<0>(build_local_dual_graph(
+
+    auto [graph, unmatched_facets, max_v, facet_attached_cells]
+        = build_local_dual_graph(
             std::span<const std::int64_t>(
                 cells_extracted.array().data(),
                 cells_extracted.offsets()[num_owned_cells]),
             std::span<const std::int32_t>(cells_extracted.offsets().data(),
                                           num_owned_cells + 1),
-            tdim)));
+            tdim);
+
+    const std::vector<int> remap = graph::reorder_gps(graph);
 
     // Create re-ordered cell lists (leaves ghosts unchanged)
     std::vector<std::int64_t> original_cell_index(original_cell_index0.size());
@@ -150,12 +153,23 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 
     // -- Create Topology
 
+    // Boundary vertices are marked as unknown
+    std::vector<std::int64_t> boundary_vertices(unmatched_facets);
+    std::sort(boundary_vertices.begin(), boundary_vertices.end());
+    boundary_vertices.erase(
+        std::unique(boundary_vertices.begin(), boundary_vertices.end()),
+        boundary_vertices.end());
+
+    // Remove -1 if it occurs in boundary vertices (may occur in mixed topology)
+    if (boundary_vertices.size() > 0 and boundary_vertices[0] == -1)
+      boundary_vertices.erase(boundary_vertices.begin());
+
     // Create cells and vertices with the ghosting requested. Input
     // topology includes cells shared via facet, but ghosts will be
     // removed later if not required by ghost_mode.
     return std::pair{create_topology(comm, cells_extracted, original_cell_index,
                                      ghost_owners, element.cell_shape(),
-                                     ghost_mode),
+                                     ghost_mode, boundary_vertices),
                      std::move(cell_nodes)};
   };
 
@@ -168,16 +182,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   for (int e = 1; e < tdim; ++e)
   {
     if (dof_layout.num_entity_dofs(e) > 0)
-    {
-      auto [cell_entity, entity_vertex, index_map]
-          = compute_entities(comm, topology, e);
-      if (cell_entity)
-        topology.set_connectivity(cell_entity, tdim, e);
-      if (entity_vertex)
-        topology.set_connectivity(entity_vertex, e, 0);
-      if (index_map)
-        topology.set_index_map(e, index_map);
-    }
+      topology.create_entities(e);
   }
 
   // Function top build geometry. Used to scope memory operations.
@@ -259,37 +264,25 @@ mesh::create_submesh(const Mesh& mesh, int dim,
       submesh_owned_entities.begin(), submesh_owned_entities.end());
   std::shared_ptr<common::IndexMap> submesh_entity_index_map;
 
-  // If the entity dimension is the same as the input mesh topological
-  // dimension, add ghost entities to the submesh. If not, do not add
-  // ghost entities, because in general, not all expected ghost entities
-  // would be present.
-  if (mesh.topology().dim() == dim)
-  {
-    // TODO Call dolfinx::common::get_owned_indices here? Do we want to
-    // support `entities` possibly haveing a ghost on one process that is
-    // not in `entities` on the owning process?
-    std::pair<common::IndexMap, std::vector<int32_t>>
-        submesh_entity_index_map_pair
-        = mesh_entity_index_map->create_submap(submesh_owned_entities);
-    submesh_entity_index_map = std::make_shared<common::IndexMap>(
-        std::move(submesh_entity_index_map_pair.first));
+  // Create submesh entity index map
+  // TODO Call dolfinx::common::get_owned_indices here? Do we want to
+  // support `entities` possibly haveing a ghost on one process that is
+  // not in `entities` on the owning process?
+  std::pair<common::IndexMap, std::vector<int32_t>>
+      submesh_entity_index_map_pair
+      = mesh_entity_index_map->create_submap(submesh_owned_entities);
+  submesh_entity_index_map = std::make_shared<common::IndexMap>(
+      std::move(submesh_entity_index_map_pair.first));
 
-    // Add ghost entities to the entity map
-    submesh_to_mesh_entity_map.reserve(
-        submesh_entity_index_map->size_local()
-        + submesh_entity_index_map->num_ghosts());
-    std::transform(submesh_entity_index_map_pair.second.begin(),
-                   submesh_entity_index_map_pair.second.end(),
-                   std::back_inserter(submesh_to_mesh_entity_map),
-                   [size_local = mesh_entity_index_map->size_local()](
-                       std::int32_t entity_index)
-                   { return size_local + entity_index; });
-  }
-  else
-  {
-    submesh_entity_index_map = std::make_shared<common::IndexMap>(
-        mesh.comm(), submesh_owned_entities.size());
-  }
+  // Add ghost entities to the entity map
+  submesh_to_mesh_entity_map.reserve(submesh_entity_index_map->size_local()
+                                     + submesh_entity_index_map->num_ghosts());
+  std::transform(submesh_entity_index_map_pair.second.begin(),
+                 submesh_entity_index_map_pair.second.end(),
+                 std::back_inserter(submesh_to_mesh_entity_map),
+                 [size_local = mesh_entity_index_map->size_local()](
+                     std::int32_t entity_index)
+                 { return size_local + entity_index; });
 
   // Submesh vertex to vertex connectivity (identity)
   auto submesh_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
