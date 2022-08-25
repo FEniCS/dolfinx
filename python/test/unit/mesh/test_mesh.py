@@ -115,7 +115,7 @@ def mesh_2d():
     mesh2d = create_rectangle(
         MPI.COMM_WORLD, [np.array([0.0, 0.0]),
                          np.array([1., 1.])], [1, 1],
-        CellType.triangle, GhostMode.none, 
+        CellType.triangle, GhostMode.none,
         create_cell_partitioner(GhostMode.none), DiagonalType.left)
     i1 = np.where((mesh2d.geometry.x
                    == (1, 1, 0)).all(axis=1))[0][0]
