@@ -68,13 +68,15 @@ UFL still runs on the year-based release scheme.
 
 3. Update the dependency versions for `fenics-basix` and `fenics-ufl` in `setup.cfg`.
 
-4. Update the version number macros in `ffcx/code_generation/ufcx.h`. Typically this
+4. If necessary, update the version number in `cmake/CMakeLists.txt`, e.g. `0.5.0`.
+
+5. Update the version number macros in `ffcx/code_generation/ufcx.h`. Typically this
    should match the Python version number. Remember to change the
    `UFCX_VERSION_RELEASE` to `1`.
 
-5. Commit and push.
+6. Commit and push.
 
-6. Check `git diff main` for obvious errors.
+7. Check `git diff main` for obvious errors.
 
 ### DOLFINx
 
@@ -168,7 +170,8 @@ component.
 It is recommended to first build without publishing, then to test pypa, then to
 the real pypa. Publishing to pypa cannot be revoked.
 
-The DOLFINx wheel builder is experimental.
+The DOLFINx wheel builder is experimental and is not used in the release
+process at this time.
 
 ### Mistakes
 
