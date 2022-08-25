@@ -58,7 +58,7 @@ model.add_physical_group(dim=3, tags=[sphere])
 model.mesh.generate(dim=3)
 
 # Create a DOLFINx mesh (same mesh on each rank)
-msh, cell_markers, facet_markers = gmshio.model_to_mesh(model, MPI.COMM_SELF, 0)
+msh, cell_markers, facet_markers, _ = gmshio.model_to_mesh(model, MPI.COMM_SELF, 0)
 msh.name = "Sphere"
 cell_markers.name = f"{msh.name}_cells"
 facet_markers.name = f"{msh.name}_facets"
@@ -103,7 +103,7 @@ if mesh_comm.rank == model_rank:
     model.mesh.generate(dim=3)
 
 # Create DOLFINx distributed mesh
-msh, mt, ft = gmshio.model_to_mesh(model, mesh_comm, model_rank)
+msh, mt, ft, _ = gmshio.model_to_mesh(model, mesh_comm, model_rank)
 msh.name = "ball_d1"
 mt.name = f"{msh.name}_cells"
 ft.name = f"{msh.name}_facets"
@@ -131,7 +131,7 @@ if mesh_comm.rank == model_rank:
     model.mesh.setOrder(2)
     gmsh.option.setNumber("General.Terminal", 0)
 
-msh, ct, ft = gmshio.model_to_mesh(model, mesh_comm, model_rank)
+msh, ct, ft, _ = gmshio.model_to_mesh(model, mesh_comm, model_rank)
 msh.name = "ball_d2"
 ct.name = f"{msh.name}_cells"
 ft.name = f"{msh.name}_surface"
@@ -184,7 +184,7 @@ if mesh_comm.rank == model_rank:
     model.addPhysicalGroup(3, volume_entities, tag=1)
     model.setPhysicalName(3, 1, "Mesh volume")
 
-msh, mt, ft = gmshio.model_to_mesh(gmsh.model, mesh_comm, model_rank)
+msh, mt, ft, _ = gmshio.model_to_mesh(gmsh.model, mesh_comm, model_rank)
 msh.name = "hex_d2"
 mt.name = f"{msh.name}_cells"
 ft.name = f"{msh.name}_surface"
