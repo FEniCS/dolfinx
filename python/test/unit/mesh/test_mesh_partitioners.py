@@ -127,7 +127,7 @@ def test_asymmetric_partitioner():
         x = np.zeros((0, 3), dtype=np.float64)
 
     # Send cells to self, and if on process 1, also send to process 0.
-    def partitioner(comm, n, m, topo, ghost_mode):
+    def partitioner(comm, n, m, topo):
         r = comm.Get_rank()
         dests = []
         offsets = [0]
