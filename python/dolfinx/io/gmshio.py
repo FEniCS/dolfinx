@@ -237,7 +237,7 @@ if _has_gmsh:
         gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
         cells = cells[:, gmsh_cell_perm]
         part = create_cell_partitioner(GhostMode.none)
-        mesh = create_mesh(comm, cells, x[:, :gdim], ufl_domain, GhostMode.none, part)
+        mesh = create_mesh(comm, cells, x[:, :gdim], ufl_domain, part)
 
         # Create MeshTags for cells
         local_entities, local_values = _cpp.io.distribute_entity_data(mesh, mesh.topology.dim, cells, cell_values)
