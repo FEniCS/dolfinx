@@ -91,7 +91,6 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
         dest = np.floor(midpoints[:, 0] % mpi_comm.size).astype(np.int32)
         return dolfinx.cpp.graph.AdjacencyList_int32(dest)
 
-    ghost_mode = GhostMode.none
     new_mesh = create_mesh(mpi_comm, topo, x, domain, partitioner)
 
     tdim = new_mesh.topology.dim
@@ -141,7 +140,6 @@ def test_asymmetric_partitioner():
         offsets = np.array(offsets, dtype=np.int32)
         return dolfinx.cpp.graph.AdjacencyList_int32(dests, offsets)
 
-    ghost_mode = GhostMode.shared_facet
     new_mesh = create_mesh(mpi_comm, topo, x, domain, partitioner)
     if (r == 0 and n > 1):
         assert new_mesh.topology.index_map(2).num_ghosts == 20
