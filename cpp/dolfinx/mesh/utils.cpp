@@ -573,31 +573,26 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
   auto facet_map = topology.index_map(tdim - 1);
   if (!facet_map)
     throw std::runtime_error("Facets have not been computed.");
-  auto cell_map = topology.index_map(tdim);
-  assert(cell_map);
 
-  // Only need to consider shared facets when there are no ghost cells
-  const std::vector<std::int32_t> fwd_shared_facets
-      = cell_map->overlapped() ? std::vector<std::int32_t>()
-                               : facet_map->shared_indices();
-
-  // Find all owned facets (not ghost) with only one attached cell,
-  // which are also not shared forward (ghost on another process)
+  // Find all owned facets (not ghost) with only one attached cell
   const int num_facets = facet_map->size_local();
   auto f_to_c = topology.connectivity(tdim - 1, tdim);
   assert(f_to_c);
   std::vector<std::int32_t> facets;
   for (std::int32_t f = 0; f < num_facets; ++f)
   {
-    if (f_to_c->num_links(f) == 1
-        and !std::binary_search(fwd_shared_facets.begin(),
-                                fwd_shared_facets.end(), f))
-    {
+    if (f_to_c->num_links(f) == 1)
       facets.push_back(f);
-    }
   }
 
-  return facets;
+  // Remove facets on internal inter-process boundary
+  const std::vector<std::int32_t>& interprocess_facets
+      = topology.interprocess_facets();
+  std::vector<std::int32_t> ext_facets;
+  std::set_difference(facets.begin(), facets.end(), interprocess_facets.begin(),
+                      interprocess_facets.end(),
+                      std::back_inserter(ext_facets));
+  return ext_facets;
 }
 //------------------------------------------------------------------------------
 mesh::CellPartitionFunction
