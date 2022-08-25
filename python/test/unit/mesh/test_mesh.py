@@ -552,7 +552,7 @@ def test_empty_rank_mesh():
         cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
         x = np.empty((0, 2), dtype=np.float64)
 
-    mesh = _mesh.create_mesh(comm, cells, x, domain, GhostMode.none, partitioner)
+    mesh = _mesh.create_mesh(comm, cells, x, domain, partitioner)
     topology = mesh.topology
 
     # Check number of vertices

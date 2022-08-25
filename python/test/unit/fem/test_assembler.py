@@ -905,7 +905,7 @@ def test_assemble_empty_rank_mesh():
         cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
         x = np.empty((0, 2), dtype=np.float64)
 
-    mesh = create_mesh(comm, cells, x, domain, GhostMode.none, partitioner)
+    mesh = create_mesh(comm, cells, x, domain, partitioner)
 
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)

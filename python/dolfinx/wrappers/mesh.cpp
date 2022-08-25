@@ -215,7 +215,6 @@ void mesh(py::module& m)
          const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
          const dolfinx::fem::CoordinateElement& element,
          const py::array_t<double, py::array::c_style>& x,
-         dolfinx::mesh::GhostMode ghost_mode,
          const PythonPartitioningFunction& partitioner)
       {
         auto partitioner_wrapper
@@ -233,8 +232,7 @@ void mesh(py::module& m)
             partitioner_wrapper);
       },
       py::arg("comm"), py::arg("cells"), py::arg("element"), py::arg("x"),
-      py::arg("ghost_mode"), py::arg("partitioner"),
-      "Helper function for creating meshes.");
+      py::arg("partitioner"), "Helper function for creating meshes.");
 
   m.def(
       "create_submesh",

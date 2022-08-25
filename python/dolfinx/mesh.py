@@ -148,8 +148,8 @@ def refine(mesh: Mesh, edges: np.ndarray = None, redistribute: bool = True) -> M
 
 
 def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.AdjacencyList_int64],
-                x: np.ndarray, domain: ufl.Mesh, ghost_mode=GhostMode.shared_facet,
-                partitioner=None) -> Mesh:
+                x: np.ndarray, domain: ufl.Mesh,
+                partitioner=_cpp.mesh.create_cell_partitioner(GhostMode.none)) -> Mesh:
     """
     Create a mesh from topology and geometry arrays
 
@@ -165,17 +165,15 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
         A new mesh
 
     """
-    if partitioner is None:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     ufl_element = domain.ufl_coordinate_element()
     cell_shape = ufl_element.cell().cellname()
     cell_degree = ufl_element.degree()
     cmap = _cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree)
     try:
-        mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, ghost_mode, partitioner)
+        mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, partitioner)
     except TypeError:
         mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(np.cast['int64'](cells)),
-                                     cmap, x, ghost_mode, partitioner)
+                                     cmap, x, partitioner)
     domain._ufl_cargo = mesh
     return Mesh.from_cpp(mesh, domain)
 

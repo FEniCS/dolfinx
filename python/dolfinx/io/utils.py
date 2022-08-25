@@ -161,7 +161,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         # Build the mesh
         cmap = _cpp.fem.CoordinateElement(cell_shape, cell_degree)
         mesh = _cpp.mesh.create_mesh(self.comm(), _cpp.graph.AdjacencyList_int64(cells),
-                                     cmap, x, ghost_mode, _cpp.mesh.create_cell_partitioner(ghost_mode))
+                                     cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
         mesh.name = name
 
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
