@@ -40,8 +40,7 @@ from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
 from ufl import (FacetNormal, FiniteElement, Measure, SpatialCoordinate,
                  TestFunction, TrialFunction, algebra, as_matrix, as_vector,
-                 conj, cross, det, grad, inner, inv, lhs, rhs, sqrt,
-                 transpose)
+                 conj, cross, det, grad, inner, inv, lhs, rhs, sqrt, transpose)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -166,6 +165,7 @@ mu_0 = 4 * np.pi * 10**-7
 # Radius of the wire and of the boundary of the domain
 radius_wire = 0.05 * um
 l_dom = 0.8 * um
+l_scatt = 0.8 * l_dom / 2
 l_pml = 1 * um
 
 # The smaller the mesh_factor, the finer is the mesh
@@ -195,9 +195,9 @@ pml_tag = 4
 
 # +
 model = generate_mesh_wire(
-    radius_wire, l_dom, l_pml,
+    radius_wire, l_scatt, l_dom, l_pml,
     in_wire_size, on_wire_size, scatt_size, pml_size,
-    au_tag, bkg_tag, pml_tag, scatt_tag)
+    au_tag, bkg_tag, scatt_tag, pml_tag)
 
 domain, cell_tags, facet_tags = model_to_mesh(
     model, MPI.COMM_WORLD, 0, gdim=2)
@@ -573,7 +573,7 @@ incident_cells = mesh.compute_incident_entities(domain, scatt_facets,
 
 midpoints = mesh.compute_midpoints(domain, domain.topology.dim, incident_cells)
 inner_cells = incident_cells[(midpoints[:, 0]**2
-                              + midpoints[:, 1]**2) < (0.8 * l_dom / 2)**2]
+                              + midpoints[:, 1]**2) < (l_scatt)**2]
 
 marker.x.array[inner_cells] = 1
 

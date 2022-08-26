@@ -9,9 +9,9 @@ from numpy import intersect1d, pi
 from mpi4py import MPI
 
 
-def generate_mesh_wire(radius_wire, l_dom, l_pml,
+def generate_mesh_wire(radius_wire, l_scatt, l_dom, l_pml,
                        in_wire_size, on_wire_size, scatt_size,
-                       pml_size, au_tag, bkg_tag, pml_tag, scatt_tag):
+                       pml_size, au_tag, bkg_tag, scatt_tag, pml_tag):
 
     gmsh.initialize(sys.argv)
     if MPI.COMM_WORLD.rank == 0:
@@ -31,7 +31,7 @@ def generate_mesh_wire(radius_wire, l_dom, l_pml,
         wire, _ = gmsh.model.occ.fragment([(dim, c2)], [(dim, c1)])
 
         # A dummy circle for the calculation of the scattering efficiency
-        c3 = gmsh.model.occ.addCircle(0.0, 0.0, 0.0, 0.8 * l_dom / 2,
+        c3 = gmsh.model.occ.addCircle(0.0, 0.0, 0.0, l_scatt,
                                       angle1=0, angle2=2 * pi)
         gmsh.model.occ.addCurveLoop([c3], tag=c3)
         gmsh.model.occ.addPlaneSurface([c3], tag=c3)
