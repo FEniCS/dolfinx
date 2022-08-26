@@ -13,7 +13,7 @@ import ufl
 from dolfinx.common import has_adios2
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
-                          create_unit_square, GhostMode)
+                          create_unit_square)
 from dolfinx.graph import create_adjacencylist
 
 from mpi4py import MPI
