@@ -261,7 +261,7 @@ def test_empty_rank_mesh(tempdir):
         cells = create_adjacencylist(np.empty((0, 3), dtype=np.int64))
         x = np.empty((0, 2), dtype=np.float64)
 
-    mesh = create_mesh(comm, cells, x, domain, GhostMode.none, partitioner)
+    mesh = create_mesh(comm, cells, x, domain, partitioner)
 
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(V)
