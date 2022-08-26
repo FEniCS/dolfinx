@@ -40,7 +40,7 @@ from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
 from ufl import (FacetNormal, FiniteElement, Measure, SpatialCoordinate,
                  TestFunction, TrialFunction, algebra, as_matrix, as_vector,
-                 conj, cross, det, grad, inner, inv, lhs, rhs, sign, sqrt,
+                 conj, cross, det, grad, inner, inv, lhs, rhs, sqrt,
                  transpose)
 
 from mpi4py import MPI
