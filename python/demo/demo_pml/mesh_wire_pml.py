@@ -100,23 +100,23 @@ def generate_mesh_wire(radius_wire, l_dom, l_pml,
         x_group = [tag[0][1]
                    for tag in
                    surface_map[
-                    len(bkg_tags + wire_tags + corner_pmls):
-                    len(bkg_tags + wire_tags + corner_pmls + x_pmls)]]
+            len(bkg_tags + wire_tags + corner_pmls):
+            len(bkg_tags + wire_tags + corner_pmls + x_pmls)]]
 
         gmsh.model.addPhysicalGroup(dim, x_group, tag=pml_tag + 1)
 
         y_group = [tag[0][1]
-                   for tag in 
+                   for tag in
                    surface_map[
-                    len(bkg_tags + wire_tags + corner_pmls + x_pmls):
-                    len(bkg_tags + wire_tags + corner_pmls + x_pmls + y_pmls)]]
+            len(bkg_tags + wire_tags + corner_pmls + x_pmls):
+            len(bkg_tags + wire_tags + corner_pmls + x_pmls + y_pmls)]]
 
         gmsh.model.addPhysicalGroup(dim, y_group, tag=pml_tag + 2)
 
         # Marker interior surface in bkg group
         boundaries = []
         for tag in bkg_group:
-            boundary_pairs = gmsh.model.get_boundary([(dim, tag)], 
+            boundary_pairs = gmsh.model.get_boundary([(dim, tag)],
                                                      oriented=False)
             boundaries.append([pair[1] for pair in boundary_pairs])
         interior_boundary = reduce(intersect1d, boundaries)
