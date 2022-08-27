@@ -15,7 +15,6 @@
 # First of all, let's import the modules that will be used:
 
 # +
-from re import M
 import sys
 
 try:
@@ -32,6 +31,8 @@ except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
 
+from functools import partial
+
 import numpy as np
 from mesh_sphere_axis import generate_mesh_sphere_axis
 from scipy.special import jv
@@ -39,9 +40,10 @@ from scipy.special import jv
 from dolfinx import fem, mesh, plot
 from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
-from ufl import (FacetNormal, FiniteElement, MixedElement, Measure, SpatialCoordinate,
-                 TestFunction, TrialFunction, algebra, as_matrix, as_vector,
-                 conj, cross, det, grad, inner, inv, lhs, rhs, sqrt, transpose)
+from ufl import (FacetNormal, FiniteElement, Measure, MixedElement,
+                 SpatialCoordinate, TestFunction, TrialFunction, algebra,
+                 as_matrix, as_vector, conj, cross, det, grad, inner, inv, lhs,
+                 rhs, sqrt, transpose)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -57,47 +59,51 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     exit(0)
 
 
-def pml_coordinates(x, r, alpha, k0, radius_dom, radius_pml):
+def pml_coordinate(x, r, alpha, k0, radius_dom, radius_pml):
 
     return (x + 1j * alpha / k0 * x * (r - radius_dom) / (radius_pml * r))
 
 
-def curl_axis(v, x, m):
+def curl_axis(a, m, x):
 
-    curl_r = -v[2].dx(1) - 1j * m / x[0] * v[1]
-    curl_z = v[2] / x[0] + v[2].dx(0) + 1j * m / x[0] * v[0]
-    curl_p = v[0].dx(1) - v[1].dx(0)
+    curl_r = -a[2].dx(1) - 1j * m / x[0] * a[1]
+    curl_z = a[2] / x[0] + a[2].dx(0) + 1j * m / x[0] * a[0]
+    curl_p = a[0].dx(1) - a[1].dx(0)
 
     return as_vector((curl_r, curl_z, curl_p))
 
 
-class BackgroundField:
+def background_field_rz(theta, n_b, k0, m, x):
 
-    def __init__(self, theta, n_b, k0, m):
-        self.theta = theta
-        self.n_b = n_b
-        self.k0 = k0
-        self.m = m
+    k = k0 * n_b
 
-    def eval(self, x):
+    if m == 0:
 
-        k = self.k0 * self.n_b
+        jv_prime = - jv(1, k * x[0] * np.sin(theta))
 
-        if self.m == 0:
+    else:
 
-            jv_prime = - jv(self.m + 1, self.k * x[0] * np.sin(self.theta))
+        jv_prime = 0.5 * (jv(m - 1, k * x[0] * np.sin(theta))
+                          - jv(m + 1, k * x[0] * np.sin(theta)))
 
-        else:
+    a_r = (np.cos(theta) * np.exp(1j * k * x[1] * np.cos(theta))
+           * (1j)**(-m + 1) * jv_prime)
 
-            jv_prime = 0.5 * (jv(self.m - 1, self.k * x[0] * np.sin(self.theta))
-                              - jv(self.m + 1, self.k * x[0] * np.sin(self.theta)))
+    a_z = (np.sin(theta) * np.exp(1j * k * x[1] * np.cos(theta))
+           * (1j)**-m * jv(m, k * x[0] * np.sin(theta)))
 
-        ar = np.cos(self.theta) * np.exp(1j * self.k * x[1] * np.cos(self.theta)) * (1j)**(-self.m + 1) * jv_prime
-        az = np.sin(self.theta) * np.exp(1j * self.k * x[1] * np.cos(self.theta)) * (1j)**-self.m * jv(self.m, self.k * x[0] * np.sin(self.theta))
-        ap = np.cos(self.theta) / (self.k * x[0] * np.sin(self.theta)) * np.exp(1j * self.k * x[1]
-                                                                 * np.cos(self.theta)) * self.m * (1j)**(-self.m) * jv(self.m, self.k * x[0] * np.sin(self.theta))
+    return (a_r, a_z)
 
-        return (ar, az, ap)
+
+def background_field_p(theta, n_b, k0, m, x):
+
+    k = k0 * n_b
+
+    a_p = (np.cos(theta) / (k * x[0] * np.sin(theta))
+           * np.exp(1j * k * x[1] * np.cos(theta)) * m
+           * (1j)**(-m) * jv(m, k * x[0] * np.sin(theta)))
+
+    return a_p
 
 
 um = 1
@@ -123,9 +129,9 @@ scatt_tag = 4
 
 model = generate_mesh_sphere_axis(
     radius_sph, radius_dom, radius_pml,
-    in_sph_size, on_sph_size, bkg_size, 
+    in_sph_size, on_sph_size, bkg_size,
     scatt_size, pml_size,
-    au_tag, bkg_tag, scatt_tag, pml_tag)
+    au_tag, bkg_tag, pml_tag, scatt_tag)
 
 domain, cell_tags, facet_tags = model_to_mesh(
     model, MPI.COMM_WORLD, 0, gdim=2)
@@ -159,7 +165,7 @@ n_bkg = 1  # Background refractive index
 eps_bkg = n_bkg**2  # Background relative permittivity
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
 deg = np.pi / 180
-theta = 0 * deg  # Angle of incidence of the background field
+theta = 90 * deg  # Angle of incidence of the background field
 m = 0
 
 degree = 3
@@ -168,15 +174,19 @@ lagr_el = FiniteElement("Lagrange", domain.ufl_cell(), degree)
 V = fem.FunctionSpace(domain, MixedElement([curl_el, lagr_el]))
 
 Eb = fem.Function(V)
-f = BackgroundField(theta, n_bkg, k0, m)
-Eb.interpolate(f.eval)
+f_rz = partial(background_field_rz, theta, n_bkg, k0, m)
+f_p = partial(background_field_p, theta, n_bkg, k0, m)
+Eb.sub(0).interpolate(f_rz)
+Eb.sub(1).interpolate(f_p)
 
 # Definition of Trial and Test functions
 Es = TrialFunction(V)
 v = TestFunction(V)
 
 # Measures for subdomains
-dx = Measure("dx", domain, subdomain_data=cell_tags)
+dx = Measure("dx", domain, subdomain_data=cell_tags,
+             metadata={'quadrature_degree': 20})
+
 dDom = dx((au_tag, bkg_tag))
 dPml = dx(pml_tag)
 
@@ -195,33 +205,39 @@ x = SpatialCoordinate(domain)
 alpha = 1
 r = sqrt(x[0]**2 + x[1]**2)
 
-pml_coords = as_vector((pml_coordinates(x[0], r, alpha, k0, radius_dom, radius_pml),
-                        pml_coordinates(x[1], r, alpha, k0, radius_dom, radius_pml)))
+pml_coords = as_vector((pml_coordinate(x[0], r, alpha, k0, radius_dom, radius_pml),
+                        pml_coordinate(x[1], r, alpha, k0, radius_dom, radius_pml)))
 
-def create_eps_mu(pml, r):
+
+def create_eps_mu(pml, x, eps_bkg, mu_bkg):
 
     J = grad(pml)
 
     # Transform the 2x2 Jacobian into a 3x3 matrix.
     J = as_matrix(((J[0, 0], J[0, 1], 0),
                    (J[1, 0], J[1, 1], 0),
-                   (0, 0, pml[0]/r)))
+                   (0, 0, pml[0] / x[0])))
 
     A = inv(J)
-    eps = det(J) * A * eps_bkg * transpose(A)
-    mu = det(J) * A * 1 * transpose(A)
-    return eps, mu
+    eps_pml = det(J) * A * eps_bkg * transpose(A)
+    mu_pml = det(J) * A * mu_bkg * transpose(A)
 
-eps_pml, mu_pml = create_eps_mu(pml_coords, r)
+    return eps_pml, mu_pml
+
+
+eps_pml, mu_pml = create_eps_mu(pml_coords, x, eps_bkg, 1)
 
 # +
 # Definition of the weak form
 
-F = - inner(curl_axis(Es), curl_axis(v)) * x[0] * dDom \
+curl_Es = curl_axis(Es, m, x)
+curl_v = curl_axis(v, m, x)
+
+F = - inner(curl_Es, curl_v) * x[0] * dDom \
     + eps * k0 ** 2 * inner(Es, v) * x[0] * dDom \
     + k0 ** 2 * (eps - eps_bkg) * inner(Eb, v) * x[0] * dDom \
-    - inner(inv(mu_pml) * curl_axis(Es), curl_axis(v)) * x[0] *dPml \
-    + eps_bkg * k0 ** 2 * inner(eps * Es, v) * x[0] *dPml \
+    - inner(inv(mu_pml) * curl_Es, curl_v) * x[0] * dPml \
+    + k0 ** 2 * inner(eps_pml * Es, v) * x[0] * dPml
 
 a, L = lhs(F), rhs(F)
 
