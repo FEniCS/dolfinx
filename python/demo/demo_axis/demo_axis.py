@@ -160,28 +160,13 @@ if have_pyvista:
         figure = plotter.screenshot("sphere_axis_mesh.png",
                                     window_size=[800, 800])
 
-wl0 = 0.4 * um  # Wavelength of the background field
 n_bkg = 1  # Background refractive index
 eps_bkg = n_bkg**2  # Background relative permittivity
-k0 = 2 * np.pi / wl0  # Wavevector of the background field
-deg = np.pi / 180
-theta = 90 * deg  # Angle of incidence of the background field
-m = 0
 
 degree = 3
 curl_el = FiniteElement("N1curl", domain.ufl_cell(), degree)
 lagr_el = FiniteElement("Lagrange", domain.ufl_cell(), degree)
-V = fem.FunctionSpace(domain, MixedElement([curl_el, lagr_el]))
-
-Eb = fem.Function(V)
-f_rz = partial(background_field_rz, theta, n_bkg, k0, m)
-f_p = partial(background_field_p, theta, n_bkg, k0, m)
-Eb.sub(0).interpolate(f_rz)
-Eb.sub(1).interpolate(f_p)
-
-# Definition of Trial and Test functions
-Es = TrialFunction(V)
-v = TestFunction(V)
+V = fem.FunctionSpace(domain, MixedElement(curl_el, lagr_el))
 
 # Measures for subdomains
 dx = Measure("dx", domain, subdomain_data=cell_tags,
@@ -201,13 +186,29 @@ eps.x.array[au_cells] = np.full_like(
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
 eps.x.scatter_forward()
 
+wl0 = 0.4 * um  # Wavelength of the background field
+k0 = 2 * np.pi / wl0  # Wavevector of the background field
+deg = np.pi / 180
+theta = 90 * deg  # Angle of incidence of the background field
+m = 0
+
+Eb_m = fem.Function(V)
+f_rz = partial(background_field_rz, theta, n_bkg, k0, m)
+f_p = partial(background_field_p, theta, n_bkg, k0, m)
+Eb_m.sub(0).interpolate(f_rz)
+Eb_m.sub(1).interpolate(f_p)
+
+# Definition of Trial and Test functions
+Es_m = TrialFunction(V)
+v_m = TestFunction(V)
+
+
 x = SpatialCoordinate(domain)
 alpha = 1
 r = sqrt(x[0]**2 + x[1]**2)
 
 pml_coords = as_vector((pml_coordinate(x[0], r, alpha, k0, radius_dom, radius_pml),
                         pml_coordinate(x[1], r, alpha, k0, radius_dom, radius_pml)))
-
 
 def create_eps_mu(pml, x, eps_bkg, mu_bkg):
 
@@ -224,24 +225,38 @@ def create_eps_mu(pml, x, eps_bkg, mu_bkg):
 
     return eps_pml, mu_pml
 
-
 eps_pml, mu_pml = create_eps_mu(pml_coords, x, eps_bkg, 1)
 
 # +
 # Definition of the weak form
 
-curl_Es = curl_axis(Es, m, x)
-curl_v = curl_axis(v, m, x)
+curl_Es_m = curl_axis(Es_m, m, x)
+curl_v_m = curl_axis(v_m, m, x)
 
-F = - inner(curl_Es, curl_v) * x[0] * dDom \
-    + eps * k0 ** 2 * inner(Es, v) * x[0] * dDom \
-    + k0 ** 2 * (eps - eps_bkg) * inner(Eb, v) * x[0] * dDom \
-    - inner(inv(mu_pml) * curl_Es, curl_v) * x[0] * dPml \
-    + k0 ** 2 * inner(eps_pml * Es, v) * x[0] * dPml
+F = - inner(curl_Es_m, curl_v_m) * x[0] * dDom \
+    + eps * k0 ** 2 * inner(Es_m, v_m) * x[0] * dDom \
+    + k0 ** 2 * (eps - eps_bkg) * inner(Eb_m, v_m) * x[0] * dDom \
+    - inner(inv(mu_pml) * curl_Es_m, curl_v_m) * x[0] * dPml \
+    + k0 ** 2 * inner(eps_pml * Es_m, v_m) * x[0] * dPml
 
 a, L = lhs(F), rhs(F)
 
 problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={
                                   "ksp_type": "preonly", "pc_type": "lu"})
-Esh = problem.solve()
+Esh_m = problem.solve()
+
+Esh_rz_m ,Esh_p_m = Esh_m.split()
+
+V_dg = fem.VectorFunctionSpace(domain, ("DG", degree))
+Esh_dg = fem.Function(V_dg)
+Esh_dg.interpolate(Esh_rz_m)
+
+with VTXWriter(domain.comm, "Esh.bp", Esh_dg) as f:
+    f.write(0.0)
+
+Hs_m = 1j * curl_axis(Esh_m, m, x)
+
+E_m = fem.Function(V)
+E_m.x.array[:] = Eb_m.x.array[:] + Esh_m.x.array[:]
+
 # -
