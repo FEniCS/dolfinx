@@ -157,6 +157,10 @@ All Docker images support arm64 and amd64 architectures.
 For a full list of tags, including versioned images, see
 https://hub.docker.com/u/dolfinx
 
+## Contributing
+
+Information about how to contribute to DOLFINx can be found
+[here](CONTRIBUTING.md).
 
 ## License
 
