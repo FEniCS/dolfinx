@@ -6,9 +6,8 @@
 # generation with gmsh, one for the calculation of analytical efficiencies,
 # and one for the variational forms and the solver. It illustrates how to:
 #
-# - Use complex quantities in FEniCSx
-# - Setup and solve Maxwell's equations
-# - Implement (rectangular) perfectly matched layers
+# - Setup and solve Maxwell's equations for axisymmetric geometries
+# - Implement (axisymmetric) perfectly matched layers
 #
 # ## Equations, problem definition and implementation
 #
@@ -40,9 +39,9 @@ from scipy.special import jv
 from dolfinx import fem, mesh, plot
 from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
-from ufl import (FacetNormal, FiniteElement, Measure, MixedElement,
-                 SpatialCoordinate, TestFunction, TrialFunction, algebra,
-                 as_matrix, as_vector, conj, cross, det, grad, inner, inv, lhs,
+from ufl import (FiniteElement, Measure, MixedElement,
+                 SpatialCoordinate, TestFunction, TrialFunction,
+                 as_matrix, as_vector, det, grad, inner, inv, lhs,
                  rhs, sqrt, transpose)
 
 from mpi4py import MPI
@@ -58,6 +57,10 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
     exit(0)
 
+
+# Now, let's consider a metallic sphere immersed in
+# a background medium (e.g. vacuum or water) hit by a plane wave. We want to know what is the electric field scattered from the sphere. This problem is 3D, but can be simplified into many 2D problems by exploiting its axisymmetric nature. Let's see how.
+#
 
 def pml_coordinate(x, r, alpha, k0, radius_dom, radius_pml):
 
@@ -259,4 +262,3 @@ Hs_m = 1j * curl_axis(Esh_m, m, x)
 E_m = fem.Function(V)
 E_m.x.array[:] = Eb_m.x.array[:] + Esh_m.x.array[:]
 
-# -
