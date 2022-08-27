@@ -135,7 +135,7 @@ def curl_2d(a):
 # coordinate system of this kind:
 #
 # \begin{align}
-# & x^\prime= x\left\{1-j\frac{\alpha}{k_0}\left[\frac{|x|-l_{dom}/2}
+# & x^\prime= x\left\{1+j\frac{\alpha}{k_0}\left[\frac{|x|-l_{dom}/2}
 # {(l_{pml}/2 - l_{dom}/2)^2}\right] \right\}\\
 # \end{align}
 #
@@ -373,9 +373,9 @@ y_pml = as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 #
 # $$
 # \begin{align}
-# & {\boldsymbol{\varepsilon}_{pml}}^\prime =
+# & {\boldsymbol{\varepsilon}_{pml}} =
 # A^{-1} \mathbf{A} {\boldsymbol{\varepsilon}_b}\mathbf{A}^{T},\\
-# & {\boldsymbol{\mu}_{pml}}^\prime =
+# & {\boldsymbol{\mu}_{pml}} =
 # A^{-1} \mathbf{A} {\boldsymbol{\mu}_b}\mathbf{A}^{T},
 # \end{align}
 # $$
@@ -404,7 +404,7 @@ def create_eps_mu(pml):
 
     A = inv(J)
     eps = det(J) * A * eps_bkg * transpose(A)
-    mu = inv(det(J) * A * 1 * transpose(A))
+    mu = det(J) * A * 1 * transpose(A)
     return eps, mu
 
 
@@ -416,7 +416,7 @@ eps_xy, mu_xy = create_eps_mu(xy_pml)
 # The final weak form in the PML region is:
 #
 # $$
-# \int_{\Omega_{pml}}\left[\boldsymbol{\mu}_{pml} \nabla \times \mathbf{E}
+# \int_{\Omega_{pml}}\left[\boldsymbol{\mu}^{-1}_{pml} \nabla \times \mathbf{E}
 # \right]\cdot \nabla \times \bar{\mathbf{v}}-k_{0}^{2}
 # \left[\boldsymbol{\varepsilon}_{pml} \mathbf{E} \right]\cdot
 # \bar{\mathbf{v}}~ d x=0,
@@ -442,9 +442,9 @@ eps_xy, mu_xy = create_eps_mu(xy_pml)
 F = - inner(curl_2d(Es), curl_2d(v)) * dDom \
     + eps * k0 ** 2 * inner(Es, v) * dDom \
     + k0 ** 2 * (eps - eps_bkg) * inner(Eb, v) * dDom \
-    - inner(mu_x * curl_2d(Es), curl_2d(v)) * dPml_x \
-    - inner(mu_y * curl_2d(Es), curl_2d(v)) * dPml_y \
-    - inner(mu_xy * curl_2d(Es), curl_2d(v)) * dPml_xy \
+    - inner(inv(mu_x) * curl_2d(Es), curl_2d(v)) * dPml_x \
+    - inner(inv(mu_y) * curl_2d(Es), curl_2d(v)) * dPml_y \
+    - inner(inv(mu_xy) * curl_2d(Es), curl_2d(v)) * dPml_xy \
     + k0 ** 2 * inner(eps_x * Es_3d, v_3d) * dPml_x \
     + k0 ** 2 * inner(eps_y * Es_3d, v_3d) * dPml_y \
     + k0 ** 2 * inner(eps_xy * Es_3d, v_3d) * dPml_xy
