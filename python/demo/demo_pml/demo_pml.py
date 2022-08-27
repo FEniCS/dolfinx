@@ -393,7 +393,7 @@ y_pml = as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 # +
 
 
-def create_eps_mu(pml):
+def create_eps_mu(pml, eps_bkg, mu_bkg):
 
     J = grad(pml)
 
@@ -403,14 +403,15 @@ def create_eps_mu(pml):
                    (0, 0, 1)))
 
     A = inv(J)
-    eps = det(J) * A * eps_bkg * transpose(A)
-    mu = det(J) * A * 1 * transpose(A)
-    return eps, mu
+    eps_pml = det(J) * A * eps_bkg * transpose(A)
+    mu_pml = det(J) * A * mu_bkg * transpose(A)
+    return eps_pml, mu_pml
 
 
 eps_x, mu_x = create_eps_mu(x_pml)
 eps_y, mu_y = create_eps_mu(y_pml)
 eps_xy, mu_xy = create_eps_mu(xy_pml)
+
 # -
 
 # The final weak form in the PML region is:
