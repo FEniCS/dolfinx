@@ -35,7 +35,7 @@ from functools import partial
 
 import numpy as np
 from mesh_sphere_axis import generate_mesh_sphere_axis
-from scipy.special import jv
+from scipy.special import jv, jvp
 
 from dolfinx import fem, mesh, plot
 from dolfinx.io import VTXWriter
@@ -43,7 +43,7 @@ from dolfinx.io.gmshio import model_to_mesh
 from ufl import (FacetNormal, FiniteElement, Measure, MixedElement,
                  SpatialCoordinate, TestFunction, TrialFunction, as_matrix,
                  as_vector, conj, cross, det, grad, inner, inv, lhs, rhs, sqrt,
-                 transpose)
+                 transpose, bessel_J)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -84,17 +84,8 @@ def background_field_rz(theta, n_b, k0, m, x):
 
     k = k0 * n_b
 
-    if m == 0:
-
-        jv_prime = - jv(1, k * x[0] * np.sin(theta))
-
-    else:
-
-        jv_prime = 0.5 * (jv(m - 1, k * x[0] * np.sin(theta))
-                          - jv(m + 1, k * x[0] * np.sin(theta)))
-
     a_r = (np.cos(theta) * np.exp(1j * k * x[1] * np.cos(theta))
-           * (1j)**(-m + 1) * jv_prime)
+           * (1j)**(-m + 1) * jvp(m, k * x[0] * np.sin(theta), 1))
 
     a_z = (np.sin(theta) * np.exp(1j * k * x[1] * np.cos(theta))
            * (1j)**-m * jv(m, k * x[0] * np.sin(theta)))
@@ -123,7 +114,7 @@ radius_sph = 0.025 * um
 radius_dom = 0.200 * um
 radius_pml = 0.04 * um
 
-mesh_factor = 0.9
+mesh_factor = 0.6
 
 in_sph_size = mesh_factor * 2 * nm
 on_sph_size = mesh_factor * 2 * nm
@@ -175,7 +166,7 @@ eps_bkg = n_bkg**2  # Background relative permittivity
 
 degree = 3
 curl_el = FiniteElement("N1curl", domain.ufl_cell(), degree)
-lagr_el = FiniteElement("Lagrange", domain.ufl_cell(), degree)
+lagr_el = FiniteElement("Lagrange", domain.ufl_cell(), degree - 1)
 V = fem.FunctionSpace(domain, MixedElement([curl_el, lagr_el]))
 
 # Measures for subdomains
@@ -202,9 +193,8 @@ deg = np.pi / 180
 theta = 45 * deg  # Angle of incidence of the background field
 m_list = [0, 1]
 
-
 x = SpatialCoordinate(domain)
-alpha = 2
+alpha = 5
 r = sqrt(x[0]**2 + x[1]**2)
 
 pml_coords = as_vector((
@@ -224,6 +214,7 @@ def create_eps_mu(pml, x, eps_bkg, mu_bkg):
     J = as_matrix(((J[0, 0], J[0, 1], 0),
                    (J[1, 0], J[1, 1], 0),
                    (0, 0, pml[0] / x[0])))
+
     A = inv(J)
     eps_pml = det(J) * A * eps_bkg * transpose(A)
     mu_pml = det(J) * A * mu_bkg * transpose(A)
@@ -233,9 +224,8 @@ def create_eps_mu(pml, x, eps_bkg, mu_bkg):
 eps_pml, mu_pml = create_eps_mu(pml_coords, x, eps_bkg, 1)
 
 V_dg = fem.VectorFunctionSpace(domain, ("DG", degree))
-lagr_space = fem.FunctionSpace(domain, ("Lagrange", degree))
 
-Esh_m_dg = fem.Function(V_dg)
+Esh_rz_m_dg = fem.Function(V_dg)
 
 # Vacuum impedance
 Z0 = np.sqrt(mu_0 / epsilon_0)
@@ -243,8 +233,7 @@ Z0 = np.sqrt(mu_0 / epsilon_0)
 n = FacetNormal(domain)
 n_3d = as_vector((n[0], n[1], 0))
 
-# Intensity of the electromagnetic fields I0 = 0.5*E0**2/Z0
-# E0 = np.sqrt(ax**2 + ay**2) = 1, see background_electric_field
+# Intensity of the electromagnetic fields
 I0 = 0.5 / Z0
 
 # Geometrical cross section of the wire
@@ -271,7 +260,6 @@ dS = Measure("dS", domain, subdomain_data=facet_tags)
 
 for m in m_list:
 
-    print(m)
     Eh_m = fem.Function(V)
     Eb_m = fem.Function(V)
 
@@ -301,6 +289,11 @@ for m in m_list:
     Esh_m = problem.solve()
 
     Esh_rz_m, Esh_p_m = Esh_m.split()
+
+    Esh_rz_m_dg.interpolate(Esh_rz_m)
+
+    with VTXWriter(domain.comm, f"sols/Es_rz_{m}.bp", Esh_rz_m_dg) as f:
+        f.write(0.0)
 
     Hsh_m = 1j * curl_axis(Esh_m, m, x) / Z0 / k0 / n_bkg
 
