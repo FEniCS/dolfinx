@@ -121,9 +121,9 @@ mu_0 = 4 * np.pi * 10**-7
 
 radius_sph = 0.025 * um
 radius_dom = 0.200 * um
-radius_pml = 0.025 * um
+radius_pml = 0.04 * um
 
-mesh_factor = 1
+mesh_factor = 0.9
 
 in_sph_size = mesh_factor * 2 * nm
 on_sph_size = mesh_factor * 2 * nm
@@ -176,7 +176,7 @@ eps_bkg = n_bkg**2  # Background relative permittivity
 degree = 3
 curl_el = FiniteElement("N1curl", domain.ufl_cell(), degree)
 lagr_el = FiniteElement("Lagrange", domain.ufl_cell(), degree)
-V = fem.FunctionSpace(domain, MixedElement(curl_el, lagr_el))
+V = fem.FunctionSpace(domain, MixedElement([curl_el, lagr_el]))
 
 # Measures for subdomains
 dx = Measure("dx", domain, subdomain_data=cell_tags,
@@ -199,12 +199,12 @@ eps.x.scatter_forward()
 wl0 = 0.4 * um  # Wavelength of the background field
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
 deg = np.pi / 180
-theta = 90 * deg  # Angle of incidence of the background field
+theta = 45 * deg  # Angle of incidence of the background field
 m_list = [0, 1]
 
 
 x = SpatialCoordinate(domain)
-alpha = 1
+alpha = 2
 r = sqrt(x[0]**2 + x[1]**2)
 
 pml_coords = as_vector((
@@ -233,13 +233,12 @@ def create_eps_mu(pml, x, eps_bkg, mu_bkg):
 eps_pml, mu_pml = create_eps_mu(pml_coords, x, eps_bkg, 1)
 
 V_dg = fem.VectorFunctionSpace(domain, ("DG", degree))
+lagr_space = fem.FunctionSpace(domain, ("Lagrange", degree))
 
 Esh_m_dg = fem.Function(V_dg)
 
 # Vacuum impedance
 Z0 = np.sqrt(mu_0 / epsilon_0)
-
-Eh_m = fem.Function(V)
 
 n = FacetNormal(domain)
 n_3d = as_vector((n[0], n[1], 0))
@@ -260,7 +259,7 @@ incident_cells = mesh.compute_incident_entities(domain, scatt_facets,
 midpoints = mesh.compute_midpoints(
     domain, domain.topology.dim, incident_cells)
 inner_cells = incident_cells[(midpoints[:, 0]**2
-                              + midpoints[:, 1]**2) < (radius_dom)**2]
+                              + midpoints[:, 1]**2) < (radius_dom * 0.6)**2]
 
 marker.x.array[inner_cells] = 1
 
@@ -271,6 +270,9 @@ dAu = dx(au_tag)
 dS = Measure("dS", domain, subdomain_data=facet_tags)
 
 for m in m_list:
+
+    print(m)
+    Eh_m = fem.Function(V)
     Eb_m = fem.Function(V)
 
     # Definition of Trial and Test functions
@@ -279,6 +281,7 @@ for m in m_list:
 
     f_rz = partial(background_field_rz, theta, n_bkg, k0, m)
     f_p = partial(background_field_p, theta, n_bkg, k0, m)
+
     Eb_m.sub(0).interpolate(f_rz)
     Eb_m.sub(1).interpolate(f_p)
 
@@ -299,11 +302,6 @@ for m in m_list:
 
     Esh_rz_m, Esh_p_m = Esh_m.split()
 
-    Esh_m_dg.interpolate(Esh_rz_m)
-
-    with VTXWriter(domain.comm, f"Esh_{m}.bp", Esh_m_dg) as f:
-        f.write(0.0)
-
     Hsh_m = 1j * curl_axis(Esh_m, m, x) / Z0 / k0 / n_bkg
 
     Eh_m.x.array[:] = Eb_m.x.array[:] + Esh_m.x.array[:]
@@ -314,24 +312,24 @@ for m in m_list:
         P = np.pi * inner(cross(Esh_m, conj(Hsh_m)), n_3d) * marker
         Q = np.pi * eps_au.imag * k0 * (inner(Eh_m, Eh_m)) / Z0 / n_bkg
 
+        q_abs_fenics_proc = (fem.assemble_scalar(
+                             fem.form(Q * x[0] * dAu)) / gcs / I0).real
+        q_sca_fenics_proc = (fem.assemble_scalar(
+                             fem.form((P('+') + P('-')) * x[0] * dS(scatt_tag))) / gcs / I0).real
+        q_abs_fenics = domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+        q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
+
     else:  # we can improve it by using m_list instead of m, in that case use elif
-        P += 2 * np.pi * inner(cross(Esh_m, conj(Hsh_m)), n_3d) * marker
-        Q += 2 * np.pi * eps_au.imag * k0 * (inner(Eh_m, Eh_m)) / Z0 / n_bkg
+        P = 2 * np.pi * inner(cross(Esh_m, conj(Hsh_m)), n_3d) * marker
+        Q = 2 * np.pi * eps_au.imag * k0 * (inner(Eh_m, Eh_m)) / Z0 / n_bkg
 
-# Normalized absorption efficiency
-q_abs_fenics_proc = (fem.assemble_scalar(
-    fem.form(Q * x[0] * dAu)) / gcs / I0).real
-# Sum results from all MPI processes
-q_abs_fenics = domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+        q_abs_fenics_proc = (fem.assemble_scalar(
+            fem.form(Q * x[0] * dAu)) / gcs / I0).real
+        q_sca_fenics_proc = (fem.assemble_scalar(
+                             fem.form((P('+') + P('-')) * x[0] * dS(scatt_tag))) / gcs / I0).real
+        q_abs_fenics += domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+        q_sca_fenics += domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
-# Normalized scattering efficiency
-q_sca_fenics_proc = (fem.assemble_scalar(
-    fem.form((P('+') + P('-')) * x[0] * dS(scatt_tag))) / gcs / I0).real
-
-# Sum results from all MPI processes
-q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
-
-# Extinction efficiency
 q_ext_fenics = q_abs_fenics + q_sca_fenics
 
 analyt_effs = scattnlay(np.array(
