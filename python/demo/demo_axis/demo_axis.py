@@ -59,12 +59,131 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     exit(0)
 
 
-# Now, let's consider a metallic sphere immersed in
+# Now, let's formulate our problem.
+# Let's consider a metallic sphere immersed in
 # a background medium (e.g. vacuum or water) hit by a plane wave.
-# We want to know what is the electric field scattered from the sphere.
-# This problem is 3D, but can be simplified into many 2D problems
-# by exploiting its axisymmetric nature. Let's see how.
+# We want to know what is the electric field scattered by the sphere.
+# Even though the problem is three-dimensional, 
+# we can simplify it into many two-dimensional problems
+# by exploiting its axisymmetric nature.
 #
+# If we use PML as our absorbing layers, the weak form of our problem is:
+#
+# $$
+# \begin{align}
+# &\int_{\Omega_m\cup\Omega_b}-(\nabla \times \mathbf{E}_s)
+# \cdot (\nabla \times \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2}
+# \mathbf{E}_s \cdot \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}
+# -\varepsilon_b\right)\mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d} x\\
+# +&\int_{\Omega_{pml}}\left[\boldsymbol{\mu}^{-1}_{pml} \nabla \times \mathbf{E}_s
+# \right]\cdot \nabla \times \bar{\mathbf{v}}-k_{0}^{2}
+# \left[\boldsymbol{\varepsilon}_{pml} \mathbf{E}_s \right]\cdot
+# \bar{\mathbf{v}}~ d x=0
+# \end{align}
+# $$
+#
+# If we switch to cylindrical coordinates:
+#
+# $$
+# \begin{align}
+# &\int_{\Omega_{cs}}\int_{0}^{2\pi}-(\nabla \times \mathbf{E}_s)
+# \cdot (\nabla \times \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2}
+# \mathbf{E}_s \cdot \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}
+# -\varepsilon_b\right)\mathbf{E}_b \cdot \bar{\mathbf{v}}~ \rho d\rho dz d \phi\\
+# +&\int_{\Omega_{cs}}\int_{0}^{2\pi}\left[\boldsymbol{\mu}^{-1}_{pml} \nabla \times \mathbf{E}_s
+# \right]\cdot \nabla \times \bar{\mathbf{v}}-k_{0}^{2}
+# \left[\boldsymbol{\varepsilon}_{pml} \mathbf{E}_s \right]\cdot
+# \bar{\mathbf{v}}~ \rho d\rho dz d \phi=0
+# \end{align}
+# $$
+#
+# Let's now expand $\mathbf{E}_s$, $\mathbf{E}_b$ and $\bar{\mathbf{v}}$ in cylindrical harmonics:
+#
+# $$
+# \begin{align}
+# & \mathbf{E}_s(\rho, z, \phi) = \sum_m\mathbf{E}^{(m)}_s(\rho, z)e^{-im\phi} \\
+# & \mathbf{E}_b(\rho, z, \phi) = \sum_m\mathbf{E}^{(m)}_b(\rho, z)e^{-im\phi} \\
+# & \bar{\mathbf{v}}(\rho, z, \phi) = \sum_m\bar{\mathbf{v}}^{(m)}(\rho, z)e^{+im\phi}\\
+# \end{align}
+# $$
+#
+# The curl operator $\nabla\times$ in cylindrical coordinates becomes:
+#
+# $$
+# \begin{aligned}
+# \nabla \times \mathbf{a}=\sum_{m}\left(\nabla \times \mathbf{a}^{(m)}\right) e^{-i m \phi}
+# \end{aligned}
+# $$
+#
+# with:
+#
+# $$
+# \begin{align}
+# \left(\nabla \times \mathbf{a}^{(m)}\right) = &\left[\hat{\rho}\left(-\frac{\partial a_{\phi}^{(m)}}{\partial z}-i \frac{m}{\rho} a_{z}^{(m)}\right)+\\ \hat{\phi}\left(\frac{\partial a_{\rho}^{(m)}}{\partial z}-\frac{\partial a_{z}^{(m)}}{\partial \rho}\right)+\right.\\
+# &\left.+\hat{z}\left(\frac{a_{\phi}^{(m)}}{\rho}+\frac{\partial a_{\phi}^{(m)}}{\partial \rho}+i \frac{m}{\rho} a_{\rho}^{(m)}\right)\right]
+# \end{align}
+# $$
+#
+# By implementing these formula in our weak form, and by assuming an axisymmetric geometry $\varepsilon(\rho, z)$, we can write:
+#
+# $$
+# \begin{align}
+# \sum_{n, m}\int_{\Omega_{cs}}&-(\nabla \times \mathbf{E}^{(m)}_s)
+# \cdot (\nabla \times \bar{\mathbf{v}}^{(m)})+\varepsilon_{r} k_{0}^{2}
+# \mathbf{E}^{(m)}_s \cdot \bar{\mathbf{v}}^{(m)}+k_{0}^{2}\left(\varepsilon_{r}
+# -\varepsilon_b\right)\mathbf{E}^{(m)}_b \cdot \bar{\mathbf{v}}^{(m)}\\
+# &+\left(\boldsymbol{\mu}^{-1}_{pml} \nabla \times \mathbf{E}^{(m)}_s
+# \right)\cdot \nabla \times \bar{\mathbf{v}}^{(m)}-k_{0}^{2}
+# \left(\boldsymbol{\varepsilon}_{pml} \mathbf{E}^{(m)}_s \right)\cdot
+# \bar{\mathbf{v}}^{(m)}~ \rho d\rho dz \int_{0}^{2 \pi} e^{-i(m-n) \phi} d \phi=0
+# \end{align}
+# $$
+#
+# It's clear that the last integral is different from zero only when
+# $m = n$, and therefore we can write:
+#
+# $$
+# \begin{align}
+# \sum_{m}\int_{\Omega_{cs}}&-(\nabla \times \mathbf{E}^{(m)}_s)
+# \cdot (\nabla \times \bar{\mathbf{v}}^{(m)})+\varepsilon_{r} k_{0}^{2}
+# \mathbf{E}^{(m)}_s \cdot \bar{\mathbf{v}}^{(m)}+k_{0}^{2}\left(\varepsilon_{r}
+# -\varepsilon_b\right)\mathbf{E}^{(m)}_b \cdot \bar{\mathbf{v}}^{(m)}\\
+# &+\left(\boldsymbol{\mu}^{-1}_{pml} \nabla \times \mathbf{E}^{(m)}_s
+# \right)\cdot \nabla \times \bar{\mathbf{v}}^{(m)}-k_{0}^{2}
+# \left(\boldsymbol{\varepsilon}_{pml} \mathbf{E}^{(m)}_s \right)\cdot
+# \bar{\mathbf{v}}^{(m)}~ \rho d\rho dz =0
+# \end{align}
+# $$
+#
+# We therefore just need to solve the 2D problem for the cross-section for different harmonics.
+#
+# T
+
+# +
+def background_field_rz(theta, n_b, k0, m, x):
+
+    k = k0 * n_b
+
+    a_r = (np.cos(theta) * np.exp(1j * k * x[1] * np.cos(theta))
+           * (1j)**(-m + 1) * jvp(m, k * x[0] * np.sin(theta), 1))
+
+    a_z = (np.sin(theta) * np.exp(1j * k * x[1] * np.cos(theta))
+           * (1j)**-m * jv(m, k * x[0] * np.sin(theta)))
+
+    return (a_r, a_z)
+
+def background_field_p(theta, n_b, k0, m, x):
+
+    k = k0 * n_b
+
+    a_p = (np.cos(theta) / (k * x[0] * np.sin(theta))
+           * np.exp(1j * k * x[1] * np.cos(theta)) * m
+           * (1j)**(-m) * jv(m, k * x[0] * np.sin(theta)))
+
+    return a_p
+
+
+# -
 
 def pml_coordinate(x, r, alpha, k0, radius_dom, radius_pml):
 
@@ -80,30 +199,6 @@ def curl_axis(a, m, x):
     return as_vector((curl_r, curl_z, curl_p))
 
 
-def background_field_rz(theta, n_b, k0, m, x):
-
-    k = k0 * n_b
-
-    a_r = (np.cos(theta) * np.exp(1j * k * x[1] * np.cos(theta))
-           * (1j)**(-m + 1) * jvp(m, k * x[0] * np.sin(theta), 1))
-
-    a_z = (np.sin(theta) * np.exp(1j * k * x[1] * np.cos(theta))
-           * (1j)**-m * jv(m, k * x[0] * np.sin(theta)))
-
-    return (a_r, a_z)
-
-
-def background_field_p(theta, n_b, k0, m, x):
-
-    k = k0 * n_b
-
-    a_p = (np.cos(theta) / (k * x[0] * np.sin(theta))
-           * np.exp(1j * k * x[1] * np.cos(theta)) * m
-           * (1j)**(-m) * jv(m, k * x[0] * np.sin(theta)))
-
-    return a_p
-
-
 um = 1
 nm = um * 10**-3
 
@@ -112,13 +207,13 @@ mu_0 = 4 * np.pi * 10**-7
 
 radius_sph = 0.025 * um
 radius_dom = 0.200 * um
+radius_scatt = 0.6 * radius_dom
 radius_pml = 0.04 * um
 
 mesh_factor = 0.6
 
 in_sph_size = mesh_factor * 2 * nm
 on_sph_size = mesh_factor * 2 * nm
-bkg_size = mesh_factor * 10 * nm
 scatt_size = mesh_factor * 10 * nm
 pml_size = mesh_factor * 10 * nm
 
@@ -129,9 +224,8 @@ pml_tag = 3
 scatt_tag = 4
 
 model = generate_mesh_sphere_axis(
-    radius_sph, radius_dom, radius_pml,
-    in_sph_size, on_sph_size, bkg_size,
-    scatt_size, pml_size,
+    radius_sph, radius_scatt, radius_dom, radius_pml,
+    in_sph_size, on_sph_size, scatt_size, pml_size,
     au_tag, bkg_tag, pml_tag, scatt_tag)
 
 domain, cell_tags, facet_tags = model_to_mesh(

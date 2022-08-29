@@ -10,9 +10,8 @@ from numpy import pi
 from mpi4py import MPI
 
 
-def generate_mesh_sphere_axis(radius_sph, radius_dom, radius_pml,
-                              in_sph_size, on_sph_size, bkg_size,
-                              scatt_size, pml_size,
+def generate_mesh_sphere_axis(radius_sph, radius_scatt, radius_dom, radius_pml,
+                              in_sph_size, on_sph_size, scatt_size, pml_size,
                               au_tag, bkg_tag, pml_tag, scatt_tag):
 
     gmsh.initialize(sys.argv)
@@ -25,7 +24,7 @@ def generate_mesh_sphere_axis(radius_sph, radius_dom, radius_pml,
         gmsh.model.occ.addCircle(
             0, 0, 0, radius_sph, angle1=-pi / 2, angle2=pi / 2, tag=2)
         gmsh.model.occ.addCircle(
-            0, 0, 0, radius_dom * 0.6, angle1=-pi / 2, angle2=pi / 2, tag=3)
+            0, 0, 0, radius_scatt, angle1=-pi / 2, angle2=pi / 2, tag=3)
         gmsh.model.occ.addCircle(
             0, 0, 0, radius_dom, angle1=-pi / 2, angle2=pi / 2, tag=4)
         gmsh.model.occ.addCircle(
@@ -64,8 +63,8 @@ def generate_mesh_sphere_axis(radius_sph, radius_dom, radius_pml,
         gmsh.model.mesh.setSize([(0, 2)], size=in_sph_size)
         gmsh.model.mesh.setSize([(0, 3)], size=on_sph_size)
         gmsh.model.mesh.setSize([(0, 4)], size=on_sph_size)
-        gmsh.model.mesh.setSize([(0, 5)], size=bkg_size)
-        gmsh.model.mesh.setSize([(0, 6)], size=bkg_size)
+        gmsh.model.mesh.setSize([(0, 5)], size=scatt_size)
+        gmsh.model.mesh.setSize([(0, 6)], size=scatt_size)
         gmsh.model.mesh.setSize([(0, 7)], size=scatt_size)
         gmsh.model.mesh.setSize([(0, 8)], size=scatt_size)
         gmsh.model.mesh.setSize([(0, 9)], size=pml_size)
