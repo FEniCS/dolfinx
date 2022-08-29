@@ -292,19 +292,33 @@ def create_eps_mu(pml, x, eps_bkg, mu_bkg):
 
 # -
 
+# We can now define some constants and geometrical parameters,
+# and then we can generate the mesh with Gmsh, by using the
+# function `generate_mesh_sphere_axis` in `mesh_sphere_axis.py`: 
+
+# +
+# Constants
 um = 1
 nm = um * 10**-3
+epsilon_0 = 8.8541878128 * 10**-12 # Vacuum permittivity
+mu_0 = 4 * np.pi * 10**-7 # Vacuum permeability
+Z0 = np.sqrt(mu_0 / epsilon_0) # Vacuum impedance
+I0 = 0.5 / Z0 # Intensity of electromagnetic field
 
-epsilon_0 = 8.8541878128 * 10**-12
-mu_0 = 4 * np.pi * 10**-7
-
+# Radius of the sphere
 radius_sph = 0.025 * um
+
+# Radius of the domain
 radius_dom = 0.200 * um
+
+# Radius for the boundary of the scattering efficiency
 radius_scatt = 0.6 * radius_dom
+
+# Radius of the PML shell
 radius_pml = 0.04 * um
 
+# Mesh sizes
 mesh_factor = 0.6
-
 in_sph_size = mesh_factor * 2 * nm
 on_sph_size = mesh_factor * 2 * nm
 scatt_size = mesh_factor * 10 * nm
@@ -316,6 +330,7 @@ bkg_tag = 2
 pml_tag = 3
 scatt_tag = 4
 
+# Mesh generation
 model = generate_mesh_sphere_axis(
     radius_sph, radius_scatt, radius_dom, radius_pml,
     in_sph_size, on_sph_size, scatt_size, pml_size,
@@ -326,6 +341,7 @@ domain, cell_tags, facet_tags = model_to_mesh(
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
+# -
 
 # Let's have a visual check of the mesh and of the subdomains
 # by plotting them with PyVista:
@@ -348,12 +364,13 @@ if have_pyvista:
         figure = plotter.screenshot("sphere_axis_mesh.png",
                                     window_size=[800, 800])
 
-n_bkg = 1  # Background refractive index
-eps_bkg = n_bkg**2  # Background relative permittivity
+# We can now define our function space. For the $\hat{\rho}$ and $\hat{z}$
+# components of the electric field, we will use Nedelec elements,
+# while for the $\hat{\phi}$ components we will use Lagrange elements: 
 
-degree = 3
+degree = 2
 curl_el = FiniteElement("N1curl", domain.ufl_cell(), degree)
-lagr_el = FiniteElement("Lagrange", domain.ufl_cell(), degree - 1)
+lagr_el = FiniteElement("Lagrange", domain.ufl_cell(), degree)
 V = fem.FunctionSpace(domain, MixedElement([curl_el, lagr_el]))
 
 # Measures for subdomains
@@ -363,6 +380,9 @@ dx = Measure("dx", domain, subdomain_data=cell_tags,
 dDom = dx((au_tag, bkg_tag))
 dPml = dx(pml_tag)
 
+# +
+n_bkg = 1  # Background refractive index
+eps_bkg = n_bkg**2  # Background relative permittivity
 eps_au = -1.0782 + 1j * 5.8089
 
 D = fem.FunctionSpace(domain, ("DG", 0))
@@ -373,6 +393,7 @@ eps.x.array[au_cells] = np.full_like(
     au_cells, eps_au, dtype=np.complex128)
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
 eps.x.scatter_forward()
+# -
 
 wl0 = 0.4 * um  # Wavelength of the background field
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
@@ -398,18 +419,13 @@ V_dg = fem.VectorFunctionSpace(domain, ("DG", degree))
 
 Esh_rz_m_dg = fem.Function(V_dg)
 
-# Vacuum impedance
-Z0 = np.sqrt(mu_0 / epsilon_0)
-
 n = FacetNormal(domain)
 n_3d = as_vector((n[0], n[1], 0))
-
-# Intensity of the electromagnetic fields
-I0 = 0.5 / Z0
 
 # Geometrical cross section of the wire
 gcs = np.pi * radius_sph**2
 
+# +
 marker = fem.Function(D)
 scatt_facets = facet_tags.find(scatt_tag)
 incident_cells = mesh.compute_incident_entities(domain, scatt_facets,
@@ -422,6 +438,7 @@ inner_cells = incident_cells[(midpoints[:, 0]**2
                               + midpoints[:, 1]**2) < (radius_scatt)**2]
 
 marker.x.array[inner_cells] = 1
+# -
 
 # Define integration domain for the wire
 dAu = dx(au_tag)
