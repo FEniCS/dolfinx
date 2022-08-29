@@ -157,7 +157,39 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 #
 # We therefore just need to solve the 2D problem for the cross-section for different harmonics.
 #
-# T
+# As a first step, we can define the function for the $\nabla\times$
+# operator in cylindrical coordinates:
+
+def curl_axis(a, m, x):
+
+    curl_r = -a[2].dx(1) - 1j * m / x[0] * a[1]
+    curl_z = a[2] / x[0] + a[2].dx(0) + 1j * m / x[0] * a[0]
+    curl_p = a[0].dx(1) - a[1].dx(0)
+
+    return as_vector((curl_r, curl_z, curl_p))
+
+
+# Then we need to define the analytical formula for the background field.
+# For our purposes, we can consider the wavevector and the electric field
+# lying in our 2D domain, while the magnetic field is transverse to such
+# domain. For this reason, we will refer to this polarization as TMz
+# polarization, while the opposite case will be referred as TEz polarization.
+#
+# For TMz polarization, the cylindrical harmonics $\mathbf{E}^{(m)}_b$ of the background field 
+# can be written as (put reference):
+#
+# $$
+# \begin{align}
+# \mathbf{E}^{(m)}_b = &\hat{\rho} \left(E_{0} \cos \theta e^{i k z \cos \theta} i^{-m+1} J_{m}^{\prime}\left(k_{0} \rho \sin \theta\right)\right)\\
+# +&\hat{z} \left(E_{0} \sin \theta e^{i k z \cos \theta}i^{-m} J_{m}\left(k \rho \sin \theta\right)\right)\\
+# +&\hat{\phi} \left(\frac{E_{0} \cos \theta}{k \rho \sin \theta} e^{i k z \cos \theta} i^{-m} J_{m}\left(k \rho \sin \theta\right)\right)
+# \end{align}
+# $$
+#
+# with $k = 2\pi n_b/\lambda = k_0n_b$ being the wavevector, $\theta$ being the angle
+# between $\mathbf{E}_b$ and $\hat{\rho}$, and with $J_m$ representing the $m$-th order
+# Bessel function of first kind and $J_{m}^{\prime}$ its first-order derivative.
+# In DOLFINx, we can implement these functions in this way:
 
 # +
 def background_field_rz(theta, n_b, k0, m, x):
@@ -185,19 +217,80 @@ def background_field_p(theta, n_b, k0, m, x):
 
 # -
 
+# For the PML, we can introduce a spherical shell in our 3D domain.
+# In this shell, we can implement a complex coordinate transformation
+# of this form:
+#
+# $$
+# \begin{align}
+# & \rho^{\prime} = \rho\left[1 +j \alpha/k_0 \left(\frac{r 
+# - r_{dom}}{r~r_{pml}}\right)\right] \\
+# & z^{\prime} = z\left[1 +j \alpha/k_0 \left(\frac{r 
+# - r_{dom}}{r~r_{pml}}\right)\right] \\
+# & \phi^{\prime} = \phi \\
+# \end{align}
+# $$
+#
+# with $\alpha$ being a parameter tuning the absorption inside the PML,
+# and $r = \sqrt{\rho^2 + z^2}$.
+# This coordinate transformation has the following jacobian:
+#
+# $$
+# \mathbf{J}=\mathbf{A}^{-1}= \nabla\boldsymbol{\rho}^
+# \prime(\boldsymbol{\rho}) =
+# \left[\begin{array}{ccc}
+# \frac{\partial \rho^{\prime}}{\partial \rho} &
+# \frac{\partial z^{\prime}}{\partial \rho} &
+# 0 \\
+# \frac{\partial \rho^{\prime}}{\partial z} &
+# \frac{\partial z^{\prime}}{\partial z} &
+# 0 \\
+# 0 &
+# 0 &
+# \frac{\rho^\prime}{\rho}\frac{\partial \phi^{\prime}}{\partial \phi}
+# \end{array}\right]=\left[\begin{array}{ccc}
+# J_{11} & J_{12} & 0 \\
+# J_{21} & J_{22} & 0 \\
+# 0 & 0 & J_{33}
+# \end{array}\right]
+# $$
+#
+# which we can use to calculate ${\boldsymbol{\varepsilon}_{pml}}$ and
+# ${\boldsymbol{\mu}_{pml}}$:
+#
+# $$
+# \begin{align}
+# & {\boldsymbol{\varepsilon}_{pml}} =
+# A^{-1} \mathbf{A} {\boldsymbol{\varepsilon}_b}\mathbf{A}^{T}\\
+# & {\boldsymbol{\mu}_{pml}} =
+# A^{-1} \mathbf{A} {\boldsymbol{\mu}_b}\mathbf{A}^{T}
+# \end{align}
+# $$
+#
+# For doing these calculations, we define now the
+# `pml_coordinate` and `create_mu_eps` functions:
+
+# +
 def pml_coordinate(x, r, alpha, k0, radius_dom, radius_pml):
 
     return (x + 1j * alpha / k0 * x * (r - radius_dom) / (radius_pml * r))
 
+def create_eps_mu(pml, x, eps_bkg, mu_bkg):
 
-def curl_axis(a, m, x):
+    J = grad(pml)
 
-    curl_r = -a[2].dx(1) - 1j * m / x[0] * a[1]
-    curl_z = a[2] / x[0] + a[2].dx(0) + 1j * m / x[0] * a[0]
-    curl_p = a[0].dx(1) - a[1].dx(0)
+    # Transform the 2x2 Jacobian into a 3x3 matrix.
+    J = as_matrix(((J[0, 0], J[0, 1], 0),
+                   (J[1, 0], J[1, 1], 0),
+                   (0, 0, pml[0] / x[0])))
 
-    return as_vector((curl_r, curl_z, curl_p))
+    A = inv(J)
+    eps_pml = det(J) * A * eps_bkg * transpose(A)
+    mu_pml = det(J) * A * mu_bkg * transpose(A)
+    return eps_pml, mu_pml
 
+
+# -
 
 um = 1
 nm = um * 10**-3
@@ -299,22 +392,6 @@ pml_coords = as_vector((
         x[1],
         r, alpha, k0, radius_dom, radius_pml)))
 
-
-def create_eps_mu(pml, x, eps_bkg, mu_bkg):
-
-    J = grad(pml)
-
-    # Transform the 2x2 Jacobian into a 3x3 matrix.
-    J = as_matrix(((J[0, 0], J[0, 1], 0),
-                   (J[1, 0], J[1, 1], 0),
-                   (0, 0, pml[0] / x[0])))
-
-    A = inv(J)
-    eps_pml = det(J) * A * eps_bkg * transpose(A)
-    mu_pml = det(J) * A * mu_bkg * transpose(A)
-    return eps_pml, mu_pml
-
-
 eps_pml, mu_pml = create_eps_mu(pml_coords, x, eps_bkg, 1)
 
 V_dg = fem.VectorFunctionSpace(domain, ("DG", degree))
@@ -342,7 +419,7 @@ incident_cells = mesh.compute_incident_entities(domain, scatt_facets,
 midpoints = mesh.compute_midpoints(
     domain, domain.topology.dim, incident_cells)
 inner_cells = incident_cells[(midpoints[:, 0]**2
-                              + midpoints[:, 1]**2) < (radius_dom * 0.6)**2]
+                              + midpoints[:, 1]**2) < (radius_scatt)**2]
 
 marker.x.array[inner_cells] = 1
 
