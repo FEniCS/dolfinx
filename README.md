@@ -61,6 +61,8 @@ Conda is the recommended install method for Mac OS users. Linux users may also u
 To install the latest stable release of the Python interface, with pyvista support for
 visualisation, using [conda](https://conda.io):
 ```shell
+conda create -n fenicsx-env
+conda activate fenicsx-env
 conda install -c conda-forge fenics-dolfinx mpich pyvista
 ```
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
