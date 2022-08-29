@@ -29,6 +29,7 @@ from petsc4py import PETSc
 def run_scalar_test(mesh, V, degree):
     """ Manufactured Poisson problem, solving u = x[1]**p, where p is the
     degree of the Lagrange function space.
+
     """
     u, v = TrialFunction(V), TestFunction(V)
     a = inner(grad(u), grad(v)) * dx
@@ -196,6 +197,7 @@ def run_dg_test(mesh, V, degree):
 @pytest.mark.parametrize("order", [1])
 def test_curl_curl_eigenvalue(family, order):
     """curl curl eigenvalue problem.
+
     Solved using H(curl)-conforming finite element method.
     See https://www-users.cse.umn.edu/~arnold/papers/icm2002.pdf for details.
     """
@@ -260,6 +262,7 @@ def test_curl_curl_eigenvalue(family, order):
 @pytest.mark.parametrize("family", ["HHJ", "Regge"])
 def test_biharmonic(family):
     """Manufactured biharmonic problem.
+
     Solved using rotated Regge or the Hellan-Herrmann-Johnson (HHJ) mixed
     finite element method in two-dimensions."""
     mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]),
