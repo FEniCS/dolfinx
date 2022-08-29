@@ -408,9 +408,9 @@ def create_eps_mu(pml, eps_bkg, mu_bkg):
     return eps_pml, mu_pml
 
 
-eps_x, mu_x = create_eps_mu(x_pml)
-eps_y, mu_y = create_eps_mu(y_pml)
-eps_xy, mu_xy = create_eps_mu(xy_pml)
+eps_x, mu_x = create_eps_mu(x_pml, eps_bkg, 1)
+eps_y, mu_y = create_eps_mu(y_pml, eps_bkg, 1)
+eps_xy, mu_xy = create_eps_mu(xy_pml, eps_bkg, 1)
 
 # -
 
