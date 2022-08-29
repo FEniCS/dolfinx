@@ -15,6 +15,8 @@
 
 # # Mode analysis for a half-loaded rectangular waveguide
 
+# INFO: I've slightly changed the code to put all the inputs of the problem
+# in the same place.
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
 # This demo is implemented in one file, which shows how to:
@@ -46,12 +48,24 @@ from petsc4py.PETSc import ScalarType
 # Let's now define our domain. It is a rectangular domain  with length $l$ and height $h = l/2$, while the dielectric fills the lower-half of the domain, with a height of $d=b/2$.
 
 # +
+degree = 1
+
 l = 1
 h = 0.45*l
 d = 0.5*h
-
+lmbd0 = h/0.2
+k0 = 2*np.pi/lmbd0
 nx = 300
 ny = int(0.4*nx)
+tol = 1e-4
+max_it = 100
+
+problem_type = SLEPc.EPS.Type.KRYLOVSCHUR
+st_type = SLEPc.ST.Type.SINVERT
+which_ep = SLEPc.EPS.Which.TARGET_REAL
+target = -(0.4*k0)**2
+nev = 1
+ncv = 10*nev
 
 domain = create_rectangle(MPI.COMM_WORLD, [[0, 0], [l, h]], [
     nx, ny], CellType.quadrilateral)
@@ -64,7 +78,7 @@ domain.topology.create_connectivity(domain.topology.dim - 1, domain.topology.dim
 
 # +
 eps_v = 1
-eps_d = 1
+eps_d = 2.45
 
 def Omega_d(x):
     return x[1] <= d
@@ -140,14 +154,8 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
 # Let's now define the frequency $f_0$ of the electromagnetic wave and its
 # correspondent $k_0$:
 
-c0 = 3 * 10**8  # m/s
-MHz = 10**6 # Hz
-f0 = 200 * MHz
-k0 = 2 * np.pi * c0 / f0
-
 # We need to specify our elements. For $\mathbf{e}_t$ we can use the Nedelec elements, while for $e_z$ we can use the Lagrange elements. In DOLFINx, this hybrid formulation is implemented with `MixedElement`:
 
-degree = 2
 N1curl = ufl.FiniteElement("RTCE", domain.ufl_cell(), degree)
 H1 = ufl.FiniteElement("Lagrange", domain.ufl_cell(), degree)
 V = fem.FunctionSpace(domain, ufl.MixedElement(N1curl, H1))
@@ -203,12 +211,12 @@ eps.setProblemType(SLEPc.EPS.ProblemType.GNHEP)
 # and therefore we need to specify the tolerance for the
 # solution and the maximum number of iterations:
 
-eps.setTolerances(tol = 1e-10, 
-                  max_it = 100)
+eps.setTolerances(tol = tol, 
+                  max_it = max_it)
 
 # Now we need to set the eigensolver for our problem, which is the algorithm we want to use to find the eigenvalues and the eigenvectors. SLEPc offers different methods, and also wrappers to external libraries. Some of these methods are only suitable for Hermitian or Generalized Hermitian problems and/or for eigenvalues in a certain portion of the spectrum. However, the choice of the method is a technical discussion that is out of the scope of this demo. For our problem, we will use the default Krylov-Schur method, which we can set by calling the `setType` function:
 
-eps.setType(SLEPc.EPS.Type.KRYLOVSCHUR)
+eps.setType(problem_type)
 
 # Now we need to specify the spectral transformation we want to use
 # to solve this problem. Spectral transormation are operators applied
@@ -220,7 +228,7 @@ eps.setType(SLEPc.EPS.Type.KRYLOVSCHUR)
 st = eps.getST()
 ##
 ### Set shift-and-invert transformation
-st.setType(SLEPc.ST.Type.SINVERT)
+st.setType(st_type)
 
 # Now we need to define a target eigenvalue for our problem. In particular, we want
 # to find those $k_z$ with a real part near to $1.5k_0$ (since at page 658 of the [FEniCS book](https://fenicsproject.org/pub/book/book/fenics-book-2011-06-14.pdf)
@@ -231,40 +239,25 @@ st.setType(SLEPc.ST.Type.SINVERT)
 # the target value for the real part is $-(1.5k_0)^2$ (remember that $\lambda = -k_z^2$),
 # by using the `setTarget` function:
 
-eps.setWhichEigenpairs(SLEPc.EPS.Which.TARGET_REAL)
-eps.setTarget(-(0.5*k0)**2)
+eps.setWhichEigenpairs(which_ep)
+eps.setTarget(target)
 
 # Then, we need to define the number of eigenvalues we want to calculate.
 # We can do this with the `setDimensions` function, where we specify a
 # number of $4$ eigenvalues:
 
-nev = 6
-ncv = 20*nev
+#eps.setDimensions(nev=nev, ncv=ncv)
 eps.setDimensions(nev=nev, ncv=ncv)
+#eps.setMonitor(eps.EPS_MONITOR)
 eps.setFromOptions()
 
 # We can finally solve the problem and get the solutions
 
 # +
-harmonic_numbers = [(i, j) for i in range(4) for j in range(4)][1:]
-kz_list = []
-
-for m, n in harmonic_numbers:
-    kz_exact = np.sqrt(k0**2 - (np.pi*m/l)**2 - (np.pi*n/h)**2 + 0j).real
-    kz_list.append(kz_exact/k0)
-
-kz_list, harmonic_numbers = zip(*sorted(zip(kz_list, harmonic_numbers)))
-
-for i, val in enumerate(kz_list):
-    if val != 0:
-        print()
-        print(f"harmonic couple: {harmonic_numbers[i][0]},{harmonic_numbers[i][1]}")
-        print(f"kz/k0: {kz_list[i]}")
-        print()
-
 eps.solve()
+eps.view()
+eps.errorView()
 
-print(eps.getIterationNumber())
 vals = [(i, np.sqrt(-eps.getEigenvalue(i))) for i in range(eps.getConverged())]
 
 vals.sort(key=lambda x: x[1].real)
