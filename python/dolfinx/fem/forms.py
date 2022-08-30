@@ -87,14 +87,14 @@ form_types = typing.Union[FormMetaClass, _cpp.fem.Form_float32, _cpp.fem.Form_fl
 
 
 def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = PETSc.ScalarType,
-         form_compiler_opts: dict = {}, jit_opts: dict = {}):
+         form_compiler_options: dict = {}, jit_options: dict = {}):
     """Create a DOLFINx Form or an array of Forms
 
     Args:
         form: A UFL form or list(s) of UFL forms
         dtype: Scalar type to use for the compiled form
-        form_compiler_opts: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
-        jit_opts:See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
+        form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
+        jit_options:See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
 
     Returns:
         Compiled finite element Form
@@ -110,13 +110,13 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
     """
     if dtype == np.float32:
         ftype = _cpp.fem.Form_float32
-        form_compiler_opts["scalar_type"] = "float"
+        form_compiler_options["scalar_type"] = "float"
     elif dtype == np.float64:
         ftype = _cpp.fem.Form_float64
-        form_compiler_opts["scalar_type"] = "double"
+        form_compiler_options["scalar_type"] = "double"
     elif dtype == np.complex128:
         ftype = _cpp.fem.Form_complex128
-        form_compiler_opts["scalar_type"] = "double _Complex"
+        form_compiler_options["scalar_type"] = "double _Complex"
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
@@ -133,8 +133,8 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
             raise RuntimeError("Expecting to find a Mesh in the form.")
 
         ufcx_form, module, code = jit.ffcx_jit(mesh.comm, form,
-                                               form_compiler_opts=form_compiler_opts,
-                                               jit_opts=jit_opts)
+                                               form_compiler_options=form_compiler_options,
+                                               jit_options=jit_options)
 
         # For each argument in form extract its function space
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
