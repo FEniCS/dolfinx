@@ -7,6 +7,7 @@ except ModuleNotFoundError:
     sys.exit(0)
 
 from numpy import pi
+
 from mpi4py import MPI
 
 

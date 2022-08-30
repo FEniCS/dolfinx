@@ -13,16 +13,31 @@
 #
 # First of all, let's import the modules that will be used:
 
-# +
-from scattnlay import scattnlay
 import sys
+from functools import partial
+
+import numpy as np
+from mesh_sphere_axis import generate_mesh_sphere_axis
+from scattnlay import scattnlay
+from scipy.special import jv, jvp
+
+from dolfinx import fem, mesh, plot
+from dolfinx.io import VTXWriter
+from dolfinx.io.gmshio import model_to_mesh
+from ufl import (FacetNormal, FiniteElement, Measure, MixedElement,
+                 SpatialCoordinate, TestFunction, TrialFunction, as_matrix,
+                 as_vector, bessel_J, conj, cross, det, grad, inner, inv, lhs,
+                 rhs, sqrt, transpose)
+
+from mpi4py import MPI
+# +
+from petsc4py import PETSc
 
 try:
     import gmsh
 except ModuleNotFoundError:
     print("This demo requires gmsh to be installed")
     sys.exit(0)
-import numpy as np
 
 try:
     import pyvista
@@ -31,22 +46,6 @@ except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
 
-from functools import partial
-
-import numpy as np
-from mesh_sphere_axis import generate_mesh_sphere_axis
-from scipy.special import jv, jvp
-
-from dolfinx import fem, mesh, plot
-from dolfinx.io import VTXWriter
-from dolfinx.io.gmshio import model_to_mesh
-from ufl import (FacetNormal, FiniteElement, Measure, MixedElement,
-                 SpatialCoordinate, TestFunction, TrialFunction, as_matrix,
-                 as_vector, conj, cross, det, grad, inner, inv, lhs, rhs, sqrt,
-                 transpose, bessel_J)
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 # -
 
@@ -63,7 +62,7 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # Let's consider a metallic sphere immersed in
 # a background medium (e.g. vacuum or water) hit by a plane wave.
 # We want to know what is the electric field scattered by the sphere.
-# Even though the problem is three-dimensional, 
+# Even though the problem is three-dimensional,
 # we can simplify it into many two-dimensional problems
 # by exploiting its axisymmetric nature.
 #
@@ -175,20 +174,25 @@ def curl_axis(a, m, x):
 # domain. For this reason, we will refer to this polarization as TMz
 # polarization, while the opposite case will be referred as TEz polarization.
 #
-# For TMz polarization, the cylindrical harmonics $\mathbf{E}^{(m)}_b$ of the background field 
-# can be written as (put reference):
+# For TMz polarization, the cylindrical harmonics $\mathbf{E}^{(m)}_b$
+# of the background field can be written as (put reference):
 #
 # $$
 # \begin{align}
-# \mathbf{E}^{(m)}_b = &\hat{\rho} \left(E_{0} \cos \theta e^{i k z \cos \theta} i^{-m+1} J_{m}^{\prime}\left(k_{0} \rho \sin \theta\right)\right)\\
-# +&\hat{z} \left(E_{0} \sin \theta e^{i k z \cos \theta}i^{-m} J_{m}\left(k \rho \sin \theta\right)\right)\\
-# +&\hat{\phi} \left(\frac{E_{0} \cos \theta}{k \rho \sin \theta} e^{i k z \cos \theta} i^{-m} J_{m}\left(k \rho \sin \theta\right)\right)
+# \mathbf{E}^{(m)}_b = &\hat{\rho} \left(E_{0} \cos \theta
+# e^{i k z \cos \theta} i^{-m+1} J_{m}^{\prime}\left(k_{0} \rho \sin
+# \theta\right)\right)\\
+# +&\hat{z} \left(E_{0} \sin \theta e^{i k z \cos \theta}i^{-m} J_{m}
+# \left(k \rho \sin \theta\right)\right)\\
+# +&\hat{\phi} \left(\frac{E_{0} \cos \theta}{k \rho \sin \theta}
+# e^{i k z \cos \theta} i^{-m} J_{m}\left(k \rho \sin \theta\right)\right)
 # \end{align}
 # $$
 #
-# with $k = 2\pi n_b/\lambda = k_0n_b$ being the wavevector, $\theta$ being the angle
-# between $\mathbf{E}_b$ and $\hat{\rho}$, and with $J_m$ representing the $m$-th order
-# Bessel function of first kind and $J_{m}^{\prime}$ its first-order derivative.
+# with $k = 2\pi n_b/\lambda = k_0n_b$ being the wavevector, $\theta$ being
+# the angle between $\mathbf{E}_b$ and $\hat{\rho}$, and $J_m$
+# representing the $m$-th order Bessel function of first kind and
+# $J_{m}^{\prime}$ its first-order derivative.
 # In DOLFINx, we can implement these functions in this way:
 
 # +
@@ -203,6 +207,7 @@ def background_field_rz(theta, n_b, k0, m, x):
            * (1j)**-m * jv(m, k * x[0] * np.sin(theta)))
 
     return (a_r, a_z)
+
 
 def background_field_p(theta, n_b, k0, m, x):
 
@@ -223,9 +228,9 @@ def background_field_p(theta, n_b, k0, m, x):
 #
 # $$
 # \begin{align}
-# & \rho^{\prime} = \rho\left[1 +j \alpha/k_0 \left(\frac{r 
+# & \rho^{\prime} = \rho\left[1 +j \alpha/k_0 \left(\frac{r
 # - r_{dom}}{r~r_{pml}}\right)\right] \\
-# & z^{\prime} = z\left[1 +j \alpha/k_0 \left(\frac{r 
+# & z^{\prime} = z\left[1 +j \alpha/k_0 \left(\frac{r
 # - r_{dom}}{r~r_{pml}}\right)\right] \\
 # & \phi^{\prime} = \phi \\
 # \end{align}
@@ -267,13 +272,14 @@ def background_field_p(theta, n_b, k0, m, x):
 # \end{align}
 # $$
 #
-# For doing these calculations, we define now the
+# For doing these calculations, we define the
 # `pml_coordinate` and `create_mu_eps` functions:
 
 # +
 def pml_coordinate(x, r, alpha, k0, radius_dom, radius_pml):
 
     return (x + 1j * alpha / k0 * x * (r - radius_dom) / (radius_pml * r))
+
 
 def create_eps_mu(pml, x, eps_bkg, mu_bkg):
 
@@ -294,16 +300,16 @@ def create_eps_mu(pml, x, eps_bkg, mu_bkg):
 
 # We can now define some constants and geometrical parameters,
 # and then we can generate the mesh with Gmsh, by using the
-# function `generate_mesh_sphere_axis` in `mesh_sphere_axis.py`: 
+# function `generate_mesh_sphere_axis` in `mesh_sphere_axis.py`:
 
 # +
 # Constants
 um = 1
 nm = um * 10**-3
-epsilon_0 = 8.8541878128 * 10**-12 # Vacuum permittivity
-mu_0 = 4 * np.pi * 10**-7 # Vacuum permeability
-Z0 = np.sqrt(mu_0 / epsilon_0) # Vacuum impedance
-I0 = 0.5 / Z0 # Intensity of electromagnetic field
+epsilon_0 = 8.8541878128 * 10**-12  # Vacuum permittivity
+mu_0 = 4 * np.pi * 10**-7  # Vacuum permeability
+Z0 = np.sqrt(mu_0 / epsilon_0)  # Vacuum impedance
+I0 = 0.5 / Z0  # Intensity of electromagnetic field
 
 # Radius of the sphere
 radius_sph = 0.025 * um
@@ -311,18 +317,19 @@ radius_sph = 0.025 * um
 # Radius of the domain
 radius_dom = 0.200 * um
 
-# Radius for the boundary of the scattering efficiency
+# Radius of the boundary where scattering efficiency
+# is calculated
 radius_scatt = 0.6 * radius_dom
 
 # Radius of the PML shell
-radius_pml = 0.04 * um
+radius_pml = 0.05 * um
 
 # Mesh sizes
-mesh_factor = 0.6
+mesh_factor = 0.8
 in_sph_size = mesh_factor * 2 * nm
 on_sph_size = mesh_factor * 2 * nm
-scatt_size = mesh_factor * 10 * nm
-pml_size = mesh_factor * 10 * nm
+scatt_size = mesh_factor * 5 * nm
+pml_size = mesh_factor * 5 * nm
 
 # Tags for the subdomains
 au_tag = 1
@@ -366,7 +373,7 @@ if have_pyvista:
 
 # We can now define our function space. For the $\hat{\rho}$ and $\hat{z}$
 # components of the electric field, we will use Nedelec elements,
-# while for the $\hat{\phi}$ components we will use Lagrange elements: 
+# while for the $\hat{\phi}$ components we will use Lagrange elements:
 
 degree = 2
 curl_el = FiniteElement("N1curl", domain.ufl_cell(), degree)
@@ -379,6 +386,9 @@ dx = Measure("dx", domain, subdomain_data=cell_tags,
 
 dDom = dx((au_tag, bkg_tag))
 dPml = dx(pml_tag)
+
+# Let's define the background permittivity, the gold permittivity,
+# and a space function for the overall permittivity:
 
 # +
 n_bkg = 1  # Background refractive index
@@ -395,12 +405,17 @@ eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
 eps.x.scatter_forward()
 # -
 
+# We can now define the characteristic parameters of our background field:
+
 wl0 = 0.4 * um  # Wavelength of the background field
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
 deg = np.pi / 180
 theta = 45 * deg  # Angle of incidence of the background field
 m_list = [0, 1]
 
+# Now we can define `eps_pml` and `mu_pml`:
+
+# +
 x = SpatialCoordinate(domain)
 alpha = 5
 r = sqrt(x[0]**2 + x[1]**2)
@@ -414,50 +429,60 @@ pml_coords = as_vector((
         r, alpha, k0, radius_dom, radius_pml)))
 
 eps_pml, mu_pml = create_eps_mu(pml_coords, x, eps_bkg, 1)
+# -
 
+# We can now define other objects that will be used inside our
+# solver loop:
+
+# +
+# Function spaces for saving the solution
 V_dg = fem.VectorFunctionSpace(domain, ("DG", degree))
+V_lagr = fem.FunctionSpace(domain, ("Lagrange", degree))
 
+# Function for saving the rho and z component of the electric field
 Esh_rz_m_dg = fem.Function(V_dg)
+
+# Total field
+Eh_m = fem.Function(V)
 
 n = FacetNormal(domain)
 n_3d = as_vector((n[0], n[1], 0))
 
-# Geometrical cross section of the wire
+# Geometrical cross section of the sphere, for efficiency calculation
 gcs = np.pi * radius_sph**2
 
-# +
+# Marker functions for the scattering efficiency integral
 marker = fem.Function(D)
 scatt_facets = facet_tags.find(scatt_tag)
 incident_cells = mesh.compute_incident_entities(domain, scatt_facets,
                                                 domain.topology.dim - 1,
                                                 domain.topology.dim)
-
 midpoints = mesh.compute_midpoints(
     domain, domain.topology.dim, incident_cells)
 inner_cells = incident_cells[(midpoints[:, 0]**2
                               + midpoints[:, 1]**2) < (radius_scatt)**2]
-
 marker.x.array[inner_cells] = 1
-# -
 
-# Define integration domain for the wire
+# Define integration domain for the gold sphere
 dAu = dx(au_tag)
 
 # Define integration facet for the scattering efficiency
 dS = Measure("dS", domain, subdomain_data=facet_tags)
+# -
 
+# We can now solve our problem for all the chosen harmonic numbers:
+
+# +
 for m in m_list:
-
-    Eh_m = fem.Function(V)
-    Eb_m = fem.Function(V)
 
     # Definition of Trial and Test functions
     Es_m = TrialFunction(V)
     v_m = TestFunction(V)
 
+    # Background field
+    Eb_m = fem.Function(V)
     f_rz = partial(background_field_rz, theta, n_bkg, k0, m)
     f_p = partial(background_field_p, theta, n_bkg, k0, m)
-
     Eb_m.sub(0).interpolate(f_rz)
     Eb_m.sub(1).interpolate(f_p)
 
@@ -478,18 +503,24 @@ for m in m_list:
 
     Esh_rz_m, Esh_p_m = Esh_m.split()
 
+    # Interpolate over rho and z components over DG space
     Esh_rz_m_dg.interpolate(Esh_rz_m)
 
-    with VTXWriter(domain.comm, f"sols/Es_rz_{m}.bp", Esh_rz_m_dg) as f:
+    # Save solutions
+    with VTXWriter(domain.comm, f"sols/Es_rz_{m}_{degree}.bp", Esh_rz_m_dg) as f:
+        f.write(0.0)
+    with VTXWriter(domain.comm, f"sols/Es_p_{m}_{degree}.bp", Esh_p_m) as f:
         f.write(0.0)
 
+    # Define scattered magnetic field
     Hsh_m = 1j * curl_axis(Esh_m, m, x) / Z0 / k0 / n_bkg
 
+    # Total electric field
     Eh_m.x.array[:] = Eb_m.x.array[:] + Esh_m.x.array[:]
 
-    # Quantities for the calculation of efficiencies
-
-    if m == 0:
+    # Efficiencies calculation
+    
+    if m == 0: # initialize and do not add 2 factor
         P = np.pi * inner(cross(Esh_m, conj(Hsh_m)), n_3d) * marker
         Q = np.pi * eps_au.imag * k0 * (inner(Eh_m, Eh_m)) / Z0 / n_bkg
 
@@ -500,7 +531,18 @@ for m in m_list:
         q_abs_fenics = domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
         q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
-    else:  # we can improve it by using m_list instead of m, in that case use elif
+    elif m == m_list[0]: # initialize and add 2 factor
+        P = 2 * np.pi * inner(cross(Esh_m, conj(Hsh_m)), n_3d) * marker
+        Q = 2 * np.pi * eps_au.imag * k0 * (inner(Eh_m, Eh_m)) / Z0 / n_bkg
+
+        q_abs_fenics_proc = (fem.assemble_scalar(
+            fem.form(Q * x[0] * dAu)) / gcs / I0).real
+        q_sca_fenics_proc = (fem.assemble_scalar(
+                             fem.form((P('+') + P('-')) * x[0] * dS(scatt_tag))) / gcs / I0).real
+        q_abs_fenics = domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+        q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
+    
+    else: # do not initialize and add 2 factor
         P = 2 * np.pi * inner(cross(Esh_m, conj(Hsh_m)), n_3d) * marker
         Q = 2 * np.pi * eps_au.imag * k0 * (inner(Eh_m, Eh_m)) / Z0 / n_bkg
 
@@ -512,7 +554,11 @@ for m in m_list:
         q_sca_fenics += domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
 q_ext_fenics = q_abs_fenics + q_sca_fenics
+# -
 
+# Now we can calculate the analytical efficiencies with the `scattnlay` library:
+
+# +
 analyt_effs = scattnlay(np.array(
     [2 * np.pi * radius_sph / wl0 * n_bkg],
     dtype=np.complex128),
@@ -521,7 +567,12 @@ analyt_effs = scattnlay(np.array(
     dtype=np.complex128))
 
 q_ext_analyt, q_sca_analyt, q_abs_analyt = analyt_effs[1:4]
+# -
 
+# Let's compare the analytical and numerical efficiencies, and let's print
+# the results:
+
+# +
 # Error calculation
 err_abs = np.abs(q_abs_analyt - q_abs_fenics) / q_abs_analyt
 err_sca = np.abs(q_sca_analyt - q_sca_fenics) / q_sca_analyt
