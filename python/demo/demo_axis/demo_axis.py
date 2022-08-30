@@ -1,4 +1,4 @@
-# # Scattering from a wire with perfectly matched layer condition
+# # Scattering from a sphere in the axisymmetric formulation
 #
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
