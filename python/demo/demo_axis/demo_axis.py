@@ -138,7 +138,7 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # \end{align}
 # $$
 #
-# It's clear that the last integral is different from zero only when
+# It is clear that the last integral is different from zero only when
 # $m = n$, and therefore we can write:
 #
 # $$
