@@ -43,7 +43,7 @@ class FormMetaClass:
             coeffs: Finite element coefficients that appear in the form
             constants: Constants appearing in the form
             subdomains: Subdomains for integrals
-            mesh: The mesh that the form is deined on
+            mesh: The mesh that the form is defined on
 
         """
         self._code = code
