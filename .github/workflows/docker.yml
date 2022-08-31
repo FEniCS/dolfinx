@@ -35,7 +35,7 @@ on:
 
       ffcx_ref:
         description: "ffcx git ref to checkout"
-        default: "sarah/replace-parameters-options"
+        default: "main"
         type: string 
 
 jobs:
