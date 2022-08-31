@@ -70,7 +70,7 @@ std::size_t hash_local(const T& x)
 
 /// @brief Compute a hash for a distributed (MPI) object.
 ///
-/// A hash is computed on each process for the local part of the obejct.
+/// A hash is computed on each process for the local part of the object.
 /// Then, a hash of the std::vector containing each local hash key in
 /// rank order is returned.
 ///

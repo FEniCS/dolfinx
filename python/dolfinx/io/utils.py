@@ -74,7 +74,7 @@ if _cpp.common.has_adios2:
             self.close()
 
     class FidesWriter(_cpp.io.FidesWriter):
-        """Interface to Fides file formt.
+        """Interface to Fides file format.
 
         Fides supports first order Lagrange finite elements for the
         geometry descriptionand first order Lagrange finite elements for

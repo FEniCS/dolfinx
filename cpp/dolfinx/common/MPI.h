@@ -209,7 +209,7 @@ distribute_to_postoffice(MPI_Comm comm, const std::span<const T>& x,
 /// This function determines local neighborhoods for communication, and
 /// then using MPI neighbourhood collectives to exchange data. It is
 /// scalable if the neighborhoods are relatively small, i.e. each
-/// process communicated with a modest number of othe processes/
+/// process communicated with a modest number of other processes
 ///
 /// @param[in] comm The MPI communicator
 /// @param[in] indices Global indices of the data (row indices) required
@@ -236,7 +236,7 @@ std::vector<T> distribute_from_postoffice(
 /// This function determines local neighborhoods for communication, and
 /// then using MPI neighbourhood collectives to exchange data. It is
 /// scalable if the neighborhoods are relatively small, i.e. each
-/// process communicated with a modest number of othe processes.
+/// process communicated with a modest number of other processes.
 ///
 /// @note The non-scalable version of this function,
 /// MPI::distribute_data1, can be faster up to some number of MPI ranks
