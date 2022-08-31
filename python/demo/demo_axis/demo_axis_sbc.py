@@ -17,8 +17,8 @@ import sys
 from functools import partial
 
 import numpy as np
-from mesh_sphere_axis import generate_mesh_sphere_axis
-#from scattnlay import scattnlay
+from mesh_sphere_axis_sbc import generate_mesh_sphere_axis
+from scattnlay import scattnlay
 from scipy.special import jv, jvp
 
 from dolfinx import fem, mesh, plot
@@ -291,29 +291,6 @@ def background_field_p(theta, n_b, k0, m, x):
 # For doing these calculations, we define the
 # `pml_coordinate` and `create_mu_eps` functions:
 
-# +
-def pml_coordinate(x, r, alpha, k0, radius_dom, radius_pml):
-
-    return (x + 1j * alpha / k0 * x * (r - radius_dom) / (radius_pml * r))
-
-
-def create_eps_mu(pml, x, eps_bkg, mu_bkg):
-
-    J = grad(pml)
-
-    # Transform the 2x2 Jacobian into a 3x3 matrix.
-    J = as_matrix(((J[0, 0], J[0, 1], 0),
-                   (J[1, 0], J[1, 1], 0),
-                   (0, 0, pml[0] / x[0])))
-
-    A = inv(J)
-    eps_pml = det(J) * A * eps_bkg * transpose(A)
-    mu_pml = det(J) * A * mu_bkg * transpose(A)
-    return eps_pml, mu_pml
-
-
-# -
-
 # We can now define some constants and geometrical parameters,
 # and then we can generate the mesh with Gmsh, by using the
 # function `generate_mesh_sphere_axis` in `mesh_sphere_axis.py`:
@@ -331,33 +308,32 @@ I0 = 0.5 / Z0  # Intensity of electromagnetic field
 radius_sph = 0.025 * um
 
 # Radius of the domain
-radius_dom = 1 * um
+radius_dom = 0.8 * um
 
 # Radius of the boundary where scattering efficiency
 # is calculated
-radius_scatt = 0.4 * radius_dom
+radius_scatt = 0.6 * radius_dom
 
 # Radius of the PML shell
-radius_pml = 0.25 * um
+radius_pml = 0.2 * um
 
 # Mesh sizes
 mesh_factor = 1
-in_sph_size = mesh_factor * 2 * nm
-on_sph_size = mesh_factor * 2 * nm
-scatt_size = mesh_factor * 60 * nm
-pml_size = mesh_factor * 40 * nm
+in_sph_size = mesh_factor * 4 * nm
+on_sph_size = mesh_factor * 4 * nm
+scatt_size = mesh_factor * 10 * nm
+pml_size = mesh_factor * 10 * nm
 
 # Tags for the subdomains
 au_tag = 1
 bkg_tag = 2
-pml_tag = 3
-scatt_tag = 4
+scatt_tag = 3
 
 # Mesh generation
 model = generate_mesh_sphere_axis(
     radius_sph, radius_scatt, radius_dom, radius_pml,
     in_sph_size, on_sph_size, scatt_size, pml_size,
-    au_tag, bkg_tag, pml_tag, scatt_tag)
+    au_tag, bkg_tag, scatt_tag)
 
 domain, cell_tags, facet_tags = model_to_mesh(
     model, MPI.COMM_WORLD, 0, gdim=2)
@@ -398,10 +374,9 @@ V = fem.FunctionSpace(domain, MixedElement([curl_el, lagr_el]))
 
 # Measures for subdomains
 dx = Measure("dx", domain, subdomain_data=cell_tags,
-             metadata={'quadrature_degree': 60})
+             metadata={'quadrature_degree': 40})
 
 dDom = dx((au_tag, bkg_tag))
-dPml = dx(pml_tag)
 
 # Let's define the background permittivity, the gold permittivity,
 # and a space function for the overall permittivity:
@@ -429,23 +404,8 @@ deg = np.pi / 180
 theta = 45 * deg  # Angle of incidence of the background field
 m_list = [0, 1]
 
-# Now we can define `eps_pml` and `mu_pml`:
-
-# +
 x = SpatialCoordinate(domain)
-alpha = 5
 r = sqrt(x[0]**2 + x[1]**2)
-
-pml_coords = as_vector((
-    pml_coordinate(
-        x[0],
-        r, alpha, k0, radius_dom, radius_pml),
-    pml_coordinate(
-        x[1],
-        r, alpha, k0, radius_dom, radius_pml)))
-
-eps_pml, mu_pml = create_eps_mu(pml_coords, x, eps_bkg, 1)
-# -
 
 # We can now define other objects that will be used inside our
 # solver loop:
@@ -467,23 +427,11 @@ n_3d = as_vector((n[0], n[1], 0))
 # Geometrical cross section of the sphere, for efficiency calculation
 gcs = np.pi * radius_sph**2
 
-# Marker functions for the scattering efficiency integral
-marker = fem.Function(D)
-scatt_facets = facet_tags.find(scatt_tag)
-incident_cells = mesh.compute_incident_entities(domain, scatt_facets,
-                                                domain.topology.dim - 1,
-                                                domain.topology.dim)
-midpoints = mesh.compute_midpoints(
-    domain, domain.topology.dim, incident_cells)
-inner_cells = incident_cells[(midpoints[:, 0]**2
-                              + midpoints[:, 1]**2) < (radius_scatt)**2]
-marker.x.array[inner_cells] = 1
-
 # Define integration domain for the gold sphere
 dAu = dx(au_tag)
 
 # Define integration facet for the scattering efficiency
-dS = Measure("dS", domain, subdomain_data=facet_tags)
+dsbc = Measure("ds", domain, subdomain_data=facet_tags)
 # -
 
 # We can now solve our problem for all the chosen harmonic numbers:
@@ -508,8 +456,8 @@ for m in m_list:
     F = - inner(curl_Es_m, curl_v_m) * x[0] * dDom \
         + eps * k0 ** 2 * inner(Es_m, v_m) * x[0] * dDom \
         + k0 ** 2 * (eps - eps_bkg) * inner(Eb_m, v_m) * x[0] * dDom \
-        - inner(inv(mu_pml) * curl_Es_m, curl_v_m) * x[0] * dPml \
-        + k0 ** 2 * inner(eps_pml * Es_m, v_m) * x[0] * dPml
+        + (1j * k0 * n_bkg + 1 / r) \
+        * inner(cross(Es_m, n_3d), cross(v_m, n_3d)) * x[0] * dsbc
 
     a, L = lhs(F), rhs(F)
 
@@ -537,35 +485,35 @@ for m in m_list:
     # Efficiencies calculation
 
     if m == 0:  # initialize and do not add 2 factor
-        P = np.pi * inner(cross(Esh_m, conj(Hsh_m)), n_3d) * marker
+        P = np.pi * inner(cross(Esh_m, conj(Hsh_m)), n_3d)
         Q = np.pi * eps_au.imag * k0 * (inner(Eh_m, Eh_m)) / Z0 / n_bkg
 
         q_abs_fenics_proc = (fem.assemble_scalar(
                              fem.form(Q * x[0] * dAu)) / gcs / I0).real
         q_sca_fenics_proc = (fem.assemble_scalar(
-                             fem.form((P('+') + P('-')) * x[0] * dS(scatt_tag))) / gcs / I0).real
+                             fem.form(P * x[0] * dsbc(scatt_tag))) / gcs / I0).real
         q_abs_fenics = domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
         q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
     elif m == m_list[0]:  # initialize and add 2 factor
-        P = 2 * np.pi * inner(cross(Esh_m, conj(Hsh_m)), n_3d) * marker
+        P = 2 * np.pi * inner(cross(Esh_m, conj(Hsh_m)), n_3d)
         Q = 2 * np.pi * eps_au.imag * k0 * (inner(Eh_m, Eh_m)) / Z0 / n_bkg
 
         q_abs_fenics_proc = (fem.assemble_scalar(
             fem.form(Q * x[0] * dAu)) / gcs / I0).real
         q_sca_fenics_proc = (fem.assemble_scalar(
-                             fem.form((P('+') + P('-')) * x[0] * dS(scatt_tag))) / gcs / I0).real
+                             fem.form(P * x[0] * dsbc(scatt_tag))) / gcs / I0).real
         q_abs_fenics = domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
         q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
     else:  # do not initialize and add 2 factor
-        P = 2 * np.pi * inner(cross(Esh_m, conj(Hsh_m)), n_3d) * marker
+        P = 2 * np.pi * inner(cross(Esh_m, conj(Hsh_m)), n_3d)
         Q = 2 * np.pi * eps_au.imag * k0 * (inner(Eh_m, Eh_m)) / Z0 / n_bkg
 
         q_abs_fenics_proc = (fem.assemble_scalar(
             fem.form(Q * x[0] * dAu)) / gcs / I0).real
         q_sca_fenics_proc = (fem.assemble_scalar(
-                             fem.form((P('+') + P('-')) * x[0] * dS(scatt_tag))) / gcs / I0).real
+            fem.form(P * x[0] * dsbc(scatt_tag))) / gcs / I0).real
         q_abs_fenics += domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
         q_sca_fenics += domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
@@ -575,22 +523,18 @@ q_ext_fenics = q_abs_fenics + q_sca_fenics
 # Now we can calculate the analytical efficiencies with the `scattnlay` library:
 
 # +
-# analyt_effs = scattnlay(np.array(
-#    [2 * np.pi * radius_sph / wl0 * n_bkg],
-#    dtype=np.complex128),
-#    np.array(
-#    [np.sqrt(eps_au) / n_bkg],
-#    dtype=np.complex128))
-#
-#q_ext_analyt, q_sca_analyt, q_abs_analyt = analyt_effs[1:4]
+analyt_effs = scattnlay(np.array(
+    [2 * np.pi * radius_sph / wl0 * n_bkg],
+    dtype=np.complex128),
+    np.array(
+    [np.sqrt(eps_au) / n_bkg],
+    dtype=np.complex128))
+
+q_ext_analyt, q_sca_analyt, q_abs_analyt = analyt_effs[1:4]
 # -
 
 # Let's compare the analytical and numerical efficiencies, and let's print
 # the results:
-
-q_abs_analyt = 0.9622728008329892
-q_sca_analyt = 0.07770397394691526
-q_ext_analyt = q_abs_analyt + q_sca_analyt
 
 # +
 # Error calculation

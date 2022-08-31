@@ -13,7 +13,7 @@ from mpi4py import MPI
 
 def generate_mesh_sphere_axis(radius_sph, radius_scatt, radius_dom, radius_pml,
                               in_sph_size, on_sph_size, scatt_size, pml_size,
-                              au_tag, bkg_tag, pml_tag, scatt_tag):
+                              au_tag, bkg_tag, scatt_tag):
 
     gmsh.initialize(sys.argv)
     if MPI.COMM_WORLD.rank == 0:
@@ -21,7 +21,7 @@ def generate_mesh_sphere_axis(radius_sph, radius_scatt, radius_dom, radius_pml,
         gmsh.model.add("geometry")
 
         gmsh.model.occ.addCircle(
-            0, 0, 0, radius_sph * 0.5, angle1=-pi / 2, angle2=pi / 2, tag=1)
+            0, 0, 0, radius_sph * 0.8, angle1=-pi / 2, angle2=pi / 2, tag=1)
         gmsh.model.occ.addCircle(
             0, 0, 0, radius_sph, angle1=-pi / 2, angle2=pi / 2, tag=2)
         gmsh.model.occ.addCircle(
@@ -56,9 +56,8 @@ def generate_mesh_sphere_axis(radius_sph, radius_scatt, radius_dom, radius_pml,
         gmsh.model.occ.synchronize()
 
         gmsh.model.addPhysicalGroup(2, [1, 2], tag=au_tag)
-        gmsh.model.addPhysicalGroup(2, [3, 4], tag=bkg_tag)
-        gmsh.model.addPhysicalGroup(2, [5], tag=pml_tag)
-        gmsh.model.addPhysicalGroup(1, [3], tag=scatt_tag)
+        gmsh.model.addPhysicalGroup(2, [3, 4, 5], tag=bkg_tag)
+        gmsh.model.addPhysicalGroup(1, [5], tag=scatt_tag)
 
         gmsh.model.mesh.setSize([(0, 1)], size=in_sph_size)
         gmsh.model.mesh.setSize([(0, 2)], size=in_sph_size)
@@ -66,8 +65,8 @@ def generate_mesh_sphere_axis(radius_sph, radius_scatt, radius_dom, radius_pml,
         gmsh.model.mesh.setSize([(0, 4)], size=on_sph_size)
         gmsh.model.mesh.setSize([(0, 5)], size=scatt_size)
         gmsh.model.mesh.setSize([(0, 6)], size=scatt_size)
-        gmsh.model.mesh.setSize([(0, 7)], size=pml_size)
-        gmsh.model.mesh.setSize([(0, 8)], size=pml_size)
+        gmsh.model.mesh.setSize([(0, 7)], size=scatt_size)
+        gmsh.model.mesh.setSize([(0, 8)], size=scatt_size)
         gmsh.model.mesh.setSize([(0, 9)], size=pml_size)
         gmsh.model.mesh.setSize([(0, 10)], size=pml_size)
 
