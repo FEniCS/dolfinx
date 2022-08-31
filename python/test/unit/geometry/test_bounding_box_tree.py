@@ -373,7 +373,7 @@ def test_surface_bbtree():
 
 
 def test_sub_bbtree():
-    """Testing point collision with a BoundingBoxTree of sub entitites"""
+    """Testing point collision with a BoundingBoxTree of sub entities"""
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, cell_type=CellType.hexahedron)
     tdim = mesh.topology.dim
     fdim = tdim - 1

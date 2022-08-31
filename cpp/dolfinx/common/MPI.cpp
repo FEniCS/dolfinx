@@ -92,7 +92,7 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm,
                                       const std::span<const int>& edges)
 {
   LOG(INFO)
-      << "Computing communicaton graph edges (using PCX algorithm). Number "
+      << "Computing communication graph edges (using PCX algorithm). Number "
          "of input edges: "
       << edges.size();
 
@@ -152,7 +152,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
                                       const std::span<const int>& edges)
 {
   LOG(INFO)
-      << "Computing communicaton graph edges (using NBX algorithm). Number "
+      << "Computing communication graph edges (using NBX algorithm). Number "
          "of input edges: "
       << edges.size();
 

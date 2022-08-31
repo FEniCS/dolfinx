@@ -215,7 +215,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 {
   // -- Submesh topology
 
-  // Get the verticies in the submesh
+  // Get the vertices in the submesh
   std::vector<std::int32_t> submesh_vertices
       = compute_incident_entities(mesh, entities, dim, 0);
 
@@ -266,7 +266,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Create submesh entity index map
   // TODO Call dolfinx::common::get_owned_indices here? Do we want to
-  // support `entities` possibly haveing a ghost on one process that is
+  // support `entities` possibly having a ghost on one process that is
   // not in `entities` on the owning process?
   std::pair<common::IndexMap, std::vector<int32_t>>
       submesh_entity_index_map_pair

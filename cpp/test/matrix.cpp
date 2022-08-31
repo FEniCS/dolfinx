@@ -55,7 +55,7 @@ void spmv_impl(std::span<const T> values,
 // decomposed into diagonal (Ai[0]) and off diagonal (Ai[1]) blocks:
 //  Ai = |Ai[0] Ai[1]|
 //
-// If A is square, the diagonal block Ai[0] is also square and countains
+// If A is square, the diagonal block Ai[0] is also square and contains
 // only owned columns and rows. The block Ai[1] contains ghost columns
 // (unowned dofs).
 
