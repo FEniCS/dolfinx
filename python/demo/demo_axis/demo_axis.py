@@ -612,3 +612,7 @@ if MPI.COMM_WORLD.rank == 0:
     print(f"The analytical extinction efficiency is {q_ext_analyt}")
     print(f"The numerical extinction efficiency is {q_ext_fenics}")
     print(f"The error is {err_ext*100}%")
+
+    assert err_abs < 0.01
+    assert err_sca < 0.01
+    assert err_ext < 0.01
