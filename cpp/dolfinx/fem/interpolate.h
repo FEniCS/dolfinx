@@ -122,7 +122,7 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0,
   auto apply_inverse_dof_transform
       = element1->get_dof_transformation_function<T>(true, true, false);
 
-  // Creat working array
+  // Create working array
   std::vector<T> local0(element0->space_dimension());
   std::vector<T> local1(element1->space_dimension());
 

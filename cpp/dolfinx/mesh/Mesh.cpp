@@ -12,8 +12,8 @@
 #include "graphbuild.h"
 #include "topologycomputation.h"
 #include "utils.h"
+#include <algorithm>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/utils.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
@@ -215,7 +215,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 {
   // -- Submesh topology
 
-  // Get the verticies in the submesh
+  // Get the vertices in the submesh
   std::vector<std::int32_t> submesh_vertices
       = compute_incident_entities(mesh, entities, dim, 0);
 
@@ -266,7 +266,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Create submesh entity index map
   // TODO Call dolfinx::common::get_owned_indices here? Do we want to
-  // support `entities` possibly haveing a ghost on one process that is
+  // support `entities` possibly having a ghost on one process that is
   // not in `entities` on the owning process?
   std::pair<common::IndexMap, std::vector<int32_t>>
       submesh_entity_index_map_pair
@@ -372,9 +372,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::vector<double> submesh_x(3 * submesh_num_x_dofs);
   for (int i = 0; i < submesh_num_x_dofs; ++i)
   {
-    common::impl::copy_N<3>(
-        std::next(mesh_x.begin(), 3 * submesh_to_mesh_x_dof_map[i]),
-        std::next(submesh_x.begin(), 3 * i));
+    std::copy_n(std::next(mesh_x.begin(), 3 * submesh_to_mesh_x_dof_map[i]), 3,
+                std::next(submesh_x.begin(), 3 * i));
   }
 
   std::vector<std::int32_t> entity_x_dofs;
