@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 /// @file DofMap.h
-/// @brief Degree-of-freedeom map representations ans tools
+/// @brief Degree-of-freedom map representations and tools
 
 #pragma once
 

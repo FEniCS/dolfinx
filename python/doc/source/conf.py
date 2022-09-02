@@ -10,7 +10,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath('.'))
 
-import jupytext_process
+import jupytext_process # noqa
 
 
 jupytext_process.process()
@@ -147,4 +147,4 @@ autoclass_content = "both"
 napoleon_google_docstring = True
 napoleon_use_admonition_for_notes = False
 
-myst_enable_extensions = ["dollarmath",]
+myst_enable_extensions = ["dollarmath", ]

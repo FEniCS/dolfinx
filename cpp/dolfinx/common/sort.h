@@ -183,7 +183,7 @@ std::vector<std::int32_t> sort_by_perm(const std::span<const T>& x,
   std::vector<std::int32_t> perm(shape0);
   std::iota(perm.begin(), perm.end(), 0);
 
-  // Sort by each column, right to left. Col 0 has the most signficant
+  // Sort by each column, right to left. Col 0 has the most significant
   // "digit".
   std::vector<T> column(shape0);
   for (std::size_t i = 0; i < shape1; ++i)
