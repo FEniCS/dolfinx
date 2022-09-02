@@ -14,7 +14,7 @@ TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int32_t,
   std::vector<TestType> vec;
   vec.reserve(vec_size);
 
-  // Gererate a vector of ints with a Uniform Int distribution
+  // Generate a vector of ints with a Uniform Int distribution
   std::uniform_int_distribution<TestType> distribution(0, 10000);
   std::mt19937 engine;
   auto generator = std::bind(distribution, engine);
@@ -34,7 +34,7 @@ TEST_CASE("Test argsort bitset")
 
   std::vector<std::int32_t> arr(shape0 * shape1);
 
-  // Gererate a vector of ints with a Uniform Int distribution
+  // Generate a vector of ints with a Uniform Int distribution
   std::uniform_int_distribution<std::int32_t> distribution(0, 10000);
   std::mt19937 engine;
   auto generator = std::bind(distribution, engine);

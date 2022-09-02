@@ -50,7 +50,7 @@ public:
   ///
   /// @param[in] comm The MPI communicator
   /// @param[in] patterns Rectangular array of sparsity pattern. The
-  ///   patterns must not be finalised. Null block are permited
+  ///   patterns must not be finalised. Null block are permitted
   /// @param[in] maps Pairs of (index map, block size) for each row
   ///   block (maps[0]) and column blocks (maps[1])
   /// @param[in] bs Block sizes for the sparsity pattern entries
