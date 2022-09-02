@@ -55,7 +55,7 @@ constexpr mesh::CellType get_cell_type(int num_vertices, int tdim)
   default:
     throw std::runtime_error("Invalid data");
   }
-};
+}
 
 //-----------------------------------------------------------------------------
 

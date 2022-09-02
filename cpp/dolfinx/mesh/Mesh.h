@@ -135,13 +135,12 @@ Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                  const fem::CoordinateElement& element,
                  std::span<const double> x, std::array<std::size_t, 2> xshape,
-                 GhostMode ghost_mode,
                  const CellPartitionFunction& cell_partitioner);
 
 /// Create a new mesh consisting of a subset of entities in a mesh.
 /// @param[in] mesh The mesh
 /// @param[in] dim Entity dimension
-/// @param[in] entities List of entity indicies in `mesh` to include in
+/// @param[in] entities List of entity indices in `mesh` to include in
 /// the new mesh
 /// @return The new mesh, and maps from the new mesh entities, vertices,
 /// and geometry to the input mesh entities, vertices, and geometry.

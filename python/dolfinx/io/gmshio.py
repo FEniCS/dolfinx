@@ -12,7 +12,7 @@ import numpy.typing as npt
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.mesh import (CellType, Mesh, create_mesh, meshtags,
-                          meshtags_from_entities)
+                          meshtags_from_entities, create_cell_partitioner, GhostMode)
 
 from mpi4py import MPI as _MPI
 
@@ -236,7 +236,8 @@ if _has_gmsh:
         ufl_domain = ufl_mesh(cell_id, gdim)
         gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
         cells = cells[:, gmsh_cell_perm]
-        mesh = create_mesh(comm, cells, x[:, :gdim], ufl_domain)
+        part = create_cell_partitioner(GhostMode.none)
+        mesh = create_mesh(comm, cells, x[:, :gdim], ufl_domain, part)
 
         # Create MeshTags for cells
         local_entities, local_values = _cpp.io.distribute_entity_data(mesh, mesh.topology.dim, cells, cell_values)
