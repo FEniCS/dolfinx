@@ -50,8 +50,7 @@ enum class GhostMode : int
 using CellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
         MPI_Comm comm, int nparts, int tdim,
-        const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-        dolfinx::mesh::GhostMode ghost_mode)>;
+        const dolfinx::graph::AdjacencyList<std::int64_t>& cells)>;
 
 /// Extract topology from cell data, i.e. extract cell vertices
 /// @param[in] cell_type The cell shape
@@ -133,7 +132,7 @@ std::vector<std::int32_t> locate_entities_boundary(
 /// @brief Determine the indices in the geometry data for each vertex of
 /// the given mesh entities.
 ///
-/// @warning This function should be used unless there is no
+/// @warning This function should not be used unless there is no
 /// alternative. It may be removed in the future.
 ///
 /// @param[in] mesh The mesh
@@ -168,7 +167,9 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 /// this rank by applying the default graph partitioner to the dual
 /// graph of the mesh
 /// @return Function that computes the destination ranks for each cell
-CellPartitionFunction create_cell_partitioner(const graph::partition_fn& partfn
+CellPartitionFunction create_cell_partitioner(mesh::GhostMode ghost_mode
+                                              = mesh::GhostMode::none,
+                                              const graph::partition_fn& partfn
                                               = &graph::partition_graph);
 
 /// Compute incident indices

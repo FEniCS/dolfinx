@@ -26,7 +26,6 @@ class AdjacencyList;
 
 namespace dolfinx::mesh
 {
-enum class GhostMode : int;
 enum class CellType;
 
 /// @brief Topology stores the topology of a mesh, consisting of mesh
@@ -182,8 +181,6 @@ private:
 /// @param[in] ghost_owners The owning rank of each ghost cell (ghost
 /// cells are always at the end of the list of `cells`)
 /// @param[in] cell_type The cell shape
-/// @param[in] ghost_mode Type of cell ghosting: none, shared_facet or
-/// shared_vertex - FIXME: to be removed
 /// @param[in] boundary_vertices List of vertices on the exterior of the
 /// local mesh which may be shared with other processes.
 /// @return A distributed mesh topology
@@ -191,7 +188,7 @@ Topology
 create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                 const std::span<const std::int64_t>& original_cell_index,
                 const std::span<const int>& ghost_owners,
-                const CellType& cell_type, GhostMode ghost_mode,
+                const CellType& cell_type,
                 const std::vector<std::int64_t>& boundary_vertices);
 
 /// @brief Get entity indices for entities defined by their vertices.

@@ -308,8 +308,7 @@ refinement::partition(const mesh::Mesh& old_mesh,
   }
 
   auto partitioner = [](MPI_Comm comm, int, int,
-                        const graph::AdjacencyList<std::int64_t>& cell_topology,
-                        mesh::GhostMode)
+                        const graph::AdjacencyList<std::int64_t>& cell_topology)
   {
     const int mpi_rank = MPI::rank(comm);
     const int num_cells = cell_topology.num_nodes();
@@ -322,7 +321,7 @@ refinement::partition(const mesh::Mesh& old_mesh,
   };
 
   return mesh::create_mesh(old_mesh.comm(), cell_topology,
-                           old_mesh.geometry().cmap(), new_coords, xshape, gm,
+                           old_mesh.geometry().cmap(), new_coords, xshape,
                            partitioner);
 }
 //-----------------------------------------------------------------------------
