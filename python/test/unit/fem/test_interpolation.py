@@ -696,8 +696,6 @@ def test_custom_vector_element():
 def test_mixed_interpolation_permuting(cell_type, order):
     random.seed(8)
     mesh = two_cell_mesh(cell_type)
-    V = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", order))
-    run_vector_test(V, order - 1)
 
     def g(x):
         return np.sin(x[1]) + 2 * x[0]
