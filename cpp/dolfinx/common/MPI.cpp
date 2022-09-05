@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "MPI.h"
-#include <algorithm>
 #include <dolfinx/common/log.h>
 #include <iostream>
 
@@ -93,7 +92,7 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm,
                                       const std::span<const int>& edges)
 {
   LOG(INFO)
-      << "Computing communicaton graph edges (using PCX algorithm). Number "
+      << "Computing communication graph edges (using PCX algorithm). Number "
          "of input edges: "
       << edges.size();
 
@@ -153,7 +152,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
                                       const std::span<const int>& edges)
 {
   LOG(INFO)
-      << "Computing communicaton graph edges (using NBX algorithm). Number "
+      << "Computing communication graph edges (using NBX algorithm). Number "
          "of input edges: "
       << edges.size();
 
@@ -181,7 +180,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
     MPI_Iprobe(MPI_ANY_SOURCE, static_cast<int>(tag::consensus_pex), comm,
                &request_pending, &status);
 
-    // Check if message is waiting to be procssed
+    // Check if message is waiting to be processed
     if (request_pending)
     {
       // Receive it
@@ -208,7 +207,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
                   MPI_STATUSES_IGNORE);
       if (flag)
       {
-        // All send have completed, start non-blocking barrier
+        // All sends have completed, start non-blocking barrier
         MPI_Ibarrier(comm, &barrier_request);
         barrier_active = true;
       }

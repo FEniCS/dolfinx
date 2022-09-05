@@ -122,7 +122,7 @@ void interpolate_same_map(Function<T>& u1, const Function<T>& u0,
   auto apply_inverse_dof_transform
       = element1->get_dof_transformation_function<T>(true, true, false);
 
-  // Creat working array
+  // Create working array
   std::vector<T> local0(element0->space_dimension());
   std::vector<T> local1(element1->space_dimension());
 
@@ -476,13 +476,10 @@ void interpolate(Function<T>& u, std::span<const T> f,
 
   // This assumes that any element with an identity interpolation matrix
   // is a point evaluation
-  if (element->interpolation_ident())
+  if (element->map_ident() && element->interpolation_ident())
   {
     // Point evaluation element *and* the geometric map is the identity,
     // e.g. not Piola mapped
-
-    if (!element->map_ident())
-      throw std::runtime_error("Element does not have identity map.");
 
     auto apply_inv_transpose_dof_transformation
         = element->get_dof_transformation_function<T>(true, true, true);
@@ -513,8 +510,13 @@ void interpolate(Function<T>& u, std::span<const T> f,
     // Not a point evaluation, but the geometric map is the identity,
     // e.g. not Piola mapped
 
-    if (_f.extent(0) != 1)
-      throw std::runtime_error("Interpolation data has the wrong shape.");
+    const int element_vs = element->value_size() / element_bs;
+
+    if (element_vs > 1 && element_bs > 1)
+    {
+      throw std::runtime_error(
+          "Interpolation into this element not supported.");
+    }
 
     // Get interpolation operator
     const auto [_Pi, pi_shape] = element->interpolation_operator();
@@ -535,9 +537,16 @@ void interpolate(Function<T>& u, std::span<const T> f,
       std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
       for (int k = 0; k < element_bs; ++k)
       {
-        std::copy_n(std::next(f.begin(), k * f_shape1 + c * num_interp_points),
-                    num_interp_points, ref_data_b.begin());
-        impl::interpolation_apply(Pi, ref_data, std::span(_coeffs), element_bs);
+        for (int i = 0; i < element_vs; ++i)
+        {
+          std::copy_n(
+              std::next(f.begin(), (i + k) * f_shape1
+                                       + c * num_interp_points / element_vs),
+              num_interp_points / element_vs,
+              std::next(ref_data_b.begin(),
+                        i * num_interp_points / element_vs));
+        }
+        impl::interpolation_apply(Pi, ref_data, std::span(_coeffs), 1);
         apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {

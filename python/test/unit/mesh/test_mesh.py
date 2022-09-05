@@ -19,7 +19,7 @@ from dolfinx.cpp.mesh import (create_cell_partitioner, entities_to_geometry,
                               is_simplex)
 from dolfinx.fem import assemble_scalar, form
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
-                          create_rectangle, create_submesh, create_unit_cube,
+                          create_interval, create_rectangle, create_submesh, create_unit_cube,
                           create_unit_interval, create_unit_square,
                           exterior_facet_indices, locate_entities,
                           locate_entities_boundary)
@@ -115,7 +115,7 @@ def mesh_2d():
         MPI.COMM_WORLD, [np.array([0.0, 0.0]),
                          np.array([1., 1.])], [1, 1],
         CellType.triangle, GhostMode.none,
-        create_cell_partitioner(), DiagonalType.left)
+        create_cell_partitioner(GhostMode.none), DiagonalType.left)
     i1 = np.where((mesh2d.geometry.x
                    == (1, 1, 0)).all(axis=1))[0][0]
     mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
@@ -163,7 +163,7 @@ def c5(mesh3d):
 
 @pytest.fixture
 def interval():
-    return create_unit_interval(MPI.COMM_WORLD, 18)
+    return create_interval(MPI.COMM_WORLD, 18, [0.0, 1.0])
 
 
 @pytest.fixture
@@ -543,7 +543,7 @@ def test_empty_rank_mesh():
     tdim = 2
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", ufl.Cell(cell_type.name), 1))
 
-    def partitioner(comm, nparts, local_graph, num_ghost_nodes, ghosting):
+    def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the curent rank"""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
         return graph.create_adjacencylist(dest)
@@ -556,7 +556,7 @@ def test_empty_rank_mesh():
         cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
         x = np.empty((0, 2), dtype=np.float64)
 
-    mesh = _mesh.create_mesh(comm, cells, x, domain, GhostMode.none, partitioner)
+    mesh = _mesh.create_mesh(comm, cells, x, domain, partitioner)
     topology = mesh.topology
 
     # Check number of vertices

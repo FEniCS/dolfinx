@@ -139,7 +139,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
                            disp.data(), MPI_INT64_T, comm, &request);
 
   // FIXME: check that dofs is sorted
-  // Build vector of local dof indicies that have been marked by another
+  // Build vector of local dof indices that have been marked by another
   // process
   const std::array<std::int64_t, 2> range = map.local_range();
   const std::vector<std::int64_t>& ghosts = map.ghosts();

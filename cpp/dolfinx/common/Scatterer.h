@@ -355,7 +355,7 @@ private:
   // Communicator where the source ranks have ghost indices that are
   // owned by the caller, and the destination ranks are the owners of
   // indices in the callers halo region. I.e.,
-  // - in-edges (src) are from ranks that 'ghost' my owned indicies
+  // - in-edges (src) are from ranks that 'ghost' my owned indices
   // - out-edges (dest) are to the owning ranks of my ghost indices
   dolfinx::MPI::Comm _comm1;
 
