@@ -274,7 +274,7 @@ public:
       }
     }
 
-    // Array to hold evaluted Expression
+    // Array to hold evaluated Expression
     std::size_t num_cells = cells.size();
     std::size_t num_points = e.X().second[0];
     xt::xtensor<T, 3> f({num_cells, num_points, value_size});

@@ -11,6 +11,8 @@ import numba
 import numpy as np
 import pytest
 
+import basix
+import basix.ufl_wrapper
 import ufl
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
@@ -620,3 +622,69 @@ def test_interpolate_callable():
 
     with pytest.raises(RuntimeError):
         u0.interpolate(lambda x: np.vstack([x[0], x[1]]))
+
+
+@pytest.mark.parametrize("scalar_element", [
+    ufl.FiniteElement("P", "triangle", 1),
+    ufl.FiniteElement("P", "triangle", 2),
+    ufl.FiniteElement("P", "triangle", 3),
+    ufl.FiniteElement("Q", "quadrilateral", 1),
+    ufl.FiniteElement("Q", "quadrilateral", 2),
+    ufl.FiniteElement("Q", "quadrilateral", 3),
+    ufl.FiniteElement("S", "quadrilateral", 1),
+    ufl.FiniteElement("S", "quadrilateral", 2),
+    ufl.FiniteElement("S", "quadrilateral", 3),
+    ufl.EnrichedElement(ufl.FiniteElement("P", "triangle", 1), ufl.FiniteElement("Bubble", "triangle", 3)),
+    basix.ufl_wrapper._create_enriched_element([
+        basix.ufl_wrapper.create_element("P", "quadrilateral", 1),
+        basix.ufl_wrapper.create_element("Bubble", "quadrilateral", 2)]),
+])
+def test_vector_element_interpolation(scalar_element):
+    """Test interpolation into a range of vector elements."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell().cellname()))
+
+    V = FunctionSpace(mesh, ufl.VectorElement(scalar_element))
+
+    u = Function(V)
+    u.interpolate(lambda x: (x[0], x[1]))
+
+    u2 = Function(V)
+    u2.sub(0).interpolate(lambda x: x[0])
+    u2.sub(1).interpolate(lambda x: x[1])
+
+    assert np.allclose(u2.x.array, u.x.array)
+
+
+def test_custom_vector_element():
+    """Test interpolation into an element with a value size that uses an identity map."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
+
+    wcoeffs = np.eye(6)
+
+    x = [[], [], [], []]
+    x[0].append(np.array([[0., 0.]]))
+    x[0].append(np.array([[1., 0.]]))
+    x[0].append(np.array([[0., 1.]]))
+    for _ in range(3):
+        x[1].append(np.zeros((0, 2)))
+    x[2].append(np.zeros((0, 2)))
+
+    M = [[], [], [], []]
+    for _ in range(3):
+        M[0].append(np.array([[[[1.]], [[0.]]], [[[0.]], [[1.]]]]))
+    for _ in range(3):
+        M[1].append(np.zeros((0, 2, 0, 1)))
+    M[2].append(np.zeros((0, 2, 0, 1)))
+
+    element = basix.create_custom_element(
+        basix.CellType.triangle, [2], wcoeffs, x, M, 0, basix.MapType.identity, False, 1, 1)
+
+    V = FunctionSpace(mesh, basix.ufl_wrapper.BasixElement(element))
+    W = VectorFunctionSpace(mesh, ("Lagrange", 1))
+
+    v = Function(V)
+    w = Function(W)
+    v.interpolate(lambda x: (x[0], x[1]))
+    w.interpolate(lambda x: (x[0], x[1]))
+
+    assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(v - w, v - w) * ufl.dx))), 0)

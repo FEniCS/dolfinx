@@ -20,14 +20,15 @@ using namespace dolfinx;
 namespace
 {
 
-constexpr int N = 4;
+constexpr int N = 8;
 
 void create_mesh_file()
 {
   // Create mesh using all processes and save xdmf
-  auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
-      MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {N, N},
-      mesh::CellType::triangle, mesh::GhostMode::shared_facet));
+  auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
+  auto mesh = std::make_shared<mesh::Mesh>(
+      mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {N, N},
+                             mesh::CellType::triangle, part));
 
   // Save mesh in XDMF format
   io::XDMFFile file(MPI_COMM_WORLD, "mesh.xdmf", "w");
@@ -74,8 +75,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
     int nparts = mpi_size;
     const int tdim = mesh::cell_dim(mesh::CellType::triangle);
     dest = partitioner(subset_comm, nparts, tdim,
-                       graph::regular_adjacency_list(cells, cshape[1]),
-                       mesh::GhostMode::shared_facet);
+                       graph::regular_adjacency_list(cells, cshape[1]));
   }
   CHECK(xshape[1] == 2);
 
@@ -84,9 +84,37 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
       = graph::build::distribute(
           mpi_comm, graph::regular_adjacency_list(cells, cshape[1]), dest);
 
+  // FIXME: improve way to find 'external' vertices
+  // Count the connections of all vertices on owned cells. If there are 6
+  // connections (on a regular triangular mesh) then it is 'internal'.
+  int num_local_cells = cell_nodes.num_nodes() - ghost_owners.size();
+  int ghost_offset = cell_nodes.offsets()[num_local_cells];
+  std::vector<std::int64_t> external_vertices(
+      cell_nodes.array().begin(), cell_nodes.array().begin() + ghost_offset);
+  std::sort(external_vertices.begin(), external_vertices.end());
+  std::vector<int> counts;
+  auto it = external_vertices.begin();
+  while (it != external_vertices.end())
+  {
+    auto it2 = std::find_if(it, external_vertices.end(),
+                            [&](std::int64_t val) { return (val != *it); });
+    counts.push_back(std::distance(it, it2));
+    it = it2;
+  }
+  external_vertices.erase(
+      std::unique(external_vertices.begin(), external_vertices.end()),
+      external_vertices.end());
+  for (std::size_t i = 0; i < counts.size(); ++i)
+    if (counts[i] == 6)
+      external_vertices[i] = -1;
+  std::sort(external_vertices.begin(), external_vertices.end());
+  it = std::find_if(external_vertices.begin(), external_vertices.end(),
+                    [](std::int64_t i) { return (i != -1); });
+  external_vertices.erase(external_vertices.begin(), it);
+
   mesh::Topology topology = mesh::create_topology(
       mpi_comm, cell_nodes, original_cell_index, ghost_owners,
-      cmap.cell_shape(), mesh::GhostMode::shared_facet);
+      cmap.cell_shape(), external_vertices);
   int tdim = topology.dim();
 
   mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, cmap,
@@ -149,7 +177,8 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
   SECTION("parmetis")
   {
     auto partfn = graph::parmetis::partitioner();
-    CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(partfn)));
+    CHECK_NOTHROW(test_distributed_mesh(
+        mesh::create_cell_partitioner(mesh::GhostMode::none, partfn)));
   }
 #endif
 }

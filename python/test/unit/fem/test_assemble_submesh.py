@@ -14,7 +14,8 @@ from dolfinx import fem
 from dolfinx.mesh import (GhostMode, create_box, create_rectangle,
                           create_submesh, create_unit_cube, create_unit_square,
                           locate_entities, locate_entities_boundary,
-                          meshtags_from_entities, create_mesh)
+                          meshtags_from_entities, create_mesh,
+                          create_cell_partitioner)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -50,8 +51,9 @@ def create_random_mesh(corners, n, ghost_mode):
         cells, points = np.empty([0, 3]), np.empty([0, 2])
 
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "triangle", 1))
+    partitioner = create_cell_partitioner(ghost_mode)
     return create_mesh(MPI.COMM_WORLD, cells, points, domain,
-                       ghost_mode=ghost_mode)
+                       partitioner=partitioner)
 
 
 def assemble_forms_0(mesh, space, k):

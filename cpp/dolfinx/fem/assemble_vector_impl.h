@@ -12,8 +12,8 @@
 #include "Form.h"
 #include "FunctionSpace.h"
 #include "utils.h"
+#include <algorithm>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -127,8 +127,8 @@ void _lift_bc_cells(
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
-                              std::next(coordinate_dofs.begin(), 3 * i));
+      std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
+                  std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     // Size data structure for assembly
@@ -283,8 +283,8 @@ void _lift_bc_exterior_facets(
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
-                              std::next(coordinate_dofs.begin(), 3 * i));
+      std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
+                  std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     // Size data structure for assembly
@@ -390,14 +390,14 @@ void _lift_bc_interior_facets(
     auto x_dofs0 = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs0[i]),
-                              std::next(cdofs0.begin(), 3 * i));
+      std::copy_n(std::next(x_g.begin(), 3 * x_dofs0[i]), 3,
+                  std::next(cdofs0.begin(), 3 * i));
     }
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
-      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs1[i]),
-                              std::next(cdofs1.begin(), 3 * i));
+      std::copy_n(std::next(x_g.begin(), 3 * x_dofs1[i]), 3,
+                  std::next(cdofs1.begin(), 3 * i));
     }
 
     // Get dof maps for cells and pack
@@ -573,8 +573,8 @@ void assemble_cells(
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
-                              std::next(coordinate_dofs.begin(), 3 * i));
+      std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
+                  std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     // Tabulate vector for cell
@@ -652,8 +652,8 @@ void assemble_exterior_facets(
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
-                              std::next(coordinate_dofs.begin(), 3 * i));
+      std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
+                  std::next(coordinate_dofs.begin(), 3 * i));
     }
 
     // Tabulate element vector
@@ -730,14 +730,14 @@ void assemble_interior_facets(
     auto x_dofs0 = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs0[i]),
-                              std::next(cdofs0.begin(), 3 * i));
+      std::copy_n(std::next(x_g.begin(), 3 * x_dofs0[i]), 3,
+                  std::next(cdofs0.begin(), 3 * i));
     }
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
-      common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs1[i]),
-                              std::next(cdofs1.begin(), 3 * i));
+      std::copy_n(std::next(x_g.begin(), 3 * x_dofs1[i]), 3,
+                  std::next(cdofs1.begin(), 3 * i));
     }
 
     // Get dofmaps for cells
