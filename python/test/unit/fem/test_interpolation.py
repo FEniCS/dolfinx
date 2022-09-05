@@ -19,6 +19,7 @@ from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
 
 from mpi4py import MPI
 
+
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type", [
         CellType.interval,
@@ -103,6 +104,41 @@ def one_cell_mesh(cell_type):
 
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
     return create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
+
+
+def two_cell_mesh(cell_type):
+    if cell_type == CellType.interval:
+        points = np.array([[0.], [1.], [-1.]])
+        cells = [[0, 1], [0, 2]]
+    if cell_type == CellType.triangle:
+        # Define equilateral triangles with area 1
+        root = 3 ** 0.25  # 4th root of 3
+        points = np.array([[0., 0.], [2 / root, 0.],
+                           [1 / root, root], [1 / root, -root]])
+        cells = [[0, 1, 2], [1, 0, 3]]
+    elif cell_type == CellType.tetrahedron:
+        # Define regular tetrahedra with volume 1
+        s = 2 ** 0.5 * 3 ** (1 / 3)  # side length
+        points = np.array([[0., 0., 0.], [s, 0., 0.],
+                           [s / 2, s * np.sqrt(3) / 2, 0.],
+                           [s / 2, s / 2 / np.sqrt(3), s * np.sqrt(2 / 3)],
+                           [s / 2, s / 2 / np.sqrt(3), -s * np.sqrt(2 / 3)]])
+        cells = [[0, 1, 2, 3], [0, 2, 1, 4]]
+    elif cell_type == CellType.quadrilateral:
+        # Define unit quadrilaterals (area 1)
+        points = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.], [0., -1.], [1., -1.]])
+        cells = [[0, 1, 2, 3], [5, 1, 4, 0]]
+    elif cell_type == CellType.hexahedron:
+        # Define unit hexahedra (volume 1)
+        points = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.],
+                           [1., 1., 0.], [0., 0., 1.], [1., 0., 1.],
+                           [0., 1., 1.], [1., 1., 1.], [0., 0., -1.],
+                           [1., 0., -1.], [0., 1., -1.], [1., 1., -1.]])
+        cells = [[0, 1, 2, 3, 4, 5, 6, 7], [9, 11, 8, 10, 1, 3, 0, 2]]
+
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    return mesh
 
 
 def run_scalar_test(V, poly_order):
@@ -584,3 +620,102 @@ def test_interpolate_callable():
 
     with pytest.raises(RuntimeError):
         u0.interpolate(lambda x: np.vstack([x[0], x[1]]))
+
+
+@pytest.mark.parametrize("scalar_element", [
+    ufl.FiniteElement("P", "triangle", 1),
+    ufl.FiniteElement("P", "triangle", 2),
+    ufl.FiniteElement("P", "triangle", 3),
+    ufl.FiniteElement("Q", "quadrilateral", 1),
+    ufl.FiniteElement("Q", "quadrilateral", 2),
+    ufl.FiniteElement("Q", "quadrilateral", 3),
+    ufl.FiniteElement("S", "quadrilateral", 1),
+    ufl.FiniteElement("S", "quadrilateral", 2),
+    ufl.FiniteElement("S", "quadrilateral", 3),
+    ufl.EnrichedElement(ufl.FiniteElement("P", "triangle", 1), ufl.FiniteElement("Bubble", "triangle", 3)),
+    basix.ufl_wrapper._create_enriched_element([
+        basix.ufl_wrapper.create_element("P", "quadrilateral", 1),
+        basix.ufl_wrapper.create_element("Bubble", "quadrilateral", 2)]),
+])
+def test_vector_element_interpolation(scalar_element):
+    """Test interpolation into a range of vector elements."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell().cellname()))
+
+    V = FunctionSpace(mesh, ufl.VectorElement(scalar_element))
+
+    u = Function(V)
+    u.interpolate(lambda x: (x[0], x[1]))
+
+    u2 = Function(V)
+    u2.sub(0).interpolate(lambda x: x[0])
+    u2.sub(1).interpolate(lambda x: x[1])
+
+    assert np.allclose(u2.x.array, u.x.array)
+
+
+def test_custom_vector_element():
+    """Test interpolation into an element with a value size that uses an identity map."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
+
+    wcoeffs = np.eye(6)
+
+    x = [[], [], [], []]
+    x[0].append(np.array([[0., 0.]]))
+    x[0].append(np.array([[1., 0.]]))
+    x[0].append(np.array([[0., 1.]]))
+    for _ in range(3):
+        x[1].append(np.zeros((0, 2)))
+    x[2].append(np.zeros((0, 2)))
+
+    M = [[], [], [], []]
+    for _ in range(3):
+        M[0].append(np.array([[[[1.]], [[0.]]], [[[0.]], [[1.]]]]))
+    for _ in range(3):
+        M[1].append(np.zeros((0, 2, 0, 1)))
+    M[2].append(np.zeros((0, 2, 0, 1)))
+
+    element = basix.create_custom_element(
+        basix.CellType.triangle, [2], wcoeffs, x, M, 0, basix.MapType.identity, False, 1, 1)
+
+    V = FunctionSpace(mesh, basix.ufl_wrapper.BasixElement(element))
+    W = VectorFunctionSpace(mesh, ("Lagrange", 1))
+
+    v = Function(V)
+    w = Function(W)
+    v.interpolate(lambda x: (x[0], x[1]))
+    w.interpolate(lambda x: (x[0], x[1]))
+
+    assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(v - w, v - w) * ufl.dx))), 0)
+
+
+@pytest.mark.skip_in_parallel
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
+@pytest.mark.parametrize("order", range(1, 5))
+def test_mixed_interpolation_permuting(cell_type, order):
+    random.seed(8)
+    mesh = two_cell_mesh(cell_type)
+
+    def g(x):
+        return np.sin(x[1]) + 2 * x[0]
+
+    x = ufl.SpatialCoordinate(mesh)
+    dgdy = ufl.cos(x[1])
+
+    curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), 1)
+    vlag_el = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    lagr_el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), order)
+
+    V = FunctionSpace(mesh, ufl.MixedElement([curl_el, lagr_el]))
+    Eb_m = Function(V)
+    Eb_m.sub(1).interpolate(g)
+    diff = Eb_m[2].dx(1) - dgdy
+    error = assemble_scalar(form(ufl.dot(diff, diff) * ufl.dx))
+
+    V = FunctionSpace(mesh, ufl.MixedElement([vlag_el, lagr_el]))
+    Eb_m = Function(V)
+    Eb_m.sub(1).interpolate(g)
+    diff = Eb_m[2].dx(1) - dgdy
+    error2 = assemble_scalar(form(ufl.dot(diff, diff) * ufl.dx))
+
+    assert np.isclose(error, error2)
+>>>>>>> 4197fa6a69 (Fix permuting of Lagrange spaces inside mixed elements (#2347))
