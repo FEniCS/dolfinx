@@ -147,14 +147,12 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
   {
     ufcx_finite_element* ufcx_sub_element = e.sub_elements[i];
     _sub_elements.push_back(std::make_shared<FiniteElement>(*ufcx_sub_element));
-    if (_sub_elements[i]->needs_dof_permutations()
-        and !_needs_dof_transformations)
+    if (_sub_elements[i]->needs_dof_permutations())
     {
       _needs_dof_permutations = true;
     }
     if (_sub_elements[i]->needs_dof_transformations())
     {
-      _needs_dof_permutations = false;
       _needs_dof_transformations = true;
     }
   }
@@ -519,22 +517,7 @@ FiniteElement::get_dof_permutation_function(bool inverse,
 {
   if (!needs_dof_permutations())
   {
-    if (!needs_dof_transformations())
-    {
-      // If this element shouldn't be permuted, return a function that
-      // does nothing
-      return [](const std::span<std::int32_t>&, std::uint32_t) {};
-    }
-    else
-    {
-      // If this element shouldn't be permuted but needs
-      // transformations, return a function that throws an error
-      return [](const std::span<std::int32_t>&, std::uint32_t)
-      {
-        throw std::runtime_error(
-            "Permutations should not be applied for this element.");
-      };
-    }
+    return [](const std::span<std::int32_t>&, std::uint32_t) {};
   }
 
   if (!_sub_elements.empty())
