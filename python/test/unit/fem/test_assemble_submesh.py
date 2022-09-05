@@ -76,7 +76,9 @@ def assemble_forms_0(mesh, space, k):
     dofs = fem.locate_dofs_topological(V, facet_dim, facets)
 
     bc_func = fem.Function(V)
-    bc_func.interpolate(lambda x: x[0]**2)
+    # TODO Interpolate when fix for parallel has been merged
+    bc_func.x.array[:] = 1.5
+    # bc_func.interpolate(lambda x: x[0]**2)
 
     bc = fem.dirichletbc(bc_func, dofs)
 
