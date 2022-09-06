@@ -271,10 +271,8 @@ def test_manual_integration_domains():
     g.interpolate(lambda x: x[1]**2)
 
     def create_forms(dx, ds, dS):
-        a = form(ufl.inner(g * u, v) * (dx(0) + dx(7) + ds(6))
-                 + ufl.inner(g * u("+"), v("+") + v("-")) * dS(3))
-        L = form(ufl.inner(g, v) * (dx(0) + dx(7) + ds(6))
-                 + ufl.inner(g, v("+") + v("-")) * dS(3))
+        a = form(ufl.inner(g * u, v) * (dx(0) + dx(7) + ds(6)) + ufl.inner(g * u("+"), v("+") + v("-")) * dS(3))
+        L = form(ufl.inner(g, v) * (dx(0) + dx(7) + ds(6)) + ufl.inner(g, v("+") + v("-")) * dS(3))
         return (a, L)
 
     # Create forms and assemble
