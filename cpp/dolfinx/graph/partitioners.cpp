@@ -117,7 +117,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
 
   // Discover src ranks. ParMETIS/KaHIP are not scalable (holding an
   // array of size equal to the comm size), so no extra harm in using
-  // non-scalable neighbourgood detection (which might be faster for
+  // non-scalable neighbourhood detection (which might be faster for
   // small rank counts).
   const std::vector<int> src
       = dolfinx::MPI::compute_graph_edges_pcx(comm, dest);
@@ -497,8 +497,9 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     {
       offsets.resize(graph.num_nodes() + 1);
       std::iota(offsets.begin(), offsets.end(), 0);
-      dests = std::vector<std::int32_t>(node_partition.begin(),
-                                        node_partition.end());
+      dests = std::vector<std::int32_t>(
+          node_partition.begin(),
+          std::next(node_partition.begin(), graph.num_nodes()));
     }
 
     // Clean up SCOTCH objects

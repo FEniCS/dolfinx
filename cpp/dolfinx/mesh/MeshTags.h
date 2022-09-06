@@ -131,7 +131,7 @@ private:
 /// @param[in] values Tag values for each entity in `entities`. The
 /// length of `values` must be equal to number of rows in `entities`.
 /// @note Entities that do not exist on this rank are ignored.
-/// @warning `entities` must not conatined duplicate entities.
+/// @warning `entities` must not contain duplicate entities.
 template <typename T>
 MeshTags<T> create_meshtags(const std::shared_ptr<const Mesh>& mesh, int dim,
                             const graph::AdjacencyList<std::int32_t>& entities,
