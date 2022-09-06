@@ -738,12 +738,12 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
         "Piecewise constants are not (yet) supported by VTXWriter");
   }
 
-  // FIXME: is the below check adequate for dectecting a
+  // FIXME: is the below check adequate for detecting a
   // Lagrange element? Check that element is Lagrange
   if (!element0->interpolation_ident())
   {
     throw std::runtime_error("Only Lagrange functions are "
-                             "supported. Interpolate Functions before ouput.");
+                             "supported. Interpolate Functions before output.");
   }
 
   // Check that all functions are first order Lagrange
@@ -827,13 +827,13 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
         "https://gitlab.kitware.com/vtk/vtk/-/issues/18458.");
   }
 
-  // FIXME: is the below check adequate for dectecting a Lagrange
+  // FIXME: is the below check adequate for detecting a Lagrange
   // element?
   // Check that element is Lagrange
   if (!element0->interpolation_ident())
   {
     throw std::runtime_error("Only (discontinuous) Lagrange functions are "
-                             "supported. Interpolate Functions before ouput.");
+                             "supported. Interpolate Functions before output.");
   }
 
   // Check that all functions come from same element type
