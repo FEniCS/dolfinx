@@ -341,7 +341,7 @@ radius_scatt = 0.4 * radius_dom
 radius_pml = 0.25 * um
 
 # Mesh sizes
-mesh_factor = 1
+mesh_factor = 0.9
 in_sph_size = mesh_factor * 2 * nm
 on_sph_size = mesh_factor * 2 * nm
 scatt_size = mesh_factor * 60 * nm
