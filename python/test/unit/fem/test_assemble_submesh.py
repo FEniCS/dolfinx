@@ -693,9 +693,13 @@ def test_codim_1_assembly(d, n, k, space, ghost_mode, random_ordering):
     L = fem.form(ufl.inner(f, v_sm) * ds,
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD,
+                  mode=PETSc.ScatterMode.REVERSE)
 
     L_2 = fem.form(ufl.inner(f, v_m) * ds)
     b_2 = fem.petsc.assemble_vector(L_2)
+    b_2.ghostUpdate(addv=PETSc.InsertMode.ADD,
+                    mode=PETSc.ScatterMode.REVERSE)
 
     assert np.isclose(b.norm(), b_2.norm())
 
