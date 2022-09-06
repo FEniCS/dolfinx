@@ -66,15 +66,15 @@ def generate_mesh_wire(radius_wire, l_scatt, l_dom, l_pml,
                                            delta_pml, delta_pml)
         pml4 = gmsh.model.occ.addRectangle(l_dom / 2, -l_pml / 2, 0,
                                            delta_pml, delta_pml)
-
         corner_pmls = [(dim, pml1), (dim, pml2), (dim, pml3), (dim, pml4)]
+
         # X pmls
         pml5 = gmsh.model.occ.addRectangle(-l_pml / 2, -l_dom / 2, 0,
                                            delta_pml, l_dom)
         pml6 = gmsh.model.occ.addRectangle(l_dom / 2, -l_dom / 2, 0,
                                            delta_pml, l_dom)
-
         x_pmls = [(dim, pml5), (dim, pml6)]
+
         # Y pmls
         pml7 = gmsh.model.occ.addRectangle(-l_dom / 2, l_dom / 2, 0,
                                            l_dom, delta_pml)

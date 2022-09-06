@@ -12,7 +12,7 @@
 #
 # ## Equations, problem definition and implementation
 #
-# First of all, let's import the modules that will be used:
+# First, we import the required modules
 
 # +
 import sys
@@ -36,8 +36,7 @@ from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from mesh_wire_pml import generate_mesh_wire
 
 from dolfinx import fem, mesh, plot
-from dolfinx.io import VTXWriter
-from dolfinx.io.gmshio import model_to_mesh
+from dolfinx.io import VTXWriter, gmshio
 from ufl import (FacetNormal, FiniteElement, Measure, SpatialCoordinate,
                  TestFunction, TrialFunction, algebra, as_matrix, as_vector,
                  conj, cross, det, grad, inner, inv, lhs, rhs, sqrt, transpose)
@@ -47,15 +46,14 @@ from petsc4py import PETSc
 
 # -
 
-# Since we want to solve time-harmonic Maxwell's equation, we need to
-# specify that the demo should only be executed with DOLFINx complex mode,
-# otherwise it would not work:
+# Since we want to solve time-harmonic Maxwell's equation, we require that the demo is
+# executed with DOLFINx (PETSc) complex mode.
 
 if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
     exit(0)
 
-# Now, let's consider an infinite metallic wire immersed in
+# We consider an infinite metallic wire immersed in
 # a background medium (e.g. vacuum or water). Let's now
 # consider the plane cutting the wire perpendicularly to
 # its axis at a generic point. Such plane $\Omega=\Omega_{m}
@@ -65,7 +63,8 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # matched layer (PML) surrounding the domains. PMLs are
 # reflectionless layers that gradually absorb waves impinging
 # on them, therefore allowing us to truncate the domain size.
-# We want to calculate the electric field $\mathbf{E}_s$
+#
+# The goal of this demo is to calculate the electric field $\mathbf{E}_s$
 # scattered by the wire when a background wave $\mathbf{E}_b$
 # impinges on it. We will consider a background plane wave at
 # $\lambda_0$ wavelength, which can be written analytically as:
@@ -85,13 +84,12 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # to the $\Omega$ domain and perpendicular to each other,
 # i.e. $\hat{\mathbf{u}}_k \perp \hat{\mathbf{u}}_p$
 # (transversality condition of plane waves).
-# If we call $x$ and $y$ the horizontal
-# and vertical axis in our $\Omega$ domain,
+# Using a Cartesian coordinate system for $\Omega$,
 # and by defining $k_x = n_bk_0\cos\theta$ and
 # $k_y = n_bk_0\sin\theta$, with $\theta$ being the angle
 # defined by the propagation direction $\hat{\mathbf{u}}_k$
 # and the horizontal axis $\hat{\mathbf{u}}_x$,
-# we can write more explicitly:
+# we have:
 #
 # $$
 # \mathbf{E}_b = -\sin\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
@@ -104,34 +102,27 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # +
 
 
-def background_field(theta, n_b, k0, x):
+def background_field(theta: float, n_b:float, k0:complex,
+                     x: np.typing.NDArray[float]):
 
     kx = n_b * k0 * np.cos(theta)
     ky = n_b * k0 * np.sin(theta)
     phi = kx * x[0] + ky * x[1]
-
-    ax = np.sin(theta)
-    ay = np.cos(theta)
-
-    return (-ax * np.exp(1j * phi), ay * np.exp(1j * phi))
+    return (-np.sin(theta) * np.exp(1j * phi), np.cos(theta) * np.exp(1j * phi))
 
 # -
 
-# Let's now define the $\nabla\times$ operator for 2d vector, since
-# we will use it later:
+# For convenience, we define the $\nabla\times$ operator for a 2D vector
 
 # +
 
 
 def curl_2d(a):
-
     return as_vector((0, 0, a[1].dx(0) - a[0].dx(1)))
 
 # -
 
-# As said before, we are going to implement a perfectly matched layer (PML)
-# for this problem. What a PML does is to gradually absorb waves impinging
-# them. Mathematically, this effect can be embedded by using a complex
+# a PML gradually absorb waves impinging them. Mathematically, this effect can be embedded by using a complex
 # coordinate system of this kind:
 #
 # \begin{align}
@@ -146,14 +137,14 @@ def curl_2d(a):
 # coordinate transformation in the following way:
 
 
-def pml_coordinates(x, alpha, k0, l_dom, l_pml):
-
+def pml_coordinates(x, alpha: float, k0: complex,
+                    l_dom: float, l_pml: float):
     return (x + 1j * alpha / k0 * x
             * (algebra.Abs(x) - l_dom / 2)
             / (l_pml / 2 - l_dom / 2)**2)
 
 
-# Next we define some mesh specific parameters:
+# We use the following domain specific parameters
 
 # +
 # Constants
@@ -199,15 +190,14 @@ model = generate_mesh_wire(
     in_wire_size, on_wire_size, scatt_size, pml_size,
     au_tag, bkg_tag, scatt_tag, pml_tag)
 
-domain, cell_tags, facet_tags = model_to_mesh(
+domain, cell_tags, facet_tags = gmshio.model_to_mesh(
     model, MPI.COMM_WORLD, 0, gdim=2)
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
 # -
 
-# Let's have a visual check of the mesh and of the subdomains
-# by plotting them with PyVista:
+# We visualize the mesh and subdomains with [PyVista](https://docs.pyvista.org/)
 
 if have_pyvista:
     topology, cell_types, geometry = plot.create_vtk_mesh(domain, 2)
@@ -221,13 +211,13 @@ if have_pyvista:
     plotter.add_mesh(grid, show_edges=True)
     plotter.view_xy()
     if not pyvista.OFF_SCREEN:
-        plotter.show()
+        plotter.show(interactive=True)
     else:
         pyvista.start_xvfb()
         figure = plotter.screenshot("wire_mesh_pml.png",
                                     window_size=[800, 800])
 
-# In the image, we can distinguish 5 different subdomains: one for the gold
+# We observe five different subdomains: one for the gold
 # wire (`au_tag`), one for the background medium (`bkg_tag`), one for the
 # PML corners (`pml_tag`), one for the PML rectangles along $x$
 # (`pml_tag + 1`), and one for the PML rectangles along $y$ (`pml_tag + 2`).
@@ -235,15 +225,12 @@ if have_pyvista:
 # as specified here below:
 #
 # \begin{align}
-# \text{PML corners} \rightarrow \mathbf{r}^\prime & = (x^\prime, y^\prime) \\
-# \text{PML rectangles along x} \rightarrow
+# \text{PML}_\text{corners} \rightarrow \mathbf{r}^\prime & = (x^\prime, y^\prime) \\
+# \text{PML}_\text{rectangles along x} \rightarrow
 #                                       \mathbf{r}^\prime & = (x^\prime, y) \\
-# \text{PML rectangles along y} \rightarrow
-#                                       \mathbf{r}^\prime & = (x, y^\prime)
+# \text{PML}_\text{rectangles along y} \rightarrow
+#                                       \mathbf{r}^\prime & = (x, y^\prime).
 # \end{align}
-#
-# where $x^\prime$ and $y^\prime$ are our complex coordinates
-# as defined before.
 #
 # Now we define some other problem specific parameters:
 
@@ -254,10 +241,9 @@ k0 = 2 * np.pi / wl0  # Wavevector of the background field
 deg = np.pi / 180
 theta = 0 * deg  # Angle of incidence of the background field
 
-# And then the function space used for the electric field.
-# We will use a 3rd order
+# We use a 3rd order
 # [Nedelec (first kind)](https://defelement.com/elements/nedelec1.html)
-# element:
+# element to represent the electric field:
 #
 
 degree = 3
@@ -330,7 +316,6 @@ x_pml = as_vector((pml_coordinates(x[0], alpha, k0, l_dom, l_pml), x[1]))
 
 # PML rectangles along y
 y_pml = as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
-
 # -
 
 # We can then express this coordinate systems as
@@ -457,21 +442,19 @@ problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={
 Esh = problem.solve()
 # -
 
-# Let's now save the solution in a VTK file. In order to do so,
+# Let's now save the solution in a `bp`-file. In order to do so,
 # we need to interpolate our solution discretized with Nedelec elements
-# into a discontinuous lagrange space, and then we can save the interpolated
-# function as a .bp folder:
+# into a compatible discontinuous Lagrange space.
 
 # +
 V_dg = fem.VectorFunctionSpace(domain, ("DG", degree))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 
-with VTXWriter(domain.comm, "Esh.bp", Esh_dg) as f:
-    f.write(0.0)
+with VTXWriter(domain.comm, "Esh.bp", Esh_dg) as vtx:
+    vtx.write(0.0)
 # -
 
-# For a quick visualization we can use PyVista, as done for the mesh.
 # For more information about saving and visualizing vector fields
 # discretized with Nedelec elements, check [this](
 # https://docs.fenicsproject.org/dolfinx/main/python/demos/demo_interpolation-io.html)
@@ -510,27 +493,25 @@ E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
 E_dg = fem.Function(V_dg)
 E_dg.interpolate(E)
 
-with VTXWriter(domain.comm, "E.bp", E_dg) as f:
-    f.write(0.0)
+with VTXWriter(domain.comm, "E.bp", E_dg) as vtx:
+    vtx.write(0.0)
 # -
 
-# Often it is useful to calculate the norm of the electric field:
+# ## Post-processing
+# We use `dolfinx.fem.Expression` to interpolate the norm of the electric field
+# into a suitable function space.
 #
 # $$
 # ||\mathbf{E}_s|| = \sqrt{\mathbf{E}_s\cdot\bar{\mathbf{E}}_s}
 # $$
-#
-# which in DOLFINx can be retrieved in this way:
 
-# ||E||
 lagr_el = FiniteElement("CG", domain.ufl_cell(), 2)
-norm_func = sqrt(inner(Esh, Esh))
 V_normEsh = fem.FunctionSpace(domain, lagr_el)
-norm_expr = fem.Expression(norm_func, V_normEsh.element.interpolation_points())
+norm_expr = fem.Expression(sqrt(inner(Esh, Esh)), V_normEsh.element.interpolation_points())
 normEsh = fem.Function(V_normEsh)
 normEsh.interpolate(norm_expr)
 
-# Now we can validate our formulation by calculating the so-called
+# To validate the formulation we calculate the
 # absorption, scattering and extinction efficiencies, which are
 # quantities that define how much light is absorbed and scattered
 # by the wire. First of all, we calculate the analytical efficiencies
@@ -538,13 +519,9 @@ normEsh.interpolate(norm_expr)
 # separate file:
 
 q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
-    eps_au,
-    n_bkg,
-    wl0,
-    radius_wire)
+    eps_au, n_bkg, wl0, radius_wire)
 
-# Now we can calculate the numerical efficiencies. The full mathematical
-# procedure is provided in (cite the first demo)
+# We calculate the numerical efficiencies in the same way as done in (cite the first demo)
 
 # +
 # Vacuum impedance
