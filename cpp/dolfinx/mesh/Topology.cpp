@@ -13,7 +13,6 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
-#include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <numeric>
@@ -885,7 +884,7 @@ Topology mesh::create_topology(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
     const std::span<const std::int64_t>& original_cell_index,
     const std::span<const int>& ghost_owners, const CellType& cell_type,
-    GhostMode ghost_mode, const std::vector<std::int64_t>& boundary_vertices)
+    const std::vector<std::int64_t>& boundary_vertices)
 {
   common::Timer timer("Topology: create");
 
@@ -968,19 +967,15 @@ Topology mesh::create_topology(
 
   // Create an index map for cells
   std::shared_ptr<common::IndexMap> index_map_c;
-  if (ghost_mode == GhostMode::none)
-    index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells);
-  else
-  {
-    // Get global indices of ghost cells
-    std::span cell_idx(original_cell_index);
-    const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
-        comm, cell_idx.first(cells.num_nodes() - ghost_owners.size()),
-        std::span(original_cell_index).last(ghost_owners.size()), ghost_owners);
 
-    index_map_c = std::make_shared<common::IndexMap>(
-        comm, num_local_cells, cell_ghost_indices, ghost_owners);
-  }
+  // Get global indices of ghost cells
+  std::span cell_idx(original_cell_index);
+  const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
+      comm, cell_idx.first(cells.num_nodes() - ghost_owners.size()),
+      std::span(original_cell_index).last(ghost_owners.size()), ghost_owners);
+
+  index_map_c = std::make_shared<common::IndexMap>(
+      comm, num_local_cells, cell_ghost_indices, ghost_owners);
 
   // Send and receive  ((input vertex index) -> (new global index, owner
   // rank)) data with neighbours (for vertices on 'true domain
@@ -1012,7 +1007,6 @@ Topology mesh::create_topology(
       ghost_vertex_owners.push_back(unowned_vertex_data[i + 2]); // Owning rank
     }
 
-    if (ghost_mode != GhostMode::none)
     {
       // TODO: avoid building global_to_local_vertices
       std::vector<std::pair<std::int64_t, std::int32_t>>
@@ -1083,8 +1077,7 @@ Topology mesh::create_topology(
                  { return std::pair<std::int64_t, std::int32_t>(idx0, idx1); });
   std::sort(global_to_local_vertices.begin(), global_to_local_vertices.end());
 
-  const std::size_t num_local_nodes
-      = ghost_mode == GhostMode::none ? num_local_cells : cells.num_nodes();
+  const std::size_t num_local_nodes = cells.num_nodes();
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells_local_idx
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           convert_to_local_indexing(cells, num_local_nodes,

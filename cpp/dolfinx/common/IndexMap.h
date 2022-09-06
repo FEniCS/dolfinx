@@ -201,7 +201,7 @@ public:
   /// @brief Build a list of owned indices that are ghosted by another
   /// rank.
   /// @return The local index of owned indices that are ghosts on other
-  /// rank(s). The indicies are unique and sorted.
+  /// rank(s). The indices are unique and sorted.
   std::vector<std::int32_t> shared_indices() const;
 
   /// @brief Ordered set of MPI ranks that own caller's ghost indices.

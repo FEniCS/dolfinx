@@ -36,7 +36,7 @@
 # You can build an optimised version of the complete FEniCS environment for
 # your platform using the commands:
 #
-#    echo '{ "cffi_extra_compile_args" : ["-O2", "-march=native" ] }' > dolfinx/docker/dolfinx_jit_parameters.json
+#    echo '{ "cffi_extra_compile_args" : ["-O2", "-march=native" ] }' > dolfinx/docker/dolfinx_jit_options.json
 #    docker build --target dolfinx --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" --build-arg DOLFINX_CMAKE_CXX_FLAGS="-march=native" .
 #
 # You can build an optimised version of the FEniCS development environment
@@ -46,16 +46,16 @@
 #
 
 
-ARG ADIOS2_VERSION=2.8.2
-ARG GMSH_VERSION=4_10_1
+ARG ADIOS2_VERSION=2.8.3
+ARG GMSH_VERSION=4_10_5
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=2
 ARG KAHIP_VERSION=3.14
 ARG NUMPY_VERSION=1.22.4
 ARG PYBIND11_VERSION=2.10.0
-ARG PETSC_VERSION=3.17.3
-ARG SLEPC_VERSION=3.17.1
-ARG PYVISTA_VERSION=0.35.2
+ARG PETSC_VERSION=3.17.4
+ARG SLEPC_VERSION=3.17.2
+ARG PYVISTA_VERSION=0.36.1
 ARG XTENSOR_VERSION=0.24.2
 ARG XTL_VERSION=0.7.4
 
@@ -212,7 +212,7 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
 #     rm -rf /tmp/*
 
 # Note: HDF5 CMake install has numerous bugs and inconsistencies. Test carefully.
-# HDF5 overides CMAKE_INSTALL_PREFIX by default, hence it is set
+# HDF5 overrides CMAKE_INSTALL_PREFIX by default, hence it is set
 # below to ensure that HDF5 is installed into a path where it can be
 # found.
 RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
@@ -393,8 +393,8 @@ ONBUILD ADD dolfinx/ /src/dolfinx/
 
 # These files are empty by default, i.e. they do nothing.
 # The user can set them at build time if they wish.
-ONBUILD ADD dolfinx/docker/dolfinx_jit_parameters.json /root/.config/dolfinx/dolfinx_jit_parameters.json
-ONBUILD ADD dolfinx/docker/ffcx_parameters.json /root/.config/ffcx/ffcx_parameters.json
+ONBUILD ADD dolfinx/docker/dolfinx_jit_options.json /root/.config/dolfinx/dolfinx_jit_options.json
+ONBUILD ADD dolfinx/docker/ffcx_options.json /root/.config/ffcx/ffcx_options.json
 
 # The following ARGS are used in the DOLFINx layer.
 # They are safe defaults.
