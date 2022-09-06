@@ -16,17 +16,6 @@
 namespace dolfinx::common
 {
 
-namespace impl
-{
-/// std::copy_n-type function with compile-time loop bound
-template <int N, class InputIt, class OutputIt>
-inline void copy_N(InputIt first, OutputIt result)
-{
-  for (int i = 0; i < N; ++i)
-    *result++ = *first++;
-}
-} // namespace impl
-
 /// Sort two arrays based on the values in array @p indices. Any
 /// duplicate indices and the corresponding value are removed. In the
 /// case of duplicates, the entry with the smallest value is retained.
@@ -43,8 +32,7 @@ sort_unique(const U& indices, const V& values)
 
   using T = typename std::pair<typename U::value_type, typename V::value_type>;
   std::vector<T> data(indices.size());
-  std::transform(indices.cbegin(), indices.cend(), values.cbegin(),
-                 data.begin(),
+  std::transform(indices.begin(), indices.end(), values.begin(), data.begin(),
                  [](auto& idx, auto& v) -> T {
                    return {idx, v};
                  });
@@ -82,7 +70,7 @@ std::size_t hash_local(const T& x)
 
 /// @brief Compute a hash for a distributed (MPI) object.
 ///
-/// A hash is computed on each process for the local part of the obejct.
+/// A hash is computed on each process for the local part of the object.
 /// Then, a hash of the std::vector containing each local hash key in
 /// rank order is returned.
 ///

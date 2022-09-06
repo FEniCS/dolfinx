@@ -43,23 +43,4 @@ py::array_t<typename Sequence::value_type> as_pyarray(Sequence&& seq)
   return as_pyarray(std::move(seq), std::array{seq.size()});
 }
 
-/// Create a py::array_t that shares data with an
-/// xtensor array. The C++ object owns the data, and the
-/// py::array_t object keeps the C++ object alive.
-// From https://github.com/pybind/pybind11/issues/1042
-template <typename U>
-auto xt_as_pyarray(U&& x)
-{
-  auto shape = x.shape();
-  auto data = x.data();
-  auto strides = x.strides();
-  std::transform(strides.begin(), strides.end(), strides.begin(),
-                 [](auto s) { return s * sizeof(typename U::value_type); });
-  std::unique_ptr<U> x_ptr = std::make_unique<U>(std::move(x));
-  auto capsule = py::capsule(x_ptr.get(), [](void* p)
-                             { std::unique_ptr<U>(reinterpret_cast<U*>(p)); });
-  x_ptr.release();
-
-  return py::array_t<typename U::value_type>(shape, strides, data, capsule);
-}
 } // namespace dolfinx_wrappers

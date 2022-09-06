@@ -17,6 +17,7 @@ import cffi
 import numba
 import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
+import numpy.typing
 import pytest
 
 import dolfinx
@@ -47,7 +48,7 @@ index_size = np.dtype(PETSc.IntType).itemsize
 
 if index_size == 8:
     c_int_t = "int64_t"
-    ctypes_index = ctypes.c_int64
+    ctypes_index: numpy.typing.DTypeLike = ctypes.c_int64
 elif index_size == 4:
     c_int_t = "int32_t"
     ctypes_index = ctypes.c_int32
@@ -85,9 +86,10 @@ else:
         raise
 
 # Get the PETSc MatSetValuesLocal function via ctypes
+# ctypes does not support static types well, ignore type check errors
 MatSetValues_ctypes = petsc_lib_ctypes.MatSetValuesLocal
-MatSetValues_ctypes.argtypes = (ctypes.c_void_p, ctypes_index, ctypes.POINTER(
-    ctypes_index), ctypes_index, ctypes.POINTER(ctypes_index), ctypes.c_void_p, ctypes.c_int)
+MatSetValues_ctypes.argtypes = [ctypes.c_void_p, ctypes_index, ctypes.POINTER(  # type: ignore
+    ctypes_index), ctypes_index, ctypes.POINTER(ctypes_index), ctypes.c_void_p, ctypes.c_int]  # type: ignore
 del petsc_lib_ctypes
 
 
@@ -351,7 +353,7 @@ def test_custom_mesh_loop_rank1():
     ffcxtype = "double _Complex" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "double"
     b3 = Function(V)
     ufcx_form, module, code = dolfinx.jit.ffcx_jit(
-        mesh.comm, L, form_compiler_params={"scalar_type": ffcxtype})
+        mesh.comm, L, form_compiler_options={"scalar_type": ffcxtype})
 
     nptype = "complex128" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "float64"
     # First 0 for "cell" integrals, second 0 for the first one, i.e. default domain

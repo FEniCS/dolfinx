@@ -8,10 +8,10 @@
 import functools
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.common import (IndexMap, ScatterMode, git_commit_hash,  # noqa
-                                has_adios2, has_debug, has_kahip, has_parmetis)
+from dolfinx.cpp.common import (IndexMap, git_commit_hash, has_adios2,  # noqa
+                                has_debug, has_kahip, has_parmetis)
 
-__all__ = ["IndexMap", "Timer", "timed", "ScatterMode"]
+__all__ = ["IndexMap", "Timer", "timed"]
 
 TimingType = _cpp.common.TimingType
 Reduction = _cpp.common.Reduction
@@ -41,7 +41,7 @@ class Timer:
         with Timer() as t:
             costly_call_1()
             costly_call_2()
-            print(\"Ellapsed time so far: %s\" % t.elapsed()[0])
+            print(\"Elapsed time so far: %s\" % t.elapsed()[0])
 
     The timer is started when entering context manager and timing
     ends when exiting it. It is also possible to start and stop a

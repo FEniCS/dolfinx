@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 Garth N. Wells
+# Copyright (C) 2018-2022 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -245,7 +245,10 @@ def test_assemble_manifold():
     assert np.isclose(A.norm(), 25.0199)
 
 
-@ pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
+@pytest.mark.parametrize("mode", [
+    GhostMode.none,
+    GhostMode.shared_facet
+])
 def test_matrix_assembly_block(mode):
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic
@@ -254,8 +257,10 @@ def test_matrix_assembly_block(mode):
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
+    P2 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     V0 = FunctionSpace(mesh, P0)
     V1 = FunctionSpace(mesh, P1)
+    V2 = FunctionSpace(mesh, P2)
 
     # Locate facets on boundary
     facetdim = mesh.topology.dim - 1
@@ -266,22 +271,28 @@ def test_matrix_assembly_block(mode):
     bc = dirichletbc(u_bc, bdofsV1, V1)
 
     # Define variational problem
-    u, p = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
-    v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
+    u, p, r = ufl.TrialFunction(V0), ufl.TrialFunction(V1), ufl.TrialFunction(V2)
+    v, q, s = ufl.TestFunction(V0), ufl.TestFunction(V1), ufl.TestFunction(V2)
     f = 1.0
     g = -3.0
     zero = Function(V0)
 
     a00 = inner(u, v) * dx
     a01 = inner(p, v) * dx
+    a02 = inner(r, v) * dx
     a10 = inner(u, q) * dx
     a11 = inner(p, q) * dx
+    a12 = inner(r, q) * dx
+    a20 = inner(u, s) * dx
+    a21 = inner(p, s) * dx
+    a22 = inner(r, s) * dx
 
     L0 = zero * inner(f, v) * dx
     L1 = inner(g, q) * dx
+    L2 = inner(g, s) * dx
 
-    a_block = form([[a00, a01], [a10, a11]])
-    L_block = form([L0, L1])
+    a_block = form([[a00, a01, a02], [a10, a11, a12], [a20, a21, a22]])
+    L_block = form([L0, L1, L2])
 
     # Monolithic blocked
     A0 = assemble_matrix_block(a_block, bcs=[bc])
@@ -291,11 +302,30 @@ def test_matrix_assembly_block(mode):
     Anorm0 = A0.norm()
     bnorm0 = b0.norm()
 
+    # Prepare a block problem with "None" on (1, 1) diagonal
+    a_block_none = form([[a00, a01, a02], [None, None, a12], [a20, a21, a22]])
+
+    try:
+        A0 = assemble_matrix_block(a_block_none, bcs=[bc])
+    except RuntimeError:
+        pass
+    else:
+        raise RuntimeError("DirichletBC for 'None' diagonal block must raise.")
+
     # Nested (MatNest)
-    A1 = assemble_matrix_nest(a_block, bcs=[bc], mat_types=[["baij", "aij"], ["aij", ""]])
+    A1 = assemble_matrix_nest(a_block, bcs=[bc], mat_types=[["baij", "aij", "aij"],
+                                                            ["aij", "", "aij"],
+                                                            ["aij", "aij", "aij"]])
     A1.assemble()
     Anorm1 = nest_matrix_norm(A1)
     assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
+
+    try:
+        A0 = assemble_matrix_nest(a_block_none, bcs=[bc])
+    except RuntimeError:
+        pass
+    else:
+        raise RuntimeError("DirichletBC for 'None' diagonal block must raise.")
 
     b1 = assemble_vector_nest(L_block)
     apply_lifting_nest(b1, a_block, bcs=[bc])
@@ -309,13 +339,13 @@ def test_matrix_assembly_block(mode):
     assert bnorm0 == pytest.approx(bnorm1, 1.0e-12)
 
     # Monolithic version
-    E = P0 * P1
-    W = FunctionSpace(mesh, E)
-    u0, u1 = ufl.TrialFunctions(W)
-    v0, v1 = ufl.TestFunctions(W)
+    W = FunctionSpace(mesh, ufl.MixedElement([P0, P1, P2]))
+    u0, u1, u2 = ufl.TrialFunctions(W)
+    v0, v1, v2 = ufl.TestFunctions(W)
     a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
-        u1, v0) * dx
-    L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
+        u1, v0) * dx + inner(u0, v2) * dx + inner(u1, v2) * dx + inner(u2, v2) * dx \
+        + inner(u2, v0) * dx + inner(u2, v1) * dx
+    L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx + inner(g, v2) * dx
     a, L = form(a), form(L)
 
     bdofsW_V1 = locate_dofs_topological(W.sub(1), mesh.topology.dim - 1, bndry_facets)
@@ -331,7 +361,7 @@ def test_matrix_assembly_block(mode):
     assert b2.norm() == pytest.approx(bnorm0, 1.0e-9)
 
 
-@ pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
+@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_solve_block(mode):
     """Solve a two-field mass-matrix like problem with block matrix approaches
     and test that solution is the same"""
@@ -452,7 +482,7 @@ def test_assembly_solve_block(mode):
     assert x2norm == pytest.approx(x0norm, 1.0e-10)
 
 
-@ pytest.mark.parametrize("mesh", [
+@pytest.mark.parametrize("mesh", [
     create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
     create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.shared_facet),
     create_unit_cube(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.none),
@@ -659,7 +689,7 @@ def test_basic_interior_facet_assembly():
     assert isinstance(b, PETSc.Vec)
 
 
-@ pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
+@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_basic_assembly_constant(mode):
     """Tests assembly with Constant
 
@@ -842,7 +872,7 @@ def test_vector_types():
     c0 = _cpp.fem.pack_constants(L)
     c1 = _cpp.fem.pack_coefficients(L)
     _cpp.fem.assemble_vector(x0.array, L, c0, c1)
-    x0.scatter_reverse(_cpp.common.ScatterMode.add)
+    x0.scatter_reverse(la.ScatterMode.add)
 
     c = Constant(mesh, np.complex128(1))
     L = inner(c, v) * ufl.dx
@@ -851,7 +881,7 @@ def test_vector_types():
     c0 = _cpp.fem.pack_constants(L)
     c1 = _cpp.fem.pack_coefficients(L)
     _cpp.fem.assemble_vector(x1.array, L, c0, c1)
-    x1.scatter_reverse(_cpp.common.ScatterMode.add)
+    x1.scatter_reverse(la.ScatterMode.add)
 
     c = Constant(mesh, np.float32(1))
     L = inner(c, v) * ufl.dx
@@ -860,10 +890,10 @@ def test_vector_types():
     c0 = _cpp.fem.pack_constants(L)
     c1 = _cpp.fem.pack_coefficients(L)
     _cpp.fem.assemble_vector(x2.array, L, c0, c1)
-    x2.scatter_reverse(_cpp.common.ScatterMode.add)
+    x2.scatter_reverse(la.ScatterMode.add)
 
     assert np.linalg.norm(x0.array - x1.array) == pytest.approx(0.0)
-    assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-8)
+    assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-7)
 
 
 def test_assemble_empty_rank_mesh():
@@ -872,7 +902,7 @@ def test_assemble_empty_rank_mesh():
     cell_type = CellType.triangle
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", ufl.Cell(cell_type.name), 1))
 
-    def partitioner(comm, nparts, local_graph, num_ghost_nodes, ghosting):
+    def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the curent rank"""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
         return graph.create_adjacencylist(dest)
@@ -887,7 +917,7 @@ def test_assemble_empty_rank_mesh():
         cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
         x = np.empty((0, 2), dtype=np.float64)
 
-    mesh = create_mesh(comm, cells, x, domain, GhostMode.none, partitioner)
+    mesh = create_mesh(comm, cells, x, domain, partitioner)
 
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -919,3 +949,33 @@ def test_assemble_empty_rank_mesh():
     ksp.solve(b, x)
 
     assert np.allclose(x.array, 10.0)
+
+
+@pytest.mark.parametrize("mode", [
+    GhostMode.none,
+    GhostMode.shared_facet
+])
+def test_matrix_assembly_rectangular(mode):
+    """Test assembly of block rectangular block matrices"""
+    msh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
+    V0 = FunctionSpace(msh, ("Lagrange", 1))
+    V1 = V0.clone()
+    u = ufl.TrialFunction(V0)
+    v0, v1 = ufl.TestFunction(V0), ufl.TestFunction(V1)
+
+    a1 = form(ufl.inner(u, v0) * ufl.dx)
+    A1 = assemble_matrix(a1, bcs=[])
+    A1.assemble()
+
+    a2 = form([[ufl.inner(u, v0) * ufl.dx],
+              [ufl.inner(u, v1) * ufl.dx]])
+
+    A2 = assemble_matrix_block(a2, bcs=[])
+    A2.assemble()
+    assert A2.norm() == pytest.approx(np.sqrt(2) * A1.norm())
+
+    A2 = assemble_matrix_nest(a2, bcs=[])
+    A2.assemble()
+    for row in range(2):
+        A_sub = A2.getNestSubMatrix(row, 0)
+        assert A_sub.equal(A1)

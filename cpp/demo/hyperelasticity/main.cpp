@@ -60,7 +60,7 @@ public:
     return [&](const Vec x, Vec)
     {
       // Assemble b and update ghosts
-      xtl::span<T> b(_b.mutable_array());
+      std::span<T> b(_b.mutable_array());
       std::fill(b.begin(), b.end(), 0.0);
       fem::assemble_vector<T>(b, *_l);
       VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
@@ -73,7 +73,7 @@ public:
       VecGetSize(x_local, &n);
       const T* array = nullptr;
       VecGetArrayRead(x_local, &array);
-      fem::set_bc<T>(b, _bcs, xtl::span<const T>(array, n), -1.0);
+      fem::set_bc<T>(b, _bcs, std::span<const T>(array, n), -1.0);
       VecRestoreArrayRead(x, &array);
     };
   }
@@ -129,9 +129,10 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Create mesh and define function space
-    auto mesh = std::make_shared<mesh::Mesh>(mesh::create_box(
-        MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {10, 10, 10},
-        mesh::CellType::tetrahedron, mesh::GhostMode::none));
+    auto mesh = std::make_shared<mesh::Mesh>(
+        mesh::create_box(MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
+                         {10, 10, 10}, mesh::CellType::tetrahedron,
+                         mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
     auto V = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
         functionspace_form_hyperelasticity_F_form, "u", mesh));
@@ -181,7 +182,7 @@ int main(int argc, char* argv[])
                                          return xt::isclose(xt::row(x, 0), 1.0);
                                        });
     auto bcs = std::vector{
-        std::make_shared<const fem::DirichletBC<T>>(xt::xarray<T>{0, 0, 0},
+        std::make_shared<const fem::DirichletBC<T>>(std::vector<T>{0, 0, 0},
                                                     bdofs_left, V),
         std::make_shared<const fem::DirichletBC<T>>(u_rotation, bdofs_right)};
 

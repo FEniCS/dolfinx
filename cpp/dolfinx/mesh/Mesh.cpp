@@ -12,15 +12,13 @@
 #include "graphbuild.h"
 #include "topologycomputation.h"
 #include "utils.h"
+#include <algorithm>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/utils.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <memory>
-#include <xtensor/xsort.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -31,7 +29,7 @@ namespace
 template <typename T>
 graph::AdjacencyList<T>
 reorder_list(const graph::AdjacencyList<T>& list,
-             const xtl::span<const std::int32_t>& nodemap)
+             const std::span<const std::int32_t>& nodemap)
 {
   // Copy existing data to keep ghost values (not reordered)
   std::vector<T> data(list.array());
@@ -62,28 +60,26 @@ reorder_list(const graph::AdjacencyList<T>& list,
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        const fem::CoordinateElement& element,
-                       const xt::xtensor<double, 2>& x,
+                       std::span<const double> x,
+                       std::array<std::size_t, 2> xshape,
                        mesh::GhostMode ghost_mode)
 {
-  return create_mesh(comm, cells, element, x, ghost_mode,
-                     create_cell_partitioner());
+  return create_mesh(comm, cells, element, x, xshape,
+                     create_cell_partitioner(ghost_mode));
 }
 //-----------------------------------------------------------------------------
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
                        const fem::CoordinateElement& element,
-                       const xt::xtensor<double, 2>& x,
-                       mesh::GhostMode ghost_mode,
+                       std::span<const double> x,
+                       std::array<std::size_t, 2> xshape,
                        const mesh::CellPartitionFunction& cell_partitioner)
 {
-  if (ghost_mode == GhostMode::shared_vertex)
-    throw std::runtime_error("Ghost mode via vertex currently disabled.");
-
   const fem::ElementDofLayout dof_layout = element.create_dof_layout();
 
   // Function top build geometry. Used to scope memory operations.
   auto build_topology = [](auto comm, auto& element, auto& dof_layout,
-                           auto& cells, auto ghost_mode, auto& cell_partitioner)
+                           auto& cells, auto& cell_partitioner)
   {
     // -- Partition topology
 
@@ -99,14 +95,12 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // it is just the identity
 
     // Compute the destination rank for cells on this process via graph
-    // partitioning. Always get the ghost cells via facet, though these
-    // may be discarded later.
+    // partitioning.
     const int size = dolfinx::MPI::size(comm);
     const int tdim = cell_dim(element.cell_shape());
     const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
         comm, size, tdim,
-        extract_topology(element.cell_shape(), dof_layout, cells),
-        GhostMode::shared_facet);
+        extract_topology(element.cell_shape(), dof_layout, cells));
 
     // -- Distribute cells (topology, includes higher-order 'nodes')
 
@@ -121,6 +115,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 
     // Extract cell 'topology', i.e. extract the vertices for each cell
     // and discard any 'higher-order' nodes
+
     graph::AdjacencyList<std::int64_t> cells_extracted
         = extract_topology(element.cell_shape(), dof_layout, cell_nodes);
 
@@ -129,14 +124,17 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // Build local dual graph for owned cells to apply re-ordering to
     const std::int32_t num_owned_cells
         = cells_extracted.num_nodes() - ghost_owners.size();
-    const std::vector<int> remap
-        = graph::reorder_gps(std::get<0>(build_local_dual_graph(
-            xtl::span<const std::int64_t>(
+
+    auto [graph, unmatched_facets, max_v, facet_attached_cells]
+        = build_local_dual_graph(
+            std::span<const std::int64_t>(
                 cells_extracted.array().data(),
                 cells_extracted.offsets()[num_owned_cells]),
-            xtl::span<const std::int32_t>(cells_extracted.offsets().data(),
+            std::span<const std::int32_t>(cells_extracted.offsets().data(),
                                           num_owned_cells + 1),
-            tdim)));
+            tdim);
+
+    const std::vector<int> remap = graph::reorder_gps(graph);
 
     // Create re-ordered cell lists (leaves ghosts unchanged)
     std::vector<std::int64_t> original_cell_index(original_cell_index0.size());
@@ -150,17 +148,28 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 
     // -- Create Topology
 
+    // Boundary vertices are marked as unknown
+    std::vector<std::int64_t> boundary_vertices(unmatched_facets);
+    std::sort(boundary_vertices.begin(), boundary_vertices.end());
+    boundary_vertices.erase(
+        std::unique(boundary_vertices.begin(), boundary_vertices.end()),
+        boundary_vertices.end());
+
+    // Remove -1 if it occurs in boundary vertices (may occur in mixed topology)
+    if (boundary_vertices.size() > 0 and boundary_vertices[0] == -1)
+      boundary_vertices.erase(boundary_vertices.begin());
+
     // Create cells and vertices with the ghosting requested. Input
     // topology includes cells shared via facet, but ghosts will be
     // removed later if not required by ghost_mode.
     return std::pair{create_topology(comm, cells_extracted, original_cell_index,
                                      ghost_owners, element.cell_shape(),
-                                     ghost_mode),
+                                     boundary_vertices),
                      std::move(cell_nodes)};
   };
 
-  auto [topology, cell_nodes] = build_topology(comm, element, dof_layout, cells,
-                                               ghost_mode, cell_partitioner);
+  auto [topology, cell_nodes]
+      = build_topology(comm, element, dof_layout, cells, cell_partitioner);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
@@ -168,47 +177,25 @@ Mesh mesh::create_mesh(MPI_Comm comm,
   for (int e = 1; e < tdim; ++e)
   {
     if (dof_layout.num_entity_dofs(e) > 0)
-    {
-      auto [cell_entity, entity_vertex, index_map]
-          = compute_entities(comm, topology, e);
-      if (cell_entity)
-        topology.set_connectivity(cell_entity, tdim, e);
-      if (entity_vertex)
-        topology.set_connectivity(entity_vertex, e, 0);
-      if (index_map)
-        topology.set_index_map(e, index_map);
-    }
+      topology.create_entities(e);
   }
 
-  // Function top build geometry. Used to scope memory operations.
-  auto build_geometry
-      = [](auto comm, auto& cell_nodes, auto& topology, auto& element, auto& x)
-  {
-    int tdim = topology.dim();
-    int num_cells = topology.index_map(tdim)->size_local()
-                    + topology.index_map(tdim)->num_ghosts();
+  if (element.needs_dof_permutations())
+    topology.create_entity_permutations();
 
-    // Remove ghost cells from geometry data, if not required
-    cell_nodes.offsets().resize(num_cells + 1);
-    cell_nodes.array().resize(cell_nodes.offsets().back());
-
-    if (element.needs_dof_permutations())
-      topology.create_entity_permutations();
-
-    return create_geometry(comm, topology, element, cell_nodes, x, x.shape(1));
-  };
-
-  Geometry geometry = build_geometry(comm, cell_nodes, topology, element, x);
+  Geometry geometry
+      = create_geometry(comm, topology, element, cell_nodes, x, xshape[1]);
   return Mesh(comm, std::move(topology), std::move(geometry));
 }
 //-----------------------------------------------------------------------------
 std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>>
 mesh::create_submesh(const Mesh& mesh, int dim,
-                     const xtl::span<const std::int32_t>& entities)
+                     const std::span<const std::int32_t>& entities)
 {
-  // Submesh topology
-  // Get the verticies in the submesh
+  // -- Submesh topology
+
+  // Get the vertices in the submesh
   std::vector<std::int32_t> submesh_vertices
       = compute_incident_entities(mesh, entities, dim, 0);
 
@@ -226,8 +213,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   auto submesh_vertex_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_vertex_index_map_pair.first));
 
-  // Create a map from the (local) vertices in the submesh to the (local)
-  // vertices in the mesh.
+  // Create a map from the (local) vertices in the submesh to the
+  // (local) vertices in the mesh
   std::vector<int32_t> submesh_to_mesh_vertex_map(
       submesh_owned_vertices.begin(), submesh_owned_vertices.end());
   submesh_to_mesh_vertex_map.reserve(submesh_vertex_index_map->size_local()
@@ -243,48 +230,39 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // Get the entities in the submesh that are owned by this process
   auto mesh_entity_index_map = mesh.topology().index_map(dim);
   assert(mesh_entity_index_map);
+
   std::vector<std::int32_t> submesh_owned_entities;
   std::copy_if(entities.begin(), entities.end(),
                std::back_inserter(submesh_owned_entities),
-               [mesh_entity_index_map](std::int32_t e)
-               { return e < mesh_entity_index_map->size_local(); });
+               [size = mesh_entity_index_map->size_local()](std::int32_t e)
+               { return e < size; });
 
-  // Create a map from the (local) entities in the submesh to the (local)
-  // entities in the mesh, and create the submesh entity index map.
+  // Create a map from the (local) entities in the submesh to the
+  // (local) entities in the mesh, and create the submesh entity index
+  // map.
   std::vector<int32_t> submesh_to_mesh_entity_map(
       submesh_owned_entities.begin(), submesh_owned_entities.end());
   std::shared_ptr<common::IndexMap> submesh_entity_index_map;
-  // If the entity dimension is the same as the input mesh topological
-  // dimension, add ghost entities to the submesh. If not, do not add ghost
-  // entities, because in general, not all expected ghost entities would be
-  // present.
-  if (mesh.topology().dim() == dim)
-  {
-    // TODO Call dolfinx::common::get_owned_indices here? Do we want to
-    // support `entities` possibly haveing a ghost on one process that is not
-    // in `entities` on the owning process?
-    std::pair<common::IndexMap, std::vector<int32_t>>
-        submesh_entity_index_map_pair
-        = mesh_entity_index_map->create_submap(submesh_owned_entities);
-    submesh_entity_index_map = std::make_shared<common::IndexMap>(
-        std::move(submesh_entity_index_map_pair.first));
 
-    // Add ghost entities to the entity map
-    submesh_to_mesh_entity_map.reserve(
-        submesh_entity_index_map->size_local()
-        + submesh_entity_index_map->num_ghosts());
-    std::transform(submesh_entity_index_map_pair.second.begin(),
-                   submesh_entity_index_map_pair.second.end(),
-                   std::back_inserter(submesh_to_mesh_entity_map),
-                   [size_local = mesh_entity_index_map->size_local()](
-                       std::int32_t entity_index)
-                   { return size_local + entity_index; });
-  }
-  else
-  {
-    submesh_entity_index_map = std::make_shared<common::IndexMap>(
-        mesh.comm(), submesh_owned_entities.size());
-  }
+  // Create submesh entity index map
+  // TODO Call dolfinx::common::get_owned_indices here? Do we want to
+  // support `entities` possibly having a ghost on one process that is
+  // not in `entities` on the owning process?
+  std::pair<common::IndexMap, std::vector<int32_t>>
+      submesh_entity_index_map_pair
+      = mesh_entity_index_map->create_submap(submesh_owned_entities);
+  submesh_entity_index_map = std::make_shared<common::IndexMap>(
+      std::move(submesh_entity_index_map_pair.first));
+
+  // Add ghost entities to the entity map
+  submesh_to_mesh_entity_map.reserve(submesh_entity_index_map->size_local()
+                                     + submesh_entity_index_map->num_ghosts());
+  std::transform(submesh_entity_index_map_pair.second.begin(),
+                 submesh_entity_index_map_pair.second.end(),
+                 std::back_inserter(submesh_to_mesh_entity_map),
+                 [size_local = mesh_entity_index_map->size_local()](
+                     std::int32_t entity_index)
+                 { return size_local + entity_index; });
 
   // Submesh vertex to vertex connectivity (identity)
   auto submesh_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
@@ -303,7 +281,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   submesh_e_to_v_offsets.reserve(submesh_to_mesh_entity_map.size() + 1);
   for (std::int32_t e : submesh_to_mesh_entity_map)
   {
-    xtl::span<const std::int32_t> vertices = mesh_e_to_v->links(e);
+    std::span<const std::int32_t> vertices = mesh_e_to_v->links(e);
     for (std::int32_t v : vertices)
     {
       auto it = std::find(submesh_to_mesh_vertex_map.begin(),
@@ -324,62 +302,72 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
   submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
 
-  // Submesh geometry
+  // -- Submesh geometry
+
   // Get the geometry dofs in the submesh based on the entities in
   // submesh
-  xt::xtensor<std::int32_t, 2> e_to_g
+  const std::vector<std::int32_t> e_to_g
       = entities_to_geometry(mesh, dim, submesh_to_mesh_entity_map, false);
-  // FIXME Find better way to do this
-  xt::xarray<int32_t> submesh_x_dofs_xt = xt::unique(e_to_g);
-  std::vector<int32_t> submesh_x_dofs(submesh_x_dofs_xt.begin(),
-                                      submesh_x_dofs_xt.end());
+  const std::size_t num_vertices = mesh::num_cell_vertices(
+      cell_entity_type(mesh.topology().cell_type(), dim, 0));
 
-  auto mesh_geometry_dof_index_map = mesh.geometry().index_map();
-  assert(mesh_geometry_dof_index_map);
+  std::vector<int32_t> submesh_x_dofs = e_to_g;
+  std::sort(submesh_x_dofs.begin(), submesh_x_dofs.end());
+  submesh_x_dofs.erase(
+      std::unique(submesh_x_dofs.begin(), submesh_x_dofs.end()),
+      submesh_x_dofs.end());
 
   // Get the geometry dofs in the submesh owned by this process
+  auto mesh_geometry_dof_index_map = mesh.geometry().index_map();
+  assert(mesh_geometry_dof_index_map);
   auto submesh_owned_x_dofs = dolfinx::common::compute_owned_indices(
       submesh_x_dofs, *mesh_geometry_dof_index_map);
 
   // Create submesh geometry index map
-  std::pair<common::IndexMap, std::vector<int32_t>> submesh_x_dof_index_map_pair
-      = mesh_geometry_dof_index_map->create_submap(submesh_owned_x_dofs);
-  auto submesh_x_dof_index_map = std::make_shared<common::IndexMap>(
-      std::move(submesh_x_dof_index_map_pair.first));
-
-  // Create a map from the (local) geometry dofs in the submesh to the (local)
-  // geometry dofs in the mesh.
   std::vector<int32_t> submesh_to_mesh_x_dof_map(submesh_owned_x_dofs.begin(),
                                                  submesh_owned_x_dofs.end());
-  submesh_to_mesh_x_dof_map.reserve(submesh_x_dof_index_map->size_local()
-                                    + submesh_x_dof_index_map->num_ghosts());
-  std::transform(submesh_x_dof_index_map_pair.second.begin(),
-                 submesh_x_dof_index_map_pair.second.end(),
-                 std::back_inserter(submesh_to_mesh_x_dof_map),
-                 [size_local = mesh_geometry_dof_index_map->size_local()](
-                     std::int32_t x_dof_index)
-                 { return size_local + x_dof_index; });
+  std::shared_ptr<common::IndexMap> submesh_x_dof_index_map;
+  {
+    std::pair<common::IndexMap, std::vector<int32_t>>
+        submesh_x_dof_index_map_pair
+        = mesh_geometry_dof_index_map->create_submap(submesh_owned_x_dofs);
+
+    submesh_x_dof_index_map = std::make_shared<common::IndexMap>(
+        std::move(submesh_x_dof_index_map_pair.first));
+
+    // Create a map from the (local) geometry dofs in the submesh to the
+    // (local) geometry dofs in the mesh.
+    submesh_to_mesh_x_dof_map.reserve(submesh_x_dof_index_map->size_local()
+                                      + submesh_x_dof_index_map->num_ghosts());
+    std::transform(submesh_x_dof_index_map_pair.second.begin(),
+                   submesh_x_dof_index_map_pair.second.end(),
+                   std::back_inserter(submesh_to_mesh_x_dof_map),
+                   [size = mesh_geometry_dof_index_map->size_local()](
+                       auto x_dof_index) { return size + x_dof_index; });
+  }
 
   // Create submesh geometry coordinates
-  xtl::span<const double> mesh_x = mesh.geometry().x();
+  std::span<const double> mesh_x = mesh.geometry().x();
   const int submesh_num_x_dofs = submesh_to_mesh_x_dof_map.size();
   std::vector<double> submesh_x(3 * submesh_num_x_dofs);
   for (int i = 0; i < submesh_num_x_dofs; ++i)
   {
-    common::impl::copy_N<3>(
-        std::next(mesh_x.begin(), 3 * submesh_to_mesh_x_dof_map[i]),
-        std::next(submesh_x.begin(), 3 * i));
+    std::copy_n(std::next(mesh_x.begin(), 3 * submesh_to_mesh_x_dof_map[i]), 3,
+                std::next(submesh_x.begin(), 3 * i));
   }
+
+  std::vector<std::int32_t> entity_x_dofs;
 
   // Crete submesh geometry dofmap
   std::vector<std::int32_t> submesh_x_dofmap_vec;
-  submesh_x_dofmap_vec.reserve(e_to_g.shape()[0] * e_to_g.shape()[1]);
+  submesh_x_dofmap_vec.reserve(e_to_g.size());
   std::vector<std::int32_t> submesh_x_dofmap_offsets(1, 0);
-  submesh_x_dofmap_offsets.reserve(e_to_g.shape()[0] + 1);
-  for (std::size_t i = 0; i < e_to_g.shape()[0]; ++i)
+  submesh_x_dofmap_offsets.reserve(submesh_to_mesh_entity_map.size() + 1);
+  for (std::size_t i = 0; i < submesh_to_mesh_entity_map.size(); ++i)
   {
     // Get the mesh geometry dofs for ith entity in entities
-    auto entity_x_dofs = xt::row(e_to_g, i);
+    auto it = std::next(e_to_g.begin(), i * num_vertices);
+    entity_x_dofs.assign(it, std::next(it, num_vertices));
 
     // For each mesh dof of the entity, get the submesh dof
     for (std::int32_t x_dof : entity_x_dofs)

@@ -120,9 +120,10 @@ int main(int argc, char* argv[])
 
   {
     // Create mesh and function space
-    auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
-        MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}}, {32, 16},
-        mesh::CellType::triangle, mesh::GhostMode::shared_facet));
+    auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
+    auto mesh = std::make_shared<mesh::Mesh>(
+        mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}},
+                               {32, 16}, mesh::CellType::triangle, part));
 
     auto V = std::make_shared<fem::FunctionSpace>(
         fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
@@ -210,7 +211,7 @@ int main(int argc, char* argv[])
     b.set(0.0);
     fem::assemble_vector(b.mutable_array(), *L);
     fem::apply_lifting(b.mutable_array(), {a}, {{bc}}, {}, 1.0);
-    b.scatter_rev(common::IndexMap::Mode::add);
+    b.scatter_rev(std::plus<T>());
     fem::set_bc(b.mutable_array(), {bc});
 
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);

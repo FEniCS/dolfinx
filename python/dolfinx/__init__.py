@@ -12,15 +12,11 @@ import sys
 
 stored_dlopen_flags = sys.getdlopenflags()
 
-# Developer note: below is related to OpenMPI
-# Fix dlopen flags (may need reorganising)
+# Developer note: below is related to OpenMPI 
+# Fix dlopen flags
 if "linux" in sys.platform:
-    # FIXME: What with other platforms?
-    try:
-        from ctypes import RTLD_GLOBAL, RTLD_NOW
-    except ImportError:
-        RTLD_NOW = 2
-        RTLD_GLOBAL = 256
+    RTLD_NOW = 2
+    RTLD_GLOBAL = 256
     sys.setdlopenflags(RTLD_NOW | RTLD_GLOBAL)
 del sys
 

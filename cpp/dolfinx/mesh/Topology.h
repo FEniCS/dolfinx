@@ -10,8 +10,8 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <memory>
+#include <span>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::common
 {
@@ -26,21 +26,7 @@ class AdjacencyList;
 
 namespace dolfinx::mesh
 {
-enum class GhostMode : int;
-
 enum class CellType;
-class Topology;
-
-/// @brief Compute marker for owned facets that are on the exterior of
-/// the domain, i.e. are connected to only one cell.
-///
-/// This function does not require parallel communication.
-///
-/// @param[in] topology The topology
-/// @return Vector with length equal to the number of owned facets on
-/// this this process. True if the ith facet (local index) is on the
-/// exterior of the domain.
-std::vector<std::int8_t> compute_boundary_facets(const Topology& topology);
 
 /// @brief Topology stores the topology of a mesh, consisting of mesh
 /// entities and connectivity (incidence relations for the mesh
@@ -144,6 +130,9 @@ public:
   /// Compute entity permutations and reflections
   void create_entity_permutations();
 
+  /// List of inter-process facets, if facet topology has been computed
+  const std::vector<std::int32_t>& interprocess_facets() const;
+
   /// Original cell index
   std::vector<std::int64_t> original_cell_index;
 
@@ -173,6 +162,9 @@ private:
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
   std::vector<std::uint32_t> _cell_permutations;
+
+  // List of facets that are on the inter-process boundary
+  std::vector<std::int32_t> _interprocess_facets;
 };
 
 /// @brief Create a distributed mesh topology.
@@ -189,14 +181,15 @@ private:
 /// @param[in] ghost_owners The owning rank of each ghost cell (ghost
 /// cells are always at the end of the list of `cells`)
 /// @param[in] cell_type The cell shape
-/// @param[in] ghost_mode Type of cell ghosting: none, shared_facet or
-/// shared_vertex
+/// @param[in] boundary_vertices List of vertices on the exterior of the
+/// local mesh which may be shared with other processes.
 /// @return A distributed mesh topology
 Topology
 create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-                const xtl::span<const std::int64_t>& original_cell_index,
-                const xtl::span<const int>& ghost_owners,
-                const CellType& cell_type, GhostMode ghost_mode);
+                const std::span<const std::int64_t>& original_cell_index,
+                const std::span<const int>& ghost_owners,
+                const CellType& cell_type,
+                const std::vector<std::int64_t>& boundary_vertices);
 
 /// @brief Get entity indices for entities defined by their vertices.
 ///

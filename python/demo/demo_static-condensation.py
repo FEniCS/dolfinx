@@ -81,7 +81,7 @@ E, nu = 1.0, 1.0 / 3.0
 
 
 def sigma_u(u):
-    """Consitutive relation for stress-strain. Assuming plane-stress in XY"""
+    """Constitutive relation for stress-strain. Assuming plane-stress in XY"""
     eps = 0.5 * (ufl.grad(u) + ufl.grad(u).T)
     sigma = E / (1. - nu ** 2) * ((1. - nu) * eps + nu * ufl.Identity(2) * ufl.tr(eps))
     return sigma
@@ -97,11 +97,11 @@ b1 = form(- ufl.inner(f, v) * ds(1))
 # JIT compile individual blocks tabulation kernels
 nptype = "complex128" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "float64"
 ffcxtype = "double _Complex" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "double"
-ufcx_form00, _, _ = ffcx_jit(msh.comm, a00, form_compiler_params={"scalar_type": ffcxtype})
+ufcx_form00, _, _ = ffcx_jit(msh.comm, a00, form_compiler_options={"scalar_type": ffcxtype})
 kernel00 = getattr(ufcx_form00.integrals(0)[0], f"tabulate_tensor_{nptype}")
-ufcx_form01, _, _ = ffcx_jit(msh.comm, a01, form_compiler_params={"scalar_type": ffcxtype})
+ufcx_form01, _, _ = ffcx_jit(msh.comm, a01, form_compiler_options={"scalar_type": ffcxtype})
 kernel01 = getattr(ufcx_form01.integrals(0)[0], f"tabulate_tensor_{nptype}")
-ufcx_form10, _, _ = ffcx_jit(msh.comm, a10, form_compiler_params={"scalar_type": ffcxtype})
+ufcx_form10, _, _ = ffcx_jit(msh.comm, a10, form_compiler_options={"scalar_type": ffcxtype})
 kernel10 = getattr(ufcx_form10.integrals(0)[0], f"tabulate_tensor_{nptype}")
 
 ffi = cffi.FFI()
@@ -117,7 +117,7 @@ c_signature = numba.types.void(
 
 @numba.cfunc(c_signature, nopython=True)
 def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL):
-    # Prepare target condensed local elem tensor
+    # Prepare target condensed local element tensor
     A = numba.carray(A_, (Usize, Usize), dtype=PETSc.ScalarType)
 
     # Tabulate all sub blocks locally

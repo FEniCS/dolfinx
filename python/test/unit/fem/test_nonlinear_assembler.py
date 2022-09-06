@@ -427,7 +427,7 @@ def test_assembly_solve_block_nl():
     assert norm2 == pytest.approx(norm0, 1.0e-12)
 
 
-@ pytest.mark.parametrize("mesh", [
+@pytest.mark.parametrize("mesh", [
     create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
     create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.shared_facet),
     create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.none),
