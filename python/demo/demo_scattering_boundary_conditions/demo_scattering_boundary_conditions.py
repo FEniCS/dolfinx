@@ -6,11 +6,11 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.13.8
+#       jupytext_version: 1.14.1
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: Python 3 (DOLFINx complex)
 #     language: python
-#     name: python3
+#     name: python3-complex
 # ---
 
 # # Scattering from a wire with scattering boundary conditions
@@ -60,9 +60,8 @@ from petsc4py import PETSc
 
 # -
 
-# Since we want to solve time-harmonic Maxwell's equation, we need to
-# specify that the demo should only be executed with DOLFINx complex mode,
-# otherwise it would not work:
+# Since we want to solve time-harmonic Maxwell's equation, we need to solve a
+# complex-valued PDE, and therefore need to use PETSc compiled with complex numbers.
 
 if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
@@ -98,20 +97,19 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # to the $\Omega$ domain and perpendicular to each other,
 # i.e. $\hat{\mathbf{u}}_k \perp \hat{\mathbf{u}}_p$
 # (transversality condition of plane waves).
-# If we call $x$ and $y$ the horizontal
-# and vertical axis in our $\Omega$ domain,
+# Using a Cartesian coordinate system for $\Omega$,
 # and by defining $k_x = n_bk_0\cos\theta$ and
 # $k_y = n_bk_0\sin\theta$, with $\theta$ being the angle
 # defined by the propagation direction $\hat{\mathbf{u}}_k$
 # and the horizontal axis $\hat{\mathbf{u}}_x$,
-# we can write more explicitly:
+# we have:
 #
 # $$
 # \mathbf{E}_b = -\sin\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
 # + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y
 # $$
 #
-# The `BackgroundElectricField` class below implements such function.
+# The following class implements this functions.
 # The inputs to the function are the angle $\theta$, the background
 # refractive index $n_b$ and the vacuum wavevector $k_0$. The
 # function returns the expression $ \mathbf{E}_b = -\sin
@@ -168,10 +166,9 @@ class BackgroundElectricField:
 # and $\varepsilon_m = -1.0782 + 5.8089\textrm{j}$ (relative permittivity of
 # gold at $400\textrm{nm}$).
 #
-# To make the system determined, we need to add some boundary conditions
-# on $\partial \Omega$. A common approach is the use of scattering
-# boundary conditions (ref), which make the boundary transparent for
-# $\mathbf{E}_s$, allowing us to restric the computational boundary
+# To form a well-determined system, we add boundary conditions on $\partial \Omega$.
+# It is common to use scattering boundary conditions (ref), which make the boundary
+# transparent for $\mathbf{E}_s$, allowing us to restric the computational boundary
 # to a finite $\Omega$ domain. The first-order boundary conditions
 # in the 2D case take the following form:
 #
@@ -186,12 +183,10 @@ class BackgroundElectricField:
 # index, $\mathbf{n}$ being the normal vector to $\partial \Omega$,
 # and $r = \sqrt{(x-x_s)^2 + (y-y_s)^2}$ being the distance of the
 # $(x, y)$ point on $\partial\Omega$ from the wire centered in
-# $(x_s, y_s)$. In our case we will consider
-# the wire centered in the origin of our mesh, and therefore $r =
-# \sqrt{x^2 + y^2}$.
+# $(x_s, y_s)$. We consider a wired centered at the origin, i.e.
+# $r =\sqrt{x^2 + y^2}$.
 #
-# Let's therefore define the function $r(x)$ and the $\nabla \times$
-# operator for 2D vector, since they will be useful later on:
+# The radial distance function $r(x)$ and $\nabla \times$ operator for a 2D vector (in UFL syntax) is defined below.
 #
 
 # +
@@ -202,7 +197,6 @@ def radial_distance(x):
 
 def curl_2d(a):
     """Returns the curl of two 2D vectors as a 3D vector"""
-
     return as_vector((0, 0, a[1].dx(0) - a[0].dx(1)))
 
 # -
@@ -211,7 +205,6 @@ def curl_2d(a):
 
 
 # +
-# Constant definition
 um = 10**-6  # micron
 nm = 10**-9  # nanometer
 pi = np.pi
@@ -257,7 +250,7 @@ gmsh.finalize()
 MPI.COMM_WORLD.barrier()
 # -
 
-# Let's have a visual check of the mesh by plotting it with PyVista:
+# The mesh is visualized with [PyVista](https://docs.pyvista.org/)
 
 if have_pyvista:
     topology, cell_types, geometry = plot.create_vtk_mesh(mesh, 2)
@@ -284,10 +277,9 @@ k0 = 2 * np.pi / wl0  # Wavevector of the background field
 deg = np.pi / 180
 theta = 45 * deg  # Angle of incidence of the background field
 
-# And then the function space used for the electric field.
-# We will use a 3rd order
+# We use a function space consisting of 3rd order
 # [Nedelec (first kind)](https://defelement.com/elements/nedelec1.html)
-# element:
+# elements to represent the electric field
 
 degree = 3
 curl_el = FiniteElement("N1curl", mesh.ufl_cell(), degree)
@@ -324,23 +316,20 @@ n = FacetNormal(mesh)
 n_3d = as_vector((n[0], n[1], 0))
 # -
 
-# Now it is the turn of the permittivity $\varepsilon$.
-# First of all let's define the relative permittivity $\varepsilon_m$
-# of the gold wire at $400nm$ (data taken from
+# We turn our focus to the permittivity $\varepsilon$.
+# First, we define the relative permittivity $\varepsilon_m$
+# of the gold wire at $400nm$. This data can be found in
 # [*Olmon et al. 2012*](https://doi.org/10.1103/PhysRevB.86.235147)
-# , and for a quick reference have a look at [refractiveindex.info](
+# or at [refractiveindex.info](
 # https://refractiveindex.info/?shelf=main&book=Au&page=Olmon-sc
 # )):
 
-# Definition of relative permittivity for Au @400nm
 eps_au = -1.0782 + 1j * 5.8089
 
-# We want to define a space function for the permittivity
-# $\varepsilon$ that takes the value of the gold permittivity $\varepsilon_m$
+# We define a permittivity function $\varepsilon$ that takes the value of the gold permittivity $\varepsilon_m$
 # for cells inside the wire, while it takes the value of the
 # background permittivity otherwise:
 
-# Definition of the relative permittivity over the whole domain
 D = fem.FunctionSpace(mesh, ("DG", 0))
 eps = fem.Function(D)
 au_cells = cell_tags.find(au_tag)
@@ -350,11 +339,10 @@ eps.x.array[au_cells] = np.full_like(
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
 eps.x.scatter_forward()
 
-# It is time to solve our problem, and therefore we need to find
-# the weak form of the Maxwell's equation plus the scattering
-# boundary conditions. First of all, we need to take the inner
+# Next we derive the weak formulation of the Maxwell's equation plus with scattering
+# boundary conditions. First, we take the inner
 # products of the equations with a complex test function $\mathbf{v}$,
-# and then we need to integrate the terms over the corresponding domains:
+# and integrate the terms over the corresponding domains:
 #
 # $$
 # \begin{align}
@@ -368,10 +356,10 @@ eps.x.scatter_forward()
 # \end{align}.
 # $$
 #
-# By using the $(\nabla \times \mathbf{A}) \cdot \mathbf{B}=\mathbf{A}
+# By using $(\nabla \times \mathbf{A}) \cdot \mathbf{B}=\mathbf{A}
 # \cdot(\nabla \times \mathbf{B})+\nabla \cdot(\mathbf{A}
-# \times \mathbf{B})$
-# relation, we can change the first term into:
+# \times \mathbf{B}),$
+# we can change the first term into:
 #
 # $$
 # \begin{align}
@@ -402,12 +390,11 @@ eps.x.scatter_forward()
 # \end{align}
 # $$
 #
-# We can cancel $-(\nabla\times\mathbf{E}_s \times \bar{\mathbf{V}})
+# Cancelling $-(\nabla\times\mathbf{E}_s \times \bar{\mathbf{V}})
 # \cdot\mathbf{n}$  and $\mathbf{n} \times \nabla \times \mathbf{E}_s
-# \cdot \bar{\mathbf{V}}$ thanks to the triple product rule $\mathbf{A}
+# \cdot \bar{\mathbf{V}}$ using the triple product rule $\mathbf{A}
 # \cdot(\mathbf{B} \times \mathbf{C})=\mathbf{B} \cdot(\mathbf{C} \times
-# \mathbf{A})=\mathbf{C} \cdot(\mathbf{A} \times \mathbf{B})$, arriving
-# at the final weak form:
+# \mathbf{A})=\mathbf{C} \cdot(\mathbf{A} \times \mathbf{B})$, we get:
 #
 # $$
 # \begin{align}
@@ -420,7 +407,7 @@ eps.x.scatter_forward()
 # \end{align}
 # $$
 #
-# We can implement such equation in DOLFINx in the following way:
+# We use the [UFL](https://github.com/FEniCS/ufl/) to implement the residual
 
 # Weak form
 F = - inner(curl(Es), curl(v)) * dDom \
@@ -429,34 +416,30 @@ F = - inner(curl(Es), curl(v)) * dDom \
     + (1j * k0 * n_bkg + 1 / (2 * r)) \
     * inner(cross(Es_3d, n_3d), cross(v_3d, n_3d)) * dsbc
 
-# We can then split the weak form into its left-hand and right-hand side
-# and solve the problem, by storing the scattered field $\mathbf{E}_s$ in
+# We split the residual into a sesquilinear (lhs) and linear (rhs) form
+# and solve the problem. We store the scattered field $\mathbf{E}_s$ as
 # `Esh`:
 
-# +
-# Splitting in left-hand side and right-hand side
 a, L = lhs(F), rhs(F)
-
 problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={
                                   "ksp_type": "preonly", "pc_type": "lu"})
 Esh = problem.solve()
-# -
 
-# Let's now save the solution in a VTK file. In order to do so,
-# we need to interpolate our solution discretized with Nedelec elements
-# into a discontinuous lagrange space, and then we can save the interpolated
-# function as a .bp folder:
+# We save the solution as an
+# [ADIOS2 bp](https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html)
+# folder. In order to do so, we need to interpolate our solution discretized with Nedelec elements
+# into a suitable discontinuous Lagrange space.
 
 # +
 V_dg = fem.VectorFunctionSpace(mesh, ("DG", 3))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 
-with VTXWriter(mesh.comm, "Esh.bp", Esh_dg) as f:
-    f.write(0.0)
+with VTXWriter(mesh.comm, "Esh.bp", Esh_dg) as vtx:
+    vtx.write(0.0)
 # -
 
-# For a quick visualization we can use PyVista, as done for the mesh.
+# We visualize the solution using PyVista.
 # For more information about saving and visualizing vector fields
 # discretized with Nedelec elements, check [this](
 # https://docs.fenicsproject.org/dolfinx/main/python/demos/demo_interpolation-io.html)
@@ -486,7 +469,7 @@ if have_pyvista:
         plotter.screenshot("Esh.png", window_size=[800, 800])
 
 # Next we can calculate the total electric field
-# $\mathbf{E}=\mathbf{E}_s+\mathbf{E}_b$ and save it:
+# $\mathbf{E}=\mathbf{E}_s+\mathbf{E}_b$ and save it
 
 # +
 E = fem.Function(V)
@@ -495,28 +478,23 @@ E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
 E_dg = fem.Function(V_dg)
 E_dg.interpolate(E)
 
-with VTXWriter(mesh.comm, "E.bp", E_dg) as f:
-    f.write(0.0)
+with VTXWriter(mesh.comm, "E.bp", E_dg) as vtx:
+    vtx.write(0.0)
 # -
 
-# Often it is useful to calculate the norm of the electric field:
-#
+# We calculate the norm of the scattered field by using `dolfinx.fem.Expression`
 # $$
 # ||\mathbf{E}_s|| = \sqrt{\mathbf{E}_s\cdot\bar{\mathbf{E}}_s}
 # $$
-#
-# which in DOLFINx can be retrieved in this way:
 
-# ||E||
 lagr_el = FiniteElement("CG", mesh.ufl_cell(), 2)
 norm_func = sqrt(inner(Esh, Esh))
 V_normEsh = fem.FunctionSpace(mesh, lagr_el)
 norm_expr = fem.Expression(norm_func, V_normEsh.element.interpolation_points())
 normEsh = fem.Function(V_normEsh)
 normEsh.interpolate(norm_expr)
-# -
 
-# Now we can validate our formulation by calculating the so-called
+# We validate our numerical solution by computing the
 # absorption, scattering and extinction efficiencies, which are
 # quantities that define how much light is absorbed and scattered
 # by the wire. First of all, we calculate the analytical efficiencies
@@ -525,10 +503,7 @@ normEsh.interpolate(norm_expr)
 
 # Calculation of analytical efficiencies
 q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
-    eps_au,
-    n_bkg,
-    wl0,
-    radius_wire)
+    eps_au, n_bkg, wl0, radius_wire)
 
 # Now we can calculate the numerical efficiencies. The formula for the
 # absorption, scattering and extinction are:
