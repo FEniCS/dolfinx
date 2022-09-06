@@ -321,7 +321,7 @@ def create_interval(comm: _MPI.Comm, nx: int, points: numpy.typing.ArrayLike, gh
 
     """
     if partitioner is None:
-        partitioner = _cpp.mesh.create_cell_partitioner()
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", "interval", 1))
     mesh = _cpp.mesh.create_interval(comm, nx, points, ghost_mode, partitioner)
     return Mesh.from_cpp(mesh, domain)
