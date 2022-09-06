@@ -77,7 +77,7 @@ public:
   /// @brief Create a finite element form.
   ///
   /// @note User applications will normally call a fem::Form builder
-  /// function rather using this interfcae directly.
+  /// function rather using this interface directly.
   ///
   /// @param[in] function_spaces Function spaces for the form arguments
   /// @param[in] integrals The integrals in the form. The first key is

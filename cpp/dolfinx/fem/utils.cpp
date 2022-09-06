@@ -148,17 +148,7 @@ fem::create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
   for (int d = 0; d < D; ++d)
   {
     if (layout.num_entity_dofs(d) > 0)
-    {
-      // Create local entities
-      const auto [cell_entity, entity_vertex, index_map]
-          = mesh::compute_entities(comm, topology, d);
-      if (cell_entity)
-        topology.set_connectivity(cell_entity, topology.dim(), d);
-      if (entity_vertex)
-        topology.set_connectivity(entity_vertex, d, 0);
-      if (index_map)
-        topology.set_index_map(d, index_map);
-    }
+      topology.create_entities(d);
   }
 
   auto [_index_map, bs, dofmap]

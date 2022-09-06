@@ -142,10 +142,10 @@ jobs:
           cd python/doc
           make html
 
-      - name: Set default DOLFINx JIT parameters
+      - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
-          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
+          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
       - name: Run demos (Python, serial)
         run: python3 -m pytest -n=2 -m serial --durations=10 python/demo/test.py
