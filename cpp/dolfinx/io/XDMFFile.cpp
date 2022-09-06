@@ -13,7 +13,6 @@
 #include "xdmf_utils.h"
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/log.h>
-#include <dolfinx/common/utils.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
