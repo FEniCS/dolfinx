@@ -129,7 +129,12 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         domain, = list(sd.keys())  # Assuming single domain
         # Get subdomain data for each integral type
         subdomains = {}
-        for integral_type, data in sd.get(domain).items():
+        
+        # FIXME Using
+        # for integral_type, data in sd.get(domain).items():
+        # below doesn't work sometimes when running demo_types.py
+        # for no obvious reason. This is a problem even in main.
+        for integral_type, data in list(sd.values())[0].items():
             # Check that the subdomain data for each integral of this type is
             # the same
             assert all([id(d) == id(data[0]) for d in data])
