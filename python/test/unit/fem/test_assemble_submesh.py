@@ -599,10 +599,14 @@ def test_codim_1_coeffs(d, n, k, space, ghost_mode, random_ordering):
     L = fem.form(ufl.inner(f, v) * ds,
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD,
+                  mode=PETSc.ScatterMode.REVERSE)
     b_norm = b.norm()
 
     L = fem.form(ufl.inner(f_m, v) * ds)
     b = fem.petsc.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD,
+                  mode=PETSc.ScatterMode.REVERSE)
     b_expected_norm = b.norm()
     assert np.isclose(b_norm, b_expected_norm)
 
