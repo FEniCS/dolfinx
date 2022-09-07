@@ -12,8 +12,10 @@ from numpy import pi
 from mpi4py import MPI
 
 
-def generate_mesh_wire(radius_wire, radius_dom, in_wire_size, on_wire_size,
-                       bkg_size, boundary_size, au_tag, bkg_tag, boundary_tag):
+def generate_mesh_wire(
+    radius_wire: float, radius_dom: float, in_wire_size: float,
+    on_wire_size: float, bkg_size: float, boundary_size: float,
+        au_tag: int, bkg_tag: int, boundary_tag: int):
 
     gmsh.initialize(sys.argv)
     if MPI.COMM_WORLD.rank == 0:

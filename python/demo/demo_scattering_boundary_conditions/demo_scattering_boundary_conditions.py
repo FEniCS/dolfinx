@@ -258,7 +258,8 @@ if have_pyvista:
     pyvista.set_jupyter_backend("pythreejs")
     plotter = pyvista.Plotter()
     num_local_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    grid.cell_data["Marker"] = cell_tags.values[cell_tags.indices < num_local_cells]
+    grid.cell_data["Marker"] = cell_tags.values[cell_tags.indices
+                                                < num_local_cells]
     grid.set_active_scalars("Marker")
     plotter.add_mesh(grid, show_edges=True)
     plotter.view_xy()
