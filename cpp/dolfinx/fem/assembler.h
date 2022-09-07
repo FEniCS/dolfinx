@@ -342,7 +342,7 @@ void set_diagonal(U set_fn, const std::span<const std::int32_t>& rows,
 /// @param[in] V The function space for the rows and columns of the
 ///   matrix. It is used to extract only the Dirichlet boundary conditions
 ///   that are define on V or subspaces of V.
-/// @param[in] bcs The Dirichlet boundary condtions
+/// @param[in] bcs The Dirichlet boundary conditions
 /// @param[in] diagonal The value to add to the diagonal for rows with a
 ///   boundary condition applied
 template <typename T, typename U>
