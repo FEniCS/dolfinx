@@ -13,23 +13,18 @@
 #
 # First of all, let's import the modules that will be used:
 
+# +
 import sys
 from functools import partial
 
 import numpy as np
 from mesh_sphere_axis import generate_mesh_sphere_axis
-#from scattnlay import scattnlay
 from scipy.special import jv, jvp
 from dolfinx import fem, mesh, plot
 from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
-from ufl import (FacetNormal, FiniteElement, Measure, MixedElement,
-                 SpatialCoordinate, TestFunction, TrialFunction, as_matrix,
-                 as_vector, conj, cross, det, grad, inner, inv, lhs, rhs, sqrt,
-                 transpose)
-
 from mpi4py import MPI
-# +
+import ufl
 from petsc4py import PETSc
 
 try:
@@ -44,13 +39,10 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
-
-
 # -
 
-# Since we want to solve time-harmonic Maxwell's equation, we need to
-# specify that the demo should only be executed with DOLFINx complex mode,
-# otherwise it would not work:
+# Since we want to solve time-harmonic Maxwell's equation, we need to solve a
+# complex-valued PDE, and therefore need to use PETSc compiled with complex numbers.
 
 if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
@@ -59,13 +51,12 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 
 # Now, let's formulate our problem.
 # Let's consider a metallic sphere immersed in
-# a background medium (e.g. vacuum or water) hit by a plane wave.
-# We want to know what is the electric field scattered by the sphere.
+# a background medium (e.g. vacuum or water) and hit by a plane wave.
+# We want to calculate the scattered electric field scattered.
 # Even though the problem is three-dimensional,
 # we can simplify it into many two-dimensional problems
-# by exploiting its axisymmetric nature.
-#
-# If we use PML as our absorbing layers, the weak form of our problem is:
+# by exploiting its axisymmetric nature. To verify this, let's consider
+# the weakf form of the problem with PML:
 #
 # $$
 # \begin{align}
@@ -80,7 +71,9 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # \end{align}
 # $$
 #
-# If we switch to cylindrical coordinates:
+# Since we want to exploit the axisymmetry of the problem,
+# we can use cylindrical coordinates as a more appropriate
+# reference system:
 #
 # $$
 # \begin{align}
@@ -134,7 +127,7 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # $$
 #
 # By implementing these formula in our weak form, and by assuming an
-# axisymmetric geometry $\varepsilon(\rho, z)$, we can write:
+# axisymmetric permittivity $\varepsilon(\rho, z)$, we can write:
 #
 # $$
 # \begin{align}
@@ -151,8 +144,20 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # \end{align}
 # $$
 #
-# It is clear that the last integral is different from zero only when
-# $m = n$, and therefore we can write:
+# For the last integral, we have that:
+#
+# $$
+# \int_{0}^{2 \pi} e^{-i(m-n) \phi}d \phi=
+# \begin{cases}
+# \begin{align}
+# 2\pi ~~~&\textrm{if } m=n\\
+# 0 ~~~&\textrm{if }m\neq n\\
+# \end{align}
+# \end{cases}
+# $$
+#
+# We can therefore consider only the case $m = n$ and simplify the summation
+# in the following way:
 #
 # $$
 # \begin{align}
@@ -168,29 +173,32 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # \end{align}
 # $$
 #
-# We therefore just need to solve the 2D problem for the cross-section
-# for different harmonics.
+# In the end, we have multiple weak forms corresponding to the
+# different cylindrical harmonics, where the integration is performed
+# over a 2D domain.
 #
-# As a first step, we can define the function for the $\nabla\times$
+# Let's now implement this problem in DOLFINx.
+# As a first step we can define the function for the $\nabla\times$
 # operator in cylindrical coordinates:
 
-def curl_axis(a, m: int, x):
+def curl_axis(a, m: int, rho):
 
-    curl_r = -a[2].dx(1) - 1j * m / x[0] * a[1]
-    curl_z = a[2] / x[0] + a[2].dx(0) + 1j * m / x[0] * a[0]
+    curl_r = -a[2].dx(1) - 1j * m / rho * a[1]
+    curl_z = a[2] / rho + a[2].dx(0) + 1j * m / rho * a[0]
     curl_p = a[0].dx(1) - a[1].dx(0)
 
-    return as_vector((curl_r, curl_z, curl_p))
+    return ufl.as_vector((curl_r, curl_z, curl_p))
 
 
 # Then we need to define the analytical formula for the background field.
 # For our purposes, we can consider the wavevector and the electric field
-# lying in our 2D domain, while the magnetic field is transverse to such
-# domain. For this reason, we will refer to this polarization as TMz
-# polarization, while the opposite case will be referred as TEz polarization.
+# lying in the same plane of our 2D domain, while the magnetic field is
+# transverse to such domain. For this reason, we will refer to this polarization
+# as TMz polarization.
 #
-# For TMz polarization, the cylindrical harmonics $\mathbf{E}^{(m)}_b$
-# of the background field can be written as (put reference):
+# For a TMz polarization, the cylindrical harmonics $\mathbf{E}^{(m)}_b$
+# of the background field can be written in this way
+# ([Wait 1955](https://doi.org/10.1139/p55-024)):
 #
 # $$
 # \begin{align}
@@ -207,7 +215,7 @@ def curl_axis(a, m: int, x):
 # with $k = 2\pi n_b/\lambda = k_0n_b$ being the wavevector, $\theta$ being
 # the angle between $\mathbf{E}_b$ and $\hat{\rho}$, and $J_m$
 # representing the $m$-th order Bessel function of first kind and
-# $J_{m}^{\prime}$ its first-order derivative.
+# $J_{m}^{\prime}$ its derivative.
 # In DOLFINx, we can implement these functions in this way:
 
 # +
@@ -237,9 +245,9 @@ def background_field_p(theta: float, n_bkg: float, k0: float, m: int, x):
 
 # -
 
-# For the PML, we can introduce a spherical shell in our 3D domain.
-# In this shell, we can implement a complex coordinate transformation
-# of this form:
+# For PML, we can introduce them in our original domain as a spherical shell.
+# We can then implement a complex coordinate transformation
+# of this form in this spherical shell:
 #
 # $$
 # \begin{align}
@@ -297,18 +305,18 @@ def pml_coordinate(
     return (x + 1j * alpha / k0 * x * (r - radius_dom) / (radius_pml * r))
 
 
-def create_eps_mu(pml, x, eps_bkg, mu_bkg):
+def create_eps_mu(pml, rho, eps_bkg, mu_bkg):
 
-    J = grad(pml)
+    J = ufl.grad(pml)
 
     # Transform the 2x2 Jacobian into a 3x3 matrix.
-    J = as_matrix(((J[0, 0], J[0, 1], 0),
-                   (J[1, 0], J[1, 1], 0),
-                   (0, 0, pml[0] / x[0])))
+    J = ufl.as_matrix(((J[0, 0], J[0, 1], 0),
+                       (J[1, 0], J[1, 1], 0),
+                       (0, 0, pml[0] / rho)))
 
-    A = inv(J)
-    eps_pml = det(J) * A * eps_bkg * transpose(A)
-    mu_pml = det(J) * A * mu_bkg * transpose(A)
+    A = ufl.inv(J)
+    eps_pml = ufl.det(J) * A * eps_bkg * ufl.transpose(A)
+    mu_pml = ufl.det(J) * A * mu_bkg * ufl.transpose(A)
     return eps_pml, mu_pml
 
 
@@ -320,32 +328,30 @@ def create_eps_mu(pml, x, eps_bkg, mu_bkg):
 
 # +
 # Constants
-um = 1
-nm = um * 10**-3
 epsilon_0 = 8.8541878128 * 10**-12  # Vacuum permittivity
 mu_0 = 4 * np.pi * 10**-7  # Vacuum permeability
 Z0 = np.sqrt(mu_0 / epsilon_0)  # Vacuum impedance
 I0 = 0.5 / Z0  # Intensity of electromagnetic field
 
 # Radius of the sphere
-radius_sph = 0.025 * um
+radius_sph = 0.025
 
 # Radius of the domain
-radius_dom = 1 * um
+radius_dom = 1
 
 # Radius of the boundary where scattering efficiency
 # is calculated
 radius_scatt = 0.4 * radius_dom
 
 # Radius of the PML shell
-radius_pml = 0.25 * um
+radius_pml = 0.25
 
 # Mesh sizes
-mesh_factor = 0.9
-in_sph_size = mesh_factor * 2 * nm
-on_sph_size = mesh_factor * 2 * nm
-scatt_size = mesh_factor * 60 * nm
-pml_size = mesh_factor * 40 * nm
+mesh_factor = 1
+in_sph_size = mesh_factor * 2.0e-3
+on_sph_size = mesh_factor * 2.0e-3
+scatt_size = mesh_factor * 60.0e-3
+pml_size = mesh_factor * 40.0e-3
 
 # Tags for the subdomains
 au_tag = 1
@@ -392,19 +398,22 @@ if have_pyvista:
 # while for the $\hat{\phi}$ components we will use Lagrange elements:
 
 degree = 3
-curl_el = FiniteElement("N1curl", domain.ufl_cell(), degree)
-lagr_el = FiniteElement("Lagrange", domain.ufl_cell(), degree)
-V = fem.FunctionSpace(domain, MixedElement([curl_el, lagr_el]))
+curl_el = ufl.FiniteElement("N1curl", domain.ufl_cell(), degree)
+lagr_el = ufl.FiniteElement("Lagrange", domain.ufl_cell(), degree)
+V = fem.FunctionSpace(domain, ufl.MixedElement([curl_el, lagr_el]))
 
+# Let's now define our integration domains:
+
+# +
 # Measures for subdomains
-dx = Measure("dx", domain, subdomain_data=cell_tags,
-             metadata={'quadrature_degree': 60})
+dx = ufl.Measure("dx", domain, subdomain_data=cell_tags,
+                 metadata={'quadrature_degree': 60})
 
 dDom = dx((au_tag, bkg_tag))
 dPml = dx(pml_tag)
+# -
 
-# Let's define the background permittivity, the gold permittivity,
-# and a space function for the overall permittivity:
+# Let's now define the $\varepsilon_r$ function:
 
 # +
 n_bkg = 1  # Background refractive index
@@ -423,28 +432,32 @@ eps.x.scatter_forward()
 
 # We can now define the characteristic parameters of our background field:
 
-wl0 = 0.4 * um  # Wavelength of the background field
+wl0 = 0.4  # Wavelength of the background field
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
-deg = np.pi / 180
-theta = 45 * deg  # Angle of incidence of the background field
-m_list = [0, 1]
+theta = np.pi / 4  # Angle of incidence of the background field
+m_list = [0, 1]  # list of harmonics
 
-# Now we can define `eps_pml` and `mu_pml`:
+# with `m_list` being a list containing the harmonic
+# numbers we want to solve the problem for. For
+# subwavelength structure (as in our case), we can limit
+# the calculation to few harmonic numbers, i.e.
+# $m = -1, 0, 1$. Besides, due to the symmetry
+# of Bessel functions, the solutions for $m = \pm 1$ are
+# the same, and therefore we can just consider positive
+# harmonic numbers.
+
+# We can now define `eps_pml` and `mu_pml`:
 
 # +
-x = SpatialCoordinate(domain)
+rho, z = ufl.SpatialCoordinate(domain)
 alpha = 5
-r = sqrt(x[0]**2 + x[1]**2)
+r = ufl.sqrt(rho**2 + z**2)
 
-pml_coords = as_vector((
-    pml_coordinate(
-        x[0],
-        r, alpha, k0, radius_dom, radius_pml),
-    pml_coordinate(
-        x[1],
-        r, alpha, k0, radius_dom, radius_pml)))
+pml_coords = ufl.as_vector((
+    pml_coordinate(rho, r, alpha, k0, radius_dom, radius_pml),
+    pml_coordinate(z, r, alpha, k0, radius_dom, radius_pml)))
 
-eps_pml, mu_pml = create_eps_mu(pml_coords, x, eps_bkg, 1)
+eps_pml, mu_pml = create_eps_mu(pml_coords, rho, eps_bkg, 1)
 # -
 
 # We can now define other objects that will be used inside our
@@ -461,8 +474,8 @@ Esh_rz_m_dg = fem.Function(V_dg)
 # Total field
 Eh_m = fem.Function(V)
 
-n = FacetNormal(domain)
-n_3d = as_vector((n[0], n[1], 0))
+n = ufl.FacetNormal(domain)
+n_3d = ufl.as_vector((n[0], n[1], 0))
 
 # Geometrical cross section of the sphere, for efficiency calculation
 gcs = np.pi * radius_sph**2
@@ -483,7 +496,7 @@ marker.x.array[inner_cells] = 1
 dAu = dx(au_tag)
 
 # Define integration facet for the scattering efficiency
-dS = Measure("dS", domain, subdomain_data=facet_tags)
+dS = ufl.Measure("dS", domain, subdomain_data=facet_tags)
 # -
 
 # We can now solve our problem for all the chosen harmonic numbers:
@@ -492,8 +505,8 @@ dS = Measure("dS", domain, subdomain_data=facet_tags)
 for m in m_list:
 
     # Definition of Trial and Test functions
-    Es_m = TrialFunction(V)
-    v_m = TestFunction(V)
+    Es_m = ufl.TrialFunction(V)
+    v_m = ufl.TestFunction(V)
 
     # Background field
     Eb_m = fem.Function(V)
@@ -502,16 +515,16 @@ for m in m_list:
     Eb_m.sub(0).interpolate(f_rz)
     Eb_m.sub(1).interpolate(f_p)
 
-    curl_Es_m = curl_axis(Es_m, m, x)
-    curl_v_m = curl_axis(v_m, m, x)
+    curl_Es_m = curl_axis(Es_m, m, rho)
+    curl_v_m = curl_axis(v_m, m, rho)
 
-    F = - inner(curl_Es_m, curl_v_m) * x[0] * dDom \
-        + eps * k0 ** 2 * inner(Es_m, v_m) * x[0] * dDom \
-        + k0 ** 2 * (eps - eps_bkg) * inner(Eb_m, v_m) * x[0] * dDom \
-        - inner(inv(mu_pml) * curl_Es_m, curl_v_m) * x[0] * dPml \
-        + k0 ** 2 * inner(eps_pml * Es_m, v_m) * x[0] * dPml
+    F = - ufl.inner(curl_Es_m, curl_v_m) * rho * dDom \
+        + eps * k0 ** 2 * ufl.inner(Es_m, v_m) * rho * dDom \
+        + k0 ** 2 * (eps - eps_bkg) * ufl.inner(Eb_m, v_m) * rho * dDom \
+        - ufl.inner(ufl.inv(mu_pml) * curl_Es_m, curl_v_m) * rho * dPml \
+        + k0 ** 2 * ufl.inner(eps_pml * Es_m, v_m) * rho * dPml
 
-    a, L = lhs(F), rhs(F)
+    a, L = ufl.lhs(F), ufl.rhs(F)
 
     problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={
                                       "ksp_type": "preonly", "pc_type": "lu"})
@@ -523,13 +536,13 @@ for m in m_list:
     Esh_rz_m_dg.interpolate(Esh_rz_m)
 
     # Save solutions
-    with VTXWriter(domain.comm, f"sols/Es_rz_{m}_{degree}.bp", Esh_rz_m_dg) as f:
+    with VTXWriter(domain.comm, f"sols/Es_rz_{m}.bp", Esh_rz_m_dg) as f:
         f.write(0.0)
-    with VTXWriter(domain.comm, f"sols/Es_p_{m}_{degree}.bp", Esh_p_m) as f:
+    with VTXWriter(domain.comm, f"sols/Es_p_{m}.bp", Esh_p_m) as f:
         f.write(0.0)
 
     # Define scattered magnetic field
-    Hsh_m = 1j * curl_axis(Esh_m, m, x) / Z0 / k0 / n_bkg
+    Hsh_m = 1j * curl_axis(Esh_m, m, rho) / (Z0 * k0 * n_bkg)
 
     # Total electric field
     Eh_m.x.array[:] = Eb_m.x.array[:] + Esh_m.x.array[:]
@@ -537,52 +550,41 @@ for m in m_list:
     # Efficiencies calculation
 
     if m == 0:  # initialize and do not add 2 factor
-        P = np.pi * inner(cross(Esh_m, conj(Hsh_m)), n_3d) * marker
-        Q = np.pi * eps_au.imag * k0 * (inner(Eh_m, Eh_m)) / Z0 / n_bkg
+        P = np.pi * ufl.inner(ufl.cross(Esh_m, ufl.conj(Hsh_m)), n_3d) * marker
+        Q = np.pi * eps_au.imag * k0 * (ufl.inner(Eh_m, Eh_m)) / Z0 / n_bkg
 
         q_abs_fenics_proc = (fem.assemble_scalar(
-                             fem.form(Q * x[0] * dAu)) / gcs / I0).real
+                             fem.form(Q * rho * dAu)) / gcs / I0).real
         q_sca_fenics_proc = (fem.assemble_scalar(
-                             fem.form((P('+') + P('-')) * x[0] * dS(scatt_tag))) / gcs / I0).real
+                             fem.form((P('+') + P('-')) * rho * dS(scatt_tag))) / gcs / I0).real
         q_abs_fenics = domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
         q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
     elif m == m_list[0]:  # initialize and add 2 factor
-        P = 2 * np.pi * inner(cross(Esh_m, conj(Hsh_m)), n_3d) * marker
-        Q = 2 * np.pi * eps_au.imag * k0 * (inner(Eh_m, Eh_m)) / Z0 / n_bkg
+        P = 2 * np.pi * ufl.inner(ufl.cross(Esh_m,
+                                  ufl.conj(Hsh_m)), n_3d) * marker
+        Q = 2 * np.pi * eps_au.imag * k0 * (ufl.inner(Eh_m, Eh_m)) / Z0 / n_bkg
 
         q_abs_fenics_proc = (fem.assemble_scalar(
-            fem.form(Q * x[0] * dAu)) / gcs / I0).real
+            fem.form(Q * rho * dAu)) / gcs / I0).real
         q_sca_fenics_proc = (fem.assemble_scalar(
-                             fem.form((P('+') + P('-')) * x[0] * dS(scatt_tag))) / gcs / I0).real
+                             fem.form((P('+') + P('-')) * rho * dS(scatt_tag))) / gcs / I0).real
         q_abs_fenics = domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
         q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
     else:  # do not initialize and add 2 factor
-        P = 2 * np.pi * inner(cross(Esh_m, conj(Hsh_m)), n_3d) * marker
-        Q = 2 * np.pi * eps_au.imag * k0 * (inner(Eh_m, Eh_m)) / Z0 / n_bkg
+        P = 2 * np.pi * ufl.inner(ufl.cross(Esh_m,
+                                  ufl.conj(Hsh_m)), n_3d) * marker
+        Q = 2 * np.pi * eps_au.imag * k0 * (ufl.inner(Eh_m, Eh_m)) / Z0 / n_bkg
 
         q_abs_fenics_proc = (fem.assemble_scalar(
-            fem.form(Q * x[0] * dAu)) / gcs / I0).real
+            fem.form(Q * rho * dAu)) / gcs / I0).real
         q_sca_fenics_proc = (fem.assemble_scalar(
-                             fem.form((P('+') + P('-')) * x[0] * dS(scatt_tag))) / gcs / I0).real
+                             fem.form((P('+') + P('-')) * rho * dS(scatt_tag))) / gcs / I0).real
         q_abs_fenics += domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
         q_sca_fenics += domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
 q_ext_fenics = q_abs_fenics + q_sca_fenics
-# -
-
-# Now we can calculate the analytical efficiencies with the `scattnlay` library:
-
-# +
-# analyt_effs = scattnlay(np.array(
-#    [2 * np.pi * radius_sph / wl0 * n_bkg],
-#    dtype=np.complex128),
-#    np.array(
-#    [np.sqrt(eps_au) / n_bkg],
-#    dtype=np.complex128))
-#
-#q_ext_analyt, q_sca_analyt, q_abs_analyt = analyt_effs[1:4]
 # -
 
 # Let's compare the analytical and numerical efficiencies, and let's print
