@@ -27,8 +27,8 @@ nearest_simplex(const std::span<const double>& s)
   case 2:
   {
     // Compute lm = dot(s0, ds / |ds|)
-    auto s0 = s.subspan<0,3>();
-    auto s1 = s.subspan<3,3>();
+    auto s0 = s.subspan<0, 3>();
+    auto s1 = s.subspan<3, 3>();
     std::array ds = {s1[0] - s0[0], s1[1] - s0[1], s1[2] - s0[2]};
     const double lm = -(s0[0] * ds[0] + s0[1] * ds[1] + s0[2] * ds[2])
                       / (ds[0] * ds[0] + ds[1] * ds[1] + ds[2] * ds[2]);

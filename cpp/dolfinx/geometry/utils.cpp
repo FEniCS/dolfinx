@@ -99,9 +99,9 @@ std::pair<std::int32_t, double> _compute_closest_entity(
       // obtain exact distance to the convex hull of the entity
       if (r2 <= R2)
       {
-        r2 = geometry::squared_distance(mesh, tree.tdim(),
-                                        std::span(std::next(bbox.begin(), 1)),
-                                        {{point[0], point[1], point[2]}})
+        r2 = geometry::squared_distance(
+                 mesh, tree.tdim(), std::span(std::next(bbox.begin(), 1), 1),
+                 {{point[0], point[1], point[2]}})
                  .front();
       }
     }
