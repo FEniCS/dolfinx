@@ -205,6 +205,9 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::vector<std::int32_t> submesh_vertices
       = compute_incident_entities(mesh, entities, dim, 0);
 
+  ss << "submesh_vertices = " << xt::adapt(submesh_vertices)
+     << "\n";
+
   // Get the vertices in the submesh owned by this process
   auto mesh_vertex_index_map = mesh.topology().index_map(0);
   assert(mesh_vertex_index_map);
@@ -266,6 +269,11 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   submesh_entity_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_entity_index_map_pair.first));
 
+  ss << "submesh_to_mesh_entity_map (before) = " << xt::adapt(submesh_to_mesh_entity_map)
+     << "\n";
+
+    // TODO https://github.com/FEniCS/dolfinx/pull/2107
+
   // Add ghost entities to the entity map
   submesh_to_mesh_entity_map.reserve(submesh_entity_index_map->size_local()
                                      + submesh_entity_index_map->num_ghosts());
@@ -275,6 +283,9 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                  [size_local = mesh_entity_index_map->size_local()](
                      std::int32_t entity_index)
                  { return size_local + entity_index; });
+
+  ss << "submesh_to_mesh_entity_map = " << xt::adapt(submesh_to_mesh_entity_map)
+     << "\n";
 
   // Submesh vertex to vertex connectivity (identity)
   auto submesh_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
@@ -293,6 +304,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   submesh_e_to_v_offsets.reserve(submesh_to_mesh_entity_map.size() + 1);
   for (std::int32_t e : submesh_to_mesh_entity_map)
   {
+    ss << "e = " << e << "\n";
     std::span<const std::int32_t> vertices = mesh_e_to_v->links(e);
     for (std::int32_t v : vertices)
     {
