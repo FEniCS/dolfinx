@@ -27,36 +27,46 @@
 #
 # In this demo, we are going to show how to solve the eigenvalue problem
 # associated with a half-loaded rectangular waveguide
-# with perfect electric walls.
+# with perfect electric conducting walls.
 #
 # First of all, let's import the modules we need for solving the problem:
 
 # +
-from pyclbr import Function
 import numpy as np
 from slepc4py import SLEPc
 
-import ufl
-from dolfinx import fem, io
+try:
+    import pyvista
+    have_pyvista = True
+except ModuleNotFoundError:
+    print("pyvista and pyvistaqt are required to visualise the solution")
+    have_pyvista = False
+
+from analytical_modes import verify_mode
+
+from dolfinx import fem, io, plot
 from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
                           locate_entities)
-from analytical_modes import verify_mode
+from ufl import (FiniteElement, MixedElement, TestFunctions, TrialFunctions,
+                 inner, sqrt, dx, grad, curl)
+
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
+
 # -
 
 # Let's now define our domain. It is a rectangular domain
-# with length $l$ and height $h = 0.45l$, with the dielectric medium filling
-# the lower-half of the domain, with a height of $d=0.5b$.
+# with width $w$ and height $h = 0.45w$, with the dielectric medium filling
+# the lower-half of the domain, with a height of $d=0.5h$.
 
 # +
-l = 1
-h = 0.45 * l
+w = 1
+h = 0.45 * w
 d = 0.5 * h
 nx = 300
 ny = int(0.4 * nx)
 
-domain = create_rectangle(MPI.COMM_WORLD, [[0, 0], [l, h]], [
+domain = create_rectangle(MPI.COMM_WORLD, [[0, 0], [w, h]], [
     nx, ny], CellType.quadrilateral)
 
 domain.topology.create_connectivity(
@@ -90,9 +100,9 @@ eps.x.array[cells_d] = np.full_like(cells_d, eps_d, dtype=ScalarType)
 eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
 # -
 
-# In order to find the weak form of our problem, the starting point equations
-# is the Maxwell's equation and
-# its related perfect electric conductor condition:
+# In order to find the weak form of our problem, the starting point are
+# Maxwell's equation and the perfect electric conductor condition on the
+# waveguide wall:
 #
 # $$
 # \begin{align}
@@ -104,7 +114,7 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
 #
 # with $k_0$ and $\lambda_0 = 2\pi/k_0$ being the wavevector and the
 # wavelength, that we consider fixed at $\lambda = h/0.2$. If we focus on
-# non-magnetic material only, then $\mu_r=1$.
+# non-magnetic material only, we can consider $\mu_r=1$.
 #
 # Now we can assume a known dependance on $z$:
 #
@@ -118,7 +128,7 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
 # the waveguide axis, and $k_z$ represents our complex propagation constant.
 #
 # In order to pose the problem as an eigenvalue problem, we need to make the
-# following substitution (cite Jin):
+# following substitution:
 #
 # $$
 # \begin{align}
@@ -160,7 +170,9 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
 # $$
 #
 # A problem of this kind is known as a generalized eigenvalue problem, where
-# our eigenvalues are all the possible $ -k_z^2$.
+# our eigenvalues are all the possible $ -k_z^2$. For
+# further details about this problem, check Prof. Jin's
+# *The Finite Element Method in Electromagnetics*.
 #
 # To write the weak form in DOLFINx, we need to specify our function space.
 # For the $\mathbf{e}_t$ field, we can use RTCE elements (the equivalent of
@@ -169,9 +181,9 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
 # implemented with `MixedElement`:
 
 degree = 1
-RTCE = ufl.FiniteElement("RTCE", domain.ufl_cell(), degree)
-Q = ufl.FiniteElement("Lagrange", domain.ufl_cell(), degree)
-V = fem.FunctionSpace(domain, ufl.MixedElement(RTCE, Q))
+RTCE = FiniteElement("RTCE", domain.ufl_cell(), degree)
+Q = FiniteElement("Lagrange", domain.ufl_cell(), degree)
+V = fem.FunctionSpace(domain, MixedElement(RTCE, Q))
 
 # Now we can define our weak form:
 
@@ -179,16 +191,16 @@ V = fem.FunctionSpace(domain, ufl.MixedElement(RTCE, Q))
 lmbd0 = h / 0.2
 k0 = 2 * np.pi / lmbd0
 
-et, ez = ufl.TrialFunctions(V)
-vt, vz = ufl.TestFunctions(V)
+et, ez = TrialFunctions(V)
+vt, vz = TestFunctions(V)
 
-a_tt = (ufl.inner(ufl.curl(et), ufl.curl(vt)) - k0
-        ** 2 * eps * ufl.inner(et, vt)) * ufl.dx
-b_tt = ufl.inner(et, vt) * ufl.dx
-b_tz = ufl.inner(et, ufl.grad(vz)) * ufl.dx
-b_zt = ufl.inner(ufl.grad(ez), vt) * ufl.dx
-b_zz = (ufl.inner(ufl.grad(ez), ufl.grad(vz)) - k0
-        ** 2 * eps * ufl.inner(ez, vz)) * ufl.dx
+a_tt = (inner(curl(et), curl(vt)) - k0
+        ** 2 * eps * inner(et, vt)) * dx
+b_tt = inner(et, vt) * dx
+b_tz = inner(et, grad(vz)) * dx
+b_zt = inner(grad(ez), vt) * dx
+b_zz = (inner(grad(ez), grad(vz)) - k0
+        ** 2 * eps * inner(ez, vz)) * dx
 
 a = fem.form(a_tt)
 b = fem.form(b_tt + b_tz + b_zt + b_zz)
@@ -304,36 +316,43 @@ eps.solve()
 eps.view()
 eps.errorView()
 
+# Now we can get the eigenvalues and eigenvectors calculated by SLEPc:
+
 # +
+# Save the eigenvalues i
 vals = [(i, np.sqrt(-eps.getEigenvalue(i))) for i in range(eps.getConverged())]
 
 vals.sort(key=lambda x: x[1].real)
 
-j = 0
 eh = fem.Function(V)
 
 kz_list = []
 
-for i, _ in vals:
+for i, kz in vals:
 
-    eignvl = eps.getEigenpair(i, eh.vector)
+    # Save eigenvector in eh
+    eps.getEigenpair(i, eh.vector)
+
+    # Compute error for i-th eigenvalue
     error = eps.computeError(i, SLEPc.EPS.ErrorType.RELATIVE)
-    kz = np.sqrt(-eignvl)
 
+    # Verify, save and visualize solution
     if error < tol and np.isclose(kz.imag, 0, atol=tol):
 
         kz_list.append(kz)
 
-        assert verify_mode(kz, l, h, d, lmbd0, eps_d, eps_v, 1e-4)
+        # Verify if kz satisfy the analytical equations for the modes
+        assert verify_mode(kz, w, h, d, lmbd0, eps_d, eps_v, threshold=1e-4)
 
-        print(kz / k0)
-
-        j += 1
+        print(f"eigenvalue: {-kz**2}")
+        print(f"kz: {kz}")
+        print(f"kz/k0: {kz/k0}")
 
         eh.x.scatter_forward()
 
         eth, ezh = eh.split()
 
+        # Transform eth, ezh into Et and Ez
         eth.x.array[:] = eth.x.array[:] / kz
         ezh.x.array[:] = ezh.x.array[:] * 1j
 
@@ -346,44 +365,3 @@ for i, _ in vals:
 
         with io.VTXWriter(domain.comm, f"sols/Ez_{i}.bp", ezh) as f:
             f.write(0.0)
-# -
-
-# ## Analytical solutions
-#
-# For finding the analytical solutions to the problem, we can
-# follow the formulation in *Time-harmonic electromagnetic fields* by
-# Harrington. In particular, the author starts by considering the
-# $\text{TE}_x$ and $\text{TM}_x$ modes, and then find transcendental
-# equations for finding the $k_z$ wavevectors sustained by the structure
-# at a certain frequency. If we label the dielectric region with $1$ and
-# the vacuum region with $2$, the set of equations for
-# the different $k_z$ is given by:
-#
-#
-# $$
-# \begin{aligned}
-# \textrm{For TE}_x \textrm{ modes}:
-# \begin{cases}
-# &k_{x 1}{ }^{2}+\left(\frac{n \pi}{b}\right)^{2}+k_{z}{ }^{2}=
-# k_{1}^{2}=\omega^{2} \varepsilon_{1} \\
-# &k_{x 2}{ }^{2}+\left(\frac{n \pi}{b}\right)^{2}+k_{z}{ }^{2}=
-# k_{2}{ }^{2}=\omega^{2} \varepsilon_{2} \\
-# & k_{x 1} \cot k_{x 1} d=-k_{x 2} \cot \left[k_{x 2}(a-d)\right]
-# \end{cases}
-# \end{aligned}
-# $$
-#
-# $$
-# \begin{aligned}
-# \textrm{For TM}_x \textrm{ modes}:
-# \begin{cases}
-# &k_{x 1}{ }^{2}+\left(\frac{n \pi}{b}\right)^{2}+k_{z}{ }^{2}=k_{1}^{2}=
-# \omega^{2} \varepsilon_{1} \\
-# &k_{x 2}{ }^{2}+\left(\frac{n \pi}{b}\right)^{2}+k_{z}{ }^{2}=k_{2}{ }^{2}=
-# \omega^{2} \varepsilon_{2} \\
-# & \frac{k_{x 1}}{\varepsilon_{1}} \tan k_{x 1} d=
-# -\frac{k_{x 2}}{\varepsilon_{2}} \tan \left[k_{x 2}(a-d)\right]
-# \end{cases}
-# \end{aligned}
-# $$
-#
