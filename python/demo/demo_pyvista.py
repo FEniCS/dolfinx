@@ -71,7 +71,7 @@ def plot_scalar():
     # values, and one where the mesh is warped by these values
     subplotter = pyvista.Plotter(shape=(1, 2))
     subplotter.subplot(0, 0)
-    subplotter.add_text("Scalar countour field", font_size=14, color="black", position="upper_edge")
+    subplotter.add_text("Scalar contour field", font_size=14, color="black", position="upper_edge")
     subplotter.add_mesh(grid, show_edges=True, show_scalar_bar=True)
     subplotter.view_xy()
 

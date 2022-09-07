@@ -2,7 +2,7 @@
 include(GNUInstallDirs)
 
 #------------------------------------------------------------------------------
-# Delcare the library (target)
+# Declare the library (target)
 
 add_library(dolfinx)
 
@@ -38,7 +38,7 @@ set_source_files_properties(common/defines.cpp PROPERTIES
   COMPILE_DEFINITIONS "UFCX_SIGNATURE=\"${UFCX_SIGNATURE}\";DOLFINX_GIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
 
 #------------------------------------------------------------------------------
-# Set compiler options and defintions
+# Set compiler options and definitions
 
 # Set 'Developer' build type flags
 target_compile_options(dolfinx PRIVATE $<$<CONFIG:Developer>:${DOLFINX_CXX_DEVELOPER_FLAGS}>)
@@ -68,6 +68,9 @@ target_link_libraries(dolfinx PUBLIC Basix::basix)
 
 # xtensor
 target_link_libraries(dolfinx PUBLIC xtensor)
+if(XTENSOR_USE_XSIMD)
+  target_compile_definitions(dolfinx PUBLIC XTENSOR_USE_XSIMD)
+endif()
 
 # Boost
 target_link_libraries(dolfinx PUBLIC Boost::headers)

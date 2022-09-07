@@ -53,7 +53,7 @@ graph::build::distribute(MPI_Comm comm,
   }
 
   // TODO: Do this on the neighbourhood only
-  // Get the maximum number of eddges for a node
+  // Get the maximum number of edges for a node
   int shape1 = 0;
   {
     int shape1_local = list.num_nodes() > 0 ? list.links(0).size() : 0;
@@ -319,6 +319,7 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
 
   std::vector<std::array<std::int64_t, 2>> old_to_new;
   old_to_new.reserve(owned_indices.size());
+
   for (auto idx : owned_indices)
   {
     old_to_new.push_back(
@@ -379,7 +380,7 @@ std::vector<std::int64_t> graph::build::compute_local_to_global_links(
   common::Timer timer(
       "Compute-local-to-global links for global/local adjacency list");
 
-  // Return if gloabl and local are empty
+  // Return if global and local are empty
   if (global.num_nodes() == 0 and local.num_nodes() == 0)
     return std::vector<std::int64_t>();
 

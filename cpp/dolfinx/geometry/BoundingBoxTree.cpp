@@ -7,9 +7,9 @@
 
 #include "BoundingBoxTree.h"
 #include "utils.h"
+#include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
@@ -48,9 +48,9 @@ std::array<double, 6> compute_bbox_of_entity(const mesh::Mesh& mesh, int dim,
   std::array<double, 6> b;
   auto b0 = std::span(b).subspan<0,3>();
   auto b1 = std::span(b).subspan<3,3>();
-  common::impl::copy_N<3>(std::next(xg.begin(), 3 * vertex_indices.front()),
+  std::copy_n(std::next(xg.begin(), 3 * vertex_indices.front()),3,
                           b0.begin());
-  common::impl::copy_N<3>(std::next(xg.begin(), 3 * vertex_indices.front()),
+  std::copy_n(std::next(xg.begin(), 3 * vertex_indices.front()),3,
                           b1.begin());
 
   // Compute min and max over vertices
@@ -101,7 +101,7 @@ int _build_from_leaf(
     // Store bounding box data
     bboxes.push_back(entity_index);
     bboxes.push_back(entity_index);
-    common::impl::copy_N<6>(b.begin(), std::back_inserter(bbox_coordinates));
+    std::copy_n(b.begin(), 6, std::back_inserter(bbox_coordinates));
     return bboxes.size() / 2 - 1;
   }
   else
@@ -136,7 +136,7 @@ int _build_from_leaf(
     // Store bounding box data. Note that root box will be added last.
     bboxes.push_back(bbox0);
     bboxes.push_back(bbox1);
-    common::impl::copy_N<6>(b.begin(), std::back_inserter(bbox_coordinates));
+    std::copy_n(b.begin(), 6, std::back_inserter(bbox_coordinates));
     return bboxes.size() / 2 - 1;
   }
 }
@@ -288,7 +288,7 @@ BoundingBoxTree BoundingBoxTree::create_global_tree(MPI_Comm comm) const
       mpi_size);
   for (std::size_t i = 0; i < _recv_bbox.size(); ++i)
   {
-    common::impl::copy_N<6>(std::next(recv_bbox.begin(), 6 * i),
+    std::copy_n(std::next(recv_bbox.begin(), 6 * i), 6,
                             _recv_bbox[i].first.begin());
 
     _recv_bbox[i].second = i;
@@ -349,7 +349,7 @@ std::span<const double, 6> BoundingBoxTree::get_bbox(std::size_t node) const
 std::array<double, 6> BoundingBoxTree::copy_bbox(std::size_t node) const
 {
   std::array<double, 6> x;
-  common::impl::copy_N<6>(std::next(_bbox_coordinates.begin(), 6 * node),
+  std::copy_n(std::next(_bbox_coordinates.begin(), 6 * node), 6,
                           x.begin());
 
   return x;

@@ -596,13 +596,12 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
 }
 //------------------------------------------------------------------------------
 mesh::CellPartitionFunction
-mesh::create_cell_partitioner(const graph::partition_fn& partfn)
+mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
+                              const graph::partition_fn& partfn)
 {
-  return
-      [partfn](
-          MPI_Comm comm, int nparts, int tdim,
-          const graph::AdjacencyList<std::int64_t>& cells,
-          GhostMode ghost_mode) -> dolfinx::graph::AdjacencyList<std::int32_t>
+  return [partfn, ghost_mode](MPI_Comm comm, int nparts, int tdim,
+                              const graph::AdjacencyList<std::int64_t>& cells)
+             -> dolfinx::graph::AdjacencyList<std::int32_t>
   {
     LOG(INFO) << "Compute partition of cells across ranks";
 
