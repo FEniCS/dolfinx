@@ -80,12 +80,12 @@ def TEx_condition(kx_d, kx_v, d, h):
 
 
 def verify_mode(
-        kz, l, h, d, lmbd0, eps_d, eps_v, threshold):
+        kz, w, h, d, lmbd0, eps_d, eps_v, threshold):
 
     k0 = 2 * np.pi / lmbd0
 
     n = 1
-    ky = n * np.pi / l
+    ky = n * np.pi / w
 
     kx_d_target = np.sqrt(k0**2 * eps_d - ky**2 + - kz**2 + 0j)
 
