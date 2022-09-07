@@ -545,7 +545,7 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 Z0 = np.sqrt(mu_0 / epsilon_0)
 
 # Magnetic field H
-Hsh_3d = -1j * curl_2d(Esh) / Z0 / k0 / n_bkg
+Hsh_3d = -1j * curl_2d(Esh) / (Z0 * k0 * n_bkg)
 
 Esh_3d = as_vector((Esh[0], Esh[1], 0))
 E_3d = as_vector((E[0], E[1], 0))
