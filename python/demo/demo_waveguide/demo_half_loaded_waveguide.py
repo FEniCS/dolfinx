@@ -40,7 +40,7 @@ import ufl
 from dolfinx import fem, io
 from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
                           locate_entities)
-
+from analytical_modes import verify_mode
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
 # -
@@ -237,8 +237,8 @@ eps.setProblemType(SLEPc.EPS.ProblemType.GNHEP)
 
 # Next, we need to specify a tolerance for considering a solution
 # acceptable:
-
-eps.setTolerances(tol=1e-9)
+tol = 1e-9
+eps.setTolerances(tol=tol)
 
 # Now we need to set the eigensolver for our problem, which is the algorithm
 # we want to use to find the eigenvalues and the eigenvectors. SLEPc offers
@@ -312,34 +312,40 @@ vals.sort(key=lambda x: x[1].real)
 j = 0
 eh = fem.Function(V)
 
+kz_list = []
+
 for i, _ in vals:
 
     eignvl = eps.getEigenpair(i, eh.vector)
     error = eps.computeError(i, SLEPc.EPS.ErrorType.RELATIVE)
-
     kz = np.sqrt(-eignvl)
 
-    print(kz / k0)
-    print(error)
+    if error < tol and np.isclose(kz.imag, 0, atol=tol):
 
-    j += 1
+        kz_list.append(kz)
 
-    eh.x.scatter_forward()
+        assert verify_mode(kz, l, h, d, lmbd0, eps_d, eps_v, 1e-4)
 
-    eth, ezh = eh.split()
+        print(kz / k0)
 
-    eth.x.array[:] = eth.x.array[:] / kz
-    ezh.x.array[:] = ezh.x.array[:] * 1j
+        j += 1
 
-    V_dg = fem.VectorFunctionSpace(domain, ("DQ", degree))
-    Et_dg = fem.Function(V_dg)
-    Et_dg.interpolate(eth)
+        eh.x.scatter_forward()
 
-    with io.VTXWriter(domain.comm, f"sols/Et_{i}.bp", Et_dg) as f:
-        f.write(0.0)
+        eth, ezh = eh.split()
 
-    with io.VTXWriter(domain.comm, f"sols/Ez_{i}.bp", ezh) as f:
-        f.write(0.0)
+        eth.x.array[:] = eth.x.array[:] / kz
+        ezh.x.array[:] = ezh.x.array[:] * 1j
+
+        V_dg = fem.VectorFunctionSpace(domain, ("DQ", degree))
+        Et_dg = fem.Function(V_dg)
+        Et_dg.interpolate(eth)
+
+        with io.VTXWriter(domain.comm, f"sols/Et_{i}.bp", Et_dg) as f:
+            f.write(0.0)
+
+        with io.VTXWriter(domain.comm, f"sols/Ez_{i}.bp", ezh) as f:
+            f.write(0.0)
 # -
 
 # ## Analytical solutions
