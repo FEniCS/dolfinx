@@ -58,9 +58,9 @@ constexpr bool bbox_in_bbox(std::span<const double> a,
   constexpr double rtol = 1e-14;
   bool in = true;
   auto a0 = a.subspan<0, 3>();
-  auto a1 = a.subspan<3, 6>();
+  auto a1 = a.subspan<3, 3>();
   auto b0 = b.subspan<0, 3>();
-  auto b1 = b.subspan<3, 6>();
+  auto b1 = b.subspan<3, 3>();
   for (int i = 0; i < 3; i++)
   {
     double eps = rtol * (b1[i] - b0[i]);
