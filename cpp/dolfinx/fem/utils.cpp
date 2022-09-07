@@ -293,6 +293,7 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
 
   switch (integral_type)
   {
+    // TODO Sort pairs or use std::iota
   case fem::IntegralType::cell:
   {
     for (auto c = tagged_entities.cbegin(); c != entity_end; ++c)

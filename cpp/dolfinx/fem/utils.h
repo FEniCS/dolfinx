@@ -320,6 +320,7 @@ create_form(const ufcx_form& ufcx_form,
     assert(k);
 
     // FIXME Avoid copy (see also int and ext facets)
+    // TODO Try emplace instead of []
     const int id = cell_integral_ids[i];
     if (id == -1)
     {
