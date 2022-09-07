@@ -35,20 +35,13 @@
 import numpy as np
 from slepc4py import SLEPc
 
-try:
-    import pyvista
-    have_pyvista = True
-except ModuleNotFoundError:
-    print("pyvista and pyvistaqt are required to visualise the solution")
-    have_pyvista = False
-
 from analytical_modes import verify_mode
 
-from dolfinx import fem, io, plot
+from dolfinx import fem, io
 from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
                           locate_entities)
 from ufl import (FiniteElement, MixedElement, TestFunctions, TrialFunctions,
-                 inner, sqrt, dx, grad, curl)
+                 curl, dx, grad, inner)
 
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
