@@ -412,8 +412,8 @@ eps.x.scatter_forward()
 
 # Weak form
 F = - inner(curl(Es), curl(v)) * dDom \
-    + eps * k0 ** 2 * inner(Es, v) * dDom \
-    + k0 ** 2 * (eps - eps_bkg) * inner(Eb, v) * dDom \
+    + eps * (k0**2) * inner(Es, v) * dDom \
+    + (k0**2) * (eps - eps_bkg) * inner(Eb, v) * dDom \
     + (1j * k0 * n_bkg + 1 / (2 * r)) \
     * inner(cross(Es_3d, n_3d), cross(v_3d, n_3d)) * dsbc
 
