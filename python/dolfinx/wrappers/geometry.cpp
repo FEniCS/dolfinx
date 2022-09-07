@@ -244,7 +244,7 @@ void geometry(py::module& m)
             std::span<const double> bbox = self.get_bbox(i);
             std::array<std::size_t, 2> shape = {2, 3};
             std::vector<double> bbox_out(6);
-            dolfinx::common::impl::copy_N<6>(bbox.begin(), bbox_out.begin());
+            std::copy_n(bbox.begin(), 6, bbox_out.begin());
             return dolfinx_wrappers::as_pyarray(std::move(bbox_out), shape);
           },
           py::arg("i"))

@@ -129,8 +129,8 @@ nearest_simplex(const std::span<const double>& s)
     constexpr const int f[3][2] = {{0, 1}, {0, 2}, {1, 2}};
     for (std::size_t i = 0; i < s_rows; ++i)
     {
-      auto s0 = s.subspan<3 * f[i][0], 3>();
-      auto s1 = s.subspan<3 * f[i][1], 3>();
+      auto s0 = s.subspan(3 * f[i][0], 3);
+      auto s1 = s.subspan(3 * f[i][1], 3);
       if (lm[i] > 0 and lm[i] < 1)
       {
         std::array<double, 3> v;

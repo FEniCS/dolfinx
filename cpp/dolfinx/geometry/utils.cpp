@@ -36,7 +36,7 @@ constexpr bool point_in_bbox(std::span<const double, 6> b,
   constexpr double rtol = 1e-14;
   bool in = true;
   auto b0 = b.subspan<0, 3>();
-  auto b1 = b.subspan<3, 6>();
+  auto b1 = b.subspan<3, 3>();
   for (int i = 0; i < 3; i++)
   {
     double eps = rtol * (b1[i] - b0[i]);
@@ -365,7 +365,7 @@ double geometry::compute_squared_distance_bbox(std::span<const double, 6> b,
 {
   assert(b.size() == 6);
   auto b0 = b.subspan<0, 3>();
-  auto b1 = b.subspan<3, 6>();
+  auto b1 = b.subspan<3, 3>();
 
   return std::transform_reduce(x.begin(), x.end(), b0.begin(), 0.0,
                                std::plus<>{},
