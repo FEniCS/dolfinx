@@ -290,8 +290,6 @@ f = BackgroundElectricField(theta, n_bkg, k0)
 Eb = fem.Function(V)
 Eb.interpolate(f.eval)
 
-
-# Function r = radial distance from the (0, 0) point
 x = ufl.SpatialCoordinate(domain)
 r = radial_distance(x)
 
