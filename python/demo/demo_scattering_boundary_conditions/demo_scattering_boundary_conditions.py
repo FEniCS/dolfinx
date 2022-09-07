@@ -293,7 +293,7 @@ Eb.interpolate(f.eval)
 x = ufl.SpatialCoordinate(domain)
 r = radial_distance(x)
 
-# Definition of Trial and Test functions
+# Create test and trial functions
 Es = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
 
