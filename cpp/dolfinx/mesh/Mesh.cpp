@@ -201,12 +201,58 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   ss << "rank " << rank << ":\n";
   // -- Submesh topology
 
+  // Get the entities in the submesh that are owned by this process
+  auto mesh_entity_index_map = mesh.topology().index_map(dim);
+  assert(mesh_entity_index_map);
+
+  std::vector<std::int32_t> submesh_owned_entities;
+  std::copy_if(entities.begin(), entities.end(),
+               std::back_inserter(submesh_owned_entities),
+               [size = mesh_entity_index_map->size_local()](std::int32_t e)
+               { return e < size; });
+
+  // Create a map from the (local) entities in the submesh to the
+  // (local) entities in the mesh, and create the submesh entity index
+  // map.
+  std::vector<int32_t> submesh_to_mesh_entity_map(
+      submesh_owned_entities.begin(), submesh_owned_entities.end());
+  std::shared_ptr<common::IndexMap> submesh_entity_index_map;
+
+  // Create submesh entity index map
+  // TODO Call dolfinx::common::get_owned_indices here? Do we want to
+  // support `entities` possibly having a ghost on one process that is
+  // not in `entities` on the owning process?
+  // FIXME Should ghost entities be in the index map if they are not in
+  // the entity list?
+  std::pair<common::IndexMap, std::vector<int32_t>>
+      submesh_entity_index_map_pair
+      = mesh_entity_index_map->create_submap(submesh_owned_entities);
+  submesh_entity_index_map = std::make_shared<common::IndexMap>(
+      std::move(submesh_entity_index_map_pair.first));
+
+  ss << "submesh_to_mesh_entity_map (before) = "
+     << xt::adapt(submesh_to_mesh_entity_map) << "\n";
+
+  // TODO https://github.com/FEniCS/dolfinx/pull/2107
+
+  // Add ghost entities to the entity map
+  submesh_to_mesh_entity_map.reserve(submesh_entity_index_map->size_local()
+                                     + submesh_entity_index_map->num_ghosts());
+  std::transform(submesh_entity_index_map_pair.second.begin(),
+                 submesh_entity_index_map_pair.second.end(),
+                 std::back_inserter(submesh_to_mesh_entity_map),
+                 [size_local = mesh_entity_index_map->size_local()](
+                     std::int32_t entity_index)
+                 { return size_local + entity_index; });
+
+  ss << "submesh_to_mesh_entity_map = " << xt::adapt(submesh_to_mesh_entity_map)
+     << "\n";
+
   // Get the vertices in the submesh
   std::vector<std::int32_t> submesh_vertices
-      = compute_incident_entities(mesh, entities, dim, 0);
+      = compute_incident_entities(mesh, submesh_to_mesh_entity_map, dim, 0);
 
-  ss << "submesh_vertices = " << xt::adapt(submesh_vertices)
-     << "\n";
+  ss << "submesh_vertices = " << xt::adapt(submesh_vertices) << "\n";
 
   // Get the vertices in the submesh owned by this process
   auto mesh_vertex_index_map = mesh.topology().index_map(0);
@@ -240,51 +286,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                  { return size_local + vertex_index; });
 
   ss << "submesh_to_mesh_vertex_map = " << xt::adapt(submesh_to_mesh_vertex_map)
-     << "\n";
-
-  // Get the entities in the submesh that are owned by this process
-  auto mesh_entity_index_map = mesh.topology().index_map(dim);
-  assert(mesh_entity_index_map);
-
-  std::vector<std::int32_t> submesh_owned_entities;
-  std::copy_if(entities.begin(), entities.end(),
-               std::back_inserter(submesh_owned_entities),
-               [size = mesh_entity_index_map->size_local()](std::int32_t e)
-               { return e < size; });
-
-  // Create a map from the (local) entities in the submesh to the
-  // (local) entities in the mesh, and create the submesh entity index
-  // map.
-  std::vector<int32_t> submesh_to_mesh_entity_map(
-      submesh_owned_entities.begin(), submesh_owned_entities.end());
-  std::shared_ptr<common::IndexMap> submesh_entity_index_map;
-
-  // Create submesh entity index map
-  // TODO Call dolfinx::common::get_owned_indices here? Do we want to
-  // support `entities` possibly having a ghost on one process that is
-  // not in `entities` on the owning process?
-  std::pair<common::IndexMap, std::vector<int32_t>>
-      submesh_entity_index_map_pair
-      = mesh_entity_index_map->create_submap(submesh_owned_entities);
-  submesh_entity_index_map = std::make_shared<common::IndexMap>(
-      std::move(submesh_entity_index_map_pair.first));
-
-  ss << "submesh_to_mesh_entity_map (before) = " << xt::adapt(submesh_to_mesh_entity_map)
-     << "\n";
-
-    // TODO https://github.com/FEniCS/dolfinx/pull/2107
-
-  // Add ghost entities to the entity map
-  submesh_to_mesh_entity_map.reserve(submesh_entity_index_map->size_local()
-                                     + submesh_entity_index_map->num_ghosts());
-  std::transform(submesh_entity_index_map_pair.second.begin(),
-                 submesh_entity_index_map_pair.second.end(),
-                 std::back_inserter(submesh_to_mesh_entity_map),
-                 [size_local = mesh_entity_index_map->size_local()](
-                     std::int32_t entity_index)
-                 { return size_local + entity_index; });
-
-  ss << "submesh_to_mesh_entity_map = " << xt::adapt(submesh_to_mesh_entity_map)
      << "\n";
 
   // Submesh vertex to vertex connectivity (identity)
@@ -433,6 +434,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   Geometry submesh_geometry(
       submesh_x_dof_index_map, std::move(submesh_x_dofmap), submesh_coord_ele,
       std::move(submesh_x), mesh.geometry().dim(), std::move(submesh_igi));
+
+  std::cout << ss.str() << "\n";
 
   return {Mesh(mesh.comm(), std::move(submesh_topology),
                std::move(submesh_geometry)),

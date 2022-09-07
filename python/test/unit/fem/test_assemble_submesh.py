@@ -106,26 +106,15 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     edim = cube_mesh.topology.dim - 1
     entities = locate_entities_boundary(
         cube_mesh, edim, lambda x: np.isclose(x[2], 0.0))
-    # submesh = create_submesh(cube_mesh, edim, entities)[0]
+    submesh = create_submesh(cube_mesh, edim, entities)[0]
 
-    # A_submesh, b_submesh, s_submesh = assemble(submesh, space, k)
+    A_submesh, b_submesh, s_submesh = assemble(submesh, space, k)
 
-    # square_mesh = create_unit_square(
-    #     MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
-    # A_square_mesh, b_square_mesh, s_square_mesh = assemble(
-    #     square_mesh, space, k)
+    square_mesh = create_unit_square(
+        MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+    A_square_mesh, b_square_mesh, s_square_mesh = assemble(
+        square_mesh, space, k)
 
-    # assert np.isclose(A_submesh.norm(), A_square_mesh.norm())
-    # assert np.isclose(b_submesh.norm(), b_square_mesh.norm())
-    # assert np.isclose(s_submesh, s_square_mesh)
-
-
-# test_submesh_facet_assembly(6, 1, "Lagrange", GhostMode.shared_facet)
-
-n = 2
-square_mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=GhostMode.shared_facet)
-edim = square_mesh.topology.dim - 1
-entities = locate_entities_boundary(
-    square_mesh, edim, lambda x: np.isclose(x[1], 0.0))
-print(f"rank = {square_mesh.comm.rank}: entities = {entities}")
-submesh = create_submesh(square_mesh, edim, entities)[0]
+    assert np.isclose(A_submesh.norm(), A_square_mesh.norm())
+    assert np.isclose(b_submesh.norm(), b_square_mesh.norm())
+    assert np.isclose(s_submesh, s_square_mesh)
