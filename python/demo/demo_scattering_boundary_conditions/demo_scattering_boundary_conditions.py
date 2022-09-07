@@ -51,10 +51,7 @@ from mesh_wire import generate_mesh_wire
 from dolfinx import fem, plot
 from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
-from ufl import (FacetNormal, FiniteElement, Measure, SpatialCoordinate,
-                 TestFunction, TrialFunction, as_vector, conj, cross, curl,
-                 inner, lhs, rhs, sqrt)
-
+import ufl
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -192,12 +189,12 @@ class BackgroundElectricField:
 # +
 def radial_distance(x):
     """Returns the radial distance from the origin"""
-    return sqrt(x[0]**2 + x[1]**2)
+    return ufl.sqrt(x[0]**2 + x[1]**2)
 
 
 def curl_2d(a):
     """Returns the curl of two 2D vectors as a 3D vector"""
-    return as_vector((0, 0, a[1].dx(0) - a[0].dx(1)))
+    return ufl.as_vector((0, 0, a[1].dx(0) - a[0].dx(1)))
 
 # -
 
@@ -283,7 +280,7 @@ theta = 45 * deg  # Angle of incidence of the background field
 # elements to represent the electric field
 
 degree = 3
-curl_el = FiniteElement("N1curl", domain.ufl_cell(), degree)
+curl_el = ufl.FiniteElement("N1curl", domain.ufl_cell(), degree)
 V = fem.FunctionSpace(domain, curl_el)
 
 # Next, we can interpolate $\mathbf{E}_b$ into the function space $V$:
@@ -295,26 +292,26 @@ Eb.interpolate(f.eval)
 
 
 # Function r = radial distance from the (0, 0) point
-x = SpatialCoordinate(domain)
+x = ufl.SpatialCoordinate(domain)
 r = radial_distance(x)
 
 # Definition of Trial and Test functions
-Es = TrialFunction(V)
-v = TestFunction(V)
+Es = ufl.TrialFunction(V)
+v = ufl.TestFunction(V)
 
 # Definition of 3d fields for cross and curl operations
-Es_3d = as_vector((Es[0], Es[1], 0))
-v_3d = as_vector((v[0], v[1], 0))
+Es_3d = ufl.as_vector((Es[0], Es[1], 0))
+v_3d = ufl.as_vector((v[0], v[1], 0))
 
 # Measures for subdomains
-dx = Measure("dx", domain, subdomain_data=cell_tags)
-ds = Measure("ds", domain, subdomain_data=facet_tags)
+dx = ufl.Measure("dx", domain, subdomain_data=cell_tags)
+ds = ufl.Measure("ds", domain, subdomain_data=facet_tags)
 dDom = dx((au_tag, bkg_tag))
 dsbc = ds(boundary_tag)
 
 # Normal to the boundary
-n = FacetNormal(domain)
-n_3d = as_vector((n[0], n[1], 0))
+n = ufl.FacetNormal(domain)
+n_3d = ufl.as_vector((n[0], n[1], 0))
 # -
 
 # We turn our focus to the permittivity $\varepsilon$.
@@ -411,17 +408,17 @@ eps.x.scatter_forward()
 # We use the [UFL](https://github.com/FEniCS/ufl/) to implement the residual
 
 # Weak form
-F = - inner(curl(Es), curl(v)) * dDom \
-    + eps * (k0**2) * inner(Es, v) * dDom \
-    + (k0**2) * (eps - eps_bkg) * inner(Eb, v) * dDom \
+F = - ufl.inner(ufl.curl(Es), ufl.curl(v)) * dDom \
+    + eps * (k0**2) * ufl.inner(Es, v) * dDom \
+    + (k0**2) * (eps - eps_bkg) * ufl.inner(Eb, v) * dDom \
     + (1j * k0 * n_bkg + 1 / (2 * r)) \
-    * inner(cross(Es_3d, n_3d), cross(v_3d, n_3d)) * dsbc
+    * ufl.inner(ufl.cross(Es_3d, n_3d), ufl.cross(v_3d, n_3d)) * dsbc
 
 # We split the residual into a sesquilinear (lhs) and linear (rhs) form
 # and solve the problem. We store the scattered field $\mathbf{E}_s$ as
 # `Esh`:
 
-a, L = lhs(F), rhs(F)
+a, L = ufl.lhs(F), ufl.rhs(F)
 problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={
                                   "ksp_type": "preonly", "pc_type": "lu"})
 Esh = problem.solve()
@@ -432,7 +429,7 @@ Esh = problem.solve()
 # into a suitable discontinuous Lagrange space.
 
 # +
-V_dg = fem.VectorFunctionSpace(domain, ("DG", 3))
+V_dg = fem.VectorFunctionSpace(domain, ("DG", degree))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 
@@ -488,8 +485,8 @@ with VTXWriter(domain.comm, "E.bp", E_dg) as vtx:
 # ||\mathbf{E}_s|| = \sqrt{\mathbf{E}_s\cdot\bar{\mathbf{E}}_s}
 # $$
 
-lagr_el = FiniteElement("CG", domain.ufl_cell(), 2)
-norm_func = sqrt(inner(Esh, Esh))
+lagr_el = ufl.FiniteElement("CG", domain.ufl_cell(), 2)
+norm_func = ufl.sqrt(ufl.inner(Esh, Esh))
 V_normEsh = fem.FunctionSpace(domain, lagr_el)
 norm_expr = fem.Expression(norm_func, V_normEsh.element.interpolation_points())
 normEsh = fem.Function(V_normEsh)
@@ -547,8 +544,8 @@ Z0 = np.sqrt(mu_0 / epsilon_0)
 # Magnetic field H
 Hsh_3d = -1j * curl_2d(Esh) / (Z0 * k0 * n_bkg)
 
-Esh_3d = as_vector((Esh[0], Esh[1], 0))
-E_3d = as_vector((E[0], E[1], 0))
+Esh_3d = ufl.as_vector((Esh[0], Esh[1], 0))
+E_3d = ufl.as_vector((E[0], E[1], 0))
 
 # Intensity of the electromagnetic fields I0 = 0.5*E0**2/Z0
 # E0 = np.sqrt(ax**2 + ay**2) = 1, see background_electric_field
@@ -558,8 +555,8 @@ I0 = 0.5 / Z0
 gcs = 2 * radius_wire
 
 # Quantities for the calculation of efficiencies
-P = 0.5 * inner(cross(Esh_3d, conj(Hsh_3d)), n_3d)
-Q = 0.5 * np.imag(eps_au) * k0 * (inner(E_3d, E_3d)) / Z0 / n_bkg
+P = 0.5 * ufl.inner(ufl.cross(Esh_3d, ufl.conj(Hsh_3d)), n_3d)
+Q = 0.5 * np.imag(eps_au) * k0 * (ufl.inner(E_3d, E_3d)) / Z0 / n_bkg
 
 # Define integration domain for the wire
 dAu = dx(au_tag)
