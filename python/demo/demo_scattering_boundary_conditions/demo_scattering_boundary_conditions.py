@@ -578,7 +578,7 @@ assert err_abs < 0.01
 assert err_sca < 0.01
 assert err_ext < 0.01
 
-if MPI.COMM_WORLD.rank == 0:
+if domain.comm.rank == 0:
 
     print()
     print(f"The analytical absorption efficiency is {q_abs_analyt}")
