@@ -202,30 +202,28 @@ def curl_2d(a):
 
 
 # +
-um = 10**-6  # micron
-nm = 10**-9  # nanometer
 pi = np.pi
 epsilon_0 = 8.8541878128 * 10**-12
 mu_0 = 4 * pi * 10**-7
 
 # Radius of the wire and of the boundary of the domain
-radius_wire = 0.050 * um
-radius_dom = 1 * um
+radius_wire = 0.050e-6
+radius_dom = 1e-6
 
 # The smaller the mesh_factor, the finer is the mesh
 mesh_factor = 1.2
 
 # Mesh size inside the wire
-in_wire_size = mesh_factor * 7 * nm
+in_wire_size = mesh_factor * 7.0e-9
 
 # Mesh size at the boundary of the wire
-on_wire_size = mesh_factor * 3 * nm
+on_wire_size = mesh_factor * 3.0e-9
 
 # Mesh size in the background
-bkg_size = mesh_factor * 60 * nm
+bkg_size = mesh_factor * 60.0e-9
 
 # Mesh size at the boundary
-boundary_size = mesh_factor * 30 * nm
+boundary_size = mesh_factor * 30.0e-9
 
 # Tags for the subdomains
 au_tag = 1          # gold wire
@@ -268,12 +266,11 @@ if have_pyvista:
 
 # Now we define some other problem specific parameters:
 
-wl0 = 0.4 * um  # Wavelength of the background field
+wl0 = 0.4e-6  # Wavelength of the background field
 n_bkg = 1.33  # Background refractive index
 eps_bkg = n_bkg**2  # Background relative permittivity
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
-deg = np.pi / 180
-theta = 45 * deg  # Angle of incidence of the background field
+theta = np.pi / 4  # Angle of incidence of the background field
 
 # We use a function space consisting of degree 3
 # [Nedelec (first kind)](https://defelement.com/elements/nedelec1.html)
