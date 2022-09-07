@@ -78,14 +78,14 @@ std::pair<std::int32_t, double> _compute_closest_entity(
 {
   // Get children of current bounding box node (child_1 denotes entity
   // index for leaves)
-  std::span<const int, 2> bbox = tree.bbox_span(node);
+  const std::array<int, 2> bbox = tree.bbox(node);
   double r2;
   if (is_leaf(bbox))
   {
     // If point cloud tree the exact distance is easy to compute
     if (tree.tdim() == 0)
     {
-      std::array<double, 6> bbox_coord = tree.copy_bbox(node);
+      std::array<double, 6> bbox_coord = tree.get_bbox(node);
       auto diff = std::span(bbox_coord).subspan<0, 3>();
 
       for (std::size_t k = 0; k < 3; ++k)
@@ -99,7 +99,8 @@ std::pair<std::int32_t, double> _compute_closest_entity(
       // obtain exact distance to the convex hull of the entity
       if (r2 <= R2)
       {
-        r2 = geometry::squared_distance(mesh, tree.tdim(), bbox.subspan<1, 1>(),
+        r2 = geometry::squared_distance(mesh, tree.tdim(),
+                                        std::span(std::next(bbox.begin(), 1)),
                                         {{point[0], point[1], point[2]}})
                  .front();
       }
@@ -117,8 +118,7 @@ std::pair<std::int32_t, double> _compute_closest_entity(
   else
   {
     // If bounding box is outside radius, then don't search further
-    r2 = geometry::compute_squared_distance_bbox(std::span(tree.get_bbox(node)),
-                                                 point);
+    r2 = geometry::compute_squared_distance_bbox(tree.get_bbox(node), point);
     if (r2 > R2)
       return {closest_entity, R2};
 
@@ -146,7 +146,7 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
 
   while (next != -1)
   {
-    std::span<const int, 2> bbox = tree.bbox_span(next);
+    const std::array<int, 2> bbox = tree.bbox(next);
     next = -1;
 
     if (is_leaf(bbox))
@@ -198,8 +198,8 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
     return;
 
   // Get bounding boxes for current nodes
-  std::span<const int, 2> bbox_A = A.bbox_span(node_A);
-  std::span<const int, 2> bbox_B = B.bbox_span(node_B);
+  const std::array<int, 2> bbox_A = A.bbox(node_A);
+  const std::array<int, 2> bbox_B = B.bbox(node_B);
 
   // Check whether we've reached a leaf in A or B
   const bool is_leaf_A = is_leaf(bbox_A);
@@ -329,7 +329,7 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       leaves = midpoint_tree.bbox(0);
       assert(is_leaf(leaves));
       initial_entity = leaves[0];
-      std::array<double, 6> bbox_coord = midpoint_tree.copy_bbox(0);
+      std::array<double, 6> bbox_coord = midpoint_tree.get_bbox(0);
       auto diff = std::span(bbox_coord).subspan<0, 3>();
       for (std::size_t k = 0; k < 3; ++k)
         diff[k] -= points[3 * i + k];

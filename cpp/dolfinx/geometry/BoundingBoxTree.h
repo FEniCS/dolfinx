@@ -71,13 +71,7 @@ public:
   /// Return bounding box coordinates for a given node in the tree
   /// @param[in] node The bounding box node index
   /// @return A copy of bounding box (lower_corner, upper_corner). Shape (2,3).
-  std::array<double, 6> copy_bbox(std::size_t node) const;
-
-  /// Return bounding box coordinates for a given node in the tree
-  /// @param[in] node The bounding box node index
-  /// @return The bounding box (lower_corner, upper_corner) as a subspan of the
-  /// bounding box coordinates. Shape (2,3). Flattened row-major.
-  std::span<const double, 6> get_bbox(std::size_t node) const;
+  std::array<double, 6> get_bbox(std::size_t node) const;
 
   /// Compute a global bounding tree (collective on comm)
   /// This can be used to find which process a point might have a
@@ -106,19 +100,6 @@ public:
   {
     assert(2 * node + 1 < _bboxes.size());
     return {_bboxes[2 * node], _bboxes[2 * node + 1]};
-  }
-
-  /// Get bounding box child nodes
-  ///
-  /// @param[in] node The bounding box node index
-  /// @return The indices of the two child nodes. If @p node is a leaf
-  /// nodes, then the values in the returned array are equal and
-  /// correspond to the index of the entity that the leaf node bounds,
-  /// e.g. the index of the cell that it bounds.
-  std::span<const int, 2> bbox_span(std::size_t node) const
-  {
-    assert(2 * node + 1 < _bboxes.size());
-    return std::span<const int, 2>(_bboxes.data() + 2 * node, 2);
   }
 
 private:
