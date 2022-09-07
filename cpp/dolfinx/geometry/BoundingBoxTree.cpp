@@ -33,8 +33,8 @@ std::vector<std::int32_t> range(const mesh::Mesh& mesh, int tdim)
   return r;
 }
 //-----------------------------------------------------------------------------
-// Compute bounding box of mesh entity. The bounding box is defined by (lower left corner, top right corner).
-// Storage flattened row-major
+// Compute bounding box of mesh entity. The bounding box is defined by (lower
+// left corner, top right corner). Storage flattened row-major
 std::array<double, 6> compute_bbox_of_entity(const mesh::Mesh& mesh, int dim,
                                              std::int32_t index)
 {
@@ -47,12 +47,10 @@ std::array<double, 6> compute_bbox_of_entity(const mesh::Mesh& mesh, int dim,
       = mesh::entities_to_geometry(mesh, dim, entity, false);
 
   std::array<double, 6> b;
-  auto b0 = std::span(b).subspan<0,3>();
-  auto b1 = std::span(b).subspan<3,3>();
-  std::copy_n(std::next(xg.begin(), 3 * vertex_indices.front()),3,
-                          b0.begin());
-  std::copy_n(std::next(xg.begin(), 3 * vertex_indices.front()),3,
-                          b1.begin());
+  auto b0 = std::span(b).subspan<0, 3>();
+  auto b1 = std::span(b).subspan<3, 3>();
+  std::copy_n(std::next(xg.begin(), 3 * vertex_indices.front()), 3, b0.begin());
+  std::copy_n(std::next(xg.begin(), 3 * vertex_indices.front()), 3, b1.begin());
 
   // Compute min and max over vertices
   for (int local_vertex : vertex_indices)
@@ -67,21 +65,21 @@ std::array<double, 6> compute_bbox_of_entity(const mesh::Mesh& mesh, int dim,
   return b;
 }
 //-----------------------------------------------------------------------------
-// Compute bounding box of bounding boxes. Each bounding box is defined as a tuple (corners, entity_index).
-// The corners of the bounding box is flattened row-major as (lower left corner, top right corner).
+// Compute bounding box of bounding boxes. Each bounding box is defined as a
+// tuple (corners, entity_index). The corners of the bounding box is flattened
+// row-major as (lower left corner, top right corner).
 std::array<double, 6> compute_bbox_of_bboxes(
-    std::span<const std::pair<std::array<double, 6>, std::int32_t>>
-        leaf_bboxes)
+    std::span<const std::pair<std::array<double, 6>, std::int32_t>> leaf_bboxes)
 {
   // Compute min and max over remaining boxes
   std::array<double, 6> b = leaf_bboxes.front().first;
 
-  for (auto& box : leaf_bboxes)
+  for (auto [box, _] : leaf_bboxes)
   {
-    std::transform(box.first.cbegin(), std::next(box.first.cbegin(), 3),
-                   b.cbegin(), b.begin(),
+    std::transform(box.cbegin(), std::next(box.cbegin(), 3), b.cbegin(),
+                   b.begin(),
                    [](double a, double b) { return std::min(a, b); });
-    std::transform(std::next(box.first.cbegin(), 3), box.first.cend(),
+    std::transform(std::next(box.cbegin(), 3), box.cend(),
                    std::next(b.cbegin(), 3), std::next(b.begin(), 3),
                    [](double a, double b) { return std::max(a, b); });
   }
@@ -291,7 +289,7 @@ BoundingBoxTree BoundingBoxTree::create_global_tree(MPI_Comm comm) const
   for (std::size_t i = 0; i < _recv_bbox.size(); ++i)
   {
     std::copy_n(std::next(recv_bbox.begin(), 6 * i), 6,
-                            _recv_bbox[i].first.begin());
+                _recv_bbox[i].first.begin());
 
     _recv_bbox[i].second = i;
   }
@@ -351,8 +349,7 @@ std::span<const double, 6> BoundingBoxTree::get_bbox(std::size_t node) const
 std::array<double, 6> BoundingBoxTree::copy_bbox(std::size_t node) const
 {
   std::array<double, 6> x;
-  std::copy_n(std::next(_bbox_coordinates.begin(), 6 * node), 6,
-                          x.begin());
+  std::copy_n(std::next(_bbox_coordinates.begin(), 6 * node), 6, x.begin());
 
   return x;
 }
