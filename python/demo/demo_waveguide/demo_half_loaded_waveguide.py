@@ -59,8 +59,8 @@ d = 0.5 * h
 nx = 300
 ny = int(0.4 * nx)
 
-domain = create_rectangle(MPI.COMM_WORLD, [[0, 0], [w, h]], [
-    nx, ny], CellType.quadrilateral)
+domain = create_rectangle(MPI.COMM_WORLD, np.array(
+    [[0, 0], [w, h]]), np.array([nx, ny]), CellType.quadrilateral)
 
 domain.topology.create_connectivity(
     domain.topology.dim - 1, domain.topology.dim)
