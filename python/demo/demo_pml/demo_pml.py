@@ -103,7 +103,7 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 
 
 def background_field(theta: float, n_b: float, k0: complex,
-                     x: np.typing.NDArray[float]):
+                     x: np.typing.NDArray[np.float64]):
 
     kx = n_b * k0 * np.cos(theta)
     ky = n_b * k0 * np.sin(theta)
