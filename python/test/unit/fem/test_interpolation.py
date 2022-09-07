@@ -718,4 +718,3 @@ def test_mixed_interpolation_permuting(cell_type, order):
     error2 = assemble_scalar(form(ufl.dot(diff, diff) * ufl.dx))
 
     assert np.isclose(error, error2)
->>>>>>> 4197fa6a69 (Fix permuting of Lagrange spaces inside mixed elements (#2347))
