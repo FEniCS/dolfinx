@@ -8,12 +8,12 @@
 
 #include "Function.h"
 #include <array>
-#include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <span>
 #include <utility>
 #include <vector>
+#include <algorithm>
 
 namespace dolfinx::fem
 {
@@ -197,8 +197,8 @@ public:
       auto x_dofs = x_dofmap.links(cell);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)
       {
-        common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
-                                std::next(coordinate_dofs.begin(), 3 * i));
+        std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
+                    std::next(coordinate_dofs.begin(), 3 * i));
       }
 
       const T* coeff_cell = coeffs.data() + c * cstride;

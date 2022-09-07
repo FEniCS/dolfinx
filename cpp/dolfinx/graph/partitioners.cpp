@@ -497,8 +497,9 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     {
       offsets.resize(graph.num_nodes() + 1);
       std::iota(offsets.begin(), offsets.end(), 0);
-      dests = std::vector<std::int32_t>(node_partition.begin(),
-                                        node_partition.end());
+      dests = std::vector<std::int32_t>(
+          node_partition.begin(),
+          std::next(node_partition.begin(), graph.num_nodes()));
     }
 
     // Clean up SCOTCH objects

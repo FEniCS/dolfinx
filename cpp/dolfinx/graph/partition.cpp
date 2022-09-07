@@ -319,6 +319,7 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
 
   std::vector<std::array<std::int64_t, 2>> old_to_new;
   old_to_new.reserve(owned_indices.size());
+
   for (auto idx : owned_indices)
   {
     old_to_new.push_back(

@@ -8,7 +8,7 @@
 
 #include "HDF5Interface.h"
 #include <array>
-#include <dolfinx/common/utils.h>
+#include <complex>
 #include <dolfinx/mesh/cell_types.h>
 #include <filesystem>
 #include <numeric>
