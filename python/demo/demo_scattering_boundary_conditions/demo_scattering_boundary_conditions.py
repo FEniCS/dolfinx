@@ -244,7 +244,7 @@ model = generate_mesh_wire(
     radius_wire, radius_dom, in_wire_size, on_wire_size, bkg_size,
     boundary_size, au_tag, bkg_tag, boundary_tag)
 
-mesh, cell_tags, facet_tags = model_to_mesh(
+domain, cell_tags, facet_tags = model_to_mesh(
     model, MPI.COMM_WORLD, 0, gdim=2)
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
@@ -253,11 +253,11 @@ MPI.COMM_WORLD.barrier()
 # The mesh is visualized with [PyVista](https://docs.pyvista.org/)
 
 if have_pyvista:
-    topology, cell_types, geometry = plot.create_vtk_mesh(mesh, 2)
+    topology, cell_types, geometry = plot.create_vtk_mesh(domain, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     pyvista.set_jupyter_backend("pythreejs")
     plotter = pyvista.Plotter()
-    num_local_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    num_local_cells = domain.topology.index_map(domain.topology.dim).size_local
     grid.cell_data["Marker"] = cell_tags.values[cell_tags.indices
                                                 < num_local_cells]
     grid.set_active_scalars("Marker")
@@ -283,8 +283,8 @@ theta = 45 * deg  # Angle of incidence of the background field
 # elements to represent the electric field
 
 degree = 3
-curl_el = FiniteElement("N1curl", mesh.ufl_cell(), degree)
-V = fem.FunctionSpace(mesh, curl_el)
+curl_el = FiniteElement("N1curl", domain.ufl_cell(), degree)
+V = fem.FunctionSpace(domain, curl_el)
 
 # Next, we can interpolate $\mathbf{E}_b$ into the function space $V$:
 
@@ -295,7 +295,7 @@ Eb.interpolate(f.eval)
 
 
 # Function r = radial distance from the (0, 0) point
-x = SpatialCoordinate(mesh)
+x = SpatialCoordinate(domain)
 r = radial_distance(x)
 
 # Definition of Trial and Test functions
@@ -307,13 +307,13 @@ Es_3d = as_vector((Es[0], Es[1], 0))
 v_3d = as_vector((v[0], v[1], 0))
 
 # Measures for subdomains
-dx = Measure("dx", mesh, subdomain_data=cell_tags)
-ds = Measure("ds", mesh, subdomain_data=facet_tags)
+dx = Measure("dx", domain, subdomain_data=cell_tags)
+ds = Measure("ds", domain, subdomain_data=facet_tags)
 dDom = dx((au_tag, bkg_tag))
 dsbc = ds(boundary_tag)
 
 # Normal to the boundary
-n = FacetNormal(mesh)
+n = FacetNormal(domain)
 n_3d = as_vector((n[0], n[1], 0))
 # -
 
@@ -331,7 +331,7 @@ eps_au = -1.0782 + 1j * 5.8089
 # for cells inside the wire, while it takes the value of the
 # background permittivity otherwise:
 
-D = fem.FunctionSpace(mesh, ("DG", 0))
+D = fem.FunctionSpace(domain, ("DG", 0))
 eps = fem.Function(D)
 au_cells = cell_tags.find(au_tag)
 bkg_cells = cell_tags.find(bkg_tag)
@@ -432,11 +432,11 @@ Esh = problem.solve()
 # into a suitable discontinuous Lagrange space.
 
 # +
-V_dg = fem.VectorFunctionSpace(mesh, ("DG", 3))
+V_dg = fem.VectorFunctionSpace(domain, ("DG", 3))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 
-with VTXWriter(mesh.comm, "Esh.bp", Esh_dg) as vtx:
+with VTXWriter(domain.comm, "Esh.bp", Esh_dg) as vtx:
     vtx.write(0.0)
 # -
 
@@ -450,8 +450,8 @@ if have_pyvista:
     V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
-    Esh_values[:, :mesh.topology.dim] = \
-        Esh_dg.x.array.reshape(V_x.shape[0], mesh.topology.dim).real
+    Esh_values[:, :domain.topology.dim] = \
+        Esh_dg.x.array.reshape(V_x.shape[0], domain.topology.dim).real
 
     V_grid.point_data["u"] = Esh_values
 
@@ -479,7 +479,7 @@ E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
 E_dg = fem.Function(V_dg)
 E_dg.interpolate(E)
 
-with VTXWriter(mesh.comm, "E.bp", E_dg) as vtx:
+with VTXWriter(domain.comm, "E.bp", E_dg) as vtx:
     vtx.write(0.0)
 # -
 
@@ -488,9 +488,9 @@ with VTXWriter(mesh.comm, "E.bp", E_dg) as vtx:
 # ||\mathbf{E}_s|| = \sqrt{\mathbf{E}_s\cdot\bar{\mathbf{E}}_s}
 # $$
 
-lagr_el = FiniteElement("CG", mesh.ufl_cell(), 2)
+lagr_el = FiniteElement("CG", domain.ufl_cell(), 2)
 norm_func = sqrt(inner(Esh, Esh))
-V_normEsh = fem.FunctionSpace(mesh, lagr_el)
+V_normEsh = fem.FunctionSpace(domain, lagr_el)
 norm_expr = fem.Expression(norm_func, V_normEsh.element.interpolation_points())
 normEsh = fem.Function(V_normEsh)
 normEsh.interpolate(norm_expr)
@@ -567,13 +567,13 @@ dAu = dx(au_tag)
 # Normalized absorption efficiency
 q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / gcs / I0).real
 # Sum results from all MPI processes
-q_abs_fenics = mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+q_abs_fenics = domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
 q_sca_fenics_proc = (fem.assemble_scalar(fem.form(P * dsbc)) / gcs / I0).real
 
 # Sum results from all MPI processes
-q_sca_fenics = mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
+q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
 # Extinction efficiency
 q_ext_fenics = q_abs_fenics + q_sca_fenics
