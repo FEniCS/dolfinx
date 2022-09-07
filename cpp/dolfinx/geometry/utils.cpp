@@ -35,8 +35,8 @@ constexpr bool point_in_bbox(std::span<const double, 6> b,
   assert(b.size() == 6);
   constexpr double rtol = 1e-14;
   bool in = true;
-  auto b0 = b.subspan(0, 3);
-  auto b1 = b.subspan(3, 6);
+  auto b0 = b.subspan<0, 3>();
+  auto b1 = b.subspan<3, 6>();
   for (int i = 0; i < 3; i++)
   {
     double eps = rtol * (b1[i] - b0[i]);
@@ -57,10 +57,10 @@ constexpr bool bbox_in_bbox(std::span<const double> a,
   assert(a.size() == 6);
   constexpr double rtol = 1e-14;
   bool in = true;
-  auto a0 = a.subspan(0, 3);
-  auto a1 = a.subspan(3, 6);
-  auto b0 = b.subspan(0, 3);
-  auto b1 = b.subspan(3, 6);
+  auto a0 = a.subspan<0, 3>();
+  auto a1 = a.subspan<3, 6>();
+  auto b0 = b.subspan<0, 3>();
+  auto b1 = b.subspan<3, 6>();
   for (int i = 0; i < 3; i++)
   {
     double eps = rtol * (b1[i] - b0[i]);
@@ -86,7 +86,7 @@ std::pair<std::int32_t, double> _compute_closest_entity(
     if (tree.tdim() == 0)
     {
       std::array<double, 6> bbox_coord = tree.copy_bbox(node);
-      auto diff = std::span(bbox_coord).subspan(0, 3);
+      auto diff = std::span(bbox_coord).subspan<0, 3>();
 
       for (std::size_t k = 0; k < 3; ++k)
         diff[k] -= point[k];
@@ -99,7 +99,7 @@ std::pair<std::int32_t, double> _compute_closest_entity(
       // obtain exact distance to the convex hull of the entity
       if (r2 <= R2)
       {
-        r2 = geometry::squared_distance(mesh, tree.tdim(), bbox.subspan(1, 1),
+        r2 = geometry::squared_distance(mesh, tree.tdim(), bbox.subspan<1, 1>(),
                                         {{point[0], point[1], point[2]}})
                  .front();
       }
@@ -330,7 +330,7 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       assert(is_leaf(leaves));
       initial_entity = leaves[0];
       std::array<double, 6> bbox_coord = midpoint_tree.copy_bbox(0);
-      auto diff = std::span(bbox_coord).subspan(0, 3);
+      auto diff = std::span(bbox_coord).subspan<0, 3>();
       for (std::size_t k = 0; k < 3; ++k)
         diff[k] -= points[3 * i + k];
       R2 = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
@@ -364,8 +364,8 @@ double geometry::compute_squared_distance_bbox(std::span<const double, 6> b,
                                                std::span<const double, 3> x)
 {
   assert(b.size() == 6);
-  auto b0 = b.subspan(0, 3);
-  auto b1 = b.subspan(3, 6);
+  auto b0 = b.subspan<0, 3>();
+  auto b1 = b.subspan<3, 6>();
 
   return std::transform_reduce(x.begin(), x.end(), b0.begin(), 0.0,
                                std::plus<>{},
