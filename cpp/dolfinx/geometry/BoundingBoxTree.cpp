@@ -70,7 +70,7 @@ std::array<double, 6> compute_bbox_of_entity(const mesh::Mesh& mesh, int dim,
 // Compute bounding box of bounding boxes. Each bounding box is defined as a tuple (corners, entity_index).
 // The corners of the bounding box is flattened row-major as (lower left corner, top right corner).
 std::array<double, 6> compute_bbox_of_bboxes(
-    const std::span<const std::pair<std::array<double, 6>, std::int32_t>>&
+    std::span<const std::pair<std::array<double, 6>, std::int32_t>>
         leaf_bboxes)
 {
   // Compute min and max over remaining boxes
