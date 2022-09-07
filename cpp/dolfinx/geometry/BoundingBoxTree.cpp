@@ -33,7 +33,8 @@ std::vector<std::int32_t> range(const mesh::Mesh& mesh, int tdim)
   return r;
 }
 //-----------------------------------------------------------------------------
-// Compute bounding box of mesh entity
+// Compute bounding box of mesh entity. The bounding box is defined by (lower left corner, top right corner).
+// Storage flattened row-major
 std::array<double, 6> compute_bbox_of_entity(const mesh::Mesh& mesh, int dim,
                                              std::int32_t index)
 {
