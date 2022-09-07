@@ -442,7 +442,7 @@ public:
     _val_send_disp.resize(src_ranks.size() + 1, 0);
     std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
                      std::next(_val_send_disp.begin()));
-    std::vector<int> index_send_disp(num_neighbors + 1);
+    std::vector<int> index_send_disp(src_ranks.size() + 1);
     std::transform(_val_send_disp.begin(), _val_send_disp.end(),
                    index_send_disp.begin(), [](int d) { return d * 2; });
     int nbs = _bs[0] * _bs[1];
