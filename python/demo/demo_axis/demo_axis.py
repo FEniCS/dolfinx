@@ -20,7 +20,6 @@ import numpy as np
 from mesh_sphere_axis import generate_mesh_sphere_axis
 #from scattnlay import scattnlay
 from scipy.special import jv, jvp
-
 from dolfinx import fem, mesh, plot
 from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
@@ -175,7 +174,7 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # As a first step, we can define the function for the $\nabla\times$
 # operator in cylindrical coordinates:
 
-def curl_axis(a, m, x):
+def curl_axis(a, m: int, x):
 
     curl_r = -a[2].dx(1) - 1j * m / x[0] * a[1]
     curl_z = a[2] / x[0] + a[2].dx(0) + 1j * m / x[0] * a[0]
@@ -212,9 +211,9 @@ def curl_axis(a, m, x):
 # In DOLFINx, we can implement these functions in this way:
 
 # +
-def background_field_rz(theta, n_b, k0, m, x):
+def background_field_rz(theta: float, n_bkg: float, k0: float, m: int, x):
 
-    k = k0 * n_b
+    k = k0 * n_bkg
 
     a_r = (np.cos(theta) * np.exp(1j * k * x[1] * np.cos(theta))
            * (1j)**(-m + 1) * jvp(m, k * x[0] * np.sin(theta), 1))
@@ -225,9 +224,9 @@ def background_field_rz(theta, n_b, k0, m, x):
     return (a_r, a_z)
 
 
-def background_field_p(theta, n_b, k0, m, x):
+def background_field_p(theta: float, n_bkg: float, k0: float, m: int, x):
 
-    k = k0 * n_b
+    k = k0 * n_bkg
 
     a_p = (np.cos(theta) / (k * x[0] * np.sin(theta))
            * np.exp(1j * k * x[1] * np.cos(theta)) * m
@@ -292,7 +291,8 @@ def background_field_p(theta, n_b, k0, m, x):
 # `pml_coordinate` and `create_mu_eps` functions:
 
 # +
-def pml_coordinate(x, r, alpha, k0, radius_dom, radius_pml):
+def pml_coordinate(
+        x, r, alpha: float, k0: float, radius_dom: float, radius_pml: float):
 
     return (x + 1j * alpha / k0 * x * (r - radius_dom) / (radius_pml * r))
 
