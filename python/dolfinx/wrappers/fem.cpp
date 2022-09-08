@@ -186,7 +186,7 @@ void declare_functions(py::module& m)
          std::array<int, 2> bs)
       {
         dolfinx::fem::assemble_matrix(A.mat_add_values_blocked(bs), a,
-                                      std::span(constants),
+                                      std::span(constants.data(), constants.size()),
                                       py_to_cpp_coeffs(coefficients), bcs);
       },
       "Very experimental.");
