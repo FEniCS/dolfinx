@@ -12,7 +12,6 @@
 #include <functional>
 #include <mpi.h>
 #include <span>
-#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::fem
 {
@@ -130,8 +129,11 @@ std::vector<std::int32_t> locate_entities(
 /// process)
 std::vector<std::int32_t> locate_entities_boundary(
     const Mesh& mesh, int dim,
-    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
-        marker);
+    const std::function<std::vector<std::int8_t>(
+        std::experimental::mdspan<
+            const double,
+            std::experimental::extents<
+                std::size_t, 3, std::experimental::dynamic_extent>>)>& marker);
 
 /// @brief Determine the indices in the geometry data for each vertex of
 /// the given mesh entities.

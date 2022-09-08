@@ -92,8 +92,6 @@
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/petsc.h>
-#include <xtensor/xarray.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using T = PetscScalar;
@@ -164,10 +162,17 @@ int main(int argc, char* argv[])
 
     auto facets = mesh::locate_entities_boundary(
         *mesh, 1,
-        [](auto&& x) -> xt::xtensor<bool, 1>
+        [](auto x)
         {
-          auto x0 = xt::row(x, 0);
-          return xt::isclose(x0, 0.0) or xt::isclose(x0, 2.0);
+          constexpr double eps = 1.0e-8;
+          std::vector<std::int8_t> marker(x.extent(1), false);
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+          {
+            double x0 = x(0, p);
+            if (std::abs(x0) < eps or std::abs(x0 - 2) < eps)
+              marker[p] = true;
+          }
+          return marker;
         });
     const auto bdofs = fem::locate_dofs_topological({*V}, 1, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);

@@ -21,7 +21,6 @@
 #include <dolfinx/graph/partition.h>
 #include <stdexcept>
 #include <vector>
-#include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
 
@@ -33,7 +32,7 @@ namespace
 /// @return The vertex coordinates. The shape is `(3, num_vertices)` and
 /// the jth column hold the coordinates of vertex j.
 std::pair<std::vector<double>, std::array<std::size_t, 2>>
-compute_vertex_coords_new(const mesh::Mesh& mesh)
+compute_vertex_coords(const mesh::Mesh& mesh)
 {
   const mesh::Topology& topology = mesh.topology();
   const int tdim = topology.dim();
@@ -83,7 +82,7 @@ compute_vertex_coords_new(const mesh::Mesh& mesh)
 /// in the full mesh to the position (column) in the vertex coordinates
 /// array (set to -1 if vertex in full mesh is not in the coordinate
 /// array).
-std::tuple<std::vector<std::int32_t>, xt::xtensor<double, 2>,
+std::tuple<std::vector<std::int32_t>, std::vector<double>,
            std::vector<std::int32_t>>
 compute_vertex_coords_boundary(const mesh::Mesh& mesh, int dim,
                                std::span<const std::int32_t> facets)
@@ -133,7 +132,7 @@ compute_vertex_coords_boundary(const mesh::Mesh& mesh, int dim,
   assert(v_to_c);
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
-  xt::xtensor<double, 2> x_vertices({3, vertices.size()});
+  std::vector<double> x_vertices(3 * vertices.size(), 0.0);
   std::vector<std::int32_t> vertex_to_pos(v_to_c->num_nodes(), -1);
   for (std::size_t i = 0; i < vertices.size(); ++i)
   {
@@ -148,12 +147,11 @@ compute_vertex_coords_boundary(const mesh::Mesh& mesh, int dim,
 
     auto dofs = x_dofmap.links(c);
     for (int j = 0; j < 3; ++j)
-      x_vertices(j, i) = x_nodes[3 * dofs[local_pos] + j];
-
+      x_vertices[j * vertices.size() + i] = x_nodes[3 * dofs[local_pos] + j];
     vertex_to_pos[v] = i;
   }
 
-  return {entities, x_vertices, vertex_to_pos};
+  return {entities, std::move(x_vertices), vertex_to_pos};
 }
 } // namespace
 
@@ -395,7 +393,7 @@ std::vector<std::int32_t> mesh::locate_entities(
                 std::size_t, 3, std::experimental::dynamic_extent>>)>& marker)
 {
   // Run marker function on vertex coordinates
-  const auto [xdata, xshape] = compute_vertex_coords_new(mesh);
+  const auto [xdata, xshape] = compute_vertex_coords(mesh);
   std::experimental::mdspan<
       const double, std::experimental::extents<
                         std::size_t, 3, std::experimental::dynamic_extent>>
@@ -439,8 +437,11 @@ std::vector<std::int32_t> mesh::locate_entities(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities_boundary(
     const Mesh& mesh, int dim,
-    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
-        marker)
+    const std::function<std::vector<std::int8_t>(
+        std::experimental::mdspan<
+            const double,
+            std::experimental::extents<
+                std::size_t, 3, std::experimental::dynamic_extent>>)>& marker)
 {
   const Topology& topology = mesh.topology();
   const int tdim = topology.dim();
@@ -457,10 +458,14 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
       = exterior_facet_indices(topology);
 
   // Run marker function on the vertex coordinates
-  const auto [facet_entities, x_vertices, vertex_to_pos]
+  const auto [facet_entities, xdata, vertex_to_pos]
       = compute_vertex_coords_boundary(mesh, dim, boundary_facets);
-  const xt::xtensor<bool, 1> marked = marker(x_vertices);
-  if (marked.shape(0) != x_vertices.shape(1))
+  std::experimental::mdspan<
+      const double, std::experimental::extents<
+                        std::size_t, 3, std::experimental::dynamic_extent>>
+      x(xdata.data(), 3, xdata.size() / 3);
+  const std::vector<std::int8_t> marked = marker(x);
+  if (marked.size() != x.extent(1))
     throw std::runtime_error("Length of array of markers is wrong.");
 
   // Loop over entities and check vertex markers
