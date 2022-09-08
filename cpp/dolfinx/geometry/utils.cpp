@@ -101,7 +101,7 @@ std::pair<std::int32_t, double> _compute_closest_entity(
       {
         r2 = geometry::squared_distance(
                  mesh, tree.tdim(), std::span(std::next(bbox.begin(), 1), 1),
-                 {{point[0], point[1], point[2]}})
+                 point)
                  .front();
       }
     }
