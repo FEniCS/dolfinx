@@ -10,8 +10,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/nls/NewtonSolver.h>
-#include <xtensor/xarray.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using T = PetscScalar;
@@ -146,7 +144,7 @@ int main(int argc, char* argv[])
 
     auto u_rotation = std::make_shared<fem::Function<T>>(V);
     u_rotation->interpolate(
-        [](auto&& x)
+        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
           constexpr double scale = 0.005;
 
@@ -158,16 +156,24 @@ int main(int argc, char* argv[])
           constexpr double theta = 1.04719755;
 
           // New coordinates
-          auto x1 = xt::row(x, 1);
-          auto x2 = xt::row(x, 2);
-          xt::xarray<double> values = xt::zeros_like(x);
-          xt::row(values, 1) = scale
-                               * (x1_c + (x1 - x1_c) * std::cos(theta)
-                                  - (x2 - x2_c) * std::sin(theta) - x1);
-          xt::row(values, 2) = scale
-                               * (x2_c + (x1 - x1_c) * std::sin(theta)
-                                  - (x2 - x2_c) * std::cos(theta) - x2);
-          return values;
+          std::vector<double> fdata(3 * x.extent(1), 0.0);
+          std::experimental::mdspan<
+              double, std::experimental::extents<
+                          std::size_t, 3, std::experimental::dynamic_extent>>
+              f(fdata.data(), 3, x.extent(1));
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+          {
+            double x1 = x(1, p);
+            double x2 = x(2, p);
+            f(1, p) = scale
+                      * (x1_c + (x1 - x1_c) * std::cos(theta)
+                         - (x2 - x2_c) * std::sin(theta) - x1);
+            f(2, p) = scale
+                      * (x2_c + (x1 - x1_c) * std::sin(theta)
+                         - (x2 - x2_c) * std::cos(theta) - x2);
+          }
+
+          return {std::move(fdata), {3, x.extent(1)}};
         });
 
     // Create Dirichlet boundary conditions

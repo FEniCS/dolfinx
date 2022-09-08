@@ -22,7 +22,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <xtensor/xadapt.hpp>
+#include <xtensor/xarray.hpp>
 #include <xtensor/xtensor.hpp>
 
 namespace dolfinx::fem
@@ -172,7 +172,11 @@ public:
   /// @param[in] f The expression function to be interpolated
   /// @param[in] cells The cells to interpolate on
   void interpolate(
-      const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
+      const std::function<std::pair<std::vector<T>, std::vector<std::size_t>>(
+          std::experimental::mdspan<
+              const double,
+              std::experimental::extents<
+                  std::size_t, 3, std::experimental::dynamic_extent>>)>& f,
       std::span<const std::int32_t> cells)
   {
     assert(_function_space);
@@ -180,47 +184,57 @@ public:
     assert(_function_space->mesh());
     const std::vector<double> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
-    auto _x = xt::adapt(x, std::vector<std::size_t>{3, x.size() / 3});
-    auto fx = f(_x);
-    assert(fx.dimension() <= 2);
+    std::experimental::mdspan<
+        const double, std::experimental::extents<
+                          std::size_t, 3, std::experimental::dynamic_extent>>
+        _x(x.data(), 3, x.size() / 3);
+
+    const auto [fx, fshape] = f(_x);
+    assert(fshape.size() <= 2);
+    // assert(fx.dimension() <= 2);
     if (int vs = _function_space->element()->value_size();
-        vs == 1 and fx.dimension() == 1)
+        vs == 1 and fshape.size() == 1)
     {
       // Check for scalar-valued functions
-      if (fx.shape(0) != x.size() / 3)
+      if (fshape.front() != x.size() / 3)
         throw std::runtime_error("Data returned by callable has wrong length");
     }
     else
     {
       // Check for vector/tensor value
-      if (fx.dimension() != 2)
+      if (fshape.size() != 2)
         throw std::runtime_error("Expected 2D array of data");
-      if (fx.shape(0) != vs)
+
+      if (fshape[0] != vs)
       {
         throw std::runtime_error(
             "Data returned by callable has wrong shape(0) size");
       }
-      if (fx.shape(1) != x.size() / 3)
+      if (fshape[1] != x.size() / 3)
       {
         throw std::runtime_error(
             "Data returned by callable has wrong shape(1) size");
       }
     }
 
-    std::array<std::size_t, 2> fshape;
-    if (fx.dimension() == 1)
-      fshape = {1, fx.shape(0)};
+    std::array<std::size_t, 2> _fshape;
+    if (fshape.size() == 1)
+      _fshape = {1, fshape[0]};
     else
-      fshape = {fx.shape(0), fx.shape(1)};
+      _fshape = {fshape[0], fshape[1]};
 
-    fem::interpolate(*this, std::span<const T>(fx.data(), fx.size()), fshape,
+    fem::interpolate(*this, std::span<const T>(fx.data(), fx.size()), _fshape,
                      cells);
   }
 
   /// Interpolate an expression function on the whole domain
   /// @param[in] f The expression to be interpolated
   void interpolate(
-      const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f)
+      const std::function<std::pair<std::vector<T>, std::vector<std::size_t>>(
+          std::experimental::mdspan<
+              const double,
+              std::experimental::extents<
+                  std::size_t, 3, std::experimental::dynamic_extent>>)>& f)
   {
     assert(_function_space);
     assert(_function_space->mesh());

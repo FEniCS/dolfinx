@@ -18,7 +18,6 @@
 #include <filesystem>
 #include <mpi.h>
 #include <numbers>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
@@ -44,7 +43,14 @@ void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
   // Interpolate sin(2 \pi x[0]) in the scalar Lagrange finite element
   // space
   constexpr double PI = std::numbers::pi;
-  u->interpolate([PI](auto&& x) { return xt::sin(2 * PI * xt::row(x, 0)); });
+  u->interpolate(
+      [PI](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
+      {
+        std::vector<T> f(x.extent(1));
+        for (std::size_t p = 0; p < x.extent(1); ++p)
+          f[p] = std::sin(2 * PI * x(0, p));
+        return {f, {f.size()}};
+      });
 
   // Write the function to a VTK file for visualisation, e.g. using
   // ParaView
@@ -103,15 +109,23 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
                               });
 
   // Interpolation on the two sets of cells
-  u->interpolate([](auto&& x) -> xt::xtensor<T, 2>
-                 { return xt::view(x, xt::range(0, 2), xt::all()); },
-                 cells0);
   u->interpolate(
-      [](auto&& x) -> xt::xtensor<T, 2>
+      [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
       {
-        xt::xtensor<T, 2> v = xt::view(x, xt::range(0, 2), xt::all());
-        xt::row(v, 0) += T(1);
-        return v;
+        std::vector<T> f(2 * x.extent(1), 0.0);
+        std::copy_n(x.data_handle(), f.size(), f.begin());
+        return {f, {2, x.extent(1)}};
+      },
+      cells0);
+  u->interpolate(
+      [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
+      {
+        std::vector<T> f(2 * x.extent(1), 0.0);
+        std::copy_n(x.data_handle(), f.size(), f.begin());
+        for (std::size_t p = 0; p < x.extent(1); ++p)
+          f[p] += T(1);
+
+        return {f, {2, x.extent(1)}};
       },
       cells1);
 

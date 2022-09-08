@@ -92,8 +92,8 @@
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/petsc.h>
-#include <xtensor/xarray.hpp>
-#include <xtensor/xview.hpp>
+#include <utility>
+#include <vector>
 
 using namespace dolfinx;
 using T = PetscScalar;
@@ -180,15 +180,27 @@ int main(int argc, char* argv[])
     auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
 
     f->interpolate(
-        [](auto&& x) -> xt::xarray<T>
+        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
-          auto dx = xt::square(xt::row(x, 0) - 0.5)
-                    + xt::square(xt::row(x, 1) - 0.5);
-          return 10 * xt::exp(-(dx) / 0.02);
+          std::vector<T> f;
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+          {
+            double dx = (x(0, p) - 0.5) * (x(0, p) - 0.5);
+            double dy = (x(1, p) - 0.5) * (x(1, p) - 0.5);
+            f.push_back(10 * std::exp(-(dx + dy) / 0.02));
+          }
+
+          return {f, {f.size()}};
         });
 
-    g->interpolate([](auto&& x) -> xt::xarray<T>
-                   { return xt::sin(5 * xt::row(x, 0)); });
+    g->interpolate(
+        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
+        {
+          std::vector<T> f;
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+            f.push_back(std::sin(5 * x(0, p)));
+          return {f, {f.size()}};
+        });
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a
