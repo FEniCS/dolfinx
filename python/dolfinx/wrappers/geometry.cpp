@@ -243,9 +243,7 @@ void geometry(py::module& m)
           {
             std::span<const double, 6> bbox = self.get_bbox(i);
             std::array<std::size_t, 2> shape = {2, 3};
-            std::vector<double> bbox_out(6);
-            std::copy_n(bbox.begin(), 6, bbox_out.begin());
-            return dolfinx_wrappers::as_pyarray(std::move(bbox_out), shape);
+            return py::array_t<double>(shape, bbox.data());
           },
           py::arg("i"))
       .def("__repr__", &dolfinx::geometry::BoundingBoxTree::str)
