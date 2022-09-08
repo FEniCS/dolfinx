@@ -222,8 +222,9 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // TODO Call dolfinx::common::get_owned_indices here? Do we want to
   // support `entities` possibly having a ghost on one process that is
   // not in `entities` on the owning process?
-  // FIXME Should ghost entities be in the index map if they are not in
-  // the entity list?
+  // TODO Should entities still be ghosted in the submesh even if they
+  // are not in the `entities` list? If this is not desirable,
+  // create_submap needs to be changed
   std::pair<common::IndexMap, std::vector<int32_t>>
       submesh_entity_index_map_pair
       = mesh_entity_index_map->create_submap(submesh_owned_entities);
@@ -232,8 +233,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   ss << "submesh_to_mesh_entity_map (before) = "
      << xt::adapt(submesh_to_mesh_entity_map) << "\n";
-
-  // TODO https://github.com/FEniCS/dolfinx/pull/2107
 
   // Add ghost entities to the entity map
   submesh_to_mesh_entity_map.reserve(submesh_entity_index_map->size_local()
@@ -248,7 +247,9 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   ss << "submesh_to_mesh_entity_map = " << xt::adapt(submesh_to_mesh_entity_map)
      << "\n";
 
-  // Get the vertices in the submesh
+  // Get the vertices in the submesh. Use submesh_to_mesh_entity_map
+  // (instead of `entities`) to ensure vertices for ghost entities are
+  // included
   std::vector<std::int32_t> submesh_vertices
       = compute_incident_entities(mesh, submesh_to_mesh_entity_map, dim, 0);
 
@@ -258,8 +259,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   auto mesh_vertex_index_map = mesh.topology().index_map(0);
   assert(mesh_vertex_index_map);
   std::vector<int32_t> submap_owned_vertices
-      = dolfinx::common::compute_owned_indices(submesh_vertices,
-                                               *mesh_vertex_index_map);
+      = common::compute_owned_indices(submesh_vertices, *mesh_vertex_index_map);
 
   // Create submesh vertex index map
   auto [submesh_owned_vertices, submesh_vertex_index_map_pair]
@@ -350,7 +350,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // Get the geometry dofs in the submesh owned by this process
   auto mesh_geometry_dof_index_map = mesh.geometry().index_map();
   assert(mesh_geometry_dof_index_map);
-  auto submap_owned_x_dofs = dolfinx::common::compute_owned_indices(
+  auto submap_owned_x_dofs = common::compute_owned_indices(
       submesh_x_dofs, *mesh_geometry_dof_index_map);
 
   auto [submesh_owned_x_dofs, submesh_x_dof_index_map_pair]
