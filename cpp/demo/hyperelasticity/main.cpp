@@ -171,16 +171,28 @@ int main(int argc, char* argv[])
         });
 
     // Create Dirichlet boundary conditions
-    auto bdofs_left
-        = fem::locate_dofs_geometrical({*V},
-                                       [](auto&& x) -> xt::xtensor<bool, 1> {
-                                         return xt::isclose(xt::row(x, 0), 0.0);
-                                       });
-    auto bdofs_right
-        = fem::locate_dofs_geometrical({*V},
-                                       [](auto&& x) -> xt::xtensor<bool, 1> {
-                                         return xt::isclose(xt::row(x, 0), 1.0);
-                                       });
+    auto bdofs_left = fem::locate_dofs_geometrical(
+        {*V},
+        [](auto x)
+        {
+          constexpr double eps = 1.0e-8;
+          std::vector<std::int8_t> marker(x.extent(1), false);
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+            if (std::abs(x(0, p)) < eps)
+              marker[p] = true;
+          return marker;
+        });
+    auto bdofs_right = fem::locate_dofs_geometrical(
+        {*V},
+        [](auto x)
+        {
+          constexpr double eps = 1.0e-8;
+          std::vector<std::int8_t> marker(x.extent(1), false);
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+            if (std::abs(x(0, p) - 1) < eps)
+              marker[p] = true;
+          return marker;
+        });
     auto bcs = std::vector{
         std::make_shared<const fem::DirichletBC<T>>(std::vector<T>{0, 0, 0},
                                                     bdofs_left, V),
