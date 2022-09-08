@@ -48,7 +48,6 @@
 #include <ufcx.h>
 #include <utility>
 #include <xtensor/xadapt.hpp>
-#include <xtensor/xtensor.hpp>
 
 namespace py = pybind11;
 
@@ -1231,16 +1230,13 @@ void fem(py::module& m)
         if (V.size() != 2)
           throw std::runtime_error("Expected two function spaces.");
 
-        auto _marker
-            = [&marker](const xt::xtensor<double, 2>& x) -> xt::xtensor<bool, 1>
+        auto _marker = [&marker](auto x)
         {
-          auto strides = x.strides();
-          std::transform(strides.begin(), strides.end(), strides.begin(),
-                         [](auto s) { return s * sizeof(double); });
-          py::array_t _x(x.shape(), strides, x.data(), py::none());
-          py::array_t m = marker(_x);
-          std::vector<std::size_t> s(m.shape(), m.shape() + m.ndim());
-          return xt::adapt(m.data(), m.size(), xt::no_ownership(), s);
+          std::array<std::size_t, 2> shape = {x.extent(0), x.extent(1)};
+          py::array_t<double> x_view(shape, x.data_handle(), py::none());
+          py::array_t<bool> marked = marker(x_view);
+          return std::vector<std::int8_t>(marked.data(),
+                                          marked.data() + marked.size());
         };
 
         std::array<std::vector<std::int32_t>, 2> dofs
@@ -1254,17 +1250,15 @@ void fem(py::module& m)
          const std::function<py::array_t<bool>(const py::array_t<double>&)>&
              marker)
       {
-        auto _marker
-            = [&marker](const xt::xtensor<double, 2>& x) -> xt::xtensor<bool, 1>
+        auto _marker = [&marker](auto x)
         {
-          auto strides = x.strides();
-          std::transform(strides.begin(), strides.end(), strides.begin(),
-                         [](auto s) { return s * sizeof(double); });
-          py::array_t _x(x.shape(), strides, x.data(), py::none());
-          py::array_t m = marker(_x);
-          std::vector<std::size_t> s(m.shape(), m.shape() + m.ndim());
-          return xt::adapt(m.data(), m.size(), xt::no_ownership(), s);
+          std::array<std::size_t, 2> shape = {x.extent(0), x.extent(1)};
+          py::array_t<double> x_view(shape, x.data_handle(), py::none());
+          py::array_t<bool> marked = marker(x_view);
+          return std::vector<std::int8_t>(marked.data(),
+                                          marked.data() + marked.size());
         };
+
         return as_pyarray(dolfinx::fem::locate_dofs_geometrical(V, _marker));
       },
       py::arg("V"), py::arg("marker"));
