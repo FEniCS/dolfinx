@@ -47,7 +47,7 @@ jobs:
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: main
+          ref: jpdean/mixed_dim
 
       - name: Install FFCx C interface
         run: |
