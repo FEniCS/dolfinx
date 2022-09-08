@@ -22,8 +22,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <xtensor/xarray.hpp>
-#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::fem
 {
@@ -291,23 +289,31 @@ public:
     // Array to hold evaluated Expression
     std::size_t num_cells = cells.size();
     std::size_t num_points = e.X().second[0];
-    xt::xtensor<T, 3> f({num_cells, num_points, value_size});
+    std::vector<T> fdata(num_cells * num_points * value_size);
+    std::experimental::mdspan<const T,
+                              std::experimental::dextents<std::size_t, 3>>
+        f(fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
-    auto f_view = xt::reshape_view(f, {num_cells, num_points * value_size});
-    e.eval(cells, f_view);
+    e.eval(cells, fdata, {num_cells, num_points * value_size});
 
     // Reshape evaluated data to fit interpolate
     // Expression returns matrix of shape (num_cells, num_points *
     // value_size), i.e. xyzxyz ordering of dof values per cell per point.
     // The interpolation uses xxyyzz input, ordered for all points of each
     // cell, i.e. (value_size, num_cells*num_points)
-    xt::xarray<T> _f = xt::reshape_view(xt::transpose(f, {2, 0, 1}),
-                                        {value_size, num_cells * num_points});
+
+    std::vector<T> fdata1(num_cells * num_points * value_size);
+    std::experimental::mdspan<T, std::experimental::dextents<std::size_t, 3>>
+        f1(fdata1.data(), value_size, num_cells, num_points);
+    for (std::size_t i = 0; i < f.extent(0); ++i)
+      for (std::size_t j = 0; j < f.extent(1); ++j)
+        for (std::size_t k = 0; k < f.extent(2); ++k)
+          f1(k, i, j) = f(i, j, k);
 
     // Interpolate values into appropriate space
-    fem::interpolate(*this, std::span<const T>(_f.data(), _f.size()),
-                     {_f.shape(0), _f.shape(1)}, cells);
+    fem::interpolate(*this, std::span<const T>(fdata1.data(), fdata1.size()),
+                     {value_size, num_cells * num_points}, cells);
   }
 
   /// Interpolate an Expression (based on UFL) on all cells

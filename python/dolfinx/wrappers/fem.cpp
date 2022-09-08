@@ -47,7 +47,6 @@
 #include <string>
 #include <ufcx.h>
 #include <utility>
-#include <xtensor/xadapt.hpp>
 
 namespace py = pybind11;
 
@@ -522,13 +521,9 @@ void declare_objects(py::module& m, const std::string& type)
                                    py::array::c_style>& active_cells,
                  py::array_t<T, py::array::c_style>& values)
               {
-                const int size = values.shape(0) * values.shape(1);
-                auto _values = xt::adapt(
-                    const_cast<T*>(values.data()), size, xt::no_ownership(),
-                    std::array<std::size_t, 2>({(std::size_t)values.shape(0),
-                                                (std::size_t)values.shape(1)}));
                 self.eval(std::span(active_cells.data(), active_cells.size()),
-                          _values);
+                          std::span(values.mutable_data(), values.size()),
+                          {(std::size_t)values.shape(0), (std::size_t)values.shape(1)});
               },
               py::arg("active_cells"), py::arg("values"))
           .def("X",

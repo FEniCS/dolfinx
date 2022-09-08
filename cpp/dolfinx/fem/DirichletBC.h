@@ -18,7 +18,6 @@
 #include <utility>
 #include <variant>
 #include <vector>
-#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::fem
 {
