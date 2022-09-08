@@ -102,21 +102,6 @@ compute_midpoints(const Mesh& mesh, int dim,
 /// (indices local to the process)
 std::vector<std::int32_t> locate_entities(
     const Mesh& mesh, int dim,
-    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
-        marker);
-
-/// Compute indices of all mesh entities that evaluate to true for the
-/// provided geometric marking function. An entity is considered marked
-/// if the marker function evaluates true for all of its vertices.
-///
-/// @param[in] mesh The mesh
-/// @param[in] dim The topological dimension of the entities to be
-/// considered
-/// @param[in] marker The marking function
-/// @returns List of marked entity indices, including any ghost indices
-/// (indices local to the process)
-std::vector<std::int32_t> locate_entities(
-    const Mesh& mesh, int dim,
     const std::function<std::vector<std::int8_t>(
         std::experimental::mdspan<
             const double,

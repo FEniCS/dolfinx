@@ -32,46 +32,6 @@ namespace
 /// @param[in] mesh The mesh to compute the vertex coordinates for
 /// @return The vertex coordinates. The shape is `(3, num_vertices)` and
 /// the jth column hold the coordinates of vertex j.
-xt::xtensor<double, 2> compute_vertex_coords(const mesh::Mesh& mesh)
-{
-  const mesh::Topology& topology = mesh.topology();
-  const int tdim = topology.dim();
-
-  // Create entities and connectivities
-  mesh.topology_mutable().create_connectivity(tdim, 0);
-
-  // Get all vertex 'node' indices
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const std::int32_t num_vertices = topology.index_map(0)->size_local()
-                                    + topology.index_map(0)->num_ghosts();
-  auto c_to_v = topology.connectivity(tdim, 0);
-  assert(c_to_v);
-  std::vector<std::int32_t> vertex_to_node(num_vertices);
-  for (int c = 0; c < c_to_v->num_nodes(); ++c)
-  {
-    auto x_dofs = x_dofmap.links(c);
-    auto vertices = c_to_v->links(c);
-    for (std::size_t i = 0; i < vertices.size(); ++i)
-      vertex_to_node[vertices[i]] = x_dofs[i];
-  }
-
-  // Pack coordinates of vertices
-  std::span<const double> x_nodes = mesh.geometry().x();
-  xt::xtensor<double, 2> x_vertices({3, vertex_to_node.size()});
-  for (std::size_t i = 0; i < vertex_to_node.size(); ++i)
-  {
-    const int pos = 3 * vertex_to_node[i];
-    for (std::size_t j = 0; j < 3; ++j)
-      x_vertices(j, i) = x_nodes[pos + j];
-  }
-
-  return x_vertices;
-}
-
-/// The coordinates for all 'vertices' in the mesh
-/// @param[in] mesh The mesh to compute the vertex coordinates for
-/// @return The vertex coordinates. The shape is `(3, num_vertices)` and
-/// the jth column hold the coordinates of vertex j.
 std::pair<std::vector<double>, std::array<std::size_t, 2>>
 compute_vertex_coords_new(const mesh::Mesh& mesh)
 {
@@ -424,50 +384,6 @@ mesh::compute_midpoints(const Mesh& mesh, int dim,
   }
 
   return x_mid;
-}
-//-----------------------------------------------------------------------------
-std::vector<std::int32_t> mesh::locate_entities(
-    const Mesh& mesh, int dim,
-    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
-        marker)
-{
-  // Run marker function on vertex coordinates
-  const xt::xtensor<double, 2> x = compute_vertex_coords(mesh);
-  const xt::xtensor<bool, 1> marked = marker(x);
-  if (marked.shape(0) != x.shape(1))
-    throw std::runtime_error("Length of array of markers is wrong.");
-
-  const mesh::Topology& topology = mesh.topology();
-  const int tdim = topology.dim();
-
-  mesh.topology_mutable().create_entities(dim);
-  mesh.topology_mutable().create_connectivity(tdim, 0);
-  if (dim < tdim)
-    mesh.topology_mutable().create_connectivity(dim, 0);
-
-  // Iterate over entities of dimension 'dim' to build vector of marked
-  // entities
-  auto e_to_v = topology.connectivity(dim, 0);
-  assert(e_to_v);
-  std::vector<std::int32_t> entities;
-  for (int e = 0; e < e_to_v->num_nodes(); ++e)
-  {
-    // Iterate over entity vertices
-    bool all_vertices_marked = true;
-    for (std::int32_t v : e_to_v->links(e))
-    {
-      if (!marked[v])
-      {
-        all_vertices_marked = false;
-        break;
-      }
-    }
-
-    if (all_vertices_marked)
-      entities.push_back(e);
-  }
-
-  return entities;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities(

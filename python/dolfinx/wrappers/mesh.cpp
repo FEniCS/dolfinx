@@ -392,17 +392,13 @@ void mesh(py::module& m)
          const std::function<py::array_t<bool>(
              const py::array_t<double, py::array::c_style>&)>& marker)
       {
-        auto cpp_marker = [&marker](auto x) -> std::vector<std::int8_t>
+        auto cpp_marker = [&marker](auto x)
         {
           std::array<std::size_t, 2> shape = {x.extent(0), x.extent(1)};
           py::array_t<double> x_view(shape, x.data_handle(), py::none());
           py::array_t<bool> marked = marker(x_view);
-          //   std::array shape = {static_cast<std::size_t>(marked.size())};
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
-          //   return xt::adapt(marked.data(), marked.size(),
-          //   xt::no_ownership(),
-          //                    shape);
         };
 
         return as_pyarray(

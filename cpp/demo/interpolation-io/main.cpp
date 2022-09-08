@@ -84,9 +84,23 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
 
   // Find cells with all vertices satisfying (0) x0 <= 0.5 and (1) x0 >= 0.5
   auto cells0 = mesh::locate_entities(
-      *mesh, 2, [](auto&& x) { return xt::row(x, 0) <= 0.5; });
+      *mesh, 2,
+      [](auto x) -> std::vector<std::int8_t>
+      {
+        std::vector<std::int8_t> marked(x.extent(1), false);
+        for (std::size_t i = 0; i < marked.size(); ++i)
+          marked[i] = x(0, i) <= 0.5;
+        return marked;
+      });
   auto cells1 = mesh::locate_entities(
-      *mesh, 2, [](auto&& x) { return xt::row(x, 0) >= 0.5; });
+      *mesh, 2,
+      [](auto x) -> std::vector<std::int8_t>
+      {
+        std::vector<std::int8_t> marked(x.extent(1), false);
+        for (std::size_t i = 0; i < marked.size(); ++i)
+          marked[i] = x(0, i) >= 0.5;
+        return marked;
+      });
 
   // Interpolation on the two sets of cells
   u->interpolate([](auto&& x) -> xt::xtensor<T, 2>
