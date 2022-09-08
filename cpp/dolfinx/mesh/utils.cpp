@@ -63,7 +63,6 @@ compute_vertex_coords(const mesh::Mesh& mesh)
     const int pos = 3 * vertex_to_node[i];
     for (std::size_t j = 0; j < 3; ++j)
       x_vertices[j * vertex_to_node.size() + i] = x_nodes[pos + j];
-    // x_vertices(j, i) = x_nodes[pos + j];
   }
 
   return {std::move(x_vertices), {3, vertex_to_node.size()}};
@@ -132,7 +131,7 @@ compute_vertex_coords_boundary(const mesh::Mesh& mesh, int dim,
   assert(v_to_c);
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
-  std::vector<double> x_vertices(3 * vertices.size(), 0.0);
+  std::vector<double> x_vertices(3 * vertices.size(), -1.0);
   std::vector<std::int32_t> vertex_to_pos(v_to_c->num_nodes(), -1);
   for (std::size_t i = 0; i < vertices.size(); ++i)
   {
@@ -140,13 +139,13 @@ compute_vertex_coords_boundary(const mesh::Mesh& mesh, int dim,
 
     // Get first cell and find position
     const int c = v_to_c->links(v).front();
-    auto vertices = c_to_v->links(c);
-    auto it = std::find(vertices.begin(), vertices.end(), v);
-    assert(it != vertices.end());
-    const int local_pos = std::distance(vertices.begin(), it);
+    auto cell_vertices = c_to_v->links(c);
+    auto it = std::find(cell_vertices.begin(), cell_vertices.end(), v);
+    assert(it != cell_vertices.end());
+    const int local_pos = std::distance(cell_vertices.begin(), it);
 
     auto dofs = x_dofmap.links(c);
-    for (int j = 0; j < 3; ++j)
+    for (std::size_t j = 0; j < 3; ++j)
       x_vertices[j * vertices.size() + i] = x_nodes[3 * dofs[local_pos] + j];
     vertex_to_pos[v] = i;
   }
