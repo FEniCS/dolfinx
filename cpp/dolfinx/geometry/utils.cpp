@@ -514,8 +514,9 @@ int geometry::compute_first_colliding_cell(
       auto dofs = x_dofmap.links(cell);
       for (std::size_t i = 0; i < num_nodes; ++i)
       {
-        common::impl::copy_N<3>(std::next(geom_dofs.begin(), 3 * dofs[i]),
-                                std::next(coordinate_dofs.begin(), 3 * i));
+        std::copy(std::next(geom_dofs.begin(), 3 * dofs[i]),
+                  std::next(geom_dofs.begin(), 3 * dofs[i] + 3),
+                  std::next(coordinate_dofs.begin(), 3 * i));
       }
       std::array<double, 3> shortest_vector
           = geometry::compute_distance_gjk(point, coordinate_dofs);
@@ -610,7 +611,8 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
       int neighbor = rank_to_neighbor[p];
       int pos = send_offsets[neighbor] + counter[neighbor];
       auto it = std::next(send_data.begin(), pos);
-      dolfinx::common::impl::copy_N<3>(std::next(points.begin(), i), it);
+      std::copy(std::next(points.begin(), i), std::next(points.begin(), i + 3),
+                it);
       unpack_map[pos / 3] = i / 3;
       counter[neighbor] += 3;
     }
@@ -636,8 +638,8 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
     // NOTE: Aim to remove this by using span, see:
     // https://github.com/FEniCS/dolfinx/issues/2284
     std::array<double, 3> point;
-    dolfinx::common::impl::copy_N<3>(std::next(received_points.begin(), p),
-                                     point.begin());
+    std::copy(std::next(received_points.begin(), p),
+              std::next(received_points.begin(), p + 3), point.begin());
     const int colliding_cell
         = geometry::compute_first_colliding_cell(mesh, bb, point);
     cell_indicator[p / 3] = (colliding_cell >= 0) ? rank : -1;
