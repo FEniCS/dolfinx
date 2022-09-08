@@ -616,7 +616,7 @@ public:
     const std::size_t nrows = num_all_rows();
     const std::size_t ncols
         = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
-    std::vector<T> A(nrows * _bs[0] *  ncols * _bs[1]);
+    std::vector<T> A(nrows * _bs[0] * ncols * _bs[1]);
     for (std::size_t r = 0; r < nrows; ++r)
       for (int j = _row_ptr[r]; j < _row_ptr[r + 1]; ++j)
       {
@@ -631,7 +631,7 @@ public:
           ki += _bs[1];
         }
       }
-    
+
     return A;
   }
 
