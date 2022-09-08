@@ -13,6 +13,7 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
+#include <xtensor/xadapt.hpp>
 #include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
 
