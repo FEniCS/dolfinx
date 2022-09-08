@@ -131,93 +131,12 @@ public:
     return n;
   }
 
-  // /// Evaluate the expression on cells
-  // /// @param[in] cells Cells on which to evaluate the Expression
-  // /// @param[out] values A 2D array to store the result. Caller
-  // /// is responsible for correct sizing which should be (num_cells,
-  // /// num_points * value_size * num_all_argument_dofs columns).
-  // template <typename U>
-  // void eval(const std::span<const std::int32_t>& cells, U& values) const
-  // {
-  //   // Extract data from Expression
-  //   assert(_mesh);
-
-  //   // Prepare coefficients and constants
-  //   const auto [coeffs, cstride] = pack_coefficients(*this, cells);
-  //   const std::vector<T> constant_data = pack_constants(*this);
-  //   const auto& fn = this->get_tabulate_expression();
-
-  //   // Prepare cell geometry
-  //   const graph::AdjacencyList<std::int32_t>& x_dofmap
-  //       = _mesh->geometry().dofmap();
-  //   const std::size_t num_dofs_g = _mesh->geometry().cmap().dim();
-  //   std::span<const double> x_g = _mesh->geometry().x();
-
-  //   // Create data structures used in evaluation
-  //   std::vector<scalar_value_type_t> coordinate_dofs(3 * num_dofs_g);
-
-  //   int num_argument_dofs = 1;
-  //   std::span<const std::uint32_t> cell_info;
-  //   std::function<void(const std::span<T>&,
-  //                      const std::span<const std::uint32_t>&, std::int32_t,
-  //                      int)>
-  //       dof_transform_to_transpose
-  //       = [](const std::span<T>&, const std::span<const std::uint32_t>&,
-  //            std::int32_t, int)
-  //   {
-  //     // Do nothing
-  //   };
-
-  //   if (_argument_function_space)
-  //   {
-  //     num_argument_dofs
-  //         = _argument_function_space->dofmap()->element_dof_layout().num_dofs();
-  //     auto element = _argument_function_space->element();
-
-  //     assert(element);
-  //     if (element->needs_dof_transformations())
-  //     {
-  //       _mesh->topology_mutable().create_entity_permutations();
-  //       cell_info = std::span(_mesh->topology().get_cell_permutation_info());
-  //       dof_transform_to_transpose
-  //           = element
-  //                 ->template get_dof_transformation_to_transpose_function<T>();
-  //     }
-  //   }
-
-  //   const int size0 = _x_ref.second[0] * value_size();
-  //   std::vector<T> values_local(size0 * num_argument_dofs, 0);
-  //   const std::span<T> _values_local(values_local);
-
-  //   // Iterate over cells and 'assemble' into values
-  //   for (std::size_t c = 0; c < cells.size(); ++c)
-  //   {
-  //     const std::int32_t cell = cells[c];
-
-  //     auto x_dofs = x_dofmap.links(cell);
-  //     for (std::size_t i = 0; i < x_dofs.size(); ++i)
-  //     {
-  //       std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
-  //                   std::next(coordinate_dofs.begin(), 3 * i));
-  //     }
-
-  //     const T* coeff_cell = coeffs.data() + c * cstride;
-  //     std::fill(values_local.begin(), values_local.end(), 0.0);
-  //     _fn(values_local.data(), coeff_cell, constant_data.data(),
-  //         coordinate_dofs.data(), nullptr, nullptr);
-
-  //     dof_transform_to_transpose(_values_local, cell_info, c, size0);
-
-  //     for (std::size_t j = 0; j < values_local.size(); ++j)
-  //       values(c, j) = values_local[j];
-  //   }
-  // }
-
-  /// Evaluate the expression on cells
+  /// @brief Evaluate the expression on cells
   /// @param[in] cells Cells on which to evaluate the Expression
   /// @param[out] values A 2D array to store the result. Caller
   /// is responsible for correct sizing which should be (num_cells,
   /// num_points * value_size * num_all_argument_dofs columns).
+  /// @param[in] vshape The shape of `values` (row-major storage).
   void eval(const std::span<const std::int32_t>& cells, std::span<T> values,
             std::array<std::size_t, 2> vshape) const
   {
