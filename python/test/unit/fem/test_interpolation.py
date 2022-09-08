@@ -607,41 +607,6 @@ def test_interpolate_subset(order, dim, affine):
     assert np.isclose(integral, 1 / (order + 1) * 0.5**(order + 1), 0)
 
 
-# TODO Rename this when https://github.com/FEniCS/dolfinx/tree/jpdean/submesh_vertex_fix_4
-# is merged
-@pytest.mark.parametrize("n", [1, 6, 11])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
-                                        GhostMode.shared_facet])
-def test_dof_without_cell(n, ghost_mode):
-    mesh = create_unit_square(
-        MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
-    mesh_1 = create_rectangle(
-        MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-        ghost_mode=ghost_mode)
-
-    edim = mesh_1.topology.dim
-    entities = locate_entities(mesh_1, edim, lambda x: x[0] <= 1.0)
-    submesh = create_submesh(mesh_1, edim, entities)[0]
-
-    element = ("Lagrange", 1)
-
-    V_mesh = FunctionSpace(mesh, element)
-    V_submesh = FunctionSpace(submesh, element)
-
-    def f_expr(x):
-        return x[0]**2
-
-    f_mesh = Function(V_mesh)
-    f_mesh.interpolate(f_expr)
-    f_mesh.x.scatter_forward()
-
-    f_submesh = Function(V_submesh)
-    f_submesh.interpolate(f_expr)
-    f_mesh.x.scatter_forward()
-
-    assert np.isclose(f_mesh.vector.norm(), f_submesh.vector.norm())
-
-
 def test_interpolate_callable():
     """Test interpolation with callables"""
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 1)
