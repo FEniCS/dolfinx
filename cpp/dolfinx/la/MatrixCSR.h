@@ -772,6 +772,16 @@ public:
     return _off_diagonal_offset;
   }
 
+  /// @brief Block size
+  /// @param axis Axis (0 or 1)
+  /// @return Block size in that direction
+  int bs(int axis) const
+  {
+    if (axis < 0 or axis > 1)
+      throw std::runtime_error("Invalid axis for bs");
+    return _bs[axis];
+  }
+
 private:
   // Maps for the distribution of the ows and columns
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;

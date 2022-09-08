@@ -105,9 +105,10 @@ void declare_objects(py::module& m, const std::string& type)
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {
-             std::size_t nrows = self.num_all_rows();
+             std::size_t nrows = self.num_all_rows() * self.bs(0);
              auto map_col = self.index_maps()[1];
              std::size_t ncols = map_col->size_local() + map_col->num_ghosts();
+             ncols *= self.bs(1);
              return dolfinx_wrappers::as_pyarray(self.to_dense(),
                                                  std::array{nrows, ncols});
            })
