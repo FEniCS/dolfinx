@@ -85,7 +85,7 @@ std::pair<std::int32_t, double> _compute_closest_entity(
     // If point cloud tree the exact distance is easy to compute
     if (tree.tdim() == 0)
     {
-      std::array<double, 6> bbox_coord = tree.get_bbox(node);
+      std::array<double, 6> bbox_coord = tree.copy_bbox(node);
       auto diff = std::span(bbox_coord).subspan<0, 3>();
 
       for (std::size_t k = 0; k < 3; ++k)
@@ -109,7 +109,7 @@ std::pair<std::int32_t, double> _compute_closest_entity(
     // If entity is closer than best result so far, return it
     if (r2 <= R2)
     {
-      closest_entity = bbox[1];
+      closest_entity = bbox.back();
       R2 = r2;
     }
 
@@ -126,9 +126,9 @@ std::pair<std::int32_t, double> _compute_closest_entity(
     // We use R2 (as opposed to r2), as a bounding box can be closer
     // than the actual entity
     std::pair<int, double> p0 = _compute_closest_entity(
-        tree, point, bbox[0], mesh, closest_entity, R2);
+        tree, point, bbox.front(), mesh, closest_entity, R2);
     std::pair<int, double> p1 = _compute_closest_entity(
-        tree, point, bbox[1], mesh, p0.first, p0.second);
+        tree, point, bbox.back(), mesh, p0.first, p0.second);
     return p1;
   }
 }
@@ -329,7 +329,7 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       leaves = midpoint_tree.bbox(0);
       assert(is_leaf(leaves));
       initial_entity = leaves[0];
-      std::array<double, 6> bbox_coord = midpoint_tree.get_bbox(0);
+      std::array<double, 6> bbox_coord = midpoint_tree.copy_bbox(0);
       auto diff = std::span(bbox_coord).subspan<0, 3>();
       for (std::size_t k = 0; k < 3; ++k)
         diff[k] -= points[3 * i + k];
