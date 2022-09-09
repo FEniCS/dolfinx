@@ -32,8 +32,6 @@ except ModuleNotFoundError:
     sys.exit(0)
 from numpy import pi
 
-from mpi4py import MPI
-
 
 def generate_mesh_wire(
     radius_wire: float, radius_dom: float, in_wire_size: float,
