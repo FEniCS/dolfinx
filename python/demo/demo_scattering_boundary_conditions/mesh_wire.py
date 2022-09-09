@@ -38,8 +38,6 @@ def generate_mesh_wire(
     on_wire_size: float, bkg_size: float, boundary_size: float,
         au_tag: int, bkg_tag: int, boundary_tag: int):
 
-    gmsh.initialize(sys.argv)
-
     gmsh.model.add("wire")
 
     # A dummy boundary is added for setting a finer mesh

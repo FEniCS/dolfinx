@@ -236,14 +236,20 @@ boundary_tag = 3    # boundary
 # `dolfinx.mesh.Mesh`.
 
 # +
+model = None
+gmsh.initialize(sys.argv)
 if MPI.COMM_WORLD.rank == 0:
+
     model = generate_mesh_wire(
         radius_wire, radius_dom, in_wire_size, on_wire_size, bkg_size,
         boundary_size, au_tag, bkg_tag, boundary_tag)
 
-    domain, cell_tags, facet_tags = io.gmshio.model_to_mesh(
-        model, MPI.COMM_WORLD, 0, gdim=2)
-    gmsh.finalize()
+MPI.COMM_WORLD.barrier()
+model = MPI.COMM_WORLD.bcast(model, root=0)
+domain, cell_tags, facet_tags = io.gmshio.model_to_mesh(
+    model, MPI.COMM_WORLD, 0, gdim=2)
+
+gmsh.finalize()
 MPI.COMM_WORLD.barrier()
 # -
 
