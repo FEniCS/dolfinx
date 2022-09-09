@@ -45,8 +45,7 @@ def check_cell_volume(points, cell, domain, volume):
 def test_submesh(order):
     # Generate a single cell higher order mesh
     points = []
-    points += [[i / order, j / order, 0] for j in range(order + 1)
-               for i in range(order + 1 - j)]
+    points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1 - j)]
     for k in range(1, order):
         points += [[i / order, j / order + 0.1, k / order]
                    for j in range(order + 1 - k) for i in range(order + 1 - k - j)]
@@ -59,8 +58,7 @@ def test_submesh(order):
         ) // 6 + y * (2 * (order - z) + 3 - y) // 2 + x
 
     # Define a cell using DOLFINx ordering
-    cell = [coord_to_vertex(x, y, z) for x, y, z in [
-        (0, 0, 0), (order, 0, 0), (0, order, 0), (0, 0, order)]]
+    cell = [coord_to_vertex(x, y, z) for x, y, z in [(0, 0, 0), (order, 0, 0), (0, order, 0), (0, 0, order)]]
 
     if order > 1:
         for i in range(1, order):
@@ -152,8 +150,7 @@ def test_triangle_mesh(order):
 @pytest.mark.parametrize('order', range(1, 5))
 def test_tetrahedron_mesh(order):
     points = []
-    points += [[i / order, j / order, 0] for j in range(order + 1)
-               for i in range(order + 1 - j)]
+    points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1 - j)]
     for k in range(1, order):
         points += [[i / order, j / order + 0.1, k / order] for j in range(order + 1 - k)
                    for i in range(order + 1 - k - j)]
@@ -166,8 +163,7 @@ def test_tetrahedron_mesh(order):
         ) // 6 + y * (2 * (order - z) + 3 - y) // 2 + x
 
     # Define a cell using DOLFINx ordering
-    cell = [coord_to_vertex(x, y, z) for x, y, z in [
-        (0, 0, 0), (order, 0, 0), (0, order, 0), (0, 0, order)]]
+    cell = [coord_to_vertex(x, y, z) for x, y, z in [(0, 0, 0), (order, 0, 0), (0, order, 0), (0, 0, order)]]
 
     if order > 1:
         for i in range(1, order):
@@ -222,8 +218,7 @@ def test_quadrilateral_mesh(order):
         return (order + 1) * y + x
 
     # Define a cell using DOLFINx ordering
-    cell = [coord_to_vertex(i, j)
-            for i, j in [(0, 0), (order, 0), (0, order), (order, order)]]
+    cell = [coord_to_vertex(i, j) for i, j in [(0, 0), (order, 0), (0, order), (order, order)]]
     if order > 1:
         for i in range(1, order):
             cell.append(coord_to_vertex(i, 0))
@@ -248,8 +243,7 @@ def test_hexahedron_mesh(order):
     random.seed(13)
 
     points = []
-    points += [[i / order, j / order, 0] for j in range(order + 1)
-               for i in range(order + 1)]
+    points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1)]
     for k in range(1, order):
         points += [[i / order, j / order + 0.1, k / order] for j in range(order + 1)
                    for i in range(order + 1)]
@@ -361,8 +355,7 @@ def test_tetrahedron_mesh_vtk(order):
     if order > 3:
         pytest.xfail("VTK permutation for order > 3 tetrahedra not implemented in DOLFINx.")
     points = []
-    points += [[i / order, j / order, 0] for j in range(order + 1)
-               for i in range(order + 1 - j)]
+    points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1 - j)]
     for k in range(1, order):
         points += [[i / order, j / order + 0.1, k / order] for j in range(order + 1 - k)
                    for i in range(order + 1 - k - j)]
@@ -492,11 +485,9 @@ def test_hexahedron_mesh_vtk(order):
     random.seed(13)
 
     points = []
-    points += [[i / order, j / order, 0] for j in range(order + 1)
-               for i in range(order + 1)]
+    points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1)]
     for k in range(1, order):
-        points += [[i / order, j / order + 0.1, k / order] for j in range(order + 1)
-                   for i in range(order + 1)]
+        points += [[i / order, j / order + 0.1, k / order] for j in range(order + 1) for i in range(order + 1)]
 
     points += [[i / order, j / order, 1] for j in range(order + 1) for i in range(order + 1)]
 

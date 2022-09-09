@@ -19,6 +19,7 @@
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <memory>
+
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
@@ -311,8 +312,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Get the geometry dofs in the submesh based on the entities in
   // submesh
-  const fem::ElementDofLayout layout
-      = geometry.cmap().create_dof_layout();
+  const fem::ElementDofLayout layout = geometry.cmap().create_dof_layout();
   // NOTE: Unclear what this return for prisms
   const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
 
@@ -354,7 +354,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   }
 
   std::vector<std::int32_t> submesh_x_dofs = geometry_indices;
-
   std::sort(submesh_x_dofs.begin(), submesh_x_dofs.end());
   submesh_x_dofs.erase(
       std::unique(submesh_x_dofs.begin(), submesh_x_dofs.end()),
