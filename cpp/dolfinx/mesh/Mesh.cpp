@@ -214,7 +214,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::shared_ptr<common::IndexMap> submesh_entity_index_map;
 
   // Create submesh entity index map
-  // TODO Call dolfinx::common::get_owned_indices here? Do we want to
+  // TODO Call common::get_owned_indices here? Do we want to
   // support `entities` possibly having a ghost on one process that is
   // not in `entities` on the owning process?
   // TODO Should entities still be ghosted in the submesh even if they
@@ -246,8 +246,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   auto mesh_vertex_index_map = topology.index_map(0);
   assert(mesh_vertex_index_map);
   std::vector<int32_t> submesh_owned_vertices
-      = dolfinx::common::compute_owned_indices(submesh_vertices,
-                                               *mesh_vertex_index_map);
+      = common::compute_owned_indices(submesh_vertices, *mesh_vertex_index_map);
 
   // Create submesh vertex index map
   std::pair<common::IndexMap, std::vector<int32_t>>
@@ -328,10 +327,10 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     // Fetch connectivities required to get entity dofs
     const std::vector<std::vector<std::vector<int>>>& closure_dofs
         = layout.entity_closure_dofs_all();
-    const std::shared_ptr<const dolfinx::graph::AdjacencyList<int>> e_to_c
+    const std::shared_ptr<const graph::AdjacencyList<int>> e_to_c
         = topology.connectivity(dim, tdim);
     assert(e_to_c);
-    const std::shared_ptr<const dolfinx::graph::AdjacencyList<int>> c_to_e
+    const std::shared_ptr<const graph::AdjacencyList<int>> c_to_e
         = topology.connectivity(tdim, dim);
     assert(c_to_e);
     for (std::size_t i = 0; i < submesh_to_mesh_entity_map.size(); ++i)
