@@ -109,10 +109,7 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 #
 # The following class implements this functions.
 # The inputs to the function are the angle $\theta$, the background
-# refractive index $n_b$ and the vacuum wavevector $k_0$. The
-# function returns the expression $\mathbf{E}_b = -\sin
-# \theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
-# + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y$.
+# refractive index $n_b$ and the vacuum wavevector $k_0$.
 
 # +
 
