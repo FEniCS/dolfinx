@@ -7,6 +7,7 @@
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import distribute_entity_data  # noqa: F401
+from dolfinx.io import gmshio
 from dolfinx.io.utils import VTKFile, XDMFFile  # noqa: F401
 
 __all__ = ["gmshio", "distribute_entity_data", "VTKFile", "XDMFFile"]
