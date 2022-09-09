@@ -192,9 +192,9 @@ def radial_distance(x: ufl.SpatialCoordinate):
     return ufl.sqrt(x[0]**2 + x[1]**2)
 
 
-def curl_2d(a):
+def curl_2d(f: fem.Function):
     """Returns the curl of two 2D vectors as a 3D vector"""
-    return ufl.as_vector((0, 0, a[1].dx(0) - a[0].dx(1)))
+    return ufl.as_vector((0, 0, f[1].dx(0) - f[0].dx(1)))
 
 # -
 
