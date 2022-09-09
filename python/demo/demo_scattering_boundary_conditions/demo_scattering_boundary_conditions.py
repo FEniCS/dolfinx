@@ -187,7 +187,7 @@ class BackgroundElectricField:
 #
 
 # +
-def radial_distance(x):
+def radial_distance(x: ufl.SpatialCoordinate):
     """Returns the radial distance from the origin"""
     return ufl.sqrt(x[0]**2 + x[1]**2)
 
