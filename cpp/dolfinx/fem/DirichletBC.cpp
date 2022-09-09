@@ -22,6 +22,11 @@
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
+namespace stdex = std::experimental;
+using cmdspan3x_t
+    = stdex::mdspan<const double,
+                    stdex::extents<std::size_t, 3, stdex::dynamic_extent>>;
+
 namespace
 {
 //-----------------------------------------------------------------------------
@@ -472,10 +477,7 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
   const std::vector<double> dof_coordinates = V.tabulate_dof_coordinates(true);
 
   // Compute marker for each dof coordinate
-  std::experimental::mdspan<
-      const double, std::experimental::extents<
-                        std::size_t, 3, std::experimental::dynamic_extent>>
-      x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);
+  cmdspan3x_t x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);
   const std::vector<std::int8_t> marked_dofs = marker_fn(x);
 
   std::vector<std::int32_t> dofs;
@@ -523,10 +525,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
   const std::vector<double> dof_coordinates = V1.tabulate_dof_coordinates(true);
 
   // Evaluate marker for each dof coordinate
-  std::experimental::mdspan<
-      const double, std::experimental::extents<
-                        std::size_t, 3, std::experimental::dynamic_extent>>
-      x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);
+  cmdspan3x_t x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);
   const std::vector<std::int8_t> marked_dofs = marker_fn(x);
 
   // Get dofmaps

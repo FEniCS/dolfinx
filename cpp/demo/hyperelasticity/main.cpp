@@ -157,9 +157,9 @@ int main(int argc, char* argv[])
 
           // New coordinates
           std::vector<double> fdata(3 * x.extent(1), 0.0);
-          std::experimental::mdspan<
-              double, std::experimental::extents<
-                          std::size_t, 3, std::experimental::dynamic_extent>>
+          namespace stdex = std::experimental;
+          stdex::mdspan<double,
+                        stdex::extents<std::size_t, 3, stdex::dynamic_extent>>
               f(fdata.data(), 3, x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
@@ -184,8 +184,10 @@ int main(int argc, char* argv[])
           constexpr double eps = 1.0e-8;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
+          {
             if (std::abs(x(0, p)) < eps)
               marker[p] = true;
+          }
           return marker;
         });
     auto bdofs_right = fem::locate_dofs_geometrical(
@@ -195,8 +197,10 @@ int main(int argc, char* argv[])
           constexpr double eps = 1.0e-8;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
+          {
             if (std::abs(x(0, p) - 1) < eps)
               marker[p] = true;
+          }
           return marker;
         });
     auto bcs = std::vector{

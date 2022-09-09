@@ -182,14 +182,13 @@ public:
     assert(_function_space->mesh());
     const std::vector<double> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
-    std::experimental::mdspan<
-        const double, std::experimental::extents<
-                          std::size_t, 3, std::experimental::dynamic_extent>>
+    namespace stdex = std::experimental;
+    stdex::mdspan<const double,
+                  stdex::extents<std::size_t, 3, stdex::dynamic_extent>>
         _x(x.data(), 3, x.size() / 3);
 
     const auto [fx, fshape] = f(_x);
     assert(fshape.size() <= 2);
-    // assert(fx.dimension() <= 2);
     if (int vs = _function_space->element()->value_size();
         vs == 1 and fshape.size() == 1)
     {
@@ -286,13 +285,14 @@ public:
       }
     }
 
+    namespace stdex = std::experimental;
+
     // Array to hold evaluated Expression
     std::size_t num_cells = cells.size();
     std::size_t num_points = e.X().second[0];
     std::vector<T> fdata(num_cells * num_points * value_size);
-    std::experimental::mdspan<const T,
-                              std::experimental::dextents<std::size_t, 3>>
-        f(fdata.data(), num_cells, num_points, value_size);
+    stdex::mdspan<const T, stdex::dextents<std::size_t, 3>> f(
+        fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
     e.eval(cells, fdata, {num_cells, num_points * value_size});
@@ -304,8 +304,8 @@ public:
     // cell, i.e. (value_size, num_cells*num_points)
 
     std::vector<T> fdata1(num_cells * num_points * value_size);
-    std::experimental::mdspan<T, std::experimental::dextents<std::size_t, 3>>
-        f1(fdata1.data(), value_size, num_cells, num_points);
+    stdex::mdspan<T, stdex::dextents<std::size_t, 3>> f1(
+        fdata1.data(), value_size, num_cells, num_points);
     for (std::size_t i = 0; i < f.extent(0); ++i)
       for (std::size_t j = 0; j < f.extent(1); ++j)
         for (std::size_t k = 0; k < f.extent(2); ++k)

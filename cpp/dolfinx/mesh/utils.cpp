@@ -23,6 +23,10 @@
 #include <vector>
 
 using namespace dolfinx;
+namespace stdex = std::experimental;
+using cmdspan3x_t
+    = stdex::mdspan<const double,
+                    stdex::extents<std::size_t, 3, stdex::dynamic_extent>>;
 
 namespace
 {
@@ -393,10 +397,7 @@ std::vector<std::int32_t> mesh::locate_entities(
 {
   // Run marker function on vertex coordinates
   const auto [xdata, xshape] = compute_vertex_coords(mesh);
-  std::experimental::mdspan<
-      const double, std::experimental::extents<
-                        std::size_t, 3, std::experimental::dynamic_extent>>
-      x(xdata.data(), xshape);
+  cmdspan3x_t x(xdata.data(), xshape);
   const std::vector<std::int8_t> marked = marker(x);
   if (marked.size() != x.extent(1))
     throw std::runtime_error("Length of array of markers is wrong.");
@@ -459,10 +460,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   // Run marker function on the vertex coordinates
   const auto [facet_entities, xdata, vertex_to_pos]
       = compute_vertex_coords_boundary(mesh, dim, boundary_facets);
-  std::experimental::mdspan<
-      const double, std::experimental::extents<
-                        std::size_t, 3, std::experimental::dynamic_extent>>
-      x(xdata.data(), 3, xdata.size() / 3);
+  cmdspan3x_t x(xdata.data(), 3, xdata.size() / 3);
   const std::vector<std::int8_t> marked = marker(x);
   if (marked.size() != x.extent(1))
     throw std::runtime_error("Length of array of markers is wrong.");

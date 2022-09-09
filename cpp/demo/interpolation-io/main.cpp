@@ -42,13 +42,12 @@ void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
 
   // Interpolate sin(2 \pi x[0]) in the scalar Lagrange finite element
   // space
-  constexpr double PI = std::numbers::pi;
   u->interpolate(
-      [PI](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
+      [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
       {
         std::vector<T> f(x.extent(1));
         for (std::size_t p = 0; p < x.extent(1); ++p)
-          f[p] = std::sin(2 * PI * x(0, p));
+          f[p] = std::sin(2 * std::numbers::pi * x(0, p));
         return {f, {f.size()}};
       });
 
