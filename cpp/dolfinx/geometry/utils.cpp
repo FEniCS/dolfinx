@@ -26,41 +26,38 @@ constexpr bool is_leaf(std::span<const int, 2> bbox)
   return bbox[0] == bbox[1];
 }
 //-----------------------------------------------------------------------------
-/// A point `x` is inside a bounding box `b` if each component of its
-/// coordinates lies within the range `[b(0,i), b(1,i)]` that defines the bounds
-/// of the bounding box, b(0,i) <= x[i] <= b(1,i) for i = 0, 1, 2
-constexpr bool point_in_bbox(std::span<const double, 6> b,
+/// A point `x` is inside a bounding box `b` if each component of its /
+//coordinates lies within the range `[b(0,i), b(1,i)]` that defines the
+//bounds / of the bounding box, b(0,i) <= x[i] <= b(1,i) for i = 0, 1, 2
+constexpr bool point_in_bbox(const std::array<double, 6>& b,
                              std::span<const double, 3> x)
 {
   assert(b.size() == 6);
   constexpr double rtol = 1e-14;
   bool in = true;
-  auto b0 = b.subspan<0, 3>();
-  auto b1 = b.subspan<3, 3>();
   for (int i = 0; i < 3; i++)
   {
-    double eps = rtol * (b1[i] - b0[i]);
-    in &= x[i] >= (b0[i] - eps);
-    in &= x[i] <= (b1[i] + eps);
+    double eps = rtol * (b[i + 3] - b[i]);
+    in &= x[i] >= (b[i] - eps);
+    in &= x[i] <= (b[i + 3] + eps);
   }
 
   return in;
 }
 //-----------------------------------------------------------------------------
-/// A bounding box "a" is contained inside another bounding box "b", if each
-/// of its intervals [a(0,i), a(1,i)] is contained in [b(0,i), b(1,i)],
-/// a(0,i) <= b(1, i) and a(1,i) >= b(0, i)
-constexpr bool bbox_in_bbox(std::span<const double> a,
-                            std::span<const double> b)
+/// A bounding box "a" is contained inside another bounding box "b", if
+//each / of its intervals [a(0,i), a(1,i)] is contained in [b(0,i),
+//b(1,i)], / a(0,i) <= b(1, i) and a(1,i) >= b(0, i)
+constexpr bool bbox_in_bbox(std::span<const double, 6> a,
+                            std::span<const double, 6> b)
 {
-  assert(b.size() == 6);
-  assert(a.size() == 6);
   constexpr double rtol = 1e-14;
-  bool in = true;
   auto a0 = a.subspan<0, 3>();
   auto a1 = a.subspan<3, 3>();
   auto b0 = b.subspan<0, 3>();
   auto b1 = b.subspan<3, 3>();
+
+  bool in = true;
   for (int i = 0; i < 3; i++)
   {
     double eps = rtol * (b1[i] - b0[i]);
