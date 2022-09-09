@@ -154,7 +154,7 @@ compute_vertex_coords_boundary(const mesh::Mesh& mesh, int dim,
     vertex_to_pos[v] = i;
   }
 
-  return {entities, std::move(x_vertices), vertex_to_pos};
+  return {std::move(entities), std::move(x_vertices), std::move(vertex_to_pos)};
 }
 } // namespace
 

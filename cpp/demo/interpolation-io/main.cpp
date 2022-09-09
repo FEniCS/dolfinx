@@ -121,9 +121,8 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
       {
         std::vector<T> f(2 * x.extent(1), 0.0);
         std::copy_n(x.data_handle(), f.size(), f.begin());
-        for (std::size_t p = 0; p < x.extent(1); ++p)
-          f[p] += T(1);
-
+        std::transform(f.cbegin(), f.cend(), f.begin(),
+                       [](auto x) { return x + T(1); });
         return {f, {2, x.extent(1)}};
       },
       cells1);

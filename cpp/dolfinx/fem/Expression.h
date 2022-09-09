@@ -203,15 +203,13 @@ public:
       }
 
       const T* coeff_cell = coeffs.data() + c * cstride;
-      std::fill(values_local.begin(), values_local.end(), 0.0);
+      std::fill(values_local.begin(), values_local.end(), 0);
       _fn(values_local.data(), coeff_cell, constant_data.data(),
           coordinate_dofs.data(), nullptr, nullptr);
 
       dof_transform_to_transpose(_values_local, cell_info, c, size0);
-
       for (std::size_t j = 0; j < values_local.size(); ++j)
         values[c * vshape[1] + j] = values_local[j];
-      // values(c, j) = values_local[j];
     }
   }
 
