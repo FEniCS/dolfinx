@@ -49,9 +49,7 @@ from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from mesh_wire import generate_mesh_wire
 
 import ufl
-from dolfinx import fem, plot
-from dolfinx.io import VTXWriter
-from dolfinx.io.gmshio import model_to_mesh
+from dolfinx import fem, plot, io
 from typing import Tuple
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -123,9 +121,10 @@ class BackgroundElectricField:
         self.k0 = k0
         self.n_b = n_b
 
-    def eval(self, x: np.typing.NDArray[np.float64]) -> Tuple[np.array
-                                                              [np.complex128],
-                                                              np.array[np.complex]]:
+    def eval(
+            self, x: np.typing.NDArray[np.float64]) -> Tuple[
+            np.typing.NDArray[np.complex128],
+            np.typing.NDArray[np.complex128]]:
 
         kx = self.n_b * self.k0 * np.cos(self.theta)
         ky = self.n_b * self.k0 * np.sin(self.theta)
@@ -242,7 +241,8 @@ model = generate_mesh_wire(
     radius_wire, radius_dom, in_wire_size, on_wire_size, bkg_size,
     boundary_size, au_tag, bkg_tag, boundary_tag)
 
-domain, cell_tags, facet_tags = model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
+domain, cell_tags, facet_tags = io.gmshio.model_to_mesh(
+    model, MPI.COMM_WORLD, 0, gdim=2)
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
 # -
@@ -429,7 +429,7 @@ V_dg = fem.VectorFunctionSpace(domain, ("DG", degree))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 
-with VTXWriter(domain.comm, "Esh.bp", Esh_dg) as vtx:
+with io.VTXWriter(domain.comm, "Esh.bp", Esh_dg) as vtx:
     vtx.write(0.0)
 # -
 
@@ -443,7 +443,7 @@ if have_pyvista:
     V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
-    Esh_values[:, :domain.topology.dim] = \
+    Esh_values[:, : domain.topology.dim] = \
         Esh_dg.x.array.reshape(V_x.shape[0], domain.topology.dim).real
 
     V_grid.point_data["u"] = Esh_values
@@ -472,7 +472,7 @@ E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
 E_dg = fem.Function(V_dg)
 E_dg.interpolate(E)
 
-with VTXWriter(domain.comm, "E.bp", E_dg) as vtx:
+with io.VTXWriter(domain.comm, "E.bp", E_dg) as vtx:
     vtx.write(0.0)
 # -
 
