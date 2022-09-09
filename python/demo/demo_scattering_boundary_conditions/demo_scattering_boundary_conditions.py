@@ -45,12 +45,14 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
+from typing import Tuple
+
 from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from mesh_wire import generate_mesh_wire
 
 import ufl
-from dolfinx import fem, plot, io
-from typing import Tuple
+from dolfinx import fem, io, plot
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
