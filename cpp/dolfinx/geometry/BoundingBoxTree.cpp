@@ -53,9 +53,9 @@ std::array<double, 6> compute_bbox_of_entity(const mesh::Mesh& mesh, int dim,
   std::copy_n(std::next(xg.begin(), 3 * vertex_indices.front()), 3, b1.begin());
 
   // Compute min and max over vertices
-  for (int local_vertex : vertex_indices)
+  for (std::int32_t local_vertex : vertex_indices)
   {
-    for (int j = 0; j < 3; ++j)
+    for (std::size_t j = 0; j < 3; ++j)
     {
       b0[j] = std::min(b0[j], xg[3 * local_vertex + j]);
       b1[j] = std::max(b1[j], xg[3 * local_vertex + j]);
@@ -73,7 +73,6 @@ std::array<double, 6> compute_bbox_of_bboxes(
 {
   // Compute min and max over remaining boxes
   std::array<double, 6> b = leaf_bboxes.front().first;
-
   for (auto [box, _] : leaf_bboxes)
   {
     std::transform(box.cbegin(), std::next(box.cbegin(), 3), b.cbegin(),
@@ -87,7 +86,7 @@ std::array<double, 6> compute_bbox_of_bboxes(
   return b;
 }
 //------------------------------------------------------------------------------
-int _build_from_leaf(
+std::int32_t _build_from_leaf(
     std::span<std::pair<std::array<double, 6>, std::int32_t>> leaf_bboxes,
     std::vector<int>& bboxes, std::vector<double>& bbox_coordinates)
 {
@@ -128,10 +127,10 @@ int _build_from_leaf(
     // Split bounding boxes into two groups and call recursively
     assert(!leaf_bboxes.empty());
     std::size_t part = leaf_bboxes.size() / 2;
-    int bbox0
+    std::int32_t bbox0
         = _build_from_leaf(leaf_bboxes.first(part), bboxes, bbox_coordinates);
-    int bbox1 = _build_from_leaf(leaf_bboxes.last(leaf_bboxes.size() - part),
-                                 bboxes, bbox_coordinates);
+    std::int32_t bbox1 = _build_from_leaf(
+        leaf_bboxes.last(leaf_bboxes.size() - part), bboxes, bbox_coordinates);
 
     // Store bounding box data. Note that root box will be added last.
     bboxes.push_back(bbox0);
@@ -142,7 +141,7 @@ int _build_from_leaf(
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int32_t>, std::vector<double>> build_from_leaf(
-    std::vector<std::pair<std::array<double, 6>, std::int32_t>> leaf_bboxes)
+    std::vector<std::pair<std::array<double, 6>, std::int32_t>>& leaf_bboxes)
 {
   std::vector<std::int32_t> bboxes;
   std::vector<double> bbox_coordinates;
@@ -150,7 +149,7 @@ std::pair<std::vector<std::int32_t>, std::vector<double>> build_from_leaf(
   return {std::move(bboxes), std::move(bbox_coordinates)};
 }
 //-----------------------------------------------------------------------------
-int _build_from_point(
+std::int32_t _build_from_point(
     std::span<std::pair<std::array<double, 3>, std::int32_t>> points,
     std::vector<std::int32_t>& bboxes, std::vector<double>& bbox_coordinates)
 {
@@ -290,7 +289,6 @@ BoundingBoxTree BoundingBoxTree::create_global_tree(MPI_Comm comm) const
   {
     std::copy_n(std::next(recv_bbox.begin(), 6 * i), 6,
                 _recv_bbox[i].first.begin());
-
     _recv_bbox[i].second = i;
   }
 
@@ -315,12 +313,12 @@ std::string BoundingBoxTree::str() const
 //-----------------------------------------------------------------------------
 int BoundingBoxTree::tdim() const { return _tdim; }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::tree_print(std::stringstream& s, int i) const
+void BoundingBoxTree::tree_print(std::stringstream& s, std::int32_t i) const
 {
   s << "[";
-  for (int j = 0; j < 2; ++j)
+  for (std::size_t j = 0; j < 2; ++j)
   {
-    for (int k = 0; k < 3; ++k)
+    for (std::size_t k = 0; k < 3; ++k)
       s << _bbox_coordinates[6 * i + j * 3 + k] << " ";
     if (j == 0)
       s << "]->"

@@ -37,8 +37,8 @@ create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
 /// @param[in] tree1 Second BoundingBoxTree
 /// @return List of pairs of intersecting box indices from each tree, flattened
 /// as a vector of size num_intersections*2
-std::vector<int> compute_collisions(const BoundingBoxTree& tree0,
-                                    const BoundingBoxTree& tree1);
+std::vector<std::int32_t> compute_collisions(const BoundingBoxTree& tree0,
+                                             const BoundingBoxTree& tree1);
 
 /// Compute all collisions between bounding boxes and for a set of
 /// points
@@ -115,7 +115,7 @@ squared_distance(const mesh::Mesh& mesh, int dim,
 /// @return Adjacency list where the ith node is the list of entities
 /// that collide with the ith point
 /// @note There may be nodes with no entries in the adjacency list
-graph::AdjacencyList<int> compute_colliding_cells(
+graph::AdjacencyList<std::int32_t> compute_colliding_cells(
     const mesh::Mesh& mesh,
     const graph::AdjacencyList<std::int32_t>& candidate_cells,
     const std::span<const double>& points);

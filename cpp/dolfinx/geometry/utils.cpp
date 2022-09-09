@@ -19,23 +19,26 @@ using namespace dolfinx;
 namespace
 {
 //-----------------------------------------------------------------------------
-// Check whether bounding box is a leaf node
-constexpr bool is_leaf(std::span<const int, 2> bbox)
+
+/// Check whether bounding box is a leaf node
+constexpr bool is_leaf(std::array<int, 2> bbox)
 {
   // Leaf nodes are marked by setting child_0 equal to child_1
   return bbox[0] == bbox[1];
 }
 //-----------------------------------------------------------------------------
-/// A point `x` is inside a bounding box `b` if each component of its /
-//coordinates lies within the range `[b(0,i), b(1,i)]` that defines the
-//bounds / of the bounding box, b(0,i) <= x[i] <= b(1,i) for i = 0, 1, 2
+
+/// A point `x` is inside a bounding box `b` if each component of its
+/// coordinates lies within the range `[b(0,i), b(1,i)]` that defines
+/// the bounds of the bounding box, b(0,i) <= x[i] <= b(1,i) for i = 0,
+/// 1, 2
 constexpr bool point_in_bbox(const std::array<double, 6>& b,
                              std::span<const double, 3> x)
 {
   assert(b.size() == 6);
   constexpr double rtol = 1e-14;
   bool in = true;
-  for (int i = 0; i < 3; i++)
+  for (std::size_t i = 0; i < 3; i++)
   {
     double eps = rtol * (b[i + 3] - b[i]);
     in &= x[i] >= (b[i] - eps);
@@ -45,9 +48,10 @@ constexpr bool point_in_bbox(const std::array<double, 6>& b,
   return in;
 }
 //-----------------------------------------------------------------------------
+
 /// A bounding box "a" is contained inside another bounding box "b", if
-//each / of its intervals [a(0,i), a(1,i)] is contained in [b(0,i),
-//b(1,i)], / a(0,i) <= b(1, i) and a(1,i) >= b(0, i)
+/// each  of its intervals [a(0,i), a(1,i)] is contained in [b(0,i),
+/// b(1,i)], a(0,i) <= b(1, i) and a(1,i) >= b(0, i)
 constexpr bool bbox_in_bbox(std::span<const double, 6> a,
                             std::span<const double, 6> b)
 {
@@ -58,7 +62,7 @@ constexpr bool bbox_in_bbox(std::span<const double, 6> a,
   auto b1 = b.subspan<3, 3>();
 
   bool in = true;
-  for (int i = 0; i < 3; i++)
+  for (std::size_t i = 0; i < 3; i++)
   {
     double eps = rtol * (b1[i] - b0[i]);
     in &= a1[i] >= (b0[i] - eps);
@@ -69,9 +73,11 @@ constexpr bool bbox_in_bbox(std::span<const double, 6> a,
 }
 //-----------------------------------------------------------------------------
 // Compute closest entity {closest_entity, R2} (recursive)
-std::pair<std::int32_t, double> _compute_closest_entity(
-    const geometry::BoundingBoxTree& tree, std::span<const double, 3> point,
-    int node, const mesh::Mesh& mesh, std::int32_t closest_entity, double R2)
+std::pair<std::int32_t, double>
+_compute_closest_entity(const geometry::BoundingBoxTree& tree,
+                        std::span<const double, 3> point, std::int32_t node,
+                        const mesh::Mesh& mesh, std::int32_t closest_entity,
+                        double R2)
 {
   // Get children of current bounding box node (child_1 denotes entity
   // index for leaves)
@@ -135,11 +141,10 @@ std::pair<std::int32_t, double> _compute_closest_entity(
 /// @param[in, out] entities The list of colliding entities (local to process)
 void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
                                std::span<const double, 3> p,
-                               std::vector<int>& entities)
+                               std::vector<std::int32_t>& entities)
 {
   std::deque<std::int32_t> stack;
-  int next = tree.num_bboxes() - 1;
-
+  std::int32_t next = tree.num_bboxes() - 1;
   while (next != -1)
   {
     const std::array<int, 2> bbox = tree.bbox(next);
@@ -186,16 +191,17 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
 //-----------------------------------------------------------------------------
 // Compute collisions with tree (recursive)
 void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
-                              const geometry::BoundingBoxTree& B, int node_A,
-                              int node_B, std::vector<int>& entities)
+                              const geometry::BoundingBoxTree& B,
+                              std::int32_t node_A, std::int32_t node_B,
+                              std::vector<std::int32_t>& entities)
 {
   // If bounding boxes don't collide, then don't search further
   if (!bbox_in_bbox(A.get_bbox(node_A), B.get_bbox(node_B)))
     return;
 
   // Get bounding boxes for current nodes
-  const std::array<int, 2> bbox_A = A.bbox(node_A);
-  const std::array<int, 2> bbox_B = B.bbox(node_B);
+  const std::array<std::int32_t, 2> bbox_A = A.bbox(node_A);
+  const std::array<std::int32_t, 2> bbox_B = B.bbox(node_B);
 
   // Check whether we've reached a leaf in A or B
   const bool is_leaf_A = is_leaf(bbox_A);
@@ -264,11 +270,12 @@ geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
   return geometry::BoundingBoxTree(points);
 }
 //-----------------------------------------------------------------------------
-std::vector<int> geometry::compute_collisions(const BoundingBoxTree& tree0,
-                                              const BoundingBoxTree& tree1)
+std::vector<std::int32_t>
+geometry::compute_collisions(const BoundingBoxTree& tree0,
+                             const BoundingBoxTree& tree1)
 {
   // Call recursive find function
-  std::vector<int> entities;
+  std::vector<std::int32_t> entities;
   if (tree0.num_bboxes() > 0 and tree1.num_bboxes() > 0)
   {
     _compute_collisions_tree(tree0, tree1, tree0.num_bboxes() - 1,
@@ -361,7 +368,6 @@ double geometry::compute_squared_distance_bbox(std::span<const double, 6> b,
   assert(b.size() == 6);
   auto b0 = b.subspan<0, 3>();
   auto b1 = b.subspan<3, 3>();
-
   return std::transform_reduce(x.begin(), x.end(), b0.begin(), 0.0,
                                std::plus<>{},
                                [](auto x, auto b)

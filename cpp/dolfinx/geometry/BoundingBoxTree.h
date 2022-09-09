@@ -104,7 +104,7 @@ public:
   /// nodes, then the values in the returned array are equal and
   /// correspond to the index of the entity that the leaf node bounds,
   /// e.g. the index of the cell that it bounds.
-  std::array<int, 2> bbox(std::size_t node) const
+  std::array<std::int32_t, 2> bbox(std::size_t node) const
   {
     assert(2 * node + 1 < _bboxes.size());
     return {_bboxes[2 * node], _bboxes[2 * node + 1]};
@@ -119,7 +119,7 @@ private:
   int _tdim;
 
   // Print out recursively, for debugging
-  void tree_print(std::stringstream& s, int i) const;
+  void tree_print(std::stringstream& s, std::int32_t i) const;
 
   // List of bounding boxes (parent-child-entity relations)
   std::vector<std::int32_t> _bboxes;
