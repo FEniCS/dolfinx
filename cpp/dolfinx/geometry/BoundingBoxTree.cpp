@@ -340,8 +340,3 @@ void BoundingBoxTree::tree_print(std::stringstream& s, int i) const
   }
 }
 //-----------------------------------------------------------------------------
-std::span<const double, 6> BoundingBoxTree::get_bbox(std::size_t node) const
-{
-
-  return std::span<const double, 6>(_bbox_coordinates.data() + 6 * node, 6);
-}

@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstdint>
@@ -73,7 +74,12 @@ public:
   /// @param[in] node The bounding box node index.
   /// @return Bounding box coordinates (lower_corner, upper_corner).
   /// Shape is (2, 3), row-major storage.
-  std::span<const double, 6> get_bbox(std::size_t node) const;
+  std::array<double, 6> get_bbox(std::size_t node) const
+  {
+    std::array<double, 6> x;
+    std::copy_n(_bbox_coordinates.data() + 6 * node, 6, x.begin());
+    return x;
+  }
 
   /// Compute a global bounding tree (collective on comm)
   /// This can be used to find which process a point might have a

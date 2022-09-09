@@ -241,7 +241,7 @@ void geometry(py::module& m)
           [](const dolfinx::geometry::BoundingBoxTree& self,
              const std::size_t i)
           {
-            std::span<const double, 6> bbox = self.get_bbox(i);
+            std::array<double, 6> bbox = self.get_bbox(i);
             std::array<std::size_t, 2> shape = {2, 3};
             return py::array_t<double>(shape, bbox.data());
           },

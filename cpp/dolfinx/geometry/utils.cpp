@@ -85,9 +85,7 @@ std::pair<std::int32_t, double> _compute_closest_entity(
     // If point cloud tree the exact distance is easy to compute
     if (tree.tdim() == 0)
     {
-      std::span<const double, 6> bbox_coord = tree.get_bbox(node);
-      std::array<double, 3> diff;
-      std::copy_n(bbox_coord.begin(), 3, diff.begin());
+      std::array<double, 6> diff = tree.get_bbox(node);
       for (std::size_t k = 0; k < 3; ++k)
         diff[k] -= point[k];
       r2 = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
@@ -95,6 +93,7 @@ std::pair<std::int32_t, double> _compute_closest_entity(
     else
     {
       r2 = geometry::compute_squared_distance_bbox(tree.get_bbox(node), point);
+
       // If bounding box closer than previous closest entity, use gjk to
       // obtain exact distance to the convex hull of the entity
       if (r2 <= R2)
@@ -329,9 +328,7 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
       leaves = midpoint_tree.bbox(0);
       assert(is_leaf(leaves));
       initial_entity = leaves[0];
-      std::span<const double, 6> bbox_coord = midpoint_tree.get_bbox(0);
-      std::array<double, 3> diff;
-      std::copy_n(bbox_coord.begin(), 3, diff.begin());
+      std::array<double, 6> diff = midpoint_tree.get_bbox(0);
       for (std::size_t k = 0; k < 3; ++k)
         diff[k] -= points[3 * i + k];
       R2 = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
