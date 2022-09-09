@@ -244,7 +244,6 @@ if MPI.COMM_WORLD.rank == 0:
         radius_wire, radius_dom, in_wire_size, on_wire_size, bkg_size,
         boundary_size, au_tag, bkg_tag, boundary_tag)
 
-MPI.COMM_WORLD.barrier()
 model = MPI.COMM_WORLD.bcast(model, root=0)
 domain, cell_tags, facet_tags = io.gmshio.model_to_mesh(
     model, MPI.COMM_WORLD, 0, gdim=2)
