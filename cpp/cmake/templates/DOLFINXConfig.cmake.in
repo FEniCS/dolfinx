@@ -19,9 +19,6 @@ set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_VERBOSE TRUE)
 find_dependency(Boost 1.70 REQUIRED COMPONENTS timer filesystem)
 
-# xtensor
-find_dependency(xtensor)
-
 if (@ufcx_FOUND@)
   find_dependency(ufcx)
 endif()
