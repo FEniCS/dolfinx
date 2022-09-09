@@ -473,18 +473,6 @@ with VTXWriter(domain.comm, "E.bp", E_dg) as vtx:
     vtx.write(0.0)
 # -
 
-# We calculate the norm of the scattered field by using `dolfinx.fem.Expression`
-# $$
-# ||\mathbf{E}_s|| = \sqrt{\mathbf{E}_s\cdot\bar{\mathbf{E}}_s}
-# $$
-
-lagr_el = ufl.FiniteElement("CG", domain.ufl_cell(), 2)
-norm_func = ufl.sqrt(ufl.inner(Esh, Esh))
-V_normEsh = fem.FunctionSpace(domain, lagr_el)
-norm_expr = fem.Expression(norm_func, V_normEsh.element.interpolation_points())
-normEsh = fem.Function(V_normEsh)
-normEsh.interpolate(norm_expr)
-
 # We validate our numerical solution by computing the
 # absorption, scattering and extinction efficiencies, which are
 # quantities that define how much light is absorbed and scattered
