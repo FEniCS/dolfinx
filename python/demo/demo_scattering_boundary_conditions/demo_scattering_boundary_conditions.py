@@ -199,7 +199,8 @@ def curl_2d(f: fem.Function):
 
 # -
 
-# Next we define some mesh specific parameters
+# Next we define some mesh specific parameters. Please notice that the length
+# units are normalized with respect to $1\mu m$.
 
 
 # +
@@ -208,23 +209,23 @@ epsilon_0 = 8.8541878128 * 10**-12
 mu_0 = 4 * pi * 10**-7
 
 # Radius of the wire and of the boundary of the domain
-radius_wire = 0.050e-6
-radius_dom = 1e-6
+radius_wire = 0.050
+radius_dom = 1
 
 # The smaller the mesh_factor, the finer is the mesh
 mesh_factor = 1.2
 
 # Mesh size inside the wire
-in_wire_size = mesh_factor * 7.0e-9
+in_wire_size = mesh_factor * 7.0e-3
 
 # Mesh size at the boundary of the wire
-on_wire_size = mesh_factor * 3.0e-9
+on_wire_size = mesh_factor * 3.0e-3
 
 # Mesh size in the background
-bkg_size = mesh_factor * 60.0e-9
+bkg_size = mesh_factor * 60.0e-3
 
 # Mesh size at the boundary
-boundary_size = mesh_factor * 30.0e-9
+boundary_size = mesh_factor * 30.0e-3
 
 # Tags for the subdomains
 au_tag = 1          # gold wire
@@ -273,7 +274,7 @@ if have_pyvista:
 
 # Now we define some other problem specific parameters:
 
-wl0 = 0.4e-6  # Wavelength of the background field
+wl0 = 0.4  # Wavelength of the background field
 n_bkg = 1.33  # Background refractive index
 eps_bkg = n_bkg**2  # Background relative permittivity
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
