@@ -30,8 +30,6 @@
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
-#include <xtensor/xarray.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
@@ -145,8 +143,12 @@ int main(int argc, char* argv[])
     // Define boundary condition
     auto u_D = std::make_shared<fem::Function<T>>(V);
     u_D->interpolate(
-        [](auto&& x) {
-          return 1 + xt::square(xt::row(x, 0)) + 2 * xt::square(xt::row(x, 1));
+        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
+        {
+          std::vector<T> f;
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+            f.push_back(1 + x(0, p) * x(0, p) + +2 * x(1, p) * x(1, p));
+          return {f, {f.size()}};
         });
 
     mesh->topology_mutable().create_connectivity(1, 2);

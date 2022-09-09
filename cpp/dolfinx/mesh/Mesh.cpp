@@ -194,9 +194,10 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                      const std::span<const std::int32_t>& entities)
 {
   // -- Submesh topology
+  const Topology& topology = mesh.topology();
 
   // Get the entities in the submesh that are owned by this process
-  auto mesh_entity_index_map = mesh.topology().index_map(dim);
+  auto mesh_entity_index_map = topology.index_map(dim);
   assert(mesh_entity_index_map);
 
   std::vector<std::int32_t> submesh_owned_entities;
@@ -213,7 +214,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::shared_ptr<common::IndexMap> submesh_entity_index_map;
 
   // Create submesh entity index map
-  // TODO Call dolfinx::common::get_owned_indices here? Do we want to
+  // TODO Call common::get_owned_indices here? Do we want to
   // support `entities` possibly having a ghost on one process that is
   // not in `entities` on the owning process?
   // TODO Should entities still be ghosted in the submesh even if they
@@ -242,11 +243,10 @@ mesh::create_submesh(const Mesh& mesh, int dim,
       = compute_incident_entities(mesh, submesh_to_mesh_entity_map, dim, 0);
 
   // Get the vertices in the submesh owned by this process
-  auto mesh_vertex_index_map = mesh.topology().index_map(0);
+  auto mesh_vertex_index_map = topology.index_map(0);
   assert(mesh_vertex_index_map);
   std::vector<int32_t> submesh_owned_vertices
-      = common::compute_owned_indices(submesh_vertices,
-                                               *mesh_vertex_index_map);
+      = common::compute_owned_indices(submesh_vertices, *mesh_vertex_index_map);
 
   // Create submesh vertex index map
   std::pair<common::IndexMap, std::vector<int32_t>>
@@ -275,10 +275,9 @@ mesh::create_submesh(const Mesh& mesh, int dim,
       + submesh_vertex_index_map->num_ghosts());
 
   // Submesh entity to vertex connectivity
-  const CellType entity_type
-      = cell_entity_type(mesh.topology().cell_type(), dim, 0);
+  const CellType entity_type = cell_entity_type(topology.cell_type(), dim, 0);
   const int num_vertices_per_entity = cell_num_entities(entity_type, 0);
-  auto mesh_e_to_v = mesh.topology().connectivity(dim, 0);
+  auto mesh_e_to_v = topology.connectivity(dim, 0);
   std::vector<std::int32_t> submesh_e_to_v_vec;
   submesh_e_to_v_vec.reserve(submesh_to_mesh_entity_map.size()
                              * num_vertices_per_entity);
@@ -308,22 +307,59 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
 
   // -- Submesh geometry
+  const Geometry& geometry = mesh.geometry();
 
   // Get the geometry dofs in the submesh based on the entities in
   // submesh
-  const std::vector<std::int32_t> e_to_g
-      = entities_to_geometry(mesh, dim, submesh_to_mesh_entity_map, false);
-  const std::size_t num_vertices = mesh::num_cell_vertices(
-      cell_entity_type(mesh.topology().cell_type(), dim, 0));
+  const fem::ElementDofLayout layout = geometry.cmap().create_dof_layout();
+  // NOTE: Unclear what this return for prisms
+  const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
 
-  std::vector<int32_t> submesh_x_dofs = e_to_g;
+  std::vector<std::int32_t> geometry_indices(
+      num_entity_dofs * submesh_to_mesh_entity_map.size());
+  {
+    const graph::AdjacencyList<std::int32_t>& xdofs = geometry.dofmap();
+    const int tdim = topology.dim();
+    mesh.topology_mutable().create_entities(dim);
+    mesh.topology_mutable().create_connectivity(dim, tdim);
+    mesh.topology_mutable().create_connectivity(tdim, dim);
+
+    // Fetch connectivities required to get entity dofs
+    const std::vector<std::vector<std::vector<int>>>& closure_dofs
+        = layout.entity_closure_dofs_all();
+    const std::shared_ptr<const graph::AdjacencyList<int>> e_to_c
+        = topology.connectivity(dim, tdim);
+    assert(e_to_c);
+    const std::shared_ptr<const graph::AdjacencyList<int>> c_to_e
+        = topology.connectivity(tdim, dim);
+    assert(c_to_e);
+    for (std::size_t i = 0; i < submesh_to_mesh_entity_map.size(); ++i)
+    {
+      const std::int32_t idx = submesh_to_mesh_entity_map[i];
+      assert(!e_to_c->links(idx).empty());
+      // Always pick the last cell to be consistent with the e_to_v connectivity
+      const std::int32_t cell = e_to_c->links(idx).back();
+      auto cell_entities = c_to_e->links(cell);
+      auto it = std::find(cell_entities.begin(), cell_entities.end(), idx);
+      assert(it != cell_entities.end());
+      const auto local_entity = std::distance(cell_entities.begin(), it);
+      const std::vector<std::int32_t>& entity_dofs
+          = closure_dofs[dim][local_entity];
+
+      auto xc = xdofs.links(cell);
+      for (std::size_t j = 0; j < num_entity_dofs; ++j)
+        geometry_indices[i * num_entity_dofs + j] = xc[entity_dofs[j]];
+    }
+  }
+
+  std::vector<std::int32_t> submesh_x_dofs = geometry_indices;
   std::sort(submesh_x_dofs.begin(), submesh_x_dofs.end());
   submesh_x_dofs.erase(
       std::unique(submesh_x_dofs.begin(), submesh_x_dofs.end()),
       submesh_x_dofs.end());
 
   // Get the geometry dofs in the submesh owned by this process
-  auto mesh_geometry_dof_index_map = mesh.geometry().index_map();
+  auto mesh_geometry_dof_index_map = geometry.index_map();
   assert(mesh_geometry_dof_index_map);
   auto submesh_owned_x_dofs = common::compute_owned_indices(
       submesh_x_dofs, *mesh_geometry_dof_index_map);
@@ -365,14 +401,14 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Crete submesh geometry dofmap
   std::vector<std::int32_t> submesh_x_dofmap_vec;
-  submesh_x_dofmap_vec.reserve(e_to_g.size());
+  submesh_x_dofmap_vec.reserve(geometry_indices.size());
   std::vector<std::int32_t> submesh_x_dofmap_offsets(1, 0);
   submesh_x_dofmap_offsets.reserve(submesh_to_mesh_entity_map.size() + 1);
   for (std::size_t i = 0; i < submesh_to_mesh_entity_map.size(); ++i)
   {
     // Get the mesh geometry dofs for ith entity in entities
-    auto it = std::next(e_to_g.begin(), i * num_vertices);
-    entity_x_dofs.assign(it, std::next(it, num_vertices));
+    auto it = std::next(geometry_indices.begin(), i * num_entity_dofs);
+    entity_x_dofs.assign(it, std::next(it, num_entity_dofs));
 
     // For each mesh dof of the entity, get the submesh dof
     for (std::int32_t x_dof : entity_x_dofs)
@@ -390,14 +426,13 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Create submesh coordinate element
   CellType submesh_coord_cell
-      = cell_entity_type(mesh.geometry().cmap().cell_shape(), dim, 0);
-  auto submesh_coord_ele = fem::CoordinateElement(
-      submesh_coord_cell, mesh.geometry().cmap().degree());
+      = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
+  auto submesh_coord_ele
+      = fem::CoordinateElement(submesh_coord_cell, geometry.cmap().degree());
 
   // Submesh geometry input_global_indices
   // TODO Check this
-  const std::vector<std::int64_t>& mesh_igi
-      = mesh.geometry().input_global_indices();
+  const std::vector<std::int64_t>& mesh_igi = geometry.input_global_indices();
   std::vector<std::int64_t> submesh_igi;
   submesh_igi.reserve(submesh_to_mesh_x_dof_map.size());
   std::transform(submesh_to_mesh_x_dof_map.begin(),
@@ -409,7 +444,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // Create geometry
   Geometry submesh_geometry(
       submesh_x_dof_index_map, std::move(submesh_x_dofmap), submesh_coord_ele,
-      std::move(submesh_x), mesh.geometry().dim(), std::move(submesh_igi));
+      std::move(submesh_x), geometry.dim(), std::move(submesh_igi));
 
   return {Mesh(mesh.comm(), std::move(submesh_topology),
                std::move(submesh_geometry)),
