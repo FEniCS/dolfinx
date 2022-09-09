@@ -159,7 +159,7 @@ COMPONENT Development)
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
   VERSION ${DOLFINX_VERSION}
-  COMPATIBILITY ExactVersion)
+  COMPATIBILITY AnyNewerVersion)
 
 configure_package_config_file(${DOLFINX_SOURCE_DIR}/cmake/templates/DOLFINXConfig.cmake.in
   ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
