@@ -48,10 +48,11 @@ except ModuleNotFoundError:
 from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from mesh_wire import generate_mesh_wire
 
+import ufl
 from dolfinx import fem, plot
 from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
-import ufl
+from typing import Tuple
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -117,12 +118,14 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 
 class BackgroundElectricField:
 
-    def __init__(self, theta, n_b, k0):
+    def __init__(self, theta: float, n_b: float, k0: complex):
         self.theta = theta
         self.k0 = k0
         self.n_b = n_b
 
-    def eval(self, x):
+    def eval(self, x: np.typing.NDArray[np.float64]) -> Tuple[np.array
+                                                              [np.complex128],
+                                                              np.array[np.complex]]:
 
         kx = self.n_b * self.k0 * np.cos(self.theta)
         ky = self.n_b * self.k0 * np.sin(self.theta)
