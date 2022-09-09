@@ -118,18 +118,18 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 
 class BackgroundElectricField:
 
-    def __init__(self, theta: float, n_b: float, k0: complex):
-        self.theta = theta
-        self.k0 = k0
-        self.n_b = n_b
+    def __init__(self, theta: float, n_bkg: float, k0: complex):
+        self.theta = theta  # incident angle
+        self.k0 = k0  # vacuum wavevector
+        self.n_bkg = n_bkg  # background refractive index
 
     def eval(
             self, x: np.typing.NDArray[np.float64]) -> Tuple[
             np.typing.NDArray[np.complex128],
             np.typing.NDArray[np.complex128]]:
 
-        kx = self.n_b * self.k0 * np.cos(self.theta)
-        ky = self.n_b * self.k0 * np.sin(self.theta)
+        kx = self.n_bkg * self.k0 * np.cos(self.theta)
+        ky = self.n_bkg * self.k0 * np.sin(self.theta)
         phi = kx * x[0] + ky * x[1]
 
         ax = np.sin(self.theta)
