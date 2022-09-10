@@ -21,17 +21,8 @@ on:
 
 jobs:
   build:
-    # strategy:
-    #   matrix:
-    #     # os: [ubuntu-20.04, macos-10.15]
-    #     os: [ubuntu-20.04]
-    #   fail-fast: false
-    # runs-on: ${{ matrix.os }}
     runs-on: ubuntu-latest
     container: ubuntu:latest
-    # env:
-    #   CC: gcc-10
-    #   CXX: g++-10
 
     steps:
       - name: Get Spack
@@ -47,6 +38,11 @@ jobs:
           path: ./spack
           repository: ${{ github.event.inputs.spack_repo }}
           ref: ${{ github.event.inputs.spack_ref }}
+
+      - name: Install Spack requirements
+        run: |
+          apt-get -y update
+          apt-get install -y python3-minimal
 
       - name: Build DOLFINx (C++) development version via Spack
         run: |
