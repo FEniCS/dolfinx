@@ -7,9 +7,8 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
-    container: fenicsproject/test-env:latest-redhat
-
+    runs-on: ubuntu-latest
+    container: ubuntu:latest
     steps:
       - uses: actions/checkout@v3
 
