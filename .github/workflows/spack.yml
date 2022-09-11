@@ -43,7 +43,7 @@ jobs:
         run: |
           apt-get -y update
           apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar xz-utils
-          apt-get install -y g++  # compilers
+          apt-get install -y g++ gfortan  # compilers
 
       - name: Build DOLFINx (C++) development version via Spack
         run: |
