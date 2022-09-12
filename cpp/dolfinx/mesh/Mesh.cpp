@@ -20,8 +20,8 @@
 #include <dolfinx/graph/partition.h>
 #include <memory>
 
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xio.hpp>
+// #include <xtensor/xadapt.hpp>
+// #include <xtensor/xio.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -197,8 +197,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                      const std::span<const std::int32_t>& entities)
 {
   const int rank = MPI::rank(MPI_COMM_WORLD);
-  std::stringstream ss;
-  ss << "rank " << rank << ":\n";
+  // std::stringstream ss;
+  // ss << "rank " << rank << ":\n";
   // -- Submesh topology
   const Topology& topology = mesh.topology();
 
@@ -232,8 +232,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   submesh_entity_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_entity_index_map_pair.first));
 
-  ss << "submesh_to_mesh_entity_map (before) = "
-     << xt::adapt(submesh_to_mesh_entity_map) << "\n";
+  // ss << "submesh_to_mesh_entity_map (before) = "
+  //    << xt::adapt(submesh_to_mesh_entity_map) << "\n";
 
   // Add ghost entities to the entity map
   submesh_to_mesh_entity_map.reserve(submesh_entity_index_map->size_local()
@@ -245,8 +245,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                      std::int32_t entity_index)
                  { return size_local + entity_index; });
 
-  ss << "submesh_to_mesh_entity_map = " << xt::adapt(submesh_to_mesh_entity_map)
-     << "\n";
+  // ss << "submesh_to_mesh_entity_map = " << xt::adapt(submesh_to_mesh_entity_map)
+  //    << "\n";
 
   // Get the vertices in the submesh. Use submesh_to_mesh_entity_map
   // (instead of `entities`) to ensure vertices for ghost entities are
@@ -254,7 +254,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::vector<std::int32_t> submesh_vertices
       = compute_incident_entities(mesh, submesh_to_mesh_entity_map, dim, 0);
 
-  ss << "submesh_vertices = " << xt::adapt(submesh_vertices) << "\n";
+  // ss << "submesh_vertices = " << xt::adapt(submesh_vertices) << "\n";
 
   // Get the vertices in the submesh owned by this process
   auto mesh_vertex_index_map = topology.index_map(0);
@@ -269,8 +269,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   auto submesh_vertex_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_vertex_index_map_pair.first));
 
-  ss << "submesh_vertex_index_map_pair.second = "
-     << xt::adapt(submesh_vertex_index_map_pair.second) << "\n";
+  // ss << "submesh_vertex_index_map_pair.second = "
+  //    << xt::adapt(submesh_vertex_index_map_pair.second) << "\n";
 
   // Create a map from the (local) vertices in the submesh to the
   // (local) vertices in the mesh
@@ -286,8 +286,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                      std::int32_t vertex_index)
                  { return size_local + vertex_index; });
 
-  ss << "submesh_to_mesh_vertex_map = " << xt::adapt(submesh_to_mesh_vertex_map)
-     << "\n";
+  // ss << "submesh_to_mesh_vertex_map = " << xt::adapt(submesh_to_mesh_vertex_map)
+  //    << "\n";
 
   // Submesh vertex to vertex connectivity (identity)
   auto submesh_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
@@ -305,17 +305,17 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   submesh_e_to_v_offsets.reserve(submesh_to_mesh_entity_map.size() + 1);
   for (std::int32_t e : submesh_to_mesh_entity_map)
   {
-    ss << "e = " << e << "\n";
+    // ss << "e = " << e << "\n";
     std::span<const std::int32_t> vertices = mesh_e_to_v->links(e);
     for (std::int32_t v : vertices)
     {
       auto it = std::find(submesh_to_mesh_vertex_map.begin(),
                           submesh_to_mesh_vertex_map.end(), v);
-      if (it == submesh_to_mesh_vertex_map.end())
-      {
-        ss << "v = " << v << "\n";
-        std::cout << ss.str() << "\n";
-      }
+      // if (it == submesh_to_mesh_vertex_map.end())
+      // {
+      //   ss << "v = " << v << "\n";
+      //   std::cout << ss.str() << "\n";
+      // }
       assert(it != submesh_to_mesh_vertex_map.end());
       submesh_e_to_v_vec.push_back(
           std::distance(submesh_to_mesh_vertex_map.begin(), it));
@@ -471,7 +471,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
       submesh_x_dof_index_map, std::move(submesh_x_dofmap), submesh_coord_ele,
       std::move(submesh_x), geometry.dim(), std::move(submesh_igi));
 
-  std::cout << ss.str() << "\n";
+  // std::cout << ss.str() << "\n";
 
   return {Mesh(mesh.comm(), std::move(submesh_topology),
                std::move(submesh_geometry)),
