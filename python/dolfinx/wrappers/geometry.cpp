@@ -68,19 +68,18 @@ void geometry(py::module& m)
         [](const dolfinx::mesh::Mesh& mesh, const py::array_t<double>& points)
         {
           const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-          xt::xtensor<double, 2> _p
-              = xt::zeros<double>({p_s0, static_cast<std::size_t>(3)});
+          std::vector<double> _p(3 * p_s0);
           auto px = points.unchecked();
           if (px.ndim() == 1)
           {
             for (py::ssize_t i = 0; i < px.shape(0); i++)
-              _p(0, i) = px(i);
+              _p[i] = px(i);
           }
           else if (px.ndim() == 2)
           {
             for (py::ssize_t i = 0; i < px.shape(0); i++)
               for (py::ssize_t j = 0; j < px.shape(1); j++)
-                _p(i, j) = px(i, j);
+                _p[3 * i + j] = px(i, j);
           }
           else
             throw std::runtime_error("Array has wrong ndim.");
