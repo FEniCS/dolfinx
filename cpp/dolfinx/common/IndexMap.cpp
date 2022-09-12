@@ -15,8 +15,8 @@
 #include <vector>
 
 #include <iostream>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xio.hpp>
+// #include <xtensor/xadapt.hpp>
+// #include <xtensor/xio.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::common;
@@ -617,21 +617,21 @@ IndexMap::create_submap(
     const std::span<const std::int32_t>& connected_indices) const
 {
   const int rank = MPI::rank(comm());
-  std::stringstream ss;
-  ss << "rank " << rank << ":\n";
+  // std::stringstream ss;
+  // ss << "rank " << rank << ":\n";
 
-  ss << "indices = {";
-  for (auto index : indices)
-  {
-    ss << index << " ";
-  }
-  ss << "}\n";
-  ss << "connected_indices = {";
-  for (auto index : connected_indices)
-  {
-    ss << index << " ";
-  }
-  ss << "}\n";
+  // ss << "indices = {";
+  // for (auto index : indices)
+  // {
+  //   ss << index << " ";
+  // }
+  // ss << "}\n";
+  // ss << "connected_indices = {";
+  // for (auto index : connected_indices)
+  // {
+  //   ss << index << " ";
+  // }
+  // ss << "}\n";
 
   if (!indices.empty() and indices.back() >= this->size_local())
   {
@@ -658,10 +658,10 @@ IndexMap::create_submap(
     }
   }
 
-  ss << "owned_connected_indices = " << xt::adapt(owned_connected_indices)
-     << "\n";
-  ss << "owned_unconnected_indices = " << xt::adapt(owned_unconnected_indices)
-     << "\n";
+  // ss << "owned_connected_indices = " << xt::adapt(owned_connected_indices)
+  //    << "\n";
+  // ss << "owned_unconnected_indices = " << xt::adapt(owned_unconnected_indices)
+  //    << "\n";
 
   // --- Step 2: Send ghost indices to owning rank
 
@@ -750,12 +750,12 @@ IndexMap::create_submap(
       ghost_send_disp.data(), MPI_INT32_T, ghost_connected_indices_recv.data(),
       ghost_recv_sizes.data(), ghost_recv_disp.data(), MPI_INT32_T, comm0);
 
-  ss << "ghost_indices_send = " << xt::adapt(ghost_indices_send) << "\n";
-  ss << "ghost_connected_indices_send = "
-     << xt::adapt(ghost_connected_indices_send) << "\n";
-  ss << "ghost_indices_recv = " << xt::adapt(ghost_indices_recv) << "\n";
-  ss << "ghost_connected_indices_recv = "
-     << xt::adapt(ghost_connected_indices_recv) << "\n";
+  // ss << "ghost_indices_send = " << xt::adapt(ghost_indices_send) << "\n";
+  // ss << "ghost_connected_indices_send = "
+  //    << xt::adapt(ghost_connected_indices_send) << "\n";
+  // ss << "ghost_indices_recv = " << xt::adapt(ghost_indices_recv) << "\n";
+  // ss << "ghost_connected_indices_recv = "
+  //    << xt::adapt(ghost_connected_indices_recv) << "\n";
 
   // std::vector
   // std::vector<std::int64_t> owned_unconnected_indices_global;
@@ -778,8 +778,8 @@ IndexMap::create_submap(
   // 2: {2, 2, 2, 2}
   // 3: {3, 3}
 
-  ss << "src = " << xt::adapt(src) << "\n";
-  ss << "dest = " << xt::adapt(dest) << "\n";
+  // ss << "src = " << xt::adapt(src) << "\n";
+  // ss << "dest = " << xt::adapt(dest) << "\n";
 
   // TODO Try to replace map
   std::map<std::int64_t, std::vector<std::int32_t>> possible_new_owners;
@@ -797,12 +797,12 @@ IndexMap::create_submap(
     }
   }
 
-  ss << "possible_new_owners = \n";
-  for (auto& [global_index, processes] : possible_new_owners)
-  {
-    ss << "   global_index  = " << global_index
-       << "   processes = " << xt::adapt(processes) << "\n";
-  }
+  // ss << "possible_new_owners = \n";
+  // for (auto& [global_index, processes] : possible_new_owners)
+  // {
+  //   ss << "   global_index  = " << global_index
+  //      << "   processes = " << xt::adapt(processes) << "\n";
+  // }
 
   std::vector<std::int32_t> new_owners_send;
   new_owners_send.reserve(ghost_indices_recv.size());
@@ -836,7 +836,7 @@ IndexMap::create_submap(
     }
   }
 
-  ss << "new_owners_send = " << xt::adapt(new_owners_send) << "\n";
+  // ss << "new_owners_send = " << xt::adapt(new_owners_send) << "\n";
 
   // Create neighbourhood comm (owner -> ghost)
   MPI_Comm comm1;
@@ -850,13 +850,13 @@ IndexMap::create_submap(
                          new_owners_recv.data(), ghost_send_sizes.data(),
                          ghost_send_disp.data(), MPI_INT32_T, comm1);
 
-  ss << "new_owners_recv = " << xt::adapt(new_owners_recv) << "\n";
+  // ss << "new_owners_recv = " << xt::adapt(new_owners_recv) << "\n";
 
   int num_ghosts_to_take_ownership
       = std::count(new_owners_recv.begin(), new_owners_recv.end(), rank);
 
-  ss << "num_ghosts_to_take_ownership = " << num_ghosts_to_take_ownership
-     << "\n";
+  // ss << "num_ghosts_to_take_ownership = " << num_ghosts_to_take_ownership
+  //    << "\n";
 
   // --- Step 1: Compute new offset for this rank
 
@@ -903,11 +903,11 @@ IndexMap::create_submap(
       ghost_recv_sizes.data(), ghost_recv_disp.data(), MPI_INT64_T, comm0);
   MPI_Comm_free(&comm0);
 
-  ss << "send_gidx_to_original_owner = "
-     << xt::adapt(send_gidx_to_original_owner) << "\n";
+  // ss << "send_gidx_to_original_owner = "
+  //    << xt::adapt(send_gidx_to_original_owner) << "\n";
 
-  ss << "recv_gidx_to_original_owner = "
-     << xt::adapt(recv_gidx_to_original_owner) << "\n";
+  // ss << "recv_gidx_to_original_owner = "
+  //    << xt::adapt(recv_gidx_to_original_owner) << "\n";
 
   // Global to new global map for indices whose ownership needs changing
   std::map<std::int64_t, std::int64_t> ownership_change_global_map;
@@ -951,7 +951,7 @@ IndexMap::create_submap(
       send_gidx.push_back(-1);
   }
 
-  ss << "send_gidx = " << xt::adapt(send_gidx) << "\n";
+  // ss << "send_gidx = " << xt::adapt(send_gidx) << "\n";
 
   // --- Step 4: Send new global indices from owner back to ranks that
   // ghost the index
@@ -965,7 +965,7 @@ IndexMap::create_submap(
 
   MPI_Comm_free(&comm1);
 
-  ss << "recv_gidx = " << xt::adapt(recv_gidx) << "\n";
+  // ss << "recv_gidx = " << xt::adapt(recv_gidx) << "\n";
 
   // --- Step 5: Unpack received data
 
@@ -991,9 +991,9 @@ IndexMap::create_submap(
     }
   }
 
-  ss << "ghosts = " << xt::adapt(ghosts) << "\n";
+  // ss << "ghosts = " << xt::adapt(ghosts) << "\n";
 
-  std::cout << ss.str() << "\n";
+  // std::cout << ss.str() << "\n";
 
   if (_overlapping)
   {
