@@ -35,9 +35,10 @@ create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
 /// process)
 /// @param[in] tree0 First BoundingBoxTree
 /// @param[in] tree1 Second BoundingBoxTree
-/// @return List of pairs of intersecting box indices from each tree
-std::vector<std::array<int, 2>>
-compute_collisions(const BoundingBoxTree& tree0, const BoundingBoxTree& tree1);
+/// @return List of pairs of intersecting box indices from each tree, flattened
+/// as a vector of size num_intersections*2
+std::vector<std::int32_t> compute_collisions(const BoundingBoxTree& tree0,
+                                             const BoundingBoxTree& tree1);
 
 /// Compute all collisions between bounding boxes and for a set of
 /// points
@@ -79,9 +80,8 @@ std::vector<std::int32_t> compute_closest_entity(
 /// @param[in] x A point
 /// @return The shortest distance between the bounding box `b` and the
 /// point `x`. Returns zero if `x` is inside box.
-double
-compute_squared_distance_bbox(const std::array<std::array<double, 3>, 2>& b,
-                              const std::array<double, 3>& x);
+double compute_squared_distance_bbox(std::span<const double, 6> b,
+                                     std::span<const double, 3> x);
 
 /// Compute the shortest vector from a mesh entity to a point
 /// @param[in] mesh The mesh
@@ -125,7 +125,7 @@ squared_distance(const mesh::Mesh& mesh, int dim,
 /// @return Adjacency list where the ith node is the list of entities
 /// that collide with the ith point
 /// @note There may be nodes with no entries in the adjacency list
-graph::AdjacencyList<int> compute_colliding_cells(
+graph::AdjacencyList<std::int32_t> compute_colliding_cells(
     const mesh::Mesh& mesh,
     const graph::AdjacencyList<std::int32_t>& candidate_cells,
     const std::span<const double>& points);
