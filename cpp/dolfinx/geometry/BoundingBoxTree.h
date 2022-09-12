@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstdint>
@@ -68,11 +69,17 @@ public:
   /// Destructor
   ~BoundingBoxTree() = default;
 
-  /// Return bounding box coordinates for a given node in the tree
-  /// @param[in] node The bounding box node index
-  /// @return The bounding box where [0] is the lower corner and [1] is
-  /// the upper corner
-  std::array<std::array<double, 3>, 2> get_bbox(std::size_t node) const;
+  /// @brief Return bounding box coordinates for a given node in the
+  /// tree,
+  /// @param[in] node The bounding box node index.
+  /// @return Bounding box coordinates (lower_corner, upper_corner).
+  /// Shape is (2, 3), row-major storage.
+  std::array<double, 6> get_bbox(std::size_t node) const
+  {
+    std::array<double, 6> x;
+    std::copy_n(_bbox_coordinates.data() + 6 * node, 6, x.begin());
+    return x;
+  }
 
   /// Compute a global bounding tree (collective on comm)
   /// This can be used to find which process a point might have a
@@ -97,7 +104,7 @@ public:
   /// nodes, then the values in the returned array are equal and
   /// correspond to the index of the entity that the leaf node bounds,
   /// e.g. the index of the cell that it bounds.
-  std::array<int, 2> bbox(std::size_t node) const
+  std::array<std::int32_t, 2> bbox(std::size_t node) const
   {
     assert(2 * node + 1 < _bboxes.size());
     return {_bboxes[2 * node], _bboxes[2 * node + 1]};
@@ -112,7 +119,7 @@ private:
   int _tdim;
 
   // Print out recursively, for debugging
-  void tree_print(std::stringstream& s, int i) const;
+  void tree_print(std::stringstream& s, std::int32_t i) const;
 
   // List of bounding boxes (parent-child-entity relations)
   std::vector<std::int32_t> _bboxes;
