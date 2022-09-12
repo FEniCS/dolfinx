@@ -435,7 +435,7 @@ eps.x.scatter_forward()
 wl0 = 0.4  # Wavelength of the background field
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
 theta = np.pi / 4  # Angle of incidence of the background field
-m_list = [0, 1, 2, 3, 4, 5]  # list of harmonics
+m_list = [0, 1]  # list of harmonics
 
 # with `m_list` being a list containing the harmonic
 # numbers we want to solve the problem for. For
