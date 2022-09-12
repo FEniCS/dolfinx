@@ -435,7 +435,7 @@ eps.x.scatter_forward()
 wl0 = 0.4  # Wavelength of the background field
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
 theta = np.pi / 4  # Angle of incidence of the background field
-m_list = [0, 1]  # list of harmonics
+m_list = [0, 1, 2, 3, 4, 5]  # list of harmonics
 
 # with `m_list` being a list containing the harmonic
 # numbers we want to solve the problem for. For
@@ -473,6 +473,7 @@ Esh_rz_m_dg = fem.Function(V_dg)
 
 # Total field
 Eh_m = fem.Function(V)
+Esh = fem.Function(V)
 
 n = ufl.FacetNormal(domain)
 n_3d = ufl.as_vector((n[0], n[1], 0))
@@ -497,6 +498,8 @@ dAu = dx(au_tag)
 
 # Define integration facet for the scattering efficiency
 dS = ufl.Measure("dS", domain, subdomain_data=facet_tags)
+
+phi = 0
 # -
 
 # We can now solve our problem for all the chosen harmonic numbers:
@@ -546,6 +549,18 @@ for m in m_list:
 
     # Total electric field
     Eh_m.x.array[:] = Eb_m.x.array[:] + Esh_m.x.array[:]
+
+    if m == 0:
+
+        Esh.x.array[:] = Esh_m.x.array[:] * np.exp(- 1j * m * phi)
+
+    elif m == m_list[0]:
+
+        Esh.x.array[:] = 2 * Esh_m.x.array[:] * np.exp(- 1j * m * phi)
+
+    else:
+
+        Esh.x.array[:] += 2 * Esh_m.x.array[:] * np.exp(- 1j * m * phi)
 
     # Efficiencies calculation
 
@@ -618,3 +633,40 @@ if MPI.COMM_WORLD.rank == 0:
     assert err_abs < 0.01
     assert err_sca < 0.01
     assert err_ext < 0.01
+
+
+Esh_rz, Esh_p = Esh.split()
+
+Esh_rz_dg = fem.Function(V_dg)
+Esh_r_dg = fem.Function(V_dg)
+
+# Interpolate over rho and z components over DG space
+Esh_rz_dg.interpolate(Esh_rz)
+
+with VTXWriter(domain.comm, "sols/Es_rz.bp", Esh_rz_dg) as f:
+    f.write(0.0)
+with VTXWriter(domain.comm, "sols/Es_p.bp", Esh_p) as f:
+    f.write(0.0)
+
+if have_pyvista:
+    V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
+    V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
+    Esh_r_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
+    Esh_r_values[:, :domain.topology.dim] = \
+        Esh_r_dg.x.array.reshape(V_x.shape[0], domain.topology.dim).real
+
+    V_grid.point_data["u"] = Esh_r_values
+
+    pyvista.set_jupyter_backend("pythreejs")
+    plotter = pyvista.Plotter()
+
+    plotter.add_text("magnitude", font_size=12, color="black")
+    plotter.add_mesh(V_grid.copy(), show_edges=True)
+    plotter.view_xy()
+    plotter.link_views()
+
+    if not pyvista.OFF_SCREEN:
+        plotter.show()
+    else:
+        pyvista.start_xvfb()
+        plotter.screenshot("Esh_r.png", window_size=[800, 800])
