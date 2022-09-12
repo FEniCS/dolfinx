@@ -73,6 +73,18 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 
 } // namespace impl
 
+/// @brief Given an integral type and meshtags, this function computes
+/// the entities that should be integrated over (i.e. local cell indices
+/// for cell integrals, local facets on the boundary as
+/// (cell, local facet index) pairs for exterior facet integrals etc.)
+/// @param[in] integral_type The integral type
+/// @param[in] meshtags The meshtags
+/// @return A map from the integral id to the entities in the integration
+/// domain
+std::map<int, std::vector<std::int32_t>>
+compute_integration_domains(const IntegralType integral_type,
+                            const mesh::MeshTags<int>& meshtags);
+
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms
 ///
@@ -244,13 +256,15 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] mesh The mesh of the domain
 /// @param[in] entity_maps The entity maps for the form
 template <typename T>
-Form<T> create_form(
-    const ufcx_form& ufcx_form,
-    const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
-    const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
-    const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
-    const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
+Form<T>
+create_form(const ufcx_form& ufcx_form,
+            const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
+            const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+            const std::vector<std::shared_ptr<const Constant<T>>>& constants,
+            const std::map<IntegralType,
+                           std::map<std::int32_t, std::vector<std::int32_t>>>&
+                subdomains,
+            const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
     const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
                    std::vector<std::int32_t>>& entity_maps
     = {})
@@ -290,8 +304,9 @@ Form<T> create_form(
       T*, const T*, const T*,
       const typename impl::scalar_value_type<T>::value_type*, const int*,
       const std::uint8_t*)>;
-  std::map<IntegralType, std::pair<std::vector<std::pair<int, kern>>,
-                                   const mesh::MeshTags<int>*>>
+
+  std::map<IntegralType,
+           std::map<int, std::pair<kern, std::vector<std::int32_t>>>>
       integral_data;
 
   bool needs_facet_permutations = false;
@@ -326,17 +341,25 @@ Form<T> create_form(
     }
     assert(k);
 
-    integral_data[IntegralType::cell].first.emplace_back(cell_integral_ids[i],
-                                                         k);
+    // FIXME Avoid copy (see also int and ext facets)
+    // TODO Try emplace instead of []
+    const int id = cell_integral_ids[i];
+    if (id == -1)
+    {
+      integral_data[IntegralType::cell][id] = {k, {}};
+    }
+    else
+    {
+      if (subdomains.at(IntegralType::cell).find(id)
+          != subdomains.at(IntegralType::cell).end())
+      {
+        integral_data[IntegralType::cell][id]
+            = {k, subdomains.at(IntegralType::cell).at(id)};
+      }
+    }
+
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
-  }
-
-  // Attach cell subdomain data
-  if (auto it = subdomains.find(IntegralType::cell);
-      it != subdomains.end() and !cell_integral_ids.empty())
-  {
-    integral_data[IntegralType::cell].second = it->second;
   }
 
   // FIXME: Can facets be handled better?
@@ -384,17 +407,23 @@ Form<T> create_form(
     }
     assert(k);
 
-    integral_data[IntegralType::exterior_facet].first.emplace_back(
-        exterior_facet_integral_ids[i], k);
+    const int id = exterior_facet_integral_ids[i];
+    if (id == -1)
+    {
+      integral_data[IntegralType::exterior_facet][id] = {k, {}};
+    }
+    else
+    {
+      if (subdomains.at(IntegralType::exterior_facet).find(id)
+          != subdomains.at(IntegralType::exterior_facet).end())
+      {
+        integral_data[IntegralType::exterior_facet][id]
+            = {k, subdomains.at(IntegralType::exterior_facet).at(id)};
+      }
+    }
+
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
-  }
-
-  // Attach exterior facet subdomain data
-  if (auto it = subdomains.find(IntegralType::exterior_facet);
-      it != subdomains.end() and !exterior_facet_integral_ids.empty())
-  {
-    integral_data[IntegralType::exterior_facet].second = it->second;
   }
 
   // Attach interior facet kernels
@@ -428,17 +457,23 @@ Form<T> create_form(
     }
     assert(k);
 
-    integral_data[IntegralType::interior_facet].first.emplace_back(
-        interior_facet_integral_ids[i], k);
+    const int id = interior_facet_integral_ids[i];
+    if (id == -1)
+    {
+      integral_data[IntegralType::interior_facet][id] = {k, {}};
+    }
+    else
+    {
+      if (subdomains.at(IntegralType::interior_facet).find(id)
+          != subdomains.at(IntegralType::interior_facet).end())
+      {
+        integral_data[IntegralType::interior_facet][id]
+            = {k, subdomains.at(IntegralType::interior_facet).at(id)};
+      }
+    }
+
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
-  }
-
-  // Attach interior facet subdomain data
-  if (auto it = subdomains.find(IntegralType::interior_facet);
-      it != subdomains.end() and !interior_facet_integral_ids.empty())
-  {
-    integral_data[IntegralType::interior_facet].second = it->second;
   }
 
   return Form<T>(spaces, integral_data, coefficients, constants,
@@ -461,7 +496,9 @@ Form<T> create_form(
     const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
+    const std::map<IntegralType,
+                   std::map<std::int32_t, std::vector<std::int32_t>>>&
+        subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   // Place coefficients in appropriate order
@@ -508,7 +545,9 @@ Form<T> create_form(
     const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
+    const std::map<IntegralType,
+                   std::map<std::int32_t, std::vector<std::int32_t>>>&
+        subdomains,
     const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
 {
   ufcx_form* form = fptr();

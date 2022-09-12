@@ -274,3 +274,101 @@ fem::FunctionSpace fem::create_functionspace(
           mesh->comm(), layout, mesh->topology(), reorder_fn, *element)));
 }
 //-----------------------------------------------------------------------------
+std::map<int, std::vector<std::int32_t>>
+fem::compute_integration_domains(const fem::IntegralType integral_type,
+                                 const mesh::MeshTags<int>& meshtags)
+{
+  std::map<int, std::vector<std::int32_t>> integrals;
+
+  std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
+  const mesh::Topology& topology = mesh->topology();
+  const int tdim = topology.dim();
+  int dim = integral_type == IntegralType::cell ? tdim : tdim - 1;
+  if (dim != meshtags.dim())
+  {
+    throw std::runtime_error("Invalid MeshTags dimension: "
+                             + std::to_string(meshtags.dim()));
+  }
+
+  // Get mesh tag data
+  const std::vector<int>& tags = meshtags.values();
+  const std::vector<std::int32_t>& tagged_entities = meshtags.indices();
+  assert(topology.index_map(dim));
+  const auto entity_end
+      = std::lower_bound(tagged_entities.begin(), tagged_entities.end(),
+                         topology.index_map(dim)->size_local());
+
+  switch (integral_type)
+  {
+    // TODO Sort pairs or use std::iota
+  case fem::IntegralType::cell:
+  {
+    for (auto c = tagged_entities.cbegin(); c != entity_end; ++c)
+    {
+      const std::size_t index = std::distance(tagged_entities.cbegin(), c);
+      integrals[tags[index]].push_back(*c);
+    }
+  }
+  break;
+  default:
+    mesh->topology_mutable().create_connectivity(dim, tdim);
+    mesh->topology_mutable().create_connectivity(tdim, dim);
+    auto f_to_c = topology.connectivity(tdim - 1, tdim);
+    assert(f_to_c);
+    auto c_to_f = topology.connectivity(tdim, tdim - 1);
+    assert(c_to_f);
+    switch (integral_type)
+    {
+    case IntegralType::exterior_facet:
+    {
+      const std::vector<std::int32_t> boundary_facets
+          = mesh::exterior_facet_indices(mesh->topology());
+
+      for (auto f = tagged_entities.cbegin(); f != entity_end; ++f)
+      {
+        if (std::find(boundary_facets.begin(), boundary_facets.end(), *f)
+            != boundary_facets.end())
+        {
+          const std::size_t index = std::distance(tagged_entities.cbegin(), f);
+
+          // There will only be one pair for an exterior facet integral
+          const std::array<std::int32_t, 2> pair
+              = mesh::get_cell_local_facet_pairs<1>(*f, f_to_c->links(*f),
+                                                    *c_to_f)[0];
+          std::vector<std::int32_t>& integration_entities
+              = integrals[tags[index]];
+          integration_entities.insert(integration_entities.end(), pair.cbegin(),
+                                      pair.cend());
+        }
+      }
+    }
+    break;
+    case IntegralType::interior_facet:
+    {
+      for (auto f = tagged_entities.cbegin(); f != entity_end; ++f)
+      {
+        if (f_to_c->num_links(*f) == 2)
+        {
+          const std::size_t index = std::distance(tagged_entities.cbegin(), f);
+
+          const std::array<std::array<std::int32_t, 2>, 2> pairs
+              = mesh::get_cell_local_facet_pairs<2>(*f, f_to_c->links(*f),
+                                                    *c_to_f);
+          std::vector<std::int32_t>& integration_entities
+              = integrals[tags[index]];
+          integration_entities.insert(integration_entities.end(),
+                                      pairs[0].cbegin(), pairs[0].cend());
+          integration_entities.insert(integration_entities.end(),
+                                      pairs[1].cbegin(), pairs[1].cend());
+        }
+      }
+    }
+    break;
+    default:
+      throw std::runtime_error(
+          "Cannot compute integration domains. Integral type not supported.");
+    }
+  }
+  return integrals;
+}
+//-----------------------------------------------------------------------------
