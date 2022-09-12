@@ -682,6 +682,3 @@ def test_submesh_codim_1_boundary_facets(n, ghost_mode):
 
     expected_num_boundary_facets = 4 * n
     assert compute_num_boundary_facets(submesh) == expected_num_boundary_facets
-
-
-test_submesh_full(2, 2, 1, lambda x: x[0] > -1, GhostMode.none, True)
