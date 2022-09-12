@@ -80,7 +80,7 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
             # to submesh_x_dofs[i] for the same reason as explained in
             # submesh_topology_test
             mesh_x_dofs = np.sort(e_to_g[submesh_entity])
-            assert(np.all(np.sort(geom_map[submesh_x_dofs]) == mesh_x_dofs))
+            assert np.all(np.sort(geom_map[submesh_x_dofs]) == mesh_x_dofs)
 
     for i in range(num_x_dofs):
         mesh_x_dof = geom_map[i]
