@@ -196,7 +196,7 @@ std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>,
 mesh::create_submesh(const Mesh& mesh, int dim,
                      const std::span<const std::int32_t>& entities)
 {
-  const int rank = MPI::rank(MPI_COMM_WORLD);
+  // const int rank = MPI::rank(MPI_COMM_WORLD);
   // std::stringstream ss;
   // ss << "rank " << rank << ":\n";
   // -- Submesh topology
