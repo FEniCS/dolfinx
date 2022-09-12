@@ -18,7 +18,6 @@
 #include <utility>
 #include <variant>
 #include <vector>
-#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::fem
 {
@@ -89,7 +88,11 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
 /// with V.
 std::vector<std::int32_t> locate_dofs_geometrical(
     const FunctionSpace& V,
-    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+    const std::function<std::vector<std::int8_t>(
+        std::experimental::mdspan<
+            const double,
+            std::experimental::extents<std::size_t, 3,
+                                       std::experimental::dynamic_extent>>)>&
         marker_fn);
 
 /// Finds degrees of freedom whose geometric coordinate is true for the
@@ -107,7 +110,11 @@ std::vector<std::int32_t> locate_dofs_geometrical(
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
-    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+    const std::function<std::vector<std::int8_t>(
+        std::experimental::mdspan<
+            const double,
+            std::experimental::extents<std::size_t, 3,
+                                       std::experimental::dynamic_extent>>)>&
         marker_fn);
 
 /// Object for setting (strong) Dirichlet boundary conditions

@@ -62,7 +62,7 @@ la::petsc::create_vectors(MPI_Comm comm,
   return v;
 }
 //-----------------------------------------------------------------------------
-Vec la::petsc::create_vector(const dolfinx::common::IndexMap& map, int bs)
+Vec la::petsc::create_vector(const common::IndexMap& map, int bs)
 {
   return la::petsc::create_vector(map.comm(), map.local_range(), map.ghosts(),
                                   bs);
