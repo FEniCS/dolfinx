@@ -765,6 +765,16 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        // Other integrals in the form might have coefficients defined over
+        // entities of codim > 0, which don't make sense for cell integrals, so
+        // don't pack them.
+        const int tdim = form.mesh()->topology().dim();
+        const int codim
+            = tdim
+              - coefficients[coeff]->function_space()->mesh()->topology().dim();
+        if (codim != 0)
+          continue;
+
         auto fetch_cell = form.function_space_to_entity_map(
             *coefficients[coeff]->function_space());
         // Get cell info for coefficient (with respect to coefficient mesh)
