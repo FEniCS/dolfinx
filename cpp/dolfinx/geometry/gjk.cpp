@@ -27,8 +27,8 @@ nearest_simplex(const std::span<const double>& s)
   case 2:
   {
     // Compute lm = dot(s0, ds / |ds|)
-    auto s0 = s.subspan(0, 3);
-    auto s1 = s.subspan(3, 3);
+    auto s0 = s.subspan<0, 3>();
+    auto s1 = s.subspan<3, 3>();
     std::array ds = {s1[0] - s0[0], s1[1] - s0[1], s1[2] - s0[2]};
     const double lm = -(s0[0] * ds[0] + s0[1] * ds[1] + s0[2] * ds[2])
                       / (ds[0] * ds[0] + ds[1] * ds[1] + ds[2] * ds[2]);
@@ -48,9 +48,9 @@ nearest_simplex(const std::span<const double>& s)
   }
   case 3:
   {
-    auto a = s.subspan(0, 3);
-    auto b = s.subspan(3, 3);
-    auto c = s.subspan(6, 3);
+    auto a = s.subspan<0, 3>();
+    auto b = s.subspan<3, 3>();
+    auto c = s.subspan<6, 3>();
     auto length = [](auto& x, auto& y)
     {
       return std::transform_reduce(
@@ -155,10 +155,10 @@ nearest_simplex(const std::span<const double>& s)
   }
   case 4:
   {
-    auto s0 = s.subspan(0, 3);
-    auto s1 = s.subspan(3, 3);
-    auto s2 = s.subspan(6, 3);
-    auto s3 = s.subspan(9, 3);
+    auto s0 = s.subspan<0, 3>();
+    auto s1 = s.subspan<3, 3>();
+    auto s2 = s.subspan<6, 3>();
+    auto s3 = s.subspan<9, 3>();
     auto W1 = math::cross(s0, s1);
     auto W2 = math::cross(s2, s3);
 
@@ -178,7 +178,7 @@ nearest_simplex(const std::span<const double>& s)
       if (f_inside[0]) // The origin is inside the tetrahedron
         return {std::vector<double>(s.begin(), s.end()), {0, 0, 0}};
       else // The origin projection P faces BCD
-        return nearest_simplex(s.subspan(0, 3 * 3));
+        return nearest_simplex(s.subspan<0, 3 * 3>());
     }
 
     // Test ACD, ABD and/or ABC

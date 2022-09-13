@@ -15,7 +15,6 @@ ARG PETSC_VERSION=3.17.1
 ARG PYBIND11_VERSION=2.9.2
 ARG NUMPY_VERSION=1.21.6
 ARG MPICH_VERSION=4.0.2
-ARG XTENSOR_VERSION=0.24.2
 ARG XTL_VERSION=0.7.4
 
 WORKDIR /tmp
@@ -102,22 +101,6 @@ RUN curl -L -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES
     cd hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
     ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
     make -j${BUILD_NP} install && \
-    rm -rf /tmp/*
-
-# Install xtensor libraries
-RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack/xtl.git && \
-    cd xtl && \
-    mkdir -p build && \
-    cd build && \
-    cmake -G Ninja ../ && \
-    ninja install && \
-    cd ../../ && \
-    git clone -b ${XTENSOR_VERSION} --single-branch https://github.com/xtensor-stack/xtensor.git && \
-    cd xtensor && \
-    mkdir -p build && \
-    cd build && \
-    cmake -G Ninja ../ && \
-    ninja install && \
     rm -rf /tmp/*
 
 # RHEL pkgconfig does not look here by default. Setting this probably better

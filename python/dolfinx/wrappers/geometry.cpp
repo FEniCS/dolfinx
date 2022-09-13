@@ -6,6 +6,7 @@
 
 #include "array.h"
 #include "caster_mpi.h"
+#include <dolfinx/common/utils.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/gjk.h>
 #include <dolfinx/geometry/utils.h>
@@ -89,11 +90,16 @@ void geometry(py::module& m)
         return dolfinx::geometry::compute_collisions(tree, _p);
       },
       py::arg("tree"), py::arg("points"));
-  m.def("compute_collisions",
-        py::overload_cast<const dolfinx::geometry::BoundingBoxTree&,
-                          const dolfinx::geometry::BoundingBoxTree&>(
-            &dolfinx::geometry::compute_collisions),
-        py::arg("tree0"), py::arg("tree1"));
+  m.def(
+      "compute_collisions",
+      [](const dolfinx::geometry::BoundingBoxTree& treeA,
+         const dolfinx::geometry::BoundingBoxTree& treeB)
+      {
+        std::vector coll = dolfinx::geometry::compute_collisions(treeA, treeB);
+        std::array<py::ssize_t, 2> shape = {py::ssize_t(coll.size() / 2), 2};
+        return as_pyarray(std::move(coll), shape);
+      },
+      py::arg("tree0"), py::arg("tree1"));
 
   m.def(
       "compute_distance_gjk",
@@ -231,7 +237,12 @@ void geometry(py::module& m)
       .def(
           "get_bbox",
           [](const dolfinx::geometry::BoundingBoxTree& self,
-             const std::size_t i) { return self.get_bbox(i); },
+             const std::size_t i)
+          {
+            std::array<double, 6> bbox = self.get_bbox(i);
+            std::array<std::size_t, 2> shape = {2, 3};
+            return py::array_t<double>(shape, bbox.data());
+          },
           py::arg("i"))
       .def("__repr__", &dolfinx::geometry::BoundingBoxTree::str)
       .def(
