@@ -33,9 +33,11 @@
 
 # +
 import numpy as np
-from slepc4py import SLEPc
+import pytest
 
 from analytical_modes import verify_mode
+slepc4py = pytest.importorskip("slepc4py")  # noqa: F841
+from slepc4py import SLEPc
 
 from dolfinx import fem, io
 from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
