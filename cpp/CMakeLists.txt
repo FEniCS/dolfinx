@@ -56,10 +56,6 @@ add_feature_info(DOLFINX_SKIP_BUILD_TESTS DOLFINX_SKIP_BUILD_TESTS "Skip build t
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
 add_feature_info(CMAKE_INSTALL_RPATH_USE_LINK_PATH CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath.")
 
-# Enable xtensor with target-specific optimization, i.e. -march=native
-option(XTENSOR_OPTIMIZE "Enable xtensor target-specific optimization" OFF)
-add_feature_info(XTENSOR_OPTIMIZE XTENSOR_OPTIMIZE "Enable architecture-specific optimizations as defined by xtensor.")
-
 # Control UFCx discovery
 option(DOLFINX_UFCX_PYTHON "Enable UFCx discovery using Python. Disable if UFCx should be found using CMake." ON)
 add_feature_info(DOLFINX_UFCX_PYTHON DOLFINX_UFCX_PYTHON "Enable UFCx discovery using Python. Disable if UFCx should be found using a CMake config file.")
@@ -148,7 +144,6 @@ execute_process(
 
 if(BASIX_PY_DIR)
   message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
-  set(xtensor_ROOT "${BASIX_PY_DIR};${xtensor_ROOT}")
 
   # Basix installed from manylinux wheel
   if(IS_DIRECTORY ${BASIX_PY_DIR}/../fenics_basix.libs)
@@ -161,11 +156,6 @@ set_package_properties(basix PROPERTIES TYPE REQUIRED
   DESCRIPTION "FEniCS tabulation library"
   URL "https://github.com/fenics/basix")
 
-# Check for xtensor
-find_package(xtensor 0.23.10 REQUIRED)
-set_package_properties(xtensor PROPERTIES TYPE REQUIRED
-  DESCRIPTION "C++ library for numerical analysis with multi-dimensional array expressions."
-  URL "https://xtensor.readthedocs.io/")
 
 # Check for PETSc
 find_package(PkgConfig REQUIRED)
@@ -207,7 +197,7 @@ set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
 # Note: we use the case (ufcx vs UFCx) elsewhere to determine by which
 # method UFCx was found
 if(NOT DOLFINX_UFCX_PYTHON)
-  # Check in CONFIG mode, i.e. look for instaled ufcxConfig.cmake
+  # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
   find_package(ufcx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} REQUIRED CONFIG)
 else()
   # Check in MODULE mode (using FindUFCX.cmake)
@@ -309,7 +299,7 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfinx.conf
   COMPONENT Development)
 
 # ------------------------------------------------------------------------------
-# Copy data in demo/test direcories to the build directories
+# Copy data in demo/test directories to the build directories
 set(GENERATE_DEMO_TEST_DATA FALSE)
 
 if(Python3_Interpreter_FOUND AND(${DOLFINX_SOURCE_DIR}/demo IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/demo OR ${DOLFINX_SOURCE_DIR}/test IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/test))
