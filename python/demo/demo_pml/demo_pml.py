@@ -146,31 +146,29 @@ def pml_coordinates(x, alpha: float, k0: complex,
 
 # +
 # Constants
-um = 1  # micron
-nm = um * 10**-3  # nanometer
 epsilon_0 = 8.8541878128 * 10**-12
 mu_0 = 4 * np.pi * 10**-7
 
 # Radius of the wire and of the boundary of the domain
-radius_wire = 0.05 * um
-l_dom = 0.8 * um
+radius_wire = 0.05
+l_dom = 0.8
 l_scatt = 0.8 * l_dom / 2
-l_pml = 1 * um
+l_pml = 1
 
 # The smaller the mesh_factor, the finer is the mesh
 mesh_factor = 1
 
 # Mesh size inside the wire
-in_wire_size = mesh_factor * 6 * nm
+in_wire_size = mesh_factor * 6.0e-3
 
 # Mesh size at the boundary of the wire
-on_wire_size = mesh_factor * 3 * nm
+on_wire_size = mesh_factor * 3.0e-3
 
 # Mesh size in the background
-scatt_size = mesh_factor * 15 * nm
+scatt_size = mesh_factor * 15.0e-3
 
 # Mesh size at the boundary
-pml_size = mesh_factor * 15 * nm
+pml_size = mesh_factor * 15.0e-3
 
 # Tags for the subdomains
 au_tag = 1
@@ -232,7 +230,7 @@ if have_pyvista:
 #
 # Now we define some other problem specific parameters:
 
-wl0 = 0.4 * um  # Wavelength of the background field
+wl0 = 0.4  # Wavelength of the background field
 n_bkg = 1  # Background refractive index
 eps_bkg = n_bkg**2  # Background relative permittivity
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
