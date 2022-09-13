@@ -3,7 +3,7 @@
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
 # This demo is implemented in three files: one for the mesh
-# generation with gmsh, one for the calculation of analytical efficiencies,
+# generation with Gmsh, one for the calculation of analytical efficiencies,
 # and one for the variational forms and the solver. It illustrates how to:
 #
 # - Use complex quantities in FEniCSx
@@ -52,16 +52,16 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
     exit(0)
 
-# We consider an infinite metallic wire immersed in
+
+# WNow, let's consider an infinite metallic wire immersed in
 # a background medium (e.g. vacuum or water). Let's now
 # consider the plane cutting the wire perpendicularly to
 # its axis at a generic point. Such plane $\Omega=\Omega_{m}
-# \cup\Omega_{b}\cup\Omega_{pml}$ is formed by the cross-section
-# of the wire $\Omega_m$, the background medium
-# $\Omega_{b}$ surrounding the wire, and a squared perfectly
-# matched layer (PML) surrounding the domains. PMLs are
-# reflectionless layers that gradually absorb waves impinging
-# on them, therefore allowing us to truncate the domain size.
+# \cup\Omega_{b}$ is formed by the cross-section
+# of the wire $\Omega_m$ and the background medium
+# $\Omega_{b}$ surrounding the wire. We limit the background medium
+# with a squared perfectly matched layer (or shortly PML), which will act as an absorber for
+# outgoing scattered waves.
 #
 # The goal of this demo is to calculate the electric field $\mathbf{E}_s$
 # scattered by the wire when a background wave $\mathbf{E}_b$
@@ -100,7 +100,6 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 
 # +
 
-
 def background_field(theta: float, n_b: float, k0: complex,
                      x: np.typing.NDArray[np.float64]):
 
@@ -109,20 +108,20 @@ def background_field(theta: float, n_b: float, k0: complex,
     phi = kx * x[0] + ky * x[1]
     return (-np.sin(theta) * np.exp(1j * phi), np.cos(theta) * np.exp(1j * phi))
 
+
 # -
 
 # For convenience, we define the $\nabla\times$ operator for a 2D vector
 
 # +
 
-
 def curl_2d(a: fem.Function):
     return ufl.as_vector((0, 0, a[1].dx(0) - a[0].dx(1)))
 
 # -
 
-# a PML gradually absorb waves impinging them. Mathematically, this effect can be embedded by using a complex
-# coordinate system of this kind:
+# Let's now see how we can implement PMLs for our problem. PMLs are artificial layers surrounding the real domain that gradually absorb waves impinging them. Mathematically, we can use a complex
+# coordinate transformation of this kind to obtain this absorption:
 #
 # \begin{align}
 # & x^\prime= x\left\{1+j\frac{\alpha}{k_0}\left[\frac{|x|-l_{dom}/2}
@@ -131,7 +130,7 @@ def curl_2d(a: fem.Function):
 #
 # with $l_{dom}$ and $l_{pml}$ being the lengths of the domain
 # without and with PML, respectively, and with $\alpha$ being a parameter
-# that tunes the absorption within the PML (the greater the $\alpha$,
+# that tunes the absorption within the PML (the bigger the $\alpha$,
 # the faster the absorption). In DOLFINx, we can define this
 # coordinate transformation in the following way:
 
@@ -143,7 +142,7 @@ def pml_coordinates(x: ufl.indexed.Indexed, alpha: float, k0: complex,
             / (l_pml / 2 - l_dom / 2)**2)
 
 
-# We use the following domain specific parameters
+# We use the following domain specific parameters.
 
 # +
 # Constants
@@ -515,7 +514,10 @@ with VTXWriter(domain.comm, "E.bp", E_dg) as vtx:
 q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
     eps_au, n_bkg, wl0, radius_wire)
 
-# We calculate the numerical efficiencies in the same way as done in (cite the first demo)
+# We calculate the numerical efficiencies in the same way as done in
+# `demo_scattering_boundary_conditions.py`, with the only difference
+# that now the scattering efficiency needs to be calculated over an inner
+# facet, and therefore it requires a slightly different approach:
 
 # +
 # Vacuum impedance
@@ -537,6 +539,7 @@ gcs = 2 * radius_wire
 n = ufl.FacetNormal(domain)
 n_3d = ufl.as_vector((n[0], n[1], 0))
 
+# Create a marker for the integration boundary for the scattering efficiency
 marker = fem.Function(D)
 scatt_facets = facet_tags.find(scatt_tag)
 incident_cells = mesh.compute_incident_entities(domain, scatt_facets,
