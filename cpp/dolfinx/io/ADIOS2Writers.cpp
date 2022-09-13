@@ -701,10 +701,9 @@ void ADIOS2Writer::close()
 }
 //-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-                         std::shared_ptr<const mesh::Mesh> mesh,
-                         const bool reuse_mesh)
+                         std::shared_ptr<const mesh::Mesh> mesh)
     : ADIOS2Writer(comm, filename, "Fides mesh writer", mesh),
-      _reuse_mesh(reuse_mesh)
+      _reuse_mesh(false)
 {
   assert(_io);
   assert(mesh);

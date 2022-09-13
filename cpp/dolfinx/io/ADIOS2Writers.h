@@ -120,7 +120,7 @@ public:
   /// @note The mesh geometry can be updated between write steps but the
   /// topology should not be changed between write steps
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-              std::shared_ptr<const mesh::Mesh> mesh, const bool reuse_mesh = false);
+              std::shared_ptr<const mesh::Mesh> mesh);
 
   /// @brief Create Fides writer for list of functions
   /// @param[in] comm The MPI communicator
