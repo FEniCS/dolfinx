@@ -32,11 +32,11 @@
 # First of all, let's import the modules we need for solving the problem:
 
 # +
+slepc4py = pytest.importorskip("slepc4py")  # noqa: F841
 import numpy as np
 import pytest
-
 from analytical_modes import verify_mode
-slepc4py = pytest.importorskip("slepc4py")  # noqa: F841
+
 from slepc4py import SLEPc
 
 from dolfinx import fem, io
