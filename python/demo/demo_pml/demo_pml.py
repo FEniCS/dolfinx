@@ -234,8 +234,7 @@ wl0 = 0.4  # Wavelength of the background field
 n_bkg = 1  # Background refractive index
 eps_bkg = n_bkg**2  # Background relative permittivity
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
-deg = np.pi / 180
-theta = 0 * deg  # Angle of incidence of the background field
+theta = 0  # Angle of incidence of the background field
 
 # We use a degree 3
 # [Nedelec (first kind)](https://defelement.com/elements/nedelec1.html)
