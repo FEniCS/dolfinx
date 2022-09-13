@@ -166,15 +166,12 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
   const std::array bs
       = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};
 
-  auto cell_map_0 = a.cell_to_cell_map(*a.function_spaces().at(0));
-  auto cell_map_1 = a.cell_to_cell_map(*a.function_spaces().at(1));
+  const auto entity_map_0
+      = a.function_space_to_entity_map(*a.function_spaces().at(0));
+  const auto entity_map_1
+      = a.function_space_to_entity_map(*a.function_spaces().at(1));
   std::array<const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>
-      cell_maps = {cell_map_0, cell_map_1};
-
-  auto facet_map_0 = a.facet_to_cell_map(*a.function_spaces().at(0));
-  auto facet_map_1 = a.facet_to_cell_map(*a.function_spaces().at(1));
-  std::array<const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>
-      facet_maps = {facet_map_0, facet_map_1};
+      entity_maps = {entity_map_0, entity_map_1};
 
   // Create and build sparsity pattern
   la::SparsityPattern pattern(mesh->comm(), index_maps, bs);
@@ -187,7 +184,8 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
       for (int id : ids)
       {
         const std::vector<std::int32_t>& cells = a.cell_domains(id);
-        sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}}, cell_maps);
+        sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}},
+                             entity_maps);
       }
       break;
     case IntegralType::interior_facet:
@@ -203,7 +201,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
       {
         const std::vector<std::int32_t>& facets = a.exterior_facet_domains(id);
         sparsitybuild::exterior_facets(pattern, facets,
-                                       {{dofmaps[0], dofmaps[1]}}, facet_maps);
+                                       {{dofmaps[0], dofmaps[1]}}, entity_maps);
       }
       break;
     default:
@@ -806,8 +804,18 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
-        auto fetch_cell
-            = form.cell_to_cell_map(*coefficients[coeff]->function_space());
+        // Other integrals in the form might have coefficients defined over
+        // entities of codim > 0, which don't make sense for cell integrals, so
+        // don't pack them.
+        const int tdim = form.mesh()->topology().dim();
+        const int codim
+            = tdim
+              - coefficients[coeff]->function_space()->mesh()->topology().dim();
+        if (codim != 0)
+          continue;
+
+        auto fetch_cell = form.function_space_to_entity_map(
+            *coefficients[coeff]->function_space());
         // Get cell info for coefficient (with respect to coefficient mesh)
         std::span<const std::uint32_t> cell_info
             = impl::get_cell_orientation_info(*coefficients[coeff]);
@@ -825,8 +833,8 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
         // Create lambda function fetching cell index from exterior facet entity
-        auto fetch_cell
-            = form.facet_to_cell_map(*coefficients[coeff]->function_space());
+        auto fetch_cell = form.function_space_to_entity_map(
+            *coefficients[coeff]->function_space());
         std::span<const std::uint32_t> cell_info
             = impl::get_cell_orientation_info(*coefficients[coeff]);
         impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],

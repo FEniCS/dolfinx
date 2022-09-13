@@ -849,10 +849,13 @@ void lift_bc(std::span<T> b, const Form<T>& a,
       dof_transform_to_transpose
       = element1->get_dof_transformation_to_transpose_function<T>();
 
+  const auto entity_map_0
+      = a.function_space_to_entity_map(*a.function_spaces().at(0));
+  const auto entity_map_1
+      = a.function_space_to_entity_map(*a.function_spaces().at(1));
+
   for (int i : a.integral_ids(IntegralType::cell))
   {
-    const auto cell_map_0 = a.cell_to_cell_map(*a.function_spaces().at(0));
-    const auto cell_map_1 = a.cell_to_cell_map(*a.function_spaces().at(1));
     const auto& kernel = a.kernel(IntegralType::cell, i);
     const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
@@ -862,7 +865,7 @@ void lift_bc(std::span<T> b, const Form<T>& a,
                               dofmap0, bs0, dof_transform_to_transpose, dofmap1,
                               bs1, constants, coeffs, cstride, cell_info_0,
                               cell_info_1, bc_values1, bc_markers1, x0, scale,
-                              cell_map_0, cell_map_1);
+                              entity_map_0, entity_map_1);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
@@ -870,21 +873,19 @@ void lift_bc(std::span<T> b, const Form<T>& a,
                               dofmap0, bs0, dof_transform_to_transpose, dofmap1,
                               bs1, constants, coeffs, cstride, cell_info_0,
                               cell_info_1, bc_values1, bc_markers1, x0, scale,
-                              cell_map_0, cell_map_1);
+                              entity_map_0, entity_map_1);
     }
     else
     {
       _lift_bc_cells(b, mesh->geometry(), kernel, cells, dof_transform, dofmap0,
                      bs0, dof_transform_to_transpose, dofmap1, bs1, constants,
                      coeffs, cstride, cell_info_0, cell_info_1, bc_values1,
-                     bc_markers1, x0, scale, cell_map_0, cell_map_1);
+                     bc_markers1, x0, scale, entity_map_0, entity_map_1);
     }
   }
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
-    const auto facet_map_0 = a.facet_to_cell_map(*a.function_spaces().at(0));
-    const auto facet_map_1 = a.facet_to_cell_map(*a.function_spaces().at(1));
     const auto& kernel = a.kernel(IntegralType::exterior_facet, i);
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
@@ -893,7 +894,7 @@ void lift_bc(std::span<T> b, const Form<T>& a,
                              bs0, dof_transform_to_transpose, dofmap1, bs1,
                              constants, coeffs, cstride, cell_info_0,
                              cell_info_1, bc_values1, bc_markers1, x0, scale,
-                             facet_map_0, facet_map_1);
+                             entity_map_0, entity_map_1);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
@@ -1040,9 +1041,11 @@ void assemble_vector(
     cell_info = std::span(mesh_0->topology().get_cell_permutation_info());
   }
 
+  const auto entity_map
+      = L.function_space_to_entity_map(*L.function_spaces().at(0));
+
   for (int i : L.integral_ids(IntegralType::cell))
   {
-    const auto cell_map = L.cell_to_cell_map(*L.function_spaces().at(0));
     const auto& fn = L.kernel(IntegralType::cell, i);
     const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = L.cell_domains(i);
@@ -1050,24 +1053,24 @@ void assemble_vector(
     {
       impl::assemble_cells<T, 1>(dof_transform, b, mesh->geometry(), cells,
                                  dofs, bs, fn, constants, coeffs, cstride,
-                                 cell_info, cell_map);
+                                 cell_info, entity_map);
     }
     else if (bs == 3)
     {
       impl::assemble_cells<T, 3>(dof_transform, b, mesh->geometry(), cells,
                                  dofs, bs, fn, constants, coeffs, cstride,
-                                 cell_info, cell_map);
+                                 cell_info, entity_map);
     }
     else
     {
       impl::assemble_cells(dof_transform, b, mesh->geometry(), cells, dofs, bs,
-                           fn, constants, coeffs, cstride, cell_info, cell_map);
+                           fn, constants, coeffs, cstride, cell_info,
+                           entity_map);
     }
   }
 
   for (int i : L.integral_ids(IntegralType::exterior_facet))
   {
-    const auto facet_map = L.facet_to_cell_map(*L.function_spaces().at(0));
     const auto& fn = L.kernel(IntegralType::exterior_facet, i);
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
@@ -1076,19 +1079,19 @@ void assemble_vector(
     {
       impl::assemble_exterior_facets<T, 1>(dof_transform, b, *mesh, facets,
                                            dofs, bs, fn, constants, coeffs,
-                                           cstride, cell_info, facet_map);
+                                           cstride, cell_info, entity_map);
     }
     else if (bs == 3)
     {
       impl::assemble_exterior_facets<T, 3>(dof_transform, b, *mesh, facets,
                                            dofs, bs, fn, constants, coeffs,
-                                           cstride, cell_info, facet_map);
+                                           cstride, cell_info, entity_map);
     }
     else
     {
       impl::assemble_exterior_facets(dof_transform, b, *mesh, facets, dofs, bs,
                                      fn, constants, coeffs, cstride, cell_info,
-                                     facet_map);
+                                     entity_map);
     }
   }
 

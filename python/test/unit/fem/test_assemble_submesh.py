@@ -764,3 +764,42 @@ def test_assemble_block(random_ordering):
     # TODO Check value
     assert np.isclose(A.norm(), 3.0026030373660784)
     assert np.isclose(b.norm(), 1.4361406616345072)
+
+
+def test_mixed_coeff_form():
+    """Test that a form with coefficients involving dx and ds integrals assembles as expected"""
+    n = 4
+    msh = create_unit_square(MPI.COMM_WORLD, n, n)
+    fdim = msh.topology.dim - 1
+    num_facets = msh.topology.create_entities(fdim)
+    boundary_facets = locate_entities_boundary(
+        msh, fdim, lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 0.0),
+                                                         np.isclose(x[0], 1.0)),
+                                           np.logical_or(np.isclose(x[1], 0.0),
+                                                         np.isclose(x[1], 1.0))))
+    submesh, entity_map = create_submesh(msh, fdim, boundary_facets)[0:2]
+
+    # Create function spaces
+    V = fem.FunctionSpace(msh, ("Lagrange", 1))
+    W = fem.FunctionSpace(submesh, ("Lagrange", 1))
+    v = ufl.TestFunction(V)
+
+    # Create integration measure and entity maps
+    ds = ufl.Measure("ds", domain=msh)
+    entity_maps = {submesh: [entity_map.index(entity)
+                             if entity in entity_map else -1
+                             for entity in range(num_facets)]}
+
+    # Define forms
+    f = fem.Function(V)
+    f.interpolate(lambda x: x[0])
+    g = fem.Function(W)
+    g.interpolate(lambda x: x[1])
+    L = fem.form(ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ds, entity_maps=entity_maps)
+
+    b = fem.petsc.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD,
+                  mode=PETSc.ScatterMode.REVERSE)
+
+    # TODO Check value
+    assert np.isclose(b.norm(), 0.6937782992069734)
