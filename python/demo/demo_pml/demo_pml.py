@@ -31,10 +31,11 @@ except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
 from functools import partial
+from typing import Tuple, Union
 
 from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from mesh_wire_pml import generate_mesh_wire
-from typing import Union, Tuple
+
 import ufl
 from dolfinx import fem, mesh, plot
 from dolfinx.io import VTXWriter, gmshio
