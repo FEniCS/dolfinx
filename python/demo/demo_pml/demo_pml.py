@@ -382,7 +382,8 @@ y_pml = ufl.as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 def create_eps_mu(
         pml: ufl.tensors.ListTensor,
         eps_bkg: Union[float, ufl.tensors.ListTensor],
-        mu_bkg: Union[float, ufl.tensors.ListTensor]) -> Tuple[ufl.tensors.ComponentTensor]:
+        mu_bkg: Union[float, ufl.tensors.ListTensor]) -> Tuple[ufl.tensors.ComponentTensor,
+                                                               ufl.tensors.ComponentTensor]:
 
     J = ufl.grad(pml)
 

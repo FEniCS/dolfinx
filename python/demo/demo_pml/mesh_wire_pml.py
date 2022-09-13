@@ -35,8 +35,8 @@ from numpy import intersect1d, pi
 def generate_mesh_wire(
         radius_wire: float, radius_scatt: float, l_dom: float, l_pml: float,
         in_wire_size: float, on_wire_size: float, scatt_size: float,
-        pml_size: float, au_tag: int = 1, bkg_tag: int = 2, scatt_tag: int = 3,
-        pml_tag: int = 4):
+        pml_size: float, au_tag: int, bkg_tag: int, scatt_tag: int,
+        pml_tag: int):
 
     gmsh.model.add("nanowire")
     dim = 2
