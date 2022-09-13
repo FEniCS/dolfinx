@@ -35,11 +35,9 @@ from functools import partial
 from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from mesh_wire_pml import generate_mesh_wire
 
+import ufl
 from dolfinx import fem, mesh, plot
 from dolfinx.io import VTXWriter, gmshio
-from ufl import (FacetNormal, FiniteElement, Measure, SpatialCoordinate,
-                 TestFunction, TrialFunction, algebra, as_matrix, as_vector,
-                 conj, cross, det, grad, inner, inv, lhs, rhs, sqrt, transpose)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -118,7 +116,7 @@ def background_field(theta: float, n_b: float, k0: complex,
 
 
 def curl_2d(a):
-    return as_vector((0, 0, a[1].dx(0) - a[0].dx(1)))
+    return ufl.as_vector((0, 0, a[1].dx(0) - a[0].dx(1)))
 
 # -
 
@@ -140,7 +138,7 @@ def curl_2d(a):
 def pml_coordinates(x, alpha: float, k0: complex,
                     l_dom: float, l_pml: float):
     return (x + 1j * alpha / k0 * x
-            * (algebra.Abs(x) - l_dom / 2)
+            * (ufl.algebra.Abs(x) - l_dom / 2)
             / (l_pml / 2 - l_dom / 2)**2)
 
 
@@ -247,7 +245,7 @@ theta = 0 * deg  # Angle of incidence of the background field
 #
 
 degree = 3
-curl_el = FiniteElement("N1curl", domain.ufl_cell(), degree)
+curl_el = ufl.FiniteElement("N1curl", domain.ufl_cell(), degree)
 V = fem.FunctionSpace(domain, curl_el)
 
 # Next, we interpolate $\mathbf{E}_b$ into the function space $V$, define our
@@ -259,15 +257,15 @@ f = partial(background_field, theta, n_bkg, k0)
 Eb.interpolate(f)
 
 # Definition of Trial and Test functions
-Es = TrialFunction(V)
-v = TestFunction(V)
+Es = ufl.TrialFunction(V)
+v = ufl.TestFunction(V)
 
 # Definition of 3d fields
-Es_3d = as_vector((Es[0], Es[1], 0))
-v_3d = as_vector((v[0], v[1], 0))
+Es_3d = ufl.as_vector((Es[0], Es[1], 0))
+v_3d = ufl.as_vector((v[0], v[1], 0))
 
 # Measures for subdomains
-dx = Measure("dx", domain, subdomain_data=cell_tags)
+dx = ufl.Measure("dx", domain, subdomain_data=cell_tags)
 dDom = dx((au_tag, bkg_tag))
 dPml_xy = dx(pml_tag)
 dPml_x = dx(pml_tag + 1)
@@ -304,18 +302,18 @@ eps.x.scatter_forward()
 # we can define our new complex coordinates as:
 
 # +
-x = SpatialCoordinate(domain)
+x = ufl.SpatialCoordinate(domain)
 alpha = 1
 
 # PML corners
-xy_pml = as_vector((pml_coordinates(x[0], alpha, k0, l_dom, l_pml),
-                    pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
+xy_pml = ufl.as_vector((pml_coordinates(x[0], alpha, k0, l_dom, l_pml),
+                        pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 
 # PML rectangles along x
-x_pml = as_vector((pml_coordinates(x[0], alpha, k0, l_dom, l_pml), x[1]))
+x_pml = ufl.as_vector((pml_coordinates(x[0], alpha, k0, l_dom, l_pml), x[1]))
 
 # PML rectangles along y
-y_pml = as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
+y_pml = ufl.as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 # -
 
 # We can then express this coordinate systems as
@@ -380,16 +378,16 @@ y_pml = as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 
 def create_eps_mu(pml, eps_bkg, mu_bkg):
 
-    J = grad(pml)
+    J = ufl.grad(pml)
 
     # Transform the 2x2 Jacobian into a 3x3 matrix.
-    J = as_matrix(((J[0, 0], 0, 0),
-                   (0, J[1, 1], 0),
-                   (0, 0, 1)))
+    J = ufl.as_matrix(((J[0, 0], 0, 0),
+                       (0, J[1, 1], 0),
+                       (0, 0, 1)))
 
-    A = inv(J)
-    eps_pml = det(J) * A * eps_bkg * transpose(A)
-    mu_pml = det(J) * A * mu_bkg * transpose(A)
+    A = ufl.inv(J)
+    eps_pml = ufl.det(J) * A * eps_bkg * ufl.transpose(A)
+    mu_pml = ufl.det(J) * A * mu_bkg * ufl.transpose(A)
     return eps_pml, mu_pml
 
 
@@ -425,17 +423,17 @@ eps_xy, mu_xy = create_eps_mu(xy_pml, eps_bkg, 1)
 
 # +
 # Definition of the weak form
-F = - inner(curl_2d(Es), curl_2d(v)) * dDom \
-    + eps * (k0 ** 2) * inner(Es, v) * dDom \
-    + (k0 ** 2) * (eps - eps_bkg) * inner(Eb, v) * dDom \
-    - inner(inv(mu_x) * curl_2d(Es), curl_2d(v)) * dPml_x \
-    - inner(inv(mu_y) * curl_2d(Es), curl_2d(v)) * dPml_y \
-    - inner(inv(mu_xy) * curl_2d(Es), curl_2d(v)) * dPml_xy \
-    + (k0 ** 2) * inner(eps_x * Es_3d, v_3d) * dPml_x \
-    + (k0 ** 2) * inner(eps_y * Es_3d, v_3d) * dPml_y \
-    + (k0 ** 2) * inner(eps_xy * Es_3d, v_3d) * dPml_xy
+F = - ufl.inner(curl_2d(Es), curl_2d(v)) * dDom \
+    + eps * (k0**2) * ufl.inner(Es, v) * dDom \
+    + (k0**2) * (eps - eps_bkg) * ufl.inner(Eb, v) * dDom \
+    - ufl.inner(ufl.inv(mu_x) * curl_2d(Es), curl_2d(v)) * dPml_x \
+    - ufl.inner(ufl.inv(mu_y) * curl_2d(Es), curl_2d(v)) * dPml_y \
+    - ufl.inner(ufl.inv(mu_xy) * curl_2d(Es), curl_2d(v)) * dPml_xy \
+    + (k0**2) * ufl.inner(eps_x * Es_3d, v_3d) * dPml_x \
+    + (k0**2) * ufl.inner(eps_y * Es_3d, v_3d) * dPml_y \
+    + (k0**2) * ufl.inner(eps_xy * Es_3d, v_3d) * dPml_xy
 
-a, L = lhs(F), rhs(F)
+a, L = ufl.lhs(F), ufl.rhs(F)
 
 problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={
                                   "ksp_type": "preonly", "pc_type": "lu"})
@@ -498,20 +496,6 @@ with VTXWriter(domain.comm, "E.bp", E_dg) as vtx:
 # -
 
 # ## Post-processing
-# We use `dolfinx.fem.Expression` to interpolate the norm of the electric field
-# into a suitable function space.
-#
-# $$
-# ||\mathbf{E}_s|| = \sqrt{\mathbf{E}_s\cdot\bar{\mathbf{E}}_s}
-# $$
-
-lagr_el = FiniteElement("CG", domain.ufl_cell(), 2)
-V_normEsh = fem.FunctionSpace(domain, lagr_el)
-norm_expr = fem.Expression(
-    sqrt(inner(Esh, Esh)),
-    V_normEsh.element.interpolation_points())
-normEsh = fem.Function(V_normEsh)
-normEsh.interpolate(norm_expr)
 
 # To validate the formulation we calculate the
 # absorption, scattering and extinction efficiencies, which are
@@ -532,8 +516,8 @@ Z0 = np.sqrt(mu_0 / epsilon_0)
 # Magnetic field H
 Hsh_3d = -1j * curl_2d(Esh) / (Z0 * k0 * n_bkg)
 
-Esh_3d = as_vector((Esh[0], Esh[1], 0))
-E_3d = as_vector((E[0], E[1], 0))
+Esh_3d = ufl.as_vector((Esh[0], Esh[1], 0))
+E_3d = ufl.as_vector((E[0], E[1], 0))
 
 # Intensity of the electromagnetic fields I0 = 0.5*E0**2/Z0
 # E0 = np.sqrt(ax**2 + ay**2) = 1, see background_electric_field
@@ -542,8 +526,8 @@ I0 = 0.5 / Z0
 # Geometrical cross section of the wire
 gcs = 2 * radius_wire
 
-n = FacetNormal(domain)
-n_3d = as_vector((n[0], n[1], 0))
+n = ufl.FacetNormal(domain)
+n_3d = ufl.as_vector((n[0], n[1], 0))
 
 marker = fem.Function(D)
 scatt_facets = facet_tags.find(scatt_tag)
@@ -558,14 +542,14 @@ inner_cells = incident_cells[(midpoints[:, 0]**2
 marker.x.array[inner_cells] = 1
 
 # Quantities for the calculation of efficiencies
-P = 0.5 * inner(cross(Esh_3d, conj(Hsh_3d)), n_3d) * marker
-Q = 0.5 * eps_au.imag * k0 * (inner(E_3d, E_3d)) / (Z0 * n_bkg)
+P = 0.5 * ufl.inner(ufl.cross(Esh_3d, ufl.conj(Hsh_3d)), n_3d) * marker
+Q = 0.5 * eps_au.imag * k0 * (ufl.inner(E_3d, E_3d)) / (Z0 * n_bkg)
 
 # Define integration domain for the wire
 dAu = dx(au_tag)
 
 # Define integration facet for the scattering efficiency
-dS = Measure("dS", domain, subdomain_data=facet_tags)
+dS = ufl.Measure("dS", domain, subdomain_data=facet_tags)
 
 # Normalized absorption efficiency
 q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / (gcs * I0)).real
