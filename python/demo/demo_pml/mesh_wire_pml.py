@@ -1,4 +1,4 @@
-# # Mesh generation for the wire and PML with Gmsh
+# # Mesh generation for the wire and the PML with Gmsh
 #
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
@@ -9,18 +9,16 @@
 # The `generate_mesh_wire` function takes as input:
 
 # - `radius_wire`: the radius of the wire
-# - `radius_scatt`: the radius of the external boundary
+# - `radius_scatt`: the radius of the circle where scattering efficiency is calculated
 # - `in_wire_size`: the mesh size at a distance `0.8 * radius_wire` from the origin
 # - `on_wire_size`: the mesh size on the wire boundary
-# - `bkg_size`: the mesh size at a distance `0.9 * radius_dom` from the origin
-# - `boundary_size`: the mesh size on the external boundary
+# - `scatt_size`: the mesh size on the circle where scattering efficiency is calculated
+# - `pml_size`: the mesh size on the outer boundary of the PML
 # - `au_tag`: the tag of the physical group representing the wire
 # - `bkg_tag`: the tag of the physical group representing the background
-# - `boundary_tag`: the tag of the physical group representing the boundary
+# - `scatt_tag`: the tag of the physical group representing the boundary where scattering efficiency is calculated
+# - `pml_tag`: the tag of the physical group representing the PML (together with pml_tag+1 and pml_tag+2)
 #
-# In particular, `bkg_size` and `boundary_size` are necessary to set a finer mesh on
-# the external boundary (to improve the accuracy of the scattering efficiency
-# calculation) while keeping a coarser size over the rest of the domain.
 #
 
 import sys
@@ -35,10 +33,11 @@ from numpy import intersect1d, pi
 from mpi4py import MPI
 
 
-def generate_mesh_wire(radius_wire: float, radius_scatt: float, l_dom: float,
-                       l_pml: float, in_wire_size: float, on_wire_size: float,
-                       scatt_size: float, pml_size: float, au_tag: int,
-                       bkg_tag: int, scatt_tag: int, pml_tag: int):
+def generate_mesh_wire(
+        radius_wire: float, radius_scatt: float, l_dom: float, l_pml: float,
+        in_wire_size: float, on_wire_size: float, scatt_size: float,
+        pml_size: float, au_tag: int = 1, bkg_tag: int = 2, scatt_tag: int = 3,
+        pml_tag: int = 4):
 
     gmsh.model.add("nanowire")
     dim = 2
