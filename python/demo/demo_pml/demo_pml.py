@@ -426,14 +426,14 @@ eps_xy, mu_xy = create_eps_mu(xy_pml, eps_bkg, 1)
 # +
 # Definition of the weak form
 F = - inner(curl_2d(Es), curl_2d(v)) * dDom \
-    + eps * k0 ** 2 * inner(Es, v) * dDom \
-    + k0 ** 2 * (eps - eps_bkg) * inner(Eb, v) * dDom \
+    + eps * (k0 ** 2) * inner(Es, v) * dDom \
+    + (k0 ** 2) * (eps - eps_bkg) * inner(Eb, v) * dDom \
     - inner(inv(mu_x) * curl_2d(Es), curl_2d(v)) * dPml_x \
     - inner(inv(mu_y) * curl_2d(Es), curl_2d(v)) * dPml_y \
     - inner(inv(mu_xy) * curl_2d(Es), curl_2d(v)) * dPml_xy \
-    + k0 ** 2 * inner(eps_x * Es_3d, v_3d) * dPml_x \
-    + k0 ** 2 * inner(eps_y * Es_3d, v_3d) * dPml_y \
-    + k0 ** 2 * inner(eps_xy * Es_3d, v_3d) * dPml_xy
+    + (k0 ** 2) * inner(eps_x * Es_3d, v_3d) * dPml_x \
+    + (k0 ** 2) * inner(eps_y * Es_3d, v_3d) * dPml_y \
+    + (k0 ** 2) * inner(eps_xy * Es_3d, v_3d) * dPml_xy
 
 a, L = lhs(F), rhs(F)
 
