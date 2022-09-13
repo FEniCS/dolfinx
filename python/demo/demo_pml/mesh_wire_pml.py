@@ -1,4 +1,27 @@
+# # Mesh generation for the wire and PML with Gmsh
+#
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
+#
+# This file defines the `generate_mesh_wire` function, which is used to generate
+# the mesh used for the PML demo. The mesh is made up
+# by a central circle (the wire), and an external layer (the PML) divided in 4
+# rectangles and 4 squares at the corners.
+# The `generate_mesh_wire` function takes as input:
+
+# - `radius_wire`: the radius of the wire
+# - `radius_scatt`: the radius of the external boundary
+# - `in_wire_size`: the mesh size at a distance `0.8 * radius_wire` from the origin
+# - `on_wire_size`: the mesh size on the wire boundary
+# - `bkg_size`: the mesh size at a distance `0.9 * radius_dom` from the origin
+# - `boundary_size`: the mesh size on the external boundary
+# - `au_tag`: the tag of the physical group representing the wire
+# - `bkg_tag`: the tag of the physical group representing the background
+# - `boundary_tag`: the tag of the physical group representing the boundary
+#
+# In particular, `bkg_size` and `boundary_size` are necessary to set a finer mesh on
+# the external boundary (to improve the accuracy of the scattering efficiency
+# calculation) while keeping a coarser size over the rest of the domain.
+#
 
 import sys
 from functools import reduce
@@ -12,7 +35,7 @@ from numpy import intersect1d, pi
 from mpi4py import MPI
 
 
-def generate_mesh_wire(radius_wire: float, l_scatt: float, l_dom: float,
+def generate_mesh_wire(radius_wire: float, radius_scatt: float, l_dom: float,
                        l_pml: float, in_wire_size: float, on_wire_size: float,
                        scatt_size: float, pml_size: float, au_tag: int,
                        bkg_tag: int, scatt_tag: int, pml_tag: int):
@@ -32,7 +55,7 @@ def generate_mesh_wire(radius_wire: float, l_scatt: float, l_dom: float,
     wire, _ = gmsh.model.occ.fragment([(dim, c2)], [(dim, c1)])
 
     # A dummy circle for the calculation of the scattering efficiency
-    c3 = gmsh.model.occ.addCircle(0.0, 0.0, 0.0, l_scatt,
+    c3 = gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_scatt,
                                   angle1=0, angle2=2 * pi)
     gmsh.model.occ.addCurveLoop([c3], tag=c3)
     gmsh.model.occ.addPlaneSurface([c3], tag=c3)

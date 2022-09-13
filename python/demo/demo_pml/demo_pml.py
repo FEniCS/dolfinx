@@ -153,7 +153,7 @@ mu_0 = 4 * np.pi * 10**-7
 # Radius of the wire and of the boundary of the domain
 radius_wire = 0.05
 l_dom = 0.8
-l_scatt = 0.8 * l_dom / 2
+radius_scatt = 0.8 * l_dom / 2
 l_pml = 1
 
 # The smaller the mesh_factor, the finer is the mesh
@@ -187,7 +187,7 @@ gmsh.initialize(sys.argv)
 if MPI.COMM_WORLD.rank == 0:
 
     model = generate_mesh_wire(
-        radius_wire, l_scatt, l_dom, l_pml,
+        radius_wire, radius_scatt, l_dom, l_pml,
         in_wire_size, on_wire_size, scatt_size, pml_size,
         au_tag, bkg_tag, scatt_tag, pml_tag)
 
@@ -544,7 +544,7 @@ incident_cells = mesh.compute_incident_entities(domain, scatt_facets,
 
 midpoints = mesh.compute_midpoints(domain, domain.topology.dim, incident_cells)
 inner_cells = incident_cells[(midpoints[:, 0]**2
-                              + midpoints[:, 1]**2) < (l_scatt)**2]
+                              + midpoints[:, 1]**2) < (radius_scatt)**2]
 
 marker.x.array[inner_cells] = 1
 
