@@ -25,7 +25,7 @@
 
 import sys
 from functools import reduce
-
+import typing
 try:
     import gmsh
 except ModuleNotFoundError:
@@ -138,7 +138,7 @@ def generate_mesh_wire(
     gmsh.model.addPhysicalGroup(dim, y_group, tag=pml_tag + 2)
 
     # Marker interior surface in bkg group
-    boundaries = []
+    boundaries: typing.List[typing.List[int]] = []
     for tag in bkg_group:
         boundary_pairs = gmsh.model.get_boundary([(dim, tag)],
                                                  oriented=False)
