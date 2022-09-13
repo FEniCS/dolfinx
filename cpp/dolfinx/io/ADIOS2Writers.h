@@ -115,10 +115,12 @@ public:
   /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh. The mesh must a degree 1 mesh.
+  /// @param[in] reuse_mesh True to save the mesh only at the first
+  ///  write, false to save the mesh at each write
   /// @note The mesh geometry can be updated between write steps but the
   /// topology should not be changed between write steps
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-              std::shared_ptr<const mesh::Mesh> mesh);
+              std::shared_ptr<const mesh::Mesh> mesh, const bool reuse_mesh = false);
 
   /// @brief Create Fides writer for list of functions
   /// @param[in] comm The MPI communicator
@@ -126,8 +128,10 @@ public:
   /// @param[in] u List of functions. The functions must (1) share the
   /// same mesh (degree 1) and (2) be degree 1 Lagrange. @note All
   /// functions in `u` must share the same Mesh
+  /// @param[in] reuse_mesh True to save the mesh only at the first
+  ///  write, false to save the mesh at each write
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-              const ADIOS2Writer::U& u);
+              const ADIOS2Writer::U& u, const bool reuse_mesh = false);
 
   // Copy constructor
   FidesWriter(const FidesWriter&) = delete;
@@ -146,8 +150,12 @@ public:
 
   /// @brief Write data with a given time
   /// @param[in] t The time step
-  /// @param[in] writeMesh True to save the mesh at this time, false otherwise
-  void write(double t, bool writeMesh = true);
+  void write(double t);
+
+private:
+   /// @brief If true, the mesh is saved only at the first write and then reused,
+   /// otherwise the mesh will be saved at each write
+   bool _reuse_mesh;
 };
 
 /// @brief Writer for meshes and functions using the ADIOS2 VTX format, see

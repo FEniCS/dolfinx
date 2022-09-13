@@ -701,8 +701,10 @@ void ADIOS2Writer::close()
 }
 //-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-                         std::shared_ptr<const mesh::Mesh> mesh)
-    : ADIOS2Writer(comm, filename, "Fides mesh writer", mesh)
+                         std::shared_ptr<const mesh::Mesh> mesh,
+                         const bool reuse_mesh)
+    : ADIOS2Writer(comm, filename, "Fides mesh writer", mesh),
+      _reuse_mesh(reuse_mesh)
 {
   assert(_io);
   assert(mesh);
@@ -710,8 +712,9 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
 }
 //-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-                         const ADIOS2Writer::U& u)
-    : ADIOS2Writer(comm, filename, "Fides function writer", u)
+                         const ADIOS2Writer::U& u, const bool reuse_mesh)
+    : ADIOS2Writer(comm, filename, "Fides function writer", u),
+      _reuse_mesh(reuse_mesh)
 {
   if (u.empty())
     throw std::runtime_error("FidesWriter fem::Function list is empty");
@@ -777,21 +780,25 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
   fides_initialize_function_attributes(*_io, u);
 }
 //-----------------------------------------------------------------------------
-void FidesWriter::write(double t, bool writeMesh)
+void FidesWriter::write(double t)
 {
   assert(_io);
   assert(_engine);
+
+  static bool first_write = true;
 
   _engine->BeginStep();
   adios2::Variable<double> var_step = define_variable<double>(*_io, "step");
   _engine->Put<double>(var_step, t);
 
-  if (writeMesh)
+  if (_reuse_mesh == false or first_write == true)
   {
     fides_write_mesh(*_io, *_engine, *_mesh);
   }
   for (auto& v : _u)
     std::visit([&](const auto& u) { fides_write_data(*_io, *_engine, *u); }, v);
+
+  first_write = false;
 
   _engine->EndStep();
 }
