@@ -10,6 +10,8 @@
 
 # - `radius_wire`: the radius of the wire
 # - `radius_scatt`: the radius of the circle where scattering efficiency is calculated
+# - `l_dom`: length of real domain
+# - `l_pml`: length of PML layer
 # - `in_wire_size`: the mesh size at a distance `0.8 * radius_wire` from the origin
 # - `on_wire_size`: the mesh size on the wire boundary
 # - `scatt_size`: the mesh size on the circle where scattering efficiency is calculated
