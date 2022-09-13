@@ -135,7 +135,7 @@ def curl_2d(a: fem.Function):
 # coordinate transformation in the following way:
 
 
-def pml_coordinates(x, alpha: float, k0: complex,
+def pml_coordinates(x: ufl.indexed.Indexed, alpha: float, k0: complex,
                     l_dom: float, l_pml: float):
     return (x + 1j * alpha / k0 * x
             * (ufl.algebra.Abs(x) - l_dom / 2)
