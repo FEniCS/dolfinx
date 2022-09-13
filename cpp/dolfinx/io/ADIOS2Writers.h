@@ -115,8 +115,6 @@ public:
   /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh. The mesh must a degree 1 mesh.
-  /// @param[in] reuse_mesh True to save the mesh only at the first
-  ///  write, false to save the mesh at each write
   /// @note The mesh geometry can be updated between write steps but the
   /// topology should not be changed between write steps
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
