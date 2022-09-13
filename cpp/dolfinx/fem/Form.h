@@ -368,27 +368,8 @@ public:
     return _entity_maps;
   }
 
-  /// Given a `fem::FunctionSpace`, this function returns the required
-  /// map from cells in the integration domain mesh to cells in the mesh
-  /// that the function space is defined over.
-  /// @param[in] function_space The function space
-  /// @return The map
-  // TODO User could provide this directly, rather than entity maps
-  std::function<std::int32_t(const std::span<const std::int32_t>&)>
-  cell_to_cell_map(const FunctionSpace& function_space) const
-  {
-    auto mesh_fs = function_space.mesh();
-    if (mesh_fs != mesh())
-    {
-      return [&entity_map = entity_maps().at(mesh_fs)](auto e)
-      { return entity_map[e.front()]; };
-    }
-    else
-    {
-      return [](auto e) { return e.front(); };
-    }
-  }
-
+  // TODO UPDATE COMMENT
+  // TODO Only call once and rename
   /// Given a `fem::FunctionSpace`, this function returns the required
   /// map from facets in the integration domain mesh (identified as
   /// (cell, local_facet_index) pairs) to cells in the mesh
@@ -397,7 +378,7 @@ public:
   /// @return The map
   // TODO User could provide this directly, rather than entity maps
   std::function<std::int32_t(const std::span<const std::int32_t>&)>
-  facet_to_cell_map(const FunctionSpace& function_space) const
+  function_space_to_entity_map(const FunctionSpace& function_space) const
   {
     auto mesh_fs = function_space.mesh();
     if (mesh_fs != mesh())
