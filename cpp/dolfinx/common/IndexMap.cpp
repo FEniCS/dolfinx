@@ -10,6 +10,9 @@
 #include <functional>
 #include <map>
 #include <numeric>
+#include <span>
+#include <utility>
+#include <vector>
 
 using namespace dolfinx;
 using namespace dolfinx::common;
@@ -32,8 +35,9 @@ build_src_dest(MPI_Comm comm, const std::span<const int>& owners)
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::vector<int32_t> dolfinx::common::compute_owned_indices(
-    const std::span<const std::int32_t>& indices, const IndexMap& map)
+std::vector<int32_t>
+common::compute_owned_indices(const std::span<const std::int32_t>& indices,
+                              const IndexMap& map)
 {
   // Build list of (owner, index) pairs for each ghost in indices, and
   // sort
