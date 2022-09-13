@@ -12,9 +12,10 @@ from numpy import intersect1d, pi
 from mpi4py import MPI
 
 
-def generate_mesh_wire(radius_wire, l_scatt, l_dom, l_pml,
-                       in_wire_size, on_wire_size, scatt_size,
-                       pml_size, au_tag, bkg_tag, scatt_tag, pml_tag):
+def generate_mesh_wire(radius_wire: float, l_scatt: float, l_dom: float,
+                       l_pml: float, in_wire_size: float, on_wire_size: float,
+                       scatt_size: float, pml_size: float, au_tag: int,
+                       bkg_tag: int, scatt_tag: int, pml_tag: int):
 
     gmsh.initialize(sys.argv)
     if MPI.COMM_WORLD.rank == 0:
