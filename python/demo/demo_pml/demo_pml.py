@@ -507,7 +507,9 @@ with VTXWriter(domain.comm, "E.bp", E_dg) as vtx:
 
 lagr_el = FiniteElement("CG", domain.ufl_cell(), 2)
 V_normEsh = fem.FunctionSpace(domain, lagr_el)
-norm_expr = fem.Expression(sqrt(inner(Esh, Esh)), V_normEsh.element.interpolation_points())
+norm_expr = fem.Expression(
+    sqrt(inner(Esh, Esh)),
+    V_normEsh.element.interpolation_points())
 normEsh = fem.Function(V_normEsh)
 normEsh.interpolate(norm_expr)
 
@@ -528,7 +530,7 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 Z0 = np.sqrt(mu_0 / epsilon_0)
 
 # Magnetic field H
-Hsh_3d = -1j * curl_2d(Esh) / Z0 / k0 / n_bkg
+Hsh_3d = -1j * curl_2d(Esh) / (Z0 * k0 * n_bkg)
 
 Esh_3d = as_vector((Esh[0], Esh[1], 0))
 E_3d = as_vector((E[0], E[1], 0))
@@ -557,7 +559,7 @@ marker.x.array[inner_cells] = 1
 
 # Quantities for the calculation of efficiencies
 P = 0.5 * inner(cross(Esh_3d, conj(Hsh_3d)), n_3d) * marker
-Q = 0.5 * eps_au.imag * k0 * (inner(E_3d, E_3d)) / Z0 / n_bkg
+Q = 0.5 * eps_au.imag * k0 * (inner(E_3d, E_3d)) / (Z0 * n_bkg)
 
 # Define integration domain for the wire
 dAu = dx(au_tag)
@@ -566,13 +568,13 @@ dAu = dx(au_tag)
 dS = Measure("dS", domain, subdomain_data=facet_tags)
 
 # Normalized absorption efficiency
-q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / gcs / I0).real
+q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / (gcs * I0)).real
 # Sum results from all MPI processes
 q_abs_fenics = domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
 q_sca_fenics_proc = (fem.assemble_scalar(
-    fem.form((P('+') + P('-')) * dS(scatt_tag))) / gcs / I0).real
+    fem.form((P('+') + P('-')) * dS(scatt_tag))) / (gcs * I0)).real
 
 # Sum results from all MPI processes
 q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
