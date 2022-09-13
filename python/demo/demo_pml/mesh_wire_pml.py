@@ -23,14 +23,13 @@
 
 import sys
 from functools import reduce
+
 try:
     import gmsh
 except ModuleNotFoundError:
     print("This demo requires gmsh to be installed")
     sys.exit(0)
 from numpy import intersect1d, pi
-
-from mpi4py import MPI
 
 
 def generate_mesh_wire(
