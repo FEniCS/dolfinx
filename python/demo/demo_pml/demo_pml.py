@@ -115,7 +115,7 @@ def background_field(theta: float, n_b: float, k0: complex,
 # +
 
 
-def curl_2d(a):
+def curl_2d(a: fem.Function):
     return ufl.as_vector((0, 0, a[1].dx(0) - a[0].dx(1)))
 
 # -
