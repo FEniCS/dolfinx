@@ -757,9 +757,6 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
 
   if (!coefficients.empty())
   {
-    auto fetch_cell = form.function_space_to_entity_map(
-            *coefficients[coeff]->function_space());
-
     switch (integral_type)
     {
     case IntegralType::cell:
@@ -768,6 +765,8 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        auto fetch_cell = form.function_space_to_entity_map(
+            *coefficients[coeff]->function_space());
         // Get cell info for coefficient (with respect to coefficient mesh)
         std::span<const std::uint32_t> cell_info
             = impl::get_cell_orientation_info(*coefficients[coeff]);
@@ -784,6 +783,9 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        // Create lambda function fetching cell index from exterior facet entity
+        auto fetch_cell = form.function_space_to_entity_map(
+            *coefficients[coeff]->function_space());
         std::span<const std::uint32_t> cell_info
             = impl::get_cell_orientation_info(*coefficients[coeff]);
         impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
