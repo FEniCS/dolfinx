@@ -181,11 +181,16 @@ pml_tag = 4
 # `dolfinx.mesh.Mesh`.
 
 # +
-model = generate_mesh_wire(
-    radius_wire, l_scatt, l_dom, l_pml,
-    in_wire_size, on_wire_size, scatt_size, pml_size,
-    au_tag, bkg_tag, scatt_tag, pml_tag)
+model = None
+gmsh.initialize(sys.argv)
+if MPI.COMM_WORLD.rank == 0:
 
+    model = generate_mesh_wire(
+        radius_wire, l_scatt, l_dom, l_pml,
+        in_wire_size, on_wire_size, scatt_size, pml_size,
+        au_tag, bkg_tag, scatt_tag, pml_tag)
+
+model = MPI.COMM_WORLD.bcast(model, root=0)
 domain, cell_tags, facet_tags = gmshio.model_to_mesh(
     model, MPI.COMM_WORLD, 0, gdim=2)
 
@@ -569,7 +574,7 @@ err_sca = np.abs(q_sca_analyt - q_sca_fenics) / q_sca_analyt
 err_ext = np.abs(q_ext_analyt - q_ext_fenics) / q_ext_analyt
 
 
-if MPI.COMM_WORLD.rank == 0:
+if domain.comm.rank == 0:
 
     print()
     print(f"The analytical absorption efficiency is {q_abs_analyt}")
