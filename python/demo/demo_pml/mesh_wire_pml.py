@@ -138,7 +138,7 @@ def generate_mesh_wire(
     gmsh.model.addPhysicalGroup(dim, y_group, tag=pml_tag + 2)
 
     # Marker interior surface in bkg group
-    boundaries: typing.List[typing.List[int]] = []
+    boundaries = []
     for tag in bkg_group:
         boundary_pairs = gmsh.model.get_boundary([(dim, tag)],
                                                  oriented=False)
