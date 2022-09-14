@@ -24,8 +24,10 @@
 #
 
 import sys
-import typing
+from typing import List
 from functools import reduce
+
+import numpy.typing
 
 try:
     import gmsh
@@ -139,11 +141,15 @@ def generate_mesh_wire(
     gmsh.model.addPhysicalGroup(dim, y_group, tag=pml_tag + 2)
 
     # Marker interior surface in bkg group
-    boundaries: typing.List[typing.List[int]] = []
+    boundaries: List[numpy.typing.NDArray[numpy.int32]] = []
     for tag in bkg_group:
         boundary_pairs = gmsh.model.get_boundary([(dim, tag)],
                                                  oriented=False)
-        boundaries.append([pair[1] for pair in boundary_pairs])
+        boundaries.append(
+            numpy.asarray(
+                [pair[1] for pair in boundary_pairs],
+                dtype=numpy.int32))
+
     interior_boundary = reduce(intersect1d, boundaries)
     gmsh.model.addPhysicalGroup(dim - 1, interior_boundary, tag=scatt_tag)
     gmsh.model.mesh.setSize([(0, 1)], size=in_wire_size)
