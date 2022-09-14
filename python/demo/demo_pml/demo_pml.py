@@ -120,7 +120,9 @@ def curl_2d(a: fem.Function):
 
 # -
 
-# Let's now see how we can implement PMLs for our problem. PMLs are artificial layers surrounding the real domain that gradually absorb waves impinging them. Mathematically, we can use a complex
+# Let's now see how we can implement PMLs for our problem. PMLs are artificial
+# layers surrounding the real domain that gradually absorb waves impinging
+# them. Mathematically, we can use a complex
 # coordinate transformation of this kind to obtain this absorption:
 #
 # \begin{align}
