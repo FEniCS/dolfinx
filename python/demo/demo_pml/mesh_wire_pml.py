@@ -25,7 +25,6 @@
 
 import sys
 from functools import reduce
-import typing
 try:
     import gmsh
 except ModuleNotFoundError:
