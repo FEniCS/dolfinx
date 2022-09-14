@@ -21,7 +21,6 @@ from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
 
 from mpi4py import MPI
 
-
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type", [
         CellType.interval,
