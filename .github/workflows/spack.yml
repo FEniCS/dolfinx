@@ -21,15 +21,12 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        # os: [ubuntu-20.04, macos-10.15]
-        os: [ubuntu-20.04]
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    container: ubuntu:latest
+
     env:
-      CC: gcc-10
-      CXX: g++-10
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
 
     steps:
       - name: Get Spack
@@ -45,6 +42,12 @@ jobs:
           path: ./spack
           repository: ${{ github.event.inputs.spack_repo }}
           ref: ${{ github.event.inputs.spack_ref }}
+
+      - name: Install Spack requirements
+        run: |
+          apt-get -y update
+          apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar xz-utils
+          apt-get install -y g++ gfortran  # compilers
 
       - name: Build DOLFINx (C++) development version via Spack
         run: |
@@ -70,7 +73,7 @@ jobs:
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate cpp-main
-          spack install py-fenics-ffcx@main
+          spack install cmake py-fenics-ffcx@main
           cd dolfinx-main/cpp/
           cd demo/poisson
           cmake .
@@ -88,7 +91,7 @@ jobs:
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate cpp-release
-          spack install py-fenics-ffcx
+          spack install cmake py-fenics-ffcx
           cd dolfinx-release/cpp/
           cd demo/poisson
           cmake .
