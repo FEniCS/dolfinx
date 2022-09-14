@@ -212,7 +212,7 @@ set_package_properties(UFCx PROPERTIES TYPE REQUIRED
 # ------------------------------------------------------------------------------
 # Find optional packages
 if(DOLFINX_ENABLE_ADIOS2)
-  find_package(ADIOS2 2.8.1...2.9.1)
+  find_package(ADIOS2 2.8.1)
 endif()
 
 set_package_properties(ADIOS2 PROPERTIES TYPE OPTIONAL
