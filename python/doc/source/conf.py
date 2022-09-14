@@ -3,15 +3,15 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import dolfinx
 import datetime
 import os
 import sys
 
+import dolfinx
+
 sys.path.insert(0, os.path.abspath('.'))
 
-import jupytext_process # noqa
-
+import jupytext_process  # noqa
 
 jupytext_process.process()
 
