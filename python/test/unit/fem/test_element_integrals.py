@@ -16,7 +16,7 @@ import ufl
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.fem.petsc import assemble_matrix, assemble_vector
-from dolfinx.mesh import CellType, meshtags, create_mesh
+from dolfinx.mesh import CellType, create_mesh, meshtags
 
 from mpi4py import MPI
 from petsc4py import PETSc

@@ -92,6 +92,7 @@ from ufl import div, dx, grad, inner
 
 from mpi4py import MPI
 from petsc4py import PETSc
+
 # -
 
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions to

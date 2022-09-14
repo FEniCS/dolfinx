@@ -76,9 +76,7 @@ jobs:
         continue-on-error: true
         run: |
           cd python/
-          python3 -m isort --check dolfinx
-          python3 -m isort --check demo
-          python3 -m isort --check test
+          python3 -m isort --check .
       - name: mypy checks
         run: |
           python3 -m pip install types-setuptools
