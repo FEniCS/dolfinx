@@ -143,7 +143,7 @@ def generate_mesh_wire(
         boundary_pairs = gmsh.model.get_boundary([(dim, tag)],
                                                  oriented=False)
         boundaries.append([pair[1] for pair in boundary_pairs])
-    interior_boundary = reduce(intersect1d, boundaries)
+    interior_boundary = reduce(intersect1d, boundaries)  # type: ignore
     gmsh.model.addPhysicalGroup(dim - 1, interior_boundary, tag=scatt_tag)
     gmsh.model.mesh.setSize([(0, 1)], size=in_wire_size)
     gmsh.model.mesh.setSize([(0, 2)], size=on_wire_size)
