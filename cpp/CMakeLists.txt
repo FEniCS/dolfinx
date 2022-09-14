@@ -250,7 +250,7 @@ set_package_properties(SCOTCH PROPERTIES TYPE OPTIONAL
   PURPOSE "Parallel graph partitioning")
 
 if(DOLFINX_ENABLE_PARMETIS)
-  find_package(ParMETIS 4.0.0...4.1.0)
+  find_package(ParMETIS 4.0.0...4.0.3)
 endif()
 
 set_package_properties(ParMETIS PROPERTIES TYPE RECOMMENDED
