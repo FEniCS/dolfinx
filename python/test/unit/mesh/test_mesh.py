@@ -19,11 +19,10 @@ from dolfinx.cpp.mesh import (create_cell_partitioner, entities_to_geometry,
                               is_simplex)
 from dolfinx.fem import assemble_scalar, form
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
-                          create_interval, create_rectangle, create_submesh, create_unit_cube,
-                          create_unit_interval, create_unit_square,
-                          exterior_facet_indices, locate_entities,
-                          locate_entities_boundary)
-from ufl import dx
+                          create_interval, create_rectangle, create_submesh,
+                          create_unit_cube, create_unit_interval,
+                          create_unit_square, exterior_facet_indices,
+                          locate_entities, locate_entities_boundary)
 
 from mpi4py import MPI
 
@@ -34,12 +33,12 @@ def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
 
     assert (submesh_cell_imap.size_local + submesh_cell_imap.num_ghosts) == submesh_c_to_v.num_nodes
 
-    # Check that creating facets / creating connectivity doesn't cause
+    # Check that creating entities / creating connectivity doesn't cause
     # a segmentation fault
-    mesh_tdim = mesh.topology.dim
-    submesh.topology.create_entities(mesh_tdim - 1)
-    submesh.topology.create_connectivity(mesh_tdim - 1, 0)
 
+    for i in range(submesh.topology.dim):
+        submesh.topology.create_entities(i)
+        submesh.topology.create_connectivity(i, 0)
     # Some processes might not own or ghost entities
     if len(entity_map) > 0:
         mesh.topology.create_connectivity(entity_dim, 0)
@@ -473,7 +472,7 @@ def test_small_mesh():
 
 def test_unit_hex_mesh_assemble():
     mesh = create_unit_cube(MPI.COMM_WORLD, 6, 7, 5, CellType.hexahedron)
-    vol = assemble_scalar(form(1 * dx(mesh)))
+    vol = assemble_scalar(form(1 * ufl.dx(mesh)))
     vol = mesh.comm.allreduce(vol, MPI.SUM)
     assert vol == pytest.approx(1, rel=1e-9)
 
@@ -495,16 +494,21 @@ def boundary_2(x):
 # TODO Test that submesh of full mesh is a copy of the mesh
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [3, 6])
-@pytest.mark.parametrize("codim", [0, 1])
+@pytest.mark.parametrize("codim", [0, 1, 2])
 @pytest.mark.parametrize("marker", [lambda x: x[0] >= 0.5,
                                     lambda x: x[0] >= -1])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
-def test_submesh_full(d, n, codim, marker, ghost_mode):
+@pytest.mark.parametrize("simplex", [True, False])
+def test_submesh_full(d, n, codim, marker, ghost_mode, simplex):
+    if d == codim:
+        pytest.xfail("Cannot create vertex submesh")
     if d == 2:
-        mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+        ct = CellType.triangle if simplex else CellType.quadrilateral
+        mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode, cell_type=ct)
     else:
-        mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
+        ct = CellType.tetrahedron if simplex else CellType.hexahedron
+        mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode, cell_type=ct)
 
     edim = mesh.topology.dim - codim
     entities = locate_entities(mesh, edim, marker)
