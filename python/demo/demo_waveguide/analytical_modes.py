@@ -67,12 +67,15 @@
 import numpy as np
 
 
-def TMx_condition(kx_d, kx_v, eps_d, eps_v, d, h):
+def TMx_condition(
+        kx_d: complex, kx_v: complex, eps_d: complex, eps_v: complex, d: float,
+        h: float) -> float:
+
     return (kx_d / eps_d * np.tan(kx_d * d)
             + kx_v / eps_v * np.tan(kx_v * (h - d)))
 
 
-def TEx_condition(kx_d, kx_v, d, h):
+def TEx_condition(kx_d: complex, kx_v: complex, d: float, h: float) -> float:
     return kx_d / np.tan(kx_d * d) + kx_v / np.tan(kx_v * (h - d))
 
 # Then, we can define the `verify_mode` function, to check whether a certain
@@ -80,12 +83,12 @@ def TEx_condition(kx_d, kx_v, d, h):
 
 
 def verify_mode(
-        kz, w, h, d, lmbd0, eps_d, eps_v, threshold):
+    kz: complex, w: float, h: float, d: float, lmbd0: float,
+        eps_d: complex, eps_v: complex, threshold: float) -> bool:
 
     k0 = 2 * np.pi / lmbd0
 
-    n = 1
-    ky = n * np.pi / w
+    ky = np.pi / w  # we assume n = 1
 
     kx_d_target = np.sqrt(k0**2 * eps_d - ky**2 + - kz**2 + 0j)
 

@@ -32,10 +32,17 @@
 # First of all, let's import the modules we need for solving the problem:
 
 # +
-import pytest
-slepc4py = pytest.importorskip("slepc4py")  # noqa: F841
+import sys
+
 import numpy as np
 from analytical_modes import verify_mode
+import ufl
+from dolfinx import fem, io, plot
+from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
+                          locate_entities)
+
+from mpi4py import MPI
+from petsc4py.PETSc import ScalarType
 
 try:
     import pyvista
@@ -43,16 +50,13 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
-from slepc4py import SLEPc
 
-from dolfinx import fem, io, plot
-from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
-                          locate_entities)
-from ufl import (FiniteElement, MixedElement, TestFunctions, TrialFunctions,
-                 curl, dx, grad, inner)
+try:
+    from slepc4py import SLEPc
+except ModuleNotFoundError:
+    print("slepc4py is required to solve the problem")
+    sys.exit(0)
 
-from mpi4py import MPI
-from petsc4py.PETSc import ScalarType
 
 # -
 
@@ -182,9 +186,9 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
 # implemented with `MixedElement`:
 
 degree = 1
-RTCE = FiniteElement("RTCE", domain.ufl_cell(), degree)
-Q = FiniteElement("Lagrange", domain.ufl_cell(), degree)
-V = fem.FunctionSpace(domain, MixedElement(RTCE, Q))
+RTCE = ufl.FiniteElement("RTCE", domain.ufl_cell(), degree)
+Q = ufl.FiniteElement("Lagrange", domain.ufl_cell(), degree)
+V = fem.FunctionSpace(domain, ufl.MixedElement(RTCE, Q))
 
 # Now we can define our weak form:
 
@@ -192,16 +196,16 @@ V = fem.FunctionSpace(domain, MixedElement(RTCE, Q))
 lmbd0 = h / 0.2
 k0 = 2 * np.pi / lmbd0
 
-et, ez = TrialFunctions(V)
-vt, vz = TestFunctions(V)
+et, ez = ufl.TrialFunctions(V)
+vt, vz = ufl.TestFunctions(V)
 
-a_tt = (inner(curl(et), curl(vt)) - k0
-        ** 2 * eps * inner(et, vt)) * dx
-b_tt = inner(et, vt) * dx
-b_tz = inner(et, grad(vz)) * dx
-b_zt = inner(grad(ez), vt) * dx
-b_zz = (inner(grad(ez), grad(vz)) - k0
-        ** 2 * eps * inner(ez, vz)) * dx
+a_tt = (ufl.inner(ufl.curl(et), ufl.curl(vt)) - k0
+        ** 2 * eps * ufl.inner(et, vt)) * ufl.dx
+b_tt = ufl.inner(et, vt) * ufl.dx
+b_tz = ufl.inner(et, ufl.grad(vz)) * ufl.dx
+b_zt = ufl.inner(ufl.grad(ez), vt) * ufl.dx
+b_zz = (ufl.inner(ufl.grad(ez), ufl.grad(vz)) - k0
+        ** 2 * eps * ufl.inner(ez, vz)) * ufl.dx
 
 a = fem.form(a_tt)
 b = fem.form(b_tt + b_tz + b_zt + b_zz)
