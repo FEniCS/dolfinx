@@ -85,7 +85,7 @@ def TEx_condition(kx_d: complex, kx_v: complex, d: float, h: float) -> float:
 
 def verify_mode(
     kz: complex, w: float, h: float, d: float, lmbd0: float,
-        eps_d: complex, eps_v: complex, threshold: float) -> bool:
+        eps_d: complex, eps_v: complex, threshold: float) -> np.bool_:
 
     k0 = 2 * np.pi / lmbd0
 
