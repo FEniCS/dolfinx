@@ -199,13 +199,13 @@ k0 = 2 * np.pi / lmbd0
 et, ez = ufl.TrialFunctions(V)
 vt, vz = ufl.TestFunctions(V)
 
-a_tt = (ufl.inner(ufl.curl(et), ufl.curl(vt)) - k0
-        ** 2 * eps * ufl.inner(et, vt)) * ufl.dx
+a_tt = (ufl.inner(ufl.curl(et), ufl.curl(vt)) - (k0**2)
+        * eps * ufl.inner(et, vt)) * ufl.dx
 b_tt = ufl.inner(et, vt) * ufl.dx
 b_tz = ufl.inner(et, ufl.grad(vz)) * ufl.dx
 b_zt = ufl.inner(ufl.grad(ez), vt) * ufl.dx
-b_zz = (ufl.inner(ufl.grad(ez), ufl.grad(vz)) - k0
-        ** 2 * eps * ufl.inner(ez, vz)) * ufl.dx
+b_zz = (ufl.inner(ufl.grad(ez), ufl.grad(vz)) - (k0**2)
+        * eps * ufl.inner(ez, vz)) * ufl.dx
 
 a = fem.form(a_tt)
 b = fem.form(b_tt + b_tz + b_zt + b_zz)
@@ -382,7 +382,7 @@ for i, kz in vals:
 
             V_grid.point_data["u"] = Et_values
 
-            pyvista.set_jupyter_backend("pythreejs")
+            pyvista.set_jupyter_backend("ipygany")
             plotter = pyvista.Plotter()
 
             plotter.add_mesh(V_grid.copy(), show_edges=False)
@@ -393,7 +393,7 @@ for i, kz in vals:
                 plotter.show()
             else:
                 pyvista.start_xvfb()
-                plotter.screenshot("Et.png", window_size=[800, 800])
+                plotter.screenshot("Et.png", window_size=[400, 400])
 
         if have_pyvista:
             V_lagr, lagr_dofs = V.sub(1).collapse()
@@ -402,7 +402,7 @@ for i, kz in vals:
 
             V_grid.point_data["u"] = ezh.x.array.real[lagr_dofs]
 
-            pyvista.set_jupyter_backend("pythreejs")
+            pyvista.set_jupyter_backend("ipygany")
             plotter = pyvista.Plotter()
 
             plotter.add_mesh(V_grid.copy(), show_edges=False)
@@ -413,4 +413,4 @@ for i, kz in vals:
                 plotter.show()
             else:
                 pyvista.start_xvfb()
-                plotter.screenshot("Ez.png", window_size=[800, 800])
+                plotter.screenshot("Ez.png", window_size=[400, 400])
