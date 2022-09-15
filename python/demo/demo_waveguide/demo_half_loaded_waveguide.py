@@ -17,13 +17,19 @@
 
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
-# This demo is implemented in one file, which shows how to:
+# This demo is implemented in two files, one for defining and solving
+# the eigenvalue problem for a half-loaded electromagnetic waveguide with
+# perfect electric conducting walls, and one for verifying if the
+# numerical eigenvalues are consistent with the analytical modes
+# of the problem.
+#
+# The demo shows how to:
 #
 # - Setup an eigenvalue problem for Maxwell's equations
 # - Use SLEPc for solving eigenvalue problems in DOLFINx
 #
 
-# ## Equations, problem definition and implementation
+# ## Equations and problem definition in DOLFINx
 #
 # In this demo, we are going to show how to solve the eigenvalue problem
 # associated with a half-loaded rectangular waveguide
@@ -36,6 +42,7 @@ import sys
 
 import numpy as np
 from analytical_modes import verify_mode
+
 import ufl
 from dolfinx import fem, io, plot
 from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
@@ -118,8 +125,8 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
 # $$
 #
 # with $k_0$ and $\lambda_0 = 2\pi/k_0$ being the wavevector and the
-# wavelength, that we consider fixed at $\lambda = h/0.2$. If we focus on
-# non-magnetic material only, we can consider $\mu_r=1$.
+# wavelength, which we consider fixed at $\lambda = h/0.2$. If we focus on
+# non-magnetic material only, we can also use $\mu_r=1$.
 #
 # Now we can assume a known dependance on $z$:
 #
@@ -177,12 +184,12 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
 # A problem of this kind is known as a generalized eigenvalue problem, where
 # our eigenvalues are all the possible $ -k_z^2$. For
 # further details about this problem, check Prof. Jin's
-# *The Finite Element Method in Electromagnetics*.
+# *The Finite Element Method in Electromagnetics, third edition*.
 #
 # To write the weak form in DOLFINx, we need to specify our function space.
-# For the $\mathbf{e}_t$ field, we can use RTCE elements (the equivalent of
-# Nedelec elements on quadrilateral cells), while for $e_z$ field we can use
-# the Lagrange elements. In DOLFINx, this hybrid formulation is
+# For $\mathbf{e}_t$, we can use RTCE elements (the equivalent of
+# Nedelec elements on quadrilateral cells), while for $e_z$ field we can use Lagrange elements.
+# In DOLFINx, this hybrid formulation is
 # implemented with `MixedElement`:
 
 degree = 1
@@ -224,6 +231,8 @@ with u_bc.vector.localForm() as loc:
 bc = fem.dirichletbc(u_bc, bc_dofs)
 # -
 
+# ## Solve the problem in SLEPc
+
 # Now we can solve the problem with SLEPc.
 # First of all, we need to assemble our $A$ and $B$ matrices with PETSc
 # in this way:
@@ -235,11 +244,11 @@ B.assemble()
 
 # Now, we need to create the eigenvalue problem in SLEPc. Our problem is a
 # linear eigenvalue problem, that in SLEPc is solved with the `EPS` module.
-# We can call this module in the following way:
+# We can initialize this solver in the following way:
 
 eps = SLEPc.EPS().create(domain.comm)
 
-# We can pass to the `EPS` solver our matrices by using the `setOperators`
+# We can pass to `EPS` our matrices by using the `setOperators`
 # routine:
 
 eps.setOperators(A, B)
@@ -252,17 +261,18 @@ eps.setOperators(A, B)
 
 eps.setProblemType(SLEPc.EPS.ProblemType.GNHEP)
 
-# Next, we need to specify a tolerance for considering a solution
-# acceptable:
+# Next, we need to specify a tolerance for the iterative
+# solver, so that it knows when to stop:
+
 tol = 1e-9
 eps.setTolerances(tol=tol)
 
-# Now we need to set the eigensolver for our problem, which is the algorithm
-# we want to use to find the eigenvalues and the eigenvectors. SLEPc offers
-# different methods, and also wrappers to external libraries. Some of these
-# methods are only suitable for Hermitian or Generalized Hermitian problems
-# and/or for eigenvalues in a certain portion of the spectrum. However, the
-# choice of the method is a technical discussion that is out of the scope of
+# Now we need to set the eigensolver for our problem. SLEPc offers
+# different built-in algorithms, and also wrappers to external libraries. Some of these
+# can only solve Hermitian problems and/or problems with eigenvalues in a certain
+# portion of the spectrum. However, the
+# choice of the particular method to choose to solve a problem is a technical discussion
+# that is out of the scope of
 # this demo, and that is more comprehensively discussed in the
 # [SLEPc documentation](https://slepc.upv.es/documentation/slepc.pdf).
 # For our problem, we will use the Krylov-Schur method, which we can set by
@@ -271,7 +281,8 @@ eps.setTolerances(tol=tol)
 eps.setType(SLEPc.EPS.Type.KRYLOVSCHUR)
 
 # In order to accelerate the calculation of our solutions,
-# we can also use spectral transformation, which maps the
+# we can also use a so-called *spectral transformation*,
+# a technique which maps the
 # original eigenvalues into another position of the spectrum
 # without affecting the eigenvectors. In our case,
 # we can use the shift-and-invert transformation with
@@ -286,8 +297,7 @@ st.setType(SLEPc.ST.Type.SINVERT)
 # -
 
 # The spectral transformation needs a target value for the
-# eigenvalues we are looking at to perform the
-# spectral transformation. Since the eigenvalues for our
+# eigenvalues we are looking for. Since the eigenvalues for our
 # problem can be complex numbers, we need to specify
 # whether we are searching for specific values in the real part,
 # in the imaginary part, or in the magnitude. In our case, we are
@@ -308,25 +318,29 @@ eps.setTarget(-(0.5 * k0)**2)
 
 # Then, we need to define the number of eigenvalues we want to calculate.
 # We can do this with the `setDimensions` function, where we specify that
-# we are searching for just one eigenvalue:
+# we are looking for just one eigenvalue:
 
 eps.setDimensions(nev=1)
 
 # We can finally solve the problem with the `solve` function.
-# To gain a deeper insight over the simulation, we can get an
-# output message by SLEPc by calling the `view` and `errorView`
+# To gain a deeper insight over the simulation, we also print an
+# output message from SLEPc by calling the `view` and `errorView`
 # function:
 
 eps.solve()
 eps.view()
 eps.errorView()
 
-# Now we can get the eigenvalues and eigenvectors calculated by SLEPc:
+# Now we can get the eigenvalues and eigenvectors calculated by SLEPc
+# with the following code. We also verify if the numerical $k_z$
+# are consistent with the analytical equations of the half-loaded waveguide modes,
+# with the `verify_mode()` function defined in `analytical_modes.py`:
 
 # +
-# Save the eigenvalues i
+# Save the kz
 vals = [(i, np.sqrt(-eps.getEigenvalue(i))) for i in range(eps.getConverged())]
 
+# Sort kz by real part
 vals.sort(key=lambda x: x[1].real)
 
 eh = fem.Function(V)
@@ -346,7 +360,7 @@ for i, kz in vals:
 
         kz_list.append(kz)
 
-        # Verify if kz satisfy the analytical equations for the modes
+        # Verify if kz is consistent with the analytical equations
         assert verify_mode(kz, w, h, d, lmbd0, eps_d, eps_v, threshold=1e-4)
 
         print(f"eigenvalue: {-kz**2}")
@@ -367,12 +381,14 @@ for i, kz in vals:
         Et_dg = fem.Function(V_dg)
         Et_dg.interpolate(eth)
 
+        # Save solutions
         with io.VTXWriter(domain.comm, f"sols/Et_{i}.bp", Et_dg) as f:
             f.write(0.0)
 
         with io.VTXWriter(domain.comm, f"sols/Ez_{i}.bp", ezh) as f:
             f.write(0.0)
 
+        # Visualize solutions with Pyvista
         if have_pyvista:
             V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
             V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
@@ -414,3 +430,4 @@ for i, kz in vals:
             else:
                 pyvista.start_xvfb()
                 plotter.screenshot("Ez.png", window_size=[400, 400])
+# -

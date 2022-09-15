@@ -61,7 +61,8 @@
 # - $k_{xd}\rightarrow$ $x$ component of the wavevector in the dielectric
 # - $k_{xv}\rightarrow$ $x$ component of the wavevector in the vacuum
 # - $\frac{n \pi}{w} = k_y\rightarrow$ $y$ component of the wavevector for
-# different $n$ harmonic numbers
+# different $n$ harmonic numbers (we assume $n=1$ for the
+# sake of simplicity)
 #
 # Let's define the set of equations with the $\tan$ and $\cot$ function:
 
@@ -80,7 +81,11 @@ def TEx_condition(kx_d: complex, kx_v: complex, d: float, h: float) -> float:
     return kx_d / np.tan(kx_d * d) + kx_v / np.tan(kx_v * (h - d))
 
 # Then, we can define the `verify_mode` function, to check whether a certain
-# $k_z$ satisfy the equations (below a certain threshold):
+# $k_z$ satisfy the equations (below a certain threshold). In other words,
+# we provide a certain $k_z$, together with the geometrical and optical
+# parameters of the waveguide, and `verify_mode()` checks whether
+# the last equations for the $\mathrm{TE}_x$ or
+# $\mathrm{TM}_x$ modes are close to $0$.
 
 
 def verify_mode(
