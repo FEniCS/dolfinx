@@ -28,9 +28,9 @@
 # \begin{aligned}
 # \textrm{For TE}_x \textrm{ modes}:
 # \begin{cases}
-# &k_{x d}^{2}+\left(\frac{n \pi}{b}\right)^{2}+k_{z}^{2}=k_0^{2}
+# &k_{x d}^{2}+\left(\frac{n \pi}{w}\right)^{2}+k_{z}^{2}=k_0^{2}
 # \varepsilon_{d} \\
-# &k_{x v}^{2}+\left(\frac{n \pi}{b}\right)^{2}+k_{z}^{2}=k_0^{2}
+# &k_{x v}^{2}+\left(\frac{n \pi}{w}\right)^{2}+k_{z}^{2}=k_0^{2}
 # \varepsilon_{v} \\
 # & k_{x d} \cot k_{x d} d + k_{x v} \cot \left[k_{x v}(h-d)\right] = 0
 # \end{cases}
@@ -41,9 +41,9 @@
 # \begin{aligned}
 # \textrm{For TM}_x \textrm{ modes}:
 # \begin{cases}
-# &k_{x d}^{2}+\left(\frac{n \pi}{b}\right)^{2}+k_{z}^{2}=
+# &k_{x d}^{2}+\left(\frac{n \pi}{w}\right)^{2}+k_{z}^{2}=
 # k_0^{2} \varepsilon_{d} \\
-# &k_{x v}^{2}+\left(\frac{n \pi}{b}\right)^{2}+k_{z}^{2}=
+# &k_{x v}^{2}+\left(\frac{n \pi}{w}\right)^{2}+k_{z}^{2}=
 # k_0^{2} \varepsilon_{v} \\
 # & \frac{k_{x d}}{\varepsilon_{d}} \tan k_{x d} d +
 # \frac{k_{x v}}{\varepsilon_{v}} \tan \left[k_{x v}(h-d)\right] = 0
@@ -54,12 +54,13 @@
 # with:
 # - $\varepsilon_d\rightarrow$ dielectric permittivity
 # - $\varepsilon_v\rightarrow$ vacuum permittivity
-# - $h\rightarrow$ height of the waveguide
-# - $d\rightarrow$ height of the dielectric
+# - $w\rightarrow$ total width of the waveguide
+# - $h\rightarrow$ total height of the waveguide
+# - $d\rightarrow$ height of the dielectric fraction
 # - $k_0\rightarrow$ vacuum wavevector
 # - $k_{xd}\rightarrow$ $x$ component of the wavevector in the dielectric
 # - $k_{xv}\rightarrow$ $x$ component of the wavevector in the vacuum
-# - $\frac{n \pi}{b} = k_y\rightarrow$ $y$ component of the wavevector for
+# - $\frac{n \pi}{w} = k_y\rightarrow$ $y$ component of the wavevector for
 # different $n$ harmonic numbers
 #
 # Let's define the set of equations with the $\tan$ and $\cot$ function:
