@@ -32,14 +32,20 @@
 # First of all, let's import the modules we need for solving the problem:
 
 # +
+import pytest
 slepc4py = pytest.importorskip("slepc4py")  # noqa: F841
 import numpy as np
-import pytest
 from analytical_modes import verify_mode
 
+try:
+    import pyvista
+    have_pyvista = True
+except ModuleNotFoundError:
+    print("pyvista and pyvistaqt are required to visualise the solution")
+    have_pyvista = False
 from slepc4py import SLEPc
 
-from dolfinx import fem, io
+from dolfinx import fem, io, plot
 from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
                           locate_entities)
 from ufl import (FiniteElement, MixedElement, TestFunctions, TrialFunctions,
@@ -346,6 +352,8 @@ for i, kz in vals:
         eh.x.scatter_forward()
 
         eth, ezh = eh.split()
+        eth = eh.sub(0).collapse()
+        ez = eh.sub(1).collapse()
 
         # Transform eth, ezh into Et and Ez
         eth.x.array[:] = eth.x.array[:] / kz
@@ -360,3 +368,45 @@ for i, kz in vals:
 
         with io.VTXWriter(domain.comm, f"sols/Ez_{i}.bp", ezh) as f:
             f.write(0.0)
+
+        if have_pyvista:
+            V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
+            V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
+            Et_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
+            Et_values[:, : domain.topology.dim] = \
+                Et_dg.x.array.reshape(V_x.shape[0], domain.topology.dim).real
+
+            V_grid.point_data["u"] = Et_values
+
+            pyvista.set_jupyter_backend("pythreejs")
+            plotter = pyvista.Plotter()
+
+            plotter.add_mesh(V_grid.copy(), show_edges=False)
+            plotter.view_xy()
+            plotter.link_views()
+
+            if not pyvista.OFF_SCREEN:
+                plotter.show()
+            else:
+                pyvista.start_xvfb()
+                plotter.screenshot("Et.png", window_size=[800, 800])
+
+        if have_pyvista:
+            V_lagr, lagr_dofs = V.sub(1).collapse()
+            V_cells, V_types, V_x = plot.create_vtk_mesh(V_lagr)
+            V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
+
+            V_grid.point_data["u"] = ezh.x.array.real[lagr_dofs]
+
+            pyvista.set_jupyter_backend("pythreejs")
+            plotter = pyvista.Plotter()
+
+            plotter.add_mesh(V_grid.copy(), show_edges=False)
+            plotter.view_xy()
+            plotter.link_views()
+
+            if not pyvista.OFF_SCREEN:
+                plotter.show()
+            else:
+                pyvista.start_xvfb()
+                plotter.screenshot("Ez.png", window_size=[800, 800])
