@@ -205,10 +205,24 @@ Check for any changes on `release` that should be ported back onto `main`.
 
 Bump the version numbers on the `main` branch.
 
+## Bug fix patches
+
+Bug fix patches can be made by cherry picking commits off of `main` and bumping
+the minor version number. Remember to run the DOLFINx integration tests on a
+proposed set of tags as it is easy to make an error.
+
 ### Ubuntu
 
 Contact Drew Parsons.
 
-### conda
+### Conda Forge
 
-Contact @minrk.
+Conda Forge bots typically pickup new releases automatically. Can also contact
+@minrk.
+
+### Spack
+
+Update the Spack recipe for the FEniCSx components on the fork
+[FEniCS/spack](https://github.com/FEniCS/spack) using a branch e.g.
+`updates/dolfinx-<version>`. Create a pull request to the Spack mainline
+repository.
