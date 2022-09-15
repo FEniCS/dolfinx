@@ -14,6 +14,7 @@ import numpy as np
 import numpy.typing
 
 import basix
+import dolfinx.cpp
 import ufl
 from dolfinx.cpp.la.petsc import create_matrix
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
@@ -24,7 +25,7 @@ import petsc4py.lib
 from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
-import dolfinx.cpp
+
 dolfinx.cpp.common.init_logging(["-v"])
 # Get details of PETSc install
 petsc_dir = PETSc_get_config()['PETSC_DIR']
