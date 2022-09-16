@@ -20,11 +20,13 @@ from functools import partial
 import numpy as np
 from mesh_sphere_axis import generate_mesh_sphere_axis
 from scipy.special import jv, jvp
+
+import ufl
 from dolfinx import fem, mesh, plot
 from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
+
 from mpi4py import MPI
-import ufl
 from petsc4py import PETSc
 
 try:
@@ -359,12 +361,17 @@ bkg_tag = 2
 pml_tag = 3
 scatt_tag = 4
 
-# Mesh generation
-model = generate_mesh_sphere_axis(
-    radius_sph, radius_scatt, radius_dom, radius_pml,
-    in_sph_size, on_sph_size, scatt_size, pml_size,
-    au_tag, bkg_tag, pml_tag, scatt_tag)
+model = None
+gmsh.initialize(sys.argv)
+if MPI.COMM_WORLD.rank == 0:
 
+    # Mesh generation
+    model = generate_mesh_sphere_axis(
+        radius_sph, radius_scatt, radius_dom, radius_pml,
+        in_sph_size, on_sph_size, scatt_size, pml_size,
+        au_tag, bkg_tag, pml_tag, scatt_tag)
+
+model = MPI.COMM_WORLD.bcast(model, root=0)
 domain, cell_tags, facet_tags = model_to_mesh(
     model, MPI.COMM_WORLD, 0, gdim=2)
 
