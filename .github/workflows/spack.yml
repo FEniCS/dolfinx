@@ -49,19 +49,19 @@ jobs:
           apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar xz-utils
           apt-get install -y g++ gfortran  # compilers
 
-      - name: Build DOLFINx (C++) development version via Spack
-        run: |
-          . ./spack/share/spack/setup-env.sh
-          spack env create cpp-main
-          spack env activate cpp-main
-          spack add fenics-dolfinx@main+adios2
-          spack install
       - name: Build DOLFINx (C++) release version via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env create cpp-release
           spack env activate cpp-release
           spack add fenics-dolfinx+adios2
+          spack install
+      - name: Build DOLFINx (C++) development version via Spack
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env create cpp-main
+          spack env activate cpp-main
+          spack add fenics-dolfinx@main+adios2
           spack install
 
       - name: Get DOLFINx code (to access test files)
