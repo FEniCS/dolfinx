@@ -99,7 +99,6 @@ jobs:
           make -j2
           mpirun -np 2 ./demo_poisson
 
-
       - name: Build DOLFINx (Python, release version)
         run: |
           . ./spack/share/spack/setup-env.sh
@@ -120,7 +119,7 @@ jobs:
           . ./spack/share/spack/setup-env.sh
           spack env activate py-release
           mpirun -np 2 python3 ./dolfinx-release/python/demo/demo_elasticity.py
-     - name: Run DOLFINx (Python, development) test
+      - name: Run DOLFINx (Python, development) test
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate py-main
