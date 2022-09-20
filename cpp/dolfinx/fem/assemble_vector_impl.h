@@ -698,6 +698,8 @@ void assemble_interior_facets(
                              const std::uint8_t*)>& fn,
     const std::span<const T>& constants, const std::span<const T>& coeffs,
     int cstride, const std::span<const std::uint32_t>& cell_info,
+    const std::function<std::int32_t(const std::span<const std::int32_t>&)>&
+        facet_map,
     const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
   const int tdim = mesh.topology().dim();
@@ -726,6 +728,12 @@ void assemble_interior_facets(
     std::array<std::int32_t, 2> local_facet
         = {facets[index + 1], facets[index + 3]};
 
+    // Map the cell in the integration domain to the cell in the mesh
+    // each function space is defined over
+    std::array<std::int32_t, 2> cells_0
+        = {facet_map(facets.subspan(index, 2)),
+           facet_map(facets.subspan(index + 2, 2))};
+
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
@@ -741,8 +749,8 @@ void assemble_interior_facets(
     }
 
     // Get dofmaps for cells
-    std::span<const std::int32_t> dmap0 = dofmap.cell_dofs(cells[0]);
-    std::span<const std::int32_t> dmap1 = dofmap.cell_dofs(cells[1]);
+    std::span<const std::int32_t> dmap0 = dofmap.cell_dofs(cells_0[0]);
+    std::span<const std::int32_t> dmap1 = dofmap.cell_dofs(cells_0[1]);
 
     // Tabulate element vector
     be.resize(bs * (dmap0.size() + dmap1.size()));
@@ -757,8 +765,8 @@ void assemble_interior_facets(
     const std::span<T> sub_be
         = _be.subspan(bs * dmap0.size(), bs * dmap1.size());
 
-    dof_transform(be, cell_info, cells[0], 1);
-    dof_transform(sub_be, cell_info, cells[1], 1);
+    dof_transform(be, cell_info, cells_0[0], 1);
+    dof_transform(sub_be, cell_info, cells_0[1], 1);
 
     // Add element vector to global vector
     if constexpr (_bs > 0)
@@ -1116,21 +1124,21 @@ void assemble_vector(
       const std::vector<std::int32_t>& facets = L.interior_facet_domains(i);
       if (bs == 1)
       {
-        impl::assemble_interior_facets<T, 1>(dof_transform, b, *mesh, facets,
-                                             *dofmap, fn, constants, coeffs,
-                                             cstride, cell_info, get_perm);
+        impl::assemble_interior_facets<T, 1>(
+            dof_transform, b, *mesh, facets, *dofmap, fn, constants, coeffs,
+            cstride, cell_info, entity_map, get_perm);
       }
       else if (bs == 3)
       {
-        impl::assemble_interior_facets<T, 3>(dof_transform, b, *mesh, facets,
-                                             *dofmap, fn, constants, coeffs,
-                                             cstride, cell_info, get_perm);
+        impl::assemble_interior_facets<T, 3>(
+            dof_transform, b, *mesh, facets, *dofmap, fn, constants, coeffs,
+            cstride, cell_info, entity_map, get_perm);
       }
       else
       {
         impl::assemble_interior_facets(dof_transform, b, *mesh, facets, *dofmap,
                                        fn, constants, coeffs, cstride,
-                                       cell_info, get_perm);
+                                       cell_info, entity_map, get_perm);
       }
     }
   }
