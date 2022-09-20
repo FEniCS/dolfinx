@@ -75,7 +75,11 @@ void cells(
 /// @note The sparsity pattern is not finalised
 void interior_facets(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
-    const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps);
+    const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps,
+    const std::array<
+        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
+        facet_maps
+    = {[](auto e) { return e.front(); }, [](auto e) { return e.front(); }});
 
 /// @brief Iterate over interior facets and insert entries into sparsity
 /// pattern.
@@ -88,7 +92,11 @@ void interior_facets(
 /// @note The sparsity pattern is not finalised
 void interior_facets(
     la::SparsityPattern& pattern, const std::span<const std::int32_t>& facets,
-    const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps);
+    const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps,
+    const std::array<
+        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
+        facet_maps
+    = {[](auto e) { return e.front(); }, [](auto e) { return e.front(); }});
 
 /// @brief Iterate over exterior facets and insert entries into sparsity
 /// pattern.

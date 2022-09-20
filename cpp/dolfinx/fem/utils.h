@@ -181,7 +181,8 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
       {
         const std::vector<std::int32_t>& facets = a.interior_facet_domains(id);
         sparsitybuild::interior_facets(pattern, facets,
-                                       {{dofmaps[0], dofmaps[1]}});
+                                       {{dofmaps[0], dofmaps[1]}},
+                                       entity_maps);
       }
       break;
     case IntegralType::exterior_facet:

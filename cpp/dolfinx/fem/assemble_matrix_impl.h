@@ -327,12 +327,14 @@ void assemble_interior_facets(
         = {facet_map_1(facets.subspan(index, 2)),
            facet_map_1(facets.subspan(index + 2, 2))};
 
+    // std::cout << "cells_0 = ";
     // for (auto c : cells_0)
     // {
     //   std::cout << c << " ";
     // }
     // std::cout << "\n";
 
+    // std::cout << "cells_1 = ";
     // for (auto c : cells_1)
     // {
     //   std::cout << c << " ";
