@@ -16,6 +16,7 @@ from dolfinx.mesh import (GhostMode, create_box, create_rectangle,
                           locate_entities, locate_entities_boundary,
                           meshtags_from_entities, create_mesh,
                           create_cell_partitioner)
+from dolfinx.cpp.mesh import cell_num_entities
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -803,3 +804,69 @@ def test_mixed_coeff_form():
 
     # TODO Check value
     assert np.isclose(b.norm(), 0.6937782992069734)
+
+
+def reorder_mesh(msh):
+    # FIXME Check this is correct
+    # FIXME Needs generalising for high-order mesh
+    # FIXME What about quads / hexes?
+    tdim = msh.topology.dim
+    num_cell_vertices = cell_num_entities(msh.topology.cell_type, 0)
+    c_to_v = msh.topology.connectivity(tdim, 0)
+    geom_dofmap = msh.geometry.dofmap
+    vertex_imap = msh.topology.index_map(0)
+    geom_imap = msh.geometry.index_map()
+    for i in range(0, len(c_to_v.array), num_cell_vertices):
+        topo_perm = np.argsort(vertex_imap.local_to_global(
+            c_to_v.array[i:i+num_cell_vertices]))
+        geom_perm = np.argsort(geom_imap.local_to_global(
+            geom_dofmap.array[i:i+num_cell_vertices]))
+
+        c_to_v.array[i:i+num_cell_vertices] = \
+            c_to_v.array[i:i+num_cell_vertices][topo_perm]
+        geom_dofmap.array[i:i+num_cell_vertices] = \
+            geom_dofmap.array[i:i+num_cell_vertices][geom_perm]
+
+
+@pytest.mark.parametrize("n", [2, 4, 8])
+@pytest.mark.parametrize("d", [2, 3])
+def test_int_facet(n, d):
+    if d == 2:
+        msh_0 = create_rectangle(
+                MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+                ghost_mode=GhostMode.shared_facet)
+        msh_1 = create_unit_square(MPI.COMM_WORLD, n, n,
+            ghost_mode=GhostMode.shared_facet)
+    else:
+        msh_0 = create_box(
+            MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
+            (2 * n, n, n), ghost_mode=GhostMode.shared_facet)
+        msh_1 = create_unit_cube(MPI.COMM_WORLD, n, n, n,
+            ghost_mode=GhostMode.shared_facet)
+    # Facet perms not working in parallel yet, so reorder the mesh for now
+    reorder_mesh(msh_0)
+
+    tdim = msh_0.topology.dim
+    entities = locate_entities(msh_0, tdim, lambda x: x[0] <= 1.0)
+    submesh, entity_map = create_submesh(
+        msh_0, tdim, entities)[:2]
+
+    V_msh = fem.FunctionSpace(msh_0, ("Lagrange", 1))
+    V_submesh = fem.FunctionSpace(submesh, ("Lagrange", 1))
+
+    u, v = ufl.TrialFunction(V_msh), ufl.TestFunction(V_submesh)
+
+    dS = ufl.Measure("dS", domain=submesh)
+    a = fem.form(ufl.inner(u("+"), v("+")) * dS, entity_maps={msh_0: entity_map})
+    A = fem.petsc.assemble_matrix(a)
+    A.assemble()
+    A_norm = A.norm()
+
+    V = fem.FunctionSpace(msh_1, ("Lagrange", 1))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = fem.form(ufl.inner(u("+"), v("+")) * ufl.dS)
+    A = fem.petsc.assemble_matrix(a)
+    A.assemble()
+
+    print(A_norm, A.norm())
+    assert np.isclose(A_norm, A.norm())
