@@ -12,8 +12,8 @@ body:
     id: description
     attributes:
       label: Describe new/missing feature
-      description: Tell us about what feature you are missing, and how you would like it to work.
-      placeholder: I would like you to add a `subtraction` subroutine...
+      description: Explain what feature you are missing, and how you would like it to work.
+      placeholder: I would like to add a `subtraction` subroutine...
     validations:
       required: true
   - type: textarea

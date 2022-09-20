@@ -8,7 +8,7 @@ body:
     id: description
     attributes:
       label: How to reproduce the bug
-      description: Tell us how one can reproduce the bug
+      description: Explain how to reproduce the issue you are having
       placeholder: I ran a demo or test that failed. The name of the demo is `demo_something.py`
     validations:
       required: true
@@ -17,7 +17,7 @@ body:
     attributes:
       label: Minimal Example (Python)
       description: Add (optionally) a minimal script that reproduces the bug
-      render:
+      render: Python
       placeholder: |
           import dolfinx
           from mpi4py import MPI
@@ -43,7 +43,7 @@ body:
     id: version
     attributes:
       label: Version
-      description: What version of our software are you running?
+      description: What version of DOLFINx are you running?
       options:
         - 0.4.0
         - 0.4.1
