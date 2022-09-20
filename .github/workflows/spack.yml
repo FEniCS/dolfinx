@@ -64,18 +64,12 @@ jobs:
           spack add fenics-dolfinx@main+adios2
           spack install
 
-      - name: Get DOLFINx code (to access test files)
-        uses: actions/checkout@v3
-        with:
-          path: ./dolfinx-main
-
       - name: Get DOLFINx release code (to access test files)
         uses: actions/checkout@v3
         with:
-          ref: main
+          ref: v0.5.1
           # ref: v${{ github.event.inputs.spack_branch }}
           path: ./dolfinx-release
-
       - name: Run a C++ test (release version)
         run: |
           . ./spack/share/spack/setup-env.sh
@@ -87,6 +81,11 @@ jobs:
           export VERBOSE=1
           make -j2
           mpirun -np 2 ./demo_poisson
+
+      - name: Get DOLFINx code (to access test files)
+        uses: actions/checkout@v3
+        with:
+          path: ./dolfinx-main
       - name: Run a C++ test (development version)
         run: |
           . ./spack/share/spack/setup-env.sh
