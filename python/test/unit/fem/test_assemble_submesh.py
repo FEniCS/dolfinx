@@ -818,14 +818,14 @@ def reorder_mesh(msh):
     geom_imap = msh.geometry.index_map()
     for i in range(0, len(c_to_v.array), num_cell_vertices):
         topo_perm = np.argsort(vertex_imap.local_to_global(
-            c_to_v.array[i:i+num_cell_vertices]))
+            c_to_v.array[i:i + num_cell_vertices]))
         geom_perm = np.argsort(geom_imap.local_to_global(
-            geom_dofmap.array[i:i+num_cell_vertices]))
+            geom_dofmap.array[i:i + num_cell_vertices]))
 
-        c_to_v.array[i:i+num_cell_vertices] = \
-            c_to_v.array[i:i+num_cell_vertices][topo_perm]
-        geom_dofmap.array[i:i+num_cell_vertices] = \
-            geom_dofmap.array[i:i+num_cell_vertices][geom_perm]
+        c_to_v.array[i:i + num_cell_vertices] = \
+            c_to_v.array[i:i + num_cell_vertices][topo_perm]
+        geom_dofmap.array[i:i + num_cell_vertices] = \
+            geom_dofmap.array[i:i + num_cell_vertices][geom_perm]
 
 
 @pytest.mark.parametrize("n", [2, 4, 8])
@@ -833,16 +833,16 @@ def reorder_mesh(msh):
 def test_int_facet(n, d):
     if d == 2:
         msh_0 = create_rectangle(
-                MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-                ghost_mode=GhostMode.shared_facet)
-        msh_1 = create_unit_square(MPI.COMM_WORLD, n, n,
+            MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
             ghost_mode=GhostMode.shared_facet)
+        msh_1 = create_unit_square(MPI.COMM_WORLD, n, n,
+                                   ghost_mode=GhostMode.shared_facet)
     else:
         msh_0 = create_box(
             MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
             (2 * n, n, n), ghost_mode=GhostMode.shared_facet)
         msh_1 = create_unit_cube(MPI.COMM_WORLD, n, n, n,
-            ghost_mode=GhostMode.shared_facet)
+                                 ghost_mode=GhostMode.shared_facet)
     # Facet perms not working in parallel yet, so reorder the mesh for now
     reorder_mesh(msh_0)
 
@@ -856,9 +856,12 @@ def test_int_facet(n, d):
 
     u, v = ufl.TrialFunction(V_msh), ufl.TestFunction(V_submesh)
 
+    # TODO Remove duplicate code
     dS = ufl.Measure("dS", domain=submesh)
     x = ufl.SpatialCoordinate(submesh)
-    a = fem.form(ufl.inner((1 + x[0]) * u("+"), v("+")) * dS, entity_maps={msh_0: entity_map})
+    c = fem.Function(V_msh)
+    c.interpolate(lambda x: 1 + x[0]**2)
+    a = fem.form(ufl.inner((1 + x[0]) * c * u("+"), v("+")) * dS, entity_maps={msh_0: entity_map})
     A = fem.petsc.assemble_matrix(a)
     A.assemble()
     A_norm = A.norm()
@@ -866,7 +869,9 @@ def test_int_facet(n, d):
     V = fem.FunctionSpace(msh_1, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     x = ufl.SpatialCoordinate(msh_1)
-    a = fem.form(ufl.inner((1 + x[0]) * u("+"), v("+")) * ufl.dS)
+    c = fem.Function(V)
+    c.interpolate(lambda x: 1 + x[0]**2)
+    a = fem.form(ufl.inner((1 + x[0]) * c * u("+"), v("+")) * ufl.dS)
     A = fem.petsc.assemble_matrix(a)
     A.assemble()
 

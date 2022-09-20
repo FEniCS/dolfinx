@@ -181,8 +181,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
       {
         const std::vector<std::int32_t>& facets = a.interior_facet_domains(id);
         sparsitybuild::interior_facets(pattern, facets,
-                                       {{dofmaps[0], dofmaps[1]}},
-                                       entity_maps);
+                                       {{dofmaps[0], dofmaps[1]}}, entity_maps);
       }
       break;
     case IntegralType::exterior_facet:
@@ -809,13 +808,18 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
     case IntegralType::interior_facet:
     {
       const std::vector<std::int32_t>& facets = form.interior_facet_domains(id);
-      // Lambda functions to fetch cell index from interior facet entity
-      auto fetch_cell0 = [](auto& entity) { return entity[0]; };
-      auto fetch_cell1 = [](auto& entity) { return entity[2]; };
 
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        auto entity_map = form.function_space_to_entity_map(
+            *coefficients[coeff]->function_space());
+        // Lambda functions to fetch cell index from interior facet entity
+        auto fetch_cell0 = [entity_map](auto& entity)
+        { return entity_map(entity.subspan(0, 2)); };
+        auto fetch_cell1 = [entity_map](auto& entity)
+        { return entity_map(entity.subspan(2, 4)); };
+
         std::span<const std::uint32_t> cell_info
             = impl::get_cell_orientation_info(*coefficients[coeff]);
         // Pack coefficient ['+']
