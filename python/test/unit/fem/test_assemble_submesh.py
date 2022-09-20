@@ -857,14 +857,16 @@ def test_int_facet(n, d):
     u, v = ufl.TrialFunction(V_msh), ufl.TestFunction(V_submesh)
 
     dS = ufl.Measure("dS", domain=submesh)
-    a = fem.form(ufl.inner(u("+"), v("+")) * dS, entity_maps={msh_0: entity_map})
+    x = ufl.SpatialCoordinate(submesh)
+    a = fem.form(ufl.inner((1 + x[0]) * u("+"), v("+")) * dS, entity_maps={msh_0: entity_map})
     A = fem.petsc.assemble_matrix(a)
     A.assemble()
     A_norm = A.norm()
 
     V = fem.FunctionSpace(msh_1, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = fem.form(ufl.inner(u("+"), v("+")) * ufl.dS)
+    x = ufl.SpatialCoordinate(msh_1)
+    a = fem.form(ufl.inner((1 + x[0]) * u("+"), v("+")) * ufl.dS)
     A = fem.petsc.assemble_matrix(a)
     A.assemble()
 
