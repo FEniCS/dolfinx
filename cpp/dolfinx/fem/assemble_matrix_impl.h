@@ -318,9 +318,27 @@ void assemble_interior_facets(
     std::array<std::int32_t, 2> local_facet
         = {facets[index + 1], facets[index + 3]};
 
-    // // Map the cell in the integration domain to the cell in the mesh
-    // // each function space is defined over
-    // std::array<std::int32_t, 2> cells_0 = facet_map_0(facets.subspan(index, 2));
+    // Map the cell in the integration domain to the cell in the mesh
+    // each function space is defined over
+    std::array<std::int32_t, 2> cells_0
+        = {facet_map_0(facets.subspan(index, 2)),
+           facet_map_0(facets.subspan(index + 2, 2))};
+    std::array<std::int32_t, 2> cells_1
+        = {facet_map_1(facets.subspan(index, 2)),
+           facet_map_1(facets.subspan(index + 2, 2))};
+
+    // for (auto c : cells_0)
+    // {
+    //   std::cout << c << " ";
+    // }
+    // std::cout << "\n";
+
+    // for (auto c : cells_1)
+    // {
+    //   std::cout << c << " ";
+    // }
+    // std::cout << "\n";
+    // TODO Asserts
     // assert(c_0 >= 0);
     // std::int32_t c_1 = facet_map_1(facets.subspan(index, 2));
     // assert(c_1 >= 0);
@@ -340,15 +358,15 @@ void assemble_interior_facets(
     }
 
     // Get dof maps for cells and pack
-    std::span<const std::int32_t> dmap0_cell0 = dofmap0.cell_dofs(cells[0]);
-    std::span<const std::int32_t> dmap0_cell1 = dofmap0.cell_dofs(cells[1]);
+    std::span<const std::int32_t> dmap0_cell0 = dofmap0.cell_dofs(cells_0[0]);
+    std::span<const std::int32_t> dmap0_cell1 = dofmap0.cell_dofs(cells_0[1]);
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
     std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
     std::copy(dmap0_cell1.begin(), dmap0_cell1.end(),
               std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
-    std::span<const std::int32_t> dmap1_cell0 = dofmap1.cell_dofs(cells[0]);
-    std::span<const std::int32_t> dmap1_cell1 = dofmap1.cell_dofs(cells[1]);
+    std::span<const std::int32_t> dmap1_cell0 = dofmap1.cell_dofs(cells_1[0]);
+    std::span<const std::int32_t> dmap1_cell1 = dofmap1.cell_dofs(cells_1[1]);
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
     std::copy(dmap1_cell0.begin(), dmap1_cell0.end(), dmapjoint1.begin());
     std::copy(dmap1_cell1.begin(), dmap1_cell1.end(),
@@ -361,6 +379,7 @@ void assemble_interior_facets(
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
 
+    // TODO Figure out perms
     const std::array perm{
         get_perm(cells[0] * num_cell_facets + local_facet[0]),
         get_perm(cells[1] * num_cell_facets + local_facet[1])};
@@ -382,10 +401,10 @@ void assemble_interior_facets(
     // blocks of the matrix
 
     // TODO Check cell_info correct
-    dof_transform(_Ae, cell_info_1, cells[0], num_cols);
-    dof_transform(sub_Ae0, cell_info_1, cells[1], num_cols);
-    dof_transform_to_transpose(_Ae, cell_info_0, cells[0], num_rows);
-    dof_transform_to_transpose(sub_Ae1, cell_info_0, cells[1], num_rows);
+    dof_transform(_Ae, cell_info_1, cells_1[0], num_cols);
+    dof_transform(sub_Ae0, cell_info_1, cells_1[1], num_cols);
+    dof_transform_to_transpose(_Ae, cell_info_0, cells_0[0], num_rows);
+    dof_transform_to_transpose(sub_Ae1, cell_info_0, cells_0[1], num_rows);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -529,8 +548,8 @@ void assemble_matrix(
       impl::assemble_interior_facets(
           mat_set, *mesh, facets, dof_transform, *dofmap0, bs0,
           dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1, fn, coeffs,
-          cstride, c_offsets, constants, cell_info_0, cell_info_1,
-          entity_map_0, entity_map_1, get_perm);
+          cstride, c_offsets, constants, cell_info_0, cell_info_1, entity_map_0,
+          entity_map_1, get_perm);
     }
   }
 }
