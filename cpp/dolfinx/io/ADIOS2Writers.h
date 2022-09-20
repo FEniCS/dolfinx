@@ -154,6 +154,8 @@ private:
    /// @brief If true, the mesh is saved only at the first write and then reused,
    /// otherwise the mesh will be saved at each write
    bool _reuse_mesh;
+   /// @brief Auxiliary flag
+   bool first_write = true;
 };
 
 /// @brief Writer for meshes and functions using the ADIOS2 VTX format, see

@@ -784,8 +784,6 @@ void FidesWriter::write(double t)
   assert(_io);
   assert(_engine);
 
-  static bool first_write = true;
-
   _engine->BeginStep();
   adios2::Variable<double> var_step = define_variable<double>(*_io, "step");
   _engine->Put<double>(var_step, t);
