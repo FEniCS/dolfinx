@@ -789,7 +789,7 @@ void FidesWriter::write(double t)
   adios2::Variable<double> var_step = define_variable<double>(*_io, "step");
   _engine->Put<double>(var_step, t);
 
-  if (auto v = _io->InquireVariable<double>("connectivity");
+  if (auto v = _io->InquireVariable<std::int64_t>("connectivity");
       _mesh_reuse_policy == MeshReusePolicy::DoNotReuse or not v)
   {
     fides_write_mesh(*_io, *_engine, *_mesh);
