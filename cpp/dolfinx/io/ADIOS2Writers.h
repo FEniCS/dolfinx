@@ -133,8 +133,9 @@ public:
   /// @param[in] u List of functions. The functions must (1) share the
   /// same mesh (degree 1) and (2) be degree 1 Lagrange. @note All
   /// functions in `u` must share the same Mesh
-  /// @param[in] reuse_mesh True to save the mesh only at the first
-  ///  write, false to save the mesh at each write
+  /// @param[in] mesh_reuse_policy MeshReusePolicy::Reuse to save the
+  /// mesh only at the first write, MeshReusePolicy::DoNotReuse to
+  /// save the mesh at each write
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
               const ADIOS2Writer::U& u,
               const MeshReusePolicy mesh_reuse_policy = MeshReusePolicy::DoNotReuse);
