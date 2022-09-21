@@ -703,7 +703,7 @@ void ADIOS2Writer::close()
 FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
                          std::shared_ptr<const mesh::Mesh> mesh)
     : ADIOS2Writer(comm, filename, "Fides mesh writer", mesh),
-      _reuse_mesh(false)
+      _mesh_reuse_policy(MeshReusePolicy::DoNotReuse)
 {
   assert(_io);
   assert(mesh);
@@ -711,9 +711,10 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
 }
 //-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-                         const ADIOS2Writer::U& u, const bool reuse_mesh)
+                         const ADIOS2Writer::U& u,
+                         const MeshReusePolicy mesh_reuse_policy)
     : ADIOS2Writer(comm, filename, "Fides function writer", u),
-      _reuse_mesh(reuse_mesh)
+      _mesh_reuse_policy(mesh_reuse_policy)
 {
   if (u.empty())
     throw std::runtime_error("FidesWriter fem::Function list is empty");
@@ -788,14 +789,13 @@ void FidesWriter::write(double t)
   adios2::Variable<double> var_step = define_variable<double>(*_io, "step");
   _engine->Put<double>(var_step, t);
 
-  if (_reuse_mesh == false or first_write == true)
+  if (auto v = _io->InquireVariable("connectivity");
+      _mesh_reuse_policy == MeshReusePolicy::DoNotReuse or not v)
   {
     fides_write_mesh(*_io, *_engine, *_mesh);
   }
   for (auto& v : _u)
     std::visit([&](const auto& u) { fides_write_data(*_io, *_engine, *u); }, v);
-
-  first_write = false;
 
   _engine->EndStep();
 }

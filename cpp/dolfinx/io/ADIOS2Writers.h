@@ -111,6 +111,13 @@ protected:
 class FidesWriter : public ADIOS2Writer
 {
 public:
+  /// Mesh reuse policy
+  enum class MeshReusePolicy
+  {
+    DoNotReuse,
+    Reuse
+  };
+
   /// @brief  Create Fides writer for a mesh
   /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of output file
@@ -129,7 +136,8 @@ public:
   /// @param[in] reuse_mesh True to save the mesh only at the first
   ///  write, false to save the mesh at each write
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-              const ADIOS2Writer::U& u, const bool reuse_mesh = false);
+              const ADIOS2Writer::U& u,
+              const MeshReusePolicy mesh_reuse_policy = MeshReusePolicy::DoNotReuse);
 
   // Copy constructor
   FidesWriter(const FidesWriter&) = delete;
@@ -153,9 +161,7 @@ public:
 private:
    /// @brief If true, the mesh is saved only at the first write and then reused,
    /// otherwise the mesh will be saved at each write
-   bool _reuse_mesh;
-   /// @brief Auxiliary flag
-   bool first_write = true;
+   MeshReusePolicy _mesh_reuse_policy;
 };
 
 /// @brief Writer for meshes and functions using the ADIOS2 VTX format, see
