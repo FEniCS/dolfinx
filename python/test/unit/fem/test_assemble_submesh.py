@@ -856,13 +856,20 @@ def test_int_facet(n, d):
 
     u, v = ufl.TrialFunction(V_msh), ufl.TestFunction(V_submesh)
 
+    boundary_facets = locate_entities_boundary(
+        msh_0, tdim - 1, lambda x: np.isclose(x[1], 1.0))
+    dofs = fem.locate_dofs_topological(V_msh, tdim - 1, boundary_facets)
+    bc_func = fem.Function(V_msh)
+    bc_func.interpolate(lambda x: x[0])
+    bc = fem.dirichletbc(bc_func, dofs)
+
     # TODO Remove duplicate code
     dS = ufl.Measure("dS", domain=submesh)
     x = ufl.SpatialCoordinate(submesh)
     c = fem.Function(V_msh)
     c.interpolate(lambda x: 1 + x[0]**2)
     a = fem.form(ufl.inner((1 + x[0]) * c * u("+"), v("+")) * dS, entity_maps={msh_0: entity_map})
-    A = fem.petsc.assemble_matrix(a)
+    A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
     A_norm = A.norm()
 
@@ -872,13 +879,22 @@ def test_int_facet(n, d):
                   mode=PETSc.ScatterMode.REVERSE)
     b_norm = b.norm()
 
-    V = fem.FunctionSpace(msh_1, ("Lagrange", 1))
-    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    V_0 = fem.FunctionSpace(msh_1, ("Lagrange", 1))
+    V_1 = fem.FunctionSpace(msh_1, ("Lagrange", 1))
+    u, v = ufl.TrialFunction(V_0), ufl.TestFunction(V_1)
+
+    boundary_facets = locate_entities_boundary(
+        msh_1, tdim - 1, lambda x: np.isclose(x[1], 1.0))
+    dofs = fem.locate_dofs_topological(V_0, tdim - 1, boundary_facets)
+    bc_func = fem.Function(V_0)
+    bc_func.interpolate(lambda x: x[0])
+    bc = fem.dirichletbc(bc_func, dofs)
+
     x = ufl.SpatialCoordinate(msh_1)
-    c = fem.Function(V)
+    c = fem.Function(V_0)
     c.interpolate(lambda x: 1 + x[0]**2)
     a = fem.form(ufl.inner((1 + x[0]) * c * u("+"), v("+")) * ufl.dS)
-    A = fem.petsc.assemble_matrix(a)
+    A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
     assert np.isclose(A_norm, A.norm())
 
