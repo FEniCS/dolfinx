@@ -151,7 +151,7 @@ if(BASIX_PY_DIR)
   endif()
 endif()
 
-find_package(Basix 0.5.1...0.6.0 REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
+find_package(Basix 0.5.1 REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 set_package_properties(basix PROPERTIES TYPE REQUIRED
   DESCRIPTION "FEniCS tabulation library"
   URL "https://github.com/fenics/basix")
@@ -198,11 +198,11 @@ set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
 # method UFCx was found
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
-  find_package(ufcx 0.5.1...0.6.0 REQUIRED CONFIG)
+  find_package(ufcx 0.5.1 REQUIRED CONFIG)
 else()
   # Check in MODULE mode (using FindUFCX.cmake)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
-  find_package(UFCx 0.5.1...0.6.0 REQUIRED MODULE)
+  find_package(UFCx 0.5.1 REQUIRED MODULE)
 endif()
 
 set_package_properties(UFCx PROPERTIES TYPE REQUIRED
@@ -250,7 +250,7 @@ set_package_properties(SCOTCH PROPERTIES TYPE OPTIONAL
   PURPOSE "Parallel graph partitioning")
 
 if(DOLFINX_ENABLE_PARMETIS)
-  find_package(ParMETIS 4.0.0...4.1.0)
+  find_package(ParMETIS 4.0.3)
 endif()
 
 set_package_properties(ParMETIS PROPERTIES TYPE RECOMMENDED
