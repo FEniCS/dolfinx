@@ -86,6 +86,9 @@ void interior_facets(
 /// `local_index` is the index of the facet relative to the `cell`
 /// @param[in] dofmaps The dofmap to use in building the sparsity
 /// pattern
+/// @param[in] facet_maps Maps from the facets as (cell, local_index)
+/// pairs in the integration domain to the cells in each function
+/// space in the form.
 /// @note The sparsity pattern is not finalised
 void interior_facets(
     la::SparsityPattern& pattern, const std::span<const std::int32_t>& facets,
