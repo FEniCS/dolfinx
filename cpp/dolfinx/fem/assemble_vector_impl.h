@@ -399,7 +399,11 @@ void _lift_bc_interior_facets(
     std::array<std::int32_t, 2> cells_1
         = {facet_map_1(facets.subspan(index, 2)),
            facet_map_1(facets.subspan(index + 2, 2))};
-    // TODO Add asserts
+
+    for (auto c : cells_0)
+      assert(c >= 0);
+    for (auto c : cells_1)
+      assert(c >= 0);
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
@@ -748,6 +752,9 @@ void assemble_interior_facets(
     std::array<std::int32_t, 2> cells_0
         = {facet_map(facets.subspan(index, 2)),
            facet_map(facets.subspan(index + 2, 2))};
+
+    for (auto c : cells_0)
+      assert(c >= 0);
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);

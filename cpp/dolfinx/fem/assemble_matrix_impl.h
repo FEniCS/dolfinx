@@ -327,23 +327,10 @@ void assemble_interior_facets(
         = {facet_map_1(facets.subspan(index, 2)),
            facet_map_1(facets.subspan(index + 2, 2))};
 
-    // std::cout << "cells_0 = ";
-    // for (auto c : cells_0)
-    // {
-    //   std::cout << c << " ";
-    // }
-    // std::cout << "\n";
-
-    // std::cout << "cells_1 = ";
-    // for (auto c : cells_1)
-    // {
-    //   std::cout << c << " ";
-    // }
-    // std::cout << "\n";
-    // TODO Asserts
-    // assert(c_0 >= 0);
-    // std::int32_t c_1 = facet_map_1(facets.subspan(index, 2));
-    // assert(c_1 >= 0);
+    for (auto c : cells_0)
+      assert(c >= 0);
+    for (auto c : cells_1)
+      assert(c >= 0);
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
