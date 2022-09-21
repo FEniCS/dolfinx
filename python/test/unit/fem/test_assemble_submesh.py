@@ -875,6 +875,7 @@ def test_int_facet(n, d):
 
     L = fem.form(ufl.inner((1 + x[0]) * c, v("+")) * dS, entity_maps={msh_0: entity_map})
     b = fem.petsc.assemble_vector(L)
+    fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
     b_norm = b.norm()
@@ -900,6 +901,7 @@ def test_int_facet(n, d):
 
     L = fem.form(ufl.inner((1 + x[0]) * c, v("+")) * ufl.dS)
     b = fem.petsc.assemble_vector(L)
+    fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
     assert np.isclose(b_norm, b.norm())
