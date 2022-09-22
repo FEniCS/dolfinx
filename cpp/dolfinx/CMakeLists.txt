@@ -67,13 +67,9 @@ endif()
 target_link_libraries(dolfinx PUBLIC Basix::basix)
 
 # xtensor
-target_link_libraries(dolfinx PUBLIC xtl)
 target_link_libraries(dolfinx PUBLIC xtensor)
-if("XTENSOR_USE_XSIMD" IN_LIST BASIX_DEFN)
-  target_link_libraries(dolfinx PUBLIC xsimd)
-endif()
-if(XTENSOR_OPTIMIZE)
-  target_link_libraries(dolfinx PUBLIC xtensor::optimize)
+if(XTENSOR_USE_XSIMD)
+  target_compile_definitions(dolfinx PUBLIC XTENSOR_USE_XSIMD)
 endif()
 
 # Boost
@@ -81,7 +77,7 @@ target_link_libraries(dolfinx PUBLIC Boost::headers)
 target_link_libraries(dolfinx PUBLIC Boost::timer)
 
 # MPI
-target_link_libraries(dolfinx PUBLIC MPI::MPI_C)
+target_link_libraries(dolfinx PUBLIC MPI::MPI_CXX)
 
 # PETSc
 target_link_libraries(dolfinx PUBLIC PkgConfig::PETSC)

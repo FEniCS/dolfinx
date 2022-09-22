@@ -5,13 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "generation.h"
+#include <array>
 #include <cfloat>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <xtensor/xfixed.hpp>
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
+#include <vector>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -19,13 +18,13 @@ using namespace dolfinx::mesh;
 namespace
 {
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2>
-create_geom(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
-            std::array<std::size_t, 3> n)
+std::vector<double> create_geom(MPI_Comm comm,
+                                const std::array<std::array<double, 3>, 2>& p,
+                                std::array<std::size_t, 3> n)
 {
   // Extract data
-  const std::array<double, 3>& p0 = p[0];
-  const std::array<double, 3>& p1 = p[1];
+  const std::array<double, 3> p0 = p[0];
+  const std::array<double, 3> p1 = p[1];
   std::int64_t nx = n[0];
   std::int64_t ny = n[1];
   std::int64_t nz = n[2];
@@ -66,8 +65,7 @@ create_geom(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
         "BoxMesh has non-positive number of vertices in some dimension");
   }
 
-  xt::xtensor<double, 2> geom(
-      {static_cast<std::size_t>(range_p[1] - range_p[0]), 3});
+  std::vector<double> geom((range_p[1] - range_p[0]) * 3);
   const std::int64_t sqxy = (nx + 1) * (ny + 1);
   std::array<double, 3> point;
   for (std::int64_t v = range_p[0]; v < range_p[1]; ++v)
@@ -81,7 +79,7 @@ create_geom(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
     const double x = a + ab * static_cast<double>(ix);
     point = {x, y, z};
     for (std::size_t i = 0; i < 3; i++)
-      geom(v - range_p[0], i) = point[i];
+      geom[3 * (v - range_p[0]) + i] = point[i];
   }
 
   return geom;
@@ -94,7 +92,7 @@ mesh::Mesh build_tet(MPI_Comm comm,
 {
   common::Timer timer("Build BoxMesh");
 
-  xt::xtensor<double, 2> geom = create_geom(comm, p, n);
+  std::vector<double> geom = create_geom(comm, p, n);
 
   const std::int64_t nx = n[0];
   const std::int64_t ny = n[1];
@@ -103,7 +101,7 @@ mesh::Mesh build_tet(MPI_Comm comm,
   std::array range_c = dolfinx::MPI::local_range(
       dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
   const std::size_t cell_range = range_c[1] - range_c[0];
-  xt::xtensor<std::int64_t, 2> cells({6 * cell_range, 4});
+  std::vector<std::int64_t> cells(6 * cell_range * 4);
 
   // Create tetrahedra
   for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
@@ -123,24 +121,17 @@ mesh::Mesh build_tet(MPI_Comm comm,
     const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
 
     // Note that v0 < v1 < v2 < v3 < vmid
-    xt::xtensor_fixed<std::int64_t, xt::xshape<6, 4>> c
-        = {{v0, v1, v3, v7}, {v0, v1, v7, v5}, {v0, v5, v7, v4},
-           {v0, v3, v2, v7}, {v0, v6, v4, v7}, {v0, v2, v6, v7}};
+    std::array<std::int64_t, 24> c
+        = {v0, v1, v3, v7, v0, v1, v7, v5, v0, v5, v7, v4,
+           v0, v3, v2, v7, v0, v6, v4, v7, v0, v2, v6, v7};
     std::size_t offset = 6 * (i - range_c[0]);
-
-    // Note: we would like to assign to a view, but this does not work
-    // correctly with the Intel icpx compiler
-    // xt::view(cells, xt::range(offset, offset + 6), xt::all()) = c;
-    auto _cell = xt::view(cells, xt::range(offset, offset + 6), xt::all());
-    _cell.assign(c);
+    std::copy(c.begin(), c.end(), std::next(cells.begin(), 4 * offset));
   }
 
   fem::CoordinateElement element(CellType::tetrahedron, 1);
-  auto [data, offset] = graph::create_adjacency_data(cells);
-  return create_mesh(
-      comm,
-      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-      element, geom, ghost_mode, partitioner);
+  return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 4),
+                     element, geom, {geom.size() / 3, 3}, ghost_mode,
+                     partitioner);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_hex(MPI_Comm comm,
@@ -148,7 +139,7 @@ mesh::Mesh build_hex(MPI_Comm comm,
                      std::array<std::size_t, 3> n, GhostMode ghost_mode,
                      const CellPartitionFunction& partitioner)
 {
-  xt::xtensor<double, 2> geom = create_geom(comm, p, n);
+  std::vector<double> geom = create_geom(comm, p, n);
 
   const std::int64_t nx = n[0];
   const std::int64_t ny = n[1];
@@ -157,7 +148,7 @@ mesh::Mesh build_hex(MPI_Comm comm,
   std::array range_c = dolfinx::MPI::local_range(
       dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
   const std::size_t cell_range = range_c[1] - range_c[0];
-  xt::xtensor<std::int64_t, 2> cells({cell_range, 8});
+  std::vector<std::int64_t> cells(cell_range * 8);
 
   // Create cuboids
   for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
@@ -176,21 +167,15 @@ mesh::Mesh build_hex(MPI_Comm comm,
     const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
     const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
 
-    xt::xtensor_fixed<std::int64_t, xt::xshape<8>> cell
-        = {v0, v1, v2, v3, v4, v5, v6, v7};
-    // Note: we would like to assign to a view, but this does not work
-    // correctly with the Intel icpx compiler
-    // _cell = xt::row(cells, i - range_c[0]) = c;
-    auto _cell = xt::row(cells, i - range_c[0]);
-    _cell.assign(cell);
+    std::array<std::int64_t, 8> c = {v0, v1, v2, v3, v4, v5, v6, v7};
+    std::copy(c.begin(), c.end(),
+              std::next(cells.begin(), (i - range_c[0]) * 8));
   }
 
   fem::CoordinateElement element(CellType::hexahedron, 1);
-  auto [data, offset] = graph::create_adjacency_data(cells);
-  return create_mesh(
-      comm,
-      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-      element, geom, ghost_mode, partitioner);
+  return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 8),
+                     element, geom, {geom.size() / 3, 3}, ghost_mode,
+                     partitioner);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_prism(MPI_Comm comm,
@@ -198,7 +183,7 @@ mesh::Mesh build_prism(MPI_Comm comm,
                        std::array<std::size_t, 3> n, GhostMode ghost_mode,
                        const CellPartitionFunction& partitioner)
 {
-  xt::xtensor<double, 2> geom = create_geom(comm, p, n);
+  std::vector<double> geom = create_geom(comm, p, n);
 
   const std::int64_t nx = n[0];
   const std::int64_t ny = n[1];
@@ -207,7 +192,7 @@ mesh::Mesh build_prism(MPI_Comm comm,
   std::array range_c = dolfinx::MPI::local_range(
       dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
   const std::size_t cell_range = range_c[1] - range_c[0];
-  xt::xtensor<std::int64_t, 2> cells({cell_range * 2, 6});
+  std::vector<std::int64_t> cells(2 * cell_range * 6);
 
   // Create cuboids
   for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
@@ -226,21 +211,19 @@ mesh::Mesh build_prism(MPI_Comm comm,
     const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
     const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
 
-    xt::xtensor_fixed<std::int64_t, xt::xshape<6>> cell0
-        = {v0, v1, v2, v4, v5, v6};
-    xt::xtensor_fixed<std::int64_t, xt::xshape<6>> cell1
-        = {v1, v2, v3, v5, v6, v7};
+    std::array<std::int64_t, 6> c0 = {v0, v1, v2, v4, v5, v6};
+    std::array<std::int64_t, 6> c1 = {v1, v2, v3, v5, v6, v7};
 
-    xt::view(cells, (i - range_c[0]) * 2, xt::all()) = cell0;
-    xt::view(cells, (i - range_c[0]) * 2 + 1, xt::all()) = cell1;
+    std::copy(c0.begin(), c0.end(),
+              std::next(cells.begin(), 6 * ((i - range_c[0]) * 2)));
+    std::copy(c1.begin(), c1.end(),
+              std::next(cells.begin(), 6 * ((i - range_c[0]) * 2 + 1)));
   }
 
   fem::CoordinateElement element(CellType::prism, 1);
-  auto [data, offset] = graph::create_adjacency_data(cells);
-  return create_mesh(
-      comm,
-      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-      element, geom, ghost_mode, partitioner);
+  return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 6),
+                     element, geom, {geom.size() / 3, 3}, ghost_mode,
+                     partitioner);
 }
 //-----------------------------------------------------------------------------
 
@@ -276,13 +259,9 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
   // Receive mesh according to parallel policy
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    xt::xtensor<double, 2> geom({0, 1});
-    xt::xtensor<std::int64_t, 2> cells({0, 2});
-    auto [data, offset] = graph::create_adjacency_data(cells);
     return create_mesh(
-        comm,
-        graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-        element, geom, ghost_mode, partitioner);
+        comm, graph::regular_adjacency_list(std::vector<std::int64_t>(), 2),
+        element, std::vector<double>(), {0, 1}, ghost_mode, partitioner);
   }
 
   const double a = x[0];
@@ -305,21 +284,18 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
     throw std::runtime_error("Number of points on interval must be at least 1");
 
   // Create vertices
-  xt::xtensor<double, 2> geom({(nx + 1), 1});
+  std::vector<double> geom(nx + 1);
   for (std::size_t ix = 0; ix <= nx; ix++)
-    geom(ix, 0) = a + ab * static_cast<double>(ix);
+    geom[ix] = a + ab * static_cast<double>(ix);
 
   // Create intervals
-  xt::xtensor<std::int64_t, 2> cells({nx, 2});
+  std::vector<std::int64_t> cells(nx * 2);
   for (std::size_t ix = 0; ix < nx; ++ix)
     for (std::size_t j = 0; j < 2; ++j)
-      cells(ix, j) = ix + j;
+      cells[2 * ix + j] = ix + j;
 
-  auto [data, offset] = graph::create_adjacency_data(cells);
-  return create_mesh(
-      comm,
-      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-      element, geom, ghost_mode, partitioner);
+  return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 2),
+                     element, geom, {geom.size(), 1}, ghost_mode, partitioner);
 }
 } // namespace
 
@@ -345,13 +321,9 @@ mesh::Mesh build_tri(MPI_Comm comm,
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    xt::xtensor<double, 2> geom({0, 2});
-    xt::xtensor<std::int64_t, 2> cells({0, 3});
-    auto [data, offset] = graph::create_adjacency_data(cells);
     return create_mesh(
-        comm,
-        graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-        element, geom, ghost_mode, partitioner);
+        comm, graph::regular_adjacency_list(std::vector<std::int64_t>(), 3),
+        element, std::vector<double>(), {0, 2}, ghost_mode, partitioner);
   }
 
   const std::array<double, 2> p0 = p[0];
@@ -399,8 +371,8 @@ mesh::Mesh build_tri(MPI_Comm comm,
     nc = 2 * nx * ny;
   }
 
-  xt::xtensor<double, 2> geom({nv, 2});
-  xt::xtensor<std::int64_t, 2> cells({nc, 3});
+  std::vector<double> geom(nv * 2);
+  std::vector<std::int64_t> cells(nc * 3);
 
   // Create main vertices
   std::size_t vertex = 0;
@@ -409,8 +381,8 @@ mesh::Mesh build_tri(MPI_Comm comm,
     const double x1 = c + cd * static_cast<double>(iy);
     for (std::size_t ix = 0; ix <= nx; ix++)
     {
-      geom(vertex, 0) = a + ab * static_cast<double>(ix);
-      geom(vertex, 1) = x1;
+      geom[2 * vertex + 0] = a + ab * static_cast<double>(ix);
+      geom[2 * vertex + 1] = x1;
       ++vertex;
     }
   }
@@ -424,8 +396,8 @@ mesh::Mesh build_tri(MPI_Comm comm,
       const double x1 = c + cd * (static_cast<double>(iy) + 0.5);
       for (std::size_t ix = 0; ix < nx; ix++)
       {
-        geom(vertex, 0) = a + ab * (static_cast<double>(ix) + 0.5);
-        geom(vertex, 1) = x1;
+        geom[2 * vertex + 0] = a + ab * (static_cast<double>(ix) + 0.5);
+        geom[2 * vertex + 1] = x1;
         ++vertex;
       }
     }
@@ -450,17 +422,10 @@ mesh::Mesh build_tri(MPI_Comm comm,
         const std::size_t vmid = (nx + 1) * (ny + 1) + iy * nx + ix;
 
         // Note that v0 < v1 < v2 < v3 < vmid
-        xt::xtensor_fixed<std::size_t, xt::xshape<4, 3>> c
-            = {{v0, v1, vmid}, {v0, v2, vmid}, {v1, v3, vmid}, {v2, v3, vmid}};
+        std::array<std::size_t, 12> c
+            = {v0, v1, vmid, v0, v2, vmid, v1, v3, vmid, v2, v3, vmid};
         std::size_t offset = iy * nx + ix;
-
-        // Note: we would like to assign to a view, but this does not
-        // work correctly with the Intel icpx compiler
-        // xt::view(cells, xt::range(4 * offset, 4 * offset + 4), xt::all()) =
-        // c;
-        auto _cell
-            = xt::view(cells, xt::range(4 * offset, 4 * offset + 4), xt::all());
-        _cell.assign(c);
+        std::copy(c.begin(), c.end(), std::next(cells.begin(), 4 * offset * 3));
       }
     }
     break;
@@ -500,16 +465,9 @@ mesh::Mesh build_tri(MPI_Comm comm,
         {
         case DiagonalType::left:
         {
-          xt::xtensor_fixed<std::size_t, xt::xshape<2, 3>> c
-              = {{v0, v1, v2}, {v1, v2, v3}};
-          // Note: we would like to assign to a view, but this does not
-          // work correctly with the Intel icpx compiler
-          // xt::view(cells, xt::range(2 * offset, 2 * offset + 2), xt::all()) =
-          // c;
-          auto _cell = xt::view(cells, xt::range(2 * offset, 2 * offset + 2),
-                                xt::all());
-          _cell.assign(c);
-
+          std::array<std::size_t, 6> c = {v0, v1, v2, v1, v2, v3};
+          std::copy(c.begin(), c.end(),
+                    std::next(cells.begin(), 2 * offset * 3));
           if (diagonal == DiagonalType::right_left
               or diagonal == DiagonalType::left_right)
           {
@@ -519,15 +477,9 @@ mesh::Mesh build_tri(MPI_Comm comm,
         }
         default:
         {
-          xt::xtensor_fixed<std::size_t, xt::xshape<2, 3>> c
-              = {{v0, v1, v3}, {v0, v2, v3}};
-          // Note: we would like to assign to a view, but this does not
-          // work correctly with the Intel icpx compiler
-          // xt::view(cells, xt::range(2 * offset, 2 * offset + 2), xt::all()) =
-          // c;
-          auto _cell = xt::view(cells, xt::range(2 * offset, 2 * offset + 2),
-                                xt::all());
-          _cell.assign(c);
+          std::array<std::size_t, 6> c = {v0, v1, v3, v0, v2, v3};
+          std::copy(c.begin(), c.end(),
+                    std::next(cells.begin(), 2 * offset * 3));
           if (diagonal == DiagonalType::right_left
               or diagonal == DiagonalType::left_right)
           {
@@ -540,11 +492,9 @@ mesh::Mesh build_tri(MPI_Comm comm,
   }
   }
 
-  auto [data, offset] = graph::create_adjacency_data(cells);
-  return create_mesh(
-      comm,
-      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-      element, geom, ghost_mode, partitioner);
+  return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 3),
+                     element, geom, {geom.size() / 2, 2}, ghost_mode,
+                     partitioner);
 }
 
 //-----------------------------------------------------------------------------
@@ -558,13 +508,9 @@ mesh::Mesh build_quad(MPI_Comm comm,
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    xt::xtensor<double, 2> geom({0, 2});
-    xt::xtensor<std::int64_t, 2> cells({0, 4});
-    auto [data, offset] = graph::create_adjacency_data(cells);
     return create_mesh(
-        comm,
-        graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-        element, geom, ghost_mode, partitioner);
+        comm, graph::regular_adjacency_list(std::vector<std::int64_t>(), 4),
+        element, std::vector<double>(), {0, 2}, ghost_mode, partitioner);
   }
 
   const std::size_t nx = n[0];
@@ -579,42 +525,36 @@ mesh::Mesh build_quad(MPI_Comm comm,
   const double cd = (d - c) / static_cast<double>(ny);
 
   // Create vertices
-  xt::xtensor<double, 2> geom({(nx + 1) * (ny + 1), 2});
+  std::vector<double> geom((nx + 1) * (ny + 1) * 2);
   std::size_t vertex = 0;
   for (std::size_t ix = 0; ix <= nx; ix++)
   {
     double x0 = a + ab * static_cast<double>(ix);
     for (std::size_t iy = 0; iy <= ny; iy++)
     {
-      geom(vertex, 0) = x0;
-      geom(vertex, 1) = c + cd * static_cast<double>(iy);
+      geom[2 * vertex + 0] = x0;
+      geom[2 * vertex + 1] = c + cd * static_cast<double>(iy);
       ++vertex;
     }
   }
 
   // Create rectangles
-  xt::xtensor<std::int64_t, 2> cells({nx * ny, 4});
+  std::vector<std::int64_t> cells(nx * ny * 4);
   for (std::size_t ix = 0; ix < nx; ix++)
   {
     for (std::size_t iy = 0; iy < ny; iy++)
     {
       const std::size_t i0 = ix * (ny + 1);
       std::size_t cell = ix * ny + iy;
-      xt::xtensor_fixed<std::size_t, xt::xshape<4>> c
+      std::array<std::size_t, 4> c
           = {i0 + iy, i0 + iy + 1, i0 + iy + ny + 1, i0 + iy + ny + 2};
-      // Note: we would like to assign to a view, but this does not
-      // work correctly with the Intel icpx compiler
-      // xt::row(cells, cell) = c;
-      auto _cell = xt::row(cells, cell);
-      _cell.assign(c);
+      std::copy(c.begin(), c.end(), std::next(cells.begin(), 4 * cell));
     }
   }
 
-  auto [data, offset] = graph::create_adjacency_data(cells);
-  return create_mesh(
-      comm,
-      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offset)),
-      element, geom, ghost_mode, partitioner);
+  return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 4),
+                     element, geom, {geom.size() / 2, 2}, ghost_mode,
+                     partitioner);
 }
 } // namespace
 

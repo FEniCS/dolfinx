@@ -29,11 +29,11 @@ namespace
 /// @param[in] x Input vector
 /// @param[in, out] x Output vector
 template <typename T>
-void spmv_impl(xtl::span<const T> values,
-               xtl::span<const std::int32_t> row_begin,
-               xtl::span<const std::int32_t> row_end,
-               xtl::span<const std::int32_t> indices, xtl::span<const T> x,
-               xtl::span<T> y)
+void spmv_impl(std::span<const T> values,
+               std::span<const std::int32_t> row_begin,
+               std::span<const std::int32_t> row_end,
+               std::span<const std::int32_t> indices, std::span<const T> x,
+               std::span<T> y)
 {
   assert(row_begin.size() == row_end.size());
   for (std::size_t i = 0; i < row_begin.size(); i++)
@@ -78,17 +78,17 @@ void spmv(la::MatrixCSR<T>& A, la::Vector<T>& x, la::Vector<T>& y)
   x.scatter_fwd_begin();
 
   const std::int32_t nrowslocal = A.num_owned_rows();
-  xtl::span<const std::int32_t> row_ptr(A.row_ptr().data(), nrowslocal + 1);
-  xtl::span<const std::int32_t> cols(A.cols().data(), row_ptr[nrowslocal]);
-  xtl::span<const std::int32_t> off_diag_offset(A.off_diag_offset().data(),
+  std::span<const std::int32_t> row_ptr(A.row_ptr().data(), nrowslocal + 1);
+  std::span<const std::int32_t> cols(A.cols().data(), row_ptr[nrowslocal]);
+  std::span<const std::int32_t> off_diag_offset(A.off_diag_offset().data(),
                                                 nrowslocal);
-  xtl::span<const T> values(A.values().data(), row_ptr[nrowslocal]);
+  std::span<const T> values(A.values().data(), row_ptr[nrowslocal]);
 
-  xtl::span<const T> _x = x.array();
-  xtl::span<T> _y = y.mutable_array();
+  std::span<const T> _x = x.array();
+  std::span<T> _y = y.mutable_array();
 
-  xtl::span<const std::int32_t> row_begin(row_ptr.data(), nrowslocal);
-  xtl::span<const std::int32_t> row_end(row_ptr.data() + 1, nrowslocal);
+  std::span<const std::int32_t> row_begin(row_ptr.data(), nrowslocal);
+  std::span<const std::int32_t> row_end(row_ptr.data() + 1, nrowslocal);
 
   // First stage:  spmv - diagonal
   // yi[0] += Ai[0] * xi[0]
@@ -100,7 +100,7 @@ void spmv(la::MatrixCSR<T>& A, la::Vector<T>& x, la::Vector<T>& y)
   // Second stage:  spmv - off-diagonal
   // yi[0] += Ai[1] * xi[1]
   spmv_impl<T>(values, off_diag_offset, row_end, cols, _x, _y);
-};
+}
 
 void test_matrix_apply()
 {
