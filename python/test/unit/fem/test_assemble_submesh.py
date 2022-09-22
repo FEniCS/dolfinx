@@ -905,3 +905,90 @@ def test_int_facet(n, d):
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
     assert np.isclose(b_norm, b.norm())
+
+
+def test_jørgen_problem():
+    """Test assembling a form where the trial function is defined
+    over the left half of the mesh and the test function is defined
+    over the right half of the mesh"""
+    # FIXME This is a hack. Implement properly
+    # Create a rectangle mesh
+    n = 2
+    msh = create_rectangle(
+        MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+        ghost_mode=GhostMode.shared_facet)
+    reorder_mesh(msh)
+
+    # Create submeshes of the left and right halves
+    tdim = msh.topology.dim
+    left_cells = locate_entities(msh, tdim, lambda x: x[0] <= 1.0)
+    left_submesh, left_entity_map = create_submesh(msh, tdim, left_cells)[:2]
+    right_cells = locate_entities(msh, tdim, lambda x: x[0] >= 1.0)
+    right_submesh, right_entity_map = create_submesh(msh, tdim, right_cells)[:2]
+
+    # Define function spaces on each half
+    V_left = fem.FunctionSpace(left_submesh, ("Lagrange", 1))
+    V_right = fem.FunctionSpace(right_submesh, ("Lagrange", 1))
+
+    # Test and trial functions
+    u = ufl.TestFunction(V_left)
+    v = ufl.TrialFunction(V_right)
+
+    # Get centre facets
+    fdim = tdim - 1
+    centre_facets = locate_entities(
+        msh, fdim, lambda x: np.isclose(x[0], 1.0))
+
+    # Create entity maps
+    facet_imap = msh.topology.index_map(fdim)
+    num_facets = facet_imap.size_local + facet_imap.num_ghosts
+    entity_maps = {left_submesh: [left_entity_map.index(entity)
+                                if entity in left_entity_map else -1
+                                for entity in range(num_facets)],
+                right_submesh: [right_entity_map.index(entity)
+                                if entity in right_entity_map else -1
+                                for entity in range(num_facets)]}
+
+    # Create measure for integration. Assign the first (cell, local facet)
+    # pair to the left cell, corresponding to the "+" restriction. Assign
+    # the second (cell, local facet) pair to the right cell, corresponding
+    # to the "-" restriction.
+    facet_integration_entities = {1: []}
+    msh.topology.create_connectivity(tdim, fdim)
+    msh.topology.create_connectivity(fdim, tdim)
+    c_to_f = msh.topology.connectivity(tdim, fdim)
+    f_to_c = msh.topology.connectivity(fdim, tdim)
+    for facet in centre_facets:
+        # Check if this facet is owned
+        if facet < facet_imap.size_local:
+            cells = f_to_c.links(facet)
+            assert len(cells) == 2
+            cell_plus = cells[0] if cells[0] in left_cells else cells[1]
+            cell_minus = cells[0] if cells[0] in right_cells else cells[1]
+            assert cell_plus in left_cells
+            assert cell_minus in right_cells
+
+            # FIXME Don't use tolist
+            local_facet_plus = c_to_f.links(cell_plus).tolist().index(facet)
+            local_facet_minus = c_to_f.links(cell_minus).tolist().index(facet)
+            facet_integration_entities[1].extend([cell_plus, local_facet_plus, cell_minus, local_facet_minus])
+
+            # HACK cell_minus does not exist in the left submesh, so it will be mapped to
+            # index -1. This is problematic for the assembler, which assumes it is possible
+            # to get the full macro dofmap for the trial and test functions, despite the
+            # restriction meaning we don't need the non-existant dofs. To fix this, we
+            # just map cell_minus to the cell corresponding to cell plus. This will just
+            # add zeros to the assembled system, since there are no u("-") terms.
+            # Could map this to any cell in the submesh, but I think using the cell on the
+            # other side of the facet means a facet space coefficient could be used
+            entity_maps[left_submesh][cell_minus] = entity_maps[left_submesh][cell_plus]
+            # Same hack for the right submesh
+            entity_maps[right_submesh][cell_plus] = entity_maps[right_submesh][cell_minus]
+    dS = ufl.Measure("dS", domain=msh, subdomain_data=facet_integration_entities)
+
+    # Define form and assemble
+    a = fem.form(ufl.inner(u("+"), v("-")) * dS(1), entity_maps=entity_maps)
+    A = fem.petsc.assemble_matrix(a)
+    A.assemble()
+
+    assert np.isclose(A.norm(), 0.4409585518440985)
