@@ -225,11 +225,10 @@ void _lift_bc_exterior_facets(
   const std::size_t num_dofs_g = geometry.cmap().dim();
 
   // Data structures used in bc application
-  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
+  std::vector<typename decltype(x)::value_type> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> Ae, be;
   assert(facets.size() % 2 == 0);
-  const scalar_value_type_t<T> _scale
-      = static_cast<scalar_value_type_t<T>>(scale);
+  auto _scale = static_cast<scalar_value_type_t<T>>(scale);
   for (std::size_t index = 0; index < facets.size(); index += 2)
   {
     std::int32_t cell = facets[index];
@@ -343,7 +342,7 @@ void _lift_bc_interior_facets(
       = mesh::cell_num_entities(mesh.topology().cell_type(), tdim - 1);
 
   // Data structures used in assembly
-  using X = scalar_value_type_t<T>;
+  using X = typename decltype(x)::value_type;
   std::vector<X> coordinate_dofs(2 * num_dofs_g * 3);
   std::span<X> cdofs0(coordinate_dofs.data(), num_dofs_g * 3);
   std::span<X> cdofs1(coordinate_dofs.data() + num_dofs_g * 3, num_dofs_g * 3);
@@ -353,8 +352,7 @@ void _lift_bc_interior_facets(
   std::vector<std::int32_t> dmapjoint0, dmapjoint1;
   assert(facets.size() % 4 == 0);
 
-  const scalar_value_type_t<T> _scale
-      = static_cast<scalar_value_type_t<T>>(scale);
+  auto _scale = static_cast<scalar_value_type_t<T>>(scale);
   for (std::size_t index = 0; index < facets.size(); index += 4)
   {
     std::array<std::int32_t, 2> cells = {facets[index], facets[index + 2]};
@@ -602,7 +600,7 @@ void assemble_exterior_facets(
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
   const int num_dofs = dofmap.links(0).size();
-  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
+  std::vector<typename decltype(x)::value_type> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> be(bs * num_dofs);
   const std::span<T> _be(be);
   assert(facets.size() % 2 == 0);
@@ -671,7 +669,7 @@ void assemble_interior_facets(
   const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
 
   // Create data structures used in assembly
-  using X = scalar_value_type_t<T>;
+  using X = typename decltype(x)::value_type;
   std::vector<X> coordinate_dofs(2 * num_dofs_g * 3);
   std::span<X> cdofs0(coordinate_dofs.data(), num_dofs_g * 3);
   std::span<X> cdofs1(coordinate_dofs.data() + num_dofs_g * 3, num_dofs_g * 3);
@@ -807,8 +805,19 @@ void lift_bc(std::span<T> b, const Form<T>& a,
       dof_transform_to_transpose
       = element1->get_dof_transformation_to_transpose_function<T>();
 
-  std::vector<scalar_value_type_t<T>> x(mesh->geometry().x().begin(),
-                                        mesh->geometry().x().end());
+  // Copy (cast) geometry data if required
+  auto get_xdata = [](auto x)
+  {
+    using U = scalar_value_type_t<T>;
+    if constexpr (!std::is_same_v<typename decltype(x)::value_type, U>)
+    {
+      std::vector<U> _x(x.begin(), x.end());
+      return std::pair(std::span<const U>(_x.data(), _x.size()), std::move(_x));
+    }
+    else
+      return std::pair(x, std::vector<U>());
+  };
+  auto [x, xtmp] = get_xdata(mesh->geometry().x());
 
   for (int i : a.integral_ids(IntegralType::cell))
   {
@@ -995,31 +1004,18 @@ void assemble_vector(
   }
 
   // Copy (cast) geometry data if required
-  // std::vector<scalar_value_type_t<T>> _x;
-  // std::span<const scalar_value_type_t<T>> x;
-  // if constexpr (!std::is_same_v<decltype(mesh->geometry().x())::value_type,
-  //                               scalar_value_type_t<T>>)
-  // {
-  //   _x.assign(mesh->geometry().x().begin(), mesh->geometry().x().end());
-  //   x = std::span<const scalar_value_type_t<T>>(_x.data(), _x.size());
-  // }
-  // else
-  //   x = mesh->geometry().x();
-
   auto get_xdata = [](auto x)
   {
-    using U = typename scalar_value_type<T>::value_type;
-    std::unique_ptr<U> _x;
+    using U = scalar_value_type_t<T>;
     if constexpr (!std::is_same_v<typename decltype(x)::value_type, U>)
     {
-      _x = std::make_unique<U>(x.size());
-      std::copy(x.begin(), x.end(), _x.get());
-      return std::pair(std::span<const U>(_x.get(), x.size()), std::move(_x));
+      std::vector<U> _x(x.begin(), x.end());
+      return std::pair(std::span<const U>(_x.data(), _x.size()), std::move(_x));
     }
     else
-      return std::pair(std::span<const U>(x.data(), x.size()), std::move(_x));
+      return std::pair(x, std::vector<U>());
   };
-  auto [x, xdata] = get_xdata(mesh->geometry().x());
+  auto [x, xtmp] = get_xdata(mesh->geometry().x());
 
   for (int i : L.integral_ids(IntegralType::cell))
   {

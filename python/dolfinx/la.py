@@ -72,6 +72,8 @@ def matrix_csr(sp, dtype=np.float64) -> MatrixCSRMetaClass:
         ftype = _cpp.la.MatrixCSR_float32
     elif dtype == np.float64:
         ftype = _cpp.la.MatrixCSR_float64
+    elif dtype == np.complex64:
+        ftype = _cpp.la.MatrixCSR_complex64
     elif dtype == np.complex128:
         ftype = _cpp.la.MatrixCSR_complex128
     else:
