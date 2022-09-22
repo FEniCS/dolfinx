@@ -943,11 +943,11 @@ def test_jørgen_problem():
     facet_imap = msh.topology.index_map(fdim)
     num_facets = facet_imap.size_local + facet_imap.num_ghosts
     entity_maps = {left_submesh: [left_entity_map.index(entity)
-                                if entity in left_entity_map else -1
-                                for entity in range(num_facets)],
-                right_submesh: [right_entity_map.index(entity)
-                                if entity in right_entity_map else -1
-                                for entity in range(num_facets)]}
+                                  if entity in left_entity_map else -1
+                                  for entity in range(num_facets)],
+                   right_submesh: [right_entity_map.index(entity)
+                                   if entity in right_entity_map else -1
+                                   for entity in range(num_facets)]}
 
     # Create measure for integration. Assign the first (cell, local facet)
     # pair to the left cell, corresponding to the "+" restriction. Assign
@@ -990,5 +990,12 @@ def test_jørgen_problem():
     a = fem.form(ufl.inner(u("+"), v("-")) * dS(1), entity_maps=entity_maps)
     A = fem.petsc.assemble_matrix(a)
     A.assemble()
-
     assert np.isclose(A.norm(), 0.4409585518440985)
+
+    f = fem.Function(V_left)
+    f.interpolate(lambda x: x[1]**2)
+    L = fem.form(ufl.inner(f("+"), v("-")) * dS(1), entity_maps=entity_maps)
+    b = fem.petsc.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD,
+                  mode=PETSc.ScatterMode.REVERSE)
+    assert np.isclose(b.norm(), 0.2517301244498869)
