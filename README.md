@@ -13,7 +13,6 @@ Solving Environment in C++ and Python.
 
 DOLFINx is a new version of DOLFIN and is being actively developed.
 
-
 ## Documentation
 
 Documentation can be viewed at:
@@ -28,6 +27,7 @@ Documentation can be viewed at:
 #### C++ core
 
 To build and install the C++ core, in the ``cpp/`` directory, run::
+
 ```shell
 mkdir build
 cd build
@@ -39,9 +39,11 @@ make install
 
 To install the Python interface, first install the C++ core, and then
 in the ``python/`` directory run::
+
 ```shell
 pip install .
 ```
+
 (you may need to use ``pip3``, depending on your system).
 
 For detailed instructions, see
@@ -60,11 +62,13 @@ Conda is the recommended install method for Mac OS users. Linux users may also u
 
 To install the latest stable release of the Python interface, with pyvista support for
 visualisation, using [conda](https://conda.io):
+
 ```shell
 conda create -n fenicsx-env
 conda activate fenicsx-env
 conda install -c conda-forge fenics-dolfinx mpich pyvista
 ```
+
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
 [Miniconda](https://docs.conda.io/en/latest/miniconda.html). The conda
 recipe is hosted on
@@ -85,6 +89,7 @@ Spack is recommended for building DOLFINx on HPC systems.
 To build the most recent release using
 [Spack](https://spack.readthedocs.io/) (assuming a bash-compatible
 shell):
+
 ```shell
 git clone https://github.com/spack/spack.git
 . ./spack/share/spack/setup-env.sh
@@ -93,6 +98,7 @@ spack env activate fenicsx-env
 spack add py-fenics-dolfinx cflags="-O3" fflags="-O3"
 spack install
 ```
+
 See the Spack [documentation](https://spack.readthedocs.io/) for
 comprehensive instructions.
 
@@ -103,7 +109,8 @@ PPA](https://launchpad.net/~fenics-packages/+archive/ubuntu/fenics) contains
 binary packages of the FEniCSx components for Ubuntu.
 
 To install:
-```
+
+```shell
 add-apt-repository ppa:fenics-packages/fenics
 apt update
 apt install fenicsx
@@ -122,34 +129,40 @@ of Debian. Install with `apt-get install fenicsx`.
 #### Docker images
 
 A Docker image with the latest stable release of DOLFINx:
+
 ```shell
 docker run -ti dolfinx/dolfinx:stable
 ```
 
 To switch between real and complex builds of DOLFINx/PETSc.
+
 ```shell
 source /usr/local/bin/dolfinx-complex-mode
 source /usr/local/bin/dolfinx-real-mode
 ```
 
 A Jupyter Lab environment with the latest stable release of DOLFINx:
+
 ```shell
 docker run --init -ti -p 8888:8888 dolfinx/lab:stable  # Access at http://localhost:8888
 ```
 
 A Docker image with DOLFINx built nightly:
+
 ```shell
 docker run -ti dolfinx/dolfinx:nightly
 ```
 
 A development image with all of the dependencies required
 to build the latest stable release of the FEniCSx components:
+
 ```shell
 docker run -ti dolfinx/dev-env:stable
 ```
 
 A development image with all of the dependencies required
 to build the `main` branch of the FEniCSx components:
+
 ```shell
 docker run -ti dolfinx/dev-env:nightly
 ```
@@ -179,7 +192,6 @@ Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public
 License along with DOLFINx. If not, see
 <http://www.gnu.org/licenses/>.
-
 
 ## Contact
 

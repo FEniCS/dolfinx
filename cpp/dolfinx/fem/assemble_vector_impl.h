@@ -348,11 +348,16 @@ void _lift_bc_interior_facets(
                              std::int32_t, int)>& dof_transform_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const std::span<const T>& constants, const std::span<const T>& coeffs,
-    int cstride, const std::span<const std::uint32_t>& cell_info,
+    int cstride, const std::span<const std::uint32_t>& cell_info_0,
+    const std::span<const std::uint32_t>& cell_info_1,
     const std::function<std::uint8_t(std::size_t)>& get_perm,
     const std::span<const T>& bc_values1,
     const std::span<const std::int8_t>& bc_markers1,
-    const std::span<const T>& x0, double scale)
+    const std::span<const T>& x0, double scale,
+    const std::function<std::int32_t(const std::span<const std::int32_t>&)>&
+        facet_map_0,
+    const std::function<std::int32_t(const std::span<const std::int32_t>&)>&
+        facet_map_1)
 {
   if (facets.empty())
     return;
@@ -386,6 +391,20 @@ void _lift_bc_interior_facets(
     std::array<std::int32_t, 2> local_facet
         = {facets[index + 1], facets[index + 3]};
 
+    // Map the cell in the integration domain to the cell in the mesh
+    // each function space is defined over
+    std::array<std::int32_t, 2> cells_0
+        = {facet_map_0(facets.subspan(index, 2)),
+           facet_map_0(facets.subspan(index + 2, 2))};
+    std::array<std::int32_t, 2> cells_1
+        = {facet_map_1(facets.subspan(index, 2)),
+           facet_map_1(facets.subspan(index + 2, 2))};
+
+    for (auto c : cells_0)
+      assert(c >= 0);
+    for (auto c : cells_1)
+      assert(c >= 0);
+
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
@@ -401,15 +420,15 @@ void _lift_bc_interior_facets(
     }
 
     // Get dof maps for cells and pack
-    const std::span<const std::int32_t> dmap0_cell0 = dofmap0.links(cells[0]);
-    const std::span<const std::int32_t> dmap0_cell1 = dofmap0.links(cells[1]);
+    const std::span<const std::int32_t> dmap0_cell0 = dofmap0.links(cells_0[0]);
+    const std::span<const std::int32_t> dmap0_cell1 = dofmap0.links(cells_0[1]);
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
     std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
     std::copy(dmap0_cell1.begin(), dmap0_cell1.end(),
               std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
-    const std::span<const std::int32_t> dmap1_cell0 = dofmap1.links(cells[0]);
-    const std::span<const std::int32_t> dmap1_cell1 = dofmap1.links(cells[1]);
+    const std::span<const std::int32_t> dmap1_cell0 = dofmap1.links(cells_1[0]);
+    const std::span<const std::int32_t> dmap1_cell1 = dofmap1.links(cells_1[1]);
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
     std::copy(dmap1_cell0.begin(), dmap1_cell0.end(), dmapjoint1.begin());
     std::copy(dmap1_cell1.begin(), dmap1_cell1.end(),
@@ -465,10 +484,10 @@ void _lift_bc_interior_facets(
         = _Ae.subspan(bs1 * dmap1_cell0.size(),
                       num_rows * num_cols - bs1 * dmap1_cell0.size());
 
-    dof_transform(_Ae, cell_info, cells[0], num_cols);
-    dof_transform(sub_Ae0, cell_info, cells[1], num_cols);
-    dof_transform_to_transpose(_Ae, cell_info, cells[0], num_rows);
-    dof_transform_to_transpose(sub_Ae1, cell_info, cells[1], num_rows);
+    dof_transform(_Ae, cell_info_1, cells_1[0], num_cols);
+    dof_transform(sub_Ae0, cell_info_1, cells_1[1], num_cols);
+    dof_transform_to_transpose(_Ae, cell_info_0, cells_0[0], num_rows);
+    dof_transform_to_transpose(sub_Ae1, cell_info_0, cells_0[1], num_rows);
 
     be.resize(num_rows);
     std::fill(be.begin(), be.end(), 0);
@@ -698,6 +717,8 @@ void assemble_interior_facets(
                              const std::uint8_t*)>& fn,
     const std::span<const T>& constants, const std::span<const T>& coeffs,
     int cstride, const std::span<const std::uint32_t>& cell_info,
+    const std::function<std::int32_t(const std::span<const std::int32_t>&)>&
+        facet_map,
     const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
   const int tdim = mesh.topology().dim();
@@ -726,6 +747,15 @@ void assemble_interior_facets(
     std::array<std::int32_t, 2> local_facet
         = {facets[index + 1], facets[index + 3]};
 
+    // Map the cell in the integration domain to the cell in the mesh
+    // each function space is defined over
+    std::array<std::int32_t, 2> cells_0
+        = {facet_map(facets.subspan(index, 2)),
+           facet_map(facets.subspan(index + 2, 2))};
+
+    for (auto c : cells_0)
+      assert(c >= 0);
+
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
@@ -741,8 +771,8 @@ void assemble_interior_facets(
     }
 
     // Get dofmaps for cells
-    std::span<const std::int32_t> dmap0 = dofmap.cell_dofs(cells[0]);
-    std::span<const std::int32_t> dmap1 = dofmap.cell_dofs(cells[1]);
+    std::span<const std::int32_t> dmap0 = dofmap.cell_dofs(cells_0[0]);
+    std::span<const std::int32_t> dmap1 = dofmap.cell_dofs(cells_0[1]);
 
     // Tabulate element vector
     be.resize(bs * (dmap0.size() + dmap1.size()));
@@ -757,8 +787,8 @@ void assemble_interior_facets(
     const std::span<T> sub_be
         = _be.subspan(bs * dmap0.size(), bs * dmap1.size());
 
-    dof_transform(be, cell_info, cells[0], 1);
-    dof_transform(sub_be, cell_info, cells[1], 1);
+    dof_transform(be, cell_info, cells_0[0], 1);
+    dof_transform(sub_be, cell_info, cells_0[1], 1);
 
     // Add element vector to global vector
     if constexpr (_bs > 0)
@@ -919,7 +949,8 @@ void lift_bc(std::span<T> b, const Form<T>& a,
       _lift_bc_interior_facets(b, *mesh, kernel, facets, dof_transform, dofmap0,
                                bs0, dof_transform_to_transpose, dofmap1, bs1,
                                constants, coeffs, cstride, cell_info_0,
-                               get_perm, bc_values1, bc_markers1, x0, scale);
+                               cell_info_1, get_perm, bc_values1, bc_markers1,
+                               x0, scale, entity_map_0, entity_map_1);
     }
   }
 }
@@ -1116,21 +1147,21 @@ void assemble_vector(
       const std::vector<std::int32_t>& facets = L.interior_facet_domains(i);
       if (bs == 1)
       {
-        impl::assemble_interior_facets<T, 1>(dof_transform, b, *mesh, facets,
-                                             *dofmap, fn, constants, coeffs,
-                                             cstride, cell_info, get_perm);
+        impl::assemble_interior_facets<T, 1>(
+            dof_transform, b, *mesh, facets, *dofmap, fn, constants, coeffs,
+            cstride, cell_info, entity_map, get_perm);
       }
       else if (bs == 3)
       {
-        impl::assemble_interior_facets<T, 3>(dof_transform, b, *mesh, facets,
-                                             *dofmap, fn, constants, coeffs,
-                                             cstride, cell_info, get_perm);
+        impl::assemble_interior_facets<T, 3>(
+            dof_transform, b, *mesh, facets, *dofmap, fn, constants, coeffs,
+            cstride, cell_info, entity_map, get_perm);
       }
       else
       {
         impl::assemble_interior_facets(dof_transform, b, *mesh, facets, *dofmap,
                                        fn, constants, coeffs, cstride,
-                                       cell_info, get_perm);
+                                       cell_info, entity_map, get_perm);
       }
     }
   }

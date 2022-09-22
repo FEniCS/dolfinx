@@ -103,15 +103,20 @@ void sparsitybuild::interior_facets(
 //-----------------------------------------------------------------------------
 void sparsitybuild::interior_facets(
     la::SparsityPattern& pattern, const std::span<const std::int32_t>& facets,
-    const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps)
+    const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps,
+    const std::array<
+        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
+        facet_maps)
 {
   std::array<std::vector<std::int32_t>, 2> macro_dofs;
   for (std::size_t index = 0; index < facets.size(); index += 4)
   {
-    const int cell_0 = facets[index];
-    const int cell_1 = facets[index + 2];
     for (std::size_t i = 0; i < 2; ++i)
     {
+      // TODO Use span to simplify (see assemblers)
+      const std::int32_t cell_0 = facet_maps[i]({facets[index], facets[index + 1]});
+      const std::int32_t cell_1 = facet_maps[i]({facets[index + 2], facets[index + 3]});
+
       auto cell_dofs_0 = dofmaps[i].get().cell_dofs(cell_0);
       auto cell_dofs_1 = dofmaps[i].get().cell_dofs(cell_1);
       macro_dofs[i].resize(cell_dofs_0.size() + cell_dofs_1.size());
@@ -174,6 +179,7 @@ void sparsitybuild::exterior_facets(
 {
   for (std::size_t index = 0; index < facets.size(); index += 2)
   {
+    // TODO Simplify using span (see assemblers)
     std::int32_t cell = facets[index];
     std::int32_t local_f = facets[index + 1];
     pattern.insert(dofmaps[0].get().cell_dofs(facet_maps[0]({cell, local_f})),
