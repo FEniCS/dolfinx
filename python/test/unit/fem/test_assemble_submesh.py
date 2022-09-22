@@ -931,8 +931,8 @@ def test_jørgen_problem():
     V_right = fem.FunctionSpace(right_submesh, ("Lagrange", 1))
 
     # Test and trial functions
-    u = ufl.TestFunction(V_left)
-    v = ufl.TrialFunction(V_right)
+    u = ufl.TrialFunction(V_left)
+    v = ufl.TestFunction(V_right)
 
     # Get centre facets
     fdim = tdim - 1
