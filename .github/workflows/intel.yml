@@ -41,13 +41,12 @@ jobs:
       - name: Install Basix
         run: |
           . /opt/intel/oneapi/setvars.sh
-          python3 -m pip install git+https://github.com/FEniCS/basix.git@mscroggs/sobolev_spaces
+          python3 -m pip install git+https://github.com/FEniCS/basix.git
       - name: Clone FFCx
         uses: actions/checkout@v3
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: mscroggs/sobolev_spaces
 
       - name: Install FFCx C interface
         run: |
