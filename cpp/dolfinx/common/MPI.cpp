@@ -79,12 +79,23 @@ int dolfinx::MPI::rank(const MPI_Comm comm)
   return rank;
 }
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 int dolfinx::MPI::size(const MPI_Comm comm)
 {
   int size;
   MPI_Comm_size(comm, &size);
   return size;
+}
+//-----------------------------------------------------------------------------
+void dolfinx::MPI::assert_and_throw(int error_code)
+{
+  if (error_code != MPI_SUCCESS)
+  {
+    int len = MPI_MAX_ERROR_STRING;
+    std::string error_string(len, ' ');
+    MPI_Error_string(error_code, error_string.data(), &len);
+    error_string.resize(len);
+    throw std::runtime_error(error_string);
+  }
 }
 //-----------------------------------------------------------------------------
 std::vector<int>

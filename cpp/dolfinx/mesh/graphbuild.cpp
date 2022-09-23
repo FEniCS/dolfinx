@@ -91,7 +91,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // TODO: Two possible straightforward optimisations:
   // 1. Do not send owned data to self via MPI.
-  // 2. Modify MPI::index_owner to use a subet of ranks as post offices.
+  // 2. Modify MPI::index_owner to use a subset of ranks as post offices.
   // 3. Find the max buffer row size for the neighbourhood rather than
   //    globally.
   //

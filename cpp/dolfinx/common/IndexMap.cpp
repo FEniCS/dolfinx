@@ -86,16 +86,18 @@ common::compute_owned_indices(const std::span<const std::int32_t>& indices,
 
   // Create ghost -> owner comm
   MPI_Comm comm;
-  MPI_Dist_graph_create_adjacent(map.comm(), dest.size(), dest.data(),
-                                 MPI_UNWEIGHTED, src.size(), src.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  int ierr = MPI_Dist_graph_create_adjacent(
+      map.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
+      src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  dolfinx::MPI::assert_and_throw(ierr);
 
   // Exchange number of indices to send/receive from each rank
   std::vector<int> recv_sizes(dest.size(), 0);
   send_sizes.reserve(1);
   recv_sizes.reserve(1);
-  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
-                        MPI_INT, comm);
+  ierr = MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(),
+                               1, MPI_INT, comm);
+  dolfinx::MPI::assert_and_throw(ierr);
 
   // Prepare receive displacement array
   std::vector<int> recv_disp(dest.size() + 1, 0);
@@ -104,11 +106,14 @@ common::compute_owned_indices(const std::span<const std::int32_t>& indices,
 
   // Send ghost indices to owner, and receive owned indices
   std::vector<std::int64_t> recv_buffer(recv_disp.back());
-  MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
-                         send_disp.data(), MPI_INT64_T, recv_buffer.data(),
-                         recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
-                         comm);
-  MPI_Comm_free(&comm);
+  ierr = MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
+                                send_disp.data(), MPI_INT64_T,
+                                recv_buffer.data(), recv_sizes.data(),
+                                recv_disp.data(), MPI_INT64_T, comm);
+  dolfinx::MPI::assert_and_throw(ierr);
+
+  ierr = MPI_Comm_free(&comm);
+  dolfinx::MPI::assert_and_throw(ierr);
 
   // Remove duplicates from received indices
   std::sort(recv_buffer.begin(), recv_buffer.end());
