@@ -186,7 +186,7 @@ def create_submesh(mesh, dim, entities):
                                 geometric_dimension=submesh.geometry.dim)
     submesh_domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
         "Lagrange", submesh_ufl_cell.cellname(), mesh.geometry.cmap.degree, basix.LagrangeVariant.equispaced,
-        dim=submesh.geometry.dim, gdim=submesh.geometry.dim)))
+        dim=submesh.geometry.dim, gdim=submesh.geometry.dim))
     return (Mesh.from_cpp(submesh, submesh_domain), entity_map, vertex_map, geom_map)
 
 
@@ -326,7 +326,7 @@ def create_interval(comm: _MPI.Comm, nx: int, points: numpy.typing.ArrayLike, gh
     if partitioner is None:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
-        "Lagrange", "interval", 1, basix.LagrangeVariant.equispaced))>>>>>>> main
+        "Lagrange", "interval", 1, basix.LagrangeVariant.equispaced))
     mesh = _cpp.mesh.create_interval(comm, nx, points, ghost_mode, partitioner)
     return Mesh.from_cpp(mesh, domain)
 
