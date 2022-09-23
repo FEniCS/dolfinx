@@ -676,7 +676,8 @@ def test_custom_vector_element():
     M[2].append(np.zeros((0, 2, 0, 1)))
 
     element = basix.create_custom_element(
-        basix.CellType.triangle, [2], wcoeffs, x, M, 0, basix.MapType.identity, False, 1, 1)
+        basix.CellType.triangle, [2], wcoeffs, x, M, 0, basix.MapType.identity,
+        basix.SobolevSpace.H1, False, 1, 1)
 
     V = FunctionSpace(mesh, basix.ufl_wrapper.BasixElement(element))
     W = VectorFunctionSpace(mesh, ("Lagrange", 1))
