@@ -18,10 +18,14 @@
 #include <map>
 #include <numeric>
 #include <utility>
-#include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
+
+namespace stdex = std::experimental;
+using cmdspan3x_t
+    = stdex::mdspan<const double,
+                    stdex::extents<std::size_t, 3, stdex::dynamic_extent>>;
 
 namespace
 {
@@ -139,7 +143,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
                            disp.data(), MPI_INT64_T, comm, &request);
 
   // FIXME: check that dofs is sorted
-  // Build vector of local dof indicies that have been marked by another
+  // Build vector of local dof indices that have been marked by another
   // process
   const std::array<std::int64_t, 2> range = map.local_range();
   const std::vector<std::int64_t>& ghosts = map.ghosts();
@@ -451,7 +455,11 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> fem::locate_dofs_geometrical(
     const FunctionSpace& V,
-    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+    const std::function<std::vector<std::int8_t>(
+        std::experimental::mdspan<
+            const double,
+            std::experimental::extents<std::size_t, 3,
+                                       std::experimental::dynamic_extent>>)>&
         marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
@@ -469,9 +477,8 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
   const std::vector<double> dof_coordinates = V.tabulate_dof_coordinates(true);
 
   // Compute marker for each dof coordinate
-  auto x = xt::adapt(dof_coordinates,
-                     std::vector<std::size_t>{3, dof_coordinates.size() / 3});
-  const xt::xtensor<bool, 1> marked_dofs = marker_fn(x);
+  cmdspan3x_t x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);
+  const std::vector<std::int8_t> marked_dofs = marker_fn(x);
 
   std::vector<std::int32_t> dofs;
   dofs.reserve(std::count(marked_dofs.begin(), marked_dofs.end(), true));
@@ -486,7 +493,11 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
-    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+    const std::function<std::vector<std::int8_t>(
+        std::experimental::mdspan<
+            const double,
+            std::experimental::extents<std::size_t, 3,
+                                       std::experimental::dynamic_extent>>)>&
         marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
@@ -514,9 +525,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
   const std::vector<double> dof_coordinates = V1.tabulate_dof_coordinates(true);
 
   // Evaluate marker for each dof coordinate
-  auto x = xt::adapt(dof_coordinates,
-                     std::vector<std::size_t>{3, dof_coordinates.size() / 3});
-  const xt::xtensor<bool, 1> marked_dofs = marker_fn(x);
+  cmdspan3x_t x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);
+  const std::vector<std::int8_t> marked_dofs = marker_fn(x);
 
   // Get dofmaps
   std::shared_ptr<const DofMap> dofmap0 = V0.dofmap();

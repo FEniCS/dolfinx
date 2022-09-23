@@ -7,14 +7,13 @@
 // Unit tests for Distributed la::MatrixCSR
 
 #include "poisson.h"
+#include <basix/mdspan.hpp>
 #include <catch2/catch.hpp>
 #include <dolfinx.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
-#include <xtensor/xio.hpp>
-#include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
 
@@ -55,7 +54,7 @@ void spmv_impl(std::span<const T> values,
 // decomposed into diagonal (Ai[0]) and off diagonal (Ai[1]) blocks:
 //  Ai = |Ai[0] Ai[1]|
 //
-// If A is square, the diagonal block Ai[0] is also square and countains
+// If A is square, the diagonal block Ai[0] is also square and contains
 // only owned columns and rows. The block Ai[1] contains ghost columns
 // (unowned dofs).
 
@@ -105,9 +104,10 @@ void spmv(la::MatrixCSR<T>& A, la::Vector<T>& x, la::Vector<T>& y)
 void test_matrix_apply()
 {
   MPI_Comm comm = MPI_COMM_WORLD;
+  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
   auto mesh = std::make_shared<mesh::Mesh>(
       mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
-                       mesh::CellType::tetrahedron, mesh::GhostMode::none));
+                       mesh::CellType::tetrahedron, part));
 
   auto V = std::make_shared<fem::FunctionSpace>(
       fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
@@ -160,22 +160,31 @@ void test_matrix()
   p.insert(std::vector{5}, std::vector{4});
   p.assemble();
 
-  la::MatrixCSR<float> A(p);
+  using T = float;
+  la::MatrixCSR<T> A(p);
   A.add(std::vector<decltype(A)::value_type>{1}, std::vector{0},
         std::vector{0});
   A.add(std::vector<decltype(A)::value_type>{2.3}, std::vector{4},
         std::vector{5});
 
   const std::vector Adense0 = A.to_dense();
-  auto Adense = xt::adapt(Adense0, {8, 8});
 
-  xt::xtensor<float, 2> Aref = xt::zeros<float>({8, 8});
+  namespace stdex = std::experimental;
+  stdex::mdspan<const T, stdex::extents<std::size_t, 8, 8>> Adense(
+      Adense0.data(), 8, 8);
+
+  std::vector<T> Aref_data(8 * 8, 0);
+  stdex::mdspan<T, stdex::extents<std::size_t, 8, 8>> Aref(Aref_data.data(), 8,
+                                                           8);
   Aref(0, 0) = 1;
   Aref(4, 5) = 2.3;
-  CHECK((Adense == Aref));
+
+  for (std::size_t i = 0; i < Adense.extent(0); ++i)
+    for (std::size_t j = 0; j < Adense.extent(1); ++j)
+      CHECK(Adense(i, j) == Aref(i, j));
 
   Aref(4, 4) = 2.3;
-  CHECK((Adense != Aref));
+  CHECK(Adense(4, 4) != Aref(4, 4));
 }
 
 } // namespace

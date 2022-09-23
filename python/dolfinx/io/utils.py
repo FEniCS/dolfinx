@@ -76,7 +76,7 @@ if _cpp.common.has_adios2:
             self.close()
 
     class FidesWriter(_cpp.io.FidesWriter):
-        """Interface to Fides file formt.
+        """Interface to Fides file format.
 
         Fides supports first order Lagrange finite elements for the
         geometry descriptionand first order Lagrange finite elements for
@@ -160,7 +160,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         # Build the mesh
         cmap = _cpp.fem.CoordinateElement(cell_shape, cell_degree)
         mesh = _cpp.mesh.create_mesh(self.comm(), _cpp.graph.AdjacencyList_int64(cells),
-                                     cmap, x, ghost_mode, _cpp.mesh.create_cell_partitioner())
+                                     cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
         mesh.name = name
 
         domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(

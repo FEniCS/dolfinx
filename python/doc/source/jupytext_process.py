@@ -4,9 +4,9 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import shutil
-import pathlib
 import os
+import pathlib
+import shutil
 
 import jupytext
 

@@ -36,7 +36,7 @@
 # You can build an optimised version of the complete FEniCS environment for
 # your platform using the commands:
 #
-#    echo '{ "cffi_extra_compile_args" : ["-O2", "-march=native" ] }' > dolfinx/docker/dolfinx_jit_parameters.json
+#    echo '{ "cffi_extra_compile_args" : ["-O2", "-march=native" ] }' > dolfinx/docker/dolfinx_jit_options.json
 #    docker build --target dolfinx --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" --build-arg DOLFINX_CMAKE_CXX_FLAGS="-march=native" .
 #
 # You can build an optimised version of the FEniCS development environment
@@ -56,8 +56,6 @@ ARG PYBIND11_VERSION=2.10.0
 ARG PETSC_VERSION=3.17.4
 ARG SLEPC_VERSION=3.17.2
 ARG PYVISTA_VERSION=0.36.1
-ARG XTENSOR_VERSION=0.24.2
-ARG XTL_VERSION=0.7.4
 
 ARG MPICH_VERSION=4.0.2
 ARG OPENMPI_SERIES=4.1
@@ -81,8 +79,6 @@ ARG SLEPC_VERSION
 ARG ADIOS2_VERSION
 ARG KAHIP_VERSION
 ARG NUMPY_VERSION
-ARG XTENSOR_VERSION
-ARG XTL_VERSION
 ARG MPICH_VERSION
 ARG OPENMPI_SERIES
 ARG OPENMPI_PATCH
@@ -183,18 +179,6 @@ RUN if [ "$MPI" = "mpich" ]; then \
 RUN pip3 install --no-binary="numpy" --no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scipy && \
     pip3 install --no-cache-dir cppimport flake8 isort jupytext matplotlib mypy myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
 
-# Install xtl, xtensor
-RUN git clone -b ${XTL_VERSION} --single-branch --depth 1 https://github.com/xtensor-stack/xtl.git && \
-    cd xtl && \
-    cmake -G Ninja . && \
-    ninja install && \
-    cd ../ && \
-    git clone -b ${XTENSOR_VERSION} --single-branch --depth 1 https://github.com/xtensor-stack/xtensor.git && \
-    cd xtensor && \
-    cmake -G Ninja . && \
-    ninja install && \
-    rm -rf /tmp/*
-
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
     tar -xf v${KAHIP_VERSION}.tar.gz && \
@@ -212,7 +196,7 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
 #     rm -rf /tmp/*
 
 # Note: HDF5 CMake install has numerous bugs and inconsistencies. Test carefully.
-# HDF5 overides CMAKE_INSTALL_PREFIX by default, hence it is set
+# HDF5 overrides CMAKE_INSTALL_PREFIX by default, hence it is set
 # below to ensure that HDF5 is installed into a path where it can be
 # found.
 RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
@@ -393,8 +377,8 @@ ONBUILD ADD dolfinx/ /src/dolfinx/
 
 # These files are empty by default, i.e. they do nothing.
 # The user can set them at build time if they wish.
-ONBUILD ADD dolfinx/docker/dolfinx_jit_parameters.json /root/.config/dolfinx/dolfinx_jit_parameters.json
-ONBUILD ADD dolfinx/docker/ffcx_parameters.json /root/.config/ffcx/ffcx_parameters.json
+ONBUILD ADD dolfinx/docker/dolfinx_jit_options.json /root/.config/dolfinx/dolfinx_jit_options.json
+ONBUILD ADD dolfinx/docker/ffcx_options.json /root/.config/ffcx/ffcx_options.json
 
 # The following ARGS are used in the DOLFINx layer.
 # They are safe defaults.

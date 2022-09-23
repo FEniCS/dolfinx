@@ -76,9 +76,7 @@ jobs:
         continue-on-error: true
         run: |
           cd python/
-          python3 -m isort --check dolfinx
-          python3 -m isort --check demo
-          python3 -m isort --check test
+          python3 -m isort --check .
       - name: mypy checks
         run: |
           python3 -m pip install types-setuptools
@@ -142,10 +140,10 @@ jobs:
           cd python/doc
           make html
 
-      - name: Set default DOLFINx JIT parameters
+      - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
-          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
+          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
       - name: Run demos (Python, serial)
         run: python3 -m pytest -n=2 -m serial --durations=10 python/demo/test.py

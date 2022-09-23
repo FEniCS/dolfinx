@@ -282,11 +282,11 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
   }
 
   // List of (local index, sorted global vertices) pairs received from
-  // othe ranks. The list is eventually sorted.
+  // other ranks. The list is eventually sorted.
   std::vector<std::pair<std::int32_t, std::int64_t>>
       shared_entity_to_global_vertices_data;
 
-  // List of (local enity index, global MPI ranks)
+  // List of (local entity index, global MPI ranks)
   std::vector<std::pair<std::int32_t, int>> shared_entities_data;
 
   // Compare received and sent entity keys. Any received entities
@@ -475,7 +475,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
 /// @param[in] shared_vertices TODO
 /// @param[in] cell_type Cell type
 /// @param[in] dim Topological dimension of the entities to be computed
-/// @return Returns the (cell-entity connectivity, entity-cell
+/// @return Returns the (cell-entity connectivity, entity-vertex
 /// connectivity, index map for the entity distribution across
 /// processes, shared entities)
 std::tuple<graph::AdjacencyList<std::int32_t>,

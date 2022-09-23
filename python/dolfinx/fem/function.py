@@ -71,7 +71,7 @@ class Constant(ufl.Constant):
 
 class Expression:
     def __init__(self, ufl_expression: ufl.core.expr.Expr, X: np.ndarray,
-                 form_compiler_params: dict = {}, jit_params: dict = {},
+                 form_compiler_options: dict = {}, jit_options: dict = {},
                  dtype=PETSc.ScalarType):
         """Create DOLFINx Expression.
 
@@ -88,10 +88,10 @@ class Expression:
             ufl_expression: Pure UFL expression
             X: Array of points of shape `(num_points, tdim)` on the
                 reference element.
-            form_compiler_params: Parameters used in FFCx compilation of
+            form_compiler_options: Options used in FFCx compilation of
                 this Expression. Run ``ffcx --help`` in the commandline
                 to see all available options.
-            jit_params: Parameters controlling JIT compilation of C code.
+            jit_options: Options controlling JIT compilation of C code.
 
         Notes:
             This wrapper is responsible for the FFCx compilation of the
@@ -108,17 +108,17 @@ class Expression:
 
         # Compile UFL expression with JIT
         if dtype == np.float32:
-            form_compiler_params["scalar_type"] = "float"
+            form_compiler_options["scalar_type"] = "float"
         if dtype == np.float64:
-            form_compiler_params["scalar_type"] = "double"
+            form_compiler_options["scalar_type"] = "double"
         elif dtype == np.complex128:
-            form_compiler_params["scalar_type"] = "double _Complex"
+            form_compiler_options["scalar_type"] = "double _Complex"
         else:
             raise RuntimeError(f"Unsupported scalar type {dtype} for Expression.")
 
         self._ufcx_expression, module, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, _X),
-                                                                 form_compiler_params=form_compiler_params,
-                                                                 jit_params=jit_params)
+                                                                 form_compiler_options=form_compiler_options,
+                                                                 jit_options=jit_options)
         self._ufl_expression = ufl_expression
 
         # Prepare coefficients data. For every coefficient in form take
@@ -433,7 +433,7 @@ class FunctionSpace(ufl.FunctionSpace):
     def __init__(self, mesh: typing.Union[None, Mesh],
                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int]],
                  cppV: typing.Optional[_cpp.fem.FunctionSpace] = None,
-                 form_compiler_params: dict[str, typing.Any] = {}, jit_params: dict[str, typing.Any] = {}):
+                 form_compiler_options: dict[str, typing.Any] = {}, jit_options: dict[str, typing.Any] = {}):
         """Create a finite element function space."""
 
         # Create function space from a UFL element and existing cpp
@@ -458,8 +458,8 @@ class FunctionSpace(ufl.FunctionSpace):
 
             # Compile dofmap and element and create DOLFIN objects
             (self._ufcx_element, self._ufcx_dofmap), module, code = jit.ffcx_jit(
-                mesh.comm, self.ufl_element(), form_compiler_params=form_compiler_params,
-                jit_params=jit_params)
+                mesh.comm, self.ufl_element(), form_compiler_options=form_compiler_options,
+                jit_options=jit_options)
 
             ffi = module.ffi
             cpp_element = _cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
