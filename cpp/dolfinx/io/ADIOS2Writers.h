@@ -112,10 +112,11 @@ class FidesWriter : public ADIOS2Writer
 {
 public:
   /// Mesh reuse policy
-  enum class MeshReusePolicy
+  enum class MeshPolicy
   {
-    DoNotReuse,
-    Reuse
+    update, ///< Re-write the mesh to file upon every write of a fem::Function
+    reuse   ///< Write the mesh to file only the first time a fem::Function is
+            ///< written to file
   };
 
   /// @brief  Create Fides writer for a mesh
@@ -133,12 +134,12 @@ public:
   /// @param[in] u List of functions. The functions must (1) share the
   /// same mesh (degree 1) and (2) be degree 1 Lagrange. @note All
   /// functions in `u` must share the same Mesh
-  /// @param[in] mesh_reuse_policy MeshReusePolicy::Reuse to save the
-  /// mesh only at the first write, MeshReusePolicy::DoNotReuse to
-  /// save the mesh at each write
+  /// @param[in] mesh_policy Controls if the mesh is written to file at
+  /// the first time step only or is re-written (updated) at each time
+  /// step.
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
               const ADIOS2Writer::U& u,
-              const MeshReusePolicy mesh_reuse_policy = MeshReusePolicy::DoNotReuse);
+              const MeshPolicy mesh_policy = MeshPolicy::update);
 
   // Copy constructor
   FidesWriter(const FidesWriter&) = delete;
@@ -160,9 +161,8 @@ public:
   void write(double t);
 
 private:
-   /// @brief If true, the mesh is saved only at the first write and then reused,
-   /// otherwise the mesh will be saved at each write
-   MeshReusePolicy _mesh_reuse_policy;
+  // Control whether the mesh is written to file once or at every time step
+  MeshPolicy _mesh_reuse_policy;
 };
 
 /// @brief Writer for meshes and functions using the ADIOS2 VTX format, see
