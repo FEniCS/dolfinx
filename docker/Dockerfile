@@ -56,8 +56,6 @@ ARG PYBIND11_VERSION=2.10.0
 ARG PETSC_VERSION=3.17.4
 ARG SLEPC_VERSION=3.17.2
 ARG PYVISTA_VERSION=0.36.1
-ARG XTENSOR_VERSION=0.24.2
-ARG XTL_VERSION=0.7.4
 
 ARG MPICH_VERSION=4.0.2
 ARG OPENMPI_SERIES=4.1
@@ -81,8 +79,6 @@ ARG SLEPC_VERSION
 ARG ADIOS2_VERSION
 ARG KAHIP_VERSION
 ARG NUMPY_VERSION
-ARG XTENSOR_VERSION
-ARG XTL_VERSION
 ARG MPICH_VERSION
 ARG OPENMPI_SERIES
 ARG OPENMPI_PATCH
@@ -182,18 +178,6 @@ RUN if [ "$MPI" = "mpich" ]; then \
 #   documentation or run tests.
 RUN pip3 install --no-binary="numpy" --no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scipy && \
     pip3 install --no-cache-dir cppimport flake8 isort jupytext matplotlib mypy myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
-
-# Install xtl, xtensor
-RUN git clone -b ${XTL_VERSION} --single-branch --depth 1 https://github.com/xtensor-stack/xtl.git && \
-    cd xtl && \
-    cmake -G Ninja . && \
-    ninja install && \
-    cd ../ && \
-    git clone -b ${XTENSOR_VERSION} --single-branch --depth 1 https://github.com/xtensor-stack/xtensor.git && \
-    cd xtensor && \
-    cmake -G Ninja . && \
-    ninja install && \
-    rm -rf /tmp/*
 
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \

@@ -12,9 +12,9 @@ import pytest
 import ufl
 from dolfinx.common import has_adios2
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
-                          create_unit_square, GhostMode)
 from dolfinx.graph import create_adjacencylist
+from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
+                          create_unit_square)
 
 from mpi4py import MPI
 
@@ -248,7 +248,7 @@ def test_empty_rank_mesh(tempdir):
     domain = ufl.Mesh(
         ufl.VectorElement("Lagrange", ufl.Cell(cell_type.name), 1))
 
-    def partitioner(comm, nparts, local_graph, num_ghost_nodes, ghosting):
+    def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the current rank"""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
         return create_adjacencylist(dest)
@@ -261,7 +261,7 @@ def test_empty_rank_mesh(tempdir):
         cells = create_adjacencylist(np.empty((0, 3), dtype=np.int64))
         x = np.empty((0, 2), dtype=np.float64)
 
-    mesh = create_mesh(comm, cells, x, domain, GhostMode.none, partitioner)
+    mesh = create_mesh(comm, cells, x, domain, partitioner)
 
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(V)

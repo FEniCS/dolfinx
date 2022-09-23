@@ -167,12 +167,12 @@ void Scatterer::scatter_rev_end(MPI_Request& request) const
 std::int32_t Scatterer::local_buffer_size() const noexcept
 {
   return _local_inds.size();
-};
+}
 //-----------------------------------------------------------------------------
 std::int32_t Scatterer::remote_buffer_size() const noexcept
 {
   return _remote_inds.size();
-};
+}
 //-----------------------------------------------------------------------------
 const std::vector<std::int32_t>& Scatterer::local_indices() const noexcept
 {

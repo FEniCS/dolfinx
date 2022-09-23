@@ -21,10 +21,10 @@ jobs:
       # runner but included here for completeness
       - name: Install Homebrew dependencies
         run: |
-          brew install boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python@3.10 xtensor # FEniCS
+          brew install boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python@3.10 # FEniCS
           brew install bison flex # PETSc
           brew list --versions
-      
+
       # This 'activates' Python 3.10 from Homebrew
       - name: Setup Python
         uses: actions/setup-python@v4
