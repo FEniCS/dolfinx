@@ -60,7 +60,7 @@ Vec create_vector(const common::IndexMap& map, int bs);
 /// `bs * (range[1] - range[0])`.
 /// @returns A PETSc Vec
 Vec create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
-                  const std::span<const std::int64_t>& ghosts, int bs);
+                  std::span<const std::int64_t> ghosts, int bs);
 
 /// Create a PETSc Vec that wraps the data in an array
 /// @param[in] map The index map that describes the parallel layout of
@@ -72,7 +72,7 @@ Vec create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
 /// @note The caller should call VecDestroy to free the return PETSc
 /// vector
 Vec create_vector_wrap(const common::IndexMap& map, int bs,
-                       const std::span<const PetscScalar>& x);
+                       std::span<const PetscScalar> x);
 
 /// Create a PETSc Vec that wraps the data in an array
 /// @param[in] x The vector to be wrapped
@@ -121,7 +121,7 @@ Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
 /// @param [in] comm The MPI communicator
 /// @param[in] basis The nullspace basis vectors
 /// @return A PETSc nullspace object
-MatNullSpace create_nullspace(MPI_Comm comm, const std::span<const Vec>& basis);
+MatNullSpace create_nullspace(MPI_Comm comm, std::span<const Vec> basis);
 
 /// These class provides static functions that permit users to set and
 /// retrieve PETSc options via the PETSc option/parameter system. The

@@ -103,8 +103,8 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// for this triangle.
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
 distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
-                       const std::span<const std::int64_t>& entities,
-                       const std::span<const std::int32_t>& data);
+                       std::span<const std::int64_t> entities,
+                       std::span<const std::int32_t> data);
 
 /// TODO: Document
 template <typename T>

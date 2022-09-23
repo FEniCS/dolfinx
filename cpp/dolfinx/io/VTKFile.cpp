@@ -128,7 +128,7 @@ void add_pvtu_mesh(pugi::xml_node& node)
 /// @param[in,out] data_node The XML node to add data to
 template <typename T>
 void add_data_float(const std::string& name, int rank,
-                    const std::span<const T>& values, pugi::xml_node& node)
+                    std::span<const T> values, pugi::xml_node& node)
 {
   static_assert(std::is_floating_point_v<T>, "Scalar must be a float");
 
@@ -159,8 +159,8 @@ void add_data_float(const std::string& name, int rank,
 /// @param[in] values The data array to add
 /// @param[in,out] data_node The XML node to add data to
 template <typename T>
-void add_data(const std::string& name, int rank,
-              const std::span<const T>& values, pugi::xml_node& node)
+void add_data(const std::string& name, int rank, std::span<const T> values,
+              pugi::xml_node& node)
 {
   if constexpr (std::is_scalar_v<T>)
     add_data_float(name, rank, values, node);
@@ -192,11 +192,10 @@ void add_data(const std::string& name, int rank,
 /// @param[in] celltype The cell type
 /// @param[in] tdim Topological dimension of the cells
 /// @param[in,out] piece_node The XML node to add data to
-void add_mesh(const std::span<const double>& x,
-              std::array<std::size_t, 2> /*xshape*/,
-              const std::span<const std::int64_t> x_id,
-              const std::span<const std::uint8_t> x_ghost,
-              const std::span<const std::int64_t>& cells,
+void add_mesh(std::span<const double> x, std::array<std::size_t, 2> /*xshape*/,
+              std::span<const std::int64_t> x_id,
+              std::span<const std::uint8_t> x_ghost,
+              std::span<const std::int64_t> cells,
               std::array<std::size_t, 2> cshape,
               const common::IndexMap& cellmap, mesh::CellType celltype,
               int tdim, pugi::xml_node& piece_node)
@@ -503,7 +502,7 @@ void write_function(
       // Function to pack data to 3D with 'zero' padding, typically when
       // a Function is 2D
       auto pad_data
-          = [num_comp](const fem::FunctionSpace& V, const std::span<const T>& u)
+          = [num_comp](const fem::FunctionSpace& V, std::span<const T> u)
       {
         auto dofmap = V.dofmap();
         int bs = dofmap->bs();

@@ -166,7 +166,7 @@ void SparsityPattern::insert(const std::span<const std::int32_t>& rows,
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert_diagonal(const std::span<const std::int32_t>& rows)
+void SparsityPattern::insert_diagonal(std::span<const std::int32_t> rows)
 {
   if (_graph)
   {

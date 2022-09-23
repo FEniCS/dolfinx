@@ -21,7 +21,7 @@ namespace dolfinx::geometry
 /// @param[in] q Body 2 list of points, shape (num_points, 3). Row-major
 /// storage.
 /// @return shortest vector between bodies
-std::array<double, 3> compute_distance_gjk(const std::span<const double>& p,
-                                           const std::span<const double>& q);
+std::array<double, 3> compute_distance_gjk(std::span<const double> p,
+                                           std::span<const double> q);
 
 } // namespace dolfinx::geometry

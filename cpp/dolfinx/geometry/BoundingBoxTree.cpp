@@ -213,7 +213,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
-                                 const std::span<const std::int32_t>& entities,
+                                 std::span<const std::int32_t> entities,
                                  double padding)
     : _tdim(tdim)
 {

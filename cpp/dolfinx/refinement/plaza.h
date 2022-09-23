@@ -68,7 +68,7 @@ refine(const mesh::Mesh& mesh, bool redistribute, RefinementOptions options);
 /// returned.
 /// @return New Mesh and optional parent cell index, parent facet indices
 std::tuple<mesh::Mesh, std::vector<std::int32_t>, std::vector<std::int8_t>>
-refine(const mesh::Mesh& mesh, const std::span<const std::int32_t>& edges,
+refine(const mesh::Mesh& mesh, std::span<const std::int32_t> edges,
        bool redistribute, RefinementOptions options);
 
 /// Refine mesh returning new mesh data.
@@ -99,7 +99,7 @@ std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<double>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>,
            std::vector<std::int8_t>>
 compute_refinement_data(const mesh::Mesh& mesh,
-                        const std::span<const std::int32_t>& edges,
+                        std::span<const std::int32_t> edges,
                         RefinementOptions options);
 
 } // namespace plaza

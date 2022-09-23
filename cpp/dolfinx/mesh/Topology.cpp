@@ -40,8 +40,7 @@ namespace
 /// @return Map from global index to sharing ranks for each index in
 /// indices. The owner rank is the first as the first in the of ranks.
 graph::AdjacencyList<int>
-determine_sharing_ranks(MPI_Comm comm,
-                        const std::span<const std::int64_t>& indices)
+determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
 {
   common::Timer timer("Topology: determine shared index ownership");
 
@@ -298,7 +297,7 @@ determine_sharing_ranks(MPI_Comm comm,
 std::array<std::vector<std::int64_t>, 2>
 vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
                         int num_local_cells,
-                        const std::vector<std::int64_t>& boundary_vertices)
+                        std::span<const std::int64_t> boundary_vertices)
 {
   common::Timer timer("Topology: determine vertex ownership groups (owned, "
                       "undetermined, unowned)");
@@ -371,11 +370,11 @@ vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
 /// 2. New global index
 /// 3. MPI rank of the owner
 std::vector<std::int64_t>
-exchange_indexing(MPI_Comm comm, const std::span<const std::int64_t>& indices,
+exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
                   const graph::AdjacencyList<int>& index_to_ranks,
                   std::int64_t offset,
-                  const std::span<const std::int64_t>& global_indices,
-                  const std::span<const std::int32_t>& local_indices)
+                  std::span<const std::int64_t> global_indices,
+                  std::span<const std::int32_t> local_indices)
 {
   const int mpi_rank = dolfinx::MPI::rank(comm);
 
@@ -503,14 +502,14 @@ exchange_indexing(MPI_Comm comm, const std::span<const std::int64_t>& indices,
 /// 1. Old entity index
 /// 2. New global index
 /// 3. Rank of the process that owns the entity
-std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
-    const common::IndexMap& map0,
-    const graph::AdjacencyList<std::int64_t>& entities0, int nlocal1,
-    std::int64_t offset1,
-    const std::span<const std::pair<std::int64_t, std::int32_t>>&
-        global_local_entities1,
-    const std::span<const std::int64_t>& ghost_entities1,
-    const std::span<const int>& ghost_owners1)
+std::vector<std::array<std::int64_t, 3>>
+exchange_ghost_indexing(const common::IndexMap& map0,
+                        const graph::AdjacencyList<std::int64_t>& entities0,
+                        int nlocal1, std::int64_t offset1,
+                        std::span<const std::pair<std::int64_t, std::int32_t>>
+                            global_local_entities1,
+                        std::span<const std::int64_t> ghost_entities1,
+                        std::span<const int> ghost_owners1)
 {
   // Receive index of ghost vertices that are not on the process
   // ('true') boundary from the owner of ghost cells.
@@ -694,8 +693,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
 /// @param[in] global_to_local Sorted array of (global, local) indices.
 graph::AdjacencyList<std::int32_t> convert_to_local_indexing(
     const graph::AdjacencyList<std::int64_t>& g, std::size_t num_local_nodes,
-    const std::span<const std::pair<std::int64_t, std::int32_t>>&
-        global_to_local)
+    std::span<const std::pair<std::int64_t, std::int32_t>> global_to_local)
 {
   std::vector<std::int32_t> offsets(
       g.offsets().begin(), std::next(g.offsets().begin(), num_local_nodes + 1));
@@ -882,9 +880,9 @@ MPI_Comm Topology::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------
 Topology mesh::create_topology(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-    const std::span<const std::int64_t>& original_cell_index,
-    const std::span<const int>& ghost_owners, const CellType& cell_type,
-    const std::vector<std::int64_t>& boundary_vertices)
+    std::span<const std::int64_t> original_cell_index,
+    std::span<const int> ghost_owners, const CellType& cell_type,
+    std::span<const std::int64_t> boundary_vertices)
 {
   common::Timer timer("Topology: create");
 

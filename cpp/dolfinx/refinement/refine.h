@@ -36,8 +36,7 @@ mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute = true);
 /// @param[in] redistribute Optional argument to redistribute the
 /// refined mesh if mesh is a distributed mesh.
 /// @return A locally refined mesh
-mesh::Mesh refine(const mesh::Mesh& mesh,
-                  const std::span<const std::int32_t>& edges,
+mesh::Mesh refine(const mesh::Mesh& mesh, std::span<const std::int32_t> edges,
                   bool redistribute = true);
 
 } // namespace dolfinx::refinement

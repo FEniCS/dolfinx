@@ -696,14 +696,14 @@ void interpolate(Function<T>& u, std::span<const T> f,
   }
 }
 
-/// Interpolate from one finite element Function to another on the same
-/// mesh
+/// @brief Interpolate from one finite element Function to another on
+/// the same mesh.
 /// @param[out] u The function to interpolate into
 /// @param[in] v The function to be interpolated
 /// @param[in] cells List of cell indices to interpolate on
 template <typename T>
 void interpolate(Function<T>& u, const Function<T>& v,
-                 const std::span<const std::int32_t>& cells)
+                 std::span<const std::int32_t> cells)
 {
   assert(u.function_space());
   assert(v.function_space());

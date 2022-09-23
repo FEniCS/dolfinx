@@ -250,7 +250,7 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
 //-----------------------------------------------------------------------------
 geometry::BoundingBoxTree
 geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
-                               const std::span<const std::int32_t>& entities)
+                               std::span<const std::int32_t> entities)
 {
   LOG(INFO) << "Building point search tree to accelerate distance queries for "
                "a given topological dimension and subset of entities.";
@@ -287,7 +287,7 @@ geometry::compute_collisions(const BoundingBoxTree& tree0,
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
 geometry::compute_collisions(const BoundingBoxTree& tree,
-                             const std::span<const double>& points)
+                             std::span<const double> points)
 {
   if (tree.num_bboxes() > 0)
   {
@@ -313,7 +313,7 @@ geometry::compute_collisions(const BoundingBoxTree& tree,
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> geometry::compute_closest_entity(
     const BoundingBoxTree& tree, const BoundingBoxTree& midpoint_tree,
-    const mesh::Mesh& mesh, const std::span<const double>& points)
+    const mesh::Mesh& mesh, std::span<const double> points)
 {
   if (tree.num_bboxes() == 0)
     return std::vector<std::int32_t>(points.size() / 3, -1);
@@ -386,8 +386,8 @@ double geometry::compute_squared_distance_bbox(std::span<const double, 6> b,
 //-----------------------------------------------------------------------------
 std::vector<double>
 geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
-                          const std::span<const std::int32_t>& entities,
-                          const std::span<const double>& points)
+                          std::span<const std::int32_t> entities,
+                          std::span<const double> points)
 {
   const int tdim = mesh.topology().dim();
   const mesh::Geometry& geometry = mesh.geometry();
@@ -458,8 +458,8 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
 //-----------------------------------------------------------------------------
 std::vector<double>
 geometry::squared_distance(const mesh::Mesh& mesh, int dim,
-                           const std::span<const std::int32_t>& entities,
-                           const std::span<const double>& points)
+                           std::span<const std::int32_t> entities,
+                           std::span<const double> points)
 {
   std::vector<double> v = shortest_vector(mesh, dim, entities, points);
   std::vector<double> d(v.size() / 3, 0);
@@ -472,7 +472,7 @@ geometry::squared_distance(const mesh::Mesh& mesh, int dim,
 graph::AdjacencyList<std::int32_t> geometry::compute_colliding_cells(
     const mesh::Mesh& mesh,
     const graph::AdjacencyList<std::int32_t>& candidate_cells,
-    const std::span<const double>& points)
+    std::span<const double> points)
 {
   std::vector<std::int32_t> offsets = {0};
   offsets.reserve(candidate_cells.num_nodes() + 1);

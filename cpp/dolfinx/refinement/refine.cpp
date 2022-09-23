@@ -36,7 +36,7 @@ mesh::Mesh refinement::refine(const mesh::Mesh& mesh, bool redistribute)
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh refinement::refine(const mesh::Mesh& mesh,
-                              const std::span<const std::int32_t>& edges,
+                              std::span<const std::int32_t> edges,
                               bool redistribute)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle

@@ -142,7 +142,7 @@ mesh::Geometry
 create_geometry(MPI_Comm comm, const Topology& topology,
                 const fem::CoordinateElement& element,
                 const graph::AdjacencyList<std::int64_t>& cells,
-                const std::span<const double>& x, int dim,
+                std::span<const double> x, int dim,
                 const std::function<std::vector<int>(
                     const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
                 = nullptr);

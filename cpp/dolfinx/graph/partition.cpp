@@ -224,10 +224,11 @@ graph::build::distribute(MPI_Comm comm,
           global_indices0, ghost_index_owner};
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t> graph::build::compute_ghost_indices(
-    MPI_Comm comm, const std::span<const std::int64_t>& owned_indices,
-    const std::span<const std::int64_t>& ghost_indices,
-    const std::span<const int>& ghost_owners)
+std::vector<std::int64_t>
+graph::build::compute_ghost_indices(MPI_Comm comm,
+                                    std::span<const std::int64_t> owned_indices,
+                                    std::span<const std::int64_t> ghost_indices,
+                                    std::span<const int> ghost_owners)
 {
   LOG(INFO) << "Compute ghost indices";
 
@@ -412,8 +413,8 @@ std::vector<std::int64_t> graph::build::compute_local_to_global_links(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> graph::build::compute_local_to_local(
-    const std::span<const std::int64_t>& local0_to_global,
-    const std::span<const std::int64_t>& local1_to_global)
+    std::span<const std::int64_t> local0_to_global,
+    std::span<const std::int64_t> local1_to_global)
 {
   common::Timer timer("Compute local-to-local map");
   assert(local0_to_global.size() == local1_to_global.size());

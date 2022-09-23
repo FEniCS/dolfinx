@@ -441,10 +441,9 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-xdmf_utils::distribute_entity_data(
-    const mesh::Mesh& mesh, int entity_dim,
-    const std::span<const std::int64_t>& entities,
-    const std::span<const std::int32_t>& data)
+xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
+                                   std::span<const std::int64_t> entities,
+                                   std::span<const std::int32_t> data)
 {
   LOG(INFO) << "XDMF distribute entity data";
 
@@ -516,8 +515,8 @@ xdmf_utils::distribute_entity_data(
 
   auto postmaster_global_ent_sendrecv
       = [&cell_vertex_dofs](const mesh::Mesh& mesh, int entity_dim,
-                            const std::span<const std::int64_t>& entities,
-                            const std::span<const std::int32_t>& data)
+                            std::span<const std::int64_t> entities,
+                            std::span<const std::int32_t> data)
   {
     const MPI_Comm comm = mesh.comm();
     const int comm_size = dolfinx::MPI::size(comm);
