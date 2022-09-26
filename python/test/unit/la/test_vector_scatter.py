@@ -11,7 +11,6 @@ import pytest
 
 import basix
 import basix.ufl_wrapper
-import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.mesh import create_unit_square
@@ -50,7 +49,7 @@ def test_scatter_forward(element):
 
 
 @pytest.mark.parametrize("element", [
-   basix.ufl_wrapper.create_element("Lagrange", "triangle", 1),
+    basix.ufl_wrapper.create_element("Lagrange", "triangle", 1),
     basix.ufl_wrapper.create_vector_element("Lagrange", "triangle", 1)])
 def test_scatter_reverse(element):
 

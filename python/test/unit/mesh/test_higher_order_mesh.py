@@ -711,5 +711,5 @@ def test_quadrilateral_cell_order_3():
 
     cell = list(range(16))
     domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
-        "Lagrange", "quadrilateral", order, gdim=2))
+        "Lagrange", "quadrilateral", 3, gdim=2))
     check_cell_volume(points, cell, domain, 5 / 6)
