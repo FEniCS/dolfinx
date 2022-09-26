@@ -14,12 +14,14 @@ import numpy as np
 import numpy.typing
 
 import basix
+import basix.ufl_wrapper
 import dolfinx.cpp
 import ufl
 from dolfinx.cpp.la.petsc import create_matrix
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace, create_sparsity_pattern, form)
 from dolfinx.mesh import create_unit_square
+from ffcx.element_iterface import QuadratureElement
 
 import petsc4py.lib
 from mpi4py import MPI
@@ -295,7 +297,8 @@ def test_assembly_into_quadrature_function():
 
     quadrature_degree = 2
     quadrature_points, wts = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
-    Q_element = ufl.VectorElement("Quadrature", ufl.triangle, quadrature_degree, quad_scheme="default")
+    Q_element = basix.ufl_wrapper.VectorElement(
+        QuadratureElement("triangle", (), degree=quadrature_degree, scheme="default"))
     Q = FunctionSpace(mesh, Q_element)
     P2 = FunctionSpace(mesh, ("P", 2))
 

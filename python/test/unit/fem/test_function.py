@@ -11,6 +11,8 @@ import cffi
 import numpy as np
 import pytest
 
+import basix
+import basix.ufl_wrapper
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
@@ -102,8 +104,7 @@ def test_eval_manifold():
     vertices = [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0,
                                                                     0.0)]
     cells = [(0, 1, 2), (0, 1, 3)]
-    cell = ufl.Cell("triangle", geometric_dimension=3)
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 1))
+    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", "triangle", 1, gdim=3))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
     Q = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(Q)
@@ -125,8 +126,8 @@ def test_interpolation_mismatch_rank1(W):
 
 def test_mixed_element_interpolation():
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
-    el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    V = FunctionSpace(mesh, ufl.MixedElement([el, el]))
+    el = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    V = FunctionSpace(mesh, basix.ufl_wrapper.MixedElement([el, el]))
     u = Function(V)
     with pytest.raises(RuntimeError):
         u.interpolate(lambda x: np.ones(2, x.shape[1]))

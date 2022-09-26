@@ -11,6 +11,8 @@ from itertools import combinations, product
 import numpy as np
 import pytest
 
+import basix
+import basix.ufl_wrapper
 import dolfinx
 import ufl
 from dolfinx.fem import (Constant, Function, FunctionSpace,
@@ -63,7 +65,7 @@ def unit_cell(cell_type, random_order=True):
         ordered_points[j] = points[i]
     cells = np.array([order])
 
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
+    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
     return mesh
 
@@ -123,7 +125,7 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
         ordered_points[j] = points[i]
     ordered_cells = np.array([[order[i] for i in c] for c in cells])
 
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
+    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 1))
     mesh = create_mesh(MPI.COMM_WORLD, ordered_cells, ordered_points, domain)
     if return_order:
         return mesh, order
@@ -433,7 +435,7 @@ def test_curl(space_type, order):
     for i in range(5):
         random.shuffle(cell)
 
-        domain = ufl.Mesh(ufl.VectorElement("Lagrange", ufl.tetrahedron, 1))
+        domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", "tetrahedron", 1))
         mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
 
         V = FunctionSpace(mesh, (space_type, order))
@@ -483,7 +485,7 @@ def create_quad_mesh(offset):
                   [0, 0.5 + offset],
                   [1, 0.5 - offset]])
     cells = np.array([[0, 1, 2, 3]])
-    ufl_mesh = ufl.Mesh(ufl.VectorElement("Lagrange", "quadrilateral", 1))
+    ufl_mesh = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", "quadrilateral", 1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh)
     return mesh
 

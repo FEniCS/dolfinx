@@ -6,11 +6,11 @@
 """Unit tests for the FunctionSpace class"""
 import pytest
 
-import basix.finite_element
+import basix
+import basix.ufl_wrapper
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import create_unit_cube
-from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
-                 grad, triangle)
+from ufl import TestFunction, TrialFunction, grad
 from ufl.log import UFLException
 
 from mpi4py import MPI
@@ -33,8 +33,8 @@ def W(mesh):
 
 @pytest.fixture
 def Q(mesh):
-    W = VectorElement('Lagrange', mesh.ufl_cell(), 1)
-    V = FiniteElement('Lagrange', mesh.ufl_cell(), 1)
+    W = basix.ufl_wrapper.create_vector_element('Lagrange', mesh.ufl_cell().cellname(), 1)
+    V = basix.ufl_wrapper.create_element('Lagrange', mesh.ufl_cell().cellname(), 1)
     return FunctionSpace(mesh, W * V)
 
 
@@ -219,7 +219,7 @@ def test_argument_equality(mesh, V, V2, W, W2):
 
 def test_cell_mismatch(mesh):
     """Test that cell mismatch raises early enough from UFL"""
-    element = FiniteElement("P", triangle, 1)
+    element = basix.ufl_wrapper.create_element("P", "triangle", 1)
     with pytest.raises(UFLException):
         FunctionSpace(mesh, element)
 

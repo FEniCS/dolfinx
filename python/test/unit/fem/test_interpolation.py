@@ -103,7 +103,7 @@ def one_cell_mesh(cell_type):
         ordered_points[j] = points[i]
     cells = np.array([order])
 
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
+    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 1))
     return create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
 
 
@@ -137,7 +137,7 @@ def two_cell_mesh(cell_type):
                            [1., 0., -1.], [0., 1., -1.], [1., 1., -1.]])
         cells = [[0, 1, 2, 3, 4, 5, 6, 7], [9, 11, 8, 10, 1, 3, 0, 2]]
 
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
+    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     return mesh
 
@@ -266,8 +266,8 @@ def test_mixed_sub_interpolation():
     def f(x):
         return np.vstack((10 + x[0], -10 - x[1], 25 + x[0]))
 
-    P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
-    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    P2 = basix.ufl_wrapper.create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 2)
+    P1 = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), 1)
     for i, P in enumerate((P2 * P1, P1 * P2)):
         W = FunctionSpace(mesh, P)
         U = Function(W)
@@ -315,9 +315,9 @@ def test_mixed_sub_interpolation():
 def test_mixed_interpolation():
     """Test that mixed interpolation raised an exception."""
     mesh = one_cell_mesh(CellType.triangle)
-    A = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    B = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
-    v = Function(FunctionSpace(mesh, ufl.MixedElement([A, B])))
+    A = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    B = basix.ufl_wrapper.create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    v = Function(FunctionSpace(mesh, basix.ufl_wrapper.MixedElement([A, B])))
     with pytest.raises(RuntimeError):
         v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
 
@@ -446,7 +446,7 @@ def test_interpolation_non_affine():
 
     cells = np.array([range(len(points))], dtype=np.int32)
     cell_type = CellType.hexahedron
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 2))
+    domain = ufl.Mesh(basix.ufl.create_vector_element("Lagrange", cell_type.name, 2))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     W = FunctionSpace(mesh, ("NCE", 1))
     V = FunctionSpace(mesh, ("NCE", 2))
@@ -469,7 +469,7 @@ def test_interpolation_non_affine_nonmatching_maps():
 
     cells = np.array([range(len(points))], dtype=np.int32)
     cell_type = CellType.hexahedron
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 2))
+    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 2))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     W = VectorFunctionSpace(mesh, ("DG", 1))
     V = FunctionSpace(mesh, ("NCE", 4))
@@ -624,16 +624,18 @@ def test_interpolate_callable():
 
 
 @pytest.mark.parametrize("scalar_element", [
-    ufl.FiniteElement("P", "triangle", 1),
-    ufl.FiniteElement("P", "triangle", 2),
-    ufl.FiniteElement("P", "triangle", 3),
-    ufl.FiniteElement("Q", "quadrilateral", 1),
-    ufl.FiniteElement("Q", "quadrilateral", 2),
-    ufl.FiniteElement("Q", "quadrilateral", 3),
-    ufl.FiniteElement("S", "quadrilateral", 1),
-    ufl.FiniteElement("S", "quadrilateral", 2),
-    ufl.FiniteElement("S", "quadrilateral", 3),
-    ufl.EnrichedElement(ufl.FiniteElement("P", "triangle", 1), ufl.FiniteElement("Bubble", "triangle", 3)),
+    basix.ufl_wrapper.create_element("P", "triangle", 1),
+    basix.ufl_wrapper.create_element("P", "triangle", 2),
+    basix.ufl_wrapper.create_element("P", "triangle", 3),
+    basix.ufl_wrapper.create_element("Q", "quadrilateral", 1),
+    basix.ufl_wrapper.create_element("Q", "quadrilateral", 2),
+    basix.ufl_wrapper.create_element("Q", "quadrilateral", 3),
+    basix.ufl_wrapper.create_element("S", "quadrilateral", 1),
+    basix.ufl_wrapper.create_element("S", "quadrilateral", 2),
+    basix.ufl_wrapper.create_element("S", "quadrilateral", 3),
+    basix.ufl_wrapper._create_enriched_element([
+        basix.ufl_wrapper.create_element("P", "triangle", 1),
+        basix.ufl_wrapper.create_element("Bubble", "triangle", 3)]),
     basix.ufl_wrapper._create_enriched_element([
         basix.ufl_wrapper.create_element("P", "quadrilateral", 1),
         basix.ufl_wrapper.create_element("Bubble", "quadrilateral", 2)]),
@@ -642,7 +644,7 @@ def test_vector_element_interpolation(scalar_element):
     """Test interpolation into a range of vector elements."""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell().cellname()))
 
-    V = FunctionSpace(mesh, ufl.VectorElement(scalar_element))
+    V = FunctionSpace(mesh, basix.ufl_wrapper.create_vector_element(scalar_element))
 
     u = Function(V)
     u.interpolate(lambda x: (x[0], x[1]))
@@ -703,17 +705,17 @@ def test_mixed_interpolation_permuting(cell_type, order):
     x = ufl.SpatialCoordinate(mesh)
     dgdy = ufl.cos(x[1])
 
-    curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), 1)
-    vlag_el = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
-    lagr_el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), order)
+    curl_el = basix.ufl_wrapper.create_element("N1curl", mesh.ufl_cell(), 1)
+    vlag_el = basix.ufl_wrapper.create_vector_element("Lagrange", mesh.ufl_cell(), 1)
+    lagr_el = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell(), order)
 
-    V = FunctionSpace(mesh, ufl.MixedElement([curl_el, lagr_el]))
+    V = FunctionSpace(mesh, basix.ufl_wrapper.MixedElement([curl_el, lagr_el]))
     Eb_m = Function(V)
     Eb_m.sub(1).interpolate(g)
     diff = Eb_m[2].dx(1) - dgdy
     error = assemble_scalar(form(ufl.dot(diff, diff) * ufl.dx))
 
-    V = FunctionSpace(mesh, ufl.MixedElement([vlag_el, lagr_el]))
+    V = FunctionSpace(mesh, basix.ufl_wrapper.MixedElement([vlag_el, lagr_el]))
     Eb_m = Function(V)
     Eb_m.sub(1).interpolate(g)
     diff = Eb_m[2].dx(1) - dgdy

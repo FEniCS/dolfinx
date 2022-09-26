@@ -7,6 +7,8 @@
 import numpy as np
 import pytest
 
+import basix
+import basix.ufl_wrapper
 import ufl
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          TensorFunctionSpace, VectorFunctionSpace, dirichletbc,
@@ -27,8 +29,8 @@ def test_locate_dofs_geometrical():
     spaces, returns the correct degrees of freedom in each space"""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
     p0, p1 = 1, 2
-    P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
-    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
+    P0 = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), p0)
+    P1 = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), p1)
 
     W = FunctionSpace(mesh, P0 * P1)
     V = W.sub(0).collapse()[0]
@@ -251,8 +253,9 @@ def test_mixed_constant_bc(mesh_factory):
     mesh = func(*args)
     tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
-    TH = ufl.MixedElement([ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1),
-                          ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 2)])
+    TH = basix.ufl_wrapper.MixedElement([
+        basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), 1),
+        basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), 2)])
     W = FunctionSpace(mesh, TH)
     u = Function(W)
 
@@ -287,8 +290,9 @@ def test_mixed_blocked_constant():
     tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
-    TH = ufl.MixedElement([ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1),
-                           ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)])
+    TH = basix.ufl_wrapper.MixedElement([
+        basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), 1),
+        basix.ufl_wrapper.create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 2)])
     W = FunctionSpace(mesh, TH)
     u = Function(W)
     c0 = PETSc.ScalarType(3)

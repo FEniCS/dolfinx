@@ -7,11 +7,13 @@
 
 import pytest
 
+import basix
+import basix.ufl_wrapper
 import dolfinx
 import ufl
 from dolfinx.fem import FunctionSpace, form
 from dolfinx.mesh import CellType, create_unit_cube, create_unit_square
-from ufl import FiniteElement, MixedElement, VectorElement, grad, inner
+from ufl import grad, inner
 
 from mpi4py import MPI
 
@@ -111,18 +113,9 @@ def test_mixed_element_form(cell_type, sign, order):
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
 
-    if cell_type == CellType.triangle:
-        U_el = MixedElement([FiniteElement("Lagrange", ufl.triangle, order),
-                             FiniteElement("N1curl", ufl.triangle, order)])
-    elif cell_type == CellType.quadrilateral:
-        U_el = MixedElement([FiniteElement("Lagrange", ufl.quadrilateral, order),
-                             FiniteElement("RTCE", ufl.quadrilateral, order)])
-    elif cell_type == CellType.tetrahedron:
-        U_el = MixedElement([FiniteElement("Lagrange", ufl.tetrahedron, order),
-                             FiniteElement("N1curl", ufl.tetrahedron, order)])
-    elif cell_type == CellType.hexahedron:
-        U_el = MixedElement([FiniteElement("Lagrange", ufl.hexahedron, order),
-                             FiniteElement("NCE", ufl.hexahedron, order)])
+    U_el = basix.ufl_wrapper.MixedElement([
+        basix.ufl_wrapper.create_element(basix.ElementFamily.P, cell_type.name, order),
+        basix.ufl_wrapper.create_element(basix.ElementFamily.N1E, cell_type.name, order)])
 
     U = FunctionSpace(mesh, U_el)
     u, p = ufl.TrialFunctions(U)
@@ -144,18 +137,9 @@ def test_mixed_element_vector_element_form(cell_type, sign, order):
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
 
-    if cell_type == CellType.triangle:
-        U_el = MixedElement([VectorElement("Lagrange", ufl.triangle, order),
-                             FiniteElement("N1curl", ufl.triangle, order)])
-    elif cell_type == CellType.quadrilateral:
-        U_el = MixedElement([VectorElement("Lagrange", ufl.quadrilateral, order),
-                             FiniteElement("RTCE", ufl.quadrilateral, order)])
-    elif cell_type == CellType.tetrahedron:
-        U_el = MixedElement([VectorElement("Lagrange", ufl.tetrahedron, order),
-                             FiniteElement("N1curl", ufl.tetrahedron, order)])
-    elif cell_type == CellType.hexahedron:
-        U_el = MixedElement([VectorElement("Lagrange", ufl.hexahedron, order),
-                             FiniteElement("NCE", ufl.hexahedron, order)])
+    U_el = basix.ufl_wrapper.MixedElement([
+        basix.ufl_wrapper.create_vector_element(basix.ElementFamily.P, cell_type.name, order),
+        basix.ufl_wrapper.create_element(basix.ElementFamily.N1E, cell_type.name, order)])
 
     U = FunctionSpace(mesh, U_el)
     u, p = ufl.TrialFunctions(U)

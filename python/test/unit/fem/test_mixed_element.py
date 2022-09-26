@@ -7,6 +7,8 @@
 import numpy as np
 import pytest
 
+import basix
+import basix.ufl_wrapper
 import dolfinx
 import ufl
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace, form
@@ -19,12 +21,7 @@ from mpi4py import MPI
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("cell", [ufl.triangle, ufl.tetrahedron])
 @pytest.mark.parametrize("order", [1, 2])
-@pytest.mark.parametrize("ElementType, space",
-                         [
-                             (ufl.FiniteElement, "Lagrange"),
-                             (ufl.VectorElement, "Lagrange"),
-                             (ufl.FiniteElement, "N1curl")
-                         ])
+@pytest.mark.parametrize("space", ["Lagrange", "N1curl"])
 def test_mixed_element(ElementType, space, cell, order):
     if cell == ufl.triangle:
         mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
@@ -32,7 +29,7 @@ def test_mixed_element(ElementType, space, cell, order):
         mesh = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1, CellType.tetrahedron, GhostMode.shared_facet)
 
     norms = []
-    U_el = ufl.FiniteElement(space, cell, order)
+    U_el = basix.ufl_wrapper.create_element(space, cell.cellname(), order)
     for i in range(3):
         U = FunctionSpace(mesh, U_el)
         u = ufl.TrialFunction(U)
@@ -43,7 +40,7 @@ def test_mixed_element(ElementType, space, cell, order):
         A.assemble()
         norms.append(A.norm())
 
-        U_el = ufl.MixedElement(U_el)
+        U_el = basix.ufl_wrapper.MixedElement(U_el)
 
     for i in norms[1:]:
         assert np.isclose(norms[0], i)
@@ -75,8 +72,8 @@ def test_vector_element():
 @pytest.mark.parametrize("d2", range(1, 4))
 def test_element_product(d1, d2):
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 2)
-    P3 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), d1)
-    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), d2)
+    P3 = basix.ufl_wrapper.create_vector_element("Lagrange", mesh.ufl_cell().cellname(), d1)
+    P1 = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), d2)
     TH = P3 * P1
     W = FunctionSpace(mesh, TH)
 
