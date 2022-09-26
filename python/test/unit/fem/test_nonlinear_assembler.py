@@ -260,7 +260,7 @@ def test_assembly_solve_block_nl():
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 11)
     p = 1
-    P = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell(), p)
+    P = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), p)
     V0 = FunctionSpace(mesh, P)
     V1 = V0.clone()
 

@@ -703,9 +703,9 @@ def test_mixed_interpolation_permuting(cell_type, order):
     x = ufl.SpatialCoordinate(mesh)
     dgdy = ufl.cos(x[1])
 
-    curl_el = basix.ufl_wrapper.create_element("N1curl", mesh.ufl_cell(), 1)
-    vlag_el = basix.ufl_wrapper.create_vector_element("Lagrange", mesh.ufl_cell(), 1)
-    lagr_el = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell(), order)
+    curl_el = basix.ufl_wrapper.create_element("N1curl", mesh.ufl_cell().cellname(), 1)
+    vlag_el = basix.ufl_wrapper.create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    lagr_el = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), order)
 
     V = FunctionSpace(mesh, basix.ufl_wrapper.MixedElement([curl_el, lagr_el]))
     Eb_m = Function(V)
