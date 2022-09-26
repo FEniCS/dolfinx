@@ -1,6 +1,8 @@
 import numpy as np
 import pytest
 
+import basix
+import basix.ufl_wrapper
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import geometry
@@ -15,7 +17,7 @@ def test_manifold_point_search():
     # Simple two-triangle surface in 3d
     vertices = np.array([[0.0, 0.0, 1.0], [1.0, 1.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     cells = np.array([[0, 1, 2], [0, 1, 3]], dtype=np.int64)
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", "triangle", 1))
+    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", "triangle", 1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
     bb = BoundingBoxTree(mesh, mesh.topology.dim)
 

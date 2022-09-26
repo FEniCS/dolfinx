@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 
 import basix
+import basix.ufl_wrapper
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import graph
@@ -541,7 +542,7 @@ def test_empty_rank_mesh():
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
     tdim = 2
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", ufl.Cell(cell_type.name), 1))
+    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 1))
 
     def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the curent rank"""
