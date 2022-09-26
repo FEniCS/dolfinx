@@ -175,7 +175,7 @@ def test_save_vtk_cell_point(tempdir):
     """Test writing cell-wise and point-wise data"""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     P2 = basix.ufl_wrapper.create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 1)
-    P1 = basix.ufl_wraper.create_element("Discontinuous Lagrange", mesh.ufl_cell().cellname(), 0)
+    P1 = basix.ufl_wrapper.create_element("Discontinuous Lagrange", mesh.ufl_cell().cellname(), 0)
 
     V2, V1 = FunctionSpace(mesh, P2), FunctionSpace(mesh, P1)
     U2, U1 = Function(V2), Function(V1)

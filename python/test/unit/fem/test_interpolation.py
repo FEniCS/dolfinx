@@ -445,8 +445,7 @@ def test_interpolation_non_affine():
                        [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=np.float64)
 
     cells = np.array([range(len(points))], dtype=np.int32)
-    cell_type = CellType.hexahedron
-    domain = ufl.Mesh(basix.ufl.create_vector_element("Lagrange", cell_type.name, 2))
+    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", "hexahedron", 2))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     W = FunctionSpace(mesh, ("NCE", 1))
     V = FunctionSpace(mesh, ("NCE", 2))
@@ -468,8 +467,7 @@ def test_interpolation_non_affine_nonmatching_maps():
                        [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=np.float64)
 
     cells = np.array([range(len(points))], dtype=np.int32)
-    cell_type = CellType.hexahedron
-    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 2))
+    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", "hexahedron", 2))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     W = VectorFunctionSpace(mesh, ("DG", 1))
     V = FunctionSpace(mesh, ("NCE", 4))
@@ -644,7 +642,7 @@ def test_vector_element_interpolation(scalar_element):
     """Test interpolation into a range of vector elements."""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell().cellname()))
 
-    V = FunctionSpace(mesh, basix.ufl_wrapper.create_vector_element(scalar_element))
+    V = FunctionSpace(mesh, basix.ufl_wrapper.VectorElement(scalar_element))
 
     u = Function(V)
     u.interpolate(lambda x: (x[0], x[1]))

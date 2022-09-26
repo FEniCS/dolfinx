@@ -21,7 +21,7 @@ from dolfinx.cpp.la.petsc import create_matrix
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace, create_sparsity_pattern, form)
 from dolfinx.mesh import create_unit_square
-from ffcx.element_iterface import QuadratureElement
+from ffcx.element_interface import QuadratureElement
 
 import petsc4py.lib
 from mpi4py import MPI

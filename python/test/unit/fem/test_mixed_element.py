@@ -22,7 +22,7 @@ from mpi4py import MPI
 @pytest.mark.parametrize("cell", [ufl.triangle, ufl.tetrahedron])
 @pytest.mark.parametrize("order", [1, 2])
 @pytest.mark.parametrize("space", ["Lagrange", "N1curl"])
-def test_mixed_element(ElementType, space, cell, order):
+def test_mixed_element(space, cell, order):
     if cell == ufl.triangle:
         mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
     else:
@@ -40,7 +40,7 @@ def test_mixed_element(ElementType, space, cell, order):
         A.assemble()
         norms.append(A.norm())
 
-        U_el = basix.ufl_wrapper.MixedElement(U_el)
+        U_el = basix.ufl_wrapper.MixedElement([U_el])
 
     for i in norms[1:]:
         assert np.isclose(norms[0], i)
