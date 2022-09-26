@@ -49,13 +49,6 @@ jobs:
           apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar xz-utils
           apt-get install -y g++ gfortran  # compilers
 
-      - name: Build DOLFINx (C++) development version via Spack
-        run: |
-          . ./spack/share/spack/setup-env.sh
-          spack env create cpp-main
-          spack env activate cpp-main
-          spack add fenics-dolfinx@main+adios2
-          spack install
       - name: Build DOLFINx (C++) release version via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
@@ -63,28 +56,18 @@ jobs:
           spack env activate cpp-release
           spack add fenics-dolfinx+adios2
           spack install
-
-      - name: Get DOLFINx code (to access test files)
-        uses: actions/checkout@v3
-        with:
-          path: ./dolfinx-main
-
-      - name: Run a C++ test (development version)
+      - name: Build DOLFINx (C++) development version via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
+          spack env create cpp-main
           spack env activate cpp-main
-          spack install cmake py-fenics-ffcx@main
-          cd dolfinx-main/cpp/
-          cd demo/poisson
-          cmake .
-          export VERBOSE=1
-          make -j2
-          mpirun -np 2 ./demo_poisson
+          spack add fenics-dolfinx@main+adios2
+          spack install
 
       - name: Get DOLFINx release code (to access test files)
         uses: actions/checkout@v3
         with:
-          ref: main
+          ref: v0.5.1
           # ref: v${{ github.event.inputs.spack_branch }}
           path: ./dolfinx-release
       - name: Run a C++ test (release version)
@@ -99,13 +82,22 @@ jobs:
           make -j2
           mpirun -np 2 ./demo_poisson
 
-      - name: Build DOLFINx (Python, development)
+      - name: Get DOLFINx code (to access test files)
+        uses: actions/checkout@v3
+        with:
+          path: ./dolfinx-main
+      - name: Run a C++ test (development version)
         run: |
           . ./spack/share/spack/setup-env.sh
-          spack env create py-main
-          spack env activate py-main
-          spack add py-fenics-dolfinx@main
-          spack install
+          spack env activate cpp-main
+          spack install cmake py-fenics-ffcx@main
+          cd dolfinx-main/cpp/
+          cd demo/poisson
+          cmake .
+          export VERBOSE=1
+          make -j2
+          mpirun -np 2 ./demo_poisson
+
       - name: Build DOLFINx (Python, release version)
         run: |
           . ./spack/share/spack/setup-env.sh
@@ -113,14 +105,21 @@ jobs:
           spack env activate py-release
           spack add py-fenics-dolfinx
           spack install
-
-      - name: Run DOLFINx (Python, development) test
+      - name: Build DOLFINx (Python, development)
         run: |
           . ./spack/share/spack/setup-env.sh
+          spack env create py-main
           spack env activate py-main
-          mpirun -np 2 python3 ./dolfinx-main/python/demo/demo_elasticity.py
+          spack add py-fenics-dolfinx@main
+          spack install
+
       - name: Run DOLFINx (Python, release) test
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate py-release
           mpirun -np 2 python3 ./dolfinx-release/python/demo/demo_elasticity.py
+      - name: Run DOLFINx (Python, development) test
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env activate py-main
+          mpirun -np 2 python3 ./dolfinx-main/python/demo/demo_elasticity.py
