@@ -47,7 +47,6 @@ jobs:
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: main
 
       - name: Install FFCx C interface
         run: |
