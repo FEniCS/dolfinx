@@ -9,7 +9,10 @@ import typing
 import numpy as np
 import numpy.typing as npt
 
+import basix
+import basix.ufl_wrapper
 import ufl
+
 from dolfinx import cpp as _cpp
 from dolfinx.mesh import (CellType, GhostMode, Mesh, create_cell_partitioner,
                           create_mesh, meshtags, meshtags_from_entities)
@@ -40,8 +43,10 @@ def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
     """
     shape, degree = _gmsh_to_cells[gmsh_cell]
     cell = ufl.Cell(shape, geometric_dimension=gdim)
-    scalar_element = ufl.FiniteElement("Lagrange", cell, degree, variant="equispaced")
-    return ufl.Mesh(ufl.VectorElement(scalar_element))
+
+    element = basix.ufl_wrapper.create_vector_element(
+        basix.ElementFamily.P, cell.cellname(), degree, basix.LagrangeVariant.equispaced, dim=gdim, gdim=gdim)
+    return ufl.Mesh(element)
 
 
 def cell_perm_array(cell_type: CellType, num_nodes: int) -> typing.List[int]:
