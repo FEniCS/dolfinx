@@ -54,11 +54,11 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # Now, let's formulate our problem.
 # Let's consider a metallic sphere immersed in
 # a background medium (e.g. vacuum or water) and hit by a plane wave.
-# We want to calculate the scattered electric field scattered.
+# We want to calculate the scattered electric field.
 # Even though the problem is three-dimensional,
 # we can simplify it into many two-dimensional problems
-# by exploiting its axisymmetric nature. To verify this, let's consider
-# the weakf form of the problem with PML:
+# by exploiting axisymmetry. To verify this, let's consider
+# the weak form of the problem with PML:
 #
 # $$
 # \begin{align}
@@ -175,10 +175,8 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # \end{align}
 # $$
 #
-# In the end, we have multiple weak forms corresponding to the
-# different cylindrical harmonics, where the integration is performed
-# over a 2D domain.
-#
+# We have just obtained multiple weak forms corresponding to
+# different and independent cylindrical harmonics.
 # Let's now implement this problem in DOLFINx.
 # As a first step we can define the function for the $\nabla\times$
 # operator in cylindrical coordinates:
@@ -194,9 +192,9 @@ def curl_axis(a, m: int, rho):
 
 # Then we need to define the analytical formula for the background field.
 # For our purposes, we can consider the wavevector and the electric field
-# lying in the same plane of our 2D domain, while the magnetic field is
-# transverse to such domain. For this reason, we will refer to this polarization
-# as TMz polarization.
+# lying in the cross-section of our weak form. We will refer to this case as
+# a TMz polarized plane wave, since the magnetic field is perpendicular to
+# the $z$ axis.
 #
 # For a TMz polarization, the cylindrical harmonics $\mathbf{E}^{(m)}_b$
 # of the background field can be written in this way
@@ -247,9 +245,9 @@ def background_field_p(theta: float, n_bkg: float, k0: float, m: int, x):
 
 # -
 
-# For PML, we can introduce them in our original domain as a spherical shell.
-# We can then implement a complex coordinate transformation
-# of this form in this spherical shell:
+# PML can be implemented in a spherical shell surrounding the
+# background domain. We can use the following complex coordinate
+# transformation for PML:
 #
 # $$
 # \begin{align}
@@ -261,7 +259,7 @@ def background_field_p(theta: float, n_bkg: float, k0: float, m: int, x):
 # \end{align}
 # $$
 #
-# with $\alpha$ being a parameter tuning the absorption inside the PML,
+# with $\alpha$ tuning the absorption inside the PML,
 # and $r = \sqrt{\rho^2 + z^2}$.
 # This coordinate transformation has the following jacobian:
 #
@@ -398,7 +396,7 @@ if have_pyvista:
     else:
         pyvista.start_xvfb()
         figure = plotter.screenshot("sphere_axis_mesh.png",
-                                    window_size=[1000, 1000])
+                                    window_size=[500, 500])
 
 # We can now define our function space. For the $\hat{\rho}$ and $\hat{z}$
 # components of the electric field, we will use Nedelec elements,
@@ -637,6 +635,10 @@ if MPI.COMM_WORLD.rank == 0:
     print(f"The numerical extinction efficiency is {q_ext_fenics}")
     print(f"The error is {err_ext*100}%")
 
+    # Check whether the geometrical or optical parameters ar correct
+    assert radius_sph / wl0 == 0.025 / 0.4
+    assert eps_au == -1.0782 + 1j * 5.8089
+
     assert err_abs < 0.01
     assert err_sca < 0.01
     assert err_ext < 0.01
@@ -668,7 +670,7 @@ if have_pyvista:
     plotter = pyvista.Plotter()
 
     plotter.add_text("magnitude", font_size=12, color="black")
-    plotter.add_mesh(V_grid.copy(), show_edges=True)
+    plotter.add_mesh(V_grid.copy(), show_edges=False)
     plotter.view_xy()
     plotter.link_views()
 
@@ -676,4 +678,4 @@ if have_pyvista:
         plotter.show()
     else:
         pyvista.start_xvfb()
-        plotter.screenshot("Esh_r.png", window_size=[800, 800])
+        plotter.screenshot("Esh_r.png", window_size=[500, 500])
