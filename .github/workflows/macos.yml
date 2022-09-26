@@ -61,7 +61,7 @@ jobs:
       - name: Install Basix
         run: |
           source fenicsx/bin/activate
-          python -m pip install git+https://github.com/FEniCS/basix.git@mscroggs/sobolev-correction
+          python -m pip install git+https://github.com/FEniCS/basix.git
 
       - name: Install UFL
         run: |
