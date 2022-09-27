@@ -10,8 +10,7 @@ import math
 import numpy as np
 import pytest
 
-import basix
-import basix.ufl_wrapper
+from basix.ufl_wrapper import create_element, create_vector_element
 import ufl
 from dolfinx.cpp.la.petsc import scatter_local_vectors
 from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
@@ -54,8 +53,8 @@ def test_matrix_assembly_block_nl():
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
     p0, p1 = 1, 2
-    P0 = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), p0)
-    P1 = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), p1)
+    P0 = create_element("Lagrange", mesh.ufl_cell().cellname(), p0)
+    P1 = create_element("Lagrange", mesh.ufl_cell().cellname(), p1)
     V0 = FunctionSpace(mesh, P0)
     V1 = FunctionSpace(mesh, P1)
 
@@ -260,7 +259,7 @@ def test_assembly_solve_block_nl():
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 11)
     p = 1
-    P = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), p)
+    P = create_element("Lagrange", mesh.ufl_cell().cellname(), p)
     V0 = FunctionSpace(mesh, P)
     V1 = V0.clone()
 
@@ -562,8 +561,8 @@ def test_assembly_solve_taylor_hood_nl(mesh):
 
     # -- Monolithic
 
-    P2_el = basix.ufl_wrapper.create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 2)
-    P1_el = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    P2_el = create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 2)
+    P1_el = create_element("Lagrange", mesh.ufl_cell().cellname(), 1)
     TH = P2_el * P1_el
     W = FunctionSpace(mesh, TH)
     U = Function(W)

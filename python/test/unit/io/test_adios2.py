@@ -9,8 +9,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-import basix
-import basix.ufl_wrapper
+from basix.ufl_wrapper import create_element, create_vector_element
 import ufl
 from dolfinx.common import has_adios2
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
@@ -121,7 +120,7 @@ def test_second_order_vtx(tempdir):
     filename = Path(tempdir, "mesh_fides.bp")
     points = np.array([[0, 0, 0], [1, 0, 0], [0.5, 0, 0]], dtype=np.float64)
     cells = np.array([[0, 1, 2]], dtype=np.int32)
-    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
+    domain = ufl.Mesh(create_vector_element(
         "Lagrange", "interval", 2, gdim=points.shape[1]))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     with VTXWriter(mesh.comm, filename, mesh) as f:
@@ -229,7 +228,7 @@ def test_vtx_functions(tempdir, dim, simplex):
 def test_save_vtkx_cell_point(tempdir):
     """Test writing point-wise data"""
     mesh = create_unit_square(MPI.COMM_WORLD, 8, 5)
-    P = basix.ufl_wrapper.create_element("Discontinuous Lagrange", mesh.ufl_cell().cellname(), 0)
+    P = create_element("Discontinuous Lagrange", mesh.ufl_cell().cellname(), 0)
 
     V = FunctionSpace(mesh, P)
     u = Function(V)
@@ -248,7 +247,7 @@ def test_empty_rank_mesh(tempdir):
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
     domain = ufl.Mesh(
-        basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 1))
+        create_vector_element("Lagrange", cell_type.name, 1))
 
     def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the current rank"""

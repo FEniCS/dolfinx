@@ -7,7 +7,7 @@
 import pytest
 
 import basix
-import basix.ufl_wrapper
+from basix.ufl_wrapper import create_element, create_vector_element
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import create_unit_cube
 from ufl import TestFunction, TrialFunction, grad
@@ -33,8 +33,8 @@ def W(mesh):
 
 @pytest.fixture
 def Q(mesh):
-    W = basix.ufl_wrapper.create_vector_element('Lagrange', mesh.ufl_cell().cellname(), 1)
-    V = basix.ufl_wrapper.create_element('Lagrange', mesh.ufl_cell().cellname(), 1)
+    W = create_vector_element('Lagrange', mesh.ufl_cell().cellname(), 1)
+    V = create_element('Lagrange', mesh.ufl_cell().cellname(), 1)
     return FunctionSpace(mesh, W * V)
 
 
@@ -219,7 +219,7 @@ def test_argument_equality(mesh, V, V2, W, W2):
 
 def test_cell_mismatch(mesh):
     """Test that cell mismatch raises early enough from UFL"""
-    element = basix.ufl_wrapper.create_element("P", "triangle", 1)
+    element = create_element("P", "triangle", 1)
     with pytest.raises(UFLException):
         FunctionSpace(mesh, element)
 

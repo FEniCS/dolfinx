@@ -8,7 +8,7 @@
 import pytest
 
 import basix
-import basix.ufl_wrapper
+from basix.ufl_wrapper import MixedElement, create_element, create_vector_element
 import dolfinx
 import ufl
 from dolfinx.fem import FunctionSpace, form
@@ -113,9 +113,9 @@ def test_mixed_element_form(cell_type, sign, order):
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
 
-    U_el = basix.ufl_wrapper.MixedElement([
-        basix.ufl_wrapper.create_element(basix.ElementFamily.P, cell_type.name, order),
-        basix.ufl_wrapper.create_element(basix.ElementFamily.N1E, cell_type.name, order)])
+    U_el = MixedElement([
+        create_element(basix.ElementFamily.P, cell_type.name, order),
+        create_element(basix.ElementFamily.N1E, cell_type.name, order)])
 
     U = FunctionSpace(mesh, U_el)
     u, p = ufl.TrialFunctions(U)
@@ -137,9 +137,9 @@ def test_mixed_element_vector_element_form(cell_type, sign, order):
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
 
-    U_el = basix.ufl_wrapper.MixedElement([
-        basix.ufl_wrapper.create_vector_element(basix.ElementFamily.P, cell_type.name, order),
-        basix.ufl_wrapper.create_element(basix.ElementFamily.N1E, cell_type.name, order)])
+    U_el = MixedElement([
+        create_vector_element(basix.ElementFamily.P, cell_type.name, order),
+        create_element(basix.ElementFamily.N1E, cell_type.name, order)])
 
     U = FunctionSpace(mesh, U_el)
     u, p = ufl.TrialFunctions(U)

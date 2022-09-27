@@ -9,8 +9,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-import basix
-import basix.ufl_wrapper
+from basix.ufl_wrapper import create_vector_element
 import dolfinx
 import dolfinx.graph
 import ufl
@@ -83,7 +82,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     rank = mpi_comm.rank
     assert (np.all(x_global[all_ranges[rank]:all_ranges[rank + 1]] == x))
 
-    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_shape.name, cell_degree))
+    domain = ufl.Mesh(create_vector_element("Lagrange", cell_shape.name, cell_degree))
 
     # Partition mesh in layers, capture geometrical data and topological
     # data from outer scope
@@ -107,7 +106,7 @@ def test_asymmetric_partitioner():
     mpi_comm = MPI.COMM_WORLD
     n = mpi_comm.Get_size()
     r = mpi_comm.Get_rank()
-    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", "triangle", 1))
+    domain = ufl.Mesh(create_vector_element("Lagrange", "triangle", 1))
 
     # Create a simple triangle mesh with a strip on each process
     topo = []

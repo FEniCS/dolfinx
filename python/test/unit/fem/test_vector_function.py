@@ -8,8 +8,7 @@
 import numpy as np
 import pytest
 
-import basix
-import basix.ufl_wrapper
+from basix.ufl_wrapper import create_vector_element
 import ufl
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.mesh import create_mesh
@@ -24,7 +23,7 @@ def test_div_conforming_triangle(space_type, order):
     """Checks that the vectors in div conforming spaces on a triangle are correctly oriented"""
     # Create simple triangle mesh
     def perform_test(points, cells):
-        domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", "triangle", 1))
+        domain = ufl.Mesh(create_vector_element("Lagrange", "triangle", 1))
         mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
         V = FunctionSpace(mesh, (space_type, order))
         f = Function(V)
@@ -54,7 +53,7 @@ def test_div_conforming_tetrahedron(space_type, order):
     """Checks that the vectors in div conforming spaces on a tetrahedron are correctly oriented"""
     # Create simple tetrahedron cell mesh
     def perform_test(points, cells):
-        domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", "tetrahedron", 1))
+        domain = ufl.Mesh(create_vector_element("Lagrange", "tetrahedron", 1))
         mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
         V = FunctionSpace(mesh, (space_type, order))
         f = Function(V)

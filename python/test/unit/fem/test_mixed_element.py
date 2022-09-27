@@ -7,8 +7,7 @@
 import numpy as np
 import pytest
 
-import basix
-import basix.ufl_wrapper
+from basix.ufl_wrapper import MixedElement, create_element, create_vector_element
 import dolfinx
 import ufl
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace, form
@@ -29,7 +28,7 @@ def test_mixed_element(space, cell, order):
         mesh = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1, CellType.tetrahedron, GhostMode.shared_facet)
 
     norms = []
-    U_el = basix.ufl_wrapper.create_element(space, cell.cellname(), order)
+    U_el = create_element(space, cell.cellname(), order)
     for i in range(3):
         U = FunctionSpace(mesh, U_el)
         u = ufl.TrialFunction(U)
@@ -40,7 +39,7 @@ def test_mixed_element(space, cell, order):
         A.assemble()
         norms.append(A.norm())
 
-        U_el = basix.ufl_wrapper.MixedElement([U_el])
+        U_el = MixedElement([U_el])
 
     for i in norms[1:]:
         assert np.isclose(norms[0], i)
@@ -72,8 +71,8 @@ def test_vector_element():
 @pytest.mark.parametrize("d2", range(1, 4))
 def test_element_product(d1, d2):
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 2)
-    P3 = basix.ufl_wrapper.create_vector_element("Lagrange", mesh.ufl_cell().cellname(), d1)
-    P1 = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), d2)
+    P3 = create_vector_element("Lagrange", mesh.ufl_cell().cellname(), d1)
+    P1 = create_element("Lagrange", mesh.ufl_cell().cellname(), d2)
     TH = P3 * P1
     W = FunctionSpace(mesh, TH)
 

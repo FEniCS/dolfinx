@@ -9,8 +9,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-import basix
-import basix.ufl_wrapper
+from basix.ufl_wrapper import create_tensor_element, create_element, create_vector_element
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
@@ -92,7 +91,7 @@ def test_save_1d_vector(tempdir):
         vals[1] = 2 * x[0] * x[0]
         return vals
 
-    element = basix.ufl_wrapper.create_vector_element(
+    element = create_vector_element(
         "Lagrange", mesh.ufl_cell().cellname(), 2, dim=2)
     u = Function(FunctionSpace(mesh, element))
     u.interpolate(f)
@@ -128,7 +127,7 @@ def test_save_2d_vector_CG2(tempdir):
                        [1, 2], [0.5, 2], [1, 1]])
     cells = np.array([[0, 1, 2, 3, 4, 5],
                       [1, 6, 2, 7, 3, 8]])
-    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", "triangle", 2))
+    domain = ufl.Mesh(create_vector_element("Lagrange", "triangle", 2))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
     u.interpolate(lambda x: np.vstack((x[0], x[1])))
@@ -139,8 +138,8 @@ def test_save_2d_vector_CG2(tempdir):
 
 def test_save_vtk_mixed(tempdir):
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
-    P2 = basix.ufl_wrapper.create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 1)
-    P1 = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    P2 = create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    P1 = create_element("Lagrange", mesh.ufl_cell().cellname(), 1)
     W = FunctionSpace(mesh, P2 * P1)
     V1 = FunctionSpace(mesh, P1)
     V2 = FunctionSpace(mesh, P2)
@@ -174,8 +173,8 @@ def test_save_vtk_mixed(tempdir):
 def test_save_vtk_cell_point(tempdir):
     """Test writing cell-wise and point-wise data"""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
-    P2 = basix.ufl_wrapper.create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 1)
-    P1 = basix.ufl_wrapper.create_element("Discontinuous Lagrange", mesh.ufl_cell().cellname(), 0)
+    P2 = create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    P1 = create_element("Discontinuous Lagrange", mesh.ufl_cell().cellname(), 0)
 
     V2, V1 = FunctionSpace(mesh, P2), FunctionSpace(mesh, P1)
     U2, U1 = Function(V2), Function(V1)
@@ -193,7 +192,7 @@ def test_save_vtk_cell_point(tempdir):
 
 def test_save_1d_tensor(tempdir):
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)
-    element = basix.ufl_wrapper.create_tensor_element(
+    element = create_tensor_element(
         "Lagrange", mesh.ufl_cell().cellname(), 2, shape=(2, 2))
     u = Function(FunctionSpace(mesh, element))
     u.x.array[:] = 1.0

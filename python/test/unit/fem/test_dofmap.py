@@ -10,8 +10,7 @@ import sys
 import numpy as np
 import pytest
 
-import basix
-import basix.ufl_wrapper
+from basix.ufl_wrapper import MixedElement, create_element, create_vector_element
 import dolfinx
 import ufl
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace
@@ -37,8 +36,8 @@ def mesh():
 def test_tabulate_dofs(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
-    W0 = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), 1)
-    W1 = basix.ufl_wrapper.create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    W0 = create_element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    W1 = create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 1)
     W = FunctionSpace(mesh, W0 * W1)
 
     L0 = W.sub(0)
@@ -153,7 +152,7 @@ def test_block_size(mesh):
         create_unit_cube(4, 4, 4, CellType.hexahedron)
     ]
     for mesh in meshes:
-        P2 = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), 2)
+        P2 = create_element("Lagrange", mesh.ufl_cell().cellname(), 2)
 
         V = FunctionSpace(mesh, P2)
         assert V.dofmap.bs == 1
@@ -162,7 +161,7 @@ def test_block_size(mesh):
         assert V.dofmap.index_map_bs == 2
 
         for i in range(1, 6):
-            W = FunctionSpace(mesh, basix.ufl_wrapper.MixedElement(i * [P2]))
+            W = FunctionSpace(mesh, MixedElement(i * [P2]))
             assert W.dofmap.index_map_bs == i
 
         V = VectorFunctionSpace(mesh, ("Lagrange", 2))
@@ -172,8 +171,8 @@ def test_block_size(mesh):
 @pytest.mark.skip
 def test_block_size_real(mesh):
     mesh = create_unit_interval(MPI.COMM_WORLD, 12)
-    V = basix.ufl_wrapper.create_element('DG', mesh.ufl_cell().cellname(), 0)
-    R = basix.ufl_wrapper.create_element('R', mesh.ufl_cell().cellname(), 0)
+    V = create_element('DG', mesh.ufl_cell().cellname(), 0)
+    R = create_element('R', mesh.ufl_cell().cellname(), 0)
     X = FunctionSpace(mesh, V * R)
     assert X.dofmap.index_map_bs == 1
 
@@ -187,8 +186,8 @@ def test_local_dimension(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
 
-    v = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), 1)
-    q = basix.ufl_wrapper.create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    v = create_element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    q = create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 1)
     w = v * q
 
     V = FunctionSpace(mesh, v)
@@ -255,7 +254,7 @@ def test_readonly_view_local_to_global_unwoned(mesh):
 def test_higher_order_coordinate_map(points, celltype, order):
     """Computes physical coordinates of a cell, based on the coordinate map."""
     cells = np.array([range(len(points))])
-    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", celltype.name, order))
+    domain = ufl.Mesh(create_vector_element("Lagrange", celltype.name, order))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     V = FunctionSpace(mesh, ("Lagrange", 2))
@@ -304,7 +303,7 @@ def test_higher_order_tetra_coordinate_map(order):
                            [0, 1, 3 / 2], [1 / 2, 0, 3 / 2], [1 / 2, 1, 0], [0, 0, 3 / 2],
                            [0, 1, 0], [1 / 2, 0, 0]])
     cells = np.array([range(len(points))])
-    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", celltype.name, order))
+    domain = ufl.Mesh(create_vector_element("Lagrange", celltype.name, order))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     V = FunctionSpace(mesh, ("Lagrange", order))
     X = V.element.interpolation_points()

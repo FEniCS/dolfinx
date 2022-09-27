@@ -8,8 +8,7 @@
 import numpy as np
 import pytest
 
-import basix
-import basix.ufl_wrapper
+from basix.ufl_wrapper import create_element
 import ufl
 from dolfinx.fem import Function, FunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix, assemble_vector
@@ -27,7 +26,7 @@ def test_complex_assembly():
     """Test assembly of complex matrices and vectors"""
 
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
-    P2 = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), 2)
+    P2 = create_element("Lagrange", mesh.ufl_cell().cellname(), 2)
     V = FunctionSpace(mesh, P2)
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
@@ -80,7 +79,7 @@ def test_complex_assembly_solve():
 
     degree = 3
     mesh = create_unit_square(MPI.COMM_WORLD, 20, 20)
-    P = basix.ufl_wrapper.create_element("Lagrange", mesh.ufl_cell().cellname(), degree)
+    P = create_element("Lagrange", mesh.ufl_cell().cellname(), degree)
     V = FunctionSpace(mesh, P)
 
     x = ufl.SpatialCoordinate(mesh)
