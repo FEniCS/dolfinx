@@ -208,7 +208,7 @@ def curl_axis(a, m: int, rho):
 # +&\hat{z} \left(E_{0} \sin \theta e^{i k z \cos \theta}i^{-m} J_{m}
 # \left(k \rho \sin \theta\right)\right)\\
 # +&\hat{\phi} \left(\frac{E_{0} \cos \theta}{k \rho \sin \theta}
-# e^{i k z \cos \theta} i^{-m} J_{m}\left(k \rho \sin \theta\right)\right)
+# e^{i k z \cos \theta} mi^{-m} J_{m}\left(k \rho \sin \theta\right)\right)
 # \end{align}
 # $$
 #
@@ -443,13 +443,29 @@ theta = np.pi / 4  # Angle of incidence of the background field
 m_list = [0, 1]  # list of harmonics
 
 # with `m_list` being a list containing the harmonic
-# numbers we want to solve the problem for. For
-# subwavelength structure (as in our case), we can limit
-# the calculation to few harmonic numbers, i.e.
-# $m = -1, 0, 1$. Besides, due to the symmetry
-# of Bessel functions, the solutions for $m = \pm 1$ are
-# the same, and therefore we can just consider positive
-# harmonic numbers.
+# numbers we want to solve the problem for. In general,
+# we would need to solve for $m\in \mathbb{Z}$. However,
+# for subwavelength structure (as our sphere),
+# we can limit the calculation to few harmonic numbers, i.e.
+# $m = -1, 0, 1$. Besides, we have that:
+#
+# \begin{aligned}
+# &J_{-m}=(-1)^m J_m \\
+# &J_{-m}^{\prime}=(-1)^m J_m^{\prime} \\
+# &i^{-m}=(-1)^m i^m
+# \end{aligned}
+#
+# and therefore:
+#
+# \begin{aligned}
+# &E_{b, \rho}^{(m)}=E_{b, \rho}^{(-m)} \\
+# &E_{b, \phi}^{(m)}=-E_{b, \phi}^{(-m)} \\
+# &E_{b, z}^{(m)}=E_{b, z}^{(-m)}
+# \end{aligned}
+#
+# It follows that we can solve the problem only for $m\geq 0$,
+# and retrieving $m<0$ solutions by considering parity.
+#
 
 # We can now define `eps_pml` and `mu_pml`:
 
@@ -607,12 +623,28 @@ for m in m_list:
 q_ext_fenics = q_abs_fenics + q_sca_fenics
 # -
 
-# Let's compare the analytical and numerical efficiencies, and let's print
-# the results:
+# We can now compare the numerical efficiencies with
+# the analytical ones. For analytical efficiencies,
+# we used the output given by the following routine
+# provided by the [`scattnlay`](https://github.com/ovidiopr/scattnlay)
+# library:
+#
+# ```
+# from scattnlay import scattnlay
+#
+# m = np.sqrt(eps_au)/n_bkg
+# x = 2*np.pi*radius_sph/wl0*n_bkg
+#
+# q_sca_analyt, q_abs_analyt = scattnlay(np.array([x], dtype=np.complex128), np.array([m], dtype=np.complex128))[2:4]
+# ```
+#
+# The numbers are the following:
 
 q_abs_analyt = 0.9622728008329892
 q_sca_analyt = 0.07770397394691526
 q_ext_analyt = q_abs_analyt + q_sca_analyt
+
+# We can now calculate the error:
 
 # +
 # Error calculation
@@ -642,8 +674,12 @@ if MPI.COMM_WORLD.rank == 0:
     assert err_abs < 0.01
     assert err_sca < 0.01
     assert err_ext < 0.01
+# -
 
+# Once sure our solution is correct, we can save
+# the scattered field and visualize it:
 
+# +
 Esh_rz, Esh_p = Esh.split()
 
 Esh_rz_dg = fem.Function(V_dg)
