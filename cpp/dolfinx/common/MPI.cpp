@@ -95,8 +95,13 @@ void dolfinx::MPI::assert_and_throw(MPI_Comm comm, int error_code)
     std::string error_string(len, ' ');
     MPI_Error_string(error_code, error_string.data(), &len);
     error_string.resize(len);
+    
+    // Output error message
+    std::cerr << error_string << std::endl;
     MPI_Abort(comm, error_code);
-    throw std::runtime_error(error_string);
+
+    // Terminate execution
+    std::abort();
   }
 }
 //-----------------------------------------------------------------------------
