@@ -89,7 +89,7 @@ common::compute_owned_indices(const std::span<const std::int32_t>& indices,
   int ierr = MPI_Dist_graph_create_adjacent(
       map.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
       src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
-  dolfinx::MPI::assert_and_throw(ierr);
+  dolfinx::MPI::assert_and_throw(map.comm(), ierr);
 
   // Exchange number of indices to send/receive from each rank
   std::vector<int> recv_sizes(dest.size(), 0);
@@ -97,7 +97,7 @@ common::compute_owned_indices(const std::span<const std::int32_t>& indices,
   recv_sizes.reserve(1);
   ierr = MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(),
                                1, MPI_INT, comm);
-  dolfinx::MPI::assert_and_throw(ierr);
+  dolfinx::MPI::assert_and_throw(comm, ierr);
 
   // Prepare receive displacement array
   std::vector<int> recv_disp(dest.size() + 1, 0);
@@ -110,10 +110,10 @@ common::compute_owned_indices(const std::span<const std::int32_t>& indices,
                                 send_disp.data(), MPI_INT64_T,
                                 recv_buffer.data(), recv_sizes.data(),
                                 recv_disp.data(), MPI_INT64_T, comm);
-  dolfinx::MPI::assert_and_throw(ierr);
+  dolfinx::MPI::assert_and_throw(comm, ierr);
 
   ierr = MPI_Comm_free(&comm);
-  dolfinx::MPI::assert_and_throw(ierr);
+  dolfinx::MPI::assert_and_throw(comm, ierr);
 
   // Remove duplicates from received indices
   std::sort(recv_buffer.begin(), recv_buffer.end());

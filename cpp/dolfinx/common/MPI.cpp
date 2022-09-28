@@ -82,11 +82,12 @@ int dolfinx::MPI::rank(const MPI_Comm comm)
 int dolfinx::MPI::size(const MPI_Comm comm)
 {
   int size;
-  MPI_Comm_size(comm, &size);
+  int ierr = MPI_Comm_size(comm, &size);
+  dolfinx::MPI::assert_and_throw(comm, ierr);
   return size;
 }
 //-----------------------------------------------------------------------------
-void dolfinx::MPI::assert_and_throw(int error_code)
+void dolfinx::MPI::assert_and_throw(MPI_Comm comm, int error_code)
 {
   if (error_code != MPI_SUCCESS)
   {
@@ -94,6 +95,7 @@ void dolfinx::MPI::assert_and_throw(int error_code)
     std::string error_string(len, ' ');
     MPI_Error_string(error_code, error_string.data(), &len);
     error_string.resize(len);
+    MPI_Abort(comm, error_code);
     throw std::runtime_error(error_string);
   }
 }
