@@ -235,7 +235,9 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
     _element
         = std::make_unique<basix::FiniteElement>(basix::create_custom_element(
             cell_type, value_shape, wcoeffs, _x, _M, nderivs,
-            static_cast<basix::maps::type>(ce->map_type), ce->discontinuous,
+            static_cast<basix::maps::type>(ce->map_type),
+            static_cast<basix::sobolev::space>(ce->sobolev_space),
+            ce->discontinuous,
             ce->highest_complete_degree, ce->highest_degree));
   }
   else if (is_basix_element(e))
