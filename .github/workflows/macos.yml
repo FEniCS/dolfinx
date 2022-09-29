@@ -71,7 +71,7 @@ jobs:
       - name: Install FFCx
         run: |
           source fenicsx/bin/activate
-          python -m pip install git+https://github.com/FEniCS/ffcx.git
+          python -m pip install git+https://github.com/FEniCS/ffcx.git@mscroggs/leave-ufl-elements-alone
 
       - uses: actions/checkout@v3
         with:
