@@ -11,6 +11,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+import basix
+from basix.ufl_wrapper import create_vector_element
 import ufl
 from dolfinx.cpp.io import perm_vtk
 from dolfinx.fem import assemble_scalar, form
@@ -92,8 +94,8 @@ def test_submesh(order):
                 for i in range(1, order - j - k):
                     cell.append(coord_to_vertex(i, j, k))
 
-    domain = ufl.Mesh(ufl.VectorElement(
-        "Lagrange", ufl.Cell("tetrahedron", geometric_dimension=3), order))
+    domain = ufl.Mesh(create_vector_element(
+        "Lagrange", "tetrahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced))
 
     mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
     for i in range(mesh.topology.dim):
