@@ -10,7 +10,7 @@ import basix.finite_element
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import create_unit_cube, create_mesh
 from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
-                 grad, triangle, Mesh, Cell, VectorElement)
+                 grad, triangle, Mesh, Cell)
 from ufl.log import UFLException
 import numpy as np
 from mpi4py import MPI
