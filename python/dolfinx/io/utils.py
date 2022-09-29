@@ -11,6 +11,8 @@ import typing
 import numpy as np
 import numpy.typing as npt
 
+import basix
+import basix.ufl_wrapper
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.fem import Function
@@ -155,16 +157,15 @@ class XDMFFile(_cpp.io.XDMFFile):
         cells = super().read_topology_data(name, xpath)
         x = super().read_geometry_data(name, xpath)
 
-        # Construct the geometry map
-        cell = ufl.Cell(cell_shape.name, geometric_dimension=x.shape[1])
-
         # Build the mesh
         cmap = _cpp.fem.CoordinateElement(cell_shape, cell_degree)
         mesh = _cpp.mesh.create_mesh(self.comm(), _cpp.graph.AdjacencyList_int64(cells),
                                      cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
         mesh.name = name
 
-        domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
+        domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
+            "Lagrange", cell_shape.name, cell_degree, basix.LagrangeVariant.equispaced, dim=x.shape[1],
+            gdim=x.shape[1]))
         return Mesh.from_cpp(mesh, domain)
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
