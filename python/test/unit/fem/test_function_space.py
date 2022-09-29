@@ -7,9 +7,8 @@
 import pytest
 
 import basix.finite_element
-from dolfinx.graph import create_adjacencylist
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.mesh import create_unit_cube, CellType, create_mesh, create_cell_partitioner
+from dolfinx.mesh import create_unit_cube, create_mesh
 from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
                  grad, triangle, Mesh, Cell, VectorElement)
 from ufl.log import UFLException
