@@ -2,6 +2,7 @@ from dolfinx import mesh, fem
 from mpi4py import MPI
 from petsc4py import PETSc
 import numpy as np
+from ufl import TrialFunction, TestFunction, CellDiameter, FacetNormal
 
 
 n = 16
@@ -37,3 +38,17 @@ def boundary_marker(x):
 
 
 msh = mesh.create_unit_square(MPI.COMM_WORLD, n, n)
+
+V = fem.FunctionSpace(msh, ("Raviart-Thomas", k + 1))
+Q = fem.FunctionSpace(msh, ("Discontinuous Lagrange", k))
+W = fem.VectorFunctionSpace(msh, ("Discontinuous Lagrange", k + 1))
+
+u, v = TrialFunction(V), TestFunction(V)
+p, q = TrialFunction(Q), TestFunction(Q)
+
+delta_t = fem.Constant(msh, PETSc.ScalarType(t_end / num_time_steps))
+alpha = fem.Constant(msh, PETSc.ScalarType(6.0 * k**2))
+R_e = fem.Constant(msh, PETSc.ScalarType(R_e))
+
+h = CellDiameter(msh)
+n = FacetNormal(msh)
