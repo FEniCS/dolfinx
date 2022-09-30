@@ -167,3 +167,31 @@ L_0 += inner(u_n / delta_t, v) * dx - \
     inner(dot(u_n, n) * (1 - lmbda) * u_bc, v) * ds
 L = fem.form([L_0,
               L_1])
+
+for n in range(num_time_steps):
+    t += delta_t.value
+
+    A.zeroEntries()
+    fem.petsc.assemble_matrix_block(A, a, bcs=bcs)
+    A.assemble()
+
+    with b.localForm() as b_loc:
+        b_loc.set(0)
+    fem.petsc.assemble_vector_block(b, L, a, bcs=bcs)
+
+    # Compute solution
+    ksp.solve(b, x)
+    u_h.x.array[:offset] = x.array_r[:offset]
+    u_h.x.scatter_forward()
+    p_h.x.array[:(len(x.array_r) - offset)] = x.array_r[offset:]
+    p_h.x.scatter_forward()
+
+    u_vis.interpolate(u_h)
+
+    u_file.write(t)
+    p_file.write(t)
+
+    u_n.x.array[:] = u_h.x.array
+
+u_file.close()
+p_file.close()
