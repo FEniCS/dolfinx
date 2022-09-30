@@ -1,3 +1,13 @@
+# This demo illustrates how to implement a divergence conforming
+# discontinuous Galerkin method for the Navier-Stokes equations in
+# FEniCSx. The method conserves mass exactly and uses upwinding.
+# Formulation inspired by a combination of "A fully divergence-free finite
+# element method for magnetohydrodynamic equations" by Himpmair et al.,
+# "A Note on Discontinuous Galerkin Divergence-free Solutions of the
+# Navier-Stokes Equations" by Cockburn et al, and "On the Divergence
+# Constraint in Mixed Finite Element Methods for Incompressible Flows" by
+# John et al.
+
 from dolfinx import mesh, fem, io
 from mpi4py import MPI
 from petsc4py import PETSc
