@@ -3,7 +3,8 @@ from mpi4py import MPI
 from petsc4py import PETSc
 import numpy as np
 from ufl import (TrialFunction, TestFunction, CellDiameter, FacetNormal,
-                 inner, grad, dx, dS, ds, avg, outer, div)
+                 inner, grad, dx, dS, ds, avg, outer, div, conditional,
+                 gt, dot)
 
 
 n = 16
@@ -148,3 +149,21 @@ p_file = io.VTXWriter(msh.comm, "p.bp", [p_h._cpp_object])
 t = 0.0
 u_file.write(t)
 p_file.write(t)
+
+u_n = fem.Function(V)
+u_n.x.array[:] = u_h.x.array
+
+lmbda = conditional(gt(dot(u_n, n), 0), 1, 0)
+u_uw = lmbda("+") * u("+") + lmbda("-") * u("-")
+a_00 += inner(u / delta_t, v) * dx - \
+    inner(u, div(outer(v, u_n))) * dx + \
+    inner((dot(u_n, n))("+") * u_uw, v("+")) * dS + \
+    inner((dot(u_n, n))("-") * u_uw, v("-")) * dS + \
+    inner(dot(u_n, n) * lmbda * u, v) * ds
+a = fem.form([[a_00, a_01],
+              [a_10, a_11]])
+
+L_0 += inner(u_n / delta_t, v) * dx - \
+    inner(dot(u_n, n) * (1 - lmbda) * u_bc, v) * ds
+L = fem.form([L_0,
+              L_1])
