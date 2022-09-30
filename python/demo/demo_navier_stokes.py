@@ -82,3 +82,23 @@ L_1 = inner(fem.Constant(msh, PETSc.ScalarType(0.0)), q) * dx
 
 L = fem.form([L_0,
               L_1])
+
+boundary_facets = mesh.locate_entities_boundary(
+    msh, msh.topology.dim - 1, boundary_marker)
+boundary_vel_dofs = fem.locate_dofs_topological(
+    V, msh.topology.dim - 1, boundary_facets)
+bc_u = fem.dirichletbc(u_bc, boundary_vel_dofs)
+
+# TODO TIDY
+pressure_dofs = fem.locate_dofs_geometrical(
+    Q, lambda x: np.logical_and(np.isclose(x[0], 0.0),
+                                np.isclose(x[1], 0.0)))
+if len(pressure_dofs) > 0:
+    pressure_dof = [pressure_dofs[0]]
+else:
+    pressure_dof = []
+bc_p = fem.dirichletbc(PETSc.ScalarType(0.0),
+                       np.array(pressure_dof, dtype=np.int32),
+                       Q)
+
+bcs = [bc_u, bc_p]
