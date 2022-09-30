@@ -405,7 +405,6 @@ public:
     const std::array local_range
         = {_index_maps[0]->local_range(), _index_maps[1]->local_range()};
     const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
-
     const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
     const std::vector<int>& src_ranks = _index_maps[0]->src();
     const std::vector<int>& dest_ranks = _index_maps[0]->dest();
@@ -435,24 +434,20 @@ public:
     {
       assert(_ghost_row_to_rank[i] < data_per_proc.size());
       std::size_t pos = local_size[0] + i;
+      assert((pos + 1) < _row_ptr.size());
       data_per_proc[_ghost_row_to_rank[i]] += _row_ptr[pos + 1] - _row_ptr[pos];
     }
 
-    // Compute send displacements for values (x bs0*bs1) and indices (x2)
-    _val_send_disp.resize(src_ranks.size() + 1, 0);
-    std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
-                     std::next(_val_send_disp.begin()));
+    // Compute send displacements for indices (x2)
     std::vector<int> index_send_disp(src_ranks.size() + 1);
-    std::transform(_val_send_disp.begin(), _val_send_disp.end(),
+    std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
+                     std::next(index_send_disp.begin()));
+    std::transform(index_send_disp.begin(), index_send_disp.end(),
                    index_send_disp.begin(), [](int d) { return d * 2; });
-    int nbs = _bs[0] * _bs[1];
-    std::transform(_val_send_disp.begin(), _val_send_disp.end(),
-                   _val_send_disp.begin(), [&nbs](int d) { return d * nbs; });
 
     // For each ghost row, pack and send indices to neighborhood
-    std::vector<std::int64_t> ghost_index_data(2 * _val_send_disp.back());
+    std::vector<std::int64_t> ghost_index_data(index_send_disp.back());
     {
-      std::vector<int> insert_pos = _val_send_disp;
       for (std::size_t i = 0; i < _ghost_row_to_rank.size(); ++i)
       {
         const int rank = _ghost_row_to_rank[i];
@@ -460,7 +455,7 @@ public:
         for (int j = _row_ptr[row_id]; j < _row_ptr[row_id + 1]; ++j)
         {
           // Get position in send buffer
-          const std::int32_t idx_pos = 2 * insert_pos[rank];
+          const std::int32_t idx_pos = index_send_disp[rank];
 
           // Pack send data (row, col) as global indices
           ghost_index_data[idx_pos] = ghosts0[i];
@@ -469,7 +464,7 @@ public:
           else
             ghost_index_data[idx_pos + 1] = ghosts1[col_local - local_size[1]];
 
-          insert_pos[rank] += 1;
+          index_send_disp[rank] += 2;
         }
       }
     }
@@ -504,8 +499,15 @@ public:
                              recv_disp.data(), MPI_INT64_T, _comm.comm());
     }
 
-    // Store receive displacements for future use, when transferring
+    // Store displacements for future use, when transferring
     // data values
+
+    _val_send_disp.resize(src_ranks.size() + 1, 0);
+    std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
+                     std::next(_val_send_disp.begin()));
+    int nbs = _bs[0] * _bs[1];
+    std::transform(_val_send_disp.begin(), _val_send_disp.end(),
+                   _val_send_disp.begin(), [&nbs](int d) { return d * nbs; });
     _val_recv_disp.resize(recv_disp.size());
     std::transform(recv_disp.begin(), recv_disp.end(), _val_recv_disp.begin(),
                    [&nbs](int d) { return nbs * d / 2; });
