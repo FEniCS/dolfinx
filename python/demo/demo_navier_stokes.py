@@ -102,3 +102,24 @@ bc_p = fem.dirichletbc(PETSc.ScalarType(0.0),
                        Q)
 
 bcs = [bc_u, bc_p]
+
+# Assemble Stokes problem
+A = fem.petsc.assemble_matrix_block(a, bcs=bcs)
+A.assemble()
+b = fem.petsc.assemble_vector_block(L, a, bcs=bcs)
+
+# Create and configure solver
+ksp = PETSc.KSP().create(msh.comm)
+ksp.setOperators(A)
+ksp.setType("preonly")
+ksp.getPC().setType("lu")
+ksp.getPC().setFactorSolverType("mumps")
+opts = PETSc.Options()
+# See https://graal.ens-lyon.fr/MUMPS/doc/userguide_5.5.1.pdf
+# TODO Check
+opts["mat_mumps_icntl_6"] = 2
+opts["mat_mumps_icntl_14"] = 100
+opts["ksp_error_if_not_converged"] = 1
+ksp.setFromOptions()
+
+x = A.createVecRight()
