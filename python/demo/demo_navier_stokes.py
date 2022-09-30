@@ -82,8 +82,8 @@ def jump(phi, n):
 
 
 # We solve the Stokes problem for the initial condition
-a_00 = 1 / R_e_const * (inner(grad(u), grad(v)) * dx -
-                        inner(avg(grad(u)), jump(v, n)) * dS
+a_00 = 1 / R_e_const * (inner(grad(u), grad(v)) * dx
+                        - inner(avg(grad(u)), jump(v, n)) * dS
                         - inner(jump(u, n), avg(grad(v))) * dS
                         + alpha / avg(h) * inner(jump(u, n), jump(v, n)) * dS
                         - inner(grad(u), outer(v, n)) * ds
