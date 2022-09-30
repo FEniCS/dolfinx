@@ -7,11 +7,19 @@ from ufl import (TrialFunction, TestFunction, CellDiameter, FacetNormal,
                  gt, dot)
 
 
-n = 16
-num_time_steps = 25
-t_end = 10
-R_e = 25
-k = 1
+def norm_L2(comm, v):
+    """Compute the L2(Ω)-norm of v"""
+    return np.sqrt(comm.allreduce(
+        fem.assemble_scalar(fem.form(inner(v, v) * dx)), op=MPI.SUM))
+
+
+def domain_average(msh, v):
+    """Compute the average of a function over the domain"""
+    vol = msh.comm.allreduce(
+        fem.assemble_scalar(fem.form(
+            fem.Constant(msh, PETSc.ScalarType(1.0)) * dx)), op=MPI.SUM)
+    return 1 / vol * msh.comm.allreduce(
+        fem.assemble_scalar(fem.form(v * dx)), op=MPI.SUM)
 
 
 def u_e_expr(x):
@@ -38,6 +46,12 @@ def boundary_marker(x):
     return np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0) | \
         np.isclose(x[1], 0.0) | np.isclose(x[1], 1.0)
 
+
+n = 16
+num_time_steps = 25
+t_end = 10
+R_e = 25
+k = 1
 
 msh = mesh.create_unit_square(MPI.COMM_WORLD, n, n)
 
@@ -195,3 +209,24 @@ for n in range(num_time_steps):
 
 u_file.close()
 p_file.close()
+
+V_e = fem.VectorFunctionSpace(msh, ("Lagrange", k + 3))
+Q_e = fem.FunctionSpace(msh, ("Lagrange", k + 2))
+
+u_e = fem.Function(V_e)
+u_e.interpolate(u_e_expr)
+
+p_e = fem.Function(Q_e)
+p_e.interpolate(p_e_expr)
+
+e_u = norm_L2(msh.comm, u_h - u_e)
+e_div_u = norm_L2(msh.comm, div(u_h))
+assert np.isclose(e_div_u, 0.0)
+p_h_avg = domain_average(msh, p_h)
+p_e_avg = domain_average(msh, p_e)
+e_p = norm_L2(msh.comm, (p_h - p_h_avg) - (p_e - p_e_avg))
+
+if msh.comm.rank == 0:
+    print(f"e_u = {e_u}")
+    print(f"e_div_u = {e_div_u}")
+    print(f"e_p = {e_p}")
