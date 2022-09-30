@@ -23,6 +23,7 @@ def domain_average(msh, v):
 
 
 def u_e_expr(x):
+    """Expression for the exact velocity solution to Kovasznay flow"""
     return np.vstack((1 - np.exp(
         (R_e / 2 - np.sqrt(R_e**2 / 4 + 4 * np.pi**2)) * x[0])
         * np.cos(2 * np.pi * x[1]),
@@ -33,11 +34,13 @@ def u_e_expr(x):
 
 
 def p_e_expr(x):
+    """Expression for the exact pressure solution to Kovasznay flow"""
     return (1 / 2) * (1 - np.exp(
         2 * (R_e / 2 - np.sqrt(R_e**2 / 4 + 4 * np.pi**2)) * x[0]))
 
 
 def f_expr(x):
+    """Expression for the applied force"""
     return np.vstack((np.zeros_like(x[0]),
                       np.zeros_like(x[0])))
 
@@ -47,16 +50,20 @@ def boundary_marker(x):
         np.isclose(x[1], 0.0) | np.isclose(x[1], 1.0)
 
 
+# Simulation parameters
 n = 16
 num_time_steps = 25
 t_end = 10
-R_e = 25
-k = 1
+R_e = 25  # Reynolds Number
+k = 1  # Polynomial degree
 
 msh = mesh.create_unit_square(MPI.COMM_WORLD, n, n)
 
+# Function space for the velocity
 V = fem.FunctionSpace(msh, ("Raviart-Thomas", k + 1))
+# Function space for the pressure
 Q = fem.FunctionSpace(msh, ("Discontinuous Lagrange", k))
+# Funcion space for visualising the velocity field
 W = fem.VectorFunctionSpace(msh, ("Discontinuous Lagrange", k + 1))
 
 u, v = TrialFunction(V), TestFunction(V)
@@ -74,6 +81,7 @@ def jump(phi, n):
     return outer(phi("+"), n("+")) + outer(phi("-"), n("-"))
 
 
+# We solve the Stokes problem for the initial condition
 a_00 = 1 / R_e_const * (inner(grad(u), grad(v)) * dx -
                         inner(avg(grad(u)), jump(v, n)) * dS
                         - inner(jump(u, n), avg(grad(v))) * dS
@@ -99,12 +107,15 @@ L_1 = inner(fem.Constant(msh, PETSc.ScalarType(0.0)), q) * dx
 L = fem.form([L_0,
               L_1])
 
+# Boundary conditions
 boundary_facets = mesh.locate_entities_boundary(
     msh, msh.topology.dim - 1, boundary_marker)
 boundary_vel_dofs = fem.locate_dofs_topological(
     V, msh.topology.dim - 1, boundary_facets)
 bc_u = fem.dirichletbc(u_bc, boundary_vel_dofs)
 
+# The pressure is only determined up to a constant, so pin a single degree
+# of freedom
 # TODO TIDY
 pressure_dofs = fem.locate_dofs_geometrical(
     Q, lambda x: np.logical_and(np.isclose(x[0], 0.0),
@@ -143,6 +154,7 @@ x = A.createVecRight()
 # Solve Stokes for initial condition
 ksp.solve(b, x)
 
+# Split the solution
 u_h = fem.Function(V)
 p_h = fem.Function(Q)
 p_h.name = "p"
@@ -157,6 +169,7 @@ u_vis = fem.Function(W)
 u_vis.name = "u"
 u_vis.interpolate(u_h)
 
+# Write initial condition to file
 u_file = io.VTXWriter(msh.comm, "u.bp", [u_vis._cpp_object])
 p_file = io.VTXWriter(msh.comm, "p.bp", [p_h._cpp_object])
 
@@ -164,9 +177,11 @@ t = 0.0
 u_file.write(t)
 p_file.write(t)
 
+# Solution and previous time step
 u_n = fem.Function(V)
 u_n.x.array[:] = u_h.x.array
 
+# Add time stepping and convective terms
 lmbda = conditional(gt(dot(u_n, n), 0), 1, 0)
 u_uw = lmbda("+") * u("+") + lmbda("-") * u("-")
 a_00 += inner(u / delta_t, v) * dx - \
@@ -182,6 +197,7 @@ L_0 += inner(u_n / delta_t, v) * dx - \
 L = fem.form([L_0,
               L_1])
 
+# Time stepping loop
 for n in range(num_time_steps):
     t += delta_t.value
 
@@ -202,14 +218,17 @@ for n in range(num_time_steps):
 
     u_vis.interpolate(u_h)
 
+    # Write to file
     u_file.write(t)
     p_file.write(t)
 
+    # Update u_n
     u_n.x.array[:] = u_h.x.array
 
 u_file.close()
 p_file.close()
 
+# Function spaces for exact velocity and pressure
 V_e = fem.VectorFunctionSpace(msh, ("Lagrange", k + 3))
 Q_e = fem.FunctionSpace(msh, ("Lagrange", k + 2))
 
@@ -219,8 +238,10 @@ u_e.interpolate(u_e_expr)
 p_e = fem.Function(Q_e)
 p_e.interpolate(p_e_expr)
 
+# Compute errors
 e_u = norm_L2(msh.comm, u_h - u_e)
 e_div_u = norm_L2(msh.comm, div(u_h))
+# This scheme conserves mass exactly, so check this
 assert np.isclose(e_div_u, 0.0)
 p_h_avg = domain_average(msh, p_h)
 p_e_avg = domain_average(msh, p_e)
