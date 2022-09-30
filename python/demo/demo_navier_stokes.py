@@ -1,4 +1,4 @@
-from dolfinx import mesh, fem
+from dolfinx import mesh, fem, io
 from mpi4py import MPI
 from petsc4py import PETSc
 import numpy as np
@@ -49,7 +49,7 @@ p, q = TrialFunction(Q), TestFunction(Q)
 
 delta_t = fem.Constant(msh, PETSc.ScalarType(t_end / num_time_steps))
 alpha = fem.Constant(msh, PETSc.ScalarType(6.0 * k**2))
-R_e = fem.Constant(msh, PETSc.ScalarType(R_e))
+R_e_const = fem.Constant(msh, PETSc.ScalarType(R_e))
 
 h = CellDiameter(msh)
 n = FacetNormal(msh)
@@ -59,13 +59,13 @@ def jump(phi, n):
     return outer(phi("+"), n("+")) + outer(phi("-"), n("-"))
 
 
-a_00 = 1 / R_e * (inner(grad(u), grad(v)) * dx -
-                  inner(avg(grad(u)), jump(v, n)) * dS
-                  - inner(jump(u, n), avg(grad(v))) * dS
-                  + alpha / avg(h) * inner(jump(u, n), jump(v, n)) * dS
-                  - inner(grad(u), outer(v, n)) * ds
-                  - inner(outer(u, n), grad(v)) * ds
-                  + alpha / h * inner(outer(u, n), outer(v, n)) * ds)
+a_00 = 1 / R_e_const * (inner(grad(u), grad(v)) * dx -
+                        inner(avg(grad(u)), jump(v, n)) * dS
+                        - inner(jump(u, n), avg(grad(v))) * dS
+                        + alpha / avg(h) * inner(jump(u, n), jump(v, n)) * dS
+                        - inner(grad(u), outer(v, n)) * ds
+                        - inner(outer(u, n), grad(v)) * ds
+                        + alpha / h * inner(outer(u, n), outer(v, n)) * ds)
 a_01 = - inner(p, div(v)) * dx
 a_10 = - inner(div(u), q) * dx
 a_11 = fem.Constant(msh, PETSc.ScalarType(0.0)) * inner(p, q) * dx
@@ -75,9 +75,10 @@ a = fem.form([[a_00, a_01],
 
 f = fem.Function(W)
 u_bc = fem.Function(V)
+u_bc.interpolate(u_e_expr)
 L_0 = inner(f, v) * dx + \
-    1 / R_e * (- inner(outer(u_bc, n), grad(v)) * ds
-               + alpha / h * inner(outer(u_bc, n), outer(v, n)) * ds)
+    1 / R_e_const * (- inner(outer(u_bc, n), grad(v)) * ds
+                     + alpha / h * inner(outer(u_bc, n), outer(v, n)) * ds)
 L_1 = inner(fem.Constant(msh, PETSc.ScalarType(0.0)), q) * dx
 
 L = fem.form([L_0,
@@ -123,3 +124,27 @@ opts["ksp_error_if_not_converged"] = 1
 ksp.setFromOptions()
 
 x = A.createVecRight()
+
+# Solve Stokes for initial condition
+ksp.solve(b, x)
+
+u_h = fem.Function(V)
+p_h = fem.Function(Q)
+p_h.name = "p"
+offset = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
+
+u_h.x.array[:offset] = x.array_r[:offset]
+u_h.x.scatter_forward()
+p_h.x.array[:(len(x.array_r) - offset)] = x.array_r[offset:]
+p_h.x.scatter_forward()
+
+u_vis = fem.Function(W)
+u_vis.name = "u"
+u_vis.interpolate(u_h)
+
+u_file = io.VTXWriter(msh.comm, "u.bp", [u_vis._cpp_object])
+p_file = io.VTXWriter(msh.comm, "p.bp", [p_h._cpp_object])
+
+t = 0.0
+u_file.write(t)
+p_file.write(t)
