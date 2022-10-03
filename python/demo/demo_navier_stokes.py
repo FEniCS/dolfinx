@@ -12,7 +12,7 @@
 # This demo illustrates how to implement a divergence conforming
 # discontinuous Galerkin method for the Navier-Stokes equations in
 # FEniCSx. The method conserves mass exactly and uses upwinding. The
-# formulation is inspired by a combination of "A fully divergence-free
+# formulation is based on a combination of "A fully divergence-free
 # finite element method for magnetohydrodynamic equations" by Himpmair
 # et al., "A Note on Discontinuous Galerkin Divergence-free Solutions
 # of the Navier-Stokes Equations" by Cockburn et al, and "On the Divergence
@@ -20,7 +20,7 @@
 # John et al.
 
 # ## Governing equations
-# We consider incompressible Navier-Stokes equations in a domain
+# We consider the incompressible Navier-Stokes equations in a domain
 # $\Omega \subset \mathbb{R}^d$, $d \in \{2, 3\}$, and time interval
 # $(0, \infty)$, given by
 # $$
@@ -68,8 +68,8 @@
 # $$
 #     \nabla \cdot V_h(K) \subseteq Q_h(K),
 # $$
-# in order to conserve mass exactly. Suitable choices on affine simplex cells
-# include
+# in order for mass to be conserved exactly. Suitable choices on
+# affine simplex cells include
 # $$
 #     V_h(K) \coloneqq \mathbb{RT}_k(K) \textnormal{ and }
 #     Q_h(K) \coloneqq \mathbb{P}_k(K),
@@ -142,7 +142,7 @@
 # $$
 
 # ## Implementation
-# We begin by importing the required modules and functions and
+# We begin by importing the required modules and functions
 
 from dolfinx import mesh, fem, io
 from mpi4py import MPI
