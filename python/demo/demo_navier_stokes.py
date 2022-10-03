@@ -1,3 +1,14 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.13.6
+# ---
+
+# # A divergence conforming discontinuous Galerkin method for the Navier-Stokes equations
 # This demo illustrates how to implement a divergence conforming
 # discontinuous Galerkin method for the Navier-Stokes equations in
 # FEniCSx. The method conserves mass exactly and uses upwinding. The
@@ -7,6 +18,128 @@
 # of the Navier-Stokes Equations" by Cockburn et al, and "On the Divergence
 # Constraint in Mixed Finite Element Methods for Incompressible Flows" by
 # John et al.
+
+# ## Governing equations
+# We consider incompressible Navier-Stokes equations in a domain
+# $\Omega \subset \mathbb{R}^d$, $d \in \{2, 3\}$, and time interval
+# $(0, \infty)$, given by
+# $$
+#     \partial_t u - \nu \Delta u + (u \cdot \nabla)u + \nabla p = f
+#     \textnormal{ in } \Omega_t,
+# $$
+# $$
+#     \nabla \cdot u = 0
+#     \textnormal{ in } \Omega_t,
+# $$
+# where $u: \Omega_t \to \mathbb{R}^d$ is the velocity field,
+# $p: \Omega_t \to \mathbb{R}$ is the pressure field,
+# $f: \Omega_t \to \mathbb{R}^d$ is a prescribed force, $\nu \in \mathbb{R}^+$
+# is the kinematic viscosity, and
+# $\Omega_t \coloneqq \Omega \times (0, \infty)$.
+
+# The problem is supplemented with the initial condition
+# $$
+#     u(x, 0) = u_0(x) \textnormal{ in } \Omega
+# $$
+# and boundary condition
+# $$
+#     u = u_D \textnormal{ on } \partial \Omega \times (0, \infty),
+# $$
+# where $u_0: \Omega \to \mathbb{R}^d$ is a prescribed initial velocity field
+# which satisfies the divergence free condition. The pressure field is only
+# determined up to a constant, so we seek the unique pressure field satisfying
+# $$
+#     \int_\Omega p = 0.
+# $$
+
+# ## Discrete problem
+# We begin by introducing the function spaces
+# $$
+#     V_h^g \coloneqq \left\{v \in H(\textnormal{div}; \Omega);
+#     v|_K \in V_h(K) \; \forall K \in \mathcal{T}, v \cdot n = g \cdot n
+#     \textnormal{ on } \partial \Omega \right\}
+# $$,
+# and
+# $$
+#     Q_h \coloneqq \left\{q \in L^2_0(\Omega);
+#     q|_K \in Q_h(K) \; \forall K \in \mathcal{T} \right\}.
+# $$
+# The local spaces $V_h(K)$ and $Q_h(K)$ should satisfy
+# $$
+#     \nabla \cdot V_h(K) \subseteq Q_h(K),
+# $$
+# in order to conserve mass exactly. Suitable choices on affine simplex cells
+# include
+# $$
+#     V_h(K) \coloneqq \mathbb{RT}_k(K) \textnormal{ and }
+#     Q_h(K) \coloneqq \mathbb{P}_k(K),
+# $$
+# or
+# $$
+#     V_h(K) \coloneqq \mathbb{BDM}_k(K) \textnormal{ and }
+#     Q_h(K) \coloneqq \mathbb{P}_{k-1}(K).
+# $$
+
+# Let two cells $K^+$ and $K^-$ share a facet $F$. The trace of a piecewise
+# smooth vector valued function $\phi$ on F taken approaching from inside $K^+$
+# (resp. $K^-$) is denoted $\phi^{+}$ (resp. $\phi^-$). We now introduce the
+# average
+# $\renewcommand{\avg}[1]{\left\{\!\!\left\{#1\right\}\!\!\right\}}$
+# $$
+#     \avg{\phi} = \frac{1}{2} \left(\phi^+ + \phi^-\right)
+# $$
+# $\renewcommand{\jump}[1]{\llbracket #1 \rrbracket}$
+# and jump
+# $$
+#     \jump{\phi} = \phi^+ \otimes n^+ + \phi^- \otimes n^-,
+# $$
+# operators, where $n$ denotes the outward unit normal to $\partial K$.
+# Finally, let the upwind flux of $\phi$ with respect to a vector field
+# $\psi$ be defined as
+# $$
+#     \hat{\phi}^\psi \coloneqq
+#     \begin{cases}
+#         \lim_{\epsilon \downarrow 0} \phi(x - \epsilon \psi(x)), \;
+#         x \in \partial K \setminus \Gamma^\psi, \\
+#         0, \qquad \qquad \qquad \qquad x \in \partial K \cap \Gamma^\psi,
+#     \end{cases}
+# $$
+# where $\Gamma^\psi = \left\{x \in \Gamma; \; \psi(x) \cdot n(x) < 0\right\}$.
+
+# The semi-discrete version problem is: find $(u_h, p_h) \in V_h^{u_D} \times Q_h$
+# such that
+# $$
+#     \int_\Omega \partial_t u_h \cdot v + a_h(u_h, v_h) + c_h(u_h; u_h, v_h)
+#     + b_h(v_h, p_h) = \int_\Omega f \cdot v_h + L_{a_h}(v_h) + L_{c_h}(v_h)
+#      \quad \forall v_h \in V_h^0,
+# $$
+# $$
+#     b_h(u_h, q_h) = 0 \quad \forall q_h \in Q_h,
+# $$
+# where
+# $\renewcommand{\sumK}[0]{\sum_{K \in \mathcal{T}_h}}$
+# $\renewcommand{\sumF}[0]{\sum_{F \in \mathcal{F}_h}}$
+# $$
+#     a_h(u, v) = Re^{-1} \left(\sumK \int_K \nabla u : \nabla v
+#     - \sumF \int_F \avg{\nabla u} : \jump{v}
+#     - \sumF \int_F \avg{\nabla v} : \jump{u} \\
+#     + \sumF \int_F \frac{\alpha}{h_K} \jump{u} : \jump{v}\right),
+# $$
+# $$
+#     c_h(w; u, v) = - \sumK \int_K u \cdot \nabla \cdot (v \otimes w)
+#     + \sumK \int_{\partial_K} w \cdot n \hat{u}^{w} \cdot v,
+# $$
+# $$
+# L_{a_h}(v_h) = Re^{-1} \left(- \int_{\partial \Omega} u_D \otimes n :
+#   \nabla_h v_h + \frac{\alpha}{h} u_D \otimes n : v_h \otimes n \right),
+# $$
+# $$
+#     L_{c_h}(v_h) = - \int_{\partial \Omega} u_D \cdot n \hat{u}_D \cdot v_h,
+# $$
+# and
+# $$
+#     b_h(v, q) = - \int_K \nabla \cdot v q.
+# $$
 
 from dolfinx import mesh, fem, io
 from mpi4py import MPI
