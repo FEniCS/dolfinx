@@ -206,10 +206,10 @@ t_end = 10
 R_e = 25  # Reynolds Number
 k = 1  # Polynomial degree
 
-# Next, we create a mesh and create the required functions spaces over
+# Next, we create a mesh and the required functions spaces over
 # it. Since the velocity uses an $H(\textnormal{div}$-conforming function
-# space, we also create a vector valued discontinuous Lagrange to interpolate
-# into for artifact free visualisation.
+# space, we also create a vector valued discontinuous Lagrange space
+# to interpolate into for artifact free visualisation.
 
 msh = mesh.create_unit_square(MPI.COMM_WORLD, n, n)
 # Function space for the velocity
@@ -254,11 +254,11 @@ a = fem.form([[a_00, a_01],
               [a_10, a_11]])
 
 f = fem.Function(W)
-u_bc = fem.Function(V)
-u_bc.interpolate(u_e_expr)
+u_D = fem.Function(V)
+u_D.interpolate(u_e_expr)
 L_0 = inner(f, v) * dx + \
-    1 / R_e_const * (- inner(outer(u_bc, n), grad(v)) * ds
-                     + alpha / h * inner(outer(u_bc, n), outer(v, n)) * ds)
+    1 / R_e_const * (- inner(outer(u_D, n), grad(v)) * ds
+                     + alpha / h * inner(outer(u_D, n), outer(v, n)) * ds)
 L_1 = inner(fem.Constant(msh, PETSc.ScalarType(0.0)), q) * dx
 
 L = fem.form([L_0,
@@ -270,7 +270,7 @@ boundary_facets = mesh.locate_entities_boundary(
     msh, msh.topology.dim - 1, boundary_marker)
 boundary_vel_dofs = fem.locate_dofs_topological(
     V, msh.topology.dim - 1, boundary_facets)
-bc_u = fem.dirichletbc(u_bc, boundary_vel_dofs)
+bc_u = fem.dirichletbc(u_D, boundary_vel_dofs)
 
 # The pressure is only determined up to a constant, so pin a single degree
 # of freedom
@@ -356,7 +356,7 @@ a = fem.form([[a_00, a_01],
               [a_10, a_11]])
 
 L_0 += inner(u_n / delta_t, v) * dx - \
-    inner(dot(u_n, n) * (1 - lmbda) * u_bc, v) * ds
+    inner(dot(u_n, n) * (1 - lmbda) * u_D, v) * ds
 L = fem.form([L_0,
               L_1])
 
