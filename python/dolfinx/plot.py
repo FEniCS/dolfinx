@@ -84,7 +84,7 @@ def _(V: fem.FunctionSpace, entities=None):
     discontinuous) only.
 
     """
-    if not (V.ufl_element().family() in ['Discontinuous Lagrange', "Lagrange", "DQ", "Q"]):
+    if not (V.ufl_element().family() in ['Discontinuous Lagrange', "Lagrange", "DQ", "Q", "DP", "P"]):
         raise RuntimeError("Can only create meshes from continuous or discontinuous Lagrange spaces")
 
     degree = V.ufl_element().degree()

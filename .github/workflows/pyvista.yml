@@ -14,7 +14,7 @@ jobs:
   pyvista:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
     runs-on: ubuntu-22.04
-    container: fenicsproject/test-env:latest-openmpi
+    container: fenicsproject/test-env:nightly-openmpi
 
     env:
       CC: clang
@@ -24,7 +24,7 @@ jobs:
       DISPLAY: ":99.0"
       PYVISTA_OFF_SCREEN: true
       PYVISTA_QT_VERSION: 0.9.0
-      PYVISTA_VERSION: 0.34.2
+      PYVISTA_VERSION: 0.36.1
 
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-32
       OMPI_ALLOW_RUN_AS_ROOT: 1

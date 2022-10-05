@@ -6,6 +6,7 @@
 
 #include "array.h"
 #include "caster_mpi.h"
+#include <dolfinx/common/utils.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/gjk.h>
 #include <dolfinx/geometry/utils.h>
@@ -15,9 +16,7 @@
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include <xtensor/xbuilder.hpp>
-#include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
+#include <span>
 
 namespace py = pybind11;
 
@@ -32,7 +31,7 @@ void geometry(py::module& m)
       {
         return dolfinx::geometry::create_midpoint_tree(
             mesh, tdim,
-            xtl::span<const std::int32_t>(entities.data(), entities.size()));
+            std::span<const std::int32_t>(entities.data(), entities.size()));
       },
       py::arg("mesh"), py::arg("tdim"), py::arg("entities"));
 
@@ -44,19 +43,18 @@ void geometry(py::module& m)
          const py::array_t<double, py::array::c_style>& points)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-        xt::xtensor<double, 2> p
-            = xt::zeros<double>({p_s0, static_cast<std::size_t>(3)});
+        std::vector<double> p(3 * p_s0);
         auto px = points.unchecked();
         if (px.ndim() == 1)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
-            p(0, i) = px(i);
+            p[i] = px(i);
         }
         else if (px.ndim() == 2)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
             for (py::ssize_t j = 0; j < px.shape(1); j++)
-              p(i, j) = px(i, j);
+              p[3 * i + j] = px(i, j);
         }
         else
           throw std::runtime_error("Array has wrong ndim.");
@@ -73,19 +71,18 @@ void geometry(py::module& m)
          const py::array_t<double>& points)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-        xt::xtensor<double, 2> _p
-            = xt::zeros<double>({p_s0, static_cast<std::size_t>(3)});
+        std::vector<double> _p(3 * p_s0);
         auto px = points.unchecked();
         if (px.ndim() == 1)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
-            _p(0, i) = px(i);
+            _p[i] = px(i);
         }
         else if (px.ndim() == 2)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
             for (py::ssize_t j = 0; j < px.shape(1); j++)
-              _p(i, j) = px(i, j);
+              _p[3 * i + j] = px(i, j);
         }
         else
           throw std::runtime_error("Array has wrong ndim.");
@@ -93,11 +90,16 @@ void geometry(py::module& m)
         return dolfinx::geometry::compute_collisions(tree, _p);
       },
       py::arg("tree"), py::arg("points"));
-  m.def("compute_collisions",
-        py::overload_cast<const dolfinx::geometry::BoundingBoxTree&,
-                          const dolfinx::geometry::BoundingBoxTree&>(
-            &dolfinx::geometry::compute_collisions),
-        py::arg("tree0"), py::arg("tree1"));
+  m.def(
+      "compute_collisions",
+      [](const dolfinx::geometry::BoundingBoxTree& treeA,
+         const dolfinx::geometry::BoundingBoxTree& treeB)
+      {
+        std::vector coll = dolfinx::geometry::compute_collisions(treeA, treeB);
+        std::array<py::ssize_t, 2> shape = {py::ssize_t(coll.size() / 2), 2};
+        return as_pyarray(std::move(coll), shape);
+      },
+      py::arg("tree0"), py::arg("tree1"));
 
   m.def(
       "compute_distance_gjk",
@@ -105,22 +107,20 @@ void geometry(py::module& m)
       {
         const std::size_t p_s0 = p.ndim() == 1 ? 1 : p.shape(0);
         const std::size_t q_s0 = q.ndim() == 1 ? 1 : q.shape(0);
-        xt::xtensor<double, 2> _p
-            = xt::zeros<double>({p_s0, static_cast<std::size_t>(3)});
-        xt::xtensor<double, 2> _q
-            = xt::zeros<double>({q_s0, static_cast<std::size_t>(3)});
+        std::vector<double> _p(3 * p_s0);
+        std::vector<double> _q(3 * q_s0);
 
         auto px = p.unchecked();
         if (px.ndim() == 1)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
-            _p(0, i) = px(i);
+            _p[i] = px(i);
         }
         else if (px.ndim() == 2)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
             for (py::ssize_t j = 0; j < px.shape(1); j++)
-              _p(i, j) = px(i, j);
+              _p[3 * i + j] = px(i, j);
         }
         else
           throw std::runtime_error("Array has wrong ndim.");
@@ -129,20 +129,20 @@ void geometry(py::module& m)
         if (qx.ndim() == 1)
         {
           for (py::ssize_t i = 0; i < qx.shape(0); i++)
-            _q(0, i) = qx(i);
+            _q[i] = qx(i);
         }
         else if (qx.ndim() == 2)
         {
           for (py::ssize_t i = 0; i < qx.shape(0); i++)
             for (py::ssize_t j = 0; j < qx.shape(1); j++)
-              _q(i, j) = qx(i, j);
+              _q[3 * i + j] = qx(i, j);
         }
         else
           throw std::runtime_error("Array has wrong ndim.");
 
-        const xt::xtensor_fixed<double, xt::xshape<3>> d
+        const std::array<double, 3> d
             = dolfinx::geometry::compute_distance_gjk(_p, _q);
-        return py::array_t<double>(d.shape(), d.data());
+        return py::array_t<double>(3, d.data());
       },
       py::arg("p"), py::arg("q"));
 
@@ -152,24 +152,23 @@ void geometry(py::module& m)
          std::vector<std::int32_t> indices, const py::array_t<double>& points)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-        xt::xtensor<double, 2> _p
-            = xt::zeros<double>({p_s0, static_cast<std::size_t>(3)});
+        std::vector<double> _p(3 * p_s0);
         auto px = points.unchecked();
         if (px.ndim() == 1)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
-            _p(0, i) = px(i);
+            _p[i] = px(i);
         }
         else if (px.ndim() == 2)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
             for (py::ssize_t j = 0; j < px.shape(1); j++)
-              _p(i, j) = px(i, j);
+              _p[3 * i + j] = px(i, j);
         }
         else
           throw std::runtime_error("Array has wrong ndim.");
 
-        return xt_as_pyarray(
+        return as_pyarray(
             dolfinx::geometry::squared_distance(mesh, dim, indices, _p));
       },
       py::arg("mesh"), py::arg("dim"), py::arg("indices"), py::arg("points"));
@@ -183,14 +182,14 @@ void geometry(py::module& m)
       {
         const int gdim = mesh.geometry().dim();
         std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-        xt::xtensor<double, 2> _p = xt::zeros<double>({p_s0, std::size_t(3)});
+        std::vector<double> _p(3 * p_s0);
         auto px = points.unchecked();
         if (gdim > 1 and px.ndim() == 1)
         {
           // Single point in 2D/3D
           assert(px.shape(0) <= 3);
           for (py::ssize_t i = 0; i < px.shape(0); i++)
-            _p(0, i) = px(i);
+            _p[i] = px(i);
           auto cells = dolfinx::geometry::compute_colliding_cells(
               mesh, candidate_cells, _p);
           return py::array_t<std::int32_t>(cells.array().size(),
@@ -200,13 +199,13 @@ void geometry(py::module& m)
         {
           // 1D problem
           for (py::ssize_t i = 0; i < px.shape(0); i++)
-            _p(i, 0) = px(i);
+            _p[3 * i] = px(i);
         }
         else if (px.ndim() == 2)
         {
           for (py::ssize_t i = 0; i < px.shape(0); i++)
             for (py::ssize_t j = 0; j < px.shape(1); j++)
-              _p(i, j) = px(i, j);
+              _p[3 * i + j] = px(i, j);
         }
         else
           throw std::runtime_error("Array has wrong ndim.");
@@ -227,7 +226,7 @@ void geometry(py::module& m)
                {
                  return dolfinx::geometry::BoundingBoxTree(
                      mesh, dim,
-                     xtl::span<const std::int32_t>(entities.data(),
+                     std::span<const std::int32_t>(entities.data(),
                                                    entities.size()),
                      padding);
                }),
@@ -240,8 +239,9 @@ void geometry(py::module& m)
           [](const dolfinx::geometry::BoundingBoxTree& self,
              const std::size_t i)
           {
-            xt::xtensor<double, 2> bbox = self.get_bbox(i);
-            return xt_as_pyarray(std::move(bbox));
+            std::array<double, 6> bbox = self.get_bbox(i);
+            std::array<std::size_t, 2> shape = {2, 3};
+            return py::array_t<double>(shape, bbox.data());
           },
           py::arg("i"))
       .def("__repr__", &dolfinx::geometry::BoundingBoxTree::str)

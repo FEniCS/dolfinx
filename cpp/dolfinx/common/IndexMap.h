@@ -10,9 +10,9 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <memory>
+#include <span>
 #include <utility>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::common
 {
@@ -27,7 +27,7 @@ class IndexMap;
 /// @param[in] map The index map
 /// @return Indices owned by the calling process
 std::vector<int32_t>
-compute_owned_indices(const xtl::span<const std::int32_t>& indices,
+compute_owned_indices(const std::span<const std::int32_t>& indices,
                       const IndexMap& map);
 
 /// @brief Compute layout data and ghost indices for a stacked
@@ -89,8 +89,8 @@ public:
   /// @param[in] owners Owner rank (on global communicator) of each
   /// entry in `ghosts`
   IndexMap(MPI_Comm comm, std::int32_t local_size,
-           const xtl::span<const std::int64_t>& ghosts,
-           const xtl::span<const int>& owners);
+           const std::span<const std::int64_t>& ghosts,
+           const std::span<const int>& owners);
 
   /// @brief Create an overlapping (ghosted) index map.
   ///
@@ -113,8 +113,8 @@ public:
   /// in `ghosts`
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            const std::array<std::vector<int>, 2>& src_dest,
-           const xtl::span<const std::int64_t>& ghosts,
-           const xtl::span<const int>& owners);
+           const std::span<const std::int64_t>& ghosts,
+           const std::span<const int>& owners);
 
   // Copy constructor
   IndexMap(const IndexMap& map) = delete;
@@ -154,16 +154,16 @@ public:
   /// @brief Compute global indices for array of local indices.
   /// @param[in] local Local indices
   /// @param[out] global The global indices
-  void local_to_global(const xtl::span<const std::int32_t>& local,
-                       const xtl::span<std::int64_t>& global) const;
+  void local_to_global(const std::span<const std::int32_t>& local,
+                       const std::span<std::int64_t>& global) const;
 
   /// @brief Compute local indices for array of global indices
   /// @param[in] global Global indices
   /// @param[out] local The local of the corresponding global index in
   /// 'global'. Returns -1 if the local index does not exist on this
   /// process.
-  void global_to_local(const xtl::span<const std::int64_t>& global,
-                       const xtl::span<std::int32_t>& local) const;
+  void global_to_local(const std::span<const std::int64_t>& global,
+                       const std::span<std::int32_t>& local) const;
 
   /// @brief Build list of indices with global indexing.
   /// @return The global index for all local indices (0, 1, 2, ...) on
@@ -189,7 +189,7 @@ public:
   /// position in the new map to the ghost position in the original
   /// (this) map
   std::pair<IndexMap, std::vector<std::int32_t>>
-  create_submap(const xtl::span<const std::int32_t>& indices) const;
+  create_submap(const std::span<const std::int32_t>& indices) const;
 
   /// @todo Aim to remove this function?
   ///
@@ -201,7 +201,7 @@ public:
   /// @brief Build a list of owned indices that are ghosted by another
   /// rank.
   /// @return The local index of owned indices that are ghosts on other
-  /// rank(s). The indicies are unique and sorted.
+  /// rank(s). The indices are unique and sorted.
   std::vector<std::int32_t> shared_indices() const;
 
   /// @brief Ordered set of MPI ranks that own caller's ghost indices.

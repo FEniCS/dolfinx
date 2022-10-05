@@ -77,7 +77,7 @@ public:
   /// @brief Create a finite element form.
   ///
   /// @note User applications will normally call a fem::Form builder
-  /// function rather using this interfcae directly.
+  /// function rather using this interface directly.
   ///
   /// @param[in] function_spaces Function spaces for the form arguments
   /// @param[in] integrals The integrals in the form. The first key is
@@ -378,7 +378,7 @@ private:
   template <int num_cells>
   static std::array<std::array<std::int32_t, 2>, num_cells>
   get_cell_local_facet_pairs(
-      std::int32_t f, const xtl::span<const std::int32_t>& cells,
+      std::int32_t f, const std::span<const std::int32_t>& cells,
       const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f)
   {
     // Loop over cells sharing facet

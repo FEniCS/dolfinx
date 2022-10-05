@@ -6,12 +6,12 @@
 
 #pragma once
 
+#include <basix/mdspan.hpp>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <functional>
 #include <mpi.h>
-#include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
+#include <span>
 
 namespace dolfinx::fem
 {
@@ -50,8 +50,7 @@ enum class GhostMode : int
 using CellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
         MPI_Comm comm, int nparts, int tdim,
-        const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-        dolfinx::mesh::GhostMode ghost_mode)>;
+        const dolfinx::graph::AdjacencyList<std::int64_t>& cells)>;
 
 /// Extract topology from cell data, i.e. extract cell vertices
 /// @param[in] cell_type The cell shape
@@ -75,20 +74,20 @@ extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
 /// @returns The greatest distance between any two vertices, `h[i]`
 /// corresponds to the entity `entities[i]`.
 std::vector<double> h(const Mesh& mesh,
-                      const xtl::span<const std::int32_t>& entities, int dim);
+                      const std::span<const std::int32_t>& entities, int dim);
 
 /// @brief Compute normal to given cell (viewed as embedded in 3D)
 /// @returns The entity normals. The shape is `(entities.size(), 3)` and
 /// the storage is row-major.
 std::vector<double> cell_normals(const Mesh& mesh, int dim,
-                                 const xtl::span<const std::int32_t>& entities);
+                                 const std::span<const std::int32_t>& entities);
 
 /// @brief Compute the midpoints for mesh entities of a given dimension.
 /// @returns The entity midpoints. The shape is `(entities.size(), 3)`
 /// and the storage is row-major.
 std::vector<double>
 compute_midpoints(const Mesh& mesh, int dim,
-                  const xtl::span<const std::int32_t>& entities);
+                  const std::span<const std::int32_t>& entities);
 
 /// Compute indices of all mesh entities that evaluate to true for the
 /// provided geometric marking function. An entity is considered marked
@@ -102,8 +101,11 @@ compute_midpoints(const Mesh& mesh, int dim,
 /// (indices local to the process)
 std::vector<std::int32_t> locate_entities(
     const Mesh& mesh, int dim,
-    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
-        marker);
+    const std::function<std::vector<std::int8_t>(
+        std::experimental::mdspan<
+            const double,
+            std::experimental::extents<
+                std::size_t, 3, std::experimental::dynamic_extent>>)>& marker);
 
 /// Compute indices of all mesh entities that are attached to an owned
 /// boundary facet and evaluate to true for the provided geometric
@@ -127,13 +129,16 @@ std::vector<std::int32_t> locate_entities(
 /// process)
 std::vector<std::int32_t> locate_entities_boundary(
     const Mesh& mesh, int dim,
-    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
-        marker);
+    const std::function<std::vector<std::int8_t>(
+        std::experimental::mdspan<
+            const double,
+            std::experimental::extents<
+                std::size_t, 3, std::experimental::dynamic_extent>>)>& marker);
 
 /// @brief Determine the indices in the geometry data for each vertex of
 /// the given mesh entities.
 ///
-/// @warning This function should be used unless there is no
+/// @warning This function should not be used unless there is no
 /// alternative. It may be removed in the future.
 ///
 /// @param[in] mesh The mesh
@@ -148,7 +153,7 @@ std::vector<std::int32_t> locate_entities_boundary(
 /// geometry array of the `j`-th vertex of the `entity[i]`.
 std::vector<std::int32_t>
 entities_to_geometry(const Mesh& mesh, int dim,
-                     const xtl::span<const std::int32_t>& entities,
+                     const std::span<const std::int32_t>& entities,
                      bool orient);
 
 /// @brief Compute the indices of all exterior facets that are owned by
@@ -168,7 +173,9 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 /// this rank by applying the default graph partitioner to the dual
 /// graph of the mesh
 /// @return Function that computes the destination ranks for each cell
-CellPartitionFunction create_cell_partitioner(const graph::partition_fn& partfn
+CellPartitionFunction create_cell_partitioner(mesh::GhostMode ghost_mode
+                                              = mesh::GhostMode::none,
+                                              const graph::partition_fn& partfn
                                               = &graph::partition_graph);
 
 /// Compute incident indices
@@ -180,7 +187,7 @@ CellPartitionFunction create_cell_partitioner(const graph::partition_fn& partfn
 /// incident to entities in `entities` (topological dimension `d0`)
 std::vector<std::int32_t>
 compute_incident_entities(const Mesh& mesh,
-                          const xtl::span<const std::int32_t>& entities, int d0,
+                          const std::span<const std::int32_t>& entities, int d0,
                           int d1);
 
 } // namespace dolfinx::mesh

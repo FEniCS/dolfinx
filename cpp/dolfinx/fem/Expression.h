@@ -7,13 +7,13 @@
 #pragma once
 
 #include "Function.h"
-#include <dolfinx/common/utils.h>
+#include <algorithm>
+#include <array>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
+#include <span>
 #include <utility>
 #include <vector>
-#include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::fem
 {
@@ -52,15 +52,16 @@ public:
   /// @param[in] coefficients Coefficients in the Expression
   /// @param[in] constants Constants in the Expression
   /// @param[in] mesh
-  /// @param[in] X points on reference cell, number of points rows and
-  /// tdim cols
+  /// @param[in] X points on reference cell, shape=(number of points,
+  /// tdim) and storage is row-major.
+  /// @param[in] Xshape Shape of `X`.
   /// @param[in] fn function for tabulating expression
   /// @param[in] value_shape shape of expression evaluated at single point
   /// @param[in] argument_function_space Function space for Argument
   Expression(
       const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
       const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-      const xt::xtensor<double, 2>& X,
+      std::span<const double> X, std::array<std::size_t, 2> Xshape,
       const std::function<void(T*, const T*, const T*,
                                const scalar_value_type_t*, const int*,
                                const uint8_t*)>
@@ -70,7 +71,8 @@ public:
       const std::shared_ptr<const FunctionSpace> argument_function_space
       = nullptr)
       : _coefficients(coefficients), _constants(constants), _mesh(mesh),
-        _x_ref(X), _fn(fn), _value_shape(value_shape),
+        _x_ref(std::vector<double>(X.begin(), X.end()), Xshape), _fn(fn),
+        _value_shape(value_shape),
         _argument_function_space(argument_function_space)
   {
     // Extract mesh from argument's function space
@@ -129,13 +131,14 @@ public:
     return n;
   }
 
-  /// Evaluate the expression on cells
+  /// @brief Evaluate the expression on cells
   /// @param[in] cells Cells on which to evaluate the Expression
   /// @param[out] values A 2D array to store the result. Caller
   /// is responsible for correct sizing which should be (num_cells,
   /// num_points * value_size * num_all_argument_dofs columns).
-  template <typename U>
-  void eval(const xtl::span<const std::int32_t>& cells, U& values) const
+  /// @param[in] vshape The shape of `values` (row-major storage).
+  void eval(const std::span<const std::int32_t>& cells, std::span<T> values,
+            std::array<std::size_t, 2> vshape) const
   {
     // Extract data from Expression
     assert(_mesh);
@@ -149,18 +152,18 @@ public:
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = _mesh->geometry().dofmap();
     const std::size_t num_dofs_g = _mesh->geometry().cmap().dim();
-    xtl::span<const double> x_g = _mesh->geometry().x();
+    std::span<const double> x_g = _mesh->geometry().x();
 
     // Create data structures used in evaluation
     std::vector<scalar_value_type_t> coordinate_dofs(3 * num_dofs_g);
 
     int num_argument_dofs = 1;
-    xtl::span<const std::uint32_t> cell_info;
-    std::function<void(const xtl::span<T>&,
-                       const xtl::span<const std::uint32_t>&, std::int32_t,
+    std::span<const std::uint32_t> cell_info;
+    std::function<void(const std::span<T>&,
+                       const std::span<const std::uint32_t>&, std::int32_t,
                        int)>
         dof_transform_to_transpose
-        = [](const xtl::span<T>&, const xtl::span<const std::uint32_t>&,
+        = [](const std::span<T>&, const std::span<const std::uint32_t>&,
              std::int32_t, int)
     {
       // Do nothing
@@ -176,16 +179,16 @@ public:
       if (element->needs_dof_transformations())
       {
         _mesh->topology_mutable().create_entity_permutations();
-        cell_info = xtl::span(_mesh->topology().get_cell_permutation_info());
+        cell_info = std::span(_mesh->topology().get_cell_permutation_info());
         dof_transform_to_transpose
             = element
                   ->template get_dof_transformation_to_transpose_function<T>();
       }
     }
 
-    const int size0 = _x_ref.shape(0) * value_size();
+    const int size0 = _x_ref.second[0] * value_size();
     std::vector<T> values_local(size0 * num_argument_dofs, 0);
-    const xtl::span<T> _values_local(values_local);
+    const std::span<T> _values_local(values_local);
 
     // Iterate over cells and 'assemble' into values
     for (std::size_t c = 0; c < cells.size(); ++c)
@@ -195,19 +198,18 @@ public:
       auto x_dofs = x_dofmap.links(cell);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)
       {
-        common::impl::copy_N<3>(std::next(x_g.begin(), 3 * x_dofs[i]),
-                                std::next(coordinate_dofs.begin(), 3 * i));
+        std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
+                    std::next(coordinate_dofs.begin(), 3 * i));
       }
 
       const T* coeff_cell = coeffs.data() + c * cstride;
-      std::fill(values_local.begin(), values_local.end(), 0.0);
+      std::fill(values_local.begin(), values_local.end(), 0);
       _fn(values_local.data(), coeff_cell, constant_data.data(),
           coordinate_dofs.data(), nullptr, nullptr);
 
       dof_transform_to_transpose(_values_local, cell_info, c, size0);
-
       for (std::size_t j = 0; j < values_local.size(); ++j)
-        values(c, j) = values_local[j];
+        values[c * vshape[1] + j] = values_local[j];
     }
   }
 
@@ -238,7 +240,10 @@ public:
 
   /// @brief Evaluation points on the reference cell
   /// @return Evaluation points
-  const xt::xtensor<double, 2>& X() const { return _x_ref; }
+  std::pair<std::vector<double>, std::array<std::size_t, 2>> X() const
+  {
+    return _x_ref;
+  }
 
   /// Scalar type (T)
   using scalar_type = T;
@@ -265,6 +270,6 @@ private:
   std::vector<int> _value_shape;
 
   // Evaluation points on reference cell. Synonymous with X in public interface.
-  xt::xtensor<double, 2> _x_ref;
+  std::pair<std::vector<double>, std::array<std::size_t, 2>> _x_ref;
 };
 } // namespace dolfinx::fem

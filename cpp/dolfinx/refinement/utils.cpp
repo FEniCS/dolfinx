@@ -20,11 +20,8 @@
 #include <memory>
 #include <mpi.h>
 #include <vector>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
-using namespace xt::placeholders;
 
 namespace
 {
@@ -55,7 +52,7 @@ std::int64_t local_to_global(std::int32_t local_index,
 /// @param Mesh
 /// @param local_edge_to_new_vertex
 /// @return array of points
-xt::xtensor<double, 2> create_new_geometry(
+std::pair<std::vector<double>, std::array<std::size_t, 2>> create_new_geometry(
     const mesh::Mesh& mesh,
     const std::map<std::int32_t, std::int64_t>& local_edge_to_new_vertex)
 {
@@ -85,18 +82,18 @@ xt::xtensor<double, 2> create_new_geometry(
   }
 
   // Copy over existing mesh vertices
-  xtl::span<const double> x_g = mesh.geometry().x();
-
+  std::span<const double> x_g = mesh.geometry().x();
+  const std::size_t gdim = mesh.geometry().dim();
   const std::size_t num_vertices = map_v->size_local();
   const std::size_t num_new_vertices = local_edge_to_new_vertex.size();
-  xt::xtensor<double, 2> new_vertex_coordinates(
-      {num_vertices + num_new_vertices, 3});
 
+  std::array<std::size_t, 2> shape = {num_vertices + num_new_vertices, gdim};
+  std::vector<double> new_vertex_coords(shape[0] * shape[1]);
   for (std::size_t v = 0; v < num_vertices; ++v)
   {
-    const int pos = 3 * vertex_to_x[v];
-    for (std::size_t j = 0; j < 3; ++j)
-      new_vertex_coordinates(v, j) = x_g[pos + j];
+    std::size_t pos = 3 * vertex_to_x[v];
+    for (std::size_t j = 0; j < gdim; ++j)
+      new_vertex_coords[gdim * v + j] = x_g[pos + j];
   }
 
   // Compute new vertices
@@ -107,23 +104,15 @@ xt::xtensor<double, 2> create_new_geometry(
     for (auto& e : local_edge_to_new_vertex)
       edges[i++] = e.first;
 
+    // Compute midpoint of each edge (padded to 3D)
     const std::vector<double> midpoints
         = mesh::compute_midpoints(mesh, 1, edges);
-
-    std::vector<std::size_t> shape = {edges.size(), 3};
-    auto _midpoints = xt::adapt(midpoints, shape);
-
-    // The below should work, but misbehaves with the Intel icpx compiler
-    // xt::view(new_vertex_coordinates, xt::range(-num_new_vertices, _),
-    // xt::all())
-    //     = midpoints;
-    auto _vertex = xt::view(new_vertex_coordinates,
-                            xt::range(-num_new_vertices, _), xt::all());
-    _vertex.assign(_midpoints);
+    for (std::size_t i = 0; i < num_new_vertices; ++i)
+      for (std::size_t j = 0; j < gdim; ++j)
+        new_vertex_coords[gdim * (num_vertices + i) + j] = midpoints[3 * i + j];
   }
 
-  return xt::view(new_vertex_coordinates, xt::all(),
-                  xt::range(0, mesh.geometry().dim()));
+  return {std::move(new_vertex_coords), shape};
 }
 } // namespace
 
@@ -184,7 +173,8 @@ void refinement::update_logical_edgefunction(
   }
 }
 //-----------------------------------------------------------------------------
-std::pair<std::map<std::int32_t, std::int64_t>, xt::xtensor<double, 2>>
+std::tuple<std::map<std::int32_t, std::int64_t>, std::vector<double>,
+           std::array<std::size_t, 2>>
 refinement::create_new_vertices(MPI_Comm neighbor_comm,
                                 const graph::AdjacencyList<int>& shared_edges,
                                 const mesh::Mesh& mesh,
@@ -216,7 +206,7 @@ refinement::create_new_vertices(MPI_Comm neighbor_comm,
                 [global_offset](auto& e) { e.second += global_offset; });
 
   // Create actual points
-  xt::xtensor<double, 2> new_vertex_coordinates
+  auto [new_vertex_coords, xshape]
       = create_new_geometry(mesh, local_edge_to_new_vertex);
 
   // If they are shared, then the new global vertex index needs to be
@@ -299,84 +289,40 @@ refinement::create_new_vertices(MPI_Comm neighbor_comm,
     assert(it.second);
   }
 
-  return {std::move(local_edge_to_new_vertex),
-          std::move(new_vertex_coordinates)};
+  return {std::move(local_edge_to_new_vertex), std::move(new_vertex_coords),
+          xshape};
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh
 refinement::partition(const mesh::Mesh& old_mesh,
                       const graph::AdjacencyList<std::int64_t>& cell_topology,
-                      const xt::xtensor<double, 2>& new_vertex_coordinates,
-                      bool redistribute, mesh::GhostMode gm)
+                      std::span<const double> new_coords,
+                      std::array<std::size_t, 2> xshape, bool redistribute,
+                      mesh::GhostMode gm)
 {
   if (redistribute)
   {
-    xt::xtensor<double, 2> new_coords(new_vertex_coordinates);
     return mesh::create_mesh(old_mesh.comm(), cell_topology,
-                             old_mesh.geometry().cmap(), new_coords, gm);
+                             old_mesh.geometry().cmap(), new_coords, xshape,
+                             gm);
   }
 
-  auto partitioner = [](MPI_Comm comm, int, int tdim,
-                        const graph::AdjacencyList<std::int64_t>& cell_topology,
-                        mesh::GhostMode)
+  auto partitioner = [](MPI_Comm comm, int, int,
+                        const graph::AdjacencyList<std::int64_t>& cell_topology)
   {
-    // Find out the ghosting information
-    graph::AdjacencyList<std::int64_t> graph
-        = mesh::build_dual_graph(comm, cell_topology, tdim);
-
-    // FIXME: much of this is reverse engineering of data that is already
-    // known in the GraphBuilder
-
-    const int mpi_size = dolfinx::MPI::size(comm);
-    const int mpi_rank = dolfinx::MPI::rank(comm);
-    const std::int32_t local_size = graph.num_nodes();
-    std::vector<std::int32_t> local_sizes(mpi_size);
-
-    // Get the "local range" for all processes
-    MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1,
-                  MPI_INT32_T, comm);
-
-    std::vector<std::int64_t> local_offsets(mpi_size + 1);
-    for (int i = 0; i < mpi_size; ++i)
-      local_offsets[i + 1] = local_offsets[i] + local_sizes[i];
-
-    // All cells should go to their currently assigned ranks (no change)
-    // but must also be sent to their ghost destinations, which are determined
-    // here.
-    std::vector<std::int32_t> destinations;
-    destinations.reserve(graph.num_nodes());
-    std::vector<std::int32_t> dest_offsets = {0};
-    dest_offsets.reserve(graph.num_nodes());
-    for (int i = 0; i < graph.num_nodes(); ++i)
-    {
-      destinations.push_back(mpi_rank);
-      for (int j = 0; j < graph.num_links(i); ++j)
-      {
-        std::int64_t index = graph.links(i)[j];
-        if (index < local_offsets[mpi_rank]
-            or index >= local_offsets[mpi_rank + 1])
-        {
-          // Ghosted cell - identify which process it should be sent to.
-          for (std::size_t k = 0; k < local_offsets.size(); ++k)
-          {
-            if (index >= local_offsets[k] and index < local_offsets[k + 1])
-            {
-              destinations.push_back(k);
-              break;
-            }
-          }
-        }
-      }
-      dest_offsets.push_back(destinations.size());
-    }
+    const int mpi_rank = MPI::rank(comm);
+    const int num_cells = cell_topology.num_nodes();
+    std::vector<std::int32_t> destinations(num_cells, mpi_rank);
+    std::vector<std::int32_t> dest_offsets(num_cells + 1);
+    std::iota(dest_offsets.begin(), dest_offsets.end(), 0);
 
     return graph::AdjacencyList<std::int32_t>(std::move(destinations),
                                               std::move(dest_offsets));
   };
 
   return mesh::create_mesh(old_mesh.comm(), cell_topology,
-                           old_mesh.geometry().cmap(), new_vertex_coordinates,
-                           gm, partitioner);
+                           old_mesh.geometry().cmap(), new_coords, xshape,
+                           partitioner);
 }
 //-----------------------------------------------------------------------------
 

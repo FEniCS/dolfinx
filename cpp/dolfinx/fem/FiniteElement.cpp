@@ -16,7 +16,6 @@
 #include <ufcx.h>
 #include <utility>
 #include <vector>
-#include <xtensor/xadapt.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -148,14 +147,12 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
   {
     ufcx_finite_element* ufcx_sub_element = e.sub_elements[i];
     _sub_elements.push_back(std::make_shared<FiniteElement>(*ufcx_sub_element));
-    if (_sub_elements[i]->needs_dof_permutations()
-        and !_needs_dof_transformations)
+    if (_sub_elements[i]->needs_dof_permutations())
     {
       _needs_dof_permutations = true;
     }
     if (_sub_elements[i]->needs_dof_transformations())
     {
-      _needs_dof_permutations = false;
       _needs_dof_transformations = true;
     }
   }
@@ -238,7 +235,9 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
     _element
         = std::make_unique<basix::FiniteElement>(basix::create_custom_element(
             cell_type, value_shape, wcoeffs, _x, _M, nderivs,
-            static_cast<basix::maps::type>(ce->map_type), ce->discontinuous,
+            static_cast<basix::maps::type>(ce->map_type),
+            static_cast<basix::sobolev::space>(ce->sobolev_space),
+            ce->discontinuous,
             ce->highest_complete_degree, ce->highest_degree));
   }
   else if (is_basix_element(e))
@@ -340,29 +339,27 @@ int FiniteElement::reference_value_size() const
 //-----------------------------------------------------------------------------
 int FiniteElement::block_size() const noexcept { return _bs; }
 //-----------------------------------------------------------------------------
-xtl::span<const std::size_t> FiniteElement::value_shape() const noexcept
+std::span<const std::size_t> FiniteElement::value_shape() const noexcept
 {
   return _value_shape;
 }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::family() const noexcept { return _family; }
 //-----------------------------------------------------------------------------
-void FiniteElement::tabulate(xt::xtensor<double, 4>& reference_values,
-                             const xt::xtensor<double, 2>& X, int order) const
+void FiniteElement::tabulate(std::span<double> values,
+                             std::span<const double> X,
+                             std::array<std::size_t, 2> shape, int order) const
 {
   assert(_element);
-  _element->tabulate(
-      order, xtl::span(X), std::array{X.shape(0), X.shape(1)},
-      xtl::span<double>(reference_values.data(), reference_values.size()));
+  _element->tabulate(order, X, shape, values);
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 4> FiniteElement::tabulate(const xt::xtensor<double, 2>& X,
-                                               int order) const
+std::pair<std::vector<double>, std::array<std::size_t, 4>>
+FiniteElement::tabulate(std::span<const double> X,
+                        std::array<std::size_t, 2> shape, int order) const
 {
   assert(_element);
-  auto [tab, shape] = _element->tabulate(order, X, {X.shape(0), X.shape(1)});
-  return xt::adapt(
-      tab, std::vector<std::size_t>{shape[0], shape[1], shape[2], shape[3]});
+  return _element->tabulate(order, X, shape);
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept
@@ -426,7 +423,8 @@ bool FiniteElement::interpolation_ident() const noexcept
   return _element->interpolation_is_identity();
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2> FiniteElement::interpolation_points() const
+std::pair<std::vector<double>, std::array<std::size_t, 2>>
+FiniteElement::interpolation_points() const
 {
   if (!_element)
   {
@@ -435,11 +433,11 @@ xt::xtensor<double, 2> FiniteElement::interpolation_points() const
         "this is a mixed element?");
   }
 
-  auto& [x, shape] = _element->points();
-  return xt::adapt(x, std::vector<std::size_t>{shape[0], shape[1]});
+  return _element->points();
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2> FiniteElement::interpolation_operator() const
+std::pair<std::vector<double>, std::array<std::size_t, 2>>
+FiniteElement::interpolation_operator() const
 {
   if (!_element)
   {
@@ -447,11 +445,10 @@ xt::xtensor<double, 2> FiniteElement::interpolation_operator() const
                              "Cannot interpolate mixed elements directly.");
   }
 
-  auto& [im, shape] = _element->interpolation_matrix();
-  return xt::adapt(im, std::vector<std::size_t>{shape[0], shape[1]});
+  return _element->interpolation_matrix();
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2>
+std::pair<std::vector<double>, std::array<std::size_t, 2>>
 FiniteElement::create_interpolation_operator(const FiniteElement& from) const
 {
   assert(_element);
@@ -466,28 +463,26 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
   {
     // If one of the elements has bs=1, Basix can figure out the size
     // of the matrix
-    auto [data, shape]
-        = basix::compute_interpolation_operator(*from._element, *_element);
-    return xt::adapt(data, std::vector<std::size_t>{shape[0], shape[1]});
+    return basix::compute_interpolation_operator(*from._element, *_element);
   }
   else if (_bs > 1 and from._bs == _bs)
   {
     // If bs != 1 for at least one element, then bs0 == bs1 for this
     // case
-    auto [data, dshape]
+    const auto [data, dshape]
         = basix::compute_interpolation_operator(*from._element, *_element);
-    auto i_m = xt::adapt(data, std::vector<std::size_t>{dshape[0], dshape[1]});
-    std::array<std::size_t, 2> shape = {i_m.shape(0) * _bs, i_m.shape(1) * _bs};
-    xt::xtensor<double, 2> out = xt::zeros<double>(shape);
+    std::array<std::size_t, 2> shape = {dshape[0] * _bs, dshape[1] * _bs};
+    std::vector<double> out(shape[0] * shape[1]);
 
     // NOTE: Alternatively this operation could be implemented during
     // matvec with the original matrix
-    for (std::size_t i = 0; i < i_m.shape(0); ++i)
-      for (std::size_t j = 0; j < i_m.shape(1); ++j)
+    for (std::size_t i = 0; i < dshape[0]; ++i)
+      for (std::size_t j = 0; j < dshape[1]; ++j)
         for (int k = 0; k < _bs; ++k)
-          out(i * _bs + k, j * _bs + k) = i_m(i, j);
+          out[shape[1] * (i * _bs + k) + (j * _bs + k)]
+              = data[dshape[1] * i + j];
 
-    return out;
+    return {std::move(out), shape};
   }
   else
   {
@@ -506,40 +501,25 @@ bool FiniteElement::needs_dof_permutations() const noexcept
   return _needs_dof_permutations;
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::permute_dofs(const xtl::span<std::int32_t>& doflist,
+void FiniteElement::permute_dofs(const std::span<std::int32_t>& doflist,
                                  std::uint32_t cell_permutation) const
 {
   _element->permute_dofs(doflist, cell_permutation);
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::unpermute_dofs(const xtl::span<std::int32_t>& doflist,
+void FiniteElement::unpermute_dofs(const std::span<std::int32_t>& doflist,
                                    std::uint32_t cell_permutation) const
 {
   _element->unpermute_dofs(doflist, cell_permutation);
 }
 //-----------------------------------------------------------------------------
-std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>
+std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
 FiniteElement::get_dof_permutation_function(bool inverse,
                                             bool scalar_element) const
 {
   if (!needs_dof_permutations())
   {
-    if (!needs_dof_transformations())
-    {
-      // If this element shouldn't be permuted, return a function that
-      // does nothing
-      return [](const xtl::span<std::int32_t>&, std::uint32_t) {};
-    }
-    else
-    {
-      // If this element shouldn't be permuted but needs
-      // transformations, return a function that throws an error
-      return [](const xtl::span<std::int32_t>&, std::uint32_t)
-      {
-        throw std::runtime_error(
-            "Permutations should not be applied for this element.");
-      };
-    }
+    return [](const std::span<std::int32_t>&, std::uint32_t) {};
   }
 
   if (!_sub_elements.empty())
@@ -548,7 +528,7 @@ FiniteElement::get_dof_permutation_function(bool inverse,
     {
       // Mixed element
       std::vector<
-          std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>>
+          std::function<void(const std::span<std::int32_t>&, std::uint32_t)>>
           sub_element_functions;
       std::vector<int> dims;
       for (std::size_t i = 0; i < _sub_elements.size(); ++i)
@@ -559,7 +539,7 @@ FiniteElement::get_dof_permutation_function(bool inverse,
       }
 
       return
-          [dims, sub_element_functions](const xtl::span<std::int32_t>& doflist,
+          [dims, sub_element_functions](const std::span<std::int32_t>& doflist,
                                         std::uint32_t cell_permutation)
       {
         std::size_t start = 0;
@@ -574,14 +554,14 @@ FiniteElement::get_dof_permutation_function(bool inverse,
     else if (!scalar_element)
     {
       // Vector element
-      std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>
+      std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
           sub_element_function
           = _sub_elements[0]->get_dof_permutation_function(inverse);
       int dim = _sub_elements[0]->space_dimension();
       int bs = _bs;
       return
           [sub_element_function, bs, subdofs = std::vector<std::int32_t>(dim)](
-              const xtl::span<std::int32_t>& doflist,
+              const std::span<std::int32_t>& doflist,
               std::uint32_t cell_permutation) mutable
       {
         for (int k = 0; k < bs; ++k)
@@ -598,13 +578,13 @@ FiniteElement::get_dof_permutation_function(bool inverse,
 
   if (inverse)
   {
-    return [this](const xtl::span<std::int32_t>& doflist,
+    return [this](const std::span<std::int32_t>& doflist,
                   std::uint32_t cell_permutation)
     { unpermute_dofs(doflist, cell_permutation); };
   }
   else
   {
-    return [this](const xtl::span<std::int32_t>& doflist,
+    return [this](const std::span<std::int32_t>& doflist,
                   std::uint32_t cell_permutation)
     { permute_dofs(doflist, cell_permutation); };
   }

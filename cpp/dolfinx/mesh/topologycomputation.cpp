@@ -96,12 +96,12 @@ int get_ownership(const U& processes, const V& vertices)
 /// @param[in] entity_index Initial numbering for each row in
 /// entity_list
 /// @returns Local indices and index map
-std::tuple<std::vector<int>, common::IndexMap>
+std::tuple<std::vector<int>, common::IndexMap, std::vector<std::int32_t>>
 get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
                    const common::IndexMap& vertex_map,
-                   const xtl::span<const std::int32_t>& entity_list,
+                   const std::span<const std::int32_t>& entity_list,
                    int num_vertices_per_e, int num_entities_per_cell,
-                   const xtl::span<const std::int32_t>& entity_index)
+                   const std::span<const std::int32_t>& entity_index)
 {
   // entity_list contains all the entities for all the cells, listed as
   // local vertex indices, and entity_index contains the initial
@@ -123,33 +123,18 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
 
   //---------
   // Set ghost status array values
-  // 1 = entities that are only in local cells (i.e. owned)
-  // 2 = entities that are only in ghost cells (i.e. not owned)
-  // 3 = entities with ownership that needs deciding (used also for
-  // un-ghosted case)
-  std::vector<int> ghost_status(entity_count, 0);
+  // 0 = entities that are only in ghost cells (i.e. definitely not owned)
+  // 1 = entities with local ownership or ownership that needs deciding
+  std::vector<std::int8_t> ghost_status(entity_count, 0);
+
+  const std::int32_t ghost_offset
+      = cell_map.size_local() * num_entities_per_cell;
+
+  // Tag all entities in local cells with 1
+  for (int i = 0; i < ghost_offset; ++i)
   {
-    if (cell_map.num_ghosts() == 0)
-      std::fill(ghost_status.begin(), ghost_status.end(), 3);
-    else
-    {
-      const std::int32_t ghost_offset
-          = cell_map.size_local() * num_entities_per_cell;
-
-      // Tag all entities in local cells with 1
-      for (int i = 0; i < ghost_offset; ++i)
-      {
-        const std::int32_t idx = entity_index[i];
-        ghost_status[idx] = 1;
-      }
-
-      // Set entities in ghost cells to 2 (purely ghost) or 3 (border)
-      for (std::size_t i = ghost_offset; i < entity_index.size(); ++i)
-      {
-        const std::int32_t idx = entity_index[i];
-        ghost_status[idx] = ghost_status[idx] | 2;
-      }
-    }
+    const std::int32_t idx = entity_index[i];
+    ghost_status[idx] = 1;
   }
 
   //---------
@@ -190,7 +175,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
     {
       // Get entity vertices
       std::size_t pos = std::distance(entity_index.begin(), entity_idx);
-      xtl::span entity
+      std::span entity
           = entity_list.subspan(pos * num_vertices_per_e, num_vertices_per_e);
 
       // Build list of ranks that share vertices of the entity, and sort
@@ -218,7 +203,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
           entity_to_local_idx.push_back(*entity_idx);
 
           // Only send entities that are not known to be ghosts
-          if (ghost_status[*entity_idx] != 2)
+          if (ghost_status[*entity_idx] != 0)
           {
             auto itr_local = std::lower_bound(ranks.begin(), ranks.end(), *it);
             assert(itr_local != ranks.end() and *itr_local == *it);
@@ -297,11 +282,11 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
   }
 
   // List of (local index, sorted global vertices) pairs received from
-  // othe ranks. The list is eventually sorted.
+  // other ranks. The list is eventually sorted.
   std::vector<std::pair<std::int32_t, std::int64_t>>
       shared_entity_to_global_vertices_data;
 
-  // List of (local enity index, global MPI ranks)
+  // List of (local entity index, global MPI ranks)
   std::vector<std::pair<std::int32_t, int>> shared_entities_data;
 
   // Compare received and sent entity keys. Any received entities
@@ -315,7 +300,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
     // Loop over received entities (defined by array of entity vertices)
     for (int j = recv_disp[r]; j < recv_disp[r + 1]; j += num_vertices_per_e)
     {
-      xtl::span<const std::int64_t> entity(recv_data.data() + j,
+      std::span<const std::int64_t> entity(recv_data.data() + j,
                                            num_vertices_per_e);
       auto it = std::lower_bound(
           perm.begin(), perm.end(), entity,
@@ -330,7 +315,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
       if (it != perm.end())
       {
         auto offset = (*it) * (num_vertices_per_e + 1);
-        xtl::span<const std::int64_t> e(entity_to_local_idx.data() + offset,
+        std::span<const std::int64_t> e(entity_to_local_idx.data() + offset,
                                         num_vertices_per_e + 1);
         if (std::equal(e.begin(), std::prev(e.end()), entity.begin()))
         {
@@ -363,6 +348,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
   // Determine ownership of shared entities
 
   std::vector<std::int32_t> local_index(entity_count, -1);
+  std::vector<std::int32_t> interprocess_entities;
   std::int32_t num_local;
   {
     std::int32_t c = 0;
@@ -370,20 +356,19 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
     // Index non-ghost entities
     for (int i = 0; i < entity_count; ++i)
     {
-      assert(ghost_status[i] > 0);
-
       // Definitely ghost
-      if (ghost_status[i] == 2)
+      if (ghost_status[i] == 0)
         continue;
 
-      // Definitely local
-      if (auto ranks = shared_entities.links(i);
-          ghost_status[i] == 1 or ranks.empty())
+      if (auto ranks = shared_entities.links(i); ranks.empty())
       {
+        // Definitely local, unshared
         local_index[i] = c++;
       }
       else
       {
+        // Shared with another process
+        interprocess_entities.push_back(i);
         auto vertices = shared_entities_v.links(i);
         assert(!vertices.empty());
         int owner_rank = get_ownership(ranks, vertices);
@@ -400,6 +385,11 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
                    local_index.begin(),
                    [&c](auto index) { return index == -1 ? c++ : index; });
     assert(c == entity_count);
+
+    // Convert interprocess entities to local_index
+    std::transform(interprocess_entities.cbegin(), interprocess_entities.cend(),
+                   interprocess_entities.begin(),
+                   [&local_index](std::int32_t i) { return local_index[i]; });
   }
 
   //---------
@@ -469,11 +459,12 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
 
   // Create map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
-  std::transform(entity_index.cbegin(), entity_index.cend(),
+  std::transform(entity_index.begin(), entity_index.end(),
                  new_entity_index.begin(),
                  [&local_index](auto index) { return local_index[index]; });
 
-  return {std::move(new_entity_index), std::move(index_map)};
+  return {std::move(new_entity_index), std::move(index_map),
+          std::move(interprocess_entities)};
 }
 //-----------------------------------------------------------------------------
 
@@ -484,11 +475,12 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
 /// @param[in] shared_vertices TODO
 /// @param[in] cell_type Cell type
 /// @param[in] dim Topological dimension of the entities to be computed
-/// @return Returns the (cell-entity connectivity, entity-cell
+/// @return Returns the (cell-entity connectivity, entity-vertex
 /// connectivity, index map for the entity distribution across
 /// processes, shared entities)
 std::tuple<graph::AdjacencyList<std::int32_t>,
-           graph::AdjacencyList<std::int32_t>, common::IndexMap>
+           graph::AdjacencyList<std::int32_t>, common::IndexMap,
+           std::vector<std::int32_t>>
 compute_entities_by_key_matching(
     MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& cells,
     const common::IndexMap& vertex_index_map,
@@ -564,7 +556,7 @@ compute_entities_by_key_matching(
     {
       // First entity in new index range
       std::size_t offset = (*it) * max_vertices_per_entity;
-      xtl::span e0(entity_list_sorted.data() + offset, max_vertices_per_entity);
+      std::span e0(entity_list_sorted.data() + offset, max_vertices_per_entity);
 
       // Find iterator to next entity
       auto it1 = std::find_if_not(
@@ -572,7 +564,7 @@ compute_entities_by_key_matching(
           [e0, &entity_list_sorted, max_vertices_per_entity](auto idx) -> bool
           {
             std::size_t offset = idx * max_vertices_per_entity;
-            return std::equal(e0.cbegin(), e0.cend(),
+            return std::equal(e0.begin(), e0.end(),
                               std::next(entity_list_sorted.begin(), offset));
           });
 
@@ -590,7 +582,7 @@ compute_entities_by_key_matching(
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
-  auto [local_index, index_map] = get_local_indexing(
+  auto [local_index, index_map, interprocess_entities] = get_local_indexing(
       comm, cell_index_map, vertex_index_map, entity_list,
       max_vertices_per_entity, num_entities_per_cell, entity_index);
 
@@ -631,7 +623,8 @@ compute_entities_by_key_matching(
   graph::AdjacencyList<std::int32_t> ce(std::move(local_index),
                                         std::move(offsets_ce));
 
-  return {std::move(ce), std::move(ev), std::move(index_map)};
+  return {std::move(ce), std::move(ev), std::move(index_map),
+          std::move(interprocess_entities)};
 }
 //-----------------------------------------------------------------------------
 
@@ -696,7 +689,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
   std::array<std::int32_t, 2> key;
   for (int e = 0; e < c_d1_0.num_nodes(); ++e)
   {
-    xtl::span<const std::int32_t> v = c_d1_0.links(e);
+    std::span<const std::int32_t> v = c_d1_0.links(e);
     assert(v.size() == key.size());
     std::partial_sort_copy(v.begin(), v.end(), key.begin(), key.end());
     edge_to_index.insert({key, e});
@@ -740,7 +733,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-           std::shared_ptr<common::IndexMap>>
+           std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
 mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
 {
   LOG(INFO) << "Computing mesh entities of dimension " << dim;
@@ -748,7 +741,7 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
 
   // Vertices must always exist
   if (dim == 0)
-    return {nullptr, nullptr, nullptr};
+    return {nullptr, nullptr, nullptr, std::vector<std::int32_t>()};
 
   if (topology.connectivity(dim, 0))
   {
@@ -761,7 +754,7 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
           + std::to_string(dim)
           + " exist but cell-dim connectivity is missing.");
     }
-    return {nullptr, nullptr, nullptr};
+    return {nullptr, nullptr, nullptr, std::vector<std::int32_t>()};
   }
 
   auto cells = topology.connectivity(tdim, 0);
@@ -772,12 +765,13 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
   assert(vertex_map);
   auto cell_map = topology.index_map(tdim);
   assert(cell_map);
-  auto [d0, d1, d2] = compute_entities_by_key_matching(
+  auto [d0, d1, im, interprocess_facets] = compute_entities_by_key_matching(
       comm, *cells, *vertex_map, *cell_map, topology.cell_type(), dim);
 
   return {std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d0)),
           std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d1)),
-          std::make_shared<common::IndexMap>(std::move(d2))};
+          std::make_shared<common::IndexMap>(std::move(im)),
+          std::move(interprocess_facets)};
 }
 //-----------------------------------------------------------------------------
 std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
