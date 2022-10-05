@@ -13,7 +13,7 @@
 # discontinuous Galerkin method for the Navier-Stokes equations in
 # FEniCSx. The method conserves mass exactly and uses upwinding. The
 # formulation is based on a combination of "A fully divergence-free
-# finite element method for magnetohydrodynamic equations" by Himpmair
+# finite element method for magnetohydrodynamic equations" by Hiptmair
 # et al., "A Note on Discontinuous Galerkin Divergence-free Solutions
 # of the Navier-Stokes Equations" by Cockburn et al, and "On the Divergence
 # Constraint in Mixed Finite Element Methods for Incompressible Flows" by
@@ -207,7 +207,7 @@ R_e = 25  # Reynolds Number
 k = 1  # Polynomial degree
 
 # Next, we create a mesh and the required functions spaces over
-# it. Since the velocity uses an $H(\textnormal{div}$-conforming function
+# it. Since the velocity uses an $H(\textnormal{div})$-conforming function
 # space, we also create a vector valued discontinuous Lagrange space
 # to interpolate into for artifact free visualisation.
 
