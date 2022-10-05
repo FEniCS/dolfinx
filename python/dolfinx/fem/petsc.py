@@ -555,8 +555,10 @@ class LinearProblem:
 
         Example::
 
-            problem = LinearProblem(a, L, [bc0, bc1], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
-
+            problem = LinearProblem(a, L, [bc0, bc1],
+                                    petsc_options={"ksp_type": "preonly",
+                                                   "pc_type": "lu",
+                                                   "pc_factor_mat_solver_type": "mumps"})
         """
         self._a = _create_form(a, form_compiler_options=form_compiler_options, jit_options=jit_options)
         self._A = create_matrix(self._a)
