@@ -131,6 +131,51 @@ template <typename T>
 class DirichletBC
 {
 private:
+  /// @brief Mark cells with bc dofs
+  ///
+  /// Returns an array of size number of local cells, where 1 indicates that the
+  /// cell has a dof from the incoming list in the dofmap
+  /// @param[in] V The function space
+  /// @param[in] dofs The degrees of freedom (unrolled)
+  /// @returns Indicator vector for the local cells (including ghosts)
+  std::vector<std::int8_t> mark_cells(const FunctionSpace& V,
+                                      std::span<const std::int32_t> dofs)
+  {
+    // Compute cell marker for unrolled degrees of freedom
+    auto map = V.dofmap()->index_map;
+    const int bs = V.dofmap()->index_map_bs();
+    assert(map);
+
+    // Mark all dofs in boundary condition by 1
+    const int crange = bs * (map->size_local() + map->num_ghosts());
+    std::vector<std::int8_t> dof_markers(crange, 0);
+    for (std::size_t i = 0; i < dofs.size(); ++i)
+    {
+      assert(dofs[i] < (std::int32_t)dof_markers.size());
+      dof_markers[dofs[i]] = true;
+    }
+    auto mesh = V.mesh();
+    assert(mesh);
+    const int tdim = mesh->topology().dim();
+    const auto imap = mesh->topology().index_map(tdim);
+    assert(imap);
+    const std::size_t num_cells = imap->size_local() + imap->num_ghosts();
+    std::vector<std::int8_t> marker(num_cells, false);
+    auto dofmap = V.dofmap();
+    assert(dofmap);
+    const std::size_t dofmap_bs = dofmap->bs();
+    for (std::size_t i = 0; i < num_cells; ++i)
+    {
+      auto dofs = dofmap->cell_dofs(i);
+
+      for (std::size_t j = 0; j < dofs.size(); ++j)
+        for (std::size_t k = 0; k < dofmap_bs; ++k)
+          if (dof_markers[dofs[j] * dofmap_bs + k])
+            marker[i] = true;
+    }
+    return marker;
+  }
+
   /// Compute number of owned dofs indices. Will contain 'gaps' for
   /// sub-spaces.
   std::size_t num_owned(const FunctionSpace& V,
@@ -233,6 +278,8 @@ public:
       _owned_indices0 *= bs;
       _dofs0 = unroll_dofs(_dofs0, bs);
     }
+
+    _marker = mark_cells(*V, _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -262,6 +309,7 @@ public:
       _owned_indices0 *= bs;
       _dofs0 = unroll_dofs(_dofs0, bs);
     }
+    _marker = mark_cells(*_function_space, _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -291,7 +339,8 @@ public:
       : _function_space(V), _g(g),
         _dofs0(std::forward<typename U::value_type>(V_g_dofs[0])),
         _dofs1_g(std::forward<typename U::value_type>(V_g_dofs[1])),
-        _owned_indices0(num_owned(*_function_space, _dofs0))
+        _owned_indices0(num_owned(*_function_space, _dofs0)),
+        _marker(mark_cells(*_function_space, _dofs0))
   {
   }
 
@@ -467,6 +516,13 @@ public:
     }
   }
 
+  /// Marker for cells (local to process) with a dof in the Dirichlet BC
+  /// @return The marker
+  std::span<const std::int8_t> cell_marker()
+  {
+    return std::span(_marker.data(), _marker.size());
+  }
+
 private:
   // The function space (possibly a sub function space)
   std::shared_ptr<const FunctionSpace> _function_space;
@@ -475,6 +531,9 @@ private:
   std::variant<std::shared_ptr<const Function<T>>,
                std::shared_ptr<const Constant<T>>>
       _g;
+
+  // Marker for cell containing dirichlet degrees of freedom
+  std::vector<std::int8_t> _marker;
 
   // Dof indices (_dofs0) in _function_space and (_dofs1_g) in the
   // space of _g. _dofs1_g may be empty if _dofs0 can be re-used
