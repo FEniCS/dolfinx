@@ -172,7 +172,7 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
     cell_degree = ufl_element.degree()
     try:
         variant = ufl_element.lagrange_variant
-    except:
+    except AttributeError:
         variant = basix.LagrangeVariant.unset
     cmap = _cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree, variant)
     try:
