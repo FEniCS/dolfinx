@@ -170,7 +170,11 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
     ufl_element = domain.ufl_coordinate_element()
     cell_shape = ufl_element.cell().cellname()
     cell_degree = ufl_element.degree()
-    cmap = _cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree)
+    try:
+        variant = ufl_element.lagrange_variant
+    except:
+        variant = basix.LagrangeVariant.unset
+    cmap = _cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree, variant)
     try:
         mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, partitioner)
     except TypeError:
