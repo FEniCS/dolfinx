@@ -8,11 +8,11 @@ import pytest
 
 import basix.finite_element
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.mesh import create_unit_cube
+from dolfinx.mesh import create_unit_cube, create_mesh
 from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
-                 grad, triangle)
+                 grad, triangle, Mesh, Cell)
 from ufl.log import UFLException
-
+import numpy as np
 from mpi4py import MPI
 
 
@@ -232,3 +232,23 @@ def test_basix_element(V, W, Q, V2):
     # Mixed spaces do not yet return a basix element
     with pytest.raises(RuntimeError):
         e = Q.element.basix_element
+
+
+@pytest.mark.skip_in_parallel
+def test_vector_function_space_cell_type():
+    """Test that the UFL element cell of a vector function
+    space is correct on meshes where gdim > tdim"""
+    comm = MPI.COMM_WORLD
+    gdim = 2
+
+    # Create a mesh containing a single interval living in 2D
+    cell = Cell("interval", geometric_dimension=gdim)
+    domain = Mesh(VectorElement("Lagrange", cell, 1))
+    cells = np.array([[0, 1]], dtype=np.int64)
+    x = np.array([[0., 0.], [1., 1.]])
+    mesh = create_mesh(comm, cells, x, domain)
+
+    # Create functions space over mesh, and check element cell
+    # is correct
+    V = VectorFunctionSpace(mesh, ('Lagrange', 1))
+    assert V.ufl_element().cell() == cell
