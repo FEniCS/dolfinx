@@ -106,8 +106,8 @@
 # $$
 # where $\Gamma^\psi = \left\{x \in \Gamma; \; \psi(x) \cdot n(x) < 0\right\}$.
 
-# The semi-discrete version problem is: find $(u_h, p_h) \in V_h^{u_D} \times Q_h$
-# such that
+# The semi-discrete version problem (in dimensionless form) is: find
+# $(u_h, p_h) \in V_h^{u_D} \times Q_h$ such that
 # $$
 #     \int_\Omega \partial_t u_h \cdot v + a_h(u_h, v_h) + c_h(u_h; u_h, v_h)
 #     + b_h(v_h, p_h) = \int_\Omega f \cdot v_h + L_{a_h}(v_h) + L_{c_h}(v_h)
