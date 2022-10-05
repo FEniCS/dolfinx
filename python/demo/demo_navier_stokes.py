@@ -207,7 +207,7 @@ R_e = 25  # Reynolds Number
 k = 1  # Polynomial degree
 
 # Next, we create a mesh and the required functions spaces over
-# it. Since the velocity uses an $H(\textnormal{div}$-conforming function
+# it. Since the velocity uses an $H(\textnormal{div})$-conforming function
 # space, we also create a vector valued discontinuous Lagrange space
 # to interpolate into for artifact free visualisation.
 
