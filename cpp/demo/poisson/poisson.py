@@ -23,8 +23,7 @@ element = FiniteElement("Lagrange", triangle, 1)
 # (:math:`u` and :math:`v`) and the coefficient functions (:math:`f` and
 # :math:`g`)::
 
-coord_element = create_vector_element(
-    "Lagrange", "triangle", 1, lagrange_variant=basix.LagrangeVariant.equispaced)
+coord_element = create_vector_element("Lagrange", "triangle", 1)
 mesh = Mesh(coord_element)
 
 V = FunctionSpace(mesh, element)

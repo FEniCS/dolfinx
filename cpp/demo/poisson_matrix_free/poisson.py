@@ -6,8 +6,7 @@ from ufl import (Coefficient, Constant, FiniteElement, FunctionSpace, Mesh,
 import basix
 from basix.ufl_wrapper import create_vector_element
 
-coord_element = create_vector_element(
-    "Lagrange", "triangle", 1, lagrange_variant=basix.LagrangeVariant.equispaced)
+coord_element = create_vector_element("Lagrange", "triangle", 1)
 mesh = Mesh(coord_element)
 
 # Function Space
