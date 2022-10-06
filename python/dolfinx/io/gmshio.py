@@ -181,6 +181,7 @@ if _has_gmsh:
             rank: The rank the Gmsh model is initialized on
             model: The Gmsh model
             gdim: Geometrical dimension of the mesh
+            partitioner: Function that computes the parallel distribution of cells across MPI ranks
 
         Returns:
             A triplet (mesh, cell_tags, facet_tags) where cell_tags hold
