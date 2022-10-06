@@ -54,7 +54,8 @@ void _lift_bc_cells(
     int cstride, const std::span<const std::uint32_t>& cell_info,
     const std::span<const T>& bc_values1,
     const std::span<const std::int8_t>& bc_markers1,
-    const std::span<const T>& x0, double scale)
+    const std::span<const std::int8_t>& bc_cells1, const std::span<const T>& x0,
+    double scale)
 {
   assert(_bs0 < 0 or _bs0 == bs0);
   assert(_bs1 < 0 or _bs1 == bs1);
@@ -75,42 +76,11 @@ void _lift_bc_cells(
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
     std::int32_t c = cells[index];
+    if (!bc_cells1[c])
+      continue;
 
     // Get dof maps for cell
     auto dmap1 = dofmap1.links(c);
-
-    // Check if bc is applied to cell
-    bool has_bc = false;
-    for (std::size_t j = 0; j < dmap1.size(); ++j)
-    {
-      if constexpr (_bs1 > 0)
-      {
-        for (int k = 0; k < _bs1; ++k)
-        {
-          assert(_bs1 * dmap1[j] + k < (int)bc_markers1.size());
-          if (bc_markers1[_bs1 * dmap1[j] + k])
-          {
-            has_bc = true;
-            break;
-          }
-        }
-      }
-      else
-      {
-        for (int k = 0; k < bs1; ++k)
-        {
-          assert(bs1 * dmap1[j] + k < (int)bc_markers1.size());
-          if (bc_markers1[bs1 * dmap1[j] + k])
-          {
-            has_bc = true;
-            break;
-          }
-        }
-      }
-    }
-
-    if (!has_bc)
-      continue;
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
@@ -149,8 +119,6 @@ void _lift_bc_cells(
           {
             const T bc = bc_values1[jj];
             const T _x0 = x0.empty() ? 0.0 : x0[jj];
-            // const T _x0 = 0.0;
-            // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
             for (int m = 0; m < num_rows; ++m)
               be[m] -= Ae[m * num_cols + _bs1 * j + k] * _scale * (bc - _x0);
           }
@@ -166,7 +134,6 @@ void _lift_bc_cells(
           {
             const T bc = bc_values1[jj];
             const T _x0 = x0.empty() ? 0.0 : x0[jj];
-            // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
             for (int m = 0; m < num_rows; ++m)
               be[m] -= Ae[m * num_cols + bs1 * j + k] * _scale * (bc - _x0);
           }
@@ -215,7 +182,8 @@ void _lift_bc_exterior_facets(
     int cstride, const std::span<const std::uint32_t>& cell_info,
     const std::span<const T>& bc_values1,
     const std::span<const std::int8_t>& bc_markers1,
-    const std::span<const T>& x0, double scale)
+    std::span<const std::int8_t> bc_cells1, const std::span<const T>& x0,
+    double scale)
 {
   if (facets.empty())
     return;
@@ -234,27 +202,13 @@ void _lift_bc_exterior_facets(
   for (std::size_t index = 0; index < facets.size(); index += 2)
   {
     std::int32_t cell = facets[index];
+    if (!bc_cells1[cell])
+      continue;
+
     std::int32_t local_facet = facets[index + 1];
 
     // Get dof maps for cell
     auto dmap1 = dofmap1.links(cell);
-
-    // Check if bc is applied to cell
-    bool has_bc = false;
-    for (std::size_t j = 0; j < dmap1.size(); ++j)
-    {
-      for (int k = 0; k < bs1; ++k)
-      {
-        if (bc_markers1[bs1 * dmap1[j] + k])
-        {
-          has_bc = true;
-          break;
-        }
-      }
-    }
-
-    if (!has_bc)
-      continue;
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(cell);
@@ -328,7 +282,8 @@ void _lift_bc_interior_facets(
     const std::function<std::uint8_t(std::size_t)>& get_perm,
     const std::span<const T>& bc_values1,
     const std::span<const std::int8_t>& bc_markers1,
-    const std::span<const T>& x0, double scale)
+    std::span<const std::int8_t> bc_cells1, const std::span<const T>& x0,
+    double scale)
 {
   if (facets.empty())
     return;
@@ -361,6 +316,8 @@ void _lift_bc_interior_facets(
     std::array<std::int32_t, 2> cells = {facets[index], facets[index + 2]};
     std::array<std::int32_t, 2> local_facet
         = {facets[index + 1], facets[index + 3]};
+    if (!bc_cells1[cells[0]] and !bc_cells1[cells[1]])
+      continue;
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
@@ -390,36 +347,6 @@ void _lift_bc_interior_facets(
     std::copy(dmap1_cell0.begin(), dmap1_cell0.end(), dmapjoint1.begin());
     std::copy(dmap1_cell1.begin(), dmap1_cell1.end(),
               std::next(dmapjoint1.begin(), dmap1_cell0.size()));
-
-    // Check if bc is applied to cell0
-    bool has_bc = false;
-    for (std::size_t j = 0; j < dmap1_cell0.size(); ++j)
-    {
-      for (int k = 0; k < bs1; ++k)
-      {
-        if (bc_markers1[bs1 * dmap1_cell0[j] + k])
-        {
-          has_bc = true;
-          break;
-        }
-      }
-    }
-
-    // Check if bc is applied to cell1
-    for (std::size_t j = 0; j < dmap1_cell1.size(); ++j)
-    {
-      for (int k = 0; k < bs1; ++k)
-      {
-        if (bc_markers1[bs1 * dmap1_cell1[j] + k])
-        {
-          has_bc = true;
-          break;
-        }
-      }
-    }
-
-    if (!has_bc)
-      continue;
 
     const int num_rows = bs0 * dmapjoint0.size();
     const int num_cols = bs1 * dmapjoint1.size();
@@ -757,6 +684,7 @@ void assemble_interior_facets(
 /// @param[in] bc_values1 The boundary condition 'values'
 /// @param[in] bc_markers1 The indices (columns of A, rows of x) to
 /// which bcs belong
+/// @param[in] bc_cells1 The cells which are associated with any bc dof
 /// @param[in] x0 The array used in the lifting, typically a 'current
 /// solution' in a Newton method
 /// @param[in] scale Scaling to apply
@@ -767,6 +695,7 @@ void lift_bc(std::span<T> b, const Form<T>& a,
                             std::pair<std::span<const T>, int>>& coefficients,
              const std::span<const T>& bc_values1,
              const std::span<const std::int8_t>& bc_markers1,
+             std::span<const std::int8_t> bc_cells1,
              const std::span<const T>& x0, double scale)
 {
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
@@ -818,21 +747,21 @@ void lift_bc(std::span<T> b, const Form<T>& a,
       _lift_bc_cells<T, 1, 1>(b, mesh->geometry(), kernel, cells, dof_transform,
                               dofmap0, bs0, dof_transform_to_transpose, dofmap1,
                               bs1, constants, coeffs, cstride, cell_info,
-                              bc_values1, bc_markers1, x0, scale);
+                              bc_values1, bc_markers1, bc_cells1, x0, scale);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
       _lift_bc_cells<T, 3, 3>(b, mesh->geometry(), kernel, cells, dof_transform,
                               dofmap0, bs0, dof_transform_to_transpose, dofmap1,
                               bs1, constants, coeffs, cstride, cell_info,
-                              bc_values1, bc_markers1, x0, scale);
+                              bc_values1, bc_markers1, bc_cells1, x0, scale);
     }
     else
     {
       _lift_bc_cells(b, mesh->geometry(), kernel, cells, dof_transform, dofmap0,
                      bs0, dof_transform_to_transpose, dofmap1, bs1, constants,
-                     coeffs, cstride, cell_info, bc_values1, bc_markers1, x0,
-                     scale);
+                     coeffs, cstride, cell_info, bc_values1, bc_markers1,
+                     bc_cells1, x0, scale);
     }
   }
 
@@ -845,7 +774,7 @@ void lift_bc(std::span<T> b, const Form<T>& a,
     _lift_bc_exterior_facets(b, *mesh, kernel, facets, dof_transform, dofmap0,
                              bs0, dof_transform_to_transpose, dofmap1, bs1,
                              constants, coeffs, cstride, cell_info, bc_values1,
-                             bc_markers1, x0, scale);
+                             bc_markers1, bc_cells1, x0, scale);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
@@ -870,7 +799,7 @@ void lift_bc(std::span<T> b, const Form<T>& a,
       _lift_bc_interior_facets(b, *mesh, kernel, facets, dof_transform, dofmap0,
                                bs0, dof_transform_to_transpose, dofmap1, bs1,
                                constants, coeffs, cstride, cell_info, get_perm,
-                               bc_values1, bc_markers1, x0, scale);
+                               bc_values1, bc_markers1, bc_cells1, x0, scale);
     }
   }
 }
@@ -919,6 +848,7 @@ void apply_lifting(
   for (std::size_t j = 0; j < a.size(); ++j)
   {
     std::vector<std::int8_t> bc_markers1;
+    std::vector<std::int8_t> bc_cells1;
     std::vector<T> bc_values1;
     if (a[j] and !bcs1[j].empty())
     {
@@ -930,23 +860,31 @@ void apply_lifting(
       const int bs1 = V1->dofmap()->index_map_bs();
       assert(map1);
       const int crange = bs1 * (map1->size_local() + map1->num_ghosts());
+      auto mesh = V1->mesh();
+      auto c_imap = mesh->topology().index_map(mesh->topology().dim());
+      assert(V1);
+      assert(c_imap);
+      const std::int32_t cell_range
+          = c_imap->size_local() + c_imap->num_ghosts();
+      bc_cells1.assign(cell_range, false);
       bc_markers1.assign(crange, false);
       bc_values1.assign(crange, 0.0);
       for (const std::shared_ptr<const DirichletBC<T>>& bc : bcs1[j])
       {
         bc->mark_dofs(bc_markers1);
         bc->dof_values(bc_values1);
+        bc->mark_cells(bc_cells1);
       }
 
       if (!x0.empty())
       {
         lift_bc<T>(b, *a[j], constants[j], coeffs[j], bc_values1, bc_markers1,
-                   x0[j], scale);
+                   bc_cells1, x0[j], scale);
       }
       else
       {
         lift_bc<T>(b, *a[j], constants[j], coeffs[j], bc_values1, bc_markers1,
-                   std::span<const T>(), scale);
+                   bc_cells1, std::span<const T>(), scale);
       }
     }
   }
