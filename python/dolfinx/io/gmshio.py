@@ -161,9 +161,11 @@ if _has_gmsh:
         assert np.all(indices[perm_sort] == np.arange(len(indices)))
         return points[perm_sort]
 
-    def model_to_mesh(model: gmsh.model, comm: _MPI.Comm, rank: int,
-                      gdim: int = 3,
-                      partitioner=create_cell_partitioner(GhostMode.none)) -> typing.Tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+    def model_to_mesh(
+            model: gmsh.model, comm: _MPI.Comm, rank: int,
+            gdim: int = 3,
+            partitioner=create_cell_partitioner(GhostMode.none)) -> typing.Tuple[
+                Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
         """
         Given a Gmsh model, take all physical entities of the highest
         topological dimension and create the corresponding DOLFINx mesh.
