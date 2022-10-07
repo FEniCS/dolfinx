@@ -17,7 +17,6 @@ import functools
 import typing
 import ctypes
 import ctypes.util
-from typing import Callable
 import os
 
 import ufl
@@ -744,9 +743,15 @@ class NonlinearProblem:
         A.assemble()
 
 
-def load_petsc_lib(loader: Callable):
+def load_petsc_lib(loader: typing.Callable[[str, 'os.PathLike[typing.Any]'], typing.Any]) -> typing.Any:
     """
-    Load PETSc shared library using loader callable, e.g. ctypes.CDLL. 
+    Load PETSc shared library using loader callable, e.g. ctypes.CDLL.
+
+    Args:
+        A callable that accepts a path and returns a wrapped library.
+
+    Returns:
+        A wrapped library of the type returned by the callable.
     """
     petsc_lib = None
 
