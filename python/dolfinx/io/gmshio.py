@@ -18,6 +18,7 @@ from dolfinx.mesh import (CellType, GhostMode, Mesh, create_cell_partitioner,
                           create_mesh, meshtags, meshtags_from_entities)
 
 from mpi4py import MPI as _MPI
+from dolfinx.cpp.graph import AdjacencyList_int32
 
 __all__ = ["cell_perm_array", "ufl_mesh"]
 
@@ -162,10 +163,12 @@ if _has_gmsh:
         return points[perm_sort]
 
     def model_to_mesh(
-            model: gmsh.model, comm: _MPI.Comm, rank: int,
-            gdim: int = 3,
-            partitioner=create_cell_partitioner(GhostMode.none)) -> typing.Tuple[
-                Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+        model: gmsh.model, comm: _MPI.Comm, rank: int,
+        gdim: int = 3,
+        partitioner: typing.Callable[
+            [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32] =
+            create_cell_partitioner(GhostMode.none)) -> typing.Tuple[
+            Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
         """
         Given a Gmsh model, take all physical entities of the highest
         topological dimension and create the corresponding DOLFINx mesh.
