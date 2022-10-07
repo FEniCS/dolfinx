@@ -15,6 +15,10 @@ from __future__ import annotations
 import contextlib
 import functools
 import typing
+import ctypes
+import ctypes.util
+from typing import Callable
+import os
 
 import ufl
 from dolfinx import cpp as _cpp
@@ -31,6 +35,8 @@ from dolfinx.fem.forms import form_types
 from dolfinx.fem.function import Function as _Function
 
 from petsc4py import PETSc
+import petsc4py.lib
+from petsc4py import get_config as PETSc_get_config
 
 
 def _extract_function_spaces(a: typing.List[typing.List[FormMetaClass]]):
@@ -736,3 +742,41 @@ class NonlinearProblem:
         A.zeroEntries()
         _assemble_matrix_mat(A, self._a, self.bcs)
         A.assemble()
+
+
+def load_petsc_lib(loader: Callable):
+    """
+    Load PETSc shared library using loader callable, e.g. ctypes.CDLL. 
+    """
+    petsc_lib = None
+
+    petsc_dir = PETSc_get_config()['PETSC_DIR']
+    petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
+
+    petsc_lib_path = ctypes.util.find_library("petsc")
+    if petsc_lib_path is not None:
+        try:
+            petsc_lib = loader(petsc_lib_path)
+        except OSError as exc:
+            raise RuntimeError(f"Could not load shared library at {petsc_lib_path}.") from exc
+    else:
+        candidate_paths = [os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
+                           os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib")]
+
+        for candidate_path in candidate_paths:
+            if not os.path.exists(candidate_path):
+                candidate_paths.remove(candidate_path)
+
+        if len(candidate_paths) == 0:
+            raise RuntimeError("Could not find a PETSc shared library.")
+
+        for candidate_path in candidate_paths:
+            try:
+                petsc_lib = loader(candidate_path)
+            except OSError as exc:
+                raise RuntimeWarning(f"Failed to load shared library found at {candidate_path}.") from exc
+
+    if petsc_lib is None:
+        raise RuntimeError("Failed to load a PETSc shared library.")
+
+    return petsc_lib
