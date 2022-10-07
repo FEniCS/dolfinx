@@ -748,7 +748,7 @@ def load_petsc_lib(loader: typing.Callable[[str, 'os.PathLike[typing.Any]'], typ
     Load PETSc shared library using loader callable, e.g. ctypes.CDLL.
 
     Args:
-        A callable that accepts a path and returns a wrapped library.
+        loader: A callable that accepts a library path and returns a wrapped library.
 
     Returns:
         A wrapped library of the type returned by the callable.
