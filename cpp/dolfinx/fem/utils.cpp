@@ -193,8 +193,7 @@ std::vector<std::string> fem::get_constant_names(const ufcx_form& ufcx_form)
 }
 //-----------------------------------------------------------------------------
 fem::FunctionSpace fem::create_functionspace(
-    const std::shared_ptr<mesh::Mesh>& mesh, const basix::FiniteElement& e,
-    int bs,
+    std::shared_ptr<mesh::Mesh> mesh, const basix::FiniteElement& e, int bs,
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
@@ -221,7 +220,7 @@ fem::FunctionSpace fem::create_functionspace(
   // Create a dofmap
   ElementDofLayout layout(bs, e.entity_dofs(), e.entity_closure_dofs(), {},
                           sub_doflayout);
-  auto dofmap = std::make_shared<DofMap>(
+  auto dofmap = std::make_shared<const DofMap>(
       create_dofmap(mesh->comm(), layout, mesh->topology(), reorder_fn, *_e));
 
   return FunctionSpace(mesh, _e, dofmap);
@@ -229,7 +228,7 @@ fem::FunctionSpace fem::create_functionspace(
 //-----------------------------------------------------------------------------
 fem::FunctionSpace fem::create_functionspace(
     ufcx_function_space* (*fptr)(const char*), const std::string& function_name,
-    const std::shared_ptr<mesh::Mesh>& mesh,
+    std::shared_ptr<mesh::Mesh> mesh,
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
