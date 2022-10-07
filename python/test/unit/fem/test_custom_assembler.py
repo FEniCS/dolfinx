@@ -73,17 +73,31 @@ else:
 
 
 # Load PETSc library via ctypes
-petsc_lib_name = ctypes.util.find_library("petsc")
-if petsc_lib_name is not None:
-    petsc_lib_ctypes = ctypes.CDLL(petsc_lib_name)
-else:
+petsc_lib_path = ctypes.util.find_library("petsc")
+if petsc_lib_path is not None:
     try:
-        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
-    except OSError:
-        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
-    except OSError:
-        print("Could not load PETSc library for CFFI (ABI mode).")
-        raise
+        petsc_lib_ctypes = ctypes.CDLL(petsc_lib_path)
+    except OSError as exc:
+        raise RuntimeError(f"Could not load shared library at {petsc_lib_path} using ctypes.") from exc
+
+else:
+    candidate_paths = [os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
+                       os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib")]
+
+    for candidate_path in candidate_paths:
+        if not os.path.exists(candidate_path):
+            candidate_paths.remove(candidate_path)
+
+    if len(candidate_paths) == 0:
+        raise RuntimeError("Could not find a PETSc shared library.")
+
+    for candidate_path in candidate_paths:
+        if os.path.exists(candidate_path):
+            try:
+                petsc_lib_ctypes = ctypes.CDLL(candidate_path)
+            except OSError as exc:
+                raise RuntimeError(f"Could not load shared library at {candidate_path} using ctypes.") from exc
+
 
 # Get the PETSc MatSetValuesLocal function via ctypes
 # ctypes does not support static types well, ignore type check errors
@@ -104,16 +118,31 @@ ffi.cdef("""int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow,
 """.format(c_int_t, c_scalar_t))
 
 
-if petsc_lib_name is not None:
-    petsc_lib_cffi = ffi.dlopen(petsc_lib_name)
-else:
+petsc_lib_path = ctypes.util.find_library("petsc")
+if petsc_lib_path is not None:
     try:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
-    except OSError:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
-    except OSError:
-        print("Could not load PETSc library for CFFI (ABI mode).")
-        raise
+        petsc_lib_cffi = ffi.dlopen(petsc_lib_path)
+    except OSError as exc:
+        raise RuntimeError(f"Could not load PETSc shared object located at {petsc_lib_path} in CFFI ABI mode.") from exc
+
+else:
+    candidate_paths = [os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
+                       os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib")]
+    for candidate_path in candidate_paths:
+        if not os.path.exists(candidate_path):
+            candidate_paths.remove(candidate_path)
+
+    if len(candidate_paths) == 0:
+        raise RuntimeError("Could not find PETSc shared library.")
+
+    for candidate_path in candidate_paths:
+        if os.path.exists(candidate_path):
+            try:
+                petsc_lib_cffi = ffi.dlopen(candidate_path)
+            except OSError as exc:
+                raise RuntimeError(
+                    f"Could not load PETSc shared object located at {candidate_path} in CFFI ABI mode.") from exc
+
 MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 
 
