@@ -72,7 +72,7 @@ else:
         f"Cannot translate PETSc scalar type to a C type, complex: {complex} size: {scalar_size}.")
 
 
-petsc_lib_ctypes = load_petsc_lib(ctypes.CDLL)
+petsc_lib_ctypes = load_petsc_lib(ctypes.cdll.LoadLibrary)
 # Get the PETSc MatSetValuesLocal function via ctypes
 # ctypes does not support static types well, ignore type check errors
 MatSetValues_ctypes = petsc_lib_ctypes.MatSetValuesLocal

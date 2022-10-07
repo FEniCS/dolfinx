@@ -743,7 +743,7 @@ class NonlinearProblem:
         A.assemble()
 
 
-def load_petsc_lib(loader: typing.Callable[[typing.Union[str, 'os.PathLike[typing.Any]']], typing.Any]) -> typing.Any:
+def load_petsc_lib(loader: typing.Callable[[str], typing.Any]) -> typing.Any:
     """
     Load PETSc shared library using loader callable, e.g. ctypes.CDLL.
 
