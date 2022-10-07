@@ -767,7 +767,7 @@ def load_petsc_lib(loader: typing.Callable[[typing.Union[str, 'os.PathLike[typin
     else:
         candidate_paths = [os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
                            os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib")]
-   
+
         exists_paths = []
         for candidate_path in candidate_paths:
             if os.path.exists(candidate_path):
