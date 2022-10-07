@@ -776,11 +776,11 @@ def load_petsc_lib(loader: typing.Callable[[typing.Union[str, 'os.PathLike[typin
         if len(exists_paths) == 0:
             raise RuntimeError("Could not find a PETSc shared library.")
 
-        for exist_path in exists_paths:
+        for exists_path in exists_paths:
             try:
-                petsc_lib = loader(exist_path)
+                petsc_lib = loader(exists_path)
             except OSError:
-                print(f"Failed to load shared library found at {exist_path}.")
+                print(f"Failed to load shared library found at {exists_path}.")
                 continue
 
     if petsc_lib is None:
