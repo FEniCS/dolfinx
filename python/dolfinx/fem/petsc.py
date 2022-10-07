@@ -743,7 +743,7 @@ class NonlinearProblem:
         A.assemble()
 
 
-def load_petsc_lib(loader: typing.Callable[[str, 'os.PathLike[typing.Any]'], typing.Any]) -> typing.Any:
+def load_petsc_lib(loader: typing.Callable[[typing.Union[str, 'os.PathLike[typing.Any]']], typing.Any]) -> typing.Any:
     """
     Load PETSc shared library using loader callable, e.g. ctypes.CDLL.
 
@@ -767,19 +767,20 @@ def load_petsc_lib(loader: typing.Callable[[str, 'os.PathLike[typing.Any]'], typ
     else:
         candidate_paths = [os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
                            os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib")]
-
+   
+        exists_paths = []
         for candidate_path in candidate_paths:
-            if not os.path.exists(candidate_path):
-                candidate_paths.remove(candidate_path)
+            if os.path.exists(candidate_path):
+                exists_paths.append(candidate_path)
 
-        if len(candidate_paths) == 0:
+        if len(exists_paths) == 0:
             raise RuntimeError("Could not find a PETSc shared library.")
 
-        for candidate_path in candidate_paths:
+        for exist_path in exists_paths:
             try:
-                petsc_lib = loader(candidate_path)
+                petsc_lib = loader(exist_path)
             except OSError:
-                print(f"Failed to load shared library found at {candidate_path}.")
+                print(f"Failed to load shared library found at {exist_path}.")
                 continue
 
     if petsc_lib is None:
