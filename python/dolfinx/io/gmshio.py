@@ -162,7 +162,8 @@ if _has_gmsh:
         return points[perm_sort]
 
     def model_to_mesh(model: gmsh.model, comm: _MPI.Comm, rank: int,
-                      gdim: int = 3) -> typing.Tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+                      gdim: int = 3,
+                      partitioner=create_cell_partitioner(GhostMode.none)) -> typing.Tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
         """
         Given a Gmsh model, take all physical entities of the highest
         topological dimension and create the corresponding DOLFINx mesh.
@@ -241,8 +242,7 @@ if _has_gmsh:
         ufl_domain = ufl_mesh(cell_id, gdim)
         gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
         cells = cells[:, gmsh_cell_perm]
-        part = create_cell_partitioner(GhostMode.none)
-        mesh = create_mesh(comm, cells, x[:, :gdim], ufl_domain, part)
+        mesh = create_mesh(comm, cells, x[:, :gdim], ufl_domain, partitioner)
 
         # Create MeshTags for cells
         local_entities, local_values = _cpp.io.distribute_entity_data(mesh, mesh.topology.dim, cells, cell_values)
