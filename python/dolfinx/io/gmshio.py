@@ -280,8 +280,13 @@ if _has_gmsh:
 
         return (mesh, ct, ft)
 
-    def read_from_msh(filename: str, comm: _MPI.Comm, rank: int = 0,
-                      gdim: int = 3) -> typing.Tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+    def read_from_msh(
+        filename: str, comm: _MPI.Comm, rank: int = 0,
+        gdim: int = 3,
+        partitioner: typing.Callable[
+            [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32] =
+            create_cell_partitioner(GhostMode.none)) -> typing.Tuple[
+                Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
         """Reads a mesh from a msh-file and returns the distributed DOLFINx
         mesh and cell and facet markers associated with physical groups
         in the msh file.
@@ -301,7 +306,8 @@ if _has_gmsh:
             gmsh.initialize()
             gmsh.model.add("Mesh from file")
             gmsh.merge(filename)
-        output = model_to_mesh(gmsh.model, comm, rank, gdim=gdim)
+        output = model_to_mesh(
+            gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
         if comm.rank == rank:
             gmsh.finalize()
         return output
