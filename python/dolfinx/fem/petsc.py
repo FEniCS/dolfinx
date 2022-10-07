@@ -34,9 +34,9 @@ from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.forms import form_types
 from dolfinx.fem.function import Function as _Function
 
+import petsc4py
 from petsc4py import PETSc
 import petsc4py.lib
-from petsc4py import get_config as PETSc_get_config
 
 
 def _extract_function_spaces(a: typing.List[typing.List[FormMetaClass]]):
@@ -750,7 +750,7 @@ def load_petsc_lib(loader: Callable):
     """
     petsc_lib = None
 
-    petsc_dir = PETSc_get_config()['PETSC_DIR']
+    petsc_dir = petsc4py.get_config()['PETSC_DIR']
     petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
 
     petsc_lib_path = ctypes.util.find_library("petsc")
@@ -773,8 +773,9 @@ def load_petsc_lib(loader: Callable):
         for candidate_path in candidate_paths:
             try:
                 petsc_lib = loader(candidate_path)
-            except OSError as exc:
-                raise RuntimeWarning(f"Failed to load shared library found at {candidate_path}.") from exc
+            except OSError:
+                print(f"Failed to load shared library found at {candidate_path}.")
+                continue
 
     if petsc_lib is None:
         raise RuntimeError("Failed to load a PETSc shared library.")
