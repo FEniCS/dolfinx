@@ -83,11 +83,11 @@ int dolfinx::MPI::size(const MPI_Comm comm)
 {
   int size;
   int ierr = MPI_Comm_size(comm, &size);
-  dolfinx::MPI::assert_and_throw(comm, ierr);
+  dolfinx::MPI::check_error(comm, ierr);
   return size;
 }
 //-----------------------------------------------------------------------------
-void dolfinx::MPI::assert_and_throw(MPI_Comm comm, int error_code)
+void dolfinx::MPI::check_error(MPI_Comm comm, int error_code)
 {
   if (error_code != MPI_SUCCESS)
   {

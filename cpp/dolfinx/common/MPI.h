@@ -76,10 +76,10 @@ int size(MPI_Comm comm);
 
 /// @brief Checks wether an error code returned by an MPI
 /// function is equal to MPI_SUCCESS. If the check fails then
-/// throw a runtime error.
+/// calls abort.
 /// @param[in] comm MPI communicator
 /// @param[in] error_code Error code returned by an MPI function call.
-void assert_and_throw(MPI_Comm comm, int error_code);
+void check_error(MPI_Comm comm, int error_code);
 
 /// @brief Return local range for the calling process, partitioning the
 /// global [0, N - 1] range across all ranks into partitions of almost
