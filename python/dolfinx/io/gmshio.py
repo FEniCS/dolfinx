@@ -18,6 +18,7 @@ from dolfinx.mesh import (CellType, GhostMode, Mesh, create_cell_partitioner,
                           create_mesh, meshtags, meshtags_from_entities)
 
 from mpi4py import MPI as _MPI
+from dolfinx.cpp.graph import AdjacencyList_int32
 
 __all__ = ["cell_perm_array", "ufl_mesh"]
 
@@ -161,9 +162,13 @@ if _has_gmsh:
         assert np.all(indices[perm_sort] == np.arange(len(indices)))
         return points[perm_sort]
 
-    def model_to_mesh(model: gmsh.model, comm: _MPI.Comm, rank: int,
-                      gdim: int = 3,
-                      partitioner=create_cell_partitioner(GhostMode.none)) -> typing.Tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+    def model_to_mesh(
+        model: gmsh.model, comm: _MPI.Comm, rank: int,
+        gdim: int = 3,
+        partitioner: typing.Callable[
+            [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32] =
+            create_cell_partitioner(GhostMode.none)) -> typing.Tuple[
+            Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
         """
         Given a Gmsh model, take all physical entities of the highest
         topological dimension and create the corresponding DOLFINx mesh.
@@ -179,6 +184,7 @@ if _has_gmsh:
             rank: The rank the Gmsh model is initialized on
             model: The Gmsh model
             gdim: Geometrical dimension of the mesh
+            partitioner: Function that computes the parallel distribution of cells across MPI ranks
 
         Returns:
             A triplet (mesh, cell_tags, facet_tags) where cell_tags hold
@@ -274,8 +280,13 @@ if _has_gmsh:
 
         return (mesh, ct, ft)
 
-    def read_from_msh(filename: str, comm: _MPI.Comm, rank: int = 0,
-                      gdim: int = 3) -> typing.Tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+    def read_from_msh(
+        filename: str, comm: _MPI.Comm, rank: int = 0,
+        gdim: int = 3,
+        partitioner: typing.Callable[
+            [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32] =
+            create_cell_partitioner(GhostMode.none)) -> typing.Tuple[
+                Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
         """Reads a mesh from a msh-file and returns the distributed DOLFINx
         mesh and cell and facet markers associated with physical groups
         in the msh file.
@@ -295,7 +306,8 @@ if _has_gmsh:
             gmsh.initialize()
             gmsh.model.add("Mesh from file")
             gmsh.merge(filename)
-        output = model_to_mesh(gmsh.model, comm, rank, gdim=gdim)
+        output = model_to_mesh(
+            gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
         if comm.rank == rank:
             gmsh.finalize()
         return output
