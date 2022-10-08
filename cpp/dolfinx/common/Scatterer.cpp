@@ -41,7 +41,7 @@ Scatterer::Scatterer(const IndexMap& map, int bs)
     dolfinx::MPI::check_error(map.comm(), err);
 
     MPI_Comm comm1;
-    int err = MPI_Dist_graph_create_adjacent(
+    err = MPI_Dist_graph_create_adjacent(
         map.comm(), dest_ranks.size(), dest_ranks.data(), MPI_UNWEIGHTED,
         src_ranks.size(), src_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
         false, &comm1);
