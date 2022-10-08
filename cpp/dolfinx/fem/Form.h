@@ -102,7 +102,7 @@ public:
        const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
        const std::vector<std::shared_ptr<const Constant<T>>>& constants,
        bool needs_facet_permutations,
-       const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+       std::shared_ptr<const mesh::Mesh> mesh = nullptr)
       : _function_spaces(function_spaces), _coefficients(coefficients),
         _constants(constants), _mesh(mesh),
         _needs_facet_permutations(needs_facet_permutations)

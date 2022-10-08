@@ -95,9 +95,8 @@ void io(py::module& m)
 
   xdmf_file
       .def(py::init(
-               [](const MPICommWrapper comm,
-                  const std::filesystem::path& filename,
-                  const std::string& file_mode,
+               [](const MPICommWrapper comm, std::filesystem::path filename,
+                  std::string file_mode,
                   dolfinx::io::XDMFFile::Encoding encoding)
                {
                  return std::make_unique<dolfinx::io::XDMFFile>(
@@ -113,8 +112,7 @@ void io(py::module& m)
            py::arg("xpath") = "/Xdmf/Domain")
       .def(
           "read_topology_data",
-          [](dolfinx::io::XDMFFile& self, const std::string& name,
-             const std::string& xpath)
+          [](dolfinx::io::XDMFFile& self, std::string name, std::string xpath)
           {
             auto [cells, shape] = self.read_topology_data(name, xpath);
             return as_pyarray(std::move(cells), shape);
@@ -122,8 +120,7 @@ void io(py::module& m)
           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def(
           "read_geometry_data",
-          [](dolfinx::io::XDMFFile& self, const std::string& name,
-             const std::string& xpath)
+          [](dolfinx::io::XDMFFile& self, std::string name, std::string xpath)
           {
             auto [x, shape] = self.read_geometry_data(name, xpath);
             return as_pyarray(std::move(x), shape);
@@ -135,13 +132,13 @@ void io(py::module& m)
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("write_function",
            py::overload_cast<const dolfinx::fem::Function<double>&, double,
-                             const std::string&>(
+                             std::string>(
                &dolfinx::io::XDMFFile::write_function),
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
       .def(
           "write_function",
           py::overload_cast<const dolfinx::fem::Function<std::complex<double>>&,
-                            double, const std::string&>(
+                            double, std::string>(
               &dolfinx::io::XDMFFile::write_function),
           py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
       .def("write_meshtags", &dolfinx::io::XDMFFile::write_meshtags,
@@ -161,9 +158,8 @@ void io(py::module& m)
   py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>(
       m, "VTKFile")
       .def(py::init(
-               [](const MPICommWrapper comm,
-                  const std::filesystem::path& filename,
-                  const std::string& mode) {
+               [](MPICommWrapper comm, std::filesystem::path filename,
+                  std::string mode) {
                  return std::make_unique<dolfinx::io::VTKFile>(comm.get(),
                                                                filename, mode);
                }),

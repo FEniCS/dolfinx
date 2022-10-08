@@ -430,8 +430,7 @@ void interpolate(Function<T>& u, std::span<const T> f,
   using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
   using mdspan3_t = stdex::mdspan<double, stdex::dextents<std::size_t, 3>>;
 
-  const std::shared_ptr<const FiniteElement> element
-      = u.function_space()->element();
+  std::shared_ptr<const FiniteElement> element = u.function_space()->element();
   assert(element);
   const int element_bs = element->block_size();
   if (int num_sub = element->num_sub_elements();
