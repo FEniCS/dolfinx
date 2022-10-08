@@ -40,7 +40,7 @@ public:
   /// point, commonly from a mesh input file. The type is
   /// `std:vector<std::int64_t>`.
   template <typename AdjacencyList32, typename Array, typename Vector64>
-  Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
+  Geometry(std::shared_ptr<const common::IndexMap> index_map,
            AdjacencyList32&& dofmap, const fem::CoordinateElement& element,
            Array&& x, int dim, Vector64&& input_global_indices)
       : _dim(dim), _dofmap(std::forward<AdjacencyList32>(dofmap)),
