@@ -25,7 +25,7 @@ using namespace dolfinx;
 // outputs the finite element function to a VTK file for visualisation.
 // It also shows how to create a finite element using Basix.
 template <typename T>
-void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
+void interpolate_scalar(std::shared_ptr<mesh::Mesh> mesh,
                         std::filesystem::path filename)
 {
   // Create a Basix continuous Lagrange element of degree 1
@@ -62,7 +62,7 @@ void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
 // element function in a discontinuous Lagrange space and outputs the
 // Lagrange finite element function to a VTX file for visualisation.
 template <typename T>
-void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
+void interpolate_nedelec(std::shared_ptr<mesh::Mesh> mesh,
                          [[maybe_unused]] std::filesystem::path filename)
 {
   // Create a Basix Nedelec (first kind) element of degree 2 (dim=6 on triangle)
