@@ -940,20 +940,21 @@ def test_jørgen_problem():
         msh, fdim, lambda x: np.isclose(x[0], 1.0))
 
     # Create entity maps
-    facet_imap = msh.topology.index_map(fdim)
-    num_facets = facet_imap.size_local + facet_imap.num_ghosts
+    cell_imap = msh.topology.index_map(tdim)
+    num_cells = cell_imap.size_local + cell_imap.num_ghosts
     entity_maps = {left_submesh: [left_entity_map.index(entity)
                                   if entity in left_entity_map else -1
-                                  for entity in range(num_facets)],
+                                  for entity in range(num_cells)],
                    right_submesh: [right_entity_map.index(entity)
                                    if entity in right_entity_map else -1
-                                   for entity in range(num_facets)]}
+                                   for entity in range(num_cells)]}
 
     # Create measure for integration. Assign the first (cell, local facet)
     # pair to the left cell, corresponding to the "+" restriction. Assign
     # the second (cell, local facet) pair to the right cell, corresponding
     # to the "-" restriction.
     facet_integration_entities = {1: []}
+    facet_imap = msh.topology.index_map(fdim)
     msh.topology.create_connectivity(tdim, fdim)
     msh.topology.create_connectivity(fdim, tdim)
     c_to_f = msh.topology.connectivity(tdim, fdim)
