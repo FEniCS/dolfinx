@@ -15,8 +15,6 @@ from __future__ import annotations
 import contextlib
 import functools
 import typing
-import ctypes
-import ctypes.util
 import os
 
 import ufl
