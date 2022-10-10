@@ -170,7 +170,11 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
     ufl_element = domain.ufl_coordinate_element()
     cell_shape = ufl_element.cell().cellname()
     cell_degree = ufl_element.degree()
-    cmap = _cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree)
+    try:
+        variant = ufl_element.lagrange_variant
+    except AttributeError:
+        variant = basix.LagrangeVariant.unset
+    cmap = _cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree, variant)
     try:
         mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, partitioner)
     except TypeError:
@@ -325,8 +329,7 @@ def create_interval(comm: _MPI.Comm, nx: int, points: numpy.typing.ArrayLike, gh
     """
     if partitioner is None:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
-        "Lagrange", "interval", 1, basix.LagrangeVariant.equispaced))
+    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", "interval", 1))
     mesh = _cpp.mesh.create_interval(comm, nx, points, ghost_mode, partitioner)
     return Mesh.from_cpp(mesh, domain)
 
@@ -378,8 +381,7 @@ def create_rectangle(comm: _MPI.Comm, points: numpy.typing.ArrayLike, n: numpy.t
     """
     if partitioner is None:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
-        "Lagrange", cell_type.name, 1, basix.LagrangeVariant.equispaced))
+    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 1))
     mesh = _cpp.mesh.create_rectangle(comm, points, n, cell_type, partitioner, diagonal)
 
     return Mesh.from_cpp(mesh, domain)
@@ -434,8 +436,7 @@ def create_box(comm: _MPI.Comm, points: typing.List[numpy.typing.ArrayLike], n: 
     """
     if partitioner is None:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
-        "Lagrange", cell_type.name, 1, basix.LagrangeVariant.equispaced))
+    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 1))
     mesh = _cpp.mesh.create_box(comm, points, n, cell_type, partitioner)
 
     return Mesh.from_cpp(mesh, domain)
