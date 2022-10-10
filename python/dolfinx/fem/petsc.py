@@ -758,30 +758,23 @@ def load_petsc_lib(loader: typing.Callable[[str], typing.Any]) -> typing.Any:
     petsc_dir = petsc4py.get_config()['PETSC_DIR']
     petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
 
-    petsc_lib_path = ctypes.util.find_library("petsc")
-    if petsc_lib_path is not None:
+    candidate_paths = [os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
+                       os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib")]
+
+    exists_paths = []
+    for candidate_path in candidate_paths:
+        if os.path.exists(candidate_path):
+            exists_paths.append(candidate_path)
+
+    if len(exists_paths) == 0:
+        raise RuntimeError("Could not find a PETSc shared library.")
+
+    for exists_path in exists_paths:
         try:
-            petsc_lib = loader(petsc_lib_path)
-        except OSError as exc:
-            raise RuntimeError(f"Could not load shared library at {petsc_lib_path}.") from exc
-    else:
-        candidate_paths = [os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
-                           os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib")]
-
-        exists_paths = []
-        for candidate_path in candidate_paths:
-            if os.path.exists(candidate_path):
-                exists_paths.append(candidate_path)
-
-        if len(exists_paths) == 0:
-            raise RuntimeError("Could not find a PETSc shared library.")
-
-        for exists_path in exists_paths:
-            try:
-                petsc_lib = loader(exists_path)
-            except OSError:
-                print(f"Failed to load shared library found at {exists_path}.")
-                continue
+            petsc_lib = loader(exists_path)
+        except OSError:
+            print(f"Failed to load shared library found at {exists_path}.")
+            continue
 
     if petsc_lib is None:
         raise RuntimeError("Failed to load a PETSc shared library.")
