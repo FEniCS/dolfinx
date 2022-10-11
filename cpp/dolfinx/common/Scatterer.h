@@ -61,10 +61,11 @@ public:
     if (_sizes_local.empty() and _sizes_remote.empty())
       return;
 
-    MPI_Ineighbor_alltoallv(
+    int err = MPI_Ineighbor_alltoallv(
         send_buffer.data(), _sizes_local.data(), _displs_local.data(),
         MPI::mpi_type<T>(), recv_buffer.data(), _sizes_remote.data(),
         _displs_remote.data(), MPI::mpi_type<T>(), _comm0.comm(), &request);
+    dolfinx::MPI::check_error(_comm0.comm(), err);
   }
 
   /// @brief Complete a non-blocking send from the local owner to
@@ -207,10 +208,11 @@ public:
       return;
 
     // Send and receive data
-    MPI_Ineighbor_alltoallv(
+    int err = MPI_Ineighbor_alltoallv(
         send_buffer.data(), _sizes_remote.data(), _displs_remote.data(),
         MPI::mpi_type<T>(), recv_buffer.data(), _sizes_local.data(),
         _displs_local.data(), MPI::mpi_type<T>(), _comm1.comm(), &request);
+    dolfinx::MPI::check_error(_comm1.comm(), err);
   }
 
   /// @brief End the reverse scatter communication.
