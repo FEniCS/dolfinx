@@ -222,12 +222,11 @@ int main(int argc, char* argv[])
     constexpr auto family = basix::element::family::P;
     const auto cell_type
         = mesh::cell_type_to_basix_type(mesh->topology().cell_type());
-    constexpr auto variant = basix::element::lagrange_variant::equispaced;
     constexpr int k = 0;
     constexpr bool discontinuous = true;
 
     const basix::FiniteElement S_element
-        = basix::create_element(family, cell_type, k, variant, discontinuous);
+        = basix::create_element(family, cell_type, k, discontinuous);
     auto S = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
         mesh, S_element, pow(mesh->geometry().dim(), 2)));
 
