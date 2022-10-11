@@ -74,6 +74,12 @@ int rank(MPI_Comm comm);
 /// communicator
 int size(MPI_Comm comm);
 
+/// @brief Check MPI error code. If the error code is not equal to
+/// MPI_SUCCESS, then std::abort is called.
+/// @param[in] comm MPI communicator
+/// @param[in] code Error code returned by an MPI function call
+void check_error(MPI_Comm comm, int code);
+
 /// @brief Return local range for the calling process, partitioning the
 /// global [0, N - 1] range across all ranks into partitions of almost
 /// equal size.
@@ -371,9 +377,10 @@ distribute_to_postoffice(MPI_Comm comm, const std::span<const T>& x,
 
   // Create neighbourhood communicator for sending data to post offices
   MPI_Comm neigh_comm;
-  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
-                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neigh_comm);
+  int err = MPI_Dist_graph_create_adjacent(
+      comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(), dest.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neigh_comm);
+  dolfinx::MPI::check_error(comm, err);
 
   // Compute send displacements
   std::vector<std::int32_t> send_disp = {0};
@@ -403,8 +410,9 @@ distribute_to_postoffice(MPI_Comm comm, const std::span<const T>& x,
   std::vector<int> num_items_recv(src.size());
   num_items_per_dest.reserve(1);
   num_items_recv.reserve(1);
-  MPI_Neighbor_alltoall(num_items_per_dest.data(), 1, MPI_INT,
-                        num_items_recv.data(), 1, MPI_INT, neigh_comm);
+  err = MPI_Neighbor_alltoall(num_items_per_dest.data(), 1, MPI_INT,
+                              num_items_recv.data(), 1, MPI_INT, neigh_comm);
+  dolfinx::MPI::check_error(comm, err);
 
   // Prepare receive displacement and buffers
   std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
@@ -413,22 +421,26 @@ distribute_to_postoffice(MPI_Comm comm, const std::span<const T>& x,
 
   // Send/receive global indices
   std::vector<std::int64_t> recv_buffer_index(recv_disp.back());
-  MPI_Neighbor_alltoallv(send_buffer_index.data(), num_items_per_dest.data(),
-                         send_disp.data(), MPI_INT64_T,
-                         recv_buffer_index.data(), num_items_recv.data(),
-                         recv_disp.data(), MPI_INT64_T, neigh_comm);
+  err = MPI_Neighbor_alltoallv(
+      send_buffer_index.data(), num_items_per_dest.data(), send_disp.data(),
+      MPI_INT64_T, recv_buffer_index.data(), num_items_recv.data(),
+      recv_disp.data(), MPI_INT64_T, neigh_comm);
+  dolfinx::MPI::check_error(comm, err);
 
   // Send/receive data (x)
   MPI_Datatype compound_type;
   MPI_Type_contiguous(shape[1], dolfinx::MPI::mpi_type<T>(), &compound_type);
   MPI_Type_commit(&compound_type);
   std::vector<T> recv_buffer_data(shape[1] * recv_disp.back());
-  MPI_Neighbor_alltoallv(send_buffer_data.data(), num_items_per_dest.data(),
-                         send_disp.data(), compound_type,
-                         recv_buffer_data.data(), num_items_recv.data(),
-                         recv_disp.data(), compound_type, neigh_comm);
-  MPI_Type_free(&compound_type);
-  MPI_Comm_free(&neigh_comm);
+  err = MPI_Neighbor_alltoallv(
+      send_buffer_data.data(), num_items_per_dest.data(), send_disp.data(),
+      compound_type, recv_buffer_data.data(), num_items_recv.data(),
+      recv_disp.data(), compound_type, neigh_comm);
+  dolfinx::MPI::check_error(comm, err);
+  err = MPI_Type_free(&compound_type);
+  dolfinx::MPI::check_error(comm, err);
+  err = MPI_Comm_free(&neigh_comm);
+  dolfinx::MPI::check_error(comm, err);
 
   LOG(2) << "Completed send data to post offices.";
 
@@ -505,16 +517,18 @@ std::vector<T> distribute_from_postoffice(
   // Create neighbourhood communicator for sending data to post offices
   // (src), and receiving data form my send my post office
   MPI_Comm neigh_comm0;
-  MPI_Dist_graph_create_adjacent(comm, dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 src.size(), src.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neigh_comm0);
+  int err = MPI_Dist_graph_create_adjacent(
+      comm, dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(), src.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neigh_comm0);
+  dolfinx::MPI::check_error(comm, err);
 
   // Communicate number of requests to each source
   std::vector<int> num_items_recv(dest.size());
   num_items_per_src.reserve(1);
   num_items_recv.reserve(1);
-  MPI_Neighbor_alltoall(num_items_per_src.data(), 1, MPI_INT,
-                        num_items_recv.data(), 1, MPI_INT, neigh_comm0);
+  err = MPI_Neighbor_alltoall(num_items_per_src.data(), 1, MPI_INT,
+                              num_items_recv.data(), 1, MPI_INT, neigh_comm0);
+  dolfinx::MPI::check_error(comm, err);
 
   // Prepare send/receive displacements
   std::vector<std::int32_t> send_disp = {0};
@@ -534,12 +548,14 @@ std::vector<T> distribute_from_postoffice(
 
   // Prepare the receive buffer
   std::vector<std::int64_t> recv_buffer_index(recv_disp.back());
-  MPI_Neighbor_alltoallv(send_buffer_index.data(), num_items_per_src.data(),
-                         send_disp.data(), MPI_INT64_T,
-                         recv_buffer_index.data(), num_items_recv.data(),
-                         recv_disp.data(), MPI_INT64_T, neigh_comm0);
+  err = MPI_Neighbor_alltoallv(
+      send_buffer_index.data(), num_items_per_src.data(), send_disp.data(),
+      MPI_INT64_T, recv_buffer_index.data(), num_items_recv.data(),
+      recv_disp.data(), MPI_INT64_T, neigh_comm0);
+  dolfinx::MPI::check_error(comm, err);
 
-  MPI_Comm_free(&neigh_comm0);
+  err = MPI_Comm_free(&neigh_comm0);
+  dolfinx::MPI::check_error(comm, err);
 
   // 2. Send data (rows of x) back to requesting ranks (transpose of the
   // preceding communication pattern operation)
@@ -586,22 +602,26 @@ std::vector<T> distribute_from_postoffice(
     }
   }
 
-  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
-                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neigh_comm0);
+  err = MPI_Dist_graph_create_adjacent(
+      comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(), dest.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neigh_comm0);
+  dolfinx::MPI::check_error(comm, err);
 
   MPI_Datatype compound_type0;
   MPI_Type_contiguous(shape[1], dolfinx::MPI::mpi_type<T>(), &compound_type0);
   MPI_Type_commit(&compound_type0);
 
   std::vector<T> recv_buffer_data(shape[1] * send_disp.back());
-  MPI_Neighbor_alltoallv(send_buffer_data.data(), num_items_recv.data(),
-                         recv_disp.data(), compound_type0,
-                         recv_buffer_data.data(), num_items_per_src.data(),
-                         send_disp.data(), compound_type0, neigh_comm0);
+  err = MPI_Neighbor_alltoallv(
+      send_buffer_data.data(), num_items_recv.data(), recv_disp.data(),
+      compound_type0, recv_buffer_data.data(), num_items_per_src.data(),
+      send_disp.data(), compound_type0, neigh_comm0);
+  dolfinx::MPI::check_error(comm, err);
 
-  MPI_Type_free(&compound_type0);
-  MPI_Comm_free(&neigh_comm0);
+  err = MPI_Type_free(&compound_type0);
+  dolfinx::MPI::check_error(comm, err);
+  err = MPI_Comm_free(&neigh_comm0);
+  dolfinx::MPI::check_error(comm, err);
 
   std::vector<std::int32_t> index_pos_to_buffer(indices.size(), -1);
   for (std::size_t i = 0; i < src_to_index.size(); ++i)
@@ -654,8 +674,11 @@ std::vector<T> distribute_data(MPI_Comm comm,
   const std::int64_t shape0_local = x.size() / shape1;
 
   std::int64_t shape0(0), rank_offset(0);
-  MPI_Allreduce(&shape0_local, &shape0, 1, MPI_INT64_T, MPI_SUM, comm);
-  MPI_Exscan(&shape0_local, &rank_offset, 1, MPI_INT64_T, MPI_SUM, comm);
+  int err
+      = MPI_Allreduce(&shape0_local, &shape0, 1, MPI_INT64_T, MPI_SUM, comm);
+  dolfinx::MPI::check_error(comm, err);
+  err = MPI_Exscan(&shape0_local, &rank_offset, 1, MPI_INT64_T, MPI_SUM, comm);
+  dolfinx::MPI::check_error(comm, err);
 
   return distribute_from_postoffice(comm, indices, x, {shape0, shape1},
                                     rank_offset);
