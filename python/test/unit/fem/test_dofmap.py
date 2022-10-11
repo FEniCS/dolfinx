@@ -143,13 +143,12 @@ def test_entity_closure_dofs(mesh_factory):
         assert set(V.dofmap.entity_closure_dofs(mesh, d, all_cells)) == set(range(V.dim))
 
 
-@pytest.mark.skip
 def test_block_size(mesh):
     meshes = [
-        create_unit_square(8, 8),
-        create_unit_cube(4, 4, 4),
-        create_unit_square(8, 8, CellType.quadrilateral),
-        create_unit_cube(4, 4, 4, CellType.hexahedron)
+        create_unit_square(MPI.COMM_WORLD, 8, 8),
+        create_unit_cube(MPI.COMM_WORLD, 4, 4, 4),
+        create_unit_square(MPI.COMM_WORLD, 8, 8, CellType.quadrilateral),
+        create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
     ]
     for mesh in meshes:
         P2 = FiniteElement("Lagrange", mesh.ufl_cell(), 2)
@@ -157,19 +156,20 @@ def test_block_size(mesh):
         V = FunctionSpace(mesh, P2)
         assert V.dofmap.bs == 1
 
-        V = FunctionSpace(mesh, P2 * P2)
-        assert V.dofmap.index_map_bs == 2
+        # Only VectorElements have index_map_bs > 1
+        V = FunctionSpace(mesh, MixedElement([P2, P2]))
+        assert V.dofmap.index_map_bs == 1
 
         for i in range(1, 6):
             W = FunctionSpace(mesh, MixedElement(i * [P2]))
-            assert W.dofmap.index_map_bs == i
+            assert W.dofmap.index_map_bs == 1
 
         V = VectorFunctionSpace(mesh, ("Lagrange", 2))
         assert V.dofmap.index_map_bs == mesh.geometry.dim
 
 
 @pytest.mark.skip
-def test_block_size_real(mesh):
+def test_block_size_real():
     mesh = create_unit_interval(MPI.COMM_WORLD, 12)
     V = FiniteElement('DG', mesh.ufl_cell(), 0)
     R = FiniteElement('R', mesh.ufl_cell(), 0)
