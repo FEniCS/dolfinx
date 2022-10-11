@@ -76,20 +76,18 @@ int dolfinx::MPI::size(const MPI_Comm comm)
   return size;
 }
 //-----------------------------------------------------------------------------
-void dolfinx::MPI::check_error(MPI_Comm comm, int error_code)
+void dolfinx::MPI::check_error(MPI_Comm comm, int code)
 {
-  if (error_code != MPI_SUCCESS)
+  if (code != MPI_SUCCESS)
   {
     int len = MPI_MAX_ERROR_STRING;
-    std::string error_string(len, ' ');
-    MPI_Error_string(error_code, error_string.data(), &len);
+    std::string error_string(MPI_MAX_ERROR_STRING, ' ');
+    MPI_Error_string(code, error_string.data(), &len);
     error_string.resize(len);
 
-    // Output error message
     std::cerr << error_string << std::endl;
-    MPI_Abort(comm, error_code);
+    MPI_Abort(comm, code);
 
-    // Terminate execution
     std::abort();
   }
 }

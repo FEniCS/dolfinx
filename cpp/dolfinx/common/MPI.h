@@ -74,12 +74,11 @@ int rank(MPI_Comm comm);
 /// communicator
 int size(MPI_Comm comm);
 
-/// @brief Checks wether an error code returned by an MPI
-/// function is equal to MPI_SUCCESS. If the check fails then
-/// calls abort.
+/// @brief Checks wether an error code returned by an MPI function is
+/// equal to MPI_SUCCESS. If the check fails then std::abort is called.
 /// @param[in] comm MPI communicator
-/// @param[in] error_code Error code returned by an MPI function call.
-void check_error(MPI_Comm comm, int error_code);
+/// @param[in] code Error code returned by an MPI function call
+void check_error(MPI_Comm comm, int code);
 
 /// @brief Return local range for the calling process, partitioning the
 /// global [0, N - 1] range across all ranks into partitions of almost
