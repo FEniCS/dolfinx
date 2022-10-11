@@ -239,13 +239,13 @@ def jump(phi, n):
 # We solve the Stokes problem for the initial condition, so the convective
 # terms are omitted for now
 
-a_00 = 1 / R_e_const * (inner(grad(u), grad(v)) * dx
-                        - inner(avg(grad(u)), jump(v, n)) * dS
-                        - inner(jump(u, n), avg(grad(v))) * dS
-                        + alpha / avg(h) * inner(jump(u, n), jump(v, n)) * dS
-                        - inner(grad(u), outer(v, n)) * ds
-                        - inner(outer(u, n), grad(v)) * ds
-                        + alpha / h * inner(outer(u, n), outer(v, n)) * ds)
+a_00 = (1 / R_e_const) * (inner(grad(u), grad(v)) * dx
+                          - inner(avg(grad(u)), jump(v, n)) * dS
+                          - inner(jump(u, n), avg(grad(v))) * dS
+                          + alpha / avg(h) * inner(jump(u, n), jump(v, n)) * dS
+                          - inner(grad(u), outer(v, n)) * ds
+                          - inner(outer(u, n), grad(v)) * ds
+                          + alpha / h * inner(outer(u, n), outer(v, n)) * ds)
 a_01 = - inner(p, div(v)) * dx
 a_10 = - inner(div(u), q) * dx
 a_11 = fem.Constant(msh, PETSc.ScalarType(0.0)) * inner(p, q) * dx
@@ -257,8 +257,8 @@ f = fem.Function(W)
 u_D = fem.Function(V)
 u_D.interpolate(u_e_expr)
 L_0 = inner(f, v) * dx + \
-    1 / R_e_const * (- inner(outer(u_D, n), grad(v)) * ds
-                     + alpha / h * inner(outer(u_D, n), outer(v, n)) * ds)
+    (1 / R_e_const) * (- inner(outer(u_D, n), grad(v)) * ds
+                       + alpha / h * inner(outer(u_D, n), outer(v, n)) * ds)
 L_1 = inner(fem.Constant(msh, PETSc.ScalarType(0.0)), q) * dx
 
 L = fem.form([L_0,
@@ -272,8 +272,8 @@ boundary_vel_dofs = fem.locate_dofs_topological(
     V, msh.topology.dim - 1, boundary_facets)
 bc_u = fem.dirichletbc(u_D, boundary_vel_dofs)
 
-# The pressure is only determined up to a constant, so pin a single degree
-# of freedom
+# The pressure is only determined up to a constant, so pin a single
+# degree of freedom
 
 # TODO TIDY
 pressure_dofs = fem.locate_dofs_geometrical(
@@ -283,9 +283,7 @@ if len(pressure_dofs) > 0:
     pressure_dof = [pressure_dofs[0]]
 else:
     pressure_dof = []
-bc_p = fem.dirichletbc(PETSc.ScalarType(0.0),
-                       np.array(pressure_dof, dtype=np.int32),
-                       Q)
+bc_p = fem.dirichletbc(PETSc.ScalarType(0.0), np.array(pressure_dof, dtype=np.int32), Q)
 
 bcs = [bc_u, bc_p]
 
@@ -332,11 +330,15 @@ u_vis.interpolate(u_h)
 
 # Write initial condition to file
 
-u_file = io.VTXWriter(msh.comm, "u.bp", [u_vis._cpp_object])
-p_file = io.VTXWriter(msh.comm, "p.bp", [p_h._cpp_object])
 t = 0.0
-u_file.write(t)
-p_file.write(t)
+
+try:
+    u_file = io.VTXWriterA(msh.comm, "u.bp", [u_vis._cpp_object])
+    p_file = io.VTXWriter(msh.comm, "p.bp", [p_h._cpp_object])
+    u_file.write(t)
+    p_file.write(t)
+except AttributeError:
+    print("File output requires ADIOS2.")
 
 # Create function to store solution and previous time step
 
@@ -383,14 +385,20 @@ for n in range(num_time_steps):
     u_vis.interpolate(u_h)
 
     # Write to file
-    u_file.write(t)
-    p_file.write(t)
+    try:
+        u_file.write(t)
+        p_file.write(t)
+    except NameError:
+        pass
 
     # Update u_n
     u_n.x.array[:] = u_h.x.array
 
-u_file.close()
-p_file.close()
+try:
+    u_file.close()
+    p_file.close()
+except NameError:
+    pass
 
 # Now we compare the computed solution to the exact solution
 
