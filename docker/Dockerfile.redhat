@@ -5,7 +5,7 @@
 # docker push docker.io/fenicsproject/test-env:latest-redhat
 FROM rockylinux/rockylinux:9
 
-ARG BUILD_NP=8
+ARG BUILD_NP=4
 
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=2
@@ -28,6 +28,7 @@ RUN dnf -y update && \
       boost-program-options \
       cmake \
       gcc \
+      gcc-c++ \
       gcc-gfortran \
       pugixml-devel \
       python3 \
@@ -37,7 +38,7 @@ RUN dnf -y update && \
       flex \
       # Utility
       git \
-      # Only in CRB set
+      # Only in crb set
       ninja-build \
       openblas-devel && \
     dnf -y clean all && \
