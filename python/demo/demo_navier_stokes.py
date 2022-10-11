@@ -333,7 +333,7 @@ u_vis.interpolate(u_h)
 t = 0.0
 
 try:
-    u_file = io.VTXWriterA(msh.comm, "u.bp", [u_vis._cpp_object])
+    u_file = io.VTXWriter(msh.comm, "u.bp", [u_vis._cpp_object])
     p_file = io.VTXWriter(msh.comm, "p.bp", [p_h._cpp_object])
     u_file.write(t)
     p_file.write(t)
