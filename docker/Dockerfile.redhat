@@ -11,7 +11,7 @@ ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=2
 ARG PETSC_VERSION=3.18.0
 ARG PYBIND11_VERSION=2.10.0
-ARG NUMPY_VERSION=1.24.0
+ARG NUMPY_VERSION=1.23.3
 ARG MPICH_VERSION=4.0.2
 
 WORKDIR /tmp
@@ -35,6 +35,7 @@ RUN dnf -y update && \
       python3-devel \
       python3-pip \
       # Required for PETSc build
+      diffutils \
       flex \
       # Utility
       git \
