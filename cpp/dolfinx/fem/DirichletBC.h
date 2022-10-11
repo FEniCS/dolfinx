@@ -177,8 +177,7 @@ public:
             typename = std::enable_if_t<
                 std::is_convertible_v<
                     S, T> or std::is_convertible_v<S, std::span<const T>>>>
-  DirichletBC(const S& g, U&& dofs,
-              const std::shared_ptr<const FunctionSpace>& V)
+  DirichletBC(const S& g, U&& dofs, std::shared_ptr<const FunctionSpace> V)
       : DirichletBC(std::make_shared<Constant<T>>(g), dofs, V)
   {
   }
@@ -200,8 +199,8 @@ public:
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
   template <typename U>
-  DirichletBC(const std::shared_ptr<const Constant<T>>& g, U&& dofs,
-              const std::shared_ptr<const FunctionSpace>& V)
+  DirichletBC(std::shared_ptr<const Constant<T>> g, U&& dofs,
+              std::shared_ptr<const FunctionSpace> V)
       : _function_space(V), _g(g), _dofs0(std::forward<U>(dofs)),
         _owned_indices0(num_owned(*V, _dofs0))
   {
@@ -249,7 +248,7 @@ public:
   /// corresponds to 3 degrees-of-freedom if the dofmap associated with
   /// `g` has block size 3.
   template <typename U>
-  DirichletBC(const std::shared_ptr<const Function<T>>& g, U&& dofs)
+  DirichletBC(std::shared_ptr<const Function<T>> g, U&& dofs)
       : _function_space(g->function_space()), _g(g),
         _dofs0(std::forward<U>(dofs)),
         _owned_indices0(num_owned(*_function_space, _dofs0))
@@ -286,8 +285,8 @@ public:
   /// condition is applied
   /// @note The indices in `dofs` are unrolled and not for blocks.
   template <typename U>
-  DirichletBC(const std::shared_ptr<const Function<T>>& g, U&& V_g_dofs,
-              const std::shared_ptr<const FunctionSpace>& V)
+  DirichletBC(std::shared_ptr<const Function<T>> g, U&& V_g_dofs,
+              std::shared_ptr<const FunctionSpace> V)
       : _function_space(V), _g(g),
         _dofs0(std::forward<typename U::value_type>(V_g_dofs[0])),
         _dofs1_g(std::forward<typename U::value_type>(V_g_dofs[1])),
