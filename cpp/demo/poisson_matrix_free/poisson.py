@@ -3,8 +3,10 @@
 from ufl import (Coefficient, Constant, FiniteElement, FunctionSpace, Mesh,
                  TestFunction, TrialFunction, VectorElement, action, dx, grad,
                  inner, triangle)
+import basix
+from basix.ufl_wrapper import create_vector_element
 
-coord_element = VectorElement("Lagrange", triangle, 1)
+coord_element = create_vector_element("Lagrange", "triangle", 1)
 mesh = Mesh(coord_element)
 
 # Function Space

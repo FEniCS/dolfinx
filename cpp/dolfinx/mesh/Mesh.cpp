@@ -428,7 +428,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   CellType submesh_coord_cell
       = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
   auto submesh_coord_ele
-      = fem::CoordinateElement(submesh_coord_cell, geometry.cmap().degree());
+      = fem::CoordinateElement(submesh_coord_cell, geometry.cmap().degree(), geometry.cmap().variant());
 
   // Submesh geometry input_global_indices
   // TODO Check this
