@@ -56,8 +56,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 
   // Create coordinate map
   auto e = std::make_shared<basix::FiniteElement>(basix::create_element(
-      basix::element::family::P, basix::cell::type::triangle, 1,
-      basix::element::lagrange_variant::equispaced, false));
+      basix::element::family::P, basix::cell::type::triangle, 1, false));
   fem::CoordinateElement cmap(e);
 
   // read mesh data

@@ -87,16 +87,19 @@ std::size_t hash_global(MPI_Comm comm, const T& x)
 
   // Gather hash keys on root process
   std::vector<std::size_t> all_hashes(dolfinx::MPI::size(comm));
-  MPI_Gather(&local_hash, 1, dolfinx::MPI::mpi_type<std::size_t>(),
-             all_hashes.data(), 1, dolfinx::MPI::mpi_type<std::size_t>(), 0,
-             comm);
+  int err = MPI_Gather(&local_hash, 1, dolfinx::MPI::mpi_type<std::size_t>(),
+                       all_hashes.data(), 1,
+                       dolfinx::MPI::mpi_type<std::size_t>(), 0, comm);
+  dolfinx::MPI::check_error(comm, err);
 
   // Hash the received hash keys
   boost::hash<std::vector<std::size_t>> hash;
   std::size_t global_hash = hash(all_hashes);
 
   // Broadcast hash key to all processes
-  MPI_Bcast(&global_hash, 1, dolfinx::MPI::mpi_type<std::size_t>(), 0, comm);
+  err = MPI_Bcast(&global_hash, 1, dolfinx::MPI::mpi_type<std::size_t>(), 0,
+                  comm);
+  dolfinx::MPI::check_error(comm, err);
 
   return global_hash;
 }
