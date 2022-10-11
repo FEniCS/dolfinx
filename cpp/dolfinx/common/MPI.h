@@ -74,8 +74,8 @@ int rank(MPI_Comm comm);
 /// communicator
 int size(MPI_Comm comm);
 
-/// @brief Checks wether an error code returned by an MPI function is
-/// equal to MPI_SUCCESS. If the check fails then std::abort is called.
+/// @brief Check MPI error code. If the error code is not equal to
+/// MPI_SUCCESS, then std::abort is called.
 /// @param[in] comm MPI communicator
 /// @param[in] code Error code returned by an MPI function call
 void check_error(MPI_Comm comm, int code);
