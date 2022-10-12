@@ -50,7 +50,7 @@ jobs:
           cd petsc
           python ./configure \
             --with-64-bit-indices=no \
-            --with-bison-exec=/opt/homebrew/opt/bison/bin/bison \
+            --with-bison-exec=$HOMEBREW_PREFIX/opt/bison/bin/bison \
             --with-debugging=no \
             --with-fortran-bindings=no \
             --with-scalar-type=real \
