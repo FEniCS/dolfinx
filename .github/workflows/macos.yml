@@ -1,5 +1,5 @@
 ---
-name: MacOS build
+name: macOS build
 
 on:
   schedule:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   mac-os-build:
-    name: MacOS Homebrew install and test
+    name: macOS Homebrew install and test
     strategy:
       matrix:
         os: [macos-12, macos-11]
@@ -39,7 +39,7 @@ jobs:
           python -m pip install --upgrade pip
           echo "VIRTUAL ENV:" $VIRTUAL_ENV
           echo '$(which python):' $(which python)
-      
+
       - name: Install minimal PETSc
         run: |
           curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.18.0.tar.gz
