@@ -42,6 +42,7 @@ jobs:
 
       - name: Install minimal PETSc
         run: |
+          export PATH="/opt/homebrew/opt/bison/bin:${PATH}"
           curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.18.0.tar.gz
           mkdir petsc
           tar -xf petsc-lite-3.18.0.tar.gz -C petsc --strip-components=1
