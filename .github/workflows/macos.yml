@@ -22,7 +22,7 @@ jobs:
       - name: Install Homebrew dependencies
         run: |
           brew install boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python@3.10 # FEniCS
-          brew install bison flex # PETSc
+          brew install flex # PETSc
           brew list --versions
 
       # This 'activates' Python 3.10 from Homebrew
@@ -40,8 +40,8 @@ jobs:
           echo "VIRTUAL ENV:" $VIRTUAL_ENV
           echo '$(which python):' $(which python)
 
-      # Bison > 3 required and is installed keg-only by Homebrew.
-      # Necessary to tell PETSc where homebrew bison is located.
+      # bison > 3 required. Could not get PETSc to find keg-only Homebrew
+      # bison. Instead let PETSc build bison.
       - name: Install minimal PETSc
         run: |
           curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.18.0.tar.gz
@@ -50,13 +50,13 @@ jobs:
           cd petsc
           python ./configure \
             --with-64-bit-indices=no \
-            --with-bison-exec=$HOMEBREW_PREFIX/opt/bison/bin/bison \
             --with-debugging=no \
             --with-fortran-bindings=no \
             --with-scalar-type=real \
             --with-shared-libraries \
             --with-scalar-type=real \
             --with-make-np=3 \
+            --download-bison \
             --download-metis \
             --download-ptscotch
           make all
