@@ -40,15 +40,17 @@ jobs:
           echo "VIRTUAL ENV:" $VIRTUAL_ENV
           echo '$(which python):' $(which python)
 
+      # Bison > 3 required and is installed keg-only by Homebrew.
+      # Necessary to tell PETSc where homebrew bison is located.
       - name: Install minimal PETSc
         run: |
-          export PATH="/opt/homebrew/opt/bison/bin:${PATH}"
           curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.18.0.tar.gz
           mkdir petsc
           tar -xf petsc-lite-3.18.0.tar.gz -C petsc --strip-components=1
           cd petsc
           python ./configure \
             --with-64-bit-indices=no \
+            --with-bison-exec=/opt/homebrew/opt/bison/bin/bison \
             --with-debugging=no \
             --with-fortran-bindings=no \
             --with-scalar-type=real \
