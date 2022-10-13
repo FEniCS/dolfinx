@@ -1,3 +1,4 @@
+---
 name: Docker images
 
 # Builds all images nightly. Uses cache to avoid when possible building
@@ -70,9 +71,9 @@ jobs:
     if: ${{ github.repository == 'FEniCS/dolfinx' }}
     strategy:
       matrix:
-        variant: [ "test-env", "dev-env" ]
-        mpi: [ "openmpi", "mpich" ]
-        os: [ "ubuntu-latest", "ARM64" ]
+        variant: ["test-env", "dev-env"]
+        mpi: ["openmpi", "mpich"]
+        os: ["ubuntu-latest", "ARM64"]
 
     runs-on: ${{ matrix.os }}
     needs: start_runner
@@ -105,13 +106,13 @@ jobs:
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
-        with: 
+        with:
           username: ${{ secrets.dockerhub_token }}
           password: ${{ secets.dockerhub_username }}
 
       - name: Infer PETSc build options
         if: ${{ matrix.variant == "test-env" }}
-        run: | 
+        run: |
           echo "PETSC_SLEPC_OPTFLAGS=-O2 -g" >> $GITHUB_ENV
           echo "PETSC_SLEPC_DEBUGGING=yes" >> $GITHUB_ENV
 
@@ -125,9 +126,9 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           build-args: |
-            MPI=${{ matrix.mpi }} 
-            PETSC_SLEPC_OPTFLAGS=${{ env.PETSC_SLEPC_OPTFLAGS }} 
-            PETSC_SLEPC_DEBUGGING=${{ env.PETSC_SLEPC_DEBUGGING }} 
+            MPI=${{ matrix.mpi }}
+            PETSC_SLEPC_OPTFLAGS=${{ env.PETSC_SLEPC_OPTFLAGS }}
+            PETSC_SLEPC_DEBUGGING=${{ env.PETSC_SLEPC_DEBUGGING }}
           context: docker/
           cache-from: registry,ref=${{ env.TAG }}
           cache-to: type=inline
@@ -150,11 +151,11 @@ jobs:
     steps:
       - name: Login to Docker Hub
         uses: docker/login-action@v2
-        with: 
+        with:
           username: ${{ secrets.dockerhub_token }}
           password: ${{ secrets.dockerhub_username }}
 
-    - name: Push multiarch images
+      - name: Push multiarch images
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
           TAG="fenicsproject/test-env:${USER_INPUT:-nightly}-openmpi"
@@ -250,7 +251,7 @@ jobs:
           context: .
           file: dolfinx/docker/Dockerfile
           load: true
-          target: intermediate 
+          target: intermediate
           tag: intermediate
 
       - name: Build dolfinx
@@ -262,7 +263,7 @@ jobs:
           context: .
           file: dolfinx/docker/Dockerfile
           load: true
-          target: dolfinx 
+          target: dolfinx
           tag: dolfinx/dolfinx:${{ env.TAG }}
 
       - name: Build lab
@@ -274,7 +275,7 @@ jobs:
           context: .
           file: dolfinx/docker/Dockerfile
           load: true
-          target: lab 
+          target: lab
           tag: dolfinx/lab:${{ env.TAG }}
 
       - name: Run basic tests inside container
@@ -286,12 +287,12 @@ jobs:
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
-        with: 
+        with:
           username: ${{ secrets.dockerhub_token }}
           password: ${{ secrets.dockerhub_username }}
       - name: Push to the DockerHub registry
         run: |
-          docker push dolfinx/dolfinx-onbuild:${{ env.TAG }} 
+          docker push dolfinx/dolfinx-onbuild:${{ env.TAG }}
           docker push dolfinx/dolfinx:${{ env.TAG }}
           docker push dolfinx/lab:${{ env.TAG }}
 
@@ -310,7 +311,7 @@ jobs:
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
-        with: 
+        with:
           username: ${{ secrets.dockerhub_token }}
           password: ${{ secrets.dockerhub_username }}
 
@@ -334,8 +335,8 @@ jobs:
     # Stop the runner even if an error happened in the previous jobs
     if: ${{ always() && github.repository == 'FEniCS/dolfinx' }}
     needs:
-      - start_runner # required to get output from the start-runner job
-      - create_multiarch_end_user_images # required to wait when the main job is done
+      - start_runner  # required to get output from the start-runner job
+      - create_multiarch_end_user_images  # required to wait when the main job is done
     runs-on: ubuntu-latest
     steps:
       - name: Configure AWS credentials
