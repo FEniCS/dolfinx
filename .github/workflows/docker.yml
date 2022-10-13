@@ -81,19 +81,19 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Infer root repository
-        if: ${{ matrix.variant == "test-env" }}
+        if: ${{ matrix.variant == 'test-env' }}
         run: echo "ROOT_REPOSITORY=fenicsproject" >> $GITHUB_ENV
 
       - name: Infer root repository
-        if: ${{ matrix.variant == "dev-env" }}
+        if: ${{ matrix.variant == 'dev-env' }}
         run: echo "ROOT_REPOSITORY=dolfinx" >> $GITHUB_ENV
 
       - name: Infer architecture tag
-        if: ${{ matrix.os == "ubuntu-latest" }}
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: echo "ARCH_TAG=amd64" >> $GITHUB_ENV
 
       - name: Infer architecture tag
-        if: ${{ matrix.os == "ubuntu-latest" }}
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: echo "ARCH_TAG=arm64" >> $GITHUB_ENV
 
       - name: Create image name and tag
@@ -108,16 +108,16 @@ jobs:
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.dockerhub_token }}
-          password: ${{ secets.dockerhub_username }}
+          password: ${{ secrets.dockerhub_username }}
 
       - name: Infer PETSc build options
-        if: ${{ matrix.variant == "test-env" }}
+        if: ${{ matrix.variant == 'test-env' }}
         run: |
           echo "PETSC_SLEPC_OPTFLAGS=-O2 -g" >> $GITHUB_ENV
           echo "PETSC_SLEPC_DEBUGGING=yes" >> $GITHUB_ENV
 
       - name: Infer PETSc build options
-        if: ${{ matrix.variant == "dev-env" }}
+        if: ${{ matrix.variant == 'dev-env' }}
         run: |
           echo "PETSC_SLEPC_OPTFLAGS=-O2" >> $GITHUB_ENV
           echo "PETSC_SLEPC_DEBUGGING=no" >> $GITHUB_ENV
@@ -135,7 +135,7 @@ jobs:
           file: docker/Dockerfile
           push: true
           target: dev-env
-          tag: ${{ env.TAG }}
+          tags: ${{ env.TAG }}
 
       - name: Cleanup
         run: docker rmi ${{ env.TAG }}
@@ -181,7 +181,6 @@ jobs:
     needs:
       - start_runner
       - create_multiarch_build_images
-    env:
     steps:
       - name: Create tag without image name
         run: |
@@ -240,7 +239,7 @@ jobs:
           file: dolfinx/docker/Dockerfile
           load: true
           target: dolfinx-on-build
-          tag: dolfinx/dolfinx-onbuild:${{ env.TAG }}
+          tags: dolfinx/dolfinx-onbuild:${{ env.TAG }}
 
       - name: Build intermediate
         uses: docker/build-push-action@v3
@@ -252,7 +251,7 @@ jobs:
           file: dolfinx/docker/Dockerfile
           load: true
           target: intermediate
-          tag: intermediate
+          tags: intermediate
 
       - name: Build dolfinx
         uses: docker/build-push-action@v3
@@ -264,7 +263,7 @@ jobs:
           file: dolfinx/docker/Dockerfile
           load: true
           target: dolfinx
-          tag: dolfinx/dolfinx:${{ env.TAG }}
+          tags: dolfinx/dolfinx:${{ env.TAG }}
 
       - name: Build lab
         uses: docker/build-push-action@v3
@@ -276,7 +275,7 @@ jobs:
           file: dolfinx/docker/Dockerfile
           load: true
           target: lab
-          tag: dolfinx/lab:${{ env.TAG }}
+          tags: dolfinx/lab:${{ env.TAG }}
 
       - name: Run basic tests inside container
         run: |
