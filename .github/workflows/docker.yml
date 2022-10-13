@@ -150,20 +150,6 @@ jobs:
     needs:
       - start_runner
       - create_build_images
-    strategy:
-      include:
-        - root_repository: fenicsproject
-          image-name: test-env
-          mpi: openmpi
-        - root_repository: fenicsproject
-          image-name: test-env
-          mpi: mpich
-        - root_repository: dolfinx
-          image-name: dev-env
-          mpi: mpich
-        - root_repository: dolfinx
-          image-name: dev-env
-          mpi: openmpi 
 
     steps:
       - name: Login to Docker Hub
@@ -172,14 +158,17 @@ jobs:
           username: ${{ secrets.dockerhub_token }}
           password: ${{ secrets.dockerhub_username }}
       
-      - name: Create image name and tag
-        run: |
-          USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "TAG=${{ matrix.root_repository }}/${{ matrix.image-name }}:${USER_INPUT:-nightly}-${ matrix.mpi }" >> $GITHUB_ENV
-      
     - name: Push multiarch images
         run: |
-          docker buildx imagetools create -t ${{ env.TAG }} ${{ env.TAG }}-amd64 ${{ env.TAG }}-arm64
+          USER_INPUT=${{ github.event.inputs.tag_prefix }}
+          TAG="fenicsproject/test-env:${USER_INPUT:-nightly}-openmpi"
+          docker buildx imagetools create -t ${TAG} ${TAG}-amd64 ${TAG}-arm64
+          TAG="fenicsproject/test-env:${USER_INPUT:-nightly}-mpich"
+          docker buildx imagetools create -t ${TAG} ${TAG}-amd64 ${TAG}-arm64
+          TAG="dolfinx/dev-env:${USER_INPUT:-nightly}-openmpi"
+          docker buildx imagetools create -t ${TAG} ${TAG}-amd64 ${TAG}-arm64
+          TAG="dolfinx/dev-env:${USER_INPUT:-nightly}-mpich"
+          docker buildx imagetools create -t ${TAG} ${TAG}-amd64 ${TAG}-arm64
 
   create_end_user_images:
     name: Build DOLFINx end-user images
@@ -200,6 +189,7 @@ jobs:
       - name: Create tag without image name
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
+          echo "TAG_PREFIX=${USER_INPUT:-nightly}" >> $GITHUB_ENV
           echo "TAG=${USER_INPUT:-nightly}-${{ matrix.arch_tag }}" >> $GITHUB_ENV
       
       - name: Get git refs
@@ -249,7 +239,7 @@ jobs:
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
             DOLFINX_CMAKE_CXX_FLAGS=-O2
           context: .
-          cache-from: registry,ref=dolfinx/dev-env:${{ env.TAG }}
+          cache-from: registry,ref=dolfinx/dev-env:{{ env.TAG_PREFIX }}-mpich
           file: dolfinx/docker/Dockerfile
           load: true
           target: dolfinx-on-build
@@ -349,7 +339,7 @@ jobs:
     if: ${{ always() && github.repository == 'FEniCS/dolfinx' }}
     needs:
       - start_runner # required to get output from the start-runner job
-      - push_end_user_multiarch_images # required to wait when the main job is done
+      - create_multiarch_end_user_images # required to wait when the main job is done
     runs-on: ubuntu-latest
     steps:
       - name: Configure AWS credentials
