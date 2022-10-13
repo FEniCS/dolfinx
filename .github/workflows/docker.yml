@@ -79,25 +79,21 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Infer root repository (variant: test-env)
+      - name: Infer root repository
         if: ${{ matrix.variant == "test-env" }}
-        run: |
-          echo "ROOT_REPOSITORY=fenicsproject" >> $GITHUB_ENV
+        run: echo "ROOT_REPOSITORY=fenicsproject" >> $GITHUB_ENV
       
-      - name: Infer root repository (variant: dev-env)
+      - name: Infer root repository
         if: ${{ matrix.variant == "dev-env" }}
-        run: |
-          echo "ROOT_REPOSITORY=dolfinx" >> $GITHUB_ENV
+        run: echo "ROOT_REPOSITORY=dolfinx" >> $GITHUB_ENV
       
-      - name: Infer architecture tag (os: ubuntu-latest)
+      - name: Infer architecture tag
         if: ${{ matrix.os == "ubuntu-latest" }}
-        run: |
-          echo "ARCH_TAG=amd64" >> $GITHUB_ENV
+        run: echo "ARCH_TAG=amd64" >> $GITHUB_ENV
       
-      - name: Infer architecture tag (os: ARM64)
+      - name: Infer architecture tag
         if: ${{ matrix.os == "ubuntu-latest" }}
-        run: |
-          echo "ARCH_TAG=arm64" >> $GITHUB_ENV
+        run: echo "ARCH_TAG=arm64" >> $GITHUB_ENV
       
       - name: Create image name and tag
         run: |
@@ -113,13 +109,13 @@ jobs:
           username: ${{ secrets.dockerhub_token }}
           password: ${{ secets.dockerhub_username }}
       
-      - name: Infer PETSc options (variant: test-env)
+      - name: Infer PETSc build options
         if: ${{ matrix.variant == "test-env" }}
         run: | 
           echo "PETSC_SLEPC_OPTFLAGS=-O2 -g" >> $GITHUB_ENV
           echo "PETSC_SLEPC_DEBUGGING=yes" >> $GITHUB_ENV
       
-      - name: Infer PETSc options (variant: dev-env)
+      - name: Infer PETSc build options
         if: ${{ matrix.variant == "dev-env" }}
         run: |
           echo "PETSC_SLEPC_OPTFLAGS=-O2" >> $GITHUB_ENV
