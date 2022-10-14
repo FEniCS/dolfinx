@@ -186,13 +186,11 @@ jobs:
           TAG="test-env:${USER_INPUT:-nightly}-openmpi"
           docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
             --tag ${GH_PREFIX}/${TAG} \
-            --tag ${DH_PREFIX}/${TAG} \
             ${DH_PREFIX}/${TAG}-amd64 \
             ${DH_PREFIX}/${TAG}-arm64
           TAG="test-env:${USER_INPUT:-nightly}-mpich"
           docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
             --tag ${GH_PREFIX}/${TAG} \
-            --tag ${DH_PREFIX}/${TAG} \
             ${DH_PREFIX}/${TAG}-amd64 \
             ${DH_PREFIX}/${TAG}-arm64
           #
