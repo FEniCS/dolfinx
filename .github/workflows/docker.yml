@@ -16,8 +16,8 @@ on:
     inputs:
       tag_prefix:
         description: "tag prefix for docker images"
-        default: "nightly"
         type: string
+        required: true
 
       dockerfile:
         description: "Dockerfile"
