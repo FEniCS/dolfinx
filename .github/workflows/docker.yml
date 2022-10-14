@@ -99,7 +99,7 @@ jobs:
       - name: Create image name and tag
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "TAG=${{ env.DH_PREFIX }}/${{ matrix.variant }}:${USER_INPUT:-nightly}-${ matrix.mpi }-${{ env.ARCH_TAG }}" >> $GITHUB_ENV
+          echo "TAG=${{ env.DH_PREFIX }}/${{ matrix.variant }}:${USER_INPUT:-nightly}-${{ matrix.mpi }}-${{ env.ARCH_TAG }}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -296,9 +296,9 @@ jobs:
 
       - name: Run basic tests inside container
         run: |
-          docker run --rm dolfinx/dolfinx:${{ env.TAG }} \
+          docker run --rm docker.io/dolfinx/dolfinx:${{ env.TAG }} \
             python3 -c "import dolfinx; from dolfinx.fem import FunctionSpace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = FunctionSpace(mesh, ('Lagrange', 1));"
-          docker run --rm dolfinx/dolfinx:${{ env.TAG }} \
+          docker run --rm docker.io/dolfinx/dolfinx:${{ env.TAG }} \
             /bin/bash -c "source /usr/local/bin/dolfinx-complex-mode && python3 -c $'import dolfinx; from dolfinx.fem import FunctionSpace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = FunctionSpace(mesh, (\"Lagrange\", 1));'"
 
       - name: Login to Docker Hub
