@@ -19,10 +19,10 @@ on:
         default: "nightly"
         type: string
 
-      use_dummy:
-        description: "use Dockerfile.dummy for workflow testing"
-        default: false
-        type: boolean
+      dockerfile:
+        description: "Dockerfile"
+        default: "docker/Dockerfile"
+        type: string
 
       dolfinx_ref:
         description: "dolfinx git ref to checkout"
@@ -101,14 +101,6 @@ jobs:
         if: ${{ matrix.os == 'ARM64' }}
         run: echo "ARCH_TAG=arm64" >> $GITHUB_ENV
 
-      - name: Infer Dockerfile (1)
-        if: ${{ github.event.input.use_dummy == 'true' }}
-        run: echo "DOCKERFILE=docker/Dockerfile.dummy" >> $GITHUB_ENV
-
-      - name: Infer Dockerfile (2)
-        if: ${{ github.event.input.use_dummy == 'false' }}
-        run: echo "DOCKERFILE=docker/Dockerfile" >> $GITHUB_ENV
-
       - name: Create image name and tag
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
@@ -145,7 +137,7 @@ jobs:
           context: docker/
           cache-from: type=registry,ref=${{ env.TAG }}
           cache-to: type=inline
-          file: ${{ env.DOCKERFILE }}
+          file: ${{ github.event.input.dockerfile }}
           push: true
           target: dev-env
           tags: ${{ env.TAG }}
@@ -227,14 +219,6 @@ jobs:
           USER_INPUT=${{ github.event.inputs.ffcx_ref }}
           echo "FFCX_REF=${USER_INPUT:-main}" >> $GITHUB_ENV
 
-      - name: Infer Dockerfile (1)
-        if: ${{ github.event.input.use_dummy == 'true' }}
-        run: echo "DOCKERFILE=dolfinx/docker/Dockerfile.dummy" >> $GITHUB_ENV
-
-      - name: Infer Dockerfile (2)
-        if: ${{ !github.event.input.use_dummy == 'false' }}
-        run: echo "DOCKERFILE=dolfinx/docker/Dockerfile" >> $GITHUB_ENV
-
       - uses: actions/checkout@v3
         with:
           repository: "FEniCS/dolfinx"
@@ -271,7 +255,7 @@ jobs:
             DOLFINX_CMAKE_CXX_FLAGS=-O2
           context: .
           cache-from: type=registry,ref=docker.io/dolfinx/dev-env:{{ env.TAG_PREFIX }}-mpich
-          file: ${{ env.DOCKERFILE }}
+          file: dolfinx/${{ github.event.input.dockerfile }}
           load: true
           target: dolfinx-onbuild
           tags: docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
@@ -283,7 +267,7 @@ jobs:
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
             DOLFINX_CMAKE_CXX_FLAGS=-O2
           context: .
-          file: ${{ env.DOCKERFILE }}
+          file: dolfinx/${{ github.event.input.dockerfile }}
           load: true
           target: intermediate
           tags: intermediate
@@ -295,7 +279,7 @@ jobs:
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
             DOLFINX_CMAKE_CXX_FLAGS=-O2
           context: .
-          file: ${{ env.DOCKERFILE }}
+          file: dolfinx/${{ github.event.input.dockerfile }}
           load: true
           target: dolfinx
           tags: docker.io/dolfinx/dolfinx:${{ env.TAG }}
@@ -307,13 +291,13 @@ jobs:
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
             DOLFINX_CMAKE_CXX_FLAGS=-O2
           context: .
-          file: ${{ env.DOCKERFILE }}
+          file: dolfinx/${{ github.event.input.dockerfile }}
           load: true
           target: lab
           tags: docker.io/dolfinx/lab:${{ env.TAG }}
 
       - name: Run basic tests inside container
-        if: ${{ github.event.input.use_dummy == 'false' }}
+        if: ${{ !contains(github.event.input.dockerfile, 'dummy') }}
         run: |
           docker run --rm docker.io/dolfinx/dolfinx:${{ env.TAG }} \
             python3 -c "import dolfinx; from dolfinx.fem import FunctionSpace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = FunctionSpace(mesh, ('Lagrange', 1));"
