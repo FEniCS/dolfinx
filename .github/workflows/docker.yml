@@ -181,10 +181,20 @@ jobs:
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
           #
-          TAG="docker.io/fenicsproject/test-env:${USER_INPUT:-nightly}-openmpi"
-          docker buildx imagetools create --tag ${TAG} ${TAG}-amd64 ${TAG}-arm64
-          TAG="docker.io/fenicsproject/test-env:${USER_INPUT:-nightly}-mpich"
-          docker buildx imagetools create --tag ${TAG} ${TAG}-amd64 ${TAG}-arm64
+          GH_PREFIX="ghcr.io/fenics"
+          DH_PREFIX="docker.io/fenicsproject"
+          TAG="test-env:${USER_INPUT:-nightly}-openmpi"
+          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
+            --tag ${GH_PREFIX}/${TAG} \
+            --tag ${DH_PREFIX}/${TAG} \
+            ${DH_PREFIX}/${TAG}-amd64 \
+            ${DH_PREFIX}/${TAG}-arm64
+          TAG="test-env:${USER_INPUT:-nightly}-mpich"
+          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
+            --tag ${GH_PREFIX}/${TAG} \
+            --tag ${DH_PREFIX}/${TAG} \
+            ${DH_PREFIX}/${TAG}-amd64 \
+            ${DH_PREFIX}/${TAG}-arm64
           #
           GH_PREFIX="ghcr.io/fenics/dolfinx"
           DH_PREFIX="docker.io/dolfinx"
