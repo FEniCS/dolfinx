@@ -206,6 +206,11 @@ jobs:
             --tag ${GH_PREFIX}/${TAG} \
             ${DH_PREFIX}/${TAG}-amd64 \
             ${DH_PREFIX}/${TAG}-arm64
+          TAG="dev-env:${USER_INPUT:-nightly}"
+          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
+            --tag ${GH_PREFIX}/${TAG} \
+            ${DH_PREFIX}/${TAG}-mpich-amd64 \
+            ${DH_PREFIX}/${TAG}-mpich-arm64
 
   create_end_user_images:
     name: Build DOLFINx end-user images
