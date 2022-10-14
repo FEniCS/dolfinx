@@ -118,7 +118,7 @@ jobs:
       - name: Infer PETSc build options (1)
         if: ${{ matrix.variant == 'test-env' }}
         run: |
-          echo "PETSC_SLEPC_OPTFLAGS=-O2 -g" >> $GITHUB_ENV
+          echo "PETSC_SLEPC_OPTFLAGS='-O2 -g'" >> $GITHUB_ENV
           echo "PETSC_SLEPC_DEBUGGING=yes" >> $GITHUB_ENV
 
       - name: Infer PETSc build options (2)
