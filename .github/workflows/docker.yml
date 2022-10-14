@@ -268,7 +268,7 @@ jobs:
         run: |
           echo '{ "cffi_extra_compile_args" : ["-O2"] } ' > dolfinx/docker/dolfinx_jit_options.json
 
-      - name: Build dolfinx/onbuild
+      - name: Build dolfinx-onbuild
         uses: docker/build-push-action@v3
         with:
           build-args: |
