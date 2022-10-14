@@ -93,7 +93,7 @@ jobs:
         run: echo "ARCH_TAG=amd64" >> $GITHUB_ENV
 
       - name: Infer architecture tag (2)
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'ARM64' }}
         run: echo "ARCH_TAG=arm64" >> $GITHUB_ENV
 
       - name: Create image name and tag
