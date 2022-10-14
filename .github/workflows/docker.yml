@@ -377,7 +377,7 @@ jobs:
             --tag ${DH_PREFIX}/dolfinx-onbuild:${{ env.TAG }} \
             --tag ${GH_PREFIX}/dolfinx-onbuild:${{ env.TAG }} \
             ${DH_PREFIX}/dolfinx-onbuild:${{ env.TAG }}-amd64 \
-            ${DH_PREFIX}/dolfinx/dolfinx-onbuild:${{ env.TAG }}-arm64
+            ${DH_PREFIX}/dolfinx-onbuild:${{ env.TAG }}-arm64
           docker buildx imagetools create \
             --tag ${DH_PREFIX}/dolfinx:${{ env.TAG }} \
             --tag ${GH_PREFIX}/dolfinx:${{ env.TAG }} \
