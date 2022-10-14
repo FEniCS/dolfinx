@@ -102,11 +102,11 @@ jobs:
         run: echo "ARCH_TAG=arm64" >> $GITHUB_ENV
 
       - name: Infer Dockerfile (1)
-        if: ${{ github.event.input.use_dummy == true }}
+        if: ${{ github.event.input.use_dummy == 'true' }}
         run: echo "DOCKERFILE=docker/Dockerfile.dummy" >> $GITHUB_ENV
 
       - name: Infer Dockerfile (2)
-        if: ${{ github.event.input.use_dummy == false }}
+        if: ${{ github.event.input.use_dummy == 'false' }}
         run: echo "DOCKERFILE=docker/Dockerfile" >> $GITHUB_ENV
 
       - name: Create image name and tag
@@ -228,11 +228,11 @@ jobs:
           echo "FFCX_REF=${USER_INPUT:-main}" >> $GITHUB_ENV
 
       - name: Infer Dockerfile (1)
-        if: ${{ github.event.input.use_dummy == true }}
+        if: ${{ github.event.input.use_dummy == 'true' }}
         run: echo "DOCKERFILE=dolfinx/docker/Dockerfile.dummy" >> $GITHUB_ENV
 
       - name: Infer Dockerfile (2)
-        if: ${{ !github.event.input.use_dummy == false }}
+        if: ${{ !github.event.input.use_dummy == 'false' }}
         run: echo "DOCKERFILE=dolfinx/docker/Dockerfile" >> $GITHUB_ENV
 
       - uses: actions/checkout@v3
@@ -313,7 +313,7 @@ jobs:
           tags: docker.io/dolfinx/lab:${{ env.TAG }}
 
       - name: Run basic tests inside container
-        if: ${{ github.event.input.use_dummy == false }}
+        if: ${{ github.event.input.use_dummy == 'false' }}
         run: |
           docker run --rm docker.io/dolfinx/dolfinx:${{ env.TAG }} \
             python3 -c "import dolfinx; from dolfinx.fem import FunctionSpace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = FunctionSpace(mesh, ('Lagrange', 1));"
