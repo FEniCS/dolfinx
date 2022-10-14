@@ -57,7 +57,7 @@ jobs:
 
       - name: Start EC2 runner
         id: start-ec2-runner
-        uses: machulav/ec2-github-runner@v2.3.2
+        uses: machulav/ec2-github-runner@v2
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
@@ -80,26 +80,26 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Infer root repository
+      - name: Infer root repository (1)
         if: ${{ matrix.variant == 'test-env' }}
-        run: echo "ROOT_REPOSITORY=fenicsproject" >> $GITHUB_ENV
+        run: echo "DH_PREFIX=docker.io/fenicsproject" >> $GITHUB_ENV
 
-      - name: Infer root repository
+      - name: Infer root repository (2)
         if: ${{ matrix.variant == 'dev-env' }}
-        run: echo "ROOT_REPOSITORY=dolfinx" >> $GITHUB_ENV
+        run: echo "DH_PREFIX=docker.io/dolfinx" >> $GITHUB_ENV
 
-      - name: Infer architecture tag
+      - name: Infer architecture tag (1)
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: echo "ARCH_TAG=amd64" >> $GITHUB_ENV
 
-      - name: Infer architecture tag
+      - name: Infer architecture tag (2)
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: echo "ARCH_TAG=arm64" >> $GITHUB_ENV
 
       - name: Create image name and tag
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "TAG=${{ env.ROOT_REPOSITORY }}/${{ matrix.variant }}:${USER_INPUT:-nightly}-${ matrix.mpi }-${{ env.ARCH_TAG }}" >> $GITHUB_ENV
+          echo "TAG=${{ env.DH_PREFIX }}/${{ matrix.variant }}:${USER_INPUT:-nightly}-${ matrix.mpi }-${{ env.ARCH_TAG }}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -110,13 +110,13 @@ jobs:
           username: ${{ secrets.dockerhub_token }}
           password: ${{ secrets.dockerhub_username }}
 
-      - name: Infer PETSc build options
+      - name: Infer PETSc build options (1)
         if: ${{ matrix.variant == 'test-env' }}
         run: |
           echo "PETSC_SLEPC_OPTFLAGS=-O2 -g" >> $GITHUB_ENV
           echo "PETSC_SLEPC_DEBUGGING=yes" >> $GITHUB_ENV
 
-      - name: Infer PETSc build options
+      - name: Infer PETSc build options (2)
         if: ${{ matrix.variant == 'dev-env' }}
         run: |
           echo "PETSC_SLEPC_OPTFLAGS=-O2" >> $GITHUB_ENV
@@ -155,17 +155,34 @@ jobs:
           username: ${{ secrets.dockerhub_token }}
           password: ${{ secrets.dockerhub_username }}
 
-      - name: Push multiarch images
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
+
+      - name: Push multiarch images to ghcr.io and docker.io
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          TAG="fenicsproject/test-env:${USER_INPUT:-nightly}-openmpi"
-          docker buildx imagetools create -t ${TAG} ${TAG}-amd64 ${TAG}-arm64
-          TAG="fenicsproject/test-env:${USER_INPUT:-nightly}-mpich"
-          docker buildx imagetools create -t ${TAG} ${TAG}-amd64 ${TAG}-arm64
-          TAG="dolfinx/dev-env:${USER_INPUT:-nightly}-openmpi"
-          docker buildx imagetools create -t ${TAG} ${TAG}-amd64 ${TAG}-arm64
-          TAG="dolfinx/dev-env:${USER_INPUT:-nightly}-mpich"
-          docker buildx imagetools create -t ${TAG} ${TAG}-amd64 ${TAG}-arm64
+          #
+          TAG="docker.io/fenicsproject/test-env:${USER_INPUT:-nightly}-openmpi"
+          docker buildx imagetools create --tag ${TAG} ${TAG}-amd64 ${TAG}-arm64
+          TAG="docker.io/fenicsproject/test-env:${USER_INPUT:-nightly}-mpich"
+          docker buildx imagetools create --tag ${TAG} ${TAG}-amd64 ${TAG}-arm64
+          #
+          GH_PREFIX="ghcr.io/fenics/dolfinx"
+          DH_PREFIX="docker.io/dolfinx"
+          TAG="dev-env:${USER_INPUT:-nightly}-openmpi"
+          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
+            --tag ${GH_PREFIX}/${TAG} \
+            ${DH_PREFIX}/${TAG}-amd64 \
+            ${DH_PREFIX}/${TAG}-arm64
+          TAG="dev-env:${USER_INPUT:-nightly}-mpich"
+          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
+            --tag ${GH_PREFIX}/${TAG} \
+            ${DH_PREFIX}/${TAG}-amd64 \
+            ${DH_PREFIX}/${TAG}-arm64
 
   create_end_user_images:
     name: Build DOLFINx end-user images
@@ -235,11 +252,11 @@ jobs:
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
             DOLFINX_CMAKE_CXX_FLAGS=-O2
           context: .
-          cache-from: registry,ref=dolfinx/dev-env:{{ env.TAG_PREFIX }}-mpich
+          cache-from: registry,ref=docker.io/dolfinx/dev-env:{{ env.TAG_PREFIX }}-mpich
           file: dolfinx/docker/Dockerfile
           load: true
           target: dolfinx-on-build
-          tags: dolfinx/dolfinx-onbuild:${{ env.TAG }}
+          tags: docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
 
       - name: Build intermediate
         uses: docker/build-push-action@v3
@@ -263,7 +280,7 @@ jobs:
           file: dolfinx/docker/Dockerfile
           load: true
           target: dolfinx
-          tags: dolfinx/dolfinx:${{ env.TAG }}
+          tags: docker.io/dolfinx/dolfinx:${{ env.TAG }}
 
       - name: Build lab
         uses: docker/build-push-action@v3
@@ -275,7 +292,7 @@ jobs:
           file: dolfinx/docker/Dockerfile
           load: true
           target: lab
-          tags: dolfinx/lab:${{ env.TAG }}
+          tags: docker.io/dolfinx/lab:${{ env.TAG }}
 
       - name: Run basic tests inside container
         run: |
@@ -291,9 +308,9 @@ jobs:
           password: ${{ secrets.dockerhub_username }}
       - name: Push to the DockerHub registry
         run: |
-          docker push dolfinx/dolfinx-onbuild:${{ env.TAG }}
-          docker push dolfinx/dolfinx:${{ env.TAG }}
-          docker push dolfinx/lab:${{ env.TAG }}
+          docker push docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
+          docker push docker.io/dolfinx/dolfinx:${{ env.TAG }}
+          docker push docker.io/dolfinx/lab:${{ env.TAG }}
 
   create_multiarch_end_user_images:
     name: Create multiarch end-user images
@@ -314,20 +331,32 @@ jobs:
           username: ${{ secrets.dockerhub_token }}
           password: ${{ secrets.dockerhub_username }}
 
-      - name: Push multiarch images
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
+
+      - name: Push multiarch images to ghcr.io and docker.io
         run: |
+          GH_PREFIX="ghcr.io/fenics/dolfinx"
+          DH_PREFIX="docker.io/dolfinx"
           docker buildx imagetools create \
-            -t dolfinx/dolfinx-onbuild:{{ env.TAG }} \
-            dolfinx/dolfinx-onbuild:${{ env.TAG }}-amd64 \
-            dolfinx/dolfinx-onbuild:${{ env.TAG }}-arm64
+            --tag ${DH_PREFIX}/dolfinx-onbuild:{{ env.TAG }} \
+            --tag ${GH_PREFIX}/dolfinx-onbuild:{{ env.TAG }} \
+            ${DH_PREFIX}/dolfinx-onbuild:${{ env.TAG }}-amd64 \
+            ${DH_PREFIX}/dolfinx/dolfinx-onbuild:${{ env.TAG }}-arm64
           docker buildx imagetools create \
-            -t dolfinx/dolfinx:${{ env.TAG }} \
-            dolfinx/dolfinx:${{ env.TAG }}-amd64 \
-            dolfinx/dolfinx:${{ env.TAG }}-arm64
+            --tag ${DH_PREFIX}/dolfinx:${{ env.TAG }} \
+            --tag ${GH_PREFIX}/dolfinx:{{ env.TAG }} \
+            ${DH_PREFIX}/dolfinx:${{ env.TAG }}-amd64 \
+            ${DH_PREFIX}/dolfinx:${{ env.TAG }}-arm64
           docker buildx imagetools create \
-            -t dolfinx/lab:${{ env.TAG }} \
-            dolfinx/lab:${{ env.TAG }}-amd64 \
-            dolfinx/lab:${{ env.TAG }}-arm64
+            --tag ${DH_PREFIX}/lab:${{ env.TAG }} \
+            --tag ${GH_PREFIX}/dolfinx:{{ env.TAG }} \
+            ${DH_PREFIX}/lab:${{ env.TAG }}-amd64 \
+            ${DH_PREFIX}/lab:${{ env.TAG }}-arm64
 
   stop-runner:
     name: Stop self-hosted EC2 runner
@@ -345,7 +374,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Stop EC2 runner
-        uses: jhale/ec2-github-runner@main
+        uses: machulav/ec2-github-runner@v2
         with:
           mode: stop
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
