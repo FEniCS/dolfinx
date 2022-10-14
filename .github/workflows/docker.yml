@@ -137,9 +137,6 @@ jobs:
           target: dev-env
           tags: ${{ env.TAG }}
 
-      - name: Cleanup
-        run: docker rmi ${{ env.TAG }}
-
   create_multiarch_build_images:
     name: Create multiarch build environment images
     if: ${{ github.repository == 'FEniCS/dolfinx' }}
@@ -255,7 +252,7 @@ jobs:
           cache-from: registry,ref=docker.io/dolfinx/dev-env:{{ env.TAG_PREFIX }}-mpich
           file: dolfinx/docker/Dockerfile
           load: true
-          target: dolfinx-on-build
+          target: dolfinx-onbuild
           tags: docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
 
       - name: Build intermediate
@@ -311,6 +308,13 @@ jobs:
           docker push docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
           docker push docker.io/dolfinx/dolfinx:${{ env.TAG }}
           docker push docker.io/dolfinx/lab:${{ env.TAG }}
+
+      - name: Cleanup
+        run: |
+          docker rmi docker.io/dolfinx/lab:${{ env.TAG }}
+          docker rmi docker.io/dolfinx/dolfinx:${{ env.TAG }}
+          docker rmi intermediate
+          docker rmi docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
 
   create_multiarch_end_user_images:
     name: Create multiarch end-user images
