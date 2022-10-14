@@ -1,5 +1,5 @@
 ---
-name: MacOS build
+name: macOS build
 
 on:
   schedule:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   mac-os-build:
-    name: MacOS Homebrew install and test
+    name: macOS Homebrew install and test
     strategy:
       matrix:
         os: [macos-12, macos-11]
@@ -22,7 +22,7 @@ jobs:
       - name: Install Homebrew dependencies
         run: |
           brew install boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python@3.10 # FEniCS
-          brew install bison flex # PETSc
+          brew install flex # PETSc
           brew list --versions
 
       # This 'activates' Python 3.10 from Homebrew
@@ -30,24 +30,6 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-
-      - name: Install minimal PETSc
-        run: |
-          curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.17.3.tar.gz
-          mkdir petsc
-          tar -xf petsc-lite-3.17.3.tar.gz -C petsc --strip-components=1
-          cd petsc
-          python ./configure \
-          --with-64-bit-indices=no \
-          --with-debugging=no \
-          --with-fortran-bindings=no \
-          --with-scalar-type=real \
-          --with-shared-libraries \
-          --with-scalar-type=real \
-          --with-make-np=3 \
-          --download-metis \
-          --download-ptscotch
-          make all
 
       - name: Create virtualenv
         run: |
@@ -57,6 +39,29 @@ jobs:
           python -m pip install --upgrade pip
           echo "VIRTUAL ENV:" $VIRTUAL_ENV
           echo '$(which python):' $(which python)
+
+      # bison > 3 required. Could not get PETSc to find keg-only Homebrew
+      # bison. Instead let PETSc build bison.
+      - name: Install minimal PETSc
+        run: |
+          curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.18.0.tar.gz
+          mkdir petsc
+          tar -xf petsc-lite-3.18.0.tar.gz -C petsc --strip-components=1
+          cd petsc
+          python ./configure \
+            --with-64-bit-indices=no \
+            --with-debugging=no \
+            --with-fortran-bindings=no \
+            --with-scalar-type=real \
+            --with-shared-libraries \
+            --with-scalar-type=real \
+            --with-make-np=3 \
+            --download-bison \
+            --download-metis \
+            --download-ptscotch
+          make all
+          cd src/binding/petsc4py
+          PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt pip3 install --no-cache-dir .
 
       - name: Install Basix
         run: |
