@@ -83,30 +83,34 @@ jobs:
     runs-on: ${{ matrix.os }}
     needs: start_runner
     steps:
-      - name: Get git refs
-        id: refs
+      - name: Set git ref
         run: |
           USER_INPUT=${{ github.event.inputs.dolfinx_ref }}
           echo "DOLFINX_REF=${USER_INPUT:-main}" >> $GITHUB_ENV
+
+      - name: Set Dockerfile
+        run: |
+          USER_INPUT=${{ github.event.inputs.dockerfile }}
+          echo "DOLFINX_REF=${USER_INPUT:-docker/Dockerfile}" >> $GITHUB_ENV
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v3
         with:
           ref: ${{ env.DOLFINX_REF }}
 
-      - name: Infer root repository (1)
+      - name: Set root repository (docker.io/fenicsproject)
         if: ${{ matrix.variant == 'test-env' }}
         run: echo "DH_PREFIX=docker.io/fenicsproject" >> $GITHUB_ENV
 
-      - name: Infer root repository (2)
+      - name: Set root repository (docker.io/dolfinx)
         if: ${{ matrix.variant == 'dev-env' }}
         run: echo "DH_PREFIX=docker.io/dolfinx" >> $GITHUB_ENV
 
-      - name: Infer architecture tag (1)
+      - name: Set architecture tag (amd64)
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: echo "ARCH_TAG=amd64" >> $GITHUB_ENV
 
-      - name: Infer architecture tag (2)
+      - name: Set architecture tag (arm64)
         if: ${{ matrix.os == 'ARM64' }}
         run: echo "ARCH_TAG=arm64" >> $GITHUB_ENV
 
@@ -124,13 +128,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Infer PETSc build options (1)
+      - name: Set PETSc build options (-O2 -g + debugging)
         if: ${{ matrix.variant == 'test-env' }}
         run: |
           echo "PETSC_SLEPC_OPTFLAGS='-O2 -g'" >> $GITHUB_ENV
           echo "PETSC_SLEPC_DEBUGGING=yes" >> $GITHUB_ENV
 
-      - name: Infer PETSc build options (2)
+      - name: Set PETSc build options (-O2 + no debugging)
         if: ${{ matrix.variant == 'dev-env' }}
         run: |
           echo "PETSC_SLEPC_OPTFLAGS=-O2" >> $GITHUB_ENV
@@ -146,7 +150,7 @@ jobs:
           context: docker/
           cache-from: type=registry,ref=${{ env.TAG }}
           cache-to: type=inline
-          file: ${{ github.event.inputs.dockerfile }}
+          file: ${{ env.DOCKERFILE }}
           push: true
           target: dev-env
           tags: ${{ env.TAG }}
@@ -217,7 +221,6 @@ jobs:
           echo "TAG=${USER_INPUT:-nightly}-${{ matrix.arch_tag }}" >> $GITHUB_ENV
 
       - name: Get git refs
-        id: refs
         run: |
           USER_INPUT=${{ github.event.inputs.dolfinx_ref }}
           echo "DOLFINX_REF=${USER_INPUT:-main}" >> $GITHUB_ENV
@@ -227,6 +230,11 @@ jobs:
           echo "UFL_REF=${USER_INPUT:-main}" >> $GITHUB_ENV
           USER_INPUT=${{ github.event.inputs.ffcx_ref }}
           echo "FFCX_REF=${USER_INPUT:-main}" >> $GITHUB_ENV
+
+      - name: Set Dockerfile
+        run: |
+          USER_INPUT=${{ github.event.inputs.dockerfile }}
+          echo "DOCKERFILE=${USER_INPUT:-docker/Dockerfile}" >> $GITHUB_ENV
 
       - name: Checkout basix
         uses: actions/checkout@v3
@@ -268,7 +276,7 @@ jobs:
             DOLFINX_CMAKE_CXX_FLAGS=-O2
           context: .
           cache-from: type=registry,ref=docker.io/dolfinx/dev-env:{{ env.TAG_PREFIX }}-mpich
-          file: dolfinx/${{ github.event.inputs.dockerfile }}
+          file: dolfinx/${{ env.DOCKERFILE }}
           load: true
           target: dolfinx-onbuild
           tags: docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
@@ -280,7 +288,7 @@ jobs:
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
             DOLFINX_CMAKE_CXX_FLAGS=-O2
           context: .
-          file: dolfinx/${{ github.event.inputs.dockerfile }}
+          file: dolfinx/${{ env.DOCKERFILE }}
           load: true
           target: intermediate
           tags: intermediate
@@ -292,7 +300,7 @@ jobs:
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
             DOLFINX_CMAKE_CXX_FLAGS=-O2
           context: .
-          file: dolfinx/${{ github.event.inputs.dockerfile }}
+          file: dolfinx/${{ env.DOCKERFILE }}
           load: true
           target: dolfinx
           tags: docker.io/dolfinx/dolfinx:${{ env.TAG }}
@@ -304,7 +312,7 @@ jobs:
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
             DOLFINX_CMAKE_CXX_FLAGS=-O2
           context: .
-          file: dolfinx/${{ github.event.inputs.dockerfile }}
+          file: dolfinx/${{ env.DOCKERFILE }}
           load: true
           target: lab
           tags: docker.io/dolfinx/lab:${{ env.TAG }}
@@ -320,8 +328,8 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_TOKEN }}
-          password: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Push to the DockerHub registry
         run: |
           docker push docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
