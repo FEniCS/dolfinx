@@ -374,18 +374,18 @@ jobs:
           GH_PREFIX="ghcr.io/fenics/dolfinx"
           DH_PREFIX="docker.io/dolfinx"
           docker buildx imagetools create \
-            --tag ${DH_PREFIX}/dolfinx-onbuild:{{ env.TAG }} \
-            --tag ${GH_PREFIX}/dolfinx-onbuild:{{ env.TAG }} \
+            --tag ${DH_PREFIX}/dolfinx-onbuild:${{ env.TAG }} \
+            --tag ${GH_PREFIX}/dolfinx-onbuild:${{ env.TAG }} \
             ${DH_PREFIX}/dolfinx-onbuild:${{ env.TAG }}-amd64 \
             ${DH_PREFIX}/dolfinx/dolfinx-onbuild:${{ env.TAG }}-arm64
           docker buildx imagetools create \
             --tag ${DH_PREFIX}/dolfinx:${{ env.TAG }} \
-            --tag ${GH_PREFIX}/dolfinx:{{ env.TAG }} \
+            --tag ${GH_PREFIX}/dolfinx:${{ env.TAG }} \
             ${DH_PREFIX}/dolfinx:${{ env.TAG }}-amd64 \
             ${DH_PREFIX}/dolfinx:${{ env.TAG }}-arm64
           docker buildx imagetools create \
             --tag ${DH_PREFIX}/lab:${{ env.TAG }} \
-            --tag ${GH_PREFIX}/dolfinx:{{ env.TAG }} \
+            --tag ${GH_PREFIX}/lab:${{ env.TAG }} \
             ${DH_PREFIX}/lab:${{ env.TAG }}-amd64 \
             ${DH_PREFIX}/lab:${{ env.TAG }}-arm64
 
