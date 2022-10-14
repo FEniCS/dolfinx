@@ -137,7 +137,7 @@ jobs:
           context: docker/
           cache-from: type=registry,ref=${{ env.TAG }}
           cache-to: type=inline
-          file: ${{ github.event.input.dockerfile }}
+          file: ${{ github.event.inputs.dockerfile }}
           push: true
           target: dev-env
           tags: ${{ env.TAG }}
@@ -255,7 +255,7 @@ jobs:
             DOLFINX_CMAKE_CXX_FLAGS=-O2
           context: .
           cache-from: type=registry,ref=docker.io/dolfinx/dev-env:{{ env.TAG_PREFIX }}-mpich
-          file: dolfinx/${{ github.event.input.dockerfile }}
+          file: dolfinx/${{ github.event.inputs.dockerfile }}
           load: true
           target: dolfinx-onbuild
           tags: docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
@@ -267,7 +267,7 @@ jobs:
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
             DOLFINX_CMAKE_CXX_FLAGS=-O2
           context: .
-          file: dolfinx/${{ github.event.input.dockerfile }}
+          file: dolfinx/${{ github.event.inputs.dockerfile }}
           load: true
           target: intermediate
           tags: intermediate
@@ -279,7 +279,7 @@ jobs:
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
             DOLFINX_CMAKE_CXX_FLAGS=-O2
           context: .
-          file: dolfinx/${{ github.event.input.dockerfile }}
+          file: dolfinx/${{ github.event.inputs.dockerfile }}
           load: true
           target: dolfinx
           tags: docker.io/dolfinx/dolfinx:${{ env.TAG }}
@@ -291,13 +291,13 @@ jobs:
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
             DOLFINX_CMAKE_CXX_FLAGS=-O2
           context: .
-          file: dolfinx/${{ github.event.input.dockerfile }}
+          file: dolfinx/${{ github.event.inputs.dockerfile }}
           load: true
           target: lab
           tags: docker.io/dolfinx/lab:${{ env.TAG }}
 
       - name: Run basic tests inside container
-        if: ${{ !contains(github.event.input.dockerfile, 'dummy') }}
+        if: ${{ !contains(github.event.inputs.dockerfile, 'dummy') }}
         run: |
           docker run --rm docker.io/dolfinx/dolfinx:${{ env.TAG }} \
             python3 -c "import dolfinx; from dolfinx.fem import FunctionSpace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = FunctionSpace(mesh, ('Lagrange', 1));"
