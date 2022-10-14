@@ -83,7 +83,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     needs: start_runner
     steps:
-      - uses: actions/checkout@v3
+      - name: Get git refs
+        id: refs
+        run: |
+          USER_INPUT=${{ github.event.inputs.dolfinx_ref }}
+          echo "DOLFINX_REF=${USER_INPUT:-main}" >> $GITHUB_ENV
+
+      - name: Checkout DOLFINx
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ env.DOLFINX_REF }}
 
       - name: Infer root repository (1)
         if: ${{ matrix.variant == 'test-env' }}
@@ -219,26 +228,30 @@ jobs:
           USER_INPUT=${{ github.event.inputs.ffcx_ref }}
           echo "FFCX_REF=${USER_INPUT:-main}" >> $GITHUB_ENV
 
-      - uses: actions/checkout@v3
-        with:
-          repository: "FEniCS/dolfinx"
-          path: "dolfinx"
-          ref: ${{ env.DOLFINX_REF }}
-      - uses: actions/checkout@v3
+      - name: Checkout basix
+        uses: actions/checkout@v3
         with:
           repository: "FEniCS/basix"
           path: "basix"
           ref: ${{ env.BASIX_REF }}
-      - uses: actions/checkout@v3
+      - name: Checkout UFL
+        uses: actions/checkout@v3
         with:
           repository: "FEniCS/ufl"
           path: "ufl"
           ref: ${{ env.UFL_REF }}
-      - uses: actions/checkout@v3
+      - name: Checkout FFCx
+        uses: actions/checkout@v3
         with:
           repository: "FEniCS/ffcx"
           path: "ffcx"
           ref: ${{ env.FFCX_REF }}
+      - name: Checkout DOLFINx
+        uses: actions/checkout@v3
+        with:
+          repository: "FEniCS/dolfinx"
+          path: "dolfinx"
+          ref: ${{ env.DOLFINX_REF }}
 
       - name: Set default FFCx options
         run: |
