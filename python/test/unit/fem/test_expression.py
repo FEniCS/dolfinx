@@ -6,7 +6,6 @@
 
 import ctypes
 import ctypes.util
-import os
 
 import cffi
 import numba
@@ -17,20 +16,15 @@ import basix
 import dolfinx.cpp
 import ufl
 from dolfinx.cpp.la.petsc import create_matrix
+from dolfinx.fem.petsc import load_petsc_lib
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace, create_sparsity_pattern, form)
 from dolfinx.mesh import create_unit_square
 
-import petsc4py.lib
 from mpi4py import MPI
 from petsc4py import PETSc
-from petsc4py import get_config as PETSc_get_config
 
 dolfinx.cpp.common.init_logging(["-v"])
-# Get details of PETSc install
-petsc_dir = PETSc_get_config()['PETSC_DIR']
-petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
-petsc_lib_name = ctypes.util.find_library("petsc")
 
 # Get PETSc int and scalar types
 if np.dtype(PETSc.ScalarType).kind == 'c':
@@ -76,16 +70,7 @@ int MatAssemblyBegin(void* mat, int mode);
 int MatAssemblyEnd(void* mat, int mode);
 """.format(c_int_t, c_scalar_t))
 
-if petsc_lib_name is not None:
-    petsc_lib_cffi = ffi.dlopen(petsc_lib_name)
-else:
-    try:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
-    except OSError:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
-    except OSError:
-        print("Could not load PETSc library for CFFI (ABI mode).")
-        raise
+petsc_lib_cffi = load_petsc_lib(ffi.dlopen)
 MatSetValues = petsc_lib_cffi.MatSetValuesLocal
 
 

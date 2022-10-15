@@ -24,7 +24,7 @@ import dolfinx
 import dolfinx.pkgconfig
 import ufl
 from dolfinx.fem import Function, FunctionSpace, form, transpose_dofmap
-from dolfinx.fem.petsc import assemble_matrix
+from dolfinx.fem.petsc import assemble_matrix, load_petsc_lib
 from dolfinx.mesh import create_unit_square
 from ufl import dx, inner
 
@@ -72,19 +72,7 @@ else:
         f"Cannot translate PETSc scalar type to a C type, complex: {complex} size: {scalar_size}.")
 
 
-# Load PETSc library via ctypes
-petsc_lib_name = ctypes.util.find_library("petsc")
-if petsc_lib_name is not None:
-    petsc_lib_ctypes = ctypes.CDLL(petsc_lib_name)
-else:
-    try:
-        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
-    except OSError:
-        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
-    except OSError:
-        print("Could not load PETSc library for CFFI (ABI mode).")
-        raise
-
+petsc_lib_ctypes = load_petsc_lib(ctypes.cdll.LoadLibrary)
 # Get the PETSc MatSetValuesLocal function via ctypes
 # ctypes does not support static types well, ignore type check errors
 MatSetValues_ctypes = petsc_lib_ctypes.MatSetValuesLocal
@@ -104,16 +92,7 @@ ffi.cdef("""int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow,
 """.format(c_int_t, c_scalar_t))
 
 
-if petsc_lib_name is not None:
-    petsc_lib_cffi = ffi.dlopen(petsc_lib_name)
-else:
-    try:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
-    except OSError:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
-    except OSError:
-        print("Could not load PETSc library for CFFI (ABI mode).")
-        raise
+petsc_lib_cffi = load_petsc_lib(ffi.dlopen)
 MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 
 
