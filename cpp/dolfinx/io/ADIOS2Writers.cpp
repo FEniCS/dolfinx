@@ -644,8 +644,7 @@ void fides_initialize_function_attributes(adios2::IO& io,
 //-----------------------------------------------------------------------------
 ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                            const std::string& tag,
-                           const std::shared_ptr<const mesh::Mesh>& mesh,
-                           const U& u)
+                           std::shared_ptr<const mesh::Mesh> mesh, const U& u)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(_adios->DeclareIO(tag))),
       _engine(std::make_unique<adios2::Engine>(
