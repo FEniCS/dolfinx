@@ -624,7 +624,7 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute,
             std::move(parent_cell), std::move(parent_facet)};
   }
 
-  const std::shared_ptr<const common::IndexMap> map_c
+  std::shared_ptr<const common::IndexMap> map_c
       = mesh.topology().index_map(mesh.topology().dim());
   const int num_ghost_cells = map_c->num_ghosts();
   // Check if mesh has ghost cells on any rank
@@ -659,7 +659,7 @@ plaza::refine(const mesh::Mesh& mesh,
             std::move(parent_cell), std::move(parent_facet)};
   }
 
-  const std::shared_ptr<const common::IndexMap> map_c
+  std::shared_ptr<const common::IndexMap> map_c
       = mesh.topology().index_map(mesh.topology().dim());
   const int num_ghost_cells = map_c->num_ghosts();
   // Check if mesh has ghost cells on any rank
