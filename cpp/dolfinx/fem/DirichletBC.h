@@ -131,16 +131,19 @@ template <typename T>
 class DirichletBC
 {
 private:
-  /// @brief Mark cells with bc dofs
+  /// @brief Locate all cells (local to process, including ghosts) which contain
+  /// any of the input degrees of freedom.
   ///
-  /// Returns an array of size number of local cells, where 1 indicates that the
-  /// cell has a dof from the incoming list in the dofmap
+  /// Given a function space `V` and a set of `dofs`, return cell `c` if
+  /// `V.dofmap()->cell_dofs(i)` contains any of the entries in `dofs`.
+  ///
   /// @param[in] V The function space
-  /// @param[in] dofs The degrees of freedom (local indices, unrolled),
+  /// @param[in] dofs A list of degrees of freedom (local indices, unrolled),
   /// including ghosts
-  /// @returns Indicator vector for the local cells (including ghosts)
-  std::vector<std::int32_t> mark_cells(const FunctionSpace& V,
-                                       std::span<const std::int32_t> dofs)
+  /// @returns List of cell indices (local to process, including ghosts) of
+  /// which has any of the input `dofs`
+  std::vector<std::int32_t> locate_cells(const FunctionSpace& V,
+                                         std::span<const std::int32_t> dofs)
   {
     // Mark all dofs in boundary condition by 1
     assert(V.dofmap());
@@ -176,12 +179,14 @@ private:
         if (has_bc)
           break;
         for (std::size_t k = 0; k < dofmap_bs; ++k)
+        {
           if (dof_markers[dofs[j] * dofmap_bs + k])
           {
             marker.push_back(i);
             has_bc = true;
             break;
           }
+        }
       }
     }
     return marker;
@@ -290,7 +295,7 @@ public:
       _dofs0 = unroll_dofs(_dofs0, bs);
     }
 
-    _marker = mark_cells(*V, _dofs0);
+    _marker = locate_cells(*V, _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -320,7 +325,7 @@ public:
       _owned_indices0 *= bs;
       _dofs0 = unroll_dofs(_dofs0, bs);
     }
-    _marker = mark_cells(*_function_space, _dofs0);
+    _marker = locate_cells(*_function_space, _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -350,9 +355,9 @@ public:
       : _function_space(V), _g(g),
         _dofs0(std::forward<typename U::value_type>(V_g_dofs[0])),
         _dofs1_g(std::forward<typename U::value_type>(V_g_dofs[1])),
-        _owned_indices0(num_owned(*_function_space, _dofs0))
+        _owned_indices0(num_owned(*_function_space, _dofs0)),
+        _marker(locate_cells(*_function_space, _dofs0))
   {
-    _marker = mark_cells(*_function_space, _dofs0);
   }
 
   /// Copy constructor
@@ -528,7 +533,7 @@ public:
     }
   }
 
-  /// Set markers[i] = true if dof i has a boundary condition applied.
+  /// Set markers[i] = 1 if dof i has a boundary condition applied.
   /// Value of markers[i] is not changed otherwise.
   /// @param[in,out] markers Entry makers[i] is set to true if dof i in
   /// V0 had a boundary condition applied, i.e. dofs which are fixed by
@@ -539,7 +544,7 @@ public:
     for (std::size_t i = 0; i < _dofs0.size(); ++i)
     {
       assert(_dofs0[i] < (std::int32_t)markers.size());
-      markers[_dofs0[i]] = true;
+      markers[_dofs0[i]] = 1;
     }
   }
 
@@ -552,14 +557,14 @@ private:
                std::shared_ptr<const Constant<T>>>
       _g;
 
-  // List of cells having a degree of freedom with the dirichlet bc
-  std::vector<std::int32_t> _marker;
-
   // Dof indices (_dofs0) in _function_space and (_dofs1_g) in the
   // space of _g. _dofs1_g may be empty if _dofs0 can be re-used
   std::vector<std::int32_t> _dofs0, _dofs1_g;
 
   // The first _owned_indices in _dofs are owned by this process
   std::int32_t _owned_indices0 = -1;
+
+  // List of cells having a degree of freedom with the dirichlet bc
+  std::vector<std::int32_t> _marker;
 };
 } // namespace dolfinx::fem

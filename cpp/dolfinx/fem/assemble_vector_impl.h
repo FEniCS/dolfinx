@@ -26,6 +26,43 @@
 namespace dolfinx::fem::impl
 {
 
+/// Extract a sub-set of entities whose cell index (local to process) is marked
+///
+/// @param[in] entities The entities.
+/// @param[in] cell_indicator An indicator vector. The size of cell_indicator
+/// should be smaller than max(entities).
+/// @tparam stride  The number of entries in each entity (1 for cells, 2 for
+/// exterior facets, 4 for interior facets)
+/// @returns A list of sub-entities
+template <std::size_t stride>
+std::vector<std::int32_t>
+_extract_entities(std::span<const std::int32_t> entities,
+                  std::span<const std::int8_t> cell_indicator)
+{
+  std::vector<std::int32_t> sub_entities;
+  sub_entities.reserve(entities.size());
+  for (std::size_t e = 0; e < entities.size(); e += stride)
+  {
+    if constexpr (stride == 1)
+    {
+      if (cell_indicator[entities[e]])
+        sub_entities.push_back(entities[e]);
+    }
+    else if constexpr (stride == 2)
+    {
+      std::copy_n(std::next(entities.begin(), e), stride,
+                  std::back_inserter(sub_entities));
+    }
+    else if constexpr (stride == 4)
+    {
+      if (cell_indicator[entities[e]] or cell_indicator[entities[e + 2]])
+        std::copy_n(std::next(entities.begin(), e), stride,
+                    std::back_inserter(sub_entities));
+    }
+  }
+  return sub_entities;
+}
+
 /// Implementation of vector assembly
 
 /// Implementation of bc application
@@ -54,8 +91,7 @@ void _lift_bc_cells(
     int cstride, const std::span<const std::uint32_t>& cell_info,
     const std::span<const T>& bc_values1,
     const std::span<const std::int8_t>& bc_markers1,
-    const std::span<const std::int8_t>& bc_cells1, const std::span<const T>& x0,
-    double scale)
+    const std::span<const T>& x0, double scale)
 {
   assert(_bs0 < 0 or _bs0 == bs0);
   assert(_bs1 < 0 or _bs1 == bs1);
@@ -76,9 +112,6 @@ void _lift_bc_cells(
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
     std::int32_t c = cells[index];
-    if (!bc_cells1[c])
-      continue;
-
     // Get dof maps for cell
     auto dmap1 = dofmap1.links(c);
 
@@ -118,7 +151,8 @@ void _lift_bc_cells(
           if (bc_markers1[jj])
           {
             const T bc = bc_values1[jj];
-            const T _x0 = x0.empty() ? 0.0 : x0[jj];
+            const T _x0 = x0.empty() ? 0 : x0[jj];
+            // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
             for (int m = 0; m < num_rows; ++m)
               be[m] -= Ae[m * num_cols + _bs1 * j + k] * _scale * (bc - _x0);
           }
@@ -134,6 +168,7 @@ void _lift_bc_cells(
           {
             const T bc = bc_values1[jj];
             const T _x0 = x0.empty() ? 0.0 : x0[jj];
+            // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
             for (int m = 0; m < num_rows; ++m)
               be[m] -= Ae[m * num_cols + bs1 * j + k] * _scale * (bc - _x0);
           }
@@ -182,8 +217,7 @@ void _lift_bc_exterior_facets(
     int cstride, const std::span<const std::uint32_t>& cell_info,
     const std::span<const T>& bc_values1,
     const std::span<const std::int8_t>& bc_markers1,
-    std::span<const std::int8_t> bc_cells1, const std::span<const T>& x0,
-    double scale)
+    const std::span<const T>& x0, double scale)
 {
   if (facets.empty())
     return;
@@ -202,9 +236,6 @@ void _lift_bc_exterior_facets(
   for (std::size_t index = 0; index < facets.size(); index += 2)
   {
     std::int32_t cell = facets[index];
-    if (!bc_cells1[cell])
-      continue;
-
     std::int32_t local_facet = facets[index + 1];
 
     // Get dof maps for cell
@@ -282,8 +313,7 @@ void _lift_bc_interior_facets(
     const std::function<std::uint8_t(std::size_t)>& get_perm,
     const std::span<const T>& bc_values1,
     const std::span<const std::int8_t>& bc_markers1,
-    std::span<const std::int8_t> bc_cells1, const std::span<const T>& x0,
-    double scale)
+    const std::span<const T>& x0, double scale)
 {
   if (facets.empty())
     return;
@@ -316,8 +346,6 @@ void _lift_bc_interior_facets(
     std::array<std::int32_t, 2> cells = {facets[index], facets[index + 2]};
     std::array<std::int32_t, 2> local_facet
         = {facets[index + 1], facets[index + 3]};
-    if (!bc_cells1[cells[0]] and !bc_cells1[cells[1]])
-      continue;
 
     // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
@@ -742,26 +770,28 @@ void lift_bc(std::span<T> b, const Form<T>& a,
     const auto& kernel = a.kernel(IntegralType::cell, i);
     const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
+    const std::vector<std::int32_t> bc_cells
+        = _extract_entities<1>(cells, bc_cells1);
     if (bs0 == 1 and bs1 == 1)
     {
-      _lift_bc_cells<T, 1, 1>(b, mesh->geometry(), kernel, cells, dof_transform,
-                              dofmap0, bs0, dof_transform_to_transpose, dofmap1,
-                              bs1, constants, coeffs, cstride, cell_info,
-                              bc_values1, bc_markers1, bc_cells1, x0, scale);
+      _lift_bc_cells<T, 1, 1>(
+          b, mesh->geometry(), kernel, bc_cells, dof_transform, dofmap0, bs0,
+          dof_transform_to_transpose, dofmap1, bs1, constants, coeffs, cstride,
+          cell_info, bc_values1, bc_markers1, x0, scale);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
-      _lift_bc_cells<T, 3, 3>(b, mesh->geometry(), kernel, cells, dof_transform,
-                              dofmap0, bs0, dof_transform_to_transpose, dofmap1,
-                              bs1, constants, coeffs, cstride, cell_info,
-                              bc_values1, bc_markers1, bc_cells1, x0, scale);
+      _lift_bc_cells<T, 3, 3>(
+          b, mesh->geometry(), kernel, bc_cells, dof_transform, dofmap0, bs0,
+          dof_transform_to_transpose, dofmap1, bs1, constants, coeffs, cstride,
+          cell_info, bc_values1, bc_markers1, x0, scale);
     }
     else
     {
-      _lift_bc_cells(b, mesh->geometry(), kernel, cells, dof_transform, dofmap0,
-                     bs0, dof_transform_to_transpose, dofmap1, bs1, constants,
-                     coeffs, cstride, cell_info, bc_values1, bc_markers1,
-                     bc_cells1, x0, scale);
+      _lift_bc_cells(b, mesh->geometry(), kernel, bc_cells, dof_transform,
+                     dofmap0, bs0, dof_transform_to_transpose, dofmap1, bs1,
+                     constants, coeffs, cstride, cell_info, bc_values1,
+                     bc_markers1, x0, scale);
     }
   }
 
@@ -771,10 +801,12 @@ void lift_bc(std::span<T> b, const Form<T>& a,
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::int32_t>& facets = a.exterior_facet_domains(i);
-    _lift_bc_exterior_facets(b, *mesh, kernel, facets, dof_transform, dofmap0,
-                             bs0, dof_transform_to_transpose, dofmap1, bs1,
-                             constants, coeffs, cstride, cell_info, bc_values1,
-                             bc_markers1, bc_cells1, x0, scale);
+    const std::vector<std::int32_t> bc_facets
+        = _extract_entities<2>(facets, bc_cells1);
+    _lift_bc_exterior_facets(b, *mesh, kernel, bc_facets, dof_transform,
+                             dofmap0, bs0, dof_transform_to_transpose, dofmap1,
+                             bs1, constants, coeffs, cstride, cell_info,
+                             bc_values1, bc_markers1, x0, scale);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
@@ -796,10 +828,12 @@ void lift_bc(std::span<T> b, const Form<T>& a,
       const auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
       const std::vector<std::int32_t>& facets = a.interior_facet_domains(i);
-      _lift_bc_interior_facets(b, *mesh, kernel, facets, dof_transform, dofmap0,
-                               bs0, dof_transform_to_transpose, dofmap1, bs1,
-                               constants, coeffs, cstride, cell_info, get_perm,
-                               bc_values1, bc_markers1, bc_cells1, x0, scale);
+      const std::vector<std::int32_t> bc_facets
+          = _extract_entities<4>(facets, bc_cells1);
+      _lift_bc_interior_facets(
+          b, *mesh, kernel, bc_facets, dof_transform, dofmap0, bs0,
+          dof_transform_to_transpose, dofmap1, bs1, constants, coeffs, cstride,
+          cell_info, get_perm, bc_values1, bc_markers1, x0, scale);
     }
   }
 }
