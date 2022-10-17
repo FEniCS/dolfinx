@@ -23,26 +23,31 @@ on:
         description: "Dockerfile"
         default: "docker/Dockerfile"
         type: string
+        required: true
 
       dolfinx_ref:
         description: "dolfinx git ref to checkout"
         default: "main"
         type: string
+        required: true
 
       basix_ref:
         description: "basix git ref to checkout"
         default: "main"
         type: string
+        required: true
 
       ufl_ref:
         description: "ufl git ref to checkout"
         default: "main"
         type: string
+        required: true
 
       ffcx_ref:
         description: "ffcx git ref to checkout"
         default: "main"
         type: string
+        required: true
 
 jobs:
   start_runner:
@@ -180,32 +185,37 @@ jobs:
       - name: Push multiarch images to ghcr.io and docker.io
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          #
+          # test-env images
           GH_PREFIX="ghcr.io/fenics"
           DH_PREFIX="docker.io/fenicsproject"
+          # openmpi
           TAG="test-env:${USER_INPUT:-nightly}-openmpi"
           docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
             --tag ${GH_PREFIX}/${TAG} \
             ${DH_PREFIX}/${TAG}-amd64 \
             ${DH_PREFIX}/${TAG}-arm64
+          # mpich
           TAG="test-env:${USER_INPUT:-nightly}-mpich"
           docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
             --tag ${GH_PREFIX}/${TAG} \
             ${DH_PREFIX}/${TAG}-amd64 \
             ${DH_PREFIX}/${TAG}-arm64
-          #
+          # dev-env images
           GH_PREFIX="ghcr.io/fenics/dolfinx"
           DH_PREFIX="docker.io/dolfinx"
+          # openmpi
           TAG="dev-env:${USER_INPUT:-nightly}-openmpi"
           docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
             --tag ${GH_PREFIX}/${TAG} \
             ${DH_PREFIX}/${TAG}-amd64 \
             ${DH_PREFIX}/${TAG}-arm64
+          # mpich
           TAG="dev-env:${USER_INPUT:-nightly}-mpich"
           docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
             --tag ${GH_PREFIX}/${TAG} \
             ${DH_PREFIX}/${TAG}-amd64 \
             ${DH_PREFIX}/${TAG}-arm64
+          # mpich (default)
           TAG="dev-env:${USER_INPUT:-nightly}"
           docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
             --tag ${GH_PREFIX}/${TAG} \
@@ -288,7 +298,7 @@ jobs:
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
             DOLFINX_CMAKE_CXX_FLAGS=-O2
           context: .
-          cache-from: type=registry,ref=docker.io/dolfinx/dev-env:${{ env.TAG_PREFIX }}-mpich
+          cache-from: type=registry,ref=docker.io/dolfinx/dev-env:${{ env.TAG_PREFIX }}
           file: dolfinx/${{ env.DOCKERFILE }}
           load: true
           target: dolfinx-onbuild
