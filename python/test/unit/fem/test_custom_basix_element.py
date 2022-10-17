@@ -94,7 +94,7 @@ def test_custom_element_triangle_degree1():
 
     e = basix.create_custom_element(
         basix.CellType.triangle, [], wcoeffs,
-        x, M, 0, basix.MapType.identity, False, 1, 1)
+        x, M, 0, basix.MapType.identity, basix.SobolevSpace.H1, False, 1, 1)
     ufl_element = BasixElement(e)
 
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
@@ -115,7 +115,7 @@ def test_custom_element_triangle_degree4():
 
     e = basix.create_custom_element(
         basix.CellType.triangle, [], wcoeffs,
-        x, M, 0, basix.MapType.identity, False, 4, 4)
+        x, M, 0, basix.MapType.identity, basix.SobolevSpace.H1, False, 4, 4)
     ufl_element = BasixElement(e)
 
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
@@ -146,7 +146,7 @@ def test_custom_element_triangle_degree4_integral():
 
     e = basix.create_custom_element(
         basix.CellType.triangle, [], wcoeffs,
-        x, M, 0, basix.MapType.identity, False, 4, 4)
+        x, M, 0, basix.MapType.identity, basix.SobolevSpace.H1, False, 4, 4)
     ufl_element = BasixElement(e)
 
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
@@ -166,7 +166,7 @@ def test_custom_element_quadrilateral_degree1():
 
     e = basix.create_custom_element(
         basix.CellType.quadrilateral, [], wcoeffs,
-        x, M, 0, basix.MapType.identity, False, 1, 1)
+        x, M, 0, basix.MapType.identity, basix.SobolevSpace.H1, False, 1, 1)
     ufl_element = BasixElement(e)
 
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, CellType.quadrilateral)

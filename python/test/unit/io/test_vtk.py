@@ -15,6 +15,8 @@ from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
 from dolfinx.io import VTKFile
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
+from dolfinx.plot import create_vtk_mesh
+
 
 from mpi4py import MPI
 
@@ -216,3 +218,10 @@ def test_save_3d_tensor(tempdir):
     filename = Path(tempdir, "u.pvd")
     with VTKFile(mesh.comm, filename, "w") as vtk:
         vtk.write_function(u, 0.)
+
+
+def test_vtk_mesh():
+    comm = MPI.COMM_WORLD
+    mesh = create_unit_square(comm, 2 * comm.size, 2 * comm.size)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
+    create_vtk_mesh(V)

@@ -327,10 +327,10 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     // Fetch connectivities required to get entity dofs
     const std::vector<std::vector<std::vector<int>>>& closure_dofs
         = layout.entity_closure_dofs_all();
-    const std::shared_ptr<const graph::AdjacencyList<int>> e_to_c
+    std::shared_ptr<const graph::AdjacencyList<int>> e_to_c
         = topology.connectivity(dim, tdim);
     assert(e_to_c);
-    const std::shared_ptr<const graph::AdjacencyList<int>> c_to_e
+    std::shared_ptr<const graph::AdjacencyList<int>> c_to_e
         = topology.connectivity(tdim, dim);
     assert(c_to_e);
     for (std::size_t i = 0; i < submesh_to_mesh_entity_map.size(); ++i)
@@ -428,7 +428,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   CellType submesh_coord_cell
       = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
   auto submesh_coord_ele
-      = fem::CoordinateElement(submesh_coord_cell, geometry.cmap().degree());
+      = fem::CoordinateElement(submesh_coord_cell, geometry.cmap().degree(), geometry.cmap().variant());
 
   // Submesh geometry input_global_indices
   // TODO Check this
