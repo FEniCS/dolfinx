@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "defines.h"
-#include <petscsys.h>
 
 //-------------------------------------------------------------------------
 std::string dolfinx::version() { return std::string(DOLFINX_VERSION); }
