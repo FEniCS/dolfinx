@@ -32,7 +32,7 @@ public:
   using allocator_type = Allocator;
 
   /// Create a distributed vector
-  Vector(const std::shared_ptr<const common::IndexMap>& map, int bs,
+  Vector(std::shared_ptr<const common::IndexMap> map, int bs,
          const Allocator& alloc = Allocator())
       : _map(map), _scatterer(std::make_shared<common::Scatterer>(*_map, bs)),
         _bs(bs), _buffer_local(_scatterer->local_buffer_size(), alloc),

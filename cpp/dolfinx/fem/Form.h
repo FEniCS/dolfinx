@@ -110,7 +110,7 @@ public:
        const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
        const std::vector<std::shared_ptr<const Constant<T>>>& constants,
        bool needs_facet_permutations,
-       const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
+       std::shared_ptr<const mesh::Mesh> mesh = nullptr,
       const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
                      std::vector<std::int32_t>>& entity_maps
       = {})

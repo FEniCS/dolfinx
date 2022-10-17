@@ -289,32 +289,28 @@ void declare_objects(py::module& m, const std::string& type)
           py::init(
               [](const py::array_t<T, py::array::c_style>& g,
                  const py::array_t<std::int32_t, py::array::c_style>& dofs,
-                 const std::shared_ptr<const dolfinx::fem::FunctionSpace>& V)
+                 std::shared_ptr<const dolfinx::fem::FunctionSpace> V)
               {
                 if (dofs.ndim() != 1)
                   throw std::runtime_error("Wrong number of dims");
                 std::vector<std::size_t> shape(g.shape(), g.shape() + g.ndim());
-                auto _g  = std::make_shared<dolfinx::fem::Constant<T>>(std::span(g.data(), g.size()), shape);
+                auto _g = std::make_shared<dolfinx::fem::Constant<T>>(
+                    std::span(g.data(), g.size()), shape);
                 return dolfinx::fem::DirichletBC<T>(
-                   _g, std::vector(dofs.data(), dofs.data() + dofs.size()),
-                    V);
+                    _g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
               }),
-          py::arg("g").noconvert(), py::arg("dofs").noconvert(),
-          py::arg("V"))
+          py::arg("g").noconvert(), py::arg("dofs").noconvert(), py::arg("V"))
       .def(py::init(
-               [](const std::shared_ptr<const dolfinx::fem::Constant<T>>& g,
+               [](std::shared_ptr<const dolfinx::fem::Constant<T>> g,
                   const py::array_t<std::int32_t, py::array::c_style>& dofs,
-                  const std::shared_ptr<const dolfinx::fem::FunctionSpace>&
-                  V)
+                  std::shared_ptr<const dolfinx::fem::FunctionSpace> V)
                {
                  return dolfinx::fem::DirichletBC<T>(
-                     g, std::vector(dofs.data(), dofs.data() + dofs.size()),
-                     V);
+                     g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
                }),
-           py::arg("g").noconvert(), py::arg("dofs").noconvert(),
-           py::arg("V"))
+           py::arg("g").noconvert(), py::arg("dofs").noconvert(), py::arg("V"))
       .def(py::init(
-               [](const std::shared_ptr<const dolfinx::fem::Function<T>>& g,
+               [](std::shared_ptr<const dolfinx::fem::Function<T>> g,
                   const py::array_t<std::int32_t, py::array::c_style>& dofs)
                {
                  return dolfinx::fem::DirichletBC<T>(
@@ -323,15 +319,15 @@ void declare_objects(py::module& m, const std::string& type)
            py::arg("g").noconvert(), py::arg("dofs"))
       .def(
           py::init(
-              [](const std::shared_ptr<const dolfinx::fem::Function<T>>& g,
-                 const std::array<py::array_t<std::int32_t,
-                 py::array::c_style>,
+              [](std::shared_ptr<const dolfinx::fem::Function<T>> g,
+                 const std::array<py::array_t<std::int32_t, py::array::c_style>,
                                   2>& V_g_dofs,
-                 const std::shared_ptr<const dolfinx::fem::FunctionSpace>& V)
+                 std::shared_ptr<const dolfinx::fem::FunctionSpace> V)
               {
-                std::array dofs = {std::vector(V_g_dofs[0].data(),
-                V_g_dofs[0].data() + V_g_dofs[0].size()),
-                                   std::vector(V_g_dofs[1].data(),
+                std::array dofs
+                    = {std::vector(V_g_dofs[0].data(),
+                                   V_g_dofs[0].data() + V_g_dofs[0].size()),
+                       std::vector(V_g_dofs[1].data(),
                                    V_g_dofs[1].data() + V_g_dofs[1].size())};
                 return dolfinx::fem::DirichletBC(g, std::move(dofs), V);
               }),
@@ -496,8 +492,8 @@ void declare_objects(py::module& m, const std::string& type)
                       const py::array_t<double, py::array::c_style>& X,
                       std::uintptr_t fn_addr,
                       const std::vector<int>& value_shape,
-                      const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
-                      const std::shared_ptr<const dolfinx::fem::FunctionSpace>&
+                      std::shared_ptr<const dolfinx::mesh::Mesh> mesh,
+                      std::shared_ptr<const dolfinx::fem::FunctionSpace>
                           argument_function_space)
                    {
                      auto tabulate_expression_ptr
@@ -550,8 +546,8 @@ void declare_objects(py::module& m, const std::string& type)
              coefficients,
          const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
              constants,
-         const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
-         const std::shared_ptr<const dolfinx::fem::FunctionSpace>&
+         std::shared_ptr<const dolfinx::mesh::Mesh> mesh,
+         std::shared_ptr<const dolfinx::fem::FunctionSpace>
              argument_function_space)
       {
         const ufcx_expression* p
@@ -759,7 +755,7 @@ void declare_form(py::module& m, const std::string& type)
                   const std::vector<std::shared_ptr<
                       const dolfinx::fem::Constant<T>>>& constants,
                   bool needs_permutation_data,
-                  const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh)
+                  std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
                {
                  //  FIXME Use py::array in integrals instead of std::vector?
                  using kern = std::function<void(
@@ -804,7 +800,7 @@ void declare_form(py::module& m, const std::string& type)
                       dolfinx::fem::IntegralType,
                       std::map<std::int32_t, std::vector<std::int32_t>>>&
                       subdomains,
-                  const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
+                  std::shared_ptr<const dolfinx::mesh::Mesh> mesh,
                   const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
                                  std::vector<std::int32_t>>& entity_maps
                   = {})
@@ -883,7 +879,7 @@ void declare_form(py::module& m, const std::string& type)
          const std::map<dolfinx::fem::IntegralType,
                         std::map<std::int32_t, std::vector<std::int32_t>>>&
              subdomains,
-         const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh,
+         std::shared_ptr<const dolfinx::mesh::Mesh> mesh,
          const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
                         std::vector<std::int32_t>>& entity_maps
          = {})
@@ -1106,6 +1102,9 @@ void fem(py::module& m)
       m, "CoordinateElement", "Coordinate map element")
       .def(py::init<dolfinx::mesh::CellType, int>(), py::arg("celltype"),
            py::arg("degree"))
+      .def(py::init<dolfinx::mesh::CellType, int,
+                    basix::element::lagrange_variant>(),
+           py::arg("celltype"), py::arg("degree"), py::arg("variant"))
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement::create_dof_layout)
       .def_property_readonly("degree", &dolfinx::fem::CoordinateElement::degree)

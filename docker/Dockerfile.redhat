@@ -3,49 +3,47 @@
 #
 # docker build -f Dockerfile.redhat -t docker.io/fenicsproject/test-env:latest-redhat .
 # docker push docker.io/fenicsproject/test-env:latest-redhat
-FROM rockylinux/rockylinux:8
+FROM rockylinux/rockylinux:9
 
-ARG BUILD_NP=16
+ARG BUILD_NP=4
 
-ARG BOOST_VERSION=1.77.0
-ARG BOOST_VERSION_UNDERSCORES=1_77_0
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=2
-ARG PETSC_VERSION=3.17.1
-ARG PYBIND11_VERSION=2.9.2
-ARG NUMPY_VERSION=1.21.6
+ARG PETSC_VERSION=3.17.4
+ARG PYBIND11_VERSION=2.10.0
+ARG NUMPY_VERSION=1.23.3
 ARG MPICH_VERSION=4.0.2
-ARG XTL_VERSION=0.7.4
 
 WORKDIR /tmp
 
 RUN dnf -y update && \
     dnf install -y dnf-plugins-core && \
-    dnf config-manager --set-enabled powertools && \
+    dnf config-manager --set-enabled crb && \
     dnf install -y epel-release && \
     dnf -y install \
-      pugixml-devel \
-      # Required by PETSc build
       bison \
+      boost-devel \
+      boost-filesystem \
+      boost-timer \
+      boost-program-options \
       cmake \
-      # Required by PETSc build
+      gcc \
+      gcc-c++ \
+      gcc-gfortran \
+      pugixml-devel \
+      python3 \
+      python3-devel \
+      python3-pip \
+      # Required for PETSc build
+      diffutils \
       flex \
-      gcc-toolset-11 \
       # Utility
       git \
-      # Only in PowerTools repo
+      # Only in crb set
       ninja-build \
-      openblas-devel \
-      python39 \
-      python39-devel \
-      python39-pip && \
+      openblas-devel && \
     dnf -y clean all && \
     rm -rf /var/cache
-
-# Permanently enable GCC 11 toolset
-ENV DEVTOOLSET_ROOTPATH="/opt/rh/gcc-toolset-11/root"
-ENV PATH="${DEVTOOLSET_ROOTPATH}/usr/bin:${PATH}"
-ENV LD_LIBRARY_PATH="${DEVTOOLSET_ROOTPATH}/usr/lib64:${DEVTOOLSET_ROOTPATH}/usr/lib:${DEVTOOLSET_ROOTPATH}/usr/lib64/dyninst:${DEVTOOLSET_ROOTPATH}/usr/lib/dyninst:/usr/local/lib64:${LD_LIBRARY_PATH}"
 
 # Build MPICH (see https://github.com/pmodels/mpich/issues/5811)
 RUN curl -L -O http://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
@@ -86,14 +84,6 @@ RUN curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${P
     rm -rf /tmp/*
 
 ENV PETSC_DIR=/usr/local
-
-# System Boost too old
-RUN curl -L -O https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION_UNDERSCORES}.tar.gz && \
-    tar -xf boost_${BOOST_VERSION_UNDERSCORES}.tar.gz && \
-    cd boost_${BOOST_VERSION_UNDERSCORES} && \
-    ./bootstrap.sh --prefix=/usr/local && \
-    ./b2 -j ${BUILD_NP} --with-timer --with-filesystem --with-program_options cxxflags="-fPIC -std=c++11" install && \
-    rm -rf /tmp/*
 
 # Build HDF5
 RUN curl -L -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
