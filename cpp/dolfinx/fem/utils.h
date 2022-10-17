@@ -245,7 +245,7 @@ create_form(const ufcx_form& ufcx_form,
             const std::map<IntegralType,
                            std::map<std::int32_t, std::vector<std::int32_t>>>&
                 subdomains,
-            std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+            std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
   if (ufcx_form.rank != (int)spaces.size())
     throw std::runtime_error("Wrong number of argument spaces for Form.");
