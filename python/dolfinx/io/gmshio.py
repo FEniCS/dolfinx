@@ -18,7 +18,6 @@ from dolfinx.mesh import (CellType, GhostMode, Mesh, create_cell_partitioner,
                           create_mesh, meshtags, meshtags_from_entities)
 
 from mpi4py import MPI as _MPI
-from dolfinx.cpp.graph import AdjacencyList_int32
 
 __all__ = ["cell_perm_array", "ufl_mesh"]
 
