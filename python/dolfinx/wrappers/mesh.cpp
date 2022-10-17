@@ -89,7 +89,7 @@ void declare_meshtags(py::module& m, std::string type)
              std::shared_ptr<dolfinx::mesh::MeshTags<T>>>(
       m, pyclass_name.c_str(), "MeshTags object")
       .def(py::init(
-          [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, int dim,
+          [](std::shared_ptr<const dolfinx::mesh::Mesh> mesh, int dim,
              const py::array_t<std::int32_t, py::array::c_style>& indices,
              const py::array_t<T, py::array::c_style>& values)
           {
@@ -123,7 +123,7 @@ void declare_meshtags(py::module& m, std::string type)
            { return as_pyarray(self.find(value)); });
 
   m.def("create_meshtags",
-        [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, int dim,
+        [](std::shared_ptr<const dolfinx::mesh::Mesh> mesh, int dim,
            const dolfinx::graph::AdjacencyList<std::int32_t>& entities,
            const py::array_t<T, py::array::c_style>& values)
         {
