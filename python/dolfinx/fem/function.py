@@ -573,7 +573,8 @@ def VectorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typin
 
     e = ElementMetaData(*element)
     ufl_element = basix.ufl_wrapper.create_vector_element(
-        e.family, mesh.ufl_cell().cellname(), e.degree, dim=dim)
+        e.family, mesh.ufl_cell().cellname(), e.degree, dim=dim,
+        gdim=mesh.geometry.dim)
 
     return FunctionSpace(mesh, ufl_element)
 
@@ -584,5 +585,6 @@ def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typin
 
     e = ElementMetaData(*element)
     ufl_element = basix.ufl_wrapper.create_tensor_element(
-        e.family, mesh.ufl_cell().cellname(), e.degree, shape=shape, symmetry=symmetry)
+        e.family, mesh.ufl_cell().cellname(), e.degree, shape=shape, symmetry=symmetry,
+        gdim=mesh.geometry.dim)
     return FunctionSpace(mesh, ufl_element)

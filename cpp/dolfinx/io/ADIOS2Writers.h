@@ -58,8 +58,8 @@ private:
   /// @param[in] mesh
   /// @param[in] u
   ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-               const std::string& tag,
-               const std::shared_ptr<const mesh::Mesh>& mesh, const U& u);
+               const std::string& tag, std::shared_ptr<const mesh::Mesh> mesh,
+               const U& u);
 
 protected:
   /// @brief Create an ADIOS2-based writer for a mesh
