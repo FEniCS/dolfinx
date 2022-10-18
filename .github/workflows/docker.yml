@@ -136,7 +136,7 @@ jobs:
       - name: Set PETSc build options (-O2 -g + debugging)
         if: ${{ matrix.variant == 'test-env' }}
         run: |
-          echo "PETSC_SLEPC_OPTFLAGS='-O2 -g'" >> $GITHUB_ENV
+          echo "PETSC_SLEPC_OPTFLAGS=-O2 -g" >> $GITHUB_ENV
           echo "PETSC_SLEPC_DEBUGGING=yes" >> $GITHUB_ENV
 
       - name: Set PETSc build options (-O2 + no debugging)
