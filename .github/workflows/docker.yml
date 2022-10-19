@@ -1,3 +1,4 @@
+---
 name: Docker images
 
 # Builds all images nightly. Uses cache to avoid when possible building
@@ -15,28 +16,38 @@ on:
     inputs:
       tag_prefix:
         description: "tag prefix for docker images"
-        default: "nightly"
         type: string
+        required: true
+
+      dockerfile:
+        description: "Dockerfile"
+        default: "docker/Dockerfile"
+        type: string
+        required: true
 
       dolfinx_ref:
         description: "dolfinx git ref to checkout"
         default: "main"
         type: string
+        required: true
 
       basix_ref:
         description: "basix git ref to checkout"
         default: "main"
         type: string
+        required: true
 
       ufl_ref:
         description: "ufl git ref to checkout"
         default: "main"
         type: string
+        required: true
 
       ffcx_ref:
         description: "ffcx git ref to checkout"
         default: "main"
-        type: string 
+        type: string
+        required: true
 
 jobs:
   start_runner:
@@ -53,9 +64,10 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Start EC2 runner
         id: start-ec2-runner
-        uses: machulav/ec2-github-runner@v2.3.2
+        uses: machulav/ec2-github-runner@v2
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
@@ -64,137 +76,153 @@ jobs:
           subnet-id: subnet-dc2151b7
           security-group-id: sg-03fc69ee7a6ba8bc4
 
-  build_test_env_openmpi:
-    name: Build fenicsproject/test-env:openmpi image
-    if: ${{ github.repository == 'FEniCS/dolfinx' }}
-    strategy:
-      fail-fast: False
-      matrix:
-        include:
-          - arch_tag: amd64
-            os: ubuntu-latest
-          - arch_tag: arm64
-            os: ARM64
-    runs-on: ${{ matrix.os }}
-    needs: start_runner
-    env:
-      PETSC_SLEPC_OPTFLAGS: "-O2 -g"
-      PETSC_SLEPC_DEBUGGING: "yes"
-      MPI: "openmpi"
-      DOCKER_BUILD_ARGS: "--build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI"
-      ARCH_TAG: ${{ matrix.arch_tag }}
-    steps:
-      - uses: actions/checkout@v3
-      - name: Get tag name
-        id: tag_name
-        run: |
-          USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-nightly}"
-      - name: Log into the Dockerhub registry
-        run: echo ${{ secrets.dockerhub_token }} | docker login -u ${{ secrets.dockerhub_username }} --password-stdin
-      - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG} docker/
-      - name: Cleanup
-        run: docker rmi fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG}
-
-  build_test_env_mpich:
-    name: Build fenicsproject/test-env:mpich image
-    if: ${{ github.repository == 'FEniCS/dolfinx' }}
-    strategy:
-      fail-fast: False
-      matrix:
-        include:
-          - arch_tag: amd64
-            os: ubuntu-latest
-          - arch_tag: arm64
-            os: ARM64
-    runs-on: ${{ matrix.os }}
-    needs: start_runner
-    env:
-      PETSC_SLEPC_OPTFLAGS: "-O2 -g"
-      PETSC_SLEPC_DEBUGGING: "yes"
-      MPI: "mpich"
-      DOCKER_BUILD_ARGS: "--build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI"
-      ARCH_TAG: ${{ matrix.arch_tag }}
-    steps:
-      - uses: actions/checkout@v3
-      - name: Log into the DockerHub registry
-        run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-      - name: Get tag name
-        id: tag_name
-        run: |
-          USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-nightly}"
-      - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG} docker/
-      - name: Cleanup
-        run: docker rmi fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${MPI}-${ARCH_TAG}
-
-  build_dev_env:
-    name: Build dolfinx/dev-env image
+  create_build_images:
+    name: Create build environment images
     if: ${{ github.repository == 'FEniCS/dolfinx' }}
     strategy:
       matrix:
-        include:
-          - arch_tag: amd64
-            os: ubuntu-latest
-          - arch_tag: arm64
-            os: ARM64
+        variant: ["test-env", "dev-env"]
+        mpi: ["openmpi", "mpich"]
+        os: ["ubuntu-latest", "ARM64"]
+
     runs-on: ${{ matrix.os }}
     needs: start_runner
-    env:
-      # TODO: march based on matrix.os
-      PETSC_SLEPC_OPTFLAGS: "-O2"
-      PETSC_SLEPC_DEBUGGING: "no"
-      MPI: "mpich"
-      DOCKER_BUILD_ARGS: "--build-arg PETSC_SLEPC_OPTFLAGS --build-arg PETSC_SLEPC_DEBUGGING --build-arg MPI"
-      ARCH_TAG: ${{ matrix.arch_tag }}
     steps:
-      - uses: actions/checkout@v3
-      - name: Get tag name
-        id: tag_name
+      - name: Set git ref
+        run: |
+          USER_INPUT=${{ github.event.inputs.dolfinx_ref }}
+          echo "DOLFINX_REF=${USER_INPUT:-main}" >> $GITHUB_ENV
+
+      - name: Set Dockerfile
+        run: |
+          USER_INPUT=${{ github.event.inputs.dockerfile }}
+          echo "DOCKERFILE=${USER_INPUT:-docker/Dockerfile}" >> $GITHUB_ENV
+
+      - name: Checkout DOLFINx
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ env.DOLFINX_REF }}
+
+      - name: Set root repository (docker.io/fenicsproject)
+        if: ${{ matrix.variant == 'test-env' }}
+        run: echo "DH_PREFIX=docker.io/fenicsproject" >> $GITHUB_ENV
+
+      - name: Set root repository (docker.io/dolfinx)
+        if: ${{ matrix.variant == 'dev-env' }}
+        run: echo "DH_PREFIX=docker.io/dolfinx" >> $GITHUB_ENV
+
+      - name: Set architecture tag (amd64)
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: echo "ARCH_TAG=amd64" >> $GITHUB_ENV
+
+      - name: Set architecture tag (arm64)
+        if: ${{ matrix.os == 'ARM64' }}
+        run: echo "ARCH_TAG=arm64" >> $GITHUB_ENV
+
+      - name: Create image name and tag
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-nightly}"
-      - name: Log into the DockerHub registry
-        run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-      - name: Build the Docker image
-        run: docker buildx build ${DOCKER_BUILD_ARGS} --push --cache-from=type=registry,ref=dolfinx/dev-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG} --cache-to=type=inline --file docker/Dockerfile --target dev-env --tag dolfinx/dev-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG} docker/
-      - name: Cleanup
-        run: docker rmi dolfinx/dev-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG}
+          echo "TAG=${{ env.DH_PREFIX }}/${{ matrix.variant }}:${USER_INPUT:-nightly}-${{ matrix.mpi }}-${{ env.ARCH_TAG }}" >> $GITHUB_ENV
 
-  push_dev_multiarch_images:
-    name: Push development multiarch images
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set PETSc build options (-O2 -g + debugging)
+        if: ${{ matrix.variant == 'test-env' }}
+        run: |
+          echo "PETSC_SLEPC_OPTFLAGS=-O2 -g" >> $GITHUB_ENV
+          echo "PETSC_SLEPC_DEBUGGING=yes" >> $GITHUB_ENV
+
+      - name: Set PETSc build options (-O2 + no debugging)
+        if: ${{ matrix.variant == 'dev-env' }}
+        run: |
+          echo "PETSC_SLEPC_OPTFLAGS=-O2" >> $GITHUB_ENV
+          echo "PETSC_SLEPC_DEBUGGING=no" >> $GITHUB_ENV
+
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          build-args: |
+            MPI=${{ matrix.mpi }}
+            PETSC_SLEPC_OPTFLAGS=${{ env.PETSC_SLEPC_OPTFLAGS }}
+            PETSC_SLEPC_DEBUGGING=${{ env.PETSC_SLEPC_DEBUGGING }}
+          context: docker/
+          cache-from: type=registry,ref=${{ env.TAG }}
+          cache-to: type=inline
+          file: ${{ env.DOCKERFILE }}
+          push: true
+          target: dev-env
+          tags: ${{ env.TAG }}
+
+  create_multiarch_build_images:
+    name: Create multiarch build environment images
     if: ${{ github.repository == 'FEniCS/dolfinx' }}
     runs-on: ubuntu-latest
     needs:
-      - build_test_env_openmpi
-      - build_test_env_mpich
-      - build_dev_env
+      - start_runner
+      - create_build_images
+
     steps:
-      - name: Get tag name
-        id: tag_name
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push multiarch images to ghcr.io and docker.io
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-nightly}"
-      - name: Log into the DockerHub registry
-        run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-      - name: Push multiarch images
-        run: |
-          docker buildx imagetools create \
-            -t fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-mpich \
-            fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-mpich-amd64 \
-            fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-mpich-arm64
-          docker buildx imagetools create \
-            -t fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-openmpi \
-            fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-openmpi-amd64 \
-            fenicsproject/test-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-openmpi-arm64
-          docker buildx imagetools create \
-            -t dolfinx/dev-env:${{ steps.tag_name.outputs.TAG_PREFIX }} \
-            dolfinx/dev-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 \
-            dolfinx/dev-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-arm64
+          # test-env images
+          GH_PREFIX="ghcr.io/fenics"
+          DH_PREFIX="docker.io/fenicsproject"
+          # openmpi
+          TAG="test-env:${USER_INPUT:-nightly}-openmpi"
+          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
+            --tag ${GH_PREFIX}/${TAG} \
+            ${DH_PREFIX}/${TAG}-amd64 \
+            ${DH_PREFIX}/${TAG}-arm64
+          # mpich
+          TAG="test-env:${USER_INPUT:-nightly}-mpich"
+          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
+            --tag ${GH_PREFIX}/${TAG} \
+            ${DH_PREFIX}/${TAG}-amd64 \
+            ${DH_PREFIX}/${TAG}-arm64
+          # dev-env images
+          GH_PREFIX="ghcr.io/fenics/dolfinx"
+          DH_PREFIX="docker.io/dolfinx"
+          # openmpi
+          TAG="dev-env:${USER_INPUT:-nightly}-openmpi"
+          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
+            --tag ${GH_PREFIX}/${TAG} \
+            ${DH_PREFIX}/${TAG}-amd64 \
+            ${DH_PREFIX}/${TAG}-arm64
+          # mpich
+          TAG="dev-env:${USER_INPUT:-nightly}-mpich"
+          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
+            --tag ${GH_PREFIX}/${TAG} \
+            ${DH_PREFIX}/${TAG}-amd64 \
+            ${DH_PREFIX}/${TAG}-arm64
+          # mpich (default)
+          TAG="dev-env:${USER_INPUT:-nightly}"
+          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
+            --tag ${GH_PREFIX}/${TAG} \
+            ${DH_PREFIX}/${TAG}-mpich-amd64 \
+            ${DH_PREFIX}/${TAG}-mpich-arm64
 
-  build_end_user_images:
+  create_end_user_images:
     name: Build DOLFINx end-user images
     if: ${{ github.repository == 'FEniCS/dolfinx' }}
     strategy:
@@ -207,125 +235,190 @@ jobs:
     runs-on: ${{ matrix.os }}
     needs:
       - start_runner
-      - push_dev_multiarch_images
-    env:
-      DOLFINX_CMAKE_BUILD_TYPE: "RelWithDebInfo"
-      DOLFINX_CMAKE_CXX_FLAGS: "-O2"
-      DOCKER_BUILD_ARGS: "--build-arg DOLFINX_CMAKE_BUILD_TYPE --build-arg DOLFINX_CMAKE_CXX_FLAGS"
-      ARCH_TAG: ${{ matrix.arch_tag }}
+      - create_multiarch_build_images
     steps:
-      - name: Get tag name
-        id: tag_name
+      - name: Create tag without image name
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-nightly}"
+          echo "TAG_PREFIX=${USER_INPUT:-nightly}" >> $GITHUB_ENV
+          echo "TAG=${USER_INPUT:-nightly}-${{ matrix.arch_tag }}" >> $GITHUB_ENV
+
       - name: Get git refs
-        id: refs
         run: |
           USER_INPUT=${{ github.event.inputs.dolfinx_ref }}
-          echo "::set-output name=DOLFINX_REF::${USER_INPUT:-main}"
+          echo "DOLFINX_REF=${USER_INPUT:-main}" >> $GITHUB_ENV
           USER_INPUT=${{ github.event.inputs.basix_ref }}
-          echo "::set-output name=BASIX_REF::${USER_INPUT:-main}"
+          echo "BASIX_REF=${USER_INPUT:-main}" >> $GITHUB_ENV
           USER_INPUT=${{ github.event.inputs.ufl_ref }}
-          echo "::set-output name=UFL_REF::${USER_INPUT:-main}"
+          echo "UFL_REF=${USER_INPUT:-main}" >> $GITHUB_ENV
           USER_INPUT=${{ github.event.inputs.ffcx_ref }}
-          echo "::set-output name=FFCX_REF::${USER_INPUT:-main}"
-      - uses: actions/checkout@v3
-        with:
-          repository: "FEniCS/dolfinx"
-          path: "dolfinx"
-          ref: ${{ steps.refs.outputs.DOLFINX_REF }}
-      - uses: actions/checkout@v3
+          echo "FFCX_REF=${USER_INPUT:-main}" >> $GITHUB_ENV
+
+      - name: Set Dockerfile
+        run: |
+          USER_INPUT=${{ github.event.inputs.dockerfile }}
+          echo "DOCKERFILE=${USER_INPUT:-docker/Dockerfile}" >> $GITHUB_ENV
+
+      - name: Checkout basix
+        uses: actions/checkout@v3
         with:
           repository: "FEniCS/basix"
           path: "basix"
-          ref: ${{ steps.refs.outputs.BASIX_REF }}
-      - uses: actions/checkout@v3
+          ref: ${{ env.BASIX_REF }}
+      - name: Checkout UFL
+        uses: actions/checkout@v3
         with:
           repository: "FEniCS/ufl"
           path: "ufl"
-          ref: ${{ steps.refs.outputs.UFL_REF }}
-      - uses: actions/checkout@v3
+          ref: ${{ env.UFL_REF }}
+      - name: Checkout FFCx
+        uses: actions/checkout@v3
         with:
           repository: "FEniCS/ffcx"
           path: "ffcx"
-          ref: ${{ steps.refs.outputs.FFCX_REF }}
+          ref: ${{ env.FFCX_REF }}
+      - name: Checkout DOLFINx
+        uses: actions/checkout@v3
+        with:
+          repository: "FEniCS/dolfinx"
+          path: "dolfinx"
+          ref: ${{ env.DOLFINX_REF }}
+
       - name: Set default FFCx options
         run: |
           echo '{ }' > dolfinx/docker/ffcx_options.json
       - name: Set default DOLFINx JIT options
         run: |
           echo '{ "cffi_extra_compile_args" : ["-O2"] } ' > dolfinx/docker/dolfinx_jit_options.json
-      - name: Build dolfinx/dolfinx-onbuild
-        run: |
-          docker buildx build --file dolfinx/docker/Dockerfile ${DOCKER_BUILD_ARGS} \
-            --target dolfinx-onbuild --cache-from=type=registry,ref=dolfinx/dev-env:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG} \
-            --tag dolfinx/dolfinx-onbuild .
+
+      - name: Build dolfinx-onbuild
+        uses: docker/build-push-action@v3
+        with:
+          build-args: |
+            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
+            DOLFINX_CMAKE_CXX_FLAGS=-O2
+          context: .
+          cache-from: type=registry,ref=docker.io/dolfinx/dev-env:${{ env.TAG_PREFIX }}
+          file: dolfinx/${{ env.DOCKERFILE }}
+          load: true
+          target: dolfinx-onbuild
+          tags: docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
+
       - name: Build intermediate
-        run: |
-          docker buildx build --file dolfinx/docker/Dockerfile ${DOCKER_BUILD_ARGS} \
-            --target intermediate --tag intermediate .
-      - name: Build dolfinx/dolfinx
-        run: |
-          docker buildx build --file dolfinx/docker/Dockerfile ${DOCKER_BUILD_ARGS} \
-            --target dolfinx --tag dolfinx/dolfinx .
-      - name: Build dolfinx/lab
-        run: |
-          docker buildx build --file dolfinx/docker/Dockerfile ${DOCKER_BUILD_ARGS} \
-            --target lab --tag dolfinx/lab .
+        uses: docker/build-push-action@v3
+        with:
+          build-args: |
+            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
+            DOLFINX_CMAKE_CXX_FLAGS=-O2
+          context: .
+          file: dolfinx/${{ env.DOCKERFILE }}
+          load: true
+          target: intermediate
+          tags: intermediate
+
+      - name: Build dolfinx
+        uses: docker/build-push-action@v3
+        with:
+          build-args: |
+            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
+            DOLFINX_CMAKE_CXX_FLAGS=-O2
+          context: .
+          file: dolfinx/${{ env.DOCKERFILE }}
+          load: true
+          target: dolfinx
+          tags: docker.io/dolfinx/dolfinx:${{ env.TAG }}
+
+      - name: Build lab
+        uses: docker/build-push-action@v3
+        with:
+          build-args: |
+            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
+            DOLFINX_CMAKE_CXX_FLAGS=-O2
+          context: .
+          file: dolfinx/${{ env.DOCKERFILE }}
+          load: true
+          target: lab
+          tags: docker.io/dolfinx/lab:${{ env.TAG }}
+
       - name: Run basic tests inside container
+        if: ${{ !contains(github.event.inputs.dockerfile, 'dummy') }}
         run: |
-          docker run --rm dolfinx/dolfinx \
+          docker run --rm docker.io/dolfinx/dolfinx:${{ env.TAG }} \
             python3 -c "import dolfinx; from dolfinx.fem import FunctionSpace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = FunctionSpace(mesh, ('Lagrange', 1));"
-          docker run --rm dolfinx/dolfinx \
+          docker run --rm docker.io/dolfinx/dolfinx:${{ env.TAG }} \
             /bin/bash -c "source /usr/local/bin/dolfinx-complex-mode && python3 -c $'import dolfinx; from dolfinx.fem import FunctionSpace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = FunctionSpace(mesh, (\"Lagrange\", 1));'"
-      - name: Log into the DockerHub registry
-        run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Push to the DockerHub registry
         run: |
-          docker tag dolfinx/dolfinx-onbuild dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG}
-          docker push dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG}
-          docker tag dolfinx/dolfinx dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG}
-          docker push dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG}
-          docker tag dolfinx/lab dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG}
-          docker push dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }}-${ARCH_TAG}
+          docker push docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
+          docker push docker.io/dolfinx/dolfinx:${{ env.TAG }}
+          docker push docker.io/dolfinx/lab:${{ env.TAG }}
 
-  push_end_user_multiarch_images:
-    name: Push end-user multiarch image
+      - name: Cleanup
+        run: |
+          docker rmi docker.io/dolfinx/lab:${{ env.TAG }}
+          docker rmi docker.io/dolfinx/dolfinx:${{ env.TAG }}
+          docker rmi intermediate
+          docker rmi docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
+
+  create_multiarch_end_user_images:
+    name: Create multiarch end-user images
     if: ${{ github.repository == 'FEniCS/dolfinx' }}
     runs-on: ubuntu-latest
     needs:
-      - build_end_user_images
+      - create_end_user_images
     steps:
       - name: Get tag name
         id: tag_name
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "::set-output name=TAG_PREFIX::${USER_INPUT:-nightly}"
-      - name: Log into the DockerHub registry
-        run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-      - name: Push multiarch images
+          echo "TAG=${USER_INPUT:-nightly}" >> $GITHUB_ENV
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push multiarch images to ghcr.io and docker.io
         run: |
+          GH_PREFIX="ghcr.io/fenics/dolfinx"
+          DH_PREFIX="docker.io/dolfinx"
           docker buildx imagetools create \
-            -t dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }} \
-            dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 \
-            dolfinx/dolfinx-onbuild:${{ steps.tag_name.outputs.TAG_PREFIX }}-arm64
+            --tag ${DH_PREFIX}/dolfinx-onbuild:${{ env.TAG }} \
+            --tag ${GH_PREFIX}/dolfinx-onbuild:${{ env.TAG }} \
+            ${DH_PREFIX}/dolfinx-onbuild:${{ env.TAG }}-amd64 \
+            ${DH_PREFIX}/dolfinx-onbuild:${{ env.TAG }}-arm64
           docker buildx imagetools create \
-            -t dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }} \
-            dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 \
-            dolfinx/dolfinx:${{ steps.tag_name.outputs.TAG_PREFIX }}-arm64
+            --tag ${DH_PREFIX}/dolfinx:${{ env.TAG }} \
+            --tag ${GH_PREFIX}/dolfinx:${{ env.TAG }} \
+            ${DH_PREFIX}/dolfinx:${{ env.TAG }}-amd64 \
+            ${DH_PREFIX}/dolfinx:${{ env.TAG }}-arm64
           docker buildx imagetools create \
-            -t dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }} \
-            dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }}-amd64 \
-            dolfinx/lab:${{ steps.tag_name.outputs.TAG_PREFIX }}-arm64
+            --tag ${DH_PREFIX}/lab:${{ env.TAG }} \
+            --tag ${GH_PREFIX}/lab:${{ env.TAG }} \
+            ${DH_PREFIX}/lab:${{ env.TAG }}-amd64 \
+            ${DH_PREFIX}/lab:${{ env.TAG }}-arm64
 
   stop-runner:
     name: Stop self-hosted EC2 runner
     # Stop the runner even if an error happened in the previous jobs
     if: ${{ always() && github.repository == 'FEniCS/dolfinx' }}
     needs:
-      - start_runner # required to get output from the start-runner job
-      - push_end_user_multiarch_images # required to wait when the main job is done
+      - start_runner  # required to get output from the start-runner job
+      - create_multiarch_end_user_images  # required to wait when the main job is done
     runs-on: ubuntu-latest
     steps:
       - name: Configure AWS credentials
@@ -335,7 +428,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Stop EC2 runner
-        uses: jhale/ec2-github-runner@main
+        uses: machulav/ec2-github-runner@v2
         with:
           mode: stop
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
