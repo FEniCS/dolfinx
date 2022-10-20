@@ -284,6 +284,10 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::vector<std::int32_t> submesh_e_to_v_offsets(1, 0);
   submesh_e_to_v_offsets.reserve(submesh_to_mesh_entity_map.size() + 1);
 
+  // Create mesh to submesh vertex map (i.e. the inverse of
+  // submesh_to_mesh_vertex_map)
+  // NOTE: Depending on the submesh, this may be densely or sparsely
+  // populated. Is a different data structure more appropriate?
   std::vector<int32_t> mesh_to_submesh_vertex_map(
       mesh_vertex_index_map->size_local() + mesh_vertex_index_map->num_ghosts(),
       -1);
@@ -404,6 +408,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                 std::next(submesh_x.begin(), 3 * i));
   }
 
+  // Create mesh to submesh geometry map
   std::vector<int32_t> mesh_to_submesh_x_dof_map(
       mesh_geometry_dof_index_map->size_local()
           + mesh_geometry_dof_index_map->num_ghosts(),
@@ -413,7 +418,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     mesh_to_submesh_x_dof_map[submesh_to_mesh_x_dof_map[i]] = i;
   }
 
-  // Crete submesh geometry dofmap
+  // Create submesh geometry dofmap
   std::vector<std::int32_t> entity_x_dofs;
   std::vector<std::int32_t> submesh_x_dofmap_vec;
   submesh_x_dofmap_vec.reserve(geometry_indices.size());
