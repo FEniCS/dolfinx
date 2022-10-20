@@ -303,22 +303,28 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                              * num_vertices_per_entity);
   std::vector<std::int32_t> submesh_e_to_v_offsets(1, 0);
   submesh_e_to_v_offsets.reserve(submesh_to_mesh_entity_map.size() + 1);
+
+  // Create mesh to submesh vertex map (i.e. the inverse of
+  // submesh_to_mesh_vertex_map)
+  // NOTE: Depending on the submesh, this may be densely or sparsely
+  // populated. Is a different data structure more appropriate?
+  std::vector<int32_t> mesh_to_submesh_vertex_map(
+      mesh_vertex_index_map->size_local() + mesh_vertex_index_map->num_ghosts(),
+      -1);
+  for (std::size_t i = 0; i < submesh_to_mesh_vertex_map.size(); ++i)
+  {
+    mesh_to_submesh_vertex_map[submesh_to_mesh_vertex_map[i]] = i;
+  }
+
   for (std::int32_t e : submesh_to_mesh_entity_map)
   {
     // ss << "e = " << e << "\n";
     std::span<const std::int32_t> vertices = mesh_e_to_v->links(e);
     for (std::int32_t v : vertices)
     {
-      auto it = std::find(submesh_to_mesh_vertex_map.begin(),
-                          submesh_to_mesh_vertex_map.end(), v);
-      // if (it == submesh_to_mesh_vertex_map.end())
-      // {
-      //   ss << "v = " << v << "\n";
-      //   std::cout << ss.str() << "\n";
-      // }
-      assert(it != submesh_to_mesh_vertex_map.end());
-      submesh_e_to_v_vec.push_back(
-          std::distance(submesh_to_mesh_vertex_map.begin(), it));
+      std::int32_t v_submesh = mesh_to_submesh_vertex_map[v];
+      assert(v_submesh != -1);
+      submesh_e_to_v_vec.push_back(v_submesh);
     }
     submesh_e_to_v_offsets.push_back(submesh_e_to_v_vec.size());
   }
@@ -422,9 +428,18 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                 std::next(submesh_x.begin(), 3 * i));
   }
 
-  std::vector<std::int32_t> entity_x_dofs;
+  // Create mesh to submesh geometry map
+  std::vector<int32_t> mesh_to_submesh_x_dof_map(
+      mesh_geometry_dof_index_map->size_local()
+          + mesh_geometry_dof_index_map->num_ghosts(),
+      -1);
+  for (std::size_t i = 0; i < submesh_to_mesh_x_dof_map.size(); ++i)
+  {
+    mesh_to_submesh_x_dof_map[submesh_to_mesh_x_dof_map[i]] = i;
+  }
 
-  // Crete submesh geometry dofmap
+  // Create submesh geometry dofmap
+  std::vector<std::int32_t> entity_x_dofs;
   std::vector<std::int32_t> submesh_x_dofmap_vec;
   submesh_x_dofmap_vec.reserve(geometry_indices.size());
   std::vector<std::int32_t> submesh_x_dofmap_offsets(1, 0);
@@ -438,11 +453,9 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     // For each mesh dof of the entity, get the submesh dof
     for (std::int32_t x_dof : entity_x_dofs)
     {
-      auto it = std::find(submesh_to_mesh_x_dof_map.begin(),
-                          submesh_to_mesh_x_dof_map.end(), x_dof);
-      assert(it != submesh_to_mesh_x_dof_map.end());
-      submesh_x_dofmap_vec.push_back(
-          std::distance(submesh_to_mesh_x_dof_map.begin(), it));
+      std::int32_t x_dof_submesh = mesh_to_submesh_x_dof_map[x_dof];
+      assert(x_dof_submesh != -1);
+      submesh_x_dofmap_vec.push_back(x_dof_submesh);
     }
     submesh_x_dofmap_offsets.push_back(submesh_x_dofmap_vec.size());
   }
@@ -452,8 +465,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // Create submesh coordinate element
   CellType submesh_coord_cell
       = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
-  auto submesh_coord_ele
-      = fem::CoordinateElement(submesh_coord_cell, geometry.cmap().degree(), geometry.cmap().variant());
+  auto submesh_coord_ele = fem::CoordinateElement(
+      submesh_coord_cell, geometry.cmap().degree(), geometry.cmap().variant());
 
   // Submesh geometry input_global_indices
   // TODO Check this
