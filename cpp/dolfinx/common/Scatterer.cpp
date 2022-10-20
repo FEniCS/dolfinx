@@ -33,18 +33,20 @@ Scatterer::Scatterer(const IndexMap& map, int bs)
     // (0) owner -> ghost,
     // (1) ghost -> owner
     MPI_Comm comm0;
-    MPI_Dist_graph_create_adjacent(
+    int err = MPI_Dist_graph_create_adjacent(
         map.comm(), src_ranks.size(), src_ranks.data(), MPI_UNWEIGHTED,
         dest_ranks.size(), dest_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
         false, &comm0);
     _comm0 = dolfinx::MPI::Comm(comm0, false);
+    dolfinx::MPI::check_error(map.comm(), err);
 
     MPI_Comm comm1;
-    MPI_Dist_graph_create_adjacent(
+    err = MPI_Dist_graph_create_adjacent(
         map.comm(), dest_ranks.size(), dest_ranks.data(), MPI_UNWEIGHTED,
         src_ranks.size(), src_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
         false, &comm1);
     _comm1 = dolfinx::MPI::Comm(comm1, false);
+    dolfinx::MPI::check_error(map.comm(), err);
 
     // Build permutation array that sorts ghost indices by owning rank
     const std::vector<int>& owners = map.owners();
@@ -91,8 +93,10 @@ Scatterer::Scatterer(const IndexMap& map, int bs)
     _displs_local.resize(_sizes_local.size() + 1);
     _sizes_remote.reserve(1);
     _sizes_local.reserve(1);
-    MPI_Neighbor_alltoall(_sizes_remote.data(), 1, MPI_INT32_T,
-                          _sizes_local.data(), 1, MPI_INT32_T, _comm1.comm());
+    err = MPI_Neighbor_alltoall(_sizes_remote.data(), 1, MPI_INT32_T,
+                                _sizes_local.data(), 1, MPI_INT32_T,
+                                _comm1.comm());
+    dolfinx::MPI::check_error(map.comm(), err);
     std::partial_sum(_sizes_local.begin(), _sizes_local.end(),
                      std::next(_displs_local.begin()));
 
@@ -102,10 +106,11 @@ Scatterer::Scatterer(const IndexMap& map, int bs)
     // Send ghost global indices to owning rank, and receive owned
     // indices that are ghosts on other ranks
     std::vector<std::int64_t> recv_buffer(_displs_local.back(), 0);
-    MPI_Neighbor_alltoallv(ghosts_sorted.data(), _sizes_remote.data(),
-                           _displs_remote.data(), MPI_INT64_T,
-                           recv_buffer.data(), _sizes_local.data(),
-                           _displs_local.data(), MPI_INT64_T, _comm1.comm());
+    err = MPI_Neighbor_alltoallv(
+        ghosts_sorted.data(), _sizes_remote.data(), _displs_remote.data(),
+        MPI_INT64_T, recv_buffer.data(), _sizes_local.data(),
+        _displs_local.data(), MPI_INT64_T, _comm1.comm());
+    dolfinx::MPI::check_error(map.comm(), err);
 
     const std::array<std::int64_t, 2> range = map.local_range();
 #ifndef NDEBUG
@@ -151,7 +156,8 @@ void Scatterer::scatter_fwd_end(MPI_Request& request) const
     return;
 
   // Wait for communication to complete
-  MPI_Wait(&request, MPI_STATUS_IGNORE);
+  int err = MPI_Wait(&request, MPI_STATUS_IGNORE);
+  dolfinx::MPI::check_error(_comm0.comm(), err);
 }
 //-----------------------------------------------------------------------------
 void Scatterer::scatter_rev_end(MPI_Request& request) const
@@ -161,7 +167,8 @@ void Scatterer::scatter_rev_end(MPI_Request& request) const
     return;
 
   // Wait for communication to complete
-  MPI_Wait(&request, MPI_STATUS_IGNORE);
+  int err = MPI_Wait(&request, MPI_STATUS_IGNORE);
+  dolfinx::MPI::check_error(_comm0.comm(), err);
 }
 //-----------------------------------------------------------------------------
 std::int32_t Scatterer::local_buffer_size() const noexcept
