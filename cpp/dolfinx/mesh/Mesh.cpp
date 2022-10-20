@@ -193,11 +193,9 @@ std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>,
 mesh::create_submesh(const Mesh& mesh, int dim,
                      const std::span<const std::int32_t>& entities)
 {
-  std::cout << "Topology\n";
   // -- Submesh topology
   const Topology& topology = mesh.topology();
 
-  std::cout << "Gat owned submesh entities\n";
   // Get the entities in the submesh that are owned by this process
   auto mesh_entity_index_map = topology.index_map(dim);
   assert(mesh_entity_index_map);
@@ -208,7 +206,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                [size = mesh_entity_index_map->size_local()](std::int32_t e)
                { return e < size; });
 
-  std::cout << "Create entity map\n";
   // Create a map from the (local) entities in the submesh to the
   // (local) entities in the mesh, and create the submesh entity index
   // map.
@@ -239,7 +236,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                      std::int32_t entity_index)
                  { return size_local + entity_index; });
 
-  std::cout << "Get vertices\n";
   // Get the vertices in the submesh. Use submesh_to_mesh_entity_map
   // (instead of `entities`) to ensure vertices for ghost entities are
   // included
@@ -259,7 +255,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   auto submesh_vertex_index_map = std::make_shared<common::IndexMap>(
       std::move(submesh_vertex_index_map_pair.first));
 
-  std::cout << "Create vertex map\n";
   // Create a map from the (local) vertices in the submesh to the
   // (local) vertices in the mesh
   std::vector<int32_t> submesh_to_mesh_vertex_map(
@@ -279,8 +274,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
       submesh_vertex_index_map->size_local()
       + submesh_vertex_index_map->num_ghosts());
 
-  std::cout << "Entity to vertex connectivity\n";
-
   // Submesh entity to vertex connectivity
   const CellType entity_type = cell_entity_type(topology.cell_type(), dim, 0);
   const int num_vertices_per_entity = cell_num_entities(entity_type, 0);
@@ -291,8 +284,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::vector<std::int32_t> submesh_e_to_v_offsets(1, 0);
   submesh_e_to_v_offsets.reserve(submesh_to_mesh_entity_map.size() + 1);
 
-  std::cout << "Create inverse vertex map\n";
-
   std::vector<int32_t> mesh_to_submesh_vertex_map(
       mesh_vertex_index_map->size_local() + mesh_vertex_index_map->num_ghosts(),
       -1);
@@ -301,7 +292,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     mesh_to_submesh_vertex_map[submesh_to_mesh_vertex_map[i]] = i;
   }
 
-  std::cout << "Loop through entities\n";
   for (std::int32_t e : submesh_to_mesh_entity_map)
   {
     std::span<const std::int32_t> vertices = mesh_e_to_v->links(e);
@@ -316,7 +306,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   auto submesh_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(submesh_e_to_v_vec), std::move(submesh_e_to_v_offsets));
 
-  std::cout << "Create topology\n";
   // Create submesh topology
   Topology submesh_topology(mesh.comm(), entity_type);
   submesh_topology.set_index_map(0, submesh_vertex_index_map);
@@ -324,7 +313,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
   submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
 
-  std::cout << "Geometry\n";
   // -- Submesh geometry
   const Geometry& geometry = mesh.geometry();
 
@@ -425,7 +413,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     mesh_to_submesh_x_dof_map[submesh_to_mesh_x_dof_map[i]] = i;
   }
 
-  std::cout << "Geom dofmap\n";
   // Crete submesh geometry dofmap
   std::vector<std::int32_t> entity_x_dofs;
   std::vector<std::int32_t> submesh_x_dofmap_vec;
@@ -449,7 +436,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   }
   graph::AdjacencyList<std::int32_t> submesh_x_dofmap(
       std::move(submesh_x_dofmap_vec), std::move(submesh_x_dofmap_offsets));
-  std::cout << "Geom dofmap done\n";
 
   // Create submesh coordinate element
   CellType submesh_coord_cell
@@ -472,8 +458,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   Geometry submesh_geometry(
       submesh_x_dof_index_map, std::move(submesh_x_dofmap), submesh_coord_ele,
       std::move(submesh_x), geometry.dim(), std::move(submesh_igi));
-
-  std::cout << "Done\n";
 
   return {Mesh(mesh.comm(), std::move(submesh_topology),
                std::move(submesh_geometry)),
