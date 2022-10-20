@@ -733,7 +733,7 @@ Topology::Topology(MPI_Comm comm, CellType type)
 int Topology::dim() const noexcept { return _connectivity.size() - 1; }
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
-                             const std::shared_ptr<const common::IndexMap>& map)
+                             std::shared_ptr<const common::IndexMap> map)
 {
   assert(dim < (int)_index_map.size());
   _index_map[dim] = map;

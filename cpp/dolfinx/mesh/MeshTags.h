@@ -44,8 +44,7 @@ public:
   /// @param[in] values std::vector<T> of values for each index in
   /// indices. The size must be equal to the size of @p indices.
   template <typename U, typename V>
-  MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim, U&& indices,
-           V&& values)
+  MeshTags(std::shared_ptr<const Mesh> mesh, int dim, U&& indices, V&& values)
       : _mesh(mesh), _dim(dim), _indices(std::forward<U>(indices)),
         _values(std::forward<V>(values))
   {
@@ -133,7 +132,7 @@ private:
 /// @note Entities that do not exist on this rank are ignored.
 /// @warning `entities` must not contain duplicate entities.
 template <typename T>
-MeshTags<T> create_meshtags(const std::shared_ptr<const Mesh>& mesh, int dim,
+MeshTags<T> create_meshtags(std::shared_ptr<const Mesh> mesh, int dim,
                             const graph::AdjacencyList<std::int32_t>& entities,
                             const std::span<const T>& values)
 {
