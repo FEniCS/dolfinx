@@ -294,8 +294,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::cout << "Create inverse vertex map\n";
 
   std::vector<int32_t> mesh_to_submesh_vertex_map(
-      mesh_vertex_index_map->size_local()
-      + mesh_vertex_index_map->num_ghosts(), -1);
+      mesh_vertex_index_map->size_local() + mesh_vertex_index_map->num_ghosts(),
+      -1);
   for (std::size_t i = 0; i < submesh_to_mesh_vertex_map.size(); ++i)
   {
     mesh_to_submesh_vertex_map[submesh_to_mesh_vertex_map[i]] = i;
@@ -416,9 +416,18 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                 std::next(submesh_x.begin(), 3 * i));
   }
 
-  std::vector<std::int32_t> entity_x_dofs;
+  std::vector<int32_t> mesh_to_submesh_x_dof_map(
+      mesh_geometry_dof_index_map->size_local()
+          + mesh_geometry_dof_index_map->num_ghosts(),
+      -1);
+  for (std::size_t i = 0; i < submesh_to_mesh_x_dof_map.size(); ++i)
+  {
+    mesh_to_submesh_x_dof_map[submesh_to_mesh_x_dof_map[i]] = i;
+  }
 
+  std::cout << "Geom dofmap\n";
   // Crete submesh geometry dofmap
+  std::vector<std::int32_t> entity_x_dofs;
   std::vector<std::int32_t> submesh_x_dofmap_vec;
   submesh_x_dofmap_vec.reserve(geometry_indices.size());
   std::vector<std::int32_t> submesh_x_dofmap_offsets(1, 0);
@@ -432,16 +441,15 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     // For each mesh dof of the entity, get the submesh dof
     for (std::int32_t x_dof : entity_x_dofs)
     {
-      auto it = std::find(submesh_to_mesh_x_dof_map.begin(),
-                          submesh_to_mesh_x_dof_map.end(), x_dof);
-      assert(it != submesh_to_mesh_x_dof_map.end());
-      submesh_x_dofmap_vec.push_back(
-          std::distance(submesh_to_mesh_x_dof_map.begin(), it));
+      std::int32_t x_dof_submesh = mesh_to_submesh_x_dof_map[x_dof];
+      assert(x_dof_submesh != -1);
+      submesh_x_dofmap_vec.push_back(x_dof_submesh);
     }
     submesh_x_dofmap_offsets.push_back(submesh_x_dofmap_vec.size());
   }
   graph::AdjacencyList<std::int32_t> submesh_x_dofmap(
       std::move(submesh_x_dofmap_vec), std::move(submesh_x_dofmap_offsets));
+  std::cout << "Geom dofmap done\n";
 
   // Create submesh coordinate element
   CellType submesh_coord_cell
