@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2021 Garth N. Wells
+# Copyright (C) 2011-2022 Garth N. Wells, Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -13,10 +13,12 @@ import pytest
 
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
-                         VectorFunctionSpace)
+                         VectorFunctionSpace, form, assemble_scalar)
 from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
                               compute_collisions)
-from dolfinx.mesh import create_mesh, create_unit_cube
+from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
+                          create_unit_square, locate_entities_boundary,
+                          meshtags)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -170,6 +172,50 @@ def test_interpolation_rank1(W):
 
     num_vertices = W.mesh.topology.index_map(0).size_global
     assert round(w.vector.norm(PETSc.NormType.N1) - 3 * num_vertices, 7) == 0
+
+
+@pytest.mark.parametrize("cell_type0", [CellType.hexahedron, CellType.tetrahedron])
+@pytest.mark.parametrize("cell_type1", [CellType.triangle, CellType.quadrilateral])
+def test_nonmatching_interpolation(cell_type0, cell_type1):
+    mesh0 = create_unit_cube(MPI.COMM_WORLD, 5, 6, 7, cell_type=cell_type0)
+    mesh1 = create_unit_square(MPI.COMM_WORLD, 25, 24, cell_type=cell_type1)
+
+    def f(x):
+        return (7 * x[1], 3 * x[0], x[2] + 0.4)
+
+    el0 = ufl.VectorElement("Lagrange", mesh0.ufl_cell(), 1, dim=3)
+    V0 = FunctionSpace(mesh0, el0)
+    el1 = ufl.VectorElement("Lagrange", mesh1.ufl_cell(), 1, dim=3)
+    V1 = FunctionSpace(mesh1, el1)
+
+    # Interpolate on 3D mesh
+    u0 = Function(V0)
+    u0.interpolate(f)
+    u0.x.scatter_forward()
+
+    # Interpolate 3D->2D
+    u1 = Function(V1)
+    u1.interpolate(u0)
+    u1.x.scatter_forward()
+
+    # Exact interpolation on 2D mesh
+    u1_ex = Function(V1)
+    u1_ex.interpolate(f)
+    u1_ex.x.scatter_forward()
+
+    assert np.allclose(u1_ex.x.array, u1.x.array)
+
+    # Interpolate 2D->3D
+    u0_2 = Function(V0)
+    u0_2.interpolate(u1)
+
+    # Check that function values over facets of 3D mesh of the twice interpolated property is preserved
+    def locate_bottom_facets(x):
+        return np.isclose(x[2], 0)
+    facets = locate_entities_boundary(mesh0, mesh0.topology.dim - 1, locate_bottom_facets)
+    facet_tag = meshtags(mesh0, mesh0.topology.dim - 1, facets, np.full(len(facets), 1, dtype=np.int32))
+    residual = ufl.inner(u0 - u0_2, u0 - u0_2) * ufl.ds(domain=mesh0, subdomain_data=facet_tag, subdomain_id=1)
+    assert np.isclose(assemble_scalar(form(residual)), 0)
 
 
 def test_cffi_expression(V):
