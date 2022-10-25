@@ -288,7 +288,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // submesh_to_mesh_vertex_map)
   // NOTE: Depending on the submesh, this may be densely or sparsely
   // populated. Is a different data structure more appropriate?
-  std::vector<int32_t> mesh_to_submesh_vertex_map(
+  std::vector<std::int32_t> mesh_to_submesh_vertex_map(
       mesh_vertex_index_map->size_local() + mesh_vertex_index_map->num_ghosts(),
       -1);
   for (std::size_t i = 0; i < submesh_to_mesh_vertex_map.size(); ++i)
@@ -409,7 +409,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   }
 
   // Create mesh to submesh geometry map
-  std::vector<int32_t> mesh_to_submesh_x_dof_map(
+  std::vector<std::int32_t> mesh_to_submesh_x_dof_map(
       mesh_geometry_dof_index_map->size_local()
           + mesh_geometry_dof_index_map->num_ghosts(),
       -1);
