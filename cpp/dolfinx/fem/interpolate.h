@@ -38,6 +38,36 @@ class Function;
 std::vector<double> interpolation_coords(const fem::FiniteElement& element,
                                          const mesh::Mesh& mesh,
                                          std::span<const std::int32_t> cells);
+
+/// This class offers functionalities to interpolate functions defined on
+/// different meshes.
+/// The class caches as much data as possible to allow for fast repeated
+/// interpolation and the user can manually force recomputation by
+/// invalidating the instance.
+class M2MInterpolator
+{
+public:
+  /// Interpolate a function on the whole domain
+  template <typename T>
+  void interpolate(Function<T>& u, const Function<T>& v);
+  /// Interpolate a function on a list of cells
+  template <typename T>
+  void interpolate(Function<T>& u, const Function<T>& v,
+                   std::span<const std::int32_t> cells);
+
+  /// Force recomputation of all intermediate data structures when
+  /// interpolation is called next.
+  void invalidate() { valid = false; }
+
+private:
+  std::vector<double> x;
+  std::vector<std::int32_t> dest_ranks;
+  std::vector<std::int32_t> src_ranks;
+  std::vector<double> received_points;
+  std::vector<std::int32_t> evaluation_cells;
+  bool valid = false;
+};
+
 namespace impl
 {
 /// @brief Scatter data into non-contiguous memory
@@ -834,15 +864,12 @@ void interpolate(Function<T>& u, std::span<const T> f,
   }
 }
 
-namespace impl
-{
-
 /// Interpolate from one finite element Function to another
 /// @param[in,out] u The function to interpolate into
 /// @param[in] v The function to be interpolated
 /// @param[in] cells List of cell indices to interpolate on
 template <typename T>
-void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
+void M2MInterpolator::interpolate(Function<T>& u, const Function<T>& v,
                                     std::span<const std::int32_t> cells)
 {
   assert(u.function_space());
@@ -868,10 +895,12 @@ void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
       = u.function_space()->element();
   const std::size_t value_size = element_u->value_size();
 
-  // Collect all the points at which values are needed to define the
-  // interpolating function
-  std::vector<double> x;
+  if (not valid)
   {
+    valid = true;
+
+    // Collect all the points at which values are needed to define the
+    // interpolating function
     const std::vector<double> coords_b
         = fem::interpolation_coords(*element_u, *mesh, cells);
 
@@ -886,11 +915,11 @@ void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
     for (std::size_t j = 0; j < coords.extent(1); ++j)
       for (std::size_t i = 0; i < 3; ++i)
         _x(j, i) = coords(i, j);
-  }
 
-  // Determine ownership of each point
-  auto [dest_ranks, src_ranks, received_points, evaluation_cells]
-      = dolfinx::geometry::determine_point_ownership(*mesh_v, x);
+    // Determine ownership of each point
+    std::tie(dest_ranks, src_ranks, received_points, evaluation_cells)
+        = dolfinx::geometry::determine_point_ownership(*mesh_v, x);
+  }
 
   // Evaluate the interpolating function where possible
   std::vector<T> send_values(received_points.size() / 3 * value_size);
@@ -922,7 +951,21 @@ void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
                       {valuesT.extent(0), valuesT.extent(1)}, cells);
 }
 
-} // namespace impl
+template <typename T>
+void M2MInterpolator::interpolate(Function<T>& u, const Function<T>& v)
+{
+  assert(u.function_space());
+  assert(u.function_space()->mesh());
+  int tdim = u.function_space()->mesh()->topology().dim();
+  auto cell_map = u.function_space()->mesh()->topology().index_map(tdim);
+  assert(cell_map);
+  std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
+  std::vector<std::int32_t> cells(num_cells, 0);
+  std::iota(cells.begin(), cells.end(), 0);
+
+  interpolate(u, v, cells);
+}
+
 //----------------------------------------------------------------------------
 /// Interpolate from one finite element Function to another one
 /// @param[out] u The function to interpolate into
@@ -951,7 +994,10 @@ void interpolate(Function<T>& u, const Function<T>& v,
   {
     // Get mesh and check that functions share the same mesh
     if (auto mesh_v = v.function_space()->mesh(); mesh != mesh_v)
-      impl::interpolate_nonmatching_meshes(u, v, cells);
+    {
+      M2MInterpolator interpolator;
+      interpolator.interpolate(u, v, cells);
+    }
     else
     {
 
