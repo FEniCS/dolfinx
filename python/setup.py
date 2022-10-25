@@ -59,8 +59,6 @@ class CMakeBuild(build_ext):
 
         import pybind11
         env['pybind11_DIR'] = pybind11.get_cmake_dir()
-        env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
-                                                              self.distribution.get_version())
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
