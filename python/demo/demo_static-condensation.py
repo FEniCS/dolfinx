@@ -139,7 +139,7 @@ Form = Form_float64 if PETSc.ScalarType == np.float64 else Form_complex128
 
 integrals: dict[IntegralType, dict[int, tuple[object, list[int]]]] = {
     IntegralType.cell: {-1: (tabulate_condensed_tensor_A.address, [])}}
-a_cond = Form([U._cpp_object, U._cpp_object], integrals, [], [], False, None)
+a_cond = Form([U._cpp_object, U._cpp_object], integrals, [], [], False, None, {})
 
 A_cond = assemble_matrix(a_cond, bcs=[bc])
 A_cond.assemble()
