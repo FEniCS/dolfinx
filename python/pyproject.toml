@@ -2,7 +2,7 @@
 # DOLFINx Python cannot be built in isolated mode without recompiling mpi4py and petsc4py
 # pip install -r build-and-run-requirements.txt
 # pip install --no-build-isolation .
-requires = ["setuptools>=61", "wheel"]
+requires = ["setuptools>=61", "wheel", "petsc4py", "pybind11", "slepc4py"]
 
 build-backend = "setuptools.build_meta"
 
