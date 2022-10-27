@@ -81,10 +81,10 @@ def test_numba_assembly():
     integrals = {IntegralType.cell: ([(-1, tabulate_tensor_A.address),
                                       (12, tabulate_tensor_A.address),
                                       (2, tabulate_tensor_A.address)], None)}
-    a = Form([V._cpp_object, V._cpp_object], integrals, [], [], False)
+    a = Form([V._cpp_object, V._cpp_object], integrals, [], [], False, None, {})
 
     integrals = {IntegralType.cell: ([(-1, tabulate_tensor_b.address)], None)}
-    L = Form([V._cpp_object], integrals, [], [], False)
+    L = Form([V._cpp_object], integrals, [], [], False, None, {})
 
     A = dolfinx.fem.petsc.assemble_matrix(a)
     A.assemble()
@@ -113,7 +113,7 @@ def test_coefficient():
     mt = meshtags(mesh, tdim, np.arange(num_cells, dtype=np.intc), np.ones(num_cells, dtype=np.intc))
 
     integrals = {IntegralType.cell: ([(1, tabulate_tensor_b_coeff.address)], mt)}
-    L = Form([V._cpp_object], integrals, [vals._cpp_object], [], False)
+    L = Form([V._cpp_object], integrals, [vals._cpp_object], [], False, None, {})
 
     b = dolfinx.fem.petsc.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -227,11 +227,11 @@ def test_cffi_assembly():
 
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
     integrals = {IntegralType.cell: ([(-1, ptrA)], None)}
-    a = _cpp.fem.Form_float64([V._cpp_object, V._cpp_object], integrals, [], [], False)
+    a = _cpp.fem.Form_float64([V._cpp_object, V._cpp_object], integrals, [], [], False, None, {})
 
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
     integrals = {IntegralType.cell: ([(-1, ptrL)], None)}
-    L = _cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False)
+    L = _cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False, None, {})
 
     A = fem.assemble_matrix(a)
     A.finalize()
