@@ -51,6 +51,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Upgrade setuptools and pip
+        run: |
+          python3 -m pip install --upgrade pip setuptools # TODO: Remove
+
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |

@@ -1,4 +1,6 @@
 setuptools>=61
-petsc4py
+wheel
+#cmake>=3.16
 mpi4py
+petsc4py
 pybind11
