@@ -56,7 +56,7 @@ build-python-interface: &build-python-interface
   name: Build Python/pybind11 interface
   command: |
     cd python
-    pip3 -v install --global-option build --global-option --debug . --user
+    pip3 -v install --no-build-isolation --global-option build --global-option --debug . --user
 
 demos-python: &demos-python
   name: Run demos (Python, serial)
