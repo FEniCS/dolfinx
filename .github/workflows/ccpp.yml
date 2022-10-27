@@ -27,7 +27,7 @@ on:
 jobs:
   build:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container: fenicsproject/test-env:nightly-openmpi
 
     env:
@@ -64,8 +64,6 @@ jobs:
           python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
 
-      - name: Install matplotlib
-        run: pip3 install matplotlib
       - name: Flake8 checks
         run: |
           cd python/
@@ -79,7 +77,7 @@ jobs:
           python3 -m isort --check .
       - name: mypy checks
         run: |
-          python3 -m pip install types-setuptools
+          python3 -m pip install types-setuptools # TODO: Remove
           cd python/
           mypy dolfinx
           mypy demo
@@ -105,7 +103,7 @@ jobs:
 
       - name: Build C++ interface documentation
         run: |
-          python3 -m pip install breathe
+          python3 -m pip install breathe # TODO: Remove
           export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
           echo $DOLFINX_VERSION
           cd cpp/doc
@@ -133,10 +131,10 @@ jobs:
           ctest -V -R demo -R mpi_2
 
       - name: Build Python interface
-        run: python3 -m pip -v install --global-option build --global-option --debug python/
+        run: |
+          python3 -m pip -v install --no-build-isolation --global-option build --global-option --debug python/
       - name: Build Python interface documentation
         run: |
-          python3 -m pip install sphinx==5.0.2
           cd python/doc
           make html
 

@@ -97,7 +97,7 @@ jobs:
           source fenicsx/bin/activate
           cd dolfinx
           PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt \
-          python -m pip -v install python/
+          python -m pip -v install --no-build-isolation python/
 
       - name: Basic test
         run: |
