@@ -755,10 +755,7 @@ void declare_form(py::module& m, const std::string& type)
                  const std::vector<std::shared_ptr<
                      const dolfinx::fem::Constant<T>>>& constants,
                  bool needs_permutation_data,
-                 std::shared_ptr<const dolfinx::mesh::Mesh> mesh,
-                 const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
-                                std::vector<std::int32_t>>& entity_maps
-                 = {})
+                 std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
               {
                 using kern = std::function<void(
                     T*, const T*, const T*,
@@ -790,11 +787,11 @@ void declare_form(py::module& m, const std::string& type)
                 }
                 return dolfinx::fem::Form<T>(spaces, _integrals, coefficients,
                                              constants, needs_permutation_data,
-                                             mesh, entity_maps);
+                                             mesh);
               }),
           py::arg("spaces"), py::arg("integrals"), py::arg("coefficients"),
           py::arg("constants"), py::arg("need_permutation_data"),
-          py::arg("mesh") = py::none(), py::arg("entity_maps"))
+          py::arg("mesh") = py::none())
       .def(py::init(
                [](std::uintptr_t form,
                   const std::vector<std::shared_ptr<
@@ -894,7 +891,8 @@ void declare_form(py::module& m, const std::string& type)
       },
       py::arg("form"), py::arg("spaces"), py::arg("coefficients"),
       py::arg("constants"), py::arg("subdomains"), py::arg("mesh"),
-      py::arg("entity_maps"), "Create Form from a pointer to ufcx_form.");
+      py::arg("entity_maps"),
+      "Create Form from a pointer to ufcx_form.");
 }
 } // namespace
 
