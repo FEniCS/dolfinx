@@ -1,0 +1,4 @@
+setuptools>=61
+petsc4py
+mpi4py
+pybind11

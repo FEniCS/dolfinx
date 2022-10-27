@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fenics-dolfinx"
+version = "0.5.3.dev0"
+authors = [{name="FEniCS Project Contributors"}]
+maintainers = [{name="FEniCS Project Steering Council", email="fenics-dev@googlegroups.com"}]
+description = "DOLFINx Python interface"
+readme = "README.rst"
+requires-python = ">=3.8"
+license = {text = "LGPLv3 or later"}
+dependencies = [
+  "cffi",
+  "numpy>=1.21",
+  "mpi4py",
+  "petsc4py",
+  "fenics-ffcx>=0.5.1.dev0,<0.6.0",
+  "fenics-ufl>=2022.3.0.dev0,<2022.4.0"
+]
+
+[project.urls]
+homepage = "https://fenicsproject.org"
+documentation = "https://docs.fenicsproject.org"
+issues = "https://github.com/FeniCS/ffcx/issues"
+funding = "https://numfocus.org/donate"
+
+[tool.setuptools.packages.find]
+where = ["dolfinx"]
+
+[tools.setuptools.package-data]
+dolfinx.wrappers = ["*.h"]
+"*" = ["py.typed"]
+
+[tools.setuptools]
+packages = ["dolfinx", "dolfinx.fem", "dolfinx.io", "dolfinx.nls", "dolfinx.wrappers"]
+zip-safe = false
