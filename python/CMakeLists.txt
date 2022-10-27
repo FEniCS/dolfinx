@@ -19,13 +19,6 @@ endif()
 find_package(pybind11 2.7.0 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
   $ENV{PYBIND11_DIR} $ENV{PYBIND11_ROOT})
 
-execute_process(
-  COMMAND ${Python3_EXECUTABLE} -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
-  OUTPUT_VARIABLE BASIX_PY_DIR
-  RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
-  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
-
 find_package(DOLFINX REQUIRED CONFIG)
 
 # Create the binding library
