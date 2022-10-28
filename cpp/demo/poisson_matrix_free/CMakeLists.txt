@@ -25,6 +25,8 @@ add_custom_command(
   COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.py ${SCALAR_TYPE}
   VERBATIM DEPENDS poisson.py COMMENT "Compile poisson.py using FFCx")
 
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
 target_link_libraries(${PROJECT_NAME} dolfinx)
 
