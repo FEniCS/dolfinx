@@ -11,14 +11,14 @@ if sys.version_info < (3, 8):
     print("Python 3.8 or higher required, please upgrade.")
     sys.exit(1)
 
-VERSION = "0.5.2.dev0"
+VERSION = "0.6.0.dev0"
 
 REQUIREMENTS = [
     "cffi",
     "numpy>=1.21",
     "mpi4py",
     "petsc4py",
-    "fenics-ffcx>=0.5.1.dev0,<0.6.0",
+    "fenics-ffcx>=0.6.0.dev0,<0.7.0",
     "fenics-ufl>=2022.3.0.dev0,<2022.4.0"
 ]
 
@@ -59,8 +59,6 @@ class CMakeBuild(build_ext):
 
         import pybind11
         env['pybind11_DIR'] = pybind11.get_cmake_dir()
-        env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
-                                                              self.distribution.get_version())
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
