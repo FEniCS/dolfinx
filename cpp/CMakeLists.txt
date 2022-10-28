@@ -198,11 +198,11 @@ set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
 # method UFCx was found
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
-  find_package(ufcx 0.5 REQUIRED CONFIG)
+  find_package(ufcx 0.6 REQUIRED CONFIG)
 else()
   # Check in MODULE mode (using FindUFCX.cmake)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
-  find_package(UFCx 0.5 REQUIRED MODULE)
+  find_package(UFCx 0.6 REQUIRED MODULE)
 endif()
 
 set_package_properties(UFCx PROPERTIES TYPE REQUIRED
