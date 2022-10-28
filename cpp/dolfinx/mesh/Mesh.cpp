@@ -205,34 +205,34 @@ mesh::create_submesh(const Mesh& mesh, int dim,
       entities.begin(), entities.end(), std::back_inserter(submesh_owned),
       [size = mesh_map->size_local()](std::int32_t e) { return e < size; });
 
+  // Create submesh entity index map
+  // TODO Call common::get_owned_indices here? Do we want to
+  // support `entities` possibly having a ghost on one process that is
+  // not in `entities` on the owning process?
+  // TODO: Should entities still be ghosted in the submesh even if they
+  // are not in the `entities` list? If this is not desirable,
+  // create_submap needs to be changed
+
   // Create a map from the (local) entities in the submesh to the
   // (local) entities in the mesh, and create the submesh entity index
   // map.
   std::vector<int32_t> submesh_to_mesh_map(submesh_owned.begin(),
                                            submesh_owned.end());
   std::shared_ptr<common::IndexMap> submesh_map;
+  {
+    std::pair<common::IndexMap, std::vector<int32_t>> map_data
+        = mesh_map->create_submap(submesh_owned);
+    submesh_map = std::make_shared<common::IndexMap>(std::move(map_data.first));
 
-  // Create submesh entity index map
-  // TODO Call common::get_owned_indices here? Do we want to
-  // support `entities` possibly having a ghost on one process that is
-  // not in `entities` on the owning process?
-  // TODO Should entities still be ghosted in the submesh even if they
-  // are not in the `entities` list? If this is not desirable,
-  // create_submap needs to be changed
-  std::pair<common::IndexMap, std::vector<int32_t>> submesh_index_map_pair
-      = mesh_map->create_submap(submesh_owned);
-  submesh_map = std::make_shared<common::IndexMap>(
-      std::move(submesh_index_map_pair.first));
-
-  // Add ghost entities to the entity map
-  submesh_to_mesh_map.reserve(submesh_map->size_local()
-                              + submesh_map->num_ghosts());
-  std::transform(
-      submesh_index_map_pair.second.begin(),
-      submesh_index_map_pair.second.end(),
-      std::back_inserter(submesh_to_mesh_map),
-      [size_local = mesh_map->size_local()](std::int32_t entity_index)
-      { return size_local + entity_index; });
+    // Add ghost entities to the entity map
+    submesh_to_mesh_map.reserve(submesh_map->size_local()
+                                + submesh_map->num_ghosts());
+    std::transform(
+        map_data.second.begin(), map_data.second.end(),
+        std::back_inserter(submesh_to_mesh_map),
+        [size_local = mesh_map->size_local()](std::int32_t entity_index)
+        { return size_local + entity_index; });
+  }
 
   // Get the vertices in the submesh. Use submesh_to_mesh_map
   // (instead of `entities`) to ensure vertices for ghost entities are
@@ -241,40 +241,38 @@ mesh::create_submesh(const Mesh& mesh, int dim,
       = compute_incident_entities(mesh, submesh_to_mesh_map, dim, 0);
 
   // Get the vertices in the submesh owned by this process
-  auto mesh_vertex_index_map = topology.index_map(0);
-  assert(mesh_vertex_index_map);
+  auto mesh_index_map0 = topology.index_map(0);
+  assert(mesh_index_map0);
   std::vector<int32_t> submesh_owned_vertices
-      = common::compute_owned_indices(submesh_vertices, *mesh_vertex_index_map);
+      = common::compute_owned_indices(submesh_vertices, *mesh_index_map0);
 
   // Create submesh vertex index map
-  std::shared_ptr<common::IndexMap> submesh_vertex_index_map;
-  std::vector<int32_t> submesh_to_mesh_vertex_map;
+  std::shared_ptr<common::IndexMap> submesh_map0;
+  std::vector<int32_t> submesh_to_mesh_map0;
   {
-    std::pair<common::IndexMap, std::vector<int32_t>> index_map_data
-        = mesh_vertex_index_map->create_submap(submesh_owned_vertices);
-    submesh_vertex_index_map
-        = std::make_shared<common::IndexMap>(std::move(index_map_data.first));
+    std::pair<common::IndexMap, std::vector<int32_t>> map_data
+        = mesh_index_map0->create_submap(submesh_owned_vertices);
+    submesh_map0
+        = std::make_shared<common::IndexMap>(std::move(map_data.first));
 
     // Create a map from the (local) vertices in the submesh to the
     // (local) vertices in the mesh
-    submesh_to_mesh_vertex_map.assign(submesh_owned_vertices.begin(),
-                                      submesh_owned_vertices.end());
-    submesh_to_mesh_vertex_map.reserve(
-        submesh_vertex_index_map->size_local()
-        + submesh_vertex_index_map->num_ghosts());
+    submesh_to_mesh_map0.assign(submesh_owned_vertices.begin(),
+                                submesh_owned_vertices.end());
+    submesh_to_mesh_map0.reserve(submesh_map0->size_local()
+                                 + submesh_map0->num_ghosts());
 
     // Add ghost vertices to the map
-    std::transform(index_map_data.second.begin(), index_map_data.second.end(),
-                   std::back_inserter(submesh_to_mesh_vertex_map),
-                   [size_local = mesh_vertex_index_map->size_local()](
-                       std::int32_t vertex_index)
-                   { return size_local + vertex_index; });
+    std::transform(
+        map_data.second.begin(), map_data.second.end(),
+        std::back_inserter(submesh_to_mesh_map0),
+        [size_local = mesh_index_map0->size_local()](std::int32_t vertex_index)
+        { return size_local + vertex_index; });
   }
 
   // Submesh vertex to vertex connectivity (identity)
   auto submesh_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-      submesh_vertex_index_map->size_local()
-      + submesh_vertex_index_map->num_ghosts());
+      submesh_map0->size_local() + submesh_map0->num_ghosts());
 
   // Submesh entity to vertex connectivity
   const CellType entity_type = cell_entity_type(topology.cell_type(), dim, 0);
@@ -287,23 +285,20 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   submesh_e_to_v_offsets.reserve(submesh_to_mesh_map.size() + 1);
 
   // Create mesh to submesh vertex map (i.e. the inverse of
-  // submesh_to_mesh_vertex_map)
+  // submesh_to_mesh_map0)
   // NOTE: Depending on the submesh, this may be densely or sparsely
   // populated. Is a different data structure more appropriate?
-  std::vector<std::int32_t> mesh_to_submesh_vertex_map(
-      mesh_vertex_index_map->size_local() + mesh_vertex_index_map->num_ghosts(),
-      -1);
-  for (std::size_t i = 0; i < submesh_to_mesh_vertex_map.size(); ++i)
-  {
-    mesh_to_submesh_vertex_map[submesh_to_mesh_vertex_map[i]] = i;
-  }
+  std::vector<std::int32_t> mesh_to_submesh_map0(
+      mesh_index_map0->size_local() + mesh_index_map0->num_ghosts(), -1);
+  for (std::size_t i = 0; i < submesh_to_mesh_map0.size(); ++i)
+    mesh_to_submesh_map0[submesh_to_mesh_map0[i]] = i;
 
   for (std::int32_t e : submesh_to_mesh_map)
   {
     std::span<const std::int32_t> vertices = mesh_e_to_v->links(e);
     for (std::int32_t v : vertices)
     {
-      std::int32_t v_submesh = mesh_to_submesh_vertex_map[v];
+      std::int32_t v_submesh = mesh_to_submesh_map0[v];
       assert(v_submesh != -1);
       submesh_e_to_v_vec.push_back(v_submesh);
     }
@@ -314,7 +309,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Create submesh topology
   Topology submesh_topology(mesh.comm(), entity_type);
-  submesh_topology.set_index_map(0, submesh_vertex_index_map);
+  submesh_topology.set_index_map(0, submesh_map0);
   submesh_topology.set_index_map(dim, submesh_map);
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);
   submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
@@ -416,9 +411,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
           + mesh_geometry_dof_index_map->num_ghosts(),
       -1);
   for (std::size_t i = 0; i < submesh_to_mesh_x_dof_map.size(); ++i)
-  {
     mesh_to_submesh_x_dof_map[submesh_to_mesh_x_dof_map[i]] = i;
-  }
 
   // Create submesh geometry dofmap
   std::vector<std::int32_t> entity_x_dofs;
@@ -447,7 +440,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // Create submesh coordinate element
   CellType submesh_coord_cell
       = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
-  auto submesh_coord_ele = fem::CoordinateElement(
+  fem::CoordinateElement submesh_coord_ele(
       submesh_coord_cell, geometry.cmap().degree(), geometry.cmap().variant());
 
   // Submesh geometry input_global_indices
@@ -468,7 +461,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   return {Mesh(mesh.comm(), std::move(submesh_topology),
                std::move(submesh_geometry)),
-          std::move(submesh_to_mesh_map), std::move(submesh_to_mesh_vertex_map),
+          std::move(submesh_to_mesh_map), std::move(submesh_to_mesh_map0),
           std::move(submesh_to_mesh_x_dof_map)};
 }
 //-----------------------------------------------------------------------------
