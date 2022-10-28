@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Garth N. Wells, Igor A. Baratta
+// Copyright (C) 2020-2022 Garth N. Wells, Igor A. Baratta, Massimiliano Leoni
 // and Jørgen S.Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -12,6 +12,8 @@
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/geometry/BoundingBoxTree.h>
+#include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <numeric>
@@ -23,8 +25,158 @@ namespace dolfinx::fem
 template <typename T>
 class Function;
 
+/// Compute the evaluation points in the physical space at which an
+/// expression should be computed to interpolate it in a finite element
+/// space.
+///
+/// @param[in] element The element to be interpolated into
+/// @param[in] mesh The domain
+/// @param[in] cells Indices of the cells in the mesh to compute
+/// interpolation coordinates for
+/// @return The coordinates in the physical space at which to evaluate
+/// an expression. The shape is (3, num_points) and storage is row-major.
+std::vector<double> interpolation_coords(const fem::FiniteElement& element,
+                                         const mesh::Mesh& mesh,
+                                         std::span<const std::int32_t> cells);
 namespace impl
 {
+/// @brief Scatter data into non-contiguous memory
+///
+/// Scatter blocked data `send_values` to its
+/// corresponding src_rank and insert the data into `recv_values`.
+/// The insert location in `recv_values` is determined by `dest_ranks`.
+/// If the j-th dest rank is -1, then
+/// `recv_values[j*block_size:(j+1)*block_size]) = 0.
+///
+/// @param[in] comm The mpi communicator
+/// @param[in] src_ranks The rank owning the values of each row in send_values
+/// @param[in] dest_ranks List of ranks receiving data. Size of array is how
+/// many values we are receiving (not unrolled for blcok_size).
+/// @param[in] send_values The values to send back to owner. Shape
+/// (src_ranks.size(), block_size). Storage is row-major.
+/// @param[in] s_shape Shape of send_values
+/// @param[in,out] recv_values Array to fill with values  Shape
+/// (dest_ranks.size(), block_size). Storage is row-major.
+/// @pre It is required that src_ranks are sorted.
+/// @note dest_ranks can contain repeated entries
+/// @note dest_ranks might contain -1 (no process owns the point)
+template <typename T>
+void scatter_values(const MPI_Comm& comm,
+                    std::span<const std::int32_t> src_ranks,
+                    std::span<const std::int32_t> dest_ranks,
+                    std::span<const T> send_values,
+                    const std::array<std::size_t, 2>& s_shape,
+                    std::span<T> recv_values)
+{
+  const std::size_t block_size = s_shape[1];
+  assert(src_ranks.size() * block_size == send_values.size());
+  assert(recv_values.size() == dest_ranks.size() * block_size);
+
+  // Build unique set of the sorted src_ranks
+  std::vector<std::int32_t> out_ranks(src_ranks.size());
+  out_ranks.assign(src_ranks.begin(), src_ranks.end());
+  out_ranks.erase(std::unique(out_ranks.begin(), out_ranks.end()),
+                  out_ranks.end());
+  out_ranks.reserve(out_ranks.size() + 1);
+
+  // Remove negative entries from dest_ranks
+  std::vector<std::int32_t> in_ranks;
+  in_ranks.reserve(dest_ranks.size());
+  std::copy_if(dest_ranks.begin(), dest_ranks.end(),
+               std::back_inserter(in_ranks),
+               [](auto rank) { return rank >= 0; });
+
+  // Create unique set of sorted in-ranks
+  std::sort(in_ranks.begin(), in_ranks.end());
+  in_ranks.erase(std::unique(in_ranks.begin(), in_ranks.end()), in_ranks.end());
+  in_ranks.reserve(in_ranks.size() + 1);
+
+  // Create neighborhood communicator
+  MPI_Comm reverse_comm;
+  MPI_Dist_graph_create_adjacent(
+      comm, in_ranks.size(), in_ranks.data(), MPI_UNWEIGHTED, out_ranks.size(),
+      out_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &reverse_comm);
+
+  std::vector<std::int32_t> comm_to_output;
+  std::vector<std::int32_t> recv_sizes(in_ranks.size());
+  recv_sizes.reserve(1);
+  std::vector<std::int32_t> recv_offsets(in_ranks.size() + 1, 0);
+  {
+    // Build map from parent to neighborhood communicator ranks
+    std::map<std::int32_t, std::int32_t> rank_to_neighbor;
+    for (std::size_t i = 0; i < in_ranks.size(); i++)
+      rank_to_neighbor[in_ranks[i]] = i;
+
+    // Compute receive sizes
+    std::for_each(
+        dest_ranks.begin(), dest_ranks.end(),
+        [&dest_ranks, &rank_to_neighbor, &recv_sizes, block_size](auto rank)
+        {
+          if (rank >= 0)
+          {
+            const int neighbor = rank_to_neighbor[rank];
+            recv_sizes[neighbor] += block_size;
+          }
+        });
+
+    // Compute receiving offsets
+    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                     std::next(recv_offsets.begin(), 1));
+
+    // Compute map from receiving values to position in recv_values
+    comm_to_output.resize(recv_offsets.back() / block_size);
+    std::vector<std::int32_t> recv_counter(recv_sizes.size(), 0);
+    for (std::size_t i = 0; i < dest_ranks.size(); ++i)
+    {
+      if (const std::int32_t rank = dest_ranks[i]; rank >= 0)
+      {
+        const int neighbor = rank_to_neighbor[rank];
+        int insert_pos = recv_offsets[neighbor] + recv_counter[neighbor];
+        comm_to_output[insert_pos / block_size] = i * block_size;
+        recv_counter[neighbor] += block_size;
+      }
+    }
+  }
+
+  std::vector<std::int32_t> send_sizes(out_ranks.size());
+  send_sizes.reserve(1);
+  {
+    // Compute map from parent mpi rank to neigbor rank for outgoing data
+    std::map<std::int32_t, std::int32_t> rank_to_neighbor;
+    for (std::size_t i = 0; i < out_ranks.size(); i++)
+      rank_to_neighbor[out_ranks[i]] = i;
+
+    // Compute send sizes
+    std::for_each(src_ranks.begin(), src_ranks.end(),
+                  [&rank_to_neighbor, &send_sizes, block_size](auto rank)
+                  { send_sizes[rank_to_neighbor[rank]] += block_size; });
+  }
+
+  // Compute sending offsets
+  std::vector<std::int32_t> send_offsets(send_sizes.size() + 1, 0);
+  std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                   std::next(send_offsets.begin(), 1));
+
+  std::stringstream cc;
+  // Send values to dest ranks
+  std::vector<T> values(recv_offsets.back());
+  values.reserve(1);
+  MPI_Neighbor_alltoallv(send_values.data(), send_sizes.data(),
+                         send_offsets.data(), dolfinx::MPI::mpi_type<T>(),
+                         values.data(), recv_sizes.data(), recv_offsets.data(),
+                         dolfinx::MPI::mpi_type<T>(), reverse_comm);
+  MPI_Comm_free(&reverse_comm);
+
+  // Insert values received from neighborhood communicator in output span
+  std::fill(recv_values.begin(), recv_values.end(), T(0));
+  for (std::size_t i = 0; i < comm_to_output.size(); i++)
+  {
+    auto vals = std::next(recv_values.begin(), comm_to_output[i]);
+    auto vals_from = std::next(values.begin(), i * block_size);
+    std::copy_n(vals_from, block_size, vals);
+  }
+};
+
 /// @brief Apply interpolation operator Pi to data to evaluate the dof
 /// coefficients
 /// @param[in] Pi The interpolation matrix (shape = (num dofs,
@@ -389,21 +541,8 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
         array1[dof_bs1 * dofs1[i] + k] = local1[dof_bs1 * i + k];
   }
 }
+//----------------------------------------------------------------------------
 } // namespace impl
-
-/// Compute the evaluation points in the physical space at which an
-/// expression should be computed to interpolate it in a finite element
-/// space.
-///
-/// @param[in] element The element to be interpolated into
-/// @param[in] mesh The domain
-/// @param[in] cells Indices of the cells in the mesh to compute
-/// interpolation coordinates for
-/// @return The coordinates in the physical space at which to evaluate
-/// an expression. The shape is (3, num_points) and storage is row-major.
-std::vector<double> interpolation_coords(const FiniteElement& element,
-                                         const mesh::Mesh& mesh,
-                                         std::span<const std::int32_t> cells);
 
 /// Interpolate an expression f(x) in a finite element space
 ///
@@ -695,14 +834,103 @@ void interpolate(Function<T>& u, std::span<const T> f,
   }
 }
 
-/// Interpolate from one finite element Function to another on the same
-/// mesh
+namespace impl
+{
+
+/// Interpolate from one finite element Function to another
+/// @param[in,out] u The function to interpolate into
+/// @param[in] v The function to be interpolated
+/// @param[in] cells List of cell indices to interpolate on
+template <typename T>
+void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
+                                    std::span<const std::int32_t> cells)
+{
+  assert(u.function_space());
+  assert(v.function_space());
+
+  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
+  std::shared_ptr<const mesh::Mesh> mesh_v = v.function_space()->mesh();
+
+  assert(mesh);
+
+  int result;
+  MPI_Comm_compare(mesh->comm(), mesh_v->comm(), &result);
+
+  if (result == MPI_UNEQUAL)
+    throw std::runtime_error("Interpolation on different meshes is only "
+                             "supported with the same communicator.");
+
+  MPI_Comm comm = mesh->comm();
+  const int tdim = mesh->topology().dim();
+  const auto cell_map = mesh->topology().index_map(tdim);
+
+  std::shared_ptr<const FiniteElement> element_u
+      = u.function_space()->element();
+  const std::size_t value_size = element_u->value_size();
+
+  // Collect all the points at which values are needed to define the
+  // interpolating function
+  std::vector<double> x;
+  {
+    const std::vector<double> coords_b
+        = fem::interpolation_coords(*element_u, *mesh, cells);
+
+    namespace stdex = std::experimental;
+    using cmdspan2_t
+        = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+    using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+    cmdspan2_t coords(coords_b.data(), 3, coords_b.size() / 3);
+    // Transpose interpolation coords
+    x.resize(coords.size());
+    mdspan2_t _x(x.data(), coords_b.size() / 3, 3);
+    for (std::size_t j = 0; j < coords.extent(1); ++j)
+      for (std::size_t i = 0; i < 3; ++i)
+        _x(j, i) = coords(i, j);
+  }
+
+  // Determine ownership of each point
+  auto [dest_ranks, src_ranks, received_points, evaluation_cells]
+      = dolfinx::geometry::determine_point_ownership(*mesh_v, x);
+
+  // Evaluate the interpolating function where possible
+  std::vector<T> send_values(received_points.size() / 3 * value_size);
+  v.eval(received_points, {received_points.size() / 3, (std::size_t)3},
+         evaluation_cells, send_values,
+         {received_points.size() / 3, (std::size_t)value_size});
+
+  // Send values back to owning process
+  std::array<std::size_t, 2> v_shape = {src_ranks.size(), value_size};
+  std::vector<T> values_b(dest_ranks.size() * value_size);
+  impl::scatter_values(comm, src_ranks, dest_ranks,
+                       std::span<const T>(send_values), v_shape,
+                       std::span<T>(values_b));
+
+  // Transpose received data
+  namespace stdex = std::experimental;
+  stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> values(
+      values_b.data(), dest_ranks.size(), value_size);
+
+  std::vector<T> valuesT_b(value_size * dest_ranks.size());
+  stdex::mdspan<T, stdex::dextents<std::size_t, 2>> valuesT(
+      valuesT_b.data(), value_size, dest_ranks.size());
+  for (std::size_t i = 0; i < values.extent(0); ++i)
+    for (std::size_t j = 0; j < values.extent(1); ++j)
+      valuesT(j, i) = values(i, j);
+
+  // Call local interpolation operator
+  fem::interpolate<T>(u, std::span(valuesT_b.data(), valuesT_b.size()),
+                      {valuesT.extent(0), valuesT.extent(1)}, cells);
+}
+
+} // namespace impl
+//----------------------------------------------------------------------------
+/// Interpolate from one finite element Function to another one
 /// @param[out] u The function to interpolate into
 /// @param[in] v The function to be interpolated
 /// @param[in] cells List of cell indices to interpolate on
 template <typename T>
 void interpolate(Function<T>& u, const Function<T>& v,
-                 const std::span<const std::int32_t>& cells)
+                 std::span<const std::int32_t> cells)
 {
   assert(u.function_space());
   assert(v.function_space());
@@ -722,74 +950,74 @@ void interpolate(Function<T>& u, const Function<T>& v,
   else
   {
     // Get mesh and check that functions share the same mesh
-    if (mesh != v.function_space()->mesh())
+    if (auto mesh_v = v.function_space()->mesh(); mesh != mesh_v)
+      impl::interpolate_nonmatching_meshes(u, v, cells);
+    else
     {
-      throw std::runtime_error(
-          "Interpolation on different meshes not supported (yet).");
-    }
 
-    // Get elements and check value shape
-    auto element0 = v.function_space()->element();
-    assert(element0);
-    auto element1 = u.function_space()->element();
-    assert(element1);
-    if (element0->value_shape().size() != element1->value_shape().size()
-        or !std::equal(element0->value_shape().begin(),
-                       element0->value_shape().end(),
-                       element1->value_shape().begin()))
-    {
-      throw std::runtime_error(
-          "Interpolation: elements have different value dimensions");
-    }
-
-    if (*element1 == *element0)
-    {
-      // Same element, different dofmaps (or just a subset of cells)
-
-      const int tdim = mesh->topology().dim();
-      auto cell_map = mesh->topology().index_map(tdim);
-      assert(cell_map);
-
-      assert(element1->block_size() == element0->block_size());
-
-      // Get dofmaps
-      std::shared_ptr<const DofMap> dofmap0 = v.function_space()->dofmap();
-      assert(dofmap0);
-      std::shared_ptr<const DofMap> dofmap1 = u.function_space()->dofmap();
-      assert(dofmap1);
-
-      std::span<T> u1_array = u.x()->mutable_array();
-      std::span<const T> u0_array = v.x()->array();
-
-      // Iterate over mesh and interpolate on each cell
-      const int bs0 = dofmap0->bs();
-      const int bs1 = dofmap1->bs();
-      for (auto c : cells)
+      // Get elements and check value shape
+      auto element0 = v.function_space()->element();
+      assert(element0);
+      auto element1 = u.function_space()->element();
+      assert(element1);
+      if (element0->value_shape().size() != element1->value_shape().size()
+          or !std::equal(element0->value_shape().begin(),
+                         element0->value_shape().end(),
+                         element1->value_shape().begin()))
       {
-        std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
-        std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
-        assert(bs0 * dofs0.size() == bs1 * dofs1.size());
-        for (std::size_t i = 0; i < dofs0.size(); ++i)
+        throw std::runtime_error(
+            "Interpolation: elements have different value dimensions");
+      }
+
+      if (element1 == element0 or *element1 == *element0)
+      {
+        // Same element, different dofmaps (or just a subset of cells)
+
+        const int tdim = mesh->topology().dim();
+        auto cell_map = mesh->topology().index_map(tdim);
+        assert(cell_map);
+
+        assert(element1->block_size() == element0->block_size());
+
+        // Get dofmaps
+        std::shared_ptr<const DofMap> dofmap0 = v.function_space()->dofmap();
+        assert(dofmap0);
+        std::shared_ptr<const DofMap> dofmap1 = u.function_space()->dofmap();
+        assert(dofmap1);
+
+        std::span<T> u1_array = u.x()->mutable_array();
+        std::span<const T> u0_array = v.x()->array();
+
+        // Iterate over mesh and interpolate on each cell
+        const int bs0 = dofmap0->bs();
+        const int bs1 = dofmap1->bs();
+        for (auto c : cells)
         {
-          for (int k = 0; k < bs0; ++k)
+          std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
+          std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
+          assert(bs0 * dofs0.size() == bs1 * dofs1.size());
+          for (std::size_t i = 0; i < dofs0.size(); ++i)
           {
-            int index = bs0 * i + k;
-            std::div_t dv1 = std::div(index, bs1);
-            u1_array[bs1 * dofs1[dv1.quot] + dv1.rem]
-                = u0_array[bs0 * dofs0[i] + k];
+            for (int k = 0; k < bs0; ++k)
+            {
+              int index = bs0 * i + k;
+              std::div_t dv1 = std::div(index, bs1);
+              u1_array[bs1 * dofs1[dv1.quot] + dv1.rem]
+                  = u0_array[bs0 * dofs0[i] + k];
+            }
           }
         }
       }
-    }
-    else if (element1->map_type() == element0->map_type())
-    {
-      // Different elements, same basis function map type
-      impl::interpolate_same_map(u, v, cells);
-    }
-    else
-    {
-      //  Different elements with different maps for basis functions
-      impl::interpolate_nonmatching_maps(u, v, cells);
+      else if (element1->map_type() == element0->map_type())
+      {
+        // Different elements, same basis function map type
+        impl::interpolate_same_map(u, v, cells);
+      }
+      else
+      {
+        //  Different elements with different maps for basis functions
+        impl::interpolate_nonmatching_maps(u, v, cells);
+      }
     }
   }
 }
