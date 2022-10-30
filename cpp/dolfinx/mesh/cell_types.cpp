@@ -135,9 +135,9 @@ graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
 
   static const auto triangle = connectivity(CellType::triangle);
   static const auto quadrilateral = connectivity(CellType::quadrilateral);
+  static const auto tetrahedron = connectivity(CellType::tetrahedron);
   static const auto prism = connectivity(CellType::prism);
   static const auto hexahedron = connectivity(CellType::hexahedron);
-  static const auto tetrahedron = connectivity(CellType::tetrahedron);
 
   switch (type)
   {
