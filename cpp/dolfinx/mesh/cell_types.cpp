@@ -9,6 +9,7 @@
 #include <basix/cell.h>
 #include <cfloat>
 #include <cstdlib>
+#include <ranges>
 #include <stdexcept>
 
 using namespace dolfinx;
@@ -123,16 +124,21 @@ graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
         "mesh::get_sub_entities supports getting edges (d=1) at present.");
   }
 
-  // TODO: get this data from basix
-  static const std::vector<std::vector<int>> triangle = {{0, 1, 2}};
-  static const std::vector<std::vector<int>> quadrilateral = {{0, 1, 2, 3}};
-  static const std::vector<std::vector<int>> tetrahedron
-      = {{0, 1, 2}, {0, 3, 4}, {1, 3, 5}, {2, 4, 5}};
-  static const std::vector<std::vector<int>> prism
-      = {{0, 1, 3}, {0, 2, 4, 6}, {1, 2, 5, 7}, {3, 4, 5, 8}, {6, 7, 8}};
-  static const std::vector<std::vector<int>> hexahedron
-      = {{0, 1, 3, 5},  {0, 2, 4, 8},  {1, 2, 6, 9},
-         {3, 4, 7, 10}, {5, 6, 7, 11}, {8, 9, 10, 11}};
+  auto connectivity = [](CellType type) -> const std::vector<std::vector<int>>
+  {
+    const auto cell_type = cell_type_to_basix_type(type);
+    const auto conn = basix::cell::sub_entity_connectivity(cell_type)[2];
+    const auto range
+        = conn | std::views::transform([](auto &e) { return e[1]; });
+    return {range.begin(), range.end()};
+  };
+
+  static const auto triangle = connectivity(CellType::triangle);
+  static const auto quadrilateral = connectivity(CellType::quadrilateral);
+  static const auto prism = connectivity(CellType::prism);
+  static const auto hexahedron = connectivity(CellType::hexahedron);
+  static const auto tetrahedron = connectivity(CellType::tetrahedron);
+
   switch (type)
   {
   case CellType::interval:
