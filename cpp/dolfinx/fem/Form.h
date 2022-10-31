@@ -422,46 +422,37 @@ private:
       const iterator& tagged_facets_begin, const iterator& tagged_facets_end,
       const std::vector<int>& tags)
   {
-    // When a mesh is not ghosted by cell, it is not straightforward
-    // to distinguish between (i) exterior facets and (ii) interior
-    // facets that are on a partition boundary. If there are no
-    // ghost cells, build a set of owned facts that are ghosted on
-    // another process to help determine if a facet is on an
-    // exterior boundary.
-    int tdim = topology.dim();
-    assert(topology.index_map(tdim));
-    assert(topology.index_map(tdim - 1));
-    const std::vector<std::int32_t> fwd_shared_facets
-        = topology.index_map(tdim)->overlapped()
-              ? std::vector<std::int32_t>()
-              : topology.index_map(tdim - 1)->shared_indices();
+    const std::vector<std::int32_t> boundary_facets
+        = mesh::exterior_facet_indices(topology);
 
+    // Create list of tagged boundary facets
+    std::vector<std::int32_t> tagged_ext_facets;
+    std::set_intersection(tagged_facets_begin, tagged_facets_end,
+                          boundary_facets.begin(), boundary_facets.end(),
+                          std::back_inserter(tagged_ext_facets));
+
+    const int tdim = topology.dim();
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
     assert(f_to_c);
     auto c_to_f = topology.connectivity(tdim, tdim - 1);
     assert(c_to_f);
-    for (auto f = tagged_facets_begin; f != tagged_facets_end; ++f)
+
+    // Loop through tagged boundary facets and add to respective integral
+    for (std::int32_t f : tagged_ext_facets)
     {
-      // All "owned" facets connected to one cell, that are not
-      // shared, should be external
-      // TODO: Consider removing this check and integrating over all
-      // tagged facets. This may be useful in a few cases.
-      if (f_to_c->num_links(*f) == 1)
+      // Find index of f in tagged facets so that we can access the associated
+      // tag
+      // FIXME Would be better to avoid calling std::lower_bound in a loop
+      auto index_it = std::lower_bound(tagged_facets_begin, tagged_facets_end, f);
+      assert(index_it != tagged_facets_end and *index_it == f);
+      const int index = std::distance(tagged_facets_begin, index_it);
+      if (auto it = integrals.find(tags[index]); it != integrals.end())
       {
-        if (!std::binary_search(fwd_shared_facets.begin(),
-                                fwd_shared_facets.end(), *f))
-        {
-          const std::size_t pos = std::distance(tagged_facets_begin, f);
-          if (auto it = integrals.find(tags[pos]); it != integrals.end())
-          {
-            // There will only be one pair for an exterior facet integral
-            const std::array<std::int32_t, 2> pair
-                = get_cell_local_facet_pairs<1>(*f, f_to_c->links(*f),
-                                                *c_to_f)[0];
-            it->second.second.insert(it->second.second.end(), pair.cbegin(),
-                                     pair.cend());
-          }
-        }
+        // There will only be one pair for an exterior facet integral
+        const std::array<std::int32_t, 2> pair
+            = get_cell_local_facet_pairs<1>(f, f_to_c->links(f), *c_to_f)[0];
+        it->second.second.insert(it->second.second.end(), pair.cbegin(),
+                                 pair.cend());
       }
     }
   }
