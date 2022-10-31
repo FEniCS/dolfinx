@@ -1,0 +1,22 @@
+# Dummy Dockerfile for testing CI infrastructure without lengthy builds
+#
+# Authors:
+# Jack S. Hale <jack.hale@uni.lu>
+
+FROM ubuntu:22.04 as dev-env
+
+########################################
+
+FROM dev-env as dolfinx-onbuild
+
+########################################
+
+FROM dolfinx-onbuild as intermediate
+
+########################################
+
+FROM dev-env as dolfinx
+
+########################################
+
+FROM dolfinx as lab
