@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.16)
 
 # ------------------------------------------------------------------------------
 # Set project name and version number
-project(DOLFINX VERSION "0.5.2.0")
+project(DOLFINX VERSION "0.6.0.0")
 
 set(DOXYGEN_DOLFINX_VERSION ${DOLFINX_VERSION} CACHE STRING "Version for Doxygen" FORCE)
 
@@ -198,11 +198,11 @@ set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
 # method UFCx was found
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
-  find_package(ufcx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} REQUIRED CONFIG)
+  find_package(ufcx 0.6 REQUIRED CONFIG)
 else()
   # Check in MODULE mode (using FindUFCX.cmake)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
-  find_package(UFCx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} REQUIRED MODULE)
+  find_package(UFCx 0.6 REQUIRED MODULE)
 endif()
 
 set_package_properties(UFCx PROPERTIES TYPE REQUIRED
