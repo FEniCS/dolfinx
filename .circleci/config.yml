@@ -8,7 +8,7 @@ install-python-components: &install-python-components
     cmake --build build-dir --parallel 3
     cmake --install build-dir
     pip3 install ./basix/python
-    pip3 install git+https://github.com/FEniCS/ufl.git@jpdean/multiple_subdomain_data
+    pip3 install git+https://github.com/FEniCS/ufl.git
     pip3 install git+https://github.com/FEniCS/ffcx.git@jpdean/mixed_dim
 
 flake8-python-code: &flake8-python-code

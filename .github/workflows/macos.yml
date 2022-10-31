@@ -71,7 +71,7 @@ jobs:
       - name: Install UFL
         run: |
           source fenicsx/bin/activate
-          python -m pip install git+https://github.com/FEniCS/ufl.git@jpdean/multiple_subdomain_data
+          python -m pip install git+https://github.com/FEniCS/ufl.git
 
       - name: Install FFCx
         run: |
