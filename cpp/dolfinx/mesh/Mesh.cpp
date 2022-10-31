@@ -316,30 +316,30 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     // Convert submesh_e_to_v_vec from local to global vertex numbering
     std::vector<std::int64_t> submesh_e_to_global_v_vec(
         submesh_e_to_v_vec.size(), 0);
-    submesh_vertex_index_map->local_to_global(submesh_e_to_v_vec,
+    submesh_map0->local_to_global(submesh_e_to_v_vec,
                                               submesh_e_to_global_v_vec);
 
     // Scatter forward to send global vertices of owned entity vertices
     // to ghost entities
-    common::Scatterer scatterer(*submesh_entity_index_map,
+    common::Scatterer scatterer(*submesh_map,
                                 num_vertices_per_entity);
     std::vector<std::int64_t> ghost_vertices(
-        num_vertices_per_entity * submesh_entity_index_map->num_ghosts(), 0);
+        num_vertices_per_entity * submesh_map->num_ghosts(), 0);
     scatterer.scatter_fwd(
         std::span<const std::int64_t>(
             submesh_e_to_global_v_vec.begin(),
             submesh_e_to_global_v_vec.begin()
                 + num_vertices_per_entity
-                      * submesh_entity_index_map->size_local()),
+                      * submesh_map->size_local()),
         std::span<std::int64_t>(ghost_vertices));
 
     // Convert received global vertices back to local numbering and overwrite
     // ghosts in submesh_e_to_v_vec
     std::span<std::int32_t> ghost_vertices_local(
         submesh_e_to_v_vec.begin()
-            + num_vertices_per_entity * submesh_entity_index_map->size_local(),
+            + num_vertices_per_entity * submesh_map->size_local(),
         submesh_e_to_v_vec.end());
-    submesh_vertex_index_map->global_to_local(ghost_vertices,
+    submesh_map0->global_to_local(ghost_vertices,
                                               ghost_vertices_local);
   }
 
@@ -492,20 +492,20 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     const int x_dofs_per_entity = submesh_coord_ele.dim();
 
     // TODO Don't hardcode blocksize
-    common::Scatterer scatterer(*submesh_entity_index_map, x_dofs_per_entity);
+    common::Scatterer scatterer(*submesh_map, x_dofs_per_entity);
     std::vector<std::int64_t> ghost_x_dofs(
-        x_dofs_per_entity * submesh_entity_index_map->num_ghosts(), 0);
+        x_dofs_per_entity * submesh_map->num_ghosts(), 0);
 
     scatterer.scatter_fwd(
         std::span<const std::int64_t>(
             submesh_xdofmap_global_vec.begin(),
             submesh_xdofmap_global_vec.begin()
-                + x_dofs_per_entity * submesh_entity_index_map->size_local()),
+                + x_dofs_per_entity * submesh_map->size_local()),
         std::span<std::int64_t>(ghost_x_dofs));
 
     std::span<std::int32_t> ghost_x_dofs_local(
         submesh_x_dofmap_vec.begin()
-            + x_dofs_per_entity * submesh_entity_index_map->size_local(),
+            + x_dofs_per_entity * submesh_map->size_local(),
         submesh_x_dofmap_vec.end());
 
     submesh_x_dof_index_map->global_to_local(ghost_x_dofs, ghost_x_dofs_local);
