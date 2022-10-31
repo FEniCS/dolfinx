@@ -51,6 +51,16 @@ graph::AdjacencyList<std::int32_t>
 compute_collisions(const BoundingBoxTree& tree,
                    const std::span<const double>& points);
 
+/// Compute the first collision between a point and
+/// the cells of the mesh
+/// @param[in] mesh The mesh
+/// @param[in] tree The bounding box tree
+/// @param[in] point The point (shape=(3))
+/// @return The local cell index, -1 if not found
+int compute_first_colliding_cell(const mesh::Mesh& mesh,
+                                 const BoundingBoxTree& tree,
+                                 const std::array<double, 3>& point);
+
 /// Compute closest mesh entity to a point
 /// @param[in] tree The bounding box tree for the entities
 /// @param[in] midpoint_tree A bounding box tree with the midpoints of
@@ -119,4 +129,24 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
     const mesh::Mesh& mesh,
     const graph::AdjacencyList<std::int32_t>& candidate_cells,
     const std::span<const double>& points);
+
+/// Given a set of points (local on each process) which process is colliding,
+/// using the GJK algorithm on cells to determine collisions.
+/// @param[in] mesh The mesh
+/// @param[in] points The points to check for collision (shape=(num_points, 3)).
+/// Storage is row-major.
+/// @return Quadratuplet (src_owner, dest_owner, dest_points, dest_cells), where
+/// src_owner is a list of ranks corresponding to the input points. dest_owner
+/// is a list of ranks corresponding to dest_points, the points that this
+/// process owns. dest_cells contains the corresponding cell for each entry in
+/// dest_points.
+/// @note dest_owner is sorted
+/// @note Returns -1 if no colliding process is found
+/// @note dest_points is flattened row-major, shape (dest_owner.size(), 3)
+/// @note Only looks through cells owned by the process
+std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
+           std::vector<double>, std::vector<std::int32_t>>
+determine_point_ownership(const mesh::Mesh& mesh,
+                          std::span<const double> points);
+
 } // namespace dolfinx::geometry
