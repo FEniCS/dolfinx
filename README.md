@@ -5,7 +5,7 @@
 [![Actions Docker images](https://github.com/FEniCS/dolfinx/actions/workflows/docker.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/docker.yml)
 [![Actions Spack build](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml)
 [![Actions Conda install](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml)
-[![Actions MacOS/Homebrew install](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml)
+[![Actions macOS/Homebrew install](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml)
 
 DOLFINx is the computational environment of
 [FEniCSx](https://fenicsproject.org) and implements the FEniCS Problem
@@ -17,8 +17,8 @@ DOLFINx is a new version of DOLFIN and is being actively developed.
 
 Documentation can be viewed at:
 
-- https://docs.fenicsproject.org/dolfinx/main/cpp/
-- https://docs.fenicsproject.org/dolfinx/main/python/
+- <https://docs.fenicsproject.org/dolfinx/main/cpp/>
+- <https://docs.fenicsproject.org/dolfinx/main/python/>
 
 ## Installation
 
@@ -47,12 +47,13 @@ pip install .
 (you may need to use ``pip3``, depending on your system).
 
 For detailed instructions, see
-https://docs.fenicsproject.org/dolfinx/main/python/installation.
+<https://docs.fenicsproject.org/dolfinx/main/python/installation>.
 
 ### Binary
 
 #### Operating System Recommendations
-- Mac OS: use [conda](#conda).
+
+- macOS: use [conda](#conda).
 - Linux: use [apt](#ubuntu-packages) ([Ubuntu](#ubuntu-packages)/[Debian](#debian-packages)), [docker](#docker-images) or [conda](#conda). See also [Spack](#spack).
 - Windows: use [docker](#docker-images), or install Microsoft's [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and use [Ubuntu](#ubuntu-packages).
 
@@ -170,7 +171,7 @@ docker run -ti dolfinx/dev-env:nightly
 All Docker images support arm64 and amd64 architectures.
 
 For a full list of tags, including versioned images, see
-https://hub.docker.com/u/dolfinx
+<https://hub.docker.com/u/dolfinx>
 
 ## Contributing
 
@@ -197,14 +198,14 @@ License along with DOLFINx. If not, see
 
 For questions about using DOLFINx, visit the FEniCS Discourse page:
 
-https://fenicsproject.discourse.group/
+<https://fenicsproject.discourse.group/>
 
 or use the FEniCS Slack channel:
 
-https://fenicsproject.slack.com/
+<https://fenicsproject.slack.com/>
 
-(use https://fenicsproject-slack-invite.herokuapp.com/ to sign up)
+(use <https://fenicsproject-slack-invite.herokuapp.com/> to sign up)
 
 For bug reports visit:
 
-https://github.com/FEniCS/dolfinx
+<https://github.com/FEniCS/dolfinx>
