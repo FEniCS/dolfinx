@@ -456,7 +456,7 @@ private:
       {
         // There will only be one pair for an exterior facet integral
         const std::array<std::int32_t, 2> pair
-            = get_cell_local_facet_pairs<1>(f, f_to_c->links(f), *c_to_f)[0];
+            = get_cell_local_facet_pairs<1>(f, f_to_c->links(f), *c_to_f).front();
         it->second.second.insert(it->second.second.end(), pair.cbegin(),
                                  pair.cend());
       }
