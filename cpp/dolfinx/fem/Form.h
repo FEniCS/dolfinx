@@ -415,6 +415,12 @@ private:
   }
 
   // Set exterior facet domains
+  // @param[in] topology The mesh topology
+  // @param[in] integrals The integrals to set exterior facet domains for
+  // @param[in] tagged_facets_begin The start of the list of facets
+  // NOTE: The list of tagged facets must be sorted
+  // @param[in] tagged_facets_end The end of the list of facets
+  // @param[in] tags A list of tags
   template <typename iterator>
   void set_exterior_facet_domains(
       const mesh::Topology& topology,
