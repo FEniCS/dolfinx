@@ -4,7 +4,6 @@ set(HEADERS_common
   ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_doc.h
   ${CMAKE_CURRENT_SOURCE_DIR}/IndexMap.h
   ${CMAKE_CURRENT_SOURCE_DIR}/log.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/loguru.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/sort.h
   ${CMAKE_CURRENT_SOURCE_DIR}/math.h
   ${CMAKE_CURRENT_SOURCE_DIR}/MPI.h
@@ -29,3 +28,13 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogManager.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/timing.cpp
 )
+
+add_library(dolfinx_loguru INTERFACE)
+target_sources(dolfinx_loguru INTERFACE
+  ${CMAKE_CURRENT_SOURCE_DIR}/loguru.cpp
+)
+target_compile_definitions(dolfinx_loguru INTERFACE
+    LOGURU_WITH_STREAMS
+    LOGURU_REPLACE_GLOG
+)
+target_link_libraries(dolfinx PRIVATE dolfinx_loguru)
