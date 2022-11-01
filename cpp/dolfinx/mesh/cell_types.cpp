@@ -9,7 +9,6 @@
 #include <basix/cell.h>
 #include <cfloat>
 #include <cstdlib>
-#include <ranges>
 #include <stdexcept>
 
 using namespace dolfinx;
@@ -113,51 +112,20 @@ graph::AdjacencyList<int> mesh::get_entity_vertices(CellType type, int dim)
 graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
                                                  int dim1)
 {
-  if (dim0 != 2)
-  {
-    throw std::runtime_error(
-        "mesh::get_sub_entities supports faces (d=2) only at present.");
-  }
-  if (dim1 != 1)
-  {
-    throw std::runtime_error(
-        "mesh::get_sub_entities supports getting edges (d=1) at present.");
-  }
-
-  auto connectivity = [](CellType type) -> const std::vector<std::vector<int>>
-  {
-    const auto cell_type = cell_type_to_basix_type(type);
-    const auto conn = basix::cell::sub_entity_connectivity(cell_type)[2];
-    const auto range
-        = conn | std::views::transform([](auto &e) { return e[1]; });
-    return {range.begin(), range.end()};
-  };
-
-  static const auto triangle = connectivity(CellType::triangle);
-  static const auto quadrilateral = connectivity(CellType::quadrilateral);
-  static const auto tetrahedron = connectivity(CellType::tetrahedron);
-  static const auto prism = connectivity(CellType::prism);
-  static const auto hexahedron = connectivity(CellType::hexahedron);
-
-  switch (type)
-  {
-  case CellType::interval:
+  // keep backward compatibility
+  if (type == CellType::interval)
     return graph::AdjacencyList<int>(0);
-  case CellType::point:
+  else if (type == CellType::point)
     return graph::AdjacencyList<int>(0);
-  case CellType::triangle:
-    return graph::AdjacencyList<int>(triangle);
-  case CellType::tetrahedron:
-    return graph::AdjacencyList<int>(tetrahedron);
-  case CellType::prism:
-    return graph::AdjacencyList<int>(prism);
-  case CellType::quadrilateral:
-    return graph::AdjacencyList<int>(quadrilateral);
-  case CellType::hexahedron:
-    return graph::AdjacencyList<int>(hexahedron);
-  default:
-    throw std::runtime_error("Unsupported cell type.");
-  }
+
+  const std::vector<std::vector<std::vector<int>>> connectivity
+      = basix::cell::sub_entity_connectivity(
+          cell_type_to_basix_type(type))[dim0];
+  std::vector<std::vector<int>> subset;
+  subset.reserve(connectivity.size());
+  for (auto& row : connectivity)
+    subset.emplace_back(std::move(row[dim1]));
+  return graph::AdjacencyList<int>(subset);
 }
 //-----------------------------------------------------------------------------
 int mesh::cell_dim(CellType type)
