@@ -409,7 +409,8 @@ private:
     {
       if (auto it = integrals.find(tags[i]); it != integrals.end())
       {
-        it->second.second.push_back(tagged_cells[i]);
+        std::vector<std::int32_t>& integration_entities = it->second.second;
+        integration_entities.push_back(tagged_cells[i]);
       }
     }
   }
@@ -458,8 +459,9 @@ private:
         std::array<std::int32_t, 2> facet
             = get_cell_local_facet_pairs<1>(f, f_to_c->links(f), *c_to_f)
                   .front();
-        it->second.second.insert(it->second.second.end(), facet.cbegin(),
-                                 facet.cend());
+        std::vector<std::int32_t>& integration_entities = it->second.second;
+        integration_entities.insert(integration_entities.end(), facet.cbegin(),
+                                    facet.cend());
       }
     }
   }
@@ -487,10 +489,11 @@ private:
           // cell
           auto [facet_0, facet_1]
               = get_cell_local_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
-          it->second.second.insert(it->second.second.end(), facet_0.cbegin(),
-                                   facet_0.cend());
-          it->second.second.insert(it->second.second.end(), facet_1.cbegin(),
-                                   facet_1.cend());
+          std::vector<std::int32_t>& integration_entities = it->second.second;
+          integration_entities.insert(integration_entities.end(),
+                                      facet_0.cbegin(), facet_0.cend());
+          integration_entities.insert(integration_entities.end(),
+                                      facet_1.cbegin(), facet_1.cend());
         }
       }
     }
