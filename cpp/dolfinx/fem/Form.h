@@ -487,12 +487,12 @@ private:
         {
           // Ge the facet as a pair of (cell, local facet) pairs, one for each
           // cell
-          std::array<std::array<std::int32_t, 2>, 2> facets
+          auto [facet_0, facet_1]
               = get_cell_local_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
-          it->second.second.insert(it->second.second.end(), facets[0].cbegin(),
-                                   facets[0].cend());
-          it->second.second.insert(it->second.second.end(), facets[1].cbegin(),
-                                   facets[1].cend());
+          it->second.second.insert(it->second.second.end(), facet_0.cbegin(),
+                                   facet_0.cend());
+          it->second.second.insert(it->second.second.end(), facet_1.cbegin(),
+                                   facet_1.cend());
         }
       }
     }
