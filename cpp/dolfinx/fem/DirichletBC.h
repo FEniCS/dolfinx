@@ -518,7 +518,7 @@ public:
 
   /// Set markers[i] = true if cell i has a dof in with boundary condition
   /// applied. Value of markers[i] is not changed otherwise.
-  /// @param[in,out] markers Entry makers[i] is set to true if cell i in
+  /// @param[in,out] markers Entry markers[i] is set to true if cell i in
   /// V0 has a dof with a boundary condition applied, i.e. dofs which are
   /// fixed by a boundary condition. Other entries in @p markers are left
   /// unchanged.
