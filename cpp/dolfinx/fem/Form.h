@@ -401,15 +401,15 @@ private:
   // Set cell domains
   void set_cell_domains(
       std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
-      const std::span<const std::int32_t>& owned_tagged_cells,
+      const std::span<const std::int32_t>& tagged_cells,
       const std::vector<int>& tags)
   {
-    // For cell integrals use all markers (but not on ghost entities)
-    for (std::int32_t i = 0; i < owned_tagged_cells.size(); ++i)
+    // For cell integrals use all markers
+    for (std::int32_t i = 0; i < tagged_cells.size(); ++i)
     {
       if (auto it = integrals.find(tags[i]); it != integrals.end())
       {
-        it->second.second.push_back(owned_tagged_cells[i]);
+        it->second.second.push_back(tagged_cells[i]);
       }
     }
   }
@@ -417,14 +417,13 @@ private:
   // Set exterior facet domains
   // @param[in] topology The mesh topology
   // @param[in] integrals The integrals to set exterior facet domains for
-  // @param[in] tagged_facets_begin The start of the list of facets
-  // @param[in] tagged_facets_end The end of the list of facets
+  // @param[in] tagged_facets A list of facets
   // @param[in] tags A list of tags
   // @pre The list of tagged facets must be sorted
   void set_exterior_facet_domains(
       const mesh::Topology& topology,
       std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
-      const std::span<const std::int32_t>& owned_tagged_facets,
+      const std::span<const std::int32_t>& tagged_facets,
       const std::vector<int>& tags)
   {
     const std::vector<std::int32_t> boundary_facets
@@ -432,9 +431,8 @@ private:
 
     // Create list of tagged boundary facets
     std::vector<std::int32_t> tagged_ext_facets;
-    std::set_intersection(owned_tagged_facets.begin(),
-                          owned_tagged_facets.end(), boundary_facets.begin(),
-                          boundary_facets.end(),
+    std::set_intersection(tagged_facets.begin(), tagged_facets.end(),
+                          boundary_facets.begin(), boundary_facets.end(),
                           std::back_inserter(tagged_ext_facets));
 
     const int tdim = topology.dim();
@@ -449,10 +447,10 @@ private:
       // Find index of f in tagged facets so that we can access the associated
       // tag
       // FIXME Would be better to avoid calling std::lower_bound in a loop
-      auto index_it = std::lower_bound(owned_tagged_facets.begin(),
-                                       owned_tagged_facets.end(), f);
-      assert(index_it != owned_tagged_facets.end() and *index_it == f);
-      const int index = std::distance(owned_tagged_facets.begin(), index_it);
+      auto index_it
+          = std::lower_bound(tagged_facets.begin(), tagged_facets.end(), f);
+      assert(index_it != tagged_facets.end() and *index_it == f);
+      const int index = std::distance(tagged_facets.begin(), index_it);
       if (auto it = integrals.find(tags[index]); it != integrals.end())
       {
         // Get the facet as a (cell, local_facet) pair. There will only be one
@@ -470,7 +468,7 @@ private:
   static void set_interior_facet_domains(
       const mesh::Topology& topology,
       std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
-      const std::span<const std::int32_t>& owned_tagged_facets,
+      const std::span<const std::int32_t>& tagged_facets,
       const std::vector<int>& tags)
   {
     int tdim = topology.dim();
@@ -478,9 +476,9 @@ private:
     assert(f_to_c);
     auto c_to_f = topology.connectivity(tdim, tdim - 1);
     assert(c_to_f);
-    for (int i = 0; i < owned_tagged_facets.size(); ++i)
+    for (int i = 0; i < tagged_facets.size(); ++i)
     {
-      const std::int32_t f = owned_tagged_facets[i];
+      const std::int32_t f = tagged_facets[i];
       if (f_to_c->num_links(f) == 2)
       {
         if (auto it = integrals.find(tags[i]); it != integrals.end())
@@ -523,6 +521,7 @@ private:
     const auto entity_end
         = std::lower_bound(tagged_entities.begin(), tagged_entities.end(),
                            topology.index_map(dim)->size_local());
+    // Only include owned entities in integration domains
     const std::span<const std::int32_t> owned_tagged_entities(
         tagged_entities.begin(), entity_end);
     switch (type)
