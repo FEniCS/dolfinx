@@ -118,10 +118,10 @@ void scatter_values(const MPI_Comm& comm,
           if (rank >= 0)
           {
             const std::int32_t neighbor
-                = std::lower_bound(rank_to_neighbor.begin(),
-                                   rank_to_neighbor.end(),
-                                   [rank](auto& left, auto& right)
-                                   { return left.first < rank; })
+                = std::lower_bound(
+                      rank_to_neighbor.begin(), rank_to_neighbor.end(),
+                      [rank](auto& left, [[maybe_unused]] auto& right)
+                      { return left.first < rank; })
                       .second;
             recv_sizes[neighbor] += block_size;
           }
@@ -169,10 +169,10 @@ void scatter_values(const MPI_Comm& comm,
           if (rank >= 0)
           {
             const std::int32_t neighbor
-                = std::lower_bound(rank_to_neighbor.begin(),
-                                   rank_to_neighbor.end(),
-                                   [rank](auto& left, auto& right)
-                                   { return left.first < rank; })
+                = std::lower_bound(
+                      rank_to_neighbor.begin(), rank_to_neighbor.end(),
+                      [rank](auto& left, [[maybe_unused]] auto& right)
+                      { return left.first < rank; })
                       .second;
             send_sizes[neighbor] += block_size;
           }
