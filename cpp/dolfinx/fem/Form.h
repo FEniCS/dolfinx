@@ -457,7 +457,7 @@ private:
       {
         // Get the facet as a (cell, local_facet) pair. There will only be one
         // pair for an exterior facet integral
-        const std::array<std::int32_t, 2> facet
+        std::array<std::int32_t, 2> facet
             = get_cell_local_facet_pairs<1>(f, f_to_c->links(f), *c_to_f)
                   .front();
         it->second.second.insert(it->second.second.end(), facet.cbegin(),
@@ -487,7 +487,7 @@ private:
         {
           // Ge the facet as a pair of (cell, local facet) pairs, one for each
           // cell
-          const std::array<std::array<std::int32_t, 2>, 2> facets
+          std::array<std::array<std::int32_t, 2>, 2> facets
               = get_cell_local_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
           it->second.second.insert(it->second.second.end(), facets[0].cbegin(),
                                    facets[0].cend());
