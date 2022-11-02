@@ -467,11 +467,10 @@ private:
   }
 
   // Set interior facet domains
-  template <typename iterator>
   static void set_interior_facet_domains(
       const mesh::Topology& topology,
       std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
-      const iterator& tagged_facets_begin, const iterator& tagged_facets_end,
+      const std::span<const std::int32_t>& owned_tagged_facets,
       const std::vector<int>& tags)
   {
     int tdim = topology.dim();
@@ -479,19 +478,21 @@ private:
     assert(f_to_c);
     auto c_to_f = topology.connectivity(tdim, tdim - 1);
     assert(c_to_f);
-    for (auto f = tagged_facets_begin; f != tagged_facets_end; ++f)
+    for (int i = 0; i < owned_tagged_facets.size(); ++i)
     {
-      if (f_to_c->num_links(*f) == 2)
+      const std::int32_t f = owned_tagged_facets[i];
+      if (f_to_c->num_links(f) == 2)
       {
-        const std::size_t pos = std::distance(tagged_facets_begin, f);
-        if (auto it = integrals.find(tags[pos]); it != integrals.end())
+        if (auto it = integrals.find(tags[i]); it != integrals.end())
         {
-          const std::array<std::array<std::int32_t, 2>, 2> pairs
-              = get_cell_local_facet_pairs<2>(*f, f_to_c->links(*f), *c_to_f);
-          it->second.second.insert(it->second.second.end(), pairs[0].cbegin(),
-                                   pairs[0].cend());
-          it->second.second.insert(it->second.second.end(), pairs[1].cbegin(),
-                                   pairs[1].cend());
+          // Ge the facet as a pair of (cell, local facet) pairs, one for each
+          // cell
+          const std::array<std::array<std::int32_t, 2>, 2> facets
+              = get_cell_local_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
+          it->second.second.insert(it->second.second.end(), facets[0].cbegin(),
+                                   facets[0].cend());
+          it->second.second.insert(it->second.second.end(), facets[1].cbegin(),
+                                   facets[1].cend());
         }
       }
     }
@@ -540,7 +541,7 @@ private:
         break;
       case IntegralType::interior_facet:
         set_interior_facet_domains(topology, _interior_facet_integrals,
-                                   tagged_entities.cbegin(), entity_end, tags);
+                                   owned_tagged_entities, tags);
         break;
       default:
         throw std::runtime_error(
