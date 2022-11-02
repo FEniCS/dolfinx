@@ -399,18 +399,18 @@ private:
   }
 
   // Set cell domains
-  template <typename iterator>
   void set_cell_domains(
       std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
-      const iterator& tagged_cells_begin, const iterator& tagged_cells_end,
+      const std::span<const std::int32_t>& owned_tagged_cells,
       const std::vector<int>& tags)
   {
     // For cell integrals use all markers (but not on ghost entities)
-    for (auto c = tagged_cells_begin; c != tagged_cells_end; ++c)
+    for (std::int32_t i = 0; i < owned_tagged_cells.size(); ++i)
     {
-      const std::size_t pos = std::distance(tagged_cells_begin, c);
-      if (auto it = integrals.find(tags[pos]); it != integrals.end())
-        it->second.second.push_back(*c);
+      if (auto it = integrals.find(tags[i]); it != integrals.end())
+      {
+        it->second.second.push_back(owned_tagged_cells[i]);
+      }
     }
   }
 
@@ -527,8 +527,7 @@ private:
     switch (type)
     {
     case IntegralType::cell:
-      set_cell_domains(_cell_integrals, tagged_entities.cbegin(), entity_end,
-                       tags);
+      set_cell_domains(_cell_integrals, owned_tagged_entities, tags);
       break;
     default:
       mesh->topology_mutable().create_connectivity(dim, tdim);
