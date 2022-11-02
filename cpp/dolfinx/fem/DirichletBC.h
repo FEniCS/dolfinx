@@ -524,7 +524,6 @@ public:
   /// unchanged.
   void mark_cells(const std::span<std::int8_t>& markers) const
   {
-
     for (std::size_t i = 0; i < _marker.size(); ++i)
     {
       assert(_marker[i] < (std::int32_t)markers.size());
