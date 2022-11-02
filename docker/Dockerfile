@@ -51,7 +51,7 @@ ARG GMSH_VERSION=4_10_5
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=2
 ARG KAHIP_VERSION=3.14
-ARG NUMPY_VERSION=1.22.4
+ARG NUMPY_VERSION=1.23.3
 ARG PYBIND11_VERSION=2.10.0
 ARG PETSC_VERSION=3.17.4
 ARG SLEPC_VERSION=3.17.2
@@ -188,13 +188,6 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
     rm -rf /tmp/*
 
 # Install HDF5
-# RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-#     tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-#     cd hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
-#     ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
-#     make -j${BUILD_NP} install && \
-#     rm -rf /tmp/*
-
 # Note: HDF5 CMake install has numerous bugs and inconsistencies. Test carefully.
 # HDF5 overrides CMAKE_INSTALL_PREFIX by default, hence it is set
 # below to ensure that HDF5 is installed into a path where it can be

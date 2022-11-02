@@ -12,8 +12,8 @@ import numpy.typing as npt
 import basix
 import basix.ufl_wrapper
 import ufl
-
 from dolfinx import cpp as _cpp
+from dolfinx.cpp.graph import AdjacencyList_int32
 from dolfinx.mesh import (CellType, GhostMode, Mesh, create_cell_partitioner,
                           create_mesh, meshtags, meshtags_from_entities)
 
@@ -67,14 +67,17 @@ if _has_gmsh:
 
     def extract_topology_and_markers(model: gmsh.model, name: str = None):
         """Extract all entities tagged with a physical marker in the gmsh
-        model, and collect the data per cell type. Returns a nested
-        dictionary where the first key is the gmsh MSH element type integer.
-        Each element type present in the model contains the cell topology of
-        the elements and corresponding markers.
+        model, and collect the data per cell type.
+
+        Returns a nested dictionary where the first key is the gmsh MSH
+        element type integer. Each element type present in the model
+        contains the cell topology of the elements and corresponding
+        markers.
 
         Args:
             model: The Gmsh model
-            name: The name of the gmsh model. If not set the current model will be used
+            name: The name of the gmsh model. If not set the current
+                model will be used.
 
         Returns:
             A nested dictionary where each key corresponds to a gmsh
@@ -121,8 +124,8 @@ if _has_gmsh:
                 # Group element topology and markers of the same entity type
                 entity_type = entity_types[0]
                 if entity_type in topologies.keys():
-                    topologies[entity_type]["topology"] = np.concatenate((topologies[entity_type]["topology"],
-                                                                          topology), axis=0)
+                    topologies[entity_type]["topology"] = np.concatenate(
+                        (topologies[entity_type]["topology"], topology), axis=0)
                     topologies[entity_type]["cell_data"] = np.hstack([topologies[entity_type]["cell_data"], marker])
                 else:
                     topologies[entity_type] = {"topology": topology, "cell_data": marker}
@@ -136,7 +139,7 @@ if _has_gmsh:
 
         Args:
             model: The Gmsh model
-            name: The name of the gmsh model. If not set the current model will be used
+            name: The name of the gmsh model. If not set the current model will be used.
 
         Returns:
             The mesh geometry as an array of shape (num_nodes, 3).
@@ -162,14 +165,18 @@ if _has_gmsh:
         return points[perm_sort]
 
     def model_to_mesh(model: gmsh.model, comm: _MPI.Comm, rank: int,
-                      gdim: int = 3) -> typing.Tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
-        """
-        Given a Gmsh model, take all physical entities of the highest
+                      gdim: int = 3,
+                      partitioner: typing.Callable[
+            [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32] =
+            create_cell_partitioner(GhostMode.none)) -> typing.Tuple[
+            Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+        """Given a Gmsh model, take all physical entities of the highest
         topological dimension and create the corresponding DOLFINx mesh.
-        NOTE: It is assumed that the gmsh model lives on a single rank,
-        and is then read into DOLFINx on a single process to be
-        distributed. This means that this function should only be called
-        once for large problems. It is recommended to save the mesh and
+
+        It is assumed that the gmsh model lives on a single rank, and is
+        then read into DOLFINx on a single process to be distributed.
+        This means that this function should only be called once for
+        large problems. It is recommended to save the mesh and
         corresponding tags to XDMFFile after creation for efficient
         access.
 
@@ -178,6 +185,8 @@ if _has_gmsh:
             rank: The rank the Gmsh model is initialized on
             model: The Gmsh model
             gdim: Geometrical dimension of the mesh
+            partitioner: Function that computes the parallel
+                distribution of cells across MPI ranks
 
         Returns:
             A triplet (mesh, cell_tags, facet_tags) where cell_tags hold
@@ -198,8 +207,7 @@ if _has_gmsh:
             cell_information = {}
             cell_dimensions = np.zeros(num_cell_types, dtype=np.int32)
             for i, element in enumerate(topologies.keys()):
-                properties = model.mesh.getElementProperties(element)
-                _, dim, _, num_nodes, _, _ = properties
+                _, dim, _, num_nodes, _, _ = model.mesh.getElementProperties(element)
                 cell_information[i] = {"id": element, "dim": dim, "num_nodes": num_nodes}
                 cell_dimensions[i] = dim
 
@@ -241,8 +249,7 @@ if _has_gmsh:
         ufl_domain = ufl_mesh(cell_id, gdim)
         gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
         cells = cells[:, gmsh_cell_perm]
-        part = create_cell_partitioner(GhostMode.none)
-        mesh = create_mesh(comm, cells, x[:, :gdim], ufl_domain, part)
+        mesh = create_mesh(comm, cells, x[:, :gdim], ufl_domain, partitioner)
 
         # Create MeshTags for cells
         local_entities, local_values = _cpp.io.distribute_entity_data(mesh, mesh.topology.dim, cells, cell_values)
@@ -274,15 +281,20 @@ if _has_gmsh:
 
         return (mesh, ct, ft)
 
-    def read_from_msh(filename: str, comm: _MPI.Comm, rank: int = 0,
-                      gdim: int = 3) -> typing.Tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+    def read_from_msh(
+        filename: str, comm: _MPI.Comm, rank: int = 0,
+        gdim: int = 3,
+        partitioner: typing.Callable[
+            [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32] =
+            create_cell_partitioner(GhostMode.none)) -> typing.Tuple[
+                Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
         """Reads a mesh from a msh-file and returns the distributed DOLFINx
         mesh and cell and facet markers associated with physical groups
         in the msh file.
 
         Args:
             filename: Name of msh file
-            comm: The MPI communciator to initialize the mesh with
+            comm: The MPI communicator to initialize the mesh with
             rank: Rank for `comm` responsible for reading the msh file
             gdim: Geometrical dimension of the mesh
 
@@ -295,7 +307,9 @@ if _has_gmsh:
             gmsh.initialize()
             gmsh.model.add("Mesh from file")
             gmsh.merge(filename)
-        output = model_to_mesh(gmsh.model, comm, rank, gdim=gdim)
+
+        output = model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
+
         if comm.rank == rank:
             gmsh.finalize()
         return output

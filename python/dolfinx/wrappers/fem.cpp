@@ -1084,6 +1084,9 @@ void fem(py::module& m)
       m, "CoordinateElement", "Coordinate map element")
       .def(py::init<dolfinx::mesh::CellType, int>(), py::arg("celltype"),
            py::arg("degree"))
+      .def(py::init<dolfinx::mesh::CellType, int,
+                    basix::element::lagrange_variant>(),
+           py::arg("celltype"), py::arg("degree"), py::arg("variant"))
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement::create_dof_layout)
       .def_property_readonly("degree", &dolfinx::fem::CoordinateElement::degree)

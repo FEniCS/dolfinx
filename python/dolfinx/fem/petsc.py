@@ -15,6 +15,7 @@ from __future__ import annotations
 import contextlib
 import functools
 import typing
+import os
 
 import ufl
 from dolfinx import cpp as _cpp
@@ -30,7 +31,9 @@ from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.forms import form_types
 from dolfinx.fem.function import Function as _Function
 
+import petsc4py
 from petsc4py import PETSc
+import petsc4py.lib
 
 
 def _extract_function_spaces(a: typing.List[typing.List[FormMetaClass]]):
@@ -555,8 +558,10 @@ class LinearProblem:
 
         Example::
 
-            problem = LinearProblem(a, L, [bc0, bc1], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
-
+            problem = LinearProblem(a, L, [bc0, bc1],
+                                    petsc_options={"ksp_type": "preonly",
+                                                   "pc_type": "lu",
+                                                   "pc_factor_mat_solver_type": "mumps"})
         """
         self._a = _create_form(a, form_compiler_options=form_compiler_options, jit_options=jit_options)
         self._A = create_matrix(self._a)
@@ -736,3 +741,42 @@ class NonlinearProblem:
         A.zeroEntries()
         _assemble_matrix_mat(A, self._a, self.bcs)
         A.assemble()
+
+
+def load_petsc_lib(loader: typing.Callable[[str], typing.Any]) -> typing.Any:
+    """
+    Load PETSc shared library using loader callable, e.g. ctypes.CDLL.
+
+    Args:
+        loader: A callable that accepts a library path and returns a wrapped library.
+
+    Returns:
+        A wrapped library of the type returned by the callable.
+    """
+    petsc_lib = None
+
+    petsc_dir = petsc4py.get_config()['PETSC_DIR']
+    petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
+
+    candidate_paths = [os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
+                       os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib")]
+
+    exists_paths = []
+    for candidate_path in candidate_paths:
+        if os.path.exists(candidate_path):
+            exists_paths.append(candidate_path)
+
+    if len(exists_paths) == 0:
+        raise RuntimeError("Could not find a PETSc shared library.")
+
+    for exists_path in exists_paths:
+        try:
+            petsc_lib = loader(exists_path)
+        except OSError:
+            print(f"Failed to load shared library found at {exists_path}.")
+            continue
+
+    if petsc_lib is None:
+        raise RuntimeError("Failed to load a PETSc shared library.")
+
+    return petsc_lib
