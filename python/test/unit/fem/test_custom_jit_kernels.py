@@ -14,7 +14,7 @@ from dolfinx import TimingType
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la, list_timings
 from dolfinx.fem import Function, FunctionSpace, IntegralType
-from dolfinx.mesh import create_unit_square
+from dolfinx.mesh import create_unit_square, meshtags
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -107,7 +107,12 @@ def test_coefficient():
     vals.vector.set(2.0)
 
     Form = _cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else _cpp.fem.Form_complex128
-    integrals = {IntegralType.cell: ([(-1, tabulate_tensor_b_coeff.address)], None)}
+
+    tdim = mesh.topology.dim
+    num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
+    mt = meshtags(mesh, tdim, np.arange(num_cells, dtype=np.intc), np.ones(num_cells, dtype=np.intc))
+
+    integrals = {IntegralType.cell: ([(1, tabulate_tensor_b_coeff.address)], mt)}
     L = Form([V._cpp_object], integrals, [vals._cpp_object], [], False)
 
     b = dolfinx.fem.petsc.assemble_vector(L)

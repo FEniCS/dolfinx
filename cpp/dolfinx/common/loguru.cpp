@@ -274,7 +274,7 @@ namespace loguru
 	const char* terminal_light_red()  { return s_terminal_has_color ? VTSEQ(91) : ""; }
 	const char* terminal_dim()        { return s_terminal_has_color ? VTSEQ(2)  : ""; }
 
-	// Formating
+	// Formatting
 	const char* terminal_bold()       { return s_terminal_has_color ? VTSEQ(1) : ""; }
 	const char* terminal_underline()  { return s_terminal_has_color ? VTSEQ(4) : ""; }
 
@@ -394,7 +394,7 @@ namespace loguru
 		}
 
 		// Note: We don't add the time info.
-		// This is done automatically by the syslog deamon.
+		// This is done automatically by the syslog daemon.
 		// Otherwise log all information that the file log does.
 		syslog(level, "%s%s%s", message.indentation, message.prefix, message.message);
 	}
@@ -556,7 +556,7 @@ namespace loguru
 			else if (c == '\'') { out += "\\\'"; }
 			else if (c == '\"') { out += "\\\""; }
 			else if (c == ' ')  { out += "\\ ";  }
-			else if (0 <= c && c < 0x20) { // ASCI control character:
+			else if (0 <= c && c < 0x20) { // ASCII control character:
 			// else if (c < 0x20 || c != (c & 127)) { // ASCII control character or UTF-8:
 				out += "\\x";
 				write_hex_byte(out, static_cast<uint8_t>(c));
@@ -1088,7 +1088,7 @@ namespace loguru
 			#elif LOGURU_PTHREADS
 				uint64_t thread_id = pthread_self();
 			#else
-				// This ID does not correllate to anything we can get from the OS,
+				// This ID does not correlate to anything we can get from the OS,
 				// so this is the worst way to get the ID.
 				const auto thread_id = std::hash<std::thread::id>{}(std::this_thread::get_id());
 			#endif

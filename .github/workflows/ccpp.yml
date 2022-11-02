@@ -28,7 +28,7 @@ jobs:
   build:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
     runs-on: ubuntu-20.04
-    container: fenicsproject/test-env:latest-openmpi
+    container: fenicsproject/test-env:nightly-openmpi
 
     env:
       CC: clang
@@ -76,12 +76,10 @@ jobs:
         continue-on-error: true
         run: |
           cd python/
-          python3 -m isort --check dolfinx
-          python3 -m isort --check demo
-          python3 -m isort --check test
-      - name: mypy checks (non-blocking)
-        continue-on-error: true
+          python3 -m isort --check .
+      - name: mypy checks
         run: |
+          python3 -m pip install types-setuptools
           cd python/
           mypy dolfinx
           mypy demo
@@ -90,7 +88,7 @@ jobs:
         continue-on-error: true
         run: |
           cd cpp
-          find . -type f \( -name "*.cpp" -o -name "*.h" \) ! -name "pugixml.cpp" ! -name "loguru.cpp" | xargs clang-format --dry-run --Werror
+          find . -type f \( -name "*.cpp" -o -name "*.h" \) ! -name "loguru.cpp" | xargs clang-format --dry-run --Werror
       - name: clang-format Python binding checks (non-blocking)
         continue-on-error: true
         run: |
@@ -138,13 +136,14 @@ jobs:
         run: python3 -m pip -v install --global-option build --global-option --debug python/
       - name: Build Python interface documentation
         run: |
+          python3 -m pip install sphinx==5.0.2
           cd python/doc
           make html
 
-      - name: Set default DOLFINx JIT parameters
+      - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
-          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
+          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
       - name: Run demos (Python, serial)
         run: python3 -m pytest -n=2 -m serial --durations=10 python/demo/test.py

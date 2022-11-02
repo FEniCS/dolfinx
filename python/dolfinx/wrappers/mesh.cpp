@@ -28,8 +28,7 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include <xtensor/xadapt.hpp>
-#include <xtl/xspan.hpp>
+#include <span>
 
 namespace py = pybind11;
 
@@ -53,31 +52,27 @@ template <typename Functor>
 auto create_cell_partitioner_py(Functor p_cpp)
 {
   return [p_cpp](dolfinx_wrappers::MPICommWrapper comm, int n, int tdim,
-                 const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-                 dolfinx::mesh::GhostMode ghost_mode)
-  { return p_cpp(comm.get(), n, tdim, cells, ghost_mode); };
+                 const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
+  { return p_cpp(comm.get(), n, tdim, cells); };
 }
 
 using PythonCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
         dolfinx_wrappers::MPICommWrapper, int, int,
-        const dolfinx::graph::AdjacencyList<std::int64_t>&,
-        dolfinx::mesh::GhostMode)>;
+        const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
 
 using CppCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPI_Comm, int, int, const dolfinx::graph::AdjacencyList<std::int64_t>&,
-        dolfinx::mesh::GhostMode)>;
+        MPI_Comm, int, int,
+        const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
 
 CppCellPartitionFunction
 create_cell_partitioner_cpp(const PythonCellPartitionFunction& partitioner)
 {
   return [partitioner](MPI_Comm comm, int n, int tdim,
-                       const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-                       dolfinx::mesh::GhostMode ghost_mode)
+                       const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
   {
-    return partitioner(dolfinx_wrappers::MPICommWrapper(comm), n, tdim, cells,
-                       ghost_mode);
+    return partitioner(dolfinx_wrappers::MPICommWrapper(comm), n, tdim, cells);
   };
 }
 
@@ -94,7 +89,7 @@ void declare_meshtags(py::module& m, std::string type)
              std::shared_ptr<dolfinx::mesh::MeshTags<T>>>(
       m, pyclass_name.c_str(), "MeshTags object")
       .def(py::init(
-          [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, int dim,
+          [](std::shared_ptr<const dolfinx::mesh::Mesh> mesh, int dim,
              const py::array_t<std::int32_t, py::array::c_style>& indices,
              const py::array_t<T, py::array::c_style>& values)
           {
@@ -123,15 +118,17 @@ void declare_meshtags(py::module& m, std::string type)
                                return py::array_t<std::int32_t>(
                                    self.indices().size(), self.indices().data(),
                                    py::cast(self));
-                             });
+                             })
+      .def("find", [](dolfinx::mesh::MeshTags<T>& self, T value)
+           { return as_pyarray(self.find(value)); });
 
   m.def("create_meshtags",
-        [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, int dim,
+        [](std::shared_ptr<const dolfinx::mesh::Mesh> mesh, int dim,
            const dolfinx::graph::AdjacencyList<std::int32_t>& entities,
            const py::array_t<T, py::array::c_style>& values)
         {
           return dolfinx::mesh::create_meshtags(
-              mesh, dim, entities, xtl::span(values.data(), values.size()));
+              mesh, dim, entities, std::span(values.data(), values.size()));
         });
 }
 
@@ -148,25 +145,32 @@ void mesh(py::module& m)
       .value("prism", dolfinx::mesh::CellType::prism)
       .value("hexahedron", dolfinx::mesh::CellType::hexahedron);
 
-  m.def("to_type", &dolfinx::mesh::to_type);
-  m.def("to_string", &dolfinx::mesh::to_string);
-  m.def("is_simplex", &dolfinx::mesh::is_simplex);
+  m.def("to_type", &dolfinx::mesh::to_type, py::arg("cell"));
+  m.def("to_string", &dolfinx::mesh::to_string, py::arg("type"));
+  m.def("is_simplex", &dolfinx::mesh::is_simplex, py::arg("type"));
 
-  m.def("cell_entity_type", &dolfinx::mesh::cell_entity_type);
-  m.def("cell_dim", &dolfinx::mesh::cell_dim);
-  m.def("cell_num_entities", &dolfinx::mesh::cell_num_entities);
-  m.def("cell_num_vertices", &dolfinx::mesh::num_cell_vertices);
-  m.def("cell_normals",
-        [](const dolfinx::mesh::Mesh& mesh, int dim,
-           const py::array_t<std::int32_t, py::array::c_style>& entities)
-        {
-          std::vector<double> n = dolfinx::mesh::cell_normals(
-              mesh, dim, xtl::span(entities.data(), entities.size()));
-          return as_pyarray(std::move(n),
-                            std::array<std::size_t, 2>{n.size() / 3, 3});
-        });
-  m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
-  m.def("extract_topology", &dolfinx::mesh::extract_topology);
+  m.def("cell_entity_type", &dolfinx::mesh::cell_entity_type, py::arg("type"),
+        py::arg("dim"), py::arg("index"));
+  m.def("cell_dim", &dolfinx::mesh::cell_dim, py::arg("type"));
+  m.def("cell_num_entities", &dolfinx::mesh::cell_num_entities, py::arg("type"),
+        py::arg("dim"));
+  m.def("cell_num_vertices", &dolfinx::mesh::num_cell_vertices,
+        py::arg("type"));
+  m.def(
+      "cell_normals",
+      [](const dolfinx::mesh::Mesh& mesh, int dim,
+         const py::array_t<std::int32_t, py::array::c_style>& entities)
+      {
+        std::vector<double> n = dolfinx::mesh::cell_normals(
+            mesh, dim, std::span(entities.data(), entities.size()));
+        return as_pyarray(std::move(n),
+                          std::array<std::size_t, 2>{n.size() / 3, 3});
+      },
+      py::arg("mesh"), py::arg("dim"), py::arg("entities"));
+  m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices,
+        py::arg("type"), py::arg("dim"));
+  m.def("extract_topology", &dolfinx::mesh::extract_topology,
+        py::arg("cell_type"), py::arg("layout"), py::arg("cells"));
 
   m.def(
       "h",
@@ -174,31 +178,34 @@ void mesh(py::module& m)
          const py::array_t<std::int32_t, py::array::c_style>& entities)
       {
         return as_pyarray(dolfinx::mesh::h(
-            mesh, xtl::span(entities.data(), entities.size()), dim));
+            mesh, std::span(entities.data(), entities.size()), dim));
       },
+      py::arg("mesh"), py::arg("dim"), py::arg("entities"),
       "Compute maximum distance between any two vertices.");
 
-  m.def("compute_midpoints",
-        [](const dolfinx::mesh::Mesh& mesh, int dim,
-           py::array_t<std::int32_t, py::array::c_style> entities)
-        {
-          std::vector<double> x = dolfinx::mesh::compute_midpoints(
-              mesh, dim, xtl::span(entities.data(), entities.size()));
-          std::array<std::size_t, 2> shape = {(std::size_t)entities.size(), 3};
-          return as_pyarray(std::move(x), shape);
-        });
+  m.def(
+      "compute_midpoints",
+      [](const dolfinx::mesh::Mesh& mesh, int dim,
+         py::array_t<std::int32_t, py::array::c_style> entities)
+      {
+        std::vector<double> x = dolfinx::mesh::compute_midpoints(
+            mesh, dim, std::span(entities.data(), entities.size()));
+        std::array<std::size_t, 2> shape = {(std::size_t)entities.size(), 3};
+        return as_pyarray(std::move(x), shape);
+      },
+      py::arg("mesh"), py::arg("dim"), py::arg("entities"));
 
   using PythonPartitioningFunction
       = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
           MPICommWrapper, int, int,
-          const dolfinx::graph::AdjacencyList<std::int64_t>&,
-          dolfinx::mesh::GhostMode)>;
+          const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
 
   m.def(
       "build_dual_graph",
       [](const MPICommWrapper comm,
          const dolfinx::graph::AdjacencyList<std::int64_t>& cells, int tdim)
       { return dolfinx::mesh::build_dual_graph(comm.get(), cells, tdim); },
+      py::arg("comm"), py::arg("cells"), py::arg("tdim"),
       "Build dual graph for cells");
 
   m.def(
@@ -207,33 +214,34 @@ void mesh(py::module& m)
          const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
          const dolfinx::fem::CoordinateElement& element,
          const py::array_t<double, py::array::c_style>& x,
-         dolfinx::mesh::GhostMode ghost_mode,
          const PythonPartitioningFunction& partitioner)
       {
         auto partitioner_wrapper
             = [partitioner](
                   MPI_Comm comm, int n, int tdim,
-                  const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-                  dolfinx::mesh::GhostMode ghost_mode)
-        {
-          return partitioner(MPICommWrapper(comm), n, tdim, cells, ghost_mode);
-        };
+                  const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
+        { return partitioner(MPICommWrapper(comm), n, tdim, cells); };
 
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape()[1];
         std::vector shape{std::size_t(x.shape(0)), shape1};
-        auto _x = xt::adapt(x.data(), x.size(), xt::no_ownership(), shape);
-        return dolfinx::mesh::create_mesh(comm.get(), cells, element, _x,
-                                          ghost_mode, partitioner_wrapper);
+        return dolfinx::mesh::create_mesh(
+            comm.get(), cells, element, std::span(x.data(), x.size()),
+            {static_cast<std::size_t>(x.shape(0)),
+             static_cast<std::size_t>(x.shape(1))},
+            partitioner_wrapper);
       },
-      "Helper function for creating meshes.");
+      py::arg("comm"), py::arg("cells"), py::arg("element"), py::arg("x"),
+      py::arg("partitioner"), "Helper function for creating meshes.");
 
-  m.def("create_submesh",
-        [](const dolfinx::mesh::Mesh& mesh, int dim,
-           const py::array_t<std::int32_t, py::array::c_style>& entities)
-        {
-          return dolfinx::mesh::create_submesh(
-              mesh, dim, xtl::span(entities.data(), entities.size()));
-        });
+  m.def(
+      "create_submesh",
+      [](const dolfinx::mesh::Mesh& mesh, int dim,
+         const py::array_t<std::int32_t, py::array::c_style>& entities)
+      {
+        return dolfinx::mesh::create_submesh(
+            mesh, dim, std::span(entities.data(), entities.size()));
+      },
+      py::arg("mesh"), py::arg("dim"), py::arg("entities"));
 
   // dolfinx::mesh::GhostMode enums
   py::enum_<dolfinx::mesh::GhostMode>(m, "GhostMode")
@@ -263,23 +271,32 @@ void mesh(py::module& m)
                              &dolfinx::mesh::Geometry::input_global_indices);
 
   // dolfinx::mesh::TopologyComputation
-  m.def("compute_entities", [](const MPICommWrapper comm,
-                               const dolfinx::mesh::Topology& topology, int dim)
-        { return dolfinx::mesh::compute_entities(comm.get(), topology, dim); });
-  m.def("compute_connectivity", &dolfinx::mesh::compute_connectivity);
+  m.def(
+      "compute_entities",
+      [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
+         int dim)
+      { return dolfinx::mesh::compute_entities(comm.get(), topology, dim); },
+      py::arg("comm"), py::arg("topology"), py::arg("dim"));
+  m.def("compute_connectivity", &dolfinx::mesh::compute_connectivity,
+        py::arg("topology"), py::arg("d0"), py::arg("d1"));
 
   // dolfinx::mesh::Topology class
   py::class_<dolfinx::mesh::Topology, std::shared_ptr<dolfinx::mesh::Topology>>(
       m, "Topology", py::dynamic_attr(), "Topology object")
-      .def(py::init(
-          [](const MPICommWrapper comm, const dolfinx::mesh::CellType cell_type)
-          { return dolfinx::mesh::Topology(comm.get(), cell_type); }))
-      .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity)
-      .def("set_index_map", &dolfinx::mesh::Topology::set_index_map)
-      .def("create_entities", &dolfinx::mesh::Topology::create_entities)
+      .def(py::init([](const MPICommWrapper comm,
+                       const dolfinx::mesh::CellType cell_type)
+                    { return dolfinx::mesh::Topology(comm.get(), cell_type); }),
+           py::arg("comm"), py::arg("cell_type"))
+      .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity,
+           py::arg("c"), py::arg("d0"), py::arg("d1"))
+      .def("set_index_map", &dolfinx::mesh::Topology::set_index_map,
+           py::arg("dim"), py::arg("map"))
+      .def("create_entities", &dolfinx::mesh::Topology::create_entities,
+           py::arg("dim"))
       .def("create_entity_permutations",
            &dolfinx::mesh::Topology::create_entity_permutations)
-      .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity)
+      .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity,
+           py::arg("d0"), py::arg("d1"))
       .def("get_facet_permutations",
            [](const dolfinx::mesh::Topology& self)
            {
@@ -307,11 +324,13 @@ void mesh(py::module& m)
                              })
       .def("connectivity",
            py::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
-                                       py::const_))
-      .def("index_map", &dolfinx::mesh::Topology::index_map)
+                                       py::const_),
+           py::arg("d0"), py::arg("d1"))
+      .def("index_map", &dolfinx::mesh::Topology::index_map, py::arg("dim"))
       .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
       .def("cell_name", [](const dolfinx::mesh::Topology& self)
            { return dolfinx::mesh::to_string(self.cell_type()); })
+      .def("interprocess_facets", &dolfinx::mesh::Topology::interprocess_facets)
       .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self)
                              { return MPICommWrapper(self.comm()); });
 
@@ -319,9 +338,11 @@ void mesh(py::module& m)
   py::class_<dolfinx::mesh::Mesh, std::shared_ptr<dolfinx::mesh::Mesh>>(
       m, "Mesh", py::dynamic_attr(), "Mesh object")
       .def(py::init(
-          [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
-             dolfinx::mesh::Geometry& geometry)
-          { return dolfinx::mesh::Mesh(comm.get(), topology, geometry); }))
+               [](const MPICommWrapper comm,
+                  const dolfinx::mesh::Topology& topology,
+                  dolfinx::mesh::Geometry& geometry)
+               { return dolfinx::mesh::Mesh(comm.get(), topology, geometry); }),
+           py::arg("comm"), py::arg("topology"), py::arg("geometry"))
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
           "Mesh geometry")
@@ -343,84 +364,95 @@ void mesh(py::module& m)
   using PythonCellPartitionFunction
       = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
           MPICommWrapper, int, int,
-          const dolfinx::graph::AdjacencyList<std::int64_t>&,
-          dolfinx::mesh::GhostMode)>;
+          const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
   m.def("create_cell_partitioner",
-        []() -> PythonCellPartitionFunction
+        [](dolfinx::mesh::GhostMode gm) -> PythonCellPartitionFunction
         {
           return create_cell_partitioner_py(
-              dolfinx::mesh::create_cell_partitioner());
+              dolfinx::mesh::create_cell_partitioner(gm));
         });
-  m.def("create_cell_partitioner",
-        [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-               MPICommWrapper comm, int nparts,
-               const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-               bool ghosting)>& part) -> PythonCellPartitionFunction
-        {
-          return create_cell_partitioner_py(
-              dolfinx::mesh::create_cell_partitioner(
-                  create_cell_partitioner_cpp(part)));
-        });
+  m.def(
+      "create_cell_partitioner",
+      [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+             MPICommWrapper comm, int nparts,
+             const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+             bool ghosting)>& part) -> PythonCellPartitionFunction
+      {
+        return create_cell_partitioner_py(
+            dolfinx::mesh::create_cell_partitioner(
+                dolfinx::mesh::GhostMode::none,
+                create_cell_partitioner_cpp(part)));
+      },
+      py::arg("part"));
 
-  m.def("locate_entities",
-        [](const dolfinx::mesh::Mesh& mesh, int dim,
-           const std::function<py::array_t<bool>(
-               const py::array_t<double, py::array::c_style>&)>& marker)
+  m.def(
+      "locate_entities",
+      [](const dolfinx::mesh::Mesh& mesh, int dim,
+         const std::function<py::array_t<bool>(
+             const py::array_t<double, py::array::c_style>&)>& marker)
+      {
+        auto cpp_marker = [&marker](auto x)
         {
-          auto cpp_marker =
-              [&marker](const xt::xtensor<double, 2>& x) -> xt::xtensor<bool, 1>
-          {
-            py::array_t<double> x_view(x.shape(), x.data(), py::none());
-            py::array_t<bool> marked = marker(x_view);
-            std::array shape = {static_cast<std::size_t>(marked.size())};
-            return xt::adapt(marked.data(), marked.size(), xt::no_ownership(),
-                             shape);
-          };
-          return as_pyarray(
-              dolfinx::mesh::locate_entities(mesh, dim, cpp_marker));
-        });
+          std::array<std::size_t, 2> shape = {x.extent(0), x.extent(1)};
+          py::array_t<double> x_view(shape, x.data_handle(), py::none());
+          py::array_t<bool> marked = marker(x_view);
+          return std::vector<std::int8_t>(marked.data(),
+                                          marked.data() + marked.size());
+        };
 
-  m.def("locate_entities_boundary",
-        [](const dolfinx::mesh::Mesh& mesh, int dim,
-           const std::function<py::array_t<bool>(
-               const py::array_t<double, py::array::c_style>&)>& marker)
-        {
-          auto cpp_marker =
-              [&marker](const xt::xtensor<double, 2>& x) -> xt::xtensor<bool, 1>
-          {
-            py::array_t<double> x_view(x.shape(), x.data(), py::none());
-            py::array_t<bool> marked = marker(x_view);
-            std::array shape = {static_cast<std::size_t>(marked.size())};
-            return xt::adapt(marked.data(), marked.size(), xt::no_ownership(),
-                             shape);
-          };
-          return as_pyarray(
-              dolfinx::mesh::locate_entities_boundary(mesh, dim, cpp_marker));
-        });
+        return as_pyarray(
+            dolfinx::mesh::locate_entities(mesh, dim, cpp_marker));
+      },
+      py::arg("mesh"), py::arg("dim"), py::arg("marker"));
 
-  m.def("entities_to_geometry",
-        [](const dolfinx::mesh::Mesh& mesh, int dim,
-           py::array_t<std::int32_t, py::array::c_style> entities, bool orient)
+  m.def(
+      "locate_entities_boundary",
+      [](const dolfinx::mesh::Mesh& mesh, int dim,
+         const std::function<py::array_t<bool>(
+             const py::array_t<double, py::array::c_style>&)>& marker)
+      {
+        auto cpp_marker = [&marker](auto x)
         {
-          std::vector<std::int32_t> idx = dolfinx::mesh::entities_to_geometry(
-              mesh, dim, entities, orient);
-          dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
-          std::size_t num_vertices = dolfinx::mesh::num_cell_vertices(
-              cell_entity_type(cell_type, dim, 0));
-          std::array<std::size_t, 2> shape
-              = {(std::size_t)entities.size(), num_vertices};
-          return as_pyarray(std::move(idx), shape);
-        });
-  m.def("exterior_facet_indices", [](const dolfinx::mesh::Topology& t)
-        { return as_pyarray(dolfinx::mesh::exterior_facet_indices(t)); });
-  m.def("compute_incident_entities",
-        [](const dolfinx::mesh::Mesh& mesh,
-           py::array_t<std::int32_t, py::array::c_style> entities, int d0,
-           int d1)
-        {
-          return as_pyarray(dolfinx::mesh::compute_incident_entities(
-              mesh, xtl::span(entities.data(), entities.size()), d0, d1));
-        });
+          std::array<std::size_t, 2> shape = {x.extent(0), x.extent(1)};
+          py::array_t<double> x_view(shape, x.data_handle(), py::none());
+          py::array_t<bool> marked = marker(x_view);
+          return std::vector<std::int8_t>(marked.data(),
+                                          marked.data() + marked.size());
+        };
+        return as_pyarray(
+            dolfinx::mesh::locate_entities_boundary(mesh, dim, cpp_marker));
+      },
+      py::arg("mesh"), py::arg("dim"), py::arg("marker"));
+
+  m.def(
+      "entities_to_geometry",
+      [](const dolfinx::mesh::Mesh& mesh, int dim,
+         py::array_t<std::int32_t, py::array::c_style> entities, bool orient)
+      {
+        std::vector<std::int32_t> idx = dolfinx::mesh::entities_to_geometry(
+            mesh, dim, std::span(entities.data(), entities.size()), orient);
+        dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
+        std::size_t num_vertices = dolfinx::mesh::num_cell_vertices(
+            cell_entity_type(cell_type, dim, 0));
+        std::array<std::size_t, 2> shape
+            = {(std::size_t)entities.size(), num_vertices};
+        return as_pyarray(std::move(idx), shape);
+      },
+      py::arg("mesh"), py::arg("dim"), py::arg("entities"), py::arg("orient"));
+  m.def(
+      "exterior_facet_indices",
+      [](const dolfinx::mesh::Topology& t)
+      { return as_pyarray(dolfinx::mesh::exterior_facet_indices(t)); },
+      py::arg("topology"));
+  m.def(
+      "compute_incident_entities",
+      [](const dolfinx::mesh::Mesh& mesh,
+         py::array_t<std::int32_t, py::array::c_style> entities, int d0, int d1)
+      {
+        return as_pyarray(dolfinx::mesh::compute_incident_entities(
+            mesh, std::span(entities.data(), entities.size()), d0, d1));
+      },
+      py::arg("mesh"), py::arg("entities"), py::arg("d0"), py::arg("d1"));
 
   // Mesh generation
   py::enum_<dolfinx::mesh::DiagonalType>(m, "DiagonalType")
@@ -437,8 +469,7 @@ void mesh(py::module& m)
          const PythonCellPartitionFunction& partitioner)
       {
         return dolfinx::mesh::create_interval(
-            comm.get(), n, p, ghost_mode,
-            create_cell_partitioner_cpp(partitioner));
+            comm.get(), n, p, create_cell_partitioner_cpp(partitioner));
       },
       py::arg("comm"), py::arg("n"), py::arg("p"), py::arg("ghost_mode"),
       py::arg("partitioner"));
@@ -448,30 +479,28 @@ void mesh(py::module& m)
       [](const MPICommWrapper comm,
          const std::array<std::array<double, 2>, 2>& p,
          std::array<std::size_t, 2> n, dolfinx::mesh::CellType celltype,
-         dolfinx::mesh::GhostMode ghost_mode,
          const PythonCellPartitionFunction& partitioner,
          dolfinx::mesh::DiagonalType diagonal)
       {
         return dolfinx::mesh::create_rectangle(
-            comm.get(), p, n, celltype, ghost_mode,
+            comm.get(), p, n, celltype,
             create_cell_partitioner_cpp(partitioner), diagonal);
       },
       py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("celltype"),
-      py::arg("ghost_mode"), py::arg("partitioner"), py::arg("diagonal"));
+      py::arg("partitioner"), py::arg("diagonal"));
 
   m.def(
       "create_box",
       [](const MPICommWrapper comm,
          const std::array<std::array<double, 3>, 2>& p,
          std::array<std::size_t, 3> n, dolfinx::mesh::CellType celltype,
-         dolfinx::mesh::GhostMode ghost_mode,
          const PythonCellPartitionFunction& partitioner)
       {
         return dolfinx::mesh::create_box(
-            comm.get(), p, n, celltype, ghost_mode,
+            comm.get(), p, n, celltype,
             create_cell_partitioner_cpp(partitioner));
       },
       py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("celltype"),
-      py::arg("ghost_mode"), py::arg("partitioner"));
+      py::arg("partitioner"));
 }
 } // namespace dolfinx_wrappers

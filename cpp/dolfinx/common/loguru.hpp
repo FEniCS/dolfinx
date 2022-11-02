@@ -45,7 +45,7 @@ Website: www.ilikebigbits.com
 	* Version 1.3.1 - 2016-07-20 - Add LOGURU_UNSAFE_SIGNAL_HANDLER to toggle stacktrace on signals.
 	* Version 1.3.2 - 2016-07-20 - Add loguru::arguments()
 	* Version 1.4.0 - 2016-09-15 - Semantic versioning + add loguru::create_directories
-	* Version 1.4.1 - 2016-09-29 - Customize formating with LOGURU_FILENAME_WIDTH
+	* Version 1.4.1 - 2016-09-29 - Customize formatting with LOGURU_FILENAME_WIDTH
 	* Version 1.5.0 - 2016-12-22 - LOGURU_USE_FMTLIB by kolis and LOGURU_WITH_FILEABS by scinart
 	* Version 1.5.1 - 2017-08-08 - Terminal colors on Windows 10 thanks to looki
 	* Version 1.6.0 - 2018-01-03 - Add LOGURU_RTTI and LOGURU_STACKTRACES settings
@@ -281,7 +281,7 @@ namespace loguru
 		char* _str;
 	};
 
-	// Like printf, but returns the formated text.
+	// Like printf, but returns the formatted text.
 #if LOGURU_USE_FMTLIB
 	LOGURU_EXPORT
 	Text vtextprintf(const char* format, fmt::format_args args);
@@ -344,7 +344,7 @@ namespace loguru
 
 	struct Message
 	{
-		// You would generally print a Message by just concating the buffers without spacing.
+		// You would generally print a Message by just concatenating the buffers without spacing.
 		// Optionally, ignore preamble and indentation.
 		Verbosity   verbosity;   // Already part of preamble
 		const char* filename;    // Already part of preamble
@@ -800,7 +800,7 @@ namespace loguru
 	LOGURU_EXPORT const char* terminal_light_red();
 	LOGURU_EXPORT const char* terminal_white();
 
-	// Formating
+	// Formatting
 	LOGURU_EXPORT const char* terminal_bold();
 	LOGURU_EXPORT const char* terminal_underline();
 
@@ -1191,11 +1191,11 @@ namespace loguru
 
 namespace loguru
 {
-	// Like sprintf, but returns the formated text.
+	// Like sprintf, but returns the formatted text.
 	LOGURU_EXPORT
 	std::string strprintf(LOGURU_FORMAT_STRING_TYPE format, ...) LOGURU_PRINTF_LIKE(1, 2);
 
-	// Like vsprintf, but returns the formated text.
+	// Like vsprintf, but returns the formatted text.
 	LOGURU_EXPORT
 	std::string vstrprintf(LOGURU_FORMAT_STRING_TYPE format, va_list) LOGURU_PRINTF_LIKE(1, 0);
 

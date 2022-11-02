@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "xdmf_function.h"
-#include "pugixml.hpp"
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
 #include <boost/lexical_cast.hpp>
@@ -16,6 +15,7 @@
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <pugixml.hpp>
 #include <string>
 
 using namespace dolfinx;
@@ -106,7 +106,7 @@ void _add_function(MPI_Comm comm, const fem::Function<Scalar>& u,
   const int value_rank = u.function_space()->element()->value_shape().size();
 
   std::vector<std::string> components = {""};
-  if constexpr (!std::is_scalar<Scalar>::value)
+  if constexpr (!std::is_scalar_v<Scalar>)
     components = {"real", "imag"};
 
   std::string t_str = boost::lexical_cast<std::string>(t);
@@ -137,7 +137,7 @@ void _add_function(MPI_Comm comm, const fem::Function<Scalar>& u,
     attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
     const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
-    if constexpr (!std::is_scalar<Scalar>::value)
+    if constexpr (!std::is_scalar_v<Scalar>)
     {
       // Complex case
 

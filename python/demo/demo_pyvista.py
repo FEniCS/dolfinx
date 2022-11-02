@@ -71,7 +71,7 @@ def plot_scalar():
     # values, and one where the mesh is warped by these values
     subplotter = pyvista.Plotter(shape=(1, 2))
     subplotter.subplot(0, 0)
-    subplotter.add_text("Scalar countour field", font_size=14, color="black", position="upper_edge")
+    subplotter.add_text("Scalar contour field", font_size=14, color="black", position="upper_edge")
     subplotter.add_mesh(grid, show_edges=True, show_scalar_bar=True)
     subplotter.view_xy()
 
@@ -94,7 +94,7 @@ def plot_scalar():
 
 def plot_meshtags():
 
-    msh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
+    msh = create_unit_square(MPI.COMM_WORLD, 25, 25, cell_type=CellType.quadrilateral)
 
     # We continue using the mesh from the previous section, and find all
     # cells satisfying the condition below
@@ -128,8 +128,7 @@ def plot_meshtags():
     # We can also visualize subsets of data, by creating a smaller topology,
     # only consisting of those entities that has value one in the
     # mesh tags
-    cells, types, x = plot.create_vtk_mesh(
-        msh, entities=cell_tags.indices[cell_tags.values == 1])
+    cells, types, x = plot.create_vtk_mesh(msh, entities=cell_tags.find(1))
 
     # We add this grid to the second plotter
     sub_grid = pyvista.UnstructuredGrid(cells, types, x)
@@ -169,12 +168,11 @@ def plot_higher_order():
     # We start by interpolating a discontinuous function into a second order
     # discontinuous Lagrange space. Note that we use the `cell_tags` from
     # the previous section to get the cells for each of the regions
-    cells0 = cell_tags.indices[cell_tags.values == 0]
-    cells1 = cell_tags.indices[cell_tags.values == 1]
     V = FunctionSpace(msh, ("Discontinuous Lagrange", 2))
     u = Function(V, dtype=np.float64)
-    u.interpolate(lambda x: x[0], cells0)
-    u.interpolate(lambda x: x[1] + 1, cells1)
+    u.interpolate(lambda x: x[0], cell_tags.find(0))
+    u.interpolate(lambda x: x[1] + 1, cell_tags.find(1))
+    u.x.scatter_forward()
 
     # To get a topology that has a 1-1 correspondence with the
     # degrees-of-freedom in the function space, we call

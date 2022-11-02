@@ -7,14 +7,17 @@
 
 import random
 
+import numba
 import numpy as np
 import pytest
 
+import basix
+import basix.ufl_wrapper
 import ufl
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
-from dolfinx.mesh import (CellType, meshtags, create_mesh, create_unit_cube,
-                          create_unit_square, locate_entities)
+from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
+                          create_unit_square, locate_entities, meshtags)
 
 from mpi4py import MPI
 
@@ -102,6 +105,41 @@ def one_cell_mesh(cell_type):
 
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
     return create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
+
+
+def two_cell_mesh(cell_type):
+    if cell_type == CellType.interval:
+        points = np.array([[0.], [1.], [-1.]])
+        cells = [[0, 1], [0, 2]]
+    if cell_type == CellType.triangle:
+        # Define equilateral triangles with area 1
+        root = 3 ** 0.25  # 4th root of 3
+        points = np.array([[0., 0.], [2 / root, 0.],
+                           [1 / root, root], [1 / root, -root]])
+        cells = [[0, 1, 2], [1, 0, 3]]
+    elif cell_type == CellType.tetrahedron:
+        # Define regular tetrahedra with volume 1
+        s = 2 ** 0.5 * 3 ** (1 / 3)  # side length
+        points = np.array([[0., 0., 0.], [s, 0., 0.],
+                           [s / 2, s * np.sqrt(3) / 2, 0.],
+                           [s / 2, s / 2 / np.sqrt(3), s * np.sqrt(2 / 3)],
+                           [s / 2, s / 2 / np.sqrt(3), -s * np.sqrt(2 / 3)]])
+        cells = [[0, 1, 2, 3], [0, 2, 1, 4]]
+    elif cell_type == CellType.quadrilateral:
+        # Define unit quadrilaterals (area 1)
+        points = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.], [0., -1.], [1., -1.]])
+        cells = [[0, 1, 2, 3], [5, 1, 4, 0]]
+    elif cell_type == CellType.hexahedron:
+        # Define unit hexahedra (volume 1)
+        points = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.],
+                           [1., 1., 0.], [0., 0., 1.], [1., 0., 1.],
+                           [0., 1., 1.], [1., 1., 1.], [0., 0., -1.],
+                           [1., 0., -1.], [0., 1., -1.], [1., 1., -1.]])
+        cells = [[0, 1, 2, 3, 4, 5, 6, 7], [9, 11, 8, 10, 1, 3, 0, 2]]
+
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    return mesh
 
 
 def run_scalar_test(V, poly_order):
@@ -419,6 +457,29 @@ def test_interpolation_non_affine():
     assert np.isclose(s, 0)
 
 
+@pytest.mark.skip_in_parallel
+def test_interpolation_non_affine_nonmatching_maps():
+    points = np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0],
+                       [0, 0, 3], [1, 0, 3], [0, 2, 3], [1, 2, 3],
+                       [0.5, 0, 0], [0, 1, 0], [0, 0, 1.5], [1, 1, 0],
+                       [1, 0, 1.5], [0.5, 2, 0], [0, 2, 1.5], [1, 2, 1.5],
+                       [0.5, 0, 3], [0, 1, 3], [1, 1, 3], [0.5, 2, 3],
+                       [0.5, 1, 0], [0.5, -0.1, 1.5], [0, 1, 1.5], [1, 1, 1.5],
+                       [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=np.float64)
+
+    cells = np.array([range(len(points))], dtype=np.int32)
+    cell_type = CellType.hexahedron
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 2))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    W = VectorFunctionSpace(mesh, ("DG", 1))
+    V = FunctionSpace(mesh, ("NCE", 4))
+    w, v = Function(W), Function(V)
+    w.interpolate(lambda x: x)
+    v.interpolate(w)
+    s = assemble_scalar(form(ufl.inner(w - v, w - v) * ufl.dx))
+    assert np.isclose(s, 0)
+
+
 @pytest.mark.parametrize("order", [2, 3, 4])
 @pytest.mark.parametrize("dim", [2, 3])
 def test_nedelec_spatial(order, dim):
@@ -434,7 +495,7 @@ def test_nedelec_spatial(order, dim):
     # The expression (x,y,z) is contained in the N1curl function space
     # order>1
     f_ex = x
-    f = Expression(f_ex, V.element.interpolation_points)
+    f = Expression(f_ex, V.element.interpolation_points())
     u.interpolate(f)
     assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(u - f_ex, u - f_ex) * ufl.dx))), 0)
 
@@ -442,7 +503,7 @@ def test_nedelec_spatial(order, dim):
     # order
     V2 = FunctionSpace(mesh, ("N2curl", 1))
     w = Function(V2)
-    f2 = Expression(f_ex, V2.element.interpolation_points)
+    f2 = Expression(f_ex, V2.element.interpolation_points())
     w.interpolate(f2)
     assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(w - f_ex, w - f_ex) * ufl.dx))), 0)
 
@@ -464,7 +525,7 @@ def test_vector_interpolation_spatial(order, dim, affine):
 
     # The expression (x,y,z)^n is contained in space
     f = ufl.as_vector([x[i]**order for i in range(dim)])
-    u.interpolate(Expression(f, V.element.interpolation_points))
+    u.interpolate(Expression(f, V.element.interpolation_points()))
     assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(u - f, u - f) * ufl.dx))), 0)
 
 
@@ -481,7 +542,7 @@ def test_2D_lagrange_to_curl(order):
     u1.interpolate(lambda x: x[0])
 
     f = ufl.as_vector((u0, u1))
-    f_expr = Expression(f, V.element.interpolation_points)
+    f_expr = Expression(f, V.element.interpolation_points())
     u.interpolate(f_expr)
     x = ufl.SpatialCoordinate(mesh)
     f_ex = ufl.as_vector((-x[1], x[0]))
@@ -498,7 +559,7 @@ def test_de_rahm_2D(order):
     g = ufl.grad(w)
     Q = FunctionSpace(mesh, ("N2curl", order - 1))
     q = Function(Q)
-    q.interpolate(Expression(g, Q.element.interpolation_points))
+    q.interpolate(Expression(g, Q.element.interpolation_points()))
 
     x = ufl.SpatialCoordinate(mesh)
     g_ex = ufl.as_vector((1 + x[1], 4 * x[1] + x[0]))
@@ -510,7 +571,7 @@ def test_de_rahm_2D(order):
     def curl2D(u):
         return ufl.as_vector((ufl.Dx(u[1], 0), - ufl.Dx(u[0], 1)))
 
-    v.interpolate(Expression(curl2D(ufl.grad(w)), V.element.interpolation_points))
+    v.interpolate(Expression(curl2D(ufl.grad(w)), V.element.interpolation_points()))
     h_ex = ufl.as_vector((1, -1))
     assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(v - h_ex, v - h_ex) * ufl.dx))), 0)
 
@@ -535,10 +596,127 @@ def test_interpolate_subset(order, dim, affine):
 
     x = ufl.SpatialCoordinate(mesh)
     f = x[1]**order
-    expr = Expression(f, V.element.interpolation_points)
+    expr = Expression(f, V.element.interpolation_points())
     u.interpolate(expr, cells_local)
     mt = meshtags(mesh, mesh.topology.dim, cells_local, np.ones(cells_local.size, dtype=np.int32))
     dx = ufl.Measure("dx", domain=mesh, subdomain_data=mt)
     assert np.isclose(np.abs(form(assemble_scalar(form(ufl.inner(u - f, u - f) * dx(1))))), 0)
     integral = mesh.comm.allreduce(assemble_scalar(form(u * dx)), op=MPI.SUM)
     assert np.isclose(integral, 1 / (order + 1) * 0.5**(order + 1), 0)
+
+
+def test_interpolate_callable():
+    """Test interpolation with callables"""
+    mesh = create_unit_square(MPI.COMM_WORLD, 2, 1)
+    V = FunctionSpace(mesh, ("Lagrange", 2))
+    u0, u1 = Function(V), Function(V)
+
+    @numba.njit
+    def f(x):
+        return x[0]
+
+    u0.interpolate(lambda x: x[0])
+    u1.interpolate(f)
+    assert np.allclose(u0.x.array, u1.x.array)
+
+    with pytest.raises(RuntimeError):
+        u0.interpolate(lambda x: np.vstack([x[0], x[1]]))
+
+
+@pytest.mark.parametrize("scalar_element", [
+    ufl.FiniteElement("P", "triangle", 1),
+    ufl.FiniteElement("P", "triangle", 2),
+    ufl.FiniteElement("P", "triangle", 3),
+    ufl.FiniteElement("Q", "quadrilateral", 1),
+    ufl.FiniteElement("Q", "quadrilateral", 2),
+    ufl.FiniteElement("Q", "quadrilateral", 3),
+    ufl.FiniteElement("S", "quadrilateral", 1),
+    ufl.FiniteElement("S", "quadrilateral", 2),
+    ufl.FiniteElement("S", "quadrilateral", 3),
+    ufl.EnrichedElement(ufl.FiniteElement("P", "triangle", 1), ufl.FiniteElement("Bubble", "triangle", 3)),
+    basix.ufl_wrapper._create_enriched_element([
+        basix.ufl_wrapper.create_element("P", "quadrilateral", 1),
+        basix.ufl_wrapper.create_element("Bubble", "quadrilateral", 2)]),
+])
+def test_vector_element_interpolation(scalar_element):
+    """Test interpolation into a range of vector elements."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell().cellname()))
+
+    V = FunctionSpace(mesh, ufl.VectorElement(scalar_element))
+
+    u = Function(V)
+    u.interpolate(lambda x: (x[0], x[1]))
+
+    u2 = Function(V)
+    u2.sub(0).interpolate(lambda x: x[0])
+    u2.sub(1).interpolate(lambda x: x[1])
+
+    assert np.allclose(u2.x.array, u.x.array)
+
+
+def test_custom_vector_element():
+    """Test interpolation into an element with a value size that uses an identity map."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
+
+    wcoeffs = np.eye(6)
+
+    x = [[], [], [], []]
+    x[0].append(np.array([[0., 0.]]))
+    x[0].append(np.array([[1., 0.]]))
+    x[0].append(np.array([[0., 1.]]))
+    for _ in range(3):
+        x[1].append(np.zeros((0, 2)))
+    x[2].append(np.zeros((0, 2)))
+
+    M = [[], [], [], []]
+    for _ in range(3):
+        M[0].append(np.array([[[[1.]], [[0.]]], [[[0.]], [[1.]]]]))
+    for _ in range(3):
+        M[1].append(np.zeros((0, 2, 0, 1)))
+    M[2].append(np.zeros((0, 2, 0, 1)))
+
+    element = basix.create_custom_element(
+        basix.CellType.triangle, [2], wcoeffs, x, M, 0, basix.MapType.identity,
+        basix.SobolevSpace.H1, False, 1, 1)
+
+    V = FunctionSpace(mesh, basix.ufl_wrapper.BasixElement(element))
+    W = VectorFunctionSpace(mesh, ("Lagrange", 1))
+
+    v = Function(V)
+    w = Function(W)
+    v.interpolate(lambda x: (x[0], x[1]))
+    w.interpolate(lambda x: (x[0], x[1]))
+
+    assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(v - w, v - w) * ufl.dx))), 0)
+
+
+@pytest.mark.skip_in_parallel
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
+@pytest.mark.parametrize("order", range(1, 5))
+def test_mixed_interpolation_permuting(cell_type, order):
+    random.seed(8)
+    mesh = two_cell_mesh(cell_type)
+
+    def g(x):
+        return np.sin(x[1]) + 2 * x[0]
+
+    x = ufl.SpatialCoordinate(mesh)
+    dgdy = ufl.cos(x[1])
+
+    curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), 1)
+    vlag_el = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    lagr_el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), order)
+
+    V = FunctionSpace(mesh, ufl.MixedElement([curl_el, lagr_el]))
+    Eb_m = Function(V)
+    Eb_m.sub(1).interpolate(g)
+    diff = Eb_m[2].dx(1) - dgdy
+    error = assemble_scalar(form(ufl.dot(diff, diff) * ufl.dx))
+
+    V = FunctionSpace(mesh, ufl.MixedElement([vlag_el, lagr_el]))
+    Eb_m = Function(V)
+    Eb_m.sub(1).interpolate(g)
+    diff = Eb_m[2].dx(1) - dgdy
+    error2 = assemble_scalar(form(ufl.dot(diff, diff) * ufl.dx))
+
+    assert np.isclose(error, error2)

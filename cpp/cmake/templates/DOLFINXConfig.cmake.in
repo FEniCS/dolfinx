@@ -9,6 +9,7 @@
 include(CMakeFindDependencyMacro)
 
 find_dependency(MPI REQUIRED)
+find_dependency(pugixml)
 
 # Check for Boost
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
@@ -17,10 +18,6 @@ endif()
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_VERBOSE TRUE)
 find_dependency(Boost 1.70 REQUIRED COMPONENTS timer filesystem)
-
-# xtensor
-find_dependency(xtl)
-find_dependency(xtensor)
 
 if (@ufcx_FOUND@)
   find_dependency(ufcx)
@@ -39,11 +36,6 @@ if (BASIX_PY_DIR)
   message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
 endif()
 find_dependency(Basix CONFIG HINTS ${BASIX_PY_DIR})
-
-# Add xsimd if the C++ interface was compiled with it
-if(@xsimd_FOUND@)
-  find_dependency(xsimd)
-endif()
 
 # HDF5
 if (NOT TARGET hdf5::hdf5)

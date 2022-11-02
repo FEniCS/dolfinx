@@ -13,8 +13,8 @@
 #include <limits>
 #include <memory>
 #include <numeric>
+#include <span>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::la
 {
@@ -32,7 +32,7 @@ public:
   using allocator_type = Allocator;
 
   /// Create a distributed vector
-  Vector(const std::shared_ptr<const common::IndexMap>& map, int bs,
+  Vector(std::shared_ptr<const common::IndexMap> map, int bs,
          const Allocator& alloc = Allocator())
       : _map(map), _scatterer(std::make_shared<common::Scatterer<>>(*_map, bs)),
         _bs(bs), _buffer_local(_scatterer->local_buffer_size(), alloc),
@@ -74,7 +74,7 @@ public:
   void scatter_fwd_begin()
   {
     const std::int32_t local_size = _bs * _map->size_local();
-    xtl::span<const T> x_local(_x.data(), local_size);
+    std::span<const T> x_local(_x.data(), local_size);
 
     auto pack = [](const auto& in, const auto& idx, auto& out)
     {
@@ -83,9 +83,9 @@ public:
     };
     pack(x_local, _scatterer->local_indices(), _buffer_local);
 
-    _scatterer->scatter_fwd_begin(xtl::span<const T>(_buffer_local),
-                                  xtl::span<T>(_buffer_remote),
-                                  xtl::span<MPI_Request>(_request));
+    _scatterer->scatter_fwd_begin(std::span<const T>(_buffer_local),
+                                  std::span<T>(_buffer_remote),
+                                  std::span<MPI_Request>(_request));
   }
 
   /// End scatter of local data from owner to ghosts on other ranks
@@ -94,8 +94,8 @@ public:
   {
     const std::int32_t local_size = _bs * _map->size_local();
     const std::int32_t num_ghosts = _bs * _map->num_ghosts();
-    xtl::span<T> x_remote(_x.data() + local_size, num_ghosts);
-    _scatterer->scatter_fwd_end(xtl::span<MPI_Request>(_request));
+    std::span<T> x_remote(_x.data() + local_size, num_ghosts);
+    _scatterer->scatter_fwd_end(std::span<MPI_Request>(_request));
 
     auto unpack = [](const auto& in, const auto& idx, auto& out, auto op)
     {
@@ -121,7 +121,7 @@ public:
   {
     const std::int32_t local_size = _bs * _map->size_local();
     const std::int32_t num_ghosts = _bs * _map->num_ghosts();
-    xtl::span<T> x_remote(_x.data() + local_size, num_ghosts);
+    std::span<T> x_remote(_x.data() + local_size, num_ghosts);
 
     auto pack = [](const auto& in, const auto& idx, auto& out)
     {
@@ -130,8 +130,8 @@ public:
     };
     pack(x_remote, _scatterer->remote_indices(), _buffer_remote);
 
-    _scatterer->scatter_rev_begin(xtl::span<const T>(_buffer_remote),
-                                  xtl::span<T>(_buffer_local), _request);
+    _scatterer->scatter_rev_begin(std::span<const T>(_buffer_remote),
+                                  std::span<T>(_buffer_local), _request);
   }
 
   /// End scatter of ghost data to owner. This process may receive data
@@ -144,7 +144,7 @@ public:
   void scatter_rev_end(BinaryOperation op)
   {
     const std::int32_t local_size = _bs * _map->size_local();
-    xtl::span<T> x_local(_x.data(), local_size);
+    std::span<T> x_local(_x.data(), local_size);
     _scatterer->scatter_rev_end(_request);
 
     auto unpack = [](const auto& in, const auto& idx, auto& out, auto op)
@@ -174,10 +174,10 @@ public:
   constexpr int bs() const { return _bs; }
 
   /// Get local part of the vector (const version)
-  xtl::span<const T> array() const { return xtl::span<const T>(_x); }
+  std::span<const T> array() const { return std::span<const T>(_x); }
 
   /// Get local part of the vector
-  xtl::span<T> mutable_array() { return xtl::span(_x); }
+  std::span<T> mutable_array() { return std::span(_x); }
 
   /// Get the allocator associated with the container
   constexpr allocator_type allocator() const { return _x.get_allocator(); }
@@ -214,11 +214,11 @@ T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
   const std::int32_t local_size = a.bs() * a.map()->size_local();
   if (local_size != b.bs() * b.map()->size_local())
     throw std::runtime_error("Incompatible vector sizes");
-  xtl::span<const T> x_a = a.array().subspan(0, local_size);
-  xtl::span<const T> x_b = b.array().subspan(0, local_size);
+  std::span<const T> x_a = a.array().subspan(0, local_size);
+  std::span<const T> x_b = b.array().subspan(0, local_size);
 
   const T local = std::transform_reduce(
-      x_a.begin(), x_a.end(), x_b.begin(), static_cast<T>(0), std::plus<T>(),
+      x_a.begin(), x_a.end(), x_b.begin(), static_cast<T>(0), std::plus{},
       [](T a, T b) -> T
       {
         if constexpr (std::is_same<T, std::complex<double>>::value
@@ -259,7 +259,7 @@ auto norm(const Vector<T, Allocator>& a, Norm type = Norm::l2)
   case Norm::linf:
   {
     const std::int32_t size_local = a.bs() * a.map()->size_local();
-    xtl::span<const T> x_a = a.array().subspan(0, size_local);
+    std::span<const T> x_a = a.array().subspan(0, size_local);
     auto max_pos = std::max_element(x_a.begin(), x_a.end(),
                                     [](T a, T b)
                                     { return std::norm(a) < std::norm(b); });
@@ -280,7 +280,7 @@ auto norm(const Vector<T, Allocator>& a, Norm type = Norm::l2)
 /// modified in-place.
 /// @param[in] tol The tolerance used to detect a linear dependency
 template <typename T, typename U>
-void orthonormalize(const xtl::span<Vector<T, U>>& basis, double tol = 1.0e-10)
+void orthonormalize(const std::span<Vector<T, U>>& basis, double tol = 1.0e-10)
 {
   // Loop over each vector in basis
   for (std::size_t i = 0; i < basis.size(); ++i)
@@ -314,7 +314,7 @@ void orthonormalize(const xtl::span<Vector<T, U>>& basis, double tol = 1.0e-10)
 /// @param[in] tol The tolerance used to test for orthonormality
 /// @return True is basis is orthonormal, otherwise false
 template <typename T, typename U>
-bool is_orthonormal(const xtl::span<const Vector<T, U>>& basis,
+bool is_orthonormal(const std::span<const Vector<T, U>>& basis,
                     double tol = 1.0e-10)
 {
   for (std::size_t i = 0; i < basis.size(); i++)

@@ -8,7 +8,6 @@
 
 #include "ADIOS2Writers.h"
 #include "cells.h"
-#include "pugixml.hpp"
 #include "vtk_utils.h"
 #include <adios2.h>
 #include <algorithm>
@@ -20,8 +19,7 @@
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
+#include <pugixml.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -91,7 +89,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
 {
   // Get function data array and information about layout
   assert(u.x());
-  xtl::span<const T> u_vector = u.x()->array();
+  std::span<const T> u_vector = u.x()->array();
   const int rank = u.function_space()->element()->value_shape().size();
   const std::uint32_t num_comp = std::pow(3, rank);
   std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
@@ -104,7 +102,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
       = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
         / dofmap_bs;
 
-  if constexpr (std::is_scalar<T>::value)
+  if constexpr (std::is_scalar_v<T>)
   {
     // ---- Real
     std::vector<T> data(num_dofs * num_comp, 0);
@@ -164,33 +162,33 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
       io, "NumberOfNodes", {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
+  const auto [vtkcells, shape] = io::extract_vtk_connectivity(mesh);
+
   // Add cell metadata
   const int tdim = topology.dim();
-  const std::uint32_t num_cells = topology.index_map(tdim)->size_local()
-                                  + topology.index_map(tdim)->num_ghosts();
   adios2::Variable<std::uint32_t> cell_variable
       = define_variable<std::uint32_t>(io, "NumberOfCells",
                                        {adios2::LocalValueDim});
-  engine.Put<std::uint32_t>(cell_variable, num_cells);
+  engine.Put<std::uint32_t>(cell_variable, shape[0]);
   adios2::Variable<std::uint32_t> celltype_variable
       = define_variable<std::uint32_t>(io, "types");
   engine.Put<std::uint32_t>(
       celltype_variable, cells::get_vtk_cell_type(topology.cell_type(), tdim));
 
-  // Get DOLFINx to VTK permutation
-  const std::uint32_t num_nodes = geometry.cmap().dim();
-
   // Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
   // etc, is the node index
-  xt::xtensor<std::int64_t, 2> cells({num_cells, num_nodes + 1});
-  xt::view(cells, xt::all(), xt::xrange(std::size_t(1), cells.shape(1)))
-      = io::extract_vtk_connectivity(mesh);
-  xt::view(cells, xt::all(), 0) = num_nodes;
+  std::vector<std::int64_t> cells(shape[0] * (shape[1] + 1), shape[1]);
+  for (std::size_t c = 0; c < shape[0]; ++c)
+  {
+    std::span vtkcell(vtkcells.data() + c * shape[1], shape[1]);
+    std::span cell(cells.data() + c * (shape[1] + 1), shape[1] + 1);
+    std::copy(vtkcell.begin(), vtkcell.end(), std::next(cell.begin()));
+  }
 
   // Put topology (nodes)
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
-      io, "connectivity", {}, {}, {num_cells, num_nodes + 1});
+      io, "connectivity", {}, {}, {shape[0], shape[1] + 1});
   engine.Put<std::int64_t>(local_topology, cells.data());
 
   // Vertex global ids and ghost markers
@@ -223,31 +221,32 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   const int tdim = mesh->topology().dim();
 
   // Get a VTK mesh with points at the 'nodes'
-  const auto [x, x_id, x_ghost, vtk] = io::vtk_mesh_from_space(V);
+  const auto [x, xshape, x_id, x_ghost, vtk, vtkshape]
+      = io::vtk_mesh_from_space(V);
 
-  std::uint32_t num_dofs = x.shape(0);
-  std::uint32_t num_cells = mesh->topology().index_map(tdim)->size_local();
+  std::uint32_t num_dofs = xshape[0];
 
   // -- Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
   // etc, is the node index.
-  std::vector<std::size_t> shape = {num_cells, vtk.shape(1) + 1};
 
   // Create vector, setting all entries to nodes per cell (vtk.shape(1))
-  std::vector<std::uint64_t> vtk_topology(shape[0] * shape[1], vtk.shape(1));
+  std::vector<std::int64_t> cells(vtkshape[0] * (vtkshape[1] + 1), vtkshape[1]);
 
   // Set the [v0_0,...., v0_N0, v1_0,...., v1_N1,....] data
-  auto _vtk = xt::adapt(vtk_topology, shape);
-  xt::view(_vtk, xt::all(), xt::range(1, _vtk.shape(1)))
-      = xt::view(vtk, xt::range(0, num_cells, xt::all()));
+  for (std::size_t c = 0; c < vtkshape[0]; ++c)
+  {
+    std::span vtkcell(vtk.data() + c * vtkshape[1], vtkshape[1]);
+    std::span cell(cells.data() + c * (vtkshape[1] + 1), vtkshape[1] + 1);
+    std::copy(vtkcell.begin(), vtkcell.end(), std::next(cell.begin()));
+  }
 
   // Define ADIOS2 variables for geometry, topology, celltypes and
   // corresponding VTK data
   adios2::Variable<double> local_geometry
       = define_variable<double>(io, "geometry", {}, {}, {num_dofs, 3});
-  adios2::Variable<std::uint64_t> local_topology
-      = define_variable<std::uint64_t>(io, "connectivity", {}, {},
-                                       {num_cells, vtk.shape(1) + 1});
+  adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
+      io, "connectivity", {}, {}, {vtkshape[0], vtkshape[1] + 1});
   adios2::Variable<std::uint32_t> cell_type
       = define_variable<std::uint32_t>(io, "types");
   adios2::Variable<std::uint32_t> vertices = define_variable<std::uint32_t>(
@@ -257,11 +256,11 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 
   // Write mesh information to file
   engine.Put<std::uint32_t>(vertices, num_dofs);
-  engine.Put<std::uint32_t>(elements, num_cells);
+  engine.Put<std::uint32_t>(elements, vtkshape[0]);
   engine.Put<std::uint32_t>(
       cell_type, cells::get_vtk_cell_type(mesh->topology().cell_type(), tdim));
   engine.Put<double>(local_geometry, x.data());
-  engine.Put<std::uint64_t>(local_topology, vtk_topology.data());
+  engine.Put<std::int64_t>(local_topology, cells.data());
 
   // Node global ids
   adios2::Variable<std::int64_t> orig_id = define_variable<std::int64_t>(
@@ -471,14 +470,14 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
 
   // Get vertex data. If the mesh and function dofmaps are the same we
   // can work directly with the dof array.
-  xtl::span<const T> data;
+  std::span<const T> data;
   std::vector<T> _data;
   if (mesh->geometry().dofmap() == dofmap->list() and !need_padding)
     data = u.x()->array();
   else
   {
     _data = pack_function_data(u);
-    data = xtl::span<const T>(_data);
+    data = std::span<const T>(_data);
   }
 
   auto vertex_map = mesh->topology().index_map(0);
@@ -489,7 +488,7 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
   // Write each real and imaginary part of the function
   const std::uint32_t num_components = std::pow(3, rank);
   assert(data.size() % num_components == 0);
-  if constexpr (std::is_scalar<T>::value)
+  if constexpr (std::is_scalar_v<T>)
   {
     // ---- Real
     const std::string u_name = u.name;
@@ -509,13 +508,13 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
 
     adios2::Variable<U> local_output_r = define_variable<U>(
         io, u.name + field_ext[0], {}, {}, {num_vertices, num_components});
-    std::transform(data.cbegin(), data.cend(), data_real.begin(),
+    std::transform(data.begin(), data.end(), data_real.begin(),
                    [](auto& x) -> U { return std::real(x); });
     engine.Put<U>(local_output_r, data_real.data());
 
     adios2::Variable<U> local_output_c = define_variable<U>(
         io, u.name + field_ext[1], {}, {}, {num_vertices, num_components});
-    std::transform(data.cbegin(), data.cend(), data_imag.begin(),
+    std::transform(data.begin(), data.end(), data_imag.begin(),
                    [](auto& x) -> U { return std::imag(x); });
     engine.Put<U>(local_output_c, data_imag.data());
     engine.PerformPuts();
@@ -548,7 +547,7 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
   const int tdim = topology.dim();
   const std::int32_t num_cells = topology.index_map(tdim)->size_local();
   const int num_nodes = geometry.cmap().dim();
-  const xt::xtensor<std::int64_t, 2> cells = extract_vtk_connectivity(mesh);
+  const auto [cells, shape] = io::extract_vtk_connectivity(mesh);
 
   // "Put" topology data in the result in the ADIOS2 file
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
@@ -586,6 +585,8 @@ void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
 
   std::string cell_type = to_fides_cell(topology.cell_type());
   define_attribute<std::string>(io, "Fides_Cell_Type", cell_type);
+
+  define_attribute<std::string>(io, "Fides_Time_Variable", "step");
 }
 //-----------------------------------------------------------------------------
 
@@ -643,8 +644,7 @@ void fides_initialize_function_attributes(adios2::IO& io,
 //-----------------------------------------------------------------------------
 ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                            const std::string& tag,
-                           const std::shared_ptr<const mesh::Mesh>& mesh,
-                           const U& u)
+                           std::shared_ptr<const mesh::Mesh> mesh, const U& u)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(_adios->DeclareIO(tag))),
       _engine(std::make_unique<adios2::Engine>(
@@ -737,12 +737,12 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
         "Piecewise constants are not (yet) supported by VTXWriter");
   }
 
-  // FIXME: is the below check adequate for dectecting a
+  // FIXME: is the below check adequate for detecting a
   // Lagrange element? Check that element is Lagrange
   if (!element0->interpolation_ident())
   {
     throw std::runtime_error("Only Lagrange functions are "
-                             "supported. Interpolate Functions before ouput.");
+                             "supported. Interpolate Functions before output.");
   }
 
   // Check that all functions are first order Lagrange
@@ -826,13 +826,13 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
         "https://gitlab.kitware.com/vtk/vtk/-/issues/18458.");
   }
 
-  // FIXME: is the below check adequate for dectecting a Lagrange
+  // FIXME: is the below check adequate for detecting a Lagrange
   // element?
   // Check that element is Lagrange
   if (!element0->interpolation_ident())
   {
     throw std::runtime_error("Only (discontinuous) Lagrange functions are "
-                             "supported. Interpolate Functions before ouput.");
+                             "supported. Interpolate Functions before output.");
   }
 
   // Check that all functions come from same element type

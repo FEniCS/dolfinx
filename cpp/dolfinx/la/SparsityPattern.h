@@ -8,9 +8,9 @@
 
 #include <dolfinx/common/MPI.h>
 #include <memory>
+#include <span>
 #include <utility>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::graph
 {
@@ -50,7 +50,7 @@ public:
   ///
   /// @param[in] comm The MPI communicator
   /// @param[in] patterns Rectangular array of sparsity pattern. The
-  ///   patterns must not be finalised. Null block are permited
+  ///   patterns must not be finalised. Null block are permitted
   /// @param[in] maps Pairs of (index map, block size) for each row
   ///   block (maps[0]) and column blocks (maps[1])
   /// @param[in] bs Block sizes for the sparsity pattern entries
@@ -75,13 +75,13 @@ public:
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
   /// Insert non-zero locations using local (process-wise) indices
-  void insert(const xtl::span<const std::int32_t>& rows,
-              const xtl::span<const std::int32_t>& cols);
+  void insert(const std::span<const std::int32_t>& rows,
+              const std::span<const std::int32_t>& cols);
 
   /// Insert non-zero locations on the diagonal
   /// @param[in] rows The rows in local (process-wise) indices. The
   /// indices must exist in the row IndexMap.
-  void insert_diagonal(const xtl::span<const std::int32_t>& rows);
+  void insert_diagonal(const std::span<const std::int32_t>& rows);
 
   /// Finalize sparsity pattern and communicate off-process entries
   void assemble();
@@ -133,7 +133,7 @@ public:
 
   /// Row-wise start of off-diagonal (unowned columns) on each row
   /// @note Includes ghost rows
-  xtl::span<const int> off_diagonal_offset() const;
+  std::span<const int> off_diagonal_offset() const;
 
   /// Return MPI communicator
   MPI_Comm comm() const;

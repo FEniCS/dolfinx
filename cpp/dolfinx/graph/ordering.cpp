@@ -21,7 +21,7 @@ namespace
 // contain the nodes in "indices".
 std::vector<std::vector<int>>
 residual_graph_components(const graph::AdjacencyList<int>& graph,
-                          const xtl::span<const int>& indices)
+                          const std::span<const int>& indices)
 {
   if (indices.empty())
     return std::vector<std::vector<int>>();
@@ -125,7 +125,7 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
 // with -1 in the vector rlabel).
 std::vector<std::int32_t>
 gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
-                       const xtl::span<const std::int32_t>& rlabel)
+                       const std::span<const std::int32_t>& rlabel)
 {
   common::Timer timer("Gibbs-Poole-Stockmeyer ordering");
 

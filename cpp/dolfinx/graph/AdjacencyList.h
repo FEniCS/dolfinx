@@ -8,33 +8,13 @@
 
 #include <cassert>
 #include <numeric>
+#include <span>
 #include <sstream>
 #include <utility>
 #include <vector>
-#include <xtensor/xtensor.hpp>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::graph
 {
-
-/// Construct adjacency list data for a problem with a fixed number of
-/// links (edges) for each node
-/// @param [in] array Two-dimensional array of adjacency data where
-/// matrix(i, j) is the jth neighbor of the ith node
-/// @return Adjacency list data and offset array
-template <typename T>
-auto create_adjacency_data(const xt::xtensor<T, 2>& array)
-{
-  std::vector<T> data(array.shape(0) * array.shape(1));
-  std::vector<std::int32_t> offset(array.shape(0) + 1, 0);
-  for (std::size_t i = 0; i < array.shape(0); ++i)
-  {
-    for (std::size_t j = 0; j < array.shape(1); ++j)
-      data[i * array.shape(1) + j] = array(i, j);
-    offset[i + 1] = offset[i] + array.shape(1);
-  }
-  return std::pair(std::move(data), std::move(offset));
-}
 
 /// This class provides a static adjacency list data structure. It is
 /// commonly used to store directed graphs. For each node in the
@@ -128,9 +108,9 @@ public:
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   /// AdjacencyList::num_links(node).
-  xtl::span<T> links(int node)
+  std::span<T> links(int node)
   {
-    return xtl::span<T>(_array.data() + _offsets[node],
+    return std::span<T>(_array.data() + _offsets[node],
                         _offsets[node + 1] - _offsets[node]);
   }
 
@@ -138,9 +118,9 @@ public:
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   /// AdjacencyList:num_links(node).
-  xtl::span<const T> links(int node) const
+  std::span<const T> links(int node) const
   {
-    return xtl::span<const T>(_array.data() + _offsets[node],
+    return std::span<const T>(_array.data() + _offsets[node],
                               _offsets[node + 1] - _offsets[node]);
   }
 
@@ -184,12 +164,13 @@ private:
 /// @brief Construct a constant degree (valency) adjacency list.
 ///
 /// A constant degree graph has the same number of edges for every node.
+///
 /// @param [in] data Adjacency array
 /// @param [in] degree The number of (outgoing) edges for each node
 /// @return An adjacency list
 template <typename U>
-AdjacencyList<typename U::value_type> regular_adjacency_list(U&& data,
-                                                             int degree)
+AdjacencyList<typename std::decay_t<U>::value_type>
+regular_adjacency_list(U&& data, int degree)
 {
   if (degree == 0 and !data.empty())
   {
@@ -207,8 +188,8 @@ AdjacencyList<typename U::value_type> regular_adjacency_list(U&& data,
   std::vector<std::int32_t> offsets(num_nodes + 1, 0);
   for (std::size_t i = 1; i < offsets.size(); ++i)
     offsets[i] = offsets[i - 1] + degree;
-  return AdjacencyList<typename U::value_type>(std::forward<U>(data),
-                                               std::move(offsets));
+  return AdjacencyList<typename std::decay_t<U>::value_type>(
+      std::forward<U>(data), std::move(offsets));
 }
 
 } // namespace dolfinx::graph

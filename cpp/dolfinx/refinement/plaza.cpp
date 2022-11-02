@@ -17,7 +17,6 @@
 #include <map>
 #include <numeric>
 #include <vector>
-#include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::refinement;
@@ -324,9 +323,9 @@ face_long_edge(const mesh::Mesh& mesh)
     const std::size_t local1 = std::distance(cell_vertices.begin(), it1);
 
     auto x_dofs = x_dofmap.links(cells.front());
-    xtl::span<const double, 3> x0(
+    std::span<const double, 3> x0(
         mesh.geometry().x().data() + 3 * x_dofs[local0], 3);
-    xtl::span<const double, 3> x1(
+    std::span<const double, 3> x1(
         mesh.geometry().x().data() + 3 * x_dofs[local1], 3);
 
     // Compute length of edge between vertex x0 and x1
@@ -450,8 +449,9 @@ compute_parent_facets(const std::vector<std::int32_t>& simplex_set)
 }
 //-----------------------------------------------------------------------------
 // Convenient interface for both uniform and marker refinement
-std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>, std::vector<std::int8_t>>
+std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<double>,
+           std::array<std::size_t, 2>, std::vector<std::int32_t>,
+           std::vector<std::int8_t>>
 compute_refinement(MPI_Comm neighbor_comm,
                    const std::vector<std::int8_t>& marked_edges,
                    const graph::AdjacencyList<int>& shared_edges,
@@ -473,7 +473,7 @@ compute_refinement(MPI_Comm neighbor_comm,
          or options == plaza::RefinementOptions::parent_cell_and_facet);
 
   // Make new vertices in parallel
-  const auto [new_vertex_map, new_vertex_coordinates]
+  const auto [new_vertex_map, new_vertex_coords, xshape]
       = create_new_vertices(neighbor_comm, shared_edges, mesh, marked_edges);
 
   std::vector<std::int32_t> parent_cell;
@@ -602,7 +602,7 @@ compute_refinement(MPI_Comm neighbor_comm,
   graph::AdjacencyList<std::int64_t> cell_adj(std::move(cell_topology),
                                               std::move(offsets));
 
-  return {std::move(cell_adj), std::move(new_vertex_coordinates),
+  return {std::move(cell_adj), std::move(new_vertex_coords), xshape,
           std::move(parent_cell), std::move(parent_facet)};
 }
 //-----------------------------------------------------------------------------
@@ -614,17 +614,17 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute,
               RefinementOptions options)
 {
 
-  auto [cell_adj, new_vertex_coordinates, parent_cell, parent_facet]
-      = plaza::compute_refinement_data(mesh, options);
+  auto [cell_adj, new_coords, xshape, parent_cell, parent_facet]
+      = compute_refinement_data(mesh, options);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
     return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
-                              new_vertex_coordinates, mesh::GhostMode::none),
+                              new_coords, xshape, mesh::GhostMode::none),
             std::move(parent_cell), std::move(parent_facet)};
   }
 
-  const std::shared_ptr<const common::IndexMap> map_c
+  std::shared_ptr<const common::IndexMap> map_c
       = mesh.topology().index_map(mesh.topology().dim());
   const int num_ghost_cells = map_c->num_ghosts();
   // Check if mesh has ghost cells on any rank
@@ -638,28 +638,28 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute,
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
-  return {partition(mesh, cell_adj, new_vertex_coordinates, redistribute,
+  return {partition(mesh, cell_adj, std::span(new_coords), xshape, redistribute,
                     ghost_mode),
           std::move(parent_cell), std::move(parent_facet)};
 }
 //-----------------------------------------------------------------------------
 std::tuple<mesh::Mesh, std::vector<std::int32_t>, std::vector<std::int8_t>>
 plaza::refine(const mesh::Mesh& mesh,
-              const xtl::span<const std::int32_t>& edges, bool redistribute,
+              const std::span<const std::int32_t>& edges, bool redistribute,
               RefinementOptions options)
 {
 
-  auto [cell_adj, new_vertex_coordinates, parent_cell, parent_facet]
-      = plaza::compute_refinement_data(mesh, edges, options);
+  auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
+      = compute_refinement_data(mesh, edges, options);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
     return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
-                              new_vertex_coordinates, mesh::GhostMode::none),
+                              new_vertex_coords, xshape, mesh::GhostMode::none),
             std::move(parent_cell), std::move(parent_facet)};
   }
 
-  const std::shared_ptr<const common::IndexMap> map_c
+  std::shared_ptr<const common::IndexMap> map_c
       = mesh.topology().index_map(mesh.topology().dim());
   const int num_ghost_cells = map_c->num_ghosts();
   // Check if mesh has ghost cells on any rank
@@ -673,13 +673,14 @@ plaza::refine(const mesh::Mesh& mesh,
                                          ? mesh::GhostMode::none
                                          : mesh::GhostMode::shared_facet;
 
-  return {partition(mesh, cell_adj, new_vertex_coordinates, redistribute,
+  return {partition(mesh, cell_adj, new_vertex_coords, xshape, redistribute,
                     ghost_mode),
           std::move(parent_cell), std::move(parent_facet)};
 }
 //------------------------------------------------------------------------------
-std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>, std::vector<std::int8_t>>
+std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<double>,
+           std::array<std::size_t, 2>, std::vector<std::int32_t>,
+           std::vector<std::int8_t>>
 plaza::compute_refinement_data(const mesh::Mesh& mesh,
                                RefinementOptions options)
 {
@@ -721,21 +722,22 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
                                  MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
 
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
-  auto [cell_adj, new_vertex_coordinates, parent_cell, parent_facet]
+  auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
       = compute_refinement(comm,
                            std::vector<std::int8_t>(
                                map_e->size_local() + map_e->num_ghosts(), true),
                            edge_ranks, mesh, long_edge, edge_ratio_ok, options);
   MPI_Comm_free(&comm);
 
-  return {std::move(cell_adj), std::move(new_vertex_coordinates),
+  return {std::move(cell_adj), std::move(new_vertex_coords), xshape,
           std::move(parent_cell), std::move(parent_facet)};
 }
 //------------------------------------------------------------------------------
-std::tuple<graph::AdjacencyList<std::int64_t>, xt::xtensor<double, 2>,
-           std::vector<std::int32_t>, std::vector<std::int8_t>>
+std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<double>,
+           std::array<std::size_t, 2>, std::vector<std::int32_t>,
+           std::vector<std::int8_t>>
 plaza::compute_refinement_data(const mesh::Mesh& mesh,
-                               const xtl::span<const std::int32_t>& edges,
+                               const std::span<const std::int32_t>& edges,
                                RefinementOptions options)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
@@ -798,12 +800,12 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
   const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
   enforce_rules(comm, edge_ranks, marked_edges, mesh, long_edge);
 
-  auto [cell_adj, new_vertex_coordinates, parent_cell, parent_facet]
+  auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
       = compute_refinement(comm, marked_edges, edge_ranks, mesh, long_edge,
                            edge_ratio_ok, options);
   MPI_Comm_free(&comm);
 
-  return {std::move(cell_adj), std::move(new_vertex_coordinates),
+  return {std::move(cell_adj), std::move(new_vertex_coords), xshape,
           std::move(parent_cell), std::move(parent_facet)};
 }
 //-----------------------------------------------------------------------------

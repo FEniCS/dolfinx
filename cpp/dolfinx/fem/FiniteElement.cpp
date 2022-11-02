@@ -6,12 +6,16 @@
 
 #include "FiniteElement.h"
 #include <algorithm>
+#include <array>
 #include <basix/finite-element.h>
 #include <basix/interpolation.h>
 #include <basix/polyset.h>
 #include <dolfinx/common/log.h>
 #include <functional>
+#include <numeric>
 #include <ufcx.h>
+#include <utility>
+#include <vector>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -143,48 +147,36 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
   {
     ufcx_finite_element* ufcx_sub_element = e.sub_elements[i];
     _sub_elements.push_back(std::make_shared<FiniteElement>(*ufcx_sub_element));
-    if (_sub_elements[i]->needs_dof_permutations()
-        and !_needs_dof_transformations)
+    if (_sub_elements[i]->needs_dof_permutations())
     {
       _needs_dof_permutations = true;
     }
     if (_sub_elements[i]->needs_dof_transformations())
     {
-      _needs_dof_permutations = false;
       _needs_dof_transformations = true;
     }
   }
 
   if (is_basix_custom_element(e))
   {
-    // Recreate the custom Basix element using information written into the
-    // generated code
+    // Recreate the custom Basix element using information written into
+    // the generated code
     ufcx_basix_custom_finite_element* ce = e.custom_element;
     const basix::cell::type cell_type
         = static_cast<basix::cell::type>(ce->cell_type);
 
-    std::vector<std::size_t> value_shape(ce->value_shape_length);
-    std::size_t value_size = 1;
-    for (int i = 0; i < ce->value_shape_length; ++i)
-    {
-      value_shape[i] = ce->value_shape[i];
-      value_size *= ce->value_shape[i];
-    }
+    const std::vector<std::size_t> value_shape(
+        ce->value_shape, ce->value_shape + ce->value_shape_length);
+    const std::size_t value_size = std::reduce(
+        value_shape.begin(), value_shape.end(), 1, std::multiplies{});
+
     const int nderivs = ce->interpolation_nderivs;
     const std::size_t nderivs_dim = basix::polyset::nderivs(cell_type, nderivs);
 
-    xt::xtensor<double, 2> wcoeffs(
-        {static_cast<std::size_t>(ce->wcoeffs_rows),
-         static_cast<std::size_t>(ce->wcoeffs_cols)});
-    { // scope
-      int e = 0;
-      for (int i = 0; i < ce->wcoeffs_rows; ++i)
-        for (int j = 0; j < ce->wcoeffs_cols; ++j)
-          wcoeffs(i, j) = ce->wcoeffs[e++];
-    }
-
-    std::array<std::vector<xt::xtensor<double, 2>>, 4> x;
-    std::array<std::vector<xt::xtensor<double, 4>>, 4> M;
+    using array2_t = std::pair<std::vector<double>, std::array<std::size_t, 2>>;
+    using array4_t = std::pair<std::vector<double>, std::array<std::size_t, 4>>;
+    std::array<std::vector<array2_t>, 4> x;
+    std::array<std::vector<array4_t>, 4> M;
     { // scope
       int pt_n = 0;
       int p_e = 0;
@@ -196,29 +188,56 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
         const int num_entities = basix::cell::num_sub_entities(cell_type, d);
         for (int entity = 0; entity < num_entities; ++entity)
         {
-          const std::size_t npts = static_cast<std::size_t>(ce->npts[pt_n]);
-          const std::size_t ndofs = static_cast<std::size_t>(ce->ndofs[pt_n]);
-          ++pt_n;
-          xt::xtensor<double, 2> pts({npts, dim});
-          xt::xtensor<double, 4> mat({ndofs, value_size, npts, nderivs_dim});
-          for (std::size_t i = 0; i < npts; ++i)
-            for (std::size_t j = 0; j < dim; ++j)
-              pts(i, j) = ce->x[p_e++];
-          for (std::size_t i = 0; i < ndofs; ++i)
-            for (std::size_t j = 0; j < value_size; ++j)
-              for (std::size_t k = 0; k < npts; ++k)
-                for (std::size_t l = 0; l < nderivs_dim; ++l)
-                  mat(i, j, k, l) = ce->M[m_e++];
-          x[d].push_back(pts);
-          M[d].push_back(mat);
+          std::size_t npts = ce->npts[pt_n + entity];
+          std::size_t ndofs = ce->ndofs[pt_n + entity];
+
+          std::array pshape = {npts, dim};
+          auto& pts
+              = x[d].emplace_back(std::vector<double>(pshape[0] * pshape[1]),
+                                  pshape)
+                    .first;
+          std::copy_n(ce->x + p_e, pts.size(), pts.begin());
+          p_e += pts.size();
+
+          std::array mshape = {ndofs, value_size, npts, nderivs_dim};
+          std::size_t msize
+              = std::reduce(mshape.begin(), mshape.end(), 1, std::multiplies{});
+          auto& mat
+              = M[d].emplace_back(std::vector<double>(msize), mshape).first;
+          std::copy_n(ce->M + m_e, mat.size(), mat.begin());
+          m_e += mat.size();
         }
+
+        pt_n += num_entities;
       }
     }
 
+    namespace stdex = std::experimental;
+    using cmdspan2_t
+        = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+    using cmdspan4_t
+        = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
+
+    std::array<std::vector<cmdspan2_t>, 4> _x;
+    for (std::size_t i = 0; i < x.size(); ++i)
+      for (auto& [buffer, shape] : x[i])
+        _x[i].push_back(cmdspan2_t(buffer.data(), shape));
+
+    std::array<std::vector<cmdspan4_t>, 4> _M;
+    for (std::size_t i = 0; i < M.size(); ++i)
+      for (auto& [buffer, shape] : M[i])
+        _M[i].push_back(cmdspan4_t(buffer.data(), shape));
+
+    std::vector<double> wcoeffs_b(ce->wcoeffs_rows * ce->wcoeffs_cols);
+    cmdspan2_t wcoeffs(wcoeffs_b.data(), ce->wcoeffs_rows, ce->wcoeffs_cols);
+    std::copy_n(ce->wcoeffs, wcoeffs_b.size(), wcoeffs_b.begin());
+
     _element
         = std::make_unique<basix::FiniteElement>(basix::create_custom_element(
-            cell_type, value_shape, wcoeffs, x, M, nderivs,
-            static_cast<basix::maps::type>(ce->map_type), ce->discontinuous,
+            cell_type, value_shape, wcoeffs, _x, _M, nderivs,
+            static_cast<basix::maps::type>(ce->map_type),
+            static_cast<basix::sobolev::space>(ce->sobolev_space),
+            ce->discontinuous,
             ce->highest_complete_degree, ce->highest_degree));
   }
   else if (is_basix_element(e))
@@ -265,6 +284,7 @@ FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
   _needs_dof_permutations
       = !_element->dof_transformations_are_identity()
         and _element->dof_transformations_are_permutations();
+
   switch (_element->family())
   {
   case basix::element::family::P:
@@ -308,29 +328,38 @@ int FiniteElement::space_dimension() const noexcept { return _space_dim; }
 int FiniteElement::value_size() const
 {
   return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
-                         std::multiplies<int>());
+                         std::multiplies{});
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::reference_value_size() const
 {
   return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
-                         std::multiplies<int>());
+                         std::multiplies{});
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::block_size() const noexcept { return _bs; }
 //-----------------------------------------------------------------------------
-xtl::span<const int> FiniteElement::value_shape() const noexcept
+std::span<const std::size_t> FiniteElement::value_shape() const noexcept
 {
   return _value_shape;
 }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::family() const noexcept { return _family; }
 //-----------------------------------------------------------------------------
-void FiniteElement::tabulate(xt::xtensor<double, 4>& reference_values,
-                             const xt::xtensor<double, 2>& X, int order) const
+void FiniteElement::tabulate(std::span<double> values,
+                             std::span<const double> X,
+                             std::array<std::size_t, 2> shape, int order) const
 {
   assert(_element);
-  reference_values = _element->tabulate(order, X);
+  _element->tabulate(order, X, shape, values);
+}
+//-----------------------------------------------------------------------------
+std::pair<std::vector<double>, std::array<std::size_t, 4>>
+FiniteElement::tabulate(std::span<const double> X,
+                        std::array<std::size_t, 2> shape, int order) const
+{
+  assert(_element);
+  return _element->tabulate(order, X, shape);
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::num_sub_elements() const noexcept
@@ -360,6 +389,17 @@ FiniteElement::extract_sub_element(const std::vector<int>& component) const
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
+const basix::FiniteElement& FiniteElement::basix_element() const
+{
+  if (!_element)
+  {
+    throw std::runtime_error("No Basix element available. "
+                             "Maybe this is a mixed element?");
+  }
+
+  return *_element;
+}
+//-----------------------------------------------------------------------------
 basix::maps::type FiniteElement::map_type() const
 {
   if (!_element)
@@ -383,7 +423,8 @@ bool FiniteElement::interpolation_ident() const noexcept
   return _element->interpolation_is_identity();
 }
 //-----------------------------------------------------------------------------
-const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
+std::pair<std::vector<double>, std::array<std::size_t, 2>>
+FiniteElement::interpolation_points() const
 {
   if (!_element)
   {
@@ -395,7 +436,8 @@ const xt::xtensor<double, 2>& FiniteElement::interpolation_points() const
   return _element->points();
 }
 //-----------------------------------------------------------------------------
-const xt::xtensor<double, 2>& FiniteElement::interpolation_operator() const
+std::pair<std::vector<double>, std::array<std::size_t, 2>>
+FiniteElement::interpolation_operator() const
 {
   if (!_element)
   {
@@ -406,7 +448,7 @@ const xt::xtensor<double, 2>& FiniteElement::interpolation_operator() const
   return _element->interpolation_matrix();
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2>
+std::pair<std::vector<double>, std::array<std::size_t, 2>>
 FiniteElement::create_interpolation_operator(const FiniteElement& from) const
 {
   assert(_element);
@@ -427,19 +469,20 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
   {
     // If bs != 1 for at least one element, then bs0 == bs1 for this
     // case
-    xt::xtensor<double, 2> i_m
+    const auto [data, dshape]
         = basix::compute_interpolation_operator(*from._element, *_element);
-    std::array<std::size_t, 2> shape = {i_m.shape(0) * _bs, i_m.shape(1) * _bs};
-    xt::xtensor<double, 2> out = xt::zeros<double>(shape);
+    std::array<std::size_t, 2> shape = {dshape[0] * _bs, dshape[1] * _bs};
+    std::vector<double> out(shape[0] * shape[1]);
 
     // NOTE: Alternatively this operation could be implemented during
     // matvec with the original matrix
-    for (std::size_t i = 0; i < i_m.shape(0); ++i)
-      for (std::size_t j = 0; j < i_m.shape(1); ++j)
+    for (std::size_t i = 0; i < dshape[0]; ++i)
+      for (std::size_t j = 0; j < dshape[1]; ++j)
         for (int k = 0; k < _bs; ++k)
-          out(i * _bs + k, j * _bs + k) = i_m(i, j);
+          out[shape[1] * (i * _bs + k) + (j * _bs + k)]
+              = data[dshape[1] * i + j];
 
-    return out;
+    return {std::move(out), shape};
   }
   else
   {
@@ -458,40 +501,25 @@ bool FiniteElement::needs_dof_permutations() const noexcept
   return _needs_dof_permutations;
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::permute_dofs(const xtl::span<std::int32_t>& doflist,
+void FiniteElement::permute_dofs(const std::span<std::int32_t>& doflist,
                                  std::uint32_t cell_permutation) const
 {
   _element->permute_dofs(doflist, cell_permutation);
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::unpermute_dofs(const xtl::span<std::int32_t>& doflist,
+void FiniteElement::unpermute_dofs(const std::span<std::int32_t>& doflist,
                                    std::uint32_t cell_permutation) const
 {
   _element->unpermute_dofs(doflist, cell_permutation);
 }
 //-----------------------------------------------------------------------------
-std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>
+std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
 FiniteElement::get_dof_permutation_function(bool inverse,
                                             bool scalar_element) const
 {
   if (!needs_dof_permutations())
   {
-    if (!needs_dof_transformations())
-    {
-      // If this element shouldn't be permuted, return a function that
-      // does nothing
-      return [](const xtl::span<std::int32_t>&, std::uint32_t) {};
-    }
-    else
-    {
-      // If this element shouldn't be permuted but needs
-      // transformations, return a function that throws an error
-      return [](const xtl::span<std::int32_t>&, std::uint32_t)
-      {
-        throw std::runtime_error(
-            "Permutations should not be applied for this element.");
-      };
-    }
+    return [](const std::span<std::int32_t>&, std::uint32_t) {};
   }
 
   if (!_sub_elements.empty())
@@ -500,7 +528,7 @@ FiniteElement::get_dof_permutation_function(bool inverse,
     {
       // Mixed element
       std::vector<
-          std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>>
+          std::function<void(const std::span<std::int32_t>&, std::uint32_t)>>
           sub_element_functions;
       std::vector<int> dims;
       for (std::size_t i = 0; i < _sub_elements.size(); ++i)
@@ -511,7 +539,7 @@ FiniteElement::get_dof_permutation_function(bool inverse,
       }
 
       return
-          [dims, sub_element_functions](const xtl::span<std::int32_t>& doflist,
+          [dims, sub_element_functions](const std::span<std::int32_t>& doflist,
                                         std::uint32_t cell_permutation)
       {
         std::size_t start = 0;
@@ -526,14 +554,14 @@ FiniteElement::get_dof_permutation_function(bool inverse,
     else if (!scalar_element)
     {
       // Vector element
-      std::function<void(const xtl::span<std::int32_t>&, std::uint32_t)>
+      std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
           sub_element_function
           = _sub_elements[0]->get_dof_permutation_function(inverse);
       int dim = _sub_elements[0]->space_dimension();
       int bs = _bs;
       return
           [sub_element_function, bs, subdofs = std::vector<std::int32_t>(dim)](
-              const xtl::span<std::int32_t>& doflist,
+              const std::span<std::int32_t>& doflist,
               std::uint32_t cell_permutation) mutable
       {
         for (int k = 0; k < bs; ++k)
@@ -550,13 +578,13 @@ FiniteElement::get_dof_permutation_function(bool inverse,
 
   if (inverse)
   {
-    return [this](const xtl::span<std::int32_t>& doflist,
+    return [this](const std::span<std::int32_t>& doflist,
                   std::uint32_t cell_permutation)
     { unpermute_dofs(doflist, cell_permutation); };
   }
   else
   {
-    return [this](const xtl::span<std::int32_t>& doflist,
+    return [this](const std::span<std::int32_t>& doflist,
                   std::uint32_t cell_permutation)
     { permute_dofs(doflist, cell_permutation); };
   }

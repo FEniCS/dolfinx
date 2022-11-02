@@ -7,4 +7,4 @@
 
 from dolfinx.nls import petsc
 
-__all__ = ["foo", "petsc"]
+__all__ = ["petsc"]

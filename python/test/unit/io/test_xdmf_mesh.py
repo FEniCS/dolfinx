@@ -10,8 +10,8 @@ import numpy as np
 import pytest
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.io import perm_gmsh
-from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
+from dolfinx.io import XDMFFile
+from dolfinx.io.gmshio import cell_perm_array, ufl_mesh
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_submesh,
                           create_unit_cube, create_unit_interval,
                           create_unit_square, locate_entities)
@@ -119,9 +119,9 @@ def test_read_write_p2_mesh(tempdir, encoding):
         num_nodes, gmsh_cell_id = MPI.COMM_WORLD.bcast([None, None], root=0)
         cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
 
-    domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
+    domain = ufl_mesh(gmsh_cell_id, 3)
     cell_type = _cpp.mesh.to_type(str(domain.ufl_cell()))
-    cells = cells[:, perm_gmsh(cell_type, cells.shape[1])]
+    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])]
 
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 

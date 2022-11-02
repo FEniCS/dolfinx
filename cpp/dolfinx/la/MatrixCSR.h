@@ -12,9 +12,9 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <mpi.h>
 #include <numeric>
+#include <span>
 #include <utility>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::la
 {
@@ -136,12 +136,12 @@ public:
   /// used in finite element assembly functions.
   /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
-  /// @todo clarify setting on non-owned enrties
+  /// @todo clarify setting on non-owned entries
   auto mat_set_values()
   {
-    return [&](const xtl::span<const std::int32_t>& rows,
-               const xtl::span<const std::int32_t>& cols,
-               const xtl::span<const T>& data) -> int
+    return [&](const std::span<const std::int32_t>& rows,
+               const std::span<const std::int32_t>& cols,
+               const std::span<const T>& data) -> int
     {
       this->set(data, rows, cols);
       return 0;
@@ -154,9 +154,9 @@ public:
   /// @return Function for inserting values into `A`
   auto mat_add_values()
   {
-    return [&](const xtl::span<const std::int32_t>& rows,
-               const xtl::span<const std::int32_t>& cols,
-               const xtl::span<const T>& data) -> int
+    return [&](const std::span<const std::int32_t>& rows,
+               const std::span<const std::int32_t>& cols,
+               const std::span<const T>& data) -> int
     {
       this->add(data, rows, cols);
       return 0;
@@ -181,11 +181,10 @@ public:
       throw std::runtime_error("Block size not yet supported");
 
     // Compute off-diagonal offset for each row
-    xtl::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offset();
+    std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offset();
     _off_diagonal_offset.reserve(num_diag_nnz.size());
     std::transform(num_diag_nnz.begin(), num_diag_nnz.end(), _row_ptr.begin(),
-                   std::back_inserter(_off_diagonal_offset),
-                   std::plus<std::int32_t>());
+                   std::back_inserter(_off_diagonal_offset), std::plus{});
 
     // Some short-hand
     const std::array local_size
@@ -198,7 +197,7 @@ public:
     const std::vector<int>& src_ranks = _index_maps[0]->src();
     const std::vector<int>& dest_ranks = _index_maps[0]->dest();
 
-    // Create neigbourhood communicator (owner <- ghost)
+    // Create neighbourhood communicator (owner <- ghost)
     MPI_Comm comm;
     MPI_Dist_graph_create_adjacent(_index_maps[0]->comm(), dest_ranks.size(),
                                    dest_ranks.data(), MPI_UNWEIGHTED,
@@ -353,9 +352,9 @@ public:
   /// set in the matrix
   /// @param[in] rows The row indices of `x`
   /// @param[in] cols The column indices of `x`
-  void set(const xtl::span<const T>& x,
-           const xtl::span<const std::int32_t>& rows,
-           const xtl::span<const std::int32_t>& cols)
+  void set(const std::span<const T>& x,
+           const std::span<const std::int32_t>& rows,
+           const std::span<const std::int32_t>& cols)
   {
     impl::set_csr(_data, _cols, _row_ptr, x, rows, cols,
                   _index_maps[0]->size_local());
@@ -373,9 +372,9 @@ public:
   /// add to the matrix
   /// @param[in] rows The row indices of `x`
   /// @param[in] cols The column indices of `x`
-  void add(const xtl::span<const T>& x,
-           const xtl::span<const std::int32_t>& rows,
-           const xtl::span<const std::int32_t>& cols)
+  void add(const std::span<const T>& x,
+           const std::span<const std::int32_t>& rows,
+           const std::span<const std::int32_t>& cols)
   {
     impl::add_csr(_data, _cols, _row_ptr, x, rows, cols);
   }

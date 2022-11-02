@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 /// @file DofMap.h
-/// @brief Degree-of-freedeom map representations ans tools
+/// @brief Degree-of-freedom map representations and tools
 
 #pragma once
 
@@ -17,9 +17,9 @@
 #include <functional>
 #include <memory>
 #include <mpi.h>
+#include <span>
 #include <utility>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::common
 {
@@ -119,7 +119,7 @@ public:
   /// @param[in] cell The cell index
   /// @return Local-global dof map for the cell (using process-local
   /// indices)
-  xtl::span<const std::int32_t> cell_dofs(int cell) const
+  std::span<const std::int32_t> cell_dofs(int cell) const
   {
     return _dofmap.links(cell);
   }

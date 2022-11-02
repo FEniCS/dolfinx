@@ -233,7 +233,7 @@ def test_assemble_manifold():
     assert np.isclose(A.norm(), 25.0199)
 
 
-@ pytest.mark.parametrize("mode", [
+@pytest.mark.parametrize("mode", [
     GhostMode.none,
     GhostMode.shared_facet
 ])
@@ -349,7 +349,7 @@ def test_matrix_assembly_block(mode):
     assert b2.norm() == pytest.approx(bnorm0, 1.0e-9)
 
 
-@ pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
+@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_solve_block(mode):
     """Solve a two-field mass-matrix like problem with block matrix approaches
     and test that solution is the same"""
@@ -470,7 +470,7 @@ def test_assembly_solve_block(mode):
     assert x2norm == pytest.approx(x0norm, 1.0e-10)
 
 
-@ pytest.mark.parametrize("mesh", [
+@pytest.mark.parametrize("mesh", [
     create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
     create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.shared_facet),
     create_unit_cube(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.none),
@@ -677,7 +677,7 @@ def test_basic_interior_facet_assembly():
     assert isinstance(b, PETSc.Vec)
 
 
-@ pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
+@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_basic_assembly_constant(mode):
     """Tests assembly with Constant
 
@@ -881,7 +881,7 @@ def test_vector_types():
     x2.scatter_reverse(la.ScatterMode.add)
 
     assert np.linalg.norm(x0.array - x1.array) == pytest.approx(0.0)
-    assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-8)
+    assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-7)
 
 
 def test_assemble_empty_rank_mesh():
@@ -890,7 +890,7 @@ def test_assemble_empty_rank_mesh():
     cell_type = CellType.triangle
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", ufl.Cell(cell_type.name), 1))
 
-    def partitioner(comm, nparts, local_graph, num_ghost_nodes, ghosting):
+    def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the curent rank"""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
         return graph.create_adjacencylist(dest)
@@ -905,7 +905,7 @@ def test_assemble_empty_rank_mesh():
         cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
         x = np.empty((0, 2), dtype=np.float64)
 
-    mesh = create_mesh(comm, cells, x, domain, GhostMode.none, partitioner)
+    mesh = create_mesh(comm, cells, x, domain, partitioner)
 
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -939,7 +939,7 @@ def test_assemble_empty_rank_mesh():
     assert np.allclose(x.array, 10.0)
 
 
-@ pytest.mark.parametrize("mode", [
+@pytest.mark.parametrize("mode", [
     GhostMode.none,
     GhostMode.shared_facet
 ])

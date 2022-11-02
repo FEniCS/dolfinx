@@ -6,7 +6,6 @@
 
 import ctypes
 import ctypes.util
-import os
 
 import cffi
 import numba
@@ -14,22 +13,18 @@ import numpy as np
 import numpy.typing
 
 import basix
+import dolfinx.cpp
 import ufl
 from dolfinx.cpp.la.petsc import create_matrix
+from dolfinx.fem.petsc import load_petsc_lib
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace, create_sparsity_pattern, form)
 from dolfinx.mesh import create_unit_square
 
-import petsc4py.lib
 from mpi4py import MPI
 from petsc4py import PETSc
-from petsc4py import get_config as PETSc_get_config
-import dolfinx.cpp
+
 dolfinx.cpp.common.init_logging(["-v"])
-# Get details of PETSc install
-petsc_dir = PETSc_get_config()['PETSC_DIR']
-petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
-petsc_lib_name = ctypes.util.find_library("petsc")
 
 # Get PETSc int and scalar types
 if np.dtype(PETSc.ScalarType).kind == 'c':
@@ -75,16 +70,7 @@ int MatAssemblyBegin(void* mat, int mode);
 int MatAssemblyEnd(void* mat, int mode);
 """.format(c_int_t, c_scalar_t))
 
-if petsc_lib_name is not None:
-    petsc_lib_cffi = ffi.dlopen(petsc_lib_name)
-else:
-    try:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
-    except OSError:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
-    except OSError:
-        print("Could not load PETSc library for CFFI (ABI mode).")
-        raise
+petsc_lib_cffi = load_petsc_lib(ffi.dlopen)
 MatSetValues = petsc_lib_cffi.MatSetValuesLocal
 
 
@@ -107,7 +93,7 @@ def test_rank0():
     f.interpolate(expr1)
 
     ufl_expr = ufl.grad(f)
-    points = vdP1.element.interpolation_points
+    points = vdP1.element.interpolation_points()
 
     compiled_expr = Expression(ufl_expr, points)
     num_cells = mesh.topology.index_map(2).size_local
@@ -147,7 +133,7 @@ def test_rank1_hdiv():
 
     f = ufl.TrialFunction(RT1)
 
-    points = vdP1.element.interpolation_points
+    points = vdP1.element.interpolation_points()
     compiled_expr = Expression(f, points)
 
     num_cells = mesh.topology.index_map(2).size_local
@@ -237,7 +223,7 @@ def test_simple_evaluation():
     ufl_grad_f = Constant(mesh, PETSc.ScalarType(3.0)) * ufl.grad(expr)
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
     grad_f_expr = Expression(ufl_grad_f, points)
-    assert grad_f_expr.X.shape[0] == points.shape[0]
+    assert grad_f_expr.X().shape[0] == points.shape[0]
     assert grad_f_expr.value_size == 2
 
     # NOTE: Cell numbering is process local.
@@ -247,16 +233,16 @@ def test_simple_evaluation():
 
     grad_f_evaluated = grad_f_expr.eval(cells)
     assert grad_f_evaluated.shape[0] == cells.shape[0]
-    assert grad_f_evaluated.shape[1] == grad_f_expr.value_size * grad_f_expr.X.shape[0]
+    assert grad_f_evaluated.shape[1] == grad_f_expr.value_size * grad_f_expr.X().shape[0]
 
     # Evaluate points in global space
     ufl_x = ufl.SpatialCoordinate(mesh)
     x_expr = Expression(ufl_x, points)
-    assert x_expr.X.shape[0] == points.shape[0]
+    assert x_expr.X().shape[0] == points.shape[0]
     assert x_expr.value_size == 2
     x_evaluated = x_expr.eval(cells)
     assert x_evaluated.shape[0] == cells.shape[0]
-    assert x_evaluated.shape[1] == x_expr.X.shape[0] * x_expr.value_size
+    assert x_evaluated.shape[1] == x_expr.X().shape[0] * x_expr.value_size
 
     # Evaluate exact gradient using global points
     grad_f_exact = exact_grad_f(x_evaluated)
@@ -367,7 +353,7 @@ def test_expression_eval_cells_subset():
     u = dolfinx.fem.Function(V)
     u.x.array[:] = dofs_to_cells
     u.x.scatter_forward()
-    e = dolfinx.fem.Expression(u, V.element.interpolation_points)
+    e = dolfinx.fem.Expression(u, V.element.interpolation_points())
 
     # Test eval on single cell
     for c in range(cells_imap.size_local):

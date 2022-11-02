@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <xtensor/xfixed.hpp>
-#include <xtensor/xtensor.hpp>
+#include <array>
+#include <span>
 
 namespace dolfinx::geometry
 {
@@ -16,11 +16,12 @@ namespace dolfinx::geometry
 /// defined by a set of points, using the Gilbert–Johnson–Keerthi (GJK)
 /// distance algorithm.
 ///
-/// @param[in] p Body 1 list of points, shape (num_points, 3)
-/// @param[in] q Body 2 list of points, shape (num_points, 3)
+/// @param[in] p Body 1 list of points, shape (num_points, 3). Row-major
+/// storage.
+/// @param[in] q Body 2 list of points, shape (num_points, 3). Row-major
+/// storage.
 /// @return shortest vector between bodies
-xt::xtensor_fixed<double, xt::xshape<3>>
-compute_distance_gjk(const xt::xtensor<double, 2>& p,
-                     const xt::xtensor<double, 2>& q);
+std::array<double, 3> compute_distance_gjk(const std::span<const double>& p,
+                                           const std::span<const double>& q);
 
 } // namespace dolfinx::geometry

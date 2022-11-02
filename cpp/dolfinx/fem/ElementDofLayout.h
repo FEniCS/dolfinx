@@ -7,8 +7,8 @@
 #pragma once
 
 #include <array>
+#include <span>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::mesh
 {
@@ -111,12 +111,12 @@ public:
 
   /// Get sub-dofmap given by list of components, one for each level
   const ElementDofLayout&
-  sub_layout(const xtl::span<const int>& component) const;
+  sub_layout(const std::span<const int>& component) const;
 
   /// Get view for a sub-layout, defined by the component list (as for
   /// sub_layour()), into this dofmap. I.e., the dofs in this dofmap
   /// that are the sub-dofs.
-  std::vector<int> sub_view(const xtl::span<const int>& component) const;
+  std::vector<int> sub_view(const std::span<const int>& component) const;
 
   /// Block size
   int block_size() const;

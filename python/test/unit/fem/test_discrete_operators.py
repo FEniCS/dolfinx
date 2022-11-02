@@ -10,8 +10,9 @@ import pytest
 
 import ufl
 from dolfinx.cpp.fem.petsc import discrete_gradient, interpolation_matrix
-from dolfinx.fem import Expression, Function, FunctionSpace
-from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
+from dolfinx.fem import (Expression, Function, FunctionSpace,
+                         VectorFunctionSpace, assemble_scalar, form)
+from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_unit_cube,
                           create_unit_square)
 
 from mpi4py import MPI
@@ -77,7 +78,7 @@ def test_gradient_interpolation(cell_type, p, q):
     u = Function(V)
     u.interpolate(lambda x: 2 * x[0]**p + 3 * x[1]**p)
 
-    grad_u = Expression(ufl.grad(u), W.element.interpolation_points)
+    grad_u = Expression(ufl.grad(u), W.element.interpolation_points())
     w_expr = Function(W)
     w_expr.interpolate(grad_u)
 
@@ -92,10 +93,12 @@ def test_gradient_interpolation(cell_type, p, q):
 @pytest.mark.parametrize("p", range(1, 4))
 @pytest.mark.parametrize("q", range(1, 4))
 @pytest.mark.parametrize("from_lagrange", [True, False])
-@pytest.mark.parametrize("cell_type", [CellType.quadrilateral,
-                                       CellType.triangle,
-                                       CellType.tetrahedron,
-                                       CellType.hexahedron])
+@pytest.mark.parametrize("cell_type", [
+    CellType.quadrilateral,
+    CellType.triangle,
+    CellType.tetrahedron,
+    CellType.hexahedron
+])
 def test_interpolation_matrix(cell_type, p, q, from_lagrange):
     """Test that discrete interpolation matrix yields the same result as interpolation."""
 
@@ -147,3 +150,41 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
     w.x.scatter_forward()
 
     assert np.allclose(w_vec.x.array, w.x.array)
+
+
+@pytest.mark.skip_in_parallel
+def test_nonaffine_discrete_operator():
+    """
+    Check that discrete operator is consistent with normal interpolation between non-matching
+    maps on non-affine geometries
+    """
+    points = np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0],
+                       [0, 0, 3], [1, 0, 3], [0, 2, 3], [1, 2, 3],
+                       [0.5, 0, 0], [0, 1, 0], [0, 0, 1.5], [1, 1, 0],
+                       [1, 0, 1.5], [0.5, 2, 0], [0, 2, 1.5], [1, 2, 1.5],
+                       [0.5, 0, 3], [0, 1, 3], [1, 1, 3], [0.5, 2, 3],
+                       [0.5, 1, 0], [0.5, -0.1, 1.5], [0, 1, 1.5], [1, 1, 1.5],
+                       [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=np.float64)
+
+    cells = np.array([range(len(points))], dtype=np.int32)
+    cell_type = CellType.hexahedron
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 2))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    W = VectorFunctionSpace(mesh, ("DG", 1))
+    V = FunctionSpace(mesh, ("NCE", 4))
+    w, v = Function(W), Function(V)
+    w.interpolate(lambda x: x)
+    v.interpolate(w)
+
+    G = interpolation_matrix(W._cpp_object, V._cpp_object)
+    G.assemble()
+
+    # Compute global matrix vector product
+    v_vec = Function(V)
+    G.mult(w.vector, v_vec.vector)
+    v_vec.x.scatter_forward()
+
+    assert np.allclose(v_vec.x.array, v.x.array)
+
+    s = assemble_scalar(form(ufl.inner(w - v, w - v) * ufl.dx))
+    assert np.isclose(s, 0)

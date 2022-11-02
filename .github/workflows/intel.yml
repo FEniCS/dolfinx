@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04
-    container: fenicsproject/test-env:latest-mpich
+    container: fenicsproject/test-env:nightly-mpich
 
     defaults:
       run:
@@ -42,13 +42,11 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           python3 -m pip install git+https://github.com/FEniCS/basix.git
-
       - name: Clone FFCx
         uses: actions/checkout@v3
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: main
 
       - name: Install FFCx C interface
         run: |
@@ -60,7 +58,7 @@ jobs:
       - name: Configure DOLFInx C++
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_UFCX_PYTHON=off -B build -S cpp/
 
       - name: Build and install DOLFINx C++ library
         run: |
@@ -95,10 +93,10 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           python3 -m pip -v install python/
-      - name: Set default DOLFINx JIT parameters
+      - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
-          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
+          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
       - name: Run DOLFINx demos (Python, serial)
         run: |
           . /opt/intel/oneapi/setvars.sh

@@ -11,8 +11,8 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <functional>
 #include <memory>
+#include <span>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::common
 {
@@ -40,7 +40,7 @@ public:
   /// point, commonly from a mesh input file. The type is
   /// `std:vector<std::int64_t>`.
   template <typename AdjacencyList32, typename Array, typename Vector64>
-  Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
+  Geometry(std::shared_ptr<const common::IndexMap> index_map,
            AdjacencyList32&& dofmap, const fem::CoordinateElement& element,
            Array&& x, int dim, Vector64&& input_global_indices)
       : _dim(dim), _dofmap(std::forward<AdjacencyList32>(dofmap)),
@@ -80,14 +80,14 @@ public:
   ///
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
-  xtl::span<const double> x() const;
+  std::span<const double> x() const;
 
   /// @brief Access geometry degrees-of-freedom data (non-const
   /// version).
   ///
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
-  xtl::span<double> x();
+  std::span<double> x();
 
   /// @brief The element that describes the geometry map.
   ///
@@ -128,7 +128,8 @@ private:
 /// @param[in] topology The mesh topology
 /// @param[in] element The element that defines the geometry map for
 /// each cell
-/// @param[in] cells The mesh cells, including higher-ordder geometry 'nodes'
+/// @param[in] cells The mesh cells, including higher-order geometry
+/// 'nodes'
 /// @param[in] x The node coordinates (row-major, with shape
 /// `(num_nodes, dim)`. The global index of each node is `i +
 /// rank_offset`, where `i` is the local row index in `x` and
@@ -141,7 +142,7 @@ mesh::Geometry
 create_geometry(MPI_Comm comm, const Topology& topology,
                 const fem::CoordinateElement& element,
                 const graph::AdjacencyList<std::int64_t>& cells,
-                const xtl::span<const double>& x, int dim,
+                const std::span<const double>& x, int dim,
                 const std::function<std::vector<int>(
                     const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
                 = nullptr);
