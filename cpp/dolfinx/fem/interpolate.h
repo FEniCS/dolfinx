@@ -103,9 +103,12 @@ void scatter_values(const MPI_Comm& comm,
   std::vector<std::int32_t> recv_offsets(in_ranks.size() + 1, 0);
   {
     // Build map from parent to neighborhood communicator ranks
-    std::map<std::int32_t, std::int32_t> rank_to_neighbor;
+    std::vector<std::pair<std::int32_t, std::int32_t>> rank_to_neighbor;
+    rank_to_neighbor.reserve(in_ranks.size());
     for (std::size_t i = 0; i < in_ranks.size(); i++)
-      rank_to_neighbor[in_ranks[i]] = i;
+      rank_to_neighbor[i] = std::pair(in_ranks[i], i);
+    std::sort(rank_to_neighbor.begin(), rank_to_neighbor.end(),
+              [](auto& left, auto& right) { return left.first < right.first; });
 
     // Compute receive sizes
     std::for_each(
@@ -114,7 +117,12 @@ void scatter_values(const MPI_Comm& comm,
         {
           if (rank >= 0)
           {
-            const int neighbor = rank_to_neighbor[rank];
+            const std::int32_t neighbor
+                = std::lower_bound(rank_to_neighbor.begin(),
+                                   rank_to_neighbor.end(),
+                                   [rank](auto& left, auto& right)
+                                   { return left.first < rank; })
+                      .second;
             recv_sizes[neighbor] += block_size;
           }
         });
@@ -130,7 +138,11 @@ void scatter_values(const MPI_Comm& comm,
     {
       if (const std::int32_t rank = dest_ranks[i]; rank >= 0)
       {
-        const int neighbor = rank_to_neighbor[rank];
+        const std::int32_t neighbor
+            = std::lower_bound(rank_to_neighbor.begin(), rank_to_neighbor.end(),
+                               [rank](auto& left, auto& right)
+                               { return left.first < rank; })
+                  .second;
         int insert_pos = recv_offsets[neighbor] + recv_counter[neighbor];
         comm_to_output[insert_pos / block_size] = i * block_size;
         recv_counter[neighbor] += block_size;
@@ -141,15 +153,30 @@ void scatter_values(const MPI_Comm& comm,
   std::vector<std::int32_t> send_sizes(out_ranks.size());
   send_sizes.reserve(1);
   {
-    // Compute map from parent mpi rank to neigbor rank for outgoing data
-    std::map<std::int32_t, std::int32_t> rank_to_neighbor;
+    // Build map from parent to neighborhood communicator ranks
+    std::vector<std::pair<std::int32_t, std::int32_t>> rank_to_neighbor;
+    rank_to_neighbor.reserve(out_ranks.size());
     for (std::size_t i = 0; i < out_ranks.size(); i++)
-      rank_to_neighbor[out_ranks[i]] = i;
+      rank_to_neighbor[i] = std::pair(out_ranks[i], i);
+    std::sort(rank_to_neighbor.begin(), rank_to_neighbor.end(),
+              [](auto& left, auto& right) { return left.first < right.first; });
 
-    // Compute send sizes
-    std::for_each(src_ranks.begin(), src_ranks.end(),
-                  [&rank_to_neighbor, &send_sizes, block_size](auto rank)
-                  { send_sizes[rank_to_neighbor[rank]] += block_size; });
+    // Compute receive sizes
+    std::for_each(
+        dest_ranks.begin(), dest_ranks.end(),
+        [&dest_ranks, &rank_to_neighbor, &send_sizes, block_size](auto rank)
+        {
+          if (rank >= 0)
+          {
+            const std::int32_t neighbor
+                = std::lower_bound(rank_to_neighbor.begin(),
+                                   rank_to_neighbor.end(),
+                                   [rank](auto& left, auto& right)
+                                   { return left.first < rank; })
+                      .second;
+            send_sizes[neighbor] += block_size;
+          }
+        });
   }
 
   // Compute sending offsets
@@ -157,7 +184,6 @@ void scatter_values(const MPI_Comm& comm,
   std::partial_sum(send_sizes.begin(), send_sizes.end(),
                    std::next(send_offsets.begin(), 1));
 
-  std::stringstream cc;
   // Send values to dest ranks
   std::vector<T> values(recv_offsets.back());
   values.reserve(1);
