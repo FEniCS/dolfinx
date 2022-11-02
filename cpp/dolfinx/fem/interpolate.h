@@ -120,8 +120,7 @@ void scatter_values(const MPI_Comm& comm,
             const std::int32_t neighbor
                 = std::lower_bound(
                       rank_to_neighbor.begin(), rank_to_neighbor.end(),
-                      [rank](auto& left)
-                      { return left.first < rank; })
+                      [rank](auto& left) { return left.first < rank; })
                       .second;
             recv_sizes[neighbor] += block_size;
           }
@@ -140,8 +139,7 @@ void scatter_values(const MPI_Comm& comm,
       {
         const std::int32_t neighbor
             = std::lower_bound(rank_to_neighbor.begin(), rank_to_neighbor.end(),
-                               [rank](auto& left)
-                               { return left.first < rank; })
+                               [rank](auto& left) { return left.first < rank; })
                   .second;
         int insert_pos = recv_offsets[neighbor] + recv_counter[neighbor];
         comm_to_output[insert_pos / block_size] = i * block_size;
