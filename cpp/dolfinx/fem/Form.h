@@ -454,11 +454,12 @@ private:
       const int index = std::distance(tagged_facets_begin, index_it);
       if (auto it = integrals.find(tags[index]); it != integrals.end())
       {
-        // There will only be one pair for an exterior facet integral
-        const std::array<std::int32_t, 2> pair
+        // Get the facet as a (cell, local_facet) pair. There will only be one
+        // pair for an exterior facet integral
+        const std::array<std::int32_t, 2> facet
             = get_cell_local_facet_pairs<1>(f, f_to_c->links(f), *c_to_f).front();
-        it->second.second.insert(it->second.second.end(), pair.cbegin(),
-                                 pair.cend());
+        it->second.second.insert(it->second.second.end(), facet.cbegin(),
+                                 facet.cend());
       }
     }
   }
