@@ -126,8 +126,15 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         """"Compile a single UFL form"""
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
-        subdomains, = list(sd.values())  # Assuming single domain
         domain, = list(sd.keys())  # Assuming single domain
+        # Get subdomain data for each integral type
+        subdomains = {}
+        for integral_type, data in sd.get(domain).items():
+            # Check that the subdomain data for each integral of this type is
+            # the same
+            assert all([id(d) == id(data[0]) for d in data])
+            subdomains[integral_type] = data[0]
+
         mesh = domain.ufl_cargo()
         if mesh is None:
             raise RuntimeError("Expecting to find a Mesh in the form.")
