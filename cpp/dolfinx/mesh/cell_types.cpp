@@ -182,14 +182,7 @@ int mesh::cell_dim(CellType type)
 int mesh::cell_num_entities(CellType type, int dim)
 {
   assert(dim <= 3);
-  try
-  {
-    return basix::cell::num_sub_entities(cell_type_to_basix_type(type), dim);
-  }
-  catch (const std::out_of_range& e)
-  {
-    return 0;
-  }
+  return basix::cell::num_sub_entities(cell_type_to_basix_type(type), dim);
 }
 //-----------------------------------------------------------------------------
 bool mesh::is_simplex(CellType type) { return static_cast<int>(type) > 0; }
