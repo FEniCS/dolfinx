@@ -274,11 +274,8 @@ void set_cell_domains(std::map<int, std::vector<std::int32_t>>& integrals,
   // For cell integrals use all markers
   for (std::size_t i = 0; i < tagged_cells.size(); ++i)
   {
-    if (auto it = integrals.find(tags[i]); it != integrals.end())
-    {
-      std::vector<std::int32_t>& integration_entities = it->second;
-      integration_entities.push_back(tagged_cells[i]);
-    }
+    std::vector<std::int32_t>& integration_entities = integrals[tags[i]];
+    integration_entities.push_back(tagged_cells[i]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -319,17 +316,15 @@ void set_exterior_facet_domains(
         = std::lower_bound(tagged_facets.begin(), tagged_facets.end(), f);
     assert(index_it != tagged_facets.end() and *index_it == f);
     const int index = std::distance(tagged_facets.begin(), index_it);
-    if (auto it = integrals.find(tags[index]); it != integrals.end())
-    {
-      // Get the facet as a (cell, local_facet) pair. There will only be one
-      // pair for an exterior facet integral
-      std::array<std::int32_t, 2> facet
-          = mesh::get_cell_local_facet_pairs<1>(f, f_to_c->links(f), *c_to_f)
-                .front();
-      std::vector<std::int32_t>& integration_entities = it->second;
-      integration_entities.insert(integration_entities.end(), facet.cbegin(),
-                                  facet.cend());
-    }
+
+    // Get the facet as a (cell, local_facet) pair. There will only be one
+    // pair for an exterior facet integral
+    std::array<std::int32_t, 2> facet
+        = mesh::get_cell_local_facet_pairs<1>(f, f_to_c->links(f), *c_to_f)
+              .front();
+    std::vector<std::int32_t>& integration_entities = integrals[tags[index]];
+    integration_entities.insert(integration_entities.end(), facet.cbegin(),
+                                facet.cend());
   }
 }
 //-----------------------------------------------------------------------------
@@ -350,18 +345,16 @@ void set_interior_facet_domains(
     const std::int32_t f = tagged_facets[i];
     if (f_to_c->num_links(f) == 2)
     {
-      if (auto it = integrals.find(tags[i]); it != integrals.end())
-      {
-        // Ge the facet as a pair of (cell, local facet) pairs, one for each
-        // cell
-        auto [facet_0, facet_1]
-            = mesh::get_cell_local_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
-        std::vector<std::int32_t>& integration_entities = it->second;
-        integration_entities.insert(integration_entities.end(),
-                                    facet_0.cbegin(), facet_0.cend());
-        integration_entities.insert(integration_entities.end(),
-                                    facet_1.cbegin(), facet_1.cend());
-      }
+
+      // Get the facet as a pair of (cell, local facet) pairs, one for each
+      // cell
+      auto [facet_0, facet_1]
+          = mesh::get_cell_local_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
+      std::vector<std::int32_t>& integration_entities = integrals[tags[i]];
+      integration_entities.insert(integration_entities.end(), facet_0.cbegin(),
+                                  facet_0.cend());
+      integration_entities.insert(integration_entities.end(), facet_1.cbegin(),
+                                  facet_1.cend());
     }
   }
 }
