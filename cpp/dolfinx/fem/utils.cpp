@@ -272,7 +272,7 @@ void set_cell_domains(std::map<int, std::vector<std::int32_t>>& integrals,
                       const std::vector<int>& tags)
 {
   // For cell integrals use all markers
-  for (std::int32_t i = 0; i < tagged_cells.size(); ++i)
+  for (std::size_t i = 0; i < tagged_cells.size(); ++i)
   {
     if (auto it = integrals.find(tags[i]); it != integrals.end())
     {
@@ -345,7 +345,7 @@ void set_interior_facet_domains(
   assert(f_to_c);
   auto c_to_f = topology.connectivity(tdim, tdim - 1);
   assert(c_to_f);
-  for (int i = 0; i < tagged_facets.size(); ++i)
+  for (std::size_t i = 0; i < tagged_facets.size(); ++i)
   {
     const std::int32_t f = tagged_facets[i];
     if (f_to_c->num_links(f) == 2)
