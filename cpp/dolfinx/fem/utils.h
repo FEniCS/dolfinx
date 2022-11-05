@@ -15,6 +15,7 @@
 #include "Function.h"
 #include "sparsitybuild.h"
 #include <array>
+#include <concepts>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -72,6 +73,11 @@ template <typename T>
 using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 
 } // namespace impl
+
+template <class U, class T>
+concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
+                                       const impl::scalar_value_type_t<T>*,
+                                       const int*, const std::uint8_t*>;
 
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms
@@ -856,11 +862,9 @@ Expression<T> create_expression(
         const unsigned char*)>(expression.tabulate_tensor_complex128);
   }
   else
-  {
     throw std::runtime_error("Type not supported.");
-  }
-  assert(tabulate_tensor);
 
+  assert(tabulate_tensor);
   return Expression(coefficients, constants, X, Xshape, tabulate_tensor,
                     value_shape, mesh, argument_function_space);
 }

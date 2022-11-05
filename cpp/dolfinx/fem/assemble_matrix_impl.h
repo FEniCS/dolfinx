@@ -38,7 +38,7 @@ void assemble_matrix(
     const std::span<const std::int8_t>& bc1);
 
 /// Execute kernel over cells and accumulate result in matrix
-template <typename T, typename U>
+template <typename T, typename U, FEkernel<T> V>
 void assemble_cells(
     U mat_set, const mesh::Geometry& geometry,
     const std::span<const std::int32_t>& cells,
@@ -51,10 +51,7 @@ void assemble_cells(
                              std::int32_t, int)>& dof_transform_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const std::span<const std::int8_t>& bc0,
-    const std::span<const std::int8_t>& bc1,
-    const std::function<void(T*, const T*, const T*,
-                             const scalar_value_type_t<T>*, const int*,
-                             const std::uint8_t*)>& kernel,
+    const std::span<const std::int8_t>& bc1, V kernel,
     const std::span<const T>& coeffs, int cstride,
     const std::span<const T>& constants,
     const std::span<const std::uint32_t>& cell_info)
@@ -138,7 +135,7 @@ void assemble_cells(
 }
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
-template <typename T, typename U>
+template <typename T, typename U, FEkernel<T> V>
 void assemble_exterior_facets(
     U mat_set, const mesh::Mesh& mesh,
     const std::span<const std::int32_t>& facets,
@@ -151,10 +148,7 @@ void assemble_exterior_facets(
                              std::int32_t, int)>& dof_transform_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     const std::span<const std::int8_t>& bc0,
-    const std::span<const std::int8_t>& bc1,
-    const std::function<void(T*, const T*, const T*,
-                             const scalar_value_type_t<T>*, const int*,
-                             const std::uint8_t*)>& kernel,
+    const std::span<const std::int8_t>& bc1, V kernel,
     const std::span<const T>& coeffs, int cstride,
     const std::span<const T>& constants,
     const std::span<const std::uint32_t>& cell_info)
@@ -237,7 +231,7 @@ void assemble_exterior_facets(
 }
 
 /// Execute kernel over interior facets and  accumulate result in Mat
-template <typename T, typename U>
+template <typename T, typename U, FEkernel<T> V>
 void assemble_interior_facets(
     U mat_set, const mesh::Mesh& mesh,
     const std::span<const std::int32_t>& facets,
@@ -249,10 +243,7 @@ void assemble_interior_facets(
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform_to_transpose,
     const DofMap& dofmap1, int bs1, const std::span<const std::int8_t>& bc0,
-    const std::span<const std::int8_t>& bc1,
-    const std::function<void(T*, const T*, const T*,
-                             const scalar_value_type_t<T>*, const int*,
-                             const std::uint8_t*)>& kernel,
+    const std::span<const std::int8_t>& bc1, V kernel,
     const std::span<const T>& coeffs, int cstride,
     const std::span<const int>& offsets, const std::span<const T>& constants,
     const std::span<const std::uint32_t>& cell_info,
