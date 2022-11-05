@@ -138,7 +138,7 @@ private:
 template <typename T>
 MeshTags<T> create_meshtags(std::shared_ptr<const Mesh> mesh, int dim,
                             const graph::AdjacencyList<std::int32_t>& entities,
-                            const std::span<const T>& values)
+                            std::span<const T> values)
 {
   LOG(INFO)
       << "Building MeshTgas object from tagged entities (defined by vertices).";

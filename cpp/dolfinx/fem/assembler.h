@@ -53,7 +53,7 @@ make_coefficients_span(const std::map<std::pair<IntegralType, int>,
 /// process
 template <typename T>
 T assemble_scalar(
-    const Form<T>& M, const std::span<const T>& constants,
+    const Form<T>& M, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
@@ -87,7 +87,7 @@ T assemble_scalar(const Form<T>& M)
 /// @param[in] coefficients The coefficients that appear in `L`
 template <typename T>
 void assemble_vector(
-    std::span<T> b, const Form<T>& L, const std::span<const T>& constants,
+    std::span<T> b, const Form<T>& L, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
@@ -198,7 +198,7 @@ void apply_lifting(
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
 template <typename T, typename U>
 void assemble_matrix(
-    U mat_add, const Form<T>& a, const std::span<const T>& constants,
+    U mat_add, const Form<T>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
@@ -271,11 +271,11 @@ void assemble_matrix(
 /// local index.
 template <typename T, typename U>
 void assemble_matrix(
-    U mat_add, const Form<T>& a, const std::span<const T>& constants,
+    U mat_add, const Form<T>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
-    const std::span<const std::int8_t>& dof_marker0,
-    const std::span<const std::int8_t>& dof_marker1)
+    std::span<const std::int8_t> dof_marker0,
+    std::span<const std::int8_t> dof_marker1)
 
 {
   impl::assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
@@ -294,8 +294,8 @@ void assemble_matrix(
 ///   local index.
 template <typename T, typename U>
 void assemble_matrix(U mat_add, const Form<T>& a,
-                     const std::span<const std::int8_t>& dof_marker0,
-                     const std::span<const std::int8_t>& dof_marker1)
+                     std::span<const std::int8_t> dof_marker0,
+                     std::span<const std::int8_t> dof_marker1)
 
 {
   // Prepare constants and coefficients
@@ -320,7 +320,7 @@ void assemble_matrix(U mat_add, const Form<T>& a,
 /// @param[in] diagonal The value to add to the diagonal for the
 ///   specified rows
 template <typename T, typename U>
-void set_diagonal(U set_fn, const std::span<const std::int32_t>& rows,
+void set_diagonal(U set_fn, std::span<const std::int32_t> rows,
                   T diagonal = 1.0)
 {
   for (std::size_t i = 0; i < rows.size(); ++i)
@@ -374,7 +374,7 @@ void set_diagonal(U set_fn, const fem::FunctionSpace& V,
 template <typename T>
 void set_bc(std::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
-            const std::span<const T>& x0, double scale = 1.0)
+            std::span<const T> x0, double scale = 1.0)
 {
   if (b.size() > x0.size())
     throw std::runtime_error("Size mismatch between b and x0 vectors.");

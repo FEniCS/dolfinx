@@ -38,8 +38,7 @@ namespace
 /// @returns A list of (cell_index, entity_index) pairs for each input entity
 std::vector<std::pair<std::int32_t, int>>
 find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
-                        const std::span<const std::int32_t>& entities,
-                        const int dim)
+                        std::span<const std::int32_t> entities, const int dim)
 {
   // Initialise entity-cell connectivity
   const int tdim = mesh->topology().dim();
@@ -81,7 +80,7 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
 /// this rank
 std::vector<std::int32_t>
 get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
-                const std::span<const std::int32_t>& dofs_local)
+                std::span<const std::int32_t> dofs_local)
 {
   int num_neighbors(-1);
   {
@@ -184,7 +183,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 fem::locate_dofs_topological(const FunctionSpace& V, int dim,
-                             const std::span<const std::int32_t>& entities,
+                             std::span<const std::int32_t> entities,
                              bool remote)
 {
   assert(V.dofmap());
@@ -298,7 +297,7 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
-    const int dim, const std::span<const std::int32_t>& entities, bool remote)
+    const int dim, std::span<const std::int32_t> entities, bool remote)
 {
   const FunctionSpace& V0 = V.at(0).get();
   const FunctionSpace& V1 = V.at(1).get();

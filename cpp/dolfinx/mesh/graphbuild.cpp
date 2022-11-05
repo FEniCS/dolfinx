@@ -82,8 +82,8 @@ constexpr mesh::CellType get_cell_type(int num_vertices, int tdim)
 /// @return (0) Extended dual graph to include ghost edges (edges to
 /// off-procss cells) and (1) the number of ghost edges
 graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
-    const MPI_Comm comm, const std::span<const std::int64_t>& facets,
-    std::size_t shape1, const std::span<const std::int32_t>& cells,
+    const MPI_Comm comm, std::span<const std::int64_t> facets,
+    std::size_t shape1, std::span<const std::int32_t> cells,
     const graph::AdjacencyList<std::int32_t>& local_graph)
 {
   LOG(INFO) << "Build nonlocal part of mesh dual graph";
@@ -389,8 +389,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
-mesh::build_local_dual_graph(const std::span<const std::int64_t>& cell_vertices,
-                             const std::span<const std::int32_t>& cell_offsets,
+mesh::build_local_dual_graph(std::span<const std::int64_t> cell_vertices,
+                             std::span<const std::int32_t> cell_offsets,
                              int tdim)
 {
   LOG(INFO) << "Build local part of mesh dual graph";

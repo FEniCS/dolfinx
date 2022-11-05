@@ -612,9 +612,10 @@ void pack_coefficient_entity(const std::span<T>& c, int cstride,
                              std::int32_t offset)
 {
   // Read data from coefficient "u"
-  const std::span<const T>& v = u.x()->array();
+  std::span<const T> v = u.x()->array();
   const DofMap& dofmap = *u.function_space()->dofmap();
   std::shared_ptr<const FiniteElement> element = u.function_space()->element();
+  assert(element);
   int space_dim = element->space_dimension();
   const auto transformation
       = element->get_dof_transformation_function<T>(false, true);
