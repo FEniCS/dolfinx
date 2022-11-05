@@ -20,7 +20,7 @@
 namespace dolfinx::graph
 {
 
-/// Signature of functions for computing the parallel partitioning of a
+/// @brief Signature of functions for computing the parallel partitioning of a
 /// distributed graph
 ///
 /// @param[in] comm MPI Communicator that the graph is distributed
