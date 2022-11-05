@@ -74,6 +74,7 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 
 } // namespace impl
 
+/// @brief Assembler kernel concept
 template <class U, class T>
 concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
                                        const impl::scalar_value_type_t<T>*,
