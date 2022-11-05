@@ -10,6 +10,7 @@
 #include "Mesh.h"
 #include "Topology.h"
 #include <algorithm>
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
@@ -45,7 +46,8 @@ public:
   /// @param[in] values List of values for each index in indices. The
   /// size must be equal to the size of `indices`.
   /// @pre `indices` must be sorted and unique.
-  template <typename U, typename V>
+  template <std::convertible_to<std::vector<std::int32_t>> U,
+            std::convertible_to<std::vector<T>> V>
   MeshTags(std::shared_ptr<const Mesh> mesh, int dim, U&& indices, V&& values)
       : _mesh(mesh), _dim(dim), _indices(std::forward<U>(indices)),
         _values(std::forward<V>(values))
@@ -156,7 +158,7 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Mesh> mesh, int dim,
   // Sort the indices and values by indices
   auto [indices_sorted, values_sorted] = common::sort_unique(indices, values);
 
-  // Remove any entities that were not found (these have andindex of -1)
+  // Remove any entities that were not found (these have an index of -1)
   auto it0 = std::lower_bound(indices_sorted.begin(), indices_sorted.end(), 0);
   std::size_t pos0 = std::distance(indices_sorted.begin(), it0);
   indices_sorted.erase(indices_sorted.begin(), it0);
