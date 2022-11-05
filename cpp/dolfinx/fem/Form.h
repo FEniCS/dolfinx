@@ -405,7 +405,7 @@ private:
       std::span<const std::int32_t> tagged_cells, std::span<const int> tags)
   {
     // For cell integrals use all markers
-    for (std::int32_t i = 0; i < tagged_cells.size(); ++i)
+    for (std::size_t i = 0; i < tagged_cells.size(); ++i)
     {
       if (auto it = integrals.find(tags[i]); it != integrals.end())
       {
@@ -478,7 +478,7 @@ private:
     assert(f_to_c);
     auto c_to_f = topology.connectivity(tdim, tdim - 1);
     assert(c_to_f);
-    for (int i = 0; i < tagged_facets.size(); ++i)
+    for (std::size_t i = 0; i < tagged_facets.size(); ++i)
     {
       const std::int32_t f = tagged_facets[i];
       if (f_to_c->num_links(f) == 2)

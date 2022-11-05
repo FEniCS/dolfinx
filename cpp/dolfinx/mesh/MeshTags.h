@@ -35,11 +35,13 @@ template <typename T>
 class MeshTags
 {
 public:
-  /// @brief Create a MeshTag from entities of given dimension on a mesh.
+  /// @brief Create a MeshTag from entities of given dimension on a
+  /// mesh.
   ///
   /// @param[in] mesh The mesh on which the tags are associated.
   /// @param[in] dim Topological dimension of mesh entities to tag.
-  /// @param[in] indices List of entity indices (indices local to the process).
+  /// @param[in] indices List of entity indices (indices local to the
+  /// process).
   /// @param[in] values List of values for each index in indices. The
   /// size must be equal to the size of `indices`.
   /// @pre `indices` must be sorted and unique.
