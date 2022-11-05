@@ -215,7 +215,7 @@ class MeshTagsMetaClass:
         Args:
             mesh: The mesh
             dim: Topological dimension of the mesh entity
-            indices: Entity indices (local to process)
+            indices: Sorted and unique entity indices (local to process)
             values: The corresponding value for each entity
 
         Note:
@@ -246,7 +246,7 @@ def meshtags(mesh: Mesh, dim: int, indices: np.ndarray,
     Args:
         mesh: The mesh
         dim: Topological dimension of the mesh entity
-        indices: Entity indices (local to process)
+        indices: Sorted and unique entity indices (local to process)
         values: The corresponding value for each entity
 
     Returns:
