@@ -14,6 +14,7 @@
 #include <dolfinx/mesh/MeshTags.h>
 #include <functional>
 #include <memory>
+#include <span>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -369,7 +370,7 @@ private:
     return it->second.first;
   }
 
-  // Helper function to get a std::vector of (cell, local_facet) pairs
+  // Helper function to get an array of of (cell, local_facet) pairs
   // corresponding to a given facet index.
   // @param[in] f Facet index
   // @param[in] f_to_c Facet to cell connectivity
@@ -425,7 +426,7 @@ private:
       const mesh::Topology& topology,
       std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
       const std::span<const std::int32_t>& tagged_facets,
-      const std::vector<int>& tags)
+      std::span<const int>& tags)
   {
     const std::vector<std::int32_t> boundary_facets
         = mesh::exterior_facet_indices(topology);
@@ -442,20 +443,22 @@ private:
     auto c_to_f = topology.connectivity(tdim, tdim - 1);
     assert(c_to_f);
 
-    // Loop through tagged boundary facets and add to respective integral
+    // Loop through tagged boundary facets and add to respective
+    // integral
     for (std::int32_t f : tagged_ext_facets)
     {
-      // Find index of f in tagged facets so that we can access the associated
-      // tag
-      // FIXME Would be better to avoid calling std::lower_bound in a loop
+      // Find index of f in tagged facets so that we can access the
+      // associated tag
+      // FIXME: Would it be better to avoid calling std::lower_bound in
+      // a loop>
       auto index_it
           = std::lower_bound(tagged_facets.begin(), tagged_facets.end(), f);
       assert(index_it != tagged_facets.end() and *index_it == f);
       const int index = std::distance(tagged_facets.begin(), index_it);
       if (auto it = integrals.find(tags[index]); it != integrals.end())
       {
-        // Get the facet as a (cell, local_facet) pair. There will only be one
-        // pair for an exterior facet integral
+        // Get the facet as a (cell, local_facet) pair. There will only
+        // be one pair for an exterior facet integral
         std::array<std::int32_t, 2> facet
             = get_cell_local_facet_pairs<1>(f, f_to_c->links(f), *c_to_f)
                   .front();
@@ -471,7 +474,7 @@ private:
       const mesh::Topology& topology,
       std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
       const std::span<const std::int32_t>& tagged_facets,
-      const std::vector<int>& tags)
+      const std::span<const int>& tags)
   {
     int tdim = topology.dim();
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
@@ -518,19 +521,18 @@ private:
     }
 
     // Get mesh tag data
-    const std::vector<int>& tags = marker.values();
-    const std::vector<std::int32_t>& tagged_entities = marker.indices();
     assert(topology.index_map(dim));
-    const auto entity_end
-        = std::lower_bound(tagged_entities.begin(), tagged_entities.end(),
+    auto entity_end
+        = std::lower_bound(marker.indices().begin(), marker.indices().end(),
                            topology.index_map(dim)->size_local());
     // Only include owned entities in integration domains
-    const std::span<const std::int32_t> owned_tagged_entities(
-        tagged_entities.begin(), entity_end);
+    std::span<const std::int32_t> owned_tagged_entities(
+        marker.indices().data(),
+        std::distance(marker.indices().begin(), entity_end));
     switch (type)
     {
     case IntegralType::cell:
-      set_cell_domains(_cell_integrals, owned_tagged_entities, tags);
+      set_cell_domains(_cell_integrals, owned_tagged_entities, marker.values());
       break;
     default:
       mesh->topology_mutable().create_connectivity(dim, tdim);
@@ -539,11 +541,11 @@ private:
       {
       case IntegralType::exterior_facet:
         set_exterior_facet_domains(topology, _exterior_facet_integrals,
-                                   owned_tagged_entities, tags);
+                                   owned_tagged_entities, marker.values());
         break;
       case IntegralType::interior_facet:
         set_interior_facet_domains(topology, _interior_facet_integrals,
-                                   owned_tagged_entities, tags);
+                                   owned_tagged_entities, marker.values());
         break;
       default:
         throw std::runtime_error(
@@ -583,6 +585,7 @@ private:
       mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
       mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
     }
+
     const std::vector<std::int32_t> boundary_facets
         = _exterior_facet_integrals.empty()
               ? std::vector<std::int32_t>()
