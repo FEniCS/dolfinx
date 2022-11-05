@@ -22,9 +22,9 @@ namespace dolfinx::fem::impl
 {
 
 /// Assemble functional over cells
-template <typename T, FEkernel<T> U>
+template <typename T>
 T assemble_cells(const mesh::Geometry& geometry,
-                 std::span<const std::int32_t> cells, U fn,
+                 std::span<const std::int32_t> cells, FEkernel<T> auto fn,
                  std::span<const T> constants, std::span<const T> coeffs,
                  int cstride)
 {
