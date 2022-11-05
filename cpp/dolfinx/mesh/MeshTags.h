@@ -97,7 +97,7 @@ public:
   const std::vector<std::int32_t>& indices() const { return _indices; }
 
   /// Values attached to mesh entities
-  const std::vector<T>& values() const { return _values; }
+  std::span<const T> values() const { return _values; }
 
   /// Return topological dimension of tagged entities
   int dim() const { return _dim; }

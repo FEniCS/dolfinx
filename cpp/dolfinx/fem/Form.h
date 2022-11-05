@@ -379,7 +379,7 @@ private:
   template <int num_cells>
   static std::array<std::array<std::int32_t, 2>, num_cells>
   get_cell_local_facet_pairs(
-      std::int32_t f, const std::span<const std::int32_t>& cells,
+      std::int32_t f, std::span<const std::int32_t> cells,
       const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f)
   {
     // Loop over cells sharing facet
@@ -402,8 +402,7 @@ private:
   // Set cell domains
   void set_cell_domains(
       std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
-      const std::span<const std::int32_t>& tagged_cells,
-      const std::vector<int>& tags)
+      std::span<const std::int32_t> tagged_cells, std::span<const int> tags)
   {
     // For cell integrals use all markers
     for (std::int32_t i = 0; i < tagged_cells.size(); ++i)
@@ -425,8 +424,7 @@ private:
   void set_exterior_facet_domains(
       const mesh::Topology& topology,
       std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
-      const std::span<const std::int32_t>& tagged_facets,
-      std::span<const int>& tags)
+      std::span<const std::int32_t> tagged_facets, std::span<const int> tags)
   {
     const std::vector<std::int32_t> boundary_facets
         = mesh::exterior_facet_indices(topology);
@@ -473,8 +471,7 @@ private:
   static void set_interior_facet_domains(
       const mesh::Topology& topology,
       std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
-      const std::span<const std::int32_t>& tagged_facets,
-      const std::span<const int>& tags)
+      std::span<const std::int32_t> tagged_facets, std::span<const int> tags)
   {
     int tdim = topology.dim();
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
