@@ -169,7 +169,7 @@ private:
 /// @return An adjacency list
 template <typename U>
   requires requires {
-             typename U::value_type;
+             typename std::decay_t<U>::value_type;
              std::convertible_to<
                  U, std::vector<typename std::decay_t<U>::value_type>>;
            }
