@@ -478,5 +478,5 @@ private:
 
   // The first _owned_indices in _dofs are owned by this process
   std::int32_t _owned_indices0 = -1;
-}; // namespace dolfinx::fem
+};
 } // namespace dolfinx::fem

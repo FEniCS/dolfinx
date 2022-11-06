@@ -595,6 +595,7 @@ void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
   transform(coeffs, cell_info, cell, 1);
 }
 
+/// @brief  Concepts for function that returns cell index
 template <typename F>
 concept FetchCells = requires(F&& f, std::span<const std::int32_t> v) {
                        std::invocable<F, std::span<const std::int32_t>>;
