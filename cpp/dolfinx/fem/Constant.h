@@ -21,7 +21,11 @@ class Constant
 public:
   /// @brief Create a rank-0 (scalar-valued) constant
   /// @param[in] c Value of the constant
-  explicit Constant(T c) : value({c}) {}
+  template <typename U,
+            typename = std::enable_if_t<std::is_convertible_v<U, T>>>
+  explicit Constant(U c) : value({c})
+  {
+  }
 
   /// @brief Create a rank-1 (vector-valued) constant
   /// @param[in] c Value of the constant

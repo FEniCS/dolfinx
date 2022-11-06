@@ -173,11 +173,6 @@ public:
   /// @note The size of of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
-  // template <std::convertible_to<Constant<T>> S,
-  //           std::convertible_to<std::vector<std::int32_t>> U>
-  // DirichletBC(const S& g, U&& dofs, std::shared_ptr<const FunctionSpace> V)
-  //     : DirichletBC(std::make_shared<Constant<T>>(g), dofs, V)
-
   template <typename S, std::convertible_to<std::vector<std::int32_t>> U,
             typename
             = std::enable_if_t<std::is_convertible_v<S, T>
@@ -483,5 +478,5 @@ private:
 
   // The first _owned_indices in _dofs are owned by this process
   std::int32_t _owned_indices0 = -1;
-};
+}; // namespace dolfinx::fem
 } // namespace dolfinx::fem
