@@ -167,6 +167,11 @@ private:
 /// @param [in] degree The number of (outgoing) edges for each node
 /// @return An adjacency list
 template <typename U>
+  requires requires {
+             typename U::value_type;
+             std::convertible_to<
+                 U, std::vector<typename std::decay_t<U>::value_type>>;
+           }
 AdjacencyList<typename std::decay_t<U>::value_type>
 regular_adjacency_list(U&& data, int degree)
 {
