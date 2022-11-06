@@ -28,16 +28,16 @@ namespace dolfinx::fem::impl
 
 /// Implementation of vector assembly
 
-/// Implementation of bc application
+/// @brief Implementation of bc application
 /// @tparam T The scalar type
 /// @tparam _bs0 The block size of the form test function dof map. If
 /// less than zero the block size is determined at runtime. If `_bs0` is
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
 /// @tparam _bs1 The block size of the trial function dof map.
-template <typename T, FEkernel<T> U, int _bs0 = -1, int _bs1 = -1>
+template <typename T, int _bs0 = -1, int _bs1 = -1>
 void _lift_bc_cells(
-    std::span<T> b, const mesh::Geometry& geometry, U kernel,
+    std::span<T> b, const mesh::Geometry& geometry, FEkernel<T> auto kernel,
     std::span<const std::int32_t> cells,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -61,7 +61,7 @@ void _lift_bc_cells(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   const std::size_t num_dofs_g = geometry.cmap().dim();
-  std::span<const double> x_g = geometry.x();
+  std::span<const double> x = geometry.x();
 
   // Data structures used in bc application
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
@@ -112,7 +112,7 @@ void _lift_bc_cells(
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
+      std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
                   std::next(coordinate_dofs.begin(), 3 * i));
     }
 
@@ -192,9 +192,9 @@ void _lift_bc_cells(
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
 /// @tparam _bs1 The block size of the trial function dof map.
-template <typename T, FEkernel<T> U, int _bs = -1>
+template <typename T, int _bs = -1>
 void _lift_bc_exterior_facets(
-    std::span<T> b, const mesh::Mesh& mesh, U kernel,
+    std::span<T> b, const mesh::Mesh& mesh, FEkernel<T> auto kernel,
     std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -215,7 +215,7 @@ void _lift_bc_exterior_facets(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
-  std::span<const double> x_g = mesh.geometry().x();
+  std::span<const double> x = mesh.geometry().x();
 
   // Data structures used in bc application
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
@@ -252,7 +252,7 @@ void _lift_bc_exterior_facets(
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
+      std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
                   std::next(coordinate_dofs.begin(), 3 * i));
     }
 
@@ -300,9 +300,9 @@ void _lift_bc_exterior_facets(
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
 /// @tparam _bs1 The block size of the trial function dof map.
-template <typename T, FEkernel<T> U, int _bs = -1>
+template <typename T, int _bs = -1>
 void _lift_bc_interior_facets(
-    std::span<T> b, const mesh::Mesh& mesh, U kernel,
+    std::span<T> b, const mesh::Mesh& mesh, FEkernel<T> auto kernel,
     std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -326,7 +326,7 @@ void _lift_bc_interior_facets(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
-  std::span<const double> x_g = mesh.geometry().x();
+  std::span<const double> x = mesh.geometry().x();
 
   const int num_cell_facets
       = mesh::cell_num_entities(mesh.topology().cell_type(), tdim - 1);
@@ -354,13 +354,13 @@ void _lift_bc_interior_facets(
     auto x_dofs0 = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      std::copy_n(std::next(x_g.begin(), 3 * x_dofs0[i]), 3,
+      std::copy_n(std::next(x.begin(), 3 * x_dofs0[i]), 3,
                   std::next(cdofs0.begin(), 3 * i));
     }
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
-      std::copy_n(std::next(x_g.begin(), 3 * x_dofs1[i]), 3,
+      std::copy_n(std::next(x.begin(), 3 * x_dofs1[i]), 3,
                   std::next(cdofs1.begin(), 3 * i));
     }
 
@@ -490,15 +490,16 @@ void _lift_bc_interior_facets(
 /// less than zero the block size is determined at runtime. If `_bs` is
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
-template <typename T, FEkernel<T> U, int _bs = -1>
+template <typename T, int _bs = -1>
 void assemble_cells(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
     std::span<T> b, const mesh::Geometry& geometry,
     std::span<const std::int32_t> cells,
-    const graph::AdjacencyList<std::int32_t>& dofmap, int bs, U kernel,
-    std::span<const T> constants, std::span<const T> coeffs, int cstride,
+    const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
+    FEkernel<T> auto kernel, std::span<const T> constants,
+    std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info)
 {
   assert(_bs < 0 or _bs == bs);
@@ -509,7 +510,7 @@ void assemble_cells(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   const std::size_t num_dofs_g = geometry.cmap().dim();
-  std::span<const double> x_g = geometry.x();
+  std::span<const double> x = geometry.x();
 
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
@@ -527,7 +528,7 @@ void assemble_cells(
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
+      std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
                   std::next(coordinate_dofs.begin(), 3 * i));
     }
 
@@ -560,15 +561,16 @@ void assemble_cells(
 /// less than zero the block size is determined at runtime. If `_bs` is
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
-template <typename T, FEkernel<T> U, int _bs = -1>
+template <typename T, int _bs = -1>
 void assemble_exterior_facets(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
     std::span<T> b, const mesh::Mesh& mesh,
     std::span<const std::int32_t> facets,
-    const graph::AdjacencyList<std::int32_t>& dofmap, int bs, U fn,
-    std::span<const T> constants, std::span<const T> coeffs, int cstride,
+    const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
+    FEkernel<T> auto fn, std::span<const T> constants,
+    std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info)
 {
   assert(_bs < 0 or _bs == bs);
@@ -579,7 +581,7 @@ void assemble_exterior_facets(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
-  std::span<const double> x_g = mesh.geometry().x();
+  std::span<const double> x = mesh.geometry().x();
 
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
@@ -597,7 +599,7 @@ void assemble_exterior_facets(
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
+      std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
                   std::next(coordinate_dofs.begin(), 3 * i));
     }
 
@@ -631,14 +633,15 @@ void assemble_exterior_facets(
 /// less than zero the block size is determined at runtime. If `_bs` is
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
-template <typename T, FEkernel<T> U, int _bs = -1>
+template <typename T, int _bs = -1>
 void assemble_interior_facets(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
     std::span<T> b, const mesh::Mesh& mesh,
-    std::span<const std::int32_t> facets, const fem::DofMap& dofmap, U fn,
-    std::span<const T> constants, std::span<const T> coeffs, int cstride,
+    std::span<const std::int32_t> facets, const fem::DofMap& dofmap,
+    FEkernel<T> auto fn, std::span<const T> constants,
+    std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info,
     const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
@@ -647,7 +650,7 @@ void assemble_interior_facets(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
-  std::span<const double> x_g = mesh.geometry().x();
+  std::span<const double> x = mesh.geometry().x();
 
   // Create data structures used in assembly
   using X = scalar_value_type_t<T>;
@@ -672,13 +675,13 @@ void assemble_interior_facets(
     auto x_dofs0 = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      std::copy_n(std::next(x_g.begin(), 3 * x_dofs0[i]), 3,
+      std::copy_n(std::next(x.begin(), 3 * x_dofs0[i]), 3,
                   std::next(cdofs0.begin(), 3 * i));
     }
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
-      std::copy_n(std::next(x_g.begin(), 3 * x_dofs1[i]), 3,
+      std::copy_n(std::next(x.begin(), 3 * x_dofs1[i]), 3,
                   std::next(cdofs1.begin(), 3 * i));
     }
 
@@ -791,17 +794,17 @@ void lift_bc(std::span<T> b, const Form<T>& a, std::span<const T> constants,
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
     if (bs0 == 1 and bs1 == 1)
     {
-      _lift_bc_cells<T, decltype(kernel), 1, 1>(
-          b, mesh->geometry(), kernel, cells, dof_transform, dofmap0, bs0,
-          dof_transform_to_transpose, dofmap1, bs1, constants, coeffs, cstride,
-          cell_info, bc_values1, bc_markers1, x0, scale);
+      _lift_bc_cells<T, 1, 1>(b, mesh->geometry(), kernel, cells, dof_transform,
+                              dofmap0, bs0, dof_transform_to_transpose, dofmap1,
+                              bs1, constants, coeffs, cstride, cell_info,
+                              bc_values1, bc_markers1, x0, scale);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
-      _lift_bc_cells<T, decltype(kernel), 3, 3>(
-          b, mesh->geometry(), kernel, cells, dof_transform, dofmap0, bs0,
-          dof_transform_to_transpose, dofmap1, bs1, constants, coeffs, cstride,
-          cell_info, bc_values1, bc_markers1, x0, scale);
+      _lift_bc_cells<T, 3, 3>(b, mesh->geometry(), kernel, cells, dof_transform,
+                              dofmap0, bs0, dof_transform_to_transpose, dofmap1,
+                              bs1, constants, coeffs, cstride, cell_info,
+                              bc_values1, bc_markers1, x0, scale);
     }
     else
     {
@@ -974,15 +977,15 @@ void assemble_vector(
     const std::vector<std::int32_t>& cells = L.cell_domains(i);
     if (bs == 1)
     {
-      impl::assemble_cells<T, decltype(fn), 1>(
-          dof_transform, b, mesh->geometry(), cells, dofs, bs, fn, constants,
-          coeffs, cstride, cell_info);
+      impl::assemble_cells<T, 1>(dof_transform, b, mesh->geometry(), cells,
+                                 dofs, bs, fn, constants, coeffs, cstride,
+                                 cell_info);
     }
     else if (bs == 3)
     {
-      impl::assemble_cells<T, decltype(fn), 3>(
-          dof_transform, b, mesh->geometry(), cells, dofs, bs, fn, constants,
-          coeffs, cstride, cell_info);
+      impl::assemble_cells<T, 3>(dof_transform, b, mesh->geometry(), cells,
+                                 dofs, bs, fn, constants, coeffs, cstride,
+                                 cell_info);
     }
     else
     {
@@ -999,15 +1002,15 @@ void assemble_vector(
     const std::vector<std::int32_t>& facets = L.exterior_facet_domains(i);
     if (bs == 1)
     {
-      impl::assemble_exterior_facets<T, decltype(fn), 1>(
-          dof_transform, b, *mesh, facets, dofs, bs, fn, constants, coeffs,
-          cstride, cell_info);
+      impl::assemble_exterior_facets<T, 1>(dof_transform, b, *mesh, facets,
+                                           dofs, bs, fn, constants, coeffs,
+                                           cstride, cell_info);
     }
     else if (bs == 3)
     {
-      impl::assemble_exterior_facets<T, decltype(fn), 3>(
-          dof_transform, b, *mesh, facets, dofs, bs, fn, constants, coeffs,
-          cstride, cell_info);
+      impl::assemble_exterior_facets<T, 3>(dof_transform, b, *mesh, facets,
+                                           dofs, bs, fn, constants, coeffs,
+                                           cstride, cell_info);
     }
     else
     {
@@ -1037,15 +1040,15 @@ void assemble_vector(
       const std::vector<std::int32_t>& facets = L.interior_facet_domains(i);
       if (bs == 1)
       {
-        impl::assemble_interior_facets<T, decltype(fn), 1>(
-            dof_transform, b, *mesh, facets, *dofmap, fn, constants, coeffs,
-            cstride, cell_info, get_perm);
+        impl::assemble_interior_facets<T, 1>(dof_transform, b, *mesh, facets,
+                                             *dofmap, fn, constants, coeffs,
+                                             cstride, cell_info, get_perm);
       }
       else if (bs == 3)
       {
-        impl::assemble_interior_facets<T, decltype(fn), 3>(
-            dof_transform, b, *mesh, facets, *dofmap, fn, constants, coeffs,
-            cstride, cell_info, get_perm);
+        impl::assemble_interior_facets<T, 3>(dof_transform, b, *mesh, facets,
+                                             *dofmap, fn, constants, coeffs,
+                                             cstride, cell_info, get_perm);
       }
       else
       {
