@@ -21,9 +21,7 @@ class Constant
 public:
   /// @brief Create a rank-0 (scalar-valued) constant
   /// @param[in] c Value of the constant
-  explicit Constant(T c) : value({c})
-  {
-  }
+  explicit Constant(T c) : value({c}) {}
 
   /// @brief Create a rank-1 (vector-valued) constant
   /// @param[in] c Value of the constant

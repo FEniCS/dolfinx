@@ -80,12 +80,6 @@ concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
                                        const impl::scalar_value_type_t<T>*,
                                        const int*, const std::uint8_t*>;
 
-/// @brief Assembler kernel concept
-template <class U, class T>
-concept FEkernel2 = std::invocable<T*, const T*, const T*,
-                                   const impl::scalar_value_type_t<T>*,
-                                   const int*, const std::uint8_t*>;
-
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms
 ///
@@ -574,11 +568,11 @@ std::span<const std::uint32_t> get_cell_orientation_info(
 }
 
 // Pack a single coefficient for a single cell
-template <typename T, int _bs, typename Functor>
+template <typename T, int _bs>
 static inline void pack(const std::span<T>& coeffs, std::int32_t cell, int bs,
                         const std::span<const T>& v,
                         const std::span<const std::uint32_t>& cell_info,
-                        const DofMap& dofmap, Functor transform)
+                        const DofMap& dofmap, auto transform)
 {
   auto dofs = dofmap.cell_dofs(cell);
   for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -616,12 +610,12 @@ static inline void pack(const std::span<T>& coeffs, std::int32_t cell, int bs,
 /// entity in active_entities (signature:
 /// `std::function<std::int32_t(E::value_type)>`)
 /// @param[in] offset The offset for c
-template <typename T, typename Functor>
+template <typename T>
 void pack_coefficient_entity(const std::span<T>& c, int cstride,
                              const Function<T>& u,
                              const std::span<const std::uint32_t>& cell_info,
                              const std::span<const std::int32_t>& entities,
-                             std::size_t estride, Functor fetch_cells,
+                             std::size_t estride, auto fetch_cells,
                              std::int32_t offset)
 {
   // Read data from coefficient "u"
@@ -767,6 +761,7 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
     {
       auto fetch_cell = [](auto entity) { return entity.front(); };
       const std::vector<std::int32_t>& cells = form.cell_domains(id);
+
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
@@ -780,7 +775,7 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
     {
       const std::vector<std::int32_t>& facets = form.exterior_facet_domains(id);
 
-      // Create lambda function fetching cell index from exterior facet entity
+      // Function to fetch cell index from exterior facet entity
       auto fetch_cell = [](auto& entity) { return entity.front(); };
 
       // Iterate over coefficients
@@ -796,7 +791,8 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
     case IntegralType::interior_facet:
     {
       const std::vector<std::int32_t>& facets = form.interior_facet_domains(id);
-      // Lambda functions to fetch cell index from interior facet entity
+
+      // Functions to fetch cell indices from interior facet entity
       auto fetch_cell0 = [](auto& entity) { return entity[0]; };
       auto fetch_cell1 = [](auto& entity) { return entity[2]; };
 
