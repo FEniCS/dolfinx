@@ -567,7 +567,7 @@ std::span<const std::uint32_t> get_cell_orientation_info(
   return cell_info;
 }
 
-// Pack a single coefficient for a single cell
+/// Pack a single coefficient for a single cell
 template <typename T, int _bs>
 void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
           std::span<const std::uint32_t> cell_info, const DofMap& dofmap,
