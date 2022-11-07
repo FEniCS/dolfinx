@@ -286,8 +286,8 @@ public:
     return it->second.second;
   }
 
-  /// Get the list of (cell_index, local_facet_index) pairs for the ith
-  /// integral (kernel) for the exterior facet domain type
+  /// @brief List of (cell_index, local_facet_index) pairs for the ith
+  /// integral (kernel) for the exterior facet domain type.
   /// @param[in] i Integral ID, i.e. (sub)domain index
   /// @return List of (cell_index, local_facet_index) pairs. This data is
   /// flattened with row-major layout, shape=(num_facets, 2)

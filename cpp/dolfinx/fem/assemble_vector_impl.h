@@ -28,7 +28,7 @@ namespace dolfinx::fem::impl
 
 /// Implementation of vector assembly
 
-/// Implementation of bc application
+/// @brief Implementation of bc application
 /// @tparam T The scalar type
 /// @tparam _bs0 The block size of the form test function dof map. If
 /// less than zero the block size is determined at runtime. If `_bs0` is
@@ -38,10 +38,7 @@ namespace dolfinx::fem::impl
 template <typename T, int _bs0 = -1, int _bs1 = -1>
 void lift_bc_cells(
     std::span<T> b, const mesh::Geometry& geometry,
-    std::span<const scalar_value_type_t<T>> x,
-    const std::function<void(T*, const T*, const T*,
-                             const scalar_value_type_t<T>*, const int*,
-                             const std::uint8_t*)>& kernel,
+    std::span<const scalar_value_type_t<T>> x, FEkernel<T> auto kernel,
     std::span<const std::int32_t> cells,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -196,10 +193,7 @@ void lift_bc_cells(
 template <typename T, int _bs = -1>
 void _lift_bc_exterior_facets(
     std::span<T> b, const mesh::Geometry& geometry,
-    std::span<const scalar_value_type_t<T>> x,
-    const std::function<void(T*, const T*, const T*,
-                             const scalar_value_type_t<T>*, const int*,
-                             const std::uint8_t*)>& kernel,
+    std::span<const scalar_value_type_t<T>> x, FEkernel<T> auto kernel,
     std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -305,10 +299,7 @@ void _lift_bc_exterior_facets(
 template <typename T, int _bs = -1>
 void lift_bc_interior_facets(
     std::span<T> b, const mesh::Mesh& mesh,
-    std::span<const scalar_value_type_t<T>> x,
-    const std::function<void(T*, const T*, const T*,
-                             const scalar_value_type_t<T>*, const int*,
-                             const std::uint8_t*)>& kernel,
+    std::span<const scalar_value_type_t<T>> x, FEkernel<T> auto kernel,
     std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -502,10 +493,8 @@ void assemble_cells(
     std::span<const scalar_value_type_t<T>> x,
     std::span<const std::int32_t> cells,
     const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
-    const std::function<void(T*, const T*, const T*,
-                             const scalar_value_type_t<T>*, const int*,
-                             const std::uint8_t*)>& kernel,
-    std::span<const T> constants, std::span<const T> coeffs, int cstride,
+    FEkernel<T> auto kernel, std::span<const T> constants,
+    std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info)
 {
   assert(_bs < 0 or _bs == bs);
@@ -575,10 +564,8 @@ void assemble_exterior_facets(
     std::span<const scalar_value_type_t<T>> x,
     std::span<const std::int32_t> facets,
     const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
-    const std::function<void(T*, const T*, const T*,
-                             const scalar_value_type_t<T>*, const int*,
-                             const std::uint8_t*)>& fn,
-    std::span<const T> constants, std::span<const T> coeffs, int cstride,
+    FEkernel<T> auto fn, std::span<const T> constants,
+    std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info)
 {
   assert(_bs < 0 or _bs == bs);
@@ -648,10 +635,8 @@ void assemble_interior_facets(
     std::span<T> b, const mesh::Mesh& mesh,
     std::span<const scalar_value_type_t<T>> x,
     std::span<const std::int32_t> facets, const fem::DofMap& dofmap,
-    const std::function<void(T*, const T*, const T*,
-                             const scalar_value_type_t<T>*, const int*,
-                             const std::uint8_t*)>& fn,
-    std::span<const T> constants, std::span<const T> coeffs, int cstride,
+    FEkernel<T> auto fn, std::span<const T> constants,
+    std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info,
     const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
