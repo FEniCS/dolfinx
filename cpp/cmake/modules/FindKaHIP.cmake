@@ -1,8 +1,8 @@
 # * Try to find KaHIP Once done this will define
 #
 # KAHIP_FOUND - system has KaHIP KAHIP_INCLUDE_DIRS - include directories for
-# KaHIP KAHIP_LIBRARIES - libraries for KaHIP KAHIP_VERSION - version for
-# KaHIP
+# KaHIP KAHIP_LIBRARIES - libraries for KaHIP KAHIP_VERSION - version for KaHIP
+#
 # =============================================================================
 # Copyright (C) 2019 Igor A. Baratta All rights reserved.
 #
