@@ -112,6 +112,7 @@ def display(u, filter=np.real):
 # Solve the variational problem using different scalar types
 uh = solve(dtype=np.float32)
 uh = solve(dtype=np.float64)
+uh = solve(dtype=np.complex64)
 uh = solve(dtype=np.complex128)
 
 # Display the last computed solution

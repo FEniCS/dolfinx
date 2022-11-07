@@ -24,12 +24,12 @@ namespace dolfinx::fem::impl
 /// Assemble functional over cells
 template <typename T>
 T assemble_cells(const mesh::Geometry& geometry,
-                 const std::span<const std::int32_t>& cells,
+                 std::span<const std::int32_t> cells,
                  const std::function<void(T*, const T*, const T*,
                                           const scalar_value_type_t<T>*,
                                           const int*, const std::uint8_t*)>& fn,
-                 const std::span<const T>& constants,
-                 const std::span<const T>& coeffs, int cstride)
+                 std::span<const T> constants, std::span<const T> coeffs,
+                 int cstride)
 {
   T value(0);
   if (cells.empty())
@@ -67,12 +67,11 @@ T assemble_cells(const mesh::Geometry& geometry,
 /// Execute kernel over exterior facets and accumulate result
 template <typename T>
 T assemble_exterior_facets(
-    const mesh::Mesh& mesh, const std::span<const std::int32_t>& facets,
+    const mesh::Mesh& mesh, std::span<const std::int32_t> facets,
     const std::function<void(T*, const T*, const T*,
                              const scalar_value_type_t<T>*, const int*,
                              const std::uint8_t*)>& fn,
-    const std::span<const T>& constants, const std::span<const T>& coeffs,
-    int cstride)
+    std::span<const T> constants, std::span<const T> coeffs, int cstride)
 {
   T value(0);
   if (facets.empty())
@@ -112,13 +111,12 @@ T assemble_exterior_facets(
 /// Assemble functional over interior facets
 template <typename T>
 T assemble_interior_facets(
-    const mesh::Mesh& mesh, const std::span<const std::int32_t>& facets,
+    const mesh::Mesh& mesh, std::span<const std::int32_t> facets,
     const std::function<void(T*, const T*, const T*,
                              const scalar_value_type_t<T>*, const int*,
                              const std::uint8_t*)>& fn,
-    const std::span<const T>& constants, const std::span<const T>& coeffs,
-    int cstride, const std::span<const int>& offsets,
-    const std::span<const std::uint8_t>& perms)
+    std::span<const T> constants, std::span<const T> coeffs, int cstride,
+    std::span<const int> offsets, std::span<const std::uint8_t> perms)
 {
   T value(0);
   if (facets.empty())
@@ -177,7 +175,7 @@ T assemble_interior_facets(
 /// Assemble functional into an scalar
 template <typename T>
 T assemble_scalar(
-    const fem::Form<T>& M, const std::span<const T>& constants,
+    const fem::Form<T>& M, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
