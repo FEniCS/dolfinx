@@ -168,8 +168,23 @@ std::vector<std::uint8_t> vtk_wedge(int num_nodes)
   {
   case 6:
     return {0, 1, 2, 3, 4, 5};
+  case 15:
+    return {0, 1, 2, 3, 4, 5, 6, 9, 7, 12, 14, 13, 8, 10, 11};
   default:
     throw std::runtime_error("Unknown wedge layout");
+  }
+}
+//-----------------------------------------------------------------------------
+std::vector<std::uint8_t> vtk_pyramid(int num_nodes)
+{
+  switch (num_nodes)
+  {
+  case 6:
+    return {0, 1, 3, 2, 4};
+  case 13:
+    return {0, 1, 3, 2, 4, 5, 8, 10, 6, 7, 9, 12, 11};
+  default:
+    throw std::runtime_error("Unknown pyramid layout");
   }
 }
 //-----------------------------------------------------------------------------
@@ -334,11 +349,14 @@ std::vector<std::uint8_t> io::cells::perm_vtk(mesh::CellType type,
   case mesh::CellType::quadrilateral:
     map = vtk_quadrilateral(num_nodes);
     break;
+  case mesh::CellType::hexahedron:
+    map = vtk_hexahedron(num_nodes);
+    break;
   case mesh::CellType::prism:
     map = vtk_wedge(num_nodes);
     break;
-  case mesh::CellType::hexahedron:
-    map = vtk_hexahedron(num_nodes);
+  case mesh::CellType::pyramid:
+    map = vtk_pyramid(num_nodes);
     break;
   default:
     throw std::runtime_error("Unknown cell type.");
