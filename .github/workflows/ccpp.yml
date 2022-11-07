@@ -94,6 +94,11 @@ jobs:
         run: |
           cd python/dolfinx/wrappers
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
+      - name: cmake-format (non-blocking)
+        continue-on-error: true
+        run: |
+          python3 -m pip install cmakelang
+          find . -type f -name "*.cmake" | xargs cmake-format --check
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
