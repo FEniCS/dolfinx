@@ -27,7 +27,7 @@ namespace dolfinx::fem::impl
 /// Execute kernel over cells and accumulate result in matrix
 template <typename T>
 void assemble_cells(
-    auto mat_set, const mesh::Geometry& geometry,
+    la::MatSet<T> auto mat_set, const mesh::Geometry& geometry,
     std::span<const std::int32_t> cells,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -122,7 +122,8 @@ void assemble_cells(
 /// Execute kernel over exterior facets and  accumulate result in Mat
 template <typename T>
 void assemble_exterior_facets(
-    auto mat_set, const mesh::Mesh& mesh, std::span<const std::int32_t> facets,
+    la::MatSet<T> auto mat_set, const mesh::Mesh& mesh,
+    std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
@@ -215,7 +216,8 @@ void assemble_exterior_facets(
 /// Execute kernel over interior facets and  accumulate result in Mat
 template <typename T>
 void assemble_interior_facets(
-    auto mat_set, const mesh::Mesh& mesh, std::span<const std::int32_t> facets,
+    la::MatSet<T> auto mat_set, const mesh::Mesh& mesh,
+    std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
@@ -363,7 +365,7 @@ void assemble_interior_facets(
 /// are applied. Matrix is not finalised.
 template <typename T>
 void assemble_matrix(
-    auto mat_set, const Form<T>& a, std::span<const T> constants,
+    la::MatSet<T> auto mat_set, const Form<T>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
     std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1)
