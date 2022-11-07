@@ -20,7 +20,7 @@
 namespace dolfinx::graph
 {
 
-/// Signature of functions for computing the parallel partitioning of a
+/// @brief Signature of functions for computing the parallel partitioning of a
 /// distributed graph
 ///
 /// @param[in] comm MPI Communicator that the graph is distributed
@@ -95,9 +95,9 @@ distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
 /// @return New global indices for the ghost indices.
 std::vector<std::int64_t>
 compute_ghost_indices(MPI_Comm comm,
-                      const std::span<const std::int64_t>& owned_indices,
-                      const std::span<const std::int64_t>& ghost_indices,
-                      const std::span<const int>& ghost_owners);
+                      std::span<const std::int64_t> owned_indices,
+                      std::span<const std::int64_t> ghost_indices,
+                      std::span<const int> ghost_owners);
 
 /// Given an adjacency list with global, possibly non-contiguous, link
 /// indices and a local adjacency list with contiguous link indices
@@ -122,8 +122,8 @@ compute_local_to_global_links(const graph::AdjacencyList<std::int64_t>& global,
 /// indices
 /// @return Map from local0 indices to local1 indices
 std::vector<std::int32_t>
-compute_local_to_local(const std::span<const std::int64_t>& local0_to_global,
-                       const std::span<const std::int64_t>& local1_to_global);
+compute_local_to_local(std::span<const std::int64_t> local0_to_global,
+                       std::span<const std::int64_t> local1_to_global);
 } // namespace build
 
 } // namespace dolfinx::graph

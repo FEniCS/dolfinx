@@ -31,17 +31,16 @@ namespace dolfinx::fem::impl
 /// are applied. Matrix is not finalised.
 template <typename T, typename U>
 void assemble_matrix(
-    U mat_set_values, const Form<T>& a, const std::span<const T>& constants,
+    U mat_set_values, const Form<T>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
-    const std::span<const std::int8_t>& bc0,
-    const std::span<const std::int8_t>& bc1);
+    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1);
 
 /// Execute kernel over cells and accumulate result in matrix
 template <typename T, typename U>
 void assemble_cells(
     U mat_set, const mesh::Geometry& geometry,
-    const std::span<const std::int32_t>& cells,
+    std::span<const std::int32_t> cells,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
@@ -50,14 +49,12 @@ void assemble_cells(
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
-    const std::span<const std::int8_t>& bc0,
-    const std::span<const std::int8_t>& bc1,
+    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
     const std::function<void(T*, const T*, const T*,
                              const scalar_value_type_t<T>*, const int*,
                              const std::uint8_t*)>& kernel,
-    const std::span<const T>& coeffs, int cstride,
-    const std::span<const T>& constants,
-    const std::span<const std::uint32_t>& cell_info)
+    std::span<const T> coeffs, int cstride, std::span<const T> constants,
+    std::span<const std::uint32_t> cell_info)
 {
   if (cells.empty())
     return;
@@ -73,7 +70,7 @@ void assemble_cells(
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
-  const std::span<T> _Ae(Ae);
+  std::span<T> _Ae(Ae);
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
 
   // Iterate over active cells
@@ -140,8 +137,7 @@ void assemble_cells(
 /// Execute kernel over exterior facets and  accumulate result in Mat
 template <typename T, typename U>
 void assemble_exterior_facets(
-    U mat_set, const mesh::Mesh& mesh,
-    const std::span<const std::int32_t>& facets,
+    U mat_set, const mesh::Mesh& mesh, std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
@@ -150,14 +146,12 @@ void assemble_exterior_facets(
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform_to_transpose,
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
-    const std::span<const std::int8_t>& bc0,
-    const std::span<const std::int8_t>& bc1,
+    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
     const std::function<void(T*, const T*, const T*,
                              const scalar_value_type_t<T>*, const int*,
                              const std::uint8_t*)>& kernel,
-    const std::span<const T>& coeffs, int cstride,
-    const std::span<const T>& constants,
-    const std::span<const std::uint32_t>& cell_info)
+    std::span<const T> coeffs, int cstride, std::span<const T> constants,
+    std::span<const std::uint32_t> cell_info)
 {
   if (facets.empty())
     return;
@@ -174,7 +168,7 @@ void assemble_exterior_facets(
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
-  const std::span<T> _Ae(Ae);
+  std::span<T> _Ae(Ae);
   assert(facets.size() % 2 == 0);
   for (std::size_t index = 0; index < facets.size(); index += 2)
   {
@@ -239,8 +233,7 @@ void assemble_exterior_facets(
 /// Execute kernel over interior facets and  accumulate result in Mat
 template <typename T, typename U>
 void assemble_interior_facets(
-    U mat_set, const mesh::Mesh& mesh,
-    const std::span<const std::int32_t>& facets,
+    U mat_set, const mesh::Mesh& mesh, std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
@@ -248,14 +241,13 @@ void assemble_interior_facets(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform_to_transpose,
-    const DofMap& dofmap1, int bs1, const std::span<const std::int8_t>& bc0,
-    const std::span<const std::int8_t>& bc1,
+    const DofMap& dofmap1, int bs1, std::span<const std::int8_t> bc0,
+    std::span<const std::int8_t> bc1,
     const std::function<void(T*, const T*, const T*,
                              const scalar_value_type_t<T>*, const int*,
                              const std::uint8_t*)>& kernel,
-    const std::span<const T>& coeffs, int cstride,
-    const std::span<const int>& offsets, const std::span<const T>& constants,
-    const std::span<const std::uint32_t>& cell_info,
+    std::span<const T> coeffs, int cstride, std::span<const int> offsets,
+    std::span<const T> constants, std::span<const std::uint32_t> cell_info,
     const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
   if (facets.empty())
@@ -332,12 +324,10 @@ void assemble_interior_facets(
     kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data());
 
-    const std::span<T> _Ae(Ae);
-
-    const std::span<T> sub_Ae0
-        = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
-                      bs0 * dmap0_cell1.size() * num_cols);
-    const std::span<T> sub_Ae1
+    std::span<T> _Ae(Ae);
+    std::span<T> sub_Ae0 = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
+                                       bs0 * dmap0_cell1.size() * num_cols);
+    std::span<T> sub_Ae1
         = _Ae.subspan(bs1 * dmap1_cell0.size(),
                       num_rows * num_cols - bs1 * dmap1_cell0.size());
 
@@ -389,11 +379,10 @@ void assemble_interior_facets(
 
 template <typename T, typename U>
 void assemble_matrix(
-    U mat_set, const Form<T>& a, const std::span<const T>& constants,
+    U mat_set, const Form<T>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
-    const std::span<const std::int8_t>& bc0,
-    const std::span<const std::int8_t>& bc1)
+    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1)
 {
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
   assert(mesh);

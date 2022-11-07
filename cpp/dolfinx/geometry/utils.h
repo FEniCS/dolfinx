@@ -29,7 +29,7 @@ class BoundingBoxTree;
 /// @return Bounding box tree for midpoints of mesh entities
 BoundingBoxTree
 create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
-                     const std::span<const std::int32_t>& entity_indices);
+                     std::span<const std::int32_t> entity_indices);
 
 /// Compute all collisions between two BoundingBoxTrees (local to
 /// process)
@@ -48,8 +48,17 @@ std::vector<std::int32_t> compute_collisions(const BoundingBoxTree& tree0,
 /// @return An adjacency list where the ith node corresponds to the
 /// bounding box leaves that contain the ith point
 graph::AdjacencyList<std::int32_t>
-compute_collisions(const BoundingBoxTree& tree,
-                   const std::span<const double>& points);
+compute_collisions(const BoundingBoxTree& tree, std::span<const double> points);
+
+/// Compute the first collision between a point and
+/// the cells of the mesh
+/// @param[in] mesh The mesh
+/// @param[in] tree The bounding box tree
+/// @param[in] point The point (shape=(3))
+/// @return The local cell index, -1 if not found
+int compute_first_colliding_cell(const mesh::Mesh& mesh,
+                                 const BoundingBoxTree& tree,
+                                 const std::array<double, 3>& point);
 
 /// Compute closest mesh entity to a point
 /// @param[in] tree The bounding box tree for the entities
@@ -61,9 +70,10 @@ compute_collisions(const BoundingBoxTree& tree,
 /// @return Index of the closest mesh entity to a point. The ith entry
 /// is the index of the closest entity to the ith input point.
 /// @note Returns index -1 if the bounding box tree is empty
-std::vector<std::int32_t> compute_closest_entity(
-    const BoundingBoxTree& tree, const BoundingBoxTree& midpoint_tree,
-    const mesh::Mesh& mesh, const std::span<const double>& points);
+std::vector<std::int32_t>
+compute_closest_entity(const BoundingBoxTree& tree,
+                       const BoundingBoxTree& midpoint_tree,
+                       const mesh::Mesh& mesh, std::span<const double> points);
 
 /// Compute squared distance between point and bounding box
 /// @param[in] b Bounding box coordinates
@@ -82,10 +92,9 @@ double compute_squared_distance_bbox(std::span<const double, 6> b,
 /// @return An array of vectors (shape=(num_points, 3)) where the ith
 /// row is the shortest vector between the ith entity and the ith point.
 /// Storage is row-major.
-std::vector<double>
-shortest_vector(const mesh::Mesh& mesh, int dim,
-                const std::span<const std::int32_t>& entities,
-                const std::span<const double>& points);
+std::vector<double> shortest_vector(const mesh::Mesh& mesh, int dim,
+                                    std::span<const std::int32_t> entities,
+                                    std::span<const double> points);
 
 /// Compute the squared distance between a point and a mesh entity. The
 /// distance is computed between the ith input points and the ith input
@@ -99,10 +108,9 @@ shortest_vector(const mesh::Mesh& mesh, int dim,
 /// @param[in] points The set points from which to computed the shortest
 /// (shape=(num_points, 3)). Storage is row-major.
 /// @return Squared shortest distance from points[i] to entities[i]
-std::vector<double>
-squared_distance(const mesh::Mesh& mesh, int dim,
-                 const std::span<const std::int32_t>& entities,
-                 const std::span<const double>& points);
+std::vector<double> squared_distance(const mesh::Mesh& mesh, int dim,
+                                     std::span<const std::int32_t> entities,
+                                     std::span<const double> points);
 
 /// From a Mesh, find which cells collide with a set of points.
 /// @note Uses the GJK algorithm, see geometry::compute_distance_gjk for
@@ -118,5 +126,25 @@ squared_distance(const mesh::Mesh& mesh, int dim,
 graph::AdjacencyList<std::int32_t> compute_colliding_cells(
     const mesh::Mesh& mesh,
     const graph::AdjacencyList<std::int32_t>& candidate_cells,
-    const std::span<const double>& points);
+    std::span<const double> points);
+
+/// Given a set of points (local on each process) which process is colliding,
+/// using the GJK algorithm on cells to determine collisions.
+/// @param[in] mesh The mesh
+/// @param[in] points The points to check for collision (shape=(num_points, 3)).
+/// Storage is row-major.
+/// @return Quadratuplet (src_owner, dest_owner, dest_points, dest_cells), where
+/// src_owner is a list of ranks corresponding to the input points. dest_owner
+/// is a list of ranks corresponding to dest_points, the points that this
+/// process owns. dest_cells contains the corresponding cell for each entry in
+/// dest_points.
+/// @note dest_owner is sorted
+/// @note Returns -1 if no colliding process is found
+/// @note dest_points is flattened row-major, shape (dest_owner.size(), 3)
+/// @note Only looks through cells owned by the process
+std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
+           std::vector<double>, std::vector<std::int32_t>>
+determine_point_ownership(const mesh::Mesh& mesh,
+                          std::span<const double> points);
+
 } // namespace dolfinx::geometry

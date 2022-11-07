@@ -42,8 +42,8 @@ namespace dolfinx::mesh
 /// topology meshes.
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
-build_local_dual_graph(const std::span<const std::int64_t>& cells,
-                       const std::span<const std::int32_t>& offsets, int tdim);
+build_local_dual_graph(std::span<const std::int64_t> cells,
+                       std::span<const std::int32_t> offsets, int tdim);
 
 /// @brief Build distributed mesh dual graph (cell-cell connections via
 /// facets) from minimal mesh data.

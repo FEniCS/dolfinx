@@ -45,7 +45,7 @@ namespace dolfinx::fem
 /// with V.
 std::vector<std::int32_t>
 locate_dofs_topological(const FunctionSpace& V, int dim,
-                        const std::span<const std::int32_t>& entities,
+                        std::span<const std::int32_t> entities,
                         bool remote = true);
 
 /// Find degrees-of-freedom which belong to the provided mesh entities
@@ -73,7 +73,7 @@ locate_dofs_topological(const FunctionSpace& V, int dim,
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
     const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
-    int dim, const std::span<const std::int32_t>& entities, bool remote = true);
+    int dim, std::span<const std::int32_t> entities, bool remote = true);
 
 /// Finds degrees of freedom whose geometric coordinate is true for the
 /// provided marking function.
@@ -387,8 +387,7 @@ public:
   /// @param[in] x The array in which to set `scale * (x0 - x_bc)`
   /// @param[in] x0 The array used in compute the value to set
   /// @param[in] scale The scaling value to apply
-  void set(std::span<T> x, const std::span<const T>& x0,
-           double scale = 1.0) const
+  void set(std::span<T> x, std::span<const T> x0, double scale = 1.0) const
   {
     if (std::holds_alternative<std::shared_ptr<const Function<T>>>(_g))
     {
@@ -457,7 +456,7 @@ public:
   /// V0 had a boundary condition applied, i.e. dofs which are fixed by
   /// a boundary condition. Other entries in @p markers are left
   /// unchanged.
-  void mark_dofs(const std::span<std::int8_t>& markers) const
+  void mark_dofs(std::span<std::int8_t> markers) const
   {
     for (std::size_t i = 0; i < _dofs0.size(); ++i)
     {
