@@ -80,7 +80,6 @@ int cell_degree(mesh::CellType type, int num_nodes)
       return 2;
     default:
       throw std::runtime_error("Unsupported hexahedron layout");
-      return 1;
     }
   default:
     throw std::runtime_error("Unknown cell type.");
