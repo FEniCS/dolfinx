@@ -81,6 +81,26 @@ int cell_degree(mesh::CellType type, int num_nodes)
     default:
       throw std::runtime_error("Unsupported hexahedron layout");
     }
+  case mesh::CellType::prism:
+    switch (num_nodes)
+    {
+    case 6:
+      return 1;
+    case 15:
+      return 2;
+    default:
+      throw std::runtime_error("Unsupported prism layout");
+    }
+  case mesh::CellType::pyramid:
+    switch (num_nodes)
+    {
+    case 5:
+      return 1;
+    case 13:
+      return 2;
+    default:
+      throw std::runtime_error("Unsupported pyramid layout");
+    }
   default:
     throw std::runtime_error("Unknown cell type.");
   }
@@ -179,7 +199,7 @@ std::vector<std::uint8_t> vtk_pyramid(int num_nodes)
 {
   switch (num_nodes)
   {
-  case 6:
+  case 5:
     return {0, 1, 3, 2, 4};
   case 13:
     return {0, 1, 3, 2, 4, 5, 8, 10, 6, 7, 9, 12, 11};
