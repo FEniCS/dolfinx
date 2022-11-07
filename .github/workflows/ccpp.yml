@@ -97,7 +97,6 @@ jobs:
       - name: cmake-format (non-blocking)
         continue-on-error: true
         run: |
-          python3 -m pip install cmakelang
           find . -type f \( -name "*.cmake" -o -name "*.cmake.in" \) | xargs cmake-format --check
 
       - name: Configure C++
