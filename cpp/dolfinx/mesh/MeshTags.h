@@ -10,6 +10,7 @@
 #include "Mesh.h"
 #include "Topology.h"
 #include <algorithm>
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
@@ -35,15 +36,18 @@ template <typename T>
 class MeshTags
 {
 public:
-  /// @brief Create a MeshTag from entities of given dimension on a mesh.
+  /// @brief Create a MeshTag from entities of given dimension on a
+  /// mesh.
   ///
-  /// @param[in] mesh The mesh on which the tags are associated
-  /// @param[in] dim Topological dimension of mesh entities to tag
-  /// @param[in] indices std::vector<std::int32> of sorted and unique
-  /// entity indices (indices local to the process)
-  /// @param[in] values std::vector<T> of values for each index in
-  /// indices. The size must be equal to the size of @p indices.
-  template <typename U, typename V>
+  /// @param[in] mesh The mesh on which the tags are associated.
+  /// @param[in] dim Topological dimension of mesh entities to tag.
+  /// @param[in] indices List of entity indices (indices local to the
+  /// process).
+  /// @param[in] values List of values for each index in indices. The
+  /// size must be equal to the size of `indices`.
+  /// @pre `indices` must be sorted and unique.
+  template <std::convertible_to<std::vector<std::int32_t>> U,
+            std::convertible_to<std::vector<T>> V>
   MeshTags(std::shared_ptr<const Mesh> mesh, int dim, U&& indices, V&& values)
       : _mesh(mesh), _dim(dim), _indices(std::forward<U>(indices)),
         _values(std::forward<V>(values))
@@ -81,23 +85,23 @@ public:
   /// @return Indices of tagged entities. The indices are sorted.
   std::vector<std::int32_t> find(const T value) const
   {
-    int n = std::count(_values.begin(), _values.end(), value);
-    std::vector<std::int32_t> indices(n);
-    int counter = 0;
+    std::size_t n = std::count(_values.begin(), _values.end(), value);
+    std::vector<std::int32_t> indices;
+    indices.reserve(n);
     for (std::int32_t i = 0; i < _values.size(); ++i)
     {
       if (_values[i] == value)
-        indices[counter++] = _indices[i];
+        indices.push_back(_indices[i]);
     }
     return indices;
   }
 
   /// Indices of tagged mesh entities (local-to-process). The indices
   /// are sorted.
-  const std::vector<std::int32_t>& indices() const { return _indices; }
+  std::span<const std::int32_t> indices() const { return _indices; }
 
   /// Values attached to mesh entities
-  const std::vector<T>& values() const { return _values; }
+  std::span<const T> values() const { return _values; }
 
   /// Return topological dimension of tagged entities
   int dim() const { return _dim; }
@@ -134,7 +138,7 @@ private:
 template <typename T>
 MeshTags<T> create_meshtags(std::shared_ptr<const Mesh> mesh, int dim,
                             const graph::AdjacencyList<std::int32_t>& entities,
-                            const std::span<const T>& values)
+                            std::span<const T> values)
 {
   LOG(INFO)
       << "Building MeshTgas object from tagged entities (defined by vertices).";
@@ -154,7 +158,7 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Mesh> mesh, int dim,
   // Sort the indices and values by indices
   auto [indices_sorted, values_sorted] = common::sort_unique(indices, values);
 
-  // Remove any entities that were not found (these have andindex of -1)
+  // Remove any entities that were not found (these have an index of -1)
   auto it0 = std::lower_bound(indices_sorted.begin(), indices_sorted.end(), 0);
   std::size_t pos0 = std::distance(indices_sorted.begin(), it0);
   indices_sorted.erase(indices_sorted.begin(), it0);
