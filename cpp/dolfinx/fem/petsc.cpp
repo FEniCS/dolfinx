@@ -266,8 +266,7 @@ Vec fem::petsc::create_vector_nest(
 }
 //-----------------------------------------------------------------------------
 void fem::petsc::assemble_vector(
-    Vec b, const Form<PetscScalar>& L,
-    const std::span<const PetscScalar>& constants,
+    Vec b, const Form<PetscScalar>& L, std::span<const PetscScalar> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const PetscScalar>, int>>& coeffs)
 {
