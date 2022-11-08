@@ -24,10 +24,7 @@ namespace dolfinx::fem::impl
 /// Assemble functional over cells
 template <typename T>
 T assemble_cells(const mesh::Geometry& geometry,
-                 std::span<const std::int32_t> cells,
-                 const std::function<void(T*, const T*, const T*,
-                                          const scalar_value_type_t<T>*,
-                                          const int*, const std::uint8_t*)>& fn,
+                 std::span<const std::int32_t> cells, FEkernel<T> auto fn,
                  std::span<const T> constants, std::span<const T> coeffs,
                  int cstride)
 {
@@ -38,7 +35,7 @@ T assemble_cells(const mesh::Geometry& geometry,
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   const std::size_t num_dofs_g = geometry.cmap().dim();
-  std::span<const double> x_g = geometry.x();
+  std::span<const double> x = geometry.x();
 
   // Create data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
@@ -52,7 +49,7 @@ T assemble_cells(const mesh::Geometry& geometry,
     auto x_dofs = x_dofmap.links(c);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
+      std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
                   std::next(coordinate_dofs.begin(), 3 * i));
     }
 
@@ -66,12 +63,10 @@ T assemble_cells(const mesh::Geometry& geometry,
 
 /// Execute kernel over exterior facets and accumulate result
 template <typename T>
-T assemble_exterior_facets(
-    const mesh::Mesh& mesh, std::span<const std::int32_t> facets,
-    const std::function<void(T*, const T*, const T*,
-                             const scalar_value_type_t<T>*, const int*,
-                             const std::uint8_t*)>& fn,
-    std::span<const T> constants, std::span<const T> coeffs, int cstride)
+T assemble_exterior_facets(const mesh::Mesh& mesh,
+                           std::span<const std::int32_t> facets,
+                           FEkernel<T> auto fn, std::span<const T> constants,
+                           std::span<const T> coeffs, int cstride)
 {
   T value(0);
   if (facets.empty())
@@ -80,7 +75,7 @@ T assemble_exterior_facets(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
-  std::span<const double> x_g = mesh.geometry().x();
+  std::span<const double> x = mesh.geometry().x();
 
   // Create data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
@@ -96,7 +91,7 @@ T assemble_exterior_facets(
     auto x_dofs = x_dofmap.links(cell);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
+      std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
                   std::next(coordinate_dofs.begin(), 3 * i));
     }
 
@@ -110,13 +105,12 @@ T assemble_exterior_facets(
 
 /// Assemble functional over interior facets
 template <typename T>
-T assemble_interior_facets(
-    const mesh::Mesh& mesh, std::span<const std::int32_t> facets,
-    const std::function<void(T*, const T*, const T*,
-                             const scalar_value_type_t<T>*, const int*,
-                             const std::uint8_t*)>& fn,
-    std::span<const T> constants, std::span<const T> coeffs, int cstride,
-    std::span<const int> offsets, std::span<const std::uint8_t> perms)
+T assemble_interior_facets(const mesh::Mesh& mesh,
+                           std::span<const std::int32_t> facets,
+                           FEkernel<T> auto fn, std::span<const T> constants,
+                           std::span<const T> coeffs, int cstride,
+                           std::span<const int> offsets,
+                           std::span<const std::uint8_t> perms)
 {
   T value(0);
   if (facets.empty())
@@ -127,7 +121,7 @@ T assemble_interior_facets(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
-  std::span<const double> x_g = mesh.geometry().x();
+  std::span<const double> x = mesh.geometry().x();
 
   // Create data structures used in assembly
   using X = scalar_value_type_t<T>;
@@ -153,13 +147,13 @@ T assemble_interior_facets(
     auto x_dofs0 = x_dofmap.links(cells[0]);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
-      std::copy_n(std::next(x_g.begin(), 3 * x_dofs0[i]), 3,
+      std::copy_n(std::next(x.begin(), 3 * x_dofs0[i]), 3,
                   std::next(cdofs0.begin(), 3 * i));
     }
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
-      std::copy_n(std::next(x_g.begin(), 3 * x_dofs1[i]), 3,
+      std::copy_n(std::next(x.begin(), 3 * x_dofs1[i]), 3,
                   std::next(cdofs1.begin(), 3 * i));
     }
 
