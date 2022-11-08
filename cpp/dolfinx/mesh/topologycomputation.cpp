@@ -99,9 +99,9 @@ int get_ownership(const U& processes, const V& vertices)
 std::tuple<std::vector<int>, common::IndexMap, std::vector<std::int32_t>>
 get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
                    const common::IndexMap& vertex_map,
-                   const std::span<const std::int32_t>& entity_list,
+                   std::span<const std::int32_t> entity_list,
                    int num_vertices_per_e, int num_entities_per_cell,
-                   const std::span<const std::int32_t>& entity_index)
+                   std::span<const std::int32_t> entity_index)
 {
   // entity_list contains all the entities for all the cells, listed as
   // local vertex indices, and entity_index contains the initial
