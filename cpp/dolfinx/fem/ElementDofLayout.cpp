@@ -97,7 +97,7 @@ ElementDofLayout::entity_closure_dofs_all() const
 int ElementDofLayout::num_sub_dofmaps() const { return _sub_dofmaps.size(); }
 //-----------------------------------------------------------------------------
 const ElementDofLayout&
-ElementDofLayout::sub_layout(const std::span<const int>& component) const
+ElementDofLayout::sub_layout(std::span<const int> component) const
 {
   if (component.empty())
     throw std::runtime_error("No sub dofmap specified");
@@ -110,7 +110,7 @@ ElementDofLayout::sub_layout(const std::span<const int>& component) const
 }
 //-----------------------------------------------------------------------------
 std::vector<int>
-ElementDofLayout::sub_view(const std::span<const int>& component) const
+ElementDofLayout::sub_view(std::span<const int> component) const
 {
   // Fill up a list of parent dofs, from which subdofmap will select
   std::vector<int> dof_list(_num_dofs * _block_size);
