@@ -378,9 +378,9 @@ private:
   // @return Vector of (cell, local_facet) pairs
   template <int num_cells>
   static std::array<std::array<std::int32_t, 2>, num_cells>
-  get_cell_local_facet_pairs(
-      std::int32_t f, std::span<const std::int32_t> cells,
-      const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f)
+  get_cell_local_facet_pairs(std::int32_t f,
+                             std::span<const std::int32_t> cells,
+                             const graph::AdjacencyList<std::int32_t>& c_to_f)
   {
     // Loop over cells sharing facet
     assert(cells.size() == num_cells);

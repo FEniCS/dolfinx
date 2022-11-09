@@ -159,7 +159,6 @@ private:
   std::vector<std::int32_t> _offsets;
 };
 
-/// @cond
 /// @brief Construct a constant degree (valency) adjacency list.
 ///
 /// A constant degree graph has the same number of edges for every node.
@@ -195,6 +194,5 @@ regular_adjacency_list(U&& data, int degree)
   return AdjacencyList<typename std::decay_t<U>::value_type>(
       std::forward<U>(data), std::move(offsets));
 }
-/// @endcond
 
 } // namespace dolfinx::graph
