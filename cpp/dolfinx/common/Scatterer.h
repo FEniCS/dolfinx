@@ -36,7 +36,7 @@ public:
   /// Types of MPI communication pattern used by the Scatterer.
   enum class type
   {
-    neighbour, // use MPI neighbourhood collectives
+    neighbor, // use MPI neighbourhood collectives
     p2p        // use MPI Isend/Irecv for communication
   };
 
@@ -193,7 +193,8 @@ public:
   /// Scatterer, either Scatterer::type::neighbor or Scatterer::type::p2p.
   template <typename T>
   void scatter_fwd_begin(std::span<const T> send_buffer,
-                         std::span<T> recv_buffer, MPI_Request& request) const
+                         std::span<T> recv_buffer, std::span<MPI_Request> requests,
+                         Scatterer::type type=type::neighbor) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
@@ -201,7 +202,7 @@ public:
 
     switch (type)
     {
-    case type::neighbour:
+    case type::neighbor:
       assert(requests.size() == std::size_t(1));
       MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_local.data(),
                               _displs_local.data(), MPI::mpi_type<T>(),
@@ -272,7 +273,7 @@ public:
   void scatter_fwd_begin(std::span<const T> local_data,
                          std::span<T> local_buffer, std::span<T> remote_buffer,
                          Functor pack_fn, std::span<MPI_Request> requests,
-                         Scatterer::type type = type::neighbour) const
+                         Scatterer::type type = type::neighbor) const
   {
     assert(local_buffer.size() == _local_inds.size());
     assert(remote_buffer.size() == _remote_inds.size());
@@ -377,7 +378,7 @@ public:
   /// Scatterer, either Scatterer::type::neighbor or Scatterer::type::p2p.
   template <typename T>
   void scatter_rev_begin(std::span<const T> send_buffer,
-                         std::span<T> recv_buffer, MPI_Request& request) const
+                         std::span<T> recv_buffer, std::span<MPI_Request> requests, Scatterer::type type=type::neighbor) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
@@ -387,7 +388,7 @@ public:
 
     switch (type)
     {
-    case type::neighbour:
+    case type::neighbor:
       assert(requests.size() == 1);
       MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_remote.data(),
                               _displs_remote.data(), MPI::mpi_type<T>(),
@@ -469,7 +470,7 @@ public:
   void scatter_rev_begin(std::span<const T> remote_data,
                          std::span<T> remote_buffer, std::span<T> local_buffer,
                          Functor pack_fn, std::span<MPI_Request> request,
-                         Scatterer::type type = type::neighbour) const
+                         Scatterer::type type = type::neighbor) const
   {
     assert(local_buffer.size() == _local_inds.size());
     assert(remote_buffer.size() == _remote_inds.size());
@@ -571,12 +572,12 @@ public:
   /// @brief Create a vector of MPI_Requests for a given Scatterer::type
   /// @return A vector of MPI requests
   std::vector<MPI_Request> create_request_vector(Scatterer::type type
-                                                 = type::neighbour)
+                                                 = type::neighbor)
   {
     std::vector<MPI_Request> requests;
     switch (type)
     {
-    case type::neighbour:
+    case type::neighbor:
       requests = {MPI_REQUEST_NULL};
       break;
     case type::p2p:
