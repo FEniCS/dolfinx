@@ -47,6 +47,7 @@
 
 
 ARG ADIOS2_VERSION=2.8.3
+ARG DOXYGEN_VERSION=1_9_5
 ARG GMSH_VERSION=4_10_5
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=2
@@ -70,6 +71,7 @@ FROM ubuntu:22.04 as dev-env
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
+ARG DOXYGEN_VERSION
 ARG GMSH_VERSION
 ARG HDF5_SERIES
 ARG HDF5_PATCH
@@ -133,7 +135,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y install \
     catch2 \
     clang-format \
-    doxygen \
     git \
     graphviz \
     libeigen3-dev \
@@ -152,6 +153,20 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libocct-data-exchange-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install Doxygen
+RUN apt-get -qq update && \
+    apt-get -y install bison flex && \
+    wget -nc --quiet https://github.com/doxygen/doxygen/archive/refs/tags/Release_${DOXYGEN_VERSION}.tar.gz && \
+    tar xfz Release_${DOXYGEN_VERSION}.tar.gz && \
+    cd doxygen-Release_${DOXYGEN_VERSION} && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir . && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    apt-get -y purge bison flex && \
+    apt-get -y autoremove && \
+    apt-get clean && \
+    rm -rf /tmp/*
 
 # Install MPI
 RUN if [ "$MPI" = "mpich" ]; then \
