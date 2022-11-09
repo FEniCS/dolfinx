@@ -500,7 +500,7 @@ public:
   /// Scatterer::scatter_rev_begin
   template <typename T, typename Functor, typename BinaryOp>
   void scatter_rev_end(std::span<const T> local_buffer, std::span<T> local_data,
-                       Functor unpack_fn, BinaryOp op, MPI_Request& request)
+                       Functor unpack_fn, BinaryOp op, std::span<MPI_Request> request)
   {
     assert(local_buffer.size() == _local_inds.size());
     if (_local_inds.size() > 0)
