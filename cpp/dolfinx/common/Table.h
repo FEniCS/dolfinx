@@ -14,7 +14,6 @@
 
 namespace dolfinx
 {
-class TableEntry;
 
 /// This class provides storage and pretty-printing for tables.
 /// Example usage:
@@ -22,8 +21,8 @@ class TableEntry;
 ///   Table table("Timings");
 ///   table.set("Foo", "Assemble", 0.010);
 ///   table.set("Foo", "Solve", 0.020);
-///   table.set("PETSc", "Assemble", 0.011);
-///   table.set("PETSc", "Solve", 0.019);
+///   table.set("Bar", "Assemble", 0.011);
+///   table.set("Bar", "Solve", 0.019);
 
 class Table
 {

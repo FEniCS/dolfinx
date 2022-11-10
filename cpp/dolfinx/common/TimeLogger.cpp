@@ -7,6 +7,7 @@
 #include "TimeLogger.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
+#include <iostream>
 #include <variant>
 
 using namespace dolfinx;
@@ -38,11 +39,12 @@ void TimeLogger::register_timing(std::string task, double wall, double user,
     _timings.insert({task, {1, wall, user, system}});
 }
 //-----------------------------------------------------------------------------
-void TimeLogger::list_timings(MPI_Comm comm, std::set<TimingType> type)
+void TimeLogger::list_timings(MPI_Comm comm, std::set<TimingType> type,
+                              Table::Reduction reduction)
 {
   // Format and reduce to rank 0
   Table timings = this->timings(type);
-  timings = timings.reduce(comm, Table::Reduction::average);
+  timings = timings.reduce(comm, reduction);
   const std::string str = "\n" + timings.str();
 
   // Print just on rank 0

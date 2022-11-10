@@ -8,18 +8,26 @@
 
 import pathlib
 
-import numpy
-import petsc4py
-from dolfinx.jit import dolfinx_pc, mpi_jit_decorator
+import cppimport
+import numpy as np
+import pytest
+
+import dolfinx
+import dolfinx.pkgconfig
+from dolfinx.jit import mpi_jit_decorator
 from dolfinx.wrappers import get_include_path as pybind_inc
-from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
+
+import petsc4py
 from mpi4py import MPI
 from petsc4py import PETSc
-import cppimport
 
 
+@pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),
+                    reason="This test needs DOLFINx pkg-config.")
 def test_petsc_casters_cppimport(tempdir):  # noqa: F811
     """Test casters of PETSc objects in codes compiled with cppimport"""
+
+    dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
 
     @mpi_jit_decorator
     def compile_module():
@@ -74,10 +82,10 @@ PYBIND11_MODULE(petsc_casters_cppimport, m)
     x1.create(MPI.COMM_WORLD)
     x1.setSizes((local_range[1] - local_range[0], None))
     x1.setFromOptions()
-    x1.setArray(numpy.arange(local_range[0], local_range[1]))
+    x1.setArray(np.arange(local_range[0], local_range[1]))
     x2 = x1.copy()
 
     # Replace each component by its exponential
     module.PETSc_exp(x1)
     x2.exp()
-    assert numpy.allclose(x1.getArray(), x2.getArray())
+    assert np.allclose(x1.getArray(), x2.getArray())

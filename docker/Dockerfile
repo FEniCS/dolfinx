@@ -6,17 +6,21 @@
 # Garth N. Wells <gnw20@cam.ac.uk>
 # Jan Blechta <blechta@karlin.mff.cuni.cz>
 #
+# To run the latest stable build:
+#
+#    docker run -ti dolfinx/dolfinx:stable
+#
 # To run a nightly build:
 #
-#    docker run -ti dolfinx/dolfinx:latest
+#    docker run -ti dolfinx/dolfinx:nightly
 #
 # To run a Jupyter lab session:
 #
-#    docker run --init -p 8888:8888 dolfinx/lab:latest
+#    docker run --init -p 8888:8888 dolfinx/lab:stable
 #
 # To run and share the current host directory with the container:
 #
-#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab:latest
+#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab:stable
 #
 # To build from source, first checkout the DOLFINx, FFCx, Basix and UFL
 # repositories into the working directory, e.g.:
@@ -32,7 +36,7 @@
 # You can build an optimised version of the complete FEniCS environment for
 # your platform using the commands:
 #
-#    echo '{ "cffi_extra_compile_args" : ["-O2", "-march=native" ] }' > dolfinx/docker/dolfinx_jit_parameters.json
+#    echo '{ "cffi_extra_compile_args" : ["-O2", "-march=native" ] }' > dolfinx/docker/dolfinx_jit_options.json
 #    docker build --target dolfinx --file dolfinx/docker/Dockerfile --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" --build-arg DOLFINX_CMAKE_CXX_FLAGS="-march=native" .
 #
 # You can build an optimised version of the FEniCS development environment
@@ -42,45 +46,59 @@
 #
 
 
-ARG GMSH_VERSION=4_8_4
-ARG PYBIND11_VERSION=2.7.1
-ARG PETSC_VERSION=3.15.2
-ARG SLEPC_VERSION=3.15.1
-ARG ADIOS2_VERSION=2.7.1
-ARG PYVISTA_VERSION=0.32.1
-ARG NUMPY_VERSION=1.20.3
-ARG KAHIP_VERSION=3.11
-ARG XTENSOR_VERSION=0.23.10
-ARG XTENSOR_BLAS_VERSION=0.19.1
-ARG XTL_VERSION=0.7.2
+ARG ADIOS2_VERSION=2.8.3
+ARG DOXYGEN_VERSION=1_9_5
+ARG GMSH_VERSION=4_10_5
+ARG HDF5_SERIES=1.12
+ARG HDF5_PATCH=2
+ARG KAHIP_VERSION=3.14
+ARG NUMPY_VERSION=1.23.3
+ARG PYBIND11_VERSION=2.10.0
+ARG PETSC_VERSION=3.17.4
+ARG SLEPC_VERSION=3.17.2
+ARG PYVISTA_VERSION=0.36.1
+
+ARG MPICH_VERSION=4.0.2
+ARG OPENMPI_SERIES=4.1
+ARG OPENMPI_PATCH=4
+# Used to set the correct PYTHONPATH for the real and complex install of
+# DOLFINx
+ARG PYTHON_VERSION=3.10
 
 ########################################
 
-FROM ubuntu:21.04 as dev-env
+FROM ubuntu:22.04 as dev-env
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
+ARG DOXYGEN_VERSION
 ARG GMSH_VERSION
+ARG HDF5_SERIES
+ARG HDF5_PATCH
 ARG PYBIND11_VERSION
 ARG PETSC_VERSION
 ARG SLEPC_VERSION
 ARG ADIOS2_VERSION
 ARG KAHIP_VERSION
 ARG NUMPY_VERSION
-ARG XTENSOR_VERSION
-ARG XTENSOR_BLAS_VERSION
-ARG XTL_VERSION
+ARG MPICH_VERSION
+ARG OPENMPI_SERIES
+ARG OPENMPI_PATCH
 
 # The following ARGS are used in the dev-env layer.
 # They are safe defaults. They can be overridden by the user.
 # Compiler optimisation flags for SLEPc and PETSc, all languages.
 ARG PETSC_SLEPC_OPTFLAGS="-O2"
-# PETSc and SLEPc number of make processes (--with-make-np)
-ARG PETSC_SLEPC_MAKE_NP=2
 # Turn on PETSc and SLEPc debugging. "yes" or "no".
 ARG PETSC_SLEPC_DEBUGGING="no"
-# Ubuntu MPI variant. "mpich" or "openmpi".
+
+# MPI variant. "mpich" or "openmpi".
 ARG MPI="mpich"
+# See https://github.com/pmodels/mpich/issues/5811
+ARG MPICH_CONFIGURE_OPTIONS="FCFLAGS=-fallow-argument-mismatch FFLAGS=-fallow-argument-mismatch --with-device=ch4:ofi"
+
+# Number of build threads to use with make
+ARG BUILD_NP=3
 
 WORKDIR /tmp
 
@@ -105,23 +123,21 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libboost-dev \
     libboost-filesystem-dev \
     libboost-timer-dev \
-    libhdf5-${MPI}-dev \
     liblapack-dev \
-    lib${MPI}-dev \
     libopenblas-dev \
-    llvm-9 \
+    libpugixml-dev \
     ninja-build \
     pkg-config \
     python3-dev \
-    python3-numpy \
     python3-pip \
-    python3-scipy \
     python3-setuptools && \
     #
     apt-get -y install \
-    doxygen \
+    catch2 \
+    clang-format \
     git \
     graphviz \
+    libeigen3-dev \
     valgrind \
     wget && \
     #
@@ -135,39 +151,48 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libgl1-mesa-dev \
     libocct-foundation-dev \
     libocct-data-exchange-dev && \
-    #
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Install Doxygen
+RUN apt-get -qq update && \
+    apt-get -y install bison flex && \
+    wget -nc --quiet https://github.com/doxygen/doxygen/archive/refs/tags/Release_${DOXYGEN_VERSION}.tar.gz && \
+    tar xfz Release_${DOXYGEN_VERSION}.tar.gz && \
+    cd doxygen-Release_${DOXYGEN_VERSION} && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir . && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    apt-get -y purge bison flex && \
+    apt-get -y autoremove && \
+    apt-get clean && \
+    rm -rf /tmp/*
+
+# Install MPI
+RUN if [ "$MPI" = "mpich" ]; then \
+    wget http://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
+    tar xfz mpich-${MPICH_VERSION}.tar.gz  && \
+    cd mpich-${MPICH_VERSION}  && \
+    ./configure ${MPICH_CONFIGURE_OPTIONS} && \
+    make -j${BUILD_NP} install; \
+    else \
+    wget https://download.open-mpi.org/release/open-mpi/v${OPENMPI_SERIES}/openmpi-${OPENMPI_SERIES}.${OPENMPI_PATCH}.tar.gz && \
+    tar xfz openmpi-${OPENMPI_SERIES}.${OPENMPI_PATCH}.tar.gz  && \
+    cd openmpi-${OPENMPI_SERIES}.${OPENMPI_PATCH} && \
+    ./configure  && \
+    make -j${BUILD_NP} install; \
+    fi && \
+    ldconfig && \
+    rm -rf /tmp/*
 
 # Install Python packages (via pip)
+# Install numpy via pip. Exclude binaries to avoid conflicts with libblas
+# (See issue #126 and #1305)
 # - First set of packages are required to build and run DOLFINx Python.
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
-# LLVM_CONFIG required on aarch64, should be removed long-term.
-RUN LLVM_CONFIG=/usr/bin/llvm-config-9 pip3 install --no-cache-dir mpi4py numba && \
-    pip3 install --no-cache-dir cffi cppimport flake8 pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
-
-# Upgrade numpy via pip. Exclude binaries to avoid conflicts with libblas
-# (See issue #126 and #1305)
-RUN pip3 install --no-cache-dir --no-binary="numpy" numpy==${NUMPY_VERSION} --upgrade
-
-# Install xtl, xtensor, xtensor-blas.
-RUN git clone -b ${XTL_VERSION} --single-branch https://github.com/xtensor-stack/xtl.git && \
-    cd xtl && \
-    cmake -G Ninja . && \
-    ninja install && \
-    cd ../ && \
-    git clone -b ${XTENSOR_VERSION} --single-branch https://github.com/xtensor-stack/xtensor.git && \
-    cd xtensor && \
-    cmake -G Ninja . && \
-    ninja install && \
-    cd ../ && \
-    git clone -b ${XTENSOR_BLAS_VERSION} --single-branch https://github.com/xtensor-stack/xtensor-blas.git && \
-    cd xtensor-blas && \
-    cmake -G Ninja . && \
-    ninja install && \
-    rm -rf xtl xtensor xtensor-blas
+RUN pip3 install --no-binary="numpy" --no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scipy && \
+    pip3 install --no-cache-dir cppimport flake8 isort jupytext matplotlib mypy myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
@@ -177,22 +202,35 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
     cmake --install build-dir && \
     rm -rf /tmp/*
 
+# Install HDF5
+# Note: HDF5 CMake install has numerous bugs and inconsistencies. Test carefully.
+# HDF5 overrides CMAKE_INSTALL_PREFIX by default, hence it is set
+# below to ensure that HDF5 is installed into a path where it can be
+# found.
+RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+    tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DHDF5_ENABLE_PARALLEL=on -DHDF5_ENABLE_Z_LIB_SUPPORT=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    rm -rf /tmp/*
+
 # Install ADIOS2
 RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
     mkdir -p adios2-v${ADIOS2_VERSION} && \
     tar -xf adios2-v${ADIOS2_VERSION}.tar.gz -C adios2-v${ADIOS2_VERSION} --strip-components 1 && \
-    cmake -G Ninja -DADIOS2_USE_Fortran=off -DBUILD_TESTING=off -DADIOS2_BUILD_EXAMPLES=off -DADIOS2_USE_ZeroMQ=off -B build-dir -S ./adios2-v${ADIOS2_VERSION} && \
+    cmake -G Ninja -DADIOS2_USE_HDF5=on -DADIOS2_USE_Fortran=off -DBUILD_TESTING=off -DADIOS2_BUILD_EXAMPLES=off -DADIOS2_USE_ZeroMQ=off -B build-dir -S ./adios2-v${ADIOS2_VERSION} && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     rm -rf /tmp/*
 
 # Install GMSH
-RUN git clone -b gmsh_${GMSH_VERSION} --single-branch https://gitlab.onelab.info/gmsh/gmsh.git && \
+RUN git clone -b gmsh_${GMSH_VERSION} --single-branch --depth 1 https://gitlab.onelab.info/gmsh/gmsh.git && \
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1  -DENABLE_OPENMP=1 -B build-dir -S gmsh && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     rm -rf /tmp/*
 
+# GMSH installs python library in /usr/local/lib, see: https://gitlab.onelab.info/gmsh/gmsh/-/issues/1414
 ENV PYTHONPATH=/usr/local/lib:$PYTHONPATH
 
 # Install PETSc and petsc4py with real and complex types
@@ -208,7 +246,6 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -230,7 +267,6 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -251,7 +287,6 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=yes \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -270,7 +305,6 @@ RUN apt-get -qq update && \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --with-make-np=${PETSC_SLEPC_MAKE_NP} \
     --with-64-bit-indices=yes \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
@@ -304,8 +338,8 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install SLEPc
-RUN wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
-    mkdir -p ${SLEPC_DIR} && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C ${SLEPC_DIR} --strip-components 1 && \
+RUN wget -nc --quiet https://gitlab.com/slepc/slepc/-/archive/v${SLEPC_VERSION}/slepc-v${SLEPC_VERSION}.tar.gz && \
+    mkdir -p ${SLEPC_DIR} && tar -xf slepc-v${SLEPC_VERSION}.tar.gz -C ${SLEPC_DIR} --strip-components 1 && \
     cd ${SLEPC_DIR} && \
     export PETSC_ARCH=linux-gnu-real-32 && \
     python3 ./configure && \
@@ -332,15 +366,18 @@ WORKDIR /root
 FROM dev-env as dolfinx-onbuild
 LABEL description="DOLFINx in 32-bit real and complex modes (onbuild)"
 
+ARG PYTHON_VERSION
+
 ADD dolfinx/docker/dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
 ADD dolfinx/docker/dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
 RUN chmod +x /usr/local/bin/dolfinx-*-mode
 
 ONBUILD WORKDIR /src
 
-# This leaves the sources inside the container. This is a limitation of Docker.
-# There is some trickery in the intermediate and DOLFINx containers that can be
-# used to remove this source if needed, see below.
+# This leaves the sources inside the container. This is a limitation of
+# Docker. There is some trickery in the intermediate and DOLFINx
+# containers that can be used to remove this source if needed, see
+# below.
 ONBUILD ADD basix/ /src/basix/
 ONBUILD ADD ufl/ /src/ufl/
 ONBUILD ADD ffcx/ /src/ffcx/
@@ -348,8 +385,8 @@ ONBUILD ADD dolfinx/ /src/dolfinx/
 
 # These files are empty by default, i.e. they do nothing.
 # The user can set them at build time if they wish.
-ONBUILD ADD dolfinx/docker/dolfinx_jit_parameters.json /root/.config/dolfinx/dolfinx_jit_parameters.json
-ONBUILD ADD dolfinx/docker/ffcx_parameters.json /root/.config/ffcx/ffcx_parameters.json
+ONBUILD ADD dolfinx/docker/dolfinx_jit_options.json /root/.config/dolfinx/dolfinx_jit_options.json
+ONBUILD ADD dolfinx/docker/ffcx_options.json /root/.config/ffcx/ffcx_options.json
 
 # The following ARGS are used in the DOLFINx layer.
 # They are safe defaults.
@@ -358,8 +395,8 @@ ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="RelWithDebInfo"
 # Extra CMake C++ compiler flags for DOLFINx C++ build.
 ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
 
-# The dolfinx-onbuild container expects to have folders basix/ ufl/ ffcx/ and
-# dolfinx/ mounted/shared at /src.
+# The dolfinx-onbuild container expects to have folders basix/ ufl/
+# ffcx/ and dolfinx/ mounted/shared at /src.
 ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} -B build-dir -S ./cpp && \
     cmake --build build-dir && \
     cmake --install build-dir && \
@@ -374,7 +411,8 @@ ONBUILD RUN cd dolfinx && \
     PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} ../cpp && \
     ninja install && \
     cd ../python && \
-    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.8/dist-packages --no-dependencies . && \
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-real-32 pip3 install -v --target /usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir . && \
+    git clean -fdx && \
     cd ../ && \
     mkdir -p build-complex && \
     cd build-complex && \
@@ -382,12 +420,12 @@ ONBUILD RUN cd dolfinx && \
     ninja install && \
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
-    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies .
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install -v --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir .
 
 # Real by default.
 ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
     PETSC_ARCH=linux-gnu-real-32 \
-    PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
+    PYTHONPATH=/usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages:$PYTHONPATH \
     LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ONBUILD WORKDIR /root
@@ -401,11 +439,13 @@ FROM dolfinx-onbuild as intermediate
 FROM dev-env as dolfinx
 LABEL description="DOLFINx in 32-bit real and complex modes"
 
-# This layer manually copies the build artifacts from intermediate into dev-env
-# to make the final image. This is a workaround for a well known limitation of
-# Docker that you cannot cleanup after an ADD operation. This reduces the
-# container size by around 80MB as the /src folder no longer exists in the final
-# image.
+ARG PYTHON_VERSION
+
+# This layer manually copies the build artifacts from intermediate into
+# dev-env to make the final image. This is a workaround for a well known
+# limitation of Docker that you cannot cleanup after an ADD operation.
+# This reduces the container size by around 80MB as the /src folder no
+# longer exists in the final image.
 COPY --from=intermediate /usr/local /usr/local
 COPY --from=intermediate /root/.config /root/.config
 
@@ -414,13 +454,15 @@ COPY --from=intermediate /root/.config /root/.config
 # dolfinx-onbuild so this must be repeated here.
 ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
     PETSC_ARCH=linux-gnu-real-32 \
-    PYTHONPATH=/usr/local/dolfinx-real/lib/python3.8/dist-packages:$PYTHONPATH \
+    PYTHONPATH=/usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages:$PYTHONPATH \
     LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ########################################
 
 FROM dolfinx as lab
 LABEL description="DOLFINx Jupyter Lab"
+
+ARG PYVISTA_VERSION
 
 WORKDIR /root
 
@@ -432,13 +474,23 @@ RUN apt-get -qq update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# pyvista dependencies from pip. Only compatible with x86-64 (amd64).
-# matplotlib improves plotting quality with better color maps and properly rendering colorbars.
+# Install pyvista from PyPI. pyvisa depends on (py)vtk), but vtk is not
+# available on pypi for linux/arm64.
+# matplotlib improves plotting quality with better color maps and
+# properly rendering colorbars.
+# pythreejs and ipygany are two backends of pyvista not requiring a framebuffer,
+# and are therefore preferred in notebooks
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
-    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ;; \
-    esac; \
-    pip3 install --no-cache-dir matplotlib
+    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} && \
+    pip3 install --no-cache-dir matplotlib && \
+    pip3 install --no-cache-dir pythreejs ipygany && \
+    pip3 cache purge && \
+    jupyter nbextension enable --py --sys-prefix ipygany ;; \
+    esac;
+
+# Jupyter Notebook kernel specification for complex build DOLFINx
+ADD dolfinx/docker/complex-kernel.json /usr/local/share/jupyter/kernels/python3-complex/kernel.json
 
 EXPOSE 8888/tcp
 ENV SHELL /bin/bash

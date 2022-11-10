@@ -4,53 +4,44 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import os
+from pathlib import Path
 
 import numpy as np
 import pytest
-from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
-from dolfinx.cpp.io import perm_gmsh
-from dolfinx.cpp.mesh import CellType
-from dolfinx.io import XDMFFile, ufl_mesh_from_gmsh
-from dolfinx.mesh import create_mesh
-from dolfinx_utils.test.fixtures import tempdir
-from mpi4py import MPI
 
-assert (tempdir)
+from dolfinx import cpp as _cpp
+from dolfinx.io import XDMFFile
+from dolfinx.io.gmshio import cell_perm_array, ufl_mesh
+from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_submesh,
+                          create_unit_cube, create_unit_interval,
+                          create_unit_square, locate_entities)
+
+from mpi4py import MPI
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:
-    encodings = (XDMFFile.Encoding.HDF5, )
+    encodings = [XDMFFile.Encoding.HDF5]
 else:
-    encodings = (XDMFFile.Encoding.HDF5, XDMFFile.Encoding.ASCII)
+    encodings = [XDMFFile.Encoding.HDF5, XDMFFile.Encoding.ASCII]
 
 celltypes_2D = [CellType.triangle, CellType.quadrilateral]
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 
-def mesh_factory(tdim, n):
+def mesh_factory(tdim, n, ghost_mode=GhostMode.shared_facet):
     if tdim == 1:
-        return UnitIntervalMesh(MPI.COMM_WORLD, n)
+        return create_unit_interval(MPI.COMM_WORLD, n, ghost_mode=ghost_mode)
     elif tdim == 2:
-        return UnitSquareMesh(MPI.COMM_WORLD, n, n)
+        return create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
     elif tdim == 3:
-        return UnitCubeMesh(MPI.COMM_WORLD, n, n, n)
-
-
-@pytest.fixture
-def worker_id(request):
-    """Return worker ID when using pytest-xdist to run tests in parallel"""
-    if hasattr(request.config, 'slaveinput'):
-        return request.config.slaveinput['slaveid']
-    else:
-        return 'master'
+        return create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
 
 
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_1d_mesh(tempdir, encoding):
-    filename = os.path.join(tempdir, "mesh.xdmf")
-    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
-    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+    filename = Path(tempdir, "mesh.xdmf")
+    mesh = create_unit_interval(MPI.COMM_WORLD, 32)
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
         mesh2 = file.read_mesh()
@@ -62,11 +53,11 @@ def test_save_and_load_1d_mesh(tempdir, encoding):
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
-    filename = os.path.join(tempdir, "mesh.xdmf")
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12, cell_type)
+    filename = Path(tempdir, "mesh.xdmf")
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type)
     mesh.name = "square"
 
-    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
 
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
@@ -81,9 +72,9 @@ def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
-    filename = os.path.join(tempdir, "mesh.xdmf")
-    mesh = UnitCubeMesh(MPI.COMM_WORLD, 12, 12, 8, cell_type)
-    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+    filename = Path(tempdir, "mesh.xdmf")
+    mesh = create_unit_cube(MPI.COMM_WORLD, 12, 12, 8, cell_type)
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
 
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
@@ -128,18 +119,36 @@ def test_read_write_p2_mesh(tempdir, encoding):
         num_nodes, gmsh_cell_id = MPI.COMM_WORLD.bcast([None, None], root=0)
         cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
 
-    domain = ufl_mesh_from_gmsh(gmsh_cell_id, 3)
-    cell_type = cpp.mesh.to_type(str(domain.ufl_cell()))
-    cells = cells[:, perm_gmsh(cell_type, cells.shape[1])]
+    domain = ufl_mesh(gmsh_cell_id, 3)
+    cell_type = _cpp.mesh.to_type(str(domain.ufl_cell()))
+    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])]
 
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 
-    filename = os.path.join(tempdir, "tet10_mesh.xdmf")
-    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as xdmf:
+    filename = Path(tempdir, "tet10_mesh.xdmf")
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as xdmf:
         xdmf.write_mesh(mesh)
-    with XDMFFile(mesh.mpi_comm(), filename, "r", encoding=encoding) as xdmf:
+    with XDMFFile(mesh.comm, filename, "r", encoding=encoding) as xdmf:
         mesh2 = xdmf.read_mesh()
 
     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
     assert mesh.topology.index_map(mesh.topology.dim).size_global == mesh2.topology.index_map(
         mesh.topology.dim).size_global
+
+
+@pytest.mark.parametrize("d", [2, 3])
+@pytest.mark.parametrize("n", [2, 5])
+@pytest.mark.parametrize("codim", [0, 1])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
+                                        GhostMode.shared_facet])
+@pytest.mark.parametrize("encoding", encodings)
+def xtest_submesh(tempdir, d, n, codim, ghost_mode, encoding):
+    mesh = mesh_factory(d, n, ghost_mode)
+    edim = d - codim
+    entities = locate_entities(mesh, edim, lambda x: x[0] >= 0.5)
+    submesh = create_submesh(mesh, edim, entities)[0]
+
+    filename = Path(tempdir, "submesh.xdmf")
+    # Check writing the mesh doesn't cause a segmentation fault
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as xdmf:
+        xdmf.write_mesh(submesh)

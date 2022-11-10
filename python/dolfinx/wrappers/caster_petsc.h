@@ -36,16 +36,14 @@ namespace py = pybind11;
     PYBIND11_TYPE_CASTER(TYPE, _(#NAME));                                      \
     bool load(handle src, bool)                                                \
     {                                                                          \
-      if (src.is_none())                                                       \
+      VERIFY_PETSC4PY(PyPetsc##P4PYTYPE##_Get);                                \
+      if (PyObject_TypeCheck(src.ptr(), &PyPetsc##P4PYTYPE##_Type) != 0)       \
       {                                                                        \
-        value = nullptr;                                                       \
+        value = PyPetsc##P4PYTYPE##_Get(src.ptr());                            \
         return true;                                                           \
       }                                                                        \
-      VERIFY_PETSC4PY(PyPetsc##P4PYTYPE##_Get);                                \
-      if (PyObject_TypeCheck(src.ptr(), &PyPetsc##P4PYTYPE##_Type) == 0)       \
-        return false;                                                          \
-      value = PyPetsc##P4PYTYPE##_Get(src.ptr());                              \
-      return true;                                                             \
+                                                                               \
+      return false;                                                            \
     }                                                                          \
                                                                                \
     static handle cast(TYPE src, py::return_value_policy policy,               \
@@ -69,7 +67,6 @@ PETSC_CASTER_MACRO(DM, DM, dm);
 PETSC_CASTER_MACRO(IS, IS, is);
 PETSC_CASTER_MACRO(KSP, KSP, ksp);
 PETSC_CASTER_MACRO(Mat, Mat, mat);
-// PETSC_CASTER_MACRO(MatNullSpace, NullSpace, matnullspace);
 PETSC_CASTER_MACRO(SNES, SNES, snes);
 PETSC_CASTER_MACRO(Vec, Vec, vec);
 } // namespace pybind11::detail

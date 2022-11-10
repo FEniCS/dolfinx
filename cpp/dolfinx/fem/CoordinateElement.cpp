@@ -9,47 +9,26 @@
 #include <cmath>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
-#include <xtensor/xnoalias.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
-namespace
-{
-// Computes the determinant of rectangular matrices
-// det(A^T * A) = det(A) * det(A)
-template <typename Matrix>
-double compute_determinant(Matrix& A)
-{
-  if (A.shape(0) == A.shape(1))
-    return math::det(A);
-  else
-  {
-    using T = typename Matrix::value_type;
-    xt::xtensor<T, 2> B = xt::transpose(A);
-    xt::xtensor<T, 2> BA = xt::zeros<T>({B.shape(0), A.shape(1)});
-    math::dot(B, A, BA);
-    return std::sqrt(math::det(BA));
-  }
-}
-} // namespace
-
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(
-    std::shared_ptr<basix::FiniteElement> element)
+    std::shared_ptr<const basix::FiniteElement> element)
     : _element(element)
 {
   int degree = _element->degree();
-  const mesh::CellType cell = cell_shape();
+  mesh::CellType cell = this->cell_shape();
   _is_affine = mesh::is_simplex(cell) and degree == 1;
 }
 //-----------------------------------------------------------------------------
-CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree)
-    : CoordinateElement(
-        std::make_shared<basix::FiniteElement>(basix::create_element(
-            basix::element::family::P, mesh::cell_type_to_basix_type(celltype),
-            degree, basix::element::lagrange_variant::equispaced, false)))
+CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree,
+                                     basix::element::lagrange_variant type)
+    : CoordinateElement(std::make_shared<basix::FiniteElement>(
+        basix::create_element(basix::element::family::P,
+                              mesh::cell_type_to_basix_type(celltype), degree,
+                              type, false)))
 {
   // Do nothing
 }
@@ -59,251 +38,130 @@ mesh::CellType CoordinateElement::cell_shape() const
   return mesh::cell_type_from_basix_type(_element->cell_type());
 }
 //-----------------------------------------------------------------------------
-int CoordinateElement::topological_dimension() const
+std::array<std::size_t, 4>
+CoordinateElement::tabulate_shape(std::size_t nd, std::size_t num_points) const
 {
-  return basix::cell::topological_dimension(_element->cell_type());
+  return _element->tabulate_shape(nd, num_points);
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 4>
-CoordinateElement::tabulate(int n, const xt::xtensor<double, 2>& X) const
-{
-  return _element->tabulate(n, X);
-}
-//--------------------------------------------------------------------------------
-void CoordinateElement::compute_jacobian(
-    const xt::xtensor<double, 4>& dphi, const xt::xtensor<double, 2>& cell_geom,
-    xt::xtensor<double, 3>& J) const
-{
-  // Number of points
-  std::size_t num_points = dphi.shape(1);
-  if (num_points == 0)
-    return;
-
-  // in-argument checks
-  const std::size_t tdim = this->topological_dimension();
-  const std::size_t gdim = cell_geom.shape(1);
-  const std::size_t d = cell_geom.shape(0);
-
-  // In/out size checks
-  assert(J.shape(0) == num_points);
-  assert(J.shape(1) == gdim);
-  assert(J.shape(2) == tdim);
-  assert(dphi.shape(0) == tdim);
-  assert(dphi.shape(1) == num_points);
-  assert(dphi.shape(3) == 1); // Assumes that value size is equal to 1
-  xt::xtensor<double, 2> J0 = xt::zeros<double>({gdim, tdim});
-  xt::xtensor<double, 2> dphi0 = xt::empty<double>({tdim, d});
-  if (_is_affine)
-  {
-    xt::noalias(dphi0) = xt::view(dphi, xt::all(), 0, xt::all(), 0);
-    math::dot(cell_geom, dphi0, J0, true);
-    J = xt::broadcast(J0, J.shape());
-  }
-  else
-  {
-    for (std::size_t p = 0; p < num_points; ++p)
-    {
-      J0.fill(0);
-      xt::noalias(dphi0) = xt::view(dphi, xt::all(), p, xt::all(), 0);
-      auto J_ip = xt::view(J, p, xt::all(), xt::all());
-      math::dot(cell_geom, dphi0, J0, true);
-      J_ip.assign(J0);
-    }
-  }
-}
-//--------------------------------------------------------------------------------
-void CoordinateElement::compute_jacobian_inverse(
-    const xt::xtensor<double, 3>& J, xt::xtensor<double, 3>& K) const
-{
-  assert(J.shape(0) == K.shape(0));
-  assert(J.shape(1) == K.shape(2));
-  assert(J.shape(2) == K.shape(1));
-
-  const int gdim = J.shape(1);
-  const int tdim = K.shape(1);
-  xt::xtensor<double, 2> K0 = xt::zeros<double>({tdim, gdim});
-  xt::xtensor<double, 2> J0 = xt::zeros<double>({gdim, tdim});
-  if (_is_affine)
-  {
-    J0 = xt::view(J, 0, xt::all(), xt::all());
-    if (gdim == tdim)
-      math::inv(J0, K0);
-    else
-      math::pinv(J0, K0);
-    K = xt::broadcast(K0, K.shape());
-  }
-  else
-  {
-    for (std::size_t p = 0; p < J.shape(0); ++p)
-    {
-      K0.fill(0);
-      J0 = xt::view(J, p, xt::all(), xt::all());
-      if (gdim == tdim)
-        math::inv(J0, K0);
-      else
-        math::pinv(J0, K0);
-      auto K_ip = xt::view(K, p, xt::all(), xt::all());
-      K_ip.assign(K0);
-    }
-  }
-}
-//--------------------------------------------------------------------------------
-void CoordinateElement::compute_jacobian_determinant(
-    const xt::xtensor<double, 3>& J, xt::xtensor<double, 1>& Jdet) const
-{
-  assert(J.shape(0) == Jdet.shape(0));
-  if (_is_affine)
-  {
-    auto J0 = xt::view(J, 0, xt::all(), xt::all());
-    double det = compute_determinant(J0);
-    Jdet.fill(det);
-  }
-  else
-  {
-    for (std::size_t p = 0; p < J.shape(0); ++p)
-    {
-      auto Jp = xt::view(J, p, xt::all(), xt::all());
-      double det = compute_determinant(Jp);
-      Jdet[p] = det;
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-ElementDofLayout CoordinateElement::dof_layout() const
+void CoordinateElement::tabulate(int nd, std::span<const double> X,
+                                 std::array<std::size_t, 2> shape,
+                                 std::span<double> basis) const
 {
   assert(_element);
-  std::vector<std::vector<std::vector<int>>> entity_dofs
-      = _element->entity_dofs();
-  std::vector<std::vector<std::vector<int>>> entity_closure_dofs
-      = _element->entity_closure_dofs();
-
-  return ElementDofLayout(1, entity_dofs, entity_closure_dofs, {}, {});
+  _element->tabulate(nd, X, shape, basis);
 }
-//-----------------------------------------------------------------------------
-void CoordinateElement::push_forward(
-    xt::xtensor<double, 2>& x, const xt::xtensor<double, 2>& cell_geometry,
-    const xt::xtensor<double, 2>& phi)
+//--------------------------------------------------------------------------------
+ElementDofLayout CoordinateElement::create_dof_layout() const
 {
-  assert(phi.shape(1) == cell_geometry.shape(0));
-
-  // Compute physical coordinates
-  // x = phi * cell_geometry;
-  x.fill(0);
-  math::dot(phi, cell_geometry, x);
+  assert(_element);
+  return ElementDofLayout(1, _element->entity_dofs(),
+                          _element->entity_closure_dofs(), {}, {});
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::pull_back(
-    xt::xtensor<double, 2>& X, xt::xtensor<double, 3>& J,
-    xt::xtensor<double, 1>& detJ, xt::xtensor<double, 3>& K,
-    const xt::xtensor<double, 2>& x,
-    const xt::xtensor<double, 2>& cell_geometry) const
+void CoordinateElement::pull_back_nonaffine(mdspan2_t X, cmdspan2_t x,
+                                            cmdspan2_t cell_geometry,
+                                            double tol, int maxit) const
 {
   // Number of points
-  std::size_t num_points = x.shape(0);
+  std::size_t num_points = x.extent(0);
   if (num_points == 0)
     return;
 
-  // in-argument checks
-  const std::size_t tdim = this->topological_dimension();
-  const std::size_t gdim = x.shape(1);
-  const std::size_t d = cell_geometry.shape(0);
-  assert(cell_geometry.shape(1) == gdim);
+  const std::size_t tdim = mesh::cell_dim(this->cell_shape());
+  const std::size_t gdim = x.extent(1);
+  const std::size_t num_xnodes = cell_geometry.extent(0);
+  assert(cell_geometry.extent(1) == gdim);
+  assert(X.extent(0) == num_points);
+  assert(X.extent(1) == tdim);
 
-  // In/out size checks
-  assert(X.shape(0) == num_points);
-  assert(X.shape(1) == tdim);
-  assert(J.size() == num_points * gdim * tdim);
-  assert(detJ.size() == num_points);
-  assert(K.size() == num_points * gdim * tdim);
+  std::vector<double> dphi_b(tdim * num_xnodes);
+  mdspan2_t dphi(dphi_b.data(), tdim, num_xnodes);
 
-  xt::xtensor<double, 4> dphi({tdim, num_points, d, 1});
-  if (_is_affine)
+  std::vector<double> Xk_b(tdim);
+  mdspan2_t Xk(Xk_b.data(), 1, tdim);
+
+  std::array<double, 3> xk = {0, 0, 0};
+
+  std::vector<double> dX(tdim);
+
+  std::vector<double> J_b(gdim * tdim);
+  mdspan2_t J(J_b.data(), gdim, tdim);
+
+  std::vector<double> K_b(tdim * gdim);
+  mdspan2_t K(K_b.data(), tdim, gdim);
+
+  namespace stdex = std::experimental;
+  using mdspan4_t = stdex::mdspan<double, stdex::dextents<std::size_t, 4>>;
+
+  const std::array<std::size_t, 4> bsize = _element->tabulate_shape(1, 1);
+  std::vector<double> basis_b(
+      std::reduce(bsize.begin(), bsize.end(), 1, std::multiplies{}));
+  mdspan4_t basis(basis_b.data(), bsize);
+  std::vector<double> phi(basis.extent(2));
+
+  for (std::size_t p = 0; p < num_points; ++p)
   {
-    // Tabulate shape function and first derivative at the origin
-    xt::xtensor<double, 2> X0 = xt::zeros<double>({std::size_t(1), tdim});
-    xt::xtensor<double, 4> tabulated_data = _element->tabulate(1, X0);
-    dphi = xt::view(tabulated_data, xt::range(1, tdim + 1), xt::all(),
-                    xt::all(), xt::all());
-
-    // Compute Jacobian, its inverse and determinant
-    compute_jacobian(dphi, cell_geometry, J);
-    compute_jacobian_inverse(J, K);
-    compute_jacobian_determinant(J, detJ);
-
-    // Compute physical coordinates at X=0 (phi(X) * cell_geom).
-    auto phi0 = xt::view(tabulated_data, 0, 0, xt::all(), 0);
-    std::vector<double> x0(cell_geometry.shape(1), 0.0);
-    for (std::size_t i = 0; i < x.size(); ++i)
-      for (std::size_t j = 0; j < phi0.shape(0); ++j)
-        x0[i] += cell_geometry(j, i) * phi0[j];
-
-    // Calculate X for each point
-    auto K0 = xt::view(K, 0, xt::all(), xt::all());
-    X.fill(0.0);
-    for (std::size_t ip = 0; ip < num_points; ++ip)
+    std::fill(Xk_b.begin(), Xk_b.end(), 0.0);
+    int k;
+    for (k = 0; k < maxit; ++k)
     {
-      for (std::size_t i = 0; i < K0.shape(0); ++i)
-        for (std::size_t j = 0; j < K0.shape(1); ++j)
-          X(ip, i) += K0(i, j) * (x(ip, j) - x0[j]);
+      _element->tabulate(1, Xk_b, {1, tdim}, basis_b);
+
+      // x = cell_geometry * phi
+      std::fill(xk.begin(), xk.end(), 0.0);
+      for (std::size_t i = 0; i < cell_geometry.extent(0); ++i)
+        for (std::size_t j = 0; j < cell_geometry.extent(1); ++j)
+          xk[j] += cell_geometry(i, j) * basis(0, 0, i, 0);
+
+      // Compute Jacobian, its inverse and determinant
+      std::fill(J_b.begin(), J_b.end(), 0.0);
+      for (std::size_t i = 0; i < tdim; ++i)
+        for (std::size_t j = 0; j < basis.extent(2); ++j)
+          dphi(i, j) = basis(i + 1, 0, j, 0);
+
+      compute_jacobian(dphi, cell_geometry, J);
+      compute_jacobian_inverse(J, K);
+
+      // Compute dX = K * (x_p - x_k)
+      std::fill(dX.begin(), dX.end(), 0);
+      for (std::size_t i = 0; i < K.extent(0); ++i)
+        for (std::size_t j = 0; j < K.extent(1); ++j)
+          dX[i] += K(i, j) * (x(p, j) - xk[j]);
+
+      // Compute Xk += dX
+      std::transform(dX.begin(), dX.end(), Xk_b.begin(), Xk_b.begin(),
+                     [](double a, double b) { return a + b; });
+
+      // Compute norm(dX)
+      if (auto dX_squared
+          = std::transform_reduce(dX.cbegin(), dX.cend(), 0.0, std::plus{},
+                                  [](auto v) { return v * v; });
+          std::sqrt(dX_squared) < tol)
+      {
+        break;
+      }
     }
-  }
-  else
-  {
-    xt::xtensor<double, 2> Xk({1, tdim});
-    std::vector<double> xk(cell_geometry.shape(1));
-    xt::xtensor<double, 1> dX = xt::empty<double>({tdim});
-    for (std::size_t ip = 0; ip < num_points; ++ip)
+
+    std::copy(Xk_b.cbegin(), std::next(Xk_b.cbegin(), tdim),
+              X.data_handle() + p * tdim);
+    if (k == maxit)
     {
-      Xk.fill(0);
-      int k;
-      for (k = 0; k < non_affine_max_its; ++k)
-      {
-        xt::xtensor<double, 4> tabulated_data = _element->tabulate(1, Xk);
-        dphi = xt::view(tabulated_data, xt::range(1, tdim + 1), xt::all(),
-                        xt::all(), xt::all());
-
-        // cell_geometry * phi(0)
-        auto phi0 = xt::view(tabulated_data, 0, 0, xt::all(), 0);
-        std::fill(xk.begin(), xk.end(), 0.0);
-        for (std::size_t i = 0; i < cell_geometry.shape(1); ++i)
-          for (std::size_t j = 0; j < cell_geometry.shape(0); ++j)
-            xk[i] += cell_geometry(j, i) * phi0[j];
-
-        // Compute Jacobian, its inverse and determinant
-        compute_jacobian(dphi, cell_geometry, J);
-        compute_jacobian_inverse(J, K);
-        compute_jacobian_determinant(J, detJ);
-
-        auto K0 = xt::view(K, 0, xt::all(), xt::all());
-        dX.fill(0.0);
-        for (std::size_t i = 0; i < K0.shape(0); ++i)
-          for (std::size_t j = 0; j < K0.shape(1); ++j)
-            dX[i] += K0(i, j) * (x(ip, j) - xk[j]);
-
-        if (std::sqrt(xt::sum(dX * dX)()) < non_affine_atol)
-          break;
-
-        Xk += dX;
-      }
-      xt::row(X, ip) = xt::row(Xk, 0);
-      if (k == non_affine_max_its)
-      {
-        throw std::runtime_error(
-            "Newton method failed to converge for non-affine geometry");
-      }
+      throw std::runtime_error(
+          "Newton method failed to converge for non-affine geometry");
     }
   }
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::permute_dofs(xtl::span<std::int32_t> dofs,
-                                     const std::uint32_t cell_perm) const
+void CoordinateElement::permute_dofs(const std::span<std::int32_t>& dofs,
+                                     std::uint32_t cell_perm) const
 {
   assert(_element);
   _element->permute_dofs(dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::unpermute_dofs(xtl::span<std::int32_t> dofs,
-                                       const std::uint32_t cell_perm) const
+void CoordinateElement::unpermute_dofs(const std::span<std::int32_t>& dofs,
+                                       std::uint32_t cell_perm) const
 {
   assert(_element);
   _element->unpermute_dofs(dofs, cell_perm);
@@ -314,5 +172,23 @@ bool CoordinateElement::needs_dof_permutations() const
   assert(_element);
   assert(_element->dof_transformations_are_permutations());
   return !_element->dof_transformations_are_identity();
+}
+//-----------------------------------------------------------------------------
+int CoordinateElement::degree() const
+{
+  assert(_element);
+  return _element->degree();
+}
+//-----------------------------------------------------------------------------
+int CoordinateElement::dim() const
+{
+  assert(_element);
+  return _element->dim();
+}
+//-----------------------------------------------------------------------------
+basix::element::lagrange_variant CoordinateElement::variant() const
+{
+  assert(_element);
+  return _element->lagrange_variant();
 }
 //-----------------------------------------------------------------------------

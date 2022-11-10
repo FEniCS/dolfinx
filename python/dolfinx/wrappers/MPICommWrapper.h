@@ -25,7 +25,8 @@ public:
   MPICommWrapper(MPI_Comm comm) : _comm(comm) {}
 
   /// Assignment operator
-  MPICommWrapper& operator=(const MPI_Comm comm) {
+  MPICommWrapper& operator=(const MPI_Comm comm)
+  {
     this->_comm = comm;
     return *this;
   }

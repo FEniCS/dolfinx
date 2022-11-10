@@ -1,0 +1,67 @@
+# Dockerfile for building image suitable for creating binary Python wheels on
+# Linux x86-64 platforms.  This image should be built manually/locally and
+# pushed to docker.io/fenicsproject/wheelbuilder_x86_64:latest. It is then
+# used in the DOLFINx GitHub workflow wheels.yml.
+#
+# docker build -t docker.io/fenicsproject/wheelbuilder_x86_64:latest -f Dockerfile.wheelbuilder .
+# docker push docker.io/fenicsproject.org/wheelbuilder_x86_64:latest
+FROM quay.io/pypa/manylinux2014_x86_64:2021-11-15-a808c18
+
+ARG BUILD_NP=16
+
+ARG MPICH_VERSION=3.4.2
+ARG PETSC_VERSION=3.16.0
+ARG BOOST_VERSION=1.77.0
+ARG BOOST_VERSION_UNDERSCORES=1_77_0
+ARG HDF5_SERIES=1.12
+ARG HDF5_PATCH=1
+
+WORKDIR /tmp
+
+RUN yum -y update && \
+    yum -y install cmake flex bison openblas-devel ninja-build && \
+    yum -y clean all && \
+    rm -rf /var/cache
+
+RUN curl -L -O http://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
+    tar -xf mpich-${MPICH_VERSION}.tar.gz && \
+    cd mpich-${MPICH_VERSION} && \
+    FFLAGS=-fallow-argument-mismatch ./configure --with-device=ch4:ofi --enable-shared --prefix=/usr/local && \
+    make -j${BUILD_NP} install && \
+    rm -rf /tmp/*
+
+RUN curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz && \
+    mkdir petsc && \
+    tar -xf petsc-lite-${PETSC_VERSION}.tar.gz -C petsc --strip-components=1 && \
+    cd petsc && \
+    python3.8 ./configure \
+      --with-shared-libraries \
+      --with-fortran-bindings=no \
+      --with-scalar-type=real \
+      --with-64-bit-indices=no \
+      --download-ptscotch \
+      --download-hypre \
+      --download-metis \
+      --download-mumps \
+      --download-scalapack \
+      --download-superlu \
+      --download-superlu_dist \
+      --prefix=/usr/local \
+      --with-make-np=${BUILD_NP} && \
+    make all && \
+    make install && \
+    rm -rf /tmp/*
+
+RUN curl -L -O https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION_UNDERSCORES}.tar.gz && \
+    tar -xf boost_${BOOST_VERSION_UNDERSCORES}.tar.gz && \
+    cd boost_${BOOST_VERSION_UNDERSCORES} && \
+    ./bootstrap.sh --prefix=/usr/local && \
+    ./b2 -j ${BUILD_NP} --with-timer --with-filesystem --with-program_options cxxflags="-fPIC -std=c++11" install && \
+    rm -rf /tmp/*
+
+RUN curl -L -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+    tar -xf hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+    cd hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
+    ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
+    make -j${BUILD_NP} install && \
+    rm -rf /tmp/*

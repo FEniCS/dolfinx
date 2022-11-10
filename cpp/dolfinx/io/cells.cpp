@@ -10,7 +10,6 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <numeric>
 #include <stdexcept>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 namespace
@@ -238,7 +237,7 @@ std::vector<std::uint8_t> gmsh_triangle(int num_nodes)
   case 10:
     return {0, 1, 2, 7, 8, 3, 4, 6, 5, 9};
   default:
-    throw std::runtime_error("Higher order GMSH triangle not supported");
+    throw std::runtime_error("Higher order Gmsh triangle not supported");
   }
 }
 //-----------------------------------------------------------------------------
@@ -254,7 +253,7 @@ std::vector<std::uint8_t> gmsh_tetrahedron(int num_nodes)
     return {0,  1,  2, 3, 14, 15, 8,  9,  13, 12,
             11, 10, 5, 4, 7,  6,  19, 18, 17, 16};
   default:
-    throw std::runtime_error("Higher order GMSH tetrahedron not supported");
+    throw std::runtime_error("Higher order Gmsh tetrahedron not supported");
   }
 }
 //-----------------------------------------------------------------------------
@@ -268,7 +267,7 @@ std::vector<std::uint8_t> gmsh_hexahedron(int num_nodes)
     return {0,  1,  3,  2,  4,  5,  7,  6,  8,  9,  10, 11, 12, 13,
             15, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26};
   default:
-    throw std::runtime_error("Higher order GMSH hexahedron not supported");
+    throw std::runtime_error("Higher order Gmsh hexahedron not supported");
   }
 }
 //-----------------------------------------------------------------------------
@@ -283,7 +282,7 @@ std::vector<std::uint8_t> gmsh_quadrilateral(int num_nodes)
   case 16:
     return {0, 1, 3, 2, 4, 5, 8, 9, 11, 10, 7, 6, 12, 13, 15, 14};
   default:
-    throw std::runtime_error("Higher order GMSH quadrilateral not supported");
+    throw std::runtime_error("Higher order Gmsh quadrilateral not supported");
   }
 }
 } // namespace
@@ -364,32 +363,35 @@ io::cells::transpose(const std::vector<std::uint8_t>& map)
   return transpose;
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<std::int64_t, 2>
-io::cells::compute_permutation(const xt::xtensor<std::int64_t, 2>& cells,
-                               const std::vector<std::uint8_t>& p)
+std::vector<std::int64_t>
+io::cells::apply_permutation(const std::span<const std::int64_t>& cells,
+                             std::array<std::size_t, 2> shape,
+                             const std::span<const std::uint8_t>& p)
 {
-  xt::xtensor<std::int64_t, 2> cells_new(cells.shape());
-  for (std::size_t c = 0; c < cells_new.shape(0); ++c)
+  assert(cells.size() == shape[0] * shape[1]);
+  assert(shape[1] == p.size());
+
+  LOG(INFO) << "IO permuting cells";
+  std::vector<std::int64_t> cells_new(cells.size());
+  for (std::size_t c = 0; c < shape[0]; ++c)
   {
-    auto cell = xt::row(cells, c);
-    auto cell_new = xt::row(cells_new, c);
-    for (std::size_t i = 0; i < cell_new.shape(0); ++i)
+    auto cell = cells.subspan(c * shape[1], shape[1]);
+    std::span cell_new(cells_new.data() + c * shape[1], shape[1]);
+    for (std::size_t i = 0; i < shape[1]; ++i)
       cell_new[i] = cell[p[i]];
   }
   return cells_new;
 }
 //-----------------------------------------------------------------------------
-std::int8_t io::cells::get_vtk_cell_type(const dolfinx::mesh::Mesh& mesh,
-                                         int dim)
+std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim)
 {
-  if (mesh.topology().cell_type() == mesh::CellType::prism)
+  if (cell == mesh::CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cell");
 
   // Get cell type
-  mesh::CellType cell_type
-      = mesh::cell_entity_type(mesh.topology().cell_type(), dim, 0);
+  mesh::CellType cell_type = mesh::cell_entity_type(cell, dim, 0);
 
-  // Determine VTK cell type (Using arbitrary Lagrange elements)
+  // Determine VTK cell type (arbitrary Lagrange elements)
   // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
   switch (cell_type)
   {

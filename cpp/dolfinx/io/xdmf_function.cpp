@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "xdmf_function.h"
-#include "pugixml.hpp"
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
 #include <boost/lexical_cast.hpp>
@@ -16,6 +15,7 @@
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <pugixml.hpp>
 #include <string>
 
 using namespace dolfinx;
@@ -48,14 +48,13 @@ template <typename Scalar>
 bool has_cell_centred_data(const fem::Function<Scalar>& u)
 {
   int cell_based_dim = 1;
-  const int rank = u.function_space()->element()->value_rank();
+  const int rank = u.function_space()->element()->value_shape().size();
   for (int i = 0; i < rank; i++)
     cell_based_dim *= u.function_space()->mesh()->topology().dim();
 
   assert(u.function_space());
   assert(u.function_space()->dofmap());
-  assert(u.function_space()->dofmap()->element_dof_layout);
-  return (u.function_space()->dofmap()->element_dof_layout->num_dofs()
+  return (u.function_space()->dofmap()->element_dof_layout().num_dofs()
               * u.function_space()->dofmap()->bs()
           == cell_based_dim);
 }
@@ -66,7 +65,7 @@ bool has_cell_centred_data(const fem::Function<Scalar>& u)
 int get_padded_width(const fem::FiniteElement& e)
 {
   const int width = e.value_size();
-  const int rank = e.value_rank();
+  const int rank = e.value_shape().size();
   if (rank == 1 and width == 2)
     return 3;
   else if (rank == 2 and width == 4)
@@ -104,10 +103,10 @@ void _add_function(MPI_Comm comm, const fem::Function<Scalar>& u,
   const int num_values
       = cell_centred ? map_c->size_global() : map_v->size_global();
 
-  const int value_rank = u.function_space()->element()->value_rank();
+  const int value_rank = u.function_space()->element()->value_shape().size();
 
   std::vector<std::string> components = {""};
-  if constexpr (!std::is_scalar<Scalar>::value)
+  if constexpr (!std::is_scalar_v<Scalar>)
     components = {"real", "imag"};
 
   std::string t_str = boost::lexical_cast<std::string>(t);
@@ -120,12 +119,14 @@ void _add_function(MPI_Comm comm, const fem::Function<Scalar>& u,
     if (component.empty())
     {
       attr_name = u.name;
-      dataset_name = "/Function/" + attr_name + "/" + t_str;
+      dataset_name
+          = std::string("/Function/") + attr_name + std::string("/") + t_str;
     }
     else
     {
-      attr_name = component + "_" + u.name;
-      dataset_name = "/Function/" + attr_name + "/" + t_str;
+      attr_name = component + std::string("_") + u.name;
+      dataset_name
+          = std::string("/Function/") + attr_name + std::string("/") + t_str;
     }
     // Add attribute node
     pugi::xml_node attribute_node = xml_node.append_child("Attribute");
@@ -136,7 +137,7 @@ void _add_function(MPI_Comm comm, const fem::Function<Scalar>& u,
     attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
     const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
-    if constexpr (!std::is_scalar<Scalar>::value)
+    if constexpr (!std::is_scalar_v<Scalar>)
     {
       // Complex case
 
@@ -156,8 +157,7 @@ void _add_function(MPI_Comm comm, const fem::Function<Scalar>& u,
       // Add data item of component
       const std::int64_t num_local = component_data_values.size() / width;
       std::int64_t offset = 0;
-      MPI_Exscan(&num_local, &offset, 1, dolfinx::MPI::mpi_type<std::int64_t>(),
-                 MPI_SUM, comm);
+      MPI_Exscan(&num_local, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
       xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name,
                                 component_data_values, offset,
                                 {num_values, width}, "", use_mpi_io);
@@ -169,8 +169,7 @@ void _add_function(MPI_Comm comm, const fem::Function<Scalar>& u,
       // Add data item
       const std::int64_t num_local = data_values.size() / width;
       std::int64_t offset = 0;
-      MPI_Exscan(&num_local, &offset, 1, dolfinx::MPI::mpi_type<std::int64_t>(),
-                 MPI_SUM, comm);
+      MPI_Exscan(&num_local, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
       xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name,
                                 data_values, offset, {num_values, width}, "",
                                 use_mpi_io);

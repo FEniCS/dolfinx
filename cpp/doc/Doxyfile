@@ -569,7 +569,7 @@ CASE_SENSE_NAMES       = YES
 # scope will be hidden.
 # The default value is: NO.
 
-HIDE_SCOPE_NAMES       = NO
+HIDE_SCOPE_NAMES       = YES
 
 # If the HIDE_COMPOUND_REFERENCE tag is set to NO (default) then doxygen will
 # append additional text to a page's title, such as Class Reference. If set to
@@ -655,7 +655,7 @@ SORT_BY_SCOPE_NAME     = NO
 # accept a match between prototype and implementation in such cases.
 # The default value is: NO.
 
-STRICT_PROTO_MATCHING  = NO
+STRICT_PROTO_MATCHING  = YES
 
 # The GENERATE_TODOLIST tag can be used to enable (YES) or disable (NO) the todo
 # list. This list is created by putting \todo commands in the documentation.
@@ -916,6 +916,7 @@ RECURSIVE              = YES
 
 EXCLUDE                = ../dolfinx/io/pugixml.hpp \
                          ../dolfinx/io/pugixml.cpp \
+                         ../dolfinx/io/pugiconfig.hpp \
                          ../dolfinx/common/loguru.hpp \
                          ../dolfinx/common/loguru.cpp
 
@@ -2010,7 +2011,7 @@ MAN_LINKS              = NO
 # captures the structure of the code including all documentation.
 # The default value is: NO.
 
-GENERATE_XML           = NO
+GENERATE_XML           = YES
 
 # The XML_OUTPUT tag is used to specify where the XML pages will be put. If a
 # relative path is entered the value of OUTPUT_DIRECTORY will be put in front of
@@ -2034,7 +2035,7 @@ XML_PROGRAMLISTING     = YES
 # The default value is: NO.
 # This tag requires that the tag GENERATE_XML is set to YES.
 
-XML_NS_MEMB_FILE_SCOPE = NO
+XML_NS_MEMB_FILE_SCOPE = YES
 
 #---------------------------------------------------------------------------
 # Configuration options related to the DOCBOOK output
@@ -2121,7 +2122,7 @@ PERLMOD_MAKEVAR_PREFIX =
 # C-preprocessor directives found in the sources and include files.
 # The default value is: YES.
 
-ENABLE_PREPROCESSING   = YES
+ENABLE_PREPROCESSING   = NO
 
 # If the MACRO_EXPANSION tag is set to YES, doxygen will expand all macro names
 # in the source code. If set to NO, only conditional compilation will be

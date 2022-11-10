@@ -6,22 +6,21 @@
 
 #include "XDMFFile.h"
 #include "cells.h"
-#include "pugixml.hpp"
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
 #include "xdmf_meshtags.h"
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
-#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/log.h>
-#include <dolfinx/common/utils.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/utils.h>
+#include <filesystem>
+#include <pugixml.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -32,7 +31,7 @@ template <typename Scalar>
 void _write_function(dolfinx::MPI::Comm& comm,
                      const fem::Function<Scalar>& function, const double t,
                      const std::string& mesh_xpath, pugi::xml_document& xml_doc,
-                     hid_t h5_id, const std::string& filename)
+                     hid_t h5_id, const std::filesystem::path& filename)
 {
   const std::string timegrid_xpath
       = "/Xdmf/Domain/Grid[@GridType='Collection'][@Name='" + function.name
@@ -87,9 +86,9 @@ void _write_function(dolfinx::MPI::Comm& comm,
 } // namespace
 
 //-----------------------------------------------------------------------------
-XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
-                   const std::string file_mode, const Encoding encoding)
-    : _mpi_comm(comm), _filename(filename), _file_mode(file_mode),
+XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
+                   std::string file_mode, Encoding encoding)
+    : _comm(comm), _filename(filename), _file_mode(file_mode),
       _xml_doc(new pugi::xml_document), _encoding(encoding)
 {
   // Handle HDF5 and XDMF files with the file mode. At the end of this
@@ -102,10 +101,11 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
     // _hdf5_file_id(0)
 
     // Open HDF5 file
-    const std::string hdf5_filename = xdmf_utils::get_hdf5_filename(_filename);
-    const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
-    _h5_id = HDF5Interface::open_file(_mpi_comm.comm(), hdf5_filename,
-                                      file_mode, mpi_io);
+    const std::filesystem::path hdf5_filename
+        = xdmf_utils::get_hdf5_filename(_filename);
+    const bool mpi_io = dolfinx::MPI::size(_comm.comm()) > 1 ? true : false;
+    _h5_id = HDF5Interface::open_file(_comm.comm(), hdf5_filename, file_mode,
+                                      mpi_io);
     assert(_h5_id > 0);
     LOG(INFO) << "Opened HDF5 file with id \"" << _h5_id << "\"";
   }
@@ -119,7 +119,8 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
   {
     // Load XML doc from file
     pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
-    assert(result);
+    if (!result)
+      throw std::runtime_error("Failed to load xml document from file.");
 
     if (_xml_doc->child("Xdmf").empty())
       throw std::runtime_error("Empty <Xdmf> root node.");
@@ -140,14 +141,16 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
     xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
 
     pugi::xml_node domain_node = xdmf_node.append_child("Domain");
-    assert(domain_node);
+    if (!domain_node)
+      throw std::runtime_error("Failed to append xml/xdmf Domain.");
   }
   else if (_file_mode == "a")
   {
-    if (boost::filesystem::exists(_filename))
+    if (std::filesystem::exists(_filename))
     {
       // Load XML doc from file
-      pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
+      [[maybe_unused]] pugi::xml_parse_result result
+          = _xml_doc->load_file(_filename.c_str());
       assert(result);
 
       if (_xml_doc->child("Xdmf").empty())
@@ -170,7 +173,8 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
           = "http://www.w3.org/2001/XInclude";
 
       pugi::xml_node domain_node = xdmf_node.append_child("Domain");
-      assert(domain_node);
+      if (!domain_node)
+        throw std::runtime_error("Failed to append xml/xdmf Domain.");
     }
   }
 }
@@ -184,22 +188,22 @@ void XDMFFile::close()
   _h5_id = -1;
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_mesh(const mesh::Mesh& mesh, const std::string xpath)
+void XDMFFile::write_mesh(const mesh::Mesh& mesh, std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
     throw std::runtime_error("XML node '" + xpath + "' not found.");
 
   // Add the mesh Grid to the domain
-  xdmf_mesh::add_mesh(_mpi_comm.comm(), node, _h5_id, mesh, mesh.name);
+  xdmf_mesh::add_mesh(_comm.comm(), node, _h5_id, mesh, mesh.name);
 
   // Save XML file (on process 0 only)
-  if (MPI::rank(_mpi_comm.comm()) == 0)
+  if (MPI::rank(_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_geometry(const mesh::Geometry& geometry,
-                              const std::string name, const std::string xpath)
+void XDMFFile::write_geometry(const mesh::Geometry& geometry, std::string name,
+                              std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -212,38 +216,38 @@ void XDMFFile::write_geometry(const mesh::Geometry& geometry,
   grid_node.append_attribute("GridType") = "Uniform";
 
   const std::string path_prefix = "/Geometry/" + name;
-  xdmf_mesh::add_geometry_data(_mpi_comm.comm(), grid_node, _h5_id, path_prefix,
+  xdmf_mesh::add_geometry_data(_comm.comm(), grid_node, _h5_id, path_prefix,
                                geometry);
 
   // Save XML file (on process 0 only)
-  if (MPI::rank(_mpi_comm.comm()) == 0)
+  if (MPI::rank(_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
-                               const mesh::GhostMode& mode,
-                               const std::string name,
-                               const std::string xpath) const
+                               mesh::GhostMode mode, std::string name,
+                               std::string xpath) const
 {
   // Read mesh data
-  const xt::xtensor<std::int64_t, 2> cells
-      = XDMFFile::read_topology_data(name, xpath);
-  const xt::xtensor<double, 2> x = XDMFFile::read_geometry_data(name, xpath);
+  auto [cells, cshape] = XDMFFile::read_topology_data(name, xpath);
+  auto [x, xshape] = XDMFFile::read_geometry_data(name, xpath);
 
   // Create mesh
-  auto [data, offset] = graph::create_adjacency_data(cells);
-  graph::AdjacencyList<std::int64_t> cells_adj(std::move(data),
+  std::vector<std::int32_t> offset(cshape[0] + 1, 0);
+  for (std::size_t i = 0; i < cshape[0]; ++i)
+    offset[i + 1] = offset[i] + cshape[1];
+
+  graph::AdjacencyList<std::int64_t> cells_adj(std::move(cells),
                                                std::move(offset));
 
   mesh::Mesh mesh
-      = mesh::create_mesh(_mpi_comm.comm(), cells_adj, element, x, mode);
+      = mesh::create_mesh(_comm.comm(), cells_adj, element, x, xshape, mode);
   mesh.name = name;
   return mesh;
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<std::int64_t, 2>
-XDMFFile::read_topology_data(const std::string name,
-                             const std::string xpath) const
+std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
+XDMFFile::read_topology_data(std::string name, std::string xpath) const
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -255,12 +259,11 @@ XDMFFile::read_topology_data(const std::string name,
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
 
   LOG(INFO) << "Read topology data \"" << name << "\" at \"" << xpath << "\"";
-  return xdmf_mesh::read_topology_data(_mpi_comm.comm(), _h5_id, grid_node);
+  return xdmf_mesh::read_topology_data(_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
-xt::xtensor<double, 2>
-XDMFFile::read_geometry_data(const std::string name,
-                             const std::string xpath) const
+std::pair<std::vector<double>, std::array<std::size_t, 2>>
+XDMFFile::read_geometry_data(std::string name, std::string xpath) const
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -272,24 +275,23 @@ XDMFFile::read_geometry_data(const std::string name,
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
 
   LOG(INFO) << "Read geometry data \"" << name << "\" at \"" << xpath << "\"";
-  return xdmf_mesh::read_geometry_data(_mpi_comm.comm(), _h5_id, grid_node);
+  return xdmf_mesh::read_geometry_data(_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_function(const fem::Function<double>& u, double t,
-                              const std::string& mesh_xpath)
+                              std::string mesh_xpath)
 {
-  _write_function(_mpi_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
+  _write_function(_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_function(const fem::Function<std::complex<double>>& u,
-                              double t, const std::string& mesh_xpath)
+                              double t, std::string mesh_xpath)
 {
-  _write_function(_mpi_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
+  _write_function(_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
-                              const std::string& geometry_xpath,
-                              const std::string& xpath)
+                              std::string geometry_xpath, std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -304,18 +306,19 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
   pugi::xml_node geo_ref_node = grid_node.append_child("xi:include");
   geo_ref_node.append_attribute("xpointer") = geo_ref_path.c_str();
   assert(geo_ref_node);
-  xdmf_meshtags::add_meshtags(_mpi_comm.comm(), meshtags, grid_node, _h5_id,
+  xdmf_meshtags::add_meshtags(_comm.comm(), meshtags, grid_node, _h5_id,
                               meshtags.name);
 
   // Save XML file (on process 0 only)
-  if (MPI::rank(_mpi_comm.comm()) == 0)
+  if (MPI::rank(_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t>
-XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
-                        const std::string name, const std::string xpath)
+XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
+                        std::string name, std::string xpath)
 {
+  LOG(INFO) << "XDMF read meshtags (" << name << ")";
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
     throw std::runtime_error("XML node '" + xpath + "' not found.");
@@ -324,37 +327,43 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
 
-  const xt::xtensor<std::int64_t, 2> entities = read_topology_data(name, xpath);
+  const auto [entities, eshape] = read_topology_data(name, xpath);
 
   pugi::xml_node values_data_node
       = grid_node.child("Attribute").child("DataItem");
   const std::vector values = xdmf_read::get_dataset<std::int32_t>(
-      _mpi_comm.comm(), values_data_node, _h5_id);
+      _comm.comm(), values_data_node, _h5_id);
 
   const std::pair<std::string, int> cell_type_str
       = xdmf_utils::get_cell_type(grid_node.child("Topology"));
   mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
 
   // Permute entities from VTK to DOLFINx ordering
-  xt::xtensor<std::int64_t, 2> entities1 = io::cells::compute_permutation(
-      entities, io::cells::perm_vtk(cell_type, entities.shape(1)));
+  std::vector<std::int64_t> entities1 = io::cells::apply_permutation(
+      entities, eshape, io::cells::perm_vtk(cell_type, eshape[1]));
 
-  const auto [entities_local, values_local]
-      = xdmf_utils::extract_local_entities(*mesh, mesh::cell_dim(cell_type),
-                                           entities1, values);
+  std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
+      entities_values = xdmf_utils::distribute_entity_data(
+          *mesh, mesh::cell_dim(cell_type), entities1, values);
 
-  auto [data, offset] = graph::create_adjacency_data(entities_local);
-  graph::AdjacencyList<std::int32_t> entities_adj(std::move(data),
-                                                  std::move(offset));
+  LOG(INFO) << "XDMF create meshtags";
+  const std::size_t num_vertices_per_entity = mesh::cell_num_entities(
+      mesh::cell_entity_type(mesh->topology().cell_type(),
+                             mesh::cell_dim(cell_type), 0),
+      0);
+  const graph::AdjacencyList<std::int32_t> entities_adj
+      = graph::regular_adjacency_list(std::move(entities_values.first),
+                                      num_vertices_per_entity);
   mesh::MeshTags meshtags = mesh::create_meshtags(
-      mesh, mesh::cell_dim(cell_type), entities_adj, xtl::span(values_local));
+      mesh, mesh::cell_dim(cell_type), entities_adj,
+      std::span<const std::int32_t>(entities_values.second));
   meshtags.name = name;
 
   return meshtags;
 }
 //-----------------------------------------------------------------------------
-std::pair<mesh::CellType, int>
-XDMFFile::read_cell_type(const std::string grid_name, const std::string xpath)
+std::pair<mesh::CellType, int> XDMFFile::read_cell_type(std::string grid_name,
+                                                        std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -378,9 +387,8 @@ XDMFFile::read_cell_type(const std::string grid_name, const std::string xpath)
   return {cell_type, cell_type_str.second};
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_information(const std::string name,
-                                 const std::string value,
-                                 const std::string xpath)
+void XDMFFile::write_information(std::string name, std::string value,
+                                 std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -392,12 +400,11 @@ void XDMFFile::write_information(const std::string name,
   info_node.append_attribute("Value") = value.c_str();
 
   // Save XML file (on process 0 only)
-  if (MPI::rank(_mpi_comm.comm()) == 0)
+  if (MPI::rank(_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-std::string XDMFFile::read_information(const std::string name,
-                                       const std::string xpath)
+std::string XDMFFile::read_information(std::string name, std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -413,5 +420,5 @@ std::string XDMFFile::read_information(const std::string name,
   return value_str;
 }
 //-----------------------------------------------------------------------------
-MPI_Comm XDMFFile::comm() const { return _mpi_comm.comm(); }
+MPI_Comm XDMFFile::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------

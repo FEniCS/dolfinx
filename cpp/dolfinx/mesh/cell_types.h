@@ -13,7 +13,6 @@
 #include <set>
 #include <string>
 #include <vector>
-#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::mesh
 {
@@ -68,7 +67,7 @@ int cell_dim(CellType type);
 /// @param[in] dim Entity dimension
 /// @param[in] type Cell type
 /// @return Number of entities in cell
-int cell_num_entities(mesh::CellType type, int dim);
+int cell_num_entities(CellType type, int dim);
 
 /// Check if cell is a simplex
 /// @param[in] type Cell type
@@ -86,7 +85,7 @@ int num_cell_vertices(CellType type);
 /// attached to a cell entity. Map from entity {dim_e, entity_e} to
 /// closure{sub_dim, (sub_entities)}
 std::map<std::array<int, 2>, std::vector<std::set<int>>>
-cell_entity_closure(mesh::CellType cell_type);
+cell_entity_closure(CellType cell_type);
 
 /// Convert a cell type to a Basix cell type
 basix::cell::type cell_type_to_basix_type(CellType celltype);

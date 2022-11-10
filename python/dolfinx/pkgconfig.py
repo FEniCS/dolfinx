@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Tool for querying pkg-config files
+"""Tool for querying pkg-config files.
 
 This module exists solely to extract the compilation and linking
 information saved in the **dolfinx.pc** pkg-config file, needed for JIT

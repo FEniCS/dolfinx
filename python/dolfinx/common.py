@@ -7,19 +7,26 @@
 
 import functools
 
-from dolfinx import cpp
-from dolfinx.cpp.common import (git_commit_hash, has_debug, has_kahip,  # noqa
-                                has_parmetis, has_petsc_complex)
+from dolfinx import cpp as _cpp
+from dolfinx.cpp.common import (IndexMap, git_commit_hash, has_adios2,  # noqa
+                                has_debug, has_kahip, has_parmetis)
 
-TimingType = cpp.common.TimingType
+__all__ = ["IndexMap", "Timer", "timed"]
+
+TimingType = _cpp.common.TimingType
+Reduction = _cpp.common.Reduction
 
 
 def timing(task: str):
-    return cpp.common.timing(task)
+    return _cpp.common.timing(task)
 
 
-def list_timings(mpi_comm, timing_types: list):
-    return cpp.common.list_timings(mpi_comm, timing_types)
+def list_timings(comm, timing_types: list, reduction=Reduction.max):
+    """Print out a summary of all Timer measurements, with a choice of
+    wall time, system time or user time. When used in parallel, a
+    reduction is applied across all processes. By default, the maximum
+    time is shown."""
+    _cpp.common.list_timings(comm, timing_types, reduction)
 
 
 class Timer:
@@ -34,7 +41,7 @@ class Timer:
         with Timer() as t:
             costly_call_1()
             costly_call_2()
-            print(\"Ellapsed time so far: %s\" % t.elapsed()[0])
+            print(\"Elapsed time so far: %s\" % t.elapsed()[0])
 
     The timer is started when entering context manager and timing
     ends when exiting it. It is also possible to start and stop a
@@ -53,14 +60,14 @@ class Timer:
     may be printed using functions ``timing``, ``timings``,
     ``list_timings``, ``dump_timings_to_xml``, e.g.::
 
-        list_timings(mpi_comm, [TimingType.wall, TimingType.user])
+        list_timings(comm, [TimingType.wall, TimingType.user])
     """
 
     def __init__(self, name: str = None):
         if name is None:
-            self._cpp_object = cpp.common.Timer()
+            self._cpp_object = _cpp.common.Timer()
         else:
-            self._cpp_object = cpp.common.Timer(name)
+            self._cpp_object = _cpp.common.Timer(name)
 
     def __enter__(self):
         self._cpp_object.start()

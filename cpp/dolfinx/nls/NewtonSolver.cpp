@@ -7,9 +7,7 @@
 #include "NewtonSolver.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/la/PETScKrylovSolver.h>
-#include <dolfinx/la/PETScOptions.h>
-#include <dolfinx/la/PETScVector.h>
+#include <dolfinx/la/petsc.h>
 #include <string>
 
 using namespace dolfinx;
@@ -17,21 +15,23 @@ using namespace dolfinx;
 namespace
 {
 //-----------------------------------------------------------------------------
+
 /// Convergence test
 /// @param solver The Newton solver
 /// @param r The residual vector
 /// @return The pair `(residual norm, converged)`, where `converged` is
-// and true` if convergence achieved
-std::pair<double, bool> converged(const nls::NewtonSolver& solver, const Vec r)
+/// and true` if convergence achieved
+std::pair<double, bool> converged(const nls::petsc::NewtonSolver& solver,
+                                  const Vec r)
 {
-  la::PETScVector _r(r, true);
-  double residual = _r.norm(la::Norm::l2);
+  PetscReal residual = 0.0;
+  VecNorm(r, NORM_2, &residual);
 
   // Relative residual
   const double relative_residual = residual / solver.residual0();
 
   // Output iteration number and residual
-  if (solver.report and dolfinx::MPI::rank(solver.mpi_comm()) == 0)
+  if (solver.report and dolfinx::MPI::rank(solver.comm()) == 0)
   {
     LOG(INFO) << "Newton iteration " << solver.iteration()
               << ": r (abs) = " << residual << " (tol = " << solver.atol
@@ -46,6 +46,7 @@ std::pair<double, bool> converged(const nls::NewtonSolver& solver, const Vec r)
     return {residual, false};
 }
 //-----------------------------------------------------------------------------
+
 /// Update solution vector by computed Newton step. Default update is
 /// given by formula::
 ///
@@ -54,7 +55,8 @@ std::pair<double, bool> converged(const nls::NewtonSolver& solver, const Vec r)
 ///  @param solver The Newton solver
 ///  @param dx The update vector computed by Newton step
 ///  @param[in,out] x The solution vector to be updated
-void update_solution(const nls::NewtonSolver& solver, const Vec dx, Vec x)
+void update_solution(const nls::petsc::NewtonSolver& solver, const Vec dx,
+                     Vec x)
 {
   VecAXPY(x, -solver.relaxation_parameter, dx);
 }
@@ -62,22 +64,22 @@ void update_solution(const nls::NewtonSolver& solver, const Vec dx, Vec x)
 } // namespace
 
 //-----------------------------------------------------------------------------
-nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
+nls::petsc::NewtonSolver::NewtonSolver(MPI_Comm comm)
     : _converged(converged), _update_solution(update_solution),
       _krylov_iterations(0), _iteration(0), _residual(0.0), _residual0(0.0),
-      _solver(comm), _dx(nullptr), _mpi_comm(comm)
+      _solver(comm), _dx(nullptr), _comm(comm)
 {
   // Create linear solver if not already created. Default to LU.
   _solver.set_options_prefix("nls_solve_");
-  la::PETScOptions::set("nls_solve_ksp_type", "preonly");
-  la::PETScOptions::set("nls_solve_pc_type", "lu");
+  la::petsc::options::set("nls_solve_ksp_type", "preonly");
+  la::petsc::options::set("nls_solve_pc_type", "lu");
 #if PETSC_HAVE_MUMPS
-  la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
+  la::petsc::options::set("nls_solve_pc_factor_mat_solver_type", "mumps");
 #endif
   _solver.set_from_options();
 }
 //-----------------------------------------------------------------------------
-nls::NewtonSolver::~NewtonSolver()
+nls::petsc::NewtonSolver::~NewtonSolver()
 {
   if (_b)
     VecDestroy(&_b);
@@ -89,60 +91,61 @@ nls::NewtonSolver::~NewtonSolver()
     MatDestroy(&_matP);
 }
 //-----------------------------------------------------------------------------
-void nls::NewtonSolver::setF(const std::function<void(const Vec, Vec)>& F,
-                             Vec b)
+void nls::petsc::NewtonSolver::setF(
+    const std::function<void(const Vec, Vec)>& F, Vec b)
 {
   _fnF = F;
   _b = b;
   PetscObjectReference((PetscObject)_b);
 }
 //-----------------------------------------------------------------------------
-void nls::NewtonSolver::setJ(const std::function<void(const Vec, Mat)>& J,
-                             Mat Jmat)
+void nls::petsc::NewtonSolver::setJ(
+    const std::function<void(const Vec, Mat)>& J, Mat Jmat)
 {
   _fnJ = J;
   _matJ = Jmat;
   PetscObjectReference((PetscObject)_matJ);
 }
 //-----------------------------------------------------------------------------
-void nls::NewtonSolver::setP(const std::function<void(const Vec, Mat)>& P,
-                             Mat Pmat)
+void nls::petsc::NewtonSolver::setP(
+    const std::function<void(const Vec, Mat)>& P, Mat Pmat)
 {
   _fnP = P;
   _matP = Pmat;
   PetscObjectReference((PetscObject)_matP);
 }
 //-----------------------------------------------------------------------------
-const la::PETScKrylovSolver& nls::NewtonSolver::get_krylov_solver() const
+const la::petsc::KrylovSolver&
+nls::petsc::NewtonSolver::get_krylov_solver() const
 {
   return _solver;
 }
 //-----------------------------------------------------------------------------
-la::PETScKrylovSolver& nls::NewtonSolver::get_krylov_solver()
+la::petsc::KrylovSolver& nls::petsc::NewtonSolver::get_krylov_solver()
 {
   return _solver;
 }
 //-----------------------------------------------------------------------------
-void nls::NewtonSolver::set_form(const std::function<void(Vec)>& form)
+void nls::petsc::NewtonSolver::set_form(const std::function<void(Vec)>& form)
 {
   _system = form;
 }
 //-----------------------------------------------------------------------------
-void nls::NewtonSolver::set_convergence_check(
-    const std::function<std::pair<double, bool>(const nls::NewtonSolver& solver,
-                                                const Vec r)>& c)
+void nls::petsc::NewtonSolver::set_convergence_check(
+    const std::function<std::pair<double, bool>(const NewtonSolver&,
+                                                const Vec)>& c)
 {
   _converged = c;
 }
 //-----------------------------------------------------------------------------
-void nls::NewtonSolver::set_update(
-    const std::function<void(const nls::NewtonSolver& solver, const Vec dx,
-                             Vec x)>& update)
+void nls::petsc::NewtonSolver::set_update(
+    const std::function<void(const NewtonSolver& solver, const Vec, Vec)>&
+        update)
 {
   _update_solution = update;
 }
 //-----------------------------------------------------------------------------
-std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
+std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
 {
   // Reset iteration counts
   _iteration = 0;
@@ -247,7 +250,7 @@ std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
 
   if (newton_converged)
   {
-    if (dolfinx::MPI::rank(_mpi_comm.comm()) == 0)
+    if (dolfinx::MPI::rank(_comm.comm()) == 0)
     {
       LOG(INFO) << "Newton solver finished in " << _iteration
                 << " iterations and " << _krylov_iterations
@@ -273,13 +276,16 @@ std::pair<int, bool> dolfinx::nls::NewtonSolver::solve(Vec x)
   return {_iteration, newton_converged};
 }
 //-----------------------------------------------------------------------------
-int nls::NewtonSolver::krylov_iterations() const { return _krylov_iterations; }
+int nls::petsc::NewtonSolver::krylov_iterations() const
+{
+  return _krylov_iterations;
+}
 //-----------------------------------------------------------------------------
-int nls::NewtonSolver::iteration() const { return _iteration; }
+int nls::petsc::NewtonSolver::iteration() const { return _iteration; }
 //-----------------------------------------------------------------------------
-double nls::NewtonSolver::residual() const { return _residual; }
+double nls::petsc::NewtonSolver::residual() const { return _residual; }
 //-----------------------------------------------------------------------------
-double nls::NewtonSolver::residual0() const { return _residual0; }
+double nls::petsc::NewtonSolver::residual0() const { return _residual0; }
 //-----------------------------------------------------------------------------
-MPI_Comm nls::NewtonSolver::mpi_comm() const { return _mpi_comm.comm(); }
+MPI_Comm nls::petsc::NewtonSolver::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------

@@ -5,11 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "permutationcomputation.h"
+#include "Topology.h"
+#include "cell_types.h"
 #include <algorithm>
 #include <bitset>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/mesh/Topology.h>
 
 namespace
 {
@@ -43,7 +44,7 @@ std::vector<std::bitset<BITSETSIZE>> compute_face_permutations_simplex(
       vertices.resize(f_to_v.links(face).size());
       im.local_to_global(f_to_v.links(face), vertices);
 
-      // Orient that triangle so the the lowest numbered vertex is the
+      // Orient that triangle so the lowest numbered vertex is the
       // origin, and the next vertex anticlockwise from the lowest has a
       // lower number than the next vertex clockwise. Find the index of
       // the lowest numbered vertex
@@ -125,7 +126,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
       vertices.resize(f_to_v.links(face).size());
       im.local_to_global(f_to_v.links(face), vertices);
 
-      // Orient that triangle so the the lowest numbered vertex is the
+      // Orient that triangle so the lowest numbered vertex is the
       // origin, and the next vertex anticlockwise from the lowest has a
       // lower number than the next vertex clockwise. Find the index of
       // the lowest numbered vertex

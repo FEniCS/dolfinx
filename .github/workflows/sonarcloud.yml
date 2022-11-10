@@ -1,0 +1,70 @@
+name: SonarCloud
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    if: (github.event.pull_request.head.repo.full_name == github.repository) || github.ref_name == 'main'
+    container: fenicsproject/test-env:nightly-mpich
+    env:
+      SONAR_SCANNER_VERSION:
+        4.7.0.2747 # Find the latest version at:
+        # https://github.com/SonarSource/sonar-scanner-cli/tags
+      SONAR_SERVER_URL: "https://sonarcloud.io"
+      BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
+      PETSC_ARCH: linux-gnu-real-32
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Install zip
+        run: |
+          apt-get -y update
+          apt-get install unzip
+      - name: Set up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v1
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Download and set up sonar-scanner
+        env:
+          SONAR_SCANNER_DOWNLOAD_URL: https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${{ env.SONAR_SCANNER_VERSION }}-linux.zip
+        run: |
+          mkdir -p $HOME/.sonar
+          wget -O $HOME/.sonar/sonar-scanner.zip ${{ env.SONAR_SCANNER_DOWNLOAD_URL }}
+          unzip -o $HOME/.sonar/sonar-scanner.zip -d $HOME/.sonar/
+          echo "$HOME/.sonar/sonar-scanner-${{ env.SONAR_SCANNER_VERSION }}-linux/bin" >> $GITHUB_PATH
+      - name: Download and set up build-wrapper
+        env:
+          BUILD_WRAPPER_DOWNLOAD_URL: ${{ env.SONAR_SERVER_URL }}/static/cpp/build-wrapper-linux-x86.zip
+        run: |
+          wget -O $HOME/.sonar/build-wrapper-linux-x86.zip ${{ env.BUILD_WRAPPER_DOWNLOAD_URL }}
+          unzip -o $HOME/.sonar/build-wrapper-linux-x86.zip -d $HOME/.sonar/
+          echo "$HOME/.sonar/build-wrapper-linux-x86" >> $GITHUB_PATH
+      - name: Install FEniCS Python components
+        run: |
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git
+          python3 -m pip install git+https://github.com/FEniCS/basix.git
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+      - name: Run build-wrapper
+        run: |
+          mkdir build
+          cmake -S ./cpp -B build
+          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/ --config Release
+      - name: Run sonar-scanner
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          sonar-scanner --define sonar.host.url="${{ env.SONAR_SERVER_URL }}" --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}"

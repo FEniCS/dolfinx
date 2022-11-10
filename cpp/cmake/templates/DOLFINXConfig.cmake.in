@@ -9,6 +9,7 @@
 include(CMakeFindDependencyMacro)
 
 find_dependency(MPI REQUIRED)
+find_dependency(pugixml)
 
 # Check for Boost
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
@@ -18,9 +19,9 @@ set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_VERBOSE TRUE)
 find_dependency(Boost 1.70 REQUIRED COMPONENTS timer filesystem)
 
-# xtensor
-find_dependency(xtl)
-find_dependency(xtensor)
+if (@ufcx_FOUND@)
+  find_dependency(ufcx)
+endif()
 
 # Basix
 find_package(Python3 COMPONENTS Interpreter)
@@ -36,11 +37,6 @@ if (BASIX_PY_DIR)
 endif()
 find_dependency(Basix CONFIG HINTS ${BASIX_PY_DIR})
 
-# Add xsimd if the C++ interface was compiled with it
-if(@xsimd_FOUND@)
-  find_dependency(xsimd)
-endif()
-
 # HDF5
 if (NOT TARGET hdf5::hdf5)
   set(HDF5_PREFER_PARALLEL TRUE)
@@ -51,16 +47,20 @@ if (NOT TARGET hdf5::hdf5)
   endif()
 endif()
 
-if (NOT TARGET PETSC::petsc)
-  set(DOLFINX_SKIP_BUILD_TESTS TRUE)
-  list(APPEND CMAKE_MODULE_PATH "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_LIBDIR@/cmake/dolfinx")
-  find_dependency(PETSc REQUIRED QUIET)
+set(PETSC_SCALAR_COMPLEX @HAVE_PETSC_SCALAR_COMPLEX@)
+if (NOT TARGET PkgConfig::PETSC)
+  find_package(PkgConfig REQUIRED)
+  set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+  pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc petsc)
 endif()
 
 if (@SLEPC_FOUND@)
-  if (NOT TARGET SLEPC::slepc)
-    set(DOLFINX_SKIP_BUILD_TESTS TRUE)
-    find_dependency(SLEPc REQUIRED QUIET)
+  if (NOT TARGET PkgConfig::SLEPC)
+     find_package(PkgConfig REQUIRED)
+     set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+     set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+     set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}:$ENV{PETSC_DIR}:$ENV{PKG_CONFIG_PATH}")
+     pkg_search_module(SLEPC REQUIRED IMPORTED_TARGET SLEPc slepc)
   endif()
 endif()
 

@@ -7,24 +7,54 @@
 #pragma once
 
 #include "partition.h"
-#include <cstdint>
-#include <dolfinx/graph/AdjacencyList.h>
-#include <functional>
-#include <mpi.h>
 
 namespace dolfinx::graph
 {
+
+namespace scotch
+{
+#ifdef HAS_PTSCOTCH
+
+/// @brief PT-SCOTCH partitioning strategies.
+///
+/// See PT-SCOTCH documentation for details.
+enum class strategy
+{
+  ///< SCOTCH default strategy
+  none,
+  balance,
+  quality,
+  safety,
+  speed,
+  scalability
+};
+
+/// @brief Create a graph partitioning function that uses PT-SCOTCH.
+///
+/// @param[in] strategy The SCOTCH strategy
+/// @param[in] imbalance The allowable imbalance (between 0 and 1). The
+/// smaller value the more balanced the partitioning must be.
+/// @param[in] seed Random number generator seed
+/// @return A graph partitioning function
+graph::partition_fn partitioner(scotch::strategy strategy = strategy::none,
+                                double imbalance = 0.025, int seed = 0);
+
+#endif
+
+} // namespace scotch
 
 namespace parmetis
 {
 #ifdef HAS_PARMETIS
 
-/// Create a graph partitioning function that uses ParMETIS
+/// @brief Create a graph partitioning function that uses ParMETIS.
 ///
-/// param[in] options The ParMETIS option. See ParMETIS manual for
+/// @param[in] imbalance Imbalance tolerance. See ParMETIS manual for
+/// details.
+/// @param[in] options The ParMETIS option. See ParMETIS manual for
 /// details.
 graph::partition_fn partitioner(double imbalance = 1.02,
-                                std::array<int, 3> options = {0, 0, 0});
+                                std::array<int, 3> options = {1, 0, 5});
 
 #endif
 } // namespace parmetis
@@ -33,7 +63,7 @@ graph::partition_fn partitioner(double imbalance = 1.02,
 namespace kahip
 {
 #ifdef HAS_KAHIP
-/// Create a graph partitioning function that uses KaHIP
+/// @brief Create a graph partitioning function that uses KaHIP.
 ///
 /// @param[in] mode The KaHiP partitioning mode (see
 /// https://github.com/KaHIP/KaHIP/blob/master/parallel/parallel_src/interface/parhip_interface.h)
@@ -48,4 +78,5 @@ graph::partition_fn partitioner(int mode = 1, int seed = 1,
 
 #endif
 } // namespace kahip
+
 } // namespace dolfinx::graph

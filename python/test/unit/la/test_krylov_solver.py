@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2014 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -10,27 +9,29 @@ from contextlib import ExitStack
 
 import numpy as np
 import pytest
+
 import ufl
-from dolfinx import (DirichletBC, Function, FunctionSpace, UnitSquareMesh,
-                     VectorFunctionSpace)
-from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector,
-                         locate_dofs_topological, set_bc)
-from dolfinx.la import VectorSpaceBasis
-from dolfinx.mesh import locate_entities_boundary
-from mpi4py import MPI
-from petsc4py import PETSc
+from dolfinx import la
+from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
+                         dirichletbc, form, locate_dofs_topological)
+from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
+                               set_bc)
+from dolfinx.mesh import create_unit_square, locate_entities_boundary
 from ufl import (Identity, TestFunction, TrialFunction, dot, dx, grad, inner,
                  sym, tr)
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 def test_krylov_solver_lu():
 
-    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = TrialFunction(V), TestFunction(V)
 
-    a = inner(u, v) * dx
-    L = inner(1.0, v) * dx
+    a = form(inner(u, v) * dx)
+    L = form(inner(1.0, v) * dx)
     A = assemble_matrix(a)
     A.assemble()
     b = assemble_vector(L)
@@ -38,7 +39,7 @@ def test_krylov_solver_lu():
 
     norm = 13.0
 
-    solver = PETSc.KSP().create(mesh.mpi_comm())
+    solver = PETSc.KSP().create(mesh.comm)
     solver.setOptionsPrefix("test_lu_")
     opts = PETSc.Options("test_lu_")
     opts["ksp_type"] = "preonly"
@@ -60,10 +61,10 @@ def test_krylov_samg_solver_elasticity():
         """Function to build null space for 2D elasticity"""
 
         # Create list of vectors for null space
-        nullspace_basis = [x.copy() for i in range(3)]
+        ns = [x.copy() for i in range(3)]
 
         with ExitStack() as stack:
-            vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
+            vec_local = [stack.enter_context(x.localForm()) for x in ns]
             basis = [np.asarray(x) for x in vec_local]
 
             # Build null space basis
@@ -74,9 +75,8 @@ def test_krylov_samg_solver_elasticity():
             basis[2][dofs[0]] = -x[dofs[0], 1]
             basis[2][dofs[1]] = x[dofs[1], 0]
 
-        null_space = VectorSpaceBasis(nullspace_basis)
-        null_space.orthonormalize()
-        return null_space
+        la.orthonormalize(ns)
+        return ns
 
     def amg_solve(N, method):
         # Elasticity parameters
@@ -91,22 +91,15 @@ def test_krylov_samg_solver_elasticity():
                 grad(v))) * Identity(2)
 
         # Define problem
-        mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N)
+        mesh = create_unit_square(MPI.COMM_WORLD, N, N)
         V = VectorFunctionSpace(mesh, 'Lagrange', 1)
-        bc0 = Function(V)
-        with bc0.vector.localForm() as bc_local:
-            bc_local.set(0.0)
-
-        def boundary(x):
-            return np.full(x.shape[1], True)
-
-        facetdim = mesh.topology.dim - 1
-        bndry_facets = locate_entities_boundary(mesh, facetdim, boundary)
-
-        bdofs = locate_dofs_topological(V.sub(0), V, facetdim, bndry_facets)
-        bc = DirichletBC(bc0, bdofs, V.sub(0))
         u = TrialFunction(V)
         v = TestFunction(V)
+
+        facetdim = mesh.topology.dim - 1
+        bndry_facets = locate_entities_boundary(mesh, facetdim, lambda x: np.full(x.shape[1], True))
+        bdofs = locate_dofs_topological(V.sub(0), V, facetdim, bndry_facets)
+        bc = dirichletbc(PETSc.ScalarType(0), bdofs, V.sub(0))
 
         # Forms
         a, L = inner(sigma(u), grad(v)) * dx, dot(ufl.as_vector((1.0, 1.0)), v) * dx
@@ -133,7 +126,7 @@ def test_krylov_samg_solver_elasticity():
 
         # Create PETSC smoothed aggregation AMG preconditioner, and
         # create CG solver
-        solver = PETSc.KSP().create(mesh.mpi_comm)
+        solver = PETSc.KSP().create(mesh.comm)
         solver.setType("cg")
 
         # Set matrix operator
@@ -142,7 +135,7 @@ def test_krylov_samg_solver_elasticity():
         # Compute solution and return number of iterations
         return solver.solve(b, u.vector)
 
-    # Set some multigrid smoother paramete rs
+    # Set some multigrid smoother parameters
     opts = PETSc.Options()
     opts["mg_levels_ksp_type"] = "chebyshev"
     opts["mg_levels_pc_type"] = "jacobi"
@@ -160,6 +153,6 @@ def test_krylov_samg_solver_elasticity():
     # preconditioner
     for method in methods:
         for N in [8, 16, 32, 64]:
-            print("Testing method '{}' with {} x {} mesh".format(method, N, N))
+            print(f"Testing method '{method}' with {N} x {N} mesh")
             niter = amg_solve(N, method)
             assert niter < 18

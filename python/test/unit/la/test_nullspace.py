@@ -1,22 +1,25 @@
-"Unit tests for nullspaces"
-
 # Copyright (C) 2014-2018 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Unit tests for nullspaces"""
 
 from contextlib import ExitStack
 
 import numpy as np
 import pytest
+
 import ufl
-from dolfinx import UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, cpp, la
-from dolfinx.cpp.mesh import CellType, GhostMode
-from dolfinx.fem import assemble_matrix
-from dolfinx.generation import BoxMesh
-from mpi4py import MPI
+from dolfinx import la
+from dolfinx.fem import VectorFunctionSpace, form
+from dolfinx.fem.petsc import assemble_matrix
+from dolfinx.mesh import (CellType, GhostMode, create_box, create_unit_cube,
+                          create_unit_square)
 from ufl import TestFunction, TrialFunction, dx, grad, inner
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 def build_elastic_nullspace(V):
@@ -30,10 +33,10 @@ def build_elastic_nullspace(V):
     dim = 3 if gdim == 2 else 6
 
     # Create list of vectors for null space
-    nullspace_basis = [cpp.la.create_vector(V.dofmap.index_map, V.dofmap.index_map_bs) for i in range(dim)]
+    ns = [la.create_petsc_vector(V.dofmap.index_map, V.dofmap.index_map_bs) for i in range(dim)]
 
     with ExitStack() as stack:
-        vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
+        vec_local = [stack.enter_context(x.localForm()) for x in ns]
         basis = [np.asarray(x) for x in vec_local]
 
         dofs = [V.sub(i).dofmap.list.array for i in range(gdim)]
@@ -57,17 +60,17 @@ def build_elastic_nullspace(V):
             basis[5][dofs[2]] = x1
             basis[5][dofs[1]] = -x2
 
-    return la.VectorSpaceBasis(nullspace_basis)
+    return ns
 
 
 def build_broken_elastic_nullspace(V):
     """Function to build incorrect null space for 2D elasticity"""
 
     # Create list of vectors for null space
-    nullspace_basis = [cpp.la.create_vector(V.dofmap.index_map, V.dofmap.index_map_bs) for i in range(4)]
+    ns = [la.create_petsc_vector(V.dofmap.index_map, V.dofmap.index_map_bs) for i in range(4)]
 
     with ExitStack() as stack:
-        vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
+        vec_local = [stack.enter_context(x.localForm()) for x in ns]
         basis = [np.asarray(x) for x in vec_local]
 
         dofs = [V.sub(i).dofmap.list.array for i in range(2)]
@@ -84,34 +87,30 @@ def build_broken_elastic_nullspace(V):
         # Add vector that is not in nullspace
         basis[3][dofs[1]] = x1
 
-    return la.VectorSpaceBasis(nullspace_basis)
+    return ns
 
 
 @pytest.mark.parametrize("mesh", [
-    UnitSquareMesh(MPI.COMM_WORLD, 12, 13),
-    UnitCubeMesh(MPI.COMM_WORLD, 12, 18, 15)
+    create_unit_square(MPI.COMM_WORLD, 12, 13),
+    create_unit_cube(MPI.COMM_WORLD, 12, 18, 15)
 ])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_nullspace_orthogonal(mesh, degree):
     """Test that null spaces orthogonalisation"""
     V = VectorFunctionSpace(mesh, ('Lagrange', degree))
-    null_space = build_elastic_nullspace(V)
-    assert not null_space.is_orthogonal()
-    assert not null_space.is_orthonormal()
-
-    null_space.orthonormalize()
-    assert null_space.is_orthogonal()
-    assert null_space.is_orthonormal()
+    nullspace = build_elastic_nullspace(V)
+    assert not la.is_orthonormal(nullspace)
+    la.orthonormalize(nullspace)
+    assert la.is_orthonormal(nullspace)
 
 
 @pytest.mark.parametrize("mesh", [
-    UnitSquareMesh(MPI.COMM_WORLD, 12, 13),
-    BoxMesh(
-        MPI.COMM_WORLD,
-        [np.array([0.8, -0.2, 1.2]),
-         np.array([3.0, 11.0, -5.0])], [12, 18, 25],
-        cell_type=CellType.tetrahedron,
-        ghost_mode=GhostMode.none),
+    create_unit_square(MPI.COMM_WORLD, 12, 13),
+    create_box(MPI.COMM_WORLD,
+               [np.array([0.8, -0.2, 1.2]),
+                np.array([3.0, 11.0, -5.0])], [12, 18, 25],
+               cell_type=CellType.tetrahedron,
+               ghost_mode=GhostMode.none),
 ])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_nullspace_check(mesh, degree):
@@ -126,20 +125,20 @@ def test_nullspace_check(mesh, degree):
         return 2.0 * mu * ufl.sym(grad(w)) + lmbda * ufl.tr(
             grad(w)) * ufl.Identity(gdim)
 
-    a = inner(sigma(u, mesh.geometry.dim), grad(v)) * dx
+    a = form(inner(sigma(u, mesh.geometry.dim), grad(v)) * dx)
 
     # Assemble matrix and create compatible vector
     A = assemble_matrix(a)
     A.assemble()
 
     # Create null space basis and test
-    null_space = build_elastic_nullspace(V)
-    assert null_space.in_nullspace(A, tol=1.0e-8)
-    null_space.orthonormalize()
-    assert null_space.in_nullspace(A, tol=1.0e-8)
+    nullspace = build_elastic_nullspace(V)
+    la.orthonormalize(nullspace)
+    ns = PETSc.NullSpace().create(vectors=nullspace)
+    assert ns.test(A)
 
     # Create incorrect null space basis and test
-    null_space = build_broken_elastic_nullspace(V)
-    assert not null_space.in_nullspace(A, tol=1.0e-8)
-    null_space.orthonormalize()
-    assert not null_space.in_nullspace(A, tol=1.0e-8)
+    nullspace = build_broken_elastic_nullspace(V)
+    la.orthonormalize(nullspace)
+    ns = PETSc.NullSpace().create(vectors=nullspace)
+    assert not ns.test(A)

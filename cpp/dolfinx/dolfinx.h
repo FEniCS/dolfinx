@@ -4,7 +4,6 @@
 
 #include <dolfinx/common/dolfin_common.h>
 #include <dolfinx/fem/dolfin_fem.h>
-#include <dolfinx/generation/dolfin_generation.h>
 #include <dolfinx/geometry/dolfin_geometry.h>
 #include <dolfinx/graph/dolfin_graph.h>
 #include <dolfinx/io/dolfin_io.h>

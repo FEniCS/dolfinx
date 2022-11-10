@@ -1,0 +1,204 @@
+name: Build wheels
+
+# By default this action does not push to test or production PyPI.  The wheels
+# are available as an artifact that can be downloaded and tested locally.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dolfinx_ref:
+        description: "dolfinx git ref to checkout"
+        default: ""
+        type: string
+
+      build_fenicsx_stack:
+        description: "Build wheels for whole FEniCSx stack"
+        default: false
+        type: boolean
+
+      basix_ref:
+        description: "basix git ref to checkout"
+        default: ""
+        type: string
+
+      ufl_ref:
+        description: "ufl git ref to checkout"
+        default: ""
+        type: string
+
+      ffcx_ref:
+        description: "ffcx git ref to checkout"
+        default: ""
+        type: string
+
+  workflow_call:
+    inputs:
+      dolfinx_ref:
+        description: "dolfinx git ref to checkout"
+        default: ""
+        type: string
+
+      build_fenicsx_stack:
+        description: "Build wheels for entire FEniCSx stack"
+        default: false
+        type: boolean
+
+      basix_ref:
+        description: "basix git ref to checkout"
+        default: ""
+        type: string
+
+      ufl_ref:
+        description: "ufl git ref to checkout"
+        default: ""
+        type: string
+
+      ffcx_ref:
+        description: "ffcx git ref to checkout"
+        default: ""
+        type: string
+
+jobs:
+  build_wheels:
+    name: Build wheels
+    runs-on: ubuntu-latest
+
+    env:
+      MPI4PY_VERSION: 3.1.2
+      PETSC4PY_VERSION: 3.16.1
+      CIBW_MANYLINUX_X86_64_IMAGE: docker.io/fenicsproject/wheelbuilder_x86_64:latest
+      CIBW_BUILD: cp37-manylinux_x86_64 cp38-manylinux_x86_64 cp39-manylinux_x86_64
+      CIBW_BUILD_VERBOSITY: 1
+      CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple PETSC_DIR=/usr/local MAKEFLAGS=-j2
+
+    steps:
+      - uses: actions/setup-python@v2
+
+      - name: Install Python dependencies
+        run: python -m pip install cibuildwheel simple503 wheel
+
+      - name: Checkout Basix
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        uses: actions/checkout@v3
+        with:
+          repository: FEniCS/basix
+          path: basix
+          ref: ${{ github.event.inputs.basix_ref }}
+
+      - name: Build Basix wheel
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        run: |
+          cd basix
+          python -m cibuildwheel --output-dir ../wheelhouse .
+
+      - name: Checkout UFL
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        uses: actions/checkout@v3
+        with:
+          repository: FEniCS/ufl
+          path: ufl
+          ref: ${{ github.event.inputs.ufl_ref }}
+
+      - name: Build UFL wheel
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        run: python -m pip wheel --no-deps -w wheelhouse ./ufl
+
+      - name: Checkout FFCx
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        uses: actions/checkout@v3
+        with:
+          repository: FEniCS/ffcx
+          path: ffcx
+          ref: ${{ github.event.inputs.ffcx_ref }}
+
+      - name: Build FFCx wheel
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        run: python -m pip wheel --no-deps -w wheelhouse ./ffcx
+
+      - name: Download mpi4py
+        run: |
+          curl -L -O https://github.com/mpi4py/mpi4py/releases/download/${MPI4PY_VERSION}/mpi4py-${MPI4PY_VERSION}.tar.gz
+          mkdir -p mpi4py
+          tar -xf mpi4py-${MPI4PY_VERSION}.tar.gz -C mpi4py --strip-components 1
+
+      - name: Build mpi4py wheels
+        run: python -m cibuildwheel --output-dir wheelhouse mpi4py
+
+      - name: Make temporary simple503 repository
+        run: |
+          mkdir -p simple
+          cp wheelhouse/* simple/
+          python -m simple503 --base-url file:///project/simple simple
+
+      - name: Download petsc4py
+        run: |
+          curl -L -O https://pypi.io/packages/source/p/petsc4py/petsc4py-${PETSC4PY_VERSION}.tar.gz
+          mkdir -p petsc4py
+          tar -xf petsc4py-${PETSC4PY_VERSION}.tar.gz -C petsc4py --strip-components 1
+
+      - name: Build petsc4py wheels
+        run: python -m cibuildwheel --output-dir wheelhouse petsc4py
+        env:
+          CIBW_BEFORE_BUILD: python -m pip install numpy # Not specified correctly in petsc4py
+
+      - name: Update temporary simple503 repository
+        run: |
+          cp wheelhouse/* simple/
+          python -m simple503 --base-url file:///project/simple simple
+
+      - name: Checkout DOLFINx
+        uses: actions/checkout@v3
+        with:
+          path: dolfinx
+          ref: ${{ github.event.inputs.dolfinx_ref }}
+
+      # fenics-ffcx and fenics-basix are required by DOLFINx C++ build
+      # mpi4py and petsc4py are build_requirements of DOLFINx Python
+      - name: Build DOLFINx wheel
+        run: python -m cibuildwheel --output-dir wheelhouse dolfinx/python
+        env:
+          CIBW_BEFORE_BUILD: python -m pip -v install --prefer-binary fenics-ffcx fenics-basix && python -m pip -v install --prefer-binary petsc4py mpi4py && cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) && cmake --build build-dir && cmake --install build-dir
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')") && auditwheel repair -w {dest_dir} {wheel}
+
+      - name: Update temporary simple503 repository
+        run: |
+          cp wheelhouse/* simple
+          python -m simple503 --base-url file:///shared simple
+
+      # Artifact can be unzipped into $(pwd) and tested with e.g.:
+      # docker run -ti -v $(pwd):/shared --env PIP_EXTRA_INDEX_URL=file:///shared python:3.9 /bin/bash -l
+      - name: Upload simple503-test artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: "simple503-test"
+          path: simple/*
+
+      - name: Upload wheelhouse artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheelhouse
+          path: wheelhouse/*
+
+      - name: Update FEniCS Project simple503 repository
+        run: |
+          python -m simple503 --base-url http://packages.fenicsproject.org/simple simple
+
+      # For manual upload.
+      - name: Upload simple503 artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: "simple503"
+          path: simple/*
+
+      # Extract mpiexec from docker image
+      - name: Extract mpiexec.hydra from Docker image
+        run: |
+          export CONTAINER_ID=$(docker create ${CIBW_MANYLINUX_X86_64_IMAGE})
+          docker cp ${CONTAINER_ID}:/usr/local/bin/mpiexec.hydra mpiexec.hydra
+          docker rm ${CONTAINER_ID}
+
+      - name: Upload mpiexec artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: "mpiexec.hydra"
+          path: mpiexec.hydra

@@ -5,12 +5,11 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "defines.h"
-#include <petscsys.h>
 
 //-------------------------------------------------------------------------
 std::string dolfinx::version() { return std::string(DOLFINX_VERSION); }
 //-------------------------------------------------------------------------
-std::string dolfinx::ufc_signature() { return std::string(UFC_SIGNATURE); }
+std::string dolfinx::ufcx_signature() { return std::string(UFCX_SIGNATURE); }
 //-------------------------------------------------------------------------
 std::string dolfinx::git_commit_hash()
 {
@@ -19,16 +18,7 @@ std::string dolfinx::git_commit_hash()
 //-------------------------------------------------------------------------
 bool dolfinx::has_debug()
 {
-#ifdef DEBUG
-  return true;
-#else
-  return false;
-#endif
-}
-//-------------------------------------------------------------------------
-bool dolfinx::has_petsc_complex()
-{
-#ifdef PETSC_USE_COMPLEX
+#ifndef NDEBUG
   return true;
 #else
   return false;
@@ -56,6 +46,15 @@ bool dolfinx::has_parmetis()
 bool dolfinx::has_kahip()
 {
 #ifdef HAS_KAHIP
+  return true;
+#else
+  return false;
+#endif
+}
+//-------------------------------------------------------------------------
+bool dolfinx::has_adios2()
+{
+#ifdef HAS_ADIOS2
   return true;
 #else
   return false;

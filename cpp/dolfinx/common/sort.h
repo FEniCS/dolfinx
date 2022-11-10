@@ -11,21 +11,20 @@
 #include <cstdint>
 #include <dolfinx/common/Timer.h>
 #include <numeric>
+#include <span>
+#include <type_traits>
 #include <vector>
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {
 
-/// Sort a vector of integers with radix sorting algorithm.The bucket size is
-/// determined by the number of bits to sort at a time (2^BITS).
+/// Sort a vector of integers with radix sorting algorithm. The bucket
+/// size is determined by the number of bits to sort at a time (2^BITS).
 /// @tparam T Integral type
 /// @tparam BITS The number of bits to sort at a time.
 /// @param[in, out] array The array to sort.
 template <typename T, int BITS = 8>
-void radix_sort(const xtl::span<T>& array)
+void radix_sort(std::span<T> array)
 {
   static_assert(std::is_integral<T>(), "This function only sorts integers.");
 
@@ -53,8 +52,8 @@ void radix_sort(const xtl::span<T>& array)
 
   std::int32_t mask_offset = 0;
   std::vector<T> buffer(array.size());
-  xtl::span<T> current_perm = array;
-  xtl::span<T> next_perm = buffer;
+  std::span<T> current_perm = array;
+  std::span<T> next_perm = buffer;
   for (int i = 0; i < its; i++)
   {
     // Zero counter array
@@ -88,17 +87,17 @@ void radix_sort(const xtl::span<T>& array)
 
 /// Returns the indices that would sort (lexicographic) a vector of
 /// bitsets.
-/// @tparam N The size of the bitset, which corresponds to the number of
+/// @tparam T The size of the bitset, which corresponds to the number of
 /// bits necessary to represent a set of integers. For example, N = 96
 /// for mapping three std::int32_t.
 /// @tparam BITS The number of bits to sort at a time
 /// @param[in] array The array to sort
 /// @param[in] perm FIXME
-/// @return Array of indices that sort the input array.
 template <typename T, int BITS = 16>
-void argsort_radix(const xtl::span<const T>& array,
-                   xtl::span<std::int32_t> perm)
+void argsort_radix(std::span<const T> array, std::span<std::int32_t> perm)
 {
+  static_assert(std::is_integral_v<T>, "Integral required.");
+
   if (array.size() <= 1)
     return;
 
@@ -124,8 +123,8 @@ void argsort_radix(const xtl::span<const T>& array,
   std::array<std::int32_t, bucket_size + 1> offset;
 
   std::vector<std::int32_t> perm2(perm.size());
-  xtl::span<std::int32_t> current_perm = perm;
-  xtl::span<std::int32_t> next_perm = perm2;
+  std::span<std::int32_t> current_perm = perm;
+  std::span<std::int32_t> next_perm = perm2;
   for (int i = 0; i < its; i++)
   {
     // Zero counter
@@ -163,23 +162,34 @@ void argsort_radix(const xtl::span<const T>& array,
     std::copy(perm2.begin(), perm2.end(), perm.begin());
 }
 
+/// @brief Compute the permutation array that sorts a 2D array by row.
+///
+/// @param[in] x The flattened 2D array to compute the permutation array
+/// for.
+/// @param[in] shape1 The number of columns of `x`.
+/// @return The permutation array such that `x[perm[i]] <= x[perm[i +1]].
+/// @pre `x.size()` must be a multiple of `shape1`.
+/// @note This function is suitable for small values of `shape1`. Each
+/// column of `x` is copied into an array that is then sorted.
 template <typename T, int BITS = 16>
-std::vector<std::int32_t> sort_by_perm(const xt::xtensor<T, 2>& array)
+std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
 {
-  // Sort the list and label uniquely
-  const int cols = array.shape(1);
-  const int size = array.shape(0);
-  std::vector<std::int32_t> perm(size);
+  static_assert(std::is_integral_v<T>, "Integral required.");
+  assert(shape1 > 0);
+  assert(x.size() % shape1 == 0);
+  const std::size_t shape0 = x.size() / shape1;
+  std::vector<std::int32_t> perm(shape0);
   std::iota(perm.begin(), perm.end(), 0);
 
-  // Sort each column at a time from right to left.
-  // Col 0 has the most signficant "digit".
-  for (int i = 0; i < cols; i++)
+  // Sort by each column, right to left. Col 0 has the most significant
+  // "digit".
+  std::vector<T> column(shape0);
+  for (std::size_t i = 0; i < shape1; ++i)
   {
-    int col = cols - 1 - i;
-    xt::xtensor<std::int32_t, 1> column = xt::view(array, xt::all(), col);
-    argsort_radix<std::int32_t, BITS>(xtl::span<const std::int32_t>(column),
-                                      perm);
+    int col = shape1 - 1 - i;
+    for (std::size_t j = 0; j < shape0; ++j)
+      column[j] = x[j * shape1 + col];
+    argsort_radix<T, BITS>(column, perm);
   }
 
   return perm;

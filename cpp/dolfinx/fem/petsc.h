@@ -6,12 +6,14 @@
 
 #pragma once
 
+#include "Form.h"
+#include <map>
 #include <memory>
 #include <petscmat.h>
 #include <petscvec.h>
+#include <span>
 #include <utility>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::common
 {
@@ -20,13 +22,13 @@ class IndexMap;
 
 namespace dolfinx::fem
 {
-
 template <typename T>
 class DirichletBC;
-template <typename T>
-class Form;
 class FunctionSpace;
 
+/// Helper functions for assembly into PETSc data structures
+namespace petsc
+{
 /// Create a matrix
 /// @param[in] a A bilinear form
 /// @param[in] type The PETSc matrix type to create
@@ -45,14 +47,14 @@ Mat create_matrix(const Form<PetscScalar>& a,
 /// bilinear forms. The caller is responsible for destroying the Mat
 /// object.
 Mat create_matrix_block(
-    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
+    const std::vector<std::vector<const Form<PetscScalar>*>>& a,
     const std::string& type = std::string());
 
 /// Create nested (MatNest) matrix
 ///
 /// The caller is responsible for destroying the Mat object
 Mat create_matrix_nest(
-    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
+    const std::vector<std::vector<const Form<PetscScalar>*>>& a,
     const std::vector<std::vector<std::string>>& types);
 
 /// Initialise monolithic vector. Vector is not zeroed.
@@ -80,10 +82,10 @@ Vec create_vector_nest(
 /// @param[in] L The linear form to assemble
 /// @param[in] constants The constants that appear in `L`
 /// @param[in] coeffs The coefficients that appear in `L`
-void assemble_vector_petsc(
-    Vec b, const Form<PetscScalar>& L,
-    const xtl::span<const PetscScalar>& constants,
-    const std::pair<xtl::span<const PetscScalar>, int>& coeffs);
+void assemble_vector(
+    Vec b, const Form<PetscScalar>& L, std::span<const PetscScalar> constants,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<std::span<const PetscScalar>, int>>& coeffs);
 
 /// Assemble linear form into an already allocated PETSc vector. Ghost
 /// contributions are not accumulated (not sent to owner). Caller is
@@ -94,7 +96,7 @@ void assemble_vector_petsc(
 /// process-local contribution of the form is assembled into this
 /// vector. It is not zeroed before assembly.
 /// @param[in] L The linear form to assemble
-void assemble_vector_petsc(Vec b, const Form<PetscScalar>& L);
+void assemble_vector(Vec b, const Form<PetscScalar>& L);
 
 // FIXME: clarify how x0 is used
 // FIXME: if bcs entries are set
@@ -114,10 +116,12 @@ void assemble_vector_petsc(Vec b, const Form<PetscScalar>& L);
 ///
 /// Ghost contributions are not accumulated (not sent to owner). Caller
 /// is responsible for calling VecGhostUpdateBegin/End.
-void apply_lifting_petsc(
+void apply_lifting(
     Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
-    const std::vector<xtl::span<const PetscScalar>>& constants,
-    const std::vector<std::pair<xtl::span<const PetscScalar>, int>>& coeffs,
+    const std::vector<std::span<const PetscScalar>>& constants,
+    const std::vector<std::map<std::pair<IntegralType, int>,
+                               std::pair<std::span<const PetscScalar>, int>>>&
+        coeffs,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<Vec>& x0, double scale);
@@ -140,7 +144,7 @@ void apply_lifting_petsc(
 ///
 /// Ghost contributions are not accumulated (not sent to owner). Caller
 /// is responsible for calling VecGhostUpdateBegin/End.
-void apply_lifting_petsc(
+void apply_lifting(
     Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
@@ -153,12 +157,12 @@ void apply_lifting_petsc(
 // FIXME: clarify x0
 // FIXME: clarify what happens with ghosts
 
-/// Set bc values in owned (local) part of the PETScVector, multiplied
+/// Set bc values in owned (local) part of the PETSc vector, multiplied
 /// by 'scale'. The vectors b and x0 must have the same local size. The
 /// bcs should be on (sub-)spaces of the form L that b represents.
-void set_bc_petsc(
+void set_bc(
     Vec b,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
     const Vec x0, double scale = 1.0);
-
+} // namespace petsc
 } // namespace dolfinx::fem

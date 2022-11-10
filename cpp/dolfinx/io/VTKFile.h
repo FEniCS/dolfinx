@@ -7,7 +7,7 @@
 #pragma once
 
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/fem/Function.h>
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <string>
@@ -17,7 +17,7 @@ namespace pugi
 class xml_document;
 }
 
-namespace dolfinx::function
+namespace dolfinx::fem
 {
 template <typename T>
 class Function;
@@ -37,16 +37,14 @@ namespace dolfinx::io
 /// be saved. For vertex-based functions the output must be
 /// isoparametic, i.e. the geometry and the finite element functions
 /// must be defined using the same basis.
-
-/// This format if It is not suitable to checkpointing as it may
-/// decimate some data.
-
+///
+/// @warning This format is not suitable to checkpointing
 class VTKFile
 {
 public:
   /// Create VTK file
-  VTKFile(MPI_Comm comm, const std::string filename,
-          const std::string file_mode);
+  VTKFile(MPI_Comm comm, const std::filesystem::path& filename,
+          const std::string& file_mode);
 
   /// Destructor
   ~VTKFile();
@@ -57,31 +55,41 @@ public:
   /// Flushes XML files to disk
   void flush();
 
-  /// Write mesh to file. Supports arbitrary order Lagrange
+  /// Write a mesh to file. Supports arbitrary order Lagrange
   /// isoparametric cells.
   /// @param[in] mesh The Mesh to write to file
-  /// @param[in] time Time parameter to associate with the @p mesh
+  /// @param[in] time Time parameter to associate with @p mesh
   void write(const mesh::Mesh& mesh, double time = 0.0);
 
-  /// Output fem::Function and timestep
+  /// Write finite elements function with an associated timestep
   /// @param[in] u List of functions to write to file
-  /// @param[in] t Time parameter to associate with the @p mesh
-  void write(
+  /// @param[in] t Time parameter to associate with @p u
+  /// @pre All Functions in `u` must share the same mesh
+  /// @pre All Functions in `u` with point-wise data must use the same
+  /// element type (up to the block size) and the element must be
+  /// (discontinuous) Lagrange
+  /// @pre Functions in `u` cannot be sub-Functions. Interpolate
+  /// sub-Functions before output
+  template <typename T>
+  void
+  write(const std::vector<std::reference_wrapper<const fem::Function<T>>>& u,
+        double t)
+  {
+    write_functions(u, t);
+  }
+
+private:
+  void write_functions(
       const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
       double t);
-
-  /// Output fem::Function and timestep
-  /// @param[in] u List of functions to write to file
-  /// @param[in] t Time parameter to associate with the @p mesh
-  void write(
+  void write_functions(
       const std::vector<
           std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
       double t);
 
-private:
   std::unique_ptr<pugi::xml_document> _pvd_xml;
 
-  std::string _filename;
+  std::filesystem::path _filename;
 
   // MPI communicator
   dolfinx::MPI::Comm _comm;

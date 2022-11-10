@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2016-2016 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import os
 import pathlib
 import subprocess
 import sys
@@ -25,10 +23,7 @@ for f in demo_files:
 @pytest.mark.serial
 @pytest.mark.parametrize("path,name", demos)
 def test_demos(path, name):
-    ret = subprocess.run([sys.executable, name],
-                         cwd=str(path),
-                         env={**os.environ, 'MPLBACKEND': 'agg'},
-                         check=True)
+    ret = subprocess.run([sys.executable, name], cwd=str(path), check=True)
     assert ret.returncode == 0
 
 
@@ -37,8 +32,5 @@ def test_demos(path, name):
 def test_demos_mpi(num_proc, mpiexec, path, name):
     cmd = [mpiexec, "-np", str(num_proc), sys.executable, name]
     print(cmd)
-    ret = subprocess.run(cmd,
-                         cwd=str(path),
-                         env={**os.environ, 'MPLBACKEND': 'agg'},
-                         check=True)
+    ret = subprocess.run(cmd, cwd=str(path), check=True)
     assert ret.returncode == 0

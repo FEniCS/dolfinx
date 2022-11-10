@@ -24,36 +24,47 @@ void log(py::module& m)
       .value("WARNING", loguru::Verbosity_WARNING)
       .value("ERROR", loguru::Verbosity_ERROR);
 
-  m.def("set_output_file", [](std::string filename) {
-    loguru::add_file(filename.c_str(), loguru::Truncate,
-                     loguru::Verbosity_INFO);
-  });
+  m.def(
+      "set_output_file",
+      [](std::string filename)
+      {
+        loguru::add_file(filename.c_str(), loguru::Truncate,
+                         loguru::Verbosity_INFO);
+      },
+      py::arg("filename"));
 
-  m.def("set_thread_name", [](std::string thread_name) {
-    loguru::set_thread_name(thread_name.c_str());
-  });
+  m.def(
+      "set_thread_name",
+      [](std::string thread_name)
+      { loguru::set_thread_name(thread_name.c_str()); },
+      py::arg("thread_name"));
 
-  m.def("set_log_level", [](loguru::NamedVerbosity level) {
-    loguru::g_stderr_verbosity = level;
-  });
+  m.def(
+      "set_log_level",
+      [](loguru::NamedVerbosity level) { loguru::g_stderr_verbosity = level; },
+      py::arg("level"));
   m.def("get_log_level",
         []() { return loguru::NamedVerbosity(loguru::g_stderr_verbosity); });
-  m.def("log", [](loguru::NamedVerbosity level, std::string s) {
-    switch (level)
-    {
-    case (loguru::Verbosity_INFO):
-      LOG(INFO) << s;
-      break;
-    case (loguru::Verbosity_WARNING):
-      LOG(WARNING) << s;
-      break;
-    case (loguru::Verbosity_ERROR):
-      LOG(ERROR) << s;
-      break;
-    default:
-      throw std::runtime_error("Log level not supported");
-      break;
-    }
-  });
+  m.def(
+      "log",
+      [](loguru::NamedVerbosity level, std::string s)
+      {
+        switch (level)
+        {
+        case (loguru::Verbosity_INFO):
+          LOG(INFO) << s;
+          break;
+        case (loguru::Verbosity_WARNING):
+          LOG(WARNING) << s;
+          break;
+        case (loguru::Verbosity_ERROR):
+          LOG(ERROR) << s;
+          break;
+        default:
+          throw std::runtime_error("Log level not supported");
+          break;
+        }
+      },
+      py::arg("level"), py::arg("s"));
 }
 } // namespace dolfinx_wrappers
