@@ -26,8 +26,7 @@ class FunctionSpace;
 
 /// @brief Create a map of `std::span`s from a map of `std::vector`s
 template <typename T>
-std::map<std::pair<dolfinx::fem::IntegralType, int>,
-         std::pair<std::span<const T>, int>>
+std::map<std::pair<fem::IntegralType, int>, std::pair<std::span<const T>, int>>
 make_coefficients_span(const std::map<std::pair<IntegralType, int>,
                                       std::pair<std::vector<T>, int>>& coeffs)
 {

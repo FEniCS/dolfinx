@@ -74,7 +74,10 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 
 } // namespace impl
 
-/// @brief Assembler kernel concept
+/// @brief Finite element cell kernel concept.
+///
+/// Kernel functions that can be passed to an assembler for execution
+/// must satisfy this concept.
 template <class U, class T>
 concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
                                        const impl::scalar_value_type_t<T>*,
@@ -595,6 +598,7 @@ void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
   transform(coeffs, cell_info, cell, 1);
 }
 
+/// @private
 /// @brief  Concepts for function that returns cell index
 template <typename F>
 concept FetchCells = requires(F&& f, std::span<const std::int32_t> v) {
