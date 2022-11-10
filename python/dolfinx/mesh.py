@@ -125,7 +125,7 @@ _uflcell_to_dolfinxcell = {
 }
 
 
-def refine(mesh: Mesh, edges: np.ndarray = None, redistribute: bool = True) -> Mesh:
+def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True) -> Mesh:
     """Refine a mesh
 
     Args:
