@@ -13,6 +13,6 @@
 dolfinx::common::TimeLogger& dolfinx::common::TimeLogManager::logger()
 {
   // NB static - this only allocates a new Logger on the first call to logger()
-  static dolfinx::common::TimeLogger lg{};
+  static TimeLogger lg{};
   return lg;
 }

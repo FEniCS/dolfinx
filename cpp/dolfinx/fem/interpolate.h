@@ -890,7 +890,7 @@ void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
 
   // Determine ownership of each point
   auto [dest_ranks, src_ranks, received_points, evaluation_cells]
-      = dolfinx::geometry::determine_point_ownership(*mesh_v, x);
+      = geometry::determine_point_ownership(*mesh_v, x);
 
   // Evaluate the interpolating function where possible
   std::vector<T> send_values(received_points.size() / 3 * value_size);
