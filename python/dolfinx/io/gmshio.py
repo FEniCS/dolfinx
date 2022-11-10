@@ -65,7 +65,7 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> typing.List[int]:
 if _has_gmsh:
     __all__ += ["extract_topology_and_markers", "extract_geometry", "model_to_mesh", "read_from_msh"]
 
-    def extract_topology_and_markers(model: gmsh.model, name: str = None):
+    def extract_topology_and_markers(model: gmsh.model, name: typing.Optional[str] = None):
         """Extract all entities tagged with a physical marker in the gmsh
         model, and collect the data per cell type.
 
@@ -132,7 +132,7 @@ if _has_gmsh:
 
         return topologies
 
-    def extract_geometry(model: gmsh.model, name: str = None) -> npt.NDArray[np.float64]:
+    def extract_geometry(model: gmsh.model, name: typing.Optional[str] = None) -> npt.NDArray[np.float64]:
         """Extract the mesh geometry from a gmsh model as an array of shape
         (num_nodes, 3), where the i-th row corresponds to the i-th node in the
         mesh.
