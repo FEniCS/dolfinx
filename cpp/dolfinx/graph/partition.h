@@ -20,7 +20,6 @@
 namespace dolfinx::graph
 {
 
-/// @typedef partition_fn
 /// @brief Signature of functions for computing the parallel /
 /// partitioning of a distributed graph.
 // See https://github.com/doxygen/doxygen/issues/9552
