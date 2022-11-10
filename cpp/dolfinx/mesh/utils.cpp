@@ -188,8 +188,7 @@ mesh::extract_topology(const CellType& cell_type,
 }
 //-----------------------------------------------------------------------------
 std::vector<double> mesh::h(const Mesh& mesh,
-                            const std::span<const std::int32_t>& entities,
-                            int dim)
+                            std::span<const std::int32_t> entities, int dim)
 {
   if (entities.empty())
     return std::vector<double>();
@@ -203,7 +202,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   const std::size_t num_vertices = vertex_xdofs.size() / entities.size();
 
   // Get the  geometry coordinate
-  const std::span<const double> x = mesh.geometry().x();
+  std::span<const double> x = mesh.geometry().x();
 
   // Function to compute the length of (p0 - p1)
   auto delta_norm = [](const auto& p0, const auto& p1)
@@ -238,9 +237,8 @@ std::vector<double> mesh::h(const Mesh& mesh,
   return h;
 }
 //-----------------------------------------------------------------------------
-std::vector<double>
-mesh::cell_normals(const mesh::Mesh& mesh, int dim,
-                   const std::span<const std::int32_t>& entities)
+std::vector<double> mesh::cell_normals(const mesh::Mesh& mesh, int dim,
+                                       std::span<const std::int32_t> entities)
 {
   if (entities.empty())
     return std::vector<double>();
@@ -357,7 +355,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 //-----------------------------------------------------------------------------
 std::vector<double>
 mesh::compute_midpoints(const Mesh& mesh, int dim,
-                        const std::span<const std::int32_t>& entities)
+                        std::span<const std::int32_t> entities)
 {
   if (entities.empty())
     return std::vector<double>();
@@ -494,8 +492,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 mesh::entities_to_geometry(const Mesh& mesh, int dim,
-                           const std::span<const std::int32_t>& entities,
-                           bool orient)
+                           std::span<const std::int32_t> entities, bool orient)
 {
   CellType cell_type = mesh.topology().cell_type();
   if (cell_type == CellType::prism and dim == 2)
@@ -614,7 +611,7 @@ mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
 {
   return [partfn, ghost_mode](MPI_Comm comm, int nparts, int tdim,
                               const graph::AdjacencyList<std::int64_t>& cells)
-             -> dolfinx::graph::AdjacencyList<std::int32_t>
+             -> graph::AdjacencyList<std::int32_t>
   {
     LOG(INFO) << "Compute partition of cells across ranks";
 
@@ -630,10 +627,8 @@ mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
   };
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t>
-mesh::compute_incident_entities(const Mesh& mesh,
-                                const std::span<const std::int32_t>& entities,
-                                int d0, int d1)
+std::vector<std::int32_t> mesh::compute_incident_entities(
+    const Mesh& mesh, std::span<const std::int32_t> entities, int d0, int d1)
 {
   auto map0 = mesh.topology().index_map(d0);
   if (!map0)

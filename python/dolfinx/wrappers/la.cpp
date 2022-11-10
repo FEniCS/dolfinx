@@ -41,9 +41,8 @@ void declare_objects(py::module& m, const std::string& type)
   std::string pyclass_vector_name = std::string("Vector_") + type;
   py::class_<dolfinx::la::Vector<T>, std::shared_ptr<dolfinx::la::Vector<T>>>(
       m, pyclass_vector_name.c_str())
-      .def(py::init(
-               [](std::shared_ptr<const dolfinx::common::IndexMap> map,
-                  int bs) { return dolfinx::la::Vector<T>(map, bs); }),
+      .def(py::init([](std::shared_ptr<const dolfinx::common::IndexMap> map,
+                       int bs) { return dolfinx::la::Vector<T>(map, bs); }),
            py::arg("map"), py::arg("bs"))
       .def(py::init([](const dolfinx::la::Vector<T>& vec)
                     { return dolfinx::la::Vector<T>(vec); }),

@@ -141,7 +141,7 @@ void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
     // Columns indices for row
     auto cit0 = std::next(cols.begin(), row_ptr[row]);
     auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
-    for (std::size_t c = 0; c < nc; ++c)
+    for (std::size_t c = 0; c < xcols.size(); ++c)
     {
       // Find position of column index
       auto it = std::lower_bound(cit0, cit1, xcols[c]);
