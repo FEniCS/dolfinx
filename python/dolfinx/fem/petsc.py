@@ -536,7 +536,7 @@ class LinearProblem:
     """
 
     def __init__(self, a: ufl.Form, L: ufl.Form, bcs: typing.List[DirichletBCMetaClass] = [],
-                 u: _Function = None, petsc_options={}, form_compiler_options={}, jit_options={}):
+                 u: typing.Optional[_Function] = None, petsc_options={}, form_compiler_options={}, jit_options={}):
         """Initialize solver for a linear variational problem.
 
         Args:
