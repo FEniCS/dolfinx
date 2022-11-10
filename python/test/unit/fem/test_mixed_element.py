@@ -33,7 +33,7 @@ def test_mixed_element(create_element_function, family, cell, degree):
         mesh = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1, CellType.tetrahedron, GhostMode.shared_facet)
 
     norms = []
-    U_el = create_element_function(space, cell.cellname(), order)
+    U_el = create_element_function(family, cell.cellname(), degree)
     for i in range(3):
         U = FunctionSpace(mesh, U_el)
         u = ufl.TrialFunction(U)
