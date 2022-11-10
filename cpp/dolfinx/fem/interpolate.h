@@ -556,6 +556,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
 /// @param[in] cells Indices of the cells in the mesh on which to
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
+/// @tparam Scalar type
 template <typename T>
 void interpolate(Function<T>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
