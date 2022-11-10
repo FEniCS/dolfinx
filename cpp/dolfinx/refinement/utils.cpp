@@ -473,8 +473,8 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
 
   // Copy facet meshtag from parent to child
   std::vector<std::int32_t> facet_indices, tag_values;
-  const std::vector<std::int32_t>& in_index = meshtag.indices();
-  const std::vector<std::int32_t>& in_value = meshtag.values();
+  std::span<const std::int32_t> in_index = meshtag.indices();
+  std::span<const std::int32_t> in_value = meshtag.values();
   for (std::size_t i = 0; i < in_index.size(); ++i)
   {
     std::int32_t parent_index = in_index[i];
@@ -571,10 +571,9 @@ mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
                                                  std::move(offset_child));
 
   // Copy cell meshtag from parent to child
-  std::vector<std::int32_t> cell_indices;
-  std::vector<std::int32_t> tag_values;
-  const std::vector<std::int32_t>& in_index = meshtag.indices();
-  const std::vector<std::int32_t>& in_value = meshtag.values();
+  std::vector<std::int32_t> cell_indices, tag_values;
+  std::span<const std::int32_t> in_index = meshtag.indices();
+  std::span<const std::int32_t> in_value = meshtag.values();
   for (std::size_t i = 0; i < in_index.size(); ++i)
   {
     auto pclinks = p_to_c_cell.links(in_index[i]);
