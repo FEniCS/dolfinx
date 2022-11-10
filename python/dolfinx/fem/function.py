@@ -233,10 +233,12 @@ class Function(ufl.Coefficient):
 
         # Create cpp Function
         def functiontype(dtype):
-            if dtype is np.float64:
-                return _cpp.fem.Function_float64
-            elif dtype is np.float32:
+            if dtype is np.float32:
                 return _cpp.fem.Function_float32
+            elif dtype is np.float64:
+                return _cpp.fem.Function_float64
+            elif dtype is np.complex64:
+                return _cpp.fem.Function_complex64
             elif dtype is np.complex128:
                 return _cpp.fem.Function_complex128
             else:
@@ -573,7 +575,8 @@ def VectorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typin
 
     e = ElementMetaData(*element)
     ufl_element = basix.ufl_wrapper.create_vector_element(
-        e.family, mesh.ufl_cell().cellname(), e.degree, dim=dim)
+        e.family, mesh.ufl_cell().cellname(), e.degree, dim=dim,
+        gdim=mesh.geometry.dim)
 
     return FunctionSpace(mesh, ufl_element)
 
@@ -584,5 +587,6 @@ def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typin
 
     e = ElementMetaData(*element)
     ufl_element = basix.ufl_wrapper.create_tensor_element(
-        e.family, mesh.ufl_cell().cellname(), e.degree, shape=shape, symmetry=symmetry)
+        e.family, mesh.ufl_cell().cellname(), e.degree, shape=shape, symmetry=symmetry,
+        gdim=mesh.geometry.dim)
     return FunctionSpace(mesh, ufl_element)

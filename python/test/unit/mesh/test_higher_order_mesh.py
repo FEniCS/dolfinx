@@ -201,7 +201,6 @@ def test_tetrahedron_mesh(order):
 
     domain = ufl.Mesh(create_vector_element(
         "Lagrange", "tetrahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced))
-
     check_cell_volume(points, cell, domain, 1 / 6)
 
 
@@ -711,5 +710,5 @@ def test_quadrilateral_cell_order_3():
 
     cell = list(range(16))
     domain = ufl.Mesh(create_vector_element(
-        "Lagrange", "quadrilateral", 3, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced))
+        "Q", "quadrilateral", 3, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced))
     check_cell_volume(points, cell, domain, 5 / 6)
