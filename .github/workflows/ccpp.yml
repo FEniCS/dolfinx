@@ -156,7 +156,7 @@ jobs:
         run: mpirun -np 2 python3 -m pytest python/test/unit/
 
       - name: Upload C++ documentation artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: doc-cpp-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
           path: |
@@ -166,7 +166,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload Python documentation artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: doc-python-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
           path: |
