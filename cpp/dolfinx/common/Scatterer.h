@@ -36,8 +36,8 @@ public:
   /// Types of MPI communication pattern used by the Scatterer.
   enum class type
   {
-    neighbor, // use MPI neighbourhood collectives
-    p2p        // use MPI Isend/Irecv for communication
+    neighbor, // use MPI neighborhood collectives
+    p2p       // use MPI Isend/Irecv for communication
   };
 
   /// @brief Create a scatterer
@@ -193,8 +193,9 @@ public:
   /// Scatterer, either Scatterer::type::neighbor or Scatterer::type::p2p.
   template <typename T>
   void scatter_fwd_begin(std::span<const T> send_buffer,
-                         std::span<T> recv_buffer, std::span<MPI_Request> requests,
-                         Scatterer::type type=type::neighbor) const
+                         std::span<T> recv_buffer,
+                         std::span<MPI_Request> requests,
+                         Scatterer::type type = type::p2p) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
@@ -378,7 +379,9 @@ public:
   /// Scatterer, either Scatterer::type::neighbor or Scatterer::type::p2p.
   template <typename T>
   void scatter_rev_begin(std::span<const T> send_buffer,
-                         std::span<T> recv_buffer, std::span<MPI_Request> requests, Scatterer::type type=type::neighbor) const
+                         std::span<T> recv_buffer,
+                         std::span<MPI_Request> requests,
+                         Scatterer::type type = type::p2p) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
@@ -500,7 +503,8 @@ public:
   /// Scatterer::scatter_rev_begin
   template <typename T, typename Functor, typename BinaryOp>
   void scatter_rev_end(std::span<const T> local_buffer, std::span<T> local_data,
-                       Functor unpack_fn, BinaryOp op, std::span<MPI_Request> request)
+                       Functor unpack_fn, BinaryOp op,
+                       std::span<MPI_Request> request)
   {
     assert(local_buffer.size() == _local_inds.size());
     if (_local_inds.size() > 0)
