@@ -32,7 +32,7 @@ public:
   using allocator_type = Allocator;
 
   /// Create a distributed vector
-  Vector(const std::shared_ptr<const common::IndexMap>& map, int bs,
+  Vector(std::shared_ptr<const common::IndexMap> map, int bs,
          const Allocator& alloc = Allocator())
       : _map(map), _scatterer(std::make_shared<common::Scatterer>(*_map, bs)),
         _bs(bs), _buffer_local(_scatterer->local_buffer_size(), alloc),
@@ -279,7 +279,7 @@ auto norm(const Vector<T, Allocator>& a, Norm type = Norm::l2)
 /// modified in-place.
 /// @param[in] tol The tolerance used to detect a linear dependency
 template <typename T, typename U>
-void orthonormalize(const std::span<Vector<T, U>>& basis, double tol = 1.0e-10)
+void orthonormalize(std::span<Vector<T, U>> basis, double tol = 1.0e-10)
 {
   // Loop over each vector in basis
   for (std::size_t i = 0; i < basis.size(); ++i)
@@ -313,8 +313,7 @@ void orthonormalize(const std::span<Vector<T, U>>& basis, double tol = 1.0e-10)
 /// @param[in] tol The tolerance used to test for orthonormality
 /// @return True is basis is orthonormal, otherwise false
 template <typename T, typename U>
-bool is_orthonormal(const std::span<const Vector<T, U>>& basis,
-                    double tol = 1.0e-10)
+bool is_orthonormal(std::span<const Vector<T, U>> basis, double tol = 1.0e-10)
 {
   for (std::size_t i = 0; i < basis.size(); i++)
   {

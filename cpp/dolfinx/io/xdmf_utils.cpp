@@ -263,7 +263,8 @@ xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
          {"quadrilateral", {"quadrilateral", 1}},
          {"quadrilateral_9", {"quadrilateral", 2}},
          {"quadrilateral_16", {"quadrilateral", 3}},
-         {"hexahedron", {"hexahedron", 1}}};
+         {"hexahedron", {"hexahedron", 1}},
+         {"hexahedron_27", {"hexahedron", 2}}};
 
   // Convert XDMF cell type string to DOLFINx cell type string
   std::string cell_type = type_attr.as_string();
@@ -441,10 +442,9 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-xdmf_utils::distribute_entity_data(
-    const mesh::Mesh& mesh, int entity_dim,
-    const std::span<const std::int64_t>& entities,
-    const std::span<const std::int32_t>& data)
+xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
+                                   std::span<const std::int64_t> entities,
+                                   std::span<const std::int32_t> data)
 {
   LOG(INFO) << "XDMF distribute entity data";
 
@@ -516,8 +516,8 @@ xdmf_utils::distribute_entity_data(
 
   auto postmaster_global_ent_sendrecv
       = [&cell_vertex_dofs](const mesh::Mesh& mesh, int entity_dim,
-                            const std::span<const std::int64_t>& entities,
-                            const std::span<const std::int32_t>& data)
+                            std::span<const std::int64_t> entities,
+                            std::span<const std::int32_t> data)
   {
     const MPI_Comm comm = mesh.comm();
     const int comm_size = dolfinx::MPI::size(comm);

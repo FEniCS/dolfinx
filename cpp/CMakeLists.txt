@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.16)
 
 # ------------------------------------------------------------------------------
 # Set project name and version number
-project(DOLFINX VERSION "0.5.1.0")
+project(DOLFINX VERSION "0.6.0.0")
 
 set(DOXYGEN_DOLFINX_VERSION ${DOLFINX_VERSION} CACHE STRING "Version for Doxygen" FORCE)
 
@@ -55,10 +55,6 @@ add_feature_info(DOLFINX_SKIP_BUILD_TESTS DOLFINX_SKIP_BUILD_TESTS "Skip build t
 # Add shared library paths so shared libs in non-system paths are found
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
 add_feature_info(CMAKE_INSTALL_RPATH_USE_LINK_PATH CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath.")
-
-# Enable xtensor with target-specific optimization, i.e. -march=native
-option(XTENSOR_OPTIMIZE "Enable xtensor target-specific optimization" OFF)
-add_feature_info(XTENSOR_OPTIMIZE XTENSOR_OPTIMIZE "Enable architecture-specific optimizations as defined by xtensor.")
 
 # Control UFCx discovery
 option(DOLFINX_UFCX_PYTHON "Enable UFCx discovery using Python. Disable if UFCx should be found using CMake." ON)
@@ -148,7 +144,6 @@ execute_process(
 
 if(BASIX_PY_DIR)
   message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
-  set(xtensor_ROOT "${BASIX_PY_DIR};${xtensor_ROOT}")
 
   # Basix installed from manylinux wheel
   if(IS_DIRECTORY ${BASIX_PY_DIR}/../fenics_basix.libs)
@@ -161,11 +156,6 @@ set_package_properties(basix PROPERTIES TYPE REQUIRED
   DESCRIPTION "FEniCS tabulation library"
   URL "https://github.com/fenics/basix")
 
-# Check for xtensor
-find_package(xtensor 0.23.10 REQUIRED)
-set_package_properties(xtensor PROPERTIES TYPE REQUIRED
-  DESCRIPTION "C++ library for numerical analysis with multi-dimensional array expressions."
-  URL "https://xtensor.readthedocs.io/")
 
 # Check for PETSc
 find_package(PkgConfig REQUIRED)
@@ -208,11 +198,11 @@ set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
 # method UFCx was found
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
-  find_package(ufcx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} REQUIRED CONFIG)
+  find_package(ufcx 0.6 REQUIRED CONFIG)
 else()
   # Check in MODULE mode (using FindUFCX.cmake)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
-  find_package(UFCx ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR} REQUIRED MODULE)
+  find_package(UFCx 0.6 REQUIRED MODULE)
 endif()
 
 set_package_properties(UFCx PROPERTIES TYPE REQUIRED

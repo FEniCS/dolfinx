@@ -17,6 +17,8 @@ from functools import singledispatch
 import numpy as np
 import numpy.typing as npt
 
+import basix
+import basix.ufl_wrapper
 import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
@@ -231,10 +233,12 @@ class Function(ufl.Coefficient):
 
         # Create cpp Function
         def functiontype(dtype):
-            if dtype is np.float64:
-                return _cpp.fem.Function_float64
-            elif dtype is np.float32:
+            if dtype is np.float32:
                 return _cpp.fem.Function_float32
+            elif dtype is np.float64:
+                return _cpp.fem.Function_float64
+            elif dtype is np.complex64:
+                return _cpp.fem.Function_complex64
             elif dtype is np.complex128:
                 return _cpp.fem.Function_complex128
             else:
@@ -450,7 +454,8 @@ class FunctionSpace(ufl.FunctionSpace):
                 super().__init__(mesh.ufl_domain(), element)
             else:
                 e = ElementMetaData(*element)
-                ufl_element = ufl.FiniteElement(e.family, mesh.ufl_cell(), e.degree)
+                ufl_element = basix.ufl_wrapper.create_element(
+                    e.family, mesh.ufl_cell().cellname(), e.degree, gdim=mesh.ufl_cell().geometric_dimension())
                 super().__init__(mesh.ufl_domain(), ufl_element)
 
             # Compile dofmap and element and create DOLFIN objects
@@ -569,7 +574,10 @@ def VectorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typin
     """Create vector finite element (composition of scalar elements) function space."""
 
     e = ElementMetaData(*element)
-    ufl_element = ufl.VectorElement(e.family, mesh.ufl_cell(), e.degree, dim=dim)
+    ufl_element = basix.ufl_wrapper.create_vector_element(
+        e.family, mesh.ufl_cell().cellname(), e.degree, dim=dim,
+        gdim=mesh.geometry.dim)
+
     return FunctionSpace(mesh, ufl_element)
 
 
@@ -578,5 +586,7 @@ def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typin
     """Create tensor finite element (composition of scalar elements) function space."""
 
     e = ElementMetaData(*element)
-    ufl_element = ufl.TensorElement(e.family, mesh.ufl_cell(), e.degree, shape, symmetry)
+    ufl_element = basix.ufl_wrapper.create_tensor_element(
+        e.family, mesh.ufl_cell().cellname(), e.degree, shape=shape, symmetry=symmetry,
+        gdim=mesh.geometry.dim)
     return FunctionSpace(mesh, ufl_element)

@@ -22,8 +22,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::fem
 {
@@ -172,7 +170,11 @@ public:
   /// @param[in] f The expression function to be interpolated
   /// @param[in] cells The cells to interpolate on
   void interpolate(
-      const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f,
+      const std::function<std::pair<std::vector<T>, std::vector<std::size_t>>(
+          std::experimental::mdspan<
+              const double,
+              std::experimental::extents<
+                  std::size_t, 3, std::experimental::dynamic_extent>>)>& f,
       std::span<const std::int32_t> cells)
   {
     assert(_function_space);
@@ -180,47 +182,56 @@ public:
     assert(_function_space->mesh());
     const std::vector<double> x = fem::interpolation_coords(
         *_function_space->element(), *_function_space->mesh(), cells);
-    auto _x = xt::adapt(x, std::vector<std::size_t>{3, x.size() / 3});
-    auto fx = f(_x);
-    assert(fx.dimension() <= 2);
+    namespace stdex = std::experimental;
+    stdex::mdspan<const double,
+                  stdex::extents<std::size_t, 3, stdex::dynamic_extent>>
+        _x(x.data(), 3, x.size() / 3);
+
+    const auto [fx, fshape] = f(_x);
+    assert(fshape.size() <= 2);
     if (int vs = _function_space->element()->value_size();
-        vs == 1 and fx.dimension() == 1)
+        vs == 1 and fshape.size() == 1)
     {
       // Check for scalar-valued functions
-      if (fx.shape(0) != x.size() / 3)
+      if (fshape.front() != x.size() / 3)
         throw std::runtime_error("Data returned by callable has wrong length");
     }
     else
     {
       // Check for vector/tensor value
-      if (fx.dimension() != 2)
+      if (fshape.size() != 2)
         throw std::runtime_error("Expected 2D array of data");
-      if (fx.shape(0) != vs)
+
+      if (fshape[0] != vs)
       {
         throw std::runtime_error(
             "Data returned by callable has wrong shape(0) size");
       }
-      if (fx.shape(1) != x.size() / 3)
+      if (fshape[1] != x.size() / 3)
       {
         throw std::runtime_error(
             "Data returned by callable has wrong shape(1) size");
       }
     }
 
-    std::array<std::size_t, 2> fshape;
-    if (fx.dimension() == 1)
-      fshape = {1, fx.shape(0)};
+    std::array<std::size_t, 2> _fshape;
+    if (fshape.size() == 1)
+      _fshape = {1, fshape[0]};
     else
-      fshape = {fx.shape(0), fx.shape(1)};
+      _fshape = {fshape[0], fshape[1]};
 
-    fem::interpolate(*this, std::span<const T>(fx.data(), fx.size()), fshape,
+    fem::interpolate(*this, std::span<const T>(fx.data(), fx.size()), _fshape,
                      cells);
   }
 
   /// Interpolate an expression function on the whole domain
   /// @param[in] f The expression to be interpolated
   void interpolate(
-      const std::function<xt::xarray<T>(const xt::xtensor<double, 2>&)>& f)
+      const std::function<std::pair<std::vector<T>, std::vector<std::size_t>>(
+          std::experimental::mdspan<
+              const double,
+              std::experimental::extents<
+                  std::size_t, 3, std::experimental::dynamic_extent>>)>& f)
   {
     assert(_function_space);
     assert(_function_space->mesh());
@@ -274,26 +285,35 @@ public:
       }
     }
 
+    namespace stdex = std::experimental;
+
     // Array to hold evaluated Expression
     std::size_t num_cells = cells.size();
     std::size_t num_points = e.X().second[0];
-    xt::xtensor<T, 3> f({num_cells, num_points, value_size});
+    std::vector<T> fdata(num_cells * num_points * value_size);
+    stdex::mdspan<const T, stdex::dextents<std::size_t, 3>> f(
+        fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
-    auto f_view = xt::reshape_view(f, {num_cells, num_points * value_size});
-    e.eval(cells, f_view);
+    e.eval(cells, fdata, {num_cells, num_points * value_size});
 
     // Reshape evaluated data to fit interpolate
     // Expression returns matrix of shape (num_cells, num_points *
     // value_size), i.e. xyzxyz ordering of dof values per cell per point.
     // The interpolation uses xxyyzz input, ordered for all points of each
     // cell, i.e. (value_size, num_cells*num_points)
-    xt::xarray<T> _f = xt::reshape_view(xt::transpose(f, {2, 0, 1}),
-                                        {value_size, num_cells * num_points});
+
+    std::vector<T> fdata1(num_cells * num_points * value_size);
+    stdex::mdspan<T, stdex::dextents<std::size_t, 3>> f1(
+        fdata1.data(), value_size, num_cells, num_points);
+    for (std::size_t i = 0; i < f.extent(0); ++i)
+      for (std::size_t j = 0; j < f.extent(1); ++j)
+        for (std::size_t k = 0; k < f.extent(2); ++k)
+          f1(k, i, j) = f(i, j, k);
 
     // Interpolate values into appropriate space
-    fem::interpolate(*this, std::span<const T>(_f.data(), _f.size()),
-                     {_f.shape(0), _f.shape(1)}, cells);
+    fem::interpolate(*this, std::span<const T>(fdata1.data(), fdata1.size()),
+                     {value_size, num_cells * num_points}, cells);
   }
 
   /// Interpolate an Expression (based on UFL) on all cells
@@ -411,7 +431,7 @@ public:
 
     // Loop over points
     std::fill(u.data(), u.data() + u.size(), 0.0);
-    const std::span<const T>& _v = _x->array();
+    std::span<const T> _v = _x->array();
 
     // Evaluate geometry basis at point (0, 0, 0) on the reference cell.
     // Used in affine case.

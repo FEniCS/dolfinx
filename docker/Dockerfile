@@ -47,17 +47,16 @@
 
 
 ARG ADIOS2_VERSION=2.8.3
+ARG DOXYGEN_VERSION=1_9_5
 ARG GMSH_VERSION=4_10_5
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=2
 ARG KAHIP_VERSION=3.14
-ARG NUMPY_VERSION=1.22.4
+ARG NUMPY_VERSION=1.23.3
 ARG PYBIND11_VERSION=2.10.0
 ARG PETSC_VERSION=3.17.4
 ARG SLEPC_VERSION=3.17.2
 ARG PYVISTA_VERSION=0.36.1
-ARG XTENSOR_VERSION=0.24.2
-ARG XTL_VERSION=0.7.4
 
 ARG MPICH_VERSION=4.0.2
 ARG OPENMPI_SERIES=4.1
@@ -72,6 +71,7 @@ FROM ubuntu:22.04 as dev-env
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
+ARG DOXYGEN_VERSION
 ARG GMSH_VERSION
 ARG HDF5_SERIES
 ARG HDF5_PATCH
@@ -81,8 +81,6 @@ ARG SLEPC_VERSION
 ARG ADIOS2_VERSION
 ARG KAHIP_VERSION
 ARG NUMPY_VERSION
-ARG XTENSOR_VERSION
-ARG XTL_VERSION
 ARG MPICH_VERSION
 ARG OPENMPI_SERIES
 ARG OPENMPI_PATCH
@@ -137,7 +135,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y install \
     catch2 \
     clang-format \
-    doxygen \
     git \
     graphviz \
     libeigen3-dev \
@@ -156,6 +153,20 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libocct-data-exchange-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install Doxygen
+RUN apt-get -qq update && \
+    apt-get -y install bison flex && \
+    wget -nc --quiet https://github.com/doxygen/doxygen/archive/refs/tags/Release_${DOXYGEN_VERSION}.tar.gz && \
+    tar xfz Release_${DOXYGEN_VERSION}.tar.gz && \
+    cd doxygen-Release_${DOXYGEN_VERSION} && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir . && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    apt-get -y purge bison flex && \
+    apt-get -y autoremove && \
+    apt-get clean && \
+    rm -rf /tmp/*
 
 # Install MPI
 RUN if [ "$MPI" = "mpich" ]; then \
@@ -183,18 +194,6 @@ RUN if [ "$MPI" = "mpich" ]; then \
 RUN pip3 install --no-binary="numpy" --no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scipy && \
     pip3 install --no-cache-dir cppimport flake8 isort jupytext matplotlib mypy myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
 
-# Install xtl, xtensor
-RUN git clone -b ${XTL_VERSION} --single-branch --depth 1 https://github.com/xtensor-stack/xtl.git && \
-    cd xtl && \
-    cmake -G Ninja . && \
-    ninja install && \
-    cd ../ && \
-    git clone -b ${XTENSOR_VERSION} --single-branch --depth 1 https://github.com/xtensor-stack/xtensor.git && \
-    cd xtensor && \
-    cmake -G Ninja . && \
-    ninja install && \
-    rm -rf /tmp/*
-
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
     tar -xf v${KAHIP_VERSION}.tar.gz && \
@@ -204,13 +203,6 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
     rm -rf /tmp/*
 
 # Install HDF5
-# RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-#     tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-#     cd hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
-#     ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
-#     make -j${BUILD_NP} install && \
-#     rm -rf /tmp/*
-
 # Note: HDF5 CMake install has numerous bugs and inconsistencies. Test carefully.
 # HDF5 overrides CMAKE_INSTALL_PREFIX by default, hence it is set
 # below to ensure that HDF5 is installed into a path where it can be

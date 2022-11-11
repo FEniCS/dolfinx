@@ -29,7 +29,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <span>
-#include <xtensor/xadapt.hpp>
 
 namespace py = pybind11;
 
@@ -90,7 +89,7 @@ void declare_meshtags(py::module& m, std::string type)
              std::shared_ptr<dolfinx::mesh::MeshTags<T>>>(
       m, pyclass_name.c_str(), "MeshTags object")
       .def(py::init(
-          [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, int dim,
+          [](std::shared_ptr<const dolfinx::mesh::Mesh> mesh, int dim,
              const py::array_t<std::int32_t, py::array::c_style>& indices,
              const py::array_t<T, py::array::c_style>& values)
           {
@@ -124,7 +123,7 @@ void declare_meshtags(py::module& m, std::string type)
            { return as_pyarray(self.find(value)); });
 
   m.def("create_meshtags",
-        [](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, int dim,
+        [](std::shared_ptr<const dolfinx::mesh::Mesh> mesh, int dim,
            const dolfinx::graph::AdjacencyList<std::int32_t>& entities,
            const py::array_t<T, py::array::c_style>& values)
         {
@@ -392,15 +391,15 @@ void mesh(py::module& m)
          const std::function<py::array_t<bool>(
              const py::array_t<double, py::array::c_style>&)>& marker)
       {
-        auto cpp_marker
-            = [&marker](const xt::xtensor<double, 2>& x) -> xt::xtensor<bool, 1>
+        auto cpp_marker = [&marker](auto x)
         {
-          py::array_t<double> x_view(x.shape(), x.data(), py::none());
+          std::array<std::size_t, 2> shape = {x.extent(0), x.extent(1)};
+          py::array_t<double> x_view(shape, x.data_handle(), py::none());
           py::array_t<bool> marked = marker(x_view);
-          std::array shape = {static_cast<std::size_t>(marked.size())};
-          return xt::adapt(marked.data(), marked.size(), xt::no_ownership(),
-                           shape);
+          return std::vector<std::int8_t>(marked.data(),
+                                          marked.data() + marked.size());
         };
+
         return as_pyarray(
             dolfinx::mesh::locate_entities(mesh, dim, cpp_marker));
       },
@@ -412,14 +411,13 @@ void mesh(py::module& m)
          const std::function<py::array_t<bool>(
              const py::array_t<double, py::array::c_style>&)>& marker)
       {
-        auto cpp_marker
-            = [&marker](const xt::xtensor<double, 2>& x) -> xt::xtensor<bool, 1>
+        auto cpp_marker = [&marker](auto x)
         {
-          py::array_t<double> x_view(x.shape(), x.data(), py::none());
+          std::array<std::size_t, 2> shape = {x.extent(0), x.extent(1)};
+          py::array_t<double> x_view(shape, x.data_handle(), py::none());
           py::array_t<bool> marked = marker(x_view);
-          std::array shape = {static_cast<std::size_t>(marked.size())};
-          return xt::adapt(marked.data(), marked.size(), xt::no_ownership(),
-                           shape);
+          return std::vector<std::int8_t>(marked.data(),
+                                          marked.data() + marked.size());
         };
         return as_pyarray(
             dolfinx::mesh::locate_entities_boundary(mesh, dim, cpp_marker));

@@ -14,8 +14,9 @@ from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_scalar,
                          dirichletbc, form)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
-from dolfinx.mesh import (GhostMode, Mesh, create_unit_square, meshtags, meshtags_from_entities,
-                          locate_entities_boundary)
+from dolfinx.mesh import (GhostMode, Mesh, create_unit_square,
+                          locate_entities_boundary, meshtags,
+                          meshtags_from_entities)
 
 from mpi4py import MPI
 from petsc4py import PETSc

@@ -53,18 +53,18 @@ public:
   /// @param request The MPI request handle for tracking the status of
   /// the non-blocking communication
   template <typename T>
-  void scatter_fwd_begin(const std::span<const T>& send_buffer,
-                         const std::span<T>& recv_buffer,
-                         MPI_Request& request) const
+  void scatter_fwd_begin(std::span<const T> send_buffer,
+                         std::span<T> recv_buffer, MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
       return;
 
-    MPI_Ineighbor_alltoallv(
+    int err = MPI_Ineighbor_alltoallv(
         send_buffer.data(), _sizes_local.data(), _displs_local.data(),
         MPI::mpi_type<T>(), recv_buffer.data(), _sizes_remote.data(),
         _displs_remote.data(), MPI::mpi_type<T>(), _comm0.comm(), &request);
+    dolfinx::MPI::check_error(_comm0.comm(), err);
   }
 
   /// @brief Complete a non-blocking send from the local owner to
@@ -96,7 +96,7 @@ public:
   /// @param[in] request The MPI request handle for tracking the status
   /// of the send
   template <typename T, typename Functor>
-  void scatter_fwd_begin(const std::span<const T>& local_data,
+  void scatter_fwd_begin(std::span<const T> local_data,
                          std::span<T> local_buffer, std::span<T> remote_buffer,
                          Functor pack_fn, MPI_Request& request) const
   {
@@ -126,7 +126,7 @@ public:
   /// @param[in] request The MPI request handle for tracking the status
   /// of the send
   template <typename T, typename Functor>
-  void scatter_fwd_end(const std::span<const T>& remote_buffer,
+  void scatter_fwd_end(std::span<const T> remote_buffer,
                        std::span<T> remote_data, Functor unpack_fn,
                        MPI_Request& request) const
   {
@@ -149,7 +149,7 @@ public:
   /// number of ghosts in the index map multiplied by the block size.
   /// The data for each index is blocked.
   template <typename T>
-  void scatter_fwd(const std::span<const T>& local_data,
+  void scatter_fwd(std::span<const T> local_data,
                    std::span<T> remote_data) const
   {
     MPI_Request request;
@@ -198,19 +198,19 @@ public:
   /// @param request The MPI request handle for tracking the status of
   /// the non-blocking communication
   template <typename T>
-  void scatter_rev_begin(const std::span<const T>& send_buffer,
-                         const std::span<T>& recv_buffer,
-                         MPI_Request& request) const
+  void scatter_rev_begin(std::span<const T> send_buffer,
+                         std::span<T> recv_buffer, MPI_Request& request) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
       return;
 
     // Send and receive data
-    MPI_Ineighbor_alltoallv(
+    int err = MPI_Ineighbor_alltoallv(
         send_buffer.data(), _sizes_remote.data(), _displs_remote.data(),
         MPI::mpi_type<T>(), recv_buffer.data(), _sizes_local.data(),
         _displs_local.data(), MPI::mpi_type<T>(), _comm1.comm(), &request);
+    dolfinx::MPI::check_error(_comm1.comm(), err);
   }
 
   /// @brief End the reverse scatter communication.
@@ -250,7 +250,7 @@ public:
   /// @param request The MPI request handle for tracking the status of
   /// the non-blocking communication
   template <typename T, typename Functor>
-  void scatter_rev_begin(const std::span<const T>& remote_data,
+  void scatter_rev_begin(std::span<const T> remote_data,
                          std::span<T> remote_buffer, std::span<T> local_buffer,
                          Functor pack_fn, MPI_Request& request) const
   {
@@ -280,9 +280,8 @@ public:
   /// @param[in] request The handle used when calling
   /// Scatterer::scatter_rev_begin
   template <typename T, typename Functor, typename BinaryOp>
-  void scatter_rev_end(const std::span<const T>& local_buffer,
-                       std::span<T> local_data, Functor unpack_fn, BinaryOp op,
-                       MPI_Request& request)
+  void scatter_rev_end(std::span<const T> local_buffer, std::span<T> local_data,
+                       Functor unpack_fn, BinaryOp op, MPI_Request& request)
   {
     assert(local_buffer.size() == _local_inds.size());
     if (_local_inds.size() > 0)
@@ -295,8 +294,8 @@ public:
   /// @brief Scatter data associated with ghost indices to ranks that
   /// own the indices.
   template <typename T, typename BinaryOp>
-  void scatter_rev(std::span<T> local_data,
-                   const std::span<const T>& remote_data, BinaryOp op)
+  void scatter_rev(std::span<T> local_data, std::span<const T> remote_data,
+                   BinaryOp op)
   {
     std::vector<T> local_buffer(local_buffer_size(), 0);
     std::vector<T> remote_buffer(remote_buffer_size(), 0);

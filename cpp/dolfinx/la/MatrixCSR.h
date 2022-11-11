@@ -134,7 +134,6 @@ public:
 
   /// Insertion functor for setting values in matrix. It is typically
   /// used in finite element assembly functions.
-  /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
   /// @todo clarify setting on non-owned entries
   auto mat_set_values()
@@ -150,7 +149,6 @@ public:
 
   /// Insertion functor for accumulating values in matrix. It is
   /// typically used in finite element assembly functions.
-  /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
   auto mat_add_values()
   {

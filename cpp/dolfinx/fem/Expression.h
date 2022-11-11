@@ -7,13 +7,13 @@
 #pragma once
 
 #include "Function.h"
+#include <algorithm>
 #include <array>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <span>
 #include <utility>
 #include <vector>
-#include <algorithm>
 
 namespace dolfinx::fem
 {
@@ -67,9 +67,8 @@ public:
                                const uint8_t*)>
           fn,
       const std::vector<int>& value_shape,
-      const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
-      const std::shared_ptr<const FunctionSpace> argument_function_space
-      = nullptr)
+      std::shared_ptr<const mesh::Mesh> mesh = nullptr,
+      std::shared_ptr<const FunctionSpace> argument_function_space = nullptr)
       : _coefficients(coefficients), _constants(constants), _mesh(mesh),
         _x_ref(std::vector<double>(X.begin(), X.end()), Xshape), _fn(fn),
         _value_shape(value_shape),
@@ -131,13 +130,14 @@ public:
     return n;
   }
 
-  /// Evaluate the expression on cells
+  /// @brief Evaluate the expression on cells
   /// @param[in] cells Cells on which to evaluate the Expression
   /// @param[out] values A 2D array to store the result. Caller
   /// is responsible for correct sizing which should be (num_cells,
   /// num_points * value_size * num_all_argument_dofs columns).
-  template <typename U>
-  void eval(const std::span<const std::int32_t>& cells, U& values) const
+  /// @param[in] vshape The shape of `values` (row-major storage).
+  void eval(std::span<const std::int32_t> cells, std::span<T> values,
+            std::array<std::size_t, 2> vshape) const
   {
     // Extract data from Expression
     assert(_mesh);
@@ -202,14 +202,13 @@ public:
       }
 
       const T* coeff_cell = coeffs.data() + c * cstride;
-      std::fill(values_local.begin(), values_local.end(), 0.0);
+      std::fill(values_local.begin(), values_local.end(), 0);
       _fn(values_local.data(), coeff_cell, constant_data.data(),
           coordinate_dofs.data(), nullptr, nullptr);
 
       dof_transform_to_transpose(_values_local, cell_info, c, size0);
-
       for (std::size_t j = 0; j < values_local.size(); ++j)
-        values(c, j) = values_local[j];
+        values[c * vshape[1] + j] = values_local[j];
     }
   }
 
