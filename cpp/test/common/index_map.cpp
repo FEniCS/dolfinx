@@ -47,6 +47,20 @@ void test_scatter_fwd(int n)
   CHECK(std::all_of(data_ghost.begin(), data_ghost.end(),
                     [=](auto i)
                     { return i == val * ((mpi_rank + 1) % mpi_size); }));
+
+  int num_requests = idx_map.dest().size() + idx_map.src().size();
+  std::vector<MPI_Request> requests(num_requests, MPI_REQUEST_NULL);
+
+  std::fill(data_ghost.begin(), data_ghost.end(), 0);
+  sct.scatter_fwd_begin<std::int64_t>(std::span<const std::int64_t>(data_local),
+                                      std::span<std::int64_t>(data_ghost),
+                                      requests, decltype(sct)::type::p2p);
+
+  sct.scatter_fwd_end(requests);
+
+  CHECK(std::all_of(data_ghost.begin(), data_ghost.end(),
+                    [=](auto i)
+                    { return i == val * ((mpi_rank + 1) % mpi_size); }));
 }
 
 void test_scatter_rev()

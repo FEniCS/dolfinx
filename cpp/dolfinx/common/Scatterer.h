@@ -195,7 +195,7 @@ public:
   void scatter_fwd_begin(std::span<const T> send_buffer,
                          std::span<T> recv_buffer,
                          std::span<MPI_Request> requests,
-                         Scatterer::type type = type::p2p) const
+                         Scatterer::type type = type::neighbor) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
@@ -381,7 +381,7 @@ public:
   void scatter_rev_begin(std::span<const T> send_buffer,
                          std::span<T> recv_buffer,
                          std::span<MPI_Request> requests,
-                         Scatterer::type type = type::p2p) const
+                         Scatterer::type type = type::neighbor) const
   {
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
