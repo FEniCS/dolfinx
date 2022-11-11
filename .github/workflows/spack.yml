@@ -94,6 +94,7 @@ jobs:
           spack env create cpp-main-test
           spack env activate cpp-main-test
           spack add fenics-dolfinx@main+adios2 cmake py-fenics-ffcx@main
+          spack install
           cd dolfinx-main/cpp/
           cd demo/poisson
           cmake .
