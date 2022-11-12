@@ -255,7 +255,7 @@ if _has_gmsh:
         local_entities, local_values = _cpp.io.distribute_entity_data(mesh, mesh.topology.dim, cells, cell_values)
         mesh.topology.create_connectivity(mesh.topology.dim, 0)
         adj = _cpp.graph.AdjacencyList_int32(local_entities)
-        ct = meshtags_from_entities(mesh, mesh.topology.dim, adj, local_values.astype(np.int32))
+        ct = meshtags_from_entities(mesh, mesh.topology.dim, adj, local_values.astype(np.int32, copy=False))
         ct.name = "Cell tags"
 
         # Create MeshTags for facets
@@ -274,7 +274,7 @@ if _has_gmsh:
                 mesh, mesh.topology.dim - 1, marked_facets, facet_values)
             mesh.topology.create_connectivity(topology.dim - 1, topology.dim)
             adj = _cpp.graph.AdjacencyList_int32(local_entities)
-            ft = meshtags_from_entities(mesh, topology.dim - 1, adj, local_values.astype(np.int32))
+            ft = meshtags_from_entities(mesh, topology.dim - 1, adj, local_values.astype(np.int32, copy=False))
             ft.name = "Facet tags"
         else:
             ft = meshtags(mesh, topology.dim - 1, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))

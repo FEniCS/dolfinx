@@ -194,7 +194,10 @@ void io(py::module& m)
                [](const MPICommWrapper comm,
                   const std::filesystem::path& filename,
                   const std::vector<std::variant<
+                      std::shared_ptr<const dolfinx::fem::Function<float>>,
                       std::shared_ptr<const dolfinx::fem::Function<double>>,
+                      std::shared_ptr<
+                          const dolfinx::fem::Function<std::complex<float>>>,
                       std::shared_ptr<const dolfinx::fem::Function<
                           std::complex<double>>>>>& u)
                {
@@ -225,7 +228,10 @@ void io(py::module& m)
                [](const MPICommWrapper comm,
                   const std::filesystem::path& filename,
                   const std::vector<std::variant<
+                      std::shared_ptr<const dolfinx::fem::Function<float>>,
                       std::shared_ptr<const dolfinx::fem::Function<double>>,
+                      std::shared_ptr<
+                          const dolfinx::fem::Function<std::complex<float>>>,
                       std::shared_ptr<const dolfinx::fem::Function<
                           std::complex<double>>>>>& u) {
                  return std::make_unique<dolfinx::io::VTXWriter>(comm.get(),
