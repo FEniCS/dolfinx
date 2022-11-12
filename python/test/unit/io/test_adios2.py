@@ -107,9 +107,9 @@ def test_fides_function_at_nodes(tempdir, dim, simplex):
 
             mesh.geometry.x[:, :2] += 0.1
             if mesh.geometry.dim == 2:
-                v.interpolate(lambda x: (t * x[0], x[1] + x[1] * 1j))
+                v.interpolate(lambda x: np.vstack((t * x[0], x[1] + x[1] * 1j)))
             elif mesh.geometry.dim == 3:
-                v.interpolate(lambda x: (t * x[2], x[0] + x[2] * 2j, x[1]))
+                v.interpolate(lambda x: np.vstack((t * x[2], x[0] + x[2] * 2j, x[1])))
             f.write(t)
 
 
