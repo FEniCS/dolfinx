@@ -88,7 +88,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     # data from outer scope
     def partitioner(*args):
         midpoints = np.mean(x_global[topo], axis=1)
-        dest = np.floor(midpoints[:, 0] % mpi_comm.size, dtype=np.int32)
+        dest = np.floor(midpoints[:, 0] % mpi_comm.size).astype(np.int32)
         return dolfinx.cpp.graph.AdjacencyList_int32(dest)
 
     new_mesh = create_mesh(mpi_comm, topo, x, domain, partitioner)
