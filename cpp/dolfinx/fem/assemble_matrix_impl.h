@@ -122,7 +122,7 @@ void assemble_cells(
 /// Execute kernel over exterior facets and  accumulate result in Mat
 template <typename T>
 void assemble_exterior_facets(
-    la::MatSet<T> auto mat_set, const mesh::Mesh& mesh,
+    la::MatSet<T> auto mat_set, const mesh::Geometry& geometry,
     std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -140,9 +140,9 @@ void assemble_exterior_facets(
     return;
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
-  std::span<const double> x = mesh.geometry().x();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  const std::size_t num_dofs_g = geometry.cmap().dim();
+  std::span<const double> x = geometry.x();
 
   // Data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
@@ -216,8 +216,8 @@ void assemble_exterior_facets(
 /// Execute kernel over interior facets and  accumulate result in Mat
 template <typename T>
 void assemble_interior_facets(
-    la::MatSet<T> auto mat_set, const mesh::Mesh& mesh,
-    std::span<const std::int32_t> facets,
+    la::MatSet<T> auto mat_set, const mesh::Geometry& geometry,
+    const mesh::Topology& topology, std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
@@ -234,12 +234,12 @@ void assemble_interior_facets(
   if (facets.empty())
     return;
 
-  const int tdim = mesh.topology().dim();
+  const int tdim = topology.dim();
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
-  std::span<const double> x = mesh.geometry().x();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  const std::size_t num_dofs_g = geometry.cmap().dim();
+  std::span<const double> x = geometry.x();
 
   // Data structures used in assembly
   using X = scalar_value_type_t<T>;
@@ -252,7 +252,7 @@ void assemble_interior_facets(
   assert(offsets.back() == cstride);
 
   const int num_cell_facets
-      = mesh::cell_num_entities(mesh.topology().cell_type(), tdim - 1);
+      = mesh::cell_num_entities(topology.cell_type(), tdim - 1);
 
   // Temporaries for joint dofmaps
   std::vector<std::int32_t> dmapjoint0, dmapjoint1;
@@ -425,10 +425,10 @@ void assemble_matrix(
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::int32_t>& facets = a.exterior_facet_domains(i);
-    impl::assemble_exterior_facets(mat_set, *mesh, facets, dof_transform, dofs0,
-                                   bs0, dof_transform_to_transpose, dofs1, bs1,
-                                   bc0, bc1, fn, coeffs, cstride, constants,
-                                   cell_info);
+    impl::assemble_exterior_facets(
+        mat_set, mesh->geometry(), facets, dof_transform, dofs0, bs0,
+        dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn, coeffs, cstride,
+        constants, cell_info);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
@@ -452,9 +452,9 @@ void assemble_matrix(
           = coefficients.at({IntegralType::interior_facet, i});
       const std::vector<std::int32_t>& facets = a.interior_facet_domains(i);
       impl::assemble_interior_facets(
-          mat_set, *mesh, facets, dof_transform, *dofmap0, bs0,
-          dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1, fn, coeffs,
-          cstride, c_offsets, constants, cell_info, get_perm);
+          mat_set, mesh->geometry(), mesh->topology(), facets, dof_transform,
+          *dofmap0, bs0, dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1,
+          fn, coeffs, cstride, c_offsets, constants, cell_info, get_perm);
     }
   }
 }
