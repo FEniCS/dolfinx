@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Test that interpolation"""
+"""Test that interpolation is done correctly"""
 
 import random
 
@@ -176,10 +176,10 @@ def run_vector_test(V, poly_order):
             return x[0] ** poly_order
     elif tdim == 2:
         def f(x):
-            return np.vstack((x[1] ** min(poly_order, 1), 2 * x[0] ** poly_order))
+            return (x[1] ** min(poly_order, 1), 2 * x[0] ** poly_order)
     else:
         def f(x):
-            return np.vstack((x[1] ** min(poly_order, 1), 2 * x[0] ** poly_order, 3 * x[2] ** min(poly_order, 2)))
+            return (x[1] ** min(poly_order, 1), 2 * x[0] ** poly_order, 3 * x[2] ** min(poly_order, 2))
 
     v = Function(V)
     v.interpolate(f)
@@ -187,7 +187,7 @@ def run_vector_test(V, poly_order):
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
     for p, val in zip(points, values):
-        assert np.allclose(val, f(p).flatten())
+        assert np.allclose(val, f(p))
 
 
 @pytest.mark.skip_in_parallel
@@ -319,7 +319,7 @@ def test_mixed_interpolation():
     B = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
     v = Function(FunctionSpace(mesh, ufl.MixedElement([A, B])))
     with pytest.raises(RuntimeError):
-        v.interpolate(lambda x: np.vstack((x[1], 2 * x[0], 3 * x[1])))
+        v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
 
 
 @pytest.mark.parametrize("order1", [2, 3, 4])
@@ -645,7 +645,7 @@ def test_vector_element_interpolation(scalar_element):
     V = FunctionSpace(mesh, ufl.VectorElement(scalar_element))
 
     u = Function(V)
-    u.interpolate(lambda x: np.vstack((x[0], x[1])))
+    u.interpolate(lambda x: (x[0], x[1]))
 
     u2 = Function(V)
     u2.sub(0).interpolate(lambda x: x[0])
@@ -684,8 +684,8 @@ def test_custom_vector_element():
 
     v = Function(V)
     w = Function(W)
-    v.interpolate(lambda x: np.vstack((x[0], x[1])))
-    w.interpolate(lambda x: np.vstack((x[0], x[1])))
+    v.interpolate(lambda x: (x[0], x[1]))
+    w.interpolate(lambda x: (x[0], x[1]))
 
     assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(v - w, v - w) * ufl.dx))), 0)
 

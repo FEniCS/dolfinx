@@ -137,9 +137,9 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
 
     def f(x):
         if mesh.geometry.dim == 2:
-            return np.vstack((x[1]**p, x[0]**p))
+            return (x[1]**p, x[0]**p)
         else:
-            return np.vstack((x[0]**p, x[2]**p, x[1]**p))
+            return (x[0]**p, x[2]**p, x[1]**p)
     u.interpolate(f)
     w_vec = Function(W)
     w_vec.interpolate(u)
