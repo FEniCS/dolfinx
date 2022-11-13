@@ -277,20 +277,19 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 std::vector<std::string> extract_function_names(const ADIOS2Writer::U& u)
 {
   std::vector<std::string> names;
+  using T = decltype(names);
   for (auto& v : u)
   {
     auto n = std::visit(
-        overload{[](const std::shared_ptr<const ADIOS2Writer::Fd32>& u)
-                 { return std::vector{u->name}; },
-                 [](const std::shared_ptr<const ADIOS2Writer::Fd64>& u)
-                 { return std::vector{u->name}; },
-                 [](const std::shared_ptr<const ADIOS2Writer::Fc64>& u) {
-                   return std::vector{u->name + field_ext[0],
-                                      u->name + field_ext[1]};
+        overload{[](const std::shared_ptr<const ADIOS2Writer::Fd32>& u) -> T
+                 { return {u->name}; },
+                 [](const std::shared_ptr<const ADIOS2Writer::Fd64>& u) -> T
+                 { return {u->name}; },
+                 [](const std::shared_ptr<const ADIOS2Writer::Fc64>& u) -> T {
+                   return {u->name + field_ext[0], u->name + field_ext[1]};
                  },
-                 [](const std::shared_ptr<const ADIOS2Writer::Fc128>& u) {
-                   return std::vector{u->name + field_ext[0],
-                                      u->name + field_ext[1]};
+                 [](const std::shared_ptr<const ADIOS2Writer::Fc128>& u) -> T {
+                   return {u->name + field_ext[0], u->name + field_ext[1]};
                  }},
         v);
     names.insert(names.end(), n.begin(), n.end());
@@ -606,25 +605,22 @@ void fides_initialize_function_attributes(adios2::IO& io,
   // Array of function (name, cell association types) for each function
   // added to the file
   std::vector<std::array<std::string, 2>> u_data;
+  using T = decltype(u_data);
   for (auto& v : u)
   {
     auto n = std::visit(
-        overload{[](const std::shared_ptr<const ADIOS2Writer::Fd32>& u)
-                     -> std::vector<std::array<std::string, 2>> {
+        overload{[](const std::shared_ptr<const ADIOS2Writer::Fd32>& u) -> T {
                    return {{u->name, "points"}};
                  },
-                 [](const std::shared_ptr<const ADIOS2Writer::Fd64>& u)
-                     -> std::vector<std::array<std::string, 2>> {
+                 [](const std::shared_ptr<const ADIOS2Writer::Fd64>& u) -> T {
                    return {{u->name, "points"}};
                  },
-                 [](const std::shared_ptr<const ADIOS2Writer::Fc64>& u)
-                     -> std::vector<std::array<std::string, 2>>
+                 [](const std::shared_ptr<const ADIOS2Writer::Fc64>& u) -> T
                  {
                    return {{u->name + field_ext[0], "points"},
                            {u->name + field_ext[1], "points"}};
                  },
-                 [](const std::shared_ptr<const ADIOS2Writer::Fc128>& u)
-                     -> std::vector<std::array<std::string, 2>>
+                 [](const std::shared_ptr<const ADIOS2Writer::Fc128>& u) -> T
                  {
                    return {{u->name + field_ext[0], "points"},
                            {u->name + field_ext[1], "points"}};
