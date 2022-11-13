@@ -187,7 +187,7 @@ def run_vector_test(V, poly_order):
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
     for p, val in zip(points, values):
-        assert np.allclose(val, f(p))
+        assert np.allclose(val, f(p).flatten())
 
 
 @pytest.mark.skip_in_parallel
@@ -319,7 +319,7 @@ def test_mixed_interpolation():
     B = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
     v = Function(FunctionSpace(mesh, ufl.MixedElement([A, B])))
     with pytest.raises(RuntimeError):
-        v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
+        v.interpolate(lambda x: np.vstack((x[1], 2 * x[0], 3 * x[1])))
 
 
 @pytest.mark.parametrize("order1", [2, 3, 4])
