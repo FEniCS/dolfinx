@@ -195,10 +195,8 @@ if _has_gmsh:
         """
 
         if comm.rank == rank:
-            # Get mesh geometry
+            # Get mesh geometry and mesh topology for each element
             x = extract_geometry(model)
-
-            # Get mesh topology for each element
             topologies = extract_topology_and_markers(model)
 
             # Extract Gmsh cell id, dimension of cell and number of

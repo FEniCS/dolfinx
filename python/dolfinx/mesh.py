@@ -226,7 +226,7 @@ class MeshTagsMetaClass:
             directly.
 
         """
-        super().__init__(mesh, dim, entities.astype(np.int32, copy=False), values)  # type: ignore
+        super().__init__(mesh, dim, np.asarray(entities, dytype=np.int32), values)  # type: ignore
 
     def ufl_id(self) -> int:
         """Object identifier.

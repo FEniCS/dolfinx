@@ -349,7 +349,7 @@ class Function(ufl.Coefficient):
             # u is callable
             assert callable(u)
             x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh, cells)
-            self.interpolate(u(x).astype(self.dtype, copy=False), cells)
+            self.interpolate(np.asarray(u(x), dtype=self.dtype), cells)
 
     def copy(self) -> Function:
         """Return a copy of the Function. The FunctionSpace is shared and the
