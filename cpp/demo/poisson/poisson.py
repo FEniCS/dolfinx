@@ -4,11 +4,9 @@
 # The first step is to define the variational problem at hand. We define
 # the variational problem in UFL terms in a separate form file
 # :download:`poisson.py`.  We begin by defining the finite element::
-from ufl import (Coefficient, Constant, FiniteElement, FunctionSpace, Mesh,
-                 TestFunction, TrialFunction, VectorElement, ds, dx, grad,
-                 inner, triangle)
-import basix
 from basix.ufl_wrapper import create_vector_element
+from ufl import (Coefficient, Constant, FiniteElement, FunctionSpace, Mesh,
+                 TestFunction, TrialFunction, ds, dx, grad, inner, triangle)
 
 element = FiniteElement("Lagrange", triangle, 1)
 
