@@ -184,13 +184,13 @@ public:
   /// order of data in the buffer is given by Scatterer::local_indices.
   /// @param recv_buffer A buffer used for the received data. The
   /// position of ghost entries in the buffer is given by
-  /// Scatterer::remote_indices. The buffer must not be accessed or
-  /// changed until after a call to Scatterer::scatter_fwd_end.
+  /// Scatterer::remote_indices. The buffer must not be
+  /// accessed or changed until after a call to
+  /// Scatterer::scatter_fwd_end.
   /// @param requests The MPI request handle for tracking the status of
   /// the non-blocking communication
   /// @param[in] type The type of MPI communication pattern used by the
-  /// Scatterer, either Scatterer::type::neighbor or
-  /// Scatterer::type::p2p.
+  /// Scatterer, either Scatterer::type::neighbor or Scatterer::type::p2p.
   template <typename T>
   void scatter_fwd_begin(std::span<const T> send_buffer,
                          std::span<T> recv_buffer,
@@ -283,7 +283,8 @@ public:
     assert(local_buffer.size() == _local_inds.size());
     assert(remote_buffer.size() == _remote_inds.size());
     pack_fn(local_data, _local_inds, local_buffer);
-    scatter_fwd_begin(local_buffer, remote_buffer, requests, type);
+    scatter_fwd_begin(std::span<const T>(local_buffer), remote_buffer, requests,
+                      type);
   }
 
   /// @brief Complete a non-blocking send from the local owner to
@@ -340,8 +341,9 @@ public:
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[i] = in[idx[i]];
     };
-    scatter_fwd_begin(local_data, local_buffer, remote_buffer, pack_fn,
-                      requests);
+    scatter_fwd_begin(local_data, std::span<T>(local_buffer),
+                      std::span<T>(remote_buffer), pack_fn,
+                      std::span<MPI_Request>(requests));
 
     auto unpack_fn = [](const auto& in, const auto& idx, auto& out, auto op)
     {
@@ -349,7 +351,8 @@ public:
         out[idx[i]] = op(out[idx[i]], in[i]);
     };
 
-    scatter_fwd_end(remote_buffer, remote_data, unpack_fn, requests);
+    scatter_fwd_end(std::span<const T>(remote_buffer), remote_data, unpack_fn,
+                    std::span<MPI_Request>(requests));
   }
 
   /// @brief Start a non-blocking send of ghost data to ranks that own
@@ -395,11 +398,11 @@ public:
     case type::neighbor:
     {
       assert(requests.size() == 1);
-      MPI_Ineighbor_alltoallv(
-          send_buffer.data(), _sizes_remote.data(), _displs_remote.data(),
-          dolfinx::MPI::mpi_type<T>(), recv_buffer.data(), _sizes_local.data(),
-          _displs_local.data(), dolfinx::MPI::mpi_type<T>(), _comm1.comm(),
-          &requests[0]);
+      MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_remote.data(),
+                              _displs_remote.data(), MPI::mpi_type<T>(),
+                              recv_buffer.data(), _sizes_local.data(),
+                              _displs_local.data(), MPI::mpi_type<T>(),
+                              _comm1.comm(), &requests[0]);
       break;
     }
     case type::p2p:
@@ -483,7 +486,8 @@ public:
     assert(local_buffer.size() == _local_inds.size());
     assert(remote_buffer.size() == _remote_inds.size());
     pack_fn(remote_data, _remote_inds, remote_buffer);
-    scatter_rev_begin(remote_buffer, local_buffer, request, type);
+    scatter_rev_begin(std::span<const T>(remote_buffer), local_buffer, request,
+                      type);
   }
 
   /// @brief End the reverse scatter communication, and unpack the received
@@ -537,9 +541,11 @@ public:
         out[idx[i]] = op(out[idx[i]], in[i]);
     };
     std::vector<MPI_Request> request(1, MPI_REQUEST_NULL);
-    scatter_rev_begin(remote_data, remote_buffer, local_buffer, pack_fn,
-                      request);
-    scatter_rev_end(local_buffer, local_data, unpack_fn, op, request);
+    scatter_rev_begin(remote_data, std::span<T>(remote_buffer),
+                      std::span<T>(local_buffer), pack_fn,
+                      std::span<MPI_Request>(request));
+    scatter_rev_end(std::span<const T>(local_buffer), local_data, unpack_fn, op,
+                    std::span<MPI_Request>(request));
   }
 
   /// @brief Size of buffer for local data (owned and shared) used in

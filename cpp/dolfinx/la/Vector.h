@@ -83,7 +83,9 @@ public:
     };
     pack(x_local, _scatterer->local_indices(), _buffer_local);
 
-    _scatterer->scatter_fwd_begin(_buffer_local, _buffer_remote, _request);
+    _scatterer->scatter_fwd_begin(std::span<const T>(_buffer_local),
+                                  std::span<T>(_buffer_remote),
+                                  std::span<MPI_Request>(_request));
   }
 
   /// End scatter of local data from owner to ghosts on other ranks
@@ -93,7 +95,7 @@ public:
     const std::int32_t local_size = _bs * _map->size_local();
     const std::int32_t num_ghosts = _bs * _map->num_ghosts();
     std::span<T> x_remote(_x.data() + local_size, num_ghosts);
-    _scatterer->scatter_fwd_end(_request);
+    _scatterer->scatter_fwd_end(std::span<MPI_Request>(_request));
 
     auto unpack = [](const auto& in, const auto& idx, auto& out, auto op)
     {
@@ -128,7 +130,8 @@ public:
     };
     pack(x_remote, _scatterer->remote_indices(), _buffer_remote);
 
-    _scatterer->scatter_rev_begin(_buffer_remote, _buffer_local, _request);
+    _scatterer->scatter_rev_begin(std::span<const T>(_buffer_remote),
+                                  std::span<T>(_buffer_local), _request);
   }
 
   /// End scatter of ghost data to owner. This process may receive data
@@ -171,10 +174,10 @@ public:
   constexpr int bs() const { return _bs; }
 
   /// Get local part of the vector (const version)
-  std::span<const T> array() const { return _x; }
+  std::span<const T> array() const { return std::span<const T>(_x); }
 
   /// Get local part of the vector
-  std::span<T> mutable_array() { return _x; }
+  std::span<T> mutable_array() { return std::span(_x); }
 
   /// Get the allocator associated with the container
   constexpr allocator_type allocator() const { return _x.get_allocator(); }
@@ -211,9 +214,9 @@ T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
   const std::int32_t local_size = a.bs() * a.map()->size_local();
   if (local_size != b.bs() * b.map()->size_local())
     throw std::runtime_error("Incompatible vector sizes");
-
   std::span<const T> x_a = a.array().subspan(0, local_size);
   std::span<const T> x_b = b.array().subspan(0, local_size);
+
   const T local = std::transform_reduce(
       x_a.begin(), x_a.end(), x_b.begin(), static_cast<T>(0), std::plus{},
       [](T a, T b) -> T

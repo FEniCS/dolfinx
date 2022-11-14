@@ -41,8 +41,7 @@ void test_scatter_fwd(int n)
   std::vector<std::int64_t> data_ghost(n * num_ghosts, -1);
 
   // Scatter values to ghost and check value is correctly received
-  sct.scatter_fwd<std::int64_t>(std::span<const std::int64_t>(data_local),
-                                std::span<std::int64_t>(data_ghost));
+  sct.scatter_fwd<std::int64_t>(data_local, data_ghost);
   CHECK((int)data_ghost.size() == n * num_ghosts);
   CHECK(std::all_of(data_ghost.begin(), data_ghost.end(),
                     [=](auto i)
