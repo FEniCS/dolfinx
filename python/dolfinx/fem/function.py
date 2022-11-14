@@ -25,9 +25,9 @@ import ufl.algorithms.analysis
 from dolfinx import cpp as _cpp
 from dolfinx import jit, la
 from dolfinx.fem import dofmap
+from ufl.domain import extract_unique_domain
 
 from petsc4py import PETSc
-from ufl.domain import extract_unique_domain
 
 
 class Constant(ufl.Constant):
