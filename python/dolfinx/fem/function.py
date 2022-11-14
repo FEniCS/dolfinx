@@ -27,6 +27,7 @@ from dolfinx import jit, la
 from dolfinx.fem import dofmap
 
 from petsc4py import PETSc
+from ufl.domain import extract_unique_domain
 
 
 class Constant(ufl.Constant):
@@ -104,7 +105,7 @@ class Expression:
         num_points = X.shape[0] if X.ndim == 2 else 1
         _X = np.reshape(X, (num_points, -1))
 
-        mesh = ufl_expression.ufl_domain().ufl_cargo()
+        mesh = extract_unique_domain(ufl_expression).ufl_cargo()
 
         # Compile UFL expression with JIT
         if dtype == np.float32:
