@@ -611,7 +611,7 @@ mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
 {
   return [partfn, ghost_mode](MPI_Comm comm, int nparts, int tdim,
                               const graph::AdjacencyList<std::int64_t>& cells)
-             -> dolfinx::graph::AdjacencyList<std::int32_t>
+             -> graph::AdjacencyList<std::int32_t>
   {
     LOG(INFO) << "Compute partition of cells across ranks";
 

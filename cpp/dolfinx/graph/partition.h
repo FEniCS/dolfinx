@@ -20,9 +20,10 @@
 namespace dolfinx::graph
 {
 
-/// @brief Signature of functions for computing the parallel partitioning of a
-/// distributed graph
-///
+/// @brief Signature of functions for computing the parallel /
+/// partitioning of a distributed graph.
+// See https://github.com/doxygen/doxygen/issues/9552
+/// @cond
 /// @param[in] comm MPI Communicator that the graph is distributed
 /// across
 /// @param[in] nparts Number of partitions to divide graph nodes into
@@ -30,6 +31,7 @@ namespace dolfinx::graph
 /// @param[in] ghosting Flag to enable ghosting of the output node
 /// distribution
 /// @return Destination rank for each input node
+/// @endcond
 using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm, int, const AdjacencyList<std::int64_t>&, bool)>;
 

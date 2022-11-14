@@ -17,7 +17,7 @@ using T = double;
 
 int main(int argc, char* argv[])
 {
-  dolfinx::init_logging(argc, argv);
+  init_logging(argc, argv);
   MPI_Init(&argc, &argv);
   {
     MPI_Comm comm{MPI_COMM_WORLD};

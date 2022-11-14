@@ -65,7 +65,7 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> typing.List[int]:
 if _has_gmsh:
     __all__ += ["extract_topology_and_markers", "extract_geometry", "model_to_mesh", "read_from_msh"]
 
-    def extract_topology_and_markers(model: gmsh.model, name: str = None):
+    def extract_topology_and_markers(model: gmsh.model, name: typing.Optional[str] = None):
         """Extract all entities tagged with a physical marker in the gmsh
         model, and collect the data per cell type.
 
@@ -132,7 +132,7 @@ if _has_gmsh:
 
         return topologies
 
-    def extract_geometry(model: gmsh.model, name: str = None) -> npt.NDArray[np.float64]:
+    def extract_geometry(model: gmsh.model, name: typing.Optional[str] = None) -> npt.NDArray[np.float64]:
         """Extract the mesh geometry from a gmsh model as an array of shape
         (num_nodes, 3), where the i-th row corresponds to the i-th node in the
         mesh.
@@ -195,10 +195,8 @@ if _has_gmsh:
         """
 
         if comm.rank == rank:
-            # Get mesh geometry
+            # Get mesh geometry and mesh topology for each element
             x = extract_geometry(model)
-
-            # Get mesh topology for each element
             topologies = extract_topology_and_markers(model)
 
             # Extract Gmsh cell id, dimension of cell and number of
@@ -255,7 +253,7 @@ if _has_gmsh:
         local_entities, local_values = _cpp.io.distribute_entity_data(mesh, mesh.topology.dim, cells, cell_values)
         mesh.topology.create_connectivity(mesh.topology.dim, 0)
         adj = _cpp.graph.AdjacencyList_int32(local_entities)
-        ct = meshtags_from_entities(mesh, mesh.topology.dim, adj, local_values.astype(np.int32))
+        ct = meshtags_from_entities(mesh, mesh.topology.dim, adj, local_values.astype(np.int32, copy=False))
         ct.name = "Cell tags"
 
         # Create MeshTags for facets
@@ -274,7 +272,7 @@ if _has_gmsh:
                 mesh, mesh.topology.dim - 1, marked_facets, facet_values)
             mesh.topology.create_connectivity(topology.dim - 1, topology.dim)
             adj = _cpp.graph.AdjacencyList_int32(local_entities)
-            ft = meshtags_from_entities(mesh, topology.dim - 1, adj, local_values.astype(np.int32))
+            ft = meshtags_from_entities(mesh, topology.dim - 1, adj, local_values.astype(np.int32, copy=False))
             ft.name = "Facet tags"
         else:
             ft = meshtags(mesh, topology.dim - 1, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
