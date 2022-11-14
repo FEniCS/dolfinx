@@ -83,7 +83,7 @@ Interpolation
    :project: DOLFINx
 
 
-.. doxygenfunction:: dolfinx::fem::interpolate((Function<T>& u, std::span<const T> f, std::array<std::size_t, 2> fshape, std::span<const std::int32_t> cells)
+.. doxygenfunction:: dolfinx::fem::interpolate(Function<T>& u, std::span<const T> f, std::array<std::size_t, 2> fshape, std::span<const std::int32_t> cells)
    :project: DOLFINx
 
 
