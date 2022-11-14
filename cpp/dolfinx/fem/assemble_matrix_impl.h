@@ -439,6 +439,8 @@ void assemble_matrix(
     else
       get_perm = [](std::size_t) { return 0; };
 
+    int num_cell_facets = mesh::cell_num_entities(mesh->topology().cell_type(),
+                                                  mesh->topology().dim() - 1);
     const std::vector<int> c_offsets = a.coefficient_offsets();
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
@@ -447,12 +449,9 @@ void assemble_matrix(
           = coefficients.at({IntegralType::interior_facet, i});
       const std::vector<std::int32_t>& facets = a.interior_facet_domains(i);
       impl::assemble_interior_facets(
-          mat_set, mesh->geometry(),
-          mesh::cell_num_entities(mesh->topology().cell_type(),
-                                  mesh->topology().dim() - 1),
-          facets, dof_transform, *dofmap0, bs0, dof_transform_to_transpose,
-          *dofmap1, bs1, bc0, bc1, fn, coeffs, cstride, c_offsets, constants,
-          cell_info, get_perm);
+          mat_set, mesh->geometry(), num_cell_facets, facets, dof_transform,
+          *dofmap0, bs0, dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1,
+          fn, coeffs, cstride, c_offsets, constants, cell_info, get_perm);
     }
   }
 }

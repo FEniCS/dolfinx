@@ -198,6 +198,8 @@ T assemble_scalar(
     const std::vector<std::uint8_t>& perms
         = mesh->topology().get_facet_permutations();
 
+    int num_cell_facets = mesh::cell_num_entities(mesh->topology().cell_type(),
+                                                  mesh->topology().dim() - 1);
     const std::vector<int> c_offsets = M.coefficient_offsets();
     for (int i : M.integral_ids(IntegralType::interior_facet))
     {
@@ -205,11 +207,9 @@ T assemble_scalar(
       const auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
       const std::vector<std::int32_t>& facets = M.interior_facet_domains(i);
-      value += impl::assemble_interior_facets(
-          mesh->geometry(),
-          mesh::cell_num_entities(mesh->topology().cell_type(),
-                                  mesh->topology().dim() - 1),
-          facets, fn, constants, coeffs, cstride, c_offsets, perms);
+      value += impl::assemble_interior_facets(mesh->geometry(), num_cell_facets,
+                                              facets, fn, constants, coeffs,
+                                              cstride, c_offsets, perms);
     }
   }
 
