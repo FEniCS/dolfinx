@@ -105,8 +105,7 @@ T assemble_exterior_facets(const mesh::Geometry& geometry,
 
 /// Assemble functional over interior facets
 template <typename T>
-T assemble_interior_facets(const mesh::Geometry& geometry,
-                           const mesh::Topology& topology,
+T assemble_interior_facets(const mesh::Geometry& geometry, int num_cell_facets,
                            std::span<const std::int32_t> facets,
                            FEkernel<T> auto fn, std::span<const T> constants,
                            std::span<const T> coeffs, int cstride,
@@ -116,8 +115,6 @@ T assemble_interior_facets(const mesh::Geometry& geometry,
   T value(0);
   if (facets.empty())
     return value;
-
-  const int tdim = topology.dim();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
@@ -132,9 +129,6 @@ T assemble_interior_facets(const mesh::Geometry& geometry,
 
   std::vector<T> coeff_array(2 * offsets.back());
   assert(offsets.back() == cstride);
-
-  const int num_cell_facets
-      = mesh::cell_num_entities(topology.cell_type(), tdim - 1);
 
   // Iterate over all facets
   assert(facets.size() % 4 == 0);
@@ -212,8 +206,10 @@ T assemble_scalar(
           = coefficients.at({IntegralType::interior_facet, i});
       const std::vector<std::int32_t>& facets = M.interior_facet_domains(i);
       value += impl::assemble_interior_facets(
-          mesh->geometry(), mesh->topology(), facets, fn, constants, coeffs,
-          cstride, c_offsets, perms);
+          mesh->geometry(),
+          mesh::cell_num_entities(mesh->topology().cell_type(),
+                                  mesh->topology().dim() - 1),
+          facets, fn, constants, coeffs, cstride, c_offsets, perms);
     }
   }
 
