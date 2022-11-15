@@ -12,7 +12,7 @@ jobs:
     name: macOS Homebrew install and test
     strategy:
       matrix:
-        os: [macos-12, macos-11]
+        os: [macos-12]
       fail-fast: false
     runs-on: ${{ matrix.os }}
 

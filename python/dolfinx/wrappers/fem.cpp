@@ -900,10 +900,10 @@ void fem(py::module& m)
   petsc_module(petsc_mod);
 
   // dolfinx::fem::assemble
-  declare_functions<double>(m);
   declare_functions<float>(m);
-  declare_functions<std::complex<double>>(m);
+  declare_functions<double>(m);
   declare_functions<std::complex<float>>(m);
+  declare_functions<std::complex<double>>(m);
 
   declare_objects<float>(m, "float32");
   declare_objects<double>(m, "float64");

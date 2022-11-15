@@ -42,10 +42,9 @@ overload(Ts...) -> overload<Ts...>; // line not needed in C++20...
 /// Safe definition of an attribute. First check if it has already been
 /// defined and return it. If not defined create new attribute.
 template <class T>
-adios2::Attribute<T> define_attribute(adios2::IO& io, const std::string& name,
-                                      const T& value,
-                                      const std::string& var_name = "",
-                                      const std::string& separator = "/")
+adios2::Attribute<T> define_attribute(adios2::IO& io, std::string name,
+                                      const T& value, std::string var_name = "",
+                                      std::string separator = "/")
 {
   if (adios2::Attribute<T> attr = io.InquireAttribute<T>(name); attr)
     return attr;
@@ -57,7 +56,7 @@ adios2::Attribute<T> define_attribute(adios2::IO& io, const std::string& name,
 /// Safe definition of a variable. First check if it has already been
 /// defined and return it. If not defined create new variable.
 template <class T>
-adios2::Variable<T> define_variable(adios2::IO& io, const std::string& name,
+adios2::Variable<T> define_variable(adios2::IO& io, std::string name,
                                     const adios2::Dims& shape = adios2::Dims(),
                                     const adios2::Dims& start = adios2::Dims(),
                                     const adios2::Dims& count = adios2::Dims())
@@ -273,28 +272,35 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   engine.PerformPuts();
 }
 //-----------------------------------------------------------------------------
-// Extract name of functions and split into real and imaginary component
+
+/// Extract name of functions and split into real and imaginary component
 std::vector<std::string> extract_function_names(const ADIOS2Writer::U& u)
 {
   std::vector<std::string> names;
+  using T = decltype(names);
   for (auto& v : u)
   {
-    std::visit(
-        overload{[&names](const std::shared_ptr<const ADIOS2Writer::Fdr>& u)
-                 { names.push_back(u->name); },
-                 [&names](const std::shared_ptr<const ADIOS2Writer::Fdc>& u)
-                 {
-                   names.push_back(u->name + field_ext[0]);
-                   names.push_back(u->name + field_ext[1]);
+    auto n = std::visit(
+        overload{[](const std::shared_ptr<const ADIOS2Writer::Fd32>& u) -> T
+                 { return {u->name}; },
+                 [](const std::shared_ptr<const ADIOS2Writer::Fd64>& u) -> T
+                 { return {u->name}; },
+                 [](const std::shared_ptr<const ADIOS2Writer::Fc64>& u) -> T {
+                   return {u->name + field_ext[0], u->name + field_ext[1]};
+                 },
+                 [](const std::shared_ptr<const ADIOS2Writer::Fc128>& u) -> T {
+                   return {u->name + field_ext[0], u->name + field_ext[1]};
                  }},
         v);
+    names.insert(names.end(), n.begin(), n.end());
   };
 
   return names;
 }
 //-----------------------------------------------------------------------------
-// Create VTK xml scheme to be interpreted by the VTX reader
-// https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#saving-the-vtk-xml-data-model
+
+/// Create VTK xml scheme to be interpreted by the VTX reader
+/// https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#saving-the-vtk-xml-data-model
 std::stringstream create_vtk_schema(const std::vector<std::string>& point_data,
                                     const std::vector<std::string>& cell_data)
 {
@@ -491,9 +497,8 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
   if constexpr (std::is_scalar_v<T>)
   {
     // ---- Real
-    const std::string u_name = u.name;
     adios2::Variable<T> local_output = define_variable<T>(
-        io, u_name, {}, {}, {num_vertices, num_components});
+        io, u.name, {}, {}, {num_vertices, num_components});
 
     // To reuse out_data, we use sync mode here
     engine.Put<T>(local_output, data.data());
@@ -597,21 +602,31 @@ void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
 void fides_initialize_function_attributes(adios2::IO& io,
                                           const ADIOS2Writer::U& u)
 {
-  // Array of function (name, cell association types) for each function added
-  // to the file
+  // Array of function (name, cell association types) for each function
+  // added to the file
   std::vector<std::array<std::string, 2>> u_data;
+  using T = decltype(u_data);
   for (auto& v : u)
   {
-    std::visit(
-        overload{[&u_data](const std::shared_ptr<const ADIOS2Writer::Fdr>& u) {
-                   u_data.push_back({u->name, "points"});
+    auto n = std::visit(
+        overload{[](const std::shared_ptr<const ADIOS2Writer::Fd32>& u) -> T {
+                   return {{u->name, "points"}};
                  },
-                 [&u_data](const std::shared_ptr<const ADIOS2Writer::Fdc>& u)
+                 [](const std::shared_ptr<const ADIOS2Writer::Fd64>& u) -> T {
+                   return {{u->name, "points"}};
+                 },
+                 [](const std::shared_ptr<const ADIOS2Writer::Fc64>& u) -> T
                  {
-                   u_data.push_back({u->name + field_ext[0], "points"});
-                   u_data.push_back({u->name + field_ext[1], "points"});
+                   return {{u->name + field_ext[0], "points"},
+                           {u->name + field_ext[1], "points"}};
+                 },
+                 [](const std::shared_ptr<const ADIOS2Writer::Fc128>& u) -> T
+                 {
+                   return {{u->name + field_ext[0], "points"},
+                           {u->name + field_ext[1], "points"}};
                  }},
         v);
+    u_data.insert(u_data.end(), n.begin(), n.end());
   }
 
   // Write field associations to file
@@ -643,7 +658,7 @@ void fides_initialize_function_attributes(adios2::IO& io,
 
 //-----------------------------------------------------------------------------
 ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-                           const std::string& tag,
+                           std::string tag,
                            std::shared_ptr<const mesh::Mesh> mesh, const U& u)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(_adios->DeclareIO(tag))),
@@ -655,7 +670,7 @@ ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
 }
 //-----------------------------------------------------------------------------
 ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-                           const std::string& tag,
+                           std::string tag,
                            std::shared_ptr<const mesh::Mesh> mesh)
     : ADIOS2Writer(comm, filename, tag, mesh, {})
 {
@@ -663,7 +678,7 @@ ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
 }
 //-----------------------------------------------------------------------------
 ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-                           const std::string& tag, const U& u)
+                           std::string tag, const U& u)
     : ADIOS2Writer(comm, filename, tag, nullptr, u)
 {
   // Extract mesh from first function
@@ -701,7 +716,8 @@ void ADIOS2Writer::close()
 //-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
                          std::shared_ptr<const mesh::Mesh> mesh)
-    : ADIOS2Writer(comm, filename, "Fides mesh writer", mesh)
+    : ADIOS2Writer(comm, filename, "Fides mesh writer", mesh),
+      _mesh_reuse_policy(MeshPolicy::update)
 {
   assert(_io);
   assert(mesh);
@@ -709,8 +725,9 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
 }
 //-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-                         const ADIOS2Writer::U& u)
-    : ADIOS2Writer(comm, filename, "Fides function writer", u)
+                         const ADIOS2Writer::U& u, MeshPolicy policy)
+    : ADIOS2Writer(comm, filename, "Fides function writer", u),
+      _mesh_reuse_policy(policy)
 {
   if (u.empty())
     throw std::runtime_error("FidesWriter fem::Function list is empty");
@@ -785,7 +802,12 @@ void FidesWriter::write(double t)
   adios2::Variable<double> var_step = define_variable<double>(*_io, "step");
   _engine->Put<double>(var_step, t);
 
-  fides_write_mesh(*_io, *_engine, *_mesh);
+  if (auto v = _io->InquireVariable<std::int64_t>("connectivity");
+      !v or _mesh_reuse_policy == MeshPolicy::update)
+  {
+    fides_write_mesh(*_io, *_engine, *_mesh);
+  }
+
   for (auto& v : _u)
     std::visit([&](const auto& u) { fides_write_data(*_io, *_engine, *u); }, v);
 
