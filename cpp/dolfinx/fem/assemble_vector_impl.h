@@ -194,7 +194,7 @@ void _lift_bc_cells(
 /// @tparam _bs1 The block size of the trial function dof map.
 template <typename T, int _bs = -1>
 void _lift_bc_exterior_facets(
-    std::span<T> b, const mesh::Mesh& mesh, FEkernel<T> auto kernel,
+    std::span<T> b, const mesh::Geometry& geometry, FEkernel<T> auto kernel,
     std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -213,9 +213,9 @@ void _lift_bc_exterior_facets(
     return;
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
-  std::span<const double> x = mesh.geometry().x();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  const std::size_t num_dofs_g = geometry.cmap().dim();
+  std::span<const double> x = geometry.x();
 
   // Data structures used in bc application
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
@@ -302,8 +302,8 @@ void _lift_bc_exterior_facets(
 /// @tparam _bs1 The block size of the trial function dof map.
 template <typename T, int _bs = -1>
 void _lift_bc_interior_facets(
-    std::span<T> b, const mesh::Mesh& mesh, FEkernel<T> auto kernel,
-    std::span<const std::int32_t> facets,
+    std::span<T> b, const mesh::Geometry& geometry, int num_cell_facets,
+    FEkernel<T> auto kernel, std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
@@ -321,15 +321,10 @@ void _lift_bc_interior_facets(
   if (facets.empty())
     return;
 
-  const int tdim = mesh.topology().dim();
-
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
-  std::span<const double> x = mesh.geometry().x();
-
-  const int num_cell_facets
-      = mesh::cell_num_entities(mesh.topology().cell_type(), tdim - 1);
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  const std::size_t num_dofs_g = geometry.cmap().dim();
+  std::span<const double> x = geometry.x();
 
   // Data structures used in assembly
   using X = scalar_value_type_t<T>;
@@ -566,7 +561,7 @@ void assemble_exterior_facets(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
-    std::span<T> b, const mesh::Mesh& mesh,
+    std::span<T> b, const mesh::Geometry& geometry,
     std::span<const std::int32_t> facets,
     const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
     FEkernel<T> auto fn, std::span<const T> constants,
@@ -579,9 +574,9 @@ void assemble_exterior_facets(
     return;
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
-  std::span<const double> x = mesh.geometry().x();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  const std::size_t num_dofs_g = geometry.cmap().dim();
+  std::span<const double> x = geometry.x();
 
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
@@ -638,19 +633,17 @@ void assemble_interior_facets(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
-    std::span<T> b, const mesh::Mesh& mesh,
+    std::span<T> b, const mesh::Geometry& geometry, int num_cell_facets,
     std::span<const std::int32_t> facets, const fem::DofMap& dofmap,
     FEkernel<T> auto fn, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info,
     const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
-  const int tdim = mesh.topology().dim();
-
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const std::size_t num_dofs_g = mesh.geometry().cmap().dim();
-  std::span<const double> x = mesh.geometry().x();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  const std::size_t num_dofs_g = geometry.cmap().dim();
+  std::span<const double> x = geometry.x();
 
   // Create data structures used in assembly
   using X = scalar_value_type_t<T>;
@@ -658,9 +651,6 @@ void assemble_interior_facets(
   std::span<X> cdofs0(coordinate_dofs.data(), num_dofs_g * 3);
   std::span<X> cdofs1(coordinate_dofs.data() + num_dofs_g * 3, num_dofs_g * 3);
   std::vector<T> be;
-
-  const int num_cell_facets
-      = mesh::cell_num_entities(mesh.topology().cell_type(), tdim - 1);
 
   const int bs = dofmap.bs();
   assert(_bs < 0 or _bs == bs);
@@ -821,14 +811,15 @@ void lift_bc(std::span<T> b, const Form<T>& a, std::span<const T> constants,
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::int32_t>& facets = a.exterior_facet_domains(i);
-    _lift_bc_exterior_facets(b, *mesh, kernel, facets, dof_transform, dofmap0,
-                             bs0, dof_transform_to_transpose, dofmap1, bs1,
-                             constants, coeffs, cstride, cell_info, bc_values1,
-                             bc_markers1, x0, scale);
+    _lift_bc_exterior_facets(b, mesh->geometry(), kernel, facets, dof_transform,
+                             dofmap0, bs0, dof_transform_to_transpose, dofmap1,
+                             bs1, constants, coeffs, cstride, cell_info,
+                             bc_values1, bc_markers1, x0, scale);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
   {
+
     std::function<std::uint8_t(std::size_t)> get_perm;
     if (a.needs_facet_permutations())
     {
@@ -840,14 +831,17 @@ void lift_bc(std::span<T> b, const Form<T>& a, std::span<const T> constants,
     else
       get_perm = [](std::size_t) { return 0; };
 
+    int num_cell_facets = mesh::cell_num_entities(mesh->topology().cell_type(),
+                                                  mesh->topology().dim() - 1);
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
       const auto& kernel = a.kernel(IntegralType::interior_facet, i);
       const auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
       const std::vector<std::int32_t>& facets = a.interior_facet_domains(i);
-      _lift_bc_interior_facets(b, *mesh, kernel, facets, dof_transform, dofmap0,
-                               bs0, dof_transform_to_transpose, dofmap1, bs1,
+      _lift_bc_interior_facets(b, mesh->geometry(), num_cell_facets, kernel,
+                               facets, dof_transform, dofmap0, bs0,
+                               dof_transform_to_transpose, dofmap1, bs1,
                                constants, coeffs, cstride, cell_info, get_perm,
                                bc_values1, bc_markers1, x0, scale);
     }
@@ -1002,20 +996,21 @@ void assemble_vector(
     const std::vector<std::int32_t>& facets = L.exterior_facet_domains(i);
     if (bs == 1)
     {
-      impl::assemble_exterior_facets<T, 1>(dof_transform, b, *mesh, facets,
-                                           dofs, bs, fn, constants, coeffs,
-                                           cstride, cell_info);
+      impl::assemble_exterior_facets<T, 1>(dof_transform, b, mesh->geometry(),
+                                           facets, dofs, bs, fn, constants,
+                                           coeffs, cstride, cell_info);
     }
     else if (bs == 3)
     {
-      impl::assemble_exterior_facets<T, 3>(dof_transform, b, *mesh, facets,
-                                           dofs, bs, fn, constants, coeffs,
-                                           cstride, cell_info);
+      impl::assemble_exterior_facets<T, 3>(dof_transform, b, mesh->geometry(),
+                                           facets, dofs, bs, fn, constants,
+                                           coeffs, cstride, cell_info);
     }
     else
     {
-      impl::assemble_exterior_facets(dof_transform, b, *mesh, facets, dofs, bs,
-                                     fn, constants, coeffs, cstride, cell_info);
+      impl::assemble_exterior_facets(dof_transform, b, mesh->geometry(), facets,
+                                     dofs, bs, fn, constants, coeffs, cstride,
+                                     cell_info);
     }
   }
 
@@ -1032,6 +1027,8 @@ void assemble_vector(
     else
       get_perm = [](std::size_t) { return 0; };
 
+    int num_cell_facets = mesh::cell_num_entities(mesh->topology().cell_type(),
+                                                  mesh->topology().dim() - 1);
     for (int i : L.integral_ids(IntegralType::interior_facet))
     {
       const auto& fn = L.kernel(IntegralType::interior_facet, i);
@@ -1040,21 +1037,21 @@ void assemble_vector(
       const std::vector<std::int32_t>& facets = L.interior_facet_domains(i);
       if (bs == 1)
       {
-        impl::assemble_interior_facets<T, 1>(dof_transform, b, *mesh, facets,
-                                             *dofmap, fn, constants, coeffs,
-                                             cstride, cell_info, get_perm);
+        impl::assemble_interior_facets<T, 1>(
+            dof_transform, b, mesh->geometry(), num_cell_facets, facets,
+            *dofmap, fn, constants, coeffs, cstride, cell_info, get_perm);
       }
       else if (bs == 3)
       {
-        impl::assemble_interior_facets<T, 3>(dof_transform, b, *mesh, facets,
-                                             *dofmap, fn, constants, coeffs,
-                                             cstride, cell_info, get_perm);
+        impl::assemble_interior_facets<T, 3>(
+            dof_transform, b, mesh->geometry(), num_cell_facets, facets,
+            *dofmap, fn, constants, coeffs, cstride, cell_info, get_perm);
       }
       else
       {
-        impl::assemble_interior_facets(dof_transform, b, *mesh, facets, *dofmap,
-                                       fn, constants, coeffs, cstride,
-                                       cell_info, get_perm);
+        impl::assemble_interior_facets(
+            dof_transform, b, mesh->geometry(), num_cell_facets, facets,
+            *dofmap, fn, constants, coeffs, cstride, cell_info, get_perm);
       }
     }
   }
