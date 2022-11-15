@@ -112,9 +112,17 @@ protected:
 class FidesWriter : public ADIOS2Writer
 {
 public:
-  /// @brief  Create Fides writer for a mesh.
-  /// @param[in] comm The MPI communicator to open the file on.
-  /// @param[in] filename Name of output file.
+  /// Mesh reuse policy
+  enum class MeshPolicy
+  {
+    update, ///< Re-write the mesh to file upon every write of a fem::Function
+    reuse   ///< Write the mesh to file only the first time a fem::Function is
+            ///< written to file
+  };
+
+  /// @brief  Create Fides writer for a mesh
+  /// @param[in] comm The MPI communicator to open the file on
+  /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh. The mesh must a degree 1 mesh.
   /// @note The mesh geometry can be updated between write steps but the
   /// topology should not be changed between write steps.
@@ -127,8 +135,12 @@ public:
   /// @param[in] u List of functions. The functions must (1) share the
   /// same mesh (degree 1) and (2) be degree 1 Lagrange. @note All
   /// functions in `u` must share the same Mesh
+  /// @param[in] mesh_policy Controls if the mesh is written to file at
+  /// the first time step only or is re-written (updated) at each time
+  /// step.
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-              const ADIOS2Writer::U& u);
+              const ADIOS2Writer::U& u,
+              const MeshPolicy mesh_policy = MeshPolicy::update);
 
   // Copy constructor
   FidesWriter(const FidesWriter&) = delete;
@@ -148,6 +160,10 @@ public:
   /// @brief Write data with a given time
   /// @param[in] t The time step
   void write(double t);
+
+private:
+  // Control whether the mesh is written to file once or at every time step
+  MeshPolicy _mesh_reuse_policy;
 };
 
 /// @brief Writer for meshes and functions using the ADIOS2 VTX format,
