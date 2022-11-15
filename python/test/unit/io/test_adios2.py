@@ -107,9 +107,9 @@ def test_fides_function_at_nodes(tempdir, dim, simplex):
 
             mesh.geometry.x[:, :2] += 0.1
             if mesh.geometry.dim == 2:
-                v.interpolate(lambda x: (t * x[0], x[1] + x[1] * 1j))
+                v.interpolate(lambda x: np.vstack((t * x[0], x[1] + x[1] * 1j)))
             elif mesh.geometry.dim == 3:
-                v.interpolate(lambda x: (t * x[2], x[0] + x[2] * 2j, x[1]))
+                v.interpolate(lambda x: np.vstack((t * x[2], x[0] + x[2] * 2j, x[1])))
             f.write(t)
 
 
@@ -184,27 +184,28 @@ def test_vtx_single_function(tempdir, dim, simplex):
 
 
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
-def test_vtx_functions(tempdir, dim, simplex):
+def test_vtx_functions(tempdir, dtype, dim, simplex):
     "Test saving high order Lagrange functions"
     mesh = generate_mesh(dim, simplex)
     V = VectorFunctionSpace(mesh, ("DG", 2))
-    v = Function(V)
+    v = Function(V, dtype=dtype)
     bs = V.dofmap.index_map_bs
 
     def vel(x):
-        values = np.zeros((dim, x.shape[1]))
+        values = np.zeros((dim, x.shape[1]), dtype=dtype)
         values[0] = x[1]
         values[1] = x[0]
         return values
     v.interpolate(vel)
 
     W = FunctionSpace(mesh, ("DG", 2))
-    w = Function(W)
+    w = Function(W, dtype=v.dtype)
     w.interpolate(lambda x: x[0] + x[1])
 
-    filename = Path(tempdir, "v.bp")
+    filename = Path(tempdir, f"v-{np.dtype(dtype).num}.bp")
     f = VTXWriter(mesh.comm, filename, [v, w])
 
     # Set two cells to 0
