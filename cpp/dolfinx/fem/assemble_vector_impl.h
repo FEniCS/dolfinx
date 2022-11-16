@@ -30,7 +30,7 @@ namespace dolfinx::fem::impl
 ///
 /// @param[in] entities The entities.
 /// @param[in] cell_indicator An indicator vector. The size of cell_indicator
-/// should be smaller than max(entities).
+/// should be smaller than max(entities). A cell is marked if it contains a non-zero value.
 /// @tparam stride  The number of entries in each entity (1 for cells, 2 for
 /// exterior facets, 4 for interior facets)
 /// @returns A list of sub-entities
