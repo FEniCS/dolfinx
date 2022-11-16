@@ -555,14 +555,15 @@ private:
                std::shared_ptr<const Constant<T>>>
       _g;
 
-  // Dof indices (_dofs0) in _function_space and (_dofs1_g) in the
-  // space of _g. _dofs1_g may be empty if _dofs0 can be re-used
+  // Dof indices (_dofs0) in _function_space and (_dofs1_g) in the space
+  // of _g. _dofs1_g may be empty if _dofs0 can be re-used
   std::vector<std::int32_t> _dofs0, _dofs1_g;
 
   // The first _owned_indices in _dofs are owned by this process
   std::int32_t _owned_indices0 = -1;
 
-  // List of cells having a degree of freedom with the dirichlet bc
+  // List of cells having a degree of freedom constrained by the
+  // boundary condition
   std::vector<std::int32_t> _marker;
 };
 } // namespace dolfinx::fem
