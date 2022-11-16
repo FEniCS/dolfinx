@@ -18,21 +18,21 @@ from mpi4py import MPI
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("cell", [ufl.triangle, ufl.tetrahedron])
-@pytest.mark.parametrize("order", [1, 2])
-@pytest.mark.parametrize("ElementType, space",
+@pytest.mark.parametrize("degree", [1, 2])
+@pytest.mark.parametrize("ElementType, family",
                          [
                              (ufl.FiniteElement, "Lagrange"),
                              (ufl.VectorElement, "Lagrange"),
                              (ufl.FiniteElement, "N1curl")
                          ])
-def test_mixed_element(ElementType, space, cell, order):
+def test_mixed_element(ElementType, family, cell, degree):
     if cell == ufl.triangle:
         mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1, CellType.tetrahedron, GhostMode.shared_facet)
 
     norms = []
-    U_el = ufl.FiniteElement(space, cell, order)
+    U_el = ElementType(family, cell, degree)
     for i in range(3):
         U = FunctionSpace(mesh, U_el)
         u = ufl.TrialFunction(U)
