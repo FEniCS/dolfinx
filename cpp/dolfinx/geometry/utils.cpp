@@ -559,14 +559,13 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
   // NOTE: Should we send the cells in as input?
   std::vector<std::int32_t> cells(num_cells, 0);
   std::iota(cells.begin(), cells.end(), 0);
-  dolfinx::geometry::BoundingBoxTree bb(mesh, tdim, cells, padding);
-  dolfinx::geometry::BoundingBoxTree global_bbtree
-      = bb.create_global_tree(comm);
+  BoundingBoxTree bb(mesh, tdim, cells, padding);
+  BoundingBoxTree global_bbtree = bb.create_global_tree(comm);
 
   // Compute collisions:
   // For each point in `x` get the processes it should be sent to
-  dolfinx::graph::AdjacencyList<std::int32_t> collisions
-      = dolfinx::geometry::compute_collisions(global_bbtree, points);
+  graph::AdjacencyList<std::int32_t> collisions
+      = compute_collisions(global_bbtree, points);
 
   // Get unique list of outgoing ranks
   std::vector<std::int32_t> out_ranks = collisions.array();

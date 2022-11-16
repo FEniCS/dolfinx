@@ -125,7 +125,7 @@ _uflcell_to_dolfinxcell = {
 }
 
 
-def refine(mesh: Mesh, edges: np.ndarray = None, redistribute: bool = True) -> Mesh:
+def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True) -> Mesh:
     """Refine a mesh
 
     Args:
@@ -226,7 +226,7 @@ class MeshTagsMetaClass:
             directly.
 
         """
-        super().__init__(mesh, dim, entities.astype(np.int32), values)  # type: ignore
+        super().__init__(mesh, dim, np.asarray(entities, dtype=np.int32), values)  # type: ignore
 
     def ufl_id(self) -> int:
         """Object identifier.
