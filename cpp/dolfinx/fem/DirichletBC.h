@@ -132,8 +132,8 @@ template <typename T>
 class DirichletBC
 {
 private:
-  /// @brief Locate all cells (local to process, including ghosts) which contain
-  /// any of the input degrees of freedom.
+  /// @brief Build list of cells (local to process, including ghosts)
+  /// which contain any of the input degrees of freedom.
   ///
   /// Given a function space `V` and a set of `dofs`, return cell `c` if
   /// `V.dofmap()->cell_dofs(i)` contains any of the entries in `dofs`.
@@ -146,42 +146,44 @@ private:
   std::vector<std::int32_t> locate_cells(const FunctionSpace& V,
                                          std::span<const std::int32_t> dofs)
   {
-    // Mark all dofs in boundary condition by 1
     assert(V.dofmap());
     auto map = V.dofmap()->index_map;
     const int bs = V.dofmap()->index_map_bs();
     assert(map);
     const int crange = bs * (map->size_local() + map->num_ghosts());
-    std::vector<std::int8_t> dof_markers(crange, 0);
-    for (std::size_t i = 0; i < dofs.size(); ++i)
+
+    // Mark all dofs in boundary condition as 'true' (1)
+    std::vector<std::int8_t> dof_markers(crange, false);
+    for (std::int32_t dof : dofs)
     {
-      assert(dofs[i] < (std::int32_t)dof_markers.size());
-      dof_markers[dofs[i]] = true;
+      assert(dof < (std::int32_t)dof_markers.size());
+      dof_markers[dof] = true;
     }
-    auto mesh = V.mesh();
-    assert(mesh);
-    const int tdim = mesh->topology().dim();
-    const auto imap = mesh->topology().index_map(tdim);
+
+    assert(V.mesh());
+    const int tdim = V.mesh()->topology().dim();
+    const auto imap = V.mesh()->topology().index_map(tdim);
     assert(imap);
     const std::size_t num_cells = imap->size_local() + imap->num_ghosts();
-    std::vector<std::int32_t> marker;
-    marker.reserve(num_cells);
 
-    // Compute cell marker for unrolled degrees of freedom
     auto dofmap = V.dofmap();
     assert(dofmap);
     const std::size_t dofmap_bs = dofmap->bs();
+
+    // Compute cell marker for unrolled degrees of freedom
+    std::vector<std::int32_t> marker;
+    marker.reserve(num_cells);
     for (std::size_t i = 0; i < num_cells; ++i)
     {
       auto dofs = dofmap->cell_dofs(i);
       bool has_bc = false;
-      for (std::size_t j = 0; j < dofs.size(); ++j)
+      for (std::int32_t dof : dofs)
       {
         if (has_bc)
           break;
         for (std::size_t k = 0; k < dofmap_bs; ++k)
         {
-          if (dof_markers[dofs[j] * dofmap_bs + k])
+          if (dof_markers[dof * dofmap_bs + k])
           {
             marker.push_back(i);
             has_bc = true;
@@ -190,6 +192,7 @@ private:
         }
       }
     }
+
     return marker;
   }
 
