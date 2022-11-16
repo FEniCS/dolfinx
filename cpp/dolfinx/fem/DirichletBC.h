@@ -238,9 +238,9 @@ public:
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
   template <typename S, std::convertible_to<std::vector<std::int32_t>> U,
-            typename
-            = std::enable_if_t<std::is_convertible_v<S, T>
-                               or std::is_convertible_v<S, std::span<const T>>>>
+            typename = std::enable_if_t<
+                std::is_convertible_v<
+                    S, T> or std::is_convertible_v<S, std::span<const T>>>>
   DirichletBC(const S& g, U&& dofs, std::shared_ptr<const FunctionSpace> V)
       : DirichletBC(std::make_shared<Constant<T>>(g), dofs, V)
   {
@@ -296,7 +296,7 @@ public:
       _dofs0 = unroll_dofs(_dofs0, bs);
     }
 
-    _marker = locate_cells(*V, _dofs0);
+    _cells = locate_cells(*V, _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -325,7 +325,7 @@ public:
       _owned_indices0 *= bs;
       _dofs0 = unroll_dofs(_dofs0, bs);
     }
-    _marker = locate_cells(*_function_space, _dofs0);
+    _cells = locate_cells(*_function_space, _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -356,7 +356,7 @@ public:
         _dofs0(std::forward<typename U::value_type>(V_g_dofs[0])),
         _dofs1_g(std::forward<typename U::value_type>(V_g_dofs[1])),
         _owned_indices0(num_owned(*_function_space, _dofs0)),
-        _marker(locate_cells(*_function_space, _dofs0))
+        _cells(locate_cells(*_function_space, _dofs0))
   {
   }
 
@@ -524,10 +524,10 @@ public:
   /// unchanged.
   void mark_cells(const std::span<std::int8_t>& markers) const
   {
-    for (std::size_t i = 0; i < _marker.size(); ++i)
+    for (std::size_t i = 0; i < _cells.size(); ++i)
     {
-      assert(_marker[i] < (std::int32_t)markers.size());
-      markers[_marker[i]] = true;
+      assert(_cells[i] < (std::int32_t)markers.size());
+      markers[_cells[i]] = 1;
     }
   }
 
@@ -564,6 +564,6 @@ private:
 
   // List of cells having a degree of freedom constrained by the
   // boundary condition
-  std::vector<std::int32_t> _marker;
+  std::vector<std::int32_t> _cells;
 };
 } // namespace dolfinx::fem
