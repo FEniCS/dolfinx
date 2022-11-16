@@ -6,6 +6,7 @@
 """General tools for timing and configuration"""
 
 import functools
+import typing
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import (IndexMap, git_commit_hash, has_adios2,  # noqa
@@ -63,7 +64,7 @@ class Timer:
         list_timings(comm, [TimingType.wall, TimingType.user])
     """
 
-    def __init__(self, name: str = None):
+    def __init__(self, name: typing.Optional[str] = None):
         if name is None:
             self._cpp_object = _cpp.common.Timer()
         else:
