@@ -56,8 +56,10 @@ _extract_entities(std::span<const std::int32_t> entities,
     else if constexpr (stride == 4)
     {
       if (cell_indicator[entities[e]] or cell_indicator[entities[e + 2]])
+      {
         std::copy_n(std::next(entities.begin(), e), stride,
                     std::back_inserter(sub_entities));
+      }
     }
   }
   return sub_entities;
