@@ -136,7 +136,7 @@ public:
   /// is responsible for correct sizing which should be (num_cells,
   /// num_points * value_size * num_all_argument_dofs columns).
   /// @param[in] vshape The shape of `values` (row-major storage).
-  void eval(const std::span<const std::int32_t>& cells, std::span<T> values,
+  void eval(std::span<const std::int32_t> cells, std::span<T> values,
             std::array<std::size_t, 2> vshape) const
   {
     // Extract data from Expression

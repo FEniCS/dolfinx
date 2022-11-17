@@ -43,7 +43,7 @@ void cells(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps,
     const std::array<
-        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
+        const std::function<std::int32_t(std::span<const int>)>, 2>&
         cell_maps
     = {[](auto e) { return e.front(); }, [](auto e) { return e.front(); }});
 
@@ -60,7 +60,7 @@ void cells(
     la::SparsityPattern& pattern, const std::span<const std::int32_t>& cells,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps,
     const std::array<
-        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
+        const std::function<std::int32_t(std::span<const int>)>, 2>&
         cell_maps
     = {[](auto e) { return e.front(); }, [](auto e) { return e.front(); }});
 
@@ -94,7 +94,7 @@ void interior_facets(
     la::SparsityPattern& pattern, const std::span<const std::int32_t>& facets,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps,
     const std::array<
-        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
+        const std::function<std::int32_t(std::span<const int>)>, 2>&
         facet_maps
     = {[](auto e) { return e.front(); }, [](auto e) { return e.front(); }});
 
@@ -114,7 +114,7 @@ void exterior_facets(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps,
     const std::array<
-        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
+        const std::function<std::int32_t(std::span<const int>)>, 2>&
         facet_maps
     = {[](auto e) { return e.front(); }, [](auto e) { return e.front(); }});
 
@@ -133,7 +133,7 @@ void exterior_facets(
     la::SparsityPattern& pattern, const std::span<const std::int32_t>& facets,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps,
     const std::array<
-        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
+        const std::function<std::int32_t(std::span<const int>)>, 2>&
         facet_maps
     = {[](auto e) { return e.front(); }, [](auto e) { return e.front(); }});
 

@@ -18,9 +18,8 @@ using namespace dolfinx::fem;
 void sparsitybuild::cells(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps,
-    const std::array<
-        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
-        cell_maps)
+    const std::array<const std::function<std::int32_t(std::span<const int>)>,
+                     2>& cell_maps)
 {
   const int D = topology.dim();
   auto cells = topology.connectivity(D, 0);
@@ -32,8 +31,8 @@ void sparsitybuild::cells(
     // nothing needs to be inserted into the sparsity pattern.
     // TODO See if it is necessary to add check that c_0 and c_1 are >= 0 before
     // inserting into pattern
-    std::int32_t c_0 = cell_maps[0]({c});
-    std::int32_t c_1 = cell_maps[1]({c});
+    std::int32_t c_0 = cell_maps[0](std::array<std::int32_t, 1>{c});
+    std::int32_t c_1 = cell_maps[1](std::array<std::int32_t, 1>{c});
     pattern.insert(dofmaps[0].get().cell_dofs(c_0),
                    dofmaps[1].get().cell_dofs(c_1));
   }
@@ -42,14 +41,13 @@ void sparsitybuild::cells(
 void sparsitybuild::cells(
     la::SparsityPattern& pattern, const std::span<const std::int32_t>& cells,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps,
-    const std::array<
-        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
-        cell_maps)
+    const std::array<const std::function<std::int32_t(std::span<const int>)>,
+                     2>& cell_maps)
 {
   for (std::int32_t c : cells)
   {
-    std::int32_t c_0 = cell_maps[0]({c});
-    std::int32_t c_1 = cell_maps[1]({c});
+    std::int32_t c_0 = cell_maps[0](std::array<std::int32_t, 1>{c});
+    std::int32_t c_1 = cell_maps[1](std::array<std::int32_t, 1>{c});
     pattern.insert(dofmaps[0].get().cell_dofs(c_0),
                    dofmaps[1].get().cell_dofs(c_1));
   }
@@ -104,9 +102,8 @@ void sparsitybuild::interior_facets(
 void sparsitybuild::interior_facets(
     la::SparsityPattern& pattern, const std::span<const std::int32_t>& facets,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps,
-    const std::array<
-        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
-        facet_maps)
+    const std::array<const std::function<std::int32_t(std::span<const int>)>,
+                     2>& facet_maps)
 {
   std::array<std::vector<std::int32_t>, 2> macro_dofs;
   for (std::size_t index = 0; index < facets.size(); index += 4)
@@ -114,8 +111,10 @@ void sparsitybuild::interior_facets(
     for (std::size_t i = 0; i < 2; ++i)
     {
       // TODO Use span to simplify (see assemblers)
-      const std::int32_t cell_0 = facet_maps[i]({facets[index], facets[index + 1]});
-      const std::int32_t cell_1 = facet_maps[i]({facets[index + 2], facets[index + 3]});
+      std::span<const std::int32_t> facet_0 = facets.subspan(index, 2);
+      std::span<const std::int32_t> facet_1 = facets.subspan(index + 2, 2);
+      const std::int32_t cell_0 = facet_maps[i](facet_0);
+      const std::int32_t cell_1 = facet_maps[i](facet_1);
 
       auto cell_dofs_0 = dofmaps[i].get().cell_dofs(cell_0);
       auto cell_dofs_1 = dofmaps[i].get().cell_dofs(cell_1);
@@ -132,9 +131,8 @@ void sparsitybuild::interior_facets(
 void sparsitybuild::exterior_facets(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps,
-    const std::array<
-        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
-        facet_maps)
+    const std::array<const std::function<std::int32_t(std::span<const int>)>,
+                     2>& facet_maps)
 {
   const int D = topology.dim();
   if (!topology.connectivity(D - 1, 0))
@@ -165,25 +163,24 @@ void sparsitybuild::exterior_facets(
     assert(facet_it != cell_facets.end());
     int local_f = std::distance(cell_facets.begin(), facet_it);
 
-    pattern.insert(dofmaps[0].get().cell_dofs(facet_maps[0]({cell, local_f})),
-                   dofmaps[1].get().cell_dofs(facet_maps[1]({cell, local_f})));
+    pattern.insert(dofmaps[0].get().cell_dofs(facet_maps[0](
+                       std::array<std::int32_t, 2>{cell, local_f})),
+                   dofmaps[1].get().cell_dofs(facet_maps[1](
+                       std::array<std::int32_t, 2>{cell, local_f})));
   }
 }
 //-----------------------------------------------------------------------------
 void sparsitybuild::exterior_facets(
     la::SparsityPattern& pattern, const std::span<const std::int32_t>& facets,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps,
-    const std::array<
-        const std::function<std::int32_t(std::vector<std::int32_t>)>, 2>&
-        facet_maps)
+    const std::array<const std::function<std::int32_t(std::span<const int>)>,
+                     2>& facet_maps)
 {
   for (std::size_t index = 0; index < facets.size(); index += 2)
   {
-    // TODO Simplify using span (see assemblers)
-    std::int32_t cell = facets[index];
-    std::int32_t local_f = facets[index + 1];
-    pattern.insert(dofmaps[0].get().cell_dofs(facet_maps[0]({cell, local_f})),
-                   dofmaps[1].get().cell_dofs(facet_maps[1]({cell, local_f})));
+    std::span<const std::int32_t> facet = facets.subspan(index, 2);
+    pattern.insert(dofmaps[0].get().cell_dofs(facet_maps[0](facet)),
+                   dofmaps[1].get().cell_dofs(facet_maps[1](facet)));
   }
 }
 //-----------------------------------------------------------------------------
