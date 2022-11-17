@@ -30,7 +30,8 @@ namespace dolfinx::fem::impl
 ///
 /// @param[in] entities The entities.
 /// @param[in] cell_indicator An indicator vector. The size of cell_indicator
-/// should be smaller than max(entities). A cell is marked if it contains a non-zero value.
+/// should be smaller than max(entities). A cell is marked if it contains a
+/// non-zero value.
 /// @tparam stride  The number of entries in each entity (1 for cells, 2 for
 /// exterior facets, 4 for interior facets)
 /// @returns A list of sub-entities
@@ -41,19 +42,23 @@ _extract_entities(std::span<const std::int32_t> entities,
 {
   std::vector<std::int32_t> sub_entities;
   sub_entities.reserve(entities.size());
-  for (std::size_t e = 0; e < entities.size(); e += stride)
+  if (stride == 1)
   {
-    if constexpr (stride == 1)
-    {
+    for (std::size_t e = 0; e < entities.size(); e += stride)
       if (cell_indicator[entities[e]])
         sub_entities.push_back(entities[e]);
-    }
-    else if constexpr (stride == 2)
+  }
+  else if (stride == 2)
+  {
+    for (std::size_t e = 0; e < entities.size(); e += stride)
     {
       std::copy_n(std::next(entities.begin(), e), stride,
                   std::back_inserter(sub_entities));
     }
-    else if constexpr (stride == 4)
+  }
+  else if (stride == 4)
+  {
+    for (std::size_t e = 0; e < entities.size(); e += stride)
     {
       if (cell_indicator[entities[e]] or cell_indicator[entities[e + 2]])
       {
@@ -62,6 +67,9 @@ _extract_entities(std::span<const std::int32_t> entities,
       }
     }
   }
+  else
+    throw std::runtime_error("Unknown stride size");
+
   return sub_entities;
 }
 

@@ -173,24 +173,25 @@ private:
     // Compute cell marker for unrolled degrees of freedom
     std::vector<std::int32_t> marker;
     marker.reserve(num_cells);
+
+    // Function for checking if any of the blocked dofs
+    // are marked by dof_markers when unrolled
+    auto check_dofs = [bs = dofmap_bs, &dof_markers](auto& dofs) -> bool
+    {
+      for (auto dof : dofs)
+        for (std::size_t k = 0; k < bs; ++k)
+          if (dof_markers[dof * bs + k])
+            return true;
+      return false;
+    };
+
+    // Create list of all cells that has any unrolled dof with a
+    // Dirichlet boundary condition
     for (std::size_t i = 0; i < num_cells; ++i)
     {
       auto dofs = dofmap->cell_dofs(i);
-      bool has_bc = false;
-      for (std::int32_t dof : dofs)
-      {
-        if (has_bc)
-          break;
-        for (std::size_t k = 0; k < dofmap_bs; ++k)
-        {
-          if (dof_markers[dof * dofmap_bs + k])
-          {
-            marker.push_back(i);
-            has_bc = true;
-            break;
-          }
-        }
-      }
+      if (check_dofs(dofs))
+        marker.push_back(i);
     }
 
     return marker;
@@ -238,9 +239,9 @@ public:
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
   template <typename S, std::convertible_to<std::vector<std::int32_t>> U,
-            typename = std::enable_if_t<
-                std::is_convertible_v<
-                    S, T> or std::is_convertible_v<S, std::span<const T>>>>
+            typename
+            = std::enable_if_t<std::is_convertible_v<S, T>
+                               or std::is_convertible_v<S, std::span<const T>>>>
   DirichletBC(const S& g, U&& dofs, std::shared_ptr<const FunctionSpace> V)
       : DirichletBC(std::make_shared<Constant<T>>(g), dofs, V)
   {
