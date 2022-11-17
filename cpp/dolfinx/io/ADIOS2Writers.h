@@ -42,13 +42,14 @@ namespace dolfinx::io
 class ADIOS2Writer
 {
 public:
-  /// Typedefs
-  using Fdr = fem::Function<double>;
-  /// Typedefs
-  using Fdc = fem::Function<std::complex<double>>;
-  /// Typedefs
+  /// @privatesection
+  using Fd32 = fem::Function<float>;
+  using Fd64 = fem::Function<double>;
+  using Fc64 = fem::Function<std::complex<float>>;
+  using Fc128 = fem::Function<std::complex<double>>;
   using U = std::vector<
-      std::variant<std::shared_ptr<const Fdr>, std::shared_ptr<const Fdc>>>;
+      std::variant<std::shared_ptr<const Fd32>, std::shared_ptr<const Fd64>,
+                   std::shared_ptr<const Fc64>, std::shared_ptr<const Fc128>>>;
 
 private:
   /// @brief Create an ADIOS2-based writer
@@ -58,7 +59,7 @@ private:
   /// @param[in] mesh
   /// @param[in] u
   ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-               const std::string& tag, std::shared_ptr<const mesh::Mesh> mesh,
+               std::string tag, std::shared_ptr<const mesh::Mesh> mesh,
                const U& u);
 
 protected:
@@ -68,7 +69,7 @@ protected:
   /// @param[in] tag The ADIOS2 object name
   /// @param[in] mesh The mesh
   ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-               const std::string& tag, std::shared_ptr<const mesh::Mesh> mesh);
+               std::string tag, std::shared_ptr<const mesh::Mesh> mesh);
 
   /// @brief Create an ADIOS2-based writer for a list of functions
   /// @param[in] comm The MPI communicator
@@ -76,7 +77,7 @@ protected:
   /// @param[in] tag The ADIOS2 object name
   /// @param[in] u List of functions
   ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-               const std::string& tag, const U& u);
+               std::string tag, const U& u);
 
   /// @brief Move constructor
   ADIOS2Writer(ADIOS2Writer&& writer) = default;
@@ -105,18 +106,26 @@ protected:
   U _u;
 };
 
-/// @brief Output of meshes and functions compatible with the Fides Paraview
-/// reader, see
+/// @brief Output of meshes and functions compatible with the Fides
+/// Paraview reader, see
 /// https://fides.readthedocs.io/en/latest/paraview/paraview.html.
 class FidesWriter : public ADIOS2Writer
 {
 public:
+  /// Mesh reuse policy
+  enum class MeshPolicy
+  {
+    update, ///< Re-write the mesh to file upon every write of a fem::Function
+    reuse   ///< Write the mesh to file only the first time a fem::Function is
+            ///< written to file
+  };
+
   /// @brief  Create Fides writer for a mesh
   /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh. The mesh must a degree 1 mesh.
   /// @note The mesh geometry can be updated between write steps but the
-  /// topology should not be changed between write steps
+  /// topology should not be changed between write steps.
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
               std::shared_ptr<const mesh::Mesh> mesh);
 
@@ -126,8 +135,12 @@ public:
   /// @param[in] u List of functions. The functions must (1) share the
   /// same mesh (degree 1) and (2) be degree 1 Lagrange. @note All
   /// functions in `u` must share the same Mesh
+  /// @param[in] mesh_policy Controls if the mesh is written to file at
+  /// the first time step only or is re-written (updated) at each time
+  /// step.
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-              const ADIOS2Writer::U& u);
+              const ADIOS2Writer::U& u,
+              const MeshPolicy mesh_policy = MeshPolicy::update);
 
   // Copy constructor
   FidesWriter(const FidesWriter&) = delete;
@@ -147,17 +160,24 @@ public:
   /// @brief Write data with a given time
   /// @param[in] t The time step
   void write(double t);
+
+private:
+  // Control whether the mesh is written to file once or at every time step
+  MeshPolicy _mesh_reuse_policy;
 };
 
-/// @brief Writer for meshes and functions using the ADIOS2 VTX format, see
+/// @brief Writer for meshes and functions using the ADIOS2 VTX format,
+/// see
 /// https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#using-vtk-and-paraview.
 ///
 /// The output files can be visualized using ParaView.
 class VTXWriter : public ADIOS2Writer
 {
 public:
-  /// @brief Create a VTX writer for a mesh. This format supports
-  /// arbitrary degree meshes.
+  /// @brief Create a VTX writer for a mesh.
+  ///
+  /// This format supports arbitrary degree meshes.
+  ///
   /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh to write

@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2021 Garth N. Wells
+// Copyright (C) 2018-2022 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -24,10 +24,9 @@ class FunctionSpace;
 
 // -- Helper functions -----------------------------------------------------
 
-/// @brief Create a map std::span from a map of std::vector
+/// @brief Create a map of `std::span`s from a map of `std::vector`s
 template <typename T>
-std::map<std::pair<dolfinx::fem::IntegralType, int>,
-         std::pair<std::span<const T>, int>>
+std::map<std::pair<fem::IntegralType, int>, std::pair<std::span<const T>, int>>
 make_coefficients_span(const std::map<std::pair<IntegralType, int>,
                                       std::pair<std::vector<T>, int>>& coeffs)
 {
@@ -42,9 +41,11 @@ make_coefficients_span(const std::map<std::pair<IntegralType, int>,
 
 // -- Scalar ----------------------------------------------------------------
 
-/// Assemble functional into scalar. The caller supplies the form
-/// constants and coefficients for this version, which has efficiency
-/// benefits if the data can be re-used for multiple calls.
+/// @brief Assemble functional into scalar.
+///
+/// The caller supplies the form constants and coefficients for this
+/// version, which has efficiency benefits if the data can be re-used
+/// for multiple calls.
 /// @note Caller is responsible for accumulation across processes.
 /// @param[in] M The form (functional) to assemble
 /// @param[in] constants The constants that appear in `M`
@@ -53,7 +54,7 @@ make_coefficients_span(const std::map<std::pair<IntegralType, int>,
 /// process
 template <typename T>
 T assemble_scalar(
-    const Form<T>& M, const std::span<const T>& constants,
+    const Form<T>& M, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
@@ -77,9 +78,11 @@ T assemble_scalar(const Form<T>& M)
 
 // -- Vectors ----------------------------------------------------------------
 
-/// Assemble linear form into a vector, The caller supplies the form
-/// constants and coefficients for this version, which has efficiency
-/// benefits if the data can be re-used for multiple calls.
+/// @brief Assemble linear form into a vector.
+///
+/// The caller supplies the form constants and coefficients for this
+/// version, which has efficiency benefits if the data can be re-used
+/// for multiple calls.
 /// @param[in,out] b The vector to be assembled. It will not be zeroed
 /// before assembly.
 /// @param[in] L The linear forms to assemble into b
@@ -87,14 +90,14 @@ T assemble_scalar(const Form<T>& M)
 /// @param[in] coefficients The coefficients that appear in `L`
 template <typename T>
 void assemble_vector(
-    std::span<T> b, const Form<T>& L, const std::span<const T>& constants,
+    std::span<T> b, const Form<T>& L, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
   impl::assemble_vector(b, L, constants, coefficients);
 }
 
-/// Assemble linear form into a vector
+/// @brief Assemble linear form into a vector
 /// @param[in,out] b The vector to be assembled. It will not be zeroed
 /// before assembly.
 /// @param[in] L The linear forms to assemble into b
@@ -171,9 +174,8 @@ void apply_lifting(
     }
     else
     {
-      coeffs.push_back(std::map<std::pair<IntegralType, int>,
-                                std::pair<std::vector<T>, int>>());
-      constants.push_back({});
+      coeffs.emplace_back();
+      constants.emplace_back();
     }
   }
 
@@ -196,9 +198,9 @@ void apply_lifting(
 /// @param[in] coefficients Coefficients that appear in `a`
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
-template <typename T, typename U>
+template <typename T>
 void assemble_matrix(
-    U mat_add, const Form<T>& a, const std::span<const T>& constants,
+    auto mat_add, const Form<T>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
@@ -242,9 +244,9 @@ void assemble_matrix(
 /// @param[in] a The bilinear from to assemble
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
-template <typename T, typename U>
+template <typename T>
 void assemble_matrix(
-    U mat_add, const Form<T>& a,
+    auto mat_add, const Form<T>& a,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
 {
   // Prepare constants and coefficients
@@ -257,7 +259,7 @@ void assemble_matrix(
                   make_coefficients_span(coefficients), bcs);
 }
 
-/// Assemble bilinear form into a matrix. Matrix must already be
+/// @brief Assemble bilinear form into a matrix. Matrix must already be
 /// initialised. Does not zero or finalise the matrix.
 /// @param[in] mat_add The function for adding values into the matrix
 /// @param[in] a The bilinear form to assemble
@@ -269,33 +271,33 @@ void assemble_matrix(
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
 /// If bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
-template <typename T, typename U>
+template <typename T>
 void assemble_matrix(
-    U mat_add, const Form<T>& a, const std::span<const T>& constants,
+    auto mat_add, const Form<T>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
-    const std::span<const std::int8_t>& dof_marker0,
-    const std::span<const std::int8_t>& dof_marker1)
+    std::span<const std::int8_t> dof_marker0,
+    std::span<const std::int8_t> dof_marker1)
 
 {
   impl::assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
                         dof_marker1);
 }
 
-/// Assemble bilinear form into a matrix. Matrix must already be
+/// @brief Assemble bilinear form into a matrix. Matrix must already be
 /// initialised. Does not zero or finalise the matrix.
 /// @param[in] mat_add The function for adding values into the matrix
 /// @param[in] a The bilinear form to assemble
 /// @param[in] dof_marker0 Boundary condition markers for the rows. If
-///   bc[i] is true then rows i in A will be zeroed. The index i is a
-///   local index.
+/// bc[i] is true then rows i in A will be zeroed. The index i is a
+/// local index.
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
-///   If bc[i] is true then rows i in A will be zeroed. The index i is a
-///   local index.
-template <typename T, typename U>
-void assemble_matrix(U mat_add, const Form<T>& a,
-                     const std::span<const std::int8_t>& dof_marker0,
-                     const std::span<const std::int8_t>& dof_marker1)
+/// If bc[i] is true then rows i in A will be zeroed. The index i is a
+/// local index.
+template <typename T>
+void assemble_matrix(auto mat_add, const Form<T>& a,
+                     std::span<const std::int8_t> dof_marker0,
+                     std::span<const std::int8_t> dof_marker1)
 
 {
   // Prepare constants and coefficients
@@ -309,18 +311,19 @@ void assemble_matrix(U mat_add, const Form<T>& a,
                   dof_marker1);
 }
 
-/// Sets a value to the diagonal of a matrix for specified rows. It is
-/// typically called after assembly. The assembly function zeroes
-/// Dirichlet rows and columns. For block matrices, this function should
-/// normally be called only on the diagonal blocks, i.e. blocks for
-/// which the test and trial spaces are the same.
+/// @brief Sets a value to the diagonal of a matrix for specified rows.
+///
+/// This function is typically called after assembly. The assembly
+/// function zeroes Dirichlet rows and columns. For block matrices, this
+/// function should normally be called only on the diagonal blocks, i.e.
+/// blocks for which the test and trial spaces are the same.
 /// @param[in] set_fn The function for setting values to a matrix
 /// @param[in] rows The row blocks, in local indices, for which to add a
 /// value to the diagonal
 /// @param[in] diagonal The value to add to the diagonal for the
-///   specified rows
-template <typename T, typename U>
-void set_diagonal(U set_fn, const std::span<const std::int32_t>& rows,
+/// specified rows
+template <typename T>
+void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
                   T diagonal = 1.0)
 {
   for (std::size_t i = 0; i < rows.size(); ++i)
@@ -330,23 +333,24 @@ void set_diagonal(U set_fn, const std::span<const std::int32_t>& rows,
   }
 }
 
-/// Sets a value to the diagonal of the matrix for rows with a Dirichlet
-/// boundary conditions applied. This function is typically called after
-/// assembly. The assembly function zeroes Dirichlet rows and columns.
-/// This function adds the value only to rows that are locally owned,
-/// and therefore does not create a need for parallel communication. For
-/// block matrices, this function should normally be called only on the
-/// diagonal blocks, i.e. blocks for which the test and trial spaces are
-/// the same.
+/// @brief Sets a value to the diagonal of the matrix for rows with a
+/// Dirichlet boundary conditions applied.
+///
+/// This function is typically called after assembly. The assembly
+/// function zeroes Dirichlet rows and columns. This function adds the
+/// value only to rows that are locally owned, and therefore does not
+/// create a need for parallel communication. For block matrices, this
+/// function should normally be called only on the diagonal blocks, i.e.
+/// blocks for which the test and trial spaces are the same.
 /// @param[in] set_fn The function for setting values to a matrix
 /// @param[in] V The function space for the rows and columns of the
-///   matrix. It is used to extract only the Dirichlet boundary conditions
-///   that are define on V or subspaces of V.
+/// matrix. It is used to extract only the Dirichlet boundary conditions
+/// that are define on V or subspaces of V.
 /// @param[in] bcs The Dirichlet boundary conditions
 /// @param[in] diagonal The value to add to the diagonal for rows with a
-///   boundary condition applied
-template <typename T, typename U>
-void set_diagonal(U set_fn, const fem::FunctionSpace& V,
+/// boundary condition applied
+template <typename T>
+void set_diagonal(auto set_fn, const fem::FunctionSpace& V,
                   const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
                   T diagonal = 1.0)
 {
@@ -374,7 +378,7 @@ void set_diagonal(U set_fn, const fem::FunctionSpace& V,
 template <typename T>
 void set_bc(std::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
-            const std::span<const T>& x0, double scale = 1.0)
+            std::span<const T> x0, double scale = 1.0)
 {
   if (b.size() > x0.size())
     throw std::runtime_error("Size mismatch between b and x0 vectors.");

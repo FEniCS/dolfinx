@@ -22,7 +22,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   const std::string path_prefix,
                                   const mesh::Topology& topology,
                                   const mesh::Geometry& geometry, int dim,
-                                  const std::span<const std::int32_t>& entities)
+                                  std::span<const std::int32_t> entities)
 {
   LOG(INFO) << "Adding topology data to node \"" << xml_node.path('/') << "\"";
 

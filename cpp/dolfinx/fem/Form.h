@@ -14,6 +14,7 @@
 #include <dolfinx/mesh/MeshTags.h>
 #include <functional>
 #include <memory>
+#include <span>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -271,8 +272,8 @@ public:
     return it->second.second;
   }
 
-  /// Get the list of (cell_index, local_facet_index) pairs for the ith
-  /// integral (kernel) for the exterior facet domain type
+  /// @brief List of (cell_index, local_facet_index) pairs for the ith
+  /// integral (kernel) for the exterior facet domain type.
   /// @param[in] i Integral ID, i.e. (sub)domain index
   /// @return List of (cell_index, local_facet_index) pairs. This data is
   /// flattened with row-major layout, shape=(num_facets, 2)
@@ -386,6 +387,7 @@ private:
       mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
       mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
     }
+
     const std::vector<std::int32_t> boundary_facets
         = _exterior_facet_integrals.empty()
               ? std::vector<std::int32_t>()

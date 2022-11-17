@@ -69,8 +69,7 @@ Vec la::petsc::create_vector(const common::IndexMap& map, int bs)
 }
 //-----------------------------------------------------------------------------
 Vec la::petsc::create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
-                             const std::span<const std::int64_t>& ghosts,
-                             int bs)
+                             std::span<const std::int64_t> ghosts, int bs)
 {
   PetscErrorCode ierr;
 
@@ -89,7 +88,7 @@ Vec la::petsc::create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
 }
 //-----------------------------------------------------------------------------
 Vec la::petsc::create_vector_wrap(const common::IndexMap& map, int bs,
-                                  const std::span<const PetscScalar>& x)
+                                  std::span<const PetscScalar> x)
 {
   const std::int32_t size_local = bs * map.size_local();
   const std::int64_t size_global = bs * map.size_global();
@@ -206,8 +205,7 @@ void la::petsc::scatter_local_vectors(
   VecGhostRestoreLocalForm(x, &x_local);
 }
 //-----------------------------------------------------------------------------
-Mat la::petsc::create_matrix(MPI_Comm comm,
-                             const dolfinx::la::SparsityPattern& sp,
+Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
                              const std::string& type)
 {
   PetscErrorCode ierr;
@@ -335,7 +333,7 @@ Mat la::petsc::create_matrix(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 MatNullSpace la::petsc::create_nullspace(MPI_Comm comm,
-                                         const std::span<const Vec>& basis)
+                                         std::span<const Vec> basis)
 {
   MatNullSpace ns = nullptr;
   PetscErrorCode ierr
