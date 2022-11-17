@@ -268,8 +268,8 @@ fem::FunctionSpace fem::create_functionspace(
 //-----------------------------------------------------------------------------
 // Set cell domains
 void set_cell_domains(std::map<int, std::vector<std::int32_t>>& integrals,
-                      const std::span<const std::int32_t>& tagged_cells,
-                      const std::vector<int>& tags)
+                      std::span<const std::int32_t> tagged_cells,
+                      std::span<const int> tags)
 {
   // For cell integrals use all markers
   for (std::size_t i = 0; i < tagged_cells.size(); ++i)
@@ -288,8 +288,7 @@ void set_cell_domains(std::map<int, std::vector<std::int32_t>>& integrals,
 void set_exterior_facet_domains(
     const mesh::Topology& topology,
     std::map<int, std::vector<std::int32_t>>& integrals,
-    const std::span<const std::int32_t>& tagged_facets,
-    const std::vector<int>& tags)
+    std::span<const std::int32_t> tagged_facets, std::span<const int> tags)
 {
   const std::vector<std::int32_t> boundary_facets
       = mesh::exterior_facet_indices(topology);
@@ -332,8 +331,7 @@ void set_exterior_facet_domains(
 void set_interior_facet_domains(
     const mesh::Topology& topology,
     std::map<int, std::vector<std::int32_t>>& integrals,
-    const std::span<const std::int32_t>& tagged_facets,
-    const std::vector<int>& tags)
+    std::span<const std::int32_t> tagged_facets, std::span<const int> tags)
 {
   int tdim = topology.dim();
   auto f_to_c = topology.connectivity(tdim - 1, tdim);
@@ -345,7 +343,6 @@ void set_interior_facet_domains(
     const std::int32_t f = tagged_facets[i];
     if (f_to_c->num_links(f) == 2)
     {
-
       // Get the facet as a pair of (cell, local facet) pairs, one for each
       // cell
       auto [facet_0, facet_1]
@@ -375,23 +372,20 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
                              + std::to_string(meshtags.dim()));
   }
 
-  // Get mesh tag data
-  const std::vector<int>& tags = meshtags.values();
-  const std::vector<std::int32_t>& tagged_entities = meshtags.indices();
   assert(topology.index_map(dim));
   const auto entity_end
-      = std::lower_bound(tagged_entities.begin(), tagged_entities.end(),
+      = std::lower_bound(meshtags.indices().begin(), meshtags.indices().end(),
                          topology.index_map(dim)->size_local());
   // Only include owned entities in integration domains
-  const std::span<const std::int32_t> owned_tagged_entities(
-      tagged_entities.begin(), entity_end);
+  std::span<const std::int32_t> owned_tagged_entities(
+      meshtags.indices().begin(), entity_end);
 
   switch (integral_type)
   {
     // TODO Sort pairs or use std::iota
   case fem::IntegralType::cell:
   {
-    set_cell_domains(integrals, owned_tagged_entities, tags);
+    set_cell_domains(integrals, owned_tagged_entities, meshtags.values());
   }
   break;
   default:
@@ -402,13 +396,13 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
     case IntegralType::exterior_facet:
     {
       set_exterior_facet_domains(topology, integrals, owned_tagged_entities,
-                                 tags);
+                                 meshtags.values());
     }
     break;
     case IntegralType::interior_facet:
     {
       set_interior_facet_domains(topology, integrals, owned_tagged_entities,
-                                 tags);
+                                 meshtags.values());
     }
     break;
     default:
