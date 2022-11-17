@@ -47,8 +47,8 @@ public:
   /// `map` that will be scattered/gathered.
   /// @param[in] alloc The memory allocator for indices.
   Scatterer(const IndexMap& map, int bs, const Allocator& alloc = Allocator())
-      : _bs(bs), _src(map.src()), _dest(map.dest()), _remote_inds(0, alloc),
-        _local_inds(0, alloc)
+      : _bs(bs), _remote_inds(0, alloc), _local_inds(0, alloc), _src(map.src()),
+        _dest(map.dest())
   {
     if (map.overlapped())
     {
