@@ -598,6 +598,7 @@ public:
     default:
       throw std::runtime_error("Scatter::type not recognized");
     }
+    return requests;
   }
 
 private:
