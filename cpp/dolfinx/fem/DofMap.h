@@ -10,6 +10,7 @@
 #pragma once
 
 #include "ElementDofLayout.h"
+#include <concepts>
 #include <cstdlib>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -62,7 +63,7 @@ transpose_dofmap(const graph::AdjacencyList<std::int32_t>& dofmap,
                  std::int32_t num_cells);
 
 /// @brief Degree-of-freedom map.
-//
+///
 /// This class handles the mapping of degrees of freedom. It builds a
 /// dof map based on an ElementDofLayout on a specific mesh topology. It
 /// will reorder the dofs when running in parallel. Sub-dofmaps, both
@@ -72,21 +73,19 @@ class DofMap
 public:
   /// @brief Create a DofMap from the layout of dofs on a reference
   /// element, an IndexMap defining the distribution of dofs across
-  /// processes and a vector of indices
-  //
+  /// processes and a vector of indices.
+  ///
   /// @param[in] element The layout of the degrees of freedom on an
-  /// element (fem::ElementDofLayout)
+  /// element
   /// @param[in] index_map The map describing the parallel distribution
-  /// of the degrees of freedom
-  /// @param[in] index_map_bs The block size associated with the @p
-  /// index_map
-  /// @param[in] dofmap Adjacency list
-  /// (graph::AdjacencyList<std::int32_t>) with the degrees-of-freedom
-  /// for each cell
-  /// @param[in] bs The block size of the @p dofmap
-  template <typename E, typename U,
-            typename = std::enable_if_t<std::is_same<
-                graph::AdjacencyList<std::int32_t>, std::decay_t<U>>::value>>
+  /// of the degrees of freedom.
+  /// @param[in] index_map_bs The block size associated with the
+  /// `index_map`.
+  /// @param[in] dofmap Adjacency list with the degrees-of-freedom for
+  /// each cell.
+  /// @param[in] bs The block size of the `dofmap`.
+  template <std::convertible_to<fem::ElementDofLayout> E,
+            std::convertible_to<graph::AdjacencyList<std::int32_t>> U>
   DofMap(E&& element, std::shared_ptr<const common::IndexMap> index_map,
          int index_map_bs, U&& dofmap, int bs)
       : index_map(index_map), _index_map_bs(index_map_bs),

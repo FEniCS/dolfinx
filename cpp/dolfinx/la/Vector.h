@@ -34,7 +34,7 @@ public:
   /// Create a distributed vector
   Vector(std::shared_ptr<const common::IndexMap> map, int bs,
          const Allocator& alloc = Allocator())
-      : _map(map), _scatterer(std::make_shared<common::Scatterer>(*_map, bs)),
+      : _map(map), _scatterer(std::make_shared<common::Scatterer<>>(*_map, bs)),
         _bs(bs), _buffer_local(_scatterer->local_buffer_size(), alloc),
         _buffer_remote(_scatterer->remote_buffer_size(), alloc),
         _x(bs * (map->size_local() + map->num_ghosts()), alloc)
@@ -44,7 +44,7 @@ public:
   /// Copy constructor
   Vector(const Vector& x)
       : _map(x._map), _scatterer(x._scatterer), _bs(x._bs),
-        _request(MPI_REQUEST_NULL), _buffer_local(x._buffer_local),
+        _request(1, MPI_REQUEST_NULL), _buffer_local(x._buffer_local),
         _buffer_remote(x._buffer_remote), _x(x._x)
   {
   }
@@ -53,7 +53,7 @@ public:
   Vector(Vector&& x)
       : _map(std::move(x._map)), _scatterer(std::move(x._scatterer)),
         _bs(std::move(x._bs)),
-        _request(std::exchange(x._request, MPI_REQUEST_NULL)),
+        _request(std::exchange(x._request, {MPI_REQUEST_NULL})),
         _buffer_local(std::move(x._buffer_local)),
         _buffer_remote(std::move(x._buffer_remote)), _x(std::move(x._x))
   {
@@ -84,7 +84,8 @@ public:
     pack(x_local, _scatterer->local_indices(), _buffer_local);
 
     _scatterer->scatter_fwd_begin(std::span<const T>(_buffer_local),
-                                  std::span<T>(_buffer_remote), _request);
+                                  std::span<T>(_buffer_remote),
+                                  std::span<MPI_Request>(_request));
   }
 
   /// End scatter of local data from owner to ghosts on other ranks
@@ -94,7 +95,7 @@ public:
     const std::int32_t local_size = _bs * _map->size_local();
     const std::int32_t num_ghosts = _bs * _map->num_ghosts();
     std::span<T> x_remote(_x.data() + local_size, num_ghosts);
-    _scatterer->scatter_fwd_end(_request);
+    _scatterer->scatter_fwd_end(std::span<MPI_Request>(_request));
 
     auto unpack = [](const auto& in, const auto& idx, auto& out, auto op)
     {
@@ -186,13 +187,13 @@ private:
   std::shared_ptr<const common::IndexMap> _map;
 
   // Scatter for managing MPI communication
-  std::shared_ptr<const common::Scatterer> _scatterer;
+  std::shared_ptr<const common::Scatterer<>> _scatterer;
 
   // Block size
   int _bs;
 
   // MPI request handle
-  MPI_Request _request = MPI_REQUEST_NULL;
+  std::vector<MPI_Request> _request = {MPI_REQUEST_NULL};
 
   // Buffers for ghost scatters
   std::vector<T, Allocator> _buffer_local, _buffer_remote;
@@ -279,7 +280,7 @@ auto norm(const Vector<T, Allocator>& a, Norm type = Norm::l2)
 /// modified in-place.
 /// @param[in] tol The tolerance used to detect a linear dependency
 template <typename T, typename U>
-void orthonormalize(const std::span<Vector<T, U>>& basis, double tol = 1.0e-10)
+void orthonormalize(std::span<Vector<T, U>> basis, double tol = 1.0e-10)
 {
   // Loop over each vector in basis
   for (std::size_t i = 0; i < basis.size(); ++i)
@@ -313,8 +314,7 @@ void orthonormalize(const std::span<Vector<T, U>>& basis, double tol = 1.0e-10)
 /// @param[in] tol The tolerance used to test for orthonormality
 /// @return True is basis is orthonormal, otherwise false
 template <typename T, typename U>
-bool is_orthonormal(const std::span<const Vector<T, U>>& basis,
-                    double tol = 1.0e-10)
+bool is_orthonormal(std::span<const Vector<T, U>> basis, double tol = 1.0e-10)
 {
   for (std::size_t i = 0; i < basis.size(); i++)
   {

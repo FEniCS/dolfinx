@@ -14,6 +14,7 @@
 #include <dolfinx/mesh/MeshTags.h>
 #include <functional>
 #include <memory>
+#include <span>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -283,8 +284,8 @@ public:
     return it->second.second;
   }
 
-  /// Get the list of (cell_index, local_facet_index) pairs for the ith
-  /// integral (kernel) for the exterior facet domain type
+  /// @brief List of (cell_index, local_facet_index) pairs for the ith
+  /// integral (kernel) for the exterior facet domain type.
   /// @param[in] i Integral ID, i.e. (sub)domain index
   /// @return List of (cell_index, local_facet_index) pairs. This data is
   /// flattened with row-major layout, shape=(num_facets, 2)
@@ -363,7 +364,7 @@ public:
   /// @param[in] function_space The function space
   /// @return The map
   // TODO User could provide this directly, rather than entity maps
-  std::function<std::int32_t(const std::span<const std::int32_t>&)>
+  std::function<std::int32_t(std::span<const std::int32_t>)>
   function_space_to_entity_map(const FunctionSpace& function_space) const
   {
     auto mesh_fs = function_space.mesh();
@@ -395,7 +396,7 @@ public:
     }
     else
     {
-      return [](auto e) { return e.front(); };
+      return [](auto entity) { return entity.front(); };
     }
   }
 
@@ -451,6 +452,7 @@ private:
       mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
       mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
     }
+
     const std::vector<std::int32_t> boundary_facets
         = _exterior_facet_integrals.empty()
               ? std::vector<std::int32_t>()

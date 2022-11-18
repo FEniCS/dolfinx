@@ -11,6 +11,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <limits>
+#include <span>
 
 using namespace dolfinx;
 
@@ -21,7 +22,7 @@ namespace
 // contain the nodes in "indices".
 std::vector<std::vector<int>>
 residual_graph_components(const graph::AdjacencyList<int>& graph,
-                          const std::span<const int>& indices)
+                          std::span<const int> indices)
 {
   if (indices.empty())
     return std::vector<std::vector<int>>();
@@ -125,7 +126,7 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
 // with -1 in the vector rlabel).
 std::vector<std::int32_t>
 gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
-                       const std::span<const std::int32_t>& rlabel)
+                       std::span<const std::int32_t> rlabel)
 {
   common::Timer timer("Gibbs-Poole-Stockmeyer ordering");
 
