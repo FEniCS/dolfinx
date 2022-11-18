@@ -47,7 +47,6 @@ void test_scatter_fwd(int n)
                     [=](auto i)
                     { return i == val * ((mpi_rank + 1) % mpi_size); }));
 
-  int num_requests = idx_map.dest().size() + idx_map.src().size();
   std::vector<MPI_Request> requests
       = sct.create_request_vector(decltype(sct)::type::p2p);
 
