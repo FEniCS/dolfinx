@@ -421,7 +421,7 @@ void write_function(
     std::vector<std::int64_t> tmp;
     std::tie(tmp, cshape) = io::extract_vtk_connectivity(*mesh0);
     cells.assign(tmp.begin(), tmp.end());
-    const mesh::Geometry& geometry = mesh0->geometry();
+    const mesh::Geometry<double>& geometry = mesh0->geometry();
     x.assign(geometry.x().begin(), geometry.x().end());
     xshape = {geometry.x().size() / 3, 3};
     x_id = geometry.input_global_indices();
@@ -749,7 +749,7 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
 
   // Get mesh data for this rank
   const mesh::Topology& topology = mesh.topology();
-  const mesh::Geometry& geometry = mesh.geometry();
+  const mesh::Geometry<double>& geometry = mesh.geometry();
   auto xmap = geometry.index_map();
   assert(xmap);
   const int tdim = topology.dim();

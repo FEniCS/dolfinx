@@ -314,7 +314,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   submesh_topology.set_connectivity(submesh_e_to_v, dim, 0);
 
   // -- Submesh geometry
-  const Geometry& geometry = mesh.geometry();
+  const Geometry<double>& geometry = mesh.geometry();
 
   // Get the geometry dofs in the submesh based on the entities in
   // submesh
@@ -454,7 +454,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                  { return mesh_igi[submesh_x_dof]; });
 
   // Create geometry
-  Geometry submesh_geometry(
+  Geometry<double> submesh_geometry(
       submesh_x_dof_index_map, std::move(submesh_x_dofmap), submesh_coord_ele,
       std::move(submesh_x), geometry.dim(), std::move(submesh_igi));
 
@@ -470,9 +470,9 @@ const Topology& Mesh::topology() const { return _topology; }
 //-----------------------------------------------------------------------------
 Topology& Mesh::topology_mutable() const { return _topology; }
 //-----------------------------------------------------------------------------
-Geometry& Mesh::geometry() { return _geometry; }
+Geometry<double>& Mesh::geometry() { return _geometry; }
 //-----------------------------------------------------------------------------
-const Geometry& Mesh::geometry() const { return _geometry; }
+const Geometry<double>& Mesh::geometry() const { return _geometry; }
 //-----------------------------------------------------------------------------
 MPI_Comm Mesh::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------

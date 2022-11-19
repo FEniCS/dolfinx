@@ -37,8 +37,8 @@ namespace dolfinx::fem::impl
 /// @tparam _bs1 The block size of the trial function dof map.
 template <typename T, int _bs0 = -1, int _bs1 = -1>
 void _lift_bc_cells(
-    std::span<T> b, const mesh::Geometry& geometry, FEkernel<T> auto kernel,
-    std::span<const std::int32_t> cells,
+    std::span<T> b, const mesh::Geometry<scalar_value_type_t<double>>& geometry,
+    FEkernel<T> auto kernel, std::span<const std::int32_t> cells,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
@@ -61,7 +61,7 @@ void _lift_bc_cells(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   const std::size_t num_dofs_g = geometry.cmap().dim();
-  std::span<const double> x = geometry.x();
+  auto x = geometry.x();
 
   // Data structures used in bc application
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
@@ -194,8 +194,8 @@ void _lift_bc_cells(
 /// @tparam _bs1 The block size of the trial function dof map.
 template <typename T, int _bs = -1>
 void _lift_bc_exterior_facets(
-    std::span<T> b, const mesh::Geometry& geometry, FEkernel<T> auto kernel,
-    std::span<const std::int32_t> facets,
+    std::span<T> b, const mesh::Geometry<scalar_value_type_t<double>>& geometry,
+    FEkernel<T> auto kernel, std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
@@ -215,7 +215,7 @@ void _lift_bc_exterior_facets(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   const std::size_t num_dofs_g = geometry.cmap().dim();
-  std::span<const double> x = geometry.x();
+  auto x = geometry.x();
 
   // Data structures used in bc application
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
@@ -302,8 +302,9 @@ void _lift_bc_exterior_facets(
 /// @tparam _bs1 The block size of the trial function dof map.
 template <typename T, int _bs = -1>
 void _lift_bc_interior_facets(
-    std::span<T> b, const mesh::Geometry& geometry, int num_cell_facets,
-    FEkernel<T> auto kernel, std::span<const std::int32_t> facets,
+    std::span<T> b, const mesh::Geometry<scalar_value_type_t<double>>& geometry,
+    int num_cell_facets, FEkernel<T> auto kernel,
+    std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
@@ -324,7 +325,7 @@ void _lift_bc_interior_facets(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   const std::size_t num_dofs_g = geometry.cmap().dim();
-  std::span<const double> x = geometry.x();
+  auto x = geometry.x();
 
   // Data structures used in assembly
   using X = scalar_value_type_t<T>;
@@ -490,7 +491,7 @@ void assemble_cells(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
-    std::span<T> b, const mesh::Geometry& geometry,
+    std::span<T> b, const mesh::Geometry<scalar_value_type_t<double>>& geometry,
     std::span<const std::int32_t> cells,
     const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
     FEkernel<T> auto kernel, std::span<const T> constants,
@@ -505,7 +506,7 @@ void assemble_cells(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   const std::size_t num_dofs_g = geometry.cmap().dim();
-  std::span<const double> x = geometry.x();
+  auto x = geometry.x();
 
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
@@ -561,7 +562,7 @@ void assemble_exterior_facets(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
-    std::span<T> b, const mesh::Geometry& geometry,
+    std::span<T> b, const mesh::Geometry<scalar_value_type_t<double>>& geometry,
     std::span<const std::int32_t> facets,
     const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
     FEkernel<T> auto fn, std::span<const T> constants,
@@ -576,7 +577,7 @@ void assemble_exterior_facets(
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   const std::size_t num_dofs_g = geometry.cmap().dim();
-  std::span<const double> x = geometry.x();
+  auto x = geometry.x();
 
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
@@ -633,17 +634,17 @@ void assemble_interior_facets(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
-    std::span<T> b, const mesh::Geometry& geometry, int num_cell_facets,
-    std::span<const std::int32_t> facets, const fem::DofMap& dofmap,
-    FEkernel<T> auto fn, std::span<const T> constants,
-    std::span<const T> coeffs, int cstride,
+    std::span<T> b, const mesh::Geometry<scalar_value_type_t<double>>& geometry,
+    int num_cell_facets, std::span<const std::int32_t> facets,
+    const fem::DofMap& dofmap, FEkernel<T> auto fn,
+    std::span<const T> constants, std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info,
     const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   const std::size_t num_dofs_g = geometry.cmap().dim();
-  std::span<const double> x = geometry.x();
+  auto x = geometry.x();
 
   // Create data structures used in assembly
   using X = scalar_value_type_t<T>;

@@ -25,6 +25,7 @@ namespace dolfinx::mesh
 class Topology;
 
 /// @brief Geometry stores the geometry imposed on a mesh.
+template <typename T>
 class Geometry
 {
 public:
@@ -41,7 +42,7 @@ public:
   /// point, commonly from a mesh input file. The type is
   /// `std:vector<std::int64_t>`.
   template <std::convertible_to<graph::AdjacencyList<std::int32_t>> U,
-            std::convertible_to<std::vector<double>> V,
+            std::convertible_to<std::vector<T>> V,
             std::convertible_to<std::vector<std::int64_t>> W>
   Geometry(std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
            const fem::CoordinateElement& element, V&& x, int dim,
@@ -71,34 +72,40 @@ public:
   Geometry& operator=(Geometry&&) = default;
 
   /// Return Euclidean dimension of coordinate system
-  int dim() const;
+  int dim() const { return _dim; }
 
   /// DOF map
-  const graph::AdjacencyList<std::int32_t>& dofmap() const;
+  const graph::AdjacencyList<std::int32_t>& dofmap() const { return _dofmap; }
 
   /// Index map
-  std::shared_ptr<const common::IndexMap> index_map() const;
+  std::shared_ptr<const common::IndexMap> index_map() const
+  {
+    return _index_map;
+  }
 
   /// @brief Access geometry degrees-of-freedom data (const version).
   ///
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
-  std::span<const double> x() const;
+  std::span<const T> x() const { return _x; }
 
   /// @brief Access geometry degrees-of-freedom data (non-const
   /// version).
   ///
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
-  std::span<double> x();
+  std::span<T> x() { return _x; }
 
   /// @brief The element that describes the geometry map.
   ///
   /// @return The coordinate/geometry element
-  const fem::CoordinateElement& cmap() const;
+  const fem::CoordinateElement& cmap() const { return _cmap; }
 
   /// Global user indices
-  const std::vector<std::int64_t>& input_global_indices() const;
+  const std::vector<std::int64_t>& input_global_indices() const
+  {
+    return _input_global_indices;
+  }
 
 private:
   // Geometric dimension
@@ -115,7 +122,7 @@ private:
 
   // Coordinates for all points stored as a contiguous array (row-major,
   // column size = 3)
-  std::vector<double> _x;
+  std::vector<T> _x;
 
   // Global indices as provided on Geometry creation
   std::vector<std::int64_t> _input_global_indices;
@@ -141,7 +148,7 @@ private:
 /// @param[in] dim The geometric dimension (1, 2, or 3)
 /// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
 /// map associated with the geometry data
-mesh::Geometry
+mesh::Geometry<double>
 create_geometry(MPI_Comm comm, const Topology& topology,
                 const fem::CoordinateElement& element,
                 const graph::AdjacencyList<std::int64_t>& cells,
