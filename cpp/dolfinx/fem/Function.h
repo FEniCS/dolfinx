@@ -431,7 +431,7 @@ public:
 
     // Loop over points
     std::fill(u.data(), u.data() + u.size(), 0.0);
-    const std::span<const T>& _v = _x->array();
+    std::span<const T> _v = _x->array();
 
     // Evaluate geometry basis at point (0, 0, 0) on the reference cell.
     // Used in affine case.
