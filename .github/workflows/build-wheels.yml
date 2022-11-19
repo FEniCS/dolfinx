@@ -168,13 +168,13 @@ jobs:
       # Artifact can be unzipped into $(pwd) and tested with e.g.:
       # docker run -ti -v $(pwd):/shared --env PIP_EXTRA_INDEX_URL=file:///shared python:3.9 /bin/bash -l
       - name: Upload simple503-test artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: "simple503-test"
           path: simple/*
 
       - name: Upload wheelhouse artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: wheelhouse
           path: wheelhouse/*
@@ -185,7 +185,7 @@ jobs:
 
       # For manual upload.
       - name: Upload simple503 artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: "simple503"
           path: simple/*
@@ -198,7 +198,7 @@ jobs:
           docker rm ${CONTAINER_ID}
 
       - name: Upload mpiexec artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: "mpiexec.hydra"
           path: mpiexec.hydra

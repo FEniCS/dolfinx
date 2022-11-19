@@ -19,8 +19,8 @@ using namespace dolfinx::common;
 
 namespace
 {
-std::array<std::vector<int>, 2>
-build_src_dest(MPI_Comm comm, const std::span<const int>& owners)
+std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
+                                               std::span<const int> owners)
 {
   std::vector<int> src(owners.begin(), owners.end());
   std::sort(src.begin(), src.end());
@@ -36,7 +36,7 @@ build_src_dest(MPI_Comm comm, const std::span<const int>& owners)
 
 //-----------------------------------------------------------------------------
 std::vector<int32_t>
-common::compute_owned_indices(const std::span<const std::int32_t>& indices,
+common::compute_owned_indices(std::span<const std::int32_t> indices,
                               const IndexMap& map)
 {
   // Build list of (owner, index) pairs for each ghost in indices, and
@@ -339,8 +339,8 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
 }
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
-                   const std::span<const std::int64_t>& ghosts,
-                   const std::span<const int>& owners)
+                   std::span<const std::int64_t> ghosts,
+                   std::span<const int> owners)
     : IndexMap(comm, local_size, build_src_dest(comm, owners), ghosts, owners)
 {
   // Do nothing
@@ -348,8 +348,8 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
                    const std::array<std::vector<int>, 2>& src_dest,
-                   const std::span<const std::int64_t>& ghosts,
-                   const std::span<const int>& owners)
+                   std::span<const std::int64_t> ghosts,
+                   std::span<const int> owners)
     : _comm(comm), _ghosts(ghosts.begin(), ghosts.end()),
       _owners(owners.begin(), owners.end()), _src(src_dest[0]),
       _dest(src_dest[1]), _overlapping(true)
@@ -401,8 +401,8 @@ const std::vector<std::int64_t>& IndexMap::ghosts() const noexcept
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
-void IndexMap::local_to_global(const std::span<const std::int32_t>& local,
-                               const std::span<std::int64_t>& global) const
+void IndexMap::local_to_global(std::span<const std::int32_t> local,
+                               std::span<std::int64_t> global) const
 {
   assert(local.size() <= global.size());
   const std::int32_t local_size = _local_range[1] - _local_range[0];
@@ -420,8 +420,8 @@ void IndexMap::local_to_global(const std::span<const std::int32_t>& local,
       });
 }
 //-----------------------------------------------------------------------------
-void IndexMap::global_to_local(const std::span<const std::int64_t>& global,
-                               const std::span<std::int32_t>& local) const
+void IndexMap::global_to_local(std::span<const std::int64_t> global,
+                               std::span<std::int32_t> local) const
 {
   const std::int32_t local_size = _local_range[1] - _local_range[0];
 
@@ -462,7 +462,7 @@ std::vector<std::int64_t> IndexMap::global_indices() const
 MPI_Comm IndexMap::comm() const { return _comm.comm(); }
 //----------------------------------------------------------------------------
 std::pair<IndexMap, std::vector<std::int32_t>>
-IndexMap::create_submap(const std::span<const std::int32_t>& indices) const
+IndexMap::create_submap(std::span<const std::int32_t> indices) const
 {
   if (!indices.empty() and indices.back() >= this->size_local())
   {

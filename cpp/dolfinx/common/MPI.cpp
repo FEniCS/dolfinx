@@ -93,8 +93,7 @@ void dolfinx::MPI::check_error(MPI_Comm comm, int code)
 }
 //-----------------------------------------------------------------------------
 std::vector<int>
-dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm,
-                                      const std::span<const int>& edges)
+dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
 {
   LOG(INFO)
       << "Computing communication graph edges (using PCX algorithm). Number "
@@ -161,8 +160,7 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 std::vector<int>
-dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
-                                      const std::span<const int>& edges)
+dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
 {
   LOG(INFO)
       << "Computing communication graph edges (using NBX algorithm). Number "
