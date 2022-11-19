@@ -491,7 +491,7 @@ void assemble_cells(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
-    std::span<T> b, const mesh::Geometry<scalar_value_type_t<double>>& geometry,
+    std::span<T> b, const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     std::span<const std::int32_t> cells,
     const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
     FEkernel<T> auto kernel, std::span<const T> constants,
@@ -562,7 +562,7 @@ void assemble_exterior_facets(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
-    std::span<T> b, const mesh::Geometry<scalar_value_type_t<double>>& geometry,
+    std::span<T> b, const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     std::span<const std::int32_t> facets,
     const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
     FEkernel<T> auto fn, std::span<const T> constants,
@@ -634,7 +634,7 @@ void assemble_interior_facets(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
-    std::span<T> b, const mesh::Geometry<scalar_value_type_t<double>>& geometry,
+    std::span<T> b, const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     int num_cell_facets, std::span<const std::int32_t> facets,
     const fem::DofMap& dofmap, FEkernel<T> auto fn,
     std::span<const T> constants, std::span<const T> coeffs, int cstride,
@@ -934,7 +934,9 @@ void apply_lifting(
 /// @param[in] coefficients Packed coefficients that appear in `L`
 template <typename T>
 void assemble_vector(
-    std::span<T> b, const Form<T>& L, std::span<const T> constants,
+    std::span<T> b, const Form<T>& L,
+    const mesh::Geometry<scalar_value_type_t<T>>& geometry,
+    std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
@@ -972,20 +974,18 @@ void assemble_vector(
     const std::vector<std::int32_t>& cells = L.cell_domains(i);
     if (bs == 1)
     {
-      impl::assemble_cells<T, 1>(dof_transform, b, mesh->geometry(), cells,
-                                 dofs, bs, fn, constants, coeffs, cstride,
-                                 cell_info);
+      impl::assemble_cells<T, 1>(dof_transform, b, geometry, cells, dofs, bs,
+                                 fn, constants, coeffs, cstride, cell_info);
     }
     else if (bs == 3)
     {
-      impl::assemble_cells<T, 3>(dof_transform, b, mesh->geometry(), cells,
-                                 dofs, bs, fn, constants, coeffs, cstride,
-                                 cell_info);
+      impl::assemble_cells<T, 3>(dof_transform, b, geometry, cells, dofs, bs,
+                                 fn, constants, coeffs, cstride, cell_info);
     }
     else
     {
-      impl::assemble_cells(dof_transform, b, mesh->geometry(), cells, dofs, bs,
-                           fn, constants, coeffs, cstride, cell_info);
+      impl::assemble_cells(dof_transform, b, geometry, cells, dofs, bs, fn,
+                           constants, coeffs, cstride, cell_info);
     }
   }
 
@@ -997,20 +997,20 @@ void assemble_vector(
     const std::vector<std::int32_t>& facets = L.exterior_facet_domains(i);
     if (bs == 1)
     {
-      impl::assemble_exterior_facets<T, 1>(dof_transform, b, mesh->geometry(),
-                                           facets, dofs, bs, fn, constants,
-                                           coeffs, cstride, cell_info);
+      impl::assemble_exterior_facets<T, 1>(dof_transform, b, geometry, facets,
+                                           dofs, bs, fn, constants, coeffs,
+                                           cstride, cell_info);
     }
     else if (bs == 3)
     {
-      impl::assemble_exterior_facets<T, 3>(dof_transform, b, mesh->geometry(),
-                                           facets, dofs, bs, fn, constants,
-                                           coeffs, cstride, cell_info);
+      impl::assemble_exterior_facets<T, 3>(dof_transform, b, geometry, facets,
+                                           dofs, bs, fn, constants, coeffs,
+                                           cstride, cell_info);
     }
     else
     {
-      impl::assemble_exterior_facets(dof_transform, b, mesh->geometry(), facets,
-                                     dofs, bs, fn, constants, coeffs, cstride,
+      impl::assemble_exterior_facets(dof_transform, b, geometry, facets, dofs,
+                                     bs, fn, constants, coeffs, cstride,
                                      cell_info);
     }
   }
@@ -1039,22 +1039,47 @@ void assemble_vector(
       if (bs == 1)
       {
         impl::assemble_interior_facets<T, 1>(
-            dof_transform, b, mesh->geometry(), num_cell_facets, facets,
-            *dofmap, fn, constants, coeffs, cstride, cell_info, get_perm);
+            dof_transform, b, geometry, num_cell_facets, facets, *dofmap, fn,
+            constants, coeffs, cstride, cell_info, get_perm);
       }
       else if (bs == 3)
       {
         impl::assemble_interior_facets<T, 3>(
-            dof_transform, b, mesh->geometry(), num_cell_facets, facets,
-            *dofmap, fn, constants, coeffs, cstride, cell_info, get_perm);
+            dof_transform, b, geometry, num_cell_facets, facets, *dofmap, fn,
+            constants, coeffs, cstride, cell_info, get_perm);
       }
       else
       {
         impl::assemble_interior_facets(
-            dof_transform, b, mesh->geometry(), num_cell_facets, facets,
-            *dofmap, fn, constants, coeffs, cstride, cell_info, get_perm);
+            dof_transform, b, geometry, num_cell_facets, facets, *dofmap, fn,
+            constants, coeffs, cstride, cell_info, get_perm);
       }
     }
+  }
+}
+
+/// Assemble linear form into a vector
+/// @param[in,out] b The vector to be assembled. It will not be zeroed
+/// before assembly.
+/// @param[in] L The linear forms to assemble into b
+/// @param[in] constants Packed constants that appear in `L`
+/// @param[in] coefficients Packed coefficients that appear in `L`
+template <typename T>
+void assemble_vector(
+    std::span<T> b, const Form<T>& L, std::span<const T> constants,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<std::span<const T>, int>>& coefficients)
+{
+  std::shared_ptr<const mesh::Mesh> mesh = L.mesh();
+  assert(mesh);
+  if constexpr (std::is_same_v<double, scalar_value_type_t<T>>)
+    return assemble_vector(b, L, mesh->geometry(), constants, coefficients);
+  else
+  {
+
+    return assemble_vector(b, L,
+                           mesh->geometry().astype<scalar_value_type_t<T>>(),
+                           constants, coefficients);
   }
 }
 } // namespace dolfinx::fem::impl

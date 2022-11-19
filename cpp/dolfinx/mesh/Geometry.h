@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2020 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2022 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -35,8 +35,8 @@ public:
   /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
   /// gives the position in the point array of each local geometry node
   /// @param[in] element The element that describes the cell geometry map
-  /// @param[in] x The point coordinates. It is a `std::vector<double>`
-  /// and uses row-major storage. The shape is `(num_points, 3)`.
+  /// @param[in] x The point coordinates. It is a `std::vector<T>` and
+  /// uses row-major storage. The shape is `(num_points, 3)`.
   /// @param[in] dim The geometric dimension (`0 < dim <= 3`)
   /// @param[in] input_global_indices The 'global' input index of each
   /// point, commonly from a mesh input file. The type is
@@ -70,6 +70,15 @@ public:
 
   /// Move Assignment
   Geometry& operator=(Geometry&&) = default;
+
+  /// Copy constructor
+  template <typename U>
+  Geometry<U> astype() const
+  {
+    return Geometry<U>(_index_map, _dofmap, _cmap,
+                       std::vector<U>(_x.begin(), _x.end()), _dim,
+                       _input_global_indices);
+  }
 
   /// Return Euclidean dimension of coordinate system
   int dim() const { return _dim; }
@@ -131,8 +140,8 @@ private:
 /// @brief Build Geometry from input data.
 ///
 /// This function should be called after the mesh topology is built. It
-/// distributes the 'node' coordinate data to the required MPI process and then
-/// creates a mesh::Geometry object.
+/// distributes the 'node' coordinate data to the required MPI process
+/// and then creates a mesh::Geometry object.
 ///
 /// @param[in] comm The MPI communicator to build the Geometry on
 /// @param[in] topology The mesh topology
