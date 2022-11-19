@@ -476,14 +476,15 @@ void assemble_matrix(
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
   assert(mesh);
   if constexpr (std::is_same_v<double, scalar_value_type_t<T>>)
-    return assemble_matrix(mat_set, a, mesh->geometry(), constants,
-                           coefficients, bc0, bc1);
+  {
+    assemble_matrix(mat_set, a, mesh->geometry(), constants, coefficients, bc0,
+                    bc1);
+  }
   else
   {
-
-    return assemble_matrix(mat_set, a,
-                           mesh->geometry().astype<scalar_value_type_t<T>>(),
-                           constants, coefficients, bc0, bc1);
+    assemble_matrix(mat_set, a,
+                    mesh->geometry().astype<scalar_value_type_t<T>>(),
+                    constants, coefficients, bc0, bc1);
   }
 }
 

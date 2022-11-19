@@ -1073,13 +1073,11 @@ void assemble_vector(
   std::shared_ptr<const mesh::Mesh> mesh = L.mesh();
   assert(mesh);
   if constexpr (std::is_same_v<double, scalar_value_type_t<T>>)
-    return assemble_vector(b, L, mesh->geometry(), constants, coefficients);
+    assemble_vector(b, L, mesh->geometry(), constants, coefficients);
   else
   {
-
-    return assemble_vector(b, L,
-                           mesh->geometry().astype<scalar_value_type_t<T>>(),
-                           constants, coefficients);
+    assemble_vector(b, L, mesh->geometry().astype<scalar_value_type_t<T>>(),
+                    constants, coefficients);
   }
 }
 } // namespace dolfinx::fem::impl

@@ -230,7 +230,6 @@ T assemble_scalar(
     return assemble_scalar(M, mesh->geometry(), constants, coefficients);
   else
   {
-
     return assemble_scalar(M, mesh->geometry().astype<scalar_value_type_t<T>>(),
                            constants, coefficients);
   }
