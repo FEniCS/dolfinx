@@ -556,6 +556,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
 /// @param[in] cells Indices of the cells in the mesh on which to
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
+/// @tparam Scalar type
 template <typename T>
 void interpolate(Function<T>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
@@ -890,7 +891,7 @@ void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
 
   // Determine ownership of each point
   auto [dest_ranks, src_ranks, received_points, evaluation_cells]
-      = dolfinx::geometry::determine_point_ownership(*mesh_v, x);
+      = geometry::determine_point_ownership(*mesh_v, x);
 
   // Evaluate the interpolating function where possible
   std::vector<T> send_values(received_points.size() / 3 * value_size);
