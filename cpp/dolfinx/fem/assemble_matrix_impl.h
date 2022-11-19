@@ -28,7 +28,7 @@ namespace dolfinx::fem::impl
 template <typename T>
 void assemble_cells(
     la::MatSet<T> auto mat_set,
-    const mesh::Geometry<scalar_value_type_t<double>> geometry,
+    const mesh::Geometry<scalar_value_type_t<T>> geometry,
     std::span<const std::int32_t> cells,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -124,7 +124,7 @@ void assemble_cells(
 template <typename T>
 void assemble_exterior_facets(
     la::MatSet<T> auto mat_set,
-    const mesh::Geometry<scalar_value_type_t<double>>& geometry,
+    const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -219,7 +219,7 @@ void assemble_exterior_facets(
 template <typename T>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set,
-    const mesh::Geometry<scalar_value_type_t<double>>& geometry, int num_cell_facets,
+    const mesh::Geometry<scalar_value_type_t<T>>& geometry, int num_cell_facets,
     std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -363,7 +363,9 @@ void assemble_interior_facets(
 /// are applied. Matrix is not finalised.
 template <typename T>
 void assemble_matrix(
-    la::MatSet<T> auto mat_set, const Form<T>& a, std::span<const T> constants,
+    la::MatSet<T> auto mat_set, const Form<T>& a,
+    const mesh::Geometry<scalar_value_type_t<T>>& geometry,
+    std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
     std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1)
@@ -412,9 +414,9 @@ void assemble_matrix(
     const auto& fn = a.kernel(IntegralType::cell, i);
     const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
-    impl::assemble_cells(mat_set, mesh->geometry(), cells, dof_transform, dofs0,
-                         bs0, dof_transform_to_transpose, dofs1, bs1, bc0, bc1,
-                         fn, coeffs, cstride, constants, cell_info);
+    impl::assemble_cells(mat_set, geometry, cells, dof_transform, dofs0, bs0,
+                         dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn,
+                         coeffs, cstride, constants, cell_info);
   }
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
@@ -423,10 +425,10 @@ void assemble_matrix(
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::int32_t>& facets = a.exterior_facet_domains(i);
-    impl::assemble_exterior_facets(
-        mat_set, mesh->geometry(), facets, dof_transform, dofs0, bs0,
-        dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn, coeffs, cstride,
-        constants, cell_info);
+    impl::assemble_exterior_facets(mat_set, geometry, facets, dof_transform,
+                                   dofs0, bs0, dof_transform_to_transpose,
+                                   dofs1, bs1, bc0, bc1, fn, coeffs, cstride,
+                                   constants, cell_info);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
@@ -452,10 +454,36 @@ void assemble_matrix(
           = coefficients.at({IntegralType::interior_facet, i});
       const std::vector<std::int32_t>& facets = a.interior_facet_domains(i);
       impl::assemble_interior_facets(
-          mat_set, mesh->geometry(), num_cell_facets, facets, dof_transform,
-          *dofmap0, bs0, dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1,
-          fn, coeffs, cstride, c_offsets, constants, cell_info, get_perm);
+          mat_set, geometry, num_cell_facets, facets, dof_transform, *dofmap0,
+          bs0, dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1, fn, coeffs,
+          cstride, c_offsets, constants, cell_info, get_perm);
     }
+  }
+}
+
+/// The matrix A must already be initialised. The matrix may be a proxy,
+/// i.e. a view into a larger matrix, and assembly is performed using
+/// local indices. Rows (bc0) and columns (bc1) with Dirichlet
+/// conditions are zeroed. Markers (bc0 and bc1) can be empty if not bcs
+/// are applied. Matrix is not finalised.
+template <typename T>
+void assemble_matrix(
+    la::MatSet<T> auto mat_set, const Form<T>& a, std::span<const T> constants,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<std::span<const T>, int>>& coefficients,
+    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1)
+{
+  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
+  assert(mesh);
+  if constexpr (std::is_same_v<double, scalar_value_type_t<T>>)
+    return assemble_matrix(mat_set, a, mesh->geometry(), constants,
+                           coefficients, bc0, bc1);
+  else
+  {
+
+    return assemble_matrix(mat_set, a,
+                           mesh->geometry().astype<scalar_value_type_t<T>>(),
+                           constants, coefficients, bc0, bc1);
   }
 }
 
