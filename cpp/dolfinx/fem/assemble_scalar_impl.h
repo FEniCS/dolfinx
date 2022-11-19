@@ -217,22 +217,4 @@ T assemble_scalar(
   return value;
 }
 
-/// Assemble functional into an scalar
-template <typename T>
-T assemble_scalar(
-    const fem::Form<T>& M, std::span<const T> constants,
-    const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::span<const T>, int>>& coefficients)
-{
-  std::shared_ptr<const mesh::Mesh> mesh = M.mesh();
-  assert(mesh);
-  if constexpr (std::is_same_v<double, scalar_value_type_t<T>>)
-    return assemble_scalar(M, mesh->geometry(), constants, coefficients);
-  else
-  {
-    return assemble_scalar(M, mesh->geometry().astype<scalar_value_type_t<T>>(),
-                           constants, coefficients);
-  }
-}
-
 } // namespace dolfinx::fem::impl

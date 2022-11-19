@@ -37,7 +37,7 @@ namespace dolfinx::fem::impl
 /// @tparam _bs1 The block size of the trial function dof map.
 template <typename T, int _bs0 = -1, int _bs1 = -1>
 void _lift_bc_cells(
-    std::span<T> b, const mesh::Geometry<scalar_value_type_t<double>>& geometry,
+    std::span<T> b, const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     FEkernel<T> auto kernel, std::span<const std::int32_t> cells,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -49,8 +49,7 @@ void _lift_bc_cells(
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     std::span<const T> constants, std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info, std::span<const T> bc_values1,
-    std::span<const std::int8_t> bc_markers1, std::span<const T> x0,
-    double scale)
+    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T scale)
 {
   assert(_bs0 < 0 or _bs0 == bs0);
   assert(_bs1 < 0 or _bs1 == bs1);
@@ -66,8 +65,6 @@ void _lift_bc_cells(
   // Data structures used in bc application
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> Ae, be;
-  const scalar_value_type_t<T> _scale
-      = static_cast<scalar_value_type_t<T>>(scale);
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
     std::int32_t c = cells[index];
@@ -148,7 +145,7 @@ void _lift_bc_cells(
             // const T _x0 = 0.0;
             // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
             for (int m = 0; m < num_rows; ++m)
-              be[m] -= Ae[m * num_cols + _bs1 * j + k] * _scale * (bc - _x0);
+              be[m] -= Ae[m * num_cols + _bs1 * j + k] * scale * (bc - _x0);
           }
         }
       }
@@ -164,7 +161,7 @@ void _lift_bc_cells(
             const T _x0 = x0.empty() ? 0.0 : x0[jj];
             // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
             for (int m = 0; m < num_rows; ++m)
-              be[m] -= Ae[m * num_cols + bs1 * j + k] * _scale * (bc - _x0);
+              be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
           }
         }
       }
@@ -194,7 +191,7 @@ void _lift_bc_cells(
 /// @tparam _bs1 The block size of the trial function dof map.
 template <typename T, int _bs = -1>
 void _lift_bc_exterior_facets(
-    std::span<T> b, const mesh::Geometry<scalar_value_type_t<double>>& geometry,
+    std::span<T> b, const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     FEkernel<T> auto kernel, std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -206,8 +203,7 @@ void _lift_bc_exterior_facets(
     const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
     std::span<const T> constants, std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info, std::span<const T> bc_values1,
-    std::span<const std::int8_t> bc_markers1, std::span<const T> x0,
-    double scale)
+    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T scale)
 {
   if (facets.empty())
     return;
@@ -221,8 +217,6 @@ void _lift_bc_exterior_facets(
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> Ae, be;
   assert(facets.size() % 2 == 0);
-  const scalar_value_type_t<T> _scale
-      = static_cast<scalar_value_type_t<T>>(scale);
   for (std::size_t index = 0; index < facets.size(); index += 2)
   {
     std::int32_t cell = facets[index];
@@ -283,7 +277,7 @@ void _lift_bc_exterior_facets(
           const T _x0 = x0.empty() ? 0.0 : x0[jj];
           // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
           for (int m = 0; m < num_rows; ++m)
-            be[m] -= Ae[m * num_cols + bs1 * j + k] * _scale * (bc - _x0);
+            be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
         }
       }
     }
@@ -302,7 +296,7 @@ void _lift_bc_exterior_facets(
 /// @tparam _bs1 The block size of the trial function dof map.
 template <typename T, int _bs = -1>
 void _lift_bc_interior_facets(
-    std::span<T> b, const mesh::Geometry<scalar_value_type_t<double>>& geometry,
+    std::span<T> b, const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     int num_cell_facets, FEkernel<T> auto kernel,
     std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
@@ -317,7 +311,7 @@ void _lift_bc_interior_facets(
     std::span<const std::uint32_t> cell_info,
     const std::function<std::uint8_t(std::size_t)>& get_perm,
     std::span<const T> bc_values1, std::span<const std::int8_t> bc_markers1,
-    std::span<const T> x0, double scale)
+    std::span<const T> x0, T scale)
 {
   if (facets.empty())
     return;
@@ -338,8 +332,6 @@ void _lift_bc_interior_facets(
   std::vector<std::int32_t> dmapjoint0, dmapjoint1;
   assert(facets.size() % 4 == 0);
 
-  const scalar_value_type_t<T> _scale
-      = static_cast<scalar_value_type_t<T>>(scale);
   for (std::size_t index = 0; index < facets.size(); index += 4)
   {
     std::array<std::int32_t, 2> cells = {facets[index], facets[index + 2]};
@@ -444,7 +436,7 @@ void _lift_bc_interior_facets(
           const T _x0 = x0.empty() ? 0.0 : x0[jj];
           // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
           for (int m = 0; m < num_rows; ++m)
-            be[m] -= Ae[m * num_cols + bs1 * j + k] * _scale * (bc - _x0);
+            be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
         }
       }
     }
@@ -463,8 +455,8 @@ void _lift_bc_interior_facets(
           // be -= Ae.col(offset + bs1 * j + k) * scale * (bc - x0[jj]);
           for (int m = 0; m < num_rows; ++m)
           {
-            be[m] -= Ae[m * num_cols + offset + bs1 * j + k] * _scale
-                     * (bc - _x0);
+            be[m]
+                -= Ae[m * num_cols + offset + bs1 * j + k] * scale * (bc - _x0);
           }
         }
       }
@@ -732,12 +724,14 @@ void assemble_interior_facets(
 /// solution' in a Newton method
 /// @param[in] scale Scaling to apply
 template <typename T>
-void lift_bc(std::span<T> b, const Form<T>& a, std::span<const T> constants,
+void lift_bc(std::span<T> b, const Form<T>& a,
+             const mesh::Geometry<scalar_value_type_t<T>>& geometry,
+             std::span<const T> constants,
              const std::map<std::pair<IntegralType, int>,
                             std::pair<std::span<const T>, int>>& coefficients,
              std::span<const T> bc_values1,
              std::span<const std::int8_t> bc_markers1, std::span<const T> x0,
-             double scale)
+             T scale)
 {
   std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
   assert(mesh);
@@ -785,22 +779,22 @@ void lift_bc(std::span<T> b, const Form<T>& a, std::span<const T> constants,
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
     if (bs0 == 1 and bs1 == 1)
     {
-      _lift_bc_cells<T, 1, 1>(b, mesh->geometry(), kernel, cells, dof_transform,
+      _lift_bc_cells<T, 1, 1>(b, geometry, kernel, cells, dof_transform,
                               dofmap0, bs0, dof_transform_to_transpose, dofmap1,
                               bs1, constants, coeffs, cstride, cell_info,
                               bc_values1, bc_markers1, x0, scale);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
-      _lift_bc_cells<T, 3, 3>(b, mesh->geometry(), kernel, cells, dof_transform,
+      _lift_bc_cells<T, 3, 3>(b, geometry, kernel, cells, dof_transform,
                               dofmap0, bs0, dof_transform_to_transpose, dofmap1,
                               bs1, constants, coeffs, cstride, cell_info,
                               bc_values1, bc_markers1, x0, scale);
     }
     else
     {
-      _lift_bc_cells(b, mesh->geometry(), kernel, cells, dof_transform, dofmap0,
-                     bs0, dof_transform_to_transpose, dofmap1, bs1, constants,
+      _lift_bc_cells(b, geometry, kernel, cells, dof_transform, dofmap0, bs0,
+                     dof_transform_to_transpose, dofmap1, bs1, constants,
                      coeffs, cstride, cell_info, bc_values1, bc_markers1, x0,
                      scale);
     }
@@ -812,7 +806,7 @@ void lift_bc(std::span<T> b, const Form<T>& a, std::span<const T> constants,
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::int32_t>& facets = a.exterior_facet_domains(i);
-    _lift_bc_exterior_facets(b, mesh->geometry(), kernel, facets, dof_transform,
+    _lift_bc_exterior_facets(b, geometry, kernel, facets, dof_transform,
                              dofmap0, bs0, dof_transform_to_transpose, dofmap1,
                              bs1, constants, coeffs, cstride, cell_info,
                              bc_values1, bc_markers1, x0, scale);
@@ -840,11 +834,10 @@ void lift_bc(std::span<T> b, const Form<T>& a, std::span<const T> constants,
       const auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
       const std::vector<std::int32_t>& facets = a.interior_facet_domains(i);
-      _lift_bc_interior_facets(b, mesh->geometry(), num_cell_facets, kernel,
-                               facets, dof_transform, dofmap0, bs0,
-                               dof_transform_to_transpose, dofmap1, bs1,
-                               constants, coeffs, cstride, cell_info, get_perm,
-                               bc_values1, bc_markers1, x0, scale);
+      _lift_bc_interior_facets(
+          b, geometry, num_cell_facets, kernel, facets, dof_transform, dofmap0,
+          bs0, dof_transform_to_transpose, dofmap1, bs1, constants, coeffs,
+          cstride, cell_info, get_perm, bc_values1, bc_markers1, x0, scale);
     }
   }
 }
@@ -871,11 +864,12 @@ void lift_bc(std::span<T> b, const Form<T>& a, std::span<const T> constants,
 template <typename T>
 void apply_lifting(
     std::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
+    const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
-    const std::vector<std::span<const T>>& x0, double scale)
+    const std::vector<std::span<const T>>& x0, T scale)
 {
   // FIXME: make changes to reactivate this check
   if (!x0.empty() and x0.size() != a.size())
@@ -914,13 +908,13 @@ void apply_lifting(
 
       if (!x0.empty())
       {
-        lift_bc<T>(b, *a[j], constants[j], coeffs[j], bc_values1, bc_markers1,
-                   x0[j], scale);
+        lift_bc<T>(b, *a[j], geometry, constants[j], coeffs[j], bc_values1,
+                   bc_markers1, x0[j], scale);
       }
       else
       {
-        lift_bc<T>(b, *a[j], constants[j], coeffs[j], bc_values1, bc_markers1,
-                   std::span<const T>(), scale);
+        lift_bc<T>(b, *a[j], geometry, constants[j], coeffs[j], bc_values1,
+                   bc_markers1, std::span<const T>(), scale);
       }
     }
   }

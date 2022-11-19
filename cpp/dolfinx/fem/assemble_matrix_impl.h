@@ -461,31 +461,4 @@ void assemble_matrix(
   }
 }
 
-/// The matrix A must already be initialised. The matrix may be a proxy,
-/// i.e. a view into a larger matrix, and assembly is performed using
-/// local indices. Rows (bc0) and columns (bc1) with Dirichlet
-/// conditions are zeroed. Markers (bc0 and bc1) can be empty if not bcs
-/// are applied. Matrix is not finalised.
-template <typename T>
-void assemble_matrix(
-    la::MatSet<T> auto mat_set, const Form<T>& a, std::span<const T> constants,
-    const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::span<const T>, int>>& coefficients,
-    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1)
-{
-  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
-  assert(mesh);
-  if constexpr (std::is_same_v<double, scalar_value_type_t<T>>)
-  {
-    assemble_matrix(mat_set, a, mesh->geometry(), constants, coefficients, bc0,
-                    bc1);
-  }
-  else
-  {
-    assemble_matrix(mat_set, a,
-                    mesh->geometry().astype<scalar_value_type_t<T>>(),
-                    constants, coefficients, bc0, bc1);
-  }
-}
-
 } // namespace dolfinx::fem::impl
