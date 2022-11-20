@@ -348,7 +348,7 @@ public:
   /// of the array @p x should be equal to the number of dofs owned by
   /// this rank.
   /// @param[in] scale The scaling value to apply
-  void set(std::span<T> x, double scale = 1.0) const
+  void set(std::span<T> x, T scale = 1) const
   {
     if (std::holds_alternative<std::shared_ptr<const Function<T>>>(_g))
     {

@@ -163,6 +163,6 @@ void apply_lifting(
 void set_bc(
     Vec b,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
-    const Vec x0, double scale = 1.0);
+    const Vec x0, PetscScalar scale = 1);
 } // namespace petsc
 } // namespace dolfinx::fem
