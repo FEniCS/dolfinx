@@ -124,7 +124,7 @@ void apply_lifting(
         coeffs,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
-    const std::vector<Vec>& x0, double scale);
+    const std::vector<Vec>& x0, PetscScalar scale);
 
 // FIXME: clarify how x0 is used
 // FIXME: if bcs entries are set
@@ -148,7 +148,7 @@ void apply_lifting(
     Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
-    const std::vector<Vec>& x0, double scale);
+    const std::vector<Vec>& x0, PetscScalar scale);
 
 // -- Setting bcs ------------------------------------------------------------
 
