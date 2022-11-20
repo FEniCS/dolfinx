@@ -179,7 +179,7 @@ template <typename T>
 void apply_lifting(
     std::span<T> b, const std::vector<std::shared_ptr<const Form<T>>>& a,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
-    const std::vector<std::span<const T>>& x0, double scale)
+    const std::vector<std::span<const T>>& x0, T scale)
 {
   std::vector<
       std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>>
@@ -412,7 +412,7 @@ void set_diagonal(auto set_fn, const fem::FunctionSpace& V,
 template <typename T>
 void set_bc(std::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
-            std::span<const T> x0, double scale = 1.0)
+            std::span<const T> x0, T scale = 1)
 {
   if (b.size() > x0.size())
     throw std::runtime_error("Size mismatch between b and x0 vectors.");
@@ -429,7 +429,7 @@ void set_bc(std::span<T> b,
 template <typename T>
 void set_bc(std::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
-            double scale = 1.0)
+            T scale = 1)
 {
   for (const auto& bc : bcs)
   {
