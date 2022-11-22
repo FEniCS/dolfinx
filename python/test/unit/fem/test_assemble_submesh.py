@@ -22,6 +22,7 @@ from mpi4py import MPI
 from petsc4py import PETSc
 from dolfinx.graph import create_adjacencylist
 import random
+import basix.ufl_wrapper
 
 
 def create_random_mesh(corners, n, ghost_mode):
@@ -51,7 +52,8 @@ def create_random_mesh(corners, n, ghost_mode):
     else:
         cells, points = np.empty([0, 3]), np.empty([0, 2])
 
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", "triangle", 1))
+    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
+        "Lagrange", "triangle", 1))
     partitioner = create_cell_partitioner(ghost_mode)
     return create_mesh(MPI.COMM_WORLD, cells, points, domain,
                        partitioner=partitioner)
