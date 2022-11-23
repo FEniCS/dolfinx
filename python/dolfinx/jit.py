@@ -33,7 +33,7 @@ DOLFINX_DEFAULT_JIT_OPTIONS = {
     "cffi_libraries":
         (None, "Extra libraries to link"),
     "timeout":
-        (10, "Timeout for JIT compilation")
+        (30, "Timeout for JIT compilation")
 }
 
 
