@@ -707,31 +707,40 @@ def test_codim_1_assembly(d, n, k, space, ghost_mode, random_ordering):
     v_m = ufl.TestFunction(V_m)
     v_sm = ufl.TestFunction(V_sm)
 
+    f = fem.Function(V_m)
+    f.interpolate(lambda x: np.cos(np.pi * x[0]))
+
+    def g_expr(x):
+        return 1.0 + x[0]**2
+
+    g_m = fem.Function(V_m)
+    g_m.interpolate(g_expr)
+
+    g_sm = fem.Function(V_sm)
+    g_sm.interpolate(g_expr)
+
     ds = ufl.Measure("ds", domain=mesh)
     mp = [entity_map.index(entity) if entity in entity_map else -1
           for entity in range(num_facets)]
     entity_maps = {submesh: mp}
-    a = fem.form(ufl.inner(u_m, v_sm) * ds,
+    a = fem.form(ufl.inner(f * g_sm * u_m, v_sm) * ds,
                  entity_maps=entity_maps)
     A = fem.petsc.assemble_matrix(a)
     A.assemble()
 
-    a_2 = fem.form(ufl.inner(u_m, v_m) * ds)
+    a_2 = fem.form(ufl.inner(f * g_m * u_m, v_m) * ds)
     A_2 = fem.petsc.assemble_matrix(a_2)
     A_2.assemble()
 
     assert np.isclose(A.norm(), A_2.norm())
 
-    f = fem.Function(V_m)
-    f.interpolate(lambda x: np.cos(np.pi * x[0]))
-
-    L = fem.form(ufl.inner(f, v_sm) * ds,
+    L = fem.form(ufl.inner(f * g_sm, v_sm) * ds,
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
 
-    L_2 = fem.form(ufl.inner(f, v_m) * ds)
+    L_2 = fem.form(ufl.inner(f * g_m, v_m) * ds)
     b_2 = fem.petsc.assemble_vector(L_2)
     b_2.ghostUpdate(addv=PETSc.InsertMode.ADD,
                     mode=PETSc.ScatterMode.REVERSE)
