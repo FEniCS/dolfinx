@@ -20,6 +20,9 @@
 #include <dolfinx/graph/partition.h>
 #include <memory>
 
+// #include <xtensor/xadapt.hpp>
+// #include <xtensor/xio.hpp>
+
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
@@ -192,6 +195,9 @@ std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>,
 mesh::create_submesh(const Mesh& mesh, int dim,
                      std::span<const std::int32_t> entities)
 {
+  // const int rank = MPI::rank(MPI_COMM_WORLD);
+  // std::stringstream ss;
+  // ss << "rank " << rank << ":\n";
   // -- Submesh topology
   const Topology& topology = mesh.topology();
 
@@ -239,18 +245,21 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::vector<std::int32_t> submesh_vertices
       = compute_incident_entities(mesh, submesh_to_mesh_map, dim, 0);
 
+  // ss << "submesh_vertices = " << xt::adapt(submesh_vertices) << "\n";
+
   // Get the vertices in the submesh owned by this process
   auto mesh_index_map0 = topology.index_map(0);
   assert(mesh_index_map0);
-  std::vector<int32_t> submesh_owned_vertices
+  std::vector<int32_t> submap_owned_vertices
       = common::compute_owned_indices(submesh_vertices, *mesh_index_map0);
 
   // Create submesh vertex index map
   std::shared_ptr<common::IndexMap> submesh_map0;
   std::vector<int32_t> submesh_to_mesh_map0;
   {
-    std::pair<common::IndexMap, std::vector<int32_t>> map_data
-        = mesh_index_map0->create_submap(submesh_owned_vertices);
+    auto [submesh_owned_vertices, map_data]
+        = mesh_index_map0->create_submap(submap_owned_vertices,
+                                         submesh_vertices);
     submesh_map0
         = std::make_shared<common::IndexMap>(std::move(map_data.first));
 
@@ -268,6 +277,9 @@ mesh::create_submesh(const Mesh& mesh, int dim,
         [size_local = mesh_index_map0->size_local()](std::int32_t vertex_index)
         { return size_local + vertex_index; });
   }
+
+  // ss << "submesh_to_mesh_vertex_map = " << xt::adapt(submesh_to_mesh_vertex_map)
+  //    << "\n";
 
   // Submesh vertex to vertex connectivity (identity)
   auto submesh_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
@@ -294,6 +306,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   for (std::int32_t e : submesh_to_mesh_map)
   {
+    // ss << "e = " << e << "\n";
     std::span<const std::int32_t> vertices = mesh_e_to_v->links(e);
     for (std::int32_t v : vertices)
     {
@@ -368,31 +381,30 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // Get the geometry dofs in the submesh owned by this process
   auto mesh_geometry_dof_index_map = geometry.index_map();
   assert(mesh_geometry_dof_index_map);
-  auto submesh_owned_x_dofs = common::compute_owned_indices(
+  auto submap_owned_x_dofs = common::compute_owned_indices(
       submesh_x_dofs, *mesh_geometry_dof_index_map);
+
+  auto [submesh_owned_x_dofs, submesh_x_dof_index_map_pair]
+      = mesh_geometry_dof_index_map->create_submap(submap_owned_x_dofs,
+                                                   submesh_x_dofs);
 
   // Create submesh geometry index map
   std::vector<int32_t> submesh_to_mesh_x_dof_map(submesh_owned_x_dofs.begin(),
                                                  submesh_owned_x_dofs.end());
   std::shared_ptr<common::IndexMap> submesh_x_dof_index_map;
-  {
-    std::pair<common::IndexMap, std::vector<int32_t>>
-        submesh_x_dof_index_map_pair
-        = mesh_geometry_dof_index_map->create_submap(submesh_owned_x_dofs);
 
-    submesh_x_dof_index_map = std::make_shared<common::IndexMap>(
-        std::move(submesh_x_dof_index_map_pair.first));
+  submesh_x_dof_index_map = std::make_shared<common::IndexMap>(
+      std::move(submesh_x_dof_index_map_pair.first));
 
-    // Create a map from the (local) geometry dofs in the submesh to the
-    // (local) geometry dofs in the mesh.
-    submesh_to_mesh_x_dof_map.reserve(submesh_x_dof_index_map->size_local()
-                                      + submesh_x_dof_index_map->num_ghosts());
-    std::transform(submesh_x_dof_index_map_pair.second.begin(),
-                   submesh_x_dof_index_map_pair.second.end(),
-                   std::back_inserter(submesh_to_mesh_x_dof_map),
-                   [size = mesh_geometry_dof_index_map->size_local()](
-                       auto x_dof_index) { return size + x_dof_index; });
-  }
+  // Create a map from the (local) geometry dofs in the submesh to the
+  // (local) geometry dofs in the mesh.
+  submesh_to_mesh_x_dof_map.reserve(submesh_x_dof_index_map->size_local()
+                                    + submesh_x_dof_index_map->num_ghosts());
+  std::transform(submesh_x_dof_index_map_pair.second.begin(),
+                 submesh_x_dof_index_map_pair.second.end(),
+                 std::back_inserter(submesh_to_mesh_x_dof_map),
+                 [size = mesh_geometry_dof_index_map->size_local()](
+                     auto x_dof_index) { return size + x_dof_index; });
 
   // Create submesh geometry coordinates
   std::span<const double> mesh_x = mesh.geometry().x();
@@ -457,6 +469,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   Geometry submesh_geometry(
       submesh_x_dof_index_map, std::move(submesh_x_dofmap), submesh_coord_ele,
       std::move(submesh_x), geometry.dim(), std::move(submesh_igi));
+
+  // std::cout << ss.str() << "\n";
 
   return {Mesh(mesh.comm(), std::move(submesh_topology),
                std::move(submesh_geometry)),

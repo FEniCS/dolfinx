@@ -14,6 +14,10 @@
 #include <utility>
 #include <vector>
 
+#include <iostream>
+// #include <xtensor/xadapt.hpp>
+// #include <xtensor/xio.hpp>
+
 using namespace dolfinx;
 using namespace dolfinx::common;
 
@@ -634,6 +638,407 @@ IndexMap::create_submap(std::span<const std::int32_t> indices) const
     assert(new_to_old_ghost.empty());
     return {IndexMap(_comm.comm(), local_size_new),
             std::vector<std::int32_t>()};
+  }
+}
+//-----------------------------------------------------------------------------
+std::pair<std::vector<std::int32_t>,
+          std::pair<IndexMap, std::vector<std::int32_t>>>
+IndexMap::create_submap(
+    const std::span<const std::int32_t>& indices,
+    const std::span<const std::int32_t>& connected_indices) const
+{
+  const int rank = MPI::rank(comm());
+  // std::stringstream ss;
+  // ss << "rank " << rank << ":\n";
+
+  // ss << "indices = {";
+  // for (auto index : indices)
+  // {
+  //   ss << index << " ";
+  // }
+  // ss << "}\n";
+  // ss << "connected_indices = {";
+  // for (auto index : connected_indices)
+  // {
+  //   ss << index << " ";
+  // }
+  // ss << "}\n";
+
+  if (!indices.empty() and indices.back() >= this->size_local())
+  {
+    throw std::runtime_error(
+        "Unowned index detected when creating sub-IndexMap");
+  }
+
+  std::vector<std::int64_t> connected_indices_global(connected_indices.size(),
+                                                     0);
+  local_to_global(connected_indices, connected_indices_global);
+
+  std::vector<std::int32_t> owned_connected_indices;
+  std::vector<std::int32_t> owned_unconnected_indices;
+  for (std::int32_t index : indices)
+  {
+    if (std::find(connected_indices.begin(), connected_indices.end(), index)
+        != connected_indices.end())
+    {
+      owned_connected_indices.push_back(index);
+    }
+    else
+    {
+      owned_unconnected_indices.push_back(index);
+    }
+  }
+
+  // ss << "owned_connected_indices = " << xt::adapt(owned_connected_indices)
+  //    << "\n";
+  // ss << "owned_unconnected_indices = " << xt::adapt(owned_unconnected_indices)
+  //    << "\n";
+
+  // --- Step 2: Send ghost indices to owning rank
+
+  // Build list of src ranks (ranks that own ghosts)
+  std::vector<int> src = this->owners();
+  std::sort(src.begin(), src.end());
+  src.erase(std::unique(src.begin(), src.end()), src.end());
+
+  // Determine destination ranks (ranks that ghost my indices), and sort
+  std::vector<int> dest
+      = dolfinx::MPI::compute_graph_edges_nbx(this->comm(), src);
+  std::sort(dest.begin(), dest.end());
+
+  // Ghost indices on this process
+  std::vector<std::int64_t> ghost_indices_send;
+  std::vector<std::int32_t> ghost_connected_indices_send;
+  //  Indices owned by this process that are ghosted by other processes
+  std::vector<std::int64_t> ghost_indices_recv;
+  std::vector<std::int32_t> ghost_connected_indices_recv;
+  std::vector<std::size_t> ghost_buffer_pos;
+  std::vector<int> ghost_send_disp, ghost_recv_disp;
+  std::vector<std::int32_t> ghost_send_sizes, ghost_recv_sizes;
+
+  // Create neighbourhood comm (ghost -> owner)
+  MPI_Comm comm0;
+  MPI_Dist_graph_create_adjacent(_comm.comm(), dest.size(), dest.data(),
+                                 MPI_UNWEIGHTED, src.size(), src.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+
+  // Pack ghosts indices
+  std::vector<std::vector<std::int64_t>> send_data(src.size());
+  std::vector<std::vector<std::size_t>> pos_to_ghost(src.size());
+  for (std::size_t i = 0; i < _ghosts.size(); ++i)
+  {
+    auto it = std::lower_bound(src.begin(), src.end(), _owners[i]);
+    assert(it != src.end() and *it == _owners[i]);
+    int r = std::distance(src.begin(), it);
+    send_data[r].push_back(_ghosts[i]);
+    pos_to_ghost[r].push_back(i);
+  }
+
+  // Count number of ghosts per dest
+  std::transform(send_data.begin(), send_data.end(),
+                 std::back_inserter(ghost_send_sizes),
+                 [](auto& d) { return d.size(); });
+
+  // Build send buffer and ghost position to send buffer position
+  for (auto& d : send_data)
+    ghost_indices_send.insert(ghost_indices_send.end(), d.begin(), d.end());
+  for (auto& p : pos_to_ghost)
+    ghost_buffer_pos.insert(ghost_buffer_pos.end(), p.begin(), p.end());
+  for (std::int64_t ghost_index : ghost_indices_send)
+  {
+    ghost_connected_indices_send.push_back(
+        std::find(connected_indices_global.begin(),
+                  connected_indices_global.end(), ghost_index)
+        != connected_indices_global.end());
+  }
+
+  // Send how many indices I ghost to each owner, and receive how many
+  // of my indices other ranks ghost
+  ghost_recv_sizes.resize(dest.size(), 0);
+  ghost_send_sizes.reserve(1);
+  ghost_recv_sizes.reserve(1);
+  MPI_Neighbor_alltoall(ghost_send_sizes.data(), 1, MPI_INT32_T,
+                        ghost_recv_sizes.data(), 1, MPI_INT32_T, comm0);
+
+  // Prepare displacement vectors
+  ghost_send_disp.resize(src.size() + 1, 0);
+  ghost_recv_disp.resize(dest.size() + 1, 0);
+  std::partial_sum(ghost_send_sizes.begin(), ghost_send_sizes.end(),
+                   std::next(ghost_send_disp.begin()));
+  std::partial_sum(ghost_recv_sizes.begin(), ghost_recv_sizes.end(),
+                   std::next(ghost_recv_disp.begin()));
+
+  // Send ghost indices to owner, and receive indices
+  ghost_indices_recv.resize(ghost_recv_disp.back());
+  MPI_Neighbor_alltoallv(ghost_indices_send.data(), ghost_send_sizes.data(),
+                         ghost_send_disp.data(), MPI_INT64_T,
+                         ghost_indices_recv.data(), ghost_recv_sizes.data(),
+                         ghost_recv_disp.data(), MPI_INT64_T, comm0);
+
+  ghost_connected_indices_recv.resize(ghost_recv_disp.back());
+  MPI_Neighbor_alltoallv(
+      ghost_connected_indices_send.data(), ghost_send_sizes.data(),
+      ghost_send_disp.data(), MPI_INT32_T, ghost_connected_indices_recv.data(),
+      ghost_recv_sizes.data(), ghost_recv_disp.data(), MPI_INT32_T, comm0);
+
+  // ss << "ghost_indices_send = " << xt::adapt(ghost_indices_send) << "\n";
+  // ss << "ghost_connected_indices_send = "
+  //    << xt::adapt(ghost_connected_indices_send) << "\n";
+  // ss << "ghost_indices_recv = " << xt::adapt(ghost_indices_recv) << "\n";
+  // ss << "ghost_connected_indices_recv = "
+  //    << xt::adapt(ghost_connected_indices_recv) << "\n";
+
+  // std::vector
+  // std::vector<std::int64_t> owned_unconnected_indices_global;
+  // local_to_global(owned_unconnected_indices,
+  // owned_unconnected_indices_global); for (std::int64_t index :
+  // owned_unconnected_indices_global)
+  // {
+
+  // }
+  // std::vector<std::vector<std::int32_t>> possible_new_owners(
+  //     owned_unconnected_indices.size());
+  // for (int i = 0; i < owned_connected_indices.size(); ++i)
+  // {
+
+  // }
+
+  // Who now owns each of my ghosted vertices (-1 if not in submesh)
+  // 0: {-1, 2, -1}
+  // 1: {-1, -1, -1}
+  // 2: {2, 2, 2, 2}
+  // 3: {3, 3}
+
+  // ss << "src = " << xt::adapt(src) << "\n";
+  // ss << "dest = " << xt::adapt(dest) << "\n";
+
+  // TODO Try to replace map
+  std::map<std::int64_t, std::vector<std::int32_t>> possible_new_owners;
+  for (std::size_t i = 0; i < ghost_recv_disp.size() - 1; ++i)
+  {
+    // ss << "   i = " << i << "\n";
+    for (int j = ghost_recv_disp[i]; j < ghost_recv_disp[i + 1]; ++j)
+    {
+      // ss << "   j = " << j << "\n";
+      std::int64_t global_index = ghost_indices_recv[j];
+      if (ghost_connected_indices_recv[j] == 1)
+      {
+        possible_new_owners[global_index].push_back(dest[i]);
+      }
+    }
+  }
+
+  // ss << "possible_new_owners = \n";
+  // for (auto& [global_index, processes] : possible_new_owners)
+  // {
+  //   ss << "   global_index  = " << global_index
+  //      << "   processes = " << xt::adapt(processes) << "\n";
+  // }
+
+  std::vector<std::int32_t> new_owners_send;
+  new_owners_send.reserve(ghost_indices_recv.size());
+  for (std::size_t i = 0; i < ghost_indices_recv.size(); ++i)
+  {
+    std::int64_t global_index = ghost_indices_recv[i];
+    assert(global_index - _local_range[0] >= 0);
+    assert(global_index - _local_range[0] < _local_range[1]);
+    std::int32_t local_index = global_index - _local_range[0];
+
+    auto it = std::lower_bound(indices.begin(), indices.end(), local_index);
+    if (it != indices.end() and *it == local_index)
+    {
+      auto it_2 = std::lower_bound(connected_indices.begin(),
+                                   connected_indices.end(), local_index);
+      if (it_2 != connected_indices.end() and *it_2 == local_index)
+      {
+        new_owners_send.push_back(rank);
+      }
+      else
+      {
+        std::vector<std::int32_t>& possible_owners
+            = possible_new_owners.at(global_index);
+        assert(possible_owners.size() > 0);
+        new_owners_send.push_back(possible_owners[0]);
+      }
+    }
+    else
+    {
+      new_owners_send.push_back(-1);
+    }
+  }
+
+  // ss << "new_owners_send = " << xt::adapt(new_owners_send) << "\n";
+
+  // Create neighbourhood comm (owner -> ghost)
+  MPI_Comm comm1;
+  MPI_Dist_graph_create_adjacent(_comm.comm(), src.size(), src.data(),
+                                 MPI_UNWEIGHTED, dest.size(), dest.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+
+  std::vector<std::int32_t> new_owners_recv(ghost_send_disp.back());
+  MPI_Neighbor_alltoallv(new_owners_send.data(), ghost_recv_sizes.data(),
+                         ghost_recv_disp.data(), MPI_INT32_T,
+                         new_owners_recv.data(), ghost_send_sizes.data(),
+                         ghost_send_disp.data(), MPI_INT32_T, comm1);
+
+  // ss << "new_owners_recv = " << xt::adapt(new_owners_recv) << "\n";
+
+  int num_ghosts_to_take_ownership
+      = std::count(new_owners_recv.begin(), new_owners_recv.end(), rank);
+
+  // ss << "num_ghosts_to_take_ownership = " << num_ghosts_to_take_ownership
+  //    << "\n";
+
+  // --- Step 1: Compute new offset for this rank
+
+  std::int64_t local_size_new = indices.size() + num_ghosts_to_take_ownership
+                                - owned_unconnected_indices.size();
+  std::int64_t offset_new = 0;
+  MPI_Request request_offset;
+  MPI_Iexscan(&local_size_new, &offset_new, 1, MPI_INT64_T, MPI_SUM,
+              _comm.comm(), &request_offset);
+  MPI_Wait(&request_offset, MPI_STATUS_IGNORE);
+
+  std::vector<std::int32_t> ghost_indices_send_local(ghost_indices_send.size());
+  global_to_local(ghost_indices_send, ghost_indices_send_local);
+  for (std::size_t i = 0; i < ghost_indices_send.size(); ++i)
+  {
+    if (new_owners_recv[i] == rank)
+    {
+      owned_connected_indices.push_back(ghost_indices_send_local[i]);
+    }
+  }
+
+  // TODO Tell previous owner what the new global index is
+  std::vector<std::int64_t> send_gidx_to_original_owner;
+  for (std::size_t i = 0; i < ghost_indices_send.size(); ++i)
+  {
+    if (new_owners_recv[i] == rank)
+    {
+      auto it = std::find(owned_connected_indices.begin(),
+                          owned_connected_indices.end(),
+                          ghost_indices_send_local[i]);
+      int new_local_idx = std::distance(owned_connected_indices.begin(), it);
+      send_gidx_to_original_owner.push_back(new_local_idx + offset_new);
+    }
+    else
+    {
+      send_gidx_to_original_owner.push_back(-1);
+    }
+  }
+
+  std::vector<std::int64_t> recv_gidx_to_original_owner(ghost_recv_disp.back());
+  MPI_Neighbor_alltoallv(
+      send_gidx_to_original_owner.data(), ghost_send_sizes.data(),
+      ghost_send_disp.data(), MPI_INT64_T, recv_gidx_to_original_owner.data(),
+      ghost_recv_sizes.data(), ghost_recv_disp.data(), MPI_INT64_T, comm0);
+  MPI_Comm_free(&comm0);
+
+  // ss << "send_gidx_to_original_owner = "
+  //    << xt::adapt(send_gidx_to_original_owner) << "\n";
+
+  // ss << "recv_gidx_to_original_owner = "
+  //    << xt::adapt(recv_gidx_to_original_owner) << "\n";
+
+  // Global to new global map for indices whose ownership needs changing
+  std::map<std::int64_t, std::int64_t> ownership_change_global_map;
+  for (std::size_t i = 0; i < ghost_indices_recv.size(); ++i)
+  {
+    if (recv_gidx_to_original_owner[i] != -1)
+    {
+      ownership_change_global_map[ghost_indices_recv[i]]
+          = recv_gidx_to_original_owner[i];
+    }
+  }
+
+  // --- Step 3: Check which received indexes (all of which I should
+  // own) are in the submap
+
+  // Build array for each received ghost that (i) contains the new
+  // submap index if it is retained, or (ii) set to -1 if it is not
+  // retained.
+  std::vector<std::int64_t> send_gidx;
+  send_gidx.reserve(ghost_indices_recv.size());
+  for (auto idx : ghost_indices_recv)
+  {
+    assert(idx - _local_range[0] >= 0);
+    assert(idx - _local_range[0] < _local_range[1]);
+    std::int32_t idx_local = idx - _local_range[0];
+
+    // Could avoid search by creating look-up array
+    auto it = std::lower_bound(owned_connected_indices.begin(),
+                               owned_connected_indices.end(), idx_local);
+    if (it != owned_connected_indices.end() and *it == idx_local)
+    {
+      std::size_t idx_local_new
+          = std::distance(owned_connected_indices.begin(), it);
+      send_gidx.push_back(idx_local_new + offset_new);
+    }
+    else if (ownership_change_global_map.contains(idx))
+    {
+      send_gidx.push_back(ownership_change_global_map.at(idx));
+    }
+    else
+      send_gidx.push_back(-1);
+  }
+
+  // ss << "send_gidx = " << xt::adapt(send_gidx) << "\n";
+
+  // --- Step 4: Send new global indices from owner back to ranks that
+  // ghost the index
+
+  // Send index markers to ghosting ranks
+  std::vector<std::int64_t> recv_gidx(ghost_send_disp.back());
+  MPI_Neighbor_alltoallv(send_gidx.data(), ghost_recv_sizes.data(),
+                         ghost_recv_disp.data(), MPI_INT64_T, recv_gidx.data(),
+                         ghost_send_sizes.data(), ghost_send_disp.data(),
+                         MPI_INT64_T, comm1);
+
+  MPI_Comm_free(&comm1);
+
+  // ss << "recv_gidx = " << xt::adapt(recv_gidx) << "\n";
+
+  // --- Step 5: Unpack received data
+
+  std::vector<std::int64_t> ghosts;
+  std::vector<int> src_ranks;
+  std::vector<std::int32_t> new_to_old_ghost;
+  for (std::size_t i = 0; i < ghost_send_disp.size() - 1; ++i)
+  {
+    for (int j = ghost_send_disp[i]; j < ghost_send_disp[i + 1]; ++j)
+    {
+      if (std::int64_t idx = recv_gidx[j];
+          idx >= 0
+          and std::find(connected_indices_global.begin(),
+                        connected_indices_global.end(), ghost_indices_send[j])
+                  != connected_indices_global.end()
+          and idx != send_gidx_to_original_owner[j])
+      {
+        std::size_t p = ghost_buffer_pos[j];
+        ghosts.push_back(idx);
+        src_ranks.push_back(new_owners_recv[j]);
+        new_to_old_ghost.push_back(p);
+      }
+    }
+  }
+
+  // ss << "ghosts = " << xt::adapt(ghosts) << "\n";
+
+  // std::cout << ss.str() << "\n";
+
+  if (_overlapping)
+  {
+    return std::make_pair(std::move(owned_connected_indices),
+                          std::make_pair(IndexMap(_comm.comm(), local_size_new,
+                                                  ghosts, src_ranks),
+                                         std::move(new_to_old_ghost)));
+  }
+  else
+  {
+    assert(new_to_old_ghost.empty());
+    return std::make_pair(std::move(owned_connected_indices),
+                          std::make_pair(IndexMap(_comm.comm(), local_size_new),
+                                         std::vector<std::int32_t>()));
   }
 }
 //-----------------------------------------------------------------------------

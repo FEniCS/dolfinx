@@ -189,6 +189,25 @@ public:
   std::pair<IndexMap, std::vector<std::int32_t>>
   create_submap(std::span<const std::int32_t> indices) const;
 
+  /// @brief Create new index map from a subset of indices in this index
+  /// map, changing the ownership of indices such that they are connected
+  /// on each process.
+  ///
+  /// @param[in] indices Local indices in the map that should appear in
+  /// the new index map. All indices must be owned, i.e. indices must be
+  /// less than `this->size_local()`.
+  /// @pre `indices` must be sorted and contain no duplicates.
+  /// @param[in] connected_indices Indices (owned and ghost) that are
+  /// connected on this process
+  /// @return The (i) a new list of owned indices (now connected on this
+  /// process), (ii) a new index map and (iii) a map from the ghost
+  /// position in the new map to the ghost position in the original
+  /// (this) map
+  std::pair<std::vector<std::int32_t>,
+            std::pair<IndexMap, std::vector<std::int32_t>>>
+  create_submap(const std::span<const std::int32_t>& indices,
+                const std::span<const std::int32_t>& connected_indices) const;
+
   /// @todo Aim to remove this function?
   ///
   /// @brief Compute map from each local (owned) index to the set of
