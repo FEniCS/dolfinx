@@ -24,7 +24,7 @@ from petsc4py import PETSc
 
 @pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),
                     reason="This test needs DOLFINx pkg-config.")
-def test_petsc_casters_cppimport(tempdir):  # noqa: F811
+def xtest_petsc_casters_cppimport(tempdir):  # noqa: F811
     """Test casters of PETSc objects in codes compiled with cppimport"""
 
     dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
