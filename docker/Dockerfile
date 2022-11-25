@@ -93,7 +93,7 @@ ARG PETSC_SLEPC_OPTFLAGS="-O2"
 ARG PETSC_SLEPC_DEBUGGING="no"
 
 # See https://gitlab.com/petsc/petsc/-/issues/1288
-ARG PETSC_CPPFLAGS="-Dlogq=foobar"
+ARG PETSC_CPPFLAGS=""
 
 # MPI variant. "mpich" or "openmpi".
 ARG MPI="mpich"
