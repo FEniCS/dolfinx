@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 # TODO Test replacing mesh with submesh for existing assembler tests
+# TODO Use pygmsh
 
 import numpy as np
 import pytest
@@ -869,11 +870,16 @@ def reorder_mesh(msh):
 
 @pytest.mark.parametrize("n", [2, 4, 8])
 @pytest.mark.parametrize("d", [2, 3])
-def test_int_facet(n, d):
+@pytest.mark.parametrize("random_ordering", [False, True])
+def test_int_facet(n, d, random_ordering):
     if d == 2:
-        msh_0 = create_rectangle(
-            MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-            ghost_mode=GhostMode.shared_facet)
+        if random_ordering:
+            msh_0 = create_random_mesh(((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+                                      ghost_mode=GhostMode.shared_facet)
+        else:
+            msh_0 = create_rectangle(
+                MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+                ghost_mode=GhostMode.shared_facet)
         msh_1 = create_unit_square(MPI.COMM_WORLD, n, n,
                                    ghost_mode=GhostMode.shared_facet)
     else:
@@ -882,8 +888,6 @@ def test_int_facet(n, d):
             (2 * n, n, n), ghost_mode=GhostMode.shared_facet)
         msh_1 = create_unit_cube(MPI.COMM_WORLD, n, n, n,
                                  ghost_mode=GhostMode.shared_facet)
-    # Facet perms not working in parallel yet, so reorder the mesh for now
-    reorder_mesh(msh_0)
 
     tdim = msh_0.topology.dim
     entities = locate_entities(msh_0, tdim, lambda x: x[0] <= 1.0)
@@ -907,12 +911,12 @@ def test_int_facet(n, d):
     x = ufl.SpatialCoordinate(submesh)
     c = fem.Function(V_msh)
     c.interpolate(lambda x: 1 + x[0]**2)
-    a = fem.form(ufl.inner((1 + x[0]) * c * u("+"), v("+")) * dS, entity_maps={msh_0: entity_map})
+    a = fem.form(ufl.inner((1 + x[0]) * c * u("+"), v("-")) * dS, entity_maps={msh_0: entity_map})
     A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
     A_norm = A.norm()
 
-    L = fem.form(ufl.inner((1 + x[0]) * c, v("+")) * dS, entity_maps={msh_0: entity_map})
+    L = fem.form(ufl.inner((1 + x[0]) * c, v("-")) * dS, entity_maps={msh_0: entity_map})
     b = fem.petsc.assemble_vector(L)
     fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
@@ -933,12 +937,12 @@ def test_int_facet(n, d):
     x = ufl.SpatialCoordinate(msh_1)
     c = fem.Function(V_0)
     c.interpolate(lambda x: 1 + x[0]**2)
-    a = fem.form(ufl.inner((1 + x[0]) * c * u("+"), v("+")) * ufl.dS)
+    a = fem.form(ufl.inner((1 + x[0]) * c * u("+"), v("-")) * ufl.dS)
     A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
     assert np.isclose(A_norm, A.norm())
 
-    L = fem.form(ufl.inner((1 + x[0]) * c, v("+")) * ufl.dS)
+    L = fem.form(ufl.inner((1 + x[0]) * c, v("-")) * ufl.dS)
     b = fem.petsc.assemble_vector(L)
     fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
