@@ -951,9 +951,11 @@ def test_jørgen_problem(random_ordering):
     # Create submeshes of the left and right halves
     tdim = msh.topology.dim
     left_cells = locate_entities(msh, tdim, lambda x: x[0] <= 1.0)
-    left_submesh, left_entity_map = create_submesh(msh, tdim, left_cells)[:2]
+    left_submesh, left_entity_map = create_submesh(
+        msh, tdim, left_cells)[:2]
     right_cells = locate_entities(msh, tdim, lambda x: x[0] >= 1.0)
-    right_submesh, right_entity_map = create_submesh(msh, tdim, right_cells)[:2]
+    right_submesh, right_entity_map = create_submesh(
+        msh, tdim, right_cells)[:2]
 
     # Define function spaces on each half
     V_left = fem.FunctionSpace(left_submesh, ("Lagrange", 1))
@@ -999,22 +1001,30 @@ def test_jørgen_problem(random_ordering):
             assert cell_minus in right_cells
 
             # FIXME Don't use tolist
-            local_facet_plus = c_to_f.links(cell_plus).tolist().index(facet)
-            local_facet_minus = c_to_f.links(cell_minus).tolist().index(facet)
-            facet_integration_entities[1].extend([cell_plus, local_facet_plus, cell_minus, local_facet_minus])
+            local_facet_plus = c_to_f.links(
+                cell_plus).tolist().index(facet)
+            local_facet_minus = c_to_f.links(
+                cell_minus).tolist().index(facet)
+            facet_integration_entities[1].extend(
+                [cell_plus, local_facet_plus, cell_minus, local_facet_minus])
 
-            # HACK cell_minus does not exist in the left submesh, so it will be mapped to
-            # index -1. This is problematic for the assembler, which assumes it is possible
-            # to get the full macro dofmap for the trial and test functions, despite the
-            # restriction meaning we don't need the non-existant dofs. To fix this, we
-            # just map cell_minus to the cell corresponding to cell plus. This will just
-            # add zeros to the assembled system, since there are no u("-") terms.
-            # Could map this to any cell in the submesh, but I think using the cell on the
-            # other side of the facet means a facet space coefficient could be used
-            entity_maps[left_submesh][cell_minus] = entity_maps[left_submesh][cell_plus]
+            # HACK cell_minus does not exist in the left submesh, so it will
+            # be mapped to index -1. This is problematic for the assembler,
+            # which assumes it is possible to get the full macro dofmap for the
+            # trial and test functions, despite the restriction meaning we
+            # don't need the non-existant dofs. To fix this, we just map
+            # cell_minus to the cell corresponding to cell plus. This will
+            # just add zeros to the assembled system, since there are no
+            # u("-") terms. Could map this to any cell in the submesh, but
+            # I think using the cell on the other side of the facet means a
+            # facet space coefficient could be used
+            entity_maps[left_submesh][cell_minus] = \
+                entity_maps[left_submesh][cell_plus]
             # Same hack for the right submesh
-            entity_maps[right_submesh][cell_plus] = entity_maps[right_submesh][cell_minus]
-    dS = ufl.Measure("dS", domain=msh, subdomain_data=facet_integration_entities)
+            entity_maps[right_submesh][cell_plus] = \
+                entity_maps[right_submesh][cell_minus]
+    dS = ufl.Measure("dS", domain=msh,
+                     subdomain_data=facet_integration_entities)
 
     # Define form and assemble
     a = fem.form(ufl.inner(u("+"), v("-")) * dS(1), entity_maps=entity_maps)
