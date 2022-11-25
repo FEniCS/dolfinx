@@ -288,8 +288,9 @@ void _lift_bc_exterior_facets(
     const T* coeff_array = coeffs.data() + index / 2 * cstride;
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
+    const std::array<std::uint8_t, 2> perm = {0, 0};
     kernel(Ae.data(), coeff_array, constants.data(), coordinate_dofs.data(),
-           &local_facet, nullptr);
+           &local_facet, perm.data());
     dof_transform(Ae, cell_info_1, c_1, num_cols);
     dof_transform_to_transpose(Ae, cell_info_0, c_0, num_rows);
 
@@ -652,9 +653,10 @@ void assemble_exterior_facets(
     }
 
     // Tabulate element vector
+    const std::array<std::uint8_t, 2> perm = {0, 0};
     std::fill(be.begin(), be.end(), 0);
     fn(be.data(), coeffs.data() + index / 2 * cstride, constants.data(),
-       coordinate_dofs.data(), &local_facet, nullptr);
+       coordinate_dofs.data(), &local_facet, perm.data());
 
     dof_transform(_be, cell_info, c_0, 1);
 
