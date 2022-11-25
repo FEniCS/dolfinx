@@ -295,12 +295,22 @@ void mesh(py::module& m)
            py::arg("dim"))
       .def("create_entity_permutations",
            &dolfinx::mesh::Topology::create_entity_permutations)
+      .def("create_full_cell_permutations",
+           &dolfinx::mesh::Topology::create_full_cell_permutations)
       .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity,
            py::arg("d0"), py::arg("d1"))
       .def("get_facet_permutations",
            [](const dolfinx::mesh::Topology& self)
            {
              const std::vector<std::uint8_t>& p = self.get_facet_permutations();
+             return py::array_t<std::uint8_t>(p.size(), p.data(),
+                                              py::cast(self));
+           })
+      .def("get_full_cell_permutations",
+           [](const dolfinx::mesh::Topology& self)
+           {
+             const std::vector<std::uint8_t>& p
+                 = self.get_full_cell_permutations();
              return py::array_t<std::uint8_t>(p.size(), p.data(),
                                               py::cast(self));
            })

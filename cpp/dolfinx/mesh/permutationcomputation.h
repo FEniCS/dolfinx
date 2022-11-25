@@ -70,4 +70,8 @@ class Topology;
 std::pair<std::vector<std::uint8_t>, std::vector<std::uint32_t>>
 compute_entity_permutations(const Topology& topology);
 
+/// @todo: Get Matthew to document this if it works!
+/// @todo: Rename
+std::vector<std::uint8_t> compute_cell_permutations(const Topology& topology);
+
 } // namespace dolfinx::mesh

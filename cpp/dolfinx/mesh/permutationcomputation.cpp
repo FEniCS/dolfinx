@@ -281,7 +281,6 @@ std::vector<std::bitset<BITSETSIZE>>
 compute_face_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
-  assert(tdim > 2);
   if (!topology.index_map(2))
     throw std::runtime_error("Faces have not been computed.");
 
@@ -365,5 +364,54 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
   assert(used_bits < _BITSETSIZE);
 
   return {std::move(facet_permutations), std::move(cell_permutation_info)};
+}
+//-----------------------------------------------------------------------------
+std::vector<std::uint8_t>
+mesh::compute_cell_permutations(const mesh::Topology& topology)
+{
+  const int tdim = topology.dim();
+  const int fdim = tdim - 1;
+
+  // FIXME Don't hardcode
+  dolfinx::graph::AdjacencyList<int32_t> _v_to_v = *topology.connectivity(0, 0);
+  dolfinx::graph::AdjacencyList<int32_t> _f_to_v
+      = *topology.connectivity(fdim, 0);
+
+  auto v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      std::move(_v_to_v));
+  auto f_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      std::move(_f_to_v));
+
+  const mesh::CellType facet_cell_type
+      = mesh::cell_entity_type(topology.cell_type(), fdim, 0);
+
+  Topology facet_topology(topology.comm(), facet_cell_type);
+  facet_topology.set_index_map(0, topology.index_map(0));
+  facet_topology.set_index_map(fdim, topology.index_map(fdim));
+  facet_topology.set_connectivity(v_to_v, 0, 0);
+  facet_topology.set_connectivity(f_to_v, fdim, 0);
+  facet_topology.create_connectivity(fdim, fdim);
+
+  const std::int32_t num_facets
+      = facet_topology.connectivity(fdim, 0)->num_nodes();
+
+  if (fdim == 3)
+    throw std::runtime_error("Cannot compute cell permutations of a 3D mesh.");
+
+  std::vector<std::uint8_t> cell_permutations(num_facets);
+
+  if (fdim == 2)
+  {
+    const auto perms = compute_face_permutations<_BITSETSIZE>(facet_topology);
+    for (int c = 0; c < num_facets; ++c)
+      cell_permutations[c] = perms[c].to_ulong() & 7;
+  }
+  else if (fdim == 1)
+  {
+    const auto perms = compute_edge_reflections<_BITSETSIZE>(facet_topology);
+    for (int c = 0; c < num_facets; ++c)
+      cell_permutations[c] = perms[c].to_ulong() & 1;
+  }
+  return cell_permutations;
 }
 //-----------------------------------------------------------------------------
