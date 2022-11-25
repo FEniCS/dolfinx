@@ -807,16 +807,18 @@ def test_assemble_block(random_ordering):
 
 
 def test_mixed_coeff_form():
-    """Test that a form with coefficients involving dx and ds integrals assembles as expected"""
+    """Test that a form with coefficients involving dx and ds integrals
+    assembles as expected"""
     n = 4
     msh = create_unit_square(MPI.COMM_WORLD, n, n)
     fdim = msh.topology.dim - 1
     num_facets = msh.topology.create_entities(fdim)
     boundary_facets = locate_entities_boundary(
-        msh, fdim, lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 0.0),
-                                                         np.isclose(x[0], 1.0)),
-                                           np.logical_or(np.isclose(x[1], 0.0),
-                                                         np.isclose(x[1], 1.0))))
+        msh, fdim, lambda x: np.logical_or(
+            np.logical_or(np.isclose(x[0], 0.0),
+                          np.isclose(x[0], 1.0)),
+            np.logical_or(np.isclose(x[1], 0.0),
+                          np.isclose(x[1], 1.0))))
     submesh, entity_map = create_submesh(msh, fdim, boundary_facets)[0:2]
 
     # Create function spaces
@@ -835,7 +837,8 @@ def test_mixed_coeff_form():
     f.interpolate(lambda x: x[0])
     g = fem.Function(W)
     g.interpolate(lambda x: x[1])
-    L = fem.form(ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ds, entity_maps=entity_maps)
+    L = fem.form(ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ds,
+                 entity_maps=entity_maps)
 
     b = fem.petsc.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
@@ -852,7 +855,7 @@ def test_int_facet(n, d, random_ordering):
     if d == 2:
         if random_ordering:
             msh_0 = create_random_mesh(((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-                                      ghost_mode=GhostMode.shared_facet)
+                                       ghost_mode=GhostMode.shared_facet)
         else:
             msh_0 = create_rectangle(
                 MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
@@ -888,12 +891,14 @@ def test_int_facet(n, d, random_ordering):
     x = ufl.SpatialCoordinate(submesh)
     c = fem.Function(V_msh)
     c.interpolate(lambda x: 1 + x[0]**2)
-    a = fem.form(ufl.inner((1 + x[0]) * c * u("+"), v("-")) * dS, entity_maps={msh_0: entity_map})
+    a = fem.form(ufl.inner((1 + x[0]) * c * u("+"), v("-")) * dS,
+                 entity_maps={msh_0: entity_map})
     A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
     A_norm = A.norm()
 
-    L = fem.form(ufl.inner((1 + x[0]) * c, v("-")) * dS, entity_maps={msh_0: entity_map})
+    L = fem.form(ufl.inner((1 + x[0]) * c, v("-")) * dS,
+                 entity_maps={msh_0: entity_map})
     b = fem.petsc.assemble_vector(L)
     fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
