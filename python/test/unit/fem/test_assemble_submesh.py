@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 # TODO Test replacing mesh with submesh for existing assembler tests
+# TODO Use pygmsh
 
 import numpy as np
 import pytest
@@ -16,7 +17,6 @@ from dolfinx.mesh import (GhostMode, create_box, create_rectangle,
                           locate_entities, locate_entities_boundary,
                           meshtags_from_entities, create_mesh,
                           create_cell_partitioner)
-from dolfinx.cpp.mesh import cell_num_entities
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -79,9 +79,7 @@ def assemble_forms_0(mesh, space, k):
     dofs = fem.locate_dofs_topological(V, facet_dim, facets)
 
     bc_func = fem.Function(V)
-    # TODO Interpolate when fix for parallel has been merged
-    bc_func.x.array[:] = 1.5
-    # bc_func.interpolate(lambda x: x[0]**2)
+    bc_func.interpolate(lambda x: x[0]**2)
 
     bc = fem.dirichletbc(bc_func, dofs)
 
@@ -308,7 +306,7 @@ def test_mixed_codim_0_assembly_coeffs(d, n, k, space, ghost_mode,
     assert np.isclose(s_sm, s_m)
 
 
-def compute_expected_norms(d, n, space, k, ghost_mode):
+def compute_expected_norms(d, n, space, k, ghost_mode, f_expr, g_expr):
     """A helper function to assemble some forms on the unit square for
     testing."""
     if d == 2:
@@ -341,11 +339,17 @@ def compute_expected_norms(d, n, space, k, ghost_mode):
     bc_func.interpolate(lambda x: x[0])
     bc = fem.dirichletbc(bc_func, dofs)
 
-    a = fem.form(ufl.inner(u, v) * (ufl.dx + ds(1)))
+    f = fem.Function(V_0)
+    f.interpolate(f_expr)
+
+    g = fem.Function(V_0)
+    g.interpolate(g_expr)
+
+    a = fem.form(ufl.inner(f * g * u, v) * (ufl.dx + ds(1)))
     A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
 
-    L = fem.form(ufl.inner(1.0, v) * (ufl.dx + ds(1)))
+    L = fem.form(ufl.inner(f * g, v) * (ufl.dx + ds(1)))
     b = fem.petsc.assemble_vector(L)
     fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
@@ -424,18 +428,30 @@ def test_mixed_codim_0_assembly_0(d, n, k, space, ghost_mode,
     dx = ufl.Measure("dx", domain=mesh, subdomain_data=cell_mt)
     ds = ufl.Measure("ds", domain=mesh, subdomain_data=facet_mt)
 
+    def f_expr(x):
+        return 1 + x[0]
+
+    def g_expr(x):
+        return 1 + x[1]**2
+
+    f = fem.Function(V_m)
+    f.interpolate(f_expr)
+
+    g = fem.Function(V_sm)
+    g.interpolate(g_expr)
+
     # Create entity map from mesh cells to submesh cells (this is the inverse
     # of the entity map provided by create_submesh)
     entity_maps = {submesh: [entity_map.index(entity)
                              if entity in entity_map else -1
                              for entity in range(num_cells)]}
     # Create and assemble some forms
-    a = fem.form(ufl.inner(u, v) * (dx(1) + ds(1)),
+    a = fem.form(ufl.inner(f * g * u, v) * (dx(1) + ds(1)),
                  entity_maps=entity_maps)
     A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
 
-    L = fem.form(ufl.inner(1.0, v) * (dx(1) + ds(1)),
+    L = fem.form(ufl.inner(f * g, v) * (dx(1) + ds(1)),
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
     fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
@@ -444,7 +460,7 @@ def test_mixed_codim_0_assembly_0(d, n, k, space, ghost_mode,
 
     # Compute expected norms and compare
     A_expected_norm, b_expected_norm = compute_expected_norms(
-        d, n, space, k, ghost_mode)
+        d, n, space, k, ghost_mode, f_expr, g_expr)
     assert np.isclose(A.norm(), A_expected_norm)
     assert np.isclose(b.norm(), b_expected_norm)
 
@@ -504,13 +520,25 @@ def test_mixed_codim_0_assembly_1(d, n, k, space, ghost_mode, random_ordering):
     dx = ufl.Measure("dx", domain=submesh)
     ds = ufl.Measure("ds", domain=submesh, subdomain_data=sm_facet_mt)
 
+    def f_expr(x):
+        return 1 + x[0]
+
+    def g_expr(x):
+        return 1 + x[1]**2
+
+    f = fem.Function(V_m)
+    f.interpolate(f_expr)
+
+    g = fem.Function(V_sm)
+    g.interpolate(g_expr)
+
     entity_maps = {mesh: entity_map}
-    a = fem.form(ufl.inner(u, v) * (dx + ds(1)),
+    a = fem.form(ufl.inner(f * g * u, v) * (dx + ds(1)),
                  entity_maps=entity_maps)
     A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
 
-    L = fem.form(ufl.inner(1.0, v) * (dx + ds(1)),
+    L = fem.form(ufl.inner(f * g, v) * (dx + ds(1)),
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
     fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
@@ -518,7 +546,7 @@ def test_mixed_codim_0_assembly_1(d, n, k, space, ghost_mode, random_ordering):
                   mode=PETSc.ScatterMode.REVERSE)
 
     A_expected_norm, b_expected_norm = compute_expected_norms(
-        d, n, space, k, ghost_mode)
+        d, n, space, k, ghost_mode, f_expr, g_expr)
     assert np.isclose(A.norm(), A_expected_norm)
     assert np.isclose(b.norm(), b_expected_norm)
 
@@ -679,31 +707,40 @@ def test_codim_1_assembly(d, n, k, space, ghost_mode, random_ordering):
     v_m = ufl.TestFunction(V_m)
     v_sm = ufl.TestFunction(V_sm)
 
+    f = fem.Function(V_m)
+    f.interpolate(lambda x: np.cos(np.pi * x[0]))
+
+    def g_expr(x):
+        return 1.0 + x[0]**2
+
+    g_m = fem.Function(V_m)
+    g_m.interpolate(g_expr)
+
+    g_sm = fem.Function(V_sm)
+    g_sm.interpolate(g_expr)
+
     ds = ufl.Measure("ds", domain=mesh)
     mp = [entity_map.index(entity) if entity in entity_map else -1
           for entity in range(num_facets)]
     entity_maps = {submesh: mp}
-    a = fem.form(ufl.inner(u_m, v_sm) * ds,
+    a = fem.form(ufl.inner(f * g_sm * u_m, v_sm) * ds,
                  entity_maps=entity_maps)
     A = fem.petsc.assemble_matrix(a)
     A.assemble()
 
-    a_2 = fem.form(ufl.inner(u_m, v_m) * ds)
+    a_2 = fem.form(ufl.inner(f * g_m * u_m, v_m) * ds)
     A_2 = fem.petsc.assemble_matrix(a_2)
     A_2.assemble()
 
     assert np.isclose(A.norm(), A_2.norm())
 
-    f = fem.Function(V_m)
-    f.interpolate(lambda x: np.cos(np.pi * x[0]))
-
-    L = fem.form(ufl.inner(f, v_sm) * ds,
+    L = fem.form(ufl.inner(f * g_sm, v_sm) * ds,
                  entity_maps=entity_maps)
     b = fem.petsc.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
 
-    L_2 = fem.form(ufl.inner(f, v_m) * ds)
+    L_2 = fem.form(ufl.inner(f * g_m, v_m) * ds)
     b_2 = fem.petsc.assemble_vector(L_2)
     b_2.ghostUpdate(addv=PETSc.InsertMode.ADD,
                     mode=PETSc.ScatterMode.REVERSE)
@@ -770,16 +807,18 @@ def test_assemble_block(random_ordering):
 
 
 def test_mixed_coeff_form():
-    """Test that a form with coefficients involving dx and ds integrals assembles as expected"""
+    """Test that a form with coefficients involving dx and ds integrals
+    assembles as expected"""
     n = 4
     msh = create_unit_square(MPI.COMM_WORLD, n, n)
     fdim = msh.topology.dim - 1
     num_facets = msh.topology.create_entities(fdim)
     boundary_facets = locate_entities_boundary(
-        msh, fdim, lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 0.0),
-                                                         np.isclose(x[0], 1.0)),
-                                           np.logical_or(np.isclose(x[1], 0.0),
-                                                         np.isclose(x[1], 1.0))))
+        msh, fdim, lambda x: np.logical_or(
+            np.logical_or(np.isclose(x[0], 0.0),
+                          np.isclose(x[0], 1.0)),
+            np.logical_or(np.isclose(x[1], 0.0),
+                          np.isclose(x[1], 1.0))))
     submesh, entity_map = create_submesh(msh, fdim, boundary_facets)[0:2]
 
     # Create function spaces
@@ -798,7 +837,8 @@ def test_mixed_coeff_form():
     f.interpolate(lambda x: x[0])
     g = fem.Function(W)
     g.interpolate(lambda x: x[1])
-    L = fem.form(ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ds, entity_maps=entity_maps)
+    L = fem.form(ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ds,
+                 entity_maps=entity_maps)
 
     b = fem.petsc.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
@@ -808,35 +848,18 @@ def test_mixed_coeff_form():
     assert np.isclose(b.norm(), 0.6937782992069734)
 
 
-def reorder_mesh(msh):
-    # FIXME Check this is correct
-    # FIXME Needs generalising for high-order mesh
-    # FIXME What about quads / hexes?
-    tdim = msh.topology.dim
-    num_cell_vertices = cell_num_entities(msh.topology.cell_type, 0)
-    c_to_v = msh.topology.connectivity(tdim, 0)
-    geom_dofmap = msh.geometry.dofmap
-    vertex_imap = msh.topology.index_map(0)
-    geom_imap = msh.geometry.index_map()
-    for i in range(0, len(c_to_v.array), num_cell_vertices):
-        topo_perm = np.argsort(vertex_imap.local_to_global(
-            c_to_v.array[i:i + num_cell_vertices]))
-        geom_perm = np.argsort(geom_imap.local_to_global(
-            geom_dofmap.array[i:i + num_cell_vertices]))
-
-        c_to_v.array[i:i + num_cell_vertices] = \
-            c_to_v.array[i:i + num_cell_vertices][topo_perm]
-        geom_dofmap.array[i:i + num_cell_vertices] = \
-            geom_dofmap.array[i:i + num_cell_vertices][geom_perm]
-
-
 @pytest.mark.parametrize("n", [2, 4, 8])
 @pytest.mark.parametrize("d", [2, 3])
-def test_int_facet(n, d):
+@pytest.mark.parametrize("random_ordering", [False, True])
+def test_int_facet(n, d, random_ordering):
     if d == 2:
-        msh_0 = create_rectangle(
-            MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-            ghost_mode=GhostMode.shared_facet)
+        if random_ordering:
+            msh_0 = create_random_mesh(((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+                                       ghost_mode=GhostMode.shared_facet)
+        else:
+            msh_0 = create_rectangle(
+                MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+                ghost_mode=GhostMode.shared_facet)
         msh_1 = create_unit_square(MPI.COMM_WORLD, n, n,
                                    ghost_mode=GhostMode.shared_facet)
     else:
@@ -845,8 +868,6 @@ def test_int_facet(n, d):
             (2 * n, n, n), ghost_mode=GhostMode.shared_facet)
         msh_1 = create_unit_cube(MPI.COMM_WORLD, n, n, n,
                                  ghost_mode=GhostMode.shared_facet)
-    # Facet perms not working in parallel yet, so reorder the mesh for now
-    reorder_mesh(msh_0)
 
     tdim = msh_0.topology.dim
     entities = locate_entities(msh_0, tdim, lambda x: x[0] <= 1.0)
@@ -870,12 +891,14 @@ def test_int_facet(n, d):
     x = ufl.SpatialCoordinate(submesh)
     c = fem.Function(V_msh)
     c.interpolate(lambda x: 1 + x[0]**2)
-    a = fem.form(ufl.inner((1 + x[0]) * c * u("+"), v("+")) * dS, entity_maps={msh_0: entity_map})
+    a = fem.form(ufl.inner((1 + x[0]) * c * u("+"), v("-")) * dS,
+                 entity_maps={msh_0: entity_map})
     A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
     A_norm = A.norm()
 
-    L = fem.form(ufl.inner((1 + x[0]) * c, v("+")) * dS, entity_maps={msh_0: entity_map})
+    L = fem.form(ufl.inner((1 + x[0]) * c, v("-")) * dS,
+                 entity_maps={msh_0: entity_map})
     b = fem.petsc.assemble_vector(L)
     fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
@@ -896,12 +919,12 @@ def test_int_facet(n, d):
     x = ufl.SpatialCoordinate(msh_1)
     c = fem.Function(V_0)
     c.interpolate(lambda x: 1 + x[0]**2)
-    a = fem.form(ufl.inner((1 + x[0]) * c * u("+"), v("+")) * ufl.dS)
+    a = fem.form(ufl.inner((1 + x[0]) * c * u("+"), v("-")) * ufl.dS)
     A = fem.petsc.assemble_matrix(a, bcs=[bc])
     A.assemble()
     assert np.isclose(A_norm, A.norm())
 
-    L = fem.form(ufl.inner((1 + x[0]) * c, v("+")) * ufl.dS)
+    L = fem.form(ufl.inner((1 + x[0]) * c, v("-")) * ufl.dS)
     b = fem.petsc.assemble_vector(L)
     fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
