@@ -932,16 +932,21 @@ def test_int_facet(n, d, random_ordering):
     assert np.isclose(b_norm, b.norm())
 
 
-def test_jørgen_problem():
+@pytest.mark.parametrize("random_ordering", [False, True])
+def test_jørgen_problem(random_ordering):
     """Test assembling a form where the trial function is defined
     over the left half of the mesh and the test function is defined
     over the right half of the mesh"""
     # FIXME This is a hack. Implement properly
     # Create a rectangle mesh
     n = 2
-    msh = create_rectangle(
-        MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-        ghost_mode=GhostMode.shared_facet)
+    if random_ordering:
+        msh = create_random_mesh(((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+                                 ghost_mode=GhostMode.shared_facet)
+    else:
+        msh = create_rectangle(
+            MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+            ghost_mode=GhostMode.shared_facet)
 
     # Create submeshes of the left and right halves
     tdim = msh.topology.dim
