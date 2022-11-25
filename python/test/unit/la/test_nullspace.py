@@ -95,7 +95,7 @@ def build_broken_elastic_nullspace(V):
     create_unit_cube(MPI.COMM_WORLD, 12, 18, 15)
 ])
 @pytest.mark.parametrize("degree", [1, 2])
-def test_nullspace_orthogonal(mesh, degree):
+def xtest_nullspace_orthogonal(mesh, degree):
     """Test that null spaces orthogonalisation"""
     V = VectorFunctionSpace(mesh, ('Lagrange', degree))
     nullspace = build_elastic_nullspace(V)
