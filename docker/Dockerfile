@@ -54,8 +54,8 @@ ARG HDF5_PATCH=2
 ARG KAHIP_VERSION=3.14
 ARG NUMPY_VERSION=1.23.3
 ARG PYBIND11_VERSION=2.10.1
-ARG PETSC_VERSION=3.18.1
-ARG SLEPC_VERSION=3.18.1
+ARG PETSC_VERSION=3.17.4
+ARG SLEPC_VERSION=3.17.2
 ARG PYVISTA_VERSION=0.37.0
 
 ARG MPICH_VERSION=4.0.3
@@ -91,9 +91,6 @@ ARG OPENMPI_PATCH
 ARG PETSC_SLEPC_OPTFLAGS="-O2"
 # Turn on PETSc and SLEPc debugging. "yes" or "no".
 ARG PETSC_SLEPC_DEBUGGING="no"
-
-# See https://gitlab.com/petsc/petsc/-/issues/1288
-ARG PETSC_CPPFLAGS="-Dlogq=foobar"
 
 # MPI variant. "mpich" or "openmpi".
 ARG MPI="mpich"
@@ -246,7 +243,6 @@ RUN apt-get -qq update && \
     # Real, 32-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-real-32 \
-    --CPPFLAGS="${PETSC_CPPFLAGS}" \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
@@ -268,7 +264,6 @@ RUN apt-get -qq update && \
     # Complex, 32-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-complex-32 \
-    --CPPFLAGS="${PETSC_CPPFLAGS}" \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
@@ -289,7 +284,6 @@ RUN apt-get -qq update && \
     # Real, 64-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-real-64 \
-    --CPPFLAGS="${PETSC_CPPFLAGS}" \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
@@ -308,7 +302,6 @@ RUN apt-get -qq update && \
     # Complex, 64-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-complex-64 \
-    --CPPFLAGS="${PETSC_CPPFLAGS}" \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
