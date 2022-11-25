@@ -47,17 +47,18 @@
 
 
 ARG ADIOS2_VERSION=2.8.3
-ARG GMSH_VERSION=4_10_5
+ARG DOXYGEN_VERSION=1_9_5
+ARG GMSH_VERSION=4_11_0
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=2
 ARG KAHIP_VERSION=3.14
-ARG NUMPY_VERSION=1.22.4
-ARG PYBIND11_VERSION=2.10.0
-ARG PETSC_VERSION=3.17.4
-ARG SLEPC_VERSION=3.17.2
-ARG PYVISTA_VERSION=0.36.1
+ARG NUMPY_VERSION=1.23.3
+ARG PYBIND11_VERSION=2.10.1
+ARG PETSC_VERSION=3.18.1
+ARG SLEPC_VERSION=3.18.1
+ARG PYVISTA_VERSION=0.37.0
 
-ARG MPICH_VERSION=4.0.2
+ARG MPICH_VERSION=4.0.3
 ARG OPENMPI_SERIES=4.1
 ARG OPENMPI_PATCH=4
 # Used to set the correct PYTHONPATH for the real and complex install of
@@ -70,6 +71,7 @@ FROM ubuntu:22.04 as dev-env
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
+ARG DOXYGEN_VERSION
 ARG GMSH_VERSION
 ARG HDF5_SERIES
 ARG HDF5_PATCH
@@ -89,6 +91,9 @@ ARG OPENMPI_PATCH
 ARG PETSC_SLEPC_OPTFLAGS="-O2"
 # Turn on PETSc and SLEPc debugging. "yes" or "no".
 ARG PETSC_SLEPC_DEBUGGING="no"
+
+# See https://gitlab.com/petsc/petsc/-/issues/1288
+ARG PETSC_CPPFLAGS="-Dlogq=foobar"
 
 # MPI variant. "mpich" or "openmpi".
 ARG MPI="mpich"
@@ -133,7 +138,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y install \
     catch2 \
     clang-format \
-    doxygen \
     git \
     graphviz \
     libeigen3-dev \
@@ -152,6 +156,20 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libocct-data-exchange-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install Doxygen
+RUN apt-get -qq update && \
+    apt-get -y install bison flex && \
+    wget -nc --quiet https://github.com/doxygen/doxygen/archive/refs/tags/Release_${DOXYGEN_VERSION}.tar.gz && \
+    tar xfz Release_${DOXYGEN_VERSION}.tar.gz && \
+    cd doxygen-Release_${DOXYGEN_VERSION} && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir . && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    apt-get -y purge bison flex && \
+    apt-get -y autoremove && \
+    apt-get clean && \
+    rm -rf /tmp/*
 
 # Install MPI
 RUN if [ "$MPI" = "mpich" ]; then \
@@ -188,13 +206,6 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
     rm -rf /tmp/*
 
 # Install HDF5
-# RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-#     tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-#     cd hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
-#     ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
-#     make -j${BUILD_NP} install && \
-#     rm -rf /tmp/*
-
 # Note: HDF5 CMake install has numerous bugs and inconsistencies. Test carefully.
 # HDF5 overrides CMAKE_INSTALL_PREFIX by default, hence it is set
 # below to ensure that HDF5 is installed into a path where it can be
@@ -235,6 +246,7 @@ RUN apt-get -qq update && \
     # Real, 32-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-real-32 \
+    --CPPFLAGS="${PETSC_CPPFLAGS}" \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
@@ -256,6 +268,7 @@ RUN apt-get -qq update && \
     # Complex, 32-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-complex-32 \
+    --CPPFLAGS="${PETSC_CPPFLAGS}" \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
@@ -276,6 +289,7 @@ RUN apt-get -qq update && \
     # Real, 64-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-real-64 \
+    --CPPFLAGS="${PETSC_CPPFLAGS}" \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
@@ -294,6 +308,7 @@ RUN apt-get -qq update && \
     # Complex, 64-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-complex-64 \
+    --CPPFLAGS="${PETSC_CPPFLAGS}" \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \

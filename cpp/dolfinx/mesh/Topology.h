@@ -67,8 +67,7 @@ public:
   ///
   /// Set the IndexMap for dimension dim
   /// @warning This is experimental and likely to change
-  void set_index_map(int dim,
-                     const std::shared_ptr<const common::IndexMap>& map);
+  void set_index_map(int dim, std::shared_ptr<const common::IndexMap> map);
 
   /// @brief Get the IndexMap that described the parallel distribution
   /// of the mesh entities.
@@ -193,12 +192,12 @@ private:
 /// @param[in] boundary_vertices List of vertices on the exterior of the
 /// local mesh which may be shared with other processes.
 /// @return A distributed mesh topology
-Topology
-create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-                const std::span<const std::int64_t>& original_cell_index,
-                const std::span<const int>& ghost_owners,
-                const CellType& cell_type,
-                const std::vector<std::int64_t>& boundary_vertices);
+Topology create_topology(MPI_Comm comm,
+                         const graph::AdjacencyList<std::int64_t>& cells,
+                         std::span<const std::int64_t> original_cell_index,
+                         std::span<const int> ghost_owners,
+                         const CellType& cell_type,
+                         std::span<const std::int64_t> boundary_vertices);
 
 /// @brief Get entity indices for entities defined by their vertices.
 ///
