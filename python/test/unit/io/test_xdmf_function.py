@@ -84,7 +84,7 @@ def test_save_3d_scalar(tempdir, encoding, cell_type):
 
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_2d_vector(tempdir, encoding, cell_type):
+def xtest_save_2d_vector(tempdir, encoding, cell_type):
     filename = Path(tempdir, "u_2dv.xdmf")
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 13, cell_type)
     V = VectorFunctionSpace(mesh, ("Lagrange", 2))
