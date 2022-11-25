@@ -17,7 +17,6 @@ from dolfinx.mesh import (GhostMode, create_box, create_rectangle,
                           locate_entities, locate_entities_boundary,
                           meshtags_from_entities, create_mesh,
                           create_cell_partitioner)
-from dolfinx.cpp.mesh import cell_num_entities
 
 from mpi4py import MPI
 from petsc4py import PETSc
