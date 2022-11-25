@@ -942,7 +942,6 @@ def test_jørgen_problem():
     msh = create_rectangle(
         MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
         ghost_mode=GhostMode.shared_facet)
-    reorder_mesh(msh)
 
     # Create submeshes of the left and right halves
     tdim = msh.topology.dim
