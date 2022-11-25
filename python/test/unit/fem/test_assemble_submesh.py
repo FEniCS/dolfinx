@@ -846,28 +846,6 @@ def test_mixed_coeff_form():
     assert np.isclose(b.norm(), 0.6937782992069734)
 
 
-def reorder_mesh(msh):
-    # FIXME Check this is correct
-    # FIXME Needs generalising for high-order mesh
-    # FIXME What about quads / hexes?
-    tdim = msh.topology.dim
-    num_cell_vertices = cell_num_entities(msh.topology.cell_type, 0)
-    c_to_v = msh.topology.connectivity(tdim, 0)
-    geom_dofmap = msh.geometry.dofmap
-    vertex_imap = msh.topology.index_map(0)
-    geom_imap = msh.geometry.index_map()
-    for i in range(0, len(c_to_v.array), num_cell_vertices):
-        topo_perm = np.argsort(vertex_imap.local_to_global(
-            c_to_v.array[i:i + num_cell_vertices]))
-        geom_perm = np.argsort(geom_imap.local_to_global(
-            geom_dofmap.array[i:i + num_cell_vertices]))
-
-        c_to_v.array[i:i + num_cell_vertices] = \
-            c_to_v.array[i:i + num_cell_vertices][topo_perm]
-        geom_dofmap.array[i:i + num_cell_vertices] = \
-            geom_dofmap.array[i:i + num_cell_vertices][geom_perm]
-
-
 @pytest.mark.parametrize("n", [2, 4, 8])
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("random_ordering", [False, True])
