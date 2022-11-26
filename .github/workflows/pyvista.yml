@@ -17,9 +17,6 @@ jobs:
     container: fenicsproject/test-env:nightly-openmpi
 
     env:
-      CC: clang
-      CXX: clang++
-
       # For pyvista/pyvistaqt
       DISPLAY: ":99.0"
       PYVISTA_OFF_SCREEN: true
