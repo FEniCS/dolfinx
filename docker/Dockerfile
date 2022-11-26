@@ -480,9 +480,10 @@ RUN apt-get -qq update && \
 # properly rendering colorbars.
 # pythreejs and ipygany are two backends of pyvista not requiring a framebuffer,
 # and are therefore preferred in notebooks
+# Pinning ipywidgets due to https://github.com/pyvista/pyvista/issues/3274
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
-    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} && \
+    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ipywidgets==7.7.2 && \
     pip3 install --no-cache-dir matplotlib && \
     pip3 install --no-cache-dir pythreejs ipygany && \
     pip3 cache purge && \
