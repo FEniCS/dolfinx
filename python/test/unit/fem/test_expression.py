@@ -6,25 +6,33 @@
 
 import ctypes
 import ctypes.util
-
-import cffi
-import numba
-import numpy as np
-import numpy.typing
+import importlib
+import os
+import pathlib
 
 import basix
-import dolfinx.cpp
+import cffi
+import dolfinx.pkgconfig
+import numba
+import numba.core.typing.cffi_utils as cffi_support
+import numpy as np
+import petsc4py.lib
 import ufl
 from dolfinx.cpp.la.petsc import create_matrix
-from dolfinx.fem.petsc import load_petsc_lib
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace, create_sparsity_pattern, form)
+from dolfinx.fem.petsc import load_petsc_lib
 from dolfinx.mesh import create_unit_square
-
 from mpi4py import MPI
 from petsc4py import PETSc
+from petsc4py import get_config as PETSc_get_config
+
+import dolfinx.cpp
 
 dolfinx.cpp.common.init_logging(["-v"])
+petsc_dir = PETSc_get_config()['PETSC_DIR']
+petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
+
 
 # Get PETSc int and scalar types
 if np.dtype(PETSc.ScalarType).kind == 'c':
@@ -61,17 +69,51 @@ else:
         "Cannot translate PETSc scalar type to a C type, complex: {} size: {}.".format(complex, scalar_size))
 
 
-ffi = cffi.FFI()
-# Get MatSetValuesLocal from PETSc available via cffi in ABI mode
-ffi.cdef("""int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow,
-                                {0} ncol, const {0}* icol, const {1}* y, int addv);
-int MatZeroRowsLocal(void* mat, {0} nrow, const {0}* irow, {1} diag);
-int MatAssemblyBegin(void* mat, int mode);
-int MatAssemblyEnd(void* mat, int mode);
-""".format(c_int_t, c_scalar_t))
+def get_matsetvalues_api():
+    """Make MatSetValuesLocal from PETSc available via cffi in API mode"""
+    if dolfinx.pkgconfig.exists("dolfinx"):
+        dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
+    else:
+        raise RuntimeError("Could not find DOLFINx pkgconfig file")
 
-petsc_lib_cffi = load_petsc_lib(ffi.dlopen)
-MatSetValues = petsc_lib_cffi.MatSetValuesLocal
+    worker = os.getenv('PYTEST_XDIST_WORKER', None)
+    module_name = "_petsc_cffi_{}".format(worker)
+    if MPI.COMM_WORLD.Get_rank() == 0:
+        ffibuilder = cffi.FFI()
+        ffibuilder.cdef("""
+            typedef int... PetscInt;
+            typedef ... PetscScalar;
+            typedef int... InsertMode;
+            int MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
+                                PetscInt ncol, const PetscInt* icol,
+                                const PetscScalar* y, InsertMode addv);
+        """)
+        ffibuilder.set_source(module_name, """
+            #include "petscmat.h"
+        """,
+                              libraries=['petsc'],
+                              include_dirs=[os.path.join(petsc_dir, petsc_arch, 'include'),
+                                            os.path.join(petsc_dir, 'include')] + dolfinx_pc["include_dirs"],
+                              library_dirs=[os.path.join(petsc_dir, petsc_arch, 'lib')],
+                              extra_compile_args=[])
+
+        # Build module in same directory as test file
+        path = pathlib.Path(__file__).parent.absolute()
+        ffibuilder.compile(tmpdir=path, verbose=True)
+
+    MPI.COMM_WORLD.Barrier()
+
+    spec = importlib.util.find_spec(module_name)
+    if spec is None:
+        raise ImportError("Failed to find CFFI generated module")
+    module = importlib.util.module_from_spec(spec)
+
+    cffi_support.register_module(module)
+    cffi_support.register_type(module.ffi.typeof("PetscScalar"), numba_scalar_t)
+    return module.lib.MatSetValuesLocal
+
+
+MatSetValues = get_matsetvalues_api()
 
 
 def test_rank0():
