@@ -88,12 +88,12 @@ unit-tests-python-mpi: &unit-tests-python-mpi
   name: Run unit tests (Python, MPI)
   command: |
     cd python/test/unit
-    mpirun -np 3 python3 -m pytest -vs .
+    mpirun -np 3 python3 -m pytest .
 
 jobs:
   build-real:
     docker:
-      - image: fenicsproject/test-env:nightly-mpich
+      - image: ghcr.io/fenics/test-env:latest-mpich
     environment:
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-real-32"
@@ -122,7 +122,6 @@ jobs:
 
   build-complex:
     docker:
-      # - image: fenicsproject/test-env:nightly-mpich
       - image: ghcr.io/fenics/test-env:latest-mpich
     environment:
       DEBIAN_FRONTEND: "noninteractive"
