@@ -18,6 +18,7 @@ endif()
 
 # Add target to compile UFL files
 if (PETSC_SCALAR_COMPLEX EQUAL 1)
+  message(STATUS "**** Complex: ${PETSC_VERSION}, ${PETSC_SCALAR_COMPLEX}")
   set(SCALAR_TYPE "--scalar_type=double _Complex")
 endif()
 add_custom_command(
