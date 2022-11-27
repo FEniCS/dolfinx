@@ -57,7 +57,7 @@ endif()
 include(CheckSymbolExists)
 set(CMAKE_REQUIRED_INCLUDES ${PETSC_INCLUDE_DIRS})
 check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h PETSC_SCALAR_COMPLEX)
-message("******* ${PETSC_USE_COMPLEX}.)
+message("******* ${PETSC_USE_COMPLEX}.")
 
 
 if (@SLEPC_FOUND@)
