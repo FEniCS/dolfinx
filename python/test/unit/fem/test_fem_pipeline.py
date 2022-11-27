@@ -326,6 +326,7 @@ def test_biharmonic(family):
 
     # Solve
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
+    solver.setTolerances(rtol=1e-12)
     solver.setFromOptions()
     solver.setOperators(A)
 
