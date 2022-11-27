@@ -54,6 +54,10 @@ if (NOT TARGET PkgConfig::PETSC)
   pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc petsc)
 endif()
 
+include(CheckSymbolExists)
+set(CMAKE_REQUIRED_INCLUDES ${PETSC_INCLUDE_DIRS})
+check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h HAVE_PETSC_SCALAR_COMPLEX)
+
 if (@SLEPC_FOUND@)
   if (NOT TARGET PkgConfig::SLEPC)
      find_package(PkgConfig REQUIRED)
