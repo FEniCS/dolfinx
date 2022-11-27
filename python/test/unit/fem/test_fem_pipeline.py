@@ -327,14 +327,13 @@ def test_biharmonic(family):
     # Solve
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
     solver.setTolerances(rtol=1e-12)
-    solver.setFromOptions()
     solver.setOperators(A)
 
     x_h = Function(V)
     solver.solve(b, x_h.vector)
     x_h.x.scatter_forward()
 
-    # Recall that x_h has flattened indices.
+    # Recall that x_h has flattened indices
     u_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         form(inner(u_exact - x_h[4], u_exact - x_h[4]) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
     u_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
