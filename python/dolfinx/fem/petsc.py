@@ -14,8 +14,8 @@ from __future__ import annotations
 
 import contextlib
 import functools
-import typing
 import os
+import typing
 
 import ufl
 from dolfinx import cpp as _cpp
@@ -32,8 +32,8 @@ from dolfinx.fem.forms import form_types
 from dolfinx.fem.function import Function as _Function
 
 import petsc4py
-from petsc4py import PETSc
 import petsc4py.lib
+from petsc4py import PETSc
 
 
 def _extract_function_spaces(a: typing.List[typing.List[FormMetaClass]]):
