@@ -482,7 +482,6 @@ void assemble_matrix(
   std::function<std::uint8_t(std::int32_t, std::int32_t)> get_facet_perm;
   if (a.needs_facet_permutations())
   {
-    std::cout << "Form needs perms\n";
     mesh->topology_mutable().create_entity_permutations();
     const std::vector<std::uint8_t>& perms
         = mesh->topology().get_facet_permutations();
