@@ -478,6 +478,7 @@ void assemble_matrix(
                          cell_info_1, entity_map_0, entity_map_1);
   }
 
+  // TODO Only create facet perms for mixed dim integral is needed
   std::function<std::uint8_t(std::size_t)> get_perm;
   std::function<std::uint8_t(std::int32_t, std::int32_t)> get_facet_perm;
   if (a.needs_facet_permutations())
