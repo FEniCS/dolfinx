@@ -13,6 +13,7 @@
 #include "topologycomputation.h"
 #include "utils.h"
 #include <algorithm>
+#include <common/Scatterer.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -316,6 +317,44 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     }
     submesh_e_to_v_offsets.push_back(submesh_e_to_v_vec.size());
   }
+
+  // If codim != 0, the process owning the entities should send the
+  // entity to vertex map to process ghosting the entities to ensure
+  // that the submesh ghost cells are orientated consistently. If
+  // codim = 1, the mesh should have been created so that this is the
+  // case (TODO double check this)
+  if (!(mesh.topology().dim() == dim))
+  {
+    // Convert submesh_e_to_v_vec from local to global vertex numbering
+    std::vector<std::int64_t> submesh_e_to_global_v_vec(
+        submesh_e_to_v_vec.size(), 0);
+    submesh_map0->local_to_global(submesh_e_to_v_vec,
+                                              submesh_e_to_global_v_vec);
+
+    // Scatter forward to send global vertices of owned entity vertices
+    // to ghost entities
+    common::Scatterer scatterer(*submesh_map,
+                                num_vertices_per_entity);
+    std::vector<std::int64_t> ghost_vertices(
+        num_vertices_per_entity * submesh_map->num_ghosts(), 0);
+    scatterer.scatter_fwd(
+        std::span<const std::int64_t>(
+            submesh_e_to_global_v_vec.begin(),
+            submesh_e_to_global_v_vec.begin()
+                + num_vertices_per_entity
+                      * submesh_map->size_local()),
+        std::span<std::int64_t>(ghost_vertices));
+
+    // Convert received global vertices back to local numbering and overwrite
+    // ghosts in submesh_e_to_v_vec
+    std::span<std::int32_t> ghost_vertices_local(
+        submesh_e_to_v_vec.begin()
+            + num_vertices_per_entity * submesh_map->size_local(),
+        submesh_e_to_v_vec.end());
+    submesh_map0->global_to_local(ghost_vertices,
+                                              ghost_vertices_local);
+  }
+
   auto submesh_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(submesh_e_to_v_vec), std::move(submesh_e_to_v_offsets));
 
@@ -445,14 +484,46 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     }
     submesh_x_dofmap_offsets.push_back(submesh_x_dofmap_vec.size());
   }
-  graph::AdjacencyList<std::int32_t> submesh_x_dofmap(
-      std::move(submesh_x_dofmap_vec), std::move(submesh_x_dofmap_offsets));
 
   // Create submesh coordinate element
   CellType submesh_coord_cell
       = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
   fem::CoordinateElement submesh_coord_ele(
       submesh_coord_cell, geometry.cmap().degree(), geometry.cmap().variant());
+
+  // Same communication as for the topology is also needed for the
+  // geometry
+  if (!(mesh.topology().dim() == dim))
+  {
+    std::vector<std::int64_t> submesh_xdofmap_global_vec(
+        submesh_x_dofmap_vec.size(), 0);
+    submesh_x_dof_index_map->local_to_global(submesh_x_dofmap_vec,
+                                             submesh_xdofmap_global_vec);
+
+    const int x_dofs_per_entity = submesh_coord_ele.dim();
+
+    // TODO Don't hardcode blocksize
+    common::Scatterer scatterer(*submesh_map, x_dofs_per_entity);
+    std::vector<std::int64_t> ghost_x_dofs(
+        x_dofs_per_entity * submesh_map->num_ghosts(), 0);
+
+    scatterer.scatter_fwd(
+        std::span<const std::int64_t>(
+            submesh_xdofmap_global_vec.begin(),
+            submesh_xdofmap_global_vec.begin()
+                + x_dofs_per_entity * submesh_map->size_local()),
+        std::span<std::int64_t>(ghost_x_dofs));
+
+    std::span<std::int32_t> ghost_x_dofs_local(
+        submesh_x_dofmap_vec.begin()
+            + x_dofs_per_entity * submesh_map->size_local(),
+        submesh_x_dofmap_vec.end());
+
+    submesh_x_dof_index_map->global_to_local(ghost_x_dofs, ghost_x_dofs_local);
+  }
+
+  graph::AdjacencyList<std::int32_t> submesh_x_dofmap(
+      std::move(submesh_x_dofmap_vec), std::move(submesh_x_dofmap_offsets));
 
   // Submesh geometry input_global_indices
   // TODO Check this

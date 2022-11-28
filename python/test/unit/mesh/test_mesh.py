@@ -28,6 +28,7 @@ from mpi4py import MPI
 
 
 def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
+    vertex_map = np.array(vertex_map)
     submesh_cell_imap = submesh.topology.index_map(entity_dim)
     submesh_c_to_v = submesh.topology.connectivity(entity_dim, 0)
 
@@ -47,19 +48,24 @@ def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
         submesh_e_to_v = submesh.topology.connectivity(entity_dim, 0)
         for submesh_entity in range(len(entity_map)):
             submesh_entity_vertices = submesh_e_to_v.links(submesh_entity)
-            # The submesh is created such that entities is the map from the
-            # submesh entity to the mesh entity
+            # Test that the submesh entity consists of the expected vertices
+            # NOTE In general, we do not have that submesh_entity_vertices[i]
+            # corresponds to mesh_entity_vertices[i] (hence the sort in this
+            # test). This is because for submeshes of codim 1, the submesh
+            # cell vertex connectivity of ghost cells is reordered to agree
+            # with the rank that owns the cell.
             mesh_entity = entity_map[submesh_entity]
-            mesh_entity_vertices = mesh_e_to_v.links(mesh_entity)
-            for i in range(len(submesh_entity_vertices)):
-                assert vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i]
+            mesh_entity_vertices = np.sort(mesh_e_to_v.links(mesh_entity))
+            assert np.all(np.sort(vertex_map[submesh_entity_vertices]) == mesh_entity_vertices)
     else:
         assert submesh.topology.index_map(entity_dim).size_local == 0
 
 
 def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
+    geom_map = np.array(geom_map)
     submesh_geom_index_map = submesh.geometry.index_map()
-    assert submesh_geom_index_map.size_local + submesh_geom_index_map.num_ghosts == submesh.geometry.x.shape[0]
+    num_x_dofs = submesh_geom_index_map.size_local + submesh_geom_index_map.num_ghosts
+    assert num_x_dofs == submesh.geometry.x.shape[0]
 
     # Some processes might not own or ghost entities
     if len(entity_map) > 0:
@@ -70,10 +76,17 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
             submesh_x_dofs = submesh.geometry.dofmap.links(submesh_entity)
             # e_to_g[i] gets the mesh x_dofs of entities[i], which should
             # correspond to the x_dofs of cell i in the submesh
-            mesh_x_dofs = e_to_g[submesh_entity]
-            for i in range(len(submesh_x_dofs)):
-                assert mesh_x_dofs[i] == geom_map[submesh_x_dofs[i]]
-                assert np.allclose(mesh.geometry.x[mesh_x_dofs[i]], submesh.geometry.x[submesh_x_dofs[i]])
+            # NOTE In general, we do not have mesh_x_dofs[i] corresponds
+            # to submesh_x_dofs[i] for the same reason as explained in
+            # submesh_topology_test
+            mesh_x_dofs = np.sort(e_to_g[submesh_entity])
+            assert np.all(np.sort(geom_map[submesh_x_dofs]) == mesh_x_dofs)
+
+    for i in range(num_x_dofs):
+        mesh_x_dof = geom_map[i]
+        mesh_coord = mesh.geometry.x[mesh_x_dof]
+        submesh_coord = submesh.geometry.x[i]
+        assert np.allclose(mesh_coord, submesh_coord)
 
 
 @pytest.fixture

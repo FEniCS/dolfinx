@@ -18,7 +18,8 @@ from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square, locate_entities, meshtags,
-                          GhostMode, create_rectangle, create_submesh)
+                          GhostMode, create_rectangle, create_submesh,
+                          create_cell_partitioner)
 
 from mpi4py import MPI
 
@@ -754,3 +755,61 @@ def test_submesh_interpolation(n, ghost_mode):
     f_mesh.x.scatter_forward()
 
     assert np.isclose(f_mesh.vector.norm(), f_submesh.vector.norm())
+
+
+def create_random_mesh(comm, corners, n, ghost_mode):
+    """Create a rectangular mesh made of randomly ordered simplices"""
+    if MPI.COMM_WORLD.rank == 0:
+        h_x = (corners[1][0] - corners[0][0]) / n[0]
+        h_y = (corners[1][1] - corners[0][1]) / n[1]
+
+        points = [(i * h_x, j * h_y)
+                  for i in range(n[0] + 1) for j in range(n[1] + 1)]
+
+        import random
+        random.seed(6)
+
+        cells = []
+        for i in range(n[0]):
+            for j in range(n[1]):
+                v = (n[1] + 1) * i + j
+                cell_0 = [v, v + 1, v + n[1] + 2]
+                random.shuffle(cell_0)
+                cells.append(cell_0)
+
+                cell_1 = [v, v + n[1] + 1, v + n[1] + 2]
+                random.shuffle(cell_1)
+                cells.append(cell_1)
+        cells = np.array(cells)
+        points = np.array(points)
+    else:
+        cells, points = np.empty([0, 3]), np.empty([0, 2])
+
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", "triangle", 1))
+    partitioner = create_cell_partitioner(ghost_mode)
+    return create_mesh(comm, cells, points, domain,
+                       partitioner=partitioner)
+
+
+# TODO Figure out where is best to put this
+def test_submesh_ghost_cell_ordering():
+    comm = MPI.COMM_WORLD
+    ghost_mode = GhostMode.none
+    msh = create_random_mesh(comm, ((0.0, 0.0), (1.0, 1.0)), (2, 2), ghost_mode)
+
+    tdim = msh.topology.dim
+    msh.topology.create_entities(tdim - 1)
+    facet_imap = msh.topology.index_map(tdim - 1)
+    num_facets = facet_imap.size_local + facet_imap.num_ghosts
+    facets = np.arange(num_facets, dtype=np.int32)
+
+    submesh = create_submesh(msh, tdim - 1, facets)[0]
+    V = FunctionSpace(submesh, ("Discontinuous Lagrange", 1))
+
+    f = Function(V)
+    f.interpolate(lambda x: x[0])
+
+    vec_before_scatter = f.x.array.copy()
+    f.x.scatter_forward()
+
+    assert np.allclose(vec_before_scatter, f.x.array)
