@@ -187,6 +187,7 @@ T assemble_scalar(
                                   coeffs, cstride);
   }
 
+  mesh->topology_mutable().create_entity_permutations();
   const std::vector<std::uint8_t>& perms
       = mesh->topology().get_facet_permutations();
 
@@ -218,8 +219,6 @@ T assemble_scalar(
 
   if (M.num_integrals(IntegralType::interior_facet) > 0)
   {
-    mesh->topology_mutable().create_entity_permutations();
-
     const std::vector<int> c_offsets = M.coefficient_offsets();
     for (int i : M.integral_ids(IntegralType::interior_facet))
     {
