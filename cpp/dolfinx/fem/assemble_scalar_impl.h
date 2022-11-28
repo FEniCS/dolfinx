@@ -34,7 +34,7 @@ T assemble_cells(const mesh::Geometry& geometry,
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmap().dim();
+  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   std::span<const double> x = geometry.x();
 
   // Create data structures used in assembly
@@ -74,7 +74,7 @@ T assemble_exterior_facets(const mesh::Geometry& geometry,
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmap().dim();
+  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   std::span<const double> x = geometry.x();
 
   // Create data structures used in assembly
@@ -118,7 +118,7 @@ T assemble_interior_facets(const mesh::Geometry& geometry, int num_cell_facets,
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmap().dim();
+  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   std::span<const double> x = geometry.x();
 
   // Create data structures used in assembly

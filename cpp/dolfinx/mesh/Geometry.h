@@ -44,10 +44,10 @@ public:
             std::convertible_to<std::vector<double>> V,
             std::convertible_to<std::vector<std::int64_t>> W>
   Geometry(std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
-           const fem::CoordinateElement& element, V&& x, int dim,
+           const std::vector<fem::CoordinateElement>& element, V&& x, int dim,
            W&& input_global_indices)
       : _dim(dim), _dofmap(std::forward<U>(dofmap)), _index_map(index_map),
-        _cmap(element), _x(std::forward<V>(x)),
+        _cmaps(element), _x(std::forward<V>(x)),
         _input_global_indices(std::forward<W>(input_global_indices))
   {
     assert(_x.size() % 3 == 0);
@@ -92,10 +92,10 @@ public:
   /// (num_points, 3)
   std::span<double> x();
 
-  /// @brief The element that describes the geometry map.
+  /// @brief The elements that describes the geometry map.
   ///
-  /// @return The coordinate/geometry element
-  const fem::CoordinateElement& cmap() const;
+  /// @return The coordinate/geometry elements
+  const std::vector<fem::CoordinateElement>& cmaps() const;
 
   /// Global user indices
   const std::vector<std::int64_t>& input_global_indices() const;
@@ -111,7 +111,7 @@ private:
   std::shared_ptr<const common::IndexMap> _index_map;
 
   // The coordinate element
-  fem::CoordinateElement _cmap;
+  std::vector<fem::CoordinateElement> _cmaps;
 
   // Coordinates for all points stored as a contiguous array (row-major,
   // column size = 3)
@@ -143,7 +143,7 @@ private:
 /// map associated with the geometry data
 mesh::Geometry
 create_geometry(MPI_Comm comm, const Topology& topology,
-                const fem::CoordinateElement& element,
+                const std::vector<fem::CoordinateElement>& element,
                 const graph::AdjacencyList<std::int64_t>& cells,
                 std::span<const double> x, int dim,
                 const std::function<std::vector<int>(

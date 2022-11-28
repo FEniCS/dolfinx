@@ -36,7 +36,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
       = mesh::cell_entity_type(topology.cell_type(), dim, 0);
 
   const fem::ElementDofLayout cmap_dof_layout
-      = geometry.cmap().create_dof_layout();
+      = geometry.cmaps()[0].create_dof_layout();
 
   // Get number of nodes per entity
   const int num_nodes_per_entity = cmap_dof_layout.num_entity_closure_dofs(dim);

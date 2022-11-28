@@ -58,26 +58,26 @@ graph::AdjacencyList<T> reorder_list(const graph::AdjacencyList<T>& list,
 //-----------------------------------------------------------------------------
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
-                       const fem::CoordinateElement& element,
+                       const std::vector<fem::CoordinateElement>& elements,
                        std::span<const double> x,
                        std::array<std::size_t, 2> xshape,
                        mesh::GhostMode ghost_mode)
 {
-  return create_mesh(comm, cells, element, x, xshape,
+  return create_mesh(comm, cells, elements, x, xshape,
                      create_cell_partitioner(ghost_mode));
 }
 //-----------------------------------------------------------------------------
 Mesh mesh::create_mesh(MPI_Comm comm,
                        const graph::AdjacencyList<std::int64_t>& cells,
-                       const fem::CoordinateElement& element,
+                       const std::vector<fem::CoordinateElement>& elements,
                        std::span<const double> x,
                        std::array<std::size_t, 2> xshape,
                        const mesh::CellPartitionFunction& cell_partitioner)
 {
-  const fem::ElementDofLayout dof_layout = element.create_dof_layout();
+  const fem::ElementDofLayout dof_layout = elements[0].create_dof_layout();
 
   // Function top build geometry. Used to scope memory operations.
-  auto build_topology = [](auto comm, auto& element, auto& dof_layout,
+  auto build_topology = [](auto comm, auto& elements, auto& dof_layout,
                            auto& cells, auto& cell_partitioner)
   {
     // -- Partition topology
@@ -96,10 +96,10 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // Compute the destination rank for cells on this process via graph
     // partitioning.
     const int size = dolfinx::MPI::size(comm);
-    const int tdim = cell_dim(element.cell_shape());
+    const int tdim = cell_dim(elements[0].cell_shape());
     const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
         comm, size, tdim,
-        extract_topology(element.cell_shape(), dof_layout, cells));
+        extract_topology(elements[0].cell_shape(), dof_layout, cells));
 
     // -- Distribute cells (topology, includes higher-order 'nodes')
 
@@ -116,7 +116,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // and discard any 'higher-order' nodes
 
     graph::AdjacencyList<std::int64_t> cells_extracted
-        = extract_topology(element.cell_shape(), dof_layout, cell_nodes);
+        = extract_topology(elements[0].cell_shape(), dof_layout, cell_nodes);
 
     // -- Re-order cells
 
@@ -162,13 +162,13 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // topology includes cells shared via facet, but ghosts will be
     // removed later if not required by ghost_mode.
     return std::pair{create_topology(comm, cells_extracted, original_cell_index,
-                                     ghost_owners, element.cell_shape(),
+                                     ghost_owners, elements[0].cell_shape(),
                                      boundary_vertices),
                      std::move(cell_nodes)};
   };
 
   auto [topology, cell_nodes]
-      = build_topology(comm, element, dof_layout, cells, cell_partitioner);
+      = build_topology(comm, elements, dof_layout, cells, cell_partitioner);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
@@ -179,11 +179,11 @@ Mesh mesh::create_mesh(MPI_Comm comm,
       topology.create_entities(e);
   }
 
-  if (element.needs_dof_permutations())
+  if (elements[0].needs_dof_permutations())
     topology.create_entity_permutations();
 
   Geometry geometry
-      = create_geometry(comm, topology, element, cell_nodes, x, xshape[1]);
+      = create_geometry(comm, topology, elements, cell_nodes, x, xshape[1]);
   return Mesh(comm, std::move(topology), std::move(geometry));
 }
 //-----------------------------------------------------------------------------
@@ -318,7 +318,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Get the geometry dofs in the submesh based on the entities in
   // submesh
-  const fem::ElementDofLayout layout = geometry.cmap().create_dof_layout();
+  const fem::ElementDofLayout layout = geometry.cmaps()[0].create_dof_layout();
   // NOTE: Unclear what this return for prisms
   const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
 
@@ -438,9 +438,10 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Create submesh coordinate element
   CellType submesh_coord_cell
-      = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
-  fem::CoordinateElement submesh_coord_ele(
-      submesh_coord_cell, geometry.cmap().degree(), geometry.cmap().variant());
+      = cell_entity_type(geometry.cmaps()[0].cell_shape(), dim, 0);
+  std::vector<fem::CoordinateElement> submesh_coord_ele = {
+      fem::CoordinateElement(submesh_coord_cell, geometry.cmaps()[0].degree(),
+                             geometry.cmaps()[0].variant())};
 
   // Submesh geometry input_global_indices
   // TODO Check this

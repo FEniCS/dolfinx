@@ -60,7 +60,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
   // Get the dof coordinates on the reference element and the  mesh
   // coordinate map
   const auto [X, Xshape] = element->interpolation_points();
-  const fem::CoordinateElement& cmap = mesh->geometry().cmap();
+  const fem::CoordinateElement& cmap = mesh->geometry().cmaps()[0];
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& dofmap_x
@@ -193,7 +193,7 @@ io::extract_vtk_connectivity(const mesh::Mesh& mesh)
   // Get DOLFINx to VTK permutation
   // FIXME: Use better way to get number of nodes
   const graph::AdjacencyList<std::int32_t>& dofmap_x = mesh.geometry().dofmap();
-  const std::size_t num_nodes = mesh.geometry().cmap().dim();
+  const std::size_t num_nodes = mesh.geometry().cmaps()[0].dim();
   mesh::CellType cell_type = mesh.topology().cell_type();
   std::vector vtkmap
       = io::cells::transpose(io::cells::perm_vtk(cell_type, num_nodes));
