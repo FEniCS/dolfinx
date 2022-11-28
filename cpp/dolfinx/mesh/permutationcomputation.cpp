@@ -10,7 +10,9 @@
 #include <algorithm>
 #include <bitset>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/Scatterer.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <iostream>
 
 namespace
 {
@@ -412,6 +414,18 @@ mesh::compute_cell_permutations(const mesh::Topology& topology)
     for (int c = 0; c < num_facets; ++c)
       cell_permutations[c] = perms[c].to_ulong() & 1;
   }
+
+  auto facet_map = topology.index_map(fdim);
+  assert(facet_map);
+  common::Scatterer scatterer(*facet_map, 1);
+  scatterer.scatter_fwd(
+      std::span<const std::uint8_t>(cell_permutations.begin(),
+                                    cell_permutations.begin()
+                                        + facet_map->size_local()),
+      std::span<std::uint8_t>(cell_permutations.begin()
+                                  + facet_map->size_local(),
+                              cell_permutations.end()));
+
   return cell_permutations;
 }
 //-----------------------------------------------------------------------------
