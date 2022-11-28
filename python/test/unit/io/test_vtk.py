@@ -17,7 +17,6 @@ from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
 from dolfinx.plot import create_vtk_mesh
 
-
 from mpi4py import MPI
 
 cell_types_2D = [CellType.triangle, CellType.quadrilateral]
