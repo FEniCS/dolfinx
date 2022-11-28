@@ -610,13 +610,16 @@ void assemble_exterior_facets(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
-    std::span<T> b, const mesh::Geometry& geometry,
+    std::span<T> b, const mesh::Geometry& geometry, int num_cell_facets,
     std::span<const std::int32_t> facets,
     const graph::AdjacencyList<std::int32_t>& dofmap, int bs,
     FEkernel<T> auto fn, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info,
-    const std::function<std::int32_t(std::span<const std::int32_t>)>& facet_map)
+    const std::function<std::int32_t(std::span<const std::int32_t>)>& facet_map,
+    const std::function<std::uint8_t(std::size_t)>& get_perm,
+    const std::function<std::uint8_t(std::int32_t, std::int32_t)>&
+        get_facet_perm)
 {
   assert(_bs < 0 or _bs == bs);
 
@@ -653,7 +656,9 @@ void assemble_exterior_facets(
     }
 
     // Tabulate element vector
-    const std::array<std::uint8_t, 2> perm = {0, 0};
+    const std::array<std::uint8_t, 2> perm
+        = {get_perm(cell * num_cell_facets + local_facet),
+           get_facet_perm(cell, local_facet)};
     std::fill(be.begin(), be.end(), 0);
     fn(be.data(), coeffs.data() + index / 2 * cstride, constants.data(),
        coordinate_dofs.data(), &local_facet, perm.data());
@@ -1071,6 +1076,37 @@ void assemble_vector(
     }
   }
 
+  std::function<std::uint8_t(std::size_t)> get_perm;
+  std::function<std::uint8_t(std::int32_t, std::int32_t)> get_facet_perm;
+  if (L.needs_facet_permutations())
+  {
+    mesh->topology_mutable().create_entity_permutations();
+    const std::vector<std::uint8_t>& perms
+        = mesh->topology().get_facet_permutations();
+    get_perm = [&perms](std::size_t i) { return perms[i]; };
+
+    mesh->topology_mutable().create_connectivity(mesh->topology().dim(),
+                                                 mesh->topology().dim() - 1);
+    // TODO Package as (cell, local_facet) pairs in
+    // create_full_cell_permutations?
+    auto c_to_f = mesh->topology().connectivity(mesh->topology().dim(),
+                                                mesh->topology().dim() - 1);
+    mesh->topology_mutable().create_full_cell_permutations();
+    const std::vector<std::uint8_t>& facet_perms
+        = mesh->topology().get_full_cell_permutations();
+    get_facet_perm
+        = [&facet_perms, c_to_f](std::int32_t c, std::int32_t local_f)
+    { return facet_perms[c_to_f->links(c)[local_f]]; };
+  }
+  else
+  {
+    get_perm = [](std::size_t) { return 0; };
+    get_facet_perm = [](std::int32_t, std::int32_t) { return 0; };
+  }
+
+  int num_cell_facets = mesh::cell_num_entities(mesh->topology().cell_type(),
+                                                mesh->topology().dim() - 1);
+
   for (int i : L.integral_ids(IntegralType::exterior_facet))
   {
     const auto& fn = L.kernel(IntegralType::exterior_facet, i);
@@ -1080,38 +1116,28 @@ void assemble_vector(
     if (bs == 1)
     {
       impl::assemble_exterior_facets<T, 1>(
-          dof_transform, b, mesh->geometry(), facets, dofs, bs, fn, constants,
-          coeffs, cstride, cell_info, entity_map);
+          dof_transform, b, mesh->geometry(), num_cell_facets, facets, dofs, bs,
+          fn, constants, coeffs, cstride, cell_info, entity_map, get_perm,
+          get_facet_perm);
     }
     else if (bs == 3)
     {
       impl::assemble_exterior_facets<T, 3>(
-          dof_transform, b, mesh->geometry(), facets, dofs, bs, fn, constants,
-          coeffs, cstride, cell_info, entity_map);
+          dof_transform, b, mesh->geometry(), num_cell_facets, facets, dofs, bs,
+          fn, constants, coeffs, cstride, cell_info, entity_map, get_perm,
+          get_facet_perm);
     }
     else
     {
-      impl::assemble_exterior_facets(dof_transform, b, mesh->geometry(), facets,
-                                     dofs, bs, fn, constants, coeffs, cstride,
-                                     cell_info, entity_map);
+      impl::assemble_exterior_facets(dof_transform, b, mesh->geometry(),
+                                     num_cell_facets, facets, dofs, bs, fn,
+                                     constants, coeffs, cstride, cell_info,
+                                     entity_map, get_perm, get_facet_perm);
     }
   }
 
   if (L.num_integrals(IntegralType::interior_facet) > 0)
   {
-    std::function<std::uint8_t(std::size_t)> get_perm;
-    if (L.needs_facet_permutations())
-    {
-      mesh->topology_mutable().create_entity_permutations();
-      const std::vector<std::uint8_t>& perms
-          = mesh->topology().get_facet_permutations();
-      get_perm = [&perms](std::size_t i) { return perms[i]; };
-    }
-    else
-      get_perm = [](std::size_t) { return 0; };
-
-    int num_cell_facets = mesh::cell_num_entities(mesh->topology().cell_type(),
-                                                  mesh->topology().dim() - 1);
     for (int i : L.integral_ids(IntegralType::interior_facet))
     {
       const auto& fn = L.kernel(IntegralType::interior_facet, i);
