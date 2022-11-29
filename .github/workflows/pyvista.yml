@@ -17,14 +17,11 @@ jobs:
     container: fenicsproject/test-env:nightly-openmpi
 
     env:
-      CC: clang
-      CXX: clang++
-
       # For pyvista/pyvistaqt
       DISPLAY: ":99.0"
       PYVISTA_OFF_SCREEN: true
       PYVISTA_QT_VERSION: 0.9.0
-      PYVISTA_VERSION: 0.36.1
+      PYVISTA_VERSION: 0.37.0
 
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-32
       OMPI_ALLOW_RUN_AS_ROOT: 1
