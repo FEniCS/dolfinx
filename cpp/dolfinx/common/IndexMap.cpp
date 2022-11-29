@@ -930,7 +930,6 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
   ierr = MPI_Comm_free(&comm);
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
-
   std::vector<std::int32_t> shared;
   shared.reserve(recv_buffer.size());
   std::transform(recv_buffer.begin(), recv_buffer.end(),
