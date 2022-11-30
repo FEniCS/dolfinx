@@ -32,6 +32,7 @@ find_package(DOLFINX REQUIRED CONFIG)
 # pybind11 handles its own calls to target_link_libraries
 pybind11_add_module(cpp MODULE
   dolfinx/wrappers/dolfinx.cpp
+  dolfinx/wrappers/assemble.cpp
   dolfinx/wrappers/common.cpp
   dolfinx/wrappers/fem.cpp
   dolfinx/wrappers/geometry.cpp
