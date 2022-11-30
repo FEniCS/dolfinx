@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "array.h"
-#include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <array>
 #include <cstdint>
@@ -24,7 +23,6 @@
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
-// #include <dolfinx/mesh/MeshTags.h>
 #include <memory>
 #include <petsc4py/petsc4py.h>
 #include <pybind11/complex.h>
@@ -36,7 +34,6 @@
 #include <pybind11/stl.h>
 #include <span>
 #include <string>
-#include <ufcx.h>
 #include <utility>
 
 namespace py = pybind11;
