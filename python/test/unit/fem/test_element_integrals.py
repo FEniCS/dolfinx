@@ -307,8 +307,9 @@ def test_plus_minus_simple_vector(cell_type, pm):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('pm1', ["+", "-"])
 @pytest.mark.parametrize('pm2', ["+", "-"])
+@pytest.mark.parametrize("n", [n for n in range(30)])
 @parametrize_cell_types
-def test_plus_minus_vector(cell_type, pm1, pm2):
+def test_plus_minus_vector(cell_type, pm1, pm2, n):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     results = []
     orders = []
