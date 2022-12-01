@@ -125,7 +125,7 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-hypre \
-    --download-ptscotch \
+    # --download-ptscotch \
     --download-superlu_dist \
     --with-scalar-type=real && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-32 ${MAKEFLAGS} all && \
@@ -136,7 +136,7 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-hypre \
-    --download-ptscotch \
+    # --download-ptscotch \
     --download-superlu_dist \
     --with-scalar-type=complex && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-32 ${MAKEFLAGS} all && \
@@ -147,7 +147,7 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-hypre \
-    --download-parmetis \
+    # --download-parmetis \
     --download-superlu_dist \
     --with-scalar-type=real && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-64 ${MAKEFLAGS} all && \
@@ -158,7 +158,7 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-hypre \
-    --download-ptscotch \
+    # --download-ptscotch \
     --download-superlu_dist \
     --with-scalar-type=complex && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-64 ${MAKEFLAGS} all && \
