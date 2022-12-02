@@ -599,9 +599,14 @@ def test_empty_rank_mesh():
         assert e_to_v.num_nodes == 0
 
     # Test creating and getting permutations doesn't throw an error
+    # NOTE: Permutation creation functions are called twice here to
+    # because the first time will create the permutations and stores
+    # them, whilst the second call should do nothing
+    mesh.topology.create_entity_permutations()
     mesh.topology.create_entity_permutations()
     mesh.topology.get_cell_permutation_info()
     mesh.topology.get_facet_permutations()
+    mesh.topology.create_full_cell_permutations()
     mesh.topology.create_full_cell_permutations()
     mesh.topology.get_full_cell_permutations()
 
