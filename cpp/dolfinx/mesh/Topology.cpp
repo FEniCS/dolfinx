@@ -889,7 +889,10 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
 //-----------------------------------------------------------------------------
 const std::vector<std::uint8_t>& Topology::get_full_cell_permutations() const
 {
-  if (_full_cell_permutations.empty())
+  if (auto i_map = this->index_map(this->dim() - 1);
+      !i_map
+      or (_full_cell_permutations.empty()
+          and i_map->size_local() + i_map->num_ghosts() > 0))
   {
     throw std::runtime_error(
         "create_full_cell_permutations must be called before using this data.");

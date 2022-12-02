@@ -602,6 +602,8 @@ def test_empty_rank_mesh():
     mesh.topology.create_entity_permutations()
     mesh.topology.get_cell_permutation_info()
     mesh.topology.get_facet_permutations()
+    mesh.topology.create_full_cell_permutations()
+    mesh.topology.get_full_cell_permutations()
 
 
 def test_original_index():
