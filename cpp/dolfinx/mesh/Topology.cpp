@@ -723,7 +723,7 @@ Topology::Topology(MPI_Comm comm, CellType type)
       _connectivity(
           cell_dim(type) + 1,
           std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(
-              cell_dim(type) + 1))
+              cell_dim(type) + 1)), _full_cell_perms_created(false)
 {
   // Do nothing
 }
@@ -826,7 +826,7 @@ void Topology::create_entity_permutations()
 //-----------------------------------------------------------------------------
 void Topology::create_full_cell_permutations()
 {
-  if (!_full_cell_permutations.empty())
+  if (_full_cell_perms_created)
     return;
 
   const int tdim = this->dim();
@@ -835,6 +835,7 @@ void Topology::create_full_cell_permutations()
 
   auto perms = mesh::compute_cell_permutations(*this);
   _full_cell_permutations = std::move(perms);
+  _full_cell_perms_created = true;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
