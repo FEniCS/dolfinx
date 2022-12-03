@@ -1,21 +1,26 @@
 name: oneAPI compilers
 
 on:
-  pull_request:
-    branches:
-      - main
   push:
     branches:
-      - "main"
-    tags:
-      - "v*"
-  workflow_dispatch:
-    inputs:
-      docker_image:
-        description: "Docker test image"
-        default: "fenicsproject/test-env:latest-oneapi"
-        type: string
-        required: true
+      - "**"
+
+# on:
+#   pull_request:
+#     branches:
+#       - main
+#   push:
+#     branches:
+#       - "main"
+#     tags:
+#       - "v*"
+#   workflow_dispatch:
+#     inputs:
+#       docker_image:
+#         description: "Docker test image"
+#         default: "fenicsproject/test-env:latest-oneapi"
+#         type: string
+#         required: true
 
 jobs:
   build:
