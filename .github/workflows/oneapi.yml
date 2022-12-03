@@ -122,5 +122,6 @@ jobs:
       - name: Run DOLFINx Python unit tests (MPI, np=2)
         run: |
           . /opt/intel/oneapi/setvars.sh
-          mpirun -np 2 pytest python/test/unit/common/ python/test/unit/geometry/ python/test/unit/graph/ python/test/unit/io/ python/test/unit/la/ python/test/unit/log/ python/test/unit/mesh/ python/test/unit/nls/
+          # mpirun -np 2 pytest python/test/unit/common/ python/test/unit/geometry/ python/test/unit/graph/ python/test/unit/io/ python/test/unit/la/ python/test/unit/log/ python/test/unit/mesh/ python/test/unit/nls/
+          mpirun -np 2 pytest python/test/unit/fem/
           # mpirun -np 2 pytest python/test/unit/
