@@ -23,8 +23,10 @@ jobs:
 
     strategy:
       matrix:
-        petsc_arch: [real, complex]
-        petsc_int_type: [32, 64]
+        petsc_arch: [real]
+        petsc_int_type: [32]
+        # petsc_arch: [real, complex]
+        # petsc_int_type: [32, 64]
 
     steps:
       - uses: actions/checkout@v3
