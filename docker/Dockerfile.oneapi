@@ -13,14 +13,9 @@ ARG HDF5_PATCH=2
 ARG PETSC_VERSION=3.18.2
 ARG SLEPC_VERSION=3.18.1
 ARG PYBIND11_VERSION=2.10.1
-# ARG NUMPY_VERSION=1.23.3
 ARG KAHIP_VERSION=3.14
 
 WORKDIR /tmp
-
-# Environment variables
-ENV OPENBLAS_NUM_THREADS=1 \
-    OPENBLAS_VERBOSE=0
 
 # Install dependencies available via apt-get.
 # - First set of packages are required to build and run FEniCS.
@@ -31,32 +26,28 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
     cmake \
+    gnupg \
     libboost-dev \
     libboost-filesystem-dev \
     libboost-timer-dev \
-    # liblapack-dev \
-    # libopenblas-dev \
     libpugixml-dev \
     ninja-build \
     pkg-config \
-    python3-dev \
-    python3-pip \
-    python3-setuptools && \
-    #
-    apt-get -y install \
     catch2 \
     git \
-    wget && \
+    wget \
+    zlib1g-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB && \
     apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB && \
     echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && \
-    apt update && \
-    apt install -y intel-hpckit && \
+    apt-get update && \
+    # apt install -y intel-hpckit && \
     # apt install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp && \
-    . /opt/intel/oneapi/setvars.sh && \
+    apt-get install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp \
+    intel-oneapi-mkl-devel intel-oneapi-mpi-devel intel-oneapi-python && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -121,44 +112,48 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     # Real, 32-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-real-32 \
+    CC=$CC \
+    CXX=$CXX \
     --with-64-bit-indices=no \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-hypre \
-    # --download-ptscotch \
     --download-superlu_dist \
     --with-scalar-type=real && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-32 ${MAKEFLAGS} all && \
     # Complex, 32-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-complex-32 \
+    CC=$CC \
+    CXX=$CXX \
     --with-64-bit-indices=no \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-hypre \
-    # --download-ptscotch \
     --download-superlu_dist \
     --with-scalar-type=complex && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-32 ${MAKEFLAGS} all && \
     # Real, 64-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-real-64 \
+    CC=$CC \
+    CXX=$CXX \
     --with-64-bit-indices=yes \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-hypre \
-    # --download-parmetis \
     --download-superlu_dist \
     --with-scalar-type=real && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-64 ${MAKEFLAGS} all && \
     # Complex, 64-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-complex-64 \
+    CC=$CC \
+    CXX=$CXX \
     --with-64-bit-indices=yes \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-hypre \
-    # --download-ptscotch \
     --download-superlu_dist \
     --with-scalar-type=complex && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-64 ${MAKEFLAGS} all && \
