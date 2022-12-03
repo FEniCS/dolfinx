@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - "**"
+  workflow_dispatch:
+    inputs:
+      docker_image:
+        description: "Docker test image"
+        default: "fenicsproject/test-env:latest-oneapi"
+        type: string
+        required: true
 
 # on:
 #   pull_request:
