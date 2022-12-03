@@ -24,7 +24,7 @@ except ImportError:
     pytest.skip("Test require ADIOS2", allow_module_level=True)
 
 
-def generate_mesh(dim: int, simplex: bool, N: int = 4):
+def generate_mesh(dim: int, simplex: bool, N: int = 5):
     """Helper function for parametrizing over meshes"""
     if dim == 2:
         if simplex:
