@@ -44,8 +44,6 @@ RUN wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCT
     apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB && \
     echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && \
     apt-get update && \
-    # apt install -y intel-hpckit && \
-    # apt install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp && \
     apt-get install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp \
     intel-oneapi-mkl-devel intel-oneapi-mpi-devel intel-oneapi-python && \
     apt-get clean && \
@@ -57,15 +55,6 @@ ENV CC=icx \
     I_MPI_CXX=icpx
 
 # Install Python packages (via pip)
-# Install numpy via pip. Exclude binaries to avoid conflicts with libblas
-# (See issue #126 and #1305)
-# - First set of packages are required to build and run DOLFINx Python.
-# - Second set of packages are recommended and/or required to build
-#   documentation or run tests.
-# RUN . /opt/intel/oneapi/setvars.sh && \
-#     pip3 install --no-binary="numpy" --no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scipy && \
-#     pip3 install --no-cache-dir cppimport pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme && \
-#     python3 -m pip install --no-cache-dir cppimport pytest pytest-xdist scipy
 RUN . /opt/intel/oneapi/setvars.sh && \
     pip3 install --no-cache-dir cppimport pybind11==${PYBIND11_VERSION} pytest pytest-xdist
 

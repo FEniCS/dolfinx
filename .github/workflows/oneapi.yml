@@ -1,32 +1,34 @@
-name: Intel oneAPI compilers
+name: oneAPI compilers
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
-      - "**"
-# on:
-#   pull_request:
-#     branches:
-#       - main
+      - "main"
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      docker_image:
+        description: "Docker test image"
+        default: "fenicsproject/test-env:latest-oneapi"
+        type: string
+        required: true
 
 jobs:
   build:
     runs-on: ubuntu-20.04
-    container: fenicsproject/test-env:latest-oneapi
-
-    # defaults:
-    #   run:
-    #     shell: bash
+    container: ${{ github.event.inputs.docker_image }}
 
     env:
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
 
     strategy:
       matrix:
-        petsc_arch: [real]
+        petsc_arch: [real, complex]
         petsc_int_type: [32]
-        # petsc_arch: [real, complex]
-        # petsc_int_type: [32, 64]
 
     steps:
       - uses: actions/checkout@v3
