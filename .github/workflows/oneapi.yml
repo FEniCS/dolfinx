@@ -19,16 +19,12 @@ jobs:
     #     shell: bash
 
     env:
-      # CC: ${{ matrix.c_compiler }}
-      # CXX: ${{ matrix.cxx_compiler }}
-      PETSC_ARCH: linux-gnu-real-32
+      PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
 
     strategy:
       matrix:
-        include:
-          - compiler: "LLVM-based"
-            c_compiler: icx
-            cxx_compiler: icpx
+        petsc_arch: [real, complex]
+        petsc_int_type: [32, 64]
 
     steps:
       - uses: actions/checkout@v3

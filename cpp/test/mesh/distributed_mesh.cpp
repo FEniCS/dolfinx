@@ -154,19 +154,15 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
     auto partfn = graph::kahip::partitioner();
     mesh::CellPartitionFunction kahip
         = [&](MPI_Comm comm, int nparts, int tdim,
-              const graph::AdjacencyList<std::int64_t>& cells,
-              mesh::GhostMode ghost_mode)
+              const graph::AdjacencyList<std::int64_t>& cells)
     {
       LOG(INFO) << "Compute partition of cells across ranks (KaHIP).";
       // Compute distributed dual graph (for the cells on this process)
       const graph::AdjacencyList<std::int64_t> dual_graph
           = mesh::build_dual_graph(comm, cells, tdim);
 
-      // Just flag any kind of ghosting for now
-      bool ghosting = (ghost_mode != mesh::GhostMode::none);
-
       // Compute partition
-      return partfn(comm, nparts, dual_graph, ghosting);
+      return partfn(comm, nparts, dual_graph, true);
     };
 
     CHECK_NOTHROW(test_distributed_mesh(kahip));
