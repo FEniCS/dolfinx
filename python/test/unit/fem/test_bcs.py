@@ -165,7 +165,7 @@ def test_constant_bc(mesh_factory):
 @pytest.mark.parametrize(
     'mesh_factory', [
         (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-        (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
+        (create_unit_square, (MPI.COMM_WORLD, 8, 8, CellType.quadrilateral)),
         (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
         (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
     ])
