@@ -19,16 +19,14 @@ jobs:
     #     shell: bash
 
     env:
-      # CC: ${{ matrix.c_compiler }}
-      # CXX: ${{ matrix.cxx_compiler }}
-      PETSC_ARCH: linux-gnu-real-32
+      PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
 
     strategy:
       matrix:
-        include:
-          - compiler: "LLVM-based"
-            c_compiler: icx
-            cxx_compiler: icpx
+        petsc_arch: [real]
+        petsc_int_type: [32]
+        # petsc_arch: [real, complex]
+        # petsc_int_type: [32, 64]
 
     steps:
       - uses: actions/checkout@v3
@@ -50,10 +48,10 @@ jobs:
           cmake --build ufcx-build-dir
           cmake --install ufcx-build-dir
 
-      - name: Configure DOLFInx C++
+      - name: Configure DOLFINx C++
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_UFCX_PYTHON=off -B build -S cpp/
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_KAHIP=on -DDOLFINX_UFCX_PYTHON=off -B build -S cpp/
 
       - name: Build and install DOLFINx C++ library
         run: |
@@ -63,6 +61,7 @@ jobs:
 
       - name: Install UFL and FFCx modules
         run: |
+          . /opt/intel/oneapi/setvars.sh
           pip install git+https://github.com/FEniCS/ufl.git
           pip install ffcx/
 
