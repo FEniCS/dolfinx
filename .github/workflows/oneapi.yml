@@ -58,7 +58,7 @@ jobs:
       - name: Build and install DOLFINx C++ library
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cmake --build build
+          cmake -DDOLFINX_ENABLE_KAHIP=on --build build
           cmake --install build
 
       - name: Install UFL and FFCx modules
