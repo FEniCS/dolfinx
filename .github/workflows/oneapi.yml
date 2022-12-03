@@ -50,15 +50,15 @@ jobs:
           cmake --build ufcx-build-dir
           cmake --install ufcx-build-dir
 
-      - name: Configure DOLFInx C++
+      - name: Configure DOLFINx C++
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_UFCX_PYTHON=off -B build -S cpp/
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_KAHIP=on -DDOLFINX_UFCX_PYTHON=off -B build -S cpp/
 
       - name: Build and install DOLFINx C++ library
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cmake -DDOLFINX_ENABLE_KAHIP=on --build build
+          cmake --build build
           cmake --install build
 
       - name: Install UFL and FFCx modules
