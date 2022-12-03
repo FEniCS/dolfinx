@@ -6,6 +6,9 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import os
+import sys
+
 import numba
 import numpy as np
 
@@ -18,6 +21,11 @@ from dolfinx.mesh import create_unit_square, meshtags
 
 from mpi4py import MPI
 from petsc4py import PETSc
+
+
+# Add current directory - required for some Python versions to find cffi
+# compiled modules
+sys.path.append(os.getcwd())
 
 c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
