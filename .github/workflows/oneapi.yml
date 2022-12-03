@@ -63,6 +63,7 @@ jobs:
 
       - name: Install UFL and FFCx modules
         run: |
+          . /opt/intel/oneapi/setvars.sh
           pip install git+https://github.com/FEniCS/ufl.git
           pip install ffcx/
 
