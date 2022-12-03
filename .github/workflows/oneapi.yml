@@ -4,13 +4,13 @@ on:
   push:
     branches:
       - "**"
-  workflow_dispatch:
-    inputs:
-      docker_image:
-        description: "Docker test image"
-        default: "fenicsproject/test-env:latest-oneapi"
-        type: string
-        required: true
+  # workflow_dispatch:
+  #   inputs:
+  #     docker_image:
+  #       description: "Docker test image"
+  #       default: "fenicsproject/test-env:latest-oneapi"
+  #       type: string
+  #       required: true
 
 # on:
 #   pull_request:
@@ -32,7 +32,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04
-    container: ${{ github.event.inputs.docker_image }}
+    container: fenicsproject/test-env:latest-oneapi
 
     env:
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
