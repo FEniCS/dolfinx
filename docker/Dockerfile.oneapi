@@ -17,10 +17,7 @@ ARG KAHIP_VERSION=3.14
 
 WORKDIR /tmp
 
-# Install dependencies available via apt-get.
-# - First set of packages are required to build and run FEniCS.
-# - Second set of packages are recommended and/or required to build
-#   documentation or tests.
+# Install dependencies available via apt-get
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
@@ -40,6 +37,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Install oneAPI libraries
 RUN wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB && \
     apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB && \
     echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && \
