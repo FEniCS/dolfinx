@@ -125,8 +125,8 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           cd python/
-          mpiexec -n 2 pytest test/unit/common/ test/unit/fem/ test/unit/geometry/ test/unit/graph/ test/unit/io/ test/unit/la/ test/unit/log/ test/unit/mesh/ test/unit/nls/
+          # mpiexec -n 2 pytest test/unit/common/ test/unit/fem/ test/unit/geometry/ test/unit/graph/ test/unit/io/ test/unit/la/ test/unit/log/ test/unit/mesh/ test/unit/nls/
           # mpiexec -n 2 pytest test/unit/common/ test/unit/geometry/ test/unit/graph/ test/unit/io/ test/unit/la/ test/unit/log/ test/unit/mesh/ test/unit/nls/ test/unit/fem/test_assemble_cppimport.py test/unit/fem/test_assemble_domains.py test/unit/fem/test_assemble_submesh.py test/unit/fem/test_assembler.py test/unit/fem/test_bcs.py test/unit/fem/test_complex_assembler.py test/unit/fem/test_constant.py test/unit/fem/test_custom_assembler.py test/unit/fem/test_custom_basix_element.py test/unit/fem/test_custom_jit_kernels.py test/unit/fem/test_discrete_operators.py test/unit/fem/test_dof_coordinates.py test/unit/fem/test_dof_permuting.py test/unit/fem/test_dofmap.py test/unit/fem/test_element_integrals.py test/unit/fem/test_expression.py test/unit/fem/test_fem_pipeline.py
           # mpiexec -n 2 pytest test/unit/common/ test/unit/fem/ test/unit/geometry/ test/unit/graph/ test/unit/io/ test/unit/la/ test/unit/log/ test/unit/mesh/ test/unit/nls/
-          # mpirun -np 2 pytest test/unit/
+          mpiexec -np 2 pytest test/unit/
           echo "End of MPI tests"
