@@ -125,7 +125,7 @@ _uflcell_to_dolfinxcell = {
 }
 
 
-def refine(mesh: Mesh, edges: np.ndarray = None, redistribute: bool = True) -> Mesh:
+def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True) -> Mesh:
     """Refine a mesh
 
     Args:
@@ -208,14 +208,16 @@ del _ufl_id
 
 
 class MeshTagsMetaClass:
-    def __init__(self, mesh: Mesh, dim: int, indices: numpy.typing.NDArray[typing.Any],
+    def __init__(self, mesh: Mesh, dim: int, entities: numpy.typing.NDArray[typing.Any],
                  values: numpy.typing.NDArray[typing.Any]):
         """A distributed sparse matrix that uses compressed sparse row storage.
 
         Args:
             mesh: The mesh
             dim: Topological dimension of the mesh entity
-            indices: Entity indices (local to process)
+            entities: Indices (local to process) of entities to
+                associate values with. The array must be sorted and must
+                not contain duplicates.
             values: The corresponding value for each entity
 
         Note:
@@ -224,7 +226,7 @@ class MeshTagsMetaClass:
             directly.
 
         """
-        super().__init__(mesh, dim, indices.astype(np.int32), values)  # type: ignore
+        super().__init__(mesh, dim, np.asarray(entities, dtype=np.int32), values)  # type: ignore
 
     def ufl_id(self) -> int:
         """Object identifier.
@@ -239,14 +241,16 @@ class MeshTagsMetaClass:
         return id(self)
 
 
-def meshtags(mesh: Mesh, dim: int, indices: np.ndarray,
+def meshtags(mesh: Mesh, dim: int, entities: np.ndarray,
              values: typing.Union[np.ndarray, int, float]) -> MeshTagsMetaClass:
     """Create a MeshTags object that associates data with a subset of mesh entities.
 
     Args:
         mesh: The mesh
         dim: Topological dimension of the mesh entity
-        indices: Entity indices (local to process)
+        entities: Indices (local to process) of entities to associate
+            values with. The array must be sorted and must not contain
+            duplicates.
         values: The corresponding value for each entity
 
     Returns:
@@ -260,9 +264,9 @@ def meshtags(mesh: Mesh, dim: int, indices: np.ndarray,
 
     if isinstance(values, int):
         assert np.can_cast(values, np.int32)
-        values = np.full(indices.shape, values, dtype=np.int32)
+        values = np.full(entities.shape, values, dtype=np.int32)
     elif isinstance(values, float):
-        values = np.full(indices.shape, values, dtype=np.double)
+        values = np.full(entities.shape, values, dtype=np.double)
 
     values = np.asarray(values)
     if values.dtype == np.int8:
@@ -277,7 +281,7 @@ def meshtags(mesh: Mesh, dim: int, indices: np.ndarray,
         raise NotImplementedError(f"Type {values.dtype} not supported.")
 
     tags = type("MeshTagsMetaClass", (MeshTagsMetaClass, ftype), {})
-    return tags(mesh, dim, indices, values)
+    return tags(mesh, dim, entities, values)
 
 
 def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32,
@@ -288,7 +292,8 @@ def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyL
     Args:
         mesh: The mesh
         dim: Topological dimension of the mesh entity
-        entities: Tagged entities, with entities defined by their vertices
+        entities: Entities to associated values with, with entities
+            defined by their vertices
         values: The corresponding value for each entity
 
     Returns:
@@ -310,8 +315,8 @@ def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyL
     return _cpp.mesh.create_meshtags(mesh, dim, entities, values)
 
 
-def create_interval(comm: _MPI.Comm, nx: int, points: numpy.typing.ArrayLike, ghost_mode=GhostMode.shared_facet,
-                    partitioner=None) -> Mesh:
+def create_interval(comm: _MPI.Comm, nx: int, points: numpy.typing.ArrayLike,
+                    ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
     """Create an interval mesh
 
     Args:

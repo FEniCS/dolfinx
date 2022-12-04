@@ -83,8 +83,7 @@ Vec create_vector_nest(
 /// @param[in] constants The constants that appear in `L`
 /// @param[in] coeffs The coefficients that appear in `L`
 void assemble_vector(
-    Vec b, const Form<PetscScalar>& L,
-    const std::span<const PetscScalar>& constants,
+    Vec b, const Form<PetscScalar>& L, std::span<const PetscScalar> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const PetscScalar>, int>>& coeffs);
 

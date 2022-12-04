@@ -25,6 +25,7 @@ import ufl.algorithms.analysis
 from dolfinx import cpp as _cpp
 from dolfinx import jit, la
 from dolfinx.fem import dofmap
+from ufl.domain import extract_unique_domain
 
 from petsc4py import PETSc
 
@@ -104,7 +105,7 @@ class Expression:
         num_points = X.shape[0] if X.ndim == 2 else 1
         _X = np.reshape(X, (num_points, -1))
 
-        mesh = ufl_expression.ufl_domain().ufl_cargo()
+        mesh = extract_unique_domain(ufl_expression).ufl_cargo()
 
         # Compile UFL expression with JIT
         if dtype == np.float32:
@@ -233,11 +234,13 @@ class Function(ufl.Coefficient):
 
         # Create cpp Function
         def functiontype(dtype):
-            if dtype is np.float64:
-                return _cpp.fem.Function_float64
-            elif dtype is np.float32:
+            if dtype == np.dtype(np.float32):
                 return _cpp.fem.Function_float32
-            elif dtype is np.complex128:
+            elif dtype == np.dtype(np.float64):
+                return _cpp.fem.Function_float64
+            elif dtype == np.dtype(np.complex64):
+                return _cpp.fem.Function_complex64
+            elif dtype == np.dtype(np.complex128):
                 return _cpp.fem.Function_complex128
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
@@ -347,7 +350,7 @@ class Function(ufl.Coefficient):
             # u is callable
             assert callable(u)
             x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh, cells)
-            self.interpolate(u(x), cells)
+            self._cpp_object.interpolate(np.asarray(u(x), dtype=self.dtype), cells)
 
     def copy(self) -> Function:
         """Return a copy of the Function. The FunctionSpace is shared and the
