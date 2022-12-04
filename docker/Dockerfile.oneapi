@@ -1,11 +1,9 @@
-# Dockerfile for testing DOLFINx in Red Hat-compatible distributions.  Must be
-# built locally and pushed.
+# Dockerfile for testing DOLFINx with oneAPI compilers and libraries.
+# Must be built locally and pushed.
 #
 # docker build -f Dockerfile.oneapi -t docker.io/fenicsproject/test-env:latest-oneapi .
 # docker push docker.io/fenicsproject/test-env:latest-oneapi
 FROM ubuntu:22.04
-
-ARG BUILD_NP=4
 
 ARG ADIOS2_VERSION=2.8.3
 ARG HDF5_SERIES=1.12
