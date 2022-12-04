@@ -8,7 +8,7 @@ on:
     inputs:
       docker_image:
         description: "Docker test image"
-        default: "fenicsproject/test-env:latest-oneapi"
+        default: fenicsproject/test-env:latest-oneapi
         type: string
         required: true
 
