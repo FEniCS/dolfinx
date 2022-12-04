@@ -9,7 +9,7 @@
 from dolfinx import log
 
 
-def test_log():
+def xtest_log():
     info = log.LogLevel.INFO
     warn = log.LogLevel.WARNING
     error = log.LogLevel.ERROR
