@@ -130,4 +130,10 @@ jobs:
             python/test/unit/fem/test_assemble_submesh.py
             python/test/unit/fem/test_assembler.py
             python/test/unit/fem/test_bcs.py
+            python/test/unit/fem/test_complex_assembler.py
+            python/test/unit/fem/test_constant.py
+            python/test/unit/fem/test_custom_assembler.py
+            python/test/unit/fem/test_custom_basix_element.py
+            python/test/unit/fem/test_custom_jit_kernels.py
+            python/test/unit/fem/test_discrete_operators.py
           # mpirun -np 2 pytest python/test/unit/
