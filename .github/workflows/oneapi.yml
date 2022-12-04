@@ -125,9 +125,7 @@ jobs:
           . /opt/intel/oneapi/setvars.sh
           # mpirun -np 2 pytest python/test/unit/common/ python/test/unit/geometry/ python/test/unit/graph/ python/test/unit/io/ python/test/unit/la/ python/test/unit/log/ python/test/unit/mesh/ python/test/unit/nls/
           # mpirun -np 2 pytest python/test/unit/fem/
-          mpirun -np 2 pytest -vs python/test/unit/fem/test_assemble_cppimport.py python/test/unit/fem/test_assemble_domains.py python/test/unit/fem/test_assemble_submesh.py python/test/unit/fem/test_assembler.py
-          # python/test/unit/fem/test_bcs.py
-          # python/test/unit/fem/test_complex_assembler.py
+          mpirun -np 2 pytest -vs python/test/unit/fem/test_assemble_cppimport.py python/test/unit/fem/test_assemble_domains.py python/test/unit/fem/test_assemble_submesh.py python/test/unit/fem/test_assembler.py python/test/unit/fem/test_bcs.py python/test/unit/fem/test_complex_assembler.py
           # python/test/unit/fem/test_constant.py
           # python/test/unit/fem/test_custom_assembler.py
           # python/test/unit/fem/test_custom_basix_element.py
