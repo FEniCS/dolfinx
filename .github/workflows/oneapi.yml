@@ -101,7 +101,8 @@ jobs:
       - name: Build DOLFINx Python interface
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip -v install python/
+          # pip -v install python/
+          pip -v install --global-option build --global-option --debug python/
       - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
