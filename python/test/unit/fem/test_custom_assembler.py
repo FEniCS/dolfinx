@@ -169,6 +169,7 @@ def assemble_vector(b, mesh, dofmap, num_cells):
         b[dofmap[cell, 2]] += A * q1
 
 
+@pytest.mark.skip_in_parallel
 @numba.njit(parallel=True, fastmath=True)
 def assemble_vector_parallel(b, v, x, dofmap_t_data, dofmap_t_offsets, num_cells):
     """Assemble simple linear form over a mesh into the array b using a parallel loop"""
