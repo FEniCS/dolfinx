@@ -1,53 +1,41 @@
-name: Intel compilers
+name: oneAPI compilers
 
 on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - "main"
+    tags:
+      - "v*"
 
 jobs:
   build:
     runs-on: ubuntu-20.04
-    container: fenicsproject/test-env:nightly-mpich
-
-    defaults:
-      run:
-        shell: bash
+    container: fenicsproject/test-env:latest-oneapi
 
     env:
-      CC: ${{ matrix.c_compiler }}
-      CXX: ${{ matrix.cxx_compiler }}
-      PETSC_ARCH: linux-gnu-real-32
+      PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
 
     strategy:
       matrix:
-        include:
-          - compiler: "LLVM-based"
-            c_compiler: icx
-            cxx_compiler: icpx
+        petsc_arch: [real, complex]
+        petsc_int_type: [32]
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install Intel compilers
-        run: |
-          wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
-          apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
-          echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list
-          apt update
-          # apt install -y intel-hpckit
-          apt install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp
-
       - name: Install Basix
         run: |
           . /opt/intel/oneapi/setvars.sh
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
+          pip install git+https://github.com/FEniCS/basix.git
+
       - name: Clone FFCx
         uses: actions/checkout@v3
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-
       - name: Install FFCx C interface
         run: |
           . /opt/intel/oneapi/setvars.sh
@@ -55,10 +43,10 @@ jobs:
           cmake --build ufcx-build-dir
           cmake --install ufcx-build-dir
 
-      - name: Configure DOLFInx C++
+      - name: Configure DOLFINx C++
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_UFCX_PYTHON=off -B build -S cpp/
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_SCOTCH=off -DDOLFINX_ENABLE_KAHIP=on -DDOLFINX_UFCX_PYTHON=off -B build -S cpp/
 
       - name: Build and install DOLFINx C++ library
         run: |
@@ -68,8 +56,9 @@ jobs:
 
       - name: Install UFL and FFCx modules
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install ffcx/
+          . /opt/intel/oneapi/setvars.sh
+          pip install git+https://github.com/FEniCS/ufl.git
+          pip install ffcx/
 
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)
         run: |
@@ -78,7 +67,7 @@ jobs:
           cmake --build build/test
           cd build/test
           ctest --output-on-failure -R unittests
-          mpiexec -np 2 ctest --output-on-failure -R unittests
+          mpiexec -n 2 ctest --output-on-failure -R unittests
 
       - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
         run: |
@@ -92,7 +81,7 @@ jobs:
       - name: Build DOLFINx Python interface
         run: |
           . /opt/intel/oneapi/setvars.sh
-          python3 -m pip -v install python/
+          pip -v install python/
       - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
@@ -100,17 +89,19 @@ jobs:
       - name: Run DOLFINx demos (Python, serial)
         run: |
           . /opt/intel/oneapi/setvars.sh
-          python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
+          pip install matplotlib
+          pytest -v -n=2 -m serial --durations=10 python/demo/test.py
       - name: Run DOLFINx demos (Python, MPI (np=2))
         run: |
           . /opt/intel/oneapi/setvars.sh
-          python3 -m pytest -v -m mpi --num-proc=2 python/demo/test.py
+          pytest -v -m mpi --num-proc=2 python/demo/test.py
       - name: Run DOLFINx Python unit tests (serial)
         run: |
           . /opt/intel/oneapi/setvars.sh
           pip3 install sympy
-          python3 -m pytest -n=auto --durations=50 python/test/unit/
-      - name: Run DOLFINxPython unit tests (MPI, np=2)
+          pytest -n=auto --durations=50 python/test/unit/
+      - name: Run DOLFINx Python unit tests (MPI, np=2)
         run: |
           . /opt/intel/oneapi/setvars.sh
-          mpirun -np 2 python3 -m pytest python/test/unit/
+          cd python/
+          mpiexec -n 2 pytest test/unit/
