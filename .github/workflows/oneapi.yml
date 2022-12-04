@@ -4,13 +4,13 @@ on:
   push:
     branches:
       - "**"
-  # workflow_dispatch:
-  #   inputs:
-  #     docker_image:
-  #       description: "Docker test image"
-  #       default: "fenicsproject/test-env:latest-oneapi"
-  #       type: string
-  #       required: true
+  workflow_dispatch:
+    inputs:
+      docker_image:
+        description: "Docker test image"
+        default: "fenicsproject/test-env:latest-oneapi"
+        type: string
+        required: true
 
 # on:
 #   pull_request:
@@ -32,7 +32,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04
-    container: fenicsproject/test-env:latest-oneapi
+    # container: fenicsproject/test-env:latest-oneapi
+    container: ${{ github.event.inputs.docker_image }}
 
     env:
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
@@ -80,23 +81,23 @@ jobs:
           pip install git+https://github.com/FEniCS/ufl.git
           pip install ffcx/
 
-      # - name: Build and run DOLFINx C++ unit tests (serial and MPI)
-      #   run: |
-      #     . /opt/intel/oneapi/setvars.sh
-      #     cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S build/test/
-      #     cmake --build build/test
-      #     cd build/test
-      #     ctest --output-on-failure -R unittests
-      #     mpiexec -np 2 ctest --output-on-failure -R unittests
+      - name: Build and run DOLFINx C++ unit tests (serial and MPI)
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S build/test/
+          cmake --build build/test
+          cd build/test
+          ctest --output-on-failure -R unittests
+          mpiexec -np 2 ctest --output-on-failure -R unittests
 
-      # - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
-      #   run: |
-      #     . /opt/intel/oneapi/setvars.sh
-      #     cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S build/demo/
-      #     cmake --build build/demo
-      #     cd build/demo
-      #     ctest -R demo -R serial
-      #     ctest -R demo -R mpi_2
+      - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S build/demo/
+          cmake --build build/demo
+          cd build/demo
+          ctest -R demo -R serial
+          ctest -R demo -R mpi_2
 
       - name: Build DOLFINx Python interface
         run: |
@@ -125,8 +126,4 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           cd python/
-          # mpiexec -n 2 pytest test/unit/common/ test/unit/fem/ test/unit/geometry/ test/unit/graph/ test/unit/io/ test/unit/la/ test/unit/log/ test/unit/mesh/ test/unit/nls/
-          # mpiexec -n 2 pytest test/unit/common/ test/unit/geometry/ test/unit/graph/ test/unit/io/ test/unit/la/ test/unit/log/ test/unit/mesh/ test/unit/nls/ test/unit/fem/test_assemble_cppimport.py test/unit/fem/test_assemble_domains.py test/unit/fem/test_assemble_submesh.py test/unit/fem/test_assembler.py test/unit/fem/test_bcs.py test/unit/fem/test_complex_assembler.py test/unit/fem/test_constant.py test/unit/fem/test_custom_assembler.py test/unit/fem/test_custom_basix_element.py test/unit/fem/test_custom_jit_kernels.py test/unit/fem/test_discrete_operators.py test/unit/fem/test_dof_coordinates.py test/unit/fem/test_dof_permuting.py test/unit/fem/test_dofmap.py test/unit/fem/test_element_integrals.py test/unit/fem/test_expression.py test/unit/fem/test_fem_pipeline.py
-          # mpiexec -n 2 pytest test/unit/common/ test/unit/fem/ test/unit/geometry/ test/unit/graph/ test/unit/io/ test/unit/la/ test/unit/log/ test/unit/mesh/ test/unit/nls/
           mpiexec -np 2 pytest test/unit/
-          echo "End of MPI tests"
