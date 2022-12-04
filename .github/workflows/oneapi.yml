@@ -1,19 +1,14 @@
 name: oneAPI compilers
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
-      - "**"
-
-# on:
-#   pull_request:
-#     branches:
-#       - main
-#   push:
-#     branches:
-#       - "main"
-#     tags:
-#       - "v*"
+      - "main"
+    tags:
+      - "v*"
 
 jobs:
   build:
