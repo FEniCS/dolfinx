@@ -11,17 +11,16 @@ import sys
 
 import numba
 import numpy as np
+import pytest
+from dolfinx.fem import Function, FunctionSpace, IntegralType
+from dolfinx.mesh import create_unit_square, meshtags
+from mpi4py import MPI
+from petsc4py import PETSc
 
 import dolfinx
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la, list_timings
-from dolfinx.fem import Function, FunctionSpace, IntegralType
-from dolfinx.mesh import create_unit_square, meshtags
-
-from mpi4py import MPI
-from petsc4py import PETSc
-
 
 # Add current directory - required for some Python versions to find cffi
 # compiled modules
@@ -129,6 +128,7 @@ def test_coefficient():
     assert (np.isclose(bnorm, 2.0 * 0.0739710713711999))
 
 
+@pytest.mark.skip_in_parallel
 def test_cffi_assembly():
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
