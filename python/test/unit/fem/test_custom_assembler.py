@@ -23,7 +23,7 @@ import pytest
 import dolfinx
 import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import Function, FunctionSpace, form, transpose_dofmap
+from dolfinx.fem import Function, FunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix, load_petsc_lib
 from dolfinx.mesh import create_unit_square
 from ufl import dx, inner
@@ -282,7 +282,6 @@ def test_custom_mesh_loop_rank1():
     x_dofs = mesh.geometry.dofmap.array.reshape(num_cells, 3)
     x = mesh.geometry.x
     dofmap = V.dofmap.list.array.reshape(num_cells, 3)
-    dofmap_t = transpose_dofmap(V.dofmap.list, num_owned_cells)
 
     # Assemble with pure Numba function (two passes, first will include
     # JIT overhead)
@@ -300,6 +299,8 @@ def test_custom_mesh_loop_rank1():
     # NOTE: Parallel (threaded) Numba can cause problems with MPI
     # Assemble with pure Numba function using parallel loop (two passes,
     # first will include JIT overhead)
+    # from dolfinx.fem import transpose_dofmap
+    # dofmap_t = transpose_dofmap(V.dofmap.list, num_owned_cells)
     # btmp = Function(V)
     # for i in range(2):
     #     b = btmp.x.array
