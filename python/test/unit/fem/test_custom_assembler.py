@@ -169,7 +169,6 @@ def assemble_vector(b, mesh, dofmap, num_cells):
         b[dofmap[cell, 2]] += A * q1
 
 
-@pytest.mark.skip_in_parallel
 @numba.njit(parallel=True, fastmath=True)
 def assemble_vector_parallel(b, v, x, dofmap_t_data, dofmap_t_offsets, num_cells):
     """Assemble simple linear form over a mesh into the array b using a parallel loop"""
@@ -300,16 +299,16 @@ def test_custom_mesh_loop_rank1():
 
     # Assemble with pure Numba function using parallel loop (two passes,
     # first will include JIT overhead)
-    btmp = Function(V)
-    for i in range(2):
-        b = btmp.x.array
-        b[:] = 0.0
-        start = time.time()
-        assemble_vector_parallel(b, x_dofs, x, dofmap_t.array, dofmap_t.offsets, num_owned_cells)
-        end = time.time()
-        print("Time (numba parallel, pass {}): {}".format(i, end - start))
-    btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert (btmp.vector - b0.vector).norm() == pytest.approx(0.0)
+    # btmp = Function(V)
+    # for i in range(2):
+    #     b = btmp.x.array
+    #     b[:] = 0.0
+    #     start = time.time()
+    #     assemble_vector_parallel(b, x_dofs, x, dofmap_t.array, dofmap_t.offsets, num_owned_cells)
+    #     end = time.time()
+    #     print("Time (numba parallel, pass {}): {}".format(i, end - start))
+    # btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    # assert (btmp.vector - b0.vector).norm() == pytest.approx(0.0)
 
     # Test against generated code and general assembler
     v = ufl.TestFunction(V)
