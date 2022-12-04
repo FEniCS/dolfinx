@@ -67,7 +67,7 @@ jobs:
           cmake --build build/test
           cd build/test
           ctest --output-on-failure -R unittests
-          mpiexec -np 2 ctest --output-on-failure -R unittests
+          mpiexec -n 2 ctest --output-on-failure -R unittests
 
       - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
         run: |
@@ -82,7 +82,6 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           pip -v install python/
-          # pip -v install --global-option build --global-option --debug python/
       - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
@@ -105,4 +104,4 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           cd python/
-          mpiexec -np 2 pytest test/unit/
+          mpiexec -n 2 pytest test/unit/
