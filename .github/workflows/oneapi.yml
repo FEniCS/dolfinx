@@ -50,12 +50,12 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           pip install git+https://github.com/FEniCS/basix.git
+
       - name: Clone FFCx
         uses: actions/checkout@v3
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-
       - name: Install FFCx C interface
         run: |
           . /opt/intel/oneapi/setvars.sh
@@ -80,23 +80,23 @@ jobs:
           pip install git+https://github.com/FEniCS/ufl.git
           pip install ffcx/
 
-      - name: Build and run DOLFINx C++ unit tests (serial and MPI)
-        run: |
-          . /opt/intel/oneapi/setvars.sh
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S build/test/
-          cmake --build build/test
-          cd build/test
-          ctest --output-on-failure -R unittests
-          mpiexec -np 2 ctest --output-on-failure -R unittests
+      # - name: Build and run DOLFINx C++ unit tests (serial and MPI)
+      #   run: |
+      #     . /opt/intel/oneapi/setvars.sh
+      #     cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S build/test/
+      #     cmake --build build/test
+      #     cd build/test
+      #     ctest --output-on-failure -R unittests
+      #     mpiexec -np 2 ctest --output-on-failure -R unittests
 
-      - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
-        run: |
-          . /opt/intel/oneapi/setvars.sh
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S build/demo/
-          cmake --build build/demo
-          cd build/demo
-          ctest -R demo -R serial
-          ctest -R demo -R mpi_2
+      # - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
+      #   run: |
+      #     . /opt/intel/oneapi/setvars.sh
+      #     cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S build/demo/
+      #     cmake --build build/demo
+      #     cd build/demo
+      #     ctest -R demo -R serial
+      #     ctest -R demo -R mpi_2
 
       - name: Build DOLFINx Python interface
         run: |
@@ -125,8 +125,7 @@ jobs:
           . /opt/intel/oneapi/setvars.sh
           # mpirun -np 2 pytest python/test/unit/common/ python/test/unit/geometry/ python/test/unit/graph/ python/test/unit/io/ python/test/unit/la/ python/test/unit/log/ python/test/unit/mesh/ python/test/unit/nls/
           # mpirun -np 2 pytest python/test/unit/fem/
-          mpirun -np 2 pytest -vs python/test/unit/fem/test_assemble_cppimport.py python/test/unit/fem/test_assemble_domains.py python/test/unit/fem/test_assemble_submesh.py
-          # python/test/unit/fem/test_assembler.py
+          mpirun -np 2 pytest -vs python/test/unit/fem/test_assemble_cppimport.py python/test/unit/fem/test_assemble_domains.py python/test/unit/fem/test_assemble_submesh.py python/test/unit/fem/test_assembler.py
           # python/test/unit/fem/test_bcs.py
           # python/test/unit/fem/test_complex_assembler.py
           # python/test/unit/fem/test_constant.py
