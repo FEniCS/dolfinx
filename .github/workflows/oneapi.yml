@@ -4,13 +4,6 @@ on:
   push:
     branches:
       - "**"
-  workflow_dispatch:
-    inputs:
-      docker_image:
-        description: "Docker test image"
-        default: fenicsproject/test-env:latest-oneapi
-        type: string
-        required: true
 
 # on:
 #   pull_request:
@@ -21,27 +14,18 @@ on:
 #       - "main"
 #     tags:
 #       - "v*"
-#   workflow_dispatch:
-#     inputs:
-#       docker_image:
-#         description: "Docker test image"
-#         default: "fenicsproject/test-env:latest-oneapi"
-#         type: string
-#         required: true
 
 jobs:
   build:
     runs-on: ubuntu-20.04
-    # container: fenicsproject/test-env:latest-oneapi
-    container: ${{ github.event.inputs.docker_image }}
+    container: fenicsproject/test-env:latest-oneapi
 
     env:
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
 
     strategy:
       matrix:
-        # petsc_arch: [real, complex]
-        petsc_arch: [real]
+        petsc_arch: [real, complex]
         petsc_int_type: [32]
 
     steps:
