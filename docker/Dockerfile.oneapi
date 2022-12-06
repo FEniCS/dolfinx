@@ -1,0 +1,179 @@
+# Dockerfile for testing DOLFINx with oneAPI compilers and libraries.
+# Must be built locally and pushed.
+#
+# docker build -f Dockerfile.oneapi -t docker.io/fenicsproject/test-env:latest-oneapi .
+# docker push docker.io/fenicsproject/test-env:latest-oneapi
+FROM ubuntu:22.04
+
+ARG ADIOS2_VERSION=2.8.3
+ARG HDF5_SERIES=1.12
+ARG HDF5_PATCH=2
+ARG PETSC_VERSION=3.17.5
+ARG SLEPC_VERSION=3.17.2
+ARG PYBIND11_VERSION=2.10.1
+ARG KAHIP_VERSION=3.14
+
+WORKDIR /tmp
+
+# Install dependencies available via apt-get
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get -qq update && \
+    apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
+    apt-get -y install \
+    cmake \
+    gnupg \
+    libboost-dev \
+    libboost-filesystem-dev \
+    libboost-timer-dev \
+    libpugixml-dev \
+    ninja-build \
+    pkg-config \
+    catch2 \
+    git \
+    wget \
+    zlib1g-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install oneAPI libraries
+RUN wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB && \
+    apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB && \
+    echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && \
+    apt-get update && \
+    apt-get install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp \
+    intel-oneapi-mkl-devel intel-oneapi-mpi-devel intel-oneapi-python && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+ENV CC=icx \
+    CXX=icpx \
+    I_MPI_CC=icx \
+    I_MPI_CXX=icpx
+
+# Install Python packages (via pip)
+RUN . /opt/intel/oneapi/setvars.sh && \
+    pip3 install --no-cache-dir cppimport pybind11==${PYBIND11_VERSION} pytest pytest-xdist
+
+# Install KaHIP
+RUN . /opt/intel/oneapi/setvars.sh && \
+    wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
+    tar -xf v${KAHIP_VERSION}.tar.gz && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DNONATIVEOPTIMIZATIONS=on -B build-dir -S KaHIP-${KAHIP_VERSION} && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    rm -rf /tmp/*
+
+# Install HDF5
+# Note: HDF5 CMake install has numerous bugs and inconsistencies. Test carefully.
+# HDF5 overrides CMAKE_INSTALL_PREFIX by default, hence it is set
+# below to ensure that HDF5 is installed into a path where it can be
+# found.
+RUN . /opt/intel/oneapi/setvars.sh && \
+    wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+    tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
+    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DHDF5_ENABLE_PARALLEL=on -DHDF5_ENABLE_Z_LIB_SUPPORT=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    rm -rf /tmp/*
+
+# Install ADIOS2
+RUN . /opt/intel/oneapi/setvars.sh && \
+    wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
+    mkdir -p adios2-v${ADIOS2_VERSION} && \
+    tar -xf adios2-v${ADIOS2_VERSION}.tar.gz -C adios2-v${ADIOS2_VERSION} --strip-components 1 && \
+    cmake -G Ninja -DADIOS2_USE_HDF5=on -DADIOS2_USE_Fortran=off -DBUILD_TESTING=off -DADIOS2_BUILD_EXAMPLES=off -DADIOS2_USE_ZeroMQ=off -B build-dir -S ./adios2-v${ADIOS2_VERSION} && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    rm -rf /tmp/*
+
+# Install PETSc and petsc4py with real and complex types
+ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
+RUN . /opt/intel/oneapi/setvars.sh && \
+    apt-get -qq update && \
+    apt-get -y install bison flex && \
+    wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
+    mkdir -p ${PETSC_DIR} && tar -xf petsc-${PETSC_VERSION}.tar.gz -C ${PETSC_DIR} --strip-components 1 && \
+    cd ${PETSC_DIR} && \
+    # Real, 32-bit int
+    python3 ./configure \
+    PETSC_ARCH=linux-gnu-real-32 \
+    --with-64-bit-indices=no \
+    --with-fortran-bindings=no \
+    --with-shared-libraries \
+    --download-hypre \
+    --download-superlu_dist \
+    --with-scalar-type=real && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-32 ${MAKEFLAGS} all && \
+    # Complex, 32-bit int
+    python3 ./configure \
+    PETSC_ARCH=linux-gnu-complex-32 \
+    --with-64-bit-indices=no \
+    --with-fortran-bindings=no \
+    --with-shared-libraries \
+    --download-hypre \
+    --download-superlu_dist \
+    --with-scalar-type=complex && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-32 ${MAKEFLAGS} all && \
+    # Real, 64-bit int
+    python3 ./configure \
+    PETSC_ARCH=linux-gnu-real-64 \
+    --with-64-bit-indices=yes \
+    --with-fortran-bindings=no \
+    --with-shared-libraries \
+    --download-hypre \
+    --download-superlu_dist \
+    --with-scalar-type=real && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-64 ${MAKEFLAGS} all && \
+    # Complex, 64-bit int
+    python3 ./configure \
+    PETSC_ARCH=linux-gnu-complex-64 \
+    --with-64-bit-indices=yes \
+    --with-fortran-bindings=no \
+    --with-shared-libraries \
+    --download-hypre \
+    --download-superlu_dist \
+    --with-scalar-type=complex && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-64 ${MAKEFLAGS} all && \
+    # Install petsc4py
+    cd src/binding/petsc4py && \
+    PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir . && \
+    # Cleanup
+    apt-get -y purge bison flex && \
+    apt-get -y autoremove && \
+    apt-get clean && \
+    rm -rf \
+    ${PETSC_DIR}/**/tests/ \
+    ${PETSC_DIR}/**/obj/ \
+    ${PETSC_DIR}/**/externalpackages/  \
+    ${PETSC_DIR}/CTAGS \
+    ${PETSC_DIR}/RDict.log \
+    ${PETSC_DIR}/TAGS \
+    ${PETSC_DIR}/docs/ \
+    ${PETSC_DIR}/share/ \
+    ${PETSC_DIR}/src/ \
+    ${PETSC_DIR}/systems/ \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install SLEPc
+RUN . /opt/intel/oneapi/setvars.sh && \
+    wget -nc --quiet https://gitlab.com/slepc/slepc/-/archive/v${SLEPC_VERSION}/slepc-v${SLEPC_VERSION}.tar.gz && \
+    mkdir -p ${SLEPC_DIR} && tar -xf slepc-v${SLEPC_VERSION}.tar.gz -C ${SLEPC_DIR} --strip-components 1 && \
+    cd ${SLEPC_DIR} && \
+    export PETSC_ARCH=linux-gnu-real-32 && \
+    python3 ./configure && \
+    make && \
+    export PETSC_ARCH=linux-gnu-complex-32 && \
+    python3 ./configure && \
+    make && \
+    export PETSC_ARCH=linux-gnu-real-64 && \
+    python3 ./configure && \
+    make && \
+    export PETSC_ARCH=linux-gnu-complex-64 && \
+    python3 ./configure && \
+    make && \
+    # Install slepc4py
+    cd src/binding/slepc4py && \
+    PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir . && \
+    rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
+    rm -rf /tmp/*
+
