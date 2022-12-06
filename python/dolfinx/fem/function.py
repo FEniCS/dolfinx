@@ -16,6 +16,8 @@ from functools import singledispatch
 
 import numpy as np
 import numpy.typing as npt
+from dolfinx.fem import dofmap
+from petsc4py import PETSc
 
 import basix
 import basix.ufl_wrapper
@@ -24,10 +26,7 @@ import ufl.algorithms
 import ufl.algorithms.analysis
 from dolfinx import cpp as _cpp
 from dolfinx import jit, la
-from dolfinx.fem import dofmap
 from ufl.domain import extract_unique_domain
-
-from petsc4py import PETSc
 
 
 class Constant(ufl.Constant):
@@ -68,6 +67,20 @@ class Constant(ufl.Constant):
     @property
     def dtype(self) -> np.dtype:
         return self._cpp_object.dtype
+
+    def __float__(self):
+        if self.ufl_shape or self.ufl_free_indices:
+            raise TypeError(
+                "Cannot evaluate a nonscalar expression to a scalar value.")
+        else:
+            return float(self.value)
+
+    def __int__(self):
+        if self.ufl_shape or self.ufl_free_indices:
+            raise TypeError(
+                "Cannot evaluate a nonscalar expression to a scalar value.")
+        else:
+            return int(self.value)
 
 
 class Expression:
@@ -115,7 +128,8 @@ class Expression:
         elif dtype == np.complex128:
             form_compiler_options["scalar_type"] = "double _Complex"
         else:
-            raise RuntimeError(f"Unsupported scalar type {dtype} for Expression.")
+            raise RuntimeError(
+                f"Unsupported scalar type {dtype} for Expression.")
 
         self._ufcx_expression, module, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, _X),
                                                                  form_compiler_options=form_compiler_options,
@@ -124,19 +138,23 @@ class Expression:
 
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
-        original_coefficients = ufl.algorithms.extract_coefficients(ufl_expression)
+        original_coefficients = ufl.algorithms.extract_coefficients(
+            ufl_expression)
         coeffs = [original_coefficients[self._ufcx_expression.original_coefficient_positions[i]]._cpp_object
                   for i in range(self._ufcx_expression.num_coefficients)]
 
-        ufl_constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
+        ufl_constants = ufl.algorithms.analysis.extract_constants(
+            ufl_expression)
         constants = [constant._cpp_object for constant in ufl_constants]
         arguments = ufl.algorithms.extract_arguments(ufl_expression)
         if len(arguments) == 0:
             self._argument_function_space = None
         elif len(arguments) == 1:
-            self._argument_function_space = arguments[0].ufl_function_space()._cpp_object
+            self._argument_function_space = arguments[0].ufl_function_space(
+            )._cpp_object
         else:
-            raise RuntimeError("Expressions with more that one Argument not allowed.")
+            raise RuntimeError(
+                "Expressions with more that one Argument not allowed.")
 
         def create_expression(dtype):
             if dtype is np.float32:
@@ -163,16 +181,19 @@ class Expression:
             argument_space_dimension = 1
         else:
             argument_space_dimension = self.argument_function_space.element.space_dimension
-        values_shape = (_cells.shape[0], self.X().shape[0] * self.value_size * argument_space_dimension)
+        values_shape = (_cells.shape[0], self.X(
+        ).shape[0] * self.value_size * argument_space_dimension)
 
         # Allocate memory for result if u was not provided
         if values is None:
             values = np.zeros(values_shape, dtype=self.dtype)
         else:
             if values.shape != values_shape:
-                raise TypeError("Passed array values does not have correct shape.")
+                raise TypeError(
+                    "Passed array values does not have correct shape.")
             if values.dtype != self.dtype:
-                raise TypeError("Passed array values does not have correct dtype.")
+                raise TypeError(
+                    "Passed array values does not have correct dtype.")
 
         self._cpp_object.eval(cells, values)
 
@@ -287,7 +308,8 @@ class Function(ufl.Coefficient):
             _x = np.reshape(_x, (shape0, -1))
         num_points = _x.shape[0]
         if _x.shape[1] != 3:
-            raise ValueError("Coordinate(s) for Function evaluation must have length 3.")
+            raise ValueError(
+                "Coordinate(s) for Function evaluation must have length 3.")
 
         # Make sure cells are a NumPy array
         _cells = np.asarray(cells, dtype=np.int32)
@@ -349,8 +371,10 @@ class Function(ufl.Coefficient):
         except TypeError:
             # u is callable
             assert callable(u)
-            x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh, cells)
-            self._cpp_object.interpolate(np.asarray(u(x), dtype=self.dtype), cells)
+            x = _cpp.fem.interpolation_coords(
+                self._V.element, self._V.mesh, cells)
+            self._cpp_object.interpolate(
+                np.asarray(u(x), dtype=self.dtype), cells)
 
     def copy(self) -> Function:
         """Return a copy of the Function. The FunctionSpace is shared and the
@@ -465,12 +489,14 @@ class FunctionSpace(ufl.FunctionSpace):
                 jit_options=jit_options)
 
             ffi = module.ffi
-            cpp_element = _cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
+            cpp_element = _cpp.fem.FiniteElement(
+                ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
             cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
                 "uintptr_t", ffi.addressof(self._ufcx_dofmap)), mesh.topology, cpp_element)
 
             # Initialize the cpp.FunctionSpace
-            self._cpp_object = _cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
+            self._cpp_object = _cpp.fem.FunctionSpace(
+                mesh, cpp_element, cpp_dofmap)
 
     def clone(self) -> FunctionSpace:
         """Return a new FunctionSpace :math:`W` which shares data with this
@@ -486,7 +512,8 @@ class FunctionSpace(ufl.FunctionSpace):
         conditions.
 
         """
-        Vcpp = _cpp.fem.FunctionSpace(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
+        Vcpp = _cpp.fem.FunctionSpace(
+            self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
         return FunctionSpace(None, self.ufl_element(), Vcpp)
 
     @property
