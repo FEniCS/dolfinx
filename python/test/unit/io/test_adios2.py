@@ -24,13 +24,13 @@ except ImportError:
     pytest.skip("Test require ADIOS2", allow_module_level=True)
 
 
-def generate_mesh(dim: int, simplex: bool, N: int = 3):
+def generate_mesh(dim: int, simplex: bool, N: int = 5):
     """Helper function for parametrizing over meshes"""
     if dim == 2:
         if simplex:
             return create_unit_square(MPI.COMM_WORLD, N, N)
         else:
-            return create_unit_square(MPI.COMM_WORLD, N, N, CellType.quadrilateral)
+            return create_unit_square(MPI.COMM_WORLD, 2 * N, N, CellType.quadrilateral)
     elif dim == 3:
         if simplex:
             return create_unit_cube(MPI.COMM_WORLD, N, N, N)

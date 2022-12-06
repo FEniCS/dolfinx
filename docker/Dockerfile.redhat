@@ -9,10 +9,10 @@ ARG BUILD_NP=4
 
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=2
-ARG PETSC_VERSION=3.17.4
-ARG PYBIND11_VERSION=2.10.0
+ARG PETSC_VERSION=3.17.5
+ARG PYBIND11_VERSION=2.10.1
 ARG NUMPY_VERSION=1.23.3
-ARG MPICH_VERSION=4.0.2
+ARG MPICH_VERSION=4.0.3
 
 WORKDIR /tmp
 
@@ -36,6 +36,7 @@ RUN dnf -y update && \
       python3-pip \
       # Required for PETSc build
       diffutils \
+      findutils \
       flex \
       # Utility
       git \
@@ -93,7 +94,7 @@ RUN curl -L -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES
     make -j${BUILD_NP} install && \
     rm -rf /tmp/*
 
-# RHEL pkgconfig does not look here by default. Setting this probably better
-# than forcing install into 'system path' or hacking in DOLFINx pkgconfig.py
-# code.
+# RHEL pkgconfig does not look here by default. Setting this probably
+# better than forcing install into 'system path' or hacking in DOLFINx
+# pkgconfig.py code.
 ENV PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig
