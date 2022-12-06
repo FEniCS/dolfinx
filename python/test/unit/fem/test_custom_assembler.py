@@ -23,7 +23,7 @@ import pytest
 import dolfinx
 import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import Function, FunctionSpace, form, transpose_dofmap
+from dolfinx.fem import Function, FunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix, load_petsc_lib
 from dolfinx.mesh import create_unit_square
 from ufl import dx, inner
@@ -282,7 +282,6 @@ def test_custom_mesh_loop_rank1():
     x_dofs = mesh.geometry.dofmap.array.reshape(num_cells, 3)
     x = mesh.geometry.x
     dofmap = V.dofmap.list.array.reshape(num_cells, 3)
-    dofmap_t = transpose_dofmap(V.dofmap.list, num_owned_cells)
 
     # Assemble with pure Numba function (two passes, first will include
     # JIT overhead)
@@ -297,18 +296,21 @@ def test_custom_mesh_loop_rank1():
     b0.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert b0.vector.sum() == pytest.approx(1.0)
 
+    # NOTE: Parallel (threaded) Numba can cause problems with MPI
     # Assemble with pure Numba function using parallel loop (two passes,
     # first will include JIT overhead)
-    btmp = Function(V)
-    for i in range(2):
-        b = btmp.x.array
-        b[:] = 0.0
-        start = time.time()
-        assemble_vector_parallel(b, x_dofs, x, dofmap_t.array, dofmap_t.offsets, num_owned_cells)
-        end = time.time()
-        print("Time (numba parallel, pass {}): {}".format(i, end - start))
-    btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert (btmp.vector - b0.vector).norm() == pytest.approx(0.0)
+    # from dolfinx.fem import transpose_dofmap
+    # dofmap_t = transpose_dofmap(V.dofmap.list, num_owned_cells)
+    # btmp = Function(V)
+    # for i in range(2):
+    #     b = btmp.x.array
+    #     b[:] = 0.0
+    #     start = time.time()
+    #     assemble_vector_parallel(b, x_dofs, x, dofmap_t.array, dofmap_t.offsets, num_owned_cells)
+    #     end = time.time()
+    #     print("Time (numba parallel, pass {}): {}".format(i, end - start))
+    # btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    # assert (btmp.vector - b0.vector).norm() == pytest.approx(0.0)
 
     # Test against generated code and general assembler
     v = ufl.TestFunction(V)
