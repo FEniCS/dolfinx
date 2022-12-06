@@ -54,7 +54,7 @@ ARG HDF5_PATCH=2
 ARG KAHIP_VERSION=3.14
 ARG NUMPY_VERSION=1.23.3
 ARG PYBIND11_VERSION=2.10.1
-ARG PETSC_VERSION=3.18.1
+ARG PETSC_VERSION=3.18.2
 ARG SLEPC_VERSION=3.18.1
 ARG PYVISTA_VERSION=0.37.0
 
@@ -480,9 +480,10 @@ RUN apt-get -qq update && \
 # properly rendering colorbars.
 # pythreejs and ipygany are two backends of pyvista not requiring a framebuffer,
 # and are therefore preferred in notebooks
+# Pinning ipywidgets due to https://github.com/pyvista/pyvista/issues/3274
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
-    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} && \
+    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ipywidgets==7.7.2 && \
     pip3 install --no-cache-dir matplotlib && \
     pip3 install --no-cache-dir pythreejs ipygany && \
     pip3 cache purge && \
