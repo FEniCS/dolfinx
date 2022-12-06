@@ -82,6 +82,13 @@ class Constant(ufl.Constant):
         else:
             return int(self.value)
 
+    def __complex__(self):
+        if self.ufl_shape or self.ufl_free_indices:
+            raise TypeError(
+                "Cannot evaluate a nonscalar expression to a scalar value.")
+        else:
+            return complex(self.value)
+
 
 class Expression:
     def __init__(self, ufl_expression: ufl.core.expr.Expr, X: np.ndarray,
