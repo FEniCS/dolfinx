@@ -189,7 +189,7 @@ def create_submesh(mesh, dim, entities):
     submesh_ufl_cell = ufl.Cell(submesh.topology.cell_name(),
                                 geometric_dimension=submesh.geometry.dim)
     submesh_domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
-        "Lagrange", submesh_ufl_cell.cellname(), mesh.geometry.cmap.degree, basix.LagrangeVariant.equispaced,
+        "Lagrange", submesh_ufl_cell.cellname(), submesh.geometry.cmap.degree, submesh.geometry.cmap.variant,
         dim=submesh.geometry.dim, gdim=submesh.geometry.dim))
     return (Mesh.from_cpp(submesh, submesh_domain), entity_map, vertex_map, geom_map)
 

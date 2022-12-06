@@ -215,8 +215,8 @@ def poisson_error(V):
     bdofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, bndry_facets)
     bc = fem.dirichletbc(u_bc, bdofs)
 
-    # Solve using LU linear solver
-    problem = fem.petsc.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+    # Solve
+    problem = fem.petsc.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_rtol": 1e-12})
     uh = problem.solve()
 
     M = (u_exact - uh)**2 * dx
@@ -255,7 +255,7 @@ for degree in range(2, 9):
 q_ndofs = []
 q_degrees = []
 q_errors = []
-for degree in range(1, 10):
+for degree in range(1, 9):
     V = fem.FunctionSpace(msh, ("Q", degree))
     q_degrees.append(degree)
     q_ndofs.append(V.dofmap.index_map.size_global)
