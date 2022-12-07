@@ -58,7 +58,10 @@ namespace py = pybind11;
       return py::handle(obj);                                                  \
     }                                                                          \
                                                                                \
-    operator TYPE() { return value; }                                          \
+    operator TYPE()                                                            \
+    {                                                                          \
+      return value;                                                            \
+    }                                                                          \
   }
 
 namespace pybind11::detail
