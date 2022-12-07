@@ -8,9 +8,10 @@
 import random
 from pathlib import Path
 
-import basix
 import numpy as np
 import pytest
+
+import basix
 import ufl
 from basix.ufl_wrapper import create_vector_element
 from dolfinx.cpp.io import perm_vtk
@@ -18,8 +19,9 @@ from dolfinx.fem import assemble_scalar, form
 from dolfinx.io import XDMFFile
 from dolfinx.io.gmshio import cell_perm_array, ufl_mesh
 from dolfinx.mesh import CellType, create_mesh, create_submesh
-from mpi4py import MPI
 from ufl import dx
+
+from mpi4py import MPI
 
 
 def check_cell_volume(points, cell, domain, volume):
