@@ -156,20 +156,14 @@ set_package_properties(basix PROPERTIES TYPE REQUIRED
   DESCRIPTION "FEniCS tabulation library"
   URL "https://github.com/fenics/basix")
 
-
 # Check for PETSc
 find_package(PkgConfig REQUIRED)
 set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
 
-# Check if PETSc build uses real or complex scalars (this is configured
-# in DOLFINxConfig.cmake.in)
-include(CheckSymbolExists)
-set(CMAKE_REQUIRED_INCLUDES ${PETSC_INCLUDE_DIRS})
-check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h HAVE_PETSC_SCALAR_COMPLEX)
-
 # Setting for FeatureSummary
 if(PETSC_FOUND)
+  message(STATUS "Found PETSc version ${PETSC_VERSION}, prefix: ${PETSC_PREFIX}")
   set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND PETSc)
 else()
   set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND PETSc)
@@ -229,6 +223,7 @@ if(DOLFINX_ENABLE_SLEPC)
 
   # Setting for FeatureSummary
   if(SLEPC_FOUND)
+    message(STATUS "Found SLEPc version ${SLEPC_VERSION}, prefix: ${SLEPC_PREFIX}")
     set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND SLEPc)
   else()
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SLEPc)

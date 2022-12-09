@@ -65,6 +65,10 @@ if (NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
+include(CheckSymbolExists)
+set(CMAKE_REQUIRED_INCLUDES ${{PETSC_INCLUDE_DIRS}})
+check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h PETSC_SCALAR_COMPLEX)
+
 if (PETSC_SCALAR_COMPLEX EQUAL 1)
   message(STATUS "** This demo does not support complex mode")
 else()
@@ -112,6 +116,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 if (NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
+
+include(CheckSymbolExists)
+set(CMAKE_REQUIRED_INCLUDES ${{PETSC_INCLUDE_DIRS}})
+check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h PETSC_SCALAR_COMPLEX)
 
 # Add target to compile UFL files
 if (PETSC_SCALAR_COMPLEX EQUAL 1)

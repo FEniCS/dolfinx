@@ -72,6 +72,7 @@ void spmv_impl(std::span<const T> values,
 /// @param[in, out] y Output vector
 template <typename T>
 void spmv(la::MatrixCSR<T>& A, la::Vector<T>& x, la::Vector<T>& y)
+
 {
   // start communication (update ghosts)
   x.scatter_fwd_begin();
@@ -101,7 +102,40 @@ void spmv(la::MatrixCSR<T>& A, la::Vector<T>& x, la::Vector<T>& y)
   spmv_impl<T>(values, off_diag_offset, row_end, cols, _x, _y);
 }
 
-void test_matrix_apply()
+/// @brief Create a matrix operator
+/// @param comm The communicator to builf the matrix on
+/// @return The assembled matrix
+la::MatrixCSR<double> create_operator(MPI_Comm comm)
+{
+  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
+  auto mesh = std::make_shared<mesh::Mesh>(
+      mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
+                       mesh::CellType::tetrahedron, part));
+  auto V = std::make_shared<fem::FunctionSpace>(
+      fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
+
+  // Prepare and set Constants for the bilinear form
+  auto kappa = std::make_shared<fem::Constant<double>>(2.0);
+  auto a = std::make_shared<fem::Form<double>>(fem::create_form<double>(
+      *form_poisson_a, {V, V}, {}, {{"kappa", kappa}}, {}));
+
+  la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
+  sp.assemble();
+  la::MatrixCSR<double> A(sp);
+  fem::assemble_matrix(A.mat_add_values(), *a, {});
+  A.finalize();
+
+  return A;
+}
+
+[[maybe_unused]] void test_matrix_norm()
+{
+  la::MatrixCSR<double> A0 = create_operator(MPI_COMM_SELF);
+  la::MatrixCSR<double> A1 = create_operator(MPI_COMM_WORLD);
+  CHECK(A1.norm_squared() == Approx(A0.norm_squared()).epsilon(1e-8));
+}
+
+[[maybe_unused]] void test_matrix_apply()
 {
   MPI_Comm comm = MPI_COMM_WORLD;
   auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
@@ -128,7 +162,6 @@ void test_matrix_apply()
   la::MatrixCSR<double> A(sp);
   fem::assemble_matrix(A.mat_add_values(), *a, {});
   A.finalize();
-
   CHECK((V->dofmap()->index_map->size_local() == A.num_owned_rows()));
 
   // Get compatible vectors
@@ -192,5 +225,6 @@ void test_matrix()
 TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
 {
   CHECK_NOTHROW(test_matrix());
-  CHECK_NOTHROW(test_matrix_apply());
+  // CHECK_NOTHROW(test_matrix_apply());
+  // CHECK_NOTHROW(test_matrix_norm());
 }
