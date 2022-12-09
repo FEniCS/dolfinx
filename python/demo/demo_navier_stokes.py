@@ -368,12 +368,12 @@ for n in range(num_time_steps):
     t += delta_t.value
 
     A.zeroEntries()
-    fem.petsc.assemble_matrix_block(A, a, bcs=bcs)
+    fem.petsc.assemble_matrix_block(A, a, bcs=bcs)  # type: ignore
     A.assemble()
 
     with b.localForm() as b_loc:
         b_loc.set(0)
-    fem.petsc.assemble_vector_block(b, L, a, bcs=bcs)
+    fem.petsc.assemble_vector_block(b, L, a, bcs=bcs)  # type: ignore
 
     # Compute solution
     ksp.solve(b, x)
