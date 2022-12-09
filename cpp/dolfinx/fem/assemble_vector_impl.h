@@ -44,16 +44,19 @@ _extract_entities(std::span<const std::int32_t> entities,
   sub_entities.reserve(entities.size());
   if (stride == 1)
   {
-    for (std::size_t e = 0; e < entities.size(); e += stride)
-      if (cell_indicator[entities[e]])
-        sub_entities.push_back(entities[e]);
+    std::copy_if(entities.begin(), entities.end(),
+                 std::back_inserter(sub_entities),
+                 [&cell_indicator](auto e) { return cell_indicator[e]; });
   }
   else if (stride == 2)
   {
     for (std::size_t e = 0; e < entities.size(); e += stride)
     {
-      std::copy_n(std::next(entities.begin(), e), stride,
-                  std::back_inserter(sub_entities));
+      if (cell_indicator[entities[e]])
+      {
+        std::copy_n(std::next(entities.begin(), e), stride,
+                    std::back_inserter(sub_entities));
+      }
     }
   }
   else if (stride == 4)
