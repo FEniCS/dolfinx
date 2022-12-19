@@ -34,14 +34,13 @@ from functools import partial
 from typing import Tuple, Union
 
 from analytical_efficiencies_wire import calculate_analytical_efficiencies
+from dolfinx.io import VTXWriter, gmshio
 from mesh_wire_pml import generate_mesh_wire
+from mpi4py import MPI
+from petsc4py import PETSc
 
 import ufl
 from dolfinx import fem, mesh, plot
-from dolfinx.io import VTXWriter, gmshio
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 # -
 
@@ -161,7 +160,7 @@ l_pml = 1
 mesh_factor = 1
 
 # Mesh size inside the wire
-in_wire_size = mesh_factor * 6.0e-3
+in_wire_size = mesh_factor * 3.5e-3
 
 # Mesh size at the boundary of the wire
 on_wire_size = mesh_factor * 3.0e-3
