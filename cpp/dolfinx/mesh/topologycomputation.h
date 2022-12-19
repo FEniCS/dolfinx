@@ -11,6 +11,7 @@
 #include <memory>
 #include <mpi.h>
 #include <tuple>
+#include <vector>
 
 namespace dolfinx::common
 {
@@ -34,11 +35,13 @@ class Topology;
 /// @param[in] topology Mesh topology
 /// @param[in] dim The dimension of the entities to create
 /// @return Tuple of (cell-entity connectivity, entity-vertex
-/// connectivity, index map). If the entities already exist, then
-/// {nullptr, nullptr, nullptr} is returned.
+/// connectivity, index map, list of interprocess entities).
+/// Interprocess entities lie on the "true" boundary between owned cells of each
+/// process. If the entities already exist, then {nullptr, nullptr, nullptr,
+/// std::vector()} is returned.
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-           std::shared_ptr<common::IndexMap>>
+           std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
 compute_entities(MPI_Comm comm, const Topology& topology, int dim);
 
 /// Compute connectivity (d0 -> d1) for given pair of topological

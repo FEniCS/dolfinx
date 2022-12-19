@@ -11,18 +11,19 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <functional>
 #include <mpi.h>
+#include <span>
 #include <utility>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 #include <iostream>
 
 namespace dolfinx::graph
 {
 
-/// Signature of functions for computing the parallel partitioning of a
-/// distributed graph
-///
+/// @brief Signature of functions for computing the parallel
+/// partitioning of a distributed graph.
+// See https://github.com/doxygen/doxygen/issues/9552
+/// @cond
 /// @param[in] comm MPI Communicator that the graph is distributed
 /// across
 /// @param[in] nparts Number of partitions to divide graph nodes into
@@ -30,6 +31,7 @@ namespace dolfinx::graph
 /// @param[in] ghosting Flag to enable ghosting of the output node
 /// distribution
 /// @return Destination rank for each input node
+/// @endcond
 using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm, int, const AdjacencyList<std::int64_t>&, bool)>;
 
@@ -71,23 +73,23 @@ distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
            const graph::AdjacencyList<std::int32_t>& destinations);
 
 /// @brief Take a set of distributed input global indices, including
-/// ghosts, and determine the new global indices  after remapping.
+/// ghosts, and determine the new global indices after remapping.
 ///
 /// Each rank receive 'input' global indices `[i0, i1, ..., i(m-1), im,
 /// ..., i(n-1)]`, where the first `m` indices are owned by the caller
-/// and the remained are 'ghosts' indices that are owned by other ranks.
+/// and the remainder are 'ghosts' indices that are owned by other ranks.
 ///
 /// Each rank assigns new global indices to its owned indices. The new
 /// index is the rank offset (scan of the number of indices owned by the
 /// lower rank processes, typically computed using `MPI_Exscan` with
 /// `MPI_SUM`), i.e. `i1 -> offset + 1`, `i2 -> offset + 2`, etc. Ghost
 /// indices are number by the remote owning processes. The function
-/// returns the new ghost global indices but retrieving the new indices
+/// returns the new ghost global indices by retrieving the new indices
 /// from the owning ranks.
 ///
 /// @param[in] comm MPI communicator
 /// @param[in] owned_indices List of owned global indices. It should not
-/// contain duplicates, and these indices must now appear in
+/// contain duplicates, and these indices must not appear in
 /// `owned_indices` on other ranks.
 /// @param[in] ghost_indices List of ghost global indices.
 /// @param[in] ghost_owners The owning rank for each entry in
@@ -95,9 +97,9 @@ distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
 /// @return New global indices for the ghost indices.
 std::vector<std::int64_t>
 compute_ghost_indices(MPI_Comm comm,
-                      const xtl::span<const std::int64_t>& owned_indices,
-                      const xtl::span<const std::int64_t>& ghost_indices,
-                      const xtl::span<const int>& ghost_owners);
+                      std::span<const std::int64_t> owned_indices,
+                      std::span<const std::int64_t> ghost_indices,
+                      std::span<const int> ghost_owners);
 
 /// Given an adjacency list with global, possibly non-contiguous, link
 /// indices and a local adjacency list with contiguous link indices
@@ -122,8 +124,8 @@ compute_local_to_global_links(const graph::AdjacencyList<std::int64_t>& global,
 /// indices
 /// @return Map from local0 indices to local1 indices
 std::vector<std::int32_t>
-compute_local_to_local(const xtl::span<const std::int64_t>& local0_to_global,
-                       const xtl::span<const std::int64_t>& local1_to_global);
+compute_local_to_local(std::span<const std::int64_t> local0_to_global,
+                       std::span<const std::int64_t> local1_to_global);
 } // namespace build
 
 } // namespace dolfinx::graph

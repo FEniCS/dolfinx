@@ -7,10 +7,10 @@
 #pragma once
 
 #include <array>
+#include <basix/mdspan.hpp>
 #include <cmath>
+#include <string>
 #include <type_traits>
-#include <xtensor/xfixed.hpp>
-#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::math
 {
@@ -20,21 +20,7 @@ namespace dolfinx::math
 /// @param v The second vector. It must has size 3.
 /// @return The cross product `u x v`. The type will be the same as `u`.
 template <typename U, typename V>
-std::array<typename U::value_type, 3> cross_new(const U& u, const V& v)
-{
-  assert(u.size() == 3);
-  assert(v.size() == 3);
-  return {u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2],
-          u[0] * v[1] - u[1] * v[0]};
-}
-
-/// Compute the cross product u x v
-/// @param u The first vector. It must has size 3.
-/// @param v The second vector. It must has size 3.
-/// @return The cross product `u x v`. The type will be the same as `u`.
-template <typename U, typename V>
-xt::xtensor_fixed<typename U::value_type, xt::xshape<3>> cross(const U& u,
-                                                               const V& v)
+std::array<typename U::value_type, 3> cross(const U& u, const V& v)
 {
   assert(u.size() == 3);
   assert(v.size() == 3);
@@ -76,7 +62,6 @@ auto det(const T* A, std::array<std::size_t, 2> shape)
   {
     // Leibniz formula combined with Kahan’s method for accurate
     // computation of 3 x 3 determinants
-
     T w0 = difference_of_products(A[3 + 1], A[3 + 2], A[3 * 2 + 1],
                                   A[2 * 3 + 2]);
     T w1 = difference_of_products(A[3], A[3 + 2], A[3 * 2], A[3 * 2 + 2]);
@@ -97,13 +82,13 @@ auto det(const T* A, std::array<std::size_t, 2> shape)
 /// @param[in] A The matrix tp compute the determinant of
 /// @return The determinate of @p A
 template <typename Matrix>
-auto det(const Matrix& A)
+auto det(Matrix A)
 {
-  using value_type = typename Matrix::value_type;
-  assert(A.shape(0) == A.shape(1));
-  assert(A.dimension() == 2);
+  static_assert(Matrix::rank() == 2, "Must be rank 2");
+  assert(A.extent(0) == A.extent(1));
 
-  const int nrows = A.shape(0);
+  using value_type = typename Matrix::value_type;
+  const int nrows = A.extent(0);
   switch (nrows)
   {
   case 1:
@@ -123,8 +108,8 @@ auto det(const Matrix& A)
   }
   default:
     throw std::runtime_error("math::det is not implemented for "
-                             + std::to_string(A.shape(0)) + "x"
-                             + std::to_string(A.shape(1)) + " matrices.");
+                             + std::to_string(A.extent(0)) + "x"
+                             + std::to_string(A.extent(1)) + " matrices.");
   }
 }
 
@@ -135,10 +120,13 @@ auto det(const Matrix& A)
 /// same shape as @p A.
 /// @warning This function does not check if A is invertible
 template <typename U, typename V>
-void inv(const U& A, V&& B)
+void inv(U A, V B)
 {
+  static_assert(U::rank() == 2, "Must be rank 2");
+  static_assert(V::rank() == 2, "Must be rank 2");
+
   using value_type = typename U::value_type;
-  const std::size_t nrows = A.shape(0);
+  const std::size_t nrows = A.extent(0);
   switch (nrows)
   {
   case 1:
@@ -176,8 +164,8 @@ void inv(const U& A, V&& B)
   }
   default:
     throw std::runtime_error("math::inv is not implemented for "
-                             + std::to_string(A.shape(0)) + "x"
-                             + std::to_string(A.shape(1)) + " matrices.");
+                             + std::to_string(A.extent(0)) + "x"
+                             + std::to_string(A.extent(1)) + " matrices.");
   }
 }
 
@@ -188,65 +176,85 @@ void inv(const U& A, V&& B)
 /// @param[in] transpose Computes C += A^T * B^T if false, otherwise
 /// computed C += A^T * B^T
 template <typename U, typename V, typename P>
-void dot(const U& A, const V& B, P&& C, bool transpose = false)
+void dot(U A, V B, P C, bool transpose = false)
 {
+  static_assert(U::rank() == 2, "Must be rank 2");
+  static_assert(V::rank() == 2, "Must be rank 2");
+  static_assert(P::rank() == 2, "Must be rank 2");
+
   if (transpose)
   {
-    assert(A.shape(0) == B.shape(1));
-    for (std::size_t i = 0; i < A.shape(1); i++)
-      for (std::size_t j = 0; j < B.shape(0); j++)
-        for (std::size_t k = 0; k < A.shape(0); k++)
+    assert(A.extent(0) == B.extent(1));
+    for (std::size_t i = 0; i < A.extent(1); i++)
+      for (std::size_t j = 0; j < B.extent(0); j++)
+        for (std::size_t k = 0; k < A.extent(0); k++)
           C(i, j) += A(k, i) * B(j, k);
   }
   else
   {
-    assert(A.shape(1) == B.shape(0));
-    for (std::size_t i = 0; i < A.shape(0); i++)
-      for (std::size_t j = 0; j < B.shape(1); j++)
-        for (std::size_t k = 0; k < A.shape(1); k++)
+    assert(A.extent(1) == B.extent(0));
+    for (std::size_t i = 0; i < A.extent(0); i++)
+      for (std::size_t j = 0; j < B.extent(1); j++)
+        for (std::size_t k = 0; k < A.extent(1); k++)
           C(i, j) += A(i, k) * B(k, j);
   }
 }
 
-/// Compute the left pseudo inverse of a rectangular matrix A (3x2, 3x1,
-/// or 2x1), such that pinv(A) * A = I
+/// @brief Compute the left pseudo inverse of a rectangular matrix `A`
+/// (3x2, 3x1, or 2x1), such that pinv(A) * A = I.
 /// @param[in] A The matrix to the compute the pseudo inverse of.
-/// @param[out] P The pseudo inverse of @p A. It must be pre-allocated
-/// with a size which is the transpose of the size of @p A.
-/// @warning The matrix @p A should be full rank
+/// @param[out] P The pseudo inverse of `A`. It must be pre-allocated
+/// with a size which is the transpose of the size of `A`.
+/// @pre The matrix `A` must be full rank
 template <typename U, typename V>
-void pinv(const U& A, V&& P)
+void pinv(U A, V P)
 {
-  auto shape = A.shape();
-  assert(shape[0] > shape[1]);
-  assert(P.shape(1) == shape[0]);
-  assert(P.shape(0) == shape[1]);
+  static_assert(U::rank() == 2, "Must be rank 2");
+  static_assert(V::rank() == 2, "Must be rank 2");
+
+  assert(A.extent(0) > A.extent(1));
+  assert(P.extent(1) == A.extent(0));
+  assert(P.extent(0) == A.extent(1));
   using T = typename U::value_type;
-  if (shape[1] == 2)
+  if (A.extent(1) == 2)
   {
-    xt::xtensor_fixed<T, xt::xshape<2, 3>> AT;
-    xt::xtensor_fixed<T, xt::xshape<2, 2>> ATA;
-    xt::xtensor_fixed<T, xt::xshape<2, 2>> Inv;
-    AT = xt::transpose(A);
-    std::fill(ATA.begin(), ATA.end(), 0.0);
-    std::fill(P.begin(), P.end(), 0.0);
+    namespace stdex = std::experimental;
+    std::array<T, 6> ATb;
+    std::array<T, 4> ATAb, Invb;
+    stdex::mdspan<T, stdex::extents<std::size_t, 2, 3>> AT(ATb.data(), 2, 3);
+    stdex::mdspan<T, stdex::extents<std::size_t, 2, 2>> ATA(ATAb.data(), 2, 2);
+    stdex::mdspan<T, stdex::extents<std::size_t, 2, 2>> Inv(Invb.data(), 2, 2);
+
+    for (std::size_t i = 0; i < AT.extent(0); ++i)
+      for (std::size_t j = 0; j < AT.extent(1); ++j)
+        AT(i, j) = A(j, i);
+
+    std::fill(ATAb.begin(), ATAb.end(), 0.0);
+    for (std::size_t i = 0; i < P.extent(0); ++i)
+      for (std::size_t j = 0; j < P.extent(1); ++j)
+        P(i, j) = 0;
 
     // pinv(A) = (A^T * A)^-1 * A^T
-    dolfinx::math::dot(AT, A, ATA);
-    dolfinx::math::inv(ATA, Inv);
-    dolfinx::math::dot(Inv, AT, P);
+    dot(AT, A, ATA);
+    inv(ATA, Inv);
+    dot(Inv, AT, P);
   }
-  else if (shape[1] == 1)
+  else if (A.extent(1) == 1)
   {
-    auto res = std::transform_reduce(A.begin(), A.end(), 0., std::plus<T>(),
-                                     [](const auto v) { return v * v; });
-    P = (1 / res) * xt::transpose(A);
+    T res = 0;
+    for (std::size_t i = 0; i < A.extent(0); ++i)
+      for (std::size_t j = 0; j < A.extent(1); ++j)
+        res += A(i, j) * A(i, j);
+
+    for (std::size_t i = 0; i < A.extent(0); ++i)
+      for (std::size_t j = 0; j < A.extent(1); ++j)
+        P(j, i) = (1 / res) * A(i, j);
   }
   else
   {
     throw std::runtime_error("math::pinv is not implemented for "
-                             + std::to_string(A.shape(0)) + "x"
-                             + std::to_string(A.shape(1)) + " matrices.");
+                             + std::to_string(A.extent(0)) + "x"
+                             + std::to_string(A.extent(1)) + " matrices.");
   }
 }
 

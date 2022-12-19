@@ -75,7 +75,7 @@ def test_sub_index_map():
 
 
 def test_sub_index_map_ghost_mode_none():
-    n = 2
+    n = 3
     mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=GhostMode.none)
     tdim = mesh.topology.dim
     map = mesh.topology.index_map(tdim)

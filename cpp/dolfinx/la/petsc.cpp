@@ -47,7 +47,7 @@ void la::petsc::error(int error_code, std::string filename,
 //-----------------------------------------------------------------------------
 std::vector<Vec>
 la::petsc::create_vectors(MPI_Comm comm,
-                          const std::vector<xtl::span<const PetscScalar>>& x)
+                          const std::vector<std::span<const PetscScalar>>& x)
 {
   std::vector<Vec> v(x.size());
   for (std::size_t i = 0; i < v.size(); ++i)
@@ -62,15 +62,14 @@ la::petsc::create_vectors(MPI_Comm comm,
   return v;
 }
 //-----------------------------------------------------------------------------
-Vec la::petsc::create_vector(const dolfinx::common::IndexMap& map, int bs)
+Vec la::petsc::create_vector(const common::IndexMap& map, int bs)
 {
   return la::petsc::create_vector(map.comm(), map.local_range(), map.ghosts(),
                                   bs);
 }
 //-----------------------------------------------------------------------------
 Vec la::petsc::create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
-                             const xtl::span<const std::int64_t>& ghosts,
-                             int bs)
+                             std::span<const std::int64_t> ghosts, int bs)
 {
   PetscErrorCode ierr;
 
@@ -89,7 +88,7 @@ Vec la::petsc::create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
 }
 //-----------------------------------------------------------------------------
 Vec la::petsc::create_vector_wrap(const common::IndexMap& map, int bs,
-                                  const xtl::span<const PetscScalar>& x)
+                                  std::span<const PetscScalar> x)
 {
   const std::int32_t size_local = bs * map.size_local();
   const std::int64_t size_global = bs * map.size_global();
@@ -137,7 +136,7 @@ std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
   VecGetSize(x_local, &n);
   const PetscScalar* array = nullptr;
   VecGetArrayRead(x_local, &array);
-  xtl::span _x(array, n);
+  std::span _x(array, n);
 
   // Copy PETSc Vec data in to local vectors
   std::vector<std::vector<PetscScalar>> x_b;
@@ -164,7 +163,7 @@ std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
 }
 //-----------------------------------------------------------------------------
 void la::petsc::scatter_local_vectors(
-    Vec x, const std::vector<xtl::span<const PetscScalar>>& x_b,
+    Vec x, const std::vector<std::span<const PetscScalar>>& x_b,
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
@@ -182,7 +181,7 @@ void la::petsc::scatter_local_vectors(
   VecGetSize(x_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(x_local, &array);
-  xtl::span _x(array, n);
+  std::span _x(array, n);
 
   // Copy local vectors into PETSc Vec
   int offset = 0;
@@ -206,8 +205,7 @@ void la::petsc::scatter_local_vectors(
   VecGhostRestoreLocalForm(x, &x_local);
 }
 //-----------------------------------------------------------------------------
-Mat la::petsc::create_matrix(MPI_Comm comm,
-                             const dolfinx::la::SparsityPattern& sp,
+Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
                              const std::string& type)
 {
   PetscErrorCode ierr;
@@ -335,7 +333,7 @@ Mat la::petsc::create_matrix(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 MatNullSpace la::petsc::create_nullspace(MPI_Comm comm,
-                                         const xtl::span<const Vec>& basis)
+                                         std::span<const Vec> basis)
 {
   MatNullSpace ns = nullptr;
   PetscErrorCode ierr

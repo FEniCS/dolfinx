@@ -10,8 +10,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/nls/NewtonSolver.h>
-#include <xtensor/xarray.hpp>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using T = PetscScalar;
@@ -25,7 +23,7 @@ public:
       : _l(L), _j(J), _bcs(bcs),
         _b(L->function_spaces()[0]->dofmap()->index_map,
            L->function_spaces()[0]->dofmap()->index_map_bs()),
-        _matA(la::petsc::Matrix(fem::petsc::create_matrix(*J, "baij"), false))
+        _matA(la::petsc::Matrix(fem::petsc::create_matrix(*J, "aij"), false))
   {
     auto map = L->function_spaces()[0]->dofmap()->index_map;
     const int bs = L->function_spaces()[0]->dofmap()->index_map_bs();
@@ -60,7 +58,7 @@ public:
     return [&](const Vec x, Vec)
     {
       // Assemble b and update ghosts
-      xtl::span<T> b(_b.mutable_array());
+      std::span<T> b(_b.mutable_array());
       std::fill(b.begin(), b.end(), 0.0);
       fem::assemble_vector<T>(b, *_l);
       VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
@@ -73,7 +71,7 @@ public:
       VecGetSize(x_local, &n);
       const T* array = nullptr;
       VecGetArrayRead(x_local, &array);
-      fem::set_bc<T>(b, _bcs, xtl::span<const T>(array, n), -1.0);
+      fem::set_bc<T>(b, _bcs, std::span<const T>(array, n), -1.0);
       VecRestoreArrayRead(x, &array);
     };
   }
@@ -109,7 +107,7 @@ private:
 
 int main(int argc, char* argv[])
 {
-  dolfinx::init_logging(argc, argv);
+  init_logging(argc, argv);
   PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   // Set the logging thread name to show the process rank
@@ -129,9 +127,10 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Create mesh and define function space
-    auto mesh = std::make_shared<mesh::Mesh>(mesh::create_box(
-        MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {10, 10, 10},
-        mesh::CellType::tetrahedron, mesh::GhostMode::none));
+    auto mesh = std::make_shared<mesh::Mesh>(
+        mesh::create_box(MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
+                         {10, 10, 10}, mesh::CellType::tetrahedron,
+                         mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
     auto V = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
         functionspace_form_hyperelasticity_F_form, "u", mesh));
@@ -145,7 +144,7 @@ int main(int argc, char* argv[])
 
     auto u_rotation = std::make_shared<fem::Function<T>>(V);
     u_rotation->interpolate(
-        [](auto&& x)
+        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
           constexpr double scale = 0.005;
 
@@ -157,31 +156,55 @@ int main(int argc, char* argv[])
           constexpr double theta = 1.04719755;
 
           // New coordinates
-          auto x1 = xt::row(x, 1);
-          auto x2 = xt::row(x, 2);
-          xt::xarray<double> values = xt::zeros_like(x);
-          xt::row(values, 1) = scale
-                               * (x1_c + (x1 - x1_c) * std::cos(theta)
-                                  - (x2 - x2_c) * std::sin(theta) - x1);
-          xt::row(values, 2) = scale
-                               * (x2_c + (x1 - x1_c) * std::sin(theta)
-                                  - (x2 - x2_c) * std::cos(theta) - x2);
-          return values;
+          std::vector<double> fdata(3 * x.extent(1), 0.0);
+          namespace stdex = std::experimental;
+          stdex::mdspan<double,
+                        stdex::extents<std::size_t, 3, stdex::dynamic_extent>>
+              f(fdata.data(), 3, x.extent(1));
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+          {
+            double x1 = x(1, p);
+            double x2 = x(2, p);
+            f(1, p) = scale
+                      * (x1_c + (x1 - x1_c) * std::cos(theta)
+                         - (x2 - x2_c) * std::sin(theta) - x1);
+            f(2, p) = scale
+                      * (x2_c + (x1 - x1_c) * std::sin(theta)
+                         - (x2 - x2_c) * std::cos(theta) - x2);
+          }
+
+          return {std::move(fdata), {3, x.extent(1)}};
         });
 
     // Create Dirichlet boundary conditions
-    auto bdofs_left
-        = fem::locate_dofs_geometrical({*V},
-                                       [](auto&& x) -> xt::xtensor<bool, 1> {
-                                         return xt::isclose(xt::row(x, 0), 0.0);
-                                       });
-    auto bdofs_right
-        = fem::locate_dofs_geometrical({*V},
-                                       [](auto&& x) -> xt::xtensor<bool, 1> {
-                                         return xt::isclose(xt::row(x, 0), 1.0);
-                                       });
+    auto bdofs_left = fem::locate_dofs_geometrical(
+        {*V},
+        [](auto x)
+        {
+          constexpr double eps = 1.0e-8;
+          std::vector<std::int8_t> marker(x.extent(1), false);
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+          {
+            if (std::abs(x(0, p)) < eps)
+              marker[p] = true;
+          }
+          return marker;
+        });
+    auto bdofs_right = fem::locate_dofs_geometrical(
+        {*V},
+        [](auto x)
+        {
+          constexpr double eps = 1.0e-8;
+          std::vector<std::int8_t> marker(x.extent(1), false);
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+          {
+            if (std::abs(x(0, p) - 1) < eps)
+              marker[p] = true;
+          }
+          return marker;
+        });
     auto bcs = std::vector{
-        std::make_shared<const fem::DirichletBC<T>>(xt::xarray<T>{0, 0, 0},
+        std::make_shared<const fem::DirichletBC<T>>(std::vector<T>{0, 0, 0},
                                                     bdofs_left, V),
         std::make_shared<const fem::DirichletBC<T>>(u_rotation, bdofs_right)};
 
@@ -199,12 +222,11 @@ int main(int argc, char* argv[])
     constexpr auto family = basix::element::family::P;
     const auto cell_type
         = mesh::cell_type_to_basix_type(mesh->topology().cell_type());
-    constexpr auto variant = basix::element::lagrange_variant::equispaced;
     constexpr int k = 0;
     constexpr bool discontinuous = true;
 
     const basix::FiniteElement S_element
-        = basix::create_element(family, cell_type, k, variant, discontinuous);
+        = basix::create_element(family, cell_type, k, discontinuous);
     auto S = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
         mesh, S_element, pow(mesh->geometry().dim(), 2)));
 

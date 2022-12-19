@@ -44,7 +44,7 @@ public:
   /// Move assignment
   SLEPcEigenSolver& operator=(SLEPcEigenSolver&& solver);
 
-  /// Set opeartors (B may be nullptr for regular eigenvalues
+  /// Set operators (B may be nullptr for regular eigenvalues
   /// problems)
   void set_operators(const Mat A, const Mat B);
 

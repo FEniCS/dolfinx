@@ -141,8 +141,8 @@ SparsityPattern::SparsityPattern(
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert(const xtl::span<const std::int32_t>& rows,
-                             const xtl::span<const std::int32_t>& cols)
+void SparsityPattern::insert(const std::span<const std::int32_t>& rows,
+                             const std::span<const std::int32_t>& cols)
 {
   if (_graph)
   {
@@ -166,7 +166,7 @@ void SparsityPattern::insert(const xtl::span<const std::int32_t>& rows,
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert_diagonal(const xtl::span<const std::int32_t>& rows)
+void SparsityPattern::insert_diagonal(std::span<const std::int32_t> rows)
 {
   if (_graph)
   {
@@ -419,7 +419,7 @@ const graph::AdjacencyList<std::int32_t>& SparsityPattern::graph() const
   return *_graph;
 }
 //-----------------------------------------------------------------------------
-xtl::span<const int> SparsityPattern::off_diagonal_offset() const
+std::span<const int> SparsityPattern::off_diagonal_offset() const
 {
   return _off_diagonal_offset;
 }

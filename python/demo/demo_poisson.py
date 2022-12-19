@@ -75,6 +75,7 @@ from ufl import ds, dx, grad, inner
 
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
+
 # -
 
 # We begin by using {py:func}`create_rectangle

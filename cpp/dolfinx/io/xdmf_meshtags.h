@@ -14,9 +14,9 @@
 #include <dolfinx/mesh/MeshTags.h>
 #include <hdf5.h>
 #include <pugixml.hpp>
+#include <span>
 #include <string>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {
@@ -36,9 +36,14 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   assert(meshtags.mesh());
   std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
   const int dim = meshtags.dim();
-
-  const std::int32_t num_local_entities
-      = mesh->topology().index_map(dim)->size_local();
+  std::shared_ptr<const common::IndexMap> entity_map
+      = mesh->topology().index_map(dim);
+  if (!entity_map)
+  {
+    throw std::runtime_error("Missing entities. Did you forget to call "
+                             "dolfinx::mesh::Topology::create_entities?");
+  }
+  const std::int32_t num_local_entities = entity_map->size_local();
 
   // Find number of tagged entities in local range
   auto it = std::lower_bound(meshtags.indices().begin(),
@@ -49,7 +54,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   xdmf_mesh::add_topology_data(
       comm, xml_node, h5_id, path_prefix, mesh->topology(), mesh->geometry(),
       dim,
-      xtl::span<const std::int32_t>(meshtags.indices().data(),
+      std::span<const std::int32_t>(meshtags.indices().data(),
                                     num_active_entities));
 
   // Add attribute node with values
@@ -69,7 +74,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
   xdmf_utils::add_data_item(
       attribute_node, h5_id, path_prefix + std::string("/Values"),
-      xtl::span<const T>(meshtags.values().data(), num_active_entities), offset,
+      std::span<const T>(meshtags.values().data(), num_active_entities), offset,
       {global_num_values, 1}, "", use_mpi_io);
 }
 

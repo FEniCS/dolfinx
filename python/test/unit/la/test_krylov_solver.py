@@ -135,7 +135,7 @@ def test_krylov_samg_solver_elasticity():
         # Compute solution and return number of iterations
         return solver.solve(b, u.vector)
 
-    # Set some multigrid smoother paramete rs
+    # Set some multigrid smoother parameters
     opts = PETSc.Options()
     opts["mg_levels_ksp_type"] = "chebyshev"
     opts["mg_levels_pc_type"] = "jacobi"

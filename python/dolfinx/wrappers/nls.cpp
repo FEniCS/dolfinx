@@ -28,10 +28,11 @@ void nls(py::module& m)
              std::shared_ptr<dolfinx::nls::petsc::NewtonSolver>>(m_petsc,
                                                                  "NewtonSolver")
       .def(py::init(
-          [](const MPICommWrapper comm) {
-            return std::make_unique<dolfinx::nls::petsc::NewtonSolver>(
-                comm.get());
-          }))
+               [](const MPICommWrapper comm) {
+                 return std::make_unique<dolfinx::nls::petsc::NewtonSolver>(
+                     comm.get());
+               }),
+           py::arg("comm"))
       .def_property_readonly("krylov_solver",
                              [](const dolfinx::nls::petsc::NewtonSolver& self)
                              {
@@ -39,12 +40,17 @@ void nls(py::module& m)
                                    = self.get_krylov_solver();
                                return solver.ksp();
                              })
-      .def("setF", &dolfinx::nls::petsc::NewtonSolver::setF)
-      .def("setJ", &dolfinx::nls::petsc::NewtonSolver::setJ)
-      .def("setP", &dolfinx::nls::petsc::NewtonSolver::setP)
-      .def("set_update", &dolfinx::nls::petsc::NewtonSolver::set_update)
-      .def("set_form", &dolfinx::nls::petsc::NewtonSolver::set_form)
-      .def("solve", &dolfinx::nls::petsc::NewtonSolver::solve)
+      .def("setF", &dolfinx::nls::petsc::NewtonSolver::setF, py::arg("F"),
+           py::arg("b"))
+      .def("setJ", &dolfinx::nls::petsc::NewtonSolver::setJ, py::arg("J"),
+           py::arg("Jmat"))
+      .def("setP", &dolfinx::nls::petsc::NewtonSolver::setP, py::arg("P"),
+           py::arg("Pmat"))
+      .def("set_update", &dolfinx::nls::petsc::NewtonSolver::set_update,
+           py::arg("update"))
+      .def("set_form", &dolfinx::nls::petsc::NewtonSolver::set_form,
+           py::arg("form"))
+      .def("solve", &dolfinx::nls::petsc::NewtonSolver::solve, py::arg("x"))
       .def_readwrite("atol", &dolfinx::nls::petsc::NewtonSolver::atol,
                      "Absolute tolerance")
       .def_readwrite("rtol", &dolfinx::nls::petsc::NewtonSolver::rtol,

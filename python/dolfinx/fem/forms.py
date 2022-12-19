@@ -16,7 +16,6 @@ if typing.TYPE_CHECKING:
     from dolfinx.fem import function
     from dolfinx.mesh import Mesh
 
-import cffi
 import numpy as np
 
 import ufl
@@ -29,7 +28,7 @@ from petsc4py import PETSc
 class FormMetaClass:
     def __init__(self, form, V: list[_cpp.fem.FunctionSpace], coeffs, constants,
                  subdomains: dict[_cpp.mesh.MeshTags_int32, typing.Union[None, typing.Any]], mesh: _cpp.mesh.Mesh,
-                 code):
+                 ffi, code):
         """A finite element form
 
         Notes:
@@ -44,12 +43,11 @@ class FormMetaClass:
             coeffs: Finite element coefficients that appear in the form
             constants: Constants appearing in the form
             subdomains: Subdomains for integrals
-            mesh: The mesh that the form is deined on
+            mesh: The mesh that the form is defined on
 
         """
         self._code = code
         self._ufcx_form = form
-        ffi = cffi.FFI()
         super().__init__(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_form)),
                          V, coeffs, constants, subdomains, mesh)  # type: ignore
 
@@ -89,14 +87,14 @@ form_types = typing.Union[FormMetaClass, _cpp.fem.Form_float32, _cpp.fem.Form_fl
 
 
 def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = PETSc.ScalarType,
-         form_compiler_params: dict = {}, jit_params: dict = {}):
+         form_compiler_options: dict = {}, jit_options: dict = {}):
     """Create a DOLFINx Form or an array of Forms
 
     Args:
         form: A UFL form or list(s) of UFL forms
         dtype: Scalar type to use for the compiled form
-        form_compiler_params: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
-        jit_params:See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
+        form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
+        jit_options:See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
 
     Returns:
         Compiled finite element Form
@@ -112,13 +110,16 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
     """
     if dtype == np.float32:
         ftype = _cpp.fem.Form_float32
-        form_compiler_params["scalar_type"] = "float"
+        form_compiler_options["scalar_type"] = "float"
     elif dtype == np.float64:
         ftype = _cpp.fem.Form_float64
-        form_compiler_params["scalar_type"] = "double"
+        form_compiler_options["scalar_type"] = "double"
+    elif dtype == np.complex64:
+        ftype = _cpp.fem.Form_complex64
+        form_compiler_options["scalar_type"] = "float _Complex"
     elif dtype == np.complex128:
         ftype = _cpp.fem.Form_complex128
-        form_compiler_params["scalar_type"] = "double _Complex"
+        form_compiler_options["scalar_type"] = "double _Complex"
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
@@ -128,15 +129,22 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         """"Compile a single UFL form"""
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
-        subdomains, = list(sd.values())  # Assuming single domain
         domain, = list(sd.keys())  # Assuming single domain
+        # Get subdomain data for each integral type
+        subdomains = {}
+        for integral_type, data in sd.get(domain).items():
+            # Check that the subdomain data for each integral of this type is
+            # the same
+            assert all([id(d) == id(data[0]) for d in data])
+            subdomains[integral_type] = data[0]
+
         mesh = domain.ufl_cargo()
         if mesh is None:
             raise RuntimeError("Expecting to find a Mesh in the form.")
 
         ufcx_form, module, code = jit.ffcx_jit(mesh.comm, form,
-                                               form_compiler_params=form_compiler_params,
-                                               jit_params=jit_params)
+                                               form_compiler_options=form_compiler_options,
+                                               jit_options=jit_options)
 
         # For each argument in form extract its function space
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
@@ -154,7 +162,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
                       _cpp.fem.IntegralType.interior_facet: subdomains.get("interior_facet"),
                       _cpp.fem.IntegralType.vertex: subdomains.get("vertex")}
 
-        return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, code)
+        return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, module.ffi, code)
 
     def _create_form(form):
         """Recursively convert ufl.Forms to dolfinx.fem.Form, otherwise

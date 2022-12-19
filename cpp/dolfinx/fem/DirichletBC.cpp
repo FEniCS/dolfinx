@@ -18,10 +18,14 @@
 #include <map>
 #include <numeric>
 #include <utility>
-#include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
+
+namespace stdex = std::experimental;
+using cmdspan3x_t
+    = stdex::mdspan<const double,
+                    stdex::extents<std::size_t, 3, stdex::dynamic_extent>>;
 
 namespace
 {
@@ -34,8 +38,7 @@ namespace
 /// @returns A list of (cell_index, entity_index) pairs for each input entity
 std::vector<std::pair<std::int32_t, int>>
 find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
-                        const xtl::span<const std::int32_t>& entities,
-                        const int dim)
+                        std::span<const std::int32_t> entities, const int dim)
 {
   // Initialise entity-cell connectivity
   const int tdim = mesh->topology().dim();
@@ -77,7 +80,7 @@ find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
 /// this rank
 std::vector<std::int32_t>
 get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
-                const xtl::span<const std::int32_t>& dofs_local)
+                std::span<const std::int32_t> dofs_local)
 {
   int num_neighbors(-1);
   {
@@ -108,7 +111,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
     // Convert dofs indices to 'block' map indices
     std::vector<std::int32_t> dofs_local_m;
     dofs_local_m.reserve(dofs_local.size());
-    std::transform(dofs_local.cbegin(), dofs_local.cend(),
+    std::transform(dofs_local.begin(), dofs_local.end(),
                    std::back_inserter(dofs_local_m),
                    [bs_map](auto dof) { return dof / bs_map; });
 
@@ -116,8 +119,8 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
     map.local_to_global(dofs_local_m, dofs_global);
 
     // Add offset
-    std::transform(dofs_global.cbegin(), dofs_global.cend(),
-                   dofs_local.cbegin(), dofs_global.begin(),
+    std::transform(dofs_global.begin(), dofs_global.end(), dofs_local.begin(),
+                   dofs_global.begin(),
                    [bs_map](auto global_block, auto local_dof)
                    { return bs_map * global_block + (local_dof % bs_map); });
   }
@@ -139,7 +142,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
                            disp.data(), MPI_INT64_T, comm, &request);
 
   // FIXME: check that dofs is sorted
-  // Build vector of local dof indicies that have been marked by another
+  // Build vector of local dof indices that have been marked by another
   // process
   const std::array<std::int64_t, 2> range = map.local_range();
   const std::vector<std::int64_t>& ghosts = map.ghosts();
@@ -180,7 +183,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 fem::locate_dofs_topological(const FunctionSpace& V, int dim,
-                             const xtl::span<const std::int32_t>& entities,
+                             std::span<const std::int32_t> entities,
                              bool remote)
 {
   assert(V.dofmap());
@@ -231,7 +234,7 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
     {
       // Get cell dofmap and loop over facet dofs and 'unpack' blocked
       // dofs
-      xtl::span<const std::int32_t> cell_dofs = dofmap->cell_dofs(cell);
+      std::span<const std::int32_t> cell_dofs = dofmap->cell_dofs(cell);
       for (int index : entity_dofs[entity_local_index])
       {
         for (int k = 0; k < element_bs; ++k)
@@ -294,7 +297,7 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
-    const int dim, const xtl::span<const std::int32_t>& entities, bool remote)
+    const int dim, std::span<const std::int32_t> entities, bool remote)
 {
   const FunctionSpace& V0 = V.at(0).get();
   const FunctionSpace& V1 = V.at(1).get();
@@ -351,8 +354,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   for (auto [cell, entity_local_index] : entity_indices)
   {
     // Get cell dofmap
-    xtl::span<const std::int32_t> cell_dofs0 = dofmap0->cell_dofs(cell);
-    xtl::span<const std::int32_t> cell_dofs1 = dofmap1->cell_dofs(cell);
+    std::span<const std::int32_t> cell_dofs0 = dofmap0->cell_dofs(cell);
+    std::span<const std::int32_t> cell_dofs1 = dofmap1->cell_dofs(cell);
     assert(bs[0] * cell_dofs0.size() == bs[1] * cell_dofs1.size());
 
     // Loop over facet dofs and 'unpack' blocked dofs
@@ -451,7 +454,11 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> fem::locate_dofs_geometrical(
     const FunctionSpace& V,
-    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+    const std::function<std::vector<std::int8_t>(
+        std::experimental::mdspan<
+            const double,
+            std::experimental::extents<std::size_t, 3,
+                                       std::experimental::dynamic_extent>>)>&
         marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
@@ -469,9 +476,8 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
   const std::vector<double> dof_coordinates = V.tabulate_dof_coordinates(true);
 
   // Compute marker for each dof coordinate
-  auto x = xt::adapt(dof_coordinates,
-                     std::vector<std::size_t>{3, dof_coordinates.size() / 3});
-  const xt::xtensor<bool, 1> marked_dofs = marker_fn(x);
+  cmdspan3x_t x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);
+  const std::vector<std::int8_t> marked_dofs = marker_fn(x);
 
   std::vector<std::int32_t> dofs;
   dofs.reserve(std::count(marked_dofs.begin(), marked_dofs.end(), true));
@@ -486,7 +492,11 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
-    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+    const std::function<std::vector<std::int8_t>(
+        std::experimental::mdspan<
+            const double,
+            std::experimental::extents<std::size_t, 3,
+                                       std::experimental::dynamic_extent>>)>&
         marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
@@ -514,9 +524,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
   const std::vector<double> dof_coordinates = V1.tabulate_dof_coordinates(true);
 
   // Evaluate marker for each dof coordinate
-  auto x = xt::adapt(dof_coordinates,
-                     std::vector<std::size_t>{3, dof_coordinates.size() / 3});
-  const xt::xtensor<bool, 1> marked_dofs = marker_fn(x);
+  cmdspan3x_t x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);
+  const std::vector<std::int8_t> marked_dofs = marker_fn(x);
 
   // Get dofmaps
   std::shared_ptr<const DofMap> dofmap0 = V0.dofmap();

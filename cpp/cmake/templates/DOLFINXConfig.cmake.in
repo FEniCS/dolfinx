@@ -19,10 +19,6 @@ set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_VERBOSE TRUE)
 find_dependency(Boost 1.70 REQUIRED COMPONENTS timer filesystem)
 
-# xtensor
-find_dependency(xtl)
-find_dependency(xtensor)
-
 if (@ufcx_FOUND@)
   find_dependency(ufcx)
 endif()
@@ -41,11 +37,6 @@ if (BASIX_PY_DIR)
 endif()
 find_dependency(Basix CONFIG HINTS ${BASIX_PY_DIR})
 
-# Add xsimd if the C++ interface was compiled with it
-if(@xsimd_FOUND@)
-  find_dependency(xsimd)
-endif()
-
 # HDF5
 if (NOT TARGET hdf5::hdf5)
   set(HDF5_PREFER_PARALLEL TRUE)
@@ -56,13 +47,14 @@ if (NOT TARGET hdf5::hdf5)
   endif()
 endif()
 
-set(PETSC_SCALAR_COMPLEX @HAVE_PETSC_SCALAR_COMPLEX@)
+# PETSc
 if (NOT TARGET PkgConfig::PETSC)
   find_package(PkgConfig REQUIRED)
   set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
   pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc petsc)
 endif()
 
+# SLEPc
 if (@SLEPC_FOUND@)
   if (NOT TARGET PkgConfig::SLEPC)
      find_package(PkgConfig REQUIRED)

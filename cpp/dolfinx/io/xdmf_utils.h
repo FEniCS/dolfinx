@@ -8,14 +8,15 @@
 
 #include "HDF5Interface.h"
 #include <array>
-#include <dolfinx/common/utils.h>
+#include <complex>
 #include <dolfinx/mesh/cell_types.h>
 #include <filesystem>
+#include <numeric>
 #include <pugixml.hpp>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 namespace pugi
 {
@@ -102,8 +103,8 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// for this triangle.
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
 distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
-                       const xtl::span<const std::int64_t>& entities,
-                       const xtl::span<const std::int32_t>& data);
+                       std::span<const std::int64_t> entities,
+                       std::span<const std::int32_t> data);
 
 /// TODO: Document
 template <typename T>
@@ -160,12 +161,8 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
     data_item_node.append_child(pugi::node_pcdata).set_value(xdmf_path.c_str());
 
     // Compute data offset and range of values
-    std::int64_t local_shape0 = x.size();
-    for (std::size_t i = 1; i < shape.size(); ++i)
-    {
-      assert(local_shape0 % shape[i] == 0);
-      local_shape0 /= shape[i];
-    }
+    std::int64_t local_shape0 = std::reduce(
+        std::next(shape.begin()), shape.end(), x.size(), std::divides{});
 
     const std::array local_range{offset, offset + local_shape0};
     HDF5Interface::write_dataset(h5_id, h5_path, x.data(), local_range, shape,

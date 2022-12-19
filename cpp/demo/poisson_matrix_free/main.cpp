@@ -30,7 +30,6 @@
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
-#include <xtensor/xarray.hpp>
 
 using namespace dolfinx;
 
@@ -45,7 +44,7 @@ template <typename U>
 void axpy(la::Vector<U>& r, U alpha, const la::Vector<U>& x,
           const la::Vector<U>& y)
 {
-  std::transform(x.array().cbegin(), x.array().cend(), y.array().cbegin(),
+  std::transform(x.array().begin(), x.array().end(), y.array().begin(),
                  r.mutable_array().begin(),
                  [alpha](auto x, auto y) { return alpha * x + y; });
 }
@@ -114,7 +113,7 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
 
 int main(int argc, char* argv[])
 {
-  dolfinx::init_logging(argc, argv);
+  init_logging(argc, argv);
   MPI_Init(&argc, &argv);
 
   {
@@ -125,7 +124,7 @@ int main(int argc, char* argv[])
     // Create mesh and function space
     auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
         comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {10, 10}, mesh::CellType::triangle,
-        mesh::GhostMode::none));
+        mesh::create_cell_partitioner(mesh::GhostMode::none)));
     auto V = std::make_shared<fem::FunctionSpace>(
         fem::create_functionspace(functionspace_form_poisson_M, "ui", mesh));
 
@@ -144,8 +143,12 @@ int main(int argc, char* argv[])
     // Define boundary condition
     auto u_D = std::make_shared<fem::Function<T>>(V);
     u_D->interpolate(
-        [](auto&& x) {
-          return 1 + xt::square(xt::row(x, 0)) + 2 * xt::square(xt::row(x, 1));
+        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
+        {
+          std::vector<T> f;
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+            f.push_back(1 + x(0, p) * x(0, p) + +2 * x(1, p) * x(1, p));
+          return {f, {f.size()}};
         });
 
     mesh->topology_mutable().create_connectivity(1, 2);
@@ -162,7 +165,7 @@ int main(int argc, char* argv[])
     // Apply lifting to account for Dirichlet boundary condition
     // b <- b - A * x_bc
     fem::set_bc(ui->x()->mutable_array(), {bc}, -1.0);
-    dolfinx::fem::assemble_vector(b.mutable_array(), *M);
+    fem::assemble_vector(b.mutable_array(), *M);
 
     // Communicate ghost values
     b.scatter_rev(std::plus<T>());
@@ -189,7 +192,7 @@ int main(int argc, char* argv[])
 
       // Compute action of A on x
       fem::pack_coefficients(*M, coeff);
-      fem::assemble_vector(y.mutable_array(), *M, xtl::span<const T>(constants),
+      fem::assemble_vector(y.mutable_array(), *M, std::span<const T>(constants),
                            fem::make_coefficients_span(coeff));
 
       // Set BC dofs to zero (effectively zeroes rows of A)

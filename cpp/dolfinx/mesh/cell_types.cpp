@@ -10,9 +10,6 @@
 #include <cfloat>
 #include <cstdlib>
 #include <stdexcept>
-#include <xtensor/xbuilder.hpp>
-#include <xtensor/xfixed.hpp>
-#include <xtensor/xtensor.hpp>
 
 using namespace dolfinx;
 

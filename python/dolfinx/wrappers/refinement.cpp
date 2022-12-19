@@ -40,10 +40,15 @@ void refinement(py::module& m)
   m.def("plaza_refine_data",
         py::overload_cast<const dolfinx::mesh::Mesh&, bool,
                           dolfinx::refinement::plaza::RefinementOptions>(
-            &dolfinx::refinement::plaza::refine));
+            &dolfinx::refinement::plaza::refine),
+        py::arg("mesh"), py::arg("redistribute"), py::arg("options"));
 
-  m.def("transfer_facet_meshtag", &dolfinx::refinement::transfer_facet_meshtag);
-  m.def("transfer_cell_meshtag", &dolfinx::refinement::transfer_cell_meshtag);
+  m.def("transfer_facet_meshtag", &dolfinx::refinement::transfer_facet_meshtag,
+        py::arg("parent_meshtag"), py::arg("refined_mesh"),
+        py::arg("parent_cell"), py::arg("parent_facet"));
+  m.def("transfer_cell_meshtag", &dolfinx::refinement::transfer_cell_meshtag,
+        py::arg("parent_meshtag"), py::arg("refined_mesh"),
+        py::arg("parent_cell"));
 
   m.def(
       "refine",
@@ -53,7 +58,7 @@ void refinement(py::module& m)
       {
         assert(edges.ndim() == 1);
         return dolfinx::refinement::refine(
-            mesh, xtl::span(edges.data(), edges.size()), redistribute);
+            mesh, std::span(edges.data(), edges.size()), redistribute);
       },
       py::arg("mesh"), py::arg("edges"), py::arg("redistribute") = true);
 }

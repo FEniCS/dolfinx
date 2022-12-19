@@ -11,11 +11,9 @@
 #include <cstdint>
 #include <dolfinx/common/Timer.h>
 #include <numeric>
+#include <span>
 #include <type_traits>
 #include <vector>
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx
 {
@@ -26,7 +24,7 @@ namespace dolfinx
 /// @tparam BITS The number of bits to sort at a time.
 /// @param[in, out] array The array to sort.
 template <typename T, int BITS = 8>
-void radix_sort(const xtl::span<T>& array)
+void radix_sort(std::span<T> array)
 {
   static_assert(std::is_integral<T>(), "This function only sorts integers.");
 
@@ -54,8 +52,8 @@ void radix_sort(const xtl::span<T>& array)
 
   std::int32_t mask_offset = 0;
   std::vector<T> buffer(array.size());
-  xtl::span<T> current_perm = array;
-  xtl::span<T> next_perm = buffer;
+  std::span<T> current_perm = array;
+  std::span<T> next_perm = buffer;
   for (int i = 0; i < its; i++)
   {
     // Zero counter array
@@ -96,10 +94,9 @@ void radix_sort(const xtl::span<T>& array)
 /// @param[in] array The array to sort
 /// @param[in] perm FIXME
 template <typename T, int BITS = 16>
-void argsort_radix(const xtl::span<const T>& array,
-                   xtl::span<std::int32_t> perm)
+void argsort_radix(std::span<const T> array, std::span<std::int32_t> perm)
 {
-  static_assert(std::is_integral<T>::value, "Integral required.");
+  static_assert(std::is_integral_v<T>, "Integral required.");
 
   if (array.size() <= 1)
     return;
@@ -126,8 +123,8 @@ void argsort_radix(const xtl::span<const T>& array,
   std::array<std::int32_t, bucket_size + 1> offset;
 
   std::vector<std::int32_t> perm2(perm.size());
-  xtl::span<std::int32_t> current_perm = perm;
-  xtl::span<std::int32_t> next_perm = perm2;
+  std::span<std::int32_t> current_perm = perm;
+  std::span<std::int32_t> next_perm = perm2;
   for (int i = 0; i < its; i++)
   {
     // Zero counter
@@ -175,17 +172,16 @@ void argsort_radix(const xtl::span<const T>& array,
 /// @note This function is suitable for small values of `shape1`. Each
 /// column of `x` is copied into an array that is then sorted.
 template <typename T, int BITS = 16>
-std::vector<std::int32_t> sort_by_perm(const xtl::span<const T>& x,
-                                       std::size_t shape1)
+std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
 {
-  static_assert(std::is_integral<T>::value, "Integral required.");
+  static_assert(std::is_integral_v<T>, "Integral required.");
   assert(shape1 > 0);
   assert(x.size() % shape1 == 0);
   const std::size_t shape0 = x.size() / shape1;
   std::vector<std::int32_t> perm(shape0);
   std::iota(perm.begin(), perm.end(), 0);
 
-  // Sort by each column, right to left. Col 0 has the most signficant
+  // Sort by each column, right to left. Col 0 has the most significant
   // "digit".
   std::vector<T> column(shape0);
   for (std::size_t i = 0; i < shape1; ++i)

@@ -12,7 +12,6 @@
 #include <map>
 #include <memory>
 #include <vector>
-#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::mesh
 {

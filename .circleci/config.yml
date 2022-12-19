@@ -72,10 +72,10 @@ demos-python-mpi: &demos-python-mpi
     python3 -m pytest -n=2 -v -m mpi test.py --num-proc=3
 
 set-jit-defaults: &set-jit-defaults
-  name: Set default DOLFINx JIT parameters
+  name: Set default DOLFINx JIT options
   command: |
     mkdir -p ~/.config/dolfinx
-    echo '{ "cffi_extra_compile_args" : ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
+    echo '{ "cffi_extra_compile_args" : ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
 unit-tests-python: &unit-tests-python
   name: Run unit tests (Python, serial)
@@ -93,7 +93,7 @@ unit-tests-python-mpi: &unit-tests-python-mpi
 jobs:
   build-real:
     docker:
-      - image: fenicsproject/test-env:latest-mpich
+      - image: ghcr.io/fenics/test-env:nightly-mpich
     environment:
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-real-32"
@@ -122,7 +122,7 @@ jobs:
 
   build-complex:
     docker:
-      - image: fenicsproject/test-env:latest-mpich
+      - image: ghcr.io/fenics/test-env:latest-mpich
     environment:
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-complex-32"

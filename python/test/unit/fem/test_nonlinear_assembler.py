@@ -308,8 +308,6 @@ def test_assembly_solve_block_nl():
 
         snes = PETSc.SNES().create(MPI.COMM_WORLD)
         snes.setTolerances(rtol=1.0e-15, max_it=10)
-        snes.getKSP().setType("preonly")
-        snes.getKSP().getPC().setType("lu")
 
         problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
         snes.setFunction(problem.F_block, Fvec)
@@ -345,12 +343,6 @@ def test_assembly_solve_block_nl():
         snes.getKSP().setTolerances(rtol=1e-12)
         snes.getKSP().getPC().setType("fieldsplit")
         snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
-
-        ksp_u, ksp_p = snes.getKSP().getPC().getFieldSplitSubKSP()
-        ksp_u.setType("preonly")
-        ksp_u.getPC().setType('lu')
-        ksp_p.setType("preonly")
-        ksp_p.getPC().setType('lu')
 
         problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
         snes.setFunction(problem.F_nest, Fvec)
@@ -402,9 +394,6 @@ def test_assembly_solve_block_nl():
         snes = PETSc.SNES().create(MPI.COMM_WORLD)
         snes.setTolerances(rtol=1.0e-15, max_it=10)
 
-        snes.getKSP().setType("preonly")
-        snes.getKSP().getPC().setType("lu")
-
         problem = NonlinearPDE_SNESProblem(F, J, U, bcs)
         snes.setFunction(problem.F_mono, Fvec)
         snes.setJacobian(problem.J_mono, J=Jmat, P=None)
@@ -427,7 +416,7 @@ def test_assembly_solve_block_nl():
     assert norm2 == pytest.approx(norm0, 1.0e-12)
 
 
-@ pytest.mark.parametrize("mesh", [
+@pytest.mark.parametrize("mesh", [
     create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
     create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.shared_facet),
     create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.none),
@@ -494,7 +483,6 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     snes = PETSc.SNES().create(MPI.COMM_WORLD)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
     snes.getKSP().setType("minres")
-    snes.getKSP().getPC().setType("lu")
 
     problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs, P=P)
     snes.setFunction(problem.F_block, Fvec0)
@@ -529,12 +517,6 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     snes.getKSP().setTolerances(rtol=1e-12)
     snes.getKSP().getPC().setType("fieldsplit")
     snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
-
-    ksp_u, ksp_p = snes.getKSP().getPC().getFieldSplitSubKSP()
-    ksp_u.setType("preonly")
-    ksp_u.getPC().setType('lu')
-    ksp_p.setType("preonly")
-    ksp_p.getPC().setType('lu')
 
     problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs, P=P)
     snes.setFunction(problem.F_nest, Fvec1)
@@ -589,7 +571,6 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     snes = PETSc.SNES().create(MPI.COMM_WORLD)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
     snes.getKSP().setType("minres")
-    snes.getKSP().getPC().setType("lu")
 
     problem = NonlinearPDE_SNESProblem(F, J, U, bcs, P=P)
     snes.setFunction(problem.F_mono, Fvec2)

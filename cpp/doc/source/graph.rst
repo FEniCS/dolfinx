@@ -15,9 +15,6 @@ Adjacency list builders
 .. doxygenfunction:: dolfinx::graph::regular_adjacency_list
    :project: DOLFINx
 
-.. doxygenfunction:: dolfinx::graph::create_adjacency_data
-   :project: DOLFINx
-
 
 Re-ordering
 -----------

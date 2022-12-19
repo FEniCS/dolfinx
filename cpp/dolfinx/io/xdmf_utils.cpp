@@ -22,8 +22,7 @@
 #include <filesystem>
 #include <map>
 #include <pugixml.hpp>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xtensor.hpp>
+#include <vector>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -75,7 +74,8 @@ graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
 /// @warning This function will be removed soon. Use interpolation
 /// instead.
 template <typename T>
-xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
+std::pair<std::vector<T>, std::array<std::size_t, 2>>
+compute_point_values(const fem::Function<T>& u)
 {
   auto V = u.function_space();
   assert(V);
@@ -86,18 +86,15 @@ xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
   // Compute in tensor (one for scalar function, . . .)
   const std::size_t value_size_loc = V->element()->value_size();
 
+  const std::size_t num_points = mesh->geometry().x().size() / 3;
+
   // Resize Array for holding point values
-  xt::xtensor<T, 2> point_values
-      = xt::zeros<T>({mesh->geometry().x().size() / 3, value_size_loc});
+  std::vector<T> point_values(num_points * value_size_loc);
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const int num_dofs_g = mesh->geometry().cmap().dim();
-  const auto x_g
-      = xt::adapt(mesh->geometry().x().data(), mesh->geometry().x().size(),
-                  xt::no_ownership(),
-                  std::vector{mesh->geometry().x().size() / 3, std::size_t(3)});
 
   // Interpolate point values on each cell (using last computed value if
   // not continuous, e.g. discontinuous Galerkin methods)
@@ -105,18 +102,19 @@ xt::xtensor<T, 2> compute_point_values(const fem::Function<T>& u)
   assert(map);
   const std::int32_t num_cells = map->size_local() + map->num_ghosts();
 
-  std::vector<std::int32_t> cells(x_g.shape(0), -1);
+  std::vector<std::int32_t> cells(num_points, -1);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get coordinates for all points in cell
-    xtl::span<const std::int32_t> dofs = x_dofmap.links(c);
+    std::span<const std::int32_t> dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
       cells[dofs[i]] = c;
   }
 
-  u.eval(x_g, cells, point_values);
+  u.eval(mesh->geometry().x(), {num_points, 3}, cells, point_values,
+         {num_points, value_size_loc});
 
-  return point_values;
+  return {std::move(point_values), {num_points, value_size_loc}};
 }
 
 //-----------------------------------------------------------------------------
@@ -139,17 +137,17 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
 {
   std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
-  const xt::xtensor<Scalar, 2> data_values = compute_point_values(u);
+  const auto [data_values, dshape] = compute_point_values(u);
 
   const int width = get_padded_width(*u.function_space()->element());
   assert(mesh->geometry().index_map());
   const std::size_t num_local_points
       = mesh->geometry().index_map()->size_local();
-  assert(data_values.shape(0) >= num_local_points);
+  assert(dshape[0] >= num_local_points);
 
   // FIXME: Unpick the below code for the new layout of data from
   //        GenericFunction::compute_vertex_values
-  std::vector<Scalar> _data_values(width * num_local_points, 0.0);
+  std::vector<Scalar> values(width * num_local_points, 0.0);
   const int value_rank = u.function_space()->element()->value_shape().size();
   if (value_rank > 0)
   {
@@ -159,20 +157,19 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
     {
       for (int j = 0; j < value_size; j++)
       {
-        int tensor_2d_offset
+        int tensor2d_off
             = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
-        _data_values[i * width + j + tensor_2d_offset] = data_values(i, j);
+        values[i * width + j + tensor2d_off] = data_values[i * dshape[1] + j];
       }
     }
   }
   else
   {
-    _data_values = std::vector<Scalar>(
-        data_values.data(),
-        data_values.data() + num_local_points * data_values.shape(1));
+    values.assign(data_values.begin(),
+                  std::next(data_values.begin(), num_local_points * dshape[1]));
   }
 
-  return _data_values;
+  return values;
 }
 //-----------------------------------------------------------------------------
 template <typename Scalar>
@@ -210,7 +207,7 @@ std::vector<Scalar> _get_cell_data_values(const fem::Function<Scalar>& u)
 
   // Get values
   std::vector<Scalar> values(dof_set.size());
-  xtl::span<const Scalar> _u = u.x()->array();
+  std::span<const Scalar> _u = u.x()->array();
   for (std::size_t i = 0; i < dof_set.size(); ++i)
     values[i] = _u[dof_set[i]];
 
@@ -266,7 +263,8 @@ xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
          {"quadrilateral", {"quadrilateral", 1}},
          {"quadrilateral_9", {"quadrilateral", 2}},
          {"quadrilateral_16", {"quadrilateral", 3}},
-         {"hexahedron", {"hexahedron", 1}}};
+         {"hexahedron", {"hexahedron", 1}},
+         {"hexahedron_27", {"hexahedron", 2}}};
 
   // Convert XDMF cell type string to DOLFINx cell type string
   std::string cell_type = type_attr.as_string();
@@ -351,7 +349,7 @@ xdmf_utils::get_dataset_shape(const pugi::xml_node& dataset_node)
     boost::split(dims_list, dims_str, boost::is_any_of(" "));
 
     // Cast dims to integers
-    for (const auto& d : dims_list)
+    for (auto d : dims_list)
       dims.push_back(boost::lexical_cast<std::int64_t>(d));
   }
 
@@ -444,10 +442,9 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-xdmf_utils::distribute_entity_data(
-    const mesh::Mesh& mesh, int entity_dim,
-    const xtl::span<const std::int64_t>& entities,
-    const xtl::span<const std::int32_t>& data)
+xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
+                                   std::span<const std::int64_t> entities,
+                                   std::span<const std::int32_t> data)
 {
   LOG(INFO) << "XDMF distribute entity data";
 
@@ -519,8 +516,8 @@ xdmf_utils::distribute_entity_data(
 
   auto postmaster_global_ent_sendrecv
       = [&cell_vertex_dofs](const mesh::Mesh& mesh, int entity_dim,
-                            const xtl::span<const std::int64_t>& entities,
-                            const xtl::span<const std::int32_t>& data)
+                            std::span<const std::int64_t> entities,
+                            std::span<const std::int32_t> data)
   {
     const MPI_Comm comm = mesh.comm();
     const int comm_size = dolfinx::MPI::size(comm);
@@ -567,7 +564,7 @@ xdmf_utils::distribute_entity_data(
     std::vector<std::vector<std::int32_t>> data_send(comm_size);
     for (std::size_t e = 0; e < shape_e_0; ++e)
     {
-      xtl::span<std::int64_t> entity(entities_vertices.data()
+      std::span<std::int64_t> entity(entities_vertices.data()
                                          + e * num_vert_per_entity,
                                      num_vert_per_entity);
       std::sort(entity.begin(), entity.end());
@@ -634,7 +631,7 @@ xdmf_utils::distribute_entity_data(
     assert(_data_recv.size() == shape0);
     for (std::size_t e = 0; e < shape0; ++e)
     {
-      xtl::span e_recv(entities_recv.array().data() + e * shape1, shape1);
+      std::span e_recv(entities_recv.array().data() + e * shape1, shape1);
 
       // Find ranks that have node0
       auto [it0, it1] = node_to_rank.equal_range(e_recv.front());
@@ -649,7 +646,7 @@ xdmf_utils::distribute_entity_data(
 
     // TODO: Pack into one MPI call
     const int send_val_size = std::transform_reduce(
-        send_vals_owned.begin(), send_vals_owned.end(), 0, std::plus<int>(),
+        send_vals_owned.begin(), send_vals_owned.end(), 0, std::plus{},
         [](const std::vector<std::int32_t>& v) { return v.size(); });
     LOG(INFO) << "XDMF return entity and value data size:(" << send_val_size
               << ")";

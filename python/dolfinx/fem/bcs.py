@@ -9,6 +9,7 @@ via modification of linear systems."""
 from __future__ import annotations
 
 import collections.abc
+import numbers
 import typing
 
 import numpy.typing
@@ -90,7 +91,7 @@ def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpace, typing.It
 
 class DirichletBCMetaClass:
     def __init__(self, value: typing.Union[Function, Constant, numpy.ndarray],
-                 dofs: numpy.typing.ArrayLike, V: dolfinx.fem.FunctionSpace = None):
+                 dofs: numpy.typing.ArrayLike, V: typing.Optional[dolfinx.fem.FunctionSpace] = None):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
@@ -139,7 +140,8 @@ class DirichletBCMetaClass:
 
 
 def dirichletbc(value: typing.Union[Function, Constant, np.ndarray],
-                dofs: numpy.typing.NDArray[np.int32], V: dolfinx.fem.FunctionSpace = None) -> DirichletBCMetaClass:
+                dofs: numpy.typing.NDArray[np.int32],
+                V: typing.Optional[dolfinx.fem.FunctionSpace] = None) -> DirichletBCMetaClass:
     """Create a representation of Dirichlet boundary condition which
     is imposed on a linear system.
 
@@ -159,16 +161,23 @@ def dirichletbc(value: typing.Union[Function, Constant, np.ndarray],
 
     """
 
-    if value.dtype == np.float32:
-        bctype = _cpp.fem.DirichletBC_float32
-    elif value.dtype == np.float64:
-        bctype = _cpp.fem.DirichletBC_float64
-    elif value.dtype == np.complex64:
-        bctype = _cpp.fem.DirichletBC_complex64
-    elif value.dtype == np.complex128:
-        bctype = _cpp.fem.DirichletBC_complex128
-    else:
-        raise NotImplementedError(f"Type {value.dtype} not supported.")
+    if isinstance(value, numbers.Number):
+        value = np.asarray(value)
+
+    try:
+        dtype = value.dtype
+        if dtype == np.float32:
+            bctype = _cpp.fem.DirichletBC_float32
+        elif dtype == np.float64:
+            bctype = _cpp.fem.DirichletBC_float64
+        elif dtype == np.complex64:
+            bctype = _cpp.fem.DirichletBC_complex64
+        elif dtype == np.complex128:
+            bctype = _cpp.fem.DirichletBC_complex128
+        else:
+            raise NotImplementedError(f"Type {value.dtype} not supported.")
+    except AttributeError:
+        raise AttributeError("Boundary condition value must have a dtype attribute.")
 
     formcls = type("DirichletBC", (DirichletBCMetaClass, bctype), {})
     return formcls(value, dofs, V)

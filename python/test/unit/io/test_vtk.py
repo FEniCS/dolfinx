@@ -18,6 +18,7 @@ from dolfinx.io import cell_perm_vtk  # noqa F401
 
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
+from dolfinx.plot import create_vtk_mesh
 
 from mpi4py import MPI
 
@@ -239,3 +240,10 @@ def test_triangle_perm_vtk():
     for p_test, v_test in higher_order_triangle_perm.items():
         v = cell_perm_vtk(CellType.triangle, p_test)
         assert_array_equal(v, v_test)
+
+
+def test_vtk_mesh():
+    comm = MPI.COMM_WORLD
+    mesh = create_unit_square(comm, 2 * comm.size, 2 * comm.size)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
+    create_vtk_mesh(V)

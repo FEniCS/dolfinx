@@ -28,9 +28,9 @@ std::shared_ptr<const common::IndexMap> Geometry::index_map() const
   return _index_map;
 }
 //-----------------------------------------------------------------------------
-xtl::span<double> Geometry::x() { return _x; }
+std::span<double> Geometry::x() { return _x; }
 //-----------------------------------------------------------------------------
-xtl::span<const double> Geometry::x() const { return _x; }
+std::span<const double> Geometry::x() const { return _x; }
 //-----------------------------------------------------------------------------
 const fem::CoordinateElement& Geometry::cmap() const { return _cmap; }
 //-----------------------------------------------------------------------------
@@ -45,7 +45,7 @@ mesh::Geometry mesh::create_geometry(
     MPI_Comm comm, const Topology& topology,
     const fem::CoordinateElement& element,
     const graph::AdjacencyList<std::int64_t>& cell_nodes,
-    const xtl::span<const double>& x, int dim,
+    std::span<const double> x, int dim,
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
@@ -76,7 +76,7 @@ mesh::Geometry mesh::create_geometry(
     // Build list of unique (global) node indices from adjacency list
     // (geometry nodes)
     std::vector<std::int64_t> indices = cell_nodes.array();
-    dolfinx::radix_sort(xtl::span(indices));
+    dolfinx::radix_sort(std::span(indices));
     indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
 
     //  Distribute  node coordinates by global index from other ranks.

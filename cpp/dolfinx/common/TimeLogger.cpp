@@ -7,6 +7,7 @@
 #include "TimeLogger.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
+#include <iostream>
 #include <variant>
 
 using namespace dolfinx;

@@ -6,6 +6,7 @@
 """General tools for timing and configuration"""
 
 import functools
+import typing
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import (IndexMap, git_commit_hash, has_adios2,  # noqa
@@ -41,7 +42,7 @@ class Timer:
         with Timer() as t:
             costly_call_1()
             costly_call_2()
-            print(\"Ellapsed time so far: %s\" % t.elapsed()[0])
+            print(\"Elapsed time so far: %s\" % t.elapsed()[0])
 
     The timer is started when entering context manager and timing
     ends when exiting it. It is also possible to start and stop a
@@ -63,7 +64,7 @@ class Timer:
         list_timings(comm, [TimingType.wall, TimingType.user])
     """
 
-    def __init__(self, name: str = None):
+    def __init__(self, name: typing.Optional[str] = None):
         if name is None:
             self._cpp_object = _cpp.common.Timer()
         else:

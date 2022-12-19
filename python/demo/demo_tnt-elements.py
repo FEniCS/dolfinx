@@ -83,7 +83,7 @@ for v in topology[0]:
 # the matrix.
 
 # +
-pts, wts = basix.make_quadrature(basix.CellType.interval, 1)
+pts, wts = basix.make_quadrature(basix.CellType.interval, 2)
 for e in topology[1]:
     v0 = geometry[e[0]]
     v1 = geometry[e[1]]
@@ -107,8 +107,9 @@ M[2].append(np.zeros([0, 1, 0, 1]))
 # We now create the element. Using the Basix UFL interface, we can wrap
 # this element so that it can be used with FFCx/DOLFINx.
 
-e = basix.create_custom_element(basix.CellType.quadrilateral, [], wcoeffs, x, M,
-                                0, basix.MapType.identity, False, 1, 2)
+e = basix.create_custom_element(
+    basix.CellType.quadrilateral, [], wcoeffs, x, M, 0, basix.MapType.identity,
+    basix.SobolevSpace.H1, False, 1, 2)
 tnt_degree1 = basix.ufl_wrapper.BasixElement(e)
 
 # ## Creating higher degree TNT elements
@@ -148,9 +149,9 @@ def create_tnt_quad(degree):
         M[0].append(np.array([[[[1.]]]]))
 
     # Edges
-    pts, wts = basix.make_quadrature(basix.CellType.interval, 2 * degree - 1)
+    pts, wts = basix.make_quadrature(basix.CellType.interval, 2 * degree)
     poly = basix.tabulate_polynomials(basix.PolynomialType.legendre, basix.CellType.interval, degree - 1, pts)
-    edge_ndofs = poly.shape[1]
+    edge_ndofs = poly.shape[0]
     for e in topology[1]:
         v0 = geometry[e[0]]
         v1 = geometry[e[1]]
@@ -159,7 +160,7 @@ def create_tnt_quad(degree):
 
         mat = np.zeros((edge_ndofs, 1, len(pts), 1))
         for i in range(edge_ndofs):
-            mat[i, 0, :, 0] = wts[:] * poly[:, i]
+            mat[i, 0, :, 0] = wts[:] * poly[i, :]
         M[1].append(mat)
 
     # Interior
@@ -167,17 +168,18 @@ def create_tnt_quad(degree):
         x[2].append(np.zeros([0, 2]))
         M[2].append(np.zeros([0, 1, 0, 1]))
     else:
-        pts, wts = basix.make_quadrature(basix.CellType.quadrilateral, 2 * degree - 2)
+        pts, wts = basix.make_quadrature(basix.CellType.quadrilateral, 2 * degree - 1)
         poly = basix.tabulate_polynomials(basix.PolynomialType.legendre, basix.CellType.quadrilateral, degree - 2, pts)
-        face_ndofs = poly.shape[1]
+        face_ndofs = poly.shape[0]
         x[2].append(pts)
         mat = np.zeros((face_ndofs, 1, len(pts), 1))
         for i in range(face_ndofs):
-            mat[i, 0, :, 0] = wts[:] * poly[:, i]
+            mat[i, 0, :, 0] = wts[:] * poly[i, :]
         M[2].append(mat)
 
     e = basix.create_custom_element(
-        basix.CellType.quadrilateral, [], wcoeffs, x, M, 0, basix.MapType.identity, False, degree, degree + 1)
+        basix.CellType.quadrilateral, [], wcoeffs, x, M, 0, basix.MapType.identity,
+        basix.SobolevSpace.H1, False, degree, degree + 1)
     return basix.ufl_wrapper.BasixElement(e)
 # -
 
@@ -213,8 +215,8 @@ def poisson_error(V):
     bdofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, bndry_facets)
     bc = fem.dirichletbc(u_bc, bdofs)
 
-    # Solve using LU linear solver
-    problem = fem.petsc.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+    # Solve
+    problem = fem.petsc.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_rtol": 1e-12})
     uh = problem.solve()
 
     M = (u_exact - uh)**2 * dx
@@ -253,7 +255,7 @@ for degree in range(2, 9):
 q_ndofs = []
 q_degrees = []
 q_errors = []
-for degree in range(1, 10):
+for degree in range(1, 9):
     V = fem.FunctionSpace(msh, ("Q", degree))
     q_degrees.append(degree)
     q_ndofs.append(V.dofmap.index_map.size_global)
