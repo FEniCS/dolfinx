@@ -1,0 +1,25 @@
+name: Feature request
+description: Add a request for a new/missing feature
+title: "[Feature Request]: "
+labels: ["enhancement"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this feature request!
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe new/missing feature
+      description: Explain what feature you are missing, and how you would like it to work.
+      placeholder: I would like to add a `subtraction` subroutine...
+    validations:
+      required: true
+  - type: textarea
+    id: code-block
+    attributes:
+      label: Suggestion user interface
+      description: Please create a minimal (Python) code that shows how you would like the feature to work.
+      render: python3
+      placeholder: No 3x``` encapsulation of code required

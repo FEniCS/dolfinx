@@ -286,8 +286,8 @@ public:
     return it->second.second;
   }
 
-  /// Get the list of (cell_index, local_facet_index) pairs for the ith
-  /// integral (kernel) for the exterior facet domain type
+  /// @brief List of (cell_index, local_facet_index) pairs for the ith
+  /// integral (kernel) for the exterior facet domain type.
   /// @param[in] i Integral ID, i.e. (sub)domain index
   /// @return List of (cell_index, local_facet_index) pairs. This data is
   /// flattened with row-major layout, shape=(num_facets, 2)
@@ -378,9 +378,9 @@ private:
   // @return Vector of (cell, local_facet) pairs
   template <int num_cells>
   static std::array<std::array<std::int32_t, 2>, num_cells>
-  get_cell_local_facet_pairs(
-      std::int32_t f, std::span<const std::int32_t> cells,
-      const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f)
+  get_cell_local_facet_pairs(std::int32_t f,
+                             std::span<const std::int32_t> cells,
+                             const graph::AdjacencyList<std::int32_t>& c_to_f)
   {
     // Loop over cells sharing facet
     assert(cells.size() == num_cells);

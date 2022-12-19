@@ -9,6 +9,7 @@
 #include "Geometry.h"
 #include "Topology.h"
 #include "utils.h"
+#include <concepts>
 #include <dolfinx/common/MPI.h>
 #include <string>
 #include <utility>
@@ -36,10 +37,10 @@ public:
   /// @param[in] comm MPI Communicator
   /// @param[in] topology Mesh topology
   /// @param[in] geometry Mesh geometry
-  template <typename Topology, typename Geometry>
-  Mesh(MPI_Comm comm, Topology&& topology, Geometry&& geometry)
-      : _topology(std::forward<Topology>(topology)),
-        _geometry(std::forward<Geometry>(geometry)), _comm(comm)
+  template <std::convertible_to<Topology> U, std::convertible_to<Geometry> V>
+  Mesh(MPI_Comm comm, U&& topology, V&& geometry)
+      : _topology(std::forward<U>(topology)),
+        _geometry(std::forward<V>(geometry)), _comm(comm)
   {
     // Do nothing
   }

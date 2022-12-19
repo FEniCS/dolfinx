@@ -205,8 +205,7 @@ void la::petsc::scatter_local_vectors(
   VecGhostRestoreLocalForm(x, &x_local);
 }
 //-----------------------------------------------------------------------------
-Mat la::petsc::create_matrix(MPI_Comm comm,
-                             const dolfinx::la::SparsityPattern& sp,
+Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
                              const std::string& type)
 {
   PetscErrorCode ierr;
