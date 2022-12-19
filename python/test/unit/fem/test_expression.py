@@ -9,16 +9,16 @@ import ctypes.util
 
 import cffi
 import numba
+import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
-import numpy.typing
 
 import basix
 import dolfinx.cpp
 import ufl
 from dolfinx.cpp.la.petsc import create_matrix
-from dolfinx.fem.petsc import load_petsc_lib
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace, create_sparsity_pattern, form)
+from dolfinx.fem.petsc import load_petsc_lib
 from dolfinx.mesh import create_unit_square
 
 from mpi4py import MPI
@@ -61,14 +61,16 @@ else:
         "Cannot translate PETSc scalar type to a C type, complex: {} size: {}.".format(complex, scalar_size))
 
 
+# CFFI - register complex types
 ffi = cffi.FFI()
+cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
+cffi_support.register_type(ffi.typeof('float _Complex'), numba.types.complex64)
+
 # Get MatSetValuesLocal from PETSc available via cffi in ABI mode
 ffi.cdef("""int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow,
-                                {0} ncol, const {0}* icol, const {1}* y, int addv);
-int MatZeroRowsLocal(void* mat, {0} nrow, const {0}* irow, {1} diag);
-int MatAssemblyBegin(void* mat, int mode);
-int MatAssemblyEnd(void* mat, int mode);
+                                  {0} ncol, const {0}* icol, const {1}* y, int addv);
 """.format(c_int_t, c_scalar_t))
+
 
 petsc_lib_cffi = load_petsc_lib(ffi.dlopen)
 MatSetValues = petsc_lib_cffi.MatSetValuesLocal

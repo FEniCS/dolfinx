@@ -183,12 +183,12 @@ private:
 /// @param[in] boundary_vertices List of vertices on the exterior of the
 /// local mesh which may be shared with other processes.
 /// @return A distributed mesh topology
-Topology
-create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-                const std::span<const std::int64_t>& original_cell_index,
-                const std::span<const int>& ghost_owners,
-                const CellType& cell_type,
-                const std::vector<std::int64_t>& boundary_vertices);
+Topology create_topology(MPI_Comm comm,
+                         const graph::AdjacencyList<std::int64_t>& cells,
+                         std::span<const std::int64_t> original_cell_index,
+                         std::span<const int> ghost_owners,
+                         const CellType& cell_type,
+                         std::span<const std::int64_t> boundary_vertices);
 
 /// @brief Get entity indices for entities defined by their vertices.
 ///

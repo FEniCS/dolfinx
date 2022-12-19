@@ -28,12 +28,9 @@ jobs:
   build:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
     runs-on: ubuntu-20.04
-    container: fenicsproject/test-env:nightly-openmpi
+    container: ghcr.io/fenics/test-env:nightly-openmpi
 
     env:
-      CC: clang
-      CXX: clang++
-
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
@@ -88,12 +85,18 @@ jobs:
         continue-on-error: true
         run: |
           cd cpp
+          clang-format --version
           find . -type f \( -name "*.cpp" -o -name "*.h" \) ! -name "loguru.cpp" | xargs clang-format --dry-run --Werror
       - name: clang-format Python binding checks (non-blocking)
         continue-on-error: true
         run: |
           cd python/dolfinx/wrappers
+          clang-format --version
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
+      - name: cmake-format (non-blocking)
+        continue-on-error: true
+        run: |
+          find . -type f \( -name "*.cmake" -o -name "*.cmake.in" \) | xargs cmake-format --check
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
@@ -156,7 +159,7 @@ jobs:
         run: mpirun -np 2 python3 -m pytest python/test/unit/
 
       - name: Upload C++ documentation artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: doc-cpp-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
           path: |
@@ -166,7 +169,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload Python documentation artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: doc-python-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
           path: |

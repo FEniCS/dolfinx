@@ -79,11 +79,11 @@ Interpolation
 .. doxygenfunction:: dolfinx::fem::interpolation_coords
    :project: DOLFINx
 
-.. doxygenfunction:: dolfinx::fem::interpolate(Function<T> &u, const Function<T> &v, const std::span<const std::int32_t> &cells)
+.. doxygenfunction:: dolfinx::fem::interpolate(Function<T> &u, const Function<T> &v, std::span<const std::int32_t> cells)
    :project: DOLFINx
 
 
-.. doxygenfunction:: dolfinx::fem::interpolate(Function<T> &u, const xt::xarray<T> &f, const std::span<const std::int32_t> &cells)
+.. doxygenfunction:: dolfinx::fem::interpolate(Function<T>& u, std::span<const T> f, std::array<std::size_t, 2> fshape, std::span<const std::int32_t> cells)
    :project: DOLFINx
 
 

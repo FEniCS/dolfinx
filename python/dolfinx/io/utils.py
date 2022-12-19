@@ -15,12 +15,17 @@ import basix
 import basix.ufl_wrapper
 import ufl
 from dolfinx import cpp as _cpp
+
+from dolfinx.cpp.io import perm_vtk as cell_perm_vtk  # noqa F401
+from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa F401
+
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh
 
 from mpi4py import MPI as _MPI
 
-__all__ = ["VTKFile", "XDMFFile", "distribute_entity_data"]
+__all__ = ["FidesWriter", "VTKFile", "VTXWriter", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk",
+           "distribute_entity_data"]
 
 
 def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Function]):

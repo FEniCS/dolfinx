@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Garth N. Wells
+// Copyright (C) 2019-2022 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cassert>
+#include <concepts>
 #include <numeric>
 #include <span>
 #include <sstream>
@@ -38,11 +39,8 @@ public:
   /// @param [in] data Adjacency array
   /// @param [in] offsets The index to the adjacency list in the data
   /// array for node i
-  template <
-      typename U, typename V,
-      typename = std::enable_if_t<
-          std::is_same<std::vector<T>, std::decay_t<U>>::value
-          && std::is_same<std::vector<std::int32_t>, std::decay_t<V>>::value>>
+  template <std::convertible_to<std::vector<T>> U,
+            std::convertible_to<std::vector<std::int32_t>> V>
   AdjacencyList(U&& data, V&& offsets)
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
   {
@@ -61,12 +59,12 @@ public:
     // Initialize offsets and compute total size
     _offsets.reserve(data.size() + 1);
     _offsets.push_back(0);
-    for (auto row = data.begin(); row != data.end(); ++row)
-      _offsets.push_back(_offsets.back() + row->size());
+    for (const auto& row : data)
+      _offsets.push_back(_offsets.back() + row.size());
 
     _array.reserve(_offsets.back());
-    for (auto e = data.begin(); e != data.end(); ++e)
-      _array.insert(_array.end(), e->begin(), e->end());
+    for (const auto& e : data)
+      _array.insert(_array.end(), e.begin(), e.end());
   }
 
   /// Copy constructor
@@ -169,6 +167,11 @@ private:
 /// @param [in] degree The number of (outgoing) edges for each node
 /// @return An adjacency list
 template <typename U>
+  requires requires {
+             typename std::decay_t<U>::value_type;
+             std::convertible_to<
+                 U, std::vector<typename std::decay_t<U>::value_type>>;
+           }
 AdjacencyList<typename std::decay_t<U>::value_type>
 regular_adjacency_list(U&& data, int degree)
 {

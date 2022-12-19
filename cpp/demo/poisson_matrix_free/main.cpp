@@ -113,7 +113,7 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
 
 int main(int argc, char* argv[])
 {
-  dolfinx::init_logging(argc, argv);
+  init_logging(argc, argv);
   MPI_Init(&argc, &argv);
 
   {
@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
     // Apply lifting to account for Dirichlet boundary condition
     // b <- b - A * x_bc
     fem::set_bc(ui->x()->mutable_array(), {bc}, -1.0);
-    dolfinx::fem::assemble_vector(b.mutable_array(), *M);
+    fem::assemble_vector(b.mutable_array(), *M);
 
     // Communicate ghost values
     b.scatter_rev(std::plus<T>());

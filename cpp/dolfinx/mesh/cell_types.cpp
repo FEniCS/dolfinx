@@ -89,7 +89,10 @@ mesh::CellType mesh::cell_facet_type(CellType type, int index)
   case CellType::quadrilateral:
     return CellType::interval;
   case CellType::pyramid:
-    throw std::runtime_error("TODO: pyramid");
+    if (index == 0)
+      return CellType::quadrilateral;
+    else
+      return CellType::triangle;
   case CellType::prism:
     if (index == 0 or index == 4)
       return CellType::triangle;
@@ -112,46 +115,20 @@ graph::AdjacencyList<int> mesh::get_entity_vertices(CellType type, int dim)
 graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
                                                  int dim1)
 {
-  if (dim0 != 2)
-  {
-    throw std::runtime_error(
-        "mesh::get_sub_entities supports faces (d=2) only at present.");
-  }
-  if (dim1 != 1)
-  {
-    throw std::runtime_error(
-        "mesh::get_sub_entities supports getting edges (d=1) at present.");
-  }
+  // keep backward compatibility
+  if (type == CellType::interval)
+    return graph::AdjacencyList<int>(0);
+  else if (type == CellType::point)
+    return graph::AdjacencyList<int>(0);
 
-  // TODO: get this data from basix
-  static const std::vector<std::vector<int>> triangle = {{0, 1, 2}};
-  static const std::vector<std::vector<int>> quadrilateral = {{0, 1, 2, 3}};
-  static const std::vector<std::vector<int>> tetrahedron
-      = {{0, 1, 2}, {0, 3, 4}, {1, 3, 5}, {2, 4, 5}};
-  static const std::vector<std::vector<int>> prism
-      = {{0, 1, 3}, {0, 2, 4, 6}, {1, 2, 5, 7}, {3, 4, 5, 8}, {6, 7, 8}};
-  static const std::vector<std::vector<int>> hexahedron
-      = {{0, 1, 3, 5},  {0, 2, 4, 8},  {1, 2, 6, 9},
-         {3, 4, 7, 10}, {5, 6, 7, 11}, {8, 9, 10, 11}};
-  switch (type)
-  {
-  case CellType::interval:
-    return graph::AdjacencyList<int>(0);
-  case CellType::point:
-    return graph::AdjacencyList<int>(0);
-  case CellType::triangle:
-    return graph::AdjacencyList<int>(triangle);
-  case CellType::tetrahedron:
-    return graph::AdjacencyList<int>(tetrahedron);
-  case CellType::prism:
-    return graph::AdjacencyList<int>(prism);
-  case CellType::quadrilateral:
-    return graph::AdjacencyList<int>(quadrilateral);
-  case CellType::hexahedron:
-    return graph::AdjacencyList<int>(hexahedron);
-  default:
-    throw std::runtime_error("Unsupported cell type.");
-  }
+  const std::vector<std::vector<std::vector<int>>> connectivity
+      = basix::cell::sub_entity_connectivity(
+          cell_type_to_basix_type(type))[dim0];
+  std::vector<std::vector<int>> subset;
+  subset.reserve(connectivity.size());
+  for (auto& row : connectivity)
+    subset.emplace_back(std::move(row[dim1]));
+  return graph::AdjacencyList<int>(subset);
 }
 //-----------------------------------------------------------------------------
 int mesh::cell_dim(CellType type)
