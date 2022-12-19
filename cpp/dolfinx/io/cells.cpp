@@ -80,7 +80,26 @@ int cell_degree(mesh::CellType type, int num_nodes)
       return 2;
     default:
       throw std::runtime_error("Unsupported hexahedron layout");
+    }
+  case mesh::CellType::prism:
+    switch (num_nodes)
+    {
+    case 6:
       return 1;
+    case 15:
+      return 2;
+    default:
+      throw std::runtime_error("Unsupported prism layout");
+    }
+  case mesh::CellType::pyramid:
+    switch (num_nodes)
+    {
+    case 5:
+      return 1;
+    case 13:
+      return 2;
+    default:
+      throw std::runtime_error("Unsupported pyramid layout");
     }
   default:
     throw std::runtime_error("Unknown cell type.");
@@ -169,8 +188,23 @@ std::vector<std::uint8_t> vtk_wedge(int num_nodes)
   {
   case 6:
     return {0, 1, 2, 3, 4, 5};
+  case 15:
+    return {0, 1, 2, 3, 4, 5, 6, 9, 7, 12, 14, 13, 8, 10, 11};
   default:
     throw std::runtime_error("Unknown wedge layout");
+  }
+}
+//-----------------------------------------------------------------------------
+std::vector<std::uint8_t> vtk_pyramid(int num_nodes)
+{
+  switch (num_nodes)
+  {
+  case 5:
+    return {0, 1, 3, 2, 4};
+  case 13:
+    return {0, 1, 3, 2, 4, 5, 8, 10, 6, 7, 9, 12, 11};
+  default:
+    throw std::runtime_error("Unknown pyramid layout");
   }
 }
 //-----------------------------------------------------------------------------
@@ -285,6 +319,32 @@ std::vector<std::uint8_t> gmsh_quadrilateral(int num_nodes)
     throw std::runtime_error("Higher order Gmsh quadrilateral not supported");
   }
 }
+//-----------------------------------------------------------------------------
+std::vector<std::uint8_t> gmsh_prism(int num_nodes)
+{
+  switch (num_nodes)
+  {
+  case 6:
+    return {0, 1, 2, 3, 4, 5};
+  case 15:
+    return {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
+  default:
+    throw std::runtime_error("Higher order Gmsh prism not supported");
+  }
+}
+//-----------------------------------------------------------------------------
+std::vector<std::uint8_t> gmsh_pyramid(int num_nodes)
+{
+  switch (num_nodes)
+  {
+  case 5:
+    return {0, 1, 3, 2, 4};
+  case 13:
+    return {0, 1, 3, 2, 4, 5, 6, 7, 8, 9, 10, 12, 11};
+  default:
+    throw std::runtime_error("Higher order Gmsh pyramid not supported");
+  }
+}
 } // namespace
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> io::cells::perm_vtk(mesh::CellType type,
@@ -309,11 +369,14 @@ std::vector<std::uint8_t> io::cells::perm_vtk(mesh::CellType type,
   case mesh::CellType::quadrilateral:
     map = vtk_quadrilateral(num_nodes);
     break;
+  case mesh::CellType::hexahedron:
+    map = vtk_hexahedron(num_nodes);
+    break;
   case mesh::CellType::prism:
     map = vtk_wedge(num_nodes);
     break;
-  case mesh::CellType::hexahedron:
-    map = vtk_hexahedron(num_nodes);
+  case mesh::CellType::pyramid:
+    map = vtk_pyramid(num_nodes);
     break;
   default:
     throw std::runtime_error("Unknown cell type.");
@@ -346,6 +409,12 @@ std::vector<std::uint8_t> io::cells::perm_gmsh(const mesh::CellType type,
     break;
   case mesh::CellType::hexahedron:
     map = gmsh_hexahedron(num_nodes);
+    break;
+  case mesh::CellType::prism:
+    map = gmsh_prism(num_nodes);
+    break;
+  case mesh::CellType::pyramid:
+    map = gmsh_pyramid(num_nodes);
     break;
   default:
     throw std::runtime_error("Unknown cell type.");

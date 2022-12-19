@@ -1,4 +1,5 @@
-install(CODE "MESSAGE(
+install(
+  CODE "MESSAGE(
 \"----------------------------------------------------------------------------
 DOLFINx has now been installed in
 
@@ -16,5 +17,5 @@ To update your environment variables, run the following command:
 
     source ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/dolfinx/dolfinx.conf
 
-----------------------------------------------------------------------------\")")
-
+----------------------------------------------------------------------------\")"
+)
