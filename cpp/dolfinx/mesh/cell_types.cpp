@@ -159,35 +159,7 @@ int mesh::cell_dim(CellType type)
 int mesh::cell_num_entities(CellType type, int dim)
 {
   assert(dim <= 3);
-  constexpr std::array<int, 4> point = {1, 0, 0, 0};
-  constexpr std::array<int, 4> interval = {2, 1, 0, 0};
-  constexpr std::array<int, 4> triangle = {3, 3, 1, 0};
-  constexpr std::array<int, 4> quadrilateral = {4, 4, 1, 0};
-  constexpr std::array<int, 4> tetrahedron = {4, 6, 4, 1};
-  constexpr std::array<int, 4> pyramid = {5, 8, 5, 1};
-  constexpr std::array<int, 4> prism = {6, 9, 5, 1};
-  constexpr std::array<int, 4> hexahedron = {8, 12, 6, 1};
-  switch (type)
-  {
-  case CellType::point:
-    return point[dim];
-  case CellType::interval:
-    return interval[dim];
-  case CellType::triangle:
-    return triangle[dim];
-  case CellType::tetrahedron:
-    return tetrahedron[dim];
-  case CellType::quadrilateral:
-    return quadrilateral[dim];
-  case CellType::pyramid:
-    return pyramid[dim];
-  case CellType::prism:
-    return prism[dim];
-  case CellType::hexahedron:
-    return hexahedron[dim];
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
+  return basix::cell::num_sub_entities(cell_type_to_basix_type(type), dim);
 }
 //-----------------------------------------------------------------------------
 bool mesh::is_simplex(CellType type) { return static_cast<int>(type) > 0; }
