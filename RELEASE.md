@@ -105,7 +105,7 @@ Although lengthy, integration testing is highly effective at discovering issues
 and mistakes before they reach tagged versions.
 
 At each of the following links run the GitHub Action Workflow manually using
-the `develop` branch in all fields. *Only proceed to tagging once all tests pass.*
+the `release` branch in all fields. *Only proceed to tagging once all tests pass.*
 
 ### Basix integration
 
