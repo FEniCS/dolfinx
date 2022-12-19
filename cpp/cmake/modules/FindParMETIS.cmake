@@ -1,3 +1,4 @@
+#=============================================================================
 # - Try to find ParMETIS
 # Once done this will define
 #
@@ -5,7 +6,7 @@
 #  PARMETIS_INCLUDE_DIRS - include directories for ParMETIS
 #  PARMETIS_LIBRARIES    - libraries for ParMETIS
 #  PARMETIS_VERSION      - version for ParMETIS
-
+#
 #=============================================================================
 # Copyright (C) 2010-2022 Garth N. Wells, Anders Logg, Johannes Ring
 # and Jørgen S. Dokken
@@ -36,51 +37,61 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-if (MPI_CXX_FOUND)
-  find_path(PARMETIS_INCLUDE_DIRS parmetis.h
-    HINTS ${PARMETIS_ROOT}/include $ENV{PARMETIS_ROOT}/include ${PETSC_INCLUDE_DIRS}
+if(MPI_CXX_FOUND)
+  find_path(
+    PARMETIS_INCLUDE_DIRS parmetis.h
+    HINTS ${PARMETIS_ROOT}/include $ENV{PARMETIS_ROOT}/include
+          ${PETSC_INCLUDE_DIRS}
     DOC "Directory where the ParMETIS header files are located"
   )
 
-  find_library(PARMETIS_LIBRARY parmetis
+  find_library(
+    PARMETIS_LIBRARY parmetis
     HINTS ${PARMETIS_ROOT}/lib $ENV{PARMETIS_ROOT}/lib ${PETSC_LIBRARY_DIRS}
     NO_DEFAULT_PATH
     DOC "Directory where the ParMETIS library is located"
   )
-  find_library(PARMETIS_LIBRARY parmetis
+  find_library(
+    PARMETIS_LIBRARY parmetis
     DOC "Directory where the ParMETIS library is located"
   )
 
-  find_library(METIS_LIBRARY metis
+  find_library(
+    METIS_LIBRARY metis
     HINTS ${PARMETIS_ROOT}/lib $ENV{PARMETIS_ROOT}/lib ${PETSC_LIBRARY_DIRS}
     NO_DEFAULT_PATH
     DOC "Directory where the METIS library is located"
   )
-  find_library(METIS_LIBRARY metis
-    DOC "Directory where the METIS library is located"
+  find_library(
+    METIS_LIBRARY metis DOC "Directory where the METIS library is located"
   )
 
   set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY})
-  if (METIS_LIBRARY)
+  if(METIS_LIBRARY)
     set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARIES} ${METIS_LIBRARY})
   endif()
 
   # Try compiling and running test program
-  if (DOLFINX_SKIP_BUILD_TESTS)
+  if(DOLFINX_SKIP_BUILD_TESTS)
     set(PARMETIS_TEST_RUNS TRUE)
     set(PARMETIS_VERSION "UNKNOWN")
     set(PARMETIS_VERSION_OK TRUE)
-  elseif (PARMETIS_INCLUDE_DIRS AND PARMETIS_LIBRARY)
+  elseif(PARMETIS_INCLUDE_DIRS AND PARMETIS_LIBRARY)
 
-  # Set flags for building test program
-  set(CMAKE_REQUIRED_INCLUDES  ${PARMETIS_INCLUDE_DIRS} ${MPI_CXX_INCLUDE_PATH})
-  set(CMAKE_REQUIRED_LIBRARIES ${PARMETIS_LIBRARIES}    ${MPI_CXX_LIBRARIES})
-  set(CMAKE_REQUIRED_FLAGS     ${CMAKE_REQUIRED_FLAGS}  ${MPI_CXX_COMPILE_FLAGS})
+    # Set flags for building test program
+    set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIRS}
+                                ${MPI_CXX_INCLUDE_PATH}
+    )
+    set(CMAKE_REQUIRED_LIBRARIES ${PARMETIS_LIBRARIES} ${MPI_CXX_LIBRARIES})
+    set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} ${MPI_CXX_COMPILE_FLAGS})
 
-  # Check ParMETIS version
-  set(PARMETIS_CONFIG_TEST_VERSION_CPP
-    "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/parmetis_config_test_version.cpp")
-  file(WRITE ${PARMETIS_CONFIG_TEST_VERSION_CPP} "
+    # Check ParMETIS version
+    set(PARMETIS_CONFIG_TEST_VERSION_CPP
+        "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/parmetis_config_test_version.cpp"
+    )
+    file(
+      WRITE ${PARMETIS_CONFIG_TEST_VERSION_CPP}
+      "
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <iostream>
 #include \"parmetis.h\"
@@ -96,28 +107,28 @@ int main() {
 #endif
   return 0;
 }
-")
+"
+    )
 
     try_run(
       PARMETIS_CONFIG_TEST_VERSION_EXITCODE
-      PARMETIS_CONFIG_TEST_VERSION_COMPILED
-      ${CMAKE_CURRENT_BINARY_DIR}
+      PARMETIS_CONFIG_TEST_VERSION_COMPILED ${CMAKE_CURRENT_BINARY_DIR}
       ${PARMETIS_CONFIG_TEST_VERSION_CPP}
-      CMAKE_FLAGS
-        "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
-	"-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
+      CMAKE_FLAGS "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
+                  "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
       COMPILE_OUTPUT_VARIABLE PARMETIS_CONFIG_TEST_VERSION_COMPILE_OUTPUT
       RUN_OUTPUT_VARIABLE PARMETIS_CONFIG_TEST_VERSION_OUTPUT
-      )
+    )
 
-    if (PARMETIS_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
+    if(PARMETIS_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
       set(PARMETIS_VERSION ${PARMETIS_CONFIG_TEST_VERSION_OUTPUT})
       mark_as_advanced(PARMETIS_VERSION)
     endif()
 
     # Build and run test program
     include(CheckCXXSourceRuns)
-    check_cxx_source_runs("
+    check_cxx_source_runs(
+      "
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>
 #include <parmetis.h>
@@ -128,14 +139,17 @@ int main()
 
   return 0;
 }
-" PARMETIS_TEST_RUNS)
+"
+      PARMETIS_TEST_RUNS
+    )
 
   endif()
 endif()
 
 # Standard package handling
-find_package_handle_standard_args(ParMETIS
-                                  REQUIRED_VARS PARMETIS_LIBRARIES PARMETIS_TEST_RUNS PARMETIS_INCLUDE_DIRS
-                        				  VERSION_VAR PARMETIS_VERSION
-                                  HANDLE_VERSION_RANGE
-                                  REASON_FAILURE_MESSAGE "ParMETIS could not be found.")
+find_package_handle_standard_args(
+  ParMETIS
+  REQUIRED_VARS PARMETIS_LIBRARIES PARMETIS_TEST_RUNS PARMETIS_INCLUDE_DIRS
+  VERSION_VAR PARMETIS_VERSION HANDLE_VERSION_RANGE REASON_FAILURE_MESSAGE
+                               "ParMETIS could not be found."
+)
