@@ -177,13 +177,17 @@ void io(py::module& m)
 
 #ifdef HAS_ADIOS2
   // dolfinx::io::FidesWriter
-  std::string pyclass_name = std::string("FidesWriter");
   py::class_<dolfinx::io::FidesWriter,
-             std::shared_ptr<dolfinx::io::FidesWriter>>(m, pyclass_name.c_str(),
-                                                        "FidesWriter object")
+             std::shared_ptr<dolfinx::io::FidesWriter>>
+      fides_writer(m, "FidesWriter", "FidesWriter object");
+
+  py::enum_<dolfinx::io::FidesWriter::MeshPolicy>(fides_writer, "MeshPolicy")
+      .value("update", dolfinx::io::FidesWriter::MeshPolicy::update)
+      .value("reuse", dolfinx::io::FidesWriter::MeshPolicy::reuse);
+
+  fides_writer
       .def(py::init(
-               [](const MPICommWrapper comm,
-                  const std::filesystem::path& filename,
+               [](MPICommWrapper comm, std::filesystem::path filename,
                   std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
                {
                  return std::make_unique<dolfinx::io::FidesWriter>(
@@ -191,17 +195,21 @@ void io(py::module& m)
                }),
            py::arg("comm"), py::arg("filename"), py::arg("mesh"))
       .def(py::init(
-               [](const MPICommWrapper comm,
-                  const std::filesystem::path& filename,
+               [](MPICommWrapper comm, std::filesystem::path filename,
                   const std::vector<std::variant<
+                      std::shared_ptr<const dolfinx::fem::Function<float>>,
                       std::shared_ptr<const dolfinx::fem::Function<double>>,
+                      std::shared_ptr<
+                          const dolfinx::fem::Function<std::complex<float>>>,
                       std::shared_ptr<const dolfinx::fem::Function<
-                          std::complex<double>>>>>& u)
+                          std::complex<double>>>>>& u,
+                  dolfinx::io::FidesWriter::MeshPolicy policy)
                {
-                 return std::make_unique<dolfinx::io::FidesWriter>(comm.get(),
-                                                                   filename, u);
+                 return std::make_unique<dolfinx::io::FidesWriter>(
+                     comm.get(), filename, u, policy);
                }),
-           py::arg("comm"), py::arg("filename"), py::arg("u"))
+           py::arg("comm"), py::arg("filename"), py::arg("u"),
+           py::arg("policy") = dolfinx::io::FidesWriter::MeshPolicy::update)
       .def("close", [](dolfinx::io::FidesWriter& self) { self.close(); })
       .def(
           "write",
@@ -209,12 +217,10 @@ void io(py::module& m)
           py::arg("t"));
 
   // dolfinx::io::VTXWriter
-  pyclass_name = std::string("VTXWriter");
   py::class_<dolfinx::io::VTXWriter, std::shared_ptr<dolfinx::io::VTXWriter>>(
-      m, pyclass_name.c_str(), "VTXWriter object")
+      m, "VTXWriter", "VTXWriter object")
       .def(py::init(
-               [](const MPICommWrapper comm,
-                  const std::filesystem::path& filename,
+               [](MPICommWrapper comm, std::filesystem::path filename,
                   std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
                {
                  return std::make_unique<dolfinx::io::VTXWriter>(
@@ -222,10 +228,12 @@ void io(py::module& m)
                }),
            py::arg("comm"), py::arg("filename"), py::arg("mesh"))
       .def(py::init(
-               [](const MPICommWrapper comm,
-                  const std::filesystem::path& filename,
+               [](MPICommWrapper comm, std::filesystem::path filename,
                   const std::vector<std::variant<
+                      std::shared_ptr<const dolfinx::fem::Function<float>>,
                       std::shared_ptr<const dolfinx::fem::Function<double>>,
+                      std::shared_ptr<
+                          const dolfinx::fem::Function<std::complex<float>>>,
                       std::shared_ptr<const dolfinx::fem::Function<
                           std::complex<double>>>>>& u) {
                  return std::make_unique<dolfinx::io::VTXWriter>(comm.get(),
