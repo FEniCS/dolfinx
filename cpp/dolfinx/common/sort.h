@@ -24,7 +24,7 @@ namespace dolfinx
 /// @tparam BITS The number of bits to sort at a time.
 /// @param[in, out] array The array to sort.
 template <typename T, int BITS = 8>
-void radix_sort(const std::span<T>& array)
+void radix_sort(std::span<T> array)
 {
   static_assert(std::is_integral<T>(), "This function only sorts integers.");
 
@@ -94,8 +94,7 @@ void radix_sort(const std::span<T>& array)
 /// @param[in] array The array to sort
 /// @param[in] perm FIXME
 template <typename T, int BITS = 16>
-void argsort_radix(const std::span<const T>& array,
-                   std::span<std::int32_t> perm)
+void argsort_radix(std::span<const T> array, std::span<std::int32_t> perm)
 {
   static_assert(std::is_integral_v<T>, "Integral required.");
 
@@ -173,8 +172,7 @@ void argsort_radix(const std::span<const T>& array,
 /// @note This function is suitable for small values of `shape1`. Each
 /// column of `x` is copied into an array that is then sorted.
 template <typename T, int BITS = 16>
-std::vector<std::int32_t> sort_by_perm(const std::span<const T>& x,
-                                       std::size_t shape1)
+std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
 {
   static_assert(std::is_integral_v<T>, "Integral required.");
   assert(shape1 > 0);

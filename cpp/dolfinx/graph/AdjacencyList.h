@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Garth N. Wells
+// Copyright (C) 2019-2022 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cassert>
+#include <concepts>
 #include <numeric>
 #include <span>
 #include <sstream>
@@ -38,11 +39,8 @@ public:
   /// @param [in] data Adjacency array
   /// @param [in] offsets The index to the adjacency list in the data
   /// array for node i
-  template <
-      typename U, typename V,
-      typename = std::enable_if_t<
-          std::is_same<std::vector<T>, std::decay_t<U>>::value
-          && std::is_same<std::vector<std::int32_t>, std::decay_t<V>>::value>>
+  template <std::convertible_to<std::vector<T>> U,
+            std::convertible_to<std::vector<std::int32_t>> V>
   AdjacencyList(U&& data, V&& offsets)
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
   {
@@ -169,6 +167,11 @@ private:
 /// @param [in] degree The number of (outgoing) edges for each node
 /// @return An adjacency list
 template <typename U>
+  requires requires {
+             typename std::decay_t<U>::value_type;
+             std::convertible_to<
+                 U, std::vector<typename std::decay_t<U>::value_type>>;
+           }
 AdjacencyList<typename std::decay_t<U>::value_type>
 regular_adjacency_list(U&& data, int degree)
 {

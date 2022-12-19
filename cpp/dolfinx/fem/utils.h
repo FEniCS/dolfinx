@@ -15,6 +15,7 @@
 #include "Function.h"
 #include "sparsitybuild.h"
 #include <array>
+#include <concepts>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -54,7 +55,7 @@ class FunctionSpace;
 namespace impl
 {
 /// @private These structs are used to get the float/value type from a
-/// template argument, including support for complex types
+/// template argument, including support for complex types.
 template <typename T, typename = void>
 struct scalar_value_type
 {
@@ -73,11 +74,20 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 
 } // namespace impl
 
+/// @brief Finite element cell kernel concept.
+///
+/// Kernel functions that can be passed to an assembler for execution
+/// must satisfy this concept.
+template <class U, class T>
+concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
+                                       const impl::scalar_value_type_t<T>*,
+                                       const int*, const std::uint8_t*>;
+
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
-/// bilinear form for a rectangular array of forms
+/// bilinear form for a rectangular array of forms.
 ///
 /// @param[in] a A rectangular block on bilinear forms
-/// @return Rectangular array of the same shape as @p a with a pair of
+/// @return Rectangular array of the same shape as `a` with a pair of
 /// function spaces in each array entry. If a form is null, then the
 /// returned function space pair is (null, null).
 template <typename T>
@@ -560,12 +570,11 @@ std::span<const std::uint32_t> get_cell_orientation_info(
   return cell_info;
 }
 
-// Pack a single coefficient for a single cell
-template <typename T, int _bs, typename Functor>
-static inline void pack(const std::span<T>& coeffs, std::int32_t cell, int bs,
-                        const std::span<const T>& v,
-                        const std::span<const std::uint32_t>& cell_info,
-                        const DofMap& dofmap, Functor transform)
+/// Pack a single coefficient for a single cell
+template <typename T, int _bs>
+void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
+          std::span<const std::uint32_t> cell_info, const DofMap& dofmap,
+          auto transform)
 {
   auto dofs = dofmap.cell_dofs(cell);
   for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -589,32 +598,41 @@ static inline void pack(const std::span<T>& coeffs, std::int32_t cell, int bs,
   transform(coeffs, cell_info, cell, 1);
 }
 
-/// @brief Pack a single coefficient for a set of active entities
+/// @private
+/// @brief  Concepts for function that returns cell index
+template <typename F>
+concept FetchCells = requires(F&& f, std::span<const std::int32_t> v) {
+                       std::invocable<F, std::span<const std::int32_t>>;
+                       {
+                         f(v)
+                         } -> std::convertible_to<std::int32_t>;
+                     };
+
+/// @brief Pack a single coefficient for a set of active entities.
 ///
 /// @param[out] c The coefficient to be packed
 /// @param[in] cstride The total number of coefficient values to pack
 /// for each entity
-/// @param[in] u The function to extract data from
+/// @param[in] u The function to extract coefficient data from
 /// @param[in] cell_info Array of bytes describing which transformation
 /// has to be applied on the cell to map it to the reference element
 /// @param[in] entities The set of active entities
 /// @param[in] estride The stride for each entity in active entities.
 /// @param[in] fetch_cells Function that fetches the cell index for an
-/// entity in active_entities (signature:
-/// `std::function<std::int32_t(E::value_type)>`)
+/// entity in active_entities.
 /// @param[in] offset The offset for c
-template <typename T, typename Functor>
-void pack_coefficient_entity(const std::span<T>& c, int cstride,
-                             const Function<T>& u,
-                             const std::span<const std::uint32_t>& cell_info,
-                             const std::span<const std::int32_t>& entities,
-                             std::size_t estride, Functor fetch_cells,
+template <typename T>
+void pack_coefficient_entity(std::span<T> c, int cstride, const Function<T>& u,
+                             std::span<const std::uint32_t> cell_info,
+                             std::span<const std::int32_t> entities,
+                             std::size_t estride, FetchCells auto&& fetch_cells,
                              std::int32_t offset)
 {
-  // Read data from coefficient "u"
-  const std::span<const T>& v = u.x()->array();
+  // Read data from coefficient Function u
+  std::span<const T> v = u.x()->array();
   const DofMap& dofmap = *u.function_space()->dofmap();
   std::shared_ptr<const FiniteElement> element = u.function_space()->element();
+  assert(element);
   int space_dim = element->space_dimension();
   const auto transformation
       = element->get_dof_transformation_function<T>(false, true);
@@ -627,7 +645,7 @@ void pack_coefficient_entity(const std::span<T>& c, int cstride,
     {
       auto entity = entities.subspan(e, estride);
       std::int32_t cell = fetch_cells(entity);
-      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
+      auto cell_coeff = c.subspan((e / estride) * cstride + offset, space_dim);
       pack<T, 1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
     break;
@@ -636,7 +654,7 @@ void pack_coefficient_entity(const std::span<T>& c, int cstride,
     {
       auto entity = entities.subspan(e, estride);
       std::int32_t cell = fetch_cells(entity);
-      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
+      auto cell_coeff = c.subspan((e / estride) * cstride + offset, space_dim);
       pack<T, 2>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
     break;
@@ -654,7 +672,7 @@ void pack_coefficient_entity(const std::span<T>& c, int cstride,
     {
       auto entity = entities.subspan(e, estride);
       std::int32_t cell = fetch_cells(entity);
-      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
+      auto cell_coeff = c.subspan((e / estride) * cstride + offset, space_dim);
       pack<T, -1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
     break;
@@ -735,7 +753,7 @@ allocate_coefficient_storage(const Form<T>& form)
 /// @param[in] cstride The coefficient stride
 template <typename T>
 void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
-                       const std::span<T>& c, int cstride)
+                       std::span<T> c, int cstride)
 {
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const Function<T>>>& coefficients
@@ -751,8 +769,9 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
     {
     case IntegralType::cell:
     {
-      auto fetch_cell = [](auto entity) { return entity.front(); };
+      auto fetch_cell = [](auto& entity) { return entity.front(); };
       const std::vector<std::int32_t>& cells = form.cell_domains(id);
+
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
@@ -766,7 +785,7 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
     {
       const std::vector<std::int32_t>& facets = form.exterior_facet_domains(id);
 
-      // Create lambda function fetching cell index from exterior facet entity
+      // Function to fetch cell index from exterior facet entity
       auto fetch_cell = [](auto& entity) { return entity.front(); };
 
       // Iterate over coefficients
@@ -776,13 +795,13 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
                                       cell_info, facets, 2, fetch_cell,
                                       offsets[coeff]);
       }
-
       break;
     }
     case IntegralType::interior_facet:
     {
       const std::vector<std::int32_t>& facets = form.interior_facet_domains(id);
-      // Lambda functions to fetch cell index from interior facet entity
+
+      // Functions to fetch cell indices from interior facet entity
       auto fetch_cell0 = [](auto& entity) { return entity[0]; };
       auto fetch_cell1 = [](auto& entity) { return entity[2]; };
 
@@ -856,17 +875,15 @@ Expression<T> create_expression(
         const unsigned char*)>(expression.tabulate_tensor_complex128);
   }
   else
-  {
     throw std::runtime_error("Type not supported.");
-  }
-  assert(tabulate_tensor);
 
+  assert(tabulate_tensor);
   return Expression(coefficients, constants, X, Xshape, tabulate_tensor,
                     value_shape, mesh, argument_function_space);
 }
 
 /// @brief Create Expression from UFC input (with named coefficients and
-/// constants)
+/// constants).
 template <typename T>
 Expression<T> create_expression(
     const ufcx_expression& expression,
@@ -936,8 +953,7 @@ void pack_coefficients(const Form<T>& form,
 /// @return A pair of the form (coeffs, cstride)
 template <typename T>
 std::pair<std::vector<T>, int>
-pack_coefficients(const Expression<T>& u,
-                  const std::span<const std::int32_t>& cells)
+pack_coefficients(const Expression<T>& u, std::span<const std::int32_t> cells)
 {
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const Function<T>>>& coefficients
@@ -954,9 +970,11 @@ pack_coefficients(const Expression<T>& u,
 
     // Iterate over coefficients
     for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
+    {
       impl::pack_coefficient_entity(
           std::span(c), cstride, *coefficients[coeff], cell_info, cells, 1,
           [](auto entity) { return entity[0]; }, offsets[coeff]);
+    }
   }
   return {std::move(c), cstride};
 }
@@ -981,7 +999,7 @@ std::vector<typename U::scalar_type> pack_constants(const U& u)
   for (auto& constant : constants)
   {
     const std::vector<T>& value = constant->value;
-    std::copy(value.cbegin(), value.cend(),
+    std::copy(value.begin(), value.end(),
               std::next(constant_values.begin(), offset));
     offset += value.size();
   }

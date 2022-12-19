@@ -73,8 +73,10 @@ jobs:
       - name: Run a C++ test (release version)
         run: |
           . ./spack/share/spack/setup-env.sh
-          spack env activate cpp-release
-          spack install cmake py-fenics-ffcx
+          spack env create cpp-release-test
+          spack env activate cpp-release-test
+          spack add fenics-dolfinx+adios2 cmake py-fenics-ffcx
+          spack install
           cd dolfinx-release/cpp/
           cd demo/poisson
           cmake .
@@ -89,8 +91,10 @@ jobs:
       - name: Run a C++ test (development version)
         run: |
           . ./spack/share/spack/setup-env.sh
-          spack env activate cpp-main
-          spack install cmake py-fenics-ffcx@main
+          spack env create cpp-main-test
+          spack env activate cpp-main-test
+          spack add fenics-dolfinx@main+adios2 cmake py-fenics-ffcx@main
+          spack install
           cd dolfinx-main/cpp/
           cd demo/poisson
           cmake .
