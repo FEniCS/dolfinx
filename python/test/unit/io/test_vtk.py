@@ -14,7 +14,7 @@ import ufl
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
 from dolfinx.io import (VTKFile)
-from dolfinx.io import cell_perm_vtk  # noqa F401
+from dolfinx.io.utils import cell_perm_vtk  # noqa F401
 
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)

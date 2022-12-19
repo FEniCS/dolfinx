@@ -17,6 +17,7 @@ import ufl
 from dolfinx import cpp as _cpp
 
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk  # noqa F401
+from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa F401
 
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh
