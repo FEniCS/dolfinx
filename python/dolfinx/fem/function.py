@@ -75,13 +75,6 @@ class Constant(ufl.Constant):
         else:
             return float(self.value)
 
-    def __int__(self):
-        if self.ufl_shape or self.ufl_free_indices:
-            raise TypeError(
-                "Cannot evaluate a nonscalar expression to a scalar value.")
-        else:
-            return int(self.value)
-
     def __complex__(self):
         if self.ufl_shape or self.ufl_free_indices:
             raise TypeError(
