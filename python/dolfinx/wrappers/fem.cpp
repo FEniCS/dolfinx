@@ -900,10 +900,10 @@ void fem(py::module& m)
   petsc_module(petsc_mod);
 
   // dolfinx::fem::assemble
-  declare_functions<double>(m);
   declare_functions<float>(m);
-  declare_functions<std::complex<double>>(m);
+  declare_functions<double>(m);
   declare_functions<std::complex<float>>(m);
+  declare_functions<std::complex<double>>(m);
 
   declare_objects<float>(m, "float32");
   declare_objects<double>(m, "float64");
@@ -1090,6 +1090,7 @@ void fem(py::module& m)
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement::create_dof_layout)
       .def_property_readonly("degree", &dolfinx::fem::CoordinateElement::degree)
+      .def_property_readonly("variant", &dolfinx::fem::CoordinateElement::variant)
       .def(
           "push_forward",
           [](const dolfinx::fem::CoordinateElement& self,

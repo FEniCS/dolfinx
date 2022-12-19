@@ -1,0 +1,72 @@
+name: Bug report
+description: Create a report if you believe something is not working
+title: "[BUG]: "
+labels: ["bug"]
+
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: How to reproduce the bug
+      description: Explain how to reproduce the issue you are having
+      placeholder: I ran a demo or test that failed. The name of the demo is `demo_something.py`
+    validations:
+      required: true
+  - type: textarea
+    id: mwe-python
+    attributes:
+      label: Minimal Example (Python)
+      description: Add (optionally) a minimal script that reproduces the bug
+      render: Python
+      placeholder: |
+          import dolfinx
+          from mpi4py import MPI
+          domain = dolfinx.mesh.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+    validations:
+      required: false
+
+  - type: textarea
+    id: output-python
+    attributes:
+      label: Output (Python)
+      description: If you get an error message or any output, please add it here
+      render: bash
+      placeholder: |
+          Traceback (most recent call last):
+          File "/root/shared/dolfinx/python/test/mwe.py", line 3, in <module>
+          domain = dolfinx.mesh.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+          AttributeError: module 'dolfinx.mesh' has no attribute 'UnitSquareMesh'
+    validations:
+      required: false
+  
+  - type: dropdown
+    id: version
+    attributes:
+      label: Version
+      description: What version of DOLFINx are you running?
+      options:
+        - 0.4.0
+        - 0.4.1
+        - 0.5.0
+        - 0.5.1
+        - main branch
+    validations:
+      required: true
+  - type: textarea
+    id: commit
+    attributes:
+      label: DOLFINx git commit
+      description: Supply the git commit your code is based of
+      placeholder: Can be obtained by running `python3 -c "import dolfinx; print(dolfinx.common.git_commit_hash)"
+  - type: textarea
+    id: output
+    attributes:
+      label: Installation
+      description: How did you install DOLFINx?
+      placeholder: i.e. "I used the Docker images on a Windows 11" or "I installed DOLFINx from source on a MacBook Air with the M1 chip. Here are the steps to reproduce my installation ..."
+  - type: textarea
+    id: extra
+    attributes: 
+      label: Additional information
+      description: If you have any additional information, please add it here.
+      placeholder: You can drag and drop files here to attach them

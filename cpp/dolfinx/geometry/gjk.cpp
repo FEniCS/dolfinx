@@ -18,7 +18,7 @@ namespace
 /// nearest to the origin. Also, return the shortest vector from the
 /// origin to the resulting simplex.
 std::pair<std::vector<double>, std::array<double, 3>>
-nearest_simplex(const std::span<const double>& s)
+nearest_simplex(std::span<const double> s)
 {
   assert(s.size() % 3 == 0);
   const std::size_t s_rows = s.size() / 3;
@@ -216,8 +216,8 @@ nearest_simplex(const std::span<const double>& s)
 //----------------------------------------------------------------------------
 
 /// @brief 'support' function, finds point p in bd which maximises p.v
-std::array<double, 3> support(const std::span<const double>& bd,
-                              const std::array<double, 3>& v)
+std::array<double, 3> support(std::span<const double> bd,
+                              std::array<double, 3> v)
 {
   int i = 0;
   double qmax = bd[0] * v[0] + bd[1] * v[1] + bd[2] * v[2];
@@ -235,9 +235,8 @@ std::array<double, 3> support(const std::span<const double>& bd,
 }
 } // namespace
 //----------------------------------------------------------------------------
-std::array<double, 3>
-geometry::compute_distance_gjk(const std::span<const double>& p,
-                               const std::span<const double>& q)
+std::array<double, 3> geometry::compute_distance_gjk(std::span<const double> p,
+                                                     std::span<const double> q)
 {
   assert(p.size() % 3 == 0);
   assert(q.size() % 3 == 0);

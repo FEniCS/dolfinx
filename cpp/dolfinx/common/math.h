@@ -235,9 +235,9 @@ void pinv(U A, V P)
         P(i, j) = 0;
 
     // pinv(A) = (A^T * A)^-1 * A^T
-    dolfinx::math::dot(AT, A, ATA);
-    dolfinx::math::inv(ATA, Inv);
-    dolfinx::math::dot(Inv, AT, P);
+    dot(AT, A, ATA);
+    inv(ATA, Inv);
+    dot(Inv, AT, P);
   }
   else if (A.extent(1) == 1)
   {

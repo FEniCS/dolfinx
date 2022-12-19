@@ -27,9 +27,8 @@ namespace
 {
 /// Re-order an adjacency list
 template <typename T>
-graph::AdjacencyList<T>
-reorder_list(const graph::AdjacencyList<T>& list,
-             const std::span<const std::int32_t>& nodemap)
+graph::AdjacencyList<T> reorder_list(const graph::AdjacencyList<T>& list,
+                                     std::span<const std::int32_t> nodemap)
 {
   // Copy existing data to keep ghost values (not reordered)
   std::vector<T> data(list.array());
@@ -191,7 +190,7 @@ Mesh mesh::create_mesh(MPI_Comm comm,
 std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>>
 mesh::create_submesh(const Mesh& mesh, int dim,
-                     const std::span<const std::int32_t>& entities)
+                     std::span<const std::int32_t> entities)
 {
   // -- Submesh topology
   const Topology& topology = mesh.topology();

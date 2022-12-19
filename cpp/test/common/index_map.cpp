@@ -41,9 +41,20 @@ void test_scatter_fwd(int n)
   std::vector<std::int64_t> data_ghost(n * num_ghosts, -1);
 
   // Scatter values to ghost and check value is correctly received
-  sct.scatter_fwd<std::int64_t>(std::span<const std::int64_t>(data_local),
-                                std::span<std::int64_t>(data_ghost));
+  sct.scatter_fwd<std::int64_t>(data_local, data_ghost);
   CHECK((int)data_ghost.size() == n * num_ghosts);
+  CHECK(std::all_of(data_ghost.begin(), data_ghost.end(),
+                    [=](auto i)
+                    { return i == val * ((mpi_rank + 1) % mpi_size); }));
+
+  std::vector<MPI_Request> requests
+      = sct.create_request_vector(decltype(sct)::type::p2p);
+
+  std::fill(data_ghost.begin(), data_ghost.end(), 0);
+  sct.scatter_fwd_begin<std::int64_t>(data_local, data_ghost, requests,
+                                      decltype(sct)::type::p2p);
+  sct.scatter_fwd_end(requests);
+
   CHECK(std::all_of(data_ghost.begin(), data_ghost.end(),
                     [=](auto i)
                     { return i == val * ((mpi_rank + 1) % mpi_size); }));
@@ -91,9 +102,27 @@ void test_scatter_rev()
   sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == n * value * num_ghosts);
 
-  sct.scatter_rev(std::span<std::int64_t>(data_local),
-                  std::span<const std::int64_t>(data_ghost),
-                  std::plus<std::int64_t>());
+  int num_requests = idx_map.dest().size() + idx_map.src().size();
+  std::vector<MPI_Request> requests(num_requests, MPI_REQUEST_NULL);
+  std::vector<std::int64_t> local_buffer(sct.local_buffer_size(), 0);
+  std::vector<std::int64_t> remote_buffer(sct.remote_buffer_size(), 0);
+  auto pack_fn = [](const auto& in, const auto& idx, auto& out)
+  {
+    for (std::size_t i = 0; i < idx.size(); ++i)
+      out[i] = in[idx[i]];
+  };
+  auto unpack_fn = [](const auto& in, const auto& idx, auto& out, auto op)
+  {
+    for (std::size_t i = 0; i < idx.size(); ++i)
+      out[idx[i]] = op(out[idx[i]], in[i]);
+  };
+  sct.scatter_rev_begin<std::int64_t>(data_ghost, remote_buffer, local_buffer,
+                                      pack_fn, requests,
+                                      decltype(sct)::type::p2p);
+  //
+  sct.scatter_rev_end<std::int64_t>(local_buffer, data_local, unpack_fn,
+                                    std::plus<std::int64_t>(), requests);
+
   sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == 2 * n * value * num_ghosts);
 }
