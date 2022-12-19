@@ -212,6 +212,7 @@ check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h HAVE_PETSC_SCALAR_COMPLEX)
 
 # Setting for FeatureSummary
 if(PETSC_FOUND)
+  message(STATUS "Found PETSc version ${PETSC_VERSION}, prefix: ${PETSC_PREFIX}")
   set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND PETSc)
 else()
   set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND PETSc)
@@ -295,6 +296,7 @@ if(DOLFINX_ENABLE_SLEPC)
 
   # Setting for FeatureSummary
   if(SLEPC_FOUND)
+    message(STATUS "Found SLEPc version ${SLEPC_VERSION}, prefix: ${SLEPC_PREFIX}")
     set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND SLEPc)
   else()
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SLEPc)
