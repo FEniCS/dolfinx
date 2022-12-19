@@ -1,32 +1,21 @@
 set(HEADERS_common
-  ${CMAKE_CURRENT_SOURCE_DIR}/defines.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_common.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_doc.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/IndexMap.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/log.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/loguru.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/sort.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/math.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/MPI.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Scatterer.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Table.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Timer.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogger.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogManager.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/timing.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
-  PARENT_SCOPE)
-
-target_sources(dolfinx PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/defines.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/IndexMap.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/log.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/MPI.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Table.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Timer.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogger.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogManager.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/timing.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/defines.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_common.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_doc.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/IndexMap.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/log.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/loguru.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sort.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/math.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/MPI.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Scatterer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Table.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Timer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogger.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogManager.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/timing.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
+    PARENT_SCOPE
 )
 
 add_library(dolfinx_loguru INTERFACE)
@@ -38,3 +27,17 @@ target_compile_definitions(dolfinx_loguru INTERFACE
     LOGURU_REPLACE_GLOG
 )
 target_link_libraries(dolfinx PRIVATE dolfinx_loguru)
+
+target_sources(
+  dolfinx
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/defines.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/IndexMap.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/log.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/MPI.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/Table.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/Timer.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogger.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogManager.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/timing.cpp
+)
+

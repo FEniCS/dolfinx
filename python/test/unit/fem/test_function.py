@@ -13,7 +13,7 @@ import pytest
 
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
-                         VectorFunctionSpace, form, assemble_scalar)
+                         VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
                               compute_collisions)
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
