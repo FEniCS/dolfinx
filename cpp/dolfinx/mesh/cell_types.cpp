@@ -89,7 +89,10 @@ mesh::CellType mesh::cell_facet_type(CellType type, int index)
   case CellType::quadrilateral:
     return CellType::interval;
   case CellType::pyramid:
-    throw std::runtime_error("TODO: pyramid");
+    if (index == 0)
+      return CellType::quadrilateral;
+    else
+      return CellType::triangle;
   case CellType::prism:
     if (index == 0 or index == 4)
       return CellType::triangle;
