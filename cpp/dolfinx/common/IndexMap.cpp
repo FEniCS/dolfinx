@@ -933,6 +933,8 @@ IndexMap::create_submap(
               _comm.comm(), &request_offset);
   MPI_Wait(&request_offset, MPI_STATUS_IGNORE);
 
+  // Loop through the indices that I ghost. If I am the new owner of that
+  // index, add it to `owned_connected_indices`
   std::vector<std::int32_t> ghost_indices_send_local(ghost_indices_send.size());
   global_to_local(ghost_indices_send, ghost_indices_send_local);
   for (std::size_t i = 0; i < ghost_indices_send.size(); ++i)
@@ -943,7 +945,8 @@ IndexMap::create_submap(
     }
   }
 
-  // TODO Tell previous owner what the new global index is
+  // Loop through the indices I ghost. If I am the new owner, compute the
+  // new global index
   std::vector<std::int64_t> send_gidx_to_original_owner;
   for (std::size_t i = 0; i < ghost_indices_send.size(); ++i)
   {
@@ -961,6 +964,8 @@ IndexMap::create_submap(
     }
   }
 
+  // Send the global indices of indices that I am the new owner of two their
+  // previous owners. Receive the new global indices of indices I used to own
   std::vector<std::int64_t> recv_gidx_to_original_owner(ghost_recv_disp.back());
   MPI_Neighbor_alltoallv(
       send_gidx_to_original_owner.data(), ghost_send_sizes.data(),
@@ -974,7 +979,8 @@ IndexMap::create_submap(
   // ss << "recv_gidx_to_original_owner = "
   //    << xt::adapt(recv_gidx_to_original_owner) << "\n";
 
-  // Global to new global map for indices whose ownership needs changing
+  // Create a map from old global index to new global index for the indices
+  // I used to own but who's owner has changed
   std::map<std::int64_t, std::int64_t> ownership_change_global_map;
   for (std::size_t i = 0; i < ghost_indices_recv.size(); ++i)
   {
@@ -1004,16 +1010,26 @@ IndexMap::create_submap(
                                owned_connected_indices.end(), idx_local);
     if (it != owned_connected_indices.end() and *it == idx_local)
     {
+      // If I own this index and it is connected on this process
+      // (this includes indices who's ownership has changed to this
+      // process), compute the new global index to send to other
+      // processes ghosting this index
       std::size_t idx_local_new
           = std::distance(owned_connected_indices.begin(), it);
       send_gidx.push_back(idx_local_new + offset_new);
     }
     else if (ownership_change_global_map.contains(idx))
     {
+      // Else, if I used to own this index, add the new index (sent
+      // from the new owner) so that other processes ghosting this
+      // index know the new global index
       send_gidx.push_back(ownership_change_global_map.at(idx));
     }
     else
+    {
+      // Else, the ghost index is not in the submap
       send_gidx.push_back(-1);
+    }
   }
 
   // ss << "send_gidx = " << xt::adapt(send_gidx) << "\n";
@@ -1036,6 +1052,8 @@ IndexMap::create_submap(
 
   std::vector<std::int64_t> ghosts;
   std::vector<int> src_ranks;
+  // Create a map from the old (original index map) ghost position to the
+  // new (submap) ghost position
   std::vector<std::int32_t> new_to_old_ghost;
   for (std::size_t i = 0; i < ghost_send_disp.size() - 1; ++i)
   {
