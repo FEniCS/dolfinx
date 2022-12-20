@@ -204,7 +204,7 @@ or use the FEniCS Slack channel:
 
 <https://fenicsproject.slack.com/>
 
-(use <https://fenicsproject-slack-invite.herokuapp.com/> to sign up)
+(use <https://join.slack.com/t/fenicsproject/shared_invite/zt-1lraknsp1-6_3Js5kueDIyWgF192d3nA> to sign up)
 
 For bug reports visit:
 
