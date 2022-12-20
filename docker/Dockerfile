@@ -54,8 +54,8 @@ ARG HDF5_PATCH=2
 ARG KAHIP_VERSION=3.14
 ARG NUMPY_VERSION=1.23.3
 ARG PYBIND11_VERSION=2.10.1
-ARG PETSC_VERSION=3.18.2
-ARG SLEPC_VERSION=3.18.1
+ARG PETSC_VERSION=3.17.5
+ARG SLEPC_VERSION=3.17.2
 ARG PYVISTA_VERSION=0.37.0
 
 ARG MPICH_VERSION=4.0.3
@@ -134,7 +134,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     #
     apt-get -y install \
     catch2 \
-    clang-format \
     git \
     graphviz \
     libeigen3-dev \
@@ -192,7 +191,7 @@ RUN if [ "$MPI" = "mpich" ]; then \
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
 RUN pip3 install --no-binary="numpy" --no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scipy && \
-    pip3 install --no-cache-dir cppimport flake8 isort jupytext matplotlib mypy myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
+    pip3 install --no-cache-dir clang-format cppimport cmakelang flake8 isort jupytext matplotlib mypy myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
