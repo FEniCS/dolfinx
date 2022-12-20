@@ -670,10 +670,13 @@ IndexMap::create_submap(
         "Unowned index detected when creating sub-IndexMap");
   }
 
+  // Convert local indices to global
   std::vector<std::int64_t> connected_indices_global(connected_indices.size(),
                                                      0);
   local_to_global(connected_indices, connected_indices_global);
 
+  // Separate `indices` into connected and unconnected indices
+  // FIXME Use set intersection?
   std::vector<std::int32_t> owned_connected_indices;
   std::vector<std::int32_t> owned_unconnected_indices;
   for (std::int32_t index : indices)
@@ -708,9 +711,13 @@ IndexMap::create_submap(
 
   // Ghost indices on this process
   std::vector<std::int64_t> ghost_indices_send;
+  // Marker for ghosts on this process that are connected on this process
+  // (1 if connected, 0 if unconnected)
   std::vector<std::int32_t> ghost_connected_indices_send;
   //  Indices owned by this process that are ghosted by other processes
   std::vector<std::int64_t> ghost_indices_recv;
+  // Marker for indices owned by determining if they are connected on the
+  // processes that ghost them (1 if connected, 0 if unconnected)
   std::vector<std::int32_t> ghost_connected_indices_recv;
   std::vector<std::size_t> ghost_buffer_pos;
   std::vector<int> ghost_send_disp, ghost_recv_disp;
@@ -744,8 +751,11 @@ IndexMap::create_submap(
     ghost_indices_send.insert(ghost_indices_send.end(), d.begin(), d.end());
   for (auto& p : pos_to_ghost)
     ghost_buffer_pos.insert(ghost_buffer_pos.end(), p.begin(), p.end());
+  // Determine if the indces ghosted by this process are connected on this
+  // process
   for (std::int64_t ghost_index : ghost_indices_send)
   {
+    // Mark 1 if connected else 0
     ghost_connected_indices_send.push_back(
         std::find(connected_indices_global.begin(),
                   connected_indices_global.end(), ghost_index)
@@ -812,15 +822,23 @@ IndexMap::create_submap(
   // ss << "src = " << xt::adapt(src) << "\n";
   // ss << "dest = " << xt::adapt(dest) << "\n";
 
+  // Create a map from each of the indices that I own that are ghosted on
+  // other processes to processes that could possbly become their new
+  // owner (i.e. processes on which they are connected)
   // TODO Try to replace map
   std::map<std::int64_t, std::vector<std::int32_t>> possible_new_owners;
+  // Loop over destination ranks
+  // FIXME Change ghost_recv_disp.size() - 1 to dest size?
   for (std::size_t i = 0; i < ghost_recv_disp.size() - 1; ++i)
   {
+    // Loop through indices I own that are ghosted by process dest[i]
     // ss << "   i = " << i << "\n";
     for (int j = ghost_recv_disp[i]; j < ghost_recv_disp[i + 1]; ++j)
     {
       // ss << "   j = " << j << "\n";
       std::int64_t global_index = ghost_indices_recv[j];
+      // If this index is connected on process dest[i], add it to the list
+      // of possible new owners
       if (ghost_connected_indices_recv[j] == 1)
       {
         possible_new_owners[global_index].push_back(dest[i]);
@@ -835,8 +853,15 @@ IndexMap::create_submap(
   //      << "   processes = " << xt::adapt(processes) << "\n";
   // }
 
+  // Determine the new owner of indices I own that are ghosted on other
+  // processes. If the index is connected on this process, I remain its
+  // owner. Otherwise, determine the new owner from `possible_new_owners`
+  // and communicate this to other processes.
+
+  // Storage for new owners
   std::vector<std::int32_t> new_owners_send;
   new_owners_send.reserve(ghost_indices_recv.size());
+  // Loop through indices I own that are ghosted on other processes
   for (std::size_t i = 0; i < ghost_indices_recv.size(); ++i)
   {
     std::int64_t global_index = ghost_indices_recv[i];
@@ -844,9 +869,13 @@ IndexMap::create_submap(
     assert(global_index - _local_range[0] < _local_range[1]);
     std::int32_t local_index = global_index - _local_range[0];
 
+    // Check if the index is in the submap. If so, determine its owner,
+    // else mark with -1.
     auto it = std::lower_bound(indices.begin(), indices.end(), local_index);
     if (it != indices.end() and *it == local_index)
     {
+      // See if this index is connected on this process. If so, I continue to
+      // own this index. Otherwise, determine the new owner.
       auto it_2 = std::lower_bound(connected_indices.begin(),
                                    connected_indices.end(), local_index);
       if (it_2 != connected_indices.end() and *it_2 == local_index)
@@ -855,9 +884,11 @@ IndexMap::create_submap(
       }
       else
       {
+        // Pick a new owner
         std::vector<std::int32_t>& possible_owners
             = possible_new_owners.at(global_index);
         assert(possible_owners.size() > 0);
+        // FIXME Do this randomly for load balancing
         new_owners_send.push_back(possible_owners[0]);
       }
     }
@@ -875,6 +906,8 @@ IndexMap::create_submap(
                                  MPI_UNWEIGHTED, dest.size(), dest.data(),
                                  MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
 
+  // Send who the new owners of indices I currently own are. Receive who
+  // the new owners of indices I ghost are
   std::vector<std::int32_t> new_owners_recv(ghost_send_disp.back());
   MPI_Neighbor_alltoallv(new_owners_send.data(), ghost_recv_sizes.data(),
                          ghost_recv_disp.data(), MPI_INT32_T,
@@ -883,6 +916,7 @@ IndexMap::create_submap(
 
   // ss << "new_owners_recv = " << xt::adapt(new_owners_recv) << "\n";
 
+  // Count how many indices I currently ghost that need to take ownership of
   int num_ghosts_to_take_ownership
       = std::count(new_owners_recv.begin(), new_owners_recv.end(), rank);
 
