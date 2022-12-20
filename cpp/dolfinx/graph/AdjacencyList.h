@@ -59,12 +59,12 @@ public:
     // Initialize offsets and compute total size
     _offsets.reserve(data.size() + 1);
     _offsets.push_back(0);
-    for (auto row = data.begin(); row != data.end(); ++row)
-      _offsets.push_back(_offsets.back() + row->size());
+    for (const auto& row : data)
+      _offsets.push_back(_offsets.back() + row.size());
 
     _array.reserve(_offsets.back());
-    for (auto e = data.begin(); e != data.end(); ++e)
-      _array.insert(_array.end(), e->begin(), e->end());
+    for (const auto& e : data)
+      _array.insert(_array.end(), e.begin(), e.end());
   }
 
   /// Copy constructor

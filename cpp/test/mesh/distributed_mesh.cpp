@@ -148,7 +148,7 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
     CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner()));
   }
 
-// #ifdef HAS_KAHIP
+  // #ifdef HAS_KAHIP
   // SECTION("KAHIP with Lambda")
   // {
   //   auto partfn = graph::kahip::partitioner();
