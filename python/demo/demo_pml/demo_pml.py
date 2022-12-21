@@ -33,8 +33,8 @@ except ModuleNotFoundError:
 from functools import partial
 from typing import Tuple, Union
 
-from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from dolfinx.io import VTXWriter, gmshio
+from efficiencies_pml_demo import calculate_analytical_efficiencies
 from mesh_wire_pml import generate_mesh_wire
 from mpi4py import MPI
 from petsc4py import PETSc
