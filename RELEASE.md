@@ -104,7 +104,7 @@ UFL still runs on the year-based release scheme.
    there is no need to change anything here. However, if they don't match, you
    need to manually specify the appropriate UFCx version.
 
-4. In `python/setup.cfg` change the `VERSION` variable to e.g. `0.5.0` and
+4. In `python/setup.py` change the `VERSION` variable to e.g. `0.5.0` and
    update the depedency versions for `fenics-ffcx` and `fenics-ufl`.
 
 5. Commit and push.
