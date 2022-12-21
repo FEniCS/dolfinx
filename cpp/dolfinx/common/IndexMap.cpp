@@ -694,7 +694,8 @@ IndexMap::create_submap(
 
   // ss << "owned_connected_indices = " << xt::adapt(owned_connected_indices)
   //    << "\n";
-  // ss << "owned_unconnected_indices = " << xt::adapt(owned_unconnected_indices)
+  // ss << "owned_unconnected_indices = " <<
+  // xt::adapt(owned_unconnected_indices)
   //    << "\n";
 
   // --- Step 2: Send ghost indices to owning rank
