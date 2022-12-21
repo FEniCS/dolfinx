@@ -198,7 +198,8 @@ public:
   /// less than `this->size_local()`.
   /// @pre `indices` must be sorted and contain no duplicates.
   /// @param[in] connected_indices Indices (owned and ghost) that are
-  /// connected on this process
+  /// connected on this process.
+  /// @pre `connected_indices` must be sorted and contain no duplicates.
   /// @return The (i) a new list of owned indices (w.r.t this map) in
   /// the submap (now connected on this process), (ii) a new index map
   /// and (iii) a map from the ghost position in the new map to the
