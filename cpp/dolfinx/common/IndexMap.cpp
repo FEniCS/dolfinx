@@ -653,10 +653,6 @@ IndexMap::create_submap(
         "Unowned index detected when creating sub-IndexMap");
   }
 
-  // Convert local indices to global
-  std::vector<std::int64_t> connected_indices_global(connected_indices.size());
-  local_to_global(connected_indices, connected_indices_global);
-
   // Separate `indices` into connected and unconnected indices
   // FIXME Use set intersection?
   std::vector<std::int32_t> owned_connected_indices;
@@ -728,7 +724,10 @@ IndexMap::create_submap(
     ghost_indices_send.insert(ghost_indices_send.end(), d.begin(), d.end());
   for (auto& p : pos_to_ghost)
     ghost_buffer_pos.insert(ghost_buffer_pos.end(), p.begin(), p.end());
-  // Determine if the indces ghosted by this process are connected on this
+  // Convert local indices to global
+  std::vector<std::int64_t> connected_indices_global(connected_indices.size());
+  local_to_global(connected_indices, connected_indices_global);
+  // Determine if the indices ghosted by this process are connected on this
   // process
   for (std::int64_t ghost_index : ghost_indices_send)
   {
