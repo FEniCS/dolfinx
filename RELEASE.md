@@ -79,7 +79,7 @@ UFL still runs on the year-based release scheme.
 
 4. If necessary, update the version number in `cmake/CMakeLists.txt`, e.g. `0.5.0`.
 
-5. Update the version number macros in `ffcx/code_generation/ufcx.h`. Typically this
+5. Update the version number macros in `ffcx/codegeneration/ufcx.h`. Typically this
    should match the Python version number. Remember to change the
    `UFCX_VERSION_RELEASE` to `1`.
 
