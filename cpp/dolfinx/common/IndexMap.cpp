@@ -671,8 +671,7 @@ IndexMap::create_submap(
   }
 
   // Convert local indices to global
-  std::vector<std::int64_t> connected_indices_global(connected_indices.size(),
-                                                     0);
+  std::vector<std::int64_t> connected_indices_global(connected_indices.size());
   local_to_global(connected_indices, connected_indices_global);
 
   // Separate `indices` into connected and unconnected indices
