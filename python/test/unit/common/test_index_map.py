@@ -83,6 +83,42 @@ def test_sub_index_map_ghost_mode_none():
     map.create_submap(submap_indices)
 
 
+# Test that create submap works correctly when a list of connected indices are
+# specified. The diagram illustrates the case with four processes:
+# 
+# Original map numbering and connectivity (G indicates a ghost index):
+#    Global    Rank 0    Rank 1    Rank 2    Rank 3
+#    1 - 0     1 - 0
+#    | / |     | / |
+#    3 - 2    3G - 2     0 - 2
+#    | / |               | / |
+#    5 - 4              3G - 1     0 - 2
+#    | / |                         | / |
+#    7 - 6                        3G - 1     0 - 3G
+#    | / |                                   | / |
+#    9 - 8                                   1 - 2
+# We now create a submap of the "upper triangular" parts (i.e. to
+# get the following):
+#    O - O
+#    | /
+#    O - O
+#    | /
+#    O - O
+#    | /
+#    O - O
+#    | /
+#    O
+# The expected result is as follows:
+#    Global    Rank 0    Rank 1    Rank 2    Rank 3
+#    1 - 0     1 - 0
+#    | /       | /
+#    2 - 3     2G        0 - 1
+#    | /                 | /
+#    4 - 5               2G        0 - 1
+#    | /                           | /
+#    6 - 8                         2G        0 - 2
+#    | /                                     | /
+#    7                                       1
 def test_create_submap_connected():
     comm = MPI.COMM_WORLD
 
