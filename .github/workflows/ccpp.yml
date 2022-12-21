@@ -51,9 +51,10 @@ jobs:
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git@release
+          python3 -m pip install git+https://github.com/FEniCS/basix.git@release
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@release
+
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
