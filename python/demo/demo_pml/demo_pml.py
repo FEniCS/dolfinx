@@ -160,7 +160,7 @@ l_pml = 1
 mesh_factor = 1
 
 # Mesh size inside the wire
-in_wire_size = mesh_factor * 3.5e-3
+in_wire_size = mesh_factor * 6e-3
 
 # Mesh size at the boundary of the wire
 on_wire_size = mesh_factor * 3.0e-3
