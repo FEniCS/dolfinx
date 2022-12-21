@@ -32,7 +32,10 @@ UFL still runs on the year-based release scheme.
 
 1. Merge `main` into `release` resolving all conflicts in favour of `main`.
 
-       git merge -Xtheirs main
+       git checkout release
+       git merge --no-commit main
+       git checkout --theirs main .
+       git diff main
 
 2. Update version numbers, e.g.
 
@@ -50,7 +53,10 @@ UFL still runs on the year-based release scheme.
 
 1. Merge `main` into `release` resolving all conflicts in favour of `main`.
 
-       git merge -Xtheirs main
+       git checkout release
+       git merge --no-commit main
+       git checkout --theirs main .
+       git diff main
 
 2. Update the version number in `setup.cfg`, e.g. `2022.2.0`.
 
@@ -62,7 +68,10 @@ UFL still runs on the year-based release scheme.
 
 1. Merge `main` into `release` resolving all conflicts in favour of `main`.
 
-       git merge -Xtheirs main
+       git checkout release
+       git merge --no-commit main
+       git checkout --theirs main .
+       git diff main
 
 2. Update the version number in `setup.cfg`, e.g. `0.5.0`.
 
@@ -82,7 +91,10 @@ UFL still runs on the year-based release scheme.
 
 1. Merge `main` into `release` resolving all conflicts in favour of `main`.
 
-       git merge -Xtheirs main
+       git checkout release
+       git merge --no-commit main
+       git checkout --theirs main .
+       git diff main
 
 2. In `cpp/CMakeLists.txt` change the version number near the top of the file,
    e.g. `0.5.0`.
