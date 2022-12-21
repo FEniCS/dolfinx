@@ -11,6 +11,7 @@
 #include "Function.h"
 #include "FunctionSpace.h"
 #include <array>
+#include <concepts>
 #include <functional>
 #include <memory>
 #include <span>
@@ -18,7 +19,6 @@
 #include <utility>
 #include <variant>
 #include <vector>
-#include <xtensor/xtensor.hpp>
 
 namespace dolfinx::fem
 {
@@ -46,7 +46,7 @@ namespace dolfinx::fem
 /// with V.
 std::vector<std::int32_t>
 locate_dofs_topological(const FunctionSpace& V, int dim,
-                        const std::span<const std::int32_t>& entities,
+                        std::span<const std::int32_t> entities,
                         bool remote = true);
 
 /// Find degrees-of-freedom which belong to the provided mesh entities
@@ -74,7 +74,7 @@ locate_dofs_topological(const FunctionSpace& V, int dim,
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
     const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
-    int dim, const std::span<const std::int32_t>& entities, bool remote = true);
+    int dim, std::span<const std::int32_t> entities, bool remote = true);
 
 /// Finds degrees of freedom whose geometric coordinate is true for the
 /// provided marking function.
@@ -89,7 +89,11 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
 /// with V.
 std::vector<std::int32_t> locate_dofs_geometrical(
     const FunctionSpace& V,
-    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+    const std::function<std::vector<std::int8_t>(
+        std::experimental::mdspan<
+            const double,
+            std::experimental::extents<std::size_t, 3,
+                                       std::experimental::dynamic_extent>>)>&
         marker_fn);
 
 /// Finds degrees of freedom whose geometric coordinate is true for the
@@ -103,11 +107,15 @@ std::vector<std::int32_t> locate_dofs_geometrical(
 /// @param[in] marker_fn Function marking tabulated degrees of freedom
 /// @return Array of DOF indices (local to the MPI rank) in the spaces
 /// V[0] and V[1]. The array[0](i) entry is the DOF index in the space
-/// V[0] and array[1](i) is the correspinding DOF entry in the space
+/// V[0] and array[1](i) is the corresponding DOF entry in the space
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
-    const std::function<xt::xtensor<bool, 1>(const xt::xtensor<double, 2>&)>&
+    const std::function<std::vector<std::int8_t>(
+        std::experimental::mdspan<
+            const double,
+            std::experimental::extents<std::size_t, 3,
+                                       std::experimental::dynamic_extent>>)>&
         marker_fn);
 
 /// Object for setting (strong) Dirichlet boundary conditions
@@ -155,9 +163,8 @@ public:
   ///
   /// @param[in] g The boundary condition value (`T` or convertible to
   /// `std::span<const T>`)
-  /// @param[in] dofs Degree-of-freedom block indices (
-  /// `std::vector<std::int32_t>`) to be constrained. The indices must
-  /// be sorted.
+  /// @param[in] dofs Degree-of-freedom block indices to be constrained.
+  /// The indices must be sorted.
   /// @param[in] V The function space to be constrained
   /// @note Can be used only with point-evaluation elements.
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
@@ -166,12 +173,11 @@ public:
   /// @note The size of of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
-  template <typename S, typename U,
-            typename = std::enable_if_t<
-                std::is_convertible_v<
-                    S, T> or std::is_convertible_v<S, std::span<const T>>>>
-  DirichletBC(const S& g, U&& dofs,
-              const std::shared_ptr<const FunctionSpace>& V)
+  template <typename S, std::convertible_to<std::vector<std::int32_t>> U,
+            typename
+            = std::enable_if_t<std::is_convertible_v<S, T>
+                               or std::is_convertible_v<S, std::span<const T>>>>
+  DirichletBC(const S& g, U&& dofs, std::shared_ptr<const FunctionSpace> V)
       : DirichletBC(std::make_shared<Constant<T>>(g), dofs, V)
   {
   }
@@ -182,8 +188,7 @@ public:
   ///@pre `dofs` must be sorted.
   ///
   /// @param[in] g The boundary condition value.
-  /// @param[in] dofs Degree-of-freedom block indices
-  /// (`std::vector<std::int32_t>`) to be constrained.
+  /// @param[in] dofs Degree-of-freedom block indices to be constrained.
   /// @param[in] V The function space to be constrained
   /// @note Can be used only with point-evaluation elements.
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
@@ -192,9 +197,9 @@ public:
   /// @note The size of of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
-  template <typename U>
-  DirichletBC(const std::shared_ptr<const Constant<T>>& g, U&& dofs,
-              const std::shared_ptr<const FunctionSpace>& V)
+  template <std::convertible_to<std::vector<std::int32_t>> U>
+  DirichletBC(std::shared_ptr<const Constant<T>> g, U&& dofs,
+              std::shared_ptr<const FunctionSpace> V)
       : _function_space(V), _g(g), _dofs0(std::forward<U>(dofs)),
         _owned_indices0(num_owned(*V, _dofs0))
   {
@@ -236,13 +241,12 @@ public:
   /// @pre `dofs` must be sorted.
   ///
   /// @param[in] g The boundary condition value.
-  /// @param[in] dofs Degree-of-freedom block indices
-  /// (`std::vector<std::int32_t>`) to be constrained.
+  /// @param[in] dofs Degree-of-freedom block indices to be constrained.
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
   /// corresponds to 3 degrees-of-freedom if the dofmap associated with
   /// `g` has block size 3.
-  template <typename U>
-  DirichletBC(const std::shared_ptr<const Function<T>>& g, U&& dofs)
+  template <std::convertible_to<std::vector<std::int32_t>> U>
+  DirichletBC(std::shared_ptr<const Function<T>> g, U&& dofs)
       : _function_space(g->function_space()), _g(g),
         _dofs0(std::forward<U>(dofs)),
         _owned_indices0(num_owned(*_function_space, _dofs0))
@@ -279,8 +283,8 @@ public:
   /// condition is applied
   /// @note The indices in `dofs` are unrolled and not for blocks.
   template <typename U>
-  DirichletBC(const std::shared_ptr<const Function<T>>& g, U&& V_g_dofs,
-              const std::shared_ptr<const FunctionSpace>& V)
+  DirichletBC(std::shared_ptr<const Function<T>> g, U&& V_g_dofs,
+              std::shared_ptr<const FunctionSpace> V)
       : _function_space(V), _g(g),
         _dofs0(std::forward<typename U::value_type>(V_g_dofs[0])),
         _dofs1_g(std::forward<typename U::value_type>(V_g_dofs[1])),
@@ -381,8 +385,7 @@ public:
   /// @param[in] x The array in which to set `scale * (x0 - x_bc)`
   /// @param[in] x0 The array used in compute the value to set
   /// @param[in] scale The scaling value to apply
-  void set(std::span<T> x, const std::span<const T>& x0,
-           double scale = 1.0) const
+  void set(std::span<T> x, std::span<const T> x0, double scale = 1.0) const
   {
     if (std::holds_alternative<std::shared_ptr<const Function<T>>>(_g))
     {
@@ -406,7 +409,7 @@ public:
       auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
       const std::vector<T>& value = g->value;
       std::int32_t bs = _function_space->dofmap()->bs();
-      std::for_each(_dofs0.cbegin(), _dofs0.cend(),
+      std::for_each(_dofs0.begin(), _dofs0.end(),
                     [&x, &x0, &value, scale, bs](auto dof)
                     {
                       if (dof < (std::int32_t)x.size())
@@ -451,7 +454,7 @@ public:
   /// V0 had a boundary condition applied, i.e. dofs which are fixed by
   /// a boundary condition. Other entries in @p markers are left
   /// unchanged.
-  void mark_dofs(const std::span<std::int8_t>& markers) const
+  void mark_dofs(std::span<std::int8_t> markers) const
   {
     for (std::size_t i = 0; i < _dofs0.size(); ++i)
     {

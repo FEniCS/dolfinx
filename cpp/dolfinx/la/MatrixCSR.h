@@ -134,9 +134,8 @@ public:
 
   /// Insertion functor for setting values in matrix. It is typically
   /// used in finite element assembly functions.
-  /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
-  /// @todo clarify setting on non-owned enrties
+  /// @todo clarify setting on non-owned entries
   auto mat_set_values()
   {
     return [&](const std::span<const std::int32_t>& rows,
@@ -150,7 +149,6 @@ public:
 
   /// Insertion functor for accumulating values in matrix. It is
   /// typically used in finite element assembly functions.
-  /// @param A Matrix to insert into
   /// @return Function for inserting values into `A`
   auto mat_add_values()
   {
@@ -197,7 +195,7 @@ public:
     const std::vector<int>& src_ranks = _index_maps[0]->src();
     const std::vector<int>& dest_ranks = _index_maps[0]->dest();
 
-    // Create neigbourhood communicator (owner <- ghost)
+    // Create neighbourhood communicator (owner <- ghost)
     MPI_Comm comm;
     MPI_Dist_graph_create_adjacent(_index_maps[0]->comm(), dest_ranks.size(),
                                    dest_ranks.data(), MPI_UNWEIGHTED,

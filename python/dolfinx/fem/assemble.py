@@ -205,14 +205,14 @@ def _assemble_vector_array(b: np.ndarray, L: FormMetaClass, constants=None, coef
 
 @functools.singledispatch
 def assemble_matrix(a: typing.Any,
-                    bcs: typing.List[DirichletBCMetaClass] = None,
+                    bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
                     diagonal: float = 1.0, constants=None, coeffs=None):
     return _assemble_matrix_form(a, bcs, diagonal, constants, coeffs)
 
 
 @assemble_matrix.register
 def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: form_types,
-                         bcs: typing.List[DirichletBCMetaClass] = None,
+                         bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
                          diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
     """Assemble bilinear form into a matrix.
 
@@ -245,7 +245,7 @@ def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: form_types,
 
 
 @assemble_matrix.register(FormMetaClass)
-def _assemble_matrix_form(a: form_types, bcs: typing.List[DirichletBCMetaClass] = None,
+def _assemble_matrix_form(a: form_types, bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
                           diagonal: float = 1.0,
                           constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
     """Assemble bilinear form into a matrix.

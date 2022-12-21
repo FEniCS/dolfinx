@@ -50,7 +50,7 @@ public:
   ///
   /// @param[in] comm The MPI communicator
   /// @param[in] patterns Rectangular array of sparsity pattern. The
-  ///   patterns must not be finalised. Null block are permited
+  ///   patterns must not be finalised. Null block are permitted
   /// @param[in] maps Pairs of (index map, block size) for each row
   ///   block (maps[0]) and column blocks (maps[1])
   /// @param[in] bs Block sizes for the sparsity pattern entries
@@ -81,7 +81,7 @@ public:
   /// Insert non-zero locations on the diagonal
   /// @param[in] rows The rows in local (process-wise) indices. The
   /// indices must exist in the row IndexMap.
-  void insert_diagonal(const std::span<const std::int32_t>& rows);
+  void insert_diagonal(std::span<const std::int32_t> rows);
 
   /// Finalize sparsity pattern and communicate off-process entries
   void assemble();

@@ -75,6 +75,7 @@ from ufl import ds, dx, grad, inner
 
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
+
 # -
 
 # We begin by using {py:func}`create_rectangle
@@ -163,7 +164,12 @@ try:
     plotter.add_mesh(grid, show_edges=True)
     warped = grid.warp_by_scalar()
     plotter.add_mesh(warped)
-    plotter.show()
+    if pyvista.OFF_SCREEN:
+        pyvista.start_xvfb(wait=0.1)
+        plotter.screenshot("uh_poisson.png")
+    else:
+        plotter.show()
+
 except ModuleNotFoundError:
     print("'pyvista' is required to visualise the solution")
     print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")

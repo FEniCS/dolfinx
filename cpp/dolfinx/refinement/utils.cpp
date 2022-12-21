@@ -307,66 +307,21 @@ refinement::partition(const mesh::Mesh& old_mesh,
                              gm);
   }
 
-  auto partitioner = [](MPI_Comm comm, int, int tdim,
-                        const graph::AdjacencyList<std::int64_t>& cell_topology,
-                        mesh::GhostMode)
+  auto partitioner = [](MPI_Comm comm, int, int,
+                        const graph::AdjacencyList<std::int64_t>& cell_topology)
   {
-    // Find out the ghosting information
-    graph::AdjacencyList<std::int64_t> graph
-        = mesh::build_dual_graph(comm, cell_topology, tdim);
-
-    // FIXME: much of this is reverse engineering of data that is already
-    // known in the GraphBuilder
-
-    const int mpi_size = dolfinx::MPI::size(comm);
-    const int mpi_rank = dolfinx::MPI::rank(comm);
-    const std::int32_t local_size = graph.num_nodes();
-    std::vector<std::int32_t> local_sizes(mpi_size);
-
-    // Get the "local range" for all processes
-    MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1,
-                  MPI_INT32_T, comm);
-
-    std::vector<std::int64_t> local_offsets(mpi_size + 1);
-    for (int i = 0; i < mpi_size; ++i)
-      local_offsets[i + 1] = local_offsets[i] + local_sizes[i];
-
-    // All cells should go to their currently assigned ranks (no change)
-    // but must also be sent to their ghost destinations, which are determined
-    // here.
-    std::vector<std::int32_t> destinations;
-    destinations.reserve(graph.num_nodes());
-    std::vector<std::int32_t> dest_offsets = {0};
-    dest_offsets.reserve(graph.num_nodes());
-    for (int i = 0; i < graph.num_nodes(); ++i)
-    {
-      destinations.push_back(mpi_rank);
-      for (int j = 0; j < graph.num_links(i); ++j)
-      {
-        std::int64_t index = graph.links(i)[j];
-        if (index < local_offsets[mpi_rank]
-            or index >= local_offsets[mpi_rank + 1])
-        {
-          // Ghosted cell - identify which process it should be sent to.
-          for (std::size_t k = 0; k < local_offsets.size(); ++k)
-          {
-            if (index >= local_offsets[k] and index < local_offsets[k + 1])
-            {
-              destinations.push_back(k);
-              break;
-            }
-          }
-        }
-      }
-      dest_offsets.push_back(destinations.size());
-    }
+    const int mpi_rank = MPI::rank(comm);
+    const int num_cells = cell_topology.num_nodes();
+    std::vector<std::int32_t> destinations(num_cells, mpi_rank);
+    std::vector<std::int32_t> dest_offsets(num_cells + 1);
+    std::iota(dest_offsets.begin(), dest_offsets.end(), 0);
 
     return graph::AdjacencyList<std::int32_t>(std::move(destinations),
                                               std::move(dest_offsets));
   };
 
   return mesh::create_mesh(old_mesh.comm(), cell_topology,
-                           old_mesh.geometry().cmap(), new_coords, xshape, gm,
+                           old_mesh.geometry().cmap(), new_coords, xshape,
                            partitioner);
 }
 //-----------------------------------------------------------------------------
@@ -518,8 +473,8 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
 
   // Copy facet meshtag from parent to child
   std::vector<std::int32_t> facet_indices, tag_values;
-  const std::vector<std::int32_t>& in_index = meshtag.indices();
-  const std::vector<std::int32_t>& in_value = meshtag.values();
+  std::span<const std::int32_t> in_index = meshtag.indices();
+  std::span<const std::int32_t> in_value = meshtag.values();
   for (std::size_t i = 0; i < in_index.size(); ++i)
   {
     std::int32_t parent_index = in_index[i];
@@ -616,10 +571,9 @@ mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
                                                  std::move(offset_child));
 
   // Copy cell meshtag from parent to child
-  std::vector<std::int32_t> cell_indices;
-  std::vector<std::int32_t> tag_values;
-  const std::vector<std::int32_t>& in_index = meshtag.indices();
-  const std::vector<std::int32_t>& in_value = meshtag.values();
+  std::vector<std::int32_t> cell_indices, tag_values;
+  std::span<const std::int32_t> in_index = meshtag.indices();
+  std::span<const std::int32_t> in_value = meshtag.values();
   for (std::size_t i = 0; i < in_index.size(); ++i)
   {
     auto pclinks = p_to_c_cell.links(in_index[i]);

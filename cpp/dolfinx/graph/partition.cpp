@@ -53,7 +53,7 @@ graph::build::distribute(MPI_Comm comm,
   }
 
   // TODO: Do this on the neighbourhood only
-  // Get the maximum number of eddges for a node
+  // Get the maximum number of edges for a node
   int shape1 = 0;
   {
     int shape1_local = list.num_nodes() > 0 ? list.links(0).size() : 0;
@@ -224,10 +224,11 @@ graph::build::distribute(MPI_Comm comm,
           global_indices0, ghost_index_owner};
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t> graph::build::compute_ghost_indices(
-    MPI_Comm comm, const std::span<const std::int64_t>& owned_indices,
-    const std::span<const std::int64_t>& ghost_indices,
-    const std::span<const int>& ghost_owners)
+std::vector<std::int64_t>
+graph::build::compute_ghost_indices(MPI_Comm comm,
+                                    std::span<const std::int64_t> owned_indices,
+                                    std::span<const std::int64_t> ghost_indices,
+                                    std::span<const int> ghost_owners)
 {
   LOG(INFO) << "Compute ghost indices";
 
@@ -260,14 +261,17 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
     }
   }
 
-  // NB - this assumes a symmetry, i.e. that if one process shares an index
-  // owned by another process, then the same is true vice versa. This
-  // assumption is valid for meshes with cells shared via facet or vertex.
-  MPI_Comm neighbor_comm;
-  MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
+  MPI_Comm neighbor_comm_fwd, neighbor_comm_rev;
+
+  std::vector<int> in_edges = MPI::compute_graph_edges_pcx(comm, neighbors);
+  MPI_Dist_graph_create_adjacent(comm, in_edges.size(), in_edges.data(),
                                  MPI_UNWEIGHTED, neighbors.size(),
                                  neighbors.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neighbor_comm);
+                                 MPI_INFO_NULL, false, &neighbor_comm_fwd);
+  MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
+                                 MPI_UNWEIGHTED, in_edges.size(),
+                                 in_edges.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+                                 false, &neighbor_comm_rev);
 
   std::vector<int> send_offsets = {0};
   send_offsets.reserve(ghost_index_count.size() + 1);
@@ -293,11 +297,13 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
     }
   }
 
-  std::vector<int> recv_sizes(neighbors.size());
+  std::vector<int> recv_sizes(in_edges.size());
   ghost_index_count.reserve(1);
   recv_sizes.reserve(1);
+
   MPI_Neighbor_alltoall(ghost_index_count.data(), 1, MPI_INT, recv_sizes.data(),
-                        1, MPI_INT, neighbor_comm);
+                        1, MPI_INT, neighbor_comm_fwd);
+
   std::vector<int> recv_offsets = {0};
   recv_offsets.reserve(recv_sizes.size() + 1);
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
@@ -307,13 +313,14 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   MPI_Neighbor_alltoallv(send_data.data(), ghost_index_count.data(),
                          send_offsets.data(), MPI_INT64_T, recv_data.data(),
                          recv_sizes.data(), recv_offsets.data(), MPI_INT64_T,
-                         neighbor_comm);
+                         neighbor_comm_fwd);
 
   // Complete global_offset scan
   MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
 
   std::vector<std::array<std::int64_t, 2>> old_to_new;
   old_to_new.reserve(owned_indices.size());
+
   for (auto idx : owned_indices)
   {
     old_to_new.push_back(
@@ -337,8 +344,9 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
                          recv_offsets.data(), MPI_INT64_T, new_recv.data(),
                          ghost_index_count.data(), send_offsets.data(),
-                         MPI_INT64_T, neighbor_comm);
-  MPI_Comm_free(&neighbor_comm);
+                         MPI_INT64_T, neighbor_comm_rev);
+  MPI_Comm_free(&neighbor_comm_fwd);
+  MPI_Comm_free(&neighbor_comm_rev);
 
   // Build (old id,  new id) pairs
   std::vector<std::array<std::int64_t, 2>> old_to_new1(send_data.size());
@@ -373,7 +381,7 @@ std::vector<std::int64_t> graph::build::compute_local_to_global_links(
   common::Timer timer(
       "Compute-local-to-global links for global/local adjacency list");
 
-  // Return if gloabl and local are empty
+  // Return if global and local are empty
   if (global.num_nodes() == 0 and local.num_nodes() == 0)
     return std::vector<std::int64_t>();
 
@@ -405,8 +413,8 @@ std::vector<std::int64_t> graph::build::compute_local_to_global_links(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> graph::build::compute_local_to_local(
-    const std::span<const std::int64_t>& local0_to_global,
-    const std::span<const std::int64_t>& local1_to_global)
+    std::span<const std::int64_t> local0_to_global,
+    std::span<const std::int64_t> local1_to_global)
 {
   common::Timer timer("Compute local-to-local map");
   assert(local0_to_global.size() == local1_to_global.size());

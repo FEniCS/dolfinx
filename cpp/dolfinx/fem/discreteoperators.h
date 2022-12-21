@@ -12,7 +12,6 @@
 #include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/math.h>
-#include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
 #include <span>
@@ -44,9 +43,9 @@ namespace dolfinx::fem
 /// @param[in] V0 A Lagrange space to interpolate the gradient from
 /// @param[in] V1 A Nédélec (first kind) space to interpolate into
 /// @param[in] mat_set A functor that sets values in a matrix
-template <typename T, typename U>
+template <typename T>
 void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
-                       U&& mat_set)
+                       auto&& mat_set)
 {
   namespace stdex = std::experimental;
   using cmdspan2_t
@@ -65,7 +64,7 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
   if (e0->map_type() != basix::maps::type::identity)
     throw std::runtime_error("Wrong finite element space for V0.");
   if (e0->block_size() != 1)
-    throw std::runtime_error("Block size is greather than 1 for V0.");
+    throw std::runtime_error("Block size is greater than 1 for V0.");
   if (e0->reference_value_size() != 1)
     throw std::runtime_error("Wrong value size for V0.");
 
@@ -74,7 +73,7 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
   if (e1->map_type() != basix::maps::type::covariantPiola)
     throw std::runtime_error("Wrong finite element space for V1.");
   if (e1->block_size() != 1)
-    throw std::runtime_error("Block size is greather than 1 for V1.");
+    throw std::runtime_error("Block size is greater than 1 for V1.");
 
   // Get V0 (H(curl)) space interpolation points
   const auto [X, Xshape] = e1->interpolation_points();
@@ -146,9 +145,9 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
 /// @param[in] V0 The space to interpolate from
 /// @param[in] V1 The space to interpolate to
 /// @param[in] mat_set A functor that sets values in a matrix
-template <typename T, typename U>
+template <typename T>
 void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
-                          U&& mat_set)
+                          auto&& mat_set)
 {
   // Get mesh
   auto mesh = V0.mesh();

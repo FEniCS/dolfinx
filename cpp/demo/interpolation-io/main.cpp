@@ -18,7 +18,6 @@
 #include <filesystem>
 #include <mpi.h>
 #include <numbers>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 
@@ -26,7 +25,7 @@ using namespace dolfinx;
 // outputs the finite element function to a VTK file for visualisation.
 // It also shows how to create a finite element using Basix.
 template <typename T>
-void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
+void interpolate_scalar(std::shared_ptr<mesh::Mesh> mesh,
                         std::filesystem::path filename)
 {
   // Create a Basix continuous Lagrange element of degree 1
@@ -43,8 +42,14 @@ void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
 
   // Interpolate sin(2 \pi x[0]) in the scalar Lagrange finite element
   // space
-  constexpr double PI = std::numbers::pi;
-  u->interpolate([PI](auto&& x) { return xt::sin(2 * PI * xt::row(x, 0)); });
+  u->interpolate(
+      [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
+      {
+        std::vector<T> f(x.extent(1));
+        for (std::size_t p = 0; p < x.extent(1); ++p)
+          f[p] = std::sin(2 * std::numbers::pi * x(0, p));
+        return {f, {f.size()}};
+      });
 
   // Write the function to a VTK file for visualisation, e.g. using
   // ParaView
@@ -57,7 +62,7 @@ void interpolate_scalar(const std::shared_ptr<mesh::Mesh>& mesh,
 // element function in a discontinuous Lagrange space and outputs the
 // Lagrange finite element function to a VTX file for visualisation.
 template <typename T>
-void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
+void interpolate_nedelec(std::shared_ptr<mesh::Mesh> mesh,
                          [[maybe_unused]] std::filesystem::path filename)
 {
   // Create a Basix Nedelec (first kind) element of degree 2 (dim=6 on triangle)
@@ -83,21 +88,42 @@ void interpolate_nedelec(const std::shared_ptr<mesh::Mesh>& mesh,
   // the Nedelec space when there are cell edges aligned to x0 = 0.5.
 
   // Find cells with all vertices satisfying (0) x0 <= 0.5 and (1) x0 >= 0.5
-  auto cells0 = mesh::locate_entities(
-      *mesh, 2, [](auto&& x) { return xt::row(x, 0) <= 0.5; });
-  auto cells1 = mesh::locate_entities(
-      *mesh, 2, [](auto&& x) { return xt::row(x, 0) >= 0.5; });
+  auto cells0
+      = mesh::locate_entities(*mesh, 2,
+                              [](auto x)
+                              {
+                                std::vector<std::int8_t> marked;
+                                for (std::size_t i = 0; i < x.extent(1); ++i)
+                                  marked.push_back(x(0, i) <= 0.5);
+                                return marked;
+                              });
+  auto cells1
+      = mesh::locate_entities(*mesh, 2,
+                              [](auto x)
+                              {
+                                std::vector<std::int8_t> marked;
+                                for (std::size_t i = 0; i < x.extent(1); ++i)
+                                  marked.push_back(x(0, i) >= 0.5);
+                                return marked;
+                              });
 
   // Interpolation on the two sets of cells
-  u->interpolate([](auto&& x) -> xt::xtensor<T, 2>
-                 { return xt::view(x, xt::range(0, 2), xt::all()); },
-                 cells0);
   u->interpolate(
-      [](auto&& x) -> xt::xtensor<T, 2>
+      [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
       {
-        xt::xtensor<T, 2> v = xt::view(x, xt::range(0, 2), xt::all());
-        xt::row(v, 0) += T(1);
-        return v;
+        std::vector<T> f(2 * x.extent(1), 0.0);
+        std::copy_n(x.data_handle(), f.size(), f.begin());
+        return {f, {2, x.extent(1)}};
+      },
+      cells0);
+  u->interpolate(
+      [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
+      {
+        std::vector<T> f(2 * x.extent(1), 0.0);
+        std::copy_n(x.data_handle(), f.size(), f.begin());
+        std::transform(f.cbegin(), f.cend(), f.begin(),
+                       [](auto x) { return x + T(1); });
+        return {f, {2, x.extent(1)}};
       },
       cells1);
 
@@ -150,7 +176,8 @@ int main(int argc, char* argv[])
     // ensure that a boundary between cells is located at x0=0.5
     auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
         MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
-        mesh::CellType::triangle, mesh::GhostMode::none));
+        mesh::CellType::triangle,
+        mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
     // Interpolate a function in a scalar Lagrange space and output the
     // result to file for visualisation

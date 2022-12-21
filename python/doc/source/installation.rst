@@ -38,7 +38,6 @@ C++ core
   - timer
 
 - `CMake <https://cmake.org>`_ [build dependency]
-- `xtensor <https://xtensor.readthedocs.io/>`_
 - `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_
 - `Basix <http://github.com/FEniCS/basix>`_
 - `pugixml <https://pugixml.org/>`_

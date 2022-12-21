@@ -64,7 +64,7 @@ void sparsitybuild::interior_facets(
     // Get cells incident with facet
     auto cells = connectivity->links(f);
 
-    // Proceed to next facet if only ony connection
+    // Proceed to next facet if only connection
     if (cells.size() == 1)
       continue;
 

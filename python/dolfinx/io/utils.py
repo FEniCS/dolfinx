@@ -11,14 +11,21 @@ import typing
 import numpy as np
 import numpy.typing as npt
 
+import basix
+import basix.ufl_wrapper
 import ufl
 from dolfinx import cpp as _cpp
+
+from dolfinx.cpp.io import perm_vtk as cell_perm_vtk  # noqa F401
+from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa F401
+
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh
 
 from mpi4py import MPI as _MPI
 
-__all__ = ["VTKFile", "XDMFFile", "distribute_entity_data"]
+__all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk",
+           "distribute_entity_data"]
 
 
 def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Function]):
@@ -74,7 +81,7 @@ if _cpp.common.has_adios2:
             self.close()
 
     class FidesWriter(_cpp.io.FidesWriter):
-        """Interface to Fides file formt.
+        """Interface to Fides file format.
 
         Fides supports first order Lagrange finite elements for the
         geometry descriptionand first order Lagrange finite elements for
@@ -155,16 +162,15 @@ class XDMFFile(_cpp.io.XDMFFile):
         cells = super().read_topology_data(name, xpath)
         x = super().read_geometry_data(name, xpath)
 
-        # Construct the geometry map
-        cell = ufl.Cell(cell_shape.name, geometric_dimension=x.shape[1])
-
         # Build the mesh
         cmap = _cpp.fem.CoordinateElement(cell_shape, cell_degree)
         mesh = _cpp.mesh.create_mesh(self.comm(), _cpp.graph.AdjacencyList_int64(cells),
-                                     cmap, x, ghost_mode, _cpp.mesh.create_cell_partitioner())
+                                     cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
         mesh.name = name
 
-        domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
+        domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
+            "Lagrange", cell_shape.name, cell_degree, basix.LagrangeVariant.equispaced, dim=x.shape[1],
+            gdim=x.shape[1]))
         return Mesh.from_cpp(mesh, domain)
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):

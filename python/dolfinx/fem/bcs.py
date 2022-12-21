@@ -91,7 +91,7 @@ def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpace, typing.It
 
 class DirichletBCMetaClass:
     def __init__(self, value: typing.Union[Function, Constant, numpy.ndarray],
-                 dofs: numpy.typing.ArrayLike, V: dolfinx.fem.FunctionSpace = None):
+                 dofs: numpy.typing.ArrayLike, V: typing.Optional[dolfinx.fem.FunctionSpace] = None):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
@@ -140,7 +140,8 @@ class DirichletBCMetaClass:
 
 
 def dirichletbc(value: typing.Union[Function, Constant, np.ndarray],
-                dofs: numpy.typing.NDArray[np.int32], V: dolfinx.fem.FunctionSpace = None) -> DirichletBCMetaClass:
+                dofs: numpy.typing.NDArray[np.int32],
+                V: typing.Optional[dolfinx.fem.FunctionSpace] = None) -> DirichletBCMetaClass:
     """Create a representation of Dirichlet boundary condition which
     is imposed on a linear system.
 

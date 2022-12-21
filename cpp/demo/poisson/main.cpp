@@ -92,8 +92,8 @@
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/petsc.h>
-#include <xtensor/xarray.hpp>
-#include <xtensor/xview.hpp>
+#include <utility>
+#include <vector>
 
 using namespace dolfinx;
 using T = PetscScalar;
@@ -120,9 +120,10 @@ int main(int argc, char* argv[])
 
   {
     // Create mesh and function space
-    auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
-        MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}}, {32, 16},
-        mesh::CellType::triangle, mesh::GhostMode::shared_facet));
+    auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
+    auto mesh = std::make_shared<mesh::Mesh>(
+        mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}},
+                               {32, 16}, mesh::CellType::triangle, part));
 
     auto V = std::make_shared<fem::FunctionSpace>(
         fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
@@ -163,24 +164,43 @@ int main(int argc, char* argv[])
 
     auto facets = mesh::locate_entities_boundary(
         *mesh, 1,
-        [](auto&& x) -> xt::xtensor<bool, 1>
+        [](auto x)
         {
-          auto x0 = xt::row(x, 0);
-          return xt::isclose(x0, 0.0) or xt::isclose(x0, 2.0);
+          constexpr double eps = 1.0e-8;
+          std::vector<std::int8_t> marker(x.extent(1), false);
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+          {
+            double x0 = x(0, p);
+            if (std::abs(x0) < eps or std::abs(x0 - 2) < eps)
+              marker[p] = true;
+          }
+          return marker;
         });
     const auto bdofs = fem::locate_dofs_topological({*V}, 1, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
 
     f->interpolate(
-        [](auto&& x) -> xt::xarray<T>
+        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
-          auto dx = xt::square(xt::row(x, 0) - 0.5)
-                    + xt::square(xt::row(x, 1) - 0.5);
-          return 10 * xt::exp(-(dx) / 0.02);
+          std::vector<T> f;
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+          {
+            double dx = (x(0, p) - 0.5) * (x(0, p) - 0.5);
+            double dy = (x(1, p) - 0.5) * (x(1, p) - 0.5);
+            f.push_back(10 * std::exp(-(dx + dy) / 0.02));
+          }
+
+          return {f, {f.size()}};
         });
 
-    g->interpolate([](auto&& x) -> xt::xarray<T>
-                   { return xt::sin(5 * xt::row(x, 0)); });
+    g->interpolate(
+        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
+        {
+          std::vector<T> f;
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+            f.push_back(std::sin(5 * x(0, p)));
+          return {f, {f.size()}};
+        });
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a
