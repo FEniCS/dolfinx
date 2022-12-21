@@ -199,10 +199,11 @@ public:
   /// @pre `indices` must be sorted and contain no duplicates.
   /// @param[in] connected_indices Indices (owned and ghost) that are
   /// connected on this process
-  /// @return The (i) a new list of owned indices (now connected on this
-  /// process), (ii) a new index map and (iii) a map from the ghost
-  /// position in the new map to the ghost position in the original
-  /// (this) map
+  /// @return The (i) a new list of owned indices (w.r.t this map) in
+  /// the submap (now connected on this process), (ii) a new index map
+  /// and (iii) a map from the ghost position in the new map to the
+  /// ghost position in the original (this) map
+  // FIXME Return a tuple
   std::pair<std::vector<std::int32_t>,
             std::pair<IndexMap, std::vector<std::int32_t>>>
   create_submap(const std::span<const std::int32_t>& indices,
