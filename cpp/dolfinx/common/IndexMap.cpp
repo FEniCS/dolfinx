@@ -653,22 +653,10 @@ IndexMap::create_submap(
         "Unowned index detected when creating sub-IndexMap");
   }
 
-  // Separate `indices` into connected and unconnected indices
-  // FIXME Use set intersection?
   std::vector<std::int32_t> owned_connected_indices;
-  std::vector<std::int32_t> owned_unconnected_indices;
-  for (std::int32_t index : indices)
-  {
-    if (std::find(connected_indices.begin(), connected_indices.end(), index)
-        != connected_indices.end())
-    {
-      owned_connected_indices.push_back(index);
-    }
-    else
-    {
-      owned_unconnected_indices.push_back(index);
-    }
-  }
+  std::set_intersection(indices.begin(), indices.end(),
+                        connected_indices.begin(), connected_indices.end(),
+                        std::back_inserter(owned_connected_indices));
 
   // --- Step 2: Send ghost indices to owning rank
 
@@ -856,8 +844,10 @@ IndexMap::create_submap(
 
   // --- Step 1: Compute new offset for this rank
 
+  const int num_owned_unconnected_indices
+      = indices.size() - owned_connected_indices.size();
   std::int64_t local_size_new = indices.size() + num_ghosts_to_take_ownership
-                                - owned_unconnected_indices.size();
+                                - num_owned_unconnected_indices;
   std::int64_t offset_new = 0;
   MPI_Request request_offset;
   MPI_Iexscan(&local_size_new, &offset_new, 1, MPI_INT64_T, MPI_SUM,
