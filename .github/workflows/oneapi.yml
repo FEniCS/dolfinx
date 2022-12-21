@@ -36,9 +36,6 @@ jobs:
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: dokken/cmake_version_range
-
-
       - name: Install FFCx C interface
         run: |
           . /opt/intel/oneapi/setvars.sh
