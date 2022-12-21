@@ -81,3 +81,49 @@ def test_sub_index_map_ghost_mode_none():
     map = mesh.topology.index_map(tdim)
     submap_indices = range(0, min(2, map.size_local))
     map.create_submap(submap_indices)
+
+
+def test_create_submap_connected():
+    comm = MPI.COMM_WORLD
+
+    if comm.size == 1:
+        return
+
+    if comm.rank == 0:
+        local_size = 3
+        ghosts = np.array([local_size], dtype=np.int64)
+        owners = np.array([1], dtype=np.int32)
+        submap_indices = np.arange(local_size, dtype=np.int32)
+        connected_indices = np.array([0, 1, 3], dtype=np.int32)
+    elif comm.rank == comm.size - 1:
+        local_size = 3
+        ghosts = np.array([2 * comm.rank], dtype=np.int64)
+        owners = np.array([comm.rank - 1], dtype=np.int32)
+        submap_indices = np.arange(local_size - 1, dtype=np.int32)
+        connected_indices = np.array([0, 1, 3], dtype=np.int32)
+    else:
+        local_size = 2
+        ghosts = np.array([2 * comm.rank, 2 * comm.rank + 3], dtype=np.int64)
+        owners = np.array([comm.rank - 1, comm.rank + 1], dtype=np.int32)
+        submap_indices = np.arange(local_size, dtype=np.int32)
+        connected_indices = np.array([0, 2, 3], dtype=np.int32)
+
+    map = dolfinx.common.IndexMap(comm, local_size, ghosts, owners)
+    owned, pair = map.create_submap(submap_indices, connected_indices)
+    submap, ghost_pos_map = pair
+
+    if comm.rank == 0:
+        assert np.array_equal(owned, [0, 1])
+        assert np.array_equal(ghost_pos_map, [0])
+    elif comm.rank == comm.size - 1:
+        assert np.array_equal(owned, [0, 1, 3])
+        assert np.array_equal(ghost_pos_map, [])
+    else:
+        assert np.array_equal(owned, [0, 2])
+        assert np.array_equal(ghost_pos_map, [1])
+
+    global_indices = submap.local_to_global(
+        np.arange(submap.size_local + submap.num_ghosts,
+                    dtype=np.int32))
+    assert np.array_equal(
+        global_indices, np.arange(comm.rank * 2, comm.rank * 2 + 3))
