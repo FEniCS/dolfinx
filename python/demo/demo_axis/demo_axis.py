@@ -18,18 +18,17 @@ import sys
 from functools import partial
 
 import numpy as np
-from dolfinx.io.gmshio import model_to_mesh
 from mesh_sphere_axis import generate_mesh_sphere_axis
 from mpi4py import MPI
 from petsc4py import PETSc
 from scipy.special import jv, jvp
 
 import ufl
-from dolfinx import fem, mesh, plot
+from dolfinx import fem, io, mesh, plot
 
 try:
-    has_vtx = True
     from dolfinx.io import VTXWriter
+    has_vtx = True
 except ImportError:
     print("VTXWriter not available, solution won't be saved")
     has_vtx = False
@@ -372,7 +371,7 @@ if MPI.COMM_WORLD.rank == 0:
         au_tag, bkg_tag, pml_tag, scatt_tag)
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-domain, cell_tags, facet_tags = model_to_mesh(
+domain, cell_tags, facet_tags = io.gmshio.model_to_mesh(
     model, MPI.COMM_WORLD, 0, gdim=2)
 
 gmsh.finalize()
