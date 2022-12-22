@@ -688,8 +688,9 @@ IndexMap::create_submap(
   std::vector<std::int32_t> ghost_connected_indices_send;
   //  Indices owned by this process that are ghosted by other processes
   std::vector<std::int64_t> ghost_indices_recv;
-  // Marker for indices owned by determining if they are connected on the
-  // processes that ghost them (1 if connected, 0 if unconnected)
+  // Marker for indices owned by this process determining if they are
+  // connected on the processes that ghost them (1 if connected, 0 if
+  // unconnected)
   std::vector<std::int32_t> ghost_connected_indices_recv;
   std::vector<std::size_t> ghost_buffer_pos;
   std::vector<int> ghost_send_disp, ghost_recv_disp;
@@ -723,18 +724,21 @@ IndexMap::create_submap(
     ghost_indices_send.insert(ghost_indices_send.end(), d.begin(), d.end());
   for (auto& p : pos_to_ghost)
     ghost_buffer_pos.insert(ghost_buffer_pos.end(), p.begin(), p.end());
+
   // Convert local indices to global
+  // TODO Remove
   std::vector<std::int64_t> connected_indices_global(connected_indices.size());
   local_to_global(connected_indices, connected_indices_global);
+
+  // Convert to local to check if the indices are connected on this process
+  std::vector<std::int32_t> ghost_indices_send_local(ghost_indices_send.size());
+  global_to_local(ghost_indices_send, ghost_indices_send_local);
   // Determine if the indices ghosted by this process are connected on this
   // process
-  for (std::int64_t ghost_index : ghost_indices_send)
+  for (std::int32_t ghost_index_local : ghost_indices_send_local)
   {
     // Mark 1 if connected else 0
-    ghost_connected_indices_send.push_back(
-        std::find(connected_indices_global.begin(),
-                  connected_indices_global.end(), ghost_index)
-        != connected_indices_global.end());
+    ghost_connected_indices_send.push_back(is_connected[ghost_index_local]);
   }
 
   // Send how many indices I ghost to each owner, and receive how many
@@ -845,8 +849,6 @@ IndexMap::create_submap(
 
   // Loop through the indices that I ghost. If I am the new owner of that
   // index, add it to `owned_connected_indices`
-  std::vector<std::int32_t> ghost_indices_send_local(ghost_indices_send.size());
-  global_to_local(ghost_indices_send, ghost_indices_send_local);
   for (std::size_t i = 0; i < ghost_indices_send.size(); ++i)
   {
     if (new_owners_recv[i] == rank)
