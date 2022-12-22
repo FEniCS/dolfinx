@@ -85,7 +85,7 @@ def test_sub_index_map_ghost_mode_none():
 
 # Test that create submap works correctly when a list of connected indices are
 # specified. The diagram illustrates the case with four processes:
-# 
+#
 # Original map numbering and connectivity (G indicates a ghost index):
 #    Global    Rank 0    Rank 1    Rank 2    Rank 3
 #    1 - 0     1 - 0
@@ -160,6 +160,6 @@ def test_create_submap_connected():
 
     global_indices = submap.local_to_global(
         np.arange(submap.size_local + submap.num_ghosts,
-                    dtype=np.int32))
+                  dtype=np.int32))
     assert np.array_equal(
         global_indices, np.arange(comm.rank * 2, comm.rank * 2 + 3))
