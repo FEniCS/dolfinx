@@ -725,11 +725,6 @@ IndexMap::create_submap(
   for (auto& p : pos_to_ghost)
     ghost_buffer_pos.insert(ghost_buffer_pos.end(), p.begin(), p.end());
 
-  // Convert local indices to global
-  // TODO Remove
-  std::vector<std::int64_t> connected_indices_global(connected_indices.size());
-  local_to_global(connected_indices, connected_indices_global);
-
   // Convert to local to check if the indices are connected on this process
   std::vector<std::int32_t> ghost_indices_send_local(ghost_indices_send.size());
   global_to_local(ghost_indices_send, ghost_indices_send_local);
@@ -947,9 +942,10 @@ IndexMap::create_submap(
   }
 
   // --- Step 4: Send new global indices from owner back to ranks that
-  // ghost the index
+  // ghost the index. Receive the new global indices of the indices I
+  // ghost
 
-  // Send index markers to ghosting ranks
+  // New (submap) global index of the indices I ghost
   std::vector<std::int64_t> recv_gidx(ghost_send_disp.back());
   MPI_Neighbor_alltoallv(send_gidx.data(), ghost_recv_sizes.data(),
                          ghost_recv_disp.data(), MPI_INT64_T, recv_gidx.data(),
@@ -965,15 +961,17 @@ IndexMap::create_submap(
   // Create a map from the old (original index map) ghost position to the
   // new (submap) ghost position
   std::vector<std::int32_t> new_to_old_ghost;
+  // TODO Change to src.size()
   for (std::size_t i = 0; i < ghost_send_disp.size() - 1; ++i)
   {
     for (int j = ghost_send_disp[i]; j < ghost_send_disp[i + 1]; ++j)
     {
+      // Only add the ghost index if it is (i) in the submap, (ii) connected
+      // on this process, and (iii) I have not taken ownership of it from
+      // another process
       if (std::int64_t idx = recv_gidx[j];
           idx >= 0
-          and std::find(connected_indices_global.begin(),
-                        connected_indices_global.end(), ghost_indices_send[j])
-                  != connected_indices_global.end()
+          and is_connected[ghost_indices_send_local[j]]
           and idx != send_gidx_to_original_owner[j])
       {
         std::size_t p = ghost_buffer_pos[j];
