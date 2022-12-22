@@ -13,6 +13,7 @@
 #
 # First of all, let's import the modules that will be used:
 
+# +
 import sys
 from functools import partial
 
@@ -24,7 +25,6 @@ from petsc4py import PETSc
 from scipy.special import jv, jvp
 
 import ufl
-# +
 from dolfinx import fem, mesh, plot
 
 try:
