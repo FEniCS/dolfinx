@@ -687,7 +687,7 @@ if MPI.COMM_WORLD.rank == 0:
 
 v_dg_el = ufl.VectorElement("DG", domain.ufl_cell(), degree, dim=3)
 W = fem.FunctionSpace(domain, v_dg_el)
-Es_dg = fem.Function(W, dtype=np.complex128)
+Es_dg = fem.Function(W)
 Es_expr = fem.Expression(Esh, W.element.interpolation_points())
 Es_dg.interpolate(Es_expr)
 
