@@ -18,16 +18,15 @@ import sys
 from functools import partial
 
 import numpy as np
+from dolfinx.io import VTXWriter
+from dolfinx.io.gmshio import model_to_mesh
 from mesh_sphere_axis import generate_mesh_sphere_axis
+from mpi4py import MPI
+from petsc4py import PETSc
 from scipy.special import jv, jvp
 
 import ufl
 from dolfinx import fem, mesh, plot
-from dolfinx.io import VTXWriter
-from dolfinx.io.gmshio import model_to_mesh
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 try:
     import gmsh
@@ -331,7 +330,6 @@ def create_eps_mu(pml, rho, eps_bkg, mu_bkg):
 epsilon_0 = 8.8541878128 * 10**-12  # Vacuum permittivity
 mu_0 = 4 * np.pi * 10**-7  # Vacuum permeability
 Z0 = np.sqrt(mu_0 / epsilon_0)  # Vacuum impedance
-I0 = 0.5 / Z0  # Intensity of electromagnetic field
 
 # Radius of the sphere
 radius_sph = 0.025
@@ -441,6 +439,8 @@ wl0 = 0.4  # Wavelength of the background field
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
 theta = np.pi / 4  # Angle of incidence of the background field
 m_list = [0, 1]  # list of harmonics
+I0 = 0.5 * n_bkg / Z0  # Intensity
+
 
 # with `m_list` being a list containing the harmonic
 # numbers we want to solve the problem for. In general,
@@ -554,40 +554,37 @@ for m in m_list:
                                       "ksp_type": "preonly", "pc_type": "lu"})
     Esh_m = problem.solve()
 
-    Esh_rz_m, Esh_p_m = Esh_m.split()
-
-    # Interpolate over rho and z components over DG space
-    Esh_rz_m_dg.interpolate(Esh_rz_m)
-
-    # Save solutions
-    with VTXWriter(domain.comm, f"sols/Es_rz_{m}.bp", Esh_rz_m_dg) as f:
-        f.write(0.0)
-    with VTXWriter(domain.comm, f"sols/Es_p_{m}.bp", Esh_p_m) as f:
-        f.write(0.0)
-
     # Define scattered magnetic field
-    Hsh_m = 1j * curl_axis(Esh_m, m, rho) / (Z0 * k0 * n_bkg)
+    Hsh_m = -1j * curl_axis(Esh_m, m, rho) / (Z0 * k0)
 
     # Total electric field
     Eh_m.x.array[:] = Eb_m.x.array[:] + Esh_m.x.array[:]
 
+    phase = np.exp(-1j * m * phi)
+
+    rotate_to_phi = ufl.as_vector(
+        (phase + ufl.conj(phase),
+         phase + ufl.conj(phase),
+         phase - ufl.conj(phase)))
+
     if m == 0:
 
-        Esh.x.array[:] = Esh_m.x.array[:] * np.exp(- 1j * m * phi)
+        Esh = Esh_m
 
     elif m == m_list[0]:
 
-        Esh.x.array[:] = 2 * Esh_m.x.array[:] * np.exp(- 1j * m * phi)
+        Esh = ufl.elem_mult(Esh_m, rotate_to_phi)
 
     else:
 
-        Esh.x.array[:] += 2 * Esh_m.x.array[:] * np.exp(- 1j * m * phi)
+        Esh += ufl.elem_mult(Esh_m, rotate_to_phi)
 
     # Efficiencies calculation
 
     if m == 0:  # initialize and do not add 2 factor
-        P = np.pi * ufl.inner(ufl.cross(Esh_m, ufl.conj(Hsh_m)), n_3d) * marker
-        Q = np.pi * eps_au.imag * k0 * (ufl.inner(Eh_m, Eh_m)) / Z0 / n_bkg
+        P = np.pi * \
+            ufl.inner(-ufl.cross(Esh_m, ufl.conj(Hsh_m)), n_3d) * marker
+        Q = np.pi * eps_au.imag * k0 * (ufl.inner(Eh_m, Eh_m)) / Z0
 
         q_abs_fenics_proc = (fem.assemble_scalar(
                              fem.form(Q * rho * dAu)) / gcs / I0).real
@@ -597,7 +594,7 @@ for m in m_list:
         q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
     elif m == m_list[0]:  # initialize and add 2 factor
-        P = 2 * np.pi * ufl.inner(ufl.cross(Esh_m,
+        P = 2 * np.pi * ufl.inner(-ufl.cross(Esh_m,
                                   ufl.conj(Hsh_m)), n_3d) * marker
         Q = 2 * np.pi * eps_au.imag * k0 * (ufl.inner(Eh_m, Eh_m)) / Z0 / n_bkg
 
@@ -609,7 +606,7 @@ for m in m_list:
         q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
     else:  # do not initialize and add 2 factor
-        P = 2 * np.pi * ufl.inner(ufl.cross(Esh_m,
+        P = 2 * np.pi * ufl.inner(-ufl.cross(Esh_m,
                                   ufl.conj(Hsh_m)), n_3d) * marker
         Q = 2 * np.pi * eps_au.imag * k0 * (ufl.inner(Eh_m, Eh_m)) / Z0 / n_bkg
 
@@ -680,38 +677,41 @@ if MPI.COMM_WORLD.rank == 0:
 # the scattered field and visualize it:
 
 # +
-Esh_rz, Esh_p = Esh.split()
+v_dg_el = ufl.VectorElement("DG", domain.ufl_cell(), degree, dim=3)
+W = fem.FunctionSpace(domain, v_dg_el)
+Es_dg = fem.Function(W, dtype=np.complex128)
+Es_expr = fem.Expression(Esh, W.element.interpolation_points())
+Es_dg.interpolate(Es_expr)
 
-Esh_rz_dg = fem.Function(V_dg)
-Esh_r_dg = fem.Function(V_dg)
+with VTXWriter(domain.comm, "sols/Es.bp", Es_dg) as f:
+    f.write(0.0)
 
+#Esh_r = Esh[0]
+#
+#Esh_r_dg = fem.Function(V_dg)
+#
 # Interpolate over rho and z components over DG space
-Esh_rz_dg.interpolate(Esh_rz)
-
-with VTXWriter(domain.comm, "sols/Es_rz.bp", Esh_rz_dg) as f:
-    f.write(0.0)
-with VTXWriter(domain.comm, "sols/Es_p.bp", Esh_p) as f:
-    f.write(0.0)
-
-if have_pyvista:
-    V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
-    V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
-    Esh_r_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
-    Esh_r_values[:, :domain.topology.dim] = \
-        Esh_r_dg.x.array.reshape(V_x.shape[0], domain.topology.dim).real
-
-    V_grid.point_data["u"] = Esh_r_values
-
-    pyvista.set_jupyter_backend("pythreejs")
-    plotter = pyvista.Plotter()
-
-    plotter.add_text("magnitude", font_size=12, color="black")
-    plotter.add_mesh(V_grid.copy(), show_edges=False)
-    plotter.view_xy()
-    plotter.link_views()
-
-    if not pyvista.OFF_SCREEN:
-        plotter.show()
-    else:
-        pyvista.start_xvfb()
-        plotter.screenshot("Esh_r.png", window_size=[500, 500])
+# Esh_r_dg.interpolate(Esh_r)
+#
+# if have_pyvista:
+#    V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
+#    V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
+#    Esh_r_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
+#    Esh_r_values[:, :domain.topology.dim] = \
+#        Esh_r_dg.x.array.reshape(V_x.shape[0], domain.topology.dim).real
+#
+#    V_grid.point_data["u"] = Esh_r_values
+#
+#    pyvista.set_jupyter_backend("pythreejs")
+#    plotter = pyvista.Plotter()
+#
+#    plotter.add_text("magnitude", font_size=12, color="black")
+#    plotter.add_mesh(V_grid.copy(), show_edges=False)
+#    plotter.view_xy()
+#    plotter.link_views()
+#
+#    if not pyvista.OFF_SCREEN:
+#        plotter.show()
+#    else:
+#        pyvista.start_xvfb()
+#        plotter.screenshot("Esh_r.png", window_size=[500, 500])
