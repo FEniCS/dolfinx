@@ -431,7 +431,9 @@ eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
 eps.x.scatter_forward()
 # -
 
-# For the background field, we need to specify the wavelength (and the wavevector), the angle of incidence, the harmonic numbers and the intensity. Therefore, we can write:
+# For the background field, we need to specify the wavelength
+# (and the wavevector), the angle of incidence, the harmonic numbers
+# and the intensity. Therefore, we can write:
 
 wl0 = 0.4  # Wavelength of the background field
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
@@ -511,7 +513,11 @@ dAu = dx(au_tag)
 dS = ufl.Measure("dS", domain, subdomain_data=facet_tags)
 # -
 
-# We also specify a variable `phi`, corresponding to the $\phi$ angle of the cylindrical coordinate system that we will use to post-process the field and save it along the plane at $\phi = \pi/4$. In particular, the scattered field needs to be transformed for $m\neq 0$ in the following way:
+# We also specify a variable `phi`, corresponding to the $\phi$
+# angle of the cylindrical coordinate system that we will use to
+# post-process the field and save it along the plane at
+# $\phi = \pi/4$. In particular, the scattered field needs to be
+# transformed for $m\neq 0$ in the following way:
 #
 # \begin{aligned}
 # &E_{s, \rho}^{(m)}(\phi)=E_{s, \rho}^{(m)}(e^{-jm\phi}+e^{jm\phi}) \\
