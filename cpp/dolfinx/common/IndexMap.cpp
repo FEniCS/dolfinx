@@ -756,19 +756,16 @@ IndexMap::create_submap(
       ghost_recv_sizes.data(), ghost_recv_disp.data(), MPI_INT32_T, comm0);
 
   // Create a map from each of the indices that I own that are ghosted on
-  // other processes to processes that could possbly become their new
+  // other processes to processes that could possibly become their new
   // owner (i.e. processes on which they are connected)
   // TODO Try to replace map
   std::map<std::int64_t, std::vector<std::int32_t>> possible_new_owners;
   // Loop over destination ranks
-  // FIXME Change ghost_recv_disp.size() - 1 to dest size?
-  for (std::size_t i = 0; i < ghost_recv_disp.size() - 1; ++i)
+  for (std::size_t i = 0; i < dest.size(); ++i)
   {
     // Loop through indices I own that are ghosted by process dest[i]
-    // ss << "   i = " << i << "\n";
     for (int j = ghost_recv_disp[i]; j < ghost_recv_disp[i + 1]; ++j)
     {
-      // ss << "   j = " << j << "\n";
       std::int64_t global_index = ghost_indices_recv[j];
       // If this index is connected on process dest[i], add it to the list
       // of possible new owners
