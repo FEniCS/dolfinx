@@ -661,16 +661,12 @@ IndexMap::create_submap(
   // Lookup array to determine if an owned local index is in the submap
   std::vector<bool> is_in_submap(size_local(), false);
   for (std::int32_t i : indices)
-  {
     is_in_submap[i] = true;
-  }
 
   // Lookup array to determine if a local index is connected on this process
   std::vector<bool> is_connected(size_local() + num_ghosts(), false);
   for (std::int32_t i : connected_indices)
-  {
     is_connected[i] = true;
-  }
 
   // --- Step 2: Send ghost indices to owning rank
 
