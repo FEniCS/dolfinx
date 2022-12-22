@@ -664,7 +664,7 @@ if MPI.COMM_WORLD.rank == 0:
     print(f"The numerical extinction efficiency is {q_ext_fenics}")
     print(f"The error is {err_ext*100}%")
 
-    # Check whether the geometrical or optical parameters ar correct
+    # Check whether the geometrical and optical parameters ar correct
     assert radius_sph / wl0 == 0.025 / 0.4
     assert eps_au == -1.0782 + 1j * 5.8089
 
@@ -685,33 +685,3 @@ Es_dg.interpolate(Es_expr)
 
 with VTXWriter(domain.comm, "sols/Es.bp", Es_dg) as f:
     f.write(0.0)
-
-#Esh_r = Esh[0]
-#
-#Esh_r_dg = fem.Function(V_dg)
-#
-# Interpolate over rho and z components over DG space
-# Esh_r_dg.interpolate(Esh_r)
-#
-# if have_pyvista:
-#    V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
-#    V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
-#    Esh_r_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
-#    Esh_r_values[:, :domain.topology.dim] = \
-#        Esh_r_dg.x.array.reshape(V_x.shape[0], domain.topology.dim).real
-#
-#    V_grid.point_data["u"] = Esh_r_values
-#
-#    pyvista.set_jupyter_backend("pythreejs")
-#    plotter = pyvista.Plotter()
-#
-#    plotter.add_text("magnitude", font_size=12, color="black")
-#    plotter.add_mesh(V_grid.copy(), show_edges=False)
-#    plotter.view_xy()
-#    plotter.link_views()
-#
-#    if not pyvista.OFF_SCREEN:
-#        plotter.show()
-#    else:
-#        pyvista.start_xvfb()
-#        plotter.screenshot("Esh_r.png", window_size=[500, 500])
