@@ -13,12 +13,10 @@
 #
 # First of all, let's import the modules that will be used:
 
-# +
 import sys
 from functools import partial
 
 import numpy as np
-from dolfinx.io import VTXWriter
 from dolfinx.io.gmshio import model_to_mesh
 from mesh_sphere_axis import generate_mesh_sphere_axis
 from mpi4py import MPI
@@ -26,7 +24,16 @@ from petsc4py import PETSc
 from scipy.special import jv, jvp
 
 import ufl
+# +
+from dolfinx import cpp as _cpp
 from dolfinx import fem, mesh, plot
+
+try:
+    has_vtx = True
+    from dolfinx.io import VTXWriter
+except ImportError:
+    print("VTXWriter not available, solution won't be saved")
+    has_vtx = False
 
 try:
     import gmsh
@@ -691,11 +698,12 @@ if MPI.COMM_WORLD.rank == 0:
     assert err_sca < 0.01
     assert err_ext < 0.01
 
-v_dg_el = ufl.VectorElement("DG", domain.ufl_cell(), degree, dim=3)
-W = fem.FunctionSpace(domain, v_dg_el)
-Es_dg = fem.Function(W)
-Es_expr = fem.Expression(Esh, W.element.interpolation_points())
-Es_dg.interpolate(Es_expr)
+if has_vtx:
+    v_dg_el = ufl.VectorElement("DG", domain.ufl_cell(), degree, dim=3)
+    W = fem.FunctionSpace(domain, v_dg_el)
+    Es_dg = fem.Function(W)
+    Es_expr = fem.Expression(Esh, W.element.interpolation_points())
+    Es_dg.interpolate(Es_expr)
 
-with VTXWriter(domain.comm, "sols/Es.bp", Es_dg) as f:
-    f.write(0.0)
+    with VTXWriter(domain.comm, "sols/Es.bp", Es_dg) as f:
+        f.write(0.0)
