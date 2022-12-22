@@ -325,7 +325,7 @@ set_package_properties(
 )
 
 if(DOLFINX_ENABLE_PARMETIS)
-  find_package(ParMETIS 4.0.0...4.0.3)
+  find_package(ParMETIS 4.0.2)
 endif()
 
 set_package_properties(
