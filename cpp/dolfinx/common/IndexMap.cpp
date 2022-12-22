@@ -728,7 +728,7 @@ IndexMap::create_submap(
   // Convert to local to check if the indices are connected on this process
   std::vector<std::int32_t> ghost_indices_send_local(ghost_indices_send.size());
   global_to_local(ghost_indices_send, ghost_indices_send_local);
-  // Determine if the indices ghosted by this process are connected on this
+  // Mark the indices ghosted by this process that are connected on this
   // process
   for (std::int32_t ghost_index_local : ghost_indices_send_local)
   {
@@ -818,8 +818,9 @@ IndexMap::create_submap(
         std::vector<std::int32_t>& possible_owners
             = possible_new_owners.at(global_index);
         assert(possible_owners.size() > 0);
-        // FIXME Do this randomly for load balancing
-        new_owners_send.push_back(possible_owners[0]);
+        // Choose new owner randomly for load balancing
+        const int random_index = std::rand() % possible_owners.size();
+        new_owners_send.push_back(possible_owners[random_index]);
       }
     }
     else
