@@ -42,7 +42,7 @@ except ModuleNotFoundError:
     have_pyvista = False
 # -
 
-# Since we want to solve time-harmonic Maxwell's equation, we need to solve a
+# Since we want to solve the time-harmonic version of Maxwell's equation, we need to solve a
 # complex-valued PDE, and therefore need to use PETSc compiled with complex numbers.
 
 if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
@@ -96,10 +96,10 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 #
 # $$
 # \begin{align}
-# & \mathbf{E}_s(\rho, z, \phi) = \sum_m\mathbf{E}^{(m)}_s(\rho, z)e^{-im\phi} \\
-# & \mathbf{E}_b(\rho, z, \phi) = \sum_m\mathbf{E}^{(m)}_b(\rho, z)e^{-im\phi} \\
+# & \mathbf{E}_s(\rho, z, \phi) = \sum_m\mathbf{E}^{(m)}_s(\rho, z)e^{-jm\phi} \\
+# & \mathbf{E}_b(\rho, z, \phi) = \sum_m\mathbf{E}^{(m)}_b(\rho, z)e^{-jm\phi} \\
 # & \bar{\mathbf{v}}(\rho, z, \phi) =
-# \sum_m\bar{\mathbf{v}}^{(m)}(\rho, z)e^{+im\phi}\\
+# \sum_m\bar{\mathbf{v}}^{(m)}(\rho, z)e^{+jm\phi}\\
 # \end{align}
 # $$
 #
@@ -108,7 +108,7 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # $$
 # \begin{aligned}
 # \nabla \times \mathbf{a}=
-# \sum_{m}\left(\nabla \times \mathbf{a}^{(m)}\right) e^{-i m \phi}
+# \sum_{m}\left(\nabla \times \mathbf{a}^{(m)}\right) e^{-j m \phi}
 # \end{aligned}
 # $$
 #
@@ -118,12 +118,12 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # \begin{align}
 # \left(\nabla \times \mathbf{a}^{(m)}\right) = &\left[\hat{\rho}
 # \left(-\frac{\partial a_{\phi}^{(m)}}{\partial z}
-# -i \frac{m}{\rho} a_{z}^{(m)}\right)+\\ \hat{\phi}
+# -j\frac{m}{\rho} a_{z}^{(m)}\right)+\\ \hat{\phi}
 # \left(\frac{\partial a_{\rho}^{(m)}}{\partial z}
 # -\frac{\partial a_{z}^{(m)}}{\partial \rho}\right)+\right.\\
 # &\left.+\hat{z}\left(\frac{a_{\phi}^{(m)}}{\rho}
 # +\frac{\partial a_{\phi}^{(m)}}{\partial \rho}
-# +i \frac{m}{\rho} a_{\rho}^{(m)}\right)\right]
+# +j \frac{m}{\rho} a_{\rho}^{(m)}\right)\right]
 # \end{align}
 # $$
 #
@@ -174,9 +174,9 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # \end{align}
 # $$
 #
-# We have just obtained multiple weak forms corresponding to
-# different and independent cylindrical harmonics.
-# Let's now implement this problem in DOLFINx.
+# What we have just obtained are multiple weak forms corresponding to
+# different cylindrical harmonics propagating independently.
+# Let's now solve it in DOLFINx.
 # As a first step we can define the function for the $\nabla\times$
 # operator in cylindrical coordinates:
 
@@ -190,24 +190,22 @@ def curl_axis(a, m: int, rho):
 
 
 # Then we need to define the analytical formula for the background field.
-# For our purposes, we can consider the wavevector and the electric field
-# lying in the cross-section of our weak form. We will refer to this case as
-# a TMz polarized plane wave, since the magnetic field is perpendicular to
-# the $z$ axis.
+# We will consider a TMz polarized plane wave, that is a plane wave with
+# the magnetic field normal to our reference plane
 #
-# For a TMz polarization, the cylindrical harmonics $\mathbf{E}^{(m)}_b$
-# of the background field can be written in this way
+# For a TMz polarization, we can write the cylindrical harmonics $\mathbf{E}^{(m)}_b$
+# of the background field in this way
 # ([Wait 1955](https://doi.org/10.1139/p55-024)):
 #
 # $$
 # \begin{align}
 # \mathbf{E}^{(m)}_b = &\hat{\rho} \left(E_{0} \cos \theta
-# e^{i k z \cos \theta} i^{-m+1} J_{m}^{\prime}\left(k_{0} \rho \sin
+# e^{j k z \cos \theta} j^{-m+1} J_{m}^{\prime}\left(k_{0} \rho \sin
 # \theta\right)\right)\\
-# +&\hat{z} \left(E_{0} \sin \theta e^{i k z \cos \theta}i^{-m} J_{m}
+# +&\hat{z} \left(E_{0} \sin \theta e^{j k z \cos \theta}j^{-m} J_{m}
 # \left(k \rho \sin \theta\right)\right)\\
 # +&\hat{\phi} \left(\frac{E_{0} \cos \theta}{k \rho \sin \theta}
-# e^{i k z \cos \theta} mi^{-m} J_{m}\left(k \rho \sin \theta\right)\right)
+# e^{j k z \cos \theta} mj^{-m} J_{m}\left(k \rho \sin \theta\right)\right)
 # \end{align}
 # $$
 #
@@ -405,18 +403,18 @@ curl_el = ufl.FiniteElement("N1curl", domain.ufl_cell(), degree)
 lagr_el = ufl.FiniteElement("Lagrange", domain.ufl_cell(), degree)
 V = fem.FunctionSpace(domain, ufl.MixedElement([curl_el, lagr_el]))
 
-# Let's now define our integration domains:
+# The integration domains of our problem are the following:
 
 # +
 # Measures for subdomains
 dx = ufl.Measure("dx", domain, subdomain_data=cell_tags,
-                 metadata={'quadrature_degree': 60})
+                 metadata={'quadrature_degree': 5})
 
 dDom = dx((au_tag, bkg_tag))
 dPml = dx(pml_tag)
 # -
 
-# Let's now define the $\varepsilon_r$ function:
+# Let's now add the $\varepsilon_r$ function:
 
 # +
 n_bkg = 1  # Background refractive index
@@ -433,7 +431,7 @@ eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
 eps.x.scatter_forward()
 # -
 
-# We can now define the characteristic parameters of our background field:
+# For the background field, we need to specify the wavelength (and the wavevector), the angle of incidence, the harmonic numbers and the intensity. Therefore, we can write:
 
 wl0 = 0.4  # Wavelength of the background field
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
@@ -452,7 +450,7 @@ I0 = 0.5 * n_bkg / Z0  # Intensity
 # \begin{aligned}
 # &J_{-m}=(-1)^m J_m \\
 # &J_{-m}^{\prime}=(-1)^m J_m^{\prime} \\
-# &i^{-m}=(-1)^m i^m
+# &j^{-m}=(-1)^m j^m
 # \end{aligned}
 #
 # and therefore:
@@ -463,11 +461,10 @@ I0 = 0.5 * n_bkg / Z0  # Intensity
 # &E_{b, z}^{(m)}=E_{b, z}^{(-m)}
 # \end{aligned}
 #
-# It follows that we can solve the problem only for $m\geq 0$,
-# and retrieving $m<0$ solutions by considering parity.
+# In light of this, we can just solve the problem for $m\geq 0$.
 #
 
-# We can now define `eps_pml` and `mu_pml`:
+# Let's now define `eps_pml` and `mu_pml`:
 
 # +
 rho, z = ufl.SpatialCoordinate(domain)
@@ -485,13 +482,6 @@ eps_pml, mu_pml = create_eps_mu(pml_coords, rho, eps_bkg, 1)
 # solver loop:
 
 # +
-# Function spaces for saving the solution
-V_dg = fem.VectorFunctionSpace(domain, ("DG", degree))
-V_lagr = fem.FunctionSpace(domain, ("Lagrange", degree))
-
-# Function for saving the rho and z component of the electric field
-Esh_rz_m_dg = fem.Function(V_dg)
-
 # Total field
 Eh_m = fem.Function(V)
 Esh = fem.Function(V)
@@ -519,13 +509,27 @@ dAu = dx(au_tag)
 
 # Define integration facet for the scattering efficiency
 dS = ufl.Measure("dS", domain, subdomain_data=facet_tags)
-
-phi = 0
 # -
 
-# We can now solve our problem for all the chosen harmonic numbers:
+# We also specify a variable `phi`, corresponding to the $\phi$ angle of the cylindrical coordinate system that we will use to post-process the field and save it along the plane at $\phi = \pi/4$. In particular, the scattered field needs to be transformed for $m\neq 0$ in the following way:
+#
+# \begin{aligned}
+# &E_{s, \rho}^{(m)}(\phi)=E_{s, \rho}^{(m)}(e^{-jm\phi}+e^{jm\phi}) \\
+# &E_{s, \phi}^{(m)}(\phi)=E_{s, \phi}^{(m)}(e^{-jm\phi}-e^{jm\phi}) \\
+# &E_{s, z}^{(m)}(\phi)=E_{s, z}^{(m)}(e^{-jm\phi}+e^{jm\phi})
+# \end{aligned}
+#
+# For this reason, we also add a `phase` constant for the above phase term:
 
 # +
+phi = np.pi / 4
+
+# Initialize phase term
+phase = fem.Constant(domain, PETSc.ScalarType(np.exp(1j * 0 * phi)))
+# -
+
+# Let's now solve the problem:
+
 for m in m_list:
 
     # Definition of Trial and Test functions
@@ -554,31 +558,37 @@ for m in m_list:
                                       "ksp_type": "preonly", "pc_type": "lu"})
     Esh_m = problem.solve()
 
-    # Define scattered magnetic field
+    # Scattered magnetic field
     Hsh_m = -1j * curl_axis(Esh_m, m, rho) / (Z0 * k0)
 
     # Total electric field
     Eh_m.x.array[:] = Eb_m.x.array[:] + Esh_m.x.array[:]
 
-    phase = np.exp(-1j * m * phi)
+# We can add our solution to the total scattered field, which also includes the transformation to the $\phi$ plane:
+
+    phase.value = np.exp(-1j * m * phi)
 
     rotate_to_phi = ufl.as_vector(
         (phase + ufl.conj(phase),
          phase + ufl.conj(phase),
          phase - ufl.conj(phase)))
 
-    if m == 0:
+    if m == 0:  # initialize and do not transform
 
         Esh = Esh_m
 
-    elif m == m_list[0]:
+    elif m == m_list[0]:  # initialize and transform
 
         Esh = ufl.elem_mult(Esh_m, rotate_to_phi)
 
-    else:
+    else:  # transform
 
         Esh += ufl.elem_mult(Esh_m, rotate_to_phi)
 
+# In order to check whether our calculation are correct, we can use
+# as reference quantities the absorption and scattering efficiencies:
+
+# +
     # Efficiencies calculation
 
     if m == 0:  # initialize and do not add 2 factor
@@ -620,9 +630,11 @@ for m in m_list:
 q_ext_fenics = q_abs_fenics + q_sca_fenics
 # -
 
+# The quantities `P` and `Q` have an additional `2` factor for `m != 0` due to parity.
+
 # We can now compare the numerical efficiencies with
-# the analytical ones. For analytical efficiencies,
-# we used the output given by the following routine
+# the analytical ones. The latter were obtained
+# with the following routine
 # provided by the [`scattnlay`](https://github.com/ovidiopr/scattnlay)
 # library:
 #
@@ -635,13 +647,14 @@ q_ext_fenics = q_abs_fenics + q_sca_fenics
 # q_sca_analyt, q_abs_analyt = scattnlay(np.array([x], dtype=np.complex128), np.array([m], dtype=np.complex128))[2:4]
 # ```
 #
-# The numbers are the following:
+# The numerical values are reported here below:
 
 q_abs_analyt = 0.9622728008329892
 q_sca_analyt = 0.07770397394691526
 q_ext_analyt = q_abs_analyt + q_sca_analyt
 
-# We can now calculate the error:
+# Finally, we can calculate the error and save our total
+# scattered field:
 
 # +
 # Error calculation
@@ -671,12 +684,7 @@ if MPI.COMM_WORLD.rank == 0:
     assert err_abs < 0.01
     assert err_sca < 0.01
     assert err_ext < 0.01
-# -
 
-# Once sure our solution is correct, we can save
-# the scattered field and visualize it:
-
-# +
 v_dg_el = ufl.VectorElement("DG", domain.ufl_cell(), degree, dim=3)
 W = fem.FunctionSpace(domain, v_dg_el)
 Es_dg = fem.Function(W, dtype=np.complex128)
