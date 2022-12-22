@@ -847,23 +847,6 @@ IndexMap::create_submap(
                          new_owners_recv.data(), ghost_send_sizes.data(),
                          ghost_send_disp.data(), MPI_INT32_T, comm1);
 
-  // Count how many indices I currently ghost that need to take ownership of
-  int num_ghosts_to_take_ownership
-      = std::count(new_owners_recv.begin(), new_owners_recv.end(), rank);
-
-  // --- Step 1: Compute new offset for this rank
-
-  // TODO Move this and compute from owned_connected_indices?
-  const int num_owned_unconnected_indices
-      = indices.size() - owned_connected_indices.size();
-  std::int64_t local_size_new = indices.size() + num_ghosts_to_take_ownership
-                                - num_owned_unconnected_indices;
-  std::int64_t offset_new = 0;
-  MPI_Request request_offset;
-  MPI_Iexscan(&local_size_new, &offset_new, 1, MPI_INT64_T, MPI_SUM,
-              _comm.comm(), &request_offset);
-  MPI_Wait(&request_offset, MPI_STATUS_IGNORE);
-
   // Loop through the indices that I ghost. If I am the new owner of that
   // index, add it to `owned_connected_indices`
   std::vector<std::int32_t> ghost_indices_send_local(ghost_indices_send.size());
@@ -875,6 +858,14 @@ IndexMap::create_submap(
       owned_connected_indices.push_back(ghost_indices_send_local[i]);
     }
   }
+
+  // --- Step 1: Compute new offset for this rank
+  std::int64_t local_size_new = owned_connected_indices.size();
+  std::int64_t offset_new = 0;
+  MPI_Request request_offset;
+  MPI_Iexscan(&local_size_new, &offset_new, 1, MPI_INT64_T, MPI_SUM,
+              _comm.comm(), &request_offset);
+  MPI_Wait(&request_offset, MPI_STATUS_IGNORE);
 
   // Loop through the indices I ghost. If I am the new owner, compute the
   // new global index
