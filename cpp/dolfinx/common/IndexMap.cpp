@@ -658,6 +658,20 @@ IndexMap::create_submap(
                         connected_indices.begin(), connected_indices.end(),
                         std::back_inserter(owned_connected_indices));
 
+  // Lookup array to determine if an owned local index is in the submap
+  std::vector<bool> is_in_submap(size_local(), false);
+  for (std::int32_t i : indices)
+  {
+    is_in_submap[i] = true;
+  }
+
+  // Lookup array to determine if a local index is connected on this process
+  std::vector<bool> is_connected(size_local() + num_ghosts(), false);
+  for (std::int32_t i : connected_indices)
+  {
+    is_connected[i] = true;
+  }
+
   // --- Step 2: Send ghost indices to owning rank
 
   // Build list of src ranks (ranks that own ghosts)
@@ -674,6 +688,7 @@ IndexMap::create_submap(
   std::vector<std::int64_t> ghost_indices_send;
   // Marker for ghosts on this process that are connected on this process
   // (1 if connected, 0 if unconnected)
+  // TODO Make this a bool array
   std::vector<std::int32_t> ghost_connected_indices_send;
   //  Indices owned by this process that are ghosted by other processes
   std::vector<std::int64_t> ghost_indices_recv;
@@ -794,8 +809,7 @@ IndexMap::create_submap(
 
     // Check if the index is in the submap. If so, determine its owner,
     // else mark with -1.
-    auto it = std::lower_bound(indices.begin(), indices.end(), local_index);
-    if (it != indices.end() and *it == local_index)
+    if (is_in_submap[local_index])
     {
       // See if this index is connected on this process. If so, I continue to
       // own this index. Otherwise, determine the new owner.
@@ -841,6 +855,7 @@ IndexMap::create_submap(
 
   // --- Step 1: Compute new offset for this rank
 
+  // TODO Move this and compute from owned_connected_indices?
   const int num_owned_unconnected_indices
       = indices.size() - owned_connected_indices.size();
   std::int64_t local_size_new = indices.size() + num_ghosts_to_take_ownership
