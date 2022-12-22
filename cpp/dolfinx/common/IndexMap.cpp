@@ -659,9 +659,9 @@ IndexMap::create_submap(
                         std::back_inserter(owned_connected_indices));
 
   // Lookup array to determine if an owned local index is in the submap
-  std::vector<bool> is_in_submap(size_local(), false);
+  std::vector<bool> in_submap(size_local(), false);
   for (std::int32_t i : indices)
-    is_in_submap[i] = true;
+    in_submap[i] = true;
 
   // Lookup array to determine if a local index is connected on this process
   std::vector<bool> is_connected(size_local() + num_ghosts(), false);
@@ -804,7 +804,7 @@ IndexMap::create_submap(
 
     // Check if the index is in the submap. If so, determine its owner,
     // else mark with -1.
-    if (is_in_submap[local_index])
+    if (in_submap[local_index])
     {
       // See if this index is connected on this process. If so, I continue to
       // own this index. Otherwise, determine the new owner.
