@@ -25,7 +25,6 @@ from scipy.special import jv, jvp
 
 import ufl
 # +
-from dolfinx import cpp as _cpp
 from dolfinx import fem, mesh, plot
 
 try:
