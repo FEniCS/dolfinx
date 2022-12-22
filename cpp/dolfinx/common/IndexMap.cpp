@@ -813,9 +813,7 @@ IndexMap::create_submap(
     {
       // See if this index is connected on this process. If so, I continue to
       // own this index. Otherwise, determine the new owner.
-      auto it_2 = std::lower_bound(connected_indices.begin(),
-                                   connected_indices.end(), local_index);
-      if (it_2 != connected_indices.end() and *it_2 == local_index)
+      if (is_connected[local_index])
       {
         new_owners_send.push_back(rank);
       }
