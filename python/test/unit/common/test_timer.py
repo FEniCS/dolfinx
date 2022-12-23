@@ -17,7 +17,7 @@ random.seed(0)
 
 def get_random_task_name():
     """Get pseudo-random string"""
-    return hex(random.randint(0, 1e32))
+    return hex(random.randint(int(0), int(1e32)))
 
 
 def test_context_manager_named():
