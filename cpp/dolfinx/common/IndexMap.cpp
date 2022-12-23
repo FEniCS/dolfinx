@@ -653,6 +653,7 @@ IndexMap::create_submap(
         "Unowned index detected when creating sub-IndexMap");
   }
 
+  // Create a list of indices that are owned and connected on this process
   std::vector<std::int32_t> owned_connected_indices;
   std::set_intersection(indices.begin(), indices.end(),
                         connected_indices.begin(), connected_indices.end(),
@@ -668,7 +669,8 @@ IndexMap::create_submap(
   for (std::int32_t i : connected_indices)
     is_connected[i] = true;
 
-  // --- Step 2: Send ghost indices to owning rank
+  // --- Step 1: Send ghost indices to owning rank. Also, send array
+  // marking ghosts that are connected on this process.
 
   // Build list of src ranks (ranks that own ghosts)
   std::vector<int> src = this->owners();
@@ -765,6 +767,9 @@ IndexMap::create_submap(
       ghost_send_disp.data(), MPI_INT32_T, ghost_connected_indices_recv.data(),
       ghost_recv_sizes.data(), ghost_recv_disp.data(), MPI_INT32_T, comm0);
 
+  // --- Step 3: For each index I own which are ghosted by other ranks,
+  // figure out who the new owner should be and tell them
+
   // Create a map from each of the indices that I own that are ghosted on
   // other processes to processes that could possibly become their new
   // owner (i.e. processes on which they are connected)
@@ -783,6 +788,24 @@ IndexMap::create_submap(
       {
         possible_new_owners[global_index].push_back(dest[i]);
       }
+    }
+  }
+
+  // Map from global index of indices I own that are shared to their
+  // new owner
+  // TODO Replace map
+  std::map<std::int64_t, std::int32_t> new_owners;
+  for (auto [global_index, possible_owners] : possible_new_owners)
+  {
+    // Not all owned shared indices will be in the submap, and some
+    // of those that are will be connected on this rank and but not
+    // on the ranks that ghost them, so check we need to check the
+    // size of `possible_owners`
+    if (possible_owners.size() > 0)
+    {
+      // Choose new owner randomly for load balancing
+      const int random_index = std::rand() % possible_owners.size();
+      new_owners[global_index] = possible_owners[random_index];
     }
   }
 
@@ -807,20 +830,14 @@ IndexMap::create_submap(
     if (in_submap[local_index])
     {
       // See if this index is connected on this process. If so, I continue to
-      // own this index. Otherwise, determine the new owner.
+      // own this index. Otherwise, use the new owner.
       if (is_connected[local_index])
       {
         new_owners_send.push_back(rank);
       }
       else
       {
-        // Pick a new owner
-        std::vector<std::int32_t>& possible_owners
-            = possible_new_owners.at(global_index);
-        assert(possible_owners.size() > 0);
-        // Choose new owner randomly for load balancing
-        const int random_index = std::rand() % possible_owners.size();
-        new_owners_send.push_back(possible_owners[random_index]);
+        new_owners_send.push_back(new_owners[global_index]);
       }
     }
     else
