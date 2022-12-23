@@ -138,7 +138,27 @@ void common(py::module& m)
                 std::span(entities.data(), entities.size()));
             return std::pair(std::move(map), as_pyarray(std::move(ghosts)));
           },
-          py::arg("entities"));
+          py::arg("entities"))
+      .def(
+          "create_submap",
+          [](const dolfinx::common::IndexMap& self,
+             const py::array_t<std::int32_t, py::array::c_style>& indices,
+             const py::array_t<std::int32_t, py::array::c_style>&
+                 connected_indices)
+          {
+            std::pair<
+                std::vector<std::int32_t>,
+                std::pair<dolfinx::common::IndexMap, std::vector<std::int32_t>>>
+                submap
+                = self.create_submap(std::span(indices.data(), indices.size()),
+                                     std::span(connected_indices.data(),
+                                               connected_indices.size()));
+            return std::pair(
+                as_pyarray(std::move(submap.first)),
+                std::pair(std::move(submap.second.first),
+                          as_pyarray(std::move(submap.second.second))));
+          },
+          py::arg("indices"), py::arg("connected_indices"));
 
   // dolfinx::common::Timer
   py::class_<dolfinx::common::Timer, std::shared_ptr<dolfinx::common::Timer>>(

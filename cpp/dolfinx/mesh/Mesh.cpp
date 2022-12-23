@@ -246,8 +246,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::vector<std::int32_t> submesh_vertices
       = compute_incident_entities(mesh, submesh_to_mesh_map, dim, 0);
 
-  // ss << "submesh_vertices = " << xt::adapt(submesh_vertices) << "\n";
-
   // Get the vertices in the submesh owned by this process
   auto mesh_index_map0 = topology.index_map(0);
   assert(mesh_index_map0);
@@ -258,9 +256,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   std::shared_ptr<common::IndexMap> submesh_map0;
   std::vector<int32_t> submesh_to_mesh_map0;
   {
-    auto [submesh_owned_vertices, map_data]
-        = mesh_index_map0->create_submap(submap_owned_vertices,
-                                         submesh_vertices);
+    auto [submesh_owned_vertices, map_data] = mesh_index_map0->create_submap(
+        submap_owned_vertices, submesh_vertices);
     submesh_map0
         = std::make_shared<common::IndexMap>(std::move(map_data.first));
 
@@ -279,7 +276,8 @@ mesh::create_submesh(const Mesh& mesh, int dim,
         { return size_local + vertex_index; });
   }
 
-  // ss << "submesh_to_mesh_vertex_map = " << xt::adapt(submesh_to_mesh_vertex_map)
+  // ss << "submesh_to_mesh_vertex_map = " <<
+  // xt::adapt(submesh_to_mesh_vertex_map)
   //    << "\n";
 
   // Submesh vertex to vertex connectivity (identity)
