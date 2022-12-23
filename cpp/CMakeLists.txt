@@ -1,6 +1,6 @@
 # ------------------------------------------------------------------------------
 # Top level CMakeLists.txt file for DOLFINx
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.19)
 
 # ------------------------------------------------------------------------------
 # Set project name and version number
@@ -189,7 +189,7 @@ if(BASIX_PY_DIR)
   endif()
 endif()
 
-find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
+find_package(Basix 0.6 REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 set_package_properties(
   basix PROPERTIES
   TYPE REQUIRED
