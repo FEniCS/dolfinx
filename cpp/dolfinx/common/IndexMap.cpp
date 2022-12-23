@@ -767,7 +767,7 @@ IndexMap::create_submap(
       ghost_send_disp.data(), MPI_INT32_T, ghost_connected_indices_recv.data(),
       ghost_recv_sizes.data(), ghost_recv_disp.data(), MPI_INT32_T, comm0);
 
-  // --- Step 3: For each index I own which are ghosted by other ranks,
+  // --- Step 2: For each index I own which are ghosted by other ranks,
   // figure out who the new owner should be and tell them
 
   // Create a map from each of the indices that I own that are ghosted on
@@ -860,7 +860,7 @@ IndexMap::create_submap(
                          new_owners_recv.data(), ghost_send_sizes.data(),
                          ghost_send_disp.data(), MPI_INT32_T, comm1);
 
-  // --- Step 4: Take ownership of new indices and compute their new
+  // --- Step 3: Take ownership of new indices and compute their new
   // global index in the submap. Send the new global index back to
   // their original owner.
   // NOTE: This rank computes the new global index of indices it has
@@ -926,7 +926,7 @@ IndexMap::create_submap(
     }
   }
 
-  // --- Step 5: Check which received indexes (all of which I own
+  // --- Step 4: Check which received indexes (all of which I own
   // in the original map, but some of which may have new owners
   // in the new map) are in the submap, and send their new global
   // index to the ranks that share them. NOTE: The original owner
@@ -973,7 +973,7 @@ IndexMap::create_submap(
     }
   }
 
-  // --- Step 6: Send new global indices from owner back to ranks that
+  // --- Step 5: Send new global indices from owner back to ranks that
   // ghost the index. Receive the new global indices of the indices I
   // ghost
 
@@ -986,7 +986,7 @@ IndexMap::create_submap(
 
   MPI_Comm_free(&comm1);
 
-  // --- Step 7: Unpack received data
+  // --- Step 6: Unpack received data
 
   std::vector<std::int64_t> ghosts;
   std::vector<int> src_ranks;
