@@ -12,7 +12,7 @@ cmakelists_noufl_str = \
 #
 # python cmake/scripts/generate-cmakefiles from dolfinx/cpp
 #
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.19)
 
 set(PROJECT_NAME {project_name})
 project(${{PROJECT_NAME}} LANGUAGES C CXX)
@@ -118,7 +118,7 @@ cmakelists_str = \
 #
 # python cmake/scripts/generate-cmakefiles from dolfinx/cpp
 #
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.19)
 
 set(PROJECT_NAME {project_name})
 project(${{PROJECT_NAME}} LANGUAGES C CXX)
