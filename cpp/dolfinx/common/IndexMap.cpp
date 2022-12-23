@@ -922,7 +922,6 @@ IndexMap::create_submap(
     }
   }
 
-  // FIXME Can the above be combined with the below?
   // --- Step 5: Check which received indexes (all of which I own
   // in the original map, but some of which may have new owners
   // in the new map) are in the submap, and send their new global
