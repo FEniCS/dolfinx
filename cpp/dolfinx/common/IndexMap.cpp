@@ -863,6 +863,10 @@ IndexMap::create_submap(
   // --- Step 4: Take ownership of new indices and compute their new
   // global index in the submap. Send the new global index back to
   // their original owner.
+  // NOTE: This rank computes the new global index of indices it has
+  // taken ownership of, and sends it back to the original owner. The
+  // original owner then sends it to the ghosts. This two-step process
+  // avoids having to discover the new neighbourhood.
 
   // Loop through the indices that I ghost. If I am the new owner of that
   // index, add it to `owned_connected_indices`
