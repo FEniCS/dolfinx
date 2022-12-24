@@ -6,23 +6,14 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import random
 from time import sleep
 
 from dolfinx import common
 
-# Seed random generator for determinism
-random.seed(0)
-
-
-def get_random_task_name():
-    """Get pseudo-random string"""
-    return hex(random.randint(int(0), int(1e32)))
-
 
 def test_context_manager_named():
     """Test that named Timer works as context manager"""
-    task = get_random_task_name()
+    task = "test_context_manager_named_str"
 
     # Execute task in the context manager
     t = common.Timer(task)
