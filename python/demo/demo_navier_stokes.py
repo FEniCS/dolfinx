@@ -169,22 +169,22 @@ def norm_L2(comm, v):
 def domain_average(msh, v):
     """Compute the average of a function over the domain"""
     vol = msh.comm.allreduce(
-        fem.assemble_scalar(fem.form(fem.Constant(msh, PETSc.ScalarType(1.0)) * dx)), op=MPI.SUM)
+        fem.assemble_scalar(fem.form(fem.Constant(msh, 1.0) * dx)), op=MPI.SUM)
     return (1 / vol) * msh.comm.allreduce(fem.assemble_scalar(fem.form(v * dx)), op=MPI.SUM)
 
 
 def u_e_expr(x):
     """Expression for the exact velocity solution to Kovasznay flow"""
     return np.vstack((1 - np.exp(
-        (R_e / 2 - np.sqrt(R_e**2 / 4 + 4 * np.pi**2)) * x[0]) * np.cos(2 * np.pi * x[1]),
-        (R_e / 2 - np.sqrt(R_e**2 / 4 + 4 * np.pi**2)) / (2 * np.pi) * np.exp(
-            (R_e / 2 - np.sqrt(R_e**2 / 4 + 4 * np.pi**2)) * x[0])
+        (Re / 2 - np.sqrt(Re**2 / 4 + 4 * np.pi**2)) * x[0]) * np.cos(2 * np.pi * x[1]),
+        (Re / 2 - np.sqrt(Re**2 / 4 + 4 * np.pi**2)) / (2 * np.pi) * np.exp(
+            (Re / 2 - np.sqrt(Re**2 / 4 + 4 * np.pi**2)) * x[0])
         * np.sin(2 * np.pi * x[1])))
 
 
 def p_e_expr(x):
     """Expression for the exact pressure solution to Kovasznay flow"""
-    return (1 / 2) * (1 - np.exp(2 * (R_e / 2 - np.sqrt(R_e**2 / 4 + 4 * np.pi**2)) * x[0]))
+    return (1 / 2) * (1 - np.exp(2 * (Re / 2 - np.sqrt(Re**2 / 4 + 4 * np.pi**2)) * x[0]))
 
 
 def f_expr(x):
@@ -194,8 +194,7 @@ def f_expr(x):
 
 
 def boundary_marker(x):
-    return np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0) | \
-        np.isclose(x[1], 0.0) | np.isclose(x[1], 1.0)
+    return np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0) | np.isclose(x[1], 0.0) | np.isclose(x[1], 1.0)
 
 
 # We define some simulation parameters
@@ -203,13 +202,13 @@ def boundary_marker(x):
 n = 16
 num_time_steps = 25
 t_end = 10
-R_e = 25  # Reynolds Number
+Re = 25  # Reynolds Number
 k = 1  # Polynomial degree
 
-# Next, we create a mesh and the required functions spaces over
-# it. Since the velocity uses an $H(\textnormal{div})$-conforming function
-# space, we also create a vector valued discontinuous Lagrange space
-# to interpolate into for artifact free visualisation.
+# Next, we create a mesh and the required functions spaces over it.
+# Since the velocity uses an $H(\textnormal{div})$-conforming function
+# space, we also create a vector valued discontinuous Lagrange space to
+# interpolate into for artifact free visualisation.
 
 msh = mesh.create_unit_square(MPI.COMM_WORLD, n, n)
 
@@ -225,9 +224,8 @@ W = fem.VectorFunctionSpace(msh, ("Discontinuous Lagrange", k + 1))
 u, v = TrialFunction(V), TestFunction(V)
 p, q = TrialFunction(Q), TestFunction(Q)
 
-delta_t = fem.Constant(msh, PETSc.ScalarType(t_end / num_time_steps))
-alpha = fem.Constant(msh, PETSc.ScalarType(6.0 * k**2))
-R_e_const = fem.Constant(msh, PETSc.ScalarType(R_e))
+delta_t = fem.Constant(msh, t_end / num_time_steps)
+alpha = fem.Constant(msh, 6.0 * k**2)
 
 h = CellDiameter(msh)
 n = FacetNormal(msh)
@@ -240,13 +238,13 @@ def jump(phi, n):
 # We solve the Stokes problem for the initial condition, so the
 # convective terms are omitted for now
 
-a_00 = (1 / R_e_const) * (inner(grad(u), grad(v)) * dx
-                          - inner(avg(grad(u)), jump(v, n)) * dS
-                          - inner(jump(u, n), avg(grad(v))) * dS
-                          + alpha / avg(h) * inner(jump(u, n), jump(v, n)) * dS
-                          - inner(grad(u), outer(v, n)) * ds
-                          - inner(outer(u, n), grad(v)) * ds
-                          + alpha / h * inner(outer(u, n), outer(v, n)) * ds)
+a_00 = (1 / Re) * (inner(grad(u), grad(v)) * dx
+                   - inner(avg(grad(u)), jump(v, n)) * dS
+                   - inner(jump(u, n), avg(grad(v))) * dS
+                   + alpha / avg(h) * inner(jump(u, n), jump(v, n)) * dS
+                   - inner(grad(u), outer(v, n)) * ds
+                   - inner(outer(u, n), grad(v)) * ds
+                   + alpha / h * inner(outer(u, n), outer(v, n)) * ds)
 a_01 = - inner(p, div(v)) * dx
 a_10 = - inner(div(u), q) * dx
 a_11 = fem.Constant(msh, 0.0) * inner(p, q) * dx
@@ -257,9 +255,9 @@ a = fem.form([[a_00, a_01],
 f = fem.Function(W)
 u_D = fem.Function(V)
 u_D.interpolate(u_e_expr)
-L_0 = inner(f, v) * dx + (1 / R_e_const) * (- inner(outer(u_D, n), grad(v)) * ds
-                                            + (alpha / h) * inner(outer(u_D, n), outer(v, n)) * ds)
-L_1 = inner(fem.Constant(msh, PETSc.ScalarType(0.0)), q) * dx
+L_0 = inner(f, v) * dx + (1 / Re) * (- inner(outer(u_D, n), grad(v)) * ds
+                                     + (alpha / h) * inner(outer(u_D, n), outer(v, n)) * ds)
+L_1 = inner(fem.Constant(msh, 0.0), q) * dx
 L = fem.form([L_0, L_1])
 
 # Boundary conditions
@@ -272,13 +270,12 @@ bc_u = fem.dirichletbc(u_D, boundary_vel_dofs)
 # degree of freedom
 
 # TODO TIDY
-pressure_dofs = fem.locate_dofs_geometrical(
-    Q, lambda x: np.logical_and(np.isclose(x[0], 0.0), np.isclose(x[1], 0.0)))
+pressure_dofs = fem.locate_dofs_geometrical(Q, lambda x: np.logical_and(np.isclose(x[0], 0.0), np.isclose(x[1], 0.0)))
 if len(pressure_dofs) > 0:
     pressure_dof = [pressure_dofs[0]]
 else:
     pressure_dof = []
-bc_p = fem.dirichletbc(PETSc.ScalarType(0.0), np.array(pressure_dof, dtype=np.int32), Q)
+bc_p = fem.dirichletbc(0.0, np.array(pressure_dof, dtype=np.int32), Q)
 
 bcs = [bc_u, bc_p]
 
@@ -379,6 +376,7 @@ for n in range(num_time_steps):
 
     # Compute solution
     ksp.solve(b, x)
+
     u_h.x.array[:offset] = x.array_r[:offset]
     u_h.x.scatter_forward()
     p_h.x.array[:(len(x.array_r) - offset)] = x.array_r[offset:]
@@ -417,6 +415,7 @@ p_e.interpolate(p_e_expr)
 # Compute errors
 e_u = norm_L2(msh.comm, u_h - u_e)
 e_div_u = norm_L2(msh.comm, div(u_h))
+
 # This scheme conserves mass exactly, so check this
 assert np.isclose(e_div_u, 0.0)
 p_h_avg = domain_average(msh, p_h)
