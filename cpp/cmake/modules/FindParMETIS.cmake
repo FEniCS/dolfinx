@@ -8,8 +8,7 @@
 #  PARMETIS_VERSION      - version for ParMETIS
 #
 #=============================================================================
-# Copyright (C) 2010-2022 Garth N. Wells, Anders Logg, Johannes Ring
-# and Jørgen S. Dokken
+# Copyright (C) 2010 Garth N. Wells, Anders Logg and Johannes Ring
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -125,6 +124,17 @@ int main() {
       mark_as_advanced(PARMETIS_VERSION)
     endif()
 
+    if(ParMETIS_FIND_VERSION)
+      # Check if version found is >= required version
+      if(NOT "${PARMETIS_VERSION}" VERSION_LESS "${ParMETIS_FIND_VERSION}")
+        set(PARMETIS_VERSION_OK TRUE)
+      endif()
+    else()
+      # No specific version requested
+      set(PARMETIS_VERSION_OK TRUE)
+    endif()
+    mark_as_advanced(PARMETIS_VERSION_OK)
+
     # Build and run test program
     include(CheckCXXSourceRuns)
     check_cxx_source_runs(
@@ -149,7 +159,10 @@ endif()
 # Standard package handling
 find_package_handle_standard_args(
   ParMETIS
-  REQUIRED_VARS PARMETIS_LIBRARIES PARMETIS_TEST_RUNS PARMETIS_INCLUDE_DIRS
-  VERSION_VAR PARMETIS_VERSION HANDLE_VERSION_RANGE REASON_FAILURE_MESSAGE
-                               "ParMETIS could not be found."
+  "ParMETIS could not be found/configured."
+  PARMETIS_LIBRARIES
+  PARMETIS_TEST_RUNS
+  PARMETIS_INCLUDE_DIRS
+  PARMETIS_VERSION
+  PARMETIS_VERSION_OK
 )
