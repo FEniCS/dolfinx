@@ -169,27 +169,22 @@ def norm_L2(comm, v):
 def domain_average(msh, v):
     """Compute the average of a function over the domain"""
     vol = msh.comm.allreduce(
-        fem.assemble_scalar(fem.form(
-            fem.Constant(msh, PETSc.ScalarType(1.0)) * dx)), op=MPI.SUM)
-    return 1 / vol * msh.comm.allreduce(
-        fem.assemble_scalar(fem.form(v * dx)), op=MPI.SUM)
+        fem.assemble_scalar(fem.form(fem.Constant(msh, PETSc.ScalarType(1.0)) * dx)), op=MPI.SUM)
+    return (1 / vol) * msh.comm.allreduce(fem.assemble_scalar(fem.form(v * dx)), op=MPI.SUM)
 
 
 def u_e_expr(x):
     """Expression for the exact velocity solution to Kovasznay flow"""
     return np.vstack((1 - np.exp(
-        (R_e / 2 - np.sqrt(R_e**2 / 4 + 4 * np.pi**2)) * x[0])
-        * np.cos(2 * np.pi * x[1]),
-        (R_e / 2 - np.sqrt(R_e**2 / 4 + 4 * np.pi**2))
-        / (2 * np.pi) * np.exp(
+        (R_e / 2 - np.sqrt(R_e**2 / 4 + 4 * np.pi**2)) * x[0]) * np.cos(2 * np.pi * x[1]),
+        (R_e / 2 - np.sqrt(R_e**2 / 4 + 4 * np.pi**2)) / (2 * np.pi) * np.exp(
             (R_e / 2 - np.sqrt(R_e**2 / 4 + 4 * np.pi**2)) * x[0])
         * np.sin(2 * np.pi * x[1])))
 
 
 def p_e_expr(x):
     """Expression for the exact pressure solution to Kovasznay flow"""
-    return (1 / 2) * (1 - np.exp(
-        2 * (R_e / 2 - np.sqrt(R_e**2 / 4 + 4 * np.pi**2)) * x[0]))
+    return (1 / 2) * (1 - np.exp(2 * (R_e / 2 - np.sqrt(R_e**2 / 4 + 4 * np.pi**2)) * x[0]))
 
 
 def f_expr(x):
@@ -242,8 +237,8 @@ def jump(phi, n):
     return outer(phi("+"), n("+")) + outer(phi("-"), n("-"))
 
 
-# We solve the Stokes problem for the initial condition, so the convective
-# terms are omitted for now
+# We solve the Stokes problem for the initial condition, so the
+# convective terms are omitted for now
 
 a_00 = (1 / R_e_const) * (inner(grad(u), grad(v)) * dx
                           - inner(avg(grad(u)), jump(v, n)) * dS
@@ -262,13 +257,10 @@ a = fem.form([[a_00, a_01],
 f = fem.Function(W)
 u_D = fem.Function(V)
 u_D.interpolate(u_e_expr)
-L_0 = inner(f, v) * dx + \
-    (1 / R_e_const) * (- inner(outer(u_D, n), grad(v)) * ds
-                       + alpha / h * inner(outer(u_D, n), outer(v, n)) * ds)
+L_0 = inner(f, v) * dx + (1 / R_e_const) * (- inner(outer(u_D, n), grad(v)) * ds
+                                            + (alpha / h) * inner(outer(u_D, n), outer(v, n)) * ds)
 L_1 = inner(fem.Constant(msh, PETSc.ScalarType(0.0)), q) * dx
-
-L = fem.form([L_0,
-              L_1])
+L = fem.form([L_0, L_1])
 
 # Boundary conditions
 
@@ -369,10 +361,8 @@ a_00 += inner(u / delta_t, v) * dx - \
 a = fem.form([[a_00, a_01],
               [a_10, a_11]])
 
-L_0 += inner(u_n / delta_t, v) * dx - \
-    inner(dot(u_n, n) * (1 - lmbda) * u_D, v) * ds
-L = fem.form([L_0,
-              L_1])
+L_0 += inner(u_n / delta_t, v) * dx - inner(dot(u_n, n) * (1 - lmbda) * u_D, v) * ds
+L = fem.form([L_0, L_1])
 
 # Time stepping loop
 
