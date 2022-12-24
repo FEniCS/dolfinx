@@ -272,10 +272,8 @@ L = fem.form([L_0,
 
 # Boundary conditions
 
-boundary_facets = mesh.locate_entities_boundary(
-    msh, msh.topology.dim - 1, boundary_marker)
-boundary_vel_dofs = fem.locate_dofs_topological(
-    V, msh.topology.dim - 1, boundary_facets)
+boundary_facets = mesh.locate_entities_boundary(msh, msh.topology.dim - 1, boundary_marker)
+boundary_vel_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, boundary_facets)
 bc_u = fem.dirichletbc(u_D, boundary_vel_dofs)
 
 # The pressure is only determined up to a constant, so pin a single
@@ -283,8 +281,7 @@ bc_u = fem.dirichletbc(u_D, boundary_vel_dofs)
 
 # TODO TIDY
 pressure_dofs = fem.locate_dofs_geometrical(
-    Q, lambda x: np.logical_and(np.isclose(x[0], 0.0),
-                                np.isclose(x[1], 0.0)))
+    Q, lambda x: np.logical_and(np.isclose(x[0], 0.0), np.isclose(x[1], 0.0)))
 if len(pressure_dofs) > 0:
     pressure_dof = [pressure_dofs[0]]
 else:
@@ -317,7 +314,16 @@ ksp.setFromOptions()
 # Solve Stokes for initial condition
 
 x = A.createVecRight()
-ksp.solve(b, x)
+try:
+    ksp.solve(b, x)
+except PETSc.Error as e:
+    if e.ierr == 92:
+        print("The required PETSc solver/preconditioner is not available. Exiting.")
+        print(e)
+        exit(0)
+    else:
+        raise e
+
 
 # Split the solution
 
