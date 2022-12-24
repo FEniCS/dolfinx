@@ -144,13 +144,18 @@
 # ## Implementation
 # We begin by importing the required modules and functions
 
-from dolfinx import mesh, fem, io
+import numpy as np
 from mpi4py import MPI
 from petsc4py import PETSc
-import numpy as np
-from ufl import (TrialFunction, TestFunction, CellDiameter, FacetNormal,
-                 inner, grad, dx, dS, ds, avg, outer, div, conditional,
-                 gt, dot)
+from ufl import (CellDiameter, FacetNormal, TestFunction, TrialFunction, avg,
+                 conditional, div, dot, dS, ds, dx, grad, gt, inner, outer)
+
+from dolfinx import fem, io, mesh
+
+if np.issubdtype(PETSc.ScalarType, np.complexfloating):
+    print("Demo should only be executed with DOLFINx real mode")
+    exit(0)
+
 
 # We also define some helper functions that will be used later
 
