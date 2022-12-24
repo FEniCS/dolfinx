@@ -217,10 +217,11 @@ k = 1  # Polynomial degree
 # to interpolate into for artifact free visualisation.
 
 msh = mesh.create_unit_square(MPI.COMM_WORLD, n, n)
-# Function space for the velocity
+
+# Function spaces for the velocity and for the pressure
 V = fem.FunctionSpace(msh, ("Raviart-Thomas", k + 1))
-# Function space for the pressure
 Q = fem.FunctionSpace(msh, ("Discontinuous Lagrange", k))
+
 # Funcion space for visualising the velocity field
 W = fem.VectorFunctionSpace(msh, ("Discontinuous Lagrange", k + 1))
 
@@ -253,7 +254,7 @@ a_00 = (1 / R_e_const) * (inner(grad(u), grad(v)) * dx
                           + alpha / h * inner(outer(u, n), outer(v, n)) * ds)
 a_01 = - inner(p, div(v)) * dx
 a_10 = - inner(div(u), q) * dx
-a_11 = fem.Constant(msh, PETSc.ScalarType(0.0)) * inner(p, q) * dx
+a_11 = fem.Constant(msh, 0.0) * inner(p, q) * dx
 
 a = fem.form([[a_00, a_01],
               [a_10, a_11]])
