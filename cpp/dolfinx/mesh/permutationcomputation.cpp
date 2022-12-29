@@ -372,6 +372,17 @@ mesh::compute_cell_permutations(const mesh::Topology& topology)
   const int tdim = topology.dim();
   const int fdim = tdim - 1;
 
+  if (fdim == 3)
+    throw std::runtime_error("Cannot compute cell permutations of a 3D mesh.");
+
+  const std::int32_t num_facets = topology.index_map(fdim)->size_local()
+                                  + topology.index_map(fdim)->num_ghosts();
+
+  std::vector<std::uint8_t> cell_permutations(num_facets);
+
+  if (fdim == 0)
+    return cell_permutations;
+
   // FIXME Don't hardcode
   dolfinx::graph::AdjacencyList<int32_t> _v_to_v = *topology.connectivity(0, 0);
   dolfinx::graph::AdjacencyList<int32_t> _f_to_v
@@ -391,14 +402,6 @@ mesh::compute_cell_permutations(const mesh::Topology& topology)
   facet_topology.set_connectivity(v_to_v, 0, 0);
   facet_topology.set_connectivity(f_to_v, fdim, 0);
   facet_topology.create_connectivity(fdim, fdim);
-
-  const std::int32_t num_facets
-      = facet_topology.connectivity(fdim, 0)->num_nodes();
-
-  if (fdim == 3)
-    throw std::runtime_error("Cannot compute cell permutations of a 3D mesh.");
-
-  std::vector<std::uint8_t> cell_permutations(num_facets);
 
   if (fdim == 2)
   {
