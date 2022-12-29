@@ -32,7 +32,10 @@ UFL still runs on the year-based release scheme.
 
 1. Merge `main` into `release` resolving all conflicts in favour of `main`.
 
-       git merge -Xtheirs main
+       git checkout release
+       git merge --no-commit main
+       git checkout --theirs main .
+       git diff main
 
 2. Update version numbers, e.g.
 
@@ -50,7 +53,10 @@ UFL still runs on the year-based release scheme.
 
 1. Merge `main` into `release` resolving all conflicts in favour of `main`.
 
-       git merge -Xtheirs main
+       git checkout release
+       git merge --no-commit main
+       git checkout --theirs main .
+       git diff main
 
 2. Update the version number in `setup.cfg`, e.g. `2022.2.0`.
 
@@ -62,7 +68,10 @@ UFL still runs on the year-based release scheme.
 
 1. Merge `main` into `release` resolving all conflicts in favour of `main`.
 
-       git merge -Xtheirs main
+       git checkout release
+       git merge --no-commit main
+       git checkout --theirs main .
+       git diff main
 
 2. Update the version number in `setup.cfg`, e.g. `0.5.0`.
 
@@ -70,7 +79,7 @@ UFL still runs on the year-based release scheme.
 
 4. If necessary, update the version number in `cmake/CMakeLists.txt`, e.g. `0.5.0`.
 
-5. Update the version number macros in `ffcx/code_generation/ufcx.h`. Typically this
+5. Update the version number macros in `ffcx/codegeneration/ufcx.h`. Typically this
    should match the Python version number. Remember to change the
    `UFCX_VERSION_RELEASE` to `1`.
 
@@ -82,7 +91,10 @@ UFL still runs on the year-based release scheme.
 
 1. Merge `main` into `release` resolving all conflicts in favour of `main`.
 
-       git merge -Xtheirs main
+       git checkout release
+       git merge --no-commit main
+       git checkout --theirs main .
+       git diff main
 
 2. In `cpp/CMakeLists.txt` change the version number near the top of the file,
    e.g. `0.5.0`.
@@ -92,7 +104,7 @@ UFL still runs on the year-based release scheme.
    there is no need to change anything here. However, if they don't match, you
    need to manually specify the appropriate UFCx version.
 
-4. In `python/setup.cfg` change the `VERSION` variable to e.g. `0.5.0` and
+4. In `python/setup.py` change the `VERSION` variable to e.g. `0.5.0` and
    update the depedency versions for `fenics-ffcx` and `fenics-ufl`.
 
 5. Commit and push.

@@ -122,7 +122,7 @@ jobs:
 
   build-complex:
     docker:
-      - image: ghcr.io/fenics/test-env:latest-mpich
+      - image: ghcr.io/fenics/test-env:nightly-mpich
     environment:
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-complex-32"
