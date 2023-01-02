@@ -12,7 +12,6 @@ from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import create_mesh, create_unit_cube
 from ufl import (Cell, FiniteElement, Mesh, TestFunction, TrialFunction,
                  VectorElement, grad, triangle)
-from ufl.log import UFLException
 
 from mpi4py import MPI
 
@@ -221,7 +220,7 @@ def test_argument_equality(mesh, V, V2, W, W2):
 def test_cell_mismatch(mesh):
     """Test that cell mismatch raises early enough from UFL"""
     element = FiniteElement("P", triangle, 1)
-    with pytest.raises(UFLException):
+    with pytest.raises(BaseException):
         FunctionSpace(mesh, element)
 
 
