@@ -52,7 +52,7 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     exit(0)
 
 
-# WNow, let's consider an infinite metallic wire immersed in
+# Now, let's consider an infinite metallic wire immersed in
 # a background medium (e.g. vacuum or water). Let's now
 # consider the plane cutting the wire perpendicularly to
 # its axis at a generic point. Such plane $\Omega=\Omega_{m}
