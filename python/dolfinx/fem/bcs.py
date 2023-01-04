@@ -9,7 +9,6 @@ via modification of linear systems."""
 from __future__ import annotations
 
 import collections.abc
-import numbers
 import typing
 
 import numpy.typing
