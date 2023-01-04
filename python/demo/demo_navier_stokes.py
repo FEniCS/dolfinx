@@ -247,7 +247,6 @@ a_00 = (1 / Re) * (inner(grad(u), grad(v)) * dx
                    + alpha / h * inner(outer(u, n), outer(v, n)) * ds)
 a_01 = - inner(p, div(v)) * dx
 a_10 = - inner(div(u), q) * dx
-a_11 = fem.Constant(msh, 0.0) * inner(p, q) * dx
 
 a = fem.form([[a_00, a_01],
               [a_10, None]])
@@ -347,7 +346,7 @@ a_00 += inner(u / delta_t, v) * dx - \
     inner((dot(u_n, n))("-") * u_uw, v("-")) * dS + \
     inner(dot(u_n, n) * lmbda * u, v) * ds
 a = fem.form([[a_00, a_01],
-              [a_10, a_11]])
+              [a_10, None]])
 
 L_0 += inner(u_n / delta_t, v) * dx - inner(dot(u_n, n) * (1 - lmbda) * u_D, v) * ds
 L = fem.form([L_0, L_1])
