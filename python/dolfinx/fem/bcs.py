@@ -161,7 +161,7 @@ def dirichletbc(value: typing.Union[complex, Function, Constant, np.ndarray],
 
     """
 
-    if isinstance(value, numbers.Number):
+    if isinstance(value, complex):
         value = np.asarray(value)
 
     try:
