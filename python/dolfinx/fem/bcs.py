@@ -139,7 +139,7 @@ class DirichletBCMetaClass:
         return super().function_space  # type: ignore
 
 
-def dirichletbc(value: typing.Union[Function, Constant, np.ndarray],
+def dirichletbc(value: typing.Union[complex, Function, Constant, np.ndarray],
                 dofs: numpy.typing.NDArray[np.int32],
                 V: typing.Optional[dolfinx.fem.FunctionSpace] = None) -> DirichletBCMetaClass:
     """Create a representation of Dirichlet boundary condition which
