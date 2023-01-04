@@ -416,7 +416,6 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     mesh_to_submesh_x_dof_map[submesh_to_mesh_x_dof_map[i]] = i;
 
   // Create submesh geometry dofmap
-  std::vector<std::int32_t> entity_x_dofs;
   std::vector<std::int32_t> submesh_x_dofmap_vec;
   submesh_x_dofmap_vec.reserve(geometry_indices.size());
   std::transform(geometry_indices.cbegin(), geometry_indices.cend(),
