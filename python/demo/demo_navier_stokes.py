@@ -275,7 +275,7 @@ if len(pressure_dofs) > 0:
     pressure_dof = [pressure_dofs[0]]
 else:
     pressure_dof = []
-bc_p = fem.dirichletbc(PETSc.ScalarType(0.0), np.array(pressure_dof, dtype=np.int32), Q)
+bc_p = fem.dirichletbc(0.0, np.array(pressure_dof, dtype=np.int32), Q)
 
 bcs = [bc_u, bc_p]
 
