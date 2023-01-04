@@ -250,7 +250,7 @@ a_10 = - inner(div(u), q) * dx
 a_11 = fem.Constant(msh, 0.0) * inner(p, q) * dx
 
 a = fem.form([[a_00, a_01],
-              [a_10, a_11]])
+              [a_10, None]])
 
 f = fem.Function(W)
 u_D = fem.Function(V)
@@ -265,19 +265,7 @@ L = fem.form([L_0, L_1])
 boundary_facets = mesh.locate_entities_boundary(msh, msh.topology.dim - 1, boundary_marker)
 boundary_vel_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, boundary_facets)
 bc_u = fem.dirichletbc(u_D, boundary_vel_dofs)
-
-# The pressure is only determined up to a constant, so pin a single
-# degree of freedom
-
-# TODO TIDY
-pressure_dofs = fem.locate_dofs_geometrical(Q, lambda x: np.logical_and(np.isclose(x[0], 0.0), np.isclose(x[1], 0.0)))
-if len(pressure_dofs) > 0:
-    pressure_dof = [pressure_dofs[0]]
-else:
-    pressure_dof = []
-bc_p = fem.dirichletbc(0.0, np.array(pressure_dof, dtype=np.int32), Q)
-
-bcs = [bc_u, bc_p]
+bcs = [bc_u]
 
 # Assemble Stokes problem
 
@@ -324,6 +312,9 @@ u_h.x.array[:offset] = x.array_r[:offset]
 u_h.x.scatter_forward()
 p_h.x.array[:(len(x.array_r) - offset)] = x.array_r[offset:]
 p_h.x.scatter_forward()
+# Subtract the average of the pressure since it is only determined
+# up to a constant
+p_h.x.array[:] -= domain_average(msh, p_h)
 
 u_vis = fem.Function(W)
 u_vis.name = "u"
@@ -381,6 +372,7 @@ for n in range(num_time_steps):
     u_h.x.scatter_forward()
     p_h.x.array[:(len(x.array_r) - offset)] = x.array_r[offset:]
     p_h.x.scatter_forward()
+    p_h.x.array[:] -= domain_average(msh, p_h)
 
     u_vis.interpolate(u_h)
 
@@ -418,9 +410,8 @@ e_div_u = norm_L2(msh.comm, div(u_h))
 
 # This scheme conserves mass exactly, so check this
 assert np.isclose(e_div_u, 0.0)
-p_h_avg = domain_average(msh, p_h)
 p_e_avg = domain_average(msh, p_e)
-e_p = norm_L2(msh.comm, (p_h - p_h_avg) - (p_e - p_e_avg))
+e_p = norm_L2(msh.comm, p_h - (p_e - p_e_avg))
 
 if msh.comm.rank == 0:
     print(f"e_u = {e_u}")
