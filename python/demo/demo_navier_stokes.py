@@ -284,6 +284,7 @@ opts = PETSc.Options()
 # TODO Check
 opts["mat_mumps_icntl_6"] = 2
 opts["mat_mumps_icntl_14"] = 100
+opts["mat_mumps_icntl_25"] = 0
 opts["ksp_error_if_not_converged"] = 1
 ksp.setFromOptions()
 
