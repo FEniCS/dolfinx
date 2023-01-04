@@ -1,6 +1,12 @@
 Change log
 ==========
 
+The new change log for DOLFINx is maintained using `GitHub Releases
+<https://github.com/FEniCS/dolfinx/releases>`_.
+
+Below are the historical change logs related to the previous generation `DOLFIN
+solver <https://bitbucket.org/fenics-project/dolfin/>`_.
+
 2018.2.0.dev0
 -------------
 
