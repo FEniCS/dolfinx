@@ -52,7 +52,7 @@ if _cpp.common.has_adios2:
 
         """
 
-        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, Function. typing.List[Function]]):
+        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, Function, typing.List[Function]]):
             """Initialize a writer for outputting data in the VTX format.
 
             Args:
