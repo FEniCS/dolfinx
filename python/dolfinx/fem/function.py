@@ -515,7 +515,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
         """
         Vcpp = _cpp.fem.FunctionSpace(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
-        return FunctionSpace(None, self.ufl_element(), Vcpp)
+        return FunctionSpace(self._mesh, self.ufl_element(), Vcpp)
 
     @property
     def num_sub_spaces(self) -> int:

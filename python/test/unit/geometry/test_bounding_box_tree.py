@@ -162,7 +162,7 @@ def test_compute_collisions_tree_1d(point):
     def locator_A(x):
         return x[0] >= point[0]
     # Locate all vertices of mesh A that should collide
-    vertices_A = _cpp.mesh.locate_entities(mesh_A, 0, locator_A)
+    vertices_A = _cpp.mesh.locate_entities(mesh_A._mesh, 0, locator_A)
     mesh_A.topology.create_connectivity(0, mesh_A.topology.dim)
     v_to_c = mesh_A.topology.connectivity(0, mesh_A.topology.dim)
 
@@ -177,7 +177,7 @@ def test_compute_collisions_tree_1d(point):
         return x[0] <= 1
 
     # Locate all vertices of mesh B that should collide
-    vertices_B = _cpp.mesh.locate_entities(mesh_B, 0, locator_B)
+    vertices_B = _cpp.mesh.locate_entities(mesh_B._mesh, 0, locator_B)
     mesh_B.topology.create_connectivity(0, mesh_B.topology.dim)
     v_to_c = mesh_B.topology.connectivity(0, mesh_B.topology.dim)
 
