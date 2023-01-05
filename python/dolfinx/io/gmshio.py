@@ -250,7 +250,7 @@ if _has_gmsh:
         mesh = create_mesh(comm, cells, x[:, :gdim], ufl_domain, partitioner)
 
         # Create MeshTags for cells
-        local_entities, local_values = _cpp.io.distribute_entity_data(mesh, mesh.topology.dim, cells, cell_values)
+        local_entities, local_values = _cpp.io.distribute_entity_data(mesh._mesh, mesh.topology.dim, cells, cell_values)
         mesh.topology.create_connectivity(mesh.topology.dim, 0)
         adj = _cpp.graph.AdjacencyList_int32(local_entities)
         ct = meshtags_from_entities(mesh, mesh.topology.dim, adj, local_values.astype(np.int32, copy=False))
@@ -269,7 +269,7 @@ if _has_gmsh:
             marked_facets = marked_facets[:, gmsh_facet_perm]
 
             local_entities, local_values = _cpp.io.distribute_entity_data(
-                mesh, mesh.topology.dim - 1, marked_facets, facet_values)
+                mesh._mesh, mesh.topology.dim - 1, marked_facets, facet_values)
             mesh.topology.create_connectivity(topology.dim - 1, topology.dim)
             adj = _cpp.graph.AdjacencyList_int32(local_entities)
             ft = meshtags_from_entities(mesh, topology.dim - 1, adj, local_values.astype(np.int32, copy=False))
