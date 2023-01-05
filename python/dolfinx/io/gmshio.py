@@ -232,7 +232,6 @@ if _has_gmsh:
 
             cells = np.asarray(topologies[cell_id]["topology"], dtype=np.int64)
             cell_values = np.asarray(topologies[cell_id]["cell_data"], dtype=np.int32)
-
         else:
             cell_id, num_nodes = comm.bcast([None, None], root=rank)
             cells, x = np.empty([0, num_nodes], dtype=np.int32), np.empty([0, gdim])
@@ -259,7 +258,7 @@ if _has_gmsh:
         # Create MeshTags for facets
         topology = mesh.topology
         if has_facet_data:
-            # Permute facets from MSH to Dolfin-X ordering
+            # Permute facets from MSH to DOLFINx ordering
             # FIXME: This does not work for prism meshes
             if topology.cell_type == CellType.prism or topology.cell_type == CellType.pyramid:
                 raise RuntimeError(f"Unsupported cell type {topology.cell_type}")
@@ -305,12 +304,11 @@ if _has_gmsh:
             gmsh.initialize()
             gmsh.model.add("Mesh from file")
             gmsh.merge(filename)
-
-        output = model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
-
-        if comm.rank == rank:
+            msh = model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
             gmsh.finalize()
-        return output
+            return msh
+        else:
+            return model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
 
     # Map from Gmsh cell type identifier (integer) to DOLFINx cell type
     # and degree http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
