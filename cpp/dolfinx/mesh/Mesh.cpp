@@ -374,8 +374,9 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   std::vector<std::int32_t> geometry_indices;
   geometry_indices.reserve(num_entity_dofs * submesh_to_mesh_map.size());
-  std::vector<std::int32_t> submesh_x_dofmap_offsets(1, 0);
+  std::vector<std::int32_t> submesh_x_dofmap_offsets;
   submesh_x_dofmap_offsets.reserve(submesh_to_mesh_map.size() + 1);
+  submesh_x_dofmap_offsets.push_back(0);
   {
     const graph::AdjacencyList<std::int32_t>& xdofs = geometry.dofmap();
     const int tdim = topology.dim();
