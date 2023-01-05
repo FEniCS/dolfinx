@@ -13,24 +13,26 @@ import math
 import os
 import pathlib
 import time
+
 import cffi
+import dolfinx.pkgconfig
 import numpy as np
 import numpy.typing
-import dolfinx
-import dolfinx.pkgconfig
+import petsc4py.lib
+import pytest
 import ufl
 from dolfinx.fem import Function, FunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix, load_petsc_lib
 from dolfinx.mesh import create_unit_square
-from ufl import dx, inner
-import petsc4py.lib
 from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
+from ufl import dx, inner
 
-import pytest
+import dolfinx
+
 numba = pytest.importorskip("numba")
-import numba.core.typing.cffi_utils as cffi_support
+cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
 
 # Get details of PETSc install
 petsc_dir = PETSc_get_config()['PETSC_DIR']

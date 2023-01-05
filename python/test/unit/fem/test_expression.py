@@ -7,24 +7,23 @@
 import ctypes
 import ctypes.util
 
+import basix
 import cffi
 import numpy as np
-
-import basix
-import dolfinx.cpp
+import pytest
 import ufl
 from dolfinx.cpp.la.petsc import create_matrix
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace, create_sparsity_pattern, form)
 from dolfinx.fem.petsc import load_petsc_lib
 from dolfinx.mesh import create_unit_square
-
 from mpi4py import MPI
 from petsc4py import PETSc
 
-import pytest
+import dolfinx.cpp
+
 numba = pytest.importorskip("numba")
-import numba.core.typing.cffi_utils as cffi_support
+cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
 
 
 dolfinx.cpp.common.init_logging(["-v"])

@@ -609,6 +609,7 @@ def test_interpolate_callable():
     u0, u1 = Function(V), Function(V)
 
     numba = pytest.importorskip("numba")
+
     @numba.njit
     def f(x):
         return x[0]
