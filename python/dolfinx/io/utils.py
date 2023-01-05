@@ -151,7 +151,7 @@ class XDMFFile(_cpp.io.XDMFFile):
 
     def write_mesh(self, mesh: Mesh) -> None:
         """Write mesh to file for a given time (default 0.0)"""
-        super().write_mesh(mesh)
+        super().write_mesh(mesh._mesh)
 
     def write_function(self, u, t: float = 0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
         super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
@@ -171,7 +171,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
             "Lagrange", cell_shape.name, cell_degree, basix.LagrangeVariant.equispaced, dim=x.shape[1],
             gdim=x.shape[1]))
-        return Mesh.from_cpp(mesh, domain)
+        return Mesh(mesh, domain)
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
         return super().read_meshtags(mesh, name, xpath)

@@ -9,32 +9,34 @@ from __future__ import annotations
 
 import typing
 
-import numpy as np
-import numpy.typing
-
 import basix
 import basix.ufl_wrapper
+import numpy as np
+import numpy.typing
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
-                              compute_incident_entities, compute_midpoints,
+                              compute_incident_entities,
                               create_cell_partitioner, exterior_facet_indices,
                               to_string, to_type)
-
 from mpi4py import MPI as _MPI
+
+from dolfinx import cpp as _cpp
 
 __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "Mesh", "MeshTagsMetaClass", "meshtags", "CellType",
-           "GhostMode", "build_dual_graph", "cell_dim", "compute_midpoints",
+           "GhostMode", "build_dual_graph", "cell_dim",
            "exterior_facet_indices", "compute_incident_entities", "create_cell_partitioner",
            "create_interval", "create_unit_interval", "create_rectangle", "create_unit_square",
            "create_box", "create_unit_cube", "to_type", "to_string"]
 
 
-class Mesh(_cpp.mesh.Mesh):
-    def __init__(self, comm: _MPI.Comm, topology: _cpp.mesh.Topology,
-                 geometry: _cpp.mesh.Geometry, domain: ufl.Mesh):
+def compute_midpoints(mesh, dim: int, entities):
+    return _cpp.mesh.compute_midpoints(mesh._mesh, dim, entities)
+
+
+class Mesh:
+    def __init__(self, mesh, domain: ufl.Mesh):
         """A class for representing meshes
 
         Args:
@@ -47,17 +49,23 @@ class Mesh(_cpp.mesh.Mesh):
             Mesh objects are not generally created using this class directly.
 
         """
-        super().__init__(comm, topology, geometry)
+        # super().__init__(comm, topology, geometry)
+        self._mesh = mesh
         self._ufl_domain = domain
-        domain._ufl_cargo = self
+        self._ufl_domain._ufl_cargo = self._mesh
+        # domain._ufl_cargo = self
 
-    @classmethod
-    def from_cpp(cls, obj: _cpp.mesh.Mesh, domain: ufl.Mesh) -> Mesh:
-        """Create Mesh object from a C++ Mesh object"""
-        obj._ufl_domain = domain
-        obj.__class__ = Mesh
-        domain._ufl_cargo = obj
-        return obj
+    # @classmethod
+    # def from_cpp(cls, obj: _cpp.mesh.Mesh, domain: ufl.Mesh) -> Mesh:
+    #     """Create Mesh object from a C++ Mesh object"""
+    #     obj._ufl_domain = domain
+    #     obj.__class__ = Mesh
+    #     domain._ufl_cargo = obj
+    #     return obj
+
+    @property
+    def comm(self):
+        return self._mesh.comm
 
     def ufl_cell(self) -> ufl.Cell:
         """Return the UFL cell type"""
@@ -66,6 +74,49 @@ class Mesh(_cpp.mesh.Mesh):
     def ufl_domain(self) -> ufl.Mesh:
         """Return the ufl domain corresponding to the mesh."""
         return self._ufl_domain
+
+    @property
+    def topology(self):
+        return self._mesh.topology
+
+    @property
+    def geometry(self):
+        return self._mesh.geometry
+
+# class Mesh(_cpp.mesh.Mesh):
+#     def __init__(self, comm: _MPI.Comm, topology: _cpp.mesh.Topology,
+#                  geometry: _cpp.mesh.Geometry, domain: ufl.Mesh):
+#         """A class for representing meshes
+
+#         Args:
+#             comm: The MPI communicator
+#             topology: The mesh topology
+#             geometry: The mesh geometry
+#             domain: The MPI communicator
+
+#         Note:
+#             Mesh objects are not generally created using this class directly.
+
+#         """
+#         super().__init__(comm, topology, geometry)
+#         self._ufl_domain = domain
+#         domain._ufl_cargo = self
+
+#     @classmethod
+#     def from_cpp(cls, obj: _cpp.mesh.Mesh, domain: ufl.Mesh) -> Mesh:
+#         """Create Mesh object from a C++ Mesh object"""
+#         obj._ufl_domain = domain
+#         obj.__class__ = Mesh
+#         domain._ufl_cargo = obj
+#         return obj
+
+#     def ufl_cell(self) -> ufl.Cell:
+#         """Return the UFL cell type"""
+#         return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)
+
+#     def ufl_domain(self) -> ufl.Mesh:
+#         """Return the ufl domain corresponding to the mesh."""
+#         return self._ufl_domain
 
 
 def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
@@ -82,7 +133,7 @@ def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray
         Indices (local to the process) of marked mesh entities.
 
     """
-    return _cpp.mesh.locate_entities(mesh, dim, marker)
+    return _cpp.mesh.locate_entities(mesh._mesh, dim, marker)
 
 
 def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
@@ -109,7 +160,7 @@ def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> n
         Indices (local to the process) of marked mesh entities.
 
     """
-    return _cpp.mesh.locate_entities_boundary(mesh, dim, marker)
+    return _cpp.mesh.locate_entities_boundary(mesh._mesh, dim, marker)
 
 
 _uflcell_to_dolfinxcell = {
@@ -125,28 +176,28 @@ _uflcell_to_dolfinxcell = {
 }
 
 
-def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True) -> Mesh:
-    """Refine a mesh
+# def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True) -> Mesh:
+#     """Refine a mesh
 
-    Args:
-        mesh: The mesh from which to build a refined mesh
-        edges: Optional argument to specify which edges should be refined. If
-            not supplied uniform refinement is applied.
-        redistribute:
-            Optional argument to redistribute the refined mesh if mesh is a
-            distributed mesh.
+#     Args:
+#         mesh: The mesh from which to build a refined mesh
+#         edges: Optional argument to specify which edges should be refined. If
+#             not supplied uniform refinement is applied.
+#         redistribute:
+#             Optional argument to redistribute the refined mesh if mesh is a
+#             distributed mesh.
 
-    Returns:
-        A refined mesh
-    """
-    if edges is None:
-        mesh_refined = _cpp.refinement.refine(mesh, redistribute)
-    else:
-        mesh_refined = _cpp.refinement.refine(mesh, edges, redistribute)
+#     Returns:
+#         A refined mesh
+#     """
+#     if edges is None:
+#         mesh_refined = _cpp.refinement.refine(mesh, redistribute)
+#     else:
+#         mesh_refined = _cpp.refinement.refine(mesh, edges, redistribute)
 
-    coordinate_element = mesh._ufl_domain.ufl_coordinate_element()
-    domain = ufl.Mesh(coordinate_element)
-    return Mesh.from_cpp(mesh_refined, domain)
+#     coordinate_element = mesh._ufl_domain.ufl_coordinate_element()
+#     domain = ufl.Mesh(coordinate_element)
+#     return Mesh.from_cpp(mesh_refined, domain)
 
 
 def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.AdjacencyList_int64],
@@ -180,8 +231,7 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
     except TypeError:
         mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(np.cast['int64'](cells)),
                                      cmap, x, partitioner)
-    domain._ufl_cargo = mesh
-    return Mesh.from_cpp(mesh, domain)
+    return Mesh(mesh, domain)
 
 
 def create_submesh(mesh, dim, entities):
@@ -191,7 +241,7 @@ def create_submesh(mesh, dim, entities):
     submesh_domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
         "Lagrange", submesh_ufl_cell.cellname(), submesh.geometry.cmap.degree, submesh.geometry.cmap.variant,
         dim=submesh.geometry.dim, gdim=submesh.geometry.dim))
-    return (Mesh.from_cpp(submesh, submesh_domain), entity_map, vertex_map, geom_map)
+    return (Mesh(submesh._mesh, submesh_domain), entity_map, vertex_map, geom_map)
 
 
 # Add attribute to MeshTags
@@ -226,7 +276,7 @@ class MeshTagsMetaClass:
             directly.
 
         """
-        super().__init__(mesh, dim, np.asarray(entities, dtype=np.int32), values)  # type: ignore
+        super().__init__(mesh._mesh, dim, np.asarray(entities, dtype=np.int32), values)  # type: ignore
 
     def ufl_id(self) -> int:
         """Object identifier.
@@ -336,7 +386,7 @@ def create_interval(comm: _MPI.Comm, nx: int, points: numpy.typing.ArrayLike,
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", "interval", 1))
     mesh = _cpp.mesh.create_interval(comm, nx, points, ghost_mode, partitioner)
-    return Mesh.from_cpp(mesh, domain)
+    return Mesh(mesh, domain)
 
 
 def create_unit_interval(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_facet,
@@ -388,8 +438,7 @@ def create_rectangle(comm: _MPI.Comm, points: numpy.typing.ArrayLike, n: numpy.t
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 1))
     mesh = _cpp.mesh.create_rectangle(comm, points, n, cell_type, partitioner, diagonal)
-
-    return Mesh.from_cpp(mesh, domain)
+    return Mesh(mesh, domain)
 
 
 def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.triangle,
@@ -443,8 +492,7 @@ def create_box(comm: _MPI.Comm, points: typing.List[numpy.typing.ArrayLike], n: 
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 1))
     mesh = _cpp.mesh.create_box(comm, points, n, cell_type, partitioner)
-
-    return Mesh.from_cpp(mesh, domain)
+    return Mesh(mesh, domain)
 
 
 def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellType.tetrahedron,

@@ -371,10 +371,8 @@ class Function(ufl.Coefficient):
         except TypeError:
             # u is callable
             assert callable(u)
-            x = _cpp.fem.interpolation_coords(
-                self._V.element, self._V.mesh, cells)
-            self._cpp_object.interpolate(
-                np.asarray(u(x), dtype=self.dtype), cells)
+            x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh._mesh, cells)
+            self._cpp_object.interpolate(np.asarray(u(x), dtype=self.dtype), cells)
 
     def copy(self) -> Function:
         """Return a copy of the Function. The FunctionSpace is shared and the
@@ -443,8 +441,7 @@ class Function(ufl.Coefficient):
 
     def collapse(self) -> Function:
         u_collapsed = self._cpp_object.collapse()
-        V_collapsed = FunctionSpace(None, self.ufl_element(),
-                                    u_collapsed.function_space)
+        V_collapsed = FunctionSpace(self.function_space._mesh, self.ufl_element(), u_collapsed.function_space)
         return Function(V_collapsed, u_collapsed.x)
 
 
@@ -466,10 +463,12 @@ class FunctionSpace(ufl.FunctionSpace):
         # Create function space from a UFL element and existing cpp
         # FunctionSpace
         if cppV is not None:
-            assert mesh is None
-            ufl_domain = cppV.mesh.ufl_domain()
+            # assert mesh is None
+            # ufl_domain = cppV.mesh.ufl_domain()
+            ufl_domain = mesh.ufl_domain()
             super().__init__(ufl_domain, element)
             self._cpp_object = cppV
+            self._mesh = mesh
             return
 
         if mesh is not None:
@@ -489,14 +488,17 @@ class FunctionSpace(ufl.FunctionSpace):
                 jit_options=jit_options)
 
             ffi = module.ffi
-            cpp_element = _cpp.fem.FiniteElement(
-                ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
+            cpp_element = _cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
             cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
                 "uintptr_t", ffi.addressof(self._ufcx_dofmap)), mesh.topology, cpp_element)
 
             # Initialize the cpp.FunctionSpace
-            self._cpp_object = _cpp.fem.FunctionSpace(
-                mesh, cpp_element, cpp_dofmap)
+            try:
+                self._cpp_object = _cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
+            except TypeError:
+                self._cpp_object = _cpp.fem.FunctionSpace(mesh._mesh, cpp_element, cpp_dofmap)
+
+            self._mesh = mesh
 
     def clone(self) -> FunctionSpace:
         """Return a new FunctionSpace :math:`W` which shares data with this
@@ -512,8 +514,7 @@ class FunctionSpace(ufl.FunctionSpace):
         conditions.
 
         """
-        Vcpp = _cpp.fem.FunctionSpace(
-            self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
+        Vcpp = _cpp.fem.FunctionSpace(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
         return FunctionSpace(None, self.ufl_element(), Vcpp)
 
     @property
@@ -534,7 +535,8 @@ class FunctionSpace(ufl.FunctionSpace):
         assert self.ufl_element().num_sub_elements() > i
         sub_element = self.ufl_element().sub_elements()[i]
         cppV_sub = self._cpp_object.sub([i])
-        return FunctionSpace(None, sub_element, cppV_sub)
+        print("A: ******", type(self._mesh))
+        return FunctionSpace(self._mesh, sub_element, cppV_sub)
 
     def component(self):
         """Return the component relative to the parent space."""
@@ -579,7 +581,7 @@ class FunctionSpace(ufl.FunctionSpace):
     @property
     def mesh(self) -> _cpp.mesh.Mesh:
         """Return the mesh on which the function space is defined."""
-        return self._cpp_object.mesh
+        return self._mesh
 
     def collapse(self) -> tuple[FunctionSpace, np.ndarray]:
         """Collapse a subspace and return a new function space and a map from
@@ -590,7 +592,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
         """
         cpp_space, dofs = self._cpp_object.collapse()
-        V = FunctionSpace(None, self.ufl_element(), cpp_space)
+        V = FunctionSpace(self._mesh, self.ufl_element(), cpp_space)
         return V, dofs
 
     def tabulate_dof_coordinates(self) -> np.ndarray:
