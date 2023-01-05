@@ -14,19 +14,19 @@ if typing.TYPE_CHECKING:
 
 from functools import singledispatch
 
-import numpy as np
-import numpy.typing as npt
-from dolfinx.fem import dofmap
-from petsc4py import PETSc
-
 import basix
 import basix.ufl_wrapper
+import numpy as np
+import numpy.typing as npt
 import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
+from dolfinx.fem import dofmap
+from petsc4py import PETSc
+from ufl.domain import extract_unique_domain
+
 from dolfinx import cpp as _cpp
 from dolfinx import jit, la
-from ufl.domain import extract_unique_domain
 
 
 class Constant(ufl.Constant):
@@ -454,7 +454,7 @@ class ElementMetaData(typing.NamedTuple):
 class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
-    def __init__(self, mesh: typing.Union[None, Mesh],
+    def __init__(self, mesh: Mesh,
                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int]],
                  cppV: typing.Optional[_cpp.fem.FunctionSpace] = None,
                  form_compiler_options: dict[str, typing.Any] = {}, jit_options: dict[str, typing.Any] = {}):
@@ -463,8 +463,6 @@ class FunctionSpace(ufl.FunctionSpace):
         # Create function space from a UFL element and existing cpp
         # FunctionSpace
         if cppV is not None:
-            # assert mesh is None
-            # ufl_domain = cppV.mesh.ufl_domain()
             ufl_domain = mesh.ufl_domain()
             super().__init__(ufl_domain, element)
             self._cpp_object = cppV
