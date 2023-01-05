@@ -14,8 +14,7 @@ if typing.TYPE_CHECKING:
     from dolfinx.cpp.graph import AdjacencyList_int32
 
 import numpy
-from dolfinx.cpp.geometry import (compute_closest_entity, compute_collisions,
-                                  compute_distance_gjk)
+from dolfinx.cpp.geometry import compute_collisions, compute_distance_gjk
 
 from dolfinx import cpp as _cpp
 
