@@ -562,7 +562,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return super().__ne__(other) or self._cpp_object != other._cpp_object
 
     def ufl_cell(self):
-        return self._cpp_object.mesh.ufl_cell()
+        return self._mesh.ufl_cell()
 
     def ufl_function_space(self) -> ufl.FunctionSpace:
         """UFL function space"""
