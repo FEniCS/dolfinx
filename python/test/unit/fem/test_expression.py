@@ -8,8 +8,6 @@ import ctypes
 import ctypes.util
 
 import cffi
-import numba
-import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
 
 import basix
@@ -23,6 +21,11 @@ from dolfinx.mesh import create_unit_square
 
 from mpi4py import MPI
 from petsc4py import PETSc
+
+import pytest
+numba = pytest.importorskip("numba")
+import numba.core.typing.cffi_utils as cffi_support
+
 
 dolfinx.cpp.common.init_logging(["-v"])
 

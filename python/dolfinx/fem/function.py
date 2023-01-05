@@ -535,7 +535,6 @@ class FunctionSpace(ufl.FunctionSpace):
         assert self.ufl_element().num_sub_elements() > i
         sub_element = self.ufl_element().sub_elements()[i]
         cppV_sub = self._cpp_object.sub([i])
-        print("A: ******", type(self._mesh))
         return FunctionSpace(self._mesh, sub_element, cppV_sub)
 
     def component(self):

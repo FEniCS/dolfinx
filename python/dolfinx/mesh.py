@@ -16,7 +16,6 @@ import numpy.typing
 import ufl
 from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
-                              compute_incident_entities,
                               create_cell_partitioner, exterior_facet_indices,
                               to_string, to_type)
 from mpi4py import MPI as _MPI
@@ -25,10 +24,14 @@ from dolfinx import cpp as _cpp
 
 __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "Mesh", "MeshTagsMetaClass", "meshtags", "CellType",
-           "GhostMode", "build_dual_graph", "cell_dim",
+           "GhostMode", "build_dual_graph", "cell_dim", "compute_midpoints",
            "exterior_facet_indices", "compute_incident_entities", "create_cell_partitioner",
            "create_interval", "create_unit_interval", "create_rectangle", "create_unit_square",
            "create_box", "create_unit_cube", "to_type", "to_string"]
+
+
+def compute_incident_entities(mesh, entities, d0: int, d1: int):
+    return _cpp.mesh.compute_incident_entities(mesh._mesh, entities, d0, d1)
 
 
 def compute_midpoints(mesh, dim: int, entities):
@@ -66,6 +69,14 @@ class Mesh:
     @property
     def comm(self):
         return self._mesh.comm
+
+    @property
+    def name(self):
+        return self._mesh.name
+
+    @name.setter
+    def name(self, value):
+        self._mesh.name = value
 
     def ufl_cell(self) -> ufl.Cell:
         """Return the UFL cell type"""
@@ -176,28 +187,28 @@ _uflcell_to_dolfinxcell = {
 }
 
 
-# def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True) -> Mesh:
-#     """Refine a mesh
+def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True) -> Mesh:
+    """Refine a mesh
 
-#     Args:
-#         mesh: The mesh from which to build a refined mesh
-#         edges: Optional argument to specify which edges should be refined. If
-#             not supplied uniform refinement is applied.
-#         redistribute:
-#             Optional argument to redistribute the refined mesh if mesh is a
-#             distributed mesh.
+    Args:
+        mesh: The mesh from which to build a refined mesh
+        edges: Optional argument to specify which edges should be refined. If
+            not supplied uniform refinement is applied.
+        redistribute:
+            Optional argument to redistribute the refined mesh if mesh is a
+            distributed mesh.
 
-#     Returns:
-#         A refined mesh
-#     """
-#     if edges is None:
-#         mesh_refined = _cpp.refinement.refine(mesh, redistribute)
-#     else:
-#         mesh_refined = _cpp.refinement.refine(mesh, edges, redistribute)
+    Returns:
+        A refined mesh
+    """
+    if edges is None:
+        mesh_refined = _cpp.refinement.refine(mesh._mesh, redistribute)
+    else:
+        mesh_refined = _cpp.refinement.refine(mesh._mesh, edges, redistribute)
 
-#     coordinate_element = mesh._ufl_domain.ufl_coordinate_element()
-#     domain = ufl.Mesh(coordinate_element)
-#     return Mesh.from_cpp(mesh_refined, domain)
+    coordinate_element = mesh._ufl_domain.ufl_coordinate_element()
+    domain = ufl.Mesh(coordinate_element)
+    return Mesh(mesh_refined, domain)
 
 
 def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.AdjacencyList_int64],
@@ -234,14 +245,13 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
     return Mesh(mesh, domain)
 
 
-def create_submesh(mesh, dim, entities):
-    submesh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(mesh, dim, entities)
-    submesh_ufl_cell = ufl.Cell(submesh.topology.cell_name(),
-                                geometric_dimension=submesh.geometry.dim)
-    submesh_domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
-        "Lagrange", submesh_ufl_cell.cellname(), submesh.geometry.cmap.degree, submesh.geometry.cmap.variant,
-        dim=submesh.geometry.dim, gdim=submesh.geometry.dim))
-    return (Mesh(submesh._mesh, submesh_domain), entity_map, vertex_map, geom_map)
+def create_submesh(msh, dim, entities):
+    submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(msh._mesh, dim, entities)
+    submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name(), geometric_dimension=submsh.geometry.dim)
+    submsh_domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
+        "Lagrange", submsh_ufl_cell.cellname(), submsh.geometry.cmap.degree, submsh.geometry.cmap.variant,
+        dim=submsh.geometry.dim, gdim=submsh.geometry.dim))
+    return (Mesh(submsh, submsh_domain), entity_map, vertex_map, geom_map)
 
 
 # Add attribute to MeshTags
@@ -362,7 +372,7 @@ def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyL
         values = np.full(entities.num_nodes, values, dtype=np.double)
 
     values = np.asarray(values)
-    return _cpp.mesh.create_meshtags(mesh, dim, entities, values)
+    return _cpp.mesh.create_meshtags(mesh._mesh, dim, entities, values)
 
 
 def create_interval(comm: _MPI.Comm, nx: int, points: numpy.typing.ArrayLike,

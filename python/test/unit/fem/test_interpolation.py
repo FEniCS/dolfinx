@@ -7,18 +7,15 @@
 
 import random
 
-import numba
-import numpy as np
-import pytest
-
 import basix
 import basix.ufl_wrapper
+import numpy as np
+import pytest
 import ufl
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square, locate_entities, meshtags)
-
 from mpi4py import MPI
 
 parametrize_cell_types = pytest.mark.parametrize(
@@ -611,6 +608,7 @@ def test_interpolate_callable():
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u0, u1 = Function(V), Function(V)
 
+    numba = pytest.importorskip("numba")
     @numba.njit
     def f(x):
         return x[0]
