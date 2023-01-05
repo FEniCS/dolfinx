@@ -69,10 +69,10 @@ if _cpp.common.has_adios2:
             """
             try:
                 # Input is a mesh
-                super().__init__(comm, filename, output._mesh)
+                super().__init__(comm, filename, output._mesh)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
-                super().__init__(comm, filename, _extract_cpp_functions(output))
+                super().__init__(comm, filename, _extract_cpp_functions(output))   # type: ignore[arg-type]
 
         def __enter__(self):
             return self
@@ -107,9 +107,9 @@ if _cpp.common.has_adios2:
 
             """
             try:
-                super().__init__(comm, filename, output._mesh)
+                super().__init__(comm, filename, output._mesh)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
-                super().__init__(comm, filename, _extract_cpp_functions(output))
+                super().__init__(comm, filename, _extract_cpp_functions(output))  # type: ignore[arg-type]
 
         def __enter__(self):
             return self
