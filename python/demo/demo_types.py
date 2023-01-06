@@ -104,7 +104,11 @@ def display(u, filter=np.real):
         plotter.add_mesh(grid, show_edges=True)
         plotter.add_mesh(grid.warp_by_scalar())
         plotter.add_title("real" if filter is np.real else "imag")
-        plotter.show()
+        if pyvista.OFF_SCREEN:
+            pyvista.start_xvfb(wait=0.1)
+            plotter.screenshot(f"u_{'real' if filter is np.real else 'imag'}.png")
+        else:
+            plotter.show()
     except ModuleNotFoundError:
         print("'pyvista' is required to visualise the solution")
 

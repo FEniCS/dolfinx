@@ -1,14 +1,12 @@
-# - Find UFCx by interrogating the Python module FFCx
-#
+#=============================================================================
+# - Try to find UFCx by interrogating the Python module FFCx
 # Once done this will define
 #
-# This module defines
-#
 #  UFCX_FOUND        - system has UFCx
-#  UFCX_INCLUDE_DIRS - where to find ufcx.h
-#  UFCX_VERSION      - UFC version
-#  UFCX_SIGNATURE    - UFC signature
-
+#  UFCX_INCLUDE_DIRS - include directories for UFCx
+#  UFCX_SIGNATURE    - signature for UFCx
+#  UFCX_VERSION      - version for UFCx
+#
 #=============================================================================
 # Copyright (C) 2010-2021 Johannes Ring and Garth N. Wells
 # All rights reserved.
@@ -38,29 +36,42 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-MESSAGE(STATUS "Asking Python module FFCx for location of UFC... (Python executable: ${Python3_EXECUTABLE})")
+message(
+  STATUS
+    "Asking Python module FFCx for location of UFC... (Python executable: ${Python3_EXECUTABLE})"
+)
 
 # Get include path
 execute_process(
-  COMMAND ${Python3_EXECUTABLE} -c "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
-  OUTPUT_VARIABLE UFCX_INCLUDE_DIR)
+  COMMAND
+    ${Python3_EXECUTABLE} -c
+    "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
+  OUTPUT_VARIABLE UFCX_INCLUDE_DIR
+)
 
 # Get ufcx.h version
-if (UFCX_INCLUDE_DIR)
-  set(UFCX_INCLUDE_DIRS ${UFCX_INCLUDE_DIR} CACHE STRING "Where to find ufcx.h")
+if(UFCX_INCLUDE_DIR)
+  set(UFCX_INCLUDE_DIRS
+      ${UFCX_INCLUDE_DIR}
+      CACHE STRING "Where to find ufcx.h"
+  )
   execute_process(
-    COMMAND ${Python3_EXECUTABLE} -c "import ffcx, sys; sys.stdout.write(ffcx.__version__)"
-    OUTPUT_VARIABLE UFCX_VERSION)
+    COMMAND ${Python3_EXECUTABLE} -c
+            "import ffcx, sys; sys.stdout.write(ffcx.__version__)"
+    OUTPUT_VARIABLE UFCX_VERSION
+  )
 endif()
 
 # Compute hash of ufcx.h
 find_file(_UFCX_HEADER "ufcx.h" ${UFCX_INCLUDE_DIR})
-if (_UFCX_HEADER)
+if(_UFCX_HEADER)
   file(SHA1 ${_UFCX_HEADER} UFCX_SIGNATURE)
 endif()
 
 mark_as_advanced(UFCX_VERSION UFCX_INCLUDE_DIRS UFCX_SIGNATURE)
-find_package_handle_standard_args(UFCx
-                                  REQUIRED_VARS UFCX_INCLUDE_DIRS UFCX_SIGNATURE UFCX_VERSION
-                                  VERSION_VAR UFCX_VERSION
-                                  REASON_FAILURE_MESSAGE "UFCx could not be found.")
+find_package_handle_standard_args(
+  UFCx
+  REQUIRED_VARS UFCX_INCLUDE_DIRS UFCX_SIGNATURE UFCX_VERSION
+  VERSION_VAR UFCX_VERSION HANDLE_VERSION_RANGE REASON_FAILURE_MESSAGE
+                           "UFCx could not be found."
+)
