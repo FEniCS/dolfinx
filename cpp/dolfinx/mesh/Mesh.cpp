@@ -322,8 +322,11 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   // NOTE: Unclear what this return for prisms
   const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
 
-  std::vector<std::int32_t> geometry_indices(num_entity_dofs
-                                             * submesh_to_mesh_map.size());
+  std::vector<std::int32_t> geometry_indices;
+  geometry_indices.reserve(num_entity_dofs * submesh_to_mesh_map.size());
+  std::vector<std::int32_t> submesh_x_dofmap_offsets;
+  submesh_x_dofmap_offsets.reserve(submesh_to_mesh_map.size() + 1);
+  submesh_x_dofmap_offsets.push_back(0);
   {
     const graph::AdjacencyList<std::int32_t>& xdofs = geometry.dofmap();
     const int tdim = topology.dim();
@@ -354,8 +357,9 @@ mesh::create_submesh(const Mesh& mesh, int dim,
           = closure_dofs[dim][local_entity];
 
       auto xc = xdofs.links(cell);
-      for (std::size_t j = 0; j < num_entity_dofs; ++j)
-        geometry_indices[i * num_entity_dofs + j] = xc[entity_dofs[j]];
+      for (std::int32_t entity_dof : entity_dofs)
+        geometry_indices.push_back(xc[entity_dof]);
+      submesh_x_dofmap_offsets.push_back(geometry_indices.size());
     }
   }
 
@@ -413,26 +417,18 @@ mesh::create_submesh(const Mesh& mesh, int dim,
     mesh_to_submesh_x_dof_map[submesh_to_mesh_x_dof_map[i]] = i;
 
   // Create submesh geometry dofmap
-  std::vector<std::int32_t> entity_x_dofs;
   std::vector<std::int32_t> submesh_x_dofmap_vec;
   submesh_x_dofmap_vec.reserve(geometry_indices.size());
-  std::vector<std::int32_t> submesh_x_dofmap_offsets(1, 0);
-  submesh_x_dofmap_offsets.reserve(submesh_to_mesh_map.size() + 1);
-  for (std::size_t i = 0; i < submesh_to_mesh_map.size(); ++i)
-  {
-    // Get the mesh geometry dofs for ith entity in entities
-    auto it = std::next(geometry_indices.begin(), i * num_entity_dofs);
-    entity_x_dofs.assign(it, std::next(it, num_entity_dofs));
+  std::transform(geometry_indices.cbegin(), geometry_indices.cend(),
+                 std::back_inserter(submesh_x_dofmap_vec),
+                 [&mesh_to_submesh_x_dof_map](auto x_dof)
+                 {
+                   std::int32_t x_dof_submesh
+                       = mesh_to_submesh_x_dof_map[x_dof];
+                   assert(x_dof_submesh != -1);
+                   return x_dof_submesh;
+                 });
 
-    // For each mesh dof of the entity, get the submesh dof
-    for (std::int32_t x_dof : entity_x_dofs)
-    {
-      std::int32_t x_dof_submesh = mesh_to_submesh_x_dof_map[x_dof];
-      assert(x_dof_submesh != -1);
-      submesh_x_dofmap_vec.push_back(x_dof_submesh);
-    }
-    submesh_x_dofmap_offsets.push_back(submesh_x_dofmap_vec.size());
-  }
   graph::AdjacencyList<std::int32_t> submesh_x_dofmap(
       std::move(submesh_x_dofmap_vec), std::move(submesh_x_dofmap_offsets));
 
