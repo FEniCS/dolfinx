@@ -121,20 +121,20 @@ private:
 /// indices). For lowest order cells this will be just the cell
 /// vertices. For higher-order cells, other cells 'nodes' will be
 /// included.
-/// @param[in] element The coordinate element that describes the
+/// @param[in] elements The coordinate elements that describes the
 /// geometric mapping for cells
 /// @param[in] x The coordinates of mesh nodes
 /// @param[in] xshape The shape of `x`
 /// @param[in] ghost_mode The requested type of cell ghosting/overlap
 /// @return A distributed Mesh.
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-                 const fem::CoordinateElement& element,
+                 const std::vector<fem::CoordinateElement>& elements,
                  std::span<const double> x, std::array<std::size_t, 2> xshape,
                  GhostMode ghost_mode);
 
 /// Create a mesh using a provided mesh partitioning function
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-                 const fem::CoordinateElement& element,
+                 const std::vector<fem::CoordinateElement>& elements,
                  std::span<const double> x, std::array<std::size_t, 2> xshape,
                  const CellPartitionFunction& cell_partitioner);
 

@@ -241,7 +241,7 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
                                                std::move(offset));
 
   mesh::Mesh mesh
-      = mesh::create_mesh(_comm.comm(), cells_adj, element, x, xshape, mode);
+      = mesh::create_mesh(_comm.comm(), cells_adj, {element}, x, xshape, mode);
   mesh.name = name;
   return mesh;
 }

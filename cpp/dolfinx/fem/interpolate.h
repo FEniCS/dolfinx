@@ -367,7 +367,10 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
   const std::size_t value_size0 = element0->value_size() / bs0;
 
   // Get geometry data
-  const CoordinateElement& cmap = mesh->geometry().cmap();
+  if (mesh->geometry().cmaps().size() > 1)
+    throw std::runtime_error("Multiple cmaps");
+
+  const CoordinateElement& cmap = mesh->geometry().cmaps()[0];
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
@@ -710,7 +713,9 @@ void interpolate(Function<T>& u, std::span<const T> f,
       throw std::runtime_error("Interpolation data has the wrong shape.");
 
     // Get coordinate map
-    const CoordinateElement& cmap = mesh->geometry().cmap();
+    if (mesh->geometry().cmaps().size() > 1)
+      throw std::runtime_error("Multiple cmaps");
+    const CoordinateElement& cmap = mesh->geometry().cmaps()[0];
 
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap

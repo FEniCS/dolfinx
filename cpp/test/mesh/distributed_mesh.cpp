@@ -121,7 +121,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
       cell_group_offsets, external_vertices);
   int tdim = topology.dim();
 
-  mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, cmap,
+  mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, {cmap},
                                                   cell_nodes, x, xshape[1]);
 
   auto mesh = std::make_shared<mesh::Mesh>(mpi_comm, std::move(topology),

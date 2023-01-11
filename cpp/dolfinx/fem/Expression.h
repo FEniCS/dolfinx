@@ -150,7 +150,12 @@ public:
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = _mesh->geometry().dofmap();
-    const std::size_t num_dofs_g = _mesh->geometry().cmap().dim();
+
+    // Get geometry data
+    auto cmaps = _mesh->geometry().cmaps();
+    assert(cmaps.size() == 1);
+
+    const std::size_t num_dofs_g = cmaps.back().dim();
     std::span<const double> x_g = _mesh->geometry().x();
 
     // Create data structures used in evaluation

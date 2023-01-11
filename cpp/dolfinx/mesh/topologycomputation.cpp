@@ -541,7 +541,7 @@ compute_entities_by_key_matching(
     for (std::size_t i = 0; i < entity_list_shape0; ++i)
     {
       auto it = std::next(entity_list_sorted.begin(), i * entity_list_shape1);
-      std::sort(it, std::next(it, entity_list_shape1), std::greater<>());
+      std::sort(it, std::next(it, entity_list_shape1), std::less<>());
     }
 
     // Sort the list and label uniquely
@@ -591,7 +591,6 @@ compute_entities_by_key_matching(
   std::vector<int> size_ev(entity_count);
   for (std::size_t i = 0; i < entity_list_shape0; ++i)
   {
-    // if (entity_list(i, max_vertices_per_entity - 1) == -1)
     if (entity_list[i * entity_list_shape1 + entity_list_shape1 - 1] == -1)
       size_ev[local_index[i]] = max_vertices_per_entity - 1;
     else

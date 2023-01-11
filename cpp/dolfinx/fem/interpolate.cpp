@@ -21,7 +21,7 @@ fem::interpolation_coords(const FiniteElement& element, const mesh::Mesh& mesh,
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   std::span<const double> x_g = mesh.geometry().x();
-  const CoordinateElement& cmap = mesh.geometry().cmap();
+  const CoordinateElement& cmap = mesh.geometry().cmaps()[0];
   const std::size_t num_dofs_g = cmap.dim();
 
   // Get the interpolation points on the reference cells

@@ -225,7 +225,7 @@ void mesh(py::module& m)
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape()[1];
         std::vector shape{std::size_t(x.shape(0)), shape1};
         return dolfinx::mesh::create_mesh(
-            comm.get(), cells, element, std::span(x.data(), x.size()),
+            comm.get(), cells, {element}, std::span(x.data(), x.size()),
             {static_cast<std::size_t>(x.shape(0)),
              static_cast<std::size_t>(x.shape(1))},
             partitioner_wrapper);
@@ -265,8 +265,8 @@ void mesh(py::module& m)
           },
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
-      .def_property_readonly("cmap", &dolfinx::mesh::Geometry::cmap,
-                             "The coordinate map")
+      .def_property_readonly("cmap", &dolfinx::mesh::Geometry::cmaps,
+                             "The coordinate maps")
       .def_property_readonly("input_global_indices",
                              &dolfinx::mesh::Geometry::input_global_indices);
 

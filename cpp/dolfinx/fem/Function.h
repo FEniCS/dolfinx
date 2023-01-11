@@ -376,14 +376,17 @@ public:
     const std::size_t tdim = mesh->topology().dim();
     auto map = mesh->topology().index_map(tdim);
 
+    // Get coordinate map
+    if (mesh->geometry().cmaps().size() > 1)
+      throw std::runtime_error(
+          "Function with multiple geometry maps not implemented.");
+    const CoordinateElement& cmap = mesh->geometry().cmaps()[0];
+
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
-    const std::size_t num_dofs_g = mesh->geometry().cmap().dim();
+    const std::size_t num_dofs_g = cmap.dim();
     std::span<const double> x_g = mesh->geometry().x();
-
-    // Get coordinate map
-    const CoordinateElement& cmap = mesh->geometry().cmap();
 
     // Get element
     std::shared_ptr<const FiniteElement> element = _function_space->element();

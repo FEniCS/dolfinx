@@ -243,13 +243,13 @@ fem::FunctionSpace fem::create_functionspace(
   ufcx_finite_element* ufcx_element = space->finite_element;
   assert(ufcx_element);
 
-  if (space->geometry_degree != mesh->geometry().cmap().degree()
+  if (space->geometry_degree != mesh->geometry().cmaps()[0].degree()
       or static_cast<basix::cell::type>(space->geometry_basix_cell)
              != mesh::cell_type_to_basix_type(
-                 mesh->geometry().cmap().cell_shape())
+                 mesh->geometry().cmaps()[0].cell_shape())
       or static_cast<basix::element::lagrange_variant>(
              space->geometry_basix_variant)
-             != mesh->geometry().cmap().variant())
+             != mesh->geometry().cmaps()[0].variant())
   {
     throw std::runtime_error("UFL mesh and CoordinateElement do not match.");
   }
