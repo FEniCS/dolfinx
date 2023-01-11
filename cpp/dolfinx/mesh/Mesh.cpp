@@ -161,9 +161,13 @@ Mesh mesh::create_mesh(MPI_Comm comm,
     // Create cells and vertices with the ghosting requested. Input
     // topology includes cells shared via facet, but ghosts will be
     // removed later if not required by ghost_mode.
+    std::vector<int> cell_group_offsets
+        = {0, cells_extracted.num_nodes() - ghost_owners.size(),
+           cells_extracted.num_nodes()};
+
     return std::pair{create_topology(comm, cells_extracted, original_cell_index,
-                                     ghost_owners, element.cell_shape(),
-                                     boundary_vertices),
+                                     ghost_owners, {element.cell_shape()},
+                                     cell_group_offsets, boundary_vertices),
                      std::move(cell_nodes)};
   };
 
