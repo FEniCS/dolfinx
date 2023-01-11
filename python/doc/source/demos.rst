@@ -47,4 +47,7 @@ All demos
    demos/demo_types.md
    demos/demo_lagrange_variants.md
    demos/demo_tnt-elements.md
+   demos/demo_scattering_boundary_conditions.md
+   demos/demo_pml.md
+   demos/demo_half_loaded_waveguide.md
 
