@@ -63,6 +63,8 @@ public:
   /// @brief Return the topological dimension of the mesh.
   int dim() const noexcept;
 
+  void set_entity_group_offsets(int dim, std::vector<std::int32_t> offsets);
+
   /// @todo Merge with set_connectivity
   ///
   /// Set the IndexMap for dimension dim
@@ -145,6 +147,9 @@ private:
 
   // Cell types
   std::vector<CellType> _cell_types;
+
+  // Entity group offsets
+  std::array<std::vector<std::int32_t>, 4> _entity_group_offsets;
 
   // Parallel layout of entities for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;

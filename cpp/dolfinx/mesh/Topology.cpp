@@ -730,6 +730,14 @@ Topology::Topology(MPI_Comm comm, std::vector<CellType> types)
 //-----------------------------------------------------------------------------
 int Topology::dim() const noexcept { return _connectivity.size() - 1; }
 //-----------------------------------------------------------------------------
+void Topology::set_entity_group_offsets(int dim,
+                                        std::vector<std::int32_t> offsets)
+{
+  _entity_group_offsets[dim] = offsets;
+}
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
                              std::shared_ptr<const common::IndexMap> map)
 {
