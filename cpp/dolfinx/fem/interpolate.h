@@ -39,34 +39,10 @@ std::vector<double> interpolation_coords(const fem::FiniteElement& element,
                                          const mesh::Mesh& mesh,
                                          std::span<const std::int32_t> cells);
 
-/// This class offers functionalities to interpolate functions defined on
-/// different meshes.
-/// The class caches as much data as possible to allow for fast repeated
-/// interpolation and the user can manually force recomputation by
-/// invalidating the instance.
-class M2MInterpolator
-{
-public:
-  /// Interpolate a function on the whole domain
-  template <typename T>
-  void interpolate(Function<T>& u, const Function<T>& v);
-  /// Interpolate a function on a list of cells
-  template <typename T>
-  void interpolate(Function<T>& u, const Function<T>& v,
-                   std::span<const std::int32_t> cells);
-
-  /// Force recomputation of all intermediate data structures when
-  /// interpolation is called next.
-  void invalidate() { valid = false; }
-
-private:
-  std::vector<double> x;
-  std::vector<std::int32_t> dest_ranks;
-  std::vector<std::int32_t> src_ranks;
-  std::vector<double> received_points;
-  std::vector<std::int32_t> evaluation_cells;
-  bool valid = false;
-};
+/// Helper type for the data that can be cached to speed up repeated
+/// interpolation of discrete functions across different meshes
+using M2MInterpolationData = decltype(std::function{
+    dolfinx::geometry::determine_point_ownership})::result_type;
 
 namespace impl
 {
@@ -865,95 +841,55 @@ void interpolate(Function<T>& u, std::span<const T> f,
   }
 }
 
-/// Interpolate from one finite element Function to another
-/// @param[in,out] u The function to interpolate into
-/// @param[in] v The function to be interpolated
-/// @param[in] cells List of cell indices to interpolate on
+/// Generate data needed to interpolate discrete functions across different
+/// meshes
+///
+/// @param[out] u The function to interpolate into
+/// @param[in] v The function to interpolate from
+/// @param[in] cells Indices of the cells in the mesh on which to
+/// interpolate. Should be the same as the list used when calling
+/// fem::interpolation_coords.
+/// @tparam Scalar type
 template <typename T>
-void M2MInterpolator::interpolate(Function<T>& u, const Function<T>& v,
-                                    std::span<const std::int32_t> cells)
+M2MInterpolationData
+generate_m2m_interpolation_data(const Function<T>& u, const Function<T>& v,
+                                std::span<const std::int32_t> cells)
 {
-  assert(u.function_space());
-  assert(v.function_space());
+  std::vector<double> x;
+  auto mesh = u.function_space()->mesh();
+  auto mesh_v = v.function_space()->mesh();
+  auto element_u = u.function_space()->element();
 
-  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
-  std::shared_ptr<const mesh::Mesh> mesh_v = v.function_space()->mesh();
+  // Collect all the points at which values are needed to define the
+  // interpolating function
+  const std::vector<double> coords_b
+      = fem::interpolation_coords(*element_u, *mesh, cells);
 
-  assert(mesh);
-
-  int result;
-  MPI_Comm_compare(mesh->comm(), mesh_v->comm(), &result);
-
-  if (result == MPI_UNEQUAL)
-    throw std::runtime_error("Interpolation on different meshes is only "
-                             "supported with the same communicator.");
-
-  MPI_Comm comm = mesh->comm();
-  const int tdim = mesh->topology().dim();
-  const auto cell_map = mesh->topology().index_map(tdim);
-
-  std::shared_ptr<const FiniteElement> element_u
-      = u.function_space()->element();
-  const std::size_t value_size = element_u->value_size();
-
-  if (not valid)
-  {
-    valid = true;
-
-    // Collect all the points at which values are needed to define the
-    // interpolating function
-    const std::vector<double> coords_b
-        = fem::interpolation_coords(*element_u, *mesh, cells);
-
-    namespace stdex = std::experimental;
-    using cmdspan2_t
-        = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-    using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-    cmdspan2_t coords(coords_b.data(), 3, coords_b.size() / 3);
-    // Transpose interpolation coords
-    x.resize(coords.size());
-    mdspan2_t _x(x.data(), coords_b.size() / 3, 3);
-    for (std::size_t j = 0; j < coords.extent(1); ++j)
-      for (std::size_t i = 0; i < 3; ++i)
-        _x(j, i) = coords(i, j);
-
-    // Determine ownership of each point
-    std::tie(dest_ranks, src_ranks, received_points, evaluation_cells)
-        = dolfinx::geometry::determine_point_ownership(*mesh_v, x);
-  }
-
-  // Evaluate the interpolating function where possible
-  std::vector<T> send_values(received_points.size() / 3 * value_size);
-  v.eval(received_points, {received_points.size() / 3, (std::size_t)3},
-         evaluation_cells, send_values,
-         {received_points.size() / 3, (std::size_t)value_size});
-
-  // Send values back to owning process
-  std::array<std::size_t, 2> v_shape = {src_ranks.size(), value_size};
-  std::vector<T> values_b(dest_ranks.size() * value_size);
-  impl::scatter_values(comm, src_ranks, dest_ranks,
-                       std::span<const T>(send_values), v_shape,
-                       std::span<T>(values_b));
-
-  // Transpose received data
   namespace stdex = std::experimental;
-  stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> values(
-      values_b.data(), dest_ranks.size(), value_size);
+  using cmdspan2_t
+      = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+  using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
+  cmdspan2_t coords(coords_b.data(), 3, coords_b.size() / 3);
+  // Transpose interpolation coords
+  x.resize(coords.size());
+  mdspan2_t _x(x.data(), coords_b.size() / 3, 3);
+  for (std::size_t j = 0; j < coords.extent(1); ++j)
+    for (std::size_t i = 0; i < 3; ++i)
+      _x(j, i) = coords(i, j);
 
-  std::vector<T> valuesT_b(value_size * dest_ranks.size());
-  stdex::mdspan<T, stdex::dextents<std::size_t, 2>> valuesT(
-      valuesT_b.data(), value_size, dest_ranks.size());
-  for (std::size_t i = 0; i < values.extent(0); ++i)
-    for (std::size_t j = 0; j < values.extent(1); ++j)
-      valuesT(j, i) = values(i, j);
-
-  // Call local interpolation operator
-  fem::interpolate<T>(u, std::span(valuesT_b.data(), valuesT_b.size()),
-                      {valuesT.extent(0), valuesT.extent(1)}, cells);
+  // Determine ownership of each point
+  return dolfinx::geometry::determine_point_ownership(*mesh_v, x);
 }
 
+/// Generate data needed to interpolate discrete functions across different
+/// meshes. Interpolate on all cells in the mesh.
+///
+/// @param[out] u The function to interpolate into
+/// @param[in] v The function to interpolate from
+/// @tparam Scalar type
 template <typename T>
-void M2MInterpolator::interpolate(Function<T>& u, const Function<T>& v)
+M2MInterpolationData generate_m2m_interpolation_data(const Function<T>& u,
+                                                     const Function<T>& v)
 {
   assert(u.function_space());
   assert(u.function_space()->mesh());
@@ -964,7 +900,7 @@ void M2MInterpolator::interpolate(Function<T>& u, const Function<T>& v)
   std::vector<std::int32_t> cells(num_cells, 0);
   std::iota(cells.begin(), cells.end(), 0);
 
-  interpolate(u, v, cells);
+  return generate_m2m_interpolation_data(u, v, cells);
 }
 
 //----------------------------------------------------------------------------
@@ -972,9 +908,14 @@ void M2MInterpolator::interpolate(Function<T>& u, const Function<T>& v)
 /// @param[out] u The function to interpolate into
 /// @param[in] v The function to be interpolated
 /// @param[in] cells List of cell indices to interpolate on
+/// @param[in] m2mInterpolationData Shared pointer to fem::M2MInterpolationData
+/// that provides cached data to speed up the procedure when interpolating the
+/// same functions multiple times (optional).
 template <typename T>
 void interpolate(Function<T>& u, const Function<T>& v,
-                 std::span<const std::int32_t> cells)
+                 std::span<const std::int32_t> cells,
+                 std::shared_ptr<M2MInterpolationData> m2mInterpolationData
+                 = nullptr)
 {
   assert(u.function_space());
   assert(v.function_space());
@@ -996,8 +937,68 @@ void interpolate(Function<T>& u, const Function<T>& v,
     // Get mesh and check that functions share the same mesh
     if (auto mesh_v = v.function_space()->mesh(); mesh != mesh_v)
     {
-      M2MInterpolator interpolator;
-      interpolator.interpolate(u, v, cells);
+      int result;
+      MPI_Comm_compare(mesh->comm(), mesh_v->comm(), &result);
+
+      if (result == MPI_UNEQUAL)
+        throw std::runtime_error("Interpolation on different meshes is only "
+                                 "supported with the same communicator.");
+
+      MPI_Comm comm = mesh->comm();
+      const int tdim = mesh->topology().dim();
+      const auto cell_map = mesh->topology().index_map(tdim);
+
+      std::shared_ptr<const FiniteElement> element_u
+          = u.function_space()->element();
+      const std::size_t value_size = element_u->value_size();
+
+      std::tuple_element_t<0, M2MInterpolationData> dest_ranks;
+      std::tuple_element_t<1, M2MInterpolationData> src_ranks;
+      std::tuple_element_t<2, M2MInterpolationData> received_points;
+      std::tuple_element_t<3, M2MInterpolationData> evaluation_cells;
+
+      if (m2mInterpolationData == nullptr)
+      {
+        std::tie(dest_ranks, src_ranks, received_points, evaluation_cells)
+            = generate_m2m_interpolation_data(u, v, cells);
+      }
+      else
+      {
+        dest_ranks = std::get<0>(*m2mInterpolationData);
+        src_ranks = std::get<1>(*m2mInterpolationData);
+        received_points = std::get<2>(*m2mInterpolationData);
+        evaluation_cells = std::get<3>(*m2mInterpolationData);
+      }
+
+      // Evaluate the interpolating function where possible
+      std::vector<T> send_values(received_points.size() / 3 * value_size);
+      v.eval(received_points, {received_points.size() / 3, (std::size_t)3},
+             evaluation_cells, send_values,
+             {received_points.size() / 3, (std::size_t)value_size});
+
+      // Send values back to owning process
+      std::array<std::size_t, 2> v_shape = {src_ranks.size(), value_size};
+      std::vector<T> values_b(dest_ranks.size() * value_size);
+      impl::scatter_values(comm, src_ranks, dest_ranks,
+                           std::span<const T>(send_values), v_shape,
+                           std::span<T>(values_b));
+
+      // Transpose received data
+      namespace stdex = std::experimental;
+      stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> values(
+          values_b.data(), dest_ranks.size(), value_size);
+
+      std::vector<T> valuesT_b(value_size * dest_ranks.size());
+      stdex::mdspan<T, stdex::dextents<std::size_t, 2>> valuesT(
+          valuesT_b.data(), value_size, dest_ranks.size());
+      for (std::size_t i = 0; i < values.extent(0); ++i)
+        for (std::size_t j = 0; j < values.extent(1); ++j)
+          valuesT(j, i) = values(i, j);
+
+      // Call local interpolation operator
+      fem::interpolate<T>(u, std::span(valuesT_b.data(), valuesT_b.size()),
+                          {valuesT.extent(0), valuesT.extent(1)}, cells);
+      return;
     }
     else
     {

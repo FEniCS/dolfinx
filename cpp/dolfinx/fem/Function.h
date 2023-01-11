@@ -145,14 +145,26 @@ public:
   /// Interpolate a Function
   /// @param[in] v The function to be interpolated
   /// @param[in] cells The cells to interpolate on
-  void interpolate(const Function<T>& v, std::span<const std::int32_t> cells)
+  /// @param[in] m2mInterpolationData Shared pointer to
+  /// fem::M2MInterpolationData that provides cached data to speed up the
+  /// procedure when interpolating the same functions multiple times (optional).
+  void interpolate(
+      const Function<T>& v, std::span<const std::int32_t> cells,
+      std::shared_ptr<dolfinx::fem::M2MInterpolationData> m2mInterpolationData
+      = nullptr)
   {
-    fem::interpolate(*this, v, cells);
+    fem::interpolate(*this, v, cells, m2mInterpolationData);
   }
 
   /// Interpolate a Function
   /// @param[in] v The function to be interpolated
-  void interpolate(const Function<T>& v)
+  /// @param[in] m2mInterpolationData Shared pointer to
+  /// fem::M2MInterpolationData that provides cached data to speed up the
+  /// procedure when interpolating the same functions multiple times (optional).
+  void interpolate(
+      const Function<T>& v,
+      std::shared_ptr<dolfinx::fem::M2MInterpolationData> m2mInterpolationData
+      = nullptr)
   {
     assert(_function_space);
     assert(_function_space->mesh());
@@ -163,7 +175,7 @@ public:
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
 
-    fem::interpolate(*this, v, cells);
+    fem::interpolate(*this, v, cells, m2mInterpolationData);
   }
 
   /// Interpolate an expression function on a list of cells
