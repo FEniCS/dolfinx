@@ -61,8 +61,8 @@ int main(int argc, char* argv[])
 
   std::vector<int> ghost_owners;
 
-  std::vector<std::int32_t> cell_group_offsets{0, num_s, num_t, num_s + num_t,
-                                               num_s + num_t};
+  std::vector<std::int32_t> cell_group_offsets{
+    0, num_s, num_s + num_t, num_s + num_t, num_s + num_t};
 
   std::vector<std::int64_t> boundary_vertices;
   for (int j = 0; j < ny + 1; ++j)
