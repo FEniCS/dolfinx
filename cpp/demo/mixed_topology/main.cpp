@@ -85,9 +85,21 @@ int main(int argc, char* argv[])
       dolfinx::mesh::CellType::quadrilateral,
       dolfinx::mesh::CellType::triangle};
 
-  dolfinx::mesh::create_topology(
-      MPI_COMM_WORLD, cells_list, original_global_index, ghost_owners,
-      cell_types, cell_group_offsets, boundary_vertices);
+  {
+    auto topo = dolfinx::mesh::create_topology(
+        MPI_COMM_WORLD, cells_list, original_global_index, ghost_owners,
+        cell_types, cell_group_offsets, boundary_vertices);
+
+    auto topo_cells = topo.connectivity(2, 0);
+
+    for (int i = 0; i < topo_cells->num_nodes(); ++i)
+    {
+      std::cout << i << " [";
+      for (auto q : topo_cells->links(i))
+        std::cout << q << " ";
+      std::cout << "]\n";
+    }
+  }
 
   MPI_Finalize();
 
