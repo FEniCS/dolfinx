@@ -1,5 +1,4 @@
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/fem/petsc.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -9,7 +8,7 @@
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
-  PetscInitialize(&argc, &argv, nullptr, nullptr);
+  MPI_Init(&argc, &argv);
 
   const int nx_s = 2;
   const int nx_t = 2;
@@ -90,7 +89,7 @@ int main(int argc, char* argv[])
       MPI_COMM_WORLD, cells_list, original_global_index, ghost_owners,
       cell_types, cell_group_offsets, boundary_vertices);
 
-  PetscFinalize();
+  MPI_Finalize();
 
   return 0;
 }
