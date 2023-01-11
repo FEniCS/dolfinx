@@ -1153,6 +1153,8 @@ Topology mesh::create_topology(
       original_cell_index.begin(),
       std::next(original_cell_index.begin(), num_local_nodes));
 
+  topology.set_entity_group_offsets(tdim, cell_group_offsets);
+
   return topology;
 }
 //-----------------------------------------------------------------------------
