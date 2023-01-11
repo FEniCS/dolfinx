@@ -152,7 +152,7 @@ public:
         = _mesh->geometry().dofmap();
 
     // Get geometry data
-    auto cmaps = mesh->geometry().cmaps();
+    auto cmaps = _mesh->geometry().cmaps();
     assert(cmaps.size() == 1);
 
     const std::size_t num_dofs_g = cmaps.back().dim();
