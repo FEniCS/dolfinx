@@ -58,7 +58,8 @@ def random_point_in_reference(cell_type):
 
 
 def random_point_in_cell(mesh):
-    cell_type = mesh.topology.cell_type
+    assert len(mesh.topology.cell_type) == 1
+    cell_type = mesh.topology.cell_type[0]
     point = random_point_in_reference(cell_type)
 
     if cell_type == CellType.interval:
