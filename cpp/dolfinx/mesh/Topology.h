@@ -63,7 +63,9 @@ public:
   /// @brief Return the topological dimension of the mesh.
   int dim() const noexcept;
 
-  void set_entity_group_offsets(int dim, std::vector<std::int32_t> offsets);
+  void set_entity_group_offsets(int dim, const std::vector<std::int32_t>& offsets);
+
+  const std::vector<std::int32_t>& entity_group_offsets(int dim) const;
 
   /// @todo Merge with set_connectivity
   ///
