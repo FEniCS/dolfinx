@@ -258,8 +258,16 @@ fem::FunctionSpace fem::create_functionspace(
   assert(element);
   ufcx_dofmap* ufcx_map = space->dofmap;
   assert(ufcx_map);
+
+  auto cell_types = mesh->topology().cell_type();
+  if (cell_types.size() > 1)
+  {
+    throw std::runtime_error(
+        "Multiple cell types during the creation of a function space.");
+  }
+
   ElementDofLayout layout
-      = create_element_dof_layout(*ufcx_map, mesh->topology().cell_type());
+      = create_element_dof_layout(*ufcx_map, cell_types.back());
   return FunctionSpace(
       mesh, element,
       std::make_shared<DofMap>(create_dofmap(

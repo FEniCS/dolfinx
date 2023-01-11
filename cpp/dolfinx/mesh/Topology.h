@@ -111,8 +111,8 @@ public:
   const std::vector<std::uint8_t>& get_facet_permutations() const;
 
   /// Cell type
-  /// @return Cell type that the topology is for
-  CellType cell_type() const noexcept;
+  /// @return Cell types that the topology is for
+  std::vector<CellType> cell_type() const noexcept;
 
   /// @brief Create entities of given topological dimension.
   /// @param[in] dim Topological dimension

@@ -195,9 +195,17 @@ build_basic_dofmap(const mesh::Topology& topology,
   // Allocate entity indices array
   std::vector<std::vector<int32_t>> entity_indices_local(D + 1);
   std::vector<std::vector<int64_t>> entity_indices_global(D + 1);
+
+  std::vector<mesh::CellType> types = topology.cell_type();
+  if (types.size() > 1)
+  {
+    throw std::runtime_error(
+        "Don't know how to build a dofmap with more than one cell type");
+  }
+
   for (int d = 0; d <= D; ++d)
   {
-    const int num_entities = mesh::cell_num_entities(topology.cell_type(), d);
+    const int num_entities = mesh::cell_num_entities(types.back(), d);
     entity_indices_local[d].resize(num_entities);
     entity_indices_global[d].resize(num_entities);
   }

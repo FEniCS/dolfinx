@@ -346,10 +346,13 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
       entities_values = xdmf_utils::distribute_entity_data(
           *mesh, mesh::cell_dim(cell_type), entities1, values);
 
+  auto cell_types = mesh->topology().cell_type();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("cell type IO");
+
   LOG(INFO) << "XDMF create meshtags";
   const std::size_t num_vertices_per_entity = mesh::cell_num_entities(
-      mesh::cell_entity_type(mesh->topology().cell_type(),
-                             mesh::cell_dim(cell_type), 0),
+      mesh::cell_entity_type(cell_types.back(), mesh::cell_dim(cell_type), 0),
       0);
   const graph::AdjacencyList<std::int32_t> entities_adj
       = graph::regular_adjacency_list(std::move(entities_values.first),
