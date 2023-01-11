@@ -684,8 +684,13 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
                                RefinementOptions options)
 {
 
-  if (mesh.topology().cell_type() != mesh::CellType::triangle
-      and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
+  if (mesh.topology().cell_type().size() > 1)
+  {
+    throw std::runtime_error("multiple cell types");
+  }
+  auto cell_type = mesh.topology().cell_type().back();
+  if (cell_type != mesh::CellType::triangle
+      and cell_type != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }
@@ -739,8 +744,13 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
                                std::span<const std::int32_t> edges,
                                RefinementOptions options)
 {
-  if (mesh.topology().cell_type() != mesh::CellType::triangle
-      and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
+  if (mesh.topology().cell_type().size() > 1)
+  {
+    throw std::runtime_error("multiple cell types");
+  }
+  auto cell_type = mesh.topology().cell_type().back();
+  if (cell_type != mesh::CellType::triangle
+      and cell_type != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }

@@ -951,8 +951,10 @@ void fem(py::module& m)
       {
         ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
         assert(p);
+
         dolfinx::fem::ElementDofLayout layout
-            = dolfinx::fem::create_element_dof_layout(*p, topology.cell_type());
+            = dolfinx::fem::create_element_dof_layout(
+                *p, topology.cell_type().back());
         return dolfinx::fem::create_dofmap(comm.get(), layout, topology,
                                            nullptr, element);
       },

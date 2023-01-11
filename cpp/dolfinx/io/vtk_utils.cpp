@@ -165,8 +165,12 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
   const int element_block_size = V.element()->block_size();
   const std::uint32_t num_nodes
       = V.element()->space_dimension() / element_block_size;
-  const std::vector<std::uint8_t> vtkmap = io::cells::transpose(
-      io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
+
+  auto cell_types = mesh->topology().cell_type();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("Multiple cell types in IO.");
+  const std::vector<std::uint8_t> vtkmap
+      = io::cells::transpose(io::cells::perm_vtk(cell_types.back(), num_nodes));
 
   // Extract topology for all local cells as
   // [v0_0, ...., v0_N0, v1_0, ...., v1_N1, ....]
@@ -194,7 +198,11 @@ io::extract_vtk_connectivity(const mesh::Mesh& mesh)
   // FIXME: Use better way to get number of nodes
   const graph::AdjacencyList<std::int32_t>& dofmap_x = mesh.geometry().dofmap();
   const std::size_t num_nodes = mesh.geometry().cmap().dim();
-  mesh::CellType cell_type = mesh.topology().cell_type();
+
+  auto cell_types = mesh.topology().cell_type();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("Multiple cell types in IO.");
+  mesh::CellType cell_type = cell_types.back();
   std::vector vtkmap
       = io::cells::transpose(io::cells::perm_vtk(cell_type, num_nodes));
 

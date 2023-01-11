@@ -874,12 +874,9 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
   return _interprocess_facets;
 }
 //-----------------------------------------------------------------------------
-mesh::CellType Topology::cell_type() const noexcept
+std::vector<mesh::CellType> Topology::cell_type() const noexcept
 {
-  if (_cell_types.size() > 1)
-    std::cout << "Asking for cell_type when there are multiple..." << std::endl;
-
-  return _cell_types[0];
+  return _cell_types;
 }
 //-----------------------------------------------------------------------------
 MPI_Comm Topology::comm() const { return _comm.comm(); }
@@ -1165,8 +1162,12 @@ mesh::entities_to_index(const Topology& topology, int dim,
   auto e_to_v = topology.connectivity(dim, 0);
   assert(e_to_v);
 
+  auto cell_types = topology.cell_type();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("multiple cell types entities_to_index");
+
   const int num_vertices_per_entity
-      = cell_num_entities(cell_entity_type(topology.cell_type(), dim, 0), 0);
+      = cell_num_entities(cell_entity_type(cell_types.back(), dim, 0), 0);
 
   // Build map from ordered local vertex indices (key) to entity index
   // (value)

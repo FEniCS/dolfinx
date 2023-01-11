@@ -243,18 +243,24 @@ std::vector<double> mesh::cell_normals(const mesh::Mesh& mesh, int dim,
   if (entities.empty())
     return std::vector<double>();
 
-  if (mesh.topology().cell_type() == CellType::prism and dim == 2)
+  if (mesh.topology().cell_type().size() > 1)
+  {
+    throw std::runtime_error("multiple cell types");
+  }
+
+  if (mesh.topology().cell_type().back() == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cell");
 
   const int gdim = mesh.geometry().dim();
-  const CellType type = cell_entity_type(mesh.topology().cell_type(), dim, 0);
+  const CellType type
+      = cell_entity_type(mesh.topology().cell_type().back(), dim, 0);
 
   // Find geometry nodes for topology entities
   std::span<const double> x = mesh.geometry().x();
 
   // Orient cells if they are tetrahedron
   bool orient = false;
-  if (mesh.topology().cell_type() == CellType::tetrahedron)
+  if (mesh.topology().cell_type().back() == CellType::tetrahedron)
     orient = true;
 
   std::vector<std::int32_t> geometry_entities
@@ -494,7 +500,12 @@ std::vector<std::int32_t>
 mesh::entities_to_geometry(const Mesh& mesh, int dim,
                            std::span<const std::int32_t> entities, bool orient)
 {
-  CellType cell_type = mesh.topology().cell_type();
+
+  if (mesh.topology().cell_type().size() > 1)
+  {
+    throw std::runtime_error("multiple cell types");
+  }
+  CellType cell_type = mesh.topology().cell_type().back();
   if (cell_type == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cells");
   if (orient and (cell_type != CellType::tetrahedron or dim != 2))

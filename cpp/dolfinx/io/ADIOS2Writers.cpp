@@ -171,8 +171,13 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(cell_variable, shape[0]);
   adios2::Variable<std::uint32_t> celltype_variable
       = define_variable<std::uint32_t>(io, "types");
-  engine.Put<std::uint32_t>(
-      celltype_variable, cells::get_vtk_cell_type(topology.cell_type(), tdim));
+
+  auto cell_types = topology.cell_type();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("Multiple cell types in IO.");
+
+  engine.Put<std::uint32_t>(celltype_variable,
+                            cells::get_vtk_cell_type(cell_types.back(), tdim));
 
   // Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
@@ -253,11 +258,15 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable<std::uint32_t> elements = define_variable<std::uint32_t>(
       io, "NumberOfEntities", {adios2::LocalValueDim});
 
+  auto cell_types = mesh->topology().cell_type();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("Multiple cell types in IO.");
+
   // Write mesh information to file
   engine.Put<std::uint32_t>(vertices, num_dofs);
   engine.Put<std::uint32_t>(elements, vtkshape[0]);
-  engine.Put<std::uint32_t>(
-      cell_type, cells::get_vtk_cell_type(mesh->topology().cell_type(), tdim));
+  engine.Put<std::uint32_t>(cell_type,
+                            cells::get_vtk_cell_type(cell_types.back(), tdim));
   engine.Put<double>(local_geometry, x.data());
   engine.Put<std::int64_t>(local_topology, cells.data());
 
@@ -573,8 +582,12 @@ void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
 
   // Check that mesh is first order mesh
   const int num_dofs_g = geometry.cmap().dim();
+  auto cell_types = topology.cell_type();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("Multiple cell types in IO.");
+
   const int num_vertices_per_cell
-      = mesh::cell_num_entities(topology.cell_type(), 0);
+      = mesh::cell_num_entities(cell_types.back(), 0);
   if (num_dofs_g != num_vertices_per_cell)
     throw std::runtime_error("Fides only supports lowest-order meshes.");
 
@@ -588,7 +601,7 @@ void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
   define_attribute<std::string>(io, "Fides_Connecticity_Variable",
                                 "connectivity");
 
-  std::string cell_type = to_fides_cell(topology.cell_type());
+  std::string cell_type = to_fides_cell(cell_types.back());
   define_attribute<std::string>(io, "Fides_Cell_Type", cell_type);
 
   define_attribute<std::string>(io, "Fides_Time_Variable", "step");
@@ -763,8 +776,11 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
   }
 
   // Check that all functions are first order Lagrange
-  int num_vertices_per_cell
-      = mesh::cell_num_entities(mesh->topology().cell_type(), 0);
+  auto cell_types = mesh->topology().cell_type();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("Multiple cell types in IO.");
+
+  int num_vertices_per_cell = mesh::cell_num_entities(cell_types.back(), 0);
   for (auto& v : _u)
   {
     std::visit(

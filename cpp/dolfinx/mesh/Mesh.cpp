@@ -279,8 +279,14 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   auto submesh_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       submesh_map0->size_local() + submesh_map0->num_ghosts());
 
+  auto cell_types = topology.cell_type();
+  if (cell_types.size() > 1)
+  {
+    throw std::runtime_error("Multiple cell types in IO");
+  }
+
   // Submesh entity to vertex connectivity
-  const CellType entity_type = cell_entity_type(topology.cell_type(), dim, 0);
+  const CellType entity_type = cell_entity_type(cell_types.back(), dim, 0);
   const int num_vertices_per_entity = cell_num_entities(entity_type, 0);
   auto mesh_e_to_v = topology.connectivity(dim, 0);
   std::vector<std::int32_t> submesh_e_to_v_vec;
