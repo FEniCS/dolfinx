@@ -284,7 +284,7 @@ void mesh(py::module& m)
   py::class_<dolfinx::mesh::Topology, std::shared_ptr<dolfinx::mesh::Topology>>(
       m, "Topology", py::dynamic_attr(), "Topology object")
       .def(py::init([](const MPICommWrapper comm,
-                       const dolfinx::mesh::CellType cell_type)
+                       const std::vector<dolfinx::mesh::CellType> cell_type)
                     { return dolfinx::mesh::Topology(comm.get(), cell_type); }),
            py::arg("comm"), py::arg("cell_type"))
       .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity,
@@ -328,8 +328,13 @@ void mesh(py::module& m)
            py::arg("d0"), py::arg("d1"))
       .def("index_map", &dolfinx::mesh::Topology::index_map, py::arg("dim"))
       .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
-      .def("cell_name", [](const dolfinx::mesh::Topology& self)
-           { return dolfinx::mesh::to_string(self.cell_type()); })
+      .def("cell_name",
+           [](const dolfinx::mesh::Topology& self)
+           {
+             if (self.cell_type().size() > 1)
+               throw std::runtime_error("Multiple cell types not supported");
+             return dolfinx::mesh::to_string(self.cell_type()[0]);
+           })
       .def("interprocess_facets", &dolfinx::mesh::Topology::interprocess_facets)
       .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self)
                              { return MPICommWrapper(self.comm()); });
@@ -431,7 +436,11 @@ void mesh(py::module& m)
       {
         std::vector<std::int32_t> idx = dolfinx::mesh::entities_to_geometry(
             mesh, dim, std::span(entities.data(), entities.size()), orient);
-        dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
+
+        if (mesh.topology().cell_type().size() > 1)
+          throw std::runtime_error("Multiple cell type not supported.");
+
+        dolfinx::mesh::CellType cell_type = mesh.topology().cell_type()[0];
         std::size_t num_vertices = dolfinx::mesh::num_cell_vertices(
             cell_entity_type(cell_type, dim, 0));
         std::array<std::size_t, 2> shape

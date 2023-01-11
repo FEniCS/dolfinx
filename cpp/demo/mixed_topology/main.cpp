@@ -61,8 +61,8 @@ int main(int argc, char* argv[])
 
   std::vector<int> ghost_owners;
 
-  std::vector<std::int32_t> cell_group_offsets{
-    0, num_s, num_s + num_t, num_s + num_t, num_s + num_t};
+  std::vector<std::int32_t> cell_group_offsets{0, num_s, num_s + num_t,
+                                               num_s + num_t, num_s + num_t};
 
   std::vector<std::int64_t> boundary_vertices;
   for (int j = 0; j < ny + 1; ++j)
@@ -96,6 +96,17 @@ int main(int argc, char* argv[])
     {
       std::cout << i << " [";
       for (auto q : topo_cells->links(i))
+        std::cout << q << " ";
+      std::cout << "]\n";
+    }
+
+    topo.create_connectivity(1, 0);
+
+    auto topo_facets = topo.connectivity(1, 0);
+    for (int i = 0; i < topo_facets->num_nodes(); ++i)
+    {
+      std::cout << i << " [";
+      for (auto q : topo_facets->links(i))
         std::cout << q << " ";
       std::cout << "]\n";
     }
