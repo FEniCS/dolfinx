@@ -187,7 +187,8 @@ Topology create_topology(MPI_Comm comm,
                          const graph::AdjacencyList<std::int64_t>& cells,
                          std::span<const std::int64_t> original_cell_index,
                          std::span<const int> ghost_owners,
-                         const CellType& cell_type,
+                         const std::vector<CellType>& cell_type,
+                         const std::vector<std::int32_t>& cell_group_offsets,
                          std::span<const std::int64_t> boundary_vertices);
 
 /// @brief Get entity indices for entities defined by their vertices.

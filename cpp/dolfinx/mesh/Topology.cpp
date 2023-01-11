@@ -881,19 +881,20 @@ MPI_Comm Topology::comm() const { return _comm.comm(); }
 Topology mesh::create_topology(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
     std::span<const std::int64_t> original_cell_index,
-    std::span<const int> ghost_owners, const CellType& cell_type,
+    std::span<const int> ghost_owners, const std::vector<CellType>& cell_type,
+    const std::vector<std::int32_t>& cell_group_offsets,
     std::span<const std::int64_t> boundary_vertices)
 {
   common::Timer timer("Topology: create");
 
   LOG(INFO) << "Create topology";
   if (cells.num_nodes() > 0
-      and cells.num_links(0) != num_cell_vertices(cell_type))
+      and cells.num_links(0) != num_cell_vertices(cell_type[0]))
   {
     throw std::runtime_error(
         "Inconsistent number of cell vertices. Got "
         + std::to_string(cells.num_links(0)) + ", expected "
-        + std::to_string(num_cell_vertices(cell_type)) + ".");
+        + std::to_string(num_cell_vertices(cell_type[0])) + ".");
   }
 
   const std::int32_t num_local_cells = cells.num_nodes() - ghost_owners.size();
@@ -1109,7 +1110,7 @@ Topology mesh::create_topology(
     dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
   }
 
-  Topology topology(comm, cell_type);
+  Topology topology(comm, cell_type[0]);
   const int tdim = topology.dim();
 
   // Create index map for vertices
