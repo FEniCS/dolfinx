@@ -20,7 +20,11 @@ int main(int argc, char* argv[])
 
   std::vector<std::int32_t> cell_group_offsets{0, 1, 2, 2, 2};
 
-  std::vector<std::int64_t> boundary_vertices = cells;
+  std::vector<std::int64_t> boundary_vertices(cells);
+  std::sort(boundary_vertices.begin(), boundary_vertices.end());
+  boundary_vertices.erase(
+      std::unique(boundary_vertices.begin(), boundary_vertices.end()),
+      boundary_vertices.end());
 
   std::vector<dolfinx::mesh::CellType> cell_types{
       dolfinx::mesh::CellType::quadrilateral,
