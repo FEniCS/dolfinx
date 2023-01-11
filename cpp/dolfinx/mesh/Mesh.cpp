@@ -166,8 +166,9 @@ Mesh mesh::create_mesh(MPI_Comm comm,
         = {0, std::int32_t(cells_extracted.num_nodes() - ghost_owners.size()),
            cells_extracted.num_nodes()};
 
+    std::vector<mesh::CellType> cell_type = {element.cell_shape()};
     return std::pair{create_topology(comm, cells_extracted, original_cell_index,
-                                     ghost_owners, {element.cell_shape()},
+                                     ghost_owners, cell_type,
                                      cell_group_offsets, boundary_vertices),
                      std::move(cell_nodes)};
   };
