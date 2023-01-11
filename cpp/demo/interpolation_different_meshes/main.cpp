@@ -66,6 +66,13 @@ int main(int argc, char* argv[])
     // Interpolate from u_tet to u_hex
     u_hex->interpolate(*u_tet);
 
+    // Cache data explicitly and use it to interpolate quickly
+    u_hex->x()->set(0);
+    auto m2mInterpolationData
+        = std::make_shared<dolfinx::fem::M2MInterpolationData>(
+            fem::generate_m2m_interpolation_data(*u_hex, *u_tet));
+    u_hex->interpolate(*u_tet, m2mInterpolationData);
+
 #ifdef HAS_ADIOS2
     io::VTXWriter write_tet(mesh_tet->comm(), "u_tet.vtx", {u_tet});
     write_tet.write(0.0);
