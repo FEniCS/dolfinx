@@ -121,7 +121,7 @@ private:
 /// indices). For lowest order cells this will be just the cell
 /// vertices. For higher-order cells, other cells 'nodes' will be
 /// included.
-/// @param[in] element The coordinate element that describes the
+/// @param[in] elements The coordinate elements that describes the
 /// geometric mapping for cells
 /// @param[in] x The coordinates of mesh nodes
 /// @param[in] xshape The shape of `x`
