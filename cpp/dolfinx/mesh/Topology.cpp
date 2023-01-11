@@ -888,13 +888,11 @@ Topology mesh::create_topology(
   common::Timer timer("Topology: create");
 
   LOG(INFO) << "Create topology";
-  if (cells.num_nodes() > 0)
-    throw std::runtime_error("Inconsistent number of cell vertices.");
-
   for (std::size_t i = 0; i < cell_type.size(); i++)
   {
     std::int32_t offset = cell_group_offsets[i];
     int num_vertices = num_cell_vertices(cell_type[i]);
+    // int num_cells_group = cell_group_offsets[i + 1] - offset;
     if (cells.num_links(offset) != num_vertices)
       throw std::runtime_error("Inconsistent number of cell vertices. Got "
                                + std::to_string(cells.num_links(offset))
