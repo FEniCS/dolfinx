@@ -318,6 +318,11 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Get the geometry dofs in the submesh based on the entities in
   // submesh
+
+  if (geometry.cmaps().size() > 1)
+    throw std::runtime_error(
+        "SubMesh with multiple geometry maps not implemented.");
+
   const fem::ElementDofLayout layout = geometry.cmaps()[0].create_dof_layout();
   // NOTE: Unclear what this return for prisms
   const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);

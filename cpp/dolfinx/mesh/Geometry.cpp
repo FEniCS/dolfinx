@@ -46,7 +46,7 @@ const std::vector<std::int64_t>& Geometry::input_global_indices() const
 //-----------------------------------------------------------------------------
 mesh::Geometry mesh::create_geometry(
     MPI_Comm comm, const Topology& topology,
-    const std::vector<fem::CoordinateElement>& element,
+    const std::vector<fem::CoordinateElement>& elements,
     const graph::AdjacencyList<std::int64_t>& cell_nodes,
     std::span<const double> x, int dim,
     const std::function<std::vector<int>(

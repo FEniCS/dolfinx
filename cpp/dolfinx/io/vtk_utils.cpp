@@ -60,6 +60,9 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
   // Get the dof coordinates on the reference element and the  mesh
   // coordinate map
   const auto [X, Xshape] = element->interpolation_points();
+  if (mesh->geometry().cmaps().size() > 1)
+    throw std::runtime_error(
+        "VTK I/O with multiple geometry maps not implemented.");
   const fem::CoordinateElement& cmap = mesh->geometry().cmaps()[0];
 
   // Prepare cell geometry
@@ -193,6 +196,11 @@ io::extract_vtk_connectivity(const mesh::Mesh& mesh)
   // Get DOLFINx to VTK permutation
   // FIXME: Use better way to get number of nodes
   const graph::AdjacencyList<std::int32_t>& dofmap_x = mesh.geometry().dofmap();
+
+  if (mesh.geometry().cmaps().size() > 1)
+    throw std::runtime_error(
+        "VTK I/O with multiple geometry maps not implemented.");
+
   const std::size_t num_nodes = mesh.geometry().cmaps()[0].dim();
   mesh::CellType cell_type = mesh.topology().cell_type();
   std::vector vtkmap

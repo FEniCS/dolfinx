@@ -35,6 +35,9 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const mesh::CellType entity_cell_type
       = mesh::cell_entity_type(topology.cell_type(), dim, 0);
 
+  if (geometry.cmaps().size() > 1)
+    throw std::runtime_error(
+        "XDMF I/O with multiple geometry maps not implemented.");
   const fem::ElementDofLayout cmap_dof_layout
       = geometry.cmaps()[0].create_dof_layout();
 

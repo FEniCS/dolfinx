@@ -377,6 +377,9 @@ public:
     auto map = mesh->topology().index_map(tdim);
 
     // Get coordinate map
+    if (mesh->geometry().cmaps().size() > 1)
+      throw std::runtime_error(
+          "Function with multiple geometry maps not implemented.");
     const CoordinateElement& cmap = mesh->geometry().cmaps()[0];
 
     // Get geometry data
