@@ -888,16 +888,23 @@ Topology mesh::create_topology(
   common::Timer timer("Topology: create");
 
   LOG(INFO) << "Create topology";
-  if (cells.num_nodes() > 0
-      and cells.num_links(0) != num_cell_vertices(cell_type[0]))
+  if (cells.num_nodes() > 0)
+    throw std::runtime_error("Inconsistent number of cell vertices.");
+
+  for (std::size_t i = 0; i < cell_type.size(); i++)
   {
-    throw std::runtime_error(
-        "Inconsistent number of cell vertices. Got "
-        + std::to_string(cells.num_links(0)) + ", expected "
-        + std::to_string(num_cell_vertices(cell_type[0])) + ".");
+    std::int32_t offset = cell_group_offsets[i];
+    int num_vertices = num_cell_vertices(cell_type[i]);
+    if (cells.num_links(offset) != num_vertices)
+      throw std::runtime_error("Inconsistent number of cell vertices. Got "
+                               + std::to_string(cells.num_links(offset))
+                               + ", expected " + std::to_string(num_vertices)
+                               + ".");
   }
 
   const std::int32_t num_local_cells = cells.num_nodes() - ghost_owners.size();
+  if (num_local_cells == cell_group_offsets[cell_type.size()])
+    throw std::runtime_error("Inconsistent offset or ghost number.");
 
   // Create sets of owned and unowned vertices from the cell ownership
   // and the list of boundary vertices
