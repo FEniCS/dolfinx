@@ -265,8 +265,8 @@ void mesh(py::module& m)
           },
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
-      .def_property_readonly("cmap", &dolfinx::mesh::Geometry::cmap,
-                             "The coordinate map")
+      .def_property_readonly("cmap", &dolfinx::mesh::Geometry::cmaps,
+                             "The coordinate maps")
       .def_property_readonly("input_global_indices",
                              &dolfinx::mesh::Geometry::input_global_indices);
 
