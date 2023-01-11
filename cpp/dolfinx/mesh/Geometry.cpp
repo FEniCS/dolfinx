@@ -57,12 +57,12 @@ mesh::Geometry mesh::create_geometry(
 
   //  Build 'geometry' dofmap on the topology
   auto [_dof_index_map, bs, dofmap] = fem::build_dofmap_data(
-      comm, topology, element[0].create_dof_layout(), reorder_fn);
+      comm, topology, elements[0].create_dof_layout(), reorder_fn);
   auto dof_index_map
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 
   // If the mesh has higher order geometry, permute the dofmap
-  if (element[0].needs_dof_permutations())
+  if (elements[0].needs_dof_permutations())
   {
     const int D = topology.dim();
     const int num_cells = topology.connectivity(D, 0)->num_nodes();
@@ -70,7 +70,7 @@ mesh::Geometry mesh::create_geometry(
         = topology.get_cell_permutation_info();
 
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
-      element[0].unpermute_dofs(dofmap.links(cell), cell_info[cell]);
+      elements[0].unpermute_dofs(dofmap.links(cell), cell_info[cell]);
   }
 
   auto remap_data
@@ -119,7 +119,7 @@ mesh::Geometry mesh::create_geometry(
                 std::next(xg.begin(), 3 * i));
   }
 
-  return Geometry(dof_index_map, std::move(dofmap), element, std::move(xg), dim,
-                  std::move(igi));
+  return Geometry(dof_index_map, std::move(dofmap), elements, std::move(xg),
+                  dim, std::move(igi));
 }
 //-----------------------------------------------------------------------------
