@@ -414,9 +414,11 @@ std::vector<T> pack_function_data(const fem::Function<T>& u)
   const mesh::Geometry& geometry = mesh->geometry();
   const mesh::Topology& topology = mesh->topology();
 
+  auto cmaps = mesh->geometry().cmaps();
+  assert(cmaps.size() == 1);
   // The Function and the mesh must have identical element_dof_layouts
   // (up to the block size)
-  assert(dofmap->element_dof_layout() == geometry.cmap().create_dof_layout());
+  assert(dofmap->element_dof_layout() == cmaps.back().create_dof_layout());
 
   const int tdim = topology.dim();
   auto cell_map = topology.index_map(tdim);
@@ -551,7 +553,10 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
   // cell, and compute 'VTK' connectivity
   const int tdim = topology.dim();
   const std::int32_t num_cells = topology.index_map(tdim)->size_local();
-  const int num_nodes = geometry.cmap().dim();
+
+  auto cmaps = mesh.geometry().cmaps();
+  assert(cmaps.size() == 1);
+  const int num_nodes = cmaps.back().dim();
   const auto [cells, shape] = io::extract_vtk_connectivity(mesh);
 
   // "Put" topology data in the result in the ADIOS2 file
@@ -571,8 +576,11 @@ void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
 
+  auto cmaps = geometry.cmaps();
+  assert(cmaps.size() == 1);
+
   // Check that mesh is first order mesh
-  const int num_dofs_g = geometry.cmap().dim();
+  const int num_dofs_g = cmaps.back().dim();
   const int num_vertices_per_cell
       = mesh::cell_num_entities(topology.cell_type(), 0);
   if (num_dofs_g != num_vertices_per_cell)
