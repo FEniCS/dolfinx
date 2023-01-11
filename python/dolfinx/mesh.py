@@ -186,10 +186,11 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
 
 def create_submesh(mesh, dim, entities):
     submesh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(mesh, dim, entities)
+    assert len(submesh.geometry.cmap) == 1
     submesh_ufl_cell = ufl.Cell(submesh.topology.cell_name(),
                                 geometric_dimension=submesh.geometry.dim)
     submesh_domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
-        "Lagrange", submesh_ufl_cell.cellname(), submesh.geometry.cmap.degree, submesh.geometry.cmap.variant,
+        "Lagrange", submesh_ufl_cell.cellname(), submesh.geometry.cmap[0].degree, submesh.geometry.cmap[0].variant,
         dim=submesh.geometry.dim, gdim=submesh.geometry.dim))
     return (Mesh.from_cpp(submesh, submesh_domain), entity_map, vertex_map, geom_map)
 
