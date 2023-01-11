@@ -907,7 +907,8 @@ Topology mesh::create_topology(
   }
 
   const std::int32_t num_local_cells = cells.num_nodes() - ghost_owners.size();
-  if (num_local_cells == cell_group_offsets[cell_type.size()])
+
+  if (num_local_cells != cell_group_offsets[cell_type.size()])
     throw std::runtime_error("Inconsistent offset or ghost number.");
 
   // Create sets of owned and unowned vertices from the cell ownership
