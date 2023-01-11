@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
 
   std::vector<int> ghost_owners;
 
-  std::vector<std::int32_t> cell_group_offsets{0, 1, 1, 1};
+  std::vector<std::int32_t> cell_group_offsets{0, 1, 2, 2, 2};
 
   std::vector<std::int64_t> boundary_vertices = cells;
 
