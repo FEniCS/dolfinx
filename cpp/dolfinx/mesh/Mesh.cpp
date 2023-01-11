@@ -166,8 +166,9 @@ Mesh mesh::create_mesh(MPI_Comm comm,
         = {0, std::int32_t(cells_extracted.num_nodes() - ghost_owners.size()),
            cells_extracted.num_nodes()};
 
+    std::vector<mesh::CellType> cell_type = {element.cell_shape()};
     return std::pair{create_topology(comm, cells_extracted, original_cell_index,
-                                     ghost_owners, {element.cell_shape()},
+                                     ghost_owners, cell_type,
                                      cell_group_offsets, boundary_vertices),
                      std::move(cell_nodes)};
   };
@@ -312,7 +313,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
       std::move(submesh_e_to_v_vec), std::move(submesh_e_to_v_offsets));
 
   // Create submesh topology
-  Topology submesh_topology(mesh.comm(), entity_type);
+  Topology submesh_topology(mesh.comm(), {entity_type});
   submesh_topology.set_index_map(0, submesh_map0);
   submesh_topology.set_index_map(dim, submesh_map);
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);

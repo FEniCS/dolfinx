@@ -43,7 +43,7 @@ class Topology
 {
 public:
   /// Create empty mesh topology
-  Topology(MPI_Comm comm, CellType type);
+  Topology(MPI_Comm comm, std::vector<CellType> type);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -143,8 +143,8 @@ private:
   // MPI communicator
   dolfinx::MPI::Comm _comm;
 
-  // Cell type
-  CellType _cell_type;
+  // Cell types
+  std::vector<CellType> _cell_types;
 
   // Parallel layout of entities for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;

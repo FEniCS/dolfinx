@@ -718,12 +718,12 @@ graph::AdjacencyList<std::int32_t> convert_to_local_indexing(
 } // namespace
 
 //-----------------------------------------------------------------------------
-Topology::Topology(MPI_Comm comm, CellType type)
-    : _comm(comm), _cell_type(type),
+Topology::Topology(MPI_Comm comm, std::vector<CellType> types)
+    : _comm(comm), _cell_types(types),
       _connectivity(
-          cell_dim(type) + 1,
+          cell_dim(types[0]) + 1,
           std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(
-              cell_dim(type) + 1))
+              cell_dim(types[0]) + 1))
 {
   // Do nothing
 }
@@ -874,7 +874,13 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
   return _interprocess_facets;
 }
 //-----------------------------------------------------------------------------
-mesh::CellType Topology::cell_type() const noexcept { return _cell_type; }
+mesh::CellType Topology::cell_type() const noexcept
+{
+  if (_cell_types.size() > 1)
+    std::cout << "Asking for cell_type when there are multiple..." << std::endl;
+
+  return _cell_types[0];
+}
 //-----------------------------------------------------------------------------
 MPI_Comm Topology::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------
@@ -1115,7 +1121,7 @@ Topology mesh::create_topology(
     dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
   }
 
-  Topology topology(comm, cell_type[0]);
+  Topology topology(comm, cell_type);
   const int tdim = topology.dim();
 
   // Create index map for vertices
