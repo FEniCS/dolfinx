@@ -142,6 +142,11 @@ build_basic_dofmap(
   if (element_dof_layouts.size() != topology.cell_type().size())
     throw std::runtime_error("Mixed topology: topology mismatch");
 
+  // Should be 2*n+1 cell group offsets in Topology for n elements
+  if (element_dof_layouts.size() * 2 + 1
+      != topology.entity_group_offsets(D).size())
+    throw std::runtime_error("Mixed topology: topology mismatch");
+
   // Mixed topology can only manage one dof (e.g. on vertex, or on edge, i.e. P1
   // or P2) for now.
   if (element_dof_layouts.size() > 1)
@@ -160,7 +165,7 @@ build_basic_dofmap(
     for (int d = 0; d < D; ++d)
       nd[d] = element_dof_layouts[0].num_entity_dofs(d);
     for (int d = 0; d < D; ++d)
-      for (int i = 1; i < element_dof_layouts.size(); ++i)
+      for (std::size_t i = 1; i < element_dof_layouts.size(); ++i)
       {
         if (element_dof_layouts[i].num_entity_dofs(d) != nd[d])
           throw std::runtime_error(
@@ -175,8 +180,8 @@ build_basic_dofmap(
       num_mesh_entities_global(D + 1, 0);
   for (int d = 0; d <= D; ++d)
   {
-    // FIXME: P2/Q2 - Q has dof on interior, P does not - need to check all
-    // elements here.
+    // FIXME: Mixed-topology - P2/Q2 - Q has dof on interior, P does not - need
+    // to check all elements here.
     if (element_dof_layouts[0].num_entity_dofs(d) > 0)
     {
       if (!topology.connectivity(d, 0))
