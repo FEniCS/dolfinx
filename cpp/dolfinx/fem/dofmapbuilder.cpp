@@ -138,6 +138,37 @@ build_basic_dofmap(
   // Topological dimension
   const int D = topology.dim();
 
+  // Checks for mixed topology
+  if (element_dof_layouts.size() != topology.cell_type().size())
+    throw std::runtime_error("Mixed topology: topology mismatch");
+
+  // Mixed topology can only manage one dof (e.g. on vertex, or on edge, i.e. P1
+  // or P2) for now.
+  if (element_dof_layouts.size() > 1)
+  {
+    for (auto e : element_dof_layouts)
+      for (int d = 0; d <= D; ++d)
+      {
+
+        if (e.num_entity_dofs(d) > 1)
+          throw std::runtime_error("Mixed topology: dofmapbuilder does not yet "
+                                   "support elements with more than "
+                                   "one dof per entity dimension (P1/P2)");
+      }
+
+    std::array<int, 3> nd;
+    for (int d = 0; d < D; ++d)
+      nd[d] = element_dof_layouts[0].num_entity_dofs(d);
+    for (int d = 0; d < D; ++d)
+      for (int i = 1; i < element_dof_layouts.size(); ++i)
+      {
+        if (element_dof_layouts[i].num_entity_dofs(d) != nd[d])
+          throw std::runtime_error(
+              "Mixed topology: dofmapbuilder - incompatible elements "
+              "(different number of dofs on shared entity)");
+      }
+  }
+
   // Generate and number required mesh entities
   std::vector<std::int8_t> needs_entities(D + 1, false);
   std::vector<std::int32_t> num_mesh_entities_local(D + 1, 0),
