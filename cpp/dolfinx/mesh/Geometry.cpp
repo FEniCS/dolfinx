@@ -55,9 +55,13 @@ mesh::Geometry mesh::create_geometry(
   // TODO: make sure required entities are initialised, or extend
   // fem::build_dofmap_data
 
+  std::vector<fem::ElementDofLayout> dof_layouts;
+  for (auto e : elements)
+    dof_layouts.push_back(e.create_dof_layout());
+
   //  Build 'geometry' dofmap on the topology
-  auto [_dof_index_map, bs, dofmap] = fem::build_dofmap_data(
-      comm, topology, elements[0].create_dof_layout(), reorder_fn);
+  auto [_dof_index_map, bs, dofmap]
+      = fem::build_dofmap_data(comm, topology, dof_layouts, reorder_fn);
   auto dof_index_map
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 
