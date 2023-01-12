@@ -128,8 +128,9 @@ reorder_owned(const graph::AdjacencyList<std::int32_t>& dofmap,
 /// {dimension, mesh entity index} for each local dof i}
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::vector<std::pair<std::int8_t, std::int32_t>>>
-build_basic_dofmap(const mesh::Topology& topology,
-                   const fem::ElementDofLayout& element_dof_layout)
+build_basic_dofmap(
+    const mesh::Topology& topology,
+    const std::vector<fem::ElementDofLayout>& element_dof_layouts)
 {
   // Start timer for dofmap initialization
   common::Timer t0("Init dofmap from element dofmap");
@@ -143,7 +144,7 @@ build_basic_dofmap(const mesh::Topology& topology,
       num_mesh_entities_global(D + 1, 0);
   for (int d = 0; d <= D; ++d)
   {
-    if (element_dof_layout.num_entity_dofs(d) > 0)
+    if (element_dof_layouts[0].num_entity_dofs(d) > 0)
     {
       if (!topology.connectivity(d, 0))
       {
@@ -179,10 +180,10 @@ build_basic_dofmap(const mesh::Topology& topology,
   // Number of dofs on this process
   std::int32_t local_size(0), d(0);
   for (std::int32_t n : num_mesh_entities_local)
-    local_size += n * element_dof_layout.num_entity_dofs(d++);
+    local_size += n * element_dof_layouts[0].num_entity_dofs(d++);
 
   // Number of dofs per cell
-  const int local_dim = element_dof_layout.num_dofs();
+  const int local_dim = element_dof_layouts[0].num_dofs();
 
   // Allocate dofmap memory
   const int num_cells = topology.connectivity(D, 0)->num_nodes();
@@ -212,7 +213,7 @@ build_basic_dofmap(const mesh::Topology& topology,
 
   // Entity dofs on cell (dof = entity_dofs[dim][entity][index])
   const std::vector<std::vector<std::vector<int>>>& entity_dofs
-      = element_dof_layout.entity_dofs_all();
+      = element_dof_layouts[0].entity_dofs_all();
 
   // Storage for local-to-global map
   std::vector<std::int64_t> local_to_global(local_size);
@@ -590,7 +591,7 @@ fem::build_dofmap_data(
   // pair {dimension, mesh entity index} giving the mesh entity that dof
   // i is associated with.
   const auto [node_graph0, local_to_global0, dof_entity0]
-      = build_basic_dofmap(topology, element_dof_layout);
+      = build_basic_dofmap(topology, {element_dof_layout});
 
   // Compute global dofmap offset
   std::int64_t offset = 0;
