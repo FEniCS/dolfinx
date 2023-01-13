@@ -237,7 +237,7 @@ build_basic_dofmap(
   {
     // Number of dofs per cell for this element layout
     const int local_dim = element_dof_layouts[i % nelem].num_dofs();
-    for (std::size_t j = group_offsets[i]; j < group_offsets[i + 1]; ++j)
+    for (int j = group_offsets[i]; j < group_offsets[i + 1]; ++j)
       cell_ptr.push_back(cell_ptr.back() + local_dim);
   }
   std::vector<std::int32_t> dofs(cell_ptr.back());
