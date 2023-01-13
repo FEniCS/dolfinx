@@ -919,21 +919,19 @@ void interpolate(Function<T>& u, std::span<const T> f,
 /// Generate data needed to interpolate discrete functions across different
 /// meshes
 ///
-/// @param[out] u The function to interpolate into
-/// @param[in] v The function to interpolate from
+/// @param[out] Vu The function space of the function to interpolate into
+/// @param[in] Vv The function space of the function to interpolate from
 /// @param[in] cells Indices of the cells in the destination mesh on which to
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
-/// @tparam Scalar type
-template <typename T>
 nmm_interpolation_data_t create_nonmatching_meshes_interpolation_data(
-    const Function<T>& u, const Function<T>& v,
+    const FunctionSpace& Vu, const FunctionSpace& Vv,
     std::span<const std::int32_t> cells)
 {
   std::vector<double> x;
-  auto mesh = u.function_space()->mesh();
-  auto mesh_v = v.function_space()->mesh();
-  auto element_u = u.function_space()->element();
+  auto mesh = Vu.mesh();
+  auto mesh_v = Vv.mesh();
+  auto element_u = Vu.element();
 
   // Collect all the points at which values are needed to define the
   // interpolating function
@@ -959,24 +957,21 @@ nmm_interpolation_data_t create_nonmatching_meshes_interpolation_data(
 /// Generate data needed to interpolate discrete functions defined on different
 /// meshes. Interpolate on all cells in the mesh.
 ///
-/// @param[out] u The function to interpolate into
-/// @param[in] v The function to interpolate from
-/// @tparam Scalar type
-template <typename T>
+/// @param[out] Vu The function space of the function to interpolate into
+/// @param[in] Vv The function space of the function to interpolate from
 nmm_interpolation_data_t
-create_nonmatching_meshes_interpolation_data(const Function<T>& u,
-                                               const Function<T>& v)
+create_nonmatching_meshes_interpolation_data(const FunctionSpace& Vu,
+                                             const FunctionSpace& Vv)
 {
-  assert(u.function_space());
-  assert(u.function_space()->mesh());
-  int tdim = u.function_space()->mesh()->topology().dim();
-  auto cell_map = u.function_space()->mesh()->topology().index_map(tdim);
+  assert(Vu.mesh());
+  int tdim = Vu.mesh()->topology().dim();
+  auto cell_map = Vu.mesh()->topology().index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
   std::vector<std::int32_t> cells(num_cells, 0);
   std::iota(cells.begin(), cells.end(), 0);
 
-  return create_nonmatching_meshes_interpolation_data(u, v, cells);
+  return create_nonmatching_meshes_interpolation_data(Vu, Vv, cells);
 }
 
 //----------------------------------------------------------------------------

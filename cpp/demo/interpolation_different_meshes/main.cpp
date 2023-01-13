@@ -65,7 +65,8 @@ int main(int argc, char* argv[])
 
     // Interpolate from u_tet to u_hex
     auto nmm_interpolation_data
-        = fem::create_nonmatching_meshes_interpolation_data(*u_hex, *u_tet);
+        = fem::create_nonmatching_meshes_interpolation_data(
+            *u_hex->function_space(), *u_tet->function_space());
     u_hex->interpolate(*u_tet, nmm_interpolation_data);
 
 #ifdef HAS_ADIOS2
