@@ -346,7 +346,8 @@ build_basic_dofmap(
     if (needs_entities[d])
     {
       // NOTE This assumes all entities have the same number of dofs
-      auto num_entity_dofs = entity_dofs[d][0].size();
+      // Mixed topology: probably OK for P1/Q1 but not higher...
+      auto num_entity_dofs = entity_dofs[0][d][0].size();
       for (std::int32_t e_index_local = 0;
            e_index_local < num_mesh_entities_local[d]; ++e_index_local)
       {
