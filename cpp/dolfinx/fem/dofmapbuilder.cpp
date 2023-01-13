@@ -249,8 +249,9 @@ build_basic_dofmap(
   {
     for (auto cell_type : topology.cell_types())
     {
-      const int num_entities = mesh::cell_num_entities(cell_type, d);
-      entity_indices_local[d].resize(std::max(num_entities, entity_indices_local[d].size())));
+      const std::size_t num_entities = mesh::cell_num_entities(cell_type, d);
+      entity_indices_local[d].resize(
+          std::max(num_entities, entity_indices_local[d].size()));
       entity_indices_global[d].resize(entity_indices_local[d].size());
     }
   }
