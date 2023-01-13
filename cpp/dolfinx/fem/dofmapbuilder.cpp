@@ -216,20 +216,31 @@ build_basic_dofmap(
   }
 
   // Number of dofs on this process
+  // FIXME: This assumes that the number of dofs on the entities of each element
+  // must be the same. This must be true for entities which are shared
+  // (vertices, edges, facets) but may differ for cell.
   std::int32_t local_size(0), d(0);
   for (std::int32_t n : num_mesh_entities_local)
     local_size += n * element_dof_layouts[0].num_entity_dofs(d++);
 
-  // Number of dofs per cell
-  const int local_dim = element_dof_layouts[0].num_dofs();
-
   // Allocate dofmap memory
   const int num_cells = topology.connectivity(D, 0)->num_nodes();
-  std::vector<std::int32_t> dofs(num_cells * local_dim);
-  std::vector<std::int32_t> cell_ptr(num_cells + 1, local_dim);
-  cell_ptr[0] = 0;
-  std::partial_sum(std::next(cell_ptr.begin(), 1), cell_ptr.end(),
-                   std::next(cell_ptr.begin(), 1));
+  const std::vector<int>& group_offsets = topology.entity_group_offsets();
+
+  std::vector<std::int32_t> cell_ptr;
+  cell_ptr.reserve(num_cells + 1);
+  cell_ptr.push_back(0);
+
+  std::size_t nelem = element_dof_layouts.size();
+  // Go through elements twice: regular cells followed by ghost cells.
+  for (std::size_t i = 0; i < 2 * nelem; ++i)
+  {
+    // Number of dofs per cell for this element layout
+    const int local_dim = element_dof_layouts[i % nelem].num_dofs();
+    for (std::size_t j = group_offsets[i]; j < group_offsets[i + 1]; ++j)
+      cell_ptr.push_back(cell_ptr.back() + local_dim);
+  }
+  std::vector<std::int32_t> dofs(cell_ptr.back());
 
   // Allocate entity indices array
   std::vector<std::vector<int32_t>> entity_indices_local(D + 1);
