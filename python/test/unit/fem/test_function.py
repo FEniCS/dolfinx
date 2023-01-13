@@ -195,7 +195,7 @@ def test_nonmatching_interpolation(cell_type0, cell_type1):
 
     # Interpolate 3D->2D
     u1 = Function(V1)
-    u1.interpolate(u0, create_nonmatching_interpolation_data(u1.function_space(), u2.function_space()))
+    u1.interpolate(u0, create_nonmatching_interpolation_data(u1.function_space(), u0.function_space()))
     u1.x.scatter_forward()
 
     # Exact interpolation on 2D mesh
