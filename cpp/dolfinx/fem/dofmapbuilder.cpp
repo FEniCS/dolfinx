@@ -257,7 +257,7 @@ build_basic_dofmap(
   }
 
   // Entity dofs on cell (dof = entity_dofs[element][dim][entity][index])
-  std::vector<std::vector<std::vector<std::vector<int>>>> entity_dofs;
+  std::vector<std::vector<std::vector<std::vector<int>>>> entity_dofs(nelem);
   for (std::size_t i = 0; i < element_dof_layouts.size(); ++i)
     entity_dofs[i] = element_dof_layouts[i].entity_dofs_all();
 
