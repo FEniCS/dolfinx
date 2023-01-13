@@ -145,26 +145,24 @@ public:
   /// Interpolate a Function
   /// @param[in] v The function to be interpolated
   /// @param[in] cells The cells to interpolate on
-  /// @param[in] m2mInterpolationData Shared pointer to
-  /// fem::M2MInterpolationData that provides cached data to speed up the
-  /// procedure when interpolating the same functions multiple times (optional).
-  void interpolate(
-      const Function<T>& v, std::span<const std::int32_t> cells,
-      std::shared_ptr<dolfinx::fem::M2MInterpolationData> m2mInterpolationData
-      = nullptr)
+  /// @param[in] nmmInterpolationData Auxiliary data to interpolate on
+  /// nonmatching meshes. This data can be generated with
+  /// generate_nonmatching_meshes_interpolation_data (optional).
+  void interpolate(const Function<T>& v, std::span<const std::int32_t> cells,
+                   const NMMInterpolationData_t& nmmInterpolationData
+                   = NMMInterpolationData_t{})
   {
-    fem::interpolate(*this, v, cells, m2mInterpolationData);
+    fem::interpolate(*this, v, cells, nmmInterpolationData);
   }
 
   /// Interpolate a Function
   /// @param[in] v The function to be interpolated
-  /// @param[in] m2mInterpolationData Shared pointer to
-  /// fem::M2MInterpolationData that provides cached data to speed up the
-  /// procedure when interpolating the same functions multiple times (optional).
-  void interpolate(
-      const Function<T>& v,
-      std::shared_ptr<dolfinx::fem::M2MInterpolationData> m2mInterpolationData
-      = nullptr)
+  /// @param[in] nmmInterpolationData Auxiliary data to interpolate on
+  /// nonmatching meshes. This data can be generated with
+  /// generate_nonmatching_meshes_interpolation_data (optional).
+  void interpolate(const Function<T>& v,
+                   const NMMInterpolationData_t& nmmInterpolationData
+                   = NMMInterpolationData_t{})
   {
     assert(_function_space);
     assert(_function_space->mesh());
@@ -175,7 +173,7 @@ public:
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
 
-    fem::interpolate(*this, v, cells, m2mInterpolationData);
+    interpolate(v, cells, nmmInterpolationData);
   }
 
   /// Interpolate an expression function on a list of cells
