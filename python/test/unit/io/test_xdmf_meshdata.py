@@ -47,8 +47,8 @@ def test_read_mesh_data(tempdir, tdim, n):
         cells = file.read_topology_data()
         x = file.read_geometry_data()
 
-    assert len(mesh.topology.cell_type) == 1
-    assert cell_shape == mesh.topology.cell_type[0]
+    assert len(mesh.topology.cell_types) == 1
+    assert cell_shape == mesh.topology.cell_types[0]
     assert cell_degree == 1
     assert mesh.topology.index_map(tdim).size_global == mesh.comm.allreduce(cells.shape[0], op=MPI.SUM)
     assert mesh.geometry.index_map().size_global == mesh.comm.allreduce(x.shape[0], op=MPI.SUM)
