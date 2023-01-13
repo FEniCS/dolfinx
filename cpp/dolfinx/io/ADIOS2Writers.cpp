@@ -172,7 +172,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable<std::uint32_t> celltype_variable
       = define_variable<std::uint32_t>(io, "types");
 
-  auto cell_types = topology.cell_type();
+  auto cell_types = topology.cell_types();
   if (cell_types.size() > 1)
     throw std::runtime_error("Multiple cell types in IO.");
 
@@ -258,7 +258,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable<std::uint32_t> elements = define_variable<std::uint32_t>(
       io, "NumberOfEntities", {adios2::LocalValueDim});
 
-  auto cell_types = mesh->topology().cell_type();
+  auto cell_types = mesh->topology().cell_types();
   if (cell_types.size() > 1)
     throw std::runtime_error("Multiple cell types in IO.");
 
@@ -590,7 +590,7 @@ void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
 
   // Check that mesh is first order mesh
   const int num_dofs_g = cmaps.back().dim();
-  auto cell_types = topology.cell_type();
+  auto cell_types = topology.cell_types();
   if (cell_types.size() > 1)
     throw std::runtime_error("Multiple cell types in IO.");
 
@@ -784,7 +784,7 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
   }
 
   // Check that all functions are first order Lagrange
-  auto cell_types = mesh->topology().cell_type();
+  auto cell_types = mesh->topology().cell_types();
   if (cell_types.size() > 1)
     throw std::runtime_error("Multiple cell types in IO.");
 
