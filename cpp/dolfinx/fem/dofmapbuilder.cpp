@@ -245,17 +245,17 @@ build_basic_dofmap(
   // Allocate entity indices array
   std::vector<std::vector<int32_t>> entity_indices_local(D + 1);
   std::vector<std::vector<int64_t>> entity_indices_global(D + 1);
-
-  std::vector<mesh::CellType> types = topology.cell_types();
   for (int d = 0; d <= D; ++d)
   {
-    // FIXME
-    const int num_entities = mesh::cell_num_entities(types.back(), d);
-    entity_indices_local[d].resize(num_entities);
-    entity_indices_global[d].resize(num_entities);
+    for (auto cell_type : topology.cell_types())
+    {
+      const int num_entities = mesh::cell_num_entities(cell_type, d);
+      entity_indices_local[d].resize(std::max(num_entities, entity_indices_local[d].size())));
+      entity_indices_global[d].resize(entity_indices_local[d].size());
+    }
   }
 
-  // Entity dofs on cell (dof = entity_dofs[group][dim][entity][index])
+  // Entity dofs on cell (dof = entity_dofs[element][dim][entity][index])
   std::vector<std::vector<std::vector<std::vector<int>>>> entity_dofs;
   for (std::size_t i = 0; i < element_dof_layouts.size(); ++i)
     entity_dofs[i] = element_dof_layouts[i].entity_dofs_all();
