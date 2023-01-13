@@ -980,20 +980,16 @@ void fem(py::module& m)
   m.def("transpose_dofmap", &dolfinx::fem::transpose_dofmap,
         "Build the index to (cell, local index) map from a "
         "dofmap ((cell, local index ) -> index).");
-//  m.def(
-//      "create_nonmatching_meshes_interpolation_data",
-//      [](const dolfinx::fem::FunctionSpace& Vu,
-//         const dolfinx::fem::FunctionSpace& Vv,
-//         py::array_t<std::int32_t, py::array::c_style> cells)
-//      {
-//        return dolfinx::fem::create_nonmatching_meshes_interpolation_data(
-//            Vu, Vv, cells);
-//      },
-//      py::arg("element"), py::arg("V"), py::arg("cells"));
   m.def(
       "create_nonmatching_meshes_interpolation_data",
-      &dolfinx::fem::create_nonmatching_meshes_interpolation_data,
-      "Create data needed to interpolate functions defined on different meshes");
+      [](const dolfinx::fem::FunctionSpace& Vu,
+         const dolfinx::fem::FunctionSpace& Vv,
+         const py::array_t<std::int32_t, py::array::c_style>& cells)
+      {
+        return dolfinx::fem::create_nonmatching_meshes_interpolation_data(
+            Vu, Vv, std::span(cells.data(), cells.size()));
+      },
+      py::arg("Vu"), py::arg("Vv"), py::arg("cells"));
 
   // dolfinx::fem::FiniteElement
   py::class_<dolfinx::fem::FiniteElement,
