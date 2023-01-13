@@ -231,7 +231,7 @@ build_basic_dofmap(
   cell_ptr.reserve(num_cells + 1);
   cell_ptr.push_back(0);
 
-  std::size_t nelem = element_dof_layouts.size();
+  const std::size_t nelem = element_dof_layouts.size();
   // Go through elements twice: regular cells followed by ghost cells.
   for (std::size_t i = 0; i < 2 * nelem; ++i)
   {
@@ -271,7 +271,7 @@ build_basic_dofmap(
 
   // Loop over cells, group by group, and build dofmaps from respective
   // ElementDofmap
-  for (int i = 0; i < 2 * nelem; ++i)
+  for (std::size_t i = 0; i < 2 * nelem; ++i)
   {
     for (int c = group_offsets[i]; c < group_offsets[i + 1]; ++c)
     {
