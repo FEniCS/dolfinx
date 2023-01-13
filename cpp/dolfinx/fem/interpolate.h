@@ -926,33 +926,7 @@ void interpolate(Function<T>& u, std::span<const T> f,
 /// fem::interpolation_coords.
 nmm_interpolation_data_t create_nonmatching_meshes_interpolation_data(
     const FunctionSpace& Vu, const FunctionSpace& Vv,
-    std::span<const std::int32_t> cells)
-{
-  std::vector<double> x;
-  auto mesh = Vu.mesh();
-  auto mesh_v = Vv.mesh();
-  auto element_u = Vu.element();
-
-  // Collect all the points at which values are needed to define the
-  // interpolating function
-  const std::vector<double> coords_b
-      = fem::interpolation_coords(*element_u, *mesh, cells);
-
-  namespace stdex = std::experimental;
-  using cmdspan2_t
-      = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-  using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-  cmdspan2_t coords(coords_b.data(), 3, coords_b.size() / 3);
-  // Transpose interpolation coords
-  x.resize(coords.size());
-  mdspan2_t _x(x.data(), coords_b.size() / 3, 3);
-  for (std::size_t j = 0; j < coords.extent(1); ++j)
-    for (std::size_t i = 0; i < 3; ++i)
-      _x(j, i) = coords(i, j);
-
-  // Determine ownership of each point
-  return dolfinx::geometry::determine_point_ownership(*mesh_v, x);
-}
+    std::span<const std::int32_t> cells);
 
 /// Generate data needed to interpolate discrete functions defined on different
 /// meshes. Interpolate on all cells in the mesh.
@@ -961,18 +935,7 @@ nmm_interpolation_data_t create_nonmatching_meshes_interpolation_data(
 /// @param[in] Vv The function space of the function to interpolate from
 nmm_interpolation_data_t
 create_nonmatching_meshes_interpolation_data(const FunctionSpace& Vu,
-                                             const FunctionSpace& Vv)
-{
-  assert(Vu.mesh());
-  int tdim = Vu.mesh()->topology().dim();
-  auto cell_map = Vu.mesh()->topology().index_map(tdim);
-  assert(cell_map);
-  std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
-  std::vector<std::int32_t> cells(num_cells, 0);
-  std::iota(cells.begin(), cells.end(), 0);
-
-  return create_nonmatching_meshes_interpolation_data(Vu, Vv, cells);
-}
+                                             const FunctionSpace& Vv);
 
 //----------------------------------------------------------------------------
 /// Interpolate from one finite element Function to another one
