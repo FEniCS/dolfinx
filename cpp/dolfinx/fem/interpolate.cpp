@@ -1,4 +1,5 @@
-// Copyright (C) 2021 Garth N. Wells, Jørgen S. Dokken, Igor A. Baratta
+// Copyright (C) 2021 Garth N. Wells, Jørgen S. Dokken, Igor A. Baratta,
+// Massimiliano Leoni
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
