@@ -140,12 +140,12 @@ build_basic_dofmap(
 
   // Checks for mixed topology
   if (element_dof_layouts.size() != topology.cell_types().size())
-    throw std::runtime_error("Mixed topology: topology mismatch");
+    throw std::runtime_error("Mixed topology mismatch: cell types");
 
   // Should be 2*n+1 cell group offsets in Topology for n elements
   if (element_dof_layouts.size() * 2 + 1
       != topology.entity_group_offsets(D).size())
-    throw std::runtime_error("Mixed topology: topology mismatch");
+    throw std::runtime_error("Mixed topology mismatch: groups");
 
   // Mixed topology can only manage one dof (e.g. on vertex, or on edge, i.e. P1
   // or P2) for now.

@@ -320,6 +320,10 @@ mesh::create_submesh(const Mesh& mesh, int dim,
 
   // Create submesh topology
   Topology submesh_topology(mesh.comm(), {entity_type});
+  std::vector<int> offsets
+      = {0, submesh_map->size_local(),
+         submesh_map->size_local() + submesh_map->num_ghosts()};
+  submesh_topology.set_entity_group_offsets(dim, offsets);
   submesh_topology.set_index_map(0, submesh_map0);
   submesh_topology.set_index_map(dim, submesh_map);
   submesh_topology.set_connectivity(submesh_v_to_v, 0, 0);

@@ -287,6 +287,8 @@ void mesh(py::module& m)
                        const std::vector<dolfinx::mesh::CellType> cell_type)
                     { return dolfinx::mesh::Topology(comm.get(), cell_type); }),
            py::arg("comm"), py::arg("cell_type"))
+      .def("entity_group_offsets",
+           &dolfinx::mesh::Topology::entity_group_offsets)
       .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity,
            py::arg("c"), py::arg("d0"), py::arg("d1"))
       .def("set_index_map", &dolfinx::mesh::Topology::set_index_map,
