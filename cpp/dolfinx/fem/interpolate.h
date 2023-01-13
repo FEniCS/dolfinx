@@ -581,7 +581,7 @@ void interpolate_nonmatching_meshes(
     throw std::runtime_error(
         "In order to interpolate on nonmatching meshes, the user needs to "
         "provide the necessary interpolation data. This can be computed "
-        "with fem::generate_nonmatching_meshes_interpolation_data.");
+        "with fem::create_nonmatching_meshes_interpolation_data.");
   }
 
   const std::tuple_element_t<0, nmm_interpolation_data_t>& dest_ranks
@@ -926,7 +926,7 @@ void interpolate(Function<T>& u, std::span<const T> f,
 /// fem::interpolation_coords.
 /// @tparam Scalar type
 template <typename T>
-nmm_interpolation_data_t generate_nonmatching_meshes_interpolation_data(
+nmm_interpolation_data_t create_nonmatching_meshes_interpolation_data(
     const Function<T>& u, const Function<T>& v,
     std::span<const std::int32_t> cells)
 {
@@ -964,7 +964,7 @@ nmm_interpolation_data_t generate_nonmatching_meshes_interpolation_data(
 /// @tparam Scalar type
 template <typename T>
 nmm_interpolation_data_t
-generate_nonmatching_meshes_interpolation_data(const Function<T>& u,
+create_nonmatching_meshes_interpolation_data(const Function<T>& u,
                                                const Function<T>& v)
 {
   assert(u.function_space());
@@ -976,7 +976,7 @@ generate_nonmatching_meshes_interpolation_data(const Function<T>& u,
   std::vector<std::int32_t> cells(num_cells, 0);
   std::iota(cells.begin(), cells.end(), 0);
 
-  return generate_nonmatching_meshes_interpolation_data(u, v, cells);
+  return create_nonmatching_meshes_interpolation_data(u, v, cells);
 }
 
 //----------------------------------------------------------------------------
@@ -986,7 +986,7 @@ generate_nonmatching_meshes_interpolation_data(const Function<T>& u,
 /// @param[in] cells List of cell indices to interpolate on
 /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
 /// nonmatching meshes. This data can be generated with
-/// generate_nonmatching_meshes_interpolation_data (optional).
+/// create_nonmatching_meshes_interpolation_data (optional).
 template <typename T>
 void interpolate(Function<T>& u, const Function<T>& v,
                  std::span<const std::int32_t> cells,
