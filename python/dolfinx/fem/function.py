@@ -332,7 +332,7 @@ class Function(ufl.Coefficient):
 
     def interpolate(self, u: typing.Union[typing.Callable, Expression, Function],
                     cells: typing.Optional[np.ndarray] = None,
-                    nmm_interpolation_data = ((), (), (), ())) -> None:
+                    nmm_interpolation_data=((), (), (), ())) -> None:
         """Interpolate an expression
 
         Args:
