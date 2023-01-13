@@ -29,7 +29,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const int tdim = topology.dim();
 
   // FIXME
-  auto cell_types = topology.cell_type();
+  auto cell_types = topology.cell_types();
   if (cell_types.size() > 1)
     throw std::runtime_error("cell type IO");
 
@@ -97,7 +97,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     if (!c_to_e)
       throw std::runtime_error("Mesh is missing cell-entity connectivity.");
 
-    auto cell_types = topology.cell_type();
+    auto cell_types = topology.cell_types();
     if (cell_types.size() > 1)
       throw std::runtime_error("cell type IO");
 

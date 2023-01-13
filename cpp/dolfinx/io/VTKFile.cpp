@@ -440,7 +440,7 @@ void write_function(
   piece_node.append_attribute("NumberOfCells") = cshape[0];
 
   // FIXME
-  auto cell_types = mesh0->topology().cell_type();
+  auto cell_types = mesh0->topology().cell_types();
   if (cell_types.size() > 1)
   {
     throw std::runtime_error("Multiple cell types in IO");
@@ -776,7 +776,7 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
   piece_node.append_attribute("NumberOfPoints") = num_points;
   piece_node.append_attribute("NumberOfCells") = num_cells;
 
-  auto cell_types = topology.cell_type();
+  auto cell_types = topology.cell_types();
   if (cell_types.size() > 1)
   {
     throw std::runtime_error("Multiple cell types in IO");

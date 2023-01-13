@@ -831,7 +831,7 @@ void lift_bc(std::span<T> b, const Form<T>& a, std::span<const T> constants,
     else
       get_perm = [](std::size_t) { return 0; };
 
-    auto cell_types = mesh->topology().cell_type();
+    auto cell_types = mesh->topology().cell_types();
     if (cell_types.size() > 1)
     {
       throw std::runtime_error("MUltiple cell types in the assembler");
@@ -1032,7 +1032,7 @@ void assemble_vector(
     else
       get_perm = [](std::size_t) { return 0; };
 
-    auto cell_types = mesh->topology().cell_type();
+    auto cell_types = mesh->topology().cell_types();
     if (cell_types.size() > 1)
     {
       throw std::runtime_error("MUltiple cell types in the assembler");

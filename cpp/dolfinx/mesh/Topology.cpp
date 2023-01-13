@@ -730,14 +730,13 @@ Topology::Topology(MPI_Comm comm, std::vector<CellType> types)
 //-----------------------------------------------------------------------------
 int Topology::dim() const noexcept { return _connectivity.size() - 1; }
 //-----------------------------------------------------------------------------
-void Topology::set_entity_group_offsets(int dim,
-                                        const std::vector<std::int32_t>& offsets)
+void Topology::set_entity_group_offsets(
+    int dim, const std::vector<std::int32_t>& offsets)
 {
   _entity_group_offsets[dim] = offsets;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::int32_t>&
-Topology::entity_group_offsets(int dim) const
+const std::vector<std::int32_t>& Topology::entity_group_offsets(int dim) const
 {
   return _entity_group_offsets[dim];
 }
@@ -886,7 +885,7 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
   return _interprocess_facets;
 }
 //-----------------------------------------------------------------------------
-std::vector<mesh::CellType> Topology::cell_type() const noexcept
+std::vector<mesh::CellType> Topology::cell_types() const noexcept
 {
   return _cell_types;
 }
@@ -1176,7 +1175,7 @@ mesh::entities_to_index(const Topology& topology, int dim,
   auto e_to_v = topology.connectivity(dim, 0);
   assert(e_to_v);
 
-  auto cell_types = topology.cell_type();
+  auto cell_types = topology.cell_types();
   if (cell_types.size() > 1)
     throw std::runtime_error("multiple cell types entities_to_index");
 

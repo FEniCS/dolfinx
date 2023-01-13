@@ -63,12 +63,15 @@ public:
   /// @brief Return the topological dimension of the mesh.
   int dim() const noexcept;
 
-  /// @brief Set the offsets for each group of entities of a particular dimension
+  /// @brief Set the offsets for each group of entities of a particular
+  /// dimension
   /// @param dim Dimension of the entities
   /// @param offsets The offsets
-  void set_entity_group_offsets(int dim, const std::vector<std::int32_t>& offsets);
+  void set_entity_group_offsets(int dim,
+                                const std::vector<std::int32_t>& offsets);
 
-  /// @brief Get the offsets for each group of entities of a particular dimension
+  /// @brief Get the offsets for each group of entities of a particular
+  /// dimension
   /// @param dim Dimension of the entities
   /// @return The offsets
   const std::vector<std::int32_t>& entity_group_offsets(int dim) const;
@@ -122,7 +125,7 @@ public:
 
   /// Cell type
   /// @return Cell types that the topology is for
-  std::vector<CellType> cell_type() const noexcept;
+  std::vector<CellType> cell_types() const noexcept;
 
   /// @brief Create entities of given topological dimension.
   /// @param[in] dim Topological dimension

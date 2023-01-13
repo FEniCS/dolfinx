@@ -452,7 +452,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
 {
   LOG(INFO) << "XDMF distribute entity data";
 
-  auto cell_types = mesh.topology().cell_type();
+  auto cell_types = mesh.topology().cell_types();
   if (cell_types.size() > 1)
     throw std::runtime_error("cell type IO");
 
@@ -534,7 +534,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
     const int comm_size = dolfinx::MPI::size(comm);
     const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
 
-    auto cell_types = mesh.topology().cell_type();
+    auto cell_types = mesh.topology().cell_types();
     if (cell_types.size() > 1)
       throw std::runtime_error("cell type IO");
 
@@ -624,7 +624,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
     const MPI_Comm comm = mesh.comm();
     const int comm_size = dolfinx::MPI::size(comm);
 
-    auto cell_types = mesh.topology().cell_type();
+    auto cell_types = mesh.topology().cell_types();
     if (cell_types.size() > 1)
       throw std::runtime_error("cell type IO");
 
@@ -702,7 +702,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
     // Build map from input global indices to local vertex numbers
     LOG(INFO) << "XDMF build map";
 
-    auto cell_types = mesh.topology().cell_type();
+    auto cell_types = mesh.topology().cell_types();
     if (cell_types.size() > 1)
       throw std::runtime_error("cell type IO");
 

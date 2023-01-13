@@ -139,7 +139,7 @@ build_basic_dofmap(
   const int D = topology.dim();
 
   // Checks for mixed topology
-  if (element_dof_layouts.size() != topology.cell_type().size())
+  if (element_dof_layouts.size() != topology.cell_types().size())
     throw std::runtime_error("Mixed topology: topology mismatch");
 
   // Should be 2*n+1 cell group offsets in Topology for n elements
@@ -225,7 +225,7 @@ build_basic_dofmap(
 
   // Allocate dofmap memory
   const int num_cells = topology.connectivity(D, 0)->num_nodes();
-  const std::vector<int>& group_offsets = topology.entity_group_offsets();
+  const std::vector<int>& group_offsets = topology.entity_group_offsets(D);
 
   std::vector<std::int32_t> cell_ptr;
   cell_ptr.reserve(num_cells + 1);
@@ -246,7 +246,7 @@ build_basic_dofmap(
   std::vector<std::vector<int32_t>> entity_indices_local(D + 1);
   std::vector<std::vector<int64_t>> entity_indices_global(D + 1);
 
-  std::vector<mesh::CellType> types = topology.cell_type();
+  std::vector<mesh::CellType> types = topology.cell_types();
   for (int d = 0; d <= D; ++d)
   {
     // FIXME

@@ -169,7 +169,7 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
   const std::uint32_t num_nodes
       = V.element()->space_dimension() / element_block_size;
 
-  auto cell_types = mesh->topology().cell_type();
+  auto cell_types = mesh->topology().cell_types();
   if (cell_types.size() > 1)
     throw std::runtime_error("Multiple cell types in IO.");
   const std::vector<std::uint8_t> vtkmap
@@ -205,7 +205,7 @@ io::extract_vtk_connectivity(const mesh::Mesh& mesh)
     throw std::runtime_error(
         "VTK I/O with multiple geometry maps not implemented.");
   const std::size_t num_nodes = mesh.geometry().cmaps()[0].dim();
-  auto cell_types = mesh.topology().cell_type();
+  auto cell_types = mesh.topology().cell_types();
   if (cell_types.size() > 1)
     throw std::runtime_error("Multiple cell types in IO.");
   mesh::CellType cell_type = cell_types.back();

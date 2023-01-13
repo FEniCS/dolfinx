@@ -279,7 +279,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   auto submesh_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       submesh_map0->size_local() + submesh_map0->num_ghosts());
 
-  auto cell_types = topology.cell_type();
+  auto cell_types = topology.cell_types();
   if (cell_types.size() > 1)
   {
     throw std::runtime_error("Multiple cell types in IO");

@@ -191,7 +191,7 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
   assert(V.mesh());
   std::shared_ptr<const mesh::Mesh> mesh = V.mesh();
 
-  auto cell_types = mesh->topology().cell_type();
+  auto cell_types = mesh->topology().cell_types();
   if (cell_types.size() > 1)
   {
     throw std::runtime_error("Multiple cell types in DirichletBC");
@@ -329,7 +329,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   // Check that dof layouts are the same
   assert(dofmap0->element_dof_layout() == dofmap1->element_dof_layout());
 
-  auto cell_types = mesh->topology().cell_type();
+  auto cell_types = mesh->topology().cell_types();
   if (cell_types.size() > 1)
   {
     throw std::runtime_error("Multiple cell types in DirichletBC");

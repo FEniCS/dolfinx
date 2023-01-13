@@ -198,7 +198,7 @@ T assemble_scalar(
     const std::vector<std::uint8_t>& perms
         = mesh->topology().get_facet_permutations();
 
-    auto cell_types = mesh->topology().cell_type();
+    auto cell_types = mesh->topology().cell_types();
     if (cell_types.size() > 1)
     {
       throw std::runtime_error("MUltiple cell types in the assembler");

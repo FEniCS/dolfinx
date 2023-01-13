@@ -346,7 +346,7 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
       entities_values = xdmf_utils::distribute_entity_data(
           *mesh, mesh::cell_dim(cell_type), entities1, values);
 
-  auto cell_types = mesh->topology().cell_type();
+  auto cell_types = mesh->topology().cell_types();
   if (cell_types.size() > 1)
     throw std::runtime_error("cell type IO");
 
