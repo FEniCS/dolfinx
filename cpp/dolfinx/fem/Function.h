@@ -145,24 +145,24 @@ public:
   /// Interpolate a Function
   /// @param[in] v The function to be interpolated
   /// @param[in] cells The cells to interpolate on
-  /// @param[in] nmmInterpolationData Auxiliary data to interpolate on
+  /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
   /// nonmatching meshes. This data can be generated with
   /// generate_nonmatching_meshes_interpolation_data (optional).
   void interpolate(const Function<T>& v, std::span<const std::int32_t> cells,
-                   const NMMInterpolationData_t& nmmInterpolationData
-                   = NMMInterpolationData_t{})
+                   const nmm_interpolation_data_t& nmm_interpolation_data
+                   = nmm_interpolation_data_t{})
   {
-    fem::interpolate(*this, v, cells, nmmInterpolationData);
+    fem::interpolate(*this, v, cells, nmm_interpolation_data);
   }
 
   /// Interpolate a Function
   /// @param[in] v The function to be interpolated
-  /// @param[in] nmmInterpolationData Auxiliary data to interpolate on
+  /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
   /// nonmatching meshes. This data can be generated with
   /// generate_nonmatching_meshes_interpolation_data (optional).
   void interpolate(const Function<T>& v,
-                   const NMMInterpolationData_t& nmmInterpolationData
-                   = NMMInterpolationData_t{})
+                   const nmm_interpolation_data_t& nmm_interpolation_data
+                   = nmm_interpolation_data_t{})
   {
     assert(_function_space);
     assert(_function_space->mesh());
@@ -173,7 +173,7 @@ public:
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
 
-    interpolate(v, cells, nmmInterpolationData);
+    interpolate(v, cells, nmm_interpolation_data);
   }
 
   /// Interpolate an expression function on a list of cells

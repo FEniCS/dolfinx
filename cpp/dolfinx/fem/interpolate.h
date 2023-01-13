@@ -41,7 +41,7 @@ std::vector<double> interpolation_coords(const fem::FiniteElement& element,
 
 /// Helper type for the data that can be cached to speed up repeated
 /// interpolation of discrete functions on nonmatching meshes
-using NMMInterpolationData_t = decltype(std::function{
+using nmm_interpolation_data_t = decltype(std::function{
     dolfinx::geometry::determine_point_ownership})::result_type;
 
 /// Forward declaration
@@ -557,7 +557,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
 template <typename T>
 void interpolate_nonmatching_meshes(
     Function<T>& u, const Function<T>& v, std::span<const std::int32_t> cells,
-    NMMInterpolationData_t& nmmInterpolationData)
+    nmm_interpolation_data_t& nmm_interpolation_data)
 {
   int result;
   auto mesh = u.function_space()->mesh();
@@ -576,7 +576,7 @@ void interpolate_nonmatching_meshes(
       = u.function_space()->element();
   const std::size_t value_size = element_u->value_size();
 
-  if (std::get<0>(nmmInterpolationData).empty())
+  if (std::get<0>(nmm_interpolation_data).empty())
   {
     throw std::runtime_error(
         "In order to interpolate on nonmatching meshes, the user needs to "
@@ -584,14 +584,14 @@ void interpolate_nonmatching_meshes(
         "with fem::generate_nonmatching_meshes_interpolation_data.");
   }
 
-  const std::tuple_element_t<0, NMMInterpolationData_t>& dest_ranks
-      = std::get<0>(nmmInterpolationData);
-  const std::tuple_element_t<1, NMMInterpolationData_t>& src_ranks
-      = std::get<1>(nmmInterpolationData);
-  const std::tuple_element_t<2, NMMInterpolationData_t>& received_points
-      = std::get<2>(nmmInterpolationData);
-  const std::tuple_element_t<3, NMMInterpolationData_t>& evaluation_cells
-      = std::get<3>(nmmInterpolationData);
+  const std::tuple_element_t<0, nmm_interpolation_data_t>& dest_ranks
+      = std::get<0>(nmm_interpolation_data);
+  const std::tuple_element_t<1, nmm_interpolation_data_t>& src_ranks
+      = std::get<1>(nmm_interpolation_data);
+  const std::tuple_element_t<2, nmm_interpolation_data_t>& received_points
+      = std::get<2>(nmm_interpolation_data);
+  const std::tuple_element_t<3, nmm_interpolation_data_t>& evaluation_cells
+      = std::get<3>(nmm_interpolation_data);
 
   // Evaluate the interpolating function where possible
   std::vector<T> send_values(received_points.size() / 3 * value_size);
@@ -926,7 +926,7 @@ void interpolate(Function<T>& u, std::span<const T> f,
 /// fem::interpolation_coords.
 /// @tparam Scalar type
 template <typename T>
-NMMInterpolationData_t generate_nonmatching_meshes_interpolation_data(
+nmm_interpolation_data_t generate_nonmatching_meshes_interpolation_data(
     const Function<T>& u, const Function<T>& v,
     std::span<const std::int32_t> cells)
 {
@@ -963,7 +963,7 @@ NMMInterpolationData_t generate_nonmatching_meshes_interpolation_data(
 /// @param[in] v The function to interpolate from
 /// @tparam Scalar type
 template <typename T>
-NMMInterpolationData_t
+nmm_interpolation_data_t
 generate_nonmatching_meshes_interpolation_data(const Function<T>& u,
                                                const Function<T>& v)
 {
@@ -984,14 +984,14 @@ generate_nonmatching_meshes_interpolation_data(const Function<T>& u,
 /// @param[out] u The function to interpolate into
 /// @param[in] v The function to be interpolated
 /// @param[in] cells List of cell indices to interpolate on
-/// @param[in] nmmInterpolationData Auxiliary data to interpolate on nonmatching
-/// meshes. This data can be generated with
+/// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
+/// nonmatching meshes. This data can be generated with
 /// generate_nonmatching_meshes_interpolation_data (optional).
 template <typename T>
 void interpolate(Function<T>& u, const Function<T>& v,
                  std::span<const std::int32_t> cells,
-                 const NMMInterpolationData_t& nmmInterpolationData
-                 = NMMInterpolationData_t{})
+                 const nmm_interpolation_data_t& nmm_interpolation_data
+                 = nmm_interpolation_data_t{})
 {
   assert(u.function_space());
   assert(v.function_space());
@@ -1013,7 +1013,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
     // Get mesh and check that functions share the same mesh
     if (auto mesh_v = v.function_space()->mesh(); mesh != mesh_v)
     {
-      impl::interpolate_nonmatching_meshes(u, v, cells, nmmInterpolationData);
+      impl::interpolate_nonmatching_meshes(u, v, cells, nmm_interpolation_data);
       return;
     }
     else
