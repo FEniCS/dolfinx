@@ -327,13 +327,13 @@ void mesh(py::module& m)
                                        py::const_),
            py::arg("d0"), py::arg("d1"))
       .def("index_map", &dolfinx::mesh::Topology::index_map, py::arg("dim"))
-      .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
+      .def_property_readonly("cell_types", &dolfinx::mesh::Topology::cell_types)
       .def("cell_name",
            [](const dolfinx::mesh::Topology& self)
            {
-             if (self.cell_type().size() > 1)
+             if (self.cell_types().size() > 1)
                throw std::runtime_error("Multiple cell types not supported");
-             return dolfinx::mesh::to_string(self.cell_type()[0]);
+             return dolfinx::mesh::to_string(self.cell_types()[0]);
            })
       .def("interprocess_facets", &dolfinx::mesh::Topology::interprocess_facets)
       .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self)
@@ -437,10 +437,10 @@ void mesh(py::module& m)
         std::vector<std::int32_t> idx = dolfinx::mesh::entities_to_geometry(
             mesh, dim, std::span(entities.data(), entities.size()), orient);
 
-        if (mesh.topology().cell_type().size() > 1)
+        if (mesh.topology().cell_types().size() > 1)
           throw std::runtime_error("Multiple cell type not supported.");
 
-        dolfinx::mesh::CellType cell_type = mesh.topology().cell_type()[0];
+        dolfinx::mesh::CellType cell_type = mesh.topology().cell_types()[0];
         std::size_t num_vertices = dolfinx::mesh::num_cell_vertices(
             cell_entity_type(cell_type, dim, 0));
         std::array<std::size_t, 2> shape

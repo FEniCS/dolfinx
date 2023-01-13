@@ -954,7 +954,7 @@ void fem(py::module& m)
 
         dolfinx::fem::ElementDofLayout layout
             = dolfinx::fem::create_element_dof_layout(
-                *p, topology.cell_type().back());
+                *p, topology.cell_types().back());
         return dolfinx::fem::create_dofmap(comm.get(), layout, topology,
                                            nullptr, element);
       },
@@ -967,7 +967,7 @@ void fem(py::module& m)
          const dolfinx::fem::ElementDofLayout& layout)
       {
         auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
-            comm.get(), topology, layout,
+            comm.get(), topology, {layout},
             [](const dolfinx::graph::AdjacencyList<std::int32_t>& g)
             { return dolfinx::graph::reorder_gps(g); });
         return std::tuple(std::move(map), bs, std::move(dofmap));
