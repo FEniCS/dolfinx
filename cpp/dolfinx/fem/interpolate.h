@@ -557,7 +557,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
 template <typename T>
 void interpolate_nonmatching_meshes(
     Function<T>& u, const Function<T>& v, std::span<const std::int32_t> cells,
-    nmm_interpolation_data_t& nmm_interpolation_data)
+    const nmm_interpolation_data_t& nmm_interpolation_data)
 {
   int result;
   auto mesh = u.function_space()->mesh();
