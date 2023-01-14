@@ -1,5 +1,6 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <iostream>
@@ -16,6 +17,15 @@ int main(int argc, char* argv[])
 
   const int num_s = nx_s * ny;
   const int num_t = 2 * nx_t * ny;
+
+  std::vector<double> x;
+  for (int i = 0; i < nx_s + nx_t + 1; ++i)
+    for (int j = 0; j < ny + 1; ++j)
+    {
+      x.push_back(i);
+      x.push_back(j);
+      x.push_back(0);
+    }
 
   std::vector<std::int64_t> cells;
   std::vector<std::int32_t> offsets{0};
@@ -85,6 +95,8 @@ int main(int argc, char* argv[])
       dolfinx::mesh::CellType::quadrilateral,
       dolfinx::mesh::CellType::triangle};
 
+  std::vector<dolfinx::fem::CoordinateElement> elements;
+
   {
     auto topo = dolfinx::mesh::create_topology(
         MPI_COMM_WORLD, cells_list, original_global_index, ghost_owners,
@@ -110,6 +122,10 @@ int main(int argc, char* argv[])
         std::cout << q << " ";
       std::cout << "]\n";
     }
+
+    //    auto geom = dolfinx::mesh::create_geometry(MPI_COMM_WORLD, topo,
+    //    elements,
+    //                                               cells_list, x, 2);
   }
 
   MPI_Finalize();

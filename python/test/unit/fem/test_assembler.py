@@ -901,7 +901,7 @@ def test_assemble_empty_rank_mesh():
         cells = graph.create_adjacencylist(cells)
         x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]])
     else:
-        # No cells onm other ranks
+        # No cells on other ranks
         cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
         x = np.empty((0, 2), dtype=np.float64)
 
