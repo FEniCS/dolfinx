@@ -18,12 +18,10 @@
 import numpy as np
 
 from dolfinx import fem, io, mesh
-from ufl import (CellDiameter, FacetNormal, FiniteElement, Measure, MixedElement,
-                 SpatialCoordinate, TestFunctions, TrialFunctions, avg, div, exp,
-                 grad, inner, jump)
+from ufl import (FiniteElement, Measure, MixedElement, SpatialCoordinate,
+                 TestFunctions, TrialFunctions, div, exp, inner)
 
 from mpi4py import MPI
-from petsc4py import PETSc
 
 # -
 
