@@ -94,8 +94,9 @@ int main(int argc, char* argv[])
   std::vector<dolfinx::mesh::CellType> cell_types{
       dolfinx::mesh::CellType::quadrilateral,
       dolfinx::mesh::CellType::triangle};
-
   std::vector<dolfinx::fem::CoordinateElement> elements;
+  for (auto ct : cell_types)
+    elements.push_back(dolfinx::fem::CoordinateElement(ct, 1));
 
   {
     auto topo = dolfinx::mesh::create_topology(
@@ -123,9 +124,8 @@ int main(int argc, char* argv[])
       std::cout << "]\n";
     }
 
-    //    auto geom = dolfinx::mesh::create_geometry(MPI_COMM_WORLD, topo,
-    //    elements,
-    //                                               cells_list, x, 2);
+    auto geom = dolfinx::mesh::create_geometry(MPI_COMM_WORLD, topo, elements,
+                                               cells_list, x, 2);
   }
 
   MPI_Finalize();
