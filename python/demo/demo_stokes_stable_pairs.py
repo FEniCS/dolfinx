@@ -83,8 +83,8 @@ import numpy as np
 
 import ufl
 from dolfinx import fem
-from dolfinx.fem import (Constant, Function, FunctionSpace, dirichletbc,
-                         form, locate_dofs_topological)
+from dolfinx.fem import (Constant, Function, FunctionSpace, dirichletbc, form,
+                         locate_dofs_topological)
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, create_rectangle,
                           locate_entities_boundary)
