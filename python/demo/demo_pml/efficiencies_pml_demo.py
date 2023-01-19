@@ -66,10 +66,10 @@
 # \end{align}
 # $$
 
-import numpy as np
-from scipy.special import h2vp, hankel2, jv, jvp
 from typing import Tuple
 
+import numpy as np
+from scipy.special import h2vp, hankel2, jv, jvp
 
 # The functions that we import from `scipy.special` correspond to:
 #
