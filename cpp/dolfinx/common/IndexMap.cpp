@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "IndexMap.h"
-#include "DolfinxException.h"
+#include "DolfinXException.h"
 #include "sort.h"
 #include <algorithm>
 #include <functional>
