@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <dolfinx/common/DolfinXException.h>
 #include <petsc4py/petsc4py.h>
 #include <petscdm.h>
 #include <petscis.h>
