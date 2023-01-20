@@ -488,7 +488,7 @@ compute_entities_by_key_matching(
 {
   if (dim == 0)
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Cannot create vertices for topology. Should already exist.");
   }
 
@@ -748,7 +748,7 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
     // Make sure we really have the connectivity
     if (!topology.connectivity(tdim, dim))
     {
-      throw std::runtime_error(
+      throw DolfinXException(
           "Cannot compute topological entities. Entities of topological "
           "dimension "
           + std::to_string(dim)
@@ -759,7 +759,7 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
 
   auto cells = topology.connectivity(tdim, 0);
   if (!cells)
-    throw std::runtime_error("Cell connectivity missing.");
+    throw DolfinXException("Cell connectivity missing.");
 
   auto vertex_map = topology.index_map(0);
   assert(vertex_map);
@@ -788,16 +788,16 @@ mesh::compute_connectivity(const Topology& topology, int d0, int d1)
       = topology.connectivity(d0, 0);
   if (d0 > 0 and !topology.connectivity(d0, 0))
   {
-    throw std::runtime_error("Missing entities of dimension "
-                             + std::to_string(d0) + ".");
+    throw DolfinXException("Missing entities of dimension " + std::to_string(d0)
+                           + ".");
   }
 
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d1_0
       = topology.connectivity(d1, 0);
   if (d1 > 0 and !topology.connectivity(d1, 0))
   {
-    throw std::runtime_error("Missing entities of dimension "
-                             + std::to_string(d1) + ".");
+    throw DolfinXException("Missing entities of dimension " + std::to_string(d1)
+                           + ".");
   }
 
   // Start timer
@@ -841,6 +841,6 @@ mesh::compute_connectivity(const Topology& topology, int d0, int d1)
     return {c_d0_d1, nullptr};
   }
   else
-    throw std::runtime_error("Entity dimension error when computing topology.");
+    throw DolfinXException("Entity dimension error when computing topology.");
 }
 //--------------------------------------------------------------------------

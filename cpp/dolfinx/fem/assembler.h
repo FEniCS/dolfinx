@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "../common/DolfinXException.h"
 #include "assemble_matrix_impl.h"
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
@@ -381,7 +382,7 @@ void set_bc(std::span<T> b,
             std::span<const T> x0, double scale = 1.0)
 {
   if (b.size() > x0.size())
-    throw std::runtime_error("Size mismatch between b and x0 vectors.");
+    throw DolfinXException("Size mismatch between b and x0 vectors.");
   for (const auto& bc : bcs)
   {
     assert(bc);

@@ -466,8 +466,7 @@ IndexMap::create_submap(std::span<const std::int32_t> indices) const
 {
   if (!indices.empty() and indices.back() >= this->size_local())
   {
-    throw std::runtime_error(
-        "Unowned index detected when creating sub-IndexMap");
+    throw DolfinXException("Unowned index detected when creating sub-IndexMap");
   }
 
   // --- Step 1: Compute new offset for this rank

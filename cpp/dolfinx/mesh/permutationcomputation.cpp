@@ -283,7 +283,7 @@ compute_face_permutations(const mesh::Topology& topology)
   const int tdim = topology.dim();
   assert(tdim > 2);
   if (!topology.index_map(2))
-    throw std::runtime_error("Faces have not been computed.");
+    throw DolfinXException("Faces have not been computed.");
 
   // If faces have been computed, the below should exist
   auto c_to_v = topology.connectivity(tdim, 0);

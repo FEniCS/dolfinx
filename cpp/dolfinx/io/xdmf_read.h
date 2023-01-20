@@ -105,8 +105,8 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
         // Check for data size consistency
         if (d * shape_xml[0] != shape_hdf5[0])
         {
-          throw std::runtime_error("Data size in XDMF/XML and size of HDF5 "
-                                   "dataset are inconsistent");
+          throw DolfinXException("Data size in XDMF/XML and size of HDF5 "
+                                 "dataset are inconsistent");
         }
 
         // Compute data range to read
@@ -117,7 +117,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
       }
       else
       {
-        throw std::runtime_error(
+        throw DolfinXException(
             "This combination of array shapes in XDMF and HDF5 "
             "is not supported");
       }
@@ -127,7 +127,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     data_vector = HDF5Interface::read_dataset<T>(h5_id, paths[1], range);
   }
   else
-    throw std::runtime_error("Storage format \"" + format + "\" is unknown");
+    throw DolfinXException("Storage format \"" + format + "\" is unknown");
 
   // Get dimensions for consistency (if available in DataItem node)
   if (shape_xml.empty())
@@ -141,7 +141,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     MPI_Allreduce(&size_local, &size_global, 1, MPI_INT64_T, MPI_SUM, comm);
     if (size != size_global)
     {
-      throw std::runtime_error(
+      throw DolfinXException(
           "Data sizes in attribute and size of data read are inconsistent");
     }
   }

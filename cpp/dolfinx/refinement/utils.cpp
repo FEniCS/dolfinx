@@ -389,13 +389,13 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   const int tdim = meshtag.mesh()->topology().dim();
 
   if (meshtag.dim() != tdim - 1)
-    throw std::runtime_error("Input meshtag is not facet-based");
+    throw DolfinXException("Input meshtag is not facet-based");
   if (meshtag.mesh()->topology().index_map(tdim)->num_ghosts() > 0)
-    throw std::runtime_error("Ghosted meshes are not supported");
+    throw DolfinXException("Ghosted meshes are not supported");
 
   auto c_to_f = meshtag.mesh()->topology().connectivity(tdim, tdim - 1);
   if (!c_to_f)
-    throw std::runtime_error("Parent mesh is missing cell-facet connectivity.");
+    throw DolfinXException("Parent mesh is missing cell-facet connectivity.");
 
   // Create map parent->child facets
   const std::int32_t num_input_facets
@@ -436,8 +436,7 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
   auto c_to_f_refined = refined_mesh->topology().connectivity(tdim, tdim - 1);
   if (!c_to_f_refined)
   {
-    throw std::runtime_error(
-        "Refined mesh is missing cell-facet connectivity.");
+    throw DolfinXException("Refined mesh is missing cell-facet connectivity.");
   }
 
   // Fill in data for each child facet
@@ -512,10 +511,10 @@ mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
 {
   const int tdim = meshtag.mesh()->topology().dim();
   if (meshtag.dim() != tdim)
-    throw std::runtime_error("Input meshtag is not cell-based");
+    throw DolfinXException("Input meshtag is not cell-based");
 
   if (meshtag.mesh()->topology().index_map(tdim)->num_ghosts() > 0)
-    throw std::runtime_error("Ghosted meshes are not supported");
+    throw DolfinXException("Ghosted meshes are not supported");
 
   // Create map parent->child facets
   const std::int32_t num_input_cells

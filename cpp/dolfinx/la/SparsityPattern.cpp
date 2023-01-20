@@ -93,8 +93,8 @@ SparsityPattern::SparsityPattern(
 
       if (p->_graph)
       {
-        throw std::runtime_error("Sub-sparsity pattern has been finalised. "
-                                 "Cannot compute stacked pattern.");
+        throw DolfinXException("Sub-sparsity pattern has been finalised. "
+                               "Cannot compute stacked pattern.");
       }
 
       const int bs_dof0 = bs[0][row];
@@ -146,7 +146,7 @@ void SparsityPattern::insert(const std::span<const std::int32_t>& rows,
 {
   if (_graph)
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Cannot insert into sparsity pattern. It has already been assembled");
   }
 
@@ -158,7 +158,7 @@ void SparsityPattern::insert(const std::span<const std::int32_t>& rows,
   {
     if (row > max_row or row < 0)
     {
-      throw std::runtime_error(
+      throw DolfinXException(
           "Cannot insert rows that do not exist in the IndexMap.");
     }
 
@@ -170,7 +170,7 @@ void SparsityPattern::insert_diagonal(std::span<const std::int32_t> rows)
 {
   if (_graph)
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Cannot insert into sparsity pattern. It has already been assembled");
   }
 
@@ -182,7 +182,7 @@ void SparsityPattern::insert_diagonal(std::span<const std::int32_t> rows)
   {
     if (row > max_row or row < 0)
     {
-      throw std::runtime_error(
+      throw DolfinXException(
           "Cannot insert rows that do not exist in the IndexMap.");
     }
 
@@ -199,7 +199,7 @@ SparsityPattern::index_map(int dim) const
 std::vector<std::int64_t> SparsityPattern::column_indices() const
 {
   if (!_graph)
-    throw std::runtime_error("Sparsity pattern has not been finalised.");
+    throw DolfinXException("Sparsity pattern has not been finalised.");
 
   std::array range = _index_maps[1]->local_range();
   const std::int32_t local_size = range[1] - range[0];
@@ -214,7 +214,7 @@ std::vector<std::int64_t> SparsityPattern::column_indices() const
 common::IndexMap SparsityPattern::column_index_map() const
 {
   if (!_graph)
-    throw std::runtime_error("Sparsity pattern has not been finalised.");
+    throw DolfinXException("Sparsity pattern has not been finalised.");
 
   std::array range = _index_maps[1]->local_range();
   const std::int32_t local_size = range[1] - range[0];
@@ -227,7 +227,7 @@ int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
 void SparsityPattern::assemble()
 {
   if (_graph)
-    throw std::runtime_error("Sparsity pattern has already been finalised.");
+    throw DolfinXException("Sparsity pattern has already been finalised.");
 
   common::Timer t0("SparsityPattern::assemble");
 
@@ -394,28 +394,28 @@ void SparsityPattern::assemble()
 std::int64_t SparsityPattern::num_nonzeros() const
 {
   if (!_graph)
-    throw std::runtime_error("Sparsity pattern has not be assembled.");
+    throw DolfinXException("Sparsity pattern has not be assembled.");
   return _graph->array().size();
 }
 //-----------------------------------------------------------------------------
 std::int32_t SparsityPattern::nnz_diag(std::int32_t row) const
 {
   if (!_graph)
-    throw std::runtime_error("Sparsity pattern has not be assembled.");
+    throw DolfinXException("Sparsity pattern has not be assembled.");
   return _off_diagonal_offset[row];
 }
 //-----------------------------------------------------------------------------
 std::int32_t SparsityPattern::nnz_off_diag(std::int32_t row) const
 {
   if (!_graph)
-    throw std::runtime_error("Sparsity pattern has not be assembled.");
+    throw DolfinXException("Sparsity pattern has not be assembled.");
   return _graph->num_links(row) - _off_diagonal_offset[row];
 }
 //-----------------------------------------------------------------------------
 const graph::AdjacencyList<std::int32_t>& SparsityPattern::graph() const
 {
   if (!_graph)
-    throw std::runtime_error("Sparsity pattern has not been assembled.");
+    throw DolfinXException("Sparsity pattern has not been assembled.");
   return *_graph;
 }
 //-----------------------------------------------------------------------------

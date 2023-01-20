@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "../common/DolfinXException.h"
 #include <cassert>
 #include <concepts>
 #include <numeric>
@@ -177,13 +178,13 @@ regular_adjacency_list(U&& data, int degree)
 {
   if (degree == 0 and !data.empty())
   {
-    throw std::runtime_error("Degree is zero but data is not empty for "
-                             "constant degree AdjacencyList");
+    throw DolfinXException("Degree is zero but data is not empty for "
+                           "constant degree AdjacencyList");
   }
 
   if (degree > 0 and data.size() % degree != 0)
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Incompatible data size and degree for constant degree AdjacencyList");
   }
 

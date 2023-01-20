@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "CoordinateElement.h"
+#include "../common/DolfinXException.h"
 #include <basix/finite-element.h>
 #include <cmath>
 #include <dolfinx/common/math.h>
@@ -147,7 +148,7 @@ void CoordinateElement::pull_back_nonaffine(mdspan2_t X, cmdspan2_t x,
               X.data_handle() + p * tdim);
     if (k == maxit)
     {
-      throw std::runtime_error(
+      throw DolfinXException(
           "Newton method failed to converge for non-affine geometry");
     }
   }

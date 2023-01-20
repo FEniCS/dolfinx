@@ -46,11 +46,11 @@ void sparsitybuild::interior_facets(
 {
   const int D = topology.dim();
   if (!topology.connectivity(D - 1, 0))
-    throw std::runtime_error("Topology facets have not been created.");
+    throw DolfinXException("Topology facets have not been created.");
 
   auto connectivity = topology.connectivity(D - 1, D);
   if (!connectivity)
-    throw std::runtime_error("Facet-cell connectivity has not been computed.");
+    throw DolfinXException("Facet-cell connectivity has not been computed.");
 
   // Array to store macro-dofs, if required (for interior facets)
   std::array<std::vector<std::int32_t>, 2> macro_dofs;
@@ -115,11 +115,11 @@ void sparsitybuild::exterior_facets(
 {
   const int D = topology.dim();
   if (!topology.connectivity(D - 1, 0))
-    throw std::runtime_error("Topology facets have not been created.");
+    throw DolfinXException("Topology facets have not been created.");
 
   auto connectivity = topology.connectivity(D - 1, D);
   if (!connectivity)
-    throw std::runtime_error("Facet-cell connectivity has not been computed.");
+    throw DolfinXException("Facet-cell connectivity has not been computed.");
 
   // Loop over owned facets
   auto map = topology.index_map(D - 1);

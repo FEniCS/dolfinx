@@ -154,14 +154,14 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
 
   if (!_fnF)
   {
-    throw std::runtime_error("Function for computing residual vector has not "
-                             "been provided to the NewtonSolver.");
+    throw DolfinXException("Function for computing residual vector has not "
+                           "been provided to the NewtonSolver.");
   }
 
   if (!_fnJ)
   {
-    throw std::runtime_error("Function for computing Jacobianhas not "
-                             "been provided to the NewtonSolver.");
+    throw DolfinXException("Function for computing Jacobianhas not "
+                           "been provided to the NewtonSolver.");
   }
 
   if (_system)
@@ -181,8 +181,8 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
   }
   else
   {
-    throw std::runtime_error("Unknown convergence criterion: "
-                             + convergence_criterion);
+    throw DolfinXException("Unknown convergence criterion: "
+                           + convergence_criterion);
   }
 
   // FIXME: check that this is efficient if A and/or P are unchanged
@@ -245,7 +245,7 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
         std::tie(_residual, newton_converged) = this->_converged(*this, _dx);
     }
     else
-      throw std::runtime_error("Unknown convergence criterion string.");
+      throw DolfinXException("Unknown convergence criterion string.");
   }
 
   if (newton_converged)
@@ -263,11 +263,11 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
     {
       if (_iteration == max_it)
       {
-        throw std::runtime_error("Newton solver did not converge because "
-                                 "maximum number of iterations reached");
+        throw DolfinXException("Newton solver did not converge because "
+                               "maximum number of iterations reached");
       }
       else
-        throw std::runtime_error("Newton solver did not converge");
+        throw DolfinXException("Newton solver did not converge");
     }
     else
       LOG(WARNING) << "Newton solver did not converge.";

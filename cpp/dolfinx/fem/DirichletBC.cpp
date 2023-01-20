@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "DirichletBC.h"
+#include "../common/DolfinXException.h"
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include <algorithm>
@@ -246,7 +247,7 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
     }
   }
   else
-    throw std::runtime_error("Block size combination not supported");
+    throw DolfinXException("Block size combination not supported");
 
   // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
@@ -307,13 +308,13 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   assert(mesh);
   assert(V1.mesh());
   if (mesh != V1.mesh())
-    throw std::runtime_error("Meshes are not the same.");
+    throw DolfinXException("Meshes are not the same.");
 
   // FIXME: Elements must be the same?
   assert(V0.element());
   assert(V1.element());
   if (*V0.element() != *V1.element())
-    throw std::runtime_error("Function spaces must have the same element.");
+    throw DolfinXException("Function spaces must have the same element.");
 
   // Get dofmaps
   std::shared_ptr<const DofMap> dofmap0 = V0.dofmap();
@@ -468,7 +469,7 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
   assert(V.element());
   if (V.element()->is_mixed())
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Cannot locate dofs geometrically for mixed space. Use subspaces.");
   }
 
@@ -512,13 +513,13 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
   assert(mesh);
   assert(V1.mesh());
   if (mesh != V1.mesh())
-    throw std::runtime_error("Meshes are not the same.");
+    throw DolfinXException("Meshes are not the same.");
   const int tdim = mesh->topology().dim();
 
   assert(V0.element());
   assert(V1.element());
   if (*V0.element() != *V1.element())
-    throw std::runtime_error("Function spaces must have the same element.");
+    throw DolfinXException("Function spaces must have the same element.");
 
   // Compute dof coordinates
   const std::vector<double> dof_coordinates = V1.tabulate_dof_coordinates(true);

@@ -28,7 +28,7 @@ std::pair<std::vector<typename U::value_type>,
 sort_unique(const U& indices, const V& values)
 {
   if (indices.size() != values.size())
-    throw std::runtime_error("Cannot sort two arrays of different lengths");
+    throw DolfinXException("Cannot sort two arrays of different lengths");
 
   using T = typename std::pair<typename U::value_type, typename V::value_type>;
   std::vector<T> data(indices.size());

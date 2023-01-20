@@ -232,7 +232,7 @@ public:
       break;
     }
     default:
-      throw std::runtime_error("Scatter::type not recognized");
+      throw DolfinXException("Scatter::type not recognized");
     }
   }
 
@@ -427,7 +427,7 @@ public:
       break;
     }
     default:
-      throw std::runtime_error("Scatter::type not recognized");
+      throw DolfinXException("Scatter::type not recognized");
     }
   }
 
@@ -596,7 +596,7 @@ public:
       requests.resize(_dest.size() + _src.size(), MPI_REQUEST_NULL);
       break;
     default:
-      throw std::runtime_error("Scatter::type not recognized");
+      throw DolfinXException("Scatter::type not recognized");
     }
     return requests;
   }

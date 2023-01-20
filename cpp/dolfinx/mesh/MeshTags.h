@@ -54,14 +54,13 @@ public:
   {
     if (_indices.size() != _values.size())
     {
-      throw std::runtime_error(
-          "Indices and values arrays must have same size.");
+      throw DolfinXException("Indices and values arrays must have same size.");
     }
 #ifndef NDEBUG
     if (!std::is_sorted(_indices.begin(), _indices.end()))
-      throw std::runtime_error("MeshTag data is not sorted");
+      throw DolfinXException("MeshTag data is not sorted");
     if (std::adjacent_find(_indices.begin(), _indices.end()) != _indices.end())
-      throw std::runtime_error("MeshTag data has duplicates");
+      throw DolfinXException("MeshTag data has duplicates");
 #endif
   }
 
@@ -151,7 +150,7 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Mesh> mesh, int dim,
       = entities_to_index(mesh->topology(), dim, entities);
   if (indices.size() != values.size())
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Duplicate mesh entities when building MeshTags object.");
   }
 

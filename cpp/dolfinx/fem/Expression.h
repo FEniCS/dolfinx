@@ -78,10 +78,10 @@ public:
     if (!_mesh and argument_function_space)
       _mesh = argument_function_space->mesh();
     if (argument_function_space and _mesh != argument_function_space->mesh())
-      throw std::runtime_error("Incompatible mesh");
+      throw DolfinXException("Incompatible mesh");
     if (!_mesh)
     {
-      throw std::runtime_error(
+      throw DolfinXException(
           "No mesh could be associated with the Expression.");
     }
   }
@@ -124,7 +124,7 @@ public:
     for (auto& c : _coefficients)
     {
       if (!c)
-        throw std::runtime_error("Not all form coefficients have been set.");
+        throw DolfinXException("Not all form coefficients have been set.");
       n.push_back(n.back() + c->function_space()->element()->space_dimension());
     }
     return n;

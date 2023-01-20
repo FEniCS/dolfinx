@@ -343,7 +343,7 @@ vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
                         std::back_inserter(unowned_vertices_in_error));
 
   if (unowned_vertices_in_error.size() > 0)
-    throw std::runtime_error(
+    throw DolfinXException(
         "Adding boundary vertices in ghost cells not allowed.");
 
   return {std::move(owned_vertices), std::move(unowned_vertices)};
@@ -848,7 +848,7 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
       _cell_permutations.empty()
       and i_map->size_local() + i_map->num_ghosts() > 0)
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "create_entity_permutations must be called before using this data.");
   }
 
@@ -862,7 +862,7 @@ const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
       or (_facet_permutations.empty()
           and i_map->size_local() + i_map->num_ghosts() > 0))
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "create_entity_permutations must be called before using this data.");
   }
 
@@ -890,10 +890,10 @@ Topology mesh::create_topology(
   if (cells.num_nodes() > 0
       and cells.num_links(0) != num_cell_vertices(cell_type))
   {
-    throw std::runtime_error(
-        "Inconsistent number of cell vertices. Got "
-        + std::to_string(cells.num_links(0)) + ", expected "
-        + std::to_string(num_cell_vertices(cell_type)) + ".");
+    throw DolfinXException("Inconsistent number of cell vertices. Got "
+                           + std::to_string(cells.num_links(0)) + ", expected "
+                           + std::to_string(num_cell_vertices(cell_type))
+                           + ".");
   }
 
   const std::int32_t num_local_cells = cells.num_nodes() - ghost_owners.size();
@@ -1145,8 +1145,8 @@ mesh::entities_to_index(const Topology& topology, int dim,
   auto map_e = topology.index_map(dim);
   if (!map_e)
   {
-    throw std::runtime_error("Mesh entities of dimension " + std::to_string(dim)
-                             + "have not been created.");
+    throw DolfinXException("Mesh entities of dimension " + std::to_string(dim)
+                           + "have not been created.");
   }
 
   auto e_to_v = topology.connectivity(dim, 0);
@@ -1167,7 +1167,7 @@ mesh::entities_to_index(const Topology& topology, int dim,
     std::sort(key.begin(), key.end());
     auto ins = entity_key_to_index.insert({key, e});
     if (!ins.second)
-      throw std::runtime_error("Duplicate mesh entity detected.");
+      throw DolfinXException("Duplicate mesh entity detected.");
   }
 
   // Iterate over all entities and find index

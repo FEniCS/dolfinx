@@ -61,7 +61,7 @@ void log(py::module& m)
           LOG(ERROR) << s;
           break;
         default:
-          throw std::runtime_error("Log level not supported");
+          throw DolfinXException("Log level not supported");
           break;
         }
       },

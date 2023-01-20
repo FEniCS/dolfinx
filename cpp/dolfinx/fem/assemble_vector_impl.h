@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "../common/DolfinXException.h"
 #include "Constant.h"
 #include "DirichletBC.h"
 #include "DofMap.h"
@@ -879,14 +880,13 @@ void apply_lifting(
   // FIXME: make changes to reactivate this check
   if (!x0.empty() and x0.size() != a.size())
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Mismatch in size between x0 and bilinear form in assembler.");
   }
 
   if (a.size() != bcs1.size())
   {
-    throw std::runtime_error(
-        "Mismatch in size between a and bcs in assembler.");
+    throw DolfinXException("Mismatch in size between a and bcs in assembler.");
   }
 
   for (std::size_t j = 0; j < a.size(); ++j)

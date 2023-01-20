@@ -127,7 +127,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
 {
   if (a.rank() != 2)
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Cannot create sparsity pattern. Form is not a bilinear form");
   }
 
@@ -187,7 +187,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
       }
       break;
     default:
-      throw std::runtime_error("Unsupported integral type");
+      throw DolfinXException("Unsupported integral type");
     }
   }
 
@@ -244,15 +244,15 @@ Form<T> create_form(
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
   if (ufcx_form.rank != (int)spaces.size())
-    throw std::runtime_error("Wrong number of argument spaces for Form.");
+    throw DolfinXException("Wrong number of argument spaces for Form.");
   if (ufcx_form.num_coefficients != (int)coefficients.size())
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Mismatch between number of expected and provided Form coefficients.");
   }
   if (ufcx_form.num_constants != (int)constants.size())
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Mismatch between number of expected and provided Form constants.");
   }
 
@@ -266,7 +266,7 @@ Form<T> create_form(
     if (std::string(ufcx_element->signature)
         != spaces[i]->element()->signature())
     {
-      throw std::runtime_error(
+      throw DolfinXException(
           "Cannot create form. Wrong type of function space for argument.");
     }
   }
@@ -460,8 +460,7 @@ Form<T> create_form(
       coeff_map.push_back(it->second);
     else
     {
-      throw std::runtime_error("Form coefficient \"" + name
-                               + "\" not provided.");
+      throw DolfinXException("Form coefficient \"" + name + "\" not provided.");
     }
   }
 
@@ -472,7 +471,7 @@ Form<T> create_form(
     if (auto it = constants.find(name); it != constants.end())
       const_map.push_back(it->second);
     else
-      throw std::runtime_error("Form constant \"" + name + "\" not provided.");
+      throw DolfinXException("Form constant \"" + name + "\" not provided.");
   }
 
   return create_form(ufcx_form, spaces, coeff_map, const_map, subdomains, mesh);
@@ -605,7 +604,7 @@ concept FetchCells = requires(F&& f, std::span<const std::int32_t> v) {
                        std::invocable<F, std::span<const std::int32_t>>;
                        {
                          f(v)
-                         } -> std::convertible_to<std::int32_t>;
+                       } -> std::convertible_to<std::int32_t>;
                      };
 
 /// @brief Pack a single coefficient for a set of active entities.
@@ -714,7 +713,7 @@ allocate_coefficient_storage(const Form<T>& form, IntegralType integral_type,
       num_entities = form.interior_facet_domains(id).size() / 2;
       break;
     default:
-      throw std::runtime_error(
+      throw DolfinXException(
           "Could not allocate coefficient data. Integral type not supported.");
     }
   }
@@ -820,7 +819,7 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       break;
     }
     default:
-      throw std::runtime_error(
+      throw DolfinXException(
           "Could not pack coefficient. Integral type not supported.");
     }
   }
@@ -837,7 +836,7 @@ Expression<T> create_expression(
 {
   if (expression.rank > 0 and !argument_function_space)
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Expression has Argument but no Argument function space was provided.");
   }
 
@@ -875,7 +874,7 @@ Expression<T> create_expression(
         const unsigned char*)>(expression.tabulate_tensor_complex128);
   }
   else
-    throw std::runtime_error("Type not supported.");
+    throw DolfinXException("Type not supported.");
 
   assert(tabulate_tensor);
   return Expression(coefficients, constants, X, Xshape, tabulate_tensor,
@@ -905,8 +904,8 @@ Expression<T> create_expression(
       coeff_map.push_back(it->second);
     else
     {
-      throw std::runtime_error("Expression coefficient \"" + name
-                               + "\" not provided.");
+      throw DolfinXException("Expression coefficient \"" + name
+                             + "\" not provided.");
     }
   }
 
@@ -922,8 +921,8 @@ Expression<T> create_expression(
       const_map.push_back(it->second);
     else
     {
-      throw std::runtime_error("Expression constant \"" + name
-                               + "\" not provided.");
+      throw DolfinXException("Expression constant \"" + name
+                             + "\" not provided.");
     }
   }
 

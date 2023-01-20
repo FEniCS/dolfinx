@@ -63,21 +63,21 @@ _extract_sub_element(const FiniteElement& finite_element,
   // Check that a sub system has been specified
   if (component.empty())
   {
-    throw std::runtime_error("Cannot extract subsystem of finite element. No "
-                             "system was specified");
+    throw DolfinXException("Cannot extract subsystem of finite element. No "
+                           "system was specified");
   }
 
   // Check if there are any sub systems
   if (finite_element.num_sub_elements() == 0)
   {
-    throw std::runtime_error("Cannot extract subsystem of finite element. "
-                             "There are no subsystems.");
+    throw DolfinXException("Cannot extract subsystem of finite element. "
+                           "There are no subsystems.");
   }
 
   // Check the number of available sub systems
   if (component[0] >= finite_element.num_sub_elements())
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Cannot extract subsystem of finite element. Requested "
         "subsystem out of range.");
   }
@@ -128,7 +128,7 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
     _cell_shape = mesh::CellType::hexahedron;
     break;
   default:
-    throw std::runtime_error(
+    throw DolfinXException(
         "Unknown UFC cell type when building FiniteElement.");
   }
   assert(mesh::cell_dim(_cell_shape) == e.topological_dimension);
@@ -305,7 +305,7 @@ bool FiniteElement::operator==(const FiniteElement& e) const
 {
   if (!_element or !e._element)
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Missing a Basix element. Cannot check for equivalence");
   }
   return *_element == *e._element;
@@ -393,8 +393,8 @@ const basix::FiniteElement& FiniteElement::basix_element() const
 {
   if (!_element)
   {
-    throw std::runtime_error("No Basix element available. "
-                             "Maybe this is a mixed element?");
+    throw DolfinXException("No Basix element available. "
+                           "Maybe this is a mixed element?");
   }
 
   return *_element;
@@ -404,8 +404,8 @@ basix::maps::type FiniteElement::map_type() const
 {
   if (!_element)
   {
-    throw std::runtime_error("Cannot element map type - no Basix element "
-                             "available. Maybe this is a mixed element?");
+    throw DolfinXException("Cannot element map type - no Basix element "
+                           "available. Maybe this is a mixed element?");
   }
 
   return _element->map_type();
@@ -428,7 +428,7 @@ FiniteElement::interpolation_points() const
 {
   if (!_element)
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Cannot get interpolation points - no Basix element available. Maybe "
         "this is a mixed element?");
   }
@@ -441,8 +441,8 @@ FiniteElement::interpolation_operator() const
 {
   if (!_element)
   {
-    throw std::runtime_error("No underlying element for interpolation. "
-                             "Cannot interpolate mixed elements directly.");
+    throw DolfinXException("No underlying element for interpolation. "
+                           "Cannot interpolate mixed elements directly.");
   }
 
   return _element->interpolation_matrix();
@@ -455,8 +455,8 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
   assert(from._element);
   if (_element->map_type() != from._element->map_type())
   {
-    throw std::runtime_error("Interpolation between elements with different "
-                             "maps is not supported.");
+    throw DolfinXException("Interpolation between elements with different "
+                           "maps is not supported.");
   }
 
   if (_bs == 1 or from._bs == 1)
@@ -486,7 +486,7 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
   }
   else
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Interpolation for element combination is not supported.");
   }
 }

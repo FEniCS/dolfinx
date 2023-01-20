@@ -388,16 +388,16 @@ std::vector<std::int64_t> graph::build::compute_local_to_global_links(
   // Build local-to-global for adjacency lists
   if (global.num_nodes() != local.num_nodes())
   {
-    throw std::runtime_error("Mismatch in number of nodes between local and "
-                             "global adjacency lists.");
+    throw DolfinXException("Mismatch in number of nodes between local and "
+                           "global adjacency lists.");
   }
 
   const std::vector<std::int64_t>& _global = global.array();
   const std::vector<std::int32_t>& _local = local.array();
   if (_global.size() != _local.size())
   {
-    throw std::runtime_error("Data size mismatch between local and "
-                             "global adjacency lists.");
+    throw DolfinXException("Data size mismatch between local and "
+                           "global adjacency lists.");
   }
 
   const std::int32_t max_local_idx

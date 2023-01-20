@@ -38,7 +38,7 @@ std::string rank_to_string(int value_rank)
   case 2:
     return "Tensor";
   default:
-    throw std::runtime_error("Range Error");
+    throw DolfinXException("Range Error");
   }
 }
 //-----------------------------------------------------------------------------

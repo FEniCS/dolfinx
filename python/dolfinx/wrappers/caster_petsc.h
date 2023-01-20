@@ -24,7 +24,7 @@ namespace py = pybind11;
   if (!func)                                                                   \
   {                                                                            \
     if (import_petsc4py() != 0)                                                \
-      throw std::runtime_error("Error when importing petsc4py");               \
+      throw DolfinXException("Error when importing petsc4py");                 \
   }
 
 // Macro for casting between PETSc and petsc4py objects
@@ -58,10 +58,7 @@ namespace py = pybind11;
       return py::handle(obj);                                                  \
     }                                                                          \
                                                                                \
-    operator TYPE()                                                            \
-    {                                                                          \
-      return value;                                                            \
-    }                                                                          \
+    operator TYPE() { return value; }                                          \
   }
 
 namespace pybind11::detail

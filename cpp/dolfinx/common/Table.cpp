@@ -23,7 +23,7 @@ std::string to_str(std::variant<std::string, int, double> value)
   else if (std::holds_alternative<std::string>(value))
     return std::get<std::string>(value);
   else
-    throw std::runtime_error("Variant incorrect");
+    throw DolfinXException("Variant incorrect");
 }
 } // namespace
 
@@ -59,8 +59,8 @@ std::variant<std::string, int, double> Table::get(std::string row,
   auto it = _values.find(key);
   if (it == _values.end())
   {
-    throw std::runtime_error("Missing table value for entry (\"" + row
-                             + "\", \"" + col + "\")");
+    throw DolfinXException("Missing table value for entry (\"" + row + "\", \""
+                           + col + "\")");
   }
 
   return it->second;
@@ -87,8 +87,8 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
     op_impl = [](double y, double x) { return std::max(y, x); };
     break;
   default:
-    throw std::runtime_error("Cannot perform reduction of Table. Requested "
-                             "reduction not implemented");
+    throw DolfinXException("Cannot perform reduction of Table. Requested "
+                           "reduction not implemented");
   }
   new_title += name;
 

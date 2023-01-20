@@ -213,7 +213,7 @@ T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
 {
   const std::int32_t local_size = a.bs() * a.map()->size_local();
   if (local_size != b.bs() * b.map()->size_local())
-    throw std::runtime_error("Incompatible vector sizes");
+    throw DolfinXException("Incompatible vector sizes");
   std::span<const T> x_a = a.array().subspan(0, local_size);
   std::span<const T> x_b = b.array().subspan(0, local_size);
 
@@ -270,7 +270,7 @@ auto norm(const Vector<T, Allocator>& a, Norm type = Norm::l2)
     return linf;
   }
   default:
-    throw std::runtime_error("Norm type not supported");
+    throw DolfinXException("Norm type not supported");
   }
 }
 
@@ -300,7 +300,7 @@ void orthonormalize(std::span<Vector<T, U>> basis, double tol = 1.0e-10)
     double norm = la::norm(basis[i], la::Norm::l2);
     if (norm < tol)
     {
-      throw std::runtime_error(
+      throw DolfinXException(
           "Linear dependency detected. Cannot orthogonalize.");
     }
     std::transform(basis[i].array().begin(), basis[i].array().end(),

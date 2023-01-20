@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+#include "../common/DolfinXException.h"
 #include "Geometry.h"
 #include "Mesh.h"
 #include "Topology.h"
@@ -94,7 +95,7 @@ compute_vertex_coords_boundary(const mesh::Mesh& mesh, int dim,
   const int tdim = topology.dim();
   if (dim == tdim)
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Cannot use mesh::locate_entities_boundary (boundary) for cells.");
   }
 
@@ -244,7 +245,7 @@ std::vector<double> mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     return std::vector<double>();
 
   if (mesh.topology().cell_type() == CellType::prism and dim == 2)
-    throw std::runtime_error("More work needed for prism cell");
+    throw DolfinXException("More work needed for prism cell");
 
   const int gdim = mesh.geometry().dim();
   const CellType type = cell_entity_type(mesh.topology().cell_type(), dim, 0);
@@ -398,7 +399,7 @@ std::vector<std::int32_t> mesh::locate_entities(
   cmdspan3x_t x(xdata.data(), xshape);
   const std::vector<std::int8_t> marked = marker(x);
   if (marked.size() != x.extent(1))
-    throw std::runtime_error("Length of array of markers is wrong.");
+    throw DolfinXException("Length of array of markers is wrong.");
 
   const mesh::Topology& topology = mesh.topology();
   const int tdim = topology.dim();
@@ -445,7 +446,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   const int tdim = topology.dim();
   if (dim == tdim)
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Cannot use mesh::locate_entities_boundary (boundary) for cells.");
   }
 
@@ -461,7 +462,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   cmdspan3x_t x(xdata.data(), 3, xdata.size() / 3);
   const std::vector<std::int8_t> marked = marker(x);
   if (marked.size() != x.extent(1))
-    throw std::runtime_error("Length of array of markers is wrong.");
+    throw DolfinXException("Length of array of markers is wrong.");
 
   // Loop over entities and check vertex markers
   mesh.topology_mutable().create_entities(dim);
@@ -496,9 +497,9 @@ mesh::entities_to_geometry(const Mesh& mesh, int dim,
 {
   CellType cell_type = mesh.topology().cell_type();
   if (cell_type == CellType::prism and dim == 2)
-    throw std::runtime_error("More work needed for prism cells");
+    throw DolfinXException("More work needed for prism cells");
   if (orient and (cell_type != CellType::tetrahedron or dim != 2))
-    throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
+    throw DolfinXException("Can only orient facets of a tetrahedral mesh");
 
   const Geometry& geometry = mesh.geometry();
   auto x = geometry.x();
@@ -582,7 +583,7 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
   const int tdim = topology.dim();
   auto facet_map = topology.index_map(tdim - 1);
   if (!facet_map)
-    throw std::runtime_error("Facets have not been computed.");
+    throw DolfinXException("Facets have not been computed.");
 
   // Find all owned facets (not ghost) with only one attached cell
   const int num_facets = facet_map->size_local();
@@ -633,22 +634,22 @@ std::vector<std::int32_t> mesh::compute_incident_entities(
   auto map0 = mesh.topology().index_map(d0);
   if (!map0)
   {
-    throw std::runtime_error("Mesh entities of dimension " + std::to_string(d0)
-                             + " have not been created.");
+    throw DolfinXException("Mesh entities of dimension " + std::to_string(d0)
+                           + " have not been created.");
   }
 
   auto map1 = mesh.topology().index_map(d1);
   if (!map1)
   {
-    throw std::runtime_error("Mesh entities of dimension " + std::to_string(d1)
-                             + " have not been created.");
+    throw DolfinXException("Mesh entities of dimension " + std::to_string(d1)
+                           + " have not been created.");
   }
 
   auto e0_to_e1 = mesh.topology().connectivity(d0, d1);
   if (!e0_to_e1)
   {
-    throw std::runtime_error("Connectivity missing: (" + std::to_string(d0)
-                             + ", " + std::to_string(d1) + ")");
+    throw DolfinXException("Connectivity missing: (" + std::to_string(d0) + ", "
+                           + std::to_string(d1) + ")");
   }
 
   std::vector<std::int32_t> entities1;

@@ -101,7 +101,7 @@ std::pair<FunctionSpace, std::vector<std::int32_t>>
 FunctionSpace::collapse() const
 {
   if (_component.empty())
-    throw std::runtime_error("Function space is not a subspace");
+    throw DolfinXException("Function space is not a subspace");
 
   // Create collapsed DofMap
   auto [_collapsed_dofmap, collapsed_dofs]
@@ -121,14 +121,14 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 {
   if (!_component.empty())
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
   }
 
   assert(_element);
   if (_element->is_mixed())
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Cannot tabulate coordinates for a mixed FunctionSpace.");
   }
 
@@ -155,8 +155,8 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   // Get the dof coordinates on the reference element
   if (!_element->interpolation_ident())
   {
-    throw std::runtime_error("Cannot evaluate dof coordinates - this element "
-                             "does not have pointwise evaluation.");
+    throw DolfinXException("Cannot evaluate dof coordinates - this element "
+                           "does not have pointwise evaluation.");
   }
   const auto [X, Xshape] = _element->interpolation_points();
 
@@ -277,7 +277,7 @@ fem::common_function_spaces(
         else
         {
           if (spaces0[i] != V0)
-            throw std::runtime_error("Mismatched test space for row.");
+            throw DolfinXException("Mismatched test space for row.");
         }
 
         if (!spaces1[j])
@@ -285,7 +285,7 @@ fem::common_function_spaces(
         else
         {
           if (spaces1[j] != V1)
-            throw std::runtime_error("Mismatched trial space for column.");
+            throw DolfinXException("Mismatched trial space for column.");
         }
       }
     }
@@ -293,9 +293,9 @@ fem::common_function_spaces(
 
   // Check there are no null entries
   if (std::find(spaces0.begin(), spaces0.end(), nullptr) != spaces0.end())
-    throw std::runtime_error("Could not deduce all block test spaces.");
+    throw DolfinXException("Could not deduce all block test spaces.");
   if (std::find(spaces1.begin(), spaces1.end(), nullptr) != spaces1.end())
-    throw std::runtime_error("Could not deduce all block trial spaces.");
+    throw DolfinXException("Could not deduce all block trial spaces.");
 
   return {spaces0, spaces1};
 }

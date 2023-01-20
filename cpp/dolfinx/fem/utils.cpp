@@ -60,7 +60,7 @@ la::SparsityPattern fem::create_sparsity_pattern(
                                      {{dofmaps[0], dofmaps[1]}});
       break;
     default:
-      throw std::runtime_error("Unsupported integral type");
+      throw DolfinXException("Unsupported integral type");
     }
   }
 
@@ -235,7 +235,7 @@ fem::FunctionSpace fem::create_functionspace(
   ufcx_function_space* space = fptr(function_name.c_str());
   if (!space)
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Could not create UFC function space with function name "
         + function_name);
   }
@@ -251,7 +251,7 @@ fem::FunctionSpace fem::create_functionspace(
              space->geometry_basix_variant)
              != mesh->geometry().cmap().variant())
   {
-    throw std::runtime_error("UFL mesh and CoordinateElement do not match.");
+    throw DolfinXException("UFL mesh and CoordinateElement do not match.");
   }
 
   auto element = std::make_shared<FiniteElement>(*ufcx_element);

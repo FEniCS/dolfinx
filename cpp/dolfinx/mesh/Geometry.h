@@ -52,7 +52,7 @@ public:
   {
     assert(_x.size() % 3 == 0);
     if (_x.size() / 3 != _input_global_indices.size())
-      throw std::runtime_error("Geometry size mis-match");
+      throw DolfinXException("Geometry size mis-match");
   }
 
   /// Copy constructor

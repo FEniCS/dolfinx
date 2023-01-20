@@ -36,7 +36,7 @@ constexpr mesh::CellType get_cell_type(int num_vertices, int tdim)
     case 4:
       return mesh::CellType::quadrilateral;
     default:
-      throw std::runtime_error("Invalid data");
+      throw DolfinXException("Invalid data");
     }
   case 3:
     switch (num_vertices)
@@ -50,10 +50,10 @@ constexpr mesh::CellType get_cell_type(int num_vertices, int tdim)
     case 8:
       return mesh::CellType::hexahedron;
     default:
-      throw std::runtime_error("Invalid data");
+      throw DolfinXException("Invalid data");
     }
   default:
-    throw std::runtime_error("Invalid data");
+    throw DolfinXException("Invalid data");
   }
 }
 
@@ -300,8 +300,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       std::size_t num_matches = std::distance(it, it1);
       if (num_matches > 2)
       {
-        throw std::runtime_error(
-            "A facet is connected to more than two cells.");
+        throw DolfinXException("A facet is connected to more than two cells.");
       }
 
       // TODO: generalise for more than matches and log warning (maybe

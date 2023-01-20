@@ -78,7 +78,7 @@ void declare_objects(py::module& m, const std::string& type)
               self.scatter_rev([](T /*a*/, T b) { return b; });
               break;
             default:
-              throw std::runtime_error("ScatterMode not recognized.");
+              throw DolfinXException("ScatterMode not recognized.");
               break;
             }
           },

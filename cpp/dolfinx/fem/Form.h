@@ -114,10 +114,10 @@ public:
     for (const auto& V : function_spaces)
     {
       if (_mesh != V->mesh())
-        throw std::runtime_error("Incompatible mesh");
+        throw DolfinXException("Incompatible mesh");
     }
     if (!_mesh)
-      throw std::runtime_error("No mesh could be associated with the Form.");
+      throw DolfinXException("No mesh could be associated with the Form.");
 
     // Store kernels, looping over integrals by domain type (dimension)
     for (auto& integral_type : integrals)
@@ -202,7 +202,7 @@ public:
     case IntegralType::interior_facet:
       return get_kernel_from_integrals(_interior_facet_integrals, i);
     default:
-      throw std::runtime_error(
+      throw DolfinXException(
           "Cannot access kernel. Integral type not supported.");
     }
   }
@@ -236,7 +236,7 @@ public:
     case IntegralType::interior_facet:
       return _interior_facet_integrals.size();
     default:
-      throw std::runtime_error("Integral type not supported.");
+      throw DolfinXException("Integral type not supported.");
     }
   }
 
@@ -267,8 +267,7 @@ public:
                      [](auto& integral) { return integral.first; });
       break;
     default:
-      throw std::runtime_error(
-          "Cannot return IDs. Integral type not supported.");
+      throw DolfinXException("Cannot return IDs. Integral type not supported.");
     }
 
     return ids;
@@ -282,7 +281,7 @@ public:
   {
     auto it = _cell_integrals.find(i);
     if (it == _cell_integrals.end())
-      throw std::runtime_error("No mesh entities for requested domain index.");
+      throw DolfinXException("No mesh entities for requested domain index.");
     return it->second.second;
   }
 
@@ -295,7 +294,7 @@ public:
   {
     auto it = _exterior_facet_integrals.find(i);
     if (it == _exterior_facet_integrals.end())
-      throw std::runtime_error("No mesh entities for requested domain index.");
+      throw DolfinXException("No mesh entities for requested domain index.");
     return it->second.second;
   }
 
@@ -310,7 +309,7 @@ public:
   {
     auto it = _interior_facet_integrals.find(i);
     if (it == _interior_facet_integrals.end())
-      throw std::runtime_error("No mesh entities for requested domain index.");
+      throw DolfinXException("No mesh entities for requested domain index.");
     return it->second.second;
   }
 
@@ -334,7 +333,7 @@ public:
     for (const auto& c : _coefficients)
     {
       if (!c)
-        throw std::runtime_error("Not all form coefficients have been set.");
+        throw DolfinXException("Not all form coefficients have been set.");
       n.push_back(n.back() + c->function_space()->element()->space_dimension());
     }
     return n;
@@ -366,7 +365,7 @@ private:
   {
     auto it = integrals.find(i);
     if (it == integrals.end())
-      throw std::runtime_error("No kernel for requested domain index.");
+      throw DolfinXException("No kernel for requested domain index.");
     return it->second.first;
   }
 
@@ -513,8 +512,8 @@ private:
     int dim = type == IntegralType::cell ? tdim : tdim - 1;
     if (dim != marker.dim())
     {
-      throw std::runtime_error("Invalid MeshTags dimension: "
-                               + std::to_string(marker.dim()));
+      throw DolfinXException("Invalid MeshTags dimension: "
+                             + std::to_string(marker.dim()));
     }
 
     // Get mesh tag data
@@ -545,7 +544,7 @@ private:
                                    owned_tagged_entities, marker.values());
         break;
       default:
-        throw std::runtime_error(
+        throw DolfinXException(
             "Cannot set domains. Integral type not supported.");
       }
     }

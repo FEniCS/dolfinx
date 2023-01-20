@@ -95,8 +95,7 @@ std::tuple<int, double, double, double> TimeLogger::timing(std::string task)
   auto it = _timings.find(task);
   if (it == _timings.end())
   {
-    throw std::runtime_error("No timings registered for task \"" + task
-                             + "\".");
+    throw DolfinXException("No timings registered for task \"" + task + "\".");
   }
   return it->second;
 }

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "DofMap.h"
+#include "../common/DolfinXException.h"
 #include "ElementDofLayout.h"
 #include "dofmapbuilder.h"
 #include "utils.h"
@@ -30,7 +31,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 {
   if (dofmap_view.element_dof_layout().block_size() > 1)
   {
-    throw std::runtime_error(
+    throw DolfinXException(
         "Cannot collapse a dofmap view with block size greater "
         "than 1 when the parent has a block size of 1. Create new dofmap "
         "first.");

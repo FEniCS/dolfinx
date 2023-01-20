@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "ElementDofLayout.h"
+#include "../common/DolfinXException.h"
 #include <array>
 #include <cassert>
 #include <functional>
@@ -100,7 +101,7 @@ const ElementDofLayout&
 ElementDofLayout::sub_layout(std::span<const int> component) const
 {
   if (component.empty())
-    throw std::runtime_error("No sub dofmap specified");
+    throw DolfinXException("No sub dofmap specified");
   std::reference_wrapper<const ElementDofLayout> current
       = _sub_dofmaps.at(component[0]);
   for (std::size_t i = 1; i < component.size(); ++i)
@@ -122,7 +123,7 @@ ElementDofLayout::sub_view(std::span<const int> component) const
     // Switch to sub-dofmap
     assert(element_dofmap_current);
     if (i >= (int)element_dofmap_current->_sub_dofmaps.size())
-      throw std::runtime_error("Invalid component");
+      throw DolfinXException("Invalid component");
     element_dofmap_current = &_sub_dofmaps.at(i);
 
     std::vector<int> dof_list_new(element_dofmap_current->_num_dofs

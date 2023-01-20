@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "dofmapbuilder.h"
+#include "../common/DolfinXException.h"
 #include "ElementDofLayout.h"
 #include <algorithm>
 #include <cstdint>
@@ -147,7 +148,7 @@ build_basic_dofmap(const mesh::Topology& topology,
     {
       if (!topology.connectivity(d, 0))
       {
-        throw std::runtime_error(
+        throw DolfinXException(
             "Cannot create basic dofmap. Missing entities of dimension "
             + std::to_string(d) + " .");
       }

@@ -273,8 +273,8 @@ xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
   auto it = xdmf_to_dolfin.find(cell_type);
   if (it == xdmf_to_dolfin.end())
   {
-    throw std::runtime_error("Cannot recognise cell type. Unknown value: "
-                             + cell_type);
+    throw DolfinXException("Cannot recognise cell type. Unknown value: "
+                           + cell_type);
   }
   return it->second;
 }
@@ -287,9 +287,8 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   const std::string dataitem_str = "DataItem";
   if (dataitem_node.name() != dataitem_str)
   {
-    throw std::runtime_error("Node name is \""
-                             + std::string(dataitem_node.name())
-                             + R"(", expecting "DataItem")");
+    throw DolfinXException("Node name is \"" + std::string(dataitem_node.name())
+                           + R"(", expecting "DataItem")");
   }
 
   // Check that format is HDF
@@ -298,8 +297,7 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   const std::string format = format_attr.as_string();
   if (format.compare("HDF") != 0)
   {
-    throw std::runtime_error("DataItem format \"" + format
-                             + R"(" is not "HDF")");
+    throw DolfinXException("DataItem format \"" + format + R"(" is not "HDF")");
   }
 
   // Get path data
@@ -325,8 +323,8 @@ xdmf_utils::get_hdf5_filename(const std::filesystem::path& xdmf_filename)
   p.replace_extension("h5");
   if (p.string() == xdmf_filename)
   {
-    throw std::runtime_error("Cannot deduce name of HDF5 file from XDMF "
-                             "filename. Filename clash. Check XDMF filename");
+    throw DolfinXException("Cannot deduce name of HDF5 file from XDMF "
+                           "filename. Filename clash. Check XDMF filename");
   }
 
   return p;
@@ -374,14 +372,14 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
 
   // Check that number of cells can be determined
   if (tdims.size() != 2 and num_cells_topology == -1)
-    throw std::runtime_error("Cannot determine number of cells in XDMF mesh");
+    throw DolfinXException("Cannot determine number of cells in XDMF mesh");
 
   // Check for consistency if number of cells appears in both the topology
   // and DataItem nodes
   if (num_cells_topology != -1 and tdims.size() == 2)
   {
     if (num_cells_topology != tdims[0])
-      throw std::runtime_error("Cannot determine number of cells in XDMF mesh");
+      throw DolfinXException("Cannot determine number of cells in XDMF mesh");
   }
 
   return std::max(num_cells_topology, tdims[0]);
@@ -431,12 +429,12 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
   // Get cell family
   auto cell = vtk_map.find(cell_type);
   if (cell == vtk_map.end())
-    throw std::runtime_error("Could not find cell type.");
+    throw DolfinXException("Could not find cell type.");
 
   // Get cell string
   auto cell_str = cell->second.find(num_nodes);
   if (cell_str == cell->second.end())
-    throw std::runtime_error("Could not find VTK string for cell order.");
+    throw DolfinXException("Could not find VTK string for cell order.");
 
   return cell_str->second;
 }
@@ -527,7 +525,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
         mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim, 0), 0);
     auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
     if (!c_to_v)
-      throw std::runtime_error("Missing cell-vertex connectivity.");
+      throw DolfinXException("Missing cell-vertex connectivity.");
 
     const fem::ElementDofLayout cmap_dof_layout
         = mesh.geometry().cmap().create_dof_layout();
@@ -687,7 +685,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
         mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim, 0), 0);
     auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
     if (!c_to_v)
-      throw std::runtime_error("Missing cell-vertex connectivity.");
+      throw DolfinXException("Missing cell-vertex connectivity.");
 
     const std::vector<std::int64_t>& nodes_g
         = mesh.geometry().input_global_indices();

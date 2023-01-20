@@ -343,7 +343,7 @@ void write_function(
     const std::filesystem::path& filename)
 {
   if (!xml_doc)
-    throw std::runtime_error("VTKFile has been closed");
+    throw DolfinXException("VTKFile has been closed");
   if (u.empty())
     return;
 
@@ -375,21 +375,21 @@ void write_function(
     assert(V->mesh());
     if (V->mesh() != mesh0)
     {
-      throw std::runtime_error(
+      throw DolfinXException(
           "All Functions written to VTK file must share the same Mesh.");
     }
 
     // Check that v isn't a sub-function
     if (!V->component().empty())
-      throw std::runtime_error("Cannot write sub-Functions to VTK file.");
+      throw DolfinXException("Cannot write sub-Functions to VTK file.");
 
     // Check that pointwise elements are the same (up to the block size)
     if (!is_cellwise(*V))
     {
       if (*(V->element()) != *element0)
       {
-        throw std::runtime_error("All point-wise Functions written to VTK file "
-                                 "must have same element.");
+        throw DolfinXException("All point-wise Functions written to VTK file "
+                               "must have same element.");
       }
     }
   }
@@ -573,8 +573,7 @@ void write_function(
       }
       else
       {
-        throw std::runtime_error(
-            "Elements differ, not permitted for VTK output");
+        throw DolfinXException("Elements differ, not permitted for VTK output");
       }
     }
   }
@@ -714,9 +713,8 @@ void io::VTKFile::close()
     bool status = _pvd_xml->save_file(_filename.c_str(), "  ");
     if (status == false)
     {
-      throw std::runtime_error(
-          "Could not write VTKFile. Does the directory "
-          "exists and do you have read/write permissions?");
+      throw DolfinXException("Could not write VTKFile. Does the directory "
+                             "exists and do you have read/write permissions?");
     }
   }
 }
@@ -724,7 +722,7 @@ void io::VTKFile::close()
 void io::VTKFile::flush()
 {
   if (!_pvd_xml and dolfinx::MPI::rank(_comm.comm()) == 0)
-    throw std::runtime_error("VTKFile has already been closed");
+    throw DolfinXException("VTKFile has already been closed");
 
   if (MPI::rank(_comm.comm()) == 0)
   {
@@ -737,7 +735,7 @@ void io::VTKFile::flush()
 void io::VTKFile::write(const mesh::Mesh& mesh, double time)
 {
   if (!_pvd_xml)
-    throw std::runtime_error("VTKFile has already been closed");
+    throw DolfinXException("VTKFile has already been closed");
 
   // Get the PVD "Collection" node
   pugi::xml_node xml_collections

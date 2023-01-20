@@ -71,9 +71,9 @@ auto det(const T* A, std::array<std::size_t, 2> shape)
     return w4;
   }
   default:
-    throw std::runtime_error("math::det is not implemented for "
-                             + std::to_string(A[0]) + "x" + std::to_string(A[1])
-                             + " matrices.");
+    throw DolfinXException("math::det is not implemented for "
+                           + std::to_string(A[0]) + "x" + std::to_string(A[1])
+                           + " matrices.");
   }
 }
 
@@ -107,9 +107,9 @@ auto det(Matrix A)
     return w4;
   }
   default:
-    throw std::runtime_error("math::det is not implemented for "
-                             + std::to_string(A.extent(0)) + "x"
-                             + std::to_string(A.extent(1)) + " matrices.");
+    throw DolfinXException("math::det is not implemented for "
+                           + std::to_string(A.extent(0)) + "x"
+                           + std::to_string(A.extent(1)) + " matrices.");
   }
 }
 
@@ -163,9 +163,9 @@ void inv(U A, V B)
     break;
   }
   default:
-    throw std::runtime_error("math::inv is not implemented for "
-                             + std::to_string(A.extent(0)) + "x"
-                             + std::to_string(A.extent(1)) + " matrices.");
+    throw DolfinXException("math::inv is not implemented for "
+                           + std::to_string(A.extent(0)) + "x"
+                           + std::to_string(A.extent(1)) + " matrices.");
   }
 }
 
@@ -252,9 +252,9 @@ void pinv(U A, V P)
   }
   else
   {
-    throw std::runtime_error("math::pinv is not implemented for "
-                             + std::to_string(A.extent(0)) + "x"
-                             + std::to_string(A.extent(1)) + " matrices.");
+    throw DolfinXException("math::pinv is not implemented for "
+                           + std::to_string(A.extent(0)) + "x"
+                           + std::to_string(A.extent(1)) + " matrices.");
   }
 }
 

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "cell_types.h"
+#include "../common/DolfinXException.h"
 #include <algorithm>
 #include <basix/cell.h>
 #include <cfloat>
@@ -35,7 +36,7 @@ std::string mesh::to_string(CellType type)
   case CellType::hexahedron:
     return "hexahedron";
   default:
-    throw std::runtime_error("Unknown cell type.");
+    throw DolfinXException("Unknown cell type.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -58,7 +59,7 @@ mesh::CellType mesh::to_type(const std::string& cell)
   else if (cell == "hexahedron")
     return CellType::hexahedron;
   else
-    throw std::runtime_error("Unknown cell type (" + cell + ")");
+    throw DolfinXException("Unknown cell type (" + cell + ")");
 }
 //-----------------------------------------------------------------------------
 mesh::CellType mesh::cell_entity_type(CellType type, int d, int index)
@@ -101,7 +102,7 @@ mesh::CellType mesh::cell_facet_type(CellType type, int index)
   case CellType::hexahedron:
     return CellType::quadrilateral;
   default:
-    throw std::runtime_error("Unknown cell type.");
+    throw DolfinXException("Unknown cell type.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -228,7 +229,7 @@ basix::cell::type mesh::cell_type_to_basix_type(CellType celltype)
   case CellType::pyramid:
     return basix::cell::type::pyramid;
   default:
-    throw std::runtime_error("Unrecognised cell type.");
+    throw DolfinXException("Unrecognised cell type.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -251,7 +252,7 @@ mesh::CellType mesh::cell_type_from_basix_type(basix::cell::type celltype)
   case basix::cell::type::pyramid:
     return CellType::pyramid;
   default:
-    throw std::runtime_error("Unrecognised cell type.");
+    throw DolfinXException("Unrecognised cell type.");
   }
 }
 //-----------------------------------------------------------------------------

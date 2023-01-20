@@ -263,7 +263,7 @@ get_simplices(const std::vector<std::int64_t>& indices,
     return get_tetrahedra(indices, longest_edge);
   }
   else
-    throw std::runtime_error("Topological dimension not supported");
+    throw DolfinXException("Topological dimension not supported");
 }
 
 // Get the longest edge of each face (using local mesh index)
@@ -687,14 +687,14 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
   {
-    throw std::runtime_error("Cell type not supported");
+    throw DolfinXException("Cell type not supported");
   }
 
   common::Timer t0("PLAZA: refine");
 
   auto map_e = mesh.topology().index_map(1);
   if (!map_e)
-    throw std::runtime_error("Edges must be initialised");
+    throw DolfinXException("Edges must be initialised");
 
   // Get sharing ranks for each edge
   graph::AdjacencyList<int> edge_ranks = map_e->index_to_dest_ranks();
@@ -742,14 +742,14 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
   {
-    throw std::runtime_error("Cell type not supported");
+    throw DolfinXException("Cell type not supported");
   }
 
   common::Timer t0("PLAZA: refine");
 
   auto map_e = mesh.topology().index_map(1);
   if (!map_e)
-    throw std::runtime_error("Edges must be initialised");
+    throw DolfinXException("Edges must be initialised");
 
   // Get sharing ranks for each edge
   graph::AdjacencyList<int> edge_ranks = map_e->index_to_dest_ranks();

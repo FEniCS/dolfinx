@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "../common/DolfinXException.h"
 #include "MPICommWrapper.h"
 #include "array.h"
 #include "caster_mpi.h"
@@ -121,7 +122,7 @@ void common(py::module& m)
              const py::array_t<std::int32_t, py::array::c_style>& local)
           {
             if (local.ndim() != 1)
-              throw std::runtime_error("Array of local indices must be 1D.");
+              throw DolfinXException("Array of local indices must be 1D.");
             py::array_t<std::int64_t> global(local.size());
             self.local_to_global(
                 std::span(local.data(), local.size()),
