@@ -7,12 +7,12 @@
 
 #pragma once
 
-#include "../common/DolfinXException.h"
 #include "Constant.h"
 #include "Function.h"
 #include "FunctionSpace.h"
 #include <array>
 #include <concepts>
+#include <dolfinx/common/DolfinXException.h>
 #include <functional>
 #include <memory>
 #include <span>

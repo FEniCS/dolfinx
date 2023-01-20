@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include "../common/DolfinXException.h"
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>

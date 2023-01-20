@@ -5,11 +5,11 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "DofMap.h"
-#include "../common/DolfinXException.h"
 #include "ElementDofLayout.h"
 #include "dofmapbuilder.h"
 #include "utils.h"
 #include <cstdint>
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/sort.h>

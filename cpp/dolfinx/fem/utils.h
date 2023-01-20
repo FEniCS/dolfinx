@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "../common/DolfinXException.h"
 #include "Constant.h"
 #include "CoordinateElement.h"
 #include "DofMap.h"
@@ -17,6 +16,7 @@
 #include "sparsitybuild.h"
 #include <array>
 #include <concepts>
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>

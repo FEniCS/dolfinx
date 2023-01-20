@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "../common/DolfinXException.h"
 #include "Constant.h"
 #include "DirichletBC.h"
 #include "DofMap.h"
@@ -14,6 +13,7 @@
 #include "FunctionSpace.h"
 #include "utils.h"
 #include <algorithm>
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>

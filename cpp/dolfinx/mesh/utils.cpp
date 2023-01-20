@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include "../common/DolfinXException.h"
 #include "Geometry.h"
 #include "Mesh.h"
 #include "Topology.h"
@@ -14,6 +13,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdlib>
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/math.h>

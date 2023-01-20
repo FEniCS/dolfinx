@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "XDMFFile.h"
-#include "../common/DolfinXException.h"
 #include "cells.h"
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
@@ -13,6 +12,7 @@
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
 #include <boost/lexical_cast.hpp>
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/graph/AdjacencyList.h>

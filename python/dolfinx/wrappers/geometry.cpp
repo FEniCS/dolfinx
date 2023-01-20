@@ -4,9 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "../common/DolfinXException.h"
 #include "array.h"
 #include "caster_mpi.h"
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/gjk.h>

@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include "../common/DolfinXException.h"
 #include <cassert>
 #include <concepts>
+#include <dolfinx/common/DolfinXException.h>
 #include <numeric>
 #include <span>
 #include <sstream>

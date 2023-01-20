@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include "../common/DolfinXException.h"
 #include "CoordinateElement.h"
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/utils.h>

@@ -5,9 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "ElementDofLayout.h"
-#include "../common/DolfinXException.h"
 #include <array>
 #include <cassert>
+#include <dolfinx/common/DolfinXException.h>
 #include <functional>
 #include <numeric>
 #include <stdexcept>

@@ -5,9 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "CoordinateElement.h"
-#include "../common/DolfinXException.h"
 #include <basix/finite-element.h>
 #include <cmath>
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
 

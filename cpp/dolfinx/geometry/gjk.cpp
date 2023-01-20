@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "gjk.h"
-#include "../common/DolfinXException.h"
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/math.h>
 #include <numeric>
 #include <stdexcept>

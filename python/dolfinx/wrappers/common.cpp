@@ -4,12 +4,12 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "../common/DolfinXException.h"
 #include "MPICommWrapper.h"
 #include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <complex>
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>

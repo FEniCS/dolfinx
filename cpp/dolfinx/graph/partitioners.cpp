@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "partitioners.h"
-#include "../common/DolfinXException.h"
 #include <cstdint>
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>

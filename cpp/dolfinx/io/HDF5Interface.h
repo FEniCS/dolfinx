@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include "../common/DolfinXException.h"
 #include <array>
 #include <cassert>
 #include <chrono>
 #include <cstdint>
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/log.h>
 #include <filesystem>
 #include <hdf5.h>

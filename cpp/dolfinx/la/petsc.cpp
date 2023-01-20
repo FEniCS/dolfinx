@@ -6,10 +6,10 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "petsc.h"
-#include "../common/DolfinXException.h"
 #include "SparsityPattern.h"
 #include "Vector.h"
 #include "utils.h"
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>

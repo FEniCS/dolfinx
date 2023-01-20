@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include "../common/DolfinXException.h"
 #include "assemble_matrix_impl.h"
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
 #include <cstdint>
+#include <dolfinx/common/DolfinXException.h>
 #include <memory>
 #include <span>
 #include <vector>

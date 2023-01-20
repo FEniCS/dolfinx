@@ -5,11 +5,11 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FunctionSpace.h"
-#include "../common/DolfinXException.h"
 #include "CoordinateElement.h"
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include <boost/uuid/uuid_generators.hpp>
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>

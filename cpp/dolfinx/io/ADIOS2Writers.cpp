@@ -7,13 +7,13 @@
 #ifdef HAS_ADIOS2
 
 #include "ADIOS2Writers.h"
-#include "../common/DolfinXException.h"
 #include "cells.h"
 #include "vtk_utils.h"
 #include <adios2.h>
 #include <algorithm>
 #include <array>
 #include <complex>
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>

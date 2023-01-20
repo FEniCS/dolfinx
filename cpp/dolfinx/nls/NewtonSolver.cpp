@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "NewtonSolver.h"
-#include "../common/DolfinXException.h"
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/la/petsc.h>

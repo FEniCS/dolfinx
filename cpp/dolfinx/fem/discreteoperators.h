@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include "../common/DolfinXException.h"
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include <array>
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/Mesh.h>

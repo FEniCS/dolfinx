@@ -7,9 +7,9 @@
 #ifdef HAS_SLEPC
 
 #include "slepc.h"
-#include "../common/DolfinXException.h"
 #include "petsc.h"
 #include "utils.h"
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
 #include <petscmat.h>

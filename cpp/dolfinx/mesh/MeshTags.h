@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include "../common/DolfinXException.h"
 #include "Geometry.h"
 #include "Mesh.h"
 #include "Topology.h"
 #include <algorithm>
 #include <concepts>
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>

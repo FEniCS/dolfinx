@@ -5,9 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "generation.h"
-#include "../common/DolfinXException.h"
 #include <array>
 #include <cfloat>
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/graph/AdjacencyList.h>

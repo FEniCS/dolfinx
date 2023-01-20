@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "../common/DolfinXException.h"
 #include <concepts>
+#include <dolfinx/common/DolfinXException.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
