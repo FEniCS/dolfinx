@@ -72,7 +72,6 @@ jobs:
           cmake -G Ninja -DADIOS2_USE_HDF5=on -DADIOS2_USE_Fortran=off -DBUILD_TESTING=off -DADIOS2_BUILD_EXAMPLES=off -DADIOS2_USE_ZeroMQ=off -B build-dir -S ./adios2-v2.8.3
           cmake --build build-dir
           cmake --install build-dir
-          rm -rf /tmp/*
 
       - name: Install Basix
         run: |
