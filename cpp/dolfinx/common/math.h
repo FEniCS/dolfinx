@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "../common/DolfinXException.h"
 #include <array>
 #include <basix/mdspan.hpp>
 #include <cmath>
