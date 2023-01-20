@@ -147,9 +147,9 @@ def lid_velocity_expression(x):
 
 # -
 
-# ### 1. $(\mathcal{P}_2, \mathcal{P}_1$): The Taylor Hood element for $k=2$
+# ### 1. $(\mathcal{P}_2, \mathcal{P}_1$): The Taylor-Hood element for $k=2$
 #
-# For the Taylor Hood, the discrete function spaces are chosen as
+# For the Taylor-Hood, the discrete function spaces are chosen as
 # $V_h = \mathcal{P}_k$ and $Q_h = \mathcal{P}_{k-1}$ with $k \geq 2$.
 #
 # For $k = 2$ we have:
@@ -283,14 +283,14 @@ coef_norm_p_1 = p.x.norm()
 l2_norm_u_1 = l2_norm(u)
 l2_norm_p_1 = l2_norm(p)
 if MPI.COMM_WORLD.rank == 0:
-    print("(1) Norm of velocity coeff. vector " +
-          "with the Taylor-Hood element:       {}".format(coef_norm_u_1))
-    print("(1) Norm of pressure coeff. vector " +
-          "with the Taylor-Hood element:       {}".format(coef_norm_p_1))
-    print("(1) L2 Norm of the velocity field " +
-          "with the Taylor-Hood element:        {}".format(l2_norm_u_1))
-    print("(1) L2 Norm of pressure field " +
-          "with the Taylor-Hood element:            {}".format(l2_norm_p_1))
+    print("(1) Norm of velocity coeff. vector "
+          + "with the Taylor-Hood element:      {}".format(coef_norm_u_1))
+    print("(1) Norm of pressure coeff. vector "
+          + "with the Taylor-Hood element:      {}".format(coef_norm_p_1))
+    print("(1) L2 Norm of the velocity field "
+          + "with the Taylor-Hood element:       {}".format(l2_norm_u_1))
+    print("(1) L2 Norm of pressure field "
+          + "with the Taylor-Hood element:           {}".format(l2_norm_p_1))
 
 
 # -
@@ -344,14 +344,14 @@ coef_norm_p_2 = p.x.norm()
 l2_norm_u_2 = l2_norm(u)
 l2_norm_p_2 = l2_norm(p)
 if MPI.COMM_WORLD.rank == 0:
-    print("(2) Norm of velocity coeff. vector " +
-          "with the MINI element:              {}".format(coef_norm_u_2))
-    print("(2) Norm of pressure coeff. vector " +
-          "with the MINI element:              {}".format(coef_norm_p_2))
-    print("(2) L2 Norm of the velocity field " +
-          "with the MINI element:               {}".format(l2_norm_u_2))
-    print("(2) L2 Norm of pressure field " +
-          "with the MINI element:                   {}".format(l2_norm_p_2))
+    print("(2) Norm of velocity coeff. vector "
+          + "with the MINI element:             {}".format(coef_norm_u_2))
+    print("(2) Norm of pressure coeff. vector "
+          + "with the MINI element:             {}".format(coef_norm_p_2))
+    print("(2) L2 Norm of the velocity field "
+          + "with the MINI element:              {}".format(l2_norm_u_2))
+    print("(2) L2 Norm of pressure field "
+          + "with the MINI element:                  {}".format(l2_norm_p_2))
 save_solution(u, "out_stokes_stable_pairs/2_velocity.xdmf")
 save_solution(p, "out_stokes_stable_pairs/2_pressure.xdmf")
 
@@ -387,14 +387,14 @@ coef_norm_p_3 = p.x.norm()
 l2_norm_u_3 = l2_norm(u)
 l2_norm_p_3 = l2_norm(p)
 if MPI.COMM_WORLD.rank == 0:
-    print("(3) Norm of velocity coeff. vector " +
-          "with the Crouzeix-Raviart element: {}".format(coef_norm_u_3))
-    print("(3) Norm of pressure coeff. vector " +
-          "with the Crouzeix-Raviart element: {}".format(coef_norm_p_3))
-    print("(3) L2 Norm of the velocity field " +
-          "with the Crouzeix-Raviart element:   {}".format(l2_norm_u_3))
-    print("(3) L2 Norm of pressure field " +
-          "with the Crouzeix-Raviart element:      {}".format(l2_norm_p_3))
+    print("(3) Norm of velocity coeff. vector "
+          + "with the Crouzeix-Raviart element: {}".format(coef_norm_u_3))
+    print("(3) Norm of pressure coeff. vector "
+          + "with the Crouzeix-Raviart element: {}".format(coef_norm_p_3))
+    print("(3) L2 Norm of the velocity field "
+          + "with the Crouzeix-Raviart element:  {}".format(l2_norm_u_3))
+    print("(3) L2 Norm of pressure field "
+          + "with the Crouzeix-Raviart element:      {}".format(l2_norm_p_3))
 save_solution(u, "out_stokes_stable_pairs/3_velocity.xdmf")
 save_solution(p, "out_stokes_stable_pairs/3_pressure.xdmf")
 
@@ -439,7 +439,7 @@ while iters < max_iters and u_m_u > 1e-8:
         u_m_u = (u.vector - u_old_vec).norm(2)
     u_old_vec = u.vector.copy()
     iters += 1
-    print(f'iterration {iters}: u_m_u = {u_m_u}')
+    print(f'iteration {iters}: u_m_u = {u_m_u}')
 
 
 # -
@@ -484,14 +484,14 @@ coef_norm_p_4 = p.x.norm()
 l2_norm_u_4 = l2_norm(u)
 l2_norm_p_4 = l2_norm(p)
 if MPI.COMM_WORLD.rank == 0:
-    print("(4) Norm of velocity coeff. vector " +
-          "with the Scott-Vigelius element: {}".format(coef_norm_u_3))
-    print("(4) Norm of pressure coeff. vector " +
-          "with the Scott-Vigelius element: {}".format(coef_norm_p_3))
-    print("(4) L2 Norm of the velocity field " +
-          "with the Scott-Vigelius element:  {}".format(l2_norm_u_3))
-    print("(4) L2 Norm of pressure field " +
-          "with the Scott-Vigelius element:  {}".format(l2_norm_p_3))
+    print("(4) Norm of velocity coeff. vector "
+          + "with the Scott-Vigelius element:   {}".format(coef_norm_u_3))
+    print("(4) Norm of pressure coeff. vector "
+          + "with the Scott-Vigelius element:   {}".format(coef_norm_p_3))
+    print("(4) L2 Norm of the velocity field "
+          + "with the Scott-Vigelius element:    {}".format(l2_norm_u_3))
+    print("(4) L2 Norm of pressure field "
+          + "with the Scott-Vigelius element:        {}".format(l2_norm_p_3))
 save_solution(u, "out_stokes_stable_pairs/4_velocity.xdmf")
 save_solution(p, "out_stokes_stable_pairs/4_pressure.xdmf")
 
