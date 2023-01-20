@@ -62,6 +62,16 @@ jobs:
           make all
           cd src/binding/petsc4py
           PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt pip3 install --no-cache-dir .
+ 
+      - name: Install minimal ADIOS2
+        run: |
+          wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v2.8.3.tar.gz -O adios2-v2.8.3.tar.gz
+          mkdir -p adios2-v2.8.3
+          tar -xf adios2-v2.8.3.tar.gz -C adios2-v2.8.3 --strip-components 1
+          cmake -G Ninja -DADIOS2_USE_HDF5=on -DADIOS2_USE_Fortran=off -DBUILD_TESTING=off -DADIOS2_BUILD_EXAMPLES=off -DADIOS2_USE_ZeroMQ=off -B build-dir -S ./adios2-v2.8.3
+          cmake --build build-dir
+          cmake --install build-dir
+          rm -rf /tmp/*
 
       - name: Install Basix
         run: |
