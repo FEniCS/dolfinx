@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Timer.h"
-#include "../common/DolfinXException.h"
+#include "DolfinXException.h"
 #include "TimeLogManager.h"
 #include "TimeLogger.h"
 #include <stdexcept>

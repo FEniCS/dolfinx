@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../common/DolfinXException.h"
+#include "DolfinXException.h"
 #include <algorithm>
 #include <boost/functional/hash.hpp>
 #include <dolfinx/common/MPI.h>

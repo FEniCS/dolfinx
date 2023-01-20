@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../common/DolfinXException.h"
+#include "DolfinXException.h"
 #include "IndexMap.h"
 #include "MPI.h"
 #include "sort.h"
