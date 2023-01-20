@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+#include "../common/DolfinXException.h"
 #include "Constant.h"
 #include "DofMap.h"
 #include "FiniteElement.h"

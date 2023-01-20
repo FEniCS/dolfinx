@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "../common/DolfinXException.h"
 #include "SparsityPattern.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>

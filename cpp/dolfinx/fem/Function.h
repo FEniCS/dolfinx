@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "../common/DolfinXException.h"
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"

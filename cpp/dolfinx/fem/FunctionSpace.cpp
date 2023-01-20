@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FunctionSpace.h"
+#include "../common/DolfinXException.h"
 #include "CoordinateElement.h"
 #include "DofMap.h"
 #include "FiniteElement.h"

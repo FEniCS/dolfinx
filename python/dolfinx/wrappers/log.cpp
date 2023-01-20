@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "../common/DolfinXException.h"
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>

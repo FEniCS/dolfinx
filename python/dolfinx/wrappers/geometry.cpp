@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "../common/DolfinXException.h"
 #include "array.h"
 #include "caster_mpi.h"
 #include <dolfinx/common/utils.h>

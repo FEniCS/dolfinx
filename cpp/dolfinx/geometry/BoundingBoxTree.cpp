@@ -6,6 +6,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "BoundingBoxTree.h"
+#include "../common/DolfinXException.h"
 #include "utils.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>

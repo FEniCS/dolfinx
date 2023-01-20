@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "permutationcomputation.h"
+#include "../common/DolfinXException.h"
 #include "Topology.h"
 #include "cell_types.h"
 #include <algorithm>

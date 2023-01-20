@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "VTKFile.h"
+#include "../common/DolfinXException.h"
 #include "cells.h"
 #include "vtk_utils.h"
 #include "xdmf_utils.h"

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "HDF5Interface.h"
+#include "../common/DolfinXException.h"
 #include <filesystem>
 
 #define HDF5_MAXSTRLEN 80

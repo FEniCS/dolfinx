@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "../common/DolfinXException.h"
 #include "utils.h"
 #include <complex>
 #include <dolfinx/common/IndexMap.h>

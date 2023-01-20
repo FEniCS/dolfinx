@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "../common/DolfinXException.h"
 #include "Geometry.h"
 #include "Mesh.h"
 #include "Topology.h"

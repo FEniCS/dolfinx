@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "../common/DolfinXException.h"
 #include "FunctionSpace.h"
 #include <algorithm>
 #include <array>

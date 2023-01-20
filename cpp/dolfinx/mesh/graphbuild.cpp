@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "graphbuild.h"
+#include "../common/DolfinXException.h"
 #include "cell_types.h"
 #include <algorithm>
 #include <dolfinx/common/MPI.h>

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FiniteElement.h"
+#include "../common/DolfinXException.h"
 #include <algorithm>
 #include <array>
 #include <basix/finite-element.h>

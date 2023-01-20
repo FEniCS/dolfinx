@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "../common/DolfinXException.h"
 #include "CoordinateElement.h"
 #include "DofMap.h"
 #include "FiniteElement.h"

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "XDMFFile.h"
+#include "../common/DolfinXException.h"
 #include "cells.h"
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
