@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.1
+#       jupytext_version: 1.14.4
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -19,13 +19,21 @@
 # ### Strong formulation
 #
 # $$
-# -\nabla \cdot (\nabla u + p I) = f \; {\rm in} \; \Omega, \quad \nabla \cdot u = 0 \; {\rm in} \; \Omega
+# \begin{align}
+# -\nabla \cdot (\nabla u + p I) &= f \; {\rm in} \; \Omega, \\
+# \nabla \cdot u &= 0 \; {\rm in} \; \Omega
+# \end{align}
 # $$
 #
-# A typical set of boundary conditions on the boundary $\partial\Omega = \Gamma_{D} \cup \Gamma_{N}$ can be:
+#
+# A typical set of boundary conditions on the boundary
+# $\partial\Omega = \Gamma_{D} \cup \Gamma_{N}$ can be:
 #
 # $$
-# u = u_0 \; {\rm on} \; \Gamma_{D}, \quad \nabla u \cdot n + p n = g \; {\rm on} \; \Gamma_{N}.
+# \begin{align}
+# u &= u_0 \; {\rm on} \; \Gamma_{D}, \\
+# \nabla u \cdot n + p n &= g \; {\rm on} \; \Gamma_{N}.
+# \end{align}
 # $$
 #
 # ### Weak formulation
@@ -41,14 +49,17 @@
 # for all $(v, q) \in W$, where
 #
 # $$
-# a((u, p), (v, q)) := \int_{\Omega} \nabla u \cdot \nabla v - \nabla \cdot v \; p + \nabla \cdot u \; q \, {\rm d} x,
+# a((u, p), (v, q)) := \int_{\Omega} \nabla u \cdot \nabla v
+# - \nabla \cdot v \; p + \nabla \cdot u \; q \, {\rm d} x,
 # $$
 #
 # $$
-# L((v, q)) := \int_{\Omega} f \cdot v \, {\rm d} x + \int_{\partial \Omega_N} g \cdot v \, {\rm d} s.
+# L((v, q)) := \int_{\Omega} f \cdot v \, {\rm d} x
+# + \int_{\partial \Omega_N} g \cdot v \, {\rm d} s.
 # $$
 #
-# The space $W$ is a mixed (product) function space $W = V \times Q$, such that $u \in V$ and $q \in Q$.
+# The space $W$ is a mixed (product) function space $W = V \times Q$,
+# such that $u \in V$ and $q \in Q$.
 #
 # ### Domain and boundary conditions
 #
@@ -63,16 +74,25 @@
 #
 # ### Discretization
 #
-# There are many ways to choose the discretized function spaces $V_h \subset V$ and $Q_h \subset Q$ for the
-# mixed variational form.
-# Care must be taken that the combination of $V_h$ and $Q_h$ is stable in the sense of the inf-sup condition.
+# There are many ways to choose the discretized function spaces $V_h \subset V$
+# and $Q_h \subset Q$ for the mixed variational form.
+# Care must be taken that the combination of $V_h$ and $Q_h$ is stable
+# in the sense of the inf-sup condition.
 # Common are the following stable pairs:
 #
-# 1. $(\mathcal{P}_2, \mathcal{P}_1$): The Taylor Hood element for $k=2$
-# 2. $(\mathcal{P}_1 + \mathcal{B}_3, \mathcal{P}_1)$: The MINI element
-# 3. $(\mathcal{P}_1^{\rm CR}, \mathcal{P}_0)$: The non-conforming Crouzeix-Raviart element
+# 1. $(\mathcal{P}_2, \mathcal{P}_1$):
+# The [Taylor-Hood element](https://defelement.com/elements/taylor-hood.html)
+# for $k=2$
+# 2. $(\mathcal{P}_1 + \mathcal{B}_3, \mathcal{P}_1)$:
+# The [MINI element](https://defelement.com/elements/mini.html)
+# 3. $(\mathcal{P}_1^{\rm CR}, \mathcal{P}_0)$:
+# The [non-conforming Crouzeix-Raviart element]
+# (https://defelement.com/elements/crouzeix-raviart.html)
+# 4. $(\mathcal{P}_4, \mathcal{P}_3^{-1})$:
+# The Scott-Vogelius element for $k=4$
 #
-# In the following, the Stokes equations in the lid-driven cavity setting are solved using each of these stable pairs.
+# In the following, the Stokes equations in the lid-driven cavity setting
+# are solved using each of these stable pairs.
 #
 # ## Implementation
 #
@@ -129,8 +149,8 @@ def lid_velocity_expression(x):
 
 # ### 1. $(\mathcal{P}_2, \mathcal{P}_1$): The Taylor Hood element for $k=2$
 #
-# For the Taylor Hood, the discrete function spaces are chosen as $V_h = \mathcal{P}_k$ and
-# $Q_h = \mathcal{P}_{k-1}$ with $k \geq 2$.
+# For the Taylor Hood, the discrete function spaces are chosen as
+# $V_h = \mathcal{P}_k$ and $Q_h = \mathcal{P}_{k-1}$ with $k \geq 2$.
 #
 # For $k = 2$ we have:
 
@@ -145,8 +165,9 @@ V, Q = FunctionSpace(msh, P2), FunctionSpace(msh, P1)
 
 # -
 
-# First, we have to define the boundary conditions for the velocity field in the problem setting.
-# In the case of the lid driven cavity scenario, there is a driving velocity condition on the top boundary
+# First, we have to define the boundary conditions for the velocity field
+# in the problem setting. In the case of the lid driven cavity scenario,
+# there is a driving velocity condition on the top boundary
 # and a no-slip boundary condition on the remaining boundary.
 
 # +
@@ -182,7 +203,8 @@ def define_weak_form(u, p, v, q):
 
     a = form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
               [inner(div(u), q) * dx, None]])
-    L = form([inner(f, v) * dx, inner(Constant(msh, PETSc.ScalarType(0)), q) * dx])
+    L = form([inner(f, v) * dx,
+              inner(Constant(msh, PETSc.ScalarType(0)), q) * dx])
     return a, L
 
 
@@ -191,8 +213,9 @@ a, L = define_weak_form(u, p, v, q)
 
 # -
 
-# Before the solution can be obtained, the linear system has to be assembled. We set a null space to account
-# for the homogeneous Neumann boundary conditions of the pressure field.
+# Before the solution can be obtained, the linear system has to be assembled.
+# We set a null space to account for the homogeneous Neumann
+# boundary conditions of the pressure field.
 
 # +
 def assemble_system(a, L, bcs, V):
@@ -216,7 +239,8 @@ A, b = assemble_system(a, L, bcs, V)
 
 # -
 
-# Finally, the linear system can be solved to obtain the solution functions $u$ and $p$. Here, a direct solver is used.
+# Finally, the linear system can be solved to obtain the solution functions
+# $u$ and $p$. Here, a direct solver is used.
 
 # +
 def solve_system(A, b, msh, V):
@@ -259,15 +283,20 @@ coef_norm_p_1 = p.x.norm()
 l2_norm_u_1 = l2_norm(u)
 l2_norm_p_1 = l2_norm(p)
 if MPI.COMM_WORLD.rank == 0:
-    print("(1) Norm of velocity coefficient vector with the Taylor Hood element:      {}".format(coef_norm_u_1))
-    print("(1) Norm of pressure coefficient vector with the Taylor Hood element:      {}".format(coef_norm_p_1))
-    print("(1) L2 Norm of the velocity field with the Taylor Hood element:            {}".format(l2_norm_u_1))
-    print("(1) L2 Norm of pressure field with the Taylor Hood element:                {}".format(l2_norm_p_1))
+    print("(1) Norm of velocity coeff. vector " +
+          "with the Taylor-Hood element:       {}".format(coef_norm_u_1))
+    print("(1) Norm of pressure coeff. vector " +
+          "with the Taylor-Hood element:       {}".format(coef_norm_p_1))
+    print("(1) L2 Norm of the velocity field " +
+          "with the Taylor-Hood element:        {}".format(l2_norm_u_1))
+    print("(1) L2 Norm of pressure field " +
+          "with the Taylor-Hood element:            {}".format(l2_norm_p_1))
 
 
 # -
 
-# The solved velocity and pressure fields are saved as XDMF files and can be visualized e.g. in Paraview.
+# The solved velocity and pressure fields are saved as XDMF files
+# and can be visualized e.g. in Paraview.
 
 # +
 def save_solution(sol, file_name):
@@ -283,12 +312,15 @@ save_solution(p, "out_stokes_stable_pairs/1_pressure.xdmf")
 
 # ### 2. $(\mathcal{P}_1 + \mathcal{B}_3, \mathcal{P}_1)$: The MINI element
 
-# For the so-called [MINI element](https://defelement.com/elements/mini.html) the finite element for
-# the velocity field is chosen as the Lagrange element of degree 1 enriched with a
+# For the so-called [MINI element](https://defelement.com/elements/mini.html)
+# the finite element for the velocity field is chosen as
+# the Lagrange element of degree 1 enriched with a
 # [bubble element](https://defelement.com/elements/bubble.html) of degree 3.
-# The finite element for the pressure field is chosen as Lagrange element of degree 1.
+# The finite element for the pressure field is chosen as
+# Lagrange element of degree 1.
 #
-# In `dolfinx`, enriched finite elements can be obtained simply by using the `+` operator.
+# In `dolfinx`, enriched finite elements can be obtained simply
+# by using the `+` operator.
 
 # +
 P1 = ufl.FiniteElement("Lagrange", msh.ufl_cell(), 1)
@@ -312,18 +344,25 @@ coef_norm_p_2 = p.x.norm()
 l2_norm_u_2 = l2_norm(u)
 l2_norm_p_2 = l2_norm(p)
 if MPI.COMM_WORLD.rank == 0:
-    print("(2) Norm of velocity coefficient vector with the MINI element:             {}".format(coef_norm_u_2))
-    print("(2) Norm of pressure coefficient vector with the MINI element:             {}".format(coef_norm_p_2))
-    print("(2) L2 Norm of the velocity field with the MINI element:                   {}".format(l2_norm_u_2))
-    print("(2) L2 Norm of pressure field with the MINI element:                       {}".format(l2_norm_p_2))
+    print("(2) Norm of velocity coeff. vector " +
+          "with the MINI element:              {}".format(coef_norm_u_2))
+    print("(2) Norm of pressure coeff. vector " +
+          "with the MINI element:              {}".format(coef_norm_p_2))
+    print("(2) L2 Norm of the velocity field " +
+          "with the MINI element:               {}".format(l2_norm_u_2))
+    print("(2) L2 Norm of pressure field " +
+          "with the MINI element:                   {}".format(l2_norm_p_2))
 save_solution(u, "out_stokes_stable_pairs/2_velocity.xdmf")
 save_solution(p, "out_stokes_stable_pairs/2_pressure.xdmf")
 
-# ### 3. $(\mathcal{P}_1^{\rm CR}, \mathcal{P}_0)$: The non-conforming Crouzeix-Raviart element
+# ### 3. $(\mathcal{P}_1^{\rm CR}, \mathcal{P}_0)$:
+# The non-conforming Crouzeix-Raviart element
 #
-# Another possibility for chosing the discretized function spaces is by using the
-# [Crouzeix-Raviart element](https://defelement.com/elements/crouzeix-raviart.html).
-# Here, a non-conforming variant of the Lagrange element of degree 1 is used for the velocity field,
+# Another possibility for chosing the discretized function spaces
+# is by using the [Crouzeix-Raviart element]
+# (https://defelement.com/elements/crouzeix-raviart.html).
+# Here, a non-conforming variant of the Lagrange element of degree 1
+# is used for the velocity field,
 # whereas the DG element is used for the pressure field.
 
 # +
@@ -335,7 +374,8 @@ V, Q = FunctionSpace(msh, P1CR), FunctionSpace(msh, P1)
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
 # -
 
-# We solve the Stokes equations as before but this time using the Crouzeix-Raviart element.
+# We solve the Stokes equations as before but this time using
+# the Crouzeix-Raviart element.
 # Subsequently, the solved velocity and pressure fields are saved.
 
 bcs = define_bcs(V)
@@ -347,18 +387,124 @@ coef_norm_p_3 = p.x.norm()
 l2_norm_u_3 = l2_norm(u)
 l2_norm_p_3 = l2_norm(p)
 if MPI.COMM_WORLD.rank == 0:
-    print("(3) Norm of velocity coefficient vector with the Crouzeix-Raviart element: {}".format(coef_norm_u_3))
-    print("(3) Norm of pressure coefficient vector with the Crouzeix-Raviart element: {}".format(coef_norm_p_3))
-    print("(3) L2 Norm of the velocity field with the Crouzeix-Raviart element:       {}".format(l2_norm_u_3))
-    print("(3) L2 Norm of pressure field with the Crouzeix-Raviart element:           {}".format(l2_norm_p_3))
+    print("(3) Norm of velocity coeff. vector " +
+          "with the Crouzeix-Raviart element: {}".format(coef_norm_u_3))
+    print("(3) Norm of pressure coeff. vector " +
+          "with the Crouzeix-Raviart element: {}".format(coef_norm_p_3))
+    print("(3) L2 Norm of the velocity field " +
+          "with the Crouzeix-Raviart element:   {}".format(l2_norm_u_3))
+    print("(3) L2 Norm of pressure field " +
+          "with the Crouzeix-Raviart element:      {}".format(l2_norm_p_3))
 save_solution(u, "out_stokes_stable_pairs/3_velocity.xdmf")
 save_solution(p, "out_stokes_stable_pairs/3_pressure.xdmf")
 
+# ### 4. $(\mathcal{P}_4, \mathcal{P}_{3}^{-1})$:
+# The Scott-Vogelius element for $k=4$
+
+# Scott-Vogelius method taken from the FEniCS book p. 388
+
+# +
+# Define function space
+P4 = ufl.VectorElement("Lagrange", msh.ufl_cell(), 4)
+P3 = ufl.FiniteElement("DG", msh.ufl_cell(), 3)
+V, Q = FunctionSpace(msh, P4), FunctionSpace(msh, P3)
+
+# Define trial and test functions
+u = ufl.TrialFunction(V)
+v = ufl.TestFunction(V)
+
+# Define auxiliary function and parameters
+w = Function(V)
+rho = 1.0e3
+r = -rho
+
+# Define the variational problem
+f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
+a = inner(grad(u), grad(v)) * dx + r * div(u) * div(v) * dx
+L = inner(f, v) * dx + inner(div(w), div(v)) * dx
+
+bcs = define_bcs(V)
+problem = fem.petsc.LinearProblem(a, L, bcs=bcs,
+                                  petsc_options={"ksp_type": "preonly",
+                                                 "pc_type": "lu"})
+# Iterate to fix point
+iters = 0
+max_iters = 100
+u_m_u = 1
+u_old_vec = None
+while iters < max_iters and u_m_u > 1e-8:
+    u = problem.solve()
+    w.vector.axpy(rho, u.vector)
+    if iters != 0:
+        u_m_u = (u.vector - u_old_vec).norm(2)
+    u_old_vec = u.vector.copy()
+    iters += 1
+    print(f'iterration {iters}: u_m_u = {u_m_u}')
+
+
+# -
+
+# After that, we have to reconstruct the pressure field by computing $div(w)$
+# and projecting the function onto the function space
+# for the pressure field $Q$.
+
+# +
+# Reconstruct pressure field
+def project(v, target_func, bcs=[]):
+    # Ensure we have a mesh and attach to measure
+    V = target_func.function_space
+    dx = ufl.dx(V.mesh)
+
+    # Define variational problem for projection
+    w = ufl.TestFunction(V)
+    Pv = ufl.TrialFunction(V)
+    a = fem.form(ufl.inner(Pv, w) * dx)
+    L = fem.form(ufl.inner(v, w) * dx)
+
+    # Assemble linear system
+    A = fem.petsc.assemble_matrix(a, bcs)
+    A.assemble()
+    b = fem.petsc.assemble_vector(L)
+    fem.petsc.apply_lifting(b, [a], [bcs])
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    fem.petsc.set_bc(b, bcs)
+
+    # Solve linear system
+    solver = PETSc.KSP().create(A.getComm())
+    solver.setOperators(A)
+    solver.solve(b, target_func.vector)
+
+
+p = Function(Q)
+project(div(w), p)
+# -
+
+coef_norm_u_4 = u.x.norm()
+coef_norm_p_4 = p.x.norm()
+l2_norm_u_4 = l2_norm(u)
+l2_norm_p_4 = l2_norm(p)
+if MPI.COMM_WORLD.rank == 0:
+    print("(4) Norm of velocity coeff. vector " +
+          "with the Scott-Vigelius element: {}".format(coef_norm_u_3))
+    print("(4) Norm of pressure coeff. vector " +
+          "with the Scott-Vigelius element: {}".format(coef_norm_p_3))
+    print("(4) L2 Norm of the velocity field " +
+          "with the Scott-Vigelius element:  {}".format(l2_norm_u_3))
+    print("(4) L2 Norm of pressure field " +
+          "with the Scott-Vigelius element:  {}".format(l2_norm_p_3))
+save_solution(u, "out_stokes_stable_pairs/4_velocity.xdmf")
+save_solution(p, "out_stokes_stable_pairs/4_pressure.xdmf")
+
 # ## Interpretation
 #
-# We solved the Stokes equations for the lid driven cavity setting using different stable pairs of finite elements.
-# Due to the rather coarse discretization, slight differences in the velocity field can be observed (e.g. in Paraview),
-# but these gradually disappear with finer discretization. The pressure field is only determined except to a constant
-# due to the homogeneous Neumann boundary conditions and therefore the L2 norms of the pressure field can differ
-# from each other a lot. Due to the different basis functions, the solved coefficients are completely different
+# We solved the Stokes equations for the lid driven cavity setting using
+# different stable pairs of finite elements.
+# Due to the rather coarse discretization, slight differences in the
+# velocity field can be observed (e.g. in ParaView),
+# but these gradually disappear with finer discretization.
+# The pressure field is only determined except to a constant
+# due to the homogeneous Neumann boundary conditions and therefore
+# the L2 norms of the pressure field can differ
+# from each other a lot. Due to the different basis functions,
+# the solved coefficients are completely different
 # despite the almost coinciding velocity field.
