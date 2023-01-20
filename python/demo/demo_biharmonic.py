@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.1
+#       jupytext_version: 1.14.4
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -115,7 +115,6 @@ import numpy as np
 
 import ufl
 from dolfinx import fem, io, mesh, plot
-from dolfinx.fem import Constant
 from dolfinx.mesh import CellType, GhostMode
 from ufl import (CellDiameter, FacetNormal, avg, div, dS, dx, grad, inner,
                  jump, pi, sin)
@@ -143,7 +142,8 @@ V = fem.FunctionSpace(msh, ("Lagrange", 2))
 # specifies the polynomial degree. in this case `V` consists of
 # first-order, continuous Lagrange finite element functions.
 #
-# Next, we locate the mesh facets that lie on the boundary $\Gamma_D$.
+# Next, we locate the mesh facets that lie on the boundary
+# $\Gamma_D = \partial\Omega$.
 # We do this using using {py:func}`locate_entities_boundary
 # <dolfinx.mesh.locate_entities_boundary>` and providing  a marker
 # function that returns `True` for points `x` on the boundary and
@@ -176,7 +176,7 @@ bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 h = CellDiameter(msh)
 h_avg = (h('+') + h('-')) / 2.0
 n = FacetNormal(msh)
-alpha = Constant(msh, 8.0)
+alpha = ScalarType(8.0)
 
 # +
 # Define variational problem
