@@ -420,7 +420,7 @@ r = -rho
 
 # Define the variational problem
 f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
-a = inner(grad(u), grad(v)) * dx + r * div(u) * div(v) * dx
+a = inner(grad(u), grad(v)) * dx + r * inner(div(u), div(v)) * dx
 L = inner(f, v) * dx + inner(div(w), div(v)) * dx
 
 bcs = define_bcs(V)
@@ -485,13 +485,13 @@ l2_norm_u_4 = l2_norm(u)
 l2_norm_p_4 = l2_norm(p)
 if MPI.COMM_WORLD.rank == 0:
     print("(4) Norm of velocity coeff. vector "
-          + "with the Scott-Vigelius element:   {}".format(coef_norm_u_3))
+          + "with the Scott-Vigelius element:   {}".format(coef_norm_u_4))
     print("(4) Norm of pressure coeff. vector "
-          + "with the Scott-Vigelius element:   {}".format(coef_norm_p_3))
+          + "with the Scott-Vigelius element:   {}".format(coef_norm_p_4))
     print("(4) L2 Norm of the velocity field "
-          + "with the Scott-Vigelius element:    {}".format(l2_norm_u_3))
+          + "with the Scott-Vigelius element:    {}".format(l2_norm_u_4))
     print("(4) L2 Norm of pressure field "
-          + "with the Scott-Vigelius element:        {}".format(l2_norm_p_3))
+          + "with the Scott-Vigelius element:        {}".format(l2_norm_p_4))
 save_solution(u, "out_stokes_stable_pairs/4_velocity.xdmf")
 save_solution(p, "out_stokes_stable_pairs/4_pressure.xdmf")
 
