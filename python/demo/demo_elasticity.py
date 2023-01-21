@@ -188,8 +188,8 @@ solver.setFromOptions()
 solver.setOperators(A)
 # -
 
-# Create a solution {py:class}`Function<dolfinx.fem.Function>`, `uh`, and
-# solve:
+# Create a solution {py:class}`Function<dolfinx.fem.Function>`, `uh`,
+# and solve:
 
 # +
 uh = Function(V)

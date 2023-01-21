@@ -2,11 +2,12 @@
 #
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
-# This file defines the `generate_mesh_wire` function, which is used to generate
-# the mesh used for scattering boundary conditions demo. The mesh is made up
-# by a central circle representing the wire, and an external circle, which
-# represents the external boundary of our domain, where scattering boundary
-# conditions are applied. The `generate_mesh_wire` function takes as input:
+# This file defines the `generate_mesh_wire` function, which is used to
+# generate the mesh used for scattering boundary conditions demo. The
+# mesh is made up by a central circle representing the wire, and an
+# external circle, which represents the external boundary of our domain,
+# where scattering boundary conditions are applied. The
+# `generate_mesh_wire` function takes as input:
 
 # - `radius_wire`: the radius of the wire
 # - `radius_dom`: the radius of the external boundary
@@ -18,9 +19,10 @@
 # - `bkg_tag`: the tag of the physical group representing the background
 # - `boundary_tag`: the tag of the physical group representing the boundary
 #
-# In particular, `bkg_size` and `boundary_size` are necessary to set a finer mesh on
-# the external boundary (to improve the accuracy of the scattering efficiency
-# calculation) while keeping a coarser size over the rest of the domain.
+# In particular, `bkg_size` and `boundary_size` are necessary to set a
+# finer mesh on the external boundary (to improve the accuracy of the
+# scattering efficiency calculation) while keeping a coarser size over
+# the rest of the domain.
 #
 
 import sys
@@ -47,10 +49,8 @@ def generate_mesh_wire(
                              angle1=0, angle2=2 * pi, tag=2)
 
     # A dummy boundary is added for setting a finer mesh
-    gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_dom * 0.9,
-                             angle1=0.0, angle2=2 * pi, tag=3)
-    gmsh.model.occ.addCircle(
-        0.0, 0.0, 0.0, radius_dom, angle1=0.0, angle2=2 * pi, tag=4)
+    gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_dom * 0.9, angle1=0.0, angle2=2 * pi, tag=3)
+    gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_dom, angle1=0.0, angle2=2 * pi, tag=4)
 
     gmsh.model.occ.addCurveLoop([1], tag=1)
     gmsh.model.occ.addPlaneSurface([1], tag=1)

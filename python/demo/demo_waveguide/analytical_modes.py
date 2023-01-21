@@ -15,13 +15,12 @@
 
 # ## Analytical solutions for the half-loaded waveguide
 #
-# The analytical solutions for the half-loaded waveguide
-# with perfect electric conducting walls are
-# described in Harrington's *Time-harmonic electromagnetic fields*.
-# We will skip the full derivation, and we just mention that
-# the problem can be decoupled into $\mathrm{TE}_x$ and
-# $\mathrm{TM}_x$ modes, and the possible $k_z$ can be found by
-# solving a set of transcendental equations, which is shown here below:
+# The analytical solutions for the half-loaded waveguide with perfect
+# electric conducting walls are described in Harrington's *Time-harmonic
+# electromagnetic fields*. We will skip the full derivation, and we just
+# mention that the problem can be decoupled into $\mathrm{TE}_x$ and
+# $\mathrm{TM}_x$ modes, and the possible $k_z$ can be found by solving
+# a set of transcendental equations, which is shown here below:
 #
 #
 # $$
@@ -69,45 +68,30 @@
 import numpy as np
 
 
-def TMx_condition(
-        kx_d: complex, kx_v: complex, eps_d: complex, eps_v: complex, d: float,
-        h: float) -> float:
-
-    return (kx_d / eps_d * np.tan(kx_d * d)
-            + kx_v / eps_v * np.tan(kx_v * (h - d)))
+def TMx_condition(kx_d: complex, kx_v: complex, eps_d: complex, eps_v: complex, d: float, h: float) -> float:
+    return (kx_d / eps_d * np.tan(kx_d * d) + kx_v / eps_v * np.tan(kx_v * (h - d)))
 
 
 def TEx_condition(kx_d: complex, kx_v: complex, d: float, h: float) -> float:
     return kx_d / np.tan(kx_d * d) + kx_v / np.tan(kx_v * (h - d))
 
-# Then, we can define the `verify_mode` function, to check whether a certain
-# $k_z$ satisfy the equations (below a certain threshold). In other words,
-# we provide a certain $k_z$, together with the geometrical and optical
-# parameters of the waveguide, and `verify_mode()` checks whether
-# the last equations for the $\mathrm{TE}_x$ or
-# $\mathrm{TM}_x$ modes are close to $0$.
+# Then, we can define the `verify_mode` function, to check whether a
+# certain $k_z$ satisfy the equations (below a certain threshold). In
+# other words, we provide a certain $k_z$, together with the geometrical
+# and optical parameters of the waveguide, and `verify_mode()` checks
+# whether the last equations for the $\mathrm{TE}_x$ or $\mathrm{TM}_x$
+# modes are close to $0$.
 
 
-def verify_mode(
-    kz: complex, w: float, h: float, d: float, lmbd0: float,
-        eps_d: complex, eps_v: complex, threshold: float) -> np.bool_:
-
+def verify_mode(kz: complex, w: float, h: float, d: float, lmbd0: float,
+                eps_d: complex, eps_v: complex, threshold: float) -> np.bool_:
     k0 = 2 * np.pi / lmbd0
-
     ky = np.pi / w  # we assume n = 1
-
     kx_d_target = np.sqrt(k0**2 * eps_d - ky**2 + - kz**2 + 0j)
-
     alpha = kx_d_target**2
-
     beta = alpha - k0**2 * (eps_d - eps_v)
-
     kx_v = np.sqrt(beta)
     kx_d = np.sqrt(alpha)
-
     f_tm = TMx_condition(kx_d, kx_v, eps_d, eps_v, d, h)
     f_te = TEx_condition(kx_d, kx_v, d, h)
-
-    return np.isclose(
-        f_tm, 0, atol=threshold) or np.isclose(
-        f_te, 0, atol=threshold)
+    return np.isclose(f_tm, 0, atol=threshold) or np.isclose(f_te, 0, atol=threshold)

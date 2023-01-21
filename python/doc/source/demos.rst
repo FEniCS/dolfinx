@@ -7,7 +7,7 @@ Demos
 Introductory demos
 ------------------
 
-These demos illustrate DOLFINx/FEniCSx usage and are a good way to begin
+These demos illustrate DOLFINx usage and are a good way to begin
 learning FEniCS. We recommend that you go through these examples in the
 given order.
 
@@ -29,8 +29,8 @@ functionality and optimizations.
    <demos/demo_tnt-elements>`.
 
 
-All demos
----------
+List of all demos
+-----------------
 
 .. toctree::
    :maxdepth: 1

@@ -73,9 +73,9 @@ with XDMFFile(MPI.COMM_WORLD, "out_helmholtz/plane_wave.xdmf", "w", encoding=XDM
     file.write_function(uh)
 # -
 
-# Calculate $L_2$ and $H^1$ errors of FEM solution and best approximation.
-# This demonstrates the error bounds given in Ihlenburg. Pollution errors are
-# evident for high wavenumbers.
+# Calculate $L_2$ and $H^1$ errors of FEM solution and best
+# approximation. This demonstrates the error bounds given in Ihlenburg.
+# Pollution errors are evident for high wavenumbers.
 
 # +
 # Function space for exact solution - need it to be higher than deg
