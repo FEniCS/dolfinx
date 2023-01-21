@@ -284,13 +284,13 @@ l2_norm_u_1 = l2_norm(u)
 l2_norm_p_1 = l2_norm(p)
 if MPI.COMM_WORLD.rank == 0:
     print("(1) Norm of velocity coeff. vector "
-          + "with the Taylor-Hood element:      {}".format(coef_norm_u_1))
+          "with the Taylor-Hood element:      {}".format(coef_norm_u_1))
     print("(1) Norm of pressure coeff. vector "
-          + "with the Taylor-Hood element:      {}".format(coef_norm_p_1))
+          "with the Taylor-Hood element:      {}".format(coef_norm_p_1))
     print("(1) L2 Norm of the velocity field "
-          + "with the Taylor-Hood element:       {}".format(l2_norm_u_1))
+          "with the Taylor-Hood element:       {}".format(l2_norm_u_1))
     print("(1) L2 Norm of pressure field "
-          + "with the Taylor-Hood element:           {}".format(l2_norm_p_1))
+          "with the Taylor-Hood element:           {}".format(l2_norm_p_1))
 
 
 # -
@@ -345,13 +345,13 @@ l2_norm_u_2 = l2_norm(u)
 l2_norm_p_2 = l2_norm(p)
 if MPI.COMM_WORLD.rank == 0:
     print("(2) Norm of velocity coeff. vector "
-          + "with the MINI element:             {}".format(coef_norm_u_2))
+          "with the MINI element:             {}".format(coef_norm_u_2))
     print("(2) Norm of pressure coeff. vector "
-          + "with the MINI element:             {}".format(coef_norm_p_2))
+          "with the MINI element:             {}".format(coef_norm_p_2))
     print("(2) L2 Norm of the velocity field "
-          + "with the MINI element:              {}".format(l2_norm_u_2))
+          "with the MINI element:              {}".format(l2_norm_u_2))
     print("(2) L2 Norm of pressure field "
-          + "with the MINI element:                  {}".format(l2_norm_p_2))
+          "with the MINI element:                  {}".format(l2_norm_p_2))
 save_solution(u, "out_stokes_stable_pairs/2_velocity.xdmf")
 save_solution(p, "out_stokes_stable_pairs/2_pressure.xdmf")
 
@@ -388,20 +388,39 @@ l2_norm_u_3 = l2_norm(u)
 l2_norm_p_3 = l2_norm(p)
 if MPI.COMM_WORLD.rank == 0:
     print("(3) Norm of velocity coeff. vector "
-          + "with the Crouzeix-Raviart element: {}".format(coef_norm_u_3))
+          "with the Crouzeix-Raviart element: {}".format(coef_norm_u_3))
     print("(3) Norm of pressure coeff. vector "
-          + "with the Crouzeix-Raviart element: {}".format(coef_norm_p_3))
+          "with the Crouzeix-Raviart element: {}".format(coef_norm_p_3))
     print("(3) L2 Norm of the velocity field "
-          + "with the Crouzeix-Raviart element:  {}".format(l2_norm_u_3))
+          "with the Crouzeix-Raviart element:  {}".format(l2_norm_u_3))
     print("(3) L2 Norm of pressure field "
-          + "with the Crouzeix-Raviart element:      {}".format(l2_norm_p_3))
+          "with the Crouzeix-Raviart element:      {}".format(l2_norm_p_3))
 save_solution(u, "out_stokes_stable_pairs/3_velocity.xdmf")
 save_solution(p, "out_stokes_stable_pairs/3_pressure.xdmf")
 
 # ### 4. $(\mathcal{P}_4, \mathcal{P}_{3}^{-1})$:
 # The Scott-Vogelius element for $k=4$
 
-# Scott-Vogelius method taken from the FEniCS book p. 388
+# A possible to solve the Stokes equatoins using the Scott-Vogelius
+# element is the iterated penalty method
+# by Scott and Vogelius (1985). This iterative procedure is also
+# explained in the FEniCS book, chapter 20.3.
+#
+# In each iteration, we have to find $u^n \in V$ such that
+#
+# $$
+# a(u^n, v) + r (\nabla \cdot u^n, \nabla \cdot v)
+# = (f, v) - (\nabla \cdot v, \nabla \cdot w^n)
+# $$
+#
+# for all $v \in V$, where
+#
+# $$
+# w^{n+1} = w^n + \rho u^n.
+# $$
+#
+# The parameters $r \in \mathbb{R}$ and $\rho \in \mathbb{R}^+$
+# can be chosen to achieve good convergence.
 
 # +
 # Define function space
@@ -485,13 +504,13 @@ l2_norm_u_4 = l2_norm(u)
 l2_norm_p_4 = l2_norm(p)
 if MPI.COMM_WORLD.rank == 0:
     print("(4) Norm of velocity coeff. vector "
-          + "with the Scott-Vigelius element:   {}".format(coef_norm_u_4))
+          "with the Scott-Vogelius element:   {}".format(coef_norm_u_4))
     print("(4) Norm of pressure coeff. vector "
-          + "with the Scott-Vigelius element:   {}".format(coef_norm_p_4))
+          "with the Scott-Vogelius element:   {}".format(coef_norm_p_4))
     print("(4) L2 Norm of the velocity field "
-          + "with the Scott-Vigelius element:    {}".format(l2_norm_u_4))
+          "with the Scott-Vogelius element:    {}".format(l2_norm_u_4))
     print("(4) L2 Norm of pressure field "
-          + "with the Scott-Vigelius element:        {}".format(l2_norm_p_4))
+          "with the Scott-Vogelius element:        {}".format(l2_norm_p_4))
 save_solution(u, "out_stokes_stable_pairs/4_velocity.xdmf")
 save_solution(p, "out_stokes_stable_pairs/4_pressure.xdmf")
 
