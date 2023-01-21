@@ -8,10 +8,11 @@
 #       jupytext_version: 1.13.6
 # ---
 
-# # Stokes equations with Taylor-Hood elements
+# # Stokes equations using Taylor-Hood elements
 #
-# This demo shows how to solve the Stokes problem using Taylor-Hood
-# elements with a range of different linear solvers.
+# This demo is implemented in {download}`demo_stokes.py`. It shows how
+# to solve the Stokes problem using Taylor-Hood elements using different
+# linear solvers.
 #
 # ## Equation and problem definition
 #
@@ -23,14 +24,8 @@
 # \nabla \cdot u &= 0 \quad {\rm in} \ \Omega.
 # $$
 #
-# ```{note}
-# The sign of the pressure has been flipped from the classical
-# definition. This is done in order to have a symmetric system
-# of equations rather than a non-symmetric system of equations.
-# ```
-#
-# A typical set of boundary conditions on the boundary $\partial
-# \Omega = \Gamma_{D} \cup \Gamma_{N}$ can be:
+# with conditions on the boundary $\partial \Omega = \Gamma_{D} \cup
+# \Gamma_{N}$ of the form:
 #
 # $$
 # u &= u_0 \quad {\rm on} \ \Gamma_{D},
@@ -38,17 +33,21 @@
 # \nabla u \cdot n + p n &= g \,   \quad\;\; {\rm on} \ \Gamma_{N}.
 # $$
 #
+# ```{note}
+# The sign of the pressure has been changed from the usual
+# definition. This is to generate have a symmetric system
+# of equations.
+# ```
+#
 # ### Weak formulation
 #
-# We formulate the Stokes equations' mixed variational form; that is, a
-# form where the two variables, the velocity and the pressure, are
-# approximated. We have the problem: find $(u, p) \in W$ such that
+# The weak formulation reads: find $(u, p) \in V \times Q$ such that
 #
 # $$
-# a((u, p), (v, q)) = L((v, q))
+# a((u, p), (v, q)) = L((v, q)) \quad \forall  (v, q) \in V \times Q
 # $$
 #
-# for all $(v, q) \in W$, where
+# where
 #
 # $$
 # a((u, p), (v, q)) &:= \int_{\Omega} \nabla u \cdot \nabla v -
@@ -58,60 +57,51 @@
 #            \Omega_N} g \cdot v \, {\rm d} s.
 # $$
 #
-# The space $W$ is a mixed (product) function space $W = V
-# \times Q$, such that $u \in V$ and $q \in Q$.
-#
 # ### Domain and boundary conditions
 #
-# We define the lid-driven cavity problem with the following
+# We consider the lid-driven cavity problem with the following
 # domain and boundary conditions:
 #
-# - $\Omega = [0,1]\times[0,1]$ (a unit square)
-# - $\Gamma_D = \partial \Omega$
-# - $u_0 = (1, 0)^\top$ at $x_1 = 1$ and $u_0 = (0,
-#   0)^\top$ otherwise
-# - $f = (0, 0)^\top$
+# - $\Omega := [0,1]\times[0,1]$ (a unit square)
+# - $\Gamma_D := \partial \Omega$
+# - $u_0 := (1, 0)^\top$ at $x_1 = 1$ and $u_0 = (0, 0)^\top$ otherwise
+# - $f := (0, 0)^\top$
 #
 # ## Implementation
 #
-# We first import the modules and functions that the program uses:
+# The required modules are first imported:
 
 # +
 import numpy as np
-
 import ufl
-from dolfinx import cpp as _cpp
-from dolfinx import fem
 from dolfinx.fem import (Constant, Function, FunctionSpace, dirichletbc,
                          extract_function_spaces, form,
                          locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, create_rectangle,
                           locate_entities_boundary)
-from ufl import div, dx, grad, inner
-
 from mpi4py import MPI
 from petsc4py import PETSc
+from ufl import div, dx, grad, inner
+
+from dolfinx import cpp as _cpp
+from dolfinx import fem
 
 # -
 
-# We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions to
-# geometrically locate subsets of its boundary and define a function
-# describing the velocity to be imposed as a boundary condition in a lid
-# driven cavity problem:
+# We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
+# locating geometrically subsets of the boundary, and define a function
+# for the  velocity on the lid:
 
 # +
 # Create mesh
-msh = create_rectangle(MPI.COMM_WORLD,
-                       [np.array([0, 0]), np.array([1, 1])],
-                       [32, 32],
-                       CellType.triangle, GhostMode.none)
+msh = create_rectangle(MPI.COMM_WORLD, [np.array([0, 0]), np.array([1, 1])],
+                       [32, 32], CellType.triangle)
 
 
 # Function to mark x = 0, x = 1 and y = 0
 def noslip_boundary(x):
-    return np.logical_or(np.logical_or(np.isclose(x[0], 0.0),
-                                       np.isclose(x[0], 1.0)),
+    return np.logical_or(np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)),
                          np.isclose(x[1], 0.0))
 
 
@@ -125,26 +115,25 @@ def lid_velocity_expression(x):
     return np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1])))
 # -
 
-# We define two {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
-# instances with different finite elements. `P2` corresponds to a continuous
-# piecewise quadratic basis for the velocity field and `P1` to a continuous
-# piecewise linear basis for the pressure field:
+# We define two {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`s
+# with different finite elements. `P2` corresponds to a continuous
+# piecewise quadratic basis (vector) and `P1` to a
+# continuous piecewise linear basis (scalar):
 
 
 P2 = ufl.VectorElement("Lagrange", msh.ufl_cell(), 2)
 P1 = ufl.FiniteElement("Lagrange", msh.ufl_cell(), 1)
 V, Q = FunctionSpace(msh, P2), FunctionSpace(msh, P1)
 
-# We define boundary conditions:
+# We define boundary conditions for the velocity field:
 
 # +
-# No-slip boundary condition for velocity field (`V`) on boundaries
-# where x = 0, x = 1, and y = 0
+# No-slip condition on boundaries where x = 0, x = 1, and y = 0
 noslip = np.zeros(msh.geometry.dim, dtype=PETSc.ScalarType)
 facets = locate_entities_boundary(msh, 1, noslip_boundary)
 bc0 = dirichletbc(noslip, locate_dofs_topological(V, 1, facets), V)
 
-# Driving velocity condition u = (1, 0) on top boundary (y = 1)
+# Driving (lid) velocity condition on top boundary (y = 1)
 lid_velocity = Function(V)
 lid_velocity.interpolate(lid_velocity_expression)
 facets = locate_entities_boundary(msh, 1, lid)
@@ -154,8 +143,8 @@ bc1 = dirichletbc(lid_velocity, locate_dofs_topological(V, 1, facets))
 bcs = [bc0, bc1]
 # -
 
-# We now define the bilinear and linear forms corresponding to the weak
-# mixed formulation of the Stokes equations in a blocked structure:
+# We now define the bilinear and linear forms for the Stokes equations
+# in a blocked structure:
 
 # +
 # Define variational problem
@@ -176,7 +165,7 @@ a_p = [[a[0][0], None],
 
 # ### Nested matrix solver
 #
-# We now assemble the bilinear form into a nested matrix `A`, and call
+# We assemble the bilinear form into a nested matrix `A`, and call
 # the `assemble()` method to communicate shared entries in parallel.
 # Rows and columns in `A` that correspond to degrees-of-freedom with
 # Dirichlet boundary conditions are zeroed and a value of 1 is set on
