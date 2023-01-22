@@ -17,9 +17,10 @@
 # # Interpolation and IO
 #
 # This demo shows the interpolation of functions into vector-element
-# $H(\mathrm{curl})$ finite element spaces, and the interpolation of these
-# special finite elements in discontinuous Lagrange spaces for
-# artifact-free visualisation.
+# $H(\mathrm{curl})$ finite element spaces, and the interpolation of
+# these special finite elements in discontinuous Lagrange spaces for
+# artifact-free visualisation. It is implemented in
+# {download}`demo_interpolation-io.py`.
 
 # +
 import numpy as np
@@ -29,36 +30,43 @@ from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
 
 from dolfinx import plot
+# -
 
-# Create a mesh. For what comes later in this demo we need to ensure
-# that a boundary between cells is located at x0=0.5
+# Create a mesh. For later in the demo we need to ensure that a boundary
+# between cells is located at $x_0=0.5$.
+
 msh = create_rectangle(MPI.COMM_WORLD, ((0.0, 0.0), (1.0, 1.0)), (16, 16), CellType.triangle)
 
-# Create Nedelec function space and finite element Function
+# Create a Nedelec function space and finite element Function
+
 V = FunctionSpace(msh, ("Nedelec 1st kind H(curl)", 1))
 u = Function(V, dtype=ScalarType)
 
-# Find cells with *all* vertices (0) <= 0.5 or (1) >= 0.5
+# Find cells with *all* vertices (0) $x_0 <= 0.5$ or (1) $x_0 >= 0.5$:
+
 tdim = msh.topology.dim
 cells0 = locate_entities(msh, tdim, lambda x: x[0] <= 0.5)
 cells1 = locate_entities(msh, tdim, lambda x: x[0] >= 0.5)
 
 # Interpolate in the Nedelec/H(curl) space a vector-valued expression
-# ``f``, where f \dot e_0 is discontinuous at x0 = 0.5 and  f \dot e_1
-# is continuous.
+# `f`, where $f \cdot n$ is discontinuous at $x_0 = 0.5$ and  $f \cdot
+# e$ is continuous.
+
 u.interpolate(lambda x: np.vstack((x[0], x[1])), cells0)
 u.interpolate(lambda x: np.vstack((x[0] + 1, x[1])), cells1)
 
 # Create a vector-valued discontinuous Lagrange space and function, and
-# interpolate the H(curl) function `u`
+# interpolate the $H({\rm curl})$ function `u`
+
 V0 = VectorFunctionSpace(msh, ("Discontinuous Lagrange", 1))
 u0 = Function(V0, dtype=ScalarType)
 u0.interpolate(u)
 
+# Save the interpolated function u0 in VTX format. It should be seen
+# when visualising that the $x_0$-component is discontinuous across
+# $x_0=0.5$ and the $x_0$-component is continuous across $x_0=0.5$.
+
 try:
-    # Save the interpolated function u0 in VTX format. It should be seen
-    # when visualising that the x0-component is discontinuous across
-    # x0=0.5 and the x0-component is continuous across x0=0.5
     from dolfinx.io import VTXWriter
     with VTXWriter(msh.comm, "output_nedelec.bp", u0) as f:
         f.write(0.0)
@@ -66,7 +74,8 @@ except ImportError:
     print("ADIOS2 required for VTK output")
 
 
-# Plot solution
+# Plot the functions
+
 try:
     import pyvista
     cells, types, x = plot.create_vtk_mesh(V0)
