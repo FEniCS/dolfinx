@@ -13,6 +13,8 @@ sys.path.insert(0, os.path.abspath('.'))
 
 import jupytext_process  # noqa
 
+myst_heading_anchors = 3
+
 jupytext_process.process()
 
 # -- General configuration ------------------------------------------------
