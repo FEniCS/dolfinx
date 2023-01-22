@@ -13,7 +13,7 @@
 #     name: python3
 # ---
 
-# # Mode analysis for a half-loaded rectangular waveguide
+# # Electromagnetic modal analysis for a waveguide
 
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
@@ -26,10 +26,10 @@
 # The demo shows how to:
 #
 # - Setup an eigenvalue problem for Maxwell's equations
-# - Use SLEPc for solving eigenvalue problems in DOLFINx
+# - Use SLEPc for solving eigenvalue problems
 #
 
-# ## Equations and problem definition in DOLFINx
+# ## Equations and problem definition
 #
 # In this demo, we are going to show how to solve the eigenvalue problem
 # associated with a half-loaded rectangular waveguide with perfect
