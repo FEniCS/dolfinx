@@ -117,8 +117,9 @@ tnt_degree1 = basix.ufl_wrapper.BasixElement(e)
 # The following function follows the same method as above to define
 # arbitrary degree TNT elements.
 
-
 # +
+
+
 def create_tnt_quad(degree):
     assert degree > 1
     # Polyset
@@ -177,9 +178,8 @@ def create_tnt_quad(degree):
             mat[i, 0, :, 0] = wts[:] * poly[i, :]
         M[2].append(mat)
 
-    e = basix.create_custom_element(
-        basix.CellType.quadrilateral, [], wcoeffs, x, M, 0, basix.MapType.identity,
-        basix.SobolevSpace.H1, False, degree, degree + 1)
+    e = basix.create_custom_element(basix.CellType.quadrilateral, [], wcoeffs, x, M, 0,
+                                    basix.MapType.identity, basix.SobolevSpace.H1, False, degree, degree + 1)
     return basix.ufl_wrapper.BasixElement(e)
 # -
 
@@ -246,7 +246,6 @@ print(f"TNT degree 2 error: {tnt_errors[-1]}")
 
 for degree in range(2, 9):
     V = fem.FunctionSpace(msh, create_tnt_quad(degree))
-
     tnt_degrees.append(degree + 1)
     tnt_ndofs.append(V.dofmap.index_map.size_global)
     tnt_errors.append(poisson_error(V))

@@ -11,19 +11,21 @@
 
 # - `radius_wire`: the radius of the wire
 # - `radius_dom`: the radius of the external boundary
-# - `in_wire_size`: the mesh size at a distance `0.8 * radius_wire` from the origin
+# - `in_wire_size`: the mesh size at a distance `0.8 * radius_wire` from
+#   the origin
 # - `on_wire_size`: the mesh size on the wire boundary
-# - `bkg_size`: the mesh size at a distance `0.9 * radius_dom` from the origin
+# - `bkg_size`: the mesh size at a distance `0.9 * radius_dom` from the
+#   origin
 # - `boundary_size`: the mesh size on the external boundary
 # - `au_tag`: the tag of the physical group representing the wire
 # - `bkg_tag`: the tag of the physical group representing the background
-# - `boundary_tag`: the tag of the physical group representing the boundary
+# - `boundary_tag`: the tag of the physical group representing the
+#   boundary
 #
 # In particular, `bkg_size` and `boundary_size` are necessary to set a
 # finer mesh on the external boundary (to improve the accuracy of the
 # scattering efficiency calculation) while keeping a coarser size over
 # the rest of the domain.
-#
 
 import sys
 
@@ -35,18 +37,15 @@ except ModuleNotFoundError:
 from numpy import pi
 
 
-def generate_mesh_wire(
-    radius_wire: float, radius_dom: float, in_wire_size: float,
-    on_wire_size: float, bkg_size: float, boundary_size: float,
-        au_tag: int, bkg_tag: int, boundary_tag: int):
+def generate_mesh_wire(radius_wire: float, radius_dom: float, in_wire_size: float,
+                       on_wire_size: float, bkg_size: float, boundary_size: float,
+                       au_tag: int, bkg_tag: int, boundary_tag: int):
 
     gmsh.model.add("wire")
 
     # A dummy boundary is added for setting a finer mesh
-    gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_wire * 0.8,
-                             angle1=0.0, angle2=2 * pi, tag=1)
-    gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_wire,
-                             angle1=0, angle2=2 * pi, tag=2)
+    gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_wire * 0.8, angle1=0.0, angle2=2 * pi, tag=1)
+    gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_wire, angle1=0, angle2=2 * pi, tag=2)
 
     # A dummy boundary is added for setting a finer mesh
     gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_dom * 0.9, angle1=0.0, angle2=2 * pi, tag=3)

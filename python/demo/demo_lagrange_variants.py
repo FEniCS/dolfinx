@@ -39,9 +39,10 @@ if np.issubdtype(ScalarType, np.complexfloating):
 # In addition to the imports seen in other demos, we also import Basix
 # and its UFL wrapper directly. Basix is the element definition and
 # tabulation library that is used by FEniCSx.
-
-
+#
+#
 # ## Equispaced points vs GLL points
+#
 # The basis function of Lagrange elements are defined by placing points
 # on the reference element, with each basis function equal to 1 at one
 # point and 0 at all the other points.
@@ -106,8 +107,9 @@ if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
 #
 # The points are clustered towards the endpoints of the interval, and
 # the basis functions do not exhibit Runge's phenomenon.
-
+#
 # ## Wrapping a Basix element
+#
 # Elements created using Basix can be used directly with UFL via Basix's
 # UFL wrapper.
 
@@ -146,6 +148,7 @@ uh = problem.solve()
 # -
 
 # ## Computing the error of an interpolation
+#
 # To demonstrate how the choice of Lagrange variant can affect
 # computed results, we will compute the error when interpolating a
 # function into a finite element space. For this example, we define a
@@ -243,22 +246,29 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 # - `basix.LagrangeVariant.gl_centroid`
 # - `basix.LagrangeVariant.legendre`
 #
+#
 # ### Equispaced points
+#
 # The variant `basix.LagrangeVariant.equispaced` defines an element
 # using equally spaced points on the cell.
 #
+#
 # ### GLL points
+#
 # For intervals, quadrilaterals and hexahedra, the variants
 # `basix.LagrangeVariant.gll_warped`, `basix.LagrangeVariant.gll_isaac`
 # and `basix.LagrangeVariant.gll_centroid` all define an element using
 # GLL-type points.
+#
 #
 # On triangles and tetrahedra, the three variants use different methods
 # to distribute points on the cell so that the points on each edge are
 # GLL points. The three methods used are described in [the Basix
 # documentation](https://docs.fenicsproject.org/basix/main/cpp/namespacebasix_1_1lattice.html).
 #
+#
 # ### Chebyshev points
+#
 # The variants `basix.LagrangeVariant.chebyshev_warped`,
 # `basix.LagrangeVariant.chebyshev_isaac` and
 # `basix.LagrangeVariant.chebyshev_centroid` can be used to define
@@ -267,7 +277,9 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 # points, these three variants are the same on intervals, quadrilaterals
 # and hexahedra, and vary on simplex cells.
 #
+#
 # ### GL points
+#
 # The variants `basix.LagrangeVariant.gl_warped`,
 # `basix.LagrangeVariant.gl_isaac` and
 # `basix.LagrangeVariant.gl_centroid` can be used to define elements
@@ -276,7 +288,9 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 # GL points do not include the endpoints, hence this variant can only be
 # used for discontinuous elements.
 #
+#
 # ### Legendre polynomials
+#
 # The variant `basix.LagrangeVariant.legendre` can be used to define a
 # Lagrange-like element whose basis functions are the orthonormal
 # Legendre polynomials. These polynomials are not defined using points

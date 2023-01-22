@@ -2,24 +2,29 @@
 #
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
-# This file defines the `generate_mesh_wire` function, which is used to generate
-# the mesh used for the PML demo. The mesh is made up
-# by a central circle (the wire), and an external layer (the PML) divided in 4
-# rectangles and 4 squares at the corners.
-# The `generate_mesh_wire` function takes as input:
+# This file defines the `generate_mesh_wire` function, which is used to
+# generate the mesh used for the PML demo. The mesh is made up by a
+# central circle (the wire), and an external layer (the PML) divided in
+# 4 rectangles and 4 squares at the corners. The `generate_mesh_wire`
+# function takes as input:
 
 # - `radius_wire`: the radius of the wire
-# - `radius_scatt`: the radius of the circle where scattering efficiency is calculated
+# - `radius_scatt`: the radius of the circle where scattering efficiency
+#   is calculated
 # - `l_dom`: length of real domain
 # - `l_pml`: length of PML layer
-# - `in_wire_size`: the mesh size at a distance `0.8 * radius_wire` from the origin
+# - `in_wire_size`: the mesh size at a distance `0.8 * radius_wire` from
+#   the origin
 # - `on_wire_size`: the mesh size on the wire boundary
-# - `scatt_size`: the mesh size on the circle where scattering efficiency is calculated
+# - `scatt_size`: the mesh size on the circle where scattering
+#   efficiency is calculated
 # - `pml_size`: the mesh size on the outer boundary of the PML
 # - `au_tag`: the tag of the physical group representing the wire
 # - `bkg_tag`: the tag of the physical group representing the background
-# - `scatt_tag`: the tag of the physical group representing the boundary where scattering efficiency is calculated
-# - `pml_tag`: the tag of the physical group representing the PML (together with pml_tag+1 and pml_tag+2)
+# - `scatt_tag`: the tag of the physical group representing the boundary
+#   where scattering efficiency is calculated
+# - `pml_tag`: the tag of the physical group representing the PML
+#   (together with pml_tag+1 and pml_tag+2)
 #
 #
 
@@ -94,28 +99,20 @@ def generate_mesh_wire(radius_wire: float, radius_scatt: float, l_dom: float, l_
 
     bkg_group = [tag[0][1] for tag in surface_map[:len(bkg_tags)]]
     gmsh.model.addPhysicalGroup(dim, bkg_group, tag=bkg_tag)
-    wire_group = [tag[0][1] for tag in surface_map[len(bkg_tags):
-                                                   len(bkg_tags + wire_tags)]]
+    wire_group = [tag[0][1] for tag in surface_map[len(bkg_tags):len(bkg_tags + wire_tags)]]
 
     gmsh.model.addPhysicalGroup(dim, wire_group, tag=au_tag)
 
-    corner_group = [tag[0][1] for tag in surface_map[len(bkg_tags + wire_tags):
-                                                     len(bkg_tags + wire_tags + corner_pmls)]]
+    corner_group = [tag[0][1] for tag in surface_map[len(bkg_tags + wire_tags):len(bkg_tags + wire_tags + corner_pmls)]]
     gmsh.model.addPhysicalGroup(dim, corner_group, tag=pml_tag)
 
-    x_group = [tag[0][1]
-               for tag in
-               surface_map[
-        len(bkg_tags + wire_tags + corner_pmls):
-        len(bkg_tags + wire_tags + corner_pmls + x_pmls)]]
+    x_group = [tag[0][1] for tag in surface_map[len(
+        bkg_tags + wire_tags + corner_pmls):len(bkg_tags + wire_tags + corner_pmls + x_pmls)]]
 
     gmsh.model.addPhysicalGroup(dim, x_group, tag=pml_tag + 1)
 
-    y_group = [tag[0][1]
-               for tag in
-               surface_map[
-        len(bkg_tags + wire_tags + corner_pmls + x_pmls):
-        len(bkg_tags + wire_tags + corner_pmls + x_pmls + y_pmls)]]
+    y_group = [tag[0][1] for tag in surface_map[len(
+        bkg_tags + wire_tags + corner_pmls + x_pmls):len(bkg_tags + wire_tags + corner_pmls + x_pmls + y_pmls)]]
 
     gmsh.model.addPhysicalGroup(dim, y_group, tag=pml_tag + 2)
 

@@ -24,7 +24,6 @@
 #
 #
 # $$
-# \begin{aligned}
 # \textrm{For TE}_x \textrm{ modes}:
 # \begin{cases}
 # &k_{x d}^{2}+\left(\frac{n \pi}{w}\right)^{2}+k_{z}^{2}=k_0^{2}
@@ -33,11 +32,9 @@
 # \varepsilon_{v} \\
 # & k_{x d} \cot k_{x d} d + k_{x v} \cot \left[k_{x v}(h-d)\right] = 0
 # \end{cases}
-# \end{aligned}
 # $$
 #
 # $$
-# \begin{aligned}
 # \textrm{For TM}_x \textrm{ modes}:
 # \begin{cases}
 # &k_{x d}^{2}+\left(\frac{n \pi}{w}\right)^{2}+k_{z}^{2}=
@@ -47,7 +44,6 @@
 # & \frac{k_{x d}}{\varepsilon_{d}} \tan k_{x d} d +
 # \frac{k_{x v}}{\varepsilon_{v}} \tan \left[k_{x v}(h-d)\right] = 0
 # \end{cases}
-# \end{aligned}
 # $$
 #
 # with:
@@ -59,9 +55,9 @@
 # - $k_0\rightarrow$ vacuum wavevector
 # - $k_{xd}\rightarrow$ $x$ component of the wavevector in the dielectric
 # - $k_{xv}\rightarrow$ $x$ component of the wavevector in the vacuum
-# - $\frac{n \pi}{w} = k_y\rightarrow$ $y$ component of the wavevector for
-# different $n$ harmonic numbers (we assume $n=1$ for the
-# sake of simplicity)
+# - $\frac{n \pi}{w} = k_y\rightarrow$ $y$ component of the wavevector
+#   for different $n$ harmonic numbers (we assume $n=1$ for the sake of
+#   simplicity)
 #
 # Let's define the set of equations with the $\tan$ and $\cot$ function:
 

@@ -130,11 +130,8 @@ def curl_2d(a: fem.Function):
 # transformation in the following way:
 
 
-def pml_coordinates(x: ufl.indexed.Indexed, alpha: float, k0: complex,
-                    l_dom: float, l_pml: float):
-    return (x + 1j * alpha / k0 * x
-            * (ufl.algebra.Abs(x) - l_dom / 2)
-            / (l_pml / 2 - l_dom / 2)**2)
+def pml_coordinates(x: ufl.indexed.Indexed, alpha: float, k0: complex, l_dom: float, l_pml: float):
+    return (x + 1j * alpha / k0 * x * (ufl.algebra.Abs(x) - l_dom / 2) / (l_pml / 2 - l_dom / 2)**2)
 
 
 # We use the following domain specific parameters.
@@ -180,14 +177,12 @@ model = None
 gmsh.initialize(sys.argv)
 if MPI.COMM_WORLD.rank == 0:
 
-    model = generate_mesh_wire(
-        radius_wire, radius_scatt, l_dom, l_pml,
-        in_wire_size, on_wire_size, scatt_size, pml_size,
-        au_tag, bkg_tag, scatt_tag, pml_tag)
+    model = generate_mesh_wire(radius_wire, radius_scatt, l_dom, l_pml,
+                               in_wire_size, on_wire_size, scatt_size, pml_size,
+                               au_tag, bkg_tag, scatt_tag, pml_tag)
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-domain, cell_tags, facet_tags = gmshio.model_to_mesh(
-    model, MPI.COMM_WORLD, 0, gdim=2)
+domain, cell_tags, facet_tags = gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
@@ -202,8 +197,7 @@ if have_pyvista:
     pyvista.set_jupyter_backend("pythreejs")
     plotter = pyvista.Plotter()
     num_local_cells = domain.topology.index_map(domain.topology.dim).size_local
-    grid.cell_data["Marker"] = \
-        cell_tags.values[cell_tags.indices < num_local_cells]
+    grid.cell_data["Marker"] = cell_tags.values[cell_tags.indices < num_local_cells]
     grid.set_active_scalars("Marker")
     plotter.add_mesh(grid, show_edges=True)
     plotter.view_xy()
@@ -211,8 +205,7 @@ if have_pyvista:
         plotter.show(interactive=True)
     else:
         pyvista.start_xvfb()
-        figure = plotter.screenshot("wire_mesh_pml.png",
-                                    window_size=[800, 800])
+        figure = plotter.screenshot("wire_mesh_pml.png", window_size=[800, 800])
 
 # We observe five different subdomains: one for the gold wire
 # (`au_tag`), one for the background medium (`bkg_tag`), one for the PML
@@ -289,8 +282,7 @@ D = fem.FunctionSpace(domain, ("DG", 0))
 eps = fem.Function(D)
 au_cells = cell_tags.find(au_tag)
 bkg_cells = cell_tags.find(bkg_tag)
-eps.x.array[au_cells] = np.full_like(
-    au_cells, eps_au, dtype=np.complex128)
+eps.x.array[au_cells] = np.full_like(au_cells, eps_au, dtype=np.complex128)
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
 eps.x.scatter_forward()
 
@@ -351,31 +343,27 @@ y_pml = ufl.as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 # https://www.tandfonline.com/doi/abs/10.1080/09500349608232782):
 #
 # $$
-# \begin{align}
-# & {\boldsymbol{\varepsilon}_{pml}} =
+# {\boldsymbol{\varepsilon}_{pml}} &=
 # A^{-1} \mathbf{A} {\boldsymbol{\varepsilon}_b}\mathbf{A}^{T},\\
-# & {\boldsymbol{\mu}_{pml}} =
+# {\boldsymbol{\mu}_{pml}} &=
 # A^{-1} \mathbf{A} {\boldsymbol{\mu}_b}\mathbf{A}^{T},
-# \end{align}
 # $$
 #
 # with $A^{-1}=\operatorname{det}(\mathbf{J})$.
 #
-# In DOLFINx, we use `ufl.grad` to calculate the Jacobian of our
-# coordinate transformation for the different PML regions, and then we
-# can implement this Jacobian for calculating
+# We use `ufl.grad` to calculate the Jacobian of our coordinate
+# transformation for the different PML regions, and then we can
+# implement this Jacobian for calculating
 # $\boldsymbol{\varepsilon}_{pml}$ and $\boldsymbol{\mu}_{pml}$. The
 # here below function named `create_eps_mu()` serves this purpose:
 
 # +
 
 
-def create_eps_mu(
-        pml: ufl.tensors.ListTensor,
-        eps_bkg: Union[float, ufl.tensors.ListTensor],
-        mu_bkg: Union[float, ufl.tensors.ListTensor]) -> Tuple[ufl.tensors.ComponentTensor,
-                                                               ufl.tensors.ComponentTensor]:
-
+def create_eps_mu(pml: ufl.tensors.ListTensor,
+                  eps_bkg: Union[float, ufl.tensors.ListTensor],
+                  mu_bkg: Union[float, ufl.tensors.ListTensor]) -> Tuple[ufl.tensors.ComponentTensor,
+                                                                         ufl.tensors.ComponentTensor]:
     J = ufl.grad(pml)
 
     # Transform the 2x2 Jacobian into a 3x3 matrix.
@@ -386,7 +374,6 @@ def create_eps_mu(
     A = ufl.inv(J)
     eps_pml = ufl.det(J) * A * eps_bkg * ufl.transpose(A)
     mu_pml = ufl.det(J) * A * mu_bkg * ufl.transpose(A)
-
     return eps_pml, mu_pml
 
 
@@ -409,13 +396,11 @@ eps_xy, mu_xy = create_eps_mu(xy_pml, eps_bkg, 1)
 # while in the rest of the domain is:
 #
 # $$
-# \begin{align}
 # & \int_{\Omega_m\cup\Omega_b}-(\nabla \times \mathbf{E}_s)
 # \cdot (\nabla \times \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2}
 # \mathbf{E}_s \cdot \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}
 # -\varepsilon_b\right)\mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x.
 # = 0.
-# \end{align}
 # $$
 #
 # Let's solve this equation in DOLFINx:
@@ -434,8 +419,7 @@ F = - ufl.inner(curl_2d(Es), curl_2d(v)) * dDom \
 
 a, L = ufl.lhs(F), ufl.rhs(F)
 
-problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={
-                                  "ksp_type": "preonly", "pc_type": "lu"})
+problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 Esh = problem.solve()
 # -
 
@@ -461,8 +445,7 @@ if have_pyvista:
     V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
-    Esh_values[:, :domain.topology.dim] = \
-        Esh_dg.x.array.reshape(V_x.shape[0], domain.topology.dim).real
+    Esh_values[:, :domain.topology.dim] = Esh_dg.x.array.reshape(V_x.shape[0], domain.topology.dim).real
 
     V_grid.point_data["u"] = Esh_values
 
@@ -503,8 +486,7 @@ with VTXWriter(domain.comm, "E.bp", E_dg) as vtx:
 # `calculate_analytical_efficiencies` function defined in a separate
 # file:
 
-q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
-    eps_au, n_bkg, wl0, radius_wire)
+q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(eps_au, n_bkg, wl0, radius_wire)
 
 # We calculate the numerical efficiencies in the same way as done in
 # `demo_scattering_boundary_conditions.py`, with the only difference
@@ -540,8 +522,7 @@ incident_cells = mesh.compute_incident_entities(domain, scatt_facets,
                                                 domain.topology.dim)
 
 midpoints = mesh.compute_midpoints(domain, domain.topology.dim, incident_cells)
-inner_cells = incident_cells[(midpoints[:, 0]**2
-                              + midpoints[:, 1]**2) < (radius_scatt)**2]
+inner_cells = incident_cells[(midpoints[:, 0]**2 + midpoints[:, 1]**2) < (radius_scatt)**2]
 
 marker.x.array[inner_cells] = 1
 
@@ -561,8 +542,7 @@ q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / (gcs * I0)).real
 q_abs_fenics = domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
-q_sca_fenics_proc = (fem.assemble_scalar(
-    fem.form((P('+') + P('-')) * dS(scatt_tag))) / (gcs * I0)).real
+q_sca_fenics_proc = (fem.assemble_scalar(fem.form((P('+') + P('-')) * dS(scatt_tag))) / (gcs * I0)).real
 
 # Sum results from all MPI processes
 q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)

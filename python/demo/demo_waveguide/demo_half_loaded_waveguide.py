@@ -208,8 +208,7 @@ a_tt = (ufl.inner(ufl.curl(et), ufl.curl(vt)) - (k0**2) * eps * ufl.inner(et, vt
 b_tt = ufl.inner(et, vt) * ufl.dx
 b_tz = ufl.inner(et, ufl.grad(vz)) * ufl.dx
 b_zt = ufl.inner(ufl.grad(ez), vt) * ufl.dx
-b_zz = (ufl.inner(ufl.grad(ez), ufl.grad(vz)) - (k0**2)
-        * eps * ufl.inner(ez, vz)) * ufl.dx
+b_zz = (ufl.inner(ufl.grad(ez), ufl.grad(vz)) - (k0**2) * eps * ufl.inner(ez, vz)) * ufl.dx
 
 a = fem.form(a_tt)
 b = fem.form(b_tt + b_tz + b_zt + b_zz)
@@ -390,11 +389,9 @@ for i, kz in vals:
 
             pyvista.set_jupyter_backend("ipygany")
             plotter = pyvista.Plotter()
-
             plotter.add_mesh(V_grid.copy(), show_edges=False)
             plotter.view_xy()
             plotter.link_views()
-
             if not pyvista.OFF_SCREEN:
                 plotter.show()
             else:
@@ -410,11 +407,9 @@ for i, kz in vals:
 
             pyvista.set_jupyter_backend("ipygany")
             plotter = pyvista.Plotter()
-
             plotter.add_mesh(V_grid.copy(), show_edges=False)
             plotter.view_xy()
             plotter.link_views()
-
             if not pyvista.OFF_SCREEN:
                 plotter.show()
             else:
