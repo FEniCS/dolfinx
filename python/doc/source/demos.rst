@@ -29,6 +29,42 @@ functionality and optimizations.
    <demos/demo_tnt-elements>`.
 
 
+PDEs
+----
+
+.. toctree::
+   :maxdepth: 1
+
+   demos/demo_poisson.md
+   demos/demo_cahn-hilliard.md
+   demos/demo_stokes.md
+   demos/demo_elasticity.md
+   demos/demo_helmholtz.md
+   demos/demo_static-condensation.md
+   demos/demo_scattering_boundary_conditions.md
+   demos/demo_pml.md
+   demos/demo_half_loaded_waveguide.md
+   demos/demo_axis.md
+
+
+Interpolation, IO and visualisation
+-----------------------------------
+
+.. toctree::
+   :maxdepth: 1
+
+   demos/demo_pyvista.md
+   demos/demo_interpolation-io.md
+
+Mesh generation
+---------------
+
+.. toctree::
+   :maxdepth: 1
+
+   demos/demo_gmsh.md
+
+
 List of all demos
 -----------------
 
