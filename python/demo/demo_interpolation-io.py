@@ -8,19 +8,15 @@
 #       jupytext_version: 1.13.6
 # ---
 
-# Copyright (C) 2022 Garth N. Wells
-#
-# This file is part of DOLFINx (<https://www.fenicsproject.org>)
-#
-# SPDX-License-Identifier:    LGPL-3.0-or-later
-#
 # # Interpolation and IO
 #
-# This demo shows the interpolation of functions into vector-element
-# $H(\mathrm{curl})$ finite element spaces, and the interpolation of
-# these special finite elements in discontinuous Lagrange spaces for
-# artifact-free visualisation. It is implemented in
-# {download}`demo_interpolation-io.py`.
+# Copyright (C) 2022 Garth N. Wells
+#
+# This demo ({download}`demo_interpolation-io.py`) shows the
+# interpolation of functions into vector-element $H(\mathrm{curl})$
+# finite element spaces, and the interpolation of these special finite
+# elements in discontinuous Lagrange spaces for artifact-free
+# visualisation.
 
 # +
 import numpy as np
@@ -37,7 +33,7 @@ from dolfinx import plot
 
 msh = create_rectangle(MPI.COMM_WORLD, ((0.0, 0.0), (1.0, 1.0)), (16, 16), CellType.triangle)
 
-# Create a Nedelec function space and finite element Function
+# Create a Nédélec function space and finite element Function
 
 V = FunctionSpace(msh, ("Nedelec 1st kind H(curl)", 1))
 u = Function(V, dtype=ScalarType)
@@ -48,7 +44,7 @@ tdim = msh.topology.dim
 cells0 = locate_entities(msh, tdim, lambda x: x[0] <= 0.5)
 cells1 = locate_entities(msh, tdim, lambda x: x[0] >= 0.5)
 
-# Interpolate in the Nedelec/H(curl) space a vector-valued expression
+# Interpolate in the Nédélec/H(curl) space a vector-valued expression
 # `f`, where $f \cdot n$ is discontinuous at $x_0 = 0.5$ and  $f \cdot
 # e$ is continuous.
 
@@ -62,16 +58,16 @@ V0 = VectorFunctionSpace(msh, ("Discontinuous Lagrange", 1))
 u0 = Function(V0, dtype=ScalarType)
 u0.interpolate(u)
 
-# Save the interpolated function u0 in VTX format. It should be seen
-# when visualising that the $x_0$-component is discontinuous across
-# $x_0=0.5$ and the $x_0$-component is continuous across $x_0=0.5$.
+# We save the interpolated function `u0` in VTX format. When visualising
+# the field, at $x_0 = 0.5$ the $x_0$-component should appear
+# discontinuous and the $x_1$-component should appear continuous.
 
 try:
     from dolfinx.io import VTXWriter
     with VTXWriter(msh.comm, "output_nedelec.bp", u0) as f:
         f.write(0.0)
 except ImportError:
-    print("ADIOS2 required for VTK output")
+    print("ADIOS2 required for VTX output")
 
 
 # Plot the functions

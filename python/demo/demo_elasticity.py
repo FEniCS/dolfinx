@@ -12,11 +12,9 @@
 #
 # Copyright © 2020-2022 Garth N. Wells and Michal Habera
 #
-# This demo solves the equations of static linear elasticity using a
-# smoothed aggregation algebraic multigrid solver. It is implemented in
-# {download}`demo_elasticity.py`.
-#
-# It illustrates how to:
+# This demo ({download}`demo_elasticity.py`) solves the equations of
+# static linear elasticity using a smoothed aggregation algebraic
+# multigrid solver. It illustrates how to:
 #
 # - Use a smoothed aggregation algebraic multigrid solver
 # - Use {py:class}`Expression <dolfinx.fem.Expression>` to compute
