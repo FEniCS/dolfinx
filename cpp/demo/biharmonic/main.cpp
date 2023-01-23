@@ -109,11 +109,11 @@
 // The main solver is implemented in the :download:`main.cpp` file.
 //
 // At the top we include the DOLFINx header file and the generated header
-// file "Poisson.h" containing the variational forms for the Poisson
-// equation.  For convenience we also include the DOLFINx namespace.
+// file "biharmonic.h" containing the variational forms for the
+// Biharmonic equation, which are defined in the UFL form file.
+// For convenience we also include the DOLFINx namespace.
 //
 // .. code-block:: cpp
-
 
 #include "biharmonic.h"
 #include <cmath>
@@ -126,7 +126,6 @@
 using namespace dolfinx;
 using T = PetscScalar;
 
-
 // Inside the ``main`` function, we begin by defining a mesh of the
 // domain. As the unit square is a very standard domain, we can use a
 // built-in mesh provided by the :cpp:class:`UnitSquareMesh` factory. In
@@ -135,7 +134,6 @@ using T = PetscScalar;
 // the form file) defined relative to this mesh, we do as follows
 //
 // .. code-block:: cpp
-
 
 int main(int argc, char* argv[])
 {
@@ -158,12 +156,10 @@ int main(int argc, char* argv[])
     auto V = std::make_shared<fem::FunctionSpace>(
     fem::create_functionspace(functionspace_form_biharmonic_a, "u", mesh));
 
-
-    // The source function, a function for the cell size and the penalty term
+    // The source function ::math:`f` and the penalty term ::math:`\alpha`
     // are declared:
     //
     // .. code-block:: cpp
-
 
     auto f = std::make_shared<fem::Function<T>>(V);
     f->interpolate(
@@ -186,7 +182,6 @@ int main(int argc, char* argv[])
     auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_biharmonic_L, {V}, {{"f", f}}, {}, {}));
 
-
     // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
     // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
     // takes two arguments: the value of the boundary condition,
@@ -199,7 +194,6 @@ int main(int argc, char* argv[])
     // as follows:
     //
     // .. code-block:: cpp
-
 
     // Define boundary condition
     auto facets = mesh::locate_entities_boundary(
@@ -222,7 +216,6 @@ int main(int argc, char* argv[])
     const auto bdofs = fem::locate_dofs_topological({*V}, 1, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
 
-
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a
     // :cpp:class:`Function` ``u`` to store the solution. (Upon
@@ -231,7 +224,6 @@ int main(int argc, char* argv[])
     // ``bc`` as follows:
     //
     // .. code-block:: cpp
-
 
     // Compute solution
     fem::Function<T> u(V);
@@ -265,14 +257,12 @@ int main(int argc, char* argv[])
     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
     lu.solve(_u.vec(), _b.vec());
 
-
     // The function ``u`` will be modified during the call to solve. A
     // :cpp:class:`Function` can be saved to a file. Here, we output the
     // solution to a ``VTK`` file (specified using the suffix ``.pvd``) for
     // visualisation in an external program such as Paraview.
     //
     // .. code-block:: cpp
-
 
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");

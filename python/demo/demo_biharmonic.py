@@ -48,7 +48,7 @@
 # equations (see the Mixed Poisson demo for a mixed method for the Poisson
 # equation), or a variational formulation can be constructed that imposes
 # weak continuity of normal derivatives between finite element cells.
-# The demo uses a discontinuous Galerkin approach to impose continuity
+# This demo uses a discontinuous Galerkin approach to impose continuity
 # of the normal derivative weakly.
 #
 # Consider a triangulation $\mathcal{T}$ of the domain $\Omega$, where
@@ -92,7 +92,7 @@
 # and the linear form is
 #
 # $$
-# L(v) = \int_{\Omega} fv \, {\rm d}x
+# L(v) = \int_{\Omega} fv \, {\rm d}x.
 # $$
 #
 # Furthermore, $\left< u \right> = \frac{1}{2} (u_{+} + u_{-})$,
@@ -140,7 +140,7 @@ V = fem.FunctionSpace(msh, ("Lagrange", 2))
 # <dolfinx.fem.FunctionSpace>` is a tuple consisting of `(family,
 # degree)`, where `family` is the finite element family, and `degree`
 # specifies the polynomial degree. in this case `V` consists of
-# first-order, continuous Lagrange finite element functions.
+# second-order, continuous Lagrange finite element functions.
 #
 # Next, we locate the mesh facets that lie on the boundary
 # $\Gamma_D = \partial\Omega$.
@@ -167,23 +167,41 @@ dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 
 # and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
 # {py:class}`DirichletBCMetaClass <dolfinx.fem.DirichletBCMetaClass>`
-# class that represents the boundary condition
+# class that represents the boundary condition. In this case, we impose
+# Dirichlet boundary conditions with value $0$ on the entire boundary
+# $\partial\Omega$.
 
 bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 
 # Next, we express the variational problem using UFL.
+#
+# First, the penalty parameter $\alpha$ is defined. In addition, we define a
+# variable `h` for the cell diameter $h_E$, a variable `n`for the
+# outward-facing normal vector $n$ and a variable `h_avg` for the
+# average size of cells sharing a facet
+# $\left< h \right> = \frac{1}{2} (h_{+} + h_{-})$. Here, the UFL syntax
+# `('+')` and `('-')` restricts a function to the `('+')` and `('-')`
+# sides of a facet.
 
-h = CellDiameter(msh)
-h_avg = (h('+') + h('-')) / 2.0
-n = FacetNormal(msh)
 alpha = ScalarType(8.0)
+h = CellDiameter(msh)
+n = FacetNormal(msh)
+h_avg = (h('+') + h('-')) / 2.0
+
+# After that, we can define the variational problem consisting of the bilinear
+# form $a$ and the linear form $L$. The source term is prescribed as
+# $f = 4.0 \pi^4\sin(\pi x)\sin(\pi y)$. Note that with `dS`, integration is
+# carried out over all the interior facets $\mathcal{E}_h^{\rm int}$, whereas
+# with `ds` it would be only the facets on the boundary of the domain, i.e.
+# $\partial\Omega$. The jump operator
+# $[\!\![ w ]\!\!] = w_{+} \cdot n_{+} + w_{-} \cdot n_{-}$ w.r.t. the
+# outward-facing normal vector $n$ is in UFL available as `jump(w, n)`.
 
 # +
 # Define variational problem
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(msh)
-f = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
 f = 4.0 * pi**4 * sin(pi * x[0]) * sin(pi * x[1])
 
 a = inner(div(grad(u)), div(grad(v))) * dx \
