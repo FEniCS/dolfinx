@@ -408,7 +408,15 @@ def block_direct_solver():
 
     # Create a block vector (x) to store the full solution, and solve
     x = A.createVecLeft()
-    ksp.solve(b, x)
+    try:
+        ksp.solve(b, x)
+    except PETSc.Error as e:
+        if e.ierr == 92:
+            print("The required PETSc solver/preconditioner is not available. Exiting.")
+            print(e)
+            exit(0)
+        else:
+            raise e
 
     # Create Functions and scatter x solution
     u, p = Function(V), Function(Q)
