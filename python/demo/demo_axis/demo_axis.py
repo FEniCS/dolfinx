@@ -19,12 +19,13 @@ from functools import partial
 
 import numpy as np
 from mesh_sphere_axis import generate_mesh_sphere_axis
-from mpi4py import MPI
-from petsc4py import PETSc
 from scipy.special import jv, jvp
 
 import ufl
 from dolfinx import fem, io, mesh, plot
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 try:
     from dolfinx.io import VTXWriter

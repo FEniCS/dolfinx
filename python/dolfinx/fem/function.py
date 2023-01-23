@@ -16,8 +16,6 @@ from functools import singledispatch
 
 import numpy as np
 import numpy.typing as npt
-from dolfinx.fem import dofmap
-from petsc4py import PETSc
 
 import basix
 import basix.ufl_wrapper
@@ -26,7 +24,10 @@ import ufl.algorithms
 import ufl.algorithms.analysis
 from dolfinx import cpp as _cpp
 from dolfinx import jit, la
+from dolfinx.fem import dofmap
 from ufl.domain import extract_unique_domain
+
+from petsc4py import PETSc
 
 
 class Constant(ufl.Constant):
