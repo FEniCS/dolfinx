@@ -8,7 +8,7 @@
 #       jupytext_version: 1.13.6
 # ---
 
-# # Elasticity
+# # Elasticity using algebraic multigrid
 #
 # Copyright © 2020-2022 Garth N. Wells and Michal Habera
 #

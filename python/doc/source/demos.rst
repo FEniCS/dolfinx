@@ -30,6 +30,7 @@ PDEs (advanced)
    demos/demo_elasticity.md
    demos/demo_cahn-hilliard.md
    demos/demo_static-condensation.md
+   demos/demo_types.md
 
 
 Interpolation, IO and visualisation
