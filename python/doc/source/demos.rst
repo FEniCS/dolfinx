@@ -33,6 +33,24 @@ PDEs (advanced)
    demos/demo_types.md
 
 
+Nonlinear problems
+------------------
+
+.. toctree::
+   :maxdepth: 1
+
+   demos/demo_cahn-hilliard.md
+
+
+Mesh generation
+---------------
+
+.. toctree::
+   :maxdepth: 1
+
+   demos/demo_gmsh.md
+
+
 Interpolation, IO and visualisation
 -----------------------------------
 
@@ -42,13 +60,6 @@ Interpolation, IO and visualisation
    demos/demo_pyvista.md
    demos/demo_interpolation-io.md
 
-Mesh generation
----------------
-
-.. toctree::
-   :maxdepth: 1
-
-   demos/demo_gmsh.md
 
 Advanced iterative solvers
 --------------------------
@@ -59,13 +70,6 @@ Advanced iterative solvers
    demos/demo_stokes.md
    demos/demo_elasticity.md
 
-Nonlinear problems
-------------------
-
-.. toctree::
-   :maxdepth: 1
-
-   demos/demo_cahn-hilliard.md
 
 User-defined and advanced finite elements
 -----------------------------------------
