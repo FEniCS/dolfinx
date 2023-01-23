@@ -858,7 +858,7 @@ void declare_form(py::module& m, const std::string& type)
                                                py::cast(self));
             }
             default:
-              throw ::DolfinXException("Integral type unsupported.");
+              throw dolfinx::runtime_error("Integral type unsupported.");
             }
           },
           py::arg("type"), py::arg("i"));
