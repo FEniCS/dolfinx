@@ -10,7 +10,7 @@
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include "interpolate.h"
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -55,7 +55,7 @@ public:
   {
     if (!V->component().empty())
     {
-      throw DolfinXException("Cannot create Function from subspace. Consider "
+      throw dolfinx::runtime_error("Cannot create Function from subspace. Consider "
                              "collapsing the function space");
     }
   }
@@ -195,22 +195,22 @@ public:
     {
       // Check for scalar-valued functions
       if (fshape.front() != x.size() / 3)
-        throw DolfinXException("Data returned by callable has wrong length");
+        throw dolfinx::runtime_error("Data returned by callable has wrong length");
     }
     else
     {
       // Check for vector/tensor value
       if (fshape.size() != 2)
-        throw DolfinXException("Expected 2D array of data");
+        throw dolfinx::runtime_error("Expected 2D array of data");
 
       if (fshape[0] != vs)
       {
-        throw DolfinXException(
+        throw dolfinx::runtime_error(
             "Data returned by callable has wrong shape(0) size");
       }
       if (fshape[1] != x.size() / 3)
       {
-        throw DolfinXException(
+        throw dolfinx::runtime_error(
             "Data returned by callable has wrong shape(1) size");
       }
     }
@@ -258,11 +258,11 @@ public:
     assert(_function_space->element());
     std::size_t value_size = e.value_size();
     if (e.argument_function_space())
-      throw DolfinXException("Cannot interpolate Expression with Argument");
+      throw dolfinx::runtime_error("Cannot interpolate Expression with Argument");
 
     if (value_size != _function_space->element()->value_size())
     {
-      throw DolfinXException(
+      throw dolfinx::runtime_error(
           "Function value size not equal to Expression value size");
     }
 
@@ -272,7 +272,7 @@ public:
       auto [X1, shape1] = _function_space->element()->interpolation_points();
       if (shape0 != shape1)
       {
-        throw DolfinXException(
+        throw dolfinx::runtime_error(
             "Function element interpolation points has different shape to "
             "Expression interpolation points");
       }
@@ -280,7 +280,7 @@ public:
       {
         if (std::abs(X0[i] - X1[i]) > 1.0e-10)
         {
-          throw DolfinXException("Function element interpolation points not "
+          throw dolfinx::runtime_error("Function element interpolation points not "
                                  "equal to Expression interpolation points");
         }
       }
@@ -359,12 +359,12 @@ public:
 
     if (xshape[0] != cells.size())
     {
-      throw DolfinXException(
+      throw dolfinx::runtime_error(
           "Number of points and number of cells must be equal.");
     }
     if (xshape[0] != ushape[0])
     {
-      throw DolfinXException("Length of array for Function values must be the "
+      throw dolfinx::runtime_error("Length of array for Function values must be the "
                              "same as the number of points.");
     }
 
@@ -399,7 +399,7 @@ public:
     const int num_sub_elements = element->num_sub_elements();
     if (num_sub_elements > 1 and num_sub_elements != bs_element)
     {
-      throw DolfinXException("Function::eval is not supported for mixed "
+      throw dolfinx::runtime_error("Function::eval is not supported for mixed "
                              "elements. Extract subspaces.");
     }
 

@@ -11,7 +11,7 @@
 #include "Topology.h"
 #include <algorithm>
 #include <concepts>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
@@ -55,13 +55,13 @@ public:
   {
     if (_indices.size() != _values.size())
     {
-      throw DolfinXException("Indices and values arrays must have same size.");
+      throw dolfinx::runtime_error("Indices and values arrays must have same size.");
     }
 #ifndef NDEBUG
     if (!std::is_sorted(_indices.begin(), _indices.end()))
-      throw DolfinXException("MeshTag data is not sorted");
+      throw dolfinx::runtime_error("MeshTag data is not sorted");
     if (std::adjacent_find(_indices.begin(), _indices.end()) != _indices.end())
-      throw DolfinXException("MeshTag data has duplicates");
+      throw dolfinx::runtime_error("MeshTag data has duplicates");
 #endif
   }
 
@@ -151,7 +151,7 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Mesh> mesh, int dim,
       = entities_to_index(mesh->topology(), dim, entities);
   if (indices.size() != values.size())
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Duplicate mesh entities when building MeshTags object.");
   }
 

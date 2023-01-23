@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdlib>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/math.h>
@@ -95,7 +95,7 @@ compute_vertex_coords_boundary(const mesh::Mesh& mesh, int dim,
   const int tdim = topology.dim();
   if (dim == tdim)
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Cannot use mesh::locate_entities_boundary (boundary) for cells.");
   }
 
@@ -245,7 +245,7 @@ std::vector<double> mesh::cell_normals(const mesh::Mesh& mesh, int dim,
     return std::vector<double>();
 
   if (mesh.topology().cell_type() == CellType::prism and dim == 2)
-    throw DolfinXException("More work needed for prism cell");
+    throw dolfinx::runtime_error("More work needed for prism cell");
 
   const int gdim = mesh.geometry().dim();
   const CellType type = cell_entity_type(mesh.topology().cell_type(), dim, 0);
@@ -399,7 +399,7 @@ std::vector<std::int32_t> mesh::locate_entities(
   cmdspan3x_t x(xdata.data(), xshape);
   const std::vector<std::int8_t> marked = marker(x);
   if (marked.size() != x.extent(1))
-    throw DolfinXException("Length of array of markers is wrong.");
+    throw dolfinx::runtime_error("Length of array of markers is wrong.");
 
   const mesh::Topology& topology = mesh.topology();
   const int tdim = topology.dim();
@@ -446,7 +446,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   const int tdim = topology.dim();
   if (dim == tdim)
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Cannot use mesh::locate_entities_boundary (boundary) for cells.");
   }
 
@@ -462,7 +462,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
   cmdspan3x_t x(xdata.data(), 3, xdata.size() / 3);
   const std::vector<std::int8_t> marked = marker(x);
   if (marked.size() != x.extent(1))
-    throw DolfinXException("Length of array of markers is wrong.");
+    throw dolfinx::runtime_error("Length of array of markers is wrong.");
 
   // Loop over entities and check vertex markers
   mesh.topology_mutable().create_entities(dim);
@@ -497,9 +497,9 @@ mesh::entities_to_geometry(const Mesh& mesh, int dim,
 {
   CellType cell_type = mesh.topology().cell_type();
   if (cell_type == CellType::prism and dim == 2)
-    throw DolfinXException("More work needed for prism cells");
+    throw dolfinx::runtime_error("More work needed for prism cells");
   if (orient and (cell_type != CellType::tetrahedron or dim != 2))
-    throw DolfinXException("Can only orient facets of a tetrahedral mesh");
+    throw dolfinx::runtime_error("Can only orient facets of a tetrahedral mesh");
 
   const Geometry& geometry = mesh.geometry();
   auto x = geometry.x();
@@ -583,7 +583,7 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
   const int tdim = topology.dim();
   auto facet_map = topology.index_map(tdim - 1);
   if (!facet_map)
-    throw DolfinXException("Facets have not been computed.");
+    throw dolfinx::runtime_error("Facets have not been computed.");
 
   // Find all owned facets (not ghost) with only one attached cell
   const int num_facets = facet_map->size_local();
@@ -634,21 +634,21 @@ std::vector<std::int32_t> mesh::compute_incident_entities(
   auto map0 = mesh.topology().index_map(d0);
   if (!map0)
   {
-    throw DolfinXException("Mesh entities of dimension " + std::to_string(d0)
+    throw dolfinx::runtime_error("Mesh entities of dimension " + std::to_string(d0)
                            + " have not been created.");
   }
 
   auto map1 = mesh.topology().index_map(d1);
   if (!map1)
   {
-    throw DolfinXException("Mesh entities of dimension " + std::to_string(d1)
+    throw dolfinx::runtime_error("Mesh entities of dimension " + std::to_string(d1)
                            + " have not been created.");
   }
 
   auto e0_to_e1 = mesh.topology().connectivity(d0, d1);
   if (!e0_to_e1)
   {
-    throw DolfinXException("Connectivity missing: (" + std::to_string(d0) + ", "
+    throw dolfinx::runtime_error("Connectivity missing: (" + std::to_string(d0) + ", "
                            + std::to_string(d1) + ")");
   }
 

@@ -9,7 +9,7 @@
 #include "caster_petsc.h"
 #include <array>
 #include <cstdint>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/CoordinateElement.h>
@@ -171,7 +171,7 @@ void declare_functions(py::module& m)
         if (a.function_spaces()[0]->dofmap()->bs() != 1
             or a.function_spaces()[0]->dofmap()->bs() != 1)
         {
-          throw DolfinXException("Assembly with block size > 1 not yet "
+          throw dolfinx::runtime_error("Assembly with block size > 1 not yet "
                                  "supported with la::MatrixCSR.");
         }
         dolfinx::fem::assemble_matrix(
@@ -267,7 +267,7 @@ void declare_functions(py::module& m)
                                   std::span(x0.data(), x0.shape(0)), scale);
         }
         else
-          throw DolfinXException("Wrong array dimension.");
+          throw dolfinx::runtime_error("Wrong array dimension.");
       },
       py::arg("b"), py::arg("bcs"), py::arg("x0") = py::none(),
       py::arg("scale") = 1.0);
@@ -293,7 +293,7 @@ void declare_objects(py::module& m, const std::string& type)
                  std::shared_ptr<const dolfinx::fem::FunctionSpace> V)
               {
                 if (dofs.ndim() != 1)
-                  throw DolfinXException("Wrong number of dims");
+                  throw dolfinx::runtime_error("Wrong number of dims");
                 std::vector<std::size_t> shape(g.shape(), g.shape() + g.ndim());
                 auto _g = std::make_shared<dolfinx::fem::Constant<T>>(
                     std::span(g.data(), g.size()), shape);
@@ -628,7 +628,7 @@ void petsc_module(py::module& m)
       {
         if (rows0.ndim() != 1 or rows1.ndim())
         {
-          throw DolfinXException(
+          throw dolfinx::runtime_error(
               "Expected 1D arrays for boundary condition rows/columns");
         }
 
@@ -925,7 +925,7 @@ void fem(py::module& m)
       {
         if (dofmaps.size() != 2)
         {
-          throw DolfinXException(
+          throw dolfinx::runtime_error(
               "create_sparsity_pattern requires exactly two dofmaps.");
         }
         return dolfinx::fem::create_sparsity_pattern(
@@ -1197,7 +1197,7 @@ void fem(py::module& m)
          bool remote) -> std::array<py::array, 2>
       {
         if (V.size() != 2)
-          throw DolfinXException("Expected two function spaces.");
+          throw dolfinx::runtime_error("Expected two function spaces.");
         std::array<std::vector<std::int32_t>, 2> dofs
             = dolfinx::fem::locate_dofs_topological(
                 {V[0], V[1]}, dim, std::span(entities.data(), entities.size()),
@@ -1225,7 +1225,7 @@ void fem(py::module& m)
              marker) -> std::array<py::array, 2>
       {
         if (V.size() != 2)
-          throw DolfinXException("Expected two function spaces.");
+          throw dolfinx::runtime_error("Expected two function spaces.");
 
         auto _marker = [&marker](auto x)
         {

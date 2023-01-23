@@ -9,7 +9,7 @@
 #include "dofmapbuilder.h"
 #include "utils.h"
 #include <cstdint>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/sort.h>
@@ -31,7 +31,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 {
   if (dofmap_view.element_dof_layout().block_size() > 1)
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Cannot collapse a dofmap view with block size greater "
         "than 1 when the parent has a block size of 1. Create new dofmap "
         "first.");

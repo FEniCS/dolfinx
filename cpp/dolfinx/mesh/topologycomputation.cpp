@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <boost/unordered_map.hpp>
 #include <cstdint>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -489,7 +489,7 @@ compute_entities_by_key_matching(
 {
   if (dim == 0)
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Cannot create vertices for topology. Should already exist.");
   }
 
@@ -749,7 +749,7 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
     // Make sure we really have the connectivity
     if (!topology.connectivity(tdim, dim))
     {
-      throw DolfinXException(
+      throw dolfinx::runtime_error(
           "Cannot compute topological entities. Entities of topological "
           "dimension "
           + std::to_string(dim)
@@ -760,7 +760,7 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
 
   auto cells = topology.connectivity(tdim, 0);
   if (!cells)
-    throw DolfinXException("Cell connectivity missing.");
+    throw dolfinx::runtime_error("Cell connectivity missing.");
 
   auto vertex_map = topology.index_map(0);
   assert(vertex_map);
@@ -789,7 +789,7 @@ mesh::compute_connectivity(const Topology& topology, int d0, int d1)
       = topology.connectivity(d0, 0);
   if (d0 > 0 and !topology.connectivity(d0, 0))
   {
-    throw DolfinXException("Missing entities of dimension " + std::to_string(d0)
+    throw dolfinx::runtime_error("Missing entities of dimension " + std::to_string(d0)
                            + ".");
   }
 
@@ -797,7 +797,7 @@ mesh::compute_connectivity(const Topology& topology, int d0, int d1)
       = topology.connectivity(d1, 0);
   if (d1 > 0 and !topology.connectivity(d1, 0))
   {
-    throw DolfinXException("Missing entities of dimension " + std::to_string(d1)
+    throw dolfinx::runtime_error("Missing entities of dimension " + std::to_string(d1)
                            + ".");
   }
 
@@ -842,6 +842,6 @@ mesh::compute_connectivity(const Topology& topology, int d0, int d1)
     return {c_d0_d1, nullptr};
   }
   else
-    throw DolfinXException("Entity dimension error when computing topology.");
+    throw dolfinx::runtime_error("Entity dimension error when computing topology.");
 }
 //--------------------------------------------------------------------------

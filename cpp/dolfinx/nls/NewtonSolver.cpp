@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "NewtonSolver.h"
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/la/petsc.h>
@@ -155,13 +155,13 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
 
   if (!_fnF)
   {
-    throw DolfinXException("Function for computing residual vector has not "
+    throw dolfinx::runtime_error("Function for computing residual vector has not "
                            "been provided to the NewtonSolver.");
   }
 
   if (!_fnJ)
   {
-    throw DolfinXException("Function for computing Jacobianhas not "
+    throw dolfinx::runtime_error("Function for computing Jacobianhas not "
                            "been provided to the NewtonSolver.");
   }
 
@@ -182,7 +182,7 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
   }
   else
   {
-    throw DolfinXException("Unknown convergence criterion: "
+    throw dolfinx::runtime_error("Unknown convergence criterion: "
                            + convergence_criterion);
   }
 
@@ -246,7 +246,7 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
         std::tie(_residual, newton_converged) = this->_converged(*this, _dx);
     }
     else
-      throw DolfinXException("Unknown convergence criterion string.");
+      throw dolfinx::runtime_error("Unknown convergence criterion string.");
   }
 
   if (newton_converged)
@@ -264,11 +264,11 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
     {
       if (_iteration == max_it)
       {
-        throw DolfinXException("Newton solver did not converge because "
+        throw dolfinx::runtime_error("Newton solver did not converge because "
                                "maximum number of iterations reached");
       }
       else
-        throw DolfinXException("Newton solver did not converge");
+        throw dolfinx::runtime_error("Newton solver did not converge");
     }
     else
       LOG(WARNING) << "Newton solver did not converge.";

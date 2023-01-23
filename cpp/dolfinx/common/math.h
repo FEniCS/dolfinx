@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "DolfinXException.h"
+#include "exception.h"
 #include <array>
 #include <basix/mdspan.hpp>
 #include <cmath>
@@ -72,7 +72,7 @@ auto det(const T* A, std::array<std::size_t, 2> shape)
     return w4;
   }
   default:
-    throw DolfinXException("math::det is not implemented for "
+    throw dolfinx::runtime_error("math::det is not implemented for "
                            + std::to_string(A[0]) + "x" + std::to_string(A[1])
                            + " matrices.");
   }
@@ -108,7 +108,7 @@ auto det(Matrix A)
     return w4;
   }
   default:
-    throw DolfinXException("math::det is not implemented for "
+    throw dolfinx::runtime_error("math::det is not implemented for "
                            + std::to_string(A.extent(0)) + "x"
                            + std::to_string(A.extent(1)) + " matrices.");
   }
@@ -164,7 +164,7 @@ void inv(U A, V B)
     break;
   }
   default:
-    throw DolfinXException("math::inv is not implemented for "
+    throw dolfinx::runtime_error("math::inv is not implemented for "
                            + std::to_string(A.extent(0)) + "x"
                            + std::to_string(A.extent(1)) + " matrices.");
   }
@@ -253,7 +253,7 @@ void pinv(U A, V P)
   }
   else
   {
-    throw DolfinXException("math::pinv is not implemented for "
+    throw dolfinx::runtime_error("math::pinv is not implemented for "
                            + std::to_string(A.extent(0)) + "x"
                            + std::to_string(A.extent(1)) + " matrices.");
   }

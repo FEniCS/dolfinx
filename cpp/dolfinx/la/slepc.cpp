@@ -9,7 +9,7 @@
 #include "slepc.h"
 #include "petsc.h"
 #include "utils.h"
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
 #include <petscmat.h>
@@ -24,7 +24,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm) { EPSCreate(comm, &_eps); }
 SLEPcEigenSolver::SLEPcEigenSolver(EPS eps, bool inc_ref_count) : _eps(eps)
 {
   if (!eps)
-    throw DolfinXException("SLEPc EPS must be initialised before wrapping");
+    throw dolfinx::runtime_error("SLEPc EPS must be initialised before wrapping");
 
   PetscErrorCode ierr;
   if (inc_ref_count)
@@ -132,7 +132,7 @@ std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(int i) const
   }
   else
   {
-    throw DolfinXException("Requested eigenvalue (" + std::to_string(i)
+    throw dolfinx::runtime_error("Requested eigenvalue (" + std::to_string(i)
                            + ") has not been computed");
   }
 }
@@ -150,7 +150,7 @@ void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc, Vec r,
     EPSGetEigenpair(_eps, ii, &lr, &lc, r, c);
   else
   {
-    throw DolfinXException("Requested eigenpair (" + std::to_string(i)
+    throw dolfinx::runtime_error("Requested eigenpair (" + std::to_string(i)
                            + ") has not been computed");
   }
 }

@@ -5,9 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Timer.h"
-#include "DolfinXException.h"
 #include "TimeLogManager.h"
 #include "TimeLogger.h"
+#include "exception.h"
 #include <stdexcept>
 
 using namespace dolfinx;
@@ -36,7 +36,7 @@ void Timer::resume()
 {
   if (!_task.empty())
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Resuming is not well-defined for logging timer. Only "
         "non-logging timer can be resumed");
   }

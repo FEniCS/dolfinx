@@ -10,7 +10,7 @@
 #include <cassert>
 #include <chrono>
 #include <cstdint>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/log.h>
 #include <filesystem>
 #include <hdf5.h>
@@ -116,7 +116,7 @@ private:
   template <typename T>
   static hid_t hdf5_type()
   {
-    throw DolfinXException("Cannot get HDF5 primitive data type. "
+    throw dolfinx::runtime_error("Cannot get HDF5 primitive data type. "
                            "No specialised function for this data type");
   }
 };
@@ -154,7 +154,7 @@ inline hid_t HDF5Interface::hdf5_type<std::size_t>()
   else if (sizeof(std::size_t) == sizeof(unsigned int))
     return H5T_NATIVE_UINT;
 
-  throw DolfinXException("Cannot determine size of std::size_t. "
+  throw dolfinx::runtime_error("Cannot determine size of std::size_t. "
                          "std::size_t is not the same size as long or int");
 }
 //---------------------------------------------------------------------------
@@ -169,7 +169,7 @@ inline void HDF5Interface::write_dataset(
   assert(rank != 0);
   if (rank > 2)
   {
-    throw DolfinXException("Cannot write dataset to HDF5 file"
+    throw dolfinx::runtime_error("Cannot write dataset to HDF5 file"
                            "Only rank 1 and rank 2 dataset are supported");
   }
 
@@ -190,7 +190,7 @@ inline void HDF5Interface::write_dataset(
   // Create a global data space
   const hid_t filespace0 = H5Screate_simple(rank, dimsf.data(), nullptr);
   if (filespace0 == HDF5_FAIL)
-    throw DolfinXException("Failed to create HDF5 data space");
+    throw dolfinx::runtime_error("Failed to create HDF5 data space");
 
   // Set chunking parameters
   hid_t chunking_properties;
@@ -219,7 +219,7 @@ inline void HDF5Interface::write_dataset(
       = H5Dcreate2(file_handle, dataset_path.c_str(), h5type, filespace0,
                    H5P_DEFAULT, chunking_properties, H5P_DEFAULT);
   if (dset_id == HDF5_FAIL)
-    throw DolfinXException("Failed to create HDF5 global dataset.");
+    throw dolfinx::runtime_error("Failed to create HDF5 global dataset.");
 
   // Generic status report
   herr_t status;
@@ -227,19 +227,19 @@ inline void HDF5Interface::write_dataset(
   // Close global data space
   status = H5Sclose(filespace0);
   if (status == HDF5_FAIL)
-    throw DolfinXException("Failed to close HDF5 global data space.");
+    throw dolfinx::runtime_error("Failed to close HDF5 global data space.");
 
   // Create a local data space
   const hid_t memspace = H5Screate_simple(rank, count.data(), nullptr);
   if (memspace == HDF5_FAIL)
-    throw DolfinXException("Failed to create HDF5 local data space.");
+    throw dolfinx::runtime_error("Failed to create HDF5 local data space.");
 
   // Create a file dataspace within the global space - a hyperslab
   const hid_t filespace1 = H5Dget_space(dset_id);
   status = H5Sselect_hyperslab(filespace1, H5S_SELECT_SET, offset.data(),
                                nullptr, count.data(), nullptr);
   if (status == HDF5_FAIL)
-    throw DolfinXException("Failed to create HDF5 dataspace.");
+    throw dolfinx::runtime_error("Failed to create HDF5 dataspace.");
 
   // Set parallel access
   const hid_t plist_id = H5Pcreate(H5P_DATASET_XFER);
@@ -249,11 +249,11 @@ inline void HDF5Interface::write_dataset(
     status = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
     if (status == HDF5_FAIL)
     {
-      throw DolfinXException("Failed to set HDF5 data transfer property list.");
+      throw dolfinx::runtime_error("Failed to set HDF5 data transfer property list.");
     }
 
 #else
-    throw DolfinXException("HDF5 library has not been configured with MPI");
+    throw dolfinx::runtime_error("HDF5 library has not been configured with MPI");
 #endif
   }
 
@@ -261,7 +261,7 @@ inline void HDF5Interface::write_dataset(
   status = H5Dwrite(dset_id, h5type, memspace, filespace1, plist_id, data);
   if (status == HDF5_FAIL)
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Failed to write HDF5 local dataset into hyperslab.");
   }
 
@@ -270,28 +270,28 @@ inline void HDF5Interface::write_dataset(
     // Close chunking properties
     status = H5Pclose(chunking_properties);
     if (status == HDF5_FAIL)
-      throw DolfinXException("Failed to close HDF5 chunking properties.");
+      throw dolfinx::runtime_error("Failed to close HDF5 chunking properties.");
   }
 
   // Close dataset collectively
   status = H5Dclose(dset_id);
   if (status == HDF5_FAIL)
-    throw DolfinXException("Failed to close HDF5 dataset.");
+    throw dolfinx::runtime_error("Failed to close HDF5 dataset.");
 
   // Close hyperslab
   status = H5Sclose(filespace1);
   if (status == HDF5_FAIL)
-    throw DolfinXException("Failed to close HDF5 hyperslab.");
+    throw dolfinx::runtime_error("Failed to close HDF5 hyperslab.");
 
   // Close local dataset
   status = H5Sclose(memspace);
   if (status == HDF5_FAIL)
-    throw DolfinXException("Failed to close local HDF5 dataset.");
+    throw dolfinx::runtime_error("Failed to close local HDF5 dataset.");
 
   // Release file-access template
   status = H5Pclose(plist_id);
   if (status == HDF5_FAIL)
-    throw DolfinXException("Failed to release HDF5 file-access template.");
+    throw dolfinx::runtime_error("Failed to release HDF5 file-access template.");
 }
 //---------------------------------------------------------------------------
 template <typename T>
@@ -306,12 +306,12 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   const hid_t dset_id
       = H5Dopen2(file_handle, dataset_path.c_str(), H5P_DEFAULT);
   if (dset_id == HDF5_FAIL)
-    throw DolfinXException("Failed to open HDF5 global dataset.");
+    throw dolfinx::runtime_error("Failed to open HDF5 global dataset.");
 
   // Open dataspace
   const hid_t dataspace = H5Dget_space(dset_id);
   if (dataspace == HDF5_FAIL)
-    throw DolfinXException("Failed to open HDF5 data space.");
+    throw dolfinx::runtime_error("Failed to open HDF5 data space.");
 
   // Get rank of data set
   const int rank = H5Sget_simple_extent_ndims(dataspace);
@@ -325,7 +325,7 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   // Get size in each dimension
   const int ndims = H5Sget_simple_extent_dims(dataspace, shape.data(), nullptr);
   if (ndims != rank)
-    throw DolfinXException("Failed to get dimensionality of dataspace");
+    throw dolfinx::runtime_error("Failed to get dimensionality of dataspace");
 
   // Hyperslab selection
   std::vector<hsize_t> offset(rank, 0);
@@ -343,12 +343,12 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   [[maybe_unused]] herr_t status = H5Sselect_hyperslab(
       dataspace, H5S_SELECT_SET, offset.data(), nullptr, count.data(), nullptr);
   if (status == HDF5_FAIL)
-    throw DolfinXException("Failed to select HDF5 hyperslab.");
+    throw dolfinx::runtime_error("Failed to select HDF5 hyperslab.");
 
   // Create a memory dataspace
   const hid_t memspace = H5Screate_simple(rank, count.data(), nullptr);
   if (memspace == HDF5_FAIL)
-    throw DolfinXException("Failed to create HDF5 dataspace.");
+    throw dolfinx::runtime_error("Failed to create HDF5 dataspace.");
 
   // Create local data to read into
   std::vector<T> data(
@@ -359,22 +359,22 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   status
       = H5Dread(dset_id, h5type, memspace, dataspace, H5P_DEFAULT, data.data());
   if (status == HDF5_FAIL)
-    throw DolfinXException("Failed to read HDF5 data.");
+    throw dolfinx::runtime_error("Failed to read HDF5 data.");
 
   // Close dataspace
   status = H5Sclose(dataspace);
   if (status == HDF5_FAIL)
-    throw DolfinXException("Failed to close HDF5 dataspace.");
+    throw dolfinx::runtime_error("Failed to close HDF5 dataspace.");
 
   // Close memspace
   status = H5Sclose(memspace);
   if (status == HDF5_FAIL)
-    throw DolfinXException("Failed to close HDF5 memory space.");
+    throw dolfinx::runtime_error("Failed to close HDF5 memory space.");
 
   // Close dataset
   status = H5Dclose(dset_id);
   if (status == HDF5_FAIL)
-    throw DolfinXException("Failed to close HDF5 dataset.");
+    throw dolfinx::runtime_error("Failed to close HDF5 dataset.");
 
   auto timer_end = std::chrono::system_clock::now();
   std::chrono::duration<double> dt = (timer_end - timer_start);

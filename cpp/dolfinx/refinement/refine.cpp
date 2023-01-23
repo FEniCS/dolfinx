@@ -18,7 +18,7 @@ mesh::Mesh refinement::refine(const mesh::Mesh& mesh, bool redistribute)
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
   {
-    throw DolfinXException("Refinement only defined for simplices");
+    throw dolfinx::runtime_error("Refinement only defined for simplices");
   }
 
   auto [refined_mesh, parent_cell, parent_facet]
@@ -42,7 +42,7 @@ mesh::Mesh refinement::refine(const mesh::Mesh& mesh,
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
   {
-    throw DolfinXException("Refinement only defined for simplices");
+    throw dolfinx::runtime_error("Refinement only defined for simplices");
   }
 
   auto [refined_mesh, parent_cell, parent_facet] = plaza::refine(

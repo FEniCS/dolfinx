@@ -8,7 +8,7 @@
 
 #include <cassert>
 #include <concepts>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <numeric>
 #include <span>
 #include <sstream>
@@ -178,13 +178,13 @@ regular_adjacency_list(U&& data, int degree)
 {
   if (degree == 0 and !data.empty())
   {
-    throw DolfinXException("Degree is zero but data is not empty for "
+    throw dolfinx::runtime_error("Degree is zero but data is not empty for "
                            "constant degree AdjacencyList");
   }
 
   if (degree > 0 and data.size() % degree != 0)
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Incompatible data size and degree for constant degree AdjacencyList");
   }
 

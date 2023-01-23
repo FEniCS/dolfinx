@@ -17,7 +17,7 @@
     int rc = import_mpi4py();                                                  \
     if (rc != 0)                                                               \
     {                                                                          \
-      throw DolfinXException("Error when importing mpi4py");                   \
+      throw dolfinx::runtime_error("Error when importing mpi4py");                   \
     }                                                                          \
   }
 

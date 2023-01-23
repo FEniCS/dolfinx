@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -148,7 +148,7 @@ build_basic_dofmap(const mesh::Topology& topology,
     {
       if (!topology.connectivity(d, 0))
       {
-        throw DolfinXException(
+        throw dolfinx::runtime_error(
             "Cannot create basic dofmap. Missing entities of dimension "
             + std::to_string(d) + " .");
       }

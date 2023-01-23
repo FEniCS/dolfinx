@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <array>
 #include <complex>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
@@ -396,7 +396,7 @@ std::string to_fides_cell(mesh::CellType type)
   case mesh::CellType::hexahedron:
     return "hexahedron";
   default:
-    throw DolfinXException("Unknown cell type.");
+    throw dolfinx::runtime_error("Unknown cell type.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -577,7 +577,7 @@ void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
   const int num_vertices_per_cell
       = mesh::cell_num_entities(topology.cell_type(), 0);
   if (num_dofs_g != num_vertices_per_cell)
-    throw DolfinXException("Fides only supports lowest-order meshes.");
+    throw dolfinx::runtime_error("Fides only supports lowest-order meshes.");
 
   // NOTE: If we start using mixed element types, we can change
   // data-model to "unstructured"
@@ -696,7 +696,7 @@ ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
         {
           if (mesh != u->function_space()->mesh())
           {
-            throw DolfinXException(
+            throw dolfinx::runtime_error(
                 "ADIOS2Writer only supports functions sharing the same mesh");
           }
         },
@@ -731,7 +731,7 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
       _mesh_reuse_policy(policy)
 {
   if (u.empty())
-    throw DolfinXException("FidesWriter fem::Function list is empty");
+    throw dolfinx::runtime_error("FidesWriter fem::Function list is empty");
 
   // Extract Mesh from first function
   auto mesh = std::visit(
@@ -746,12 +746,12 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
 
   // Check if function is mixed
   if (element0->is_mixed())
-    throw DolfinXException("Mixed functions are not supported by VTXWriter");
+    throw dolfinx::runtime_error("Mixed functions are not supported by VTXWriter");
 
   // Check if function is DG 0
   if (element0->space_dimension() / element0->block_size() == 1)
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Piecewise constants are not (yet) supported by VTXWriter");
   }
 
@@ -759,7 +759,7 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
   // Lagrange element? Check that element is Lagrange
   if (!element0->interpolation_ident())
   {
-    throw DolfinXException("Only Lagrange functions are "
+    throw dolfinx::runtime_error("Only Lagrange functions are "
                            "supported. Interpolate Functions before output.");
   }
 
@@ -775,7 +775,7 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
           assert(element);
           if (*element != *element0)
           {
-            throw DolfinXException(
+            throw dolfinx::runtime_error(
                 "All functions in FidesWriter must have the same element type");
           }
           auto dof_layout = u->function_space()->dofmap()->element_dof_layout();
@@ -783,7 +783,7 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
           int num_dofs = element->space_dimension() / element->block_size();
           if (num_dofs != num_vertices_per_cell or num_vertex_dofs != 1)
           {
-            throw DolfinXException("Only first order Lagrange spaces are "
+            throw dolfinx::runtime_error("Only first order Lagrange spaces are "
                                    "supported by FidesWriter");
           }
         },
@@ -829,7 +829,7 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
     : ADIOS2Writer(comm, filename, "VTX function writer", u)
 {
   if (u.empty())
-    throw DolfinXException("VTXWriter fem::Function list is empty");
+    throw dolfinx::runtime_error("VTXWriter fem::Function list is empty");
 
   // Extract element from first function
   const fem::FiniteElement* element0 = std::visit(
@@ -839,12 +839,12 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
 
   // Check if function is mixed
   if (element0->is_mixed())
-    throw DolfinXException("Mixed functions are not supported by VTXWriter");
+    throw dolfinx::runtime_error("Mixed functions are not supported by VTXWriter");
 
   // Check if function is DG 0
   if (element0->space_dimension() / element0->block_size() == 1)
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "VTK does not support cell-wise fields. See "
         "https://gitlab.kitware.com/vtk/vtk/-/issues/18458.");
   }
@@ -854,7 +854,7 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
   // Check that element is Lagrange
   if (!element0->interpolation_ident())
   {
-    throw DolfinXException("Only (discontinuous) Lagrange functions are "
+    throw dolfinx::runtime_error("Only (discontinuous) Lagrange functions are "
                            "supported. Interpolate Functions before output.");
   }
 
@@ -868,7 +868,7 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
           assert(element);
           if (*element != *element0)
           {
-            throw DolfinXException(
+            throw dolfinx::runtime_error(
                 "All functions in VTXWriter must have the same element type");
           }
         },

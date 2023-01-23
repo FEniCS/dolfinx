@@ -12,7 +12,7 @@
 #include "FunctionSpace.h"
 #include <array>
 #include <concepts>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <functional>
 #include <memory>
 #include <span>
@@ -208,13 +208,13 @@ public:
     assert(V);
     if (g->shape.size() != V->element()->value_shape().size())
     {
-      throw DolfinXException(
+      throw dolfinx::runtime_error(
           "Rank mis-match between Constant and function space in DirichletBC");
     }
 
     if (g->value.size() != _function_space->dofmap()->bs())
     {
-      throw DolfinXException(
+      throw dolfinx::runtime_error(
           "Creating a DirichletBC using a Constant is not supported when the "
           "Constant size is not equal to the block size of the constrained "
           "(sub-)space. Use a fem::Function to create the fem::DirichletBC.");
@@ -222,7 +222,7 @@ public:
 
     if (!V->element()->interpolation_ident())
     {
-      throw DolfinXException(
+      throw dolfinx::runtime_error(
           "Constant can be used only with point-evaluation elements");
     }
 

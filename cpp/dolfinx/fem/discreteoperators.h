@@ -10,7 +10,7 @@
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include <array>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -63,18 +63,18 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
   std::shared_ptr<const FiniteElement> e0 = V0.element();
   assert(e0);
   if (e0->map_type() != basix::maps::type::identity)
-    throw DolfinXException("Wrong finite element space for V0.");
+    throw dolfinx::runtime_error("Wrong finite element space for V0.");
   if (e0->block_size() != 1)
-    throw DolfinXException("Block size is greater than 1 for V0.");
+    throw dolfinx::runtime_error("Block size is greater than 1 for V0.");
   if (e0->reference_value_size() != 1)
-    throw DolfinXException("Wrong value size for V0.");
+    throw dolfinx::runtime_error("Wrong value size for V0.");
 
   std::shared_ptr<const FiniteElement> e1 = V1.element();
   assert(e1);
   if (e1->map_type() != basix::maps::type::covariantPiola)
-    throw DolfinXException("Wrong finite element space for V1.");
+    throw dolfinx::runtime_error("Wrong finite element space for V1.");
   if (e1->block_size() != 1)
-    throw DolfinXException("Block size is greater than 1 for V1.");
+    throw dolfinx::runtime_error("Block size is greater than 1 for V1.");
 
   // Get V0 (H(curl)) space interpolation points
   const auto [X, Xshape] = e1->interpolation_points();

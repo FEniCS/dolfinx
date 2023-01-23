@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "DolfinXException.h"
+#include "exception.h"
 #include <algorithm>
 #include <boost/functional/hash.hpp>
 #include <dolfinx/common/MPI.h>
@@ -29,7 +29,7 @@ std::pair<std::vector<typename U::value_type>,
 sort_unique(const U& indices, const V& values)
 {
   if (indices.size() != values.size())
-    throw DolfinXException("Cannot sort two arrays of different lengths");
+    throw dolfinx::runtime_error("Cannot sort two arrays of different lengths");
 
   using T = typename std::pair<typename U::value_type, typename V::value_type>;
   std::vector<T> data(indices.size());

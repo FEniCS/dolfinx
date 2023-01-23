@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <petsc4py/petsc4py.h>
 #include <petscdm.h>
 #include <petscis.h>
@@ -25,7 +25,7 @@ namespace py = pybind11;
   if (!func)                                                                   \
   {                                                                            \
     if (import_petsc4py() != 0)                                                \
-      throw DolfinXException("Error when importing petsc4py");                 \
+      throw dolfinx::runtime_error("Error when importing petsc4py");                 \
   }
 
 // Macro for casting between PETSc and petsc4py objects

@@ -11,7 +11,7 @@
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/utils.h>
@@ -577,12 +577,12 @@ void interpolate(Function<T>& u, std::span<const T> f,
   if (int num_sub = element->num_sub_elements();
       num_sub > 0 and num_sub != element_bs)
   {
-    throw DolfinXException("Cannot directly interpolate a mixed space. "
+    throw dolfinx::runtime_error("Cannot directly interpolate a mixed space. "
                            "Interpolate into subspaces.");
   }
 
   if (fshape[0] != (std::size_t)element->value_size())
-    throw DolfinXException("Interpolation data has the wrong shape/size.");
+    throw dolfinx::runtime_error("Interpolation data has the wrong shape/size.");
 
   // Get mesh
   assert(u.function_space());
@@ -654,7 +654,7 @@ void interpolate(Function<T>& u, std::span<const T> f,
 
     if (element_vs > 1 && element_bs > 1)
     {
-      throw DolfinXException("Interpolation into this element not supported.");
+      throw dolfinx::runtime_error("Interpolation into this element not supported.");
     }
 
     // Get interpolation operator
@@ -702,12 +702,12 @@ void interpolate(Function<T>& u, std::span<const T> f,
     const auto [X, Xshape] = element->interpolation_points();
     if (X.empty())
     {
-      throw DolfinXException(
+      throw dolfinx::runtime_error(
           "Interpolation into this space is not yet supported.");
     }
 
     if (_f.extent(1) != cells.size() * Xshape[0])
-      throw DolfinXException("Interpolation data has the wrong shape.");
+      throw dolfinx::runtime_error("Interpolation data has the wrong shape.");
 
     // Get coordinate map
     const CoordinateElement& cmap = mesh->geometry().cmap();
@@ -858,7 +858,7 @@ void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
   MPI_Comm_compare(mesh->comm(), mesh_v->comm(), &result);
 
   if (result == MPI_UNEQUAL)
-    throw DolfinXException("Interpolation on different meshes is only "
+    throw dolfinx::runtime_error("Interpolation on different meshes is only "
                            "supported with the same communicator.");
 
   MPI_Comm comm = mesh->comm();
@@ -966,7 +966,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
                          element0->value_shape().end(),
                          element1->value_shape().begin()))
       {
-        throw DolfinXException(
+        throw dolfinx::runtime_error(
             "Interpolation: elements have different value dimensions");
       }
 

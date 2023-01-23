@@ -13,7 +13,7 @@
 #include "FunctionSpace.h"
 #include "utils.h"
 #include <algorithm>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -880,13 +880,13 @@ void apply_lifting(
   // FIXME: make changes to reactivate this check
   if (!x0.empty() and x0.size() != a.size())
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Mismatch in size between x0 and bilinear form in assembler.");
   }
 
   if (a.size() != bcs1.size())
   {
-    throw DolfinXException("Mismatch in size between a and bcs in assembler.");
+    throw dolfinx::runtime_error("Mismatch in size between a and bcs in assembler.");
   }
 
   for (std::size_t j = 0; j < a.size(); ++j)

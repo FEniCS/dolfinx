@@ -16,7 +16,7 @@
 #include "sparsitybuild.h"
 #include <array>
 #include <concepts>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
@@ -128,7 +128,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
 {
   if (a.rank() != 2)
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Cannot create sparsity pattern. Form is not a bilinear form");
   }
 
@@ -188,7 +188,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
       }
       break;
     default:
-      throw DolfinXException("Unsupported integral type");
+      throw dolfinx::runtime_error("Unsupported integral type");
     }
   }
 
@@ -245,15 +245,15 @@ Form<T> create_form(
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
   if (ufcx_form.rank != (int)spaces.size())
-    throw DolfinXException("Wrong number of argument spaces for Form.");
+    throw dolfinx::runtime_error("Wrong number of argument spaces for Form.");
   if (ufcx_form.num_coefficients != (int)coefficients.size())
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Mismatch between number of expected and provided Form coefficients.");
   }
   if (ufcx_form.num_constants != (int)constants.size())
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Mismatch between number of expected and provided Form constants.");
   }
 
@@ -267,7 +267,7 @@ Form<T> create_form(
     if (std::string(ufcx_element->signature)
         != spaces[i]->element()->signature())
     {
-      throw DolfinXException(
+      throw dolfinx::runtime_error(
           "Cannot create form. Wrong type of function space for argument.");
     }
   }
@@ -461,7 +461,7 @@ Form<T> create_form(
       coeff_map.push_back(it->second);
     else
     {
-      throw DolfinXException("Form coefficient \"" + name + "\" not provided.");
+      throw dolfinx::runtime_error("Form coefficient \"" + name + "\" not provided.");
     }
   }
 
@@ -472,7 +472,7 @@ Form<T> create_form(
     if (auto it = constants.find(name); it != constants.end())
       const_map.push_back(it->second);
     else
-      throw DolfinXException("Form constant \"" + name + "\" not provided.");
+      throw dolfinx::runtime_error("Form constant \"" + name + "\" not provided.");
   }
 
   return create_form(ufcx_form, spaces, coeff_map, const_map, subdomains, mesh);
@@ -714,7 +714,7 @@ allocate_coefficient_storage(const Form<T>& form, IntegralType integral_type,
       num_entities = form.interior_facet_domains(id).size() / 2;
       break;
     default:
-      throw DolfinXException(
+      throw dolfinx::runtime_error(
           "Could not allocate coefficient data. Integral type not supported.");
     }
   }
@@ -820,7 +820,7 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
       break;
     }
     default:
-      throw DolfinXException(
+      throw dolfinx::runtime_error(
           "Could not pack coefficient. Integral type not supported.");
     }
   }
@@ -837,7 +837,7 @@ Expression<T> create_expression(
 {
   if (expression.rank > 0 and !argument_function_space)
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Expression has Argument but no Argument function space was provided.");
   }
 
@@ -875,7 +875,7 @@ Expression<T> create_expression(
         const unsigned char*)>(expression.tabulate_tensor_complex128);
   }
   else
-    throw DolfinXException("Type not supported.");
+    throw dolfinx::runtime_error("Type not supported.");
 
   assert(tabulate_tensor);
   return Expression(coefficients, constants, X, Xshape, tabulate_tensor,
@@ -905,7 +905,7 @@ Expression<T> create_expression(
       coeff_map.push_back(it->second);
     else
     {
-      throw DolfinXException("Expression coefficient \"" + name
+      throw dolfinx::runtime_error("Expression coefficient \"" + name
                              + "\" not provided.");
     }
   }
@@ -922,7 +922,7 @@ Expression<T> create_expression(
       const_map.push_back(it->second);
     else
     {
-      throw DolfinXException("Expression constant \"" + name
+      throw dolfinx::runtime_error("Expression constant \"" + name
                              + "\" not provided.");
     }
   }

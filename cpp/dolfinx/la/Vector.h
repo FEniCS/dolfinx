@@ -8,7 +8,7 @@
 
 #include "utils.h"
 #include <complex>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <limits>
@@ -214,7 +214,7 @@ T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
 {
   const std::int32_t local_size = a.bs() * a.map()->size_local();
   if (local_size != b.bs() * b.map()->size_local())
-    throw DolfinXException("Incompatible vector sizes");
+    throw dolfinx::runtime_error("Incompatible vector sizes");
   std::span<const T> x_a = a.array().subspan(0, local_size);
   std::span<const T> x_b = b.array().subspan(0, local_size);
 
@@ -271,7 +271,7 @@ auto norm(const Vector<T, Allocator>& a, Norm type = Norm::l2)
     return linf;
   }
   default:
-    throw DolfinXException("Norm type not supported");
+    throw dolfinx::runtime_error("Norm type not supported");
   }
 }
 
@@ -301,7 +301,7 @@ void orthonormalize(std::span<Vector<T, U>> basis, double tol = 1.0e-10)
     double norm = la::norm(basis[i], la::Norm::l2);
     if (norm < tol)
     {
-      throw DolfinXException(
+      throw dolfinx::runtime_error(
           "Linear dependency detected. Cannot orthogonalize.");
     }
     std::transform(basis[i].array().begin(), basis[i].array().end(),

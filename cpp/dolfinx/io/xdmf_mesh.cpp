@@ -8,7 +8,7 @@
 #include "cells.h"
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <pugixml.hpp>
@@ -30,7 +30,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const int tdim = topology.dim();
 
   if (tdim == 2 and topology.cell_type() == mesh::CellType::prism)
-    throw DolfinXException("More work needed for prism cell");
+    throw dolfinx::runtime_error("More work needed for prism cell");
 
   // Get entity 'cell' type
   const mesh::CellType entity_cell_type
@@ -85,10 +85,10 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   {
     auto e_to_c = topology.connectivity(dim, tdim);
     if (!e_to_c)
-      throw DolfinXException("Mesh is missing entity-cell connectivity.");
+      throw dolfinx::runtime_error("Mesh is missing entity-cell connectivity.");
     auto c_to_e = topology.connectivity(tdim, dim);
     if (!c_to_e)
-      throw DolfinXException("Mesh is missing cell-entity connectivity.");
+      throw dolfinx::runtime_error("Mesh is missing cell-entity connectivity.");
 
     // Tabulate geometry dofs for local entities
     std::vector<std::vector<int>> entity_dofs;
@@ -252,7 +252,7 @@ xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
     gdim = 3;
   else
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Cannot determine geometric dimension. GeometryType \"" + geometry_type
         + "\" in XDMF file is unknown or unsupported");
   }

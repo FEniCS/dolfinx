@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include "DolfinXException.h"
 #include "IndexMap.h"
 #include "MPI.h"
+#include "exception.h"
 #include "sort.h"
 #include <algorithm>
 #include <memory>
@@ -233,7 +233,7 @@ public:
       break;
     }
     default:
-      throw DolfinXException("Scatter::type not recognized");
+      throw dolfinx::runtime_error("Scatter::type not recognized");
     }
   }
 
@@ -428,7 +428,7 @@ public:
       break;
     }
     default:
-      throw DolfinXException("Scatter::type not recognized");
+      throw dolfinx::runtime_error("Scatter::type not recognized");
     }
   }
 
@@ -597,7 +597,7 @@ public:
       requests.resize(_dest.size() + _src.size(), MPI_REQUEST_NULL);
       break;
     default:
-      throw DolfinXException("Scatter::type not recognized");
+      throw dolfinx::runtime_error("Scatter::type not recognized");
     }
     return requests;
   }

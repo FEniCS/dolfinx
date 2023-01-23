@@ -8,7 +8,7 @@
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
 #include <boost/lexical_cast.hpp>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
@@ -39,7 +39,7 @@ std::string rank_to_string(int value_rank)
   case 2:
     return "Tensor";
   default:
-    throw DolfinXException("Range Error");
+    throw dolfinx::runtime_error("Range Error");
   }
 }
 //-----------------------------------------------------------------------------

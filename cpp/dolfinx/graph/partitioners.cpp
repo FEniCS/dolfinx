@@ -6,7 +6,7 @@
 
 #include "partitioners.h"
 #include <cstdint>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -336,7 +336,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     SCOTCH_Dgraph dgrafdat;
     int err = SCOTCH_dgraphInit(&dgrafdat, comm);
     if (err != 0)
-      throw DolfinXException("Error initializing SCOTCH graph");
+      throw dolfinx::runtime_error("Error initializing SCOTCH graph");
 
     // FIXME: If the nodes have weights but this rank has no nodes, then
     //        SCOTCH may deadlock since vload.data() will be nullptr on
@@ -360,14 +360,14 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
         vertloctab.data(), nullptr, vload.data(), nullptr, edgeloctab.size(),
         edgeloctab.size(), edgeloctab.data(), nullptr, nullptr);
     if (err != 0)
-      throw DolfinXException("Error building SCOTCH graph");
+      throw dolfinx::runtime_error("Error building SCOTCH graph");
     timer1.stop();
 
 // Check graph data for consistency
 #ifndef NDEBUG
     err = SCOTCH_dgraphCheck(&dgrafdat);
     if (err != 0)
-      throw DolfinXException("Consistency error in SCOTCH graph");
+      throw dolfinx::runtime_error("Consistency error in SCOTCH graph");
 #endif
 
     // Initialise partitioning strategy
@@ -397,12 +397,12 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       strat_val = SCOTCH_STRATSCALABILITY;
       break;
     default:
-      throw DolfinXException("Unknown SCOTCH strategy");
+      throw dolfinx::runtime_error("Unknown SCOTCH strategy");
     }
     err = SCOTCH_stratDgraphMapBuild(&strat, strat_val, nparts, nparts,
                                      imbalance);
     if (err != 0)
-      throw DolfinXException("Error calling SCOTCH_stratDgraphMapBuild");
+      throw dolfinx::runtime_error("Error calling SCOTCH_stratDgraphMapBuild");
 
     // Count number of 'ghost' edges, i.e. an edge to a cell that does
     // not belong to the caller
@@ -431,7 +431,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     common::Timer timer2("SCOTCH: call SCOTCH_dgraphPart");
     err = SCOTCH_dgraphPart(&dgrafdat, nparts, &strat, node_partition.data());
     if (err != 0)
-      throw DolfinXException("Error during SCOTCH partitioning");
+      throw dolfinx::runtime_error("Error during SCOTCH partitioning");
     timer2.stop();
 
     // Data arrays for adjacency list, where the edges are the destination
@@ -446,7 +446,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       err = SCOTCH_dgraphHalo(&dgrafdat, node_partition.data(),
                               dolfinx::MPI::mpi_type<SCOTCH_Num>());
       if (err != 0)
-        throw DolfinXException("Error during SCOTCH halo exchange");
+        throw dolfinx::runtime_error("Error during SCOTCH halo exchange");
       timer3.stop();
 
       // Get SCOTCH's locally indexed graph
@@ -573,7 +573,7 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
           opts.data(), &edgecut, part.data(), &pcomm);
       if (err != METIS_OK)
       {
-        throw DolfinXException("ParMETIS_V3_PartKway failed. Error code: "
+        throw dolfinx::runtime_error("ParMETIS_V3_PartKway failed. Error code: "
                                + std::to_string(err));
       }
     }

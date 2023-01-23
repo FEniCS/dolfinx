@@ -10,7 +10,7 @@
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
 #include <cstdint>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <memory>
 #include <span>
 #include <vector>
@@ -382,7 +382,7 @@ void set_bc(std::span<T> b,
             std::span<const T> x0, double scale = 1.0)
 {
   if (b.size() > x0.size())
-    throw DolfinXException("Size mismatch between b and x0 vectors.");
+    throw dolfinx::runtime_error("Size mismatch between b and x0 vectors.");
   for (const auto& bc : bcs)
   {
     assert(bc);

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "TimeLogger.h"
-#include "DolfinXException.h"
+#include "exception.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
 #include <iostream>
@@ -96,7 +96,7 @@ std::tuple<int, double, double, double> TimeLogger::timing(std::string task)
   auto it = _timings.find(task);
   if (it == _timings.end())
   {
-    throw DolfinXException("No timings registered for task \"" + task + "\".");
+    throw dolfinx::runtime_error("No timings registered for task \"" + task + "\".");
   }
   return it->second;
 }

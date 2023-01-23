@@ -7,7 +7,7 @@
 #pragma once
 
 #include "SparsityPattern.h"
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -49,7 +49,7 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 
 #ifndef NDEBUG
     if (row >= local_size)
-      throw DolfinXException("Local row out of range");
+      throw dolfinx::runtime_error("Local row out of range");
 #endif
 
     // Columns indices for row
@@ -90,7 +90,7 @@ void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 
 #ifndef NDEBUG
     if (row >= (int)row_ptr.size())
-      throw DolfinXException("Local row out of range");
+      throw dolfinx::runtime_error("Local row out of range");
 #endif
 
     // Columns indices for row
@@ -177,7 +177,7 @@ public:
   {
     // TODO: handle block sizes
     if (_bs[0] > 1 or _bs[1] > 1)
-      throw DolfinXException("Block size not yet supported");
+      throw dolfinx::runtime_error("Block size not yet supported");
 
     // Compute off-diagonal offset for each row
     std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offset();

@@ -7,7 +7,7 @@
 #include "graphbuild.h"
 #include "cell_types.h"
 #include <algorithm>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -37,7 +37,7 @@ constexpr mesh::CellType get_cell_type(int num_vertices, int tdim)
     case 4:
       return mesh::CellType::quadrilateral;
     default:
-      throw DolfinXException("Invalid data");
+      throw dolfinx::runtime_error("Invalid data");
     }
   case 3:
     switch (num_vertices)
@@ -51,10 +51,10 @@ constexpr mesh::CellType get_cell_type(int num_vertices, int tdim)
     case 8:
       return mesh::CellType::hexahedron;
     default:
-      throw DolfinXException("Invalid data");
+      throw dolfinx::runtime_error("Invalid data");
     }
   default:
-    throw DolfinXException("Invalid data");
+    throw dolfinx::runtime_error("Invalid data");
   }
 }
 
@@ -301,7 +301,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       std::size_t num_matches = std::distance(it, it1);
       if (num_matches > 2)
       {
-        throw DolfinXException("A facet is connected to more than two cells.");
+        throw dolfinx::runtime_error("A facet is connected to more than two cells.");
       }
 
       // TODO: generalise for more than matches and log warning (maybe

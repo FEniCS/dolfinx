@@ -8,7 +8,7 @@
 #include "BoundingBoxTree.h"
 #include "utils.h"
 #include <algorithm>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -220,7 +220,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
 {
   if (tdim < 0 or tdim > mesh.topology().dim())
   {
-    throw DolfinXException("Dimension must be non-negative and less than or "
+    throw dolfinx::runtime_error("Dimension must be non-negative and less than or "
                            "equal to the topological dimension of the mesh");
   }
 

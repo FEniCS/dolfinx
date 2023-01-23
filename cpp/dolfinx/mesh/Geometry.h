@@ -7,7 +7,7 @@
 #pragma once
 
 #include <concepts>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -53,7 +53,7 @@ public:
   {
     assert(_x.size() % 3 == 0);
     if (_x.size() / 3 != _input_global_indices.size())
-      throw DolfinXException("Geometry size mis-match");
+      throw dolfinx::runtime_error("Geometry size mis-match");
   }
 
   /// Copy constructor

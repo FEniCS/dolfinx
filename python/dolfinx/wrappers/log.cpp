@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
@@ -62,7 +62,7 @@ void log(py::module& m)
           LOG(ERROR) << s;
           break;
         default:
-          throw DolfinXException("Log level not supported");
+          throw dolfinx::runtime_error("Log level not supported");
           break;
         }
       },

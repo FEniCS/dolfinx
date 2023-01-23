@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "cells.h"
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -47,7 +47,7 @@ int cell_degree(mesh::CellType type, int num_nodes)
       LOG(WARNING) << "9th order mesh is untested";
       return 9;
     default:
-      throw DolfinXException("Unknown triangle layout. Number of nodes: "
+      throw dolfinx::runtime_error("Unknown triangle layout. Number of nodes: "
                              + std::to_string(num_nodes));
     }
   case mesh::CellType::tetrahedron:
@@ -60,14 +60,14 @@ int cell_degree(mesh::CellType type, int num_nodes)
     case 20:
       return 3;
     default:
-      throw DolfinXException("Unknown tetrahedron layout.");
+      throw dolfinx::runtime_error("Unknown tetrahedron layout.");
     }
   case mesh::CellType::quadrilateral:
   {
     const int n = std::sqrt(num_nodes);
     if (num_nodes != n * n)
     {
-      throw DolfinXException("Quadrilateral of order "
+      throw dolfinx::runtime_error("Quadrilateral of order "
                              + std::to_string(num_nodes) + " not supported");
     }
     return n - 1;
@@ -80,7 +80,7 @@ int cell_degree(mesh::CellType type, int num_nodes)
     case 27:
       return 2;
     default:
-      throw DolfinXException("Unsupported hexahedron layout");
+      throw dolfinx::runtime_error("Unsupported hexahedron layout");
     }
   case mesh::CellType::prism:
     switch (num_nodes)
@@ -90,7 +90,7 @@ int cell_degree(mesh::CellType type, int num_nodes)
     case 15:
       return 2;
     default:
-      throw DolfinXException("Unsupported prism layout");
+      throw dolfinx::runtime_error("Unsupported prism layout");
     }
   case mesh::CellType::pyramid:
     switch (num_nodes)
@@ -100,10 +100,10 @@ int cell_degree(mesh::CellType type, int num_nodes)
     case 13:
       return 2;
     default:
-      throw DolfinXException("Unsupported pyramid layout");
+      throw dolfinx::runtime_error("Unsupported pyramid layout");
     }
   default:
-    throw DolfinXException("Unknown cell type.");
+    throw dolfinx::runtime_error("Unknown cell type.");
   }
 }
 
@@ -179,7 +179,7 @@ std::vector<std::uint8_t> vtk_tetrahedron(int num_nodes)
     return {0,  1,  2, 3, 14, 15, 8,  9,  13, 12,
             10, 11, 6, 7, 4,  5,  18, 16, 17, 19};
   default:
-    throw DolfinXException("Unknown tetrahedron layout");
+    throw dolfinx::runtime_error("Unknown tetrahedron layout");
   }
 }
 //-----------------------------------------------------------------------------
@@ -192,7 +192,7 @@ std::vector<std::uint8_t> vtk_wedge(int num_nodes)
   case 15:
     return {0, 1, 2, 3, 4, 5, 6, 9, 7, 12, 14, 13, 8, 10, 11};
   default:
-    throw DolfinXException("Unknown wedge layout");
+    throw dolfinx::runtime_error("Unknown wedge layout");
   }
 }
 //-----------------------------------------------------------------------------
@@ -205,7 +205,7 @@ std::vector<std::uint8_t> vtk_pyramid(int num_nodes)
   case 13:
     return {0, 1, 3, 2, 4, 5, 8, 10, 6, 7, 9, 12, 11};
   default:
-    throw DolfinXException("Unknown pyramid layout");
+    throw dolfinx::runtime_error("Unknown pyramid layout");
   }
 }
 //-----------------------------------------------------------------------------
@@ -257,7 +257,7 @@ std::vector<std::uint8_t> vtk_hexahedron(int num_nodes)
     return {0,  1,  3,  2,  4,  5,  7,  6,  8,  11, 13, 9,  16, 18,
             19, 17, 10, 12, 15, 14, 22, 23, 21, 24, 20, 25, 26};
   default:
-    throw DolfinXException("Higher order hexahedron not supported.");
+    throw dolfinx::runtime_error("Higher order hexahedron not supported.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -272,7 +272,7 @@ std::vector<std::uint8_t> gmsh_triangle(int num_nodes)
   case 10:
     return {0, 1, 2, 7, 8, 3, 4, 6, 5, 9};
   default:
-    throw DolfinXException("Higher order Gmsh triangle not supported");
+    throw dolfinx::runtime_error("Higher order Gmsh triangle not supported");
   }
 }
 //-----------------------------------------------------------------------------
@@ -288,7 +288,7 @@ std::vector<std::uint8_t> gmsh_tetrahedron(int num_nodes)
     return {0,  1,  2, 3, 14, 15, 8,  9,  13, 12,
             11, 10, 5, 4, 7,  6,  19, 18, 17, 16};
   default:
-    throw DolfinXException("Higher order Gmsh tetrahedron not supported");
+    throw dolfinx::runtime_error("Higher order Gmsh tetrahedron not supported");
   }
 }
 //-----------------------------------------------------------------------------
@@ -302,7 +302,7 @@ std::vector<std::uint8_t> gmsh_hexahedron(int num_nodes)
     return {0,  1,  3,  2,  4,  5,  7,  6,  8,  9,  10, 11, 12, 13,
             15, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26};
   default:
-    throw DolfinXException("Higher order Gmsh hexahedron not supported");
+    throw dolfinx::runtime_error("Higher order Gmsh hexahedron not supported");
   }
 }
 //-----------------------------------------------------------------------------
@@ -317,7 +317,7 @@ std::vector<std::uint8_t> gmsh_quadrilateral(int num_nodes)
   case 16:
     return {0, 1, 3, 2, 4, 5, 8, 9, 11, 10, 7, 6, 12, 13, 15, 14};
   default:
-    throw DolfinXException("Higher order Gmsh quadrilateral not supported");
+    throw dolfinx::runtime_error("Higher order Gmsh quadrilateral not supported");
   }
 }
 //-----------------------------------------------------------------------------
@@ -330,7 +330,7 @@ std::vector<std::uint8_t> gmsh_prism(int num_nodes)
   case 15:
     return {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
   default:
-    throw DolfinXException("Higher order Gmsh prism not supported");
+    throw dolfinx::runtime_error("Higher order Gmsh prism not supported");
   }
 }
 //-----------------------------------------------------------------------------
@@ -343,7 +343,7 @@ std::vector<std::uint8_t> gmsh_pyramid(int num_nodes)
   case 13:
     return {0, 1, 3, 2, 4, 5, 6, 7, 8, 9, 10, 12, 11};
   default:
-    throw DolfinXException("Higher order Gmsh pyramid not supported");
+    throw dolfinx::runtime_error("Higher order Gmsh pyramid not supported");
   }
 }
 } // namespace
@@ -380,7 +380,7 @@ std::vector<std::uint8_t> io::cells::perm_vtk(mesh::CellType type,
     map = vtk_pyramid(num_nodes);
     break;
   default:
-    throw DolfinXException("Unknown cell type.");
+    throw dolfinx::runtime_error("Unknown cell type.");
   }
 
   return io::cells::transpose(map);
@@ -418,7 +418,7 @@ std::vector<std::uint8_t> io::cells::perm_gmsh(const mesh::CellType type,
     map = gmsh_pyramid(num_nodes);
     break;
   default:
-    throw DolfinXException("Unknown cell type.");
+    throw dolfinx::runtime_error("Unknown cell type.");
   }
 
   return io::cells::transpose(map);
@@ -456,7 +456,7 @@ io::cells::apply_permutation(const std::span<const std::int64_t>& cells,
 std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim)
 {
   if (cell == mesh::CellType::prism and dim == 2)
-    throw DolfinXException("More work needed for prism cell");
+    throw dolfinx::runtime_error("More work needed for prism cell");
 
   // Get cell type
   mesh::CellType cell_type = mesh::cell_entity_type(cell, dim, 0);
@@ -478,7 +478,7 @@ std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim)
   case mesh::CellType::hexahedron:
     return 72;
   default:
-    throw DolfinXException("Unknown cell type");
+    throw dolfinx::runtime_error("Unknown cell type");
   }
 }
 //----------------------------------------------------------------------------

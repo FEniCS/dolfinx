@@ -7,7 +7,7 @@
 #include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
@@ -79,7 +79,7 @@ void declare_objects(py::module& m, const std::string& type)
               self.scatter_rev([](T /*a*/, T b) { return b; });
               break;
             default:
-              throw DolfinXException("ScatterMode not recognized.");
+              throw dolfinx::runtime_error("ScatterMode not recognized.");
               break;
             }
           },

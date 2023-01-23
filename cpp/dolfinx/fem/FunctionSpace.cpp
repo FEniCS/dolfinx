@@ -9,7 +9,7 @@
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include <boost/uuid/uuid_generators.hpp>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -102,7 +102,7 @@ std::pair<FunctionSpace, std::vector<std::int32_t>>
 FunctionSpace::collapse() const
 {
   if (_component.empty())
-    throw DolfinXException("Function space is not a subspace");
+    throw dolfinx::runtime_error("Function space is not a subspace");
 
   // Create collapsed DofMap
   auto [_collapsed_dofmap, collapsed_dofs]
@@ -122,14 +122,14 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 {
   if (!_component.empty())
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
   }
 
   assert(_element);
   if (_element->is_mixed())
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Cannot tabulate coordinates for a mixed FunctionSpace.");
   }
 
@@ -156,7 +156,7 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   // Get the dof coordinates on the reference element
   if (!_element->interpolation_ident())
   {
-    throw DolfinXException("Cannot evaluate dof coordinates - this element "
+    throw dolfinx::runtime_error("Cannot evaluate dof coordinates - this element "
                            "does not have pointwise evaluation.");
   }
   const auto [X, Xshape] = _element->interpolation_points();
@@ -278,7 +278,7 @@ fem::common_function_spaces(
         else
         {
           if (spaces0[i] != V0)
-            throw DolfinXException("Mismatched test space for row.");
+            throw dolfinx::runtime_error("Mismatched test space for row.");
         }
 
         if (!spaces1[j])
@@ -286,7 +286,7 @@ fem::common_function_spaces(
         else
         {
           if (spaces1[j] != V1)
-            throw DolfinXException("Mismatched trial space for column.");
+            throw dolfinx::runtime_error("Mismatched trial space for column.");
         }
       }
     }
@@ -294,9 +294,9 @@ fem::common_function_spaces(
 
   // Check there are no null entries
   if (std::find(spaces0.begin(), spaces0.end(), nullptr) != spaces0.end())
-    throw DolfinXException("Could not deduce all block test spaces.");
+    throw dolfinx::runtime_error("Could not deduce all block test spaces.");
   if (std::find(spaces1.begin(), spaces1.end(), nullptr) != spaces1.end())
-    throw DolfinXException("Could not deduce all block trial spaces.");
+    throw dolfinx::runtime_error("Could not deduce all block trial spaces.");
 
   return {spaces0, spaces1};
 }

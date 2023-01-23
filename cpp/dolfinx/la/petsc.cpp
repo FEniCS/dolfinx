@@ -9,7 +9,7 @@
 #include "SparsityPattern.h"
 #include "Vector.h"
 #include "utils.h"
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -40,7 +40,7 @@ void la::petsc::error(int error_code, std::string filename,
   DLOG(INFO) << "PETSc error in '" << filename.c_str() << "', '"
              << petsc_function.c_str() << "'";
   DLOG(INFO) << "PETSc error code '" << error_code << "' (" << desc << ".";
-  throw DolfinXException("Failed to successfully call PETSc function '"
+  throw dolfinx::runtime_error("Failed to successfully call PETSc function '"
                          + petsc_function + "'. PETSc error code is: "
                          + std ::to_string(error_code) + ", "
                          + std::string(desc));
@@ -169,7 +169,7 @@ void la::petsc::scatter_local_vectors(
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
   if (x_b.size() != maps.size())
-    throw DolfinXException("Mismatch in vector/map size.");
+    throw dolfinx::runtime_error("Mismatch in vector/map size.");
 
   // Get ghost offset
   int offset_owned = 0;
@@ -527,7 +527,7 @@ Vec petsc::Operator::create_vector(std::size_t dim) const
   {
     LOG(ERROR) << "Cannot initialize PETSc vector to match PETSc matrix. "
                << "Dimension must be 0 or 1, not " << dim;
-    throw DolfinXException("Invalid dimension");
+    throw dolfinx::runtime_error("Invalid dimension");
   }
 
   return x;
@@ -565,7 +565,7 @@ double petsc::Matrix::norm(Norm norm_type) const
     ierr = MatNorm(_matA, NORM_FROBENIUS, &value);
     break;
   default:
-    throw DolfinXException("Unknown PETSc Mat norm type");
+    throw dolfinx::runtime_error("Unknown PETSc Mat norm type");
   }
 
   if (ierr != 0)

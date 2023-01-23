@@ -7,7 +7,7 @@
 #include "CoordinateElement.h"
 #include <basix/finite-element.h>
 #include <cmath>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
 
@@ -148,7 +148,7 @@ void CoordinateElement::pull_back_nonaffine(mdspan2_t X, cmdspan2_t x,
               X.data_handle() + p * tdim);
     if (k == maxit)
     {
-      throw DolfinXException(
+      throw dolfinx::runtime_error(
           "Newton method failed to converge for non-affine geometry");
     }
   }

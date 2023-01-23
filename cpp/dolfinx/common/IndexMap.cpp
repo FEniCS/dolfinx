@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "IndexMap.h"
-#include "DolfinXException.h"
+#include "exception.h"
 #include "sort.h"
 #include <algorithm>
 #include <functional>
@@ -467,7 +467,7 @@ IndexMap::create_submap(std::span<const std::int32_t> indices) const
 {
   if (!indices.empty() and indices.back() >= this->size_local())
   {
-    throw DolfinXException("Unowned index detected when creating sub-IndexMap");
+    throw runtime_error("Unowned index detected when creating sub-IndexMap");
   }
 
   // --- Step 1: Compute new offset for this rank

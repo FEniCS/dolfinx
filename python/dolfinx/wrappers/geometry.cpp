@@ -6,7 +6,7 @@
 
 #include "array.h"
 #include "caster_mpi.h"
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/gjk.h>
@@ -58,7 +58,7 @@ void geometry(py::module& m)
               p[3 * i + j] = px(i, j);
         }
         else
-          throw DolfinXException("Array has wrong ndim.");
+          throw dolfinx::runtime_error("Array has wrong ndim.");
 
         return as_pyarray(dolfinx::geometry::compute_closest_entity(
             tree, midpoint_tree, mesh, p));
@@ -83,7 +83,7 @@ void geometry(py::module& m)
                 _p[3 * i + j] = px(i, j);
           }
           else
-            throw DolfinXException("Array has wrong ndim.");
+            throw dolfinx::runtime_error("Array has wrong ndim.");
 
           return dolfinx::geometry::determine_point_ownership(mesh, _p);
         });
@@ -108,7 +108,7 @@ void geometry(py::module& m)
               _p[3 * i + j] = px(i, j);
         }
         else
-          throw DolfinXException("Array has wrong ndim.");
+          throw dolfinx::runtime_error("Array has wrong ndim.");
 
         return dolfinx::geometry::compute_collisions(tree, _p);
       },
@@ -146,7 +146,7 @@ void geometry(py::module& m)
               _p[3 * i + j] = px(i, j);
         }
         else
-          throw DolfinXException("Array has wrong ndim.");
+          throw dolfinx::runtime_error("Array has wrong ndim.");
 
         auto qx = q.unchecked();
         if (qx.ndim() == 1)
@@ -161,7 +161,7 @@ void geometry(py::module& m)
               _q[3 * i + j] = qx(i, j);
         }
         else
-          throw DolfinXException("Array has wrong ndim.");
+          throw dolfinx::runtime_error("Array has wrong ndim.");
 
         const std::array<double, 3> d
             = dolfinx::geometry::compute_distance_gjk(_p, _q);
@@ -189,7 +189,7 @@ void geometry(py::module& m)
               _p[3 * i + j] = px(i, j);
         }
         else
-          throw DolfinXException("Array has wrong ndim.");
+          throw dolfinx::runtime_error("Array has wrong ndim.");
 
         return as_pyarray(
             dolfinx::geometry::squared_distance(mesh, dim, indices, _p));
@@ -231,7 +231,7 @@ void geometry(py::module& m)
               _p[3 * i + j] = px(i, j);
         }
         else
-          throw DolfinXException("Array has wrong ndim.");
+          throw dolfinx::runtime_error("Array has wrong ndim.");
 
         return dolfinx::geometry::compute_colliding_cells(mesh, candidate_cells,
                                                           _p);

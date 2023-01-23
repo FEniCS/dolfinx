@@ -12,7 +12,7 @@
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
 #include <boost/lexical_cast.hpp>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -121,13 +121,13 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
     // Load XML doc from file
     pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
     if (!result)
-      throw DolfinXException("Failed to load xml document from file.");
+      throw dolfinx::runtime_error("Failed to load xml document from file.");
 
     if (_xml_doc->child("Xdmf").empty())
-      throw DolfinXException("Empty <Xdmf> root node.");
+      throw dolfinx::runtime_error("Empty <Xdmf> root node.");
 
     if (_xml_doc->child("Xdmf").child("Domain").empty())
-      throw DolfinXException("Empty <Domain> node.");
+      throw dolfinx::runtime_error("Empty <Domain> node.");
   }
   else if (_file_mode == "w")
   {
@@ -143,7 +143,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
 
     pugi::xml_node domain_node = xdmf_node.append_child("Domain");
     if (!domain_node)
-      throw DolfinXException("Failed to append xml/xdmf Domain.");
+      throw dolfinx::runtime_error("Failed to append xml/xdmf Domain.");
   }
   else if (_file_mode == "a")
   {
@@ -155,10 +155,10 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
       assert(result);
 
       if (_xml_doc->child("Xdmf").empty())
-        throw DolfinXException("Empty <Xdmf> root node.");
+        throw dolfinx::runtime_error("Empty <Xdmf> root node.");
 
       if (_xml_doc->child("Xdmf").child("Domain").empty())
-        throw DolfinXException("Empty <Domain> node.");
+        throw dolfinx::runtime_error("Empty <Domain> node.");
     }
     else
     {
@@ -175,7 +175,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
 
       pugi::xml_node domain_node = xdmf_node.append_child("Domain");
       if (!domain_node)
-        throw DolfinXException("Failed to append xml/xdmf Domain.");
+        throw dolfinx::runtime_error("Failed to append xml/xdmf Domain.");
     }
   }
 }
@@ -193,7 +193,7 @@ void XDMFFile::write_mesh(const mesh::Mesh& mesh, std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
-    throw DolfinXException("XML node '" + xpath + "' not found.");
+    throw dolfinx::runtime_error("XML node '" + xpath + "' not found.");
 
   // Add the mesh Grid to the domain
   xdmf_mesh::add_mesh(_comm.comm(), node, _h5_id, mesh, mesh.name);
@@ -208,7 +208,7 @@ void XDMFFile::write_geometry(const mesh::Geometry& geometry, std::string name,
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
-    throw DolfinXException("XML node '" + xpath + "' not found.");
+    throw dolfinx::runtime_error("XML node '" + xpath + "' not found.");
 
   // Prepare a Grid for Geometry only
   pugi::xml_node grid_node = node.append_child("Grid");
@@ -252,12 +252,12 @@ XDMFFile::read_topology_data(std::string name, std::string xpath) const
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
-    throw DolfinXException("XML node '" + xpath + "' not found.");
+    throw dolfinx::runtime_error("XML node '" + xpath + "' not found.");
 
   pugi::xml_node grid_node
       = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
   if (!grid_node)
-    throw DolfinXException("<Grid> with name '" + name + "' not found.");
+    throw dolfinx::runtime_error("<Grid> with name '" + name + "' not found.");
 
   LOG(INFO) << "Read topology data \"" << name << "\" at \"" << xpath << "\"";
   return xdmf_mesh::read_topology_data(_comm.comm(), _h5_id, grid_node);
@@ -268,12 +268,12 @@ XDMFFile::read_geometry_data(std::string name, std::string xpath) const
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
-    throw DolfinXException("XML node '" + xpath + "' not found.");
+    throw dolfinx::runtime_error("XML node '" + xpath + "' not found.");
 
   pugi::xml_node grid_node
       = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
   if (!grid_node)
-    throw DolfinXException("<Grid> with name '" + name + "' not found.");
+    throw dolfinx::runtime_error("<Grid> with name '" + name + "' not found.");
 
   LOG(INFO) << "Read geometry data \"" << name << "\" at \"" << xpath << "\"";
   return xdmf_mesh::read_geometry_data(_comm.comm(), _h5_id, grid_node);
@@ -296,7 +296,7 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
-    throw DolfinXException("XML node '" + xpath + "' not found.");
+    throw dolfinx::runtime_error("XML node '" + xpath + "' not found.");
 
   pugi::xml_node grid_node = node.append_child("Grid");
   assert(grid_node);
@@ -322,11 +322,11 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
   LOG(INFO) << "XDMF read meshtags (" << name << ")";
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
-    throw DolfinXException("XML node '" + xpath + "' not found.");
+    throw dolfinx::runtime_error("XML node '" + xpath + "' not found.");
   pugi::xml_node grid_node
       = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
   if (!grid_node)
-    throw DolfinXException("<Grid> with name '" + name + "' not found.");
+    throw dolfinx::runtime_error("<Grid> with name '" + name + "' not found.");
 
   const auto [entities, eshape] = read_topology_data(name, xpath);
 
@@ -368,11 +368,11 @@ std::pair<mesh::CellType, int> XDMFFile::read_cell_type(std::string grid_name,
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
-    throw DolfinXException("XML node '" + xpath + "' not found.");
+    throw dolfinx::runtime_error("XML node '" + xpath + "' not found.");
   pugi::xml_node grid_node
       = node.select_node(("Grid[@Name='" + grid_name + "']").c_str()).node();
   if (!grid_node)
-    throw DolfinXException("<Grid> with name '" + grid_name + "' not found.");
+    throw dolfinx::runtime_error("<Grid> with name '" + grid_name + "' not found.");
 
   // Get topology node
   pugi::xml_node topology_node = grid_node.child("Topology");
@@ -393,7 +393,7 @@ void XDMFFile::write_information(std::string name, std::string value,
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
-    throw DolfinXException("XML node '" + xpath + "' not found.");
+    throw dolfinx::runtime_error("XML node '" + xpath + "' not found.");
 
   pugi::xml_node info_node = node.append_child("Information");
   assert(info_node);
@@ -409,11 +409,11 @@ std::string XDMFFile::read_information(std::string name, std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
-    throw DolfinXException("XML node '" + xpath + "' not found.");
+    throw dolfinx::runtime_error("XML node '" + xpath + "' not found.");
   pugi::xml_node info_node
       = node.select_node(("Information[@Name='" + name + "']").c_str()).node();
   if (!info_node)
-    throw DolfinXException("<Information> with name '" + name + "' not found.");
+    throw dolfinx::runtime_error("<Information> with name '" + name + "' not found.");
 
   // Read data and trim any leading/trailing whitespace
   std::string value_str = info_node.attribute("Value").as_string();

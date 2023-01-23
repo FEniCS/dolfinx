@@ -7,7 +7,7 @@
 #include "generation.h"
 #include <array>
 #include <cfloat>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -56,13 +56,13 @@ std::vector<double> create_geom(MPI_Comm comm,
       or std::abs(y0 - y1) < 2.0 * DBL_EPSILON
       or std::abs(z0 - z1) < 2.0 * DBL_EPSILON)
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Box seems to have zero width, height or depth. Check dimensions");
   }
 
   if (nx < 1 || ny < 1 || nz < 1)
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "BoxMesh has non-positive number of vertices in some dimension");
   }
 
@@ -242,7 +242,7 @@ mesh::Mesh mesh::create_box(MPI_Comm comm,
   case CellType::prism:
     return build_prism(comm, p, n, partitioner);
   default:
-    throw DolfinXException("Generate box mesh. Wrong cell type");
+    throw dolfinx::runtime_error("Generate box mesh. Wrong cell type");
   }
 }
 
@@ -267,18 +267,18 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
 
   if (std::abs(a - b) < DBL_EPSILON)
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Length of interval is zero. Check your dimensions.");
   }
 
   if (b < a)
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Interval length is negative. Check order of arguments.");
   }
 
   if (nx < 1)
-    throw DolfinXException("Number of points on interval must be at least 1");
+    throw dolfinx::runtime_error("Number of points on interval must be at least 1");
 
   // Create vertices
   std::vector<double> geom(nx + 1);
@@ -344,13 +344,13 @@ mesh::Mesh build_tri(MPI_Comm comm,
 
   if (std::abs(x0 - x1) < DBL_EPSILON || std::abs(y0 - y1) < DBL_EPSILON)
   {
-    throw DolfinXException("Rectangle seems to have zero width, height or "
+    throw dolfinx::runtime_error("Rectangle seems to have zero width, height or "
                            "depth. Check dimensions");
   }
 
   if (nx < 1 or ny < 1)
   {
-    throw DolfinXException(
+    throw dolfinx::runtime_error(
         "Rectangle has non-positive number of vertices in some dimension: "
         "number of vertices must be at least 1 in each dimension");
   }
@@ -577,7 +577,7 @@ mesh::Mesh mesh::create_rectangle(MPI_Comm comm,
   case CellType::quadrilateral:
     return build_quad(comm, p, n, partitioner);
   default:
-    throw DolfinXException("Generate rectangle mesh. Wrong cell type");
+    throw dolfinx::runtime_error("Generate rectangle mesh. Wrong cell type");
   }
 }
 //-----------------------------------------------------------------------------

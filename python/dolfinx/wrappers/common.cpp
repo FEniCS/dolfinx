@@ -9,7 +9,7 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <complex>
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
@@ -122,7 +122,7 @@ void common(py::module& m)
              const py::array_t<std::int32_t, py::array::c_style>& local)
           {
             if (local.ndim() != 1)
-              throw DolfinXException("Array of local indices must be 1D.");
+              throw dolfinx::runtime_error("Array of local indices must be 1D.");
             py::array_t<std::int64_t> global(local.size());
             self.local_to_global(
                 std::span(local.data(), local.size()),

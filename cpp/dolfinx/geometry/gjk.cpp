@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "gjk.h"
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/common/math.h>
 #include <numeric>
 #include <stdexcept>
@@ -211,7 +211,7 @@ nearest_simplex(std::span<const double> s)
     return {smin, vmin};
   }
   default:
-    throw DolfinXException("Number of rows defining simplex not supported.");
+    throw dolfinx::runtime_error("Number of rows defining simplex not supported.");
   }
 }
 //----------------------------------------------------------------------------
@@ -293,7 +293,7 @@ std::array<double, 3> geometry::compute_distance_gjk(std::span<const double> p,
   }
 
   if (k == maxk)
-    throw DolfinXException("GJK error: max iteration limit reached");
+    throw dolfinx::runtime_error("GJK error: max iteration limit reached");
 
   return v;
 }

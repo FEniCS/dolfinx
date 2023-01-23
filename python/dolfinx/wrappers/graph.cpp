@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "caster_mpi.h"
-#include <dolfinx/common/DolfinXException.h>
+#include <dolfinx/common/exception.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
@@ -46,7 +46,7 @@ void declare_adjacency_list(py::module& m, std::string type)
                [](const py::array_t<T, py::array::c_style>& adj)
                {
                  if (adj.ndim() > 2)
-                   throw DolfinXException("Incorrect array dimension.");
+                   throw dolfinx::runtime_error("Incorrect array dimension.");
                  const std::size_t dim = adj.ndim() < 2 ? 1 : adj.shape(1);
                  std::vector<T> data(adj.data(), adj.data() + adj.size());
                  return dolfinx::graph::regular_adjacency_list(std::move(data),

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Table.h"
-#include "DolfinXException.h"
+#include "exception.h"
 #include <array>
 #include <dolfinx/common/MPI.h>
 #include <functional>
@@ -24,7 +24,7 @@ std::string to_str(std::variant<std::string, int, double> value)
   else if (std::holds_alternative<std::string>(value))
     return std::get<std::string>(value);
   else
-    throw DolfinXException("Variant incorrect");
+    throw dolfinx::runtime_error("Variant incorrect");
 }
 } // namespace
 
@@ -60,7 +60,7 @@ std::variant<std::string, int, double> Table::get(std::string row,
   auto it = _values.find(key);
   if (it == _values.end())
   {
-    throw DolfinXException("Missing table value for entry (\"" + row + "\", \""
+    throw dolfinx::runtime_error("Missing table value for entry (\"" + row + "\", \""
                            + col + "\")");
   }
 
@@ -88,7 +88,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
     op_impl = [](double y, double x) { return std::max(y, x); };
     break;
   default:
-    throw DolfinXException("Cannot perform reduction of Table. Requested "
+    throw dolfinx::runtime_error("Cannot perform reduction of Table. Requested "
                            "reduction not implemented");
   }
   new_title += name;
