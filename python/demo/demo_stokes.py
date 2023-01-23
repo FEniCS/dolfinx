@@ -497,7 +497,15 @@ def mixed_direct():
 
     # Compute the solution
     U = Function(W)
-    ksp.solve(b, U.vector)
+    try:
+        ksp.solve(b, U.vector)
+    except PETSc.Error as e:
+        if e.ierr == 92:
+            print("The required PETSc solver/preconditioner is not available. Exiting.")
+            print(e)
+            exit(0)
+        else:
+            raise e
 
     # Split the mixed solution and collapse
     u, p = U.sub(0).collapse(), U.sub(1).collapse()
