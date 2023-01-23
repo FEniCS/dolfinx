@@ -97,6 +97,7 @@ def solve(dtype=np.float32):
 
 # This function visualises the solution.
 
+
 def display(u, filter=np.real):
     """Plot the solution using pyvista"""
     try:
