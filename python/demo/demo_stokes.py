@@ -401,8 +401,9 @@ def block_direct_solver():
     # handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
+    pc.setFactorSolverType("mumps")
     try:
-        pc.setFactorSolverType("mumps")
+        pc.setFactorSetUpSolverType()
     except PETSc.Error as e:
         if e.ierr == 92:
             print("The required PETSc solver/preconditioner is not available. Exiting.")
@@ -410,8 +411,6 @@ def block_direct_solver():
             exit(0)
         else:
             raise e
-
-    pc.setFactorSetUpSolverType()
     pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)  # For pressure nullspace
     pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)  # For pressure nullspace
 
