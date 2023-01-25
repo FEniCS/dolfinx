@@ -605,54 +605,10 @@ def test_pyramid_mesh_vtk(order):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("order", range(1, 5))
-def test_pyramid_mesh_vtk(order):
-    if order > 3:
-        pytest.xfail("VTK permutation for order > 3 pyramid not implemented in DOLFINx.")
-    points = []
-    points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1 - j)]
-    for k in range(1, order):
-        points += [[i / order, j / order + 0.1, k / order] for j in range(order + 1 - k) for i in
-                   range(order + 1 - k - j)]
-
-    points += [[0, 0, 1]]
-
-    def coord_to_vertex(x, y, z):
-        return (z * (order - z + 1) * (2 * order - z + 1) // 2 + y * (2 * order - z + 1) + x)
-
-    # Make the cell, following
-    # https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
-    cell = [coord_to_vertex(x, y, z) for x, y, z in
-            [(0, 0, 0), (order, 0, 0), (0, order, 0), (0, 0, order), (order, order, order), ]]
-    if order > 1:
-        for i in range(1, order):
-            cell.append(coord_to_vertex(i, 0, 0))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(order - i, i, 0))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(0, order - i, 0))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(0, 0, i))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(order - i, 0, i))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(0, order - i, i))
-    if order == 3:
-        cell.append(coord_to_vertex(1, 1, 1))
-    elif order > 3:
-        raise NotImplementedError
-
-    cell = np.array(cell)[perm_vtk(CellType.pyramid, len(cell))]
-    domain = ufl.Mesh(create_vector_element("Lagrange", "pyramid", order, gdim=3,
-                                            lagrange_variant=basix.LagrangeVariant.equispaced, ))
-    check_cell_volume(points, cell, domain, 1 / 6)
-
-
-@pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("vtk,dolfin,cell_type",
-                         [([0, 1, 2, 3, 4, 5], [0, 1, 2, 4, 5, 3], CellType.triangle),
-                          ([0, 1, 2, 3], [0, 1, 3, 2], CellType.quadrilateral),
-                          ([0, 1, 2, 3, 4, 5, 6, 7], [0, 1, 3, 2, 4, 5, 7, 6], CellType.hexahedron), ], )
+@pytest.mark.parametrize("vtk,dolfin,cell_type", [([0, 1, 2, 3, 4, 5], [0, 1, 2, 4, 5, 3], CellType.triangle),
+                                                  ([0, 1, 2, 3], [0, 1, 3, 2], CellType.quadrilateral), (
+                                                  [0, 1, 2, 3, 4, 5, 6, 7], [0, 1, 3, 2, 4, 5, 7, 6],
+                                                  CellType.hexahedron), ], )
 def test_map_vtk_to_dolfin(vtk, dolfin, cell_type):
     p = perm_vtk(cell_type, len(vtk))
     cell_p = np.array(vtk)[p]
