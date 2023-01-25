@@ -21,7 +21,7 @@ jobs:
       # runner but included here for completeness
       - name: Install Homebrew dependencies
         run: |
-          brew install boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python@3.10 # FEniCS
+          brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python@3.10 # FEniCS
           brew install flex # PETSc
           brew list --versions
 
@@ -44,9 +44,10 @@ jobs:
       # bison. Instead let PETSc build bison.
       - name: Install minimal PETSc
         run: |
-          curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.18.0.tar.gz
+          source fenicsx/bin/activate
+          curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.18.3.tar.gz
           mkdir petsc
-          tar -xf petsc-lite-3.18.0.tar.gz -C petsc --strip-components=1
+          tar -xf petsc-lite-3.18.3.tar.gz -C petsc --strip-components=1
           cd petsc
           python ./configure \
             --with-64-bit-indices=no \
@@ -62,7 +63,7 @@ jobs:
           make all
           cd src/binding/petsc4py
           PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt pip3 install --no-cache-dir .
-
+ 
       - name: Install Basix
         run: |
           source fenicsx/bin/activate
