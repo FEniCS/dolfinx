@@ -102,7 +102,7 @@
 #
 # $$
 #
-# and jump $\renewcommand{\jump}[1]{\llbracket #1 \rrbracket}$
+# and jump $\renewcommand{\jump}[1]{[\![ #1 ]\!]}$
 #
 # $$
 #     \jump{\phi} = \phi^+ \otimes n^+ + \phi^- \otimes n^-,
