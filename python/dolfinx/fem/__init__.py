@@ -6,6 +6,7 @@
 """Tools for assembling and manipulating finite element forms."""
 
 from dolfinx.cpp.fem import transpose_dofmap  # noqa
+from dolfinx.cpp.fem import create_nonmatching_meshes_interpolation_data
 from dolfinx.cpp.fem import IntegralType
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.fem import petsc
@@ -42,6 +43,7 @@ __all__ = [
     "FunctionSpace", "TensorFunctionSpace",
     "VectorFunctionSpace", "create_sparsity_pattern",
     "assemble_scalar", "assemble_matrix", "assemble_vector", "apply_lifting", "set_bc",
-    "DirichletBCMetaClass", "dirichletbc", "bcs_by_block", "DofMap", "FormMetaClass", "form", "IntegralType",
+    "DirichletBCMetaClass", "dirichletbc", "bcs_by_block", "DofMap", "FormMetaClass",
+    "form", "IntegralType",
     "locate_dofs_geometrical", "locate_dofs_topological",
-    "extract_function_spaces", "petsc"]
+    "extract_function_spaces", "petsc", "create_nonmatching_meshes_interpolation_data"]
