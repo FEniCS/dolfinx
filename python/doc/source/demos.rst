@@ -27,6 +27,7 @@ PDEs (advanced)
    :maxdepth: 1
 
    demos/demo_stokes.md
+   demos/demo_navier_stokes.md
    demos/demo_elasticity.md
    demos/demo_cahn-hilliard.md
    demos/demo_static-condensation.md
