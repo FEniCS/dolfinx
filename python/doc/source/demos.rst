@@ -51,4 +51,5 @@ All demos
    demos/demo_pml.md
    demos/demo_half_loaded_waveguide.md
    demos/demo_axis.md
+   demos/demo_navier_stokes.md
 
