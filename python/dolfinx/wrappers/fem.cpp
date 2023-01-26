@@ -174,9 +174,14 @@ void declare_objects(py::module& m, const std::string& type)
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T>& self, dolfinx::fem::Function<T>& u,
-             const py::array_t<std::int32_t, py::array::c_style>& cells)
-          { self.interpolate(u, std::span(cells.data(), cells.size())); },
-          py::arg("u"), py::arg("cells"),
+             const py::array_t<std::int32_t, py::array::c_style>& cells,
+             const dolfinx::fem::nmm_interpolation_data_t&
+                 nmm_interpolation_data)
+          {
+            self.interpolate(u, std::span(cells.data(), cells.size()),
+                             nmm_interpolation_data);
+          },
+          py::arg("u"), py::arg("cells"), py::arg("nmm_interpolation_data"),
           "Interpolate a finite element function")
       .def(
           "interpolate_ptr",
@@ -575,6 +580,34 @@ void fem(py::module& m)
   m.def("transpose_dofmap", &dolfinx::fem::transpose_dofmap,
         "Build the index to (cell, local index) map from a "
         "dofmap ((cell, local index ) -> index).");
+  m.def(
+      "create_nonmatching_meshes_interpolation_data",
+      [](const dolfinx::fem::FunctionSpace& Vu,
+         const dolfinx::fem::FunctionSpace& Vv)
+      {
+        assert(Vu.mesh());
+        int tdim = Vu.mesh()->topology().dim();
+        auto cell_map = Vu.mesh()->topology().index_map(tdim);
+        assert(cell_map);
+        std::int32_t num_cells
+            = cell_map->size_local() + cell_map->num_ghosts();
+        std::vector<std::int32_t> cells(num_cells, 0);
+        std::iota(cells.begin(), cells.end(), 0);
+
+        return dolfinx::fem::create_nonmatching_meshes_interpolation_data(
+            Vu, Vv, std::span(cells.data(), cells.size()));
+      },
+      py::arg("Vu"), py::arg("Vv"));
+  m.def(
+      "create_nonmatching_meshes_interpolation_data",
+      [](const dolfinx::fem::FunctionSpace& Vu,
+         const dolfinx::fem::FunctionSpace& Vv,
+         const py::array_t<std::int32_t, py::array::c_style>& cells)
+      {
+        return dolfinx::fem::create_nonmatching_meshes_interpolation_data(
+            Vu, Vv, std::span(cells.data(), cells.size()));
+      },
+      py::arg("Vu"), py::arg("Vv"), py::arg("cells"));
 
   // dolfinx::fem::FiniteElement
   py::class_<dolfinx::fem::FiniteElement,
