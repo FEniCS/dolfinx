@@ -578,11 +578,10 @@ def test_pyramid_mesh_vtk(order):
     check_cell_volume(points, cell, domain, 1 / 6)
 
 
-@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("vtk,dolfin,cell_type", [([0, 1, 2, 3, 4, 5], [0, 1, 2, 4, 5, 3], CellType.triangle),
-                                                  ([0, 1, 2, 3], [0, 1, 3, 2], CellType.quadrilateral), (
-                                                          [0, 1, 2, 3, 4, 5, 6, 7], [0, 1, 3, 2, 4, 5, 7, 6],
-                                                          CellType.hexahedron), ], )
+                                                   ([0, 1, 2, 3], [0, 1, 3, 2], CellType.quadrilateral), (
+                                                   [0, 1, 2, 3, 4, 5, 6, 7], [0, 1, 3, 2, 4, 5, 7, 6],
+                                                   CellType.hexahedron), ], )
 def test_map_vtk_to_dolfin(vtk, dolfin, cell_type):
     p = perm_vtk(cell_type, len(vtk))
     cell_p = np.array(vtk)[p]
@@ -591,6 +590,7 @@ def test_map_vtk_to_dolfin(vtk, dolfin, cell_type):
     p = np.argsort(perm_vtk(cell_type, len(vtk)))
     cell_p = np.array(dolfin)[p]
     assert (cell_p == vtk).all()
+
 
 @pytest.mark.skip_in_parallel
 def test_xdmf_input_tri(datadir):
