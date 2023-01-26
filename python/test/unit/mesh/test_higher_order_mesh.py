@@ -591,7 +591,7 @@ def test_map_vtk_to_dolfin(vtk, dolfin, cell_type):
     cell_p = np.array(dolfin)[p]
     assert (cell_p == vtk).all()
 
-
+    
 @pytest.mark.skip_in_parallel
 def test_xdmf_input_tri(datadir):
     with XDMFFile(MPI.COMM_WORLD, Path(datadir, "mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII, ) as xdmf:
