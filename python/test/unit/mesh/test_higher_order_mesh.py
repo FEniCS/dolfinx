@@ -579,9 +579,9 @@ def test_pyramid_mesh_vtk(order):
 
 
 @pytest.mark.parametrize("vtk,dolfin,cell_type", [([0, 1, 2, 3, 4, 5], [0, 1, 2, 4, 5, 3], CellType.triangle),
-                                                  ([0, 1, 2, 3], [0, 1, 3, 2], CellType.quadrilateral), (
-                                                          [0, 1, 2, 3, 4, 5, 6, 7], [0, 1, 3, 2, 4, 5, 7, 6],
-                                                          CellType.hexahedron), ], )
+                                                   ([0, 1, 2, 3], [0, 1, 3, 2], CellType.quadrilateral), (
+                                                   [0, 1, 2, 3, 4, 5, 6, 7], [0, 1, 3, 2, 4, 5, 7, 6],
+                                                   CellType.hexahedron), ], )
 def test_map_vtk_to_dolfin(vtk, dolfin, cell_type):
     p = perm_vtk(cell_type, len(vtk))
     cell_p = np.array(vtk)[p]
