@@ -187,10 +187,12 @@ RUN if [ "$MPI" = "mpich" ]; then \
 # Install Python packages (via pip)
 # Install numpy via pip. Exclude binaries to avoid conflicts with libblas
 # (See issue #126 and #1305)
+# - make sure pip/setuptoools are up-to-date before using them
 # - First set of packages are required to build and run DOLFINx Python.
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
-RUN pip3 install --no-binary="numpy" --no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scipy && \
+RUN pip3 install --no-cache-dir --upgrade setuptools pip && \
+    pip3 install --no-binary="numpy" --no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scipy && \
     pip3 install --no-cache-dir clang-format cppimport cmakelang flake8 isort jupytext matplotlib mypy myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Install KaHIP
