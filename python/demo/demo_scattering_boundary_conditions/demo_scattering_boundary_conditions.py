@@ -13,13 +13,13 @@
 #     name: python3-complex
 # ---
 
-# # Scattering from a wire with scattering boundary conditions
+# # Electromagnetic scattering from a wire with scattering boundary conditions
 #
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
-# This demo is implemented in two files: one for the mesh
-# generation with gmsh, and one for the variational forms
-# and the solver. It illustrates how to:
+# This demo is implemented in two files: one for the mesh generation
+# with gmsh, and one for the variational forms and the solver. It
+# illustrates how to:
 #
 # - Use complex quantities in FEniCSx
 # - Setup and solve Maxwell's equations
@@ -58,58 +58,52 @@ from petsc4py import PETSc
 
 # -
 
-# Since we want to solve time-harmonic Maxwell's equation, we need to solve a
-# complex-valued PDE, and therefore need to use PETSc compiled with complex numbers.
+# Since we want to solve time-harmonic Maxwell's equation, we need to
+# solve a complex-valued PDE, and therefore need to use PETSc compiled
+# with complex numbers.
 
 if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
     exit(0)
 
 
-# Now, let's consider an infinite metallic wire immersed in
-# a background medium (e.g. vacuum or water). Let's now
-# consider the plane cutting the wire perpendicularly to
-# its axis at a generic point. Such plane $\Omega=\Omega_{m}
-# \cup\Omega_{b}$ is formed by the cross-section
-# of the wire $\Omega_m$ and the background medium
-# $\Omega_{b}$ surrounding the wire. Let's consider
-# just the portion of this plane delimited by an external
-# circular boundary $\partial \Omega$. We want to calculate
-# the electric field $\mathbf{E}_s$ scattered by the wire
-# when a background wave $\mathbf{E}_b$ impinges on it.
-# We will consider a background plane wave at $\lambda_0$
-# wavelength, that can be written analytically as:
+# Now, let's consider an infinite metallic wire immersed in a background
+# medium (e.g. vacuum or water). Let's now consider the plane cutting
+# the wire perpendicularly to its axis at a generic point. Such plane
+# $\Omega=\Omega_{m} \cup\Omega_{b}$ is formed by the cross-section of
+# the wire $\Omega_m$ and the background medium $\Omega_{b}$ surrounding
+# the wire. Let's consider just the portion of this plane delimited by
+# an external circular boundary $\partial \Omega$. We want to calculate
+# the electric field $\mathbf{E}_s$ scattered by the wire when a
+# background wave $\mathbf{E}_b$ impinges on it. We will consider a
+# background plane wave at $\lambda_0$ wavelength, that can be written
+# analytically as:
 #
 # $$
 # \mathbf{E}_b = \exp(\mathbf{k}\cdot\mathbf{r})\hat{\mathbf{u}}_p
 # $$
 #
-# with $\mathbf{k} = \frac{2\pi}{\lambda_0}n_b\hat{\mathbf{u}}_k$
-# being the wavevector of the
-# plane wave, pointing along the propagation direction,
-# with $\hat{\mathbf{u}}_p$ being the
-# polarization direction, and with $\mathbf{r}$ being a
-# point in $\Omega$.
-# We will only consider $\hat{\mathbf{u}}_k$ and $\hat{\mathbf{u}}_p$
-# with components belonging
-# to the $\Omega$ domain and perpendicular to each other,
-# i.e. $\hat{\mathbf{u}}_k \perp \hat{\mathbf{u}}_p$
-# (transversality condition of plane waves).
-# Using a Cartesian coordinate system for $\Omega$,
-# and by defining $k_x = n_bk_0\cos\theta$ and
-# $k_y = n_bk_0\sin\theta$, with $\theta$ being the angle
-# defined by the propagation direction $\hat{\mathbf{u}}_k$
-# and the horizontal axis $\hat{\mathbf{u}}_x$,
-# we have:
+# with $\mathbf{k} = \frac{2\pi}{\lambda_0}n_b\hat{\mathbf{u}}_k$ being
+# the wavevector of the plane wave, pointing along the propagation
+# direction, with $\hat{\mathbf{u}}_p$ being the polarization direction,
+# and with $\mathbf{r}$ being a point in $\Omega$. We will only consider
+# $\hat{\mathbf{u}}_k$ and $\hat{\mathbf{u}}_p$ with components
+# belonging to the $\Omega$ domain and perpendicular to each other, i.e.
+# $\hat{\mathbf{u}}_k \perp \hat{\mathbf{u}}_p$ (transversality
+# condition of plane waves). Using a Cartesian coordinate system for
+# $\Omega$, and by defining $k_x = n_bk_0\cos\theta$ and $k_y =
+# n_bk_0\sin\theta$, with $\theta$ being the angle defined by the
+# propagation direction $\hat{\mathbf{u}}_k$ and the horizontal axis
+# $\hat{\mathbf{u}}_x$, we have:
 #
 # $$
 # \mathbf{E}_b = -\sin\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_x
 # + \cos\theta e^{j (k_xx+k_yy)}\hat{\mathbf{u}}_y
 # $$
 #
-# The following class implements this functions.
-# The inputs to the function are the angle $\theta$, the background
-# refractive index $n_b$ and the vacuum wavevector $k_0$.
+# The following class implements this functions. The inputs to the
+# function are the angle $\theta$, the background refractive index $n_b$
+# and the vacuum wavevector $k_0$.
 
 # +
 
@@ -120,24 +114,19 @@ class BackgroundElectricField:
         self.k0 = k0  # vacuum wavevector
         self.n_bkg = n_bkg  # background refractive index
 
-    def eval(
-            self, x: np.typing.NDArray[np.float64]) -> Tuple[
-            np.typing.NDArray[np.complex128],
-            np.typing.NDArray[np.complex128]]:
-
+    def eval(self, x: np.typing.NDArray[np.float64]) -> Tuple[np.typing.NDArray[np.complex128],
+                                                              np.typing.NDArray[np.complex128]]:
         kx = self.n_bkg * self.k0 * np.cos(self.theta)
         ky = self.n_bkg * self.k0 * np.sin(self.theta)
         phi = kx * x[0] + ky * x[1]
-
-        ax = np.sin(self.theta)
-        ay = np.cos(self.theta)
-
+        ax, ay = np.sin(self.theta), np.cos(self.theta)
         return (-ax * np.exp(1j * phi), ay * np.exp(1j * phi))
 
 
 # -
 
-# The Maxwell's equation for scattering problems takes the following form:
+# The Maxwell's equation for scattering problems takes the following
+# form:
 #
 # $$
 # -\nabla \times \nabla \times \mathbf{E}_s+\varepsilon_{r} k_{0}^{2}
@@ -146,10 +135,10 @@ class BackgroundElectricField:
 # \mathbf{E}_{\mathrm{b}}=0 \textrm{ in } \Omega,
 # $$
 #
-# where $k_0 = 2\pi/\lambda_0$ is the vacuum wavevector of the background
-# field, $\varepsilon_b$ is the background relative permittivity and
-# $\varepsilon_r$ is the relative permittivity as a function of space,
-# i.e.:
+# where $k_0 = 2\pi/\lambda_0$ is the vacuum wavevector of the
+# background field, $\varepsilon_b$ is the background relative
+# permittivity and $\varepsilon_r$ is the relative permittivity as a
+# function of space, i.e.:
 #
 # $$
 # \varepsilon_r = \begin{cases}
@@ -159,16 +148,17 @@ class BackgroundElectricField:
 # $$
 #
 # with $\varepsilon_m$ being the relative permittivity of the metallic
-# wire. As reference values, we will consider $\lambda_0 = 400\textrm{nm}$
-# (violet light), $\varepsilon_b = 1.33^2$ (relative permittivity of water),
-# and $\varepsilon_m = -1.0782 + 5.8089\textrm{j}$ (relative permittivity of
-# gold at $400\textrm{nm}$).
+# wire. As reference values, we will consider $\lambda_0 =
+# 400\textrm{nm}$ (violet light), $\varepsilon_b = 1.33^2$ (relative
+# permittivity of water), and $\varepsilon_m = -1.0782 +
+# 5.8089\textrm{j}$ (relative permittivity of gold at $400\textrm{nm}$).
 #
-# To form a well-determined system, we add boundary conditions on $\partial \Omega$.
-# It is common to use scattering boundary conditions (ref), which make the boundary
-# transparent for $\mathbf{E}_s$, allowing us to restric the computational boundary
-# to a finite $\Omega$ domain. The first-order boundary conditions
-# in the 2D case take the following form:
+# To form a well-determined system, we add boundary conditions on
+# $\partial \Omega$. It is common to use scattering boundary conditions
+# (ref), which make the boundary transparent for $\mathbf{E}_s$,
+# allowing us to restrict the computational boundary to a finite
+# $\Omega$ domain. The first-order boundary conditions in the 2D case
+# take the following form:
 #
 # $$\mathbf{n} \times
 # \nabla \times \mathbf{E}_s+\left(j k_{0}n_b + \frac{1}{2r}
@@ -178,13 +168,13 @@ class BackgroundElectricField:
 #
 #
 # with $n_b = \sqrt{\varepsilon_b}$ being the background refractive
-# index, $\mathbf{n}$ being the normal vector to $\partial \Omega$,
-# and $r = \sqrt{(x-x_s)^2 + (y-y_s)^2}$ being the distance of the
-# $(x, y)$ point on $\partial\Omega$ from the wire centered in
-# $(x_s, y_s)$. We consider a wired centered at the origin, i.e.
-# $r =\sqrt{x^2 + y^2}$.
+# index, $\mathbf{n}$ being the normal vector to $\partial \Omega$, and
+# $r = \sqrt{(x-x_s)^2 + (y-y_s)^2}$ being the distance of the $(x, y)$
+# point on $\partial\Omega$ from the wire centered in $(x_s, y_s)$. We
+# consider a wired centered at the origin, i.e. $r =\sqrt{x^2 + y^2}$.
 #
-# The radial distance function $r(x)$ and $\nabla \times$ operator for a 2D vector (in UFL syntax) is defined below.
+# The radial distance function $r(x)$ and $\nabla \times$ operator for a
+# 2D vector (in UFL syntax) is defined below.
 #
 
 # +
@@ -199,8 +189,8 @@ def curl_2d(f: fem.Function):
 
 # -
 
-# Next we define some mesh specific parameters. Please notice that the length
-# units are normalized with respect to $1\mu m$.
+# Next we define some mesh specific parameters. Please notice that the
+# length units are normalized with respect to $1\mu m$.
 
 
 # +
@@ -240,14 +230,11 @@ boundary_tag = 3    # boundary
 model = None
 gmsh.initialize(sys.argv)
 if MPI.COMM_WORLD.rank == 0:
-
-    model = generate_mesh_wire(
-        radius_wire, radius_dom, in_wire_size, on_wire_size, bkg_size,
-        boundary_size, au_tag, bkg_tag, boundary_tag)
+    model = generate_mesh_wire(radius_wire, radius_dom, in_wire_size, on_wire_size, bkg_size,
+                               boundary_size, au_tag, bkg_tag, boundary_tag)
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-domain, cell_tags, facet_tags = io.gmshio.model_to_mesh(
-    model, MPI.COMM_WORLD, 0, gdim=2)
+domain, cell_tags, facet_tags = io.gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
@@ -261,8 +248,7 @@ if have_pyvista:
     pyvista.set_jupyter_backend("pythreejs")
     plotter = pyvista.Plotter()
     num_local_cells = domain.topology.index_map(domain.topology.dim).size_local
-    grid.cell_data["Marker"] = cell_tags.values[cell_tags.indices
-                                                < num_local_cells]
+    grid.cell_data["Marker"] = cell_tags.values[cell_tags.indices < num_local_cells]
     grid.set_active_scalars("Marker")
     plotter.add_mesh(grid, show_edges=True)
     plotter.view_xy()
@@ -280,9 +266,9 @@ eps_bkg = n_bkg**2  # Background relative permittivity
 k0 = 2 * np.pi / wl0  # Wavevector of the background field
 theta = np.pi / 4  # Angle of incidence of the background field
 
-# We use a function space consisting of degree 3
-# [Nedelec (first kind)](https://defelement.com/elements/nedelec1.html)
-# elements to represent the electric field
+# We use a function space consisting of degree 3 [Nedelec (first
+# kind)](https://defelement.com/elements/nedelec1.html) elements to
+# represent the electric field
 
 degree = 3
 curl_el = ufl.FiniteElement("N1curl", domain.ufl_cell(), degree)
@@ -317,19 +303,18 @@ n = ufl.FacetNormal(domain)
 n_3d = ufl.as_vector((n[0], n[1], 0))
 # -
 
-# We turn our focus to the permittivity $\varepsilon$.
-# First, we define the relative permittivity $\varepsilon_m$
-# of the gold wire at $400nm$. This data can be found in
-# [*Olmon et al. 2012*](https://doi.org/10.1103/PhysRevB.86.235147)
-# or at [refractiveindex.info](
-# https://refractiveindex.info/?shelf=main&book=Au&page=Olmon-sc
-# )):
+# We turn our focus to the permittivity $\varepsilon$. First, we define
+# the relative permittivity $\varepsilon_m$ of the gold wire at $400nm$.
+# This data can be found in [*Olmon et al.
+# 2012*](https://doi.org/10.1103/PhysRevB.86.235147) or at
+# [refractiveindex.info](
+# https://refractiveindex.info/?shelf=main&book=Au&page=Olmon-sc)):
 
 eps_au = -1.0782 + 1j * 5.8089
 
-# We define a permittivity function $\varepsilon$ that takes the value of the gold permittivity $\varepsilon_m$
-# for cells inside the wire, while it takes the value of the
-# background permittivity otherwise:
+# We define a permittivity function $\varepsilon$ that takes the value
+# of the gold permittivity $\varepsilon_m$ for cells inside the wire,
+# while it takes the value of the background permittivity otherwise:
 
 D = fem.FunctionSpace(domain, ("DG", 0))
 eps = fem.Function(D)
@@ -339,10 +324,10 @@ eps.x.array[au_cells] = np.full_like(au_cells, eps_au, dtype=np.complex128)
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
 eps.x.scatter_forward()
 
-# Next we derive the weak formulation of the Maxwell's equation plus with scattering
-# boundary conditions. First, we take the inner
-# products of the equations with a complex test function $\mathbf{v}$,
-# and integrate the terms over the corresponding domains:
+# Next we derive the weak formulation of the Maxwell's equation plus
+# with scattering boundary conditions. First, we take the inner products
+# of the equations with a complex test function $\mathbf{v}$, and
+# integrate the terms over the corresponding domains:
 #
 # $$
 # \begin{align}
@@ -357,9 +342,8 @@ eps.x.scatter_forward()
 # $$
 #
 # By using $(\nabla \times \mathbf{A}) \cdot \mathbf{B}=\mathbf{A}
-# \cdot(\nabla \times \mathbf{B})+\nabla \cdot(\mathbf{A}
-# \times \mathbf{B}),$
-# we can change the first term into:
+# \cdot(\nabla \times \mathbf{B})+\nabla \cdot(\mathbf{A} \times
+# \mathbf{B}),$ we can change the first term into:
 #
 # $$
 # \begin{align}
@@ -374,8 +358,9 @@ eps.x.scatter_forward()
 # \end{align}
 # $$
 #
-# using the divergence theorem $\int_\Omega\nabla\cdot\mathbf{F}~\mathrm{d}x =
-# \int_{\partial\Omega} \mathbf{F}\cdot\mathbf{n}~\mathrm{d}s$, we can write:
+# using the divergence theorem
+# $\int_\Omega\nabla\cdot\mathbf{F}~\mathrm{d}x = \int_{\partial\Omega}
+# \mathbf{F}\cdot\mathbf{n}~\mathrm{d}s$, we can write:
 #
 # $$
 # \begin{align}
@@ -407,7 +392,8 @@ eps.x.scatter_forward()
 # \end{align}
 # $$
 #
-# We use the [UFL](https://github.com/FEniCS/ufl/) to implement the residual
+# We use the [UFL](https://github.com/FEniCS/ufl/) to implement the
+# residual
 
 # Weak form
 F = - ufl.inner(ufl.curl(Es), ufl.curl(v)) * dDom \
@@ -421,17 +407,17 @@ F = - ufl.inner(ufl.curl(Es), ufl.curl(v)) * dDom \
 # `Esh`:
 
 a, L = ufl.lhs(F), ufl.rhs(F)
-problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={
-                                  "ksp_type": "preonly", "pc_type": "lu"})
+problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 Esh = problem.solve()
 
-# We save the solution as an
-# [ADIOS2 bp](https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html)
-# folder. In order to do so, we need to interpolate our solution discretized with Nedelec elements
-# into a suitable discontinuous Lagrange space.
+# We save the solution as an [ADIOS2
+# bp](https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html)
+# folder. In order to do so, we need to interpolate our solution
+# discretized with Nedelec elements into a suitable discontinuous
+# Lagrange space.
 
 # +
-V_dg = fem.VectorFunctionSpace(domain, ("DG", degree))
+V_dg = fem.VectorFunctionSpace(domain, ("Discontinuous Lagrange", degree))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 
@@ -439,9 +425,9 @@ with io.VTXWriter(domain.comm, "Esh.bp", Esh_dg) as vtx:
     vtx.write(0.0)
 # -
 
-# We visualize the solution using PyVista.
-# For more information about saving and visualizing vector fields
-# discretized with Nedelec elements, check [this](
+# We visualize the solution using PyVista. For more information about
+# saving and visualizing vector fields discretized with Nedelec
+# elements, check [this](
 # https://docs.fenicsproject.org/dolfinx/main/python/demos/demo_interpolation-io.html)
 # DOLFINx demo.
 
@@ -449,19 +435,16 @@ if have_pyvista:
     V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
-    Esh_values[:, : domain.topology.dim] = \
-        Esh_dg.x.array.reshape(V_x.shape[0], domain.topology.dim).real
+    Esh_values[:, : domain.topology.dim] = Esh_dg.x.array.reshape(V_x.shape[0], domain.topology.dim).real
 
     V_grid.point_data["u"] = Esh_values
 
     pyvista.set_jupyter_backend("pythreejs")
     plotter = pyvista.Plotter()
-
     plotter.add_text("magnitude", font_size=12, color="black")
     plotter.add_mesh(V_grid.copy(), show_edges=True)
     plotter.view_xy()
     plotter.link_views()
-
     if not pyvista.OFF_SCREEN:
         plotter.show()
     else:
@@ -469,25 +452,23 @@ if have_pyvista:
         plotter.screenshot("Esh.png", window_size=[800, 800])
 
 # Next we can calculate the total electric field
-# $\mathbf{E}=\mathbf{E}_s+\mathbf{E}_b$ and save it
+# $\mathbf{E}=\mathbf{E}_s+\mathbf{E}_b$ and save it.
 
 # +
 E = fem.Function(V)
 E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
-
 E_dg = fem.Function(V_dg)
 E_dg.interpolate(E)
-
 with io.VTXWriter(domain.comm, "E.bp", E_dg) as vtx:
     vtx.write(0.0)
 # -
 
-# We validate our numerical solution by computing the
-# absorption, scattering and extinction efficiencies, which are
-# quantities that define how much light is absorbed and scattered
-# by the wire. First of all, we calculate the analytical efficiencies
-# with the `calculate_analytical_efficiencies` function defined in a
-# separate file:
+# We validate our numerical solution by computing the absorption,
+# scattering and extinction efficiencies, which are quantities that
+# define how much light is absorbed and scattered by the wire. First of
+# all, we calculate the analytical efficiencies with the
+# `calculate_analytical_efficiencies` function defined in a separate
+# file:
 
 # Calculation of analytical efficiencies
 q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
@@ -497,35 +478,29 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 # absorption, scattering and extinction are:
 #
 # $$
-# \begin{align}
 # & Q_{abs} = \operatorname{Re}\left(\int_{\Omega_{m}} \frac{1}{2}
 #   \frac{\operatorname{Im}(\varepsilon_m)k_0}{Z_0n_b}
 #   \mathbf{E}\cdot\hat{\mathbf{E}}dx\right) \\
 # & Q_{sca} = \operatorname{Re}\left(\int_{\partial\Omega} \frac{1}{2}
 #   \left(\mathbf{E}_s\times\bar{\mathbf{H}}_s\right)
 #   \cdot\mathbf{n}ds\right)\\ \\
-# & Q_{ext} = Q_{abs} + Q_{sca}, \\
-# \end{align}
+# & Q_{ext} = Q_{abs} + Q_{sca},
 # $$
 #
-# with $Z_0 = \sqrt{\frac{\mu_0}{\varepsilon_0}}$ being the
-# vacuum impedance, and $\mathbf{H}_s =
-# -j\frac{1}{Z_0k_0n_b}\nabla\times\mathbf{E}_s$ being
-# the scattered magnetic field.
-# We can then normalize these values over the intensity of
-# the electromagnetic field $I_0$ and the geometrical cross
-# section of the wire,
-# $\sigma_{gcs} = 2r_w$:
+# with $Z_0 = \sqrt{\frac{\mu_0}{\varepsilon_0}}$ being the vacuum
+# impedance, and $\mathbf{H}_s =
+# -j\frac{1}{Z_0k_0n_b}\nabla\times\mathbf{E}_s$ being the scattered
+# magnetic field. We can then normalize these values over the intensity
+# of the electromagnetic field $I_0$ and the geometrical cross section
+# of the wire, $\sigma_{gcs} = 2r_w$:
 #
 # $$
-# \begin{align}
 # & q_{abs} = \frac{Q_{abs}}{I_0\sigma_{gcs}} \\
 # & q_{sca} = \frac{Q_{sca}}{I_0\sigma_{gcs}} \\
-# & q_{ext} = q_{abs} + q_{sca}, \\
-# \end{align}
+# & q_{ext} = q_{abs} + q_{sca}.
 # $$
 #
-# In FEniCSx, we can calculate these values in the following way:
+# We can calculate these values in the following way:
 
 # +
 # Vacuum impedance
@@ -537,8 +512,8 @@ Hsh_3d = -1j * curl_2d(Esh) / (Z0 * k0 * n_bkg)
 Esh_3d = ufl.as_vector((Esh[0], Esh[1], 0))
 E_3d = ufl.as_vector((E[0], E[1], 0))
 
-# Intensity of the electromagnetic fields I0 = 0.5*E0**2/Z0
-# E0 = np.sqrt(ax**2 + ay**2) = 1, see background_electric_field
+# Intensity of the electromagnetic fields I0 = 0.5*E0**2/Z0 E0 =
+# np.sqrt(ax**2 + ay**2) = 1, see background_electric_field
 I0 = 0.5 / Z0
 
 # Geometrical cross section of the wire
@@ -553,13 +528,10 @@ dAu = dx(au_tag)
 
 # Normalized absorption efficiency
 q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / gcs / I0).real
-# Sum results from all MPI processes
 q_abs_fenics = domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
 q_sca_fenics_proc = (fem.assemble_scalar(fem.form(P * dsbc)) / gcs / I0).real
-
-# Sum results from all MPI processes
 q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
 # Extinction efficiency
@@ -576,7 +548,6 @@ assert err_sca < 0.01
 assert err_ext < 0.01
 
 if domain.comm.rank == 0:
-
     print()
     print(f"The analytical absorption efficiency is {q_abs_analyt}")
     print(f"The numerical absorption efficiency is {q_abs_fenics}")

@@ -10,13 +10,12 @@
 
 # # Poisson equation
 #
-# This demo is implemented in a single Python file,
-# {download}`demo_poisson.py`, which contains both the variational forms
-# and the solver. It illustrates how to:
+# This demo is implemented in {download}`demo_poisson.py`. It
+# illustrates how to:
 #
-# - Solve a linear partial differential equation
 # - Define a {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
-# - Create and apply Dirichlet boundary conditions
+# - Define a {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
+# - Solve a linear partial differential equation
 #
 # ## Equation and problem definition
 #
@@ -78,11 +77,10 @@ from petsc4py.PETSc import ScalarType
 
 # -
 
-# We begin by using {py:func}`create_rectangle
-# <dolfinx.mesh.create_rectangle>` to create a rectangular
-# {py:class}`Mesh <dolfinx.mesh.Mesh>` of the domain, and creating a
-# finite element {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
-# $V$ on the mesh.
+# We create a rectangular {py:class}`Mesh <dolfinx.mesh.Mesh>` using
+# {py:func}`create_rectangle <dolfinx.mesh.create_rectangle>`, and
+# create a finite element {py:class}`FunctionSpace
+# <dolfinx.fem.FunctionSpace>` $V$ on the mesh.
 
 # +
 msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
@@ -92,34 +90,35 @@ V = fem.FunctionSpace(msh, ("Lagrange", 1))
 # -
 
 # The second argument to {py:class}`FunctionSpace
-# <dolfinx.fem.FunctionSpace>` is a tuple consisting of `(family,
-# degree)`, where `family` is the finite element family, and `degree`
-# specifies the polynomial degree. in this case `V` consists of
-# first-order, continuous Lagrange finite element functions.
+# <dolfinx.fem.FunctionSpace>` is a tuple `(family, degree)`, where
+# `family` is the finite element family, and `degree` specifies the
+# polynomial degree. In this case `V` is a space of continuous Lagrange
+# finite elements of degree 1.
 #
-# Next, we locate the mesh facets that lie on the boundary $\Gamma_D$.
-# We do this using using {py:func}`locate_entities_boundary
-# <dolfinx.mesh.locate_entities_boundary>` and providing  a marker
-# function that returns `True` for points `x` on the boundary and
-# `False` otherwise.
+# To apply the Dirichlet boundary conditions, we find the mesh facets
+# (entities of topological co-dimension 1) that lie on the boundary
+# $\Gamma_D$ using {py:func}`locate_entities_boundary
+# <dolfinx.mesh.locate_entities_boundary>`. The function is provided
+# with a 'marker' function that returns `True` for points `x` on the
+# boundary and `False` otherwise.
 
-facets = mesh.locate_entities_boundary(msh, dim=1,
+facets = mesh.locate_entities_boundary(msh, dim=(msh.topology.dim - 1),
                                        marker=lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                       np.isclose(x[0], 2.0)))
 
 # We now find the degrees-of-freedom that are associated with the
 # boundary facets using {py:func}`locate_dofs_topological
-# <dolfinx.fem.locate_dofs_topological>`
+# <dolfinx.fem.locate_dofs_topological>`:
 
 dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 
 # and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
 # {py:class}`DirichletBCMetaClass <dolfinx.fem.DirichletBCMetaClass>`
-# class that represents the boundary condition
+# class that represents the boundary condition:
 
 bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 
-# Next, we express the variational problem using UFL.
+# Next, the variational problem is defined:
 
 # +
 u = ufl.TrialFunction(V)
@@ -131,19 +130,19 @@ a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx + inner(g, v) * ds
 # -
 
-# We create a {py:class}`LinearProblem <dolfinx.fem.LinearProblem>`
-# object that brings together the variational problem, the Dirichlet
+# A {py:class}`LinearProblem <dolfinx.fem.LinearProblem>` object is
+# created that brings together the variational problem, the Dirichlet
 # boundary condition, and which specifies the linear solver. In this
-# case we use a direct (LU) solver. The {py:func}`solve
-# <dolfinx.fem.LinearProblem.solve>` will compute a solution.
+# case an LU solver us sued. The {py:func}`solve
+# <dolfinx.fem.LinearProblem.solve>` computes the solution.
 
 # +
 problem = fem.petsc.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 uh = problem.solve()
 # -
 
-# The solution can be written to a  {py:class}`XDMFFile
-# <dolfinx.io.XDMFFile>` file visualization with ParaView or VisIt
+# The solution can be written to a {py:class}`XDMFFile
+# <dolfinx.io.XDMFFile>` file visualization with ParaView or VisIt:
 
 # +
 with io.XDMFFile(msh.comm, "out_poisson/poisson.xdmf", "w") as file:
