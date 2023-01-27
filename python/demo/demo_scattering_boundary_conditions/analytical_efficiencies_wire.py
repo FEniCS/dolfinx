@@ -107,8 +107,7 @@ def compute_a(nu: int, m: complex, alpha: float) -> float:
     return a_nu_num / a_nu_den
 
 
-def calculate_analytical_efficiencies(eps: complex, n_bkg: float,
-                                      wl0: float, radius_wire: float,
+def calculate_analytical_efficiencies(eps: complex, n_bkg: float, wl0: float, radius_wire: float,
                                       num_n: int = 50) -> Tuple[float, float, float]:
     m = np.sqrt(np.conj(eps)) / n_bkg
     alpha = 2 * np.pi * radius_wire / wl0 * n_bkg
