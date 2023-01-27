@@ -378,11 +378,10 @@ public:
   ///
   /// Typically used in finite element assembly functions. This is a
   /// special version, which uses "block" insertion on an unblocked CSR
-  /// matrix which has the appropriate sparsity. By specifying the block
-  /// size here, the rows and columns will use block indices during
-  /// insertion.
+  /// matrix (bs=1). The row and column indices passed during insert
+  /// should be for the row/column block index.
   ///
-  /// @param bs Block size to use with insertion
+  /// @param bs Block sizes to use during  insertion
   /// @return Function for inserting values into `A`
   auto mat_add_values_blocked(std::array<int, 2> bs)
   {

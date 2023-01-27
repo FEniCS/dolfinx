@@ -118,11 +118,11 @@ void declare_objects(py::module& m, const std::string& type)
               }),
           py::arg("g").noconvert(), py::arg("dofs").noconvert(),
           py::arg("V").noconvert())
-      .def_property_readonly(
-          "dtype",
-          [](const dolfinx::fem::Form<T>& self) { return py::dtype::of<T>(); })
+      .def_property_readonly("dtype", [](const dolfinx::fem::Form<T>& self)
+                             { return py::dtype::of<T>(); })
       .def("dof_indices",
-           [](const dolfinx::fem::DirichletBC<T>& self) {
+           [](const dolfinx::fem::DirichletBC<T>& self)
+           {
              auto [dofs, owned] = self.dof_indices();
              return std::pair(py::array_t<std::int32_t>(
                                   dofs.size(), dofs.data(), py::cast(self)),

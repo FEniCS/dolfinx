@@ -152,6 +152,7 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = form(inner(u, v) * dx + inner(u, v) * ds)
 
+    # Assemble bilinear form for scalar-valued problem
     A0 = fem.assemble_matrix(a)
     A0.finalize()
     assert isinstance(A0, la.MatrixCSRMetaClass)
@@ -160,6 +161,7 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     assert isinstance(A1, PETSc.Mat)
     assert np.sqrt(A0.norm_squared()) == pytest.approx(A1.norm())
 
+    # Assemble bilinear form for vector-valued problem
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = form(inner(u, v) * dx + inner(u, v) * ds)
@@ -170,7 +172,8 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     assert isinstance(A1, PETSc.Mat)
     assert np.sqrt(A0.norm_squared()) == pytest.approx(A1.norm())
 
-    # Assemble blocks into matrix with bs=1
+    # Assemble bilinear form for vector-valued problem into matrix with
+    # matrix bs=1
     sp = fem.create_sparsity_pattern(a)
     sp = sp.expand()
     sp.assemble()

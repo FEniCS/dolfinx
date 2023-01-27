@@ -263,7 +263,7 @@ void la(py::module& m)
                         std::span(cols.data(), cols.size()));
           },
           py::arg("rows"), py::arg("cols"))
-      .def("block_size", &dolfinx::la::SparsityPattern::block_size)
+      .def("bs", &dolfinx::la::SparsityPattern::block_size, "Block size")
       .def(
           "insert_diagonal",
           [](dolfinx::la::SparsityPattern& self,
