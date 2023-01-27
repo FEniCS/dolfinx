@@ -51,7 +51,7 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
     // Row index and current data row
     auto row = xrows[r];
     using T = typename W::value_type;
-    const int nc = xcols.size();
+    const std::size_t nc = xcols.size();
     const T* xr = x.data() + r * nbs * nc;
 
 #ifndef NDEBUG
@@ -132,7 +132,7 @@ void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
     // Row index and current data row
     auto row = xrows[r];
     using T = typename W::value_type;
-    const int nc = xcols.size();
+    const std::size_t nc = xcols.size();
     const T* xr = x.data() + nbs * r * nc;
 
 #ifndef NDEBUG
@@ -239,7 +239,7 @@ void add_csr_blocked(U&& data, const V& cols, const V& row_ptr, const W& x,
 /// @brief Distributed sparse matrix
 ///
 /// The matrix storage format is compressed sparse row. The matrix is
-/// partitioned row-wise across MPI rank.
+/// partitioned row-wise across MPI ranks.
 ///
 /// @tparam T Data type for the matrix
 /// @tparam Allocator The memory allocator type for the data storage
@@ -576,7 +576,7 @@ public:
   /// @param[in] x The value to set
   void set(T x) { std::fill(_data.begin(), _data.end(), x); }
 
-  /// @brief Set values in the matrix
+  /// @brief Set values in the matrix.
   ///
   /// @note Only entries included in the sparsity pattern used to
   /// initialize the matrix can be set.
@@ -673,12 +673,12 @@ public:
   {
     const std::int32_t local_size0 = _index_maps[0]->size_local();
     const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
-    int nbs = _bs[0] * _bs[1];
+    const int nbs = _bs[0] * _bs[1];
 
     // For each ghost row, pack and send values to send to neighborhood
     std::vector<int> insert_pos = _val_send_disp;
     std::vector<T> ghost_value_data(_val_send_disp.back());
-    for (int i = 0; i < num_ghosts0; ++i)
+    for (std::int32_t i = 0; i < num_ghosts0; ++i)
     {
       const int rank = _ghost_row_to_rank[i];
 
@@ -722,7 +722,7 @@ public:
     assert(status == MPI_SUCCESS);
 
     // Add to local rows
-    int nbs = _bs[0] * _bs[1];
+    const int nbs = _bs[0] * _bs[1];
     assert(_ghost_value_data_in.size() == nbs * _unpack_pos.size());
     for (std::size_t i = 0; i < _unpack_pos.size(); ++i)
       for (int j = 0; j < nbs; ++j)
