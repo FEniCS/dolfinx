@@ -1,9 +1,9 @@
-# Copyright (C) 2009-2022 Chris N. Richardson, Garth N. Wells and Michal Habera
+# Copyright (C) 2009-2023 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Collection of functions and function spaces"""
+"""Finite element function spaces and functions"""
 
 from __future__ import annotations
 
@@ -40,7 +40,6 @@ class Constant(ufl.Constant):
         """
         c = np.asarray(c)
         super().__init__(domain, c.shape)
-
         try:
             if c.dtype == np.complex64:
                 self._cpp_object = _cpp.fem.Constant_complex64(c)
@@ -597,14 +596,15 @@ class FunctionSpace(ufl.FunctionSpace):
                 Coordinates of the degrees-of-freedom.
 
             Notes:
-                The methods should be used only for elements with point
+                This method should be used only for elements with point
                 evaluation degrees-of-freedom.
 
          """
         return self._cpp_object.tabulate_dof_coordinates()
 
 
-def VectorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]], dim=None) -> FunctionSpace:
+def VectorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]],
+                        dim=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
     e = ElementMetaData(*element)
     ufl_element = basix.ufl_wrapper.create_vector_element(e.family, mesh.ufl_cell().cellname(), e.degree,
