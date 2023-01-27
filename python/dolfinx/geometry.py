@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import typing
 
+import numpy.typing as npt
+
 if typing.TYPE_CHECKING:
     from dolfinx.mesh import Mesh
     from dolfinx.cpp.graph import AdjacencyList_int32
@@ -46,11 +48,26 @@ class BoundingBoxTree(_cpp.geometry.BoundingBoxTree):
         super().__init__(mesh._cpp_object, dim, entities, padding)
 
 
-def compute_closest_entity(tree, midpoint_tree, mesh, points):
+def compute_closest_entity(tree: BoundingBoxTree, midpoint_tree: BoundingBoxTree, mesh: Mesh,
+                           points: numpy.ndarray) -> npt.NDArray[np.int32]:
+    """Compute closest mesh entity to a point.
+
+        Args:
+            tree: bounding box tree for the entities
+            midpoint_tree: A bounding box tree with the midpoints of all
+                the mesh entities. This is used to accelerate the search.
+            mesh: The mesh
+            points: The points to check for collision, shape=(num_points, 3)
+
+        Returns:
+            Mesh entity index for each point in `points`. Returns -1 for
+            a point if the bounding box tree is empty.
+
+    """
     return _cpp.geometry.compute_closest_entity(tree, midpoint_tree, mesh._cpp_object, points)
 
 
-def create_midpoint_tree(mesh, dim, entities):
+def create_midpoint_tree(mesh: Mesh, dim: int, entities: numpy.ndarray):
     return _cpp.geometry.create_midpoint_tree(mesh._cpp_object, dim, entities)
 
 
