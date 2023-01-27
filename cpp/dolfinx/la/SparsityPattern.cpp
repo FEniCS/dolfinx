@@ -160,11 +160,9 @@ SparsityPattern SparsityPattern::expand() const
     const std::vector<int> ghost_owner_i = im->owners();
     for (std::size_t j = 0; j < ghost_i.size(); ++j)
     {
+      src_rank[i].insert(src_rank[i].end(), _bs[i], ghost_owner_i[j]);
       for (int k = 0; k < _bs[i]; ++k)
-      {
         ghosts[i].push_back(ghost_i[j] * _bs[i] + k);
-        src_rank[i].push_back(ghost_owner_i[j]);
-      }
     }
   }
 

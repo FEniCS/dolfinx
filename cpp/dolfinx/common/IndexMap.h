@@ -104,12 +104,12 @@ public:
   /// @param[in] comm The MPI communicator
   /// @param[in] local_size Local size of the index map, i.e. the number
   /// @param[in] src_dest Lists of [0] src and [1] dest ranks. The list
-  /// in each must be sorted and not contain duplicates. `src` ranks are
-  /// owners of the indices in `ghosts`. `dest` ranks are the rank that
-  /// ghost indices owned by the caller.
+  /// in each must be sorted and must not contain duplicates. `src`
+  /// ranks are owners of the indices in `ghosts`. `dest` ranks are the
+  /// rank that ghost indices owned by the caller.
   /// @param[in] ghosts The global indices of ghost entries
-  /// @param[in] owners Owner rank (on global communicator) of each entry
-  /// in `ghosts`
+  /// @param[in] owners Owner rank (on global communicator) of each
+  /// entry in `ghosts`
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            const std::array<std::vector<int>, 2>& src_dest,
            std::span<const std::int64_t> ghosts, std::span<const int> owners);

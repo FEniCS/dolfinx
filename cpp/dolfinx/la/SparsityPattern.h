@@ -26,18 +26,19 @@ class IndexMap;
 namespace dolfinx::la
 {
 
-/// This class provides a sparsity pattern data structure that can be
-/// used to initialize sparse matrices. After assembly, column indices
-/// are always sorted in increasing order. Ghost entries are kept after
-/// assembly.
+/// @brief A distributed sparsity pattern data structure that can be
+/// used to initialize sparse matrices.
+///
+/// After assembly for the sparsity pattern, column indices are always
+/// sorted in increasing order. Ghost entries are kept after assembly.
 class SparsityPattern
 {
 
 public:
-  /// Create an empty sparsity pattern with specified dimensions
-  /// @param[in] comm The communicator that the pattenr is defined on
-  /// @param[in] maps The index maps describing the [0] row and [1]
-  /// column index ranges (up to a block size)
+  /// @brief Create an empty sparsity pattern with specified dimensions.
+  /// @param[in] comm Communicator that the pattern is defined on
+  /// @param[in] maps Index maps describing the [0] row and [1] column
+  /// index ranges (up to a block size)
   /// @param[in] bs The block sizes for the [0] row and [1] column maps
   SparsityPattern(
       MPI_Comm comm,
@@ -50,9 +51,9 @@ public:
   ///
   /// @param[in] comm The MPI communicator
   /// @param[in] patterns Rectangular array of sparsity pattern. The
-  ///   patterns must not be finalised. Null block are permitted
+  /// patterns must not be finalised. Null block are permitted
   /// @param[in] maps Pairs of (index map, block size) for each row
-  ///   block (maps[0]) and column blocks (maps[1])
+  /// block (maps[0]) and column blocks (maps[1])
   /// @param[in] bs Block sizes for the sparsity pattern entries
   SparsityPattern(
       MPI_Comm comm,
@@ -74,10 +75,10 @@ public:
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
-  /// Take an unassembled SparsityPattern with a block size greater than 1, and
-  /// expand the entries, repeating rows and columns in each block. More entries
-  /// may be added to the new expanded SparsityPattern before assembling.
-  /// @return Unassembled SparsityPattern of same size but with bs={1, 1}
+  /// Expand an unassembled SparsityPattern with a block size(s) greater
+  /// than 1 into an unassembled SparsityPattern  with `bs={1, 1}`.
+  //
+  /// @return Unassembled SparsityPattern with `bs={1, 1}`.
   SparsityPattern expand() const;
 
   /// Insert non-zero locations using local (process-wise) indices
