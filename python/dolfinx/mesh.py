@@ -12,7 +12,7 @@ import typing
 import basix
 import basix.ufl_wrapper
 import numpy as np
-import numpy.typing
+import numpy.typing as npt
 import ufl
 from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
@@ -30,11 +30,11 @@ __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundar
            "create_box", "create_unit_cube", "to_type", "to_string"]
 
 
-def compute_incident_entities(mesh: Mesh, entities, d0: int, d1: int):
+def compute_incident_entities(mesh: Mesh, entities: npt.NDArray[np.int32], d0: int, d1: int):
     return _cpp.mesh.compute_incident_entities(mesh._cpp_object, entities, d0, d1)
 
 
-def compute_midpoints(mesh: Mesh, dim: int, entities):
+def compute_midpoints(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
     return _cpp.mesh.compute_midpoints(mesh._cpp_object, dim, entities)
 
 
@@ -221,8 +221,8 @@ del _ufl_id
 
 
 class MeshTagsMetaClass:
-    def __init__(self, mesh: Mesh, dim: int, entities: numpy.typing.NDArray[typing.Any],
-                 values: numpy.typing.NDArray[typing.Any]):
+    def __init__(self, mesh: Mesh, dim: int, entities: npt.NDArray[typing.Any],
+                 values: npt.NDArray[typing.Any]):
         """A distributed sparse matrix that uses compressed sparse row storage.
 
         Args:
@@ -254,7 +254,7 @@ class MeshTagsMetaClass:
         return id(self)
 
 
-def meshtags(mesh: Mesh, dim: int, entities: np.ndarray,
+def meshtags(mesh: Mesh, dim: int, entities: npt.NDArray[np.int64],
              values: typing.Union[np.ndarray, int, float]) -> MeshTagsMetaClass:
     """Create a MeshTags object that associates data with a subset of mesh entities.
 
@@ -298,7 +298,7 @@ def meshtags(mesh: Mesh, dim: int, entities: np.ndarray,
 
 
 def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32,
-                           values: numpy.typing.NDArray[typing.Any]):
+                           values: npt.NDArray[typing.Any]):
     """Create a MeshTags object that associates data with a subset of
     mesh entities, where the entities are defined by their vertices.
 
@@ -328,7 +328,7 @@ def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyL
     return _cpp.mesh.create_meshtags(mesh._cpp_object, dim, entities, values)
 
 
-def create_interval(comm: _MPI.Comm, nx: int, points: numpy.typing.ArrayLike,
+def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
                     ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
     """Create an interval mesh
 
@@ -374,7 +374,7 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_f
     return create_interval(comm, nx, [0.0, 1.0], ghost_mode, partitioner)
 
 
-def create_rectangle(comm: _MPI.Comm, points: numpy.typing.ArrayLike, n: numpy.typing.ArrayLike,
+def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
                      cell_type=CellType.triangle, ghost_mode=GhostMode.shared_facet,
                      partitioner=None,
                      diagonal: DiagonalType = DiagonalType.right) -> Mesh:
@@ -431,7 +431,7 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
                             partitioner, diagonal)
 
 
-def create_box(comm: _MPI.Comm, points: typing.List[numpy.typing.ArrayLike], n: list,
+def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
                cell_type=CellType.tetrahedron,
                ghost_mode=GhostMode.shared_facet,
                partitioner=None) -> Mesh:
