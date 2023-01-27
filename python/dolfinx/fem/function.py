@@ -376,7 +376,7 @@ class Function(ufl.Coefficient):
             self._cpp_object.interpolate(np.asarray(u(x), dtype=self.dtype), cells)
 
     def copy(self) -> Function:
-        """Return a copy of the Function. The FunctionSpace is shared and the
+        """Create a copy of the Function. The FunctionSpace is shared and the
         degree-of-freedom vector is copied.
 
         """
@@ -472,6 +472,8 @@ class FunctionSpace(ufl.FunctionSpace):
 
         if mesh is not None:
             assert cppV is None
+            self._mesh = mesh
+
             # Initialise the ufl.FunctionSpace
             if isinstance(element, ufl.FiniteElementBase):
                 super().__init__(mesh.ufl_domain(), element)
@@ -492,15 +494,10 @@ class FunctionSpace(ufl.FunctionSpace):
                 "uintptr_t", ffi.addressof(self._ufcx_dofmap)), mesh.topology, cpp_element)
 
             # Initialize the cpp.FunctionSpace
-            try:
-                self._cpp_object = _cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
-            except TypeError:
-                self._cpp_object = _cpp.fem.FunctionSpace(mesh._cpp_object, cpp_element, cpp_dofmap)
-
-            self._mesh = mesh
+            self._cpp_object = _cpp.fem.FunctionSpace(mesh._cpp_object, cpp_element, cpp_dofmap)
 
     def clone(self) -> FunctionSpace:
-        """Return a new FunctionSpace :math:`W` which shares data with this
+        """Create a new FunctionSpace :math:`W` which shares data with this
         FunctionSpace :math:`V`, but with a different unique integer ID.
 
         This function is helpful for defining mixed problems and using
@@ -511,6 +508,9 @@ class FunctionSpace(ufl.FunctionSpace):
         V` and :math:`V \\times V` matrices can be identified as
         diagonal blocks. This is relevant for the handling of boundary
         conditions.
+
+        Returns:
+            A new function space that shares data
 
         """
         Vcpp = _cpp.fem.FunctionSpace(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
@@ -560,9 +560,6 @@ class FunctionSpace(ufl.FunctionSpace):
         """Comparison for inequality."""
         return super().__ne__(other) or self._cpp_object != other._cpp_object
 
-    def ufl_cell(self):
-        return self._mesh.ufl_cell()
-
     def ufl_function_space(self) -> ufl.FunctionSpace:
         """UFL function space"""
         return self
@@ -578,7 +575,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
     @property
     def mesh(self) -> Mesh:
-        """Return the mesh on which the function space is defined."""
+        """Mesh on which the function space is defined."""
         return self._mesh
 
     def collapse(self) -> tuple[FunctionSpace, np.ndarray]:
