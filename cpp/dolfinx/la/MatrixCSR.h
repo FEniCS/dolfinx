@@ -21,18 +21,20 @@ namespace dolfinx::la
 
 namespace impl
 {
-/// @brief Set data in a CSR matrix
-/// @note For block data layout see `add_csr`
-/// @tparam BS Templated block size, default=-1, untemplated. Templating with
-/// BS>0 allows optimisation for square blocks (bs[0]==bs[1]).
-/// @param[out] data The CSR matrix data
-/// @param[in] cols The CSR column indices
-/// @param[in] row_ptr The pointer to the ith row in the CSR data
+/// @brief Set data in a CSR matrix.
+///
+/// @note For block data layout see `add_csr`.
+///
+/// @tparam BS Block size, default=-1 (dynamic). BS > 0 allows
+/// optimisation for square blocks (bs[0]==bs[1]).
+/// @param[out] data Matrix data
+/// @param[in] cols Column indices
+/// @param[in] row_ptr Pointer to the ith row in the CSR data
 /// @param[in] x The `m` by `n` dense array of values (row-major) to set
-/// in the matrix.
-/// @param[in] xrows The (block) row indices of `x`
-/// @param[in] xcols The (block) column indices of `x`
-/// @param[in] bs Two dimensional size of each block.
+/// in the matrix
+/// @param[in] xrows The (blocked) row indices of `x`
+/// @param[in] xcols The (blocked) column indices of `x`
+/// @param[in] bs Row and columns block sizes
 /// @param[in] local_size The maximum row index that can be set. Used
 /// when debugging is on to check that rows beyond a permitted range are
 /// not being set.
@@ -98,8 +100,9 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 /// @brief Add data to a CSR matrix
 ///
 /// Data layout for blocks. For example, the following can be inserted
-/// into the top-left corner of a suitable CSR matrix with xrows={0,1} and
-/// xcols={0,1}, bs={2,2} and x={0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}.
+/// into the top-left corner of a suitable CSR matrix with `xrows = {0,
+/// 1}` and `xcols = {0, 1}`, `bs = {2,2}` and `x = {0, 1, 2, 3, 4, 5,
+/// 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}`.
 ///
 /// 0  1  | 2  3
 /// 4  5  | 6  7
@@ -107,22 +110,21 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 /// 8  9  | 10 11
 /// 12 13 | 14 15
 ///
-/// @tparam BS Templated block size, default=-1, untemplated. Templating with
-/// BS>0 allows optimisation for square blocks (bs[0]==bs[1]).
-/// @param[out] data The CSR matrix data
-/// @param[in] cols The CSR column indices
-/// @param[in] row_ptr The pointer to the ith row in the CSR data
+/// @tparam BS Block size, default=-1 (dynamic). `BS > 0` allows
+/// optimisation for square blocks (bs[0]==bs[1]).
+/// @param[out] data Matrix data
+/// @param[in] cols Column indices
+/// @param[in] row_ptr Pointer to the ith row in the CSR data
 /// @param[in] x The `m` by `n` dense array of values (row-major) to add
 /// to the matrix
-/// @param[in] xrows The (block) row indices of `x`
-/// @param[in] xcols The (block) column indices of `x`
+/// @param[in] xrows The (blocked) row indices of `x`
+/// @param[in] xcols The (blocked) column indices of `x`
 /// @param[in] bs Number of entries in each direction in each block
 template <int BS = -1, typename U, typename V, typename W, typename X>
 void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
              const X& xrows, const X& xcols, std::array<int, 2> bs)
 {
   assert(BS < 0 or (bs[0] == BS and bs[1] == BS));
-
   const int nbs = bs[0] * bs[1];
   assert(x.size() == nbs * xrows.size() * xcols.size());
   for (std::size_t r = 0; r < xrows.size(); ++r)
@@ -178,25 +180,27 @@ void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 }
 
 /// @brief Add block data to a CSR matrix with blocksize 1
-/// Add data which is in block format (i.e. the rows and columns are indexed
-/// by block) into a CSR matrix which has bs={1,1}. The matrix must have the
-/// appropriate sparsity to receive the block data. For the input data layout of
-/// `x`, see `add_csr`.
-/// @param[out] data The CSR matrix data
-/// @param[in] cols The CSR column indices
-/// @param[in] row_ptr The pointer to the ith row in the CSR data
+///
+/// Add data which is in block format (i.e. the rows and columns are
+/// indexed by block) into a CSR matrix which has bs={1,1}. The matrix
+/// must have the appropriate sparsity to receive the block data. For
+/// the input data layout of `x`, see `add_csr`.
+///
+/// @param[out] data Matrix data
+/// @param[in] cols Column indices
+/// @param[in] row_ptr Pointer to the ith row in the CSR data
 /// @param[in] x The `m` by `n` dense array of values (row-major) to add
 /// to the matrix
-/// @param[in] xrows The block row indices of `x`
-/// @param[in] xcols The block column indices of `x`
-/// @param[in] bs Number of block entries in each direction for the input `x`
+/// @param[in] xrows Row indices of `x`
+/// @param[in] xcols Column indices of `x`
+/// @param[in] bs Number of block entries in each direction for the
+/// input `x`
 template <typename U, typename V, typename W, typename X>
 void add_csr_blocked(U&& data, const V& cols, const V& row_ptr, const W& x,
                      const X& xrows, const X& xcols, std::array<int, 2> bs)
 {
   const int nbs = bs[0] * bs[1];
   assert(x.size() == nbs * xrows.size() * xcols.size());
-
   for (std::size_t r = 0; r < xrows.size(); ++r)
   {
     for (int k = 0; k < bs[0]; ++k)
@@ -232,16 +236,16 @@ void add_csr_blocked(U&& data, const V& cols, const V& row_ptr, const W& x,
 
 } // namespace impl
 
-/// Distributed sparse matrix
+/// @brief Distributed sparse matrix
 ///
 /// The matrix storage format is compressed sparse row. The matrix is
 /// partitioned row-wise across MPI rank.
 ///
-/// @tparam T The data type for the matrix
+/// @tparam T Data type for the matrix
 /// @tparam Allocator The memory allocator type for the data storage
 ///
 /// @note Highly "experimental" storage of a matrix in CSR format which
-/// can be assembled into using the usual dolfinx assembly routines
+/// can be assembled into using the usual DOLFINx assembly routines
 /// Matrix internal data can be accessed for interfacing with other
 /// code.
 ///
@@ -256,8 +260,10 @@ public:
   /// The allocator type
   using allocator_type = Allocator;
 
-  /// Insertion functor for setting values in matrix. It is typically
-  /// used in finite element assembly functions.
+  /// @brief Insertion functor for setting values in matrix.
+  ///
+  /// It is typically used in finite element assembly functions.
+  ///
   /// @return Function for inserting values into the matrix
   /// @todo clarify setting on non-owned enrties
   std::function<int(const std::span<const std::int32_t>& rows,
@@ -300,21 +306,25 @@ public:
         };
       }
     }
-
-    // Drop through to default implementation (non-template for bs)
-    return [&, local_size](const std::span<const std::int32_t>& rows,
-                           const std::span<const std::int32_t>& cols,
-                           const std::span<const T>& data) -> int
+    else
     {
-      impl::set_csr(_data, _cols, _row_ptr, data, rows, cols, _bs, local_size);
-      return 0;
-    };
+      // Drop through to default implementation (non-template for bs)
+      return [&, local_size](const std::span<const std::int32_t>& rows,
+                             const std::span<const std::int32_t>& cols,
+                             const std::span<const T>& data) -> int
+      {
+        impl::set_csr(_data, _cols, _row_ptr, data, rows, cols, _bs,
+                      local_size);
+        return 0;
+      };
+    }
   }
 
-  /// Insertion functor for accumulating values in matrix. It is
-  /// typically used in finite element assembly functions.
+  /// @brief Insertion functor for accumulating values in matrix.
+  ///
+  /// Typically used in finite element assembly functions.
+  ///
   /// @return Function for inserting values into the matrix
-
   std::function<int(const std::span<const std::int32_t>& rows,
                     const std::span<const std::int32_t>& cols,
                     const std::span<const T>& data)>
@@ -351,22 +361,27 @@ public:
         };
       }
     }
-
-    // Drop through to default implementation (non-template for bs)
-    return [&](const std::span<const std::int32_t>& rows,
-               const std::span<const std::int32_t>& cols,
-               const std::span<const T>& data) -> int
+    else
     {
-      impl::add_csr(_data, _cols, _row_ptr, data, rows, cols, _bs);
-      return 0;
-    };
+      // Drop through to default implementation (non-template for bs)
+      return [&](const std::span<const std::int32_t>& rows,
+                 const std::span<const std::int32_t>& cols,
+                 const std::span<const T>& data) -> int
+      {
+        impl::add_csr(_data, _cols, _row_ptr, data, rows, cols, _bs);
+        return 0;
+      };
+    }
   }
 
-  /// Insertion functor for accumulating values in matrix. It is
-  /// typically used in finite element assembly functions.
-  /// This is a special version, which uses "block" insertion on an unblocked
-  /// CSR matrix which has the appropriate sparsity. By specifying the block
-  /// size here, the rows and columns will use block indices during insertion.
+  /// @brief Insertion functor for accumulating values in matrix.
+  ///
+  /// Typically used in finite element assembly functions. This is a
+  /// special version, which uses "block" insertion on an unblocked CSR
+  /// matrix which has the appropriate sparsity. By specifying the block
+  /// size here, the rows and columns will use block indices during
+  /// insertion.
+  ///
   /// @param bs Block size to use with insertion
   /// @return Function for inserting values into `A`
   auto mat_add_values_blocked(std::array<int, 2> bs)
@@ -380,8 +395,8 @@ public:
     };
   }
 
-  /// Create a distributed matrix
-  /// @param[in] p The sparsty pattern the describes the parallel
+  /// @brief Create a distributed matrix.
+  /// @param[in] p The sparsity pattern the describes the parallel
   /// distribution and the non-zero structure
   /// @param[in] alloc The memory allocator for the data storafe
   MatrixCSR(const SparsityPattern& p, const Allocator& alloc = Allocator())
@@ -556,14 +571,15 @@ public:
   /// @todo Check handling of MPI_Request
   MatrixCSR(MatrixCSR&& A) = default;
 
-  /// Set all non-zero local entries to a value
-  /// including entries in ghost rows
-  /// @param[in] x The value to set non-zero matrix entries to
+  /// @brief Set all non-zero local entries to a value, including
+  /// entries in ghost rows.
+  /// @param[in] x The value to set
   void set(T x) { std::fill(_data.begin(), _data.end(), x); }
 
-  /// Set values in the matrix
+  /// @brief Set values in the matrix
+  ///
   /// @note Only entries included in the sparsity pattern used to
-  /// initialize the matrix can be set
+  /// initialize the matrix can be set.
   /// @note All indices are local to the calling MPI rank and entries
   /// cannot be set in ghost rows.
   /// @note This should be called after `finalize`. Using before
@@ -581,7 +597,8 @@ public:
                   _index_maps[0]->size_local());
   }
 
-  /// Accumulate values in the matrix
+  /// @brief Accumulate values in the matrix.
+  ///
   /// @note Only entries included in the sparsity pattern used to
   /// initialize the matrix can be accumulated in to
   /// @note All indices are local to the calling MPI rank and entries
@@ -606,11 +623,11 @@ public:
   /// Number of local rows including ghost rows
   std::int32_t num_all_rows() const { return _row_ptr.size() - 1; }
 
-  /// Copy to a dense matrix
-  /// @note This function is typically used for debugging and not used
-  /// in production
+  /// @brief Copy to a dense matrix.
+  ///
+  /// @note This function is typically used for debugging.
   /// @note Ghost rows are also returned, and these can be truncated
-  /// manually by using num_owned_rows() if required.
+  /// manually by using num_owned_rows(), if required.
   /// @return Dense copy of the part of the matrix on the calling rank.
   /// Storage is row-major.
   std::vector<T> to_dense() const
@@ -624,7 +641,6 @@ public:
       {
         int row = r * _bs[0];
         int col = _cols[j] * _bs[1];
-
         int ki = j * _bs[0] * _bs[1];
         for (int k = 0; k < _bs[0]; ++k)
         {
@@ -637,22 +653,22 @@ public:
     return A;
   }
 
-  /// Transfer ghost row data to the owning ranks
-  /// accumulating received values on the owned rows, and zeroing any existing
-  /// data in ghost rows.
+  /// @brief Send ghost data to owner and set/accumulate on owner.
+  ///
+  /// Ghost entries are zeroed after communication.
   void finalize()
   {
     finalize_begin();
     finalize_end();
   }
 
-  /// Begin transfer of ghost row data to owning ranks, where it will be
-  /// accumulated into existing owned rows.
+  /// @brief Begin sending of ghost data to owner.
+  ///
   /// @note Calls to this function must be followed by
   /// MatrixCSR::finalize_end(). Between the two calls matrix values
   /// must not be changed.
-  /// @note This function does not change the matrix data. Data update only
-  /// occurs with `finalize_end()`.
+  /// @note This function does not change the matrix data. Data update
+  /// only occurs with `finalize_end()`.
   void finalize_begin()
   {
     const std::int32_t local_size0 = _index_maps[0]->size_local();
@@ -694,7 +710,8 @@ public:
     assert(status == MPI_SUCCESS);
   }
 
-  /// End transfer of ghost row data to owning ranks
+  /// @brief Finalize sending of ghost data to owner.
+  ///
   /// @note Must be preceded by MatrixCSR::finalize_begin()
   /// @note Matrix data received from other processes will be
   /// accumulated into locally owned rows, and ghost rows will be
@@ -734,10 +751,11 @@ public:
     return norm_sq;
   }
 
-  /// Index maps for the row and column space. The row IndexMap contains
-  /// ghost entries for rows which may be inserted into and the column
-  /// IndexMap contains all local and ghost columns that may exist in
-  /// the owned rows.
+  /// @brief Index maps for the row and column space.
+  ///
+  /// The row index map contains ghost entries for rows which may be
+  /// inserted into and the column index map contains all local and
+  /// ghost columns that may exist in the owned rows.
   ///
   /// @return Row (0) and column (1) index maps
   const std::array<std::shared_ptr<const common::IndexMap>, 2>&
@@ -746,37 +764,38 @@ public:
     return _index_maps;
   }
 
-  /// Get local data values
+  /// @brief Get local data values
   /// @note Includes ghost values
   std::vector<T>& values() { return _data; }
 
-  /// Get local values (const version)
+  /// @brief Get local values (const version)
   /// @note Includes ghost values
   const std::vector<T>& values() const { return _data; }
 
-  /// Get local row pointers
+  /// @brief Get local row pointers
   /// @note Includes pointers to ghost rows
   const std::vector<std::int32_t>& row_ptr() const { return _row_ptr; }
 
-  /// Get local column indices
+  /// @brief Get local column indices
   /// @note Includes columns in ghost rows
   const std::vector<std::int32_t>& cols() const { return _cols; }
 
-  /// Get the start of off-diagonal (unowned columns) on each row,
-  /// allowing the matrix to be split (virtually) into two parts.
+  /// @brief Get the start of off-diagonal (unowned columns) on each
+  /// row, allowing the matrix to be split (virtually) into two parts.
+  ///
   /// Operations (such as matrix-vector multiply) between the owned
   /// parts of the matrix and vector can then be performed separately
-  /// from operations on the unowned parts.
   /// @note Includes ghost rows, which should be truncated manually if
   /// not required.
-  const std::vector<std::int32_t>& off_diag_offset() const
+  /// from operations on the unowned parts.
+  std::span<const std::int32_t> off_diag_offset() const
   {
     return _off_diagonal_offset;
   }
 
   /// @brief Block size
-  /// @param axis Axis (0 or 1)
-  /// @return Block size in that direction
+  /// @param axis Row (0) or column (1) axis
+  /// @return Block size in the requested direction
   int bs(int axis) const
   {
     if (axis < 0 or axis > 1)
