@@ -43,15 +43,15 @@ class BoundingBoxTree(_cpp.geometry.BoundingBoxTree):
         if entities is None:
             entities = range(0, map.size_local + map.num_ghosts)
 
-        super().__init__(mesh._mesh, dim, entities, padding)
+        super().__init__(mesh._cpp_object, dim, entities, padding)
 
 
 def compute_closest_entity(tree, midpoint_tree, mesh, points):
-    return _cpp.geometry.compute_closest_entity(tree, midpoint_tree, mesh._mesh, points)
+    return _cpp.geometry.compute_closest_entity(tree, midpoint_tree, mesh._cpp_object, points)
 
 
 def create_midpoint_tree(mesh, dim, entities):
-    return _cpp.geometry.create_midpoint_tree(mesh._mesh, dim, entities)
+    return _cpp.geometry.create_midpoint_tree(mesh._cpp_object, dim, entities)
 
 
 def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: numpy.ndarray):
@@ -67,7 +67,7 @@ def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: nump
         Adjacency list where the ith node is the list of entities that
         collide with the ith point
     """
-    return _cpp.geometry.compute_colliding_cells(mesh._mesh, candidates, x)
+    return _cpp.geometry.compute_colliding_cells(mesh._cpp_object, candidates, x)
 
 
 def squared_distance(mesh: Mesh, dim: int, entities: typing.List[int], points: numpy.ndarray):
@@ -87,4 +87,4 @@ def squared_distance(mesh: Mesh, dim: int, entities: typing.List[int], points: n
         Squared shortest distance from points[i] to entities[i]
 
     """
-    return _cpp.geometry.squared_distance(mesh._mesh, dim, entities, points)
+    return _cpp.geometry.squared_distance(mesh._cpp_object, dim, entities, points)

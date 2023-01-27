@@ -67,7 +67,7 @@ if _cpp.common.has_adios2:
             """
             try:
                 # Input is a mesh
-                super().__init__(comm, filename, output._mesh)  # type: ignore[union-attr]
+                super().__init__(comm, filename, output._cpp_object)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
                 super().__init__(comm, filename, _extract_cpp_functions(output))   # type: ignore[arg-type]
@@ -105,7 +105,7 @@ if _cpp.common.has_adios2:
 
             """
             try:
-                super().__init__(comm, filename, output._mesh)  # type: ignore[union-attr]
+                super().__init__(comm, filename, output._cpp_object)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
                 super().__init__(comm, filename, _extract_cpp_functions(output))  # type: ignore[arg-type]
 
@@ -133,7 +133,7 @@ class VTKFile(_cpp.io.VTKFile):
 
     def write_mesh(self, mesh: Mesh, t: float = 0.0) -> None:
         """Write mesh to file for a given time (default 0.0)"""
-        self.write(mesh._mesh, t)
+        self.write(mesh._cpp_object, t)
 
     def write_function(self, u: typing.Union[typing.List[Function], Function], t: float = 0.0) -> None:
         """Write a single function or a list of functions to file for a given time (default 0.0)"""
@@ -149,7 +149,7 @@ class XDMFFile(_cpp.io.XDMFFile):
 
     def write_mesh(self, mesh: Mesh) -> None:
         """Write mesh to file for a given time (default 0.0)"""
-        super().write_mesh(mesh._mesh)
+        super().write_mesh(mesh._cpp_object)
 
     def write_function(self, u, t: float = 0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
         super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
@@ -172,9 +172,9 @@ class XDMFFile(_cpp.io.XDMFFile):
         return Mesh(msh, domain)
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
-        return super().read_meshtags(mesh._mesh, name, xpath)
+        return super().read_meshtags(mesh._cpp_object, name, xpath)
 
 
 def distribute_entity_data(mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64],
                            values: npt.NDArray[np.int32]) -> typing.Tuple[npt.NDArray[np.int64], npt.NDArray[np.int32]]:
-    return _cpp.io.distribute_entity_data(mesh._mesh, entity_dim, entities, values)
+    return _cpp.io.distribute_entity_data(mesh._cpp_object, entity_dim, entities, values)

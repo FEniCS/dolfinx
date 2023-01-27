@@ -372,7 +372,7 @@ class Function(ufl.Coefficient):
         except TypeError:
             # u is callable
             assert callable(u)
-            x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh._mesh, cells)
+            x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh._cpp_object, cells)
             self._cpp_object.interpolate(np.asarray(u(x), dtype=self.dtype), cells)
 
     def copy(self) -> Function:
@@ -495,7 +495,7 @@ class FunctionSpace(ufl.FunctionSpace):
             try:
                 self._cpp_object = _cpp.fem.FunctionSpace(mesh, cpp_element, cpp_dofmap)
             except TypeError:
-                self._cpp_object = _cpp.fem.FunctionSpace(mesh._mesh, cpp_element, cpp_dofmap)
+                self._cpp_object = _cpp.fem.FunctionSpace(mesh._cpp_object, cpp_element, cpp_dofmap)
 
             self._mesh = mesh
 
@@ -577,7 +577,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return dofmap.DofMap(self._cpp_object.dofmap)
 
     @property
-    def mesh(self) -> _cpp.mesh.Mesh:
+    def mesh(self) -> Mesh:
         """Return the mesh on which the function space is defined."""
         return self._mesh
 

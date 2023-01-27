@@ -159,8 +159,7 @@ def test_nonlinear_pde_snes():
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(V)
     v = TestFunction(V)
-    F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
-        grad(u), grad(v)) * dx - inner(u, v) * dx
+    F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(grad(u), grad(v)) * dx - inner(u, v) * dx
 
     u_bc = Function(V)
     u_bc.x.array[:] = 1.0

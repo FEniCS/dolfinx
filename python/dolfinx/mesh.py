@@ -31,11 +31,11 @@ __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundar
 
 
 def compute_incident_entities(mesh, entities, d0: int, d1: int):
-    return _cpp.mesh.compute_incident_entities(mesh._mesh, entities, d0, d1)
+    return _cpp.mesh.compute_incident_entities(mesh._cpp_object, entities, d0, d1)
 
 
 def compute_midpoints(mesh, dim: int, entities):
-    return _cpp.mesh.compute_midpoints(mesh._mesh, dim, entities)
+    return _cpp.mesh.compute_midpoints(mesh._cpp_object, dim, entities)
 
 
 class Mesh:
@@ -53,9 +53,9 @@ class Mesh:
 
         """
         # super().__init__(comm, topology, geometry)
-        self._mesh = mesh
+        self._cpp_object = mesh
         self._ufl_domain = domain
-        self._ufl_domain._ufl_cargo = self._mesh
+        self._ufl_domain._ufl_cargo = self._cpp_object
         # domain._ufl_cargo = self
 
     # @classmethod
@@ -68,15 +68,15 @@ class Mesh:
 
     @property
     def comm(self):
-        return self._mesh.comm
+        return self._cpp_object.comm
 
     @property
     def name(self):
-        return self._mesh.name
+        return self._cpp_object.name
 
     @name.setter
     def name(self, value):
-        self._mesh.name = value
+        self._cpp_object.name = value
 
     def ufl_cell(self) -> ufl.Cell:
         """Return the UFL cell type"""
@@ -88,11 +88,11 @@ class Mesh:
 
     @property
     def topology(self):
-        return self._mesh.topology
+        return self._cpp_object.topology
 
     @property
     def geometry(self):
-        return self._mesh.geometry
+        return self._cpp_object.geometry
 
 # class Mesh(_cpp.mesh.Mesh):
 #     def __init__(self, comm: _MPI.Comm, topology: _cpp.mesh.Topology,
@@ -144,7 +144,7 @@ def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray
         Indices (local to the process) of marked mesh entities.
 
     """
-    return _cpp.mesh.locate_entities(mesh._mesh, dim, marker)
+    return _cpp.mesh.locate_entities(mesh._cpp_object, dim, marker)
 
 
 def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
@@ -171,7 +171,7 @@ def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> n
         Indices (local to the process) of marked mesh entities.
 
     """
-    return _cpp.mesh.locate_entities_boundary(mesh._mesh, dim, marker)
+    return _cpp.mesh.locate_entities_boundary(mesh._cpp_object, dim, marker)
 
 
 _uflcell_to_dolfinxcell = {
@@ -202,9 +202,9 @@ def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: 
         A refined mesh
     """
     if edges is None:
-        mesh_refined = _cpp.refinement.refine(mesh._mesh, redistribute)
+        mesh_refined = _cpp.refinement.refine(mesh._cpp_object, redistribute)
     else:
-        mesh_refined = _cpp.refinement.refine(mesh._mesh, edges, redistribute)
+        mesh_refined = _cpp.refinement.refine(mesh._cpp_object, edges, redistribute)
 
     coordinate_element = mesh._ufl_domain.ufl_coordinate_element()
     domain = ufl.Mesh(coordinate_element)
@@ -246,7 +246,7 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
 
 
 def create_submesh(msh, dim, entities):
-    submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(msh._mesh, dim, entities)
+    submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(msh._cpp_object, dim, entities)
     submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name(), geometric_dimension=submsh.geometry.dim)
     submsh_domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
         "Lagrange", submsh_ufl_cell.cellname(), submsh.geometry.cmap.degree, submsh.geometry.cmap.variant,
@@ -286,7 +286,7 @@ class MeshTagsMetaClass:
             directly.
 
         """
-        super().__init__(mesh._mesh, dim, np.asarray(entities, dtype=np.int32), values)  # type: ignore
+        super().__init__(mesh._cpp_object, dim, np.asarray(entities, dtype=np.int32), values)  # type: ignore
 
     def ufl_id(self) -> int:
         """Object identifier.
@@ -372,7 +372,7 @@ def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyL
         values = np.full(entities.num_nodes, values, dtype=np.double)
 
     values = np.asarray(values)
-    return _cpp.mesh.create_meshtags(mesh._mesh, dim, entities, values)
+    return _cpp.mesh.create_meshtags(mesh._cpp_object, dim, entities, values)
 
 
 def create_interval(comm: _MPI.Comm, nx: int, points: numpy.typing.ArrayLike,
