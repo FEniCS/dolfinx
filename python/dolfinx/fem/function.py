@@ -14,6 +14,9 @@ if typing.TYPE_CHECKING:
 
 from functools import singledispatch
 
+import numpy as np
+import numpy.typing as npt
+
 import basix
 import basix.ufl_wrapper
 import numpy as np
@@ -27,6 +30,10 @@ from ufl.domain import extract_unique_domain
 
 from dolfinx import cpp as _cpp
 from dolfinx import jit, la
+from dolfinx.fem import dofmap
+from ufl.domain import extract_unique_domain
+
+from petsc4py import PETSc
 
 
 class Constant(ufl.Constant):
@@ -331,7 +338,8 @@ class Function(ufl.Coefficient):
         return u
 
     def interpolate(self, u: typing.Union[typing.Callable, Expression, Function],
-                    cells: typing.Optional[np.ndarray] = None) -> None:
+                    cells: typing.Optional[np.ndarray] = None,
+                    nmm_interpolation_data=((), (), (), ())) -> None:
         """Interpolate an expression
 
         Args:
@@ -343,12 +351,12 @@ class Function(ufl.Coefficient):
         @singledispatch
         def _interpolate(u, cells: typing.Optional[np.ndarray] = None):
             """Interpolate a cpp.fem.Function"""
-            self._cpp_object.interpolate(u, cells)
+            self._cpp_object.interpolate(u, cells, nmm_interpolation_data)
 
         @_interpolate.register(Function)
         def _(u: Function, cells: typing.Optional[np.ndarray] = None):
             """Interpolate a fem.Function"""
-            self._cpp_object.interpolate(u._cpp_object, cells)
+            self._cpp_object.interpolate(u._cpp_object, cells, nmm_interpolation_data)
 
         @_interpolate.register(int)
         def _(u_ptr: int, cells: typing.Optional[np.ndarray] = None):

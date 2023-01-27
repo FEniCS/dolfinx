@@ -169,7 +169,7 @@ private:
 template <typename U>
   requires requires {
              typename std::decay_t<U>::value_type;
-             std::convertible_to<
+             requires std::convertible_to<
                  U, std::vector<typename std::decay_t<U>::value_type>>;
            }
 AdjacencyList<typename std::decay_t<U>::value_type>

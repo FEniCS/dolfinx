@@ -6,18 +6,17 @@
 """Tools to extract data from Gmsh models"""
 import typing
 
-import numpy as np
-import numpy.typing as npt
-
 import basix
 import basix.ufl_wrapper
+import numpy as np
+import numpy.typing as npt
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx.cpp.graph import AdjacencyList_int32
 from dolfinx.mesh import (CellType, GhostMode, Mesh, create_cell_partitioner,
                           create_mesh, meshtags, meshtags_from_entities)
-
 from mpi4py import MPI as _MPI
+
+from dolfinx import cpp as _cpp
 
 __all__ = ["cell_perm_array", "ufl_mesh"]
 
@@ -164,8 +163,7 @@ if _has_gmsh:
         assert np.all(indices[perm_sort] == np.arange(len(indices)))
         return points[perm_sort]
 
-    def model_to_mesh(model: gmsh.model, comm: _MPI.Comm, rank: int,
-                      gdim: int = 3,
+    def model_to_mesh(model: gmsh.model, comm: _MPI.Comm, rank: int, gdim: int = 3,
                       partitioner: typing.Callable[
             [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32] =
             create_cell_partitioner(GhostMode.none)) -> typing.Tuple[
@@ -173,7 +171,7 @@ if _has_gmsh:
         """Given a Gmsh model, take all physical entities of the highest
         topological dimension and create the corresponding DOLFINx mesh.
 
-        It is assumed that the gmsh model lives on a single rank, and is
+        It is assumed that the gmsh model is on a single rank, and is
         then read into DOLFINx on a single process to be distributed.
         This means that this function should only be called once for
         large problems. It is recommended to save the mesh and
@@ -190,8 +188,8 @@ if _has_gmsh:
 
         Returns:
             A triplet (mesh, cell_tags, facet_tags) where cell_tags hold
-            markers for the cells, facet tags holds markers for facets
-            if found in Gmsh model.
+            markers for the cells and facet tags holds markers for
+            facets (if tags are found in Gmsh model).
         """
 
         if comm.rank == rank:
@@ -278,14 +276,12 @@ if _has_gmsh:
 
         return (mesh, ct, ft)
 
-    def read_from_msh(
-        filename: str, comm: _MPI.Comm, rank: int = 0,
-        gdim: int = 3,
-        partitioner: typing.Callable[
+    def read_from_msh(filename: str, comm: _MPI.Comm, rank: int = 0, gdim: int = 3,
+                      partitioner: typing.Callable[
             [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32] =
             create_cell_partitioner(GhostMode.none)) -> typing.Tuple[
                 Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
-        """Reads a mesh from a msh-file and returns the distributed DOLFINx
+        """Read a mesh from a msh-file and return a distributed DOLFINx
         mesh and cell and facet markers associated with physical groups
         in the msh file.
 
@@ -297,7 +293,7 @@ if _has_gmsh:
 
         Returns:
             A triplet (mesh, cell_tags, facet_tags) with meshtags for
-            associated physical groups for cells and facets
+            associated physical groups for cells and facets.
 
         """
         if comm.rank == rank:

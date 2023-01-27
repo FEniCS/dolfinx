@@ -66,10 +66,10 @@
 # \end{align}
 # $$
 
-import numpy as np
-from scipy.special import h2vp, hankel2, jv, jvp
 from typing import Tuple
 
+import numpy as np
+from scipy.special import h2vp, hankel2, jv, jvp
 
 # The functions that we import from `scipy.special` correspond to:
 #
@@ -91,6 +91,8 @@ from typing import Tuple
 # orders of the Bessel functions is truncated at $\nu=50$.
 
 # +
+
+
 def compute_a(nu: int, m: complex, alpha: float) -> float:
     J_nu_alpha = jv(nu, alpha)
     J_nu_malpha = jv(nu, m * alpha)
@@ -105,8 +107,7 @@ def compute_a(nu: int, m: complex, alpha: float) -> float:
     return a_nu_num / a_nu_den
 
 
-def calculate_analytical_efficiencies(eps: complex, n_bkg: float,
-                                      wl0: float, radius_wire: float,
+def calculate_analytical_efficiencies(eps: complex, n_bkg: float, wl0: float, radius_wire: float,
                                       num_n: int = 50) -> Tuple[float, float, float]:
     m = np.sqrt(np.conj(eps)) / n_bkg
     alpha = 2 * np.pi * radius_wire / wl0 * n_bkg
