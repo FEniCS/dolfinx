@@ -30,41 +30,29 @@ __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundar
            "create_box", "create_unit_cube", "to_type", "to_string"]
 
 
-def compute_incident_entities(mesh, entities, d0: int, d1: int):
+def compute_incident_entities(mesh: Mesh, entities, d0: int, d1: int):
     return _cpp.mesh.compute_incident_entities(mesh._cpp_object, entities, d0, d1)
 
 
-def compute_midpoints(mesh, dim: int, entities):
+def compute_midpoints(mesh: Mesh, dim: int, entities):
     return _cpp.mesh.compute_midpoints(mesh._cpp_object, dim, entities)
 
 
 class Mesh:
-    def __init__(self, mesh, domain: ufl.Mesh):
+    def __init__(self, mesh: _cpp.mesh.Mesh, domain: ufl.Mesh):
         """A class for representing meshes
 
         Args:
-            comm: The MPI communicator
-            topology: The mesh topology
-            geometry: The mesh geometry
-            domain: The MPI communicator
+            mesh: The C++ mesh object
+            domain: The UFL domain
 
         Note:
-            Mesh objects are not generally created using this class directly.
+            Mesh objects should not usually be created using this class directly.
 
         """
-        # super().__init__(comm, topology, geometry)
         self._cpp_object = mesh
         self._ufl_domain = domain
         self._ufl_domain._ufl_cargo = self._cpp_object
-        # domain._ufl_cargo = self
-
-    # @classmethod
-    # def from_cpp(cls, obj: _cpp.mesh.Mesh, domain: ufl.Mesh) -> Mesh:
-    #     """Create Mesh object from a C++ Mesh object"""
-    #     obj._ufl_domain = domain
-    #     obj.__class__ = Mesh
-    #     domain._ufl_cargo = obj
-    #     return obj
 
     @property
     def comm(self):
@@ -93,41 +81,6 @@ class Mesh:
     @property
     def geometry(self):
         return self._cpp_object.geometry
-
-# class Mesh(_cpp.mesh.Mesh):
-#     def __init__(self, comm: _MPI.Comm, topology: _cpp.mesh.Topology,
-#                  geometry: _cpp.mesh.Geometry, domain: ufl.Mesh):
-#         """A class for representing meshes
-
-#         Args:
-#             comm: The MPI communicator
-#             topology: The mesh topology
-#             geometry: The mesh geometry
-#             domain: The MPI communicator
-
-#         Note:
-#             Mesh objects are not generally created using this class directly.
-
-#         """
-#         super().__init__(comm, topology, geometry)
-#         self._ufl_domain = domain
-#         domain._ufl_cargo = self
-
-#     @classmethod
-#     def from_cpp(cls, obj: _cpp.mesh.Mesh, domain: ufl.Mesh) -> Mesh:
-#         """Create Mesh object from a C++ Mesh object"""
-#         obj._ufl_domain = domain
-#         obj.__class__ = Mesh
-#         domain._ufl_cargo = obj
-#         return obj
-
-#     def ufl_cell(self) -> ufl.Cell:
-#         """Return the UFL cell type"""
-#         return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)
-
-#     def ufl_domain(self) -> ufl.Mesh:
-#         """Return the ufl domain corresponding to the mesh."""
-#         return self._ufl_domain
 
 
 def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
