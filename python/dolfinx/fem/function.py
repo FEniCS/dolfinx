@@ -461,19 +461,7 @@ class FunctionSpace(ufl.FunctionSpace):
                  form_compiler_options: dict[str, typing.Any] = {}, jit_options: dict[str, typing.Any] = {}):
         """Create a finite element function space."""
 
-        # Create function space from a UFL element and existing cpp
-        # FunctionSpace
-        if cppV is not None:
-            ufl_domain = mesh.ufl_domain()
-            super().__init__(ufl_domain, element)
-            self._cpp_object = cppV
-            self._mesh = mesh
-            return
-
-        if mesh is not None:
-            assert cppV is None
-            self._mesh = mesh
-
+        if cppV is None:
             # Initialise the ufl.FunctionSpace
             if isinstance(element, ufl.FiniteElementBase):
                 super().__init__(mesh.ufl_domain(), element)
@@ -493,8 +481,19 @@ class FunctionSpace(ufl.FunctionSpace):
             cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
                 "uintptr_t", ffi.addressof(self._ufcx_dofmap)), mesh.topology, cpp_element)
 
-            # Initialize the cpp.FunctionSpace
+            # Initialize the cpp.FunctionSpace and store mesh
             self._cpp_object = _cpp.fem.FunctionSpace(mesh._cpp_object, cpp_element, cpp_dofmap)
+            self._mesh = mesh
+        else:
+            # Create function space from a UFL element and an existing
+            # C++ FunctionSpace
+            if mesh._cpp_object is not cppV.mesh:
+                raise RecursionError("Meshes do not match in FunctionSpace initialisation.")
+            ufl_domain = mesh.ufl_domain()
+            super().__init__(ufl_domain, element)
+            self._cpp_object = cppV
+            self._mesh = mesh
+            return
 
     def clone(self) -> FunctionSpace:
         """Create a new FunctionSpace :math:`W` which shares data with this
@@ -566,6 +565,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
     @property
     def element(self):
+        """Function space finite element."""
         return self._cpp_object.element
 
     @property
@@ -590,28 +590,34 @@ class FunctionSpace(ufl.FunctionSpace):
         V = FunctionSpace(self._mesh, self.ufl_element(), cpp_space)
         return V, dofs
 
-    def tabulate_dof_coordinates(self) -> np.ndarray:
+    def tabulate_dof_coordinates(self) -> npt.NDArray[np.float64]:
+        """Tabulate the coordinates of the degrees-of-freedom in the function space.
+
+            Returns:
+                Coordinates of the degrees-of-freedom.
+
+            Notes:
+                The methods should be used only for elements with point
+                evaluation degrees-of-freedom.
+
+         """
         return self._cpp_object.tabulate_dof_coordinates()
 
 
 def VectorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]], dim=None,
                         restriction=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
-
     e = ElementMetaData(*element)
-    ufl_element = basix.ufl_wrapper.create_vector_element(
-        e.family, mesh.ufl_cell().cellname(), e.degree, dim=dim,
-        gdim=mesh.geometry.dim)
-
+    ufl_element = basix.ufl_wrapper.create_vector_element(e.family, mesh.ufl_cell().cellname(), e.degree,
+                                                          dim=dim, gdim=mesh.geometry.dim)
     return FunctionSpace(mesh, ufl_element)
 
 
 def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]], shape=None,
                         symmetry: typing.Optional[bool] = None, restriction=None) -> FunctionSpace:
     """Create tensor finite element (composition of scalar elements) function space."""
-
     e = ElementMetaData(*element)
-    ufl_element = basix.ufl_wrapper.create_tensor_element(
-        e.family, mesh.ufl_cell().cellname(), e.degree, shape=shape, symmetry=symmetry,
-        gdim=mesh.geometry.dim)
+    ufl_element = basix.ufl_wrapper.create_tensor_element(e.family, mesh.ufl_cell().cellname(),
+                                                          e.degree, shape=shape, symmetry=symmetry,
+                                                          gdim=mesh.geometry.dim)
     return FunctionSpace(mesh, ufl_element)
