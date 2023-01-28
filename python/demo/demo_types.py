@@ -12,7 +12,7 @@
 #
 # This demo  ({download}`demo_types.py`) shows:
 #
-# - How to solve problems using different scalar types, .e.g. single or
+# - How to solve problems using different scalar types, e.g. single or
 #   double precision, or complex numbers
 # - Interfacing with [SciPy](https://scipy.org/) sparse linear algebra
 #   functionality
@@ -66,7 +66,7 @@ dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 # The below function computes the solution of the finite problem using a
 # specified scalar type.
 
-def solve(dtype=np.float32):
+def solve_scalar(dtype=np.float32):
     """Solve the variational problem"""
 
     # Process forms. This will compile the forms for the requested type.
@@ -98,7 +98,7 @@ def solve(dtype=np.float32):
 # This function visualises the solution.
 
 
-def display(u, filter=np.real):
+def display_scalar(u, filter=np.real):
     """Plot the solution using pyvista"""
     try:
         import pyvista
@@ -122,12 +122,50 @@ def display(u, filter=np.real):
 
 # Solve the variational problem using different scalar types
 
-uh = solve(dtype=np.float32)
-uh = solve(dtype=np.float64)
-uh = solve(dtype=np.complex64)
-uh = solve(dtype=np.complex128)
+uh = solve_scalar(dtype=np.float32)
+uh = solve_scalar(dtype=np.float64)
+uh = solve_scalar(dtype=np.complex64)
+uh = solve_scalar(dtype=np.complex128)
 
 # Display the last computed solution
 
-display(uh, np.real)
-display(uh, np.imag)
+display_scalar(uh, np.real)
+display_scalar(uh, np.imag)
+
+
+E = 1.0e9
+ν = 0.3
+μ = E / (2.0 * (1.0 + ν))
+λ = E * ν / ((1.0 + ν) * (1.0 - 2.0 * ν))
+
+
+def σ(v):
+    """Return an expression for the stress σ given a displacement field"""
+    return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(len(v))
+# -
+
+# A function space space is created and the elasticity variational
+# problem defined:
+
+
+ω, ρ = 300.0, 10.0
+x = ufl.SpatialCoordinate(msh)
+f = ufl.as_vector((ρ * ω**2 * x[0], ρ * ω**2 * x[1], 0.0))
+
+
+V = fem.VectorFunctionSpace(msh, ("Lagrange", 1))
+u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+a = fem.form(ufl.inner(σ(u), ufl.grad(v)) * ufl.dx)
+L = fem.form(ufl.inner(f, v) * ufl.dx)
+
+bc = fem.dirichletbc(np.zeros(3, dtype=np.float64),
+                     fem.locate_dofs_topological(V, entity_dim=2, entities=facets), V=V)
+
+
+A = fem.assemble_matrix(a, bcs=[bc])
+A.assemble()
+
+b = fem.assemble_vector(L)
+fem.apply_lifting(b, [a], bcs=[[bc]])
+# b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+fem.set_bc(b, [bc])
