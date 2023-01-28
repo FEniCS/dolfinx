@@ -167,6 +167,9 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     a = form(inner(u, v) * dx + inner(u, v) * ds)
     A0 = fem.assemble_matrix(a)
     A0.finalize()
+    assert isinstance(A0, la.MatrixCSRMetaClass)
+    assert A0, la.MatrixCSRMetaClass)
+
     A1 = fem.petsc.assemble_matrix(a)
     A1.assemble()
     assert isinstance(A1, PETSc.Mat)

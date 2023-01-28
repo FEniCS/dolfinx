@@ -12,6 +12,9 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
+#include <numeric>
+#include <span>
+#include <vector>
 
 using namespace dolfinx;
 using namespace dolfinx::la;
@@ -149,20 +152,24 @@ SparsityPattern SparsityPattern::expand() const
   if (_bs[0] == 1 and _bs[1] == 1)
     throw std::runtime_error("Cannot expand SparsityPattern, already bs=1");
 
+  assert(_index_maps[0]);
+  assert(_index_maps[1]);
   std::array<int, 2> size_local = {_index_maps[0]->size_local() * _bs[0],
                                    _index_maps[1]->size_local() * _bs[1]};
   std::array<std::vector<std::int64_t>, 2> ghosts;
   std::array<std::vector<int>, 2> src_rank;
   for (int i = 0; i < 2; ++i)
   {
-    const auto im = _index_maps[i];
-    const std::vector<std::int64_t>& ghost_i = im->ghosts();
-    const std::vector<int> ghost_owner_i = im->owners();
+    const std::vector<std::int64_t>& ghost_i = _index_maps[i]->ghosts();
+    const std::vector<int>& ghost_owner_i = _index_maps[i]->owners();
+
+    ghosts[i].reserve(ghost_i.size() * _bs[i]);
+    src_rank[i].reserve(ghost_i.size() * _bs[i]);
     for (std::size_t j = 0; j < ghost_i.size(); ++j)
     {
       src_rank[i].insert(src_rank[i].end(), _bs[i], ghost_owner_i[j]);
-      for (int k = 0; k < _bs[i]; ++k)
-        ghosts[i].push_back(ghost_i[j] * _bs[i] + k);
+      auto it = ghosts[i].insert(ghosts[i].end(), _bs[i], ghost_i[j] * _bs[i]);
+      std::iota(it, std::next(it, _bs[i]), *it);
     }
   }
 
@@ -176,7 +183,7 @@ SparsityPattern SparsityPattern::expand() const
   auto map1 = std::make_shared<common::IndexMap>(
       _index_maps[1]->comm(), size_local[1], src_dest1, ghosts[1], src_rank[1]);
 
-  // Make new SparsityPattern with bs={1, 1}
+  // Create new SparsityPattern with bs={1, 1}
   SparsityPattern sp(comm(), {map0, map1}, {1, 1});
 
   // Copy sparsity from input pattern
@@ -188,8 +195,8 @@ SparsityPattern SparsityPattern::expand() const
       vj.reserve(_row_cache[i].size() * _bs[1]);
       for (std::int32_t q : _row_cache[i])
       {
-        for (int k = 0; k < _bs[1]; ++k)
-          vj.push_back(q * _bs[1] + k);
+        auto it = vj.insert(vj.end(), _bs[1], q * _bs[1]);
+        std::iota(it, std::next(it, _bs[1]), *it);
       }
     }
   }

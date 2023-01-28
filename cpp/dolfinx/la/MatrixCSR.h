@@ -381,7 +381,7 @@ public:
   /// matrix (bs=1). The row and column indices passed during insert
   /// should be for the row/column block index.
   ///
-  /// @param bs Block sizes to use during  insertion
+  /// @param bs Block sizes (row, colums) to use during insertion
   /// @return Function for inserting values into `A`
   auto mat_add_values_blocked(std::array<int, 2> bs)
   {
