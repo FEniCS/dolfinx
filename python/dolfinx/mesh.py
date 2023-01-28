@@ -74,6 +74,10 @@ class Mesh:
         """Return the ufl domain corresponding to the mesh."""
         return self._ufl_domain
 
+    def h(self, dim: int, entities: npt.NDArray[np.int32]) -> npt.NDArray[np.float64]:
+        """Size measure for each cell."""
+        return _cpp.mesh.h(self._cpp_object, dim, entities)
+
     @property
     def topology(self):
         return self._cpp_object.topology

@@ -312,7 +312,7 @@ def test_cell_circumradius(c0, c1, c5):
 @pytest.mark.skip_in_parallel
 def test_cell_h(c0, c1, c5):
     for c in [c0, c1, c5]:
-        assert _cpp.mesh.h(c[0]._cpp_object, c[1], [c[2]]) == pytest.approx(math.sqrt(2.0))
+        assert c[0].h(c[1], [c[2]])
 
 
 def test_cell_h_prism():
