@@ -73,12 +73,14 @@
 
 # +
 import numpy as np
+
 import ufl
 from dolfinx import fem, mesh
+from ufl import action, dx, grad, inner
+
 from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py.PETSc import ScalarType
-from ufl import action, dx, grad, inner
 
 # -
 
@@ -88,7 +90,7 @@ from ufl import action, dx, grad, inner
 # finite element {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
 # $V$ on the mesh.
 
-msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
+msh = mesh.create_rectangle(comm=MPI.COMM_SELF,
                             points=((0.0, 0.0), (1.0, 1.0)), n=(10, 10),
                             cell_type=mesh.CellType.triangle,
                             ghost_mode=mesh.GhostMode.none)
@@ -178,12 +180,12 @@ b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 # #### 1. Implementation using PETSc vectors
 
 def action_A(x_vec, y_vec):
-    ui.vector.setArray(x_vec.array)
+    x_vec.copy(ui.vector)
     y = fem.petsc.assemble_vector(fem.form(M))
     fem.set_bc(y, [bc], scale=0.0)
     y.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
     y.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    y_vec.setArray(y.array)
+    y.copy(y_vec)
 
 
 def cg(action_A, b, x, kmax=50, rtol=1e-8):
@@ -278,3 +280,125 @@ if msh.comm.rank == 0:
     print(f"CG iterations until convergence:  {k}")
     print(f"L2-error against exact solution:  {error_L2_cg2:.4e}")
     print(f"Coeff. error against LU solution: {error_lu_cg2:.4e}")
+
+
+# -
+# ### 3. Implementation using the built-in PETSc KSP solver
+
+class Poisson:
+    def create(self, A):
+        M, N = A.getSize()
+        assert M == N
+
+    def mult(self, A, x, y):
+        action_A(x, y)
+
+
+A = PETSc.Mat()
+A.create(comm=msh.comm)
+print(b.getSize(), b.local_size, b.getLocalSize(), b.getSizes(), b.getBlockSize())
+A.setSizes([b.getSize(), b.getSize()])
+A.setType(PETSc.Mat.Type.PYTHON)
+A.setPythonContext(Poisson())
+A.setUp()
+
+solver = PETSc.KSP().create(msh.comm)
+solver.setOperators(A)
+solver.setType(PETSc.KSP.Type.CG)
+solver.getPC().setType(PETSc.PC.Type.NONE)
+solver.setTolerances(rtol=1e-6)
+solver.setConvergenceHistory()
+
+# +
+uh_cg3 = fem.Function(V)
+solver.solve(b, uh_cg3.vector)
+fem.set_bc(uh_cg3.vector, [bc], scale=1.0)
+
+error_L2_cg3 = L2Norm(uh_cg3 - uD)
+error_lu_cg3 = np.linalg.norm(uh_cg3.x.array - uh_lu.x.array)
+if msh.comm.rank == 0:
+    print("Matrix-free CG solver using the built-in PETSc KSP solver:")
+    print(f"CG iterations until convergence:  {k}")
+    print(f"L2-error against exact solution:  {error_L2_cg3:.4e}")
+    print(f"Coeff. error against LU solution: {error_lu_cg3:.4e}")
+
+
+# -
+
+# ### 4. Implementation using a custom PETSc KSP solver
+
+class CustomKSP:
+    def create(self, ksp):
+        self.vectors = []
+
+    def destroy(self, ksp):
+        for v in self.vectors:
+            v.destroy()
+
+    def setUp(self, ksp):
+        self.vectors[:] = ksp.getWorkVecs(right=2, left=None)
+
+    def reset(self, ksp):
+        for v in self.vectors:
+            v.destroy()
+        del self.vectors[:]
+
+    def converged(self, ksp, r):
+        k = ksp.getIterationNumber()
+        r_norm = r.norm()
+        ksp.setResidualNorm(r_norm)
+        ksp.logConvergenceHistory(r_norm)
+        ksp.monitor(k, r_norm)
+        reason = ksp.callConvergenceTest(k, r_norm)
+        if not reason:
+            ksp.setIterationNumber(k + 1)
+        else:
+            ksp.setConvergedReason(reason)
+        return reason
+
+
+class CG(CustomKSP):
+    def setUp(self, ksp):
+        super(CG, self).setUp(ksp)
+        p = self.vectors[0].duplicate()
+        y = p.duplicate()
+        self.vectors += [p, y]
+
+    def solve(self, ksp, b, x):
+        A, _ = ksp.getOperators()
+        r, _, p, y = self.vectors
+        A.mult(x, r)
+        r.aypx(-1, b)
+        r.copy(p)
+        r0_norm = r.dot(r)
+        r_norm = r0_norm
+        while not self.converged(ksp, r):
+            A.mult(p, y)
+            alpha = r_norm / p.dot(y)
+            x.axpy(alpha, p)
+            r.axpy(-alpha, y)
+            r_norm_new = r.dot(r)
+            beta = r_norm_new / r_norm
+            r_norm = r_norm_new
+            p.aypx(beta, r)
+
+
+solver = PETSc.KSP().create(msh.comm)
+solver.setOperators(A)
+solver.setType(PETSc.KSP.Type.PYTHON)
+solver.setPythonContext(CG())
+solver.setTolerances(rtol=1e-6)
+solver.setConvergenceHistory()
+
+# +
+uh_cg4 = fem.Function(V)
+solver.solve(b, uh_cg4.vector)
+fem.set_bc(uh_cg4.vector, [bc], scale=1.0)
+
+error_L2_cg4 = L2Norm(uh_cg4 - uD)
+error_lu_cg4 = np.linalg.norm(uh_cg4.x.array - uh_lu.x.array)
+if msh.comm.rank == 0:
+    print("Matrix-free CG solver using a custom PETSc KSP solver:")
+    print(f"CG iterations until convergence:  {k}")
+    print(f"L2-error against exact solution:  {error_L2_cg4:.4e}")
+    print(f"Coeff. error against LU solution: {error_lu_cg4:.4e}")
