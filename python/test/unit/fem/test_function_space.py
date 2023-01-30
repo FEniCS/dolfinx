@@ -65,8 +65,8 @@ def test_python_interface(V, V2, W, W2, Q):
     assert isinstance(V2, FunctionSpace)
     assert isinstance(W2, FunctionSpace)
 
-    assert V.ufl_cell() == V2.ufl_cell()
-    assert W.ufl_cell() == W2.ufl_cell()
+    assert V.mesh.ufl_cell() == V2.mesh.ufl_cell()
+    assert W.mesh.ufl_cell() == W2.mesh.ufl_cell()
     assert V.element == V2.element
     assert W.element == W2.element
     assert V.ufl_element() == V2.ufl_element()
