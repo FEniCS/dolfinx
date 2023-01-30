@@ -9,20 +9,18 @@ from __future__ import annotations
 
 import typing
 
-import numpy as np
-import numpy.typing
-
 import basix
 import basix.ufl_wrapper
+import numpy as np
+import numpy.typing as npt
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
-                              compute_incident_entities, compute_midpoints,
                               create_cell_partitioner, exterior_facet_indices,
                               to_string, to_type)
-
 from mpi4py import MPI as _MPI
+
+from dolfinx import cpp as _cpp
 
 __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "Mesh", "MeshTagsMetaClass", "meshtags", "CellType",
@@ -32,32 +30,41 @@ __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundar
            "create_box", "create_unit_cube", "to_type", "to_string"]
 
 
-class Mesh(_cpp.mesh.Mesh):
-    def __init__(self, comm: _MPI.Comm, topology: _cpp.mesh.Topology,
-                 geometry: _cpp.mesh.Geometry, domain: ufl.Mesh):
+def compute_incident_entities(mesh: Mesh, entities: npt.NDArray[np.int32], d0: int, d1: int):
+    return _cpp.mesh.compute_incident_entities(mesh._cpp_object, entities, d0, d1)
+
+
+def compute_midpoints(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
+    return _cpp.mesh.compute_midpoints(mesh._cpp_object, dim, entities)
+
+
+class Mesh:
+    def __init__(self, mesh: _cpp.mesh.Mesh, domain: ufl.Mesh):
         """A class for representing meshes
 
         Args:
-            comm: The MPI communicator
-            topology: The mesh topology
-            geometry: The mesh geometry
-            domain: The MPI communicator
+            mesh: The C++ mesh object
+            domain: The UFL domain
 
         Note:
-            Mesh objects are not generally created using this class directly.
+            Mesh objects should not usually be created using this class directly.
 
         """
-        super().__init__(comm, topology, geometry)
+        self._cpp_object = mesh
         self._ufl_domain = domain
-        domain._ufl_cargo = self
+        self._ufl_domain._ufl_cargo = self._cpp_object
 
-    @classmethod
-    def from_cpp(cls, obj: _cpp.mesh.Mesh, domain: ufl.Mesh) -> Mesh:
-        """Create Mesh object from a C++ Mesh object"""
-        obj._ufl_domain = domain
-        obj.__class__ = Mesh
-        domain._ufl_cargo = obj
-        return obj
+    @property
+    def comm(self):
+        return self._cpp_object.comm
+
+    @property
+    def name(self):
+        return self._cpp_object.name
+
+    @name.setter
+    def name(self, value):
+        self._cpp_object.name = value
 
     def ufl_cell(self) -> ufl.Cell:
         """Return the UFL cell type"""
@@ -66,6 +73,18 @@ class Mesh(_cpp.mesh.Mesh):
     def ufl_domain(self) -> ufl.Mesh:
         """Return the ufl domain corresponding to the mesh."""
         return self._ufl_domain
+
+    def h(self, dim: int, entities: npt.NDArray[np.int32]) -> npt.NDArray[np.float64]:
+        """Size measure for each cell."""
+        return _cpp.mesh.h(self._cpp_object, dim, entities)
+
+    @property
+    def topology(self):
+        return self._cpp_object.topology
+
+    @property
+    def geometry(self):
+        return self._cpp_object.geometry
 
 
 def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
@@ -82,7 +101,7 @@ def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray
         Indices (local to the process) of marked mesh entities.
 
     """
-    return _cpp.mesh.locate_entities(mesh, dim, marker)
+    return _cpp.mesh.locate_entities(mesh._cpp_object, dim, marker)
 
 
 def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
@@ -109,7 +128,7 @@ def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> n
         Indices (local to the process) of marked mesh entities.
 
     """
-    return _cpp.mesh.locate_entities_boundary(mesh, dim, marker)
+    return _cpp.mesh.locate_entities_boundary(mesh._cpp_object, dim, marker)
 
 
 _uflcell_to_dolfinxcell = {
@@ -140,13 +159,13 @@ def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: 
         A refined mesh
     """
     if edges is None:
-        mesh_refined = _cpp.refinement.refine(mesh, redistribute)
+        mesh_refined = _cpp.refinement.refine(mesh._cpp_object, redistribute)
     else:
-        mesh_refined = _cpp.refinement.refine(mesh, edges, redistribute)
+        mesh_refined = _cpp.refinement.refine(mesh._cpp_object, edges, redistribute)
 
     coordinate_element = mesh._ufl_domain.ufl_coordinate_element()
     domain = ufl.Mesh(coordinate_element)
-    return Mesh.from_cpp(mesh_refined, domain)
+    return Mesh(mesh_refined, domain)
 
 
 def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.AdjacencyList_int64],
@@ -180,19 +199,17 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
     except TypeError:
         mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(np.cast['int64'](cells)),
                                      cmap, x, partitioner)
-    domain._ufl_cargo = mesh
-    return Mesh.from_cpp(mesh, domain)
+    return Mesh(mesh, domain)
 
 
-def create_submesh(mesh, dim, entities):
-    submesh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(mesh, dim, entities)
+def create_submesh(msh, dim, entities):
+    submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(msh._cpp_object, dim, entities)
     assert len(submesh.geometry.cmap) == 1
-    submesh_ufl_cell = ufl.Cell(submesh.topology.cell_name(),
-                                geometric_dimension=submesh.geometry.dim)
-    submesh_domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
-        "Lagrange", submesh_ufl_cell.cellname(), submesh.geometry.cmap[0].degree, submesh.geometry.cmap[0].variant,
-        dim=submesh.geometry.dim, gdim=submesh.geometry.dim))
-    return (Mesh.from_cpp(submesh, submesh_domain), entity_map, vertex_map, geom_map)
+    submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name(), geometric_dimension=submsh.geometry.dim)
+    submsh_domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
+        "Lagrange", submsh_ufl_cell.cellname(), submsh.geometry.cmap[0].degree, submsh.geometry.cmap[0].variant,
+        dim=submsh.geometry.dim, gdim=submsh.geometry.dim))
+    return (Mesh(submsh, submsh_domain), entity_map, vertex_map, geom_map)
 
 
 # Add attribute to MeshTags
@@ -209,8 +226,8 @@ del _ufl_id
 
 
 class MeshTagsMetaClass:
-    def __init__(self, mesh: Mesh, dim: int, entities: numpy.typing.NDArray[typing.Any],
-                 values: numpy.typing.NDArray[typing.Any]):
+    def __init__(self, mesh: Mesh, dim: int, entities: npt.NDArray[typing.Any],
+                 values: npt.NDArray[typing.Any]):
         """A distributed sparse matrix that uses compressed sparse row storage.
 
         Args:
@@ -227,7 +244,7 @@ class MeshTagsMetaClass:
             directly.
 
         """
-        super().__init__(mesh, dim, np.asarray(entities, dtype=np.int32), values)  # type: ignore
+        super().__init__(mesh._cpp_object, dim, np.asarray(entities, dtype=np.int32), values)  # type: ignore
 
     def ufl_id(self) -> int:
         """Object identifier.
@@ -242,7 +259,7 @@ class MeshTagsMetaClass:
         return id(self)
 
 
-def meshtags(mesh: Mesh, dim: int, entities: np.ndarray,
+def meshtags(mesh: Mesh, dim: int, entities: npt.NDArray[np.int64],
              values: typing.Union[np.ndarray, int, float]) -> MeshTagsMetaClass:
     """Create a MeshTags object that associates data with a subset of mesh entities.
 
@@ -286,7 +303,7 @@ def meshtags(mesh: Mesh, dim: int, entities: np.ndarray,
 
 
 def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32,
-                           values: numpy.typing.NDArray[typing.Any]):
+                           values: npt.NDArray[typing.Any]):
     """Create a MeshTags object that associates data with a subset of
     mesh entities, where the entities are defined by their vertices.
 
@@ -313,10 +330,10 @@ def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyL
         values = np.full(entities.num_nodes, values, dtype=np.double)
 
     values = np.asarray(values)
-    return _cpp.mesh.create_meshtags(mesh, dim, entities, values)
+    return _cpp.mesh.create_meshtags(mesh._cpp_object, dim, entities, values)
 
 
-def create_interval(comm: _MPI.Comm, nx: int, points: numpy.typing.ArrayLike,
+def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
                     ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
     """Create an interval mesh
 
@@ -337,7 +354,7 @@ def create_interval(comm: _MPI.Comm, nx: int, points: numpy.typing.ArrayLike,
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", "interval", 1))
     mesh = _cpp.mesh.create_interval(comm, nx, points, ghost_mode, partitioner)
-    return Mesh.from_cpp(mesh, domain)
+    return Mesh(mesh, domain)
 
 
 def create_unit_interval(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_facet,
@@ -362,7 +379,7 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_f
     return create_interval(comm, nx, [0.0, 1.0], ghost_mode, partitioner)
 
 
-def create_rectangle(comm: _MPI.Comm, points: numpy.typing.ArrayLike, n: numpy.typing.ArrayLike,
+def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
                      cell_type=CellType.triangle, ghost_mode=GhostMode.shared_facet,
                      partitioner=None,
                      diagonal: DiagonalType = DiagonalType.right) -> Mesh:
@@ -389,8 +406,7 @@ def create_rectangle(comm: _MPI.Comm, points: numpy.typing.ArrayLike, n: numpy.t
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 1))
     mesh = _cpp.mesh.create_rectangle(comm, points, n, cell_type, partitioner, diagonal)
-
-    return Mesh.from_cpp(mesh, domain)
+    return Mesh(mesh, domain)
 
 
 def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.triangle,
@@ -420,7 +436,7 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
                             partitioner, diagonal)
 
 
-def create_box(comm: _MPI.Comm, points: typing.List[numpy.typing.ArrayLike], n: list,
+def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
                cell_type=CellType.tetrahedron,
                ghost_mode=GhostMode.shared_facet,
                partitioner=None) -> Mesh:
@@ -444,8 +460,7 @@ def create_box(comm: _MPI.Comm, points: typing.List[numpy.typing.ArrayLike], n: 
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 1))
     mesh = _cpp.mesh.create_box(comm, points, n, cell_type, partitioner)
-
-    return Mesh.from_cpp(mesh, domain)
+    return Mesh(mesh, domain)
 
 
 def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellType.tetrahedron,

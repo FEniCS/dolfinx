@@ -53,11 +53,11 @@ def create_vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=N
         entities = range(msh.topology.index_map(dim).size_local)
 
     if dim == tdim:
-        vtk_topology = _cpp.io.extract_vtk_connectivity(msh)[entities]
+        vtk_topology = _cpp.io.extract_vtk_connectivity(msh._cpp_object)[entities]
         num_nodes_per_cell = vtk_topology.shape[1]
     else:
         # NOTE: This linearizes higher order geometries
-        geometry_entities = _cpp.mesh.entities_to_geometry(msh, dim, entities, False)
+        geometry_entities = _cpp.mesh.entities_to_geometry(msh._cpp_object, dim, entities, False)
         if degree > 1:
             warnings.warn("Linearizing topology for higher order sub entities.")
 
