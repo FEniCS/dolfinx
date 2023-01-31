@@ -26,7 +26,6 @@ import ufl
 from dolfinx import fem, la, mesh, plot
 
 from mpi4py import MPI
-
 # -
 
 # SciPy solvers do not support MPI, so all computations will be

@@ -157,15 +157,15 @@ def saw_tooth(x):
 # elements, and plot the finite element interpolation.
 
 # +
-mesh = mesh.create_unit_interval(MPI.COMM_WORLD, 10)
+msh = mesh.create_unit_interval(MPI.COMM_WORLD, 10)
 
-x = ufl.SpatialCoordinate(mesh)
+x = ufl.SpatialCoordinate(msh)
 u_exact = saw_tooth(x[0])
 
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
     element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
     ufl_element = basix.ufl_wrapper.BasixElement(element)
-    V = fem.FunctionSpace(mesh, ufl_element)
+    V = fem.FunctionSpace(msh, ufl_element)
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
     if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
@@ -205,11 +205,11 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
     element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
     ufl_element = basix.ufl_wrapper.BasixElement(element)
-    V = fem.FunctionSpace(mesh, ufl_element)
+    V = fem.FunctionSpace(msh, ufl_element)
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
     M = fem.form((u_exact - uh)**2 * dx)
-    error = mesh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
+    error = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
     print(f"Computed L2 interpolation error ({variant.name}):", error ** 0.5)
 # -
 
