@@ -24,6 +24,12 @@
 # - Compute errors against the exact solution and against a
 # direct solver for the assembled matrix
 #
+# ```{note}
+# This demo illustrates the use of a matrix-free Conjugate Gradient
+# solver. Many practical problems will also require a preconditioner
+# to create an efficient solver. This is not covered here.
+# ```
+#
 # ## Equation and problem definition
 #
 # For a domain $\Omega \subset \mathbb{R}^n$ with boundary $\partial
@@ -141,7 +147,7 @@ M = action(a, ui)
 
 # ### Direct solver using the assembled matrix
 #
-# To validate the results of the matrix free solver, we first compute the
+# To validate the results of the matrix-free solvers, we first compute the
 # solution with a direct solver using the assembled matrix.
 
 problem = fem.petsc.LinearProblem(a, L, bcs=[bc],
@@ -172,7 +178,7 @@ if msh.comm.rank == 0:
 # on the linear form $L$.  To account for the Dirichlet boundary conditions
 # in $b$, we apply lifting, i.e. set $b - A x_{\rm bc}$ as new RHS vector $b$.
 # Since we want to avoid assembling the matrix `A`, we compute the necessary
-# matrix-vector product using the linear form `M`.
+# matrix-vector product using the linear form `M` implicitly.
 
 b = fem.petsc.assemble_vector(fem.form(L))
 # b <- b - A * x_bc
@@ -187,7 +193,7 @@ b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
 # To implement the matrix-free CG solver using *PETSc* vectors, we define the
 # function `action_A` with which the matrix-vector product $y = A x$
-# is calculated.
+# is computed.
 
 def action_A(x, y):
     y.set(0.0)
@@ -231,7 +237,7 @@ def cg(action_A, b, x, kmax=50, rtol=1e-8):
 
 # This matrix-free solver is now used to compute the finite element solution.
 # After that, the error against the exact solution in the $L_2$-norm and the
-# error of the coefficients against the solution obtained with the direct
+# error of the coefficients against the solution obtained by the direct
 # solver is computed.
 
 # +
@@ -257,8 +263,8 @@ assert error_L2_cg1 < 1e-6
 # using *NumPy* arrays. For that a function `action_A_np` can be defined
 # that maps an array `x` to the result of the matrix-vector product `y`.
 
-def action_A_np(x_array):
-    ui.vector.setArray(x_array)
+def action_A_np(x):
+    ui.vector.setArray(x)
     y = fem.petsc.assemble_vector(fem.form(M))
     fem.set_bc(y.array, [bc], scale=0)
     return y.array
@@ -311,11 +317,12 @@ assert error_L2_cg2 < 1e-6
 
 
 # -
-# ### 3. Implementation using the built-in PETSc KSP solver
+# ### 3. Implementation using the built-in PETSc CG solver
 #
-# Another approach is to modify the existing KSP solver of *PETSc* to obtain
-# a matrix-free Conjugate Gradient solver. For this purpose, we create a
-# class `Poisson` to emulate the assembled matrix A of the Poisson problem
+# Another approach is to use the existing CG solver of *PETSc* with a
+# virtual *PETSc* matrix in order to obtain a matrix-free Conjugate
+# Gradient solver. For this purpose, we create a class `Poisson` to
+# emulate the assembled matrix `A`` of the Poisson problem
 # considered here.
 
 class Poisson:
@@ -406,7 +413,7 @@ class CustomKSP:
         return reason
 
 
-# A user-defined Conjugate Gradient procedure can then be defined based
+# A user-defined Conjugate Gradient solver can then be defined based
 # on this prototype.
 
 class CG(CustomKSP):
@@ -435,8 +442,8 @@ class CG(CustomKSP):
             p.aypx(beta, r)
 
 
-# As before, a matrix-free can be achieved by passing the emulated matrix
-# as the operator.
+# As before, a matrix-free solver can be achieved by passing the
+# emulated matrix `A` as the operator.
 
 solver = PETSc.KSP().create(msh.comm)
 solver.setOperators(A)
