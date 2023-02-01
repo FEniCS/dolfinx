@@ -24,7 +24,7 @@ namespace dolfinx::fem::impl
 /// Assemble functional over cells
 template <typename T>
 T assemble_cells(
-    const mesh::Geometry<scalar_value_type_t<scalar_value_type_t<T>>>& geometry,
+    const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     std::span<const std::int32_t> cells, FEkernel<T> auto fn,
     std::span<const T> constants, std::span<const T> coeffs, int cstride)
 {
