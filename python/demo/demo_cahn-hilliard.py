@@ -28,10 +28,10 @@
 #
 # ## Equation and problem definition
 #
-# The Cahn-Hilliard equation is a parabolic equation and is typically used
-# to model phase separation in binary mixtures.  It involves first-order
-# time derivatives, and second- and fourth-order spatial derivatives.  The
-# equation reads:
+# The Cahn-Hilliard equation is a parabolic equation and is typically
+# used to model phase separation in binary mixtures.  It involves
+# first-order time derivatives, and second- and fourth-order spatial
+# derivatives.  The equation reads:
 #
 # $$
 # \begin{align}
@@ -45,18 +45,17 @@
 # \end{align}
 # $$
 #
-# where $c$ is the unknown field, the function $f$ is usually
-# non-convex in $c$ (a fourth-order polynomial is commonly used),
-# $n$ is the outward directed boundary normal, and $M$ is a
-# scalar parameter.
+# where $c$ is the unknown field, the function $f$ is usually non-convex
+# in $c$ (a fourth-order polynomial is commonly used), $n$ is the
+# outward directed boundary normal, and $M$ is a scalar parameter.
 #
 # ### Operator split form
 #
-# The Cahn-Hilliard equation is a fourth-order equation, so casting it in
-# a weak form would result in the presence of second-order spatial
+# The Cahn-Hilliard equation is a fourth-order equation, so casting it
+# in a weak form would result in the presence of second-order spatial
 # derivatives, and the problem could not be solved using a standard
-# Lagrange finite element basis.  A solution is to rephrase the problem as
-# two coupled second-order equations:
+# Lagrange finite element basis.  A solution is to rephrase the problem
+# as two coupled second-order equations:
 #
 # $$
 # \begin{align}
@@ -66,9 +65,8 @@
 # \end{align}
 # $$
 #
-# The unknown fields are now $c$ and $\mu$. The weak
-# (variational) form of the problem reads: find $(c, \mu) \in V
-# \times V$ such that
+# The unknown fields are now $c$ and $\mu$. The weak (variational) form
+# of the problem reads: find $(c, \mu) \in V \times V$ such that
 #
 # $$
 # \begin{align}
@@ -84,8 +82,8 @@
 # ### Time discretisation
 #
 # Before being able to solve this problem, the time derivative must be
-# dealt with. Apply the $\theta$-method to the mixed weak form of
-# the equation:
+# dealt with. Apply the $\theta$-method to the mixed weak form of the
+# equation:
 #
 # $$
 # \begin{align}
@@ -98,10 +96,9 @@
 # \end{align}
 # $$
 #
-# where $dt = t_{n+1} - t_{n}$ and $\mu_{n+\theta} =
-# (1-\theta) \mu_{n} + \theta \mu_{n+1}$.  The task is: given
-# $c_{n}$ and $\mu_{n}$, solve the above equation to find
-# $c_{n+1}$ and $\mu_{n+1}$.
+# where $dt = t_{n+1} - t_{n}$ and $\mu_{n+\theta} = (1-\theta) \mu_{n}
+# + \theta \mu_{n+1}$.  The task is: given $c_{n}$ and $\mu_{n}$, solve
+# the above equation to find $c_{n+1}$ and $\mu_{n+1}$.
 #
 # ### Demo parameters
 #
@@ -124,18 +121,17 @@
 import os
 
 import numpy as np
-
 import ufl
-from dolfinx import log, plot
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.fem.petsc import NonlinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
 from dolfinx.nls.petsc import NewtonSolver
-from ufl import dx, grad, inner
-
 from mpi4py import MPI
 from petsc4py import PETSc
+from ufl import dx, grad, inner
+
+from dolfinx import log, plot
 
 try:
     import pyvista as pv
@@ -175,11 +171,10 @@ q, v = ufl.TestFunctions(ME)
 #
 # For the test functions, {py:func}`TestFunctions<function
 # ufl.argument.TestFunctions>` (note the 's' at the end) is used to
-# define the scalar test functions `q` and `v`. Some mixed objects
-# of the {py:class}`Function<dolfinx.fem.function.Function>` class on
-# `ME` are defined to represent $u = (c_{n+1}, \mu_{n+1})$ and
-# $u0 = (c_{n}, \mu_{n})$, and these are then split into
-# sub-functions:
+# define the scalar test functions `q` and `v`. Some mixed objects of
+# the {py:class}`Function<dolfinx.fem.function.Function>` class on `ME`
+# are defined to represent $u = (c_{n+1}, \mu_{n+1})$ and $u0 = (c_{n},
+# \mu_{n})$, and these are then split into sub-functions:
 
 # +
 u = Function(ME)  # current solution
@@ -209,9 +204,9 @@ u.x.scatter_forward()
 # -
 
 # The first line creates an object of type `InitialConditions`.  The
-# following two lines make `u` and `u0` interpolants of `u_init`
-# (since `u` and `u0` are finite element functions, they may not be
-# able to represent a given function exactly, but the function can be
+# following two lines make `u` and `u0` interpolants of `u_init` (since
+# `u` and `u0` are finite element functions, they may not be able to
+# represent a given function exactly, but the function can be
 # approximated by interpolating it in a finite element space).
 #
 # ```{index} automatic differentiation
@@ -226,9 +221,9 @@ f = 100 * c**2 * (1 - c)**2
 dfdc = ufl.diff(f, c)
 
 # The first line declares that `c` is a variable that some function can
-# be differentiated with respect to. The next line is the function
-# $f$ defined in the problem statement, and the third line performs
-# the differentiation of `f` with respect to the variable `c`.
+# be differentiated with respect to. The next line is the function $f$
+# defined in the problem statement, and the third line performs the
+# differentiation of `f` with respect to the variable `c`.
 #
 # It is convenient to introduce an expression for $\mu_{n+\theta}$:
 
@@ -242,8 +237,8 @@ F0 = inner(c, q) * dx - inner(c0, q) * dx + dt * inner(grad(mu_mid), grad(q)) * 
 F1 = inner(mu, v) * dx - inner(dfdc, v) * dx - lmbda * inner(grad(c), grad(v)) * dx
 F = F0 + F1
 
-# This is a statement of the time-discrete equations presented as part of
-# the problem statement, using UFL syntax.
+# This is a statement of the time-discrete equations presented as part
+# of the problem statement, using UFL syntax.
 #
 # ```{index} single: Newton solver; (in Cahn-Hilliard demo)
 # ```

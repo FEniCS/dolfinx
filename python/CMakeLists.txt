@@ -53,6 +53,7 @@ pybind11_add_module(
   cpp
   MODULE
   dolfinx/wrappers/dolfinx.cpp
+  dolfinx/wrappers/assemble.cpp
   dolfinx/wrappers/common.cpp
   dolfinx/wrappers/fem.cpp
   dolfinx/wrappers/geometry.cpp
