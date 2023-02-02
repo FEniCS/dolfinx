@@ -49,6 +49,27 @@ pip install .
 For detailed instructions, see
 <https://docs.fenicsproject.org/dolfinx/main/python/installation>.
 
+#### Spack
+
+Spack automates the installtion from source and is recommended for
+building DOLFINx on HPC systems.
+
+To build the most recent release using
+[Spack](https://spack.readthedocs.io/) (assuming a bash-compatible
+shell):
+
+```shell
+git clone https://github.com/spack/spack.git
+. ./spack/share/spack/setup-env.sh
+spack env create fenicsx-env
+spack env activate fenicsx-env
+spack add py-fenics-dolfinx cflags="-O3" fflags="-O3"
+spack install
+```
+
+See the Spack [documentation](https://spack.readthedocs.io/) for
+comprehensive instructions.
+
 ### Binary
 
 #### Operating System Recommendations
@@ -82,26 +103,6 @@ recipe is hosted on
 > **Note**
 > Windows packages are not available. This is due to some DOLFINx
 > dependencies not supporting Windows.
-
-#### Spack
-
-Spack is recommended for building DOLFINx on HPC systems.
-
-To build the most recent release using
-[Spack](https://spack.readthedocs.io/) (assuming a bash-compatible
-shell):
-
-```shell
-git clone https://github.com/spack/spack.git
-. ./spack/share/spack/setup-env.sh
-spack env create fenicsx-env
-spack env activate fenicsx-env
-spack add py-fenics-dolfinx cflags="-O3" fflags="-O3"
-spack install
-```
-
-See the Spack [documentation](https://spack.readthedocs.io/) for
-comprehensive instructions.
 
 #### Ubuntu packages
 
