@@ -64,7 +64,10 @@ int main(int argc, char* argv[])
     u_tet->interpolate(fun);
 
     // Interpolate from u_tet to u_hex
-    u_hex->interpolate(*u_tet);
+    auto nmm_interpolation_data
+        = fem::create_nonmatching_meshes_interpolation_data(
+            *u_hex->function_space(), *u_tet->function_space());
+    u_hex->interpolate(*u_tet, nmm_interpolation_data);
 
 #ifdef HAS_ADIOS2
     io::VTXWriter write_tet(mesh_tet->comm(), "u_tet.vtx", {u_tet});

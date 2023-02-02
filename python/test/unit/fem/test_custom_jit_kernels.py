@@ -9,19 +9,19 @@
 import os
 import sys
 
-import numba
 import numpy as np
 import pytest
+from dolfinx.fem import Function, FunctionSpace, IntegralType
+from dolfinx.mesh import create_unit_square, meshtags
+from mpi4py import MPI
+from petsc4py import PETSc
 
 import dolfinx
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la, list_timings
-from dolfinx.fem import Function, FunctionSpace, IntegralType
-from dolfinx.mesh import create_unit_square, meshtags
 
-from mpi4py import MPI
-from petsc4py import PETSc
+numba = pytest.importorskip("numba")
 
 # Add current directory - required for some Python versions to find cffi
 # compiled modules
