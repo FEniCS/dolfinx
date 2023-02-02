@@ -111,6 +111,9 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
 
 
     """
+    # TODO Come up with a neater way of doing this
+    entity_maps = {mesh._cpp_object: entity_map for mesh, entity_map in entity_maps.items()}
+
     if dtype == np.float32:
         ftype = _cpp.fem.Form_float32
         form_compiler_options["scalar_type"] = "float"

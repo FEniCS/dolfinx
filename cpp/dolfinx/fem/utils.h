@@ -872,9 +872,9 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
         auto entity_map = form.function_space_to_entity_map(
             *coefficients[coeff]->function_space());
         // Lambda functions to fetch cell index from interior facet entity
-        auto fetch_cell0 = [entity_map](auto& entity)
+        auto fetch_cell0 = [entity_map](auto entity)
         { return entity_map(entity.subspan(0, 2)); };
-        auto fetch_cell1 = [entity_map](auto& entity)
+        auto fetch_cell1 = [entity_map](auto entity)
         { return entity_map(entity.subspan(2, 4)); };
 
         std::span<const std::uint32_t> cell_info
