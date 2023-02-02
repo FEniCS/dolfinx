@@ -7,8 +7,6 @@
 
 import numpy as np
 import pytest
-
-from dolfinx import cpp as _cpp
 from dolfinx.geometry import (BoundingBoxTree, compute_closest_entity,
                               compute_colliding_cells, compute_collisions,
                               compute_distance_gjk, create_midpoint_tree)
@@ -16,8 +14,9 @@ from dolfinx.mesh import (CellType, create_box, create_unit_cube,
                           create_unit_interval, create_unit_square,
                           exterior_facet_indices, locate_entities,
                           locate_entities_boundary)
-
 from mpi4py import MPI
+
+from dolfinx import cpp as _cpp
 
 
 def extract_geometricial_data(mesh, dim, entities):
@@ -25,9 +24,7 @@ def extract_geometricial_data(mesh, dim, entities):
     vertices"""
     mesh_nodes = []
     geom = mesh.geometry
-    g_indices = _cpp.mesh.entities_to_geometry(mesh, dim,
-                                               np.array(entities, dtype=np.int32),
-                                               False)
+    g_indices = _cpp.mesh.entities_to_geometry(mesh._cpp_object, dim, np.array(entities, dtype=np.int32), False)
     for cell in g_indices:
         nodes = np.zeros((len(cell), 3), dtype=np.float64)
         for j, entity in enumerate(cell):
@@ -55,8 +52,8 @@ def find_colliding_cells(mesh, bbox):
     # Find actual cells using known bounding box tree
     colliding_cells = []
     num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    x_indices = _cpp.mesh.entities_to_geometry(
-        mesh, mesh.topology.dim, np.arange(num_cells, dtype=np.int32), False)
+    x_indices = _cpp.mesh.entities_to_geometry(mesh._cpp_object, mesh.topology.dim,
+                                               np.arange(num_cells, dtype=np.int32), False)
     points = mesh.geometry.x
     bounding_box = expand_bbox(bbox)
     for cell in range(num_cells):
@@ -148,7 +145,7 @@ def test_compute_collisions_point_1d():
     assert len(entities.array) == 1
 
     # Get the vertices of the geometry
-    geom_entities = _cpp.mesh.entities_to_geometry(mesh, tdim, entities.array, False)[0]
+    geom_entities = _cpp.mesh.entities_to_geometry(mesh._cpp_object, tdim, entities.array, False)[0]
     x = mesh.geometry.x
     cell_vertices = x[geom_entities]
     # Check that we get the cell with correct vertices
@@ -164,7 +161,7 @@ def test_compute_collisions_tree_1d(point):
     def locator_A(x):
         return x[0] >= point[0]
     # Locate all vertices of mesh A that should collide
-    vertices_A = _cpp.mesh.locate_entities(mesh_A, 0, locator_A)
+    vertices_A = _cpp.mesh.locate_entities(mesh_A._cpp_object, 0, locator_A)
     mesh_A.topology.create_connectivity(0, mesh_A.topology.dim)
     v_to_c = mesh_A.topology.connectivity(0, mesh_A.topology.dim)
 
@@ -179,7 +176,7 @@ def test_compute_collisions_tree_1d(point):
         return x[0] <= 1
 
     # Locate all vertices of mesh B that should collide
-    vertices_B = _cpp.mesh.locate_entities(mesh_B, 0, locator_B)
+    vertices_B = _cpp.mesh.locate_entities(mesh_B._cpp_object, 0, locator_B)
     mesh_B.topology.create_connectivity(0, mesh_B.topology.dim)
     v_to_c = mesh_B.topology.connectivity(0, mesh_B.topology.dim)
 

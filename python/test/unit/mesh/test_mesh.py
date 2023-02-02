@@ -71,7 +71,7 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
     if len(entity_map) > 0:
         assert mesh.geometry.dim == submesh.geometry.dim
 
-        e_to_g = entities_to_geometry(mesh, entity_dim, entity_map, False)
+        e_to_g = entities_to_geometry(mesh._cpp_object, entity_dim, entity_map, False)
         for submesh_entity in range(len(entity_map)):
             submesh_x_dofs = submesh.geometry.dofmap.links(submesh_entity)
             # e_to_g[i] gets the mesh x_dofs of entities[i], which should
@@ -325,7 +325,7 @@ def test_cell_circumradius(c0, c1, c5):
 @pytest.mark.skip_in_parallel
 def test_cell_h(c0, c1, c5):
     for c in [c0, c1, c5]:
-        assert _cpp.mesh.h(c[0], c[1], [c[2]]) == pytest.approx(math.sqrt(2.0))
+        assert c[0].h(c[1], [c[2]])
 
 
 def test_cell_h_prism():
@@ -334,7 +334,7 @@ def test_cell_h_prism():
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local
     cells = np.arange(num_cells, dtype=np.int32)
-    h = _cpp.mesh.h(mesh, tdim, cells)
+    h = _cpp.mesh.h(mesh._cpp_object, tdim, cells)
     assert np.allclose(h, np.sqrt(3 / (N**2)))
 
 
@@ -343,7 +343,7 @@ def test_facet_h(ct):
     N = 3
     mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, ct)
     left_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, lambda x: np.isclose(x[0], 0))
-    h = _cpp.mesh.h(mesh, mesh.topology.dim - 1, left_facets)
+    h = _cpp.mesh.h(mesh._cpp_object, mesh.topology.dim - 1, left_facets)
     assert np.allclose(h, np.sqrt(2 / (N**2)))
 
 
@@ -371,7 +371,7 @@ def test_hmin_hmax(_mesh, hmin, hmax):
     mesh = _mesh()
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local
-    h = _cpp.mesh.h(mesh, tdim, range(num_cells))
+    h = _cpp.mesh.h(mesh._cpp_object, tdim, range(num_cells))
     assert h.min() == pytest.approx(hmin)
     assert h.max() == pytest.approx(hmax)
 
