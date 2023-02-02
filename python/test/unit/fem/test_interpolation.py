@@ -17,8 +17,6 @@ from dolfinx.fem import (Expression, Function, FunctionSpace,
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square, locate_entities, meshtags,
                           GhostMode, create_rectangle, create_submesh)
-
-                          create_unit_square, locate_entities, meshtags)
 from mpi4py import MPI
 
 parametrize_cell_types = pytest.mark.parametrize(
