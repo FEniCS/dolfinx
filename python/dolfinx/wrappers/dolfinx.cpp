@@ -4,7 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <iostream>
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
@@ -15,6 +14,7 @@ void common(py::module& m);
 void mpi(py::module& m);
 
 void log(py::module& m);
+void assemble(py::module& m);
 void fem(py::module& m);
 void geometry(py::module& m);
 void graph(py::module& m);
@@ -49,6 +49,7 @@ PYBIND11_MODULE(cpp, m)
 
   // Create fem submodule [fem]
   py::module fem = m.def_submodule("fem", "FEM module");
+  dolfinx_wrappers::assemble(fem);
   dolfinx_wrappers::fem(fem);
 
   // Create geometry submodule
