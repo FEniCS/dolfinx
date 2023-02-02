@@ -483,8 +483,8 @@ IndexMap::create_submap(std::span<const std::int32_t> indices) const
 
   // Get source ranks (ranks that own ghosts) and destination ranks
   // (ranks that ghost my indices)
-  std::vector<int> src = this->src();
-  std::vector<int> dest = this->dest();
+  const std::vector<int>& src = this->src();
+  const std::vector<int>& dest = this->dest();
 
   std::vector<std::int64_t> recv_indices;
   std::vector<std::size_t> ghost_buffer_pos;
