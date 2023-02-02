@@ -481,15 +481,10 @@ IndexMap::create_submap(std::span<const std::int32_t> indices) const
 
   // --- Step 2: Send ghost indices to owning rank
 
-  // Build list of src ranks (ranks that own ghosts)
-  std::vector<int> src = this->owners();
-  std::sort(src.begin(), src.end());
-  src.erase(std::unique(src.begin(), src.end()), src.end());
-
-  // Determine destination ranks (ranks that ghost my indices), and sort
-  std::vector<int> dest
-      = dolfinx::MPI::compute_graph_edges_nbx(this->comm(), src);
-  std::sort(dest.begin(), dest.end());
+  // Get source ranks (ranks that own ghosts) and destination ranks
+  // (ranks that ghost my indices)
+  std::vector<int> src = this->src();
+  std::vector<int> dest = this->dest();
 
   std::vector<std::int64_t> recv_indices;
   std::vector<std::size_t> ghost_buffer_pos;
