@@ -49,12 +49,10 @@ pip install .
 For detailed instructions, see
 <https://docs.fenicsproject.org/dolfinx/main/python/installation>.
 
-#### Spack
+### Spack
 
 Spack automates the installtion from source and is recommended for
-building DOLFINx on HPC systems.
-
-To build the most recent release using
+building DOLFINx on HPC systems. To build the most recent release using
 [Spack](https://spack.readthedocs.io/) (assuming a bash-compatible
 shell):
 
@@ -72,7 +70,7 @@ comprehensive instructions.
 
 ### Binary
 
-#### Operating System Recommendations
+**Recommendations**
 
 - macOS: use [conda](#conda).
 - Linux: use [apt](#ubuntu-packages) ([Ubuntu](#ubuntu-packages)/[Debian](#debian-packages)), [docker](#docker-images) or [conda](#conda). See also [Spack](#spack).
@@ -80,10 +78,8 @@ comprehensive instructions.
 
 #### conda
 
-Conda is the recommended install method for Mac OS users. Linux users may also use it.
-
-To install the latest stable release of the Python interface, with pyvista support for
-visualisation, using [conda](https://conda.io):
+To install the latest stable release of the Python interface, with
+pyvista support for visualisation, using [conda](https://conda.io):
 
 ```shell
 conda create -n fenicsx-env
@@ -107,10 +103,9 @@ recipe is hosted on
 #### Ubuntu packages
 
 The [Ubuntu
-PPA](https://launchpad.net/~fenics-packages/+archive/ubuntu/fenics) contains
-binary packages of the FEniCSx components for Ubuntu.
-
-To install:
+PPA](https://launchpad.net/~fenics-packages/+archive/ubuntu/fenics)
+contains binary packages of the FEniCSx components for Ubuntu. To
+install:
 
 ```shell
 add-apt-repository ppa:fenics-packages/fenics
