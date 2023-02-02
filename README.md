@@ -72,9 +72,13 @@ comprehensive instructions.
 
 **Recommendations**
 
-- macOS: use [conda](#conda).
-- Linux: use [apt](#ubuntu-packages) ([Ubuntu](#ubuntu-packages)/[Debian](#debian-packages)), [docker](#docker-images) or [conda](#conda). See also [Spack](#spack).
-- Windows: use [docker](#docker-images), or install Microsoft's [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and use [Ubuntu](#ubuntu-packages).
+- macOS: [conda](#conda).
+- Linux: [apt](#ubuntu-packages)
+  ([Ubuntu](#ubuntu-packages)/[Debian](#debian-packages)),
+  [docker](#docker-images) or [conda](#conda). See also [Spack](#spack).
+- Windows: [docker](#docker-images), or install
+  [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and use
+  [Ubuntu](#ubuntu-packages).
 
 #### conda
 
@@ -104,8 +108,7 @@ recipe is hosted on
 
 The [Ubuntu
 PPA](https://launchpad.net/~fenics-packages/+archive/ubuntu/fenics)
-contains binary packages of the FEniCSx components for Ubuntu. To
-install:
+contains binary packages of the FEniCSx components. To install:
 
 ```shell
 add-apt-repository ppa:fenics-packages/fenics
@@ -119,7 +122,8 @@ best-effort basis.
 
 #### Debian packages
 
-[DOLFINx](https://tracker.debian.org/pkg/fenics-dolfinx) has been included with [various
+[DOLFINx](https://tracker.debian.org/pkg/fenics-dolfinx) is included
+with [various
 versions](https://packages.debian.org/search?keywords=python3-dolfinx&searchon=names&exact=1&suite=all&section=all)
 of Debian. Install with `apt-get install fenicsx`.
 
