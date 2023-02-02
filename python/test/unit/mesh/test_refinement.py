@@ -139,7 +139,7 @@ def test_refine_facet_meshtag(tdim):
                        numpy.arange(len(facet_indices), dtype=numpy.int32))
 
     fine_mesh, parent_cell, parent_facet = _cpp.refinement.plaza_refine_data(
-        mesh, False, _cpp.refinement.RefinementOptions.parent_cell_and_facet)
+        mesh._cpp_object, False, _cpp.refinement.RefinementOptions.parent_cell_and_facet)
     fine_mesh.topology.create_entities(tdim - 1)
 
     new_meshtag = _cpp.refinement.transfer_facet_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
@@ -177,7 +177,7 @@ def test_refine_cell_meshtag(tdim):
                        numpy.arange(len(cell_indices), dtype=numpy.int32))
 
     fine_mesh, parent_cell, parent_facet = _cpp.refinement.plaza_refine_data(
-        mesh, False, _cpp.refinement.RefinementOptions.parent_cell_and_facet)
+        mesh._cpp_object, False, _cpp.refinement.RefinementOptions.parent_cell_and_facet)
 
     new_meshtag = _cpp.refinement.transfer_cell_meshtag(meshtag, fine_mesh, parent_cell)
 

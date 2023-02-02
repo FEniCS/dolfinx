@@ -7,15 +7,14 @@
 from pathlib import Path
 
 import numpy as np
-from numpy.testing import assert_array_equal
 import pytest
+from numpy.testing import assert_array_equal
 
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
-from dolfinx.io import (VTKFile)
+from dolfinx.io import VTKFile
 from dolfinx.io.utils import cell_perm_vtk  # noqa F401
-
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
 from dolfinx.plot import create_vtk_mesh
