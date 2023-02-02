@@ -120,7 +120,6 @@ def test_linear_pde():
 
 def test_nonlinear_pde():
     """Test Newton solver for a simple nonlinear PDE"""
-    # Create mesh and function space
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 5)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(V)
@@ -154,13 +153,11 @@ def test_nonlinear_pde():
 
 def test_nonlinear_pde_snes():
     """Test Newton solver for a simple nonlinear PDE"""
-    # Create mesh and function space
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(V)
     v = TestFunction(V)
-    F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
-        grad(u), grad(v)) * dx - inner(u, v) * dx
+    F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(grad(u), grad(v)) * dx - inner(u, v) * dx
 
     u_bc = Function(V)
     u_bc.x.array[:] = 1.0

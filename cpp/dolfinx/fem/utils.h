@@ -609,13 +609,13 @@ void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
 /// @private
 /// @brief  Concepts for function that returns cell index
 template <typename F>
-concept FetchCells = requires(F&& f, std::span<const std::int32_t> v)
-{
-  std::invocable<F, std::span<const std::int32_t>>;
-  {
-    f(v)
-    } -> std::convertible_to<std::int32_t>;
-};
+concept FetchCells
+    = requires(F&& f, std::span<const std::int32_t> v) {
+        requires std::invocable<F, std::span<const std::int32_t>>;
+        {
+          f(v)
+          } -> std::convertible_to<std::int32_t>;
+      };
 
 /// @brief Pack a single coefficient for a set of active entities.
 ///
