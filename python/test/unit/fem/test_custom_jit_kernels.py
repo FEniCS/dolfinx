@@ -117,7 +117,7 @@ def test_coefficient():
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
     mt = meshtags(mesh, tdim, np.arange(num_cells, dtype=np.intc), np.ones(num_cells, dtype=np.intc))._cpp_object
-    integrals = {IntegralType.cell: ([(1, tabulate_tensor_b_coeff.address)], mt)}
+    integrals = {IntegralType.cell: ([(1, tabulate_tensor_b_coeff.address)], mt._cpp_object)}
 
     Form = _cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else _cpp.fem.Form_complex128
     L = Form([V._cpp_object], integrals, [vals._cpp_object], [], False)
