@@ -46,10 +46,18 @@ class FormMetaClass:
             mesh: The mesh that the form is defined on
 
         """
+
+        sd = {key: value for (key, value) in subdomains.items()}
+        for key, domain in sd.items():
+            try:
+                sd[key] = domain._cpp_object
+            except AttributeError:
+                pass
+
         self._code = code
         self._ufcx_form = form
         super().__init__(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_form)),
-                         V, coeffs, constants, subdomains, mesh)  # type: ignore
+                         V, coeffs, constants, sd, mesh)  # type: ignore
 
     @property
     def ufcx_form(self):
@@ -130,6 +138,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
         domain, = list(sd.keys())  # Assuming single domain
+
         # Get subdomain data for each integral type
         subdomains = {}
         for integral_type, data in sd.get(domain).items():
