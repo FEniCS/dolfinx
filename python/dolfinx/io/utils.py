@@ -146,13 +146,14 @@ class XDMFFile(_cpp.io.XDMFFile):
     def __exit__(self, exception_type, exception_value, traceback):
         self.close()
 
-    def write_mesh(self, mesh: Mesh) -> None:
+    def write_mesh(self, mesh: Mesh, xpath: str = "/Xdmf/Domain") -> None:
         """Write mesh to file for a given time (default 0.0)"""
-        super().write_mesh(mesh._cpp_object)
+        super().write_mesh(mesh._cpp_object, xpath)
 
-    def write_meshtags(self, tags: MeshTags) -> None:
+    def write_meshtags(self, tags: MeshTags, geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
+                       xpath: str = "/Xdmf/Domain") -> None:
         """Write mesh tags to file for a given time (default 0.0)"""
-        super().write_meshtags(tags._cpp_object)
+        super().write_meshtags(tags._cpp_object, geometry_xpath, xpath)
 
     def write_function(self, u, t: float = 0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
         super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)

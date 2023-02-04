@@ -97,16 +97,15 @@ void io(py::module& m)
       .def(py::init(
                [](const MPICommWrapper comm, std::filesystem::path filename,
                   std::string file_mode,
-                  dolfinx::io::XDMFFile::Encoding encoding)
-               {
-                 return std::make_unique<dolfinx::io::XDMFFile>(
-                     comm.get(), filename, file_mode, encoding);
+                  dolfinx::io::XDMFFile::Encoding encoding) {
+                 return dolfinx::io::XDMFFile(comm.get(), filename, file_mode,
+                                              encoding);
                }),
            py::arg("comm"), py::arg("filename"), py::arg("file_mode"),
            py::arg("encoding") = dolfinx::io::XDMFFile::Encoding::HDF5)
       .def("close", &dolfinx::io::XDMFFile::close)
       .def("write_mesh", &dolfinx::io::XDMFFile::write_mesh, py::arg("mesh"),
-           py::arg("xpath") = "/Xdmf/Domain")
+           py::arg("xpath"))
       .def("write_geometry", &dolfinx::io::XDMFFile::write_geometry,
            py::arg("geometry"), py::arg("name") = "geometry",
            py::arg("xpath") = "/Xdmf/Domain")
@@ -142,11 +141,9 @@ void io(py::module& m)
               &dolfinx::io::XDMFFile::write_function),
           py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
       .def("write_meshtags", &dolfinx::io::XDMFFile::write_meshtags,
-           py::arg("meshtags"),
-           py::arg("geometry_xpath") = "/Xdmf/Domain/Grid/Geometry",
-           py::arg("xpath") = "/Xdmf/Domain")
+           py::arg("meshtags"), py::arg("geometry_xpath"), py::arg("xpath"))
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
-           py::arg("mesh"), py::arg("name"), py::arg("xpath") = "/Xdmf/Domain")
+           py::arg("mesh"), py::arg("name"), py::arg("xpath"))
       .def("write_information", &dolfinx::io::XDMFFile::write_information,
            py::arg("name"), py::arg("value"), py::arg("xpath") = "/Xdmf/Domain")
       .def("read_information", &dolfinx::io::XDMFFile::read_information,
