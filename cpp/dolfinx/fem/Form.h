@@ -119,6 +119,9 @@ public:
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
 
+    const mesh::Topology& topology = _mesh->topology();
+    const int tdim = topology.dim();
+
     // Store kernels, looping over integrals by domain type (dimension)
     for (auto& integral_type : integrals)
     {
@@ -131,17 +134,92 @@ public:
       switch (type)
       {
       case IntegralType::cell:
+      {
         for (auto& [id, kern] : kernels)
-          _cell_integrals.insert({id, {kern, {}}});
+        {
+          if (id == -1)
+          {
+            std::int32_t num_cells = topology.index_map(tdim)->size_local();
+            std::vector<std::int32_t> cells(num_cells, 0);
+            std::iota(cells.begin(), cells.end(), 0);
+            _cell_integrals.insert({id, {kern, cells}});
+          }
+          else
+            _cell_integrals.insert({id, {kern, {}}});
+        }
         break;
+      }
       case IntegralType::exterior_facet:
+      {
+        std::vector<std::int32_t> bfacets;
+        if (!kernels.empty())
+        {
+          _mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+          _mesh->topology_mutable().create_connectivity(tdim, tdim - 1);
+          bfacets = mesh::exterior_facet_indices(topology);
+        }
+
+        auto f_to_c = topology.connectivity(tdim - 1, tdim);
+        // assert(f_to_c);
+        auto c_to_f = topology.connectivity(tdim, tdim - 1);
+        // assert(c_to_f);
         for (auto& [id, kern] : kernels)
-          _exterior_facet_integrals.insert({id, {kern, {}}});
+        {
+          if (id == -1)
+          {
+            std::vector<std::int32_t> facets;
+            facets.reserve(2 * bfacets.size());
+            for (std::int32_t f : bfacets)
+            {
+              // There will only be one pair for an exterior facet integral
+              std::array<std::int32_t, 2> pair = get_cell_local_facet_pairs<1>(
+                  f, f_to_c->links(f), *c_to_f)[0];
+              facets.insert(facets.end(), pair.begin(), pair.end());
+            }
+            _exterior_facet_integrals.insert({id, {kern, facets}});
+          }
+          else
+            _exterior_facet_integrals.insert({id, {kern, {}}});
+        }
         break;
+      }
       case IntegralType::interior_facet:
+      {
         for (auto& [id, kern] : kernels)
-          _interior_facet_integrals.insert({id, {kern, {}}});
+        {
+          if (id == -1)
+          {
+            _mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+            auto f_to_c = topology.connectivity(tdim - 1, tdim);
+            assert(f_to_c);
+            _mesh->topology_mutable().create_connectivity(tdim, tdim - 1);
+            auto c_to_f = _mesh->topology().connectivity(tdim, tdim - 1);
+            assert(c_to_f);
+
+            // Get number of facets owned by this process
+            assert(topology.index_map(tdim - 1));
+            const int num_facets = topology.index_map(tdim - 1)->size_local();
+            std::vector<std::int32_t> facets;
+            facets.reserve(4 * num_facets);
+            for (int f = 0; f < num_facets; ++f)
+            {
+              if (f_to_c->num_links(f) == 2)
+              {
+                std::array<std::array<std::int32_t, 2>, 2> pairs
+                    = get_cell_local_facet_pairs<2>(f, f_to_c->links(f),
+                                                    *c_to_f);
+                facets.insert(facets.end(), pairs[0].begin(), pairs[0].end());
+                facets.insert(facets.end(), pairs[1].begin(), pairs[1].end());
+              }
+            }
+
+            _interior_facet_integrals.insert({id, {kern, facets}});
+          }
+          else
+            _interior_facet_integrals.insert({id, {kern, {}}});
+        }
         break;
+      }
       }
 
       if (mt)
@@ -150,8 +228,6 @@ public:
         assert(_mesh == mt->mesh());
         // set_domains(type, *mt);
 
-        const mesh::Topology& topology = mesh->topology();
-        const int tdim = topology.dim();
         int dim = type == IntegralType::cell ? tdim : tdim - 1;
         if (dim != mt->dim())
         {
@@ -192,10 +268,6 @@ public:
         }
       }
     }
-
-    // FIXME: do this neatly via a static function
-    // Set markers for default integrals
-    set_default_domains(*_mesh);
   }
 
   /// Copy constructor
@@ -410,12 +482,12 @@ private:
     return it->second.first;
   }
 
-  // Helper function to get an array of of (cell, local_facet) pairs
-  // corresponding to a given facet index.
-  // @param[in] f Facet index
-  // @param[in] f_to_c Facet to cell connectivity
-  // @param[in] c_to_f Cell to facet connectivity
-  // @return Vector of (cell, local_facet) pairs
+  /// Helper function to get an array of of (cell, local_facet) pairs
+  /// corresponding to a given facet index.
+  /// @param[in] f Facet index
+  /// @param[in] f_to_c Facet to cell connectivity
+  /// @param[in] c_to_f Cell to facet connectivity
+  /// @return Vector of (cell, local_facet) pairs
   template <int num_cells>
   static std::array<std::array<std::int32_t, 2>, num_cells>
   get_cell_local_facet_pairs(std::int32_t f,
@@ -534,97 +606,6 @@ private:
                                       facet_0.cbegin(), facet_0.cend());
           integration_entities.insert(integration_entities.end(),
                                       facet_1.cbegin(), facet_1.cend());
-        }
-      }
-    }
-  }
-
-  /// If there exists a default integral of any type, set the list of
-  /// entities for those integrals from the mesh topology. For cell
-  /// integrals, this is all cells. For facet integrals, it is either
-  /// all interior or all exterior facets.
-  /// @param[in] mesh Mesh
-  void set_default_domains(const mesh::Mesh& mesh)
-  {
-    const mesh::Topology& topology = mesh.topology();
-    const int tdim = topology.dim();
-
-    // Cells. If there is a default integral, define it on all owned
-    // cells
-    for (auto& [domain_id, kernel_cells] : _cell_integrals)
-    {
-      if (domain_id == -1)
-      {
-        std::vector<std::int32_t>& cells = kernel_cells.second;
-        const int num_cells = topology.index_map(tdim)->size_local();
-        cells.resize(num_cells);
-        std::iota(cells.begin(), cells.end(), 0);
-      }
-    }
-
-    // Exterior facets. If there is a default integral, define it only
-    // on owned surface facets.
-
-    if (!_exterior_facet_integrals.empty())
-    {
-      mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-      mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
-    }
-
-    const std::vector<std::int32_t> boundary_facets
-        = _exterior_facet_integrals.empty()
-              ? std::vector<std::int32_t>()
-              : mesh::exterior_facet_indices(topology);
-    for (auto& [domain_id, kernel_facets] : _exterior_facet_integrals)
-    {
-      if (domain_id == -1)
-      {
-        std::vector<std::int32_t>& facets = kernel_facets.second;
-        facets.clear();
-
-        auto f_to_c = topology.connectivity(tdim - 1, tdim);
-        assert(f_to_c);
-        auto c_to_f = topology.connectivity(tdim, tdim - 1);
-        assert(c_to_f);
-        for (std::int32_t f : boundary_facets)
-        {
-          // There will only be one pair for an exterior facet integral
-          std::array<std::int32_t, 2> pair
-              = get_cell_local_facet_pairs<1>(f, f_to_c->links(f), *c_to_f)[0];
-          facets.insert(facets.end(), pair.cbegin(), pair.cend());
-        }
-      }
-    }
-
-    // Interior facets. If there is a default integral, define it only on
-    // owned interior facets.
-    for (auto& [domain_id, kernel_facets] : _interior_facet_integrals)
-    {
-      if (domain_id == -1)
-      {
-        std::vector<std::int32_t>& facets = kernel_facets.second;
-        facets.clear();
-
-        mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-        auto f_to_c = topology.connectivity(tdim - 1, tdim);
-        assert(f_to_c);
-        mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
-        auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
-        assert(c_to_f);
-
-        // Get number of facets owned by this process
-        assert(topology.index_map(tdim - 1));
-        const int num_facets = topology.index_map(tdim - 1)->size_local();
-        facets.reserve(num_facets);
-        for (int f = 0; f < num_facets; ++f)
-        {
-          if (f_to_c->num_links(f) == 2)
-          {
-            const std::array<std::array<std::int32_t, 2>, 2> pairs
-                = get_cell_local_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
-            facets.insert(facets.end(), pairs[0].cbegin(), pairs[0].cend());
-            facets.insert(facets.end(), pairs[1].cbegin(), pairs[1].cend());
-          }
         }
       }
     }
