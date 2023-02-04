@@ -124,29 +124,72 @@ public:
     {
       const IntegralType type = integral_type.first;
       auto& integral_data = integral_type.second;
+      const mesh::MeshTags<int>* mt = integral_data.second;
+      auto& kernels = integral_data.first;
 
       // Loop over integrals kernels and set domains
       switch (type)
       {
       case IntegralType::cell:
-        for (auto& itg : integral_data.first)
-          _cell_integrals.insert({itg.first, {itg.second, {}}});
+        for (auto& [id, kern] : kernels)
+          _cell_integrals.insert({id, {kern, {}}});
         break;
       case IntegralType::exterior_facet:
-        for (auto& itg : integral_data.first)
-          _exterior_facet_integrals.insert({itg.first, {itg.second, {}}});
+        for (auto& [id, kern] : kernels)
+          _exterior_facet_integrals.insert({id, {kern, {}}});
         break;
       case IntegralType::interior_facet:
-        for (auto& itg : integral_data.first)
-          _interior_facet_integrals.insert({itg.first, {itg.second, {}}});
+        for (auto& [id, kern] : kernels)
+          _interior_facet_integrals.insert({id, {kern, {}}});
         break;
       }
 
-      if (integral_data.second)
+      if (mt)
       {
         // Have a MeshTag
-        assert(_mesh == integral_data.second->mesh());
-        set_domains(type, *integral_data.second);
+        assert(_mesh == mt->mesh());
+        // set_domains(type, *mt);
+
+        const mesh::Topology& topology = mesh->topology();
+        const int tdim = topology.dim();
+        int dim = type == IntegralType::cell ? tdim : tdim - 1;
+        if (dim != mt->dim())
+        {
+          throw std::runtime_error("Invalid MeshTags dimension: "
+                                   + std::to_string(mt->dim()));
+        }
+
+        // Get mesh tag data. Only include owned entities in integration
+        // domains.
+        assert(topology.index_map(dim));
+        auto it = std::lower_bound(mt->indices().begin(), mt->indices().end(),
+                                   topology.index_map(dim)->size_local());
+        std::span<const std::int32_t> entities(
+            mt->indices().data(), std::distance(mt->indices().begin(), it));
+        std::span<const std::int32_t> values = mt->values();
+        switch (type)
+        {
+        case IntegralType::cell:
+          set_cell_domains(_cell_integrals, entities, values);
+          break;
+        default:
+          mesh->topology_mutable().create_connectivity(dim, tdim);
+          mesh->topology_mutable().create_connectivity(tdim, dim);
+          switch (type)
+          {
+          case IntegralType::exterior_facet:
+            set_exterior_facet_domains(topology, _exterior_facet_integrals,
+                                       entities, values);
+            break;
+          case IntegralType::interior_facet:
+            set_interior_facet_domains(topology, _interior_facet_integrals,
+                                       entities, values);
+            break;
+          default:
+            throw std::runtime_error(
+                "Cannot set domains. Integral type not supported.");
+          }
+        }
       }
     }
 
@@ -397,7 +440,7 @@ private:
   }
 
   // Set cell domains
-  void set_cell_domains(
+  static void set_cell_domains(
       std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
       std::span<const std::int32_t> tagged_cells, std::span<const int> tags)
   {
@@ -418,7 +461,7 @@ private:
   // @param[in] tagged_facets A list of facets
   // @param[in] tags A list of tags
   // @pre The list of tagged facets must be sorted
-  void set_exterior_facet_domains(
+  static void set_exterior_facet_domains(
       const mesh::Topology& topology,
       std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
       std::span<const std::int32_t> tagged_facets, std::span<const int> tags)
@@ -482,8 +525,8 @@ private:
       {
         if (auto it = integrals.find(tags[i]); it != integrals.end())
         {
-          // Ge the facet as a pair of (cell, local facet) pairs, one for each
-          // cell
+          // Get the facet as a pair of (cell, local facet) pairs, one
+          // for each cell
           auto [facet_0, facet_1]
               = get_cell_local_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
           std::vector<std::int32_t>& integration_entities = it->second.second;
@@ -492,58 +535,6 @@ private:
           integration_entities.insert(integration_entities.end(),
                                       facet_1.cbegin(), facet_1.cend());
         }
-      }
-    }
-  }
-
-  // Sets the entity indices to assemble over for kernels with a domain
-  // ID
-  // @param[in] type Integral type
-  // @param[in] marker MeshTags with domain ID. Entities with marker 'i'
-  // will be assembled over using the kernel with ID 'i'. The MeshTags
-  // is not stored.
-  void set_domains(IntegralType type, const mesh::MeshTags<int>& marker)
-  {
-    std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
-    const mesh::Topology& topology = mesh->topology();
-    const int tdim = topology.dim();
-    int dim = type == IntegralType::cell ? tdim : tdim - 1;
-    if (dim != marker.dim())
-    {
-      throw std::runtime_error("Invalid MeshTags dimension: "
-                               + std::to_string(marker.dim()));
-    }
-
-    // Get mesh tag data
-    assert(topology.index_map(dim));
-    auto entity_end
-        = std::lower_bound(marker.indices().begin(), marker.indices().end(),
-                           topology.index_map(dim)->size_local());
-    // Only include owned entities in integration domains
-    std::span<const std::int32_t> owned_tagged_entities(
-        marker.indices().data(),
-        std::distance(marker.indices().begin(), entity_end));
-    switch (type)
-    {
-    case IntegralType::cell:
-      set_cell_domains(_cell_integrals, owned_tagged_entities, marker.values());
-      break;
-    default:
-      mesh->topology_mutable().create_connectivity(dim, tdim);
-      mesh->topology_mutable().create_connectivity(tdim, dim);
-      switch (type)
-      {
-      case IntegralType::exterior_facet:
-        set_exterior_facet_domains(topology, _exterior_facet_integrals,
-                                   owned_tagged_entities, marker.values());
-        break;
-      case IntegralType::interior_facet:
-        set_interior_facet_domains(topology, _interior_facet_integrals,
-                                   owned_tagged_entities, marker.values());
-        break;
-      default:
-        throw std::runtime_error(
-            "Cannot set domains. Integral type not supported.");
       }
     }
   }
