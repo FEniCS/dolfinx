@@ -50,7 +50,7 @@ class FormMetaClass:
         sd = {key: value for (key, value) in subdomains.items()}
         for key, domain in sd.items():
             try:
-                sd[key] = domain._cpp_object
+                sd[key] = domain._cpp_object   # type: ignore
             except AttributeError:
                 pass
 
