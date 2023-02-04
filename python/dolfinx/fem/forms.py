@@ -13,22 +13,21 @@ import typing
 from dolfinx.fem.function import FunctionSpace
 
 if typing.TYPE_CHECKING:
-    from dolfinx.fem import function
-    from dolfinx.mesh import Mesh
+    from dolfinx.fem import function, IntegralType
+    from dolfinx.mesh import Mesh, MeshTags
 
 import numpy as np
-
 import ufl
+from petsc4py import PETSc
+
 from dolfinx import cpp as _cpp
 from dolfinx import jit
-
-from petsc4py import PETSc
 
 
 class FormMetaClass:
     def __init__(self, form, V: list[_cpp.fem.FunctionSpace], coeffs, constants,
-                 subdomains: dict[_cpp.mesh.MeshTags_int32, typing.Union[None, typing.Any]], mesh: _cpp.mesh.Mesh,
-                 ffi, code):
+                 subdomains: dict[IntegralType, typing.Union[None, MeshTags]],
+                 mesh: _cpp.mesh.Mesh, ffi, code):
         """A finite element form
 
         Notes:
