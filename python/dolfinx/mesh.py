@@ -263,6 +263,18 @@ class MeshTags:
     def name(self, value):
         self._cpp_object.name = value
 
+    def find(self, value) -> npt.NDArray[np.int32]:
+        """Get list of all entity indices with a given value.
+
+        Args:
+            value: Mesh tag value to search for
+
+        Return:
+            Indices of entities with tag `value`
+
+        """
+        return self._cpp_object.find(value)
+
 
 def meshtags(mesh: Mesh, dim: int, entities: npt.NDArray[np.int64],
              values: typing.Union[np.ndarray, int, float]) -> MeshTags:
