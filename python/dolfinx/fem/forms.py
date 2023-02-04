@@ -26,7 +26,7 @@ from dolfinx import jit
 
 class FormMetaClass:
     def __init__(self, form, V: list[_cpp.fem.FunctionSpace], coeffs, constants,
-                 subdomains: dict[IntegralType, typing.Union[None, MeshTags]],
+                 subdomains: dict[IntegralType, typing.Union[None, _cpp.mesh.MeshTags_in32t]],
                  mesh: _cpp.mesh.Mesh, ffi, code):
         """A finite element form
 
@@ -46,17 +46,10 @@ class FormMetaClass:
 
         """
 
-        sd = {key: value for (key, value) in subdomains.items()}
-        for key, domain in sd.items():
-            try:
-                sd[key] = domain._cpp_object   # type: ignore
-            except AttributeError:
-                pass
-
         self._code = code
         self._ufcx_form = form
         super().__init__(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_form)),
-                         V, coeffs, constants, sd, mesh)  # type: ignore
+                         V, coeffs, constants, subdomains, mesh)  # type: ignore
 
     @property
     def ufcx_form(self):
@@ -95,7 +88,7 @@ form_types = typing.Union[FormMetaClass, _cpp.fem.Form_float32, _cpp.fem.Form_fl
 
 def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = PETSc.ScalarType,
          form_compiler_options: dict = {}, jit_options: dict = {}):
-    """Create a DOLFINx Form or an array of Forms
+    """Create a Form or an array of Forms.
 
     Args:
         form: A UFL form or list(s) of UFL forms
@@ -112,7 +105,6 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         data to the underlying C++ form. It dynamically create a
         :class:`Form` instance with an appropriate base class for the
         scalar type, e.g. `_cpp.fem.Form_float64`.
-
 
     """
     if dtype == np.float32:
@@ -165,10 +157,15 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         constants = [c._cpp_object for c in form.constants()]
 
         # Subdomain markers (possibly None for some dimensions)
-        subdomains = {_cpp.fem.IntegralType.cell: subdomains.get("cell"),
-                      _cpp.fem.IntegralType.exterior_facet: subdomains.get("exterior_facet"),
-                      _cpp.fem.IntegralType.interior_facet: subdomains.get("interior_facet"),
-                      _cpp.fem.IntegralType.vertex: subdomains.get("vertex")}
+        def unwrap_mt(t):
+            try:
+                return t._cpp_object
+            except AttributeError:
+                return t
+        subdomains = {_cpp.fem.IntegralType.cell: unwrap_mt(subdomains.get("cell")),
+                      _cpp.fem.IntegralType.exterior_facet: unwrap_mt(subdomains.get("exterior_facet")),
+                      _cpp.fem.IntegralType.interior_facet: unwrap_mt(subdomains.get("interior_facet")),
+                      _cpp.fem.IntegralType.vertex: unwrap_mt(subdomains.get("vertex"))}
 
         return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, module.ffi, code)
 
