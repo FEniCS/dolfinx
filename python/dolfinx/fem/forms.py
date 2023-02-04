@@ -14,7 +14,7 @@ from dolfinx.fem.function import FunctionSpace
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem import function, IntegralType
-    from dolfinx.mesh import Mesh, MeshTags
+    from dolfinx.mesh import Mesh
 
 import numpy as np
 import ufl
