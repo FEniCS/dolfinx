@@ -114,13 +114,12 @@ def test_coefficient():
     vals = Function(DG0)
     vals.vector.set(2.0)
 
-    Form = _cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else _cpp.fem.Form_complex128
-
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
-    mt = meshtags(mesh, tdim, np.arange(num_cells, dtype=np.intc), np.ones(num_cells, dtype=np.intc))
-
+    mt = meshtags(mesh, tdim, np.arange(num_cells, dtype=np.intc), np.ones(num_cells, dtype=np.intc))._cpp_object
     integrals = {IntegralType.cell: ([(1, tabulate_tensor_b_coeff.address)], mt)}
+
+    Form = _cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else _cpp.fem.Form_complex128
     L = Form([V._cpp_object], integrals, [vals._cpp_object], [], False)
 
     b = dolfinx.fem.petsc.assemble_vector(L)
