@@ -162,10 +162,10 @@ public:
         // Get mesh tag data. Only include owned entities in integration
         // domains.
         assert(topology.index_map(dim));
-        auto it = std::lower_bound(mt->indices().begin(), mt->indices().end(),
-                                   topology.index_map(dim)->size_local());
-        std::span<const std::int32_t> entities(
-            mt->indices().data(), std::distance(mt->indices().begin(), it));
+        auto it0 = mt->indices().begin();
+        auto it1 = std::lower_bound(it0, mt->indices().end(),
+                                    topology.index_map(dim)->size_local());
+        auto entities = mt->indices().first(std::distance(it0, it1));
         std::span<const std::int32_t> values = mt->values();
         switch (type)
         {
