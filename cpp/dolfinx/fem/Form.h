@@ -123,33 +123,30 @@ public:
     for (auto& integral_type : integrals)
     {
       const IntegralType type = integral_type.first;
+      auto& integral_data = integral_type.second;
+
       // Loop over integrals kernels and set domains
       switch (type)
       {
       case IntegralType::cell:
-        for (auto& integral : integral_type.second.first)
-          _cell_integrals.insert({integral.first, {integral.second, {}}});
+        for (auto& itg : integral_data.first)
+          _cell_integrals.insert({itg.first, {itg.second, {}}});
         break;
       case IntegralType::exterior_facet:
-        for (auto& integral : integral_type.second.first)
-        {
-          _exterior_facet_integrals.insert(
-              {integral.first, {integral.second, {}}});
-        }
+        for (auto& itg : integral_data.first)
+          _exterior_facet_integrals.insert({itg.first, {itg.second, {}}});
         break;
       case IntegralType::interior_facet:
-        for (auto& integral : integral_type.second.first)
-        {
-          _interior_facet_integrals.insert(
-              {integral.first, {integral.second, {}}});
-        }
+        for (auto& itg : integral_data.first)
+          _interior_facet_integrals.insert({itg.first, {itg.second, {}}});
         break;
       }
 
-      if (integral_type.second.second)
+      if (integral_data.second)
       {
-        assert(_mesh == integral_type.second.second->mesh());
-        set_domains(type, *integral_type.second.second);
+        // Have a MeshTag
+        assert(_mesh == integral_data.second->mesh());
+        set_domains(type, *integral_data.second);
       }
     }
 
