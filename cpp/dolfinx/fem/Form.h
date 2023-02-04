@@ -130,6 +130,13 @@ public:
       const mesh::MeshTags<int>* mt = integral_data.second;
       auto& kernels = integral_data.first;
 
+      int dim = type == IntegralType::cell ? tdim : tdim - 1;
+      if (mt and dim != mt->dim())
+      {
+        throw std::runtime_error("Invalid MeshTags dimension: "
+                                 + std::to_string(mt->dim()));
+      }
+
       // Loop over integrals kernels and set domains
       switch (type)
       {
@@ -145,7 +152,22 @@ public:
             _cell_integrals.insert({id, {kern, cells}});
           }
           else
+          {
+            assert(topology.index_map(dim));
+            auto it0 = mt->indices().begin();
+            auto it1 = std::lower_bound(it0, mt->indices().end(),
+                                        topology.index_map(dim)->size_local());
+            auto entities = mt->indices().first(std::distance(it0, it1));
+            std::span<const std::int32_t> values = mt->values();
+
+            std::vector<std::int32_t> cells;
+            for (std::size_t i = 0; i < entities.size(); ++i)
+            {
+              if (values[i] == id)
+                cells.push_back(entities[i]);
+            }
             _cell_integrals.insert({id, {kern, {}}});
+          }
         }
         break;
       }
@@ -228,12 +250,12 @@ public:
         assert(_mesh == mt->mesh());
         // set_domains(type, *mt);
 
-        int dim = type == IntegralType::cell ? tdim : tdim - 1;
-        if (dim != mt->dim())
-        {
-          throw std::runtime_error("Invalid MeshTags dimension: "
-                                   + std::to_string(mt->dim()));
-        }
+        // int dim = type == IntegralType::cell ? tdim : tdim - 1;
+        // if (dim != mt->dim())
+        // {
+        //   throw std::runtime_error("Invalid MeshTags dimension: "
+        //                            + std::to_string(mt->dim()));
+        // }
 
         // Get mesh tag data. Only include owned entities in integration
         // domains.
@@ -466,11 +488,11 @@ private:
       = std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
                            const int*, const std::uint8_t*)>;
 
-  // Helper function to get the kernel for integral i from a map
-  // of integrals i.e. from _cell_integrals
-  // @param[in] integrals Map of integrals
-  // @param[in] i Domain index
-  // @return Function to call for tabulate_tensor
+  /// Helper function to get the kernel for integral i from a map
+  /// of integrals i.e. from _cell_integrals
+  /// @param[in] integrals Map of integrals
+  /// @param[in] i Domain index
+  /// @return Function to call for tabulate_tensor
   template <typename U>
   const std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
                            const int*, const std::uint8_t*)>&
@@ -485,7 +507,7 @@ private:
   /// Helper function to get an array of of (cell, local_facet) pairs
   /// corresponding to a given facet index.
   /// @param[in] f Facet index
-  /// @param[in] f_to_c Facet to cell connectivity
+  /// @param[in] cells
   /// @param[in] c_to_f Cell to facet connectivity
   /// @return Vector of (cell, local_facet) pairs
   template <int num_cells>
@@ -514,15 +536,15 @@ private:
   // Set cell domains
   static void set_cell_domains(
       std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
-      std::span<const std::int32_t> tagged_cells, std::span<const int> tags)
+      std::span<const std::int32_t> entities, std::span<const int> values)
   {
     // For cell integrals use all markers
-    for (std::size_t i = 0; i < tagged_cells.size(); ++i)
+    for (std::size_t i = 0; i < entities.size(); ++i)
     {
-      if (auto it = integrals.find(tags[i]); it != integrals.end())
+      if (auto it = integrals.find(values[i]); it != integrals.end())
       {
         std::vector<std::int32_t>& integration_entities = it->second.second;
-        integration_entities.push_back(tagged_cells[i]);
+        integration_entities.push_back(entities[i]);
       }
     }
   }
