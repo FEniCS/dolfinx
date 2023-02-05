@@ -446,6 +446,8 @@ Form<T> create_form(
 
     // Build list of entities to assembler over
     std::vector<std::int32_t> e;
+    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    mesh->topology_mutable().create_connectivity(tdim, tdim - 1);
     const std::vector<std::int32_t> bfacets
         = mesh::exterior_facet_indices(topology);
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
