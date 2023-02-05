@@ -78,12 +78,14 @@
 # The modules that will be used are imported:
 
 import numpy as np
+
 import ufl
 from dolfinx import fem, mesh
+from ufl import action, dx, grad, inner
+
 from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py.PETSc import ScalarType
-from ufl import action, dx, grad, inner
 
 # We begin by using {py:func}`create_rectangle
 # <dolfinx.mesh.create_rectangle>` to create a rectangular
@@ -181,12 +183,20 @@ if msh.comm.rank == 0:
 # matrix-vector product using the linear form `M` implicitly.
 
 b = fem.petsc.assemble_vector(fem.form(L))
-# b <- b - A * x_bc
+# Apply lifting: b <- b - A * x_bc
 fem.set_bc(ui.x.array, [bc], scale=-1)
 fem.petsc.assemble_vector(b, fem.form(M))
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 fem.petsc.set_bc(b, [bc], scale=0.0)
 b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+# In the following, different variants are presented in which the posed
+# Poisson problem is solved using matrix-free CG solvers. In each case
+# we want to achieve convergence up to a relative tolerence `rtol = 1e-6`
+# within `max_iter = 200` iterations.
+
+rtol = 1e-6
+max_iter = 200
 
 
 # #### 1. Implementation using PETSc vectors
@@ -196,13 +206,15 @@ b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 # is computed.
 
 def action_A(x):
-    y = x.duplicate()
-    with y.localForm() as y_loc:
-        y_loc.set(0)
+    # Update coefficient ui of the linear form M
     x.copy(ui.vector)
     ui.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
                           mode=PETSc.ScatterMode.FORWARD)
+
+    # Compute action of A on x using the linear form M
     y = fem.petsc.assemble_vector(fem.form(M))
+
+    # Set BC dofs to zero (effectively zeroes rows of A)
     with y.localForm() as y_local:
         fem.set_bc(y_local, [bc], scale=0.0)
     y.ghostUpdate(addv=PETSc.InsertMode.ADD,
@@ -213,11 +225,16 @@ def action_A(x):
 # This function can be used to replace the matrix-vector product in the
 # plain Conjugate Gradient method by Hestenes and Stiefel.
 
-def cg(action_A, b, x, kmax=50, rtol=1e-8):
+def cg(action_A, b, x, max_iter=200, rtol=1e-6):
+    # Create working vectors
     y = b.duplicate()
     b.copy(y)
+
+    # Compute initial residual r0 = b - A x0
     y = action_A(x)
     r = b - y
+
+    # Create work vector for the search direction p
     p = r.duplicate()
     r.copy(p)
     p.ghostUpdate(addv=PETSc.InsertMode.INSERT,
@@ -226,17 +243,31 @@ def cg(action_A, b, x, kmax=50, rtol=1e-8):
     r0_norm2 = r_norm2
     eps = rtol**2
     k = 0
-    while (k < kmax):
+    while k < max_iter:
         k += 1
+
+        # Compute y = A p
         y = action_A(p)
+
+        # Compute alpha = r.r / p.y
         alpha = r_norm2 / p.dot(y)
+
+        # Update x (x <- x + alpha * p)
         x.axpy(alpha, p)
+
+        # Update r (r <- r - alpha * y)
         r.axpy(-alpha, y)
+
+        # Update residual norm
         r_norm2_new = r.dot(r)
         beta = r_norm2_new / r_norm2
         r_norm2 = r_norm2_new
+
+        # Convergence test
         if abs(r_norm2 / r0_norm2) < eps:
             break
+
+        # Update p (p <- beta * p + r)
         p.aypx(beta, r)
     return k
 
@@ -248,24 +279,27 @@ def cg(action_A, b, x, kmax=50, rtol=1e-8):
 
 # +
 uh_cg1 = fem.Function(V, dtype=ScalarType)
-k = cg(action_A, b, uh_cg1.vector, kmax=100, rtol=1e-6)
+iter_cg1 = cg(action_A, b, uh_cg1.vector, max_iter=max_iter, rtol=rtol)
+
+# Set BC values in the solution vectors
 uh_cg1.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
                           mode=PETSc.ScatterMode.FORWARD)
 with uh_cg1.vector.localForm() as y_local:
     fem.set_bc(y_local, [bc], scale=1.0)
 
+# Print CG iteration number and errors
 error_L2_cg1 = L2Norm(uh_cg1 - uD)
 error_lu_cg1 = np.linalg.norm(uh_cg1.x.array - uh_lu.x.array)
 if msh.comm.rank == 0:
     print("Matrix-free CG solver using PETSc vectors:")
-    print(f"CG iterations until convergence:  {k}")
+    print(f"CG iterations until convergence:  {iter_cg1}")
     print(f"L2-error against exact solution:  {error_L2_cg1:.4e}")
     print(f"Coeff. error against LU solution: {error_lu_cg1:.4e}")
-assert error_L2_cg1 < 1e-6
+assert error_L2_cg1 < rtol
 
 
 # -
-# ### 3. Implementation using the built-in PETSc CG solver
+# ### 2. Implementation using the built-in PETSc CG solver
 #
 # Another approach is to use the existing CG solver of *PETSc* with a
 # virtual *PETSc* matrix in order to obtain a matrix-free Conjugate
@@ -297,38 +331,56 @@ A.setUp()
 # Conjugate Gradient solver in the KSP framework, automatically making
 # that solver matrix-free.
 
+# +
 solver = PETSc.KSP().create(msh.comm)
 solver.setOperators(A)
 solver.setType(PETSc.KSP.Type.CG)
 solver.getPC().setType(PETSc.PC.Type.NONE)
-solver.setTolerances(rtol=1e-6)
+solver.setTolerances(rtol=rtol, max_it=max_iter)
 solver.setConvergenceHistory()
+
+
+# Set custom convergence test to resemble our CG solver exactly
+def converged(ksp, iter, r_norm):
+    rtol, _, _, max_iter = ksp.getTolerances()
+    if iter > max_iter:
+        return PETSc.KSP.ConvergedReason.DIVERGED_MAX_IT
+    r0_norm = ksp.getConvergenceHistory()[0]
+    if r_norm / r0_norm < rtol:
+        return PETSc.KSP.ConvergedReason.CONVERGED_RTOL
+    return PETSc.KSP.ConvergedReason.ITERATING
+
+
+solver.setConvergenceTest(converged)
+# -
 
 # Again, the solver is applied and the errors are computed.
 
 # +
-uh_cg3 = fem.Function(V)
-solver.solve(b, uh_cg3.vector)
+uh_cg2 = fem.Function(V)
+solver.solve(b, uh_cg2.vector)
 
-uh_cg3.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
+# Set BC values in the solution vectors
+uh_cg2.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
                           mode=PETSc.ScatterMode.FORWARD)
-with uh_cg3.vector.localForm() as y_local:
+with uh_cg2.vector.localForm() as y_local:
     fem.set_bc(y_local, [bc], scale=1.0)
 
-k = len(solver.getConvergenceHistory()) - 1
-error_L2_cg3 = L2Norm(uh_cg3 - uD)
-error_lu_cg3 = np.linalg.norm(uh_cg3.x.array - uh_lu.x.array)
+# Print CG iteration number and errors
+iter_cg2 = solver.getIterationNumber()
+error_L2_cg2 = L2Norm(uh_cg2 - uD)
+error_lu_cg2 = np.linalg.norm(uh_cg2.x.array - uh_lu.x.array)
 if msh.comm.rank == 0:
     print("Matrix-free CG solver using the built-in PETSc KSP solver:")
-    print(f"CG iterations until convergence:  {k}")
-    print(f"L2-error against exact solution:  {error_L2_cg3:.4e}")
-    print(f"Coeff. error against LU solution: {error_lu_cg3:.4e}")
-assert error_L2_cg3 < 1e-6
+    print(f"CG iterations until convergence:  {iter_cg2}")
+    print(f"L2-error against exact solution:  {error_L2_cg2:.4e}")
+    print(f"Coeff. error against LU solution: {error_lu_cg2:.4e}")
+assert error_L2_cg2 < rtol
 
 
 # -
 
-# ### 4. Implementation using a custom PETSc KSP solver
+# ### 3. Implementation using a custom PETSc KSP solver
 #
 # Furthermore, it is also possible to write a custom Conjugate Gradient
 # solver in the KSP framework, which is matrix-free as before. For this
@@ -336,6 +388,7 @@ assert error_L2_cg3 < 1e-6
 
 class CustomKSP:
     def create(self, ksp):
+        # Work vectors
         self.vectors = []
 
     def destroy(self, ksp):
@@ -376,22 +429,41 @@ class CG(CustomKSP):
 
     def solve(self, ksp, b, x):
         A, _ = ksp.getOperators()
+
+        # Create work vectors
         r, _, p, y = self.vectors
         b.copy(y)
+
+        # Compute initial residual r0 = b - A x0
         A.mult(x, y)
         r = b - y
+
+        # Create work vector for the search direction p
         r.copy(p)
         p.ghostUpdate(addv=PETSc.InsertMode.INSERT,
                       mode=PETSc.ScatterMode.FORWARD)
         r_norm2 = r.dot(r)
+        self.r0_norm2 = r_norm2
         while not self.converged(ksp, r):
+
+            # Compute y = A p
             A.mult(p, y)
+
+            # Compute alpha = r.r / p.y
             alpha = r_norm2 / p.dot(y)
+
+            # Update x (x <- x + alpha * p)
             x.axpy(alpha, p)
+
+            # Update x (r <- r - alpha * y)
             r.axpy(-alpha, y)
+
+            # Update residual norm
             r_norm2_new = r.dot(r)
             beta = r_norm2_new / r_norm2
             r_norm2 = r_norm2_new
+
+            # Update p (p <- beta * p + r)
             p.aypx(beta, r)
 
 
@@ -402,26 +474,30 @@ solver = PETSc.KSP().create(msh.comm)
 solver.setOperators(A)
 solver.setType(PETSc.KSP.Type.PYTHON)
 solver.setPythonContext(CG())
-solver.setTolerances(rtol=1e-6)
+solver.setTolerances(rtol=rtol, max_it=max_iter)
 solver.setConvergenceHistory()
+solver.setConvergenceTest(converged)
 
 # The computed solution is again compared with the exact solution and
 # the direct solver using the assembled matrix.
 
 # +
-uh_cg4 = fem.Function(V)
-solver.solve(b, uh_cg4.vector)
-uh_cg4.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
+uh_cg3 = fem.Function(V)
+solver.solve(b, uh_cg3.vector)
+
+# Set BC values in the solution vectors
+uh_cg3.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
                           mode=PETSc.ScatterMode.FORWARD)
-with uh_cg4.vector.localForm() as y_local:
+with uh_cg3.vector.localForm() as y_local:
     fem.set_bc(y_local, [bc], scale=1.0)
 
-k = len(solver.getConvergenceHistory()) - 1
-error_L2_cg4 = L2Norm(uh_cg4 - uD)
-error_lu_cg4 = np.linalg.norm(uh_cg4.x.array - uh_lu.x.array)
+# Print CG iteration number and errors
+iter_cg3 = solver.getIterationNumber()
+error_L2_cg3 = L2Norm(uh_cg3 - uD)
+error_lu_cg3 = np.linalg.norm(uh_cg3.x.array - uh_lu.x.array)
 if msh.comm.rank == 0:
     print("Matrix-free CG solver using a custom PETSc KSP solver:")
-    print(f"CG iterations until convergence:  {k}")
-    print(f"L2-error against exact solution:  {error_L2_cg4:.4e}")
-    print(f"Coeff. error against LU solution: {error_lu_cg4:.4e}")
-assert error_L2_cg4 < 1e-6
+    print(f"CG iterations until convergence:  {iter_cg3}")
+    print(f"L2-error against exact solution:  {error_L2_cg3:.4e}")
+    print(f"Coeff. error against LU solution: {error_lu_cg3:.4e}")
+assert error_L2_cg3 < rtol
