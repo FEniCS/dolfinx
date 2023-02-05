@@ -215,7 +215,7 @@ def create_submesh(msh, dim, entities):
 
 class MeshTags:
     def __init__(self, meshtags, mesh: Mesh):
-        """A class for representing mesh tags.
+        """Mesh tags associate data (markers) with a subset of mesh entities of a given dimension.
 
         Args:
             meshtags: C++ mesh tags object
@@ -225,10 +225,10 @@ class MeshTags:
             MeshTags objects should not usually be created using this
             initializer directly.
 
-            The Python mesh is passed to the initializer as it may have
+            A Python mesh is passed to the initializer as it may have
             UFL data attached that is not attached the C++ Mesh that is
-            associated with `meshtags`. If `mesh` is passed, `mesh` and
-            `meshtags` must share the same C++ mesh.
+            associated with the C++ `meshtags` object. If `mesh` is
+            passed, `mesh` and `meshtags` must share the same C++ mesh.
 
         """
         if mesh is not None:
@@ -264,7 +264,7 @@ class MeshTags:
         self._cpp_object.name = value
 
     def find(self, value) -> npt.NDArray[np.int32]:
-        """Get list of all entity indices with a given value.
+        """Get a list of all entity indices with a given value.
 
         Args:
             value: Mesh tag value to search for
@@ -351,7 +351,7 @@ def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyL
 
 def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
                     ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
-    """Create an interval mesh
+    """Create an interval mesh.
 
     Args:
         comm: MPI communicator
@@ -375,7 +375,7 @@ def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
 
 def create_unit_interval(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_facet,
                          partitioner=None) -> Mesh:
-    """Create a mesh on the unit interval
+    """Create a mesh on the unit interval.
 
     Args:
         comm: MPI communicator
@@ -397,9 +397,8 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, ghost_mode=GhostMode.shared_f
 
 def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
                      cell_type=CellType.triangle, ghost_mode=GhostMode.shared_facet,
-                     partitioner=None,
-                     diagonal: DiagonalType = DiagonalType.right) -> Mesh:
-    """Create rectangle mesh
+                     partitioner=None, diagonal: DiagonalType = DiagonalType.right) -> Mesh:
+    """Create a rectangle mesh.
 
     Args:
         comm: MPI communicator
@@ -428,7 +427,7 @@ def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
 def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.triangle,
                        ghost_mode=GhostMode.shared_facet, partitioner=None,
                        diagonal: DiagonalType = DiagonalType.right) -> Mesh:
-    """Create a mesh of a unit square
+    """Create a mesh of a unit square.
 
     Args:
         comm: MPI communicator
@@ -453,10 +452,9 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
 
 
 def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
-               cell_type=CellType.tetrahedron,
-               ghost_mode=GhostMode.shared_facet,
+               cell_type=CellType.tetrahedron, ghost_mode=GhostMode.shared_facet,
                partitioner=None) -> Mesh:
-    """Create box mesh
+    """Create a box mesh.
 
     Args:
         comm: MPI communicator
@@ -481,7 +479,7 @@ def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
 
 def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellType.tetrahedron,
                      ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
-    """Create a mesh of a unit cube
+    """Create a mesh of a unit cube.
 
     Args:
         comm: MPI communicator
@@ -500,5 +498,5 @@ def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellT
     """
     if partitioner is None:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    return create_box(comm, [np.array([0.0, 0.0, 0.0]), np.array(
-        [1.0, 1.0, 1.0])], [nx, ny, nz], cell_type, ghost_mode, partitioner)
+    return create_box(comm, [np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 1.0])],
+                      [nx, ny, nz], cell_type, ghost_mode, partitioner)
