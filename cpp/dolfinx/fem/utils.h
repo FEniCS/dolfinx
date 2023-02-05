@@ -476,7 +476,7 @@ Form<T> create_form(
       for (auto f : tagged_facets)
       {
         auto index_it = std::lower_bound(entities.begin(), entities.end(), f);
-        assert(index_it != tagged_facets.end() and *index_it == f);
+        assert(index_it != entities.end() and *index_it == f);
         std::size_t pos = std::distance(entities.begin(), index_it);
         if (values[pos] == exterior_facet_integral_ids[i])
         {
