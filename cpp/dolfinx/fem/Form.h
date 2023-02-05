@@ -292,6 +292,82 @@ public:
     }
   }
 
+  /// @brief Create a finite element form.
+  ///
+  /// @note User applications will normally call a fem::Form builder
+  /// function rather using this interface directly.
+  ///
+  /// @param[in] function_spaces Function spaces for the form arguments
+  /// @param[in] integrals The integrals in the form. The first key is
+  /// the domain type. For each key there is a pair (list[domain id,
+  /// integration kernel, entities]).
+  /// @param[in] coefficients
+  /// @param[in] constants Constants in the Form
+  /// @param[in] needs_facet_permutations Set to true is any of the
+  /// integration kernels require cell permutation data
+  /// @param[in] mesh The mesh of the domain. This is required when
+  /// there are not argument functions from which the mesh can be
+  /// extracted, e.g. for functionals
+  Form(const std::vector<std::shared_ptr<const FunctionSpace>>& function_spaces,
+       const std::map<IntegralType,
+                      std::vector<std::tuple<
+                          int,
+                          std::function<void(T*, const T*, const T*,
+                                             const scalar_value_type_t*,
+                                             const int*, const std::uint8_t*)>,
+                          std::vector<std::int32_t>>>>& integrals,
+       const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+       const std::vector<std::shared_ptr<const Constant<T>>>& constants,
+       bool needs_facet_permutations,
+       std::shared_ptr<const mesh::Mesh> mesh = nullptr)
+      : _function_spaces(function_spaces), _coefficients(coefficients),
+        _constants(constants), _mesh(mesh),
+        _needs_facet_permutations(needs_facet_permutations)
+  {
+    // Extract _mesh from FunctionSpace, and check they are the same
+    if (!_mesh and !function_spaces.empty())
+      _mesh = function_spaces[0]->mesh();
+    for (const auto& V : function_spaces)
+    {
+      if (_mesh != V->mesh())
+        throw std::runtime_error("Incompatible mesh");
+    }
+    if (!_mesh)
+      throw std::runtime_error("No mesh could be associated with the Form.");
+
+    // Store kernels, looping over integrals by domain type (dimension)
+    for (auto& integral_type : integrals)
+    {
+      const IntegralType type = integral_type.first;
+      auto& kernels = integral_type.second;
+
+      // auto& kernels = integral_data.first;
+
+      // Loop over integrals kernels and set domains
+      switch (type)
+      {
+      case IntegralType::cell:
+        for (auto& [id, kern, e] : kernels)
+          _cell_integrals.insert({id, {kern, std::vector(e.begin(), e.end())}});
+        break;
+      case IntegralType::exterior_facet:
+        for (auto& [id, kern, e] : kernels)
+        {
+          _exterior_facet_integrals.insert(
+              {id, {kern, std::vector(e.begin(), e.end())}});
+        }
+        break;
+      case IntegralType::interior_facet:
+        for (auto& [id, kern, e] : kernels)
+        {
+          _interior_facet_integrals.insert(
+              {id, {kern, std::vector(e.begin(), e.end())}});
+        }
+        break;
+      }
+    }
+  }
+
   /// Copy constructor
   Form(const Form& form) = delete;
 
@@ -438,8 +514,9 @@ public:
   /// interior facet domain type.
   /// @param[in] i Integral ID, i.e. (sub)domain index
   /// @return List of tuples of the form
-  /// (cell_index_0, local_facet_index_0, cell_index_1, local_facet_index_1).
-  /// This data is flattened with row-major layout, shape=(num_facets, 4)
+  /// (cell_index_0, local_facet_index_0, cell_index_1,
+  /// local_facet_index_1). This data is flattened with row-major layout,
+  /// shape=(num_facets, 4)
   const std::vector<std::int32_t>& interior_facet_domains(int i) const
   {
     auto it = _interior_facet_integrals.find(i);

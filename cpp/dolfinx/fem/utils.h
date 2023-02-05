@@ -54,6 +54,34 @@ class FunctionSpace;
 
 namespace impl
 {
+/// Helper function to get an array of of (cell, local_facet) pairs
+/// corresponding to a given facet index.
+/// @param[in] f Facet index
+/// @param[in] cells
+/// @param[in] c_to_f Cell to facet connectivity
+/// @return Vector of (cell, local_facet) pairs
+template <int num_cells>
+static std::array<std::array<std::int32_t, 2>, num_cells>
+get_cell_local_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
+                           const graph::AdjacencyList<std::int32_t>& c_to_f)
+{
+  // Loop over cells sharing facet
+  assert(cells.size() == num_cells);
+  std::array<std::array<std::int32_t, 2>, num_cells> cell_local_facet_pairs;
+  for (int c = 0; c < num_cells; ++c)
+  {
+    // Get local index of facet with respect to the cell
+    std::int32_t cell = cells[c];
+    auto cell_facets = c_to_f.links(cell);
+    auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), f);
+    assert(facet_it != cell_facets.end());
+    int local_f = std::distance(cell_facets.begin(), facet_it);
+    cell_local_facet_pairs[c] = {cell, local_f};
+  }
+
+  return cell_local_facet_pairs;
+}
+
 /// @private These structs are used to get the float/value type from a
 /// template argument, including support for complex types.
 template <typename T, typename = void>
@@ -272,22 +300,42 @@ Form<T> create_form(
   }
 #endif
 
+  // ------
+  // Extract _mesh from FunctionSpace, and check they are the same
+  if (!mesh and !spaces.empty())
+    mesh = spaces[0]->mesh();
+  for (auto& V : spaces)
+  {
+    if (mesh != V->mesh())
+      throw std::runtime_error("Incompatible mesh");
+  }
+  if (!mesh)
+    throw std::runtime_error("No mesh could be associated with the Form.");
+
+  const mesh::Topology& topology = mesh->topology();
+  const int tdim = topology.dim();
+
+  // ------
+
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
   using kern = std::function<void(
       T*, const T*, const T*,
       const typename impl::scalar_value_type<T>::value_type*, const int*,
       const std::uint8_t*)>;
-  std::map<IntegralType, std::pair<std::vector<std::pair<int, kern>>,
-                                   const mesh::MeshTags<int>*>>
+  std::map<IntegralType,
+           std::vector<std::tuple<int, kern, std::vector<std::int32_t>>>>
       integral_data;
+  // std::map<IntegralType, std::pair<std::vector<std::pair<int, kern>>,
+  //                                  const mesh::MeshTags<int>*>>
+  //     integral_data;
 
   bool needs_facet_permutations = false;
 
   // Attach cell kernels
-  std::vector<int> cell_integral_ids(ufcx_form.integral_ids(cell),
-                                     ufcx_form.integral_ids(cell)
-                                         + ufcx_form.num_integrals(cell));
+  const std::vector<int> cell_integral_ids(ufcx_form.integral_ids(cell),
+                                           ufcx_form.integral_ids(cell)
+                                               + ufcx_form.num_integrals(cell));
   for (int i = 0; i < ufcx_form.num_integrals(cell); ++i)
   {
     ufcx_integral* integral = ufcx_form.integrals(cell)[i];
@@ -314,18 +362,42 @@ Form<T> create_form(
     }
     assert(k);
 
-    integral_data[IntegralType::cell].first.emplace_back(cell_integral_ids[i],
-                                                         k);
+    // Build list of entities to assembler over
+    std::vector<std::int32_t> e;
+    if (cell_integral_ids[i] == -1)
+    {
+      // Default kernel, operates on all (owned) cells
+      assert(topology.index_map(tdim));
+      e.resize(topology.index_map(tdim)->size_local(), 0);
+      std::iota(e.begin(), e.end(), 0);
+    }
+    else if (auto it = subdomains.find(IntegralType::cell);
+             it != subdomains.end() and it->second)
+    {
+      assert(topology.index_map(tdim));
+      std::span<const std::int32_t> entities = it->second->indices();
+      std::span<const int> values = it->second->values();
+      auto it0 = entities.begin();
+      auto it1 = std::lower_bound(it0, entities.end(),
+                                  topology.index_map(tdim)->size_local());
+      entities = entities.first(std::distance(it0, it1));
+      std::vector<std::int32_t> e;
+      for (std::size_t j = 0; j < entities.size(); ++j)
+        if (values[j] == cell_integral_ids[i])
+          e.push_back(entities[j]);
+    }
+
+    integral_data[IntegralType::cell].emplace_back(cell_integral_ids[i], k, e);
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }
 
-  // Attach cell subdomain data
-  if (auto it = subdomains.find(IntegralType::cell);
-      it != subdomains.end() and !cell_integral_ids.empty())
-  {
-    integral_data[IntegralType::cell].second = it->second;
-  }
+  // // Attach cell subdomain data
+  // if (auto it = subdomains.find(IntegralType::cell);
+  //     it != subdomains.end() and !cell_integral_ids.empty())
+  // {
+  //   // integral_data[IntegralType::cell].second = it->second;
+  // }
 
   // FIXME: Can facets be handled better?
 
@@ -372,18 +444,63 @@ Form<T> create_form(
     }
     assert(k);
 
-    integral_data[IntegralType::exterior_facet].first.emplace_back(
-        exterior_facet_integral_ids[i], k);
+    // Build list of entities to assembler over
+    std::vector<std::int32_t> e;
+    const std::vector<std::int32_t> bfacets
+        = mesh::exterior_facet_indices(topology);
+    auto f_to_c = topology.connectivity(tdim - 1, tdim);
+    assert(f_to_c);
+    auto c_to_f = topology.connectivity(tdim, tdim - 1);
+    assert(c_to_f);
+    if (exterior_facet_integral_ids[i] == -1)
+    {
+      // Default kernel, operates on all (owned) exterior facets
+      e.reserve(2 * bfacets.size());
+      for (std::int32_t f : bfacets)
+      {
+        // There will only be one pair for an exterior facet integral
+        auto pair = impl::get_cell_local_facet_pairs<1>(f, f_to_c->links(f),
+                                                        *c_to_f)[0];
+        e.insert(e.end(), pair.begin(), pair.end());
+      }
+    }
+    else if (auto it = subdomains.find(IntegralType::exterior_facet);
+             it != subdomains.end() and it->second)
+    {
+      // Create list of tagged boundary facets
+      std::span<const std::int32_t> entities = it->second->indices();
+      std::span<const int> values = it->second->values();
+      std::vector<std::int32_t> tagged_facets;
+      std::set_intersection(entities.begin(), entities.end(), bfacets.begin(),
+                            bfacets.end(), std::back_inserter(tagged_facets));
+      for (auto f : tagged_facets)
+      {
+        auto index_it = std::lower_bound(entities.begin(), entities.end(), f);
+        assert(index_it != tagged_facets.end() and *index_it == f);
+        std::size_t pos = std::distance(entities.begin(), index_it);
+        if (values[pos] == exterior_facet_integral_ids[i])
+        {
+          auto facet = impl::get_cell_local_facet_pairs<1>(f, f_to_c->links(f),
+                                                           *c_to_f)
+                           .front();
+          e.insert(e.end(), facet.begin(), facet.end());
+        }
+      }
+    }
+
+    integral_data[IntegralType::exterior_facet].emplace_back(
+        exterior_facet_integral_ids[i], k, e);
+
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }
 
-  // Attach exterior facet subdomain data
-  if (auto it = subdomains.find(IntegralType::exterior_facet);
-      it != subdomains.end() and !exterior_facet_integral_ids.empty())
-  {
-    integral_data[IntegralType::exterior_facet].second = it->second;
-  }
+  // // Attach exterior facet subdomain data
+  // if (auto it = subdomains.find(IntegralType::exterior_facet);
+  //     it != subdomains.end() and !exterior_facet_integral_ids.empty())
+  // {
+  //   // integral_data[IntegralType::exterior_facet].second = it->second;
+  // }
 
   // Attach interior facet kernels
   std::vector<int> interior_facet_integral_ids(
@@ -416,8 +533,8 @@ Form<T> create_form(
     }
     assert(k);
 
-    integral_data[IntegralType::interior_facet].first.emplace_back(
-        interior_facet_integral_ids[i], k);
+    // integral_data[IntegralType::interior_facet].first.emplace_back(
+    //     interior_facet_integral_ids[i], k);
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }
@@ -426,7 +543,7 @@ Form<T> create_form(
   if (auto it = subdomains.find(IntegralType::interior_facet);
       it != subdomains.end() and !interior_facet_integral_ids.empty())
   {
-    integral_data[IntegralType::interior_facet].second = it->second;
+    // integral_data[IntegralType::interior_facet].second = it->second;
   }
 
   return Form<T>(spaces, integral_data, coefficients, constants,
