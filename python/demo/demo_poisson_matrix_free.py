@@ -91,7 +91,7 @@ from ufl import action, dx, grad, inner
 # finite element {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
 # $V$ on the mesh.
 
-msh = mesh.create_rectangle(comm=MPI.COMM_SELF,
+msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
                             points=((0.0, 0.0), (1.0, 1.0)), n=(10, 10),
                             cell_type=mesh.CellType.triangle,
                             ghost_mode=mesh.GhostMode.none)
@@ -195,15 +195,19 @@ b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 # function `action_A` with which the matrix-vector product $y = A x$
 # is computed.
 
-def action_A(x, y):
-    y.set(0.0)
+def action_A(x):
+    y = x.duplicate()
+    with y.localForm() as y_loc:
+        y_loc.set(0)
     x.copy(ui.vector)
-    fem.petsc.assemble_vector(y, fem.form(M))
-    fem.petsc.set_bc(y, [bc], scale=0.0)
+    ui.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
+                          mode=PETSc.ScatterMode.FORWARD)
+    y = fem.petsc.assemble_vector(fem.form(M))
+    with y.localForm() as y_local:
+        fem.set_bc(y_local, [bc], scale=0.0)
     y.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
-    y.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                  mode=PETSc.ScatterMode.FORWARD)
+    return y
 
 
 # This function can be used to replace the matrix-vector product in the
@@ -212,17 +216,19 @@ def action_A(x, y):
 def cg(action_A, b, x, kmax=50, rtol=1e-8):
     y = b.duplicate()
     b.copy(y)
-    action_A(x, y)
+    y = action_A(x)
     r = b - y
     p = r.duplicate()
     r.copy(p)
+    p.ghostUpdate(addv=PETSc.InsertMode.INSERT,
+                  mode=PETSc.ScatterMode.FORWARD)
     r_norm2 = r.dot(r)
     r0_norm2 = r_norm2
     eps = rtol**2
     k = 0
     while (k < kmax):
         k += 1
-        action_A(p, y)
+        y = action_A(p)
         alpha = r_norm2 / p.dot(y)
         x.axpy(alpha, p)
         r.axpy(-alpha, y)
@@ -242,8 +248,11 @@ def cg(action_A, b, x, kmax=50, rtol=1e-8):
 
 # +
 uh_cg1 = fem.Function(V, dtype=ScalarType)
-k = cg(action_A, b, uh_cg1.vector, kmax=200, rtol=1e-6)
-fem.set_bc(uh_cg1.vector, [bc], scale=1.0)
+k = cg(action_A, b, uh_cg1.vector, kmax=100, rtol=1e-6)
+uh_cg1.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
+                          mode=PETSc.ScatterMode.FORWARD)
+with uh_cg1.vector.localForm() as y_local:
+    fem.set_bc(y_local, [bc], scale=1.0)
 
 error_L2_cg1 = L2Norm(uh_cg1 - uD)
 error_lu_cg1 = np.linalg.norm(uh_cg1.x.array - uh_lu.x.array)
@@ -253,67 +262,6 @@ if msh.comm.rank == 0:
     print(f"L2-error against exact solution:  {error_L2_cg1:.4e}")
     print(f"Coeff. error against LU solution: {error_lu_cg1:.4e}")
 assert error_L2_cg1 < 1e-6
-
-
-# -
-
-# #### 2. Implementation using NumPy arrays
-
-# It is also possible to implement a matrix-free Conjugate Gradient solver
-# using *NumPy* arrays. For that a function `action_A_np` can be defined
-# that maps an array `x` to the result of the matrix-vector product `y`.
-
-def action_A_np(x):
-    ui.vector.setArray(x)
-    y = fem.petsc.assemble_vector(fem.form(M))
-    fem.set_bc(y.array, [bc], scale=0)
-    return y.array
-
-
-# The matrix-free Conjugate Gradient solver using *NumPy* arrays is then
-# implemented analogously to the approach with *PETSc* vectors.
-
-def cg_np(action_A, b, x0=None, kmax=50, rtol=1e-8):
-    if x0 is None:
-        x0 = np.zeros_like(b)
-    r = b - action_A(x0)
-    p = r
-    r_norm2 = np.dot(r, r)
-    r0_norm2 = r_norm2
-    x = np.copy(x0)
-    k = 0
-    eps = rtol**2
-    while (k < kmax):
-        k += 1
-        y = action_A(p)
-        alpha = r_norm2 / np.dot(p, y)
-        x = x + alpha * p
-        r = r - alpha * y
-        r_norm2_new = np.dot(r, r)
-        beta = r_norm2_new / r_norm2
-        p = r + beta * p
-        r_norm2 = r_norm2_new
-        if r_norm2 / r0_norm2 < eps:
-            break
-    return x, k
-
-
-# As before, we apply the solver to the Poisson problem and compute the errors.
-
-# +
-cg2_x_array, k = cg_np(action_A_np, b.array, kmax=200, rtol=1e-6)
-fem.set_bc(cg2_x_array, [bc], scale=1.0)
-uh_cg2 = fem.Function(V, dtype=ScalarType)
-uh_cg2.vector.setArray(cg2_x_array)
-
-error_L2_cg2 = L2Norm(uh_cg2 - uD)
-error_lu_cg2 = np.linalg.norm(uh_cg2.x.array - uh_lu.x.array)
-if msh.comm.rank == 0:
-    print("Matrix-free CG solver using NumPy arrays:")
-    print(f"CG iterations until convergence:  {k}")
-    print(f"L2-error against exact solution:  {error_L2_cg2:.4e}")
-    print(f"Coeff. error against LU solution: {error_lu_cg2:.4e}")
-assert error_L2_cg2 < 1e-6
 
 
 # -
@@ -331,7 +279,7 @@ class Poisson:
         assert M == N
 
     def mult(self, A, x, y):
-        action_A(x, y)
+        action_A(x).copy(y)
 
 
 # With this we can define a virtual *PETSc* matrix, where every
@@ -339,7 +287,8 @@ class Poisson:
 
 A = PETSc.Mat()
 A.create(comm=msh.comm)
-A.setSizes([b.getSize(), b.getSize()])
+A.setSizes(((b.local_size, PETSc.DETERMINE),
+            (b.local_size, PETSc.DETERMINE)), bsize=1)
 A.setType(PETSc.Mat.Type.PYTHON)
 A.setPythonContext(Poisson())
 A.setUp()
@@ -360,11 +309,13 @@ solver.setConvergenceHistory()
 # +
 uh_cg3 = fem.Function(V)
 solver.solve(b, uh_cg3.vector)
-uh_cg3.x.scatter_forward()
-fem.set_bc(uh_cg3.vector, [bc], scale=1.0)
-uh_cg3.vector.ghostUpdate(
-    addv=PETSc.InsertMode.INSERT_VALUES, mode=PETSc.ScatterMode.FORWARD)
 
+uh_cg3.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
+                          mode=PETSc.ScatterMode.FORWARD)
+with uh_cg3.vector.localForm() as y_local:
+    fem.set_bc(y_local, [bc], scale=1.0)
+
+k = len(solver.getConvergenceHistory()) - 1
 error_L2_cg3 = L2Norm(uh_cg3 - uD)
 error_lu_cg3 = np.linalg.norm(uh_cg3.x.array - uh_lu.x.array)
 if msh.comm.rank == 0:
@@ -426,19 +377,21 @@ class CG(CustomKSP):
     def solve(self, ksp, b, x):
         A, _ = ksp.getOperators()
         r, _, p, y = self.vectors
-        A.mult(x, r)
-        r.aypx(-1, b)
+        b.copy(y)
+        A.mult(x, y)
+        r = b - y
         r.copy(p)
-        r0_norm = r.dot(r)
-        r_norm = r0_norm
+        p.ghostUpdate(addv=PETSc.InsertMode.INSERT,
+                      mode=PETSc.ScatterMode.FORWARD)
+        r_norm2 = r.dot(r)
         while not self.converged(ksp, r):
             A.mult(p, y)
-            alpha = r_norm / p.dot(y)
+            alpha = r_norm2 / p.dot(y)
             x.axpy(alpha, p)
             r.axpy(-alpha, y)
-            r_norm_new = r.dot(r)
-            beta = r_norm_new / r_norm
-            r_norm = r_norm_new
+            r_norm2_new = r.dot(r)
+            beta = r_norm2_new / r_norm2
+            r_norm2 = r_norm2_new
             p.aypx(beta, r)
 
 
@@ -458,10 +411,12 @@ solver.setConvergenceHistory()
 # +
 uh_cg4 = fem.Function(V)
 solver.solve(b, uh_cg4.vector)
-fem.set_bc(uh_cg4.vector, [bc], scale=1.0)
-uh_cg4.vector.ghostUpdate(
-    addv=PETSc.InsertMode.INSERT_VALUES, mode=PETSc.ScatterMode.FORWARD)
+uh_cg4.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
+                          mode=PETSc.ScatterMode.FORWARD)
+with uh_cg4.vector.localForm() as y_local:
+    fem.set_bc(y_local, [bc], scale=1.0)
 
+k = len(solver.getConvergenceHistory()) - 1
 error_L2_cg4 = L2Norm(uh_cg4 - uD)
 error_lu_cg4 = np.linalg.norm(uh_cg4.x.array - uh_lu.x.array)
 if msh.comm.rank == 0:
