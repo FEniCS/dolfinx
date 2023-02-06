@@ -378,10 +378,6 @@ V = fem.FunctionSpace(domain, ufl.MixedElement([curl_el, lagr_el]))
 # +
 # Measures for subdomains
 dx = ufl.Measure("dx", domain, subdomain_data=cell_tags, metadata={'quadrature_degree': 5})
-
-
-print("tags 0:", au_tag, bkg_tag)
-print("tags 1:", pml_tag)
 dDom = dx((au_tag, bkg_tag))
 dPml = dx(pml_tag)
 # -

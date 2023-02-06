@@ -272,7 +272,8 @@ Form<T> create_form(
     const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
-  // create_form_new(ufcx_form, spaces, coefficients, constants, subdomains, mesh);
+  return create_form_new(ufcx_form, spaces, coefficients, constants, subdomains,
+                         mesh);
 
   if (ufcx_form.rank != (int)spaces.size())
     throw std::runtime_error("Wrong number of argument spaces for Form.");
@@ -460,9 +461,6 @@ Form<T> create_form(
     integral_data[IntegralType::interior_facet].second = it->second;
   }
 
-  // create_form_new(ufcx_form, spaces, coefficients, constants, subdomains,
-  // mesh);
-
   return Form<T>(spaces, integral_data, coefficients, constants,
                  needs_facet_permutations, mesh);
 }
@@ -597,6 +595,7 @@ Form<T> create_form_new(
     }
 
     integral_data[IntegralType::cell].emplace_back(cell_integral_ids[i], k, e);
+
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }
@@ -674,10 +673,10 @@ Form<T> create_form_new(
       // Create list of tagged boundary facets
       std::span<const std::int32_t> entities = it->second->indices();
       std::span<const int> values = it->second->values();
-      std::vector<std::int32_t> tagged_facets;
+      std::vector<std::int32_t> facets;
       std::set_intersection(entities.begin(), entities.end(), bfacets.begin(),
-                            bfacets.end(), std::back_inserter(tagged_facets));
-      for (auto f : tagged_facets)
+                            bfacets.end(), std::back_inserter(facets));
+      for (auto f : facets)
       {
         auto index_it = std::lower_bound(entities.begin(), entities.end(), f);
         assert(index_it != entities.end() and *index_it == f);
@@ -690,21 +689,17 @@ Form<T> create_form_new(
           e.insert(e.end(), facet.begin(), facet.end());
         }
       }
-    }
 
+      // std::cout << "(BB0) Integral type, id: " <<
+      // exterior_facet_integral_ids[i]
+      //           << ", " << e.size() << std::endl;
+    }
     integral_data[IntegralType::exterior_facet].emplace_back(
         exterior_facet_integral_ids[i], k, e);
 
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }
-
-  // // Attach exterior facet subdomain data
-  // if (auto it = subdomains.find(IntegralType::exterior_facet);
-  //     it != subdomains.end() and !exterior_facet_integral_ids.empty())
-  // {
-  //   // integral_data[IntegralType::exterior_facet].second = it->second;
-  // }
 
   // Attach interior facet kernels
   std::vector<int> interior_facet_integral_ids(
@@ -741,13 +736,11 @@ Form<T> create_form_new(
     std::vector<std::int32_t> e;
     mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
     mesh->topology_mutable().create_connectivity(tdim, tdim - 1);
-    const std::vector<std::int32_t> bfacets
-        = mesh::exterior_facet_indices(topology);
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
     assert(f_to_c);
     auto c_to_f = topology.connectivity(tdim, tdim - 1);
     assert(c_to_f);
-    if (exterior_facet_integral_ids[i] == -1)
+    if (interior_facet_integral_ids[i] == -1)
     {
       // Default kernel, operates on all (owned) exterior facets
 
@@ -772,11 +765,11 @@ Form<T> create_form_new(
     {
       std::span<const std::int32_t> entities = it->second->indices();
       std::span<const int> values = it->second->values();
-      for (std::size_t i = 0; i < entities.size(); ++i)
+      for (std::size_t j = 0; j < entities.size(); ++j)
       {
-        const std::int32_t f = entities[i];
+        const std::int32_t f = entities[j];
         if (f_to_c->num_links(f) == 2
-            and values[f] == interior_facet_integral_ids[i])
+            and values[j] == interior_facet_integral_ids[i])
         {
           // Get the facet as a pair of (cell, local facet) pairs, one
           // for each cell

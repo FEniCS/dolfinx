@@ -291,12 +291,19 @@ public:
       }
     }
 
-    for (auto& d : _cell_integrals)
-    {
-      std::cout << "(A1) Integral type, id: " << d.first << std::endl;
-      std::cout << "                      : " << d.second.second.size()
-                << std::endl;
-    }
+    // for (auto& d : _cell_integrals)
+    // {
+    //   std::cout << "(A1) Integral type, id: " << d.first << std::endl;
+    //   std::cout << "                      : " << d.second.second.size()
+    //             << std::endl;
+    // }
+
+    // for (auto& d : _interior_facet_integrals)
+    // {
+    //   std::cout << "(B1) Integral type, id: " << d.first << std::endl;
+    //   std::cout << "                      : " << d.second.second.size()
+    //             << std::endl;
+    // }
   }
 
   /// @brief Create a finite element form.
@@ -374,12 +381,18 @@ public:
       }
     }
 
-    for (auto& d : _cell_integrals)
-    {
-      std::cout << "(A0) Integral type, id: " << d.first << std::endl;
-      std::cout << "                      : " << d.second.second.size()
-                << std::endl;
-    }
+    // for (auto& d : _cell_integrals)
+    // {
+    //   std::cout << "(A0) Integral type, id: " << d.first << std::endl;
+    //   std::cout << "                      : " << d.second.second.size()
+    //             << std::endl;
+    // }
+    // for (auto& d : _interior_facet_integrals)
+    // {
+    //   std::cout << "(B0) Integral type, id: " << d.first << std::endl;
+    //   std::cout << "                      : " << d.second.second.size()
+    //             << std::endl;
+    // }
   }
 
   /// Copy constructor
