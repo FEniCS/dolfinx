@@ -70,7 +70,7 @@
 # - $u_{\rm D} = 1 + x^2 + 2y^2$
 # - $f = -6$
 #
-# The function $u_{\rm D}$ for the Dirichlet boundary conditions is
+# The function $u_{\rm D}$ for the Dirichlet boundary condition is
 # in this case also the exact solution of the posed problem.
 #
 # ## Implementation
@@ -102,7 +102,7 @@ V = fem.FunctionSpace(msh, ("Lagrange", 2))
 # The second argument to {py:class}`FunctionSpace
 # <dolfinx.fem.FunctionSpace>` is a tuple consisting of `(family,
 # degree)`, where `family` is the finite element family, and `degree`
-# specifies the polynomial degree. in this case `V` consists of
+# specifies the polynomial degree. In this case `V` consists of
 # second-order, continuous Lagrange finite element functions.
 #
 # Next, we locate the mesh facets that lie on the
@@ -124,7 +124,7 @@ dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 # and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
 # {py:class}`DirichletBCMetaClass <dolfinx.fem.DirichletBCMetaClass>`
 # class that represents the boundary condition. On the boundary we prescribe
-# the {py:class}`Function <dolfinx.fem.Function>` `u_D`, which is obtained by
+# the {py:class}`Function <dolfinx.fem.Function>` `uD`, which is obtained by
 # interpolating the expression $u_{\rm D}$ onto the finite element space $V$.
 
 uD = fem.Function(V, dtype=ScalarType)
@@ -142,7 +142,12 @@ L = inner(f, v) * dx
 
 # For the matrix-free solvers we also define a second linear form `M` as
 # the {py:class}`action <ufl.action>` of the bilinear form $a$ onto an
-# arbitrary {py:class}`Function <dolfinx.fem.Function>` `ui`.
+# arbitrary {py:class}`Function <dolfinx.fem.Function>` `ui`. This linear
+# form is defined as
+#
+# $$
+# M(v) = a(u_i, v) \quad \text{for} \; \ u_i \in V.
+# $$
 
 ui = fem.Function(V)
 M = action(a, ui)
@@ -304,7 +309,7 @@ assert error_L2_cg1 < rtol
 # Another approach is to use the existing CG solver of *PETSc* with a
 # virtual *PETSc* matrix in order to obtain a matrix-free Conjugate
 # Gradient solver. For this purpose, we create a class `Poisson` to
-# emulate the assembled matrix `A`` of the Poisson problem
+# emulate the assembled matrix `A` of the Poisson problem
 # considered here.
 
 class Poisson:
