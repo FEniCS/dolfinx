@@ -62,7 +62,8 @@ namespace impl
 /// @return Vector of (cell, local_facet) pairs
 template <int num_cells>
 static std::array<std::array<std::int32_t, 2>, num_cells>
-get_cell_local_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
+get_cell_local_facet_pairs(std::int32_t f,
+                           const std::span<const std::int32_t>& cells,
                            const graph::AdjacencyList<std::int32_t>& c_to_f)
 {
   // Loop over cells sharing facet
@@ -326,9 +327,6 @@ Form<T> create_form(
   std::map<IntegralType,
            std::vector<std::tuple<int, kern, std::vector<std::int32_t>>>>
       integral_data;
-  // std::map<IntegralType, std::pair<std::vector<std::pair<int, kern>>,
-  //                                  const mesh::MeshTags<int>*>>
-  //     integral_data;
 
   bool needs_facet_permutations = false;
 
@@ -338,6 +336,8 @@ Form<T> create_form(
                                                + ufcx_form.num_integrals(cell));
   for (int i = 0; i < ufcx_form.num_integrals(cell); ++i)
   {
+    std::cout << "Domain id (0): " << cell_integral_ids[i] << std::endl;
+
     ufcx_integral* integral = ufcx_form.integrals(cell)[i];
     assert(integral);
 
@@ -366,6 +366,8 @@ Form<T> create_form(
     std::vector<std::int32_t> e;
     if (cell_integral_ids[i] == -1)
     {
+      std::cout << "Default domain: " << cell_integral_ids[i] << std::endl;
+
       // Default kernel, operates on all (owned) cells
       assert(topology.index_map(tdim));
       e.resize(topology.index_map(tdim)->size_local(), 0);
@@ -374,6 +376,8 @@ Form<T> create_form(
     else if (auto it = subdomains.find(IntegralType::cell);
              it != subdomains.end() and it->second)
     {
+      std::cout << "Domain id (1): " << cell_integral_ids[i] << std::endl;
+
       assert(topology.index_map(tdim));
       std::span<const std::int32_t> entities = it->second->indices();
       std::span<const int> values = it->second->values();
@@ -391,13 +395,6 @@ Form<T> create_form(
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }
-
-  // // Attach cell subdomain data
-  // if (auto it = subdomains.find(IntegralType::cell);
-  //     it != subdomains.end() and !cell_integral_ids.empty())
-  // {
-  //   // integral_data[IntegralType::cell].second = it->second;
-  // }
 
   // FIXME: Can facets be handled better?
 

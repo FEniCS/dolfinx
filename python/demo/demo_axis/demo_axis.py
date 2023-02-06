@@ -352,11 +352,9 @@ MPI.COMM_WORLD.barrier()
 if have_pyvista:
     topology, cell_types, geometry = plot.create_vtk_mesh(domain, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
-    pyvista.set_jupyter_backend("pythreejs")
     plotter = pyvista.Plotter()
     num_local_cells = domain.topology.index_map(domain.topology.dim).size_local
-    grid.cell_data["Marker"] = \
-        cell_tags.values[cell_tags.indices < num_local_cells]
+    grid.cell_data["Marker"] = cell_tags.values[cell_tags.indices < num_local_cells]
     grid.set_active_scalars("Marker")
     plotter.add_mesh(grid, show_edges=True)
     plotter.view_xy()
@@ -364,8 +362,7 @@ if have_pyvista:
         plotter.show()
     else:
         pyvista.start_xvfb()
-        figure = plotter.screenshot("sphere_axis_mesh.png",
-                                    window_size=[500, 500])
+        figure = plotter.screenshot("sphere_axis_mesh.png", window_size=[500, 500])
 
 # For the $\hat{\rho}$ and $\hat{z}$ components of the electric field,
 # we will use Nedelec elements, while for the $\hat{\phi}$ components we
@@ -382,6 +379,9 @@ V = fem.FunctionSpace(domain, ufl.MixedElement([curl_el, lagr_el]))
 # Measures for subdomains
 dx = ufl.Measure("dx", domain, subdomain_data=cell_tags, metadata={'quadrature_degree': 5})
 
+
+print("tags 0:", au_tag, bkg_tag)
+print("tags 1:", pml_tag)
 dDom = dx((au_tag, bkg_tag))
 dPml = dx(pml_tag)
 # -
@@ -525,6 +525,7 @@ for m in m_list:
     problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={
                                       "ksp_type": "preonly", "pc_type": "lu"})
     Esh_m = problem.solve()
+    exit(0)
 
     # Scattered magnetic field
     Hsh_m = -1j * curl_axis(Esh_m, m, rho) / (Z0 * k0)
