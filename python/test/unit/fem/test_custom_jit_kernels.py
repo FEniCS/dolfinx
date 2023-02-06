@@ -86,12 +86,15 @@ def test_numba_assembly():
     V = FunctionSpace(mesh, ("Lagrange", 1))
     Form = _cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else _cpp.fem.Form_complex128
 
-    integrals = {IntegralType.cell: ([(-1, tabulate_tensor_A.address),
-                                      (12, tabulate_tensor_A.address),
-                                      (2, tabulate_tensor_A.address)], None)}
+    cells = range(mesh.topology.index_map(mesh.topology.dim).size_local)
+    integrals = {IntegralType.cell: [(-1, tabulate_tensor_A.address, cells),
+                                     (12, tabulate_tensor_A.address, range(0)),
+                                     (2, tabulate_tensor_A.address, range(0))
+                                     ]
+                 }
     a = Form([V._cpp_object, V._cpp_object], integrals, [], [], False)
 
-    integrals = {IntegralType.cell: ([(-1, tabulate_tensor_b.address)], None)}
+    integrals = {IntegralType.cell: [(-1, tabulate_tensor_b.address, cells)]}
     L = Form([V._cpp_object], integrals, [], [], False)
 
     A = dolfinx.fem.petsc.assemble_matrix(a)
@@ -231,12 +234,14 @@ def test_cffi_assembly():
     mesh.comm.Barrier()
     from _cffi_kernelA import ffi, lib
 
+    cells = range(mesh.topology.index_map(mesh.topology.dim).size_local)
+
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
-    integrals = {IntegralType.cell: ([(-1, ptrA)], None)}
+    integrals = {IntegralType.cell: [(-1, ptrA, cells)]}
     a = _cpp.fem.Form_float64([V._cpp_object, V._cpp_object], integrals, [], [], False)
 
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
-    integrals = {IntegralType.cell: ([(-1, ptrL)], None)}
+    integrals = {IntegralType.cell: [(-1, ptrL, cells)]}
     L = _cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False)
 
     A = fem.assemble_matrix(a)
