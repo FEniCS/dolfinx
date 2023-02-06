@@ -382,9 +382,9 @@ void declare_form(py::module& m, const std::string& type)
                      _integrals;
 
                  // Loop over kernel for each entity type
-                 for (auto& [type, kernels] : integrals)
+                 for (auto [type, kernels] : integrals)
                  {
-                   for (auto& [id, kn, e] : kernels)
+                   for (auto [id, kn, e] : kernels)
                    {
                      std::uintptr_t ptr = kn.cast<std::uintptr_t>();
                      auto kn_ptr
