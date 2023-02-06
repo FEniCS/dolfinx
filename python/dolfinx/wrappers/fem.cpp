@@ -386,10 +386,11 @@ void declare_form(py::module& m, const std::string& type)
                  {
                    for (auto& [id, kn, e] : kernels)
                    {
-                     auto kn_ptr = (void (*)(
-                         T*, const T*, const T*,
-                         const typename geom_type<T>::value_type*, const int*,
-                         const std::uint8_t*))kn.cast<std::uintptr_t>();
+                     std::uintptr_t ptr = kn.cast<std::uintptr_t>();
+                     auto kn_ptr
+                         = (void (*)(T*, const T*, const T*,
+                                     const typename geom_type<T>::value_type*,
+                                     const int*, const std::uint8_t*))ptr;
                      _integrals[type].emplace_back(
                          id, kn_ptr,
                          std::vector<std::int32_t>(e.data(),
