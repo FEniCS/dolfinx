@@ -551,9 +551,10 @@ Form<T> create_form(
 
       // Get number of facets owned by this process
       assert(topology.index_map(tdim - 1));
-      const int num_facets = topology.index_map(tdim - 1)->size_local();
+      const std::int32_t num_facets
+          = topology.index_map(tdim - 1)->size_local();
       e.reserve(4 * num_facets);
-      for (int f = 0; f < num_facets; ++f)
+      for (std::int32_t f = 0; f < num_facets; ++f)
       {
         if (f_to_c->num_links(f) == 2)
         {
@@ -567,45 +568,30 @@ Form<T> create_form(
     else if (auto it = subdomains.find(IntegralType::interior_facet);
              it != subdomains.end() and it->second)
     {
-      // // Create list of tagged boundary facets
-      // std::span<const std::int32_t> entities = it->second->indices();
-      // std::span<const int> values = it->second->values();
-      // std::vector<std::int32_t> tagged_facets;
-      // std::set_intersection(entities.begin(), entities.end(),
-      // bfacets.begin(),
-      //                       bfacets.end(),
-      //                       std::back_inserter(tagged_facets));
-      // for (auto f : tagged_facets)
-      // {
-      //   auto index_it = std::lower_bound(entities.begin(), entities.end(),
-      //   f); assert(index_it != entities.end() and *index_it == f);
-      //   std::size_t pos = std::distance(entities.begin(), index_it);
-      //   if (values[pos] == exterior_facet_integral_ids[i])
-      //   {
-      //     auto facet = impl::get_cell_local_facet_pairs<1>(f,
-      //     f_to_c->links(f),
-      //                                                      *c_to_f)
-      //                      .front();
-      //     e.insert(e.end(), facet.begin(), facet.end());
-      //   }
-      // }
+      std::span<const std::int32_t> entities = it->second->indices();
+      std::span<const int> values = it->second->values();
+      for (std::size_t i = 0; i < entities.size(); ++i)
+      {
+        const std::int32_t f = entities[i];
+        if (f_to_c->num_links(f) == 2
+            and values[f] == interior_facet_integral_ids[i])
+        {
+          // Get the facet as a pair of (cell, local facet) pairs, one
+          // for each cell
+          auto [f0, f1] = impl::get_cell_local_facet_pairs<2>(
+              f, f_to_c->links(f), *c_to_f);
+          e.insert(e.end(), f0.begin(), f0.end());
+          e.insert(e.end(), f1.begin(), f1.end());
+        }
+      }
     }
 
     integral_data[IntegralType::interior_facet].emplace_back(
         interior_facet_integral_ids[i], k, e);
 
-    // integral_data[IntegralType::interior_facet].first.emplace_back(
-    //     interior_facet_integral_ids[i], k);
     if (integral->needs_facet_permutations)
       needs_facet_permutations = true;
   }
-
-  // // Attach interior facet subdomain data
-  // if (auto it = subdomains.find(IntegralType::interior_facet);
-  //     it != subdomains.end() and !interior_facet_integral_ids.empty())
-  // {
-  //   // integral_data[IntegralType::interior_facet].second = it->second;
-  // }
 
   return Form<T>(spaces, integral_data, coefficients, constants,
                  needs_facet_permutations, mesh);
