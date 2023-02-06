@@ -40,6 +40,9 @@ from petsc4py import PETSc
 
 from dolfinx import geometry
 
+exit(0)
+
+
 infile = XDMFFile(MPI.COMM_WORLD, Path(Path(__file__).parent, "data",
                   "cooks_tri_mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII)
 msh = infile.read_mesh(name="Grid")
