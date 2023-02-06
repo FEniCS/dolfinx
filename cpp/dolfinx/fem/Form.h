@@ -290,6 +290,13 @@ public:
         }
       }
     }
+
+    for (auto& d : _cell_integrals)
+    {
+      std::cout << "(A1) Integral type, id: " << d.first << std::endl;
+      std::cout << "                      : " << d.second.second.size()
+                << std::endl;
+    }
   }
 
   /// @brief Create a finite element form.
@@ -365,6 +372,13 @@ public:
         }
         break;
       }
+    }
+
+    for (auto& d : _cell_integrals)
+    {
+      std::cout << "(A0) Integral type, id: " << d.first << std::endl;
+      std::cout << "                      : " << d.second.second.size()
+                << std::endl;
     }
   }
 

@@ -525,7 +525,6 @@ for m in m_list:
     problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={
                                       "ksp_type": "preonly", "pc_type": "lu"})
     Esh_m = problem.solve()
-    exit(0)
 
     # Scattered magnetic field
     Hsh_m = -1j * curl_axis(Esh_m, m, rho) / (Z0 * k0)
