@@ -61,13 +61,13 @@ namespace impl
 /// @param[in] c_to_f Cell to facet connectivity
 /// @return Vector of (cell, local_facet) pairs
 template <int num_cells>
-static std::array<std::array<std::int32_t, 2>, num_cells>
+std::array<std::int32_t, 2 * num_cells>
 get_cell_facet_pairs(std::int32_t f, const std::span<const std::int32_t>& cells,
                      const graph::AdjacencyList<std::int32_t>& c_to_f)
 {
   // Loop over cells sharing facet
   assert(cells.size() == num_cells);
-  std::array<std::array<std::int32_t, 2>, num_cells> cell_local_facet_pairs;
+  std::array<std::int32_t, 2 * num_cells> cell_local_facet_pairs;
   for (int c = 0; c < num_cells; ++c)
   {
     // Get local index of facet with respect to the cell
@@ -76,7 +76,8 @@ get_cell_facet_pairs(std::int32_t f, const std::span<const std::int32_t>& cells,
     auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), f);
     assert(facet_it != cell_facets.end());
     int local_f = std::distance(cell_facets.begin(), facet_it);
-    cell_local_facet_pairs[c] = {cell, local_f};
+    cell_local_facet_pairs[2 * c] = cell;
+    cell_local_facet_pairs[2 * c + 1] = local_f;
   }
 
   return cell_local_facet_pairs;
@@ -445,7 +446,7 @@ Form<T> create_form(
         {
           // There will only be one pair for an exterior facet integral
           auto pair
-              = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f)[0];
+              = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
           e.insert(e.end(), pair.begin(), pair.end());
         }
       }
@@ -465,8 +466,7 @@ Form<T> create_form(
           if (values[pos] == id)
           {
             auto facet
-                = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f)
-                      .front();
+                = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
             e.insert(e.end(), facet.begin(), facet.end());
           }
         }
@@ -529,8 +529,7 @@ Form<T> create_form(
           {
             auto pairs
                 = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
-            e.insert(e.end(), pairs[0].begin(), pairs[0].end());
-            e.insert(e.end(), pairs[1].begin(), pairs[1].end());
+            e.insert(e.end(), pairs.begin(), pairs.end());
           }
         }
       }
@@ -545,10 +544,9 @@ Form<T> create_form(
           {
             // Get the facet as a pair of (cell, local facet) pairs, one
             // for each cell
-            auto [f0, f1]
+            auto facets
                 = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
-            e.insert(e.end(), f0.begin(), f0.end());
-            e.insert(e.end(), f1.begin(), f1.end());
+            e.insert(e.end(), facets.begin(), facets.end());
           }
         }
       }
