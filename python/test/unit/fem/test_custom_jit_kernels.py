@@ -12,7 +12,7 @@ import sys
 import numpy as np
 import pytest
 from dolfinx.fem import Function, FunctionSpace, IntegralType
-from dolfinx.mesh import create_unit_square, meshtags
+from dolfinx.mesh import create_unit_square
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -48,9 +48,7 @@ def tabulate_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_orientation)
 
     # 2x Element area Ae
     Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
-    B = np.array(
-        [y1 - y2, y2 - y0, y0 - y1, x2 - x1, x0 - x2, x1 - x0],
-        dtype=PETSc.ScalarType).reshape(2, 3)
+    B = np.array([y1 - y2, y2 - y0, y0 - y1, x2 - x1, x0 - x2, x1 - x0], dtype=PETSc.ScalarType).reshape(2, 3)
     A[:, :] = np.dot(B.T, B) / (2 * Ae)
 
 
@@ -89,9 +87,7 @@ def test_numba_assembly():
     cells = range(mesh.topology.index_map(mesh.topology.dim).size_local)
     integrals = {IntegralType.cell: [(-1, tabulate_tensor_A.address, cells),
                                      (12, tabulate_tensor_A.address, range(0)),
-                                     (2, tabulate_tensor_A.address, range(0))
-                                     ]
-                 }
+                                     (2, tabulate_tensor_A.address, range(0))]}
     a = Form([V._cpp_object, V._cpp_object], integrals, [], [], False)
 
     integrals = {IntegralType.cell: [(-1, tabulate_tensor_b.address, cells)]}
