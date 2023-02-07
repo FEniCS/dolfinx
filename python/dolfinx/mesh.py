@@ -248,7 +248,7 @@ class MeshTags:
         return self._cpp_object.dim
 
     @property
-    def indices(self) -> npt.NDArray[np.in32_t]:
+    def indices(self) -> npt.NDArray[np.int32]:
         """Indices of tagged mesh entities."""
         return self._cpp_object.indices
 
