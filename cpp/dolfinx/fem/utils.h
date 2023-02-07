@@ -391,7 +391,7 @@ Form<T> create_form(
             e.push_back(entities[j]);
       }
 
-      itg.first->second.emplace_back(id, k, e);
+      itg.first->second.emplace_back(id, k, std::move(e));
       if (integral->needs_facet_permutations)
         needs_facet_permutations = true;
     }
@@ -472,7 +472,7 @@ Form<T> create_form(
         }
       }
 
-      itg.first->second.emplace_back(id, k, e);
+      itg.first->second.emplace_back(id, k, std::move(e));
       if (integral->needs_facet_permutations)
         needs_facet_permutations = true;
     }
@@ -553,7 +553,7 @@ Form<T> create_form(
         }
       }
 
-      itg.first->second.emplace_back(id, k, e);
+      itg.first->second.emplace_back(id, k, std::move(e));
       if (integral->needs_facet_permutations)
         needs_facet_permutations = true;
     }
