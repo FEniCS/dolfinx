@@ -29,7 +29,6 @@ def test_create(cell_type):
 
     assert hasattr(mt, "ufl_id")
     assert mt.indices.shape == marked_lines.shape
-    assert mt.dtype == np.int32
     assert mt.values.dtype == np.int32
     assert mt.values.shape[0] == entities.num_nodes
 

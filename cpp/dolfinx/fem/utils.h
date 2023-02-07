@@ -340,6 +340,7 @@ Form<T> create_form(
     std::span<const int> ids(ufcx_form.integral_ids(cell),
                              ufcx_form.num_integrals(cell));
     auto itg = integral_data.insert({IntegralType::cell, {}});
+    auto sd = subdomains.find(IntegralType::cell);
     for (int i = 0; i < ufcx_form.num_integrals(cell); ++i)
     {
       const int id = ids[i];
@@ -376,12 +377,11 @@ Form<T> create_form(
         e.resize(topology.index_map(tdim)->size_local(), 0);
         std::iota(e.begin(), e.end(), 0);
       }
-      else if (auto it = subdomains.find(IntegralType::cell);
-               it != subdomains.end() and it->second)
+      else if (sd != subdomains.end() and sd->second)
       {
         assert(topology.index_map(tdim));
-        std::span<const std::int32_t> entities = it->second->indices();
-        std::span<const int> values = it->second->values();
+        std::span<const std::int32_t> entities = sd->second->indices();
+        std::span<const int> values = sd->second->values();
         auto it0 = entities.begin();
         auto it1 = std::lower_bound(it0, entities.end(),
                                     topology.index_map(tdim)->size_local());
@@ -402,6 +402,7 @@ Form<T> create_form(
     std::span<const int> ids(ufcx_form.integral_ids(exterior_facet),
                              ufcx_form.num_integrals(exterior_facet));
     auto itg = integral_data.insert({IntegralType::exterior_facet, {}});
+    auto sd = subdomains.find(IntegralType::exterior_facet);
     for (int i = 0; i < ufcx_form.num_integrals(exterior_facet); ++i)
     {
       const int id = ids[i];
@@ -448,12 +449,11 @@ Form<T> create_form(
           e.insert(e.end(), pair.begin(), pair.end());
         }
       }
-      else if (auto it = subdomains.find(IntegralType::exterior_facet);
-               it != subdomains.end() and it->second)
+      else if (sd != subdomains.end() and sd->second)
       {
         // Create list of tagged boundary facets
-        std::span<const std::int32_t> entities = it->second->indices();
-        std::span<const int> values = it->second->values();
+        std::span<const std::int32_t> entities = sd->second->indices();
+        std::span<const int> values = sd->second->values();
         std::vector<std::int32_t> facets;
         std::set_intersection(entities.begin(), entities.end(), bfacets.begin(),
                               bfacets.end(), std::back_inserter(facets));
@@ -483,6 +483,7 @@ Form<T> create_form(
     std::span<const int> ids(ufcx_form.integral_ids(interior_facet),
                              ufcx_form.num_integrals(interior_facet));
     auto itg = integral_data.insert({IntegralType::interior_facet, {}});
+    auto sd = subdomains.find(IntegralType::interior_facet);
     for (int i = 0; i < ufcx_form.num_integrals(interior_facet); ++i)
     {
       const int id = ids[i];
@@ -533,11 +534,10 @@ Form<T> create_form(
           }
         }
       }
-      else if (auto it = subdomains.find(IntegralType::interior_facet);
-               it != subdomains.end() and it->second)
+      else if (sd != subdomains.end() and sd->second)
       {
-        std::span<const std::int32_t> entities = it->second->indices();
-        std::span<const int> values = it->second->values();
+        std::span<const std::int32_t> entities = sd->second->indices();
+        std::span<const int> values = sd->second->values();
         for (std::size_t j = 0; j < entities.size(); ++j)
         {
           const std::int32_t f = entities[j];

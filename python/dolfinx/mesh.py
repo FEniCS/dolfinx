@@ -211,8 +211,6 @@ def create_submesh(msh, dim, entities):
     return (Mesh(submsh, submsh_domain), entity_map, vertex_map, geom_map)
 
 
-# -------
-
 class MeshTags:
     def __init__(self, meshtags, mesh: Mesh):
         """Mesh tags associate data (markers) with a subset of mesh entities of a given dimension.
@@ -240,23 +238,27 @@ class MeshTags:
         return id(self)
 
     @property
-    def mesh(self):
+    def mesh(self) -> Mesh:
+        """Mesh with which the the tags are associated."""
         return self._mesh
 
     @property
-    def indices(self):
+    def dim(self) -> int:
+        """Topological dimension of the tagged entities."""
+        return self._cpp_object.dim
+
+    @property
+    def indices(self) -> npt.NDArray[np.in32_t]:
+        """Indices of tagged mesh entities."""
         return self._cpp_object.indices
 
     @property
     def values(self):
+        """Values associated with tagged mesh entities."""
         return self._cpp_object.values
 
     @property
-    def dtype(self):
-        return self._cpp_object.dtype
-
-    @property
-    def name(self):
+    def name(self) -> str:
         return self._cpp_object.name
 
     @name.setter
@@ -276,7 +278,7 @@ class MeshTags:
         return self._cpp_object.find(value)
 
 
-def meshtags(mesh: Mesh, dim: int, entities: npt.NDArray[np.int64],
+def meshtags(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32],
              values: typing.Union[np.ndarray, int, float]) -> MeshTags:
     """Create a MeshTags object that associates data with a subset of mesh entities.
 
