@@ -104,8 +104,8 @@ def test_numba_assembly():
 
     Anorm = A.norm(PETSc.NormType.FROBENIUS)
     bnorm = b.norm(PETSc.NormType.N2)
-    assert (np.isclose(Anorm, 56.124860801609124))
-    assert (np.isclose(bnorm, 0.0739710713711999))
+    assert np.isclose(Anorm, 56.124860801609124)
+    assert np.isclose(bnorm, 0.0739710713711999)
 
     list_timings(MPI.COMM_WORLD, [TimingType.wall])
 
@@ -119,16 +119,14 @@ def test_coefficient():
 
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
-    mt = meshtags(mesh, tdim, np.arange(num_cells, dtype=np.intc), np.ones(num_cells, dtype=np.intc))
-    integrals = {IntegralType.cell: ([(1, tabulate_tensor_b_coeff.address)], mt._cpp_object)}
-
+    integrals = {IntegralType.cell: [(1, tabulate_tensor_b_coeff.address, np.arange(num_cells, dtype=np.intc))]}
     Form = _cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else _cpp.fem.Form_complex128
     L = Form([V._cpp_object], integrals, [vals._cpp_object], [], False)
 
     b = dolfinx.fem.petsc.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bnorm = b.norm(PETSc.NormType.N2)
-    assert (np.isclose(bnorm, 2.0 * 0.0739710713711999))
+    assert np.isclose(bnorm, 2.0 * 0.0739710713711999)
 
 
 @pytest.mark.skip_in_parallel
