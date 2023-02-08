@@ -14,24 +14,24 @@ import pathlib
 import time
 
 import cffi
-import numba
-import numba.core.typing.cffi_utils as cffi_support
+import dolfinx.pkgconfig
 import numpy as np
 import numpy.typing
-import pytest
-
-import dolfinx
-import dolfinx.pkgconfig
-import ufl
-from dolfinx.fem import Function, FunctionSpace, form, transpose_dofmap
-from dolfinx.fem.petsc import assemble_matrix
-from dolfinx.mesh import create_unit_square
-from ufl import dx, inner
-
 import petsc4py.lib
+import pytest
+import ufl
+from dolfinx.fem import Function, FunctionSpace, form
+from dolfinx.fem.petsc import assemble_matrix, load_petsc_lib
+from dolfinx.mesh import create_unit_square
 from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
+from ufl import dx, inner
+
+import dolfinx
+
+numba = pytest.importorskip("numba")
+cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
 
 # Get details of PETSc install
 petsc_dir = PETSc_get_config()['PETSC_DIR']
@@ -72,19 +72,7 @@ else:
         f"Cannot translate PETSc scalar type to a C type, complex: {complex} size: {scalar_size}.")
 
 
-# Load PETSc library via ctypes
-petsc_lib_name = ctypes.util.find_library("petsc")
-if petsc_lib_name is not None:
-    petsc_lib_ctypes = ctypes.CDLL(petsc_lib_name)
-else:
-    try:
-        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
-    except OSError:
-        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
-    except OSError:
-        print("Could not load PETSc library for CFFI (ABI mode).")
-        raise
-
+petsc_lib_ctypes = load_petsc_lib(ctypes.cdll.LoadLibrary)
 # Get the PETSc MatSetValuesLocal function via ctypes
 # ctypes does not support static types well, ignore type check errors
 MatSetValues_ctypes = petsc_lib_ctypes.MatSetValuesLocal
@@ -104,16 +92,7 @@ ffi.cdef("""int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow,
 """.format(c_int_t, c_scalar_t))
 
 
-if petsc_lib_name is not None:
-    petsc_lib_cffi = ffi.dlopen(petsc_lib_name)
-else:
-    try:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
-    except OSError:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
-    except OSError:
-        print("Could not load PETSc library for CFFI (ABI mode).")
-        raise
+petsc_lib_cffi = load_petsc_lib(ffi.dlopen)
 MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 
 
@@ -303,7 +282,6 @@ def test_custom_mesh_loop_rank1():
     x_dofs = mesh.geometry.dofmap.array.reshape(num_cells, 3)
     x = mesh.geometry.x
     dofmap = V.dofmap.list.array.reshape(num_cells, 3)
-    dofmap_t = transpose_dofmap(V.dofmap.list, num_owned_cells)
 
     # Assemble with pure Numba function (two passes, first will include
     # JIT overhead)
@@ -318,18 +296,21 @@ def test_custom_mesh_loop_rank1():
     b0.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert b0.vector.sum() == pytest.approx(1.0)
 
+    # NOTE: Parallel (threaded) Numba can cause problems with MPI
     # Assemble with pure Numba function using parallel loop (two passes,
     # first will include JIT overhead)
-    btmp = Function(V)
-    for i in range(2):
-        b = btmp.x.array
-        b[:] = 0.0
-        start = time.time()
-        assemble_vector_parallel(b, x_dofs, x, dofmap_t.array, dofmap_t.offsets, num_owned_cells)
-        end = time.time()
-        print("Time (numba parallel, pass {}): {}".format(i, end - start))
-    btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert (btmp.vector - b0.vector).norm() == pytest.approx(0.0)
+    # from dolfinx.fem import transpose_dofmap
+    # dofmap_t = transpose_dofmap(V.dofmap.list, num_owned_cells)
+    # btmp = Function(V)
+    # for i in range(2):
+    #     b = btmp.x.array
+    #     b[:] = 0.0
+    #     start = time.time()
+    #     assemble_vector_parallel(b, x_dofs, x, dofmap_t.array, dofmap_t.offsets, num_owned_cells)
+    #     end = time.time()
+    #     print("Time (numba parallel, pass {}): {}".format(i, end - start))
+    # btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    # assert (btmp.vector - b0.vector).norm() == pytest.approx(0.0)
 
     # Test against generated code and general assembler
     v = ufl.TestFunction(V)

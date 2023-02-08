@@ -16,11 +16,9 @@ class AdjacencyList;
 
 /// @brief Re-order a graph using the Gibbs-Poole-Stockmeyer algorithm.
 ///
-/// The algorithm is described in
-///
-/// An Algorithm for Reducing the Bandwidth and Profile of a Sparse
-/// Matrix, SIAM Journal on Numerical Analysis, 13(2): 236-250, 1976,
-/// https://www.jstor.org/stable/2156090.
+/// The algorithm is described in *An Algorithm for Reducing the
+/// Bandwidth and Profile of a Sparse Matrix*, SIAM Journal on Numerical
+/// Analysis, 13(2): 236-250, 1976, https://doi.org/10.1137/0713023.
 ///
 /// @param[in] graph The graph to compute a re-ordering for
 /// @return Reordering array `map`, where `map[i]` is the new index of

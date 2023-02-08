@@ -5,7 +5,7 @@
 [![Actions Docker images](https://github.com/FEniCS/dolfinx/actions/workflows/docker.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/docker.yml)
 [![Actions Spack build](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml)
 [![Actions Conda install](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml)
-[![Actions MacOS/Homebrew install](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml)
+[![Actions macOS/Homebrew install](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml)
 
 DOLFINx is the computational environment of
 [FEniCSx](https://fenicsproject.org) and implements the FEniCS Problem
@@ -13,13 +13,12 @@ Solving Environment in C++ and Python.
 
 DOLFINx is a new version of DOLFIN and is being actively developed.
 
-
 ## Documentation
 
 Documentation can be viewed at:
 
-- https://docs.fenicsproject.org/dolfinx/main/cpp/
-- https://docs.fenicsproject.org/dolfinx/main/python/
+- <https://docs.fenicsproject.org/dolfinx/main/cpp/>
+- <https://docs.fenicsproject.org/dolfinx/main/python/>
 
 ## Installation
 
@@ -28,6 +27,7 @@ Documentation can be viewed at:
 #### C++ core
 
 To build and install the C++ core, in the ``cpp/`` directory, run::
+
 ```shell
 mkdir build
 cd build
@@ -39,18 +39,21 @@ make install
 
 To install the Python interface, first install the C++ core, and then
 in the ``python/`` directory run::
+
 ```shell
 pip install .
 ```
+
 (you may need to use ``pip3``, depending on your system).
 
 For detailed instructions, see
-https://docs.fenicsproject.org/dolfinx/main/python/installation.
+<https://docs.fenicsproject.org/dolfinx/main/python/installation>.
 
 ### Binary
 
 #### Operating System Recommendations
-- Mac OS: use [conda](#conda).
+
+- macOS: use [conda](#conda).
 - Linux: use [apt](#ubuntu-packages) ([Ubuntu](#ubuntu-packages)/[Debian](#debian-packages)), [docker](#docker-images) or [conda](#conda). See also [Spack](#spack).
 - Windows: use [docker](#docker-images), or install Microsoft's [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and use [Ubuntu](#ubuntu-packages).
 
@@ -60,11 +63,13 @@ Conda is the recommended install method for Mac OS users. Linux users may also u
 
 To install the latest stable release of the Python interface, with pyvista support for
 visualisation, using [conda](https://conda.io):
+
 ```shell
 conda create -n fenicsx-env
 conda activate fenicsx-env
 conda install -c conda-forge fenics-dolfinx mpich pyvista
 ```
+
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
 [Miniconda](https://docs.conda.io/en/latest/miniconda.html). The conda
 recipe is hosted on
@@ -85,6 +90,7 @@ Spack is recommended for building DOLFINx on HPC systems.
 To build the most recent release using
 [Spack](https://spack.readthedocs.io/) (assuming a bash-compatible
 shell):
+
 ```shell
 git clone https://github.com/spack/spack.git
 . ./spack/share/spack/setup-env.sh
@@ -93,6 +99,7 @@ spack env activate fenicsx-env
 spack add py-fenics-dolfinx cflags="-O3" fflags="-O3"
 spack install
 ```
+
 See the Spack [documentation](https://spack.readthedocs.io/) for
 comprehensive instructions.
 
@@ -103,7 +110,8 @@ PPA](https://launchpad.net/~fenics-packages/+archive/ubuntu/fenics) contains
 binary packages of the FEniCSx components for Ubuntu.
 
 To install:
-```
+
+```shell
 add-apt-repository ppa:fenics-packages/fenics
 apt update
 apt install fenicsx
@@ -122,34 +130,40 @@ of Debian. Install with `apt-get install fenicsx`.
 #### Docker images
 
 A Docker image with the latest stable release of DOLFINx:
+
 ```shell
 docker run -ti dolfinx/dolfinx:stable
 ```
 
 To switch between real and complex builds of DOLFINx/PETSc.
+
 ```shell
 source /usr/local/bin/dolfinx-complex-mode
 source /usr/local/bin/dolfinx-real-mode
 ```
 
 A Jupyter Lab environment with the latest stable release of DOLFINx:
+
 ```shell
 docker run --init -ti -p 8888:8888 dolfinx/lab:stable  # Access at http://localhost:8888
 ```
 
 A Docker image with DOLFINx built nightly:
+
 ```shell
 docker run -ti dolfinx/dolfinx:nightly
 ```
 
 A development image with all of the dependencies required
 to build the latest stable release of the FEniCSx components:
+
 ```shell
 docker run -ti dolfinx/dev-env:stable
 ```
 
 A development image with all of the dependencies required
 to build the `main` branch of the FEniCSx components:
+
 ```shell
 docker run -ti dolfinx/dev-env:nightly
 ```
@@ -157,7 +171,7 @@ docker run -ti dolfinx/dev-env:nightly
 All Docker images support arm64 and amd64 architectures.
 
 For a full list of tags, including versioned images, see
-https://hub.docker.com/u/dolfinx
+<https://hub.docker.com/u/dolfinx>
 
 ## Contributing
 
@@ -180,19 +194,18 @@ You should have received a copy of the GNU Lesser General Public
 License along with DOLFINx. If not, see
 <http://www.gnu.org/licenses/>.
 
-
 ## Contact
 
 For questions about using DOLFINx, visit the FEniCS Discourse page:
 
-https://fenicsproject.discourse.group/
+<https://fenicsproject.discourse.group/>
 
 or use the FEniCS Slack channel:
 
-https://fenicsproject.slack.com/
+<https://fenicsproject.slack.com/>
 
-(use https://fenicsproject-slack-invite.herokuapp.com/ to sign up)
+(use <https://join.slack.com/t/fenicsproject/shared_invite/zt-1lraknsp1-6_3Js5kueDIyWgF192d3nA> to sign up)
 
 For bug reports visit:
 
-https://github.com/FEniCS/dolfinx
+<https://github.com/FEniCS/dolfinx>

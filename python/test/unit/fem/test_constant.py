@@ -59,3 +59,17 @@ def test_tensor_constant():
     assert c0.value.all() == np.asarray(data).all()
     c0.value *= 2.0
     assert c0.value.all() == (2.0 * np.asarray(data)).all()
+
+
+def test_float_method():
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+    a = 1.0
+    c0 = Constant(mesh, a)
+    assert a == float(c0)
+
+
+def test_complex_method():
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+    a = 1.0 + 1.0j
+    c0 = Constant(mesh, a)
+    assert a == complex(c0)

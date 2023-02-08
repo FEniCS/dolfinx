@@ -10,7 +10,8 @@
 
 # # Solving PDEs with different scalar (float) types
 #
-# This demo shows
+# This demo  ({download}`demo_types.py`) shows:
+#
 # - How to solve problems using different scalar types, .e.g. single or
 #   double precision, or complex numbers
 # - Interfacing with [SciPy](https://scipy.org/) sparse linear algebra
@@ -25,23 +26,23 @@ import ufl
 from dolfinx import fem, la, mesh, plot
 
 from mpi4py import MPI
-
 # -
 
-# SciPy solvers do not support MPI, so all computations are performed on
-# a single MPI rank
+# SciPy solvers do not support MPI, so all computations will be
+# performed on a single MPI rank
 
 # +
 comm = MPI.COMM_SELF
 # -
 
-# Create a mesh and function space
+# Create a mesh and function space.
 
 msh = mesh.create_rectangle(comm=comm, points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
                             cell_type=mesh.CellType.triangle)
 V = fem.FunctionSpace(msh, ("Lagrange", 1))
 
-# Define a variational problem
+# Define a variational problem.
+
 u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(msh)
 fr = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
@@ -51,15 +52,18 @@ gc = ufl.sin(5 * x[0]) * 1j
 a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
 L = ufl.inner(fr + fc, v) * ufl.dx + ufl.inner(gr + gc, v) * ufl.ds
 
-
 # In preparation for constructing Dirichlet boundary conditions, locate
 # facets on the constrained boundary and the corresponding
-# degrees-of-freedom
+# degrees-of-freedom.
+
 facets = mesh.locate_entities_boundary(msh, dim=1,
                                        marker=lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                       np.isclose(x[0], 2.0)))
 dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 
+
+# The below function computes the solution of the finite problem using a
+# specified scalar type.
 
 def solve(dtype=np.float32):
     """Solve the variational problem"""
@@ -90,6 +94,8 @@ def solve(dtype=np.float32):
     uh.x.array[:] = scipy.sparse.linalg.spsolve(As, b.array)
     return uh
 
+# This function visualises the solution.
+
 
 def display(u, filter=np.real):
     """Plot the solution using pyvista"""
@@ -104,16 +110,23 @@ def display(u, filter=np.real):
         plotter.add_mesh(grid, show_edges=True)
         plotter.add_mesh(grid.warp_by_scalar())
         plotter.add_title("real" if filter is np.real else "imag")
-        plotter.show()
+        if pyvista.OFF_SCREEN:
+            pyvista.start_xvfb(wait=0.1)
+            plotter.screenshot(f"u_{'real' if filter is np.real else 'imag'}.png")
+        else:
+            plotter.show()
     except ModuleNotFoundError:
         print("'pyvista' is required to visualise the solution")
 
 
 # Solve the variational problem using different scalar types
+
 uh = solve(dtype=np.float32)
 uh = solve(dtype=np.float64)
+uh = solve(dtype=np.complex64)
 uh = solve(dtype=np.complex128)
 
 # Display the last computed solution
+
 display(uh, np.real)
 display(uh, np.imag)

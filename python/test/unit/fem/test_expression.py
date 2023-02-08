@@ -6,30 +6,27 @@
 
 import ctypes
 import ctypes.util
-import os
-
-import cffi
-import numba
-import numpy as np
-import numpy.typing
 
 import basix
+import cffi
+import numpy as np
+import pytest
 import ufl
 from dolfinx.cpp.la.petsc import create_matrix
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace, create_sparsity_pattern, form)
+from dolfinx.fem.petsc import load_petsc_lib
 from dolfinx.mesh import create_unit_square
-
-import petsc4py.lib
 from mpi4py import MPI
 from petsc4py import PETSc
-from petsc4py import get_config as PETSc_get_config
+
 import dolfinx.cpp
+
+numba = pytest.importorskip("numba")
+cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
+
+
 dolfinx.cpp.common.init_logging(["-v"])
-# Get details of PETSc install
-petsc_dir = PETSc_get_config()['PETSC_DIR']
-petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
-petsc_lib_name = ctypes.util.find_library("petsc")
 
 # Get PETSc int and scalar types
 if np.dtype(PETSc.ScalarType).kind == 'c':
@@ -66,25 +63,18 @@ else:
         "Cannot translate PETSc scalar type to a C type, complex: {} size: {}.".format(complex, scalar_size))
 
 
+# CFFI - register complex types
 ffi = cffi.FFI()
+cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
+cffi_support.register_type(ffi.typeof('float _Complex'), numba.types.complex64)
+
 # Get MatSetValuesLocal from PETSc available via cffi in ABI mode
 ffi.cdef("""int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow,
-                                {0} ncol, const {0}* icol, const {1}* y, int addv);
-int MatZeroRowsLocal(void* mat, {0} nrow, const {0}* irow, {1} diag);
-int MatAssemblyBegin(void* mat, int mode);
-int MatAssemblyEnd(void* mat, int mode);
+                                  {0} ncol, const {0}* icol, const {1}* y, int addv);
 """.format(c_int_t, c_scalar_t))
 
-if petsc_lib_name is not None:
-    petsc_lib_cffi = ffi.dlopen(petsc_lib_name)
-else:
-    try:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
-    except OSError:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
-    except OSError:
-        print("Could not load PETSc library for CFFI (ABI mode).")
-        raise
+
+petsc_lib_cffi = load_petsc_lib(ffi.dlopen)
 MatSetValues = petsc_lib_cffi.MatSetValuesLocal
 
 

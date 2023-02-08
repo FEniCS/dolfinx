@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import contextlib
 import functools
+import os
 import typing
 
 import ufl
@@ -30,6 +31,8 @@ from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.forms import form_types
 from dolfinx.fem.function import Function as _Function
 
+import petsc4py
+import petsc4py.lib
 from petsc4py import PETSc
 
 
@@ -245,24 +248,13 @@ def _assemble_vector_nest_vec(b: PETSc.Vec, L: typing.List[form_types], constant
 
 # FIXME: Revise this interface
 @functools.singledispatch
-def assemble_vector_block(L: typing.Any,
+def assemble_vector_block(L: typing.List[form_types],
                           a: typing.List[typing.List[form_types]],
                           bcs: typing.List[DirichletBCMetaClass] = [],
                           x0: typing.Optional[PETSc.Vec] = None,
                           scale: float = 1.0,
                           constants_L=None, coeffs_L=None,
                           constants_a=None, coeffs_a=None) -> PETSc.Vec:
-    return _assemble_vector_block_form(L, a, bcs, x0, scale, constants_L, coeffs_L, constants_a, coeffs_a)
-
-
-@assemble_vector_block.register(list)
-def _assemble_vector_block_form(L: typing.List[form_types],
-                                a: typing.List[typing.List[form_types]],
-                                bcs: typing.List[DirichletBCMetaClass] = [],
-                                x0: typing.Optional[PETSc.Vec] = None,
-                                scale: float = 1.0,
-                                constants_L=None, coeffs_L=None,
-                                constants_a=None, coeffs_a=None) -> PETSc.Vec:
     """Assemble linear forms into a monolithic vector. The vector is not
     finalised, i.e. ghost values are not accumulated.
 
@@ -369,18 +361,10 @@ def _assemble_matrix_mat(A: PETSc.Mat, a: form_types, bcs: typing.List[Dirichlet
 
 # FIXME: Revise this interface
 @functools.singledispatch
-def assemble_matrix_nest(a: typing.Any,
+def assemble_matrix_nest(a: typing.List[typing.List[form_types]],
                          bcs: typing.List[DirichletBCMetaClass] = [], mat_types=[],
                          diagonal: float = 1.0,
                          constants=None, coeffs=None) -> PETSc.Mat:
-    return _assemble_matrix_nest_form(a, bcs, diagonal, constants, coeffs)
-
-
-@assemble_matrix_nest.register(list)
-def _assemble_matrix_nest_form(a: typing.List[typing.List[form_types]],
-                               bcs: typing.List[DirichletBCMetaClass] = [], mat_types=[],
-                               diagonal: float = 1.0,
-                               constants=None, coeffs=None) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     A = _cpp.fem.petsc.create_matrix_nest(a, mat_types)
     _assemble_matrix_nest_mat(A, a, bcs, diagonal, constants, coeffs)
@@ -414,18 +398,10 @@ def _assemble_matrix_nest_mat(A: PETSc.Mat, a: typing.List[typing.List[form_type
 
 # FIXME: Revise this interface
 @functools.singledispatch
-def assemble_matrix_block(a: typing.Any,
+def assemble_matrix_block(a: typing.List[typing.List[form_types]],
                           bcs: typing.List[DirichletBCMetaClass] = [],
                           diagonal: float = 1.0,
-                          constants=None, coeffs=None) -> PETSc.Mat:
-    return _assemble_matrix_block_form(a, bcs, diagonal, constants, coeffs)
-
-
-@assemble_matrix_block.register(list)
-def _assemble_matrix_block_form(a: typing.List[typing.List[form_types]],
-                                bcs: typing.List[DirichletBCMetaClass] = [],
-                                diagonal: float = 1.0,
-                                constants=None, coeffs=None) -> PETSc.Mat:
+                          constants=None, coeffs=None) -> PETSc.Mat:  # type: ignore
     """Assemble bilinear forms into matrix"""
     A = _cpp.fem.petsc.create_matrix_block(a)
     return _assemble_matrix_block_mat(A, a, bcs, diagonal, constants, coeffs)
@@ -533,7 +509,7 @@ class LinearProblem:
     """
 
     def __init__(self, a: ufl.Form, L: ufl.Form, bcs: typing.List[DirichletBCMetaClass] = [],
-                 u: _Function = None, petsc_options={}, form_compiler_options={}, jit_options={}):
+                 u: typing.Optional[_Function] = None, petsc_options={}, form_compiler_options={}, jit_options={}):
         """Initialize solver for a linear variational problem.
 
         Args:
@@ -555,8 +531,10 @@ class LinearProblem:
 
         Example::
 
-            problem = LinearProblem(a, L, [bc0, bc1], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
-
+            problem = LinearProblem(a, L, [bc0, bc1],
+                                    petsc_options={"ksp_type": "preonly",
+                                                   "pc_type": "lu",
+                                                   "pc_factor_mat_solver_type": "mumps"})
         """
         self._a = _create_form(a, form_compiler_options=form_compiler_options, jit_options=jit_options)
         self._A = create_matrix(self._a)
@@ -736,3 +714,42 @@ class NonlinearProblem:
         A.zeroEntries()
         _assemble_matrix_mat(A, self._a, self.bcs)
         A.assemble()
+
+
+def load_petsc_lib(loader: typing.Callable[[str], typing.Any]) -> typing.Any:
+    """
+    Load PETSc shared library using loader callable, e.g. ctypes.CDLL.
+
+    Args:
+        loader: A callable that accepts a library path and returns a wrapped library.
+
+    Returns:
+        A wrapped library of the type returned by the callable.
+    """
+    petsc_lib = None
+
+    petsc_dir = petsc4py.get_config()['PETSC_DIR']
+    petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
+
+    candidate_paths = [os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
+                       os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib")]
+
+    exists_paths = []
+    for candidate_path in candidate_paths:
+        if os.path.exists(candidate_path):
+            exists_paths.append(candidate_path)
+
+    if len(exists_paths) == 0:
+        raise RuntimeError("Could not find a PETSc shared library.")
+
+    for exists_path in exists_paths:
+        try:
+            petsc_lib = loader(exists_path)
+        except OSError:
+            print(f"Failed to load shared library found at {exists_path}.")
+            continue
+
+    if petsc_lib is None:
+        raise RuntimeError("Failed to load a PETSc shared library.")
+
+    return petsc_lib

@@ -67,9 +67,8 @@ public:
                                const uint8_t*)>
           fn,
       const std::vector<int>& value_shape,
-      const std::shared_ptr<const mesh::Mesh>& mesh = nullptr,
-      const std::shared_ptr<const FunctionSpace> argument_function_space
-      = nullptr)
+      std::shared_ptr<const mesh::Mesh> mesh = nullptr,
+      std::shared_ptr<const FunctionSpace> argument_function_space = nullptr)
       : _coefficients(coefficients), _constants(constants), _mesh(mesh),
         _x_ref(std::vector<double>(X.begin(), X.end()), Xshape), _fn(fn),
         _value_shape(value_shape),
@@ -137,7 +136,7 @@ public:
   /// is responsible for correct sizing which should be (num_cells,
   /// num_points * value_size * num_all_argument_dofs columns).
   /// @param[in] vshape The shape of `values` (row-major storage).
-  void eval(const std::span<const std::int32_t>& cells, std::span<T> values,
+  void eval(std::span<const std::int32_t> cells, std::span<T> values,
             std::array<std::size_t, 2> vshape) const
   {
     // Extract data from Expression
