@@ -177,7 +177,7 @@ class XDMFFile(_cpp.io.XDMFFile):
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
         mt = super().read_meshtags(mesh._cpp_object, name, xpath)
-        return MeshTags(mt, None)
+        return MeshTags(mt, mesh)
 
 
 def distribute_entity_data(mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64],

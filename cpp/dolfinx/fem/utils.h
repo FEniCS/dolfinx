@@ -57,7 +57,7 @@ namespace impl
 /// Helper function to get an array of of (cell, local_facet) pairs
 /// corresponding to a given facet index.
 /// @param[in] f Facet index
-/// @param[in] cells
+/// @param[in] cells List of cells incident to the facet
 /// @param[in] c_to_f Cell to facet connectivity
 /// @return Vector of (cell, local_facet) pairs
 template <int num_cells>
@@ -519,7 +519,7 @@ Form<T> create_form(
       assert(c_to_f);
       if (id == -1)
       {
-        // Default kernel, operates on all (owned) exterior facets
+        // Default kernel, operates on all (owned) interior facets
         assert(topology.index_map(tdim - 1));
         std::int32_t num_facets = topology.index_map(tdim - 1)->size_local();
         e.reserve(4 * num_facets);

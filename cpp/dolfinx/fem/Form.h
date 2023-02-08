@@ -82,8 +82,8 @@ public:
   ///
   /// @param[in] function_spaces Function spaces for the form arguments
   /// @param[in] integrals The integrals in the form. The first key is
-  /// the domain type. For each key there is a pair (list[domain id,
-  /// integration kernel, entities]).
+  /// the domain type. For each key there is a list of tuples (domain id,
+  /// integration kernel, entities).
   /// @param[in] coefficients
   /// @param[in] constants Constants in the Form
   /// @param[in] needs_facet_permutations Set to true is any of the
