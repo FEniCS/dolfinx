@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2019 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2022 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,8 +10,8 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <memory>
+#include <span>
 #include <vector>
-#include <xtl/xspan.hpp>
 
 namespace dolfinx::common
 {
@@ -26,26 +26,19 @@ class AdjacencyList;
 
 namespace dolfinx::mesh
 {
-enum class GhostMode : int;
-
 enum class CellType;
-class Topology;
 
-/// Compute marker for owned facets that are on the exterior of the
-/// domain, i.e. are connected to only one cell. The function does not
-/// require parallel communication.
-/// @param[in] topology The topology
-/// @return Vector with length equal to the number of owned facets on
-///   this this process. True if the ith facet (local index) is on the
-///   exterior of the domain.
-std::vector<std::int8_t> compute_boundary_facets(const Topology& topology);
-
-/// Topology stores the topology of a mesh, consisting of mesh entities
-/// and connectivity (incidence relations for the mesh entities).
+/// @brief Topology stores the topology of a mesh, consisting of mesh
+/// entities and connectivity (incidence relations for the mesh
+/// entities).
 ///
-/// A mesh entity e may be identified globally as a pair e = (dim, i),
+/// A mesh entity e may be identified globally as a pair `e = (dim, i)`,
 /// where dim is the topological dimension and i is the index of the
 /// entity within that topological dimension.
+///
+/// @todo Rework memory management and associated API. Currently, there
+/// is no clear caching policy implemented and no way of discarding
+/// cached data.
 class Topology
 {
 public:
@@ -67,25 +60,26 @@ public:
   /// Assignment
   Topology& operator=(Topology&& topology) = default;
 
-  /// Return the topological dimension of the mesh
+  /// @brief Return the topological dimension of the mesh.
   int dim() const noexcept;
 
   /// @todo Merge with set_connectivity
   ///
   /// Set the IndexMap for dimension dim
   /// @warning This is experimental and likely to change
-  void set_index_map(int dim,
-                     const std::shared_ptr<const common::IndexMap>& map);
+  void set_index_map(int dim, std::shared_ptr<const common::IndexMap> map);
 
-  /// Get the IndexMap that described the parallel distribution of the
-  /// mesh entities
+  /// @brief Get the IndexMap that described the parallel distribution
+  /// of the mesh entities.
+  ///
   /// @param[in] dim Topological dimension
-  /// @return Index map for the entities of dimension @p dim. Returns
+  /// @return Index map for the entities of dimension `dim`. Returns
   /// `nullptr` if index map has not been set.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
-  /// Return connectivity from entities of dimension d0 to entities of
-  /// dimension d1
+  /// @brief Return connectivity from entities of dimension d0 to
+  /// entities of dimension d1.
+  ///
   /// @param[in] d0
   /// @param[in] d1
   /// @return The adjacency list that for each entity of dimension d0
@@ -95,15 +89,16 @@ public:
   connectivity(int d0, int d1) const;
 
   /// @todo Merge with set_index_map
-  /// Set connectivity for given pair of topological dimensions
+  /// @brief Set connectivity for given pair of topological dimensions.
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
                         int d0, int d1);
 
   /// Returns the permutation information
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
-  /// Get the permutation number to apply to a facet. The permutations
-  /// are numbered so that:
+  /// @brief Get the permutation number to apply to a facet.
+  ///
+  /// The permutations are numbered so that:
   ///
   ///   - `n % 2` gives the number of reflections to apply
   ///   - `n // 2` gives the number of rotations to apply
@@ -119,23 +114,26 @@ public:
   /// @return Cell type that the topology is for
   CellType cell_type() const noexcept;
 
-  // TODO: Rework memory management and associated API
-  // Currently, there is no clear caching policy implemented and no way of
-  // discarding cached data.
-
-  /// Create entities of given topological dimension.
+  /// @brief Create entities of given topological dimension.
   /// @param[in] dim Topological dimension
   /// @return Number of newly created entities, returns -1 if entities
   /// already existed
   std::int32_t create_entities(int dim);
 
-  /// Create connectivity between given pair of dimensions, d0 -> d1
+  /// @brief Create connectivity between given pair of dimensions, `d0
+  /// -> d1`.
   /// @param[in] d0 Topological dimension
   /// @param[in] d1 Topological dimension
   void create_connectivity(int d0, int d1);
 
   /// Compute entity permutations and reflections
   void create_entity_permutations();
+
+  /// List of inter-process facets, if facet topology has been computed
+  const std::vector<std::int32_t>& interprocess_facets() const;
+
+  /// Original cell index
+  std::vector<std::int64_t> original_cell_index;
 
   /// Mesh MPI communicator
   /// @return The communicator on which the topology is distributed
@@ -163,9 +161,12 @@ private:
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
   std::vector<std::uint32_t> _cell_permutations;
+
+  // List of facets that are on the inter-process boundary
+  std::vector<std::int32_t> _interprocess_facets;
 };
 
-/// Create distributed topology
+/// @brief Create a distributed mesh topology.
 ///
 /// @param[in] comm MPI communicator across which the topology is
 /// distributed
@@ -176,15 +177,30 @@ private:
 /// neighboring process and share a facet with a local cell.
 /// @param[in] original_cell_index The original global index associated
 /// with each cell
-/// @param[in] ghost_owners The ownership of the ghost cells (ghost
-/// cells are always at the end of the list of @p cells)
+/// @param[in] ghost_owners The owning rank of each ghost cell (ghost
+/// cells are always at the end of the list of `cells`)
 /// @param[in] cell_type The cell shape
-/// @param[in] ghost_mode How to partition the cell overlap: none,
-/// shared_facet or shared_vertex
-/// @return A distributed Topology
-Topology
-create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-                const xtl::span<const std::int64_t>& original_cell_index,
-                const xtl::span<const int>& ghost_owners,
-                const CellType& cell_type, GhostMode ghost_mode);
+/// @param[in] boundary_vertices List of vertices on the exterior of the
+/// local mesh which may be shared with other processes.
+/// @return A distributed mesh topology
+Topology create_topology(MPI_Comm comm,
+                         const graph::AdjacencyList<std::int64_t>& cells,
+                         std::span<const std::int64_t> original_cell_index,
+                         std::span<const int> ghost_owners,
+                         const CellType& cell_type,
+                         std::span<const std::int64_t> boundary_vertices);
+
+/// @brief Get entity indices for entities defined by their vertices.
+///
+/// @warning This function may be removed in the future.
+///
+/// @param[in] topology The mesh topology
+/// @param[in] dim Topological dimension of the entities
+/// @param[in] entities The mesh entities defined by their vertices
+/// @return The index of the ith entity in `entities`
+/// @note If an entity cannot be found on this rank, -1 is returned as
+/// the index.
+std::vector<std::int32_t>
+entities_to_index(const Topology& topology, int dim,
+                  const graph::AdjacencyList<std::int32_t>& entities);
 } // namespace dolfinx::mesh

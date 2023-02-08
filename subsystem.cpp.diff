@@ -1,0 +1,72 @@
+diff --git a/cpp/dolfinx/common/subsystem.cpp b/cpp/dolfinx/common/subsystem.cpp
+index ace3329721..0b95e5765c 100644
+--- a/cpp/dolfinx/common/subsystem.cpp
++++ b/cpp/dolfinx/common/subsystem.cpp
+@@ -4,10 +4,10 @@
+ //
+ // SPDX-License-Identifier:    LGPL-3.0-or-later
+ 
++
+ #include "subsystem.h"
+ #include <dolfinx/common/log.h>
+ #include <iostream>
+-#include <mpi.h>
+ #include <petscsys.h>
+ #include <string>
+ #include <vector>
+@@ -47,7 +47,7 @@ void subsystem::init_logging(int argc, char* argv[])
+ {
+   loguru::g_stderr_verbosity = loguru::Verbosity_WARNING;
+ 
+-#ifdef DEBUG
++#ifndef NDEBUG
+   loguru::SignalOptions signals;
+ #else
+   loguru::SignalOptions signals = loguru::SignalOptions::none();
+@@ -55,7 +55,7 @@ void subsystem::init_logging(int argc, char* argv[])
+ 
+   loguru::Options options = {"-dolfinx_loglevel", "main", signals};
+ 
+-  // Make a copy of argv, as loguru may modify it.
++  // Make a copy of argv, as loguru may modify it
+   std::vector<char*> argv_copy;
+   for (int i = 0; i < argc; ++i)
+     argv_copy.push_back(argv[i]);
+@@ -64,18 +64,29 @@ void subsystem::init_logging(int argc, char* argv[])
+   loguru::init(argc, argv_copy.data(), options);
+ }
+ //-----------------------------------------------------------------------------
+-void subsystem::init_petsc()
++void subsystem::init_petsc(MPI_Comm comm)
+ {
+   int argc = 0;
+   char** argv = nullptr;
+-  init_petsc(argc, argv);
++  init_petsc(argc, argv, comm);
+ }
+ //-----------------------------------------------------------------------------
+-void subsystem::init_petsc(int argc, char* argv[])
++void subsystem::init_petsc(int argc, char* argv[], MPI_Comm comm)
+ {
+   if (argc > 1)
+     LOG(INFO) << "Initializing PETSc with given command-line arguments.";
+ 
++  // Ensure MPI has been initialised, otberwise setting PETSC_COMM_WORLD can
++  // cause MPI not initialised errors.
++  int mpi_initialized;
++  MPI_Initialized(&mpi_initialized);
++  if (not mpi_initialized)
++    init_mpi(argc, argv);
++  // Ensure the PETSC_COMM_WORLD is not MPI_COMM_WORLD if the user has specified
++  // a communicator.
++  //
++  PETSC_COMM_WORLD = comm;
++
+   PetscBool is_initialized;
+   PetscInitialized(&is_initialized);
+   if (!is_initialized)
+@@ -132,4 +143,3 @@ bool subsystem::mpi_finalized()
+   MPI_Finalized(&mpi_finalized);
+   return mpi_finalized;
+ }
+-//-----------------------------------------------------------------------------

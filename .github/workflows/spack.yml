@@ -8,33 +8,47 @@ on:
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 2 * * THU"
-  workflow_dispatch: ~
+  workflow_dispatch:
+    inputs:
+      spack_repo:
+        description: "Spack repository to test"
+        default: "spack/spack"
+        type: string
+      spack_ref:
+        description: "Spack repository branch/tag to test"
+        default: "develop"
+        type: string
 
 jobs:
   build:
+    runs-on: ubuntu-latest
+    container: ubuntu:latest
+
     env:
-      release_version: 0.3.0
-    strategy:
-      matrix:
-        # os: [ubuntu-20.04, macos-10.15]
-        os: [ubuntu-20.04]
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
 
     steps:
       - name: Get Spack
-        uses: actions/checkout@v2
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/checkout@v3
         with:
           path: ./spack
           repository: spack/spack
-          ref: develop
-      - name: Build DOLFINx (C++) development version via Spack
+      - name: Get Spack
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v3
+        with:
+          path: ./spack
+          repository: ${{ github.event.inputs.spack_repo }}
+          ref: ${{ github.event.inputs.spack_ref }}
+
+      - name: Install Spack requirements
         run: |
-          . ./spack/share/spack/setup-env.sh
-          spack env create cpp-main
-          spack env activate cpp-main
-          spack add fenics-dolfinx@main+adios2
-          spack install
+          apt-get -y update
+          apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar xz-utils
+          apt-get install -y g++ gfortran  # compilers
+
       - name: Build DOLFINx (C++) release version via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
@@ -42,46 +56,52 @@ jobs:
           spack env activate cpp-release
           spack add fenics-dolfinx+adios2
           spack install
+      - name: Build DOLFINx (C++) development version via Spack
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env create cpp-main
+          spack env activate cpp-main
+          spack add fenics-dolfinx@main+adios2
+          spack install
+
+      - name: Get DOLFINx release code (to access test files)
+        uses: actions/checkout@v3
+        with:
+          ref: v0.5.1
+          # ref: v${{ github.event.inputs.spack_branch }}
+          path: ./dolfinx-release
+      - name: Run a C++ test (release version)
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env create cpp-release-test
+          spack env activate cpp-release-test
+          spack add fenics-dolfinx+adios2 cmake py-fenics-ffcx
+          spack install
+          cd dolfinx-release/cpp/
+          cd demo/poisson
+          cmake .
+          export VERBOSE=1
+          make -j2
+          mpirun -np 2 ./demo_poisson
 
       - name: Get DOLFINx code (to access test files)
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
-          ref: main
           path: ./dolfinx-main
       - name: Run a C++ test (development version)
         run: |
           . ./spack/share/spack/setup-env.sh
-          spack env activate cpp-main
+          spack env create cpp-main-test
+          spack env activate cpp-main-test
+          spack add fenics-dolfinx@main+adios2 cmake py-fenics-ffcx@main
+          spack install
           cd dolfinx-main/cpp/
           cd demo/poisson
           cmake .
           export VERBOSE=1
           make -j2
           mpirun -np 2 ./demo_poisson
-      - name: Get DOLFINx code (to access test files)
-        uses: actions/checkout@v2
-        with:
-          ref: v${{ env.release_version }}
-          path: ./dolfinx-release
-      # - name: Run a C++ test (release version)
-      #   run: |
-      #     . ./spack/share/spack/setup-env.sh
-      #     spack env activate cpp-release
-      #     cd dolfinx-release/cpp/
-      #     cd demo/poisson
-      #     ffcx poisson.ufl
-      #     cmake .
-      #     export VERBOSE=1
-      #     make -j2
-      #     mpirun -np 2 ./demo_poisson
 
-      - name: Build DOLFINx (Python, development)
-        run: |
-          . ./spack/share/spack/setup-env.sh
-          spack env create py-main
-          spack env activate py-main
-          spack add py-fenics-dolfinx@main
-          spack install
       - name: Build DOLFINx (Python, release version)
         run: |
           . ./spack/share/spack/setup-env.sh
@@ -89,18 +109,21 @@ jobs:
           spack env activate py-release
           spack add py-fenics-dolfinx
           spack install
-
-      # NOTE: numba is installed via pip because the spack package takes
-      # an extremely long time to compile
-      - name: Run DOLFINx (Python, development) test
+      - name: Build DOLFINx (Python, development)
         run: |
           . ./spack/share/spack/setup-env.sh
+          spack env create py-main
           spack env activate py-main
-          pip install numba
-          mpirun -np 2 python3 ./dolfinx-main/python/demo/stokes-taylor-hood/demo_stokes-taylor-hood.py
+          spack add py-fenics-dolfinx@main
+          spack install
+
       - name: Run DOLFINx (Python, release) test
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env activate py-release
-          pip install numba
-          mpirun -np 2 python3 ./dolfinx-release/python/demo/stokes-taylor-hood/demo_stokes-taylor-hood.py
+          mpirun -np 2 python3 ./dolfinx-release/python/demo/demo_elasticity.py
+      - name: Run DOLFINx (Python, development) test
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env activate py-main
+          mpirun -np 2 python3 ./dolfinx-main/python/demo/demo_elasticity.py

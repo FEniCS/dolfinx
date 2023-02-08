@@ -11,6 +11,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <limits>
+#include <span>
 
 using namespace dolfinx;
 
@@ -21,7 +22,7 @@ namespace
 // contain the nodes in "indices".
 std::vector<std::vector<int>>
 residual_graph_components(const graph::AdjacencyList<int>& graph,
-                          const xtl::span<const int>& indices)
+                          std::span<const int> indices)
 {
   if (indices.empty())
     return std::vector<std::vector<int>>();
@@ -43,11 +44,11 @@ residual_graph_components(const graph::AdjacencyList<int>& graph,
   {
     r.clear();
     r.push_back(std::distance(labelled.begin(), it));
-    labelled[r[0]] = true;
+    labelled[r.front()] = true;
 
     // Get connected component of graph starting from r[0]
-    int c = 0;
-    while (c < static_cast<int>(r.size()))
+    std::size_t c = 0;
+    while (c < r.size())
     {
       for (int w : graph.links(r[c]))
       {
@@ -123,8 +124,9 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
 // Gibbs-Poole-Stockmeyer algorithm, finding a reordering for the given
 // graph, operating only on nodes which are yet unlabelled (indicated
 // with -1 in the vector rlabel).
-std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
-                                        const xtl::span<const int>& rlabel)
+std::vector<std::int32_t>
+gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
+                       std::span<const std::int32_t> rlabel)
 {
   common::Timer timer("Gibbs-Poole-Stockmeyer ordering");
 
@@ -354,11 +356,12 @@ std::vector<int> gps_reorder_unlabelled(const graph::AdjacencyList<int>& graph,
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::vector<int> graph::reorder_gps(const graph::AdjacencyList<int>& graph)
+std::vector<std::int32_t>
+graph::reorder_gps(const graph::AdjacencyList<std::int32_t>& graph)
 {
-  const int n = graph.num_nodes();
-  std::vector<int> r(n, -1);
-  std::vector<int> rv;
+  const std::int32_t n = graph.num_nodes();
+  std::vector<std::int32_t> r(n, -1);
+  std::vector<std::int32_t> rv;
 
   // Repeat for each disconnected part of the graph
   int count = 0;
@@ -368,7 +371,7 @@ std::vector<int> graph::reorder_gps(const graph::AdjacencyList<int>& graph)
     assert(rv.size() > 0);
 
     // Reverse permutation
-    for (int q : rv)
+    for (std::int32_t q : rv)
       r[q] = count++;
   }
 

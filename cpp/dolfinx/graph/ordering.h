@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <vector>
 
 namespace dolfinx::graph
@@ -13,15 +14,16 @@ namespace dolfinx::graph
 template <typename T>
 class AdjacencyList;
 
-/// Implementation of the Gibbs-Poole-Stockmeyer algorithm
+/// @brief Re-order a graph using the Gibbs-Poole-Stockmeyer algorithm.
 ///
-/// An Algorithm for Reducing the Bandwidth and Profile of a Sparse
-/// Matrix SIAM Journal on Numerical Analysis, Vol. 13, No. 2 (Apr.,
-/// 1976), pp. 236-250 https://www.jstor.org/stable/2156090
+/// The algorithm is described in *An Algorithm for Reducing the
+/// Bandwidth and Profile of a Sparse Matrix*, SIAM Journal on Numerical
+/// Analysis, 13(2): 236-250, 1976, https://doi.org/10.1137/0713023.
 ///
 /// @param[in] graph The graph to compute a re-ordering for
-/// @return Reordering vector map, when `map[i]` is the new index on
+/// @return Reordering array `map`, where `map[i]` is the new index of
 /// node `i`
-std::vector<int> reorder_gps(const graph::AdjacencyList<int>& graph);
+std::vector<std::int32_t>
+reorder_gps(const graph::AdjacencyList<std::int32_t>& graph);
 
 } // namespace dolfinx::graph

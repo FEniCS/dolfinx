@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2022 Garth N. Wells
+# Copyright (C) 2018-2022 Garth N. Wells, Jack S. Hale
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -8,14 +8,8 @@
 from __future__ import annotations
 
 import collections
-import typing
-
-if typing.TYPE_CHECKING:
-    from dolfinx.fem.forms import FormMetaClass
-    from dolfinx.fem.bcs import DirichletBCMetaClass
-
 import functools
-import warnings
+import typing
 
 import numpy as np
 
@@ -24,6 +18,8 @@ from dolfinx import cpp as _cpp
 from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
+from dolfinx.fem.bcs import DirichletBCMetaClass
+from dolfinx.fem.forms import FormMetaClass, form_types
 
 
 def pack_constants(form: typing.Union[FormMetaClass,
@@ -134,11 +130,17 @@ def assemble_scalar(M: FormMetaClass, constants=None, coeffs=None):
 # -- Vector assembly ---------------------------------------------------------
 
 @functools.singledispatch
-def assemble_vector(L: FormMetaClass, constants=None, coeffs=None) -> la.VectorMetaClass:
+def assemble_vector(L: typing.Any,
+                    constants=None, coeffs=None):
+    return _assemble_vector_form(L, constants, coeffs)
+
+
+@assemble_vector.register(FormMetaClass)
+def _assemble_vector_form(L: form_types, constants=None, coeffs=None) -> la.VectorMetaClass:
     """Assemble linear form into a new Vector.
 
     Args:
-        L: The linear form assemble.
+        L: The linear form to assemble.
         constants: Constants that appear in the form. If not provided,
             any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
@@ -163,12 +165,12 @@ def assemble_vector(L: FormMetaClass, constants=None, coeffs=None) -> la.VectorM
     b.array[:] = 0
     constants = constants or _pack_constants(L)
     coeffs = coeffs or _pack_coefficients(L)
-    _cpp.fem.assemble_vector(b.array, L, constants, coeffs)
+    _assemble_vector_array(b.array, L, constants, coeffs)
     return b
 
 
 @assemble_vector.register(np.ndarray)
-def _(b: np.ndarray, L: FormMetaClass, constants=None, coeffs=None):
+def _assemble_vector_array(b: np.ndarray, L: FormMetaClass, constants=None, coeffs=None):
     """Assemble linear form into a new Vector.
 
     Args:
@@ -202,38 +204,74 @@ def _(b: np.ndarray, L: FormMetaClass, constants=None, coeffs=None):
 
 
 @functools.singledispatch
-def assemble_matrix(a: FormMetaClass, bcs: typing.List[DirichletBCMetaClass] = [],
-                    diagonal: float = 1.0,
-                    constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
-    """Assemble bilinear form into a matrix. The returned matrix is not
-    finalised, i.e. ghost values are not accumulated.
+def assemble_matrix(a: typing.Any,
+                    bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
+                    diagonal: float = 1.0, constants=None, coeffs=None):
+    return _assemble_matrix_form(a, bcs, diagonal, constants, coeffs)
+
+
+@assemble_matrix.register
+def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: form_types,
+                         bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
+                         diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
+    """Assemble bilinear form into a matrix.
+
+        Args:
+        a: The bilinear form assemble.
+        bcs: Boundary conditions that affect the assembled matrix.
+            Degrees-of-freedom constrained by a boundary condition will
+            have their rows/columns zeroed and the value ``diagonal`` set
+            on on the matrix diagonal.
+        constants: Constants that appear in the form. If not provided,
+            any required constants will be computed.
+        coeffs: Coefficients that appear in the form. If not provided,
+            any required coefficients will be computed.
+
+    Note:
+        The returned matrix is not finalised, i.e. ghost values are not
+        accumulated.
 
     """
-    A = create_matrix(a)
-    assemble_matrix(A, a, bcs, diagonal, constants, coeffs)
-    return A
-
-
-@assemble_matrix.register(la.MatrixCSRMetaClass)
-def _(A: la.MatrixCSRMetaClass, a: FormMetaClass,
-      bcs: typing.List[DirichletBCMetaClass] = [],
-      diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
-    """Assemble bilinear form into a matrix. The returned matrix is not
-    finalised, i.e. ghost values are not accumulated.
-
-    """
-    constants = constants or _pack_constants(a)
-    coeffs = coeffs or _pack_coefficients(a)
+    bcs = [] if bcs is None else bcs
+    constants = _pack_constants(a) if constants is None else constants
+    coeffs = _pack_coefficients(a) if coeffs is None else coeffs
     _cpp.fem.assemble_matrix(A, a, constants, coeffs, bcs)
 
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
     # dofs
-    if a.function_spaces[0].id == a.function_spaces[1].id:
-        if len(bcs) > 0:
-            warnings.warn("Setting of matrix bc diagonals not yet implemented.")
-    #     A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
-    #     A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
-    #     _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], bcs, diagonal)
+    if a.function_spaces[0] is a.function_spaces[1]:
+        _cpp.fem.insert_diagonal(A, a.function_spaces[0], bcs, diagonal)
+    return A
+
+
+@assemble_matrix.register(FormMetaClass)
+def _assemble_matrix_form(a: form_types, bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
+                          diagonal: float = 1.0,
+                          constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
+    """Assemble bilinear form into a matrix.
+
+    Args:
+        a: The bilinear form assemble.
+        bcs: Boundary conditions that affect the assembled matrix.
+            Degrees-of-freedom constrained by a boundary condition will
+            have their rows/columns zeroed and the value ``diagonal``
+            set on on the matrix diagonal.
+        constants: Constants that appear in the form. If not provided,
+            any required constants will be computed.
+        coeffs: Coefficients that appear in the form. If not provided,
+            any required coefficients will be computed.
+
+    Returns:
+        Matrix representation of the bilinear form ``a``.
+
+    Note:
+        The returned matrix is not finalised, i.e. ghost values are not
+        accumulated.
+
+    """
+    bcs = [] if bcs is None else bcs
+    A: la.MatrixCSRMetaClass = create_matrix(a)
+    _assemble_matrix_csr(A, a, bcs, diagonal, constants, coeffs)
     return A
 
 
@@ -242,9 +280,10 @@ def _(A: la.MatrixCSRMetaClass, a: FormMetaClass,
 
 def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
                   bcs: typing.List[typing.List[DirichletBCMetaClass]],
-                  x0: typing.Optional[typing.List[np.ndarray]] = [],
+                  x0: typing.Optional[typing.List[np.ndarray]] = None,
                   scale: float = 1.0, constants=None, coeffs=None) -> None:
     """Modify RHS vector b for lifting of Dirichlet boundary conditions.
+
     It modifies b such that:
 
     .. math::
@@ -257,10 +296,12 @@ def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
     but the trial space may differ. If x0 is not supplied, then it is
     treated as zero.
 
-    Ghost contributions are not accumulated (not sent to owner). Caller
-    is responsible for calling VecGhostUpdateBegin/End.
+    Note:
+        Ghost contributions are not accumulated (not sent to owner).
+        Caller is responsible for calling VecGhostUpdateBegin/End.
 
     """
+    x0 = [] if x0 is None else x0
     constants = [form and _pack_constants(form) for form in a] if constants is None else constants
     coeffs = [{} if form is None else _pack_coefficients(form) for form in a] if coeffs is None else coeffs
     _cpp.fem.apply_lifting(b, a, constants, coeffs, bcs, x0, scale)

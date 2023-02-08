@@ -9,31 +9,11 @@
 import numpy as np
 
 from dolfinx import cpp as _cpp
+from dolfinx.cpp.la import Norm, ScatterMode
 from dolfinx.cpp.la.petsc import create_vector as create_petsc_vector
 
-__all__ = ["orthonormalize", "is_orthonormal", "create_petsc_vector",
-           "MatrixCSRMetaClass", "VectorMetaClass", "matrix_csr", "vector"]
-
-
-def orthonormalize(basis):
-    """Orthogoalise set of PETSc vectors in-place"""
-    for i, x in enumerate(basis):
-        for y in basis[:i]:
-            alpha = x.dot(y)
-            x.axpy(-alpha, y)
-        x.normalize()
-
-
-def is_orthonormal(basis, eps: float = 1.0e-12) -> bool:
-    """Check that list of PETSc vectors are orthonormal"""
-    for x in basis:
-        if abs(x.norm() - 1.0) > eps:
-            return False
-    for i, x in enumerate(basis[:-1]):
-        for y in basis[i + 1:]:
-            if abs(x.dot(y)) > eps:
-                return False
-    return True
+__all__ = ["orthonormalize", "is_orthonormal", "create_petsc_vector", "matrix_csr", "vector",
+           "MatrixCSRMetaClass", "Norm", "ScatterMode", "VectorMetaClass", ]
 
 
 class MatrixCSRMetaClass:
@@ -71,6 +51,8 @@ def matrix_csr(sp, dtype=np.float64) -> MatrixCSRMetaClass:
         ftype = _cpp.la.MatrixCSR_float32
     elif dtype == np.float64:
         ftype = _cpp.la.MatrixCSR_float64
+    elif dtype == np.complex64:
+        ftype = _cpp.la.MatrixCSR_complex64
     elif dtype == np.complex128:
         ftype = _cpp.la.MatrixCSR_complex128
     else:
@@ -94,7 +76,11 @@ class VectorMetaClass:
             and not created using the class initialiser.
 
         """
-        super().__init__(map, bs)
+        super().__init__(map, bs)  # type: ignore
+
+    @property
+    def array(self) -> np.ndarray:
+        return super().array  # type: ignore
 
 
 def vector(map, bs=1, dtype=np.float64) -> VectorMetaClass:
@@ -123,3 +109,41 @@ def vector(map, bs=1, dtype=np.float64) -> VectorMetaClass:
 
     vectorcls = type("Vector", (VectorMetaClass, vtype), {})
     return vectorcls(map, bs)
+
+
+def create_petsc_vector_wrap(x: VectorMetaClass):
+    """Wrap a distributed DOLFINx vector as a PETSc vector.
+
+    Args:
+        x: The vector to wrap as a PETSc vector.
+
+    Returns:
+        A PETSc vector that shares data with `x`.
+
+    Note:
+        The vector `x` must not be destroyed before the returned PETSc
+        object.
+
+    """
+    return _cpp.la.petsc.create_vector_wrap(x)
+
+
+def orthonormalize(basis):
+    """Orthogoalise set of PETSc vectors in-place"""
+    for i, x in enumerate(basis):
+        for y in basis[:i]:
+            alpha = x.dot(y)
+            x.axpy(-alpha, y)
+        x.normalize()
+
+
+def is_orthonormal(basis, eps: float = 1.0e-12) -> bool:
+    """Check that list of PETSc vectors are orthonormal"""
+    for x in basis:
+        if abs(x.norm() - 1.0) > eps:
+            return False
+    for i, x in enumerate(basis[:-1]):
+        for y in basis[i + 1:]:
+            if abs(x.dot(y)) > eps:
+                return False
+    return True

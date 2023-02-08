@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "pugixml.hpp"
 #include "xdmf_utils.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -14,6 +13,7 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <pugixml.hpp>
 
 /// Low-level methods for reading XDMF files
 namespace dolfinx::io::xdmf_read
@@ -100,7 +100,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
       {
         // Size of dims > 0
         std::int64_t d = std::reduce(shape_xml.begin(), shape_xml.end(),
-                                     std::int64_t(1), std::multiplies<>());
+                                     std::int64_t(1), std::multiplies{});
 
         // Check for data size consistency
         if (d * shape_xml[0] != shape_hdf5[0])

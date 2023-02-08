@@ -1,5 +1,9 @@
-release.conf export-ignore
-bitbucket-pipelines.yml export-ignore
 .gitignore export-ignore
 .gitattributes export-ignore
+.circleci export-ignore
+.clang-format export-ignore
+.github export-ignore
+.dockerignore export-ignore
 .mailmap export-ignore
+docker export-ignore
+sonar-project.properties export-ignore

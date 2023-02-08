@@ -35,16 +35,17 @@ __all__ = ["create_adjacencylist", "partitioner"]
 
 
 def create_adjacencylist(data: np.ndarray, offsets=None):
-    """
-    Create an AdjacencyList for int32 or int64 datasets.
+    """Create an AdjacencyList for int32 or int64 datasets.
 
-    Parameters
-    ----------
-    data
-        The adjacency array. If the array is one-dimensional, offsets should be supplied.
-        If the array is two-dimensional the number of edges per node is the second dimension.
-    offsets
-        The offsets array with the number of edges per node.
+    Args:
+        data: The adjacency array. If the array is one-dimensional,
+            offsets should be supplied. If the array is two-dimensional the
+            number of edges per node is the second dimension.
+        offsets: The offsets array with the number of edges per node.
+
+    Returns:
+        An adjacency list
+
     """
     if offsets is None:
         try:

@@ -78,41 +78,41 @@ jobs:
         run: python -m pip install cibuildwheel simple503 wheel
 
       - name: Checkout Basix
-        if: { { input.build_fenicsx_stack } }
-        uses: actions/checkout@v2
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        uses: actions/checkout@v3
         with:
           repository: FEniCS/basix
           path: basix
-          ref: ${{ inputs.basix_ref }}
+          ref: ${{ github.event.inputs.basix_ref }}
 
       - name: Build Basix wheel
-        if: { { input.build_fenicsx_stack } }
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         run: |
           cd basix
           python -m cibuildwheel --output-dir ../wheelhouse .
 
       - name: Checkout UFL
-        if: { { input.build_fenicsx_stack } }
-        uses: actions/checkout@v2
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        uses: actions/checkout@v3
         with:
           repository: FEniCS/ufl
           path: ufl
-          ref: ${{ inputs.ufl_ref }}
+          ref: ${{ github.event.inputs.ufl_ref }}
 
       - name: Build UFL wheel
-        if: { { input.build_fenicsx_stack } }
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         run: python -m pip wheel --no-deps -w wheelhouse ./ufl
 
       - name: Checkout FFCx
-        if: { { input.build_fenicsx_stack } }
-        uses: actions/checkout@v2
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        uses: actions/checkout@v3
         with:
           repository: FEniCS/ffcx
           path: ffcx
-          ref: ${{ inputs.ffcx_ref }}
+          ref: ${{ github.event.inputs.ffcx_ref }}
 
       - name: Build FFCx wheel
-        if: { { input.build_fenicsx_stack } }
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         run: python -m pip wheel --no-deps -w wheelhouse ./ffcx
 
       - name: Download mpi4py
@@ -147,10 +147,10 @@ jobs:
           python -m simple503 --base-url file:///project/simple simple
 
       - name: Checkout DOLFINx
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: dolfinx
-          ref: ${{ inputs.dolfinx_ref }}
+          ref: ${{ github.event.inputs.dolfinx_ref }}
 
       # fenics-ffcx and fenics-basix are required by DOLFINx C++ build
       # mpi4py and petsc4py are build_requirements of DOLFINx Python
@@ -168,13 +168,13 @@ jobs:
       # Artifact can be unzipped into $(pwd) and tested with e.g.:
       # docker run -ti -v $(pwd):/shared --env PIP_EXTRA_INDEX_URL=file:///shared python:3.9 /bin/bash -l
       - name: Upload simple503-test artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: "simple503-test"
           path: simple/*
 
       - name: Upload wheelhouse artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: wheelhouse
           path: wheelhouse/*
@@ -185,7 +185,7 @@ jobs:
 
       # For manual upload.
       - name: Upload simple503 artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: "simple503"
           path: simple/*
@@ -198,7 +198,7 @@ jobs:
           docker rm ${CONTAINER_ID}
 
       - name: Upload mpiexec artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: "mpiexec.hydra"
           path: mpiexec.hydra

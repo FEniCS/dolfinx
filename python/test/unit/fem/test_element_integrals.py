@@ -16,7 +16,7 @@ import ufl
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.fem.petsc import assemble_matrix, assemble_vector
-from dolfinx.mesh import CellType, MeshTags, create_mesh
+from dolfinx.mesh import CellType, create_mesh, meshtags
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -146,7 +146,7 @@ def test_facet_integral(cell_type):
         num_facets = map_f.size_local + map_f.num_ghosts
         indices = np.arange(0, num_facets)
         values = np.arange(0, num_facets, dtype=np.intc)
-        marker = MeshTags(mesh, tdim - 1, indices, values)
+        marker = meshtags(mesh, tdim - 1, indices, values)
 
         # Functions that will have the same integral over each facet
         if cell_type == CellType.triangle:
@@ -189,7 +189,7 @@ def test_facet_normals(cell_type):
         num_facets = map_f.size_local + map_f.num_ghosts
         indices = np.arange(0, num_facets)
         values = np.arange(0, num_facets, dtype=np.intc)
-        marker = MeshTags(mesh, tdim - 1, indices, values)
+        marker = meshtags(mesh, tdim - 1, indices, values)
 
         # For each facet, check that the inner product of the normal and
         # the vector that has a positive normal component on only that
@@ -290,7 +290,7 @@ def test_plus_minus_simple_vector(cell_type, pm):
 
         # For each cell
         for cell in range(2):
-            # For each point in cell 0 in the the first mesh
+            # For each point in cell 0 in the first mesh
             for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
                 # Find the point in the cell 0 in the second mesh
                 for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
@@ -344,7 +344,7 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
 
         # For each cell
         for cell in range(2):
-            # For each point in cell 0 in the the first mesh
+            # For each point in cell 0 in the first mesh
             for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
                 # Find the point in the cell 0 in the second mesh
                 for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
@@ -395,7 +395,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
 
         # For each cell
         for cell in range(2):
-            # For each point in cell 0 in the the first mesh
+            # For each point in cell 0 in the first mesh
             for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
                 # Find the point in the cell 0 in the second mesh
                 for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):

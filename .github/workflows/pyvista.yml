@@ -11,20 +11,17 @@ on:
   workflow_dispatch: ~
 
 jobs:
-  build:
+  pyvista:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
-    runs-on: ubuntu-20.04
-    container: fenicsproject/test-env:latest-openmpi
+    runs-on: ubuntu-22.04
+    container: fenicsproject/test-env:nightly-openmpi
 
     env:
-      CC: clang
-      CXX: clang++
-
       # For pyvista/pyvistaqt
       DISPLAY: ":99.0"
       PYVISTA_OFF_SCREEN: true
-      PYVISTA_VERSION: 0.33.2
-      PYVISTA_QT_VERSION: 0.7.0
+      PYVISTA_QT_VERSION: 0.9.0
+      PYVISTA_VERSION: 0.37.0
 
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-32
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -40,7 +37,7 @@ jobs:
         petsc_arch: [real, complex]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install FEniCS Python components
         run: |
@@ -52,6 +49,7 @@ jobs:
           apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
           pip3 install pyvista==${PYVISTA_VERSION}
           pip3 install pyvistaqt==${PYVISTA_QT_VERSION}
+          pip3 install matplotlib
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/

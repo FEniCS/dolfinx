@@ -6,11 +6,14 @@
 import datetime
 import os
 import sys
-sys.path.insert(0, os.path.abspath('.'))
-
-import jupytext_process
 
 import dolfinx
+
+sys.path.insert(0, os.path.abspath('.'))
+
+import jupytext_process  # noqa
+
+myst_heading_anchors = 3
 
 jupytext_process.process()
 
@@ -29,7 +32,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.napoleon',
               'sphinx.ext.todo',
               'sphinx.ext.viewcode',
-              'myst_parser']
+              'myst_parser', ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -63,7 +66,7 @@ release = dolfinx.__version__
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -82,7 +85,7 @@ todo_include_todos = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "nature"
+html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -145,3 +148,5 @@ autoclass_content = "both"
 
 napoleon_google_docstring = True
 napoleon_use_admonition_for_notes = False
+
+myst_enable_extensions = ["dollarmath", ]

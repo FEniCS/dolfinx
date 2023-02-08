@@ -3,7 +3,8 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-import os
+
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -15,8 +16,8 @@ from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import (CellType, compute_boundary_facets, create_rectangle,
-                          create_unit_cube, create_unit_square,
+from dolfinx.mesh import (CellType, create_rectangle, create_unit_cube,
+                          create_unit_square, exterior_facet_indices,
                           locate_entities_boundary)
 from ufl import (CellDiameter, FacetNormal, SpatialCoordinate, TestFunction,
                  TrialFunction, avg, div, ds, dS, dx, grad, inner, jump)
@@ -26,7 +27,7 @@ from petsc4py import PETSc
 
 
 def run_scalar_test(mesh, V, degree):
-    """ Manufactured Poisson problem, solving u = x[1]**p, where p is the
+    """Manufactured Poisson problem, solving u = x[1]**p, where p is the
     degree of the Lagrange function space.
 
     """
@@ -54,7 +55,7 @@ def run_scalar_test(mesh, V, degree):
     # Create Dirichlet boundary condition
     facetdim = mesh.topology.dim - 1
     mesh.topology.create_connectivity(facetdim, mesh.topology.dim)
-    bndry_facets = np.where(np.array(compute_boundary_facets(mesh.topology)) == 1)[0]
+    bndry_facets = exterior_facet_indices(mesh.topology)
     bdofs = locate_dofs_topological(V, facetdim, bndry_facets)
     bc = dirichletbc(u_bc, bdofs)
 
@@ -67,10 +68,9 @@ def run_scalar_test(mesh, V, degree):
     A = assemble_matrix(a, bcs=[bc])
     A.assemble()
 
-    # Create LU linear solver
+    # Create linear solver
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
-    solver.setType(PETSc.KSP.Type.PREONLY)
-    solver.getPC().setType(PETSc.PC.Type.LU)
+    solver.setTolerances(rtol=1e-12)
     solver.setOperators(A)
 
     uh = Function(V)
@@ -99,11 +99,10 @@ def run_vector_test(mesh, V, degree):
     A = assemble_matrix(a)
     A.assemble()
 
-    # Create LU linear solver (Note: need to use a solver that
+    # Create linear solver (Note: need to use a solver that
     # re-orders to handle pivots, e.g. not the PETSc built-in LU solver)
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
-    solver.setType("preonly")
-    solver.getPC().setType('lu')
+    solver.setTolerances(rtol=1e-12)
     solver.setOperators(A)
 
     # Solve
@@ -173,10 +172,9 @@ def run_dg_test(mesh, V, degree):
     A = assemble_matrix(a, [])
     A.assemble()
 
-    # Create LU linear solver
+    # Create linear solver
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
-    solver.setType(PETSc.KSP.Type.PREONLY)
-    solver.getPC().setType(PETSc.PC.Type.LU)
+    solver.setTolerances(rtol=1e-12)
     solver.setOperators(A)
 
     # Solve
@@ -224,10 +222,8 @@ def test_curl_curl_eigenvalue(family, order):
     bcs = [dirichletbc(zero_u, boundary_dofs)]
 
     a, b = form(a), form(b)
-
     A = assemble_matrix(a, bcs=bcs)
     A.assemble()
-
     B = assemble_matrix(b, bcs=bcs, diagonal=0.01)
     B.assemble()
 
@@ -258,16 +254,16 @@ def test_curl_curl_eigenvalue(family, order):
 
 @pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
                     reason="This test does not work in complex mode.")
-def test_biharmonic():
+@pytest.mark.parametrize("family", ["HHJ", "Regge"])
+def test_biharmonic(family):
     """Manufactured biharmonic problem.
 
-    Solved using rotated Regge mixed finite element method. This is equivalent
-    to the Hellan-Herrmann-Johnson (HHJ) finite element method in
-    two-dimensions."""
+    Solved using rotated Regge or the Hellan-Herrmann-Johnson (HHJ) mixed
+    finite element method in two-dimensions."""
     mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]),
                                              np.array([1.0, 1.0])], [32, 32], CellType.triangle)
 
-    element = ufl.MixedElement([ufl.FiniteElement("Regge", ufl.triangle, 1),
+    element = ufl.MixedElement([ufl.FiniteElement(family, ufl.triangle, 1),
                                 ufl.FiniteElement("Lagrange", ufl.triangle, 2)])
 
     V = FunctionSpace(mesh, element)
@@ -279,16 +275,25 @@ def test_biharmonic():
     f_exact = div(grad(div(grad(u_exact))))
     sigma_exact = grad(grad(u_exact))
 
-    # sigma and tau are tangential-tangential continuous according to the
-    # H(curl curl) continuity of the Regge space. However, for the biharmonic
-    # problem we require normal-normal continuity H (div div). Theorem 4.2 of
-    # Lizao Li's PhD thesis shows that the latter space can be constructed by
-    # the former through the action of the operator S:
+    # sigma and tau are tangential-tangential continuous according to
+    # the H(curl curl) continuity of the Regge space. However, for the
+    # biharmonic problem we require normal-normal continuity H (div
+    # div). Theorem 4.2 of Lizao Li's PhD thesis shows that the latter
+    # space can be constructed by the former through the action of the
+    # operator S:
     def S(tau):
         return tau - ufl.Identity(2) * ufl.tr(tau)
 
-    sigma_S = S(sigma)
-    tau_S = S(tau)
+    if family == "Regge":
+        # Apply S if we are working with Regge which is H(curl curl)
+        sigma_S = S(sigma)
+        tau_S = S(tau)
+    elif family == "HHJ":
+        # Don't apply S if we are working with HHJ which is already H(div div)
+        sigma_S = sigma
+        tau_S = tau
+    else:
+        raise ValueError(f"Family {family} not supported.")
 
     # Discrete duality inner product eq. 4.5 Lizao Li's PhD thesis
     def b(tau_S, v):
@@ -321,17 +326,15 @@ def test_biharmonic():
 
     # Solve
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
-    PETSc.Options()["ksp_type"] = "preonly"
-    PETSc.Options()["pc_type"] = "lu"
-    # PETSc.Options()["pc_factor_mat_solver_type"] = "mumps"
-    solver.setFromOptions()
+    solver.setTolerances(rtol=1e-10)
+    solver.setType("bcgs")
     solver.setOperators(A)
 
     x_h = Function(V)
     solver.solve(b, x_h.vector)
     x_h.x.scatter_forward()
 
-    # Recall that x_h has flattened indices.
+    # Recall that x_h has flattened indices
     u_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         form(inner(u_exact - x_h[4], u_exact - x_h[4]) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
     u_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
@@ -341,7 +344,13 @@ def test_biharmonic():
 
     # Reconstruct tensor from flattened indices.
     # Apply inverse transform. In 2D we have S^{-1} = S.
-    sigma_h = S(ufl.as_tensor([[x_h[0], x_h[1]], [x_h[2], x_h[3]]]))
+    if family == "Regge":
+        sigma_h = S(ufl.as_tensor([[x_h[0], x_h[1]], [x_h[2], x_h[3]]]))
+    elif family == "HHJ":
+        sigma_h = ufl.as_tensor([[x_h[0], x_h[1]], [x_h[2], x_h[3]]])
+    else:
+        raise ValueError(f"Family {family} not supported.")
+
     sigma_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         form(inner(sigma_exact - sigma_h, sigma_exact - sigma_h) * dx(mesh, metadata={"quadrature_degree": 5}))),
         op=MPI.SUM))
@@ -361,21 +370,16 @@ def get_mesh(cell_type, datadir):
         filename = "create_unit_cube_tetra.xdmf"
     elif cell_type == CellType.hexahedron:
         filename = "create_unit_cube_hexahedron.xdmf"
-    with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+    with XDMFFile(MPI.COMM_WORLD, Path(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         return xdmf.read_mesh(name="Grid")
 
 
 parametrize_cell_types = pytest.mark.parametrize(
-    "cell_type", [CellType.triangle, CellType.quadrilateral,
-                  CellType.tetrahedron, CellType.hexahedron])
-parametrize_cell_types_simplex = pytest.mark.parametrize(
-    "cell_type", [CellType.triangle, CellType.tetrahedron])
-parametrize_cell_types_tp = pytest.mark.parametrize(
-    "cell_type", [CellType.quadrilateral, CellType.hexahedron])
-parametrize_cell_types_quad = pytest.mark.parametrize(
-    "cell_type", [CellType.quadrilateral])
-parametrize_cell_types_hex = pytest.mark.parametrize(
-    "cell_type", [CellType.hexahedron])
+    "cell_type", [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron])
+parametrize_cell_types_simplex = pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
+parametrize_cell_types_tp = pytest.mark.parametrize("cell_type", [CellType.quadrilateral, CellType.hexahedron])
+parametrize_cell_types_quad = pytest.mark.parametrize("cell_type", [CellType.quadrilateral])
+parametrize_cell_types_hex = pytest.mark.parametrize("cell_type", [CellType.hexahedron])
 
 
 # Run tests on all spaces in periodic table on triangles and tetrahedra
@@ -515,6 +519,39 @@ def test_dP_hex(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_dg_test(mesh, V, degree)
+
+
+@parametrize_cell_types_tp
+@pytest.mark.parametrize("family", ["S"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_S_tp(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
+    V = FunctionSpace(mesh, (family, degree))
+    run_scalar_test(mesh, V, degree // 2)
+
+
+@parametrize_cell_types_tp
+@pytest.mark.parametrize("family", ["S"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_S_tp_built_in_mesh(family, degree, cell_type, datadir):
+    if cell_type == CellType.hexahedron:
+        mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, cell_type)
+    elif cell_type == CellType.quadrilateral:
+        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, cell_type)
+    mesh = get_mesh(cell_type, datadir)
+    V = FunctionSpace(mesh, (family, degree))
+    run_scalar_test(mesh, V, degree // 2)
+
+
+@parametrize_cell_types_tp
+@pytest.mark.parametrize("family", ["S"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_vector_S_tp(family, degree, cell_type, datadir):
+    if cell_type == CellType.hexahedron and degree == 4:
+        pytest.skip("Skip expensive test on hexahedron")
+    mesh = get_mesh(cell_type, datadir)
+    V = VectorFunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree // 2)
 
 
 @parametrize_cell_types_quad

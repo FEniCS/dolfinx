@@ -6,6 +6,7 @@
 """Support functions for plotting"""
 
 import functools
+import typing
 import warnings
 
 import numpy as np
@@ -29,13 +30,17 @@ _first_order_vtk = {mesh.CellType.interval: 3,
 
 
 @functools.singledispatch
-def create_vtk_mesh(msh: mesh.Mesh, dim: int, entities=None):
+def create_vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=None):
     """Create vtk mesh topology data for mesh entities of a given
     dimension. The vertex indices in the returned topology array are the
     indices for the associated entry in the mesh geometry.
 
     """
+    if dim is None:
+        dim = msh.topology.dim
+
     tdim = msh.topology.dim
+
     cell_type = _cpp.mesh.cell_entity_type(msh.topology.cell_type, dim, 0)
     degree = msh.geometry.cmap.degree
     if cell_type == mesh.CellType.prism:
@@ -46,11 +51,11 @@ def create_vtk_mesh(msh: mesh.Mesh, dim: int, entities=None):
         entities = range(msh.topology.index_map(dim).size_local)
 
     if dim == tdim:
-        vtk_topology = _cpp.io.extract_vtk_connectivity(msh)[entities]
+        vtk_topology = _cpp.io.extract_vtk_connectivity(msh._cpp_object)[entities]
         num_nodes_per_cell = vtk_topology.shape[1]
     else:
         # NOTE: This linearizes higher order geometries
-        geometry_entities = _cpp.mesh.entities_to_geometry(msh, dim, entities, False)
+        geometry_entities = _cpp.mesh.entities_to_geometry(msh._cpp_object, dim, entities, False)
         if degree > 1:
             warnings.warn("Linearizing topology for higher order sub entities.")
 
@@ -79,7 +84,7 @@ def _(V: fem.FunctionSpace, entities=None):
     discontinuous) only.
 
     """
-    if not (V.ufl_element().family() in ['Discontinuous Lagrange', "Lagrange", "DQ", "Q"]):
+    if not (V.ufl_element().family() in ['Discontinuous Lagrange', "Lagrange", "DQ", "Q", "DP", "P"]):
         raise RuntimeError("Can only create meshes from continuous or discontinuous Lagrange spaces")
 
     degree = V.ufl_element().degree()

@@ -1,0 +1,35 @@
+diff --git a/cpp/dolfinx/common/subsystem.h b/cpp/dolfinx/common/subsystem.h
+index 32ffb92efb..22cf10709c 100644
+--- a/cpp/dolfinx/common/subsystem.h
++++ b/cpp/dolfinx/common/subsystem.h
+@@ -6,13 +6,14 @@
+ 
+ #pragma once
+ 
++#include<mpi.h>
++
+ namespace dolfinx::common
+ {
+ 
+-/// Function in this namesspace are convenience functtions for the
++/// Functions in this namesspace are convenience functtions for the
+ /// initialisation and finalisation of various sub systems, such as MPI
+ /// and PETSc.
+-
+ namespace subsystem
+ {
+ 
+@@ -27,11 +28,11 @@ void init_logging(int argc, char* argv[]);
+ 
+ /// Initialize PETSc (and SLEPc, if configured) without command-line
+ /// arguments
+-void init_petsc();
++void init_petsc(MPI_Comm comm = MPI_COMM_WORLD);
+ 
+ /// Initialize PETSc (and SLEPc, if configured) with command-line
+ /// arguments
+-void init_petsc(int argc, char* argv[]);
++void init_petsc(int argc, char* argv[], MPI_Comm comm = MPI_COMM_WORLD);
+ 
+ /// Check if MPI has been initialised (returns true if MPI has been
+ /// initialised, even if it is later finalised)

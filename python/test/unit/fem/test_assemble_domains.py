@@ -9,12 +9,14 @@ import numpy as np
 import pytest
 
 import ufl
+from dolfinx import cpp as _cpp
 from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_scalar,
                          dirichletbc, form)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
-from dolfinx.mesh import (GhostMode, MeshTags, create_unit_square,
-                          locate_entities_boundary)
+from dolfinx.mesh import (GhostMode, Mesh, create_unit_square,
+                          locate_entities_boundary, meshtags,
+                          meshtags_from_entities)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -25,6 +27,13 @@ def mesh():
     return create_unit_square(MPI.COMM_WORLD, 10, 10)
 
 
+def create_cell_meshtags_from_entities(mesh: Mesh, dim: int, cells: np.ndarray, values: np.ndarray):
+    mesh.topology.create_connectivity(mesh.topology.dim, 0)
+    cell_to_vertices = mesh.topology.connectivity(mesh.topology.dim, 0)
+    entities = _cpp.graph.AdjacencyList_int32([cell_to_vertices.links(cell) for cell in cells])
+    return meshtags_from_entities(mesh, dim, entities, values)
+
+
 parametrize_ghost_mode = pytest.mark.parametrize("mode", [
     pytest.param(GhostMode.none, marks=pytest.mark.skipif(condition=MPI.COMM_WORLD.size > 1,
                                                           reason="Unghosted interior facets fail in parallel")),
@@ -33,7 +42,8 @@ parametrize_ghost_mode = pytest.mark.parametrize("mode", [
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-def test_assembly_dx_domains(mode):
+@pytest.mark.parametrize("meshtags_factory", [meshtags, create_cell_meshtags_from_entities])
+def test_assembly_dx_domains(mode, meshtags_factory):
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -47,7 +57,7 @@ def test_assembly_dx_domains(mode):
     values = np.full(indices.shape, 3, dtype=np.intc)
     values[0] = 1
     values[1] = 2
-    marker = MeshTags(mesh, mesh.topology.dim, indices, values)
+    marker = meshtags_factory(mesh, mesh.topology.dim, indices, values)
     dx = ufl.Measure('dx', subdomain_data=marker, domain=mesh)
     w = Function(V)
     w.x.array[:] = 0.5
@@ -125,7 +135,7 @@ def test_assembly_ds_domains(mode):
     values = np.hstack((bottom_vals, top_vals, left_vals, right_vals))
 
     indices, pos = np.unique(indices, return_index=True)
-    marker = MeshTags(mesh, mesh.topology.dim - 1, indices, values[pos])
+    marker = meshtags(mesh, mesh.topology.dim - 1, indices, values[pos])
 
     ds = ufl.Measure('ds', subdomain_data=marker, domain=mesh)
 

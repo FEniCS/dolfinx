@@ -44,14 +44,15 @@ public:
   /// Move assignment
   SLEPcEigenSolver& operator=(SLEPcEigenSolver&& solver);
 
-  /// Set opeartors (B may be nullptr for regular eigenvalues
+  /// Set operators (B may be nullptr for regular eigenvalues
   /// problems)
   void set_operators(const Mat A, const Mat B);
 
-  /// Compute all eigenpairs of the matrix A (solve Ax = \lambda x)
+  /// Compute all eigenpairs of the matrix A (solve \f$A x = \lambda x\f$)
   void solve();
 
-  /// Compute the n first eigenpairs of the matrix A (solve Ax = \lambda x)
+  /// Compute the n first eigenpairs of the matrix A
+  /// (solve \f$A x = \lambda x\f$)
   void solve(std::int64_t n);
 
   /// Get ith eigenvalue

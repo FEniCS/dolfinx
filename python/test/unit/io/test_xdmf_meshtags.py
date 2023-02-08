@@ -4,22 +4,22 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import os
+from pathlib import Path
 from xml.etree import ElementTree
 
 import numpy as np
 import pytest
 
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, MeshTags, create_unit_cube, locate_entities
+from dolfinx.mesh import CellType, create_unit_cube, locate_entities, meshtags
 
 from mpi4py import MPI
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:
-    encodings = (XDMFFile.Encoding.HDF5, )
+    encodings = [XDMFFile.Encoding.HDF5]
 else:
-    encodings = (XDMFFile.Encoding.ASCII, XDMFFile.Encoding.HDF5)
+    encodings = [XDMFFile.Encoding.ASCII, XDMFFile.Encoding.HDF5]
 
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
@@ -27,7 +27,7 @@ celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_3d(tempdir, cell_type, encoding):
-    filename = os.path.join(tempdir, "meshtags_3d.xdmf")
+    filename = Path(tempdir, "meshtags_3d.xdmf")
     comm = MPI.COMM_WORLD
     mesh = create_unit_cube(comm, 4, 4, 4, cell_type)
     mesh.topology.create_entities(2)
@@ -38,7 +38,7 @@ def test_3d(tempdir, cell_type, encoding):
     left_values = np.full(left_facets.shape, 2, dtype=np.int32)
 
     indices, pos = np.unique(np.hstack((bottom_facets, left_facets)), return_index=True)
-    mt = MeshTags(mesh, 2, indices, np.hstack((bottom_values, left_values))[pos])
+    mt = meshtags(mesh, 2, indices, np.hstack((bottom_values, left_values))[pos])
     mt.name = "facets"
 
     top_lines = locate_entities(mesh, 1, lambda x: np.isclose(x[2], 1.0))
@@ -47,7 +47,7 @@ def test_3d(tempdir, cell_type, encoding):
     right_values = np.full(right_lines.shape, 4, dtype=np.int32)
 
     indices, pos = np.unique(np.hstack((top_lines, right_lines)), return_index=True)
-    mt_lines = MeshTags(mesh, 1, indices, np.hstack((top_values, right_values))[pos])
+    mt_lines = meshtags(mesh, 1, indices, np.hstack((top_values, right_values))[pos])
     mt_lines.name = "lines"
 
     mesh.topology.create_connectivity(1, 3)
@@ -72,7 +72,7 @@ def test_3d(tempdir, cell_type, encoding):
         assert mt_in.name == "facets"
         assert mt_lines_in.name == "lines"
 
-    with XDMFFile(comm, os.path.join(tempdir, "meshtags_3d_out.xdmf"), "w", encoding=encoding) as file:
+    with XDMFFile(comm, Path(tempdir, "meshtags_3d_out.xdmf"), "w", encoding=encoding) as file:
         file.write_mesh(mesh_in)
         file.write_meshtags(mt_lines_in)
         file.write_meshtags(mt_in)
@@ -87,7 +87,7 @@ def test_3d(tempdir, cell_type, encoding):
     # Check that only owned data is written to file
     facets_local = comm.allreduce((mt.indices < mesh.topology.index_map(2).size_local).sum(), op=MPI.SUM)
     parser = ElementTree.XMLParser()
-    tree = ElementTree.parse(os.path.join(tempdir, "meshtags_3d_out.xdmf"), parser)
+    tree = ElementTree.parse(Path(tempdir, "meshtags_3d_out.xdmf"), parser)
     num_lines = int(tree.findall(".//Grid[@Name='lines']/Topology")[0].get("NumberOfElements"))
     num_facets = int(tree.findall(".//Grid[@Name='facets']/Topology")[0].get("NumberOfElements"))
     assert num_lines == lines_local

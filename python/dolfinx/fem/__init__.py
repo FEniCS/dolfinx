@@ -6,6 +6,7 @@
 """Tools for assembling and manipulating finite element forms."""
 
 from dolfinx.cpp.fem import transpose_dofmap  # noqa
+from dolfinx.cpp.fem import create_nonmatching_meshes_interpolation_data
 from dolfinx.cpp.fem import IntegralType
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.fem import petsc
@@ -14,7 +15,6 @@ from dolfinx.fem.assemble import (apply_lifting, assemble_matrix,
 from dolfinx.fem.bcs import (DirichletBCMetaClass, bcs_by_block, dirichletbc,
                              locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.fem.dofmap import DofMap
-from dolfinx.fem.formmanipulations import adjoint
 from dolfinx.fem.forms import FormMetaClass, extract_function_spaces, form
 from dolfinx.fem.function import (Constant, Expression, Function,
                                   FunctionSpace, TensorFunctionSpace,
@@ -43,6 +43,7 @@ __all__ = [
     "FunctionSpace", "TensorFunctionSpace",
     "VectorFunctionSpace", "create_sparsity_pattern",
     "assemble_scalar", "assemble_matrix", "assemble_vector", "apply_lifting", "set_bc",
-    "DirichletBCMetaClass", "dirichletbc", "bcs_by_block", "DofMap", "FormMetaClass", "form", "IntegralType",
-    "adjoint", "locate_dofs_geometrical", "locate_dofs_topological",
-    "extract_function_spaces", "petsc"]
+    "DirichletBCMetaClass", "dirichletbc", "bcs_by_block", "DofMap", "FormMetaClass",
+    "form", "IntegralType",
+    "locate_dofs_geometrical", "locate_dofs_topological",
+    "extract_function_spaces", "petsc", "create_nonmatching_meshes_interpolation_data"]

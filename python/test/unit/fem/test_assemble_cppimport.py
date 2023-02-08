@@ -42,7 +42,7 @@ def test_eigen_assembly(tempdir):  # noqa: F811
 setup_pybind11(cfg)
 cfg['include_dirs'] = {dolfinx_pc["include_dirs"] + [petsc4py.get_include()]
   + [pybind11.get_include()] + [str(pybind_inc())] + eigen_dir}
-cfg['compiler_args'] = ["-std=c++17", "-Wno-comment"]
+cfg['compiler_args'] = ["-std=c++20", "-Wno-comment"]
 cfg['libraries'] = {dolfinx_pc["libraries"]}
 cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
 %>
@@ -65,10 +65,10 @@ assemble_csr(const dolfinx::fem::Form<T>& a,
              const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>& bcs)
 {
   std::vector<Eigen::Triplet<T>> triplets;
-  const auto mat_add
-      = [&triplets](const xtl::span<const std::int32_t>& rows,
-                    const xtl::span<const std::int32_t>& cols,
-                    const xtl::span<const T>& v)
+  auto mat_add
+      = [&triplets](const std::span<const std::int32_t>& rows,
+                    const std::span<const std::int32_t>& cols,
+                    const std::span<const T>& v)
     {
       for (std::size_t i = 0; i < rows.size(); ++i)
         for (std::size_t j = 0; j < cols.size(); ++j)
@@ -76,7 +76,7 @@ assemble_csr(const dolfinx::fem::Form<T>& a,
       return 0;
     };
 
-  dolfinx::fem::assemble_matrix<T>(mat_add, a, bcs);
+  dolfinx::fem::assemble_matrix(mat_add, a, bcs);
 
   auto map0 = a.function_spaces().at(0)->dofmap()->index_map;
   int bs0 = a.function_spaces().at(0)->dofmap()->index_map_bs();
@@ -105,7 +105,7 @@ PYBIND11_MODULE(eigen_csr, m)
         """Assemble bilinear form into an SciPy CSR matrix, in serial."""
         module = compile_eigen_csr_assembler_module()
         A = module.assemble_matrix(a, bcs)
-        if a.function_spaces[0].id == a.function_spaces[1].id:
+        if a.function_spaces[0] is a.function_spaces[1]:
             for bc in bcs:
                 if a.function_spaces[0].contains(bc.function_space):
                     bc_dofs, _ = bc.dof_indices()

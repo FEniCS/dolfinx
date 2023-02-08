@@ -4,14 +4,19 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - "main"
+    tags:
+      - "v*"
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container: fenicsproject/test-env:latest-redhat
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install FEniCS Python components
         run: |
@@ -29,15 +34,15 @@ jobs:
 
       - name: Build C++ unit tests
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/unit/ -S build/test/unit/
-          cmake --build build/test/unit
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S build/test/
+          cmake --build build/test
       - name: Run C++ unit tests (serial)
         run: |
-          cd build/test/unit
+          cd build/test
           ctest -V --output-on-failure -R unittests
       - name: Run C++ unit tests (MPI)
         run: |
-          cd build/test/unit
+          cd build/test
           mpiexec -np 2 ctest -V --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
@@ -50,10 +55,10 @@ jobs:
       - name: Build Python interface
         run: python3 -m pip -v install --global-option build --global-option --debug python/
 
-      - name: Set default DOLFINx JIT parameters
+      - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
-          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_parameters.json
+          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
       - name: Run demos (Python, serial)
         run: python3 -m pytest -n=2 -m serial --durations=10 python/demo/test.py

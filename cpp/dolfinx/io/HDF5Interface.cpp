@@ -76,6 +76,8 @@ hid_t HDF5Interface::open_file(MPI_Comm comm,
   hid_t file_id = -1;
   if (mode == "w") // Create file for write, overwriting any existing file
   {
+    if (auto d = filename.parent_path(); !d.empty())
+      std::filesystem::create_directories(d);
     file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
     if (file_id < 0)
       throw std::runtime_error("Failed to create HDF5 file.");
@@ -86,6 +88,8 @@ hid_t HDF5Interface::open_file(MPI_Comm comm,
       file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
     else
     {
+      if (auto d = filename.parent_path(); !d.empty())
+        std::filesystem::create_directories(d);
       file_id
           = H5Fcreate(filename.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, plist_id);
     }

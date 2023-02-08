@@ -4,14 +4,14 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the FunctionSpace class"""
-
+import numpy as np
 import pytest
 
+import basix.finite_element
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.mesh import create_unit_cube
-from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
-                 grad, triangle)
-from ufl.log import UFLException
+from dolfinx.mesh import create_mesh, create_unit_cube
+from ufl import (Cell, FiniteElement, Mesh, TestFunction, TrialFunction,
+                 VectorElement, grad, triangle)
 
 from mpi4py import MPI
 
@@ -65,14 +65,14 @@ def test_python_interface(V, V2, W, W2, Q):
     assert isinstance(V2, FunctionSpace)
     assert isinstance(W2, FunctionSpace)
 
-    assert V.ufl_cell() == V2.ufl_cell()
-    assert W.ufl_cell() == W2.ufl_cell()
+    assert V.mesh.ufl_cell() == V2.mesh.ufl_cell()
+    assert W.mesh.ufl_cell() == W2.mesh.ufl_cell()
     assert V.element == V2.element
     assert W.element == W2.element
     assert V.ufl_element() == V2.ufl_element()
     assert W.ufl_element() == W2.ufl_element()
-    assert W.id == W2.id
-    assert V.id == V2.id
+    assert W is W2
+    assert V is V2
 
 
 def test_component(V, W, Q):
@@ -85,7 +85,7 @@ def test_component(V, W, Q):
 
 
 def test_equality(V, V2, W, W2):
-    assert V == V
+    assert V == V  # /NOSONAR
     assert V == V2
     assert W == W
     assert W == W2
@@ -112,7 +112,7 @@ def test_sub(Q, W):
     assert W.element.num_sub_elements == X.element.num_sub_elements
     assert W.element.space_dimension == X.element.space_dimension
     assert W.element.value_shape == X.element.value_shape
-    assert W.element.interpolation_points.shape == X.element.interpolation_points.shape
+    assert W.element.interpolation_points().shape == X.element.interpolation_points().shape
     assert W.element == X.element
 
 
@@ -151,9 +151,7 @@ def test_not_equal(W, V, W2, V2):
 
 
 def test_clone(W):
-    V = W.clone()
-    assert V == W
-    assert V.id != W.id
+    assert W.clone() is not W
 
 
 def test_collapse(W, V):
@@ -222,5 +220,35 @@ def test_argument_equality(mesh, V, V2, W, W2):
 def test_cell_mismatch(mesh):
     """Test that cell mismatch raises early enough from UFL"""
     element = FiniteElement("P", triangle, 1)
-    with pytest.raises(UFLException):
+    with pytest.raises(BaseException):
         FunctionSpace(mesh, element)
+
+
+def test_basix_element(V, W, Q, V2):
+    for V_ in (V, W, V2):
+        e = V_.element.basix_element
+        assert isinstance(e, basix.finite_element.FiniteElement)
+
+    # Mixed spaces do not yet return a basix element
+    with pytest.raises(RuntimeError):
+        e = Q.element.basix_element
+
+
+@pytest.mark.skip_in_parallel
+def test_vector_function_space_cell_type():
+    """Test that the UFL element cell of a vector function
+    space is correct on meshes where gdim > tdim"""
+    comm = MPI.COMM_WORLD
+    gdim = 2
+
+    # Create a mesh containing a single interval living in 2D
+    cell = Cell("interval", geometric_dimension=gdim)
+    domain = Mesh(VectorElement("Lagrange", cell, 1))
+    cells = np.array([[0, 1]], dtype=np.int64)
+    x = np.array([[0., 0.], [1., 1.]])
+    mesh = create_mesh(comm, cells, x, domain)
+
+    # Create functions space over mesh, and check element cell
+    # is correct
+    V = VectorFunctionSpace(mesh, ('Lagrange', 1))
+    assert V.ufl_element().cell() == cell

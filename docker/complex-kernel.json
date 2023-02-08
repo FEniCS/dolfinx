@@ -1,20 +1,21 @@
 {
- "argv": [
-     "python",
-     "-m",
-     "ipykernel_launcher",
-     "-f",
-     "{connection_file}"
- ],
- "display_name": "Python 3 (DOLFINx complex)",
- "language": "python",
- "metadata": {
-     "debugger": true
- },
- "env": {
-     "PKG_CONFIG_PATH": "/usr/local/dolfinx-complex/lib/pkgconfig",
-     "PETSC_ARCH": "linux-gnu-complex-32",
-     "PYTHONPATH": "/usr/local/dolfinx-complex/lib/python3.8/dist-packages",
-     "LD_LIBRARY_PATH": "/usr/local/dolfinx-complex/lib"
- }
+    "argv": [
+        "python",
+        "-m",
+        "ipykernel_launcher",
+        "-f",
+        "{connection_file}"
+    ],
+    "display_name": "Python 3 (DOLFINx complex)",
+    "language": "python",
+    "metadata": {
+        "debugger": true
+    },
+    "env": {
+        "PKG_CONFIG_PATH": "/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH",
+        "PETSC_DIR": "/usr/local/petsc/",
+        "PETSC_ARCH": "linux-gnu-complex-32",
+        "PYTHONPATH": "/usr/local/dolfinx-complex/lib/python3.10/dist-packages:$PYTHONPATH",
+        "LD_LIBRARY_PATH": "/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH"
+    }
 }

@@ -8,23 +8,23 @@ via modification of linear systems."""
 
 from __future__ import annotations
 
+import collections.abc
+import numbers
 import typing
+
+import numpy.typing
 
 if typing.TYPE_CHECKING:
-    from dolfinx.fem.function import Constant, Function, FunctionSpace
-
-import collections.abc
-import types
-import typing
+    from dolfinx.fem.function import Constant, Function
 
 import numpy as np
 
-import ufl
+import dolfinx
 from dolfinx import cpp as _cpp
 
 
-def locate_dofs_geometrical(V: typing.Iterable[typing.Union[_cpp.fem.FunctionSpace, FunctionSpace]],
-                            marker: types.FunctionType) -> np.ndarray:
+def locate_dofs_geometrical(V: typing.Union[dolfinx.fem.FunctionSpace, typing.Iterable[dolfinx.fem.FunctionSpace]],
+                            marker: typing.Callable) -> np.ndarray:
     """Locate degrees-of-freedom geometrically using a marker function.
 
     Args:
@@ -48,22 +48,16 @@ def locate_dofs_geometrical(V: typing.Iterable[typing.Union[_cpp.fem.FunctionSpa
     """
 
     if isinstance(V, collections.abc.Sequence):
-        _V = []
-        for space in V:
-            try:
-                _V.append(space._cpp_object)
-            except AttributeError:
-                _V.append(space)
+        _V = [space._cpp_object for space in V]
         return _cpp.fem.locate_dofs_geometrical(_V, marker)
+    elif isinstance(V, dolfinx.fem.FunctionSpace):
+        return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)
     else:
-        try:
-            return _cpp.fem.locate_dofs_geometrical(V, marker)
-        except TypeError:
-            return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)
+        raise TypeError
 
 
-def locate_dofs_topological(V: typing.Iterable[typing.Union[_cpp.fem.FunctionSpace, FunctionSpace]],
-                            entity_dim: int, entities: typing.List[int],
+def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpace, typing.Iterable[dolfinx.fem.FunctionSpace]],
+                            entity_dim: int, entities: numpy.typing.NDArray[np.int32],
                             remote: bool = True) -> np.ndarray:
     """Locate degrees-of-freedom belonging to mesh entities topologically.
 
@@ -87,23 +81,17 @@ def locate_dofs_topological(V: typing.Iterable[typing.Union[_cpp.fem.FunctionSpa
 
     _entities = np.asarray(entities, dtype=np.int32)
     if isinstance(V, collections.abc.Sequence):
-        _V = []
-        for space in V:
-            try:
-                _V.append(space._cpp_object)
-            except AttributeError:
-                _V.append(space)
+        _V = [space._cpp_object for space in V]
         return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
+    elif isinstance(V, dolfinx.fem.FunctionSpace):
+        return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)
     else:
-        try:
-            return _cpp.fem.locate_dofs_topological(V, entity_dim, _entities, remote)
-        except TypeError:
-            return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)
+        raise TypeError
 
 
 class DirichletBCMetaClass:
-    def __init__(self, value: typing.Union[ufl.Coefficient, Function, Constant],
-                 dofs: typing.List[int], V: FunctionSpace = None):
+    def __init__(self, value: typing.Union[Function, Constant, numpy.ndarray],
+                 dofs: numpy.typing.ArrayLike, V: typing.Optional[dolfinx.fem.FunctionSpace] = None):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
@@ -118,35 +106,42 @@ class DirichletBCMetaClass:
             value: Lifted boundary values function.
             dofs: Local indices of degrees of freedom in function space to which
                 boundary condition applies. Expects array of size (number of
-                dofs, 2) if function space of the problem, ``V``, is passed.
+                dofs, 2) if function space of the problem, ``V`` is passed.
                 Otherwise assumes function space of the problem is the same
-                of function space of boundary values function. V: Function
-                space of a problem to which boundary conditions are applied.
-
+                of function space of boundary values function.
+            V: Function space of a problem to which boundary conditions are applied.
         """
-
         # Unwrap value object, if required
-        try:
-            _value = value._cpp_object
-        except AttributeError:
+        if isinstance(value, np.ndarray):
             _value = value
+        else:
+            try:
+                _value = value._cpp_object
+            except AttributeError:
+                _value = value
 
         if V is not None:
             try:
-                super().__init__(_value, dofs, V)
+                super().__init__(_value, dofs, V)  # type: ignore
             except TypeError:
-                super().__init__(_value, dofs, V._cpp_object)
+                super().__init__(_value, dofs, V._cpp_object)  # type: ignore
         else:
-            super().__init__(_value, dofs)
+            super().__init__(_value, dofs)  # type: ignore
 
     @property
     def g(self):
         """The boundary condition value(s)"""
-        return self.value
+        return self.value  # type: ignore
+
+    @property
+    def function_space(self) -> dolfinx.fem.FunctionSpace:
+        """The function space on which the boundary condition is defined"""
+        return super().function_space  # type: ignore
 
 
-def dirichletbc(value: typing.Union[Function, Constant],
-                dofs: typing.List[int], V: FunctionSpace = None) -> DirichletBCMetaClass:
+def dirichletbc(value: typing.Union[Function, Constant, np.ndarray],
+                dofs: numpy.typing.NDArray[np.int32],
+                V: typing.Optional[dolfinx.fem.FunctionSpace] = None) -> DirichletBCMetaClass:
     """Create a representation of Dirichlet boundary condition which
     is imposed on a linear system.
 
@@ -166,23 +161,30 @@ def dirichletbc(value: typing.Union[Function, Constant],
 
     """
 
-    if value.dtype == np.float32:
-        bctype = _cpp.fem.DirichletBC_float32
-    elif value.dtype == np.float64:
-        bctype = _cpp.fem.DirichletBC_float64
-    elif value.dtype == np.complex64:
-        bctype = _cpp.fem.DirichletBC_complex64
-    elif value.dtype == np.complex128:
-        bctype = _cpp.fem.DirichletBC_complex128
-    else:
-        raise NotImplementedError(f"Type {value.dtype} not supported.")
+    if isinstance(value, numbers.Number):
+        value = np.asarray(value)
+
+    try:
+        dtype = value.dtype
+        if dtype == np.float32:
+            bctype = _cpp.fem.DirichletBC_float32
+        elif dtype == np.float64:
+            bctype = _cpp.fem.DirichletBC_float64
+        elif dtype == np.complex64:
+            bctype = _cpp.fem.DirichletBC_complex64
+        elif dtype == np.complex128:
+            bctype = _cpp.fem.DirichletBC_complex128
+        else:
+            raise NotImplementedError(f"Type {value.dtype} not supported.")
+    except AttributeError:
+        raise AttributeError("Boundary condition value must have a dtype attribute.")
 
     formcls = type("DirichletBC", (DirichletBCMetaClass, bctype), {})
     return formcls(value, dofs, V)
 
 
-def bcs_by_block(spaces: typing.Iterable[FunctionSpace],
-                 bcs: typing.Iterable[DirichletBCMetaClass]) -> typing.Iterable[typing.Iterable[DirichletBCMetaClass]]:
+def bcs_by_block(spaces: typing.Iterable[typing.Union[dolfinx.fem.FunctionSpace, None]],
+                 bcs: typing.Iterable[DirichletBCMetaClass]) -> typing.List[typing.List[DirichletBCMetaClass]]:
     """Arrange Dirichlet boundary conditions by the function space that
     they constrain.
 

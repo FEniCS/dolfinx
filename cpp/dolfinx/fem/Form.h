@@ -9,10 +9,12 @@
 #include "FunctionSpace.h"
 #include <algorithm>
 #include <array>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <functional>
 #include <memory>
+#include <span>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -25,16 +27,16 @@ class Constant;
 template <typename T>
 class Function;
 
-/// Type of integral
+/// @brief Type of integral
 enum class IntegralType : std::int8_t
 {
-  cell = 0,
-  exterior_facet = 1,
-  interior_facet = 2,
-  vertex = 3
+  cell = 0,           ///< Cell
+  exterior_facet = 1, ///< Exterior facet
+  interior_facet = 2, ///< Interior facet
+  vertex = 3          ///< Vertex
 };
 
-/// Class for variational forms
+/// @brief A representation of finite element variational forms.
 ///
 /// A note on the order of trial and test spaces: FEniCS numbers
 /// argument spaces starting with the leading dimension of the
@@ -57,12 +59,26 @@ enum class IntegralType : std::int8_t
 /// (the variable `function_spaces` in the constructors below), the list
 /// of spaces should start with space number 0 (the test space) and then
 /// space number 1 (the trial space).
-
 template <typename T>
 class Form
 {
+  template <typename X, typename = void>
+  struct scalar_value_type
+  {
+    typedef X value_type;
+  };
+  template <typename X>
+  struct scalar_value_type<X, std::void_t<typename X::value_type>>
+  {
+    typedef typename X::value_type value_type;
+  };
+  using scalar_value_type_t = typename scalar_value_type<T>::value_type;
+
 public:
-  /// Create form
+  /// @brief Create a finite element form.
+  ///
+  /// @note User applications will normally call a fem::Form builder
+  /// function rather using this interface directly.
   ///
   /// @param[in] function_spaces Function spaces for the form arguments
   /// @param[in] integrals The integrals in the form. The first key is
@@ -75,25 +91,24 @@ public:
   /// @param[in] mesh The mesh of the domain. This is required when
   /// there are not argument functions from which the mesh can be
   /// extracted, e.g. for functionals
-  Form(
-      const std::vector<std::shared_ptr<const fem::FunctionSpace>>&
-          function_spaces,
-      const std::map<
-          IntegralType,
-          std::pair<
-              std::vector<std::pair<
-                  int, std::function<void(T*, const T*, const T*, const double*,
-                                          const int*, const std::uint8_t*)>>>,
-              const mesh::MeshTags<int>*>>& integrals,
-      const std::vector<std::shared_ptr<const fem::Function<T>>>& coefficients,
-      const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants,
-      bool needs_facet_permutations,
-      const std::shared_ptr<const mesh::Mesh>& mesh = nullptr)
+  Form(const std::vector<std::shared_ptr<const FunctionSpace>>& function_spaces,
+       const std::map<
+           IntegralType,
+           std::pair<
+               std::vector<std::pair<
+                   int, std::function<void(T*, const T*, const T*,
+                                           const scalar_value_type_t*,
+                                           const int*, const std::uint8_t*)>>>,
+               const mesh::MeshTags<int>*>>& integrals,
+       const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+       const std::vector<std::shared_ptr<const Constant<T>>>& constants,
+       bool needs_facet_permutations,
+       std::shared_ptr<const mesh::Mesh> mesh = nullptr)
       : _function_spaces(function_spaces), _coefficients(coefficients),
         _constants(constants), _mesh(mesh),
         _needs_facet_permutations(needs_facet_permutations)
   {
-    // Extract _mesh from fem::FunctionSpace, and check they are the same
+    // Extract _mesh from FunctionSpace, and check they are the same
     if (!_mesh and !function_spaces.empty())
       _mesh = function_spaces[0]->mesh();
     for (const auto& V : function_spaces)
@@ -163,7 +178,7 @@ public:
 
   /// Return function spaces for all arguments
   /// @return Function spaces
-  const std::vector<std::shared_ptr<const fem::FunctionSpace>>&
+  const std::vector<std::shared_ptr<const FunctionSpace>>&
   function_spaces() const
   {
     return _function_spaces;
@@ -174,8 +189,8 @@ public:
   /// @param[in] type Integral type
   /// @param[in] i Domain index
   /// @return Function to call for tabulate_tensor
-  const std::function<void(T*, const T*, const T*, const double*, const int*,
-                           const std::uint8_t*)>&
+  const std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
+                           const int*, const std::uint8_t*)>&
   kernel(IntegralType type, int i) const
   {
     switch (type)
@@ -271,12 +286,12 @@ public:
     return it->second.second;
   }
 
-  /// Get the list of (cell_index, local_facet_index) pairs for the ith
-  /// integral (kernel) for the exterior facet domain type
+  /// @brief List of (cell_index, local_facet_index) pairs for the ith
+  /// integral (kernel) for the exterior facet domain type.
   /// @param[in] i Integral ID, i.e. (sub)domain index
-  /// @return List of (cell_index, local_facet_index) pairs
-  const std::vector<std::pair<std::int32_t, int>>&
-  exterior_facet_domains(int i) const
+  /// @return List of (cell_index, local_facet_index) pairs. This data is
+  /// flattened with row-major layout, shape=(num_facets, 2)
+  const std::vector<std::int32_t>& exterior_facet_domains(int i) const
   {
     auto it = _exterior_facet_integrals.find(i);
     if (it == _exterior_facet_integrals.end())
@@ -285,13 +300,13 @@ public:
   }
 
   /// Get the list of (cell_index_0, local_facet_index_0, cell_index_1,
-  /// local_facet_index_1) tuples for the ith integral (kernel) for the
-  /// interior facet domain type,
+  /// local_facet_index_1) quadruplets for the ith integral (kernel) for the
+  /// interior facet domain type.
   /// @param[in] i Integral ID, i.e. (sub)domain index
   /// @return List of tuples of the form
-  /// (cell_index_0, local_facet_index_0, cell_index_1, local_facet_index_1)
-  const std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>&
-  interior_facet_domains(int i) const
+  /// (cell_index_0, local_facet_index_0, cell_index_1, local_facet_index_1).
+  /// This data is flattened with row-major layout, shape=(num_facets, 4)
+  const std::vector<std::int32_t>& interior_facet_domains(int i) const
   {
     auto it = _interior_facet_integrals.find(i);
     if (it == _interior_facet_integrals.end())
@@ -300,8 +315,7 @@ public:
   }
 
   /// Access coefficients
-  const std::vector<std::shared_ptr<const fem::Function<T>>>&
-  coefficients() const
+  const std::vector<std::shared_ptr<const Function<T>>>& coefficients() const
   {
     return _coefficients;
   }
@@ -327,7 +341,7 @@ public:
   }
 
   /// Access constants
-  const std::vector<std::shared_ptr<const fem::Constant<T>>>& constants() const
+  const std::vector<std::shared_ptr<const Constant<T>>>& constants() const
   {
     return _constants;
   }
@@ -336,8 +350,9 @@ public:
   using scalar_type = T;
 
 private:
-  using kern = std::function<void(T*, const T*, const T*, const double*,
-                                  const int*, const std::uint8_t*)>;
+  using kern
+      = std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
+                           const int*, const std::uint8_t*)>;
 
   // Helper function to get the kernel for integral i from a map
   // of integrals i.e. from _cell_integrals
@@ -345,8 +360,8 @@ private:
   // @param[in] i Domain index
   // @return Function to call for tabulate_tensor
   template <typename U>
-  const std::function<void(T*, const T*, const T*, const double*, const int*,
-                           const std::uint8_t*)>&
+  const std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
+                           const int*, const std::uint8_t*)>&
   get_kernel_from_integrals(const U& integrals, int i) const
   {
     auto it = integrals.find(i);
@@ -355,21 +370,21 @@ private:
     return it->second.first;
   }
 
-  // Helper function to get a std::vector of (cell, local_facet) pairs
+  // Helper function to get an array of of (cell, local_facet) pairs
   // corresponding to a given facet index.
   // @param[in] f Facet index
   // @param[in] f_to_c Facet to cell connectivity
   // @param[in] c_to_f Cell to facet connectivity
   // @return Vector of (cell, local_facet) pairs
   template <int num_cells>
-  static std::array<std::pair<std::int32_t, int>, num_cells>
-  get_cell_local_facet_pairs(
-      std::int32_t f, const xtl::span<const std::int32_t>& cells,
-      const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f)
+  static std::array<std::array<std::int32_t, 2>, num_cells>
+  get_cell_local_facet_pairs(std::int32_t f,
+                             std::span<const std::int32_t> cells,
+                             const graph::AdjacencyList<std::int32_t>& c_to_f)
   {
     // Loop over cells sharing facet
     assert(cells.size() == num_cells);
-    std::array<std::pair<std::int32_t, int>, num_cells> cell_local_facet_pairs;
+    std::array<std::array<std::int32_t, 2>, num_cells> cell_local_facet_pairs;
     for (int c = 0; c < num_cells; ++c)
     {
       // Get local index of facet with respect to the cell
@@ -385,98 +400,100 @@ private:
   }
 
   // Set cell domains
-  template <typename iterator>
   void set_cell_domains(
       std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
-      const iterator& tagged_cells_begin, const iterator& tagged_cells_end,
-      const std::vector<int>& tags)
+      std::span<const std::int32_t> tagged_cells, std::span<const int> tags)
   {
-    // For cell integrals use all markers (but not on ghost entities)
-    for (auto c = tagged_cells_begin; c != tagged_cells_end; ++c)
+    // For cell integrals use all markers
+    for (std::size_t i = 0; i < tagged_cells.size(); ++i)
     {
-      const std::size_t pos = std::distance(tagged_cells_begin, c);
-      if (auto it = integrals.find(tags[pos]); it != integrals.end())
-        it->second.second.push_back(*c);
+      if (auto it = integrals.find(tags[i]); it != integrals.end())
+      {
+        std::vector<std::int32_t>& integration_entities = it->second.second;
+        integration_entities.push_back(tagged_cells[i]);
+      }
     }
   }
 
   // Set exterior facet domains
-  template <typename iterator>
+  // @param[in] topology The mesh topology
+  // @param[in] integrals The integrals to set exterior facet domains for
+  // @param[in] tagged_facets A list of facets
+  // @param[in] tags A list of tags
+  // @pre The list of tagged facets must be sorted
   void set_exterior_facet_domains(
       const mesh::Topology& topology,
-      std::map<int, std::pair<kern, std::vector<std::pair<std::int32_t, int>>>>&
-          integrals,
-      const iterator& tagged_facets_begin, const iterator& tagged_facets_end,
-      const std::vector<int>& tags)
+      std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
+      std::span<const std::int32_t> tagged_facets, std::span<const int> tags)
   {
-    // When a mesh is not ghosted by cell, it is not straightforward
-    // to distinguish between (i) exterior facets and (ii) interior
-    // facets that are on a partition boundary. If there are no
-    // ghost cells, build a set of owned facts that are ghosted on
-    // another process to help determine if a facet is on an
-    // exterior boundary.
-    int tdim = topology.dim();
-    assert(topology.index_map(tdim));
-    std::set<std::int32_t> fwd_shared_facets;
-    if (topology.index_map(tdim)->num_ghosts() == 0)
-    {
-      const std::vector<std::int32_t>& fwd_indices
-          = topology.index_map(tdim - 1)->scatter_fwd_indices().array();
-      fwd_shared_facets.insert(fwd_indices.begin(), fwd_indices.end());
-    }
+    const std::vector<std::int32_t> boundary_facets
+        = mesh::exterior_facet_indices(topology);
 
+    // Create list of tagged boundary facets
+    std::vector<std::int32_t> tagged_ext_facets;
+    std::set_intersection(tagged_facets.begin(), tagged_facets.end(),
+                          boundary_facets.begin(), boundary_facets.end(),
+                          std::back_inserter(tagged_ext_facets));
+
+    const int tdim = topology.dim();
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
     assert(f_to_c);
     auto c_to_f = topology.connectivity(tdim, tdim - 1);
     assert(c_to_f);
-    for (auto f = tagged_facets_begin; f != tagged_facets_end; ++f)
+
+    // Loop through tagged boundary facets and add to respective
+    // integral
+    for (std::int32_t f : tagged_ext_facets)
     {
-      // All "owned" facets connected to one cell, that are not
-      // shared, should be external
-      // TODO: Consider removing this check and integrating over all
-      // tagged facets. This may be useful in a few cases.
-      if (f_to_c->num_links(*f) == 1
-          and fwd_shared_facets.find(*f) == fwd_shared_facets.end())
+      // Find index of f in tagged facets so that we can access the
+      // associated tag
+      // FIXME: Would it be better to avoid calling std::lower_bound in
+      // a loop>
+      auto index_it
+          = std::lower_bound(tagged_facets.begin(), tagged_facets.end(), f);
+      assert(index_it != tagged_facets.end() and *index_it == f);
+      const int index = std::distance(tagged_facets.begin(), index_it);
+      if (auto it = integrals.find(tags[index]); it != integrals.end())
       {
-        const std::size_t pos = std::distance(tagged_facets_begin, f);
-        if (auto it = integrals.find(tags[pos]); it != integrals.end())
-        {
-          // There will only be one pair for an exterior facet integral
-          std::pair<std::int32_t, int> pair = get_cell_local_facet_pairs<1>(
-              *f, f_to_c->links(*f), *c_to_f)[0];
-          it->second.second.push_back(pair);
-        }
+        // Get the facet as a (cell, local_facet) pair. There will only
+        // be one pair for an exterior facet integral
+        std::array<std::int32_t, 2> facet
+            = get_cell_local_facet_pairs<1>(f, f_to_c->links(f), *c_to_f)
+                  .front();
+        std::vector<std::int32_t>& integration_entities = it->second.second;
+        integration_entities.insert(integration_entities.end(), facet.cbegin(),
+                                    facet.cend());
       }
     }
   }
 
   // Set interior facet domains
-  template <typename iterator>
   static void set_interior_facet_domains(
       const mesh::Topology& topology,
-      std::map<int,
-               std::pair<kern, std::vector<std::tuple<std::int32_t, int,
-                                                      std::int32_t, int>>>>&
-          integrals,
-      const iterator& tagged_facets_begin, const iterator& tagged_facets_end,
-      const std::vector<int>& tags)
+      std::map<int, std::pair<kern, std::vector<std::int32_t>>>& integrals,
+      std::span<const std::int32_t> tagged_facets, std::span<const int> tags)
   {
     int tdim = topology.dim();
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
     assert(f_to_c);
     auto c_to_f = topology.connectivity(tdim, tdim - 1);
     assert(c_to_f);
-    for (auto f = tagged_facets_begin; f != tagged_facets_end; ++f)
+    for (std::size_t i = 0; i < tagged_facets.size(); ++i)
     {
-      if (f_to_c->num_links(*f) == 2)
+      const std::int32_t f = tagged_facets[i];
+      if (f_to_c->num_links(f) == 2)
       {
-        const std::size_t pos = std::distance(tagged_facets_begin, f);
-        if (auto it = integrals.find(tags[pos]); it != integrals.end())
+        if (auto it = integrals.find(tags[i]); it != integrals.end())
         {
-          std::array<std::pair<std::int32_t, int>, 2> pairs
-              = get_cell_local_facet_pairs<2>(*f, f_to_c->links(*f), *c_to_f);
-          it->second.second.emplace_back(pairs[0].first, pairs[0].second,
-                                         pairs[1].first, pairs[1].second);
+          // Ge the facet as a pair of (cell, local facet) pairs, one for each
+          // cell
+          auto [facet_0, facet_1]
+              = get_cell_local_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
+          std::vector<std::int32_t>& integration_entities = it->second.second;
+          integration_entities.insert(integration_entities.end(),
+                                      facet_0.cbegin(), facet_0.cend());
+          integration_entities.insert(integration_entities.end(),
+                                      facet_1.cbegin(), facet_1.cend());
         }
       }
     }
@@ -501,17 +518,18 @@ private:
     }
 
     // Get mesh tag data
-    const std::vector<int>& tags = marker.values();
-    const std::vector<std::int32_t>& tagged_entities = marker.indices();
     assert(topology.index_map(dim));
-    const auto entity_end
-        = std::lower_bound(tagged_entities.begin(), tagged_entities.end(),
+    auto entity_end
+        = std::lower_bound(marker.indices().begin(), marker.indices().end(),
                            topology.index_map(dim)->size_local());
+    // Only include owned entities in integration domains
+    std::span<const std::int32_t> owned_tagged_entities(
+        marker.indices().data(),
+        std::distance(marker.indices().begin(), entity_end));
     switch (type)
     {
     case IntegralType::cell:
-      set_cell_domains(_cell_integrals, tagged_entities.cbegin(), entity_end,
-                       tags);
+      set_cell_domains(_cell_integrals, owned_tagged_entities, marker.values());
       break;
     default:
       mesh->topology_mutable().create_connectivity(dim, tdim);
@@ -520,11 +538,11 @@ private:
       {
       case IntegralType::exterior_facet:
         set_exterior_facet_domains(topology, _exterior_facet_integrals,
-                                   tagged_entities.cbegin(), entity_end, tags);
+                                   owned_tagged_entities, marker.values());
         break;
       case IntegralType::interior_facet:
         set_interior_facet_domains(topology, _interior_facet_integrals,
-                                   tagged_entities.cbegin(), entity_end, tags);
+                                   owned_tagged_entities, marker.values());
         break;
       default:
         throw std::runtime_error(
@@ -558,45 +576,34 @@ private:
 
     // Exterior facets. If there is a default integral, define it only
     // on owned surface facets.
+
+    if (!_exterior_facet_integrals.empty())
+    {
+      mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+      mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
+    }
+
+    const std::vector<std::int32_t> boundary_facets
+        = _exterior_facet_integrals.empty()
+              ? std::vector<std::int32_t>()
+              : mesh::exterior_facet_indices(topology);
     for (auto& [domain_id, kernel_facets] : _exterior_facet_integrals)
     {
       if (domain_id == -1)
       {
-        std::vector<std::pair<std::int32_t, int>>& facets
-            = kernel_facets.second;
+        std::vector<std::int32_t>& facets = kernel_facets.second;
         facets.clear();
 
-        mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
         auto f_to_c = topology.connectivity(tdim - 1, tdim);
         assert(f_to_c);
-
-        mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
-        auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
+        auto c_to_f = topology.connectivity(tdim, tdim - 1);
         assert(c_to_f);
-
-        // Only need to consider shared facets when there are no ghost
-        // cells
-        std::set<std::int32_t> fwd_shared_facets;
-        assert(topology.index_map(tdim - 1));
-        if (topology.index_map(tdim)->num_ghosts() == 0)
+        for (std::int32_t f : boundary_facets)
         {
-          const std::vector<std::int32_t>& fwd_indices
-              = topology.index_map(tdim - 1)->scatter_fwd_indices().array();
-          fwd_shared_facets.insert(fwd_indices.begin(), fwd_indices.end());
-        }
-
-        const int num_facets = topology.index_map(tdim - 1)->size_local();
-        for (int f = 0; f < num_facets; ++f)
-        {
-          if (f_to_c->num_links(f) == 1
-              and fwd_shared_facets.find(f) == fwd_shared_facets.end())
-          {
-            // There will only be one pair for an exterior facet
-            // integral
-            std::pair<std::int32_t, int> pair = get_cell_local_facet_pairs<1>(
-                f, f_to_c->links(f), *c_to_f)[0];
-            facets.push_back(pair);
-          }
+          // There will only be one pair for an exterior facet integral
+          std::array<std::int32_t, 2> pair
+              = get_cell_local_facet_pairs<1>(f, f_to_c->links(f), *c_to_f)[0];
+          facets.insert(facets.end(), pair.cbegin(), pair.cend());
         }
       }
     }
@@ -607,8 +614,7 @@ private:
     {
       if (domain_id == -1)
       {
-        std::vector<std::tuple<std::int32_t, int, std::int32_t, int>>& facets
-            = kernel_facets.second;
+        std::vector<std::int32_t>& facets = kernel_facets.second;
         facets.clear();
 
         mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
@@ -626,10 +632,10 @@ private:
         {
           if (f_to_c->num_links(f) == 2)
           {
-            std::array<std::pair<std::int32_t, int>, 2> pairs
+            const std::array<std::array<std::int32_t, 2>, 2> pairs
                 = get_cell_local_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
-            facets.emplace_back(pairs[0].first, pairs[0].second, pairs[1].first,
-                                pairs[1].second);
+            facets.insert(facets.end(), pairs[0].cbegin(), pairs[0].cend());
+            facets.insert(facets.end(), pairs[1].cbegin(), pairs[1].cend());
           }
         }
       }
@@ -637,13 +643,13 @@ private:
   }
 
   // Function spaces (one for each argument)
-  std::vector<std::shared_ptr<const fem::FunctionSpace>> _function_spaces;
+  std::vector<std::shared_ptr<const FunctionSpace>> _function_spaces;
 
   // Form coefficients
-  std::vector<std::shared_ptr<const fem::Function<T>>> _coefficients;
+  std::vector<std::shared_ptr<const Function<T>>> _coefficients;
 
   // Constants associated with the Form
-  std::vector<std::shared_ptr<const fem::Constant<T>>> _constants;
+  std::vector<std::shared_ptr<const Constant<T>>> _constants;
 
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;
@@ -652,12 +658,11 @@ private:
   std::map<int, std::pair<kern, std::vector<std::int32_t>>> _cell_integrals;
 
   // Exterior facet integrals
-  std::map<int, std::pair<kern, std::vector<std::pair<std::int32_t, int>>>>
+  std::map<int, std::pair<kern, std::vector<std::int32_t>>>
       _exterior_facet_integrals;
 
   // Interior facet integrals
-  std::map<int, std::pair<kern, std::vector<std::tuple<std::int32_t, int,
-                                                       std::int32_t, int>>>>
+  std::map<int, std::pair<kern, std::vector<std::int32_t>>>
       _interior_facet_integrals;
 
   // True if permutation data needs to be passed into these integrals

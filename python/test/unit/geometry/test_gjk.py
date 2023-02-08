@@ -186,7 +186,7 @@ def test_collision_2nd_order_triangle():
     point = np.array([0.2, line_func(0.2), 0])
 
     # Point inside 2nd order geometry, outside linear approximation
-    # Usefull for debugging on a later stage
+    # Useful for debugging on a later stage
     # point = np.array([0.25, 0.89320760, 0])
     distance = geometry.squared_distance(mesh, mesh.topology.dim - 1, [2], point)
     assert np.isclose(distance, 0)

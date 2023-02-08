@@ -14,23 +14,24 @@ import pathlib
 import time
 
 import cffi
-import numba
-import numba.core.typing.cffi_utils as cffi_support
-import numpy as np
-import pytest
-
-import dolfinx
 import dolfinx.pkgconfig
-import ufl
-from dolfinx.fem import Function, FunctionSpace, form, transpose_dofmap
-from dolfinx.fem.petsc import assemble_matrix
-from dolfinx.mesh import create_unit_square
-from ufl import dx, inner
-
+import numpy as np
+import numpy.typing
 import petsc4py.lib
+import pytest
+import ufl
+from dolfinx.fem import Function, FunctionSpace, form
+from dolfinx.fem.petsc import assemble_matrix, load_petsc_lib
+from dolfinx.mesh import create_unit_square
 from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
+from ufl import dx, inner
+
+import dolfinx
+
+numba = pytest.importorskip("numba")
+cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
 
 # Get details of PETSc install
 petsc_dir = PETSc_get_config()['PETSC_DIR']
@@ -47,12 +48,12 @@ index_size = np.dtype(PETSc.IntType).itemsize
 
 if index_size == 8:
     c_int_t = "int64_t"
-    ctypes_index = ctypes.c_int64
+    ctypes_index: numpy.typing.DTypeLike = ctypes.c_int64
 elif index_size == 4:
     c_int_t = "int32_t"
     ctypes_index = ctypes.c_int32
 else:
-    raise RuntimeError("Cannot translate PETSc index size into a C type, index_size: {}.".format(index_size))
+    raise RuntimeError(f"Cannot translate PETSc index size into a C type, index_size: {index_size}.")
 
 if complex and scalar_size == 16:
     c_scalar_t = "double _Complex"
@@ -68,26 +69,15 @@ elif not complex and scalar_size == 4:
     numba_scalar_t = numba.types.float32
 else:
     raise RuntimeError(
-        "Cannot translate PETSc scalar type to a C type, complex: {} size: {}.".format(complex, scalar_size))
+        f"Cannot translate PETSc scalar type to a C type, complex: {complex} size: {scalar_size}.")
 
 
-# Load PETSc library via ctypes
-petsc_lib_name = ctypes.util.find_library("petsc")
-if petsc_lib_name is not None:
-    petsc_lib_ctypes = ctypes.CDLL(petsc_lib_name)
-else:
-    try:
-        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
-    except OSError:
-        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
-    except OSError:
-        print("Could not load PETSc library for CFFI (ABI mode).")
-        raise
-
+petsc_lib_ctypes = load_petsc_lib(ctypes.cdll.LoadLibrary)
 # Get the PETSc MatSetValuesLocal function via ctypes
+# ctypes does not support static types well, ignore type check errors
 MatSetValues_ctypes = petsc_lib_ctypes.MatSetValuesLocal
-MatSetValues_ctypes.argtypes = (ctypes.c_void_p, ctypes_index, ctypes.POINTER(
-    ctypes_index), ctypes_index, ctypes.POINTER(ctypes_index), ctypes.c_void_p, ctypes.c_int)
+MatSetValues_ctypes.argtypes = [ctypes.c_void_p, ctypes_index, ctypes.POINTER(  # type: ignore
+    ctypes_index), ctypes_index, ctypes.POINTER(ctypes_index), ctypes.c_void_p, ctypes.c_int]  # type: ignore
 del petsc_lib_ctypes
 
 
@@ -102,16 +92,7 @@ ffi.cdef("""int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow,
 """.format(c_int_t, c_scalar_t))
 
 
-if petsc_lib_name is not None:
-    petsc_lib_cffi = ffi.dlopen(petsc_lib_name)
-else:
-    try:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
-    except OSError:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
-    except OSError:
-        print("Could not load PETSc library for CFFI (ABI mode).")
-        raise
+petsc_lib_cffi = load_petsc_lib(ffi.dlopen)
 MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 
 
@@ -301,7 +282,6 @@ def test_custom_mesh_loop_rank1():
     x_dofs = mesh.geometry.dofmap.array.reshape(num_cells, 3)
     x = mesh.geometry.x
     dofmap = V.dofmap.list.array.reshape(num_cells, 3)
-    dofmap_t = transpose_dofmap(V.dofmap.list, num_owned_cells)
 
     # Assemble with pure Numba function (two passes, first will include
     # JIT overhead)
@@ -316,18 +296,21 @@ def test_custom_mesh_loop_rank1():
     b0.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert b0.vector.sum() == pytest.approx(1.0)
 
+    # NOTE: Parallel (threaded) Numba can cause problems with MPI
     # Assemble with pure Numba function using parallel loop (two passes,
     # first will include JIT overhead)
-    btmp = Function(V)
-    for i in range(2):
-        b = btmp.x.array
-        b[:] = 0.0
-        start = time.time()
-        assemble_vector_parallel(b, x_dofs, x, dofmap_t.array, dofmap_t.offsets, num_owned_cells)
-        end = time.time()
-        print("Time (numba parallel, pass {}): {}".format(i, end - start))
-    btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert (btmp.vector - b0.vector).norm() == pytest.approx(0.0)
+    # from dolfinx.fem import transpose_dofmap
+    # dofmap_t = transpose_dofmap(V.dofmap.list, num_owned_cells)
+    # btmp = Function(V)
+    # for i in range(2):
+    #     b = btmp.x.array
+    #     b[:] = 0.0
+    #     start = time.time()
+    #     assemble_vector_parallel(b, x_dofs, x, dofmap_t.array, dofmap_t.offsets, num_owned_cells)
+    #     end = time.time()
+    #     print("Time (numba parallel, pass {}): {}".format(i, end - start))
+    # btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    # assert (btmp.vector - b0.vector).norm() == pytest.approx(0.0)
 
     # Test against generated code and general assembler
     v = ufl.TestFunction(V)
@@ -351,7 +334,7 @@ def test_custom_mesh_loop_rank1():
     ffcxtype = "double _Complex" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "double"
     b3 = Function(V)
     ufcx_form, module, code = dolfinx.jit.ffcx_jit(
-        mesh.comm, L, form_compiler_params={"scalar_type": ffcxtype})
+        mesh.comm, L, form_compiler_options={"scalar_type": ffcxtype})
 
     nptype = "complex128" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "float64"
     # First 0 for "cell" integrals, second 0 for the first one, i.e. default domain

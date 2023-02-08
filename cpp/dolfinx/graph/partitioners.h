@@ -15,10 +15,13 @@ namespace scotch
 {
 #ifdef HAS_PTSCOTCH
 
-/// SCOTCH partitioning strategies
+/// @brief PT-SCOTCH partitioning strategies.
+///
+/// See PT-SCOTCH documentation for details.
 enum class strategy
 {
-  none, // SCOTCH default strategy
+  ///< SCOTCH default strategy
+  none,
   balance,
   quality,
   safety,
@@ -26,7 +29,7 @@ enum class strategy
   scalability
 };
 
-/// Create a graph partitioning function that uses SCOTCH
+/// @brief Create a graph partitioning function that uses PT-SCOTCH.
 ///
 /// @param[in] strategy The SCOTCH strategy
 /// @param[in] imbalance The allowable imbalance (between 0 and 1). The
@@ -44,9 +47,11 @@ namespace parmetis
 {
 #ifdef HAS_PARMETIS
 
-/// Create a graph partitioning function that uses ParMETIS
+/// @brief Create a graph partitioning function that uses ParMETIS.
 ///
-/// param[in] options The ParMETIS option. See ParMETIS manual for
+/// @param[in] imbalance Imbalance tolerance. See ParMETIS manual for
+/// details.
+/// @param[in] options The ParMETIS option. See ParMETIS manual for
 /// details.
 graph::partition_fn partitioner(double imbalance = 1.02,
                                 std::array<int, 3> options = {1, 0, 5});
@@ -58,7 +63,7 @@ graph::partition_fn partitioner(double imbalance = 1.02,
 namespace kahip
 {
 #ifdef HAS_KAHIP
-/// Create a graph partitioning function that uses KaHIP
+/// @brief Create a graph partitioning function that uses KaHIP.
 ///
 /// @param[in] mode The KaHiP partitioning mode (see
 /// https://github.com/KaHIP/KaHIP/blob/master/parallel/parallel_src/interface/parhip_interface.h)

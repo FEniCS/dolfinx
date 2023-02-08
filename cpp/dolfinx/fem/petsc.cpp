@@ -11,7 +11,9 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
-#include <xtl/xspan.hpp>
+#include <functional>
+#include <petscistypes.h>
+#include <span>
 
 using namespace dolfinx;
 
@@ -29,11 +31,11 @@ Mat fem::petsc::create_matrix(const Form<PetscScalar>& a,
 }
 //-----------------------------------------------------------------------------
 Mat fem::petsc::create_matrix_block(
-    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
+    const std::vector<std::vector<const Form<PetscScalar>*>>& a,
     const std::string& type)
 {
   // Extract and check row/column ranges
-  std::array<std::vector<std::shared_ptr<const fem::FunctionSpace>>, 2> V
+  std::array<std::vector<std::shared_ptr<const FunctionSpace>>, 2> V
       = fem::common_function_spaces(extract_function_spaces(a));
   std::array<std::vector<int>, 2> bs_dofs;
   for (std::size_t i = 0; i < 2; ++i)
@@ -57,7 +59,7 @@ Mat fem::petsc::create_matrix_block(
           = {{V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
       const std::array bs = {V[0][row]->dofmap()->index_map_bs(),
                              V[1][col]->dofmap()->index_map_bs()};
-      if (const fem::Form<PetscScalar>* form = a[row][col]; form)
+      if (const Form<PetscScalar>* form = a[row][col]; form)
       {
         // Create sparsity pattern for block
         patterns[row].push_back(std::make_unique<la::SparsityPattern>(
@@ -66,7 +68,7 @@ Mat fem::petsc::create_matrix_block(
         // Build sparsity pattern for block
         assert(V[0][row]->dofmap());
         assert(V[1][col]->dofmap());
-        std::array<const std::reference_wrapper<const fem::DofMap>, 2> dofmaps{
+        std::array<const std::reference_wrapper<const DofMap>, 2> dofmaps{
             *V[0][row]->dofmap(), *V[1][col]->dofmap()};
         assert(patterns[row].back());
         auto& sp = patterns[row].back();
@@ -98,23 +100,17 @@ Mat fem::petsc::create_matrix_block(
   {
     for (auto space : V[d])
     {
-      maps[d].push_back(
-          {*space->dofmap()->index_map.get(), space->dofmap()->index_map_bs()});
+      maps[d].emplace_back(*space->dofmap()->index_map,
+                           space->dofmap()->index_map_bs());
     }
   }
-
-  // FIXME: This is computed again inside the SparsityPattern
-  // constructor, but we also need to outside to build the PETSc
-  // local-to-global map. Compute outside and pass into SparsityPattern
-  // constructor.
-  auto [rank_offset, local_offset, ghosts, owner]
-      = common::stack_index_maps(maps[0]);
 
   // Create merged sparsity pattern
   std::vector<std::vector<const la::SparsityPattern*>> p(V[0].size());
   for (std::size_t row = 0; row < V[0].size(); ++row)
     for (std::size_t col = 0; col < V[1].size(); ++col)
       p[row].push_back(patterns[row][col].get());
+
   la::SparsityPattern pattern(mesh->comm(), p, maps, bs_dofs);
   pattern.assemble();
 
@@ -129,6 +125,17 @@ Mat fem::petsc::create_matrix_block(
   std::array<std::vector<PetscInt>, 2> _maps;
   for (int d = 0; d < 2; ++d)
   {
+    // FIXME: Index map concatenation has already been computed inside
+    // the SparsityPattern constructor, but we also need it here to
+    // build the PETSc local-to-global map. Compute outside and pass
+    // into SparsityPattern constructor.
+
+    // FIXME: avoid concatenating the same maps twice in case that V[0]
+    // == V[1].
+
+    // Concatenate the block index map in the row and column directions
+    auto [rank_offset, local_offset, ghosts, _]
+        = common::stack_index_maps(maps[d]);
     for (std::size_t f = 0; f < maps[d].size(); ++f)
     {
       const common::IndexMap& map = maps[d][f].first.get();
@@ -155,12 +162,11 @@ Mat fem::petsc::create_matrix_block(
   }
   else
   {
+
     ISLocalToGlobalMapping petsc_local_to_global1;
     ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[1].size(),
                                  _maps[1].data(), PETSC_COPY_VALUES,
                                  &petsc_local_to_global1);
-    MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
-                               petsc_local_to_global1);
     MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
                                petsc_local_to_global1);
     ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
@@ -171,7 +177,7 @@ Mat fem::petsc::create_matrix_block(
 }
 //-----------------------------------------------------------------------------
 Mat fem::petsc::create_matrix_nest(
-    const std::vector<std::vector<const fem::Form<PetscScalar>*>>& a,
+    const std::vector<std::vector<const Form<PetscScalar>*>>& a,
     const std::vector<std::vector<std::string>>& types)
 {
   // Extract and check row/column ranges
@@ -190,7 +196,7 @@ Mat fem::petsc::create_matrix_nest(
   {
     for (int j = 0; j < cols; ++j)
     {
-      if (const fem::Form<PetscScalar>* form = a[i][j]; form)
+      if (const Form<PetscScalar>* form = a[i][j]; form)
         mats[i * cols + j] = create_matrix(*form, _types[i][j]);
     }
   }
@@ -230,20 +236,9 @@ Vec fem::petsc::create_vector_block(
   for (auto& sub_owner : ghost_new_owners)
     ghost_owners.insert(ghost_owners.end(), sub_owner.begin(), sub_owner.end());
 
-  std::vector<int> dest_ranks;
-  for (auto& map : maps)
-  {
-    const auto [_, ranks] = dolfinx::MPI::neighbors(
-        map.first.get().comm(common::IndexMap::Direction::forward));
-    dest_ranks.insert(dest_ranks.end(), ranks.begin(), ranks.end());
-  }
-  std::sort(dest_ranks.begin(), dest_ranks.end());
-  dest_ranks.erase(std::unique(dest_ranks.begin(), dest_ranks.end()),
-                   dest_ranks.end());
-
   // Create map for combined problem, and create vector
-  common::IndexMap index_map(maps[0].first.get().comm(), local_size, dest_ranks,
-                             ghosts, ghost_owners);
+  common::IndexMap index_map(maps[0].first.get().comm(), local_size, ghosts,
+                             ghost_owners);
 
   return la::petsc::create_vector(index_map, 1);
 }
@@ -271,10 +266,9 @@ Vec fem::petsc::create_vector_nest(
 }
 //-----------------------------------------------------------------------------
 void fem::petsc::assemble_vector(
-    Vec b, const Form<PetscScalar>& L,
-    const xtl::span<const PetscScalar>& constants,
+    Vec b, const Form<PetscScalar>& L, std::span<const PetscScalar> constants,
     const std::map<std::pair<IntegralType, int>,
-                   std::pair<xtl::span<const PetscScalar>, int>>& coeffs)
+                   std::pair<std::span<const PetscScalar>, int>>& coeffs)
 {
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);
@@ -282,7 +276,7 @@ void fem::petsc::assemble_vector(
   VecGetSize(b_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b_local, &array);
-  xtl::span<PetscScalar> _b(array, n);
+  std::span<PetscScalar> _b(array, n);
   fem::assemble_vector<PetscScalar>(_b, L, constants, coeffs);
   VecRestoreArray(b_local, &array);
   VecGhostRestoreLocalForm(b, &b_local);
@@ -296,7 +290,7 @@ void fem::petsc::assemble_vector(Vec b, const Form<PetscScalar>& L)
   VecGetSize(b_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b_local, &array);
-  xtl::span<PetscScalar> _b(array, n);
+  std::span<PetscScalar> _b(array, n);
   fem::assemble_vector<PetscScalar>(_b, L);
   VecRestoreArray(b_local, &array);
   VecGhostRestoreLocalForm(b, &b_local);
@@ -304,9 +298,9 @@ void fem::petsc::assemble_vector(Vec b, const Form<PetscScalar>& L)
 //-----------------------------------------------------------------------------
 void fem::petsc::apply_lifting(
     Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
-    const std::vector<xtl::span<const PetscScalar>>& constants,
+    const std::vector<std::span<const PetscScalar>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
-                               std::pair<xtl::span<const PetscScalar>, int>>>&
+                               std::pair<std::span<const PetscScalar>, int>>>&
         coeffs,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
@@ -318,13 +312,13 @@ void fem::petsc::apply_lifting(
   VecGetSize(b_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b_local, &array);
-  xtl::span<PetscScalar> _b(array, n);
+  std::span<PetscScalar> _b(array, n);
 
   if (x0.empty())
     fem::apply_lifting<PetscScalar>(_b, a, constants, coeffs, bcs1, {}, scale);
   else
   {
-    std::vector<xtl::span<const PetscScalar>> x0_ref;
+    std::vector<std::span<const PetscScalar>> x0_ref;
     std::vector<Vec> x0_local(a.size());
     std::vector<const PetscScalar*> x0_array(a.size());
     for (std::size_t i = 0; i < a.size(); ++i)
@@ -364,13 +358,13 @@ void fem::petsc::apply_lifting(
   VecGetSize(b_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b_local, &array);
-  xtl::span<PetscScalar> _b(array, n);
+  std::span<PetscScalar> _b(array, n);
 
   if (x0.empty())
     fem::apply_lifting<PetscScalar>(_b, a, bcs1, {}, scale);
   else
   {
-    std::vector<xtl::span<const PetscScalar>> x0_ref;
+    std::vector<std::span<const PetscScalar>> x0_ref;
     std::vector<Vec> x0_local(a.size());
     std::vector<const PetscScalar*> x0_array(a.size());
     for (std::size_t i = 0; i < a.size(); ++i)
@@ -406,7 +400,7 @@ void fem::petsc::set_bc(
   VecGetLocalSize(b, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b, &array);
-  xtl::span<PetscScalar> _b(array, n);
+  std::span<PetscScalar> _b(array, n);
   if (x0)
   {
     Vec x0_local;
@@ -415,7 +409,7 @@ void fem::petsc::set_bc(
     VecGetSize(x0_local, &n);
     const PetscScalar* array = nullptr;
     VecGetArrayRead(x0_local, &array);
-    xtl::span<const PetscScalar> _x0(array, n);
+    std::span<const PetscScalar> _x0(array, n);
     fem::set_bc<PetscScalar>(_b, bcs, _x0, scale);
     VecRestoreArrayRead(x0_local, &array);
     VecGhostRestoreLocalForm(x0, &x0_local);

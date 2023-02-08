@@ -13,12 +13,11 @@
 #include <cstddef>
 #include <mpi.h>
 
-/// Right cuboid mesh creation
 namespace dolfinx::mesh
 {
 
-/// Create a uniform mesh::Mesh over the rectangular prism spanned by the
-/// two points @p p. The order of the two points is not important in
+/// Create a uniform mesh::Mesh over the rectangular prism spanned by
+/// the two points @p p. The order of the two points is not important in
 /// terms of minimum and maximum coordinates. The total number of
 /// vertices will be `(n[0] + 1)*(n[1] + 1)*(n[2] + 1)`. For tetrahedra
 /// there will be  will be `6*n[0]*n[1]*n[2]` cells. For hexahedra the
@@ -28,13 +27,11 @@ namespace dolfinx::mesh
 /// @param[in] p Points of box
 /// @param[in] n Number of cells in each direction
 /// @param[in] celltype Cell shape
-/// @param[in] ghost_mode Ghost mode
 /// @param[in] partitioner Partitioning function to use for
 /// determining the parallel distribution of cells across MPI ranks
 /// @return Mesh
 Mesh create_box(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                 std::array<std::size_t, 3> n, CellType celltype,
-                GhostMode ghost_mode,
                 const mesh::CellPartitionFunction& partitioner
                 = create_cell_partitioner());
 
@@ -45,12 +42,10 @@ Mesh create_box(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
 /// @param[in] comm MPI communicator to build the mesh on
 /// @param[in] n The number of cells
 /// @param[in] x The end points of the interval
-/// @param[in] ghost_mode Ghosting mode
 /// @param[in] partitioner Partitioning function to use for determining
 /// the parallel distribution of cells across MPI ranks
 /// @return A mesh
 Mesh create_interval(MPI_Comm comm, std::size_t n, std::array<double, 2> x,
-                     GhostMode ghost_mode,
                      const CellPartitionFunction& partitioner
                      = create_cell_partitioner());
 
@@ -76,13 +71,11 @@ enum class DiagonalType
 /// @param[in] p Two corner points
 /// @param[in] n Number of cells in each direction
 /// @param[in] celltype Cell shape
-/// @param[in] ghost_mode Mesh ghosting mode
 /// @param[in] diagonal Direction of diagonals
 /// @return Mesh
 Mesh create_rectangle(MPI_Comm comm,
                       const std::array<std::array<double, 2>, 2>& p,
                       std::array<std::size_t, 2> n, CellType celltype,
-                      GhostMode ghost_mode,
                       DiagonalType diagonal = DiagonalType::right);
 
 /// Create a uniform mesh::Mesh over the rectangle spanned by the two
@@ -96,7 +89,6 @@ Mesh create_rectangle(MPI_Comm comm,
 /// @param[in] p Two corner points
 /// @param[in] n Number of cells in each direction
 /// @param[in] celltype Cell shape
-/// @param[in] ghost_mode Mesh ghosting mode
 /// @param[in] partitioner Partitioning function to use for determining
 /// the parallel distribution of cells across MPI ranks
 /// @param[in] diagonal Direction of diagonals
@@ -104,7 +96,6 @@ Mesh create_rectangle(MPI_Comm comm,
 Mesh create_rectangle(MPI_Comm comm,
                       const std::array<std::array<double, 2>, 2>& p,
                       std::array<std::size_t, 2> n, CellType celltype,
-                      GhostMode ghost_mode,
                       const CellPartitionFunction& partitioner,
                       DiagonalType diagonal = DiagonalType::right);
 } // namespace dolfinx::mesh

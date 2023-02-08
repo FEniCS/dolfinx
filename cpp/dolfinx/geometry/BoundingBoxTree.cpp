@@ -1,5 +1,5 @@
-// Copyright (C) 2013-2021 Chris N. Richardson, Anders Logg, Garth N. Wells and
-// Jørgen S. Dokken
+// Copyright (C) 2013-2022 Chris N. Richardson, Anders Logg, Garth N. Wells,
+// Jørgen S. Dokken, Sarah Roggendorf
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,13 +7,12 @@
 
 #include "BoundingBoxTree.h"
 #include "utils.h"
+#include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
-#include <xtensor/xview.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::geometry;
@@ -34,144 +33,125 @@ std::vector<std::int32_t> range(const mesh::Mesh& mesh, int tdim)
   return r;
 }
 //-----------------------------------------------------------------------------
-// Compute bounding box of mesh entity
-std::array<std::array<double, 3>, 2>
-compute_bbox_of_entity(const mesh::Mesh& mesh, int dim, std::int32_t index)
+// Compute bounding box of mesh entity. The bounding box is defined by (lower
+// left corner, top right corner). Storage flattened row-major
+std::array<double, 6> compute_bbox_of_entity(const mesh::Mesh& mesh, int dim,
+                                             std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
-  const int tdim = mesh.topology().dim();
-  xtl::span<const double> xg = mesh.geometry().x();
-
-  mesh.topology_mutable().create_connectivity(dim, tdim);
+  std::span<const double> xg = mesh.geometry().x();
 
   // FIXME: return of small dynamic array is expensive
-  const std::array<std::int32_t, 1> entity = {index};
-  const xt::xtensor<std::int32_t, 2> vertex_indices
+  std::span<const std::int32_t> entity(&index, 1);
+  const std::vector<std::int32_t> vertex_indices
       = mesh::entities_to_geometry(mesh, dim, entity, false);
-  auto entity_vertices = xt::row(vertex_indices, 0);
 
-  std::array<std::array<double, 3>, 2> b;
-  b[0] = {xg[3 * entity_vertices[0]], xg[3 * entity_vertices[0] + 1],
-          xg[3 * entity_vertices[0] + 2]};
-  b[1] = b[0];
+  std::array<double, 6> b;
+  auto b0 = std::span(b).subspan<0, 3>();
+  auto b1 = std::span(b).subspan<3, 3>();
+  std::copy_n(std::next(xg.begin(), 3 * vertex_indices.front()), 3, b0.begin());
+  std::copy_n(std::next(xg.begin(), 3 * vertex_indices.front()), 3, b1.begin());
 
   // Compute min and max over vertices
-  for (const int local_vertex : entity_vertices)
+  for (std::int32_t local_vertex : vertex_indices)
   {
-    for (int j = 0; j < 3; ++j)
+    for (std::size_t j = 0; j < 3; ++j)
     {
-      b[0][j] = std::min(b[0][j], xg[3 * local_vertex + j]);
-      b[1][j] = std::max(b[1][j], xg[3 * local_vertex + j]);
+      b0[j] = std::min(b0[j], xg[3 * local_vertex + j]);
+      b1[j] = std::max(b1[j], xg[3 * local_vertex + j]);
     }
   }
 
   return b;
 }
 //-----------------------------------------------------------------------------
-// Compute bounding box of bounding boxes
-std::array<std::array<double, 3>, 2> compute_bbox_of_bboxes(
-    const xtl::span<const std::pair<std::array<std::array<double, 3>, 2>,
-                                    std::int32_t>>& leaf_bboxes)
+// Compute bounding box of bounding boxes. Each bounding box is defined as a
+// tuple (corners, entity_index). The corners of the bounding box is flattened
+// row-major as (lower left corner, top right corner).
+std::array<double, 6> compute_bbox_of_bboxes(
+    std::span<const std::pair<std::array<double, 6>, std::int32_t>> leaf_bboxes)
 {
   // Compute min and max over remaining boxes
-  std::array<std::array<double, 3>, 2> b;
-  b[0] = leaf_bboxes[0].first[0];
-  b[1] = leaf_bboxes[0].first[1];
-  for (auto& box : leaf_bboxes)
+  std::array<double, 6> b = leaf_bboxes.front().first;
+  for (auto [box, _] : leaf_bboxes)
   {
-    std::transform(box.first[0].begin(), box.first[0].end(), b[0].begin(),
-                   b[0].begin(),
+    std::transform(box.cbegin(), std::next(box.cbegin(), 3), b.cbegin(),
+                   b.begin(),
                    [](double a, double b) { return std::min(a, b); });
-    std::transform(box.first[1].begin(), box.first[1].end(), b[1].begin(),
-                   b[1].begin(),
+    std::transform(std::next(box.cbegin(), 3), box.cend(),
+                   std::next(b.cbegin(), 3), std::next(b.begin(), 3),
                    [](double a, double b) { return std::max(a, b); });
   }
 
   return b;
 }
 //------------------------------------------------------------------------------
-int _build_from_leaf(
-    xtl::span<std::pair<std::array<std::array<double, 3>, 2>, std::int32_t>>
-        leaf_bboxes,
-    std::vector<std::array<int, 2>>& bboxes,
-    std::vector<double>& bbox_coordinates)
+std::int32_t _build_from_leaf(
+    std::span<std::pair<std::array<double, 6>, std::int32_t>> leaf_bboxes,
+    std::vector<int>& bboxes, std::vector<double>& bbox_coordinates)
 {
   if (leaf_bboxes.size() == 1)
   {
     // Reached leaf
 
     // Get bounding box coordinates for leaf
-    const std::int32_t entity_index = leaf_bboxes[0].second;
-    const std::array<double, 3> b0 = leaf_bboxes[0].first[0];
-    const std::array<double, 3> b1 = leaf_bboxes[0].first[1];
+    const auto [b, entity_index] = leaf_bboxes.front();
 
     // Store bounding box data
-    bboxes.push_back({entity_index, entity_index});
-    bbox_coordinates.insert(bbox_coordinates.end(), b0.begin(), b0.end());
-    bbox_coordinates.insert(bbox_coordinates.end(), b1.begin(), b1.end());
-    return bboxes.size() - 1;
+    bboxes.push_back(entity_index);
+    bboxes.push_back(entity_index);
+    std::copy_n(b.begin(), 6, std::back_inserter(bbox_coordinates));
+    return bboxes.size() / 2 - 1;
   }
   else
   {
     // Compute bounding box of all bounding boxes
-    std::array<std::array<double, 3>, 2> b
-        = compute_bbox_of_bboxes(leaf_bboxes);
-    std::array<double, 3> b0 = b[0];
-    std::array<double, 3> b1 = b[1];
+    std::array<double, 6> b = compute_bbox_of_bboxes(leaf_bboxes);
 
     // Sort bounding boxes along longest axis
     std::array<double, 3> b_diff;
-    std::transform(b1.begin(), b1.end(), b0.begin(), b_diff.begin(),
-                   std::minus<double>());
+    std::transform(std::next(b.cbegin(), 3), b.cend(), b.cbegin(),
+                   b_diff.begin(), std::minus<double>());
     const std::size_t axis = std::distance(
         b_diff.begin(), std::max_element(b_diff.begin(), b_diff.end()));
 
     auto middle = std::next(leaf_bboxes.begin(), leaf_bboxes.size() / 2);
-
     std::nth_element(leaf_bboxes.begin(), middle, leaf_bboxes.end(),
-                     [axis](const auto& p0, const auto& p1) -> bool
+                     [axis](auto& p0, auto& p1) -> bool
                      {
-                       const double x0 = p0.first[0][axis] + p0.first[1][axis];
-                       const double x1 = p1.first[0][axis] + p1.first[1][axis];
+                       double x0 = p0.first[axis] + p0.first[3 + axis];
+                       double x1 = p1.first[axis] + p1.first[3 + axis];
                        return x0 < x1;
                      });
 
     // Split bounding boxes into two groups and call recursively
-    std::array bbox{_build_from_leaf(xtl::span(leaf_bboxes.begin(), middle),
-                                     bboxes, bbox_coordinates),
-                    _build_from_leaf(xtl::span(middle, leaf_bboxes.end()),
-                                     bboxes, bbox_coordinates)};
+    assert(!leaf_bboxes.empty());
+    std::size_t part = leaf_bboxes.size() / 2;
+    std::int32_t bbox0
+        = _build_from_leaf(leaf_bboxes.first(part), bboxes, bbox_coordinates);
+    std::int32_t bbox1 = _build_from_leaf(
+        leaf_bboxes.last(leaf_bboxes.size() - part), bboxes, bbox_coordinates);
 
     // Store bounding box data. Note that root box will be added last.
-    bboxes.push_back(bbox);
-    bbox_coordinates.insert(bbox_coordinates.end(), b0.begin(), b0.end());
-    bbox_coordinates.insert(bbox_coordinates.end(), b1.begin(), b1.end());
-    return bboxes.size() - 1;
+    bboxes.push_back(bbox0);
+    bboxes.push_back(bbox1);
+    std::copy_n(b.begin(), 6, std::back_inserter(bbox_coordinates));
+    return bboxes.size() / 2 - 1;
   }
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int32_t>, std::vector<double>> build_from_leaf(
-    std::vector<std::pair<std::array<std::array<double, 3>, 2>, std::int32_t>>
-        leaf_bboxes)
+    std::vector<std::pair<std::array<double, 6>, std::int32_t>>& leaf_bboxes)
 {
-  std::vector<std::array<std::int32_t, 2>> bboxes;
+  std::vector<std::int32_t> bboxes;
   std::vector<double> bbox_coordinates;
   _build_from_leaf(leaf_bboxes, bboxes, bbox_coordinates);
-
-  std::vector<std::int32_t> bbox_array(2 * bboxes.size());
-  for (std::size_t i = 0; i < bboxes.size(); ++i)
-  {
-    bbox_array[2 * i] = bboxes[i][0];
-    bbox_array[2 * i + 1] = bboxes[i][1];
-  }
-
-  return {std::move(bbox_array), std::move(bbox_coordinates)};
+  return {std::move(bboxes), std::move(bbox_coordinates)};
 }
 //-----------------------------------------------------------------------------
-int _build_from_point(
-    xtl::span<std::pair<std::array<double, 3>, std::int32_t>> points,
-    std::vector<std::array<std::int32_t, 2>>& bboxes,
-    std::vector<double>& bbox_coordinates)
+std::int32_t _build_from_point(
+    std::span<std::pair<std::array<double, 3>, std::int32_t>> points,
+    std::vector<std::int32_t>& bboxes, std::vector<double>& bbox_coordinates)
 {
   // Reached leaf
   if (points.size() == 1)
@@ -180,12 +160,13 @@ int _build_from_point(
 
     // Index of entity contained in leaf
     const std::int32_t c1 = points[0].second;
-    bboxes.push_back({c1, c1});
+    bboxes.push_back(c1);
+    bboxes.push_back(c1);
     bbox_coordinates.insert(bbox_coordinates.end(), points[0].first.begin(),
                             points[0].first.end());
     bbox_coordinates.insert(bbox_coordinates.end(), points[0].first.begin(),
                             points[0].first.end());
-    return bboxes.size() - 1;
+    return bboxes.size() / 2 - 1;
   }
 
   // Compute bounding box of all points
@@ -199,24 +180,26 @@ int _build_from_point(
                  std::minus<double>());
   const std::size_t axis = std::distance(
       b_diff.begin(), std::max_element(b_diff.begin(), b_diff.end()));
+
   auto middle = std::next(points.begin(), points.size() / 2);
-  std::nth_element(
-      points.begin(), middle, points.end(),
-      [axis](const std::pair<std::array<double, 3>, std::int32_t>& p0,
-             const std::pair<std::array<double, 3>, std::int32_t>& p1) -> bool
-      { return p0.first[axis] < p1.first[axis]; });
+  std::nth_element(points.begin(), middle, points.end(),
+                   [axis](auto& p0, auto&& p1) -> bool
+                   { return p0.first[axis] < p1.first[axis]; });
 
   // Split bounding boxes into two groups and call recursively
-  std::array bbox{_build_from_point(xtl::span(points.begin(), middle), bboxes,
-                                    bbox_coordinates),
-                  _build_from_point(xtl::span(middle, points.end()), bboxes,
-                                    bbox_coordinates)};
+  assert(!points.empty());
+  std::size_t part = points.size() / 2;
+  std::int32_t bbox0
+      = _build_from_point(points.first(part), bboxes, bbox_coordinates);
+  std::int32_t bbox1 = _build_from_point(points.last(points.size() - part),
+                                         bboxes, bbox_coordinates);
 
   // Store bounding box data. Note that root box will be added last.
-  bboxes.push_back(bbox);
+  bboxes.push_back(bbox0);
+  bboxes.push_back(bbox1);
   bbox_coordinates.insert(bbox_coordinates.end(), b0.begin(), b0.end());
   bbox_coordinates.insert(bbox_coordinates.end(), b1.begin(), b1.end());
-  return bboxes.size() - 1;
+  return bboxes.size() / 2 - 1;
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -230,7 +213,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
-                                 const xtl::span<const std::int32_t>& entities,
+                                 std::span<const std::int32_t> entities,
                                  double padding)
     : _tdim(tdim)
 {
@@ -242,19 +225,18 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
 
   // Initialize entities of given dimension if they don't exist
   mesh.topology_mutable().create_entities(tdim);
+  mesh.topology_mutable().create_connectivity(tdim, mesh.topology().dim());
 
   // Create bounding boxes for all mesh entities (leaves)
-  std::vector<std::pair<std::array<std::array<double, 3>, 2>, std::int32_t>>
-      leaf_bboxes;
+  std::vector<std::pair<std::array<double, 6>, std::int32_t>> leaf_bboxes;
   leaf_bboxes.reserve(entities.size());
   for (std::int32_t e : entities)
   {
-    std::array<std::array<double, 3>, 2> b
-        = compute_bbox_of_entity(mesh, tdim, e);
-    std::for_each(b[0].begin(), b[0].end(),
-                  [padding](double& x) { x -= padding; });
-    std::for_each(b[1].begin(), b[1].end(),
-                  [padding](double& x) { x += padding; });
+    std::array<double, 6> b = compute_bbox_of_entity(mesh, tdim, e);
+    std::transform(b.cbegin(), std::next(b.cbegin(), 3), b.begin(),
+                   [padding](double x) { return x - padding; });
+    std::transform(std::next(b.begin(), 3), b.end(), std::next(b.begin(), 3),
+                   [padding](double& x) { return x + padding; });
     leaf_bboxes.emplace_back(b, e);
   }
 
@@ -270,23 +252,15 @@ BoundingBoxTree::BoundingBoxTree(
     std::vector<std::pair<std::array<double, 3>, std::int32_t>> points)
     : _tdim(0)
 {
-  const std::int32_t num_leaves = points.size();
-
   // Recursively build the bounding box tree from the leaves
-  std::vector<std::array<int, 2>> bboxes;
-  if (num_leaves > 0)
+  if (!points.empty())
   {
-    _build_from_point(tcb::make_span(points), bboxes, _bbox_coordinates);
-    _bboxes.resize(2 * bboxes.size());
-    for (std::size_t i = 0; i < bboxes.size(); ++i)
-    {
-      _bboxes[2 * i] = bboxes[i][0];
-      _bboxes[2 * i + 1] = bboxes[i][1];
-    }
+    _bboxes.clear();
+    _build_from_point(std::span(points), _bboxes, _bbox_coordinates);
   }
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
-            << " nodes for " << num_leaves << " points.";
+            << " nodes for " << points.size() << " points.";
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(std::vector<std::int32_t>&& bboxes,
@@ -296,27 +270,25 @@ BoundingBoxTree::BoundingBoxTree(std::vector<std::int32_t>&& bboxes,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoundingBoxTree BoundingBoxTree::create_global_tree(const MPI_Comm& comm) const
+BoundingBoxTree BoundingBoxTree::create_global_tree(MPI_Comm comm) const
 {
   // Build tree for each rank
   const int mpi_size = dolfinx::MPI::size(comm);
 
   // Send root node coordinates to all processes
-  std::vector<double> send_bbox(6, 0.0);
+  std::array<double, 6> send_bbox = {0, 0, 0, 0, 0, 0};
   if (num_bboxes() > 0)
     std::copy_n(std::prev(_bbox_coordinates.end(), 6), 6, send_bbox.begin());
   std::vector<double> recv_bbox(mpi_size * 6);
   MPI_Allgather(send_bbox.data(), 6, MPI_DOUBLE, recv_bbox.data(), 6,
                 MPI_DOUBLE, comm);
 
-  std::vector<std::pair<std::array<std::array<double, 3>, 2>, std::int32_t>>
-      _recv_bbox(mpi_size);
+  std::vector<std::pair<std::array<double, 6>, std::int32_t>> _recv_bbox(
+      mpi_size);
   for (std::size_t i = 0; i < _recv_bbox.size(); ++i)
   {
-    common::impl::copy_N<3>(std::next(recv_bbox.begin(), 6 * i),
-                            _recv_bbox[i].first[0].begin());
-    common::impl::copy_N<3>(std::next(recv_bbox.begin(), 6 * i + 3),
-                            _recv_bbox[i].first[1].begin());
+    std::copy_n(std::next(recv_bbox.begin(), 6 * i), 6,
+                _recv_bbox[i].first.begin());
     _recv_bbox[i].second = i;
   }
 
@@ -341,12 +313,12 @@ std::string BoundingBoxTree::str() const
 //-----------------------------------------------------------------------------
 int BoundingBoxTree::tdim() const { return _tdim; }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::tree_print(std::stringstream& s, int i) const
+void BoundingBoxTree::tree_print(std::stringstream& s, std::int32_t i) const
 {
   s << "[";
-  for (int j = 0; j < 2; ++j)
+  for (std::size_t j = 0; j < 2; ++j)
   {
-    for (int k = 0; k < 3; ++k)
+    for (std::size_t k = 0; k < 3; ++k)
       s << _bbox_coordinates[6 * i + j * 3 + k] << " ";
     if (j == 0)
       s << "]->"
@@ -364,16 +336,5 @@ void BoundingBoxTree::tree_print(std::stringstream& s, int i) const
     tree_print(s, _bboxes[2 * i + 1]);
     s << "}\n";
   }
-}
-//-----------------------------------------------------------------------------
-xt::xtensor_fixed<double, xt::xshape<2, 3>>
-BoundingBoxTree::get_bbox(std::size_t node) const
-{
-  xt::xtensor_fixed<double, xt::xshape<2, 3>> x;
-  common::impl::copy_N<3>(std::next(_bbox_coordinates.begin(), 6 * node),
-                          x.begin());
-  common::impl::copy_N<3>(std::next(_bbox_coordinates.begin(), 6 * node + 3),
-                          std::next(x.begin(), 3));
-  return x;
 }
 //-----------------------------------------------------------------------------

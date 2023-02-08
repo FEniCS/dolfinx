@@ -119,8 +119,9 @@ def _create_tempdir(request):
     return path
 
 
-_create_tempdir._sequencenumber = defaultdict(int)
-_create_tempdir._basepaths = set()
+# Assigning a function member variables is a bit of a nasty hack
+_create_tempdir._sequencenumber = defaultdict(int)  # type: ignore
+_create_tempdir._basepaths = set()  # type: ignore
 
 
 @pytest.fixture(scope="function")

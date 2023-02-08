@@ -14,6 +14,7 @@
 #include <filesystem>
 #include <hdf5.h>
 #include <mpi.h>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -350,10 +351,8 @@ HDF5Interface::read_dataset(const hid_t file_handle,
     throw std::runtime_error("Failed to create HDF5 dataspace.");
 
   // Create local data to read into
-  std::size_t data_size = 1;
-  for (std::size_t i = 0; i < count.size(); ++i)
-    data_size *= count[i];
-  std::vector<T> data(data_size);
+  std::vector<T> data(
+      std::reduce(count.begin(), count.end(), 1, std::multiplies{}));
 
   // Read data on each process
   const hid_t h5type = hdf5_type<T>();

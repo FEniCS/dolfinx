@@ -27,7 +27,7 @@ import sys
 sub_directories = ["demo", "test"]
 
 # Copy all files with the following suffixes
-suffix_patterns = ["txt", "h", "hpp", "c", "cpp", "ufl", "xdmf", "h5"]
+suffix_patterns = ["txt", "h", "hpp", "c", "cpp", "py", "xdmf", "h5"]
 
 suffix_pattern = re.compile("(%s)," % ("|".join("[\w-]+\.%s" % pattern
                                                 for pattern in suffix_patterns)))
@@ -36,6 +36,7 @@ script_rel_path = os.sep.join(__file__.split(os.sep)[:-1])
 script_rel_path = script_rel_path or "."
 dolfinx_dir = os.path.abspath(os.path.join(
     script_rel_path, os.pardir, os.pardir))
+
 
 def copy_data(top_destdir, complex_mode):
     abs_destdir = top_destdir if os.path.isabs(
@@ -76,4 +77,3 @@ if __name__ == "__main__":
     else:
         raise RuntimeError(
             "Expecting either one or two arguments")
-

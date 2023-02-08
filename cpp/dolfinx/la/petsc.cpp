@@ -47,7 +47,7 @@ void la::petsc::error(int error_code, std::string filename,
 //-----------------------------------------------------------------------------
 std::vector<Vec>
 la::petsc::create_vectors(MPI_Comm comm,
-                          const std::vector<xtl::span<const PetscScalar>>& x)
+                          const std::vector<std::span<const PetscScalar>>& x)
 {
   std::vector<Vec> v(x.size());
   for (std::size_t i = 0; i < v.size(); ++i)
@@ -62,15 +62,14 @@ la::petsc::create_vectors(MPI_Comm comm,
   return v;
 }
 //-----------------------------------------------------------------------------
-Vec la::petsc::create_vector(const dolfinx::common::IndexMap& map, int bs)
+Vec la::petsc::create_vector(const common::IndexMap& map, int bs)
 {
   return la::petsc::create_vector(map.comm(), map.local_range(), map.ghosts(),
                                   bs);
 }
 //-----------------------------------------------------------------------------
 Vec la::petsc::create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
-                             const xtl::span<const std::int64_t>& ghosts,
-                             int bs)
+                             std::span<const std::int64_t> ghosts, int bs)
 {
   PetscErrorCode ierr;
 
@@ -89,7 +88,7 @@ Vec la::petsc::create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
 }
 //-----------------------------------------------------------------------------
 Vec la::petsc::create_vector_wrap(const common::IndexMap& map, int bs,
-                                  const xtl::span<const PetscScalar>& x)
+                                  std::span<const PetscScalar> x)
 {
   const std::int32_t size_local = bs * map.size_local();
   const std::int64_t size_global = bs * map.size_global();
@@ -137,7 +136,7 @@ std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
   VecGetSize(x_local, &n);
   const PetscScalar* array = nullptr;
   VecGetArrayRead(x_local, &array);
-  xtl::span _x(array, n);
+  std::span _x(array, n);
 
   // Copy PETSc Vec data in to local vectors
   std::vector<std::vector<PetscScalar>> x_b;
@@ -164,7 +163,7 @@ std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
 }
 //-----------------------------------------------------------------------------
 void la::petsc::scatter_local_vectors(
-    Vec x, const std::vector<xtl::span<const PetscScalar>>& x_b,
+    Vec x, const std::vector<std::span<const PetscScalar>>& x_b,
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
 {
@@ -182,7 +181,7 @@ void la::petsc::scatter_local_vectors(
   VecGetSize(x_local, &n);
   PetscScalar* array = nullptr;
   VecGetArray(x_local, &array);
-  xtl::span _x(array, n);
+  std::span _x(array, n);
 
   // Copy local vectors into PETSc Vec
   int offset = 0;
@@ -206,8 +205,7 @@ void la::petsc::scatter_local_vectors(
   VecGhostRestoreLocalForm(x, &x_local);
 }
 //-----------------------------------------------------------------------------
-Mat la::petsc::create_matrix(MPI_Comm comm,
-                             const dolfinx::la::SparsityPattern& sp,
+Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
                              const std::string& type)
 {
   PetscErrorCode ierr;
@@ -335,7 +333,7 @@ Mat la::petsc::create_matrix(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 MatNullSpace la::petsc::create_nullspace(MPI_Comm comm,
-                                         const xtl::span<const Vec>& basis)
+                                         std::span<const Vec> basis)
 {
   MatNullSpace ns = nullptr;
   PetscErrorCode ierr
@@ -536,105 +534,6 @@ Vec petsc::Operator::create_vector(std::size_t dim) const
 //-----------------------------------------------------------------------------
 Mat petsc::Operator::mat() const { return _matA; }
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-std::function<int(const xtl::span<const std::int32_t>&,
-                  const xtl::span<const std::int32_t>&,
-                  const xtl::span<const PetscScalar>&)>
-petsc::Matrix::set_fn(Mat A, InsertMode mode)
-{
-  return [A, mode, cache = std::vector<PetscInt>()](
-             const xtl::span<const std::int32_t>& rows,
-             const xtl::span<const std::int32_t>& cols,
-             const xtl::span<const PetscScalar>& vals) mutable -> int
-  {
-    PetscErrorCode ierr;
-#ifdef PETSC_USE_64BIT_INDICES
-    cache.resize(rows.size() + cols.size());
-    std::copy(rows.begin(), rows.end(), cache.begin());
-    std::copy(cols.begin(), cols.end(), std::next(cache.begin(), rows.size()));
-    const PetscInt* _rows = cache.data();
-    const PetscInt* _cols = cache.data() + rows.size();
-    ierr = MatSetValuesLocal(A, rows.size(), _rows, cols.size(), _cols,
-                             vals.data(), mode);
-#else
-    ierr = MatSetValuesLocal(A, rows.size(), rows.data(), cols.size(),
-                             cols.data(), vals.data(), mode);
-#endif
-
-#ifndef NDEBUG
-    if (ierr != 0)
-      petsc::error(ierr, __FILE__, "MatSetValuesLocal");
-#endif
-    return ierr;
-  };
-}
-//-----------------------------------------------------------------------------
-std::function<int(const xtl::span<const std::int32_t>&,
-                  const xtl::span<const std::int32_t>&,
-                  const xtl::span<const PetscScalar>&)>
-petsc::Matrix::set_block_fn(Mat A, InsertMode mode)
-{
-  return [A, mode, cache = std::vector<PetscInt>()](
-             const xtl::span<const std::int32_t>& rows,
-             const xtl::span<const std::int32_t>& cols,
-             const xtl::span<const PetscScalar>& vals) mutable -> int
-  {
-    PetscErrorCode ierr;
-#ifdef PETSC_USE_64BIT_INDICES
-    cache.resize(rows.size() + cols.size());
-    std::copy(rows.begin(), rows.end(), cache.begin());
-    std::copy(cols.begin(), cols.end(), std::next(cache.begin(), rows.size()));
-    const PetscInt* _rows = cache.data();
-    const PetscInt* _cols = cache.data() + rows.size();
-    ierr = MatSetValuesBlockedLocal(A, rows.size(), _rows, cols.size(), _cols,
-                                    vals.data(), mode);
-#else
-    ierr = MatSetValuesBlockedLocal(A, rows.size(), rows.data(), cols.size(),
-                                    cols.data(), vals.data(), mode);
-#endif
-
-#ifndef NDEBUG
-    if (ierr != 0)
-      petsc::error(ierr, __FILE__, "MatSetValuesBlockedLocal");
-#endif
-    return ierr;
-  };
-}
-//-----------------------------------------------------------------------------
-std::function<int(const xtl::span<const std::int32_t>&,
-                  const xtl::span<const std::int32_t>&,
-                  const xtl::span<const PetscScalar>&)>
-petsc::Matrix::set_block_expand_fn(Mat A, int bs0, int bs1, InsertMode mode)
-{
-  if (bs0 == 1 and bs1 == 1)
-    return set_fn(A, mode);
-
-  return [A, bs0, bs1, mode, cache0 = std::vector<PetscInt>(),
-          cache1 = std::vector<PetscInt>()](
-             const xtl::span<const std::int32_t>& rows,
-             const xtl::span<const std::int32_t>& cols,
-             const xtl::span<const PetscScalar>& vals) mutable -> int
-  {
-    PetscErrorCode ierr;
-    cache0.resize(bs0 * rows.size());
-    cache1.resize(bs1 * cols.size());
-    for (std::size_t i = 0; i < rows.size(); ++i)
-      for (int k = 0; k < bs0; ++k)
-        cache0[bs0 * i + k] = bs0 * rows[i] + k;
-
-    for (std::size_t i = 0; i < cols.size(); ++i)
-      for (int k = 0; k < bs1; ++k)
-        cache1[bs1 * i + k] = bs1 * cols[i] + k;
-
-    ierr = MatSetValuesLocal(A, cache0.size(), cache0.data(), cache1.size(),
-                             cache1.data(), vals.data(), mode);
-#ifndef NDEBUG
-    if (ierr != 0)
-      petsc::error(ierr, __FILE__, "MatSetValuesLocal");
-#endif
-    return ierr;
-  };
-}
 //-----------------------------------------------------------------------------
 petsc::Matrix::Matrix(MPI_Comm comm, const SparsityPattern& sp,
                       const std::string& type)

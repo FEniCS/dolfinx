@@ -38,9 +38,9 @@ def test_scatter_forward(element):
     w0 = u.x.array.copy()
     u.x.scatter_forward()
 
-    # Now the ghosts should have the value of the rank of
-    # the owning process
-    ghost_owners = u.function_space.dofmap.index_map.ghost_owner_rank()
+    # Now the ghosts should have the value of the rank of the owning
+    # process
+    ghost_owners = u.function_space.dofmap.index_map.owners
     ghost_owners = np.repeat(ghost_owners, bs)
     local_size = u.function_space.dofmap.index_map.size_local * bs
     assert np.allclose(u.x.array[local_size:], ghost_owners)
@@ -60,19 +60,20 @@ def test_scatter_reverse(element):
 
     # Reverse scatter (insert) should have no effect
     w0 = u.x.array.copy()
-    u.x.scatter_reverse(_cpp.common.ScatterMode.insert)
+    u.x.scatter_reverse(_cpp.la.ScatterMode.insert)
     assert np.allclose(w0, u.x.array)
 
-    # Fill with MPI rank, and sum all entries in the vector (including ghosts)
+    # Fill with MPI rank, and sum all entries in the vector (including
+    # ghosts)
     u.x.array.fill(comm.rank)
     all_count0 = MPI.COMM_WORLD.allreduce(u.x.array.sum(), op=MPI.SUM)
 
     # Reverse scatter (add)
-    u.x.scatter_reverse(_cpp.common.ScatterMode.add)
+    u.x.scatter_reverse(_cpp.la.ScatterMode.add)
     num_ghosts = V.dofmap.index_map.num_ghosts
     ghost_count = MPI.COMM_WORLD.allreduce(num_ghosts * comm.rank, op=MPI.SUM)
 
-    # New count should have gone up by the number of ghosts times their rank
-    # on all processes
+    # New count should have gone up by the number of ghosts times their
+    # rank on all processes
     all_count1 = MPI.COMM_WORLD.allreduce(u.x.array.sum(), op=MPI.SUM)
     assert all_count1 == (all_count0 + bs * ghost_count)

@@ -6,18 +6,26 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import numba
+import os
+import sys
+
 import numpy as np
+import pytest
+from dolfinx.fem import Function, FunctionSpace, IntegralType
+from dolfinx.mesh import create_unit_square, meshtags
+from mpi4py import MPI
+from petsc4py import PETSc
 
 import dolfinx
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
-from dolfinx import fem, list_timings
-from dolfinx.fem import Function, FunctionSpace, IntegralType
-from dolfinx.mesh import create_unit_square
+from dolfinx import fem, la, list_timings
 
-from mpi4py import MPI
-from petsc4py import PETSc
+numba = pytest.importorskip("numba")
+
+# Add current directory - required for some Python versions to find cffi
+# compiled modules
+sys.path.append(os.getcwd())
 
 c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
@@ -107,7 +115,12 @@ def test_coefficient():
     vals.vector.set(2.0)
 
     Form = _cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else _cpp.fem.Form_complex128
-    integrals = {IntegralType.cell: ([(-1, tabulate_tensor_b_coeff.address)], None)}
+
+    tdim = mesh.topology.dim
+    num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
+    mt = meshtags(mesh, tdim, np.arange(num_cells, dtype=np.intc), np.ones(num_cells, dtype=np.intc))
+
+    integrals = {IntegralType.cell: ([(1, tabulate_tensor_b_coeff.address)], mt)}
     L = Form([V._cpp_object], integrals, [vals._cpp_object], [], False)
 
     b = dolfinx.fem.petsc.assemble_vector(L)
@@ -116,6 +129,7 @@ def test_coefficient():
     assert (np.isclose(bnorm, 2.0 * 0.0739710713711999))
 
 
+@pytest.mark.skip_in_parallel
 def test_cffi_assembly():
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
@@ -125,7 +139,6 @@ def test_cffi_assembly():
         ffibuilder = FFI()
         ffibuilder.set_source("_cffi_kernelA", r"""
         #include <math.h>
-        #include <stdalign.h>
         void tabulate_tensor_poissonA(double* restrict A, const double* w,
                                     const double* c,
                                     const double* restrict coordinate_dofs,
@@ -136,13 +149,13 @@ def test_cffi_assembly():
         // FE* dimensions: [entities][points][dofs]
         // PI* dimensions: [entities][dofs][dofs] or [entities][dofs]
         // PM* dimensions: [entities][dofs][dofs]
-        alignas(32) static const double FE3_C0_D01_Q1[1][1][2] = { { { -1.0, 1.0 } } };
+        static const double FE3_C0_D01_Q1[1][1][2] = { { { -1.0, 1.0 } } };
         // Unstructured piecewise computations
         const double J_c0 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[3] * FE3_C0_D01_Q1[0][0][1];
         const double J_c3 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[7] * FE3_C0_D01_Q1[0][0][1];
         const double J_c1 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[6] * FE3_C0_D01_Q1[0][0][1];
         const double J_c2 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[4] * FE3_C0_D01_Q1[0][0][1];
-        alignas(32) double sp[20];
+        double sp[20];
         sp[0] = J_c0 * J_c3;
         sp[1] = J_c1 * J_c2;
         sp[2] = sp[0] + -1 * sp[1];
@@ -185,18 +198,17 @@ def test_cffi_assembly():
         // FE* dimensions: [entities][points][dofs]
         // PI* dimensions: [entities][dofs][dofs] or [entities][dofs]
         // PM* dimensions: [entities][dofs][dofs]
-        alignas(32) static const double FE4_C0_D01_Q1[1][1][2] = { { { -1.0, 1.0 } } };
+        static const double FE4_C0_D01_Q1[1][1][2] = { { { -1.0, 1.0 } } };
         // Unstructured piecewise computations
         const double J_c0 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[3] * FE4_C0_D01_Q1[0][0][1];
         const double J_c3 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[7] * FE4_C0_D01_Q1[0][0][1];
         const double J_c1 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[6] * FE4_C0_D01_Q1[0][0][1];
         const double J_c2 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[4] * FE4_C0_D01_Q1[0][0][1];
-        alignas(32) double sp[4];
+        double sp[4];
         sp[0] = J_c0 * J_c3;
         sp[1] = J_c1 * J_c2;
         sp[2] = sp[0] + -1 * sp[1];
         sp[3] = fabs(sp[2]);
-        // UFLACS block mode: preintegrated
         A[0] = 0.1666666666666667 * sp[3];
         A[1] = 0.1666666666666667 * sp[3];
         A[2] = 0.1666666666666667 * sp[3];
@@ -233,5 +245,5 @@ def test_cffi_assembly():
     assert np.isclose(np.sqrt(A.norm_squared()), 56.124860801609124)
 
     b = fem.assemble_vector(L)
-    b.scatter_reverse(_cpp.common.ScatterMode.add)
+    b.scatter_reverse(la.ScatterMode.add)
     assert np.isclose(b.norm(), 0.0739710713711999)
