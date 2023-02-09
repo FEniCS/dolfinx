@@ -66,7 +66,8 @@ void refinement(py::module& m)
       {
         return dolfinx::refinement::transfer_cell_meshtag(
             parent_meshtag, refined_mesh,
-            std::span<const std::int32_t>(parent_cell));
+            std::span<const std::int32_t>(parent_cell.data(),
+                                          parent_cell.size()));
       },
       py::arg("parent_meshtag"), py::arg("refined_mesh"),
       py::arg("parent_cell"));
