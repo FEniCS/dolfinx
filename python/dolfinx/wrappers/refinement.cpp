@@ -51,10 +51,8 @@ void refinement(py::module& m)
       {
         return dolfinx::refinement::transfer_facet_meshtag(
             parent_meshtag, refined_mesh,
-            std::span<const std::int32_t>(parent_cell.data(),
-                                          parent_cell.size()),
-            std::span<const std::int8_t>(parent_facet.data(),
-                                         parent_facet.size()));
+            std::span(parent_cell.data(), parent_cell.size()),
+            std::span(parent_facet.data(), parent_facet.size()));
       },
       py::arg("parent_meshtag"), py::arg("refined_mesh"),
       py::arg("parent_cell"), py::arg("parent_facet"));
@@ -66,8 +64,7 @@ void refinement(py::module& m)
       {
         return dolfinx::refinement::transfer_cell_meshtag(
             parent_meshtag, refined_mesh,
-            std::span<const std::int32_t>(parent_cell.data(),
-                                          parent_cell.size()));
+            std::span(parent_cell.data(), parent_cell.size()));
       },
       py::arg("parent_meshtag"), py::arg("refined_mesh"),
       py::arg("parent_cell"));
