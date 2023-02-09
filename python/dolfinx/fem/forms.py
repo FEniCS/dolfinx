@@ -162,12 +162,12 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
                 return t._cpp_object
             except AttributeError:
                 return t
-        subdomains = {_cpp.fem.IntegralType.cell: unwrap_mt(subdomains.get("cell")),
-                      _cpp.fem.IntegralType.exterior_facet: unwrap_mt(subdomains.get("exterior_facet")),
-                      _cpp.fem.IntegralType.interior_facet: unwrap_mt(subdomains.get("interior_facet")),
-                      _cpp.fem.IntegralType.vertex: unwrap_mt(subdomains.get("vertex"))}
+        domains = {_cpp.fem.IntegralType.cell: unwrap_mt(subdomains.get("cell")),
+                   _cpp.fem.IntegralType.exterior_facet: unwrap_mt(subdomains.get("exterior_facet")),
+                   _cpp.fem.IntegralType.interior_facet: unwrap_mt(subdomains.get("interior_facet")),
+                   _cpp.fem.IntegralType.vertex: unwrap_mt(subdomains.get("vertex"))}
 
-        return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, module.ffi, code)
+        return formcls(ufcx_form, V, coeffs, constants, domains, mesh, module.ffi, code)
 
     def _create_form(form):
         """Recursively convert ufl.Forms to dolfinx.fem.Form, otherwise
