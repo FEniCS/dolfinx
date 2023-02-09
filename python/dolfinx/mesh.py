@@ -143,6 +143,25 @@ _uflcell_to_dolfinxcell = {
     "hexahedron": CellType.hexahedron
 }
 
+# new_meshtag = _cpp.refinement.transfer_cell_meshtag(meshtag._cpp_object, fine_mesh, parent_cell)
+
+
+def transfer_cell_meshtag(meshtag: MeshTags, mesh1: Mesh, parent_cell: npt.NDArray[np.int32]) -> MeshTags:
+    """Generate cell mesh tags on a refined mesh from the meshtgs on the coarse parent mesh
+
+        Args:
+            meshtag: Mesh tags on the coarse, parent mesh
+            mesh1: The refined mesh
+            parent_cell: Index of the parent cell for each cell in the refined mesh
+
+        Returns:
+            Mesh tags on the refined mesh
+
+    """
+
+    mt = _cpp.refinement.transfer_cell_meshtag(meshtag._cpp_object, mesh1._cpp_object, parent_cell)
+    return MeshTags(mt, mesh1)
+
 
 def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True) -> Mesh:
     """Refine a mesh
