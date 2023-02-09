@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells and Michal Habera
+# Copyright (C) 2017-2023 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -86,6 +86,12 @@ form_types = typing.Union[FormMetaClass, _cpp.fem.Form_float32, _cpp.fem.Form_fl
                           _cpp.fem.Form_complex64, _cpp.fem.Form_complex128]
 
 
+_ufl_to_dolfinx_domain = {"cell": _cpp.fem.IntegralType.cell,
+                          "exterior_facet": _cpp.fem.IntegralType.exterior_facet,
+                          "interior_facet": _cpp.fem.IntegralType.interior_facet,
+                          "vertex": _cpp.fem.IntegralType.vertex}
+
+
 def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = PETSc.ScalarType,
          form_compiler_options: dict = {}, jit_options: dict = {}):
     """Create a Form or an array of Forms.
@@ -130,13 +136,16 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         sd = form.subdomain_data()
         domain, = list(sd.keys())  # Assuming single domain
 
-        # Get subdomain data for each integral type
-        subdomains = {}
-        for integral_type, data in sd.get(domain).items():
-            # Check that the subdomain data for each integral of this type is
-            # the same
-            assert all([id(d) == id(data[0]) for d in data])
-            subdomains[integral_type] = data[0]
+        def unwrap_mt(t):
+            """Get subdomain data for each integral type."""
+            try:
+                return t._cpp_object
+            except AttributeError:
+                return t
+        # Check that subdomain data for each integral type is the same
+        for data in sd.get(domain).values():
+            assert all([d is data[0] for d in data])
+        subdomains = {_ufl_to_dolfinx_domain[key]: unwrap_mt(mt[0]) for (key, mt) in sd.get(domain).items()}
 
         mesh = domain.ufl_cargo()
         if mesh is None:
@@ -149,25 +158,14 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         # For each argument in form extract its function space
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
 
-        # Prepare coefficients data. For every coefficient in form take its
-        # C++ object.
-        original_coefficients = form.coefficients()
-        coeffs = [original_coefficients[ufcx_form.original_coefficient_position[i]
-                                        ]._cpp_object for i in range(ufcx_form.num_coefficients)]
+        # Prepare coefficients data. For every coefficient in form take
+        # its C++ object.
+        original_coeffs = form.coefficients()
+        coeffs = [original_coeffs[ufcx_form.original_coefficient_position[i]
+                                  ]._cpp_object for i in range(ufcx_form.num_coefficients)]
         constants = [c._cpp_object for c in form.constants()]
 
-        # Subdomain markers (possibly None for some dimensions)
-        def unwrap_mt(t):
-            try:
-                return t._cpp_object
-            except AttributeError:
-                return t
-        domains = {_cpp.fem.IntegralType.cell: unwrap_mt(subdomains.get("cell")),
-                   _cpp.fem.IntegralType.exterior_facet: unwrap_mt(subdomains.get("exterior_facet")),
-                   _cpp.fem.IntegralType.interior_facet: unwrap_mt(subdomains.get("interior_facet")),
-                   _cpp.fem.IntegralType.vertex: unwrap_mt(subdomains.get("vertex"))}
-
-        return formcls(ufcx_form, V, coeffs, constants, domains, mesh, module.ffi, code)
+        return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, module.ffi, code)
 
     def _create_form(form):
         """Recursively convert ufl.Forms to dolfinx.fem.Form, otherwise
