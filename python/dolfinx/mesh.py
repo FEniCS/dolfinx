@@ -144,7 +144,6 @@ _uflcell_to_dolfinxcell = {
 }
 
 
-
 def transfer_cell_meshtag(meshtag: MeshTags, mesh1: Mesh, parent_cell: npt.NDArray[np.int32]) -> MeshTags:
     """Generate cell mesh tags on a refined mesh from the meshtgs on the coarse parent mesh
 
