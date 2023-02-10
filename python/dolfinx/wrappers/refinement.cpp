@@ -42,13 +42,32 @@ void refinement(py::module& m)
                           dolfinx::refinement::plaza::RefinementOptions>(
             &dolfinx::refinement::plaza::refine),
         py::arg("mesh"), py::arg("redistribute"), py::arg("options"));
-
-  m.def("transfer_facet_meshtag", &dolfinx::refinement::transfer_facet_meshtag,
-        py::arg("parent_meshtag"), py::arg("refined_mesh"),
-        py::arg("parent_cell"), py::arg("parent_facet"));
-  m.def("transfer_cell_meshtag", &dolfinx::refinement::transfer_cell_meshtag,
-        py::arg("parent_meshtag"), py::arg("refined_mesh"),
-        py::arg("parent_cell"));
+  m.def(
+      "transfer_facet_meshtag",
+      [](const dolfinx::mesh::MeshTags<std::int32_t>& parent_meshtag,
+         std::shared_ptr<const dolfinx::mesh::Mesh> refined_mesh,
+         const py::array_t<std::int32_t, py::array::c_style>& parent_cell,
+         const py::array_t<std::int8_t, py::array::c_style>& parent_facet)
+      {
+        return dolfinx::refinement::transfer_facet_meshtag(
+            parent_meshtag, refined_mesh,
+            std::span(parent_cell.data(), parent_cell.size()),
+            std::span(parent_facet.data(), parent_facet.size()));
+      },
+      py::arg("parent_meshtag"), py::arg("refined_mesh"),
+      py::arg("parent_cell"), py::arg("parent_facet"));
+  m.def(
+      "transfer_cell_meshtag",
+      [](const dolfinx::mesh::MeshTags<std::int32_t>& parent_meshtag,
+         std::shared_ptr<const dolfinx::mesh::Mesh> refined_mesh,
+         const py::array_t<std::int32_t, py::array::c_style>& parent_cell)
+      {
+        return dolfinx::refinement::transfer_cell_meshtag(
+            parent_meshtag, refined_mesh,
+            std::span(parent_cell.data(), parent_cell.size()));
+      },
+      py::arg("parent_meshtag"), py::arg("refined_mesh"),
+      py::arg("parent_cell"));
 
   m.def(
       "refine",
