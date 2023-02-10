@@ -71,6 +71,9 @@ public:
   XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
            std::string file_mode, Encoding encoding = default_encoding);
 
+  /// Move constructor
+  XDMFFile(XDMFFile&&) = default;
+
   /// Destructor
   ~XDMFFile();
 

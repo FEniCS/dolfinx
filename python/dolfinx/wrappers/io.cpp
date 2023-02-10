@@ -106,7 +106,7 @@ void io(py::module& m)
            py::arg("encoding") = dolfinx::io::XDMFFile::Encoding::HDF5)
       .def("close", &dolfinx::io::XDMFFile::close)
       .def("write_mesh", &dolfinx::io::XDMFFile::write_mesh, py::arg("mesh"),
-           py::arg("xpath") = "/Xdmf/Domain")
+           py::arg("xpath"))
       .def("write_geometry", &dolfinx::io::XDMFFile::write_geometry,
            py::arg("geometry"), py::arg("name") = "geometry",
            py::arg("xpath") = "/Xdmf/Domain")
