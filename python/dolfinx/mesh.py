@@ -143,7 +143,6 @@ _uflcell_to_dolfinxcell = {
     "hexahedron": CellType.hexahedron
 }
 
-# new_meshtag = _cpp.refinement.transfer_cell_meshtag(meshtag._cpp_object, fine_mesh, parent_cell)
 
 
 def transfer_cell_meshtag(meshtag: MeshTags, mesh1: Mesh, parent_cell: npt.NDArray[np.int32]) -> MeshTags:

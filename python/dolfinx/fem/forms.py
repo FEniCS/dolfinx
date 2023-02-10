@@ -150,7 +150,6 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         mesh = domain.ufl_cargo()
         if mesh is None:
             raise RuntimeError("Expecting to find a Mesh in the form.")
-
         ufcx_form, module, code = jit.ffcx_jit(mesh.comm, form,
                                                form_compiler_options=form_compiler_options,
                                                jit_options=jit_options)
