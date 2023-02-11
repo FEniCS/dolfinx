@@ -162,27 +162,53 @@ def transfer_cell_meshtag(meshtag: MeshTags, mesh1: Mesh, parent_cell: npt.NDArr
 
 
 def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True) -> Mesh:
-    """Refine a mesh
+    """Refine a mesh.
 
     Args:
-        mesh: The mesh from which to build a refined mesh
-        edges: Optional argument to specify which edges should be refined. If
-            not supplied uniform refinement is applied.
+        mesh: Mesh from which to create the refined mesh.
+        edges: Indices of edges to split during refinement. If `None`,
+            uniform refinement is uses.
         redistribute:
-            Optional argument to redistribute the refined mesh if mesh is a
-            distributed mesh.
+            Refined mesh is re-partitioned if `True`
 
     Returns:
-        A refined mesh
+       Refined mesh
+
     """
     if edges is None:
-        mesh_refined = _cpp.refinement.refine(mesh._cpp_object, redistribute)
+        mesh1 = _cpp.refinement.refine(mesh._cpp_object, redistribute)
     else:
-        mesh_refined = _cpp.refinement.refine(mesh._cpp_object, edges, redistribute)
+        mesh1 = _cpp.refinement.refine(mesh._cpp_object, edges, redistribute)
+    element = mesh._ufl_domain.ufl_coordinate_element()
+    domain = ufl.Mesh(element)
+    return Mesh(mesh1, domain)
 
-    coordinate_element = mesh._ufl_domain.ufl_coordinate_element()
-    domain = ufl.Mesh(coordinate_element)
-    return Mesh(mesh_refined, domain)
+
+def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True,
+                 option: _cpp.refinement.RefinementOption = _cpp.refinement.RefinementOption.none) -> Mesh:
+    """Refine a mesh.
+
+    Args:
+        mesh: Mesh from which to create the refined mesh.
+        edges: Indices of edges to split during refinement. If `None`,
+            uniform refinement is uses.
+        redistribute:
+            Refined mesh is re-partitioned if `True`
+        option:
+            Control computation of the parent-refined mesh data.
+
+    Returns:
+       Refined mesh, list of parent cell for each refine cell, and list
+       of parent facets.
+
+    """
+    if edges is None:
+        mesh1, cells, facets = _cpp.refinement.refine_plaza(mesh._cpp_object, redistribute)
+    else:
+        mesh1, cells, facets = _cpp.refinement.refine_plaza(mesh._cpp_object, edges, redistribute)
+    element = mesh._ufl_domain.ufl_coordinate_element()
+    domain = ufl.Mesh(element)
+    return Mesh(mesh1, domain), cells, facets
 
 
 def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.AdjacencyList_int64],

@@ -458,19 +458,18 @@ compute_refinement(MPI_Comm neighbor_comm,
                    const mesh::Mesh& mesh,
                    const std::vector<std::int32_t>& long_edge,
                    const std::vector<std::int8_t>& edge_ratio_ok,
-                   plaza::RefinementOptions options)
+                   plaza::Option option)
 {
   const std::int32_t tdim = mesh.topology().dim();
   const std::int32_t num_cell_edges = tdim * 3 - 3;
   const std::int32_t num_cell_vertices = tdim + 1;
 
-  bool compute_facets
-      = (options == plaza::RefinementOptions::parent_facet
-         or options == plaza::RefinementOptions::parent_cell_and_facet);
+  bool compute_facets = (option == plaza::Option::parent_facet
+                         or option == plaza::Option::parent_cell_and_facet);
 
   bool compute_parent_cell
-      = (options == plaza::RefinementOptions::parent_cell
-         or options == plaza::RefinementOptions::parent_cell_and_facet);
+      = (option == plaza::Option::parent_cell
+         or option == plaza::Option::parent_cell_and_facet);
 
   // Make new vertices in parallel
   const auto [new_vertex_map, new_vertex_coords, xshape]
@@ -610,12 +609,11 @@ compute_refinement(MPI_Comm neighbor_comm,
 
 //-----------------------------------------------------------------------------
 std::tuple<mesh::Mesh, std::vector<std::int32_t>, std::vector<std::int8_t>>
-plaza::refine(const mesh::Mesh& mesh, bool redistribute,
-              RefinementOptions options)
+plaza::refine(const mesh::Mesh& mesh, bool redistribute, Option option)
 {
 
   auto [cell_adj, new_coords, xshape, parent_cell, parent_facet]
-      = compute_refinement_data(mesh, options);
+      = compute_refinement_data(mesh, option);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
@@ -645,11 +643,11 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute,
 //-----------------------------------------------------------------------------
 std::tuple<mesh::Mesh, std::vector<std::int32_t>, std::vector<std::int8_t>>
 plaza::refine(const mesh::Mesh& mesh, std::span<const std::int32_t> edges,
-              bool redistribute, RefinementOptions options)
+              bool redistribute, Option option)
 {
 
   auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
-      = compute_refinement_data(mesh, edges, options);
+      = compute_refinement_data(mesh, edges, option);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
@@ -680,8 +678,7 @@ plaza::refine(const mesh::Mesh& mesh, std::span<const std::int32_t> edges,
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<double>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>,
            std::vector<std::int8_t>>
-plaza::compute_refinement_data(const mesh::Mesh& mesh,
-                               RefinementOptions options)
+plaza::compute_refinement_data(const mesh::Mesh& mesh, Option option)
 {
 
   if (mesh.topology().cell_type() != mesh::CellType::triangle
@@ -725,7 +722,7 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
       = compute_refinement(comm,
                            std::vector<std::int8_t>(
                                map_e->size_local() + map_e->num_ghosts(), true),
-                           edge_ranks, mesh, long_edge, edge_ratio_ok, options);
+                           edge_ranks, mesh, long_edge, edge_ratio_ok, option);
   MPI_Comm_free(&comm);
 
   return {std::move(cell_adj), std::move(new_vertex_coords), xshape,
@@ -737,7 +734,7 @@ std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<double>,
            std::vector<std::int8_t>>
 plaza::compute_refinement_data(const mesh::Mesh& mesh,
                                std::span<const std::int32_t> edges,
-                               RefinementOptions options)
+                               Option option)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
@@ -801,7 +798,7 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
 
   auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
       = compute_refinement(comm, marked_edges, edge_ranks, mesh, long_edge,
-                           edge_ratio_ok, options);
+                           edge_ratio_ok, option);
   MPI_Comm_free(&comm);
 
   return {std::move(cell_adj), std::move(new_vertex_coords), xshape,

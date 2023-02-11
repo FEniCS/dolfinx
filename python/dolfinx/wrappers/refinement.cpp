@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "array.h"
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/refinement/plaza.h>
@@ -17,31 +18,57 @@ namespace py = pybind11;
 
 namespace dolfinx_wrappers
 {
-
 void refinement(py::module& m)
 {
-
-  py::enum_<dolfinx::refinement::plaza::RefinementOptions>(m,
-                                                           "RefinementOptions")
-      .value("parent_facet",
-             dolfinx::refinement::plaza::RefinementOptions::parent_facet)
-      .value("parent_cell",
-             dolfinx::refinement::plaza::RefinementOptions::parent_cell)
-      .value(
-          "parent_cell_and_facet",
-          dolfinx::refinement::plaza::RefinementOptions::parent_cell_and_facet);
+  py::enum_<dolfinx::refinement::plaza::Option>(m, "RefinementOption")
+      .value("none", dolfinx::refinement::plaza::Option::none)
+      .value("parent_facet", dolfinx::refinement::plaza::Option::parent_facet)
+      .value("parent_cell", dolfinx::refinement::plaza::Option::parent_cell)
+      .value("parent_cell_and_facet",
+             dolfinx::refinement::plaza::Option::parent_cell_and_facet);
 
   // dolfinx::refinement::refine
   m.def("refine",
         py::overload_cast<const dolfinx::mesh::Mesh&, bool>(
             &dolfinx::refinement::refine),
         py::arg("mesh"), py::arg("redistribute") = true);
+  m.def(
+      "refine",
+      [](const dolfinx::mesh::Mesh& mesh,
+         const py::array_t<std::int32_t, py::array::c_style>& edges,
+         bool redistribute)
+      {
+        assert(edges.ndim() == 1);
+        return dolfinx::refinement::refine(
+            mesh, std::span(edges.data(), edges.size()), redistribute);
+      },
+      py::arg("mesh"), py::arg("edges"), py::arg("redistribute") = true);
+  m.def(
+      "refine_plaza",
+      [](const dolfinx::mesh::Mesh& mesh0, bool redistribute,
+         dolfinx::refinement::plaza::Option option)
+      {
+        auto [mesh1, cell, facet]
+            = dolfinx::refinement::plaza::refine(mesh0, redistribute, option);
+        return std::tuple{std::move(mesh1), as_pyarray(std::move(cell)),
+                          as_pyarray(std::move(facet))};
+      },
+      py::arg("mesh"), py::arg("redistribute"), py::arg("option"));
+  m.def(
+      "refine_plaza",
+      [](const dolfinx::mesh::Mesh& mesh0, py::array_t<std::int32_t> edges,
+         bool redistribute, dolfinx::refinement::plaza::Option option)
+      {
+        assert(edges.ndim() == 1);
+        auto [mesh1, cell, facet] = dolfinx::refinement::plaza::refine(
+            mesh0, std::span<const std::int32_t>(edges.data(), edges.size()),
+            redistribute, option);
+        return std::tuple{std::move(mesh1), as_pyarray(std::move(cell)),
+                          as_pyarray(std::move(facet))};
+      },
+      py::arg("mesh"), py::arg("edges"), py::arg("redistribute"),
+      py::arg("option"));
 
-  m.def("plaza_refine_data",
-        py::overload_cast<const dolfinx::mesh::Mesh&, bool,
-                          dolfinx::refinement::plaza::RefinementOptions>(
-            &dolfinx::refinement::plaza::refine),
-        py::arg("mesh"), py::arg("redistribute"), py::arg("options"));
   m.def(
       "transfer_facet_meshtag",
       [](const dolfinx::mesh::MeshTags<std::int32_t>& parent_meshtag,
@@ -68,18 +95,6 @@ void refinement(py::module& m)
       },
       py::arg("parent_meshtag"), py::arg("refined_mesh"),
       py::arg("parent_cell"));
-
-  m.def(
-      "refine",
-      [](const dolfinx::mesh::Mesh& mesh,
-         const py::array_t<std::int32_t, py::array::c_style>& edges,
-         bool redistribute)
-      {
-        assert(edges.ndim() == 1);
-        return dolfinx::refinement::refine(
-            mesh, std::span(edges.data(), edges.size()), redistribute);
-      },
-      py::arg("mesh"), py::arg("edges"), py::arg("redistribute") = true);
 }
 
 } // namespace dolfinx_wrappers
