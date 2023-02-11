@@ -26,7 +26,7 @@ template <typename T>
 class DirichletBC;
 class FunctionSpace;
 
-/// Helper functions for assembly into PETSc data structures
+/// @brief Helper functions for assembly into PETSc data structures
 namespace petsc
 {
 /// Create a matrix
@@ -71,9 +71,10 @@ Vec create_vector_nest(
 
 // -- Vectors ----------------------------------------------------------------
 
-/// Assemble linear form into an already allocated PETSc vector. Ghost
-/// contributions are not accumulated (not sent to owner). Caller is
-/// responsible for calling VecGhostUpdateBegin/End.
+/// @brief Assemble linear form into an already allocated PETSc vector.
+///
+/// Ghost contributions are not accumulated (not sent to owner). Caller
+/// is responsible for calling `VecGhostUpdateBegin/End`.
 ///
 /// @param[in,out] b The PETsc vector to assemble the form into. The
 /// vector must already be initialised with the correct size. The
@@ -104,6 +105,9 @@ void assemble_vector(Vec b, const Form<PetscScalar>& L);
 // FIXME: need to pass an array of Vec for x0?
 // FIXME: clarify zeroing of vector
 
+/// @brief Modify RHS vector to account for Dirichlet boundary
+/// conditions.
+///
 /// Modify b such that:
 ///
 ///   b <- b - scale * A_j (g_j - x0_j)
