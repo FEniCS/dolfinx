@@ -185,7 +185,9 @@ CellPartitionFunction create_cell_partitioner(mesh::GhostMode ghost_mode
 /// @param[in] d1 Topological dimension
 /// @return List of entities of topological dimension `d1` that are
 /// incident to entities in `entities` (topological dimension `d0`)
-std::vector<std::int32_t> compute_incident_entities(
-    const Mesh& mesh, std::span<const std::int32_t> entities, int d0, int d1);
+std::vector<std::int32_t>
+compute_incident_entities(const Topology& topology,
+                          std::span<const std::int32_t> entities, int d0,
+                          int d1);
 
 } // namespace dolfinx::mesh
