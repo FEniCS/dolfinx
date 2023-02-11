@@ -27,14 +27,14 @@ class MeshTags;
 /// Applied Numerical Mathematics 32 (2000), 195-218.
 namespace dolfinx::refinement::plaza
 {
-/// @brief Options for mesh refinement.
+/// @brief Options for data to compute during mesh refinement.
 enum class Option : int
 {
   none = 0, /*!< No extra data */
   parent_cell
   = 1, /*!< Compute list with the parent cell index for each new cell  */
   parent_facet
-  = 2, /*!< Compute a list of the cell-local facet indices in the parent cell of
+  = 2, /*!< Compute list of the cell-local facet indices in the parent cell of
           each facet in each new cell (or -1 if no match) */
   parent_cell_and_facet = 3 /*!< Both cell and facet parent data */
 };

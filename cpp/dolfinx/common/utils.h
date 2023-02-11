@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-/// @namespace Foobar
+/// @namespace Generic tools
 namespace dolfinx::common
 {
 
