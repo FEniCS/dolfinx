@@ -1164,15 +1164,13 @@ mesh::create_subtopology(const Topology& topology, int dim,
     // Entities in the sub-topology that are owned by this process
     auto entity_map = topology.index_map(dim);
     assert(entity_map);
-    std::vector<std::int32_t> entities_owned;
-    std::copy_if(
-        entities.begin(), entities.end(), std::back_inserter(entities_owned),
-        [size = entity_map->size_local()](std::int32_t e) { return e < size; });
-
-    subentity_to_entity.assign(entities_owned.begin(), entities_owned.end());
+    std::copy_if(entities.begin(), entities.end(),
+                 std::back_inserter(subentity_to_entity),
+                 [size = entity_map->size_local()](std::int32_t e)
+                 { return e < size; });
 
     std::pair<common::IndexMap, std::vector<int32_t>> map_data
-        = entity_map->create_submap(entities_owned);
+        = entity_map->create_submap(subentity_to_entity);
     sub_entity_map
         = std::make_shared<common::IndexMap>(std::move(map_data.first));
 
@@ -1210,8 +1208,8 @@ mesh::create_subtopology(const Topology& topology, int dim,
     submesh_map0
         = std::make_shared<common::IndexMap>(std::move(map_data.first));
 
-    // Create a map from the (local) vertices in the submesh to the
-    // (local) vertices in the mesh
+    // Create a map from the vertices in the submesh to the vertices in
+    // the mesh
     subvertex_to_vertex.assign(submesh_owned_vertices.begin(),
                                submesh_owned_vertices.end());
     subvertex_to_vertex.reserve(submesh_map0->size_local()
@@ -1225,11 +1223,11 @@ mesh::create_subtopology(const Topology& topology, int dim,
         { return size_local + vertex_index; });
   }
 
-  // Submesh vertex to vertex connectivity (identity)
+  // Sub-topology vertex-to-vertex connectivity (identity)
   auto submesh_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       submesh_map0->size_local() + submesh_map0->num_ghosts());
 
-  // Submesh entity to vertex connectivity
+  // Sub-topology entity to vertex connectivity
   const CellType entity_type = cell_entity_type(topology.cell_type(), dim, 0);
   const int num_vertices_per_entity = cell_num_entities(entity_type, 0);
   auto mesh_e_to_v = topology.connectivity(dim, 0);
@@ -1239,7 +1237,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
   std::vector<std::int32_t> submesh_e_to_v_offsets(1, 0);
   submesh_e_to_v_offsets.reserve(subentity_to_entity.size() + 1);
 
-  // Create mesh to submesh vertex map (i.e. the inverse of
+  // Create topology to sub-topology vertex map (i.e. the inverse of
   // subvertex_to_vertex)
   // NOTE: Depending on the submesh, this may be densely or sparsely
   // populated. Is a different data structure more appropriate?
@@ -1250,8 +1248,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
 
   for (std::int32_t e : subentity_to_entity)
   {
-    std::span<const std::int32_t> vertices = mesh_e_to_v->links(e);
-    for (std::int32_t v : vertices)
+    for (std::int32_t v : mesh_e_to_v->links(e))
     {
       std::int32_t v_submesh = mesh_to_submesh_map0[v];
       assert(v_submesh != -1);
