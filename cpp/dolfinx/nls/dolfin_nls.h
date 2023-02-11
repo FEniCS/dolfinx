@@ -1,12 +1,10 @@
 #pragma once
 
-namespace dolfinx
+/// @brief Nonlinear solvers.
+///
+/// Methods for solving nonlinear equations.
+namespace dolfinx::nls
 {
-/*! \namespace dolfinx::nls
-    \brief Nonlinear solvers
-
-    Methods for solving nonlinear equations
-*/
 }
 
 // DOLFINx nonlinear solver

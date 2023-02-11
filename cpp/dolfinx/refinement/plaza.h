@@ -20,22 +20,23 @@ template <typename T>
 class MeshTags;
 } // namespace dolfinx::mesh
 
-/// Function in this namespace implement the refinement method described
-/// in Plaza and Carey "Local refinement of simplicial grids based on
-/// the skeleton" (Applied Numerical Mathematics 32 (2000) 195-218).
+/// @brief Plaza mesh refinement.
+///
+/// Functions for the refinement method described in Plaza and Carey
+/// "Local refinement of simplicial grids based on the skeleton",
+/// Applied Numerical Mathematics 32 (2000), 195-218.
 namespace dolfinx::refinement::plaza
 {
-/// Selection of options when refining a Mesh. `parent_cell` will output
-/// a list containing the local parent cell index for each new cell,
-/// `parent_facet` will output a list of the cell-local facet indices in
-/// the parent cell of each facet in each new cell (or -1 if no match).
-/// `parent_cell_and_facet` will output both datasets.
+/// @brief Options for mesh refinement.
 enum class Option : int
 {
-  none = 0,
-  parent_cell = 1,
-  parent_facet = 2,
-  parent_cell_and_facet = 3
+  none = 0, /*!< No extra data */
+  parent_cell
+  = 1, /*!< Compute list with the parent cell index for each new cell  */
+  parent_facet
+  = 2, /*!< Compute a list of the cell-local facet indices in the parent cell of
+          each facet in each new cell (or -1 if no match) */
+  parent_cell_and_facet = 3 /*!< Both cell and facet parent data */
 };
 
 /// @brief Uniform refine, optionally redistributing and optionally

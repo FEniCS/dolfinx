@@ -1,12 +1,10 @@
 #pragma once
 
-namespace dolfinx
+/// @brief Support for file IO.
+///
+/// IO to files for checkpointing and visualisation.
+namespace dolfinx::io
 {
-/*! \namespace dolfinx::io
-    \brief Support for file IO
-
-    IO to files for checkpointing and visualisation.
-*/
 }
 
 // DOLFINx io interface

@@ -1,12 +1,10 @@
 #pragma once
 
-namespace dolfinx
+/// @brief Linear algebra interface.
+///
+/// Interface to linear algebra data structures and solvers.
+namespace dolfinx::la
 {
-/*! \namespace dolfinx::la
-    \brief Linear algebra interface
-
-    Interface to linear algebra data structures and solvers
-*/
 }
 
 // DOLFINx la interface

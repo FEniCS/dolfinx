@@ -1,5 +1,10 @@
 #pragma once
 
+/// @brief Top-level namespace
+namespace dolfinx
+{
+}
+
 // DOLFINx interface
 
 #include <dolfinx/common/dolfin_common.h>
