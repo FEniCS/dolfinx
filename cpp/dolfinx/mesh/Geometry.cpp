@@ -214,9 +214,8 @@ mesh::create_subgeometry(const Topology& topology, const Geometry& geometry,
                  std::back_inserter(sub_x_dofmap_vec),
                  [&x_to_subx_dof_map](auto x_dof)
                  {
-                   std::int32_t sub_x_dof = x_to_subx_dof_map[x_dof];
-                   assert(sub_x_dof != -1);
-                   return sub_x_dof;
+                   assert(x_to_subx_dof_map[x_dof] != -1);
+                   return x_to_subx_dof_map[x_dof];
                  });
 
   graph::AdjacencyList<std::int32_t> sub_x_dofmap(
