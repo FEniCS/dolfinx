@@ -193,7 +193,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                      std::span<const std::int32_t> entities)
 {
   // Create sub-topology
-  auto [topology, submesh_to_mesh_map, submesh_to_mesh_map0]
+  auto [topology, subentity_to_entity, subentity_to_entity0]
       = mesh::create_subtopology(mesh.topology(), dim, entities);
 
   const int tdim = topology.dim();
@@ -202,157 +202,10 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   mesh.topology_mutable().create_connectivity(tdim, dim);
 
   auto [geometry, submesh_to_mesh_x_dof_map] = mesh::create_subgeometry(
-      mesh.topology(), mesh.geometry(), dim, submesh_to_mesh_map);
-  // const Topology& topology = mesh.topology();
-
-  // // -- Submesh geometry
-  // const Geometry& geometry = mesh.geometry();
-
-  // // Get the geometry dofs in the submesh based on the entities in
-  // // submesh
-  // const fem::ElementDofLayout layout = geometry.cmap().create_dof_layout();
-  // // NOTE: Unclear what this return for prisms
-  // const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
-
-  // std::vector<std::int32_t> geometry_indices;
-  // geometry_indices.reserve(num_entity_dofs * submesh_to_mesh_map.size());
-  // std::vector<std::int32_t> submesh_x_dofmap_offsets;
-  // submesh_x_dofmap_offsets.reserve(submesh_to_mesh_map.size() + 1);
-  // submesh_x_dofmap_offsets.push_back(0);
-  // {
-  //   const graph::AdjacencyList<std::int32_t>& xdofs = geometry.dofmap();
-  //   const int tdim = topology.dim();
-  //   mesh.topology_mutable().create_entities(dim);
-  //   mesh.topology_mutable().create_connectivity(dim, tdim);
-  //   mesh.topology_mutable().create_connectivity(tdim, dim);
-
-  //   // Fetch connectivities required to get entity dofs
-  //   const std::vector<std::vector<std::vector<int>>>& closure_dofs
-  //       = layout.entity_closure_dofs_all();
-  //   std::shared_ptr<const graph::AdjacencyList<int>> e_to_c
-  //       = topology.connectivity(dim, tdim);
-  //   assert(e_to_c);
-  //   std::shared_ptr<const graph::AdjacencyList<int>> c_to_e
-  //       = topology.connectivity(tdim, dim);
-  //   assert(c_to_e);
-  //   for (std::size_t i = 0; i < submesh_to_mesh_map.size(); ++i)
-  //   {
-  //     const std::int32_t idx = submesh_to_mesh_map[i];
-  //     assert(!e_to_c->links(idx).empty());
-  //     // Always pick the last cell to be consistent with the e_to_v
-  //     connectivity const std::int32_t cell = e_to_c->links(idx).back(); auto
-  //     cell_entities = c_to_e->links(cell); auto it =
-  //     std::find(cell_entities.begin(), cell_entities.end(), idx); assert(it
-  //     != cell_entities.end()); const auto local_entity =
-  //     std::distance(cell_entities.begin(), it); const
-  //     std::vector<std::int32_t>& entity_dofs
-  //         = closure_dofs[dim][local_entity];
-
-  //     auto xc = xdofs.links(cell);
-  //     for (std::int32_t entity_dof : entity_dofs)
-  //       geometry_indices.push_back(xc[entity_dof]);
-  //     submesh_x_dofmap_offsets.push_back(geometry_indices.size());
-  //   }
-  // }
-
-  // std::vector<std::int32_t> submesh_x_dofs = geometry_indices;
-  // std::sort(submesh_x_dofs.begin(), submesh_x_dofs.end());
-  // submesh_x_dofs.erase(
-  //     std::unique(submesh_x_dofs.begin(), submesh_x_dofs.end()),
-  //     submesh_x_dofs.end());
-
-  // // Get the geometry dofs in the submesh owned by this process
-  // auto mesh_geometry_dof_index_map = geometry.index_map();
-  // assert(mesh_geometry_dof_index_map);
-  // auto submesh_owned_x_dofs = common::compute_owned_indices(
-  //     submesh_x_dofs, *mesh_geometry_dof_index_map);
-
-  // // Create submesh geometry index map
-  // std::vector<int32_t>
-  // submesh_to_mesh_x_dof_map(submesh_owned_x_dofs.begin(),
-  //                                                submesh_owned_x_dofs.end());
-  // std::shared_ptr<common::IndexMap> submesh_x_dof_index_map;
-  // {
-  //   std::pair<common::IndexMap, std::vector<int32_t>>
-  //       submesh_x_dof_index_map_pair
-  //       = mesh_geometry_dof_index_map->create_submap(submesh_owned_x_dofs);
-
-  //   submesh_x_dof_index_map = std::make_shared<common::IndexMap>(
-  //       std::move(submesh_x_dof_index_map_pair.first));
-
-  //   // Create a map from the (local) geometry dofs in the submesh to the
-  //   // (local) geometry dofs in the mesh.
-  //   submesh_to_mesh_x_dof_map.reserve(submesh_x_dof_index_map->size_local()
-  //                                     +
-  //                                     submesh_x_dof_index_map->num_ghosts());
-  //   std::transform(submesh_x_dof_index_map_pair.second.begin(),
-  //                  submesh_x_dof_index_map_pair.second.end(),
-  //                  std::back_inserter(submesh_to_mesh_x_dof_map),
-  //                  [size = mesh_geometry_dof_index_map->size_local()](
-  //                      auto x_dof_index) { return size + x_dof_index; });
-  // }
-
-  // // Create submesh geometry coordinates
-  // std::span<const double> mesh_x = mesh.geometry().x();
-  // const int submesh_num_x_dofs = submesh_to_mesh_x_dof_map.size();
-  // std::vector<double> submesh_x(3 * submesh_num_x_dofs);
-  // for (int i = 0; i < submesh_num_x_dofs; ++i)
-  // {
-  //   std::copy_n(std::next(mesh_x.begin(), 3 * submesh_to_mesh_x_dof_map[i]),
-  //   3,
-  //               std::next(submesh_x.begin(), 3 * i));
-  // }
-
-  // // Create mesh to submesh geometry map
-  // std::vector<std::int32_t> mesh_to_submesh_x_dof_map(
-  //     mesh_geometry_dof_index_map->size_local()
-  //         + mesh_geometry_dof_index_map->num_ghosts(),
-  //     -1);
-  // for (std::size_t i = 0; i < submesh_to_mesh_x_dof_map.size(); ++i)
-  //   mesh_to_submesh_x_dof_map[submesh_to_mesh_x_dof_map[i]] = i;
-
-  // // Create submesh geometry dofmap
-  // std::vector<std::int32_t> submesh_x_dofmap_vec;
-  // submesh_x_dofmap_vec.reserve(geometry_indices.size());
-  // std::transform(geometry_indices.cbegin(), geometry_indices.cend(),
-  //                std::back_inserter(submesh_x_dofmap_vec),
-  //                [&mesh_to_submesh_x_dof_map](auto x_dof)
-  //                {
-  //                  std::int32_t x_dof_submesh
-  //                      = mesh_to_submesh_x_dof_map[x_dof];
-  //                  assert(x_dof_submesh != -1);
-  //                  return x_dof_submesh;
-  //                });
-
-  // graph::AdjacencyList<std::int32_t> submesh_x_dofmap(
-  //     std::move(submesh_x_dofmap_vec), std::move(submesh_x_dofmap_offsets));
-
-  // // Create submesh coordinate element
-  // CellType submesh_coord_cell
-  //     = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
-  // fem::CoordinateElement submesh_coord_ele(
-  //     submesh_coord_cell, geometry.cmap().degree(),
-  //     geometry.cmap().variant());
-
-  // // Submesh geometry input_global_indices
-  // // TODO Check this
-  // const std::vector<std::int64_t>& mesh_igi =
-  // geometry.input_global_indices(); std::vector<std::int64_t> submesh_igi;
-  // submesh_igi.reserve(submesh_to_mesh_x_dof_map.size());
-  // std::transform(submesh_to_mesh_x_dof_map.begin(),
-  //                submesh_to_mesh_x_dof_map.end(),
-  //                std::back_inserter(submesh_igi),
-  //                [&mesh_igi](std::int32_t submesh_x_dof)
-  //                { return mesh_igi[submesh_x_dof]; });
-
-  // // Create geometry
-  // Geometry submesh_geometry(
-  //     submesh_x_dof_index_map, std::move(submesh_x_dofmap),
-  //     submesh_coord_ele, std::move(submesh_x), geometry.dim(),
-  //     std::move(submesh_igi));
+      mesh.topology(), mesh.geometry(), dim, subentity_to_entity);
 
   return {Mesh(mesh.comm(), std::move(topology), std::move(geometry)),
-          std::move(submesh_to_mesh_map), std::move(submesh_to_mesh_map0),
+          std::move(subentity_to_entity), std::move(subentity_to_entity0),
           std::move(submesh_to_mesh_x_dof_map)};
 }
 //-----------------------------------------------------------------------------

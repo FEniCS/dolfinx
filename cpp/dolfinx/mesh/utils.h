@@ -178,8 +178,8 @@ CellPartitionFunction create_cell_partitioner(mesh::GhostMode ghost_mode
                                               const graph::partition_fn& partfn
                                               = &graph::partition_graph);
 
-/// Compute incident indices
-/// @param[in] mesh The mesh
+/// @brief Compute incident indices
+/// @param[in] topology The topology
 /// @param[in] entities List of indices of topological dimension `d0`
 /// @param[in] d0 Topological dimension
 /// @param[in] d1 Topological dimension

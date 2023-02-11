@@ -259,6 +259,6 @@ mesh::create_subgeometry(const Topology& topology, const Geometry& geometry,
   return {Geometry(submesh_x_dof_index_map, std::move(submesh_x_dofmap),
                    submesh_coord_ele, std::move(submesh_x), geometry.dim(),
                    std::move(submesh_igi)),
-          submesh_to_mesh_x_dof_map};
+          std::move(submesh_to_mesh_x_dof_map)};
 }
 //-----------------------------------------------------------------------------

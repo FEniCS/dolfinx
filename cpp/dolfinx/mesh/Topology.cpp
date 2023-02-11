@@ -1258,7 +1258,8 @@ mesh::create_subtopology(const Topology& topology, int dim,
   subtopology.set_connectivity(submesh_v_to_v, 0, 0);
   subtopology.set_connectivity(submesh_e_to_v, dim, 0);
 
-  return {subtopology, subentity_to_entity, submesh_to_mesh_map0};
+  return {std::move(subtopology), std::move(subentity_to_entity),
+          std::move(submesh_to_mesh_map0)};
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
