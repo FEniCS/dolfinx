@@ -193,15 +193,15 @@ mesh::create_submesh(const Mesh& mesh, int dim,
                      std::span<const std::int32_t> entities)
 {
   // Create sub-topology
+  mesh.topology_mutable().create_connectivity(dim, 0);
   auto [topology, subentity_to_entity, subvertex_to_vertex]
       = mesh::create_subtopology(mesh.topology(), dim, entities);
 
+  // Create sub-geometry
   const int tdim = mesh.topology().dim();
   mesh.topology_mutable().create_entities(dim);
   mesh.topology_mutable().create_connectivity(dim, tdim);
   mesh.topology_mutable().create_connectivity(tdim, dim);
-
-  // Create sub-geometry
   auto [geometry, subx_to_x_dofmap] = mesh::create_subgeometry(
       mesh.topology(), mesh.geometry(), dim, subentity_to_entity);
 

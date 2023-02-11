@@ -151,12 +151,14 @@ create_geometry(MPI_Comm comm, const Topology& topology,
                     const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
                 = nullptr);
 
-/// @brief  Build Geometry from input data.
-/// @param topology
-/// @param geometry
-/// @param dim
-/// @param subentity_to_entity
-/// @return
+/// @brief Create a sub-geometry for a subset of entities.
+/// @param topology Full mesh topology
+/// @param geometry Full mesh geometry
+/// @param dim Topological dimension of the sub-topology
+/// @param subentity_to_entity Map from sub-topology entity to the
+/// entity in the parent topology
+/// @return A sub-geometry and a map from sub-geometry coordinate
+/// degree-of-freedom to the coordinate degree-of-freedom in `geometry`.
 std::pair<mesh::Geometry, std::vector<int32_t>>
 create_subgeometry(const Topology& topology, const Geometry& geometry, int dim,
                    std::span<const std::int32_t> subentity_to_entity);
