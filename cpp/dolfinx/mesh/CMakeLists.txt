@@ -1,5 +1,5 @@
 set(HEADERS_mesh
-    ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_mesh.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_mesh.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Mesh.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Geometry.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Topology.h
