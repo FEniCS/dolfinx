@@ -191,11 +191,14 @@ Topology create_topology(MPI_Comm comm,
                          const CellType& cell_type,
                          std::span<const std::int64_t> boundary_vertices);
 
-/// @brief  Sub-topology
-/// @param topology
-/// @param dim
-/// @param entities
-/// @return
+/// @brief Create a topology for a subset of entities ofa given
+/// topological dimension.
+/// @param topology Original topology.
+/// @param dim Topological dimension of the entities in the new topology.
+/// @param entities The indices of the entities in `topology` to include
+/// in the new topology.
+/// @return New topology of dimension `dim` with all entities in
+/// `entities`.
 std::tuple<Topology, std::vector<int32_t>, std::vector<int32_t>>
 create_subtopology(const Topology& topology, int dim,
                    std::span<const std::int32_t> entities);
