@@ -18,6 +18,7 @@ from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
                               create_cell_partitioner, exterior_facet_indices,
                               to_string, to_type)
+from dolfinx.cpp.refinement import RefinementOption
 from mpi4py import MPI as _MPI
 
 from dolfinx import cpp as _cpp
@@ -144,21 +145,30 @@ _uflcell_to_dolfinxcell = {
 }
 
 
-def transfer_cell_meshtag(meshtag: MeshTags, mesh1: Mesh, parent_cell: npt.NDArray[np.int32]) -> MeshTags:
-    """Generate cell mesh tags on a refined mesh from the meshtgs on the coarse parent mesh
+def transfer_meshtag(meshtag: MeshTags, mesh1: Mesh, parent_cell: npt.NDArray[np.int32],
+                     parent_facet: typing.Optional[npt.NDArray[np.int8]] = None) -> MeshTags:
+    """Generate cell mesh tags on a refined mesh from the mesh tags on the coarse parent mesh.
 
         Args:
             meshtag: Mesh tags on the coarse, parent mesh
             mesh1: The refined mesh
             parent_cell: Index of the parent cell for each cell in the refined mesh
+            parent_facet: Index of the local parent facet for each cell
+                in the refined mesh. Only required for transfer tags on facets.
 
         Returns:
-            Mesh tags on the refined mesh
+            Mesh tags on the refined mesh.
 
     """
-
-    mt = _cpp.refinement.transfer_cell_meshtag(meshtag._cpp_object, mesh1._cpp_object, parent_cell)
-    return MeshTags(mt, mesh1)
+    if meshtag.dim == meshtag.mesh.topology.dim:
+        mt = _cpp.refinement.transfer_cell_meshtag(meshtag._cpp_object, mesh1._cpp_object, parent_cell)
+        return MeshTags(mt, mesh1)
+    elif meshtag.dim == meshtag.mesh.topology.dim - 1:
+        assert parent_facet is not None
+        mt = _cpp.refinement.transfer_facet_meshtag(meshtag._cpp_object, mesh1._cpp_object, parent_cell, parent_facet)
+        return MeshTags(mt, mesh1)
+    else:
+        raise RuntimeError("MeshTag transfer is supported on on cells or facets.")
 
 
 def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True) -> Mesh:
@@ -185,7 +195,8 @@ def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: 
 
 
 def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True,
-                 option: _cpp.refinement.RefinementOption = _cpp.refinement.RefinementOption.none) -> Mesh:
+                 option: RefinementOption = RefinementOption.none) -> tuple[Mesh, npt.NDArray[np.int32],
+                                                                            npt.NDArray[np.int32]]:
     """Refine a mesh.
 
     Args:
