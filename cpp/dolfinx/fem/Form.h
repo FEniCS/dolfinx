@@ -82,9 +82,8 @@ public:
   ///
   /// @param[in] function_spaces Function spaces for the form arguments
   /// @param[in] integrals The integrals in the form. The first key is
-  /// the domain type. For each key there is a map from the domain id
-  /// to a pair containing the integration kernel and a list of entities
-  /// over which to integrate
+  /// the domain type. For each key there is a list of tuples (domain id,
+  /// integration kernel, entities).
   /// @param[in] coefficients
   /// @param[in] constants Constants in the Form
   /// @param[in] needs_facet_permutations Set to true is any of the
@@ -95,13 +94,13 @@ public:
   // TODO Could change first integrals map to std::array and second
   // to vector of pair
   Form(const std::vector<std::shared_ptr<const FunctionSpace>>& function_spaces,
-       const std::map<
-           IntegralType,
-           std::map<int, std::pair<std::function<
-                                       void(T*, const T*, const T*,
-                                            const scalar_value_type_t*,
-                                            const int*, const std::uint8_t*)>,
-                                   std::vector<std::int32_t>>>>& integrals,
+       const std::map<IntegralType,
+                      std::vector<std::tuple<
+                          int,
+                          std::function<void(T*, const T*, const T*,
+                                             const scalar_value_type_t*,
+                                             const int*, const std::uint8_t*)>,
+                          std::vector<std::int32_t>>>>& integrals,
        const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
        const std::vector<std::shared_ptr<const Constant<T>>>& constants,
        bool needs_facet_permutations,
@@ -125,23 +124,32 @@ public:
     // NOTE Could probably simplify Form by combining integral types
     for (const auto& [type, integral] : integrals)
     {
+      const IntegralType type = integral_type.first;
+      auto& kernels = integral_type.second;
+
+      // Loop over integrals kernels and set domains
       switch (type)
       {
       case IntegralType::cell:
-        _cell_integrals = integral;
+        for (auto& [id, kern, e] : kernels)
+          _cell_integrals.insert({id, {kern, std::vector(e.begin(), e.end())}});
         break;
       case IntegralType::exterior_facet:
-        _exterior_facet_integrals = integral;
+        for (auto& [id, kern, e] : kernels)
+        {
+          _exterior_facet_integrals.insert(
+              {id, {kern, std::vector(e.begin(), e.end())}});
+        }
         break;
       case IntegralType::interior_facet:
-        _interior_facet_integrals = integral;
+        for (auto& [id, kern, e] : kernels)
+        {
+          _interior_facet_integrals.insert(
+              {id, {kern, std::vector(e.begin(), e.end())}});
+        }
         break;
       }
     }
-
-    // FIXME: do this neatly via a static function
-    // Set markers for default integrals
-    set_default_domains(*_mesh);
   }
 
   /// Copy constructor
@@ -290,8 +298,9 @@ public:
   /// interior facet domain type.
   /// @param[in] i Integral ID, i.e. (sub)domain index
   /// @return List of tuples of the form
-  /// (cell_index_0, local_facet_index_0, cell_index_1, local_facet_index_1).
-  /// This data is flattened with row-major layout, shape=(num_facets, 4)
+  /// (cell_index_0, local_facet_index_0, cell_index_1,
+  /// local_facet_index_1). This data is flattened with row-major layout,
+  /// shape=(num_facets, 4)
   const std::vector<std::int32_t>& interior_facet_domains(int i) const
   {
     auto it = _interior_facet_integrals.find(i);
@@ -340,11 +349,11 @@ private:
       = std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
                            const int*, const std::uint8_t*)>;
 
-  // Helper function to get the kernel for integral i from a map
-  // of integrals i.e. from _cell_integrals
-  // @param[in] integrals Map of integrals
-  // @param[in] i Domain index
-  // @return Function to call for tabulate_tensor
+  /// Helper function to get the kernel for integral i from a map
+  /// of integrals i.e. from _cell_integrals
+  /// @param[in] integrals Map of integrals
+  /// @param[in] i Domain index
+  /// @return Function to call for tabulate_tensor
   template <typename U>
   const std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
                            const int*, const std::uint8_t*)>&
@@ -354,99 +363,6 @@ private:
     if (it == integrals.end())
       throw std::runtime_error("No kernel for requested domain index.");
     return it->second.first;
-  }
-
-  /// If there exists a default integral of any type, set the list of
-  /// entities for those integrals from the mesh topology. For cell
-  /// integrals, this is all cells. For facet integrals, it is either
-  /// all interior or all exterior facets.
-  /// @param[in] mesh Mesh
-  void set_default_domains(const mesh::Mesh& mesh)
-  {
-    const mesh::Topology& topology = mesh.topology();
-    const int tdim = topology.dim();
-
-    // Cells. If there is a default integral, define it on all owned
-    // cells
-    for (auto& [domain_id, kernel_cells] : _cell_integrals)
-    {
-      if (domain_id == -1)
-      {
-        std::vector<std::int32_t>& cells = kernel_cells.second;
-        const int num_cells = topology.index_map(tdim)->size_local();
-        cells.resize(num_cells);
-        std::iota(cells.begin(), cells.end(), 0);
-      }
-    }
-
-    // Exterior facets. If there is a default integral, define it only
-    // on owned surface facets.
-
-    if (!_exterior_facet_integrals.empty())
-    {
-      mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-      mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
-    }
-
-    const std::vector<std::int32_t> boundary_facets
-        = _exterior_facet_integrals.empty()
-              ? std::vector<std::int32_t>()
-              : mesh::exterior_facet_indices(topology);
-    for (auto& [domain_id, kernel_facets] : _exterior_facet_integrals)
-    {
-      if (domain_id == -1)
-      {
-        std::vector<std::int32_t>& facets = kernel_facets.second;
-        facets.clear();
-
-        auto f_to_c = topology.connectivity(tdim - 1, tdim);
-        assert(f_to_c);
-        auto c_to_f = topology.connectivity(tdim, tdim - 1);
-        assert(c_to_f);
-        for (std::int32_t f : boundary_facets)
-        {
-          // There will only be one pair for an exterior facet integral
-          std::array<std::int32_t, 2> pair
-              = mesh::get_cell_local_facet_pairs<1>(f, f_to_c->links(f),
-                                                    *c_to_f)[0];
-          facets.insert(facets.end(), pair.cbegin(), pair.cend());
-        }
-      }
-    }
-
-    // Interior facets. If there is a default integral, define it only on
-    // owned interior facets.
-    for (auto& [domain_id, kernel_facets] : _interior_facet_integrals)
-    {
-      if (domain_id == -1)
-      {
-        std::vector<std::int32_t>& facets = kernel_facets.second;
-        facets.clear();
-
-        mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
-        auto f_to_c = topology.connectivity(tdim - 1, tdim);
-        assert(f_to_c);
-        mesh.topology_mutable().create_connectivity(tdim, tdim - 1);
-        auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
-        assert(c_to_f);
-
-        // Get number of facets owned by this process
-        assert(topology.index_map(tdim - 1));
-        const int num_facets = topology.index_map(tdim - 1)->size_local();
-        facets.reserve(num_facets);
-        for (int f = 0; f < num_facets; ++f)
-        {
-          if (f_to_c->num_links(f) == 2)
-          {
-            const std::array<std::array<std::int32_t, 2>, 2> pairs
-                = mesh::get_cell_local_facet_pairs<2>(f, f_to_c->links(f),
-                                                      *c_to_f);
-            facets.insert(facets.end(), pairs[0].cbegin(), pairs[0].cend());
-            facets.insert(facets.end(), pairs[1].cbegin(), pairs[1].cend());
-          }
-        }
-      }
-    }
   }
 
   // Function spaces (one for each argument)

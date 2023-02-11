@@ -362,8 +362,8 @@ void declare_form(py::module& m, const std::string& type)
                       const dolfinx::fem::FunctionSpace>>& spaces,
                   const std::map<
                       dolfinx::fem::IntegralType,
-                      std::map<int, std::pair<py::object,
-                                              std::vector<std::int32_t>>>>&
+                      std::vector<std::tuple<int, py::object,
+                                             py::array_t<std::int32_t>>>>&
                       integrals,
                   const std::vector<std::shared_ptr<
                       const dolfinx::fem::Function<T>>>& coefficients,
@@ -372,30 +372,32 @@ void declare_form(py::module& m, const std::string& type)
                   bool needs_permutation_data,
                   std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
                {
-                 //  FIXME Use py::array in integrals instead of std::vector?
                  using kern = std::function<void(
                      T*, const T*, const T*,
                      const typename geom_type<T>::value_type*, const int*,
                      const std::uint8_t*)>;
-                 std::map<
-                     dolfinx::fem::IntegralType,
-                     std::map<int, std::pair<kern, std::vector<std::int32_t>>>>
+                 std::map<dolfinx::fem::IntegralType,
+                          std::vector<
+                              std::tuple<int, kern, std::vector<std::int32_t>>>>
                      _integrals;
 
-                 for (auto& kernel_type : integrals)
+                 // Loop over kernel for each entity type
+                 for (auto& [type, kernels] : integrals)
                  {
-                   for (auto& kernel : kernel_type.second)
+                   for (auto& [id, kn, e] : kernels)
                    {
-                     auto tabulate_tensor_ptr
+                     std::uintptr_t ptr = kn.template cast<std::uintptr_t>();
+                     auto kn_ptr
                          = (void (*)(T*, const T*, const T*,
                                      const typename geom_type<T>::value_type*,
-                                     const int*, const std::uint8_t*))
-                               kernel.second.first.cast<std::uintptr_t>();
-                     // FIXME Avoid this copy
-                     _integrals[kernel_type.first][kernel.first]
-                         = {tabulate_tensor_ptr, {kernel.second.second}};
+                                     const int*, const std::uint8_t*))ptr;
+                     _integrals[type].emplace_back(
+                         id, kn_ptr,
+                         std::vector<std::int32_t>(e.data(),
+                                                   e.data() + e.size()));
                    }
                  }
+
                  return dolfinx::fem::Form<T>(spaces, _integrals, coefficients,
                                               constants, needs_permutation_data,
                                               mesh);
