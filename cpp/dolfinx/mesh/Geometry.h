@@ -155,9 +155,9 @@ create_geometry(MPI_Comm comm, const Topology& topology,
 /// @param topology
 /// @param geometry
 /// @param dim
-/// @param submesh_to_mesh_map
+/// @param subentity_to_entity
 /// @return
 std::pair<mesh::Geometry, std::vector<int32_t>>
 create_subgeometry(const Topology& topology, const Geometry& geometry, int dim,
-                   std::span<const std::int32_t> submesh_to_mesh_map);
+                   std::span<const std::int32_t> subentity_to_entity);
 } // namespace dolfinx::mesh
