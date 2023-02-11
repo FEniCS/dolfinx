@@ -357,59 +357,57 @@ void declare_form(py::module& m, const std::string& type)
   std::string pyclass_name_form = std::string("Form_") + type;
   py::class_<dolfinx::fem::Form<T>, std::shared_ptr<dolfinx::fem::Form<T>>>(
       m, pyclass_name_form.c_str(), "Variational form object")
-      .def(
-          py::init(
-              [](const std::vector<std::shared_ptr<
-                     const dolfinx::fem::FunctionSpace>>& spaces,
-                 const std::map<
-                     dolfinx::fem::IntegralType,
-                     std::pair<std::vector<std::pair<int, py::object>>,
-                               const dolfinx::mesh::MeshTags<int>*>>& integrals,
-                 const std::vector<std::shared_ptr<
-                     const dolfinx::fem::Function<T>>>& coefficients,
-                 const std::vector<std::shared_ptr<
-                     const dolfinx::fem::Constant<T>>>& constants,
-                 bool needs_permutation_data,
-                 std::shared_ptr<const dolfinx::mesh::Mesh> mesh,
-                 const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
+      .def(py::init(
+               [](const std::vector<std::shared_ptr<
+                      const dolfinx::fem::FunctionSpace>>& spaces,
+                  const std::map<
+                      dolfinx::fem::IntegralType,
+                      std::vector<std::tuple<int, py::object,
+                                             py::array_t<std::int32_t>>>>&
+                      integrals,
+                  const std::vector<std::shared_ptr<
+                      const dolfinx::fem::Function<T>>>& coefficients,
+                  const std::vector<std::shared_ptr<
+                      const dolfinx::fem::Constant<T>>>& constants,
+                  bool needs_permutation_data,
+                  std::shared_ptr<const dolfinx::mesh::Mesh> mesh,
+                  const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
                                 std::vector<std::int32_t>>& entity_maps
                  = {})
-              {
-                using kern = std::function<void(
-                    T*, const T*, const T*,
-                    const typename geom_type<T>::value_type*, const int*,
-                    const std::uint8_t*)>;
-                std::map<dolfinx::fem::IntegralType,
-                         std::pair<std::vector<std::pair<int, kern>>,
-                                   const dolfinx::mesh::MeshTags<int>*>>
-                    _integrals;
+               {
+                 using kern = std::function<void(
+                     T*, const T*, const T*,
+                     const typename geom_type<T>::value_type*, const int*,
+                     const std::uint8_t*)>;
+                 std::map<dolfinx::fem::IntegralType,
+                          std::vector<
+                              std::tuple<int, kern, std::vector<std::int32_t>>>>
+                     _integrals;
 
-                // Loop over kernel for each entity type
-                for (auto& kernel_type : integrals)
-                {
-                  // Set subdomain markers
-                  _integrals[kernel_type.first].second
-                      = kernel_type.second.second;
+                 // Loop over kernel for each entity type
+                 for (auto& [type, kernels] : integrals)
+                 {
+                   for (auto& [id, kn, e] : kernels)
+                   {
+                     std::uintptr_t ptr = kn.template cast<std::uintptr_t>();
+                     auto kn_ptr
+                         = (void (*)(T*, const T*, const T*,
+                                     const typename geom_type<T>::value_type*,
+                                     const int*, const std::uint8_t*))ptr;
+                     _integrals[type].emplace_back(
+                         id, kn_ptr,
+                         std::vector<std::int32_t>(e.data(),
+                                                   e.data() + e.size()));
+                   }
+                 }
 
-                  // Loop over each domain kernel
-                  for (auto& kernel : kernel_type.second.first)
-                  {
-                    auto tabulate_tensor_ptr
-                        = (void (*)(T*, const T*, const T*,
-                                    const typename geom_type<T>::value_type*,
-                                    const int*, const std::uint8_t*))
-                              kernel.second.cast<std::uintptr_t>();
-                    _integrals[kernel_type.first].first.push_back(
-                        {kernel.first, tabulate_tensor_ptr});
-                  }
-                }
-                return dolfinx::fem::Form<T>(spaces, _integrals, coefficients,
-                                             constants, needs_permutation_data,
-                                             mesh, entity_maps);
-              }),
-          py::arg("spaces"), py::arg("integrals"), py::arg("coefficients"),
-          py::arg("constants"), py::arg("need_permutation_data"),
-          py::arg("mesh") = py::none(), py::arg("entity_maps"))
+                 return dolfinx::fem::Form<T>(spaces, _integrals, coefficients,
+                                              constants, needs_permutation_data,
+                                              mesh, entity_maps);
+               }),
+           py::arg("spaces"), py::arg("integrals"), py::arg("coefficients"),
+           py::arg("constants"), py::arg("need_permutation_data"),
+           py::arg("mesh") = py::none(), py::arg("entity_maps"))
       .def(py::init(
                [](std::uintptr_t form,
                   const std::vector<std::shared_ptr<

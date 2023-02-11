@@ -339,7 +339,7 @@ void add_mesh(std::span<const double> x, std::array<std::size_t, 2> /*xshape*/,
 template <typename T>
 void write_function(
     const std::vector<std::reference_wrapper<const fem::Function<T>>>& u,
-    double time, std::unique_ptr<pugi::xml_document>& xml_doc,
+    double time, pugi::xml_document* xml_doc,
     const std::filesystem::path& filename)
 {
   if (!xml_doc)
@@ -819,6 +819,7 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
       pugi::xml_node piece_node = grid_node.append_child("Piece");
       piece_node.append_attribute("Source") = vtu.filename().c_str();
     }
+
     // Write PVTU file
     if (p_pvtu.has_parent_path())
       std::filesystem::create_directories(p_pvtu.parent_path());
@@ -836,7 +837,7 @@ void io::VTKFile::write_functions(
     const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
     double time)
 {
-  write_function(u, time, _pvd_xml, _filename);
+  write_function(u, time, _pvd_xml.get(), _filename);
 }
 //----------------------------------------------------------------------------
 void io::VTKFile::write_functions(
@@ -844,6 +845,6 @@ void io::VTKFile::write_functions(
         std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
     double time)
 {
-  write_function(u, time, _pvd_xml, _filename);
+  write_function(u, time, _pvd_xml.get(), _filename);
 }
 //----------------------------------------------------------------------------
