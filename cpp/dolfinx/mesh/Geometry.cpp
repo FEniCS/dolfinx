@@ -125,8 +125,8 @@ mesh::create_subgeometry(const Topology& topology, const Geometry& geometry,
                          int dim,
                          std::span<const std::int32_t> submesh_to_mesh_map)
 {
-  // Get the geometry dofs in the submesh based on the entities in
-  // submesh
+  // Get the geometry dofs in the sub-geometry based on the entities in
+  // sub-geometry
   const fem::ElementDofLayout layout = geometry.cmap().create_dof_layout();
   // NOTE: Unclear what this return for prisms
   const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
@@ -143,11 +143,9 @@ mesh::create_subgeometry(const Topology& topology, const Geometry& geometry,
     // Fetch connectivities required to get entity dofs
     const std::vector<std::vector<std::vector<int>>>& closure_dofs
         = layout.entity_closure_dofs_all();
-    std::shared_ptr<const graph::AdjacencyList<int>> e_to_c
-        = topology.connectivity(dim, tdim);
+    auto e_to_c = topology.connectivity(dim, tdim);
     assert(e_to_c);
-    std::shared_ptr<const graph::AdjacencyList<int>> c_to_e
-        = topology.connectivity(tdim, dim);
+    auto c_to_e = topology.connectivity(tdim, dim);
     assert(c_to_e);
     for (std::size_t i = 0; i < submesh_to_mesh_map.size(); ++i)
     {
@@ -158,12 +156,10 @@ mesh::create_subgeometry(const Topology& topology, const Geometry& geometry,
       auto cell_entities = c_to_e->links(cell);
       auto it = std::find(cell_entities.begin(), cell_entities.end(), idx);
       assert(it != cell_entities.end());
-      const auto local_entity = std::distance(cell_entities.begin(), it);
-      const std::vector<std::int32_t>& entity_dofs
-          = closure_dofs[dim][local_entity];
+      std::size_t local_entity = std::distance(cell_entities.begin(), it);
 
       auto xc = xdofs.links(cell);
-      for (std::int32_t entity_dof : entity_dofs)
+      for (std::int32_t entity_dof : closure_dofs[dim][local_entity])
         geometry_indices.push_back(xc[entity_dof]);
       submesh_x_dofmap_offsets.push_back(geometry_indices.size());
     }

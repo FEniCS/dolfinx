@@ -196,7 +196,7 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   auto [topology, subentity_to_entity, subvertex_to_vertex]
       = mesh::create_subtopology(mesh.topology(), dim, entities);
 
-  const int tdim = topology.dim();
+  const int tdim = mesh.topology().dim();
   mesh.topology_mutable().create_entities(dim);
   mesh.topology_mutable().create_connectivity(dim, tdim);
   mesh.topology_mutable().create_connectivity(tdim, dim);
