@@ -26,8 +26,7 @@ __all__ = ["compute_colliding_cells", "squared_distance", "compute_closest_entit
 
 
 class BoundingBoxTree(_cpp.geometry.BoundingBoxTree):
-    """A class for representing bounding box trees used in collision
-    detection."""
+    """Bounding box trees used in collision detection."""
 
     def __init__(self, mesh: Mesh, dim: int, entities=None, padding: float = 0.0):
         """Create a bounding box tree for entities of a mesh.
