@@ -191,6 +191,11 @@ Topology create_topology(MPI_Comm comm,
                          const CellType& cell_type,
                          std::span<const std::int64_t> boundary_vertices);
 
+/// @brief  Sub-topology
+/// @param topology
+/// @param dim
+/// @param entities
+/// @return
 std::tuple<Topology, std::vector<int32_t>, std::vector<int32_t>>
 create_subtopology(const Topology& topology, int dim,
                    std::span<const std::int32_t> entities);

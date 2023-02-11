@@ -13,6 +13,7 @@
 #include <functional>
 #include <memory>
 #include <span>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::common
@@ -150,4 +151,13 @@ create_geometry(MPI_Comm comm, const Topology& topology,
                     const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
                 = nullptr);
 
+/// @brief  Build Geometry from input data.
+/// @param topology
+/// @param geometry
+/// @param dim
+/// @param submesh_to_mesh_map
+/// @return
+std::pair<mesh::Geometry, std::vector<int32_t>>
+create_subgeometry(const Topology& topology, const Geometry& geometry, int dim,
+                   std::span<const std::int32_t> submesh_to_mesh_map);
 } // namespace dolfinx::mesh
