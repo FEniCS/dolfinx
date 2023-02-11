@@ -4,7 +4,7 @@
 ///
 /// Data structures for building and representing graphs, and algorithms
 /// on graphs, e.g., re-ordering and partitioning.
-namespace dolfinx::::graph
+namespace dolfinx::graph
 {
 }
 

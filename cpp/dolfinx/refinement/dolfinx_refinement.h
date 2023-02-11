@@ -4,7 +4,7 @@
 ///
 /// Methods for refining meshes uniformly, or with markers, using edge
 /// bisection.
-namespace dolfinx:: ::refinement
+namespace dolfinx::refinement
 {
 }
 
