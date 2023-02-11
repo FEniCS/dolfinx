@@ -20,15 +20,11 @@ template <typename T>
 class MeshTags;
 } // namespace dolfinx::mesh
 
-namespace dolfinx::refinement
-{
-
 /// Function in this namespace implement the refinement method described
 /// in Plaza and Carey "Local refinement of simplicial grids based on
 /// the skeleton" (Applied Numerical Mathematics 32 (2000) 195-218).
-namespace plaza
+namespace dolfinx::refinement::plaza
 {
-
 /// Selection of options when refining a Mesh. `parent_cell` will output
 /// a list containing the local parent cell index for each new cell,
 /// `parent_facet` will output a list of the cell-local facet indices in
@@ -76,7 +72,7 @@ refine(const mesh::Mesh& mesh, std::span<const std::int32_t> edges,
 /// @param[in] option Control computation of parent facets and parent
 /// cells. If an option is unselected, an empty list is returned.
 /// @return New mesh data: cell topology, vertex coordinates, vertex
-/// coordinates shape,  and optional parent cell index, and parent facet
+/// coordinates shape, and optional parent cell index, and parent facet
 /// indices.
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<double>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>,
@@ -97,6 +93,4 @@ std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<double>,
            std::vector<std::int8_t>>
 compute_refinement_data(const mesh::Mesh& mesh,
                         std::span<const std::int32_t> edges, Option option);
-
-} // namespace plaza
-} // namespace dolfinx::refinement
+} // namespace dolfinx::refinement::plaza
