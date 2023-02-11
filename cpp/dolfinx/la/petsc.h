@@ -28,6 +28,7 @@ namespace dolfinx::la
 {
 class SparsityPattern;
 
+/// @brief PETSc linear algebra functions
 namespace petsc
 {
 /// Print error message for PETSc calls that return an error

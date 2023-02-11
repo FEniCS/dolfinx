@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+/// @namespace Generic tools
 namespace dolfinx::common
 {
 

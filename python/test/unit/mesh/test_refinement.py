@@ -6,18 +6,16 @@
 
 import numpy
 import pytest
-from numpy import isclose, logical_and
-
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx.fem import FunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix
-from dolfinx.mesh import (CellType, DiagonalType, GhostMode,
+from dolfinx.mesh import (CellType, DiagonalType, GhostMode, RefinementOption,
                           compute_incident_entities, create_unit_cube,
                           create_unit_square, locate_entities,
-                          locate_entities_boundary, meshtags, refine)
-
+                          locate_entities_boundary, meshtags, refine,
+                          refine_plaza, transfer_meshtag)
 from mpi4py import MPI
+from numpy import isclose, logical_and
 
 
 def test_Refinecreate_unit_square():
@@ -138,10 +136,9 @@ def test_refine_facet_meshtag(tdim):
     meshtag = meshtags(mesh, tdim - 1, numpy.array(facet_indices, dtype=numpy.int32),
                        numpy.arange(len(facet_indices), dtype=numpy.int32))
 
-    fine_mesh, parent_cell, parent_facet = _cpp.refinement.plaza_refine_data(
-        mesh._cpp_object, False, _cpp.refinement.RefinementOptions.parent_cell_and_facet)
+    fine_mesh, parent_cell, parent_facet = refine_plaza(mesh, False, RefinementOption.parent_cell_and_facet)
     fine_mesh.topology.create_entities(tdim - 1)
-    new_meshtag = _cpp.refinement.transfer_facet_meshtag(meshtag._cpp_object, fine_mesh, parent_cell, parent_facet)
+    new_meshtag = transfer_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
     assert len(new_meshtag.indices) == (tdim * 2 - 2) * len(meshtag.indices)
 
     # New tags should be on facets with one cell (i.e. exterior)
@@ -154,26 +151,23 @@ def test_refine_facet_meshtag(tdim):
     facet_indices = numpy.arange(mesh.topology.index_map(tdim - 1).size_local)
     meshtag = meshtags(mesh, tdim - 1, numpy.array(facet_indices, dtype=numpy.int32),
                        numpy.arange(len(facet_indices), dtype=numpy.int32))
-    new_meshtag = _cpp.refinement.transfer_facet_meshtag(meshtag._cpp_object, fine_mesh, parent_cell, parent_facet)
+    new_meshtag = transfer_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
     assert len(new_meshtag.indices) == (tdim * 2 - 2) * len(meshtag.indices)
 
 
 @pytest.mark.parametrize("tdim", [2, 3])
 def test_refine_cell_meshtag(tdim):
-
     if tdim == 3:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron, GhostMode.none)
     else:
         mesh = create_unit_square(MPI.COMM_WORLD, 2, 5, CellType.triangle, GhostMode.none)
 
     mesh.topology.create_entities(1)
-
     cell_indices = numpy.arange(mesh.topology.index_map(tdim).size_local)
     meshtag = meshtags(mesh, tdim, numpy.array(cell_indices, dtype=numpy.int32),
                        numpy.arange(len(cell_indices), dtype=numpy.int32))
 
-    fine_mesh, parent_cell, parent_facet = _cpp.refinement.plaza_refine_data(
-        mesh._cpp_object, False, _cpp.refinement.RefinementOptions.parent_cell_and_facet)
-    new_meshtag = _cpp.refinement.transfer_cell_meshtag(meshtag._cpp_object, fine_mesh, parent_cell)
+    fine_mesh, parent_cell, _ = refine_plaza(mesh, False, RefinementOption.parent_cell_and_facet)
+    new_meshtag = transfer_meshtag(meshtag, fine_mesh, parent_cell)
     assert sum(new_meshtag.values) == (tdim * 4 - 4) * sum(meshtag.values)
     assert len(new_meshtag.indices) == (tdim * 4 - 4) * len(meshtag.indices)
