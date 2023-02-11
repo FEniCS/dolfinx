@@ -355,7 +355,7 @@ distribute_to_postoffice(MPI_Comm comm, std::span<const T> x,
 
       // Find iterator to next global rank
       auto it1
-          = std::find_if(it, dest_to_index.end(),
+          = std::find_if(it, s.end(),
                          [r = dest.back()](auto& idx) { return idx[0] != r; });
 
       // Store number of items for current rank
