@@ -141,9 +141,7 @@ def test_refine_facet_meshtag(tdim):
     fine_mesh, parent_cell, parent_facet = _cpp.refinement.plaza_refine_data(
         mesh._cpp_object, False, _cpp.refinement.RefinementOptions.parent_cell_and_facet)
     fine_mesh.topology.create_entities(tdim - 1)
-
-    new_meshtag = _cpp.refinement.transfer_facet_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
-
+    new_meshtag = _cpp.refinement.transfer_facet_meshtag(meshtag._cpp_object, fine_mesh, parent_cell, parent_facet)
     assert len(new_meshtag.indices) == (tdim * 2 - 2) * len(meshtag.indices)
 
     # New tags should be on facets with one cell (i.e. exterior)
@@ -156,9 +154,7 @@ def test_refine_facet_meshtag(tdim):
     facet_indices = numpy.arange(mesh.topology.index_map(tdim - 1).size_local)
     meshtag = meshtags(mesh, tdim - 1, numpy.array(facet_indices, dtype=numpy.int32),
                        numpy.arange(len(facet_indices), dtype=numpy.int32))
-
-    new_meshtag = _cpp.refinement.transfer_facet_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
-
+    new_meshtag = _cpp.refinement.transfer_facet_meshtag(meshtag._cpp_object, fine_mesh, parent_cell, parent_facet)
     assert len(new_meshtag.indices) == (tdim * 2 - 2) * len(meshtag.indices)
 
 
@@ -178,8 +174,6 @@ def test_refine_cell_meshtag(tdim):
 
     fine_mesh, parent_cell, parent_facet = _cpp.refinement.plaza_refine_data(
         mesh._cpp_object, False, _cpp.refinement.RefinementOptions.parent_cell_and_facet)
-
-    new_meshtag = _cpp.refinement.transfer_cell_meshtag(meshtag, fine_mesh, parent_cell)
-
+    new_meshtag = _cpp.refinement.transfer_cell_meshtag(meshtag._cpp_object, fine_mesh, parent_cell)
     assert sum(new_meshtag.values) == (tdim * 4 - 4) * sum(meshtag.values)
     assert len(new_meshtag.indices) == (tdim * 4 - 4) * len(meshtag.indices)

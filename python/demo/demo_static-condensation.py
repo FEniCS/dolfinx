@@ -40,6 +40,7 @@ from petsc4py import PETSc
 
 from dolfinx import geometry
 
+
 infile = XDMFFile(MPI.COMM_WORLD, Path(Path(__file__).parent, "data",
                   "cooks_tri_mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII)
 msh = infile.read_mesh(name="Grid")
@@ -136,7 +137,8 @@ def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permuta
 # Prepare a Form with a condensed tabulation kernel
 Form = Form_float64 if PETSc.ScalarType == np.float64 else Form_complex128
 
-integrals = {IntegralType.cell: ([(-1, tabulate_condensed_tensor_A.address)], None)}
+cells = range(msh.topology.index_map(msh.topology.dim).size_local)
+integrals = {IntegralType.cell: [(-1, tabulate_condensed_tensor_A.address, cells)]}
 a_cond = Form([U._cpp_object, U._cpp_object], integrals, [], [], False, None)
 
 A_cond = assemble_matrix(a_cond, bcs=[bc])
