@@ -448,11 +448,11 @@ void mesh(py::module& m)
       py::arg("topology"));
   m.def(
       "compute_incident_entities",
-      [](const dolfinx::mesh::Mesh& mesh,
+      [](const dolfinx::mesh::Topology& topology,
          py::array_t<std::int32_t, py::array::c_style> entities, int d0, int d1)
       {
         return as_pyarray(dolfinx::mesh::compute_incident_entities(
-            mesh, std::span(entities.data(), entities.size()), d0, d1));
+            topology, std::span(entities.data(), entities.size()), d0, d1));
       },
       py::arg("mesh"), py::arg("entities"), py::arg("d0"), py::arg("d1"));
 
