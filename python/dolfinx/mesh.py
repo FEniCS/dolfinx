@@ -30,7 +30,7 @@ __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundar
            "create_box", "create_unit_cube", "to_type", "to_string"]
 
 
-def compute_incident_entities(topology: Topology, entities: npt.NDArray[np.int32], d0: int, d1: int):
+def compute_incident_entities(topology, entities: npt.NDArray[np.int32], d0: int, d1: int):
     return _cpp.mesh.compute_incident_entities(topology, entities, d0, d1)
 
 

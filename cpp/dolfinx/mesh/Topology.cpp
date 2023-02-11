@@ -1139,13 +1139,14 @@ mesh::create_subtopology(const Topology& topology, int dim,
                          std::span<const std::int32_t> entities)
 {
 
-  // Get the entities in the sub-topology that are owned by this process
-  auto entity_map = topology.index_map(dim);
-  assert(entity_map);
-  std::vector<std::int32_t> submesh_owned;
-  std::copy_if(
-      entities.begin(), entities.end(), std::back_inserter(submesh_owned),
-      [size = entity_map->size_local()](std::int32_t e) { return e < size; });
+  // // Entities in the sub-topology that are owned by this process
+  // auto entity_map = topology.index_map(dim);
+  // assert(entity_map);
+  // std::vector<std::int32_t> entities_owned;
+  // std::copy_if(
+  //     entities.begin(), entities.end(), std::back_inserter(entities_owned),
+  //     [size = entity_map->size_local()](std::int32_t e) { return e < size;
+  //     });
 
   // Create sub-topology entity index map
   // TODO Call common::get_owned_indices here? Do we want to
@@ -1157,12 +1158,21 @@ mesh::create_subtopology(const Topology& topology, int dim,
 
   // Create a map from an entity in the sub-topology to the
   // corresponding entity in the topology, and create an index map
-  std::vector<int32_t> subentity_to_entity(submesh_owned.begin(),
-                                           submesh_owned.end());
+  std::vector<int32_t> subentity_to_entity;
   std::shared_ptr<common::IndexMap> sub_entity_map;
   {
+    // Entities in the sub-topology that are owned by this process
+    auto entity_map = topology.index_map(dim);
+    assert(entity_map);
+    std::vector<std::int32_t> entities_owned;
+    std::copy_if(
+        entities.begin(), entities.end(), std::back_inserter(entities_owned),
+        [size = entity_map->size_local()](std::int32_t e) { return e < size; });
+
+    subentity_to_entity.assign(entities_owned.begin(), entities_owned.end());
+
     std::pair<common::IndexMap, std::vector<int32_t>> map_data
-        = entity_map->create_submap(submesh_owned);
+        = entity_map->create_submap(entities_owned);
     sub_entity_map
         = std::make_shared<common::IndexMap>(std::move(map_data.first));
 
@@ -1190,7 +1200,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
 
   // Map from the vertices in the sub-topology to the vertices in the
   // parent topology
-  std::vector<int32_t> subvertex_to_vertex_map0;
+  std::vector<int32_t> subvertex_to_vertex;
 
   // Create submesh vertex index map
   std::shared_ptr<common::IndexMap> submesh_map0;
@@ -1202,15 +1212,15 @@ mesh::create_subtopology(const Topology& topology, int dim,
 
     // Create a map from the (local) vertices in the submesh to the
     // (local) vertices in the mesh
-    subvertex_to_vertex_map0.assign(submesh_owned_vertices.begin(),
-                                    submesh_owned_vertices.end());
-    subvertex_to_vertex_map0.reserve(submesh_map0->size_local()
-                                     + submesh_map0->num_ghosts());
+    subvertex_to_vertex.assign(submesh_owned_vertices.begin(),
+                               submesh_owned_vertices.end());
+    subvertex_to_vertex.reserve(submesh_map0->size_local()
+                                + submesh_map0->num_ghosts());
 
     // Add ghost vertices to the map
     std::transform(
         map_data.second.begin(), map_data.second.end(),
-        std::back_inserter(subvertex_to_vertex_map0),
+        std::back_inserter(subvertex_to_vertex),
         [size_local = index_map0->size_local()](std::int32_t vertex_index)
         { return size_local + vertex_index; });
   }
@@ -1230,13 +1240,13 @@ mesh::create_subtopology(const Topology& topology, int dim,
   submesh_e_to_v_offsets.reserve(subentity_to_entity.size() + 1);
 
   // Create mesh to submesh vertex map (i.e. the inverse of
-  // subvertex_to_vertex_map0)
+  // subvertex_to_vertex)
   // NOTE: Depending on the submesh, this may be densely or sparsely
   // populated. Is a different data structure more appropriate?
   std::vector<std::int32_t> mesh_to_submesh_map0(
       index_map0->size_local() + index_map0->num_ghosts(), -1);
-  for (std::size_t i = 0; i < subvertex_to_vertex_map0.size(); ++i)
-    mesh_to_submesh_map0[subvertex_to_vertex_map0[i]] = i;
+  for (std::size_t i = 0; i < subvertex_to_vertex.size(); ++i)
+    mesh_to_submesh_map0[subvertex_to_vertex[i]] = i;
 
   for (std::int32_t e : subentity_to_entity)
   {
@@ -1260,7 +1270,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
   subtopology.set_connectivity(submesh_e_to_v, dim, 0);
 
   return {std::move(subtopology), std::move(subentity_to_entity),
-          std::move(subvertex_to_vertex_map0)};
+          std::move(subvertex_to_vertex)};
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
