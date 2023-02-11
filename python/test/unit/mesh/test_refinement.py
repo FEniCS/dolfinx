@@ -7,10 +7,9 @@
 import numpy
 import pytest
 import ufl
-from dolfinx.cpp.refinement import RefinementOption
 from dolfinx.fem import FunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix
-from dolfinx.mesh import (CellType, DiagonalType, GhostMode,
+from dolfinx.mesh import (CellType, DiagonalType, GhostMode, RefinementOption,
                           compute_incident_entities, create_unit_cube,
                           create_unit_square, locate_entities,
                           locate_entities_boundary, meshtags, refine,
