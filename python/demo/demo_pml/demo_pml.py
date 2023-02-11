@@ -33,15 +33,14 @@ except ModuleNotFoundError:
 from functools import partial
 from typing import Tuple, Union
 
+import ufl
+from dolfinx.io import VTXWriter, gmshio
 from efficiencies_pml_demo import calculate_analytical_efficiencies
 from mesh_wire_pml import generate_mesh_wire
-
-import ufl
-from dolfinx import fem, mesh, plot
-from dolfinx.io import VTXWriter, gmshio
-
 from mpi4py import MPI
 from petsc4py import PETSc
+
+from dolfinx import fem, mesh, plot
 
 # -
 
@@ -93,7 +92,6 @@ if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # formula:
 
 # +
-
 def background_field(theta: float, n_b: float, k0: complex,
                      x: np.typing.NDArray[np.float64]):
 
@@ -101,18 +99,14 @@ def background_field(theta: float, n_b: float, k0: complex,
     ky = n_b * k0 * np.sin(theta)
     phi = kx * x[0] + ky * x[1]
     return (-np.sin(theta) * np.exp(1j * phi), np.cos(theta) * np.exp(1j * phi))
-
-
 # -
 
 # For convenience, we define the $\nabla\times$ operator for a 2D vector
 
-# +
 
 def curl_2d(a: fem.Function):
     return ufl.as_vector((0, 0, a[1].dx(0) - a[0].dx(1)))
 
-# -
 
 # Let's now see how we can implement PMLs for our problem. PMLs are
 # artificial layers surrounding the real domain that gradually absorb
@@ -177,11 +171,9 @@ pml_tag = 4
 model = None
 gmsh.initialize(sys.argv)
 if MPI.COMM_WORLD.rank == 0:
-
     model = generate_mesh_wire(radius_wire, radius_scatt, l_dom, l_pml,
                                in_wire_size, on_wire_size, scatt_size, pml_size,
                                au_tag, bkg_tag, scatt_tag, pml_tag)
-
 model = MPI.COMM_WORLD.bcast(model, root=0)
 msh, cell_tags, facet_tags = gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
 
@@ -234,7 +226,6 @@ theta = 0  # Angle of incidence of the background field
 # We use a degree 3
 # [Nedelec (first kind)](https://defelement.com/elements/nedelec1.html)
 # element to represent the electric field:
-#
 
 degree = 3
 curl_el = ufl.FiniteElement("N1curl", msh.ufl_cell(), degree)
@@ -447,12 +438,10 @@ if have_pyvista:
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
     Esh_values[:, :msh.topology.dim] = Esh_dg.x.array.reshape(V_x.shape[0], msh.topology.dim).real
-
     V_grid.point_data["u"] = Esh_values
 
     pyvista.set_jupyter_backend("pythreejs")
     plotter = pyvista.Plotter()
-
     plotter.add_text("magnitude", font_size=12, color="black")
     plotter.add_mesh(V_grid.copy(), show_edges=True)
     plotter.view_xy()
@@ -479,7 +468,7 @@ with VTXWriter(msh.comm, "E.bp", E_dg) as vtx:
 # -
 
 # ## Post-processing
-
+#
 # To validate the formulation we calculate the absorption, scattering
 # and extinction efficiencies, which are quantities that define how much
 # light is absorbed and scattered by the wire. First of all, we
@@ -511,15 +500,14 @@ I0 = 0.5 / Z0
 # Geometrical cross section of the wire
 gcs = 2 * radius_wire
 
-n = ufl.FacetNormal(domain)
+n = ufl.FacetNormal(msh)
 n_3d = ufl.as_vector((n[0], n[1], 0))
 
 # Create a marker for the integration boundary for the scattering
 # efficiency
 marker = fem.Function(D)
 scatt_facets = facet_tags.find(scatt_tag)
-incident_cells = mesh.compute_incident_entities(msh.topology, scatt_facets,
-                                                msh.topology.dim - 1,
+incident_cells = mesh.compute_incident_entities(msh.topology, scatt_facets, msh.topology.dim - 1,
                                                 msh.topology.dim)
 
 midpoints = mesh.compute_midpoints(msh, msh.topology.dim, incident_cells)
@@ -555,7 +543,6 @@ q_ext_fenics = q_abs_fenics + q_sca_fenics
 err_abs = np.abs(q_abs_analyt - q_abs_fenics) / q_abs_analyt
 err_sca = np.abs(q_sca_analyt - q_sca_fenics) / q_sca_analyt
 err_ext = np.abs(q_ext_analyt - q_ext_fenics) / q_ext_analyt
-
 
 if msh.comm.rank == 0:
     print()
