@@ -340,8 +340,7 @@ if MPI.COMM_WORLD.rank == 0:
         au_tag, bkg_tag, pml_tag, scatt_tag)
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-domain, cell_tags, facet_tags = io.gmshio.model_to_mesh(
-    model, MPI.COMM_WORLD, 0, gdim=2)
+msh, cell_tags, facet_tags = io.gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
@@ -350,10 +349,10 @@ MPI.COMM_WORLD.barrier()
 # Visually check of the mesh and of the subdomains using PyVista:
 
 if have_pyvista:
-    topology, cell_types, geometry = plot.create_vtk_mesh(domain, 2)
+    topology, cell_types, geometry = plot.create_vtk_mesh(msh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     plotter = pyvista.Plotter()
-    num_local_cells = domain.topology.index_map(domain.topology.dim).size_local
+    num_local_cells = msh.topology.index_map(msh.topology.dim).size_local
     grid.cell_data["Marker"] = cell_tags.values[cell_tags.indices < num_local_cells]
     grid.set_active_scalars("Marker")
     plotter.add_mesh(grid, show_edges=True)
@@ -369,15 +368,15 @@ if have_pyvista:
 # will use Lagrange elements:
 
 degree = 3
-curl_el = ufl.FiniteElement("N1curl", domain.ufl_cell(), degree)
-lagr_el = ufl.FiniteElement("Lagrange", domain.ufl_cell(), degree)
-V = fem.FunctionSpace(domain, ufl.MixedElement([curl_el, lagr_el]))
+curl_el = ufl.FiniteElement("N1curl", msh.ufl_cell(), degree)
+lagr_el = ufl.FiniteElement("Lagrange", msh.ufl_cell(), degree)
+V = fem.FunctionSpace(msh, ufl.MixedElement([curl_el, lagr_el]))
 
 # The integration domains of our problem are the following:
 
 # +
 # Measures for subdomains
-dx = ufl.Measure("dx", domain, subdomain_data=cell_tags, metadata={'quadrature_degree': 5})
+dx = ufl.Measure("dx", msh, subdomain_data=cell_tags, metadata={'quadrature_degree': 5})
 dDom = dx((au_tag, bkg_tag))
 dPml = dx(pml_tag)
 # -
@@ -389,7 +388,7 @@ n_bkg = 1  # Background refractive index
 eps_bkg = n_bkg**2  # Background relative permittivity
 eps_au = -1.0782 + 1j * 5.8089
 
-D = fem.FunctionSpace(domain, ("DG", 0))
+D = fem.FunctionSpace(msh, ("DG", 0))
 eps = fem.Function(D)
 au_cells = cell_tags.find(au_tag)
 bkg_cells = cell_tags.find(bkg_tag)
@@ -432,7 +431,7 @@ I0 = 0.5 * n_bkg / Z0  # Intensity
 # We now now define `eps_pml` and `mu_pml`:
 
 # +
-rho, z = ufl.SpatialCoordinate(domain)
+rho, z = ufl.SpatialCoordinate(msh)
 alpha = 5
 r = ufl.sqrt(rho**2 + z**2)
 
@@ -449,7 +448,7 @@ eps_pml, mu_pml = create_eps_mu(pml_coords, rho, eps_bkg, 1)
 Eh_m = fem.Function(V)
 Esh = fem.Function(V)
 
-n = ufl.FacetNormal(domain)
+n = ufl.FacetNormal(msh)
 n_3d = ufl.as_vector((n[0], n[1], 0))
 
 # Geometrical cross section of the sphere, for efficiency calculation
@@ -458,10 +457,10 @@ gcs = np.pi * radius_sph**2
 # Marker functions for the scattering efficiency integral
 marker = fem.Function(D)
 scatt_facets = facet_tags.find(scatt_tag)
-incident_cells = mesh.compute_incident_entities(domain, scatt_facets,
-                                                domain.topology.dim - 1,
-                                                domain.topology.dim)
-midpoints = mesh.compute_midpoints(domain, domain.topology.dim, incident_cells)
+incident_cells = mesh.compute_incident_entities(msh.topology, scatt_facets,
+                                                msh.topology.dim - 1,
+                                                msh.topology.dim)
+midpoints = mesh.compute_midpoints(msh, msh.topology.dim, incident_cells)
 inner_cells = incident_cells[(midpoints[:, 0]**2 + midpoints[:, 1]**2) < (radius_scatt)**2]
 marker.x.array[inner_cells] = 1
 
@@ -469,7 +468,7 @@ marker.x.array[inner_cells] = 1
 dAu = dx(au_tag)
 
 # Define integration facet for the scattering efficiency
-dS = ufl.Measure("dS", domain, subdomain_data=facet_tags)
+dS = ufl.Measure("dS", msh, subdomain_data=facet_tags)
 # -
 
 # We also specify a variable `phi`, corresponding to the $\phi$ angle of
@@ -491,7 +490,7 @@ dS = ufl.Measure("dS", domain, subdomain_data=facet_tags)
 phi = np.pi / 4
 
 # Initialize phase term
-phase = fem.Constant(domain, PETSc.ScalarType(np.exp(1j * 0 * phi)))
+phase = fem.Constant(msh, PETSc.ScalarType(np.exp(1j * 0 * phi)))
 # -
 
 # We now solve the problem:
@@ -518,8 +517,7 @@ for m in m_list:
         + k0 ** 2 * ufl.inner(eps_pml * Es_m, v_m) * rho * dPml
     a, L = ufl.lhs(F), ufl.rhs(F)
 
-    problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={
-                                      "ksp_type": "preonly", "pc_type": "lu"})
+    problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
     Esh_m = problem.solve()
 
     # Scattered magnetic field
@@ -553,22 +551,22 @@ for m in m_list:
         Q = np.pi * eps_au.imag * k0 * (ufl.inner(Eh_m, Eh_m)) / Z0
         q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * rho * dAu)) / gcs / I0).real
         q_sca_fenics_proc = (fem.assemble_scalar(fem.form((P('+') + P('-')) * rho * dS(scatt_tag))) / gcs / I0).real
-        q_abs_fenics = domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
-        q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
+        q_abs_fenics = msh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+        q_sca_fenics = msh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
     elif m == m_list[0]:  # initialize and add 2 factor
         P = 2 * np.pi * ufl.inner(-ufl.cross(Esh_m, ufl.conj(Hsh_m)), n_3d) * marker
         Q = 2 * np.pi * eps_au.imag * k0 * (ufl.inner(Eh_m, Eh_m)) / Z0 / n_bkg
         q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * rho * dAu)) / gcs / I0).real
         q_sca_fenics_proc = (fem.assemble_scalar(fem.form((P('+') + P('-')) * rho * dS(scatt_tag))) / gcs / I0).real
-        q_abs_fenics = domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
-        q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
+        q_abs_fenics = msh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+        q_sca_fenics = msh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
     else:  # do not initialize and add 2 factor
         P = 2 * np.pi * ufl.inner(-ufl.cross(Esh_m, ufl.conj(Hsh_m)), n_3d) * marker
         Q = 2 * np.pi * eps_au.imag * k0 * (ufl.inner(Eh_m, Eh_m)) / Z0 / n_bkg
         q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * rho * dAu)) / gcs / I0).real
         q_sca_fenics_proc = (fem.assemble_scalar(fem.form((P('+') + P('-')) * rho * dS(scatt_tag))) / gcs / I0).real
-        q_abs_fenics += domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
-        q_sca_fenics += domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
+        q_abs_fenics += msh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+        q_sca_fenics += msh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
 q_ext_fenics = q_abs_fenics + q_sca_fenics
 # -
@@ -626,11 +624,11 @@ if MPI.COMM_WORLD.rank == 0:
     assert err_ext < 0.01
 
 if has_vtx:
-    v_dg_el = ufl.VectorElement("DG", domain.ufl_cell(), degree, dim=3)
-    W = fem.FunctionSpace(domain, v_dg_el)
+    v_dg_el = ufl.VectorElement("DG", msh.ufl_cell(), degree, dim=3)
+    W = fem.FunctionSpace(msh, v_dg_el)
     Es_dg = fem.Function(W)
     Es_expr = fem.Expression(Esh, W.element.interpolation_points())
     Es_dg.interpolate(Es_expr)
-    with VTXWriter(domain.comm, "sols/Es.bp", Es_dg) as f:
+    with VTXWriter(msh.comm, "sols/Es.bp", Es_dg) as f:
         f.write(0.0)
 # -
