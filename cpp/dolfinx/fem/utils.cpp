@@ -273,96 +273,6 @@ fem::FunctionSpace fem::create_functionspace(
           mesh->comm(), layout, mesh->topology(), reorder_fn, *element)));
 }
 //-----------------------------------------------------------------------------
-// Set cell domains
-void set_cell_domains(std::map<int, std::vector<std::int32_t>>& integrals,
-                      std::span<const std::int32_t> tagged_cells,
-                      std::span<const int> tags)
-{
-  // For cell integrals use all markers
-  for (std::size_t i = 0; i < tagged_cells.size(); ++i)
-  {
-    std::vector<std::int32_t>& integration_entities = integrals[tags[i]];
-    integration_entities.push_back(tagged_cells[i]);
-  }
-}
-//-----------------------------------------------------------------------------
-// Set exterior facet domains
-// @param[in] topology The mesh topology
-// @param[in] integrals The integrals to set exterior facet domains for
-// @param[in] tagged_facets A list of facets
-// @param[in] tags A list of tags
-// @pre The list of tagged facets must be sorted
-void set_exterior_facet_domains(
-    const mesh::Topology& topology,
-    std::map<int, std::vector<std::int32_t>>& integrals,
-    std::span<const std::int32_t> tagged_facets, std::span<const int> tags)
-{
-  const std::vector<std::int32_t> boundary_facets
-      = mesh::exterior_facet_indices(topology);
-
-  // Create list of tagged boundary facets
-  std::vector<std::int32_t> tagged_ext_facets;
-  std::set_intersection(tagged_facets.begin(), tagged_facets.end(),
-                        boundary_facets.begin(), boundary_facets.end(),
-                        std::back_inserter(tagged_ext_facets));
-
-  const int tdim = topology.dim();
-  auto f_to_c = topology.connectivity(tdim - 1, tdim);
-  assert(f_to_c);
-  auto c_to_f = topology.connectivity(tdim, tdim - 1);
-  assert(c_to_f);
-
-  // Loop through tagged boundary facets and add to respective integral
-  for (std::int32_t f : tagged_ext_facets)
-  {
-    // Find index of f in tagged facets so that we can access the associated
-    // tag
-    // FIXME Would be better to avoid calling std::lower_bound in a loop
-    auto index_it
-        = std::lower_bound(tagged_facets.begin(), tagged_facets.end(), f);
-    assert(index_it != tagged_facets.end() and *index_it == f);
-    const int index = std::distance(tagged_facets.begin(), index_it);
-
-    // Get the facet as a (cell, local_facet) pair. There will only be one
-    // pair for an exterior facet integral
-    std::array<std::int32_t, 2> facet
-        = mesh::get_cell_local_facet_pairs<1>(f, f_to_c->links(f), *c_to_f)
-              .front();
-    std::vector<std::int32_t>& integration_entities = integrals[tags[index]];
-    integration_entities.insert(integration_entities.end(), facet.cbegin(),
-                                facet.cend());
-  }
-}
-//-----------------------------------------------------------------------------
-// Set interior facet domains
-void set_interior_facet_domains(
-    const mesh::Topology& topology,
-    std::map<int, std::vector<std::int32_t>>& integrals,
-    std::span<const std::int32_t> tagged_facets, std::span<const int> tags)
-{
-  int tdim = topology.dim();
-  auto f_to_c = topology.connectivity(tdim - 1, tdim);
-  assert(f_to_c);
-  auto c_to_f = topology.connectivity(tdim, tdim - 1);
-  assert(c_to_f);
-  for (std::size_t i = 0; i < tagged_facets.size(); ++i)
-  {
-    const std::int32_t f = tagged_facets[i];
-    if (f_to_c->num_links(f) == 2)
-    {
-      // Get the facet as a pair of (cell, local facet) pairs, one for each
-      // cell
-      auto [facet_0, facet_1]
-          = mesh::get_cell_local_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
-      std::vector<std::int32_t>& integration_entities = integrals[tags[i]];
-      integration_entities.insert(integration_entities.end(), facet_0.cbegin(),
-                                  facet_0.cend());
-      integration_entities.insert(integration_entities.end(), facet_1.cbegin(),
-                                  facet_1.cend());
-    }
-  }
-}
-//-----------------------------------------------------------------------------
 std::map<int, std::vector<std::int32_t>>
 fem::compute_integration_domains(const fem::IntegralType integral_type,
                                  const mesh::MeshTags<int>& meshtags)
@@ -379,37 +289,71 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
                              + std::to_string(meshtags.dim()));
   }
 
+  std::span<const std::int32_t> entities = meshtags.indices();
+  std::span<const int> values = meshtags.values();
   assert(topology.index_map(dim));
-  const auto entity_end
-      = std::lower_bound(meshtags.indices().begin(), meshtags.indices().end(),
-                         topology.index_map(dim)->size_local());
-  // Only include owned entities in integration domains
-  std::span<const std::int32_t> owned_tagged_entities(
-      meshtags.indices().begin(), entity_end);
+  auto it0 = entities.begin();
+  auto it1 = std::lower_bound(it0, entities.end(),
+                              topology.index_map(dim)->size_local());
+  entities = entities.first(std::distance(it0, it1));
 
   switch (integral_type)
   {
     // TODO Sort pairs or use std::iota
   case fem::IntegralType::cell:
   {
-    set_cell_domains(integrals, owned_tagged_entities, meshtags.values());
+    for (std::size_t j = 0; j < entities.size(); ++j)
+    {
+      // TODO Avoid map lookup in loop
+      integrals[values[j]].push_back(entities[j]);
+    }
   }
   break;
   default:
     mesh->topology_mutable().create_connectivity(dim, tdim);
     mesh->topology_mutable().create_connectivity(tdim, dim);
+
+    auto f_to_c = topology.connectivity(tdim - 1, tdim);
+    assert(f_to_c);
+    auto c_to_f = topology.connectivity(tdim, tdim - 1);
+    assert(c_to_f);
     switch (integral_type)
     {
     case IntegralType::exterior_facet:
     {
-      set_exterior_facet_domains(topology, integrals, owned_tagged_entities,
-                                 meshtags.values());
+      // Create list of tagged boundary facets
+      const std::vector bfacets = mesh::exterior_facet_indices(topology);
+      std::vector<std::int32_t> facets;
+      std::set_intersection(entities.begin(), entities.end(), bfacets.begin(),
+                            bfacets.end(), std::back_inserter(facets));
+      for (auto f : facets)
+      {
+        auto index_it = std::lower_bound(entities.begin(), entities.end(), f);
+        assert(index_it != entities.end() and *index_it == f);
+        std::size_t pos = std::distance(entities.begin(), index_it);
+        auto facet
+            = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
+        integrals[values[pos]].insert(integrals[values[pos]].end(),
+                                      facet.begin(), facet.end());
+      }
     }
     break;
     case IntegralType::interior_facet:
     {
-      set_interior_facet_domains(topology, integrals, owned_tagged_entities,
-                                 meshtags.values());
+      for (std::size_t j = 0; j < entities.size(); ++j)
+      {
+        const std::int32_t f = entities[j];
+        if (f_to_c->num_links(f) == 2)
+        {
+          // Get the facet as a pair of (cell, local facet) pairs, one
+          // for each cell
+          auto facets
+              = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
+
+          integrals[values[j]].insert(integrals[values[j]].end(),
+                                      facets.begin(), facets.end());
+        }
+      }
     }
     break;
     default:
