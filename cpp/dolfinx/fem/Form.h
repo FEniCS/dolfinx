@@ -122,11 +122,8 @@ public:
 
     // Set integral data (intentially copying)
     // NOTE Could probably simplify Form by combining integral types
-    for (const auto& [type, integral] : integrals)
+    for (const auto& [type, kernels] : integrals)
     {
-      const IntegralType type = integral_type.first;
-      auto& kernels = integral_type.second;
-
       // Loop over integrals kernels and set domains
       switch (type)
       {

@@ -372,37 +372,92 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
                              + std::to_string(meshtags.dim()));
   }
 
-  assert(topology.index_map(dim));
-  const auto entity_end
-      = std::lower_bound(meshtags.indices().begin(), meshtags.indices().end(),
-                         topology.index_map(dim)->size_local());
-  // Only include owned entities in integration domains
-  std::span<const std::int32_t> owned_tagged_entities(
-      meshtags.indices().begin(), entity_end);
+  // TODO REMOVE
+  // assert(topology.index_map(dim));
+  // const auto entity_end
+  //     = std::lower_bound(meshtags.indices().begin(),
+  //     meshtags.indices().end(),
+  //                        topology.index_map(dim)->size_local());
+  // // Only include owned entities in integration domains
+  // std::span<const std::int32_t> owned_tagged_entities(
+  //     meshtags.indices().begin(), entity_end);
+
+  std::span<const std::int32_t> entities = meshtags.indices();
+  std::span<const int> values = meshtags.values();
 
   switch (integral_type)
   {
     // TODO Sort pairs or use std::iota
   case fem::IntegralType::cell:
   {
-    set_cell_domains(integrals, owned_tagged_entities, meshtags.values());
+    // TODO REMOVE
+    // set_cell_domains(integrals, owned_tagged_entities, meshtags.values());
+
+    assert(topology.index_map(tdim));
+    auto it0 = entities.begin();
+    auto it1 = std::lower_bound(it0, entities.end(),
+                                topology.index_map(tdim)->size_local());
+    entities = entities.first(std::distance(it0, it1));
+    for (std::size_t j = 0; j < entities.size(); ++j)
+    {
+      // TODO Avoid map lookup in loop
+      integrals[values[j]].push_back(entities[j]);
+    }
   }
   break;
   default:
     mesh->topology_mutable().create_connectivity(dim, tdim);
     mesh->topology_mutable().create_connectivity(tdim, dim);
+
+    auto f_to_c = topology.connectivity(tdim - 1, tdim);
+    assert(f_to_c);
+    auto c_to_f = topology.connectivity(tdim, tdim - 1);
+    assert(c_to_f);
     switch (integral_type)
     {
     case IntegralType::exterior_facet:
     {
-      set_exterior_facet_domains(topology, integrals, owned_tagged_entities,
-                                 meshtags.values());
+      // TODO REMOVE
+      // set_exterior_facet_domains(topology, integrals, owned_tagged_entities,
+      //                            meshtags.values());
+
+      // Create list of tagged boundary facets
+      const std::vector bfacets = mesh::exterior_facet_indices(topology);
+      std::vector<std::int32_t> facets;
+      std::set_intersection(entities.begin(), entities.end(), bfacets.begin(),
+                            bfacets.end(), std::back_inserter(facets));
+      for (auto f : facets)
+      {
+        auto index_it = std::lower_bound(entities.begin(), entities.end(), f);
+        assert(index_it != entities.end() and *index_it == f);
+        std::size_t pos = std::distance(entities.begin(), index_it);
+        auto facet
+            = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
+        integrals[values[pos]].insert(integrals[values[pos]].end(),
+                                      facet.begin(), facet.end());
+      }
     }
     break;
     case IntegralType::interior_facet:
     {
-      set_interior_facet_domains(topology, integrals, owned_tagged_entities,
-                                 meshtags.values());
+      // TODO REMOVE
+      // set_interior_facet_domains(topology, integrals, owned_tagged_entities,
+      //                            meshtags.values());
+
+      for (std::size_t j = 0; j < entities.size(); ++j)
+      {
+        const std::int32_t f = entities[j];
+        if (f_to_c->num_links(f) == 2)
+        {
+          // Get the facet as a pair of (cell, local facet) pairs, one
+          // for each cell
+          auto facets
+              = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
+
+          integrals[values[j]].insert(integrals[values[j]].end(),
+                                      facets.begin(), facets.end());
+        }
+      }
     }
     break;
     default:
