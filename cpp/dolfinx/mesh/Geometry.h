@@ -157,6 +157,7 @@ create_geometry(MPI_Comm comm, const Topology& topology,
 /// @param dim Topological dimension of the sub-topology
 /// @param subentity_to_entity Map from sub-topology entity to the
 /// entity in the parent topology
+/// @param submap The index map for the subtopology of dimension dim
 /// @return A sub-geometry and a map from sub-geometry coordinate
 /// degree-of-freedom to the coordinate degree-of-freedom in `geometry`.
 std::pair<mesh::Geometry, std::vector<int32_t>>
