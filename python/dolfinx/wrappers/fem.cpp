@@ -372,8 +372,8 @@ void declare_form(py::module& m, const std::string& type)
                   bool needs_permutation_data,
                   std::shared_ptr<const dolfinx::mesh::Mesh> mesh,
                   const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
-                                 std::vector<std::int32_t>>& entity_maps
-                  = {})
+                                std::vector<std::int32_t>>& entity_maps
+                 = {})
                {
                  using kern = std::function<void(
                      T*, const T*, const T*,

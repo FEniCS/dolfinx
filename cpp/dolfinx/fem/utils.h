@@ -342,8 +342,9 @@ create_form(const ufcx_form& ufcx_form,
     mesh = spaces[0]->mesh();
   for (auto& V : spaces)
   {
-    if (mesh != V->mesh())
-      throw std::runtime_error("Incompatible mesh");
+    if (mesh != V->mesh() and entity_maps.find(V->mesh()) == entity_maps.end())
+      throw std::runtime_error(
+          "Incompatible mesh. entity_maps must be provided.");
   }
   if (!mesh)
     throw std::runtime_error("No mesh could be associated with the Form.");
