@@ -1,13 +1,18 @@
 #pragma once
 
+/// @brief Top-level namespace
+namespace dolfinx
+{
+}
+
 // DOLFINx interface
 
-#include <dolfinx/common/dolfin_common.h>
-#include <dolfinx/fem/dolfin_fem.h>
-#include <dolfinx/geometry/dolfin_geometry.h>
-#include <dolfinx/graph/dolfin_graph.h>
-#include <dolfinx/io/dolfin_io.h>
-#include <dolfinx/la/dolfin_la.h>
-#include <dolfinx/mesh/dolfin_mesh.h>
-#include <dolfinx/nls/dolfin_nls.h>
-#include <dolfinx/refinement/dolfin_refinement.h>
+#include <dolfinx/common/dolfinx_common.h>
+#include <dolfinx/fem/dolfinx_fem.h>
+#include <dolfinx/geometry/dolfinx_geometry.h>
+#include <dolfinx/graph/dolfinx_graph.h>
+#include <dolfinx/io/dolfinx_io.h>
+#include <dolfinx/la/dolfinx_la.h>
+#include <dolfinx/mesh/dolfinx_mesh.h>
+#include <dolfinx/nls/dolfinx_nls.h>
+#include <dolfinx/refinement/dolfinx_refinement.h>
