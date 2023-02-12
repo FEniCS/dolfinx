@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <basix/e-lagrange.h>
-#include <dolfinx/fem/dolfin_fem.h>
+#include <dolfinx/fem/dolfinx_fem.h>
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/mesh/generation.h>
 #include <memory>
