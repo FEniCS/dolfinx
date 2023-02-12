@@ -326,7 +326,7 @@ Form<T> create_form(
     mesh = spaces[0]->mesh();
   for (auto& V : spaces)
   {
-    if (_mesh != V->mesh() and entity_maps.find(V->mesh()) == entity_maps.end())
+    if (mesh != V->mesh() and entity_maps.find(V->mesh()) == entity_maps.end())
       throw std::runtime_error(
           "Incompatible mesh. entity_maps must be provided.");
   }
