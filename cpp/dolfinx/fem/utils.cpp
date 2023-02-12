@@ -384,6 +384,11 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
 
   std::span<const std::int32_t> entities = meshtags.indices();
   std::span<const int> values = meshtags.values();
+  assert(topology.index_map(dim));
+  auto it0 = entities.begin();
+  auto it1 = std::lower_bound(it0, entities.end(),
+                              topology.index_map(dim)->size_local());
+  entities = entities.first(std::distance(it0, it1));
 
   switch (integral_type)
   {
@@ -393,11 +398,6 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
     // TODO REMOVE
     // set_cell_domains(integrals, owned_tagged_entities, meshtags.values());
 
-    assert(topology.index_map(tdim));
-    auto it0 = entities.begin();
-    auto it1 = std::lower_bound(it0, entities.end(),
-                                topology.index_map(tdim)->size_local());
-    entities = entities.first(std::distance(it0, it1));
     for (std::size_t j = 0; j < entities.size(); ++j)
     {
       // TODO Avoid map lookup in loop
