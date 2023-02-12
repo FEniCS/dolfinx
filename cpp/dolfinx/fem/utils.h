@@ -399,7 +399,9 @@ create_form(const ufcx_form& ufcx_form,
       // pointer)
       else if (sd != subdomains.end())
       {
-        itg.first->second.emplace_back(id, k, sd->second.at(id));
+        // FIXME id may not be in subdomain map on all processes
+        if (sd->second.count(id))
+          itg.first->second.emplace_back(id, k, sd->second.at(id));
       }
 
       if (integral->needs_facet_permutations)
@@ -462,8 +464,9 @@ create_form(const ufcx_form& ufcx_form,
       }
       else if (sd != subdomains.end())
       {
-        itg.first->second.emplace_back(id, k, sd->second.at(id));
-        // TODO MOVE
+        // FIXME id may not be in subdomain map on all processes
+        if (sd->second.count(id))
+          itg.first->second.emplace_back(id, k, sd->second.at(id));
       }
 
       if (integral->needs_facet_permutations)
@@ -529,7 +532,9 @@ create_form(const ufcx_form& ufcx_form,
       }
       else if (sd != subdomains.end())
       {
-        itg.first->second.emplace_back(id, k, sd->second.at(id));
+        // FIXME id may not be in subdomain map on all processes
+        if (sd->second.count(id))
+          itg.first->second.emplace_back(id, k, sd->second.at(id));
       }
 
       if (integral->needs_facet_permutations)
