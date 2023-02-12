@@ -166,8 +166,9 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
 
         # NOTE Could remove this and let the user convert meshtags by calling
         # compute_integration_domains themselves
+        # TODO Combine this function with unwrap_mt above
         def get_integration_domains(integral_type, subdomains):
-            subdomain = subdomains.get(integral_type.name)
+            subdomain = subdomains.get(integral_type)
             if subdomain is None:
                 return {}
             else:
