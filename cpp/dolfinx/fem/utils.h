@@ -108,9 +108,9 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 /// Kernel functions that can be passed to an assembler for execution
 /// must satisfy this concept.
 template <class U, class T>
-concept FEkernel = std::is_invocable_v < U,
-        T*, const T*, const T*, const impl::scalar_value_type_t<T>
-*, const int*, const std::uint8_t* > ;
+concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
+                                       const impl::scalar_value_type_t<T>*,
+                                       const int*, const std::uint8_t*>;
 
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms.
@@ -326,8 +326,9 @@ Form<T> create_form(
     mesh = spaces[0]->mesh();
   for (auto& V : spaces)
   {
-    if (mesh != V->mesh())
-      throw std::runtime_error("Incompatible mesh");
+    if (_mesh != V->mesh() and entity_maps.find(V->mesh()) == entity_maps.end())
+      throw std::runtime_error(
+          "Incompatible mesh. entity_maps must be provided.");
   }
   if (!mesh)
     throw std::runtime_error("No mesh could be associated with the Form.");
