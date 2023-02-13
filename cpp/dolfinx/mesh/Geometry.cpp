@@ -6,6 +6,7 @@
 
 #include "Geometry.h"
 #include "Topology.h"
+#include <common/Scatterer.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/fem/ElementDofLayout.h>
@@ -123,7 +124,8 @@ mesh::Geometry mesh::create_geometry(
 std::pair<mesh::Geometry, std::vector<int32_t>>
 mesh::create_subgeometry(const Topology& topology, const Geometry& geometry,
                          int dim,
-                         std::span<const std::int32_t> subentity_to_entity)
+                         std::span<const std::int32_t> subentity_to_entity,
+                         const common::IndexMap& submap)
 {
   // Get the geometry dofs in the sub-geometry based on the entities in
   // sub-geometry
@@ -215,14 +217,44 @@ mesh::create_subgeometry(const Topology& topology, const Geometry& geometry,
                    return x_to_subx_dof_map[x_dof];
                  });
 
-  graph::AdjacencyList<std::int32_t> sub_x_dofmap(
-      std::move(sub_x_dofmap_vec), std::move(sub_x_dofmap_offsets));
-
   // Create sub-geometry coordinate element
   CellType sub_coord_cell
       = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
   fem::CoordinateElement sub_coord_ele(sub_coord_cell, geometry.cmap().degree(),
                                        geometry.cmap().variant());
+
+  // Same communication as for the topology is also needed for the
+  // geometry
+  if (!(topology.dim() == dim))
+  {
+    std::vector<std::int64_t> sub_xdofmap_global_vec(sub_x_dofmap_vec.size(),
+                                                     0);
+    sub_x_dof_index_map->local_to_global(sub_x_dofmap_vec,
+                                         sub_xdofmap_global_vec);
+
+    const int x_dofs_per_entity = sub_coord_ele.dim();
+
+    // FIXME See if this scatter can be done without the subtopology
+    // index map
+    common::Scatterer scatterer(submap, x_dofs_per_entity);
+    std::vector<std::int64_t> ghost_x_dofs(
+        x_dofs_per_entity * submap.num_ghosts(), 0);
+
+    scatterer.scatter_fwd(std::span<const std::int64_t>(
+                              sub_xdofmap_global_vec.begin(),
+                              sub_xdofmap_global_vec.begin()
+                                  + x_dofs_per_entity * submap.size_local()),
+                          std::span<std::int64_t>(ghost_x_dofs));
+
+    std::span<std::int32_t> ghost_x_dofs_local(
+        sub_x_dofmap_vec.begin() + x_dofs_per_entity * submap.size_local(),
+        sub_x_dofmap_vec.end());
+
+    sub_x_dof_index_map->global_to_local(ghost_x_dofs, ghost_x_dofs_local);
+  }
+
+  graph::AdjacencyList<std::int32_t> sub_x_dofmap(
+      std::move(sub_x_dofmap_vec), std::move(sub_x_dofmap_offsets));
 
   // Sub-geometry input_global_indices
   // TODO: Check this

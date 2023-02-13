@@ -206,8 +206,9 @@ mesh::create_submesh(const Mesh& mesh, int dim,
   mesh.topology_mutable().create_entities(dim);
   mesh.topology_mutable().create_connectivity(dim, tdim);
   mesh.topology_mutable().create_connectivity(tdim, dim);
-  auto [geometry, subx_to_x_dofmap] = mesh::create_subgeometry(
-      mesh.topology(), mesh.geometry(), dim, subentity_to_entity);
+  auto [geometry, subx_to_x_dofmap]
+      = mesh::create_subgeometry(mesh.topology(), mesh.geometry(), dim,
+                                 subentity_to_entity, *topology.index_map(dim));
 
   return {Mesh(mesh.comm(), std::move(topology), std::move(geometry)),
           std::move(subentity_to_entity), std::move(subvertex_to_vertex),
