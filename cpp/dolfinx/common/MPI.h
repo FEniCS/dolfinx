@@ -25,7 +25,7 @@
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>
 
-/// MPI support functionality
+/// @brief MPI support functionality
 namespace dolfinx::MPI
 {
 
@@ -36,8 +36,8 @@ enum class tag : int
   consensus_pex
 };
 
-/// A duplicate MPI communicator and manage lifetime of the
-/// communicator
+/// @brief A duplicate MPI communicator and manage lifetime of the
+/// communicator.
 class Comm
 {
 public:
