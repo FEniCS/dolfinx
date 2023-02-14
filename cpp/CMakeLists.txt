@@ -166,26 +166,29 @@ set_package_properties(
 find_package(
   Python3
   COMPONENTS Interpreter
-  REQUIRED
+  QUIET
 )
 
 # Check for Basix Note: Basix may be installed as a standalone C++ library, or
 # in the Basix Python module tree
-execute_process(
-  COMMAND
-    ${Python3_EXECUTABLE} -c
-    "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
-  OUTPUT_VARIABLE BASIX_PY_DIR
-  RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
-  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+if (Python3_Interpreter_FOUND)
+  MESSAGE(STATUS "Checking for basix hints with ${Python3_EXECUTABLE}")
+  execute_process(
+    COMMAND
+      ${Python3_EXECUTABLE} -c
+      "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
+    OUTPUT_VARIABLE BASIX_PY_DIR
+    RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
+    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
 
-if(BASIX_PY_DIR)
-  message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
+  if(BASIX_PY_DIR)
+    message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
 
-  # Basix installed from manylinux wheel
-  if(IS_DIRECTORY ${BASIX_PY_DIR}/../fenics_basix.libs)
-    set(CMAKE_INSTALL_RPATH ${BASIX_PY_DIR}/../fenics_basix.libs)
+    # Basix installed from manylinux wheel
+    if(IS_DIRECTORY ${BASIX_PY_DIR}/../fenics_basix.libs)
+      set(CMAKE_INSTALL_RPATH ${BASIX_PY_DIR}/../fenics_basix.libs)
+    endif()
   endif()
 endif()
 
@@ -325,7 +328,7 @@ set_package_properties(
 )
 
 if(DOLFINX_ENABLE_PARMETIS)
-  find_package(ParMETIS 4.0.0...4.0.3)
+  find_package(ParMETIS 4.0.2)
 endif()
 
 set_package_properties(

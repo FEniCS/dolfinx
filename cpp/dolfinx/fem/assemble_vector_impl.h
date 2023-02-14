@@ -846,7 +846,7 @@ void lift_bc(std::span<T> b, const Form<T>& a, std::span<const T> constants,
 /// @param[in] scale Scaling to apply
 template <typename T>
 void apply_lifting(
-    std::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
+    std::span<T> b, std::vector<std::shared_ptr<const Form<T>>> a,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,

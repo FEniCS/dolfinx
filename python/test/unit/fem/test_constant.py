@@ -7,8 +7,10 @@
 
 import numpy as np
 import pytest
+
 from dolfinx.fem import Constant
 from dolfinx.mesh import create_unit_cube
+
 from mpi4py import MPI
 
 
@@ -42,7 +44,7 @@ def test_vector_constant():
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     c0 = Constant(mesh, [1.0, 2.0])
     c1 = Constant(mesh, np.array([1.0, 2.0]))
-    assert (c0.value.all() == c1.value.all())
+    assert c0.value.all() == c1.value.all()
     c0.value += 1.0
     assert c0.value.all() == np.array([2.0, 3.0]).all()
     c0.value -= [1.0, 2.0]
