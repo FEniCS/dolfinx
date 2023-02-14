@@ -319,48 +319,42 @@ std::vector<std::int32_t> geometry::compute_closest_entity(
 {
   if (tree.num_bboxes() == 0)
     return std::vector<std::int32_t>(points.size() / 3, -1);
-  else
+
+  std::vector<std::int32_t> entities;
+  entities.reserve(points.size() / 3);
+  for (std::size_t i = 0; i < points.size() / 3; ++i)
   {
-    double R2;
-    double initial_entity;
-    std::array<int, 2> leaves;
-    std::vector<std::int32_t> entities;
-    entities.reserve(points.size() / 3);
-    for (std::size_t i = 0; i < points.size() / 3; ++i)
-    {
-      // Use midpoint tree to find initial closest entity to the point.
-      // Start by using a leaf node as the initial guess for the input
-      // entity
-      leaves = midpoint_tree.bbox(0);
-      assert(is_leaf(leaves));
-      initial_entity = leaves[0];
-      std::array<double, 6> diff = midpoint_tree.get_bbox(0);
-      for (std::size_t k = 0; k < 3; ++k)
-        diff[k] -= points[3 * i + k];
-      R2 = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
+    // Use midpoint tree to find initial closest entity to the point.
+    // Start by using a leaf node as the initial guess for the input
+    // entity
+    std::array<int, 2> leaf0 = midpoint_tree.bbox(0);
+    assert(is_leaf(leaf0));
+    std::array<double, 6> diff = midpoint_tree.get_bbox(0);
+    for (std::size_t k = 0; k < 3; ++k)
+      diff[k] -= points[3 * i + k];
+    double R2 = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
 
-      // Use a recursive search through the bounding box tree
-      // to find determine the entity with the closest midpoint.
-      // As the midpoint tree only consist of points, the distance
-      // queries are lightweight.
-      const auto [m_index, m_distance2] = _compute_closest_entity(
-          midpoint_tree, std::span<const double, 3>(points.data() + 3 * i, 3),
-          midpoint_tree.num_bboxes() - 1, mesh, initial_entity, R2);
+    // Use a recursive search through the bounding box tree
+    // to find determine the entity with the closest midpoint.
+    // As the midpoint tree only consist of points, the distance
+    // queries are lightweight.
+    const auto [m_index, m_distance2] = _compute_closest_entity(
+        midpoint_tree, std::span<const double, 3>(points.data() + 3 * i, 3),
+        midpoint_tree.num_bboxes() - 1, mesh, leaf0[0], R2);
 
-      // Use a recursive search through the bounding box tree to
-      // determine which entity is actually closest.
-      // Uses the entity with the closest midpoint as initial guess, and
-      // the distance from the midpoint to the point of interest as the
-      // initial search radius.
-      const auto [index, distance2] = _compute_closest_entity(
-          tree, std::span<const double, 3>(points.data() + 3 * i, 3),
-          tree.num_bboxes() - 1, mesh, m_index, m_distance2);
+    // Use a recursive search through the bounding box tree to
+    // determine which entity is actually closest.
+    // Uses the entity with the closest midpoint as initial guess, and
+    // the distance from the midpoint to the point of interest as the
+    // initial search radius.
+    const auto [index, distance2] = _compute_closest_entity(
+        tree, std::span<const double, 3>(points.data() + 3 * i, 3),
+        tree.num_bboxes() - 1, mesh, m_index, m_distance2);
 
-      entities.push_back(index);
-    }
-
-    return entities;
+    entities.push_back(index);
   }
+
+  return entities;
 }
 
 //-----------------------------------------------------------------------------

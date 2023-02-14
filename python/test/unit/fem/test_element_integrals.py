@@ -10,16 +10,15 @@ from itertools import combinations, product
 
 import numpy as np
 import pytest
-
-import dolfinx
 import ufl
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.fem.petsc import assemble_matrix, assemble_vector
 from dolfinx.mesh import CellType, create_mesh, meshtags
-
 from mpi4py import MPI
 from petsc4py import PETSc
+
+import dolfinx
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",
@@ -294,8 +293,7 @@ def test_plus_minus_simple_vector(cell_type, pm):
             for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
                 # Find the point in the cell 0 in the second mesh
                 for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
-                    if np.allclose(spaces[0].mesh.geometry.x[point0],
-                                   space.mesh.geometry.x[point1]):
+                    if np.allclose(spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]):
                         break
                 else:
                     # If no matching point found, fail
@@ -317,7 +315,6 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
         for agree in [True, False]:
             # Two cell mesh with randomly numbered points
             mesh, order = two_unit_cells(cell_type, agree, return_order=True)
-
             if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
                 V = FunctionSpace(mesh, ("DG", 1))
             else:
@@ -348,8 +345,7 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
             for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
                 # Find the point in the cell 0 in the second mesh
                 for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
-                    if np.allclose(spaces[0].mesh.geometry.x[point0],
-                                   space.mesh.geometry.x[point1]):
+                    if np.allclose(spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]):
                         break
                 else:
                     # If no matching point found, fail
@@ -371,7 +367,6 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
         for agree in [True, False]:
             # Two cell mesh with randomly numbered points
             mesh, order = two_unit_cells(cell_type, agree, return_order=True)
-
             V = FunctionSpace(mesh, ("DG", 1))
             u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -399,8 +394,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
             for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
                 # Find the point in the cell 0 in the second mesh
                 for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
-                    if np.allclose(spaces[0].mesh.geometry.x[point0],
-                                   space.mesh.geometry.x[point1]):
+                    if np.allclose(spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]):
                         break
                 else:
                     # If no matching point found, fail
@@ -435,10 +429,8 @@ def test_curl(space_type, order):
 
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", ufl.tetrahedron, 1))
         mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
-
         V = FunctionSpace(mesh, (space_type, order))
         v = ufl.TestFunction(V)
-
         f = ufl.as_vector(tuple(1 if i == 0 else 0 for i in range(tdim)))
         L = form(ufl.inner(f, ufl.curl(v)) * ufl.dx)
         result = assemble_vector(L)

@@ -323,8 +323,8 @@ u_h.x.array[:offset] = x.array_r[:offset]
 u_h.x.scatter_forward()
 p_h.x.array[:(len(x.array_r) - offset)] = x.array_r[offset:]
 p_h.x.scatter_forward()
-# Subtract the average of the pressure since it is only determined
-# up to a constant
+# Subtract the average of the pressure since it is only determined up to
+# a constant
 p_h.x.array[:] -= domain_average(msh, p_h)
 
 u_vis = fem.Function(W)

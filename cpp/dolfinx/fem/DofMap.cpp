@@ -182,7 +182,7 @@ bool DofMap::operator==(const DofMap& map) const
 //-----------------------------------------------------------------------------
 int DofMap::bs() const noexcept { return _bs; }
 //-----------------------------------------------------------------------------
-DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
+DofMap DofMap::extract_sub_dofmap(std::span<const int> component) const
 {
   assert(!component.empty());
 
