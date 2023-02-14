@@ -1261,6 +1261,9 @@ mesh::create_subtopology(const Topology& topology, int dim,
   subtopology.set_index_map(dim, submap);
   subtopology.set_connectivity(sub_v_to_v, 0, 0);
   subtopology.set_connectivity(sub_e_to_v, dim, 0);
+  subtopology.set_entity_group_offsets(
+      dim,
+      {0, submap->size_local(), submap->size_local() + submap->num_ghosts()});
 
   return {std::move(subtopology), std::move(subentities),
           std::move(subvertices0)};
