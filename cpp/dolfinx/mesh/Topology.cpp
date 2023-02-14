@@ -1222,7 +1222,8 @@ mesh::create_subtopology(const Topology& topology, int dim,
       submap0->size_local() + submap0->num_ghosts());
 
   // Sub-topology entity to vertex connectivity
-  const CellType entity_type = cell_entity_type(topology.cell_type(), dim, 0);
+  const CellType entity_type
+      = cell_entity_type(topology.cell_types()[0], dim, 0);
   int num_vertices_per_entity = cell_num_entities(entity_type, 0);
   auto e_to_v = topology.connectivity(dim, 0);
   assert(e_to_v);
@@ -1255,7 +1256,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
       std::move(sub_e_to_v_vec), std::move(sub_e_to_v_offsets));
 
   // Create sub-topology
-  Topology subtopology(topology.comm(), entity_type);
+  Topology subtopology(topology.comm(), {entity_type});
   subtopology.set_index_map(0, submap0);
   subtopology.set_index_map(dim, submap);
   subtopology.set_connectivity(sub_v_to_v, 0, 0);

@@ -134,7 +134,10 @@ mesh::create_subgeometry(const Topology& topology, const Geometry& geometry,
 {
   // Get the geometry dofs in the sub-geometry based on the entities in
   // sub-geometry
-  const fem::ElementDofLayout layout = geometry.cmap().create_dof_layout();
+
+  assert(geometry.cmaps().size() == 1);
+
+  const fem::ElementDofLayout layout = geometry.cmaps()[0].create_dof_layout();
   // NOTE: Unclear what this return for prisms
   const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
 
@@ -228,11 +231,13 @@ mesh::create_subgeometry(const Topology& topology, const Geometry& geometry,
   graph::AdjacencyList<std::int32_t> sub_x_dofmap(
       std::move(sub_x_dofmap_vec), std::move(sub_x_dofmap_offsets));
 
+  assert(geometry.cmaps().size() == 1);
+  fem::CoordinateElement cmap = geometry.cmaps()[0];
+
   // Create sub-geometry coordinate element
-  CellType sub_coord_cell
-      = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
-  fem::CoordinateElement sub_coord_ele(sub_coord_cell, geometry.cmap().degree(),
-                                       geometry.cmap().variant());
+  CellType sub_coord_cell = cell_entity_type(cmap.cell_shape(), dim, 0);
+  fem::CoordinateElement sub_coord_ele(sub_coord_cell, cmap.degree(),
+                                       cmap.variant());
 
   // Sub-geometry input_global_indices
   // TODO: Check this
@@ -244,8 +249,9 @@ mesh::create_subgeometry(const Topology& topology, const Geometry& geometry,
                  [&igi](std::int32_t sub_x_dof) { return igi[sub_x_dof]; });
 
   // Create geometry
-  return {Geometry(sub_x_dof_index_map, std::move(sub_x_dofmap), sub_coord_ele,
-                   std::move(sub_x), geometry.dim(), std::move(sub_igi)),
+  return {Geometry(sub_x_dof_index_map, std::move(sub_x_dofmap),
+                   {sub_coord_ele}, std::move(sub_x), geometry.dim(),
+                   std::move(sub_igi)),
           std::move(subx_to_x_dofmap)};
 }
 //-----------------------------------------------------------------------------
