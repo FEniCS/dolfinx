@@ -147,15 +147,25 @@ class XDMFFile(_cpp.io.XDMFFile):
         self.close()
 
     def write_mesh(self, mesh: Mesh, xpath: str = "/Xdmf/Domain") -> None:
-        """Write mesh to file for a given time (default 0.0)"""
+        """Write mesh to file"""
         super().write_mesh(mesh._cpp_object, xpath)
 
     def write_meshtags(self, tags: MeshTags, geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
                        xpath: str = "/Xdmf/Domain") -> None:
-        """Write mesh tags to file for a given time (default 0.0)"""
+        """Write mesh tags to file"""
         super().write_meshtags(tags._cpp_object, geometry_xpath, xpath)
 
     def write_function(self, u, t: float = 0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
+        """
+        Write function to file for a given time.
+
+        NOTE: Function is interpolated onto the mesh nodes, as either a Nth order Lagrange function or DG-0 function.
+
+        Args:
+            u: The function
+            t: Time-stamp associated with the function.
+            mesh_xpath: Path to mesh associated with the function in the XDMFFile.
+        """
         super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
 
     def read_mesh(self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain") -> Mesh:
