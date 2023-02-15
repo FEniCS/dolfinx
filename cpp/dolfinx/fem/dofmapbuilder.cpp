@@ -693,11 +693,7 @@ fem::build_dofmap_data(
       dofmap[local_dim0 * cell + j] = new_node;
     }
   }
-
-  int dofs_per_cell
-      = dofmap.empty() ? 0 : dofmap.size() / node_graph0.num_nodes();
-  graph::AdjacencyList<std::int32_t> dmap
-      = graph::regular_adjacency_list(std::move(dofmap), dofs_per_cell);
+  graph::AdjacencyList<std::int32_t> dmap(dofmap, node_graph0.offsets());
 
   return {std::move(index_map), element_dof_layouts[0].block_size(),
           std::move(dmap)};

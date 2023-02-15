@@ -68,6 +68,8 @@ mesh::Geometry mesh::create_geometry(
   // If the mesh has higher order geometry, permute the dofmap
   if (elements[0].needs_dof_permutations())
   {
+    if (elements.size() > 1)
+      throw std::runtime_error("Unsupported for Mixed Topology");
     const int D = topology.dim();
     const int num_cells = topology.connectivity(D, 0)->num_nodes();
     const std::vector<std::uint32_t>& cell_info
