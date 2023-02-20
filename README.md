@@ -51,7 +51,7 @@ For detailed instructions, see
 
 ### Spack
 
-Spack automates the installtion from source and is recommended for
+Spack automates the installation from source and is recommended for
 building DOLFINx on HPC systems. To build the most recent release using
 [Spack](https://spack.readthedocs.io/) (assuming a bash-compatible
 shell):
