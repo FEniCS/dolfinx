@@ -8,19 +8,18 @@
 
 import typing
 
-import numpy as np
-import numpy.typing as npt
-
 import basix
 import basix.ufl_wrapper
+import numpy as np
+import numpy.typing as npt
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa F401
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk  # noqa F401
 from dolfinx.fem import Function
-from dolfinx.mesh import GhostMode, Mesh
-
+from dolfinx.mesh import GhostMode, Mesh, MeshTags
 from mpi4py import MPI as _MPI
+
+from dolfinx import cpp as _cpp
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk",
            "distribute_entity_data"]
@@ -147,11 +146,28 @@ class XDMFFile(_cpp.io.XDMFFile):
     def __exit__(self, exception_type, exception_value, traceback):
         self.close()
 
-    def write_mesh(self, mesh: Mesh) -> None:
-        """Write mesh to file for a given time (default 0.0)"""
-        super().write_mesh(mesh._cpp_object)
+    def write_mesh(self, mesh: Mesh, xpath: str = "/Xdmf/Domain") -> None:
+        """Write mesh to file"""
+        super().write_mesh(mesh._cpp_object, xpath)
 
-    def write_function(self, u, t: float = 0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
+    def write_meshtags(self, tags: MeshTags, geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
+                       xpath: str = "/Xdmf/Domain") -> None:
+        """Write mesh tags to file"""
+        super().write_meshtags(tags._cpp_object, geometry_xpath, xpath)
+
+    def write_function(self, u: Function, t: float = 0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
+        """Write function to file for a given time.
+
+        Note:
+            Function is interpolated onto the mesh nodes, as a Nth order Lagrange function,
+            where N is the order of the coordinate map.
+            If the Function is a cell-wise constant, it is saved as a cell-wise constant.
+
+        Args:
+            u: The Function to write to file.
+            t: Time associated with Function output .
+            mesh_xpath: Path to mesh associated with the Function in the XDMFFile.
+        """
         super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
 
     def read_mesh(self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain") -> Mesh:
@@ -172,7 +188,8 @@ class XDMFFile(_cpp.io.XDMFFile):
         return Mesh(msh, domain)
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
-        return super().read_meshtags(mesh._cpp_object, name, xpath)
+        mt = super().read_meshtags(mesh._cpp_object, name, xpath)
+        return MeshTags(mt, mesh)
 
 
 def distribute_entity_data(mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64],

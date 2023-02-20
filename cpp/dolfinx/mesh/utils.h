@@ -178,14 +178,16 @@ CellPartitionFunction create_cell_partitioner(mesh::GhostMode ghost_mode
                                               const graph::partition_fn& partfn
                                               = &graph::partition_graph);
 
-/// Compute incident indices
-/// @param[in] mesh The mesh
+/// @brief Compute incident indices
+/// @param[in] topology The topology
 /// @param[in] entities List of indices of topological dimension `d0`
 /// @param[in] d0 Topological dimension
 /// @param[in] d1 Topological dimension
 /// @return List of entities of topological dimension `d1` that are
 /// incident to entities in `entities` (topological dimension `d0`)
-std::vector<std::int32_t> compute_incident_entities(
-    const Mesh& mesh, std::span<const std::int32_t> entities, int d0, int d1);
+std::vector<std::int32_t>
+compute_incident_entities(const Topology& topology,
+                          std::span<const std::int32_t> entities, int d0,
+                          int d1);
 
 } // namespace dolfinx::mesh

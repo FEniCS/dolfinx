@@ -14,7 +14,6 @@
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Topology.h>
 #include <limits>
-#include <map>
 #include <numeric>
 #include <vector>
 
@@ -31,7 +30,7 @@ void enforce_rules(MPI_Comm neighbor_comm,
                    const graph::AdjacencyList<int>& shared_edges,
                    std::vector<std::int8_t>& marked_edges,
                    const mesh::Mesh& mesh,
-                   const std::vector<std::int32_t>& long_edge)
+                   std::span<const std::int32_t> long_edge)
 {
   common::Timer t0("PLAZA: Enforce rules");
 
@@ -95,9 +94,9 @@ void enforce_rules(MPI_Comm neighbor_comm,
 }
 //-----------------------------------------------------------------------------
 // 2D version of subdivision allowing for uniform subdivision (flag)
-std::vector<std::int32_t>
-get_triangles(const std::vector<std::int64_t>& indices,
-              const std::int32_t longest_edge, bool uniform)
+std::vector<std::int32_t> get_triangles(std::span<const std::int64_t> indices,
+                                        const std::int32_t longest_edge,
+                                        bool uniform)
 {
   // v0 and v1 are at ends of longest_edge (e2) opposite vertex has same
   // index as longest_edge
@@ -135,8 +134,8 @@ get_triangles(const std::vector<std::int64_t>& indices,
 //-----------------------------------------------------------------------------
 // 3D version of subdivision
 std::vector<std::int32_t>
-get_tetrahedra(const std::vector<std::int64_t>& indices,
-               const std::vector<std::int32_t>& longest_edge)
+get_tetrahedra(std::span<const std::int64_t> indices,
+               std::span<const std::int32_t> longest_edge)
 {
   // Connectivity matrix for ten possible points (4 vertices + 6 edge
   // midpoints) ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5} Only need
@@ -248,8 +247,8 @@ get_tetrahedra(const std::vector<std::int64_t>& indices,
 ///   being similar shape
 /// @return
 std::vector<std::int32_t>
-get_simplices(const std::vector<std::int64_t>& indices,
-              const std::vector<std::int32_t>& longest_edge, std::int32_t tdim,
+get_simplices(std::span<const std::int64_t> indices,
+              std::span<const std::int32_t> longest_edge, int tdim,
               bool uniform)
 {
   if (tdim == 2)
@@ -381,20 +380,19 @@ face_long_edge(const mesh::Mesh& mesh)
   return std::pair(std::move(long_edge), std::move(edge_ratio_ok));
 }
 //-----------------------------------------------------------------
-// Computes the parent-child facet relationship
-// @param simplex_set - index into indices for each child cell
-// @return mapping from child to parent facets, using cell-local index
+/// Computes the parent-child facet relationship
+/// @param simplex_set - index into indices for each child cell
+/// @return mapping from child to parent facets, using cell-local index
 template <int tdim>
 std::vector<std::int8_t>
-compute_parent_facets(const std::vector<std::int32_t>& simplex_set)
+compute_parent_facets(std::span<const std::int32_t> simplex_set)
 {
   assert(simplex_set.size() % (tdim + 1) == 0);
-
   std::vector<std::int8_t> parent_facet(simplex_set.size(), -1);
 
-  // Index lookups in 'indices' for the child vertices that occur on each parent
-  // facet in 2D and 3D. In 2D each edge has 3 child vertices, and in 3D each
-  // triangular facet has six child vertices.
+  // Index lookups in 'indices' for the child vertices that occur on
+  // each parent facet in 2D and 3D. In 2D each edge has 3 child
+  // vertices, and in 3D each triangular facet has six child vertices.
   constexpr std::array<std::array<int, 3>, 3> facet_table_2d{
       {{1, 2, 3}, {0, 2, 4}, {0, 1, 5}}};
 
@@ -436,6 +434,7 @@ compute_parent_facets(const std::vector<std::int32_t>& simplex_set)
                                           cf.end(), set_output.begin());
           num_common_vertices = std::distance(set_output.begin(), it);
         }
+
         if (num_common_vertices == tdim)
         {
           assert(parent_facet[cc * (tdim + 1) + fci] == -1);
@@ -458,19 +457,17 @@ compute_refinement(MPI_Comm neighbor_comm,
                    const mesh::Mesh& mesh,
                    const std::vector<std::int32_t>& long_edge,
                    const std::vector<std::int8_t>& edge_ratio_ok,
-                   plaza::RefinementOptions options)
+                   plaza::Option option)
 {
-  const std::int32_t tdim = mesh.topology().dim();
-  const std::int32_t num_cell_edges = tdim * 3 - 3;
-  const std::int32_t num_cell_vertices = tdim + 1;
+  int tdim = mesh.topology().dim();
+  int num_cell_edges = tdim * 3 - 3;
+  int num_cell_vertices = tdim + 1;
 
-  bool compute_facets
-      = (options == plaza::RefinementOptions::parent_facet
-         or options == plaza::RefinementOptions::parent_cell_and_facet);
-
+  bool compute_facets = (option == plaza::Option::parent_facet
+                         or option == plaza::Option::parent_cell_and_facet);
   bool compute_parent_cell
-      = (options == plaza::RefinementOptions::parent_cell
-         or options == plaza::RefinementOptions::parent_cell_and_facet);
+      = (option == plaza::Option::parent_cell
+         or option == plaza::Option::parent_cell_and_facet);
 
   // Make new vertices in parallel
   const auto [new_vertex_map, new_vertex_coords, xshape]
@@ -483,7 +480,6 @@ compute_refinement(MPI_Comm neighbor_comm,
 
   auto map_c = mesh.topology().index_map(tdim);
   assert(map_c);
-
   auto c_to_v = mesh.topology().connectivity(tdim, 0);
   assert(c_to_v);
   auto c_to_e = mesh.topology().connectivity(tdim, 1);
@@ -536,6 +532,7 @@ compute_refinement(MPI_Comm neighbor_comm,
 
       if (compute_parent_cell)
         parent_cell.push_back(c);
+
       if (compute_facets)
       {
         if (tdim == 3)
@@ -578,6 +575,7 @@ compute_refinement(MPI_Comm neighbor_comm,
         for (std::int32_t i = 0; i < ncells; ++i)
           parent_cell.push_back(c);
       }
+
       if (compute_facets)
       {
         std::vector<std::int8_t> npf;
@@ -610,12 +608,11 @@ compute_refinement(MPI_Comm neighbor_comm,
 
 //-----------------------------------------------------------------------------
 std::tuple<mesh::Mesh, std::vector<std::int32_t>, std::vector<std::int8_t>>
-plaza::refine(const mesh::Mesh& mesh, bool redistribute,
-              RefinementOptions options)
+plaza::refine(const mesh::Mesh& mesh, bool redistribute, Option option)
 {
 
   auto [cell_adj, new_coords, xshape, parent_cell, parent_facet]
-      = compute_refinement_data(mesh, options);
+      = compute_refinement_data(mesh, option);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
@@ -645,11 +642,11 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute,
 //-----------------------------------------------------------------------------
 std::tuple<mesh::Mesh, std::vector<std::int32_t>, std::vector<std::int8_t>>
 plaza::refine(const mesh::Mesh& mesh, std::span<const std::int32_t> edges,
-              bool redistribute, RefinementOptions options)
+              bool redistribute, Option option)
 {
 
   auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
-      = compute_refinement_data(mesh, edges, options);
+      = compute_refinement_data(mesh, edges, option);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
@@ -680,8 +677,7 @@ plaza::refine(const mesh::Mesh& mesh, std::span<const std::int32_t> edges,
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<double>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>,
            std::vector<std::int8_t>>
-plaza::compute_refinement_data(const mesh::Mesh& mesh,
-                               RefinementOptions options)
+plaza::compute_refinement_data(const mesh::Mesh& mesh, Option option)
 {
 
   if (mesh.topology().cell_type() != mesh::CellType::triangle
@@ -725,7 +721,7 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
       = compute_refinement(comm,
                            std::vector<std::int8_t>(
                                map_e->size_local() + map_e->num_ghosts(), true),
-                           edge_ranks, mesh, long_edge, edge_ratio_ok, options);
+                           edge_ranks, mesh, long_edge, edge_ratio_ok, option);
   MPI_Comm_free(&comm);
 
   return {std::move(cell_adj), std::move(new_vertex_coords), xshape,
@@ -737,7 +733,7 @@ std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<double>,
            std::vector<std::int8_t>>
 plaza::compute_refinement_data(const mesh::Mesh& mesh,
                                std::span<const std::int32_t> edges,
-                               RefinementOptions options)
+                               Option option)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
@@ -801,7 +797,7 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh,
 
   auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
       = compute_refinement(comm, marked_edges, edge_ranks, mesh, long_edge,
-                           edge_ratio_ok, options);
+                           edge_ratio_ok, option);
   MPI_Comm_free(&comm);
 
   return {std::move(cell_adj), std::move(new_vertex_coords), xshape,
