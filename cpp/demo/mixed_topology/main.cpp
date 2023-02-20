@@ -1,6 +1,8 @@
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <iostream>
@@ -126,6 +128,13 @@ int main(int argc, char* argv[])
 
     auto geom = dolfinx::mesh::create_geometry(MPI_COMM_WORLD, topo, elements,
                                                cells_list, x, 2);
+
+    dolfinx::mesh::Mesh mesh(MPI_COMM_WORLD, topo, geom);
+    std::cout << "num cells = " << mesh.topology().index_map(2)->size_local()
+              << "\n";
+    for (auto q : mesh.topology().entity_group_offsets(2))
+      std::cout << q << " ";
+    std::cout << "\n";
   }
 
   MPI_Finalize();
