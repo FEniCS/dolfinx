@@ -124,7 +124,7 @@ private:
 /// @param[in] element The coordinate element that describes the
 /// geometric mapping for cells
 /// @param[in] x The coordinates of mesh nodes
-/// @param[in] xshape The shape of `x`
+/// @param[in] xshape The shape of `x`. It should be `(num_points, gdim)`.
 /// @param[in] ghost_mode The requested type of cell ghosting/overlap
 /// @return A distributed Mesh.
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
