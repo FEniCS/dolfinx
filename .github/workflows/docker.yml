@@ -89,7 +89,7 @@ jobs:
         run: echo "ARCH_TAG=amd64" >> $GITHUB_ENV
 
       - name: Set architecture tag (arm64)
-        if: ${{ matrix.os == 'buildjet-4vcpu-ubuntu-2204-arm' }}
+        if: ${{ contains(matrix.os, 'arm') }}
         run: echo "ARCH_TAG=arm64" >> $GITHUB_ENV
 
       - name: Create image name and tag
