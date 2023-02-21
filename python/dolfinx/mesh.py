@@ -18,6 +18,7 @@ from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
                               create_cell_partitioner, exterior_facet_indices,
                               to_string, to_type)
+from dolfinx.cpp.refinement import RefinementOption
 from mpi4py import MPI as _MPI
 
 from dolfinx import cpp as _cpp
@@ -30,8 +31,8 @@ __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundar
            "create_box", "create_unit_cube", "to_type", "to_string"]
 
 
-def compute_incident_entities(mesh: Mesh, entities: npt.NDArray[np.int32], d0: int, d1: int):
-    return _cpp.mesh.compute_incident_entities(mesh._cpp_object, entities, d0, d1)
+def compute_incident_entities(topology, entities: npt.NDArray[np.int32], d0: int, d1: int):
+    return _cpp.mesh.compute_incident_entities(topology, entities, d0, d1)
 
 
 def compute_midpoints(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
@@ -93,9 +94,10 @@ def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray
     Args:
         mesh: Mesh to locate entities on
         dim: Topological dimension of the mesh entities to consider
-        marker: A function that takes an array of points `x` with shape ``(gdim,
-            num_points)`` and returns an array of booleans of length
-            ``num_points``, evaluating to `True` for entities to be located.
+        marker: A function that takes an array of points `x` with shape
+            `(gdim, num_points)` and returns an array of booleans of
+            length `num_points`, evaluating to `True` for entities to be
+            located.
 
     Returns:
         Indices (local to the process) of marked mesh entities.
@@ -120,9 +122,10 @@ def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> n
     Args:
         mesh: Mesh to locate boundary entities on
         dim: Topological dimension of the mesh entities to consider
-        marker: Function that takes an array of points `x` with shape ``(gdim,
-            num_points)`` and returns an array of booleans of length
-            ``num_points``, evaluating to `True` for entities to be located.
+        marker: Function that takes an array of points `x` with shape
+            `(gdim, num_points)` and returns an array of booleans of
+            length `num_points`, evaluating to `True` for entities to be
+            located.
 
     Returns:
         Indices (local to the process) of marked mesh entities.
@@ -144,63 +147,99 @@ _uflcell_to_dolfinxcell = {
 }
 
 
-def transfer_cell_meshtag(meshtag: MeshTags, mesh1: Mesh, parent_cell: npt.NDArray[np.int32]) -> MeshTags:
-    """Generate cell mesh tags on a refined mesh from the meshtgs on the coarse parent mesh
+def transfer_meshtag(meshtag: MeshTags, mesh1: Mesh, parent_cell: npt.NDArray[np.int32],
+                     parent_facet: typing.Optional[npt.NDArray[np.int8]] = None) -> MeshTags:
+    """Generate cell mesh tags on a refined mesh from the mesh tags on the coarse parent mesh.
 
         Args:
             meshtag: Mesh tags on the coarse, parent mesh
             mesh1: The refined mesh
             parent_cell: Index of the parent cell for each cell in the refined mesh
+            parent_facet: Index of the local parent facet for each cell
+                in the refined mesh. Only required for transfer tags on facets.
 
         Returns:
-            Mesh tags on the refined mesh
+            Mesh tags on the refined mesh.
 
     """
-
-    mt = _cpp.refinement.transfer_cell_meshtag(meshtag._cpp_object, mesh1._cpp_object, parent_cell)
-    return MeshTags(mt, mesh1)
+    if meshtag.dim == meshtag.mesh.topology.dim:
+        mt = _cpp.refinement.transfer_cell_meshtag(meshtag._cpp_object, mesh1._cpp_object, parent_cell)
+        return MeshTags(mt, mesh1)
+    elif meshtag.dim == meshtag.mesh.topology.dim - 1:
+        assert parent_facet is not None
+        mt = _cpp.refinement.transfer_facet_meshtag(meshtag._cpp_object, mesh1._cpp_object, parent_cell, parent_facet)
+        return MeshTags(mt, mesh1)
+    else:
+        raise RuntimeError("MeshTag transfer is supported on on cells or facets.")
 
 
 def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True) -> Mesh:
-    """Refine a mesh
+    """Refine a mesh.
 
     Args:
-        mesh: The mesh from which to build a refined mesh
-        edges: Optional argument to specify which edges should be refined. If
-            not supplied uniform refinement is applied.
+        mesh: Mesh from which to create the refined mesh.
+        edges: Indices of edges to split during refinement. If `None`,
+            uniform refinement is uses.
         redistribute:
-            Optional argument to redistribute the refined mesh if mesh is a
-            distributed mesh.
+            Refined mesh is re-partitioned if `True`
 
     Returns:
-        A refined mesh
+       Refined mesh
+
     """
     if edges is None:
-        mesh_refined = _cpp.refinement.refine(mesh._cpp_object, redistribute)
+        mesh1 = _cpp.refinement.refine(mesh._cpp_object, redistribute)
     else:
-        mesh_refined = _cpp.refinement.refine(mesh._cpp_object, edges, redistribute)
+        mesh1 = _cpp.refinement.refine(mesh._cpp_object, edges, redistribute)
+    element = mesh._ufl_domain.ufl_coordinate_element()
+    domain = ufl.Mesh(element)
+    return Mesh(mesh1, domain)
 
-    coordinate_element = mesh._ufl_domain.ufl_coordinate_element()
-    domain = ufl.Mesh(coordinate_element)
-    return Mesh(mesh_refined, domain)
+
+def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True,
+                 option: RefinementOption = RefinementOption.none) -> tuple[Mesh, npt.NDArray[np.int32],
+                                                                            npt.NDArray[np.int32]]:
+    """Refine a mesh.
+
+    Args:
+        mesh: Mesh from which to create the refined mesh.
+        edges: Indices of edges to split during refinement. If `None`,
+            uniform refinement is uses.
+        redistribute:
+            Refined mesh is re-partitioned if `True`
+        option:
+            Control computation of the parent-refined mesh data.
+
+    Returns:
+       Refined mesh, list of parent cell for each refine cell, and list
+       of parent facets.
+
+    """
+    if edges is None:
+        mesh1, cells, facets = _cpp.refinement.refine_plaza(mesh._cpp_object, redistribute)
+    else:
+        mesh1, cells, facets = _cpp.refinement.refine_plaza(mesh._cpp_object, edges, redistribute)
+    element = mesh._ufl_domain.ufl_coordinate_element()
+    domain = ufl.Mesh(element)
+    return Mesh(mesh1, domain), cells, facets
 
 
 def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.AdjacencyList_int64],
                 x: np.ndarray, domain: ufl.Mesh,
                 partitioner=_cpp.mesh.create_cell_partitioner(GhostMode.none)) -> Mesh:
-    """
-    Create a mesh from topology and geometry arrays
+    """Create a mesh from topology and geometry arrays.
 
     Args:
-        comm: MPI communicator to define the mesh on
-        cells: Cells of the mesh
-        x: Mesh geometry ('node' coordinates),  with shape ``(gdim, num_nodes)``
-        domain: UFL mesh
-        ghost_mode: The ghost mode used in the mesh partitioning
-        partitioner: Function that computes the parallel distribution of cells across MPI ranks
+        comm: MPI communicator to define the mesh on.
+        cells: Cells of the mesh. `cells[i]` is the 'nodes' of cell `i`.
+        x: Mesh geometry ('node' coordinates), with shape ``(num_nodes, gdim)``
+        domain: UFL mesh.
+        ghost_mode: The ghost mode used in the mesh partitioning.
+        partitioner: Function that computes the parallel distribution of
+            cells across MPI ranks.
 
     Returns:
-        A new mesh
+        A mesh.
 
     """
     ufl_element = domain.ufl_coordinate_element()
@@ -233,7 +272,7 @@ class MeshTags:
         """Mesh tags associate data (markers) with a subset of mesh entities of a given dimension.
 
         Args:
-            meshtags: C++ mesh tags object
+            meshtags: C++ mesh tags object.
             mesh: Python mesh that tags are defined on.
 
         Note:

@@ -13,6 +13,7 @@
 #include <functional>
 #include <memory>
 #include <span>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::common
@@ -34,8 +35,8 @@ public:
   /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
   /// gives the position in the point array of each local geometry node
   /// @param[in] element The element that describes the cell geometry map
-  /// @param[in] x The point coordinates. It is a `std::vector<double>`
-  /// and uses row-major storage. The shape is `(num_points, 3)`.
+  /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
+  /// and the storage is row-major.
   /// @param[in] dim The geometric dimension (`0 < dim <= 3`)
   /// @param[in] input_global_indices The 'global' input index of each
   /// point, commonly from a mesh input file. The type is
@@ -150,4 +151,15 @@ create_geometry(MPI_Comm comm, const Topology& topology,
                     const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
                 = nullptr);
 
+/// @brief Create a sub-geometry for a subset of entities.
+/// @param topology Full mesh topology
+/// @param geometry Full mesh geometry
+/// @param dim Topological dimension of the sub-topology
+/// @param subentity_to_entity Map from sub-topology entity to the
+/// entity in the parent topology
+/// @return A sub-geometry and a map from sub-geometry coordinate
+/// degree-of-freedom to the coordinate degree-of-freedom in `geometry`.
+std::pair<mesh::Geometry, std::vector<int32_t>>
+create_subgeometry(const Topology& topology, const Geometry& geometry, int dim,
+                   std::span<const std::int32_t> subentity_to_entity);
 } // namespace dolfinx::mesh
