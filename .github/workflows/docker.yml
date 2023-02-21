@@ -138,7 +138,6 @@ jobs:
     if: ${{ github.repository == 'FEniCS/dolfinx' }}
     runs-on: ubuntu-latest
     needs:
-      - start_runner
       - create_build_images
 
     steps:
