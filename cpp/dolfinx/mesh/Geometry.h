@@ -36,8 +36,8 @@ public:
   /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
   /// gives the position in the point array of each local geometry node
   /// @param[in] element The element that describes the cell geometry map
-  /// @param[in] x The point coordinates. It is a `std::vector<T>` and
-  /// uses row-major storage. The shape is `(num_points, 3)`.
+  /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
+  /// and the storage is row-major.
   /// @param[in] dim The geometric dimension (`0 < dim <= 3`)
   /// @param[in] input_global_indices The 'global' input index of each
   /// point, commonly from a mesh input file. The type is
