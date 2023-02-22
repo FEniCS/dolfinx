@@ -21,7 +21,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   const hid_t h5_id,
                                   const std::string path_prefix,
                                   const mesh::Topology& topology,
-                                  const mesh::Geometry& geometry, int dim,
+                                  const mesh::Geometry<double>& geometry, int dim,
                                   std::span<const std::int32_t> entities)
 {
   LOG(INFO) << "Adding topology data to node \"" << xml_node.path('/') << "\"";
@@ -149,7 +149,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   const hid_t h5_id,
                                   const std::string path_prefix,
-                                  const mesh::Geometry& geometry)
+                                  const mesh::Geometry<double>& geometry)
 {
   LOG(INFO) << "Adding geometry data to node \"" << xml_node.path('/') << "\"";
   auto map = geometry.index_map();
