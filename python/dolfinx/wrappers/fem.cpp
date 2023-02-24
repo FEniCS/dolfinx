@@ -653,12 +653,22 @@ void fem(py::module& m)
           },
           py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
       .def(
-          "apply_inverse_dof_transformation",
+          "apply_transpose_dof_transformation",
           [](const dolfinx::fem::FiniteElement& self,
              py::array_t<double, py::array::c_style> x,
              std::uint32_t cell_permutation, int dim)
           {
-            self.apply_inverse_dof_transformation(
+            self.apply_transpose_dof_transformation(
+                std::span(x.mutable_data(), x.size()), cell_permutation, dim);
+          },
+          py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
+      .def(
+          "apply_inverse_transpose_dof_transformation",
+          [](const dolfinx::fem::FiniteElement& self,
+             py::array_t<double, py::array::c_style> x,
+             std::uint32_t cell_permutation, int dim)
+          {
+            self.apply_inverse_transpose_dof_transformation(
                 std::span(x.mutable_data(), x.size()), cell_permutation, dim);
           },
           py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
