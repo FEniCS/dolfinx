@@ -645,7 +645,7 @@ void fem(py::module& m)
       .def(
           "apply_dof_transformation",
           [](const dolfinx::fem::FiniteElement& self,
-             py::array_t<double, py::array::c_style>& x,
+             py::array_t<double, py::array::c_style> x,
              std::uint32_t cell_permutation, int dim)
           {
             self.apply_dof_transformation(std::span(x.mutable_data(), x.size()),
@@ -655,7 +655,7 @@ void fem(py::module& m)
       .def(
           "apply_inverse_dof_transformation",
           [](const dolfinx::fem::FiniteElement& self,
-             py::array_t<double, py::array::c_style>& x,
+             py::array_t<double, py::array::c_style> x,
              std::uint32_t cell_permutation, int dim)
           {
             self.apply_inverse_dof_transformation(
