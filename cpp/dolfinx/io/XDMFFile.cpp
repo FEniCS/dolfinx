@@ -202,8 +202,8 @@ void XDMFFile::write_mesh(const mesh::Mesh& mesh, std::string xpath)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_geometry(const mesh::Geometry<double>& geometry, std::string name,
-                              std::string xpath)
+void XDMFFile::write_geometry(const mesh::Geometry<double>& geometry,
+                              std::string name, std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
