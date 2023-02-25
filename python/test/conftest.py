@@ -5,8 +5,8 @@ import time
 from collections import defaultdict
 
 import pytest
-
 from mpi4py import MPI
+from petsc4py import PETSc
 
 
 def pytest_runtest_teardown(item):
@@ -18,10 +18,11 @@ def pytest_runtest_teardown(item):
 
     # Collect the garbage (call destructors collectively)
     del item
-    # NOTE: How are we sure that 'item' does not hold references
-    #       to temporaries and someone else does not hold a reference
-    #       to 'item'?! Well, it seems that it works...
+    # NOTE: How are we sure that 'item' does not hold references to
+    # temporaries and someone else does not hold a reference to 'item'?!
+    # Well, it seems that it works...
     gc.collect()
+    PETSc.garbage_cleanup()
     comm = MPI.COMM_WORLD
     comm.Barrier()
 
@@ -36,9 +37,7 @@ def pytest_runtest_setup(item):
 @pytest.fixture(scope="module")
 def datadir(request):
     """Return the directory of the shared test data. Assumes run from
-    within repository filetree.
-
-    """
+    within repository filetree."""
     d = os.path.dirname(os.path.abspath(request.module.__file__))
     t = os.path.join(d, "data")
     while not os.path.isdir(t):
@@ -62,8 +61,7 @@ def _create_tempdir(request):
 
     # Construct name test_foo_tempdir from name test_foo.py
     testfilename = os.path.basename(testfile)
-    outputname = testfilename.replace(".py", "_tempdir_{}".format(
-        _worker_id(request)))
+    outputname = testfilename.replace(".py", f"_tempdir_{_worker_id(request)}")
 
     # Get function name test_something from test_foo.py
     function = request.function.__name__
@@ -110,7 +108,6 @@ def _create_tempdir(request):
         while not os.path.exists(path):
             time.sleep(0.1)
             waited += 0.1
-
             if waited > 1:
                 raise RuntimeError(f"Unable to create test directory {path}")
 
