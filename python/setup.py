@@ -56,19 +56,20 @@ class CMakeBuild(build_ext):
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
         cmake_generator = env.get("CMAKE_GENERATOR", "")
+        cmake_args += ["-B", self.build_temp, "-S", ext.sourcedir]
         if not cmake_generator:
             try:
                 # Use ninja if available
-                subprocess.run(['ninja', '--version'], capture_output=True)
-                subprocess.run(['cmake', '-G Ninja', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
+                s = subprocess.run(['cmake', '-G Ninja'] + cmake_args, capture_output=True, check=True, env=env)
+                sys.stderr.write(s.stderr)
+                sys.stdout.write(s.stdout)
             except (FileNotFoundError, subprocess.CalledProcessError):
                 if "CMAKE_BUILD_PARALLEL_LEVEL" not in env:
                     env["CMAKE_BUILD_PARALLEL_LEVEL"] = "3"
-                subprocess.run(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
+                subprocess.run(['cmake'] + cmake_args, env=env)
         else:
-            subprocess.run(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
-
-        subprocess.check_call(['cmake', '--build', '.'], cwd=self.build_temp, env=env)
+            subprocess.run(['cmake'] + cmake_args, env=env)
+        subprocess.run(['cmake', '--build', self.build_temp], env=env)
 
 
 setup(name='fenics-dolfinx',
