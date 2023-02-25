@@ -22,7 +22,10 @@ def pytest_runtest_teardown(item):
     # temporaries and someone else does not hold a reference to 'item'?!
     # Well, it seems that it works...
     gc.collect()
-    # PETSc.garbage_cleanup()
+    try:
+        PETSc.garbage_cleanup()
+    except AttributeError:
+        pass
     comm = MPI.COMM_WORLD
     comm.Barrier()
 
