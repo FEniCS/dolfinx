@@ -60,9 +60,12 @@ class CMakeBuild(build_ext):
         if not cmake_generator:
             try:
                 # Use ninja if available
-                s = subprocess.run(['cmake', '-G Ninja'] + cmake_args, capture_output=True, check=True, env=env)
+                s = subprocess.run(['cmake', '-G Ninja'] + cmake_args,
+                                   capture_output=True, text=True, check=True, env=env)
                 sys.stderr.write(s.stderr)
+                sys.stderr.flush()
                 sys.stdout.write(s.stdout)
+                sys.stdout.flush()
             except (FileNotFoundError, subprocess.CalledProcessError):
                 if "CMAKE_BUILD_PARALLEL_LEVEL" not in env:
                     env["CMAKE_BUILD_PARALLEL_LEVEL"] = "3"
