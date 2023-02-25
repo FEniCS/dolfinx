@@ -1,6 +1,5 @@
 #pragma once
 
-
 /// @brief Miscellaneous classes, functions and types.
 ///
 /// This namespace provides utility type functions for managing
