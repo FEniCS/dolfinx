@@ -4,6 +4,7 @@ import subprocess
 import sys
 import sysconfig
 
+import pybind11
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
@@ -47,23 +48,28 @@ class CMakeBuild(build_ext):
                        '-DPython3_EXECUTABLE=' + sys.executable,
                        f'-DPython3_LIBRARIES={sysconfig.get_config_var("LIBDEST")}',
                        f'-DPython3_INCLUDE_DIRS={sysconfig.get_config_var("INCLUDEPY")}']
-
         cfg = 'Debug' if self.debug else 'Release'
-        build_args = ['--config', cfg]
         cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
 
         env = os.environ.copy()
-        # default to 3 build threads
-        if "CMAKE_BUILD_PARALLEL_LEVEL" not in env:
-            env["CMAKE_BUILD_PARALLEL_LEVEL"] = "3"
-
-        import pybind11
         env['pybind11_DIR'] = pybind11.get_cmake_dir()
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
-        subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
-        subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp, env=env)
+        cmake_generator = env.get("CMAKE_GENERATOR", "")
+        if not cmake_generator:
+            try:
+                # Use ninja if available
+                subprocess.run(['ninja', '--version'])
+                subprocess.run(['cmake', '-G Ninja', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
+            except (FileNotFoundError, subprocess.CalledProcessError):
+                if "CMAKE_BUILD_PARALLEL_LEVEL" not in env:
+                    env["CMAKE_BUILD_PARALLEL_LEVEL"] = "3"
+                subprocess.run(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
+        else:
+            subprocess.run(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
+
+        subprocess.check_call(['cmake', '--build', '.'], cwd=self.build_temp, env=env)
 
 
 setup(name='fenics-dolfinx',
