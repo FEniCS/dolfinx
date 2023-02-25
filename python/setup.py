@@ -66,7 +66,7 @@ class CMakeBuild(build_ext):
                 sys.stderr.flush()
                 sys.stdout.write(s.stdout)
                 sys.stdout.flush()
-            except (FileNotFoundError, subprocess.CalledProcessError):
+            except subprocess.CalledProcessError:
                 if "CMAKE_BUILD_PARALLEL_LEVEL" not in env:
                     env["CMAKE_BUILD_PARALLEL_LEVEL"] = "3"
                 subprocess.run(['cmake'] + cmake_args, env=env)
