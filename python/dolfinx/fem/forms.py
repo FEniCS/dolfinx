@@ -17,11 +17,12 @@ if typing.TYPE_CHECKING:
     from dolfinx.mesh import Mesh
 
 import numpy as np
-import ufl
-from petsc4py import PETSc
 
+import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import jit
+
+from petsc4py import PETSc
 
 
 class FormMetaClass:
