@@ -616,12 +616,12 @@ if MPI.COMM_WORLD.rank == 0:
     print(f"The numerical extinction efficiency is {q_ext_fenics}")
     print(f"The error is {err_ext*100}%")
 
-    # Check whether the geometrical and optical parameters ar correct
-    assert radius_sph / wl0 == 0.025 / 0.4
-    assert eps_au == -1.0782 + 1j * 5.8089
-    assert err_abs < 0.01
-    # assert err_sca < 0.01
-    assert err_ext < 0.01
+# Check whether the geometrical and optical parameters ar correct
+assert radius_sph / wl0 == 0.025 / 0.4
+assert eps_au == -1.0782 + 1j * 5.8089
+assert err_abs < 0.01
+# assert err_sca < 0.01
+assert err_ext < 0.01
 
 if has_vtx:
     v_dg_el = ufl.VectorElement("DG", msh.ufl_cell(), degree, dim=3)
