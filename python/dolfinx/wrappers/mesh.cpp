@@ -250,25 +250,27 @@ void mesh(py::module& m)
       .value("shared_vertex", dolfinx::mesh::GhostMode::shared_vertex);
 
   // dolfinx::mesh::Geometry class
-  py::class_<dolfinx::mesh::Geometry, std::shared_ptr<dolfinx::mesh::Geometry>>(
+  py::class_<dolfinx::mesh::Geometry<double>,
+             std::shared_ptr<dolfinx::mesh::Geometry<double>>>(
       m, "Geometry", "Geometry object")
-      .def_property_readonly("dim", &dolfinx::mesh::Geometry::dim,
+      .def_property_readonly("dim", &dolfinx::mesh::Geometry<double>::dim,
                              "Geometric dimension")
-      .def_property_readonly("dofmap", &dolfinx::mesh::Geometry::dofmap)
-      .def("index_map", &dolfinx::mesh::Geometry::index_map)
+      .def_property_readonly("dofmap", &dolfinx::mesh::Geometry<double>::dofmap)
+      .def("index_map", &dolfinx::mesh::Geometry<double>::index_map)
       .def_property_readonly(
           "x",
-          [](const dolfinx::mesh::Geometry& self)
+          [](const dolfinx::mesh::Geometry<double>& self)
           {
             std::array<std::size_t, 2> shape = {self.x().size() / 3, 3};
             return py::array_t<double>(shape, self.x().data(), py::cast(self));
           },
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
-      .def_property_readonly("cmap", &dolfinx::mesh::Geometry::cmap,
+      .def_property_readonly("cmap", &dolfinx::mesh::Geometry<double>::cmap,
                              "The coordinate map")
-      .def_property_readonly("input_global_indices",
-                             &dolfinx::mesh::Geometry::input_global_indices);
+      .def_property_readonly(
+          "input_global_indices",
+          &dolfinx::mesh::Geometry<double>::input_global_indices);
 
   // dolfinx::mesh::TopologyComputation
   m.def(
@@ -350,7 +352,7 @@ void mesh(py::module& m)
       .def(py::init(
                [](const MPICommWrapper comm,
                   const dolfinx::mesh::Topology& topology,
-                  dolfinx::mesh::Geometry& geometry)
+                  dolfinx::mesh::Geometry<double>& geometry)
                { return dolfinx::mesh::Mesh(comm.get(), topology, geometry); }),
            py::arg("comm"), py::arg("topology"), py::arg("geometry"))
       .def_property_readonly(
