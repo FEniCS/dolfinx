@@ -32,6 +32,7 @@ class Function;
 
 namespace dolfinx::mesh
 {
+template <typename T>
 class Geometry;
 enum class GhostMode : int;
 class Mesh;
@@ -92,7 +93,7 @@ public:
   /// @param[in] geometry
   /// @param[in] name
   /// @param[in] xpath XPath of a node where Geometry will be inserted
-  void write_geometry(const mesh::Geometry& geometry, std::string name,
+  void write_geometry(const mesh::Geometry<double>& geometry, std::string name,
                       std::string xpath = "/Xdmf/Domain");
 
   /// Read in Mesh

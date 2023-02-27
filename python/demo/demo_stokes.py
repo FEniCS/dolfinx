@@ -84,17 +84,18 @@
 
 
 import numpy as np
+
 import ufl
+from dolfinx import fem, la
 from dolfinx.fem import (Constant, Function, FunctionSpace, dirichletbc,
                          extract_function_spaces, form,
                          locate_dofs_topological)
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import div, dx, grad, inner
 
-from dolfinx import fem, la
+from mpi4py import MPI
+from petsc4py import PETSc
 
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
 # locating geometrically subsets of the boundary, and define a function
