@@ -17,9 +17,9 @@ if typing.TYPE_CHECKING:
     from dolfinx.cpp.graph import AdjacencyList_int32
 
 import numpy
-from dolfinx.cpp.geometry import compute_collisions, compute_distance_gjk
 
 from dolfinx import cpp as _cpp
+from dolfinx.cpp.geometry import compute_collisions, compute_distance_gjk
 
 __all__ = ["compute_colliding_cells", "squared_distance", "compute_closest_entity", "compute_collisions",
            "compute_distance_gjk", "create_midpoint_tree"]
