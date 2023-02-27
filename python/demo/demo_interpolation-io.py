@@ -20,12 +20,14 @@
 
 # +
 import numpy as np
+
+from dolfinx import plot
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import CellType, create_rectangle, locate_entities
+
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
 
-from dolfinx import plot
 # -
 
 # Create a mesh. For later in the demo we need to ensure that a boundary

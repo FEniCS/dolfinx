@@ -6,6 +6,8 @@
 
 import numpy
 import pytest
+from numpy import isclose, logical_and
+
 import ufl
 from dolfinx.fem import FunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix
@@ -14,8 +16,8 @@ from dolfinx.mesh import (CellType, DiagonalType, GhostMode, RefinementOption,
                           create_unit_square, locate_entities,
                           locate_entities_boundary, meshtags, refine,
                           refine_plaza, transfer_meshtag)
+
 from mpi4py import MPI
-from numpy import isclose, logical_and
 
 
 def test_Refinecreate_unit_square():
