@@ -39,7 +39,6 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         self._A.destroy()
         self._b.destroy()
 
-
     def solve(self, u: fem.Function):
         """Solve non-linear problem into function u. Returns the number
         of iterations and if the solver converged."""
