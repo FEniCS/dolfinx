@@ -41,6 +41,7 @@ def test_gradient(mesh):
 
     G.assemble()
     assert np.isclose(G.norm(PETSc.NormType.FROBENIUS), np.sqrt(2.0 * num_edges))
+    G.destroy()
 
 
 @pytest.mark.parametrize("p", range(1, 4))
@@ -88,6 +89,7 @@ def test_gradient_interpolation(cell_type, p, q):
     w.x.scatter_forward()
 
     assert np.allclose(w_expr.x.array, w.x.array)
+    G.destroy()
 
 
 @pytest.mark.parametrize("p", range(1, 4))
@@ -150,6 +152,7 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
     w.x.scatter_forward()
 
     assert np.allclose(w_vec.x.array, w.x.array)
+    G.destroy()
 
 
 @pytest.mark.skip_in_parallel
@@ -188,3 +191,4 @@ def test_nonaffine_discrete_operator():
 
     s = assemble_scalar(form(ufl.inner(w - v, w - v) * ufl.dx))
     assert np.isclose(s, 0)
+    G.destroy()

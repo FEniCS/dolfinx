@@ -71,15 +71,17 @@ def run_scalar_test(V, degree):
 
     assert np.absolute(error) < 1.0e-14
 
+    solver.destroy()
+    A.destroy()
+    b.destroy()
+
 
 @pytest.mark.parametrize("degree", range(1, 6))
 def test_basix_element_wrapper(degree):
     e = basix.create_element(basix.ElementFamily.P, basix.CellType.triangle, degree, basix.LagrangeVariant.gll_isaac)
     ufl_element = BasixElement(e)
-
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     V = FunctionSpace(mesh, ufl_element)
-
     run_scalar_test(V, degree)
 
 

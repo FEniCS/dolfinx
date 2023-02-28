@@ -92,6 +92,11 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
     assert np.isclose(b_mesh_0.norm(), b_submesh.norm())
     assert np.isclose(s_mesh_0, s_submesh)
 
+    A_mesh_0.destroy()
+    b_mesh_0.destroy()
+    A_submesh.destroy()
+    b_submesh.destroy()
+
 
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("k", [1, 4])
@@ -118,3 +123,8 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     assert np.isclose(A_submesh.norm(), A_square_mesh.norm())
     assert np.isclose(b_submesh.norm(), b_square_mesh.norm())
     assert np.isclose(s_submesh, s_square_mesh)
+
+    A_submesh.destroy()
+    b_submesh.destroy()
+    A_square_mesh.destroy()
+    b_square_mesh.destroy()

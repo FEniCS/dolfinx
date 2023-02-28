@@ -184,6 +184,8 @@ def test_rank1_hdiv():
 
     assert np.isclose((h2.vector - h.vector).norm(), 0.0)
 
+    A.destroy()
+
 
 def test_simple_evaluation():
     """Test evaluation of UFL Expression.

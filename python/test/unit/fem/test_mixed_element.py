@@ -42,6 +42,7 @@ def test_mixed_element(ElementType, family, cell, degree):
         A = dolfinx.fem.petsc.assemble_matrix(a)
         A.assemble()
         norms.append(A.norm())
+        A.destroy()
 
         U_el = ufl.MixedElement(U_el)
 
@@ -59,6 +60,7 @@ def test_vector_element():
     a = form(ufl.inner(u, v) * ufl.dx)
     A = dolfinx.fem.petsc.assemble_matrix(a)
     A.assemble()
+    A.destroy()
 
     with pytest.raises(ValueError):
         # VectorFunctionSpace containing a vector should throw an error rather than segfaulting
@@ -68,6 +70,7 @@ def test_vector_element():
         a = form(ufl.inner(u, v) * ufl.dx)
         A = dolfinx.fem.petsc.assemble_matrix(a)
         A.assemble()
+        A.destroy()
 
 
 @pytest.mark.skip_in_parallel
@@ -94,3 +97,6 @@ def test_element_product(d1, d2):
     B.assemble()
 
     assert np.isclose(A.norm(), B.norm())
+
+    A.destroy()
+    B.destroy()
