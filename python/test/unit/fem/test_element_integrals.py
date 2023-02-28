@@ -302,6 +302,9 @@ def test_plus_minus_simple_vector(cell_type, pm):
 
                 assert np.isclose(results[0][dof0], result[dof1])
 
+    for x in results:
+        x.destroy()
+
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('pm1', ["+", "-"])
@@ -353,6 +356,9 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
                     assert False
 
                 assert np.isclose(results[0][dof0], result[dof1])
+
+    for x in results:
+        x.destroy()
 
 
 @pytest.mark.skip_in_parallel
@@ -408,6 +414,9 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
             for c, d in dof_order:
                 assert np.isclose(results[0][a, c], result[b, d])
 
+    for x in results:
+        x.destroy()
+
 
 @pytest.mark.skip(reason="This test relies on the mesh constructor not re-ordering the mesh points. Needs replacing.")
 @pytest.mark.skip_in_parallel
@@ -415,7 +424,6 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
 @pytest.mark.parametrize('space_type', ["N1curl", "N2curl"])
 def test_curl(space_type, order):
     """Test that curl is consistent for different cell permutations of a tetrahedron."""
-
     tdim = dolfinx.mesh.cell_dim(CellType.tetrahedron)
     points = unit_cell_points(CellType.tetrahedron)
 
@@ -427,7 +435,6 @@ def test_curl(space_type, order):
     # Assemble vector on 5 randomly numbered cells
     for i in range(5):
         random.shuffle(cell)
-
         domain = ufl.Mesh(ufl.VectorElement("Lagrange", ufl.tetrahedron, 1))
         mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
         V = FunctionSpace(mesh, (space_type, order))
@@ -467,6 +474,9 @@ def test_curl(space_type, order):
                 continue
             break
 
+    for x in results:
+        x.destroy()
+
 
 def create_quad_mesh(offset):
     """Creates a mesh of a single square element if offset = 0, or a
@@ -489,7 +499,9 @@ def assemble_div_matrix(k, offset):
     a = form(ufl.inner(u, ufl.div(w)) * ufl.dx)
     A = assemble_matrix(a)
     A.assemble()
-    return A[:, :]
+    _A = A[:, :]
+    A.destroy()
+    return _A
 
 
 def assemble_div_vector(k, offset):
@@ -498,7 +510,10 @@ def assemble_div_vector(k, offset):
     v = ufl.TestFunction(V)
     L = form(ufl.inner(Constant(mesh, PETSc.ScalarType(1)), ufl.div(v)) * ufl.dx)
     b = assemble_vector(L)
-    return b[:]
+    b.assemble()
+    _b = b[:]
+    b.destroy()
+    return _b
 
 
 @pytest.mark.skip_in_parallel
@@ -508,7 +523,6 @@ def test_div_general_quads_mat(k):
     "DQ" space and w is from an "RTCF" space, gives the same matrix for
     square and trapezoidal elements. This should be the case due to the
     properties of the Piola transform."""
-
     # Assemble matrix on a mesh of square elements and on a mesh of
     # trapezium elements
     A_square = assemble_div_matrix(k, 0)
@@ -526,7 +540,6 @@ def test_div_general_quads_vec(k):
     "RTCF" space, gives the same matrix for square and trapezoidal
     elements. This should be the case due to the properties of the Piola
     transform."""
-
     # Assemble vector on a mesh of square elements and on a mesh of
     # trapezium elements
     L_square = assemble_div_vector(k, 0)

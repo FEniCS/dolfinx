@@ -159,6 +159,14 @@ def test_matrix_assembly_block_nl():
     assert A2.norm() == pytest.approx(Anorm0, 1.0e-12)
     assert b2.norm() == pytest.approx(bnorm0, 1.0e-12)
 
+    A0.destroy()
+    A1.destroy()
+    A2.destroy()
+    b0.destroy()
+    b1.destroy()
+    b2.destroy()
+    x1.destroy()
+
 
 class NonlinearPDE_SNESProblem():
     def __init__(self, F, J, soln_vars, bcs, P=None):
@@ -325,7 +333,15 @@ def test_assembly_solve_block_nl():
         snes.solve(None, x)
         assert snes.getKSP().getConvergedReason() > 0
         assert snes.getConvergedReason() > 0
-        return x.norm()
+
+        xnorm = x.norm()
+
+        snes.destroy()
+        Jmat.destroy()
+        Fvec.destroy()
+        x.destroy()
+
+        return xnorm
 
     def nested_solve():
         """Nested version"""
@@ -362,7 +378,15 @@ def test_assembly_solve_block_nl():
         snes.solve(None, x)
         assert snes.getKSP().getConvergedReason() > 0
         assert snes.getConvergedReason() > 0
-        return x.norm()
+
+        xnorm = x.norm()
+
+        snes.destroy()
+        Jmat.destroy()
+        Fvec.destroy()
+        x.destroy()
+
+        return xnorm
 
     def monolithic_solve():
         """Monolithic version"""
@@ -407,7 +431,15 @@ def test_assembly_solve_block_nl():
         snes.solve(None, x)
         assert snes.getKSP().getConvergedReason() > 0
         assert snes.getConvergedReason() > 0
-        return x.norm()
+
+        xnorm = x.norm()
+
+        snes.destroy()
+        Jmat.destroy()
+        Fvec.destroy()
+        x.destroy()
+
+        return xnorm
 
     norm0 = blocked_solve()
     norm1 = nested_solve()
@@ -501,6 +533,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     snes.solve(None, x0)
 
     assert snes.getConvergedReason() > 0
+    snes.destroy()
 
     # -- Blocked and nested
 
@@ -539,6 +572,8 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     assert nest_matrix_norm(Jmat1) == pytest.approx(Jmat0.norm(), 1.0e-12)
     assert Fvec1.norm() == pytest.approx(Fvec0.norm(), 1.0e-12)
     assert x1.norm() == pytest.approx(x0.norm(), 1.0e-12)
+
+    snes.destroy()
 
     # -- Monolithic
 
@@ -588,3 +623,20 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     assert Jmat2.norm() == pytest.approx(Jmat0.norm(), 1.0e-12)
     assert Fvec2.norm() == pytest.approx(Fvec0.norm(), 1.0e-12)
     assert x2.norm() == pytest.approx(x0.norm(), 1.0e-12)
+
+    snes.destroy()
+
+    Jmat0.destroy()
+    Pmat0.destroy()
+    Fvec0.destroy()
+    x0.destroy()
+
+    Jmat1.destroy()
+    Pmat1.destroy()
+    Fvec1.destroy()
+    x1.destroy()
+
+    Jmat2.destroy()
+    Pmat2.destroy()
+    Fvec2.destroy()
+    x2.destroy()

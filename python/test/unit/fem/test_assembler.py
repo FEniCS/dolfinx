@@ -96,6 +96,9 @@ def test_assemble_derivatives():
     A2.assemble()
     assert (A1 - A2).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
 
+    A1.destroy()
+    A2.destroy()
+
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_basic_assembly(mode):
@@ -144,6 +147,9 @@ def test_basic_assembly(mode):
     A.assemble()
     assert 2.0 * normA == pytest.approx(A.norm())
 
+    A.destroy()
+    b.destroy()
+
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_basic_assembly_petsc_matrixcsr(mode):
@@ -166,6 +172,8 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     a = form(inner(u, v) * dx + inner(u, v) * ds)
     with pytest.raises(RuntimeError):
         A0 = fem.assemble_matrix(a)
+
+    A1.destroy()
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
@@ -200,6 +208,10 @@ def test_assembly_bcs(mode):
 
     assert (f - b_bc).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
 
+    A.destroy()
+    b.destroy()
+    g.destroy()
+
 
 @pytest.mark.skip_in_parallel
 def test_assemble_manifold():
@@ -231,6 +243,9 @@ def test_assemble_manifold():
 
     assert np.isclose(b.norm(), 0.41231)
     assert np.isclose(A.norm(), 25.0199)
+
+    A.destroy()
+    b.destroy()
 
 
 @pytest.mark.parametrize("mode", [
@@ -347,6 +362,13 @@ def test_matrix_assembly_block(mode):
     assert A2.getType() != "nest"
     assert A2.norm() == pytest.approx(Anorm0, 1.0e-9)
     assert b2.norm() == pytest.approx(bnorm0, 1.0e-9)
+
+    A0.destroy()
+    b0.destroy()
+    A1.destroy()
+    b1.destroy()
+    A2.destroy()
+    b2.destroy()
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
@@ -469,6 +491,14 @@ def test_assembly_solve_block(mode):
     x2norm = x2.norm()
     assert x2norm == pytest.approx(x0norm, 1.0e-10)
 
+    ksp.destroy()
+    A0.destroy()
+    b0.destroy()
+    A1.destroy()
+    b1.destroy()
+    A2.destroy()
+    b2.destroy()
+
 
 @pytest.mark.parametrize("mesh", [
     create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
@@ -559,6 +589,7 @@ def test_assembly_solve_taylor_hood(mesh):
         x = b.copy()
         ksp.solve(b, x)
         assert ksp.getConvergedReason() > 0
+        ksp.destroy()
         return b.norm(), x.norm(), nest_matrix_norm(A), nest_matrix_norm(P)
 
     def blocked_solve():
@@ -580,6 +611,7 @@ def test_assembly_solve_taylor_hood(mesh):
         x = A.createVecRight()
         ksp.solve(b, x)
         assert ksp.getConvergedReason() > 0
+        ksp.destroy()
         return b.norm(), x.norm(), A.norm(), P.norm()
 
     def monolithic_solve():
@@ -641,6 +673,7 @@ def test_assembly_solve_taylor_hood(mesh):
         x = A.createVecRight()
         ksp.solve(b, x)
         assert ksp.getConvergedReason() > 0
+        ksp.destroy()
         return b.norm(), x.norm(), A.norm(), P.norm()
 
     bnorm0, xnorm0, Anorm0, Pnorm0 = nested_solve()
@@ -675,6 +708,9 @@ def test_basic_interior_facet_assembly():
     b = assemble_vector(L)
     b.assemble()
     assert isinstance(b, PETSc.Vec)
+
+    A.destroy()
+    b.destroy()
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
@@ -712,6 +748,11 @@ def test_basic_assembly_constant(mode):
 
     assert (A1 * 3.0 - A2 * 5.0).norm() == pytest.approx(0.0)
     assert (b1 * 3.0 - b2 * 5.0).norm() == pytest.approx(0.0)
+
+    A1.destroy()
+    b1.destroy()
+    A2.destroy()
+    b2.destroy()
 
 
 def test_lambda_assembler():
@@ -805,6 +846,9 @@ def test_pack_coefficients():
         A.assemble()
         assert (A - A0).norm() > 1.0e-5
 
+    A.destroy()
+    A0.destroy()
+
 
 def test_coefficents_non_constant():
     "Test packing coefficients with non-constant values"
@@ -845,6 +889,8 @@ def test_coefficents_non_constant():
     b0 = assemble_vector(F)
     b0.assemble()
     assert np.linalg.norm(b0.array) == pytest.approx(0.0)
+
+    b0.destroy()
 
 
 def test_vector_types():
@@ -938,6 +984,10 @@ def test_assemble_empty_rank_mesh():
 
     assert np.allclose(x.array, 10.0)
 
+    ksp.destroy()
+    b.destroy()
+    A.destroy()
+
 
 @pytest.mark.parametrize("mode", [
     GhostMode.none,
@@ -967,3 +1017,6 @@ def test_matrix_assembly_rectangular(mode):
     for row in range(2):
         A_sub = A2.getNestSubMatrix(row, 0)
         assert A_sub.equal(A1)
+
+    A1.destroy()
+    A2.destroy()
