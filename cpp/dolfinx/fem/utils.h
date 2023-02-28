@@ -475,6 +475,10 @@ Form<T> create_form(
       {
         // Create list of tagged boundary facets
         std::span<const std::int32_t> entities = sd->second->indices();
+        auto it0 = entities.begin();
+        auto it1 = std::lower_bound(it0, entities.end(),
+                                    topology.index_map(tdim - 1)->size_local());
+        entities = entities.first(std::distance(it0, it1));
         std::span<const int> values = sd->second->values();
         std::vector<std::int32_t> facets;
         std::set_intersection(entities.begin(), entities.end(), bfacets.begin(),
@@ -557,6 +561,10 @@ Form<T> create_form(
       else if (sd != subdomains.end() and sd->second)
       {
         std::span<const std::int32_t> entities = sd->second->indices();
+        auto it0 = entities.begin();
+        auto it1 = std::lower_bound(it0, entities.end(),
+                                    topology.index_map(tdim - 1)->size_local());
+        entities = entities.first(std::distance(it0, it1));
         std::span<const int> values = sd->second->values();
         for (std::size_t j = 0; j < entities.size(); ++j)
         {

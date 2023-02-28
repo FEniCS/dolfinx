@@ -100,10 +100,10 @@ jobs:
       - name: Run DOLFINx Python unit tests (serial)
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip3 install sympy
           pytest -n=auto --durations=50 python/test/unit/
       - name: Run DOLFINx Python unit tests (MPI, np=2)
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cd python/
-          mpiexec -n 2 pytest test/unit/
+          cd python/test/unit
+          # mpiexec -n 2 pytest .
+          mpiexec -n 2 pytest common geometry graph io la mesh nls

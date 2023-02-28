@@ -278,7 +278,7 @@ void fem::petsc::apply_lifting(
         coeffs,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
-    const std::vector<Vec>& x0, double scale)
+    const std::vector<Vec>& x0, PetscScalar scale)
 {
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);
@@ -324,7 +324,7 @@ void fem::petsc::apply_lifting(
     Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
-    const std::vector<Vec>& x0, double scale)
+    const std::vector<Vec>& x0, PetscScalar scale)
 {
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);
@@ -368,7 +368,7 @@ void fem::petsc::apply_lifting(
 void fem::petsc::set_bc(
     Vec b,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
-    const Vec x0, double scale)
+    const Vec x0, PetscScalar scale)
 {
   PetscInt n = 0;
   VecGetLocalSize(b, &n);
