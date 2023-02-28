@@ -234,9 +234,7 @@ def test_assemble_manifold():
 
     assert np.isclose(b.norm(), 0.41231)
     assert np.isclose(A.norm(), 25.0199)
-
-    A.destroy()
-    b.destroy()
+    A.destroy(), b.destroy()
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
@@ -396,94 +394,102 @@ def test_assembly_solve_block(mode):
         pass
         # print("Norm:", its, rnorm)
 
-    A0 = assemble_matrix_block([[a00, a01], [a10, a11]], bcs=bcs)
-    b0 = assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]], bcs=bcs)
-    A0.assemble()
-    A0norm = A0.norm()
-    b0norm = b0.norm()
-    x0 = A0.createVecLeft()
-    ksp = PETSc.KSP()
-    ksp.create(mesh.comm)
-    ksp.setOperators(A0)
-    ksp.setMonitor(monitor)
-    ksp.setType('cg')
-    ksp.setTolerances(rtol=1.0e-14)
-    ksp.setFromOptions()
-    ksp.solve(b0, x0)
-    x0norm = x0.norm()
+    def blocked():
+        """Blocked"""
+        A = assemble_matrix_block([[a00, a01], [a10, a11]], bcs=bcs)
+        b = assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]], bcs=bcs)
+        A.assemble()
+        x = A.createVecLeft()
+        ksp = PETSc.KSP()
+        ksp.create(mesh.comm)
+        ksp.setOperators(A)
+        ksp.setMonitor(monitor)
+        ksp.setType('cg')
+        ksp.setTolerances(rtol=1.0e-14)
+        ksp.setFromOptions()
+        ksp.solve(b, x)
 
-    # Nested (MatNest)
-    A1 = assemble_matrix_nest([[a00, a01], [a10, a11]], bcs=bcs, diagonal=1.0)
-    A1.assemble()
-    b1 = assemble_vector_nest([L0, L1])
-    apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs=bcs)
-    for b_sub in b1.getNestSubVecs():
-        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = bcs_by_block([L0.function_spaces[0], L1.function_spaces[0]], bcs)
-    set_bc_nest(b1, bcs0)
-    b1.assemble()
+        Anorm = A.norm()
+        bnorm = b.norm()
+        xnorm = x.norm()
+        ksp.destroy(), A.destroy(), b.destroy(), x.destroy()
+        return Anorm, bnorm, xnorm
 
-    b1norm = b1.norm()
-    assert b1norm == pytest.approx(b0norm, 1.0e-12)
-    A1norm = nest_matrix_norm(A1)
-    assert A0norm == pytest.approx(A1norm, 1.0e-12)
+    def nested():
+        """Nested (MatNest)"""
+        A = assemble_matrix_nest([[a00, a01], [a10, a11]], bcs=bcs, diagonal=1.0)
+        A.assemble()
+        b = assemble_vector_nest([L0, L1])
+        apply_lifting_nest(b, [[a00, a01], [a10, a11]], bcs=bcs)
+        for b_sub in b.getNestSubVecs():
+            b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        bcs0 = bcs_by_block([L0.function_spaces[0], L1.function_spaces[0]], bcs)
+        set_bc_nest(b, bcs0)
+        b.assemble()
 
-    x1 = b1.copy()
-    ksp = PETSc.KSP()
-    ksp.create(mesh.comm)
-    ksp.setMonitor(monitor)
-    ksp.setOperators(A1)
-    ksp.setType('cg')
-    ksp.setTolerances(rtol=1.0e-12)
-    ksp.setFromOptions()
-    ksp.solve(b1, x1)
-    x1norm = x1.norm()
-    assert x1norm == pytest.approx(x0norm, rel=1.0e-12)
+        x = b.copy()
+        ksp = PETSc.KSP()
+        ksp.create(mesh.comm)
+        ksp.setMonitor(monitor)
+        ksp.setOperators(A)
+        ksp.setType('cg')
+        ksp.setTolerances(rtol=1.0e-12)
+        ksp.setFromOptions()
+        ksp.solve(b, x)
 
-    # Monolithic version
-    E = P * P
-    W = FunctionSpace(mesh, E)
-    u0, u1 = ufl.TrialFunctions(W)
-    v0, v1 = ufl.TestFunctions(W)
-    a = inner(u0, v0) * dx + inner(u1, v1) * dx
-    L = inner(f, v0) * ufl.dx + inner(g, v1) * dx
-    a, L = form(a), form(L)
+        Anorm = nest_matrix_norm(A)
+        bnorm = b.norm()
+        xnorm = x.norm()
+        ksp.destroy(), A.destroy(), b.destroy(), x.destroy()
+        return Anorm, bnorm, xnorm
 
-    bdofsW0_V0 = locate_dofs_topological(W.sub(0), facetdim, bndry_facets)
-    bdofsW1_V1 = locate_dofs_topological(W.sub(1), facetdim, bndry_facets)
-    bcs = [dirichletbc(u0_bc, bdofsW0_V0, W.sub(0)), dirichletbc(u1_bc, bdofsW1_V1, W.sub(1))]
+    def monolithic():
+        """Monolithic version"""
+        E = P * P
+        W = FunctionSpace(mesh, E)
+        u0, u1 = ufl.TrialFunctions(W)
+        v0, v1 = ufl.TestFunctions(W)
+        a = inner(u0, v0) * dx + inner(u1, v1) * dx
+        L = inner(f, v0) * ufl.dx + inner(g, v1) * dx
+        a, L = form(a), form(L)
 
-    A2 = assemble_matrix(a, bcs=bcs)
-    A2.assemble()
-    b2 = assemble_vector(L)
-    apply_lifting(b2, [a], [bcs])
-    b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    set_bc(b2, bcs)
-    A2norm = A2.norm()
-    b2norm = b2.norm()
-    assert A2norm == pytest.approx(A0norm, 1.0e-12)
-    assert b2norm == pytest.approx(b0norm, 1.0e-12)
+        bdofsW0_V0 = locate_dofs_topological(W.sub(0), facetdim, bndry_facets)
+        bdofsW1_V1 = locate_dofs_topological(W.sub(1), facetdim, bndry_facets)
+        bcs = [dirichletbc(u0_bc, bdofsW0_V0, W.sub(0)), dirichletbc(u1_bc, bdofsW1_V1, W.sub(1))]
 
-    x2 = b2.copy()
-    ksp = PETSc.KSP()
-    ksp.create(mesh.comm)
-    ksp.setMonitor(monitor)
-    ksp.setOperators(A2)
-    ksp.setType('cg')
-    ksp.getPC().setType('jacobi')
-    ksp.setTolerances(rtol=1.0e-12)
-    ksp.setFromOptions()
-    ksp.solve(b2, x2)
-    x2norm = x2.norm()
-    assert x2norm == pytest.approx(x0norm, 1.0e-10)
+        A = assemble_matrix(a, bcs=bcs)
+        A.assemble()
+        b = assemble_vector(L)
+        apply_lifting(b, [a], [bcs])
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        set_bc(b, bcs)
 
-    ksp.destroy()
-    A0.destroy()
-    b0.destroy()
-    A1.destroy()
-    b1.destroy()
-    A2.destroy()
-    b2.destroy()
+        x = b.copy()
+        ksp = PETSc.KSP()
+        ksp.create(mesh.comm)
+        ksp.setMonitor(monitor)
+        ksp.setOperators(A)
+        ksp.setType('cg')
+        ksp.getPC().setType('jacobi')
+        ksp.setTolerances(rtol=1.0e-12)
+        ksp.setFromOptions()
+        ksp.solve(b, x)
+        Anorm = A.norm()
+        bnorm = b.norm()
+        xnorm = x.norm()
+        ksp.destroy(), A.destroy(), b.destroy(), x.destroy()
+        return Anorm, bnorm, xnorm
+
+    Anorm0, bnorm0, xnorm0 = blocked()
+    Anorm1, bnorm1, xnorm1 = nested()
+    assert Anorm1 == pytest.approx(Anorm0, 1.0e-12)
+    assert bnorm1 == pytest.approx(bnorm0, 1.0e-12)
+    assert xnorm1 == pytest.approx(xnorm0, 1.0e-10)
+
+    Anorm2, bnorm2, xnorm2 = monolithic()
+    assert Anorm2 == pytest.approx(Anorm0, 1.0e-12)
+    assert bnorm2 == pytest.approx(bnorm0, 1.0e-12)
+    assert xnorm2 == pytest.approx(xnorm0, 1.0e-10)
 
 
 @pytest.mark.parametrize("mesh", [
@@ -621,7 +627,6 @@ def test_assembly_solve_taylor_hood(mesh):
         L0 = inner(f, v) * dx
         L1 = inner(p_zero, q) * dx
         L = L0 + L1
-
         a, p_form, L = form(a), form(p_form), form(L)
 
         bdofsW0_P2_0 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets0)
@@ -663,13 +668,12 @@ def test_assembly_solve_taylor_hood(mesh):
 
     bnorm0, xnorm0, Anorm0, Pnorm0 = nested_solve()
     bnorm1, xnorm1, Anorm1, Pnorm1 = blocked_solve()
-    bnorm2, xnorm2, Anorm2, Pnorm2 = monolithic_solve()
-
     assert bnorm1 == pytest.approx(bnorm0, 1.0e-12)
     assert xnorm1 == pytest.approx(xnorm0, 1.0e-8)
     assert Anorm1 == pytest.approx(Anorm0, 1.0e-12)
     assert Pnorm1 == pytest.approx(Pnorm0, 1.0e-12)
 
+    bnorm2, xnorm2, Anorm2, Pnorm2 = monolithic_solve()
     assert bnorm2 == pytest.approx(bnorm0, 1.0e-12)
     assert xnorm2 == pytest.approx(xnorm0, 1.0e-8)
     assert Anorm2 == pytest.approx(Anorm0, 1.0e-12)
