@@ -287,7 +287,6 @@ class Function(ufl.Coefficient):
         # Store DOLFINx FunctionSpace object
         self._V = V
 
-
     def __del__(self):
         if self._petsc_x is not None:
             self._petsc_x.destroy()
