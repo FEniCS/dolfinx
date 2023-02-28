@@ -157,7 +157,9 @@ void apply_lifting(
       throw std::runtime_error("Mis-mismatch between meshes.");
   }
 
-  assert(mesh);
+  if (!mesh)
+    throw std::runtime_error("Unable to extract a mesh.");
+
   if constexpr (std::is_same_v<double, impl::scalar_value_type_t<T>>)
   {
     impl::apply_lifting<T>(b, a, mesh->geometry(), constants, coeffs, bcs1, x0,

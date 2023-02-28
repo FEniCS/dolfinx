@@ -95,9 +95,7 @@ def test_assemble_derivatives():
     A2 = assemble_matrix(a)
     A2.assemble()
     assert (A1 - A2).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
-
-    A1.destroy()
-    A2.destroy()
+    A1.destroy(), A2.destroy()
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
@@ -146,9 +144,7 @@ def test_basic_assembly(mode):
     assemble_matrix(A, a)
     A.assemble()
     assert 2.0 * normA == pytest.approx(A.norm())
-
-    A.destroy()
-    b.destroy()
+    A.destroy(), b.destroy()
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
@@ -166,14 +162,13 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     A1.assemble()
     assert isinstance(A1, PETSc.Mat)
     assert np.sqrt(A0.norm_squared()) == pytest.approx(A1.norm())
+    A1.destroy()
 
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = form(inner(u, v) * dx + inner(u, v) * ds)
     with pytest.raises(RuntimeError):
         A0 = fem.assemble_matrix(a)
-
-    A1.destroy()
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
@@ -205,12 +200,8 @@ def test_assembly_bcs(mode):
     apply_lifting(b_bc, [a], [[bc]])
     b_bc.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b_bc, [bc])
-
     assert (f - b_bc).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
-
-    A.destroy()
-    b.destroy()
-    g.destroy()
+    A.destroy(), b.destroy(), g.destroy()
 
 
 @pytest.mark.skip_in_parallel
@@ -248,10 +239,7 @@ def test_assemble_manifold():
     b.destroy()
 
 
-@pytest.mark.parametrize("mode", [
-    GhostMode.none,
-    GhostMode.shared_facet
-])
+@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_matrix_assembly_block(mode):
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic
@@ -504,8 +492,7 @@ def test_assembly_solve_block(mode):
     create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
     create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.shared_facet),
     create_unit_cube(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.none),
-    create_unit_cube(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.shared_facet)
-])
+    create_unit_cube(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.shared_facet)])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
     P2 = VectorFunctionSpace(mesh, ("Lagrange", 2))
@@ -702,13 +689,11 @@ def test_basic_interior_facet_assembly():
     A = assemble_matrix(a)
     A.assemble()
     assert isinstance(A, PETSc.Mat)
-
     L = ufl.conj(ufl.avg(v)) * ufl.dS
     L = form(L)
     b = assemble_vector(L)
     b.assemble()
     assert isinstance(b, PETSc.Vec)
-
     A.destroy()
     b.destroy()
 
@@ -745,10 +730,8 @@ def test_basic_assembly_constant(mode):
 
     b2 = assemble_vector(L)
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-
     assert (A1 * 3.0 - A2 * 5.0).norm() == pytest.approx(0.0)
     assert (b1 * 3.0 - b2 * 5.0).norm() == pytest.approx(0.0)
-
     A1.destroy()
     b1.destroy()
     A2.destroy()
@@ -846,8 +829,7 @@ def test_pack_coefficients():
         A.assemble()
         assert (A - A0).norm() > 1.0e-5
 
-    A.destroy()
-    A0.destroy()
+    A.destroy(), A0.destroy()
 
 
 def test_coefficents_non_constant():
@@ -981,18 +963,11 @@ def test_assemble_empty_rank_mesh():
     ksp.setFromOptions()
     x = b.copy()
     ksp.solve(b, x)
-
     assert np.allclose(x.array, 10.0)
-
-    ksp.destroy()
-    b.destroy()
-    A.destroy()
+    ksp.destroy(), b.destroy(), A.destroy()
 
 
-@pytest.mark.parametrize("mode", [
-    GhostMode.none,
-    GhostMode.shared_facet
-])
+@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_matrix_assembly_rectangular(mode):
     """Test assembly of block rectangular block matrices"""
     msh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
@@ -1001,22 +976,26 @@ def test_matrix_assembly_rectangular(mode):
     u = ufl.TrialFunction(V0)
     v0, v1 = ufl.TestFunction(V0), ufl.TestFunction(V1)
 
-    a1 = form(ufl.inner(u, v0) * ufl.dx)
-    A1 = assemble_matrix(a1, bcs=[])
-    A1.assemble()
+    def single():
+        a = form(ufl.inner(u, v0) * ufl.dx)
+        A = assemble_matrix(a, bcs=[])
+        A.assemble()
+        return A
 
-    a2 = form([[ufl.inner(u, v0) * ufl.dx],
-              [ufl.inner(u, v1) * ufl.dx]])
+    def block():
+        a = form([[ufl.inner(u, v0) * ufl.dx],
+                  [ufl.inner(u, v1) * ufl.dx]])
+        A0 = assemble_matrix_block(a, bcs=[])
+        A0.assemble()
+        A1 = assemble_matrix_nest(a, bcs=[])
+        A1.assemble()
+        return A0, A1
 
-    A2 = assemble_matrix_block(a2, bcs=[])
-    A2.assemble()
-    assert A2.norm() == pytest.approx(np.sqrt(2) * A1.norm())
-
-    A2 = assemble_matrix_nest(a2, bcs=[])
-    A2.assemble()
+    A0 = single()
+    A1, A2 = block()
+    assert A1.norm() == pytest.approx(np.sqrt(2) * A0.norm())
     for row in range(2):
         A_sub = A2.getNestSubMatrix(row, 0)
-        assert A_sub.equal(A1)
+        assert A_sub.equal(A0)
 
-    A1.destroy()
-    A2.destroy()
+    A0.destroy(), A1.destroy(), A2.destroy()
