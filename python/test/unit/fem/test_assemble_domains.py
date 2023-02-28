@@ -78,15 +78,13 @@ def test_assembly_dx_domains(mode, meshtags_factory):
     b = assemble_vector(L)
 
     apply_lifting(b, [a], [[bc]])
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES,
-                  mode=PETSc.ScatterMode.REVERSE)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b, [bc])
 
     L2 = form(ufl.inner(w, v) * dx)
     b2 = assemble_vector(L2)
     apply_lifting(b2, [a], [[bc]])
-    b2.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES,
-                   mode=PETSc.ScatterMode.REVERSE)
+    b2.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b2, [bc])
     assert (b - b2).norm() < 1.0e-12
 
@@ -173,7 +171,6 @@ def test_assembly_ds_domains(mode):
     apply_lifting(b2, [a2], [[bc]])
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b2, [bc])
-
     assert b.norm() == pytest.approx(b2.norm(), 1.0e-12)
 
     # Assemble scalar

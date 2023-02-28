@@ -68,7 +68,6 @@ def run_scalar_test(V, degree):
     M = (u_exact - uh)**2 * dx
     M = form(M)
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
-
     assert np.absolute(error) < 1.0e-14
 
     solver.destroy()
@@ -93,15 +92,11 @@ def test_custom_element_triangle_degree1():
     z = np.zeros((0, 1, 0, 1))
     M = [[np.array([[[[1.]]]]), np.array([[[[1.]]]]), np.array([[[[1.]]]])],
          [z, z, z], [z], []]
-
-    e = basix.create_custom_element(
-        basix.CellType.triangle, [], wcoeffs,
-        x, M, 0, basix.MapType.identity, basix.SobolevSpace.H1, False, 1, 1)
+    e = basix.create_custom_element(basix.CellType.triangle, [], wcoeffs,
+                                    x, M, 0, basix.MapType.identity, basix.SobolevSpace.H1, False, 1, 1)
     ufl_element = BasixElement(e)
-
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     V = FunctionSpace(mesh, ufl_element)
-
     run_scalar_test(V, 1)
 
 
@@ -115,14 +110,11 @@ def test_custom_element_triangle_degree4():
     M = [[np.array([[[[1.]]]]), np.array([[[[1.]]]]), np.array([[[[1.]]]])],
          [id, id, id], [id], []]
 
-    e = basix.create_custom_element(
-        basix.CellType.triangle, [], wcoeffs,
-        x, M, 0, basix.MapType.identity, basix.SobolevSpace.H1, False, 4, 4)
+    e = basix.create_custom_element(basix.CellType.triangle, [], wcoeffs,
+                                    x, M, 0, basix.MapType.identity, basix.SobolevSpace.H1, False, 4, 4)
     ufl_element = BasixElement(e)
-
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     V = FunctionSpace(mesh, ufl_element)
-
     run_scalar_test(V, 4)
 
 
@@ -146,14 +138,11 @@ def test_custom_element_triangle_degree4_integral():
          [quadrature_mat, quadrature_mat, quadrature_mat],
          [np.array([[[[1.], [0.], [0.]]], [[[0.], [1.], [0.]]], [[[0.], [0.], [1.]]]])], []]
 
-    e = basix.create_custom_element(
-        basix.CellType.triangle, [], wcoeffs,
-        x, M, 0, basix.MapType.identity, basix.SobolevSpace.H1, False, 4, 4)
+    e = basix.create_custom_element(basix.CellType.triangle, [], wcoeffs,
+                                    x, M, 0, basix.MapType.identity, basix.SobolevSpace.H1, False, 4, 4)
     ufl_element = BasixElement(e)
-
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     V = FunctionSpace(mesh, ufl_element)
-
     run_scalar_test(V, 4)
 
 
@@ -163,15 +152,11 @@ def test_custom_element_quadrilateral_degree1():
     x = [[np.array([[0., 0.]]), np.array([[1., 0.]]), np.array([[0., 1.]]), np.array([[1., 1.]])],
          [z, z, z, z], [z], []]
     z = np.zeros((0, 1, 0, 1))
-    M = [[np.array([[[[1.]]]]), np.array([[[[1.]]]]), np.array([[[[1.]]]]), np.array([[[[1.]]]])],
-         [z, z, z, z], [z], []]
-
-    e = basix.create_custom_element(
-        basix.CellType.quadrilateral, [], wcoeffs,
-        x, M, 0, basix.MapType.identity, basix.SobolevSpace.H1, False, 1, 1)
+    M = [[np.array([[[[1.]]]]), np.array([[[[1.]]]]), np.array(
+        [[[[1.]]]]), np.array([[[[1.]]]])], [z, z, z, z], [z], []]
+    e = basix.create_custom_element(basix.CellType.quadrilateral, [], wcoeffs,
+                                    x, M, 0, basix.MapType.identity, basix.SobolevSpace.H1, False, 1, 1)
     ufl_element = BasixElement(e)
-
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, CellType.quadrilateral)
     V = FunctionSpace(mesh, ufl_element)
-
     run_scalar_test(V, 1)

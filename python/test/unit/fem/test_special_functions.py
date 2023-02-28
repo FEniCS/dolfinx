@@ -39,9 +39,8 @@ def test_facet_area1D():
                                           #   (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron), 1. / 9)
                                           ])
 def test_facet_area(mesh_factory):
-    """
-    Compute facet area of cell. UFL currently only supports affine cells for this computation
-    """
+    """Compute facet area of cell. UFL currently only supports affine
+    cells for this computation"""
     # NOTE: UFL only supports facet area calculations of affine cells
     func, args, exact_area = mesh_factory
     mesh = func(*args)

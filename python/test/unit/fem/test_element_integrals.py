@@ -424,7 +424,6 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
 @pytest.mark.parametrize('space_type', ["N1curl", "N2curl"])
 def test_curl(space_type, order):
     """Test that curl is consistent for different cell permutations of a tetrahedron."""
-
     tdim = dolfinx.mesh.cell_dim(CellType.tetrahedron)
     points = unit_cell_points(CellType.tetrahedron)
 
@@ -522,7 +521,6 @@ def test_div_general_quads_mat(k):
     "DQ" space and w is from an "RTCF" space, gives the same matrix for
     square and trapezoidal elements. This should be the case due to the
     properties of the Piola transform."""
-
     # Assemble matrix on a mesh of square elements and on a mesh of
     # trapezium elements
     A_square = assemble_div_matrix(k, 0)
@@ -540,7 +538,6 @@ def test_div_general_quads_vec(k):
     "RTCF" space, gives the same matrix for square and trapezoidal
     elements. This should be the case due to the properties of the Piola
     transform."""
-
     # Assemble vector on a mesh of square elements and on a mesh of
     # trapezium elements
     L_square = assemble_div_vector(k, 0)

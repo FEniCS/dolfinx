@@ -8,15 +8,14 @@
 
 import numpy as np
 import pytest
-
 import ufl
-from dolfinx import fem
 from dolfinx.mesh import (GhostMode, create_box, create_rectangle,
                           create_submesh, create_unit_cube, create_unit_square,
                           locate_entities, locate_entities_boundary)
-
 from mpi4py import MPI
 from petsc4py import PETSc
+
+from dolfinx import fem
 
 
 def assemble(mesh, space, k):
@@ -29,8 +28,7 @@ def assemble(mesh, space, k):
     a = fem.form(ufl.inner(c * u, v) * (dx + ds))
 
     facet_dim = mesh.topology.dim - 1
-    facets = locate_entities_boundary(
-        mesh, facet_dim, lambda x: np.isclose(x[0], 1))
+    facets = locate_entities_boundary(mesh, facet_dim, lambda x: np.isclose(x[0], 1))
     dofs = fem.locate_dofs_topological(V, facet_dim, facets)
 
     bc_func = fem.Function(V)
@@ -48,13 +46,9 @@ def assemble(mesh, space, k):
     L = fem.form(ufl.inner(c * f, v) * (dx + ds))
     b = fem.petsc.assemble_vector(L)
     fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD,
-                  mode=PETSc.ScatterMode.REVERSE)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     fem.petsc.set_bc(b, [bc])
-
-    s = mesh.comm.allreduce(fem.assemble_scalar(
-        fem.form(ufl.inner(c * f, f) * (dx + ds))), op=MPI.SUM)
-
+    s = mesh.comm.allreduce(fem.assemble_scalar(fem.form(ufl.inner(c * f, f) * (dx + ds))), op=MPI.SUM)
     return A, b, s
 
 
@@ -69,17 +63,12 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
     result as assembling over half of a 2x1 rectangle with the same
     triangulation."""
     if d == 2:
-        mesh_0 = create_unit_square(
-            MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
-        mesh_1 = create_rectangle(
-            MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-            ghost_mode=ghost_mode)
+        mesh_0 = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+        mesh_1 = create_rectangle(MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n), ghost_mode=ghost_mode)
     else:
-        mesh_0 = create_unit_cube(
-            MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
-        mesh_1 = create_box(
-            MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
-            (2 * n, n, n), ghost_mode=ghost_mode)
+        mesh_0 = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
+        mesh_1 = create_box(MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
+                            (2 * n, n, n), ghost_mode=ghost_mode)
 
     A_mesh_0, b_mesh_0, s_mesh_0 = assemble(mesh_0, space, k)
 
@@ -101,24 +90,19 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
-                                        GhostMode.shared_facet])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 def test_submesh_facet_assembly(n, k, space, ghost_mode):
     """Test that assembling a form over the face of a unit cube gives
     the same result as assembling it over a unit square."""
-    cube_mesh = create_unit_cube(
-        MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
+    cube_mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
     edim = cube_mesh.topology.dim - 1
-    entities = locate_entities_boundary(
-        cube_mesh, edim, lambda x: np.isclose(x[2], 0.0))
+    entities = locate_entities_boundary(cube_mesh, edim, lambda x: np.isclose(x[2], 0.0))
     submesh = create_submesh(cube_mesh, edim, entities)[0]
 
     A_submesh, b_submesh, s_submesh = assemble(submesh, space, k)
 
-    square_mesh = create_unit_square(
-        MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
-    A_square_mesh, b_square_mesh, s_square_mesh = assemble(
-        square_mesh, space, k)
+    square_mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+    A_square_mesh, b_square_mesh, s_square_mesh = assemble(square_mesh, space, k)
 
     assert np.isclose(A_submesh.norm(), A_square_mesh.norm())
     assert np.isclose(b_submesh.norm(), b_square_mesh.norm())

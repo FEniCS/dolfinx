@@ -20,11 +20,9 @@ from mpi4py import MPI
 @pytest.mark.parametrize("cell", [ufl.triangle, ufl.tetrahedron])
 @pytest.mark.parametrize("degree", [1, 2])
 @pytest.mark.parametrize("ElementType, family",
-                         [
-                             (ufl.FiniteElement, "Lagrange"),
-                             (ufl.VectorElement, "Lagrange"),
-                             (ufl.FiniteElement, "N1curl")
-                         ])
+                         [(ufl.FiniteElement, "Lagrange"),
+                          (ufl.VectorElement, "Lagrange"),
+                          (ufl.FiniteElement, "N1curl")])
 def test_mixed_element(ElementType, family, cell, degree):
     if cell == ufl.triangle:
         mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
@@ -63,7 +61,8 @@ def test_vector_element():
     A.destroy()
 
     with pytest.raises(ValueError):
-        # VectorFunctionSpace containing a vector should throw an error rather than segfaulting
+        # VectorFunctionSpace containing a vector should throw an error
+        # rather than segfaulting
         U = VectorFunctionSpace(mesh, ("RT", 2))
         u = ufl.TrialFunction(U)
         v = ufl.TestFunction(U)
