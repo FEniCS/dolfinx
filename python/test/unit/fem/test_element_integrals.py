@@ -498,6 +498,7 @@ def assemble_div_matrix(k, offset):
     u, w = ufl.TrialFunction(V), ufl.TestFunction(W)
     a = form(ufl.inner(u, ufl.div(w)) * ufl.dx)
     A = assemble_matrix(a)
+    A.assemble()
     _A = A[:, :]
     A.destroy()
     return _A
@@ -509,6 +510,7 @@ def assemble_div_vector(k, offset):
     v = ufl.TestFunction(V)
     L = form(ufl.inner(Constant(mesh, PETSc.ScalarType(1)), ufl.div(v)) * ufl.dx)
     b = assemble_vector(L)
+    b.assemble()
     _b = b[:]
     b.destroy()
     return _b
