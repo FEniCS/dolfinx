@@ -283,9 +283,13 @@ class Function(ufl.Coefficient):
         # Store DOLFINx FunctionSpace object
         self._V = V
 
-        # PETSc Vec wrapper around the C++ function data. Constructed
-        # when first requested.
+        # PETSc Vec wrapper around the C++ function data (constructed
+        # when first requested)
         self._petsc_x = None
+
+    def __del__(self):
+        if self._petsc_x is not None:
+            self._petsc_x.destroy()
 
     @property
     def function_space(self) -> FunctionSpace:
