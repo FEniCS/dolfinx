@@ -218,9 +218,9 @@ const Topology& Mesh::topology() const { return _topology; }
 //-----------------------------------------------------------------------------
 Topology& Mesh::topology_mutable() const { return _topology; }
 //-----------------------------------------------------------------------------
-Geometry& Mesh::geometry() { return _geometry; }
+Geometry<double>& Mesh::geometry() { return _geometry; }
 //-----------------------------------------------------------------------------
-const Geometry& Mesh::geometry() const { return _geometry; }
+const Geometry<double>& Mesh::geometry() const { return _geometry; }
 //-----------------------------------------------------------------------------
 MPI_Comm Mesh::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------

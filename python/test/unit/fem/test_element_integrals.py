@@ -10,15 +10,16 @@ from itertools import combinations, product
 
 import numpy as np
 import pytest
+
+import dolfinx
 import ufl
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.fem.petsc import assemble_matrix, assemble_vector
 from dolfinx.mesh import CellType, create_mesh, meshtags
+
 from mpi4py import MPI
 from petsc4py import PETSc
-
-import dolfinx
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",

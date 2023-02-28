@@ -7,10 +7,11 @@
 
 import random
 
-import basix
-import basix.ufl_wrapper
 import numpy as np
 import pytest
+
+import basix
+import basix.ufl_wrapper
 import ufl
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)

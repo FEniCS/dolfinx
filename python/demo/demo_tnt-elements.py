@@ -21,15 +21,17 @@
 # We begin this demo by importing the required modules.
 
 # +
-import basix
-import basix.ufl_wrapper
 import matplotlib.pylab as plt
 import numpy as np
-from mpi4py import MPI
+
+import basix
+import basix.ufl_wrapper
+from dolfinx import fem, mesh
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx,
                  grad, inner, sin)
 
-from dolfinx import fem, mesh
+from mpi4py import MPI
+
 # -
 
 # ## Defining a degree 1 TNT element

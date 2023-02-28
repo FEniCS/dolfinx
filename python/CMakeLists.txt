@@ -23,6 +23,7 @@ else()
     REQUIRED
   )
 endif()
+
 find_package(
   pybind11
   2.7.0
@@ -37,8 +38,8 @@ find_package(
 
 execute_process(
   COMMAND
-    ${Python3_EXECUTABLE} -c
-    "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
+  ${Python3_EXECUTABLE} -c
+  "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
   OUTPUT_VARIABLE BASIX_PY_DIR
   RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -69,6 +70,7 @@ pybind11_add_module(
 # Add strict compiler flags
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-Wall -Werror -pedantic" HAVE_PEDANTIC)
+
 if(HAVE_PEDANTIC)
   target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
 endif()
@@ -85,11 +87,12 @@ target_link_libraries(cpp PRIVATE dolfinx)
 # Check for petsc4py
 execute_process(
   COMMAND ${Python3_EXECUTABLE} -c
-          "import petsc4py; print(petsc4py.get_include())"
+  "import petsc4py; print(petsc4py.get_include())"
   OUTPUT_VARIABLE PETSC4PY_INCLUDE_DIR
   RESULT_VARIABLE PETSC4PY_COMMAND_RESULT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
 )
+
 if(NOT PETSC4PY_COMMAND_RESULT)
   message(STATUS "Found petsc4py include directory at ${PETSC4PY_INCLUDE_DIR}")
   target_include_directories(cpp PRIVATE ${PETSC4PY_INCLUDE_DIR})
@@ -100,11 +103,12 @@ endif()
 # Check for mpi4py
 execute_process(
   COMMAND "${Python3_EXECUTABLE}" "-c"
-          "import mpi4py; print(mpi4py.get_include())"
+  "import mpi4py; print(mpi4py.get_include())"
   OUTPUT_VARIABLE MPI4PY_INCLUDE_DIR
   RESULT_VARIABLE MPI4PY_COMMAND_RESULT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
 )
+
 if(NOT MPI4PY_COMMAND_RESULT)
   message(STATUS "Found mpi4py include directory at ${MPI4PY_INCLUDE_DIR}")
   target_include_directories(cpp PRIVATE ${MPI4PY_INCLUDE_DIR})

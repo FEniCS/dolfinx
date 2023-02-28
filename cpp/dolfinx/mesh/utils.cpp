@@ -500,7 +500,7 @@ mesh::entities_to_geometry(const Mesh& mesh, int dim,
   if (orient and (cell_type != CellType::tetrahedron or dim != 2))
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
 
-  const Geometry& geometry = mesh.geometry();
+  const Geometry<double>& geometry = mesh.geometry();
   auto x = geometry.x();
 
   const Topology& topology = mesh.topology();
