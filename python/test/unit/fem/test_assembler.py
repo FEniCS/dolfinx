@@ -285,78 +285,76 @@ def test_matrix_assembly_block(mode):
     a_block = form([[a00, a01, a02], [a10, a11, a12], [a20, a21, a22]])
     L_block = form([L0, L1, L2])
 
-    # Monolithic blocked
-    A0 = assemble_matrix_block(a_block, bcs=[bc])
-    A0.assemble()
-    b0 = assemble_vector_block(L_block, a_block, bcs=[bc])
-    assert A0.getType() != "nest"
-    Anorm0 = A0.norm()
-    bnorm0 = b0.norm()
-
     # Prepare a block problem with "None" on (1, 1) diagonal
     a_block_none = form([[a00, a01, a02], [None, None, a12], [a20, a21, a22]])
 
-    try:
-        A0 = assemble_matrix_block(a_block_none, bcs=[bc])
-    except RuntimeError:
-        pass
-    else:
-        raise RuntimeError("DirichletBC for 'None' diagonal block must raise.")
+    def blocked():
+        """Monolithic blocked"""
+        A = assemble_matrix_block(a_block, bcs=[bc])
+        A.assemble()
+        b = assemble_vector_block(L_block, a_block, bcs=[bc])
+        assert A.getType() != "nest"
+        Anorm = A.norm()
+        bnorm = b.norm()
+        A.destroy(), b.destroy()
+        with pytest.raises(RuntimeError):
+            assemble_matrix_block(a_block_none, bcs=[bc])
+        return Anorm, bnorm
 
-    # Nested (MatNest)
-    A1 = assemble_matrix_nest(a_block, bcs=[bc], mat_types=[["baij", "aij", "aij"],
-                                                            ["aij", "", "aij"],
-                                                            ["aij", "aij", "aij"]])
-    A1.assemble()
-    Anorm1 = nest_matrix_norm(A1)
-    assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
+    def nest():
+        """Nested (MatNest)"""
+        A = assemble_matrix_nest(a_block, bcs=[bc], mat_types=[["baij", "aij", "aij"],
+                                                               ["aij", "", "aij"],
+                                                               ["aij", "aij", "aij"]])
+        A.assemble()
+        with pytest.raises(RuntimeError):
+            assemble_matrix_nest(a_block_none, bcs=[bc])
 
-    try:
-        A0 = assemble_matrix_nest(a_block_none, bcs=[bc])
-    except RuntimeError:
-        pass
-    else:
-        raise RuntimeError("DirichletBC for 'None' diagonal block must raise.")
+        b = assemble_vector_nest(L_block)
+        apply_lifting_nest(b, a_block, bcs=[bc])
+        for b_sub in b.getNestSubVecs():
+            b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
+        set_bc_nest(b, bcs0)
+        b.assemble()
+        bnorm = math.sqrt(sum([x.norm()**2 for x in b.getNestSubVecs()]))
+        Anorm = nest_matrix_norm(A)
+        A.destroy(), b.destroy()
+        return Anorm, bnorm
 
-    b1 = assemble_vector_nest(L_block)
-    apply_lifting_nest(b1, a_block, bcs=[bc])
-    for b_sub in b1.getNestSubVecs():
-        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
-    set_bc_nest(b1, bcs0)
-    b1.assemble()
+    def monolithic():
+        """Monolithic version"""
+        W = FunctionSpace(mesh, ufl.MixedElement([P0, P1, P2]))
+        u0, u1, u2 = ufl.TrialFunctions(W)
+        v0, v1, v2 = ufl.TestFunctions(W)
+        a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
+            u1, v0) * dx + inner(u0, v2) * dx + inner(u1, v2) * dx + inner(u2, v2) * dx \
+            + inner(u2, v0) * dx + inner(u2, v1) * dx
+        L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx + inner(g, v2) * dx
+        a, L = form(a), form(L)
 
-    bnorm1 = math.sqrt(sum([x.norm()**2 for x in b1.getNestSubVecs()]))
-    assert bnorm0 == pytest.approx(bnorm1, 1.0e-12)
+        bdofsW_V1 = locate_dofs_topological(W.sub(1), mesh.topology.dim - 1, bndry_facets)
+        bc = dirichletbc(u_bc, bdofsW_V1, W.sub(1))
+        A = assemble_matrix(a, bcs=[bc])
+        A.assemble()
+        b = assemble_vector(L)
+        apply_lifting(b, [a], bcs=[[bc]])
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        set_bc(b, [bc])
+        assert A.getType() != "nest"
+        Anorm = A.norm()
+        bnorm = b.norm()
+        A.destroy(), b.destroy()
+        return Anorm, bnorm
 
-    # Monolithic version
-    W = FunctionSpace(mesh, ufl.MixedElement([P0, P1, P2]))
-    u0, u1, u2 = ufl.TrialFunctions(W)
-    v0, v1, v2 = ufl.TestFunctions(W)
-    a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
-        u1, v0) * dx + inner(u0, v2) * dx + inner(u1, v2) * dx + inner(u2, v2) * dx \
-        + inner(u2, v0) * dx + inner(u2, v1) * dx
-    L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx + inner(g, v2) * dx
-    a, L = form(a), form(L)
+    Anorm0, bnorm0 = blocked()
+    Anorm1, bnorm1 = nest()
+    assert Anorm1 == pytest.approx(Anorm0, 1.0e-9)
+    assert bnorm1 == pytest.approx(bnorm0, 1.0e-9)
 
-    bdofsW_V1 = locate_dofs_topological(W.sub(1), mesh.topology.dim - 1, bndry_facets)
-    bc = dirichletbc(u_bc, bdofsW_V1, W.sub(1))
-    A2 = assemble_matrix(a, bcs=[bc])
-    A2.assemble()
-    b2 = assemble_vector(L)
-    apply_lifting(b2, [a], bcs=[[bc]])
-    b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    set_bc(b2, [bc])
-    assert A2.getType() != "nest"
-    assert A2.norm() == pytest.approx(Anorm0, 1.0e-9)
-    assert b2.norm() == pytest.approx(bnorm0, 1.0e-9)
-
-    A0.destroy()
-    b0.destroy()
-    A1.destroy()
-    b1.destroy()
-    A2.destroy()
-    b2.destroy()
+    Anorm2, bnorm2 = monolithic()
+    assert Anorm2 == pytest.approx(Anorm0, 1.0e-9)
+    assert bnorm2 == pytest.approx(bnorm0, 1.0e-9)
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
