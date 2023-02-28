@@ -148,7 +148,15 @@ void apply_lifting(
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = a[0]->mesh();
+  std::shared_ptr<const mesh::Mesh> mesh;
+  for (auto& a_i : a)
+  {
+    if (a_i and !mesh)
+      mesh = a_i->mesh();
+    if (a_i and mesh and a_i->mesh() != mesh)
+      throw std::runtime_error("Mis-mismatch between meshes.");
+  }
+
   assert(mesh);
   if constexpr (std::is_same_v<double, impl::scalar_value_type_t<T>>)
   {
