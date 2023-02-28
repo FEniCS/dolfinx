@@ -104,4 +104,3 @@ jobs:
           . /opt/intel/oneapi/setvars.sh
           cd python/test/unit
           mpiexec -n 2 pytest -vs .
-          # mpiexec -n 2 pytest common geometry graph io la mesh nls
