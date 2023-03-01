@@ -71,8 +71,8 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh> mesh,
   basix::FiniteElement e = basix::create_element(
       basix::element::family::N1E,
       mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2,
-      basix::element::dpc_variant::unset,
-      basix::element::lagrange_variant::legendre, false);
+      basix::element::lagrange_variant::legendre,
+      basix::element::dpc_variant::unset, false);
 
   // Create a Nedelec function space
   auto V = std::make_shared<fem::FunctionSpace>(
