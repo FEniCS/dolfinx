@@ -80,9 +80,6 @@ jobs:
           python -m pip install git+https://github.com/FEniCS/ffcx.git
 
       - uses: actions/checkout@v3
-        with:
-          path: dolfinx
-          ref: main
 
       - name: Build and install DOLFINx C++ library
         run: |
