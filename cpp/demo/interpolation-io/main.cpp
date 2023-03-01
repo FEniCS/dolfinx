@@ -31,7 +31,9 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh> mesh,
   // Create a Basix continuous Lagrange element of degree 1
   basix::FiniteElement e = basix::create_element(
       basix::element::family::P,
-      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1);
+      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1,
+      basix::element::lagrange_variant::unset,
+      basix::element::dpc_variant::unset, false);
 
   // Create a scalar function space
   auto V = std::make_shared<fem::FunctionSpace>(
@@ -69,7 +71,8 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh> mesh,
   basix::FiniteElement e = basix::create_element(
       basix::element::family::N1E,
       mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2,
-      basix::element::lagrange_variant::legendre);
+      basix::element::lagrange_variant::legendre,
+      basix::element::dpc_variant::unset, false);
 
   // Create a Nedelec function space
   auto V = std::make_shared<fem::FunctionSpace>(
@@ -137,7 +140,9 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh> mesh,
   // (which contains the N2 space):
   basix::FiniteElement e_l = basix::create_element(
       basix::element::family::P,
-      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2, true);
+      mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2,
+      basix::element::lagrange_variant::unset,
+      basix::element::dpc_variant::unset, true);
 
   // Create a function space
   auto V_l = std::make_shared<fem::FunctionSpace>(
