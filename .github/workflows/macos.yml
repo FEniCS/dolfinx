@@ -5,7 +5,7 @@ on:
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 4 * * WED"
-  workflow_dispatch: ~
+  workflow_dispatch:
 
 jobs:
   mac-os-build:
@@ -63,7 +63,7 @@ jobs:
           make all
           cd src/binding/petsc4py
           PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt pip3 install --no-cache-dir .
- 
+
       - name: Install Basix
         run: |
           source fenicsx/bin/activate
