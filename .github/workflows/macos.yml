@@ -76,8 +76,9 @@ jobs:
           source fenicsx/bin/activate
           python -m pip install git+https://github.com/FEniCS/ffcx.git
 
-      - name: Checkout DOLFINx
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+        with:
+          path: dolfinx
 
       - name: Build and install DOLFINx C++ library
         run: |
