@@ -28,7 +28,7 @@ CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree,
     : CoordinateElement(std::make_shared<basix::FiniteElement>(
         basix::create_element(basix::element::family::P,
                               mesh::cell_type_to_basix_type(celltype), degree,
-                              type, false)))
+                              type, basix::element::dpc_variant::unset, false)))
 {
   // Do nothing
 }
