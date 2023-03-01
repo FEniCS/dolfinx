@@ -45,9 +45,7 @@ jobs:
       - name: Install minimal PETSc
         run: |
           source fenicsx/bin/activate
-          curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.18.3.tar.gz
-          mkdir petsc
-          tar -xf petsc-lite-3.18.3.tar.gz -C petsc --strip-components=1
+          git clone -b release https://gitlab.com/petsc/petsc.git petsc
           cd petsc
           python ./configure \
             --with-64-bit-indices=no \
@@ -56,7 +54,6 @@ jobs:
             --with-scalar-type=real \
             --with-shared-libraries \
             --with-scalar-type=real \
-            --with-make-np=3 \
             --download-bison \
             --download-metis \
             --download-ptscotch
