@@ -145,7 +145,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
 void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
                     const mesh::Mesh& mesh)
 {
-  const mesh::Geometry& geometry = mesh.geometry();
+  const mesh::Geometry<double>& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
 
   // "Put" geometry
@@ -420,7 +420,7 @@ std::vector<T> pack_function_data(const fem::Function<T>& u)
   assert(dofmap);
   auto mesh = V->mesh();
   assert(mesh);
-  const mesh::Geometry& geometry = mesh->geometry();
+  const mesh::Geometry<double>& geometry = mesh->geometry();
   const mesh::Topology& topology = mesh->topology();
 
   auto cmaps = mesh->geometry().cmaps();
@@ -545,7 +545,7 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
 void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
                       const mesh::Mesh& mesh)
 {
-  const mesh::Geometry& geometry = mesh.geometry();
+  const mesh::Geometry<double>& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
 
   // "Put" geometry data
@@ -582,7 +582,7 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] mesh The mesh
 void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
 {
-  const mesh::Geometry& geometry = mesh.geometry();
+  const mesh::Geometry<double>& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
 
   auto cmaps = geometry.cmaps();

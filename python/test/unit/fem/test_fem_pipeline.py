@@ -82,6 +82,10 @@ def run_scalar_test(mesh, V, degree):
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
 
+    solver.destroy()
+    A.destroy()
+    b.destroy()
+
 
 def run_vector_test(mesh, V, degree):
     """Projection into H(div/curl) spaces"""
@@ -118,6 +122,10 @@ def run_vector_test(mesh, V, degree):
 
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
+
+    solver.destroy()
+    A.destroy()
+    b.destroy()
 
 
 def run_dg_test(mesh, V, degree):
@@ -189,6 +197,10 @@ def run_dg_test(mesh, V, degree):
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
 
+    solver.destroy()
+    A.destroy()
+    b.destroy()
+
 
 @pytest.mark.parametrize("family", ["N1curl", "N2curl"])
 @pytest.mark.parametrize("order", [1])
@@ -250,6 +262,10 @@ def test_curl_curl_eigenvalue(family, order):
 
     eigenvalues_exact = np.array([1.0, 1.0, 2.0, 4.0, 4.0, 5.0, 5.0, 8.0, 9.0])
     assert np.isclose(eigenvalues_sorted[0:eigenvalues_exact.shape[0]], eigenvalues_exact, rtol=1E-2).all()
+
+    eps.destroy()
+    A.destroy()
+    B.destroy()
 
 
 @pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
@@ -358,6 +374,10 @@ def test_biharmonic(family):
         form(inner(sigma_exact, sigma_exact) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
 
     assert np.absolute(sigma_error_numerator / sigma_error_denominator) < 0.005
+
+    solver.destroy()
+    A.destroy()
+    b.destroy()
 
 
 def get_mesh(cell_type, datadir):

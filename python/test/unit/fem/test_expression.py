@@ -7,20 +7,21 @@
 import ctypes
 import ctypes.util
 
-import basix
 import cffi
 import numpy as np
 import pytest
+
+import basix
+import dolfinx.cpp
 import ufl
 from dolfinx.cpp.la.petsc import create_matrix
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace, create_sparsity_pattern, form)
 from dolfinx.fem.petsc import load_petsc_lib
 from dolfinx.mesh import create_unit_square
+
 from mpi4py import MPI
 from petsc4py import PETSc
-
-import dolfinx.cpp
 
 numba = pytest.importorskip("numba")
 cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
@@ -159,8 +160,7 @@ def test_rank1_hdiv():
     dofmap_col = RT1.dofmap.list.array.reshape(-1, 8).astype(np.dtype(PETSc.IntType))
     dofmap_row = vdP1.dofmap.list.array
 
-    dofmap_row_unrolled = (2 * np.repeat(dofmap_row, 2).reshape(-1, 2)
-                           + np.arange(2)).flatten()
+    dofmap_row_unrolled = (2 * np.repeat(dofmap_row, 2).reshape(-1, 2) + np.arange(2)).flatten()
     dofmap_row = dofmap_row_unrolled.reshape(-1, 12).astype(np.dtype(PETSc.IntType))
     scatter(A.handle, array_evaluated, dofmap_row, dofmap_col)
     A.assemble()
@@ -182,6 +182,8 @@ def test_rank1_hdiv():
     h2.vector.axpy(1.0, A * g.vector)
 
     assert np.isclose((h2.vector - h.vector).norm(), 0.0)
+
+    A.destroy()
 
 
 def test_simple_evaluation():
@@ -279,6 +281,7 @@ def test_assembly_into_quadrature_function():
     In parallel, each process evaluates the Expression on both local cells and
     ghost cells so that no parallel communication is required after insertion
     into the vector.
+
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 6)
 
@@ -333,8 +336,7 @@ def test_assembly_into_quadrature_function():
 
     Q_dofs_unrolled = bs * np.repeat(Q_dofs, bs).reshape(-1, bs) + np.arange(bs)
     Q_dofs_unrolled = Q_dofs_unrolled.reshape(-1, bs * quadrature_points.shape[0]).astype(Q_dofs.dtype)
-
-    assert len(mesh.geometry.cmap) == 1
+    assert len(mesh.geometry.cmaps) == 1
 
     with e_Q.vector.localForm() as local:
         e_exact_eval = np.zeros_like(local.array)

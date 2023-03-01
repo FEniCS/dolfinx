@@ -9,19 +9,20 @@ from __future__ import annotations
 
 import typing
 
-import basix
-import basix.ufl_wrapper
 import numpy as np
 import numpy.typing as npt
+
+import basix
+import basix.ufl_wrapper
 import ufl
+from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
                               create_cell_partitioner, exterior_facet_indices,
                               to_string, to_type)
 from dolfinx.cpp.refinement import RefinementOption
-from mpi4py import MPI as _MPI
 
-from dolfinx import cpp as _cpp
+from mpi4py import MPI as _MPI
 
 __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "Mesh", "MeshTags", "meshtags", "CellType",
@@ -94,9 +95,10 @@ def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray
     Args:
         mesh: Mesh to locate entities on
         dim: Topological dimension of the mesh entities to consider
-        marker: A function that takes an array of points `x` with shape ``(gdim,
-            num_points)`` and returns an array of booleans of length
-            ``num_points``, evaluating to `True` for entities to be located.
+        marker: A function that takes an array of points `x` with shape
+            `(gdim, num_points)` and returns an array of booleans of
+            length `num_points`, evaluating to `True` for entities to be
+            located.
 
     Returns:
         Indices (local to the process) of marked mesh entities.
@@ -121,9 +123,10 @@ def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> n
     Args:
         mesh: Mesh to locate boundary entities on
         dim: Topological dimension of the mesh entities to consider
-        marker: Function that takes an array of points `x` with shape ``(gdim,
-            num_points)`` and returns an array of booleans of length
-            ``num_points``, evaluating to `True` for entities to be located.
+        marker: Function that takes an array of points `x` with shape
+            `(gdim, num_points)` and returns an array of booleans of
+            length `num_points`, evaluating to `True` for entities to be
+            located.
 
     Returns:
         Indices (local to the process) of marked mesh entities.
@@ -225,19 +228,19 @@ def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistri
 def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.AdjacencyList_int64],
                 x: np.ndarray, domain: ufl.Mesh,
                 partitioner=_cpp.mesh.create_cell_partitioner(GhostMode.none)) -> Mesh:
-    """
-    Create a mesh from topology and geometry arrays
+    """Create a mesh from topology and geometry arrays.
 
     Args:
-        comm: MPI communicator to define the mesh on
-        cells: Cells of the mesh
-        x: Mesh geometry ('node' coordinates),  with shape ``(gdim, num_nodes)``
-        domain: UFL mesh
-        ghost_mode: The ghost mode used in the mesh partitioning
-        partitioner: Function that computes the parallel distribution of cells across MPI ranks
+        comm: MPI communicator to define the mesh on.
+        cells: Cells of the mesh. `cells[i]` is the 'nodes' of cell `i`.
+        x: Mesh geometry ('node' coordinates), with shape ``(num_nodes, gdim)``
+        domain: UFL mesh.
+        ghost_mode: The ghost mode used in the mesh partitioning.
+        partitioner: Function that computes the parallel distribution of
+            cells across MPI ranks.
 
     Returns:
-        A new mesh
+        A mesh.
 
     """
     ufl_element = domain.ufl_coordinate_element()
@@ -271,7 +274,7 @@ class MeshTags:
         """Mesh tags associate data (markers) with a subset of mesh entities of a given dimension.
 
         Args:
-            meshtags: C++ mesh tags object
+            meshtags: C++ mesh tags object.
             mesh: Python mesh that tags are defined on.
 
         Note:

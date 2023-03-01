@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2020 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2022 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -26,6 +26,7 @@ namespace dolfinx::mesh
 class Topology;
 
 /// @brief Geometry stores the geometry imposed on a mesh.
+template <typename T>
 class Geometry
 {
 public:
@@ -35,14 +36,14 @@ public:
   /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
   /// gives the position in the point array of each local geometry node
   /// @param[in] elements The elements that describes the cell geometry maps
-  /// @param[in] x The point coordinates. It is a `std::vector<double>`
-  /// and uses row-major storage. The shape is `(num_points, 3)`.
+  /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
+  /// and the storage is row-major.
   /// @param[in] dim The geometric dimension (`0 < dim <= 3`)
   /// @param[in] input_global_indices The 'global' input index of each
   /// point, commonly from a mesh input file. The type is
   /// `std:vector<std::int64_t>`.
   template <std::convertible_to<graph::AdjacencyList<std::int32_t>> U,
-            std::convertible_to<std::vector<double>> V,
+            std::convertible_to<std::vector<T>> V,
             std::convertible_to<std::vector<std::int64_t>> W>
   Geometry(std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
            const std::vector<fem::CoordinateElement>& elements, V&& x, int dim,
@@ -71,35 +72,50 @@ public:
   /// Move Assignment
   Geometry& operator=(Geometry&&) = default;
 
+  /// Copy constructor
+  template <typename U>
+  Geometry<U> astype() const
+  {
+    return Geometry<U>(_index_map, _dofmap, _cmap,
+                       std::vector<U>(_x.begin(), _x.end()), _dim,
+                       _input_global_indices);
+  }
+
   /// Return Euclidean dimension of coordinate system
-  int dim() const;
+  int dim() const { return _dim; }
 
   /// DOF map
-  const graph::AdjacencyList<std::int32_t>& dofmap() const;
+  const graph::AdjacencyList<std::int32_t>& dofmap() const { return _dofmap; }
 
   /// Index map
-  std::shared_ptr<const common::IndexMap> index_map() const;
+  std::shared_ptr<const common::IndexMap> index_map() const
+  {
+    return _index_map;
+  }
 
   /// @brief Access geometry degrees-of-freedom data (const version).
   ///
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
-  std::span<const double> x() const;
+  std::span<const T> x() const { return _x; }
 
   /// @brief Access geometry degrees-of-freedom data (non-const
   /// version).
   ///
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
-  std::span<double> x();
+  std::span<T> x() { return _x; }
 
   /// @brief The elements that describes the geometry maps.
   ///
   /// @return The coordinate/geometry elements
-  const std::vector<fem::CoordinateElement>& cmaps() const;
+  const std::vector<fem::CoordinateElement>& cmaps() const { return _cmaps; }
 
   /// Global user indices
-  const std::vector<std::int64_t>& input_global_indices() const;
+  const std::vector<std::int64_t>& input_global_indices() const
+  {
+    return _input_global_indices;
+  }
 
 private:
   // Geometric dimension
@@ -116,7 +132,7 @@ private:
 
   // Coordinates for all points stored as a contiguous array (row-major,
   // column size = 3)
-  std::vector<double> _x;
+  std::vector<T> _x;
 
   // Global indices as provided on Geometry creation
   std::vector<std::int64_t> _input_global_indices;
@@ -125,8 +141,8 @@ private:
 /// @brief Build Geometry from input data.
 ///
 /// This function should be called after the mesh topology is built. It
-/// distributes the 'node' coordinate data to the required MPI process and then
-/// creates a mesh::Geometry object.
+/// distributes the 'node' coordinate data to the required MPI process
+/// and then creates a mesh::Geometry object.
 ///
 /// @param[in] comm The MPI communicator to build the Geometry on
 /// @param[in] topology The mesh topology
@@ -142,7 +158,7 @@ private:
 /// @param[in] dim The geometric dimension (1, 2, or 3)
 /// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
 /// map associated with the geometry data
-mesh::Geometry
+mesh::Geometry<double>
 create_geometry(MPI_Comm comm, const Topology& topology,
                 const std::vector<fem::CoordinateElement>& element,
                 const graph::AdjacencyList<std::int64_t>& cells,
@@ -159,7 +175,7 @@ create_geometry(MPI_Comm comm, const Topology& topology,
 /// entity in the parent topology
 /// @return A sub-geometry and a map from sub-geometry coordinate
 /// degree-of-freedom to the coordinate degree-of-freedom in `geometry`.
-std::pair<mesh::Geometry, std::vector<int32_t>>
-create_subgeometry(const Topology& topology, const Geometry& geometry, int dim,
-                   std::span<const std::int32_t> subentity_to_entity);
+std::pair<mesh::Geometry<double>, std::vector<int32_t>>
+create_subgeometry(const Topology& topology, const Geometry<double>& geometry,
+                   int dim, std::span<const std::int32_t> subentity_to_entity);
 } // namespace dolfinx::mesh

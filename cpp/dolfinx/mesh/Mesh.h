@@ -37,7 +37,8 @@ public:
   /// @param[in] comm MPI Communicator
   /// @param[in] topology Mesh topology
   /// @param[in] geometry Mesh geometry
-  template <std::convertible_to<Topology> U, std::convertible_to<Geometry> V>
+  template <std::convertible_to<Topology> U,
+            std::convertible_to<Geometry<double>> V>
   Mesh(MPI_Comm comm, U&& topology, V&& geometry)
       : _topology(std::forward<U>(topology)),
         _geometry(std::forward<V>(geometry)), _comm(comm)
@@ -80,17 +81,17 @@ public:
 
   /// Get mesh geometry
   /// @return The geometry object associated with the mesh
-  Geometry& geometry();
+  Geometry<double>& geometry();
 
   /// Get mesh geometry (const version)
   /// @return The geometry object associated with the mesh
-  const Geometry& geometry() const;
+  const Geometry<double>& geometry() const;
 
   /// Mesh MPI communicator
   /// @return The communicator on which the mesh is distributed
   MPI_Comm comm() const;
 
-  /// Name
+  /// Nameg
   std::string name = "mesh";
 
 private:
@@ -102,7 +103,7 @@ private:
   mutable Topology _topology;
 
   // Mesh geometry
-  Geometry _geometry;
+  Geometry<double> _geometry;
 
   // MPI communicator
   dolfinx::MPI::Comm _comm;
@@ -124,7 +125,7 @@ private:
 /// @param[in] elements The coordinate elements that describes the
 /// geometric mapping for cells
 /// @param[in] x The coordinates of mesh nodes
-/// @param[in] xshape The shape of `x`
+/// @param[in] xshape The shape of `x`. It should be `(num_points, gdim)`.
 /// @param[in] ghost_mode The requested type of cell ghosting/overlap
 /// @return A distributed Mesh.
 Mesh create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,

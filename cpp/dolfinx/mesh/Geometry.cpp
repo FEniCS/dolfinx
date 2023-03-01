@@ -16,35 +16,7 @@ using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
-int Geometry::dim() const { return _dim; }
-//-----------------------------------------------------------------------------
-const graph::AdjacencyList<std::int32_t>& Geometry::dofmap() const
-{
-  return _dofmap;
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const common::IndexMap> Geometry::index_map() const
-{
-  return _index_map;
-}
-//-----------------------------------------------------------------------------
-std::span<double> Geometry::x() { return _x; }
-//-----------------------------------------------------------------------------
-std::span<const double> Geometry::x() const { return _x; }
-//-----------------------------------------------------------------------------
-const std::vector<fem::CoordinateElement>& Geometry::cmaps() const
-{
-  return _cmaps;
-}
-//-----------------------------------------------------------------------------
-const std::vector<std::int64_t>& Geometry::input_global_indices() const
-{
-  return _input_global_indices;
-}
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-mesh::Geometry mesh::create_geometry(
+mesh::Geometry<double> mesh::create_geometry(
     MPI_Comm comm, const Topology& topology,
     const std::vector<fem::CoordinateElement>& elements,
     const graph::AdjacencyList<std::int64_t>& cell_nodes,
@@ -125,13 +97,13 @@ mesh::Geometry mesh::create_geometry(
                 std::next(xg.begin(), 3 * i));
   }
 
-  return Geometry(dof_index_map, std::move(dofmap), elements, std::move(xg),
-                  dim, std::move(igi));
+  return Geometry<double>(dof_index_map, std::move(dofmap), elements,
+                          std::move(xg), dim, std::move(igi));
 }
 //-----------------------------------------------------------------------------
-std::pair<mesh::Geometry, std::vector<int32_t>>
-mesh::create_subgeometry(const Topology& topology, const Geometry& geometry,
-                         int dim,
+std::pair<mesh::Geometry<double>, std::vector<int32_t>>
+mesh::create_subgeometry(const Topology& topology,
+                         const Geometry<double>& geometry, int dim,
                          std::span<const std::int32_t> subentity_to_entity)
 {
   // Get the geometry dofs in the sub-geometry based on the entities in
@@ -251,9 +223,9 @@ mesh::create_subgeometry(const Topology& topology, const Geometry& geometry,
                  [&igi](std::int32_t sub_x_dof) { return igi[sub_x_dof]; });
 
   // Create geometry
-  return {Geometry(sub_x_dof_index_map, std::move(sub_x_dofmap),
-                   {sub_coord_ele}, std::move(sub_x), geometry.dim(),
-                   std::move(sub_igi)),
+  return {Geometry<double>(sub_x_dof_index_map, std::move(sub_x_dofmap),
+                           {sub_coord_ele}, std::move(sub_x), geometry.dim(),
+                           std::move(sub_igi)),
           std::move(subx_to_x_dofmap)};
 }
 //-----------------------------------------------------------------------------
