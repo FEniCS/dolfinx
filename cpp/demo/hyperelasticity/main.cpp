@@ -227,7 +227,7 @@ int main(int argc, char* argv[])
 
     const basix::FiniteElement S_element = basix::create_element(
         family, cell_type, k, basix::element::lagrange_variant::unset,
-        basix::element::dpc_element::unset, discontinuous);
+        basix::element::dpc_variant::unset, discontinuous);
     auto S = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
         mesh, S_element, pow(mesh->geometry().dim(), 2)));
 
