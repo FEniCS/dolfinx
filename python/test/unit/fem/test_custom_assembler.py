@@ -393,6 +393,9 @@ def test_custom_mesh_loop_ctypes_rank2():
 
     assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-9)
 
+    A0.destroy()
+    A1.destroy()
+
 
 @pytest.mark.parametrize("set_vals", [MatSetValues_abi, get_matsetvalues_api()])
 def test_custom_mesh_loop_cffi_rank2(set_vals):
@@ -431,3 +434,6 @@ def test_custom_mesh_loop_cffi_rank2(set_vals):
         A1.assemble()
 
     assert (A1 - A0).norm() == pytest.approx(0.0)
+
+    A0.destroy()
+    A1.destroy()
