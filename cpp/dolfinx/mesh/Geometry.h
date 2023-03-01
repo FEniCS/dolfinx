@@ -76,7 +76,7 @@ public:
   template <typename U>
   Geometry<U> astype() const
   {
-    return Geometry<U>(_index_map, _dofmap, _cmap,
+    return Geometry<U>(_index_map, _dofmap, _cmaps,
                        std::vector<U>(_x.begin(), _x.end()), _dim,
                        _input_global_indices);
   }
