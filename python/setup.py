@@ -4,7 +4,6 @@ import subprocess
 import sys
 import sysconfig
 
-import pybind11
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
@@ -51,6 +50,8 @@ class CMakeBuild(build_ext):
         cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
 
         env = os.environ.copy()
+
+        import pybind11
         env['pybind11_DIR'] = pybind11.get_cmake_dir()
 
         if not os.path.exists(self.build_temp):
