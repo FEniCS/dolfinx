@@ -225,8 +225,9 @@ int main(int argc, char* argv[])
     constexpr int k = 0;
     constexpr bool discontinuous = true;
 
-    const basix::FiniteElement S_element
-        = basix::create_element(family, cell_type, k, discontinuous);
+    const basix::FiniteElement S_element = basix::create_element(
+        family, cell_type, k, basix::element::lagrange_variant::unset,
+        basix::element::dpc_variant::unset, discontinuous);
     auto S = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
         mesh, S_element, pow(mesh->geometry().dim(), 2)));
 
