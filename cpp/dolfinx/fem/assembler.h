@@ -154,7 +154,7 @@ void apply_lifting(
     if (a_i and !mesh)
       mesh = a_i->mesh();
     if (a_i and mesh and a_i->mesh() != mesh)
-      throw std::runtime_error("Mis-mismatch between meshes.");
+      throw std::runtime_error("Mismatch between meshes.");
   }
 
   if (!mesh)
