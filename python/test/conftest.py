@@ -5,8 +5,8 @@ import time
 from collections import defaultdict
 
 import pytest
+
 from mpi4py import MPI
-from petsc4py import PETSc
 
 
 def pytest_runtest_teardown(item):
@@ -22,10 +22,6 @@ def pytest_runtest_teardown(item):
     # temporaries and someone else does not hold a reference to 'item'?!
     # Well, it seems that it works...
     gc.collect()
-    try:
-        PETSc.garbage_cleanup()
-    except AttributeError:
-        pass
     comm = MPI.COMM_WORLD
     comm.Barrier()
 

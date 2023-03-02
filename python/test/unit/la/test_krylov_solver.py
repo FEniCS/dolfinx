@@ -52,6 +52,11 @@ def test_krylov_solver_lu():
     # *Tight* tolerance for LU solves
     assert x.norm(PETSc.NormType.N2) == pytest.approx(norm, abs=1.0e-12)
 
+    solver.destroy()
+    A.destroy()
+    b.destroy()
+    x.destroy()
+
 
 @pytest.mark.skip
 def test_krylov_samg_solver_elasticity():
