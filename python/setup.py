@@ -45,6 +45,7 @@ class CMakeBuild(build_ext):
         cmake_args = shlex.split(os.environ.get("CMAKE_ARGS", ""))
         cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                        '-DPython3_EXECUTABLE=' + sys.executable,
+                       f'-DPython3_LIBRARIES={sysconfig.get_config_var("LIBDEST")}',
                        f'-DPython3_INCLUDE_DIRS={sysconfig.get_config_var("INCLUDEPY")}']
         cfg = 'Debug' if self.debug else 'Release'
         cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
