@@ -157,12 +157,13 @@
 
 # +
 import numpy as np
-from mpi4py import MPI
-from petsc4py import PETSc
+
+from dolfinx import fem, io, mesh
 from ufl import (CellDiameter, FacetNormal, TestFunction, TrialFunction, avg,
                  conditional, div, dot, dS, ds, dx, grad, gt, inner, outer)
 
-from dolfinx import fem, io, mesh
+from mpi4py import MPI
+from petsc4py import PETSc
 
 if np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx real mode")
@@ -323,8 +324,8 @@ u_h.x.array[:offset] = x.array_r[:offset]
 u_h.x.scatter_forward()
 p_h.x.array[:(len(x.array_r) - offset)] = x.array_r[offset:]
 p_h.x.scatter_forward()
-# Subtract the average of the pressure since it is only determined
-# up to a constant
+# Subtract the average of the pressure since it is only determined up to
+# a constant
 p_h.x.array[:] -= domain_average(msh, p_h)
 
 u_vis = fem.Function(W)

@@ -14,21 +14,22 @@ import pathlib
 import time
 
 import cffi
-import dolfinx.pkgconfig
 import numpy as np
 import numpy.typing
-import petsc4py.lib
 import pytest
+
+import dolfinx
+import dolfinx.pkgconfig
 import ufl
 from dolfinx.fem import Function, FunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix, load_petsc_lib
 from dolfinx.mesh import create_unit_square
+from ufl import dx, inner
+
+import petsc4py.lib
 from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
-from ufl import dx, inner
-
-import dolfinx
 
 numba = pytest.importorskip("numba")
 cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
@@ -392,6 +393,9 @@ def test_custom_mesh_loop_ctypes_rank2():
 
     assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-9)
 
+    A0.destroy()
+    A1.destroy()
+
 
 @pytest.mark.parametrize("set_vals", [MatSetValues_abi, get_matsetvalues_api()])
 def test_custom_mesh_loop_cffi_rank2(set_vals):
@@ -430,3 +434,6 @@ def test_custom_mesh_loop_cffi_rank2(set_vals):
         A1.assemble()
 
     assert (A1 - A0).norm() == pytest.approx(0.0)
+
+    A0.destroy()
+    A1.destroy()
