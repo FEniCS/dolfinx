@@ -151,34 +151,4 @@ std::tuple<Mesh, std::vector<std::int32_t>, std::vector<std::int32_t>,
 create_submesh(const Mesh& mesh, int dim,
                std::span<const std::int32_t> entities);
 
-/// Helper function to get the (cell, local facet index) pairs
-/// for a given facet. There is one pair for exterior facets,
-/// and two pairs for interior facets.
-/// @param[in] f The facet index
-/// @param[in] cells The cell(s) connected to the facet
-/// @param[in] c_to_f The cell to facet connectivity for the mesh
-/// @return List of (cell, local facet index) pairs corresponding
-/// to the facet.
-template <std::int32_t num_cells>
-static std::array<std::array<std::int32_t, 2>, num_cells>
-get_cell_local_facet_pairs(
-    std::int32_t f, const std::span<const std::int32_t>& cells,
-    const dolfinx::graph::AdjacencyList<std::int32_t>& c_to_f)
-{
-  // Loop over cells sharing facet
-  assert(cells.size() == num_cells);
-  std::array<std::array<std::int32_t, 2>, num_cells> cell_local_facet_pairs;
-  for (int c = 0; c < num_cells; ++c)
-  {
-    // Get local index of facet with respect to the cell
-    std::int32_t cell = cells[c];
-    auto cell_facets = c_to_f.links(cell);
-    auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), f);
-    assert(facet_it != cell_facets.end());
-    int local_f = std::distance(cell_facets.begin(), facet_it);
-    cell_local_facet_pairs[c] = {cell, local_f};
-  }
-
-  return cell_local_facet_pairs;
-}
 } // namespace dolfinx::mesh
