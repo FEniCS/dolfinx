@@ -13,22 +13,12 @@
 # This demo illustrates how to solve Poisson equation using a mixed
 # (two-field) formulation. In particular, it illustrates how to
 #
-# * Use mixed and non-continuous finite element spaces
-# * Set essential boundary conditions for subspaces and $H(\mathrm{div})$ spaces
+# * Use mixed and non-continuous finite element spaces.
+# * Set essential boundary conditions for subspaces and $H(\mathrm{div})$ spaces.
 #
-# {download}`Python script <./demo_mixed-poisson.py>`.
-#
+# {download}`Python script <./demo_mixed-poisson.py>`.\
 # {download}`Jupyter notebook <./demo_mixed-poisson.ipynb>`.
-import numpy as np
-
-from dolfinx import fem, io, mesh
-from ufl import (FiniteElement, Measure, MixedElement, SpatialCoordinate,
-                 TestFunctions, TrialFunctions, div, exp, inner)
-
-from mpi4py import MPI
-
-# -
-
+#
 # ## Equation and problem definition
 #
 # An alternative formulation of Poisson equation can be formulated by
@@ -41,6 +31,7 @@ from mpi4py import MPI
 #   \nabla \cdot \sigma &= - f \quad {\rm in} \ \Omega,
 # $$
 # with boundary conditions
+#
 # $$
 #   u = u_0 \quad {\rm on} \ \Gamma_{D},  \\
 #   \sigma \cdot n = g \quad {\rm on} \ \Gamma_{N}.
@@ -55,11 +46,14 @@ from mpi4py import MPI
 # (which should be applied to the variational form). Inserting the boundary
 # conditions, this variational problem can be phrased in the general form: find
 # $(\sigma, u) \in \Sigma_g \times V$ such that
+#
 # $$
 #    a((\sigma, u), (\tau, v)) = L((\tau, v))
 #    \quad \forall \ (\tau, v) \in \Sigma_0 \times V,
 # $$
+#
 # where the variational forms $a$ and $L$ are defined as
+#
 # $$
 #   a((\sigma, u), (\tau, v)) &=
 #     \int_{\Omega} \sigma \cdot \tau + \nabla \cdot \tau \ u
@@ -68,7 +62,7 @@ from mpi4py import MPI
 #   + \int_{\Gamma_D} u_0 \tau \cdot n  \ {\rm d} s,
 # $$
 # and $\Sigma_g = \{ \tau \in H({\rm div})$ such that $\tau \cdot n|_{\Gamma_N}
-# = g \}$ and $V = L^2(\Omega)`$.
+# = g \}$ and $V = L^2(\Omega)$.
 #
 # To discretize the above formulation, two discrete function spaces $\Sigma_h
 # \subset \Sigma$ and $V_h \subset V$ are needed to form a mixed function space
@@ -77,7 +71,7 @@ from mpi4py import MPI
 # $k$ and let $V_h$ be discontinuous elements of polynomial order $k-1$.
 #
 # We will use the same definitions of functions and boundaries as in the
-# demo for Poisson's equation. These are:
+# demo for {doc}`the Poisson equation <demo_poisson>`. These are:
 #
 # * $\Omega = [0,1] \times [0,1]$ (a unit square)
 # * $\Gamma_{D} = \{(0, y) \cup (1, y) \in \partial \Omega\}$
@@ -89,6 +83,14 @@ from mpi4py import MPI
 # ## Implementation
 
 # +
+
+import numpy as np
+
+from dolfinx import fem, io, mesh
+from ufl import (FiniteElement, Measure, MixedElement, SpatialCoordinate,
+                 TestFunctions, TrialFunctions, div, exp, inner)
+
+from mpi4py import MPI
 nx, ny = 64, 64
 domain = mesh.create_rectangle(
     MPI.COMM_WORLD,
@@ -132,28 +134,27 @@ def f1(x):
 
 f_h1 = fem.Function(Q)
 f_h1.interpolate(f1)
-bc_up = fem.dirichletbc(f_h1, dofs_top, V.sub(0))
+bc_top = fem.dirichletbc(f_h1, dofs_top, V.sub(0))
 
 
 def boundary_bottom(x):
     return np.isclose(x[1], 0.0)
 
 
+facets_bottom = mesh.locate_entities_boundary(domain, fdim, boundary_bottom)
+dofs_bottom = fem.locate_dofs_topological((V.sub(0), Q), fdim, facets_bottom)
+
 def f2(x):
     values = np.zeros((2, x.shape[1]))
     values[1, :] = -np.sin(5 * x[0])
     return values
 
-
-facets_bottom = mesh.locate_entities_boundary(domain, fdim, boundary_bottom)
-dofs_bottom = fem.locate_dofs_topological((V.sub(0), Q), fdim, facets_bottom)
-
 f_h2 = fem.Function(Q)
 f_h2.interpolate(f2)
-bc_down = fem.dirichletbc(f_h2, dofs_bottom, V.sub(0))
+bc_bottom = fem.dirichletbc(f_h2, dofs_bottom, V.sub(0))
 
 
-bcs = [bc_up, bc_down]
+bcs = [bc_top, bc_bottom]
 
 problem = fem.petsc.LinearProblem(a, L, bcs=bcs, petsc_options={
                                   "ksp_type": "preonly", "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
