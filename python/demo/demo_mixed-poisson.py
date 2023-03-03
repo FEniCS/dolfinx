@@ -144,10 +144,12 @@ def boundary_bottom(x):
 facets_bottom = mesh.locate_entities_boundary(domain, fdim, boundary_bottom)
 dofs_bottom = fem.locate_dofs_topological((V.sub(0), Q), fdim, facets_bottom)
 
+
 def f2(x):
     values = np.zeros((2, x.shape[1]))
     values[1, :] = -np.sin(5 * x[0])
     return values
+
 
 f_h2 = fem.Function(Q)
 f_h2.interpolate(f2)
