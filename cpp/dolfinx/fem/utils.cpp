@@ -289,16 +289,37 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
   auto it1 = std::lower_bound(it0, entities.end(),
                               topology.index_map(dim)->size_local());
   entities = entities.first(std::distance(it0, it1));
+  values = values.first(std::distance(it0, it1));
+
+  std::vector<std::pair<int, std::size_t>> value_index_pairs;
+  value_index_pairs.reserve(values.size());
+  for (std::size_t i = 0; i < values.size(); ++i)
+  {
+    value_index_pairs.push_back({values[i], i});
+  }
+  std::sort(value_index_pairs.begin(), value_index_pairs.end());
 
   switch (integral_type)
   {
     // TODO Sort pairs or use std::iota
   case fem::IntegralType::cell:
   {
-    for (std::size_t j = 0; j < entities.size(); ++j)
+    auto it2 = value_index_pairs.begin();
+    while(it2 != value_index_pairs.end())
     {
-      // TODO Avoid map lookup in loop
-      integrals[values[j]].push_back(entities[j]);
+      auto comp_val = (*it2).first;
+      auto it3 = std::lower_bound(
+        value_index_pairs.begin(), value_index_pairs.end(), comp_val,
+        [](auto pair, auto val){return pair.first <= val;});
+
+      const int id = (*it2).first;
+      std::vector<std::int32_t>& entities_id = integrals[id];
+      for (auto it4 = it2; it4 != it3; ++it4)
+      {
+        const int index = (*it4).second;
+        entities_id.push_back(index);
+      }
+      it2 = it3;
     }
   }
   break;
