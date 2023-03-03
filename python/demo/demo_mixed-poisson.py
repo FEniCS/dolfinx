@@ -14,7 +14,7 @@
 # (two-field) formulation. In particular, it illustrates how to
 #
 # * Use mixed and non-continuous finite element spaces
-# * Set essential boundary conditions for subspaces and H(div) spaces
+# * Set essential boundary conditions for subspaces and $H(\mathrm{div})$ spaces
 import numpy as np
 
 from dolfinx import fem, io, mesh
@@ -90,7 +90,7 @@ domain = mesh.create_rectangle(
     MPI.COMM_WORLD,
     [np.array([0.0, 0.0]), np.array([1.0, 1.0])],
     [nx, ny],
-    mesh.CellType.quadrilateral,
+    mesh.CellType.quadrilateral
 )
 
 k = 1
