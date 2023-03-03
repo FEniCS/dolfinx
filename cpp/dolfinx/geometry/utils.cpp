@@ -551,7 +551,7 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
   const MPI_Comm& comm = mesh.comm();
 
   // Create a global bounding-box tree to find candidate processes with cells
-  // that could collide with thte points
+  // that could collide with the points
   constexpr double padding = 0.0001;
   const int tdim = mesh.topology().dim();
   const auto cell_map = mesh.topology().index_map(tdim);
