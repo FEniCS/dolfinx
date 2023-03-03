@@ -91,8 +91,6 @@ public:
   /// @param[in] mesh The mesh of the domain. This is required when
   /// there are not argument functions from which the mesh can be
   /// extracted, e.g. for functionals
-  // TODO Could change first integrals map to std::array and second
-  // to vector of pair
   Form(const std::vector<std::shared_ptr<const FunctionSpace>>& function_spaces,
        const std::map<IntegralType,
                       std::vector<std::tuple<
