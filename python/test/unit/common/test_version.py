@@ -16,4 +16,4 @@ def test_version():
     version = version.replace('dev', '')
     cpp_version = dolfinx.__version__
     if version != cpp_version:
-        raise RuntimeError("Incorrect installed version")
+        raise RuntimeError(f"Incorrect versions. Python version: {version}, Core version: {cpp_version}")

@@ -21,10 +21,10 @@ def collect_pkg_modules_recursive(name):
 
 
 def test_all_implemented():
-    """
-    flake8 does not catch its warning code F822: whether the public API
+    """flake8 does not catch its warning code F822: whether the public API
     offered by the members of __all__ are implemented. We therefore manually
     check.
+
     """
     module_names = collect_pkg_modules_recursive("dolfinx")
     for module_name in module_names:

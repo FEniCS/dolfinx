@@ -1,5 +1,5 @@
 set(HEADERS_la
-    ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_la.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_la.h
     ${CMAKE_CURRENT_SOURCE_DIR}/MatrixCSR.h
     ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPattern.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Vector.h
