@@ -26,6 +26,7 @@ PDEs (advanced)
 .. toctree::
    :maxdepth: 1
 
+   demos/demo_mixed_poisson.md
    demos/demo_stokes.md
    demos/demo_navier_stokes.md
    demos/demo_elasticity.md

@@ -15,6 +15,10 @@
 #
 # * Use mixed and non-continuous finite element spaces
 # * Set essential boundary conditions for subspaces and $H(\mathrm{div})$ spaces
+#
+# {download}`Python script <./demo_mixed-poisson.py>`.
+#
+# {download}`Jupyter notebook <./demo_mixed-poisson.ipynb>`.
 import numpy as np
 
 from dolfinx import fem, io, mesh
