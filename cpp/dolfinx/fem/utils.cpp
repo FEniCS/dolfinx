@@ -315,20 +315,18 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
   entities = entities.first(std::distance(it0, it1));
   values = values.first(std::distance(it0, it1));
 
+  std::vector<std::pair<int, std::vector<std::int32_t>>> value_entity_pairs;
+  value_entity_pairs.reserve(values.size());
   switch (integral_type)
   {
     // TODO Sort pairs or use std::iota
   case fem::IntegralType::cell:
   {
-    std::cout << "Hello\n";
-    std::vector<std::pair<int, std::vector<std::int32_t>>> value_entity_pairs;
-    value_entity_pairs.reserve(values.size());
     for (std::size_t i = 0; i < values.size(); ++i)
     {
       value_entity_pairs.push_back({values[i], {entities[i]}});
     }
     std::sort(value_entity_pairs.begin(), value_entity_pairs.end());
-    set_entities(value_entity_pairs, integrals);
   }
   break;
   default:
@@ -355,8 +353,9 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
         std::size_t pos = std::distance(entities.begin(), index_it);
         auto facet
             = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
-        integrals[values[pos]].insert(integrals[values[pos]].end(),
-                                      facet.begin(), facet.end());
+        value_entity_pairs.push_back(
+            {values[pos],
+             std::vector<std::int32_t>(facet.begin(), facet.end())});
       }
     }
     break;
@@ -372,8 +371,9 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
           auto facets
               = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
 
-          integrals[values[j]].insert(integrals[values[j]].end(),
-                                      facets.begin(), facets.end());
+          value_entity_pairs.push_back(
+              {values[j],
+               std::vector<std::int32_t>(facets.begin(), facets.end())});
         }
       }
     }
@@ -383,6 +383,8 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
           "Cannot compute integration domains. Integral type not supported.");
     }
   }
+  std::sort(value_entity_pairs.begin(), value_entity_pairs.end());
+  set_entities(value_entity_pairs, integrals);
   return integrals;
 }
 //-----------------------------------------------------------------------------
