@@ -266,6 +266,30 @@ fem::FunctionSpace fem::create_functionspace(
           mesh->comm(), layout, mesh->topology(), reorder_fn, *element)));
 }
 //-----------------------------------------------------------------------------
+// TODO Use array
+void set_entities(std::span<const std::pair<int, std::vector<std::int32_t>>>
+                      value_entity_pairs,
+                  std::map<int, std::vector<std::int32_t>>& integrals)
+{
+  auto it2 = value_entity_pairs.begin();
+  while (it2 != value_entity_pairs.end())
+  {
+    auto comp_val = (*it2).first;
+    auto it3 = std::lower_bound(
+        value_entity_pairs.begin(), value_entity_pairs.end(), comp_val,
+        [](auto pair, auto val) { return pair.first <= val; });
+
+    const int id = (*it2).first;
+    std::vector<std::int32_t>& entities_id = integrals[id];
+    for (auto it4 = it2; it4 != it3; ++it4)
+    {
+      const auto entity = (*it4).second;
+      entities_id.insert(entities_id.end(), entity.begin(), entity.end());
+    }
+    it2 = it3;
+  }
+}
+//-----------------------------------------------------------------------------
 std::map<int, std::vector<std::int32_t>>
 fem::compute_integration_domains(const fem::IntegralType integral_type,
                                  const mesh::MeshTags<int>& meshtags)
@@ -291,36 +315,20 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
   entities = entities.first(std::distance(it0, it1));
   values = values.first(std::distance(it0, it1));
 
-  std::vector<std::pair<int, std::size_t>> value_index_pairs;
-  value_index_pairs.reserve(values.size());
-  for (std::size_t i = 0; i < values.size(); ++i)
-  {
-    value_index_pairs.push_back({values[i], i});
-  }
-  std::sort(value_index_pairs.begin(), value_index_pairs.end());
-
   switch (integral_type)
   {
     // TODO Sort pairs or use std::iota
   case fem::IntegralType::cell:
   {
-    auto it2 = value_index_pairs.begin();
-    while(it2 != value_index_pairs.end())
+    std::cout << "Hello\n";
+    std::vector<std::pair<int, std::vector<std::int32_t>>> value_entity_pairs;
+    value_entity_pairs.reserve(values.size());
+    for (std::size_t i = 0; i < values.size(); ++i)
     {
-      auto comp_val = (*it2).first;
-      auto it3 = std::lower_bound(
-        value_index_pairs.begin(), value_index_pairs.end(), comp_val,
-        [](auto pair, auto val){return pair.first <= val;});
-
-      const int id = (*it2).first;
-      std::vector<std::int32_t>& entities_id = integrals[id];
-      for (auto it4 = it2; it4 != it3; ++it4)
-      {
-        const int index = (*it4).second;
-        entities_id.push_back(index);
-      }
-      it2 = it3;
+      value_entity_pairs.push_back({values[i], {entities[i]}});
     }
+    std::sort(value_entity_pairs.begin(), value_entity_pairs.end());
+    set_entities(value_entity_pairs, integrals);
   }
   break;
   default:
