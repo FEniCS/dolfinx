@@ -394,8 +394,6 @@ Form<T> create_form(
         std::iota(e.begin(), e.end(), 0);
         itg.first->second.emplace_back(id, k, std::move(e));
       }
-      // NOTE sd->second check might not work or be needed (used to be a
-      // pointer)
       else if (sd != subdomains.end())
       {
         // NOTE This assumes pairs are sorted
