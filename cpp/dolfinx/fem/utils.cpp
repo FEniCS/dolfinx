@@ -266,11 +266,11 @@ fem::FunctionSpace fem::create_functionspace(
           mesh->comm(), layout, mesh->topology(), reorder_fn, *element)));
 }
 //-----------------------------------------------------------------------------
-std::map<int, std::vector<std::int32_t>>
+std::vector<std::pair<int, std::vector<std::int32_t>>>
 fem::compute_integration_domains(const fem::IntegralType integral_type,
                                  const mesh::MeshTags<int>& meshtags)
 {
-  std::map<int, std::vector<std::int32_t>> integrals;
+  std::vector<std::pair<int, std::vector<std::int32_t>>> integrals;
 
   std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
   const mesh::Topology& topology = mesh->topology();
@@ -369,12 +369,13 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
         [](auto pair, auto val) { return pair.first <= val; });
 
     const int id = (*it2).first;
-    std::vector<std::int32_t>& entities_id = integrals[id];
+    std::vector<std::int32_t> entities_id;
     for (auto it4 = it2; it4 != it3; ++it4)
     {
       const auto entity = (*it4).second;
       entities_id.insert(entities_id.end(), entity.begin(), entity.end());
     }
+    integrals.push_back({id, std::move(entities_id)});
     it2 = it3;
   }
   return integrals;

@@ -112,7 +112,7 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 /// @param[in] meshtags The meshtags
 /// @return A map from the integral id to the entities in the integration
 /// domain
-std::map<int, std::vector<std::int32_t>>
+std::vector<std::pair<int, std::vector<std::int32_t>>>
 compute_integration_domains(const IntegralType integral_type,
                             const mesh::MeshTags<int>& meshtags);
 
@@ -277,15 +277,16 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] subdomains Subdomain markers
 /// @param[in] mesh The mesh of the domain
 template <typename T>
-Form<T>
-create_form(const ufcx_form& ufcx_form,
-            const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
-            const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
-            const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-            const std::map<IntegralType,
-                           std::map<std::int32_t, std::vector<std::int32_t>>>&
-                subdomains,
-            std::shared_ptr<const mesh::Mesh> mesh = nullptr)
+Form<T> create_form(
+    const ufcx_form& ufcx_form,
+    const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
+    const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+    const std::vector<std::shared_ptr<const Constant<T>>>& constants,
+    const std::map<
+        IntegralType,
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
+        subdomains,
+    std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
   // FIXME Change subdomains to remove second map(like Form)
   if (ufcx_form.rank != (int)spaces.size())
@@ -400,8 +401,14 @@ create_form(const ufcx_form& ufcx_form,
       else if (sd != subdomains.end())
       {
         // FIXME id may not be in subdomain map on all processes
-        if (sd->second.count(id))
-          itg.first->second.emplace_back(id, k, sd->second.at(id));
+        // if (sd->second.count(id))
+        //   itg.first->second.emplace_back(id, k, sd->second.at(id));
+        // NOTE This assumes pairs are sorted
+        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
+                                   [](auto& pair, auto val)
+                                   { return pair.first < val; });
+        if ((*it).first == id)
+          itg.first->second.emplace_back(id, k, (*it).second);
       }
 
       if (integral->needs_facet_permutations)
@@ -464,9 +471,11 @@ create_form(const ufcx_form& ufcx_form,
       }
       else if (sd != subdomains.end())
       {
-        // FIXME id may not be in subdomain map on all processes
-        if (sd->second.count(id))
-          itg.first->second.emplace_back(id, k, sd->second.at(id));
+        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
+                                   [](auto& pair, auto val)
+                                   { return pair.first < val; });
+        if ((*it).first == id)
+          itg.first->second.emplace_back(id, k, (*it).second);
       }
 
       if (integral->needs_facet_permutations)
@@ -532,9 +541,11 @@ create_form(const ufcx_form& ufcx_form,
       }
       else if (sd != subdomains.end())
       {
-        // FIXME id may not be in subdomain map on all processes
-        if (sd->second.count(id))
-          itg.first->second.emplace_back(id, k, sd->second.at(id));
+        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
+                                   [](auto& pair, auto val)
+                                   { return pair.first < val; });
+        if ((*it).first == id)
+          itg.first->second.emplace_back(id, k, (*it).second);
       }
 
       if (integral->needs_facet_permutations)

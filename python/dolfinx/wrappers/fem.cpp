@@ -415,7 +415,7 @@ void declare_form(py::module& m, const std::string& type)
                       const dolfinx::fem::Constant<T>>>& constants,
                   const std::map<
                       dolfinx::fem::IntegralType,
-                      std::map<std::int32_t, std::vector<std::int32_t>>>&
+                      std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
                       subdomains,
                   std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
                {
@@ -489,7 +489,7 @@ void declare_form(py::module& m, const std::string& type)
          const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
              constants,
          const std::map<dolfinx::fem::IntegralType,
-                        std::map<std::int32_t, std::vector<std::int32_t>>>&
+                        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
              subdomains,
          std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
       {
