@@ -54,7 +54,6 @@ class FunctionSpace;
 
 namespace impl
 {
-// TODO REMOVE Mesh version of this func
 /// Helper function to get an array of of (cell, local_facet) pairs
 /// corresponding to a given facet index.
 /// @param[in] f Facet index
@@ -110,8 +109,7 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 /// (cell, local facet index) pairs for exterior facet integrals etc.)
 /// @param[in] integral_type The integral type
 /// @param[in] meshtags The meshtags
-/// @return A map from the integral id to the entities in the integration
-/// domain
+/// @return A list of (integral id, entities) pairs
 std::vector<std::pair<int, std::vector<std::int32_t>>>
 compute_integration_domains(const IntegralType integral_type,
                             const mesh::MeshTags<int>& meshtags);
@@ -275,6 +273,7 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] coefficients Coefficient fields in the form
 /// @param[in] constants Spatial constants in the form
 /// @param[in] subdomains Subdomain markers
+/// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain
 template <typename T>
 Form<T> create_form(
@@ -288,7 +287,6 @@ Form<T> create_form(
         subdomains,
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
-  // FIXME Change subdomains to remove second map(like Form)
   if (ufcx_form.rank != (int)spaces.size())
     throw std::runtime_error("Wrong number of argument spaces for Form.");
   if (ufcx_form.num_coefficients != (int)coefficients.size())
@@ -400,9 +398,6 @@ Form<T> create_form(
       // pointer)
       else if (sd != subdomains.end())
       {
-        // FIXME id may not be in subdomain map on all processes
-        // if (sd->second.count(id))
-        //   itg.first->second.emplace_back(id, k, sd->second.at(id));
         // NOTE This assumes pairs are sorted
         auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
                                    [](auto& pair, auto val)
@@ -471,6 +466,7 @@ Form<T> create_form(
       }
       else if (sd != subdomains.end())
       {
+        // NOTE This assumes pairs are sorted
         auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
@@ -563,6 +559,7 @@ Form<T> create_form(
 /// @param[in] coefficients Coefficient fields in the form (by name)
 /// @param[in] constants Spatial constants in the form (by name)
 /// @param[in] subdomains Subdomain makers
+/// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional
 /// @return A Form
@@ -612,6 +609,7 @@ Form<T> create_form(
 /// @param[in] coefficients Coefficient fields in the form (by name)
 /// @param[in] constants Spatial constants in the form (by name)
 /// @param[in] subdomains Subdomain markers
+/// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional.
 /// @return A Form

@@ -582,7 +582,6 @@ void fem(py::module& m)
   m.def("transpose_dofmap", &dolfinx::fem::transpose_dofmap,
         "Build the index to (cell, local index) map from a "
         "dofmap ((cell, local index ) -> index).");
-  // FIXME Where is the best place to put this?
   m.def(
       "compute_integration_domains",
       [](const dolfinx::fem::IntegralType integral_type,

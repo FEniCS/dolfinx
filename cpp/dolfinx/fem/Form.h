@@ -118,8 +118,7 @@ public:
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
 
-    // Set integral data (intentially copying)
-    // NOTE Could probably simplify Form by combining integral types
+    // Store kernels, looping over integrals by domain type (dimension)
     for (const auto& [type, kernels] : integrals)
     {
       // Loop over integrals kernels and set domains
