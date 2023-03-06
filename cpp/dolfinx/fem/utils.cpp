@@ -326,7 +326,6 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
     {
       value_entity_pairs.push_back({values[i], {entities[i]}});
     }
-    std::sort(value_entity_pairs.begin(), value_entity_pairs.end());
   }
   break;
   default:
