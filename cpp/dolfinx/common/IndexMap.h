@@ -135,7 +135,7 @@ public:
   /// Number of ghost indices on this process
   std::int32_t num_ghosts() const noexcept;
 
-  /// Number of indices owned by on this process
+  /// Number of indices owned by this process
   std::int32_t size_local() const noexcept;
 
   /// Number indices across communicator
