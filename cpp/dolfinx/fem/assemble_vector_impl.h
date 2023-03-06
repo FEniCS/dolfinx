@@ -932,7 +932,6 @@ void lift_bc(std::span<T> b, const Form<T>& a,
 /// @param[in,out] b The vector to be modified
 /// @param[in] a The bilinear forms, where a[j] is the form that
 /// generates A_j
-/// @param[in] geometry The mesh geometry
 /// @param[in] constants Constants that appear in `a`
 /// @param[in] coeffs Coefficients that appear in `a`
 /// @param[in] bcs1 List of boundary conditions for each block, i.e.
