@@ -402,7 +402,7 @@ Form<T> create_form(
         auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
-        if ((*it).first == id)
+        if (it != sd->second.end() && (*it).first == id)
           itg.first->second.emplace_back(id, k, (*it).second);
       }
 
@@ -470,7 +470,7 @@ Form<T> create_form(
         auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
-        if ((*it).first == id)
+        if (it != sd->second.end() && (*it).first == id)
           itg.first->second.emplace_back(id, k, (*it).second);
       }
 
@@ -540,7 +540,7 @@ Form<T> create_form(
         auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
-        if ((*it).first == id)
+        if (it != sd->second.end() && (*it).first == id)
           itg.first->second.emplace_back(id, k, (*it).second);
       }
 
