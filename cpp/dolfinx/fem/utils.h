@@ -54,7 +54,6 @@ class FunctionSpace;
 
 namespace impl
 {
-// TODO REMOVE Mesh version of this func
 /// Helper function to get an array of of (cell, local_facet) pairs
 /// corresponding to a given facet index.
 /// @param[in] f Facet index
@@ -110,9 +109,8 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 /// (cell, local facet index) pairs for exterior facet integrals etc.)
 /// @param[in] integral_type The integral type
 /// @param[in] meshtags The meshtags
-/// @return A map from the integral id to the entities in the integration
-/// domain
-std::map<int, std::vector<std::int32_t>>
+/// @return A list of (integral id, entities) pairs
+std::vector<std::pair<int, std::vector<std::int32_t>>>
 compute_integration_domains(const IntegralType integral_type,
                             const mesh::MeshTags<int>& meshtags);
 
@@ -291,23 +289,24 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] coefficients Coefficient fields in the form
 /// @param[in] constants Spatial constants in the form
 /// @param[in] subdomains Subdomain markers
+/// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain
 /// @param[in] entity_maps The entity maps for the form
 template <typename T>
-Form<T>
-create_form(const ufcx_form& ufcx_form,
-            const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
-            const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
-            const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-            const std::map<IntegralType,
-                           std::map<std::int32_t, std::vector<std::int32_t>>>&
-                subdomains,
-            std::shared_ptr<const mesh::Mesh> mesh = nullptr,
+Form<T> create_form(
+    const ufcx_form& ufcx_form,
+    const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
+    const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+    const std::vector<std::shared_ptr<const Constant<T>>>& constants,
+    const std::map<
+        IntegralType,
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
+        subdomains,
+    std::shared_ptr<const mesh::Mesh> mesh = nullptr,
     const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
                    std::vector<std::int32_t>>& entity_maps
     = {})
 {
-  // FIXME Change subdomains to remove second map(like Form)
   if (ufcx_form.rank != (int)spaces.size())
     throw std::runtime_error("Wrong number of argument spaces for Form.");
   if (ufcx_form.num_coefficients != (int)coefficients.size())
@@ -416,13 +415,14 @@ create_form(const ufcx_form& ufcx_form,
         std::iota(e.begin(), e.end(), 0);
         itg.first->second.emplace_back(id, k, std::move(e));
       }
-      // NOTE sd->second check might not work or be needed (used to be a
-      // pointer)
       else if (sd != subdomains.end())
       {
-        // FIXME id may not be in subdomain map on all processes
-        if (sd->second.count(id))
-          itg.first->second.emplace_back(id, k, sd->second.at(id));
+        // NOTE This assumes pairs are sorted
+        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
+                                   [](auto& pair, auto val)
+                                   { return pair.first < val; });
+        if (it != sd->second.end() && (*it).first == id)
+          itg.first->second.emplace_back(id, k, (*it).second);
       }
 
       if (integral->needs_facet_permutations)
@@ -485,9 +485,12 @@ create_form(const ufcx_form& ufcx_form,
       }
       else if (sd != subdomains.end())
       {
-        // FIXME id may not be in subdomain map on all processes
-        if (sd->second.count(id))
-          itg.first->second.emplace_back(id, k, sd->second.at(id));
+        // NOTE This assumes pairs are sorted
+        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
+                                   [](auto& pair, auto val)
+                                   { return pair.first < val; });
+        if (it != sd->second.end() && (*it).first == id)
+          itg.first->second.emplace_back(id, k, (*it).second);
       }
 
       if (integral->needs_facet_permutations)
@@ -553,9 +556,11 @@ create_form(const ufcx_form& ufcx_form,
       }
       else if (sd != subdomains.end())
       {
-        // FIXME id may not be in subdomain map on all processes
-        if (sd->second.count(id))
-          itg.first->second.emplace_back(id, k, sd->second.at(id));
+        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
+                                   [](auto& pair, auto val)
+                                   { return pair.first < val; });
+        if (it != sd->second.end() && (*it).first == id)
+          itg.first->second.emplace_back(id, k, (*it).second);
       }
 
       if (integral->needs_facet_permutations)
@@ -573,6 +578,7 @@ create_form(const ufcx_form& ufcx_form,
 /// @param[in] coefficients Coefficient fields in the form (by name)
 /// @param[in] constants Spatial constants in the form (by name)
 /// @param[in] subdomains Subdomain makers
+/// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional
 /// @return A Form
@@ -583,8 +589,9 @@ Form<T> create_form(
     const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType,
-                   std::map<std::int32_t, std::vector<std::int32_t>>>&
+    const std::map<
+        IntegralType,
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
@@ -622,6 +629,7 @@ Form<T> create_form(
 /// @param[in] coefficients Coefficient fields in the form (by name)
 /// @param[in] constants Spatial constants in the form (by name)
 /// @param[in] subdomains Subdomain markers
+/// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional.
 /// @return A Form
@@ -632,8 +640,9 @@ Form<T> create_form(
     const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType,
-                   std::map<std::int32_t, std::vector<std::int32_t>>>&
+    const std::map<
+        IntegralType,
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {

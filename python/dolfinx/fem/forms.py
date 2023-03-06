@@ -142,17 +142,9 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
         domain, = list(sd.keys())  # Assuming single domain
-
-        def unwrap_mt(t):
-            """Get subdomain data for each integral type."""
-            try:
-                return t._cpp_object
-            except AttributeError:
-                return t
         # Check that subdomain data for each integral type is the same
         for data in sd.get(domain).values():
             assert all([d is data[0] for d in data])
-        subdomains = {_ufl_to_dolfinx_domain[key]: unwrap_mt(mt[0]) for (key, mt) in sd.get(domain).items()}
 
         mesh = domain.ufl_cargo()
         if mesh is None:
@@ -173,26 +165,20 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
 
         # NOTE Could remove this and let the user convert meshtags by calling
         # compute_integration_domains themselves
-        # TODO Combine this function with unwrap_mt above
-        def get_integration_domains(integral_type, subdomains):
-            subdomain = subdomains.get(integral_type)
+        def get_integration_domains(integral_type, subdomain):
+            "Get integration domains from subdomain data"
             if subdomain is None:
-                return {}
+                return []
             else:
                 try:
                     return _cpp.fem.compute_integration_domains(
-                        integral_type, subdomain)
-                except TypeError:
+                        integral_type, subdomain._cpp_object)
+                except AttributeError:
                     return subdomain
 
-        # Subdomain markers (possibly empty dictionary for some dimensions)
-        subdomains = {_cpp.fem.IntegralType.cell:
-                      get_integration_domains(_cpp.fem.IntegralType.cell, subdomains),
-                      _cpp.fem.IntegralType.exterior_facet:
-                      get_integration_domains(_cpp.fem.IntegralType.exterior_facet, subdomains),
-                      _cpp.fem.IntegralType.interior_facet:
-                      get_integration_domains(_cpp.fem.IntegralType.interior_facet, subdomains),
-                      _cpp.fem.IntegralType.vertex: subdomains.get("vertex", {})}
+        # Subdomain markers (possibly empty list for some integral types)
+        subdomains = {_ufl_to_dolfinx_domain[key]: get_integration_domains(
+            _ufl_to_dolfinx_domain[key], subdomain_data[0]) for (key, subdomain_data) in sd.get(domain).items()}
 
         return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, entity_maps, module.ffi, code)
 

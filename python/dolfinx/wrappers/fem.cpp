@@ -418,7 +418,7 @@ void declare_form(py::module& m, const std::string& type)
                       const dolfinx::fem::Constant<T>>>& constants,
                   const std::map<
                       dolfinx::fem::IntegralType,
-                      std::map<std::int32_t, std::vector<std::int32_t>>>&
+                      std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
                       subdomains,
                   std::shared_ptr<const dolfinx::mesh::Mesh> mesh,
                   const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
@@ -497,7 +497,7 @@ void declare_form(py::module& m, const std::string& type)
          const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
              constants,
          const std::map<dolfinx::fem::IntegralType,
-                        std::map<std::int32_t, std::vector<std::int32_t>>>&
+                        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
              subdomains,
          std::shared_ptr<const dolfinx::mesh::Mesh> mesh,
          const std::map<std::shared_ptr<const dolfinx::mesh::Mesh>,
@@ -593,7 +593,6 @@ void fem(py::module& m)
   m.def("transpose_dofmap", &dolfinx::fem::transpose_dofmap,
         "Build the index to (cell, local index) map from a "
         "dofmap ((cell, local index ) -> index).");
-  // FIXME Where is the best place to put this?
   m.def(
       "compute_integration_domains",
       [](const dolfinx::fem::IntegralType integral_type,

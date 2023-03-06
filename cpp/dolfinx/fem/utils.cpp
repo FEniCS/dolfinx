@@ -273,21 +273,17 @@ fem::FunctionSpace fem::create_functionspace(
           mesh->comm(), layout, mesh->topology(), reorder_fn, *element)));
 }
 //-----------------------------------------------------------------------------
-std::map<int, std::vector<std::int32_t>>
+std::vector<std::pair<int, std::vector<std::int32_t>>>
 fem::compute_integration_domains(const fem::IntegralType integral_type,
                                  const mesh::MeshTags<int>& meshtags)
 {
-  std::map<int, std::vector<std::int32_t>> integrals;
-
   std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
   const mesh::Topology& topology = mesh->topology();
   const int tdim = topology.dim();
   int dim = integral_type == IntegralType::cell ? tdim : tdim - 1;
   if (dim != meshtags.dim())
-  {
     throw std::runtime_error("Invalid MeshTags dimension: "
                              + std::to_string(meshtags.dim()));
-  }
 
   std::span<const std::int32_t> entities = meshtags.indices();
   std::span<const int> values = meshtags.values();
@@ -296,17 +292,18 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
   auto it1 = std::lower_bound(it0, entities.end(),
                               topology.index_map(dim)->size_local());
   entities = entities.first(std::distance(it0, it1));
+  values = values.first(std::distance(it0, it1));
 
+  // Structure to store (meshtag value, entity) pairs
+  std::vector<std::pair<int, std::vector<std::int32_t>>> value_entity_pairs;
+  value_entity_pairs.reserve(values.size());
   switch (integral_type)
   {
     // TODO Sort pairs or use std::iota
   case fem::IntegralType::cell:
   {
-    for (std::size_t j = 0; j < entities.size(); ++j)
-    {
-      // TODO Avoid map lookup in loop
-      integrals[values[j]].push_back(entities[j]);
-    }
+    for (std::size_t i = 0; i < values.size(); ++i)
+      value_entity_pairs.push_back({values[i], {entities[i]}});
   }
   break;
   default:
@@ -333,8 +330,9 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
         std::size_t pos = std::distance(entities.begin(), index_it);
         auto facet
             = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
-        integrals[values[pos]].insert(integrals[values[pos]].end(),
-                                      facet.begin(), facet.end());
+        value_entity_pairs.push_back(
+            {values[pos],
+             std::vector<std::int32_t>(facet.begin(), facet.end())});
       }
     }
     break;
@@ -350,8 +348,9 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
           auto facets
               = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
 
-          integrals[values[j]].insert(integrals[values[j]].end(),
-                                      facets.begin(), facets.end());
+          value_entity_pairs.push_back(
+              {values[j],
+               std::vector<std::int32_t>(facets.begin(), facets.end())});
         }
       }
     }
@@ -360,6 +359,33 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
       throw std::runtime_error(
           "Cannot compute integration domains. Integral type not supported.");
     }
+  }
+  // Sort pairs by meshtag value so that entities can be grouped
+  std::sort(value_entity_pairs.begin(), value_entity_pairs.end());
+
+  std::vector<std::pair<int, std::vector<std::int32_t>>> integrals;
+  // Iterator to mark the start of the group
+  auto group_start_it = value_entity_pairs.begin();
+  while (group_start_it != value_entity_pairs.end())
+  {
+    // Get iterator pointing to end of group
+    auto val = (*group_start_it).first;
+    auto group_end_it = std::lower_bound(
+        value_entity_pairs.begin(), value_entity_pairs.end(), val,
+        [](auto& pair, auto val) { return pair.first <= val; });
+
+    // Meshtag value for this group
+    const int id = (*group_start_it).first;
+    // List to store entities in this group
+    std::vector<std::int32_t> group_entities;
+    // Loop through entities in this group and add
+    for (auto it = group_start_it; it != group_end_it; ++it)
+    {
+      const auto entity = (*it).second;
+      group_entities.insert(group_entities.end(), entity.begin(), entity.end());
+    }
+    integrals.push_back({id, std::move(group_entities)});
+    group_start_it = group_end_it;
   }
   return integrals;
 }

@@ -291,14 +291,13 @@ def test_manual_integration_domains():
 
     # Manually specify cells to integrate over (removing ghosts
     # to give same result as above)
-    cell_domains = {0: [], 7: []}
-    for i, c in enumerate(cell_indices):
-        if c < cell_map.size_local:
-            cell_domains[cell_values[i]].append(c)
+    cell_domains = [(domain_id, cell_indices[(cell_values == domain_id)
+                                             & (cell_indices < cell_map.size_local)])
+                    for domain_id in [0, 7]]
 
     # Manually specify exterior facets to integrate over as
     # (cell, local facet) pairs
-    ext_facet_domains = {6: []}
+    ext_facet_domain = []
     msh.topology.create_connectivity(tdim, tdim - 1)
     msh.topology.create_connectivity(tdim - 1, tdim)
     c_to_f = msh.topology.connectivity(tdim, tdim - 1)
@@ -307,21 +306,23 @@ def test_manual_integration_domains():
         if f < facet_map.size_local:
             c = f_to_c.links(f)[0]
             local_f = np.where(c_to_f.links(c) == f)[0][0]
-            ext_facet_domains[6].append(c)
-            ext_facet_domains[6].append(local_f)
+            ext_facet_domain.append(c)
+            ext_facet_domain.append(local_f)
+    ext_facet_domains = [(6, ext_facet_domain)]
 
     # Manually specify interior facets to integrate over
-    int_facet_domains = {3: []}
+    int_facet_domain = []
     for f in marked_int_facets:
         if f >= facet_map.size_local or len(f_to_c.links(f)) != 2:
             continue
         c_0, c_1 = f_to_c.links(f)[0], f_to_c.links(f)[1]
         local_f_0 = np.where(c_to_f.links(c_0) == f)[0][0]
         local_f_1 = np.where(c_to_f.links(c_1) == f)[0][0]
-        int_facet_domains[3].append(c_0)
-        int_facet_domains[3].append(local_f_0)
-        int_facet_domains[3].append(c_1)
-        int_facet_domains[3].append(local_f_1)
+        int_facet_domain.append(c_0)
+        int_facet_domain.append(local_f_0)
+        int_facet_domain.append(c_1)
+        int_facet_domain.append(local_f_1)
+    int_facet_domains = [(3, int_facet_domain)]
 
     # Create measures
     dx_manual = ufl.Measure("dx", subdomain_data=cell_domains, domain=msh)
