@@ -179,14 +179,8 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
                 except TypeError:
                     return subdomain
 
-        # Subdomain markers (possibly empty dictionary for some dimensions)
-        subdomains = {_cpp.fem.IntegralType.cell:
-                      get_integration_domains(_cpp.fem.IntegralType.cell, subdomains),
-                      _cpp.fem.IntegralType.exterior_facet:
-                      get_integration_domains(_cpp.fem.IntegralType.exterior_facet, subdomains),
-                      _cpp.fem.IntegralType.interior_facet:
-                      get_integration_domains(_cpp.fem.IntegralType.interior_facet, subdomains),
-                      _cpp.fem.IntegralType.vertex: subdomains.get("vertex", [])}
+        # Subdomain markers (possibly empty list for some integral types)
+        subdomains = {key: get_integration_domains(key, subdomains) for key in subdomains.keys()}
 
         return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, module.ffi, code)
 
