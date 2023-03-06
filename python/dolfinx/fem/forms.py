@@ -171,7 +171,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         def get_integration_domains(integral_type, subdomains):
             subdomain = subdomains.get(integral_type)
             if subdomain is None:
-                return {}
+                return []
             else:
                 try:
                     return _cpp.fem.compute_integration_domains(
@@ -186,7 +186,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
                       get_integration_domains(_cpp.fem.IntegralType.exterior_facet, subdomains),
                       _cpp.fem.IntegralType.interior_facet:
                       get_integration_domains(_cpp.fem.IntegralType.interior_facet, subdomains),
-                      _cpp.fem.IntegralType.vertex: subdomains.get("vertex", {})}
+                      _cpp.fem.IntegralType.vertex: subdomains.get("vertex", [])}
 
         return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, module.ffi, code)
 
