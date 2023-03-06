@@ -49,21 +49,33 @@ class CMakeBuild(build_ext):
                        f'-DPython3_INCLUDE_DIRS={sysconfig.get_config_var("INCLUDEPY")}']
 
         cfg = 'Debug' if self.debug else 'Release'
-        build_args = ['--config', cfg]
         cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
 
         env = os.environ.copy()
-        # default to 3 build threads
-        if "CMAKE_BUILD_PARALLEL_LEVEL" not in env:
-            env["CMAKE_BUILD_PARALLEL_LEVEL"] = "3"
-
         import pybind11
         env['pybind11_DIR'] = pybind11.get_cmake_dir()
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
-        subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
-        subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp, env=env)
+        cmake_generator = env.get("CMAKE_GENERATOR", "")
+        cmake_args += ["-B", self.build_temp, "-S", ext.sourcedir]
+        if not cmake_generator:
+            try:
+                # Use ninja if available
+                s = subprocess.run(['cmake', '-G Ninja'] + cmake_args,
+                                   capture_output=True, text=True, check=True, env=env)
+                sys.stderr.write(s.stderr)
+                sys.stderr.flush()
+                sys.stdout.write(s.stdout)
+                sys.stdout.flush()
+            except subprocess.CalledProcessError:
+                if "CMAKE_BUILD_PARALLEL_LEVEL" not in env:
+                    env["CMAKE_BUILD_PARALLEL_LEVEL"] = "3"
+                subprocess.run(['cmake', '--fresh'] + cmake_args, check=True, env=env)
+        else:
+            subprocess.run(['cmake'] + cmake_args, check=True, env=env)
+
+        subprocess.run(['cmake', '--build', self.build_temp], check=True, env=env)
 
 
 setup(name='fenics-dolfinx',
