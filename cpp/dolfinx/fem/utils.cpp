@@ -266,7 +266,6 @@ fem::FunctionSpace fem::create_functionspace(
           mesh->comm(), layout, mesh->topology(), reorder_fn, *element)));
 }
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 std::map<int, std::vector<std::int32_t>>
 fem::compute_integration_domains(const fem::IntegralType integral_type,
                                  const mesh::MeshTags<int>& meshtags)
