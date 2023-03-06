@@ -620,7 +620,6 @@ def test_interpolate_callable():
     u0.interpolate(lambda x: x[0])
     u1.interpolate(f)
     assert np.allclose(u0.x.array, u1.x.array)
-
     with pytest.raises(RuntimeError):
         u0.interpolate(lambda x: np.vstack([x[0], x[1]]))
 
@@ -643,16 +642,12 @@ def test_interpolate_callable():
 def test_vector_element_interpolation(scalar_element):
     """Test interpolation into a range of vector elements."""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell().cellname()))
-
     V = FunctionSpace(mesh, ufl.VectorElement(scalar_element))
-
     u = Function(V)
     u.interpolate(lambda x: (x[0], x[1]))
-
     u2 = Function(V)
     u2.sub(0).interpolate(lambda x: x[0])
     u2.sub(1).interpolate(lambda x: x[1])
-
     assert np.allclose(u2.x.array, u.x.array)
 
 
@@ -720,7 +715,6 @@ def test_mixed_interpolation_permuting(cell_type, order):
     Eb_m.sub(1).interpolate(g)
     diff = Eb_m[2].dx(1) - dgdy
     error2 = assemble_scalar(form(ufl.dot(diff, diff) * ufl.dx))
-
     assert np.isclose(error, error2)
 
 
