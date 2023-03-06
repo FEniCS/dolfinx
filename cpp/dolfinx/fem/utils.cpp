@@ -266,12 +266,6 @@ fem::FunctionSpace fem::create_functionspace(
           mesh->comm(), layout, mesh->topology(), reorder_fn, *element)));
 }
 //-----------------------------------------------------------------------------
-// TODO Use array
-void set_entities(std::span<const std::pair<int, std::vector<std::int32_t>>>
-                      value_entity_pairs,
-                  std::map<int, std::vector<std::int32_t>>& integrals)
-{
-}
 //-----------------------------------------------------------------------------
 std::map<int, std::vector<std::int32_t>>
 fem::compute_integration_domains(const fem::IntegralType integral_type,
