@@ -213,9 +213,9 @@ T assemble_scalar(
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::int32_t>& facets = M.exterior_facet_domains(i);
-    value += impl::assemble_exterior_facets(geometry, num_cell_facets, constants,
-                                            facets, fn, coeffs,
-                                            cstride, perms, get_facet_perm);
+    value += impl::assemble_exterior_facets(geometry, num_cell_facets, facets,
+                                            fn, constants, coeffs, cstride,
+                                            perms, get_facet_perm);
   }
 
   if (M.num_integrals(IntegralType::interior_facet) > 0)

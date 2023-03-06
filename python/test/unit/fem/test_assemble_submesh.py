@@ -1013,7 +1013,7 @@ def test_jørgen_problem(random_ordering):
     # pair to the left cell, corresponding to the "+" restriction. Assign
     # the second (cell, local facet) pair to the right cell, corresponding
     # to the "-" restriction.
-    facet_integration_entities = {1: []}
+    facet_integration_entities = []
     facet_imap = msh.topology.index_map(fdim)
     msh.topology.create_connectivity(tdim, fdim)
     msh.topology.create_connectivity(fdim, tdim)
@@ -1034,7 +1034,7 @@ def test_jørgen_problem(random_ordering):
                 cell_plus).tolist().index(facet)
             local_facet_minus = c_to_f.links(
                 cell_minus).tolist().index(facet)
-            facet_integration_entities[1].extend(
+            facet_integration_entities.extend(
                 [cell_plus, local_facet_plus, cell_minus, local_facet_minus])
 
             # HACK cell_minus does not exist in the left submesh, so it will
@@ -1053,7 +1053,7 @@ def test_jørgen_problem(random_ordering):
             entity_maps[right_submesh][cell_plus] = \
                 entity_maps[right_submesh][cell_minus]
     dS = ufl.Measure("dS", domain=msh,
-                     subdomain_data=facet_integration_entities)
+                     subdomain_data=[(1, facet_integration_entities)])
 
     # Define form and assemble
     a = fem.form(ufl.inner(u("+"), v("-")) * dS(1), entity_maps=entity_maps)

@@ -1170,10 +1170,10 @@ void assemble_vector(
     }
     else
     {
-      impl::assemble_exterior_facets(dof_transform, b, geometry, dofs,
-                                     num_cell_facets, facets, bs, fn, constants,
-                                     coeffs, cstride, cell_info, entity_map,
-                                     get_perm, get_facet_perm);
+      impl::assemble_exterior_facets(dof_transform, b, geometry,
+                                     num_cell_facets, facets, dofs, bs, fn,
+                                     constants, coeffs, cstride, cell_info,
+                                     entity_map, get_perm, get_facet_perm);
     }
   }
 
