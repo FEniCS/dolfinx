@@ -9,9 +9,7 @@
 
 import numpy as np
 import pytest
-
 import ufl
-from dolfinx import fem
 from dolfinx.mesh import (GhostMode, create_box, create_rectangle,
                           create_submesh, create_unit_cube, create_unit_square,
                           locate_entities, locate_entities_boundary,
@@ -23,6 +21,7 @@ from petsc4py import PETSc
 from dolfinx.graph import create_adjacencylist
 import random
 import basix.ufl_wrapper
+from dolfinx import fem
 
 
 def create_random_mesh(corners, n, ghost_mode):
@@ -74,8 +73,7 @@ def assemble_forms_0(mesh, space, k):
     a = fem.form(ufl.inner(c * f * g * u, v) * (dx + ds))
 
     facet_dim = mesh.topology.dim - 1
-    facets = locate_entities_boundary(
-        mesh, facet_dim, lambda x: np.isclose(x[0], 1))
+    facets = locate_entities_boundary(mesh, facet_dim, lambda x: np.isclose(x[0], 1))
     dofs = fem.locate_dofs_topological(V, facet_dim, facets)
 
     bc_func = fem.Function(V)
@@ -89,8 +87,7 @@ def assemble_forms_0(mesh, space, k):
     L = fem.form(ufl.inner(c * f * g, v) * (dx + ds))
     b = fem.petsc.assemble_vector(L)
     fem.petsc.apply_lifting(b, [a], bcs=[[bc]])
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD,
-                  mode=PETSc.ScatterMode.REVERSE)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     fem.petsc.set_bc(b, [bc])
 
     s = mesh.comm.allreduce(fem.assemble_scalar(
@@ -121,11 +118,9 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode, random_ordering):
                 MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
                 ghost_mode=ghost_mode)
     else:
-        mesh_0 = create_unit_cube(
-            MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
-        mesh_1 = create_box(
-            MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
-            (2 * n, n, n), ghost_mode=ghost_mode)
+        mesh_0 = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
+        mesh_1 = create_box(MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
+                            (2 * n, n, n), ghost_mode=ghost_mode)
 
     A_mesh_0, b_mesh_0, s_mesh_0 = assemble_forms_0(mesh_0, space, k)
 
@@ -138,20 +133,22 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode, random_ordering):
     assert np.isclose(b_mesh_0.norm(), b_submesh.norm())
     assert np.isclose(s_mesh_0, s_submesh)
 
+    A_mesh_0.destroy()
+    b_mesh_0.destroy()
+    A_submesh.destroy()
+    b_submesh.destroy()
+
 
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
-                                        GhostMode.shared_facet])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 def test_submesh_facet_assembly(n, k, space, ghost_mode):
     """Test that assembling a form over the face of a unit cube gives
     the same result as assembling it over a unit square."""
-    cube_mesh = create_unit_cube(
-        MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
+    cube_mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
     edim = cube_mesh.topology.dim - 1
-    entities = locate_entities_boundary(
-        cube_mesh, edim, lambda x: np.isclose(x[2], 0.0))
+    entities = locate_entities_boundary(cube_mesh, edim, lambda x: np.isclose(x[2], 0.0))
     submesh = create_submesh(cube_mesh, edim, entities)[0]
 
     A_submesh, b_submesh, s_submesh = assemble_forms_0(submesh, space, k)
@@ -164,6 +161,11 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     assert np.isclose(A_submesh.norm(), A_square_mesh.norm())
     assert np.isclose(b_submesh.norm(), b_square_mesh.norm())
     assert np.isclose(s_submesh, s_square_mesh)
+
+    A_submesh.destroy()
+    b_submesh.destroy()
+    A_square_mesh.destroy()
+    b_square_mesh.destroy()
 
 
 def assemble_forms_1(comm, f, g, h, u, v, dx, ds, bc, entity_maps={}):
@@ -304,6 +306,11 @@ def test_mixed_codim_0_assembly_coeffs(d, n, k, space, ghost_mode,
     assert np.isclose(A_sm.norm(), A_m.norm())
     assert np.isclose(b_sm.norm(), b_m.norm())
     assert np.isclose(s_sm, s_m)
+
+    A_m.destroy()
+    A_sm.destroy()
+    b_m.destroy()
+    b_sm.destroy()
 
 
 def compute_expected_norms(d, n, space, k, ghost_mode, f_expr, g_expr):
@@ -464,6 +471,9 @@ def test_mixed_codim_0_assembly_0(d, n, k, space, ghost_mode,
     assert np.isclose(A.norm(), A_expected_norm)
     assert np.isclose(b.norm(), b_expected_norm)
 
+    A.destroy()
+    b.destroy()
+
 
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
@@ -549,6 +559,9 @@ def test_mixed_codim_0_assembly_1(d, n, k, space, ghost_mode, random_ordering):
         d, n, space, k, ghost_mode, f_expr, g_expr)
     assert np.isclose(A.norm(), A_expected_norm)
     assert np.isclose(b.norm(), b_expected_norm)
+
+    A.destroy()
+    b.destroy()
 
 
 @pytest.mark.parametrize("d", [2, 3])
@@ -650,6 +663,9 @@ def test_codim_1_coeffs(d, n, k, space, ghost_mode, random_ordering):
     s_expected = mesh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
     assert np.isclose(s, s_expected)
 
+    A.destroy()
+    b.destroy()
+
 
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
@@ -747,6 +763,11 @@ def test_codim_1_assembly(d, n, k, space, ghost_mode, random_ordering):
 
     assert np.isclose(b.norm(), b_2.norm())
 
+    A.destroy()
+    b.destroy()
+    A_2.destroy()
+    b_2.destroy()
+
 
 @pytest.mark.parametrize("random_ordering", [False, True])
 def test_assemble_block(random_ordering):
@@ -805,6 +826,9 @@ def test_assemble_block(random_ordering):
     assert np.isclose(A.norm(), 3.0026030373660784)
     assert np.isclose(b.norm(), 1.4361406616345072)
 
+    A.destroy()
+    b.destroy()
+
 
 def test_mixed_coeff_form():
     """Test that a form with coefficients involving dx and ds integrals
@@ -846,6 +870,8 @@ def test_mixed_coeff_form():
 
     # TODO Check value
     assert np.isclose(b.norm(), 0.6937782992069734)
+
+    b.destroy()
 
 
 @pytest.mark.parametrize("n", [2, 4, 8])
@@ -930,6 +956,9 @@ def test_int_facet(n, d, random_ordering):
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
     assert np.isclose(b_norm, b.norm())
+
+    A.destroy()
+    b.destroy()
 
 
 @pytest.mark.parametrize("random_ordering", [False, True])

@@ -42,14 +42,15 @@
 import sys
 
 import numpy as np
-import ufl
 from analytical_modes import verify_mode
+
+import ufl
+from dolfinx import fem, io, plot
 from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
                           locate_entities)
+
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
-
-from dolfinx import fem, io, plot
 
 try:
     import pyvista

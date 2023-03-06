@@ -386,7 +386,7 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
                           std::span<const double> points)
 {
   const int tdim = mesh.topology().dim();
-  const mesh::Geometry& geometry = mesh.geometry();
+  const mesh::Geometry<double>& geometry = mesh.geometry();
   std::span<const double> geom_dofs = geometry.x();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   std::vector<double> shortest_vectors(3 * entities.size());
@@ -509,7 +509,7 @@ int geometry::compute_first_colliding_cell(
   else
   {
     constexpr double eps2 = 1e-20;
-    const mesh::Geometry& geometry = mesh.geometry();
+    const mesh::Geometry<double>& geometry = mesh.geometry();
     std::span<const double> geom_dofs = geometry.x();
     const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
     const std::size_t num_nodes = geometry.cmap().dim();
@@ -545,7 +545,7 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
   const MPI_Comm& comm = mesh.comm();
 
   // Create a global bounding-box tree to find candidate processes with cells
-  // that could collide with thte points
+  // that could collide with the points
   constexpr double padding = 0.0001;
   const int tdim = mesh.topology().dim();
   const auto cell_map = mesh.topology().index_map(tdim);

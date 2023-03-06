@@ -130,12 +130,11 @@ def test_constant_bc_constructions():
 
 
 @pytest.mark.parametrize('mesh_factory',
-                         [
-                             (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-                             (create_unit_square, (MPI.COMM_WORLD, 8, 8, CellType.quadrilateral)),
-                             (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
-                             (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
-                         ])
+                         [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
+                          (create_unit_square, (MPI.COMM_WORLD, 8, 8, CellType.quadrilateral)),
+                          (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
+                          (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
+                          ])
 def test_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with a constant yields the same
     result as setting it with a function"""
@@ -163,12 +162,11 @@ def test_constant_bc(mesh_factory):
 
 
 @pytest.mark.parametrize(
-    'mesh_factory', [
-        (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-        (create_unit_square, (MPI.COMM_WORLD, 8, 8, CellType.quadrilateral)),
-        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
-        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
-    ])
+    'mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
+                     (create_unit_square, (MPI.COMM_WORLD, 8, 8, CellType.quadrilateral)),
+                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
+                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
+                     ])
 def test_vector_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with a vector valued constant
     yields the same result as setting it with a function"""
@@ -203,12 +201,10 @@ def test_vector_constant_bc(mesh_factory):
 
 
 @pytest.mark.parametrize(
-    'mesh_factory', [
-        (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-        (create_unit_square, (MPI.COMM_WORLD, 8, 8, CellType.quadrilateral)),
-        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
-        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
-    ])
+    'mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
+                     (create_unit_square, (MPI.COMM_WORLD, 8, 8, CellType.quadrilateral)),
+                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
+                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
 def test_sub_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with on a component of a vector
     valued function yields the same result as setting it with a
@@ -238,12 +234,10 @@ def test_sub_constant_bc(mesh_factory):
 
 
 @pytest.mark.parametrize(
-    'mesh_factory', [
-        (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-        (create_unit_square, (MPI.COMM_WORLD, 8, 8, CellType.quadrilateral)),
-        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
-        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
-    ])
+    'mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
+                     (create_unit_square, (MPI.COMM_WORLD, 8, 8, CellType.quadrilateral)),
+                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
+                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
 def test_mixed_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with on a component of a mixed
     function yields the same result as setting it with a function"""
@@ -283,7 +277,6 @@ def test_mixed_blocked_constant():
     """Check that mixed space with blocked component cannot have
     Dirichlet BC based on a vector valued Constant."""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
-
     tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 

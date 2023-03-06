@@ -26,7 +26,9 @@ import cffi
 import numba
 import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
+
 import ufl
+from dolfinx import geometry
 from dolfinx.cpp.fem import Form_complex128, Form_float64
 from dolfinx.fem import (Function, FunctionSpace, IntegralType, dirichletbc,
                          form, locate_dofs_topological)
@@ -35,11 +37,9 @@ from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary, meshtags
+
 from mpi4py import MPI
 from petsc4py import PETSc
-
-from dolfinx import geometry
-
 
 infile = XDMFFile(MPI.COMM_WORLD, Path(Path(__file__).parent, "data",
                   "cooks_tri_mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII)
