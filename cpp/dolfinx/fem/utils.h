@@ -570,8 +570,9 @@ Form<T> create_form(
     const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType,
-                   std::map<std::int32_t, std::vector<std::int32_t>>>&
+    const std::map<
+        IntegralType,
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
@@ -620,8 +621,9 @@ Form<T> create_form(
     const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType,
-                   std::map<std::int32_t, std::vector<std::int32_t>>>&
+    const std::map<
+        IntegralType,
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
