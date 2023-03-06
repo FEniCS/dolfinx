@@ -23,6 +23,7 @@ import random
 import basix.ufl_wrapper
 from dolfinx import fem
 
+
 def create_random_mesh(corners, n, ghost_mode):
     """Create a rectangular mesh made of randomly ordered simplices"""
     if MPI.COMM_WORLD.rank == 0:
