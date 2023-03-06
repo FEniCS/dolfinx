@@ -574,6 +574,12 @@ class LinearProblem:
         self._b.setOptionsPrefix(problem_prefix)
         self._b.setFromOptions()
 
+    def __del__(self):
+        self._solver.destroy()
+        self._A.destroy()
+        self._b.destroy()
+        self._x.destroy()
+
     def solve(self) -> _Function:
         """Solve the problem."""
 

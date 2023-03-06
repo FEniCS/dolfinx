@@ -192,3 +192,7 @@ def test_nonlinear_pde_snes():
     assert snes.getIterationNumber() < 6
     # print(snes.getIterationNumber())
     # print(snes.getFunctionNorm())
+
+    snes.destroy()
+    b.destroy()
+    J.destroy()
