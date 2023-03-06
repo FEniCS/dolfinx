@@ -1274,7 +1274,7 @@ std::vector<std::int32_t>
 mesh::entities_to_index(const Topology& topology, int dim,
                         const graph::AdjacencyList<std::int32_t>& entities)
 {
-  LOG(INFO) << "Build list if mesh entity indices from the entity vertices.";
+  LOG(INFO) << "Build list of mesh entity indices from the entity vertices.";
 
   // Tagged entity topological dimension
   auto map_e = topology.index_map(dim);

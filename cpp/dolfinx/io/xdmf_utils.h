@@ -96,10 +96,10 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// data (values) with each entity)
 /// @note This function involves parallel distribution and must be
 /// called collectively. Global input indices for entities which are not
-/// owned by current rank could passed to this function. E.g., rank0
+/// owned by current rank could be passed to this function. E.g., rank0
 /// provides an entity with global input indices [gi0, gi1, gi2], but
 /// this identifies a triangle that is owned by rank1. It will be
-/// distributed and rank1 will receive (local) cell-vertex connectivity
+/// distributed and rank1 will receive the (local) cell-vertex connectivity
 /// for this triangle.
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
 distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
