@@ -471,7 +471,7 @@ void assemble_matrix(
     const auto& fn = a.kernel(IntegralType::cell, i);
     const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
-    impl::assemble_cells(mat_set, mesh->geometry(), cells, dof_transform, dofs0,
+    impl::assemble_cells(mat_set, geometry, cells, dof_transform, dofs0,
                          bs0, dof_transform_to_transpose, dofs1, bs1, bc0, bc1,
                          fn, coeffs, cstride, constants, cell_info_0,
                          cell_info_1, entity_map_0, entity_map_1);
@@ -484,7 +484,7 @@ void assemble_matrix(
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::int32_t>& facets = a.exterior_facet_domains(i);
     impl::assemble_exterior_facets(
-        mat_set, mesh->geometry(), facets, dof_transform, dofs0, bs0,
+        mat_set, geometry, facets, dof_transform, dofs0, bs0,
         dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn, coeffs, cstride,
         constants, cell_info_0, cell_info_1, entity_map_0, entity_map_1);
   }
@@ -512,7 +512,7 @@ void assemble_matrix(
           = coefficients.at({IntegralType::interior_facet, i});
       const std::vector<std::int32_t>& facets = a.interior_facet_domains(i);
       impl::assemble_interior_facets(
-          mat_set, mesh->geometry(), num_cell_facets, facets, dof_transform,
+          mat_set, geometry, num_cell_facets, facets, dof_transform,
           *dofmap0, bs0, dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1,
           fn, coeffs, cstride, c_offsets, constants, cell_info_0, cell_info_1,
           entity_map_0, entity_map_1, get_perm);

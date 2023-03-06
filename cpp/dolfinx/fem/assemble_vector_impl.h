@@ -50,8 +50,7 @@ void _lift_bc_cells(
     std::span<const T> constants, std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info_0,
     std::span<const std::uint32_t> cell_info_1, std::span<const T> bc_values1,
-    std::span<const std::int8_t> bc_markers1, std::span<const T> x0,
-    T scale,
+    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T scale,
     const std::function<std::int32_t(std::span<const std::int32_t>)>&
         cell_map_0,
     const std::function<std::int32_t(std::span<const std::int32_t>)>&
@@ -216,8 +215,7 @@ void _lift_bc_exterior_facets(
     std::span<const T> constants, std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info_0,
     std::span<const std::uint32_t> cell_info_1, std::span<const T> bc_values1,
-    std::span<const std::int8_t> bc_markers1, std::span<const T> x0,
-    T scale,
+    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T scale,
     const std::function<std::int32_t(std::span<const std::int32_t>)>&
         facet_map_0,
     const std::function<std::int32_t(std::span<const std::int32_t>)>&
@@ -871,8 +869,8 @@ void lift_bc(std::span<T> b, const Form<T>& a,
     }
     else
     {
-      _lift_bc_cells(b, mesh->geometry(), kernel, cells, dof_transform, dofmap0,
-                     bs0, dof_transform_to_transpose, dofmap1, bs1, constants,
+      _lift_bc_cells(b, geometry, kernel, cells, dof_transform, dofmap0, bs0,
+                     dof_transform_to_transpose, dofmap1, bs1, constants,
                      coeffs, cstride, cell_info_0, cell_info_1, bc_values1,
                      bc_markers1, x0, scale, entity_map_0, entity_map_1);
     }
@@ -914,10 +912,10 @@ void lift_bc(std::span<T> b, const Form<T>& a,
           = coefficients.at({IntegralType::interior_facet, i});
       const std::vector<std::int32_t>& facets = a.interior_facet_domains(i);
       _lift_bc_interior_facets(
-          b, mesh->geometry(), num_cell_facets, kernel, facets, dof_transform,
-          dofmap0, bs0, dof_transform_to_transpose, dofmap1, bs1, constants,
-          coeffs, cstride, cell_info_0, cell_info_1, get_perm, bc_values1,
-          bc_markers1, x0, scale, entity_map_0, entity_map_1);
+          b, geometry, num_cell_facets, kernel, facets, dof_transform, dofmap0,
+          bs0, dof_transform_to_transpose, dofmap1, bs1, constants, coeffs,
+          cstride, cell_info_0, cell_info_1, get_perm, bc_values1, bc_markers1,
+          x0, scale, entity_map_0, entity_map_1);
     }
   }
 }
@@ -945,7 +943,6 @@ void lift_bc(std::span<T> b, const Form<T>& a,
 template <typename T>
 void apply_lifting(
     std::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
-    const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
@@ -987,15 +984,35 @@ void apply_lifting(
         bc->dof_values(bc_values1);
       }
 
+      std::shared_ptr<const mesh::Mesh> mesh = a[j]->mesh();
       if (!x0.empty())
       {
-        lift_bc<T>(b, *a[j], geometry, constants[j], coeffs[j], bc_values1,
-                   bc_markers1, x0[j], scale);
+        if constexpr (std::is_same_v<double, impl::scalar_value_type_t<T>>)
+        {
+          lift_bc<T>(b, *a[j], mesh->geometry(), constants[j], coeffs[j],
+                     bc_values1, bc_markers1, x0[j], scale);
+        }
+        else
+        {
+          lift_bc<T>(
+              b, *a[j], mesh->geometry().astype<impl::scalar_value_type_t<T>>(),
+              constants[j], coeffs[j], bc_values1, bc_markers1, x0[j], scale);
+        }
       }
       else
       {
-        lift_bc<T>(b, *a[j], geometry, constants[j], coeffs[j], bc_values1,
-                   bc_markers1, std::span<const T>(), scale);
+        if constexpr (std::is_same_v<double, impl::scalar_value_type_t<T>>)
+        {
+          lift_bc<T>(b, *a[j], mesh->geometry(), constants[j], coeffs[j],
+                     bc_values1, bc_markers1, std::span<const T>(), scale);
+        }
+        else
+        {
+          lift_bc<T>(b, *a[j],
+                     mesh->geometry().astype<impl::scalar_value_type_t<T>>(),
+                     constants[j], coeffs[j], bc_values1, bc_markers1,
+                     std::span<const T>(), scale);
+        }
       }
     }
   }
@@ -1054,21 +1071,20 @@ void assemble_vector(
     const std::vector<std::int32_t>& cells = L.cell_domains(i);
     if (bs == 1)
     {
-      impl::assemble_cells<T, 1>(dof_transform, b, mesh->geometry(), cells,
-                                 dofs, bs, fn, constants, coeffs, cstride,
-                                 cell_info, entity_map);
+      impl::assemble_cells<T, 1>(dof_transform, b, geometry, cells, dofs, bs,
+                                 fn, constants, coeffs, cstride, cell_info,
+                                 entity_map);
     }
     else if (bs == 3)
     {
-      impl::assemble_cells<T, 3>(dof_transform, b, mesh->geometry(), cells,
-                                 dofs, bs, fn, constants, coeffs, cstride,
-                                 cell_info, entity_map);
+      impl::assemble_cells<T, 3>(dof_transform, b, geometry, cells, dofs, bs,
+                                 fn, constants, coeffs, cstride, cell_info,
+                                 entity_map);
     }
     else
     {
-      impl::assemble_cells(dof_transform, b, mesh->geometry(), cells, dofs, bs,
-                           fn, constants, coeffs, cstride, cell_info,
-                           entity_map);
+      impl::assemble_cells(dof_transform, b, geometry, cells, dofs, bs, fn,
+                           constants, coeffs, cstride, cell_info, entity_map);
     }
   }
 
@@ -1080,20 +1096,20 @@ void assemble_vector(
     const std::vector<std::int32_t>& facets = L.exterior_facet_domains(i);
     if (bs == 1)
     {
-      impl::assemble_exterior_facets<T, 1>(
-          dof_transform, b, mesh->geometry(), facets, dofs, bs, fn, constants,
-          coeffs, cstride, cell_info, entity_map);
+      impl::assemble_exterior_facets<T, 1>(dof_transform, b, geometry, facets,
+                                           dofs, bs, fn, constants, coeffs,
+                                           cstride, cell_info, entity_map);
     }
     else if (bs == 3)
     {
-      impl::assemble_exterior_facets<T, 3>(
-          dof_transform, b, mesh->geometry(), facets, dofs, bs, fn, constants,
-          coeffs, cstride, cell_info, entity_map);
+      impl::assemble_exterior_facets<T, 3>(dof_transform, b, geometry, facets,
+                                           dofs, bs, fn, constants, coeffs,
+                                           cstride, cell_info, entity_map);
     }
     else
     {
-      impl::assemble_exterior_facets(dof_transform, b, mesh->geometry(), facets,
-                                     dofs, bs, fn, constants, coeffs, cstride,
+      impl::assemble_exterior_facets(dof_transform, b, geometry, facets, dofs,
+                                     bs, fn, constants, coeffs, cstride,
                                      cell_info, entity_map);
     }
   }
@@ -1121,24 +1137,21 @@ void assemble_vector(
       const std::vector<std::int32_t>& facets = L.interior_facet_domains(i);
       if (bs == 1)
       {
-        impl::assemble_interior_facets<T, 1>(dof_transform, b, mesh->geometry(),
-                                             num_cell_facets, facets, *dofmap,
-                                             fn, constants, coeffs, cstride,
-                                             cell_info, entity_map, get_perm);
+        impl::assemble_interior_facets<T, 1>(
+            dof_transform, b, geometry, num_cell_facets, facets, *dofmap, fn,
+            constants, coeffs, cstride, cell_info, entity_map, get_perm);
       }
       else if (bs == 3)
       {
-        impl::assemble_interior_facets<T, 3>(dof_transform, b, mesh->geometry(),
-                                             num_cell_facets, facets, *dofmap,
-                                             fn, constants, coeffs, cstride,
-                                             cell_info, entity_map, get_perm);
+        impl::assemble_interior_facets<T, 3>(
+            dof_transform, b, geometry, num_cell_facets, facets, *dofmap, fn,
+            constants, coeffs, cstride, cell_info, entity_map, get_perm);
       }
       else
       {
-        impl::assemble_interior_facets(dof_transform, b, mesh->geometry(),
-                                       num_cell_facets, facets, *dofmap, fn,
-                                       constants, coeffs, cstride, cell_info,
-                                       entity_map, get_perm);
+        impl::assemble_interior_facets(
+            dof_transform, b, geometry, num_cell_facets, facets, *dofmap, fn,
+            constants, coeffs, cstride, cell_info, entity_map, get_perm);
       }
     }
   }

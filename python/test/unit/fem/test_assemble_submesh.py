@@ -306,6 +306,11 @@ def test_mixed_codim_0_assembly_coeffs(d, n, k, space, ghost_mode,
     assert np.isclose(b_sm.norm(), b_m.norm())
     assert np.isclose(s_sm, s_m)
 
+    A_m.destroy()
+    A_sm.destroy()
+    b_m.destroy()
+    b_sm.destroy()
+
 
 def compute_expected_norms(d, n, space, k, ghost_mode, f_expr, g_expr):
     """A helper function to assemble some forms on the unit square for
@@ -465,6 +470,9 @@ def test_mixed_codim_0_assembly_0(d, n, k, space, ghost_mode,
     assert np.isclose(A.norm(), A_expected_norm)
     assert np.isclose(b.norm(), b_expected_norm)
 
+    A.destroy()
+    b.destroy()
+
 
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
@@ -550,6 +558,9 @@ def test_mixed_codim_0_assembly_1(d, n, k, space, ghost_mode, random_ordering):
         d, n, space, k, ghost_mode, f_expr, g_expr)
     assert np.isclose(A.norm(), A_expected_norm)
     assert np.isclose(b.norm(), b_expected_norm)
+
+    A.destroy()
+    b.destroy()
 
 
 @pytest.mark.parametrize("d", [2, 3])
@@ -651,6 +662,9 @@ def test_codim_1_coeffs(d, n, k, space, ghost_mode, random_ordering):
     s_expected = mesh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
     assert np.isclose(s, s_expected)
 
+    A.destroy()
+    b.destroy()
+
 
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 6])
@@ -748,6 +762,11 @@ def test_codim_1_assembly(d, n, k, space, ghost_mode, random_ordering):
 
     assert np.isclose(b.norm(), b_2.norm())
 
+    A.destroy()
+    b.destroy()
+    A_2.destroy()
+    b_2.destroy()
+
 
 @pytest.mark.parametrize("random_ordering", [False, True])
 def test_assemble_block(random_ordering):
@@ -806,6 +825,9 @@ def test_assemble_block(random_ordering):
     assert np.isclose(A.norm(), 3.0026030373660784)
     assert np.isclose(b.norm(), 1.4361406616345072)
 
+    A.destroy()
+    b.destroy()
+
 
 def test_mixed_coeff_form():
     """Test that a form with coefficients involving dx and ds integrals
@@ -847,6 +869,8 @@ def test_mixed_coeff_form():
 
     # TODO Check value
     assert np.isclose(b.norm(), 0.6937782992069734)
+
+    b.destroy()
 
 
 @pytest.mark.parametrize("n", [2, 4, 8])
@@ -931,3 +955,6 @@ def test_int_facet(n, d, random_ordering):
     b.ghostUpdate(addv=PETSc.InsertMode.ADD,
                   mode=PETSc.ScatterMode.REVERSE)
     assert np.isclose(b_norm, b.norm())
+
+    A.destroy()
+    b.destroy()
