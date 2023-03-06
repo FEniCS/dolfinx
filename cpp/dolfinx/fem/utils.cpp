@@ -271,23 +271,6 @@ void set_entities(std::span<const std::pair<int, std::vector<std::int32_t>>>
                       value_entity_pairs,
                   std::map<int, std::vector<std::int32_t>>& integrals)
 {
-  auto it2 = value_entity_pairs.begin();
-  while (it2 != value_entity_pairs.end())
-  {
-    auto comp_val = (*it2).first;
-    auto it3 = std::lower_bound(
-        value_entity_pairs.begin(), value_entity_pairs.end(), comp_val,
-        [](auto pair, auto val) { return pair.first <= val; });
-
-    const int id = (*it2).first;
-    std::vector<std::int32_t>& entities_id = integrals[id];
-    for (auto it4 = it2; it4 != it3; ++it4)
-    {
-      const auto entity = (*it4).second;
-      entities_id.insert(entities_id.end(), entity.begin(), entity.end());
-    }
-    it2 = it3;
-  }
 }
 //-----------------------------------------------------------------------------
 std::map<int, std::vector<std::int32_t>>
@@ -383,7 +366,24 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
     }
   }
   std::sort(value_entity_pairs.begin(), value_entity_pairs.end());
-  set_entities(value_entity_pairs, integrals);
+
+  auto it2 = value_entity_pairs.begin();
+  while (it2 != value_entity_pairs.end())
+  {
+    auto comp_val = (*it2).first;
+    auto it3 = std::lower_bound(
+        value_entity_pairs.begin(), value_entity_pairs.end(), comp_val,
+        [](auto pair, auto val) { return pair.first <= val; });
+
+    const int id = (*it2).first;
+    std::vector<std::int32_t>& entities_id = integrals[id];
+    for (auto it4 = it2; it4 != it3; ++it4)
+    {
+      const auto entity = (*it4).second;
+      entities_id.insert(entities_id.end(), entity.begin(), entity.end());
+    }
+    it2 = it3;
+  }
   return integrals;
 }
 //-----------------------------------------------------------------------------
