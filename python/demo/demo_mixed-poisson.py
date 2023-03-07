@@ -91,11 +91,11 @@ from ufl import (FiniteElement, Measure, MixedElement, SpatialCoordinate,
                  TestFunctions, TrialFunctions, div, exp, inner)
 
 from mpi4py import MPI
-nx, ny = 64, 64
-domain = mesh.create_rectangle(
+from petsc4py import PETSc
+
+domain = mesh.create_unit_square(
     MPI.COMM_WORLD,
-    [np.array([0.0, 0.0]), np.array([1.0, 1.0])],
-    [nx, ny],
+    32, 32,
     mesh.CellType.quadrilateral
 )
 
@@ -160,7 +160,15 @@ bcs = [bc_top, bc_bottom]
 
 problem = fem.petsc.LinearProblem(a, L, bcs=bcs, petsc_options={
                                   "ksp_type": "preonly", "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
-w_h = problem.solve()
+try:
+    w_h = problem.solve()
+except PETSc.Error as e:
+    if e.ierr == 92:
+        print("The required PETSc solver/preconditioner is not available. Exiting.")
+        print(e)
+        exit(0)
+    else:
+        raise e
 
 sigma_h, u_h = w_h.split()
 
