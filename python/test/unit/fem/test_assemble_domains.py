@@ -248,8 +248,7 @@ def test_manual_integration_domains():
     num_cells = cell_map.size_local + cell_map.num_ghosts
     cell_indices = np.arange(0, num_cells)
     cell_values = np.zeros_like(cell_indices, dtype=np.intc)
-    marked_cells = locate_entities(
-        msh, tdim, lambda x: x[0] < 0.75)
+    marked_cells = locate_entities(msh, tdim, lambda x: x[0] < 0.75)
     cell_values[marked_cells] = 7
     mt_cells = meshtags(msh, tdim, cell_indices, cell_values)
 
@@ -259,10 +258,8 @@ def test_manual_integration_domains():
     num_facets = facet_map.size_local + facet_map.num_ghosts
     facet_indices = np.arange(0, num_facets)
     facet_values = np.zeros_like(facet_indices, dtype=np.intc)
-    marked_ext_facets = locate_entities_boundary(
-        msh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
-    marked_int_facets = locate_entities(
-        msh, tdim - 1, lambda x: x[0] < 0.75)
+    marked_ext_facets = locate_entities_boundary(msh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
+    marked_int_facets = locate_entities(msh, tdim - 1, lambda x: x[0] < 0.75)
     # marked_int_facets will also contain facets on the boundary,
     # so set these values first, followed by the values for
     # marked_ext_facets
