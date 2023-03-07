@@ -271,12 +271,15 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
                                  const mesh::MeshTags<int>& meshtags)
 {
   std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
+  assert(mesh);
   const mesh::Topology& topology = mesh->topology();
   const int tdim = topology.dim();
   int dim = integral_type == IntegralType::cell ? tdim : tdim - 1;
   if (dim != meshtags.dim())
+  {
     throw std::runtime_error("Invalid MeshTags dimension: "
                              + std::to_string(meshtags.dim()));
+  }
 
   std::span<const std::int32_t> entities = meshtags.indices();
   std::span<const int> values = meshtags.values();
@@ -289,20 +292,16 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
 
   // Structure to store (meshtag value, entity) pairs
   std::vector<std::pair<int, std::vector<std::int32_t>>> value_entity_pairs;
-  value_entity_pairs.reserve(values.size());
   switch (integral_type)
   {
-    // TODO Sort pairs or use std::iota
+    // TODO: Sort pairs or use std::iota
   case fem::IntegralType::cell:
-  {
     for (std::size_t i = 0; i < values.size(); ++i)
       value_entity_pairs.push_back({values[i], {entities[i]}});
-  }
-  break;
+    break;
   default:
     mesh->topology_mutable().create_connectivity(dim, tdim);
     mesh->topology_mutable().create_connectivity(tdim, dim);
-
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
     assert(f_to_c);
     auto c_to_f = topology.connectivity(tdim, tdim - 1);
@@ -324,8 +323,7 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
         auto facet
             = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
         value_entity_pairs.push_back(
-            {values[pos],
-             std::vector<std::int32_t>(facet.begin(), facet.end())});
+            {values[pos], std::vector(facet.begin(), facet.end())});
       }
     }
     break;
@@ -342,8 +340,7 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
               = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
 
           value_entity_pairs.push_back(
-              {values[j],
-               std::vector<std::int32_t>(facets.begin(), facets.end())});
+              {values[j], std::vector(facets.begin(), facets.end())});
         }
       }
     }
@@ -353,6 +350,7 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
           "Cannot compute integration domains. Integral type not supported.");
     }
   }
+
   // Sort pairs by meshtag value so that entities can be grouped
   std::sort(value_entity_pairs.begin(), value_entity_pairs.end());
 
@@ -362,24 +360,25 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
   while (group_start_it != value_entity_pairs.end())
   {
     // Get iterator pointing to end of group
-    auto val = (*group_start_it).first;
+    auto val = group_start_it->first;
     auto group_end_it = std::lower_bound(
         value_entity_pairs.begin(), value_entity_pairs.end(), val,
         [](auto& pair, auto val) { return pair.first <= val; });
 
     // Meshtag value for this group
-    const int id = (*group_start_it).first;
+    const int id = group_start_it->first;
     // List to store entities in this group
     std::vector<std::int32_t> group_entities;
     // Loop through entities in this group and add
     for (auto it = group_start_it; it != group_end_it; ++it)
     {
-      const auto entity = (*it).second;
+      const auto entity = it->second;
       group_entities.insert(group_entities.end(), entity.begin(), entity.end());
     }
     integrals.push_back({id, std::move(group_entities)});
     group_start_it = group_end_it;
   }
+
   return integrals;
 }
 //-----------------------------------------------------------------------------

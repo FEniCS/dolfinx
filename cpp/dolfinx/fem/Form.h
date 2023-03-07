@@ -119,7 +119,7 @@ public:
       throw std::runtime_error("No mesh could be associated with the Form.");
 
     // Store kernels, looping over integrals by domain type (dimension)
-    for (const auto& [type, kernels] : integrals)
+    for (auto& [type, kernels] : integrals)
     {
       // Loop over integrals kernels and set domains
       switch (type)

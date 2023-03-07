@@ -103,10 +103,13 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 
 } // namespace impl
 
-/// @brief Given an integral type and meshtags, this function computes
-/// the entities that should be integrated over (i.e. local cell indices
-/// for cell integrals, local facets on the boundary as
-/// (cell, local facet index) pairs for exterior facet integrals etc.)
+/// @brief Given an integral type and MeshTags compute
+/// the entities that should be integrated over.
+///
+/// I.e., local cell indices for cell integrals, local facets on the
+/// boundary as (cell, local facet index) pairs for exterior facet
+/// integrals etc.)
+///
 /// @param[in] integral_type The integral type
 /// @param[in] meshtags The meshtags
 /// @return A list of (integral id, entities) pairs
@@ -396,7 +399,7 @@ Form<T> create_form(
       }
       else if (sd != subdomains.end())
       {
-        // NOTE This assumes pairs are sorted
+        // NOTE: This requires that pairs are sorted
         auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
@@ -464,7 +467,7 @@ Form<T> create_form(
       }
       else if (sd != subdomains.end())
       {
-        // NOTE This assumes pairs are sorted
+        // NOTE: This requires that pairs are sorted
         auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });

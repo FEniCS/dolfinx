@@ -157,16 +157,15 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
                                   ]._cpp_object for i in range(ufcx_form.num_coefficients)]
         constants = [c._cpp_object for c in form.constants()]
 
-        # NOTE Could remove this and let the user convert meshtags by calling
-        # compute_integration_domains themselves
+        # NOTE Could remove this and let the user convert meshtags by
+        # calling compute_integration_domains themselves
         def get_integration_domains(integral_type, subdomain):
             "Get integration domains from subdomain data"
             if subdomain is None:
                 return []
             else:
                 try:
-                    return _cpp.fem.compute_integration_domains(
-                        integral_type, subdomain._cpp_object)
+                    return _cpp.fem.compute_integration_domains(integral_type, subdomain._cpp_object)
                 except AttributeError:
                     return subdomain
 
