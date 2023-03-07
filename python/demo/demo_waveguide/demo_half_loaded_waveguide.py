@@ -42,14 +42,15 @@
 import sys
 
 import numpy as np
-import ufl
 from analytical_modes import verify_mode
+
+import ufl
+from dolfinx import fem, io, plot
 from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
                           locate_entities)
+
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
-
-from dolfinx import fem, io, plot
 
 try:
     import pyvista
@@ -63,11 +64,9 @@ try:
 except ModuleNotFoundError:
     print("slepc4py is required to solve the problem")
     sys.exit(0)
-
-
 # -
 
-# Let's now define our domain. It is a rectangular domain with width $w$
+# We now define the domain. It is a rectangular domain with width $w$
 # and height $h = 0.45w$, with the dielectric medium filling the
 # lower-half of the domain, with a height of $d=0.5h$.
 
@@ -78,8 +77,8 @@ d = 0.5 * h
 nx = 300
 ny = int(0.4 * nx)
 
-domain = create_rectangle(MPI.COMM_WORLD, np.array([[0, 0], [w, h]]), np.array([nx, ny]), CellType.quadrilateral)
-domain.topology.create_connectivity(domain.topology.dim - 1, domain.topology.dim)
+msh = create_rectangle(MPI.COMM_WORLD, np.array([[0, 0], [w, h]]), np.array([nx, ny]), CellType.quadrilateral)
+msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
 # -
 
 # Now we can define the dielectric permittivity $\varepsilon_r$ over the
@@ -99,11 +98,11 @@ def Omega_v(x):
     return x[1] >= d
 
 
-D = fem.FunctionSpace(domain, ("DQ", 0))
+D = fem.FunctionSpace(msh, ("DQ", 0))
 eps = fem.Function(D)
 
-cells_v = locate_entities(domain, domain.topology.dim, Omega_v)
-cells_d = locate_entities(domain, domain.topology.dim, Omega_d)
+cells_v = locate_entities(msh, msh.topology.dim, Omega_v)
+cells_d = locate_entities(msh, msh.topology.dim, Omega_d)
 
 eps.x.array[cells_d] = np.full_like(cells_d, eps_d, dtype=ScalarType)
 eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
@@ -191,9 +190,9 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
 # `MixedElement`:
 
 degree = 1
-RTCE = ufl.FiniteElement("RTCE", domain.ufl_cell(), degree)
-Q = ufl.FiniteElement("Lagrange", domain.ufl_cell(), degree)
-V = fem.FunctionSpace(domain, ufl.MixedElement(RTCE, Q))
+RTCE = ufl.FiniteElement("RTCE", msh.ufl_cell(), degree)
+Q = ufl.FiniteElement("Lagrange", msh.ufl_cell(), degree)
+V = fem.FunctionSpace(msh, ufl.MixedElement(RTCE, Q))
 
 # Now we can define our weak form:
 
@@ -218,8 +217,8 @@ b = fem.form(b_tt + b_tz + b_zt + b_zz)
 # wall:
 
 # +
-bc_facets = exterior_facet_indices(domain.topology)
-bc_dofs = fem.locate_dofs_topological(V, domain.topology.dim - 1, bc_facets)
+bc_facets = exterior_facet_indices(msh.topology)
+bc_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, bc_facets)
 u_bc = fem.Function(V)
 with u_bc.vector.localForm() as loc:
     loc.set(0)
@@ -240,7 +239,7 @@ B.assemble()
 # a linear eigenvalue problem, that in SLEPc is solved with the `EPS`
 # module. We can initialize this solver in the following way:
 
-eps = SLEPc.EPS().create(domain.comm)
+eps = SLEPc.EPS().create(msh.comm)
 
 # We can pass to `EPS` our matrices by using the `setOperators` routine:
 
@@ -367,15 +366,15 @@ for i, kz in vals:
         eth.x.array[:] = eth.x.array[:] / kz
         ezh.x.array[:] = ezh.x.array[:] * 1j
 
-        V_dg = fem.VectorFunctionSpace(domain, ("DQ", degree))
+        V_dg = fem.VectorFunctionSpace(msh, ("DQ", degree))
         Et_dg = fem.Function(V_dg)
         Et_dg.interpolate(eth)
 
         # Save solutions
-        with io.VTXWriter(domain.comm, f"sols/Et_{i}.bp", Et_dg) as f:
+        with io.VTXWriter(msh.comm, f"sols/Et_{i}.bp", Et_dg) as f:
             f.write(0.0)
 
-        with io.VTXWriter(domain.comm, f"sols/Ez_{i}.bp", ezh) as f:
+        with io.VTXWriter(msh.comm, f"sols/Ez_{i}.bp", ezh) as f:
             f.write(0.0)
 
         # Visualize solutions with Pyvista
@@ -383,7 +382,7 @@ for i, kz in vals:
             V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
             V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
             Et_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
-            Et_values[:, : domain.topology.dim] = Et_dg.x.array.reshape(V_x.shape[0], domain.topology.dim).real
+            Et_values[:, : msh.topology.dim] = Et_dg.x.array.reshape(V_x.shape[0], msh.topology.dim).real
 
             V_grid.point_data["u"] = Et_values
 
@@ -402,9 +401,7 @@ for i, kz in vals:
             V_lagr, lagr_dofs = V.sub(1).collapse()
             V_cells, V_types, V_x = plot.create_vtk_mesh(V_lagr)
             V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
-
             V_grid.point_data["u"] = ezh.x.array.real[lagr_dofs]
-
             pyvista.set_jupyter_backend("ipygany")
             plotter = pyvista.Plotter()
             plotter.add_mesh(V_grid.copy(), show_edges=False)

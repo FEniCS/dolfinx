@@ -1,12 +1,11 @@
 #pragma once
 
-namespace dolfinx
+/// @brief Finite element method functionality
+///
+/// Classes and algorithms for finite element method spaces and
+/// operations.
+namespace dolfinx::fem
 {
-/*! \namespace dolfinx::fem
-    \brief Finite element method functionality
-
-    Classes and algorithms for finite element method spaces and operations.
-*/
 }
 
 // DOLFINx fem interface

@@ -79,7 +79,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
 
     # Testing the premise: coordinates are read contiguously in chunks
     rank = mpi_comm.rank
-    assert (np.all(x_global[all_ranges[rank]:all_ranges[rank + 1]] == x))
+    assert np.all(x_global[all_ranges[rank]:all_ranges[rank + 1]] == x)
 
     cell = ufl.Cell(cell_shape.name)
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))

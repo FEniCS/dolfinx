@@ -20,11 +20,9 @@ from mpi4py import MPI
 @pytest.mark.parametrize("cell", [ufl.triangle, ufl.tetrahedron])
 @pytest.mark.parametrize("degree", [1, 2])
 @pytest.mark.parametrize("ElementType, family",
-                         [
-                             (ufl.FiniteElement, "Lagrange"),
-                             (ufl.VectorElement, "Lagrange"),
-                             (ufl.FiniteElement, "N1curl")
-                         ])
+                         [(ufl.FiniteElement, "Lagrange"),
+                          (ufl.VectorElement, "Lagrange"),
+                          (ufl.FiniteElement, "N1curl")])
 def test_mixed_element(ElementType, family, cell, degree):
     if cell == ufl.triangle:
         mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
@@ -42,6 +40,7 @@ def test_mixed_element(ElementType, family, cell, degree):
         A = dolfinx.fem.petsc.assemble_matrix(a)
         A.assemble()
         norms.append(A.norm())
+        A.destroy()
 
         U_el = ufl.MixedElement(U_el)
 
@@ -59,15 +58,18 @@ def test_vector_element():
     a = form(ufl.inner(u, v) * ufl.dx)
     A = dolfinx.fem.petsc.assemble_matrix(a)
     A.assemble()
+    A.destroy()
 
     with pytest.raises(ValueError):
-        # VectorFunctionSpace containing a vector should throw an error rather than segfaulting
+        # VectorFunctionSpace containing a vector should throw an error
+        # rather than segfaulting
         U = VectorFunctionSpace(mesh, ("RT", 2))
         u = ufl.TrialFunction(U)
         v = ufl.TestFunction(U)
         a = form(ufl.inner(u, v) * ufl.dx)
         A = dolfinx.fem.petsc.assemble_matrix(a)
         A.assemble()
+        A.destroy()
 
 
 @pytest.mark.skip_in_parallel
@@ -94,3 +96,6 @@ def test_element_product(d1, d2):
     B.assemble()
 
     assert np.isclose(A.norm(), B.norm())
+
+    A.destroy()
+    B.destroy()
