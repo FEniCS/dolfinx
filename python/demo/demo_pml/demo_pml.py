@@ -176,7 +176,9 @@ if MPI.COMM_WORLD.rank == 0:
                                in_wire_size, on_wire_size, scatt_size, pml_size,
                                au_tag, bkg_tag, scatt_tag, pml_tag)
 model = MPI.COMM_WORLD.bcast(model, root=0)
-msh, cell_tags, facet_tags = gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
+mesh_partitioner = mesh.create_cell_partitioner(mesh.GhostMode.shared_facet)
+msh, cell_tags, facet_tags = gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2,
+                                                  partitioner=mesh_partitioner)
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
