@@ -24,9 +24,7 @@
 # - Interpolation of functions
 # - Visualisation of a running simulation with pyvista
 #
-# {download}`Python script <./demo_poisson.py>`.
-#
-# {download}`Jupyter notebook <./demo_poisson.ipynb>`.
+# This demo is implemented in {download}`demo_cahn-hilliard.py`.
 #
 # ## Equation and problem definition
 #
