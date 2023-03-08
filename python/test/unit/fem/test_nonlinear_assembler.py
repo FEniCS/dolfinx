@@ -575,7 +575,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     def monolithic():
         """Monolithic"""
         P2_el = create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 2)
-        P1_el = create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 1)
+        P1_el = create_element("Lagrange", mesh.ufl_cell().cellname(), 1)
         TH = P2_el * P1_el
         W = FunctionSpace(mesh, TH)
         U = Function(W)
