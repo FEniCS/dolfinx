@@ -184,9 +184,9 @@ def test_nonmatching_interpolation(cell_type0, cell_type1):
     def f(x):
         return (7 * x[1], 3 * x[0], x[2] + 0.4)
 
-    el0 = ufl.VectorElement("Lagrange", mesh0.ufl_cell(), 1, dim=3)
+    el0 = create_vector_element("Lagrange", mesh0.ufl_cell().cellname(), 1, gdim=3)
     V0 = FunctionSpace(mesh0, el0)
-    el1 = ufl.VectorElement("Lagrange", mesh1.ufl_cell(), 1, dim=3)
+    el1 = create_vector_element("Lagrange", mesh1.ufl_cell().cellname(), 1, gdim=3)
     V1 = FunctionSpace(mesh1, el1)
 
     # Interpolate on 3D mesh
