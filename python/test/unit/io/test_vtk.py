@@ -10,7 +10,8 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
 
-from basix.ufl_wrapper import create_tensor_element, create_element, create_vector_element
+from basix.ufl_wrapper import (create_tensor_element, create_element,
+                               create_vector_element, MixedElement)
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
@@ -143,7 +144,7 @@ def test_save_vtk_mixed(tempdir):
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     P2 = create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 1)
     P1 = create_element("Lagrange", mesh.ufl_cell().cellname(), 1)
-    W = FunctionSpace(mesh, P2 * P1)
+    W = FunctionSpace(mesh, MixedElement([P2, P1]))
     V1 = FunctionSpace(mesh, P1)
     V2 = FunctionSpace(mesh, P2)
 

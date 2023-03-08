@@ -82,7 +82,7 @@ def test_element_product(d1, d2):
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 2)
     P3 = create_vector_element("Lagrange", mesh.ufl_cell().cellname(), d1)
     P1 = create_element("Lagrange", mesh.ufl_cell().cellname(), d2)
-    TH = P3 * P1
+    TH = MixedElement([P3, P1])
     W = FunctionSpace(mesh, TH)
 
     u = ufl.TrialFunction(W)

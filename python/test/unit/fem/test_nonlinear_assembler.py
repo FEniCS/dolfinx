@@ -10,7 +10,7 @@ import math
 import numpy as np
 import pytest
 
-from basix.ufl_wrapper import create_element, create_vector_element
+from basix.ufl_wrapper import create_element, create_vector_element, MixedElement
 import ufl
 from dolfinx.cpp.la.petsc import scatter_local_vectors
 from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
@@ -142,7 +142,7 @@ def test_matrix_assembly_block_nl():
 
     def monolithic():
         """Monolithic version"""
-        E = P0 * P1
+        E = MixedElement([P0, P1])
         W = FunctionSpace(mesh, E)
         dU = ufl.TrialFunction(W)
         U = Function(W)
@@ -388,7 +388,7 @@ def test_assembly_solve_block_nl():
 
     def monolithic_solve():
         """Monolithic version"""
-        E = P * P
+        E = MixedElement([P, P])
         W = FunctionSpace(mesh, E)
         U = Function(W)
         dU = ufl.TrialFunction(W)
@@ -576,7 +576,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         """Monolithic"""
         P2_el = create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 2)
         P1_el = create_element("Lagrange", mesh.ufl_cell().cellname(), 1)
-        TH = P2_el * P1_el
+        TH = MixedElement([P2_el, P1_el])
         W = FunctionSpace(mesh, TH)
         U = Function(W)
         dU = ufl.TrialFunction(W)

@@ -268,7 +268,7 @@ def test_mixed_sub_interpolation():
 
     P2 = create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 2)
     P1 = create_element("Lagrange", mesh.ufl_cell().cellname(), 1)
-    for i, P in enumerate((P2 * P1, P1 * P2)):
+    for i, P in enumerate((MixedElement([P2, P1]), MixedElement([P1, P2]))):
         W = FunctionSpace(mesh, P)
         U = Function(W)
         U.sub(i).interpolate(f)

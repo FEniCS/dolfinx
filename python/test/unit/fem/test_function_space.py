@@ -8,10 +8,10 @@ import numpy as np
 import pytest
 
 import basix
-from basix.ufl_wrapper import create_element, create_vector_element
+from basix.ufl_wrapper import create_element, create_vector_element, MixedElement
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import create_mesh, create_unit_cube
-from ufl import Cell, Mesh, TestFunction, TrialFunction, VectorElement, grad
+from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
 
 from mpi4py import MPI
 
@@ -35,7 +35,7 @@ def W(mesh):
 def Q(mesh):
     W = create_vector_element('Lagrange', mesh.ufl_cell().cellname(), 1)
     V = create_element('Lagrange', mesh.ufl_cell().cellname(), 1)
-    return FunctionSpace(mesh, W * V)
+    return FunctionSpace(mesh, MixedElement([W, V]))
 
 
 @pytest.fixture
@@ -243,7 +243,7 @@ def test_vector_function_space_cell_type():
 
     # Create a mesh containing a single interval living in 2D
     cell = Cell("interval", geometric_dimension=gdim)
-    domain = Mesh(VectorElement("Lagrange", cell, 1))
+    domain = Mesh(create_vector_element("Lagrange", "interval", 1, gdim=gdim))
     cells = np.array([[0, 1]], dtype=np.int64)
     x = np.array([[0., 0.], [1., 1.]])
     mesh = create_mesh(comm, cells, x, domain)

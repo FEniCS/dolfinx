@@ -31,7 +31,7 @@ def test_locate_dofs_geometrical():
     P0 = create_element("Lagrange", mesh.ufl_cell().cellname(), p0)
     P1 = create_element("Lagrange", mesh.ufl_cell().cellname(), p1)
 
-    W = FunctionSpace(mesh, P0 * P1)
+    W = FunctionSpace(mesh, MixedElement([P0, P1]))
     V = W.sub(0).collapse()[0]
 
     with pytest.raises(RuntimeError):

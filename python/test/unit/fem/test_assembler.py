@@ -447,7 +447,7 @@ def test_assembly_solve_block(mode):
 
     def monolithic():
         """Monolithic version"""
-        E = P * P
+        E = MixedElement([P, P])
         W = FunctionSpace(mesh, E)
         u0, u1 = ufl.TrialFunctions(W)
         v0, v1 = ufl.TestFunctions(W)
@@ -611,7 +611,7 @@ def test_assembly_solve_taylor_hood(mesh):
         """Monolithic (interleaved) solver"""
         P2_el = create_vector_element("Lagrange", mesh.ufl_cell().cellname(), 2)
         P1_el = create_element("Lagrange", mesh.ufl_cell().cellname(), 1)
-        TH = P2_el * P1_el
+        TH = MixedElement([P2_el, P1_el])
         W = FunctionSpace(mesh, TH)
         (u, p) = ufl.TrialFunctions(W)
         (v, q) = ufl.TestFunctions(W)
