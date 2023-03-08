@@ -521,14 +521,29 @@ Form<T> create_form(
       assert(f_to_c);
       auto c_to_f = topology.connectivity(tdim, tdim - 1);
       assert(c_to_f);
+
+      // Compute exterior facets to check if mesh is ghosted correctly
+      const std::vector<std::int32_t> exterior_facets
+          = dolfinx::mesh::exterior_facet_indices(topology);
+      assert(topology.index_map(tdim - 1));
+      std::int32_t num_facets = topology.index_map(tdim - 1)->size_local();
+      std::vector<std::int8_t> interior_facet_marker(num_facets, 1);
+      for (auto exterior_facet : exterior_facets)
+        interior_facet_marker[exterior_facet] = 0;
+
       if (id == -1)
       {
         // Default kernel, operates on all (owned) interior facets
-        assert(topology.index_map(tdim - 1));
-        std::int32_t num_facets = topology.index_map(tdim - 1)->size_local();
         e.reserve(4 * num_facets);
+
         for (std::int32_t f = 0; f < num_facets; ++f)
         {
+          if ((f_to_c->num_links(f) == 1) && (interior_facet_marker[f] == 1))
+          {
+            throw std::runtime_error(
+                "Missing cell for interior facet, needs GhostMode.shared_facet "
+                "at mesh creation");
+          }
           if (f_to_c->num_links(f) == 2)
           {
             auto pairs
@@ -548,6 +563,13 @@ Form<T> create_form(
         for (std::size_t j = 0; j < entities.size(); ++j)
         {
           const std::int32_t f = entities[j];
+          if ((f_to_c->num_links(f) == 1) && (interior_facet_marker[f] == 1))
+          {
+            throw std::runtime_error(
+                "Missing cell for interior facet, need GhostMode.shared_facet "
+                "at mesh creation");
+          }
+
           if (f_to_c->num_links(f) == 2 and values[j] == id)
           {
             // Get the facet as a pair of (cell, local facet) pairs, one
