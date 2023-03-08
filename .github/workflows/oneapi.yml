@@ -58,7 +58,7 @@ jobs:
       - name: Install UFL and FFCx modules
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install git+https://github.com/FEniCS/ufl.git@mscroggs/mixed-element
+          pip install git+https://github.com/FEniCS/ufl.git
           pip install ffcx/
 
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)
