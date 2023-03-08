@@ -213,6 +213,8 @@ basix::cell::type mesh::cell_type_to_basix_type(CellType celltype)
 {
   switch (celltype)
   {
+  case CellType::point:
+    return basix::cell::type::point;
   case CellType::interval:
     return basix::cell::type::interval;
   case CellType::triangle:
@@ -236,6 +238,8 @@ mesh::CellType mesh::cell_type_from_basix_type(basix::cell::type celltype)
 {
   switch (celltype)
   {
+  case basix::cell::type::point:
+    return CellType::point;
   case basix::cell::type::interval:
     return CellType::interval;
   case basix::cell::type::triangle:

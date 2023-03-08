@@ -97,6 +97,7 @@ jobs:
     environment:
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-real-32"
+      CMAKE_BUILD_PARALLEL_LEVEL: "3"
     steps:
       - checkout
       - run: *install-python-components
@@ -126,6 +127,7 @@ jobs:
     environment:
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-complex-32"
+      CMAKE_BUILD_PARALLEL_LEVEL: "3"
     steps:
       - checkout
       - run: *install-python-components

@@ -13,6 +13,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <span>
 #include <tuple>
 #include <vector>
 
@@ -63,7 +64,7 @@ std::tuple<std::map<std::int32_t, std::int64_t>, std::vector<double>,
 create_new_vertices(MPI_Comm neighbor_comm,
                     const graph::AdjacencyList<int>& shared_edges,
                     const mesh::Mesh& mesh,
-                    const std::vector<std::int8_t>& marked_edges);
+                    std::span<const std::int8_t> marked_edges);
 
 /// Use vertex and topology data to partition new mesh across
 /// processes
@@ -107,13 +108,15 @@ std::vector<std::int64_t> adjust_indices(const common::IndexMap& map,
 mesh::MeshTags<std::int32_t>
 transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& meshtag,
                        std::shared_ptr<const mesh::Mesh> refined_mesh,
-                       const std::vector<std::int32_t>& cell,
-                       const std::vector<std::int8_t>& facet);
+                       std::span<const std::int32_t> cell,
+                       std::span<const std::int8_t> facet);
 
-/// @brief Transfer cell MeshTags from coarse mesh to refined mesh
+/// @brief Transfer cell MeshTags from coarse mesh to refined mesh.
+///
 /// @note The refined mesh must not have been redistributed during
-/// refinement
+/// refinement.
 /// @note GhostMode must be GhostMode.none
+///
 /// @param[in] parent_meshtag Cell MeshTags on parent mesh
 /// @param[in] refined_mesh Refined mesh based on parent mesh
 /// @param[in] parent_cell Parent cell of each cell in refined mesh
@@ -122,5 +125,5 @@ transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& meshtag,
 mesh::MeshTags<std::int32_t>
 transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& parent_meshtag,
                       std::shared_ptr<const mesh::Mesh> refined_mesh,
-                      const std::vector<std::int32_t>& parent_cell);
+                      std::span<const std::int32_t> parent_cell);
 } // namespace dolfinx::refinement

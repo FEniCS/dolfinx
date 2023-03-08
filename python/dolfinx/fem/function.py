@@ -1,9 +1,9 @@
-# Copyright (C) 2009-2022 Chris N. Richardson, Garth N. Wells and Michal Habera
+# Copyright (C) 2009-2023 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Collection of functions and function spaces"""
+"""Finite element function spaces and functions"""
 
 from __future__ import annotations
 
@@ -41,7 +41,6 @@ class Constant(ufl.Constant):
         """
         c = np.asarray(c)
         super().__init__(domain, c.shape)
-
         try:
             if c.dtype == np.complex64:
                 self._cpp_object = _cpp.fem.Constant_complex64(c)
@@ -254,6 +253,10 @@ class Function(ufl.Coefficient):
 
         """
 
+        # PETSc Vec wrapper around the C++ function data (constructed
+        # when first requested)
+        self._petsc_x = None
+
         # Create cpp Function
         def functiontype(dtype):
             if dtype == np.dtype(np.float32):
@@ -284,9 +287,9 @@ class Function(ufl.Coefficient):
         # Store DOLFINx FunctionSpace object
         self._V = V
 
-        # PETSc Vec wrapper around the C++ function data. Constructed
-        # when first requested.
-        self._petsc_x = None
+    def __del__(self):
+        if self._petsc_x is not None:
+            self._petsc_x.destroy()
 
     @property
     def function_space(self) -> FunctionSpace:
@@ -373,13 +376,11 @@ class Function(ufl.Coefficient):
         except TypeError:
             # u is callable
             assert callable(u)
-            x = _cpp.fem.interpolation_coords(
-                self._V.element, self._V.mesh, cells)
-            self._cpp_object.interpolate(
-                np.asarray(u(x), dtype=self.dtype), cells)
+            x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh._cpp_object, cells)
+            self._cpp_object.interpolate(np.asarray(u(x), dtype=self.dtype), cells)
 
     def copy(self) -> Function:
-        """Return a copy of the Function. The FunctionSpace is shared and the
+        """Create a copy of the Function. The FunctionSpace is shared and the
         degree-of-freedom vector is copied.
 
         """
@@ -445,8 +446,7 @@ class Function(ufl.Coefficient):
 
     def collapse(self) -> Function:
         u_collapsed = self._cpp_object.collapse()
-        V_collapsed = FunctionSpace(None, self.ufl_element(),
-                                    u_collapsed.function_space)
+        V_collapsed = FunctionSpace(self.function_space._mesh, self.ufl_element(), u_collapsed.function_space)
         return Function(V_collapsed, u_collapsed.x)
 
 
@@ -459,23 +459,13 @@ class ElementMetaData(typing.NamedTuple):
 class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
-    def __init__(self, mesh: typing.Union[None, Mesh],
+    def __init__(self, mesh: Mesh,
                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int]],
                  cppV: typing.Optional[_cpp.fem.FunctionSpace] = None,
                  form_compiler_options: dict[str, typing.Any] = {}, jit_options: dict[str, typing.Any] = {}):
         """Create a finite element function space."""
 
-        # Create function space from a UFL element and existing cpp
-        # FunctionSpace
-        if cppV is not None:
-            assert mesh is None
-            ufl_domain = cppV.mesh.ufl_domain()
-            super().__init__(ufl_domain, element)
-            self._cpp_object = cppV
-            return
-
-        if mesh is not None:
-            assert cppV is None
+        if cppV is None:
             # Initialise the ufl.FunctionSpace
             if isinstance(element, ufl.FiniteElementBase):
                 super().__init__(mesh.ufl_domain(), element)
@@ -491,17 +481,26 @@ class FunctionSpace(ufl.FunctionSpace):
                 jit_options=jit_options)
 
             ffi = module.ffi
-            cpp_element = _cpp.fem.FiniteElement(
-                ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
+            cpp_element = _cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
             cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
                 "uintptr_t", ffi.addressof(self._ufcx_dofmap)), mesh.topology, cpp_element)
 
-            # Initialize the cpp.FunctionSpace
-            self._cpp_object = _cpp.fem.FunctionSpace(
-                mesh, cpp_element, cpp_dofmap)
+            # Initialize the cpp.FunctionSpace and store mesh
+            self._cpp_object = _cpp.fem.FunctionSpace(mesh._cpp_object, cpp_element, cpp_dofmap)
+            self._mesh = mesh
+        else:
+            # Create function space from a UFL element and an existing
+            # C++ FunctionSpace
+            if mesh._cpp_object is not cppV.mesh:
+                raise RecursionError("Meshes do not match in FunctionSpace initialisation.")
+            ufl_domain = mesh.ufl_domain()
+            super().__init__(ufl_domain, element)
+            self._cpp_object = cppV
+            self._mesh = mesh
+            return
 
     def clone(self) -> FunctionSpace:
-        """Return a new FunctionSpace :math:`W` which shares data with this
+        """Create a new FunctionSpace :math:`W` which shares data with this
         FunctionSpace :math:`V`, but with a different unique integer ID.
 
         This function is helpful for defining mixed problems and using
@@ -513,10 +512,12 @@ class FunctionSpace(ufl.FunctionSpace):
         diagonal blocks. This is relevant for the handling of boundary
         conditions.
 
+        Returns:
+            A new function space that shares data
+
         """
-        Vcpp = _cpp.fem.FunctionSpace(
-            self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
-        return FunctionSpace(None, self.ufl_element(), Vcpp)
+        Vcpp = _cpp.fem.FunctionSpace(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
+        return FunctionSpace(self._mesh, self.ufl_element(), Vcpp)
 
     @property
     def num_sub_spaces(self) -> int:
@@ -536,7 +537,7 @@ class FunctionSpace(ufl.FunctionSpace):
         assert self.ufl_element().num_sub_elements() > i
         sub_element = self.ufl_element().sub_elements()[i]
         cppV_sub = self._cpp_object.sub([i])
-        return FunctionSpace(None, sub_element, cppV_sub)
+        return FunctionSpace(self._mesh, sub_element, cppV_sub)
 
     def component(self):
         """Return the component relative to the parent space."""
@@ -562,15 +563,13 @@ class FunctionSpace(ufl.FunctionSpace):
         """Comparison for inequality."""
         return super().__ne__(other) or self._cpp_object != other._cpp_object
 
-    def ufl_cell(self):
-        return self._cpp_object.mesh.ufl_cell()
-
     def ufl_function_space(self) -> ufl.FunctionSpace:
         """UFL function space"""
         return self
 
     @property
     def element(self):
+        """Function space finite element."""
         return self._cpp_object.element
 
     @property
@@ -579,9 +578,9 @@ class FunctionSpace(ufl.FunctionSpace):
         return dofmap.DofMap(self._cpp_object.dofmap)
 
     @property
-    def mesh(self) -> _cpp.mesh.Mesh:
-        """Return the mesh on which the function space is defined."""
-        return self._cpp_object.mesh
+    def mesh(self) -> Mesh:
+        """Mesh on which the function space is defined."""
+        return self._mesh
 
     def collapse(self) -> tuple[FunctionSpace, np.ndarray]:
         """Collapse a subspace and return a new function space and a map from
@@ -592,31 +591,37 @@ class FunctionSpace(ufl.FunctionSpace):
 
         """
         cpp_space, dofs = self._cpp_object.collapse()
-        V = FunctionSpace(None, self.ufl_element(), cpp_space)
+        V = FunctionSpace(self._mesh, self.ufl_element(), cpp_space)
         return V, dofs
 
-    def tabulate_dof_coordinates(self) -> np.ndarray:
+    def tabulate_dof_coordinates(self) -> npt.NDArray[np.float64]:
+        """Tabulate the coordinates of the degrees-of-freedom in the function space.
+
+            Returns:
+                Coordinates of the degrees-of-freedom.
+
+            Notes:
+                This method should be used only for elements with point
+                evaluation degrees-of-freedom.
+
+         """
         return self._cpp_object.tabulate_dof_coordinates()
 
 
-def VectorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]], dim=None,
-                        restriction=None) -> FunctionSpace:
+def VectorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]],
+                        dim=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
-
     e = ElementMetaData(*element)
-    ufl_element = basix.ufl_wrapper.create_vector_element(
-        e.family, mesh.ufl_cell().cellname(), e.degree, dim=dim,
-        gdim=mesh.geometry.dim)
-
+    ufl_element = basix.ufl_wrapper.create_vector_element(e.family, mesh.ufl_cell().cellname(), e.degree,
+                                                          dim=dim, gdim=mesh.geometry.dim)
     return FunctionSpace(mesh, ufl_element)
 
 
 def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]], shape=None,
-                        symmetry: typing.Optional[bool] = None, restriction=None) -> FunctionSpace:
+                        symmetry: typing.Optional[bool] = None) -> FunctionSpace:
     """Create tensor finite element (composition of scalar elements) function space."""
-
     e = ElementMetaData(*element)
-    ufl_element = basix.ufl_wrapper.create_tensor_element(
-        e.family, mesh.ufl_cell().cellname(), e.degree, shape=shape, symmetry=symmetry,
-        gdim=mesh.geometry.dim)
+    ufl_element = basix.ufl_wrapper.create_tensor_element(e.family, mesh.ufl_cell().cellname(),
+                                                          e.degree, shape=shape, symmetry=symmetry,
+                                                          gdim=mesh.geometry.dim)
     return FunctionSpace(mesh, ufl_element)
