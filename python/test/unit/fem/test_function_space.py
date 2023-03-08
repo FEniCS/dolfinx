@@ -4,15 +4,16 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the FunctionSpace class"""
+import numpy as np
 import pytest
 
 import basix
 from basix.ufl_wrapper import create_element, create_vector_element
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.mesh import create_unit_cube, create_mesh
-from ufl import TestFunction, TrialFunction, VectorElement, grad, Mesh, Cell
-from ufl.log import UFLException
-import numpy as np
+from dolfinx.mesh import create_mesh, create_unit_cube
+from ufl import (Cell, FiniteElement, Mesh, TestFunction, TrialFunction,
+                 VectorElement, grad, triangle)
+
 from mpi4py import MPI
 
 
@@ -65,8 +66,8 @@ def test_python_interface(V, V2, W, W2, Q):
     assert isinstance(V2, FunctionSpace)
     assert isinstance(W2, FunctionSpace)
 
-    assert V.ufl_cell() == V2.ufl_cell()
-    assert W.ufl_cell() == W2.ufl_cell()
+    assert V.mesh.ufl_cell() == V2.mesh.ufl_cell()
+    assert W.mesh.ufl_cell() == W2.mesh.ufl_cell()
     assert V.element == V2.element
     assert W.element == W2.element
     assert V.ufl_element() == V2.ufl_element()
@@ -220,7 +221,7 @@ def test_argument_equality(mesh, V, V2, W, W2):
 def test_cell_mismatch(mesh):
     """Test that cell mismatch raises early enough from UFL"""
     element = create_element("P", "triangle", 1)
-    with pytest.raises(UFLException):
+    with pytest.raises(BaseException):
         FunctionSpace(mesh, element)
 
 

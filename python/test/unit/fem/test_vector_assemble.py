@@ -21,6 +21,7 @@ def test_vector_assemble_matrix_exterior():
     a = form(ufl.inner(u, v) * ufl.ds)
     A = assemble_matrix(a)
     A.assemble()
+    A.destroy()
 
 
 def test_vector_assemble_matrix_interior():
@@ -30,3 +31,4 @@ def test_vector_assemble_matrix_interior():
     a = form(ufl.inner(ufl.jump(u), ufl.jump(v)) * ufl.dS)
     A = assemble_matrix(a)
     A.assemble()
+    A.destroy()

@@ -93,10 +93,11 @@ unit-tests-python-mpi: &unit-tests-python-mpi
 jobs:
   build-real:
     docker:
-      - image: fenicsproject/test-env:nightly-mpich
+      - image: ghcr.io/fenics/test-env:nightly-mpich
     environment:
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-real-32"
+      CMAKE_BUILD_PARALLEL_LEVEL: "3"
     steps:
       - checkout
       - run: *install-python-components
@@ -122,10 +123,11 @@ jobs:
 
   build-complex:
     docker:
-      - image: fenicsproject/test-env:nightly-mpich
+      - image: ghcr.io/fenics/test-env:nightly-mpich
     environment:
       DEBIAN_FRONTEND: "noninteractive"
       PETSC_ARCH: "linux-gnu-complex-32"
+      CMAKE_BUILD_PARALLEL_LEVEL: "3"
     steps:
       - checkout
       - run: *install-python-components

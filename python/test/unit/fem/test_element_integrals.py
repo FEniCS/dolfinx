@@ -295,14 +295,16 @@ def test_plus_minus_simple_vector(cell_type, pm):
             for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
                 # Find the point in the cell 0 in the second mesh
                 for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
-                    if np.allclose(spaces[0].mesh.geometry.x[point0],
-                                   space.mesh.geometry.x[point1]):
+                    if np.allclose(spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]):
                         break
                 else:
                     # If no matching point found, fail
                     assert False
 
                 assert np.isclose(results[0][dof0], result[dof1])
+
+    for x in results:
+        x.destroy()
 
 
 @pytest.mark.skip_in_parallel
@@ -318,7 +320,6 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
         for agree in [True, False]:
             # Two cell mesh with randomly numbered points
             mesh, order = two_unit_cells(cell_type, agree, return_order=True)
-
             if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
                 V = FunctionSpace(mesh, ("DG", 1))
             else:
@@ -349,14 +350,16 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
             for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
                 # Find the point in the cell 0 in the second mesh
                 for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
-                    if np.allclose(spaces[0].mesh.geometry.x[point0],
-                                   space.mesh.geometry.x[point1]):
+                    if np.allclose(spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]):
                         break
                 else:
                     # If no matching point found, fail
                     assert False
 
                 assert np.isclose(results[0][dof0], result[dof1])
+
+    for x in results:
+        x.destroy()
 
 
 @pytest.mark.skip_in_parallel
@@ -372,7 +375,6 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
         for agree in [True, False]:
             # Two cell mesh with randomly numbered points
             mesh, order = two_unit_cells(cell_type, agree, return_order=True)
-
             V = FunctionSpace(mesh, ("DG", 1))
             u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -400,8 +402,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
             for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
                 # Find the point in the cell 0 in the second mesh
                 for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
-                    if np.allclose(spaces[0].mesh.geometry.x[point0],
-                                   space.mesh.geometry.x[point1]):
+                    if np.allclose(spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]):
                         break
                 else:
                     # If no matching point found, fail
@@ -414,6 +415,9 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
             for c, d in dof_order:
                 assert np.isclose(results[0][a, c], result[b, d])
 
+    for x in results:
+        x.destroy()
+
 
 @pytest.mark.skip(reason="This test relies on the mesh constructor not re-ordering the mesh points. Needs replacing.")
 @pytest.mark.skip_in_parallel
@@ -421,7 +425,6 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
 @pytest.mark.parametrize('space_type', ["N1curl", "N2curl"])
 def test_curl(space_type, order):
     """Test that curl is consistent for different cell permutations of a tetrahedron."""
-
     tdim = dolfinx.mesh.cell_dim(CellType.tetrahedron)
     points = unit_cell_points(CellType.tetrahedron)
 
@@ -433,13 +436,10 @@ def test_curl(space_type, order):
     # Assemble vector on 5 randomly numbered cells
     for i in range(5):
         random.shuffle(cell)
-
         domain = ufl.Mesh(create_vector_element("Lagrange", "tetrahedron", 1))
         mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
-
         V = FunctionSpace(mesh, (space_type, order))
         v = ufl.TestFunction(V)
-
         f = ufl.as_vector(tuple(1 if i == 0 else 0 for i in range(tdim)))
         L = form(ufl.inner(f, ufl.curl(v)) * ufl.dx)
         result = assemble_vector(L)
@@ -475,6 +475,9 @@ def test_curl(space_type, order):
                 continue
             break
 
+    for x in results:
+        x.destroy()
+
 
 def create_quad_mesh(offset):
     """Creates a mesh of a single square element if offset = 0, or a
@@ -497,7 +500,9 @@ def assemble_div_matrix(k, offset):
     a = form(ufl.inner(u, ufl.div(w)) * ufl.dx)
     A = assemble_matrix(a)
     A.assemble()
-    return A[:, :]
+    _A = A[:, :]
+    A.destroy()
+    return _A
 
 
 def assemble_div_vector(k, offset):
@@ -506,7 +511,10 @@ def assemble_div_vector(k, offset):
     v = ufl.TestFunction(V)
     L = form(ufl.inner(Constant(mesh, PETSc.ScalarType(1)), ufl.div(v)) * ufl.dx)
     b = assemble_vector(L)
-    return b[:]
+    b.assemble()
+    _b = b[:]
+    b.destroy()
+    return _b
 
 
 @pytest.mark.skip_in_parallel
@@ -516,7 +524,6 @@ def test_div_general_quads_mat(k):
     "DQ" space and w is from an "RTCF" space, gives the same matrix for
     square and trapezoidal elements. This should be the case due to the
     properties of the Piola transform."""
-
     # Assemble matrix on a mesh of square elements and on a mesh of
     # trapezium elements
     A_square = assemble_div_matrix(k, 0)
@@ -534,7 +541,6 @@ def test_div_general_quads_vec(k):
     "RTCF" space, gives the same matrix for square and trapezoidal
     elements. This should be the case due to the properties of the Piola
     transform."""
-
     # Assemble vector on a mesh of square elements and on a mesh of
     # trapezium elements
     L_square = assemble_div_vector(k, 0)

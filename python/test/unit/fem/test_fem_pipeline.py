@@ -29,7 +29,7 @@ from petsc4py import PETSc
 
 
 def run_scalar_test(mesh, V, degree):
-    """ Manufactured Poisson problem, solving u = x[1]**p, where p is the
+    """Manufactured Poisson problem, solving u = x[1]**p, where p is the
     degree of the Lagrange function space.
 
     """
@@ -70,10 +70,9 @@ def run_scalar_test(mesh, V, degree):
     A = assemble_matrix(a, bcs=[bc])
     A.assemble()
 
-    # Create LU linear solver
+    # Create linear solver
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
-    solver.setType(PETSc.KSP.Type.PREONLY)
-    solver.getPC().setType(PETSc.PC.Type.LU)
+    solver.setTolerances(rtol=1e-12)
     solver.setOperators(A)
 
     uh = Function(V)
@@ -84,6 +83,10 @@ def run_scalar_test(mesh, V, degree):
     M = form(M)
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
+
+    solver.destroy()
+    A.destroy()
+    b.destroy()
 
 
 def run_vector_test(mesh, V, degree):
@@ -102,11 +105,10 @@ def run_vector_test(mesh, V, degree):
     A = assemble_matrix(a)
     A.assemble()
 
-    # Create LU linear solver (Note: need to use a solver that
+    # Create linear solver (Note: need to use a solver that
     # re-orders to handle pivots, e.g. not the PETSc built-in LU solver)
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
-    solver.setType("preonly")
-    solver.getPC().setType('lu')
+    solver.setTolerances(rtol=1e-12)
     solver.setOperators(A)
 
     # Solve
@@ -122,6 +124,10 @@ def run_vector_test(mesh, V, degree):
 
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
+
+    solver.destroy()
+    A.destroy()
+    b.destroy()
 
 
 def run_dg_test(mesh, V, degree):
@@ -176,10 +182,9 @@ def run_dg_test(mesh, V, degree):
     A = assemble_matrix(a, [])
     A.assemble()
 
-    # Create LU linear solver
+    # Create linear solver
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
-    solver.setType(PETSc.KSP.Type.PREONLY)
-    solver.getPC().setType(PETSc.PC.Type.LU)
+    solver.setTolerances(rtol=1e-12)
     solver.setOperators(A)
 
     # Solve
@@ -193,6 +198,10 @@ def run_dg_test(mesh, V, degree):
 
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
+
+    solver.destroy()
+    A.destroy()
+    b.destroy()
 
 
 @pytest.mark.parametrize("family", ["N1curl", "N2curl"])
@@ -227,10 +236,8 @@ def test_curl_curl_eigenvalue(family, order):
     bcs = [dirichletbc(zero_u, boundary_dofs)]
 
     a, b = form(a), form(b)
-
     A = assemble_matrix(a, bcs=bcs)
     A.assemble()
-
     B = assemble_matrix(b, bcs=bcs, diagonal=0.01)
     B.assemble()
 
@@ -258,6 +265,10 @@ def test_curl_curl_eigenvalue(family, order):
     eigenvalues_exact = np.array([1.0, 1.0, 2.0, 4.0, 4.0, 5.0, 5.0, 8.0, 9.0])
     assert np.isclose(eigenvalues_sorted[0:eigenvalues_exact.shape[0]], eigenvalues_exact, rtol=1E-2).all()
 
+    eps.destroy()
+    A.destroy()
+    B.destroy()
+
 
 @pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
                     reason="This test does not work in complex mode.")
@@ -283,11 +294,12 @@ def test_biharmonic(family):
     f_exact = div(grad(div(grad(u_exact))))
     sigma_exact = grad(grad(u_exact))
 
-    # sigma and tau are tangential-tangential continuous according to the
-    # H(curl curl) continuity of the Regge space. However, for the biharmonic
-    # problem we require normal-normal continuity H (div div). Theorem 4.2 of
-    # Lizao Li's PhD thesis shows that the latter space can be constructed by
-    # the former through the action of the operator S:
+    # sigma and tau are tangential-tangential continuous according to
+    # the H(curl curl) continuity of the Regge space. However, for the
+    # biharmonic problem we require normal-normal continuity H (div
+    # div). Theorem 4.2 of Lizao Li's PhD thesis shows that the latter
+    # space can be constructed by the former through the action of the
+    # operator S:
     def S(tau):
         return tau - ufl.Identity(2) * ufl.tr(tau)
 
@@ -333,17 +345,15 @@ def test_biharmonic(family):
 
     # Solve
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
-    PETSc.Options()["ksp_type"] = "preonly"
-    PETSc.Options()["pc_type"] = "lu"
-    # PETSc.Options()["pc_factor_mat_solver_type"] = "mumps"
-    solver.setFromOptions()
+    solver.setTolerances(rtol=1e-10)
+    solver.setType("bcgs")
     solver.setOperators(A)
 
     x_h = Function(V)
     solver.solve(b, x_h.vector)
     x_h.x.scatter_forward()
 
-    # Recall that x_h has flattened indices.
+    # Recall that x_h has flattened indices
     u_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         form(inner(u_exact - x_h[4], u_exact - x_h[4]) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
     u_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
@@ -368,6 +378,10 @@ def test_biharmonic(family):
 
     assert np.absolute(sigma_error_numerator / sigma_error_denominator) < 0.005
 
+    solver.destroy()
+    A.destroy()
+    b.destroy()
+
 
 def get_mesh(cell_type, datadir):
     # In parallel, use larger meshes
@@ -384,16 +398,11 @@ def get_mesh(cell_type, datadir):
 
 
 parametrize_cell_types = pytest.mark.parametrize(
-    "cell_type", [CellType.triangle, CellType.quadrilateral,
-                  CellType.tetrahedron, CellType.hexahedron])
-parametrize_cell_types_simplex = pytest.mark.parametrize(
-    "cell_type", [CellType.triangle, CellType.tetrahedron])
-parametrize_cell_types_tp = pytest.mark.parametrize(
-    "cell_type", [CellType.quadrilateral, CellType.hexahedron])
-parametrize_cell_types_quad = pytest.mark.parametrize(
-    "cell_type", [CellType.quadrilateral])
-parametrize_cell_types_hex = pytest.mark.parametrize(
-    "cell_type", [CellType.hexahedron])
+    "cell_type", [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron])
+parametrize_cell_types_simplex = pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
+parametrize_cell_types_tp = pytest.mark.parametrize("cell_type", [CellType.quadrilateral, CellType.hexahedron])
+parametrize_cell_types_quad = pytest.mark.parametrize("cell_type", [CellType.quadrilateral])
+parametrize_cell_types_hex = pytest.mark.parametrize("cell_type", [CellType.hexahedron])
 
 
 # Run tests on all spaces in periodic table on triangles and tetrahedra

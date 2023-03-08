@@ -97,6 +97,7 @@ def test_assemble_derivatives():
     A2 = assemble_matrix(a)
     A2.assemble()
     assert (A1 - A2).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
+    A1.destroy(), A2.destroy()
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
@@ -145,6 +146,7 @@ def test_basic_assembly(mode):
     assemble_matrix(A, a)
     A.assemble()
     assert 2.0 * normA == pytest.approx(A.norm())
+    A.destroy(), b.destroy()
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
@@ -162,6 +164,7 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     A1.assemble()
     assert isinstance(A1, PETSc.Mat)
     assert np.sqrt(A0.norm_squared()) == pytest.approx(A1.norm())
+    A1.destroy()
 
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -199,8 +202,8 @@ def test_assembly_bcs(mode):
     apply_lifting(b_bc, [a], [[bc]])
     b_bc.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b_bc, [bc])
-
     assert (f - b_bc).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
+    A.destroy(), b.destroy(), g.destroy()
 
 
 @pytest.mark.skip_in_parallel
@@ -233,12 +236,10 @@ def test_assemble_manifold():
 
     assert np.isclose(b.norm(), 0.41231)
     assert np.isclose(A.norm(), 25.0199)
+    A.destroy(), b.destroy()
 
 
-@pytest.mark.parametrize("mode", [
-    GhostMode.none,
-    GhostMode.shared_facet
-])
+@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_matrix_assembly_block(mode):
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic
@@ -284,71 +285,76 @@ def test_matrix_assembly_block(mode):
     a_block = form([[a00, a01, a02], [a10, a11, a12], [a20, a21, a22]])
     L_block = form([L0, L1, L2])
 
-    # Monolithic blocked
-    A0 = assemble_matrix_block(a_block, bcs=[bc])
-    A0.assemble()
-    b0 = assemble_vector_block(L_block, a_block, bcs=[bc])
-    assert A0.getType() != "nest"
-    Anorm0 = A0.norm()
-    bnorm0 = b0.norm()
-
     # Prepare a block problem with "None" on (1, 1) diagonal
     a_block_none = form([[a00, a01, a02], [None, None, a12], [a20, a21, a22]])
 
-    try:
-        A0 = assemble_matrix_block(a_block_none, bcs=[bc])
-    except RuntimeError:
-        pass
-    else:
-        raise RuntimeError("DirichletBC for 'None' diagonal block must raise.")
+    def blocked():
+        """Monolithic blocked"""
+        A = assemble_matrix_block(a_block, bcs=[bc])
+        A.assemble()
+        b = assemble_vector_block(L_block, a_block, bcs=[bc])
+        assert A.getType() != "nest"
+        Anorm = A.norm()
+        bnorm = b.norm()
+        A.destroy(), b.destroy()
+        with pytest.raises(RuntimeError):
+            assemble_matrix_block(a_block_none, bcs=[bc])
+        return Anorm, bnorm
 
-    # Nested (MatNest)
-    A1 = assemble_matrix_nest(a_block, bcs=[bc], mat_types=[["baij", "aij", "aij"],
-                                                            ["aij", "", "aij"],
-                                                            ["aij", "aij", "aij"]])
-    A1.assemble()
-    Anorm1 = nest_matrix_norm(A1)
-    assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
+    def nest():
+        """Nested (MatNest)"""
+        A = assemble_matrix_nest(a_block, bcs=[bc], mat_types=[["baij", "aij", "aij"],
+                                                               ["aij", "", "aij"],
+                                                               ["aij", "aij", "aij"]])
+        A.assemble()
+        with pytest.raises(RuntimeError):
+            assemble_matrix_nest(a_block_none, bcs=[bc])
 
-    try:
-        A0 = assemble_matrix_nest(a_block_none, bcs=[bc])
-    except RuntimeError:
-        pass
-    else:
-        raise RuntimeError("DirichletBC for 'None' diagonal block must raise.")
+        b = assemble_vector_nest(L_block)
+        apply_lifting_nest(b, a_block, bcs=[bc])
+        for b_sub in b.getNestSubVecs():
+            b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
+        set_bc_nest(b, bcs0)
+        b.assemble()
+        bnorm = math.sqrt(sum([x.norm()**2 for x in b.getNestSubVecs()]))
+        Anorm = nest_matrix_norm(A)
+        A.destroy(), b.destroy()
+        return Anorm, bnorm
 
-    b1 = assemble_vector_nest(L_block)
-    apply_lifting_nest(b1, a_block, bcs=[bc])
-    for b_sub in b1.getNestSubVecs():
-        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
-    set_bc_nest(b1, bcs0)
-    b1.assemble()
+    def monolithic():
+        """Monolithic version"""
+        W = FunctionSpace(mesh, MixedElement([P0, P1, P2]))
+        u0, u1, u2 = ufl.TrialFunctions(W)
+        v0, v1, v2 = ufl.TestFunctions(W)
+        a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
+            u1, v0) * dx + inner(u0, v2) * dx + inner(u1, v2) * dx + inner(u2, v2) * dx \
+            + inner(u2, v0) * dx + inner(u2, v1) * dx
+        L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx + inner(g, v2) * dx
+        a, L = form(a), form(L)
 
-    bnorm1 = math.sqrt(sum([x.norm()**2 for x in b1.getNestSubVecs()]))
-    assert bnorm0 == pytest.approx(bnorm1, 1.0e-12)
+        bdofsW_V1 = locate_dofs_topological(W.sub(1), mesh.topology.dim - 1, bndry_facets)
+        bc = dirichletbc(u_bc, bdofsW_V1, W.sub(1))
+        A = assemble_matrix(a, bcs=[bc])
+        A.assemble()
+        b = assemble_vector(L)
+        apply_lifting(b, [a], bcs=[[bc]])
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        set_bc(b, [bc])
+        assert A.getType() != "nest"
+        Anorm = A.norm()
+        bnorm = b.norm()
+        A.destroy(), b.destroy()
+        return Anorm, bnorm
 
-    # Monolithic version
-    W = FunctionSpace(mesh, MixedElement([P0, P1, P2]))
-    u0, u1, u2 = ufl.TrialFunctions(W)
-    v0, v1, v2 = ufl.TestFunctions(W)
-    a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
-        u1, v0) * dx + inner(u0, v2) * dx + inner(u1, v2) * dx + inner(u2, v2) * dx \
-        + inner(u2, v0) * dx + inner(u2, v1) * dx
-    L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx + inner(g, v2) * dx
-    a, L = form(a), form(L)
+    Anorm0, bnorm0 = blocked()
+    Anorm1, bnorm1 = nest()
+    assert Anorm1 == pytest.approx(Anorm0, 1.0e-9)
+    assert bnorm1 == pytest.approx(bnorm0, 1.0e-9)
 
-    bdofsW_V1 = locate_dofs_topological(W.sub(1), mesh.topology.dim - 1, bndry_facets)
-    bc = dirichletbc(u_bc, bdofsW_V1, W.sub(1))
-    A2 = assemble_matrix(a, bcs=[bc])
-    A2.assemble()
-    b2 = assemble_vector(L)
-    apply_lifting(b2, [a], bcs=[[bc]])
-    b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    set_bc(b2, [bc])
-    assert A2.getType() != "nest"
-    assert A2.norm() == pytest.approx(Anorm0, 1.0e-9)
-    assert b2.norm() == pytest.approx(bnorm0, 1.0e-9)
+    Anorm2, bnorm2 = monolithic()
+    assert Anorm2 == pytest.approx(Anorm0, 1.0e-9)
+    assert bnorm2 == pytest.approx(bnorm0, 1.0e-9)
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
@@ -390,94 +396,109 @@ def test_assembly_solve_block(mode):
         pass
         # print("Norm:", its, rnorm)
 
-    A0 = assemble_matrix_block([[a00, a01], [a10, a11]], bcs=bcs)
-    b0 = assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]], bcs=bcs)
-    A0.assemble()
-    A0norm = A0.norm()
-    b0norm = b0.norm()
-    x0 = A0.createVecLeft()
-    ksp = PETSc.KSP()
-    ksp.create(mesh.comm)
-    ksp.setOperators(A0)
-    ksp.setMonitor(monitor)
-    ksp.setType('cg')
-    ksp.setTolerances(rtol=1.0e-14)
-    ksp.setFromOptions()
-    ksp.solve(b0, x0)
-    x0norm = x0.norm()
+    def blocked():
+        """Blocked"""
+        A = assemble_matrix_block([[a00, a01], [a10, a11]], bcs=bcs)
+        b = assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]], bcs=bcs)
+        A.assemble()
+        x = A.createVecLeft()
+        ksp = PETSc.KSP()
+        ksp.create(mesh.comm)
+        ksp.setOperators(A)
+        ksp.setMonitor(monitor)
+        ksp.setType('cg')
+        ksp.setTolerances(rtol=1.0e-14)
+        ksp.setFromOptions()
+        ksp.solve(b, x)
 
-    # Nested (MatNest)
-    A1 = assemble_matrix_nest([[a00, a01], [a10, a11]], bcs=bcs, diagonal=1.0)
-    A1.assemble()
-    b1 = assemble_vector_nest([L0, L1])
-    apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs=bcs)
-    for b_sub in b1.getNestSubVecs():
-        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = bcs_by_block([L0.function_spaces[0], L1.function_spaces[0]], bcs)
-    set_bc_nest(b1, bcs0)
-    b1.assemble()
+        Anorm = A.norm()
+        bnorm = b.norm()
+        xnorm = x.norm()
+        ksp.destroy(), A.destroy(), b.destroy(), x.destroy()
+        return Anorm, bnorm, xnorm
 
-    b1norm = b1.norm()
-    assert b1norm == pytest.approx(b0norm, 1.0e-12)
-    A1norm = nest_matrix_norm(A1)
-    assert A0norm == pytest.approx(A1norm, 1.0e-12)
+    def nested():
+        """Nested (MatNest)"""
+        A = assemble_matrix_nest([[a00, a01], [a10, a11]], bcs=bcs, diagonal=1.0)
+        A.assemble()
+        b = assemble_vector_nest([L0, L1])
+        apply_lifting_nest(b, [[a00, a01], [a10, a11]], bcs=bcs)
+        for b_sub in b.getNestSubVecs():
+            b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        bcs0 = bcs_by_block([L0.function_spaces[0], L1.function_spaces[0]], bcs)
+        set_bc_nest(b, bcs0)
+        b.assemble()
 
-    x1 = b1.copy()
-    ksp = PETSc.KSP()
-    ksp.create(mesh.comm)
-    ksp.setMonitor(monitor)
-    ksp.setOperators(A1)
-    ksp.setType('cg')
-    ksp.setTolerances(rtol=1.0e-12)
-    ksp.setFromOptions()
-    ksp.solve(b1, x1)
-    x1norm = x1.norm()
-    assert x1norm == pytest.approx(x0norm, rel=1.0e-12)
+        x = b.copy()
+        ksp = PETSc.KSP()
+        ksp.create(mesh.comm)
+        ksp.setMonitor(monitor)
+        ksp.setOperators(A)
+        ksp.setType('cg')
+        ksp.setTolerances(rtol=1.0e-12)
+        ksp.setFromOptions()
+        ksp.solve(b, x)
 
-    # Monolithic version
-    E = P * P
-    W = FunctionSpace(mesh, E)
-    u0, u1 = ufl.TrialFunctions(W)
-    v0, v1 = ufl.TestFunctions(W)
-    a = inner(u0, v0) * dx + inner(u1, v1) * dx
-    L = inner(f, v0) * ufl.dx + inner(g, v1) * dx
-    a, L = form(a), form(L)
+        Anorm = nest_matrix_norm(A)
+        bnorm = b.norm()
+        xnorm = x.norm()
+        ksp.destroy(), A.destroy(), b.destroy(), x.destroy()
+        return Anorm, bnorm, xnorm
 
-    bdofsW0_V0 = locate_dofs_topological(W.sub(0), facetdim, bndry_facets)
-    bdofsW1_V1 = locate_dofs_topological(W.sub(1), facetdim, bndry_facets)
-    bcs = [dirichletbc(u0_bc, bdofsW0_V0, W.sub(0)), dirichletbc(u1_bc, bdofsW1_V1, W.sub(1))]
+    def monolithic():
+        """Monolithic version"""
+        E = P * P
+        W = FunctionSpace(mesh, E)
+        u0, u1 = ufl.TrialFunctions(W)
+        v0, v1 = ufl.TestFunctions(W)
+        a = inner(u0, v0) * dx + inner(u1, v1) * dx
+        L = inner(f, v0) * ufl.dx + inner(g, v1) * dx
+        a, L = form(a), form(L)
 
-    A2 = assemble_matrix(a, bcs=bcs)
-    A2.assemble()
-    b2 = assemble_vector(L)
-    apply_lifting(b2, [a], [bcs])
-    b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    set_bc(b2, bcs)
-    A2norm = A2.norm()
-    b2norm = b2.norm()
-    assert A2norm == pytest.approx(A0norm, 1.0e-12)
-    assert b2norm == pytest.approx(b0norm, 1.0e-12)
+        bdofsW0_V0 = locate_dofs_topological(W.sub(0), facetdim, bndry_facets)
+        bdofsW1_V1 = locate_dofs_topological(W.sub(1), facetdim, bndry_facets)
+        bcs = [dirichletbc(u0_bc, bdofsW0_V0, W.sub(0)), dirichletbc(u1_bc, bdofsW1_V1, W.sub(1))]
 
-    x2 = b2.copy()
-    ksp = PETSc.KSP()
-    ksp.create(mesh.comm)
-    ksp.setMonitor(monitor)
-    ksp.setOperators(A2)
-    ksp.setType('cg')
-    ksp.getPC().setType('jacobi')
-    ksp.setTolerances(rtol=1.0e-12)
-    ksp.setFromOptions()
-    ksp.solve(b2, x2)
-    x2norm = x2.norm()
-    assert x2norm == pytest.approx(x0norm, 1.0e-10)
+        A = assemble_matrix(a, bcs=bcs)
+        A.assemble()
+        b = assemble_vector(L)
+        apply_lifting(b, [a], [bcs])
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        set_bc(b, bcs)
+
+        x = b.copy()
+        ksp = PETSc.KSP()
+        ksp.create(mesh.comm)
+        ksp.setMonitor(monitor)
+        ksp.setOperators(A)
+        ksp.setType('cg')
+        ksp.getPC().setType('jacobi')
+        ksp.setTolerances(rtol=1.0e-12)
+        ksp.setFromOptions()
+        ksp.solve(b, x)
+        Anorm = A.norm()
+        bnorm = b.norm()
+        xnorm = x.norm()
+        ksp.destroy(), A.destroy(), b.destroy(), x.destroy()
+        return Anorm, bnorm, xnorm
+
+    Anorm0, bnorm0, xnorm0 = blocked()
+    Anorm1, bnorm1, xnorm1 = nested()
+    assert Anorm1 == pytest.approx(Anorm0, 1.0e-12)
+    assert bnorm1 == pytest.approx(bnorm0, 1.0e-12)
+    assert xnorm1 == pytest.approx(xnorm0, 1.0e-10)
+
+    Anorm2, bnorm2, xnorm2 = monolithic()
+    assert Anorm2 == pytest.approx(Anorm0, 1.0e-12)
+    assert bnorm2 == pytest.approx(bnorm0, 1.0e-12)
+    assert xnorm2 == pytest.approx(xnorm0, 1.0e-10)
 
 
 @pytest.mark.parametrize("mesh", [
     create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
     create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.shared_facet),
     create_unit_cube(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.none),
-    create_unit_cube(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.shared_facet)
-])
+    create_unit_cube(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.shared_facet)])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
     P2 = VectorFunctionSpace(mesh, ("Lagrange", 2))
@@ -561,6 +582,7 @@ def test_assembly_solve_taylor_hood(mesh):
         x = b.copy()
         ksp.solve(b, x)
         assert ksp.getConvergedReason() > 0
+        ksp.destroy()
         return b.norm(), x.norm(), nest_matrix_norm(A), nest_matrix_norm(P)
 
     def blocked_solve():
@@ -582,6 +604,7 @@ def test_assembly_solve_taylor_hood(mesh):
         x = A.createVecRight()
         ksp.solve(b, x)
         assert ksp.getConvergedReason() > 0
+        ksp.destroy()
         return b.norm(), x.norm(), A.norm(), P.norm()
 
     def monolithic_solve():
@@ -606,7 +629,6 @@ def test_assembly_solve_taylor_hood(mesh):
         L0 = inner(f, v) * dx
         L1 = inner(p_zero, q) * dx
         L = L0 + L1
-
         a, p_form, L = form(a), form(p_form), form(L)
 
         bdofsW0_P2_0 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets0)
@@ -643,17 +665,17 @@ def test_assembly_solve_taylor_hood(mesh):
         x = A.createVecRight()
         ksp.solve(b, x)
         assert ksp.getConvergedReason() > 0
+        ksp.destroy()
         return b.norm(), x.norm(), A.norm(), P.norm()
 
     bnorm0, xnorm0, Anorm0, Pnorm0 = nested_solve()
     bnorm1, xnorm1, Anorm1, Pnorm1 = blocked_solve()
-    bnorm2, xnorm2, Anorm2, Pnorm2 = monolithic_solve()
-
     assert bnorm1 == pytest.approx(bnorm0, 1.0e-12)
     assert xnorm1 == pytest.approx(xnorm0, 1.0e-8)
     assert Anorm1 == pytest.approx(Anorm0, 1.0e-12)
     assert Pnorm1 == pytest.approx(Pnorm0, 1.0e-12)
 
+    bnorm2, xnorm2, Anorm2, Pnorm2 = monolithic_solve()
     assert bnorm2 == pytest.approx(bnorm0, 1.0e-12)
     assert xnorm2 == pytest.approx(xnorm0, 1.0e-8)
     assert Anorm2 == pytest.approx(Anorm0, 1.0e-12)
@@ -671,12 +693,13 @@ def test_basic_interior_facet_assembly():
     A = assemble_matrix(a)
     A.assemble()
     assert isinstance(A, PETSc.Mat)
-
     L = ufl.conj(ufl.avg(v)) * ufl.dS
     L = form(L)
     b = assemble_vector(L)
     b.assemble()
     assert isinstance(b, PETSc.Vec)
+    A.destroy()
+    b.destroy()
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
@@ -711,9 +734,12 @@ def test_basic_assembly_constant(mode):
 
     b2 = assemble_vector(L)
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-
     assert (A1 * 3.0 - A2 * 5.0).norm() == pytest.approx(0.0)
     assert (b1 * 3.0 - b2 * 5.0).norm() == pytest.approx(0.0)
+    A1.destroy()
+    b1.destroy()
+    A2.destroy()
+    b2.destroy()
 
 
 def test_lambda_assembler():
@@ -807,6 +833,8 @@ def test_pack_coefficients():
         A.assemble()
         assert (A - A0).norm() > 1.0e-5
 
+    A.destroy(), A0.destroy()
+
 
 def test_coefficents_non_constant():
     "Test packing coefficients with non-constant values"
@@ -847,6 +875,8 @@ def test_coefficents_non_constant():
     b0 = assemble_vector(F)
     b0.assemble()
     assert np.linalg.norm(b0.array) == pytest.approx(0.0)
+
+    b0.destroy()
 
 
 def test_vector_types():
@@ -937,14 +967,11 @@ def test_assemble_empty_rank_mesh():
     ksp.setFromOptions()
     x = b.copy()
     ksp.solve(b, x)
-
     assert np.allclose(x.array, 10.0)
+    ksp.destroy(), b.destroy(), A.destroy()
 
 
-@pytest.mark.parametrize("mode", [
-    GhostMode.none,
-    GhostMode.shared_facet
-])
+@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_matrix_assembly_rectangular(mode):
     """Test assembly of block rectangular block matrices"""
     msh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
@@ -953,19 +980,26 @@ def test_matrix_assembly_rectangular(mode):
     u = ufl.TrialFunction(V0)
     v0, v1 = ufl.TestFunction(V0), ufl.TestFunction(V1)
 
-    a1 = form(ufl.inner(u, v0) * ufl.dx)
-    A1 = assemble_matrix(a1, bcs=[])
-    A1.assemble()
+    def single():
+        a = form(ufl.inner(u, v0) * ufl.dx)
+        A = assemble_matrix(a, bcs=[])
+        A.assemble()
+        return A
 
-    a2 = form([[ufl.inner(u, v0) * ufl.dx],
-              [ufl.inner(u, v1) * ufl.dx]])
+    def block():
+        a = form([[ufl.inner(u, v0) * ufl.dx],
+                  [ufl.inner(u, v1) * ufl.dx]])
+        A0 = assemble_matrix_block(a, bcs=[])
+        A0.assemble()
+        A1 = assemble_matrix_nest(a, bcs=[])
+        A1.assemble()
+        return A0, A1
 
-    A2 = assemble_matrix_block(a2, bcs=[])
-    A2.assemble()
-    assert A2.norm() == pytest.approx(np.sqrt(2) * A1.norm())
-
-    A2 = assemble_matrix_nest(a2, bcs=[])
-    A2.assemble()
+    A0 = single()
+    A1, A2 = block()
+    assert A1.norm() == pytest.approx(np.sqrt(2) * A0.norm())
     for row in range(2):
         A_sub = A2.getNestSubMatrix(row, 0)
-        assert A_sub.equal(A1)
+        assert A_sub.equal(A0)
+
+    A0.destroy(), A1.destroy(), A2.destroy()

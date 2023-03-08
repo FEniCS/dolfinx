@@ -23,7 +23,7 @@ public:
       : _l(L), _j(J), _bcs(bcs),
         _b(L->function_spaces()[0]->dofmap()->index_map,
            L->function_spaces()[0]->dofmap()->index_map_bs()),
-        _matA(la::petsc::Matrix(fem::petsc::create_matrix(*J, "baij"), false))
+        _matA(la::petsc::Matrix(fem::petsc::create_matrix(*J, "aij"), false))
   {
     auto map = L->function_spaces()[0]->dofmap()->index_map;
     const int bs = L->function_spaces()[0]->dofmap()->index_map_bs();
@@ -225,8 +225,9 @@ int main(int argc, char* argv[])
     constexpr int k = 0;
     constexpr bool discontinuous = true;
 
-    const basix::FiniteElement S_element
-        = basix::create_element(family, cell_type, k, discontinuous);
+    const basix::FiniteElement S_element = basix::create_element(
+        family, cell_type, k, basix::element::lagrange_variant::unset,
+        basix::element::dpc_variant::unset, discontinuous);
     auto S = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
         mesh, S_element, pow(mesh->geometry().dim(), 2)));
 

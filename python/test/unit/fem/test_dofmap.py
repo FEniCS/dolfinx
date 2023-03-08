@@ -93,7 +93,6 @@ def test_entity_dofs(mesh):
 
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     bs = V.dofmap.dof_layout.block_size
-
     for i, cdofs in enumerate([[0, 1], [2, 3], [4, 5]]):
         dofs = [bs * d + b for d in V.dofmap.dof_layout.entity_dofs(0, i)
                 for b in range(bs)]
@@ -102,10 +101,9 @@ def test_entity_dofs(mesh):
 
 @pytest.mark.skip
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize(
-    'mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 2, 2)),
-                     (create_unit_square,
-                      (MPI.COMM_WORLD, 2, 2, CellType.quadrilateral))])
+@pytest.mark.parametrize('mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 2, 2)),
+                                          (create_unit_square,
+                                           (MPI.COMM_WORLD, 2, 2, CellType.quadrilateral))])
 def test_entity_closure_dofs(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -144,15 +142,12 @@ def test_entity_closure_dofs(mesh_factory):
 
 
 def test_block_size(mesh):
-    meshes = [
-        create_unit_square(MPI.COMM_WORLD, 8, 8),
-        create_unit_cube(MPI.COMM_WORLD, 4, 4, 4),
-        create_unit_square(MPI.COMM_WORLD, 8, 8, CellType.quadrilateral),
-        create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
-    ]
+    meshes = [create_unit_square(MPI.COMM_WORLD, 8, 8),
+              create_unit_cube(MPI.COMM_WORLD, 4, 4, 4),
+              create_unit_square(MPI.COMM_WORLD, 8, 8, CellType.quadrilateral),
+              create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)]
     for mesh in meshes:
         P2 = create_element("Lagrange", mesh.ufl_cell().cellname(), 2)
-
         V = FunctionSpace(mesh, P2)
         assert V.dofmap.bs == 1
 
@@ -178,10 +173,9 @@ def test_block_size_real():
 
 
 @pytest.mark.skip
-@pytest.mark.parametrize(
-    'mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-                     (create_unit_square,
-                      (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral))])
+@pytest.mark.parametrize('mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
+                                          (create_unit_square,
+                                           (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral))])
 def test_local_dimension(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -193,7 +187,6 @@ def test_local_dimension(mesh_factory):
     V = FunctionSpace(mesh, v)
     Q = FunctionSpace(mesh, q)
     W = FunctionSpace(mesh, w)
-
     for space in [V, Q, W]:
         dofmap = space.dofmap
         local_to_global_map = dofmap.tabulate_local_to_global_dofs()
@@ -207,8 +200,7 @@ def test_local_dimension(mesh_factory):
 @pytest.mark.skip
 def test_readonly_view_local_to_global_unwoned(mesh):
     """Test that local_to_global_unwoned() returns readonly
-    view into the data; in particular test lifetime of data
-    owner"""
+    view into the data; in particular test lifetime of data owner"""
     V = FunctionSpace(mesh, "P", 1)
     dofmap = V.dofmap
     index_map = dofmap().index_map
@@ -282,9 +274,7 @@ def test_higher_order_coordinate_map(points, celltype, order):
 # @pytest.mark.parametrize("order", [1, 2, 3])
 @pytest.mark.parametrize("order", [1, 2])
 def test_higher_order_tetra_coordinate_map(order):
-    """
-    Computes physical coordinates of a cell, based on the coordinate map.
-    """
+    """Computes physical coordinates of a cell, based on the coordinate map."""
     celltype = CellType.tetrahedron
     points = np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [0, 0, 3],
                        [0, 4 / 3, 1], [0, 2 / 3, 2],

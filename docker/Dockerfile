@@ -47,20 +47,20 @@
 
 
 ARG ADIOS2_VERSION=2.8.3
-ARG DOXYGEN_VERSION=1_9_5
-ARG GMSH_VERSION=4_10_5
+ARG DOXYGEN_VERSION=1_9_6
+ARG GMSH_VERSION=4_11_1
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=2
 ARG KAHIP_VERSION=3.14
 ARG NUMPY_VERSION=1.23.3
-ARG PYBIND11_VERSION=2.10.0
-ARG PETSC_VERSION=3.17.4
-ARG SLEPC_VERSION=3.17.2
-ARG PYVISTA_VERSION=0.36.1
+ARG PYBIND11_VERSION=2.10.3
+ARG PETSC_VERSION=3.18.5
+ARG SLEPC_VERSION=3.18.2
+ARG PYVISTA_VERSION=0.38.1
 
-ARG MPICH_VERSION=4.0.2
+ARG MPICH_VERSION=4.1.1
 ARG OPENMPI_SERIES=4.1
-ARG OPENMPI_PATCH=4
+ARG OPENMPI_PATCH=5
 # Used to set the correct PYTHONPATH for the real and complex install of
 # DOLFINx
 ARG PYTHON_VERSION=3.10
@@ -116,7 +116,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
-    clang \
     cmake \
     g++ \
     gfortran \
@@ -134,7 +133,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     #
     apt-get -y install \
     catch2 \
-    clang-format \
     git \
     graphviz \
     libeigen3-dev \
@@ -188,11 +186,13 @@ RUN if [ "$MPI" = "mpich" ]; then \
 # Install Python packages (via pip)
 # Install numpy via pip. Exclude binaries to avoid conflicts with libblas
 # (See issue #126 and #1305)
+# - make sure pip/setuptoools are up-to-date before using them
 # - First set of packages are required to build and run DOLFINx Python.
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
-RUN pip3 install --no-binary="numpy" --no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scipy && \
-    pip3 install --no-cache-dir cppimport flake8 isort jupytext matplotlib mypy myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
+RUN pip3 install --no-cache-dir --upgrade setuptools pip && \
+    pip3 install --no-binary="numpy" --no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scipy && \
+    pip3 install --no-cache-dir clang-format cppimport cmakelang flake8 isort jupytext matplotlib mypy myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
@@ -480,9 +480,10 @@ RUN apt-get -qq update && \
 # properly rendering colorbars.
 # pythreejs and ipygany are two backends of pyvista not requiring a framebuffer,
 # and are therefore preferred in notebooks
+# Pinning ipywidgets due to https://github.com/pyvista/pyvista/issues/3274
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
-    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} && \
+    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ipywidgets==7.7.2 && \
     pip3 install --no-cache-dir matplotlib && \
     pip3 install --no-cache-dir pythreejs ipygany && \
     pip3 cache purge && \

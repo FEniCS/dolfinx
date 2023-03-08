@@ -1,12 +1,14 @@
 set(HEADERS_refinement
-  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_refinement.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_refinement.h
   ${CMAKE_CURRENT_SOURCE_DIR}/plaza.h
   ${CMAKE_CURRENT_SOURCE_DIR}/refine.h
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
-  PARENT_SCOPE)
+  PARENT_SCOPE
+)
 
-target_sources(dolfinx PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/plaza.cpp
+target_sources(
+  dolfinx
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/plaza.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/refine.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
 )

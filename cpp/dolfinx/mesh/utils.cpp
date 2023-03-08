@@ -500,7 +500,7 @@ mesh::entities_to_geometry(const Mesh& mesh, int dim,
   if (orient and (cell_type != CellType::tetrahedron or dim != 2))
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
 
-  const Geometry& geometry = mesh.geometry();
+  const Geometry<double>& geometry = mesh.geometry();
   auto x = geometry.x();
 
   const Topology& topology = mesh.topology();
@@ -627,24 +627,26 @@ mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
   };
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> mesh::compute_incident_entities(
-    const Mesh& mesh, std::span<const std::int32_t> entities, int d0, int d1)
+std::vector<std::int32_t>
+mesh::compute_incident_entities(const Topology& topology,
+                                std::span<const std::int32_t> entities, int d0,
+                                int d1)
 {
-  auto map0 = mesh.topology().index_map(d0);
+  auto map0 = topology.index_map(d0);
   if (!map0)
   {
     throw std::runtime_error("Mesh entities of dimension " + std::to_string(d0)
                              + " have not been created.");
   }
 
-  auto map1 = mesh.topology().index_map(d1);
+  auto map1 = topology.index_map(d1);
   if (!map1)
   {
     throw std::runtime_error("Mesh entities of dimension " + std::to_string(d1)
                              + " have not been created.");
   }
 
-  auto e0_to_e1 = mesh.topology().connectivity(d0, d1);
+  auto e0_to_e1 = topology.connectivity(d0, d1);
   if (!e0_to_e1)
   {
     throw std::runtime_error("Connectivity missing: (" + std::to_string(d0)

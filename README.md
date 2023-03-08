@@ -49,20 +49,41 @@ pip install .
 For detailed instructions, see
 <https://docs.fenicsproject.org/dolfinx/main/python/installation>.
 
+### Spack
+
+Spack automates the installation from source and is recommended for
+building DOLFINx on HPC systems. To build the most recent release using
+[Spack](https://spack.readthedocs.io/) (assuming a bash-compatible
+shell):
+
+```shell
+git clone https://github.com/spack/spack.git
+. ./spack/share/spack/setup-env.sh
+spack env create fenicsx-env
+spack env activate fenicsx-env
+spack add py-fenics-dolfinx cflags="-O3" fflags="-O3"
+spack install
+```
+
+See the Spack [documentation](https://spack.readthedocs.io/) for
+comprehensive instructions.
+
 ### Binary
 
-#### Operating System Recommendations
+**Recommendations**
 
-- macOS: use [conda](#conda).
-- Linux: use [apt](#ubuntu-packages) ([Ubuntu](#ubuntu-packages)/[Debian](#debian-packages)), [docker](#docker-images) or [conda](#conda). See also [Spack](#spack).
-- Windows: use [docker](#docker-images), or install Microsoft's [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and use [Ubuntu](#ubuntu-packages).
+- macOS: [conda](#conda).
+- Linux: [apt](#ubuntu-packages)
+  ([Ubuntu](#ubuntu-packages)/[Debian](#debian-packages)),
+  [docker](#docker-images) or [conda](#conda). See also [Spack](#spack).
+- Windows: [docker](#docker-images), or install
+  [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and use
+  [Ubuntu](#ubuntu-packages).
 
 #### conda
 
-Conda is the recommended install method for Mac OS users. Linux users may also use it.
-
-To install the latest stable release of the Python interface, with pyvista support for
-visualisation, using [conda](https://conda.io):
+To install the latest stable release of the Python interface, with
+pyvista support for visualisation, using [conda](https://conda.io):
 
 ```shell
 conda create -n fenicsx-env
@@ -83,33 +104,11 @@ recipe is hosted on
 > Windows packages are not available. This is due to some DOLFINx
 > dependencies not supporting Windows.
 
-#### Spack
-
-Spack is recommended for building DOLFINx on HPC systems.
-
-To build the most recent release using
-[Spack](https://spack.readthedocs.io/) (assuming a bash-compatible
-shell):
-
-```shell
-git clone https://github.com/spack/spack.git
-. ./spack/share/spack/setup-env.sh
-spack env create fenicsx-env
-spack env activate fenicsx-env
-spack add py-fenics-dolfinx cflags="-O3" fflags="-O3"
-spack install
-```
-
-See the Spack [documentation](https://spack.readthedocs.io/) for
-comprehensive instructions.
-
 #### Ubuntu packages
 
 The [Ubuntu
-PPA](https://launchpad.net/~fenics-packages/+archive/ubuntu/fenics) contains
-binary packages of the FEniCSx components for Ubuntu.
-
-To install:
+PPA](https://launchpad.net/~fenics-packages/+archive/ubuntu/fenics)
+contains binary packages of the FEniCSx components. To install:
 
 ```shell
 add-apt-repository ppa:fenics-packages/fenics
@@ -123,7 +122,8 @@ best-effort basis.
 
 #### Debian packages
 
-[DOLFINx](https://tracker.debian.org/pkg/fenics-dolfinx) has been included with [various
+[DOLFINx](https://tracker.debian.org/pkg/fenics-dolfinx) is included
+with [various
 versions](https://packages.debian.org/search?keywords=python3-dolfinx&searchon=names&exact=1&suite=all&section=all)
 of Debian. Install with `apt-get install fenicsx`.
 
@@ -204,7 +204,7 @@ or use the FEniCS Slack channel:
 
 <https://fenicsproject.slack.com/>
 
-(use <https://fenicsproject-slack-invite.herokuapp.com/> to sign up)
+(use <https://join.slack.com/t/fenicsproject/shared_invite/zt-1lraknsp1-6_3Js5kueDIyWgF192d3nA> to sign up)
 
 For bug reports visit:
 

@@ -43,6 +43,7 @@ def test_mixed_element(create_element_function, family, cell, degree):
         A = dolfinx.fem.petsc.assemble_matrix(a)
         A.assemble()
         norms.append(A.norm())
+        A.destroy()
 
         U_el = MixedElement([U_el])
 
@@ -60,15 +61,18 @@ def test_vector_element():
     a = form(ufl.inner(u, v) * ufl.dx)
     A = dolfinx.fem.petsc.assemble_matrix(a)
     A.assemble()
+    A.destroy()
 
     with pytest.raises(ValueError):
-        # VectorFunctionSpace containing a vector should throw an error rather than segfaulting
+        # VectorFunctionSpace containing a vector should throw an error
+        # rather than segfaulting
         U = VectorFunctionSpace(mesh, ("RT", 2))
         u = ufl.TrialFunction(U)
         v = ufl.TestFunction(U)
         a = form(ufl.inner(u, v) * ufl.dx)
         A = dolfinx.fem.petsc.assemble_matrix(a)
         A.assemble()
+        A.destroy()
 
 
 @pytest.mark.skip_in_parallel
@@ -95,3 +99,6 @@ def test_element_product(d1, d2):
     B.assemble()
 
     assert np.isclose(A.norm(), B.norm())
+
+    A.destroy()
+    B.destroy()

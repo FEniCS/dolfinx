@@ -1,12 +1,10 @@
 #pragma once
 
-namespace dolfinx
+/// @brief Mesh data structures and algorithms on meshes
+///
+/// Representations of meshes and support for operations on meshes.
+namespace dolfinx::mesh
 {
-/*! \namespace dolfinx::mesh
-    \brief Mesh data structures and algorithms on meshes
-
-    Representations of meshes and support for operations on meshes.
-*/
 }
 
 // DOLFINx mesh interface

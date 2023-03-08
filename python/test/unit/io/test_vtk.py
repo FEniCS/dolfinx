@@ -8,16 +8,17 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from numpy.testing import assert_array_equal
 
 from basix.ufl_wrapper import create_tensor_element, create_element, create_vector_element
 import ufl
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
 from dolfinx.io import VTKFile
+from dolfinx.io.utils import cell_perm_vtk  # noqa F401
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
 from dolfinx.plot import create_vtk_mesh
-
 
 from mpi4py import MPI
 
@@ -221,6 +222,26 @@ def test_save_3d_tensor(tempdir):
     filename = Path(tempdir, "u.pvd")
     with VTKFile(mesh.comm, filename, "w") as vtk:
         vtk.write_function(u, 0.)
+
+
+def test_triangle_perm_vtk():
+    higher_order_triangle_perm = {
+        10: np.array([0, 1, 2, 5, 6, 8, 7, 3, 4, 9]),
+        15: np.array([0, 1, 2, 6, 7, 8, 11, 10, 9, 3, 4, 5, 12, 13, 14]),
+        21: np.array([0, 1, 2, 7, 8, 9, 10, 14, 13, 12, 11, 3, 4, 5, 6, 15, 18, 16, 20, 19, 17]),
+        28: np.array([0, 1, 2, 8, 9, 10, 11, 12, 17, 16, 15, 14, 13, 3, 4, 5, 6, 7, 18, 21, 22,
+                      19, 26, 27, 23, 25, 24, 20]),
+        36: np.array([0, 1, 2, 9, 10, 11, 12, 13, 14, 20, 19, 18, 17, 16, 15, 3, 4, 5, 6, 7, 8,
+                      21, 24, 25, 26, 22, 32, 33, 34, 27, 31, 35, 28, 30, 29, 23]),
+        45: np.array([0, 1, 2, 10, 11, 12, 13, 14, 15, 16, 23, 22, 21, 20, 19, 18, 17, 3, 4, 5,
+                      6, 7, 8, 9, 24, 27, 28, 29, 30, 25, 38, 39, 42, 40, 31, 37, 44, 43, 32, 36, 41, 33, 35, 34, 26]),
+        55: np.array([0, 1, 2, 11, 12, 13, 14, 15, 16, 17, 18, 26, 25, 24, 23, 22, 21, 20, 19,
+                      3, 4, 5, 6, 7, 8, 9, 10, 27, 30, 31, 32, 33, 34, 28, 44, 45, 48, 49, 46,
+                      35, 43, 53, 54, 50, 36, 42, 52, 51, 37, 41, 47, 38, 40, 39, 29])
+    }
+    for p_test, v_test in higher_order_triangle_perm.items():
+        v = cell_perm_vtk(CellType.triangle, p_test)
+        assert_array_equal(v, v_test)
 
 
 def test_vtk_mesh():

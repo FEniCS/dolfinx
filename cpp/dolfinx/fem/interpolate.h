@@ -38,6 +38,18 @@ class Function;
 std::vector<double> interpolation_coords(const fem::FiniteElement& element,
                                          const mesh::Mesh& mesh,
                                          std::span<const std::int32_t> cells);
+
+/// Helper type for the data that can be cached to speed up repeated
+/// interpolation of discrete functions on nonmatching meshes
+using nmm_interpolation_data_t = decltype(std::function{
+    dolfinx::geometry::determine_point_ownership})::result_type;
+
+/// Forward declaration
+template <typename T>
+void interpolate(Function<T>& u, std::span<const T> f,
+                 std::array<std::size_t, 2> fshape,
+                 std::span<const std::int32_t> cells);
+
 namespace impl
 {
 /// @brief Scatter data into non-contiguous memory
@@ -541,6 +553,75 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
         array1[dof_bs1 * dofs1[i] + k] = local1[dof_bs1 * i + k];
   }
 }
+
+template <typename T>
+void interpolate_nonmatching_meshes(
+    Function<T>& u, const Function<T>& v, std::span<const std::int32_t> cells,
+    const nmm_interpolation_data_t& nmm_interpolation_data)
+{
+  int result;
+  auto mesh = u.function_space()->mesh();
+  auto mesh_v = v.function_space()->mesh();
+  MPI_Comm_compare(mesh->comm(), mesh_v->comm(), &result);
+
+  if (result == MPI_UNEQUAL)
+    throw std::runtime_error("Interpolation on different meshes is only "
+                             "supported with the same communicator.");
+
+  MPI_Comm comm = mesh->comm();
+  const int tdim = mesh->topology().dim();
+  const auto cell_map = mesh->topology().index_map(tdim);
+
+  std::shared_ptr<const FiniteElement> element_u
+      = u.function_space()->element();
+  const std::size_t value_size = element_u->value_size();
+
+  if (std::get<0>(nmm_interpolation_data).empty())
+  {
+    throw std::runtime_error(
+        "In order to interpolate on nonmatching meshes, the user needs to "
+        "provide the necessary interpolation data. This can be computed "
+        "with fem::create_nonmatching_meshes_interpolation_data.");
+  }
+
+  const std::tuple_element_t<0, nmm_interpolation_data_t>& dest_ranks
+      = std::get<0>(nmm_interpolation_data);
+  const std::tuple_element_t<1, nmm_interpolation_data_t>& src_ranks
+      = std::get<1>(nmm_interpolation_data);
+  const std::tuple_element_t<2, nmm_interpolation_data_t>& received_points
+      = std::get<2>(nmm_interpolation_data);
+  const std::tuple_element_t<3, nmm_interpolation_data_t>& evaluation_cells
+      = std::get<3>(nmm_interpolation_data);
+
+  // Evaluate the interpolating function where possible
+  std::vector<T> send_values(received_points.size() / 3 * value_size);
+  v.eval(received_points, {received_points.size() / 3, (std::size_t)3},
+         evaluation_cells, send_values,
+         {received_points.size() / 3, (std::size_t)value_size});
+
+  // Send values back to owning process
+  std::array<std::size_t, 2> v_shape = {src_ranks.size(), value_size};
+  std::vector<T> values_b(dest_ranks.size() * value_size);
+  impl::scatter_values(comm, src_ranks, dest_ranks,
+                       std::span<const T>(send_values), v_shape,
+                       std::span<T>(values_b));
+
+  // Transpose received data
+  namespace stdex = std::experimental;
+  stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> values(
+      values_b.data(), dest_ranks.size(), value_size);
+
+  std::vector<T> valuesT_b(value_size * dest_ranks.size());
+  stdex::mdspan<T, stdex::dextents<std::size_t, 2>> valuesT(
+      valuesT_b.data(), value_size, dest_ranks.size());
+  for (std::size_t i = 0; i < values.extent(0); ++i)
+    for (std::size_t j = 0; j < values.extent(1); ++j)
+      valuesT(j, i) = values(i, j);
+
+  // Call local interpolation operator
+  fem::interpolate<T>(u, std::span(valuesT_b.data(), valuesT_b.size()),
+                      {valuesT.extent(0), valuesT.extent(1)}, cells);
+}
 //----------------------------------------------------------------------------
 } // namespace impl
 
@@ -556,6 +637,7 @@ void interpolate_nonmatching_maps(Function<T>& u1, const Function<T>& u0,
 /// @param[in] cells Indices of the cells in the mesh on which to
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
+/// @tparam Scalar type
 template <typename T>
 void interpolate(Function<T>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
@@ -834,103 +916,40 @@ void interpolate(Function<T>& u, std::span<const T> f,
   }
 }
 
-namespace impl
-{
+/// Generate data needed to interpolate discrete functions across different
+/// meshes
+///
+/// @param[out] Vu The function space of the function to interpolate into
+/// @param[in] Vv The function space of the function to interpolate from
+/// @param[in] cells Indices of the cells in the destination mesh on which to
+/// interpolate. Should be the same as the list used when calling
+/// fem::interpolation_coords.
+nmm_interpolation_data_t create_nonmatching_meshes_interpolation_data(
+    const FunctionSpace& Vu, const FunctionSpace& Vv,
+    std::span<const std::int32_t> cells);
 
-/// Interpolate from one finite element Function to another
-/// @param[in,out] u The function to interpolate into
-/// @param[in] v The function to be interpolated
-/// @param[in] cells List of cell indices to interpolate on
-template <typename T>
-void interpolate_nonmatching_meshes(Function<T>& u, const Function<T>& v,
-                                    std::span<const std::int32_t> cells)
-{
-  assert(u.function_space());
-  assert(v.function_space());
+/// Generate data needed to interpolate discrete functions defined on different
+/// meshes. Interpolate on all cells in the mesh.
+///
+/// @param[out] Vu The function space of the function to interpolate into
+/// @param[in] Vv The function space of the function to interpolate from
+nmm_interpolation_data_t
+create_nonmatching_meshes_interpolation_data(const FunctionSpace& Vu,
+                                             const FunctionSpace& Vv);
 
-  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
-  std::shared_ptr<const mesh::Mesh> mesh_v = v.function_space()->mesh();
-
-  assert(mesh);
-
-  int result;
-  MPI_Comm_compare(mesh->comm(), mesh_v->comm(), &result);
-
-  if (result == MPI_UNEQUAL)
-    throw std::runtime_error("Interpolation on different meshes is only "
-                             "supported with the same communicator.");
-
-  MPI_Comm comm = mesh->comm();
-  const int tdim = mesh->topology().dim();
-  const auto cell_map = mesh->topology().index_map(tdim);
-
-  std::shared_ptr<const FiniteElement> element_u
-      = u.function_space()->element();
-  const std::size_t value_size = element_u->value_size();
-
-  // Collect all the points at which values are needed to define the
-  // interpolating function
-  std::vector<double> x;
-  {
-    const std::vector<double> coords_b
-        = fem::interpolation_coords(*element_u, *mesh, cells);
-
-    namespace stdex = std::experimental;
-    using cmdspan2_t
-        = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-    using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-    cmdspan2_t coords(coords_b.data(), 3, coords_b.size() / 3);
-    // Transpose interpolation coords
-    x.resize(coords.size());
-    mdspan2_t _x(x.data(), coords_b.size() / 3, 3);
-    for (std::size_t j = 0; j < coords.extent(1); ++j)
-      for (std::size_t i = 0; i < 3; ++i)
-        _x(j, i) = coords(i, j);
-  }
-
-  // Determine ownership of each point
-  auto [dest_ranks, src_ranks, received_points, evaluation_cells]
-      = geometry::determine_point_ownership(*mesh_v, x);
-
-  // Evaluate the interpolating function where possible
-  std::vector<T> send_values(received_points.size() / 3 * value_size);
-  v.eval(received_points, {received_points.size() / 3, (std::size_t)3},
-         evaluation_cells, send_values,
-         {received_points.size() / 3, (std::size_t)value_size});
-
-  // Send values back to owning process
-  std::array<std::size_t, 2> v_shape = {src_ranks.size(), value_size};
-  std::vector<T> values_b(dest_ranks.size() * value_size);
-  impl::scatter_values(comm, src_ranks, dest_ranks,
-                       std::span<const T>(send_values), v_shape,
-                       std::span<T>(values_b));
-
-  // Transpose received data
-  namespace stdex = std::experimental;
-  stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> values(
-      values_b.data(), dest_ranks.size(), value_size);
-
-  std::vector<T> valuesT_b(value_size * dest_ranks.size());
-  stdex::mdspan<T, stdex::dextents<std::size_t, 2>> valuesT(
-      valuesT_b.data(), value_size, dest_ranks.size());
-  for (std::size_t i = 0; i < values.extent(0); ++i)
-    for (std::size_t j = 0; j < values.extent(1); ++j)
-      valuesT(j, i) = values(i, j);
-
-  // Call local interpolation operator
-  fem::interpolate<T>(u, std::span(valuesT_b.data(), valuesT_b.size()),
-                      {valuesT.extent(0), valuesT.extent(1)}, cells);
-}
-
-} // namespace impl
 //----------------------------------------------------------------------------
 /// Interpolate from one finite element Function to another one
 /// @param[out] u The function to interpolate into
 /// @param[in] v The function to be interpolated
 /// @param[in] cells List of cell indices to interpolate on
+/// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
+/// nonmatching meshes. This data can be generated with
+/// create_nonmatching_meshes_interpolation_data (optional).
 template <typename T>
 void interpolate(Function<T>& u, const Function<T>& v,
-                 std::span<const std::int32_t> cells)
+                 std::span<const std::int32_t> cells,
+                 const nmm_interpolation_data_t& nmm_interpolation_data
+                 = nmm_interpolation_data_t{})
 {
   assert(u.function_space());
   assert(v.function_space());
@@ -951,7 +970,10 @@ void interpolate(Function<T>& u, const Function<T>& v,
   {
     // Get mesh and check that functions share the same mesh
     if (auto mesh_v = v.function_space()->mesh(); mesh != mesh_v)
-      impl::interpolate_nonmatching_meshes(u, v, cells);
+    {
+      impl::interpolate_nonmatching_meshes(u, v, cells, nmm_interpolation_data);
+      return;
+    }
     else
     {
 
@@ -1021,5 +1043,4 @@ void interpolate(Function<T>& u, const Function<T>& v,
     }
   }
 }
-
 } // namespace dolfinx::fem
