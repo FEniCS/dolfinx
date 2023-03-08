@@ -609,10 +609,10 @@ class FunctionSpace(ufl.FunctionSpace):
 
 
 def VectorFunctionSpace(
-    mesh: Mesh,
-    element: typing.Union[basix.ufl_wrapper._BasixElementBase,
-                          ElementMetaData, typing.Tuple[str, int]],
-    dim=None) -> FunctionSpace:
+        mesh: Mesh,
+        element: typing.Union[basix.ufl_wrapper._BasixElementBase,
+                              ElementMetaData, typing.Tuple[str, int]],
+        dim=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
     if isinstance(element, basix.ufl_wrapper._BasixElementBase):
         e = element
