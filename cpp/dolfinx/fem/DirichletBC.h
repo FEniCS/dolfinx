@@ -348,7 +348,7 @@ public:
   /// of the array @p x should be equal to the number of dofs owned by
   /// this rank.
   /// @param[in] scale The scaling value to apply
-  void set(std::span<T> x, double scale = 1.0) const
+  void set(std::span<T> x, T scale = 1) const
   {
     if (std::holds_alternative<std::shared_ptr<const Function<T>>>(_g))
     {
@@ -385,7 +385,7 @@ public:
   /// @param[in] x The array in which to set `scale * (x0 - x_bc)`
   /// @param[in] x0 The array used in compute the value to set
   /// @param[in] scale The scaling value to apply
-  void set(std::span<T> x, std::span<const T> x0, double scale = 1.0) const
+  void set(std::span<T> x, std::span<const T> x0, T scale = 1) const
   {
     if (std::holds_alternative<std::shared_ptr<const Function<T>>>(_g))
     {

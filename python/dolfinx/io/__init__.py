@@ -6,9 +6,9 @@
 """Tools for input/output (IO)."""
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.io import distribute_entity_data  # noqa: F401
 from dolfinx.io import gmshio  # noqa: F401
-from dolfinx.io.utils import VTKFile, XDMFFile  # noqa: F401
+from dolfinx.io.utils import (VTKFile, XDMFFile,  # noqa: F401
+                              distribute_entity_data)
 
 __all__ = ["gmshio", "distribute_entity_data", "VTKFile", "XDMFFile"]
 

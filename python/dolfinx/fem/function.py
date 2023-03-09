@@ -14,19 +14,20 @@ if typing.TYPE_CHECKING:
 
 from functools import singledispatch
 
-import basix
-import basix.ufl_wrapper
 import numpy as np
 import numpy.typing as npt
+
+import basix
+import basix.ufl_wrapper
 import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
-from dolfinx.fem import dofmap
-from petsc4py import PETSc
-from ufl.domain import extract_unique_domain
-
 from dolfinx import cpp as _cpp
 from dolfinx import jit, la
+from dolfinx.fem import dofmap
+from ufl.domain import extract_unique_domain
+
+from petsc4py import PETSc
 
 
 class Constant(ufl.Constant):
@@ -252,6 +253,10 @@ class Function(ufl.Coefficient):
 
         """
 
+        # PETSc Vec wrapper around the C++ function data (constructed
+        # when first requested)
+        self._petsc_x = None
+
         # Create cpp Function
         def functiontype(dtype):
             if dtype == np.dtype(np.float32):
@@ -282,9 +287,9 @@ class Function(ufl.Coefficient):
         # Store DOLFINx FunctionSpace object
         self._V = V
 
-        # PETSc Vec wrapper around the C++ function data. Constructed
-        # when first requested.
-        self._petsc_x = None
+    def __del__(self):
+        if self._petsc_x is not None:
+            self._petsc_x.destroy()
 
     @property
     def function_space(self) -> FunctionSpace:

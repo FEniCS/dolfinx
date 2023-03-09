@@ -164,14 +164,14 @@ int main(int argc, char* argv[])
 
     // Apply lifting to account for Dirichlet boundary condition
     // b <- b - A * x_bc
-    fem::set_bc(ui->x()->mutable_array(), {bc}, -1.0);
+    fem::set_bc(ui->x()->mutable_array(), {bc}, T(-1));
     fem::assemble_vector(b.mutable_array(), *M);
 
     // Communicate ghost values
     b.scatter_rev(std::plus<T>());
 
     // Set BC dofs to zero (effectively zeroes columns of A)
-    fem::set_bc(b.mutable_array(), {bc}, 0.0);
+    fem::set_bc(b.mutable_array(), {bc}, T(0));
 
     b.scatter_fwd();
 
@@ -196,7 +196,7 @@ int main(int argc, char* argv[])
                            fem::make_coefficients_span(coeff));
 
       // Set BC dofs to zero (effectively zeroes rows of A)
-      fem::set_bc(y.mutable_array(), {bc}, 0.0);
+      fem::set_bc(y.mutable_array(), {bc}, T(0));
 
       // Accumulate ghost values
       y.scatter_rev(std::plus<T>());
@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
     int num_it = linalg::cg(*u->x(), b, action, 200, 1e-6);
 
     // Set BC values in the solution vectors
-    fem::set_bc(u->x()->mutable_array(), {bc}, 1.0);
+    fem::set_bc(u->x()->mutable_array(), {bc}, T(1));
 
     // Compute L2 error (squared) of the solution vector e = (u - u_d, u
     // - u_d)*dx

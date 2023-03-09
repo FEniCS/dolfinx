@@ -11,15 +11,16 @@ import sys
 
 import numpy as np
 import pytest
-from dolfinx.fem import Function, FunctionSpace, IntegralType
-from dolfinx.mesh import create_unit_square, meshtags
-from mpi4py import MPI
-from petsc4py import PETSc
 
 import dolfinx
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la, list_timings
+from dolfinx.fem import Function, FunctionSpace, IntegralType
+from dolfinx.mesh import create_unit_square
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 numba = pytest.importorskip("numba")
 
@@ -48,9 +49,7 @@ def tabulate_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_orientation)
 
     # 2x Element area Ae
     Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
-    B = np.array(
-        [y1 - y2, y2 - y0, y0 - y1, x2 - x1, x0 - x2, x1 - x0],
-        dtype=PETSc.ScalarType).reshape(2, 3)
+    B = np.array([y1 - y2, y2 - y0, y0 - y1, x2 - x1, x0 - x2, x1 - x0], dtype=PETSc.ScalarType).reshape(2, 3)
     A[:, :] = np.dot(B.T, B) / (2 * Ae)
 
 
@@ -86,12 +85,13 @@ def test_numba_assembly():
     V = FunctionSpace(mesh, ("Lagrange", 1))
     Form = _cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else _cpp.fem.Form_complex128
 
-    integrals = {IntegralType.cell: ([(-1, tabulate_tensor_A.address),
-                                      (12, tabulate_tensor_A.address),
-                                      (2, tabulate_tensor_A.address)], None)}
+    cells = range(mesh.topology.index_map(mesh.topology.dim).size_local)
+    integrals = {IntegralType.cell: [(-1, tabulate_tensor_A.address, cells),
+                                     (12, tabulate_tensor_A.address, range(0)),
+                                     (2, tabulate_tensor_A.address, range(0))]}
     a = Form([V._cpp_object, V._cpp_object], integrals, [], [], False)
 
-    integrals = {IntegralType.cell: ([(-1, tabulate_tensor_b.address)], None)}
+    integrals = {IntegralType.cell: [(-1, tabulate_tensor_b.address, cells)]}
     L = Form([V._cpp_object], integrals, [], [], False)
 
     A = dolfinx.fem.petsc.assemble_matrix(a)
@@ -101,8 +101,8 @@ def test_numba_assembly():
 
     Anorm = A.norm(PETSc.NormType.FROBENIUS)
     bnorm = b.norm(PETSc.NormType.N2)
-    assert (np.isclose(Anorm, 56.124860801609124))
-    assert (np.isclose(bnorm, 0.0739710713711999))
+    assert np.isclose(Anorm, 56.124860801609124)
+    assert np.isclose(bnorm, 0.0739710713711999)
 
     list_timings(MPI.COMM_WORLD, [TimingType.wall])
 
@@ -114,19 +114,16 @@ def test_coefficient():
     vals = Function(DG0)
     vals.vector.set(2.0)
 
-    Form = _cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else _cpp.fem.Form_complex128
-
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
-    mt = meshtags(mesh, tdim, np.arange(num_cells, dtype=np.intc), np.ones(num_cells, dtype=np.intc))
-
-    integrals = {IntegralType.cell: ([(1, tabulate_tensor_b_coeff.address)], mt)}
+    integrals = {IntegralType.cell: [(1, tabulate_tensor_b_coeff.address, np.arange(num_cells, dtype=np.intc))]}
+    Form = _cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else _cpp.fem.Form_complex128
     L = Form([V._cpp_object], integrals, [vals._cpp_object], [], False)
 
     b = dolfinx.fem.petsc.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bnorm = b.norm(PETSc.NormType.N2)
-    assert (np.isclose(bnorm, 2.0 * 0.0739710713711999))
+    assert np.isclose(bnorm, 2.0 * 0.0739710713711999)
 
 
 @pytest.mark.skip_in_parallel
@@ -232,12 +229,14 @@ def test_cffi_assembly():
     mesh.comm.Barrier()
     from _cffi_kernelA import ffi, lib
 
+    cells = range(mesh.topology.index_map(mesh.topology.dim).size_local)
+
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
-    integrals = {IntegralType.cell: ([(-1, ptrA)], None)}
+    integrals = {IntegralType.cell: [(-1, ptrA, cells)]}
     a = _cpp.fem.Form_float64([V._cpp_object, V._cpp_object], integrals, [], [], False)
 
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
-    integrals = {IntegralType.cell: ([(-1, ptrL)], None)}
+    integrals = {IntegralType.cell: [(-1, ptrL, cells)]}
     L = _cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False)
 
     A = fem.assemble_matrix(a)
