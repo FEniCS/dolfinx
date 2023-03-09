@@ -621,7 +621,7 @@ def VectorFunctionSpace(
                                                               dim=dim, gdim=mesh.geometry.dim)
     else:
         ed = ElementMetaData(*element)
-        ufl_element = basix.ufl_wrapper.create_vector_element(e.family, mesh.ufl_cell().cellname(), e.degree,
+        ufl_element = basix.ufl_wrapper.create_vector_element(ed.family, mesh.ufl_cell().cellname(), ed.degree,
                                                               dim=dim, gdim=mesh.geometry.dim)
     return FunctionSpace(mesh, ufl_element)
 
