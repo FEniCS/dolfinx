@@ -98,7 +98,7 @@ public:
                           std::function<void(T*, const T*, const T*,
                                              const scalar_value_type_t*,
                                              const int*, const std::uint8_t*)>,
-                          std::vector<std::int32_t>>>>& integrals,
+                          std::span<const std::int32_t>>>>& integrals,
        const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
        const std::vector<std::shared_ptr<const Constant<T>>>& constants,
        bool needs_facet_permutations,
