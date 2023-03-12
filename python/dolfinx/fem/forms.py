@@ -173,8 +173,6 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         subdomains = {_ufl_to_dolfinx_domain[key]: get_integration_domains(
             _ufl_to_dolfinx_domain[key], subdomain_data[0]) for (key, subdomain_data) in sd.get(domain).items()}
 
-        print(subdomains)
-
         return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, module.ffi, code)
 
     def _create_form(form):
