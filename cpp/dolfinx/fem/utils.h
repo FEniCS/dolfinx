@@ -114,8 +114,8 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 /// @param[in] meshtags The meshtags
 /// @return A list of (integral id, entities) pairs
 std::vector<std::pair<int, std::vector<std::int32_t>>>
-compute_integration_domains(const IntegralType integral_type,
-                            const mesh::MeshTags<int>& meshtags);
+compute_integration_domains(IntegralType integral_type,
+                            const mesh::MeshTags<std : int32_t>& meshtags);
 
 /// @brief Finite element cell kernel concept.
 ///

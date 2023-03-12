@@ -267,8 +267,8 @@ fem::FunctionSpace fem::create_functionspace(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<int, std::vector<std::int32_t>>>
-fem::compute_integration_domains(const fem::IntegralType integral_type,
-                                 const mesh::MeshTags<int>& meshtags)
+fem::compute_integration_domains(fem::IntegralType integral_type,
+                                 const mesh::MeshTags<std::int32_t>& meshtags)
 {
   std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
   assert(mesh);
@@ -366,7 +366,7 @@ fem::compute_integration_domains(const fem::IntegralType integral_type,
         [](auto& pair, auto val) { return pair.first <= val; });
 
     // Meshtag value for this group
-    const int id = group_start_it->first;
+    int id = group_start_it->first;
     // List to store entities in this group
     std::vector<std::int32_t> group_entities;
     // Loop through entities in this group and add
