@@ -160,7 +160,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         # NOTE Could remove this and let the user convert meshtags by
         # calling compute_integration_domains themselves
         def get_integration_domains(integral_type, subdomain):
-            "Get integration domains from subdomain data"
+            """Get integration domains from subdomain data"""
             if subdomain is None:
                 return []
             else:
@@ -172,6 +172,8 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         # Subdomain markers (possibly empty list for some integral types)
         subdomains = {_ufl_to_dolfinx_domain[key]: get_integration_domains(
             _ufl_to_dolfinx_domain[key], subdomain_data[0]) for (key, subdomain_data) in sd.get(domain).items()}
+
+        print(subdomains)
 
         return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, module.ffi, code)
 

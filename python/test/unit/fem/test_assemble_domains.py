@@ -233,8 +233,8 @@ def test_additivity(mode):
 
 def test_manual_integration_domains():
     """Test that specifying integration domains manually i.e.
-    by passing a list of cell indices or (cell, local facet) pairs
-    to form gives the same result as the usual approach of tagging"""
+    by passing a list of cell indices or (cell, local facet) pairs to
+    form gives the same result as the usual approach of tagging"""
     n = 4
     msh = create_unit_square(MPI.COMM_WORLD, n, n)
 
@@ -260,9 +260,8 @@ def test_manual_integration_domains():
     facet_values = np.zeros_like(facet_indices, dtype=np.intc)
     marked_ext_facets = locate_entities_boundary(msh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
     marked_int_facets = locate_entities(msh, tdim - 1, lambda x: x[0] < 0.75)
-    # marked_int_facets will also contain facets on the boundary,
-    # so set these values first, followed by the values for
-    # marked_ext_facets
+    # marked_int_facets will also contain facets on the boundary, so set
+    # these values first, followed by the values for marked_ext_facets
     facet_values[marked_int_facets] = 3
     facet_values[marked_ext_facets] = 6
     mt_facets = meshtags(msh, tdim - 1, facet_indices, facet_values)

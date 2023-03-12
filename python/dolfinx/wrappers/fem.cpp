@@ -413,16 +413,35 @@ void declare_form(py::module& m, const std::string& type)
                       const dolfinx::fem::Function<T>>>& coefficients,
                   const std::vector<std::shared_ptr<
                       const dolfinx::fem::Constant<T>>>& constants,
-                  const std::map<
-                      dolfinx::fem::IntegralType,
-                      std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
+                  const std::map<dolfinx::fem::IntegralType,
+                                 std::vector<std::pair<
+                                     std::int32_t,
+                                     py::array_t<std::int32_t,
+                                                 py::array::c_style
+                                                     | py::array::forcecast>>>>&
                       subdomains,
                   std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
                {
-                 // FIXME Use py::array instead of std::vector?
+                 std::map<dolfinx::fem::IntegralType,
+                          std::vector<std::pair<std::int32_t,
+                                                std::vector<std::int32_t>>>>
+                     sd;
+                 for (auto& [itg, data] : subdomains)
+                 {
+                   std::vector<
+                       std::pair<std::int32_t, std::vector<std::int32_t>>>
+                       x;
+                   for (auto& [id, idx] : data)
+                   {
+                     x.emplace_back(
+                         id, std::vector(idx.data(), idx.data() + idx.size()));
+                   }
+                   sd.insert({itg, std::move(x)});
+                 }
+
                  ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
-                 return dolfinx::fem::create_form<T>(
-                     *p, spaces, coefficients, constants, subdomains, mesh);
+                 return dolfinx::fem::create_form<T>(*p, spaces, coefficients,
+                                                     constants, sd, mesh);
                }),
            py::arg("form"), py::arg("spaces"), py::arg("coefficients"),
            py::arg("constants"), py::arg("subdomains"), py::arg("mesh"),
@@ -488,15 +507,33 @@ void declare_form(py::module& m, const std::string& type)
              coefficients,
          const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
              constants,
-         const std::map<dolfinx::fem::IntegralType,
-                        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
+         const std::map<
+             dolfinx::fem::IntegralType,
+             std::vector<std::pair<
+                 std::int32_t,
+                 py::array_t<std::int32_t,
+                             py::array::c_style | py::array::forcecast>>>>&
              subdomains,
          std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
       {
-        // FIXME Use py::array in integrals instead of std::vector?
+        std::map<
+            dolfinx::fem::IntegralType,
+            std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>
+            sd;
+        for (auto& [itg, data] : subdomains)
+        {
+          std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>> x;
+          for (auto& [id, idx] : data)
+          {
+            x.emplace_back(id,
+                           std::vector(idx.data(), idx.data() + idx.size()));
+          }
+          sd.insert({itg, std::move(x)});
+        }
+
         ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
         return dolfinx::fem::create_form<T>(*p, spaces, coefficients, constants,
-                                            subdomains, mesh);
+                                            sd, mesh);
       },
       py::arg("form"), py::arg("spaces"), py::arg("coefficients"),
       py::arg("constants"), py::arg("subdomains"), py::arg("mesh"),
