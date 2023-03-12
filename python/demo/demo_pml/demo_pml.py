@@ -1,4 +1,4 @@
-# # ELectromagnetic scattering from a wire with perfectly matched layer condition
+# # Electromagnetic scattering from a wire with perfectly matched layer condition
 #
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
