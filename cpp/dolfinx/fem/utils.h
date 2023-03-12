@@ -114,8 +114,8 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 /// @param[in] meshtags The meshtags
 /// @return A list of (integral id, entities) pairs
 std::vector<std::pair<int, std::vector<std::int32_t>>>
-compute_integration_domains(IntegralType integral_type,
-                            const mesh::MeshTags<std::int32_t>& meshtags);
+compute_integration_domains(const IntegralType integral_type,
+                            const mesh::MeshTags<int>& meshtags);
 
 /// @brief Finite element cell kernel concept.
 ///
@@ -286,7 +286,7 @@ Form<T> create_form(
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
     const std::map<
         IntegralType,
-        std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
@@ -348,13 +348,13 @@ Form<T> create_form(
       T*, const T*, const T*,
       const typename impl::scalar_value_type<T>::value_type*, const int*,
       const std::uint8_t*)>;
+  std::map<IntegralType,
+           std::vector<std::tuple<int, kern, std::vector<std::int32_t>>>>
+      integral_data;
 
   bool needs_facet_permutations = false;
 
   // Attach cell kernels
-  std::map<IntegralType,
-           std::vector<std::tuple<int, kern, std::span<const std::int32_t>>>>
-      integral_data;
   {
     std::span<const int> ids(ufcx_form.integral_ids(cell),
                              ufcx_form.num_integrals(cell));
@@ -403,8 +403,8 @@ Form<T> create_form(
         auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
-        if (it != sd->second.end() and it->first == id)
-          itg.first->second.emplace_back(id, k, it->second);
+        if (it != sd->second.end() && (*it).first == id)
+          itg.first->second.emplace_back(id, k, (*it).second);
       }
 
       if (integral->needs_facet_permutations)
@@ -471,8 +471,8 @@ Form<T> create_form(
         auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
-        if (it != sd->second.end() and it->first == id)
-          itg.first->second.emplace_back(id, k, it->second);
+        if (it != sd->second.end() && (*it).first == id)
+          itg.first->second.emplace_back(id, k, (*it).second);
       }
 
       if (integral->needs_facet_permutations)
@@ -541,11 +541,8 @@ Form<T> create_form(
         auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
-        if (it != sd->second.end() and it->first == id)
-        {
-          itg.first->second.emplace_back(
-              id, k, std::vector(it->second.begin(), it->second.end()));
-        }
+        if (it != sd->second.end() && (*it).first == id)
+          itg.first->second.emplace_back(id, k, (*it).second);
       }
 
       if (integral->needs_facet_permutations)
@@ -576,7 +573,7 @@ Form<T> create_form(
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::map<
         IntegralType,
-        std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
@@ -627,7 +624,7 @@ Form<T> create_form(
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::map<
         IntegralType,
-        std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
