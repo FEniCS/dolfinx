@@ -290,19 +290,13 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   entities = entities.first(std::distance(it0, it1));
   values = values.first(std::distance(it0, it1));
 
-  // Structure to store (meshtag value, entity) pairs
-  std::vector<std::pair<int, std::vector<std::int32_t>>> value_entity_pairs;
-
-  std::vector<std::int32_t> entity_data_new;
+  std::vector<std::int32_t> entity_data;
   std::vector<int> id_new;
   switch (integral_type)
   {
     // TODO: Sort pairs or use std::iota
   case fem::IntegralType::cell:
-    for (std::size_t i = 0; i < values.size(); ++i)
-      value_entity_pairs.push_back({values[i], {entities[i]}});
-    entity_data_new.insert(entity_data_new.begin(), entities.begin(),
-                           entities.end());
+    entity_data.insert(entity_data.begin(), entities.begin(), entities.end());
     id_new.insert(id_new.begin(), values.begin(), values.end());
     break;
   default:
@@ -328,11 +322,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
         std::size_t pos = std::distance(entities.begin(), index_it);
         auto facet
             = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
-        value_entity_pairs.push_back(
-            {values[pos], std::vector(facet.begin(), facet.end())});
-
-        entity_data_new.insert(entity_data_new.end(), facet.begin(),
-                               facet.end());
+        entity_data.insert(entity_data.end(), facet.begin(), facet.end());
         id_new.push_back(values[pos]);
       }
     }
@@ -348,11 +338,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
           // for each cell
           auto facets
               = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
-          value_entity_pairs.push_back(
-              {values[j], std::vector(facets.begin(), facets.end())});
-
-          entity_data_new.insert(entity_data_new.end(), facets.begin(),
-                                 facets.end());
+          entity_data.insert(entity_data.end(), facets.begin(), facets.end());
           id_new.push_back(values[j]);
         }
       }
@@ -369,41 +355,13 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   std::sort(perm.begin(), perm.end(),
             [&id_new](auto p0, auto p1) { return id_new[p0] < id_new[p1]; });
 
-  // Sort pairs by meshtag value so that entities can be grouped
-  std::sort(value_entity_pairs.begin(), value_entity_pairs.end());
-
-  std::vector<std::pair<int, std::vector<std::int32_t>>> integrals;
-  // Iterator to mark the start of the group
-  auto group_start_it = value_entity_pairs.begin();
-  while (group_start_it != value_entity_pairs.end())
-  {
-    // Get iterator pointing to end of group
-    auto val = group_start_it->first;
-    auto group_end_it = std::lower_bound(
-        value_entity_pairs.begin(), value_entity_pairs.end(), val,
-        [](auto& pair, auto val) { return pair.first <= val; });
-
-    // Meshtag value for this group
-    int id = group_start_it->first;
-    // List to store entities in this group
-    std::vector<std::int32_t> group_entities;
-    // Loop through entities in this group and add
-    for (auto it = group_start_it; it != group_end_it; ++it)
-    {
-      const auto entity = it->second;
-      group_entities.insert(group_entities.end(), entity.begin(), entity.end());
-    }
-    integrals.push_back({id, std::move(group_entities)});
-    group_start_it = group_end_it;
-  }
-
   std::size_t shape = 1;
   if (integral_type == IntegralType::exterior_facet)
     shape = 2;
   else if (integral_type == IntegralType::interior_facet)
     shape = 4;
 
-  std::vector<std::pair<int, std::vector<std::int32_t>>> integrals_new;
+  std::vector<std::pair<int, std::vector<std::int32_t>>> integrals;
   {
     // Iterator to mark the start of the group
     auto it0 = perm.begin();
@@ -415,19 +373,19 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
                                   { return id0 == id_new[idx]; });
 
       std::vector<std::int32_t> data;
+      data.reserve(shape * std::distance(it0, it1));
       for (auto it = it0; it != it1; ++it)
       {
-        auto e_it0 = std::next(entity_data_new.begin(), (*it) * shape);
+        auto e_it0 = std::next(entity_data.begin(), (*it) * shape);
         auto e_it1 = std::next(e_it0, shape);
         data.insert(data.end(), e_it0, e_it1);
       }
 
-      integrals_new.push_back({id0, std::move(data)});
+      integrals.push_back({id0, std::move(data)});
       it0 = it1;
     }
   }
 
-  return integrals_new;
-  // return integrals;
+  return integrals;
 }
 //-----------------------------------------------------------------------------
