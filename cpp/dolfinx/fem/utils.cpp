@@ -12,6 +12,7 @@
 #include "Function.h"
 #include "FunctionSpace.h"
 #include "dofmapbuilder.h"
+#include <algorithm>
 #include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
@@ -352,8 +353,9 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
 
   std::vector<std::int32_t> perm(id_new.size());
   std::iota(perm.begin(), perm.end(), 0);
-  std::sort(perm.begin(), perm.end(),
-            [&id_new](auto p0, auto p1) { return id_new[p0] < id_new[p1]; });
+  std::stable_sort(perm.begin(), perm.end(),
+                   [&id_new](auto p0, auto p1)
+                   { return id_new[p0] < id_new[p1]; });
 
   std::size_t shape = 1;
   if (integral_type == IntegralType::exterior_facet)
