@@ -431,10 +431,10 @@ void declare_form(py::module& m, const std::string& type)
                    std::vector<
                        std::pair<std::int32_t, std::vector<std::int32_t>>>
                        x;
-                   for (auto& [id, idx] : data)
+                   for (auto& [id, e] : data)
                    {
-                     x.emplace_back(
-                         id, std::vector(idx.data(), idx.data() + idx.size()));
+                     x.emplace_back(id,
+                                    std::vector(e.data(), e.data() + e.size()));
                    }
                    sd.insert({itg, std::move(x)});
                  }
@@ -621,11 +621,9 @@ void fem(py::module& m)
         "dofmap ((cell, local index ) -> index).");
   m.def(
       "compute_integration_domains",
-      [](const dolfinx::fem::IntegralType integral_type,
-         const dolfinx::mesh::MeshTags<int>& meshtags) {
-        return dolfinx::fem::compute_integration_domains(integral_type,
-                                                         meshtags);
-      },
+      [](dolfinx::fem::IntegralType type,
+         const dolfinx::mesh::MeshTags<int>& meshtags)
+      { return dolfinx::fem::compute_integration_domains(type, meshtags); },
       py::arg("integral_type"), py::arg("meshtags"));
   m.def(
       "create_nonmatching_meshes_interpolation_data",
