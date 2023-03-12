@@ -103,19 +103,25 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 
 } // namespace impl
 
-/// @brief Given an integral type and MeshTags compute
-/// the entities that should be integrated over.
+/// @brief Given an integral type and MeshTags, compute the entities
+/// that should be integrated over.
 ///
-/// I.e., local cell indices for cell integrals, local facets on the
-/// boundary as (cell, local facet index) pairs for exterior facet
-/// integrals etc.)
+/// This function returns as list `[(id, entities)]`, where `entities`
+/// are the entities in `meshtags` with tag value `id`. For cell
+/// integrals `entities` are the cell indices. For exterior facet
+/// integrals, `entities` is a list of `(cell_index, local_facet_index)`
+/// pairs. For interior facet integrals, `entities` is a list of
+/// `(cell_index0, local_facet_index0, cell_index1,
+/// local_facet_index1)`.
 ///
-/// @param[in] integral_type The integral type
+/// @param[in] integral_type Integral type
 /// @param[in] meshtags The meshtags
 /// @return A list of (integral id, entities) pairs
+/// @pre The topological dimension of the integral entity type and the
+/// topological dimension of `meshtags` must be equal.
 std::vector<std::pair<int, std::vector<std::int32_t>>>
 compute_integration_domains(IntegralType integral_type,
-                            const mesh::MeshTags<std::int32_t>& meshtags);
+                            const mesh::MeshTags<int>& meshtags);
 
 /// @brief Finite element cell kernel concept.
 ///
@@ -403,8 +409,8 @@ Form<T> create_form(
         auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
-        if (it != sd->second.end() && (*it).first == id)
-          itg.first->second.emplace_back(id, k, (*it).second);
+        if (it != sd->second.end() and it->first == id)
+          itg.first->second.emplace_back(id, k, it->second);
       }
 
       if (integral->needs_facet_permutations)
@@ -471,8 +477,8 @@ Form<T> create_form(
         auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
-        if (it != sd->second.end() && (*it).first == id)
-          itg.first->second.emplace_back(id, k, (*it).second);
+        if (it != sd->second.end() and it->first == id)
+          itg.first->second.emplace_back(id, k, it->second);
       }
 
       if (integral->needs_facet_permutations)
@@ -541,13 +547,26 @@ Form<T> create_form(
         auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
-        if (it != sd->second.end() && (*it).first == id)
-          itg.first->second.emplace_back(id, k, (*it).second);
+        if (it != sd->second.end() and it->first == id)
+          itg.first->second.emplace_back(id, k, it->second);
       }
 
       if (integral->needs_facet_permutations)
         needs_facet_permutations = true;
     }
+  }
+
+  std::map<dolfinx::fem::IntegralType,
+           std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>
+      sd;
+  for (auto& [itg, data] : subdomains)
+  {
+    std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>> x;
+    for (auto& [id, idx] : data)
+    {
+      x.emplace_back(id, std::vector(idx.data(), idx.data() + idx.size()));
+    }
+    sd.insert({itg, std::move(x)});
   }
 
   return Form<T>(spaces, integral_data, coefficients, constants,

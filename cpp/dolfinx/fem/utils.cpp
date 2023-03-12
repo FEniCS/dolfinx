@@ -268,7 +268,7 @@ fem::FunctionSpace fem::create_functionspace(
 //-----------------------------------------------------------------------------
 std::vector<std::pair<int, std::vector<std::int32_t>>>
 fem::compute_integration_domains(fem::IntegralType integral_type,
-                                 const mesh::MeshTags<std::int32_t>& meshtags)
+                                 const mesh::MeshTags<int>& meshtags)
 {
   std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
   assert(mesh);
@@ -338,7 +338,6 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
           // for each cell
           auto facets
               = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
-
           value_entity_pairs.push_back(
               {values[j], std::vector(facets.begin(), facets.end())});
         }
