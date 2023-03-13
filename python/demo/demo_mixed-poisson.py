@@ -86,8 +86,9 @@
 
 import numpy as np
 
+from basix.ufl_wrapper import create_element, MixedElement
 from dolfinx import fem, io, mesh
-from ufl import (FiniteElement, Measure, MixedElement, SpatialCoordinate,
+from ufl import (Measure, SpatialCoordinate,
                  TestFunctions, TrialFunctions, div, exp, inner)
 
 from mpi4py import MPI
@@ -100,8 +101,8 @@ domain = mesh.create_unit_square(
 )
 
 k = 1
-Q_el = FiniteElement("BDMCF", domain.ufl_cell(), k)
-P_el = FiniteElement("DG", domain.ufl_cell(), k - 1)
+Q_el = create_element("BDMCF", domain.ufl_cell().cellname(), k)
+P_el = create_element("DG", domain.ufl_cell().cellname(), k - 1)
 V_el = MixedElement([Q_el, P_el])
 V = fem.FunctionSpace(domain, V_el)
 

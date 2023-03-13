@@ -28,6 +28,7 @@ import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
 
 import ufl
+from basix.ufl_wrapper import create_tensor_element, create_vector_element
 from dolfinx import geometry
 from dolfinx.cpp.fem import Form_complex128, Form_float64
 from dolfinx.fem import (Function, FunctionSpace, IntegralType, dirichletbc,
@@ -47,8 +48,8 @@ msh = infile.read_mesh(name="Grid")
 infile.close()
 
 # Stress (Se) and displacement (Ue) elements
-Se = ufl.TensorElement("DG", msh.ufl_cell(), 1, symmetry=True)
-Ue = ufl.VectorElement("Lagrange", msh.ufl_cell(), 2)
+Se = create_tensor_element("DG", msh.ufl_cell().cellname(), 1, symmetry=True)
+Ue = create_vector_element("Lagrange", msh.ufl_cell().cellname(), 2)
 
 S = FunctionSpace(msh, Se)
 U = FunctionSpace(msh, Ue)
