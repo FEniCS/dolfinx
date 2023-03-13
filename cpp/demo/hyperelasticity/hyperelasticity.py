@@ -9,18 +9,21 @@
 # dimensions, so first we need the appropriate finite element space and
 # trial and test functions on this space::
 from basix.ufl_wrapper import create_vector_element
-from ufl import (Coefficient, Identity, TestFunction, TrialFunction,
-                 derivative, det, diff, dx, grad, ln,
-                 tr, variable)
+from ufl import (Coefficient, FunctionSpace, Identity, Mesh, TestFunction,
+                 TrialFunction, derivative, det, diff, dx, grad, ln, tr,
+                 variable)
 
 # Function spaces
+coord_element = create_vector_element("Lagrange", "tetrahedron", 1)
+mesh = Mesh(coord_element)
 element = create_vector_element("Lagrange", "tetrahedron", 1)
+V = FunctionSpace(mesh, element)
 
 # Trial and test functions
-du = TrialFunction(element)     # Incremental displacement
-v = TestFunction(element)      # Test function
+du = TrialFunction(V)     # Incremental displacement
+v = TestFunction(V)      # Test function
 
-# Note that ``VectorElement`` creates a finite element space of vector
+# Note that ``create_vector_element`` creates a finite element space of vector
 # fields. The dimension of the vector field (the number of components)
 # is assumed to be the same as the spatial dimension (in this case 3),
 # unless otherwise specified.
@@ -29,7 +32,7 @@ v = TestFunction(element)      # Test function
 # traction ``T`` and the displacement solution itself ``u``::
 
 # Functions
-u = Coefficient(element)        # Displacement from previous iteration
+u = Coefficient(V)        # Displacement from previous iteration
 # B = Coefficient(element)        # Body force per unit volume
 # T = Coefficient(element)        # Traction force on the boundary
 
