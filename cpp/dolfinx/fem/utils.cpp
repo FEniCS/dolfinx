@@ -275,7 +275,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   assert(mesh);
   const mesh::Topology& topology = mesh->topology();
   const int tdim = topology.dim();
-  int dim = integral_type == IntegralType::cell ? tdim : tdim - 1;
+  const int dim = integral_type == IntegralType::cell ? tdim : tdim - 1;
   if (dim != meshtags.dim())
   {
     throw std::runtime_error("Invalid MeshTags dimension: "
@@ -292,13 +292,12 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   values = values.first(std::distance(it0, it1));
 
   std::vector<std::int32_t> entity_data;
-  std::vector<int> id_new;
+  std::vector<int> values1;
   switch (integral_type)
   {
-    // TODO: Sort pairs or use std::iota
   case fem::IntegralType::cell:
     entity_data.insert(entity_data.begin(), entities.begin(), entities.end());
-    id_new.insert(id_new.begin(), values.begin(), values.end());
+    values1.insert(values1.begin(), values.begin(), values.end());
     break;
   default:
     mesh->topology_mutable().create_connectivity(dim, tdim);
@@ -324,7 +323,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
         auto facet
             = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
         entity_data.insert(entity_data.end(), facet.begin(), facet.end());
-        id_new.push_back(values[pos]);
+        values1.push_back(values[pos]);
       }
     }
     break;
@@ -340,7 +339,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
           auto facets
               = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
           entity_data.insert(entity_data.end(), facets.begin(), facets.end());
-          id_new.push_back(values[j]);
+          values1.push_back(values[j]);
         }
       }
     }
@@ -351,32 +350,32 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     }
   }
 
-  std::vector<std::int32_t> perm(id_new.size());
+  // Build permutation that sorts by meshtag value
+  std::vector<std::int32_t> perm(values1.size());
   std::iota(perm.begin(), perm.end(), 0);
   std::stable_sort(perm.begin(), perm.end(),
-                   [&id_new](auto p0, auto p1)
-                   { return id_new[p0] < id_new[p1]; });
+                   [&values1](auto p0, auto p1)
+                   { return values1[p0] < values1[p1]; });
 
   std::size_t shape = 1;
   if (integral_type == IntegralType::exterior_facet)
     shape = 2;
   else if (integral_type == IntegralType::interior_facet)
     shape = 4;
-
   std::vector<std::pair<int, std::vector<std::int32_t>>> integrals;
   {
     // Iterator to mark the start of the group
-    auto it0 = perm.begin();
-    while (it0 != perm.end())
+    auto p0 = perm.begin();
+    while (p0 != perm.end())
     {
-      auto id0 = id_new[*it0];
-      auto it1 = std::find_if_not(it0, perm.end(),
-                                  [id0 = id_new[*it0], &id_new](auto idx)
-                                  { return id0 == id_new[idx]; });
+      auto id0 = values1[*p0];
+      auto p1 = std::find_if_not(p0, perm.end(),
+                                 [id0 = values1[*it0], &values1](auto idx)
+                                 { return id0 == values1[idx]; });
 
       std::vector<std::int32_t> data;
       data.reserve(shape * std::distance(it0, it1));
-      for (auto it = it0; it != it1; ++it)
+      for (auto it = p0; it != p1; ++it)
       {
         auto e_it0 = std::next(entity_data.begin(), (*it) * shape);
         auto e_it1 = std::next(e_it0, shape);
@@ -384,7 +383,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
       }
 
       integrals.push_back({id0, std::move(data)});
-      it0 = it1;
+      p0 = p1;
     }
   }
 

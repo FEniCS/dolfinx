@@ -114,6 +114,9 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 /// `(cell_index0, local_facet_index0, cell_index1,
 /// local_facet_index1)`.
 ///
+/// @note Owned mesh entities only are returned. Ghost entities are not
+/// included.
+///
 /// @param[in] integral_type Integral type
 /// @param[in] meshtags The meshtags
 /// @return A list of (integral id, entities) pairs
