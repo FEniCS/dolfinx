@@ -8,7 +8,7 @@ from dolfinx.fem import (Function, FunctionSpace, assemble_scalar, dirichletbc,
                          form, locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
-from dolfinx.mesh import CellType, create_unit_square, exterior_facet_indices
+from dolfinx.mesh import CellType, create_unit_cube, create_unit_square, exterior_facet_indices
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
 
@@ -160,3 +160,57 @@ def test_custom_element_quadrilateral_degree1():
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, CellType.quadrilateral)
     V = FunctionSpace(mesh, ufl_element)
     run_scalar_test(V, 1)
+
+
+def test_nedelec_degree1():
+    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, CellType.tetrahedron)
+
+    def func(x):
+        return x
+
+    e1 = basix.create_element(
+        basix.ElementFamily.N1E, basix.CellType.tetrahedron, 1, basix.LagrangeVariant.equispaced)
+    e2 = basix.create_custom_element(
+        e1.cell_type, e1.value_shape, e1.wcoeffs, e1.x, e1.M, 0, e1.map_type, e1.sobolev_space,
+        e1.discontinuous, e1.highest_complete_degree, e1.degree)
+
+    space1 = FunctionSpace(mesh, BasixElement(e1))
+    space2 = FunctionSpace(mesh, BasixElement(e2))
+
+    f1 = Function(space1)
+    f2 = Function(space2)
+    f1.interpolate(func)
+    f2.interpolate(func)
+
+    diff = f1 - f2
+
+    error = assemble_scalar(form(ufl.inner(diff, diff) * ufl.dx))
+
+    assert np.isclose(error, 0)
+
+
+def test_lagrange_degree1():
+    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, CellType.tetrahedron)
+
+    def func(x):
+        return x[0]
+
+    e1 = basix.create_element(
+        basix.ElementFamily.P, basix.CellType.tetrahedron, 1, basix.LagrangeVariant.equispaced)
+    e2 = basix.create_custom_element(
+        e1.cell_type, e1.value_shape, e1.wcoeffs, e1.x, e1.M, 0, e1.map_type, e1.sobolev_space,
+        e1.discontinuous, e1.highest_complete_degree, e1.degree)
+
+    space1 = FunctionSpace(mesh, BasixElement(e1))
+    space2 = FunctionSpace(mesh, BasixElement(e2))
+
+    f1 = Function(space1)
+    f2 = Function(space2)
+    f1.interpolate(func)
+    f2.interpolate(func)
+
+    diff = f1 - f2
+
+    error = assemble_scalar(form(ufl.inner(diff, diff) * ufl.dx))
+
+    assert np.isclose(error, 0)
