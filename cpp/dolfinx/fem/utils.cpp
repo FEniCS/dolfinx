@@ -284,12 +284,14 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
 
   std::span<const std::int32_t> entities = meshtags.indices();
   std::span<const int> values = meshtags.values();
-  assert(topology.index_map(dim));
-  auto it0 = entities.begin();
-  auto it1 = std::lower_bound(it0, entities.end(),
-                              topology.index_map(dim)->size_local());
-  entities = entities.first(std::distance(it0, it1));
-  values = values.first(std::distance(it0, it1));
+  {
+    assert(topology.index_map(dim));
+    auto it0 = entities.begin();
+    auto it1 = std::lower_bound(it0, entities.end(),
+                                topology.index_map(dim)->size_local());
+    entities = entities.first(std::distance(it0, it1));
+    values = values.first(std::distance(it0, it1));
+  }
 
   std::vector<std::int32_t> entity_data;
   std::vector<int> values1;
@@ -374,7 +376,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
                                  { return id0 == values1[idx]; });
 
       std::vector<std::int32_t> data;
-      data.reserve(shape * std::distance(it0, it1));
+      data.reserve(shape * std::distance(p0, p1));
       for (auto it = p0; it != p1; ++it)
       {
         auto e_it0 = std::next(entity_data.begin(), (*it) * shape);
