@@ -86,7 +86,8 @@
 import numpy as np
 
 import ufl
-from basix.ufl_wrapper import create_element, create_vector_element
+from basix.ufl_wrapper import (MixedElement, create_element,
+                               create_vector_element)
 from dolfinx import fem, la
 from dolfinx.fem import (Constant, Function, FunctionSpace, dirichletbc,
                          extract_function_spaces, form,
@@ -446,7 +447,7 @@ def block_direct_solver():
 def mixed_direct():
 
     # Create the Taylot-Hood function space
-    TH = P2 * P1
+    TH = MixedElement([P2, P1])
     W = FunctionSpace(msh, TH)
 
     # No slip boundary condition

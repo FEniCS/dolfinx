@@ -64,7 +64,7 @@ jobs:
       - name: Install Basix
         run: |
           source fenicsx/bin/activate
-          python -m pip install git+https://github.com/FEniCS/basix.git
+          python -m pip install git+https://github.com/FEniCS/basix.git@mscroggs/tensor
 
       - name: Install UFL
         run: |

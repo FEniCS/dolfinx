@@ -45,6 +45,7 @@ import numpy as np
 from analytical_modes import verify_mode
 
 import ufl
+from basix.ufl_wrapper import MixedElement, create_element
 from dolfinx import fem, io, plot
 from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
                           locate_entities)
@@ -190,9 +191,9 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
 # `MixedElement`:
 
 degree = 1
-RTCE = ufl.FiniteElement("RTCE", msh.ufl_cell(), degree)
-Q = ufl.FiniteElement("Lagrange", msh.ufl_cell(), degree)
-V = fem.FunctionSpace(msh, ufl.MixedElement(RTCE, Q))
+RTCE = create_element("RTCE", msh.ufl_cell().cellname(), degree)
+Q = create_element("Lagrange", msh.ufl_cell().cellname(), degree)
+V = fem.FunctionSpace(msh, MixedElement(RTCE, Q))
 
 # Now we can define our weak form:
 

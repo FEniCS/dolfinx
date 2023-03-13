@@ -22,7 +22,7 @@ jobs:
       - name: Install FEniCS Python components
         run: |
           python3 -m pip install git+https://github.com/FEniCS/ufl.git@mscroggs/remove-elements
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
+          python3 -m pip install git+https://github.com/FEniCS/basix.git@mscroggs/tensor
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
 
       - name: Configure C++
