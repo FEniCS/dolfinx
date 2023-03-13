@@ -198,8 +198,6 @@ fem::FunctionSpace fem::create_functionspace(
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
-  assert(mesh);
-
   // Create a DOLFINx element
   auto _e = std::make_shared<FiniteElement>(e, bs);
 
@@ -221,6 +219,7 @@ fem::FunctionSpace fem::create_functionspace(
   // Create a dofmap
   ElementDofLayout layout(bs, e.entity_dofs(), e.entity_closure_dofs(), {},
                           sub_doflayout);
+  assert(mesh);
   auto dofmap = std::make_shared<const DofMap>(
       create_dofmap(mesh->comm(), layout, mesh->topology(), reorder_fn, *_e));
 
@@ -297,7 +296,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   std::vector<int> values1;
   switch (integral_type)
   {
-  case fem::IntegralType::cell:
+  case IntegralType::cell:
     entity_data.insert(entity_data.begin(), entities.begin(), entities.end());
     values1.insert(values1.begin(), values.begin(), values.end());
     break;

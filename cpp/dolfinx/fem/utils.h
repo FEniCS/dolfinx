@@ -559,7 +559,7 @@ Form<T> create_form(
     }
   }
 
-  std::map<dolfinx::fem::IntegralType,
+  std::map<IntegralType,
            std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>
       sd;
   for (auto& [itg, data] : subdomains)
