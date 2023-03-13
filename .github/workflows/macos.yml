@@ -69,7 +69,7 @@ jobs:
       - name: Install UFL
         run: |
           source fenicsx/bin/activate
-          python -m pip install git+https://github.com/FEniCS/ufl.git
+          python -m pip install git+https://github.com/FEniCS/ufl.git@mscroggs/remove-elements
 
       - name: Install FFCx
         run: |
