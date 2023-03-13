@@ -47,7 +47,8 @@
 // space
 //
 // .. math::
-//     V = \left\{v \in H^{1}_{0}(\Omega)\,:\, v \in P_{k}(K) \ \forall \ K \in \mathcal{T} \right\}
+//     V = \left\{v \in H^{1}_{0}(\Omega)\,:\, v \in P_{k}(K) \ \forall \ K \in
+//     \mathcal{T} \right\}
 //
 // and considering the boundary conditions
 //
@@ -64,19 +65,23 @@
 // where the bilinear form is
 //
 // .. math::
-//    a(u, v) = \sum_{K \in \mathcal{T}} \int_{K} \nabla^{2} u \nabla^{2} v \, {\rm d}x \
-//   +\sum_{E \in \mathcal{E}_h^{\rm int}}\left(\int_{E} \frac{\alpha}{h_E} [\!\![ \nabla u ]\!\!] [\!\![ \nabla v ]\!\!] \, {\rm d}s
+//    a(u, v) = \sum_{K \in \mathcal{T}} \int_{K} \nabla^{2} u \nabla^{2} v \,
+//    {\rm d}x \
+//   +\sum_{E \in \mathcal{E}_h^{\rm int}}\left(\int_{E} \frac{\alpha}{h_E}
+//   [\!\![ \nabla u ]\!\!] [\!\![ \nabla v ]\!\!] \, {\rm d}s
 //   - \int_{E} \left<\nabla^{2} u \right>[\!\![ \nabla v ]\!\!]  \, {\rm d}s
-//   - \int_{E} [\!\![ \nabla u ]\!\!]  \left<\nabla^{2} v \right>  \, {\rm d}s\right)
+//   - \int_{E} [\!\![ \nabla u ]\!\!]  \left<\nabla^{2} v \right>  \, {\rm
+//   d}s\right)
 //
 // and the linear form is
 //
 // .. math::
 //   L(v) = \int_{\Omega} fv \, {\rm d}x
 //
-// Furthermore, :math:`\left< u \right> = \frac{1}{2} (u_{+} + u_{-})`, :math:`[\!\![
-// w ]\!\!]  = w_{+} \cdot n_{+} + w_{-} \cdot n_{-}`, :math:`\alpha \ge
-// 0` is a penalty parameter and :math:`h_E` is a measure of the cell size.
+// Furthermore, :math:`\left< u \right> = \frac{1}{2} (u_{+} + u_{-})`,
+// :math:`[\!\![ w ]\!\!]  = w_{+} \cdot n_{+} + w_{-} \cdot n_{-}`,
+// :math:`\alpha \ge 0` is a penalty parameter and :math:`h_E` is a measure of
+// the cell size.
 //
 // The input parameters for this demo are defined as follows:
 //
@@ -108,10 +113,10 @@
 //
 // The main solver is implemented in the :download:`main.cpp` file.
 //
-// At the top we include the DOLFINx header file and the generated header
-// file "biharmonic.h" containing the variational forms for the
-// Biharmonic equation, which are defined in the UFL form file.
-// For convenience we also include the DOLFINx namespace.
+// At the top we include the DOLFINx header file and the generated
+// header file "biharmonic.h" containing the variational forms for the
+// Biharmonic equation, which are defined in the UFL form file. For
+// convenience we also include the DOLFINx namespace.
 //
 // .. code-block:: cpp
 
@@ -120,6 +125,7 @@
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/petsc.h>
+#include <numbers>
 #include <utility>
 #include <vector>
 
@@ -130,8 +136,8 @@ using T = PetscScalar;
 // domain. As the unit square is a very standard domain, we can use a
 // built-in mesh provided by the :cpp:class:`UnitSquareMesh` factory. In
 // order to create a mesh consisting of 32 x 32 squares with each square
-// divided into two triangles, and the finite element space (specified in
-// the form file) defined relative to this mesh, we do as follows
+// divided into two triangles, and the finite element space (specified
+// in the form file) defined relative to this mesh, we do as follows
 //
 // .. code-block:: cpp
 
@@ -147,17 +153,17 @@ int main(int argc, char* argv[])
         mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
                                {32, 32}, mesh::CellType::triangle, part));
 
-    // A function space object, which is defined in the generated code, is
-    // created:
+    // A function space object, which is defined in the generated code,
+    // is created:
     //
     // .. code-block:: cpp
 
     // Create function space
     auto V = std::make_shared<fem::FunctionSpace>(
-    fem::create_functionspace(functionspace_form_biharmonic_a, "u", mesh));
+        fem::create_functionspace(functionspace_form_biharmonic_a, "u", mesh));
 
-    // The source function ::math:`f` and the penalty term ::math:`\alpha`
-    // are declared:
+    // The source function ::math:`f` and the penalty term
+    // ::math:`\alpha` are declared:
     //
     // .. code-block:: cpp
 
@@ -169,8 +175,8 @@ int main(int argc, char* argv[])
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
             auto pi = std::numbers::pi;
-            f.push_back(4.0*std::pow(pi, 4)*
-              std::sin(pi*x(0,p))*std::sin(pi*x(1,p)));
+            f.push_back(4.0 * std::pow(pi, 4) * std::sin(pi * x(0, p))
+                        * std::sin(pi * x(1, p)));
           }
 
           return {f, {f.size()}};
@@ -179,19 +185,19 @@ int main(int argc, char* argv[])
     // Define variational forms
     auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_biharmonic_a, {V, V}, {}, {{"alpha", alpha}}, {}));
-    auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_biharmonic_L, {V}, {{"f", f}}, {}, {}));
+    auto L = std::make_shared<fem::Form<T>>(
+        fem::create_form<T>(*form_biharmonic_L, {V}, {{"f", f}}, {}, {}));
 
-    // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
-    // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
-    // takes two arguments: the value of the boundary condition,
-    // and the part of the boundary on which the condition applies.
-    // In our example, the value of the boundary condition (0.0) can
-    // represented using a :cpp:class:`Function`, and the Dirichlet boundary
-    // is defined by the indices of degrees of freedom to which the boundary
-    // condition applies.
-    // The definition of the Dirichlet boundary condition then looks
-    // as follows:
+    // Now, the Dirichlet boundary condition (:math:`u = 0`) can be
+    // created using the class :cpp:class:`DirichletBC`. A
+    // :cpp:class:`DirichletBC` takes two arguments: the value of the
+    // boundary condition, and the part of the boundary on which the
+    // condition applies. In our example, the value of the boundary
+    // condition (0.0) can represented using a :cpp:class:`Function`,
+    // and the Dirichlet boundary is defined by the indices of degrees
+    // of freedom to which the boundary condition applies. The
+    // definition of the Dirichlet boundary condition then looks as
+    // follows:
     //
     // .. code-block:: cpp
 
@@ -219,9 +225,9 @@ int main(int argc, char* argv[])
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a
     // :cpp:class:`Function` ``u`` to store the solution. (Upon
-    // initialization, it is simply set to the zero function.) Next, we can
-    // call the ``solve`` function with the arguments ``a == L``, ``u`` and
-    // ``bc`` as follows:
+    // initialization, it is simply set to the zero function.) Next, we
+    // can call the ``solve`` function with the arguments ``a == L``,
+    // ``u`` and ``bc`` as follows:
     //
     // .. code-block:: cpp
 
@@ -259,8 +265,8 @@ int main(int argc, char* argv[])
 
     // The function ``u`` will be modified during the call to solve. A
     // :cpp:class:`Function` can be saved to a file. Here, we output the
-    // solution to a ``VTK`` file (specified using the suffix ``.pvd``) for
-    // visualisation in an external program such as Paraview.
+    // solution to a ``VTK`` file (specified using the suffix ``.pvd``)
+    // for visualisation in an external program such as Paraview.
     //
     // .. code-block:: cpp
 
