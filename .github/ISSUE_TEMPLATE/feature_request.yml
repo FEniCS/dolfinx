@@ -1,6 +1,6 @@
 name: Feature request
 description: Add a request for a new/missing feature
-title: ""
+title: " "
 labels: ["enhancement"]
 
 body:
