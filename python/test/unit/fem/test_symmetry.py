@@ -8,9 +8,10 @@
 import pytest
 
 import basix
-from basix.ufl_wrapper import MixedElement, create_element, create_vector_element
 import dolfinx
 import ufl
+from basix.ufl_wrapper import (MixedElement, create_element,
+                               create_vector_element)
 from dolfinx.fem import FunctionSpace, form
 from dolfinx.mesh import CellType, create_unit_cube, create_unit_square
 from ufl import grad, inner

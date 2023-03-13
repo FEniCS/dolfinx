@@ -11,8 +11,8 @@ import numpy as np
 import pytest
 
 import basix
-from basix.ufl_wrapper import create_vector_element
 import ufl
+from basix.ufl_wrapper import create_vector_element
 from dolfinx import cpp as _cpp
 from dolfinx import graph
 from dolfinx import mesh as _mesh

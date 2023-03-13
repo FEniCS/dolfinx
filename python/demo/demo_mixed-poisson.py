@@ -86,10 +86,10 @@
 
 import numpy as np
 
-from basix.ufl_wrapper import create_element, MixedElement
+from basix.ufl_wrapper import MixedElement, create_element
 from dolfinx import fem, io, mesh
-from ufl import (Measure, SpatialCoordinate,
-                 TestFunctions, TrialFunctions, div, exp, inner)
+from ufl import (Measure, SpatialCoordinate, TestFunctions, TrialFunctions,
+                 div, exp, inner)
 
 from mpi4py import MPI
 from petsc4py import PETSc

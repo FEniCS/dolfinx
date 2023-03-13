@@ -8,8 +8,8 @@
 import numpy as np
 import pytest
 
-from basix.ufl_wrapper import create_element, create_vector_element
 import ufl
+from basix.ufl_wrapper import create_element, create_vector_element
 from dolfinx.cpp.fem.petsc import discrete_gradient, interpolation_matrix
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)

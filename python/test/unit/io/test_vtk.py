@@ -10,9 +10,9 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
 
-from basix.ufl_wrapper import (create_tensor_element, create_element,
-                               create_vector_element, MixedElement)
 import ufl
+from basix.ufl_wrapper import (MixedElement, create_element,
+                               create_tensor_element, create_vector_element)
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
 from dolfinx.io import VTKFile

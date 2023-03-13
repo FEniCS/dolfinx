@@ -11,9 +11,10 @@ import numpy as np
 import pytest
 
 import basix
-from basix.ufl_wrapper import (MixedElement, create_vector_element, VectorElement, BasixElement,
-                               _create_enriched_element, create_element)
 import ufl
+from basix.ufl_wrapper import (BasixElement, MixedElement, VectorElement,
+                               _create_enriched_element, create_element,
+                               create_vector_element)
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,

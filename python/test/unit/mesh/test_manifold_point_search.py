@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from basix.ufl_wrapper import create_vector_element
 import ufl
+from basix.ufl_wrapper import create_vector_element
 from dolfinx import cpp as _cpp
 from dolfinx import geometry
 from dolfinx.geometry import BoundingBoxTree

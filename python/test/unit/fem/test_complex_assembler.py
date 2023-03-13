@@ -8,8 +8,8 @@
 import numpy as np
 import pytest
 
-from basix.ufl_wrapper import create_element
 import ufl
+from basix.ufl_wrapper import create_element
 from dolfinx.fem import Function, FunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix, assemble_vector
 from dolfinx.mesh import create_unit_square

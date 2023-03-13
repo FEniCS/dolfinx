@@ -12,9 +12,9 @@ import numpy as np
 import pytest
 
 import basix
-from basix.ufl_wrapper import VectorElement
 import dolfinx.cpp
 import ufl
+from basix.ufl_wrapper import VectorElement
 from dolfinx.cpp.la.petsc import create_matrix
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace, create_sparsity_pattern, form)

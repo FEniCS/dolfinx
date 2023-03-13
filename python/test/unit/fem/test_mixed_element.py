@@ -7,9 +7,10 @@
 import numpy as np
 import pytest
 
-from basix.ufl_wrapper import MixedElement, create_element, create_vector_element
 import dolfinx
 import ufl
+from basix.ufl_wrapper import (MixedElement, create_element,
+                               create_vector_element)
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace, form
 from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
                           create_unit_square)

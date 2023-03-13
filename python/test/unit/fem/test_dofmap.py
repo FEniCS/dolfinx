@@ -10,9 +10,10 @@ import sys
 import numpy as np
 import pytest
 
-from basix.ufl_wrapper import MixedElement, create_element, create_vector_element
 import dolfinx
 import ufl
+from basix.ufl_wrapper import (MixedElement, create_element,
+                               create_vector_element)
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace
 from dolfinx.graph import create_adjacencylist
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,

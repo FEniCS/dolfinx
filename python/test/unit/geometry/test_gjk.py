@@ -8,8 +8,8 @@ import numpy as np
 import pytest
 from scipy.spatial.transform import Rotation
 
-from basix.ufl_wrapper import create_vector_element
 import ufl
+from basix.ufl_wrapper import create_vector_element
 from dolfinx import geometry
 from dolfinx.geometry import compute_distance_gjk
 from dolfinx.mesh import create_mesh

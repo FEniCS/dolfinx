@@ -11,9 +11,9 @@ from itertools import combinations, product
 import numpy as np
 import pytest
 
-from basix.ufl_wrapper import create_vector_element
 import dolfinx
 import ufl
+from basix.ufl_wrapper import create_vector_element
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.fem.petsc import assemble_matrix, assemble_vector
