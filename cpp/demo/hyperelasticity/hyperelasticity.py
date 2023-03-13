@@ -8,12 +8,13 @@
 # We are interested in solving for a discrete vector field in three
 # dimensions, so first we need the appropriate finite element space and
 # trial and test functions on this space::
+from basix.ufl_wrapper import create_vector_element
 from ufl import (Coefficient, Identity, TestFunction, TrialFunction,
-                 VectorElement, derivative, det, diff, dx, grad, ln,
-                 tetrahedron, tr, variable)
+                 derivative, det, diff, dx, grad, ln,
+                 tr, variable)
 
 # Function spaces
-element = VectorElement("Lagrange", tetrahedron, 1)
+element = create_vector_element("Lagrange", "tetrahedron", 1)
 
 # Trial and test functions
 du = TrialFunction(element)     # Incremental displacement
