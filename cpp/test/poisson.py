@@ -1,10 +1,9 @@
-from ufl import (Coefficient, Constant, FiniteElement, FunctionSpace, Mesh,
-                 TestFunction, TrialFunction, VectorElement, dx, grad, inner,
-                 tetrahedron)
+from ufl import (Coefficient, Constant, FunctionSpace, Mesh,
+                 TestFunction, TrialFunction, dx, grad, inner)
 import basix
-from basix.ufl_wrapper import create_vector_element
+from basix.ufl_wrapper import create_vector_element, create_element
 
-element = FiniteElement("Lagrange", tetrahedron, 2)
+element = create_element("Lagrange", "tetrahedron", 2)
 coord_element = create_vector_element("Lagrange", "tetrahedron", 1)
 mesh = Mesh(coord_element)
 
