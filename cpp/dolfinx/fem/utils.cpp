@@ -370,7 +370,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     {
       auto id0 = values1[*p0];
       auto p1 = std::find_if_not(p0, perm.end(),
-                                 [id0 = values1[*it0], &values1](auto idx)
+                                 [id0, &values1](auto idx)
                                  { return id0 == values1[idx]; });
 
       std::vector<std::int32_t> data;
