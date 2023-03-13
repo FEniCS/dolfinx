@@ -12,6 +12,7 @@
 #include "Function.h"
 #include "FunctionSpace.h"
 #include "dofmapbuilder.h"
+#include <algorithm>
 #include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
@@ -197,8 +198,6 @@ fem::FunctionSpace fem::create_functionspace(
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
-  assert(mesh);
-
   // Create a DOLFINx element
   auto _e = std::make_shared<FiniteElement>(e, bs);
 
@@ -220,6 +219,7 @@ fem::FunctionSpace fem::create_functionspace(
   // Create a dofmap
   ElementDofLayout layout(bs, e.entity_dofs(), e.entity_closure_dofs(), {},
                           sub_doflayout);
+  assert(mesh);
   auto dofmap = std::make_shared<const DofMap>(
       create_dofmap(mesh->comm(), layout, mesh->topology(), reorder_fn, *_e));
 
@@ -264,5 +264,130 @@ fem::FunctionSpace fem::create_functionspace(
       mesh, element,
       std::make_shared<DofMap>(create_dofmap(
           mesh->comm(), layout, mesh->topology(), reorder_fn, *element)));
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<int, std::vector<std::int32_t>>>
+fem::compute_integration_domains(fem::IntegralType integral_type,
+                                 const mesh::MeshTags<int>& meshtags)
+{
+  std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
+  assert(mesh);
+  const mesh::Topology& topology = mesh->topology();
+  const int tdim = topology.dim();
+  const int dim = integral_type == IntegralType::cell ? tdim : tdim - 1;
+  if (dim != meshtags.dim())
+  {
+    throw std::runtime_error("Invalid MeshTags dimension: "
+                             + std::to_string(meshtags.dim()));
+  }
+
+  std::span<const std::int32_t> entities = meshtags.indices();
+  std::span<const int> values = meshtags.values();
+  {
+    assert(topology.index_map(dim));
+    auto it0 = entities.begin();
+    auto it1 = std::lower_bound(it0, entities.end(),
+                                topology.index_map(dim)->size_local());
+    entities = entities.first(std::distance(it0, it1));
+    values = values.first(std::distance(it0, it1));
+  }
+
+  std::vector<std::int32_t> entity_data;
+  std::vector<int> values1;
+  switch (integral_type)
+  {
+  case IntegralType::cell:
+    entity_data.insert(entity_data.begin(), entities.begin(), entities.end());
+    values1.insert(values1.begin(), values.begin(), values.end());
+    break;
+  default:
+    mesh->topology_mutable().create_connectivity(dim, tdim);
+    mesh->topology_mutable().create_connectivity(tdim, dim);
+    auto f_to_c = topology.connectivity(tdim - 1, tdim);
+    assert(f_to_c);
+    auto c_to_f = topology.connectivity(tdim, tdim - 1);
+    assert(c_to_f);
+    switch (integral_type)
+    {
+    case IntegralType::exterior_facet:
+    {
+      // Create list of tagged boundary facets
+      const std::vector bfacets = mesh::exterior_facet_indices(topology);
+      std::vector<std::int32_t> facets;
+      std::set_intersection(entities.begin(), entities.end(), bfacets.begin(),
+                            bfacets.end(), std::back_inserter(facets));
+      for (auto f : facets)
+      {
+        auto index_it = std::lower_bound(entities.begin(), entities.end(), f);
+        assert(index_it != entities.end() and *index_it == f);
+        std::size_t pos = std::distance(entities.begin(), index_it);
+        auto facet
+            = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
+        entity_data.insert(entity_data.end(), facet.begin(), facet.end());
+        values1.push_back(values[pos]);
+      }
+    }
+    break;
+    case IntegralType::interior_facet:
+    {
+      for (std::size_t j = 0; j < entities.size(); ++j)
+      {
+        const std::int32_t f = entities[j];
+        if (f_to_c->num_links(f) == 2)
+        {
+          // Get the facet as a pair of (cell, local facet) pairs, one
+          // for each cell
+          auto facets
+              = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
+          entity_data.insert(entity_data.end(), facets.begin(), facets.end());
+          values1.push_back(values[j]);
+        }
+      }
+    }
+    break;
+    default:
+      throw std::runtime_error(
+          "Cannot compute integration domains. Integral type not supported.");
+    }
+  }
+
+  // Build permutation that sorts by meshtag value
+  std::vector<std::int32_t> perm(values1.size());
+  std::iota(perm.begin(), perm.end(), 0);
+  std::stable_sort(perm.begin(), perm.end(),
+                   [&values1](auto p0, auto p1)
+                   { return values1[p0] < values1[p1]; });
+
+  std::size_t shape = 1;
+  if (integral_type == IntegralType::exterior_facet)
+    shape = 2;
+  else if (integral_type == IntegralType::interior_facet)
+    shape = 4;
+  std::vector<std::pair<int, std::vector<std::int32_t>>> integrals;
+  {
+    // Iterator to mark the start of the group
+    auto p0 = perm.begin();
+    while (p0 != perm.end())
+    {
+      auto id0 = values1[*p0];
+      auto p1 = std::find_if_not(p0, perm.end(),
+                                 [id0, &values1](auto idx)
+                                 { return id0 == values1[idx]; });
+
+      std::vector<std::int32_t> data;
+      data.reserve(shape * std::distance(p0, p1));
+      for (auto it = p0; it != p1; ++it)
+      {
+        auto e_it0 = std::next(entity_data.begin(), (*it) * shape);
+        auto e_it1 = std::next(e_it0, shape);
+        data.insert(data.end(), e_it0, e_it1);
+      }
+
+      integrals.push_back({id0, std::move(data)});
+      p0 = p1;
+    }
+  }
+
+  return integrals;
 }
 //-----------------------------------------------------------------------------

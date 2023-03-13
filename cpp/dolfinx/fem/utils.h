@@ -103,6 +103,29 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 
 } // namespace impl
 
+/// @brief Given an integral type and MeshTags, compute the entities
+/// that should be integrated over.
+///
+/// This function returns as list `[(id, entities)]`, where `entities`
+/// are the entities in `meshtags` with tag value `id`. For cell
+/// integrals `entities` are the cell indices. For exterior facet
+/// integrals, `entities` is a list of `(cell_index, local_facet_index)`
+/// pairs. For interior facet integrals, `entities` is a list of
+/// `(cell_index0, local_facet_index0, cell_index1,
+/// local_facet_index1)`.
+///
+/// @note Owned mesh entities only are returned. Ghost entities are not
+/// included.
+///
+/// @param[in] integral_type Integral type
+/// @param[in] meshtags The meshtags
+/// @return A list of (integral id, entities) pairs
+/// @pre The topological dimension of the integral entity type and the
+/// topological dimension of `meshtags` must be equal.
+std::vector<std::pair<int, std::vector<std::int32_t>>>
+compute_integration_domains(IntegralType integral_type,
+                            const mesh::MeshTags<int>& meshtags);
+
 /// @brief Finite element cell kernel concept.
 ///
 /// Kernel functions that can be passed to an assembler for execution
@@ -262,6 +285,7 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] coefficients Coefficient fields in the form
 /// @param[in] constants Spatial constants in the form
 /// @param[in] subdomains Subdomain markers
+/// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain
 template <typename T>
 Form<T> create_form(
@@ -269,7 +293,10 @@ Form<T> create_form(
     const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
     const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
+    const std::map<
+        IntegralType,
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
+        subdomains,
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
   if (ufcx_form.rank != (int)spaces.size())
@@ -370,29 +397,25 @@ Form<T> create_form(
       assert(k);
 
       // Build list of entities to assembler over
-      std::vector<std::int32_t> e;
       if (id == -1)
       {
         // Default kernel, operates on all (owned) cells
         assert(topology.index_map(tdim));
+        std::vector<std::int32_t> e;
         e.resize(topology.index_map(tdim)->size_local(), 0);
         std::iota(e.begin(), e.end(), 0);
+        itg.first->second.emplace_back(id, k, std::move(e));
       }
-      else if (sd != subdomains.end() and sd->second)
+      else if (sd != subdomains.end())
       {
-        assert(topology.index_map(tdim));
-        std::span<const std::int32_t> entities = sd->second->indices();
-        std::span<const int> values = sd->second->values();
-        auto it0 = entities.begin();
-        auto it1 = std::lower_bound(it0, entities.end(),
-                                    topology.index_map(tdim)->size_local());
-        entities = entities.first(std::distance(it0, it1));
-        for (std::size_t j = 0; j < entities.size(); ++j)
-          if (values[j] == id)
-            e.push_back(entities[j]);
+        // NOTE: This requires that pairs are sorted
+        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
+                                   [](auto& pair, auto val)
+                                   { return pair.first < val; });
+        if (it != sd->second.end() and it->first == id)
+          itg.first->second.emplace_back(id, k, it->second);
       }
 
-      itg.first->second.emplace_back(id, k, std::move(e));
       if (integral->needs_facet_permutations)
         needs_facet_permutations = true;
     }
@@ -432,7 +455,6 @@ Form<T> create_form(
       assert(k);
 
       // Build list of entities to assembler over
-      std::vector<std::int32_t> e;
       const std::vector bfacets = mesh::exterior_facet_indices(topology);
       auto f_to_c = topology.connectivity(tdim - 1, tdim);
       assert(f_to_c);
@@ -441,6 +463,7 @@ Form<T> create_form(
       if (id == -1)
       {
         // Default kernel, operates on all (owned) exterior facets
+        std::vector<std::int32_t> e;
         e.reserve(2 * bfacets.size());
         for (std::int32_t f : bfacets)
         {
@@ -449,34 +472,18 @@ Form<T> create_form(
               = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
           e.insert(e.end(), pair.begin(), pair.end());
         }
+        itg.first->second.emplace_back(id, k, std::move(e));
       }
-      else if (sd != subdomains.end() and sd->second)
+      else if (sd != subdomains.end())
       {
-        // Create list of tagged boundary facets
-        std::span<const std::int32_t> entities = sd->second->indices();
-        auto it0 = entities.begin();
-        auto it1 = std::lower_bound(it0, entities.end(),
-                                    topology.index_map(tdim - 1)->size_local());
-        entities = entities.first(std::distance(it0, it1));
-        std::span<const int> values = sd->second->values();
-        std::vector<std::int32_t> facets;
-        std::set_intersection(entities.begin(), entities.end(), bfacets.begin(),
-                              bfacets.end(), std::back_inserter(facets));
-        for (auto f : facets)
-        {
-          auto index_it = std::lower_bound(entities.begin(), entities.end(), f);
-          assert(index_it != entities.end() and *index_it == f);
-          std::size_t pos = std::distance(entities.begin(), index_it);
-          if (values[pos] == id)
-          {
-            auto facet
-                = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
-            e.insert(e.end(), facet.begin(), facet.end());
-          }
-        }
+        // NOTE: This requires that pairs are sorted
+        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
+                                   [](auto& pair, auto val)
+                                   { return pair.first < val; });
+        if (it != sd->second.end() and it->first == id)
+          itg.first->second.emplace_back(id, k, it->second);
       }
 
-      itg.first->second.emplace_back(id, k, std::move(e));
       if (integral->needs_facet_permutations)
         needs_facet_permutations = true;
     }
@@ -516,7 +523,6 @@ Form<T> create_form(
       assert(k);
 
       // Build list of entities to assembler over
-      std::vector<std::int32_t> e;
       auto f_to_c = topology.connectivity(tdim - 1, tdim);
       assert(f_to_c);
       auto c_to_f = topology.connectivity(tdim, tdim - 1);
@@ -524,6 +530,7 @@ Form<T> create_form(
       if (id == -1)
       {
         // Default kernel, operates on all (owned) interior facets
+        std::vector<std::int32_t> e;
         assert(topology.index_map(tdim - 1));
         std::int32_t num_facets = topology.index_map(tdim - 1)->size_local();
         e.reserve(4 * num_facets);
@@ -536,33 +543,31 @@ Form<T> create_form(
             e.insert(e.end(), pairs.begin(), pairs.end());
           }
         }
+        itg.first->second.emplace_back(id, k, std::move(e));
       }
-      else if (sd != subdomains.end() and sd->second)
+      else if (sd != subdomains.end())
       {
-        std::span<const std::int32_t> entities = sd->second->indices();
-        auto it0 = entities.begin();
-        auto it1 = std::lower_bound(it0, entities.end(),
-                                    topology.index_map(tdim - 1)->size_local());
-        entities = entities.first(std::distance(it0, it1));
-        std::span<const int> values = sd->second->values();
-        for (std::size_t j = 0; j < entities.size(); ++j)
-        {
-          const std::int32_t f = entities[j];
-          if (f_to_c->num_links(f) == 2 and values[j] == id)
-          {
-            // Get the facet as a pair of (cell, local facet) pairs, one
-            // for each cell
-            auto facets
-                = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
-            e.insert(e.end(), facets.begin(), facets.end());
-          }
-        }
+        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
+                                   [](auto& pair, auto val)
+                                   { return pair.first < val; });
+        if (it != sd->second.end() and it->first == id)
+          itg.first->second.emplace_back(id, k, it->second);
       }
 
-      itg.first->second.emplace_back(id, k, std::move(e));
       if (integral->needs_facet_permutations)
         needs_facet_permutations = true;
     }
+  }
+
+  std::map<IntegralType,
+           std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>
+      sd;
+  for (auto& [itg, data] : subdomains)
+  {
+    std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>> x;
+    for (auto& [id, idx] : data)
+      x.emplace_back(id, std::vector(idx.data(), idx.data() + idx.size()));
+    sd.insert({itg, std::move(x)});
   }
 
   return Form<T>(spaces, integral_data, coefficients, constants,
@@ -575,6 +580,7 @@ Form<T> create_form(
 /// @param[in] coefficients Coefficient fields in the form (by name)
 /// @param[in] constants Spatial constants in the form (by name)
 /// @param[in] subdomains Subdomain makers
+/// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional
 /// @return A Form
@@ -585,7 +591,10 @@ Form<T> create_form(
     const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
+    const std::map<
+        IntegralType,
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
+        subdomains,
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
   // Place coefficients in appropriate order
@@ -622,6 +631,7 @@ Form<T> create_form(
 /// @param[in] coefficients Coefficient fields in the form (by name)
 /// @param[in] constants Spatial constants in the form (by name)
 /// @param[in] subdomains Subdomain markers
+/// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional.
 /// @return A Form
@@ -632,7 +642,10 @@ Form<T> create_form(
     const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
+    const std::map<
+        IntegralType,
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
+        subdomains,
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
   ufcx_form* form = fptr();
