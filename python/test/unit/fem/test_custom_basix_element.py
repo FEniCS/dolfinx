@@ -8,7 +8,7 @@ from dolfinx.fem import (Function, FunctionSpace, assemble_scalar, dirichletbc,
                          form, locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
-from dolfinx.mesh import CellType, create_unit_square, exterior_facet_indices
+from dolfinx.mesh import CellType, create_unit_cube, create_unit_square, exterior_facet_indices
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
 
@@ -160,3 +160,78 @@ def test_custom_element_quadrilateral_degree1():
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, CellType.quadrilateral)
     V = FunctionSpace(mesh, ufl_element)
     run_scalar_test(V, 1)
+
+
+@pytest.mark.parametrize("cell_type", [
+    CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron])
+@pytest.mark.parametrize("element_family", [
+    basix.ElementFamily.N1E, basix.ElementFamily.N2E, basix.ElementFamily.RT, basix.ElementFamily.BDM])
+def test_vector_copy_degree1(cell_type, element_family):
+    if cell_type in [CellType.triangle, CellType.quadrilateral]:
+        tdim = 2
+        mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, cell_type)
+    else:
+        tdim = 3
+        mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, cell_type)
+
+    def func(x):
+        return x[:tdim]
+
+    if cell_type == CellType.hexahedron and element_family == basix.ElementFamily.BDM:
+        e1 = basix.create_element(
+            element_family, getattr(basix.CellType, cell_type.name), 1, dpc_variant=basix.DPCVariant.legendre)
+    else:
+        e1 = basix.create_element(
+            element_family, getattr(basix.CellType, cell_type.name), 1)
+    e2 = basix.create_custom_element(
+        e1.cell_type, e1.value_shape, e1.wcoeffs, e1.x, e1.M, 0, e1.map_type, e1.sobolev_space,
+        e1.discontinuous, e1.highest_complete_degree, e1.highest_degree)
+
+    space1 = FunctionSpace(mesh, BasixElement(e1))
+    space2 = FunctionSpace(mesh, BasixElement(e2))
+
+    f1 = Function(space1)
+    f2 = Function(space2)
+    f1.interpolate(func)
+    f2.interpolate(func)
+
+    diff = f1 - f2
+    error = assemble_scalar(form(ufl.inner(diff, diff) * ufl.dx))
+    assert np.isclose(error, 0)
+
+
+@pytest.mark.parametrize("cell_type", [
+    CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron])
+@pytest.mark.parametrize("element_family", [
+    basix.ElementFamily.P, basix.ElementFamily.serendipity])
+def test_scalar_copy_degree1(cell_type, element_family):
+    if element_family == basix.ElementFamily.serendipity and cell_type in [
+        CellType.triangle, CellType.tetrahedron
+    ]:
+        pytest.xfail("Serendipity elements cannot be created on simplices")
+
+    if cell_type in [CellType.triangle, CellType.quadrilateral]:
+        mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, cell_type)
+    else:
+        mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, cell_type)
+
+    def func(x):
+        return x[0]
+
+    e1 = basix.create_element(
+        element_family, getattr(basix.CellType, cell_type.name), 1)
+    e2 = basix.create_custom_element(
+        e1.cell_type, e1.value_shape, e1.wcoeffs, e1.x, e1.M, 0, e1.map_type, e1.sobolev_space,
+        e1.discontinuous, e1.highest_complete_degree, e1.degree)
+
+    space1 = FunctionSpace(mesh, BasixElement(e1))
+    space2 = FunctionSpace(mesh, BasixElement(e2))
+
+    f1 = Function(space1)
+    f2 = Function(space2)
+    f1.interpolate(func)
+    f2.interpolate(func)
+
+    diff = f1 - f2
+    error = assemble_scalar(form(ufl.inner(diff, diff) * ufl.dx))
+    assert np.isclose(error, 0)
