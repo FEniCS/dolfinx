@@ -47,7 +47,7 @@ def locate_dofs_geometrical(V: typing.Union[dolfinx.fem.FunctionSpace, typing.It
     """
 
     try:
-        return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)
+        return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)  # type: ignore
     except AttributeError:
         _V = [space._cpp_object for space in V]
         return _cpp.fem.locate_dofs_geometrical(_V, marker)
@@ -78,7 +78,7 @@ def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpace, typing.It
 
     _entities = np.asarray(entities, dtype=np.int32)
     try:
-        return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)
+        return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)   # type: ignore
     except AttributeError:
         _V = [space._cpp_object for space in V]
         return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
