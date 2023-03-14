@@ -47,13 +47,11 @@ def locate_dofs_geometrical(V: typing.Union[dolfinx.fem.FunctionSpace, typing.It
 
     """
 
-    if isinstance(V, collections.abc.Sequence):
+    try:
+        return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)
+    except AttributeError:
         _V = [space._cpp_object for space in V]
         return _cpp.fem.locate_dofs_geometrical(_V, marker)
-    elif isinstance(V, dolfinx.fem.FunctionSpace):
-        return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)
-    else:
-        raise TypeError
 
 
 def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpace, typing.Iterable[dolfinx.fem.FunctionSpace]],
@@ -80,13 +78,11 @@ def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpace, typing.It
     """
 
     _entities = np.asarray(entities, dtype=np.int32)
-    if isinstance(V, collections.abc.Sequence):
+    try:
+        return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)
+    except AttributeError:
         _V = [space._cpp_object for space in V]
         return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
-    elif isinstance(V, dolfinx.fem.FunctionSpace):
-        return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)
-    else:
-        raise TypeError
 
 
 class DirichletBCMetaClass:
