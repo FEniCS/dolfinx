@@ -162,17 +162,30 @@ def test_custom_element_quadrilateral_degree1():
     run_scalar_test(V, 1)
 
 
-def test_nedelec_degree1():
-    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, CellType.tetrahedron)
+@pytest.mark.parametrize("cell_type", [
+    CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron])
+@pytest.mark.parametrize("element_family, variants", [
+    (basix.ElementFamily.N1E, {}),
+    (basix.ElementFamily.N2E, {}),
+    (basix.ElementFamily.RT, {}),
+    (basix.ElementFamily.BDM, {"dpc_variant": basix.DPCVariant.legendre}),
+])
+def test_vector_copy_degree1(cell_type, element_family, variants):
+    if cell_type in [CellType.triangle, CellType.quadrilateral]:
+        tdim = 2
+        mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, cell_type)
+    else:
+        tdim = 3
+        mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, cell_type)
 
     def func(x):
-        return x
+        return x[:tdim]
 
     e1 = basix.create_element(
-        basix.ElementFamily.N1E, basix.CellType.tetrahedron, 1, basix.LagrangeVariant.equispaced)
+        element_family, getattr(basix.CellType, cell_type.name), 1, **variants)
     e2 = basix.create_custom_element(
         e1.cell_type, e1.value_shape, e1.wcoeffs, e1.x, e1.M, 0, e1.map_type, e1.sobolev_space,
-        e1.discontinuous, e1.highest_complete_degree, e1.degree)
+        e1.discontinuous, e1.highest_complete_degree, e1.highest_degree)
 
     space1 = FunctionSpace(mesh, BasixElement(e1))
     space2 = FunctionSpace(mesh, BasixElement(e2))
@@ -183,20 +196,30 @@ def test_nedelec_degree1():
     f2.interpolate(func)
 
     diff = f1 - f2
-
     error = assemble_scalar(form(ufl.inner(diff, diff) * ufl.dx))
-
     assert np.isclose(error, 0)
 
 
-def test_lagrange_degree1():
-    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, CellType.tetrahedron)
+@pytest.mark.parametrize("cell_type", [
+    CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron])
+@pytest.mark.parametrize("element_family", [
+    basix.ElementFamily.P, basix.ElementFamily.serendipity])
+def test_scalar_copy_degree1(cell_type, element_family):
+    if element_family == basix.ElementFamily.serendipity and cell_type in [
+        CellType.triangle, CellType.tetrahedron
+    ]:
+        pytest.xfail("Serendipity elements cannot be created on simplices")
+
+    if cell_type in [CellType.triangle, CellType.quadrilateral]:
+        mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, cell_type)
+    else:
+        mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, cell_type)
 
     def func(x):
         return x[0]
 
     e1 = basix.create_element(
-        basix.ElementFamily.P, basix.CellType.tetrahedron, 1, basix.LagrangeVariant.equispaced)
+        element_family, getattr(basix.CellType, cell_type.name), 1)
     e2 = basix.create_custom_element(
         e1.cell_type, e1.value_shape, e1.wcoeffs, e1.x, e1.M, 0, e1.map_type, e1.sobolev_space,
         e1.discontinuous, e1.highest_complete_degree, e1.degree)
@@ -210,7 +233,5 @@ def test_lagrange_degree1():
     f2.interpolate(func)
 
     diff = f1 - f2
-
     error = assemble_scalar(form(ufl.inner(diff, diff) * ufl.dx))
-
     assert np.isclose(error, 0)
