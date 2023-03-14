@@ -608,6 +608,7 @@ class FunctionSpace(ufl.FunctionSpace):
          """
         return self._cpp_object.tabulate_dof_coordinates()
 
+
 def VectorFunctionSpace(mesh: Mesh,
                         element: typing.Union[basix.ufl_wrapper._BasixElementBase,
                                               ElementMetaData, typing.Tuple[str, int]],
