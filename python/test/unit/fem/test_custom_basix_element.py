@@ -164,13 +164,9 @@ def test_custom_element_quadrilateral_degree1():
 
 @pytest.mark.parametrize("cell_type", [
     CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron])
-@pytest.mark.parametrize("element_family, variants", [
-    (basix.ElementFamily.N1E, {}),
-    (basix.ElementFamily.N2E, {}),
-    (basix.ElementFamily.RT, {}),
-    (basix.ElementFamily.BDM, {"dpc_variant": basix.DPCVariant.legendre}),
-])
-def test_vector_copy_degree1(cell_type, element_family, variants):
+@pytest.mark.parametrize("element_family", [
+    basix.ElementFamily.N1E, basix.ElementFamily.N2E, basix.ElementFamily.RT, basix.ElementFamily.BDM])
+def test_vector_copy_degree1(cell_type, element_family):
     if cell_type in [CellType.triangle, CellType.quadrilateral]:
         tdim = 2
         mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, cell_type)
@@ -181,8 +177,12 @@ def test_vector_copy_degree1(cell_type, element_family, variants):
     def func(x):
         return x[:tdim]
 
-    e1 = basix.create_element(
-        element_family, getattr(basix.CellType, cell_type.name), 1, **variants)
+    if cell_type == CellType.hexahedron and element_family == basix.ElementFamily.BDM:
+        e1 = basix.create_element(
+            element_family, getattr(basix.CellType, cell_type.name), 1, dpc_variant=basix.DPCVariant.legendre)
+    else:
+        e1 = basix.create_element(
+            element_family, getattr(basix.CellType, cell_type.name), 1)
     e2 = basix.create_custom_element(
         e1.cell_type, e1.value_shape, e1.wcoeffs, e1.x, e1.M, 0, e1.map_type, e1.sobolev_space,
         e1.discontinuous, e1.highest_complete_degree, e1.highest_degree)
