@@ -615,9 +615,9 @@ def VectorFunctionSpace(mesh: Mesh,
                         dim=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
     try:
-        ufl_e = basix.ufl_wrapper.create_vector_element(element.family(), element.cell_type, element.degree(),  # type: ignore
-                                                        element.lagrange_variant, element.dpc_variant,          # type: ignore
-                                                        element.discontinuous,                                  # type: ignore
+        ufl_e = basix.ufl_wrapper.create_vector_element(element.family(), element.cell_type,         # type: ignore
+                                                        element.degree(), element.lagrange_variant,  # type: ignore
+                                                        element.dpc_variant, element.discontinuous,  # type: ignore
                                                         dim=dim, gdim=mesh.geometry.dim)
     except AttributeError:
         ed = ElementMetaData(*element)
