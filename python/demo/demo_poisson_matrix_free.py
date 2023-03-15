@@ -14,15 +14,18 @@
 
 # # Matrix-free Conjugate Gradient solver for the Poisson equation
 #
-# This demo is implemented in a single Python file,
-# {download}`demo_poisson_matrix_free.py`, which contains both the
-# variational forms and the solver. It illustrates how to:
+# This demo illustrates how to solve the Poisson equation using a
+# matrix-free Conjugate Gradient (CG) solver. In particular, it
+# illustrates how to
 #
 # - Solve a linear partial differential equation using a matrix-free
 # Conjugate Gradient (CG) solver
 # - Create and apply Dirichlet boundary conditions
 # - Compute errors against the exact solution and against a
 # direct solver for the assembled matrix
+#
+# {download}`Python script <./demo_poisson_matrix_free.py>`\
+# {download}`Jupyter notebook <./demo_poisson_matrix_free.ipynb>`
 #
 # ```{note}
 # This demo illustrates the use of a matrix-free Conjugate Gradient
