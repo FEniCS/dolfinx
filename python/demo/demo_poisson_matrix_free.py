@@ -218,8 +218,7 @@ max_iter = 200
 def action_A(x):
     # Update coefficient ui of the linear form M
     x.copy(ui.vector)
-    ui.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                          mode=PETSc.ScatterMode.FORWARD)
+    ui.x.scatter_forward()
 
     # Compute action of A on x using the linear form M
     y = fem.petsc.assemble_vector(M_fem)
@@ -292,8 +291,7 @@ uh_cg1 = fem.Function(V, dtype=ScalarType)
 iter_cg1 = cg(action_A, b, uh_cg1.vector, max_iter=max_iter, rtol=rtol)
 
 # Set BC values in the solution vectors
-uh_cg1.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                          mode=PETSc.ScatterMode.FORWARD)
+uh_cg1.x.scatter_forward()
 with uh_cg1.vector.localForm() as y_local:
     fem.set_bc(y_local, [bc], scale=1.0)
 
@@ -371,8 +369,7 @@ uh_cg2 = fem.Function(V)
 solver.solve(b, uh_cg2.vector)
 
 # Set BC values in the solution vectors
-uh_cg2.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                          mode=PETSc.ScatterMode.FORWARD)
+uh_cg2.x.scatter_forward()
 with uh_cg2.vector.localForm() as y_local:
     fem.set_bc(y_local, [bc], scale=1.0)
 
@@ -496,8 +493,7 @@ uh_cg3 = fem.Function(V)
 solver.solve(b, uh_cg3.vector)
 
 # Set BC values in the solution vectors
-uh_cg3.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                          mode=PETSc.ScatterMode.FORWARD)
+uh_cg3.x.scatter_forward()
 with uh_cg3.vector.localForm() as y_local:
     fem.set_bc(y_local, [bc], scale=1.0)
 
