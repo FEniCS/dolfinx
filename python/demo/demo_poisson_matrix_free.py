@@ -142,6 +142,7 @@ v = ufl.TestFunction(V)
 f = fem.Constant(msh, ScalarType(-6))
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx
+L_fem = fem.form(L)
 
 # For the matrix-free solvers we also define a second linear form `M` as
 # the {py:class}`action <ufl.action>` of the bilinear form $a$ onto an
@@ -154,6 +155,7 @@ L = inner(f, v) * dx
 
 ui = fem.Function(V)
 M = action(a, ui)
+M_fem = fem.form(M)
 
 # ### Direct solver using the assembled matrix
 #
@@ -190,10 +192,10 @@ if msh.comm.rank == 0:
 # Since we want to avoid assembling the matrix `A`, we compute the necessary
 # matrix-vector product using the linear form `M` implicitly.
 
-b = fem.petsc.assemble_vector(fem.form(L))
+b = fem.petsc.assemble_vector(L_fem)
 # Apply lifting: b <- b - A * x_bc
 fem.set_bc(ui.x.array, [bc], scale=-1)
-fem.petsc.assemble_vector(b, fem.form(M))
+fem.petsc.assemble_vector(b, M_fem)
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 fem.petsc.set_bc(b, [bc], scale=0.0)
 b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
@@ -220,7 +222,7 @@ def action_A(x):
                           mode=PETSc.ScatterMode.FORWARD)
 
     # Compute action of A on x using the linear form M
-    y = fem.petsc.assemble_vector(fem.form(M))
+    y = fem.petsc.assemble_vector(M_fem)
 
     # Set BC dofs to zero (effectively zeroes rows of A)
     with y.localForm() as y_local:
