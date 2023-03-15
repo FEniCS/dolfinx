@@ -305,21 +305,22 @@ assert error_L2_cg1 < rtol
 # -
 # ### 2. Implementation using the DOLFINx native Vector object
 
-def cg(action_A, b, x, max_iter=200, rtol=1e-6):
+def cg_dolfinx(action_A, b, x, max_iter=200, rtol=1e-6):
     # Create working vectors
     y = la.vector(b.map)
-    y.array[:] = b.array
+    r = la.vector(b.map)
+    p = la.vector(b.map)
+
+    y.array[:] = b.array[:]
 
     # Compute initial residual r0 = b - A x0
     y = action_A(x)
-    r = b - y
+    r.array[:] = b.array[:] - y.array[:]
 
     # Create work vector for the search direction p
-    p = r.duplicate()
-    r.copy(p)
-    p.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                  mode=PETSc.ScatterMode.FORWARD)
-    r_norm2 = r.dot(r)
+    p.array[:] = r.array[:]
+    p.scatter_forward()
+    r_norm2 = np.dot(r.array, r.array)
     r0_norm2 = r_norm2
     eps = rtol**2
     k = 0
@@ -330,8 +331,9 @@ def cg(action_A, b, x, max_iter=200, rtol=1e-6):
         y = action_A(p)
 
         # Compute alpha = r.r / p.y
-        alpha = r_norm2 / p.dot(y)
+        alpha = r_norm2 / np.dot(p.array, y.array)
 
+        # TODO: Best way to do axpy in numpy/scipy?
         # Update x (x <- x + alpha * p)
         x.axpy(alpha, p)
 
@@ -353,7 +355,7 @@ def cg(action_A, b, x, max_iter=200, rtol=1e-6):
 
 def action_A_dolfinx(x):
     # Update coefficient ui of the linear form M
-    ui.array[:] = x.array[:]
+    ui.vector.array[:] = x.array[:]
 
     # Compute action of A on x using the linear form M
     y = fem.assemble_vector(fem.form(M))
@@ -361,8 +363,8 @@ def action_A_dolfinx(x):
     # Set BC dofs to zero (effectively zeroes rows of A)
     fem.set_bc(y.array, [bc], scale=0.0)
     
-    v.scatter_rev(la.ScatterMode.add)
-    v.scatter_forward()
+    y.scatter_reverse(la.ScatterMode.add)
+    y.scatter_forward()
     return y
 
 b_dolfinx = fem.assemble_vector(fem.form(L))
@@ -372,6 +374,9 @@ fem.assemble_vector(b_dolfinx.array, fem.form(M))
 b_dolfinx.scatter_reverse(la.ScatterMode.add)
 fem.set_bc(b_dolfinx.array, [bc], scale=0.0)
 b_dolfinx.scatter_forward()
+
+uh_cg5 = fem.Function(V, dtype=ScalarType)
+iter_cg5 = cg_dolfinx(action_A_dolfinx, b_dolfinx, uh_cg5.vector, max_iter=max_iter, rtol=rtol)
 
 # -
 # ### 2. Implementation using the built-in PETSc CG solver
