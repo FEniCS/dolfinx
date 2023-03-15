@@ -80,7 +80,7 @@
 import numpy as np
 
 import ufl
-from dolfinx import fem, mesh
+from dolfinx import fem, mesh, la
 from ufl import action, dx, grad, inner
 
 from mpi4py import MPI
@@ -187,13 +187,13 @@ if msh.comm.rank == 0:
 # Since we want to avoid assembling the matrix `A`, we compute the necessary
 # matrix-vector product using the linear form `M` implicitly.
 
-b = fem.petsc.assemble_vector(fem.form(L))
+b_petsc = fem.petsc.assemble_vector(fem.form(L))
 # Apply lifting: b <- b - A * x_bc
 fem.set_bc(ui.x.array, [bc], scale=-1)
-fem.petsc.assemble_vector(b, fem.form(M))
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-fem.petsc.set_bc(b, [bc], scale=0.0)
-b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+fem.petsc.assemble_vector(b_petsc, fem.form(M))
+b_petsc.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+fem.petsc.set_bc(b_petsc, [bc], scale=0.0)
+b_petsc.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
 # In the following, different variants are presented in which the posed
 # Poisson problem is solved using matrix-free CG solvers. In each case
@@ -207,10 +207,10 @@ max_iter = 200
 # #### 1. Implementation using PETSc vectors
 
 # To implement the matrix-free CG solver using *PETSc* vectors, we define the
-# function `action_A` with which the matrix-vector product $y = A x$
+# function `action_A_petsc` with which the matrix-vector product $y = A x$
 # is computed.
 
-def action_A(x):
+def action_A_petsc(x):
     # Update coefficient ui of the linear form M
     x.copy(ui.vector)
     ui.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
@@ -284,7 +284,7 @@ def cg(action_A, b, x, max_iter=200, rtol=1e-6):
 
 # +
 uh_cg1 = fem.Function(V, dtype=ScalarType)
-iter_cg1 = cg(action_A, b, uh_cg1.vector, max_iter=max_iter, rtol=rtol)
+iter_cg1 = cg(action_A_petsc, b_petsc, uh_cg1.vector, max_iter=max_iter, rtol=rtol)
 
 # Set BC values in the solution vectors
 uh_cg1.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
@@ -302,6 +302,76 @@ if msh.comm.rank == 0:
     print(f"Coeff. error against LU solution: {error_lu_cg1:.4e}")
 assert error_L2_cg1 < rtol
 
+# -
+# ### 2. Implementation using the DOLFINx native Vector object
+
+def cg(action_A, b, x, max_iter=200, rtol=1e-6):
+    # Create working vectors
+    y = la.vector(b.map)
+    y.array[:] = b.array
+
+    # Compute initial residual r0 = b - A x0
+    y = action_A(x)
+    r = b - y
+
+    # Create work vector for the search direction p
+    p = r.duplicate()
+    r.copy(p)
+    p.ghostUpdate(addv=PETSc.InsertMode.INSERT,
+                  mode=PETSc.ScatterMode.FORWARD)
+    r_norm2 = r.dot(r)
+    r0_norm2 = r_norm2
+    eps = rtol**2
+    k = 0
+    while k < max_iter:
+        k += 1
+
+        # Compute y = A p
+        y = action_A(p)
+
+        # Compute alpha = r.r / p.y
+        alpha = r_norm2 / p.dot(y)
+
+        # Update x (x <- x + alpha * p)
+        x.axpy(alpha, p)
+
+        # Update r (r <- r - alpha * y)
+        r.axpy(-alpha, y)
+
+        # Update residual norm
+        r_norm2_new = r.dot(r)
+        beta = r_norm2_new / r_norm2
+        r_norm2 = r_norm2_new
+
+        # Convergence test
+        if abs(r_norm2 / r0_norm2) < eps:
+            break
+
+        # Update p (p <- beta * p + r)
+        p.aypx(beta, r)
+    return k
+
+def action_A_dolfinx(x):
+    # Update coefficient ui of the linear form M
+    ui.array[:] = x.array[:]
+
+    # Compute action of A on x using the linear form M
+    y = fem.assemble_vector(fem.form(M))
+
+    # Set BC dofs to zero (effectively zeroes rows of A)
+    fem.set_bc(y.array, [bc], scale=0.0)
+    
+    v.scatter_rev(la.ScatterMode.add)
+    v.scatter_forward()
+    return y
+
+b_dolfinx = fem.assemble_vector(fem.form(L))
+# Apply lifting: b <- b - A * x_bc
+fem.set_bc(ui.vector, [bc], scale=-1.0)
+fem.assemble_vector(b_dolfinx.array, fem.form(M))
+b_dolfinx.scatter_reverse(la.ScatterMode.add)
+fem.set_bc(b_dolfinx.array, [bc], scale=0.0)
+b_dolfinx.scatter_forward()
 
 # -
 # ### 2. Implementation using the built-in PETSc CG solver
@@ -318,7 +388,7 @@ class Poisson:
         assert M == N
 
     def mult(self, A, x, y):
-        action_A(x).copy(y)
+        action_A_petsc(x).copy(y)
 
 
 # With this we can define a virtual *PETSc* matrix, where every
@@ -326,8 +396,8 @@ class Poisson:
 
 A = PETSc.Mat()
 A.create(comm=msh.comm)
-A.setSizes(((b.local_size, PETSc.DETERMINE),
-            (b.local_size, PETSc.DETERMINE)), bsize=1)
+A.setSizes(((b_petsc.local_size, PETSc.DETERMINE),
+            (b_petsc.local_size, PETSc.DETERMINE)), bsize=1)
 A.setType(PETSc.Mat.Type.PYTHON)
 A.setPythonContext(Poisson())
 A.setUp()
@@ -363,7 +433,7 @@ solver.setConvergenceTest(converged)
 
 # +
 uh_cg2 = fem.Function(V)
-solver.solve(b, uh_cg2.vector)
+solver.solve(b_petsc, uh_cg2.vector)
 
 # Set BC values in the solution vectors
 uh_cg2.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
@@ -488,7 +558,7 @@ solver.setConvergenceTest(converged)
 
 # +
 uh_cg3 = fem.Function(V)
-solver.solve(b, uh_cg3.vector)
+solver.solve(b_petsc, uh_cg3.vector)
 
 # Set BC values in the solution vectors
 uh_cg3.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
