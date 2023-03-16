@@ -609,13 +609,21 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.tabulate_dof_coordinates()
 
 
-def VectorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]],
+def VectorFunctionSpace(mesh: Mesh,
+                        element: typing.Union[basix.ufl_wrapper._BasixElementBase,
+                                              ElementMetaData, typing.Tuple[str, int]],
                         dim=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
-    e = ElementMetaData(*element)
-    ufl_element = basix.ufl_wrapper.create_vector_element(e.family, mesh.ufl_cell().cellname(), e.degree,
-                                                          dim=dim, gdim=mesh.geometry.dim)
-    return FunctionSpace(mesh, ufl_element)
+    try:
+        ufl_e = basix.ufl_wrapper.create_vector_element(element.family(), element.cell_type,         # type: ignore
+                                                        element.degree(), element.lagrange_variant,  # type: ignore
+                                                        element.dpc_variant, element.discontinuous,  # type: ignore
+                                                        dim=dim, gdim=mesh.geometry.dim)
+    except AttributeError:
+        ed = ElementMetaData(*element)
+        ufl_e = basix.ufl_wrapper.create_vector_element(ed.family, mesh.ufl_cell().cellname(), ed.degree,
+                                                        dim=dim, gdim=mesh.geometry.dim)
+    return FunctionSpace(mesh, ufl_e)
 
 
 def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]], shape=None,
