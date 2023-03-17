@@ -239,6 +239,13 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
             static_cast<basix::sobolev::space>(ce->sobolev_space),
             ce->discontinuous, ce->highest_complete_degree,
             ce->highest_degree));
+    _needs_dof_transformations
+        = !_element->dof_transformations_are_identity()
+          and !_element->dof_transformations_are_permutations();
+
+    _needs_dof_permutations
+        = !_element->dof_transformations_are_identity()
+          and _element->dof_transformations_are_permutations();
   }
   else if (is_basix_element(e))
   {

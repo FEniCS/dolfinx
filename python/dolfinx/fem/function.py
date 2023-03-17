@@ -14,20 +14,19 @@ if typing.TYPE_CHECKING:
 
 from functools import singledispatch
 
-import numpy as np
-import numpy.typing as npt
-
 import basix
 import basix.ufl_wrapper
+import numpy as np
+import numpy.typing as npt
 import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
-from dolfinx import cpp as _cpp
-from dolfinx import jit, la
 from dolfinx.fem import dofmap
+from petsc4py import PETSc
 from ufl.domain import extract_unique_domain
 
-from petsc4py import PETSc
+from dolfinx import cpp as _cpp
+from dolfinx import jit, la
 
 
 class Constant(ufl.Constant):
@@ -467,13 +466,15 @@ class FunctionSpace(ufl.FunctionSpace):
 
         if cppV is None:
             # Initialise the ufl.FunctionSpace
-            if isinstance(element, ufl.FiniteElementBase):
+            try:
+                # UFL element
                 super().__init__(mesh.ufl_domain(), element)
-            else:
+            except BaseException:
+                assert len(element) == 2, "Expected sequence of (element_type, degree)"
                 e = ElementMetaData(*element)
-                ufl_element = basix.ufl_wrapper.create_element(
+                ufl_e = basix.ufl_wrapper.create_element(
                     e.family, mesh.ufl_cell().cellname(), e.degree, gdim=mesh.ufl_cell().geometric_dimension())
-                super().__init__(mesh.ufl_domain(), ufl_element)
+                super().__init__(mesh.ufl_domain(), ufl_e)
 
             # Compile dofmap and element and create DOLFIN objects
             (self._ufcx_element, self._ufcx_dofmap), module, code = jit.ffcx_jit(
@@ -608,13 +609,21 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.tabulate_dof_coordinates()
 
 
-def VectorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]],
+def VectorFunctionSpace(mesh: Mesh,
+                        element: typing.Union[basix.ufl_wrapper._BasixElementBase,
+                                              ElementMetaData, typing.Tuple[str, int]],
                         dim=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
-    e = ElementMetaData(*element)
-    ufl_element = basix.ufl_wrapper.create_vector_element(e.family, mesh.ufl_cell().cellname(), e.degree,
-                                                          dim=dim, gdim=mesh.geometry.dim)
-    return FunctionSpace(mesh, ufl_element)
+    try:
+        ufl_e = basix.ufl_wrapper.create_vector_element(element.family(), element.cell_type,         # type: ignore
+                                                        element.degree(), element.lagrange_variant,  # type: ignore
+                                                        element.dpc_variant, element.discontinuous,  # type: ignore
+                                                        dim=dim, gdim=mesh.geometry.dim)
+    except AttributeError:
+        ed = ElementMetaData(*element)
+        ufl_e = basix.ufl_wrapper.create_vector_element(ed.family, mesh.ufl_cell().cellname(), ed.degree,
+                                                        dim=dim, gdim=mesh.geometry.dim)
+    return FunctionSpace(mesh, ufl_e)
 
 
 def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]], shape=None,
