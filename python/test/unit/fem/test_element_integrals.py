@@ -436,7 +436,7 @@ def test_curl(space_type, order):
     # Assemble vector on 5 randomly numbered cells
     for i in range(5):
         random.shuffle(cell)
-        domain = ufl.Mesh(create_vector_element("Lagrange", "tetrahedron", 1))
+        domain = ufl.Mesh(vector_element("Lagrange", "tetrahedron", 1))
         mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
         V = FunctionSpace(mesh, (space_type, order))
         v = ufl.TestFunction(V)

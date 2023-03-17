@@ -114,7 +114,7 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
         lagrange = "Lagrange" if from_lagrange else "DG"
         nedelec = "Nedelec 1st kind H(curl)"
     v_el = vector_element(lagrange, mesh.ufl_cell().cellname(), p)
-    s_el = finite_element((nedelec, mesh.ufl_cell().cellname(), q)
+    s_el = finite_element(nedelec, mesh.ufl_cell().cellname(), q)
     if from_lagrange:
         el0 = v_el
         el1 = s_el
