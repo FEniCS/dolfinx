@@ -86,7 +86,7 @@
 import numpy as np
 
 import ufl
-from basix.ufl import MixedElement, create_element, create_vector_element
+from basix.ufl import MixedElement, finite_element, vector_element
 from dolfinx import fem, la
 from dolfinx.fem import (Constant, Function, FunctionSpace, dirichletbc,
                          extract_function_spaces, form,
@@ -130,8 +130,8 @@ def lid_velocity_expression(x):
 # linear basis (scalar).
 
 
-P2 = create_vector_element("Lagrange", msh.ufl_cell().cellname(), 2)
-P1 = create_element("Lagrange", msh.ufl_cell().cellname(), 1)
+P2 = vector_element("Lagrange", msh.ufl_cell().cellname(), 2)
+P1 = finite_element("Lagrange", msh.ufl_cell().cellname(), 1)
 V, Q = FunctionSpace(msh, P2), FunctionSpace(msh, P1)
 
 # Boundary conditions for the velocity field are defined:

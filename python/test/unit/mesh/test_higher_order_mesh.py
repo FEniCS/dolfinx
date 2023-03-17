@@ -13,7 +13,7 @@ import pytest
 
 import basix
 import ufl
-from basix.ufl import create_vector_element
+from basix.ufl import vector_element
 from dolfinx.cpp.io import perm_vtk
 from dolfinx.fem import assemble_scalar, form
 from dolfinx.io import XDMFFile
@@ -94,7 +94,7 @@ def test_submesh(order):
                 for i in range(1, order - j - k):
                     cell.append(coord_to_vertex(i, j, k))
 
-    domain = ufl.Mesh(create_vector_element(
+    domain = ufl.Mesh(vector_element(
         "Lagrange", "tetrahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced))
 
     mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
@@ -142,7 +142,7 @@ def test_triangle_mesh(order):
             for i in range(1, order - j):
                 cell.append(coord_to_vertex(i, j))
 
-    domain = ufl.Mesh(create_vector_element(
+    domain = ufl.Mesh(vector_element(
         "Lagrange", "triangle", order, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced))
 
     check_cell_volume(points, cell, domain, 0.5)

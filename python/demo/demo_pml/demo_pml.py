@@ -37,7 +37,7 @@ from efficiencies_pml_demo import calculate_analytical_efficiencies
 from mesh_wire_pml import generate_mesh_wire
 
 import ufl
-from basix.ufl import create_element
+from basix.ufl import finite_element
 from dolfinx import fem, mesh, plot
 from dolfinx.io import VTXWriter, gmshio
 
@@ -230,7 +230,7 @@ theta = 0  # Angle of incidence of the background field
 # element to represent the electric field:
 
 degree = 3
-curl_el = create_element("N1curl", msh.ufl_cell().cellname(), degree)
+curl_el = finite_element("N1curl", msh.ufl_cell().cellname(), degree)
 V = fem.FunctionSpace(msh, curl_el)
 
 # Next, we interpolate $\mathbf{E}_b$ into the function space $V$,

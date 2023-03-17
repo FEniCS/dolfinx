@@ -9,8 +9,7 @@ import pytest
 
 import dolfinx
 import ufl
-from basix.ufl import (MixedElement, create_element,
-                       create_vector_element)
+from basix.ufl import MixedElement, finite_element, vector_element
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace, form
 from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
                           create_unit_square)
@@ -21,20 +20,20 @@ from mpi4py import MPI
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("cell", [ufl.triangle, ufl.tetrahedron])
 @pytest.mark.parametrize("degree", [1, 2])
-@pytest.mark.parametrize("create_element_function, family",
+@pytest.mark.parametrize("finite_element_function, family",
                          [
-                             (create_element, "Lagrange"),
-                             (create_vector_element, "Lagrange"),
-                             (create_element, "N1curl")
+                             (finite_element, "Lagrange"),
+                             (vector_element, "Lagrange"),
+                             (finite_element, "N1curl")
                          ])
-def test_mixed_element(create_element_function, family, cell, degree):
+def test_mixed_element(finite_element_function, family, cell, degree):
     if cell == ufl.triangle:
         mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1, CellType.tetrahedron, GhostMode.shared_facet)
 
     norms = []
-    U_el = create_element_function(family, cell.cellname(), degree)
+    U_el = finite_element_function(family, cell.cellname(), degree)
     for i in range(3):
         U = FunctionSpace(mesh, U_el)
         u = ufl.TrialFunction(U)
@@ -81,8 +80,8 @@ def test_vector_element():
 @pytest.mark.parametrize("d2", range(1, 4))
 def test_element_product(d1, d2):
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 2)
-    P3 = create_vector_element("Lagrange", mesh.ufl_cell().cellname(), d1)
-    P1 = create_element("Lagrange", mesh.ufl_cell().cellname(), d2)
+    P3 = vector_element("Lagrange", mesh.ufl_cell().cellname(), d1)
+    P1 = finite_element("Lagrange", mesh.ufl_cell().cellname(), d2)
     TH = MixedElement([P3, P1])
     W = FunctionSpace(mesh, TH)
 

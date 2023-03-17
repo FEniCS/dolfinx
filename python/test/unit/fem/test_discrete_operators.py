@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 import ufl
-from basix.ufl import create_element, create_vector_element
+from basix.ufl import finite_element, vector_element
 from dolfinx.cpp.fem.petsc import discrete_gradient, interpolation_matrix
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
@@ -113,8 +113,8 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
         mesh = create_unit_cube(comm, 3, 2, 2, ghost_mode=GhostMode.none, cell_type=cell_type)
         lagrange = "Lagrange" if from_lagrange else "DG"
         nedelec = "Nedelec 1st kind H(curl)"
-    v_el = create_vector_element(lagrange, mesh.ufl_cell().cellname(), p)
-    s_el = create_element(nedelec, mesh.ufl_cell().cellname(), q)
+    v_el = vector_element(lagrange, mesh.ufl_cell().cellname(), p)
+    s_el = finite_element((nedelec, mesh.ufl_cell().cellname(), q)
     if from_lagrange:
         el0 = v_el
         el1 = s_el
@@ -162,7 +162,7 @@ def test_nonaffine_discrete_operator():
 
     cells = np.array([range(len(points))], dtype=np.int32)
     cell_type = CellType.hexahedron
-    domain = ufl.Mesh(create_vector_element("Lagrange", cell_type.name, 2))
+    domain = ufl.Mesh(vector_element("Lagrange", cell_type.name, 2))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     W = VectorFunctionSpace(mesh, ("DG", 1))
     V = FunctionSpace(mesh, ("NCE", 4))

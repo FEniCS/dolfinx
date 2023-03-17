@@ -10,7 +10,7 @@ import pytest
 import basix
 import dolfinx
 import ufl
-from basix.ufl import MixedElement, create_element, create_vector_element
+from basix.ufl import MixedElement, finite_element, vector_element
 from dolfinx.fem import FunctionSpace, form
 from dolfinx.mesh import CellType, create_unit_cube, create_unit_square
 from ufl import grad, inner
@@ -114,8 +114,8 @@ def test_mixed_element_form(cell_type, sign, order):
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
 
     U_el = MixedElement([
-        create_element(basix.ElementFamily.P, cell_type.name, order),
-        create_element(basix.ElementFamily.N1E, cell_type.name, order)])
+        finite_element(basix.ElementFamily.P, cell_type.name, order),
+        finite_element(basix.ElementFamily.N1E, cell_type.name, order)])
 
     U = FunctionSpace(mesh, U_el)
     u, p = ufl.TrialFunctions(U)
@@ -138,8 +138,8 @@ def test_mixed_element_vector_element_form(cell_type, sign, order):
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
 
     U_el = MixedElement([
-        create_vector_element(basix.ElementFamily.P, cell_type.name, order),
-        create_element(basix.ElementFamily.N1E, cell_type.name, order)])
+        vector_element(basix.ElementFamily.P, cell_type.name, order),
+        finite_element(basix.ElementFamily.N1E, cell_type.name, order)])
 
     U = FunctionSpace(mesh, U_el)
     u, p = ufl.TrialFunctions(U)

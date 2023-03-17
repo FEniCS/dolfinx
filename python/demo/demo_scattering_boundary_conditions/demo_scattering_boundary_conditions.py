@@ -51,7 +51,7 @@ from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from mesh_wire import generate_mesh_wire
 
 import ufl
-from basix.ufl import create_element
+from basix.ufl import finite_element
 from dolfinx import fem, io, plot
 
 from mpi4py import MPI
@@ -272,7 +272,7 @@ theta = np.pi / 4  # Angle of incidence of the background field
 # represent the electric field
 
 degree = 3
-curl_el = create_element("N1curl", domain.ufl_cell().cellname(), degree)
+curl_el = finite_element("N1curl", domain.ufl_cell().cellname(), degree)
 V = fem.FunctionSpace(domain, curl_el)
 
 # Next, we can interpolate $\mathbf{E}_b$ into the function space $V$:

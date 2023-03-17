@@ -9,7 +9,7 @@
 import numpy as np
 import pytest
 
-from basix.ufl import create_element, create_vector_element
+from basix.ufl import finite_element, vector_element
 from dolfinx import cpp as _cpp
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.mesh import create_unit_square
@@ -18,8 +18,8 @@ from mpi4py import MPI
 
 
 @pytest.mark.parametrize("element", [
-    create_element("Lagrange", "triangle", 1),
-    create_vector_element("Lagrange", "triangle", 1)])
+    finite_element("Lagrange", "triangle", 1),
+    vector_element("Lagrange", "triangle", 1)])
 def test_scatter_forward(element):
 
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
@@ -48,8 +48,8 @@ def test_scatter_forward(element):
 
 
 @pytest.mark.parametrize("element", [
-    create_element("Lagrange", "triangle", 1),
-    create_vector_element("Lagrange", "triangle", 1)])
+    finite_element("Lagrange", "triangle", 1),
+    vector_element("Lagrange", "triangle", 1)])
 def test_scatter_reverse(element):
 
     comm = MPI.COMM_WORLD
