@@ -12,8 +12,7 @@ import pytest
 
 import dolfinx
 import ufl
-from basix.ufl import (MixedElement, create_element,
-                               create_vector_element)
+from basix.ufl import MixedElement, create_element, create_vector_element
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace
 from dolfinx.graph import create_adjacencylist
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
