@@ -28,7 +28,7 @@ import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
 
 import ufl
-from basix.ufl_wrapper import create_tensor_element, create_vector_element
+from basix.ufl import create_tensor_element, create_vector_element
 from dolfinx import geometry
 from dolfinx.cpp.fem import Form_complex128, Form_float64
 from dolfinx.fem import (Function, FunctionSpace, IntegralType, dirichletbc,

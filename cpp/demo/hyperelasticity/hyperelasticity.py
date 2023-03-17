@@ -8,7 +8,7 @@
 # We are interested in solving for a discrete vector field in three
 # dimensions, so first we need the appropriate finite element space and
 # trial and test functions on this space::
-from basix.ufl_wrapper import create_vector_element
+from basix.ufl import create_vector_element
 from ufl import (Coefficient, FunctionSpace, Identity, Mesh, TestFunction,
                  TrialFunction, derivative, det, diff, dx, grad, ln, tr,
                  variable)

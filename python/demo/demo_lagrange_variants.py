@@ -22,7 +22,7 @@ import matplotlib.pylab as plt
 import numpy as np
 
 import basix
-import basix.ufl_wrapper
+import basix.ufl
 import ufl
 from dolfinx import fem, mesh
 from ufl import ds, dx, grad, inner
@@ -109,7 +109,7 @@ if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
 
 element = basix.create_element(basix.ElementFamily.P, basix.CellType.triangle, 3,
                                basix.LagrangeVariant.gll_warped)
-ufl_element = basix.ufl_wrapper.BasixElement(element)
+ufl_element = basix.ufl.BasixElement(element)
 
 # The UFL element `ufl_element` can be used in the same way as an
 # element created directly in UFL. For example, we could [solve a
@@ -164,7 +164,7 @@ u_exact = saw_tooth(x[0])
 
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
     element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
-    ufl_element = basix.ufl_wrapper.BasixElement(element)
+    ufl_element = basix.ufl.BasixElement(element)
     V = fem.FunctionSpace(msh, ufl_element)
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
@@ -204,7 +204,7 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 # +
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
     element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
-    ufl_element = basix.ufl_wrapper.BasixElement(element)
+    ufl_element = basix.ufl.BasixElement(element)
     V = fem.FunctionSpace(msh, ufl_element)
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))

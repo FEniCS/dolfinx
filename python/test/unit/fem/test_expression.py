@@ -14,7 +14,7 @@ import pytest
 import basix
 import dolfinx.cpp
 import ufl
-from basix.ufl_wrapper import VectorElement
+from basix.ufl import VectorElement
 from dolfinx.cpp.la.petsc import create_matrix
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace, create_sparsity_pattern, form)

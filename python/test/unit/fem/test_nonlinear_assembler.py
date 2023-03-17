@@ -11,8 +11,8 @@ import numpy as np
 import pytest
 
 import ufl
-from basix.ufl_wrapper import (MixedElement, create_element,
-                               create_vector_element)
+from basix.ufl import (MixedElement, create_element,
+                       create_vector_element)
 from dolfinx.cpp.la.petsc import scatter_local_vectors
 from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
                          bcs_by_block, dirichletbc, extract_function_spaces,

@@ -7,7 +7,7 @@
 import pytest
 
 import ufl
-from basix.ufl_wrapper import create_vector_element
+from basix.ufl import create_vector_element
 from dolfinx import cpp as _cpp
 from dolfinx.geometry import squared_distance
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,

@@ -12,8 +12,7 @@ import numpy as np
 import pytest
 
 import ufl
-from basix.ufl_wrapper import (MixedElement, create_element,
-                               create_vector_element)
+from basix.ufl import MixedElement, create_element, create_vector_element
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace, assemble_scalar,
                          create_nonmatching_meshes_interpolation_data, form)

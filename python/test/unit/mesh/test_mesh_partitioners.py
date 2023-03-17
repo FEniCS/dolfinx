@@ -12,7 +12,7 @@ import pytest
 import dolfinx
 import dolfinx.graph
 import ufl
-from basix.ufl_wrapper import create_vector_element
+from basix.ufl import create_vector_element
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, compute_midpoints, create_box,
                           create_cell_partitioner, create_mesh)

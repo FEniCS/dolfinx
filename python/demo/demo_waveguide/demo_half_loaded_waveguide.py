@@ -45,7 +45,7 @@ import numpy as np
 from analytical_modes import verify_mode
 
 import ufl
-from basix.ufl_wrapper import MixedElement, create_element
+from basix.ufl import MixedElement, create_element
 from dolfinx import fem, io, plot
 from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
                           locate_entities)

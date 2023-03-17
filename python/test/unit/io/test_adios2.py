@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 import ufl
-from basix.ufl_wrapper import create_element, create_vector_element
+from basix.ufl import create_element, create_vector_element
 from dolfinx.common import has_adios2
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.graph import create_adjacencylist

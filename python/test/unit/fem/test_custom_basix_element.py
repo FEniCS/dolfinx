@@ -3,7 +3,7 @@ import pytest
 
 import basix
 import ufl
-from basix.ufl_wrapper import BasixElement
+from basix.ufl import BasixElement
 from dolfinx.fem import (Function, FunctionSpace, assemble_scalar, dirichletbc,
                          form, locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,

@@ -37,7 +37,7 @@ from efficiencies_pml_demo import calculate_analytical_efficiencies
 from mesh_wire_pml import generate_mesh_wire
 
 import ufl
-from basix.ufl_wrapper import create_element
+from basix.ufl import create_element
 from dolfinx import fem, mesh, plot
 from dolfinx.io import VTXWriter, gmshio
 

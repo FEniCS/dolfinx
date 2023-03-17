@@ -8,8 +8,7 @@ import numpy as np
 import pytest
 
 import basix
-from basix.ufl_wrapper import (MixedElement, create_element,
-                               create_vector_element)
+from basix.ufl import MixedElement, create_element, create_vector_element
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import create_mesh, create_unit_cube
 from ufl import Cell, Mesh, TestFunction, TrialFunction, grad

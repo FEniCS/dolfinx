@@ -12,7 +12,7 @@ import numpy as np
 import numpy.typing as npt
 
 import basix
-import basix.ufl_wrapper
+import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa F401
@@ -183,7 +183,7 @@ class XDMFFile(_cpp.io.XDMFFile):
                                     cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
         msh.name = name
 
-        domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
+        domain = ufl.Mesh(basix.ufl.create_vector_element(
             "Lagrange", cell_shape.name, cell_degree, basix.LagrangeVariant.equispaced, dim=x.shape[1],
             gdim=x.shape[1]))
         return Mesh(msh, domain)

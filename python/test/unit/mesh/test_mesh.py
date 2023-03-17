@@ -12,7 +12,7 @@ import pytest
 
 import basix
 import ufl
-from basix.ufl_wrapper import create_vector_element
+from basix.ufl import create_vector_element
 from dolfinx import cpp as _cpp
 from dolfinx import graph
 from dolfinx import mesh as _mesh

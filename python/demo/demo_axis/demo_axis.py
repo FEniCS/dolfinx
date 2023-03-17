@@ -22,8 +22,7 @@ from mesh_sphere_axis import generate_mesh_sphere_axis
 from scipy.special import jv, jvp
 
 import ufl
-from basix.ufl_wrapper import (MixedElement, create_element,
-                               create_vector_element)
+from basix.ufl import MixedElement, create_element, create_vector_element
 from dolfinx import fem, io, mesh, plot
 
 from mpi4py import MPI

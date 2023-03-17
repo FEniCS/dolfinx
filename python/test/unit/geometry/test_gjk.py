@@ -9,7 +9,7 @@ import pytest
 from scipy.spatial.transform import Rotation
 
 import ufl
-from basix.ufl_wrapper import create_vector_element
+from basix.ufl import create_vector_element
 from dolfinx import geometry
 from dolfinx.geometry import compute_distance_gjk
 from dolfinx.mesh import create_mesh

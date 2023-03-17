@@ -86,7 +86,7 @@
 
 import numpy as np
 
-from basix.ufl_wrapper import MixedElement, create_element
+from basix.ufl import MixedElement, create_element
 from dolfinx import fem, io, mesh
 from ufl import (Measure, SpatialCoordinate, TestFunctions, TrialFunctions,
                  div, exp, inner)

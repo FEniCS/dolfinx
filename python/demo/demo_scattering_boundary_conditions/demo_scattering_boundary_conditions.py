@@ -51,7 +51,7 @@ from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from mesh_wire import generate_mesh_wire
 
 import ufl
-from basix.ufl_wrapper import create_element
+from basix.ufl import create_element
 from dolfinx import fem, io, plot
 
 from mpi4py import MPI

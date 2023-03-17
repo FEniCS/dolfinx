@@ -13,8 +13,7 @@ import scipy.sparse
 
 import basix
 import ufl
-from basix.ufl_wrapper import (MixedElement, create_element,
-                               create_vector_element)
+from basix.ufl import MixedElement, create_element, create_vector_element
 from dolfinx import cpp as _cpp
 from dolfinx import fem, graph, la
 from dolfinx.fem import (Constant, Function, FunctionSpace,

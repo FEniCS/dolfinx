@@ -13,7 +13,7 @@ import pytest
 
 import basix
 import ufl
-from basix.ufl_wrapper import create_vector_element
+from basix.ufl import create_vector_element
 from dolfinx.cpp.io import perm_vtk
 from dolfinx.fem import assemble_scalar, form
 from dolfinx.io import XDMFFile

@@ -1,6 +1,6 @@
 # UFL input for the Matrix-free Poisson Demo
 # ==================================
-from basix.ufl_wrapper import create_element, create_vector_element
+from basix.ufl import create_element, create_vector_element
 from ufl import (Coefficient, Constant, FunctionSpace, Mesh, TestFunction,
                  TrialFunction, action, dx, grad, inner)
 

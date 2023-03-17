@@ -4,7 +4,7 @@
 # The first step is to define the variational problem at hand. We define
 # the variational problem in UFL terms in a separate form file
 # :download:`biharmonic.py`.  We begin by defining the finite element::
-from basix.ufl_wrapper import create_element, create_vector_element
+from basix.ufl import create_element, create_vector_element
 from ufl import (CellDiameter, Coefficient, Constant, FacetNormal,
                  FunctionSpace, Mesh, TestFunction, TrialFunction, avg, div,
                  dS, dx, grad, inner, jump)

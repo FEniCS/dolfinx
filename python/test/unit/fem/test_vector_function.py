@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 import ufl
-from basix.ufl_wrapper import create_vector_element
+from basix.ufl import create_vector_element
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.mesh import create_mesh
 
