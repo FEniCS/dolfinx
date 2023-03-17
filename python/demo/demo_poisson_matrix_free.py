@@ -78,6 +78,7 @@
 # The modules that will be used are imported:
 
 import numpy as np
+import scipy
 
 import ufl
 from dolfinx import fem, mesh, la
@@ -308,18 +309,21 @@ assert error_L2_cg1 < rtol
 def cg_dolfinx(action_A, b, x, max_iter=200, rtol=1e-6):
     # Create working vectors
     y = la.vector(b.map)
-    r = la.vector(b.map)
-    p = la.vector(b.map)
-
     y.array[:] = b.array[:]
+    r = la.vector(b.map)
+    r.array[:] = b.array[:]
+
+    axpy = scipy.linalg.blas.get_blas_funcs('axpy', arrays=(r.array, y.array))
+    aypx = scipy.linalg.blas.get_blas_funcs('axpy', arrays=(r.array, y.array))
 
     # Compute initial residual r0 = b - A x0
-    y = action_A(x)
-    r.array[:] = b.array[:] - y.array[:]
+    action_A(x, y)
+    axpy(y.array, r.array, len(r.array), -1.0)
+    
+    p = la.vector(b.map)
+    p.array[:] = r.array[:]
 
     # Create work vector for the search direction p
-    p.array[:] = r.array[:]
-    p.scatter_forward()
     r_norm2 = np.dot(r.array, r.array)
     r0_norm2 = r_norm2
     eps = rtol**2
@@ -328,20 +332,20 @@ def cg_dolfinx(action_A, b, x, max_iter=200, rtol=1e-6):
         k += 1
 
         # Compute y = A p
-        y = action_A(p)
+        action_A(p, y)
 
         # Compute alpha = r.r / p.y
         alpha = r_norm2 / np.dot(p.array, y.array)
 
         # TODO: Best way to do axpy in numpy/scipy?
-        # Update x (x <- x + alpha * p)
-        x.axpy(alpha, p)
+        # Update x (x <- alpha * p + x)
+        axpy(p.array, x.array, len(r.array), alpha)
 
-        # Update r (r <- r - alpha * y)
-        r.axpy(-alpha, y)
+        # Update r (r <- - alpha * y + r)
+        axpy(y.array, r.array, len(r.array), -alpha)
 
         # Update residual norm
-        r_norm2_new = r.dot(r)
+        r_norm2_new = np.dot(r.array, r.array)
         beta = r_norm2_new / r_norm2
         r_norm2 = r_norm2_new
 
@@ -350,15 +354,17 @@ def cg_dolfinx(action_A, b, x, max_iter=200, rtol=1e-6):
             break
 
         # Update p (p <- beta * p + r)
-        p.aypx(beta, r)
+        aypx(r.array, p.array, len(p.array), beta)
     return k
 
-def action_A_dolfinx(x):
+def action_A_dolfinx(x, y):
+    y.array[:] = 0.0
+
     # Update coefficient ui of the linear form M
     ui.vector.array[:] = x.array[:]
 
     # Compute action of A on x using the linear form M
-    y = fem.assemble_vector(fem.form(M))
+    fem.assemble_vector(y.array, fem.form(M))
 
     # Set BC dofs to zero (effectively zeroes rows of A)
     fem.set_bc(y.array, [bc], scale=0.0)
@@ -377,6 +383,8 @@ b_dolfinx.scatter_forward()
 
 uh_cg5 = fem.Function(V, dtype=ScalarType)
 iter_cg5 = cg_dolfinx(action_A_dolfinx, b_dolfinx, uh_cg5.vector, max_iter=max_iter, rtol=rtol)
+
+print(iter_cg5)
 
 # -
 # ### 2. Implementation using the built-in PETSc CG solver
