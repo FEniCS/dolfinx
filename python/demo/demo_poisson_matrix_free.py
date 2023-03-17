@@ -14,15 +14,18 @@
 
 # # Matrix-free Conjugate Gradient solver for the Poisson equation
 #
-# This demo is implemented in a single Python file,
-# {download}`demo_poisson_matrix_free.py`, which contains both the
-# variational forms and the solver. It illustrates how to:
+# This demo illustrates how to solve the Poisson equation using a
+# matrix-free Conjugate Gradient (CG) solver. In particular, it
+# illustrates how to
 #
 # - Solve a linear partial differential equation using a matrix-free
 # Conjugate Gradient (CG) solver
 # - Create and apply Dirichlet boundary conditions
 # - Compute errors against the exact solution and against a
 # direct solver for the assembled matrix
+#
+# {download}`Python script <./demo_poisson_matrix_free.py>`\
+# {download}`Jupyter notebook <./demo_poisson_matrix_free.ipynb>`
 #
 # ```{note}
 # This demo illustrates the use of a matrix-free Conjugate Gradient
@@ -140,6 +143,7 @@ v = ufl.TestFunction(V)
 f = fem.Constant(msh, ScalarType(-6))
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx
+L_fem = fem.form(L)
 
 # For the matrix-free solvers we also define a second linear form `M` as
 # the {py:class}`action <ufl.action>` of the bilinear form $a$ onto an
@@ -152,6 +156,7 @@ L = inner(f, v) * dx
 
 ui = fem.Function(V)
 M = action(a, ui)
+M_fem = fem.form(M)
 
 # ### Direct solver using the assembled matrix
 #
@@ -188,13 +193,13 @@ if msh.comm.rank == 0:
 # Since we want to avoid assembling the matrix `A`, we compute the necessary
 # matrix-vector product using the linear form `M` implicitly.
 
-b_petsc = fem.petsc.assemble_vector(fem.form(L))
+b = fem.petsc.assemble_vector(L_fem)
 # Apply lifting: b <- b - A * x_bc
 fem.set_bc(ui.x.array, [bc], scale=-1)
-fem.petsc.assemble_vector(b_petsc, fem.form(M))
-b_petsc.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-fem.petsc.set_bc(b_petsc, [bc], scale=0.0)
-b_petsc.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+fem.petsc.assemble_vector(b, M_fem)
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+fem.petsc.set_bc(b, [bc], scale=0.0)
+b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
 # In the following, different variants are presented in which the posed
 # Poisson problem is solved using matrix-free CG solvers. In each case
@@ -214,11 +219,10 @@ max_iter = 200
 def action_A_petsc(x):
     # Update coefficient ui of the linear form M
     x.copy(ui.vector)
-    ui.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                          mode=PETSc.ScatterMode.FORWARD)
+    ui.x.scatter_forward()
 
     # Compute action of A on x using the linear form M
-    y = fem.petsc.assemble_vector(fem.form(M))
+    y = fem.petsc.assemble_vector(M_fem)
 
     # Set BC dofs to zero (effectively zeroes rows of A)
     with y.localForm() as y_local:
@@ -285,11 +289,10 @@ def cg(action_A, b, x, max_iter=200, rtol=1e-6):
 
 # +
 uh_cg1 = fem.Function(V, dtype=ScalarType)
-iter_cg1 = cg(action_A_petsc, b_petsc, uh_cg1.vector, max_iter=max_iter, rtol=rtol)
+iter_cg1 = cg(action_A_petsc, b, uh_cg1.vector, max_iter=max_iter, rtol=rtol)
 
 # Set BC values in the solution vectors
-uh_cg1.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                          mode=PETSc.ScatterMode.FORWARD)
+uh_cg1.x.scatter_forward()
 with uh_cg1.vector.localForm() as y_local:
     fem.set_bc(y_local, [bc], scale=1.0)
 
@@ -373,16 +376,16 @@ def action_A_dolfinx(x, y):
     y.scatter_forward()
     return y
 
-b_dolfinx = fem.assemble_vector(fem.form(L))
+b = fem.assemble_vector(fem.form(L))
 # Apply lifting: b <- b - A * x_bc
 fem.set_bc(ui.vector, [bc], scale=-1.0)
-fem.assemble_vector(b_dolfinx.array, fem.form(M))
-b_dolfinx.scatter_reverse(la.ScatterMode.add)
-fem.set_bc(b_dolfinx.array, [bc], scale=0.0)
-b_dolfinx.scatter_forward()
+fem.assemble_vector(b.array, fem.form(M))
+b.scatter_reverse(la.ScatterMode.add)
+fem.set_bc(b.array, [bc], scale=0.0)
+b.scatter_forward()
 
 uh_cg5 = fem.Function(V, dtype=ScalarType)
-iter_cg5 = cg_dolfinx(action_A_dolfinx, b_dolfinx, uh_cg5.vector, max_iter=max_iter, rtol=rtol)
+iter_cg5 = cg_dolfinx(action_A_dolfinx, b, uh_cg5.vector, max_iter=max_iter, rtol=rtol)
 
 print(iter_cg5)
 
@@ -409,8 +412,8 @@ class Poisson:
 
 A = PETSc.Mat()
 A.create(comm=msh.comm)
-A.setSizes(((b_petsc.local_size, PETSc.DETERMINE),
-            (b_petsc.local_size, PETSc.DETERMINE)), bsize=1)
+A.setSizes(((b.local_size, PETSc.DETERMINE),
+            (b.local_size, PETSc.DETERMINE)), bsize=1)
 A.setType(PETSc.Mat.Type.PYTHON)
 A.setPythonContext(Poisson())
 A.setUp()
@@ -449,8 +452,7 @@ uh_cg2 = fem.Function(V)
 solver.solve(b_petsc, uh_cg2.vector)
 
 # Set BC values in the solution vectors
-uh_cg2.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                          mode=PETSc.ScatterMode.FORWARD)
+uh_cg2.x.scatter_forward()
 with uh_cg2.vector.localForm() as y_local:
     fem.set_bc(y_local, [bc], scale=1.0)
 
@@ -574,8 +576,7 @@ uh_cg3 = fem.Function(V)
 solver.solve(b_petsc, uh_cg3.vector)
 
 # Set BC values in the solution vectors
-uh_cg3.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                          mode=PETSc.ScatterMode.FORWARD)
+uh_cg3.x.scatter_forward()
 with uh_cg3.vector.localForm() as y_local:
     fem.set_bc(y_local, [bc], scale=1.0)
 
