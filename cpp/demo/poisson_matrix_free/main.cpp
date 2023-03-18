@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
     MPI_Comm comm = MPI_COMM_WORLD;
 
     // Create mesh and function space
-    auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
+    auto mesh = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle(
         comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {10, 10}, mesh::CellType::triangle,
         mesh::create_cell_partitioner(mesh::GhostMode::none)));
     auto V = std::make_shared<fem::FunctionSpace>(

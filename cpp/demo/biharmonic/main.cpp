@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
   {
     // Create mesh
     auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
-    auto mesh = std::make_shared<mesh::Mesh>(
+    auto mesh = std::make_shared<mesh::Mesh<double>>(
         mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
                                {32, 32}, mesh::CellType::triangle, part));
 

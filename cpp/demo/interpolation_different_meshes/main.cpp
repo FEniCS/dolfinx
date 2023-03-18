@@ -23,11 +23,11 @@ int main(int argc, char* argv[])
     MPI_Comm comm{MPI_COMM_WORLD};
 
     // Create a tetrahedral mesh
-    auto mesh_tet = std::make_shared<mesh::Mesh>(
+    auto mesh_tet = std::make_shared<mesh::Mesh<double>>(
         mesh::create_box(comm, {{{0, 0, 0}, {1, 1, 1}}}, {20, 20, 20},
                          mesh::CellType::tetrahedron));
     // Create a hexahedral mesh
-    auto mesh_hex = std::make_shared<mesh::Mesh>(
+    auto mesh_hex = std::make_shared<mesh::Mesh<double>>(
         mesh::create_box(comm, {{{0, 0, 0}, {1, 1, 1}}}, {15, 15, 15},
                          mesh::CellType::hexahedron));
 

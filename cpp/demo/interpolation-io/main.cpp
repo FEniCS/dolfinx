@@ -25,7 +25,7 @@ using namespace dolfinx;
 // outputs the finite element function to a VTK file for visualisation.
 // It also shows how to create a finite element using Basix.
 template <typename T>
-void interpolate_scalar(std::shared_ptr<mesh::Mesh> mesh,
+void interpolate_scalar(std::shared_ptr<mesh::Mesh<double>> mesh,
                         std::filesystem::path filename)
 {
   // Create a Basix continuous Lagrange element of degree 1
@@ -64,7 +64,7 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh> mesh,
 // element function in a discontinuous Lagrange space and outputs the
 // Lagrange finite element function to a VTX file for visualisation.
 template <typename T>
-void interpolate_nedelec(std::shared_ptr<mesh::Mesh> mesh,
+void interpolate_nedelec(std::shared_ptr<mesh::Mesh<double>> mesh,
                          [[maybe_unused]] std::filesystem::path filename)
 {
   // Create a Basix Nedelec (first kind) element of degree 2 (dim=6 on triangle)
@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
   {
     // Create a mesh. For what comes later in this demo we need to
     // ensure that a boundary between cells is located at x0=0.5
-    auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
+    auto mesh = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle(
         MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
         mesh::CellType::triangle,
         mesh::create_cell_partitioner(mesh::GhostMode::none)));
