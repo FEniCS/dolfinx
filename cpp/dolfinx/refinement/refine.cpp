@@ -13,7 +13,8 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-mesh::Mesh refinement::refine(const mesh::Mesh& mesh, bool redistribute)
+mesh::Mesh<double> refinement::refine(const mesh::Mesh<double>& mesh,
+                                      bool redistribute)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
@@ -35,9 +36,9 @@ mesh::Mesh refinement::refine(const mesh::Mesh& mesh, bool redistribute)
   return refined_mesh;
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh refinement::refine(const mesh::Mesh& mesh,
-                              std::span<const std::int32_t> edges,
-                              bool redistribute)
+mesh::Mesh<double> refinement::refine(const mesh::Mesh<double>& mesh,
+                                      std::span<const std::int32_t> edges,
+                                      bool redistribute)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)

@@ -21,6 +21,7 @@ namespace dolfinx::mesh
 {
 template <typename T>
 class MeshTags;
+template <typename T>
 class Mesh;
 enum class GhostMode;
 } // namespace dolfinx::mesh
@@ -63,7 +64,7 @@ std::tuple<std::map<std::int32_t, std::int64_t>, std::vector<double>,
            std::array<std::size_t, 2>>
 create_new_vertices(MPI_Comm neighbor_comm,
                     const graph::AdjacencyList<int>& shared_edges,
-                    const mesh::Mesh& mesh,
+                    const mesh::Mesh<double>& mesh,
                     std::span<const std::int8_t> marked_edges);
 
 /// Use vertex and topology data to partition new mesh across
@@ -75,11 +76,11 @@ create_new_vertices(MPI_Comm neighbor_comm,
 /// @param[in] redistribute Call graph partitioner if true
 /// @param[in] ghost_mode None or shared_facet
 /// @return New mesh
-mesh::Mesh partition(const mesh::Mesh& old_mesh,
-                     const graph::AdjacencyList<std::int64_t>& cell_topology,
-                     std::span<const double> new_coords,
-                     std::array<std::size_t, 2> xshape, bool redistribute,
-                     mesh::GhostMode ghost_mode);
+mesh::Mesh<double>
+partition(const mesh::Mesh<double>& old_mesh,
+          const graph::AdjacencyList<std::int64_t>& cell_topology,
+          std::span<const double> new_coords, std::array<std::size_t, 2> xshape,
+          bool redistribute, mesh::GhostMode ghost_mode);
 
 /// @todo Fix docstring. It is unclear.
 ///
@@ -107,7 +108,7 @@ std::vector<std::int64_t> adjust_indices(const common::IndexMap& map,
 /// @return MeshTags on refined mesh
 mesh::MeshTags<std::int32_t>
 transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& meshtag,
-                       std::shared_ptr<const mesh::Mesh> refined_mesh,
+                       std::shared_ptr<const mesh::Mesh<double>> refined_mesh,
                        std::span<const std::int32_t> cell,
                        std::span<const std::int8_t> facet);
 
@@ -124,6 +125,6 @@ transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& meshtag,
 /// mesh
 mesh::MeshTags<std::int32_t>
 transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& parent_meshtag,
-                      std::shared_ptr<const mesh::Mesh> refined_mesh,
+                      std::shared_ptr<const mesh::Mesh<double>> refined_mesh,
                       std::span<const std::int32_t> parent_cell);
 } // namespace dolfinx::refinement

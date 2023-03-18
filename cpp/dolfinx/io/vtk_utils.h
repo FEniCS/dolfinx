@@ -20,6 +20,7 @@ class FunctionSpace;
 
 namespace mesh
 {
+template <typename T>
 class Mesh;
 } // namespace mesh
 
@@ -56,7 +57,7 @@ vtk_mesh_from_space(const fem::FunctionSpace& V);
 /// @note Even if the indices are local (int32), both Fides and VTX
 /// require int64 as local input
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
-extract_vtk_connectivity(const mesh::Mesh& mesh);
+extract_vtk_connectivity(const mesh::Mesh<double>& mesh);
 
 } // namespace io
 } // namespace dolfinx

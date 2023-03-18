@@ -40,7 +40,7 @@ void io(py::module& m)
 
   m.def(
       "extract_vtk_connectivity",
-      [](const dolfinx::mesh::Mesh& mesh)
+      [](const dolfinx::mesh::Mesh<double>& mesh)
       {
         auto [cells, shape] = dolfinx::io::extract_vtk_connectivity(mesh);
         return as_pyarray(std::move(cells), shape);
@@ -59,7 +59,7 @@ void io(py::module& m)
   // TODO: Template for different values dtypes
   m.def(
       "distribute_entity_data",
-      [](const dolfinx::mesh::Mesh& mesh, int entity_dim,
+      [](const dolfinx::mesh::Mesh<double>& mesh, int entity_dim,
          const py::array_t<std::int64_t, py::array::c_style>& entities,
          const py::array_t<std::int32_t, py::array::c_style>& values)
       {
@@ -171,7 +171,7 @@ void io(py::module& m)
            py::arg("u"), py::arg("t") = 0.0)
       .def("write",
            static_cast<void (dolfinx::io::VTKFile::*)(
-               const dolfinx::mesh::Mesh&, double)>(
+               const dolfinx::mesh::Mesh<double>&, double)>(
                &dolfinx::io::VTKFile::write),
            py::arg("mesh"), py::arg("t") = 0.0);
 
@@ -188,7 +188,7 @@ void io(py::module& m)
   fides_writer
       .def(py::init(
                [](MPICommWrapper comm, std::filesystem::path filename,
-                  std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
+                  std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh)
                {
                  return std::make_unique<dolfinx::io::FidesWriter>(
                      comm.get(), filename, mesh);
@@ -221,7 +221,7 @@ void io(py::module& m)
       m, "VTXWriter", "VTXWriter object")
       .def(py::init(
                [](MPICommWrapper comm, std::filesystem::path filename,
-                  std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
+                  std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh)
                {
                  return std::make_unique<dolfinx::io::VTXWriter>(
                      comm.get(), filename, mesh);

@@ -36,8 +36,9 @@ namespace
 /// @param[in] entities The list of entities
 /// @param[in] dim The dimension of the entities
 /// @returns A list of (cell_index, entity_index) pairs for each input entity
+template <typename T>
 std::vector<std::pair<std::int32_t, int>>
-find_local_entity_index(std::shared_ptr<const mesh::Mesh> mesh,
+find_local_entity_index(std::shared_ptr<const mesh::Mesh<T>> mesh,
                         std::span<const std::int32_t> entities, const int dim)
 {
   // Initialise entity-cell connectivity
@@ -189,7 +190,7 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
   assert(V.dofmap());
   std::shared_ptr<const DofMap> dofmap = V.dofmap();
   assert(V.mesh());
-  std::shared_ptr<const mesh::Mesh> mesh = V.mesh();
+  auto mesh = V.mesh();
 
   // Prepare an element - local dof layout for dofs on entities of the
   // entity_dim
@@ -303,7 +304,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   const FunctionSpace& V1 = V.at(1).get();
 
   // Get mesh
-  std::shared_ptr<const mesh::Mesh> mesh = V0.mesh();
+  auto mesh = V0.mesh();
   assert(mesh);
   assert(V1.mesh());
   if (mesh != V1.mesh())
@@ -508,7 +509,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
   const FunctionSpace& V1 = V.at(1).get();
 
   // Get mesh
-  std::shared_ptr<const mesh::Mesh> mesh = V0.mesh();
+  auto mesh = V0.mesh();
   assert(mesh);
   assert(V1.mesh());
   if (mesh != V1.mesh())

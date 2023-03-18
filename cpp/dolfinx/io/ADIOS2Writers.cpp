@@ -143,7 +143,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] mesh The mesh
 void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
-                    const mesh::Mesh& mesh)
+                    const mesh::Mesh<double>& mesh)
 {
   const mesh::Geometry<double>& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
@@ -532,7 +532,7 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] engine The ADIOS2 engine
 /// @param[in] mesh The mesh
 void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
-                      const mesh::Mesh& mesh)
+                      const mesh::Mesh<double>& mesh)
 {
   const mesh::Geometry<double>& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
@@ -566,7 +566,8 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
 /// Initialize mesh related attributes for the ADIOS2 file used in Fides
 /// @param[in] io The ADIOS2 IO
 /// @param[in] mesh The mesh
-void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh& mesh)
+void fides_initialize_mesh_attributes(adios2::IO& io,
+                                      const mesh::Mesh<double>& mesh)
 {
   const mesh::Geometry<double>& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
@@ -659,7 +660,8 @@ void fides_initialize_function_attributes(adios2::IO& io,
 //-----------------------------------------------------------------------------
 ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                            std::string tag,
-                           std::shared_ptr<const mesh::Mesh> mesh, const U& u)
+                           std::shared_ptr<const mesh::Mesh<double>> mesh,
+                           const U& u)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(_adios->DeclareIO(tag))),
       _engine(std::make_unique<adios2::Engine>(
@@ -671,7 +673,7 @@ ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
 //-----------------------------------------------------------------------------
 ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                            std::string tag,
-                           std::shared_ptr<const mesh::Mesh> mesh)
+                           std::shared_ptr<const mesh::Mesh<double>> mesh)
     : ADIOS2Writer(comm, filename, tag, mesh, {})
 {
   // Do nothing
@@ -715,7 +717,7 @@ void ADIOS2Writer::close()
 }
 //-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-                         std::shared_ptr<const mesh::Mesh> mesh)
+                         std::shared_ptr<const mesh::Mesh<double>> mesh)
     : ADIOS2Writer(comm, filename, "Fides mesh writer", mesh),
       _mesh_reuse_policy(MeshPolicy::update)
 {
@@ -815,7 +817,7 @@ void FidesWriter::write(double t)
 }
 //-----------------------------------------------------------------------------
 VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
-                     std::shared_ptr<const mesh::Mesh> mesh)
+                     std::shared_ptr<const mesh::Mesh<double>> mesh)
     : ADIOS2Writer(comm, filename, "VTX mesh writer", mesh)
 {
   // Define VTK scheme attribute for mesh

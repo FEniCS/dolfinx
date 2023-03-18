@@ -35,6 +35,7 @@ namespace dolfinx::mesh
 template <typename T>
 class Geometry;
 enum class GhostMode : int;
+template <typename T>
 class Mesh;
 template <typename T>
 class MeshTags;
@@ -87,7 +88,8 @@ public:
   /// Save Mesh
   /// @param[in] mesh
   /// @param[in] xpath XPath where Mesh Grid will be written
-  void write_mesh(const mesh::Mesh& mesh, std::string xpath = "/Xdmf/Domain");
+  void write_mesh(const mesh::Mesh<double>& mesh,
+                  std::string xpath = "/Xdmf/Domain");
 
   /// Save Geometry
   /// @param[in] geometry
@@ -104,9 +106,9 @@ public:
   /// @param[in] xpath XPath where Mesh Grid is located
   /// @return A Mesh distributed on the same communicator as the
   ///   XDMFFile
-  mesh::Mesh read_mesh(const fem::CoordinateElement& element,
-                       mesh::GhostMode mode, std::string name,
-                       std::string xpath = "/Xdmf/Domain") const;
+  mesh::Mesh<double> read_mesh(const fem::CoordinateElement& element,
+                               mesh::GhostMode mode, std::string name,
+                               std::string xpath = "/Xdmf/Domain") const;
 
   /// Read Topology data for Mesh
   /// @param[in] name Name of the mesh (Grid)
@@ -162,8 +164,8 @@ public:
   /// @param[in] name
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
   mesh::MeshTags<std::int32_t>
-  read_meshtags(std::shared_ptr<const mesh::Mesh> mesh, std::string name,
-                std::string xpath = "/Xdmf/Domain");
+  read_meshtags(std::shared_ptr<const mesh::Mesh<double>> mesh,
+                std::string name, std::string xpath = "/Xdmf/Domain");
 
   /// Write Information
   /// @param[in] name

@@ -16,7 +16,6 @@ set(HEADERS_mesh
 target_sources(
   dolfinx
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Mesh.cpp
-          ${CMAKE_CURRENT_SOURCE_DIR}/Geometry.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/Topology.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/cell_types.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/generation.cpp

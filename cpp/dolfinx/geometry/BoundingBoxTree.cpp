@@ -20,7 +20,7 @@ using namespace dolfinx::geometry;
 namespace
 {
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> range(const mesh::Mesh& mesh, int tdim)
+std::vector<std::int32_t> range(const mesh::Mesh<double>& mesh, int tdim)
 {
   // Initialize entities of given dimension if they don't exist
   mesh.topology_mutable().create_entities(tdim);
@@ -35,8 +35,8 @@ std::vector<std::int32_t> range(const mesh::Mesh& mesh, int tdim)
 //-----------------------------------------------------------------------------
 // Compute bounding box of mesh entity. The bounding box is defined by (lower
 // left corner, top right corner). Storage flattened row-major
-std::array<double, 6> compute_bbox_of_entity(const mesh::Mesh& mesh, int dim,
-                                             std::int32_t index)
+std::array<double, 6> compute_bbox_of_entity(const mesh::Mesh<double>& mesh,
+                                             int dim, std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   std::span<const double> xg = mesh.geometry().x();
@@ -205,14 +205,14 @@ std::int32_t _build_from_point(
 } // namespace
 
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
+BoundingBoxTree::BoundingBoxTree(const mesh::Mesh<double>& mesh, int tdim,
                                  double padding)
     : BoundingBoxTree::BoundingBoxTree(mesh, tdim, range(mesh, tdim), padding)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
+BoundingBoxTree::BoundingBoxTree(const mesh::Mesh<double>& mesh, int tdim,
                                  std::span<const std::int32_t> entities,
                                  double padding)
     : _tdim(tdim)

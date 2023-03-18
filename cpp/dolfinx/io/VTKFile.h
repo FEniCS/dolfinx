@@ -25,6 +25,7 @@ class Function;
 
 namespace dolfinx::mesh
 {
+template <typename T>
 class Mesh;
 }
 
@@ -59,7 +60,7 @@ public:
   /// isoparametric cells.
   /// @param[in] mesh The Mesh to write to file
   /// @param[in] time Time parameter to associate with @p mesh
-  void write(const mesh::Mesh& mesh, double time = 0.0);
+  void write(const mesh::Mesh<double>& mesh, double time = 0.0);
 
   /// Write finite elements function with an associated timestep
   /// @param[in] u List of functions to write to file

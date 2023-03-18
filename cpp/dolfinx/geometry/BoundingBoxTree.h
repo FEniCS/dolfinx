@@ -17,6 +17,7 @@
 
 namespace dolfinx::mesh
 {
+template <typename T>
 class Mesh;
 }
 
@@ -37,7 +38,7 @@ public:
   /// compute the bounding box for (may be empty, if none).
   /// @param[in] padding A float perscribing how much the bounding box
   /// of each entity should be padded
-  BoundingBoxTree(const mesh::Mesh& mesh, int tdim,
+  BoundingBoxTree(const mesh::Mesh<double>& mesh, int tdim,
                   std::span<const std::int32_t> entities, double padding = 0);
 
   /// Constructor
@@ -46,7 +47,7 @@ public:
   /// build the bounding box tree for
   /// @param[in] padding A float perscribing how much the bounding box
   /// of each entity should be padded
-  BoundingBoxTree(const mesh::Mesh& mesh, int tdim, double padding = 0);
+  BoundingBoxTree(const mesh::Mesh<double>& mesh, int tdim, double padding = 0);
 
   /// Constructor @param[in] points Cloud of points, with associated
   /// point identifier index, to build the bounding box tree around

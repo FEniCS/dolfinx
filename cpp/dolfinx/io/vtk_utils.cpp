@@ -188,7 +188,7 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
-io::extract_vtk_connectivity(const mesh::Mesh& mesh)
+io::extract_vtk_connectivity(const mesh::Mesh<double>& mesh)
 {
   // Get DOLFINx to VTK permutation
   // FIXME: Use better way to get number of nodes

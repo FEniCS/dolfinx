@@ -15,6 +15,7 @@
 
 namespace dolfinx::mesh
 {
+template <typename T>
 class Mesh;
 }
 
@@ -34,7 +35,7 @@ public:
   /// @param[in] mesh The mesh
   /// @param[in] element The element
   /// @param[in] dofmap The dofmap
-  FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
+  FunctionSpace(std::shared_ptr<const mesh::Mesh<double>> mesh,
                 std::shared_ptr<const FiniteElement> element,
                 std::shared_ptr<const DofMap> dofmap);
 
@@ -88,7 +89,7 @@ public:
   std::vector<double> tabulate_dof_coordinates(bool transpose) const;
 
   /// The mesh
-  std::shared_ptr<const mesh::Mesh> mesh() const;
+  std::shared_ptr<const mesh::Mesh<double>> mesh() const;
 
   /// The finite element
   std::shared_ptr<const FiniteElement> element() const;
@@ -98,7 +99,7 @@ public:
 
 private:
   // The mesh
-  std::shared_ptr<const mesh::Mesh> _mesh;
+  std::shared_ptr<const mesh::Mesh<double>> _mesh;
 
   // The finite element
   std::shared_ptr<const FiniteElement> _element;

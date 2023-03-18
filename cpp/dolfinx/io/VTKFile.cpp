@@ -734,7 +734,7 @@ void io::VTKFile::flush()
   }
 }
 //----------------------------------------------------------------------------
-void io::VTKFile::write(const mesh::Mesh& mesh, double time)
+void io::VTKFile::write(const mesh::Mesh<double>& mesh, double time)
 {
   if (!_pvd_xml)
     throw std::runtime_error("VTKFile has already been closed");

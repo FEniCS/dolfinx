@@ -194,7 +194,8 @@ std::vector<std::string> fem::get_constant_names(const ufcx_form& ufcx_form)
 }
 //-----------------------------------------------------------------------------
 fem::FunctionSpace fem::create_functionspace(
-    std::shared_ptr<mesh::Mesh> mesh, const basix::FiniteElement& e, int bs,
+    std::shared_ptr<mesh::Mesh<double>> mesh, const basix::FiniteElement& e,
+    int bs,
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
@@ -228,7 +229,7 @@ fem::FunctionSpace fem::create_functionspace(
 //-----------------------------------------------------------------------------
 fem::FunctionSpace fem::create_functionspace(
     ufcx_function_space* (*fptr)(const char*), const std::string& function_name,
-    std::shared_ptr<mesh::Mesh> mesh,
+    std::shared_ptr<mesh::Mesh<double>> mesh,
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
@@ -270,7 +271,7 @@ std::vector<std::pair<int, std::vector<std::int32_t>>>
 fem::compute_integration_domains(fem::IntegralType integral_type,
                                  const mesh::MeshTags<int>& meshtags)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
+  auto mesh = meshtags.mesh();
   assert(mesh);
   const mesh::Topology& topology = mesh->topology();
   const int tdim = topology.dim();

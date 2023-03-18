@@ -32,6 +32,7 @@ class Function;
 
 namespace dolfinx::mesh
 {
+template <typename T>
 class Mesh;
 }
 
@@ -59,7 +60,7 @@ private:
   /// @param[in] mesh
   /// @param[in] u
   ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-               std::string tag, std::shared_ptr<const mesh::Mesh> mesh,
+               std::string tag, std::shared_ptr<const mesh::Mesh<double>> mesh,
                const U& u);
 
 protected:
@@ -69,7 +70,7 @@ protected:
   /// @param[in] tag The ADIOS2 object name
   /// @param[in] mesh The mesh
   ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-               std::string tag, std::shared_ptr<const mesh::Mesh> mesh);
+               std::string tag, std::shared_ptr<const mesh::Mesh<double>> mesh);
 
   /// @brief Create an ADIOS2-based writer for a list of functions
   /// @param[in] comm The MPI communicator
@@ -102,7 +103,7 @@ protected:
   std::unique_ptr<adios2::ADIOS> _adios;
   std::unique_ptr<adios2::IO> _io;
   std::unique_ptr<adios2::Engine> _engine;
-  std::shared_ptr<const mesh::Mesh> _mesh;
+  std::shared_ptr<const mesh::Mesh<double>> _mesh;
   U _u;
 };
 
@@ -127,7 +128,7 @@ public:
   /// @note The mesh geometry can be updated between write steps but the
   /// topology should not be changed between write steps.
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-              std::shared_ptr<const mesh::Mesh> mesh);
+              std::shared_ptr<const mesh::Mesh<double>> mesh);
 
   /// @brief Create Fides writer for list of functions
   /// @param[in] comm The MPI communicator
@@ -185,7 +186,7 @@ public:
   /// @note The mesh geometry can be updated between write steps but the
   /// topology should not be changed between write steps
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
-            std::shared_ptr<const mesh::Mesh> mesh);
+            std::shared_ptr<const mesh::Mesh<double>> mesh);
 
   /// @brief Create a VTX writer for list of functions
   /// @param[in] comm The MPI communicator to open the file on

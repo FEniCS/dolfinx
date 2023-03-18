@@ -36,7 +36,7 @@ namespace
 /// @return The vertex coordinates. The shape is `(3, num_vertices)` and
 /// the jth column hold the coordinates of vertex j.
 std::pair<std::vector<double>, std::array<std::size_t, 2>>
-compute_vertex_coords(const mesh::Mesh& mesh)
+compute_vertex_coords(const mesh::Mesh<double>& mesh)
 {
   const mesh::Topology& topology = mesh.topology();
   const int tdim = topology.dim();
@@ -87,7 +87,7 @@ compute_vertex_coords(const mesh::Mesh& mesh)
 /// array).
 std::tuple<std::vector<std::int32_t>, std::vector<double>,
            std::vector<std::int32_t>>
-compute_vertex_coords_boundary(const mesh::Mesh& mesh, int dim,
+compute_vertex_coords_boundary(const mesh::Mesh<double>& mesh, int dim,
                                std::span<const std::int32_t> facets)
 {
   const mesh::Topology& topology = mesh.topology();
@@ -187,7 +187,7 @@ mesh::extract_topology(const CellType& cell_type,
                                        num_vertices_per_cell);
 }
 //-----------------------------------------------------------------------------
-std::vector<double> mesh::h(const Mesh& mesh,
+std::vector<double> mesh::h(const Mesh<double>& mesh,
                             std::span<const std::int32_t> entities, int dim)
 {
   if (entities.empty())
@@ -237,7 +237,7 @@ std::vector<double> mesh::h(const Mesh& mesh,
   return h;
 }
 //-----------------------------------------------------------------------------
-std::vector<double> mesh::cell_normals(const mesh::Mesh& mesh, int dim,
+std::vector<double> mesh::cell_normals(const mesh::Mesh<double>& mesh, int dim,
                                        std::span<const std::int32_t> entities)
 {
   if (entities.empty())
@@ -354,7 +354,7 @@ std::vector<double> mesh::cell_normals(const mesh::Mesh& mesh, int dim,
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
-mesh::compute_midpoints(const Mesh& mesh, int dim,
+mesh::compute_midpoints(const Mesh<double>& mesh, int dim,
                         std::span<const std::int32_t> entities)
 {
   if (entities.empty())
@@ -386,7 +386,7 @@ mesh::compute_midpoints(const Mesh& mesh, int dim,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities(
-    const Mesh& mesh, int dim,
+    const Mesh<double>& mesh, int dim,
     const std::function<std::vector<std::int8_t>(
         std::experimental::mdspan<
             const double,
@@ -434,7 +434,7 @@ std::vector<std::int32_t> mesh::locate_entities(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::locate_entities_boundary(
-    const Mesh& mesh, int dim,
+    const Mesh<double>& mesh, int dim,
     const std::function<std::vector<std::int8_t>(
         std::experimental::mdspan<
             const double,
@@ -491,7 +491,7 @@ std::vector<std::int32_t> mesh::locate_entities_boundary(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
-mesh::entities_to_geometry(const Mesh& mesh, int dim,
+mesh::entities_to_geometry(const Mesh<double>& mesh, int dim,
                            std::span<const std::int32_t> entities, bool orient)
 {
   CellType cell_type = mesh.topology().cell_type();

@@ -26,7 +26,7 @@ void geometry(py::module& m)
 {
   m.def(
       "create_midpoint_tree",
-      [](const dolfinx::mesh::Mesh& mesh, int tdim,
+      [](const dolfinx::mesh::Mesh<double>& mesh, int tdim,
          const py::array_t<std::int32_t, py::array::c_style>& entities)
       {
         return dolfinx::geometry::create_midpoint_tree(
@@ -39,7 +39,7 @@ void geometry(py::module& m)
       "compute_closest_entity",
       [](const dolfinx::geometry::BoundingBoxTree& tree,
          const dolfinx::geometry::BoundingBoxTree& midpoint_tree,
-         const dolfinx::mesh::Mesh& mesh,
+         const dolfinx::mesh::Mesh<double>& mesh,
          const py::array_t<double, py::array::c_style>& points)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
@@ -65,7 +65,8 @@ void geometry(py::module& m)
       py::arg("tree"), py::arg("midpoint_tree"), py::arg("mesh"),
       py::arg("points"));
   m.def("determine_point_ownership",
-        [](const dolfinx::mesh::Mesh& mesh, const py::array_t<double>& points)
+        [](const dolfinx::mesh::Mesh<double>& mesh,
+           const py::array_t<double>& points)
         {
           const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
           std::vector<double> _p(3 * p_s0);
@@ -170,7 +171,7 @@ void geometry(py::module& m)
 
   m.def(
       "squared_distance",
-      [](const dolfinx::mesh::Mesh& mesh, int dim,
+      [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
          std::vector<std::int32_t> indices, const py::array_t<double>& points)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
@@ -196,7 +197,7 @@ void geometry(py::module& m)
       py::arg("mesh"), py::arg("dim"), py::arg("indices"), py::arg("points"));
   m.def(
       "compute_colliding_cells",
-      [](const dolfinx::mesh::Mesh& mesh,
+      [](const dolfinx::mesh::Mesh<double>& mesh,
          const dolfinx::graph::AdjacencyList<int>& candidate_cells,
          const py::array_t<double>& points)
           -> std::variant<dolfinx::graph::AdjacencyList<std::int32_t>,
@@ -242,7 +243,7 @@ void geometry(py::module& m)
              std::shared_ptr<dolfinx::geometry::BoundingBoxTree>>(
       m, "BoundingBoxTree")
       .def(py::init(
-               [](const dolfinx::mesh::Mesh& mesh, int dim,
+               [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
                   const py::array_t<std::int32_t, py::array::c_style>& entities,
                   double padding)
                {

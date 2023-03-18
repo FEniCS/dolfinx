@@ -89,7 +89,7 @@ void declare_meshtags(py::module& m, std::string type)
              std::shared_ptr<dolfinx::mesh::MeshTags<T>>>(
       m, pyclass_name.c_str(), "MeshTags object")
       .def(py::init(
-          [](std::shared_ptr<const dolfinx::mesh::Mesh> mesh, int dim,
+          [](std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh, int dim,
              const py::array_t<std::int32_t, py::array::c_style>& indices,
              const py::array_t<T, py::array::c_style>& values)
           {
@@ -123,7 +123,7 @@ void declare_meshtags(py::module& m, std::string type)
            { return as_pyarray(self.find(value)); });
 
   m.def("create_meshtags",
-        [](std::shared_ptr<const dolfinx::mesh::Mesh> mesh, int dim,
+        [](std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh, int dim,
            const dolfinx::graph::AdjacencyList<std::int32_t>& entities,
            const py::array_t<T, py::array::c_style>& values)
         {
@@ -158,7 +158,7 @@ void mesh(py::module& m)
         py::arg("type"));
   m.def(
       "cell_normals",
-      [](const dolfinx::mesh::Mesh& mesh, int dim,
+      [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
          const py::array_t<std::int32_t, py::array::c_style>& entities)
       {
         std::vector<double> n = dolfinx::mesh::cell_normals(
@@ -174,7 +174,7 @@ void mesh(py::module& m)
 
   m.def(
       "h",
-      [](const dolfinx::mesh::Mesh& mesh, int dim,
+      [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
          const py::array_t<std::int32_t, py::array::c_style>& entities)
       {
         return as_pyarray(dolfinx::mesh::h(
@@ -185,7 +185,7 @@ void mesh(py::module& m)
 
   m.def(
       "compute_midpoints",
-      [](const dolfinx::mesh::Mesh& mesh, int dim,
+      [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
          py::array_t<std::int32_t, py::array::c_style> entities)
       {
         std::vector<double> x = dolfinx::mesh::compute_midpoints(
@@ -235,7 +235,7 @@ void mesh(py::module& m)
 
   m.def(
       "create_submesh",
-      [](const dolfinx::mesh::Mesh& mesh, int dim,
+      [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
          const py::array_t<std::int32_t, py::array::c_style>& entities)
       {
         return dolfinx::mesh::create_submesh(
@@ -333,27 +333,32 @@ void mesh(py::module& m)
       .def("cell_name", [](const dolfinx::mesh::Topology& self)
            { return dolfinx::mesh::to_string(self.cell_type()); })
       .def("interprocess_facets", &dolfinx::mesh::Topology::interprocess_facets)
-      .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self)
+      .def_property_readonly("comm", [](dolfinx::mesh::Mesh<double>& self)
                              { return MPICommWrapper(self.comm()); });
 
   // dolfinx::mesh::Mesh
-  py::class_<dolfinx::mesh::Mesh, std::shared_ptr<dolfinx::mesh::Mesh>>(
+  py::class_<dolfinx::mesh::Mesh<double>,
+             std::shared_ptr<dolfinx::mesh::Mesh<double>>>(
       m, "Mesh", py::dynamic_attr(), "Mesh object")
       .def(py::init(
                [](const MPICommWrapper comm,
                   const dolfinx::mesh::Topology& topology,
-                  dolfinx::mesh::Geometry<double>& geometry)
-               { return dolfinx::mesh::Mesh(comm.get(), topology, geometry); }),
+                  dolfinx::mesh::Geometry<double>& geometry) {
+                 return dolfinx::mesh::Mesh<double>(comm.get(), topology,
+                                                    geometry);
+               }),
            py::arg("comm"), py::arg("topology"), py::arg("geometry"))
       .def_property_readonly(
-          "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
+          "geometry",
+          py::overload_cast<>(&dolfinx::mesh::Mesh<double>::geometry),
           "Mesh geometry")
       .def_property_readonly(
-          "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
+          "topology",
+          py::overload_cast<>(&dolfinx::mesh::Mesh<double>::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
-      .def_property_readonly("comm", [](dolfinx::mesh::Mesh& self)
+      .def_property_readonly("comm", [](dolfinx::mesh::Mesh<double>& self)
                              { return MPICommWrapper(self.comm()); })
-      .def_readwrite("name", &dolfinx::mesh::Mesh::name);
+      .def_readwrite("name", &dolfinx::mesh::Mesh<double>::name);
 
   // dolfinx::mesh::MeshTags
 
@@ -389,7 +394,7 @@ void mesh(py::module& m)
 
   m.def(
       "locate_entities",
-      [](const dolfinx::mesh::Mesh& mesh, int dim,
+      [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
          const std::function<py::array_t<bool>(
              const py::array_t<double, py::array::c_style>&)>& marker)
       {
@@ -409,7 +414,7 @@ void mesh(py::module& m)
 
   m.def(
       "locate_entities_boundary",
-      [](const dolfinx::mesh::Mesh& mesh, int dim,
+      [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
          const std::function<py::array_t<bool>(
              const py::array_t<double, py::array::c_style>&)>& marker)
       {
@@ -428,7 +433,7 @@ void mesh(py::module& m)
 
   m.def(
       "entities_to_geometry",
-      [](const dolfinx::mesh::Mesh& mesh, int dim,
+      [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
          py::array_t<std::int32_t, py::array::c_style> entities, bool orient)
       {
         std::vector<std::int32_t> idx = dolfinx::mesh::entities_to_geometry(

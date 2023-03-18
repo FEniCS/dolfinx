@@ -169,7 +169,7 @@ T assemble_scalar(
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = M.mesh();
+  std::shared_ptr<const mesh::Mesh<double>> mesh = M.mesh();
   assert(mesh);
 
   T value = 0;

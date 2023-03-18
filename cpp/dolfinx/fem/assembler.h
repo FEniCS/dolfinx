@@ -59,7 +59,7 @@ T assemble_scalar(
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = M.mesh();
+  std::shared_ptr<const mesh::Mesh<double>> mesh = M.mesh();
   assert(mesh);
   if constexpr (std::is_same_v<double, impl::scalar_value_type_t<T>>)
     return impl::assemble_scalar(M, mesh->geometry(), constants, coefficients);
@@ -148,7 +148,7 @@ void apply_lifting(
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
-  std::shared_ptr<const mesh::Mesh> mesh;
+  std::shared_ptr<const mesh::Mesh<double>> mesh;
   for (auto& a_i : a)
   {
     if (a_i and !mesh)
@@ -245,7 +245,7 @@ void assemble_matrix(
     std::span<const std::int8_t> dof_marker1)
 
 {
-  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
+  std::shared_ptr<const mesh::Mesh<double>> mesh = a.mesh();
   assert(mesh);
   if constexpr (std::is_same_v<double, impl::scalar_value_type_t<T>>)
   {

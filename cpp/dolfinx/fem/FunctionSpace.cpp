@@ -20,7 +20,7 @@ using namespace dolfinx;
 using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
+FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh<double>> mesh,
                              std::shared_ptr<const FiniteElement> element,
                              std::shared_ptr<const DofMap> dofmap)
     : _mesh(mesh), _element(element), _dofmap(dofmap),
@@ -243,7 +243,10 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
   return coords;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const mesh::Mesh> FunctionSpace::mesh() const { return _mesh; }
+std::shared_ptr<const mesh::Mesh<double>> FunctionSpace::mesh() const
+{
+  return _mesh;
+}
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FiniteElement> FunctionSpace::element() const
 {

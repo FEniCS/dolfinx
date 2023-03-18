@@ -370,7 +370,7 @@ void assemble_matrix(
                    std::pair<std::span<const T>, int>>& coefficients,
     std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
+  std::shared_ptr<const mesh::Mesh<double>> mesh = a.mesh();
   assert(mesh);
 
   // Get dofmap data

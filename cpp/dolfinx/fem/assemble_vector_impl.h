@@ -734,7 +734,7 @@ void lift_bc(std::span<T> b, const Form<T>& a,
              std::span<const std::int8_t> bc_markers1, std::span<const T> x0,
              T scale)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
+  std::shared_ptr<const mesh::Mesh<double>> mesh = a.mesh();
   assert(mesh);
 
   // Get dofmap for columns and rows of a
@@ -937,7 +937,7 @@ void assemble_vector(
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = L.mesh();
+  std::shared_ptr<const mesh::Mesh<double>> mesh = L.mesh();
   assert(mesh);
 
   // Get dofmap data
@@ -1067,7 +1067,7 @@ void assemble_vector(
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = L.mesh();
+  std::shared_ptr<const mesh::Mesh<double>> mesh = L.mesh();
   assert(mesh);
   if constexpr (std::is_same_v<double, scalar_value_type_t<T>>)
     assemble_vector(b, L, mesh->geometry(), constants, coefficients);

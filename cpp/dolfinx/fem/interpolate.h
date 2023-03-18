@@ -36,7 +36,7 @@ class Function;
 /// @return The coordinates in the physical space at which to evaluate
 /// an expression. The shape is (3, num_points) and storage is row-major.
 std::vector<double> interpolation_coords(const fem::FiniteElement& element,
-                                         const mesh::Mesh& mesh,
+                                         const mesh::Mesh<double>& mesh,
                                          std::span<const std::int32_t> cells);
 
 /// Helper type for the data that can be cached to speed up repeated
@@ -953,7 +953,7 @@ void interpolate(Function<T>& u, const Function<T>& v,
 {
   assert(u.function_space());
   assert(v.function_space());
-  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
+  auto mesh = u.function_space()->mesh();
   assert(mesh);
 
   auto cell_map0 = mesh->topology().index_map(mesh->topology().dim());

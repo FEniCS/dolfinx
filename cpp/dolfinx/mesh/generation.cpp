@@ -85,10 +85,10 @@ std::vector<double> create_geom(MPI_Comm comm,
   return geom;
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh build_tet(MPI_Comm comm,
-                     const std::array<std::array<double, 3>, 2>& p,
-                     std::array<std::size_t, 3> n,
-                     const CellPartitionFunction& partitioner)
+mesh::Mesh<double> build_tet(MPI_Comm comm,
+                             const std::array<std::array<double, 3>, 2>& p,
+                             std::array<std::size_t, 3> n,
+                             const CellPartitionFunction& partitioner)
 {
   common::Timer timer("Build BoxMesh");
 
@@ -129,14 +129,15 @@ mesh::Mesh build_tet(MPI_Comm comm,
   }
 
   fem::CoordinateElement element(CellType::tetrahedron, 1);
-  return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 4),
-                     element, geom, {geom.size() / 3, 3}, partitioner);
+  return create_mesh<double>(comm,
+                             graph::regular_adjacency_list(std::move(cells), 4),
+                             element, geom, {geom.size() / 3, 3}, partitioner);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh build_hex(MPI_Comm comm,
-                     const std::array<std::array<double, 3>, 2>& p,
-                     std::array<std::size_t, 3> n,
-                     const CellPartitionFunction& partitioner)
+mesh::Mesh<double> build_hex(MPI_Comm comm,
+                             const std::array<std::array<double, 3>, 2>& p,
+                             std::array<std::size_t, 3> n,
+                             const CellPartitionFunction& partitioner)
 {
   std::vector<double> geom = create_geom(comm, p, n);
 
@@ -172,14 +173,15 @@ mesh::Mesh build_hex(MPI_Comm comm,
   }
 
   fem::CoordinateElement element(CellType::hexahedron, 1);
-  return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 8),
-                     element, geom, {geom.size() / 3, 3}, partitioner);
+  return create_mesh<double>(comm,
+                             graph::regular_adjacency_list(std::move(cells), 8),
+                             element, geom, {geom.size() / 3, 3}, partitioner);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh build_prism(MPI_Comm comm,
-                       const std::array<std::array<double, 3>, 2>& p,
-                       std::array<std::size_t, 3> n,
-                       const CellPartitionFunction& partitioner)
+mesh::Mesh<double> build_prism(MPI_Comm comm,
+                               const std::array<std::array<double, 3>, 2>& p,
+                               std::array<std::size_t, 3> n,
+                               const CellPartitionFunction& partitioner)
 {
   std::vector<double> geom = create_geom(comm, p, n);
 
@@ -219,18 +221,19 @@ mesh::Mesh build_prism(MPI_Comm comm,
   }
 
   fem::CoordinateElement element(CellType::prism, 1);
-  return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 6),
-                     element, geom, {geom.size() / 3, 3}, partitioner);
+  return create_mesh<double>(comm,
+                             graph::regular_adjacency_list(std::move(cells), 6),
+                             element, geom, {geom.size() / 3, 3}, partitioner);
 }
 //-----------------------------------------------------------------------------
 
 } // namespace
 
 //-----------------------------------------------------------------------------
-mesh::Mesh mesh::create_box(MPI_Comm comm,
-                            const std::array<std::array<double, 3>, 2>& p,
-                            std::array<std::size_t, 3> n, CellType celltype,
-                            const CellPartitionFunction& partitioner)
+mesh::Mesh<double>
+mesh::create_box(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
+                 std::array<std::size_t, 3> n, CellType celltype,
+                 const CellPartitionFunction& partitioner)
 {
   switch (celltype)
   {
@@ -247,15 +250,15 @@ mesh::Mesh mesh::create_box(MPI_Comm comm,
 
 namespace
 {
-mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
-                 const CellPartitionFunction& partitioner)
+mesh::Mesh<double> build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
+                         const CellPartitionFunction& partitioner)
 {
   fem::CoordinateElement element(CellType::interval, 1);
 
   // Receive mesh according to parallel policy
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    return create_mesh(
+    return create_mesh<double>(
         comm, graph::regular_adjacency_list(std::vector<std::int64_t>(), 2),
         element, std::vector<double>(), {0, 1}, partitioner);
   }
@@ -290,15 +293,16 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
     for (std::size_t j = 0; j < 2; ++j)
       cells[2 * ix + j] = ix + j;
 
-  return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 2),
-                     element, geom, {geom.size(), 1}, partitioner);
+  return create_mesh<double>(comm,
+                             graph::regular_adjacency_list(std::move(cells), 2),
+                             element, geom, {geom.size(), 1}, partitioner);
 }
 } // namespace
 
 //-----------------------------------------------------------------------------
-mesh::Mesh mesh::create_interval(MPI_Comm comm, std::size_t n,
-                                 std::array<double, 2> x,
-                                 const CellPartitionFunction& partitioner)
+mesh::Mesh<double>
+mesh::create_interval(MPI_Comm comm, std::size_t n, std::array<double, 2> x,
+                      const CellPartitionFunction& partitioner)
 {
   return build(comm, n, x, partitioner);
 }
@@ -306,18 +310,18 @@ mesh::Mesh mesh::create_interval(MPI_Comm comm, std::size_t n,
 namespace
 {
 //-----------------------------------------------------------------------------
-mesh::Mesh build_tri(MPI_Comm comm,
-                     const std::array<std::array<double, 2>, 2>& p,
-                     std::array<std::size_t, 2> n,
-                     const CellPartitionFunction& partitioner,
-                     DiagonalType diagonal)
+mesh::Mesh<double> build_tri(MPI_Comm comm,
+                             const std::array<std::array<double, 2>, 2>& p,
+                             std::array<std::size_t, 2> n,
+                             const CellPartitionFunction& partitioner,
+                             DiagonalType diagonal)
 {
   fem::CoordinateElement element(CellType::triangle, 1);
 
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    return create_mesh(
+    return create_mesh<double>(
         comm, graph::regular_adjacency_list(std::vector<std::int64_t>(), 3),
         element, std::vector<double>(), {0, 2}, partitioner);
   }
@@ -488,22 +492,23 @@ mesh::Mesh build_tri(MPI_Comm comm,
   }
   }
 
-  return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 3),
-                     element, geom, {geom.size() / 2, 2}, partitioner);
+  return create_mesh<double>(comm,
+                             graph::regular_adjacency_list(std::move(cells), 3),
+                             element, geom, {geom.size() / 2, 2}, partitioner);
 }
 
 //-----------------------------------------------------------------------------
-mesh::Mesh build_quad(MPI_Comm comm,
-                      const std::array<std::array<double, 2>, 2> p,
-                      std::array<std::size_t, 2> n,
-                      const CellPartitionFunction& partitioner)
+mesh::Mesh<double> build_quad(MPI_Comm comm,
+                              const std::array<std::array<double, 2>, 2> p,
+                              std::array<std::size_t, 2> n,
+                              const CellPartitionFunction& partitioner)
 {
   fem::CoordinateElement element(CellType::quadrilateral, 1);
 
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
-    return create_mesh(
+    return create_mesh<double>(
         comm, graph::regular_adjacency_list(std::vector<std::int64_t>(), 4),
         element, std::vector<double>(), {0, 2}, partitioner);
   }
@@ -547,27 +552,25 @@ mesh::Mesh build_quad(MPI_Comm comm,
     }
   }
 
-  return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 4),
-                     element, geom, {geom.size() / 2, 2}, partitioner);
+  return create_mesh<double>(comm,
+                             graph::regular_adjacency_list(std::move(cells), 4),
+                             element, geom, {geom.size() / 2, 2}, partitioner);
 }
 } // namespace
 
 //-----------------------------------------------------------------------------
-mesh::Mesh mesh::create_rectangle(MPI_Comm comm,
-                                  const std::array<std::array<double, 2>, 2>& p,
-                                  std::array<std::size_t, 2> n,
-                                  CellType celltype, DiagonalType diagonal)
+mesh::Mesh<double> mesh::create_rectangle(
+    MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
+    std::array<std::size_t, 2> n, CellType celltype, DiagonalType diagonal)
 {
   return create_rectangle(comm, p, n, celltype, create_cell_partitioner(),
                           diagonal);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh mesh::create_rectangle(MPI_Comm comm,
-                                  const std::array<std::array<double, 2>, 2>& p,
-                                  std::array<std::size_t, 2> n,
-                                  CellType celltype,
-                                  const CellPartitionFunction& partitioner,
-                                  DiagonalType diagonal)
+mesh::Mesh<double> mesh::create_rectangle(
+    MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
+    std::array<std::size_t, 2> n, CellType celltype,
+    const CellPartitionFunction& partitioner, DiagonalType diagonal)
 {
   switch (celltype)
   {

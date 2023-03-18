@@ -39,6 +39,7 @@ class CoordinateElement;
 
 namespace mesh
 {
+template <typename T>
 class Mesh;
 }
 
@@ -102,7 +103,7 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// distributed and rank1 will receive the (local) cell-vertex connectivity
 /// for this triangle.
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
+distribute_entity_data(const mesh::Mesh<double>& mesh, int entity_dim,
                        std::span<const std::int64_t> entities,
                        std::span<const std::int32_t> data);
 

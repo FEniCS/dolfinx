@@ -188,7 +188,7 @@ void XDMFFile::close()
   _h5_id = -1;
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_mesh(const mesh::Mesh& mesh, std::string xpath)
+void XDMFFile::write_mesh(const mesh::Mesh<double>& mesh, std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -224,9 +224,9 @@ void XDMFFile::write_geometry(const mesh::Geometry<double>& geometry,
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
-                               mesh::GhostMode mode, std::string name,
-                               std::string xpath) const
+mesh::Mesh<double> XDMFFile::read_mesh(const fem::CoordinateElement& element,
+                                       mesh::GhostMode mode, std::string name,
+                                       std::string xpath) const
 {
   // Read mesh data
   auto [cells, cshape] = XDMFFile::read_topology_data(name, xpath);
@@ -240,8 +240,8 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
   graph::AdjacencyList<std::int64_t> cells_adj(std::move(cells),
                                                std::move(offset));
 
-  mesh::Mesh mesh
-      = mesh::create_mesh(_comm.comm(), cells_adj, element, x, xshape, mode);
+  mesh::Mesh<double> mesh = mesh::create_mesh<double>(_comm.comm(), cells_adj,
+                                                      element, x, xshape, mode);
   mesh.name = name;
   return mesh;
 }
@@ -315,7 +315,7 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
 }
 //-----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t>
-XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
+XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh<double>> mesh,
                         std::string name, std::string xpath)
 {
   LOG(INFO) << "XDMF read meshtags (" << name << ")";

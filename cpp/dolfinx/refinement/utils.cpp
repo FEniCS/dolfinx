@@ -53,7 +53,7 @@ std::int64_t local_to_global(std::int32_t local_index,
 /// @param local_edge_to_new_vertex
 /// @return array of points
 std::pair<std::vector<double>, std::array<std::size_t, 2>> create_new_geometry(
-    const mesh::Mesh& mesh,
+    const mesh::Mesh<double>& mesh,
     const std::map<std::int32_t, std::int64_t>& local_edge_to_new_vertex)
 {
   // Build map from vertex -> geometry dof
@@ -177,7 +177,7 @@ std::tuple<std::map<std::int32_t, std::int64_t>, std::vector<double>,
            std::array<std::size_t, 2>>
 refinement::create_new_vertices(MPI_Comm neighbor_comm,
                                 const graph::AdjacencyList<int>& shared_edges,
-                                const mesh::Mesh& mesh,
+                                const mesh::Mesh<double>& mesh,
                                 std::span<const std::int8_t> marked_edges)
 {
   // Take marked_edges and use to create new vertices
@@ -293,8 +293,8 @@ refinement::create_new_vertices(MPI_Comm neighbor_comm,
           xshape};
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh
-refinement::partition(const mesh::Mesh& old_mesh,
+mesh::Mesh<double>
+refinement::partition(const mesh::Mesh<double>& old_mesh,
                       const graph::AdjacencyList<std::int64_t>& cell_topology,
                       std::span<const double> new_coords,
                       std::array<std::size_t, 2> xshape, bool redistribute,
@@ -382,7 +382,7 @@ refinement::adjust_indices(const common::IndexMap& map, std::int32_t n)
 //-----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
     const mesh::MeshTags<std::int32_t>& meshtag,
-    std::shared_ptr<const mesh::Mesh> refined_mesh,
+    std::shared_ptr<const mesh::Mesh<double>> refined_mesh,
     std::span<const std::int32_t> cell, std::span<const std::int8_t> facet)
 {
   const int tdim = meshtag.mesh()->topology().dim();
@@ -506,7 +506,7 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
 //----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
     const mesh::MeshTags<std::int32_t>& meshtag,
-    std::shared_ptr<const mesh::Mesh> refined_mesh,
+    std::shared_ptr<const mesh::Mesh<double>> refined_mesh,
     std::span<const std::int32_t> cell)
 {
   const int tdim = meshtag.mesh()->topology().dim();

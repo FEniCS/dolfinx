@@ -79,7 +79,7 @@ compute_point_values(const fem::Function<T>& u)
 {
   auto V = u.function_space();
   assert(V);
-  std::shared_ptr<const mesh::Mesh> mesh = V->mesh();
+  auto mesh = V->mesh();
   assert(mesh);
   const int tdim = mesh->topology().dim();
 
@@ -135,7 +135,7 @@ std::int64_t get_padded_width(const fem::FiniteElement& e)
 template <typename Scalar>
 std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
+  auto mesh = u.function_space()->mesh();
   assert(mesh);
   const auto [data_values, dshape] = compute_point_values(u);
 
@@ -442,7 +442,8 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
+xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
+                                   int entity_dim,
                                    std::span<const std::int64_t> entities,
                                    std::span<const std::int32_t> data)
 {
@@ -470,7 +471,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   //    'postmaster' rank, and receive global "input" nodes for which
   //    this rank is the postmaster
 
-  auto postmaster_global_nodes_sendrecv = [](const mesh::Mesh& mesh)
+  auto postmaster_global_nodes_sendrecv = [](const mesh::Mesh<double>& mesh)
   {
     const MPI_Comm comm = mesh.comm();
     const int comm_size = dolfinx::MPI::size(comm);
@@ -515,7 +516,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   //    communication in Step 1 could be make non-blocking.
 
   auto postmaster_global_ent_sendrecv
-      = [&cell_vertex_dofs](const mesh::Mesh& mesh, int entity_dim,
+      = [&cell_vertex_dofs](const mesh::Mesh<double>& mesh, int entity_dim,
                             std::span<const std::int64_t> entities,
                             std::span<const std::int32_t> data)
   {
@@ -601,7 +602,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   // end.
 
   auto postmaster_send_to_candidates
-      = [](const mesh::Mesh& mesh, int entity_dim,
+      = [](const mesh::Mesh<double>& mesh, int entity_dim,
            const graph::AdjacencyList<std::int64_t>& nodes_g_recv,
            const graph::AdjacencyList<std::int64_t>& entities_recv,
            const graph::AdjacencyList<std::int32_t>& data_recv)
@@ -676,7 +677,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
   //       entities.
 
   auto determine_my_entities
-      = [&cell_vertex_dofs](const mesh::Mesh& mesh, int entity_dim,
+      = [&cell_vertex_dofs](const mesh::Mesh<double>& mesh, int entity_dim,
                             const graph::AdjacencyList<std::int64_t>& recv_ents,
                             const graph::AdjacencyList<std::int32_t>& recv_vals)
   {

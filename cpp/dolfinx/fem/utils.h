@@ -44,6 +44,7 @@ class IndexMap;
 
 namespace dolfinx::mesh
 {
+template <typename T>
 class Mesh;
 class Topology;
 } // namespace dolfinx::mesh
@@ -297,7 +298,7 @@ Form<T> create_form(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
-    std::shared_ptr<const mesh::Mesh> mesh = nullptr)
+    std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr)
 {
   if (ufcx_form.rank != (int)spaces.size())
     throw std::runtime_error("Wrong number of argument spaces for Form.");
@@ -595,7 +596,7 @@ Form<T> create_form(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
-    std::shared_ptr<const mesh::Mesh> mesh = nullptr)
+    std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr)
 {
   // Place coefficients in appropriate order
   std::vector<std::shared_ptr<const Function<T>>> coeff_map;
@@ -646,7 +647,7 @@ Form<T> create_form(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
-    std::shared_ptr<const mesh::Mesh> mesh = nullptr)
+    std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr)
 {
   ufcx_form* form = fptr();
   Form<T> L = create_form<T>(*form, spaces, coefficients, constants, subdomains,
@@ -663,11 +664,12 @@ Form<T> create_form(
 /// @param[in] reorder_fn The graph reordering function to call on the
 /// dofmap. If `nullptr`, the default re-ordering is used.
 /// @return The created function space
-FunctionSpace create_functionspace(
-    std::shared_ptr<mesh::Mesh> mesh, const basix::FiniteElement& e, int bs,
-    const std::function<
-        std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-    = nullptr);
+FunctionSpace
+create_functionspace(std::shared_ptr<mesh::Mesh<double>> mesh,
+                     const basix::FiniteElement& e, int bs,
+                     const std::function<std::vector<int>(
+                         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                     = nullptr);
 
 /// Create a FunctionSpace from UFC data
 ///
@@ -683,7 +685,7 @@ FunctionSpace create_functionspace(
 /// @return The created function space
 FunctionSpace create_functionspace(
     ufcx_function_space* (*fptr)(const char*), const std::string& function_name,
-    std::shared_ptr<mesh::Mesh> mesh,
+    std::shared_ptr<mesh::Mesh<double>> mesh,
     const std::function<
         std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
     = nullptr);
@@ -982,7 +984,7 @@ Expression<T> create_expression(
     const ufcx_expression& expression,
     const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-    std::shared_ptr<const mesh::Mesh> mesh = nullptr,
+    std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr,
     std::shared_ptr<const FunctionSpace> argument_function_space = nullptr)
 {
   if (expression.rank > 0 and !argument_function_space)
@@ -1040,7 +1042,7 @@ Expression<T> create_expression(
     const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    std::shared_ptr<const mesh::Mesh> mesh = nullptr,
+    std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr,
     std::shared_ptr<const FunctionSpace> argument_function_space = nullptr)
 {
   // Place coefficients in appropriate order

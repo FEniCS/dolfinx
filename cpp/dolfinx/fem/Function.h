@@ -380,7 +380,7 @@ public:
 
     // Get mesh
     assert(_function_space);
-    std::shared_ptr<const mesh::Mesh> mesh = _function_space->mesh();
+    auto mesh = _function_space->mesh();
     assert(mesh);
     const std::size_t gdim = mesh->geometry().dim();
     const std::size_t tdim = mesh->topology().dim();

@@ -48,7 +48,8 @@ public:
   /// @pre `indices` must be sorted and unique.
   template <std::convertible_to<std::vector<std::int32_t>> U,
             std::convertible_to<std::vector<T>> V>
-  MeshTags(std::shared_ptr<const Mesh> mesh, int dim, U&& indices, V&& values)
+  MeshTags(std::shared_ptr<const Mesh<double>> mesh, int dim, U&& indices,
+           V&& values)
       : _mesh(mesh), _dim(dim), _indices(std::forward<U>(indices)),
         _values(std::forward<V>(values))
   {
@@ -107,14 +108,14 @@ public:
   int dim() const { return _dim; }
 
   /// Return mesh
-  std::shared_ptr<const Mesh> mesh() const { return _mesh; }
+  std::shared_ptr<const Mesh<double>> mesh() const { return _mesh; }
 
   /// Name
   std::string name = "mesh_tags";
 
 private:
   // Associated mesh
-  std::shared_ptr<const Mesh> _mesh;
+  std::shared_ptr<const Mesh<double>> _mesh;
 
   // Topological dimension of tagged mesh entities
   int _dim;
@@ -136,7 +137,7 @@ private:
 /// @note Entities that do not exist on this rank are ignored.
 /// @warning `entities` must not contain duplicate entities.
 template <typename T>
-MeshTags<T> create_meshtags(std::shared_ptr<const Mesh> mesh, int dim,
+MeshTags<T> create_meshtags(std::shared_ptr<const Mesh<double>> mesh, int dim,
                             const graph::AdjacencyList<std::int32_t>& entities,
                             std::span<const T> values)
 {

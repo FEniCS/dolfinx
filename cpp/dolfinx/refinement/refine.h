@@ -11,6 +11,7 @@
 
 namespace dolfinx::mesh
 {
+template <typename T>
 class Mesh;
 } // namespace dolfinx::mesh
 
@@ -22,7 +23,8 @@ namespace dolfinx::refinement
 /// @param[in] redistribute If `true` refined mesh is re-partitioned
 /// across MPI ranks.
 /// @return Refined mesh
-mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute = true);
+mesh::Mesh<double> refine(const mesh::Mesh<double>& mesh,
+                          bool redistribute = true);
 
 /// @brief Create a locally refined mesh.
 ///
@@ -34,6 +36,7 @@ mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute = true);
 /// @param[in] redistribute If `true` refined mesh is re-partitioned
 /// across MPI ranks.
 /// @return Refined mesh.
-mesh::Mesh refine(const mesh::Mesh& mesh, std::span<const std::int32_t> edges,
-                  bool redistribute = true);
+mesh::Mesh<double> refine(const mesh::Mesh<double>& mesh,
+                          std::span<const std::int32_t> edges,
+                          bool redistribute = true);
 } // namespace dolfinx::refinement

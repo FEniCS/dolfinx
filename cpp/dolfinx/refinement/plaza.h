@@ -15,6 +15,7 @@
 
 namespace dolfinx::mesh
 {
+template <typename T>
 class Mesh;
 template <typename T>
 class MeshTags;
@@ -49,8 +50,9 @@ enum class Option : int
 /// cells. If an option is unselected, an empty list is returned.
 /// @return Refined mesh and optional parent cell index, parent facet
 /// indices
-std::tuple<mesh::Mesh, std::vector<std::int32_t>, std::vector<std::int8_t>>
-refine(const mesh::Mesh& mesh, bool redistribute, Option option);
+std::tuple<mesh::Mesh<double>, std::vector<std::int32_t>,
+           std::vector<std::int8_t>>
+refine(const mesh::Mesh<double>& mesh, bool redistribute, Option option);
 
 /// @brief Refine with markers, optionally redistributing, and
 /// optionally calculating the parent-child relationships.
@@ -63,8 +65,9 @@ refine(const mesh::Mesh& mesh, bool redistribute, Option option);
 /// @param[in] option Control the computation of parent facets, parent
 /// cells. If an option is unselected, an empty list is returned.
 /// @return New Mesh and optional parent cell index, parent facet indices
-std::tuple<mesh::Mesh, std::vector<std::int32_t>, std::vector<std::int8_t>>
-refine(const mesh::Mesh& mesh, std::span<const std::int32_t> edges,
+std::tuple<mesh::Mesh<double>, std::vector<std::int32_t>,
+           std::vector<std::int8_t>>
+refine(const mesh::Mesh<double>& mesh, std::span<const std::int32_t> edges,
        bool redistribute, Option option);
 
 /// @brief Refine mesh returning new mesh data.
@@ -78,7 +81,7 @@ refine(const mesh::Mesh& mesh, std::span<const std::int32_t> edges,
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<double>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>,
            std::vector<std::int8_t>>
-compute_refinement_data(const mesh::Mesh& mesh, Option option);
+compute_refinement_data(const mesh::Mesh<double>& mesh, Option option);
 
 /// Refine with markers returning new mesh data.
 ///
@@ -92,6 +95,6 @@ compute_refinement_data(const mesh::Mesh& mesh, Option option);
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<double>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>,
            std::vector<std::int8_t>>
-compute_refinement_data(const mesh::Mesh& mesh,
+compute_refinement_data(const mesh::Mesh<double>& mesh,
                         std::span<const std::int32_t> edges, Option option);
 } // namespace dolfinx::refinement::plaza

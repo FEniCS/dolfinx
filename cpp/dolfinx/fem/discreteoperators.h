@@ -55,7 +55,7 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
       = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
 
   // Get mesh
-  std::shared_ptr<const mesh::Mesh> mesh = V1.mesh();
+  auto mesh = V1.mesh();
   assert(mesh);
 
   // Check spaces

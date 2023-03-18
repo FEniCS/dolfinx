@@ -67,7 +67,7 @@ public:
                                const uint8_t*)>
           fn,
       const std::vector<int>& value_shape,
-      std::shared_ptr<const mesh::Mesh> mesh = nullptr,
+      std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr,
       std::shared_ptr<const FunctionSpace> argument_function_space = nullptr)
       : _coefficients(coefficients), _constants(constants), _mesh(mesh),
         _x_ref(std::vector<double>(X.begin(), X.end()), Xshape), _fn(fn),
@@ -223,7 +223,7 @@ public:
 
   /// Get mesh
   /// @return The mesh
-  std::shared_ptr<const mesh::Mesh> mesh() const { return _mesh; }
+  std::shared_ptr<const mesh::Mesh<double>> mesh() const { return _mesh; }
 
   /// Get value size
   /// @return value_size
@@ -263,7 +263,7 @@ private:
       _fn;
 
   // The mesh
-  std::shared_ptr<const mesh::Mesh> _mesh;
+  std::shared_ptr<const mesh::Mesh<double>> _mesh;
 
   // Shape of the evaluated expression
   std::vector<int> _value_shape;

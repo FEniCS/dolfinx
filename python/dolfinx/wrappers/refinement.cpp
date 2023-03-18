@@ -29,12 +29,12 @@ void refinement(py::module& m)
 
   // dolfinx::refinement::refine
   m.def("refine",
-        py::overload_cast<const dolfinx::mesh::Mesh&, bool>(
+        py::overload_cast<const dolfinx::mesh::Mesh<double>&, bool>(
             &dolfinx::refinement::refine),
         py::arg("mesh"), py::arg("redistribute") = true);
   m.def(
       "refine",
-      [](const dolfinx::mesh::Mesh& mesh,
+      [](const dolfinx::mesh::Mesh<double>& mesh,
          const py::array_t<std::int32_t, py::array::c_style>& edges,
          bool redistribute)
       {
@@ -45,7 +45,7 @@ void refinement(py::module& m)
       py::arg("mesh"), py::arg("edges"), py::arg("redistribute") = true);
   m.def(
       "refine_plaza",
-      [](const dolfinx::mesh::Mesh& mesh0, bool redistribute,
+      [](const dolfinx::mesh::Mesh<double>& mesh0, bool redistribute,
          dolfinx::refinement::plaza::Option option)
       {
         auto [mesh1, cell, facet]
@@ -56,8 +56,9 @@ void refinement(py::module& m)
       py::arg("mesh"), py::arg("redistribute"), py::arg("option"));
   m.def(
       "refine_plaza",
-      [](const dolfinx::mesh::Mesh& mesh0, py::array_t<std::int32_t> edges,
-         bool redistribute, dolfinx::refinement::plaza::Option option)
+      [](const dolfinx::mesh::Mesh<double>& mesh0,
+         py::array_t<std::int32_t> edges, bool redistribute,
+         dolfinx::refinement::plaza::Option option)
       {
         assert(edges.ndim() == 1);
         auto [mesh1, cell, facet] = dolfinx::refinement::plaza::refine(
@@ -72,7 +73,7 @@ void refinement(py::module& m)
   m.def(
       "transfer_facet_meshtag",
       [](const dolfinx::mesh::MeshTags<std::int32_t>& parent_meshtag,
-         std::shared_ptr<const dolfinx::mesh::Mesh> refined_mesh,
+         std::shared_ptr<const dolfinx::mesh::Mesh<double>> refined_mesh,
          const py::array_t<std::int32_t, py::array::c_style>& parent_cell,
          const py::array_t<std::int8_t, py::array::c_style>& parent_facet)
       {
@@ -86,7 +87,7 @@ void refinement(py::module& m)
   m.def(
       "transfer_cell_meshtag",
       [](const dolfinx::mesh::MeshTags<std::int32_t>& parent_meshtag,
-         std::shared_ptr<const dolfinx::mesh::Mesh> refined_mesh,
+         std::shared_ptr<const dolfinx::mesh::Mesh<double>> refined_mesh,
          const py::array_t<std::int32_t, py::array::c_style>& parent_cell)
       {
         return dolfinx::refinement::transfer_cell_meshtag(

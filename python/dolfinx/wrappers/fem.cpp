@@ -282,7 +282,7 @@ void declare_objects(py::module& m, const std::string& type)
                       const py::array_t<double, py::array::c_style>& X,
                       std::uintptr_t fn_addr,
                       const std::vector<int>& value_shape,
-                      std::shared_ptr<const dolfinx::mesh::Mesh> mesh,
+                      std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh,
                       std::shared_ptr<const dolfinx::fem::FunctionSpace>
                           argument_function_space)
                    {
@@ -336,7 +336,7 @@ void declare_objects(py::module& m, const std::string& type)
              coefficients,
          const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
              constants,
-         std::shared_ptr<const dolfinx::mesh::Mesh> mesh,
+         std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh,
          std::shared_ptr<const dolfinx::fem::FunctionSpace>
              argument_function_space)
       {
@@ -370,7 +370,7 @@ void declare_form(py::module& m, const std::string& type)
                   const std::vector<std::shared_ptr<
                       const dolfinx::fem::Constant<T>>>& constants,
                   bool needs_permutation_data,
-                  std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
+                  std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh)
                {
                  using kern = std::function<void(
                      T*, const T*, const T*,
@@ -420,7 +420,7 @@ void declare_form(py::module& m, const std::string& type)
                                                  py::array::c_style
                                                      | py::array::forcecast>>>>&
                       subdomains,
-                  std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
+                  std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh)
                {
                  std::map<dolfinx::fem::IntegralType,
                           std::vector<std::pair<std::int32_t,
@@ -514,7 +514,7 @@ void declare_form(py::module& m, const std::string& type)
                  py::array_t<std::int32_t,
                              py::array::c_style | py::array::forcecast>>>>&
              subdomains,
-         std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
+         std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh)
       {
         std::map<
             dolfinx::fem::IntegralType,
@@ -959,7 +959,8 @@ void fem(py::module& m)
 
   m.def(
       "interpolation_coords",
-      [](const dolfinx::fem::FiniteElement& e, const dolfinx::mesh::Mesh& mesh,
+      [](const dolfinx::fem::FiniteElement& e,
+         const dolfinx::mesh::Mesh<double>& mesh,
          py::array_t<std::int32_t, py::array::c_style> cells)
       {
         std::vector<double> x = dolfinx::fem::interpolation_coords(
@@ -972,7 +973,7 @@ void fem(py::module& m)
   // dolfinx::fem::FunctionSpace
   py::class_<dolfinx::fem::FunctionSpace,
              std::shared_ptr<dolfinx::fem::FunctionSpace>>(m, "FunctionSpace")
-      .def(py::init<std::shared_ptr<dolfinx::mesh::Mesh>,
+      .def(py::init<std::shared_ptr<dolfinx::mesh::Mesh<double>>,
                     std::shared_ptr<dolfinx::fem::FiniteElement>,
                     std::shared_ptr<dolfinx::fem::DofMap>>(),
            py::arg("mesh"), py::arg("element"), py::arg("dofmap"))

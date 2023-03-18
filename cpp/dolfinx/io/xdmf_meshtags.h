@@ -34,7 +34,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   LOG(INFO) << "XDMF: add meshtags (" << name << ")";
   // Get mesh
   assert(meshtags.mesh());
-  std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
+  auto mesh = meshtags.mesh();
   const int dim = meshtags.dim();
   std::shared_ptr<const common::IndexMap> entity_map
       = mesh->topology().index_map(dim);

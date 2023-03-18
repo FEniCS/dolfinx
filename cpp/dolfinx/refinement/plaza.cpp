@@ -29,7 +29,7 @@ namespace
 void enforce_rules(MPI_Comm neighbor_comm,
                    const graph::AdjacencyList<int>& shared_edges,
                    std::vector<std::int8_t>& marked_edges,
-                   const mesh::Mesh& mesh,
+                   const mesh::Mesh<double>& mesh,
                    std::span<const std::int32_t> long_edge)
 {
   common::Timer t0("PLAZA: Enforce rules");
@@ -267,7 +267,7 @@ get_simplices(std::span<const std::int64_t> indices,
 
 // Get the longest edge of each face (using local mesh index)
 std::pair<std::vector<std::int32_t>, std::vector<std::int8_t>>
-face_long_edge(const mesh::Mesh& mesh)
+face_long_edge(const mesh::Mesh<double>& mesh)
 {
   const int tdim = mesh.topology().dim();
   // FIXME: cleanup these calls? Some of the happen internally again.
@@ -454,7 +454,7 @@ std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<double>,
 compute_refinement(MPI_Comm neighbor_comm,
                    const std::vector<std::int8_t>& marked_edges,
                    const graph::AdjacencyList<int>& shared_edges,
-                   const mesh::Mesh& mesh,
+                   const mesh::Mesh<double>& mesh,
                    const std::vector<std::int32_t>& long_edge,
                    const std::vector<std::int8_t>& edge_ratio_ok,
                    plaza::Option option)
@@ -607,8 +607,9 @@ compute_refinement(MPI_Comm neighbor_comm,
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::tuple<mesh::Mesh, std::vector<std::int32_t>, std::vector<std::int8_t>>
-plaza::refine(const mesh::Mesh& mesh, bool redistribute, Option option)
+std::tuple<mesh::Mesh<double>, std::vector<std::int32_t>,
+           std::vector<std::int8_t>>
+plaza::refine(const mesh::Mesh<double>& mesh, bool redistribute, Option option)
 {
 
   auto [cell_adj, new_coords, xshape, parent_cell, parent_facet]
@@ -616,8 +617,9 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute, Option option)
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
-                              new_coords, xshape, mesh::GhostMode::none),
+    return {mesh::create_mesh<double>(mesh.comm(), cell_adj,
+                                      mesh.geometry().cmap(), new_coords,
+                                      xshape, mesh::GhostMode::none),
             std::move(parent_cell), std::move(parent_facet)};
   }
 
@@ -640,9 +642,11 @@ plaza::refine(const mesh::Mesh& mesh, bool redistribute, Option option)
           std::move(parent_cell), std::move(parent_facet)};
 }
 //-----------------------------------------------------------------------------
-std::tuple<mesh::Mesh, std::vector<std::int32_t>, std::vector<std::int8_t>>
-plaza::refine(const mesh::Mesh& mesh, std::span<const std::int32_t> edges,
-              bool redistribute, Option option)
+std::tuple<mesh::Mesh<double>, std::vector<std::int32_t>,
+           std::vector<std::int8_t>>
+plaza::refine(const mesh::Mesh<double>& mesh,
+              std::span<const std::int32_t> edges, bool redistribute,
+              Option option)
 {
 
   auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
@@ -650,8 +654,9 @@ plaza::refine(const mesh::Mesh& mesh, std::span<const std::int32_t> edges,
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
-                              new_vertex_coords, xshape, mesh::GhostMode::none),
+    return {mesh::create_mesh<double>(mesh.comm(), cell_adj,
+                                      mesh.geometry().cmap(), new_vertex_coords,
+                                      xshape, mesh::GhostMode::none),
             std::move(parent_cell), std::move(parent_facet)};
   }
 
@@ -677,7 +682,7 @@ plaza::refine(const mesh::Mesh& mesh, std::span<const std::int32_t> edges,
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<double>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>,
            std::vector<std::int8_t>>
-plaza::compute_refinement_data(const mesh::Mesh& mesh, Option option)
+plaza::compute_refinement_data(const mesh::Mesh<double>& mesh, Option option)
 {
 
   if (mesh.topology().cell_type() != mesh::CellType::triangle
@@ -731,7 +736,7 @@ plaza::compute_refinement_data(const mesh::Mesh& mesh, Option option)
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<double>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>,
            std::vector<std::int8_t>>
-plaza::compute_refinement_data(const mesh::Mesh& mesh,
+plaza::compute_refinement_data(const mesh::Mesh<double>& mesh,
                                std::span<const std::int32_t> edges,
                                Option option)
 {

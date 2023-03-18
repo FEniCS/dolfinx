@@ -14,6 +14,7 @@
 
 namespace dolfinx::mesh
 {
+template <typename T>
 class Mesh;
 }
 
@@ -28,7 +29,7 @@ class BoundingBoxTree;
 /// @param[in] entity_indices List of local entity indices
 /// @return Bounding box tree for midpoints of entities
 BoundingBoxTree
-create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
+create_midpoint_tree(const mesh::Mesh<double>& mesh, int tdim,
                      std::span<const std::int32_t> entity_indices);
 
 /// @brief Compute all collisions between two bounding box trees.
@@ -62,7 +63,7 @@ compute_collisions(const BoundingBoxTree& tree, std::span<const double> points);
 /// @param[in] tree The bounding box tree
 /// @param[in] point The point (`shape=(3,)`)
 /// @return The local cell index, -1 if not found
-int compute_first_colliding_cell(const mesh::Mesh& mesh,
+int compute_first_colliding_cell(const mesh::Mesh<double>& mesh,
                                  const BoundingBoxTree& tree,
                                  const std::array<double, 3>& point);
 
@@ -78,10 +79,9 @@ int compute_first_colliding_cell(const mesh::Mesh& mesh,
 /// @param[in] points The set of points (`shape=(num_points, 3)`).
 /// Storage is row-major.
 /// @return For each point, the index of the closest mesh entity.
-std::vector<std::int32_t>
-compute_closest_entity(const BoundingBoxTree& tree,
-                       const BoundingBoxTree& midpoint_tree,
-                       const mesh::Mesh& mesh, std::span<const double> points);
+std::vector<std::int32_t> compute_closest_entity(
+    const BoundingBoxTree& tree, const BoundingBoxTree& midpoint_tree,
+    const mesh::Mesh<double>& mesh, std::span<const double> points);
 
 /// @brief Compute squared distance between point and bounding box.
 ///
@@ -102,7 +102,7 @@ double compute_squared_distance_bbox(std::span<const double, 6> b,
 /// @return An array of vectors (shape=(num_points, 3)) where the ith
 /// row is the shortest vector between the ith entity and the ith point.
 /// Storage is row-major.
-std::vector<double> shortest_vector(const mesh::Mesh& mesh, int dim,
+std::vector<double> shortest_vector(const mesh::Mesh<double>& mesh, int dim,
                                     std::span<const std::int32_t> entities,
                                     std::span<const double> points);
 
@@ -121,7 +121,7 @@ std::vector<double> shortest_vector(const mesh::Mesh& mesh, int dim,
 /// @param[in] points The set points from which to computed the shortest
 /// (shape=(num_points, 3)). Storage is row-major.
 /// @return Squared shortest distance from points[i] to entities[i]
-std::vector<double> squared_distance(const mesh::Mesh& mesh, int dim,
+std::vector<double> squared_distance(const mesh::Mesh<double>& mesh, int dim,
                                      std::span<const std::int32_t> entities,
                                      std::span<const double> points);
 
@@ -137,7 +137,7 @@ std::vector<double> squared_distance(const mesh::Mesh& mesh, int dim,
 /// 3)`). Storage is row-major.
 /// @return For each point, the cells that collide with the point.
 graph::AdjacencyList<std::int32_t> compute_colliding_cells(
-    const mesh::Mesh& mesh,
+    const mesh::Mesh<double>& mesh,
     const graph::AdjacencyList<std::int32_t>& candidate_cells,
     std::span<const double> points);
 
@@ -161,7 +161,7 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// @note Only looks through cells owned by the process
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<double>, std::vector<std::int32_t>>
-determine_point_ownership(const mesh::Mesh& mesh,
+determine_point_ownership(const mesh::Mesh<double>& mesh,
                           std::span<const double> points);
 
 } // namespace dolfinx::geometry

@@ -14,7 +14,8 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 std::vector<double>
-fem::interpolation_coords(const FiniteElement& element, const mesh::Mesh& mesh,
+fem::interpolation_coords(const FiniteElement& element,
+                          const mesh::Mesh<double>& mesh,
                           std::span<const std::int32_t> cells)
 {
   // Get mesh geometry data and the element coordinate map

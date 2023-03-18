@@ -102,7 +102,7 @@ public:
        const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
        const std::vector<std::shared_ptr<const Constant<T>>>& constants,
        bool needs_facet_permutations,
-       std::shared_ptr<const mesh::Mesh> mesh = nullptr)
+       std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr)
       : _function_spaces(function_spaces), _coefficients(coefficients),
         _constants(constants), _mesh(mesh),
         _needs_facet_permutations(needs_facet_permutations)
@@ -162,7 +162,7 @@ public:
 
   /// Extract common mesh for the form
   /// @return The mesh
-  std::shared_ptr<const mesh::Mesh> mesh() const { return _mesh; }
+  std::shared_ptr<const mesh::Mesh<double>> mesh() const { return _mesh; }
 
   /// Return function spaces for all arguments
   /// @return Function spaces
@@ -369,7 +369,7 @@ private:
   std::vector<std::shared_ptr<const Constant<T>>> _constants;
 
   // The mesh
-  std::shared_ptr<const mesh::Mesh> _mesh;
+  std::shared_ptr<const mesh::Mesh<double>> _mesh;
 
   // Cell integrals
   std::map<int, std::pair<kern, std::vector<std::int32_t>>> _cell_integrals;

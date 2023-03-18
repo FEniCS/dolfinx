@@ -78,8 +78,8 @@ constexpr bool bbox_in_bbox(std::span<const double, 6> a,
 std::pair<std::int32_t, double>
 _compute_closest_entity(const geometry::BoundingBoxTree& tree,
                         std::span<const double, 3> point, std::int32_t node,
-                        const mesh::Mesh& mesh, std::int32_t closest_entity,
-                        double R2)
+                        const mesh::Mesh<double>& mesh,
+                        std::int32_t closest_entity, double R2)
 {
   // Get children of current bounding box node (child_1 denotes entity
   // index for leaves)
@@ -251,7 +251,7 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
 
 //-----------------------------------------------------------------------------
 geometry::BoundingBoxTree
-geometry::create_midpoint_tree(const mesh::Mesh& mesh, int tdim,
+geometry::create_midpoint_tree(const mesh::Mesh<double>& mesh, int tdim,
                                std::span<const std::int32_t> entities)
 {
   LOG(INFO) << "Building point search tree to accelerate distance queries for "
@@ -315,7 +315,7 @@ geometry::compute_collisions(const BoundingBoxTree& tree,
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> geometry::compute_closest_entity(
     const BoundingBoxTree& tree, const BoundingBoxTree& midpoint_tree,
-    const mesh::Mesh& mesh, std::span<const double> points)
+    const mesh::Mesh<double>& mesh, std::span<const double> points)
 {
   if (tree.num_bboxes() == 0)
     return std::vector<std::int32_t>(points.size() / 3, -1);
@@ -381,7 +381,7 @@ double geometry::compute_squared_distance_bbox(std::span<const double, 6> b,
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
-geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
+geometry::shortest_vector(const mesh::Mesh<double>& mesh, int dim,
                           std::span<const std::int32_t> entities,
                           std::span<const double> points)
 {
@@ -453,7 +453,7 @@ geometry::shortest_vector(const mesh::Mesh& mesh, int dim,
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
-geometry::squared_distance(const mesh::Mesh& mesh, int dim,
+geometry::squared_distance(const mesh::Mesh<double>& mesh, int dim,
                            std::span<const std::int32_t> entities,
                            std::span<const double> points)
 {
@@ -466,7 +466,7 @@ geometry::squared_distance(const mesh::Mesh& mesh, int dim,
 }
 //-------------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t> geometry::compute_colliding_cells(
-    const mesh::Mesh& mesh,
+    const mesh::Mesh<double>& mesh,
     const graph::AdjacencyList<std::int32_t>& candidate_cells,
     std::span<const double> points)
 {
@@ -497,7 +497,7 @@ graph::AdjacencyList<std::int32_t> geometry::compute_colliding_cells(
 }
 //-------------------------------------------------------------------------------
 int geometry::compute_first_colliding_cell(
-    const mesh::Mesh& mesh, const geometry::BoundingBoxTree& tree,
+    const mesh::Mesh<double>& mesh, const geometry::BoundingBoxTree& tree,
     const std::array<double, 3>& point)
 {
   // Compute colliding bounding boxes(cell candidates)
@@ -539,7 +539,7 @@ int geometry::compute_first_colliding_cell(
 //-------------------------------------------------------------------------------
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<double>, std::vector<std::int32_t>>
-geometry::determine_point_ownership(const mesh::Mesh& mesh,
+geometry::determine_point_ownership(const mesh::Mesh<double>& mesh,
                                     std::span<const double> points)
 {
   const MPI_Comm& comm = mesh.comm();

@@ -21,6 +21,7 @@ class ElementDofLayout;
 namespace dolfinx::mesh
 {
 enum class CellType;
+template <typename T>
 class Mesh;
 class Topology;
 
@@ -75,19 +76,19 @@ extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
 /// @param[in] dim Topological dimension of the entities.
 /// @returns The greatest distance between any two vertices, `h[i]`
 /// corresponds to the entity `entities[i]`.
-std::vector<double> h(const Mesh& mesh, std::span<const std::int32_t> entities,
-                      int dim);
+std::vector<double> h(const Mesh<double>& mesh,
+                      std::span<const std::int32_t> entities, int dim);
 
 /// @brief Compute normal to given cell (viewed as embedded in 3D)
 /// @returns The entity normals. The shape is `(entities.size(), 3)` and
 /// the storage is row-major.
-std::vector<double> cell_normals(const Mesh& mesh, int dim,
+std::vector<double> cell_normals(const Mesh<double>& mesh, int dim,
                                  std::span<const std::int32_t> entities);
 
 /// @brief Compute the midpoints for mesh entities of a given dimension.
 /// @returns The entity midpoints. The shape is `(entities.size(), 3)`
 /// and the storage is row-major.
-std::vector<double> compute_midpoints(const Mesh& mesh, int dim,
+std::vector<double> compute_midpoints(const Mesh<double>& mesh, int dim,
                                       std::span<const std::int32_t> entities);
 
 /// Compute indices of all mesh entities that evaluate to true for the
@@ -101,7 +102,7 @@ std::vector<double> compute_midpoints(const Mesh& mesh, int dim,
 /// @returns List of marked entity indices, including any ghost indices
 /// (indices local to the process)
 std::vector<std::int32_t> locate_entities(
-    const Mesh& mesh, int dim,
+    const Mesh<double>& mesh, int dim,
     const std::function<std::vector<std::int8_t>(
         std::experimental::mdspan<
             const double,
@@ -129,7 +130,7 @@ std::vector<std::int32_t> locate_entities(
 /// @returns List of marked entity indices (indices local to the
 /// process)
 std::vector<std::int32_t> locate_entities_boundary(
-    const Mesh& mesh, int dim,
+    const Mesh<double>& mesh, int dim,
     const std::function<std::vector<std::int8_t>(
         std::experimental::mdspan<
             const double,
@@ -153,7 +154,7 @@ std::vector<std::int32_t> locate_entities_boundary(
 /// is row-major. The index `indices[i, j]` is the position in the
 /// geometry array of the `j`-th vertex of the `entity[i]`.
 std::vector<std::int32_t>
-entities_to_geometry(const Mesh& mesh, int dim,
+entities_to_geometry(const Mesh<double>& mesh, int dim,
                      std::span<const std::int32_t> entities, bool orient);
 
 /// @brief Compute the indices of all exterior facets that are owned by

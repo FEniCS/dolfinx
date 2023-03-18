@@ -80,7 +80,7 @@ void _add_function(MPI_Comm comm, const fem::Function<Scalar>& u,
   LOG(INFO) << "Adding function to node \"" << xml_node.path('/') << "\"";
 
   assert(u.function_space());
-  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
+  auto mesh = u.function_space()->mesh();
   assert(mesh);
 
   // Get fem::Function data values and shape

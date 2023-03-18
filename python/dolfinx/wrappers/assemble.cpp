@@ -361,7 +361,7 @@ void petsc_module(py::module& m)
          const dolfinx::fem::FunctionSpace& V1)
       {
         assert(V0.mesh());
-        std::shared_ptr<const dolfinx::mesh::Mesh> mesh = V0.mesh();
+        auto mesh = V0.mesh();
         assert(V1.mesh());
         assert(mesh == V1.mesh());
         MPI_Comm comm = mesh->comm();
@@ -395,7 +395,7 @@ void petsc_module(py::module& m)
          const dolfinx::fem::FunctionSpace& V1)
       {
         assert(V0.mesh());
-        std::shared_ptr<const dolfinx::mesh::Mesh> mesh = V0.mesh();
+        auto mesh = V0.mesh();
         assert(V1.mesh());
         assert(mesh == V1.mesh());
         MPI_Comm comm = mesh->comm();
