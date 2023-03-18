@@ -12,6 +12,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/utils.h>
 
 using namespace dolfinx;
@@ -20,12 +21,12 @@ using namespace dolfinx::geometry;
 namespace
 {
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> range(const mesh::Mesh<double>& mesh, int tdim)
+std::vector<std::int32_t> range(mesh::Topology& topology, int tdim)
 {
   // Initialize entities of given dimension if they don't exist
-  mesh.topology_mutable().create_entities(tdim);
+  topology.create_entities(tdim);
 
-  auto map = mesh.topology().index_map(tdim);
+  auto map = topology.index_map(tdim);
   assert(map);
   const std::int32_t num_entities = map->size_local() + map->num_ghosts();
   std::vector<std::int32_t> r(num_entities);
@@ -207,7 +208,8 @@ std::int32_t _build_from_point(
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const mesh::Mesh<double>& mesh, int tdim,
                                  double padding)
-    : BoundingBoxTree::BoundingBoxTree(mesh, tdim, range(mesh, tdim), padding)
+    : BoundingBoxTree::BoundingBoxTree(
+        mesh, tdim, range(mesh.topology_mutable(), tdim), padding)
 {
   // Do nothing
 }
