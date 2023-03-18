@@ -617,9 +617,8 @@ plaza::refine(const mesh::Mesh<double>& mesh, bool redistribute, Option option)
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {mesh::create_mesh<double>(mesh.comm(), cell_adj,
-                                      mesh.geometry().cmap(), new_coords,
-                                      xshape, mesh::GhostMode::none),
+    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
+                              new_coords, xshape, mesh::GhostMode::none),
             std::move(parent_cell), std::move(parent_facet)};
   }
 
@@ -654,9 +653,8 @@ plaza::refine(const mesh::Mesh<double>& mesh,
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {mesh::create_mesh<double>(mesh.comm(), cell_adj,
-                                      mesh.geometry().cmap(), new_vertex_coords,
-                                      xshape, mesh::GhostMode::none),
+    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
+                              new_vertex_coords, xshape, mesh::GhostMode::none),
             std::move(parent_cell), std::move(parent_facet)};
   }
 

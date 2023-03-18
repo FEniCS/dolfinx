@@ -110,12 +110,18 @@ private:
 };
 
 /// Create a mesh using a provided mesh partitioning function
-template <typename T>
-Mesh<T> create_mesh(MPI_Comm comm,
-                    const graph::AdjacencyList<std::int64_t>& cells,
-                    const fem::CoordinateElement& element, std::span<const T> x,
-                    std::array<std::size_t, 2> xshape,
-                    const CellPartitionFunction& cell_partitioner)
+// template <typename T>
+// Mesh<T> create_mesh(MPI_Comm comm,
+//                     const graph::AdjacencyList<std::int64_t>& cells,
+//                     const fem::CoordinateElement& element, std::span<const T>
+//                     x, std::array<std::size_t, 2> xshape, const
+//                     CellPartitionFunction& cell_partitioner)
+template <typename U>
+Mesh<typename std::remove_reference_t<typename U::value_type>>
+create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+            const fem::CoordinateElement& element, const U& x,
+            std::array<std::size_t, 2> xshape,
+            const CellPartitionFunction& cell_partitioner)
 {
   const fem::ElementDofLayout dof_layout = element.create_dof_layout();
 
@@ -179,8 +185,6 @@ Mesh<T> create_mesh(MPI_Comm comm,
     const std::vector<int> remap = graph::reorder_gps(graph);
 
     /// Re-order an adjacency list
-    // auto reorder_list = [](const graph::AdjacencyList<T>& list,
-    //                        std::span<const std::int32_t> nodemap)
     auto reorder_list
         = [](const auto& list, std::span<const std::int32_t> nodemap)
     {
@@ -283,14 +287,20 @@ Mesh<T> create_mesh(MPI_Comm comm,
 /// @param[in] xshape The shape of `x`. It should be `(num_points, gdim)`.
 /// @param[in] ghost_mode The requested type of cell ghosting/overlap
 /// @return A distributed Mesh.
-template <typename T>
-Mesh<T> create_mesh(MPI_Comm comm,
-                    const graph::AdjacencyList<std::int64_t>& cells,
-                    const fem::CoordinateElement& element, std::span<const T> x,
-                    std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
+// template <typename T>
+// Mesh<T> create_mesh(MPI_Comm comm,
+//                     const graph::AdjacencyList<std::int64_t>& cells,
+//                     const fem::CoordinateElement& element, std::span<const T>
+//                     x, std::array<std::size_t, 2> xshape, GhostMode
+//                     ghost_mode)
+template <typename U>
+Mesh<typename std::remove_reference_t<typename U::value_type>>
+create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+            const fem::CoordinateElement& element, const U& x,
+            std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
 {
-  return create_mesh<T>(comm, cells, element, x, xshape,
-                        create_cell_partitioner(ghost_mode));
+  return create_mesh(comm, cells, element, x, xshape,
+                     create_cell_partitioner(ghost_mode));
 }
 
 /// Create a new mesh consisting of a subset of entities in a mesh.

@@ -240,8 +240,8 @@ mesh::Mesh<double> XDMFFile::read_mesh(const fem::CoordinateElement& element,
   graph::AdjacencyList<std::int64_t> cells_adj(std::move(cells),
                                                std::move(offset));
 
-  mesh::Mesh<double> mesh = mesh::create_mesh<double>(_comm.comm(), cells_adj,
-                                                      element, x, xshape, mode);
+  mesh::Mesh<double> mesh
+      = mesh::create_mesh(_comm.comm(), cells_adj, element, x, xshape, mode);
   mesh.name = name;
   return mesh;
 }

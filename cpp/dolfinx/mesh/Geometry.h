@@ -31,6 +31,8 @@ template <typename T>
 class Geometry
 {
 public:
+  using value_type = T;
+
   /// @brief Constructor of object that holds mesh geometry data.
   ///
   /// @param[in] index_map Index map associated with the geometry dofmap
@@ -159,12 +161,12 @@ private:
 /// @param[in] dim The geometric dimension (1, 2, or 3)
 /// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
 /// map associated with the geometry data
-template <typename T>
-mesh::Geometry<T>
+template <typename U>
+mesh::Geometry<typename std::remove_reference_t<typename U::value_type>>
 create_geometry(MPI_Comm comm, const Topology& topology,
                 const fem::CoordinateElement& element,
                 const graph::AdjacencyList<std::int64_t>& cell_nodes,
-                std::span<const T> x, int dim,
+                const U& x, int dim,
                 const std::function<std::vector<int>(
                     const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
                 = nullptr)
@@ -201,7 +203,7 @@ create_geometry(MPI_Comm comm, const Topology& topology,
 
     //  Distribute  node coordinates by global index from other ranks.
     //  Order of coords matches order of the indices in 'indices'.
-    std::vector<T> coords = MPI::distribute_data<T>(comm, indices, x, dim);
+    std::vector coords = dolfinx::MPI::distribute_data(comm, indices, x, dim);
 
     // Compute local-to-global map from local indices in dofmap to the
     // corresponding global indices in cell_nodes
@@ -228,15 +230,17 @@ create_geometry(MPI_Comm comm, const Topology& topology,
   assert(coords.size() % dim == 0);
   const std::size_t shape0 = coords.size() / dim;
   const std::size_t shape1 = dim;
-  std::vector<T> xg(3 * shape0, 0);
+  std::vector<typename std::remove_reference_t<typename U::value_type>> xg(
+      3 * shape0, 0);
   for (std::size_t i = 0; i < shape0; ++i)
   {
     std::copy_n(std::next(coords.cbegin(), shape1 * l2l[i]), shape1,
                 std::next(xg.begin(), 3 * i));
   }
 
-  return Geometry<T>(dof_index_map, std::move(dofmap), element, std::move(xg),
-                     dim, std::move(igi));
+  return Geometry<typename std::remove_reference_t<typename U::value_type>>(
+      dof_index_map, std::move(dofmap), element, std::move(xg), dim,
+      std::move(igi));
 }
 
 /// @brief Create a sub-geometry for a subset of entities.
