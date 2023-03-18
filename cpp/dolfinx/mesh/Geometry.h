@@ -31,6 +31,7 @@ template <typename T>
 class Geometry
 {
 public:
+  /// @brief Value type
   using value_type = T;
 
   /// @brief Constructor of object that holds mesh geometry data.
@@ -151,8 +152,8 @@ private:
 /// @param[in] topology The mesh topology
 /// @param[in] element The element that defines the geometry map for
 /// each cell
-/// @param[in] cells The mesh cells, including higher-order geometry
-/// 'nodes'
+/// @param[in] cell_nodes The mesh cells, including higher-order
+/// geometry 'nodes'
 /// @param[in] x The node coordinates (row-major, with shape
 /// `(num_nodes, dim)`. The global index of each node is `i +
 /// rank_offset`, where `i` is the local row index in `x` and
