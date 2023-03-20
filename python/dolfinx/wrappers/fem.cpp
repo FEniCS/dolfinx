@@ -627,32 +627,33 @@ void fem(py::module& m)
       py::arg("integral_type"), py::arg("meshtags"));
   m.def(
       "create_nonmatching_meshes_interpolation_data",
-      [](const dolfinx::fem::FunctionSpace& Vu,
-         const dolfinx::fem::FunctionSpace& Vv)
+      [](const dolfinx::mesh::Mesh& mesh0,
+         const dolfinx::fem::FiniteElement& element0,
+         const dolfinx::mesh::Mesh& mesh1)
       {
-        assert(Vu.mesh());
-        int tdim = Vu.mesh()->topology().dim();
-        auto cell_map = Vu.mesh()->topology().index_map(tdim);
+        int tdim = mesh0.topology().dim();
+        auto cell_map = mesh0.topology().index_map(tdim);
         assert(cell_map);
         std::int32_t num_cells
             = cell_map->size_local() + cell_map->num_ghosts();
         std::vector<std::int32_t> cells(num_cells, 0);
         std::iota(cells.begin(), cells.end(), 0);
-
         return dolfinx::fem::create_nonmatching_meshes_interpolation_data(
-            Vu, Vv, std::span(cells.data(), cells.size()));
+            mesh0, element0, mesh1, std::span(cells.data(), cells.size()));
       },
-      py::arg("Vu"), py::arg("Vv"));
+      py::arg("mesh0"), py::arg("element0"), py::arg("mesh1"));
   m.def(
       "create_nonmatching_meshes_interpolation_data",
-      [](const dolfinx::fem::FunctionSpace& Vu,
-         const dolfinx::fem::FunctionSpace& Vv,
+      [](const dolfinx::mesh::Mesh& mesh0,
+         const dolfinx::fem::FiniteElement& element0,
+         const dolfinx::mesh::Mesh& mesh1,
          const py::array_t<std::int32_t, py::array::c_style>& cells)
       {
         return dolfinx::fem::create_nonmatching_meshes_interpolation_data(
-            Vu, Vv, std::span(cells.data(), cells.size()));
+            mesh0, element0, mesh1, std::span(cells.data(), cells.size()));
       },
-      py::arg("Vu"), py::arg("Vv"), py::arg("cells"));
+      py::arg("mesh0"), py::arg("element0"), py::arg("mesh1"),
+      py::arg("cells"));
 
   // dolfinx::fem::FiniteElement
   py::class_<dolfinx::fem::FiniteElement,

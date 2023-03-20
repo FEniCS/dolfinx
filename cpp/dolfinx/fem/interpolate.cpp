@@ -71,18 +71,13 @@ fem::interpolation_coords(const FiniteElement& element, const mesh::Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 fem::nmm_interpolation_data_t fem::create_nonmatching_meshes_interpolation_data(
-    const fem::FunctionSpace& Vu, const fem::FunctionSpace& Vv,
-    std::span<const std::int32_t> cells)
+    const mesh::Mesh& mesh0, const FiniteElement& element0,
+    const mesh::Mesh& mesh1, std::span<const std::int32_t> cells)
 {
-
   // Collect all the points at which values are needed to define the
   // interpolating function
-  auto element_u = Vu.element();
-  assert(element_u);
-  auto mesh = Vu.mesh();
-  assert(mesh);
   const std::vector<double> coords_b
-      = interpolation_coords(*element_u, *mesh, cells);
+      = interpolation_coords(element0, mesh0, cells);
 
   namespace stdex = std::experimental;
   using cmdspan2_t
@@ -98,22 +93,21 @@ fem::nmm_interpolation_data_t fem::create_nonmatching_meshes_interpolation_data(
       _x(j, i) = coords(i, j);
 
   // Determine ownership of each point
-  auto mesh_v = Vv.mesh();
-  assert(mesh_v);
-  return geometry::determine_point_ownership(*mesh_v, x);
+  return geometry::determine_point_ownership(mesh1, x);
 }
 //-----------------------------------------------------------------------------
 fem::nmm_interpolation_data_t
-fem::create_nonmatching_meshes_interpolation_data(const FunctionSpace& Vu,
-                                                  const FunctionSpace& Vv)
+fem::create_nonmatching_meshes_interpolation_data(const mesh::Mesh& mesh0,
+                                                  const FiniteElement& element0,
+                                                  const mesh::Mesh& mesh1)
 {
-  assert(Vu.mesh());
-  int tdim = Vu.mesh()->topology().dim();
-  auto cell_map = Vu.mesh()->topology().index_map(tdim);
+  int tdim = mesh0.topology().dim();
+  auto cell_map = mesh0.topology().index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
   std::vector<std::int32_t> cells(num_cells, 0);
   std::iota(cells.begin(), cells.end(), 0);
-  return create_nonmatching_meshes_interpolation_data(Vu, Vv, cells);
+  return create_nonmatching_meshes_interpolation_data(mesh0, element0, mesh1,
+                                                      cells);
 }
 //-----------------------------------------------------------------------------

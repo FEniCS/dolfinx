@@ -919,24 +919,26 @@ void interpolate(Function<T>& u, std::span<const T> f,
 /// Generate data needed to interpolate discrete functions across
 /// different meshes.
 ///
-/// @param[out] Vu The function space of the function to interpolate
-/// into
-/// @param[in] Vv The function space of the function to interpolate from
+/// @param[in] mesh0 Mesh of the space to interpolate into
+/// @param[in] element0 Element of the space to interpolate into
+/// @param[in] mesh1 Mesh of the function to interpolate from
 /// @param[in] cells Indices of the cells in the destination mesh on
 /// which to interpolate. Should be the same as the list used when
 /// calling fem::interpolation_coords.
 nmm_interpolation_data_t create_nonmatching_meshes_interpolation_data(
-    const FunctionSpace& Vu, const FunctionSpace& Vv,
-    std::span<const std::int32_t> cells);
+    const mesh::Mesh& mesh0, const FiniteElement& element0,
+    const mesh::Mesh& mesh1, std::span<const std::int32_t> cells);
 
 /// Generate data needed to interpolate discrete functions defined on
 /// different meshes. Interpolate on all cells in the mesh.
 ///
-/// @param[out] Vu The function space of the function to interpolate into
-/// @param[in] Vv The function space of the function to interpolate from
+/// @param[in] mesh0 Mesh of the space to interpolate into
+/// @param[in] element0 Element of the space to interpolate into
+/// @param[in] mesh1 Mesh of the function to interpolate from
 nmm_interpolation_data_t
-create_nonmatching_meshes_interpolation_data(const FunctionSpace& Vu,
-                                             const FunctionSpace& Vv);
+create_nonmatching_meshes_interpolation_data(const mesh::Mesh& mesh0,
+                                             const FiniteElement& element0,
+                                             const mesh::Mesh& mesh1);
 
 /// Interpolate from one finite element Function to another one
 /// @param[out] u The function to interpolate into
