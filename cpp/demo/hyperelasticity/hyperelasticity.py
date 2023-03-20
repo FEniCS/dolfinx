@@ -78,5 +78,5 @@ J_form = derivative(F_form, u, du)
 sigma = (1/J)*diff(psi, F)*F.T
 
 forms = [F_form, J_form]
-elements = [(element)]
+elements = [e]
 expressions = [(sigma, [[0.25, 0.25, 0.25]])]
