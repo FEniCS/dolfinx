@@ -9,7 +9,7 @@ import pytest
 from scipy.spatial.transform import Rotation
 
 import ufl
-from basix.ufl import vector_element
+from basix.ufl import element
 from dolfinx import geometry
 from dolfinx.geometry import compute_distance_gjk
 from dolfinx.mesh import create_mesh
@@ -163,7 +163,7 @@ def test_cube_distance(delta, scale):
 def test_collision_2nd_order_triangle():
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.65, 0.65], [0.0, 0.5], [0.5, 0.0]])
     cells = np.array([[0, 1, 2, 3, 4, 5]])
-    domain = ufl.Mesh(vector_element("Lagrange", "triangle", 2, gdim=2))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 2, gdim=2, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     # Sample points along an interior line of the domain. The last point

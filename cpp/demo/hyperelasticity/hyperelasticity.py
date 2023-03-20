@@ -8,22 +8,22 @@
 # We are interested in solving for a discrete vector field in three
 # dimensions, so first we need the appropriate finite element space and
 # trial and test functions on this space::
-from basix.ufl import vector_element
+from basix.ufl import element
 from ufl import (Coefficient, FunctionSpace, Identity, Mesh, TestFunction,
                  TrialFunction, derivative, det, diff, dx, grad, ln, tr,
                  variable)
 
 # Function spaces
-coord_element = vector_element("Lagrange", "tetrahedron", 1)
+coord_element = element("Lagrange", "tetrahedron", 1, rank=1)
 mesh = Mesh(coord_element)
-element = vector_element("Lagrange", "tetrahedron", 1)
-V = FunctionSpace(mesh, element)
+e = element("Lagrange", "tetrahedron", 1, rank=1)
+V = FunctionSpace(mesh, e)
 
 # Trial and test functions
 du = TrialFunction(V)     # Incremental displacement
 v = TestFunction(V)      # Test function
 
-# Note that ``vector_element`` creates a finite element space of vector
+# Note that ``element`` with `rank=1` creates a finite element space of vector
 # fields. The dimension of the vector field (the number of components)
 # is assumed to be the same as the spatial dimension (in this case 3),
 # unless otherwise specified.

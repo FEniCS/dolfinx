@@ -7,7 +7,7 @@
 import pytest
 
 import ufl
-from basix.ufl import vector_element
+from basix.ufl import element
 from dolfinx import cpp as _cpp
 from dolfinx.geometry import squared_distance
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
@@ -26,7 +26,7 @@ def test_distance_interval():
 @pytest.mark.skip_in_parallel
 def test_distance_triangle():
     gdim, shape, degree = 2, "triangle", 1
-    domain = ufl.Mesh(vector_element("Lagrange", shape, degree, gdim=gdim))
+    domain = ufl.Mesh(element("Lagrange", shape, degree, gdim=gdim, rank=1))
     x = [[0., 0., 0.], [0., 1., 0.], [1., 1., 0.]]
     cells = [[0, 1, 2]]
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
@@ -40,7 +40,7 @@ def test_distance_tetrahedron():
     gdim = 3
     shape = "tetrahedron"
     degree = 1
-    domain = ufl.Mesh(vector_element("Lagrange", shape, degree, gdim=gdim))
+    domain = ufl.Mesh(element("Lagrange", shape, degree, gdim=gdim, rank=1))
     x = [[0., 0., 0.], [0., 1., 0.], [0., 1., 1.], [1, 1., 1]]
     cells = [[0, 1, 2, 3]]
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
@@ -78,7 +78,7 @@ def test_volume_quadrilateralR2():
      [[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [0.0, 1.0, 1.0]]])
 def test_volume_quadrilateralR3(x):
     cells = [[0, 1, 2, 3]]
-    domain = ufl.Mesh(vector_element("Lagrange", "quadrilateral", 1))
+    domain = ufl.Mesh(element("Lagrange", "quadrilateral", 1, rank=1))
     mesh = create_mesh(MPI.COMM_SELF, cells, x, domain)
     assert _cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim) == 1.0
 
@@ -96,7 +96,7 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
              [0.0, 0.0, scaling],
              [0.0, scaling, scaling]]
         cells = [[0, 1, 2, 3]]
-        domain = ufl.Mesh(vector_element("Lagrange", "quadrilateral", 1))
+        domain = ufl.Mesh(element("Lagrange", "quadrilateral", 1, rank=1))
         mesh = create_mesh(MPI.COMM_SELF, cells, x, domain)
         _cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim)
 
@@ -115,7 +115,7 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
         x = [[1.0, 0.5, 0.6], [0.0, scaling, 0.0],
              [0.0, 0.0, scaling], [0.0, 1.0, 1.0]]
         cells = [[0, 1, 2, 3]]
-        domain = ufl.Mesh(vector_element("Lagrange", "quadrilateral", 1))
+        domain = ufl.Mesh(element("Lagrange", "quadrilateral", 1, rank=1))
         mesh = create_mesh(MPI.COMM_SELF, cells, x, domain)
         _cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim)
 
