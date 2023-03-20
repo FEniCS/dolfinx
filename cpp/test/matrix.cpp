@@ -108,7 +108,7 @@ void spmv(la::MatrixCSR<T>& A, la::Vector<T>& x, la::Vector<T>& y)
 la::MatrixCSR<double> create_operator(MPI_Comm comm)
 {
   auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
-  auto mesh = std::make_shared<mesh::Mesh>(
+  auto mesh = std::make_shared<mesh::Mesh<double>>(
       mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
                        mesh::CellType::tetrahedron, part));
   auto V = std::make_shared<fem::FunctionSpace<double>>(
@@ -139,7 +139,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
 {
   MPI_Comm comm = MPI_COMM_WORLD;
   auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
-  auto mesh = std::make_shared<mesh::Mesh>(
+  auto mesh = std::make_shared<mesh::Mesh<double>>(
       mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
                        mesh::CellType::tetrahedron, part));
 

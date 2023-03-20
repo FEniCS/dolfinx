@@ -352,7 +352,7 @@ V)
       {
         const ufcx_expression* p
             = reinterpret_cast<const ufcx_expression*>(expression);
-        return dolfinx::fem::create_expression<T>(
+        return dolfinx::fem::create_expression<T, double>(
             *p, coefficients, constants, mesh, argument_function_space);
       },
       py::arg("expression"), py::arg("coefficients"), py::arg("constants"),

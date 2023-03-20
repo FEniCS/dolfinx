@@ -68,9 +68,7 @@ public:
           fn,
       const std::vector<int>& value_shape,
       std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr,
-      std::shared_ptr<const FunctionSpace<scalar_value_type_t>>
-          argument_function_space
-      = nullptr)
+      std::shared_ptr<const FunctionSpace<U>> argument_function_space = nullptr)
       : _coefficients(coefficients), _constants(constants), _mesh(mesh),
         _x_ref(std::vector<double>(X.begin(), X.end()), Xshape), _fn(fn),
         _value_shape(value_shape),
