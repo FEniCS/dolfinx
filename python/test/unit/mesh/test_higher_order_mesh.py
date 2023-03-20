@@ -95,7 +95,7 @@ def test_submesh(order):
                     cell.append(coord_to_vertex(i, j, k))
 
     domain = ufl.Mesh(element(
-        "Lagrange", "tetrahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced, rank=1))
+        "Lagrange", "tetrahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, )))
 
     mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
     for i in range(mesh.topology.dim):
@@ -143,7 +143,7 @@ def test_triangle_mesh(order):
                 cell.append(coord_to_vertex(i, j))
 
     domain = ufl.Mesh(element(
-        "Lagrange", "triangle", order, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced, rank=1))
+        "Lagrange", "triangle", order, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, )))
 
     check_cell_volume(points, cell, domain, 0.5)
 
@@ -200,7 +200,7 @@ def test_tetrahedron_mesh(order):
                     cell.append(coord_to_vertex(i, j, k))
 
     domain = ufl.Mesh(element(
-        "Lagrange", "tetrahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced, rank=1))
+        "Lagrange", "tetrahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, )))
     check_cell_volume(points, cell, domain, 1 / 6)
 
 
@@ -235,7 +235,7 @@ def test_quadrilateral_mesh(order):
                 cell.append(coord_to_vertex(i, j))
 
     domain = ufl.Mesh(element(
-        "Q", "quadrilateral", order, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced, rank=1))
+        "Q", "quadrilateral", order, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, )))
     check_cell_volume(points, cell, domain, 1)
 
 
@@ -311,7 +311,7 @@ def test_hexahedron_mesh(order):
                     cell.append(coord_to_vertex(i, j, k))
 
     domain = ufl.Mesh(element(
-        "Q", "hexahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced, rank=1))
+        "Q", "hexahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, )))
     check_cell_volume(points, cell, domain, 1)
 
 
@@ -349,7 +349,7 @@ def test_triangle_mesh_vtk(order):
 
     cell = np.array(cell)[perm_vtk(CellType.triangle, len(cell))]
     domain = ufl.Mesh(element(
-        "Lagrange", "triangle", order, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced, rank=1))
+        "Lagrange", "triangle", order, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, )))
     check_cell_volume(points, cell, domain, 0.5)
 
 
@@ -441,7 +441,7 @@ def test_tetrahedron_mesh_vtk(order):
 
     cell = np.array(cell)[perm_vtk(CellType.tetrahedron, len(cell))]
     domain = ufl.Mesh(element(
-        "Lagrange", "tetrahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced))
+        "Lagrange", "tetrahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, )))
     check_cell_volume(points, cell, domain, 1 / 6)
 
 
@@ -479,7 +479,7 @@ def test_quadrilateral_mesh_vtk(order):
 
     cell = np.array(cell)[perm_vtk(CellType.quadrilateral, len(cell))]
     domain = ufl.Mesh(element(
-        "Q", "quadrilateral", order, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced, rank=1))
+        "Q", "quadrilateral", order, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, )))
     check_cell_volume(points, cell, domain, 1)
 
 
@@ -562,7 +562,7 @@ def test_hexahedron_mesh_vtk(order):
 
     cell = np.array(cell)[perm_vtk(CellType.hexahedron, len(cell))]
     domain = ufl.Mesh(element(
-        "Q", "hexahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced, rank=1))
+        "Q", "hexahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, )))
     check_cell_volume(points, cell, domain, 1)
 
 
@@ -710,5 +710,5 @@ def test_quadrilateral_cell_order_3():
 
     cell = list(range(16))
     domain = ufl.Mesh(element(
-        "Q", "quadrilateral", 3, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced, rank=1))
+        "Q", "quadrilateral", 3, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, )))
     check_cell_volume(points, cell, domain, 5 / 6)
