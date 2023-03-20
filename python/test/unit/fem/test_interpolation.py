@@ -12,7 +12,7 @@ import pytest
 
 import basix
 import ufl
-from basix.ufl import BasixElement, MixedElement, VectorElement, element
+from basix.ufl import BasixElement, MixedElement, VectorElement, element, enriched_element
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
