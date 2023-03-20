@@ -65,14 +65,21 @@ public:
   int dim() const noexcept;
 
   /// @brief Set the offsets for each group of entities of a particular
-  /// dimension
+  /// dimension. See `entity_group_offsets`.
+  ///
   /// @param dim Dimension of the entities
   /// @param offsets The offsets
   void set_entity_group_offsets(int dim,
                                 const std::vector<std::int32_t>& offsets);
 
   /// @brief Get the offsets for each group of entities of a particular
-  /// dimension
+  /// dimension. The topology may consist of more than one cell type
+  /// or facet type. In that case, the cells of the same types are
+  /// grouped together in blocks, firstly for regular cells, then
+  /// repeated for ghost cells. For example, a mesh with two
+  /// triangles, three quads and no ghosts would have offsets: 0, 2,
+  /// 5, 5, 5. A mesh with twenty tetrahedra and two ghost tetrahedra
+  /// has offsets: 0, 20, 22.
   /// @param dim Dimension of the entities
   /// @return The offsets
   const std::vector<std::int32_t>& entity_group_offsets(int dim) const;

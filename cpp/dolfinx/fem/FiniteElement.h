@@ -168,7 +168,7 @@ public:
   /// @return True if the map is the identity
   bool map_ident() const noexcept;
 
-  /// @brief Points on the reference cell at which an expression need to
+  /// @brief Points on the reference cell at which an expression needs to
   /// be evaluated in order to interpolate the expression in the finite
   /// element space.
   ///
