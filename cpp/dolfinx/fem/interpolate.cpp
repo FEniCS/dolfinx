@@ -76,21 +76,15 @@ fem::nmm_interpolation_data_t fem::create_nonmatching_meshes_interpolation_data(
 {
   // Collect all the points at which values are needed to define the
   // interpolating function
-  const std::vector<double> coords_b
+  const std::vector<double> coords
       = interpolation_coords(element0, geometry0, cells);
-
-  namespace stdex = std::experimental;
-  using cmdspan2_t
-      = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-  using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-  cmdspan2_t coords(coords_b.data(), 3, coords_b.size() / 3);
 
   // Transpose interpolation coords
   std::vector<double> x(coords.size());
-  mdspan2_t _x(x.data(), coords_b.size() / 3, 3);
-  for (std::size_t j = 0; j < coords.extent(1); ++j)
-    for (std::size_t i = 0; i < 3; ++i)
-      _x(j, i) = coords(i, j);
+  std::size_t num_points = coords.size() / 3;
+  for (std::size_t i = 0; i < num_points; ++i)
+    for (std::size_t j = 0; j < 3; ++j)
+      x[3 * i + j] = coords[i + j * num_points];
 
   // Determine ownership of each point
   return geometry::determine_point_ownership(mesh1, x);
