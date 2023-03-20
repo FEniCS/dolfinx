@@ -199,7 +199,7 @@ void declare_objects(py::module& m, const std::string& type)
 
             assert(self.function_space()->mesh());
             const std::vector<double> x = dolfinx::fem::interpolation_coords(
-                *element, *self.function_space()->mesh(),
+                *element, self.function_space()->mesh()->geometry(),
                 std::span(cells.data(), cells.size()));
 
             std::array<std::size_t, 2> shape = {value_size, x.size() / 3};
@@ -960,11 +960,12 @@ void fem(py::module& m)
 
   m.def(
       "interpolation_coords",
-      [](const dolfinx::fem::FiniteElement& e, const dolfinx::mesh::Mesh& mesh,
+      [](const dolfinx::fem::FiniteElement& e,
+         const dolfinx::mesh::Geometry<double>& geometry,
          py::array_t<std::int32_t, py::array::c_style> cells)
       {
         std::vector<double> x = dolfinx::fem::interpolation_coords(
-            e, mesh, std::span(cells.data(), cells.size()));
+            e, geometry, std::span(cells.data(), cells.size()));
         return as_pyarray(std::move(x),
                           std::array<std::size_t, 2>{3, x.size() / 3});
       },

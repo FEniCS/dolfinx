@@ -14,15 +14,15 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 std::vector<double>
-fem::interpolation_coords(const FiniteElement& element, const mesh::Mesh& mesh,
+fem::interpolation_coords(const FiniteElement& element,
+                          const mesh::Geometry<double>& geometry,
                           std::span<const std::int32_t> cells)
 {
-  // Get mesh geometry data and the element coordinate map
-  const std::size_t gdim = mesh.geometry().dim();
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-
-  std::span<const double> x_g = mesh.geometry().x();
-  const CoordinateElement& cmap = mesh.geometry().cmap();
+  // Get geometry data and the element coordinate map
+  const std::size_t gdim = geometry.dim();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  std::span<const double> x_g = geometry.x();
+  const CoordinateElement& cmap = geometry.cmap();
   const std::size_t num_dofs_g = cmap.dim();
 
   // Get the interpolation points on the reference cells
@@ -77,7 +77,7 @@ fem::nmm_interpolation_data_t fem::create_nonmatching_meshes_interpolation_data(
   // Collect all the points at which values are needed to define the
   // interpolating function
   const std::vector<double> coords_b
-      = interpolation_coords(element0, mesh0, cells);
+      = interpolation_coords(element0, mesh0.geometry(), cells);
 
   namespace stdex = std::experimental;
   using cmdspan2_t

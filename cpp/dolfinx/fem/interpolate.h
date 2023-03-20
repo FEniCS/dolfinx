@@ -30,13 +30,13 @@ class Function;
 /// space.
 ///
 /// @param[in] element The element to be interpolated into
-/// @param[in] mesh The domain
+/// @param[in] geometry Mesh geometry
 /// @param[in] cells Indices of the cells in the mesh to compute
 /// interpolation coordinates for
 /// @return The coordinates in the physical space at which to evaluate
 /// an expression. The shape is (3, num_points) and storage is row-major.
 std::vector<double> interpolation_coords(const fem::FiniteElement& element,
-                                         const mesh::Mesh& mesh,
+                                         const mesh::Geometry<double>& geometry,
                                          std::span<const std::int32_t> cells);
 
 /// Helper type for the data that can be cached to speed up repeated
@@ -52,18 +52,18 @@ void interpolate(Function<T>& u, std::span<const T> f,
 
 namespace impl
 {
-/// @brief Scatter data into non-contiguous memory
+/// @brief Scatter data into non-contiguous memory.
 ///
-/// Scatter blocked data `send_values` to its
-/// corresponding src_rank and insert the data into `recv_values`.
-/// The insert location in `recv_values` is determined by `dest_ranks`.
-/// If the j-th dest rank is -1, then
-/// `recv_values[j*block_size:(j+1)*block_size]) = 0.
+/// Scatter blocked data `send_values` to its corresponding src_rank and
+/// insert the data into `recv_values`. The insert location in
+/// `recv_values` is determined by `dest_ranks`. If the j-th dest rank
+/// is -1, then `recv_values[j*block_size:(j+1)*block_size]) = 0.
 ///
 /// @param[in] comm The mpi communicator
-/// @param[in] src_ranks The rank owning the values of each row in send_values
-/// @param[in] dest_ranks List of ranks receiving data. Size of array is how
-/// many values we are receiving (not unrolled for blcok_size).
+/// @param[in] src_ranks The rank owning the values of each row in
+/// send_values
+/// @param[in] dest_ranks List of ranks receiving data. Size of array is
+/// how many values we are receiving (not unrolled for blcok_size).
 /// @param[in] send_values The values to send back to owner. Shape
 /// (src_ranks.size(), block_size). Storage is row-major.
 /// @param[in] s_shape Shape of send_values
@@ -73,11 +73,10 @@ namespace impl
 /// @note dest_ranks can contain repeated entries
 /// @note dest_ranks might contain -1 (no process owns the point)
 template <typename T>
-void scatter_values(const MPI_Comm& comm,
-                    std::span<const std::int32_t> src_ranks,
+void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
                     std::span<const std::int32_t> dest_ranks,
                     std::span<const T> send_values,
-                    const std::array<std::size_t, 2>& s_shape,
+                    std::array<std::size_t, 2> s_shape,
                     std::span<T> recv_values)
 {
   const std::size_t block_size = s_shape[1];
