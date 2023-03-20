@@ -472,7 +472,7 @@ class FunctionSpace(ufl.FunctionSpace):
             except BaseException:
                 assert len(element) == 2, "Expected sequence of (element_type, degree)"
                 e = ElementMetaData(*element)
-                ufl_e = basix.ufl.finite_element(
+                ufl_e = basix.ufl.element(
                     e.family, mesh.ufl_cell().cellname(), e.degree, gdim=mesh.ufl_cell().geometric_dimension())
                 super().__init__(mesh.ufl_domain(), ufl_e)
 
@@ -621,8 +621,8 @@ def VectorFunctionSpace(mesh: Mesh,
                                          dim=dim, gdim=mesh.geometry.dim)
     except AttributeError:
         ed = ElementMetaData(*element)
-        ufl_e = basix.ufl.vector_element(ed.family, mesh.ufl_cell().cellname(), ed.degree,
-                                         dim=dim, gdim=mesh.geometry.dim)
+        ufl_e = basix.ufl.element(ed.family, mesh.ufl_cell().cellname(), ed.degree,
+                                  dim=dim, gdim=mesh.geometry.dim, rank=1)
     return FunctionSpace(mesh, ufl_e)
 
 
@@ -630,7 +630,7 @@ def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typin
                         symmetry: typing.Optional[bool] = None) -> FunctionSpace:
     """Create tensor finite element (composition of scalar elements) function space."""
     e = ElementMetaData(*element)
-    ufl_element = basix.ufl.tensor_element(e.family, mesh.ufl_cell().cellname(),
-                                           e.degree, shape=shape, symmetry=symmetry,
-                                           gdim=mesh.geometry.dim)
+    ufl_element = basix.ufl.element(e.family, mesh.ufl_cell().cellname(),
+                                    e.degree, shape=shape, symmetry=symmetry,
+                                    gdim=mesh.geometry.dim, rank=1)
     return FunctionSpace(mesh, ufl_element)

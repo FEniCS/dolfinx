@@ -10,7 +10,7 @@ import pytest
 import basix
 import dolfinx
 import ufl
-from basix.ufl import MixedElement, finite_element, vector_element
+from basix.ufl import MixedElement, element
 from dolfinx.fem import FunctionSpace, form
 from dolfinx.mesh import CellType, create_unit_cube, create_unit_square
 from ufl import grad, inner
@@ -22,13 +22,13 @@ def check_symmetry(A):
     assert A.isSymmetric(1e-8)
 
 
-def run_symmetry_test(cell_type, element, form_f):
+def run_symmetry_test(cell_type, e, form_f):
     if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
         mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, cell_type)
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
 
-    space = FunctionSpace(mesh, element)
+    space = FunctionSpace(mesh, e)
     u = ufl.TrialFunction(space)
     v = ufl.TestFunction(space)
     f = form(form_f(u, v))
@@ -38,7 +38,7 @@ def run_symmetry_test(cell_type, element, form_f):
     check_symmetry(A)
 
 
-parametrize_elements = pytest.mark.parametrize("cell_type, element", [
+parametrize_elements = pytest.mark.parametrize("cell_type, family", [
     (CellType.triangle, "Lagrange"), (CellType.triangle, "N1curl"), (CellType.triangle, "RT"),
     (CellType.triangle, "Regge"),
     (CellType.quadrilateral, "Lagrange"), (CellType.quadrilateral, "RTCE"), (CellType.quadrilateral, "RTCF"),
@@ -46,7 +46,7 @@ parametrize_elements = pytest.mark.parametrize("cell_type, element", [
     (CellType.tetrahedron, "Regge"),
     (CellType.hexahedron, "Lagrange"), (CellType.hexahedron, "NCE"), (CellType.hexahedron, "NCF")
 ])
-parametrize_lagrange_elements = pytest.mark.parametrize("cell_type, element", [
+parametrize_lagrange_elements = pytest.mark.parametrize("cell_type, family", [
     (CellType.triangle, "Lagrange"), (CellType.quadrilateral, "Lagrange"),
     (CellType.tetrahedron, "Lagrange"), (CellType.hexahedron, "Lagrange")
 ])
@@ -55,32 +55,32 @@ parametrize_lagrange_elements = pytest.mark.parametrize("cell_type, element", [
 @pytest.mark.skip_in_parallel
 @parametrize_elements
 @pytest.mark.parametrize("order", range(1, 2))
-def test_mass_matrix_dx(cell_type, element, order):
-    run_symmetry_test(cell_type, (element, order),
+def test_mass_matrix_dx(cell_type, family, order):
+    run_symmetry_test(cell_type, (family, order),
                       lambda u, v: inner(u, v) * ufl.dx)
 
 
 @pytest.mark.skip_in_parallel
 @parametrize_lagrange_elements
 @pytest.mark.parametrize("order", range(1, 2))
-def test_stiffness_matrix_dx(cell_type, element, order):
-    run_symmetry_test(cell_type, (element, order),
+def test_stiffness_matrix_dx(cell_type, family, order):
+    run_symmetry_test(cell_type, (family, order),
                       lambda u, v: inner(grad(u), grad(v)) * ufl.dx)
 
 
 @pytest.mark.skip_in_parallel
 @parametrize_elements
 @pytest.mark.parametrize("order", range(1, 2))
-def test_mass_matrix_ds(cell_type, element, order):
-    run_symmetry_test(cell_type, (element, order),
+def test_mass_matrix_ds(cell_type, family, order):
+    run_symmetry_test(cell_type, (family, order),
                       lambda u, v: inner(u, v) * ufl.ds)
 
 
 @pytest.mark.skip_in_parallel
 @parametrize_lagrange_elements
 @pytest.mark.parametrize("order", range(1, 2))
-def test_stiffness_matrix_ds(cell_type, element, order):
-    run_symmetry_test(cell_type, (element, order),
+def test_stiffness_matrix_ds(cell_type, family, order):
+    run_symmetry_test(cell_type, (family, order),
                       lambda u, v: inner(grad(u), grad(v)) * ufl.ds)
 
 
@@ -88,8 +88,8 @@ def test_stiffness_matrix_ds(cell_type, element, order):
 @parametrize_elements
 @pytest.mark.parametrize("order", range(1, 2))
 @pytest.mark.parametrize("sign", ["+", "-"])
-def test_mass_matrix_dS(cell_type, element, order, sign):
-    run_symmetry_test(cell_type, (element, order),
+def test_mass_matrix_dS(cell_type, family, order, sign):
+    run_symmetry_test(cell_type, (family, order),
                       lambda u, v: inner(u, v)(sign) * ufl.dS)
 
 
@@ -97,8 +97,8 @@ def test_mass_matrix_dS(cell_type, element, order, sign):
 @parametrize_lagrange_elements
 @pytest.mark.parametrize("order", range(1, 2))
 @pytest.mark.parametrize("sign", ["+", "-"])
-def test_stiffness_matrix_dS(cell_type, element, order, sign):
-    run_symmetry_test(cell_type, (element, order),
+def test_stiffness_matrix_dS(cell_type, family, order, sign):
+    run_symmetry_test(cell_type, (family, order),
                       lambda u, v: inner(grad(u), grad(v))(sign) * ufl.dS)
 
 
@@ -114,8 +114,8 @@ def test_mixed_element_form(cell_type, sign, order):
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
 
     U_el = MixedElement([
-        finite_element(basix.ElementFamily.P, cell_type.name, order),
-        finite_element(basix.ElementFamily.N1E, cell_type.name, order)])
+        element(basix.ElementFamily.P, cell_type.name, order),
+        element(basix.ElementFamily.N1E, cell_type.name, order)])
 
     U = FunctionSpace(mesh, U_el)
     u, p = ufl.TrialFunctions(U)
@@ -138,8 +138,8 @@ def test_mixed_element_vector_element_form(cell_type, sign, order):
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
 
     U_el = MixedElement([
-        vector_element(basix.ElementFamily.P, cell_type.name, order),
-        finite_element(basix.ElementFamily.N1E, cell_type.name, order)])
+        element(basix.ElementFamily.P, cell_type.name, order, rank=1),
+        element(basix.ElementFamily.N1E, cell_type.name, order)])
 
     U = FunctionSpace(mesh, U_el)
     u, p = ufl.TrialFunctions(U)

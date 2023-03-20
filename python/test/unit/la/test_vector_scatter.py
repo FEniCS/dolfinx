@@ -9,7 +9,7 @@
 import numpy as np
 import pytest
 
-from basix.ufl import finite_element, vector_element
+from basix.ufl import element
 from dolfinx import cpp as _cpp
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.mesh import create_unit_square
@@ -17,13 +17,13 @@ from dolfinx.mesh import create_unit_square
 from mpi4py import MPI
 
 
-@pytest.mark.parametrize("element", [
-    finite_element("Lagrange", "triangle", 1),
-    vector_element("Lagrange", "triangle", 1)])
-def test_scatter_forward(element):
+@pytest.mark.parametrize("e", [
+    element("Lagrange", "triangle", 1),
+    element("Lagrange", "triangle", 1, rank=1)])
+def test_scatter_forward(e):
 
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
-    V = FunctionSpace(mesh, element)
+    V = FunctionSpace(mesh, e)
     u = Function(V)
     bs = V.dofmap.bs
 
@@ -47,14 +47,14 @@ def test_scatter_forward(element):
     assert np.allclose(u.x.array[local_size:], ghost_owners)
 
 
-@pytest.mark.parametrize("element", [
-    finite_element("Lagrange", "triangle", 1),
-    vector_element("Lagrange", "triangle", 1)])
-def test_scatter_reverse(element):
+@pytest.mark.parametrize("e", [
+    element("Lagrange", "triangle", 1),
+    element("Lagrange", "triangle", 1, rank=1)])
+def test_scatter_reverse(e):
 
     comm = MPI.COMM_WORLD
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
-    V = FunctionSpace(mesh, element)
+    V = FunctionSpace(mesh, e)
     u = Function(V)
     bs = V.dofmap.bs
 

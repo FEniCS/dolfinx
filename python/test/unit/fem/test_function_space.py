@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 import basix
-from basix.ufl import MixedElement, finite_element, vector_element
+from basix.ufl import MixedElement, element
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import create_mesh, create_unit_cube
 from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
@@ -33,8 +33,8 @@ def W(mesh):
 
 @pytest.fixture
 def Q(mesh):
-    W = vector_element('Lagrange', mesh.ufl_cell().cellname(), 1)
-    V = finite_element('Lagrange', mesh.ufl_cell().cellname(), 1)
+    W = element('Lagrange', mesh.ufl_cell().cellname(), 1, rank=1)
+    V = element('Lagrange', mesh.ufl_cell().cellname(), 1)
     return FunctionSpace(mesh, MixedElement([W, V]))
 
 
@@ -219,9 +219,9 @@ def test_argument_equality(mesh, V, V2, W, W2):
 
 def test_cell_mismatch(mesh):
     """Test that cell mismatch raises early enough from UFL"""
-    element = finite_element("P", "triangle", 1)
+    e = element("P", "triangle", 1)
     with pytest.raises(BaseException):
-        FunctionSpace(mesh, element)
+        FunctionSpace(mesh, e)
 
 
 def test_basix_element(V, W, Q, V2):
@@ -243,7 +243,7 @@ def test_vector_function_space_cell_type():
 
     # Create a mesh containing a single interval living in 2D
     cell = Cell("interval", geometric_dimension=gdim)
-    domain = Mesh(vector_element("Lagrange", "interval", 1, gdim=gdim))
+    domain = Mesh(element("Lagrange", "interval", 1, gdim=gdim, rank=1))
     cells = np.array([[0, 1]], dtype=np.int64)
     x = np.array([[0., 0.], [1., 1.]])
     mesh = create_mesh(comm, cells, x, domain)

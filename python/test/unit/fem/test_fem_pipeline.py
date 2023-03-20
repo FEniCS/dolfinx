@@ -11,7 +11,7 @@ import pytest
 
 import basix
 import ufl
-from basix.ufl import MixedElement, finite_element
+from basix.ufl import MixedElement, element
 from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
                          assemble_scalar, dirichletbc, form,
                          locate_dofs_topological)
@@ -218,8 +218,8 @@ def test_curl_curl_eigenvalue(family, order):
     mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]),
                                              np.array([np.pi, np.pi])], [24, 24], CellType.triangle)
 
-    element = finite_element(family, basix.CellType.triangle, order)
-    V = FunctionSpace(mesh, element)
+    e = element(family, basix.CellType.triangle, order)
+    V = FunctionSpace(mesh, e)
 
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
@@ -281,11 +281,11 @@ def test_biharmonic(family):
     mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]),
                                              np.array([1.0, 1.0])], [32, 32], CellType.triangle)
 
-    element = MixedElement([
-        finite_element(family, basix.CellType.triangle, 1),
-        finite_element(basix.ElementFamily.P, basix.CellType.triangle, 2)])
+    e = MixedElement([
+        element(family, basix.CellType.triangle, 1),
+        element(basix.ElementFamily.P, basix.CellType.triangle, 2)])
 
-    V = FunctionSpace(mesh, element)
+    V = FunctionSpace(mesh, e)
     sigma, u = ufl.TrialFunctions(V)
     tau, v = ufl.TestFunctions(V)
 

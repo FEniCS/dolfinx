@@ -4,12 +4,12 @@
 # The first step is to define the variational problem at hand. We define
 # the variational problem in UFL terms in a separate form file
 # :download:`biharmonic.py`.  We begin by defining the finite element::
-from basix.ufl import finite_element, vector_element
+from basix.ufl import element
 from ufl import (CellDiameter, Coefficient, Constant, FacetNormal,
                  FunctionSpace, Mesh, TestFunction, TrialFunction, avg, div,
                  dS, dx, grad, inner, jump)
 
-element = finite_element("Lagrange", "triangle", 2)
+e = element("Lagrange", "triangle", 2)
 
 # The first argument to :py:class:`FiniteElement` is the finite element
 # family, the second argument specifies the domain, while the third
@@ -21,10 +21,10 @@ element = finite_element("Lagrange", "triangle", 2)
 # Next, we use this element to initialize the trial and test functions
 # (:math:`u` and :math:`v`) and the coefficient function :math:`f`::
 
-coord_element = vector_element("Lagrange", "triangle", 1)
+coord_element = element("Lagrange", "triangle", 1, rank=1)
 mesh = Mesh(coord_element)
 
-V = FunctionSpace(mesh, element)
+V = FunctionSpace(mesh, e)
 
 u = TrialFunction(V)
 v = TestFunction(V)

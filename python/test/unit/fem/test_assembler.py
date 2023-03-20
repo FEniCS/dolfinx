@@ -13,7 +13,7 @@ import scipy.sparse
 
 import basix
 import ufl
-from basix.ufl import MixedElement, finite_element, vector_element
+from basix.ufl import MixedElement, element
 from dolfinx import cpp as _cpp
 from dolfinx import fem, graph, la
 from dolfinx.fem import (Constant, Function, FunctionSpace,
@@ -213,8 +213,8 @@ def test_assemble_manifold():
     points = np.array([[0.0, 0.0], [0.2, 0.0], [0.4, 0.0],
                        [0.6, 0.0], [0.8, 0.0], [1.0, 0.0]], dtype=np.float64)
     cells = np.array([[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]], dtype=np.int32)
-    domain = ufl.Mesh(vector_element(
-        basix.ElementFamily.P, basix.CellType.interval, 1, gdim=points.shape[1]))
+    domain = ufl.Mesh(element(
+        basix.ElementFamily.P, basix.CellType.interval, 1, gdim=points.shape[1], rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     assert mesh.geometry.dim == 2
     assert mesh.topology.dim == 1
@@ -246,9 +246,9 @@ def test_matrix_assembly_block(mode):
     structures"""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
     p0, p1 = 1, 2
-    P0 = finite_element("Lagrange", mesh.ufl_cell().cellname(), p0)
-    P1 = finite_element("Lagrange", mesh.ufl_cell().cellname(), p1)
-    P2 = finite_element("Lagrange", mesh.ufl_cell().cellname(), p0)
+    P0 = element("Lagrange", mesh.ufl_cell().cellname(), p0)
+    P1 = element("Lagrange", mesh.ufl_cell().cellname(), p1)
+    P2 = element("Lagrange", mesh.ufl_cell().cellname(), p0)
     V0 = FunctionSpace(mesh, P0)
     V1 = FunctionSpace(mesh, P1)
     V2 = FunctionSpace(mesh, P2)
@@ -362,7 +362,7 @@ def test_assembly_solve_block(mode):
     """Solve a two-field mass-matrix like problem with block matrix approaches
     and test that solution is the same"""
     mesh = create_unit_square(MPI.COMM_WORLD, 32, 31, ghost_mode=mode)
-    P = finite_element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    P = element("Lagrange", mesh.ufl_cell().cellname(), 1)
     V0 = FunctionSpace(mesh, P)
     V1 = V0.clone()
 
@@ -609,8 +609,8 @@ def test_assembly_solve_taylor_hood(mesh):
 
     def monolithic_solve():
         """Monolithic (interleaved) solver"""
-        P2_el = vector_element("Lagrange", mesh.ufl_cell().cellname(), 2)
-        P1_el = finite_element("Lagrange", mesh.ufl_cell().cellname(), 1)
+        P2_el = element("Lagrange", mesh.ufl_cell().cellname(), 2, rank=1)
+        P1_el = element("Lagrange", mesh.ufl_cell().cellname(), 1)
         TH = MixedElement([P2_el, P1_el])
         W = FunctionSpace(mesh, TH)
         (u, p) = ufl.TrialFunctions(W)
@@ -920,7 +920,7 @@ def test_assemble_empty_rank_mesh():
     """Assembly on mesh where some ranks are empty"""
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
-    domain = ufl.Mesh(vector_element("Lagrange", cell_type.name, 1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
 
     def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the curent rank"""

@@ -11,7 +11,7 @@ import pytest
 from numpy.testing import assert_array_equal
 
 import ufl
-from basix.ufl import MixedElement, finite_element, tensor_element, vector_element
+from basix.ufl import MixedElement, element
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
 from dolfinx.io import VTKFile
@@ -94,9 +94,8 @@ def test_save_1d_vector(tempdir):
         vals[1] = 2 * x[0] * x[0]
         return vals
 
-    element = vector_element(
-        "Lagrange", mesh.ufl_cell().cellname(), 2, dim=2)
-    u = Function(FunctionSpace(mesh, element))
+    e = element("Lagrange", mesh.ufl_cell().cellname(), 2, dim=2, rank=1)
+    u = Function(FunctionSpace(mesh, e))
     u.interpolate(f)
     filename = Path(tempdir, "u.pvd")
     with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
@@ -130,7 +129,7 @@ def test_save_2d_vector_CG2(tempdir):
                        [1, 2], [0.5, 2], [1, 1]])
     cells = np.array([[0, 1, 2, 3, 4, 5],
                       [1, 6, 2, 7, 3, 8]])
-    domain = ufl.Mesh(vector_element("Lagrange", "triangle", 2))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 2, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
     u.interpolate(lambda x: np.vstack((x[0], x[1])))
@@ -141,8 +140,8 @@ def test_save_2d_vector_CG2(tempdir):
 
 def test_save_vtk_mixed(tempdir):
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
-    P2 = vector_element("Lagrange", mesh.ufl_cell().cellname(), 1)
-    P1 = finite_element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    P2 = element("Lagrange", mesh.ufl_cell().cellname(), 1, rank=1)
+    P1 = element("Lagrange", mesh.ufl_cell().cellname(), 1)
     W = FunctionSpace(mesh, MixedElement([P2, P1]))
     V1 = FunctionSpace(mesh, P1)
     V2 = FunctionSpace(mesh, P2)
@@ -176,8 +175,8 @@ def test_save_vtk_mixed(tempdir):
 def test_save_vtk_cell_point(tempdir):
     """Test writing cell-wise and point-wise data"""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
-    P2 = vector_element("Lagrange", mesh.ufl_cell().cellname(), 1)
-    P1 = finite_element("Discontinuous Lagrange", mesh.ufl_cell().cellname(), 0)
+    P2 = element("Lagrange", mesh.ufl_cell().cellname(), 1, rank=1)
+    P1 = element("Discontinuous Lagrange", mesh.ufl_cell().cellname(), 0)
 
     V2, V1 = FunctionSpace(mesh, P2), FunctionSpace(mesh, P1)
     U2, U1 = Function(V2), Function(V1)
@@ -195,9 +194,9 @@ def test_save_vtk_cell_point(tempdir):
 
 def test_save_1d_tensor(tempdir):
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)
-    element = tensor_element(
+    e = element(
         "Lagrange", mesh.ufl_cell().cellname(), 2, shape=(2, 2))
-    u = Function(FunctionSpace(mesh, element))
+    u = Function(FunctionSpace(mesh, e))
     u.x.array[:] = 1.0
     filename = Path(tempdir, "u.pvd")
     with VTKFile(mesh.comm, filename, "w") as vtk:

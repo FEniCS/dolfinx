@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 
 import ufl
-from basix.ufl import MixedElement, finite_element, vector_element
+from basix.ufl import MixedElement, element
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace, assemble_scalar,
                          create_nonmatching_meshes_interpolation_data, form)
@@ -106,7 +106,7 @@ def test_eval_manifold():
     vertices = [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0,
                                                                     0.0)]
     cells = [(0, 1, 2), (0, 1, 3)]
-    domain = ufl.Mesh(vector_element("Lagrange", "triangle", 1, gdim=3))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, gdim=3, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
     Q = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(Q)
@@ -128,7 +128,7 @@ def test_interpolation_mismatch_rank1(W):
 
 def test_mixed_element_interpolation():
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
-    el = finite_element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    el = element("Lagrange", mesh.ufl_cell().cellname(), 1)
     V = FunctionSpace(mesh, MixedElement([el, el]))
     u = Function(V)
     with pytest.raises(RuntimeError):
@@ -184,9 +184,9 @@ def test_nonmatching_interpolation(cell_type0, cell_type1):
     def f(x):
         return (7 * x[1], 3 * x[0], x[2] + 0.4)
 
-    el0 = vector_element("Lagrange", mesh0.ufl_cell().cellname(), 1, dim=3)
+    el0 = element("Lagrange", mesh0.ufl_cell().cellname(), 1, dim=3, rank=1)
     V0 = FunctionSpace(mesh0, el0)
-    el1 = vector_element("Lagrange", mesh1.ufl_cell().cellname(), 1, dim=3)
+    el1 = element("Lagrange", mesh1.ufl_cell().cellname(), 1, dim=3, rank=1)
     V1 = FunctionSpace(mesh1, el1)
 
     # Interpolate on 3D mesh
