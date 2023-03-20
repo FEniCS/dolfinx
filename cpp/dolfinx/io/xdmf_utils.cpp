@@ -507,7 +507,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
     }
 
     // Send/receive
-    LOG(INFO) << "XDMF send entity nodes size:(" << num_nodes_g << ")";
+    LOG(INFO) << "XDMF send entity nodes size: (" << num_nodes_g << ")";
     graph::AdjacencyList<std::int64_t> nodes_g_recv
         = all_to_all(comm, graph::AdjacencyList<std::int64_t>(nodes_g_send));
 

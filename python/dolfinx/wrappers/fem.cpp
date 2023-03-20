@@ -414,13 +414,34 @@ void declare_form(py::module& m, const std::string& type)
                   const std::vector<std::shared_ptr<
                       const dolfinx::fem::Constant<T>>>& constants,
                   const std::map<dolfinx::fem::IntegralType,
-                                 const dolfinx::mesh::MeshTags<int>*>&
+                                 std::vector<std::pair<
+                                     std::int32_t,
+                                     py::array_t<std::int32_t,
+                                                 py::array::c_style
+                                                     | py::array::forcecast>>>>&
                       subdomains,
                   std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
                {
+                 std::map<dolfinx::fem::IntegralType,
+                          std::vector<std::pair<std::int32_t,
+                                                std::vector<std::int32_t>>>>
+                     sd;
+                 for (auto& [itg, data] : subdomains)
+                 {
+                   std::vector<
+                       std::pair<std::int32_t, std::vector<std::int32_t>>>
+                       x;
+                   for (auto& [id, e] : data)
+                   {
+                     x.emplace_back(id,
+                                    std::vector(e.data(), e.data() + e.size()));
+                   }
+                   sd.insert({itg, std::move(x)});
+                 }
+
                  ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
-                 return dolfinx::fem::create_form<T>(
-                     *p, spaces, coefficients, constants, subdomains, mesh);
+                 return dolfinx::fem::create_form<T>(*p, spaces, coefficients,
+                                                     constants, sd, mesh);
                }),
            py::arg("form"), py::arg("spaces"), py::arg("coefficients"),
            py::arg("constants"), py::arg("subdomains"), py::arg("mesh"),
@@ -486,13 +507,33 @@ void declare_form(py::module& m, const std::string& type)
              coefficients,
          const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
              constants,
-         const std::map<dolfinx::fem::IntegralType,
-                        const dolfinx::mesh::MeshTags<int>*>& subdomains,
+         const std::map<
+             dolfinx::fem::IntegralType,
+             std::vector<std::pair<
+                 std::int32_t,
+                 py::array_t<std::int32_t,
+                             py::array::c_style | py::array::forcecast>>>>&
+             subdomains,
          std::shared_ptr<const dolfinx::mesh::Mesh> mesh)
       {
+        std::map<
+            dolfinx::fem::IntegralType,
+            std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>
+            sd;
+        for (auto& [itg, data] : subdomains)
+        {
+          std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>> x;
+          for (auto& [id, idx] : data)
+          {
+            x.emplace_back(id,
+                           std::vector(idx.data(), idx.data() + idx.size()));
+          }
+          sd.insert({itg, std::move(x)});
+        }
+
         ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
         return dolfinx::fem::create_form<T>(*p, spaces, coefficients, constants,
-                                            subdomains, mesh);
+                                            sd, mesh);
       },
       py::arg("form"), py::arg("spaces"), py::arg("coefficients"),
       py::arg("constants"), py::arg("subdomains"), py::arg("mesh"),
@@ -580,6 +621,12 @@ void fem(py::module& m)
   m.def("transpose_dofmap", &dolfinx::fem::transpose_dofmap,
         "Build the index to (cell, local index) map from a "
         "dofmap ((cell, local index ) -> index).");
+  m.def(
+      "compute_integration_domains",
+      [](dolfinx::fem::IntegralType type,
+         const dolfinx::mesh::MeshTags<int>& meshtags)
+      { return dolfinx::fem::compute_integration_domains(type, meshtags); },
+      py::arg("integral_type"), py::arg("meshtags"));
   m.def(
       "create_nonmatching_meshes_interpolation_data",
       [](const dolfinx::fem::FunctionSpace& Vu,

@@ -172,7 +172,6 @@ public:
     std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-
     interpolate(v, cells, nmm_interpolation_data);
   }
 
@@ -217,6 +216,7 @@ public:
         throw std::runtime_error(
             "Data returned by callable has wrong shape(0) size");
       }
+
       if (fshape[1] != x.size() / 3)
       {
         throw std::runtime_error(
@@ -285,6 +285,7 @@ public:
             "Function element interpolation points has different shape to "
             "Expression interpolation points");
       }
+
       for (std::size_t i = 0; i < X0.size(); ++i)
       {
         if (std::abs(X0[i] - X1[i]) > 1.0e-10)
@@ -295,9 +296,8 @@ public:
       }
     }
 
-    namespace stdex = std::experimental;
-
     // Array to hold evaluated Expression
+    namespace stdex = std::experimental;
     std::size_t num_cells = cells.size();
     std::size_t num_points = e.X().second[0];
     std::vector<T> fdata(num_cells * num_points * value_size);
@@ -312,7 +312,6 @@ public:
     // value_size), i.e. xyzxyz ordering of dof values per cell per point.
     // The interpolation uses xxyyzz input, ordered for all points of each
     // cell, i.e. (value_size, num_cells*num_points)
-
     std::vector<T> fdata1(num_cells * num_points * value_size);
     stdex::mdspan<T, stdex::dextents<std::size_t, 3>> f1(
         fdata1.data(), value_size, num_cells, num_points);
@@ -371,6 +370,7 @@ public:
       throw std::runtime_error(
           "Number of points and number of cells must be equal.");
     }
+
     if (xshape[0] != ushape[0])
     {
       throw std::runtime_error(

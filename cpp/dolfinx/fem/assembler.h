@@ -27,7 +27,7 @@ class FunctionSpace;
 
 /// @brief Create a map of `std::span`s from a map of `std::vector`s
 template <typename T>
-std::map<std::pair<fem::IntegralType, int>, std::pair<std::span<const T>, int>>
+std::map<std::pair<IntegralType, int>, std::pair<std::span<const T>, int>>
 make_coefficients_span(const std::map<std::pair<IntegralType, int>,
                                       std::pair<std::vector<T>, int>>& coeffs)
 {
@@ -394,7 +394,7 @@ void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
 /// @param[in] diagonal The value to add to the diagonal for rows with a
 /// boundary condition applied
 template <typename T>
-void set_diagonal(auto set_fn, const fem::FunctionSpace& V,
+void set_diagonal(auto set_fn, const FunctionSpace& V,
                   const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
                   T diagonal = 1.0)
 {
