@@ -609,11 +609,27 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.tabulate_dof_coordinates()
 
 
+def _is_scalar(mesh, element):
+    try:
+        e = basix.ufl.element(element.family(), element.cell_type,         # type: ignore
+                              element.degree(), element.lagrange_variant,  # type: ignore
+                              element.dpc_variant, element.discontinuous,  # type: ignore
+                              gdim=mesh.geometry.dim)
+    except AttributeError:
+        ed = ElementMetaData(*element)
+        e = basix.ufl.element(ed.family, mesh.ufl_cell().cellname(), ed.degree,
+                              gdim=mesh.geometry.dim)
+    return len(e.value_shape()) == 0
+
+
 def VectorFunctionSpace(mesh: Mesh,
                         element: typing.Union[basix.ufl._BasixElementBase,
                                               ElementMetaData, typing.Tuple[str, int]],
                         dim=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
+    if not _is_scalar(mesh, element):
+        raise ValueError("Cannot create vector element containing a non-scalar.")
+
     try:
         ufl_e = basix.ufl.element(element.family(), element.cell_type,         # type: ignore
                                   element.degree(), element.lagrange_variant,  # type: ignore
@@ -629,6 +645,9 @@ def VectorFunctionSpace(mesh: Mesh,
 def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]], shape=None,
                         symmetry: typing.Optional[bool] = None) -> FunctionSpace:
     """Create tensor finite element (composition of scalar elements) function space."""
+    if not _is_scalar(mesh, element):
+        raise ValueError("Cannot create tensor element containing a non-scalar.")
+
     e = ElementMetaData(*element)
     ufl_element = basix.ufl.element(e.family, mesh.ufl_cell().cellname(),
                                     e.degree, shape=shape, symmetry=symmetry,
