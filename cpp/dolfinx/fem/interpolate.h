@@ -41,8 +41,8 @@ std::vector<double> interpolation_coords(const fem::FiniteElement& element,
 
 /// Helper type for the data that can be cached to speed up repeated
 /// interpolation of discrete functions on nonmatching meshes
-using nmm_interpolation_data_t = decltype(std::function{
-    dolfinx::geometry::determine_point_ownership})::result_type;
+using nmm_interpolation_data_t
+    = decltype(std::function{geometry::determine_point_ownership})::result_type;
 
 /// Forward declaration
 template <typename T>
