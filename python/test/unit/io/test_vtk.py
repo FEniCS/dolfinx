@@ -94,7 +94,7 @@ def test_save_1d_vector(tempdir):
         vals[1] = 2 * x[0] * x[0]
         return vals
 
-    e = element("Lagrange", mesh.ufl_cell().cellname(), 2, dim=2, rank=1)
+    e = element("Lagrange", mesh.ufl_cell().cellname(), 2, shape=(2, ))
     u = Function(FunctionSpace(mesh, e))
     u.interpolate(f)
     filename = Path(tempdir, "u.pvd")

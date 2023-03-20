@@ -618,11 +618,11 @@ def VectorFunctionSpace(mesh: Mesh,
         ufl_e = basix.ufl.element(element.family(), element.cell_type,         # type: ignore
                                   element.degree(), element.lagrange_variant,  # type: ignore
                                   element.dpc_variant, element.discontinuous,  # type: ignore
-                                  dim=dim, gdim=mesh.geometry.dim, rank=1)
+                                  shape=None if dim is None else (dim, ), gdim=mesh.geometry.dim, rank=1)
     except AttributeError:
         ed = ElementMetaData(*element)
         ufl_e = basix.ufl.element(ed.family, mesh.ufl_cell().cellname(), ed.degree,
-                                  dim=dim, gdim=mesh.geometry.dim, rank=1)
+                                  shape=None if dim is None else (dim, ), gdim=mesh.geometry.dim, rank=1)
     return FunctionSpace(mesh, ufl_e)
 
 
@@ -632,5 +632,5 @@ def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typin
     e = ElementMetaData(*element)
     ufl_element = basix.ufl.element(e.family, mesh.ufl_cell().cellname(),
                                     e.degree, shape=shape, symmetry=symmetry,
-                                    gdim=mesh.geometry.dim, rank=1)
+                                    gdim=mesh.geometry.dim, rank=2)
     return FunctionSpace(mesh, ufl_element)

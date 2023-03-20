@@ -264,7 +264,7 @@ def create_submesh(msh, dim, entities):
     submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name(), geometric_dimension=submsh.geometry.dim)
     submsh_domain = ufl.Mesh(basix.ufl.element(
         "Lagrange", submsh_ufl_cell.cellname(), submsh.geometry.cmap.degree, submsh.geometry.cmap.variant,
-        dim=submsh.geometry.dim, gdim=submsh.geometry.dim, rank=1))
+        shape=(submsh.geometry.dim, ), gdim=submsh.geometry.dim))
     return (Mesh(submsh, submsh_domain), entity_map, vertex_map, geom_map)
 
 
