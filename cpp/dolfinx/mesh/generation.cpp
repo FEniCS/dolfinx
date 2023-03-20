@@ -553,15 +553,15 @@ mesh::Mesh<double> build_quad(MPI_Comm comm,
 } // namespace
 
 //-----------------------------------------------------------------------------
-mesh::Mesh<double> mesh::create_rectangle(
-    MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
-    std::array<std::size_t, 2> n, CellType celltype, DiagonalType diagonal)
-{
-  return create_rectangle(comm, p, n, celltype, create_cell_partitioner(),
-                          diagonal);
-}
+// mesh::Mesh<double> mesh::create_rectangle(
+//     MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
+//     std::array<std::size_t, 2> n, CellType celltype, DiagonalType diagonal)
+// {
+//   return create_rectangle(comm, p, n, celltype, create_cell_partitioner(),
+//                           diagonal);
+// }
 //-----------------------------------------------------------------------------
-mesh::Mesh<double> mesh::create_rectangle(
+mesh::Mesh<double> mesh::_create_rectangle(
     MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
     std::array<std::size_t, 2> n, CellType celltype,
     const CellPartitionFunction& partitioner, DiagonalType diagonal)

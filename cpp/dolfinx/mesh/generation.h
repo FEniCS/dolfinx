@@ -73,12 +73,15 @@ enum class DiagonalType
 /// @param[in] p Two corner points
 /// @param[in] n Number of cells in each direction
 /// @param[in] celltype Cell shape
+/// @param[in] partitioner Partitioning function to use for determining
+/// the parallel distribution of cells across MPI ranks
 /// @param[in] diagonal Direction of diagonals
 /// @return Mesh
-Mesh<double> create_rectangle(MPI_Comm comm,
-                              const std::array<std::array<double, 2>, 2>& p,
-                              std::array<std::size_t, 2> n, CellType celltype,
-                              DiagonalType diagonal = DiagonalType::right);
+Mesh<double> _create_rectangle(MPI_Comm comm,
+                               const std::array<std::array<double, 2>, 2>& p,
+                               std::array<std::size_t, 2> n, CellType celltype,
+                               const CellPartitionFunction& partitioner,
+                               DiagonalType diagonal = DiagonalType::right);
 
 /// Create a uniform mesh::Mesh over the rectangle spanned by the two
 /// points @p p. The order of the two points is not important in terms
@@ -95,9 +98,33 @@ Mesh<double> create_rectangle(MPI_Comm comm,
 /// the parallel distribution of cells across MPI ranks
 /// @param[in] diagonal Direction of diagonals
 /// @return Mesh
+template <typename T>
+Mesh<T> create_rectangle(MPI_Comm comm,
+                         const std::array<std::array<double, 2>, 2>& p,
+                         std::array<std::size_t, 2> n, CellType celltype,
+                         const CellPartitionFunction& partitioner,
+                         DiagonalType diagonal = DiagonalType::right)
+{
+  auto m = _create_rectangle(comm, p, n, celltype, partitioner, diagonal);
+  return Mesh<T>(comm, m.topology(), m.geometry().template astype<T>());
+}
+
+/// Create a uniform mesh::Mesh over the rectangle spanned by the two
+/// points @p p. The order of the two points is not important in terms
+/// of minimum and maximum coordinates. The total number of vertices
+/// will be `(n[0] + 1)*(n[1] + 1)`. For triangles there will be  will
+/// be `2*n[0]*n[1]` cells. For quadrilaterals the number of cells will
+/// be `n[0]*n[1]`.
+///
+/// @param[in] comm MPI communicator to build the mesh on
+/// @param[in] p Two corner points
+/// @param[in] n Number of cells in each direction
+/// @param[in] celltype Cell shape
+/// @param[in] diagonal Direction of diagonals
+/// @return Mesh
 Mesh<double> create_rectangle(MPI_Comm comm,
                               const std::array<std::array<double, 2>, 2>& p,
                               std::array<std::size_t, 2> n, CellType celltype,
-                              const CellPartitionFunction& partitioner,
                               DiagonalType diagonal = DiagonalType::right);
+
 } // namespace dolfinx::mesh

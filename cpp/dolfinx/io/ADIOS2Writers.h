@@ -185,8 +185,15 @@ public:
   /// @note This format support arbitrary degree meshes
   /// @note The mesh geometry can be updated between write steps but the
   /// topology should not be changed between write steps
+  template <typename T>
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
-            std::shared_ptr<const mesh::Mesh<double>> mesh);
+            std::shared_ptr<const mesh::Mesh<T>> mesh)
+      : ADIOS2Writer(comm, filename, "VTX mesh writer", mesh)
+  {
+    // Define VTK scheme attribute for mesh
+    std::string vtk_scheme = create_vtk_schema({}, {}).str();
+    define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
+  }
 
   /// @brief Create a VTX writer for list of functions
   /// @param[in] comm The MPI communicator to open the file on

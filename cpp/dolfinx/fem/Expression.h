@@ -68,7 +68,9 @@ public:
           fn,
       const std::vector<int>& value_shape,
       std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr,
-      std::shared_ptr<const FunctionSpace> argument_function_space = nullptr)
+      std::shared_ptr<const FunctionSpace<scalar_value_type_t>>
+          argument_function_space
+      = nullptr)
       : _coefficients(coefficients), _constants(constants), _mesh(mesh),
         _x_ref(std::vector<double>(X.begin(), X.end()), Xshape), _fn(fn),
         _value_shape(value_shape),
@@ -94,7 +96,8 @@ public:
 
   /// Get argument function space
   /// @return The argument function space, nullptr if there is no argument.
-  std::shared_ptr<const FunctionSpace> argument_function_space() const
+  std::shared_ptr<const FunctionSpace<scalar_value_type_t>>
+  argument_function_space() const
   {
     return _argument_function_space;
   };
@@ -249,7 +252,8 @@ public:
 
 private:
   // Function space for Argument
-  std::shared_ptr<const FunctionSpace> _argument_function_space;
+  std::shared_ptr<const FunctionSpace<scalar_value_type_t>>
+      _argument_function_space;
 
   // Coefficients associated with the Expression
   std::vector<std::shared_ptr<const Function<T>>> _coefficients;

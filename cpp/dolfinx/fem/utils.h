@@ -51,6 +51,7 @@ class Topology;
 
 namespace dolfinx::fem
 {
+template <typename T>
 class FunctionSpace;
 
 namespace impl
@@ -144,12 +145,15 @@ concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
 /// function spaces in each array entry. If a form is null, then the
 /// returned function space pair is (null, null).
 template <typename T>
-std::vector<std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>
+std::vector<
+    std::vector<std::array<std::shared_ptr<const FunctionSpace<double>>, 2>>>
 extract_function_spaces(const std::vector<std::vector<const Form<T>*>>& a)
 {
-  std::vector<std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>
+  std::vector<
+      std::vector<std::array<std::shared_ptr<const FunctionSpace<double>>, 2>>>
       spaces(a.size(),
-             std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>(
+             std::vector<
+                 std::array<std::shared_ptr<const FunctionSpace<double>>, 2>>(
                  a[0].size()));
   for (std::size_t i = 0; i < a.size(); ++i)
   {
@@ -291,7 +295,7 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 template <typename T>
 Form<T> create_form(
     const ufcx_form& ufcx_form,
-    const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
+    const std::vector<std::shared_ptr<const FunctionSpace<double>>>& spaces,
     const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
     const std::map<
@@ -588,7 +592,7 @@ Form<T> create_form(
 template <typename T>
 Form<T> create_form(
     const ufcx_form& ufcx_form,
-    const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
+    const std::vector<std::shared_ptr<const FunctionSpace<double>>>& spaces,
     const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
@@ -639,7 +643,7 @@ Form<T> create_form(
 template <typename T>
 Form<T> create_form(
     ufcx_form* (*fptr)(),
-    const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
+    const std::vector<std::shared_ptr<const FunctionSpace<double>>>& spaces,
     const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
@@ -664,7 +668,7 @@ Form<T> create_form(
 /// @param[in] reorder_fn The graph reordering function to call on the
 /// dofmap. If `nullptr`, the default re-ordering is used.
 /// @return The created function space
-FunctionSpace
+FunctionSpace<double>
 create_functionspace(std::shared_ptr<mesh::Mesh<double>> mesh,
                      const basix::FiniteElement& e, int bs,
                      const std::function<std::vector<int>(
@@ -683,7 +687,7 @@ create_functionspace(std::shared_ptr<mesh::Mesh<double>> mesh,
 /// @param[in] reorder_fn The graph reordering function to call on the
 /// dofmap. If `nullptr`, the default re-ordering is used.
 /// @return The created function space
-FunctionSpace create_functionspace(
+FunctionSpace<double> create_functionspace(
     ufcx_function_space* (*fptr)(const char*), const std::string& function_name,
     std::shared_ptr<mesh::Mesh<double>> mesh,
     const std::function<
@@ -752,13 +756,12 @@ void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
 /// @private
 /// @brief  Concepts for function that returns cell index
 template <typename F>
-concept FetchCells
-    = requires(F&& f, std::span<const std::int32_t> v) {
-        requires std::invocable<F, std::span<const std::int32_t>>;
-        {
-          f(v)
-          } -> std::convertible_to<std::int32_t>;
-      };
+concept FetchCells = requires(F&& f, std::span<const std::int32_t> v) {
+  requires std::invocable<F, std::span<const std::int32_t>>;
+  {
+    f(v)
+  } -> std::convertible_to<std::int32_t>;
+};
 
 /// @brief Pack a single coefficient for a set of active entities.
 ///
@@ -985,7 +988,8 @@ Expression<T> create_expression(
     const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
     std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr,
-    std::shared_ptr<const FunctionSpace> argument_function_space = nullptr)
+    std::shared_ptr<const FunctionSpace<double>> argument_function_space
+    = nullptr)
 {
   if (expression.rank > 0 and !argument_function_space)
   {
@@ -1043,7 +1047,8 @@ Expression<T> create_expression(
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr,
-    std::shared_ptr<const FunctionSpace> argument_function_space = nullptr)
+    std::shared_ptr<const FunctionSpace<double>> argument_function_space
+    = nullptr)
 {
   // Place coefficients in appropriate order
   std::vector<std::shared_ptr<const Function<T>>> coeff_map;

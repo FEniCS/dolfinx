@@ -35,7 +35,7 @@ Mat fem::petsc::create_matrix_block(
     const std::string& type)
 {
   // Extract and check row/column ranges
-  std::array<std::vector<std::shared_ptr<const FunctionSpace>>, 2> V
+  std::array<std::vector<std::shared_ptr<const FunctionSpace<double>>>, 2> V
       = fem::common_function_spaces(extract_function_spaces(a));
   std::array<std::vector<int>, 2> bs_dofs;
   for (std::size_t i = 0; i < 2; ++i)

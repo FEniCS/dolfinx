@@ -24,7 +24,6 @@ namespace dolfinx::fem
 {
 template <typename T>
 class DirichletBC;
-class FunctionSpace;
 
 /// @brief Helper functions for assembly into PETSc data structures
 namespace petsc

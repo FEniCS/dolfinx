@@ -91,7 +91,8 @@ public:
   /// @param[in] mesh The mesh of the domain. This is required when
   /// there are not argument functions from which the mesh can be
   /// extracted, e.g. for functionals
-  Form(const std::vector<std::shared_ptr<const FunctionSpace>>& function_spaces,
+  Form(const std::vector<std::shared_ptr<
+           const FunctionSpace<scalar_value_type_t>>>& function_spaces,
        const std::map<IntegralType,
                       std::vector<std::tuple<
                           int,
@@ -166,7 +167,7 @@ public:
 
   /// Return function spaces for all arguments
   /// @return Function spaces
-  const std::vector<std::shared_ptr<const FunctionSpace>>&
+  const std::vector<std::shared_ptr<const FunctionSpace<scalar_value_type_t>>>&
   function_spaces() const
   {
     return _function_spaces;
@@ -360,7 +361,8 @@ private:
   }
 
   // Function spaces (one for each argument)
-  std::vector<std::shared_ptr<const FunctionSpace>> _function_spaces;
+  std::vector<std::shared_ptr<const FunctionSpace<scalar_value_type_t>>>
+      _function_spaces;
 
   // Form coefficients
   std::vector<std::shared_ptr<const Function<T>>> _coefficients;

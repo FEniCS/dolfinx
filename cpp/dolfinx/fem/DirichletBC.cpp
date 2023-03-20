@@ -183,7 +183,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
 
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
-fem::locate_dofs_topological(const FunctionSpace& V, int dim,
+fem::locate_dofs_topological(const FunctionSpace<double>& V, int dim,
                              std::span<const std::int32_t> entities,
                              bool remote)
 {
@@ -297,11 +297,11 @@ fem::locate_dofs_topological(const FunctionSpace& V, int dim,
 }
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
-    const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
+    const std::array<std::reference_wrapper<const FunctionSpace<double>>, 2>& V,
     const int dim, std::span<const std::int32_t> entities, bool remote)
 {
-  const FunctionSpace& V0 = V.at(0).get();
-  const FunctionSpace& V1 = V.at(1).get();
+  const FunctionSpace<double>& V0 = V.at(0).get();
+  const FunctionSpace<double>& V1 = V.at(1).get();
 
   // Get mesh
   auto mesh = V0.mesh();
@@ -454,7 +454,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> fem::locate_dofs_geometrical(
-    const FunctionSpace& V,
+    const FunctionSpace<double>& V,
     const std::function<std::vector<std::int8_t>(
         std::experimental::mdspan<
             const double,
@@ -492,7 +492,7 @@ std::vector<std::int32_t> fem::locate_dofs_geometrical(
 }
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
-    const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
+    const std::array<std::reference_wrapper<const FunctionSpace<double>>, 2>& V,
     const std::function<std::vector<std::int8_t>(
         std::experimental::mdspan<
             const double,
@@ -505,8 +505,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_geometrical(
   // interface that computes dofs coordinates only for specified cell.
 
   // Get function spaces
-  const FunctionSpace& V0 = V.at(0).get();
-  const FunctionSpace& V1 = V.at(1).get();
+  const FunctionSpace<double>& V0 = V.at(0).get();
+  const FunctionSpace<double>& V1 = V.at(1).get();
 
   // Get mesh
   auto mesh = V0.mesh();

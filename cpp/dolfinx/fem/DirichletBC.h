@@ -45,7 +45,7 @@ namespace dolfinx::fem
 /// space V. The array uses the block size of the dofmap associated
 /// with V.
 std::vector<std::int32_t>
-locate_dofs_topological(const FunctionSpace& V, int dim,
+locate_dofs_topological(const FunctionSpace<double>& V, int dim,
                         std::span<const std::int32_t> entities,
                         bool remote = true);
 
@@ -73,7 +73,7 @@ locate_dofs_topological(const FunctionSpace& V, int dim,
 /// V[0] and array[1](i) is the corresponding DOF entry in the space
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
-    const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
+    const std::array<std::reference_wrapper<const FunctionSpace<double>>, 2>& V,
     int dim, std::span<const std::int32_t> entities, bool remote = true);
 
 /// Finds degrees of freedom whose geometric coordinate is true for the
@@ -88,7 +88,7 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
 /// space V. The array uses the block size of the dofmap associated
 /// with V.
 std::vector<std::int32_t> locate_dofs_geometrical(
-    const FunctionSpace& V,
+    const FunctionSpace<double>& V,
     const std::function<std::vector<std::int8_t>(
         std::experimental::mdspan<
             const double,
@@ -110,7 +110,7 @@ std::vector<std::int32_t> locate_dofs_geometrical(
 /// V[0] and array[1](i) is the corresponding DOF entry in the space
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
-    const std::array<std::reference_wrapper<const FunctionSpace>, 2>& V,
+    const std::array<std::reference_wrapper<const FunctionSpace<double>>, 2>& V,
     const std::function<std::vector<std::int8_t>(
         std::experimental::mdspan<
             const double,
@@ -134,7 +134,7 @@ class DirichletBC
 private:
   /// Compute number of owned dofs indices. Will contain 'gaps' for
   /// sub-spaces.
-  std::size_t num_owned(const FunctionSpace& V,
+  std::size_t num_owned(const FunctionSpace<double>& V,
                         std::span<const std::int32_t> dofs)
   {
     int bs = V.dofmap()->index_map_bs();
@@ -177,7 +177,8 @@ public:
             typename
             = std::enable_if_t<std::is_convertible_v<S, T>
                                or std::is_convertible_v<S, std::span<const T>>>>
-  DirichletBC(const S& g, U&& dofs, std::shared_ptr<const FunctionSpace> V)
+  DirichletBC(const S& g, U&& dofs,
+              std::shared_ptr<const FunctionSpace<double>> V)
       : DirichletBC(std::make_shared<Constant<T>>(g), dofs, V)
   {
   }
@@ -199,7 +200,7 @@ public:
   /// mixed spaces.
   template <std::convertible_to<std::vector<std::int32_t>> U>
   DirichletBC(std::shared_ptr<const Constant<T>> g, U&& dofs,
-              std::shared_ptr<const FunctionSpace> V)
+              std::shared_ptr<const FunctionSpace<double>> V)
       : _function_space(V), _g(g), _dofs0(std::forward<U>(dofs)),
         _owned_indices0(num_owned(*V, _dofs0))
   {
@@ -284,7 +285,7 @@ public:
   /// @note The indices in `dofs` are unrolled and not for blocks.
   template <typename U>
   DirichletBC(std::shared_ptr<const Function<T>> g, U&& V_g_dofs,
-              std::shared_ptr<const FunctionSpace> V)
+              std::shared_ptr<const FunctionSpace<double>> V)
       : _function_space(V), _g(g),
         _dofs0(std::forward<typename U::value_type>(V_g_dofs[0])),
         _dofs1_g(std::forward<typename U::value_type>(V_g_dofs[1])),
@@ -312,7 +313,7 @@ public:
 
   /// The function space to which boundary conditions are applied
   /// @return The function space
-  std::shared_ptr<const FunctionSpace> function_space() const
+  std::shared_ptr<const FunctionSpace<double>> function_space() const
   {
     return _function_space;
   }
@@ -465,7 +466,7 @@ public:
 
 private:
   // The function space (possibly a sub function space)
-  std::shared_ptr<const FunctionSpace> _function_space;
+  std::shared_ptr<const FunctionSpace<double>> _function_space;
 
   // The function
   std::variant<std::shared_ptr<const Function<T>>,

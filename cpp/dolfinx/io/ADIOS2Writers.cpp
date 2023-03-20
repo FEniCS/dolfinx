@@ -212,8 +212,9 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] u The function
+template <typename T>
 void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
-                               const fem::FunctionSpace& V)
+                               const fem::FunctionSpace<T>& V)
 {
   auto mesh = V.mesh();
   assert(mesh);
@@ -242,8 +243,8 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 
   // Define ADIOS2 variables for geometry, topology, celltypes and
   // corresponding VTK data
-  adios2::Variable<double> local_geometry
-      = define_variable<double>(io, "geometry", {}, {}, {num_dofs, 3});
+  adios2::Variable<T> local_geometry
+      = define_variable<T>(io, "geometry", {}, {}, {num_dofs, 3});
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
       io, "connectivity", {}, {}, {vtkshape[0], vtkshape[1] + 1});
   adios2::Variable<std::uint32_t> cell_type
@@ -258,7 +259,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(elements, vtkshape[0]);
   engine.Put<std::uint32_t>(
       cell_type, cells::get_vtk_cell_type(mesh->topology().cell_type(), tdim));
-  engine.Put<double>(local_geometry, x.data());
+  engine.Put<T>(local_geometry, x.data());
   engine.Put<std::int64_t>(local_topology, cells.data());
 
   // Node global ids
@@ -816,14 +817,14 @@ void FidesWriter::write(double t)
   _engine->EndStep();
 }
 //-----------------------------------------------------------------------------
-VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
-                     std::shared_ptr<const mesh::Mesh<double>> mesh)
-    : ADIOS2Writer(comm, filename, "VTX mesh writer", mesh)
-{
-  // Define VTK scheme attribute for mesh
-  std::string vtk_scheme = create_vtk_schema({}, {}).str();
-  define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
-}
+// VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
+//                      std::shared_ptr<const mesh::Mesh<double>> mesh)
+//     : ADIOS2Writer(comm, filename, "VTX mesh writer", mesh)
+// {
+//   // Define VTK scheme attribute for mesh
+//   std::string vtk_scheme = create_vtk_schema({}, {}).str();
+//   define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
+// }
 //-----------------------------------------------------------------------------
 VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
                      const ADIOS2Writer::U& u)

@@ -25,12 +25,13 @@
 
 namespace dolfinx::fem
 {
+template <typename U>
 class FunctionSpace;
 template <typename T>
 class Expression;
 
-template <typename T>
-class Expression;
+// template <typename T>
+// class Expression;
 
 /// This class represents a function \f$ u_h \f$ in a finite
 /// element function space \f$ V_h \f$, given by
@@ -41,13 +42,25 @@ class Expression;
 template <typename T>
 class Function
 {
+  template <typename X, typename = void>
+  struct scalar_value_type
+  {
+    typedef X value_type;
+  };
+  template <typename X>
+  struct scalar_value_type<X, std::void_t<typename X::value_type>>
+  {
+    typedef typename X::value_type value_type;
+  };
+  using scalar_value_type_t = typename scalar_value_type<T>::value_type;
+
 public:
   /// Field type for the Function, e.g. double
   using value_type = T;
 
   /// Create function on given function space
   /// @param[in] V The function space
-  explicit Function(std::shared_ptr<const FunctionSpace> V)
+  explicit Function(std::shared_ptr<const FunctionSpace<scalar_value_type_t>> V)
       : _function_space(V),
         _x(std::make_shared<la::Vector<T>>(V->dofmap()->index_map,
                                            V->dofmap()->index_map_bs()))
@@ -66,7 +79,7 @@ public:
   ///
   /// @param[in] V The function space
   /// @param[in] x The vector
-  Function(std::shared_ptr<const FunctionSpace> V,
+  Function(std::shared_ptr<const FunctionSpace<scalar_value_type_t>> V,
            std::shared_ptr<la::Vector<T>> x)
       : _function_space(V), _x(x)
   {
@@ -131,7 +144,8 @@ public:
 
   /// Access the function space
   /// @return The function space
-  std::shared_ptr<const FunctionSpace> function_space() const
+  std::shared_ptr<const FunctionSpace<scalar_value_type_t>>
+  function_space() const
   {
     return _function_space;
   }
@@ -608,7 +622,7 @@ public:
 
 private:
   // The function space
-  std::shared_ptr<const FunctionSpace> _function_space;
+  std::shared_ptr<const FunctionSpace<scalar_value_type_t>> _function_space;
 
   // The vector of expansion coefficients (local)
   std::shared_ptr<la::Vector<T>> _x;

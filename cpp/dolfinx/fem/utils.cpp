@@ -193,7 +193,7 @@ std::vector<std::string> fem::get_constant_names(const ufcx_form& ufcx_form)
   return constants;
 }
 //-----------------------------------------------------------------------------
-fem::FunctionSpace fem::create_functionspace(
+fem::FunctionSpace<double> fem::create_functionspace(
     std::shared_ptr<mesh::Mesh<double>> mesh, const basix::FiniteElement& e,
     int bs,
     const std::function<std::vector<int>(
@@ -224,10 +224,10 @@ fem::FunctionSpace fem::create_functionspace(
   auto dofmap = std::make_shared<const DofMap>(
       create_dofmap(mesh->comm(), layout, mesh->topology(), reorder_fn, *_e));
 
-  return FunctionSpace(mesh, _e, dofmap);
+  return FunctionSpace<double>(mesh, _e, dofmap);
 }
 //-----------------------------------------------------------------------------
-fem::FunctionSpace fem::create_functionspace(
+fem::FunctionSpace<double> fem::create_functionspace(
     ufcx_function_space* (*fptr)(const char*), const std::string& function_name,
     std::shared_ptr<mesh::Mesh<double>> mesh,
     const std::function<std::vector<int>(
@@ -261,7 +261,7 @@ fem::FunctionSpace fem::create_functionspace(
   assert(ufcx_map);
   ElementDofLayout layout
       = create_element_dof_layout(*ufcx_map, mesh->topology().cell_type());
-  return FunctionSpace(
+  return FunctionSpace<double>(
       mesh, element,
       std::make_shared<DofMap>(create_dofmap(
           mesh->comm(), layout, mesh->topology(), reorder_fn, *element)));

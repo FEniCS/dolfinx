@@ -21,6 +21,7 @@ template <typename T>
 class DirichletBC;
 template <typename T>
 class Form;
+template <typename T>
 class FunctionSpace;
 
 // -- Helper functions -----------------------------------------------------
@@ -394,7 +395,7 @@ void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
 /// @param[in] diagonal The value to add to the diagonal for rows with a
 /// boundary condition applied
 template <typename T>
-void set_diagonal(auto set_fn, const FunctionSpace& V,
+void set_diagonal(auto set_fn, const FunctionSpace<double>& V,
                   const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
                   T diagonal = 1.0)
 {
