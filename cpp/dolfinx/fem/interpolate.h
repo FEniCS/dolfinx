@@ -918,7 +918,7 @@ void interpolate(Function<T>& u, std::span<const T> f,
 /// Generate data needed to interpolate discrete functions across
 /// different meshes.
 ///
-/// @param[in] mesh0 Mesh of the space to interpolate into
+/// @param[in] geometry0 Mesh geometry of the space to interpolate into
 /// @param[in] element0 Element of the space to interpolate into
 /// @param[in] mesh1 Mesh of the function to interpolate from
 /// @param[in] cells Indices of the cells in the destination mesh on

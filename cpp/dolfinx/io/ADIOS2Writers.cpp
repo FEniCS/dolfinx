@@ -161,7 +161,8 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
       io, "NumberOfNodes", {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
-  const auto [vtkcells, shape] = io::extract_vtk_connectivity(mesh);
+  const auto [vtkcells, shape] = io::extract_vtk_connectivity(
+      mesh.geometry(), mesh.topology().cell_type());
 
   // Add cell metadata
   const int tdim = topology.dim();
@@ -552,7 +553,8 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
   const int tdim = topology.dim();
   const std::int32_t num_cells = topology.index_map(tdim)->size_local();
   const int num_nodes = geometry.cmap().dim();
-  const auto [cells, shape] = io::extract_vtk_connectivity(mesh);
+  const auto [cells, shape] = io::extract_vtk_connectivity(
+      mesh.geometry(), mesh.topology().cell_type());
 
   // "Put" topology data in the result in the ADIOS2 file
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
