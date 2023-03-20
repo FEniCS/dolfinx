@@ -532,10 +532,10 @@ int geometry::compute_first_colliding_cell(
       if (norm < eps2)
         return cell;
     }
-  }
-  return -1;
-}
 
+    return -1;
+  }
+}
 //-------------------------------------------------------------------------------
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<double>, std::vector<std::int32_t>>
@@ -649,8 +649,9 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
     cell_indicator[p / 3] = (colliding_cell >= 0) ? rank : -1;
     colliding_cells[p / 3] = colliding_cell;
   }
-  // Create neighborhood communicator in the reverse direction: send back col to
-  // requesting processes
+
+  // Create neighborhood communicator in the reverse direction: send
+  // back col to requesting processes
   MPI_Comm reverse_comm;
   MPI_Dist_graph_create_adjacent(
       comm, out_ranks.size(), out_ranks.data(), MPI_UNWEIGHTED, in_ranks.size(),
@@ -689,6 +690,7 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
     if ((recv_ranks[i] >= 0) && (point_owners[pos] == -1))
       point_owners[pos] = recv_ranks[i];
   }
+
   // Communication is reversed again to send dest ranks to all processes
   std::swap(send_sizes, recv_sizes);
   std::swap(send_offsets, recv_offsets);
@@ -740,3 +742,4 @@ geometry::determine_point_ownership(const mesh::Mesh& mesh,
   return std::make_tuple(point_owners, owned_recv_ranks, owned_recv_points,
                          owned_recv_cells);
 };
+//-------------------------------------------------------------------------------

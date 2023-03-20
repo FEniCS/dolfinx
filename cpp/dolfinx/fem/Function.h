@@ -189,8 +189,9 @@ public:
     assert(_function_space);
     assert(_function_space->element());
     assert(_function_space->mesh());
-    const std::vector<double> x = fem::interpolation_coords(
-        *_function_space->element(), *_function_space->mesh(), cells);
+    const std::vector<double> x
+        = fem::interpolation_coords(*_function_space->element(),
+                                    _function_space->mesh()->geometry(), cells);
     namespace stdex = std::experimental;
     stdex::mdspan<const double,
                   stdex::extents<std::size_t, 3, stdex::dynamic_extent>>
