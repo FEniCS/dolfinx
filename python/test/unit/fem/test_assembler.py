@@ -214,7 +214,7 @@ def test_assemble_manifold():
                        [0.6, 0.0], [0.8, 0.0], [1.0, 0.0]], dtype=np.float64)
     cells = np.array([[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]], dtype=np.int32)
     domain = ufl.Mesh(element(
-        basix.ElementFamily.P, basix.CellType.interval, 1, gdim=points.shape[1], rank=1))
+        basix.ElementFamily.P, basix.CellType.interval, 1, gdim=points.shape[1], shape=(points.shape[1], )))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     assert mesh.geometry.dim == 2
     assert mesh.topology.dim == 1
