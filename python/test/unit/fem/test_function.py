@@ -197,8 +197,9 @@ def test_nonmatching_interpolation(cell_type0, cell_type1):
     # Interpolate 3D->2D
     u1 = Function(V1)
     u1.interpolate(u0, nmm_interpolation_data=create_nonmatching_meshes_interpolation_data(
-        u1.function_space._cpp_object,
-        u0.function_space._cpp_object))
+        u1.function_space.mesh._cpp_object,
+        u1.function_space.element,
+        u0.function_space.mesh._cpp_object))
     u1.x.scatter_forward()
 
     # Exact interpolation on 2D mesh
@@ -211,8 +212,9 @@ def test_nonmatching_interpolation(cell_type0, cell_type1):
     # Interpolate 2D->3D
     u0_2 = Function(V0)
     u0_2.interpolate(u1, nmm_interpolation_data=create_nonmatching_meshes_interpolation_data(
-        u0_2.function_space._cpp_object,
-        u1.function_space._cpp_object))
+        u0_2.function_space.mesh._cpp_object,
+        u0_2.function_space.element,
+        u1.function_space.mesh._cpp_object))
 
     # Check that function values over facets of 3D mesh of the twice interpolated property is preserved
     def locate_bottom_facets(x):
