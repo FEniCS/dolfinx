@@ -639,20 +639,21 @@ void fem(py::module& m)
         std::vector<std::int32_t> cells(num_cells, 0);
         std::iota(cells.begin(), cells.end(), 0);
         return dolfinx::fem::create_nonmatching_meshes_interpolation_data(
-            mesh0, element0, mesh1, std::span(cells.data(), cells.size()));
+            mesh0.geometry(), element0, mesh1,
+            std::span(cells.data(), cells.size()));
       },
       py::arg("mesh0"), py::arg("element0"), py::arg("mesh1"));
   m.def(
       "create_nonmatching_meshes_interpolation_data",
-      [](const dolfinx::mesh::Mesh& mesh0,
+      [](const dolfinx::mesh::Geometry<double>& geometry0,
          const dolfinx::fem::FiniteElement& element0,
          const dolfinx::mesh::Mesh& mesh1,
          const py::array_t<std::int32_t, py::array::c_style>& cells)
       {
         return dolfinx::fem::create_nonmatching_meshes_interpolation_data(
-            mesh0, element0, mesh1, std::span(cells.data(), cells.size()));
+            geometry0, element0, mesh1, std::span(cells.data(), cells.size()));
       },
-      py::arg("mesh0"), py::arg("element0"), py::arg("mesh1"),
+      py::arg("geometry0"), py::arg("element0"), py::arg("mesh1"),
       py::arg("cells"));
 
   // dolfinx::fem::FiniteElement

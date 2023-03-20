@@ -925,7 +925,7 @@ void interpolate(Function<T>& u, std::span<const T> f,
 /// which to interpolate. Should be the same as the list used when
 /// calling fem::interpolation_coords.
 nmm_interpolation_data_t create_nonmatching_meshes_interpolation_data(
-    const mesh::Mesh& mesh0, const FiniteElement& element0,
+    const mesh::Geometry<double>& geometry0, const FiniteElement& element0,
     const mesh::Mesh& mesh1, std::span<const std::int32_t> cells);
 
 /// Generate data needed to interpolate discrete functions defined on
