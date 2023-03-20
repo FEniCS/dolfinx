@@ -44,8 +44,9 @@ def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
     shape, degree = _gmsh_to_cells[gmsh_cell]
     cell = ufl.Cell(shape, geometric_dimension=gdim)
 
-    element = basix.ufl.vector_element(
-        basix.ElementFamily.P, cell.cellname(), degree, basix.LagrangeVariant.equispaced, dim=gdim, gdim=gdim)
+    element = basix.ufl.element(
+        basix.ElementFamily.P, cell.cellname(), degree, basix.LagrangeVariant.equispaced, dim=gdim,
+        gdim=gdim, rank=1)
     return ufl.Mesh(element)
 
 
