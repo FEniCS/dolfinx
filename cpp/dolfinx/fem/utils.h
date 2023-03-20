@@ -147,7 +147,8 @@ concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
 template <typename T>
 std::vector<
     std::vector<std::array<std::shared_ptr<const FunctionSpace<double>>, 2>>>
-extract_function_spaces(const std::vector<std::vector<const Form<T>*>>& a)
+extract_function_spaces(
+    const std::vector<std::vector<const Form<T, double>*>>& a)
 {
   std::vector<
       std::vector<std::array<std::shared_ptr<const FunctionSpace<double>>, 2>>>
@@ -159,7 +160,7 @@ extract_function_spaces(const std::vector<std::vector<const Form<T>*>>& a)
   {
     for (std::size_t j = 0; j < a[i].size(); ++j)
     {
-      if (const Form<T>* form = a[i][j]; form)
+      if (const Form<T, double>* form = a[i][j]; form)
         spaces[i][j] = {form->function_spaces()[0], form->function_spaces()[1]};
     }
   }
@@ -180,7 +181,7 @@ la::SparsityPattern create_sparsity_pattern(
 /// @param[in] a A bilinear form
 /// @return The corresponding sparsity pattern
 template <typename T>
-la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
+la::SparsityPattern create_sparsity_pattern(const Form<T, double>& a)
 {
   if (a.rank() != 2)
   {
@@ -293,10 +294,10 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain
 template <typename T>
-Form<T> create_form(
+Form<T, double> create_form(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace<double>>>& spaces,
-    const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+    const std::vector<std::shared_ptr<const Function<T, double>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
     const std::map<
         IntegralType,
@@ -575,8 +576,8 @@ Form<T> create_form(
     sd.insert({itg, std::move(x)});
   }
 
-  return Form<T>(spaces, integral_data, coefficients, constants,
-                 needs_facet_permutations, mesh);
+  return Form<T, double>(spaces, integral_data, coefficients, constants,
+                         needs_facet_permutations, mesh);
 }
 
 /// @brief Create a Form from UFC input
@@ -590,10 +591,10 @@ Form<T> create_form(
 /// has no arguments, e.g. a functional
 /// @return A Form
 template <typename T>
-Form<T> create_form(
+Form<T, double> create_form(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace<double>>>& spaces,
-    const std::map<std::string, std::shared_ptr<const Function<T>>>&
+    const std::map<std::string, std::shared_ptr<const Function<T, double>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::map<
@@ -603,7 +604,7 @@ Form<T> create_form(
     std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr)
 {
   // Place coefficients in appropriate order
-  std::vector<std::shared_ptr<const Function<T>>> coeff_map;
+  std::vector<std::shared_ptr<const Function<T, double>>> coeff_map;
   for (const std::string& name : get_coefficient_names(ufcx_form))
   {
     if (auto it = coefficients.find(name); it != coefficients.end())
@@ -641,10 +642,10 @@ Form<T> create_form(
 /// has no arguments, e.g. a functional.
 /// @return A Form
 template <typename T>
-Form<T> create_form(
+Form<T, double> create_form(
     ufcx_form* (*fptr)(),
     const std::vector<std::shared_ptr<const FunctionSpace<double>>>& spaces,
-    const std::map<std::string, std::shared_ptr<const Function<T>>>&
+    const std::map<std::string, std::shared_ptr<const Function<T, double>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::map<
@@ -654,8 +655,8 @@ Form<T> create_form(
     std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr)
 {
   ufcx_form* form = fptr();
-  Form<T> L = create_form<T>(*form, spaces, coefficients, constants, subdomains,
-                             mesh);
+  Form<T, double> L = create_form<T>(*form, spaces, coefficients, constants,
+                                     subdomains, mesh);
   std::free(form);
   return L;
 }
@@ -700,7 +701,7 @@ namespace impl
 /// @private
 template <typename T>
 std::span<const std::uint32_t> get_cell_orientation_info(
-    const std::vector<std::shared_ptr<const Function<T>>>& coefficients)
+    const std::vector<std::shared_ptr<const Function<T, double>>>& coefficients)
 {
   bool needs_dof_transformations = false;
   for (auto coeff : coefficients)
@@ -777,7 +778,8 @@ concept FetchCells = requires(F&& f, std::span<const std::int32_t> v) {
 /// entity in active_entities.
 /// @param[in] offset The offset for c
 template <typename T>
-void pack_coefficient_entity(std::span<T> c, int cstride, const Function<T>& u,
+void pack_coefficient_entity(std::span<T> c, int cstride,
+                             const Function<T, double>& u,
                              std::span<const std::uint32_t> cell_info,
                              std::span<const std::int32_t> entities,
                              std::size_t estride, FetchCells auto&& fetch_cells,
@@ -844,11 +846,11 @@ void pack_coefficient_entity(std::span<T> c, int cstride, const Function<T>& u,
 /// @return A storage container and the column stride
 template <typename T>
 std::pair<std::vector<T>, int>
-allocate_coefficient_storage(const Form<T>& form, IntegralType integral_type,
-                             int id)
+allocate_coefficient_storage(const Form<T, double>& form,
+                             IntegralType integral_type, int id)
 {
   // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const Function<T>>>& coefficients
+  const std::vector<std::shared_ptr<const Function<T, double>>>& coefficients
       = form.coefficients();
   const std::vector<int> offsets = form.coefficient_offsets();
 
@@ -883,7 +885,7 @@ allocate_coefficient_storage(const Form<T>& form, IntegralType integral_type,
 /// (coeffs, cstride) pair
 template <typename T>
 std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
-allocate_coefficient_storage(const Form<T>& form)
+allocate_coefficient_storage(const Form<T, double>& form)
 {
   std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>> coeffs;
   for (auto integral_type : form.integral_types())
@@ -907,11 +909,11 @@ allocate_coefficient_storage(const Form<T>& form)
 /// @param[in] c The coefficient array
 /// @param[in] cstride The coefficient stride
 template <typename T>
-void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
-                       std::span<T> c, int cstride)
+void pack_coefficients(const Form<T, double>& form, IntegralType integral_type,
+                       int id, std::span<T> c, int cstride)
 {
   // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const Function<T>>>& coefficients
+  const std::vector<std::shared_ptr<const Function<T, double>>>& coefficients
       = form.coefficients();
   const std::vector<int> offsets = form.coefficient_offsets();
 
@@ -982,14 +984,13 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
 }
 
 /// @brief Create Expression from UFC
-template <typename T>
-Expression<T> create_expression(
+template <typename T, typename U>
+Expression<T, U> create_expression(
     const ufcx_expression& expression,
-    const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+    const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-    std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr,
-    std::shared_ptr<const FunctionSpace<double>> argument_function_space
-    = nullptr)
+    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr,
+    std::shared_ptr<const FunctionSpace<U>> argument_function_space = nullptr)
 {
   if (expression.rank > 0 and !argument_function_space)
   {
@@ -1040,18 +1041,17 @@ Expression<T> create_expression(
 
 /// @brief Create Expression from UFC input (with named coefficients and
 /// constants).
-template <typename T>
-Expression<T> create_expression(
+template <typename T, typename U>
+Expression<T, U> create_expression(
     const ufcx_expression& expression,
-    const std::map<std::string, std::shared_ptr<const Function<T>>>&
+    const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr,
-    std::shared_ptr<const FunctionSpace<double>> argument_function_space
-    = nullptr)
+    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr,
+    std::shared_ptr<const FunctionSpace<U>> argument_function_space = nullptr)
 {
   // Place coefficients in appropriate order
-  std::vector<std::shared_ptr<const Function<T>>> coeff_map;
+  std::vector<std::shared_ptr<const Function<T, double>>> coeff_map;
   std::vector<std::string> coefficient_names;
   for (int i = 0; i < expression.num_coefficients; ++i)
     coefficient_names.push_back(expression.coefficient_names[i]);
@@ -1094,7 +1094,7 @@ Expression<T> create_expression(
 /// @param[in] coeffs A map from a (integral_type, domain_id) pair to a
 /// (coeffs, cstride) pair
 template <typename T>
-void pack_coefficients(const Form<T>& form,
+void pack_coefficients(const Form<T, double>& form,
                        std::map<std::pair<IntegralType, int>,
                                 std::pair<std::vector<T>, int>>& coeffs)
 {
@@ -1108,12 +1108,13 @@ void pack_coefficients(const Form<T>& form,
 /// @param[in] u The Expression
 /// @param[in] cells A list of active cells
 /// @return A pair of the form (coeffs, cstride)
-template <typename T>
+template <typename T, typename U>
 std::pair<std::vector<T>, int>
-pack_coefficients(const Expression<T>& u, std::span<const std::int32_t> cells)
+pack_coefficients(const Expression<T, U>& u,
+                  std::span<const std::int32_t> cells)
 {
   // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const Function<T>>>& coefficients
+  const std::vector<std::shared_ptr<const Function<T, double>>>& coefficients
       = u.coefficients();
   const std::vector<int> offsets = u.coefficient_offsets();
 

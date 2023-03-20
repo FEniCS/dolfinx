@@ -28,7 +28,7 @@ namespace dolfinx
 
 namespace fem
 {
-template <typename T>
+template <typename T, typename U>
 class Function;
 } // namespace fem
 
@@ -65,14 +65,14 @@ std::int64_t get_num_cells(const pugi::xml_node& topology_node);
 
 /// Get point data values for linear or quadratic mesh into flattened 2D
 /// array
-std::vector<double> get_point_data_values(const fem::Function<double>& u);
+std::vector<double> get_point_data_values(const fem::Function<double, double>& u);
 std::vector<std::complex<double>>
-get_point_data_values(const fem::Function<std::complex<double>>& u);
+get_point_data_values(const fem::Function<std::complex<double>, double>& u);
 
 /// Get cell data values as a flattened 2D array
-std::vector<double> get_cell_data_values(const fem::Function<double>& u);
+std::vector<double> get_cell_data_values(const fem::Function<double, double>& u);
 std::vector<std::complex<double>>
-get_cell_data_values(const fem::Function<std::complex<double>>& u);
+get_cell_data_values(const fem::Function<std::complex<double>, double>& u);
 
 /// Get the VTK string identifier
 std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);

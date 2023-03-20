@@ -18,7 +18,8 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-Mat fem::petsc::create_matrix(const Form<PetscScalar>& a,
+Mat fem::petsc::create_matrix(const Form<PetscScalar, double>
+& a,
                               const std::string& type)
 {
   // Build sparsitypattern
@@ -31,7 +32,8 @@ Mat fem::petsc::create_matrix(const Form<PetscScalar>& a,
 }
 //-----------------------------------------------------------------------------
 Mat fem::petsc::create_matrix_block(
-    const std::vector<std::vector<const Form<PetscScalar>*>>& a,
+    const std::vector<std::vector<const Form<PetscScalar, double>
+*>>& a,
     const std::string& type)
 {
   // Extract and check row/column ranges
@@ -59,7 +61,8 @@ Mat fem::petsc::create_matrix_block(
           = {{V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
       const std::array bs = {V[0][row]->dofmap()->index_map_bs(),
                              V[1][col]->dofmap()->index_map_bs()};
-      if (const Form<PetscScalar>* form = a[row][col]; form)
+      if (const Form<PetscScalar, double>
+* form = a[row][col]; form)
       {
         // Create sparsity pattern for block
         patterns[row].push_back(std::make_unique<la::SparsityPattern>(
@@ -177,7 +180,8 @@ Mat fem::petsc::create_matrix_block(
 }
 //-----------------------------------------------------------------------------
 Mat fem::petsc::create_matrix_nest(
-    const std::vector<std::vector<const Form<PetscScalar>*>>& a,
+    const std::vector<std::vector<const Form<PetscScalar, double>
+*>>& a,
     const std::vector<std::vector<std::string>>& types)
 {
   // Extract and check row/column ranges
@@ -196,7 +200,8 @@ Mat fem::petsc::create_matrix_nest(
   {
     for (int j = 0; j < cols; ++j)
     {
-      if (const Form<PetscScalar>* form = a[i][j]; form)
+      if (const Form<PetscScalar, double>
+* form = a[i][j]; form)
         mats[i * cols + j] = create_matrix(*form, _types[i][j]);
     }
   }
@@ -266,7 +271,8 @@ Vec fem::petsc::create_vector_nest(
 }
 //-----------------------------------------------------------------------------
 void fem::petsc::assemble_vector(
-    Vec b, const Form<PetscScalar>& L, std::span<const PetscScalar> constants,
+    Vec b, const Form<PetscScalar, double>
+& L, std::span<const PetscScalar> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const PetscScalar>, int>>& coeffs)
 {
@@ -282,7 +288,8 @@ void fem::petsc::assemble_vector(
   VecGhostRestoreLocalForm(b, &b_local);
 }
 //-----------------------------------------------------------------------------
-void fem::petsc::assemble_vector(Vec b, const Form<PetscScalar>& L)
+void fem::petsc::assemble_vector(Vec b, const Form<PetscScalar, double>
+& L)
 {
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);
@@ -297,7 +304,8 @@ void fem::petsc::assemble_vector(Vec b, const Form<PetscScalar>& L)
 }
 //-----------------------------------------------------------------------------
 void fem::petsc::apply_lifting(
-    Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
+    Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar, double>
+>>& a,
     const std::vector<std::span<const PetscScalar>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const PetscScalar>, int>>>&
@@ -347,7 +355,8 @@ void fem::petsc::apply_lifting(
 }
 //-----------------------------------------------------------------------------
 void fem::petsc::apply_lifting(
-    Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
+    Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar, double>
+>>& a,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<Vec>& x0, PetscScalar scale)

@@ -363,7 +363,7 @@ void assemble_interior_facets(
 /// are applied. Matrix is not finalised.
 template <typename T>
 void assemble_matrix(
-    la::MatSet<T> auto mat_set, const Form<T>& a,
+    la::MatSet<T> auto mat_set, const Form<T, double>& a,
     const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,

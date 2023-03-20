@@ -19,7 +19,7 @@ namespace dolfinx::fem
 {
 template <typename T>
 class DirichletBC;
-template <typename T>
+template <typename T, typename U>
 class Form;
 template <typename T>
 class FunctionSpace;
@@ -56,7 +56,7 @@ make_coefficients_span(const std::map<std::pair<IntegralType, int>,
 /// process
 template <typename T>
 T assemble_scalar(
-    const Form<T>& M, std::span<const T> constants,
+    const Form<T, double>& M, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
@@ -78,7 +78,7 @@ T assemble_scalar(
 /// @return The contribution to the form (functional) from the local
 ///   process
 template <typename T>
-T assemble_scalar(const Form<T>& M)
+T assemble_scalar(const Form<T, double>& M)
 {
   const std::vector<T> constants = pack_constants(M);
   auto coefficients = allocate_coefficient_storage(M);
@@ -101,7 +101,7 @@ T assemble_scalar(const Form<T>& M)
 /// @param[in] coefficients The coefficients that appear in `L`
 template <typename T>
 void assemble_vector(
-    std::span<T> b, const Form<T>& L, std::span<const T> constants,
+    std::span<T> b, const Form<T, double>& L, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
@@ -113,7 +113,7 @@ void assemble_vector(
 /// before assembly.
 /// @param[in] L The linear forms to assemble into b
 template <typename T>
-void assemble_vector(std::span<T> b, const Form<T>& L)
+void assemble_vector(std::span<T> b, const Form<T, double>& L)
 {
   auto coefficients = allocate_coefficient_storage(L);
   pack_coefficients(L, coefficients);
@@ -142,7 +142,8 @@ void assemble_vector(std::span<T> b, const Form<T>& L)
 /// is responsible for calling VecGhostUpdateBegin/End.
 template <typename T>
 void apply_lifting(
-    std::span<T> b, const std::vector<std::shared_ptr<const Form<T>>>& a,
+    std::span<T> b,
+    const std::vector<std::shared_ptr<const Form<T, double>>>& a,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
@@ -188,7 +189,8 @@ void apply_lifting(
 /// is responsible for calling VecGhostUpdateBegin/End.
 template <typename T>
 void apply_lifting(
-    std::span<T> b, const std::vector<std::shared_ptr<const Form<T>>>& a,
+    std::span<T> b,
+    const std::vector<std::shared_ptr<const Form<T, double>>>& a,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
@@ -239,7 +241,7 @@ void apply_lifting(
 /// local index.
 template <typename T>
 void assemble_matrix(
-    auto mat_add, const Form<T>& a, std::span<const T> constants,
+    auto mat_add, const Form<T, double>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
     std::span<const std::int8_t> dof_marker0,
@@ -270,7 +272,7 @@ void assemble_matrix(
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
 template <typename T>
 void assemble_matrix(
-    auto mat_add, const Form<T>& a, std::span<const T> constants,
+    auto mat_add, const Form<T, double>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
@@ -316,7 +318,7 @@ void assemble_matrix(
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
 template <typename T>
 void assemble_matrix(
-    auto mat_add, const Form<T>& a,
+    auto mat_add, const Form<T, double>& a,
     const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
 {
   // Prepare constants and coefficients
@@ -340,7 +342,7 @@ void assemble_matrix(
 /// If bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
 template <typename T>
-void assemble_matrix(auto mat_add, const Form<T>& a,
+void assemble_matrix(auto mat_add, const Form<T, double>& a,
                      std::span<const std::int8_t> dof_marker0,
                      std::span<const std::int8_t> dof_marker1)
 

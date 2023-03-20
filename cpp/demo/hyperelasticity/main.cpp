@@ -18,7 +18,8 @@ class HyperElasticProblem
 {
 public:
   HyperElasticProblem(
-      std::shared_ptr<fem::Form<T>> L, std::shared_ptr<fem::Form<T>> J,
+      std::shared_ptr<fem::Form<T, double>> L,
+      std::shared_ptr<fem::Form<T, double>> J,
       std::vector<std::shared_ptr<const fem::DirichletBC<T>>> bcs)
       : _l(L), _j(J), _bcs(bcs),
         _b(L->function_spaces()[0]->dofmap()->index_map,
@@ -98,7 +99,7 @@ public:
   Mat matrix() { return _matA.mat(); }
 
 private:
-  std::shared_ptr<fem::Form<T>> _l, _j;
+  std::shared_ptr<fem::Form<T, double>> _l, _j;
   std::vector<std::shared_ptr<const fem::DirichletBC<T>>> _bcs;
   la::Vector<T> _b;
   Vec _b_petsc = nullptr;
@@ -132,17 +133,18 @@ int main(int argc, char* argv[])
                          {10, 10, 10}, mesh::CellType::tetrahedron,
                          mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
-    auto V = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
-        functionspace_form_hyperelasticity_F_form, "u", mesh));
+    auto V = std::make_shared<fem::FunctionSpace<double>>(
+        fem::create_functionspace(functionspace_form_hyperelasticity_F_form,
+                                  "u", mesh));
 
     // Define solution function
-    auto u = std::make_shared<fem::Function<T>>(V);
-    auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
+    auto u = std::make_shared<fem::Function<T, double>>(V);
+    auto a = std::make_shared<fem::Form<T, double>>(fem::create_form<T>(
         *form_hyperelasticity_J_form, {V, V}, {{"u", u}}, {}, {}));
-    auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
+    auto L = std::make_shared<fem::Form<T, double>>(fem::create_form<T>(
         *form_hyperelasticity_F_form, {V}, {{"u", u}}, {}, {}));
 
-    auto u_rotation = std::make_shared<fem::Function<T>>(V);
+    auto u_rotation = std::make_shared<fem::Function<T, double>>(V);
     u_rotation->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
@@ -228,13 +230,14 @@ int main(int argc, char* argv[])
     const basix::FiniteElement S_element = basix::create_element(
         family, cell_type, k, basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, discontinuous);
-    auto S = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
-        mesh, S_element, pow(mesh->geometry().dim(), 2)));
+    auto S = std::make_shared<fem::FunctionSpace<double>>(
+        fem::create_functionspace(mesh, S_element,
+                                  pow(mesh->geometry().dim(), 2)));
 
-    const auto sigma_expression = fem::create_expression<T>(
+    const auto sigma_expression = fem::create_expression<T, double>(
         *expression_hyperelasticity_sigma, {{"u", u}}, {}, mesh);
 
-    auto sigma = fem::Function<T>(S);
+    auto sigma = fem::Function<T, double>(S);
     sigma.name = "cauchy_stress";
     sigma.interpolate(sigma_expression);
 

@@ -29,7 +29,7 @@ class Constant;
 /// be used as input in to a non-FEniCS function that calculates a
 /// material constitutive model.
 
-template <typename T>
+template <typename T, typename U>
 class Expression
 {
   template <typename X, typename = void>
@@ -59,7 +59,7 @@ public:
   /// @param[in] value_shape shape of expression evaluated at single point
   /// @param[in] argument_function_space Function space for Argument
   Expression(
-      const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+      const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
       const std::vector<std::shared_ptr<const Constant<T>>>& constants,
       std::span<const double> X, std::array<std::size_t, 2> Xshape,
       const std::function<void(T*, const T*, const T*,
@@ -96,15 +96,14 @@ public:
 
   /// Get argument function space
   /// @return The argument function space, nullptr if there is no argument.
-  std::shared_ptr<const FunctionSpace<scalar_value_type_t>>
-  argument_function_space() const
+  std::shared_ptr<const FunctionSpace<U>> argument_function_space() const
   {
     return _argument_function_space;
   };
 
   /// Get coefficients
   /// @return Vector of attached coefficients
-  const std::vector<std::shared_ptr<const Function<T>>>& coefficients() const
+  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients() const
   {
     return _coefficients;
   }
@@ -252,11 +251,10 @@ public:
 
 private:
   // Function space for Argument
-  std::shared_ptr<const FunctionSpace<scalar_value_type_t>>
-      _argument_function_space;
+  std::shared_ptr<const FunctionSpace<U>> _argument_function_space;
 
   // Coefficients associated with the Expression
-  std::vector<std::shared_ptr<const Function<T>>> _coefficients;
+  std::vector<std::shared_ptr<const Function<T, double>>> _coefficients;
 
   // Constants associated with the Expression
   std::vector<std::shared_ptr<const Constant<T>>> _constants;

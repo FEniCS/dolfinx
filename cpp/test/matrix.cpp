@@ -111,12 +111,12 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   auto mesh = std::make_shared<mesh::Mesh>(
       mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
                        mesh::CellType::tetrahedron, part));
-  auto V = std::make_shared<fem::FunctionSpace>(
+  auto V = std::make_shared<fem::FunctionSpace<double>>(
       fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
 
   // Prepare and set Constants for the bilinear form
   auto kappa = std::make_shared<fem::Constant<double>>(2.0);
-  auto a = std::make_shared<fem::Form<double>>(fem::create_form<double>(
+  auto a = std::make_shared<fem:: Form<double, double>>(fem::create_form<double>(
       *form_poisson_a, {V, V}, {}, {{"kappa", kappa}}, {}));
 
   la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
@@ -143,15 +143,15 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
       mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
                        mesh::CellType::tetrahedron, part));
 
-  auto V = std::make_shared<fem::FunctionSpace>(
+  auto V = std::make_shared<fem::FunctionSpace<double>>(
       fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
 
   // Prepare and set Constants for the bilinear form
   auto kappa = std::make_shared<fem::Constant<double>>(2.0);
-  auto ui = std::make_shared<fem::Function<double>>(V);
+  auto ui = std::make_shared<fem::Function<double, double>>(V);
 
   // Define variational forms
-  auto a = std::make_shared<fem::Form<double>>(fem::create_form<double>(
+  auto a = std::make_shared<fem:: Form<double, double>>(fem::create_form<double>(
       *form_poisson_a, {V, V}, {}, {{"kappa", kappa}}, {}));
 
   // Create sparsity pattern

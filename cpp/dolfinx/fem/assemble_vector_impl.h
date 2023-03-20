@@ -725,7 +725,7 @@ void assemble_interior_facets(
 /// solution' in a Newton method
 /// @param[in] scale Scaling to apply
 template <typename T>
-void lift_bc(std::span<T> b, const Form<T>& a,
+void lift_bc(std::span<T> b, const Form<T, double>& a,
              const mesh::Geometry<scalar_value_type_t<T>>& geometry,
              std::span<const T> constants,
              const std::map<std::pair<IntegralType, int>,
@@ -865,7 +865,7 @@ void lift_bc(std::span<T> b, const Form<T>& a,
 /// @param[in] scale Scaling to apply
 template <typename T>
 void apply_lifting(
-    std::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
+    std::span<T> b, const std::vector<std::shared_ptr<const Form<T, double>>> a,
     const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
@@ -931,7 +931,7 @@ void apply_lifting(
 /// @param[in] coefficients Packed coefficients that appear in `L`
 template <typename T>
 void assemble_vector(
-    std::span<T> b, const Form<T>& L,
+    std::span<T> b, const Form<T, double>& L,
     const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
@@ -1063,7 +1063,7 @@ void assemble_vector(
 /// @param[in] coefficients Packed coefficients that appear in `L`
 template <typename T>
 void assemble_vector(
-    std::span<T> b, const Form<T>& L, std::span<const T> constants,
+    std::span<T> b, const Form<T, double>& L, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {

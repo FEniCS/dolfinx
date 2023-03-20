@@ -75,7 +75,7 @@ graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
 /// instead.
 template <typename T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>>
-compute_point_values(const fem::Function<T>& u)
+compute_point_values(const fem::Function<T, double>& u)
 {
   auto V = u.function_space();
   assert(V);
@@ -133,7 +133,7 @@ std::int64_t get_padded_width(const fem::FiniteElement& e)
 }
 //-----------------------------------------------------------------------------
 template <typename Scalar>
-std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
+std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar, double>& u)
 {
   auto mesh = u.function_space()->mesh();
   assert(mesh);
@@ -173,7 +173,7 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar>& u)
 }
 //-----------------------------------------------------------------------------
 template <typename Scalar>
-std::vector<Scalar> _get_cell_data_values(const fem::Function<Scalar>& u)
+std::vector<Scalar> _get_cell_data_values(const fem::Function<Scalar, double>& u)
 {
   assert(u.function_space()->dofmap());
   const auto mesh = u.function_space()->mesh();
@@ -388,25 +388,25 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
 }
 //----------------------------------------------------------------------------
 std::vector<double>
-xdmf_utils::get_point_data_values(const fem::Function<double>& u)
+xdmf_utils::get_point_data_values(const fem::Function<double, double>& u)
 {
   return _get_point_data_values(u);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::complex<double>>
-xdmf_utils::get_point_data_values(const fem::Function<std::complex<double>>& u)
+xdmf_utils::get_point_data_values(const fem::Function<std::complex<double>, double>& u)
 {
   return _get_point_data_values(u);
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
-xdmf_utils::get_cell_data_values(const fem::Function<double>& u)
+xdmf_utils::get_cell_data_values(const fem::Function<double, double>& u)
 {
   return _get_cell_data_values(u);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::complex<double>>
-xdmf_utils::get_cell_data_values(const fem::Function<std::complex<double>>& u)
+xdmf_utils::get_cell_data_values(const fem::Function<std::complex<double>, double>& u)
 {
   return _get_cell_data_values(u);
 }

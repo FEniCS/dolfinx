@@ -23,9 +23,7 @@ namespace
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> range(mesh::Topology& topology, int tdim)
 {
-  // Initialize entities of given dimension if they don't exist
   topology.create_entities(tdim);
-
   auto map = topology.index_map(tdim);
   assert(map);
   const std::int32_t num_entities = map->size_local() + map->num_ghosts();

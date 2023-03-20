@@ -34,7 +34,8 @@ namespace petsc
 /// @return A sparse matrix with a layout and sparsity that matches the
 /// bilinear form. The caller is responsible for destroying the Mat
 /// object.
-Mat create_matrix(const Form<PetscScalar>& a,
+Mat create_matrix(const Form<PetscScalar, double>
+& a,
                   const std::string& type = std::string());
 
 /// Initialise a monolithic matrix for an array of bilinear forms
@@ -46,14 +47,16 @@ Mat create_matrix(const Form<PetscScalar>& a,
 /// bilinear forms. The caller is responsible for destroying the Mat
 /// object.
 Mat create_matrix_block(
-    const std::vector<std::vector<const Form<PetscScalar>*>>& a,
+    const std::vector<std::vector<const Form<PetscScalar, double>
+*>>& a,
     const std::string& type = std::string());
 
 /// Create nested (MatNest) matrix
 ///
 /// The caller is responsible for destroying the Mat object
 Mat create_matrix_nest(
-    const std::vector<std::vector<const Form<PetscScalar>*>>& a,
+    const std::vector<std::vector<const Form<PetscScalar, double>
+*>>& a,
     const std::vector<std::vector<std::string>>& types);
 
 /// Initialise monolithic vector. Vector is not zeroed.
@@ -83,7 +86,8 @@ Vec create_vector_nest(
 /// @param[in] constants The constants that appear in `L`
 /// @param[in] coeffs The coefficients that appear in `L`
 void assemble_vector(
-    Vec b, const Form<PetscScalar>& L, std::span<const PetscScalar> constants,
+    Vec b, const Form<PetscScalar, double>
+& L, std::span<const PetscScalar> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const PetscScalar>, int>>& coeffs);
 
@@ -96,7 +100,8 @@ void assemble_vector(
 /// process-local contribution of the form is assembled into this
 /// vector. It is not zeroed before assembly.
 /// @param[in] L The linear form to assemble
-void assemble_vector(Vec b, const Form<PetscScalar>& L);
+void assemble_vector(Vec b, const Form<PetscScalar, double>
+& L);
 
 // FIXME: clarify how x0 is used
 // FIXME: if bcs entries are set
@@ -120,7 +125,8 @@ void assemble_vector(Vec b, const Form<PetscScalar>& L);
 /// Ghost contributions are not accumulated (not sent to owner). Caller
 /// is responsible for calling VecGhostUpdateBegin/End.
 void apply_lifting(
-    Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
+    Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar, double>
+>>& a,
     const std::vector<std::span<const PetscScalar>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const PetscScalar>, int>>>&
@@ -148,7 +154,8 @@ void apply_lifting(
 /// Ghost contributions are not accumulated (not sent to owner). Caller
 /// is responsible for calling VecGhostUpdateBegin/End.
 void apply_lifting(
-    Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar>>>& a,
+    Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar, double>
+>>& a,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
     const std::vector<Vec>& x0, PetscScalar scale);

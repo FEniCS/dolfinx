@@ -34,17 +34,19 @@ int main(int argc, char* argv[])
     basix::FiniteElement element_tet = basix::element::create_lagrange(
         mesh::cell_type_to_basix_type(mesh_tet->topology().cell_type()), 1,
         basix::element::lagrange_variant::equispaced, false);
-    auto V_tet = std::make_shared<fem::FunctionSpace>(
+    auto V_tet = std::make_shared<fem::FunctionSpace<double>>(
         fem::create_functionspace(mesh_tet, element_tet, 3));
 
     basix::FiniteElement element_hex = basix::element::create_lagrange(
         mesh::cell_type_to_basix_type(mesh_hex->topology().cell_type()), 2,
         basix::element::lagrange_variant::equispaced, false);
-    auto V_hex = std::make_shared<fem::FunctionSpace>(
+    auto V_hex = std::make_shared<fem::FunctionSpace<double>>(
         fem::create_functionspace(mesh_hex, element_hex, 3));
 
-    auto u_tet = std::make_shared<fem::Function<T>>(V_tet);
-    auto u_hex = std::make_shared<fem::Function<T>>(V_hex);
+    auto u_tet = std::make_shared<fem::Function<T, double>
+>(V_tet);
+    auto u_hex = std::make_shared<fem::Function<T, double>
+>(V_hex);
 
     auto fun = [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
     {
@@ -66,7 +68,9 @@ int main(int argc, char* argv[])
     // Interpolate from u_tet to u_hex
     auto nmm_interpolation_data
         = fem::create_nonmatching_meshes_interpolation_data(
-            *u_hex->function_space(), *u_tet->function_space());
+            *u_hex->function_space()->mesh(),
+            *u_hex->function_space()->element(),
+            *u_tet->function_space()->mesh());
     u_hex->interpolate(*u_tet, nmm_interpolation_data);
 
 #ifdef HAS_ADIOS2

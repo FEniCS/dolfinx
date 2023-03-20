@@ -26,7 +26,7 @@ class Engine;
 
 namespace dolfinx::fem
 {
-template <typename T>
+template <typename T, typename U>
 class Function;
 }
 
@@ -44,10 +44,10 @@ class ADIOS2Writer
 {
 public:
   /// @privatesection
-  using Fd32 = fem::Function<float>;
-  using Fd64 = fem::Function<double>;
-  using Fc64 = fem::Function<std::complex<float>>;
-  using Fc128 = fem::Function<std::complex<double>>;
+  using Fd32 = fem::Function<float, double>;
+  using Fd64 = fem::Function<double, double>;
+  using Fc64 = fem::Function<std::complex<float>, double>;
+  using Fc128 = fem::Function<std::complex<double>, double>;
   using U = std::vector<
       std::variant<std::shared_ptr<const Fd32>, std::shared_ptr<const Fd64>,
                    std::shared_ptr<const Fc64>, std::shared_ptr<const Fc128>>>;
@@ -185,15 +185,8 @@ public:
   /// @note This format support arbitrary degree meshes
   /// @note The mesh geometry can be updated between write steps but the
   /// topology should not be changed between write steps
-  template <typename T>
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
-            std::shared_ptr<const mesh::Mesh<T>> mesh)
-      : ADIOS2Writer(comm, filename, "VTX mesh writer", mesh)
-  {
-    // Define VTK scheme attribute for mesh
-    std::string vtk_scheme = create_vtk_schema({}, {}).str();
-    define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
-  }
+            std::shared_ptr<const mesh::Mesh<double>> mesh);
 
   /// @brief Create a VTX writer for list of functions
   /// @param[in] comm The MPI communicator to open the file on

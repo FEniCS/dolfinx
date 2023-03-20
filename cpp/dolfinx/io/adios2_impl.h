@@ -4,14 +4,16 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#pragma once
+
 #ifdef HAS_ADIOS2
 
-#include "ADIOS2Writers.h"
 #include "cells.h"
 #include "vtk_utils.h"
 #include <adios2.h>
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/FiniteElement.h>
@@ -19,13 +21,36 @@
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
+#include <filesystem>
+#include <memory>
+#include <mpi.h>
 #include <pugixml.hpp>
+#include <string>
+#include <variant>
+#include <vector>
 
-using namespace dolfinx;
-using namespace dolfinx::io;
-
-namespace
+namespace adios2
 {
+class ADIOS;
+class IO;
+class Engine;
+} // namespace adios2
+
+namespace dolfinx::fem
+{
+template <typename T, typename U>
+class Function;
+}
+
+namespace dolfinx::mesh
+{
+template <typename T>
+class Mesh;
+}
+
+namespace dolfinx::io::adios2_impl
+{
+
 /// String suffix for real and complex components of a vector-valued
 /// field
 constexpr std::array field_ext = {"_real", "_imag"};
@@ -38,7 +63,6 @@ struct overload : Ts...
 template <class... Ts>
 overload(Ts...) -> overload<Ts...>; // line not needed in C++20...
 
-//-----------------------------------------------------------------------------
 /// Safe definition of an attribute. First check if it has already been
 /// defined and return it. If not defined create new attribute.
 template <class T>
@@ -51,7 +75,6 @@ adios2::Attribute<T> define_attribute(adios2::IO& io, std::string name,
   else
     return io.DefineAttribute<T>(name, value, var_name, separator);
 }
-//-----------------------------------------------------------------------------
 
 /// Safe definition of a variable. First check if it has already been
 /// defined and return it. If not defined create new variable.
@@ -70,7 +93,6 @@ adios2::Variable<T> define_variable(adios2::IO& io, std::string name,
   else
     return io.DefineVariable<T>(name, shape, start, count);
 }
-//-----------------------------------------------------------------------------
 
 /// Given a Function, write the coefficient to file using ADIOS2
 /// @note Only supports (discontinuous) Lagrange functions.
@@ -136,7 +158,6 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
     engine.Put<U>(output_imag, data.data(), adios2::Mode::Sync);
   }
 }
-//-----------------------------------------------------------------------------
 
 /// Write mesh to file using VTX format
 /// @param[in] io The ADIOS2 io object
@@ -204,7 +225,6 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
 
   engine.PerformPuts();
 }
-//-----------------------------------------------------------------------------
 
 /// Given a FunctionSpace, create a topology and geometry based on the
 /// dof coordinates. Writes the topology and geometry using ADIOS2 in
@@ -213,8 +233,9 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] u The function
+template <typename T>
 void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
-                               const fem::FunctionSpace<double>& V)
+                               const fem::FunctionSpace<T>& V)
 {
   auto mesh = V.mesh();
   assert(mesh);
@@ -243,8 +264,8 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 
   // Define ADIOS2 variables for geometry, topology, celltypes and
   // corresponding VTK data
-  adios2::Variable<double> local_geometry
-      = define_variable<double>(io, "geometry", {}, {}, {num_dofs, 3});
+  adios2::Variable<T> local_geometry
+      = define_variable<T>(io, "geometry", {}, {}, {num_dofs, 3});
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
       io, "connectivity", {}, {}, {vtkshape[0], vtkshape[1] + 1});
   adios2::Variable<std::uint32_t> cell_type
@@ -259,7 +280,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(elements, vtkshape[0]);
   engine.Put<std::uint32_t>(
       cell_type, cells::get_vtk_cell_type(mesh->topology().cell_type(), tdim));
-  engine.Put<double>(local_geometry, x.data());
+  engine.Put<T>(local_geometry, x.data());
   engine.Put<std::int64_t>(local_topology, cells.data());
 
   // Node global ids
@@ -272,7 +293,6 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 
   engine.PerformPuts();
 }
-//-----------------------------------------------------------------------------
 
 /// Extract name of functions and split into real and imaginary component
 std::vector<std::string> extract_function_names(const ADIOS2Writer::U& u)
@@ -298,7 +318,6 @@ std::vector<std::string> extract_function_names(const ADIOS2Writer::U& u)
 
   return names;
 }
-//-----------------------------------------------------------------------------
 
 /// Create VTK xml scheme to be interpreted by the VTX reader
 /// https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#saving-the-vtk-xml-data-model
@@ -369,7 +388,6 @@ std::stringstream create_vtk_schema(const std::vector<std::string>& point_data,
   xml_schema.save(ss, "  ");
   return ss;
 }
-//-----------------------------------------------------------------------------
 
 /// Convert DOLFINx CellType to Fides CellType
 /// https://gitlab.kitware.com/vtk/vtk-m/-/blob/master/vtkm/CellShape.h#L30-53
@@ -399,7 +417,6 @@ std::string to_fides_cell(mesh::CellType type)
     throw std::runtime_error("Unknown cell type.");
   }
 }
-//-----------------------------------------------------------------------------
 
 /// Pack Function data at vertices. The mesh and the function must both
 /// be 'P1'
@@ -449,7 +466,6 @@ std::vector<T> pack_function_data(const fem::Function<T, double>& u)
   }
   return data;
 }
-//-----------------------------------------------------------------------------
 
 /// Write a first order Lagrange function (real or complex) using ADIOS2
 /// in Fides format. Data is padded to be three dimensional if vector
@@ -526,7 +542,6 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
     engine.PerformPuts();
   }
 }
-//-----------------------------------------------------------------------------
 
 /// Write mesh geometry and connectivity (topology) for Fides
 /// @param[in] io The ADIOS2 IO
@@ -563,7 +578,6 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
 
   engine.PerformPuts();
 }
-//-----------------------------------------------------------------------------
 
 /// Initialize mesh related attributes for the ADIOS2 file used in Fides
 /// @param[in] io The ADIOS2 IO
@@ -596,7 +610,6 @@ void fides_initialize_mesh_attributes(adios2::IO& io,
 
   define_attribute<std::string>(io, "Fides_Time_Variable", "step");
 }
-//-----------------------------------------------------------------------------
 
 /// Initialize function related attributes for the ADIOS2 file used in
 /// Fides
@@ -656,261 +669,7 @@ void fides_initialize_function_attributes(adios2::IO& io,
                                     names.size());
   }
 }
-//-----------------------------------------------------------------------------
-} // namespace
 
-//-----------------------------------------------------------------------------
-ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-                           std::string tag,
-                           std::shared_ptr<const mesh::Mesh<double>> mesh,
-                           const U& u)
-    : _adios(std::make_unique<adios2::ADIOS>(comm)),
-      _io(std::make_unique<adios2::IO>(_adios->DeclareIO(tag))),
-      _engine(std::make_unique<adios2::Engine>(
-          _io->Open(filename, adios2::Mode::Write))),
-      _mesh(mesh), _u(u)
-{
-  _io->SetEngine("BPFile");
-}
-//-----------------------------------------------------------------------------
-ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-                           std::string tag,
-                           std::shared_ptr<const mesh::Mesh<double>> mesh)
-    : ADIOS2Writer(comm, filename, tag, mesh, {})
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-                           std::string tag, const U& u)
-    : ADIOS2Writer(comm, filename, tag, nullptr, u)
-{
-  // Extract mesh from first function
-  assert(!u.empty());
-  _mesh = std::visit([](const auto& u) { return u->function_space()->mesh(); },
-                     u.front());
-  assert(_mesh);
-
-  // Check that all functions share the same mesh
-  for (auto& v : u)
-  {
-    std::visit(
-        [&mesh = _mesh](const auto& u)
-        {
-          if (mesh != u->function_space()->mesh())
-          {
-            throw std::runtime_error(
-                "ADIOS2Writer only supports functions sharing the same mesh");
-          }
-        },
-        v);
-  }
-}
-//-----------------------------------------------------------------------------
-ADIOS2Writer::~ADIOS2Writer() { close(); }
-//-----------------------------------------------------------------------------
-void ADIOS2Writer::close()
-{
-  assert(_engine);
-  // This looks odd because ADIOS2 uses `operator bool()` to test if the
-  // engine is open
-  if (*_engine)
-    _engine->Close();
-}
-//-----------------------------------------------------------------------------
-FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-                         std::shared_ptr<const mesh::Mesh<double>> mesh)
-    : ADIOS2Writer(comm, filename, "Fides mesh writer", mesh),
-      _mesh_reuse_policy(MeshPolicy::update)
-{
-  assert(_io);
-  assert(mesh);
-  fides_initialize_mesh_attributes(*_io, *mesh);
-}
-//-----------------------------------------------------------------------------
-FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-                         const ADIOS2Writer::U& u, MeshPolicy policy)
-    : ADIOS2Writer(comm, filename, "Fides function writer", u),
-      _mesh_reuse_policy(policy)
-{
-  if (u.empty())
-    throw std::runtime_error("FidesWriter fem::Function list is empty");
-
-  // Extract Mesh from first function
-  auto mesh = std::visit(
-      [](const auto& u) { return u->function_space()->mesh(); }, u.front());
-  assert(mesh);
-
-  // Extract element from first function
-  const fem::FiniteElement* element0 = std::visit(
-      [](const auto& e) { return e->function_space()->element().get(); },
-      u.front());
-  assert(element0);
-
-  // Check if function is mixed
-  if (element0->is_mixed())
-    throw std::runtime_error("Mixed functions are not supported by VTXWriter");
-
-  // Check if function is DG 0
-  if (element0->space_dimension() / element0->block_size() == 1)
-  {
-    throw std::runtime_error(
-        "Piecewise constants are not (yet) supported by VTXWriter");
-  }
-
-  // FIXME: is the below check adequate for detecting a
-  // Lagrange element? Check that element is Lagrange
-  if (!element0->interpolation_ident())
-  {
-    throw std::runtime_error("Only Lagrange functions are "
-                             "supported. Interpolate Functions before output.");
-  }
-
-  // Check that all functions are first order Lagrange
-  int num_vertices_per_cell
-      = mesh::cell_num_entities(mesh->topology().cell_type(), 0);
-  for (auto& v : _u)
-  {
-    std::visit(
-        [&](const auto& u)
-        {
-          auto element = u->function_space()->element();
-          assert(element);
-          if (*element != *element0)
-          {
-            throw std::runtime_error(
-                "All functions in FidesWriter must have the same element type");
-          }
-          auto dof_layout = u->function_space()->dofmap()->element_dof_layout();
-          int num_vertex_dofs = dof_layout.num_entity_dofs(0);
-          int num_dofs = element->space_dimension() / element->block_size();
-          if (num_dofs != num_vertices_per_cell or num_vertex_dofs != 1)
-          {
-            throw std::runtime_error("Only first order Lagrange spaces are "
-                                     "supported by FidesWriter");
-          }
-        },
-        v);
-  }
-
-  fides_initialize_mesh_attributes(*_io, *mesh);
-  fides_initialize_function_attributes(*_io, u);
-}
-//-----------------------------------------------------------------------------
-void FidesWriter::write(double t)
-{
-  assert(_io);
-  assert(_engine);
-
-  _engine->BeginStep();
-  adios2::Variable<double> var_step = define_variable<double>(*_io, "step");
-  _engine->Put<double>(var_step, t);
-
-  if (auto v = _io->InquireVariable<std::int64_t>("connectivity");
-      !v or _mesh_reuse_policy == MeshPolicy::update)
-  {
-    fides_write_mesh(*_io, *_engine, *_mesh);
-  }
-
-  for (auto& v : _u)
-    std::visit([&](const auto& u) { fides_write_data(*_io, *_engine, *u); }, v);
-
-  _engine->EndStep();
-}
-//-----------------------------------------------------------------------------
-VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
-                     std::shared_ptr<const mesh::Mesh<double>> mesh)
-    : ADIOS2Writer(comm, filename, "VTX mesh writer", mesh)
-{
-  // Define VTK scheme attribute for mesh
-  std::string vtk_scheme = create_vtk_schema({}, {}).str();
-  define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
-}
-//-----------------------------------------------------------------------------
-VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
-                     const ADIOS2Writer::U& u)
-    : ADIOS2Writer(comm, filename, "VTX function writer", u)
-{
-  if (u.empty())
-    throw std::runtime_error("VTXWriter fem::Function list is empty");
-
-  // Extract element from first function
-  const fem::FiniteElement* element0 = std::visit(
-      [](const auto& u) { return u->function_space()->element().get(); },
-      u.front());
-  assert(element0);
-
-  // Check if function is mixed
-  if (element0->is_mixed())
-    throw std::runtime_error("Mixed functions are not supported by VTXWriter");
-
-  // Check if function is DG 0
-  if (element0->space_dimension() / element0->block_size() == 1)
-  {
-    throw std::runtime_error(
-        "VTK does not support cell-wise fields. See "
-        "https://gitlab.kitware.com/vtk/vtk/-/issues/18458.");
-  }
-
-  // FIXME: is the below check adequate for detecting a Lagrange
-  // element?
-  // Check that element is Lagrange
-  if (!element0->interpolation_ident())
-  {
-    throw std::runtime_error("Only (discontinuous) Lagrange functions are "
-                             "supported. Interpolate Functions before output.");
-  }
-
-  // Check that all functions come from same element type
-  for (auto& v : _u)
-  {
-    std::visit(
-        [element0](const auto& u)
-        {
-          auto element = u->function_space()->element();
-          assert(element);
-          if (*element != *element0)
-          {
-            throw std::runtime_error(
-                "All functions in VTXWriter must have the same element type");
-          }
-        },
-        v);
-  }
-
-  // Define VTK scheme attribute for set of functions
-  std::vector<std::string> names = extract_function_names(u);
-  std::string vtk_scheme = create_vtk_schema(names, {}).str();
-  define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
-}
-//-----------------------------------------------------------------------------
-void VTXWriter::write(double t)
-{
-  assert(_io);
-  assert(_engine);
-  adios2::Variable<double> var_step = define_variable<double>(*_io, "step");
-
-  _engine->BeginStep();
-  _engine->Put<double>(var_step, t);
-
-  // If we have no functions write the mesh to file
-  if (_u.empty())
-    vtx_write_mesh(*_io, *_engine, *_mesh);
-  else
-  {
-    // Write a single mesh for functions as they share finite element
-    std::visit(
-        [&](const auto& u)
-        { vtx_write_mesh_from_space(*_io, *_engine, *u->function_space()); },
-        _u[0]);
-
-    // Write function data for each function to file
-    for (auto& v : _u)
-      std::visit([&](const auto& u) { vtx_write_data(*_io, *_engine, *u); }, v);
-  }
-
-  _engine->EndStep();
-}
-//-----------------------------------------------------------------------------
+} // namespace dolfinx::io::adios2_impl
 
 #endif

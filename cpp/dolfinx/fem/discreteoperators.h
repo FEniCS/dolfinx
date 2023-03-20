@@ -44,8 +44,8 @@ namespace dolfinx::fem
 /// @param[in] V1 A Nédélec (first kind) space to interpolate into
 /// @param[in] mat_set A functor that sets values in a matrix
 template <typename T>
-void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
-                       auto&& mat_set)
+void discrete_gradient(const FunctionSpace<double>& V0,
+                       const FunctionSpace<double>& V1, auto&& mat_set)
 {
   namespace stdex = std::experimental;
   using cmdspan2_t
@@ -146,8 +146,8 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
 /// @param[in] V1 The space to interpolate to
 /// @param[in] mat_set A functor that sets values in a matrix
 template <typename T>
-void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
-                          auto&& mat_set)
+void interpolation_matrix(const FunctionSpace<double>& V0,
+                          const FunctionSpace<double>& V1, auto&& mat_set)
 {
   // Get mesh
   auto mesh = V0.mesh();

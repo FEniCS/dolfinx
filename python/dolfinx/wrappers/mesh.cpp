@@ -489,7 +489,7 @@ void mesh(py::module& m)
          const PythonCellPartitionFunction& partitioner,
          dolfinx::mesh::DiagonalType diagonal)
       {
-        return dolfinx::mesh::create_rectangle(
+        return dolfinx::mesh::create_rectangle<double>(
             comm.get(), p, n, celltype,
             create_cell_partitioner_cpp(partitioner), diagonal);
       },

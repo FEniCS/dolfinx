@@ -66,7 +66,7 @@ void declare_assembly_functions(py::module& m)
   // Coefficient/constant packing
   m.def(
       "pack_coefficients",
-      [](const dolfinx::fem::Form<T>& form)
+      [](const dolfinx::fem::Form<T, double>& form)
       {
         using Key_t = typename std::pair<dolfinx::fem::IntegralType, int>;
 
@@ -94,20 +94,20 @@ void declare_assembly_functions(py::module& m)
       py::arg("form"), "Pack coefficients for a Form.");
   m.def(
       "pack_constants",
-      [](const dolfinx::fem::Form<T>& form) {
+      [](const dolfinx::fem::Form<T, double>& form) {
         return dolfinx_wrappers::as_pyarray(dolfinx::fem::pack_constants(form));
       },
       py::arg("form"), "Pack constants for a Form.");
   m.def(
       "pack_constants",
-      [](const dolfinx::fem::Expression<T>& e)
+      [](const dolfinx::fem::Expression<T, double>& e)
       { return dolfinx_wrappers::as_pyarray(dolfinx::fem::pack_constants(e)); },
       py::arg("e"), "Pack constants for an Expression.");
 
   // Functional
   m.def(
       "assemble_scalar",
-      [](const dolfinx::fem::Form<T>& M,
+      [](const dolfinx::fem::Form<T, double>& M,
          const py::array_t<T, py::array::c_style>& constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         py::array_t<T, py::array::c_style>>& coefficients)
@@ -122,7 +122,8 @@ void declare_assembly_functions(py::module& m)
   // Vector
   m.def(
       "assemble_vector",
-      [](py::array_t<T, py::array::c_style> b, const dolfinx::fem::Form<T>& L,
+      [](py::array_t<T, py::array::c_style> b,
+         const dolfinx::fem::Form<T, double>& L,
          const py::array_t<T, py::array::c_style>& constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         py::array_t<T, py::array::c_style>>& coefficients)
@@ -138,7 +139,7 @@ void declare_assembly_functions(py::module& m)
   // MatrixCSR
   m.def(
       "assemble_matrix",
-      [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::Form<T>& a,
+      [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::Form<T, double>& a,
          const py::array_t<T, py::array::c_style>& constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         py::array_t<T, py::array::c_style>>& coefficients,
@@ -160,7 +161,8 @@ void declare_assembly_functions(py::module& m)
       py::arg("bcs"), "Experimental.");
   m.def(
       "insert_diagonal",
-      [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::FunctionSpace& V,
+      [](dolfinx::la::MatrixCSR<T>& A,
+         const dolfinx::fem::FunctionSpace<double>& V,
          const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
              bcs,
          T diagonal)
@@ -172,7 +174,7 @@ void declare_assembly_functions(py::module& m)
       [](const std::function<int(const py::array_t<std::int32_t>&,
                                  const py::array_t<std::int32_t>&,
                                  const py::array_t<T>&)>& fin,
-         const dolfinx::fem::Form<T>& form,
+         const dolfinx::fem::Form<T, double>& form,
          const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
              bcs)
       {
@@ -194,7 +196,8 @@ void declare_assembly_functions(py::module& m)
   m.def(
       "apply_lifting",
       [](py::array_t<T, py::array::c_style> b,
-         const std::vector<std::shared_ptr<const dolfinx::fem::Form<T>>>& a,
+         const std::vector<
+             std::shared_ptr<const dolfinx::fem::Form<T, double>>>& a,
          const std::vector<py::array_t<T, py::array::c_style>>& constants,
          const std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
                                     py::array_t<T, py::array::c_style>>>&
@@ -275,7 +278,7 @@ void petsc_module(py::module& m)
   // PETSc Matrices
   m.def(
       "assemble_matrix",
-      [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
+      [](Mat A, const dolfinx::fem::Form<PetscScalar, double>& a,
          const py::array_t<PetscScalar, py::array::c_style>& constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         py::array_t<PetscScalar, py::array::c_style>>&
@@ -306,7 +309,7 @@ void petsc_module(py::module& m)
       "Assemble bilinear form into an existing PETSc matrix");
   m.def(
       "assemble_matrix",
-      [](Mat A, const dolfinx::fem::Form<PetscScalar>& a,
+      [](Mat A, const dolfinx::fem::Form<PetscScalar, double>& a,
          const py::array_t<PetscScalar, py::array::c_style>& constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         py::array_t<PetscScalar, py::array::c_style>>&
@@ -344,7 +347,7 @@ void petsc_module(py::module& m)
       py::arg("rows0"), py::arg("rows1"), py::arg("unrolled") = false);
   m.def(
       "insert_diagonal",
-      [](Mat A, const dolfinx::fem::FunctionSpace& V,
+      [](Mat A, const dolfinx::fem::FunctionSpace<double>& V,
          const std::vector<std::shared_ptr<
              const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
          PetscScalar diagonal)
@@ -357,8 +360,8 @@ void petsc_module(py::module& m)
 
   m.def(
       "discrete_gradient",
-      [](const dolfinx::fem::FunctionSpace& V0,
-         const dolfinx::fem::FunctionSpace& V1)
+      [](const dolfinx::fem::FunctionSpace<double>& V0,
+         const dolfinx::fem::FunctionSpace<double>& V1)
       {
         assert(V0.mesh());
         auto mesh = V0.mesh();
@@ -391,8 +394,8 @@ void petsc_module(py::module& m)
       py::return_value_policy::take_ownership, py::arg("V0"), py::arg("V1"));
   m.def(
       "interpolation_matrix",
-      [](const dolfinx::fem::FunctionSpace& V0,
-         const dolfinx::fem::FunctionSpace& V1)
+      [](const dolfinx::fem::FunctionSpace<double>& V0,
+         const dolfinx::fem::FunctionSpace<double>& V1)
       {
         assert(V0.mesh());
         auto mesh = V0.mesh();

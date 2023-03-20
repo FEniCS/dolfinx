@@ -27,7 +27,7 @@ namespace dolfinx::fem
 {
 template <typename U>
 class FunctionSpace;
-template <typename T>
+template <typename T, typename U>
 class Expression;
 
 // template <typename T>
@@ -39,7 +39,7 @@ class Expression;
 /// \f[     u_h = \sum_{i=1}^{n} U_i \phi_i \f]
 /// where \f$ \{\phi_i\}_{i=1}^{n} \f$ is a basis for \f$ V_h \f$,
 /// and \f$ U \f$ is a vector of expansion coefficients for \f$ u_h \f$.
-template <typename T>
+template <typename T, typename U>
 class Function
 {
   template <typename X, typename = void>
@@ -60,7 +60,7 @@ public:
 
   /// Create function on given function space
   /// @param[in] V The function space
-  explicit Function(std::shared_ptr<const FunctionSpace<scalar_value_type_t>> V)
+  explicit Function(std::shared_ptr<const FunctionSpace<U>> V)
       : _function_space(V),
         _x(std::make_shared<la::Vector<T>>(V->dofmap()->index_map,
                                            V->dofmap()->index_map_bs()))
@@ -79,7 +79,7 @@ public:
   ///
   /// @param[in] V The function space
   /// @param[in] x The vector
-  Function(std::shared_ptr<const FunctionSpace<scalar_value_type_t>> V,
+  Function(std::shared_ptr<const FunctionSpace<U>> V,
            std::shared_ptr<la::Vector<T>> x)
       : _function_space(V), _x(x)
   {
@@ -139,13 +139,12 @@ public:
       x_new[i] = x_old[map[i]];
     }
 
-    return Function(std::make_shared<FunctionSpace>(std::move(V)), x);
+    return Function(std::make_shared<FunctionSpace<U>>(std::move(V)), x);
   }
 
   /// Access the function space
   /// @return The function space
-  std::shared_ptr<const FunctionSpace<scalar_value_type_t>>
-  function_space() const
+  std::shared_ptr<const FunctionSpace<U>> function_space() const
   {
     return _function_space;
   }
@@ -162,7 +161,8 @@ public:
   /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
   /// nonmatching meshes. This data can be generated with
   /// generate_nonmatching_meshes_interpolation_data (optional).
-  void interpolate(const Function<T>& v, std::span<const std::int32_t> cells,
+  void interpolate(const Function<T, double>& v,
+                   std::span<const std::int32_t> cells,
                    const nmm_interpolation_data_t& nmm_interpolation_data
                    = nmm_interpolation_data_t{})
   {
@@ -174,7 +174,7 @@ public:
   /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
   /// nonmatching meshes. This data can be generated with
   /// generate_nonmatching_meshes_interpolation_data (optional).
-  void interpolate(const Function<T>& v,
+  void interpolate(const Function<T, double>& v,
                    const nmm_interpolation_data_t& nmm_interpolation_data
                    = nmm_interpolation_data_t{})
   {
@@ -203,8 +203,9 @@ public:
     assert(_function_space);
     assert(_function_space->element());
     assert(_function_space->mesh());
-    const std::vector<double> x = fem::interpolation_coords(
-        *_function_space->element(), *_function_space->mesh(), cells);
+    const std::vector<double> x
+        = fem::interpolation_coords(*_function_space->element(),
+                                    _function_space->mesh()->geometry(), cells);
     namespace stdex = std::experimental;
     stdex::mdspan<const double,
                   stdex::extents<std::size_t, 3, stdex::dynamic_extent>>
@@ -274,7 +275,8 @@ public:
   /// `FiniteElement::interpolation_points()` for the element associated
   /// with `u`.
   /// @param[in] cells The cells to interpolate on
-  void interpolate(const Expression<T>& e, std::span<const std::int32_t> cells)
+  void interpolate(const Expression<T, U>& e,
+                   std::span<const std::int32_t> cells)
   {
     // Check that spaces are compatible
     assert(_function_space);
@@ -341,7 +343,7 @@ public:
 
   /// Interpolate an Expression (based on UFL) on all cells
   /// @param[in] e The function to be interpolated
-  void interpolate(const Expression<T>& e)
+  void interpolate(const Expression<T, U>& e)
   {
     assert(_function_space);
     assert(_function_space->mesh());
@@ -622,7 +624,7 @@ public:
 
 private:
   // The function space
-  std::shared_ptr<const FunctionSpace<scalar_value_type_t>> _function_space;
+  std::shared_ptr<const FunctionSpace<U>> _function_space;
 
   // The vector of expansion coefficients (local)
   std::shared_ptr<la::Vector<T>> _x;

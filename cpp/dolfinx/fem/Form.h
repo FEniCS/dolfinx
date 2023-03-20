@@ -24,7 +24,7 @@ namespace dolfinx::fem
 
 template <typename T>
 class Constant;
-template <typename T>
+template <typename T, typename U>
 class Function;
 
 /// @brief Type of integral
@@ -59,7 +59,7 @@ enum class IntegralType : std::int8_t
 /// (the variable `function_spaces` in the constructors below), the list
 /// of spaces should start with space number 0 (the test space) and then
 /// space number 1 (the trial space).
-template <typename T>
+template <typename T, typename U>
 class Form
 {
   template <typename X, typename = void>
@@ -91,8 +91,8 @@ public:
   /// @param[in] mesh The mesh of the domain. This is required when
   /// there are not argument functions from which the mesh can be
   /// extracted, e.g. for functionals
-  Form(const std::vector<std::shared_ptr<
-           const FunctionSpace<scalar_value_type_t>>>& function_spaces,
+  Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>&
+           function_spaces,
        const std::map<IntegralType,
                       std::vector<std::tuple<
                           int,
@@ -100,7 +100,8 @@ public:
                                              const scalar_value_type_t*,
                                              const int*, const std::uint8_t*)>,
                           std::vector<std::int32_t>>>>& integrals,
-       const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+       const std::vector<std::shared_ptr<const Function<T, double>>>&
+           coefficients,
        const std::vector<std::shared_ptr<const Constant<T>>>& constants,
        bool needs_facet_permutations,
        std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr)
@@ -167,7 +168,7 @@ public:
 
   /// Return function spaces for all arguments
   /// @return Function spaces
-  const std::vector<std::shared_ptr<const FunctionSpace<scalar_value_type_t>>>&
+  const std::vector<std::shared_ptr<const FunctionSpace<U>>>&
   function_spaces() const
   {
     return _function_spaces;
@@ -305,7 +306,8 @@ public:
   }
 
   /// Access coefficients
-  const std::vector<std::shared_ptr<const Function<T>>>& coefficients() const
+  const std::vector<std::shared_ptr<const Function<T, double>>>&
+  coefficients() const
   {
     return _coefficients;
   }
@@ -349,10 +351,10 @@ private:
   /// @param[in] integrals Map of integrals
   /// @param[in] i Domain index
   /// @return Function to call for tabulate_tensor
-  template <typename U>
+  template <typename X>
   const std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
                            const int*, const std::uint8_t*)>&
-  get_kernel_from_integrals(const U& integrals, int i) const
+  get_kernel_from_integrals(const X& integrals, int i) const
   {
     auto it = integrals.find(i);
     if (it == integrals.end())
@@ -361,11 +363,10 @@ private:
   }
 
   // Function spaces (one for each argument)
-  std::vector<std::shared_ptr<const FunctionSpace<scalar_value_type_t>>>
-      _function_spaces;
+  std::vector<std::shared_ptr<const FunctionSpace<U>>> _function_spaces;
 
   // Form coefficients
-  std::vector<std::shared_ptr<const Function<T>>> _coefficients;
+  std::vector<std::shared_ptr<const Function<T, double>>> _coefficients;
 
   // Constants associated with the Form
   std::vector<std::shared_ptr<const Constant<T>>> _constants;

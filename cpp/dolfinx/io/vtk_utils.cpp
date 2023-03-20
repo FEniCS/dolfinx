@@ -188,20 +188,18 @@ namespace
 // }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
-io::extract_vtk_connectivity(const mesh::Mesh<double>& mesh)
+io::extract_vtk_connectivity(const mesh::Geometry<double>& geometry,
+                             mesh::CellType cell_type)
 {
   // Get DOLFINx to VTK permutation
   // FIXME: Use better way to get number of nodes
-  const graph::AdjacencyList<std::int32_t>& dofmap_x = mesh.geometry().dofmap();
-  const std::size_t num_nodes = mesh.geometry().cmap().dim();
-  mesh::CellType cell_type = mesh.topology().cell_type();
+  const graph::AdjacencyList<std::int32_t>& dofmap_x = geometry.dofmap();
+  const std::size_t num_nodes = geometry.cmap().dim();
   std::vector vtkmap
       = io::cells::transpose(io::cells::perm_vtk(cell_type, num_nodes));
 
   // Extract mesh 'nodes'
-  const int tdim = mesh.topology().dim();
-  const std::size_t num_cells = mesh.topology().index_map(tdim)->size_local()
-                                + mesh.topology().index_map(tdim)->num_ghosts();
+  const std::size_t num_cells = dofmap_x.num_nodes();
 
   // Build mesh connectivity
 

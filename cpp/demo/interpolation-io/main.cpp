@@ -36,11 +36,11 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<double>> mesh,
       basix::element::dpc_variant::unset, false);
 
   // Create a scalar function space
-  auto V = std::make_shared<fem::FunctionSpace>(
+  auto V = std::make_shared<fem::FunctionSpace<double>>(
       fem::create_functionspace(mesh, e, 1));
 
   // Create a finite element Function
-  auto u = std::make_shared<fem::Function<T>>(V);
+  auto u = std::make_shared<fem::Function<T, double>>(V);
 
   // Interpolate sin(2 \pi x[0]) in the scalar Lagrange finite element
   // space
@@ -75,11 +75,11 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<double>> mesh,
       basix::element::dpc_variant::unset, false);
 
   // Create a Nedelec function space
-  auto V = std::make_shared<fem::FunctionSpace>(
+  auto V = std::make_shared<fem::FunctionSpace<double>>(
       fem::create_functionspace(mesh, e, 1));
 
   // Create a Nedelec finite element Function
-  auto u = std::make_shared<fem::Function<T>>(V);
+  auto u = std::make_shared<fem::Function<T, double>>(V);
 
   // Interpolate the vector field
   //  u = [x[0], x[1]]  if x[0] < 0.5
@@ -145,10 +145,10 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<double>> mesh,
       basix::element::dpc_variant::unset, true);
 
   // Create a function space
-  auto V_l = std::make_shared<fem::FunctionSpace>(
+  auto V_l = std::make_shared<fem::FunctionSpace<double>>(
       fem::create_functionspace(mesh, e_l, 2));
 
-  auto u_l = std::make_shared<fem::Function<T>>(V_l);
+  auto u_l = std::make_shared<fem::Function<T, double>>(V_l);
 
   // Interpolate the Nedelec function into the discontinuous Lagrange
   // space:
@@ -179,10 +179,11 @@ int main(int argc, char* argv[])
   {
     // Create a mesh. For what comes later in this demo we need to
     // ensure that a boundary between cells is located at x0=0.5
-    auto mesh = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle(
-        MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
-        mesh::CellType::triangle,
-        mesh::create_cell_partitioner(mesh::GhostMode::none)));
+    auto mesh
+        = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle<double>(
+            MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
+            mesh::CellType::triangle,
+            mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
     // Interpolate a function in a scalar Lagrange space and output the
     // result to file for visualisation

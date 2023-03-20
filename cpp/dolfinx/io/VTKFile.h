@@ -19,7 +19,7 @@ class xml_document;
 
 namespace dolfinx::fem
 {
-template <typename T>
+template <typename T, typename U>
 class Function;
 }
 
@@ -73,7 +73,8 @@ public:
   /// sub-Functions before output
   template <typename T>
   void
-  write(const std::vector<std::reference_wrapper<const fem::Function<T>>>& u,
+  write(const std::vector<std::reference_wrapper<const fem::Function<T, double>
+>>& u,
         double t)
   {
     write_functions(u, t);
@@ -81,11 +82,11 @@ public:
 
 private:
   void write_functions(
-      const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
+      const std::vector<std::reference_wrapper<const fem::Function<double, double>>>& u,
       double t);
   void write_functions(
       const std::vector<
-          std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
+          std::reference_wrapper<const fem::Function<std::complex<double>, double>>>& u,
       double t);
 
   std::unique_ptr<pugi::xml_document> _pvd_xml;

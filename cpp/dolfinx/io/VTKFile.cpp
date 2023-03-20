@@ -34,7 +34,8 @@ constexpr std::array field_ext = {"_real", "_imag"};
 
 //----------------------------------------------------------------------------
 /// Return true if Function is a cell-wise constant, otherwise false
-bool is_cellwise(const fem::FunctionSpace& V)
+template <typename T>
+bool is_cellwise(const fem::FunctionSpace<T>& V)
 {
   assert(V.element());
   const int rank = V.element()->value_shape().size();
@@ -338,7 +339,8 @@ void add_mesh(std::span<const double> x, std::array<std::size_t, 2> /*xshape*/,
 //----------------------------------------------------------------------------
 template <typename T>
 void write_function(
-    const std::vector<std::reference_wrapper<const fem::Function<T>>>& u,
+    const std::vector<std::reference_wrapper<const fem::Function<T, double>
+>>& u,
     double time, pugi::xml_document* xml_doc,
     const std::filesystem::path& filename)
 {
@@ -419,7 +421,8 @@ void write_function(
   if (is_cellwise(*V0))
   {
     std::vector<std::int64_t> tmp;
-    std::tie(tmp, cshape) = io::extract_vtk_connectivity(*mesh0);
+    std::tie(tmp, cshape) = io::extract_vtk_connectivity(
+        mesh0->geometry(), mesh0->topology().cell_type());
     cells.assign(tmp.begin(), tmp.end());
     const mesh::Geometry<double>& geometry = mesh0->geometry();
     x.assign(geometry.x().begin(), geometry.x().end());
@@ -501,8 +504,8 @@ void write_function(
 
       // Function to pack data to 3D with 'zero' padding, typically when
       // a Function is 2D
-      auto pad_data
-          = [num_comp](const fem::FunctionSpace& V, std::span<const T> u)
+      auto pad_data =
+          [num_comp](const fem::FunctionSpace<double>& V, std::span<const T> u)
       {
         auto dofmap = V.dofmap();
         int bs = dofmap->bs();
@@ -770,7 +773,8 @@ void io::VTKFile::write(const mesh::Mesh<double>& mesh, double time)
   piece_node.append_attribute("NumberOfCells") = num_cells;
 
   // Add mesh data to "Piece" node
-  const auto [cells, cshape] = extract_vtk_connectivity(mesh);
+  const auto [cells, cshape]
+      = extract_vtk_connectivity(mesh.geometry(), mesh.topology().cell_type());
   std::array<std::size_t, 2> xshape = {geometry.x().size() / 3, 3};
   std::vector<std::uint8_t> x_ghost(xshape[0], 0);
   std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
@@ -834,7 +838,7 @@ void io::VTKFile::write(const mesh::Mesh<double>& mesh, double time)
 }
 //----------------------------------------------------------------------------
 void io::VTKFile::write_functions(
-    const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
+    const std::vector<std::reference_wrapper<const fem::Function<double, double>>>& u,
     double time)
 {
   write_function(u, time, _pvd_xml.get(), _filename);
@@ -842,7 +846,7 @@ void io::VTKFile::write_functions(
 //----------------------------------------------------------------------------
 void io::VTKFile::write_functions(
     const std::vector<
-        std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
+        std::reference_wrapper<const fem::Function<std::complex<double>, double>>>& u,
     double time)
 {
   write_function(u, time, _pvd_xml.get(), _filename);

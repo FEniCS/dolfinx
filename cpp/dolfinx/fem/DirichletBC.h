@@ -247,7 +247,7 @@ public:
   /// corresponds to 3 degrees-of-freedom if the dofmap associated with
   /// `g` has block size 3.
   template <std::convertible_to<std::vector<std::int32_t>> U>
-  DirichletBC(std::shared_ptr<const Function<T>> g, U&& dofs)
+  DirichletBC(std::shared_ptr<const Function<T, double>> g, U&& dofs)
       : _function_space(g->function_space()), _g(g),
         _dofs0(std::forward<U>(dofs)),
         _owned_indices0(num_owned(*_function_space, _dofs0))
@@ -284,7 +284,7 @@ public:
   /// condition is applied
   /// @note The indices in `dofs` are unrolled and not for blocks.
   template <typename U>
-  DirichletBC(std::shared_ptr<const Function<T>> g, U&& V_g_dofs,
+  DirichletBC(std::shared_ptr<const Function<T, double>> g, U&& V_g_dofs,
               std::shared_ptr<const FunctionSpace<double>> V)
       : _function_space(V), _g(g),
         _dofs0(std::forward<typename U::value_type>(V_g_dofs[0])),
@@ -320,7 +320,7 @@ public:
 
   /// Return boundary value function g
   /// @return The boundary values Function
-  std::variant<std::shared_ptr<const Function<T>>,
+  std::variant<std::shared_ptr<const Function<T, double>>,
                std::shared_ptr<const Constant<T>>>
   value() const
   {
@@ -351,9 +351,9 @@ public:
   /// @param[in] scale The scaling value to apply
   void set(std::span<T> x, T scale = 1) const
   {
-    if (std::holds_alternative<std::shared_ptr<const Function<T>>>(_g))
+    if (std::holds_alternative<std::shared_ptr<const Function<T, double>>>(_g))
     {
-      auto g = std::get<std::shared_ptr<const Function<T>>>(_g);
+      auto g = std::get<std::shared_ptr<const Function<T, double>>>(_g);
       assert(g);
       std::span<const T> values = g->x()->array();
       auto dofs1_g = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
@@ -388,9 +388,9 @@ public:
   /// @param[in] scale The scaling value to apply
   void set(std::span<T> x, std::span<const T> x0, T scale = 1) const
   {
-    if (std::holds_alternative<std::shared_ptr<const Function<T>>>(_g))
+    if (std::holds_alternative<std::shared_ptr<const Function<T, double>>>(_g))
     {
-      auto g = std::get<std::shared_ptr<const Function<T>>>(_g);
+      auto g = std::get<std::shared_ptr<const Function<T, double>>>(_g);
       assert(g);
       std::span<const T> values = g->x()->array();
       assert(x.size() <= x0.size());
@@ -429,9 +429,9 @@ public:
   /// (the space of the function that provides the dof values)
   void dof_values(std::span<T> values) const
   {
-    if (std::holds_alternative<std::shared_ptr<const Function<T>>>(_g))
+    if (std::holds_alternative<std::shared_ptr<const Function<T, double>>>(_g))
     {
-      auto g = std::get<std::shared_ptr<const Function<T>>>(_g);
+      auto g = std::get<std::shared_ptr<const Function<T, double>>>(_g);
       assert(g);
       std::span<const T> g_values = g->x()->array();
       auto dofs1_g = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
@@ -469,7 +469,7 @@ private:
   std::shared_ptr<const FunctionSpace<double>> _function_space;
 
   // The function
-  std::variant<std::shared_ptr<const Function<T>>,
+  std::variant<std::shared_ptr<const Function<T, double>>,
                std::shared_ptr<const Constant<T>>>
       _g;
 

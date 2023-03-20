@@ -29,7 +29,7 @@ namespace
 {
 template <typename Scalar>
 void _write_function(dolfinx::MPI::Comm& comm,
-                     const fem::Function<Scalar>& function, const double t,
+                     const fem::Function<Scalar, double>& function, const double t,
                      const std::string& mesh_xpath, pugi::xml_document& xml_doc,
                      hid_t h5_id, const std::filesystem::path& filename)
 {
@@ -278,13 +278,13 @@ XDMFFile::read_geometry_data(std::string name, std::string xpath) const
   return xdmf_mesh::read_geometry_data(_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_function(const fem::Function<double>& u, double t,
+void XDMFFile::write_function(const fem::Function<double, double>& u, double t,
                               std::string mesh_xpath)
 {
   _write_function(_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_function(const fem::Function<std::complex<double>>& u,
+void XDMFFile::write_function(const fem::Function<std::complex<double>, double>& u,
                               double t, std::string mesh_xpath)
 {
   _write_function(_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
