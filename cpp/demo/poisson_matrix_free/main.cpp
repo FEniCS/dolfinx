@@ -135,12 +135,12 @@ int main(int argc, char* argv[])
 
     // Define variational forms
     auto L = std::make_shared<fem::Form<T, double>>(
-        fem::create_form<T>(*form_poisson_L, {V}, {}, {{"f", f}}, {}));
+        fem::create_form<T, double>(*form_poisson_L, {V}, {}, {{"f", f}}, {}));
 
     // Action of the bilinear form "a" on a function ui
     auto ui = std::make_shared<fem::Function<T, double>>(V);
-    auto M = std::make_shared<fem::Form<T, double>>(
-        fem::create_form<T>(*form_poisson_M, {V}, {{"ui", ui}}, {{}}, {}));
+    auto M = std::make_shared<fem::Form<T, double>>(fem::create_form<T, double>(
+        *form_poisson_M, {V}, {{"ui", ui}}, {{}}, {}));
 
     // Define boundary condition
     auto u_D = std::make_shared<fem::Function<T, double>>(V);
@@ -216,7 +216,7 @@ int main(int argc, char* argv[])
 
     // Compute L2 error (squared) of the solution vector e = (u - u_d, u
     // - u_d)*dx
-    auto E = std::make_shared<fem::Form<T, double>>(fem::create_form<T>(
+    auto E = std::make_shared<fem::Form<T, double>>(fem::create_form<T, double>(
         *form_poisson_E, {}, {{"uexact", u_D}, {"usol", u}}, {}, {}, mesh));
     T error = fem::assemble_scalar(*E);
 
