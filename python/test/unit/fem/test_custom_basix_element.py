@@ -77,7 +77,8 @@ def run_scalar_test(V, degree):
 
 @pytest.mark.parametrize("degree", range(1, 6))
 def test_basix_element_wrapper(degree):
-    ufl_element = basix.ufl.element(basix.ElementFamily.P, basix.CellType.triangle, degree, basix.LagrangeVariant.gll_isaac)
+    ufl_element = basix.ufl.element(
+        basix.ElementFamily.P, basix.CellType.triangle, degree, basix.LagrangeVariant.gll_isaac)
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     V = FunctionSpace(mesh, ufl_element)
     run_scalar_test(V, degree)
