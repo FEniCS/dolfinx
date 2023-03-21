@@ -214,8 +214,7 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Compute solution
-    fem::Function<T> u(V);
-    // fem::Function<T, double> u(V);
+    fem::Function<T, double> u(V);
     auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
     la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
                     L->function_spaces()[0]->dofmap()->index_map_bs());

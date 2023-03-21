@@ -395,4 +395,9 @@ common_function_spaces(
   return {spaces0, spaces1};
 }
 
+/// Type deduction
+template <typename U, typename V, typename W>
+FunctionSpace(U mesh, V element, W dofmap) -> FunctionSpace<
+    typename std::remove_cvref<typename U::element_type>::type::value_type>;
+
 } // namespace dolfinx::fem

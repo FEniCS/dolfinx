@@ -630,7 +630,4 @@ private:
   std::shared_ptr<la::Vector<T>> _x;
 };
 
-template <typename T, typename U>
-explicit Function(std::shared_ptr<const FunctionSpace<U>> V)
-    -> Function<typename T, double>;
 } // namespace dolfinx::fem

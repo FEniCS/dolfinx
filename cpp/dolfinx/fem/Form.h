@@ -387,20 +387,4 @@ private:
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
 };
-
-// template <typename V, typename U>
-// Form(
-//     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
-//     const std::map<IntegralType,
-//                    std::vector<std::tuple<
-//                        int,
-//                        std::function<void(T*, const T*, const T*,
-//                                           const scalar_value_type_t*,
-//                                           const int*, const std::uint8_t*)>,
-//                        std::vector<std::int32_t>>>>& integrals,
-//     const std::vector<std::shared_ptr<const Function<T, double>>>& coefficients,
-//     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-//     bool needs_facet_permutations,
-//     std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr)
-//     -> Form<V, typename std::iterator_traits<Iter>::value_type>;
 } // namespace dolfinx::fem

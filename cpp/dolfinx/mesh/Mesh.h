@@ -34,6 +34,9 @@ template <typename T>
 class Mesh
 {
 public:
+  /// @brief Value type
+  using value_type = T;
+
   /// Create a mesh
   /// @param[in] comm MPI Communicator
   /// @param[in] topology Mesh topology
