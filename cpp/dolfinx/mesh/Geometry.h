@@ -27,7 +27,7 @@ namespace dolfinx::mesh
 {
 
 /// @brief Geometry stores the geometry imposed on a mesh.
-template <typename T>
+template <std::floating_point T>
 class Geometry
 {
 public:

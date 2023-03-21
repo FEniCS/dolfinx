@@ -7,6 +7,7 @@
 #pragma once
 
 #include "HDF5Interface.h"
+#include <concepts>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <filesystem>
@@ -28,7 +29,7 @@ class Function;
 
 namespace dolfinx::mesh
 {
-template <typename T>
+template <std::floating_point T>
 class Geometry;
 enum class GhostMode : int;
 template <typename T>
@@ -142,7 +143,8 @@ public:
   /// @param[in] t The time stamp to associate with the Function
   /// @param[in] mesh_xpath XPath for a Grid under which Function will
   /// be inserted
-  void write_function(const fem::Function<std::complex<double>, double>& u, double t,
+  void write_function(const fem::Function<std::complex<double>, double>& u,
+                      double t,
                       std::string mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
 

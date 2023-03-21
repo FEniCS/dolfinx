@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <concepts>
 #include <hdf5.h>
 #include <mpi.h>
 #include <span>
@@ -24,7 +25,7 @@ namespace dolfinx
 
 namespace mesh
 {
-template <typename T>
+template <std::floating_point T>
 class Geometry;
 template <typename T>
 class Mesh;

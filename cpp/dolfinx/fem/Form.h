@@ -9,6 +9,7 @@
 #include "FunctionSpace.h"
 #include <algorithm>
 #include <array>
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
@@ -80,7 +81,7 @@ public:
   /// @note User applications will normally call a fem::Form builder
   /// function rather using this interface directly.
   ///
-  /// @param[in] function_spaces Function spaces for the form arguments
+  /// @param[in] V Function spaces for the form arguments
   /// @param[in] integrals The integrals in the form. The first key is
   /// the domain type. For each key there is a list of tuples (domain id,
   /// integration kernel, entities).
@@ -91,8 +92,7 @@ public:
   /// @param[in] mesh The mesh of the domain. This is required when
   /// there are not argument functions from which the mesh can be
   /// extracted, e.g. for functionals
-  Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>&
-           function_spaces,
+  Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
        const std::map<IntegralType,
                       std::vector<std::tuple<
                           int,
@@ -105,16 +105,15 @@ public:
        const std::vector<std::shared_ptr<const Constant<T>>>& constants,
        bool needs_facet_permutations,
        std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr)
-      : _function_spaces(function_spaces), _coefficients(coefficients),
-        _constants(constants), _mesh(mesh),
-        _needs_facet_permutations(needs_facet_permutations)
+      : _function_spaces(V), _coefficients(coefficients), _constants(constants),
+        _mesh(mesh), _needs_facet_permutations(needs_facet_permutations)
   {
     // Extract _mesh from FunctionSpace, and check they are the same
-    if (!_mesh and !function_spaces.empty())
-      _mesh = function_spaces[0]->mesh();
-    for (const auto& V : function_spaces)
+    if (!_mesh and !V.empty())
+      _mesh = V[0]->mesh();
+    for (const auto& space : V)
     {
-      if (_mesh != V->mesh())
+      if (_mesh != space->mesh())
         throw std::runtime_error("Incompatible mesh");
     }
     if (!_mesh)
@@ -388,4 +387,20 @@ private:
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
 };
+
+// template <typename V, typename U>
+// Form(
+//     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
+//     const std::map<IntegralType,
+//                    std::vector<std::tuple<
+//                        int,
+//                        std::function<void(T*, const T*, const T*,
+//                                           const scalar_value_type_t*,
+//                                           const int*, const std::uint8_t*)>,
+//                        std::vector<std::int32_t>>>>& integrals,
+//     const std::vector<std::shared_ptr<const Function<T, double>>>& coefficients,
+//     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
+//     bool needs_facet_permutations,
+//     std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr)
+//     -> Form<V, typename std::iterator_traits<Iter>::value_type>;
 } // namespace dolfinx::fem

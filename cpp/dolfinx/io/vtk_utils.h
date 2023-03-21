@@ -32,7 +32,7 @@ class FunctionSpace;
 namespace mesh
 {
 enum class CellType;
-template <typename T>
+template <std::floating_point T>
 class Geometry;
 template <typename T>
 class Mesh;

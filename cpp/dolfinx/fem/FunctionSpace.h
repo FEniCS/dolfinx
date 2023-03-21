@@ -41,6 +41,9 @@ template <typename T>
 class FunctionSpace
 {
 public:
+  /// @brief Value type
+  using value_type = T;
+
   /// Create function space for given mesh, element and dofmap
   /// @param[in] mesh The mesh
   /// @param[in] element The element
