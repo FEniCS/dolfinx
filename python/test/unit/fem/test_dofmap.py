@@ -151,7 +151,7 @@ def test_block_size(mesh):
         V = FunctionSpace(mesh, P2)
         assert V.dofmap.bs == 1
 
-        # Only VectorElements have index_map_bs > 1
+        # Only BlockedElements have index_map_bs > 1
         V = FunctionSpace(mesh, MixedElement([P2, P2]))
         assert V.dofmap.index_map_bs == 1
 
