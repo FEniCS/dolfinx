@@ -221,9 +221,13 @@ def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistri
 
     """
     if edges is None:
-        mesh1, cells, facets = _cpp.refinement.refine_plaza(mesh._cpp_object, redistribute)
+        mesh1, cells, facets = _cpp.refinement.refine_plaza(
+            mesh._cpp_object, redistribute, option
+        )
     else:
-        mesh1, cells, facets = _cpp.refinement.refine_plaza(mesh._cpp_object, edges, redistribute)
+        mesh1, cells, facets = _cpp.refinement.refine_plaza(
+            mesh._cpp_object, edges, redistribute, option
+        )
     element = mesh._ufl_domain.ufl_coordinate_element()
     domain = ufl.Mesh(element)
     return Mesh(mesh1, domain), cells, facets

@@ -52,20 +52,14 @@ def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
     shape, degree = _gmsh_to_cells[gmsh_cell]
     cell = ufl.Cell(shape, geometric_dimension=gdim)
 
-<<<<<<< HEAD
     element = basix.ufl.element(
-        basix.ElementFamily.P, cell.cellname(), degree, basix.LagrangeVariant.equispaced, shape=(gdim, ),
-        gdim=gdim)
-=======
-    element = basix.ufl_wrapper.create_vector_element(
         basix.ElementFamily.P,
         cell.cellname(),
         degree,
         basix.LagrangeVariant.equispaced,
-        dim=gdim,
+        shape=(gdim,),
         gdim=gdim,
     )
->>>>>>> 3819e32a14 (gmsh reader: optionally import only physical entities from a gmsh model, return the physical names)
     return ufl.Mesh(element)
 
 
@@ -359,16 +353,11 @@ if _has_gmsh:
         if has_facet_data:
             # Permute facets from MSH to DOLFINx ordering
             # FIXME: This does not work for prism meshes
-<<<<<<< HEAD
-            if topology.cell_types[0] == CellType.prism or topology.cell_types[0] == CellType.pyramid:
-                raise RuntimeError(f"Unsupported cell type {topology.cell_types[0]}")
-=======
             if (
-                topology.cell_type == CellType.prism
-                or topology.cell_type == CellType.pyramid
+                topology.cell_types[0] == CellType.prism
+                or topology.cell_types[0] == CellType.pyramid
             ):
-                raise RuntimeError(f"Unsupported cell type {topology.cell_type}")
->>>>>>> 3819e32a14 (gmsh reader: optionally import only physical entities from a gmsh model, return the physical names)
+                raise RuntimeError(f"Unsupported cell type {topology.cell_types[0]}")
 
             facet_type = _cpp.mesh.cell_entity_type(
                 _cpp.mesh.to_type(str(ufl_domain.ufl_cell())), topology.dim - 1, 0

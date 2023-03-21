@@ -137,7 +137,7 @@ def test_refine_facet_meshtag(tdim):
     meshtag = meshtags(mesh, tdim - 1, numpy.array(facet_indices, dtype=numpy.int32),
                        numpy.arange(len(facet_indices), dtype=numpy.int32))
 
-    fine_mesh, parent_cell, parent_facet = refine_plaza(mesh, False, RefinementOption.parent_cell_and_facet)
+    fine_mesh, parent_cell, parent_facet = refine_plaza(mesh, None, False, RefinementOption.parent_cell_and_facet)
     fine_mesh.topology.create_entities(tdim - 1)
     new_meshtag = transfer_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
     assert len(new_meshtag.indices) == (tdim * 2 - 2) * len(meshtag.indices)
@@ -168,7 +168,7 @@ def test_refine_cell_meshtag(tdim):
     meshtag = meshtags(mesh, tdim, numpy.array(cell_indices, dtype=numpy.int32),
                        numpy.arange(len(cell_indices), dtype=numpy.int32))
 
-    fine_mesh, parent_cell, _ = refine_plaza(mesh, False, RefinementOption.parent_cell_and_facet)
+    fine_mesh, parent_cell, _ = refine_plaza(mesh, None, False, RefinementOption.parent_cell_and_facet)
     new_meshtag = transfer_meshtag(meshtag, fine_mesh, parent_cell)
     assert sum(new_meshtag.values) == (tdim * 4 - 4) * sum(meshtag.values)
     assert len(new_meshtag.indices) == (tdim * 4 - 4) * len(meshtag.indices)
