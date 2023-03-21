@@ -623,7 +623,7 @@ def _is_scalar(mesh, element):
 
 
 def VectorFunctionSpace(mesh: Mesh,
-                        element: typing.Union[basix.ufl._BasixElementBase,
+                        element: typing.Union[basix.ufl._ElementBase,
                                               ElementMetaData, typing.Tuple[str, int]],
                         dim=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
