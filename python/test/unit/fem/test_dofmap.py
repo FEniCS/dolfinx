@@ -12,7 +12,7 @@ import pytest
 
 import dolfinx
 import ufl
-from basix.ufl import MixedElement, element
+from basix.ufl import mixed_element, element
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace
 from dolfinx.graph import create_adjacencylist
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
@@ -152,11 +152,11 @@ def test_block_size(mesh):
         assert V.dofmap.bs == 1
 
         # Only BlockedElements have index_map_bs > 1
-        V = FunctionSpace(mesh, MixedElement([P2, P2]))
+        V = FunctionSpace(mesh, mixed_element([P2, P2]))
         assert V.dofmap.index_map_bs == 1
 
         for i in range(1, 6):
-            W = FunctionSpace(mesh, MixedElement(i * [P2]))
+            W = FunctionSpace(mesh, mixed_element(i * [P2]))
             assert W.dofmap.index_map_bs == 1
 
         V = VectorFunctionSpace(mesh, ("Lagrange", 2))

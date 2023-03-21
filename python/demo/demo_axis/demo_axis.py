@@ -22,7 +22,7 @@ from mesh_sphere_axis import generate_mesh_sphere_axis
 from scipy.special import jv, jvp
 
 import ufl
-from basix.ufl import MixedElement, element
+from basix.ufl import mixed_element, element
 from dolfinx import fem, io, mesh, plot
 
 from mpi4py import MPI
@@ -371,7 +371,7 @@ if have_pyvista:
 degree = 3
 curl_el = element("N1curl", msh.ufl_cell().cellname(), degree)
 lagr_el = element("Lagrange", msh.ufl_cell().cellname(), degree)
-V = fem.FunctionSpace(msh, MixedElement([curl_el, lagr_el]))
+V = fem.FunctionSpace(msh, mixed_element([curl_el, lagr_el]))
 
 # The integration domains of our problem are the following:
 

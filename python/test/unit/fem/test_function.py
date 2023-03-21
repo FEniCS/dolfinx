@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 
 import ufl
-from basix.ufl import MixedElement, element
+from basix.ufl import mixed_element, element
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace, assemble_scalar,
                          create_nonmatching_meshes_interpolation_data, form)
@@ -129,7 +129,7 @@ def test_interpolation_mismatch_rank1(W):
 def test_mixed_element_interpolation():
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     el = element("Lagrange", mesh.ufl_cell().cellname(), 1)
-    V = FunctionSpace(mesh, MixedElement([el, el]))
+    V = FunctionSpace(mesh, mixed_element([el, el]))
     u = Function(V)
     with pytest.raises(RuntimeError):
         u.interpolate(lambda x: np.ones(2, x.shape[1]))

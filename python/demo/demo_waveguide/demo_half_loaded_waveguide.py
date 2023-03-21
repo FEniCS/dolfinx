@@ -45,7 +45,7 @@ import numpy as np
 from analytical_modes import verify_mode
 
 import ufl
-from basix.ufl import MixedElement, element
+from basix.ufl import mixed_element, element
 from dolfinx import fem, io, plot
 from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
                           locate_entities)
@@ -188,12 +188,12 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
 # $\mathbf{e}_t$, we can use RTCE elements (the equivalent of Nedelec
 # elements on quadrilateral cells), while for $e_z$ field we can use
 # Lagrange elements. This hybrid formulation is implemented with
-# `MixedElement`:
+# `mixed_element`:
 
 degree = 1
 RTCE = element("RTCE", msh.ufl_cell().cellname(), degree)
 Q = element("Lagrange", msh.ufl_cell().cellname(), degree)
-V = fem.FunctionSpace(msh, MixedElement([RTCE, Q]))
+V = fem.FunctionSpace(msh, mixed_element([RTCE, Q]))
 
 # Now we can define our weak form:
 

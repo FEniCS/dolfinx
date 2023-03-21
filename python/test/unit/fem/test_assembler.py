@@ -13,7 +13,7 @@ import scipy.sparse
 
 import basix
 import ufl
-from basix.ufl import MixedElement, element
+from basix.ufl import mixed_element, element
 from dolfinx import cpp as _cpp
 from dolfinx import fem, graph, la
 from dolfinx.fem import (Constant, Function, FunctionSpace,
@@ -324,7 +324,7 @@ def test_matrix_assembly_block(mode):
 
     def monolithic():
         """Monolithic version"""
-        W = FunctionSpace(mesh, MixedElement([P0, P1, P2]))
+        W = FunctionSpace(mesh, mixed_element([P0, P1, P2]))
         u0, u1, u2 = ufl.TrialFunctions(W)
         v0, v1, v2 = ufl.TestFunctions(W)
         a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
@@ -447,7 +447,7 @@ def test_assembly_solve_block(mode):
 
     def monolithic():
         """Monolithic version"""
-        E = MixedElement([P, P])
+        E = mixed_element([P, P])
         W = FunctionSpace(mesh, E)
         u0, u1 = ufl.TrialFunctions(W)
         v0, v1 = ufl.TestFunctions(W)
@@ -611,7 +611,7 @@ def test_assembly_solve_taylor_hood(mesh):
         """Monolithic (interleaved) solver"""
         P2_el = element("Lagrange", mesh.ufl_cell().cellname(), 2, rank=1)
         P1_el = element("Lagrange", mesh.ufl_cell().cellname(), 1)
-        TH = MixedElement([P2_el, P1_el])
+        TH = mixed_element([P2_el, P1_el])
         W = FunctionSpace(mesh, TH)
         (u, p) = ufl.TrialFunctions(W)
         (v, q) = ufl.TestFunctions(W)

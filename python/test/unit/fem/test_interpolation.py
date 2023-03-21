@@ -12,7 +12,7 @@ import pytest
 
 import basix
 import ufl
-from basix.ufl import BasixElement, MixedElement, BlockedElement, element, enriched_element
+from basix.ufl import mixed_element, blocked_element, element, enriched_element, custom_element
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
@@ -267,7 +267,7 @@ def test_mixed_sub_interpolation():
 
     P2 = element("Lagrange", mesh.ufl_cell().cellname(), 2, rank=1)
     P1 = element("Lagrange", mesh.ufl_cell().cellname(), 1)
-    for i, P in enumerate((MixedElement([P2, P1]), MixedElement([P1, P2]))):
+    for i, P in enumerate((mixed_element([P2, P1]), mixed_element([P1, P2]))):
         W = FunctionSpace(mesh, P)
         U = Function(W)
         U.sub(i).interpolate(f)
@@ -316,7 +316,7 @@ def test_mixed_interpolation():
     mesh = one_cell_mesh(CellType.triangle)
     A = element("Lagrange", mesh.ufl_cell().cellname(), 1)
     B = element("Lagrange", mesh.ufl_cell().cellname(), 1, rank=1)
-    v = Function(FunctionSpace(mesh, MixedElement([A, B])))
+    v = Function(FunctionSpace(mesh, mixed_element([A, B])))
     with pytest.raises(RuntimeError):
         v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
 
@@ -637,7 +637,7 @@ def test_interpolate_callable():
 def test_vector_element_interpolation(scalar_element):
     """Test interpolation into a range of vector elements."""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell().cellname()))
-    V = FunctionSpace(mesh, BlockedElement(scalar_element, shape=(2, )))
+    V = FunctionSpace(mesh, blocked_element(scalar_element, shape=(2, )))
     u = Function(V)
     u.interpolate(lambda x: (x[0], x[1]))
     u2 = Function(V)
@@ -667,11 +667,11 @@ def test_custom_vector_element():
         M[1].append(np.zeros((0, 2, 0, 1)))
     M[2].append(np.zeros((0, 2, 0, 1)))
 
-    e = basix.create_custom_element(
+    e = custom_element(
         basix.CellType.triangle, [2], wcoeffs, x, M, 0, basix.MapType.identity,
         basix.SobolevSpace.H1, False, 1, 1)
 
-    V = FunctionSpace(mesh, BasixElement(e))
+    V = FunctionSpace(mesh, e)
     W = VectorFunctionSpace(mesh, ("Lagrange", 1))
 
     v = Function(V)
@@ -699,13 +699,13 @@ def test_mixed_interpolation_permuting(cell_type, order):
     vlag_el = element("Lagrange", mesh.ufl_cell().cellname(), 1, rank=1)
     lagr_el = element("Lagrange", mesh.ufl_cell().cellname(), order)
 
-    V = FunctionSpace(mesh, MixedElement([curl_el, lagr_el]))
+    V = FunctionSpace(mesh, mixed_element([curl_el, lagr_el]))
     Eb_m = Function(V)
     Eb_m.sub(1).interpolate(g)
     diff = Eb_m[2].dx(1) - dgdy
     error = assemble_scalar(form(ufl.dot(diff, diff) * ufl.dx))
 
-    V = FunctionSpace(mesh, MixedElement([vlag_el, lagr_el]))
+    V = FunctionSpace(mesh, mixed_element([vlag_el, lagr_el]))
     Eb_m = Function(V)
     Eb_m.sub(1).interpolate(g)
     diff = Eb_m[2].dx(1) - dgdy

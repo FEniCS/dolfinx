@@ -9,7 +9,7 @@ import pytest
 
 import dolfinx
 import ufl
-from basix.ufl import MixedElement, element
+from basix.ufl import mixed_element, element
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace, form
 from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
                           create_unit_square)
@@ -40,7 +40,7 @@ def test_mixed_element(rank, family, cell, degree):
         norms.append(A.norm())
         A.destroy()
 
-        U_el = MixedElement([U_el])
+        U_el = mixed_element([U_el])
 
     for i in norms[1:]:
         assert np.isclose(norms[0], i)
@@ -77,7 +77,7 @@ def test_element_product(d1, d2):
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 2)
     P3 = element("Lagrange", mesh.ufl_cell().cellname(), d1, rank=1)
     P1 = element("Lagrange", mesh.ufl_cell().cellname(), d2)
-    TH = MixedElement([P3, P1])
+    TH = mixed_element([P3, P1])
     W = FunctionSpace(mesh, TH)
 
     u = ufl.TrialFunction(W)

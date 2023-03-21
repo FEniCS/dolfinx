@@ -11,7 +11,7 @@ import pytest
 
 import basix
 import ufl
-from basix.ufl import MixedElement, element
+from basix.ufl import mixed_element, element
 from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
                          assemble_scalar, dirichletbc, form,
                          locate_dofs_topological)
@@ -281,7 +281,7 @@ def test_biharmonic(family):
     mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]),
                                              np.array([1.0, 1.0])], [32, 32], CellType.triangle)
 
-    e = MixedElement([
+    e = mixed_element([
         element(family, basix.CellType.triangle, 1),
         element(basix.ElementFamily.P, basix.CellType.triangle, 2)])
 

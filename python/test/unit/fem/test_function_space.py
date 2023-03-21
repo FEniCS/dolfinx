@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 import basix
-from basix.ufl import MixedElement, element
+from basix.ufl import mixed_element, element
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import create_mesh, create_unit_cube
 from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
@@ -35,7 +35,7 @@ def W(mesh):
 def Q(mesh):
     W = element('Lagrange', mesh.ufl_cell().cellname(), 1, rank=1)
     V = element('Lagrange', mesh.ufl_cell().cellname(), 1)
-    return FunctionSpace(mesh, MixedElement([W, V]))
+    return FunctionSpace(mesh, mixed_element([W, V]))
 
 
 @pytest.fixture

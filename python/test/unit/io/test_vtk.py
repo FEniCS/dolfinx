@@ -11,7 +11,7 @@ import pytest
 from numpy.testing import assert_array_equal
 
 import ufl
-from basix.ufl import MixedElement, element
+from basix.ufl import mixed_element, element
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
 from dolfinx.io import VTKFile
@@ -142,7 +142,7 @@ def test_save_vtk_mixed(tempdir):
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     P2 = element("Lagrange", mesh.ufl_cell().cellname(), 1, rank=1)
     P1 = element("Lagrange", mesh.ufl_cell().cellname(), 1)
-    W = FunctionSpace(mesh, MixedElement([P2, P1]))
+    W = FunctionSpace(mesh, mixed_element([P2, P1]))
     V1 = FunctionSpace(mesh, P1)
     V2 = FunctionSpace(mesh, P2)
 

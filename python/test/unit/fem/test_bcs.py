@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 import ufl
-from basix.ufl import MixedElement, element
+from basix.ufl import mixed_element, element
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          TensorFunctionSpace, VectorFunctionSpace, dirichletbc,
                          form, locate_dofs_geometrical,
@@ -31,7 +31,7 @@ def test_locate_dofs_geometrical():
     P0 = element("Lagrange", mesh.ufl_cell().cellname(), p0)
     P1 = element("Lagrange", mesh.ufl_cell().cellname(), p1)
 
-    W = FunctionSpace(mesh, MixedElement([P0, P1]))
+    W = FunctionSpace(mesh, mixed_element([P0, P1]))
     V = W.sub(0).collapse()[0]
 
     with pytest.raises(RuntimeError):
@@ -246,7 +246,7 @@ def test_mixed_constant_bc(mesh_factory):
     mesh = func(*args)
     tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
-    TH = MixedElement([
+    TH = mixed_element([
         element("Lagrange", mesh.ufl_cell().cellname(), 1),
         element("Lagrange", mesh.ufl_cell().cellname(), 2)])
     W = FunctionSpace(mesh, TH)
@@ -282,7 +282,7 @@ def test_mixed_blocked_constant():
     tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
-    TH = MixedElement([
+    TH = mixed_element([
         element("Lagrange", mesh.ufl_cell().cellname(), 1),
         element("Lagrange", mesh.ufl_cell().cellname(), 2, rank=1)])
     W = FunctionSpace(mesh, TH)

@@ -10,7 +10,7 @@ import pytest
 import basix
 import dolfinx
 import ufl
-from basix.ufl import MixedElement, element
+from basix.ufl import mixed_element, element
 from dolfinx.fem import FunctionSpace, form
 from dolfinx.mesh import CellType, create_unit_cube, create_unit_square
 from ufl import grad, inner
@@ -113,7 +113,7 @@ def test_mixed_element_form(cell_type, sign, order):
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
 
-    U_el = MixedElement([
+    U_el = mixed_element([
         element(basix.ElementFamily.P, cell_type.name, order),
         element(basix.ElementFamily.N1E, cell_type.name, order)])
 
@@ -137,7 +137,7 @@ def test_mixed_element_vector_element_form(cell_type, sign, order):
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
 
-    U_el = MixedElement([
+    U_el = mixed_element([
         element(basix.ElementFamily.P, cell_type.name, order, rank=1),
         element(basix.ElementFamily.N1E, cell_type.name, order)])
 
