@@ -14,7 +14,7 @@ import pytest
 import basix
 import dolfinx.cpp
 import ufl
-from basix.ufl import VectorElement
+from basix.ufl import BlockedElement
 from dolfinx.cpp.la.petsc import create_matrix
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace, create_sparsity_pattern, form)
@@ -289,8 +289,8 @@ def test_assembly_into_quadrature_function():
 
     quadrature_degree = 2
     quadrature_points, wts = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
-    Q_element = VectorElement(
-        QuadratureElement("triangle", (), degree=quadrature_degree, scheme="default"))
+    Q_element = BlockedElement(
+        QuadratureElement("triangle", (), degree=quadrature_degree, scheme="default"), shape=(2, ))
     Q = FunctionSpace(mesh, Q_element)
     P2 = FunctionSpace(mesh, ("P", 2))
 
