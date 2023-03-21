@@ -14,15 +14,15 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 std::vector<double>
-fem::interpolation_coords(const FiniteElement& element, const mesh::Mesh& mesh,
+fem::interpolation_coords(const FiniteElement& element,
+                          const mesh::Geometry<double>& geometry,
                           std::span<const std::int32_t> cells)
 {
-  // Get mesh geometry data and the element coordinate map
-  const std::size_t gdim = mesh.geometry().dim();
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-
-  std::span<const double> x_g = mesh.geometry().x();
-  const CoordinateElement& cmap = mesh.geometry().cmaps()[0];
+  // Get geometry data and the element coordinate map
+  const std::size_t gdim = geometry.dim();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  std::span<const double> x_g = geometry.x();
+  const CoordinateElement& cmap = geometry.cmaps()[0];
   const std::size_t num_dofs_g = cmap.dim();
 
   // Get the interpolation points on the reference cells
@@ -71,49 +71,37 @@ fem::interpolation_coords(const FiniteElement& element, const mesh::Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 fem::nmm_interpolation_data_t fem::create_nonmatching_meshes_interpolation_data(
-    const fem::FunctionSpace& Vu, const fem::FunctionSpace& Vv,
-    std::span<const std::int32_t> cells)
+    const mesh::Geometry<double>& geometry0, const FiniteElement& element0,
+    const mesh::Mesh& mesh1, std::span<const std::int32_t> cells)
 {
-
   // Collect all the points at which values are needed to define the
   // interpolating function
-  auto element_u = Vu.element();
-  assert(element_u);
-  auto mesh = Vu.mesh();
-  assert(mesh);
-  const std::vector<double> coords_b
-      = interpolation_coords(*element_u, *mesh, cells);
-
-  namespace stdex = std::experimental;
-  using cmdspan2_t
-      = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-  using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-  cmdspan2_t coords(coords_b.data(), 3, coords_b.size() / 3);
+  const std::vector<double> coords
+      = interpolation_coords(element0, geometry0, cells);
 
   // Transpose interpolation coords
   std::vector<double> x(coords.size());
-  mdspan2_t _x(x.data(), coords_b.size() / 3, 3);
-  for (std::size_t j = 0; j < coords.extent(1); ++j)
-    for (std::size_t i = 0; i < 3; ++i)
-      _x(j, i) = coords(i, j);
+  std::size_t num_points = coords.size() / 3;
+  for (std::size_t i = 0; i < num_points; ++i)
+    for (std::size_t j = 0; j < 3; ++j)
+      x[3 * i + j] = coords[i + j * num_points];
 
   // Determine ownership of each point
-  auto mesh_v = Vv.mesh();
-  assert(mesh_v);
-  return geometry::determine_point_ownership(*mesh_v, x);
+  return geometry::determine_point_ownership(mesh1, x);
 }
 //-----------------------------------------------------------------------------
 fem::nmm_interpolation_data_t
-fem::create_nonmatching_meshes_interpolation_data(const FunctionSpace& Vu,
-                                                  const FunctionSpace& Vv)
+fem::create_nonmatching_meshes_interpolation_data(const mesh::Mesh& mesh0,
+                                                  const FiniteElement& element0,
+                                                  const mesh::Mesh& mesh1)
 {
-  assert(Vu.mesh());
-  int tdim = Vu.mesh()->topology().dim();
-  auto cell_map = Vu.mesh()->topology().index_map(tdim);
+  int tdim = mesh0.topology().dim();
+  auto cell_map = mesh0.topology().index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
   std::vector<std::int32_t> cells(num_cells, 0);
   std::iota(cells.begin(), cells.end(), 0);
-  return create_nonmatching_meshes_interpolation_data(Vu, Vv, cells);
+  return create_nonmatching_meshes_interpolation_data(mesh0.geometry(),
+                                                      element0, mesh1, cells);
 }
 //-----------------------------------------------------------------------------

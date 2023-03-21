@@ -40,13 +40,14 @@ void io(py::module& m)
 
   m.def(
       "extract_vtk_connectivity",
-      [](const dolfinx::mesh::Mesh& mesh)
+      [](const dolfinx::mesh::Geometry<double>& x, dolfinx::mesh::CellType cell)
       {
-        auto [cells, shape] = dolfinx::io::extract_vtk_connectivity(mesh);
+        auto [cells, shape] = dolfinx::io::extract_vtk_connectivity(x, cell);
         return as_pyarray(std::move(cells), shape);
       },
-      py::arg("mesh"),
-      "Extract the mesh topology with VTK ordering using geometry indices");
+      py::arg("x"), py::arg("celltype"),
+      "Extract the mesh topology with VTK ordering using "
+      "geometry indices");
 
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk, py::arg("type"),

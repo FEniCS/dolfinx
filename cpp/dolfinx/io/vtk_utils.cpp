@@ -195,28 +195,23 @@ io::vtk_mesh_from_space(const fem::FunctionSpace& V)
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
-io::extract_vtk_connectivity(const mesh::Mesh& mesh)
+io::extract_vtk_connectivity(const mesh::Geometry<double>& geometry,
+                             mesh::CellType cell_type)
 {
   // Get DOLFINx to VTK permutation
   // FIXME: Use better way to get number of nodes
-  const graph::AdjacencyList<std::int32_t>& dofmap_x = mesh.geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& dofmap_x = geometry.dofmap();
 
-  if (mesh.geometry().cmaps().size() > 1)
+  if (geometry.cmaps().size() > 1)
     throw std::runtime_error(
         "VTK I/O with multiple geometry maps not implemented.");
-  const std::size_t num_nodes = mesh.geometry().cmaps()[0].dim();
-  auto cell_types = mesh.topology().cell_types();
-  if (cell_types.size() > 1)
-    throw std::runtime_error("Multiple cell types in IO.");
-  mesh::CellType cell_type = cell_types.back();
+  const std::size_t num_nodes = geometry.cmaps()[0].dim();
 
   std::vector vtkmap
       = io::cells::transpose(io::cells::perm_vtk(cell_type, num_nodes));
 
   // Extract mesh 'nodes'
-  const int tdim = mesh.topology().dim();
-  const std::size_t num_cells = mesh.topology().index_map(tdim)->size_local()
-                                + mesh.topology().index_map(tdim)->num_ghosts();
+  const std::size_t num_cells = dofmap_x.num_nodes();
 
   // Build mesh connectivity
 
