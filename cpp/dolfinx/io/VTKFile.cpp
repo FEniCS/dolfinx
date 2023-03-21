@@ -420,7 +420,7 @@ void write_function(
   {
     std::vector<std::int64_t> tmp;
     std::tie(tmp, cshape) = io::extract_vtk_connectivity(
-        mesh0->geometry(), mesh0->topology().cell_type());
+        mesh0->geometry(), mesh0->topology().cell_types()[0]);
     cells.assign(tmp.begin(), tmp.end());
     const mesh::Geometry<double>& geometry = mesh0->geometry();
     x.assign(geometry.x().begin(), geometry.x().end());
@@ -784,8 +784,8 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
   }
 
   // Add mesh data to "Piece" node
-  const auto [cells, cshape]
-      = extract_vtk_connectivity(mesh.geometry(), mesh.topology().cell_type());
+  const auto [cells, cshape] = extract_vtk_connectivity(
+      mesh.geometry(), mesh.topology().cell_types()[0]);
   std::array<std::size_t, 2> xshape = {geometry.x().size() / 3, 3};
   std::vector<std::uint8_t> x_ghost(xshape[0], 0);
   std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
