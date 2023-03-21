@@ -293,17 +293,17 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] subdomains Subdomain markers
 /// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain
-template <typename T>
+template <typename T, typename U>
 Form<T, double> create_form(
     const ufcx_form& ufcx_form,
-    const std::vector<std::shared_ptr<const FunctionSpace<double>>>& spaces,
-    const std::vector<std::shared_ptr<const Function<T, double>>>& coefficients,
+    const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
+    const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
     const std::map<
         IntegralType,
         std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
-    std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr)
+    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   if (ufcx_form.rank != (int)spaces.size())
     throw std::runtime_error("Wrong number of argument spaces for Form.");
@@ -576,8 +576,8 @@ Form<T, double> create_form(
     sd.insert({itg, std::move(x)});
   }
 
-  return Form<T, double>(spaces, integral_data, coefficients, constants,
-                         needs_facet_permutations, mesh);
+  return Form<T, U>(spaces, integral_data, coefficients, constants,
+                    needs_facet_permutations, mesh);
 }
 
 /// @brief Create a Form from UFC input
@@ -590,21 +590,21 @@ Form<T, double> create_form(
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional
 /// @return A Form
-template <typename T>
-Form<T, double> create_form(
+template <typename T, typename U>
+Form<T, U> create_form(
     const ufcx_form& ufcx_form,
-    const std::vector<std::shared_ptr<const FunctionSpace<double>>>& spaces,
-    const std::map<std::string, std::shared_ptr<const Function<T, double>>>&
+    const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
+    const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::map<
         IntegralType,
         std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
-    std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr)
+    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   // Place coefficients in appropriate order
-  std::vector<std::shared_ptr<const Function<T, double>>> coeff_map;
+  std::vector<std::shared_ptr<const Function<T, U>>> coeff_map;
   for (const std::string& name : get_coefficient_names(ufcx_form))
   {
     if (auto it = coefficients.find(name); it != coefficients.end())
@@ -641,22 +641,22 @@ Form<T, double> create_form(
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional.
 /// @return A Form
-template <typename T>
-Form<T, double> create_form(
+template <typename T, typename U>
+Form<T, U> create_form(
     ufcx_form* (*fptr)(),
-    const std::vector<std::shared_ptr<const FunctionSpace<double>>>& spaces,
-    const std::map<std::string, std::shared_ptr<const Function<T, double>>>&
+    const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
+    const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::map<
         IntegralType,
         std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
-    std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr)
+    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   ufcx_form* form = fptr();
-  Form<T, double> L = create_form<T>(*form, spaces, coefficients, constants,
-                                     subdomains, mesh);
+  Form<T, U> L = create_form<T>(*form, spaces, coefficients, constants,
+                                subdomains, mesh);
   std::free(form);
   return L;
 }
