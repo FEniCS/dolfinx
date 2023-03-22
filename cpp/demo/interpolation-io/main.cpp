@@ -160,7 +160,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<double>> mesh,
   // component will appear continuous (continuous tangent component
   // between cells).
 #ifdef HAS_ADIOS2
-  io::VTXWriter outfile(mesh->comm(), filename.replace_extension("bp"), {u_l});
+  io::VTXWriter<double> outfile(mesh->comm(), filename.replace_extension("bp"), {u_l});
   outfile.write(0.0);
   outfile.close();
 #endif
@@ -188,13 +188,13 @@ int main(int argc, char* argv[])
     // Interpolate a function in a scalar Lagrange space and output the
     // result to file for visualisation
     interpolate_scalar<double>(mesh, "u");
-    // interpolate_scalar<std::complex<double>>(mesh, "u_complex");
+    interpolate_scalar<std::complex<double>>(mesh, "u_complex");
 
-    // // Interpolate a function in a H(curl) finite element space, and
-    // // then interpolate the H(curl) function in a discontinuous Lagrange
-    // // space for visualisation
-    // interpolate_nedelec<double>(mesh, "u_nedelec");
-    // interpolate_nedelec<std::complex<double>>(mesh, "u_nedelec_complex");
+    // Interpolate a function in a H(curl) finite element space, and
+    // then interpolate the H(curl) function in a discontinuous Lagrange
+    // space for visualisation
+    interpolate_nedelec<double>(mesh, "u_nedelec");
+    interpolate_nedelec<std::complex<double>>(mesh, "u_nedelec_complex");
   }
 
   MPI_Finalize();
