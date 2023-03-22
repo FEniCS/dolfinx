@@ -39,6 +39,34 @@ template <class... Ts>
 overload(Ts...) -> overload<Ts...>; // line not needed in C++20...
 
 //-----------------------------------------------------------------------------
+std::shared_ptr<const mesh::Mesh<double>>
+extract_common_mesh(const ADIOS2Writer::U& u)
+{
+  // Extract mesh from first function
+  assert(!u.empty());
+  auto mesh = std::visit(
+      [](const auto& u) { return u->function_space()->mesh(); }, u.front());
+  assert(mesh);
+
+  // Check that all functions share the same mesh
+  for (auto& v : u)
+  {
+    std::visit(
+        [&mesh](const auto& u)
+        {
+          if (mesh != u->function_space()->mesh())
+          {
+            throw std::runtime_error(
+                "ADIOS2Writer only supports functions sharing the same mesh");
+          }
+        },
+        v);
+  }
+
+  return mesh;
+}
+//-----------------------------------------------------------------------------
+
 /// Safe definition of an attribute. First check if it has already been
 /// defined and return it. If not defined create new attribute.
 template <class T>
@@ -681,32 +709,6 @@ ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-                           std::string tag, const U& u)
-    : ADIOS2Writer(comm, filename, tag, nullptr, u)
-{
-  // Extract mesh from first function
-  assert(!u.empty());
-  _mesh = std::visit([](const auto& u) { return u->function_space()->mesh(); },
-                     u.front());
-  assert(_mesh);
-
-  // Check that all functions share the same mesh
-  for (auto& v : u)
-  {
-    std::visit(
-        [&mesh = _mesh](const auto& u)
-        {
-          if (mesh != u->function_space()->mesh())
-          {
-            throw std::runtime_error(
-                "ADIOS2Writer only supports functions sharing the same mesh");
-          }
-        },
-        v);
-  }
-}
-//-----------------------------------------------------------------------------
 ADIOS2Writer::~ADIOS2Writer() { close(); }
 //-----------------------------------------------------------------------------
 void ADIOS2Writer::close()
@@ -730,7 +732,8 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
 //-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
                          const ADIOS2Writer::U& u, MeshPolicy policy)
-    : ADIOS2Writer(comm, filename, "Fides function writer", u),
+    : ADIOS2Writer(comm, filename, "Fides function writer",
+                   extract_common_mesh(u), u),
       _mesh_reuse_policy(policy)
 {
   if (u.empty())
@@ -829,7 +832,8 @@ VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
 //-----------------------------------------------------------------------------
 VTXWriter::VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
                      const ADIOS2Writer::U& u)
-    : ADIOS2Writer(comm, filename, "VTX function writer", u)
+    : ADIOS2Writer(comm, filename, "VTX function writer",
+                   extract_common_mesh(u), u)
 {
   if (u.empty())
     throw std::runtime_error("VTXWriter fem::Function list is empty");

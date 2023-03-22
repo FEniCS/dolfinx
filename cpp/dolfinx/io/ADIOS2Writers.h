@@ -52,7 +52,7 @@ public:
       std::variant<std::shared_ptr<const Fd32>, std::shared_ptr<const Fd64>,
                    std::shared_ptr<const Fc64>, std::shared_ptr<const Fc128>>>;
 
-private:
+protected:
   /// @brief Create an ADIOS2-based writer
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
@@ -63,7 +63,6 @@ private:
                std::string tag, std::shared_ptr<const mesh::Mesh<double>> mesh,
                const U& u);
 
-protected:
   /// @brief Create an ADIOS2-based writer for a mesh
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
@@ -71,14 +70,6 @@ protected:
   /// @param[in] mesh The mesh
   ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                std::string tag, std::shared_ptr<const mesh::Mesh<double>> mesh);
-
-  /// @brief Create an ADIOS2-based writer for a list of functions
-  /// @param[in] comm The MPI communicator
-  /// @param[in] filename Name of output file
-  /// @param[in] tag The ADIOS2 object name
-  /// @param[in] u List of functions
-  ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-               std::string tag, const U& u);
 
   /// @brief Move constructor
   ADIOS2Writer(ADIOS2Writer&& writer) = default;
