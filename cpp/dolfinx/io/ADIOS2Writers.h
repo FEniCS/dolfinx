@@ -186,6 +186,7 @@ private:
   MeshPolicy _mesh_reuse_policy;
 };
 
+/// @privatesection
 namespace impl
 {
 /// String suffix for real and complex components of a vector-valued
@@ -498,7 +499,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
 /// @note Only supports (discontinuous) Lagrange functions
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
-/// @param[in] u The function
+/// @param[in] V The function space
 template <typename T>
 void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
                                const fem::FunctionSpace<T>& V)
