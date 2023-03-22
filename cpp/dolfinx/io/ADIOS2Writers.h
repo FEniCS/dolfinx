@@ -8,6 +8,7 @@
 
 #ifdef HAS_ADIOS2
 
+#include <adios2.h>
 #include <cassert>
 #include <complex>
 #include <filesystem>
@@ -17,12 +18,12 @@
 #include <variant>
 #include <vector>
 
-namespace adios2
-{
-class ADIOS;
-class IO;
-class Engine;
-} // namespace adios2
+// namespace adios2
+// {
+// class ADIOS;
+// class IO;
+// class Engine;
+// } // namespace adios2
 
 namespace dolfinx::fem
 {
@@ -40,14 +41,16 @@ namespace dolfinx::io
 {
 
 /// Base class for ADIOS2-based writers
+/// @tparam T Geometry type for common mesh::Mesh.
+template <typename T>
 class ADIOS2Writer
 {
 public:
   /// @privatesection
-  using Fd32 = fem::Function<float, double>;
-  using Fd64 = fem::Function<double, double>;
-  using Fc64 = fem::Function<std::complex<float>, double>;
-  using Fc128 = fem::Function<std::complex<double>, double>;
+  using Fd32 = fem::Function<float, T>;
+  using Fd64 = fem::Function<double, T>;
+  using Fc64 = fem::Function<std::complex<float>, T>;
+  using Fc128 = fem::Function<std::complex<double>, T>;
   using U = std::vector<
       std::variant<std::shared_ptr<const Fd32>, std::shared_ptr<const Fd64>,
                    std::shared_ptr<const Fc64>, std::shared_ptr<const Fc128>>>;
@@ -60,8 +63,16 @@ protected:
   /// @param[in] mesh
   /// @param[in] u
   ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-               std::string tag, std::shared_ptr<const mesh::Mesh<double>> mesh,
-               const U& u);
+               std::string tag, std::shared_ptr<const mesh::Mesh<T>> mesh,
+               const U& u)
+      : _adios(std::make_unique<adios2::ADIOS>(comm)),
+        _io(std::make_unique<adios2::IO>(_adios->DeclareIO(tag))),
+        _engine(std::make_unique<adios2::Engine>(
+            _io->Open(filename, adios2::Mode::Write))),
+        _mesh(mesh), _u(u)
+  {
+    _io->SetEngine("BPFile");
+  }
 
   /// @brief Create an ADIOS2-based writer for a mesh
   /// @param[in] comm The MPI communicator
@@ -69,7 +80,11 @@ protected:
   /// @param[in] tag The ADIOS2 object name
   /// @param[in] mesh The mesh
   ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-               std::string tag, std::shared_ptr<const mesh::Mesh<double>> mesh);
+               std::string tag, std::shared_ptr<const mesh::Mesh<T>> mesh)
+      : ADIOS2Writer(comm, filename, tag, mesh, {})
+  {
+    // Do nothing
+  }
 
   /// @brief Move constructor
   ADIOS2Writer(ADIOS2Writer&& writer) = default;
@@ -78,7 +93,7 @@ protected:
   ADIOS2Writer(const ADIOS2Writer&) = delete;
 
   /// @brief Destructor
-  ~ADIOS2Writer();
+  ~ADIOS2Writer() { close(); }
 
   /// @brief Move assignment
   ADIOS2Writer& operator=(ADIOS2Writer&& writer) = default;
@@ -88,20 +103,27 @@ protected:
 
 public:
   /// @brief  Close the file
-  void close();
+  void close()
+  {
+    assert(_engine);
+    // The reason this looks odd is that ADIOS2 uses `operator bool()`
+    // to test if the engine is open
+    if (*_engine)
+      _engine->Close();
+  }
 
 protected:
   std::unique_ptr<adios2::ADIOS> _adios;
   std::unique_ptr<adios2::IO> _io;
   std::unique_ptr<adios2::Engine> _engine;
-  std::shared_ptr<const mesh::Mesh<double>> _mesh;
+  std::shared_ptr<const mesh::Mesh<T>> _mesh;
   U _u;
 };
 
 /// @brief Output of meshes and functions compatible with the Fides
 /// Paraview reader, see
 /// https://fides.readthedocs.io/en/latest/paraview/paraview.html.
-class FidesWriter : public ADIOS2Writer
+class FidesWriter : public ADIOS2Writer<double>
 {
 public:
   /// Mesh reuse policy
@@ -163,7 +185,7 @@ private:
 /// https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#using-vtk-and-paraview.
 ///
 /// The output files can be visualized using ParaView.
-class VTXWriter : public ADIOS2Writer
+class VTXWriter : public ADIOS2Writer<double>
 {
 public:
   /// @brief Create a VTX writer for a mesh.
