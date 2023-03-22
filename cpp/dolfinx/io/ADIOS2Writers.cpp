@@ -171,18 +171,19 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] mesh The mesh
+template <typename T>
 void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
-                    const mesh::Mesh<double>& mesh)
+                    const mesh::Mesh<T>& mesh)
 {
-  const mesh::Geometry<double>& geometry = mesh.geometry();
+  const mesh::Geometry<T>& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
 
   // "Put" geometry
   std::shared_ptr<const common::IndexMap> x_map = geometry.index_map();
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
-  adios2::Variable<double> local_geometry
-      = define_variable<double>(io, "geometry", {}, {}, {num_vertices, 3});
-  engine.Put<double>(local_geometry, geometry.x().data());
+  adios2::Variable<T> local_geometry
+      = define_variable<T>(io, "geometry", {}, {}, {num_vertices, 3});
+  engine.Put<T>(local_geometry, geometry.x().data());
 
   // Put number of nodes. The mesh data is written with local indices,
   // therefore we need the ghost vertices.
@@ -242,8 +243,9 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] u The function
+template <typename T>
 void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
-                               const fem::FunctionSpace<double>& V)
+                               const fem::FunctionSpace<T>& V)
 {
   auto mesh = V.mesh();
   assert(mesh);
@@ -272,8 +274,8 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 
   // Define ADIOS2 variables for geometry, topology, celltypes and
   // corresponding VTK data
-  adios2::Variable<double> local_geometry
-      = define_variable<double>(io, "geometry", {}, {}, {num_dofs, 3});
+  adios2::Variable<T> local_geometry
+      = define_variable<T>(io, "geometry", {}, {}, {num_dofs, 3});
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
       io, "connectivity", {}, {}, {vtkshape[0], vtkshape[1] + 1});
   adios2::Variable<std::uint32_t> cell_type
@@ -288,7 +290,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(elements, vtkshape[0]);
   engine.Put<std::uint32_t>(
       cell_type, cells::get_vtk_cell_type(mesh->topology().cell_type(), tdim));
-  engine.Put<double>(local_geometry, x.data());
+  engine.Put<T>(local_geometry, x.data());
   engine.Put<std::int64_t>(local_topology, cells.data());
 
   // Node global ids
@@ -437,8 +439,8 @@ std::string to_fides_cell(mesh::CellType type)
 
 /// Pack Function data at vertices. The mesh and the function must both
 /// be 'P1'
-template <typename T>
-std::vector<T> pack_function_data(const fem::Function<T, double>& u)
+template <typename T, typename U>
+std::vector<T> pack_function_data(const fem::Function<T, U>& u)
 {
   auto V = u.function_space();
   assert(V);
@@ -446,7 +448,7 @@ std::vector<T> pack_function_data(const fem::Function<T, double>& u)
   assert(dofmap);
   auto mesh = V->mesh();
   assert(mesh);
-  const mesh::Geometry<double>& geometry = mesh->geometry();
+  const mesh::Geometry<U>& geometry = mesh->geometry();
   const mesh::Topology& topology = mesh->topology();
 
   // The Function and the mesh must have identical element_dof_layouts
@@ -491,9 +493,9 @@ std::vector<T> pack_function_data(const fem::Function<T, double>& u)
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] u The function to write
-template <typename T>
+template <typename T, typename U>
 void fides_write_data(adios2::IO& io, adios2::Engine& engine,
-                      const fem::Function<T, double>& u)
+                      const fem::Function<T, U>& u)
 {
   // FIXME: There is an implicit assumptions that u and the mesh have
   // the same ElementDoflayout
@@ -542,21 +544,21 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
   else
   {
     // ---- Complex
-    using U = typename T::value_type;
+    using X = typename T::value_type;
 
-    std::vector<U> data_real(data.size()), data_imag(data.size());
+    std::vector<X> data_real(data.size()), data_imag(data.size());
 
-    adios2::Variable<U> local_output_r = define_variable<U>(
+    adios2::Variable<X> local_output_r = define_variable<X>(
         io, u.name + field_ext[0], {}, {}, {num_vertices, num_components});
     std::transform(data.begin(), data.end(), data_real.begin(),
-                   [](auto& x) -> U { return std::real(x); });
-    engine.Put<U>(local_output_r, data_real.data());
+                   [](auto& x) -> X { return std::real(x); });
+    engine.Put<X>(local_output_r, data_real.data());
 
-    adios2::Variable<U> local_output_c = define_variable<U>(
+    adios2::Variable<X> local_output_c = define_variable<X>(
         io, u.name + field_ext[1], {}, {}, {num_vertices, num_components});
     std::transform(data.begin(), data.end(), data_imag.begin(),
-                   [](auto& x) -> U { return std::imag(x); });
-    engine.Put<U>(local_output_c, data_imag.data());
+                   [](auto& x) -> X { return std::imag(x); });
+    engine.Put<X>(local_output_c, data_imag.data());
     engine.PerformPuts();
   }
 }
@@ -566,18 +568,19 @@ void fides_write_data(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] io The ADIOS2 IO
 /// @param[in] engine The ADIOS2 engine
 /// @param[in] mesh The mesh
+template <typename T>
 void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
-                      const mesh::Mesh<double>& mesh)
+                      const mesh::Mesh<T>& mesh)
 {
-  const mesh::Geometry<double>& geometry = mesh.geometry();
+  const mesh::Geometry<T>& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
 
   // "Put" geometry data
   auto x_map = geometry.index_map();
   const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
-  adios2::Variable<double> local_geometry
-      = define_variable<double>(io, "points", {}, {}, {num_vertices, 3});
-  engine.Put<double>(local_geometry, geometry.x().data());
+  adios2::Variable<T> local_geometry
+      = define_variable<T>(io, "points", {}, {}, {num_vertices, 3});
+  engine.Put<T>(local_geometry, geometry.x().data());
 
   // TODO: The DOLFINx and VTK topology are the same for some cell types
   // - no need to repack via extract_vtk_connectivity in these cases
@@ -602,10 +605,10 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
 /// Initialize mesh related attributes for the ADIOS2 file used in Fides
 /// @param[in] io The ADIOS2 IO
 /// @param[in] mesh The mesh
-void fides_initialize_mesh_attributes(adios2::IO& io,
-                                      const mesh::Mesh<double>& mesh)
+template <typename T>
+void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh<T>& mesh)
 {
-  const mesh::Geometry<double>& geometry = mesh.geometry();
+  const mesh::Geometry<T>& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
 
   // Check that mesh is first order mesh
@@ -699,40 +702,6 @@ void fides_initialize_function_attributes(adios2::IO& io,
 //-----------------------------------------------------------------------------
 } // namespace
 
-//-----------------------------------------------------------------------------
-// ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path&
-// filename,
-//                            std::string tag,
-//                            std::shared_ptr<const mesh::Mesh<double>> mesh,
-//                            const U& u)
-//     : _adios(std::make_unique<adios2::ADIOS>(comm)),
-//       _io(std::make_unique<adios2::IO>(_adios->DeclareIO(tag))),
-//       _engine(std::make_unique<adios2::Engine>(
-//           _io->Open(filename, adios2::Mode::Write))),
-//       _mesh(mesh), _u(u)
-// {
-//   _io->SetEngine("BPFile");
-// }
-//-----------------------------------------------------------------------------
-// ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path&
-// filename,
-//                            std::string tag,
-//                            std::shared_ptr<const mesh::Mesh<double>> mesh)
-//     : ADIOS2Writer(comm, filename, tag, mesh, {})
-// {
-//   // Do nothing
-// }
-//-----------------------------------------------------------------------------
-// ADIOS2Writer::~ADIOS2Writer() { close(); }
-//-----------------------------------------------------------------------------
-// void ADIOS2Writer::close()
-// {
-//   assert(_engine);
-//   // This looks odd because ADIOS2 uses `operator bool()` to test if the
-//   // engine is open
-//   if (*_engine)
-//     _engine->Close();
-// }
 //-----------------------------------------------------------------------------
 FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
                          std::shared_ptr<const mesh::Mesh<double>> mesh)
