@@ -43,10 +43,8 @@ int main(int argc, char* argv[])
     auto V_hex = std::make_shared<fem::FunctionSpace<double>>(
         fem::create_functionspace(mesh_hex, element_hex, 3));
 
-    auto u_tet = std::make_shared<fem::Function<T, double>
->(V_tet);
-    auto u_hex = std::make_shared<fem::Function<T, double>
->(V_hex);
+    auto u_tet = std::make_shared<fem::Function<T, double>>(V_tet);
+    auto u_hex = std::make_shared<fem::Function<T, double>>(V_hex);
 
     auto fun = [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
     {
@@ -74,10 +72,10 @@ int main(int argc, char* argv[])
     u_hex->interpolate(*u_tet, nmm_interpolation_data);
 
 #ifdef HAS_ADIOS2
-    io::VTXWriter write_tet(mesh_tet->comm(), "u_tet.vtx", {u_tet});
+    io::VTXWriter<double> write_tet(mesh_tet->comm(), "u_tet.vtx", {u_tet});
     write_tet.write(0.0);
 
-    io::VTXWriter write_hex(mesh_hex->comm(), "u_hex.vtx", {u_hex});
+    io::VTXWriter<double> write_hex(mesh_hex->comm(), "u_hex.vtx", {u_hex});
     write_hex.write(0.0);
 #endif
   }
