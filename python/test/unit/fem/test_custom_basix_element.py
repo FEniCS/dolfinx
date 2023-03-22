@@ -173,15 +173,13 @@ def test_vector_copy_degree1(cell_type, element_family):
     def func(x):
         return x[:tdim]
 
-    if cell_type == CellType.hexahedron and element_family == basix.ElementFamily.BDM:
-        e1 = basix.ufl.element(
-            element_family, getattr(basix.CellType, cell_type.name), 1, dpc_variant=basix.DPCVariant.legendre)
-    else:
-        e1 = basix.ufl.element(
-            element_family, getattr(basix.CellType, cell_type.name), 1)
+    e1 = basix.ufl.element(
+        element_family, getattr(basix.CellType, cell_type.name), 1)
+
     e2 = basix.ufl.custom_element(
-        e1.cell_type, e1.value_shape, e1.wcoeffs, e1.x, e1.M, 0, e1.map_type, e1.sobolev_space,
-        e1.discontinuous, e1.highest_complete_degree, e1.highest_degree)
+        e1.element.cell_type, e1.element.value_shape, e1.element.wcoeffs, e1.element.x,
+        e1.element.M, 0, e1.element.map_type, e1.element.sobolev_space,
+        e1.element.discontinuous, e1.element.highest_complete_degree, e1.element.highest_degree)
 
     space1 = FunctionSpace(mesh, e1)
     space2 = FunctionSpace(mesh, e2)
@@ -217,8 +215,9 @@ def test_scalar_copy_degree1(cell_type, element_family):
     e1 = basix.ufl.element(
         element_family, getattr(basix.CellType, cell_type.name), 1)
     e2 = basix.ufl.custom_element(
-        e1.cell_type, e1.value_shape, e1.wcoeffs, e1.x, e1.M, 0, e1.map_type, e1.sobolev_space,
-        e1.discontinuous, e1.highest_complete_degree, e1.degree)
+        e1.element.cell_type, e1.element.value_shape, e1.element.wcoeffs, e1.element.x,
+        e1.element.M, 0, e1.element.map_type, e1.element.sobolev_space,
+        e1.element.discontinuous, e1.element.highest_complete_degree, e1.element.highest_degree)
 
     space1 = FunctionSpace(mesh, e1)
     space2 = FunctionSpace(mesh, e2)
