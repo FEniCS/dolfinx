@@ -187,7 +187,7 @@ private:
 };
 
 /// @privatesection
-namespace impl
+namespace impl_vtx
 {
 /// String suffix for real and complex components of a vector-valued
 /// field
@@ -495,7 +495,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 
   engine.PerformPuts();
 }
-} // namespace impl
+} // namespace impl_vtx
 
 /// @brief Writer for meshes and functions using the ADIOS2 VTX format,
 /// see
@@ -521,8 +521,8 @@ public:
       : ADIOS2Writer<T>(comm, filename, "VTX mesh writer", mesh)
   {
     // Define VTK scheme attribute for mesh
-    std::string vtk_scheme = impl::create_vtk_schema({}, {}).str();
-    impl::define_attribute<std::string>(*this->_io, "vtk.xml", vtk_scheme);
+    std::string vtk_scheme = impl_vtx::create_vtk_schema({}, {}).str();
+    impl_vtx::define_attribute<std::string>(*this->_io, "vtk.xml", vtk_scheme);
   }
 
   /// @brief Create a VTX writer for list of functions
@@ -535,7 +535,7 @@ public:
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             const typename ADIOS2Writer<T>::U& u)
       : ADIOS2Writer<T>(comm, filename, "VTX function writer",
-                        impl::extract_common_mesh<T>(u), u)
+                        impl_vtx::extract_common_mesh<T>(u), u)
   {
     if (u.empty())
       throw std::runtime_error("VTXWriter fem::Function list is empty");
@@ -587,9 +587,9 @@ public:
     }
 
     // Define VTK scheme attribute for set of functions
-    std::vector<std::string> names = impl::extract_function_names<T>(u);
-    std::string vtk_scheme = impl::create_vtk_schema(names, {}).str();
-    impl::define_attribute<std::string>(*this->_io, "vtk.xml", vtk_scheme);
+    std::vector<std::string> names = impl_vtx::extract_function_names<T>(u);
+    std::string vtk_scheme = impl_vtx::create_vtk_schema(names, {}).str();
+    impl_vtx::define_attribute<std::string>(*this->_io, "vtk.xml", vtk_scheme);
   }
 
   // Copy constructor
@@ -614,35 +614,41 @@ public:
     assert(this->_io);
     assert(this->_engine);
     adios2::Variable<double> var_step
-        = impl::define_variable<double>(*this->_io, "step");
+        = impl_vtx::define_variable<double>(*this->_io, "step");
 
     this->_engine->BeginStep();
     this->_engine->template Put<double>(var_step, t);
 
     // If we have no functions write the mesh to file
     if (this->_u.empty())
-      impl::vtx_write_mesh(*this->_io, *this->_engine, *this->_mesh);
+      impl_vtx::vtx_write_mesh(*this->_io, *this->_engine, *this->_mesh);
     else
     {
       // Write a single mesh for functions as they share finite element
       std::visit(
           [&](const auto& u)
           {
-            impl::vtx_write_mesh_from_space<T>(*this->_io, *this->_engine,
-                                               *u->function_space());
+            impl_vtx::vtx_write_mesh_from_space<T>(*this->_io, *this->_engine,
+                                                   *u->function_space());
           },
           this->_u[0]);
 
       // Write function data for each function to file
       for (auto& v : this->_u)
-        std::visit([&](const auto& u)
-                   { impl::vtx_write_data(*this->_io, *this->_engine, *u); },
-                   v);
+        std::visit(
+            [&](const auto& u)
+            { impl_vtx::vtx_write_data(*this->_io, *this->_engine, *u); },
+            v);
     }
 
     this->_engine->EndStep();
   }
 };
+
+/// Type deduction
+template <typename U, typename T>
+VTXWriter(MPI_Comm comm, U filename, T mesh) -> VTXWriter<
+    typename std::remove_cvref<typename T::element_type>::type::value_type>;
 
 } // namespace dolfinx::io
 

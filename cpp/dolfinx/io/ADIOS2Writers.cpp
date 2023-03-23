@@ -430,8 +430,8 @@ void fides_initialize_function_attributes(adios2::IO& io,
 /// Create VTK xml scheme to be interpreted by the VTX reader
 /// https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#saving-the-vtk-xml-data-model
 std::stringstream
-io::impl::create_vtk_schema(const std::vector<std::string>& point_data,
-                            const std::vector<std::string>& cell_data)
+io::impl_vtx::create_vtk_schema(const std::vector<std::string>& point_data,
+                                const std::vector<std::string>& cell_data)
 {
   // Create XML
   pugi::xml_document xml_schema;

@@ -26,6 +26,7 @@ int main(int argc, char* argv[])
     auto mesh_tet = std::make_shared<mesh::Mesh<double>>(
         mesh::create_box(comm, {{{0, 0, 0}, {1, 1, 1}}}, {20, 20, 20},
                          mesh::CellType::tetrahedron));
+
     // Create a hexahedral mesh
     auto mesh_hex = std::make_shared<mesh::Mesh<double>>(
         mesh::create_box(comm, {{{0, 0, 0}, {1, 1, 1}}}, {15, 15, 15},
@@ -77,6 +78,13 @@ int main(int argc, char* argv[])
 
     io::VTXWriter<double> write_hex(mesh_hex->comm(), "u_hex.vtx", {u_hex});
     write_hex.write(0.0);
+
+    auto mesh
+        = std::make_shared<mesh::Mesh<float>>(mesh::create_rectangle<float>(
+            comm, {{{0, 0}, {1, 1}}}, {20, 20}, mesh::CellType::triangle));
+    io::VTXWriter write_msh(mesh->comm(), "foo.vtx", mesh);
+    write_msh.write(0.0);
+
 #endif
   }
   MPI_Finalize();
