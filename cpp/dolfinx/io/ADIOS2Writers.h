@@ -305,9 +305,9 @@ extract_function_names(const typename ADIOS2Writer<T>::U& u)
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] u The function
-template <typename T>
+template <typename T, typename X>
 void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
-                    const fem::Function<T, double>& u)
+                    const fem::Function<T, X>& u)
 {
   // Get function data array and information about layout
   assert(u.x());
@@ -385,7 +385,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
   const auto [vtkcells, shape] = io::extract_vtk_connectivity(
-      mesh.geometry(), mesh.topology().cell_type());
+      mesh.geometry().dofmap(), mesh.topology().cell_type());
 
   // Add cell metadata
   const int tdim = topology.dim();
@@ -447,53 +447,53 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   const auto [x, xshape, x_id, x_ghost, vtk, vtkshape]
       = io::vtk_mesh_from_space(V);
 
-  std::uint32_t num_dofs = xshape[0];
+  // std::uint32_t num_dofs = xshape[0];
 
-  // -- Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
-  // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
-  // etc, is the node index.
+  // // -- Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
+  // // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
+  // // etc, is the node index.
 
-  // Create vector, setting all entries to nodes per cell (vtk.shape(1))
-  std::vector<std::int64_t> cells(vtkshape[0] * (vtkshape[1] + 1), vtkshape[1]);
+  // // Create vector, setting all entries to nodes per cell (vtk.shape(1))
+  // std::vector<std::int64_t> cells(vtkshape[0] * (vtkshape[1] + 1), vtkshape[1]);
 
-  // Set the [v0_0,...., v0_N0, v1_0,...., v1_N1,....] data
-  for (std::size_t c = 0; c < vtkshape[0]; ++c)
-  {
-    std::span vtkcell(vtk.data() + c * vtkshape[1], vtkshape[1]);
-    std::span cell(cells.data() + c * (vtkshape[1] + 1), vtkshape[1] + 1);
-    std::copy(vtkcell.begin(), vtkcell.end(), std::next(cell.begin()));
-  }
+  // // Set the [v0_0,...., v0_N0, v1_0,...., v1_N1,....] data
+  // for (std::size_t c = 0; c < vtkshape[0]; ++c)
+  // {
+  //   std::span vtkcell(vtk.data() + c * vtkshape[1], vtkshape[1]);
+  //   std::span cell(cells.data() + c * (vtkshape[1] + 1), vtkshape[1] + 1);
+  //   std::copy(vtkcell.begin(), vtkcell.end(), std::next(cell.begin()));
+  // }
 
-  // Define ADIOS2 variables for geometry, topology, celltypes and
-  // corresponding VTK data
-  adios2::Variable<T> local_geometry
-      = define_variable<T>(io, "geometry", {}, {}, {num_dofs, 3});
-  adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
-      io, "connectivity", {}, {}, {vtkshape[0], vtkshape[1] + 1});
-  adios2::Variable<std::uint32_t> cell_type
-      = define_variable<std::uint32_t>(io, "types");
-  adios2::Variable<std::uint32_t> vertices = define_variable<std::uint32_t>(
-      io, "NumberOfNodes", {adios2::LocalValueDim});
-  adios2::Variable<std::uint32_t> elements = define_variable<std::uint32_t>(
-      io, "NumberOfEntities", {adios2::LocalValueDim});
+  // // Define ADIOS2 variables for geometry, topology, celltypes and
+  // // corresponding VTK data
+  // adios2::Variable<T> local_geometry
+  //     = define_variable<T>(io, "geometry", {}, {}, {num_dofs, 3});
+  // adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
+  //     io, "connectivity", {}, {}, {vtkshape[0], vtkshape[1] + 1});
+  // adios2::Variable<std::uint32_t> cell_type
+  //     = define_variable<std::uint32_t>(io, "types");
+  // adios2::Variable<std::uint32_t> vertices = define_variable<std::uint32_t>(
+  //     io, "NumberOfNodes", {adios2::LocalValueDim});
+  // adios2::Variable<std::uint32_t> elements = define_variable<std::uint32_t>(
+  //     io, "NumberOfEntities", {adios2::LocalValueDim});
 
-  // Write mesh information to file
-  engine.Put<std::uint32_t>(vertices, num_dofs);
-  engine.Put<std::uint32_t>(elements, vtkshape[0]);
-  engine.Put<std::uint32_t>(
-      cell_type, cells::get_vtk_cell_type(mesh->topology().cell_type(), tdim));
-  engine.Put<T>(local_geometry, x.data());
-  engine.Put<std::int64_t>(local_topology, cells.data());
+  // // Write mesh information to file
+  // engine.Put<std::uint32_t>(vertices, num_dofs);
+  // engine.Put<std::uint32_t>(elements, vtkshape[0]);
+  // engine.Put<std::uint32_t>(
+  //     cell_type, cells::get_vtk_cell_type(mesh->topology().cell_type(), tdim));
+  // engine.Put<T>(local_geometry, x.data());
+  // engine.Put<std::int64_t>(local_topology, cells.data());
 
-  // Node global ids
-  adios2::Variable<std::int64_t> orig_id = define_variable<std::int64_t>(
-      io, "vtkOriginalPointIds", {}, {}, {x_id.size()});
-  engine.Put<std::int64_t>(orig_id, x_id.data());
-  adios2::Variable<std::uint8_t> ghost = define_variable<std::uint8_t>(
-      io, "vtkGhostType", {}, {}, {x_ghost.size()});
-  engine.Put<std::uint8_t>(ghost, x_ghost.data());
+  // // Node global ids
+  // adios2::Variable<std::int64_t> orig_id = define_variable<std::int64_t>(
+  //     io, "vtkOriginalPointIds", {}, {}, {x_id.size()});
+  // engine.Put<std::int64_t>(orig_id, x_id.data());
+  // adios2::Variable<std::uint8_t> ghost = define_variable<std::uint8_t>(
+  //     io, "vtkGhostType", {}, {}, {x_ghost.size()});
+  // engine.Put<std::uint8_t>(ghost, x_ghost.data());
 
-  engine.PerformPuts();
+  // engine.PerformPuts();
 }
 } // namespace impl
 

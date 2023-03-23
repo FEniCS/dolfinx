@@ -307,7 +307,7 @@ public:
   }
 
   /// The mesh
-  std::shared_ptr<const mesh::Mesh<double>> mesh() const { return _mesh; }
+  std::shared_ptr<const mesh::Mesh<T>> mesh() const { return _mesh; }
 
   /// The finite element
   std::shared_ptr<const FiniteElement> element() const { return _element; }
@@ -317,7 +317,7 @@ public:
 
 private:
   // The mesh
-  std::shared_ptr<const mesh::Mesh<double>> _mesh;
+  std::shared_ptr<const mesh::Mesh<T>> _mesh;
 
   // The finite element
   std::shared_ptr<const FiniteElement> _element;

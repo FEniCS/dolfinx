@@ -102,12 +102,12 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
 
   namespace stdex = std::experimental;
   using mdspan2_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
-  using cmdspan4_t = stdex::mdspan<T, stdex::dextents<std::size_t, 4>>;
+  using cmdspan4_t = stdex::mdspan<double, stdex::dextents<std::size_t, 4>>;
 
   // Tabulate basis functions at node reference coordinates
   const std::array<std::size_t, 4> phi_shape
       = cmap.tabulate_shape(0, Xshape[0]);
-  std::vector<T> phi_b(
+  std::vector<double> phi_b(
       std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
   cmdspan4_t phi_full(phi_b.data(), phi_shape);
   cmap.tabulate(0, X, Xshape, phi_b);
@@ -241,7 +241,7 @@ vtk_mesh_from_space(const fem::FunctionSpace<T>& V)
 /// @note Even if the indices are local (int32), both Fides and VTX
 /// require int64 as local input
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
-extract_vtk_connectivity(const mesh::Geometry<double>& geometry,
+extract_vtk_connectivity(const graph::AdjacencyList<std::int32_t>& dofmap_x,
                          mesh::CellType cell_type);
 } // namespace io
 } // namespace dolfinx

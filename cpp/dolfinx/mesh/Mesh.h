@@ -268,7 +268,8 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 
   Geometry geometry
       = create_geometry(comm, topology, element, cell_nodes, x, xshape[1]);
-  return Mesh<double>(comm, std::move(topology), std::move(geometry));
+  return Mesh<typename U::value_type>(comm, std::move(topology),
+                                      std::move(geometry));
 }
 
 /// @brief Create a mesh using the default partitioner.

@@ -316,7 +316,7 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
   const std::int32_t num_cells = topology.index_map(tdim)->size_local();
   const int num_nodes = geometry.cmap().dim();
   const auto [cells, shape] = io::extract_vtk_connectivity(
-      mesh.geometry(), mesh.topology().cell_type());
+      mesh.geometry().dofmap(), mesh.topology().cell_type());
 
   // "Put" topology data in the result in the ADIOS2 file
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(

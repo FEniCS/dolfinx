@@ -621,7 +621,7 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
   {
     return create_mesh(
         comm, graph::regular_adjacency_list(std::vector<std::int64_t>(), 4),
-        element, std::vector<double>(), {0, 2}, partitioner);
+        element, std::vector<T>(), {0, 2}, partitioner);
   }
 
   const std::size_t nx = n[0];

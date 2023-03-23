@@ -339,8 +339,8 @@ void add_mesh(std::span<const double> x, std::array<std::size_t, 2> /*xshape*/,
 //----------------------------------------------------------------------------
 template <typename T>
 void write_function(
-    const std::vector<std::reference_wrapper<const fem::Function<T, double>
->>& u,
+    const std::vector<std::reference_wrapper<const fem::Function<T, double>>>&
+        u,
     double time, pugi::xml_document* xml_doc,
     const std::filesystem::path& filename)
 {
@@ -422,7 +422,7 @@ void write_function(
   {
     std::vector<std::int64_t> tmp;
     std::tie(tmp, cshape) = io::extract_vtk_connectivity(
-        mesh0->geometry(), mesh0->topology().cell_type());
+        mesh0->geometry().dofmap(), mesh0->topology().cell_type());
     cells.assign(tmp.begin(), tmp.end());
     const mesh::Geometry<double>& geometry = mesh0->geometry();
     x.assign(geometry.x().begin(), geometry.x().end());
@@ -773,8 +773,8 @@ void io::VTKFile::write(const mesh::Mesh<double>& mesh, double time)
   piece_node.append_attribute("NumberOfCells") = num_cells;
 
   // Add mesh data to "Piece" node
-  const auto [cells, cshape]
-      = extract_vtk_connectivity(mesh.geometry(), mesh.topology().cell_type());
+  const auto [cells, cshape] = extract_vtk_connectivity(
+      mesh.geometry().dofmap(), mesh.topology().cell_type());
   std::array<std::size_t, 2> xshape = {geometry.x().size() / 3, 3};
   std::vector<std::uint8_t> x_ghost(xshape[0], 0);
   std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
@@ -838,15 +838,16 @@ void io::VTKFile::write(const mesh::Mesh<double>& mesh, double time)
 }
 //----------------------------------------------------------------------------
 void io::VTKFile::write_functions(
-    const std::vector<std::reference_wrapper<const fem::Function<double, double>>>& u,
+    const std::vector<
+        std::reference_wrapper<const fem::Function<double, double>>>& u,
     double time)
 {
   write_function(u, time, _pvd_xml.get(), _filename);
 }
 //----------------------------------------------------------------------------
 void io::VTKFile::write_functions(
-    const std::vector<
-        std::reference_wrapper<const fem::Function<std::complex<double>, double>>>& u,
+    const std::vector<std::reference_wrapper<
+        const fem::Function<std::complex<double>, double>>>& u,
     double time)
 {
   write_function(u, time, _pvd_xml.get(), _filename);
