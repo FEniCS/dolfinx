@@ -146,8 +146,7 @@ V)
       .def(py::init<
                std::shared_ptr<const dolfinx::fem::FunctionSpace<double>>>(),
            "Create a function on the given function space")
-      .def(py::init<std::shared_ptr<dolfinx::fem::FunctionSpace<double>
-      >,
+      .def(py::init<std::shared_ptr<dolfinx::fem::FunctionSpace<double>>,
                     std::shared_ptr<dolfinx::la::Vector<T>>>())
       .def_readwrite("name", &dolfinx::fem::Function<T, double>::name)
       .def("sub", &dolfinx::fem::Function<T, double>::sub,
@@ -365,9 +364,8 @@ void declare_form(py::module& m, const std::string& type)
 {
   // dolfinx::fem::Form
   std::string pyclass_name_form = std::string("Form_") + type;
-  py::class_<dolfinx::fem::Form<T, double>
-, std::shared_ptr<dolfinx::fem::Form<T, double>
->>(
+  py::class_<dolfinx::fem::Form<T, double>,
+             std::shared_ptr<dolfinx::fem::Form<T, double>>>(
       m, pyclass_name_form.c_str(), "Variational form object")
       .def(py::init(
                [](const std::vector<std::shared_ptr<
@@ -410,10 +408,9 @@ void declare_form(py::module& m, const std::string& type)
                    }
                  }
 
-                 return dolfinx::fem::Form<T, double>
-(spaces, _integrals, coefficients,
-                                              constants, needs_permutation_data,
-                                              mesh);
+                 return dolfinx::fem::Form<T, double>(
+                     spaces, _integrals, coefficients, constants,
+                     needs_permutation_data, mesh);
                }),
            py::arg("spaces"), py::arg("integrals"), py::arg("coefficients"),
            py::arg("constants"), py::arg("need_permutation_data"),
@@ -459,31 +456,25 @@ void declare_form(py::module& m, const std::string& type)
            py::arg("form"), py::arg("spaces"), py::arg("coefficients"),
            py::arg("constants"), py::arg("subdomains"), py::arg("mesh"),
            "Create a Form from a pointer to a ufcx_form")
-      .def_property_readonly("dtype", [](const dolfinx::fem::Form<T, double>
-& self)
+      .def_property_readonly("dtype",
+                             [](const dolfinx::fem::Form<T, double>& self)
                              { return py::dtype::of<T>(); })
       .def_property_readonly("coefficients",
-                             &dolfinx::fem::Form<T, double>
-::coefficients)
-      .def_property_readonly("rank", &dolfinx::fem::Form<T, double>
-::rank)
-      .def_property_readonly("mesh", &dolfinx::fem::Form<T, double>
-::mesh)
+                             &dolfinx::fem::Form<T, double>::coefficients)
+      .def_property_readonly("rank", &dolfinx::fem::Form<T, double>::rank)
+      .def_property_readonly("mesh", &dolfinx::fem::Form<T, double>::mesh)
       .def_property_readonly("function_spaces",
-                             &dolfinx::fem::Form<T, double>
-::function_spaces)
-      .def("integral_ids", &dolfinx::fem::Form<T, double>
-::integral_ids)
+                             &dolfinx::fem::Form<T, double>::function_spaces)
+      .def("integral_ids", &dolfinx::fem::Form<T, double>::integral_ids)
       .def_property_readonly("integral_types",
-                             &dolfinx::fem::Form<T, double>
-::integral_types)
-      .def_property_readonly("needs_facet_permutations",
-                             &dolfinx::fem::Form<T, double>
-::needs_facet_permutations)
+                             &dolfinx::fem::Form<T, double>::integral_types)
+      .def_property_readonly(
+          "needs_facet_permutations",
+          &dolfinx::fem::Form<T, double>::needs_facet_permutations)
       .def(
           "domains",
-          [](const dolfinx::fem::Form<T, double>
-& self, dolfinx::fem::IntegralType type,
+          [](const dolfinx::fem::Form<T, double>& self,
+             dolfinx::fem::IntegralType type,
              int i) -> py::array_t<std::int32_t>
           {
             switch (type)
@@ -644,8 +635,12 @@ void fem(py::module& m)
   m.def(
       "compute_integration_domains",
       [](dolfinx::fem::IntegralType type,
-         const dolfinx::mesh::MeshTags<int>& meshtags)
-      { return dolfinx::fem::compute_integration_domains(type, meshtags); },
+         const dolfinx::mesh::MeshTags<int, double>& meshtags)
+      {
+        return dolfinx::fem::compute_integration_domains(
+            type, meshtags.mesh()->topology_mutable(), meshtags.indices(),
+            meshtags.dim(), meshtags.values());
+      },
       py::arg("integral_type"), py::arg("meshtags"));
   m.def(
       "create_nonmatching_meshes_interpolation_data",

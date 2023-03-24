@@ -17,8 +17,6 @@ namespace dolfinx::mesh
 {
 template <typename T>
 class Mesh;
-template <typename T>
-class MeshTags;
 } // namespace dolfinx::mesh
 
 /// @brief Plaza mesh refinement.
@@ -33,7 +31,7 @@ enum class Option : int
 {
   none = 0, /*!< No extra data */
   parent_cell
-  = 1, /*!< Compute list with the parent cell index for each new cell  */
+  = 1,      /*!< Compute list with the parent cell index for each new cell  */
   parent_facet
   = 2, /*!< Compute list of the cell-local facet indices in the parent cell of
           each facet in each new cell (or -1 if no match) */

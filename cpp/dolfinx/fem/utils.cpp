@@ -194,22 +194,21 @@ std::vector<std::string> fem::get_constant_names(const ufcx_form& ufcx_form)
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<int, std::vector<std::int32_t>>>
+// fem::compute_integration_domains(fem::IntegralType integral_type,
+//                                  const mesh::MeshTags<int>& meshtags)
 fem::compute_integration_domains(fem::IntegralType integral_type,
-                                 const mesh::MeshTags<int>& meshtags)
+                                 mesh::Topology& topology,
+                                 std::span<const std::int32_t> entities,
+                                 int dim, std::span<const int> values)
 {
-  auto mesh = meshtags.mesh();
-  assert(mesh);
-  const mesh::Topology& topology = mesh->topology();
   const int tdim = topology.dim();
-  const int dim = integral_type == IntegralType::cell ? tdim : tdim - 1;
-  if (dim != meshtags.dim())
+  // const int dim = integral_type == IntegralType::cell ? tdim : tdim - 1;
+  if ((integral_type == IntegralType::cell ? tdim : tdim - 1) != dim)
   {
     throw std::runtime_error("Invalid MeshTags dimension: "
-                             + std::to_string(meshtags.dim()));
+                             + std::to_string(dim));
   }
 
-  std::span<const std::int32_t> entities = meshtags.indices();
-  std::span<const int> values = meshtags.values();
   {
     assert(topology.index_map(dim));
     auto it0 = entities.begin();
@@ -228,8 +227,8 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     values1.insert(values1.begin(), values.begin(), values.end());
     break;
   default:
-    mesh->topology_mutable().create_connectivity(dim, tdim);
-    mesh->topology_mutable().create_connectivity(tdim, dim);
+    topology.create_connectivity(dim, tdim);
+    topology.create_connectivity(tdim, dim);
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
     assert(f_to_c);
     auto c_to_f = topology.connectivity(tdim, tdim - 1);

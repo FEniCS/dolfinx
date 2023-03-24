@@ -19,7 +19,7 @@
 
 namespace dolfinx::mesh
 {
-template <typename T>
+template <typename T, typename U>
 class MeshTags;
 template <typename T>
 class Mesh;
@@ -106,8 +106,8 @@ std::vector<std::int64_t> adjust_indices(const common::IndexMap& map,
 /// @param[in] cell Parent cell of each cell in refined mesh
 /// @param[in] facet Local facets of parent in each cell in refined mesh
 /// @return MeshTags on refined mesh
-mesh::MeshTags<std::int32_t>
-transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& meshtag,
+mesh::MeshTags<std::int32_t, double>
+transfer_facet_meshtag(const mesh::MeshTags<std::int32_t, double>& meshtag,
                        std::shared_ptr<const mesh::Mesh<double>> refined_mesh,
                        std::span<const std::int32_t> cell,
                        std::span<const std::int8_t> facet);
@@ -123,8 +123,8 @@ transfer_facet_meshtag(const mesh::MeshTags<std::int32_t>& meshtag,
 /// @param[in] parent_cell Parent cell of each cell in refined mesh
 /// @return MeshTags on refined mesh, values copied over from coarse
 /// mesh
-mesh::MeshTags<std::int32_t>
-transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& parent_meshtag,
-                      std::shared_ptr<const mesh::Mesh<double>> refined_mesh,
-                      std::span<const std::int32_t> parent_cell);
+mesh::MeshTags<std::int32_t, double> transfer_cell_meshtag(
+    const mesh::MeshTags<std::int32_t, double>& parent_meshtag,
+    std::shared_ptr<const mesh::Mesh<double>> refined_mesh,
+    std::span<const std::int32_t> parent_cell);
 } // namespace dolfinx::refinement

@@ -61,16 +61,16 @@ public:
   Expression(
       const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
       const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-      std::span<const double> X, std::array<std::size_t, 2> Xshape,
+      std::span<const U> X, std::array<std::size_t, 2> Xshape,
       const std::function<void(T*, const T*, const T*,
                                const scalar_value_type_t*, const int*,
                                const uint8_t*)>
           fn,
       const std::vector<int>& value_shape,
-      std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr,
+      std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr,
       std::shared_ptr<const FunctionSpace<U>> argument_function_space = nullptr)
       : _coefficients(coefficients), _constants(constants), _mesh(mesh),
-        _x_ref(std::vector<double>(X.begin(), X.end()), Xshape), _fn(fn),
+        _x_ref(std::vector<U>(X.begin(), X.end()), Xshape), _fn(fn),
         _value_shape(value_shape),
         _argument_function_space(argument_function_space)
   {
@@ -151,7 +151,7 @@ public:
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = _mesh->geometry().dofmap();
     const std::size_t num_dofs_g = _mesh->geometry().cmap().dim();
-    std::span<const double> x_g = _mesh->geometry().x();
+    std::span<const U> x_g = _mesh->geometry().x();
 
     // Create data structures used in evaluation
     std::vector<scalar_value_type_t> coordinate_dofs(3 * num_dofs_g);
@@ -223,7 +223,7 @@ public:
 
   /// Get mesh
   /// @return The mesh
-  std::shared_ptr<const mesh::Mesh<double>> mesh() const { return _mesh; }
+  std::shared_ptr<const mesh::Mesh<U>> mesh() const { return _mesh; }
 
   /// Get value size
   /// @return value_size
@@ -239,7 +239,7 @@ public:
 
   /// @brief Evaluation points on the reference cell
   /// @return Evaluation points
-  std::pair<std::vector<double>, std::array<std::size_t, 2>> X() const
+  std::pair<std::vector<U>, std::array<std::size_t, 2>> X() const
   {
     return _x_ref;
   }
@@ -252,7 +252,7 @@ private:
   std::shared_ptr<const FunctionSpace<U>> _argument_function_space;
 
   // Coefficients associated with the Expression
-  std::vector<std::shared_ptr<const Function<T, double>>> _coefficients;
+  std::vector<std::shared_ptr<const Function<T, U>>> _coefficients;
 
   // Constants associated with the Expression
   std::vector<std::shared_ptr<const Constant<T>>> _constants;
@@ -263,12 +263,12 @@ private:
       _fn;
 
   // The mesh
-  std::shared_ptr<const mesh::Mesh<double>> _mesh;
+  std::shared_ptr<const mesh::Mesh<U>> _mesh;
 
   // Shape of the evaluated expression
   std::vector<int> _value_shape;
 
   // Evaluation points on reference cell. Synonymous with X in public interface.
-  std::pair<std::vector<double>, std::array<std::size_t, 2>> _x_ref;
+  std::pair<std::vector<U>, std::array<std::size_t, 2>> _x_ref;
 };
 } // namespace dolfinx::fem

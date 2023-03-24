@@ -29,9 +29,10 @@ namespace
 {
 template <typename Scalar>
 void _write_function(dolfinx::MPI::Comm& comm,
-                     const fem::Function<Scalar, double>& function, const double t,
-                     const std::string& mesh_xpath, pugi::xml_document& xml_doc,
-                     hid_t h5_id, const std::filesystem::path& filename)
+                     const fem::Function<Scalar, double>& function,
+                     const double t, const std::string& mesh_xpath,
+                     pugi::xml_document& xml_doc, hid_t h5_id,
+                     const std::filesystem::path& filename)
 {
   const std::string timegrid_xpath
       = "/Xdmf/Domain/Grid[@GridType='Collection'][@Name='" + function.name
@@ -284,14 +285,16 @@ void XDMFFile::write_function(const fem::Function<double, double>& u, double t,
   _write_function(_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_function(const fem::Function<std::complex<double>, double>& u,
-                              double t, std::string mesh_xpath)
+void XDMFFile::write_function(
+    const fem::Function<std::complex<double>, double>& u, double t,
+    std::string mesh_xpath)
 {
   _write_function(_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
-                              std::string geometry_xpath, std::string xpath)
+void XDMFFile::write_meshtags(
+    const mesh::MeshTags<std::int32_t, double>& meshtags,
+    std::string geometry_xpath, std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -314,7 +317,7 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-mesh::MeshTags<std::int32_t>
+mesh::MeshTags<std::int32_t, double>
 XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh<double>> mesh,
                         std::string name, std::string xpath)
 {

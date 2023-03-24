@@ -27,7 +27,7 @@ namespace xdmf_meshtags
 
 /// Add mesh tags to XDMF file
 template <typename T>
-void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
+void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T, double>& meshtags,
                   pugi::xml_node& xml_node, const hid_t h5_id,
                   const std::string name)
 {

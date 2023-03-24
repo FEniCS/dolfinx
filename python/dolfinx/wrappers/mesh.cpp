@@ -85,8 +85,8 @@ template <typename T>
 void declare_meshtags(py::module& m, std::string type)
 {
   std::string pyclass_name = std::string("MeshTags_") + type;
-  py::class_<dolfinx::mesh::MeshTags<T>,
-             std::shared_ptr<dolfinx::mesh::MeshTags<T>>>(
+  py::class_<dolfinx::mesh::MeshTags<T, double>,
+             std::shared_ptr<dolfinx::mesh::MeshTags<T, double>>>(
       m, pyclass_name.c_str(), "MeshTags object")
       .def(py::init(
           [](std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh, int dim,
@@ -97,29 +97,30 @@ void declare_meshtags(py::module& m, std::string type)
                 indices.data(), indices.data() + indices.size());
             std::vector<T> values_vec(values.data(),
                                       values.data() + values.size());
-            return dolfinx::mesh::MeshTags<T>(mesh, dim, std::move(indices_vec),
-                                              std::move(values_vec));
+            return dolfinx::mesh::MeshTags<T, double>(
+                mesh, dim, std::move(indices_vec), std::move(values_vec));
           }))
-      .def_property_readonly("dtype", [](const dolfinx::mesh::MeshTags<T>& self)
+      .def_property_readonly("dtype",
+                             [](const dolfinx::mesh::MeshTags<T, double>& self)
                              { return py::dtype::of<T>(); })
-      .def_readwrite("name", &dolfinx::mesh::MeshTags<T>::name)
-      .def_property_readonly("dim", &dolfinx::mesh::MeshTags<T>::dim)
-      .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<T>::mesh)
+      .def_readwrite("name", &dolfinx::mesh::MeshTags<T, double>::name)
+      .def_property_readonly("dim", &dolfinx::mesh::MeshTags<T, double>::dim)
+      .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<T, double>::mesh)
       .def_property_readonly("values",
-                             [](dolfinx::mesh::MeshTags<T>& self)
+                             [](dolfinx::mesh::MeshTags<T, double>& self)
                              {
                                return py::array_t<T>(self.values().size(),
                                                      self.values().data(),
                                                      py::cast(self));
                              })
       .def_property_readonly("indices",
-                             [](dolfinx::mesh::MeshTags<T>& self)
+                             [](dolfinx::mesh::MeshTags<T, double>& self)
                              {
                                return py::array_t<std::int32_t>(
                                    self.indices().size(), self.indices().data(),
                                    py::cast(self));
                              })
-      .def("find", [](dolfinx::mesh::MeshTags<T>& self, T value)
+      .def("find", [](dolfinx::mesh::MeshTags<T, double>& self, T value)
            { return as_pyarray(self.find(value)); });
 
   m.def("create_meshtags",

@@ -34,7 +34,7 @@ class Geometry;
 enum class GhostMode : int;
 template <typename T>
 class Mesh;
-template <typename T>
+template <typename T, typename U>
 class MeshTags;
 } // namespace dolfinx::mesh
 
@@ -153,7 +153,7 @@ public:
   /// @param[in] geometry_xpath XPath where Geometry is already stored
   ///   in file
   /// @param[in] xpath XPath where MeshTags Grid will be inserted
-  void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
+  void write_meshtags(const mesh::MeshTags<std::int32_t, double>& meshtags,
                       std::string geometry_xpath,
                       std::string xpath = "/Xdmf/Domain");
 
@@ -161,7 +161,7 @@ public:
   /// @param[in] mesh The Mesh that the data is defined on
   /// @param[in] name
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
-  mesh::MeshTags<std::int32_t>
+  mesh::MeshTags<std::int32_t, double>
   read_meshtags(std::shared_ptr<const mesh::Mesh<double>> mesh,
                 std::string name, std::string xpath = "/Xdmf/Domain");
 

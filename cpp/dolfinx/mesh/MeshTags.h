@@ -32,7 +32,7 @@ namespace dolfinx::mesh
 /// with an arbitrary subset of mesh entities. An entity can have only
 /// one associated tag.
 /// @tparam Type
-template <typename T>
+template <typename T, typename X>
 class MeshTags
 {
 public:
@@ -48,7 +48,7 @@ public:
   /// @pre `indices` must be sorted and unique.
   template <std::convertible_to<std::vector<std::int32_t>> U,
             std::convertible_to<std::vector<T>> V>
-  MeshTags(std::shared_ptr<const Mesh<double>> mesh, int dim, U&& indices,
+  MeshTags(std::shared_ptr<const Mesh<X>> mesh, int dim, U&& indices,
            V&& values)
       : _mesh(mesh), _dim(dim), _indices(std::forward<U>(indices)),
         _values(std::forward<V>(values))
@@ -108,14 +108,14 @@ public:
   int dim() const { return _dim; }
 
   /// Return mesh
-  std::shared_ptr<const Mesh<double>> mesh() const { return _mesh; }
+  std::shared_ptr<const Mesh<X>> mesh() const { return _mesh; }
 
   /// Name
   std::string name = "mesh_tags";
 
 private:
   // Associated mesh
-  std::shared_ptr<const Mesh<double>> _mesh;
+  std::shared_ptr<const Mesh<X>> _mesh;
 
   // Topological dimension of tagged mesh entities
   int _dim;
@@ -136,10 +136,11 @@ private:
 /// length of `values` must be equal to number of rows in `entities`.
 /// @note Entities that do not exist on this rank are ignored.
 /// @warning `entities` must not contain duplicate entities.
-template <typename T>
-MeshTags<T> create_meshtags(std::shared_ptr<const Mesh<double>> mesh, int dim,
-                            const graph::AdjacencyList<std::int32_t>& entities,
-                            std::span<const T> values)
+template <typename T, typename U>
+MeshTags<T, U>
+create_meshtags(std::shared_ptr<const Mesh<U>> mesh, int dim,
+                const graph::AdjacencyList<std::int32_t>& entities,
+                std::span<const T> values)
 {
   LOG(INFO)
       << "Building MeshTags object from tagged entities (defined by vertices).";
@@ -166,7 +167,7 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Mesh<double>> mesh, int dim,
   values_sorted.erase(values_sorted.begin(),
                       std::next(values_sorted.begin(), pos0));
 
-  return MeshTags<T>(mesh, dim, std::move(indices_sorted),
-                     std::move(values_sorted));
+  return MeshTags<T, U>(mesh, dim, std::move(indices_sorted),
+                        std::move(values_sorted));
 }
 } // namespace dolfinx::mesh

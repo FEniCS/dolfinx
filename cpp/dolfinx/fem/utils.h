@@ -127,7 +127,9 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 /// topological dimension of `meshtags` must be equal.
 std::vector<std::pair<int, std::vector<std::int32_t>>>
 compute_integration_domains(IntegralType integral_type,
-                            const mesh::MeshTags<int>& meshtags);
+                            mesh::Topology& topology,
+                            std::span<const std::int32_t> entities, int dim,
+                            std::span<const int> values);
 
 /// @brief Finite element cell kernel concept.
 ///

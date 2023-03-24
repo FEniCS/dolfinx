@@ -380,8 +380,8 @@ refinement::adjust_indices(const common::IndexMap& map, std::int32_t n)
   return global_indices;
 }
 //-----------------------------------------------------------------------------
-mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
-    const mesh::MeshTags<std::int32_t>& meshtag,
+mesh::MeshTags<std::int32_t, double> refinement::transfer_facet_meshtag(
+    const mesh::MeshTags<std::int32_t, double>& meshtag,
     std::shared_ptr<const mesh::Mesh<double>> refined_mesh,
     std::span<const std::int32_t> cell, std::span<const std::int8_t> facet)
 {
@@ -499,13 +499,13 @@ mesh::MeshTags<std::int32_t> refinement::transfer_facet_meshtag(
     sorted_facet_indices[i] = facet_indices[sort_order[i]];
   }
 
-  return mesh::MeshTags<std::int32_t>(refined_mesh, tdim - 1,
-                                      std::move(sorted_facet_indices),
-                                      std::move(sorted_tag_values));
+  return mesh::MeshTags<std::int32_t, double>(refined_mesh, tdim - 1,
+                                              std::move(sorted_facet_indices),
+                                              std::move(sorted_tag_values));
 }
 //----------------------------------------------------------------------------
-mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
-    const mesh::MeshTags<std::int32_t>& meshtag,
+mesh::MeshTags<std::int32_t, double> refinement::transfer_cell_meshtag(
+    const mesh::MeshTags<std::int32_t, double>& meshtag,
     std::shared_ptr<const mesh::Mesh<double>> refined_mesh,
     std::span<const std::int32_t> cell)
 {
@@ -592,8 +592,8 @@ mesh::MeshTags<std::int32_t> refinement::transfer_cell_meshtag(
     sorted_cell_indices[i] = cell_indices[sort_order[i]];
   }
 
-  return mesh::MeshTags<std::int32_t>(refined_mesh, tdim,
-                                      std::move(sorted_cell_indices),
-                                      std::move(sorted_tag_values));
+  return mesh::MeshTags<std::int32_t, double>(refined_mesh, tdim,
+                                              std::move(sorted_cell_indices),
+                                              std::move(sorted_tag_values));
 }
 //-----------------------------------------------------------------------------

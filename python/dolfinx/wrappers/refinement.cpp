@@ -72,7 +72,7 @@ void refinement(py::module& m)
 
   m.def(
       "transfer_facet_meshtag",
-      [](const dolfinx::mesh::MeshTags<std::int32_t>& parent_meshtag,
+      [](const dolfinx::mesh::MeshTags<std::int32_t, double>& parent_meshtag,
          std::shared_ptr<const dolfinx::mesh::Mesh<double>> refined_mesh,
          const py::array_t<std::int32_t, py::array::c_style>& parent_cell,
          const py::array_t<std::int8_t, py::array::c_style>& parent_facet)
@@ -86,7 +86,7 @@ void refinement(py::module& m)
       py::arg("parent_cell"), py::arg("parent_facet"));
   m.def(
       "transfer_cell_meshtag",
-      [](const dolfinx::mesh::MeshTags<std::int32_t>& parent_meshtag,
+      [](const dolfinx::mesh::MeshTags<std::int32_t, double>& parent_meshtag,
          std::shared_ptr<const dolfinx::mesh::Mesh<double>> refined_mesh,
          const py::array_t<std::int32_t, py::array::c_style>& parent_cell)
       {
