@@ -13,6 +13,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/utils.h>
 #include <limits>
 #include <numeric>
 #include <vector>

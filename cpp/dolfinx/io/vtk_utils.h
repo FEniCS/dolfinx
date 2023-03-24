@@ -234,7 +234,7 @@ vtk_mesh_from_space(const fem::FunctionSpace<T>& V)
 ///
 /// @param[in] dofmap_x Geometry dofmap
 /// @param[in] cell_type Cell type
-/// @return The cell topology in VTK ordering and in term of the DOLFINx
+/// @return Cell topology in VTK ordering and in term of the DOLFINx
 /// geometry 'nodes'
 /// @note The indices in the return array correspond to the point
 /// indices in the mesh geometry array

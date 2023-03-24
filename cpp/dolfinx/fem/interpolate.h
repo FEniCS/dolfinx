@@ -35,9 +35,62 @@ class Function;
 /// interpolation coordinates for
 /// @return The coordinates in the physical space at which to evaluate
 /// an expression. The shape is (3, num_points) and storage is row-major.
-std::vector<double> interpolation_coords(const fem::FiniteElement& element,
-                                         const mesh::Geometry<double>& geometry,
-                                         std::span<const std::int32_t> cells);
+template <typename T>
+std::vector<T> interpolation_coords(const fem::FiniteElement& element,
+                                    const mesh::Geometry<T>& geometry,
+                                    std::span<const std::int32_t> cells)
+{
+  // Get geometry data and the element coordinate map
+  const std::size_t gdim = geometry.dim();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  std::span<const T> x_g = geometry.x();
+  const CoordinateElement& cmap = geometry.cmap();
+  const std::size_t num_dofs_g = cmap.dim();
+
+  // Get the interpolation points on the reference cells
+  const auto [X, Xshape] = element.interpolation_points();
+
+  // Evaluate coordinate element basis at reference points
+  namespace stdex = std::experimental;
+  using cmdspan4_t
+      = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
+  std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(0, Xshape[0]);
+  std::vector<double> phi_b(
+      std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+  cmdspan4_t phi_full(phi_b.data(), phi_shape);
+  cmap.tabulate(0, X, Xshape, phi_b);
+  auto phi = stdex::submdspan(phi_full, 0, stdex::full_extent,
+                              stdex::full_extent, 0);
+
+  // Push reference coordinates (X) forward to the physical coordinates
+  // (x) for each cell
+  std::vector<T> coordinate_dofs(num_dofs_g * gdim, 0);
+  std::vector<T> x(3 * (cells.size() * Xshape[0]), 0);
+  for (std::size_t c = 0; c < cells.size(); ++c)
+  {
+    // Get geometry data for current cell
+    auto x_dofs = x_dofmap.links(cells[c]);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), gdim,
+                  std::next(coordinate_dofs.begin(), i * gdim));
+    }
+
+    // Push forward coordinates (X -> x)
+    for (std::size_t p = 0; p < Xshape[0]; ++p)
+    {
+      for (std::size_t j = 0; j < gdim; ++j)
+      {
+        double acc = 0;
+        for (std::size_t k = 0; k < num_dofs_g; ++k)
+          acc += phi(p, k) * coordinate_dofs[k * gdim + j];
+        x[j * (cells.size() * Xshape[0]) + c * Xshape[0] + p] = acc;
+      }
+    }
+  }
+
+  return x;
+}
 
 /// Helper type for the data that can be cached to speed up repeated
 /// interpolation of discrete functions on nonmatching meshes
@@ -45,8 +98,8 @@ using nmm_interpolation_data_t
     = decltype(std::function{geometry::determine_point_ownership})::result_type;
 
 /// Forward declaration
-template <typename T>
-void interpolate(Function<T, double>& u, std::span<const T> f,
+template <typename T, typename U>
+void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
                  std::span<const std::int32_t> cells);
 
@@ -243,8 +296,8 @@ void interpolation_apply(const U& Pi, const V& data, std::span<T> coeffs,
 /// @pre The functions `u1` and `u0` must share the same mesh and the
 /// elements must share the same basis function map. Neither is checked
 /// by the function.
-template <typename T>
-void interpolate_same_map(Function<T, double>& u1, const Function<T, double>& u0,
+template <typename T, typename U>
+void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
                           std::span<const std::int32_t> cells)
 {
   auto V0 = u0.function_space();
@@ -328,8 +381,8 @@ void interpolate_same_map(Function<T, double>& u1, const Function<T, double>& u0
 /// @param[in] cells The cells to interpolate on
 /// @pre The functions `u1` and `u0` must share the same mesh. This is
 /// not checked by the function.
-template <typename T>
-void interpolate_nonmatching_maps(Function<T, double>& u1, const Function<T, double>& u0,
+template <typename T, typename U>
+void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
                                   std::span<const std::int32_t> cells)
 {
   // Get mesh
@@ -382,7 +435,7 @@ void interpolate_nonmatching_maps(Function<T, double>& u1, const Function<T, dou
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
-  std::span<const double> x_g = mesh->geometry().x();
+  std::span<const U> x_g = mesh->geometry().x();
 
   namespace stdex = std::experimental;
   using cmdspan2_t
@@ -553,9 +606,10 @@ void interpolate_nonmatching_maps(Function<T, double>& u1, const Function<T, dou
   }
 }
 
-template <typename T>
+template <typename T, typename U>
 void interpolate_nonmatching_meshes(
-    Function<T, double>& u, const Function<T, double>& v, std::span<const std::int32_t> cells,
+    Function<T, U>& u, const Function<T, U>& v,
+    std::span<const std::int32_t> cells,
     const nmm_interpolation_data_t& nmm_interpolation_data)
 {
   int result;
@@ -637,8 +691,8 @@ void interpolate_nonmatching_meshes(
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
 /// @tparam Scalar type
-template <typename T>
-void interpolate(Function<T, double>& u, std::span<const T> f,
+template <typename T, typename U>
+void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
                  std::span<const std::int32_t> cells)
 {
@@ -796,7 +850,7 @@ void interpolate(Function<T, double>& u, std::span<const T> f,
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
     const int num_dofs_g = cmap.dim();
-    std::span<const double> x_g = mesh->geometry().x();
+    std::span<const U> x_g = mesh->geometry().x();
 
     // Create data structures for Jacobian info
     std::vector<double> J_b(Xshape[0] * gdim * tdim);
@@ -923,19 +977,37 @@ void interpolate(Function<T, double>& u, std::span<const T> f,
 /// @param[in] cells Indices of the cells in the destination mesh on
 /// which to interpolate. Should be the same as the list used when
 /// calling fem::interpolation_coords.
+template <typename T>
 nmm_interpolation_data_t create_nonmatching_meshes_interpolation_data(
-    const mesh::Geometry<double>& geometry0, const FiniteElement& element0,
-    const mesh::Mesh<double>& mesh1, std::span<const std::int32_t> cells);
+    const mesh::Geometry<T>& geometry0, const FiniteElement& element0,
+    const mesh::Mesh<T>& mesh1, std::span<const std::int32_t> cells)
+{
+  // Collect all the points at which values are needed to define the
+  // interpolating function
+  const std::vector<double> coords
+      = interpolation_coords(element0, geometry0, cells);
+
+  // Transpose interpolation coords
+  std::vector<double> x(coords.size());
+  std::size_t num_points = coords.size() / 3;
+  for (std::size_t i = 0; i < num_points; ++i)
+    for (std::size_t j = 0; j < 3; ++j)
+      x[3 * i + j] = coords[i + j * num_points];
+
+  // Determine ownership of each point
+  return geometry::determine_point_ownership(mesh1, x);
+}
 
 /// @brief Generate data needed to interpolate discrete functions
 /// defined on different meshes. Interpolate on all cells in the mesh.
 /// @param[in] mesh0 Mesh of the space to interpolate into
 /// @param[in] element0 Element of the space to interpolate into
 /// @param[in] mesh1 Mesh of the function to interpolate from
+template <typename T>
 nmm_interpolation_data_t
-create_nonmatching_meshes_interpolation_data(const mesh::Mesh<double>& mesh0,
+create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
                                              const FiniteElement& element0,
-                                             const mesh::Mesh<double>& mesh1);
+                                             const mesh::Mesh<T>& mesh1);
 
 /// @brief Interpolate from one finite element Function to another one.
 /// @param[out] u The function to interpolate into
@@ -944,8 +1016,8 @@ create_nonmatching_meshes_interpolation_data(const mesh::Mesh<double>& mesh0,
 /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
 /// nonmatching meshes. This data can be generated with
 /// create_nonmatching_meshes_interpolation_data (optional).
-template <typename T>
-void interpolate(Function<T, double>& u, const Function<T, double>& v,
+template <typename T, typename U>
+void interpolate(Function<T, U>& u, const Function<T, U>& v,
                  std::span<const std::int32_t> cells,
                  const nmm_interpolation_data_t& nmm_interpolation_data
                  = nmm_interpolation_data_t{})

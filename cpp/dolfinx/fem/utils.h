@@ -18,6 +18,7 @@
 #include <concepts>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/utils.h>
 #include <functional>
 #include <memory>
 #include <set>

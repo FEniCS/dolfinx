@@ -15,6 +15,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/generation.h>
+#include <dolfinx/mesh/utils.h>
 #include <filesystem>
 #include <mpi.h>
 #include <numbers>
@@ -63,8 +64,8 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<double>> mesh,
 // space. To visualise the function, it interpolates the H(curl) finite
 // element function in a discontinuous Lagrange space and outputs the
 // Lagrange finite element function to a VTX file for visualisation.
-template <typename T>
-void interpolate_nedelec(std::shared_ptr<mesh::Mesh<double>> mesh,
+template <typename T, typename U>
+void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
                          [[maybe_unused]] std::filesystem::path filename)
 {
   // Create a Basix Nedelec (first kind) element of degree 2 (dim=6 on triangle)
@@ -75,11 +76,11 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<double>> mesh,
       basix::element::dpc_variant::unset, false);
 
   // Create a Nedelec function space
-  auto V = std::make_shared<fem::FunctionSpace<double>>(
+  auto V = std::make_shared<fem::FunctionSpace<U>>(
       fem::create_functionspace(mesh, e, 1));
 
   // Create a Nedelec finite element Function
-  auto u = std::make_shared<fem::Function<T, double>>(V);
+  auto u = std::make_shared<fem::Function<T, U>>(V);
 
   // Interpolate the vector field
   //  u = [x[0], x[1]]  if x[0] < 0.5
@@ -145,25 +146,26 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<double>> mesh,
       basix::element::dpc_variant::unset, true);
 
   // Create a function space
-  auto V_l = std::make_shared<fem::FunctionSpace<double>>(
+  auto V_l = std::make_shared<fem::FunctionSpace<U>>(
       fem::create_functionspace(mesh, e_l, 2));
 
-  auto u_l = std::make_shared<fem::Function<T, double>>(V_l);
+  auto u_l = std::make_shared<fem::Function<T, U>>(V_l);
 
   // Interpolate the Nedelec function into the discontinuous Lagrange
   // space:
   u_l->interpolate(*u);
 
-  // Output the discontinuous Lagrange space in VTK format. When
-  // plotting the x0 component the field will appear discontinuous at x0
-  // = 0.5 (jump in the normal component between cells) and the x1
-  // component will appear continuous (continuous tangent component
-  // between cells).
-#ifdef HAS_ADIOS2
-  io::VTXWriter<double> outfile(mesh->comm(), filename.replace_extension("bp"), {u_l});
-  outfile.write(0.0);
-  outfile.close();
-#endif
+  //   // Output the discontinuous Lagrange space in VTK format. When
+  //   // plotting the x0 component the field will appear discontinuous at x0
+  //   // = 0.5 (jump in the normal component between cells) and the x1
+  //   // component will appear continuous (continuous tangent component
+  //   // between cells).
+  // #ifdef HAS_ADIOS2
+  //   io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"),
+  //                            {u_l});
+  //   outfile.write(0.0);
+  //   outfile.close();
+  // #endif
 }
 
 /// This program shows how to create finite element spaces without FFCx
@@ -190,11 +192,17 @@ int main(int argc, char* argv[])
     interpolate_scalar<double>(mesh, "u");
     interpolate_scalar<std::complex<double>>(mesh, "u_complex");
 
+    auto mesh1
+        = std::make_shared<mesh::Mesh<float>>(mesh::create_rectangle<float>(
+            MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
+            mesh::CellType::triangle,
+            mesh::create_cell_partitioner(mesh::GhostMode::none)));
+
     // Interpolate a function in a H(curl) finite element space, and
     // then interpolate the H(curl) function in a discontinuous Lagrange
     // space for visualisation
-    interpolate_nedelec<double>(mesh, "u_nedelec");
-    interpolate_nedelec<std::complex<double>>(mesh, "u_nedelec_complex");
+    interpolate_nedelec<float>(mesh1, "u_nedelec");
+    // interpolate_nedelec<std::complex<double>>(mesh, "u_nedelec_complex");
   }
 
   MPI_Finalize();

@@ -161,8 +161,7 @@ public:
   /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
   /// nonmatching meshes. This data can be generated with
   /// generate_nonmatching_meshes_interpolation_data (optional).
-  void interpolate(const Function<T, double>& v,
-                   std::span<const std::int32_t> cells,
+  void interpolate(const Function<T, U>& v, std::span<const std::int32_t> cells,
                    const nmm_interpolation_data_t& nmm_interpolation_data
                    = nmm_interpolation_data_t{})
   {
@@ -174,7 +173,7 @@ public:
   /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
   /// nonmatching meshes. This data can be generated with
   /// generate_nonmatching_meshes_interpolation_data (optional).
-  void interpolate(const Function<T, double>& v,
+  void interpolate(const Function<T, U>& v,
                    const nmm_interpolation_data_t& nmm_interpolation_data
                    = nmm_interpolation_data_t{})
   {
@@ -195,7 +194,7 @@ public:
   void interpolate(
       const std::function<std::pair<std::vector<T>, std::vector<std::size_t>>(
           std::experimental::mdspan<
-              const double,
+              const U,
               std::experimental::extents<
                   std::size_t, 3, std::experimental::dynamic_extent>>)>& f,
       std::span<const std::int32_t> cells)
@@ -203,11 +202,11 @@ public:
     assert(_function_space);
     assert(_function_space->element());
     assert(_function_space->mesh());
-    const std::vector<double> x
+    const std::vector<U> x
         = fem::interpolation_coords(*_function_space->element(),
                                     _function_space->mesh()->geometry(), cells);
     namespace stdex = std::experimental;
-    stdex::mdspan<const double,
+    stdex::mdspan<const U,
                   stdex::extents<std::size_t, 3, stdex::dynamic_extent>>
         _x(x.data(), 3, x.size() / 3);
 
@@ -254,7 +253,7 @@ public:
   void interpolate(
       const std::function<std::pair<std::vector<T>, std::vector<std::size_t>>(
           std::experimental::mdspan<
-              const double,
+              const U,
               std::experimental::extents<
                   std::size_t, 3, std::experimental::dynamic_extent>>)>& f)
   {
@@ -406,7 +405,7 @@ public:
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
     const std::size_t num_dofs_g = mesh->geometry().cmap().dim();
-    std::span<const double> x_g = mesh->geometry().x();
+    std::span<const U> x_g = mesh->geometry().x();
 
     // Get coordinate map
     const CoordinateElement& cmap = mesh->geometry().cmap();
