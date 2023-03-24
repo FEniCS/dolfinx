@@ -919,9 +919,6 @@ void fem(py::module& m)
                 V[0].get().mesh()->topology_mutable(),
                 {*V[0].get().dofmap(), *V[1].get().dofmap()}, dim,
                 std::span(entities.data(), entities.size()), remote);
-        //     = dolfinx::fem::locate_dofs_topological(
-        //         {V[0], V[1]}, dim, std::span(entities.data(),
-        //         entities.size()), remote);
         return {as_pyarray(std::move(dofs[0])), as_pyarray(std::move(dofs[1]))};
       },
       py::arg("V"), py::arg("dim"), py::arg("entities"),
@@ -958,7 +955,8 @@ void fem(py::module& m)
         };
 
         std::array<std::vector<std::int32_t>, 2> dofs
-            = dolfinx::fem::locate_dofs_geometrical({V[0], V[1]}, _marker);
+            = dolfinx::fem::locate_dofs_geometrical<double>({V[0], V[1]},
+                                                            _marker);
         return {as_pyarray(std::move(dofs[0])), as_pyarray(std::move(dofs[1]))};
       },
       py::arg("V"), py::arg("marker"));

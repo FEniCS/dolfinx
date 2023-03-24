@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
 
     // Create Dirichlet boundary conditions
     auto bdofs_left = fem::locate_dofs_geometrical(
-        {*V},
+        *V,
         [](auto x)
         {
           constexpr double eps = 1.0e-8;
@@ -193,7 +193,7 @@ int main(int argc, char* argv[])
           return marker;
         });
     auto bdofs_right = fem::locate_dofs_geometrical(
-        {*V},
+        *V,
         [](auto x)
         {
           constexpr double eps = 1.0e-8;

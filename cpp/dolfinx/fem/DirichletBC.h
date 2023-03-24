@@ -75,9 +75,6 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
     mesh::Topology& topology,
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps, int dim,
     std::span<const std::int32_t> entities, bool remote = true);
-// std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
-//     const std::array<std::reference_wrapper<const FunctionSpace<double>>, 2>&
-//     V, int dim, std::span<const std::int32_t> entities, bool remote = true);
 
 /// Finds degrees of freedom whose geometric coordinate is true for the
 /// provided marking function.
@@ -90,14 +87,43 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
 /// @return Array of DOF index blocks (local to the MPI rank) in the
 /// space V. The array uses the block size of the dofmap associated
 /// with V.
-std::vector<std::int32_t> locate_dofs_geometrical(
-    const FunctionSpace<double>& V,
-    const std::function<std::vector<std::int8_t>(
-        std::experimental::mdspan<
-            const double,
-            std::experimental::extents<std::size_t, 3,
-                                       std::experimental::dynamic_extent>>)>&
-        marker_fn);
+template <typename T, typename U>
+std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
+                                                  U marker_fn)
+{
+  // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
+  // especially when we usually want the boundary dofs only. Add
+  // interface that computes dofs coordinates only for specified cell.
+
+  assert(V.element());
+  if (V.element()->is_mixed())
+  {
+    throw std::runtime_error(
+        "Cannot locate dofs geometrically for mixed space. Use subspaces.");
+  }
+
+  // Compute dof coordinates
+  const std::vector<T> dof_coordinates = V.tabulate_dof_coordinates(true);
+
+  namespace stdex = std::experimental;
+  using cmdspan3x_t
+      = stdex::mdspan<const T,
+                      stdex::extents<std::size_t, 3, stdex::dynamic_extent>>;
+
+  // Compute marker for each dof coordinate
+  cmdspan3x_t x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);
+  const std::vector<std::int8_t> marked_dofs = marker_fn(x);
+
+  std::vector<std::int32_t> dofs;
+  dofs.reserve(std::count(marked_dofs.begin(), marked_dofs.end(), true));
+  for (std::size_t i = 0; i < marked_dofs.size(); ++i)
+  {
+    if (marked_dofs[i])
+      dofs.push_back(i);
+  }
+
+  return dofs;
+}
 
 /// Finds degrees of freedom whose geometric coordinate is true for the
 /// provided marking function.
@@ -112,14 +138,99 @@ std::vector<std::int32_t> locate_dofs_geometrical(
 /// V[0] and V[1]. The array[0](i) entry is the DOF index in the space
 /// V[0] and array[1](i) is the corresponding DOF entry in the space
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
+template <typename T, typename U>
 std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
-    const std::array<std::reference_wrapper<const FunctionSpace<double>>, 2>& V,
-    const std::function<std::vector<std::int8_t>(
-        std::experimental::mdspan<
-            const double,
-            std::experimental::extents<std::size_t, 3,
-                                       std::experimental::dynamic_extent>>)>&
-        marker_fn);
+    const std::array<std::reference_wrapper<const FunctionSpace<T>>, 2>& V,
+    U marker_fn)
+{
+  // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
+  // especially when we usually want the boundary dofs only. Add
+  // interface that computes dofs coordinates only for specified cell.
+
+  // Get function spaces
+  const FunctionSpace<T>& V0 = V.at(0).get();
+  const FunctionSpace<T>& V1 = V.at(1).get();
+
+  // Get mesh
+  auto mesh = V0.mesh();
+  assert(mesh);
+  assert(V1.mesh());
+  if (mesh != V1.mesh())
+    throw std::runtime_error("Meshes are not the same.");
+  const int tdim = mesh->topology().dim();
+
+  assert(V0.element());
+  assert(V1.element());
+  if (*V0.element() != *V1.element())
+    throw std::runtime_error("Function spaces must have the same element.");
+
+  // Compute dof coordinates
+  const std::vector<T> dof_coordinates = V1.tabulate_dof_coordinates(true);
+
+  namespace stdex = std::experimental;
+  using cmdspan3x_t
+      = stdex::mdspan<const T,
+                      stdex::extents<std::size_t, 3, stdex::dynamic_extent>>;
+
+  // Evaluate marker for each dof coordinate
+  cmdspan3x_t x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);
+  const std::vector<std::int8_t> marked_dofs = marker_fn(x);
+
+  // Get dofmaps
+  std::shared_ptr<const DofMap> dofmap0 = V0.dofmap();
+  assert(dofmap0);
+  const int bs0 = dofmap0->bs();
+  std::shared_ptr<const DofMap> dofmap1 = V1.dofmap();
+  assert(dofmap1);
+  const int bs1 = dofmap1->bs();
+
+  const int element_bs = dofmap0->element_dof_layout().block_size();
+  assert(element_bs == dofmap1->element_dof_layout().block_size());
+
+  // Iterate over cells
+  const mesh::Topology& topology = mesh->topology();
+  std::vector<std::array<std::int32_t, 2>> bc_dofs;
+  for (int c = 0; c < topology.connectivity(tdim, 0)->num_nodes(); ++c)
+  {
+    // Get cell dofmaps
+    auto cell_dofs0 = dofmap0->cell_dofs(c);
+    auto cell_dofs1 = dofmap1->cell_dofs(c);
+
+    // Loop over cell dofs and add to bc_dofs if marked.
+    for (std::size_t i = 0; i < cell_dofs1.size(); ++i)
+    {
+      if (marked_dofs[cell_dofs1[i]])
+      {
+        // Unroll over blocks
+        for (int k = 0; k < element_bs; ++k)
+        {
+          const int local_pos = element_bs * i + k;
+          const std::div_t pos0 = std::div(local_pos, bs0);
+          const std::div_t pos1 = std::div(local_pos, bs1);
+          const std::int32_t dof_index0
+              = bs0 * cell_dofs0[pos0.quot] + pos0.rem;
+          const std::int32_t dof_index1
+              = bs1 * cell_dofs1[pos1.quot] + pos1.rem;
+          bc_dofs.push_back({dof_index0, dof_index1});
+        }
+      }
+    }
+  }
+
+  // Remove duplicates
+  std::sort(bc_dofs.begin(), bc_dofs.end());
+  bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
+
+  // Copy to separate array
+  std::array dofs = {std::vector<std::int32_t>(bc_dofs.size()),
+                     std::vector<std::int32_t>(bc_dofs.size())};
+  std::transform(bc_dofs.cbegin(), bc_dofs.cend(), dofs[0].begin(),
+                 [](auto dof) { return dof[0]; });
+  std::transform(bc_dofs.cbegin(), bc_dofs.cend(), dofs[1].begin(),
+                 [](auto dof) { return dof[1]; });
+
+  return dofs;
+}
 
 /// Object for setting (strong) Dirichlet boundary conditions
 ///
