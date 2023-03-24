@@ -28,8 +28,8 @@ namespace dolfinx::fem
 /// elements are associated with the cell even if they may appear to be
 /// associated with a facet/edge/vertex.
 ///
-/// @param[in] V The function (sub)space on which degrees-of-freedom
-/// (DOFs) will be located.
+/// @param[in] topology Mesh topology.
+/// @param[in] dofmap Dofmap that associated DOFs with cells.
 /// @param[in] dim Topological dimension of mesh entities on which
 /// degrees-of-freedom will be located
 /// @param[in] entities Indices of mesh entities. All DOFs associated
@@ -45,7 +45,7 @@ namespace dolfinx::fem
 /// space V. The array uses the block size of the dofmap associated
 /// with V.
 std::vector<std::int32_t>
-locate_dofs_topological(const FunctionSpace<double>& V, int dim,
+locate_dofs_topological(mesh::Topology& topology, const DofMap& dofmap, int dim,
                         std::span<const std::int32_t> entities,
                         bool remote = true);
 
@@ -134,8 +134,8 @@ class DirichletBC
 private:
   /// Compute number of owned dofs indices. Will contain 'gaps' for
   /// sub-spaces.
-  std::size_t num_owned(const FunctionSpace<double>& V,
-                        std::span<const std::int32_t> dofs)
+  static std::size_t num_owned(const FunctionSpace<double>& V,
+                               std::span<const std::int32_t> dofs)
   {
     int bs = V.dofmap()->index_map_bs();
     std::int32_t map_size = V.dofmap()->index_map->size_local();
@@ -145,8 +145,8 @@ private:
   }
 
   /// Unroll dofs for block size.
-  std::vector<std::int32_t> unroll_dofs(std::span<const std::int32_t> dofs,
-                                        int bs)
+  static std::vector<std::int32_t>
+  unroll_dofs(std::span<const std::int32_t> dofs, int bs)
   {
     std::vector<std::int32_t> dofs_unrolled(bs * dofs.size());
     for (std::size_t i = 0; i < dofs.size(); ++i)

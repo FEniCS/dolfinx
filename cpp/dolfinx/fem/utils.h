@@ -121,7 +121,10 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 /// included.
 ///
 /// @param[in] integral_type Integral type
-/// @param[in] meshtags The meshtags
+/// @param[in] topology Mesh topology
+/// @param[in] entities List of tagged mesh entities
+/// @param[in] dim Topological dimension of tagged entities
+/// @param[in] values Value associated with each entity
 /// @return A list of (integral id, entities) pairs
 /// @pre The topological dimension of the integral entity type and the
 /// topological dimension of `meshtags` must be equal.

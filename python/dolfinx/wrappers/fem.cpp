@@ -929,7 +929,8 @@ void fem(py::module& m)
          bool remote)
       {
         return as_pyarray(dolfinx::fem::locate_dofs_topological(
-            V, dim, std::span(entities.data(), entities.size()), remote));
+            V.mesh()->topology_mutable(), *V.dofmap(), dim,
+            std::span(entities.data(), entities.size()), remote));
       },
       py::arg("V"), py::arg("dim"), py::arg("entities"),
       py::arg("remote") = true);
