@@ -916,8 +916,12 @@ void fem(py::module& m)
           throw std::runtime_error("Expected two function spaces.");
         std::array<std::vector<std::int32_t>, 2> dofs
             = dolfinx::fem::locate_dofs_topological(
-                {V[0], V[1]}, dim, std::span(entities.data(), entities.size()),
-                remote);
+                V[0].get().mesh()->topology_mutable(),
+                {*V[0].get().dofmap(), *V[1].get().dofmap()}, dim,
+                std::span(entities.data(), entities.size()), remote);
+        //     = dolfinx::fem::locate_dofs_topological(
+        //         {V[0], V[1]}, dim, std::span(entities.data(),
+        //         entities.size()), remote);
         return {as_pyarray(std::move(dofs[0])), as_pyarray(std::move(dofs[1]))};
       },
       py::arg("V"), py::arg("dim"), py::arg("entities"),

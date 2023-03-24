@@ -291,66 +291,53 @@ fem::locate_dofs_topological(mesh::Topology& topology, const DofMap& dofmap,
 }
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
-    const std::array<std::reference_wrapper<const FunctionSpace<double>>, 2>& V,
-    const int dim, std::span<const std::int32_t> entities, bool remote)
+    mesh::Topology& topology,
+    std::array<std::reference_wrapper<const DofMap>, 2> dofmaps, const int dim,
+    std::span<const std::int32_t> entities, bool remote)
 {
-  const FunctionSpace<double>& V0 = V.at(0).get();
-  const FunctionSpace<double>& V1 = V.at(1).get();
-
-  // Get mesh
-  auto mesh = V0.mesh();
-  assert(mesh);
-  assert(V1.mesh());
-  if (mesh != V1.mesh())
-    throw std::runtime_error("Meshes are not the same.");
-
-  // FIXME: Elements must be the same?
-  assert(V0.element());
-  assert(V1.element());
-  if (*V0.element() != *V1.element())
-    throw std::runtime_error("Function spaces must have the same element.");
-
   // Get dofmaps
-  std::shared_ptr<const DofMap> dofmap0 = V0.dofmap();
-  std::shared_ptr<const DofMap> dofmap1 = V1.dofmap();
-  assert(dofmap0);
-  assert(dofmap1);
+  const DofMap& dofmap0 = dofmaps.at(0).get();
+  const DofMap& dofmap1 = dofmaps.at(1).get();
+
+  // // FIXME: Elements must be the same?
+  // assert(V0.element());
+  // assert(V1.element());
+  // if (*V0.element() != *V1.element())
+  //   throw std::runtime_error("Function spaces must have the same element.");
 
   // Check that dof layouts are the same
-  assert(dofmap0->element_dof_layout() == dofmap1->element_dof_layout());
+  assert(dofmap0.element_dof_layout() == dofmap1.element_dof_layout());
 
   // Build vector of local dofs for each cell entity
   const int num_cell_entities
-      = mesh::cell_num_entities(mesh->topology().cell_type(), dim);
+      = mesh::cell_num_entities(topology.cell_type(), dim);
   std::vector<std::vector<int>> entity_dofs;
   for (int i = 0; i < num_cell_entities; ++i)
   {
     entity_dofs.push_back(
-        dofmap0->element_dof_layout().entity_closure_dofs(dim, i));
+        dofmap0.element_dof_layout().entity_closure_dofs(dim, i));
   }
 
-  const std::array bs = {dofmap0->bs(), dofmap1->bs()};
+  const std::array bs = {dofmap0.bs(), dofmap1.bs()};
 
   // Get cell index and local entity index
   std::vector<std::pair<std::int32_t, int>> entity_indices
-      = find_local_entity_index(mesh->topology_mutable(), entities, dim);
+      = find_local_entity_index(topology, entities, dim);
 
   // Iterate over marked facets
-  const int element_bs = dofmap0->element_dof_layout().block_size();
+  const int element_bs = dofmap0.element_dof_layout().block_size();
   std::array<std::vector<std::int32_t>, 2> bc_dofs;
-  bc_dofs[0].reserve(
-      entities.size()
-      * dofmap0->element_dof_layout().num_entity_closure_dofs(dim)
-      * element_bs);
-  bc_dofs[1].reserve(
-      entities.size()
-      * dofmap0->element_dof_layout().num_entity_closure_dofs(dim)
-      * element_bs);
+  bc_dofs[0].reserve(entities.size()
+                     * dofmap0.element_dof_layout().num_entity_closure_dofs(dim)
+                     * element_bs);
+  bc_dofs[1].reserve(entities.size()
+                     * dofmap0.element_dof_layout().num_entity_closure_dofs(dim)
+                     * element_bs);
   for (auto [cell, entity_local_index] : entity_indices)
   {
     // Get cell dofmap
-    std::span<const std::int32_t> cell_dofs0 = dofmap0->cell_dofs(cell);
-    std::span<const std::int32_t> cell_dofs1 = dofmap1->cell_dofs(cell);
+    std::span<const std::int32_t> cell_dofs0 = dofmap0.cell_dofs(cell);
+    std::span<const std::int32_t> cell_dofs1 = dofmap1.cell_dofs(cell);
     assert(bs[0] * cell_dofs0.size() == bs[1] * cell_dofs1.size());
 
     // Loop over facet dofs and 'unpack' blocked dofs
@@ -392,7 +379,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     // were found by other processes, e.g. a vertex dof on this process
     // that has no connected facets on the boundary.
 
-    auto map0 = V0.dofmap()->index_map;
+    auto map0 = dofmap0.index_map;
     assert(map0);
 
     // Create 'symmetric' neighbourhood communicator
@@ -413,15 +400,14 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     }
 
     std::vector<std::int32_t> dofs_remote = get_remote_dofs(
-        comm, *map0, V0.dofmap()->index_map_bs(), sorted_bc_dofs[0]);
+        comm, *map0, dofmap0.index_map_bs(), sorted_bc_dofs[0]);
 
     // Add received bc indices to dofs_local
     sorted_bc_dofs[0].insert(sorted_bc_dofs[0].end(), dofs_remote.begin(),
                              dofs_remote.end());
 
-    dofs_remote
-        = get_remote_dofs(comm, *(V1.dofmap()->index_map),
-                          V1.dofmap()->index_map_bs(), sorted_bc_dofs[1]);
+    dofs_remote = get_remote_dofs(comm, *(dofmap1.index_map),
+                                  dofmap1.index_map_bs(), sorted_bc_dofs[1]);
     sorted_bc_dofs[1].insert(sorted_bc_dofs[1].end(), dofs_remote.begin(),
                              dofs_remote.end());
     assert(sorted_bc_dofs[0].size() == sorted_bc_dofs[1].size());

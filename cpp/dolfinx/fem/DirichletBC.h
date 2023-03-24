@@ -54,9 +54,8 @@ locate_dofs_topological(mesh::Topology& topology, const DofMap& dofmap, int dim,
 /// elements are associated with the cell even if they may appear to be
 /// associated with a facet/edge/vertex.
 ///
-/// @param[in] V The function (sub)spaces on which degrees-of-freedom
-/// (DOFs) will be located. The spaces must share the same mesh and
-/// element type.
+/// @param[in] topology Mesh topology.
+/// @param[in] dofmaps The dofmaps.
 /// @param[in] dim Topological dimension of mesh entities on which
 /// degrees-of-freedom will be located
 /// @param[in] entities Indices of mesh entities. All DOFs associated
@@ -73,8 +72,12 @@ locate_dofs_topological(mesh::Topology& topology, const DofMap& dofmap, int dim,
 /// V[0] and array[1](i) is the corresponding DOF entry in the space
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
-    const std::array<std::reference_wrapper<const FunctionSpace<double>>, 2>& V,
-    int dim, std::span<const std::int32_t> entities, bool remote = true);
+    mesh::Topology& topology,
+    std::array<std::reference_wrapper<const DofMap>, 2> dofmaps, int dim,
+    std::span<const std::int32_t> entities, bool remote = true);
+// std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
+//     const std::array<std::reference_wrapper<const FunctionSpace<double>>, 2>&
+//     V, int dim, std::span<const std::int32_t> entities, bool remote = true);
 
 /// Finds degrees of freedom whose geometric coordinate is true for the
 /// provided marking function.
