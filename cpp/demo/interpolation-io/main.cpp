@@ -155,17 +155,17 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
   // space:
   u_l->interpolate(*u);
 
-  //   // Output the discontinuous Lagrange space in VTK format. When
-  //   // plotting the x0 component the field will appear discontinuous at x0
-  //   // = 0.5 (jump in the normal component between cells) and the x1
-  //   // component will appear continuous (continuous tangent component
-  //   // between cells).
-  // #ifdef HAS_ADIOS2
-  //   io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"),
-  //                            {u_l});
-  //   outfile.write(0.0);
-  //   outfile.close();
-  // #endif
+  // Output the discontinuous Lagrange space in VTK format. When
+  // plotting the x0 component the field will appear discontinuous at x0
+  // = 0.5 (jump in the normal component between cells) and the x1
+  // component will appear continuous (continuous tangent component
+  // between cells).
+#ifdef HAS_ADIOS2
+  io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"),
+                           {u_l});
+  outfile.write(0.0);
+  outfile.close();
+#endif
 }
 
 /// This program shows how to create finite element spaces without FFCx

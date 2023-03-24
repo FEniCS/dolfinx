@@ -32,7 +32,6 @@ target_sources(
   ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/FunctionSpace.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/dofmapbuilder.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/interpolate.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/petsc.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/sparsitybuild.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
