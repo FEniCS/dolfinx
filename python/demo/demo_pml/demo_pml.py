@@ -188,7 +188,6 @@ MPI.COMM_WORLD.barrier()
 if have_pyvista:
     topology, cell_types, geometry = plot.create_vtk_mesh(msh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
-    pyvista.set_jupyter_backend("pythreejs")
     plotter = pyvista.Plotter()
     num_local_cells = msh.topology.index_map(msh.topology.dim).size_local
     grid.cell_data["Marker"] = cell_tags.values[cell_tags.indices < num_local_cells]
@@ -441,7 +440,6 @@ if have_pyvista:
     Esh_values[:, :msh.topology.dim] = Esh_dg.x.array.reshape(V_x.shape[0], msh.topology.dim).real
     V_grid.point_data["u"] = Esh_values
 
-    pyvista.set_jupyter_backend("pythreejs")
     plotter = pyvista.Plotter()
     plotter.add_text("magnitude", font_size=12, color="black")
     plotter.add_mesh(V_grid.copy(), show_edges=True)
