@@ -1007,7 +1007,17 @@ template <typename T>
 nmm_interpolation_data_t
 create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
                                              const FiniteElement& element0,
-                                             const mesh::Mesh<T>& mesh1);
+                                             const mesh::Mesh<T>& mesh1)
+{
+  int tdim = mesh0.topology().dim();
+  auto cell_map = mesh0.topology().index_map(tdim);
+  assert(cell_map);
+  std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
+  std::vector<std::int32_t> cells(num_cells, 0);
+  std::iota(cells.begin(), cells.end(), 0);
+  return create_nonmatching_meshes_interpolation_data(mesh0.geometry(),
+                                                      element0, mesh1, cells);
+}
 
 /// @brief Interpolate from one finite element Function to another one.
 /// @param[out] u The function to interpolate into
