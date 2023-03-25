@@ -61,9 +61,9 @@ cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
 
 template<typename T>
 Eigen::SparseMatrix<T, Eigen::RowMajor>
-assemble_csr(const dolfinx::fem::Form<T, double>
+assemble_csr(const dolfinx::fem::Form<T>
 & a,
-             const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T, double>>>& bcs)
+             const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>& bcs)
 {
   std::vector<Eigen::Triplet<T>> triplets;
   auto mat_add

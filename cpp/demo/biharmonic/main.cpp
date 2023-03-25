@@ -149,10 +149,9 @@ int main(int argc, char* argv[])
   {
     // Create mesh
     auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
-    auto mesh
-        = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle<double>(
-            MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 32},
-            mesh::CellType::triangle, part));
+    auto mesh = std::make_shared<mesh::Mesh<double>>(
+        mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
+                               {32, 32}, mesh::CellType::triangle, part));
 
     // A function space object, which is defined in the generated code,
     // is created:
@@ -184,10 +183,10 @@ int main(int argc, char* argv[])
         });
     auto alpha = std::make_shared<fem::Constant<T>>(8.0);
     // Define variational forms
-    auto a = std::make_shared<fem::Form<T>>(fem::create_form<T, double>(
+    auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_biharmonic_a, {V, V}, {}, {{"alpha", alpha}}, {}));
-    auto L = std::make_shared<fem::Form<T>>(fem::create_form<T, double>(
-        *form_biharmonic_L, {V}, {{"f", f}}, {}, {}));
+    auto L = std::make_shared<fem::Form<T>>(
+        fem::create_form<T>(*form_biharmonic_L, {V}, {{"f", f}}, {}, {}));
 
     // Now, the Dirichlet boundary condition (:math:`u = 0`) can be
     // created using the class :cpp:class:`DirichletBC`. A

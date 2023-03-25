@@ -122,11 +122,9 @@ int main(int argc, char* argv[])
     MPI_Comm comm = MPI_COMM_WORLD;
 
     // Create mesh and function space
-    auto mesh
-        = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle<double>(
-            comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {10, 10},
-            mesh::CellType::triangle,
-            mesh::create_cell_partitioner(mesh::GhostMode::none)));
+    auto mesh = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle(
+        comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {10, 10}, mesh::CellType::triangle,
+        mesh::create_cell_partitioner(mesh::GhostMode::none)));
     auto V = std::make_shared<fem::FunctionSpace<double>>(
         fem::create_functionspace(functionspace_form_poisson_M, "ui", mesh));
 
@@ -135,12 +133,12 @@ int main(int argc, char* argv[])
 
     // Define variational forms
     auto L = std::make_shared<fem::Form<T>>(
-        fem::create_form<T, double>(*form_poisson_L, {V}, {}, {{"f", f}}, {}));
+        fem::create_form<T>(*form_poisson_L, {V}, {}, {{"f", f}}, {}));
 
     // Action of the bilinear form "a" on a function ui
     auto ui = std::make_shared<fem::Function<T>>(V);
-    auto M = std::make_shared<fem::Form<T>>(fem::create_form<T, double>(
-        *form_poisson_M, {V}, {{"ui", ui}}, {{}}, {}));
+    auto M = std::make_shared<fem::Form<T>>(
+        fem::create_form<T>(*form_poisson_M, {V}, {{"ui", ui}}, {{}}, {}));
 
     // Define boundary condition
     auto u_D = std::make_shared<fem::Function<T>>(V);
@@ -216,7 +214,7 @@ int main(int argc, char* argv[])
 
     // Compute L2 error (squared) of the solution vector e = (u - u_d, u
     // - u_d)*dx
-    auto E = std::make_shared<fem::Form<T>>(fem::create_form<T, double>(
+    auto E = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_poisson_E, {}, {{"uexact", u_D}, {"usol", u}}, {}, {}, mesh));
     T error = fem::assemble_scalar(*E);
 

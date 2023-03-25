@@ -11,7 +11,6 @@
 #include "cell_types.h"
 #include "graphbuild.h"
 #include <algorithm>
-#include <array>
 #include <cstdlib>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>

@@ -138,9 +138,9 @@ int main(int argc, char* argv[])
 
     // Define solution function
     auto u = std::make_shared<fem::Function<T>>(V);
-    auto a = std::make_shared<fem::Form<T>>(fem::create_form<T, double>(
+    auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_hyperelasticity_J_form, {V, V}, {{"u", u}}, {}, {}));
-    auto L = std::make_shared<fem::Form<T>>(fem::create_form<T, double>(
+    auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_hyperelasticity_F_form, {V}, {{"u", u}}, {}, {}));
 
     auto u_rotation = std::make_shared<fem::Function<T>>(V);
