@@ -44,8 +44,8 @@ int main(int argc, char* argv[])
     auto V_hex = std::make_shared<fem::FunctionSpace<double>>(
         fem::create_functionspace(mesh_hex, element_hex, 3));
 
-    auto u_tet = std::make_shared<fem::Function<T, double>>(V_tet);
-    auto u_hex = std::make_shared<fem::Function<T, double>>(V_hex);
+    auto u_tet = std::make_shared<fem::Function<T>>(V_tet);
+    auto u_hex = std::make_shared<fem::Function<T>>(V_hex);
 
     auto fun = [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
     {

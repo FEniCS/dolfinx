@@ -9,18 +9,14 @@
 #include "BoundingBoxTree.h"
 #include "gjk.h"
 #include <array>
+#include <concepts>
 #include <cstdint>
 #include <deque>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <map>
 #include <span>
 #include <vector>
-
-namespace dolfinx::mesh
-{
-template <typename T>
-class Mesh;
-}
 
 namespace dolfinx::geometry
 {
@@ -35,7 +31,7 @@ namespace dolfinx::geometry
 /// @return An array of vectors (shape=(num_points, 3)) where the ith
 /// row is the shortest vector between the ith entity and the ith point.
 /// Storage is row-major.
-template <typename T>
+template <std::floating_point T>
 std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
                                std::span<const std::int32_t> entities,
                                std::span<const T> points)
@@ -113,7 +109,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
 /// @param[in] x A point
 /// @return The shortest distance between the bounding box `b` and the
 /// point `x`. Returns zero if `x` is inside box.
-template <typename T>
+template <std::floating_point T>
 T compute_squared_distance_bbox(std::span<const T, 6> b,
                                 std::span<const T, 3> x)
 {
@@ -151,7 +147,7 @@ T compute_squared_distance_bbox(std::span<const T, 6> b,
 /// @param[in] points The set points from which to computed the shortest
 /// (shape=(num_points, 3)). Storage is row-major.
 /// @return Squared shortest distance from points[i] to entities[i]
-template <typename T>
+template <std::floating_point T>
 std::vector<T> squared_distance(const mesh::Mesh<T>& mesh, int dim,
                                 std::span<const std::int32_t> entities,
                                 std::span<const T> points)
@@ -177,7 +173,7 @@ constexpr bool is_leaf(std::array<int, 2> bbox)
 /// coordinates lies within the range `[b(0,i), b(1,i)]` that defines
 /// the bounds of the bounding box, b(0,i) <= x[i] <= b(1,i) for i = 0,
 /// 1, 2
-template <typename T>
+template <std::floating_point T>
 constexpr bool point_in_bbox(const std::array<T, 6>& b, std::span<const T, 3> x)
 {
   assert(b.size() == 6);
@@ -196,7 +192,7 @@ constexpr bool point_in_bbox(const std::array<T, 6>& b, std::span<const T, 3> x)
 /// A bounding box "a" is contained inside another bounding box "b", if
 /// each  of its intervals [a(0,i), a(1,i)] is contained in [b(0,i),
 /// b(1,i)], a(0,i) <= b(1, i) and a(1,i) >= b(0, i)
-template <typename T>
+template <std::floating_point T>
 constexpr bool bbox_in_bbox(std::span<const T, 6> a, std::span<const T, 6> b)
 {
   constexpr T rtol = 1e-14;
@@ -215,9 +211,9 @@ constexpr bool bbox_in_bbox(std::span<const T, 6> a, std::span<const T, 6> b)
 
   return in;
 }
-//-----------------------------------------------------------------------------
-// Compute closest entity {closest_entity, R2} (recursive)
-template <typename T>
+
+/// Compute closest entity {closest_entity, R2} (recursive)
+template <std::floating_point T>
 std::pair<std::int32_t, T>
 _compute_closest_entity(const geometry::BoundingBoxTree<T>& tree,
                         std::span<const T, 3> point, std::int32_t node,
@@ -227,7 +223,7 @@ _compute_closest_entity(const geometry::BoundingBoxTree<T>& tree,
   // Get children of current bounding box node (child_1 denotes entity
   // index for leaves)
   const std::array<int, 2> bbox = tree.bbox(node);
-  double r2;
+  T r2;
   if (is_leaf(bbox))
   {
     // If point cloud tree the exact distance is easy to compute
@@ -279,12 +275,12 @@ _compute_closest_entity(const geometry::BoundingBoxTree<T>& tree,
     return p1;
   }
 }
-//-----------------------------------------------------------------------------
+
 /// Compute collisions with a single point
 /// @param[in] tree The bounding box tree
 /// @param[in] points The points (shape=(num_points, 3))
 /// @param[in, out] entities The list of colliding entities (local to process)
-template <typename T>
+template <std::floating_point T>
 void _compute_collisions_point(const geometry::BoundingBoxTree<T>& tree,
                                std::span<const T, 3> p,
                                std::vector<std::int32_t>& entities)
@@ -335,9 +331,9 @@ void _compute_collisions_point(const geometry::BoundingBoxTree<T>& tree,
     }
   }
 }
-//-----------------------------------------------------------------------------
+
 // Compute collisions with tree (recursive)
-template <typename T>
+template <std::floating_point T>
 void _compute_collisions_tree(const geometry::BoundingBoxTree<T>& A,
                               const geometry::BoundingBoxTree<T>& B,
                               std::int32_t node_A, std::int32_t node_B,
@@ -391,7 +387,6 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree<T>& A,
   // Note that cases above can be collected in fewer cases but this way
   // the logic is easier to follow.
 }
-//-----------------------------------------------------------------------------
 
 } // namespace impl
 
@@ -401,7 +396,7 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree<T>& A,
 /// @param[in] tdim The topological dimension of the entity
 /// @param[in] entities List of local entity indices
 /// @return Bounding box tree for midpoints of entities
-template <typename T>
+template <std::floating_point T>
 BoundingBoxTree<T> create_midpoint_tree(const mesh::Mesh<T>& mesh, int tdim,
                                         std::span<const std::int32_t> entities)
 {
@@ -410,7 +405,7 @@ BoundingBoxTree<T> create_midpoint_tree(const mesh::Mesh<T>& mesh, int tdim,
 
   const std::vector<T> midpoints
       = mesh::compute_midpoints(mesh, tdim, entities);
-  std::vector<std::pair<std::array<double, 3>, std::int32_t>> points(
+  std::vector<std::pair<std::array<T, 3>, std::int32_t>> points(
       entities.size());
   for (std::size_t i = 0; i < points.size(); ++i)
   {
@@ -428,7 +423,7 @@ BoundingBoxTree<T> create_midpoint_tree(const mesh::Mesh<T>& mesh, int tdim,
 /// @param[in] tree1 Second BoundingBoxTree
 /// @return List of pairs of intersecting box indices from each tree,
 /// flattened as a vector of size num_intersections*2
-template <typename T>
+template <std::floating_point T>
 std::vector<std::int32_t> compute_collisions(const BoundingBoxTree<T>& tree0,
                                              const BoundingBoxTree<T>& tree1)
 {
@@ -453,7 +448,7 @@ std::vector<std::int32_t> compute_collisions(const BoundingBoxTree<T>& tree0,
 /// row-major.
 /// @return For each point, the bounding box leaves that collide with
 /// the point.
-template <typename T>
+template <std::floating_point T>
 graph::AdjacencyList<std::int32_t>
 compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
 {
@@ -468,12 +463,11 @@ compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
       offsets[p + 1] = entities.size();
     }
 
-    return graph::AdjacencyList<std::int32_t>(std::move(entities),
-                                              std::move(offsets));
+    return graph::AdjacencyList(std::move(entities), std::move(offsets));
   }
   else
   {
-    return graph::AdjacencyList<std::int32_t>(
+    return graph::AdjacencyList(
         std::vector<std::int32_t>(),
         std::vector<std::int32_t>(points.size() / 3 + 1, 0));
   }
@@ -489,7 +483,7 @@ compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
 /// @param[in] tree The bounding box tree
 /// @param[in] point The point (`shape=(3,)`)
 /// @return The local cell index, -1 if not found
-template <typename T>
+template <std::floating_point T>
 std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
                                           const BoundingBoxTree<T>& tree,
                                           const std::array<T, 3>& point)
@@ -502,12 +496,12 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
     return -1;
   else
   {
-    constexpr double eps2 = 1e-20;
+    constexpr T eps2 = 1e-20;
     const mesh::Geometry<T>& geometry = mesh.geometry();
     std::span<const T> geom_dofs = geometry.x();
     const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
     const std::size_t num_nodes = geometry.cmap().dim();
-    std::vector<double> coordinate_dofs(num_nodes * 3);
+    std::vector<T> coordinate_dofs(num_nodes * 3);
     for (auto cell : cell_candidates)
     {
       auto dofs = x_dofmap.links(cell);
@@ -543,10 +537,11 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
 /// @param[in] points The set of points (`shape=(num_points, 3)`).
 /// Storage is row-major.
 /// @return For each point, the index of the closest mesh entity.
-template <typename T>
-std::vector<std::int32_t> compute_closest_entity(
-    const BoundingBoxTree<T>& tree, const BoundingBoxTree<T>& midpoint_tree,
-    const mesh::Mesh<T>& mesh, std::span<const double> points)
+template <std::floating_point T>
+std::vector<std::int32_t>
+compute_closest_entity(const BoundingBoxTree<T>& tree,
+                       const BoundingBoxTree<T>& midpoint_tree,
+                       const mesh::Mesh<T>& mesh, std::span<const T> points)
 {
   if (tree.num_bboxes() == 0)
     return std::vector<std::int32_t>(points.size() / 3, -1);
@@ -563,7 +558,7 @@ std::vector<std::int32_t> compute_closest_entity(
     std::array<T, 6> diff = midpoint_tree.get_bbox(0);
     for (std::size_t k = 0; k < 3; ++k)
       diff[k] -= points[3 * i + k];
-    double R2 = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
+    T R2 = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
 
     // Use a recursive search through the bounding box tree
     // to find determine the entity with the closest midpoint.
@@ -599,7 +594,7 @@ std::vector<std::int32_t> compute_closest_entity(
 /// @param[in] points Points to check for collision (`shape=(num_points,
 /// 3)`). Storage is row-major.
 /// @return For each point, the cells that collide with the point.
-template <typename T>
+template <std::floating_point T>
 graph::AdjacencyList<std::int32_t> compute_colliding_cells(
     const mesh::Mesh<T>& mesh,
     const graph::AdjacencyList<std::int32_t>& candidate_cells,
@@ -608,7 +603,7 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
   std::vector<std::int32_t> offsets = {0};
   offsets.reserve(candidate_cells.num_nodes() + 1);
   std::vector<std::int32_t> colliding_cells;
-  constexpr double eps2 = 1e-20;
+  constexpr T eps2 = 1e-20;
   const int tdim = mesh.topology().dim();
   for (std::int32_t i = 0; i < candidate_cells.num_nodes(); i++)
   {
@@ -618,7 +613,7 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
       for (std::size_t k = 0; k < 3; ++k)
         _point[3 * j + k] = points[3 * i + k];
 
-    std::vector<double> distances_sq
+    std::vector<T> distances_sq
         = squared_distance<T>(mesh, tdim, cells, _point);
     for (std::size_t j = 0; j < cells.size(); j++)
       if (distances_sq[j] < eps2)
@@ -627,8 +622,7 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
     offsets.push_back(colliding_cells.size());
   }
 
-  return graph::AdjacencyList<std::int32_t>(std::move(colliding_cells),
-                                            std::move(offsets));
+  return graph::AdjacencyList(std::move(colliding_cells), std::move(offsets));
 }
 
 /// @brief Given a set of points, determine which process is colliding,

@@ -11,6 +11,7 @@
 #include <array>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <functional>
@@ -60,21 +61,9 @@ enum class IntegralType : std::int8_t
 /// (the variable `function_spaces` in the constructors below), the list
 /// of spaces should start with space number 0 (the test space) and then
 /// space number 1 (the trial space).
-template <typename T, typename U>
+template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
 class Form
 {
-  template <typename X, typename = void>
-  struct scalar_value_type
-  {
-    typedef X value_type;
-  };
-  template <typename X>
-  struct scalar_value_type<X, std::void_t<typename X::value_type>>
-  {
-    typedef typename X::value_type value_type;
-  };
-  using scalar_value_type_t = typename scalar_value_type<T>::value_type;
-
 public:
   /// @brief Create a finite element form.
   ///
@@ -97,7 +86,7 @@ public:
                       std::vector<std::tuple<
                           int,
                           std::function<void(T*, const T*, const T*,
-                                             const scalar_value_type_t*,
+                                             const scalar_value_type_t<T>*,
                                              const int*, const std::uint8_t*)>,
                           std::vector<std::int32_t>>>>& integrals,
        const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
@@ -177,8 +166,9 @@ public:
   /// @param[in] type Integral type
   /// @param[in] i Domain index
   /// @return Function to call for tabulate_tensor
-  const std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
-                           const int*, const std::uint8_t*)>&
+  const std::function<void(T*, const T*, const T*,
+                           const scalar_value_type_t<T>*, const int*,
+                           const std::uint8_t*)>&
   kernel(IntegralType type, int i) const
   {
     switch (type)
@@ -339,9 +329,9 @@ public:
   using scalar_type = T;
 
 private:
-  using kern
-      = std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
-                           const int*, const std::uint8_t*)>;
+  using kern = std::function<void(T*, const T*, const T*,
+                                  const scalar_value_type_t<T>*, const int*,
+                                  const std::uint8_t*)>;
 
   /// Helper function to get the kernel for integral i from a map
   /// of integrals i.e. from _cell_integrals
@@ -349,8 +339,9 @@ private:
   /// @param[in] i Domain index
   /// @return Function to call for tabulate_tensor
   template <typename X>
-  const std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
-                           const int*, const std::uint8_t*)>&
+  const std::function<void(T*, const T*, const T*,
+                           const scalar_value_type_t<T>*, const int*,
+                           const std::uint8_t*)>&
   get_kernel_from_integrals(const X& integrals, int i) const
   {
     auto it = integrals.find(i);

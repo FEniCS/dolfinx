@@ -134,16 +134,16 @@ int main(int argc, char* argv[])
     auto f = std::make_shared<fem::Constant<T>>(-6.0);
 
     // Define variational forms
-    auto L = std::make_shared<fem::Form<T, double>>(
+    auto L = std::make_shared<fem::Form<T>>(
         fem::create_form<T, double>(*form_poisson_L, {V}, {}, {{"f", f}}, {}));
 
     // Action of the bilinear form "a" on a function ui
-    auto ui = std::make_shared<fem::Function<T, double>>(V);
-    auto M = std::make_shared<fem::Form<T, double>>(fem::create_form<T, double>(
+    auto ui = std::make_shared<fem::Function<T>>(V);
+    auto M = std::make_shared<fem::Form<T>>(fem::create_form<T, double>(
         *form_poisson_M, {V}, {{"ui", ui}}, {{}}, {}));
 
     // Define boundary condition
-    auto u_D = std::make_shared<fem::Function<T, double>>(V);
+    auto u_D = std::make_shared<fem::Function<T>>(V);
     u_D->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
         = mesh::exterior_facet_indices(mesh->topology());
     std::vector<std::int32_t> bdofs = fem::locate_dofs_topological(
         V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
-    auto bc = std::make_shared<const fem::DirichletBC<T, double>>(u_D, bdofs);
+    auto bc = std::make_shared<const fem::DirichletBC<T>>(u_D, bdofs);
 
     // Assemble RHS vector
     la::Vector<T> b(V->dofmap()->index_map, V->dofmap()->index_map_bs());
@@ -208,7 +208,7 @@ int main(int argc, char* argv[])
     };
 
     // Compute solution using the conjugate gradient method
-    auto u = std::make_shared<fem::Function<T, double>>(V);
+    auto u = std::make_shared<fem::Function<T>>(V);
     int num_it = linalg::cg(*u->x(), b, action, 200, 1e-6);
 
     // Set BC values in the solution vectors
@@ -216,7 +216,7 @@ int main(int argc, char* argv[])
 
     // Compute L2 error (squared) of the solution vector e = (u - u_d, u
     // - u_d)*dx
-    auto E = std::make_shared<fem::Form<T, double>>(fem::create_form<T, double>(
+    auto E = std::make_shared<fem::Form<T>>(fem::create_form<T, double>(
         *form_poisson_E, {}, {{"uexact", u_D}, {"usol", u}}, {}, {}, mesh));
     T error = fem::assemble_scalar(*E);
 

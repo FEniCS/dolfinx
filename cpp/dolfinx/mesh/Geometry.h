@@ -350,8 +350,8 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
                    return x_to_subx_dof_map[x_dof];
                  });
 
-  graph::AdjacencyList<std::int32_t> sub_x_dofmap(
-      std::move(sub_x_dofmap_vec), std::move(sub_x_dofmap_offsets));
+  graph::AdjacencyList sub_x_dofmap(std::move(sub_x_dofmap_vec),
+                                    std::move(sub_x_dofmap_offsets));
 
   // Create sub-geometry coordinate element
   CellType sub_coord_cell

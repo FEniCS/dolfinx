@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <concepts>
 #include <dolfinx/common/math.h>
 #include <numeric>
 #include <span>
@@ -22,7 +23,7 @@ namespace impl_gjk
 /// @brief Find the resulting sub-simplex of the input simplex which is
 /// nearest to the origin. Also, return the shortest vector from the
 /// origin to the resulting simplex.
-template <typename T>
+template <std::floating_point T>
 std::pair<std::vector<T>, std::array<T, 3>>
 nearest_simplex(std::span<const T> s)
 {
@@ -220,7 +221,7 @@ nearest_simplex(std::span<const T> s)
 }
 
 /// @brief 'support' function, finds point p in bd which maximises p.v
-template <typename T>
+template <std::floating_point T>
 std::array<T, 3> support(std::span<const T> bd, std::array<T, 3> v)
 {
   int i = 0;
@@ -248,7 +249,7 @@ std::array<T, 3> support(std::span<const T> bd, std::array<T, 3> v)
 /// @param[in] q Body 2 list of points, shape (num_points, 3). Row-major
 /// storage.
 /// @return shortest vector between bodies
-template <typename T>
+template <std::floating_point T>
 std::array<T, 3> compute_distance_gjk(std::span<const T> p,
                                       std::span<const T> q)
 {

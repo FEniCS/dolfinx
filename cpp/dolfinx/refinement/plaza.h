@@ -406,8 +406,7 @@ compute_refinement(MPI_Comm neighbor_comm,
       cell_topology.size() / num_cell_vertices + 1, 0);
   for (std::size_t i = 0; i < offsets.size() - 1; ++i)
     offsets[i + 1] = offsets[i] + num_cell_vertices;
-  graph::AdjacencyList<std::int64_t> cell_adj(std::move(cell_topology),
-                                              std::move(offsets));
+  graph::AdjacencyList cell_adj(std::move(cell_topology), std::move(offsets));
 
   return {std::move(cell_adj), std::move(new_vertex_coords), xshape,
           std::move(parent_cell), std::move(parent_facet)};

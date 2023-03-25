@@ -18,9 +18,8 @@ class HyperElasticProblem
 {
 public:
   HyperElasticProblem(
-      std::shared_ptr<fem::Form<T, double>> L,
-      std::shared_ptr<fem::Form<T, double>> J,
-      std::vector<std::shared_ptr<const fem::DirichletBC<T, double>>> bcs)
+      std::shared_ptr<fem::Form<T>> L, std::shared_ptr<fem::Form<T>> J,
+      std::vector<std::shared_ptr<const fem::DirichletBC<T>>> bcs)
       : _l(L), _j(J), _bcs(bcs),
         _b(L->function_spaces()[0]->dofmap()->index_map,
            L->function_spaces()[0]->dofmap()->index_map_bs()),
@@ -99,8 +98,8 @@ public:
   Mat matrix() { return _matA.mat(); }
 
 private:
-  std::shared_ptr<fem::Form<T, double>> _l, _j;
-  std::vector<std::shared_ptr<const fem::DirichletBC<T, double>>> _bcs;
+  std::shared_ptr<fem::Form<T>> _l, _j;
+  std::vector<std::shared_ptr<const fem::DirichletBC<T>>> _bcs;
   la::Vector<T> _b;
   Vec _b_petsc = nullptr;
   la::petsc::Matrix _matA;
@@ -138,13 +137,13 @@ int main(int argc, char* argv[])
                                   "u", mesh));
 
     // Define solution function
-    auto u = std::make_shared<fem::Function<T, double>>(V);
-    auto a = std::make_shared<fem::Form<T, double>>(fem::create_form<T, double>(
+    auto u = std::make_shared<fem::Function<T>>(V);
+    auto a = std::make_shared<fem::Form<T>>(fem::create_form<T, double>(
         *form_hyperelasticity_J_form, {V, V}, {{"u", u}}, {}, {}));
-    auto L = std::make_shared<fem::Form<T, double>>(fem::create_form<T, double>(
+    auto L = std::make_shared<fem::Form<T>>(fem::create_form<T, double>(
         *form_hyperelasticity_F_form, {V}, {{"u", u}}, {}, {}));
 
-    auto u_rotation = std::make_shared<fem::Function<T, double>>(V);
+    auto u_rotation = std::make_shared<fem::Function<T>>(V);
     u_rotation->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
@@ -205,10 +204,10 @@ int main(int argc, char* argv[])
           }
           return marker;
         });
-    auto bcs = std::vector{std::make_shared<const fem::DirichletBC<T, double>>(
-                               std::vector<T>{0, 0, 0}, bdofs_left, V),
-                           std::make_shared<const fem::DirichletBC<T, double>>(
-                               u_rotation, bdofs_right)};
+    auto bcs = std::vector{
+        std::make_shared<const fem::DirichletBC<T>>(std::vector<T>{0, 0, 0},
+                                                    bdofs_left, V),
+        std::make_shared<const fem::DirichletBC<T>>(u_rotation, bdofs_right)};
 
     HyperElasticProblem problem(L, a, bcs);
     nls::petsc::NewtonSolver newton_solver(mesh->comm());
@@ -237,7 +236,7 @@ int main(int argc, char* argv[])
     const auto sigma_expression = fem::create_expression<T, double>(
         *expression_hyperelasticity_sigma, {{"u", u}}, {}, mesh);
 
-    auto sigma = fem::Function<T, double>(S);
+    auto sigma = fem::Function<T>(S);
     sigma.name = "cauchy_stress";
     sigma.interpolate(sigma_expression);
 

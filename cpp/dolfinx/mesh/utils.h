@@ -743,7 +743,7 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
     // partitioning.
     const int size = dolfinx::MPI::size(comm);
     const int tdim = cell_dim(element.cell_shape());
-    const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
+    const graph::AdjacencyList dest = cell_partitioner(
         comm, size, tdim,
         extract_topology(element.cell_shape(), dof_layout, cells));
 
@@ -761,7 +761,7 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
     // Extract cell 'topology', i.e. extract the vertices for each cell
     // and discard any 'higher-order' nodes
 
-    graph::AdjacencyList<std::int64_t> cells_extracted
+    graph::AdjacencyList cells_extracted
         = extract_topology(element.cell_shape(), dof_layout, cell_nodes);
 
     // -- Re-order cells
@@ -885,12 +885,6 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 /// @param[in] xshape The shape of `x`. It should be `(num_points, gdim)`.
 /// @param[in] ghost_mode The requested type of cell ghosting/overlap
 /// @return A distributed Mesh.
-// template <typename T>
-// Mesh<T> create_mesh(MPI_Comm comm,
-//                     const graph::AdjacencyList<std::int64_t>& cells,
-//                     const fem::CoordinateElement& element, std::span<const T>
-//                     x, std::array<std::size_t, 2> xshape, GhostMode
-//                     ghost_mode)
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>>
 create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,

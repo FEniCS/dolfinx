@@ -11,6 +11,7 @@
 #include "FunctionSpace.h"
 #include "interpolate.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -25,13 +26,8 @@
 
 namespace dolfinx::fem
 {
-template <typename U>
-class FunctionSpace;
 template <typename T, typename U>
 class Expression;
-
-// template <typename T>
-// class Expression;
 
 /// This class represents a function \f$ u_h \f$ in a finite
 /// element function space \f$ V_h \f$, given by
@@ -39,20 +35,9 @@ class Expression;
 /// \f[     u_h = \sum_{i=1}^{n} U_i \phi_i \f]
 /// where \f$ \{\phi_i\}_{i=1}^{n} \f$ is a basis for \f$ V_h \f$,
 /// and \f$ U \f$ is a vector of expansion coefficients for \f$ u_h \f$.
-template <typename T, typename U>
+template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
 class Function
 {
-  template <typename X, typename = void>
-  struct scalar_value_type
-  {
-    typedef X value_type;
-  };
-  template <typename X>
-  struct scalar_value_type<X, std::void_t<typename X::value_type>>
-  {
-    typedef typename X::value_type value_type;
-  };
-  using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 
 public:
   /// Field type for the Function, e.g. double
@@ -255,7 +240,7 @@ public:
   }
 
   /// Interpolate an expression function on the whole domain
-  /// @param[in] f The expression to be interpolated
+  /// @param[in] f Expression to be interpolated
   void interpolate(
       const std::function<std::pair<std::vector<T>, std::vector<std::size_t>>(
           std::experimental::mdspan<
@@ -275,7 +260,7 @@ public:
   }
 
   /// Interpolate an Expression (based on UFL)
-  /// @param[in] e The Expression to be interpolated. The Expression
+  /// @param[in] e Expression to be interpolated. The Expression
   /// must have been created using the reference coordinates
   /// `FiniteElement::interpolation_points()` for the element associated
   /// with `u`.
@@ -330,9 +315,9 @@ public:
 
     // Reshape evaluated data to fit interpolate
     // Expression returns matrix of shape (num_cells, num_points *
-    // value_size), i.e. xyzxyz ordering of dof values per cell per point.
-    // The interpolation uses xxyyzz input, ordered for all points of each
-    // cell, i.e. (value_size, num_cells*num_points)
+    // value_size), i.e. xyzxyz ordering of dof values per cell per
+    // point. The interpolation uses xxyyzz input, ordered for all
+    // points of each cell, i.e. (value_size, num_cells*num_points)
     std::vector<T> fdata1(num_cells * num_points * value_size);
     stdex::mdspan<T, stdex::dextents<std::size_t, 3>> f1(
         fdata1.data(), value_size, num_cells, num_points);

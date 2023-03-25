@@ -16,6 +16,7 @@
 #include "sparsitybuild.h"
 #include <array>
 #include <concepts>
+#include <dolfinx/common/types.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
@@ -299,8 +300,8 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] subdomains Subdomain markers
 /// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain
-template <typename T, typename U>
-Form<T, double> create_form(
+template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
+Form<T, U> create_form(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
     const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
@@ -596,7 +597,7 @@ Form<T, double> create_form(
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional
 /// @return A Form
-template <typename T, typename U>
+template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
 Form<T, U> create_form(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
@@ -647,7 +648,7 @@ Form<T, U> create_form(
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional.
 /// @return A Form
-template <typename T, typename U>
+template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
 Form<T, U> create_form(
     ufcx_form* (*fptr)(),
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
@@ -661,8 +662,8 @@ Form<T, U> create_form(
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   ufcx_form* form = fptr();
-  Form<T, U> L = create_form<T>(*form, spaces, coefficients, constants,
-                                subdomains, mesh);
+  Form<T, U> L = create_form<T, U>(*form, spaces, coefficients, constants,
+                                   subdomains, mesh);
   std::free(form);
   return L;
 }
@@ -770,9 +771,9 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
 namespace impl
 {
 /// @private
-template <typename T>
+template <typename T, typename U>
 std::span<const std::uint32_t> get_cell_orientation_info(
-    const std::vector<std::shared_ptr<const Function<T, double>>>& coefficients)
+    const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients)
 {
   bool needs_dof_transformations = false;
   for (auto coeff : coefficients)
@@ -848,9 +849,9 @@ concept FetchCells = requires(F&& f, std::span<const std::int32_t> v) {
 /// @param[in] fetch_cells Function that fetches the cell index for an
 /// entity in active_entities.
 /// @param[in] offset The offset for c
-template <typename T>
+template <typename T, typename U>
 void pack_coefficient_entity(std::span<T> c, int cstride,
-                             const Function<T, double>& u,
+                             const Function<T, U>& u,
                              std::span<const std::uint32_t> cell_info,
                              std::span<const std::int32_t> entities,
                              std::size_t estride, FetchCells auto&& fetch_cells,
@@ -915,13 +916,13 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
 /// @param[in] integral_type Type of integral
 /// @param[in] id The id of the integration domain
 /// @return A storage container and the column stride
-template <typename T>
+template <typename T, typename U>
 std::pair<std::vector<T>, int>
-allocate_coefficient_storage(const Form<T, double>& form,
-                             IntegralType integral_type, int id)
+allocate_coefficient_storage(const Form<T, U>& form, IntegralType integral_type,
+                             int id)
 {
   // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const Function<T, double>>>& coefficients
+  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
       = form.coefficients();
   const std::vector<int> offsets = form.coefficient_offsets();
 
@@ -954,9 +955,9 @@ allocate_coefficient_storage(const Form<T, double>& form,
 /// @param[in] form The Form
 /// @return A map from a form (integral_type, domain_id) pair to a
 /// (coeffs, cstride) pair
-template <typename T>
+template <typename T, typename U>
 std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
-allocate_coefficient_storage(const Form<T, double>& form)
+allocate_coefficient_storage(const Form<T, U>& form)
 {
   std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>> coeffs;
   for (auto integral_type : form.integral_types())
@@ -979,12 +980,12 @@ allocate_coefficient_storage(const Form<T, double>& form)
 /// @param[in] id The id of the integration domain
 /// @param[in] c The coefficient array
 /// @param[in] cstride The coefficient stride
-template <typename T>
-void pack_coefficients(const Form<T, double>& form, IntegralType integral_type,
+template <typename T, typename U>
+void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
                        int id, std::span<T> c, int cstride)
 {
   // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const Function<T, double>>>& coefficients
+  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
       = form.coefficients();
   const std::vector<int> offsets = form.coefficient_offsets();
 
@@ -1122,7 +1123,7 @@ Expression<T, U> create_expression(
     std::shared_ptr<const FunctionSpace<U>> argument_function_space = nullptr)
 {
   // Place coefficients in appropriate order
-  std::vector<std::shared_ptr<const Function<T, double>>> coeff_map;
+  std::vector<std::shared_ptr<const Function<T, U>>> coeff_map;
   std::vector<std::string> coefficient_names;
   for (int i = 0; i < expression.num_coefficients; ++i)
     coefficient_names.push_back(expression.coefficient_names[i]);
@@ -1164,8 +1165,8 @@ Expression<T, U> create_expression(
 /// @param[in] form The Form
 /// @param[in] coeffs A map from a (integral_type, domain_id) pair to a
 /// (coeffs, cstride) pair
-template <typename T>
-void pack_coefficients(const Form<T, double>& form,
+template <typename T, typename U>
+void pack_coefficients(const Form<T, U>& form,
                        std::map<std::pair<IntegralType, int>,
                                 std::pair<std::vector<T>, int>>& coeffs)
 {

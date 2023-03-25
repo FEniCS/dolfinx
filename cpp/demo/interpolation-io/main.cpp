@@ -41,7 +41,7 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<double>> mesh,
       fem::create_functionspace(mesh, e, 1));
 
   // Create a finite element Function
-  auto u = std::make_shared<fem::Function<T, double>>(V);
+  auto u = std::make_shared<fem::Function<T>>(V);
 
   // Interpolate sin(2 \pi x[0]) in the scalar Lagrange finite element
   // space
@@ -80,7 +80,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
       fem::create_functionspace(mesh, e, 1));
 
   // Create a Nedelec finite element Function
-  auto u = std::make_shared<fem::Function<T, U>>(V);
+  auto u = std::make_shared<fem::Function<T>>(V);
 
   // Interpolate the vector field
   //  u = [x[0], x[1]]  if x[0] < 0.5
@@ -149,7 +149,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
   auto V_l = std::make_shared<fem::FunctionSpace<U>>(
       fem::create_functionspace(mesh, e_l, 2));
 
-  auto u_l = std::make_shared<fem::Function<T, U>>(V_l);
+  auto u_l = std::make_shared<fem::Function<T>>(V_l);
 
   // Interpolate the Nedelec function into the discontinuous Lagrange
   // space:
@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
     // then interpolate the H(curl) function in a discontinuous Lagrange
     // space for visualisation
     interpolate_nedelec<float>(mesh1, "u_nedelec");
-    // interpolate_nedelec<std::complex<double>>(mesh, "u_nedelec_complex");
+    interpolate_nedelec<std::complex<double>>(mesh, "u_nedelec_complex");
   }
 
   MPI_Finalize();

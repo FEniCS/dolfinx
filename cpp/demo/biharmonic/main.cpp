@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
     //
     // .. code-block:: cpp
 
-    auto f = std::make_shared<fem::Function<T, double>>(V);
+    auto f = std::make_shared<fem::Function<T>>(V);
     f->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
@@ -184,9 +184,9 @@ int main(int argc, char* argv[])
         });
     auto alpha = std::make_shared<fem::Constant<T>>(8.0);
     // Define variational forms
-    auto a = std::make_shared<fem::Form<T, double>>(fem::create_form<T, double>(
+    auto a = std::make_shared<fem::Form<T>>(fem::create_form<T, double>(
         *form_biharmonic_a, {V, V}, {}, {{"alpha", alpha}}, {}));
-    auto L = std::make_shared<fem::Form<T, double>>(fem::create_form<T, double>(
+    auto L = std::make_shared<fem::Form<T>>(fem::create_form<T, double>(
         *form_biharmonic_L, {V}, {{"f", f}}, {}, {}));
 
     // Now, the Dirichlet boundary condition (:math:`u = 0`) can be
@@ -222,8 +222,7 @@ int main(int argc, char* argv[])
         });
     const auto bdofs = fem::locate_dofs_topological(
         V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
-    auto bc
-        = std::make_shared<const fem::DirichletBC<T, double>>(0.0, bdofs, V);
+    auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a
@@ -235,7 +234,7 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Compute solution
-    fem::Function<T, double> u(V);
+    fem::Function<T> u(V);
     auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
     la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
                     L->function_spaces()[0]->dofmap()->index_map_bs());

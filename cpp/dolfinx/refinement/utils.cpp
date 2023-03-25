@@ -327,8 +327,8 @@ std::array<std::vector<std::int32_t>, 2> refinement::transfer_cell_meshtag(
   offset_child.front() = 0;
   std::partial_sum(count_child.begin(), count_child.end(),
                    std::next(offset_child.begin()));
-  graph::AdjacencyList<std::int32_t> p_to_c_cell(std::move(child_cell),
-                                                 std::move(offset_child));
+  graph::AdjacencyList p_to_c_cell(std::move(child_cell),
+                                   std::move(offset_child));
 
   // Copy cell meshtag from parent to child
   std::vector<std::int32_t> cell_indices, tag_values;

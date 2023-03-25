@@ -59,7 +59,7 @@ void geometry(py::module& m)
         else
           throw std::runtime_error("Array has wrong ndim.");
 
-        return as_pyarray(dolfinx::geometry::compute_closest_entity(
+        return as_pyarray(dolfinx::geometry::compute_closest_entity<double>(
             tree, midpoint_tree, mesh, p));
       },
       py::arg("tree"), py::arg("midpoint_tree"), py::arg("mesh"),

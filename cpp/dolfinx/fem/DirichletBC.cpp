@@ -299,12 +299,6 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   const DofMap& dofmap0 = dofmaps.at(0).get();
   const DofMap& dofmap1 = dofmaps.at(1).get();
 
-  // // FIXME: Elements must be the same?
-  // assert(V0.element());
-  // assert(V1.element());
-  // if (*V0.element() != *V1.element())
-  //   throw std::runtime_error("Function spaces must have the same element.");
-
   // Check that dof layouts are the same
   assert(dofmap0.element_dof_layout() == dofmap1.element_dof_layout());
 

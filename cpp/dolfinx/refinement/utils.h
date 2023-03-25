@@ -293,8 +293,8 @@ mesh::Mesh<T> partition(const mesh::Mesh<T>& old_mesh,
       std::vector<std::int32_t> destinations(num_cells, mpi_rank);
       std::vector<std::int32_t> dest_offsets(num_cells + 1);
       std::iota(dest_offsets.begin(), dest_offsets.end(), 0);
-      return graph::AdjacencyList<std::int32_t>(std::move(destinations),
-                                                std::move(dest_offsets));
+      return graph::AdjacencyList(std::move(destinations),
+                                  std::move(dest_offsets));
     };
 
     return mesh::create_mesh(old_mesh.comm(), cell_topology,

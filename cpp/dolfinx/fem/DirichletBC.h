@@ -13,6 +13,7 @@
 #include "FunctionSpace.h"
 #include <array>
 #include <concepts>
+#include <dolfinx/common/types.h>
 #include <functional>
 #include <memory>
 #include <span>
@@ -243,7 +244,7 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
 /// A DirichletBC is specified by the function \f$g\f$, the function
 /// space (trial space) and degrees of freedom to which the boundary
 /// condition applies.
-template <typename T, typename U>
+template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
 class DirichletBC
 {
 private:

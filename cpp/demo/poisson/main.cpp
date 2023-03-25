@@ -119,15 +119,13 @@ int main(int argc, char* argv[])
   PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   {
-    using U = double;
-
     // Create mesh and function space
     auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
-    auto mesh = std::make_shared<mesh::Mesh<U>>(
+    auto mesh = std::make_shared<mesh::Mesh<double>>(
         mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}},
                                {32, 16}, mesh::CellType::triangle, part));
 
-    auto V = std::make_shared<fem::FunctionSpace<U>>(
+    auto V = std::make_shared<fem::FunctionSpace<double>>(
         fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
 
     // Next, we define the variational formulation by initializing the
@@ -140,13 +138,13 @@ int main(int argc, char* argv[])
 
     // Prepare and set Constants for the bilinear form
     auto kappa = std::make_shared<fem::Constant<T>>(2.0);
-    auto f = std::make_shared<fem::Function<T, U>>(V);
-    auto g = std::make_shared<fem::Function<T, U>>(V);
+    auto f = std::make_shared<fem::Function<T>>(V);
+    auto g = std::make_shared<fem::Function<T>>(V);
 
     // Define variational forms
-    auto a = std::make_shared<fem::Form<T, U>>(fem::create_form<T, U>(
+    auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_poisson_a, {V, V}, {}, {{"kappa", kappa}}, {}));
-    auto L = std::make_shared<fem::Form<T, U>>(fem::create_form<T, U>(
+    auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_poisson_L, {V}, {{"f", f}, {"g", g}}, {}, {}));
 
     // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
@@ -168,11 +166,12 @@ int main(int argc, char* argv[])
         *mesh, 1,
         [](auto x)
         {
+          using U = typename decltype(x)::value_type;
           constexpr U eps = 1.0e-8;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
-            U x0 = x(0, p);
+            auto x0 = x(0, p);
             if (std::abs(x0) < eps or std::abs(x0 - 2) < eps)
               marker[p] = true;
           }
@@ -180,8 +179,7 @@ int main(int argc, char* argv[])
         });
     const auto bdofs = fem::locate_dofs_topological(
         V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
-    auto bc
-        = std::make_shared<const fem::DirichletBC<T, double>>(0.0, bdofs, V);
+    auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
 
     f->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
@@ -189,8 +187,8 @@ int main(int argc, char* argv[])
           std::vector<T> f;
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
-            U dx = (x(0, p) - 0.5) * (x(0, p) - 0.5);
-            U dy = (x(1, p) - 0.5) * (x(1, p) - 0.5);
+            auto dx = (x(0, p) - 0.5) * (x(0, p) - 0.5);
+            auto dy = (x(1, p) - 0.5) * (x(1, p) - 0.5);
             f.push_back(10 * std::exp(-(dx + dy) / 0.02));
           }
 
@@ -216,7 +214,7 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Compute solution
-    fem::Function<T, double> u(V);
+    fem::Function<T> u(V);
     auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
     la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
                     L->function_spaces()[0]->dofmap()->index_map_bs());

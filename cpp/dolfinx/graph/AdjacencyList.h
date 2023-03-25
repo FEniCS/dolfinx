@@ -159,6 +159,9 @@ private:
   std::vector<std::int32_t> _offsets;
 };
 
+template <typename T, typename U>
+AdjacencyList(T, U) -> AdjacencyList<typename T::value_type>;
+
 /// @brief Construct a constant degree (valency) adjacency list.
 ///
 /// A constant degree graph has the same number of edges for every node.
@@ -168,10 +171,10 @@ private:
 /// @return An adjacency list
 template <typename U>
   requires requires {
-             typename std::decay_t<U>::value_type;
-             requires std::convertible_to<
-                 U, std::vector<typename std::decay_t<U>::value_type>>;
-           }
+    typename std::decay_t<U>::value_type;
+    requires std::convertible_to<
+        U, std::vector<typename std::decay_t<U>::value_type>>;
+  }
 AdjacencyList<typename std::decay_t<U>::value_type>
 regular_adjacency_list(U&& data, int degree)
 {
