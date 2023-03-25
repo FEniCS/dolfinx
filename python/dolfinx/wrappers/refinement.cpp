@@ -30,7 +30,7 @@ void refinement(py::module& m)
   // dolfinx::refinement::refine
   m.def("refine",
         py::overload_cast<const dolfinx::mesh::Mesh<double>&, bool>(
-            &dolfinx::refinement::refine),
+            &dolfinx::refinement::refine<double>),
         py::arg("mesh"), py::arg("redistribute") = true);
   m.def(
       "refine",

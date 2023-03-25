@@ -186,9 +186,9 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
                  int dim)
 {
   if (entities.empty())
-    return std::vector<double>();
+    return std::vector<T>();
   if (dim == 0)
-    return std::vector<double>(entities.size(), 0);
+    return std::vector<T>(entities.size(), 0);
 
   // Get the geometry dofs for the vertices of each entity
   const std::vector<std::int32_t> vertex_xdofs
@@ -202,7 +202,7 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
   // Function to compute the length of (p0 - p1)
   auto delta_norm = [](const auto& p0, const auto& p1)
   {
-    double norm = 0;
+    T norm = 0;
     for (std::size_t i = 0; i < 3; ++i)
       norm += (p0[i] - p1[i]) * (p0[i] - p1[i]);
     return std::sqrt(norm);
@@ -220,10 +220,10 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
     // Compute maximum distance between any two vertices
     for (std::size_t i = 0; i < e_vertices.size(); ++i)
     {
-      std::span<const double, 3> p0(x.data() + 3 * e_vertices[i], 3);
+      std::span<const T, 3> p0(x.data() + 3 * e_vertices[i], 3);
       for (std::size_t j = i + 1; j < e_vertices.size(); ++j)
       {
-        std::span<const double, 3> p1(x.data() + 3 * e_vertices[j], 3);
+        std::span<const T, 3> p1(x.data() + 3 * e_vertices[j], 3);
         h[e] = std::max(h[e], delta_norm(p0, p1));
       }
     }
@@ -240,7 +240,7 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
                             std::span<const std::int32_t> entities)
 {
   if (entities.empty())
-    return std::vector<double>();
+    return std::vector<T>();
 
   if (mesh.topology().cell_type() == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cell");
@@ -260,7 +260,7 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
       = entities_to_geometry(mesh, dim, entities, orient);
 
   const std::size_t shape1 = geometry_entities.size() / entities.size();
-  std::vector<double> n(entities.size() * 3);
+  std::vector<T> n(entities.size() * 3);
   switch (type)
   {
   case CellType::interval:
@@ -301,7 +301,7 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
                       std::span<const T, 3>(x.data() + 3 * vertices[2], 3)};
 
       // Compute (p1 - p0) and (p2 - p0)
-      std::array<double, 3> dp1, dp2;
+      std::array<T, 3> dp1, dp2;
       std::transform(p[1].begin(), p[1].end(), p[0].begin(), dp1.begin(),
                      [](auto x, auto y) { return x - y; });
       std::transform(p[2].begin(), p[2].end(), p[0].begin(), dp2.begin(),
@@ -309,10 +309,11 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
 
       // Define cell normal via cross product of first two edges
       std::array<T, 3> ni = math::cross(dp1, dp2);
-      double norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
+      T norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
       std::transform(ni.begin(), ni.end(), std::next(n.begin(), 3 * i),
                      [norm](auto x) { return x / norm; });
     }
+
     return n;
   }
   case CellType::quadrilateral:
@@ -337,10 +338,11 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
 
       // Define cell normal via cross product of first two edges
       std::array<T, 3> ni = math::cross(dp1, dp2);
-      double norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
+      T norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
       std::transform(ni.begin(), ni.end(), std::next(n.begin(), 3 * i),
                      [norm](auto x) { return x / norm; });
     }
+
     return n;
   }
   default:

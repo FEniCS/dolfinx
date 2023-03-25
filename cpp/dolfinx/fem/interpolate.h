@@ -984,7 +984,7 @@ nmm_interpolation_data_t create_nonmatching_meshes_interpolation_data(
 {
   // Collect all the points at which values are needed to define the
   // interpolating function
-  const std::vector<double> coords
+  const std::vector<T> coords
       = interpolation_coords(element0, geometry0, cells);
 
   // Transpose interpolation coords

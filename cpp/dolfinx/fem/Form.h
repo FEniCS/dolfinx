@@ -100,11 +100,10 @@ public:
                                              const scalar_value_type_t*,
                                              const int*, const std::uint8_t*)>,
                           std::vector<std::int32_t>>>>& integrals,
-       const std::vector<std::shared_ptr<const Function<T, double>>>&
-           coefficients,
+       const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
        const std::vector<std::shared_ptr<const Constant<T>>>& constants,
        bool needs_facet_permutations,
-       std::shared_ptr<const mesh::Mesh<double>> mesh = nullptr)
+       std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
       : _function_spaces(V), _coefficients(coefficients), _constants(constants),
         _mesh(mesh), _needs_facet_permutations(needs_facet_permutations)
   {
@@ -163,7 +162,7 @@ public:
 
   /// Extract common mesh for the form
   /// @return The mesh
-  std::shared_ptr<const mesh::Mesh<double>> mesh() const { return _mesh; }
+  std::shared_ptr<const mesh::Mesh<U>> mesh() const { return _mesh; }
 
   /// Return function spaces for all arguments
   /// @return Function spaces
@@ -305,8 +304,7 @@ public:
   }
 
   /// Access coefficients
-  const std::vector<std::shared_ptr<const Function<T, double>>>&
-  coefficients() const
+  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients() const
   {
     return _coefficients;
   }
@@ -365,13 +363,13 @@ private:
   std::vector<std::shared_ptr<const FunctionSpace<U>>> _function_spaces;
 
   // Form coefficients
-  std::vector<std::shared_ptr<const Function<T, double>>> _coefficients;
+  std::vector<std::shared_ptr<const Function<T, U>>> _coefficients;
 
   // Constants associated with the Form
   std::vector<std::shared_ptr<const Constant<T>>> _constants;
 
   // The mesh
-  std::shared_ptr<const mesh::Mesh<double>> _mesh;
+  std::shared_ptr<const mesh::Mesh<U>> _mesh;
 
   // Cell integrals
   std::map<int, std::pair<kern, std::vector<std::int32_t>>> _cell_integrals;
