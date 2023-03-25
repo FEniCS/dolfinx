@@ -385,30 +385,43 @@ mesh::MeshTags<std::int32_t, double> refinement::transfer_facet_meshtag(
     std::shared_ptr<const mesh::Mesh<double>> refined_mesh,
     std::span<const std::int32_t> cell, std::span<const std::int8_t> facet)
 {
-  const int tdim = meshtag.mesh()->topology().dim();
-
+  int tdim = meshtag.mesh()->topology().dim();
   if (meshtag.dim() != tdim - 1)
     throw std::runtime_error("Input meshtag is not facet-based");
-  if (meshtag.mesh()->topology().index_map(tdim)->num_ghosts() > 0)
+
+  auto [entities, values] = transfer_facet_meshtag(
+      meshtag.mesh()->topology(), meshtag.indices(), meshtag.values(),
+      refined_mesh->topology(), cell, facet);
+  return mesh::MeshTags<std::int32_t, double>(
+      refined_mesh, tdim - 1, std::move(entities), std::move(values));
+}
+//----------------------------------------------------------------------------
+std::array<std::vector<std::int32_t>, 2> refinement::transfer_facet_meshtag(
+    const mesh::Topology& topology, std::span<const std::int32_t> indices,
+    std::span<const std::int32_t> values, const mesh::Topology& topology1,
+    std::span<const std::int32_t> cell, std::span<const std::int8_t> facet)
+{
+  const int tdim = topology.dim();
+  // if (meshtag.dim() != tdim - 1)
+  //   throw std::runtime_error("Input meshtag is not facet-based");
+  if (topology.index_map(tdim)->num_ghosts() > 0)
     throw std::runtime_error("Ghosted meshes are not supported");
 
-  auto c_to_f = meshtag.mesh()->topology().connectivity(tdim, tdim - 1);
+  auto c_to_f = topology.connectivity(tdim, tdim - 1);
   if (!c_to_f)
     throw std::runtime_error("Parent mesh is missing cell-facet connectivity.");
 
   // Create map parent->child facets
   const std::int32_t num_input_facets
-      = meshtag.mesh()->topology().index_map(tdim - 1)->size_local()
-        + meshtag.mesh()->topology().index_map(tdim - 1)->num_ghosts();
+      = topology.index_map(tdim - 1)->size_local()
+        + topology.index_map(tdim - 1)->num_ghosts();
 
   // Get global index for each refined cell, before reordering in Mesh
   // construction
-  assert(refined_mesh);
   const std::vector<std::int64_t>& original_cell_index
-      = refined_mesh->topology().original_cell_index;
+      = topology1.original_cell_index;
   assert(original_cell_index.size() == cell.size());
-  std::int64_t global_offset
-      = refined_mesh->topology().index_map(tdim)->local_range()[0];
+  std::int64_t global_offset = topology1.index_map(tdim)->local_range()[0];
 
   // Map cells back to original index
   std::vector<std::int32_t> local_cell_index(original_cell_index.size());
@@ -432,7 +445,7 @@ mesh::MeshTags<std::int32_t, double> refinement::transfer_facet_meshtag(
     }
   }
 
-  auto c_to_f_refined = refined_mesh->topology().connectivity(tdim, tdim - 1);
+  auto c_to_f_refined = topology1.connectivity(tdim, tdim - 1);
   if (!c_to_f_refined)
   {
     throw std::runtime_error(
@@ -472,11 +485,9 @@ mesh::MeshTags<std::int32_t, double> refinement::transfer_facet_meshtag(
 
   // Copy facet meshtag from parent to child
   std::vector<std::int32_t> facet_indices, tag_values;
-  std::span<const std::int32_t> in_index = meshtag.indices();
-  std::span<const std::int32_t> in_value = meshtag.values();
-  for (std::size_t i = 0; i < in_index.size(); ++i)
+  for (std::size_t i = 0; i < indices.size(); ++i)
   {
-    std::int32_t parent_index = in_index[i];
+    std::int32_t parent_index = indices[i];
     auto pclinks = p_to_c_facet.links(parent_index);
 
     // Eliminate duplicates
@@ -484,7 +495,7 @@ mesh::MeshTags<std::int32_t, double> refinement::transfer_facet_meshtag(
     auto it_end = std::unique(pclinks.begin(), pclinks.end());
     facet_indices.insert(facet_indices.end(), pclinks.begin(), it_end);
     tag_values.insert(tag_values.end(), std::distance(pclinks.begin(), it_end),
-                      in_value[i]);
+                      values[i]);
   }
 
   // Sort values into order, based on facet indices
@@ -499,9 +510,7 @@ mesh::MeshTags<std::int32_t, double> refinement::transfer_facet_meshtag(
     sorted_facet_indices[i] = facet_indices[sort_order[i]];
   }
 
-  return mesh::MeshTags<std::int32_t, double>(refined_mesh, tdim - 1,
-                                              std::move(sorted_facet_indices),
-                                              std::move(sorted_tag_values));
+  return {std::move(sorted_facet_indices), std::move(sorted_tag_values)};
 }
 //----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t, double> refinement::transfer_cell_meshtag(
@@ -509,27 +518,43 @@ mesh::MeshTags<std::int32_t, double> refinement::transfer_cell_meshtag(
     std::shared_ptr<const mesh::Mesh<double>> refined_mesh,
     std::span<const std::int32_t> cell)
 {
-  const int tdim = meshtag.mesh()->topology().dim();
+  int tdim = meshtag.mesh()->topology().dim();
   if (meshtag.dim() != tdim)
     throw std::runtime_error("Input meshtag is not cell-based");
-
   if (meshtag.mesh()->topology().index_map(tdim)->num_ghosts() > 0)
+    throw std::runtime_error("Ghosted meshes are not supported");
+
+  auto [entities, values]
+      = transfer_cell_meshtag(meshtag.mesh()->topology(), meshtag.indices(),
+                              meshtag.values(), refined_mesh->topology(), cell);
+  return mesh::MeshTags<std::int32_t, double>(
+      refined_mesh, tdim, std::move(entities), std::move(values));
+}
+//-----------------------------------------------------------------------------
+std::array<std::vector<std::int32_t>, 2> refinement::transfer_cell_meshtag(
+    const mesh::Topology& topology0, std::span<const std::int32_t> indices0,
+    std::span<const std::int32_t> values0, const mesh::Topology& topology1,
+    std::span<const std::int32_t> cell)
+{
+  const int tdim = topology0.dim();
+  // if (meshtag.dim() != tdim)
+  //   throw std::runtime_error("Input meshtag is not cell-based");
+
+  if (topology0.index_map(tdim)->num_ghosts() > 0)
     throw std::runtime_error("Ghosted meshes are not supported");
 
   // Create map parent->child facets
   const std::int32_t num_input_cells
-      = meshtag.mesh()->topology().index_map(tdim)->size_local()
-        + meshtag.mesh()->topology().index_map(tdim)->num_ghosts();
+      = topology0.index_map(tdim)->size_local()
+        + topology0.index_map(tdim)->num_ghosts();
   std::vector<int> count_child(num_input_cells, 0);
 
   // Get global index for each refined cell, before reordering in Mesh
   // construction
-  assert(refined_mesh);
   const std::vector<std::int64_t>& original_cell_index
-      = refined_mesh->topology().original_cell_index;
+      = topology1.original_cell_index;
   assert(original_cell_index.size() == cell.size());
-  std::int64_t global_offset
-      = refined_mesh->topology().index_map(tdim)->local_range()[0];
+  std::int64_t global_offset = topology1.index_map(tdim)->local_range()[0];
 
   // Map back to original index
   std::vector<std::int32_t> local_cell_index(original_cell_index.size());
@@ -571,13 +596,13 @@ mesh::MeshTags<std::int32_t, double> refinement::transfer_cell_meshtag(
 
   // Copy cell meshtag from parent to child
   std::vector<std::int32_t> cell_indices, tag_values;
-  std::span<const std::int32_t> in_index = meshtag.indices();
-  std::span<const std::int32_t> in_value = meshtag.values();
-  for (std::size_t i = 0; i < in_index.size(); ++i)
+  // std::span<const std::int32_t> in_index = meshtag.indices();
+  // std::span<const std::int32_t> in_value = meshtag.values();
+  for (std::size_t i = 0; i < indices0.size(); ++i)
   {
-    auto pclinks = p_to_c_cell.links(in_index[i]);
+    auto pclinks = p_to_c_cell.links(indices0[i]);
     cell_indices.insert(cell_indices.end(), pclinks.begin(), pclinks.end());
-    tag_values.insert(tag_values.end(), pclinks.size(), in_value[i]);
+    tag_values.insert(tag_values.end(), pclinks.size(), values0[i]);
   }
 
   // Sort values into order, based on cell indices
@@ -592,8 +617,6 @@ mesh::MeshTags<std::int32_t, double> refinement::transfer_cell_meshtag(
     sorted_cell_indices[i] = cell_indices[sort_order[i]];
   }
 
-  return mesh::MeshTags<std::int32_t, double>(refined_mesh, tdim,
-                                              std::move(sorted_cell_indices),
-                                              std::move(sorted_tag_values));
+  return {std::move(sorted_cell_indices), std::move(sorted_tag_values)};
 }
 //-----------------------------------------------------------------------------

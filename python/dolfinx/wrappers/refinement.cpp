@@ -77,10 +77,15 @@ void refinement(py::module& m)
          const py::array_t<std::int32_t, py::array::c_style>& parent_cell,
          const py::array_t<std::int8_t, py::array::c_style>& parent_facet)
       {
-        return dolfinx::refinement::transfer_facet_meshtag(
-            parent_meshtag, refined_mesh,
-            std::span(parent_cell.data(), parent_cell.size()),
-            std::span(parent_facet.data(), parent_facet.size()));
+        int tdim = parent_meshtag.mesh()->topology().dim();
+        if (parent_meshtag.dim() != tdim - 1)
+          throw std::runtime_error("Input meshtag is not facet-based");
+        auto [entities, values] = dolfinx::refinement::transfer_facet_meshtag(
+            parent_meshtag.mesh()->topology(), parent_meshtag.indices(),
+            parent_meshtag.values(), refined_mesh->topology(), parent_cell,
+            parent_facet);
+        return dolfinx::mesh::MeshTags<std::int32_t, double>(
+            refined_mesh, tdim - 1, std::move(entities), std::move(values));
       },
       py::arg("parent_meshtag"), py::arg("refined_mesh"),
       py::arg("parent_cell"), py::arg("parent_facet"));
@@ -90,9 +95,16 @@ void refinement(py::module& m)
          std::shared_ptr<const dolfinx::mesh::Mesh<double>> refined_mesh,
          const py::array_t<std::int32_t, py::array::c_style>& parent_cell)
       {
-        return dolfinx::refinement::transfer_cell_meshtag(
-            parent_meshtag, refined_mesh,
-            std::span(parent_cell.data(), parent_cell.size()));
+        int tdim = parent_meshtag.mesh()->topology().dim();
+        if (parent_meshtag.dim() != tdim)
+          throw std::runtime_error("Input meshtag is not cell-based");
+        if (parent_meshtag.mesh()->topology().index_map(tdim)->num_ghosts() > 0)
+          throw std::runtime_error("Ghosted meshes are not supported");
+        auto [entities, values] = dolfinx::refinement::transfer_cell_meshtag(
+            parent_meshtag.mesh()->topology(), parent_meshtag.indices(),
+            parent_meshtag.values(), refined_mesh->topology(), parent_cell);
+        return dolfinx::mesh::MeshTags<std::int32_t, double>(
+            refined_mesh, tdim, std::move(entities), std::move(values));
       },
       py::arg("parent_meshtag"), py::arg("refined_mesh"),
       py::arg("parent_cell"));
