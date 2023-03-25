@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <deque>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <map>
 #include <span>
 #include <vector>
 
@@ -165,53 +166,49 @@ std::vector<T> squared_distance(const mesh::Mesh<T>& mesh, int dim,
 
 namespace impl
 {
-//-----------------------------------------------------------------------------
-
 /// Check whether bounding box is a leaf node
 constexpr bool is_leaf(std::array<int, 2> bbox)
 {
   // Leaf nodes are marked by setting child_0 equal to child_1
   return bbox[0] == bbox[1];
 }
-//-----------------------------------------------------------------------------
 
 /// A point `x` is inside a bounding box `b` if each component of its
 /// coordinates lies within the range `[b(0,i), b(1,i)]` that defines
 /// the bounds of the bounding box, b(0,i) <= x[i] <= b(1,i) for i = 0,
 /// 1, 2
-constexpr bool point_in_bbox(const std::array<double, 6>& b,
-                             std::span<const double, 3> x)
+template <typename T>
+constexpr bool point_in_bbox(const std::array<T, 6>& b, std::span<const T, 3> x)
 {
   assert(b.size() == 6);
-  constexpr double rtol = 1e-14;
+  constexpr T rtol = 1e-14;
   bool in = true;
   for (std::size_t i = 0; i < 3; i++)
   {
-    double eps = rtol * (b[i + 3] - b[i]);
+    T eps = rtol * (b[i + 3] - b[i]);
     in &= x[i] >= (b[i] - eps);
     in &= x[i] <= (b[i + 3] + eps);
   }
 
   return in;
 }
-//-----------------------------------------------------------------------------
 
 /// A bounding box "a" is contained inside another bounding box "b", if
 /// each  of its intervals [a(0,i), a(1,i)] is contained in [b(0,i),
 /// b(1,i)], a(0,i) <= b(1, i) and a(1,i) >= b(0, i)
-constexpr bool bbox_in_bbox(std::span<const double, 6> a,
-                            std::span<const double, 6> b)
+template <typename T>
+constexpr bool bbox_in_bbox(std::span<const T, 6> a, std::span<const T, 6> b)
 {
-  constexpr double rtol = 1e-14;
-  auto a0 = a.subspan<0, 3>();
-  auto a1 = a.subspan<3, 3>();
-  auto b0 = b.subspan<0, 3>();
-  auto b1 = b.subspan<3, 3>();
+  constexpr T rtol = 1e-14;
+  auto a0 = a.template subspan<0, 3>();
+  auto a1 = a.template subspan<3, 3>();
+  auto b0 = b.template subspan<0, 3>();
+  auto b1 = b.template subspan<3, 3>();
 
   bool in = true;
   for (std::size_t i = 0; i < 3; i++)
   {
-    double eps = rtol * (b1[i] - b0[i]);
+    T eps = rtol * (b1[i] - b0[i]);
     in &= a1[i] >= (b0[i] - eps);
     in &= a0[i] <= (b1[i] + eps);
   }
@@ -328,6 +325,7 @@ void _compute_collisions_point(const geometry::BoundingBoxTree<T>& tree,
         next = bbox[1];
       }
     }
+
     // If tree traversal reaches a dead end (box is a leaf node or no
     // collision detected), check the stack for deferred subtrees.
     if (next == -1 and !stack.empty())
@@ -346,7 +344,7 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree<T>& A,
                               std::vector<std::int32_t>& entities)
 {
   // If bounding boxes don't collide, then don't search further
-  if (!bbox_in_bbox(A.get_bbox(node_A), B.get_bbox(node_B)))
+  if (!bbox_in_bbox<T>(A.get_bbox(node_A), B.get_bbox(node_B)))
     return;
 
   // Get bounding boxes for current nodes
@@ -651,9 +649,210 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// @note Returns -1 if no colliding process is found
 /// @note dest_points is flattened row-major, shape (dest_owner.size(), 3)
 /// @note Only looks through cells owned by the process
-std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
-           std::vector<double>, std::vector<std::int32_t>>
-determine_point_ownership(const mesh::Mesh<double>& mesh,
-                          std::span<const double> points);
+template <typename T>
+std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
+           std::vector<std::int32_t>>
+determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
+{
+  MPI_Comm comm = mesh.comm();
+
+  // Create a global bounding-box tree to find candidate processes with
+  // cells that could collide with the points
+  constexpr T padding = 1.0e-4;
+  const int tdim = mesh.topology().dim();
+  const auto cell_map = mesh.topology().index_map(tdim);
+  const std::int32_t num_cells = cell_map->size_local();
+  // NOTE: Should we send the cells in as input?
+  std::vector<std::int32_t> cells(num_cells, 0);
+  std::iota(cells.begin(), cells.end(), 0);
+  BoundingBoxTree bb(mesh, tdim, cells, padding);
+  BoundingBoxTree global_bbtree = bb.create_global_tree(comm);
+
+  // Compute collisions:
+  // For each point in `x` get the processes it should be sent to
+  graph::AdjacencyList<std::int32_t> collisions
+      = compute_collisions(global_bbtree, points);
+
+  // Get unique list of outgoing ranks
+  std::vector<std::int32_t> out_ranks = collisions.array();
+  std::sort(out_ranks.begin(), out_ranks.end());
+  out_ranks.erase(std::unique(out_ranks.begin(), out_ranks.end()),
+                  out_ranks.end());
+
+  // Compute incoming edges (source processes)
+  std::vector<int> in_ranks
+      = dolfinx::MPI::compute_graph_edges_nbx(comm, out_ranks);
+  std::sort(in_ranks.begin(), in_ranks.end());
+
+  // Create neighborhood communicator in forward direction
+  MPI_Comm forward_comm;
+  MPI_Dist_graph_create_adjacent(
+      comm, in_ranks.size(), in_ranks.data(), MPI_UNWEIGHTED, out_ranks.size(),
+      out_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &forward_comm);
+
+  // Compute map from global mpi rank to neighbor rank, "collisions" uses
+  // global rank
+  std::map<std::int32_t, std::int32_t> rank_to_neighbor;
+  for (std::size_t i = 0; i < out_ranks.size(); i++)
+    rank_to_neighbor[out_ranks[i]] = i;
+
+  // Count the number of points to send per neighbor process
+  std::vector<std::int32_t> send_sizes(out_ranks.size());
+  for (std::size_t i = 0; i < points.size() / 3; ++i)
+    for (const auto& p : collisions.links(i))
+      send_sizes[rank_to_neighbor[p]] += 3;
+
+  // Compute receive sizes
+  std::vector<std::int32_t> recv_sizes(in_ranks.size());
+  send_sizes.reserve(1);
+  recv_sizes.reserve(1);
+  MPI_Request sizes_request;
+  MPI_Ineighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                         MPI_INT, forward_comm, &sizes_request);
+
+  // Compute sending offsets
+  std::vector<std::int32_t> send_offsets(send_sizes.size() + 1, 0);
+  std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                   std::next(send_offsets.begin(), 1));
+
+  // Pack data to send and store unpack map
+  std::vector<T> send_data(send_offsets.back());
+  std::vector<std::int32_t> counter(send_sizes.size(), 0);
+  // unpack map: [index in adj list][pos in x]
+  std::vector<std::int32_t> unpack_map(send_offsets.back() / 3);
+  for (std::size_t i = 0; i < points.size(); i += 3)
+  {
+    for (const auto& p : collisions.links(i / 3))
+    {
+      int neighbor = rank_to_neighbor[p];
+      int pos = send_offsets[neighbor] + counter[neighbor];
+      auto it = std::next(send_data.begin(), pos);
+      std::copy(std::next(points.begin(), i), std::next(points.begin(), i + 3),
+                it);
+      unpack_map[pos / 3] = i / 3;
+      counter[neighbor] += 3;
+    }
+  }
+
+  MPI_Wait(&sizes_request, MPI_STATUS_IGNORE);
+  std::vector<std::int32_t> recv_offsets(in_ranks.size() + 1, 0);
+  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                   std::next(recv_offsets.begin(), 1));
+
+  std::vector<T> received_points((std::size_t)recv_offsets.back());
+  MPI_Neighbor_alltoallv(
+      send_data.data(), send_sizes.data(), send_offsets.data(),
+      dolfinx::MPI::mpi_type<T>(), received_points.data(), recv_sizes.data(),
+      recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), forward_comm);
+
+  // Each process checks which points collides with a cell on the process
+  const int rank = dolfinx::MPI::rank(comm);
+  std::vector<std::int32_t> cell_indicator(received_points.size() / 3);
+  std::vector<std::int32_t> colliding_cells(received_points.size() / 3);
+  for (std::size_t p = 0; p < received_points.size(); p += 3)
+  {
+    // NOTE: Aim to remove this by using span, see:
+    // https://github.com/FEniCS/dolfinx/issues/2284
+    std::array<T, 3> point;
+    std::copy(std::next(received_points.begin(), p),
+              std::next(received_points.begin(), p + 3), point.begin());
+    const int colliding_cell
+        = geometry::compute_first_colliding_cell(mesh, bb, point);
+    cell_indicator[p / 3] = (colliding_cell >= 0) ? rank : -1;
+    colliding_cells[p / 3] = colliding_cell;
+  }
+
+  // Create neighborhood communicator in the reverse direction: send
+  // back col to requesting processes
+  MPI_Comm reverse_comm;
+  MPI_Dist_graph_create_adjacent(
+      comm, out_ranks.size(), out_ranks.data(), MPI_UNWEIGHTED, in_ranks.size(),
+      in_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &reverse_comm);
+
+  // Reuse sizes and offsets from first communication set
+  // but divide by three
+  {
+    auto rescale = [](auto& x)
+    {
+      std::transform(x.cbegin(), x.cend(), x.begin(),
+                     [](auto e) { return (e / 3); });
+    };
+    rescale(recv_sizes);
+    rescale(recv_offsets);
+    rescale(send_sizes);
+    rescale(send_offsets);
+
+    // The communication is reversed, so swap recv to send offsets
+    std::swap(recv_sizes, send_sizes);
+    std::swap(recv_offsets, send_offsets);
+  }
+
+  std::vector<std::int32_t> recv_ranks(recv_offsets.back());
+  MPI_Neighbor_alltoallv(
+      cell_indicator.data(), send_sizes.data(), send_offsets.data(),
+      dolfinx::MPI::mpi_type<std::int32_t>(), recv_ranks.data(),
+      recv_sizes.data(), recv_offsets.data(),
+      dolfinx::MPI::mpi_type<std::int32_t>(), reverse_comm);
+
+  std::vector<std::int32_t> point_owners(points.size() / 3, -1);
+  for (std::size_t i = 0; i < unpack_map.size(); i++)
+  {
+    const std::int32_t pos = unpack_map[i];
+    // Only insert new owner if no owner has previously been found
+    if ((recv_ranks[i] >= 0) && (point_owners[pos] == -1))
+      point_owners[pos] = recv_ranks[i];
+  }
+
+  // Communication is reversed again to send dest ranks to all processes
+  std::swap(send_sizes, recv_sizes);
+  std::swap(send_offsets, recv_offsets);
+
+  // Pack ownership data
+  std::vector<std::int32_t> send_owners(send_offsets.back());
+  std::fill(counter.begin(), counter.end(), 0);
+  for (std::size_t i = 0; i < points.size() / 3; ++i)
+  {
+    for (const auto& p : collisions.links(i))
+    {
+      int neighbor = rank_to_neighbor[p];
+      send_owners[send_offsets[neighbor] + counter[neighbor]++]
+          = point_owners[i];
+    }
+  }
+
+  // Send ownership info
+  std::vector<std::int32_t> dest_ranks(recv_offsets.back());
+  MPI_Neighbor_alltoallv(
+      send_owners.data(), send_sizes.data(), send_offsets.data(),
+      dolfinx::MPI::mpi_type<std::int32_t>(), dest_ranks.data(),
+      recv_sizes.data(), recv_offsets.data(),
+      dolfinx::MPI::mpi_type<std::int32_t>(), forward_comm);
+
+  // Unpack dest ranks if point owner is this rank
+  std::vector<std::int32_t> owned_recv_ranks;
+  owned_recv_ranks.reserve(recv_offsets.back());
+  std::vector<T> owned_recv_points;
+  std::vector<std::int32_t> owned_recv_cells;
+  for (std::size_t i = 0; i < in_ranks.size(); i++)
+  {
+    for (std::int32_t j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
+    {
+      if (rank == dest_ranks[j])
+      {
+        owned_recv_ranks.push_back(in_ranks[i]);
+        owned_recv_points.insert(
+            owned_recv_points.end(), std::next(received_points.cbegin(), 3 * j),
+            std::next(received_points.cbegin(), 3 * (j + 1)));
+        owned_recv_cells.push_back(colliding_cells[j]);
+      }
+    }
+  }
+
+  MPI_Comm_free(&forward_comm);
+  MPI_Comm_free(&reverse_comm);
+
+  return std::make_tuple(point_owners, owned_recv_ranks, owned_recv_points,
+                         owned_recv_cells);
+}
 
 } // namespace dolfinx::geometry

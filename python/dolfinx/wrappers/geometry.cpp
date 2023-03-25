@@ -85,7 +85,7 @@ void geometry(py::module& m)
           else
             throw std::runtime_error("Array has wrong ndim.");
 
-          return dolfinx::geometry::determine_point_ownership(mesh, _p);
+          return dolfinx::geometry::determine_point_ownership<double>(mesh, _p);
         });
 
   m.def(

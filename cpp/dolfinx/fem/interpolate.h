@@ -1009,7 +1009,7 @@ create_nonmatching_meshes_interpolation_data(
       x[3 * i + j] = coords[i + j * num_points];
 
   // Determine ownership of each point
-  return geometry::determine_point_ownership(mesh1, x);
+  return geometry::determine_point_ownership<T>(mesh1, x);
 }
 
 /// @brief Generate data needed to interpolate discrete functions
