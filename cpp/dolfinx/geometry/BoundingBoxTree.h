@@ -1,4 +1,5 @@
-// Copyright (C) 2013 Anders Logg
+// Copyright (C) 2013-2022 Chris N. Richardson, Anders Logg, Garth N. Wells,
+// Jørgen S. Dokken, Sarah Roggendorf
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -16,15 +17,8 @@
 #include <string>
 #include <vector>
 
-namespace dolfinx::mesh
-{
-template <typename T>
-class Mesh;
-}
-
 namespace dolfinx::geometry
 {
-
 namespace impl_bb
 {
 //-----------------------------------------------------------------------------

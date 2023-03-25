@@ -334,33 +334,6 @@ std::array<std::vector<std::int32_t>, 2> transfer_facet_meshtag(
     std::span<const std::int32_t> values, const mesh::Topology& topology1,
     std::span<const std::int32_t> cell, std::span<const std::int8_t> facet);
 
-/// @brief Transfer facet MeshTags from coarse mesh to refined mesh
-/// @note The refined mesh must not have been redistributed during
-/// refinement
-/// @note GhostMode must be GhostMode.none
-/// @param[in] meshtag Facet tags on parent mesh
-/// @param[in] refined_mesh Refined mesh based on parent mesh
-/// @param[in] cell Parent cell of each cell in refined mesh
-/// @param[in] facet Local facets of parent in each cell in refined mesh
-/// @return MeshTags on refined mesh
-template <typename T>
-[[deprecated]] mesh::MeshTags<std::int32_t, T>
-transfer_facet_meshtag(const mesh::MeshTags<std::int32_t, T>& meshtag,
-                       std::shared_ptr<const mesh::Mesh<T>> refined_mesh,
-                       std::span<const std::int32_t> cell,
-                       std::span<const std::int8_t> facet)
-{
-  int tdim = meshtag.mesh()->topology().dim();
-  if (meshtag.dim() != tdim - 1)
-    throw std::runtime_error("Input meshtag is not facet-based");
-
-  auto [entities, values] = transfer_facet_meshtag(
-      meshtag.mesh()->topology(), meshtag.indices(), meshtag.values(),
-      refined_mesh->topology(), cell, facet);
-  return mesh::MeshTags<std::int32_t, T>(
-      refined_mesh, tdim - 1, std::move(entities), std::move(values));
-}
-
 /// @brief Transfer cell MeshTags from coarse mesh to refined mesh.
 ///
 /// @note The refined mesh must not have been redistributed during
@@ -377,35 +350,5 @@ std::array<std::vector<std::int32_t>, 2> transfer_cell_meshtag(
     const mesh::Topology& topology0, std::span<const std::int32_t> indices0,
     std::span<const std::int32_t> values0, const mesh::Topology& topology1,
     std::span<const std::int32_t> parent_cell);
-
-/// @brief Transfer cell MeshTags from coarse mesh to refined mesh.
-///
-/// @note The refined mesh must not have been redistributed during
-/// refinement.
-/// @note GhostMode must be GhostMode.none
-///
-/// @param[in] meshtag Cell MeshTags on parent mesh
-/// @param[in] refined_mesh Refined mesh based on parent mesh
-/// @param[in] cell Parent cell of each cell in refined mesh
-/// @return MeshTags on refined mesh, values copied over from coarse
-/// mesh
-template <typename T>
-[[deprecated]] mesh::MeshTags<std::int32_t, T>
-transfer_cell_meshtag(const mesh::MeshTags<std::int32_t, T>& meshtag,
-                      std::shared_ptr<const mesh::Mesh<T>> refined_mesh,
-                      std::span<const std::int32_t> cell)
-{
-  int tdim = meshtag.mesh()->topology().dim();
-  if (meshtag.dim() != tdim)
-    throw std::runtime_error("Input meshtag is not cell-based");
-  if (meshtag.mesh()->topology().index_map(tdim)->num_ghosts() > 0)
-    throw std::runtime_error("Ghosted meshes are not supported");
-
-  auto [entities, values]
-      = transfer_cell_meshtag(meshtag.mesh()->topology(), meshtag.indices(),
-                              meshtag.values(), refined_mesh->topology(), cell);
-  return mesh::MeshTags<std::int32_t, T>(
-      refined_mesh, tdim, std::move(entities), std::move(values));
-}
 
 } // namespace dolfinx::refinement

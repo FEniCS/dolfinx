@@ -367,7 +367,7 @@ public:
   /// for points with a negative cell index. This argument must be
   /// passed with the correct size. Storage is row-major.
   /// @param[in] ushape The shape of `u`.
-  void eval(std::span<const double> x, std::array<std::size_t, 2> xshape,
+  void eval(std::span<const U> x, std::array<std::size_t, 2> xshape,
             std::span<const std::int32_t> cells, std::span<T> u,
             std::array<std::size_t, 2> ushape) const
   {
