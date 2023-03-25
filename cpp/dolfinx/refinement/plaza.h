@@ -452,8 +452,8 @@ refine(const mesh::Mesh<T>& mesh, bool redistribute, Option option)
     const mesh::GhostMode ghost_mode = max_ghost_cells == 0
                                            ? mesh::GhostMode::none
                                            : mesh::GhostMode::shared_facet;
-    return {partition(mesh, cell_adj, std::span(new_coords), xshape,
-                      redistribute, ghost_mode),
+    return {partition<T>(mesh, cell_adj, std::span(new_coords), xshape,
+                         redistribute, ghost_mode),
             std::move(parent_cell), std::move(parent_facet)};
   }
 }
@@ -500,8 +500,8 @@ refine(const mesh::Mesh<T>& mesh, std::span<const std::int32_t> edges,
                                            ? mesh::GhostMode::none
                                            : mesh::GhostMode::shared_facet;
 
-    return {partition(mesh, cell_adj, new_vertex_coords, xshape, redistribute,
-                      ghost_mode),
+    return {partition<T>(mesh, cell_adj, new_vertex_coords, xshape,
+                         redistribute, ghost_mode),
             std::move(parent_cell), std::move(parent_facet)};
   }
 }

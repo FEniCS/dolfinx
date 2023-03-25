@@ -123,9 +123,9 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
         element, std::vector<T>(), {0, 1}, partitioner);
   }
 
-  const double a = x[0];
-  const double b = x[1];
-  const double ab = (b - a) / static_cast<double>(nx);
+  const T a = x[0];
+  const T b = x[1];
+  const T ab = (b - a) / static_cast<T>(nx);
 
   if (std::abs(a - b) < DBL_EPSILON)
   {
@@ -145,7 +145,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
   // Create vertices
   std::vector<T> geom(nx + 1);
   for (std::size_t ix = 0; ix <= nx; ix++)
-    geom[ix] = a + ab * static_cast<double>(ix);
+    geom[ix] = a + ab * static_cast<T>(ix);
 
   // Create intervals
   std::vector<std::int64_t> cells(nx * 2);
@@ -239,15 +239,15 @@ std::vector<T> create_geom(MPI_Comm comm,
   const double z0 = std::min(p0[2], p1[2]);
   const double z1 = std::max(p0[2], p1[2]);
 
-  const double a = x0;
-  const double b = x1;
-  const double ab = (b - a) / static_cast<double>(nx);
-  const double c = y0;
-  const double d = y1;
-  const double cd = (d - c) / static_cast<double>(ny);
-  const double e = z0;
-  const double f = z1;
-  const double ef = (f - e) / static_cast<double>(nz);
+  const T a = x0;
+  const T b = x1;
+  const T ab = (b - a) / static_cast<T>(nx);
+  const T c = y0;
+  const T d = y1;
+  const T cd = (d - c) / static_cast<T>(ny);
+  const T e = z0;
+  const T f = z1;
+  const T ef = (f - e) / static_cast<T>(nz);
 
   if (std::abs(x0 - x1) < 2.0 * DBL_EPSILON
       or std::abs(y0 - y1) < 2.0 * DBL_EPSILON
@@ -272,9 +272,9 @@ std::vector<T> create_geom(MPI_Comm comm,
     const std::int64_t p = v % sqxy;
     const std::int64_t iy = p / (nx + 1);
     const std::int64_t ix = p % (nx + 1);
-    const T z = e + ef * static_cast<double>(iz);
-    const T y = c + cd * static_cast<double>(iy);
-    const T x = a + ab * static_cast<double>(ix);
+    const T z = e + ef * static_cast<T>(iz);
+    const T y = c + cd * static_cast<T>(iy);
+    const T x = a + ab * static_cast<T>(ix);
     point = {x, y, z};
     for (std::size_t i = 0; i < 3; i++)
       geom[3 * (v - range_p[0]) + i] = point[i];
@@ -446,17 +446,17 @@ Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
   const std::size_t ny = n[1];
 
   // Extract minimum and maximum coordinates
-  const double x0 = std::min(p0[0], p1[0]);
-  const double x1 = std::max(p0[0], p1[0]);
-  const double y0 = std::min(p0[1], p1[1]);
-  const double y1 = std::max(p0[1], p1[1]);
+  const T x0 = std::min(p0[0], p1[0]);
+  const T x1 = std::max(p0[0], p1[0]);
+  const T y0 = std::min(p0[1], p1[1]);
+  const T y1 = std::max(p0[1], p1[1]);
 
-  const double a = x0;
-  const double b = x1;
-  const double ab = (b - a) / static_cast<double>(nx);
-  const double c = y0;
-  const double d = y1;
-  const double cd = (d - c) / static_cast<double>(ny);
+  const T a = x0;
+  const T b = x1;
+  const T ab = (b - a) / static_cast<T>(nx);
+  const T c = y0;
+  const T d = y1;
+  const T cd = (d - c) / static_cast<T>(ny);
 
   if (std::abs(x0 - x1) < DBL_EPSILON || std::abs(y0 - y1) < DBL_EPSILON)
   {
@@ -491,10 +491,10 @@ Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
   std::size_t vertex = 0;
   for (std::size_t iy = 0; iy <= ny; iy++)
   {
-    const T x1 = c + cd * static_cast<double>(iy);
+    const T x1 = c + cd * static_cast<T>(iy);
     for (std::size_t ix = 0; ix <= nx; ix++)
     {
-      geom[2 * vertex + 0] = a + ab * static_cast<double>(ix);
+      geom[2 * vertex + 0] = a + ab * static_cast<T>(ix);
       geom[2 * vertex + 1] = x1;
       ++vertex;
     }
@@ -506,10 +506,10 @@ Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
   case DiagonalType::crossed:
     for (std::size_t iy = 0; iy < ny; iy++)
     {
-      const T x1 = c + cd * (static_cast<double>(iy) + 0.5);
+      const T x1 = c + cd * (static_cast<T>(iy) + 0.5);
       for (std::size_t ix = 0; ix < nx; ix++)
       {
-        geom[2 * vertex + 0] = a + ab * (static_cast<double>(ix) + 0.5);
+        geom[2 * vertex + 0] = a + ab * (static_cast<T>(ix) + 0.5);
         geom[2 * vertex + 1] = x1;
         ++vertex;
       }
@@ -627,24 +627,24 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
   const std::size_t nx = n[0];
   const std::size_t ny = n[1];
 
-  const double a = p[0][0];
-  const double b = p[1][0];
-  const double ab = (b - a) / static_cast<double>(nx);
+  const T a = p[0][0];
+  const T b = p[1][0];
+  const T ab = (b - a) / static_cast<T>(nx);
 
-  const double c = p[0][1];
-  const double d = p[1][1];
-  const double cd = (d - c) / static_cast<double>(ny);
+  const T c = p[0][1];
+  const T d = p[1][1];
+  const T cd = (d - c) / static_cast<T>(ny);
 
   // Create vertices
   std::vector<T> geom((nx + 1) * (ny + 1) * 2);
   std::size_t vertex = 0;
   for (std::size_t ix = 0; ix <= nx; ix++)
   {
-    T x0 = a + ab * static_cast<double>(ix);
+    T x0 = a + ab * static_cast<T>(ix);
     for (std::size_t iy = 0; iy <= ny; iy++)
     {
       geom[2 * vertex + 0] = x0;
-      geom[2 * vertex + 1] = c + cd * static_cast<double>(iy);
+      geom[2 * vertex + 1] = c + cd * static_cast<T>(iy);
       ++vertex;
     }
   }
