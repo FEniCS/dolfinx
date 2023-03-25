@@ -20,6 +20,7 @@ class Mesh;
 
 namespace dolfinx::geometry
 {
+template <typename T>
 class BoundingBoxTree;
 
 /// @brief Create a bounding box tree for the midpoints of a subset of
@@ -28,7 +29,7 @@ class BoundingBoxTree;
 /// @param[in] tdim The topological dimension of the entity
 /// @param[in] entity_indices List of local entity indices
 /// @return Bounding box tree for midpoints of entities
-BoundingBoxTree
+BoundingBoxTree<double>
 create_midpoint_tree(const mesh::Mesh<double>& mesh, int tdim,
                      std::span<const std::int32_t> entity_indices);
 
@@ -37,8 +38,9 @@ create_midpoint_tree(const mesh::Mesh<double>& mesh, int tdim,
 /// @param[in] tree1 Second BoundingBoxTree
 /// @return List of pairs of intersecting box indices from each tree,
 /// flattened as a vector of size num_intersections*2
-std::vector<std::int32_t> compute_collisions(const BoundingBoxTree& tree0,
-                                             const BoundingBoxTree& tree1);
+std::vector<std::int32_t>
+compute_collisions(const BoundingBoxTree<double>& tree0,
+                   const BoundingBoxTree<double>& tree1);
 
 /// @brief Compute collisions between points and leaf bounding boxes.
 ///
@@ -51,7 +53,8 @@ std::vector<std::int32_t> compute_collisions(const BoundingBoxTree& tree0,
 /// @return For each point, the bounding box leaves that collide with
 /// the point.
 graph::AdjacencyList<std::int32_t>
-compute_collisions(const BoundingBoxTree& tree, std::span<const double> points);
+compute_collisions(const BoundingBoxTree<double>& tree,
+                   std::span<const double> points);
 
 /// @brief Compute the cell that collides with a point.
 ///
@@ -64,7 +67,7 @@ compute_collisions(const BoundingBoxTree& tree, std::span<const double> points);
 /// @param[in] point The point (`shape=(3,)`)
 /// @return The local cell index, -1 if not found
 int compute_first_colliding_cell(const mesh::Mesh<double>& mesh,
-                                 const BoundingBoxTree& tree,
+                                 const BoundingBoxTree<double>& tree,
                                  const std::array<double, 3>& point);
 
 /// @brief Compute closest mesh entity to a point.
@@ -79,9 +82,11 @@ int compute_first_colliding_cell(const mesh::Mesh<double>& mesh,
 /// @param[in] points The set of points (`shape=(num_points, 3)`).
 /// Storage is row-major.
 /// @return For each point, the index of the closest mesh entity.
-std::vector<std::int32_t> compute_closest_entity(
-    const BoundingBoxTree& tree, const BoundingBoxTree& midpoint_tree,
-    const mesh::Mesh<double>& mesh, std::span<const double> points);
+std::vector<std::int32_t>
+compute_closest_entity(const BoundingBoxTree<double>& tree,
+                       const BoundingBoxTree<double>& midpoint_tree,
+                       const mesh::Mesh<double>& mesh,
+                       std::span<const double> points);
 
 /// @brief Compute squared distance between point and bounding box.
 ///

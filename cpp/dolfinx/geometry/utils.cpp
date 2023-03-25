@@ -76,7 +76,7 @@ constexpr bool bbox_in_bbox(std::span<const double, 6> a,
 //-----------------------------------------------------------------------------
 // Compute closest entity {closest_entity, R2} (recursive)
 std::pair<std::int32_t, double>
-_compute_closest_entity(const geometry::BoundingBoxTree& tree,
+_compute_closest_entity(const geometry::BoundingBoxTree<double>& tree,
                         std::span<const double, 3> point, std::int32_t node,
                         const mesh::Mesh<double>& mesh,
                         std::int32_t closest_entity, double R2)
@@ -141,7 +141,7 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
 /// @param[in] tree The bounding box tree
 /// @param[in] points The points (shape=(num_points, 3))
 /// @param[in, out] entities The list of colliding entities (local to process)
-void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
+void _compute_collisions_point(const geometry::BoundingBoxTree<double>& tree,
                                std::span<const double, 3> p,
                                std::vector<std::int32_t>& entities)
 {
@@ -192,8 +192,8 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
 }
 //-----------------------------------------------------------------------------
 // Compute collisions with tree (recursive)
-void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
-                              const geometry::BoundingBoxTree& B,
+void _compute_collisions_tree(const geometry::BoundingBoxTree<double>& A,
+                              const geometry::BoundingBoxTree<double>& B,
                               std::int32_t node_A, std::int32_t node_B,
                               std::vector<std::int32_t>& entities)
 {
@@ -250,7 +250,7 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
 } // namespace
 
 //-----------------------------------------------------------------------------
-geometry::BoundingBoxTree
+geometry::BoundingBoxTree<double>
 geometry::create_midpoint_tree(const mesh::Mesh<double>& mesh, int tdim,
                                std::span<const std::int32_t> entities)
 {
@@ -273,8 +273,8 @@ geometry::create_midpoint_tree(const mesh::Mesh<double>& mesh, int tdim,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
-geometry::compute_collisions(const BoundingBoxTree& tree0,
-                             const BoundingBoxTree& tree1)
+geometry::compute_collisions(const BoundingBoxTree<double>& tree0,
+                             const BoundingBoxTree<double>& tree1)
 {
   // Call recursive find function
   std::vector<std::int32_t> entities;
@@ -288,7 +288,7 @@ geometry::compute_collisions(const BoundingBoxTree& tree0,
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
-geometry::compute_collisions(const BoundingBoxTree& tree,
+geometry::compute_collisions(const BoundingBoxTree<double>& tree,
                              std::span<const double> points)
 {
   if (tree.num_bboxes() > 0)
@@ -313,9 +313,11 @@ geometry::compute_collisions(const BoundingBoxTree& tree,
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> geometry::compute_closest_entity(
-    const BoundingBoxTree& tree, const BoundingBoxTree& midpoint_tree,
-    const mesh::Mesh<double>& mesh, std::span<const double> points)
+std::vector<std::int32_t>
+geometry::compute_closest_entity(const BoundingBoxTree<double>& tree,
+                                 const BoundingBoxTree<double>& midpoint_tree,
+                                 const mesh::Mesh<double>& mesh,
+                                 std::span<const double> points)
 {
   if (tree.num_bboxes() == 0)
     return std::vector<std::int32_t>(points.size() / 3, -1);
@@ -496,9 +498,9 @@ graph::AdjacencyList<std::int32_t> geometry::compute_colliding_cells(
                                             std::move(offsets));
 }
 //-------------------------------------------------------------------------------
-int geometry::compute_first_colliding_cell(
-    const mesh::Mesh<double>& mesh, const geometry::BoundingBoxTree& tree,
-    const std::array<double, 3>& point)
+int geometry::compute_first_colliding_cell(const mesh::Mesh<double>& mesh,
+                                           const BoundingBoxTree<double>& tree,
+                                           const std::array<double, 3>& point)
 {
   // Compute colliding bounding boxes(cell candidates)
   std::vector<std::int32_t> cell_candidates;
