@@ -47,7 +47,7 @@ std::int64_t local_to_global(std::int32_t local_index,
 /// Create geometric points of new Mesh, from current Mesh and a
 /// edge_to_vertex map listing the new local points (midpoints of those
 /// edges)
-/// @param Mesh
+/// @param mesh
 /// @param local_edge_to_new_vertex
 /// @return array of points
 template <typename T>
