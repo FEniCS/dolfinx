@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
         fem::create_functionspace(mesh, S_element,
                                   pow(mesh->geometry().dim(), 2)));
 
-    const auto sigma_expression = fem::create_expression<T, double>(
+    auto sigma_expression = fem::create_expression<T, double>(
         *expression_hyperelasticity_sigma, {{"u", u}}, {}, mesh);
 
     auto sigma = fem::Function<T>(S);

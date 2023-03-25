@@ -12,6 +12,7 @@
 #include <adios2.h>
 #include <cassert>
 #include <complex>
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
@@ -23,13 +24,6 @@
 #include <string>
 #include <variant>
 #include <vector>
-
-// namespace adios2
-// {
-// class ADIOS;
-// class IO;
-// class Engine;
-// } // namespace adios2
 
 namespace dolfinx::fem
 {
@@ -48,7 +42,7 @@ namespace dolfinx::io
 
 /// Base class for ADIOS2-based writers
 /// @tparam T Geometry type for common mesh::Mesh.
-template <typename T>
+template <std::floating_point T>
 class ADIOS2Writer
 {
 public:
@@ -502,7 +496,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 /// https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#using-vtk-and-paraview.
 ///
 /// The output files can be visualized using ParaView.
-template <typename T>
+template <std::floating_point T>
 class VTXWriter : public ADIOS2Writer<T>
 {
 public:

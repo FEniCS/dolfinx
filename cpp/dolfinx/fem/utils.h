@@ -151,23 +151,21 @@ concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
 /// @return Rectangular array of the same shape as `a` with a pair of
 /// function spaces in each array entry. If a form is null, then the
 /// returned function space pair is (null, null).
-template <typename T>
-std::vector<
-    std::vector<std::array<std::shared_ptr<const FunctionSpace<double>>, 2>>>
-extract_function_spaces(
-    const std::vector<std::vector<const Form<T, double>*>>& a)
+template <typename T, typename U>
+std::vector<std::vector<std::array<std::shared_ptr<const FunctionSpace<U>>, 2>>>
+extract_function_spaces(const std::vector<std::vector<const Form<T, U>*>>& a)
 {
   std::vector<
-      std::vector<std::array<std::shared_ptr<const FunctionSpace<double>>, 2>>>
-      spaces(a.size(),
-             std::vector<
-                 std::array<std::shared_ptr<const FunctionSpace<double>>, 2>>(
-                 a[0].size()));
+      std::vector<std::array<std::shared_ptr<const FunctionSpace<U>>, 2>>>
+      spaces(
+          a.size(),
+          std::vector<std::array<std::shared_ptr<const FunctionSpace<U>>, 2>>(
+              a[0].size()));
   for (std::size_t i = 0; i < a.size(); ++i)
   {
     for (std::size_t j = 0; j < a[i].size(); ++j)
     {
-      if (const Form<T, double>* form = a[i][j]; form)
+      if (const Form<T, U>* form = a[i][j]; form)
         spaces[i][j] = {form->function_spaces()[0], form->function_spaces()[1]};
     }
   }
@@ -187,8 +185,8 @@ la::SparsityPattern create_sparsity_pattern(
 /// for calling SparsityPattern::assemble.
 /// @param[in] a A bilinear form
 /// @return The corresponding sparsity pattern
-template <typename T>
-la::SparsityPattern create_sparsity_pattern(const Form<T, double>& a)
+template <typename T, typename U>
+la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
 {
   if (a.rank() != 2)
   {
@@ -1056,7 +1054,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
 }
 
 /// @brief Create Expression from UFC
-template <typename T, typename U>
+template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
 Expression<T, U> create_expression(
     const ufcx_expression& expression,
     const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
@@ -1113,7 +1111,7 @@ Expression<T, U> create_expression(
 
 /// @brief Create Expression from UFC input (with named coefficients and
 /// constants).
-template <typename T, typename U>
+template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
 Expression<T, U> create_expression(
     const ufcx_expression& expression,
     const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
@@ -1186,7 +1184,7 @@ pack_coefficients(const Expression<T, U>& u,
                   std::span<const std::int32_t> cells)
 {
   // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const Function<T, double>>>& coefficients
+  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
       = u.coefficients();
   const std::vector<int> offsets = u.coefficient_offsets();
 
