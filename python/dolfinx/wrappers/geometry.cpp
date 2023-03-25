@@ -165,7 +165,7 @@ void geometry(py::module& m)
           throw std::runtime_error("Array has wrong ndim.");
 
         const std::array<double, 3> d
-            = dolfinx::geometry::compute_distance_gjk(_p, _q);
+            = dolfinx::geometry::compute_distance_gjk<double>(_p, _q);
         return py::array_t<double>(3, d.data());
       },
       py::arg("p"), py::arg("q"));

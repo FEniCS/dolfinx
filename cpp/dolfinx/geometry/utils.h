@@ -59,7 +59,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
       }
 
       std::array<T, 3> d
-          = geometry::compute_distance_gjk(points.subspan(3 * e, 3), nodes);
+          = geometry::compute_distance_gjk<T>(points.subspan(3 * e, 3), nodes);
       std::copy(d.begin(), d.end(), std::next(shortest_vectors.begin(), 3 * e));
     }
   }
@@ -99,7 +99,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
       }
 
       std::array<T, 3> d
-          = compute_distance_gjk(points.subspan(3 * e, 3), nodes);
+          = compute_distance_gjk<T>(points.subspan(3 * e, 3), nodes);
       std::copy(d.begin(), d.end(), std::next(shortest_vectors.begin(), 3 * e));
     }
   }
@@ -518,8 +518,8 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
                   std::next(coordinate_dofs.begin(), 3 * i));
       }
       std::array<T, 3> shortest_vector
-          = compute_distance_gjk(point, coordinate_dofs);
-      double norm = 0;
+          = compute_distance_gjk<T>(point, coordinate_dofs);
+      T norm = 0;
       std::for_each(shortest_vector.cbegin(), shortest_vector.cend(),
                     [&norm](auto e) { norm += std::pow(e, 2); });
 
