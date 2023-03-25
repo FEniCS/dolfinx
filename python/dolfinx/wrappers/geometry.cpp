@@ -110,7 +110,7 @@ void geometry(py::module& m)
         else
           throw std::runtime_error("Array has wrong ndim.");
 
-        return dolfinx::geometry::compute_collisions(tree, _p);
+        return dolfinx::geometry::compute_collisions<double>(tree, _p);
       },
       py::arg("tree"), py::arg("points"));
   m.def(
@@ -118,7 +118,8 @@ void geometry(py::module& m)
       [](const dolfinx::geometry::BoundingBoxTree<double>& treeA,
          const dolfinx::geometry::BoundingBoxTree<double>& treeB)
       {
-        std::vector coll = dolfinx::geometry::compute_collisions(treeA, treeB);
+        std::vector coll
+            = dolfinx::geometry::compute_collisions<double>(treeA, treeB);
         std::array<py::ssize_t, 2> shape = {py::ssize_t(coll.size() / 2), 2};
         return as_pyarray(std::move(coll), shape);
       },
@@ -191,8 +192,8 @@ void geometry(py::module& m)
         else
           throw std::runtime_error("Array has wrong ndim.");
 
-        return as_pyarray(
-            dolfinx::geometry::squared_distance(mesh, dim, indices, _p));
+        return as_pyarray(dolfinx::geometry::squared_distance<double>(
+            mesh, dim, indices, _p));
       },
       py::arg("mesh"), py::arg("dim"), py::arg("indices"), py::arg("points"));
   m.def(
@@ -213,7 +214,7 @@ void geometry(py::module& m)
           assert(px.shape(0) <= 3);
           for (py::ssize_t i = 0; i < px.shape(0); i++)
             _p[i] = px(i);
-          auto cells = dolfinx::geometry::compute_colliding_cells(
+          auto cells = dolfinx::geometry::compute_colliding_cells<double>(
               mesh, candidate_cells, _p);
           return py::array_t<std::int32_t>(cells.array().size(),
                                            cells.array().data());
@@ -233,8 +234,8 @@ void geometry(py::module& m)
         else
           throw std::runtime_error("Array has wrong ndim.");
 
-        return dolfinx::geometry::compute_colliding_cells(mesh, candidate_cells,
-                                                          _p);
+        return dolfinx::geometry::compute_colliding_cells<double>(
+            mesh, candidate_cells, _p);
       },
       py::arg("mesh"), py::arg("candidate_cells"), py::arg("points"));
 
