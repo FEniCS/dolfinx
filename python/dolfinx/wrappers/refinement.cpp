@@ -82,8 +82,11 @@ void refinement(py::module& m)
           throw std::runtime_error("Input meshtag is not facet-based");
         auto [entities, values] = dolfinx::refinement::transfer_facet_meshtag(
             parent_meshtag.mesh()->topology(), parent_meshtag.indices(),
-            parent_meshtag.values(), refined_mesh->topology(), parent_cell,
-            parent_facet);
+            parent_meshtag.values(), refined_mesh->topology(),
+            std::span<const std::int32_t>(parent_cell.data(),
+                                          parent_cell.size()),
+            std::span<const std::int8_t>(parent_facet.data(),
+                                         parent_facet.size()));
         return dolfinx::mesh::MeshTags<std::int32_t, double>(
             refined_mesh, tdim - 1, std::move(entities), std::move(values));
       },
@@ -102,7 +105,9 @@ void refinement(py::module& m)
           throw std::runtime_error("Ghosted meshes are not supported");
         auto [entities, values] = dolfinx::refinement::transfer_cell_meshtag(
             parent_meshtag.mesh()->topology(), parent_meshtag.indices(),
-            parent_meshtag.values(), refined_mesh->topology(), parent_cell);
+            parent_meshtag.values(), refined_mesh->topology(),
+            std::span<const std::int32_t>(parent_cell.data(),
+                                          parent_cell.size()));
         return dolfinx::mesh::MeshTags<std::int32_t, double>(
             refined_mesh, tdim, std::move(entities), std::move(values));
       },
