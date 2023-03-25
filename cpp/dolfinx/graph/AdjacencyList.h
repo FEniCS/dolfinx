@@ -159,6 +159,7 @@ private:
   std::vector<std::int32_t> _offsets;
 };
 
+/// @private Deduction
 template <typename T, typename U>
 AdjacencyList(T, U) -> AdjacencyList<typename T::value_type>;
 
