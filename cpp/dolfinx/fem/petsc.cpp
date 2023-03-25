@@ -305,7 +305,8 @@ void fem::petsc::apply_lifting(
                                std::pair<std::span<const PetscScalar>, int>>>&
         coeffs,
     const std::vector<
-        std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
+        std::vector<std::shared_ptr<const DirichletBC<PetscScalar, double>>>>&
+        bcs1,
     const std::vector<Vec>& x0, PetscScalar scale)
 {
   Vec b_local;
@@ -352,7 +353,8 @@ void fem::petsc::apply_lifting(
     Vec b,
     const std::vector<std::shared_ptr<const Form<PetscScalar, double>>>& a,
     const std::vector<
-        std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
+        std::vector<std::shared_ptr<const DirichletBC<PetscScalar, double>>>>&
+        bcs1,
     const std::vector<Vec>& x0, PetscScalar scale)
 {
   Vec b_local;
@@ -396,7 +398,8 @@ void fem::petsc::apply_lifting(
 //-----------------------------------------------------------------------------
 void fem::petsc::set_bc(
     Vec b,
-    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar, double>>>&
+        bcs,
     const Vec x0, PetscScalar scale)
 {
   PetscInt n = 0;

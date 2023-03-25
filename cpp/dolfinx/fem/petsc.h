@@ -22,7 +22,7 @@ class IndexMap;
 
 namespace dolfinx::fem
 {
-template <typename T>
+template <typename T, typename U>
 class DirichletBC;
 
 /// @brief Helper functions for assembly into PETSc data structures
@@ -128,7 +128,8 @@ void apply_lifting(
                                std::pair<std::span<const PetscScalar>, int>>>&
         coeffs,
     const std::vector<
-        std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
+        std::vector<std::shared_ptr<const DirichletBC<PetscScalar, double>>>>&
+        bcs1,
     const std::vector<Vec>& x0, PetscScalar scale);
 
 // FIXME: clarify how x0 is used
@@ -153,7 +154,8 @@ void apply_lifting(
     Vec b,
     const std::vector<std::shared_ptr<const Form<PetscScalar, double>>>& a,
     const std::vector<
-        std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>>& bcs1,
+        std::vector<std::shared_ptr<const DirichletBC<PetscScalar, double>>>>&
+        bcs1,
     const std::vector<Vec>& x0, PetscScalar scale);
 
 // -- Setting bcs ------------------------------------------------------------
@@ -168,7 +170,8 @@ void apply_lifting(
 /// bcs should be on (sub-)spaces of the form L that b represents.
 void set_bc(
     Vec b,
-    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar>>>& bcs,
+    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar, double>>>&
+        bcs,
     const Vec x0, PetscScalar scale = 1);
 } // namespace petsc
 } // namespace dolfinx::fem

@@ -143,8 +143,8 @@ void declare_assembly_functions(py::module& m)
          const py::array_t<T, py::array::c_style>& constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         py::array_t<T, py::array::c_style>>& coefficients,
-         const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
-             bcs)
+         const std::vector<
+             std::shared_ptr<const dolfinx::fem::DirichletBC<T, double>>>& bcs)
       {
         if (a.function_spaces()[0]->dofmap()->bs() != 1
             or a.function_spaces()[0]->dofmap()->bs() != 1)
@@ -163,8 +163,8 @@ void declare_assembly_functions(py::module& m)
       "insert_diagonal",
       [](dolfinx::la::MatrixCSR<T>& A,
          const dolfinx::fem::FunctionSpace<double>& V,
-         const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
-             bcs,
+         const std::vector<
+             std::shared_ptr<const dolfinx::fem::DirichletBC<T, double>>>& bcs,
          T diagonal)
       { dolfinx::fem::set_diagonal(A.mat_set_values(), V, bcs, diagonal); },
       py::arg("A"), py::arg("V"), py::arg("bcs"), py::arg("diagonal"),
@@ -175,8 +175,8 @@ void declare_assembly_functions(py::module& m)
                                  const py::array_t<std::int32_t>&,
                                  const py::array_t<T>&)>& fin,
          const dolfinx::fem::Form<T, double>& form,
-         const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
-             bcs)
+         const std::vector<
+             std::shared_ptr<const dolfinx::fem::DirichletBC<T, double>>>& bcs)
       {
         auto f = [&fin](const std::span<const std::int32_t>& rows,
                         const std::span<const std::int32_t>& cols,
@@ -202,8 +202,8 @@ void declare_assembly_functions(py::module& m)
          const std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
                                     py::array_t<T, py::array::c_style>>>&
              coeffs,
-         const std::vector<std::vector<
-             std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>>& bcs1,
+         const std::vector<std::vector<std::shared_ptr<
+             const dolfinx::fem::DirichletBC<T, double>>>>& bcs1,
          const std::vector<py::array_t<T, py::array::c_style>>& x0,
          double scale)
       {
@@ -232,8 +232,8 @@ void declare_assembly_functions(py::module& m)
   m.def(
       "set_bc",
       [](py::array_t<T, py::array::c_style> b,
-         const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>&
-             bcs,
+         const std::vector<
+             std::shared_ptr<const dolfinx::fem::DirichletBC<T, double>>>& bcs,
          const py::array_t<T, py::array::c_style>& x0, double scale)
       {
         if (x0.ndim() == 0)
@@ -284,7 +284,7 @@ void petsc_module(py::module& m)
                         py::array_t<PetscScalar, py::array::c_style>>&
              coefficients,
          const std::vector<std::shared_ptr<
-             const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
+             const dolfinx::fem::DirichletBC<PetscScalar, double>>>& bcs,
          bool unrolled)
       {
         if (unrolled)
@@ -349,7 +349,7 @@ void petsc_module(py::module& m)
       "insert_diagonal",
       [](Mat A, const dolfinx::fem::FunctionSpace<double>& V,
          const std::vector<std::shared_ptr<
-             const dolfinx::fem::DirichletBC<PetscScalar>>>& bcs,
+             const dolfinx::fem::DirichletBC<PetscScalar, double>>>& bcs,
          PetscScalar diagonal)
       {
         dolfinx::fem::set_diagonal(
@@ -388,7 +388,11 @@ void petsc_module(py::module& m)
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
         dolfinx::fem::discrete_gradient<PetscScalar>(
-            V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
+            V0.mesh()->topology_mutable(), {*V0.element(), *V0.dofmap()},
+            {*V1.element(), *V1.dofmap()},
+            dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
+        // dolfinx::fem::discrete_gradient<PetscScalar>(
+        //     V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
         return A;
       },
       py::return_value_policy::take_ownership, py::arg("V0"), py::arg("V1"));

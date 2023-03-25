@@ -17,7 +17,7 @@
 
 namespace dolfinx::fem
 {
-template <typename T>
+template <typename T, typename U>
 class DirichletBC;
 template <typename T, typename U>
 class Form;
@@ -147,7 +147,8 @@ void apply_lifting(
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
+    const std::vector<
+        std::vector<std::shared_ptr<const DirichletBC<T, double>>>>& bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
   std::shared_ptr<const mesh::Mesh<double>> mesh;
@@ -191,7 +192,8 @@ template <typename T>
 void apply_lifting(
     std::span<T> b,
     const std::vector<std::shared_ptr<const Form<T, double>>>& a,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
+    const std::vector<
+        std::vector<std::shared_ptr<const DirichletBC<T, double>>>>& bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
   std::vector<
@@ -275,7 +277,7 @@ void assemble_matrix(
     auto mat_add, const Form<T, double>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
-    const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
+    const std::vector<std::shared_ptr<const DirichletBC<T, double>>>& bcs)
 {
   // Index maps for dof ranges
   auto map0 = a.function_spaces().at(0)->dofmap()->index_map;
@@ -319,7 +321,7 @@ void assemble_matrix(
 template <typename T>
 void assemble_matrix(
     auto mat_add, const Form<T, double>& a,
-    const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
+    const std::vector<std::shared_ptr<const DirichletBC<T, double>>>& bcs)
 {
   // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(a);
@@ -397,9 +399,10 @@ void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
 /// @param[in] diagonal The value to add to the diagonal for rows with a
 /// boundary condition applied
 template <typename T>
-void set_diagonal(auto set_fn, const FunctionSpace<double>& V,
-                  const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
-                  T diagonal = 1.0)
+void set_diagonal(
+    auto set_fn, const FunctionSpace<double>& V,
+    const std::vector<std::shared_ptr<const DirichletBC<T, double>>>& bcs,
+    T diagonal = 1.0)
 {
   for (const auto& bc : bcs)
   {
@@ -423,9 +426,10 @@ void set_diagonal(auto set_fn, const FunctionSpace<double>& V,
 /// 'scale'. The vectors b and x0 must have the same local size. The bcs
 /// should be on (sub-)spaces of the form L that b represents.
 template <typename T>
-void set_bc(std::span<T> b,
-            const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
-            std::span<const T> x0, T scale = 1)
+void set_bc(
+    std::span<T> b,
+    const std::vector<std::shared_ptr<const DirichletBC<T, double>>>& bcs,
+    std::span<const T> x0, T scale = 1)
 {
   if (b.size() > x0.size())
     throw std::runtime_error("Size mismatch between b and x0 vectors.");
@@ -440,9 +444,10 @@ void set_bc(std::span<T> b,
 /// 'scale'. The bcs should be on (sub-)spaces of the form L that b
 /// represents.
 template <typename T>
-void set_bc(std::span<T> b,
-            const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
-            T scale = 1)
+void set_bc(
+    std::span<T> b,
+    const std::vector<std::shared_ptr<const DirichletBC<T, double>>>& bcs,
+    T scale = 1)
 {
   for (const auto& bc : bcs)
   {

@@ -870,7 +870,8 @@ void apply_lifting(
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
+    const std::vector<
+        std::vector<std::shared_ptr<const DirichletBC<T, double>>>>& bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
   // FIXME: make changes to reactivate this check
@@ -902,7 +903,7 @@ void apply_lifting(
       const int crange = bs1 * (map1->size_local() + map1->num_ghosts());
       bc_markers1.assign(crange, false);
       bc_values1.assign(crange, 0.0);
-      for (const std::shared_ptr<const DirichletBC<T>>& bc : bcs1[j])
+      for (const std::shared_ptr<const DirichletBC<T, double>>& bc : bcs1[j])
       {
         bc->mark_dofs(bc_markers1);
         bc->dof_values(bc_values1);

@@ -180,7 +180,8 @@ int main(int argc, char* argv[])
         });
     const auto bdofs = fem::locate_dofs_topological(
         V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
-    auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
+    auto bc
+        = std::make_shared<const fem::DirichletBC<T, double>>(0.0, bdofs, V);
 
     f->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>

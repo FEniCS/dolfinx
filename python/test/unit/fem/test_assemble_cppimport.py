@@ -63,7 +63,7 @@ template<typename T>
 Eigen::SparseMatrix<T, Eigen::RowMajor>
 assemble_csr(const dolfinx::fem::Form<T, double>
 & a,
-             const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>& bcs)
+             const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T, double>>>& bcs)
 {
   std::vector<Eigen::Triplet<T>> triplets;
   auto mat_add

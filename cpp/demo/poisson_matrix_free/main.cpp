@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
         = mesh::exterior_facet_indices(mesh->topology());
     std::vector<std::int32_t> bdofs = fem::locate_dofs_topological(
         V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
-    auto bc = std::make_shared<const fem::DirichletBC<T>>(u_D, bdofs);
+    auto bc = std::make_shared<const fem::DirichletBC<T, double>>(u_D, bdofs);
 
     // Assemble RHS vector
     la::Vector<T> b(V->dofmap()->index_map, V->dofmap()->index_map_bs());

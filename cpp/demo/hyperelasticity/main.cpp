@@ -20,7 +20,7 @@ public:
   HyperElasticProblem(
       std::shared_ptr<fem::Form<T, double>> L,
       std::shared_ptr<fem::Form<T, double>> J,
-      std::vector<std::shared_ptr<const fem::DirichletBC<T>>> bcs)
+      std::vector<std::shared_ptr<const fem::DirichletBC<T, double>>> bcs)
       : _l(L), _j(J), _bcs(bcs),
         _b(L->function_spaces()[0]->dofmap()->index_map,
            L->function_spaces()[0]->dofmap()->index_map_bs()),
@@ -100,7 +100,7 @@ public:
 
 private:
   std::shared_ptr<fem::Form<T, double>> _l, _j;
-  std::vector<std::shared_ptr<const fem::DirichletBC<T>>> _bcs;
+  std::vector<std::shared_ptr<const fem::DirichletBC<T, double>>> _bcs;
   la::Vector<T> _b;
   Vec _b_petsc = nullptr;
   la::petsc::Matrix _matA;
@@ -205,10 +205,10 @@ int main(int argc, char* argv[])
           }
           return marker;
         });
-    auto bcs = std::vector{
-        std::make_shared<const fem::DirichletBC<T>>(std::vector<T>{0, 0, 0},
-                                                    bdofs_left, V),
-        std::make_shared<const fem::DirichletBC<T>>(u_rotation, bdofs_right)};
+    auto bcs = std::vector{std::make_shared<const fem::DirichletBC<T, double>>(
+                               std::vector<T>{0, 0, 0}, bdofs_left, V),
+                           std::make_shared<const fem::DirichletBC<T, double>>(
+                               u_rotation, bdofs_right)};
 
     HyperElasticProblem problem(L, a, bcs);
     nls::petsc::NewtonSolver newton_solver(mesh->comm());

@@ -63,8 +63,8 @@ void declare_objects(py::module& m, const std::string& type)
 {
   // dolfinx::fem::DirichletBC
   std::string pyclass_name = std::string("DirichletBC_") + type;
-  py::class_<dolfinx::fem::DirichletBC<T>,
-             std::shared_ptr<dolfinx::fem::DirichletBC<T>>>
+  py::class_<dolfinx::fem::DirichletBC<T, double>,
+             std::shared_ptr<dolfinx::fem::DirichletBC<T, double>>>
       dirichletbc(m, pyclass_name.c_str(),
                   "Object for representing Dirichlet (essential) boundary "
                   "conditions");
@@ -82,7 +82,7 @@ V)
                 std::vector<std::size_t> shape(g.shape(), g.shape() + g.ndim());
                 auto _g = std::make_shared<dolfinx::fem::Constant<T>>(
                     std::span(g.data(), g.size()), shape);
-                return dolfinx::fem::DirichletBC<T>(
+                return dolfinx::fem::DirichletBC<T, double>(
                     _g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
               }),
           py::arg("g").noconvert(), py::arg("dofs").noconvert(), py::arg("V"))
@@ -92,7 +92,7 @@ V)
                   std::shared_ptr<const dolfinx::fem::FunctionSpace<double>>
 V)
                {
-                 return dolfinx::fem::DirichletBC<T>(
+                 return dolfinx::fem::DirichletBC<T, double>(
                      g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
                }),
            py::arg("g").noconvert(), py::arg("dofs").noconvert(), py::arg("V"))
@@ -101,7 +101,7 @@ V)
 > g,
                   const py::array_t<std::int32_t, py::array::c_style>& dofs)
                {
-                 return dolfinx::fem::DirichletBC<T>(
+                 return dolfinx::fem::DirichletBC<T, double>(
                      g, std::vector(dofs.data(), dofs.data() + dofs.size()));
                }),
            py::arg("g").noconvert(), py::arg("dofs"))
@@ -127,7 +127,7 @@ V)
 & self)
                              { return py::dtype::of<T>(); })
       .def("dof_indices",
-           [](const dolfinx::fem::DirichletBC<T>& self)
+           [](const dolfinx::fem::DirichletBC<T, double>& self)
            {
              auto [dofs, owned] = self.dof_indices();
              return std::pair(py::array_t<std::int32_t>(
@@ -135,8 +135,8 @@ V)
                               owned);
            })
       .def_property_readonly("function_space",
-                             &dolfinx::fem::DirichletBC<T>::function_space)
-      .def_property_readonly("value", &dolfinx::fem::DirichletBC<T>::value);
+                             &dolfinx::fem::DirichletBC<T, double>::function_space)
+      .def_property_readonly("value", &dolfinx::fem::DirichletBC<T, double>::value);
 
   // dolfinx::fem::Function
   std::string pyclass_name_function = std::string("Function_") + type;
