@@ -161,9 +161,12 @@ public:
   /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
   /// nonmatching meshes. This data can be generated with
   /// generate_nonmatching_meshes_interpolation_data (optional).
-  void interpolate(const Function<T, U>& v, std::span<const std::int32_t> cells,
-                   const nmm_interpolation_data_t& nmm_interpolation_data
-                   = nmm_interpolation_data_t{})
+  void interpolate(
+      const Function<T, U>& v, std::span<const std::int32_t> cells,
+      const std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
+                       std::vector<U>, std::vector<std::int32_t>>&
+          nmm_interpolation_data
+      = {})
   {
     fem::interpolate(*this, v, cells, nmm_interpolation_data);
   }
@@ -173,9 +176,12 @@ public:
   /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
   /// nonmatching meshes. This data can be generated with
   /// generate_nonmatching_meshes_interpolation_data (optional).
-  void interpolate(const Function<T, U>& v,
-                   const nmm_interpolation_data_t& nmm_interpolation_data
-                   = nmm_interpolation_data_t{})
+  void interpolate(
+      const Function<T, U>& v,
+      const std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
+                       std::vector<U>, std::vector<std::int32_t>>&
+          nmm_interpolation_data
+      = {})
   {
     assert(_function_space);
     assert(_function_space->mesh());

@@ -183,11 +183,12 @@ V)
           [](dolfinx::fem::Function<T, double>& self,
              dolfinx::fem::Function<T, double>& u,
              const py::array_t<std::int32_t, py::array::c_style>& cells,
-             const dolfinx::fem::nmm_interpolation_data_t&
-                 nmm_interpolation_data)
+             const std::tuple<std::vector<std::int32_t>,
+                              std::vector<std::int32_t>, std::vector<double>,
+                              std::vector<std::int32_t>>& interpolation_data)
           {
             self.interpolate(u, std::span(cells.data(), cells.size()),
-                             nmm_interpolation_data);
+                             interpolation_data);
           },
           py::arg("u"), py::arg("cells"), py::arg("nmm_interpolation_data"),
           "Interpolate a finite element function")

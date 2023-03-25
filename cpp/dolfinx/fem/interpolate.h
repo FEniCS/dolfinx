@@ -94,8 +94,9 @@ std::vector<T> interpolation_coords(const fem::FiniteElement& element,
 
 /// Helper type for the data that can be cached to speed up repeated
 /// interpolation of discrete functions on nonmatching meshes
-using nmm_interpolation_data_t
-    = decltype(std::function{geometry::determine_point_ownership})::result_type;
+// using nmm_interpolation_data_t
+//     =
+//     decltype(std::function{geometry::determine_point_ownership})::result_type;
 
 /// Forward declaration
 template <typename T, typename U>
@@ -610,7 +611,9 @@ template <typename T, typename U>
 void interpolate_nonmatching_meshes(
     Function<T, U>& u, const Function<T, U>& v,
     std::span<const std::int32_t> cells,
-    const nmm_interpolation_data_t& nmm_interpolation_data)
+    const std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
+                     std::vector<U>, std::vector<std::int32_t>>&
+        nmm_interpolation_data)
 {
   int result;
   auto mesh = u.function_space()->mesh();
@@ -637,13 +640,22 @@ void interpolate_nonmatching_meshes(
         "with fem::create_nonmatching_meshes_interpolation_data.");
   }
 
-  const std::tuple_element_t<0, nmm_interpolation_data_t>& dest_ranks
+  const std::tuple_element_t<
+      0, std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
+                    std::vector<U>, std::vector<std::int32_t>>>& dest_ranks
       = std::get<0>(nmm_interpolation_data);
-  const std::tuple_element_t<1, nmm_interpolation_data_t>& src_ranks
+  const std::tuple_element_t<
+      1, std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
+                    std::vector<U>, std::vector<std::int32_t>>>& src_ranks
       = std::get<1>(nmm_interpolation_data);
-  const std::tuple_element_t<2, nmm_interpolation_data_t>& received_points
+  const std::tuple_element_t<
+      2, std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
+                    std::vector<U>, std::vector<std::int32_t>>>& received_points
       = std::get<2>(nmm_interpolation_data);
-  const std::tuple_element_t<3, nmm_interpolation_data_t>& evaluation_cells
+  const std::tuple_element_t<
+      3, std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
+                    std::vector<U>, std::vector<std::int32_t>>>&
+      evaluation_cells
       = std::get<3>(nmm_interpolation_data);
 
   // Evaluate the interpolating function where possible
@@ -978,7 +990,9 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 /// which to interpolate. Should be the same as the list used when
 /// calling fem::interpolation_coords.
 template <typename T>
-nmm_interpolation_data_t create_nonmatching_meshes_interpolation_data(
+std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
+           std::vector<std::int32_t>>
+create_nonmatching_meshes_interpolation_data(
     const mesh::Geometry<T>& geometry0, const FiniteElement& element0,
     const mesh::Mesh<T>& mesh1, std::span<const std::int32_t> cells)
 {
@@ -1004,7 +1018,8 @@ nmm_interpolation_data_t create_nonmatching_meshes_interpolation_data(
 /// @param[in] element0 Element of the space to interpolate into
 /// @param[in] mesh1 Mesh of the function to interpolate from
 template <typename T>
-nmm_interpolation_data_t
+std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
+           std::vector<std::int32_t>>
 create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
                                              const FiniteElement& element0,
                                              const mesh::Mesh<T>& mesh1)
@@ -1027,10 +1042,13 @@ create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
 /// nonmatching meshes. This data can be generated with
 /// create_nonmatching_meshes_interpolation_data (optional).
 template <typename T, typename U>
-void interpolate(Function<T, U>& u, const Function<T, U>& v,
-                 std::span<const std::int32_t> cells,
-                 const nmm_interpolation_data_t& nmm_interpolation_data
-                 = nmm_interpolation_data_t{})
+void interpolate(
+    Function<T, U>& u, const Function<T, U>& v,
+    std::span<const std::int32_t> cells,
+    const std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
+                     std::vector<U>, std::vector<std::int32_t>>&
+        nmm_interpolation_data
+    = {})
 {
   assert(u.function_space());
   assert(v.function_space());
