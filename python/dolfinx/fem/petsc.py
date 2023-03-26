@@ -314,7 +314,7 @@ def _assemble_vector_block_vec(b: PETSc.Vec,
     offset = 0
     b_array = b.getArray(readonly=False)
     for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
-        size = submap.front().size_local * submap[1]
+        size = submap[0].size_local * submap[1]
         _cpp.fem.set_bc(b_array[offset: offset + size], bc, _x0, scale)
         offset += size
 
