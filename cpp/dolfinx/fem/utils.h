@@ -13,11 +13,13 @@
 #include "Expression.h"
 #include "Form.h"
 #include "Function.h"
+#include "FunctionSpace.h"
 #include "sparsitybuild.h"
 #include <array>
 #include <concepts>
 #include <dolfinx/common/types.h>
 #include <dolfinx/la/SparsityPattern.h>
+#include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
 #include <functional>
@@ -44,15 +46,8 @@ namespace dolfinx::common
 class IndexMap;
 }
 
-namespace dolfinx::mesh
-{
-class Topology;
-} // namespace dolfinx::mesh
-
 namespace dolfinx::fem
 {
-template <typename T>
-class FunctionSpace;
 
 namespace impl
 {
@@ -140,7 +135,7 @@ extract_function_spaces(const std::vector<std::vector<const Form<T, U>*>>& a)
       spaces(
           a.size(),
           std::vector<std::array<std::shared_ptr<const FunctionSpace<U>>, 2>>(
-              a[0].size()));
+              a.front().size()));
   for (std::size_t i = 0; i < a.size(); ++i)
   {
     for (std::size_t j = 0; j < a[i].size(); ++j)

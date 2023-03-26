@@ -765,7 +765,6 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 
     // Extract cell 'topology', i.e. extract the vertices for each cell
     // and discard any 'higher-order' nodes
-
     graph::AdjacencyList cells_extracted
         = extract_topology(element.cell_shape(), dof_layout, cell_nodes);
 

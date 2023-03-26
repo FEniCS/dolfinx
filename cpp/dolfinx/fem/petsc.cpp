@@ -184,13 +184,13 @@ Mat fem::petsc::create_matrix_nest(
   auto V = fem::common_function_spaces(extract_function_spaces(a));
 
   std::vector<std::vector<std::string>> _types(
-      a.size(), std::vector<std::string>(a[0].size()));
+      a.size(), std::vector<std::string>(a.front().size()));
   if (!types.empty())
     _types = types;
 
   // Loop over each form and create matrix
   const int rows = a.size();
-  const int cols = a[0].size();
+  const int cols = a.front().size();
   std::vector<Mat> mats(rows * cols, nullptr);
   for (int i = 0; i < rows; ++i)
   {
