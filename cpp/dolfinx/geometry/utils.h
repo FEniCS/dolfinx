@@ -55,7 +55,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
       }
 
       std::array<T, 3> d
-          = geometry::compute_distance_gjk<T>(points.subspan(3 * e, 3), nodes);
+          = compute_distance_gjk<T>(points.subspan(3 * e, 3), nodes);
       std::copy(d.begin(), d.end(), std::next(shortest_vectors.begin(), 3 * e));
     }
   }
@@ -613,8 +613,7 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
       for (std::size_t k = 0; k < 3; ++k)
         _point[3 * j + k] = points[3 * i + k];
 
-    std::vector<T> distances_sq
-        = squared_distance<T>(mesh, tdim, cells, _point);
+    std::vector distances_sq = squared_distance<T>(mesh, tdim, cells, _point);
     for (std::size_t j = 0; j < cells.size(); j++)
       if (distances_sq[j] < eps2)
         colliding_cells.push_back(cells[j]);
@@ -643,7 +642,7 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// @note Returns -1 if no colliding process is found
 /// @note dest_points is flattened row-major, shape (dest_owner.size(), 3)
 /// @note Only looks through cells owned by the process
-template <typename T>
+template <std::floating_point T>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
            std::vector<std::int32_t>>
 determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
@@ -664,8 +663,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
 
   // Compute collisions:
   // For each point in `x` get the processes it should be sent to
-  graph::AdjacencyList<std::int32_t> collisions
-      = compute_collisions(global_bbtree, points);
+  graph::AdjacencyList collisions = compute_collisions(global_bbtree, points);
 
   // Get unique list of outgoing ranks
   std::vector<std::int32_t> out_ranks = collisions.array();
@@ -674,8 +672,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
                   out_ranks.end());
 
   // Compute incoming edges (source processes)
-  std::vector<int> in_ranks
-      = dolfinx::MPI::compute_graph_edges_nbx(comm, out_ranks);
+  std::vector in_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, out_ranks);
   std::sort(in_ranks.begin(), in_ranks.end());
 
   // Create neighborhood communicator in forward direction
@@ -745,8 +742,6 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
   std::vector<std::int32_t> colliding_cells(received_points.size() / 3);
   for (std::size_t p = 0; p < received_points.size(); p += 3)
   {
-    // NOTE: Aim to remove this by using span, see:
-    // https://github.com/FEniCS/dolfinx/issues/2284
     std::array<T, 3> point;
     std::copy(std::next(received_points.begin(), p),
               std::next(received_points.begin(), p + 3), point.begin());

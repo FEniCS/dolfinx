@@ -97,7 +97,7 @@ std::int32_t _build_from_leaf(
   else
   {
     // Compute bounding box of all bounding boxes
-    std::array<T, 6> b = compute_bbox_of_bboxes<T>(leaf_bboxes);
+    std::array b = compute_bbox_of_bboxes<T>(leaf_bboxes);
 
     // Sort bounding boxes along longest axis
     std::array<T, 3> b_diff;

@@ -690,8 +690,8 @@ void interpolate_nonmatching_meshes(
       valuesT(j, i) = values(i, j);
 
   // Call local interpolation operator
-  fem::interpolate<T>(u, std::span(valuesT_b.data(), valuesT_b.size()),
-                      {valuesT.extent(0), valuesT.extent(1)}, cells);
+  fem::interpolate<T>(u, valuesT_b, {valuesT.extent(0), valuesT.extent(1)},
+                      cells);
 }
 //----------------------------------------------------------------------------
 } // namespace impl
