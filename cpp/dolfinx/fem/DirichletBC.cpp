@@ -29,16 +29,17 @@ using cmdspan3x_t
 
 namespace
 {
-//-----------------------------------------------------------------------------
-/// Find the cell (local to process) and index of an entity (local to cell) for
-/// a list of entities
+
+/// @brief Find the cell (local to process) and index of an entity
+/// (local to cell) for a list of entities.
 /// @param[in] mesh The mesh
 /// @param[in] entities The list of entities
 /// @param[in] dim The dimension of the entities
-/// @returns A list of (cell_index, entity_index) pairs for each input entity
+/// @returns A list of (cell_index, entity_index) pairs for each input
+/// entity.
 std::vector<std::pair<std::int32_t, int>>
 find_local_entity_index(mesh::Topology& topology,
-                        std::span<const std::int32_t> entities, const int dim)
+                        std::span<const std::int32_t> entities, int dim)
 {
   // Initialise entity-cell connectivity
   const int tdim = topology.dim();

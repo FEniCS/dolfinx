@@ -92,13 +92,19 @@ std::vector<T> interpolation_coords(const fem::FiniteElement& element,
   return x;
 }
 
-/// Helper type for the data that can be cached to speed up repeated
-/// interpolation of discrete functions on nonmatching meshes
-// using nmm_interpolation_data_t
-//     =
-//     decltype(std::function{geometry::determine_point_ownership})::result_type;
-
-/// Forward declaration
+/// @brief Interpolate an expression f(x) in a finite element space.
+///
+/// @param[out] u The function to interpolate into
+/// @param[in] f Evaluation of the function `f(x)` at the physical
+/// points `x` given by fem::interpolation_coords. The element used in
+/// fem::interpolation_coords should be the same element as associated
+/// with `u`. The shape of `f` should be (value_size, num_points), with
+/// row-major storage.
+/// @param[in] fshape The shape of `f`.
+/// @param[in] cells Indices of the cells in the mesh on which to
+/// interpolate. Should be the same as the list used when calling
+/// fem::interpolation_coords.
+/// @tparam Scalar type
 template <typename T, typename U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
@@ -690,19 +696,6 @@ void interpolate_nonmatching_meshes(
 //----------------------------------------------------------------------------
 } // namespace impl
 
-/// Interpolate an expression f(x) in a finite element space
-///
-/// @param[out] u The function to interpolate into
-/// @param[in] f Evaluation of the function `f(x)` at the physical
-/// points `x` given by fem::interpolation_coords. The element used in
-/// fem::interpolation_coords should be the same element as associated
-/// with `u`. The shape of `f` should be (value_size, num_points), with
-/// row-major storage.
-/// @param[in] fshape The shape of `f`.
-/// @param[in] cells Indices of the cells in the mesh on which to
-/// interpolate. Should be the same as the list used when calling
-/// fem::interpolation_coords.
-/// @tparam Scalar type
 template <typename T, typename U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,

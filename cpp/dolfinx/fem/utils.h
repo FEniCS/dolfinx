@@ -85,24 +85,6 @@ get_cell_facet_pairs(std::int32_t f, const std::span<const std::int32_t>& cells,
   return cell_local_facet_pairs;
 }
 
-/// @private These structs are used to get the float/value type from a
-/// template argument, including support for complex types.
-template <typename T, typename = void>
-struct scalar_value_type
-{
-  /// @internal
-  typedef T value_type;
-};
-/// @private
-template <typename T>
-struct scalar_value_type<T, std::void_t<typename T::value_type>>
-{
-  typedef typename T::value_type value_type;
-};
-/// @private Convenience typedef
-template <typename T>
-using scalar_value_type_t = typename scalar_value_type<T>::value_type;
-
 } // namespace impl
 
 /// @brief Given an integral type and MeshTags, compute the entities
@@ -139,7 +121,7 @@ compute_integration_domains(IntegralType integral_type,
 /// must satisfy this concept.
 template <class U, class T>
 concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
-                                       const impl::scalar_value_type_t<T>*,
+                                       const scalar_value_type_t<T>*,
                                        const int*, const std::uint8_t*>;
 
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
@@ -363,9 +345,8 @@ Form<T, U> create_form(
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
   using kern = std::function<void(
-      T*, const T*, const T*,
-      const typename impl::scalar_value_type<T>::value_type*, const int*,
-      const std::uint8_t*)>;
+      T*, const T*, const T*, const typename scalar_value_type<T>::value_type*,
+      const int*, const std::uint8_t*)>;
   std::map<IntegralType,
            std::vector<std::tuple<int, kern, std::vector<std::int32_t>>>>
       integral_data;
@@ -391,7 +372,7 @@ Form<T, U> create_form(
       {
         k = reinterpret_cast<void (*)(
             T*, const T*, const T*,
-            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex64);
       }
       else if constexpr (std::is_same_v<T, double>)
@@ -400,7 +381,7 @@ Form<T, U> create_form(
       {
         k = reinterpret_cast<void (*)(
             T*, const T*, const T*,
-            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex128);
       }
       assert(k);
@@ -449,7 +430,7 @@ Form<T, U> create_form(
       {
         k = reinterpret_cast<void (*)(
             T*, const T*, const T*,
-            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex64);
       }
       else if constexpr (std::is_same_v<T, double>)
@@ -458,7 +439,7 @@ Form<T, U> create_form(
       {
         k = reinterpret_cast<void (*)(
             T*, const T*, const T*,
-            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex128);
       }
       assert(k);
@@ -517,7 +498,7 @@ Form<T, U> create_form(
       {
         k = reinterpret_cast<void (*)(
             T*, const T*, const T*,
-            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex64);
       }
       else if constexpr (std::is_same_v<T, double>)
@@ -526,7 +507,7 @@ Form<T, U> create_form(
       {
         k = reinterpret_cast<void (*)(
             T*, const T*, const T*,
-            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex128);
       }
       assert(k);
@@ -1078,7 +1059,7 @@ Expression<T, U> create_expression(
     value_shape.push_back(expression.value_shape[i]);
 
   std::function<void(T*, const T*, const T*,
-                     const typename impl::scalar_value_type<T>::value_type*,
+                     const typename scalar_value_type<T>::value_type*,
                      const int*, const std::uint8_t*)>
       tabulate_tensor = nullptr;
   if constexpr (std::is_same_v<T, float>)
@@ -1087,7 +1068,7 @@ Expression<T, U> create_expression(
   {
     tabulate_tensor = reinterpret_cast<void (*)(
         T*, const T*, const T*,
-        const typename impl::scalar_value_type<T>::value_type*, const int*,
+        const typename scalar_value_type<T>::value_type*, const int*,
         const unsigned char*)>(expression.tabulate_tensor_complex64);
   }
   else if constexpr (std::is_same_v<T, double>)
@@ -1096,7 +1077,7 @@ Expression<T, U> create_expression(
   {
     tabulate_tensor = reinterpret_cast<void (*)(
         T*, const T*, const T*,
-        const typename impl::scalar_value_type<T>::value_type*, const int*,
+        const typename scalar_value_type<T>::value_type*, const int*,
         const unsigned char*)>(expression.tabulate_tensor_complex128);
   }
   else

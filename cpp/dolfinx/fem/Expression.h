@@ -9,6 +9,7 @@
 #include "Function.h"
 #include <algorithm>
 #include <array>
+#include <dolfinx/common/types.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <span>
@@ -28,22 +29,11 @@ class Constant;
 /// at quadrature points in all cells. This evaluated gradient can then
 /// be used as input in to a non-FEniCS function that calculates a
 /// material constitutive model.
-
-template <typename T, typename U>
+/// @tparam T The scalar type
+/// @tparam U The mesh geometry scalar type
+template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
 class Expression
 {
-  template <typename X, typename = void>
-  struct scalar_value_type
-  {
-    typedef X value_type;
-  };
-  template <typename X>
-  struct scalar_value_type<X, std::void_t<typename X::value_type>>
-  {
-    typedef typename X::value_type value_type;
-  };
-  using scalar_value_type_t = typename scalar_value_type<T>::value_type;
-
 public:
   /// @brief Create an Expression
   ///
@@ -63,8 +53,8 @@ public:
       const std::vector<std::shared_ptr<const Constant<T>>>& constants,
       std::span<const U> X, std::array<std::size_t, 2> Xshape,
       const std::function<void(T*, const T*, const T*,
-                               const scalar_value_type_t*, const int*,
-                               const uint8_t*)>
+                               const dolfinx::scalar_value_type_t<T>*,
+                               const int*, const uint8_t*)>
           fn,
       const std::vector<int>& value_shape,
       std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr,
@@ -154,7 +144,8 @@ public:
     std::span<const U> x_g = _mesh->geometry().x();
 
     // Create data structures used in evaluation
-    std::vector<scalar_value_type_t> coordinate_dofs(3 * num_dofs_g);
+    std::vector<dolfinx::scalar_value_type_t<T>> coordinate_dofs(3
+                                                                 * num_dofs_g);
 
     int num_argument_dofs = 1;
     std::span<const std::uint32_t> cell_info;
@@ -214,8 +205,9 @@ public:
 
   /// Get function for tabulate_expression.
   /// @return fn Function to tabulate expression.
-  const std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
-                           const int*, const uint8_t*)>&
+  const std::function<void(T*, const T*, const T*,
+                           const dolfinx::scalar_value_type_t<T>*, const int*,
+                           const uint8_t*)>&
   get_tabulate_expression() const
   {
     return _fn;
@@ -258,8 +250,9 @@ private:
   std::vector<std::shared_ptr<const Constant<T>>> _constants;
 
   // Function to evaluate the Expression
-  std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
-                     const int*, const uint8_t*)>
+  std::function<void(T*, const T*, const T*,
+                     const dolfinx::scalar_value_type_t<T>*, const int*,
+                     const uint8_t*)>
       _fn;
 
   // The mesh

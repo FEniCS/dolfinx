@@ -78,10 +78,10 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps, int dim,
     std::span<const std::int32_t> entities, bool remote = true);
 
-/// Finds degrees of freedom whose geometric coordinate is true for the
-/// provided marking function.
+/// @brief Find degrees of freedom whose geometric coordinate is true
+/// for the provided marking function.
 ///
-/// @attention This function is slower than the topological version
+/// @attention This function is slower than the topological version.
 ///
 /// @param[in] V The function (sub)space on which degrees of freedom
 /// will be located.

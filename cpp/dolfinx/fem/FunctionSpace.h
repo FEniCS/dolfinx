@@ -27,18 +27,14 @@ namespace dolfinx::fem
 class DofMap;
 class FiniteElement;
 
-/// This class represents a finite element function space defined by a
-/// mesh, a finite element, and a local-to-global map of the degrees of
-/// freedom (dofmap).
-
+/// @brief This class represents a finite element function space defined
+/// by a mesh, a finite element, and a local-to-global map of the
+/// degrees of freedom (dofmap).
 template <typename T>
 class FunctionSpace
 {
 public:
-  /// @brief Value type
-  using value_type = T;
-
-  /// Create function space for given mesh, element and dofmap
+  /// @brief Create function space for given mesh, element and dofmap.
   /// @param[in] mesh The mesh
   /// @param[in] element The element
   /// @param[in] dofmap The dofmap
@@ -159,9 +155,9 @@ public:
             std::move(collapsed_dofs)};
   }
 
-  /// Get the component with respect to the root superspace
-  /// @return The component with respect to the root superspace , i.e.
-  /// W.sub(1).sub(0) == [1, 0]
+  /// @brief Get the component with respect to the root superspace.
+  /// @return The component with respect to the root superspace, i.e.
+  /// `W.sub(1).sub(0) == [1, 0]`.
   std::vector<int> component() const { return _component; }
 
   /// @brief Tabulate the physical coordinates of all dofs on this

@@ -11,6 +11,7 @@
 #include "assemble_vector_impl.h"
 #include "utils.h"
 #include <cstdint>
+#include <dolfinx/common/types.h>
 #include <memory>
 #include <span>
 #include <vector>
@@ -62,12 +63,12 @@ T assemble_scalar(
 {
   std::shared_ptr<const mesh::Mesh<double>> mesh = M.mesh();
   assert(mesh);
-  if constexpr (std::is_same_v<double, impl::scalar_value_type_t<T>>)
+  if constexpr (std::is_same_v<double, scalar_value_type_t<T>>)
     return impl::assemble_scalar(M, mesh->geometry(), constants, coefficients);
   else
   {
     return impl::assemble_scalar(
-        M, mesh->geometry().astype<impl::scalar_value_type_t<T>>(), constants,
+        M, mesh->geometry().astype<scalar_value_type_t<T>>(), constants,
         coefficients);
   }
 }
@@ -163,16 +164,16 @@ void apply_lifting(
   if (!mesh)
     throw std::runtime_error("Unable to extract a mesh.");
 
-  if constexpr (std::is_same_v<double, impl::scalar_value_type_t<T>>)
+  if constexpr (std::is_same_v<double, scalar_value_type_t<T>>)
   {
     impl::apply_lifting<T>(b, a, mesh->geometry(), constants, coeffs, bcs1, x0,
                            scale);
   }
   else
   {
-    impl::apply_lifting<T>(
-        b, a, mesh->geometry().astype<impl::scalar_value_type_t<T>>(),
-        constants, coeffs, bcs1, x0, scale);
+    impl::apply_lifting<T>(b, a,
+                           mesh->geometry().astype<scalar_value_type_t<T>>(),
+                           constants, coeffs, bcs1, x0, scale);
   }
 }
 
@@ -252,16 +253,16 @@ void assemble_matrix(
 {
   std::shared_ptr<const mesh::Mesh<double>> mesh = a.mesh();
   assert(mesh);
-  if constexpr (std::is_same_v<double, impl::scalar_value_type_t<T>>)
+  if constexpr (std::is_same_v<double, scalar_value_type_t<T>>)
   {
     impl::assemble_matrix(mat_add, a, mesh->geometry(), constants, coefficients,
                           dof_marker0, dof_marker1);
   }
   else
   {
-    impl::assemble_matrix(
-        mat_add, a, mesh->geometry().astype<impl::scalar_value_type_t<T>>(),
-        constants, coefficients, dof_marker0, dof_marker1);
+    impl::assemble_matrix(mat_add, a,
+                          mesh->geometry().astype<scalar_value_type_t<T>>(),
+                          constants, coefficients, dof_marker0, dof_marker1);
   }
 }
 

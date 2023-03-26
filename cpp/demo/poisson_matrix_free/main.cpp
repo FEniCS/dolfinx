@@ -207,8 +207,7 @@ int main(int argc, char* argv[])
 
     // Compute solution using the conjugate gradient method
     auto u = std::make_shared<fem::Function<T>>(V);
-    // int num_it = linalg::cg(*u->x(), b, action, 200, 1e-6);
-    linalg::cg(*u->x(), b, action, 200, 1e-6);
+    int num_it = linalg::cg(*u->x(), b, action, 200, 1e-6);
 
     // Set BC values in the solution vectors
     fem::set_bc(u->x()->mutable_array(), {bc}, T(1));
@@ -217,12 +216,10 @@ int main(int argc, char* argv[])
     // - u_d)*dx
     auto E = std::make_shared<fem::Form<T>>(fem::create_form<T, double>(
         *form_poisson_E, {}, {{"uexact", u_D}, {"usol", u}}, {}, {}, mesh));
-
     T error = fem::assemble_scalar(*E);
-
     if (dolfinx::MPI::rank(comm) == 0)
     {
-      // std::cout << "Number of CG iterations " << num_it << std::endl;
+      std::cout << "Number of CG iterations " << num_it << std::endl;
       std::cout << "Finite element error (L2 norm (squared)) "
                 << std::abs(error) << std::endl;
     }
