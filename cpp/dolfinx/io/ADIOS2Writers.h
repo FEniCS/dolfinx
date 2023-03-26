@@ -17,6 +17,7 @@
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/mesh/Geometry.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <filesystem>
 #include <memory>
 #include <mpi.h>
@@ -29,12 +30,6 @@ namespace dolfinx::fem
 {
 template <typename T, typename U>
 class Function;
-}
-
-namespace dolfinx::mesh
-{
-template <typename T>
-class Mesh;
 }
 
 namespace dolfinx::io
@@ -641,8 +636,9 @@ public:
 
 /// Type deduction
 template <typename U, typename T>
-VTXWriter(MPI_Comm comm, U filename, T mesh) -> VTXWriter<
-    typename std::remove_cvref<typename T::element_type>::type::value_type>;
+VTXWriter(MPI_Comm comm, U filename, T mesh)
+    -> VTXWriter<typename std::remove_cvref<
+        typename T::element_type>::type::geometry_type::value_type>;
 
 } // namespace dolfinx::io
 

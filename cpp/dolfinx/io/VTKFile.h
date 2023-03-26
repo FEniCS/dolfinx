@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <concepts>
 #include <dolfinx/common/MPI.h>
 #include <filesystem>
 #include <functional>
@@ -25,7 +26,7 @@ class Function;
 
 namespace dolfinx::mesh
 {
-template <typename T>
+template <std::floating_point T>
 class Mesh;
 }
 
@@ -72,22 +73,22 @@ public:
   /// @pre Functions in `u` cannot be sub-Functions. Interpolate
   /// sub-Functions before output
   template <typename T>
-  void
-  write(const std::vector<std::reference_wrapper<const fem::Function<T, double>
->>& u,
-        double t)
+  void write(const std::vector<
+                 std::reference_wrapper<const fem::Function<T, double>>>& u,
+             double t)
   {
     write_functions(u, t);
   }
 
 private:
   void write_functions(
-      const std::vector<std::reference_wrapper<const fem::Function<double, double>>>& u,
-      double t);
-  void write_functions(
       const std::vector<
-          std::reference_wrapper<const fem::Function<std::complex<double>, double>>>& u,
+          std::reference_wrapper<const fem::Function<double, double>>>& u,
       double t);
+  void
+  write_functions(const std::vector<std::reference_wrapper<
+                      const fem::Function<std::complex<double>, double>>>& u,
+                  double t);
 
   std::unique_ptr<pugi::xml_document> _pvd_xml;
 

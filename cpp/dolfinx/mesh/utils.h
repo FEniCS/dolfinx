@@ -11,6 +11,7 @@
 #include "graphbuild.h"
 #include <basix/mdspan.hpp>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <functional>
 #include <mpi.h>
@@ -24,9 +25,6 @@ class ElementDofLayout;
 namespace dolfinx::mesh
 {
 enum class CellType;
-template <typename T>
-class Mesh;
-class Topology;
 
 /// Enum for different partitioning ghost modes
 enum class GhostMode : int
@@ -35,6 +33,13 @@ enum class GhostMode : int
   shared_facet,
   shared_vertex
 };
+
+// See https://github.com/doxygen/doxygen/issues/9552
+/// Signature for the cell partitioning function. The function should
+/// compute the destination rank for cells currently on this rank.
+using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
+    MPI_Comm comm, int nparts, int tdim,
+    const graph::AdjacencyList<std::int64_t>& cells)>;
 
 namespace impl
 {

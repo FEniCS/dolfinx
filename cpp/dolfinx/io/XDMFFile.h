@@ -32,7 +32,7 @@ namespace dolfinx::mesh
 template <std::floating_point T>
 class Geometry;
 enum class GhostMode : int;
-template <typename T>
+template <std::floating_point T>
 class Mesh;
 template <typename T, typename U>
 class MeshTags;

@@ -9,6 +9,7 @@
 #include "HDF5Interface.h"
 #include <array>
 #include <complex>
+#include <concepts>
 #include <dolfinx/mesh/cell_types.h>
 #include <filesystem>
 #include <numeric>
@@ -39,7 +40,7 @@ class CoordinateElement;
 
 namespace mesh
 {
-template <typename T>
+template <std::floating_point T>
 class Mesh;
 }
 
@@ -65,12 +66,14 @@ std::int64_t get_num_cells(const pugi::xml_node& topology_node);
 
 /// Get point data values for linear or quadratic mesh into flattened 2D
 /// array
-std::vector<double> get_point_data_values(const fem::Function<double, double>& u);
+std::vector<double>
+get_point_data_values(const fem::Function<double, double>& u);
 std::vector<std::complex<double>>
 get_point_data_values(const fem::Function<std::complex<double>, double>& u);
 
 /// Get cell data values as a flattened 2D array
-std::vector<double> get_cell_data_values(const fem::Function<double, double>& u);
+std::vector<double>
+get_cell_data_values(const fem::Function<double, double>& u);
 std::vector<std::complex<double>>
 get_cell_data_values(const fem::Function<std::complex<double>, double>& u);
 

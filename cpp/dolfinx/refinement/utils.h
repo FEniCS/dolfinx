@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/utils.h>
 #include <map>
@@ -23,8 +24,6 @@ namespace dolfinx::mesh
 {
 template <typename T, typename U>
 class MeshTags;
-template <typename T>
-class Mesh;
 class Topology;
 enum class GhostMode;
 } // namespace dolfinx::mesh

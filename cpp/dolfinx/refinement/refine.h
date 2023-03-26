@@ -11,12 +11,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Mesh.h>
-
-namespace dolfinx::mesh
-{
-template <typename T>
-class Mesh;
-} // namespace dolfinx::mesh
+#include <dolfinx/mesh/Topology.h>
 
 namespace dolfinx::refinement
 {

@@ -43,7 +43,7 @@ nearest_simplex(std::span<const T> s)
     {
       // The origin is between A and B
       // v = s0 + lm * (s1 - s0);
-      std::array<T, 3> v
+      std::array v
           = {s0[0] + lm * ds[0], s0[1] + lm * ds[1], s0[2] + lm * ds[2]};
       return {std::vector<T>(s.begin(), s.end()), v};
     }
@@ -75,7 +75,7 @@ nearest_simplex(std::span<const T> s)
                                    std::plus{},
                                    [](auto x, auto y) { return x * (x - y); });
     };
-    const std::array<T, 3> lm
+    const std::array lm
         = {helper(a, b) / ab2, helper(a, c) / ac2, helper(b, c) / bc2};
 
     T caba = 0;
@@ -92,20 +92,20 @@ nearest_simplex(std::span<const T> s)
     {
       // Calculate intersection more accurately
       // v = (c - a)  x (b - a)
-      std::array<T, 3> dx0 = {c[0] - a[0], c[1] - a[1], c[2] - a[2]};
-      std::array<T, 3> dx1 = {b[0] - a[0], b[1] - a[1], b[2] - a[2]};
-      std::array<T, 3> v = math::cross(dx0, dx1);
+      std::array dx0 = {c[0] - a[0], c[1] - a[1], c[2] - a[2]};
+      std::array dx1 = {b[0] - a[0], b[1] - a[1], b[2] - a[2]};
+      std::array v = math::cross(dx0, dx1);
 
       // Barycentre of triangle
-      std::array<T, 3> p = {(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3,
-                            (a[2] + b[2] + c[2]) / 3};
+      std::array p = {(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3,
+                      (a[2] + b[2] + c[2]) / 3};
 
       T sum = v[0] * p[0] + v[1] * p[1] + v[2] * p[2];
       T vnorm2 = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
       for (std::size_t i = 0; i < 3; ++i)
         v[i] *= sum / vnorm2;
 
-      return {std::vector<T>(s.begin(), s.end()), v};
+      return {std::vector(s.begin(), s.end()), v};
     }
 
     // Get closest point
@@ -129,7 +129,7 @@ nearest_simplex(std::span<const T> s)
     for (std::size_t k = 0; k < 3; ++k)
       qmin += vmin[k] * vmin[k];
 
-    std::vector<T> smin = {vmin[0], vmin[1], vmin[2]};
+    std::vector smin = {vmin[0], vmin[1], vmin[2]};
 
     // Check if edges are closer
     constexpr const int f[3][2] = {{0, 1}, {0, 2}, {1, 2}};

@@ -27,7 +27,7 @@ namespace mesh
 {
 template <std::floating_point T>
 class Geometry;
-template <typename T>
+template <std::floating_point T>
 class Mesh;
 class Topology;
 } // namespace mesh

@@ -46,8 +46,6 @@ class IndexMap;
 
 namespace dolfinx::mesh
 {
-template <typename T>
-class Mesh;
 class Topology;
 } // namespace dolfinx::mesh
 

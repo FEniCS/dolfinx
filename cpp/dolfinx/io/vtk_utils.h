@@ -34,8 +34,6 @@ namespace mesh
 enum class CellType;
 template <std::floating_point T>
 class Geometry;
-template <typename T>
-class Mesh;
 } // namespace mesh
 
 namespace io

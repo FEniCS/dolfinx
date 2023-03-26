@@ -8,6 +8,9 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/Geometry.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/utils.h>
 #include <span>
 #include <tuple>
@@ -15,13 +18,6 @@
 #include <vector>
 
 #pragma once
-
-namespace dolfinx::mesh
-{
-template <typename T>
-class Mesh;
-class Topology;
-} // namespace dolfinx::mesh
 
 /// @brief Plaza mesh refinement.
 ///
