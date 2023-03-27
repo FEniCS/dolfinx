@@ -62,15 +62,15 @@ T assemble_scalar(
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
-  std::shared_ptr<const mesh::Mesh<double>> mesh = M.mesh();
+  std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
   if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
     return impl::assemble_scalar(M, mesh->geometry(), constants, coefficients);
   else
   {
     return impl::assemble_scalar(
-        M, mesh->geometry().astype<scalar_value_type_t<T>>(), constants,
-        coefficients);
+        M, mesh->geometry().template astype<scalar_value_type_t<T>>(),
+        constants, coefficients);
   }
 }
 
@@ -241,27 +241,27 @@ void apply_lifting(
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
 /// If bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
-template <typename T>
+template <typename T, std::floating_point U>
 void assemble_matrix(
-    auto mat_add, const Form<T, double>& a, std::span<const T> constants,
+    auto mat_add, const Form<T, U>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
     std::span<const std::int8_t> dof_marker0,
     std::span<const std::int8_t> dof_marker1)
 
 {
-  std::shared_ptr<const mesh::Mesh<double>> mesh = a.mesh();
+  std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
-  if constexpr (std::is_same_v<double, scalar_value_type_t<T>>)
+  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
   {
     impl::assemble_matrix(mat_add, a, mesh->geometry(), constants, coefficients,
                           dof_marker0, dof_marker1);
   }
   else
   {
-    impl::assemble_matrix(mat_add, a,
-                          mesh->geometry().astype<scalar_value_type_t<T>>(),
-                          constants, coefficients, dof_marker0, dof_marker1);
+    impl::assemble_matrix(
+        mat_add, a, mesh->geometry().template astype<scalar_value_type_t<T>>(),
+        constants, coefficients, dof_marker0, dof_marker1);
   }
 }
 
@@ -272,12 +272,12 @@ void assemble_matrix(
 /// @param[in] coefficients Coefficients that appear in `a`
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
-template <typename T>
+template <typename T, std::floating_point U>
 void assemble_matrix(
-    auto mat_add, const Form<T, double>& a, std::span<const T> constants,
+    auto mat_add, const Form<T, U>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
-    const std::vector<std::shared_ptr<const DirichletBC<T, double>>>& bcs)
+    const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs)
 {
   // Index maps for dof ranges
   auto map0 = a.function_spaces().at(0)->dofmap()->index_map;
@@ -318,10 +318,10 @@ void assemble_matrix(
 /// @param[in] a The bilinear from to assemble
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
-template <typename T>
+template <typename T, std::floating_point U>
 void assemble_matrix(
-    auto mat_add, const Form<T, double>& a,
-    const std::vector<std::shared_ptr<const DirichletBC<T, double>>>& bcs)
+    auto mat_add, const Form<T, U>& a,
+    const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs)
 {
   // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(a);
@@ -343,8 +343,8 @@ void assemble_matrix(
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
 /// If bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
-template <typename T>
-void assemble_matrix(auto mat_add, const Form<T, double>& a,
+template <typename T, std::floating_point U>
+void assemble_matrix(auto mat_add, const Form<T, U>& a,
                      std::span<const std::int8_t> dof_marker0,
                      std::span<const std::int8_t> dof_marker1)
 
@@ -398,10 +398,10 @@ void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
 /// @param[in] bcs The Dirichlet boundary conditions
 /// @param[in] diagonal The value to add to the diagonal for rows with a
 /// boundary condition applied
-template <typename T>
+template <typename T, std::floating_point U>
 void set_diagonal(
-    auto set_fn, const FunctionSpace<double>& V,
-    const std::vector<std::shared_ptr<const DirichletBC<T, double>>>& bcs,
+    auto set_fn, const FunctionSpace<U>& V,
+    const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
     T diagonal = 1.0)
 {
   for (const auto& bc : bcs)
@@ -425,11 +425,10 @@ void set_diagonal(
 /// Set bc values in owned (local) part of the vector, multiplied by
 /// 'scale'. The vectors b and x0 must have the same local size. The bcs
 /// should be on (sub-)spaces of the form L that b represents.
-template <typename T>
-void set_bc(
-    std::span<T> b,
-    const std::vector<std::shared_ptr<const DirichletBC<T, double>>>& bcs,
-    std::span<const T> x0, T scale = 1)
+template <typename T, std::floating_point U>
+void set_bc(std::span<T> b,
+            const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
+            std::span<const T> x0, T scale = 1)
 {
   if (b.size() > x0.size())
     throw std::runtime_error("Size mismatch between b and x0 vectors.");
@@ -443,11 +442,10 @@ void set_bc(
 /// Set bc values in owned (local) part of the vector, multiplied by
 /// 'scale'. The bcs should be on (sub-)spaces of the form L that b
 /// represents.
-template <typename T>
-void set_bc(
-    std::span<T> b,
-    const std::vector<std::shared_ptr<const DirichletBC<T, double>>>& bcs,
-    T scale = 1)
+template <typename T, std::floating_point U>
+void set_bc(std::span<T> b,
+            const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
+            T scale = 1)
 {
   for (const auto& bc : bcs)
   {
