@@ -22,11 +22,6 @@
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
-namespace stdex = std::experimental;
-using cmdspan3x_t
-    = stdex::mdspan<const double,
-                    stdex::extents<std::size_t, 3, stdex::dynamic_extent>>;
-
 namespace
 {
 

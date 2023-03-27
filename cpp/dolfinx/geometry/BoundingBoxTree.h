@@ -110,8 +110,8 @@ std::int32_t _build_from_leaf(
     std::nth_element(leaf_bboxes.begin(), middle, leaf_bboxes.end(),
                      [axis](auto& p0, auto& p1) -> bool
                      {
-                       double x0 = p0.first[axis] + p0.first[3 + axis];
-                       double x1 = p1.first[axis] + p1.first[3 + axis];
+                       auto x0 = p0.first[axis] + p0.first[3 + axis];
+                       auto x1 = p1.first[axis] + p1.first[3 + axis];
                        return x0 < x1;
                      });
 
