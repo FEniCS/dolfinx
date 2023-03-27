@@ -27,7 +27,7 @@ using namespace dolfinx;
 // It also shows how to create a finite element using Basix.
 template <typename T, typename U>
 void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
-                        std::filesystem::path filename)
+                        [[maybe_unused]] std::filesystem::path filename)
 {
   // Create a Basix continuous Lagrange element of degree 1
   basix::FiniteElement e = basix::create_element(
