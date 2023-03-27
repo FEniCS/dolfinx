@@ -392,8 +392,6 @@ void petsc_module(py::module& m)
             V0.mesh()->topology_mutable(), {*V0.element(), *V0.dofmap()},
             {*V1.element(), *V1.dofmap()},
             dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
-        // dolfinx::fem::discrete_gradient<PetscScalar>(
-        //     V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
         return A;
       },
       py::return_value_policy::take_ownership, py::arg("V0"), py::arg("V1"));

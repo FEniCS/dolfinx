@@ -1,4 +1,4 @@
-// Copyright (C) 2022 Garth N. Wells
+// Copyright (C) 2022-2023 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -178,19 +178,21 @@ int main(int argc, char* argv[])
   dolfinx::init_logging(argc, argv);
   MPI_Init(&argc, &argv);
 
-  // The main body of the function is scoped with the curly braces to
-  // ensure that all objects that depend on an MPI communicator are
-  // destroyed before MPI is finalised at the end of this function.
+  // The main body of the function is scoped to ensure that all objects
+  // that depend on an MPI communicator are destroyed before MPI is
+  // finalised at the end of this function.
   {
-    // Create a mesh. For what comes later in this demo we need to
+    // Create meshes. For what comes later in this demo we need to
     // ensure that a boundary between cells is located at x0=0.5
 
+    // Create mesh using float for geometry coordinates
     auto mesh0
         = std::make_shared<mesh::Mesh<float>>(mesh::create_rectangle<float>(
             MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
             mesh::CellType::triangle,
             mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
+    // Create mesh using double for geometry coordinates
     auto mesh1
         = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle<double>(
             MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
@@ -198,7 +200,7 @@ int main(int argc, char* argv[])
             mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
     // Interpolate a function in a scalar Lagrange space and output the
-    // result to file for visualisation
+    // result to file for visualisation using different types
     interpolate_scalar<float>(mesh0, "u32");
     interpolate_scalar<double>(mesh1, "u64");
     interpolate_scalar<std::complex<float>>(mesh0, "u_complex64");
@@ -206,7 +208,7 @@ int main(int argc, char* argv[])
 
     // Interpolate a function in a H(curl) finite element space, and
     // then interpolate the H(curl) function in a discontinuous Lagrange
-    // space for visualisation
+    // space for visualisation using different types
     interpolate_nedelec<float>(mesh0, "u_nedelec32");
     interpolate_nedelec<double>(mesh1, "u_nedelec64");
     interpolate_nedelec<std::complex<float>>(mesh0, "u_nedelec_complex64");

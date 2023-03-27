@@ -73,18 +73,11 @@ int main(int argc, char* argv[])
     u_hex->interpolate(*u_tet, nmm_interpolation_data);
 
 #ifdef HAS_ADIOS2
-    io::VTXWriter<double> write_tet(mesh_tet->comm(), "u_tet.vtx", {u_tet});
+    io::VTXWriter<double> write_tet(mesh_tet->comm(), "u_tet.bp", {u_tet});
     write_tet.write(0.0);
 
-    io::VTXWriter<double> write_hex(mesh_hex->comm(), "u_hex.vtx", {u_hex});
+    io::VTXWriter<double> write_hex(mesh_hex->comm(), "u_hex.bp", {u_hex});
     write_hex.write(0.0);
-
-    auto mesh
-        = std::make_shared<mesh::Mesh<float>>(mesh::create_rectangle<float>(
-            comm, {{{0, 0}, {1, 1}}}, {20, 20}, mesh::CellType::triangle));
-    io::VTXWriter write_msh(mesh->comm(), "foo.vtx", mesh);
-    write_msh.write(0.0);
-
 #endif
   }
   MPI_Finalize();
