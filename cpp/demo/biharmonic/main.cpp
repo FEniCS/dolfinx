@@ -123,6 +123,7 @@
 #include "biharmonic.h"
 #include <cmath>
 #include <dolfinx.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/petsc.h>
 #include <numbers>

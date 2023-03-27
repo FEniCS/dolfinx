@@ -262,15 +262,16 @@ void petsc_module(py::module& m)
   m.def("create_vector_nest", &dolfinx::fem::petsc::create_vector_nest,
         py::return_value_policy::take_ownership, py::arg("maps"),
         "Create nested vector for multiple (stacked) linear forms.");
-  m.def("create_matrix", dolfinx::fem::petsc::create_matrix,
+  m.def("create_matrix", dolfinx::fem::petsc::create_matrix<double>,
         py::return_value_policy::take_ownership, py::arg("a"),
         py::arg("type") = std::string(),
         "Create a PETSc Mat for bilinear form.");
-  m.def("create_matrix_block", &dolfinx::fem::petsc::create_matrix_block,
+  m.def("create_matrix_block",
+        &dolfinx::fem::petsc::create_matrix_block<double>,
         py::return_value_policy::take_ownership, py::arg("a"),
         py::arg("type") = std::string(),
         "Create monolithic sparse matrix for stacked bilinear forms.");
-  m.def("create_matrix_nest", &dolfinx::fem::petsc::create_matrix_nest,
+  m.def("create_matrix_nest", &dolfinx::fem::petsc::create_matrix_nest<double>,
         py::return_value_policy::take_ownership, py::arg("a"),
         py::arg("types") = std::vector<std::vector<std::string>>(),
         "Create nested sparse matrix for bilinear forms.");
