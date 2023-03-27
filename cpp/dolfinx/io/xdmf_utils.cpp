@@ -133,7 +133,8 @@ std::int64_t get_padded_width(const fem::FiniteElement& e)
 }
 //-----------------------------------------------------------------------------
 template <typename Scalar>
-std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar, double>& u)
+std::vector<Scalar>
+_get_point_data_values(const fem::Function<Scalar, double>& u)
 {
   auto mesh = u.function_space()->mesh();
   assert(mesh);
@@ -173,7 +174,8 @@ std::vector<Scalar> _get_point_data_values(const fem::Function<Scalar, double>& 
 }
 //-----------------------------------------------------------------------------
 template <typename Scalar>
-std::vector<Scalar> _get_cell_data_values(const fem::Function<Scalar, double>& u)
+std::vector<Scalar>
+_get_cell_data_values(const fem::Function<Scalar, double>& u)
 {
   assert(u.function_space()->dofmap());
   const auto mesh = u.function_space()->mesh();
@@ -393,8 +395,8 @@ xdmf_utils::get_point_data_values(const fem::Function<double, double>& u)
   return _get_point_data_values(u);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::complex<double>>
-xdmf_utils::get_point_data_values(const fem::Function<std::complex<double>, double>& u)
+std::vector<std::complex<double>> xdmf_utils::get_point_data_values(
+    const fem::Function<std::complex<double>, double>& u)
 {
   return _get_point_data_values(u);
 }
@@ -405,8 +407,8 @@ xdmf_utils::get_cell_data_values(const fem::Function<double, double>& u)
   return _get_cell_data_values(u);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::complex<double>>
-xdmf_utils::get_cell_data_values(const fem::Function<std::complex<double>, double>& u)
+std::vector<std::complex<double>> xdmf_utils::get_cell_data_values(
+    const fem::Function<std::complex<double>, double>& u)
 {
   return _get_cell_data_values(u);
 }
