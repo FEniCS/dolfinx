@@ -231,7 +231,7 @@ int main(int argc, char* argv[])
 
     b.set(0.0);
     fem::assemble_vector(b.mutable_array(), *L);
-    fem::apply_lifting(b.mutable_array(), {a}, {{bc}}, {}, T(1));
+    fem::apply_lifting<T, double>(b.mutable_array(), {a}, {{bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
     fem::set_bc(b.mutable_array(), {bc});
 

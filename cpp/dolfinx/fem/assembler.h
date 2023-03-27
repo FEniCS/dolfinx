@@ -10,6 +10,7 @@
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
 #include "utils.h"
+#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/types.h>
 #include <memory>
@@ -55,15 +56,15 @@ make_coefficients_span(const std::map<std::pair<IntegralType, int>,
 /// @param[in] coefficients The coefficients that appear in `M`
 /// @return The contribution to the form (functional) from the local
 /// process
-template <typename T>
+template <typename T, std::floating_point U>
 T assemble_scalar(
-    const Form<T, double>& M, std::span<const T> constants,
+    const Form<T, U>& M, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
   std::shared_ptr<const mesh::Mesh<double>> mesh = M.mesh();
   assert(mesh);
-  if constexpr (std::is_same_v<double, scalar_value_type_t<T>>)
+  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
     return impl::assemble_scalar(M, mesh->geometry(), constants, coefficients);
   else
   {
@@ -78,8 +79,8 @@ T assemble_scalar(
 /// @param[in] M The form (functional) to assemble
 /// @return The contribution to the form (functional) from the local
 ///   process
-template <typename T>
-T assemble_scalar(const Form<T, double>& M)
+template <typename T, std::floating_point U>
+T assemble_scalar(const Form<T, U>& M)
 {
   const std::vector<T> constants = pack_constants(M);
   auto coefficients = allocate_coefficient_storage(M);
@@ -100,9 +101,9 @@ T assemble_scalar(const Form<T, double>& M)
 /// @param[in] L The linear forms to assemble into b
 /// @param[in] constants The constants that appear in `L`
 /// @param[in] coefficients The coefficients that appear in `L`
-template <typename T>
+template <typename T, std::floating_point U>
 void assemble_vector(
-    std::span<T> b, const Form<T, double>& L, std::span<const T> constants,
+    std::span<T> b, const Form<T, U>& L, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
@@ -113,8 +114,8 @@ void assemble_vector(
 /// @param[in,out] b The vector to be assembled. It will not be zeroed
 /// before assembly.
 /// @param[in] L The linear forms to assemble into b
-template <typename T>
-void assemble_vector(std::span<T> b, const Form<T, double>& L)
+template <typename T, std::floating_point U>
+void assemble_vector(std::span<T> b, const Form<T, U>& L)
 {
   auto coefficients = allocate_coefficient_storage(L);
   pack_coefficients(L, coefficients);
@@ -141,18 +142,17 @@ void assemble_vector(std::span<T> b, const Form<T, double>& L)
 ///
 /// Ghost contributions are not accumulated (not sent to owner). Caller
 /// is responsible for calling VecGhostUpdateBegin/End.
-template <typename T>
+template <typename T, std::floating_point U>
 void apply_lifting(
-    std::span<T> b,
-    const std::vector<std::shared_ptr<const Form<T, double>>>& a,
+    std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>>& a,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
-    const std::vector<
-        std::vector<std::shared_ptr<const DirichletBC<T, double>>>>& bcs1,
+    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T, U>>>>&
+        bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
-  std::shared_ptr<const mesh::Mesh<double>> mesh;
+  std::shared_ptr<const mesh::Mesh<U>> mesh;
   for (auto& a_i : a)
   {
     if (a_i and !mesh)
@@ -164,16 +164,16 @@ void apply_lifting(
   if (!mesh)
     throw std::runtime_error("Unable to extract a mesh.");
 
-  if constexpr (std::is_same_v<double, scalar_value_type_t<T>>)
+  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
   {
     impl::apply_lifting<T>(b, a, mesh->geometry(), constants, coeffs, bcs1, x0,
                            scale);
   }
   else
   {
-    impl::apply_lifting<T>(b, a,
-                           mesh->geometry().astype<scalar_value_type_t<T>>(),
-                           constants, coeffs, bcs1, x0, scale);
+    impl::apply_lifting<T>(
+        b, a, mesh->geometry().template astype<scalar_value_type_t<T>>(),
+        constants, coeffs, bcs1, x0, scale);
   }
 }
 
@@ -189,12 +189,11 @@ void apply_lifting(
 ///
 /// Ghost contributions are not accumulated (not sent to owner). Caller
 /// is responsible for calling VecGhostUpdateBegin/End.
-template <typename T>
+template <typename T, std::floating_point U>
 void apply_lifting(
-    std::span<T> b,
-    const std::vector<std::shared_ptr<const Form<T, double>>>& a,
-    const std::vector<
-        std::vector<std::shared_ptr<const DirichletBC<T, double>>>>& bcs1,
+    std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>>& a,
+    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T, U>>>>&
+        bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
   std::vector<
