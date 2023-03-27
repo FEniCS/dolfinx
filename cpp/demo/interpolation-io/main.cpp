@@ -54,11 +54,9 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
         return {f, {f.size()}};
       });
 
-  // Write the function to a VTK file for visualisation, e.g. using
-  // ParaView
-  // io::VTKFile file(mesh->comm(), filename.replace_extension("pvd"), "w");
-  // file.write<T>({*u}, 0.0);
 #ifdef HAS_ADIOS2
+  // Write the function to a VTX file for visualisation, e.g. using
+  // ParaView
   io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"), {u});
   outfile.write(0.0);
   outfile.close();
@@ -160,7 +158,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
   // space:
   u_l->interpolate(*u);
 
-  // Output the discontinuous Lagrange space in VTK format. When
+  // Output the discontinuous Lagrange space in VTX format. When
   // plotting the x0 component the field will appear discontinuous at x0
   // = 0.5 (jump in the normal component between cells) and the x1
   // component will appear continuous (continuous tangent component
@@ -203,14 +201,16 @@ int main(int argc, char* argv[])
     // result to file for visualisation
     interpolate_scalar<float>(mesh0, "u32");
     interpolate_scalar<double>(mesh1, "u64");
-    // interpolate_scalar<std::complex<float>>(mesh0, "u_complex64");
+    interpolate_scalar<std::complex<float>>(mesh0, "u_complex64");
     interpolate_scalar<std::complex<double>>(mesh1, "u_complex128");
 
     // Interpolate a function in a H(curl) finite element space, and
     // then interpolate the H(curl) function in a discontinuous Lagrange
     // space for visualisation
-    interpolate_nedelec<float>(mesh0, "u_nedelec64");
-    interpolate_nedelec<std::complex<double>>(mesh1, "u_nedelec_complex64");
+    interpolate_nedelec<float>(mesh0, "u_nedelec32");
+    interpolate_nedelec<double>(mesh1, "u_nedelec64");
+    interpolate_nedelec<std::complex<float>>(mesh0, "u_nedelec_complex64");
+    interpolate_nedelec<std::complex<double>>(mesh1, "u_nedelec_complex12");
   }
 
   MPI_Finalize();

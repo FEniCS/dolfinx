@@ -12,6 +12,7 @@
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -260,6 +261,7 @@ template <typename U, typename V, typename T>
 void interpolation_apply(const U& Pi, const V& data, std::span<T> coeffs,
                          int bs)
 {
+  using X = typename dolfinx::scalar_value_type_t<T>;
   static_assert(U::rank() == 2, "Must be rank 2");
   static_assert(V::rank() == 2, "Must be rank 2");
 
@@ -272,7 +274,8 @@ void interpolation_apply(const U& Pi, const V& data, std::span<T> coeffs,
       coeffs[i] = 0.0;
       for (std::size_t k = 0; k < data.extent(1); ++k)
         for (std::size_t j = 0; j < data.extent(0); ++j)
-          coeffs[i] += Pi(i, k * data.extent(0) + j) * data(j, k);
+          coeffs[i]
+              += static_cast<X>(Pi(i, k * data.extent(0) + j)) * data(j, k);
     }
   }
   else
@@ -286,7 +289,7 @@ void interpolation_apply(const U& Pi, const V& data, std::span<T> coeffs,
       {
         T acc = 0;
         for (std::size_t j = 0; j < cols; ++j)
-          acc += Pi(i, j) * data(j, k);
+          acc += static_cast<X>(Pi(i, j)) * data(j, k);
         coeffs[bs * i + k] = acc;
       }
     }
@@ -354,6 +357,7 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
       = element1->create_interpolation_operator(*element0);
 
   // Iterate over mesh and interpolate on each cell
+  using X = typename dolfinx::scalar_value_type_t<T>;
   for (auto c : cells)
   {
     std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
@@ -368,7 +372,7 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
     std::fill(local1.begin(), local1.end(), 0);
     for (std::size_t i = 0; i < im_shape[0]; ++i)
       for (std::size_t j = 0; j < im_shape[1]; ++j)
-        local1[i] += i_m[im_shape[1] * i + j] * local0[j];
+        local1[i] += static_cast<X>(i_m[im_shape[1] * i + j]) * local0[j];
 
     apply_inverse_dof_transform(local1, cell_info, c, 1);
 
@@ -573,6 +577,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
         coeffs0[dof_bs0 * i + k] = array0[dof_bs0 * dofs0[i] + k];
 
     // Evaluate v at the interpolation points (physical space values)
+    using X = typename dolfinx::scalar_value_type_t<T>;
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       for (int k = 0; k < bs0; ++k)
@@ -581,7 +586,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
         {
           T acc = 0;
           for (std::size_t i = 0; i < dim0; ++i)
-            acc += coeffs0[bs0 * i + k] * basis0(p, i, j);
+            acc += coeffs0[bs0 * i + k] * static_cast<X>(basis0(p, i, j));
           values0(p, 0, j * bs0 + k) = acc;
         }
       }
