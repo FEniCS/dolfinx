@@ -30,14 +30,14 @@ jobs:
       - name: Install Basix
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install git+https://github.com/FEniCS/basix.git@mscroggs/ufl
+          pip install git+https://github.com/FEniCS/basix.git
 
       - name: Clone FFCx
         uses: actions/checkout@v3
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: mscroggs/basix-ufl
+          ref: main
       - name: Install FFCx C interface
         run: |
           . /opt/intel/oneapi/setvars.sh
