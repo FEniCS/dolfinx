@@ -8,6 +8,10 @@
 #include <iostream>
 #include <vector>
 
+// Note: this demo is not currently intended to provide a fully functional
+// example of using a mixed-topology mesh, but shows only the
+// basic constrution. Experimental.
+
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
@@ -22,12 +26,14 @@ int main(int argc, char* argv[])
 
   std::vector<double> x;
   for (int i = 0; i < nx_s + nx_t + 1; ++i)
+  {
     for (int j = 0; j < ny + 1; ++j)
     {
       x.push_back(i);
       x.push_back(j);
       x.push_back(0);
     }
+  }
 
   std::vector<std::int64_t> cells;
   std::vector<std::int32_t> offsets{0};

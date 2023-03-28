@@ -162,8 +162,10 @@ FunctionSpace::tabulate_dof_coordinates(bool transpose) const
 
   // Get coordinate map
   if (_mesh->geometry().cmaps().size() > 1)
+  {
     throw std::runtime_error(
         "FunctionSpace with multiple geometry maps not implemented.");
+  }
   const CoordinateElement& cmap = _mesh->geometry().cmaps()[0];
 
   // Prepare cell geometry

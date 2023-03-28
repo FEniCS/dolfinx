@@ -96,8 +96,10 @@ compute_point_values(const fem::Function<T>& u)
       = mesh->geometry().dofmap();
 
   if (mesh->geometry().cmaps().size() > 1)
+  {
     throw std::runtime_error(
         "XDMF I/O with multiple geometry maps not implemented.");
+  }
   const int num_dofs_g = mesh->geometry().cmaps()[0].dim();
 
   // Interpolate point values on each cell (using last computed value if
@@ -464,8 +466,10 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
     // Get layout of dofs on 0th cell entity of dimension entity_dim
 
     if (mesh.geometry().cmaps().size() > 1)
+    {
       throw std::runtime_error(
           "XDMF I/O with multiple geometry maps not implemented.");
+    }
     const fem::ElementDofLayout cmap_dof_layout
         = mesh.geometry().cmaps()[0].create_dof_layout();
     for (int i = 0; i < mesh::cell_num_entities(cell_types.back(), 0); ++i)

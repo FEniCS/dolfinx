@@ -145,13 +145,16 @@ build_basic_dofmap(
   // Should be 2*n+1 cell group offsets in Topology for n elements
   if (element_dof_layouts.size() * 2 + 1
       != topology.entity_group_offsets(D).size())
+  {
     throw std::runtime_error("Mixed topology mismatch: groups");
+  }
 
   // Mixed topology can only manage one dof (e.g. on vertex, or on edge, i.e. P1
   // or P2) for now.
   if (element_dof_layouts.size() > 1)
   {
     for (auto e : element_dof_layouts)
+    {
       for (int d = 0; d <= D; ++d)
       {
 
@@ -160,6 +163,7 @@ build_basic_dofmap(
                                    "support elements with more than "
                                    "one dof per entity dimension (P1/P2)");
       }
+    }
 
     std::array<int, 3> nd;
     for (int d = 0; d < D; ++d)

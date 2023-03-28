@@ -27,6 +27,7 @@
 //           a preconditioner to create and efficient solver.
 
 #include "poisson.h"
+#include <Kokkos_Core.hpp>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
@@ -44,9 +45,28 @@ template <typename U>
 void axpy(la::Vector<U>& r, U alpha, const la::Vector<U>& x,
           const la::Vector<U>& y)
 {
-  std::transform(x.array().begin(), x.array().end(), y.array().begin(),
-                 r.mutable_array().begin(),
-                 [alpha](auto x, auto y) { return alpha * x + y; });
+  auto rarr = r.mutable_array();
+  auto xarr = x.array();
+  auto yarr = y.array();
+
+  Kokkos::parallel_for(
+      "axpy", xarr.size(),
+      KOKKOS_LAMBDA(int j) { rarr[j] = alpha * xarr[j] + yarr[j]; });
+}
+
+template <typename U>
+U inner_product(const la::Vector<U>& x, const la::Vector<U>& y)
+{
+  auto xarr = x.array();
+  auto yarr = y.array();
+
+  U result;
+  Kokkos::parallel_reduce(
+      "dot", xarr.size(),
+      KOKKOS_LAMBDA(const int& i, U& lsum) { lsum += xarr[i] * yarr[i]; },
+      result);
+
+  return result;
 }
 
 /// Solve problem A.x = b using the Conjugate Gradient method
@@ -87,7 +107,7 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
     action(p, y);
 
     // Compute alpha = r.r/p.y
-    const U alpha = rnorm / la::inner_product(p, y);
+    const U alpha = rnorm / inner_product(p, y);
 
     // Update x (x <- x + alpha*p)
     axpy(x, alpha, p, x);
@@ -116,6 +136,7 @@ int main(int argc, char* argv[])
   init_logging(argc, argv);
   MPI_Init(&argc, &argv);
 
+  Kokkos::initialize(argc, argv);
   {
     using T = PetscScalar;
 
@@ -123,7 +144,7 @@ int main(int argc, char* argv[])
 
     // Create mesh and function space
     auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
-        comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {10, 10}, mesh::CellType::triangle,
+        comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {100, 100}, mesh::CellType::triangle,
         mesh::create_cell_partitioner(mesh::GhostMode::none)));
     auto V = std::make_shared<fem::FunctionSpace>(
         fem::create_functionspace(functionspace_form_poisson_M, "ui", mesh));
@@ -187,8 +208,14 @@ int main(int argc, char* argv[])
       y.set(0.0);
 
       // Update coefficient ui (just copy data from x to ui)
-      std::copy(x.array().begin(), x.array().end(),
-                ui->x()->mutable_array().begin());
+
+      auto xarr = x.array();
+      auto uarr = ui->x()->mutable_array();
+      Kokkos::parallel_for(
+          "copy", xarr.size(), KOKKOS_LAMBDA(int j) { uarr[j] = xarr[j]; });
+
+      // std::copy(x.array().begin(), x.array().end(),
+      //                ui->x()->mutable_array().begin());
 
       // Compute action of A on x
       fem::pack_coefficients(*M, coeff);
@@ -207,7 +234,7 @@ int main(int argc, char* argv[])
 
     // Compute solution using the conjugate gradient method
     auto u = std::make_shared<fem::Function<T>>(V);
-    int num_it = linalg::cg(*u->x(), b, action, 200, 1e-6);
+    int num_it = linalg::cg(*u->x(), b, action, 2000, 1e-6);
 
     // Set BC values in the solution vectors
     fem::set_bc(u->x()->mutable_array(), {bc}, T(1));
@@ -227,6 +254,7 @@ int main(int argc, char* argv[])
   }
 
   MPI_Finalize();
+  Kokkos::finalize();
 
   return 0;
 }

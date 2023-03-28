@@ -61,8 +61,10 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace& V)
   // coordinate map
   const auto [X, Xshape] = element->interpolation_points();
   if (mesh->geometry().cmaps().size() > 1)
+  {
     throw std::runtime_error(
         "VTK I/O with multiple geometry maps not implemented.");
+  }
   const fem::CoordinateElement& cmap = mesh->geometry().cmaps()[0];
 
   // Prepare cell geometry
