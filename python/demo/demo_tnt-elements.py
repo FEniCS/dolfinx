@@ -21,6 +21,7 @@
 # We begin this demo by importing the required modules.
 
 # +
+import matplotlib
 import matplotlib.pylab as plt
 import numpy as np
 
@@ -31,6 +32,8 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx,
                  grad, inner, sin)
 
 from mpi4py import MPI
+
+matplotlib.use('agg')
 
 # -
 
