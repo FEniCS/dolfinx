@@ -62,9 +62,7 @@ jobs:
         run: python3 -m pip -v install --global-option build --global-option --debug python/
 
       - name: Run pyvista demos (Python, serial)
-        run:
-          python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
+        run: python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
 
       - name: Run pyvista demos (Python, MPI (np=2))
-        run:
-          python3 -m pytest -v -m mpi --num-proc=2 python/demo/test.py
+        run: python3 -m pytest -v -m mpi --num-proc=2 python/demo/test.py
