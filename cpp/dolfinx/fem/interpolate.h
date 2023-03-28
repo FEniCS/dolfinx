@@ -105,7 +105,8 @@ std::vector<T> interpolation_coords(const fem::FiniteElement& element,
 /// @param[in] cells Indices of the cells in the mesh on which to
 /// interpolate. Should be the same as the list used when calling
 /// fem::interpolation_coords.
-/// @tparam Scalar type
+/// @tparam T Scalar type
+/// @tparam U Mesh geometry type
 template <typename T, typename U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
