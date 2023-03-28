@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -22,7 +23,7 @@
 
 namespace dolfinx::mesh
 {
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 class MeshTags;
 class Topology;
 enum class GhostMode;

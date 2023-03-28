@@ -11,6 +11,7 @@
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
@@ -23,7 +24,7 @@
 
 namespace dolfinx::fem
 {
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 class Function;
 
 /// @brief Compute the evaluation points in the physical space at which
@@ -107,7 +108,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement& element,
 /// fem::interpolation_coords.
 /// @tparam T Scalar type
 /// @tparam U Mesh geometry type
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
                  std::span<const std::int32_t> cells);
@@ -307,7 +308,7 @@ void interpolation_apply(const U& Pi, const V& data, std::span<T> coeffs,
 /// @pre The functions `u1` and `u0` must share the same mesh and the
 /// elements must share the same basis function map. Neither is checked
 /// by the function.
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
                           std::span<const std::int32_t> cells)
 {
@@ -393,7 +394,7 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
 /// @param[in] cells The cells to interpolate on
 /// @pre The functions `u1` and `u0` must share the same mesh. This is
 /// not checked by the function.
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
                                   std::span<const std::int32_t> cells)
 {
@@ -619,7 +620,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   }
 }
 
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 void interpolate_nonmatching_meshes(
     Function<T, U>& u, const Function<T, U>& v,
     std::span<const std::int32_t> cells,
@@ -702,7 +703,7 @@ void interpolate_nonmatching_meshes(
 //----------------------------------------------------------------------------
 } // namespace impl
 
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
                  std::span<const std::int32_t> cells)
@@ -1040,7 +1041,7 @@ create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
 /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
 /// nonmatching meshes. This data can be generated with
 /// create_nonmatching_meshes_interpolation_data (optional).
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 void interpolate(
     Function<T, U>& u, const Function<T, U>& v,
     std::span<const std::int32_t> cells,

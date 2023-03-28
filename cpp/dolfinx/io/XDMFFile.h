@@ -23,7 +23,7 @@ class xml_document;
 namespace dolfinx::fem
 {
 class CoordinateElement;
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 class Function;
 } // namespace dolfinx::fem
 
@@ -34,7 +34,7 @@ class Geometry;
 enum class GhostMode : int;
 template <std::floating_point T>
 class Mesh;
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 class MeshTags;
 } // namespace dolfinx::mesh
 

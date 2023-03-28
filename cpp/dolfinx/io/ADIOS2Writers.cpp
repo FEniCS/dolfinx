@@ -164,7 +164,7 @@ std::string to_fides_cell(mesh::CellType type)
 
 /// Pack Function data at vertices. The mesh and the function must both
 /// be 'P1'
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 std::vector<T> pack_function_data(const fem::Function<T, U>& u)
 {
   auto V = u.function_space();
@@ -218,7 +218,7 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] u The function to write
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 void fides_write_data(adios2::IO& io, adios2::Engine& engine,
                       const fem::Function<T, U>& u)
 {

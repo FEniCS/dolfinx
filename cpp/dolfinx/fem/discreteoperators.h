@@ -10,6 +10,7 @@
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include <array>
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -147,7 +148,7 @@ void discrete_gradient(mesh::Topology& topology,
 /// @param[in] V0 The space to interpolate from
 /// @param[in] V1 The space to interpolate to
 /// @param[in] mat_set A functor that sets values in a matrix
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 void interpolation_matrix(const FunctionSpace<U>& V0,
                           const FunctionSpace<U>& V1, auto&& mat_set)
 {

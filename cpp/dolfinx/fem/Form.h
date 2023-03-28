@@ -26,7 +26,7 @@ namespace dolfinx::fem
 
 template <typename T>
 class Constant;
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 class Function;
 
 /// @brief Type of integral
@@ -61,7 +61,7 @@ enum class IntegralType : std::int8_t
 /// (the variable `function_spaces` in the constructors below), the list
 /// of spaces should start with space number 0 (the test space) and then
 /// space number 1 (the trial space).
-template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
+template <typename T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
 class Form
 {
 public:

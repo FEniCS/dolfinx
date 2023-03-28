@@ -6,6 +6,7 @@
 
 #include <basix/finite-element.h>
 #include <cmath>
+#include <concepts>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/FunctionSpace.h>
@@ -25,7 +26,7 @@ using namespace dolfinx;
 // This function interpolations a function is a finite element space and
 // outputs the finite element function to a VTK file for visualisation.
 // It also shows how to create a finite element using Basix.
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
                         [[maybe_unused]] std::filesystem::path filename)
 {
@@ -67,7 +68,7 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
 // space. To visualise the function, it interpolates the H(curl) finite
 // element function in a discontinuous Lagrange space and outputs the
 // Lagrange finite element function to a VTX file for visualisation.
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
                          [[maybe_unused]] std::filesystem::path filename)
 {

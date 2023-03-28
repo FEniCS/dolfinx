@@ -10,6 +10,7 @@
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include "interpolate.h"
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/la/Vector.h>
@@ -26,7 +27,7 @@
 
 namespace dolfinx::fem
 {
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 class Expression;
 
 /// This class represents a function \f$ u_h \f$ in a finite
@@ -35,7 +36,7 @@ class Expression;
 /// \f[     u_h = \sum_{i=1}^{n} U_i \phi_i \f]
 /// where \f$ \{\phi_i\}_{i=1}^{n} \f$ is a basis for \f$ V_h \f$,
 /// and \f$ U \f$ is a vector of expansion coefficients for \f$ u_h \f$.
-template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
+template <typename T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
 class Function
 {
 

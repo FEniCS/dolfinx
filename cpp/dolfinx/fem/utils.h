@@ -126,7 +126,7 @@ concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
 /// @return Rectangular array of the same shape as `a` with a pair of
 /// function spaces in each array entry. If a form is null, then the
 /// returned function space pair is (null, null).
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 std::vector<std::vector<std::array<std::shared_ptr<const FunctionSpace<U>>, 2>>>
 extract_function_spaces(const std::vector<std::vector<const Form<T, U>*>>& a)
 {
@@ -160,7 +160,7 @@ la::SparsityPattern create_sparsity_pattern(
 /// for calling SparsityPattern::assemble.
 /// @param[in] a A bilinear form
 /// @return The corresponding sparsity pattern
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
 {
   if (a.rank() != 2)
@@ -743,7 +743,7 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
 namespace impl
 {
 /// @private
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 std::span<const std::uint32_t> get_cell_orientation_info(
     const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients)
 {
@@ -821,7 +821,7 @@ concept FetchCells = requires(F&& f, std::span<const std::int32_t> v) {
 /// @param[in] fetch_cells Function that fetches the cell index for an
 /// entity in active_entities.
 /// @param[in] offset The offset for c
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 void pack_coefficient_entity(std::span<T> c, int cstride,
                              const Function<T, U>& u,
                              std::span<const std::uint32_t> cell_info,
@@ -888,7 +888,7 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
 /// @param[in] integral_type Type of integral
 /// @param[in] id The id of the integration domain
 /// @return A storage container and the column stride
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 std::pair<std::vector<T>, int>
 allocate_coefficient_storage(const Form<T, U>& form, IntegralType integral_type,
                              int id)
@@ -927,7 +927,7 @@ allocate_coefficient_storage(const Form<T, U>& form, IntegralType integral_type,
 /// @param[in] form The Form
 /// @return A map from a form (integral_type, domain_id) pair to a
 /// (coeffs, cstride) pair
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
 allocate_coefficient_storage(const Form<T, U>& form)
 {
@@ -952,7 +952,7 @@ allocate_coefficient_storage(const Form<T, U>& form)
 /// @param[in] id The id of the integration domain
 /// @param[in] c The coefficient array
 /// @param[in] cstride The coefficient stride
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
                        int id, std::span<T> c, int cstride)
 {
@@ -1137,7 +1137,7 @@ Expression<T, U> create_expression(
 /// @param[in] form The Form
 /// @param[in] coeffs A map from a (integral_type, domain_id) pair to a
 /// (coeffs, cstride) pair
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 void pack_coefficients(const Form<T, U>& form,
                        std::map<std::pair<IntegralType, int>,
                                 std::pair<std::vector<T>, int>>& coeffs)
@@ -1152,7 +1152,7 @@ void pack_coefficients(const Form<T, U>& form,
 /// @param[in] u The Expression
 /// @param[in] cells A list of active cells
 /// @return A pair of the form (coeffs, cstride)
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 std::pair<std::vector<T>, int>
 pack_coefficients(const Expression<T, U>& u,
                   std::span<const std::int32_t> cells)

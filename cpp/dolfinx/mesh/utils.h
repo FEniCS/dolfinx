@@ -10,6 +10,7 @@
 #include "Topology.h"
 #include "graphbuild.h"
 #include <basix/mdspan.hpp>
+#include <concepts>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
@@ -447,16 +448,7 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
 /// @param[in] marker The marking function
 /// @returns List of marked entity indices, including any ghost indices
 /// (indices local to the process)
-// template <typename T>
-// std::vector<std::int32_t> locate_entities(
-//     const Mesh<T>& mesh, int dim,
-//     const std::function<std::vector<std::int8_t>(
-//         std::experimental::mdspan<
-//             const T, std::experimental::extents<
-//                          std::size_t, 3,
-//                          std::experimental::dynamic_extent>>)>&
-//         marker)
-template <typename T, typename U>
+template <std::floating_point T, typename U>
 std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
                                           U marker)
 {
@@ -525,16 +517,7 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
 /// @param[in] marker The marking function
 /// @returns List of marked entity indices (indices local to the
 /// process)
-// template <typename T>
-// std::vector<std::int32_t> locate_entities_boundary(
-//     const Mesh<T>& mesh, int dim,
-//     const std::function<std::vector<std::int8_t>(
-//         std::experimental::mdspan<
-//             const T, std::experimental::extents<
-//                          std::size_t, 3,
-//                          std::experimental::dynamic_extent>>)>&
-//         marker)
-template <typename T, typename U>
+template <std::floating_point T, typename U>
 std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
                                                    U marker)
 {

@@ -89,7 +89,7 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
 /// @return Array of DOF index blocks (local to the MPI rank) in the
 /// space V. The array uses the block size of the dofmap associated
 /// with V.
-template <typename T, typename U>
+template <std::floating_point T, typename U>
 std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
                                                   U marker_fn)
 {
@@ -140,7 +140,7 @@ std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
 /// V[0] and V[1]. The array[0](i) entry is the DOF index in the space
 /// V[0] and array[1](i) is the corresponding DOF entry in the space
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
-template <typename T, typename U>
+template <std::floating_point T, typename U>
 std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
     const std::array<std::reference_wrapper<const FunctionSpace<T>>, 2>& V,
     U marker_fn)
@@ -244,7 +244,7 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
 /// A DirichletBC is specified by the function \f$g\f$, the function
 /// space (trial space) and degrees of freedom to which the boundary
 /// condition applies.
-template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
+template <typename T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
 class DirichletBC
 {
 private:

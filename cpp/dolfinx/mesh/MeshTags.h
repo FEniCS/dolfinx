@@ -32,7 +32,7 @@ namespace dolfinx::mesh
 /// with an arbitrary subset of mesh entities. An entity can have only
 /// one associated tag.
 /// @tparam Type
-template <typename T, typename X>
+template <typename T, std::floating_point X>
 class MeshTags
 {
 public:
@@ -136,7 +136,7 @@ private:
 /// length of `values` must be equal to number of rows in `entities`.
 /// @note Entities that do not exist on this rank are ignored.
 /// @warning `entities` must not contain duplicate entities.
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 MeshTags<T, U>
 create_meshtags(std::shared_ptr<const Mesh<U>> mesh, int dim,
                 const graph::AdjacencyList<std::int32_t>& entities,

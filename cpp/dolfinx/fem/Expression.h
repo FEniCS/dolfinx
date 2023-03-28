@@ -9,6 +9,7 @@
 #include "Function.h"
 #include <algorithm>
 #include <array>
+#include <concepts>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
@@ -31,7 +32,7 @@ class Constant;
 /// material constitutive model.
 /// @tparam T The scalar type
 /// @tparam U The mesh geometry scalar type
-template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
+template <typename T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
 class Expression
 {
 public:
