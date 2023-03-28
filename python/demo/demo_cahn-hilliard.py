@@ -123,6 +123,7 @@ import os
 import numpy as np
 
 import ufl
+from basix.ufl import mixed_element, element
 from dolfinx import log, plot
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.fem.petsc import NonlinearProblem
@@ -160,8 +161,8 @@ theta = 0.5  # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -
 # using a pair of linear Lagrange elements.
 
 msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle)
-P1 = ufl.FiniteElement("Lagrange", msh.ufl_cell(), 1)
-ME = FunctionSpace(msh, P1 * P1)
+P1 = element("Lagrange", msh.ufl_cell().cellname(), 1)
+ME = FunctionSpace(msh, mixed_element([P1, P1]))
 
 # Trial and test functions of the space `ME` are now defined:
 

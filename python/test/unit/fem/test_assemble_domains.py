@@ -7,7 +7,9 @@
 
 import numpy as np
 import pytest
+
 import ufl
+from dolfinx import cpp as _cpp
 from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_scalar,
                          dirichletbc, form)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
@@ -15,10 +17,9 @@ from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
 from dolfinx.mesh import (GhostMode, Mesh, create_unit_square, locate_entities,
                           locate_entities_boundary, meshtags,
                           meshtags_from_entities)
+
 from mpi4py import MPI
 from petsc4py import PETSc
-
-from dolfinx import cpp as _cpp
 
 
 @pytest.fixture

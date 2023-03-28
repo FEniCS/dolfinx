@@ -86,9 +86,10 @@
 
 import numpy as np
 
+from basix.ufl import mixed_element, element
 from dolfinx import fem, io, mesh
-from ufl import (FiniteElement, Measure, MixedElement, SpatialCoordinate,
-                 TestFunctions, TrialFunctions, div, exp, inner)
+from ufl import (Measure, SpatialCoordinate, TestFunctions, TrialFunctions,
+                 div, exp, inner)
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -100,9 +101,9 @@ domain = mesh.create_unit_square(
 )
 
 k = 1
-Q_el = FiniteElement("BDMCF", domain.ufl_cell(), k)
-P_el = FiniteElement("DG", domain.ufl_cell(), k - 1)
-V_el = MixedElement([Q_el, P_el])
+Q_el = element("BDMCF", domain.ufl_cell().cellname(), k)
+P_el = element("DG", domain.ufl_cell().cellname(), k - 1)
+V_el = mixed_element([Q_el, P_el])
 V = fem.FunctionSpace(domain, V_el)
 
 (sigma, u) = TrialFunctions(V)

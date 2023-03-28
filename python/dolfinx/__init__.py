@@ -12,7 +12,7 @@ import sys
 
 stored_dlopen_flags = sys.getdlopenflags()
 
-# Developer note: below is related to OpenMPI 
+# Developer note: below is related to OpenMPI
 # Fix dlopen flags
 if "linux" in sys.platform:
     RTLD_NOW = 2

@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 
 import ufl
+from basix.ufl import element
 from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
                          assemble_scalar, form)
 from dolfinx.mesh import create_mesh
@@ -22,7 +23,7 @@ def randomly_ordered_mesh(cell_type):
     """Create a randomly ordered mesh to use in the test."""
     random.seed(6)
 
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type, 1))
+    domain = ufl.Mesh(element("Lagrange", cell_type, 1, rank=1))
     # Create a mesh
     if MPI.COMM_WORLD.rank == 0:
         N = 6
@@ -147,7 +148,7 @@ def test_dof_positions(cell_type, space_type):
 def random_evaluation_mesh(cell_type):
     random.seed(6)
 
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type, 1))
+    domain = ufl.Mesh(element("Lagrange", cell_type, 1, rank=1))
     if cell_type == "triangle":
         temp_points = np.array([[-1., -1.], [0., 0.], [1., 0.], [0., 1.]])
         temp_cells = [[0, 1, 3], [1, 2, 3]]
