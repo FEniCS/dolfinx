@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
 from functools import singledispatch
 
 import basix
-import basix.ufl_wrapper
+import basix.ufl
 import numpy as np
 import numpy.typing as npt
 import ufl
@@ -472,7 +472,7 @@ class FunctionSpace(ufl.FunctionSpace):
             except BaseException:
                 assert len(element) == 2, "Expected sequence of (element_type, degree)"
                 e = ElementMetaData(*element)
-                ufl_e = basix.ufl_wrapper.create_element(
+                ufl_e = basix.ufl.element(
                     e.family, mesh.ufl_cell().cellname(), e.degree, gdim=mesh.ufl_cell().geometric_dimension())
                 super().__init__(mesh.ufl_domain(), ufl_e)
 
@@ -609,28 +609,47 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.tabulate_dof_coordinates()
 
 
+def _is_scalar(mesh, element):
+    try:
+        e = basix.ufl.element(element.family(), element.cell_type,         # type: ignore
+                              element.degree(), element.lagrange_variant,  # type: ignore
+                              element.dpc_variant, element.discontinuous,  # type: ignore
+                              gdim=mesh.geometry.dim)
+    except AttributeError:
+        ed = ElementMetaData(*element)
+        e = basix.ufl.element(ed.family, mesh.ufl_cell().cellname(), ed.degree,
+                              gdim=mesh.geometry.dim)
+    return len(e.value_shape()) == 0
+
+
 def VectorFunctionSpace(mesh: Mesh,
-                        element: typing.Union[basix.ufl_wrapper._BasixElementBase,
+                        element: typing.Union[basix.ufl._ElementBase,
                                               ElementMetaData, typing.Tuple[str, int]],
                         dim=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
+    if not _is_scalar(mesh, element):
+        raise ValueError("Cannot create vector element containing a non-scalar.")
+
     try:
-        ufl_e = basix.ufl_wrapper.create_vector_element(element.family(), element.cell_type,         # type: ignore
-                                                        element.degree(), element.lagrange_variant,  # type: ignore
-                                                        element.dpc_variant, element.discontinuous,  # type: ignore
-                                                        dim=dim, gdim=mesh.geometry.dim)
+        ufl_e = basix.ufl.element(element.family(), element.cell_type,         # type: ignore
+                                  element.degree(), element.lagrange_variant,  # type: ignore
+                                  element.dpc_variant, element.discontinuous,  # type: ignore
+                                  shape=None if dim is None else (dim, ), gdim=mesh.geometry.dim, rank=1)
     except AttributeError:
         ed = ElementMetaData(*element)
-        ufl_e = basix.ufl_wrapper.create_vector_element(ed.family, mesh.ufl_cell().cellname(), ed.degree,
-                                                        dim=dim, gdim=mesh.geometry.dim)
+        ufl_e = basix.ufl.element(ed.family, mesh.ufl_cell().cellname(), ed.degree,
+                                  shape=None if dim is None else (dim, ), gdim=mesh.geometry.dim, rank=1)
     return FunctionSpace(mesh, ufl_e)
 
 
 def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]], shape=None,
                         symmetry: typing.Optional[bool] = None) -> FunctionSpace:
     """Create tensor finite element (composition of scalar elements) function space."""
+    if not _is_scalar(mesh, element):
+        raise ValueError("Cannot create tensor element containing a non-scalar.")
+
     e = ElementMetaData(*element)
-    ufl_element = basix.ufl_wrapper.create_tensor_element(e.family, mesh.ufl_cell().cellname(),
-                                                          e.degree, shape=shape, symmetry=symmetry,
-                                                          gdim=mesh.geometry.dim)
+    ufl_element = basix.ufl.element(e.family, mesh.ufl_cell().cellname(),
+                                    e.degree, shape=shape, symmetry=symmetry,
+                                    gdim=mesh.geometry.dim, rank=2)
     return FunctionSpace(mesh, ufl_element)

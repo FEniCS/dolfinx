@@ -86,6 +86,7 @@
 import numpy as np
 
 import ufl
+from basix.ufl import mixed_element, element
 from dolfinx import fem, la
 from dolfinx.fem import (Constant, Function, FunctionSpace, dirichletbc,
                          extract_function_spaces, form,
@@ -129,8 +130,8 @@ def lid_velocity_expression(x):
 # linear basis (scalar).
 
 
-P2 = ufl.VectorElement("Lagrange", msh.ufl_cell(), 2)
-P1 = ufl.FiniteElement("Lagrange", msh.ufl_cell(), 1)
+P2 = element("Lagrange", msh.ufl_cell().cellname(), 2, rank=1)
+P1 = element("Lagrange", msh.ufl_cell().cellname(), 1)
 V, Q = FunctionSpace(msh, P2), FunctionSpace(msh, P1)
 
 # Boundary conditions for the velocity field are defined:
@@ -445,7 +446,7 @@ def block_direct_solver():
 def mixed_direct():
 
     # Create the Taylot-Hood function space
-    TH = P2 * P1
+    TH = mixed_element([P2, P1])
     W = FunctionSpace(msh, TH)
 
     # No slip boundary condition

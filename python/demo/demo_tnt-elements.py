@@ -25,7 +25,7 @@ import matplotlib.pylab as plt
 import numpy as np
 
 import basix
-import basix.ufl_wrapper
+import basix.ufl
 from dolfinx import fem, mesh
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx,
                  grad, inner, sin)
@@ -104,10 +104,9 @@ M[2].append(np.zeros([0, 1, 0, 1]))
 # We now create the element. Using the Basix UFL interface, we can wrap
 # this element so that it can be used with FFCx/DOLFINx.
 
-e = basix.create_custom_element(
+tnt_degree1 = basix.ufl.custom_element(
     basix.CellType.quadrilateral, [], wcoeffs, x, M, 0, basix.MapType.identity,
     basix.SobolevSpace.H1, False, 1, 2)
-tnt_degree1 = basix.ufl_wrapper.BasixElement(e)
 
 # ## Creating higher degree TNT elements
 #
@@ -173,9 +172,8 @@ def create_tnt_quad(degree):
             mat[i, 0, :, 0] = wts[:] * poly[i, :]
         M[2].append(mat)
 
-    e = basix.create_custom_element(basix.CellType.quadrilateral, [], wcoeffs, x, M, 0,
+    return basix.ufl.custom_element(basix.CellType.quadrilateral, [], wcoeffs, x, M, 0,
                                     basix.MapType.identity, basix.SobolevSpace.H1, False, degree, degree + 1)
-    return basix.ufl_wrapper.BasixElement(e)
 
 
 # ## Comparing TNT elements and Q elements

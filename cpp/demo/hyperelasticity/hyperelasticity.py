@@ -8,18 +8,22 @@
 # We are interested in solving for a discrete vector field in three
 # dimensions, so first we need the appropriate finite element space and
 # trial and test functions on this space::
-from ufl import (Coefficient, Identity, TestFunction, TrialFunction,
-                 VectorElement, derivative, det, diff, dx, grad, ln,
-                 tetrahedron, tr, variable)
+from basix.ufl import element
+from ufl import (Coefficient, FunctionSpace, Identity, Mesh, TestFunction,
+                 TrialFunction, derivative, det, diff, dx, grad, ln, tr,
+                 variable)
 
 # Function spaces
-element = VectorElement("Lagrange", tetrahedron, 1)
+coord_element = element("Lagrange", "tetrahedron", 1, rank=1)
+mesh = Mesh(coord_element)
+e = element("Lagrange", "tetrahedron", 1, rank=1)
+V = FunctionSpace(mesh, e)
 
 # Trial and test functions
-du = TrialFunction(element)     # Incremental displacement
-v = TestFunction(element)      # Test function
+du = TrialFunction(V)     # Incremental displacement
+v = TestFunction(V)      # Test function
 
-# Note that ``VectorElement`` creates a finite element space of vector
+# Note that ``element`` with `rank=1` creates a finite element space of vector
 # fields. The dimension of the vector field (the number of components)
 # is assumed to be the same as the spatial dimension (in this case 3),
 # unless otherwise specified.
@@ -28,7 +32,7 @@ v = TestFunction(element)      # Test function
 # traction ``T`` and the displacement solution itself ``u``::
 
 # Functions
-u = Coefficient(element)        # Displacement from previous iteration
+u = Coefficient(V)        # Displacement from previous iteration
 # B = Coefficient(element)        # Body force per unit volume
 # T = Coefficient(element)        # Traction force on the boundary
 
@@ -74,5 +78,5 @@ J_form = derivative(F_form, u, du)
 sigma = (1/J)*diff(psi, F)*F.T
 
 forms = [F_form, J_form]
-elements = [(element)]
+elements = [e]
 expressions = [(sigma, [[0.25, 0.25, 0.25]])]

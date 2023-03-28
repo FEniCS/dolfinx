@@ -1,16 +1,15 @@
 # UFL input for the Matrix-free Poisson Demo
 # ==================================
-from basix.ufl_wrapper import create_vector_element
-from ufl import (Coefficient, Constant, FiniteElement, FunctionSpace, Mesh,
-                 TestFunction, TrialFunction, action, dx, grad, inner,
-                 triangle)
+from basix.ufl import element
+from ufl import (Coefficient, Constant, FunctionSpace, Mesh, TestFunction,
+                 TrialFunction, action, dx, grad, inner)
 
-coord_element = create_vector_element("Lagrange", "triangle", 1)
+coord_element = element("Lagrange", "triangle", 1, rank=1)
 mesh = Mesh(coord_element)
 
 # Function Space
-element = FiniteElement("Lagrange", triangle, 2)
-V = FunctionSpace(mesh, element)
+e = element("Lagrange", "triangle", 2)
+V = FunctionSpace(mesh, e)
 
 # Trial and test functions
 u = TrialFunction(V)
