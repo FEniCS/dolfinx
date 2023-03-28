@@ -387,7 +387,6 @@ for i, kz in vals:
 
             V_grid.point_data["u"] = Et_values
 
-            pyvista.set_jupyter_backend("ipygany")
             plotter = pyvista.Plotter()
             plotter.add_mesh(V_grid.copy(), show_edges=False)
             plotter.view_xy()
@@ -403,7 +402,6 @@ for i, kz in vals:
             V_cells, V_types, V_x = plot.create_vtk_mesh(V_lagr)
             V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
             V_grid.point_data["u"] = ezh.x.array.real[lagr_dofs]
-            pyvista.set_jupyter_backend("ipygany")
             plotter = pyvista.Plotter()
             plotter.add_mesh(V_grid.copy(), show_edges=False)
             plotter.view_xy()
