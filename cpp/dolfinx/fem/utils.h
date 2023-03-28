@@ -648,7 +648,7 @@ Form<T, U> create_form(
 /// @param[in] reorder_fn The graph reordering function to call on the
 /// dofmap. If `nullptr`, the default re-ordering is used.
 /// @return The created function space
-template <typename T>
+template <std::floating_point T>
 FunctionSpace<T>
 create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
                      const basix::FiniteElement& e, int bs,
@@ -696,7 +696,7 @@ create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
 /// @param[in] reorder_fn The graph reordering function to call on the
 /// dofmap. If `nullptr`, the default re-ordering is used.
 /// @return The created function space
-template <typename T>
+template <std::floating_point T>
 FunctionSpace<T>
 create_functionspace(ufcx_function_space* (*fptr)(const char*),
                      const std::string& function_name,

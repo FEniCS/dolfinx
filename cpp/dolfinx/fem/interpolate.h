@@ -37,7 +37,7 @@ class Function;
 /// interpolation coordinates for
 /// @return The coordinates in the physical space at which to evaluate
 /// an expression. The shape is (3, num_points) and storage is row-major.
-template <typename T>
+template <std::floating_point T>
 std::vector<T> interpolation_coords(const fem::FiniteElement& element,
                                     const mesh::Geometry<T>& geometry,
                                     std::span<const std::int32_t> cells)
@@ -989,7 +989,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 /// @param[in] cells Indices of the cells in the destination mesh on
 /// which to interpolate. Should be the same as the list used when
 /// calling fem::interpolation_coords.
-template <typename T>
+template <std::floating_point T>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
            std::vector<std::int32_t>>
 create_nonmatching_meshes_interpolation_data(
@@ -1017,7 +1017,7 @@ create_nonmatching_meshes_interpolation_data(
 /// @param[in] mesh0 Mesh of the space to interpolate into
 /// @param[in] element0 Element of the space to interpolate into
 /// @param[in] mesh1 Mesh of the function to interpolate from
-template <typename T>
+template <std::floating_point T>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
            std::vector<std::int32_t>>
 create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,

@@ -11,6 +11,7 @@
 #include "FiniteElement.h"
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -30,7 +31,7 @@ class FiniteElement;
 /// @brief This class represents a finite element function space defined
 /// by a mesh, a finite element, and a local-to-global map of the
 /// degrees of freedom (dofmap).
-template <typename T>
+template <std::floating_point T>
 class FunctionSpace
 {
 public:

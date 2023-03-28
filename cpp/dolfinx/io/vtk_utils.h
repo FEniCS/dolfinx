@@ -9,6 +9,7 @@
 #include "cells.h"
 #include "vtk_utils.h"
 #include <array>
+#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
@@ -25,7 +26,7 @@ namespace dolfinx
 {
 namespace fem
 {
-template <typename T>
+template <std::floating_point T>
 class FunctionSpace;
 }
 

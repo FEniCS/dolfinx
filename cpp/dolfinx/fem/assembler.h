@@ -23,7 +23,7 @@ template <typename T, std::floating_point U>
 class DirichletBC;
 template <typename T, std::floating_point U>
 class Form;
-template <typename T>
+template <std::floating_point T>
 class FunctionSpace;
 
 // -- Helper functions -----------------------------------------------------
