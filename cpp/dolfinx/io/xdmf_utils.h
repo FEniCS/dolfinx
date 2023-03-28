@@ -9,6 +9,7 @@
 #include "HDF5Interface.h"
 #include <array>
 #include <complex>
+#include <concepts>
 #include <dolfinx/mesh/cell_types.h>
 #include <filesystem>
 #include <numeric>
@@ -28,7 +29,7 @@ namespace dolfinx
 
 namespace fem
 {
-template <typename T>
+template <typename T, std::floating_point U>
 class Function;
 } // namespace fem
 
@@ -39,6 +40,7 @@ class CoordinateElement;
 
 namespace mesh
 {
+template <std::floating_point T>
 class Mesh;
 }
 
@@ -64,14 +66,16 @@ std::int64_t get_num_cells(const pugi::xml_node& topology_node);
 
 /// Get point data values for linear or quadratic mesh into flattened 2D
 /// array
-std::vector<double> get_point_data_values(const fem::Function<double>& u);
+std::vector<double>
+get_point_data_values(const fem::Function<double, double>& u);
 std::vector<std::complex<double>>
-get_point_data_values(const fem::Function<std::complex<double>>& u);
+get_point_data_values(const fem::Function<std::complex<double>, double>& u);
 
 /// Get cell data values as a flattened 2D array
-std::vector<double> get_cell_data_values(const fem::Function<double>& u);
+std::vector<double>
+get_cell_data_values(const fem::Function<double, double>& u);
 std::vector<std::complex<double>>
-get_cell_data_values(const fem::Function<std::complex<double>>& u);
+get_cell_data_values(const fem::Function<std::complex<double>, double>& u);
 
 /// Get the VTK string identifier
 std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
@@ -102,7 +106,7 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// distributed and rank1 will receive the (local) cell-vertex connectivity
 /// for this triangle.
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
+distribute_entity_data(const mesh::Mesh<double>& mesh, int entity_dim,
                        std::span<const std::int64_t> entities,
                        std::span<const std::int32_t> data);
 

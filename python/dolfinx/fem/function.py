@@ -311,8 +311,7 @@ class Function(ufl.Coefficient):
             _x = np.reshape(_x, (shape0, -1))
         num_points = _x.shape[0]
         if _x.shape[1] != 3:
-            raise ValueError(
-                "Coordinate(s) for Function evaluation must have length 3.")
+            raise ValueError("Coordinate(s) for Function evaluation must have length 3.")
 
         # Make sure cells are a NumPy array
         _cells = np.asarray(cells, dtype=np.int32)

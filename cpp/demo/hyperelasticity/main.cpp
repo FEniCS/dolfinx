@@ -127,13 +127,14 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Create mesh and define function space
-    auto mesh = std::make_shared<mesh::Mesh>(
+    auto mesh = std::make_shared<mesh::Mesh<double>>(
         mesh::create_box(MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
                          {10, 10, 10}, mesh::CellType::tetrahedron,
                          mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
-    auto V = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
-        functionspace_form_hyperelasticity_F_form, "u", mesh));
+    auto V = std::make_shared<fem::FunctionSpace<double>>(
+        fem::create_functionspace(functionspace_form_hyperelasticity_F_form,
+                                  "u", mesh));
 
     // Define solution function
     auto u = std::make_shared<fem::Function<T>>(V);
@@ -178,7 +179,7 @@ int main(int argc, char* argv[])
 
     // Create Dirichlet boundary conditions
     auto bdofs_left = fem::locate_dofs_geometrical(
-        {*V},
+        *V,
         [](auto x)
         {
           constexpr double eps = 1.0e-8;
@@ -191,7 +192,7 @@ int main(int argc, char* argv[])
           return marker;
         });
     auto bdofs_right = fem::locate_dofs_geometrical(
-        {*V},
+        *V,
         [](auto x)
         {
           constexpr double eps = 1.0e-8;
@@ -228,10 +229,11 @@ int main(int argc, char* argv[])
     const basix::FiniteElement S_element = basix::create_element(
         family, cell_type, k, basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, discontinuous);
-    auto S = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
-        mesh, S_element, pow(mesh->geometry().dim(), 2)));
+    auto S = std::make_shared<fem::FunctionSpace<double>>(
+        fem::create_functionspace(mesh, S_element,
+                                  pow(mesh->geometry().dim(), 2)));
 
-    const auto sigma_expression = fem::create_expression<T>(
+    auto sigma_expression = fem::create_expression<T, double>(
         *expression_hyperelasticity_sigma, {{"u", u}}, {}, mesh);
 
     auto sigma = fem::Function<T>(S);

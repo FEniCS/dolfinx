@@ -161,15 +161,15 @@ T assemble_interior_facets(
 }
 
 /// Assemble functional into an scalar with provided mesh geometry.
-template <typename T>
+template <typename T, std::floating_point U>
 T assemble_scalar(
-    const fem::Form<T>& M,
+    const fem::Form<T, U>& M,
     const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = M.mesh();
+  std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
 
   T value = 0;

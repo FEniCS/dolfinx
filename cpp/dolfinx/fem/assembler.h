@@ -10,17 +10,20 @@
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
 #include "utils.h"
+#include <concepts>
 #include <cstdint>
+#include <dolfinx/common/types.h>
 #include <memory>
 #include <span>
 #include <vector>
 
 namespace dolfinx::fem
 {
-template <typename T>
+template <typename T, std::floating_point U>
 class DirichletBC;
-template <typename T>
+template <typename T, std::floating_point U>
 class Form;
+template <std::floating_point T>
 class FunctionSpace;
 
 // -- Helper functions -----------------------------------------------------
@@ -53,21 +56,21 @@ make_coefficients_span(const std::map<std::pair<IntegralType, int>,
 /// @param[in] coefficients The coefficients that appear in `M`
 /// @return The contribution to the form (functional) from the local
 /// process
-template <typename T>
+template <typename T, std::floating_point U>
 T assemble_scalar(
-    const Form<T>& M, std::span<const T> constants,
+    const Form<T, U>& M, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = M.mesh();
+  std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
-  if constexpr (std::is_same_v<double, impl::scalar_value_type_t<T>>)
+  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
     return impl::assemble_scalar(M, mesh->geometry(), constants, coefficients);
   else
   {
     return impl::assemble_scalar(
-        M, mesh->geometry().astype<impl::scalar_value_type_t<T>>(), constants,
-        coefficients);
+        M, mesh->geometry().template astype<scalar_value_type_t<T>>(),
+        constants, coefficients);
   }
 }
 
@@ -76,8 +79,8 @@ T assemble_scalar(
 /// @param[in] M The form (functional) to assemble
 /// @return The contribution to the form (functional) from the local
 ///   process
-template <typename T>
-T assemble_scalar(const Form<T>& M)
+template <typename T, std::floating_point U>
+T assemble_scalar(const Form<T, U>& M)
 {
   const std::vector<T> constants = pack_constants(M);
   auto coefficients = allocate_coefficient_storage(M);
@@ -98,9 +101,9 @@ T assemble_scalar(const Form<T>& M)
 /// @param[in] L The linear forms to assemble into b
 /// @param[in] constants The constants that appear in `L`
 /// @param[in] coefficients The coefficients that appear in `L`
-template <typename T>
+template <typename T, std::floating_point U>
 void assemble_vector(
-    std::span<T> b, const Form<T>& L, std::span<const T> constants,
+    std::span<T> b, const Form<T, U>& L, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
@@ -111,8 +114,8 @@ void assemble_vector(
 /// @param[in,out] b The vector to be assembled. It will not be zeroed
 /// before assembly.
 /// @param[in] L The linear forms to assemble into b
-template <typename T>
-void assemble_vector(std::span<T> b, const Form<T>& L)
+template <typename T, std::floating_point U>
+void assemble_vector(std::span<T> b, const Form<T, U>& L)
 {
   auto coefficients = allocate_coefficient_storage(L);
   pack_coefficients(L, coefficients);
@@ -139,16 +142,17 @@ void assemble_vector(std::span<T> b, const Form<T>& L)
 ///
 /// Ghost contributions are not accumulated (not sent to owner). Caller
 /// is responsible for calling VecGhostUpdateBegin/End.
-template <typename T>
+template <typename T, std::floating_point U>
 void apply_lifting(
-    std::span<T> b, const std::vector<std::shared_ptr<const Form<T>>>& a,
+    std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>>& a,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
+    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T, U>>>>&
+        bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
-  std::shared_ptr<const mesh::Mesh> mesh;
+  std::shared_ptr<const mesh::Mesh<U>> mesh;
   for (auto& a_i : a)
   {
     if (a_i and !mesh)
@@ -160,7 +164,7 @@ void apply_lifting(
   if (!mesh)
     throw std::runtime_error("Unable to extract a mesh.");
 
-  if constexpr (std::is_same_v<double, impl::scalar_value_type_t<T>>)
+  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
   {
     impl::apply_lifting<T>(b, a, mesh->geometry(), constants, coeffs, bcs1, x0,
                            scale);
@@ -168,7 +172,7 @@ void apply_lifting(
   else
   {
     impl::apply_lifting<T>(
-        b, a, mesh->geometry().astype<impl::scalar_value_type_t<T>>(),
+        b, a, mesh->geometry().template astype<scalar_value_type_t<T>>(),
         constants, coeffs, bcs1, x0, scale);
   }
 }
@@ -185,10 +189,11 @@ void apply_lifting(
 ///
 /// Ghost contributions are not accumulated (not sent to owner). Caller
 /// is responsible for calling VecGhostUpdateBegin/End.
-template <typename T>
+template <typename T, std::floating_point U>
 void apply_lifting(
-    std::span<T> b, const std::vector<std::shared_ptr<const Form<T>>>& a,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
+    std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>>& a,
+    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T, U>>>>&
+        bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
   std::vector<
@@ -236,18 +241,18 @@ void apply_lifting(
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
 /// If bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
-template <typename T>
+template <typename T, std::floating_point U>
 void assemble_matrix(
-    auto mat_add, const Form<T>& a, std::span<const T> constants,
+    auto mat_add, const Form<T, U>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
     std::span<const std::int8_t> dof_marker0,
     std::span<const std::int8_t> dof_marker1)
 
 {
-  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
+  std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
-  if constexpr (std::is_same_v<double, impl::scalar_value_type_t<T>>)
+  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
   {
     impl::assemble_matrix(mat_add, a, mesh->geometry(), constants, coefficients,
                           dof_marker0, dof_marker1);
@@ -255,7 +260,7 @@ void assemble_matrix(
   else
   {
     impl::assemble_matrix(
-        mat_add, a, mesh->geometry().astype<impl::scalar_value_type_t<T>>(),
+        mat_add, a, mesh->geometry().template astype<scalar_value_type_t<T>>(),
         constants, coefficients, dof_marker0, dof_marker1);
   }
 }
@@ -267,12 +272,12 @@ void assemble_matrix(
 /// @param[in] coefficients Coefficients that appear in `a`
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
-template <typename T>
+template <typename T, std::floating_point U>
 void assemble_matrix(
-    auto mat_add, const Form<T>& a, std::span<const T> constants,
+    auto mat_add, const Form<T, U>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
-    const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
+    const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs)
 {
   // Index maps for dof ranges
   auto map0 = a.function_spaces().at(0)->dofmap()->index_map;
@@ -313,10 +318,10 @@ void assemble_matrix(
 /// @param[in] a The bilinear from to assemble
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
-template <typename T>
+template <typename T, std::floating_point U>
 void assemble_matrix(
-    auto mat_add, const Form<T>& a,
-    const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs)
+    auto mat_add, const Form<T, U>& a,
+    const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs)
 {
   // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(a);
@@ -338,8 +343,8 @@ void assemble_matrix(
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
 /// If bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
-template <typename T>
-void assemble_matrix(auto mat_add, const Form<T>& a,
+template <typename T, std::floating_point U>
+void assemble_matrix(auto mat_add, const Form<T, U>& a,
                      std::span<const std::int8_t> dof_marker0,
                      std::span<const std::int8_t> dof_marker1)
 
@@ -393,10 +398,11 @@ void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
 /// @param[in] bcs The Dirichlet boundary conditions
 /// @param[in] diagonal The value to add to the diagonal for rows with a
 /// boundary condition applied
-template <typename T>
-void set_diagonal(auto set_fn, const FunctionSpace& V,
-                  const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
-                  T diagonal = 1.0)
+template <typename T, std::floating_point U>
+void set_diagonal(
+    auto set_fn, const FunctionSpace<U>& V,
+    const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
+    T diagonal = 1.0)
 {
   for (const auto& bc : bcs)
   {
@@ -419,9 +425,9 @@ void set_diagonal(auto set_fn, const FunctionSpace& V,
 /// Set bc values in owned (local) part of the vector, multiplied by
 /// 'scale'. The vectors b and x0 must have the same local size. The bcs
 /// should be on (sub-)spaces of the form L that b represents.
-template <typename T>
+template <typename T, std::floating_point U>
 void set_bc(std::span<T> b,
-            const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
+            const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
             std::span<const T> x0, T scale = 1)
 {
   if (b.size() > x0.size())
@@ -436,9 +442,9 @@ void set_bc(std::span<T> b,
 /// Set bc values in owned (local) part of the vector, multiplied by
 /// 'scale'. The bcs should be on (sub-)spaces of the form L that b
 /// represents.
-template <typename T>
+template <typename T, std::floating_point U>
 void set_bc(std::span<T> b,
-            const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
+            const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
             T scale = 1)
 {
   for (const auto& bc : bcs)

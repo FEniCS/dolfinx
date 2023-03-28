@@ -45,7 +45,7 @@ std::string rank_to_string(int value_rank)
 
 /// Returns true for DG0 fem::Functions
 template <typename Scalar>
-bool has_cell_centred_data(const fem::Function<Scalar>& u)
+bool has_cell_centred_data(const fem::Function<Scalar, double>& u)
 {
   int cell_based_dim = 1;
   const int rank = u.function_space()->element()->value_shape().size();
@@ -74,13 +74,13 @@ int get_padded_width(const fem::FiniteElement& e)
 }
 //-----------------------------------------------------------------------------
 template <typename Scalar>
-void _add_function(MPI_Comm comm, const fem::Function<Scalar>& u,
+void _add_function(MPI_Comm comm, const fem::Function<Scalar, double>& u,
                    const double t, pugi::xml_node& xml_node, const hid_t h5_id)
 {
   LOG(INFO) << "Adding function to node \"" << xml_node.path('/') << "\"";
 
   assert(u.function_space());
-  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
+  auto mesh = u.function_space()->mesh();
   assert(mesh);
 
   // Get fem::Function data values and shape
@@ -180,17 +180,17 @@ void _add_function(MPI_Comm comm, const fem::Function<Scalar>& u,
 } // namespace
 
 //-----------------------------------------------------------------------------
-void xdmf_function::add_function(MPI_Comm comm, const fem::Function<double>& u,
+void xdmf_function::add_function(MPI_Comm comm,
+                                 const fem::Function<double, double>& u,
                                  const double t, pugi::xml_node& xml_node,
                                  const hid_t h5_id)
 {
   _add_function(comm, u, t, xml_node, h5_id);
 }
 //-----------------------------------------------------------------------------
-void xdmf_function::add_function(MPI_Comm comm,
-                                 const fem::Function<std::complex<double>>& u,
-                                 const double t, pugi::xml_node& xml_node,
-                                 const hid_t h5_id)
+void xdmf_function::add_function(
+    MPI_Comm comm, const fem::Function<std::complex<double>, double>& u,
+    const double t, pugi::xml_node& xml_node, const hid_t h5_id)
 {
   _add_function(comm, u, t, xml_node, h5_id);
 }

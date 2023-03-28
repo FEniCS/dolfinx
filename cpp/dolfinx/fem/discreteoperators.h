@@ -10,6 +10,7 @@
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include <array>
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -40,13 +41,27 @@ namespace dolfinx::fem
 /// @warning This function relies on the user supplying appropriate
 /// input and output spaces. See parameter descriptions.
 ///
-/// @param[in] V0 A Lagrange space to interpolate the gradient from
-/// @param[in] V1 A Nédélec (first kind) space to interpolate into
+/// @param[in] topology Mesh topology
+/// @param[in] V0 Lagrange element and dofmap for corresponding space to
+/// interpolate the gradient from
+/// @param[in] V1 Nédélec (first kind) element and and dofmap for
+/// corresponding space to interpolate into
 /// @param[in] mat_set A functor that sets values in a matrix
 template <typename T>
-void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
+void discrete_gradient(mesh::Topology& topology,
+                       std::pair<std::reference_wrapper<const FiniteElement>,
+                                 std::reference_wrapper<const DofMap>>
+                           V0,
+                       std::pair<std::reference_wrapper<const FiniteElement>,
+                                 std::reference_wrapper<const DofMap>>
+                           V1,
                        auto&& mat_set)
 {
+  const FiniteElement& e0 = V0.first.get();
+  const DofMap& dofmap0 = V0.second.get();
+  const FiniteElement& e1 = V1.first.get();
+  const DofMap& dofmap1 = V1.second.get();
+
   namespace stdex = std::experimental;
   using cmdspan2_t
       = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
@@ -54,37 +69,29 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
   using cmdspan4_t
       = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
 
-  // Get mesh
-  std::shared_ptr<const mesh::Mesh> mesh = V1.mesh();
-  assert(mesh);
-
-  // Check spaces
-  std::shared_ptr<const FiniteElement> e0 = V0.element();
-  assert(e0);
-  if (e0->map_type() != basix::maps::type::identity)
+  // Check elements
+  if (e0.map_type() != basix::maps::type::identity)
     throw std::runtime_error("Wrong finite element space for V0.");
-  if (e0->block_size() != 1)
+  if (e0.block_size() != 1)
     throw std::runtime_error("Block size is greater than 1 for V0.");
-  if (e0->reference_value_size() != 1)
+  if (e0.reference_value_size() != 1)
     throw std::runtime_error("Wrong value size for V0.");
 
-  std::shared_ptr<const FiniteElement> e1 = V1.element();
-  assert(e1);
-  if (e1->map_type() != basix::maps::type::covariantPiola)
+  if (e1.map_type() != basix::maps::type::covariantPiola)
     throw std::runtime_error("Wrong finite element space for V1.");
-  if (e1->block_size() != 1)
+  if (e1.block_size() != 1)
     throw std::runtime_error("Block size is greater than 1 for V1.");
 
   // Get V0 (H(curl)) space interpolation points
-  const auto [X, Xshape] = e1->interpolation_points();
+  const auto [X, Xshape] = e1.interpolation_points();
 
   // Tabulate first order derivatives of Lagrange space at H(curl)
   // interpolation points
-  const int ndofs0 = e0->space_dimension();
-  const int tdim = mesh->topology().dim();
+  const int ndofs0 = e0.space_dimension();
+  const int tdim = topology.dim();
   std::vector<double> phi0_b((tdim + 1) * Xshape[0] * ndofs0 * 1);
   cmdspan4_t phi0(phi0_b.data(), tdim + 1, Xshape[0], ndofs0, 1);
-  e0->tabulate(phi0_b, X, Xshape, 1);
+  e0.tabulate(phi0_b, X, Xshape, 1);
 
   // Reshape lagrange basis derivatives as a matrix of shape (tdim *
   // num_points, num_dofs_per_cell)
@@ -94,31 +101,27 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
 
   // Get inverse DOF transform function
   auto apply_inverse_dof_transform
-      = e1->get_dof_transformation_function<T>(true, true, false);
+      = e1.get_dof_transformation_function<T>(true, true, false);
 
   // Generate cell permutations
-  mesh->topology_mutable().create_entity_permutations();
+  topology.create_entity_permutations();
   const std::vector<std::uint32_t>& cell_info
-      = mesh->topology().get_cell_permutation_info();
+      = topology.get_cell_permutation_info();
 
   // Create element kernel function
-  std::shared_ptr<const DofMap> dofmap0 = V0.dofmap();
-  assert(dofmap0);
-  std::shared_ptr<const DofMap> dofmap1 = V1.dofmap();
-  assert(dofmap1);
 
   // Build the element interpolation matrix
-  std::vector<T> Ab(e1->space_dimension() * ndofs0);
+  std::vector<T> Ab(e1.space_dimension() * ndofs0);
   {
     stdex::mdspan<T, stdex::dextents<std::size_t, 2>> A(
-        Ab.data(), e1->space_dimension(), ndofs0);
-    const auto [Pi, shape] = e1->interpolation_operator();
+        Ab.data(), e1.space_dimension(), ndofs0);
+    const auto [Pi, shape] = e1.interpolation_operator();
     cmdspan2_t _Pi(Pi.data(), shape);
     math::dot(_Pi, dphi_reshaped, A);
   }
 
   // Insert local interpolation matrix for each cell
-  auto cell_map = mesh->topology().index_map(tdim);
+  auto cell_map = topology.index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local();
   std::vector<T> Ae(Ab.size());
@@ -126,7 +129,7 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
   {
     std::copy(Ab.cbegin(), Ab.cend(), Ae.begin());
     apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
-    mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ae);
+    mat_set(dofmap1.cell_dofs(c), dofmap0.cell_dofs(c), Ae);
   }
 }
 
@@ -145,9 +148,9 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
 /// @param[in] V0 The space to interpolate from
 /// @param[in] V1 The space to interpolate to
 /// @param[in] mat_set A functor that sets values in a matrix
-template <typename T>
-void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
-                          auto&& mat_set)
+template <typename T, std::floating_point U>
+void interpolation_matrix(const FunctionSpace<U>& V0,
+                          const FunctionSpace<U>& V1, auto&& mat_set)
 {
   // Get mesh
   auto mesh = V0.mesh();
@@ -197,7 +200,7 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
-  std::span<const double> x_g = mesh->geometry().x();
+  std::span<const U> x_g = mesh->geometry().x();
 
   namespace stdex = std::experimental;
   using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;

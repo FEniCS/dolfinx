@@ -11,6 +11,7 @@
 #include "FunctionSpace.h"
 #include "utils.h"
 #include <algorithm>
+#include <concepts>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -361,16 +362,16 @@ void assemble_interior_facets(
 /// local indices. Rows (bc0) and columns (bc1) with Dirichlet
 /// conditions are zeroed. Markers (bc0 and bc1) can be empty if not bcs
 /// are applied. Matrix is not finalised.
-template <typename T>
+template <typename T, std::floating_point U>
 void assemble_matrix(
-    la::MatSet<T> auto mat_set, const Form<T>& a,
+    la::MatSet<T> auto mat_set, const Form<T, U>& a,
     const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
     std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
+  std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
 
   // Get dofmap data

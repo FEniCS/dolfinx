@@ -29,6 +29,7 @@
 #include "poisson.h"
 #include <cmath>
 #include <dolfinx.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/fem/Constant.h>
 
 using namespace dolfinx;
@@ -118,30 +119,31 @@ int main(int argc, char* argv[])
 
   {
     using T = PetscScalar;
+    using U = typename dolfinx::scalar_value_type_t<T>;
 
     MPI_Comm comm = MPI_COMM_WORLD;
 
     // Create mesh and function space
-    auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
+    auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_rectangle<U>(
         comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {10, 10}, mesh::CellType::triangle,
         mesh::create_cell_partitioner(mesh::GhostMode::none)));
-    auto V = std::make_shared<fem::FunctionSpace>(
+    auto V = std::make_shared<fem::FunctionSpace<U>>(
         fem::create_functionspace(functionspace_form_poisson_M, "ui", mesh));
 
     // Prepare and set Constants for the bilinear form
     auto f = std::make_shared<fem::Constant<T>>(-6.0);
 
     // Define variational forms
-    auto L = std::make_shared<fem::Form<T>>(
+    auto L = std::make_shared<fem::Form<T, U>>(
         fem::create_form<T>(*form_poisson_L, {V}, {}, {{"f", f}}, {}));
 
     // Action of the bilinear form "a" on a function ui
-    auto ui = std::make_shared<fem::Function<T>>(V);
-    auto M = std::make_shared<fem::Form<T>>(
+    auto ui = std::make_shared<fem::Function<T, U>>(V);
+    auto M = std::make_shared<fem::Form<T, U>>(
         fem::create_form<T>(*form_poisson_M, {V}, {{"ui", ui}}, {{}}, {}));
 
     // Define boundary condition
-    auto u_D = std::make_shared<fem::Function<T>>(V);
+    auto u_D = std::make_shared<fem::Function<T, U>>(V);
     u_D->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
@@ -154,8 +156,8 @@ int main(int argc, char* argv[])
     mesh->topology_mutable().create_connectivity(1, 2);
     const std::vector<std::int32_t> facets
         = mesh::exterior_facet_indices(mesh->topology());
-    std::vector<std::int32_t> bdofs
-        = fem::locate_dofs_topological({*V}, 1, facets);
+    std::vector<std::int32_t> bdofs = fem::locate_dofs_topological(
+        V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T>>(u_D, bdofs);
 
     // Assemble RHS vector
@@ -164,14 +166,14 @@ int main(int argc, char* argv[])
 
     // Apply lifting to account for Dirichlet boundary condition
     // b <- b - A * x_bc
-    fem::set_bc(ui->x()->mutable_array(), {bc}, T(-1));
+    fem::set_bc<T, U>(ui->x()->mutable_array(), {bc}, T(-1));
     fem::assemble_vector(b.mutable_array(), *M);
 
     // Communicate ghost values
     b.scatter_rev(std::plus<T>());
 
     // Set BC dofs to zero (effectively zeroes columns of A)
-    fem::set_bc(b.mutable_array(), {bc}, T(0));
+    fem::set_bc<T, U>(b.mutable_array(), {bc}, T(0));
 
     b.scatter_fwd();
 
@@ -196,9 +198,9 @@ int main(int argc, char* argv[])
                            fem::make_coefficients_span(coeff));
 
       // Set BC dofs to zero (effectively zeroes rows of A)
-      fem::set_bc(y.mutable_array(), {bc}, T(0));
+      fem::set_bc<T, U>(y.mutable_array(), {bc}, T(0));
 
-      // Accumuate ghost values
+      // Accumulate ghost values
       y.scatter_rev(std::plus<T>());
 
       // Update ghost values
@@ -210,14 +212,13 @@ int main(int argc, char* argv[])
     int num_it = linalg::cg(*u->x(), b, action, 200, 1e-6);
 
     // Set BC values in the solution vectors
-    fem::set_bc(u->x()->mutable_array(), {bc}, T(1));
+    fem::set_bc<T, U>(u->x()->mutable_array(), {bc}, T(1));
 
     // Compute L2 error (squared) of the solution vector e = (u - u_d, u
     // - u_d)*dx
-    auto E = std::make_shared<fem::Form<T>>(fem::create_form<T>(
+    auto E = std::make_shared<fem::Form<T>>(fem::create_form<T, U>(
         *form_poisson_E, {}, {{"uexact", u_D}, {"usol", u}}, {}, {}, mesh));
     T error = fem::assemble_scalar(*E);
-
     if (dolfinx::MPI::rank(comm) == 0)
     {
       std::cout << "Number of CG iterations " << num_it << std::endl;

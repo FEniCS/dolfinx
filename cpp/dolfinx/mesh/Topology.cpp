@@ -712,8 +712,7 @@ graph::AdjacencyList<std::int32_t> convert_to_local_indexing(
                    return it->second;
                  });
 
-  return graph::AdjacencyList<std::int32_t>(std::move(data),
-                                            std::move(offsets));
+  return graph::AdjacencyList(std::move(data), std::move(offsets));
 }
 } // namespace
 

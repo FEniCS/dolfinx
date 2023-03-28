@@ -193,96 +193,19 @@ std::vector<std::string> fem::get_constant_names(const ufcx_form& ufcx_form)
   return constants;
 }
 //-----------------------------------------------------------------------------
-fem::FunctionSpace fem::create_functionspace(
-    std::shared_ptr<mesh::Mesh> mesh, const basix::FiniteElement& e, int bs,
-    const std::function<std::vector<int>(
-        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
-{
-  // Create a DOLFINx element
-  auto _e = std::make_shared<FiniteElement>(e, bs);
-
-  // Create UFC subdofmaps and compute offset
-  assert(_e);
-  const int num_sub_elements = _e->num_sub_elements();
-  std::vector<ElementDofLayout> sub_doflayout;
-  sub_doflayout.reserve(num_sub_elements);
-  for (int i = 0; i < num_sub_elements; ++i)
-  {
-    auto sub_element = _e->extract_sub_element({i});
-    std::vector<int> parent_map_sub(sub_element->space_dimension());
-    for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
-      parent_map_sub[j] = i + bs * j;
-    sub_doflayout.emplace_back(1, e.entity_dofs(), e.entity_closure_dofs(),
-                               parent_map_sub, std::vector<ElementDofLayout>());
-  }
-
-  // Create a dofmap
-  ElementDofLayout layout(bs, e.entity_dofs(), e.entity_closure_dofs(), {},
-                          sub_doflayout);
-  assert(mesh);
-  auto dofmap = std::make_shared<const DofMap>(
-      create_dofmap(mesh->comm(), layout, mesh->topology(), reorder_fn, *_e));
-
-  return FunctionSpace(mesh, _e, dofmap);
-}
-//-----------------------------------------------------------------------------
-fem::FunctionSpace fem::create_functionspace(
-    ufcx_function_space* (*fptr)(const char*), const std::string& function_name,
-    std::shared_ptr<mesh::Mesh> mesh,
-    const std::function<std::vector<int>(
-        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
-{
-  ufcx_function_space* space = fptr(function_name.c_str());
-  if (!space)
-  {
-    throw std::runtime_error(
-        "Could not create UFC function space with function name "
-        + function_name);
-  }
-
-  ufcx_finite_element* ufcx_element = space->finite_element;
-  assert(ufcx_element);
-
-  if (space->geometry_degree != mesh->geometry().cmap().degree()
-      or static_cast<basix::cell::type>(space->geometry_basix_cell)
-             != mesh::cell_type_to_basix_type(
-                 mesh->geometry().cmap().cell_shape())
-      or static_cast<basix::element::lagrange_variant>(
-             space->geometry_basix_variant)
-             != mesh->geometry().cmap().variant())
-  {
-    throw std::runtime_error("UFL mesh and CoordinateElement do not match.");
-  }
-
-  auto element = std::make_shared<FiniteElement>(*ufcx_element);
-  assert(element);
-  ufcx_dofmap* ufcx_map = space->dofmap;
-  assert(ufcx_map);
-  ElementDofLayout layout
-      = create_element_dof_layout(*ufcx_map, mesh->topology().cell_type());
-  return FunctionSpace(
-      mesh, element,
-      std::make_shared<DofMap>(create_dofmap(
-          mesh->comm(), layout, mesh->topology(), reorder_fn, *element)));
-}
-//-----------------------------------------------------------------------------
 std::vector<std::pair<int, std::vector<std::int32_t>>>
 fem::compute_integration_domains(fem::IntegralType integral_type,
-                                 const mesh::MeshTags<int>& meshtags)
+                                 mesh::Topology& topology,
+                                 std::span<const std::int32_t> entities,
+                                 int dim, std::span<const int> values)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
-  assert(mesh);
-  const mesh::Topology& topology = mesh->topology();
   const int tdim = topology.dim();
-  const int dim = integral_type == IntegralType::cell ? tdim : tdim - 1;
-  if (dim != meshtags.dim())
+  if ((integral_type == IntegralType::cell ? tdim : tdim - 1) != dim)
   {
     throw std::runtime_error("Invalid MeshTags dimension: "
-                             + std::to_string(meshtags.dim()));
+                             + std::to_string(dim));
   }
 
-  std::span<const std::int32_t> entities = meshtags.indices();
-  std::span<const int> values = meshtags.values();
   {
     assert(topology.index_map(dim));
     auto it0 = entities.begin();
@@ -301,8 +224,8 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     values1.insert(values1.begin(), values.begin(), values.end());
     break;
   default:
-    mesh->topology_mutable().create_connectivity(dim, tdim);
-    mesh->topology_mutable().create_connectivity(tdim, dim);
+    topology.create_connectivity(dim, tdim);
+    topology.create_connectivity(tdim, dim);
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
     assert(f_to_c);
     auto c_to_f = topology.connectivity(tdim, tdim - 1);

@@ -107,7 +107,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   if (num_ranks == 1)
   {
     // Convert graph to int64_t and return
-    return graph::AdjacencyList<std::int64_t>(
+    return graph::AdjacencyList(
         std::vector<std::int64_t>(local_graph.array().begin(),
                                   local_graph.array().end()),
         local_graph.offsets());
@@ -380,8 +380,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     }
   }
 
-  return graph::AdjacencyList<std::int64_t>(std::move(data),
-                                            std::move(offsets));
+  return graph::AdjacencyList(std::move(data), std::move(offsets));
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -520,9 +519,9 @@ mesh::build_local_dual_graph(std::span<const std::int64_t> cell_vertices,
     }
   }
 
-  return {
-      graph::AdjacencyList<std::int32_t>(std::move(data), std::move(offsets)),
-      std::move(unmatched_facets), max_vertices_per_facet, std::move(cells)};
+  return {graph::AdjacencyList(std::move(data), std::move(offsets)),
+          std::move(unmatched_facets), max_vertices_per_facet,
+          std::move(cells)};
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int64_t>
@@ -539,7 +538,7 @@ mesh::build_dual_graph(const MPI_Comm comm,
   assert(local_graph.num_nodes() == cells.num_nodes());
 
   // Extend with nonlocal edges and convert to global indices
-  graph::AdjacencyList<std::int64_t> graph
+  graph::AdjacencyList graph
       = compute_nonlocal_dual_graph(comm, facets, shape1, fcells, local_graph);
 
   LOG(INFO) << "Graph edges (local: " << local_graph.offsets().back()
