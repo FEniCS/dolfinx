@@ -66,7 +66,7 @@ jobs:
           python3 -c "import pyvista; pyvista.start_xvfb()"
           python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
 
-      - name: Run pyivsta demos (Python, MPI (np=2))
+      - name: Run pyvista demos (Python, MPI (np=2))
         run: |
           python3 -c "import pyvista; pyvista.start_xvfb()"
           python3 -m pytest -v -m mpi --num-proc=2 python/demo/test.py
