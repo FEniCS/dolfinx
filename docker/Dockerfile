@@ -478,16 +478,12 @@ RUN apt-get -qq update && \
 # available on pypi for linux/arm64.
 # matplotlib improves plotting quality with better color maps and
 # properly rendering colorbars.
-# pythreejs and ipygany are two backends of pyvista not requiring a framebuffer,
-# and are therefore preferred in notebooks
-# Pinning ipywidgets due to https://github.com/pyvista/pyvista/issues/3274
+# Trame is preferred backend for pyvista
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
-    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ipywidgets==7.7.2 && \
-    pip3 install --no-cache-dir matplotlib && \
-    pip3 install --no-cache-dir pythreejs ipygany && \
-    pip3 cache purge && \
-    jupyter nbextension enable --py --sys-prefix ipygany ;; \
+    python3 -m pip install --no-cache-dir pyvista[trame]==${PYVISTA_VERSION} && \
+    python3 -m pip install --no-cache-dir matplotlib && \
+    python3 -m pip cache purge ;; \
     esac;
 
 # Jupyter Notebook kernel specification for complex build DOLFINx
