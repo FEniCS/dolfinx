@@ -151,10 +151,10 @@ class XDMFFile(_cpp.io.XDMFFile):
         """Write mesh to file"""
         super().write_mesh(mesh._cpp_object, xpath)
 
-    def write_meshtags(self, tags: MeshTags, geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
+    def write_meshtags(self, tags: MeshTags, x: _cpp.mesh.Geometry, geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
                        xpath: str = "/Xdmf/Domain") -> None:
         """Write mesh tags to file"""
-        super().write_meshtags(tags._cpp_object, geometry_xpath, xpath)
+        super().write_meshtags(tags._cpp_object, x, geometry_xpath, xpath)
 
     def write_function(self, u: Function, t: float = 0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
         """Write function to file for a given time.
@@ -190,7 +190,7 @@ class XDMFFile(_cpp.io.XDMFFile):
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
         mt = super().read_meshtags(mesh._cpp_object, name, xpath)
-        return MeshTags(mt, mesh)
+        return MeshTags(mt)
 
 
 def distribute_entity_data(mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64],

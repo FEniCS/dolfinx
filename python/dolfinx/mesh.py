@@ -163,13 +163,13 @@ def transfer_meshtag(meshtag: MeshTags, mesh1: Mesh, parent_cell: npt.NDArray[np
             Mesh tags on the refined mesh.
 
     """
-    if meshtag.dim == meshtag.mesh.topology.dim:
-        mt = _cpp.refinement.transfer_cell_meshtag(meshtag._cpp_object, mesh1._cpp_object, parent_cell)
-        return MeshTags(mt, mesh1)
-    elif meshtag.dim == meshtag.mesh.topology.dim - 1:
+    if meshtag.dim == meshtag.topology.dim:
+        mt = _cpp.refinement.transfer_cell_meshtag(meshtag._cpp_object, mesh1.topology, parent_cell)
+        return MeshTags(mt)
+    elif meshtag.dim == meshtag.topology.dim - 1:
         assert parent_facet is not None
-        mt = _cpp.refinement.transfer_facet_meshtag(meshtag._cpp_object, mesh1._cpp_object, parent_cell, parent_facet)
-        return MeshTags(mt, mesh1)
+        mt = _cpp.refinement.transfer_facet_meshtag(meshtag._cpp_object, mesh1.topology, parent_cell, parent_facet)
+        return MeshTags(mt)
     else:
         raise RuntimeError("MeshTag transfer is supported on on cells or facets.")
 

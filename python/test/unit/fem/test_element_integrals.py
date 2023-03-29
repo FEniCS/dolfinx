@@ -162,8 +162,10 @@ def test_facet_integral(cell_type):
         elif cell_type == CellType.hexahedron:
             v.interpolate(lambda x: x[0] * (1 - x[0]) + x[1] * (1 - x[1]) + x[2] * (1 - x[2]))
 
-        # assert that the integral of these functions over each face are
+        # Check that integral of these functions over each face are
         # equal
+        mesh.topology.create_connectivity(tdim - 1, tdim)
+        mesh.topology.create_connectivity(tdim, tdim - 1)
         out = []
         for j in range(num_facets):
             a = form(v * ufl.ds(subdomain_data=marker, subdomain_id=j))

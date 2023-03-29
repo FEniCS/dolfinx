@@ -32,7 +32,6 @@ namespace dolfinx::mesh
 /// with an arbitrary subset of mesh entities. An entity can have only
 /// one associated tag.
 /// @tparam Type
-// template <typename T, std::floating_point X>
 template <typename T>
 class MeshTags
 {

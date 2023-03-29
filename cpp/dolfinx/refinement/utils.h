@@ -22,6 +22,8 @@
 
 namespace dolfinx::mesh
 {
+template <typename T>
+class MeshTags;
 class Topology;
 enum class GhostMode;
 } // namespace dolfinx::mesh
@@ -319,16 +321,13 @@ std::vector<std::int64_t> adjust_indices(const common::IndexMap& map,
 /// @note The refined mesh must not have been redistributed during
 /// refinement
 /// @note GhostMode must be GhostMode.none
-/// @param[in] topology Topology of the parent mesh
-/// @param[in] indices Tagged facets of the parent mesh
-/// @param[in] values Values for tagged entities
+/// @param[in] tags0 Tags on the parent mesh
 /// @param[in] topology1 Refined mesh topology
 /// @param[in] cell Parent cell of each cell in refined mesh
 /// @param[in] facet Local facets of parent in each cell in refined mesh
 /// @return (0) entities and (1) values on the refined topology
 std::array<std::vector<std::int32_t>, 2> transfer_facet_meshtag(
-    const mesh::Topology& topology, std::span<const std::int32_t> indices,
-    std::span<const std::int32_t> values, const mesh::Topology& topology1,
+    const mesh::MeshTags<std::int32_t>& tags0, const mesh::Topology& topology1,
     std::span<const std::int32_t> cell, std::span<const std::int8_t> facet);
 
 /// @brief Transfer cell MeshTags from coarse mesh to refined mesh.
@@ -337,15 +336,13 @@ std::array<std::vector<std::int32_t>, 2> transfer_facet_meshtag(
 /// refinement.
 /// @note GhostMode must be GhostMode.none
 ///
-/// @param[in] topology0 Topology of the parent mesh
-/// @param[in] indices0 Tagged facets of the parent mesh
-/// @param[in] values0 Values for tagged entities
+/// @param[in] tags0 Tags on the parent mesh
 /// @param[in] topology1 Refined mesh topology
 /// @param[in] parent_cell Parent cell of each cell in refined mesh
 /// @return (0) entities and (1) values on the refined topology
-std::array<std::vector<std::int32_t>, 2> transfer_cell_meshtag(
-    const mesh::Topology& topology0, std::span<const std::int32_t> indices0,
-    std::span<const std::int32_t> values0, const mesh::Topology& topology1,
-    std::span<const std::int32_t> parent_cell);
+std::array<std::vector<std::int32_t>, 2>
+transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& tags0,
+                      const mesh::Topology& topology1,
+                      std::span<const std::int32_t> parent_cell);
 
 } // namespace dolfinx::refinement

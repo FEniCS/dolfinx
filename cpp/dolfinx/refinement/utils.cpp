@@ -153,10 +153,13 @@ refinement::adjust_indices(const common::IndexMap& map, std::int32_t n)
 }
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::int32_t>, 2> refinement::transfer_facet_meshtag(
-    const mesh::Topology& topology, std::span<const std::int32_t> indices,
-    std::span<const std::int32_t> values, const mesh::Topology& topology1,
+    const mesh::MeshTags<std::int32_t>& tags0, const mesh::Topology& topology1,
     std::span<const std::int32_t> cell, std::span<const std::int8_t> facet)
 {
+  const mesh::Topology& topology = tags0.topology();
+  auto values = tags0.values();
+  auto indices = tags0.indices();
+
   int tdim = topology.dim();
   if (topology.index_map(tdim)->num_ghosts() > 0)
     throw std::runtime_error("Ghosted meshes are not supported");
@@ -267,11 +270,15 @@ std::array<std::vector<std::int32_t>, 2> refinement::transfer_facet_meshtag(
   return {std::move(sorted_facet_indices), std::move(sorted_tag_values)};
 }
 //----------------------------------------------------------------------------
-std::array<std::vector<std::int32_t>, 2> refinement::transfer_cell_meshtag(
-    const mesh::Topology& topology0, std::span<const std::int32_t> indices0,
-    std::span<const std::int32_t> values0, const mesh::Topology& topology1,
-    std::span<const std::int32_t> cell)
+std::array<std::vector<std::int32_t>, 2>
+refinement::transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& tags0,
+                                  const mesh::Topology& topology1,
+                                  std::span<const std::int32_t> cell)
 {
+  const mesh::Topology& topology0 = tags0.topology();
+  auto values0 = tags0.values();
+  auto indices0 = tags0.indices();
+
   const int tdim = topology0.dim();
   // if (meshtag.dim() != tdim)
   //   throw std::runtime_error("Input meshtag is not cell-based");
