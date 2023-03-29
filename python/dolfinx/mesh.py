@@ -291,7 +291,7 @@ class MeshTags:
         return id(self)
 
     @property
-    def topology(self) -> Mesh:
+    def topology(self) -> _cpp.mesh.Topology:
         """Mesh topology with which the the tags are associated."""
         return self._cpp_object.topology
 
