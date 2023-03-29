@@ -40,7 +40,7 @@ bool is_cellwise(const fem::FunctionSpace<T>& V)
   assert(V.element());
   const int rank = V.element()->value_shape().size();
   assert(V.mesh());
-  const int tdim = V.mesh()->topology().dim();
+  const int tdim = V.mesh()->topology()->dim();
 
   // cell_based_dim = tdim^rank
   int cell_based_dim = 1;
@@ -422,7 +422,7 @@ void write_function(
   {
     std::vector<std::int64_t> tmp;
     std::tie(tmp, cshape) = io::extract_vtk_connectivity(
-        mesh0->geometry().dofmap(), mesh0->topology().cell_type());
+        mesh0->geometry().dofmap(), mesh0->topology()->cell_type());
     cells.assign(tmp.begin(), tmp.end());
     const mesh::Geometry<double>& geometry = mesh0->geometry();
     x.assign(geometry.x().begin(), geometry.x().end());
@@ -443,10 +443,10 @@ void write_function(
   piece_node.append_attribute("NumberOfCells") = cshape[0];
 
   // Add mesh data to "Piece" node
-  int tdim = mesh0->topology().dim();
+  int tdim = mesh0->topology()->dim();
   add_mesh(x, xshape, x_id, x_ghost, cells, cshape,
-           *mesh0->topology().index_map(tdim), mesh0->topology().cell_type(),
-           mesh0->topology().dim(), piece_node);
+           *mesh0->topology()->index_map(tdim), mesh0->topology()->cell_type(),
+           mesh0->topology()->dim(), piece_node);
 
   // FIXME: is this actually setting the first?
   // Set last scalar/vector/tensor Functions in u to be the 'active'
@@ -751,14 +751,15 @@ void io::VTKFile::write(const mesh::Mesh<double>& mesh, double time)
   const std::string counter_str = get_counter(xml_collections, "DataSet");
 
   // Get mesh data for this rank
-  const mesh::Topology& topology = mesh.topology();
+  auto topology = mesh.topology();
+  assert(topology);
   const mesh::Geometry<double>& geometry = mesh.geometry();
   auto xmap = geometry.index_map();
   assert(xmap);
-  const int tdim = topology.dim();
+  const int tdim = topology->dim();
   const std::int32_t num_points = xmap->size_local() + xmap->num_ghosts();
-  const std::int32_t num_cells = topology.index_map(tdim)->size_local()
-                                 + topology.index_map(tdim)->num_ghosts();
+  const std::int32_t num_cells = topology->index_map(tdim)->size_local()
+                                 + topology->index_map(tdim)->num_ghosts();
 
   // Create a VTU XML object
   pugi::xml_document xml_vtu;
@@ -774,13 +775,13 @@ void io::VTKFile::write(const mesh::Mesh<double>& mesh, double time)
 
   // Add mesh data to "Piece" node
   const auto [cells, cshape] = extract_vtk_connectivity(
-      mesh.geometry().dofmap(), mesh.topology().cell_type());
+      mesh.geometry().dofmap(), mesh.topology()->cell_type());
   std::array<std::size_t, 2> xshape = {geometry.x().size() / 3, 3};
   std::vector<std::uint8_t> x_ghost(xshape[0], 0);
   std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
   add_mesh(geometry.x(), xshape, geometry.input_global_indices(), x_ghost,
-           cells, cshape, *topology.index_map(tdim), topology.cell_type(),
-           topology.dim(), piece_node);
+           cells, cshape, *topology->index_map(tdim), topology->cell_type(),
+           topology->dim(), piece_node);
 
   // Create filepath for a .vtu file
   auto create_vtu_path = [file_root = _filename.parent_path(),

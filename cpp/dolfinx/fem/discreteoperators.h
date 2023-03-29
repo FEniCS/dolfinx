@@ -157,7 +157,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   assert(mesh);
 
   // Mesh dims
-  const int tdim = mesh->topology().dim();
+  const int tdim = mesh->topology()->dim();
   const int gdim = mesh->geometry().dim();
 
   // Get elements
@@ -169,8 +169,8 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   std::span<const std::uint32_t> cell_info;
   if (e1->needs_dof_transformations() or e0->needs_dof_transformations())
   {
-    mesh->topology_mutable().create_entity_permutations();
-    cell_info = std::span(mesh->topology().get_cell_permutation_info());
+    mesh->topology_mutable()->create_entity_permutations();
+    cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
   // Get dofmaps
@@ -282,7 +282,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   std::vector<T> local1(space_dim1);
 
   // Iterate over mesh and interpolate on each cell
-  auto cell_map = mesh->topology().index_map(tdim);
+  auto cell_map = mesh->topology()->index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local();
   for (std::int32_t c = 0; c < num_cells; ++c)

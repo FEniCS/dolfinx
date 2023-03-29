@@ -60,7 +60,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   auto mesh = V.mesh();
   assert(mesh);
   const std::size_t gdim = mesh->geometry().dim();
-  const int tdim = mesh->topology().dim();
+  const int tdim = mesh->topology()->dim();
 
   // Get dofmap data
   auto dofmap = V.dofmap();
@@ -93,8 +93,8 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   std::span<const std::uint32_t> cell_info;
   if (element->needs_dof_transformations())
   {
-    mesh->topology_mutable().create_entity_permutations();
-    cell_info = std::span(mesh->topology().get_cell_permutation_info());
+    mesh->topology_mutable()->create_entity_permutations();
+    cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
   const auto apply_dof_transformation
       = element->template get_dof_transformation_function<T>();
@@ -114,7 +114,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
                               stdex::full_extent, 0);
 
   // Loop over cells and tabulate dofs
-  auto map = mesh->topology().index_map(tdim);
+  auto map = mesh->topology()->index_map(tdim);
   assert(map);
   const std::int32_t num_cells = map->size_local() + map->num_ghosts();
   std::vector<T> x_b(scalar_dofs * gdim);
@@ -186,7 +186,7 @@ vtk_mesh_from_space(const fem::FunctionSpace<T>& V)
 {
   auto mesh = V.mesh();
   assert(mesh);
-  const int tdim = mesh->topology().dim();
+  const int tdim = mesh->topology()->dim();
 
   assert(V.element());
   if (V.element()->is_mixed())
@@ -194,7 +194,7 @@ vtk_mesh_from_space(const fem::FunctionSpace<T>& V)
 
   const auto [x, xshape, x_id, x_ghost]
       = impl::tabulate_lagrange_dof_coordinates(V);
-  auto map = mesh->topology().index_map(tdim);
+  auto map = mesh->topology()->index_map(tdim);
   const std::size_t num_cells = map->size_local() + map->num_ghosts();
 
   // Create permutation from DOLFINx dof ordering to VTK
@@ -204,7 +204,7 @@ vtk_mesh_from_space(const fem::FunctionSpace<T>& V)
   const std::uint32_t num_nodes
       = V.element()->space_dimension() / element_block_size;
   const std::vector<std::uint8_t> vtkmap = io::cells::transpose(
-      io::cells::perm_vtk(mesh->topology().cell_type(), num_nodes));
+      io::cells::perm_vtk(mesh->topology()->cell_type(), num_nodes));
 
   // Extract topology for all local cells as
   // [v0_0, ...., v0_N0, v1_0, ...., v1_N1, ....]

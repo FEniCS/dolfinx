@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
           return {f, {f.size()}};
         });
 
-    mesh->topology_mutable().create_connectivity(1, 2);
+    mesh->topology_mutable()->create_connectivity(1, 2);
     const std::vector<std::int32_t> facets
         = mesh::exterior_facet_indices(mesh->topology());
     std::vector<std::int32_t> bdofs = fem::locate_dofs_topological(

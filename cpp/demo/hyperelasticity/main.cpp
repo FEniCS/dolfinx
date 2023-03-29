@@ -222,7 +222,7 @@ int main(int argc, char* argv[])
     // Construct appropriate Basix element for stress
     constexpr auto family = basix::element::family::P;
     const auto cell_type
-        = mesh::cell_type_to_basix_type(mesh->topology().cell_type());
+        = mesh::cell_type_to_basix_type(mesh->topology()->cell_type());
     constexpr int k = 0;
     constexpr bool discontinuous = true;
 

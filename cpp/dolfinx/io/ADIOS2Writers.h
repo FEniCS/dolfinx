@@ -358,7 +358,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
                     const mesh::Mesh<T>& mesh)
 {
   const mesh::Geometry<T>& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
+  auto topology = mesh.topology();
 
   // "Put" geometry
   std::shared_ptr<const common::IndexMap> x_map = geometry.index_map();
@@ -374,7 +374,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
   const auto [vtkcells, shape] = io::extract_vtk_connectivity(
-      mesh.geometry().dofmap(), mesh.topology().cell_type());
+      mesh.geometry().dofmap(), mesh.topology()->cell_type());
 
   // Add cell metadata
   const int tdim = topology.dim();
@@ -430,7 +430,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 {
   auto mesh = V.mesh();
   assert(mesh);
-  const int tdim = mesh->topology().dim();
+  const int tdim = mesh->topology()->dim();
 
   // Get a VTK mesh with points at the 'nodes'
   const auto [x, xshape, x_id, x_ghost, vtk, vtkshape]
@@ -470,7 +470,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(vertices, num_dofs);
   engine.Put<std::uint32_t>(elements, vtkshape[0]);
   engine.Put<std::uint32_t>(
-      cell_type, cells::get_vtk_cell_type(mesh->topology().cell_type(), tdim));
+      cell_type, cells::get_vtk_cell_type(mesh->topology()->cell_type(), tdim));
   engine.Put<T>(local_geometry, x.data());
   engine.Put<std::int64_t>(local_topology, cells.data());
 

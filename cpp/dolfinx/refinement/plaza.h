@@ -141,7 +141,7 @@ template <typename T>
 std::pair<std::vector<std::int32_t>, std::vector<std::int8_t>>
 face_long_edge(const mesh::Mesh<T>& mesh)
 {
-  const int tdim = mesh.topology().dim();
+  const int tdim = mesh.topology()->dim();
   // FIXME: cleanup these calls? Some of the happen internally again.
   mesh.topology_mutable().create_entities(1);
   mesh.topology_mutable().create_entities(2);
@@ -149,8 +149,8 @@ face_long_edge(const mesh::Mesh<T>& mesh)
   mesh.topology_mutable().create_connectivity(1, tdim);
   mesh.topology_mutable().create_connectivity(tdim, 2);
 
-  std::int64_t num_faces = mesh.topology().index_map(2)->size_local()
-                           + mesh.topology().index_map(2)->num_ghosts();
+  std::int64_t num_faces = mesh.topology()->index_map(2)->size_local()
+                           + mesh.topology()->index_map(2)->num_ghosts();
 
   // Storage for face-local index of longest edge
   std::vector<std::int32_t> long_edge(num_faces);
@@ -164,15 +164,15 @@ face_long_edge(const mesh::Mesh<T>& mesh)
 
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
-  auto c_to_v = mesh.topology().connectivity(tdim, 0);
+  auto c_to_v = mesh.topology()->connectivity(tdim, 0);
   assert(c_to_v);
-  auto e_to_c = mesh.topology().connectivity(1, tdim);
+  auto e_to_c = mesh.topology()->connectivity(1, tdim);
   assert(e_to_c);
-  auto e_to_v = mesh.topology().connectivity(1, 0);
+  auto e_to_v = mesh.topology()->connectivity(1, 0);
   assert(e_to_v);
 
   // Store all edge lengths in Mesh to save recalculating for each Face
-  auto map_e = mesh.topology().index_map(1);
+  auto map_e = mesh.topology()->index_map(1);
   assert(map_e);
   std::vector<T> edge_length(map_e->size_local() + map_e->num_ghosts());
   for (std::size_t e = 0; e < edge_length.size(); ++e)
@@ -206,12 +206,12 @@ face_long_edge(const mesh::Mesh<T>& mesh)
   }
 
   // Get longest edge of each face
-  auto f_to_v = mesh.topology().connectivity(2, 0);
+  auto f_to_v = mesh.topology()->connectivity(2, 0);
   assert(f_to_v);
-  auto f_to_e = mesh.topology().connectivity(2, 1);
+  auto f_to_e = mesh.topology()->connectivity(2, 1);
   assert(f_to_e);
   const std::vector global_indices
-      = mesh.topology().index_map(0)->global_indices();
+      = mesh.topology()->index_map(0)->global_indices();
   for (int f = 0; f < f_to_v->num_nodes(); ++f)
   {
     auto face_edges = f_to_e->links(f);
@@ -265,7 +265,7 @@ compute_refinement(MPI_Comm neighbor_comm,
                    const std::vector<std::int8_t>& edge_ratio_ok,
                    plaza::Option option)
 {
-  int tdim = mesh.topology().dim();
+  int tdim = mesh.topology()->dim();
   int num_cell_edges = tdim * 3 - 3;
   int num_cell_vertices = tdim + 1;
   bool compute_facets = (option == plaza::Option::parent_facet
@@ -283,21 +283,21 @@ compute_refinement(MPI_Comm neighbor_comm,
   std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
   std::vector<std::int32_t> simplex_set;
 
-  auto map_c = mesh.topology().index_map(tdim);
+  auto map_c = mesh.topology()->index_map(tdim);
   assert(map_c);
-  auto c_to_v = mesh.topology().connectivity(tdim, 0);
+  auto c_to_v = mesh.topology()->connectivity(tdim, 0);
   assert(c_to_v);
-  auto c_to_e = mesh.topology().connectivity(tdim, 1);
+  auto c_to_e = mesh.topology()->connectivity(tdim, 1);
   assert(c_to_e);
-  auto c_to_f = mesh.topology().connectivity(tdim, 2);
+  auto c_to_f = mesh.topology()->connectivity(tdim, 2);
   assert(c_to_f);
 
   std::int32_t num_new_vertices_local = std::count(
       marked_edges.begin(),
-      marked_edges.begin() + mesh.topology().index_map(1)->size_local(), true);
+      marked_edges.begin() + mesh.topology()->index_map(1)->size_local(), true);
 
   std::vector<std::int64_t> global_indices
-      = adjust_indices(*mesh.topology().index_map(0), num_new_vertices_local);
+      = adjust_indices(*mesh.topology()->index_map(0), num_new_vertices_local);
 
   const int num_cells = map_c->size_local();
 
@@ -435,7 +435,7 @@ refine(const mesh::Mesh<T>& mesh, bool redistribute, Option option)
   else
   {
     std::shared_ptr<const common::IndexMap> map_c
-        = mesh.topology().index_map(mesh.topology().dim());
+        = mesh.topology()->index_map(mesh.topology()->dim());
     const int num_ghost_cells = map_c->num_ghosts();
     // Check if mesh has ghost cells on any rank
     // FIXME: this is not a robust test. Should be user option.
@@ -482,7 +482,7 @@ refine(const mesh::Mesh<T>& mesh, std::span<const std::int32_t> edges,
   else
   {
     std::shared_ptr<const common::IndexMap> map_c
-        = mesh.topology().index_map(mesh.topology().dim());
+        = mesh.topology()->index_map(mesh.topology()->dim());
     const int num_ghost_cells = map_c->num_ghosts();
     // Check if mesh has ghost cells on any rank
     // FIXME: this is not a robust test. Should be user option.
@@ -517,13 +517,13 @@ compute_refinement_data(const mesh::Mesh<T>& mesh, Option option)
 {
   common::Timer t0("PLAZA: refine");
 
-  if (mesh.topology().cell_type() != mesh::CellType::triangle
-      and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
+  if (mesh.topology()->cell_type() != mesh::CellType::triangle
+      and mesh.topology()->cell_type() != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }
 
-  auto map_e = mesh.topology().index_map(1);
+  auto map_e = mesh.topology()->index_map(1);
   if (!map_e)
     throw std::runtime_error("Edges must be initialised");
 
@@ -582,13 +582,13 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
 {
   common::Timer t0("PLAZA: refine");
 
-  if (mesh.topology().cell_type() != mesh::CellType::triangle
-      and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
+  if (mesh.topology()->cell_type() != mesh::CellType::triangle
+      and mesh.topology()->cell_type() != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }
 
-  auto map_e = mesh.topology().index_map(1);
+  auto map_e = mesh.topology()->index_map(1);
   if (!map_e)
     throw std::runtime_error("Edges must be initialised");
 

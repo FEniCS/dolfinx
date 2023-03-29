@@ -214,17 +214,17 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Add topology node and attributes (including writing data)
   const std::string path_prefix = "/Mesh/" + name;
-  const int tdim = mesh.topology().dim();
+  const int tdim = mesh.topology()->dim();
 
   // Prepare an array of active cells
   // Writing whole mesh so each cell is active, excl. ghosts
-  auto map = mesh.topology().index_map(tdim);
+  auto map = mesh.topology()->index_map(tdim);
   assert(map);
   const int num_cells = map->size_local();
   std::vector<std::int32_t> cells(num_cells);
   std::iota(cells.begin(), cells.end(), 0);
 
-  add_topology_data(comm, grid_node, h5_id, path_prefix, mesh.topology(),
+  add_topology_data(comm, grid_node, h5_id, path_prefix, *mesh.topology(),
                     mesh.geometry(), tdim,
                     std::span<std::int32_t>(cells.data(), num_cells));
 

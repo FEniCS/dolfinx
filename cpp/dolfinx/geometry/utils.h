@@ -36,7 +36,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
                                std::span<const std::int32_t> entities,
                                std::span<const T> points)
 {
-  const int tdim = mesh.topology().dim();
+  const int tdim = mesh.topology()->dim();
   const mesh::Geometry<T>& geometry = mesh.geometry();
   std::span<const T> geom_dofs = geometry.x();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
@@ -61,11 +61,11 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
   }
   else
   {
-    mesh.topology_mutable().create_connectivity(dim, tdim);
-    mesh.topology_mutable().create_connectivity(tdim, dim);
-    auto e_to_c = mesh.topology().connectivity(dim, tdim);
+    mesh.topology_mutable()->create_connectivity(dim, tdim);
+    mesh.topology_mutable()->create_connectivity(tdim, dim);
+    auto e_to_c = mesh.topology()->connectivity(dim, tdim);
     assert(e_to_c);
-    auto c_to_e = mesh.topology_mutable().connectivity(tdim, dim);
+    auto c_to_e = mesh.topology_mutable()->connectivity(tdim, dim);
     assert(c_to_e);
     for (std::size_t e = 0; e < entities.size(); e++)
     {
@@ -604,7 +604,7 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
   offsets.reserve(candidate_cells.num_nodes() + 1);
   std::vector<std::int32_t> colliding_cells;
   constexpr T eps2 = 1e-20;
-  const int tdim = mesh.topology().dim();
+  const int tdim = mesh.topology()->dim();
   for (std::int32_t i = 0; i < candidate_cells.num_nodes(); i++)
   {
     auto cells = candidate_cells.links(i);
@@ -652,8 +652,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
   // Create a global bounding-box tree to find candidate processes with
   // cells that could collide with the points
   constexpr T padding = 1.0e-4;
-  const int tdim = mesh.topology().dim();
-  const auto cell_map = mesh.topology().index_map(tdim);
+  const int tdim = mesh.topology()->dim();
+  const auto cell_map = mesh.topology()->index_map(tdim);
   const std::int32_t num_cells = cell_map->size_local();
   // NOTE: Should we send the cells in as input?
   std::vector<std::int32_t> cells(num_cells, 0);

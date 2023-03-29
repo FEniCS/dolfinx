@@ -406,8 +406,8 @@ void assemble_matrix(
   std::span<const std::uint32_t> cell_info;
   if (needs_transformation_data)
   {
-    mesh->topology_mutable().create_entity_permutations();
-    cell_info = std::span(mesh->topology().get_cell_permutation_info());
+    mesh->topology_mutable()->create_entity_permutations();
+    cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
   for (int i : a.integral_ids(IntegralType::cell))
@@ -437,16 +437,16 @@ void assemble_matrix(
     std::function<std::uint8_t(std::size_t)> get_perm;
     if (a.needs_facet_permutations())
     {
-      mesh->topology_mutable().create_entity_permutations();
+      mesh->topology_mutable()->create_entity_permutations();
       const std::vector<std::uint8_t>& perms
-          = mesh->topology().get_facet_permutations();
+          = mesh->topology()->get_facet_permutations();
       get_perm = [&perms](std::size_t i) { return perms[i]; };
     }
     else
       get_perm = [](std::size_t) { return 0; };
 
-    int num_cell_facets = mesh::cell_num_entities(mesh->topology().cell_type(),
-                                                  mesh->topology().dim() - 1);
+    int num_cell_facets = mesh::cell_num_entities(mesh->topology()->cell_type(),
+                                                  mesh->topology()->dim() - 1);
     const std::vector<int> c_offsets = a.coefficient_offsets();
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {

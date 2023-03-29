@@ -228,7 +228,7 @@ public:
                   std::span<const std::int32_t> entities, double padding = 0)
       : _tdim(tdim)
   {
-    if (tdim < 0 or tdim > mesh.topology().dim())
+    if (tdim < 0 or tdim > mesh.topology()->dim())
     {
       throw std::runtime_error(
           "Dimension must be non-negative and less than or "
@@ -237,7 +237,7 @@ public:
 
     // Initialize entities of given dimension if they don't exist
     mesh.topology_mutable().create_entities(tdim);
-    mesh.topology_mutable().create_connectivity(tdim, mesh.topology().dim());
+    mesh.topology_mutable().create_connectivity(tdim, mesh.topology()->dim());
 
     // Create bounding boxes for all mesh entities (leaves)
     std::vector<std::pair<std::array<T, 6>, std::int32_t>> leaf_bboxes;

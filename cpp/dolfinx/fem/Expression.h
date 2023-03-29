@@ -169,8 +169,8 @@ public:
       assert(element);
       if (element->needs_dof_transformations())
       {
-        _mesh->topology_mutable().create_entity_permutations();
-        cell_info = std::span(_mesh->topology().get_cell_permutation_info());
+        _mesh->topology_mutable()->create_entity_permutations();
+        cell_info = std::span(_mesh->topology()->get_cell_permutation_info());
         dof_transform_to_transpose
             = element
                   ->template get_dof_transformation_to_transpose_function<T>();

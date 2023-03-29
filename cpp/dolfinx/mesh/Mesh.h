@@ -7,13 +7,13 @@
 #pragma once
 
 #include "Geometry.h"
-#include "Topology.h"
 #include <concepts>
 #include <dolfinx/common/MPI.h>
 #include <string>
 
 namespace dolfinx::mesh
 {
+class Topology;
 
 /// @brief A Mesh consists of a set of connected and numbered mesh topological
 /// entities, and geometry data.
@@ -29,10 +29,9 @@ public:
   /// @param[in] comm MPI Communicator
   /// @param[in] topology Mesh topology
   /// @param[in] geometry Mesh geometry
-  template <std::convertible_to<Topology> U, std::convertible_to<Geometry<T>> V>
-  Mesh(MPI_Comm comm, U&& topology, V&& geometry)
-      : _topology(std::forward<U>(topology)),
-        _geometry(std::forward<V>(geometry)), _comm(comm)
+  template <std::convertible_to<Geometry<T>> V>
+  Mesh(MPI_Comm comm, std::shared_ptr<Topology> topology, V&& geometry)
+      : _topology(topology), _geometry(std::forward<V>(geometry)), _comm(comm)
   {
     // Do nothing
   }
@@ -61,15 +60,15 @@ public:
   // Mesh::topology()) may still rely on it.
   /// @brief Get mesh topology
   /// @return The topology object associated with the mesh.
-  Topology& topology() { return _topology; }
+  std::shared_ptr<Topology> topology() { return _topology; }
 
   /// Get mesh topology (const version)
   /// @return The topology object associated with the mesh.
-  const Topology& topology() const { return _topology; }
+  std::shared_ptr<const Topology> topology() const { return _topology; }
 
   /// Get mesh topology if one really needs the mutable version
   /// @return The topology object associated with the mesh.
-  Topology& topology_mutable() const { return _topology; }
+  std::shared_ptr<Topology> topology_mutable() const { return _topology; }
 
   /// @brief Get mesh geometry
   /// @return The geometry object associated with the mesh
@@ -91,7 +90,7 @@ private:
   // Note: This is mutable because of the current memory management
   // within mesh::Topology. It allows to obtain a non-const Topology
   // from a const mesh (via Mesh::topology_mutable()).
-  mutable Topology _topology;
+  std::shared_ptr<Topology> _topology;
 
   // Mesh geometry
   Geometry<T> _geometry;

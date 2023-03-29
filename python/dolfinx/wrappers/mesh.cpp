@@ -437,7 +437,7 @@ void mesh(py::module& m)
       {
         std::vector<std::int32_t> idx = dolfinx::mesh::entities_to_geometry(
             mesh, dim, std::span(entities.data(), entities.size()), orient);
-        dolfinx::mesh::CellType cell_type = mesh.topology().cell_type();
+        dolfinx::mesh::CellType cell_type = mesh.topology()->cell_type();
         std::size_t num_vertices = dolfinx::mesh::num_cell_vertices(
             cell_entity_type(cell_type, dim, 0));
         std::array<std::size_t, 2> shape

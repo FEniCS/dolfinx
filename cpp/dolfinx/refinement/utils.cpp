@@ -156,22 +156,23 @@ std::array<std::vector<std::int32_t>, 2> refinement::transfer_facet_meshtag(
     const mesh::MeshTags<std::int32_t>& tags0, const mesh::Topology& topology1,
     std::span<const std::int32_t> cell, std::span<const std::int8_t> facet)
 {
-  const mesh::Topology& topology = tags0.topology();
+  auto topology = tags0.topology();
+  assert(topology);
   auto values = tags0.values();
   auto indices = tags0.indices();
 
-  int tdim = topology.dim();
-  if (topology.index_map(tdim)->num_ghosts() > 0)
+  int tdim = topology->dim();
+  if (topology->index_map(tdim)->num_ghosts() > 0)
     throw std::runtime_error("Ghosted meshes are not supported");
 
-  auto c_to_f = topology.connectivity(tdim, tdim - 1);
+  auto c_to_f = topology->connectivity(tdim, tdim - 1);
   if (!c_to_f)
     throw std::runtime_error("Parent mesh is missing cell-facet connectivity.");
 
   // Create map parent->child facets
   const std::int32_t num_input_facets
-      = topology.index_map(tdim - 1)->size_local()
-        + topology.index_map(tdim - 1)->num_ghosts();
+      = topology->index_map(tdim - 1)->size_local()
+        + topology->index_map(tdim - 1)->num_ghosts();
 
   // Get global index for each refined cell, before reordering in Mesh
   // construction
@@ -275,21 +276,22 @@ refinement::transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& tags0,
                                   const mesh::Topology& topology1,
                                   std::span<const std::int32_t> cell)
 {
-  const mesh::Topology& topology0 = tags0.topology();
+  auto topology0 = tags0.topology();
+  assert(topology0);
   auto values0 = tags0.values();
   auto indices0 = tags0.indices();
 
-  const int tdim = topology0.dim();
-  // if (meshtag.dim() != tdim)
-  //   throw std::runtime_error("Input meshtag is not cell-based");
+  const int tdim = topology0->dim();
+  if (tags0.dim() != tdim)
+    throw std::runtime_error("Input meshtag is not cell-based");
 
-  if (topology0.index_map(tdim)->num_ghosts() > 0)
+  if (topology0->index_map(tdim)->num_ghosts() > 0)
     throw std::runtime_error("Ghosted meshes are not supported");
 
   // Create map parent->child facets
   const std::int32_t num_input_cells
-      = topology0.index_map(tdim)->size_local()
-        + topology0.index_map(tdim)->num_ghosts();
+      = topology0->index_map(tdim)->size_local()
+        + topology0->index_map(tdim)->num_ghosts();
   std::vector<int> count_child(num_input_cells, 0);
 
   // Get global index for each refined cell, before reordering in Mesh

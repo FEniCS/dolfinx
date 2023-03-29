@@ -159,7 +159,7 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
   assert(V1.mesh());
   if (mesh != V1.mesh())
     throw std::runtime_error("Meshes are not the same.");
-  const int tdim = mesh->topology().dim();
+  const int tdim = mesh->topology()->dim();
 
   assert(V0.element());
   assert(V1.element());

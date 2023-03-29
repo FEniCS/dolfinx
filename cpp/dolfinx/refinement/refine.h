@@ -24,8 +24,8 @@ namespace dolfinx::refinement
 template <typename T>
 mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh, bool redistribute = true)
 {
-  if (mesh.topology().cell_type() != mesh::CellType::triangle
-      and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
+  if (mesh.topology()->cell_type() != mesh::CellType::triangle
+      and mesh.topology()->cell_type() != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Refinement only defined for simplices");
   }
@@ -34,9 +34,9 @@ mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh, bool redistribute = true)
       = plaza::refine(mesh, redistribute, plaza::Option::none);
 
   // Report the number of refined cells
-  const int D = mesh.topology().dim();
-  const std::int64_t n0 = mesh.topology().index_map(D)->size_global();
-  const std::int64_t n1 = refined_mesh.topology().index_map(D)->size_global();
+  const int D = mesh.topology()->dim();
+  const std::int64_t n0 = mesh.topology()->index_map(D)->size_global();
+  const std::int64_t n1 = refined_mesh.topology()->index_map(D)->size_global();
   LOG(INFO) << "Number of cells increased from " << n0 << " to " << n1 << " ("
             << 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0)
             << "%% increase).";
@@ -59,8 +59,8 @@ mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh,
                      std::span<const std::int32_t> edges,
                      bool redistribute = true)
 {
-  if (mesh.topology().cell_type() != mesh::CellType::triangle
-      and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
+  if (mesh.topology()->cell_type() != mesh::CellType::triangle
+      and mesh.topology()->cell_type() != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Refinement only defined for simplices");
   }
@@ -69,9 +69,9 @@ mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh,
       = plaza::refine(mesh, edges, redistribute, plaza::Option::none);
 
   // Report the number of refined cells
-  const int D = mesh.topology().dim();
-  const std::int64_t n0 = mesh.topology().index_map(D)->size_global();
-  const std::int64_t n1 = refined_mesh.topology().index_map(D)->size_global();
+  const int D = mesh.topology()->dim();
+  const std::int64_t n0 = mesh.topology()->index_map(D)->size_global();
+  const std::int64_t n1 = refined_mesh.topology()->index_map(D)->size_global();
   LOG(INFO) << "Number of cells increased from " << n0 << " to " << n1 << " ("
             << 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0)
             << "%% increase).";

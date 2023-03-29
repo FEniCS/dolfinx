@@ -62,8 +62,9 @@ std::tuple<std::vector<std::int32_t>, std::vector<T>, std::vector<std::int32_t>>
 compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
                                std::span<const std::int32_t> facets)
 {
-  const mesh::Topology& topology = mesh.topology();
-  const int tdim = topology.dim();
+  auto topology = mesh.topology();
+  assert(topology);
+  const int tdim = topology->dim();
   if (dim == tdim)
   {
     throw std::runtime_error(
@@ -75,9 +76,9 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
   mesh.topology_mutable().create_connectivity(tdim - 1, dim);
   std::vector<std::int32_t> vertices, entities;
   {
-    auto f_to_v = topology.connectivity(tdim - 1, 0);
+    auto f_to_v = topology->connectivity(tdim - 1, 0);
     assert(f_to_v);
-    auto f_to_e = topology.connectivity(tdim - 1, dim);
+    auto f_to_e = topology->connectivity(tdim - 1, dim);
     assert(f_to_e);
     for (auto f : facets)
     {
@@ -248,18 +249,18 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
   if (entities.empty())
     return std::vector<T>();
 
-  if (mesh.topology().cell_type() == CellType::prism and dim == 2)
+  if (mesh.topology()->cell_type() == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cell");
 
   const int gdim = mesh.geometry().dim();
-  const CellType type = cell_entity_type(mesh.topology().cell_type(), dim, 0);
+  const CellType type = cell_entity_type(mesh.topology()->cell_type(), dim, 0);
 
   // Find geometry nodes for topology entities
   std::span<const T> x = mesh.geometry().x();
 
   // Orient cells if they are tetrahedron
   bool orient = false;
-  if (mesh.topology().cell_type() == CellType::tetrahedron)
+  if (mesh.topology()->cell_type() == CellType::tetrahedron)
     orient = true;
 
   std::vector<std::int32_t> geometry_entities
@@ -402,17 +403,18 @@ template <typename T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>>
 compute_vertex_coords(const mesh::Mesh<T>& mesh)
 {
-  const mesh::Topology& topology = mesh.topology();
-  const int tdim = topology.dim();
+  auto topology = mesh.topology();
+  assert(topology);
+  const int tdim = topology->dim();
 
   // Create entities and connectivities
   mesh.topology_mutable().create_connectivity(tdim, 0);
 
   // Get all vertex 'node' indices
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const std::int32_t num_vertices = topology.index_map(0)->size_local()
-                                    + topology.index_map(0)->num_ghosts();
-  auto c_to_v = topology.connectivity(tdim, 0);
+  const std::int32_t num_vertices = topology->index_map(0)->size_local()
+                                    + topology->index_map(0)->num_ghosts();
+  auto c_to_v = topology->connectivity(tdim, 0);
   assert(c_to_v);
   std::vector<std::int32_t> vertex_to_node(num_vertices);
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
@@ -464,17 +466,18 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
   if (marked.size() != x.extent(1))
     throw std::runtime_error("Length of array of markers is wrong.");
 
-  const mesh::Topology& topology = mesh.topology();
-  const int tdim = topology.dim();
+  auto topology = mesh.topology();
+  assert(topology);
+  const int tdim = topology->dim();
 
-  mesh.topology_mutable().create_entities(dim);
-  mesh.topology_mutable().create_connectivity(tdim, 0);
+  mesh.topology_mutable()->create_entities(dim);
+  mesh.topology_mutable()->create_connectivity(tdim, 0);
   if (dim < tdim)
     mesh.topology_mutable().create_connectivity(dim, 0);
 
   // Iterate over entities of dimension 'dim' to build vector of marked
   // entities
-  auto e_to_v = topology.connectivity(dim, 0);
+  auto e_to_v = topology->connectivity(dim, 0);
   assert(e_to_v);
   std::vector<std::int32_t> entities;
   for (int e = 0; e < e_to_v->num_nodes(); ++e)
@@ -596,7 +599,7 @@ std::vector<std::int32_t>
 entities_to_geometry(const Mesh<T>& mesh, int dim,
                      std::span<const std::int32_t> entities, bool orient)
 {
-  CellType cell_type = mesh.topology().cell_type();
+  CellType cell_type = mesh.topology()->cell_type();
   if (cell_type == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cells");
   if (orient and (cell_type != CellType::tetrahedron or dim != 2))
@@ -605,19 +608,20 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   const Geometry<T>& geometry = mesh.geometry();
   auto x = geometry.x();
 
-  const Topology& topology = mesh.topology();
+  auto topology = mesh.topology();
+  assert(topology);
   const int tdim = topology.dim();
-  mesh.topology_mutable().create_entities(dim);
-  mesh.topology_mutable().create_connectivity(dim, tdim);
-  mesh.topology_mutable().create_connectivity(dim, 0);
-  mesh.topology_mutable().create_connectivity(tdim, 0);
+  // mesh.topology_mutable().create_entities(dim);
+  // mesh.topology_mutable().create_connectivity(dim, tdim);
+  // mesh.topology_mutable().create_connectivity(dim, 0);
+  // mesh.topology_mutable().create_connectivity(tdim, 0);
 
   const graph::AdjacencyList<std::int32_t>& xdofs = geometry.dofmap();
-  const auto e_to_c = topology.connectivity(dim, tdim);
+  const auto e_to_c = topology->connectivity(dim, tdim);
   assert(e_to_c);
-  const auto e_to_v = topology.connectivity(dim, 0);
+  const auto e_to_v = topology->connectivity(dim, 0);
   assert(e_to_v);
-  const auto c_to_v = topology.connectivity(tdim, 0);
+  const auto c_to_v = topologyvconnectivity(tdim, 0);
   assert(c_to_v);
 
   const std::size_t num_vertices
@@ -849,8 +853,10 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 
   Geometry geometry
       = create_geometry(comm, topology, element, cell_nodes, x, xshape[1]);
-  return Mesh<typename U::value_type>(comm, std::move(topology),
-                                      std::move(geometry));
+  auto _t = std::make_shared<Topology>(std::move(topology));
+  return Mesh<typename U::value_type>(comm, _t, std::move(geometry));
+  // return Mesh<typename U::value_type>(comm, std::move(topology),
+  //                                     std::move(geometry));
 }
 
 /// @brief Create a mesh using the default partitioner.
@@ -901,7 +907,7 @@ create_submesh(const Mesh<T>& mesh, int dim,
       = mesh::create_subtopology(mesh.topology(), dim, entities);
 
   // Create sub-geometry
-  const int tdim = mesh.topology().dim();
+  const int tdim = mesh.topology()->dim();
   mesh.topology_mutable().create_entities(dim);
   mesh.topology_mutable().create_connectivity(dim, tdim);
   mesh.topology_mutable().create_connectivity(tdim, dim);

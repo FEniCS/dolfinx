@@ -181,9 +181,9 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
       or types.find(IntegralType::exterior_facet) != types.end())
   {
     // FIXME: cleanup these calls? Some of the happen internally again.
-    const int tdim = mesh->topology().dim();
-    mesh->topology_mutable().create_entities(tdim - 1);
-    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    const int tdim = mesh->topology()->dim();
+    mesh->topology_mutable()->create_entities(tdim - 1);
+    mesh->topology_mutable()->create_connectivity(tdim - 1, tdim);
   }
 
   common::Timer t0("Build sparsity");
@@ -332,9 +332,9 @@ Form<T, U> create_form(
   if (ufcx_form.num_integrals(exterior_facet) > 0
       or ufcx_form.num_integrals(interior_facet) > 0)
   {
-    mesh->topology_mutable().create_entities(tdim - 1);
-    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
-    mesh->topology_mutable().create_connectivity(tdim, tdim - 1);
+    mesh->topology_mutable()->create_entities(tdim - 1);
+    mesh->topology_mutable()->create_connectivity(tdim - 1, tdim);
+    mesh->topology_mutable()->create_connectivity(tdim, tdim - 1);
   }
 
   // Get list of integral IDs, and load tabulate tensor into memory for
@@ -732,7 +732,7 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
   ufcx_dofmap* ufcx_map = space->dofmap;
   assert(ufcx_map);
   ElementDofLayout layout
-      = create_element_dof_layout(*ufcx_map, mesh->topology().cell_type());
+      = create_element_dof_layout(*ufcx_map, mesh->topology()->cell_type());
   return FunctionSpace(
       mesh, element,
       std::make_shared<DofMap>(create_dofmap(
@@ -763,8 +763,8 @@ std::span<const std::uint32_t> get_cell_orientation_info(
   if (needs_dof_transformations)
   {
     auto mesh = coefficients.front()->function_space()->mesh();
-    mesh->topology_mutable().create_entity_permutations();
-    cell_info = std::span(mesh->topology().get_cell_permutation_info());
+    mesh->topology_mutable()->create_entity_permutations();
+    cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
   return cell_info;

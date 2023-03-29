@@ -56,14 +56,14 @@ std::pair<std::vector<T>, std::array<std::size_t, 2>> create_new_geometry(
 {
   // Build map from vertex -> geometry dof
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const int tdim = mesh.topology().dim();
-  auto c_to_v = mesh.topology().connectivity(tdim, 0);
+  const int tdim = mesh.topology()->dim();
+  auto c_to_v = mesh.topology()->connectivity(tdim, 0);
   assert(c_to_v);
-  auto map_v = mesh.topology().index_map(0);
+  auto map_v = mesh.topology()->index_map(0);
   assert(map_v);
   std::vector<std::int32_t> vertex_to_x(map_v->size_local()
                                         + map_v->num_ghosts());
-  auto map_c = mesh.topology().index_map(tdim);
+  auto map_c = mesh.topology()->index_map(tdim);
 
   assert(map_c);
   auto dof_layout = mesh.geometry().cmap().create_dof_layout();
@@ -150,7 +150,7 @@ create_new_vertices(MPI_Comm comm,
 {
   // Take marked_edges and use to create new vertices
   std::shared_ptr<const common::IndexMap> edge_index_map
-      = mesh.topology().index_map(1);
+      = mesh.topology()->index_map(1);
 
   // Add new edge midpoints to list of vertices
   int n = 0;
@@ -168,7 +168,7 @@ create_new_vertices(MPI_Comm comm,
   const std::int64_t num_local = n;
   std::int64_t global_offset = 0;
   MPI_Exscan(&num_local, &global_offset, 1, MPI_INT64_T, MPI_SUM, mesh.comm());
-  global_offset += mesh.topology().index_map(0)->local_range()[1];
+  global_offset += mesh.topology()->index_map(0)->local_range()[1];
   std::for_each(local_edge_to_new_vertex.begin(),
                 local_edge_to_new_vertex.end(),
                 [global_offset](auto& e) { e.second += global_offset; });
@@ -245,7 +245,7 @@ create_new_vertices(MPI_Comm comm,
   for (std::size_t i = 0; i < received_values.size() / 2; ++i)
     recv_global_edge.push_back(received_values[i * 2]);
   std::vector<std::int32_t> recv_local_edge(recv_global_edge.size());
-  mesh.topology().index_map(1)->global_to_local(recv_global_edge,
+  mesh.topology()->index_map(1)->global_to_local(recv_global_edge,
                                                 recv_local_edge);
   for (std::size_t i = 0; i < received_values.size() / 2; ++i)
   {

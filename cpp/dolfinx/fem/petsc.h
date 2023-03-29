@@ -72,7 +72,7 @@ Mat create_matrix_block(
 
   std::shared_ptr mesh = V[0][0]->mesh();
   assert(mesh);
-  const int tdim = mesh->topology().dim();
+  const int tdim = mesh->topology()->dim();
 
   // Build sparsity pattern for each block
   std::vector<std::vector<std::unique_ptr<la::SparsityPattern>>> patterns(
@@ -103,12 +103,12 @@ Mat create_matrix_block(
           sparsitybuild::cells(*sp, mesh->topology(), dofmaps);
         if (form->num_integrals(IntegralType::interior_facet) > 0)
         {
-          mesh->topology_mutable().create_entities(tdim - 1);
+          mesh->topology_mutable()->create_entities(tdim - 1);
           sparsitybuild::interior_facets(*sp, mesh->topology(), dofmaps);
         }
         if (form->num_integrals(IntegralType::exterior_facet) > 0)
         {
-          mesh->topology_mutable().create_entities(tdim - 1);
+          mesh->topology_mutable()->create_entities(tdim - 1);
           sparsitybuild::exterior_facets(*sp, mesh->topology(), dofmaps);
         }
       }

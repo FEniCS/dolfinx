@@ -351,7 +351,7 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
 
   LOG(INFO) << "XDMF create meshtags";
   const std::size_t num_vertices_per_entity = mesh::cell_num_entities(
-      mesh::cell_entity_type(mesh.topology().cell_type(),
+      mesh::cell_entity_type(mesh.topology()->cell_type(),
                              mesh::cell_dim(cell_type), 0),
       0);
   const graph::AdjacencyList<std::int32_t> entities_adj

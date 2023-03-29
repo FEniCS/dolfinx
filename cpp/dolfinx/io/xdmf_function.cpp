@@ -50,7 +50,7 @@ bool has_cell_centred_data(const fem::Function<Scalar, double>& u)
   int cell_based_dim = 1;
   const int rank = u.function_space()->element()->value_shape().size();
   for (int i = 0; i < rank; i++)
-    cell_based_dim *= u.function_space()->mesh()->topology().dim();
+    cell_based_dim *= u.function_space()->mesh()->topology()->dim();
 
   assert(u.function_space());
   assert(u.function_space()->dofmap());
@@ -91,7 +91,7 @@ void _add_function(MPI_Comm comm, const fem::Function<Scalar, double>& u,
   else
     data_values = xdmf_utils::get_point_data_values(u);
 
-  auto map_c = mesh->topology().index_map(mesh->topology().dim());
+  auto map_c = mesh->topology()->index_map(mesh->topology()->dim());
   assert(map_c);
 
   auto map_v = mesh->geometry().index_map();

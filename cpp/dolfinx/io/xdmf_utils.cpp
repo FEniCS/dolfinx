@@ -81,7 +81,7 @@ compute_point_values(const fem::Function<T, double>& u)
   assert(V);
   auto mesh = V->mesh();
   assert(mesh);
-  const int tdim = mesh->topology().dim();
+  const int tdim = mesh->topology()->dim();
 
   // Compute in tensor (one for scalar function, . . .)
   const std::size_t value_size_loc = V->element()->value_size();
@@ -98,7 +98,7 @@ compute_point_values(const fem::Function<T, double>& u)
 
   // Interpolate point values on each cell (using last computed value if
   // not continuous, e.g. discontinuous Galerkin methods)
-  auto map = mesh->topology().index_map(tdim);
+  auto map = mesh->topology()->index_map(tdim);
   assert(map);
   const std::int32_t num_cells = map->size_local() + map->num_ghosts();
 
@@ -183,9 +183,9 @@ _get_cell_data_values(const fem::Function<Scalar, double>& u)
   const int value_rank = u.function_space()->element()->value_shape().size();
 
   // Allocate memory for function values at cell centres
-  const int tdim = mesh->topology().dim();
+  const int tdim = mesh->topology()->dim();
   const std::int32_t num_local_cells
-      = mesh->topology().index_map(tdim)->size_local();
+      = mesh->topology()->index_map(tdim)->size_local();
   const std::int32_t local_size = num_local_cells * value_size;
 
   // Build lists of dofs and create map
@@ -459,8 +459,8 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
     // Get layout of dofs on 0th cell entity of dimension entity_dim
     const fem::ElementDofLayout cmap_dof_layout
         = mesh.geometry().cmap().create_dof_layout();
-    for (int i = 0; i < mesh::cell_num_entities(mesh.topology().cell_type(), 0);
-         ++i)
+    for (int i = 0;
+         i < mesh::cell_num_entities(mesh.topology()->cell_type(), 0); ++i)
     {
       const std::vector<int>& local_index = cmap_dof_layout.entity_dofs(0, i);
       assert(local_index.size() == 1);
@@ -527,8 +527,8 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
     const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
 
     const std::size_t num_vert_per_entity = mesh::cell_num_entities(
-        mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim, 0), 0);
-    auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
+        mesh::cell_entity_type(mesh.topology()->cell_type(), entity_dim, 0), 0);
+    auto c_to_v = mesh.topology()->connectivity(mesh.topology()->dim(), 0);
     if (!c_to_v)
       throw std::runtime_error("Missing cell-vertex connectivity.");
 
@@ -613,7 +613,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
     const int comm_size = dolfinx::MPI::size(comm);
 
     const std::size_t num_vert_per_entity = mesh::cell_num_entities(
-        mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim, 0), 0);
+        mesh::cell_entity_type(mesh.topology()->cell_type(), entity_dim, 0), 0);
 
     // Build map from global node index to ranks that have the node
     std::multimap<std::int64_t, int> node_to_rank;
@@ -687,8 +687,8 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
     LOG(INFO) << "XDMF build map";
 
     const std::size_t num_vert_per_entity = mesh::cell_num_entities(
-        mesh::cell_entity_type(mesh.topology().cell_type(), entity_dim, 0), 0);
-    auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
+        mesh::cell_entity_type(mesh.topology()->cell_type(), entity_dim, 0), 0);
+    auto c_to_v = mesh.topology()->connectivity(mesh.topology()->dim(), 0);
     if (!c_to_v)
       throw std::runtime_error("Missing cell-vertex connectivity.");
 
