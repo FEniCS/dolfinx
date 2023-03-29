@@ -612,18 +612,32 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   auto topology = mesh.topology();
   assert(topology);
   const int tdim = topology->dim();
-  // mesh.topology_mutable()->create_entities(dim);
-  // mesh.topology_mutable()->create_connectivity(dim, tdim);
-  // mesh.topology_mutable()->create_connectivity(dim, 0);
-  // mesh.topology_mutable()->create_connectivity(tdim, 0);
+  mesh.topology_mutable()->create_entities(dim);
+  mesh.topology_mutable()->create_connectivity(dim, tdim);
+  mesh.topology_mutable()->create_connectivity(dim, 0);
+  mesh.topology_mutable()->create_connectivity(tdim, 0);
 
   const graph::AdjacencyList<std::int32_t>& xdofs = geometry.dofmap();
-  const auto e_to_c = topology->connectivity(dim, tdim);
-  assert(e_to_c);
-  const auto e_to_v = topology->connectivity(dim, 0);
-  assert(e_to_v);
+  auto e_to_c = topology->connectivity(dim, tdim);
+  if (!e_to_c)
+  {
+    throw std::runtime_error(
+        "Entity-to-cell connectivity has not been computed.");
+  }
+
+  auto e_to_v = topology->connectivity(dim, 0);
+  if (!e_to_v)
+  {
+    throw std::runtime_error(
+        "Entity-to-vertex connectivity has not been computed.");
+  }
+
   const auto c_to_v = topology->connectivity(tdim, 0);
-  assert(c_to_v);
+  if (!e_to_v)
+  {
+    throw std::runtime_error(
+        "Cell-to-vertex connectivity has not been computed.");
+  }
 
   const std::size_t num_vertices
       = num_cell_vertices(cell_entity_type(cell_type, dim, 0));
