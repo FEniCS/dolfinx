@@ -82,8 +82,8 @@ get_cell_facet_pairs(std::int32_t f, const std::span<const std::int32_t>& cells,
 
 } // namespace impl
 
-/// @brief Given an integral type and MeshTags, compute the entities
-/// that should be integrated over.
+/// @brief Given an integral type and mesh tag data, compute the
+/// entities that should be integrated over.
 ///
 /// This function returns as list `[(id, entities)]`, where `entities`
 /// are the entities in `meshtags` with tag value `id`. For cell
@@ -103,10 +103,10 @@ get_cell_facet_pairs(std::int32_t f, const std::span<const std::int32_t>& cells,
 /// @param[in] values Value associated with each entity
 /// @return A list of (integral id, entities) pairs
 /// @pre The topological dimension of the integral entity type and the
-/// topological dimension of `meshtags` must be equal.
+/// topological dimension of mesh tag data must be equal.
 std::vector<std::pair<int, std::vector<std::int32_t>>>
 compute_integration_domains(IntegralType integral_type,
-                            mesh::Topology& topology,
+                            const mesh::Topology& topology,
                             std::span<const std::int32_t> entities, int dim,
                             std::span<const int> values);
 

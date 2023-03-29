@@ -636,11 +636,11 @@ void fem(py::module& m)
   m.def(
       "compute_integration_domains",
       [](dolfinx::fem::IntegralType type,
-         const dolfinx::mesh::MeshTags<int, double>& meshtags)
+         const dolfinx::mesh::MeshTags<int>& meshtags)
       {
         return dolfinx::fem::compute_integration_domains(
-            type, meshtags.mesh()->topology_mutable(), meshtags.indices(),
-            meshtags.dim(), meshtags.values());
+            type, meshtags.topology(), meshtags.indices(), meshtags.dim(),
+            meshtags.values());
       },
       py::arg("integral_type"), py::arg("meshtags"));
   m.def(

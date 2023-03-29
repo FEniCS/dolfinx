@@ -12,7 +12,6 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/utils.h>
 #include <map>
 #include <memory>
@@ -23,8 +22,6 @@
 
 namespace dolfinx::mesh
 {
-template <typename T, std::floating_point U>
-class MeshTags;
 class Topology;
 enum class GhostMode;
 } // namespace dolfinx::mesh

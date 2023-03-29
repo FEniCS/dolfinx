@@ -143,7 +143,7 @@ void io(py::module& m)
                double, std::string>(&dolfinx::io::XDMFFile::write_function),
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
       .def("write_meshtags", &dolfinx::io::XDMFFile::write_meshtags,
-           py::arg("meshtags"),
+           py::arg("meshtags"), py::arg("x"),
            py::arg("geometry_xpath") = "/Xdmf/Domain/Grid/Geometry",
            py::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,

@@ -195,7 +195,7 @@ std::vector<std::string> fem::get_constant_names(const ufcx_form& ufcx_form)
 //-----------------------------------------------------------------------------
 std::vector<std::pair<int, std::vector<std::int32_t>>>
 fem::compute_integration_domains(fem::IntegralType integral_type,
-                                 mesh::Topology& topology,
+                                 const mesh::Topology& topology,
                                  std::span<const std::int32_t> entities,
                                  int dim, std::span<const int> values)
 {
@@ -224,8 +224,8 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     values1.insert(values1.begin(), values.begin(), values.end());
     break;
   default:
-    topology.create_connectivity(dim, tdim);
-    topology.create_connectivity(tdim, dim);
+    // topology.create_connectivity(dim, tdim);
+    // topology.create_connectivity(tdim, dim);
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
     assert(f_to_c);
     auto c_to_f = topology.connectivity(tdim, tdim - 1);
