@@ -236,8 +236,8 @@ public:
     }
 
     // Initialize entities of given dimension if they don't exist
-    mesh.topology_mutable().create_entities(tdim);
-    mesh.topology_mutable().create_connectivity(tdim, mesh.topology()->dim());
+    mesh.topology_mutable()->create_entities(tdim);
+    mesh.topology_mutable()->create_connectivity(tdim, mesh.topology()->dim());
 
     // Create bounding boxes for all mesh entities (leaves)
     std::vector<std::pair<std::array<T, 6>, std::int32_t>> leaf_bboxes;

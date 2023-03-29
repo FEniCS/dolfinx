@@ -100,16 +100,16 @@ Mat create_matrix_block(
         auto& sp = patterns[row].back();
         assert(sp);
         if (form->num_integrals(IntegralType::cell) > 0)
-          sparsitybuild::cells(*sp, mesh->topology(), dofmaps);
+          sparsitybuild::cells(*sp, *mesh->topology(), dofmaps);
         if (form->num_integrals(IntegralType::interior_facet) > 0)
         {
           mesh->topology_mutable()->create_entities(tdim - 1);
-          sparsitybuild::interior_facets(*sp, mesh->topology(), dofmaps);
+          sparsitybuild::interior_facets(*sp, *mesh->topology(), dofmaps);
         }
         if (form->num_integrals(IntegralType::exterior_facet) > 0)
         {
           mesh->topology_mutable()->create_entities(tdim - 1);
-          sparsitybuild::exterior_facets(*sp, mesh->topology(), dofmaps);
+          sparsitybuild::exterior_facets(*sp, *mesh->topology(), dofmaps);
         }
       }
       else

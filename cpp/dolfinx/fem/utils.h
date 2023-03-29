@@ -325,8 +325,9 @@ Form<T, U> create_form(
   if (!mesh)
     throw std::runtime_error("No mesh could be associated with the Form.");
 
-  const mesh::Topology& topology = mesh->topology();
-  const int tdim = topology.dim();
+  auto topology = mesh->topology();
+  assert(topology);
+  const int tdim = topology->dim();
 
   // Create facets, if required
   if (ufcx_form.num_integrals(exterior_facet) > 0
@@ -385,9 +386,9 @@ Form<T, U> create_form(
       if (id == -1)
       {
         // Default kernel, operates on all (owned) cells
-        assert(topology.index_map(tdim));
+        assert(topology->index_map(tdim));
         std::vector<std::int32_t> e;
-        e.resize(topology.index_map(tdim)->size_local(), 0);
+        e.resize(topology->index_map(tdim)->size_local(), 0);
         std::iota(e.begin(), e.end(), 0);
         itg.first->second.emplace_back(id, k, std::move(e));
       }
@@ -440,10 +441,10 @@ Form<T, U> create_form(
       assert(k);
 
       // Build list of entities to assembler over
-      const std::vector bfacets = mesh::exterior_facet_indices(topology);
-      auto f_to_c = topology.connectivity(tdim - 1, tdim);
+      const std::vector bfacets = mesh::exterior_facet_indices(*topology);
+      auto f_to_c = topology->connectivity(tdim - 1, tdim);
       assert(f_to_c);
-      auto c_to_f = topology.connectivity(tdim, tdim - 1);
+      auto c_to_f = topology->connectivity(tdim, tdim - 1);
       assert(c_to_f);
       if (id == -1)
       {
@@ -508,16 +509,16 @@ Form<T, U> create_form(
       assert(k);
 
       // Build list of entities to assembler over
-      auto f_to_c = topology.connectivity(tdim - 1, tdim);
+      auto f_to_c = topology->connectivity(tdim - 1, tdim);
       assert(f_to_c);
-      auto c_to_f = topology.connectivity(tdim, tdim - 1);
+      auto c_to_f = topology->connectivity(tdim, tdim - 1);
       assert(c_to_f);
       if (id == -1)
       {
         // Default kernel, operates on all (owned) interior facets
         std::vector<std::int32_t> e;
-        assert(topology.index_map(tdim - 1));
-        std::int32_t num_facets = topology.index_map(tdim - 1)->size_local();
+        assert(topology->index_map(tdim - 1));
+        std::int32_t num_facets = topology->index_map(tdim - 1)->size_local();
         e.reserve(4 * num_facets);
         for (std::int32_t f = 0; f < num_facets; ++f)
         {
@@ -679,7 +680,7 @@ create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
                           sub_doflayout);
   assert(mesh);
   auto dofmap = std::make_shared<const DofMap>(
-      create_dofmap(mesh->comm(), layout, mesh->topology(), reorder_fn, *_e));
+      create_dofmap(mesh->comm(), layout, *mesh->topology(), reorder_fn, *_e));
 
   return FunctionSpace(mesh, _e, dofmap);
 }
@@ -736,7 +737,7 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
   return FunctionSpace(
       mesh, element,
       std::make_shared<DofMap>(create_dofmap(
-          mesh->comm(), layout, mesh->topology(), reorder_fn, *element)));
+          mesh->comm(), layout, *mesh->topology(), reorder_fn, *element)));
 }
 
 /// @private

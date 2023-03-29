@@ -147,7 +147,7 @@ public:
 
     // Create collapsed DofMap
     auto [_collapsed_dofmap, collapsed_dofs]
-        = _dofmap->collapse(_mesh->comm(), _mesh->topology());
+        = _dofmap->collapse(_mesh->comm(), *_mesh->topology());
     auto collapsed_dofmap
         = std::make_shared<DofMap>(std::move(_collapsed_dofmap));
 

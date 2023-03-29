@@ -122,7 +122,8 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
                                                   cell_nodes, x, xshape[1]);
 
   auto mesh = std::make_shared<mesh::Mesh<double>>(
-      mpi_comm, std::move(topology), std::move(geometry));
+      mpi_comm, std::make_shared<mesh::Topology>(std::move(topology)),
+      std::move(geometry));
 
   CHECK(mesh->topology()->index_map(tdim)->size_global() == 2 * N * N);
   CHECK(mesh->topology()->index_map(tdim)->size_local() > 0);

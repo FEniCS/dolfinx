@@ -143,11 +143,11 @@ face_long_edge(const mesh::Mesh<T>& mesh)
 {
   const int tdim = mesh.topology()->dim();
   // FIXME: cleanup these calls? Some of the happen internally again.
-  mesh.topology_mutable().create_entities(1);
-  mesh.topology_mutable().create_entities(2);
-  mesh.topology_mutable().create_connectivity(2, 1);
-  mesh.topology_mutable().create_connectivity(1, tdim);
-  mesh.topology_mutable().create_connectivity(tdim, 2);
+  mesh.topology_mutable()->create_entities(1);
+  mesh.topology_mutable()->create_entities(2);
+  mesh.topology_mutable()->create_connectivity(2, 1);
+  mesh.topology_mutable()->create_connectivity(1, tdim);
+  mesh.topology_mutable()->create_connectivity(tdim, 2);
 
   std::int64_t num_faces = mesh.topology()->index_map(2)->size_local()
                            + mesh.topology()->index_map(2)->num_ghosts();
@@ -638,7 +638,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   // Enforce rules about refinement (i.e. if any edge is marked in a
   // triangle, then the longest edge must also be marked).
   const auto [long_edge, edge_ratio_ok] = impl::face_long_edge(mesh);
-  impl::enforce_rules(comm, edge_ranks, marked_edges, mesh.topology(),
+  impl::enforce_rules(comm, edge_ranks, marked_edges, *mesh.topology(),
                       long_edge);
 
   auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]

@@ -1024,8 +1024,8 @@ create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
                                              const FiniteElement& element0,
                                              const mesh::Mesh<T>& mesh1)
 {
-  int tdim = mesh0.topology().dim();
-  auto cell_map = mesh0.topology().index_map(tdim);
+  int tdim = mesh0.topology()->dim();
+  auto cell_map = mesh0.topology()->index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
   std::vector<std::int32_t> cells(num_cells, 0);

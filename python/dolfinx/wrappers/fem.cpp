@@ -639,7 +639,7 @@ void fem(py::module& m)
          const dolfinx::mesh::MeshTags<int>& meshtags)
       {
         return dolfinx::fem::compute_integration_domains(
-            type, meshtags.topology(), meshtags.indices(), meshtags.dim(),
+            type, *meshtags.topology(), meshtags.indices(), meshtags.dim(),
             meshtags.values());
       },
       py::arg("integral_type"), py::arg("meshtags"));
@@ -649,8 +649,8 @@ void fem(py::module& m)
          const dolfinx::fem::FiniteElement& element0,
          const dolfinx::mesh::Mesh<double>& mesh1)
       {
-        int tdim = mesh0.topology().dim();
-        auto cell_map = mesh0.topology().index_map(tdim);
+        int tdim = mesh0.topology()->dim();
+        auto cell_map = mesh0.topology()->index_map(tdim);
         assert(cell_map);
         std::int32_t num_cells
             = cell_map->size_local() + cell_map->num_ghosts();
@@ -917,7 +917,7 @@ void fem(py::module& m)
           throw std::runtime_error("Expected two function spaces.");
         std::array<std::vector<std::int32_t>, 2> dofs
             = dolfinx::fem::locate_dofs_topological(
-                V[0].get().mesh()->topology_mutable(),
+                *V[0].get().mesh()->topology_mutable(),
                 {*V[0].get().dofmap(), *V[1].get().dofmap()}, dim,
                 std::span(entities.data(), entities.size()), remote);
         return {as_pyarray(std::move(dofs[0])), as_pyarray(std::move(dofs[1]))};
@@ -931,7 +931,7 @@ void fem(py::module& m)
          bool remote)
       {
         return as_pyarray(dolfinx::fem::locate_dofs_topological(
-            V.mesh()->topology_mutable(), *V.dofmap(), dim,
+            *V.mesh()->topology_mutable(), *V.dofmap(), dim,
             std::span(entities.data(), entities.size()), remote));
       },
       py::arg("V"), py::arg("dim"), py::arg("entities"),

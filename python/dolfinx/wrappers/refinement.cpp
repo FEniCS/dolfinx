@@ -73,15 +73,15 @@ void refinement(py::module& m)
   m.def(
       "transfer_facet_meshtag",
       [](const dolfinx::mesh::MeshTags<std::int32_t>& parent_meshtag,
-         const dolfinx::mesh::Topology& topology1,
+         std::shared_ptr<const dolfinx::mesh::Topology> topology1,
          const py::array_t<std::int32_t, py::array::c_style>& parent_cell,
          const py::array_t<std::int8_t, py::array::c_style>& parent_facet)
       {
-        int tdim = parent_meshtag.topology().dim();
+        int tdim = parent_meshtag.topology()->dim();
         if (parent_meshtag.dim() != tdim - 1)
           throw std::runtime_error("Input meshtag is not facet-based");
         auto [entities, values] = dolfinx::refinement::transfer_facet_meshtag(
-            parent_meshtag, topology1,
+            parent_meshtag, *topology1,
             std::span<const std::int32_t>(parent_cell.data(),
                                           parent_cell.size()),
             std::span<const std::int8_t>(parent_facet.data(),
@@ -94,16 +94,16 @@ void refinement(py::module& m)
   m.def(
       "transfer_cell_meshtag",
       [](const dolfinx::mesh::MeshTags<std::int32_t>& parent_meshtag,
-         const dolfinx::mesh::Topology& topology1,
+         std::shared_ptr<const dolfinx::mesh::Topology> topology1,
          const py::array_t<std::int32_t, py::array::c_style>& parent_cell)
       {
-        int tdim = parent_meshtag.topology().dim();
+        int tdim = parent_meshtag.topology()->dim();
         if (parent_meshtag.dim() != tdim)
           throw std::runtime_error("Input meshtag is not cell-based");
-        if (parent_meshtag.topology().index_map(tdim)->num_ghosts() > 0)
+        if (parent_meshtag.topology()->index_map(tdim)->num_ghosts() > 0)
           throw std::runtime_error("Ghosted meshes are not supported");
         auto [entities, values] = dolfinx::refinement::transfer_cell_meshtag(
-            parent_meshtag, topology1,
+            parent_meshtag, *topology1,
             std::span<const std::int32_t>(parent_cell.data(),
                                           parent_cell.size()));
         return dolfinx::mesh::MeshTags<std::int32_t>(

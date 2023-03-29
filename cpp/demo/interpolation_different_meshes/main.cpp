@@ -33,13 +33,13 @@ int main(int argc, char* argv[])
                          mesh::CellType::hexahedron));
 
     basix::FiniteElement element_tet = basix::element::create_lagrange(
-        mesh::cell_type_to_basix_type(mesh_tet->topology().cell_type()), 1,
+        mesh::cell_type_to_basix_type(mesh_tet->topology()->cell_type()), 1,
         basix::element::lagrange_variant::equispaced, false);
     auto V_tet = std::make_shared<fem::FunctionSpace<double>>(
         fem::create_functionspace(mesh_tet, element_tet, 3));
 
     basix::FiniteElement element_hex = basix::element::create_lagrange(
-        mesh::cell_type_to_basix_type(mesh_hex->topology().cell_type()), 2,
+        mesh::cell_type_to_basix_type(mesh_hex->topology()->cell_type()), 2,
         basix::element::lagrange_variant::equispaced, false);
     auto V_hex = std::make_shared<fem::FunctionSpace<double>>(
         fem::create_functionspace(mesh_hex, element_hex, 3));

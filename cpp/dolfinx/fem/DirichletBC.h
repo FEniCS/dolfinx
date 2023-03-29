@@ -190,9 +190,10 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
   assert(element_bs == dofmap1->element_dof_layout().block_size());
 
   // Iterate over cells
-  const mesh::Topology& topology = mesh->topology();
+  auto topology = mesh->topology();
+  assert(topology);
   std::vector<std::array<std::int32_t, 2>> bc_dofs;
-  for (int c = 0; c < topology.connectivity(tdim, 0)->num_nodes(); ++c)
+  for (int c = 0; c < topology->connectivity(tdim, 0)->num_nodes(); ++c)
   {
     // Get cell dofmaps
     auto cell_dofs0 = dofmap0->cell_dofs(c);
