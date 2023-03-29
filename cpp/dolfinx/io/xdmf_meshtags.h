@@ -20,11 +20,8 @@
 
 namespace dolfinx
 {
-namespace io
+namespace io::xdmf_meshtags
 {
-namespace xdmf_meshtags
-{
-
 /// Add mesh tags to XDMF file
 template <typename T, typename U>
 void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
@@ -75,6 +72,5 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
       {global_num_values, 1}, "", use_mpi_io);
 }
 
-} // namespace xdmf_meshtags
-} // namespace io
+} // namespace io::xdmf_meshtags
 } // namespace dolfinx

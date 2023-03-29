@@ -269,12 +269,11 @@ def create_submesh(msh, dim, entities):
 
 
 class MeshTags:
-    def __init__(self, meshtags, mesh: Mesh):
+    def __init__(self, meshtags):
         """Mesh tags associate data (markers) with a subset of mesh entities of a given dimension.
 
         Args:
             meshtags: C++ mesh tags object.
-            mesh: Python mesh that tags are defined on.
 
         Note:
             MeshTags objects should not usually be created using this
@@ -286,18 +285,15 @@ class MeshTags:
             passed, `mesh` and `meshtags` must share the same C++ mesh.
 
         """
-        if mesh is not None:
-            assert meshtags.mesh is mesh._cpp_object
         self._cpp_object = meshtags
-        self._mesh = mesh
 
     def ufl_id(self) -> int:
         return id(self)
 
     @property
-    def mesh(self) -> Mesh:
-        """Mesh with which the the tags are associated."""
-        return self._mesh
+    def topology(self) -> Mesh:
+        """Mesh topology with which the the tags are associated."""
+        return self._cpp_object.topology
 
     @property
     def dim(self) -> int:
@@ -374,7 +370,7 @@ def meshtags(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32],
     else:
         raise NotImplementedError(f"Type {values.dtype} not supported.")
 
-    return MeshTags(ftype(mesh._cpp_object, dim, np.asarray(entities, dtype=np.int32), values), mesh)
+    return MeshTags(ftype(mesh.topology, dim, np.asarray(entities, dtype=np.int32), values))
 
 
 def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32,
@@ -405,7 +401,7 @@ def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyL
         values = np.full(entities.num_nodes, values, dtype=np.double)
 
     values = np.asarray(values)
-    return MeshTags(_cpp.mesh.create_meshtags(mesh._cpp_object, dim, entities, values), mesh)
+    return MeshTags(_cpp.mesh.create_meshtags(mesh.topology, dim, entities, values))
 
 
 def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
