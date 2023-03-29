@@ -40,7 +40,7 @@ public:
   /// @brief Create a MeshTag from entities of given dimension on a
   /// mesh.
   ///
-  /// @param[in] mesh The mesh on which the tags are associated.
+  /// @param[in] topology Mesh topology on which the tags are associated.
   /// @param[in] dim Topological dimension of mesh entities to tag.
   /// @param[in] indices List of entity indices (indices local to the
   /// process).
@@ -130,7 +130,7 @@ private:
 };
 
 /// @brief Create MeshTags from arrays
-/// @param[in] mesh The Mesh that the tags are associated with
+/// @param[in] topology Mesh topology that the tags are associated with
 /// @param[in] dim Topological dimension of tagged entities
 /// @param[in] entities Local vertex indices for tagged entities.
 ///
