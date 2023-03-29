@@ -65,9 +65,9 @@ facet_markers.name = f"{msh.name}_facets"
 
 with XDMFFile(msh.comm, f"out_gmsh/mesh_rank_{MPI.COMM_WORLD.rank}.xdmf", "w") as file:
     file.write_mesh(msh)
-    file.write_meshtags(cell_markers)
+    file.write_meshtags(cell_markers, msh.geometry)
     msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
-    file.write_meshtags(facet_markers)
+    file.write_meshtags(facet_markers, msh.geometry)
 
 # -
 
@@ -111,8 +111,8 @@ ft.name = f"{msh.name}_facets"
 with XDMFFile(msh.comm, "out_gmsh/mesh.xdmf", "w") as file:
     file.write_mesh(msh)
     msh.topology.create_connectivity(2, 3)
-    file.write_meshtags(mt, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
-    file.write_meshtags(ft, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
+    file.write_meshtags(mt, msh.geometry, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
+    file.write_meshtags(ft, msh.geometry, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
 # -
 
 # Create a distributed (parallel) mesh with quadratic geometry. Generate
@@ -139,8 +139,8 @@ ft.name = f"{msh.name}_surface"
 
 with XDMFFile(msh.comm, "out_gmsh/mesh.xdmf", "a") as file:
     file.write_mesh(msh)
-    file.write_meshtags(ct, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
-    file.write_meshtags(ft, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
+    file.write_meshtags(ct, msh.geometry, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
+    file.write_meshtags(ft, msh.geometry, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
 # -
 
 # Create a distributed (parallel) 2nd order hexahedral mesh. Generate
@@ -191,7 +191,7 @@ ft.name = f"{msh.name}_surface"
 
 with XDMFFile(msh.comm, "out_gmsh/mesh.xdmf", "a") as file:
     file.write_mesh(msh)
-    file.write_meshtags(mt, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
-    file.write_meshtags(ft, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
+    file.write_meshtags(mt, msh.geometry, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
+    file.write_meshtags(ft, msh.geometry, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
 
 # -
