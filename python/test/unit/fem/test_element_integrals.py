@@ -224,7 +224,7 @@ def test_facet_normals(cell_type):
                 # faces
                 v.interpolate(lambda x: tuple(x[j] - i % 2 if j == i // 3 else 0 * x[j] for j in range(3)))
 
-            # assert that the integrals these functions dotted with the
+            # Check that integrals these functions dotted with the
             # normal over a face is 1 on one face and 0 on the others
             ones = 0
             for j in range(num_facets):

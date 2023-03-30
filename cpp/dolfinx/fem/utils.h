@@ -104,6 +104,9 @@ get_cell_facet_pairs(std::int32_t f, const std::span<const std::int32_t>& cells,
 /// @return A list of (integral id, entities) pairs
 /// @pre The topological dimension of the integral entity type and the
 /// topological dimension of mesh tag data must be equal.
+/// @pre For facet integrals, the topology facet-to-cell and
+/// cell-to-facet connectivity must be computed before using the
+/// function.
 std::vector<std::pair<int, std::vector<std::int32_t>>>
 compute_integration_domains(IntegralType integral_type,
                             const mesh::Topology& topology,
