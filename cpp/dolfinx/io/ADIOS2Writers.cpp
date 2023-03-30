@@ -175,6 +175,7 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
   assert(mesh);
   const mesh::Geometry<U>& geometry = mesh->geometry();
   auto topology = mesh->topology();
+  assert(topology);
 
   // The Function and the mesh must have identical element_dof_layouts
   // (up to the block size)

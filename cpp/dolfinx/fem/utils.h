@@ -105,7 +105,7 @@ get_cell_facet_pairs(std::int32_t f, const std::span<const std::int32_t>& cells,
 /// @pre The topological dimension of the integral entity type and the
 /// topological dimension of mesh tag data must be equal.
 /// @pre For facet integrals, the topology facet-to-cell and
-/// cell-to-facet connectivity must be computed before using the
+/// cell-to-facet connectivity must be computed before calling this
 /// function.
 std::vector<std::pair<int, std::vector<std::int32_t>>>
 compute_integration_domains(IntegralType integral_type,
@@ -682,6 +682,7 @@ create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
   ElementDofLayout layout(bs, e.entity_dofs(), e.entity_closure_dofs(), {},
                           sub_doflayout);
   assert(mesh);
+  assert(mesh->topology());
   auto dofmap = std::make_shared<const DofMap>(
       create_dofmap(mesh->comm(), layout, *mesh->topology(), reorder_fn, *_e));
 
@@ -720,6 +721,7 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
   ufcx_finite_element* ufcx_element = space->finite_element;
   assert(ufcx_element);
 
+  assert(mesh);
   if (space->geometry_degree != mesh->geometry().cmap().degree()
       or static_cast<basix::cell::type>(space->geometry_basix_cell)
              != mesh::cell_type_to_basix_type(
@@ -735,6 +737,7 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
   assert(element);
   ufcx_dofmap* ufcx_map = space->dofmap;
   assert(ufcx_map);
+  assert(mesh->topology());
   ElementDofLayout layout
       = create_element_dof_layout(*ufcx_map, mesh->topology()->cell_type());
   return FunctionSpace(

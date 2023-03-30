@@ -6,16 +6,12 @@
 
 #pragma once
 
-#include "Geometry.h"
-#include "Mesh.h"
 #include "Topology.h"
 #include <algorithm>
-#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/partition.h>
 #include <dolfinx/io/cells.h>
 #include <memory>
 #include <span>
@@ -97,29 +93,27 @@ public:
     return indices;
   }
 
-  /// Indices of tagged mesh entities (local-to-process). The indices
-  /// are sorted.
+  /// Indices of tagged topology entities (local-to-process). The
+  /// indices are sorted.
   std::span<const std::int32_t> indices() const { return _indices; }
 
-  /// Values attached to mesh entities
+  /// Values attached to topology entities
   std::span<const T> values() const { return _values; }
 
   /// Return topological dimension of tagged entities
   int dim() const { return _dim; }
 
-  /// Return mesh
-  // std::shared_ptr<const Mesh<X>> mesh() const { return _mesh; }
+  /// Return topology
   std::shared_ptr<const Topology> topology() const { return _topology; }
 
   /// Name
   std::string name = "mesh_tags";
 
 private:
-  // Associated mesh
-  // std::shared_ptr<const Mesh<X>> _mesh;
+  // Associated topology
   std::shared_ptr<const Topology> _topology;
 
-  // Topological dimension of tagged mesh entities
+  // Topological dimension of tagged topology entities
   int _dim;
 
   // Local-to-process indices of tagged entities
@@ -133,16 +127,10 @@ private:
 /// @param[in] topology Mesh topology that the tags are associated with
 /// @param[in] dim Topological dimension of tagged entities
 /// @param[in] entities Local vertex indices for tagged entities.
-///
 /// @param[in] values Tag values for each entity in `entities`. The
 /// length of `values` must be equal to number of rows in `entities`.
 /// @note Entities that do not exist on this rank are ignored.
 /// @warning `entities` must not contain duplicate entities.
-// template <typename T, std::floating_point U>
-// MeshTags<T, U>
-// create_meshtags(std::shared_ptr<const Mesh<U>> mesh, int dim,
-//                 const graph::AdjacencyList<std::int32_t>& entities,
-//                 std::span<const T> values)
 template <typename T>
 MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
                             const graph::AdjacencyList<std::int32_t>& entities,
@@ -151,10 +139,8 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
   LOG(INFO)
       << "Building MeshTags object from tagged entities (defined by vertices).";
 
-  // assert(mesh);
-
-  // Compute the indices of the mesh entities (index is set to -1 if it
-  // can't be found)
+  // Compute the indices of the topology entities (index is set to -1 if
+  // it can't be found)
   assert(topology);
   const std::vector<std::int32_t> indices
       = entities_to_index(*topology, dim, entities);
