@@ -191,8 +191,8 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
 # `mixed_element`:
 
 degree = 1
-RTCE = element("RTCE", msh.ufl_cell().cellname(), degree)
-Q = element("Lagrange", msh.ufl_cell().cellname(), degree)
+RTCE = element("RTCE", msh.basix_cell(), degree)
+Q = element("Lagrange", msh.basix_cell(), degree)
 V = fem.FunctionSpace(msh, mixed_element([RTCE, Q]))
 
 # Now we can define our weak form:

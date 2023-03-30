@@ -36,8 +36,8 @@ def mesh():
 def test_tabulate_dofs(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
-    W0 = element("Lagrange", mesh.ufl_cell().cellname(), 1)
-    W1 = element("Lagrange", mesh.ufl_cell().cellname(), 1, rank=1)
+    W0 = element("Lagrange", mesh.basix_cell(), 1)
+    W1 = element("Lagrange", mesh.basix_cell(), 1, rank=1)
     W = FunctionSpace(mesh, W0 * W1)
 
     L0 = W.sub(0)
@@ -147,7 +147,7 @@ def test_block_size(mesh):
               create_unit_square(MPI.COMM_WORLD, 8, 8, CellType.quadrilateral),
               create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)]
     for mesh in meshes:
-        P2 = element("Lagrange", mesh.ufl_cell().cellname(), 2)
+        P2 = element("Lagrange", mesh.basix_cell(), 2)
         V = FunctionSpace(mesh, P2)
         assert V.dofmap.bs == 1
 
@@ -166,8 +166,8 @@ def test_block_size(mesh):
 @pytest.mark.skip
 def test_block_size_real():
     mesh = create_unit_interval(MPI.COMM_WORLD, 12)
-    V = element('DG', mesh.ufl_cell().cellname(), 0)
-    R = element('R', mesh.ufl_cell().cellname(), 0)
+    V = element('DG', mesh.basix_cell(), 0)
+    R = element('R', mesh.basix_cell(), 0)
     X = FunctionSpace(mesh, V * R)
     assert X.dofmap.index_map_bs == 1
 
@@ -180,8 +180,8 @@ def test_local_dimension(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
 
-    v = element("Lagrange", mesh.ufl_cell().cellname(), 1)
-    q = element("Lagrange", mesh.ufl_cell().cellname(), 1, rank=1)
+    v = element("Lagrange", mesh.basix_cell(), 1)
+    q = element("Lagrange", mesh.basix_cell(), 1, rank=1)
     w = v * q
 
     V = FunctionSpace(mesh, v)

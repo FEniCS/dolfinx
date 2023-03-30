@@ -28,8 +28,8 @@ def test_locate_dofs_geometrical():
     spaces, returns the correct degrees of freedom in each space"""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
     p0, p1 = 1, 2
-    P0 = element("Lagrange", mesh.ufl_cell().cellname(), p0)
-    P1 = element("Lagrange", mesh.ufl_cell().cellname(), p1)
+    P0 = element("Lagrange", mesh.basix_cell(), p0)
+    P1 = element("Lagrange", mesh.basix_cell(), p1)
 
     W = FunctionSpace(mesh, mixed_element([P0, P1]))
     V = W.sub(0).collapse()[0]
@@ -247,8 +247,8 @@ def test_mixed_constant_bc(mesh_factory):
     tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
     TH = mixed_element([
-        element("Lagrange", mesh.ufl_cell().cellname(), 1),
-        element("Lagrange", mesh.ufl_cell().cellname(), 2)])
+        element("Lagrange", mesh.basix_cell(), 1),
+        element("Lagrange", mesh.basix_cell(), 2)])
     W = FunctionSpace(mesh, TH)
     u = Function(W)
 
@@ -283,8 +283,8 @@ def test_mixed_blocked_constant():
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
     TH = mixed_element([
-        element("Lagrange", mesh.ufl_cell().cellname(), 1),
-        element("Lagrange", mesh.ufl_cell().cellname(), 2, rank=1)])
+        element("Lagrange", mesh.basix_cell(), 1),
+        element("Lagrange", mesh.basix_cell(), 2, rank=1)])
     W = FunctionSpace(mesh, TH)
     u = Function(W)
     c0 = PETSc.ScalarType(3)

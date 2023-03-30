@@ -246,9 +246,9 @@ def test_matrix_assembly_block(mode):
     structures"""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
     p0, p1 = 1, 2
-    P0 = element("Lagrange", mesh.ufl_cell().cellname(), p0)
-    P1 = element("Lagrange", mesh.ufl_cell().cellname(), p1)
-    P2 = element("Lagrange", mesh.ufl_cell().cellname(), p0)
+    P0 = element("Lagrange", mesh.basix_cell(), p0)
+    P1 = element("Lagrange", mesh.basix_cell(), p1)
+    P2 = element("Lagrange", mesh.basix_cell(), p0)
     V0 = FunctionSpace(mesh, P0)
     V1 = FunctionSpace(mesh, P1)
     V2 = FunctionSpace(mesh, P2)
@@ -362,7 +362,7 @@ def test_assembly_solve_block(mode):
     """Solve a two-field mass-matrix like problem with block matrix approaches
     and test that solution is the same"""
     mesh = create_unit_square(MPI.COMM_WORLD, 32, 31, ghost_mode=mode)
-    P = element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    P = element("Lagrange", mesh.basix_cell(), 1)
     V0 = FunctionSpace(mesh, P)
     V1 = V0.clone()
 
@@ -609,8 +609,8 @@ def test_assembly_solve_taylor_hood(mesh):
 
     def monolithic_solve():
         """Monolithic (interleaved) solver"""
-        P2_el = element("Lagrange", mesh.ufl_cell().cellname(), 2, rank=1)
-        P1_el = element("Lagrange", mesh.ufl_cell().cellname(), 1)
+        P2_el = element("Lagrange", mesh.basix_cell(), 2, rank=1)
+        P1_el = element("Lagrange", mesh.basix_cell(), 1)
         TH = mixed_element([P2_el, P1_el])
         W = FunctionSpace(mesh, TH)
         (u, p) = ufl.TrialFunctions(W)

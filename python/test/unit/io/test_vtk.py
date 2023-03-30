@@ -94,7 +94,7 @@ def test_save_1d_vector(tempdir):
         vals[1] = 2 * x[0] * x[0]
         return vals
 
-    e = element("Lagrange", mesh.ufl_cell().cellname(), 2, shape=(2, ))
+    e = element("Lagrange", mesh.basix_cell(), 2, shape=(2, ))
     u = Function(FunctionSpace(mesh, e))
     u.interpolate(f)
     filename = Path(tempdir, "u.pvd")
@@ -140,8 +140,8 @@ def test_save_2d_vector_CG2(tempdir):
 
 def test_save_vtk_mixed(tempdir):
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
-    P2 = element("Lagrange", mesh.ufl_cell().cellname(), 1, rank=1)
-    P1 = element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    P2 = element("Lagrange", mesh.basix_cell(), 1, rank=1)
+    P1 = element("Lagrange", mesh.basix_cell(), 1)
     W = FunctionSpace(mesh, mixed_element([P2, P1]))
     V1 = FunctionSpace(mesh, P1)
     V2 = FunctionSpace(mesh, P2)
@@ -175,8 +175,8 @@ def test_save_vtk_mixed(tempdir):
 def test_save_vtk_cell_point(tempdir):
     """Test writing cell-wise and point-wise data"""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
-    P2 = element("Lagrange", mesh.ufl_cell().cellname(), 1, rank=1)
-    P1 = element("Discontinuous Lagrange", mesh.ufl_cell().cellname(), 0)
+    P2 = element("Lagrange", mesh.basix_cell(), 1, rank=1)
+    P1 = element("Discontinuous Lagrange", mesh.basix_cell(), 0)
 
     V2, V1 = FunctionSpace(mesh, P2), FunctionSpace(mesh, P1)
     U2, U1 = Function(V2), Function(V1)
@@ -195,7 +195,7 @@ def test_save_vtk_cell_point(tempdir):
 def test_save_1d_tensor(tempdir):
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)
     e = element(
-        "Lagrange", mesh.ufl_cell().cellname(), 2, shape=(2, 2))
+        "Lagrange", mesh.basix_cell(), 2, shape=(2, 2))
     u = Function(FunctionSpace(mesh, e))
     u.x.array[:] = 1.0
     filename = Path(tempdir, "u.pvd")

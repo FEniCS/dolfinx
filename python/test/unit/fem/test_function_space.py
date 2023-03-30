@@ -33,8 +33,8 @@ def W(mesh):
 
 @pytest.fixture
 def Q(mesh):
-    W = element('Lagrange', mesh.ufl_cell().cellname(), 1, rank=1)
-    V = element('Lagrange', mesh.ufl_cell().cellname(), 1)
+    W = element('Lagrange', mesh.basix_cell(), 1, rank=1)
+    V = element('Lagrange', mesh.basix_cell(), 1)
     return FunctionSpace(mesh, mixed_element([W, V]))
 
 
