@@ -271,7 +271,7 @@ theta = np.pi / 4  # Angle of incidence of the background field
 # represent the electric field
 
 degree = 3
-curl_el = element("N1curl", domain.ufl_cell().cellname(), degree)
+curl_el = element("N1curl", domain.basix_cell(), degree)
 V = fem.FunctionSpace(domain, curl_el)
 
 # Next, we can interpolate $\mathbf{E}_b$ into the function space $V$:

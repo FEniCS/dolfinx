@@ -236,7 +236,7 @@ def test_vtx_functions(tempdir, dtype, dim, simplex):
 def test_save_vtkx_cell_point(tempdir):
     """Test writing point-wise data"""
     mesh = create_unit_square(MPI.COMM_WORLD, 8, 5)
-    P = element("Discontinuous Lagrange", mesh.ufl_cell().cellname(), 0)
+    P = element("Discontinuous Lagrange", mesh.basix_cell(), 0)
 
     V = FunctionSpace(mesh, P)
     u = Function(V)

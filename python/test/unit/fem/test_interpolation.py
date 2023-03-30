@@ -265,8 +265,8 @@ def test_mixed_sub_interpolation():
     def f(x):
         return np.vstack((10 + x[0], -10 - x[1], 25 + x[0]))
 
-    P2 = element("Lagrange", mesh.ufl_cell().cellname(), 2, rank=1)
-    P1 = element("Lagrange", mesh.ufl_cell().cellname(), 1)
+    P2 = element("Lagrange", mesh.basix_cell(), 2, rank=1)
+    P1 = element("Lagrange", mesh.basix_cell(), 1)
     for i, P in enumerate((mixed_element([P2, P1]), mixed_element([P1, P2]))):
         W = FunctionSpace(mesh, P)
         U = Function(W)
@@ -314,8 +314,8 @@ def test_mixed_sub_interpolation():
 def test_mixed_interpolation():
     """Test that mixed interpolation raised an exception."""
     mesh = one_cell_mesh(CellType.triangle)
-    A = element("Lagrange", mesh.ufl_cell().cellname(), 1)
-    B = element("Lagrange", mesh.ufl_cell().cellname(), 1, rank=1)
+    A = element("Lagrange", mesh.basix_cell(), 1)
+    B = element("Lagrange", mesh.basix_cell(), 1, rank=1)
     v = Function(FunctionSpace(mesh, mixed_element([A, B])))
     with pytest.raises(RuntimeError):
         v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
@@ -695,9 +695,9 @@ def test_mixed_interpolation_permuting(cell_type, order):
     x = ufl.SpatialCoordinate(mesh)
     dgdy = ufl.cos(x[1])
 
-    curl_el = element("N1curl", mesh.ufl_cell().cellname(), 1)
-    vlag_el = element("Lagrange", mesh.ufl_cell().cellname(), 1, rank=1)
-    lagr_el = element("Lagrange", mesh.ufl_cell().cellname(), order)
+    curl_el = element("N1curl", mesh.basix_cell(), 1)
+    vlag_el = element("Lagrange", mesh.basix_cell(), 1, rank=1)
+    lagr_el = element("Lagrange", mesh.basix_cell(), order)
 
     V = FunctionSpace(mesh, mixed_element([curl_el, lagr_el]))
     Eb_m = Function(V)

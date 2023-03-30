@@ -75,8 +75,8 @@ def test_vector_element():
 @pytest.mark.parametrize("d2", range(1, 4))
 def test_element_product(d1, d2):
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 2)
-    P3 = element("Lagrange", mesh.ufl_cell().cellname(), d1, rank=1)
-    P1 = element("Lagrange", mesh.ufl_cell().cellname(), d2)
+    P3 = element("Lagrange", mesh.basix_cell(), d1, rank=1)
+    P1 = element("Lagrange", mesh.basix_cell(), d2)
     TH = mixed_element([P3, P1])
     W = FunctionSpace(mesh, TH)
 

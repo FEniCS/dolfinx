@@ -472,7 +472,7 @@ class FunctionSpace(ufl.FunctionSpace):
                 assert len(element) == 2, "Expected sequence of (element_type, degree)"
                 e = ElementMetaData(*element)
                 ufl_e = basix.ufl.element(
-                    e.family, mesh.ufl_cell().cellname(), e.degree, gdim=mesh.ufl_cell().geometric_dimension())
+                    e.family, mesh.basix_cell(), e.degree, gdim=mesh.ufl_cell().geometric_dimension())
                 super().__init__(mesh.ufl_domain(), ufl_e)
 
             # Compile dofmap and element and create DOLFIN objects
@@ -616,7 +616,7 @@ def _is_scalar(mesh, element):
                               gdim=mesh.geometry.dim)
     except AttributeError:
         ed = ElementMetaData(*element)
-        e = basix.ufl.element(ed.family, mesh.ufl_cell().cellname(), ed.degree,
+        e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree,
                               gdim=mesh.geometry.dim)
     return len(e.value_shape()) == 0
 
@@ -636,7 +636,7 @@ def VectorFunctionSpace(mesh: Mesh,
                                   shape=None if dim is None else (dim, ), gdim=mesh.geometry.dim, rank=1)
     except AttributeError:
         ed = ElementMetaData(*element)
-        ufl_e = basix.ufl.element(ed.family, mesh.ufl_cell().cellname(), ed.degree,
+        ufl_e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree,
                                   shape=None if dim is None else (dim, ), gdim=mesh.geometry.dim, rank=1)
     return FunctionSpace(mesh, ufl_e)
 
@@ -648,7 +648,7 @@ def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typin
         raise ValueError("Cannot create tensor element containing a non-scalar.")
 
     e = ElementMetaData(*element)
-    ufl_element = basix.ufl.element(e.family, mesh.ufl_cell().cellname(),
+    ufl_element = basix.ufl.element(e.family, mesh.basix_cell(),
                                     e.degree, shape=shape, symmetry=symmetry,
                                     gdim=mesh.geometry.dim, rank=2)
     return FunctionSpace(mesh, ufl_element)
