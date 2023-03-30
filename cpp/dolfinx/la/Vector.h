@@ -8,7 +8,6 @@
 
 #include "utils.h"
 #include <complex>
-#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <limits>
@@ -280,8 +279,8 @@ auto norm(const Vector<T, Allocator>& a, Norm type = Norm::l2)
 /// vectors must have identical parallel layouts. The vectors are
 /// modified in-place.
 /// @param[in] tol The tolerance used to detect a linear dependency
-template <typename T, std::floating_point U>
-void orthonormalize(std::span<Vector<T, U>> basis, double tol = 1.0e-10)
+template <typename T, class Allocator>
+void orthonormalize(std::span<Vector<T, Allocator>> basis, double tol = 1.0e-10)
 {
   // Loop over each vector in basis
   for (std::size_t i = 0; i < basis.size(); ++i)
@@ -314,8 +313,9 @@ void orthonormalize(std::span<Vector<T, U>> basis, double tol = 1.0e-10)
 /// @param[in] basis The set of vectors to check
 /// @param[in] tol The tolerance used to test for orthonormality
 /// @return True is basis is orthonormal, otherwise false
-template <typename T, std::floating_point U>
-bool is_orthonormal(std::span<const Vector<T, U>> basis, double tol = 1.0e-10)
+template <typename T, class Allocator>
+bool is_orthonormal(std::span<const Vector<T, Allocator>> basis,
+                    double tol = 1.0e-10)
 {
   for (std::size_t i = 0; i < basis.size(); i++)
   {
