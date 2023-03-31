@@ -776,7 +776,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a,
 
   for (int i : a.integral_ids(IntegralType::cell))
   {
-    const auto& kernel = a.kernel(IntegralType::cell, i);
+    auto kernel = a.kernel(IntegralType::cell, i);
     const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
     if (bs0 == 1 and bs1 == 1)
@@ -804,7 +804,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a,
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
-    const auto& kernel = a.kernel(IntegralType::exterior_facet, i);
+    auto kernel = a.kernel(IntegralType::exterior_facet, i);
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::int32_t>& facets = a.exterior_facet_domains(i);
@@ -830,12 +830,12 @@ void lift_bc(std::span<T> b, const Form<T, U>& a,
 
     auto cell_types = mesh->topology()->cell_types();
     if (cell_types.size() > 1)
-      throw std::runtime_error("MUltiple cell types in the assembler");
+      throw std::runtime_error("Multiple cell types in the assembler");
     int num_cell_facets = mesh::cell_num_entities(cell_types.back(),
                                                   mesh->topology()->dim() - 1);
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
-      const auto& kernel = a.kernel(IntegralType::interior_facet, i);
+      auto kernel = a.kernel(IntegralType::interior_facet, i);
       const auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
       const std::vector<std::int32_t>& facets = a.interior_facet_domains(i);
@@ -971,7 +971,7 @@ void assemble_vector(
 
   for (int i : L.integral_ids(IntegralType::cell))
   {
-    const auto& fn = L.kernel(IntegralType::cell, i);
+    auto fn = L.kernel(IntegralType::cell, i);
     const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = L.cell_domains(i);
     if (bs == 1)
@@ -993,7 +993,7 @@ void assemble_vector(
 
   for (int i : L.integral_ids(IntegralType::exterior_facet))
   {
-    const auto& fn = L.kernel(IntegralType::exterior_facet, i);
+    auto fn = L.kernel(IntegralType::exterior_facet, i);
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::int32_t>& facets = L.exterior_facet_domains(i);
@@ -1037,7 +1037,7 @@ void assemble_vector(
                                                   mesh->topology()->dim() - 1);
     for (int i : L.integral_ids(IntegralType::interior_facet))
     {
-      const auto& fn = L.kernel(IntegralType::interior_facet, i);
+      auto fn = L.kernel(IntegralType::interior_facet, i);
       const auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
       const std::vector<std::int32_t>& facets = L.interior_facet_domains(i);

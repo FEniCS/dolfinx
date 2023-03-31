@@ -175,7 +175,7 @@ T assemble_scalar(
   T value = 0;
   for (int i : M.integral_ids(IntegralType::cell))
   {
-    const auto& fn = M.kernel(IntegralType::cell, i);
+    auto fn = M.kernel(IntegralType::cell, i);
     const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = M.cell_domains(i);
     value += impl::assemble_cells(geometry, cells, fn, constants, coeffs,
@@ -184,7 +184,7 @@ T assemble_scalar(
 
   for (int i : M.integral_ids(IntegralType::exterior_facet))
   {
-    const auto& fn = M.kernel(IntegralType::exterior_facet, i);
+    auto fn = M.kernel(IntegralType::exterior_facet, i);
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::int32_t>& facets = M.exterior_facet_domains(i);
@@ -201,13 +201,13 @@ T assemble_scalar(
 
     auto cell_types = mesh->topology()->cell_types();
     if (cell_types.size() > 1)
-      throw std::runtime_error("MUltiple cell types in the assembler");
+      throw std::runtime_error("Multiple cell types in the assembler");
     int num_cell_facets = mesh::cell_num_entities(cell_types.back(),
                                                   mesh->topology()->dim() - 1);
     const std::vector<int> c_offsets = M.coefficient_offsets();
     for (int i : M.integral_ids(IntegralType::interior_facet))
     {
-      const auto& fn = M.kernel(IntegralType::interior_facet, i);
+      auto fn = M.kernel(IntegralType::interior_facet, i);
       const auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
       const std::vector<std::int32_t>& facets = M.interior_facet_domains(i);

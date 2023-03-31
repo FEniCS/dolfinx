@@ -412,7 +412,7 @@ void assemble_matrix(
 
   for (int i : a.integral_ids(IntegralType::cell))
   {
-    const auto& fn = a.kernel(IntegralType::cell, i);
+    auto fn = a.kernel(IntegralType::cell, i);
     const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
     impl::assemble_cells(mat_set, geometry, cells, dof_transform, dofs0, bs0,
@@ -422,7 +422,7 @@ void assemble_matrix(
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
-    const auto& fn = a.kernel(IntegralType::exterior_facet, i);
+    auto fn = a.kernel(IntegralType::exterior_facet, i);
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::int32_t>& facets = a.exterior_facet_domains(i);
@@ -454,7 +454,7 @@ void assemble_matrix(
     const std::vector<int> c_offsets = a.coefficient_offsets();
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
-      const auto& fn = a.kernel(IntegralType::interior_facet, i);
+      auto fn = a.kernel(IntegralType::interior_facet, i);
       const auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
       const std::vector<std::int32_t>& facets = a.interior_facet_domains(i);
