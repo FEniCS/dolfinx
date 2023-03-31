@@ -12,8 +12,10 @@ import numpy as np
 import pytest
 
 import ufl
+from basix.ufl import mixed_element, element
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
-                         VectorFunctionSpace, assemble_scalar, form)
+                         VectorFunctionSpace, assemble_scalar,
+                         create_nonmatching_meshes_interpolation_data, form)
 from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
                               compute_collisions)
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
@@ -104,8 +106,7 @@ def test_eval_manifold():
     vertices = [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0,
                                                                     0.0)]
     cells = [(0, 1, 2), (0, 1, 3)]
-    cell = ufl.Cell("triangle", geometric_dimension=3)
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 1))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, gdim=3, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
     Q = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(Q)
@@ -127,8 +128,8 @@ def test_interpolation_mismatch_rank1(W):
 
 def test_mixed_element_interpolation():
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
-    el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    V = FunctionSpace(mesh, ufl.MixedElement([el, el]))
+    el = element("Lagrange", mesh.basix_cell(), 1)
+    V = FunctionSpace(mesh, mixed_element([el, el]))
     u = Function(V)
     with pytest.raises(RuntimeError):
         u.interpolate(lambda x: np.ones(2, x.shape[1]))
@@ -183,9 +184,9 @@ def test_nonmatching_interpolation(cell_type0, cell_type1):
     def f(x):
         return (7 * x[1], 3 * x[0], x[2] + 0.4)
 
-    el0 = ufl.VectorElement("Lagrange", mesh0.ufl_cell(), 1, dim=3)
+    el0 = element("Lagrange", mesh0.basix_cell(), 1, shape=(3, ))
     V0 = FunctionSpace(mesh0, el0)
-    el1 = ufl.VectorElement("Lagrange", mesh1.ufl_cell(), 1, dim=3)
+    el1 = element("Lagrange", mesh1.basix_cell(), 1, shape=(3, ))
     V1 = FunctionSpace(mesh1, el1)
 
     # Interpolate on 3D mesh
@@ -195,7 +196,10 @@ def test_nonmatching_interpolation(cell_type0, cell_type1):
 
     # Interpolate 3D->2D
     u1 = Function(V1)
-    u1.interpolate(u0)
+    u1.interpolate(u0, nmm_interpolation_data=create_nonmatching_meshes_interpolation_data(
+        u1.function_space.mesh._cpp_object,
+        u1.function_space.element,
+        u0.function_space.mesh._cpp_object))
     u1.x.scatter_forward()
 
     # Exact interpolation on 2D mesh
@@ -207,7 +211,10 @@ def test_nonmatching_interpolation(cell_type0, cell_type1):
 
     # Interpolate 2D->3D
     u0_2 = Function(V0)
-    u0_2.interpolate(u1)
+    u0_2.interpolate(u1, nmm_interpolation_data=create_nonmatching_meshes_interpolation_data(
+        u0_2.function_space.mesh._cpp_object,
+        u0_2.function_space.element,
+        u1.function_space.mesh._cpp_object))
 
     # Check that function values over facets of 3D mesh of the twice interpolated property is preserved
     def locate_bottom_facets(x):

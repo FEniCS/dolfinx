@@ -26,7 +26,7 @@ void create_mesh_file()
 {
   // Create mesh using all processes and save xdmf
   auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
-  auto mesh = std::make_shared<mesh::Mesh>(
+  auto mesh = std::make_shared<mesh::Mesh<double>>(
       mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {N, N},
                              mesh::CellType::triangle, part));
 
@@ -56,7 +56,9 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 
   // Create coordinate map
   auto e = std::make_shared<basix::FiniteElement>(basix::create_element(
-      basix::element::family::P, basix::cell::type::triangle, 1, false));
+      basix::element::family::P, basix::cell::type::triangle, 1,
+      basix::element::lagrange_variant::unset,
+      basix::element::dpc_variant::unset, false));
   fem::CoordinateElement cmap(e);
 
   // read mesh data
@@ -111,16 +113,21 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
                     [](std::int64_t i) { return (i != -1); });
   external_vertices.erase(external_vertices.begin(), it);
 
+  std::vector<int> cell_group_offsets
+      = {0, std::int32_t(cell_nodes.num_nodes() - ghost_owners.size()),
+         cell_nodes.num_nodes()};
+
+  std::vector<mesh::CellType> cell_types = {cmap.cell_shape()};
   mesh::Topology topology = mesh::create_topology(
-      mpi_comm, cell_nodes, original_cell_index, ghost_owners,
-      cmap.cell_shape(), external_vertices);
+      mpi_comm, cell_nodes, original_cell_index, ghost_owners, cell_types,
+      cell_group_offsets, external_vertices);
   int tdim = topology.dim();
 
-  mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, cmap,
+  mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, {cmap},
                                                   cell_nodes, x, xshape[1]);
 
-  auto mesh = std::make_shared<mesh::Mesh>(mpi_comm, std::move(topology),
-                                           std::move(geometry));
+  auto mesh = std::make_shared<mesh::Mesh<double>>(
+      mpi_comm, std::move(topology), std::move(geometry));
 
   CHECK(mesh->topology().index_map(tdim)->size_global() == 2 * N * N);
   CHECK(mesh->topology().index_map(tdim)->size_local() > 0);
@@ -148,7 +155,7 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
     CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner()));
   }
 
-// #ifdef HAS_KAHIP
+  // #ifdef HAS_KAHIP
   // SECTION("KAHIP with Lambda")
   // {
   //   auto partfn = graph::kahip::partitioner();

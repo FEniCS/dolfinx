@@ -169,8 +169,7 @@ fem::transpose_dofmap(const graph::AdjacencyList<std::int32_t>& dofmap,
               data.begin() + index_offsets[index + 1]);
   }
 
-  return graph::AdjacencyList<std::int32_t>(std::move(data),
-                                            std::move(index_offsets));
+  return graph::AdjacencyList(std::move(data), std::move(index_offsets));
 }
 //-----------------------------------------------------------------------------
 /// Equality operator
@@ -182,7 +181,7 @@ bool DofMap::operator==(const DofMap& map) const
 //-----------------------------------------------------------------------------
 int DofMap::bs() const noexcept { return _bs; }
 //-----------------------------------------------------------------------------
-DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
+DofMap DofMap::extract_sub_dofmap(std::span<const int> component) const
 {
   assert(!component.empty());
 
@@ -234,8 +233,8 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
       // Create new element dof layout and reset parent
       ElementDofLayout collapsed_dof_layout = layout.copy();
 
-      auto [_index_map, bs, dofmap]
-          = build_dofmap_data(comm, topology, collapsed_dof_layout, reorder_fn);
+      auto [_index_map, bs, dofmap] = build_dofmap_data(
+          comm, topology, {collapsed_dof_layout}, reorder_fn);
       auto index_map
           = std::make_shared<common::IndexMap>(std::move(_index_map));
       return DofMap(layout, index_map, bs, std::move(dofmap), bs);

@@ -28,6 +28,7 @@ import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
 
 import ufl
+from basix.ufl import element
 from dolfinx import geometry
 from dolfinx.cpp.fem import Form_complex128, Form_float64
 from dolfinx.fem import (Function, FunctionSpace, IntegralType, dirichletbc,
@@ -41,14 +42,14 @@ from dolfinx.mesh import locate_entities_boundary, meshtags
 from mpi4py import MPI
 from petsc4py import PETSc
 
-infile = XDMFFile(MPI.COMM_WORLD, Path(Path(__file__).parent, "data", "cooks_tri_mesh.xdmf"),
-                  "r", encoding=XDMFFile.Encoding.ASCII)
+infile = XDMFFile(MPI.COMM_WORLD, Path(Path(__file__).parent, "data",
+                  "cooks_tri_mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII)
 msh = infile.read_mesh(name="Grid")
 infile.close()
 
 # Stress (Se) and displacement (Ue) elements
-Se = ufl.TensorElement("DG", msh.ufl_cell(), 1, symmetry=True)
-Ue = ufl.VectorElement("Lagrange", msh.ufl_cell(), 2)
+Se = element("DG", msh.basix_cell(), 1, rank=2, symmetry=True)
+Ue = element("Lagrange", msh.basix_cell(), 2, rank=1)
 
 S = FunctionSpace(msh, Se)
 U = FunctionSpace(msh, Ue)
@@ -137,7 +138,8 @@ def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permuta
 # Prepare a Form with a condensed tabulation kernel
 Form = Form_float64 if PETSc.ScalarType == np.float64 else Form_complex128
 
-integrals = {IntegralType.cell: ([(-1, tabulate_condensed_tensor_A.address)], None)}
+cells = range(msh.topology.index_map(msh.topology.dim).size_local)
+integrals = {IntegralType.cell: [(-1, tabulate_condensed_tensor_A.address, cells)]}
 a_cond = Form([U._cpp_object, U._cpp_object], integrals, [], [], False, None)
 
 A_cond = assemble_matrix(a_cond, bcs=[bc])

@@ -248,24 +248,13 @@ def _assemble_vector_nest_vec(b: PETSc.Vec, L: typing.List[form_types], constant
 
 # FIXME: Revise this interface
 @functools.singledispatch
-def assemble_vector_block(L: typing.Any,
+def assemble_vector_block(L: typing.List[form_types],
                           a: typing.List[typing.List[form_types]],
                           bcs: typing.List[DirichletBCMetaClass] = [],
                           x0: typing.Optional[PETSc.Vec] = None,
                           scale: float = 1.0,
                           constants_L=None, coeffs_L=None,
                           constants_a=None, coeffs_a=None) -> PETSc.Vec:
-    return _assemble_vector_block_form(L, a, bcs, x0, scale, constants_L, coeffs_L, constants_a, coeffs_a)
-
-
-@assemble_vector_block.register(list)
-def _assemble_vector_block_form(L: typing.List[form_types],
-                                a: typing.List[typing.List[form_types]],
-                                bcs: typing.List[DirichletBCMetaClass] = [],
-                                x0: typing.Optional[PETSc.Vec] = None,
-                                scale: float = 1.0,
-                                constants_L=None, coeffs_L=None,
-                                constants_a=None, coeffs_a=None) -> PETSc.Vec:
     """Assemble linear forms into a monolithic vector. The vector is not
     finalised, i.e. ghost values are not accumulated.
 
@@ -372,18 +361,10 @@ def _assemble_matrix_mat(A: PETSc.Mat, a: form_types, bcs: typing.List[Dirichlet
 
 # FIXME: Revise this interface
 @functools.singledispatch
-def assemble_matrix_nest(a: typing.Any,
+def assemble_matrix_nest(a: typing.List[typing.List[form_types]],
                          bcs: typing.List[DirichletBCMetaClass] = [], mat_types=[],
                          diagonal: float = 1.0,
                          constants=None, coeffs=None) -> PETSc.Mat:
-    return _assemble_matrix_nest_form(a, bcs, diagonal, constants, coeffs)
-
-
-@assemble_matrix_nest.register(list)
-def _assemble_matrix_nest_form(a: typing.List[typing.List[form_types]],
-                               bcs: typing.List[DirichletBCMetaClass] = [], mat_types=[],
-                               diagonal: float = 1.0,
-                               constants=None, coeffs=None) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     A = _cpp.fem.petsc.create_matrix_nest(a, mat_types)
     _assemble_matrix_nest_mat(A, a, bcs, diagonal, constants, coeffs)
@@ -417,18 +398,10 @@ def _assemble_matrix_nest_mat(A: PETSc.Mat, a: typing.List[typing.List[form_type
 
 # FIXME: Revise this interface
 @functools.singledispatch
-def assemble_matrix_block(a: typing.Any,
+def assemble_matrix_block(a: typing.List[typing.List[form_types]],
                           bcs: typing.List[DirichletBCMetaClass] = [],
                           diagonal: float = 1.0,
-                          constants=None, coeffs=None) -> PETSc.Mat:
-    return _assemble_matrix_block_form(a, bcs, diagonal, constants, coeffs)
-
-
-@assemble_matrix_block.register(list)
-def _assemble_matrix_block_form(a: typing.List[typing.List[form_types]],
-                                bcs: typing.List[DirichletBCMetaClass] = [],
-                                diagonal: float = 1.0,
-                                constants=None, coeffs=None) -> PETSc.Mat:
+                          constants=None, coeffs=None) -> PETSc.Mat:  # type: ignore
     """Assemble bilinear forms into matrix"""
     A = _cpp.fem.petsc.create_matrix_block(a)
     return _assemble_matrix_block_mat(A, a, bcs, diagonal, constants, coeffs)
@@ -600,6 +573,12 @@ class LinearProblem:
         self._A.setFromOptions()
         self._b.setOptionsPrefix(problem_prefix)
         self._b.setFromOptions()
+
+    def __del__(self):
+        self._solver.destroy()
+        self._A.destroy()
+        self._b.destroy()
+        self._x.destroy()
 
     def solve(self) -> _Function:
         """Solve the problem."""

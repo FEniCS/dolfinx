@@ -1,13 +1,11 @@
 #pragma once
 
-namespace dolfinx
+/// @brief Miscellaneous classes, functions and types.
+///
+/// This namespace provides utility type functions for managing
+/// subsystems, convenience classes and library-wide typedefs.
+namespace dolfinx::common
 {
-/*! \namespace dolfinx::common
-    \brief Miscellaneous classes, functions and types
-
-    This namespace provides utility type functions for managing subsystems,
-   convenience classes and library-wide typedefs.
-*/
 }
 
 // DOLFINx common

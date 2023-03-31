@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2022 Anders Logg and Garth N. Wells
+// Copyright (C) 2003-2022 Anders Logg, Garth N. Wells and Massimiliano Leoni
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,7 +10,9 @@
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include "interpolate.h"
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -25,11 +27,7 @@
 
 namespace dolfinx::fem
 {
-class FunctionSpace;
-template <typename T>
-class Expression;
-
-template <typename T>
+template <typename T, std::floating_point U>
 class Expression;
 
 /// This class represents a function \f$ u_h \f$ in a finite
@@ -38,16 +36,17 @@ class Expression;
 /// \f[     u_h = \sum_{i=1}^{n} U_i \phi_i \f]
 /// where \f$ \{\phi_i\}_{i=1}^{n} \f$ is a basis for \f$ V_h \f$,
 /// and \f$ U \f$ is a vector of expansion coefficients for \f$ u_h \f$.
-template <typename T>
+template <typename T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
 class Function
 {
+
 public:
   /// Field type for the Function, e.g. double
   using value_type = T;
 
   /// Create function on given function space
   /// @param[in] V The function space
-  explicit Function(std::shared_ptr<const FunctionSpace> V)
+  explicit Function(std::shared_ptr<const FunctionSpace<U>> V)
       : _function_space(V),
         _x(std::make_shared<la::Vector<T>>(V->dofmap()->index_map,
                                            V->dofmap()->index_map_bs()))
@@ -66,7 +65,7 @@ public:
   ///
   /// @param[in] V The function space
   /// @param[in] x The vector
-  Function(std::shared_ptr<const FunctionSpace> V,
+  Function(std::shared_ptr<const FunctionSpace<U>> V,
            std::shared_ptr<la::Vector<T>> x)
       : _function_space(V), _x(x)
   {
@@ -126,12 +125,12 @@ public:
       x_new[i] = x_old[map[i]];
     }
 
-    return Function(std::make_shared<FunctionSpace>(std::move(V)), x);
+    return Function(std::make_shared<FunctionSpace<U>>(std::move(V)), x);
   }
 
   /// Access the function space
   /// @return The function space
-  std::shared_ptr<const FunctionSpace> function_space() const
+  std::shared_ptr<const FunctionSpace<U>> function_space() const
   {
     return _function_space;
   }
@@ -145,14 +144,30 @@ public:
   /// Interpolate a Function
   /// @param[in] v The function to be interpolated
   /// @param[in] cells The cells to interpolate on
-  void interpolate(const Function<T>& v, std::span<const std::int32_t> cells)
+  /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
+  /// nonmatching meshes. This data can be generated with
+  /// generate_nonmatching_meshes_interpolation_data (optional).
+  void interpolate(
+      const Function<T, U>& v, std::span<const std::int32_t> cells,
+      const std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
+                       std::vector<U>, std::vector<std::int32_t>>&
+          nmm_interpolation_data
+      = {})
   {
-    fem::interpolate(*this, v, cells);
+    fem::interpolate(*this, v, cells, nmm_interpolation_data);
   }
 
   /// Interpolate a Function
   /// @param[in] v The function to be interpolated
-  void interpolate(const Function<T>& v)
+  /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
+  /// nonmatching meshes. This data can be generated with
+  /// generate_nonmatching_meshes_interpolation_data (optional).
+  void interpolate(
+      const Function<T, U>& v,
+      const std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
+                       std::vector<U>, std::vector<std::int32_t>>&
+          nmm_interpolation_data
+      = {})
   {
     assert(_function_space);
     assert(_function_space->mesh());
@@ -162,8 +177,7 @@ public:
     std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-
-    fem::interpolate(*this, v, cells);
+    interpolate(v, cells, nmm_interpolation_data);
   }
 
   /// Interpolate an expression function on a list of cells
@@ -172,7 +186,7 @@ public:
   void interpolate(
       const std::function<std::pair<std::vector<T>, std::vector<std::size_t>>(
           std::experimental::mdspan<
-              const double,
+              const U,
               std::experimental::extents<
                   std::size_t, 3, std::experimental::dynamic_extent>>)>& f,
       std::span<const std::int32_t> cells)
@@ -180,10 +194,11 @@ public:
     assert(_function_space);
     assert(_function_space->element());
     assert(_function_space->mesh());
-    const std::vector<double> x = fem::interpolation_coords(
-        *_function_space->element(), *_function_space->mesh(), cells);
+    const std::vector<U> x
+        = fem::interpolation_coords(*_function_space->element(),
+                                    _function_space->mesh()->geometry(), cells);
     namespace stdex = std::experimental;
-    stdex::mdspan<const double,
+    stdex::mdspan<const U,
                   stdex::extents<std::size_t, 3, stdex::dynamic_extent>>
         _x(x.data(), 3, x.size() / 3);
 
@@ -207,6 +222,7 @@ public:
         throw std::runtime_error(
             "Data returned by callable has wrong shape(0) size");
       }
+
       if (fshape[1] != x.size() / 3)
       {
         throw std::runtime_error(
@@ -225,11 +241,11 @@ public:
   }
 
   /// Interpolate an expression function on the whole domain
-  /// @param[in] f The expression to be interpolated
+  /// @param[in] f Expression to be interpolated
   void interpolate(
       const std::function<std::pair<std::vector<T>, std::vector<std::size_t>>(
           std::experimental::mdspan<
-              const double,
+              const U,
               std::experimental::extents<
                   std::size_t, 3, std::experimental::dynamic_extent>>)>& f)
   {
@@ -245,12 +261,13 @@ public:
   }
 
   /// Interpolate an Expression (based on UFL)
-  /// @param[in] e The Expression to be interpolated. The Expression
+  /// @param[in] e Expression to be interpolated. The Expression
   /// must have been created using the reference coordinates
   /// `FiniteElement::interpolation_points()` for the element associated
   /// with `u`.
   /// @param[in] cells The cells to interpolate on
-  void interpolate(const Expression<T>& e, std::span<const std::int32_t> cells)
+  void interpolate(const Expression<T, U>& e,
+                   std::span<const std::int32_t> cells)
   {
     // Check that spaces are compatible
     assert(_function_space);
@@ -275,6 +292,7 @@ public:
             "Function element interpolation points has different shape to "
             "Expression interpolation points");
       }
+
       for (std::size_t i = 0; i < X0.size(); ++i)
       {
         if (std::abs(X0[i] - X1[i]) > 1.0e-10)
@@ -285,9 +303,8 @@ public:
       }
     }
 
-    namespace stdex = std::experimental;
-
     // Array to hold evaluated Expression
+    namespace stdex = std::experimental;
     std::size_t num_cells = cells.size();
     std::size_t num_points = e.X().second[0];
     std::vector<T> fdata(num_cells * num_points * value_size);
@@ -299,10 +316,9 @@ public:
 
     // Reshape evaluated data to fit interpolate
     // Expression returns matrix of shape (num_cells, num_points *
-    // value_size), i.e. xyzxyz ordering of dof values per cell per point.
-    // The interpolation uses xxyyzz input, ordered for all points of each
-    // cell, i.e. (value_size, num_cells*num_points)
-
+    // value_size), i.e. xyzxyz ordering of dof values per cell per
+    // point. The interpolation uses xxyyzz input, ordered for all
+    // points of each cell, i.e. (value_size, num_cells*num_points)
     std::vector<T> fdata1(num_cells * num_points * value_size);
     stdex::mdspan<T, stdex::dextents<std::size_t, 3>> f1(
         fdata1.data(), value_size, num_cells, num_points);
@@ -318,7 +334,7 @@ public:
 
   /// Interpolate an Expression (based on UFL) on all cells
   /// @param[in] e The function to be interpolated
-  void interpolate(const Expression<T>& e)
+  void interpolate(const Expression<T, U>& e)
   {
     assert(_function_space);
     assert(_function_space->mesh());
@@ -343,7 +359,7 @@ public:
   /// for points with a negative cell index. This argument must be
   /// passed with the correct size. Storage is row-major.
   /// @param[in] ushape The shape of `u`.
-  void eval(std::span<const double> x, std::array<std::size_t, 2> xshape,
+  void eval(std::span<const U> x, std::array<std::size_t, 2> xshape,
             std::span<const std::int32_t> cells, std::span<T> u,
             std::array<std::size_t, 2> ushape) const
   {
@@ -361,6 +377,7 @@ public:
       throw std::runtime_error(
           "Number of points and number of cells must be equal.");
     }
+
     if (xshape[0] != ushape[0])
     {
       throw std::runtime_error(
@@ -370,20 +387,25 @@ public:
 
     // Get mesh
     assert(_function_space);
-    std::shared_ptr<const mesh::Mesh> mesh = _function_space->mesh();
+    auto mesh = _function_space->mesh();
     assert(mesh);
     const std::size_t gdim = mesh->geometry().dim();
     const std::size_t tdim = mesh->topology().dim();
     auto map = mesh->topology().index_map(tdim);
 
+    // Get coordinate map
+    if (mesh->geometry().cmaps().size() > 1)
+    {
+      throw std::runtime_error(
+          "Function with multiple geometry maps not implemented.");
+    }
+    const CoordinateElement& cmap = mesh->geometry().cmaps()[0];
+
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh->geometry().dofmap();
-    const std::size_t num_dofs_g = mesh->geometry().cmap().dim();
-    std::span<const double> x_g = mesh->geometry().x();
-
-    // Get coordinate map
-    const CoordinateElement& cmap = mesh->geometry().cmap();
+    const std::size_t num_dofs_g = cmap.dim();
+    std::span<const U> x_g = mesh->geometry().x();
 
     // Get element
     std::shared_ptr<const FiniteElement> element = _function_space->element();
@@ -579,6 +601,7 @@ public:
           coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
 
       // Compute expansion
+      using X = typename dolfinx::scalar_value_type_t<T>;
       for (int k = 0; k < bs_element; ++k)
       {
         for (std::size_t i = 0; i < space_dimension; ++i)
@@ -586,7 +609,8 @@ public:
           for (std::size_t j = 0; j < value_size; ++j)
           {
             u[p * ushape[1] + (j * bs_element + k)]
-                += coefficients[bs_element * i + k] * basis_values(i, j);
+                += coefficients[bs_element * i + k]
+                   * static_cast<X>(basis_values(i, j));
           }
         }
       }
@@ -598,9 +622,10 @@ public:
 
 private:
   // The function space
-  std::shared_ptr<const FunctionSpace> _function_space;
+  std::shared_ptr<const FunctionSpace<U>> _function_space;
 
   // The vector of expansion coefficients (local)
   std::shared_ptr<la::Vector<T>> _x;
 };
+
 } // namespace dolfinx::fem

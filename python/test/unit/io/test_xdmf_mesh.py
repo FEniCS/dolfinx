@@ -64,9 +64,9 @@ def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
         mesh2 = file.read_mesh(name="square")
 
     assert mesh2.name == mesh.name
-    assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
-    assert mesh.topology.index_map(mesh.topology.dim).size_global == mesh2.topology.index_map(
-        mesh.topology.dim).size_global
+    topology, topology2 = mesh.topology, mesh2.topology
+    assert topology.index_map(0).size_global == topology2.index_map(0).size_global
+    assert topology.index_map(topology.dim).size_global == topology2.index_map(topology.dim).size_global
 
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
@@ -80,9 +80,9 @@ def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
         mesh2 = file.read_mesh()
 
-    assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
-    assert mesh.topology.index_map(mesh.topology.dim).size_global == mesh2.topology.index_map(
-        mesh.topology.dim).size_global
+    topology, topology2 = mesh.topology, mesh2.topology
+    assert topology.index_map(0).size_global == topology2.index_map(0).size_global
+    assert topology.index_map(topology.dim).size_global == topology2.index_map(topology.dim).size_global
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -131,9 +131,9 @@ def test_read_write_p2_mesh(tempdir, encoding):
     with XDMFFile(mesh.comm, filename, "r", encoding=encoding) as xdmf:
         mesh2 = xdmf.read_mesh()
 
-    assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
-    assert mesh.topology.index_map(mesh.topology.dim).size_global == mesh2.topology.index_map(
-        mesh.topology.dim).size_global
+    topology, topology2 = mesh.topology, mesh2.topology
+    assert topology.index_map(0).size_global == topology2.index_map(0).size_global
+    assert topology.index_map(topology.dim).size_global == topology2.index_map(topology.dim).size_global
 
 
 @pytest.mark.parametrize("d", [2, 3])

@@ -11,6 +11,7 @@
 #include "FunctionSpace.h"
 #include "utils.h"
 #include <algorithm>
+#include <concepts>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -27,7 +28,8 @@ namespace dolfinx::fem::impl
 /// Execute kernel over cells and accumulate result in matrix
 template <typename T>
 void assemble_cells(
-    la::MatSet<T> auto mat_set, const mesh::Geometry& geometry,
+    la::MatSet<T> auto mat_set,
+    const mesh::Geometry<scalar_value_type_t<T>> geometry,
     std::span<const std::int32_t> cells,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -46,8 +48,8 @@ void assemble_cells(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmap().dim();
-  std::span<const double> x = geometry.x();
+  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
+  auto x = geometry.x();
 
   // Iterate over active cells
   const int num_dofs0 = dofmap0.links(0).size();
@@ -122,7 +124,8 @@ void assemble_cells(
 /// Execute kernel over exterior facets and  accumulate result in Mat
 template <typename T>
 void assemble_exterior_facets(
-    la::MatSet<T> auto mat_set, const mesh::Geometry& geometry,
+    la::MatSet<T> auto mat_set,
+    const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -141,8 +144,8 @@ void assemble_exterior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmap().dim();
-  std::span<const double> x = geometry.x();
+  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
+  auto x = geometry.x();
 
   // Data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
@@ -216,8 +219,9 @@ void assemble_exterior_facets(
 /// Execute kernel over interior facets and  accumulate result in Mat
 template <typename T>
 void assemble_interior_facets(
-    la::MatSet<T> auto mat_set, const mesh::Geometry& geometry,
-    int num_cell_facets, std::span<const std::int32_t> facets,
+    la::MatSet<T> auto mat_set,
+    const mesh::Geometry<scalar_value_type_t<T>>& geometry, int num_cell_facets,
+    std::span<const std::int32_t> facets,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
@@ -236,8 +240,8 @@ void assemble_interior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmap().dim();
-  std::span<const double> x = geometry.x();
+  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
+  auto x = geometry.x();
 
   // Data structures used in assembly
   using X = scalar_value_type_t<T>;
@@ -358,14 +362,16 @@ void assemble_interior_facets(
 /// local indices. Rows (bc0) and columns (bc1) with Dirichlet
 /// conditions are zeroed. Markers (bc0 and bc1) can be empty if not bcs
 /// are applied. Matrix is not finalised.
-template <typename T>
+template <typename T, std::floating_point U>
 void assemble_matrix(
-    la::MatSet<T> auto mat_set, const Form<T>& a, std::span<const T> constants,
+    la::MatSet<T> auto mat_set, const Form<T, U>& a,
+    const mesh::Geometry<scalar_value_type_t<T>>& geometry,
+    std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
     std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
+  std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
 
   // Get dofmap data
@@ -409,9 +415,9 @@ void assemble_matrix(
     const auto& fn = a.kernel(IntegralType::cell, i);
     const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     const std::vector<std::int32_t>& cells = a.cell_domains(i);
-    impl::assemble_cells(mat_set, mesh->geometry(), cells, dof_transform, dofs0,
-                         bs0, dof_transform_to_transpose, dofs1, bs1, bc0, bc1,
-                         fn, coeffs, cstride, constants, cell_info);
+    impl::assemble_cells(mat_set, geometry, cells, dof_transform, dofs0, bs0,
+                         dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn,
+                         coeffs, cstride, constants, cell_info);
   }
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
@@ -420,10 +426,10 @@ void assemble_matrix(
     const auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     const std::vector<std::int32_t>& facets = a.exterior_facet_domains(i);
-    impl::assemble_exterior_facets(
-        mat_set, mesh->geometry(), facets, dof_transform, dofs0, bs0,
-        dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn, coeffs, cstride,
-        constants, cell_info);
+    impl::assemble_exterior_facets(mat_set, geometry, facets, dof_transform,
+                                   dofs0, bs0, dof_transform_to_transpose,
+                                   dofs1, bs1, bc0, bc1, fn, coeffs, cstride,
+                                   constants, cell_info);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
@@ -439,7 +445,11 @@ void assemble_matrix(
     else
       get_perm = [](std::size_t) { return 0; };
 
-    int num_cell_facets = mesh::cell_num_entities(mesh->topology().cell_type(),
+    auto cell_types = mesh->topology().cell_types();
+    if (cell_types.size() > 1)
+      throw std::runtime_error("Multiple cell types in the assembler.");
+
+    int num_cell_facets = mesh::cell_num_entities(cell_types.back(),
                                                   mesh->topology().dim() - 1);
     const std::vector<int> c_offsets = a.coefficient_offsets();
     for (int i : a.integral_ids(IntegralType::interior_facet))
@@ -449,9 +459,9 @@ void assemble_matrix(
           = coefficients.at({IntegralType::interior_facet, i});
       const std::vector<std::int32_t>& facets = a.interior_facet_domains(i);
       impl::assemble_interior_facets(
-          mat_set, mesh->geometry(), num_cell_facets, facets, dof_transform,
-          *dofmap0, bs0, dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1,
-          fn, coeffs, cstride, c_offsets, constants, cell_info, get_perm);
+          mat_set, geometry, num_cell_facets, facets, dof_transform, *dofmap0,
+          bs0, dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1, fn, coeffs,
+          cstride, c_offsets, constants, cell_info, get_perm);
     }
   }
 }

@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 import ufl
+from basix.ufl import element
 from dolfinx.cpp.fem.petsc import discrete_gradient, interpolation_matrix
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
@@ -20,27 +21,23 @@ from petsc4py import PETSc
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("mesh", [
-    create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none),
-    create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.shared_facet),
-    create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.none),
-    create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.shared_facet)
-])
+@pytest.mark.parametrize("mesh", [create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none),
+                                  create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.shared_facet),
+                                  create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.none),
+                                  create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.shared_facet)])
 def test_gradient(mesh):
     """Test discrete gradient computation for lowest order elements."""
-
     V = FunctionSpace(mesh, ("Lagrange", 1))
     W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
     G = discrete_gradient(V._cpp_object, W._cpp_object)
     assert G.getRefCount() == 1
-
     num_edges = mesh.topology.index_map(1).size_global
     m, n = G.getSize()
     assert m == num_edges
     assert n == mesh.topology.index_map(0).size_global
-
     G.assemble()
     assert np.isclose(G.norm(PETSc.NormType.FROBENIUS), np.sqrt(2.0 * num_edges))
+    G.destroy()
 
 
 @pytest.mark.parametrize("p", range(1, 4))
@@ -51,7 +48,6 @@ def test_gradient(mesh):
                                        CellType.hexahedron])
 def test_gradient_interpolation(cell_type, p, q):
     """Test discrete gradient computation with verification using Expression."""
-
     comm = MPI.COMM_WORLD
     if cell_type == CellType.triangle:
         mesh = create_unit_square(comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type)
@@ -88,20 +84,18 @@ def test_gradient_interpolation(cell_type, p, q):
     w.x.scatter_forward()
 
     assert np.allclose(w_expr.x.array, w.x.array)
+    G.destroy()
 
 
 @pytest.mark.parametrize("p", range(1, 4))
 @pytest.mark.parametrize("q", range(1, 4))
 @pytest.mark.parametrize("from_lagrange", [True, False])
-@pytest.mark.parametrize("cell_type", [
-    CellType.quadrilateral,
-    CellType.triangle,
-    CellType.tetrahedron,
-    CellType.hexahedron
-])
+@pytest.mark.parametrize("cell_type", [CellType.quadrilateral,
+                                       CellType.triangle,
+                                       CellType.tetrahedron,
+                                       CellType.hexahedron])
 def test_interpolation_matrix(cell_type, p, q, from_lagrange):
     """Test that discrete interpolation matrix yields the same result as interpolation."""
-
     comm = MPI.COMM_WORLD
     if cell_type == CellType.triangle:
         mesh = create_unit_square(comm, 7, 5, ghost_mode=GhostMode.none, cell_type=cell_type)
@@ -119,8 +113,8 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
         mesh = create_unit_cube(comm, 3, 2, 2, ghost_mode=GhostMode.none, cell_type=cell_type)
         lagrange = "Lagrange" if from_lagrange else "DG"
         nedelec = "Nedelec 1st kind H(curl)"
-    v_el = ufl.VectorElement(lagrange, mesh.ufl_cell(), p)
-    s_el = ufl.FiniteElement(nedelec, mesh.ufl_cell(), q)
+    v_el = element(lagrange, mesh.basix_cell(), p, rank=1)
+    s_el = element(nedelec, mesh.basix_cell(), q)
     if from_lagrange:
         el0 = v_el
         el1 = s_el
@@ -150,12 +144,12 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
     w.x.scatter_forward()
 
     assert np.allclose(w_vec.x.array, w.x.array)
+    G.destroy()
 
 
 @pytest.mark.skip_in_parallel
 def test_nonaffine_discrete_operator():
-    """
-    Check that discrete operator is consistent with normal interpolation between non-matching
+    """Check that discrete operator is consistent with normal interpolation between non-matching
     maps on non-affine geometries
     """
     points = np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0],
@@ -168,7 +162,7 @@ def test_nonaffine_discrete_operator():
 
     cells = np.array([range(len(points))], dtype=np.int32)
     cell_type = CellType.hexahedron
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 2))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 2, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     W = VectorFunctionSpace(mesh, ("DG", 1))
     V = FunctionSpace(mesh, ("NCE", 4))
@@ -188,3 +182,4 @@ def test_nonaffine_discrete_operator():
 
     s = assemble_scalar(form(ufl.inner(w - v, w - v) * ufl.dx))
     assert np.isclose(s, 0)
+    G.destroy()

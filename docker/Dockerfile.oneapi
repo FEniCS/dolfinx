@@ -8,9 +8,9 @@ FROM ubuntu:22.04
 ARG ADIOS2_VERSION=2.8.3
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=2
-ARG PETSC_VERSION=3.17.5
-ARG SLEPC_VERSION=3.17.2
-ARG PYBIND11_VERSION=2.10.1
+ARG PETSC_VERSION=3.18.5
+ARG SLEPC_VERSION=3.18.2
+ARG PYBIND11_VERSION=2.10.3
 ARG KAHIP_VERSION=3.14
 
 WORKDIR /tmp
@@ -20,6 +20,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
+    bzip2 \
     cmake \
     gnupg \
     libboost-dev \
@@ -36,12 +37,10 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install oneAPI libraries
-RUN wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB && \
-    apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB && \
-    echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && \
+RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null && \
+    echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && \
     apt-get update && \
-    apt-get install -y intel-oneapi-common-vars intel-oneapi-compiler-dpcpp-cpp \
-    intel-oneapi-mkl-devel intel-oneapi-mpi-devel intel-oneapi-python && \
+    apt-get install -y libstdc++-11-dev intel-oneapi-compiler-dpcpp-cpp intel-oneapi-mkl-devel intel-oneapi-mpi-devel intel-oneapi-python && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -100,7 +99,6 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-64-bit-indices=no \
     --with-fortran-bindings=no \
     --with-shared-libraries \
-    --download-hypre \
     --download-superlu_dist \
     --with-scalar-type=real && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-32 ${MAKEFLAGS} all && \
@@ -110,7 +108,6 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-64-bit-indices=no \
     --with-fortran-bindings=no \
     --with-shared-libraries \
-    --download-hypre \
     --download-superlu_dist \
     --with-scalar-type=complex && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-32 ${MAKEFLAGS} all && \
@@ -120,7 +117,6 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-64-bit-indices=yes \
     --with-fortran-bindings=no \
     --with-shared-libraries \
-    --download-hypre \
     --download-superlu_dist \
     --with-scalar-type=real && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-64 ${MAKEFLAGS} all && \
@@ -130,7 +126,6 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-64-bit-indices=yes \
     --with-fortran-bindings=no \
     --with-shared-libraries \
-    --download-hypre \
     --download-superlu_dist \
     --with-scalar-type=complex && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-64 ${MAKEFLAGS} all && \

@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <concepts>
 #include <hdf5.h>
 #include <mpi.h>
 #include <span>
@@ -24,7 +25,9 @@ namespace dolfinx
 
 namespace mesh
 {
+template <std::floating_point T>
 class Geometry;
+template <std::floating_point T>
 class Mesh;
 class Topology;
 } // namespace mesh
@@ -38,7 +41,7 @@ namespace io::xdmf_mesh
 /// Creates new Grid with Topology and Geometry xml nodes for mesh. In
 /// HDF file data is stored under path prefix.
 void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
-              const mesh::Mesh& mesh, const std::string path_prefix);
+              const mesh::Mesh<double>& mesh, const std::string path_prefix);
 
 /// Add Topology xml node
 /// @param[in] comm
@@ -53,13 +56,13 @@ void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
 void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                        const hid_t h5_id, const std::string path_prefix,
                        const mesh::Topology& topology,
-                       const mesh::Geometry& geometry, int cell_dim,
+                       const mesh::Geometry<double>& geometry, int cell_dim,
                        std::span<const std::int32_t> entities);
 
 /// Add Geometry xml node
 void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                        const hid_t h5_id, const std::string path_prefix,
-                       const mesh::Geometry& geometry);
+                       const mesh::Geometry<double>& geometry);
 
 /// @brief Read geometry (coordinate) data.
 ///

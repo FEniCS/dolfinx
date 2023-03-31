@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <concepts>
 #include <dolfinx/common/MPI.h>
 #include <filesystem>
 #include <functional>
@@ -19,12 +20,13 @@ class xml_document;
 
 namespace dolfinx::fem
 {
-template <typename T>
+template <typename T, std::floating_point U>
 class Function;
 }
 
 namespace dolfinx::mesh
 {
+template <std::floating_point T>
 class Mesh;
 }
 
@@ -59,7 +61,7 @@ public:
   /// isoparametric cells.
   /// @param[in] mesh The Mesh to write to file
   /// @param[in] time Time parameter to associate with @p mesh
-  void write(const mesh::Mesh& mesh, double time = 0.0);
+  void write(const mesh::Mesh<double>& mesh, double time = 0.0);
 
   /// Write finite elements function with an associated timestep
   /// @param[in] u List of functions to write to file
@@ -71,21 +73,22 @@ public:
   /// @pre Functions in `u` cannot be sub-Functions. Interpolate
   /// sub-Functions before output
   template <typename T>
-  void
-  write(const std::vector<std::reference_wrapper<const fem::Function<T>>>& u,
-        double t)
+  void write(const std::vector<
+                 std::reference_wrapper<const fem::Function<T, double>>>& u,
+             double t)
   {
     write_functions(u, t);
   }
 
 private:
   void write_functions(
-      const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
-      double t);
-  void write_functions(
       const std::vector<
-          std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
+          std::reference_wrapper<const fem::Function<double, double>>>& u,
       double t);
+  void
+  write_functions(const std::vector<std::reference_wrapper<
+                      const fem::Function<std::complex<double>, double>>>& u,
+                  double t);
 
   std::unique_ptr<pugi::xml_document> _pvd_xml;
 

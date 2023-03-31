@@ -712,23 +712,33 @@ graph::AdjacencyList<std::int32_t> convert_to_local_indexing(
                    return it->second;
                  });
 
-  return graph::AdjacencyList<std::int32_t>(std::move(data),
-                                            std::move(offsets));
+  return graph::AdjacencyList(std::move(data), std::move(offsets));
 }
 } // namespace
 
 //-----------------------------------------------------------------------------
-Topology::Topology(MPI_Comm comm, CellType type)
-    : _comm(comm), _cell_type(type),
+Topology::Topology(MPI_Comm comm, std::vector<CellType> types)
+    : _comm(comm), _cell_types(types),
       _connectivity(
-          cell_dim(type) + 1,
+          cell_dim(types[0]) + 1,
           std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(
-              cell_dim(type) + 1))
+              cell_dim(types[0]) + 1))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 int Topology::dim() const noexcept { return _connectivity.size() - 1; }
+//-----------------------------------------------------------------------------
+void Topology::set_entity_group_offsets(
+    int dim, const std::vector<std::int32_t>& offsets)
+{
+  _entity_group_offsets[dim] = offsets;
+}
+//-----------------------------------------------------------------------------
+const std::vector<std::int32_t>& Topology::entity_group_offsets(int dim) const
+{
+  return _entity_group_offsets[dim];
+}
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
                              std::shared_ptr<const common::IndexMap> map)
@@ -874,29 +884,38 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
   return _interprocess_facets;
 }
 //-----------------------------------------------------------------------------
-mesh::CellType Topology::cell_type() const noexcept { return _cell_type; }
+std::vector<mesh::CellType> Topology::cell_types() const noexcept
+{
+  return _cell_types;
+}
 //-----------------------------------------------------------------------------
 MPI_Comm Topology::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------
 Topology mesh::create_topology(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
     std::span<const std::int64_t> original_cell_index,
-    std::span<const int> ghost_owners, const CellType& cell_type,
+    std::span<const int> ghost_owners, const std::vector<CellType>& cell_type,
+    const std::vector<std::int32_t>& cell_group_offsets,
     std::span<const std::int64_t> boundary_vertices)
 {
   common::Timer timer("Topology: create");
 
   LOG(INFO) << "Create topology";
-  if (cells.num_nodes() > 0
-      and cells.num_links(0) != num_cell_vertices(cell_type))
+  for (std::size_t i = 0; i < cell_type.size(); i++)
   {
-    throw std::runtime_error(
-        "Inconsistent number of cell vertices. Got "
-        + std::to_string(cells.num_links(0)) + ", expected "
-        + std::to_string(num_cell_vertices(cell_type)) + ".");
+    std::int32_t offset = cell_group_offsets[i];
+    int num_vertices = num_cell_vertices(cell_type[i]);
+    if (cells.num_nodes() > 0 and cells.num_links(offset) != num_vertices)
+      throw std::runtime_error("Inconsistent number of cell vertices. Got "
+                               + std::to_string(cells.num_links(offset))
+                               + ", expected " + std::to_string(num_vertices)
+                               + ".");
   }
 
   const std::int32_t num_local_cells = cells.num_nodes() - ghost_owners.size();
+
+  if (num_local_cells != cell_group_offsets[cell_type.size()])
+    throw std::runtime_error("Inconsistent offset or ghost number.");
 
   // Create sets of owned and unowned vertices from the cell ownership
   // and the list of boundary vertices
@@ -1131,15 +1150,130 @@ Topology mesh::create_topology(
       original_cell_index.begin(),
       std::next(original_cell_index.begin(), num_local_nodes));
 
+  topology.set_entity_group_offsets(tdim, cell_group_offsets);
+
   return topology;
 }
 //-----------------------------------------------------------------------------
+std::tuple<Topology, std::vector<int32_t>, std::vector<int32_t>>
+mesh::create_subtopology(const Topology& topology, int dim,
+                         std::span<const std::int32_t> entities)
+{
+  // TODO Call common::get_owned_indices here? Do we want to
+  // support `entities` possibly having a ghost on one process that is
+  // not in `entities` on the owning process?
+  // TODO: Should entities still be ghosted in the sub-topology even if
+  // they are not in the `entities` list? If this is not desirable,
+  // create_submap needs to be changed
 
+  // Create a map from an entity in the sub-topology to the
+  // corresponding entity in the topology, and create an index map
+  std::vector<int32_t> subentities;
+  std::shared_ptr<common::IndexMap> submap;
+  {
+    // Entities in the sub-topology that are owned by this process
+    auto entity_map = topology.index_map(dim);
+    assert(entity_map);
+    std::copy_if(
+        entities.begin(), entities.end(), std::back_inserter(subentities),
+        [size = entity_map->size_local()](std::int32_t e) { return e < size; });
+
+    std::pair<common::IndexMap, std::vector<int32_t>> map_data
+        = entity_map->create_submap(subentities);
+    submap = std::make_shared<common::IndexMap>(std::move(map_data.first));
+
+    // Add ghost entities to subentities
+    subentities.reserve(submap->size_local() + submap->num_ghosts());
+    std::transform(map_data.second.begin(), map_data.second.end(),
+                   std::back_inserter(subentities),
+                   [offset = entity_map->size_local()](auto entity_index)
+                   { return offset + entity_index; });
+  }
+
+  // Get the vertices in the sub-topology. Use subentities
+  // (instead of entities) to ensure vertices for ghost entities are
+  // included.
+
+  // Get the vertices in the sub-topology owned by this process
+  auto map0 = topology.index_map(0);
+  assert(map0);
+  std::vector<int32_t> subvertices0 = common::compute_owned_indices(
+      compute_incident_entities(topology, subentities, dim, 0), *map0);
+
+  // Create map from the vertices in the sub-topology to the vertices in the
+  // parent topology, and an index map
+  std::shared_ptr<common::IndexMap> submap0;
+  {
+    std::pair<common::IndexMap, std::vector<int32_t>> map_data
+        = map0->create_submap(subvertices0);
+    submap0 = std::make_shared<common::IndexMap>(std::move(map_data.first));
+
+    // Add ghost vertices to the map
+    subvertices0.reserve(submap0->size_local() + submap0->num_ghosts());
+    std::transform(map_data.second.begin(), map_data.second.end(),
+                   std::back_inserter(subvertices0),
+                   [offset = map0->size_local()](std::int32_t vertex_index)
+                   { return offset + vertex_index; });
+  }
+
+  // Sub-topology vertex-to-vertex connectivity (identity)
+  auto sub_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      submap0->size_local() + submap0->num_ghosts());
+
+  // Sub-topology entity to vertex connectivity
+  const CellType entity_type
+      = cell_entity_type(topology.cell_types()[0], dim, 0);
+  int num_vertices_per_entity = cell_num_entities(entity_type, 0);
+  auto e_to_v = topology.connectivity(dim, 0);
+  assert(e_to_v);
+  std::vector<std::int32_t> sub_e_to_v_vec;
+  sub_e_to_v_vec.reserve(subentities.size() * num_vertices_per_entity);
+  std::vector<std::int32_t> sub_e_to_v_offsets(1, 0);
+  sub_e_to_v_offsets.reserve(subentities.size() + 1);
+
+  // Create vertex-to-subvertex vertex map (i.e. the inverse of
+  // subvertex_to_vertex)
+  // NOTE: Depending on the sub-topology, this may be densely or sparsely
+  // populated. Is a different data structure more appropriate?
+  std::vector<std::int32_t> vertex_to_subvertex(
+      map0->size_local() + map0->num_ghosts(), -1);
+  for (std::size_t i = 0; i < subvertices0.size(); ++i)
+    vertex_to_subvertex[subvertices0[i]] = i;
+
+  for (std::int32_t e : subentities)
+  {
+    for (std::int32_t v : e_to_v->links(e))
+    {
+      std::int32_t v_sub = vertex_to_subvertex[v];
+      assert(v_sub != -1);
+      sub_e_to_v_vec.push_back(v_sub);
+    }
+    sub_e_to_v_offsets.push_back(sub_e_to_v_vec.size());
+  }
+
+  auto sub_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      std::move(sub_e_to_v_vec), std::move(sub_e_to_v_offsets));
+
+  // Create sub-topology
+  Topology subtopology(topology.comm(), {entity_type});
+  subtopology.set_index_map(0, submap0);
+  subtopology.set_index_map(dim, submap);
+  subtopology.set_connectivity(sub_v_to_v, 0, 0);
+  subtopology.set_connectivity(sub_e_to_v, dim, 0);
+  // Set groups (only one cell type)
+  subtopology.set_entity_group_offsets(
+      dim,
+      {0, submap->size_local(), submap->size_local() + submap->num_ghosts()});
+
+  return {std::move(subtopology), std::move(subentities),
+          std::move(subvertices0)};
+}
+//-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 mesh::entities_to_index(const Topology& topology, int dim,
                         const graph::AdjacencyList<std::int32_t>& entities)
 {
-  LOG(INFO) << "Build list if mesh entity indices from the entity vertices.";
+  LOG(INFO) << "Build list of mesh entity indices from the entity vertices.";
 
   // Tagged entity topological dimension
   auto map_e = topology.index_map(dim);
@@ -1152,8 +1286,12 @@ mesh::entities_to_index(const Topology& topology, int dim,
   auto e_to_v = topology.connectivity(dim, 0);
   assert(e_to_v);
 
+  auto cell_types = topology.cell_types();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("multiple cell types entities_to_index");
+
   const int num_vertices_per_entity
-      = cell_num_entities(cell_entity_type(topology.cell_type(), dim, 0), 0);
+      = cell_num_entities(cell_entity_type(cell_types.back(), dim, 0), 0);
 
   // Build map from ordered local vertex indices (key) to entity index
   // (value)

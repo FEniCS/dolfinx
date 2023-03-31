@@ -1,5 +1,5 @@
 set(HEADERS_io
-  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_io.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_io.h
   ${CMAKE_CURRENT_SOURCE_DIR}/ADIOS2Writers.h
   ${CMAKE_CURRENT_SOURCE_DIR}/cells.h
   ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.h
@@ -11,10 +11,12 @@ set(HEADERS_io
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_meshtags.h
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_read.h
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_utils.h
-  PARENT_SCOPE)
+  PARENT_SCOPE
+)
 
-target_sources(dolfinx PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/ADIOS2Writers.cpp
+target_sources(
+  dolfinx
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ADIOS2Writers.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/cells.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.cpp
@@ -23,4 +25,4 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_function.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_mesh.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_utils.cpp
-  )
+)

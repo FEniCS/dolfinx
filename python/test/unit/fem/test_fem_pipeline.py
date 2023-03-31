@@ -8,7 +8,10 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+
+import basix
 import ufl
+from basix.ufl import mixed_element, element
 from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
                          assemble_scalar, dirichletbc, form,
                          locate_dofs_topological)
@@ -18,10 +21,11 @@ from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, create_rectangle, create_unit_cube,
                           create_unit_square, exterior_facet_indices,
                           locate_entities_boundary)
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import (CellDiameter, FacetNormal, SpatialCoordinate, TestFunction,
                  TrialFunction, avg, div, ds, dS, dx, grad, inner, jump)
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 def run_scalar_test(mesh, V, degree):
@@ -80,6 +84,10 @@ def run_scalar_test(mesh, V, degree):
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
 
+    solver.destroy()
+    A.destroy()
+    b.destroy()
+
 
 def run_vector_test(mesh, V, degree):
     """Projection into H(div/curl) spaces"""
@@ -116,6 +124,10 @@ def run_vector_test(mesh, V, degree):
 
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
+
+    solver.destroy()
+    A.destroy()
+    b.destroy()
 
 
 def run_dg_test(mesh, V, degree):
@@ -187,6 +199,10 @@ def run_dg_test(mesh, V, degree):
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14
 
+    solver.destroy()
+    A.destroy()
+    b.destroy()
+
 
 @pytest.mark.parametrize("family", ["N1curl", "N2curl"])
 @pytest.mark.parametrize("order", [1])
@@ -202,8 +218,8 @@ def test_curl_curl_eigenvalue(family, order):
     mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]),
                                              np.array([np.pi, np.pi])], [24, 24], CellType.triangle)
 
-    element = ufl.FiniteElement(family, ufl.triangle, order)
-    V = FunctionSpace(mesh, element)
+    e = element(family, basix.CellType.triangle, order)
+    V = FunctionSpace(mesh, e)
 
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
@@ -249,6 +265,10 @@ def test_curl_curl_eigenvalue(family, order):
     eigenvalues_exact = np.array([1.0, 1.0, 2.0, 4.0, 4.0, 5.0, 5.0, 8.0, 9.0])
     assert np.isclose(eigenvalues_sorted[0:eigenvalues_exact.shape[0]], eigenvalues_exact, rtol=1E-2).all()
 
+    eps.destroy()
+    A.destroy()
+    B.destroy()
+
 
 @pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
                     reason="This test does not work in complex mode.")
@@ -261,10 +281,11 @@ def test_biharmonic(family):
     mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]),
                                              np.array([1.0, 1.0])], [32, 32], CellType.triangle)
 
-    element = ufl.MixedElement([ufl.FiniteElement(family, ufl.triangle, 1),
-                                ufl.FiniteElement("Lagrange", ufl.triangle, 2)])
+    e = mixed_element([
+        element(family, basix.CellType.triangle, 1),
+        element(basix.ElementFamily.P, basix.CellType.triangle, 2)])
 
-    V = FunctionSpace(mesh, element)
+    V = FunctionSpace(mesh, e)
     sigma, u = ufl.TrialFunctions(V)
     tau, v = ufl.TestFunctions(V)
 
@@ -356,6 +377,10 @@ def test_biharmonic(family):
         form(inner(sigma_exact, sigma_exact) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
 
     assert np.absolute(sigma_error_numerator / sigma_error_denominator) < 0.005
+
+    solver.destroy()
+    A.destroy()
+    b.destroy()
 
 
 def get_mesh(cell_type, datadir):

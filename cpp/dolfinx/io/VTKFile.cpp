@@ -34,7 +34,8 @@ constexpr std::array field_ext = {"_real", "_imag"};
 
 //----------------------------------------------------------------------------
 /// Return true if Function is a cell-wise constant, otherwise false
-bool is_cellwise(const fem::FunctionSpace& V)
+template <typename T>
+bool is_cellwise(const fem::FunctionSpace<T>& V)
 {
   assert(V.element());
   const int rank = V.element()->value_shape().size();
@@ -338,8 +339,9 @@ void add_mesh(std::span<const double> x, std::array<std::size_t, 2> /*xshape*/,
 //----------------------------------------------------------------------------
 template <typename T>
 void write_function(
-    const std::vector<std::reference_wrapper<const fem::Function<T>>>& u,
-    double time, std::unique_ptr<pugi::xml_document>& xml_doc,
+    const std::vector<std::reference_wrapper<const fem::Function<T, double>>>&
+        u,
+    double time, pugi::xml_document* xml_doc,
     const std::filesystem::path& filename)
 {
   if (!xml_doc)
@@ -419,9 +421,10 @@ void write_function(
   if (is_cellwise(*V0))
   {
     std::vector<std::int64_t> tmp;
-    std::tie(tmp, cshape) = io::extract_vtk_connectivity(*mesh0);
+    std::tie(tmp, cshape) = io::extract_vtk_connectivity(
+        mesh0->geometry().dofmap(), mesh0->topology().cell_types()[0]);
     cells.assign(tmp.begin(), tmp.end());
-    const mesh::Geometry& geometry = mesh0->geometry();
+    const mesh::Geometry<double>& geometry = mesh0->geometry();
     x.assign(geometry.x().begin(), geometry.x().end());
     xshape = {geometry.x().size() / 3, 3};
     x_id = geometry.input_global_indices();
@@ -439,10 +442,17 @@ void write_function(
   piece_node.append_attribute("NumberOfPoints") = xshape[0];
   piece_node.append_attribute("NumberOfCells") = cshape[0];
 
+  // FIXME
+  auto cell_types = mesh0->topology().cell_types();
+  if (cell_types.size() > 1)
+  {
+    throw std::runtime_error("Multiple cell types in IO");
+  }
+
   // Add mesh data to "Piece" node
   int tdim = mesh0->topology().dim();
   add_mesh(x, xshape, x_id, x_ghost, cells, cshape,
-           *mesh0->topology().index_map(tdim), mesh0->topology().cell_type(),
+           *mesh0->topology().index_map(tdim), cell_types.back(),
            mesh0->topology().dim(), piece_node);
 
   // FIXME: is this actually setting the first?
@@ -501,8 +511,8 @@ void write_function(
 
       // Function to pack data to 3D with 'zero' padding, typically when
       // a Function is 2D
-      auto pad_data
-          = [num_comp](const fem::FunctionSpace& V, std::span<const T> u)
+      auto pad_data =
+          [num_comp](const fem::FunctionSpace<double>& V, std::span<const T> u)
       {
         auto dofmap = V.dofmap();
         int bs = dofmap->bs();
@@ -734,7 +744,7 @@ void io::VTKFile::flush()
   }
 }
 //----------------------------------------------------------------------------
-void io::VTKFile::write(const mesh::Mesh& mesh, double time)
+void io::VTKFile::write(const mesh::Mesh<double>& mesh, double time)
 {
   if (!_pvd_xml)
     throw std::runtime_error("VTKFile has already been closed");
@@ -749,7 +759,7 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
 
   // Get mesh data for this rank
   const mesh::Topology& topology = mesh.topology();
-  const mesh::Geometry& geometry = mesh.geometry();
+  const mesh::Geometry<double>& geometry = mesh.geometry();
   auto xmap = geometry.index_map();
   assert(xmap);
   const int tdim = topology.dim();
@@ -769,13 +779,20 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
   piece_node.append_attribute("NumberOfPoints") = num_points;
   piece_node.append_attribute("NumberOfCells") = num_cells;
 
+  auto cell_types = topology.cell_types();
+  if (cell_types.size() > 1)
+  {
+    throw std::runtime_error("Multiple cell types in IO");
+  }
+
   // Add mesh data to "Piece" node
-  const auto [cells, cshape] = extract_vtk_connectivity(mesh);
+  const auto [cells, cshape]
+      = extract_vtk_connectivity(mesh.geometry().dofmap(), cell_types[0]);
   std::array<std::size_t, 2> xshape = {geometry.x().size() / 3, 3};
   std::vector<std::uint8_t> x_ghost(xshape[0], 0);
   std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
   add_mesh(geometry.x(), xshape, geometry.input_global_indices(), x_ghost,
-           cells, cshape, *topology.index_map(tdim), topology.cell_type(),
+           cells, cshape, *topology.index_map(tdim), cell_types[0],
            topology.dim(), piece_node);
 
   // Create filepath for a .vtu file
@@ -819,6 +836,7 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
       pugi::xml_node piece_node = grid_node.append_child("Piece");
       piece_node.append_attribute("Source") = vtu.filename().c_str();
     }
+
     // Write PVTU file
     if (p_pvtu.has_parent_path())
       std::filesystem::create_directories(p_pvtu.parent_path());
@@ -833,17 +851,18 @@ void io::VTKFile::write(const mesh::Mesh& mesh, double time)
 }
 //----------------------------------------------------------------------------
 void io::VTKFile::write_functions(
-    const std::vector<std::reference_wrapper<const fem::Function<double>>>& u,
+    const std::vector<
+        std::reference_wrapper<const fem::Function<double, double>>>& u,
     double time)
 {
-  write_function(u, time, _pvd_xml, _filename);
+  write_function(u, time, _pvd_xml.get(), _filename);
 }
 //----------------------------------------------------------------------------
 void io::VTKFile::write_functions(
-    const std::vector<
-        std::reference_wrapper<const fem::Function<std::complex<double>>>>& u,
+    const std::vector<std::reference_wrapper<
+        const fem::Function<std::complex<double>, double>>>& u,
     double time)
 {
-  write_function(u, time, _pvd_xml, _filename);
+  write_function(u, time, _pvd_xml.get(), _filename);
 }
 //----------------------------------------------------------------------------

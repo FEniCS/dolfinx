@@ -61,7 +61,8 @@ cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
 
 template<typename T>
 Eigen::SparseMatrix<T, Eigen::RowMajor>
-assemble_csr(const dolfinx::fem::Form<T>& a,
+assemble_csr(const dolfinx::fem::Form<T>
+& a,
              const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>& bcs)
 {
   std::vector<Eigen::Triplet<T>> triplets;
@@ -128,3 +129,5 @@ PYBIND11_MODULE(eigen_csr, m)
     A1.assemble()
     A2 = assemble_csr_matrix(a, [bc])
     assert np.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))
+
+    A1.destroy()

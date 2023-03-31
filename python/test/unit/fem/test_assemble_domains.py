@@ -14,7 +14,7 @@ from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_scalar,
                          dirichletbc, form)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
-from dolfinx.mesh import (GhostMode, Mesh, create_unit_square,
+from dolfinx.mesh import (GhostMode, Mesh, create_unit_square, locate_entities,
                           locate_entities_boundary, meshtags,
                           meshtags_from_entities)
 
@@ -78,15 +78,13 @@ def test_assembly_dx_domains(mode, meshtags_factory):
     b = assemble_vector(L)
 
     apply_lifting(b, [a], [[bc]])
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES,
-                  mode=PETSc.ScatterMode.REVERSE)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b, [bc])
 
     L2 = form(ufl.inner(w, v) * dx)
     b2 = assemble_vector(L2)
     apply_lifting(b2, [a], [[bc]])
-    b2.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES,
-                   mode=PETSc.ScatterMode.REVERSE)
+    b2.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b2, [bc])
     assert (b - b2).norm() < 1.0e-12
 
@@ -99,6 +97,11 @@ def test_assembly_dx_domains(mode, meshtags_factory):
     s2 = assemble_scalar(L2)
     s2 = mesh.comm.allreduce(s2, op=MPI.SUM)
     assert s == pytest.approx(s2, 1.0e-12)
+
+    A.destroy()
+    b.destroy()
+    A2.destroy()
+    b2.destroy()
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
@@ -168,7 +171,6 @@ def test_assembly_ds_domains(mode):
     apply_lifting(b2, [a2], [[bc]])
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b2, [bc])
-
     assert b.norm() == pytest.approx(b2.norm(), 1.0e-12)
 
     # Assemble scalar
@@ -179,6 +181,11 @@ def test_assembly_ds_domains(mode):
     s2 = assemble_scalar(L2)
     s2 = mesh.comm.allreduce(s2, op=MPI.SUM)
     assert (s == pytest.approx(s2, 1.0e-12) and 2.0 == pytest.approx(s, 1.0e-12))
+
+    A.destroy()
+    b.destroy()
+    A2.destroy()
+    b2.destroy()
 
 
 @parametrize_ghost_mode
@@ -222,3 +229,107 @@ def test_additivity(mode):
     assert (J1 + J3) == pytest.approx(J13)
     assert (J2 + J3) == pytest.approx(J23)
     assert (J1 + J2 + J3) == pytest.approx(J123)
+
+
+def test_manual_integration_domains():
+    """Test that specifying integration domains manually i.e.
+    by passing a list of cell indices or (cell, local facet) pairs to
+    form gives the same result as the usual approach of tagging"""
+    n = 4
+    msh = create_unit_square(MPI.COMM_WORLD, n, n)
+
+    V = FunctionSpace(msh, ("Lagrange", 1))
+    u = ufl.TrialFunction(V)
+    v = ufl.TestFunction(V)
+
+    # Create meshtags to mark some cells
+    tdim = msh.topology.dim
+    cell_map = msh.topology.index_map(tdim)
+    num_cells = cell_map.size_local + cell_map.num_ghosts
+    cell_indices = np.arange(0, num_cells)
+    cell_values = np.zeros_like(cell_indices, dtype=np.intc)
+    marked_cells = locate_entities(msh, tdim, lambda x: x[0] < 0.75)
+    cell_values[marked_cells] = 7
+    mt_cells = meshtags(msh, tdim, cell_indices, cell_values)
+
+    # Create meshtags to mark some exterior facets
+    msh.topology.create_entities(tdim - 1)
+    facet_map = msh.topology.index_map(tdim - 1)
+    num_facets = facet_map.size_local + facet_map.num_ghosts
+    facet_indices = np.arange(0, num_facets)
+    facet_values = np.zeros_like(facet_indices, dtype=np.intc)
+    marked_ext_facets = locate_entities_boundary(msh, tdim - 1, lambda x: np.isclose(x[0], 0.0))
+    marked_int_facets = locate_entities(msh, tdim - 1, lambda x: x[0] < 0.75)
+    # marked_int_facets will also contain facets on the boundary, so set
+    # these values first, followed by the values for marked_ext_facets
+    facet_values[marked_int_facets] = 3
+    facet_values[marked_ext_facets] = 6
+    mt_facets = meshtags(msh, tdim - 1, facet_indices, facet_values)
+
+    # Create measures
+    dx_mt = ufl.Measure("dx", subdomain_data=mt_cells, domain=msh)
+    ds_mt = ufl.Measure("ds", subdomain_data=mt_facets, domain=msh)
+    dS_mt = ufl.Measure("dS", subdomain_data=mt_facets, domain=msh)
+
+    g = Function(V)
+    g.interpolate(lambda x: x[1]**2)
+
+    def create_forms(dx, ds, dS):
+        a = form(ufl.inner(g * u, v) * (dx(0) + dx(7) + ds(6)) + ufl.inner(g * u("+"), v("+") + v("-")) * dS(3))
+        L = form(ufl.inner(g, v) * (dx(0) + dx(7) + ds(6)) + ufl.inner(g, v("+") + v("-")) * dS(3))
+        return (a, L)
+
+    # Create forms and assemble
+    a, L = create_forms(dx_mt, ds_mt, dS_mt)
+    A_mt = assemble_matrix(a)
+    A_mt.assemble()
+    b_mt = assemble_vector(L)
+
+    # Manually specify cells to integrate over (removing ghosts
+    # to give same result as above)
+    cell_domains = [(domain_id, cell_indices[(cell_values == domain_id)
+                                             & (cell_indices < cell_map.size_local)])
+                    for domain_id in [0, 7]]
+
+    # Manually specify exterior facets to integrate over as
+    # (cell, local facet) pairs
+    ext_facet_domain = []
+    msh.topology.create_connectivity(tdim, tdim - 1)
+    msh.topology.create_connectivity(tdim - 1, tdim)
+    c_to_f = msh.topology.connectivity(tdim, tdim - 1)
+    f_to_c = msh.topology.connectivity(tdim - 1, tdim)
+    for f in marked_ext_facets:
+        if f < facet_map.size_local:
+            c = f_to_c.links(f)[0]
+            local_f = np.where(c_to_f.links(c) == f)[0][0]
+            ext_facet_domain.append(c)
+            ext_facet_domain.append(local_f)
+    ext_facet_domains = [(6, ext_facet_domain)]
+
+    # Manually specify interior facets to integrate over
+    int_facet_domain = []
+    for f in marked_int_facets:
+        if f >= facet_map.size_local or len(f_to_c.links(f)) != 2:
+            continue
+        c_0, c_1 = f_to_c.links(f)[0], f_to_c.links(f)[1]
+        local_f_0 = np.where(c_to_f.links(c_0) == f)[0][0]
+        local_f_1 = np.where(c_to_f.links(c_1) == f)[0][0]
+        int_facet_domain.append(c_0)
+        int_facet_domain.append(local_f_0)
+        int_facet_domain.append(c_1)
+        int_facet_domain.append(local_f_1)
+    int_facet_domains = [(3, int_facet_domain)]
+
+    # Create measures
+    dx_manual = ufl.Measure("dx", subdomain_data=cell_domains, domain=msh)
+    ds_manual = ufl.Measure("ds", subdomain_data=ext_facet_domains, domain=msh)
+    dS_manual = ufl.Measure("dS", subdomain_data=int_facet_domains, domain=msh)
+
+    # Assemble forms and check
+    a, L = create_forms(dx_manual, ds_manual, dS_manual)
+    A = assemble_matrix(a)
+    A.assemble()
+    b = assemble_vector(L)
+
+    assert np.isclose((A - A_mt).norm(), 0.0)
+    assert np.isclose((b - b_mt).norm(), 0.0)

@@ -27,14 +27,14 @@ namespace xdmf_meshtags
 
 /// Add mesh tags to XDMF file
 template <typename T>
-void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
+void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T, double>& meshtags,
                   pugi::xml_node& xml_node, const hid_t h5_id,
                   const std::string name)
 {
   LOG(INFO) << "XDMF: add meshtags (" << name << ")";
   // Get mesh
   assert(meshtags.mesh());
-  std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
+  auto mesh = meshtags.mesh();
   const int dim = meshtags.dim();
   std::shared_ptr<const common::IndexMap> entity_map
       = mesh->topology().index_map(dim);

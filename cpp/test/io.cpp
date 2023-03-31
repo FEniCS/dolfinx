@@ -21,7 +21,7 @@ namespace
 void test_fides_mesh()
 {
   auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
-  auto mesh = std::make_shared<mesh::Mesh>(
+  auto mesh = std::make_shared<mesh::Mesh<double>>(
       mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
                              {22, 12}, mesh::CellType::triangle, part));
   io::FidesWriter writer(mesh->comm(), "test_mesh.bp", mesh);
