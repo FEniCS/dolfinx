@@ -716,13 +716,18 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
   ufcx_finite_element* ufcx_element = space->finite_element;
   assert(ufcx_element);
 
-  if (space->geometry_degree != mesh->geometry().cmap().degree()
+  if (mesh->geometry().cmaps().size() > 1)
+  {
+    throw std::runtime_error("Not supported for Mixed Topology");
+  }
+
+  if (space->geometry_degree != mesh->geometry().cmaps()[0].degree()
       or static_cast<basix::cell::type>(space->geometry_basix_cell)
              != mesh::cell_type_to_basix_type(
-                 mesh->geometry().cmap().cell_shape())
+                 mesh->geometry().cmaps()[0].cell_shape())
       or static_cast<basix::element::lagrange_variant>(
              space->geometry_basix_variant)
-             != mesh->geometry().cmap().variant())
+             != mesh->geometry().cmaps()[0].variant())
   {
     throw std::runtime_error("UFL mesh and CoordinateElement do not match.");
   }
@@ -732,7 +737,7 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
   ufcx_dofmap* ufcx_map = space->dofmap;
   assert(ufcx_map);
   ElementDofLayout layout
-      = create_element_dof_layout(*ufcx_map, mesh->topology().cell_type());
+      = create_element_dof_layout(*ufcx_map, mesh->topology().cell_types()[0]);
   return FunctionSpace(
       mesh, element,
       std::make_shared<DofMap>(create_dofmap(
@@ -801,12 +806,13 @@ void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
 /// @private
 /// @brief  Concepts for function that returns cell index
 template <typename F>
-concept FetchCells = requires(F&& f, std::span<const std::int32_t> v) {
-  requires std::invocable<F, std::span<const std::int32_t>>;
-  {
-    f(v)
-  } -> std::convertible_to<std::int32_t>;
-};
+concept FetchCells
+    = requires(F&& f, std::span<const std::int32_t> v) {
+        requires std::invocable<F, std::span<const std::int32_t>>;
+        {
+          f(v)
+          } -> std::convertible_to<std::int32_t>;
+      };
 
 /// @brief Pack a single coefficient for a set of active entities.
 ///

@@ -34,7 +34,7 @@ T assemble_cells(const mesh::Geometry<scalar_value_type_t<T>>& geometry,
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmap().dim();
+  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 
   // Create data structures used in assembly
@@ -74,7 +74,7 @@ T assemble_exterior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmap().dim();
+  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 
   // Create data structures used in assembly
@@ -117,7 +117,7 @@ T assemble_interior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmap().dim();
+  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 
   // Create data structures used in assembly
@@ -199,7 +199,12 @@ T assemble_scalar(
     const std::vector<std::uint8_t>& perms
         = mesh->topology().get_facet_permutations();
 
-    int num_cell_facets = mesh::cell_num_entities(mesh->topology().cell_type(),
+    auto cell_types = mesh->topology().cell_types();
+    if (cell_types.size() > 1)
+    {
+      throw std::runtime_error("MUltiple cell types in the assembler");
+    }
+    int num_cell_facets = mesh::cell_num_entities(cell_types.back(),
                                                   mesh->topology().dim() - 1);
     const std::vector<int> c_offsets = M.coefficient_offsets();
     for (int i : M.integral_ids(IntegralType::interior_facet))

@@ -120,7 +120,8 @@ def test_dof_positions(cell_type, space_type):
     # for each global dof number
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
-    cmap = mesh.geometry.cmap
+    assert len(mesh.geometry.cmaps) == 1
+    cmap = mesh.geometry.cmaps[0]
     tdim = mesh.topology.dim
 
     V = FunctionSpace(mesh, space_type)

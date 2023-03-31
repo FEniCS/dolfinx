@@ -67,7 +67,7 @@ std::pair<std::vector<T>, std::array<std::size_t, 2>> create_new_geometry(
   auto map_c = mesh.topology().index_map(tdim);
 
   assert(map_c);
-  auto dof_layout = mesh.geometry().cmap().create_dof_layout();
+  auto dof_layout = mesh.geometry().cmaps()[0].create_dof_layout();
   auto entity_dofs_all = dof_layout.entity_dofs_all();
   for (int c = 0; c < map_c->size_local() + map_c->num_ghosts(); ++c)
   {
@@ -279,7 +279,7 @@ mesh::Mesh<T> partition(const mesh::Mesh<T>& old_mesh,
   if (redistribute)
   {
     return mesh::create_mesh(old_mesh.comm(), cell_topology,
-                             old_mesh.geometry().cmap(), new_coords, xshape,
+                             old_mesh.geometry().cmaps(), new_coords, xshape,
                              ghost_mode);
   }
   else
@@ -298,7 +298,7 @@ mesh::Mesh<T> partition(const mesh::Mesh<T>& old_mesh,
     };
 
     return mesh::create_mesh(old_mesh.comm(), cell_topology,
-                             old_mesh.geometry().cmap(), new_coords, xshape,
+                             old_mesh.geometry().cmaps(), new_coords, xshape,
                              partitioner);
   }
 }

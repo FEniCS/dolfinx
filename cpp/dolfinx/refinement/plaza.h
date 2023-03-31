@@ -32,7 +32,7 @@ enum class Option : int
 {
   none = 0, /*!< No extra data */
   parent_cell
-  = 1,      /*!< Compute list with the parent cell index for each new cell  */
+  = 1, /*!< Compute list with the parent cell index for each new cell  */
   parent_facet
   = 2, /*!< Compute list of the cell-local facet indices in the parent cell of
           each facet in each new cell (or -1 if no match) */
@@ -423,12 +423,17 @@ template <typename T>
 std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>, std::vector<std::int8_t>>
 refine(const mesh::Mesh<T>& mesh, bool redistribute, Option option)
 {
+  if (mesh.geometry().cmaps().size() > 1)
+  {
+    throw std::runtime_error("Mixed topology not supported");
+  }
+
   auto [cell_adj, new_coords, xshape, parent_cell, parent_facet]
       = compute_refinement_data(mesh, option);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
+    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmaps(),
                               new_coords, xshape, mesh::GhostMode::none),
             std::move(parent_cell), std::move(parent_facet)};
   }
@@ -470,12 +475,17 @@ refine(const mesh::Mesh<T>& mesh, std::span<const std::int32_t> edges,
        bool redistribute, Option option)
 {
 
+  if (mesh.geometry().cmaps().size() > 1)
+  {
+    throw std::runtime_error("Mixed topology not supported");
+  }
+
   auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
       = compute_refinement_data(mesh, edges, option);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
+    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmaps(),
                               new_vertex_coords, xshape, mesh::GhostMode::none),
             std::move(parent_cell), std::move(parent_facet)};
   }
@@ -517,8 +527,13 @@ compute_refinement_data(const mesh::Mesh<T>& mesh, Option option)
 {
   common::Timer t0("PLAZA: refine");
 
-  if (mesh.topology().cell_type() != mesh::CellType::triangle
-      and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
+  if (mesh.topology().cell_types().size() > 1)
+  {
+    throw std::runtime_error("Mixed topology not supported");
+  }
+
+  if (mesh.topology().cell_types()[0] != mesh::CellType::triangle
+      and mesh.topology().cell_types()[0] != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }
@@ -582,8 +597,13 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
 {
   common::Timer t0("PLAZA: refine");
 
-  if (mesh.topology().cell_type() != mesh::CellType::triangle
-      and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
+  if (mesh.topology().cell_types().size() > 1)
+  {
+    throw std::runtime_error("Mixed topology not supported");
+  }
+
+  if (mesh.topology().cell_types()[0] != mesh::CellType::triangle
+      and mesh.topology().cell_types()[0] != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }

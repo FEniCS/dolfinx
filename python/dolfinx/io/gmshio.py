@@ -261,8 +261,8 @@ if _has_gmsh:
         if has_facet_data:
             # Permute facets from MSH to DOLFINx ordering
             # FIXME: This does not work for prism meshes
-            if topology.cell_type == CellType.prism or topology.cell_type == CellType.pyramid:
-                raise RuntimeError(f"Unsupported cell type {topology.cell_type}")
+            if topology.cell_types[0] == CellType.prism or topology.cell_types[0] == CellType.pyramid:
+                raise RuntimeError(f"Unsupported cell type {topology.cell_types[0]}")
 
             facet_type = _cpp.mesh.cell_entity_type(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), topology.dim - 1, 0)
             gmsh_facet_perm = cell_perm_array(facet_type, num_facet_nodes)

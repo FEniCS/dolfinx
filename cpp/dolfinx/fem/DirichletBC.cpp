@@ -182,10 +182,15 @@ fem::locate_dofs_topological(mesh::Topology& topology, const DofMap& dofmap,
                              int dim, std::span<const std::int32_t> entities,
                              bool remote)
 {
+  auto cell_types = topology.cell_types();
+  if (cell_types.size() > 1)
+  {
+    throw std::runtime_error("Multiple cell types in DirichletBC");
+  }
+
   // Prepare an element - local dof layout for dofs on entities of the
   // entity_dim
-  const int num_cell_entities
-      = mesh::cell_num_entities(topology.cell_type(), dim);
+  const int num_cell_entities = mesh::cell_num_entities(cell_types.back(), dim);
   std::vector<std::vector<int>> entity_dofs;
   for (int i = 0; i < num_cell_entities; ++i)
   {
@@ -298,9 +303,13 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   // Check that dof layouts are the same
   assert(dofmap0.element_dof_layout() == dofmap1.element_dof_layout());
 
+  auto cell_types = topology.cell_types();
+  if (cell_types.size() > 1)
+  {
+    throw std::runtime_error("Multiple cell types in DirichletBC");
+  }
   // Build vector of local dofs for each cell entity
-  const int num_cell_entities
-      = mesh::cell_num_entities(topology.cell_type(), dim);
+  const int num_cell_entities = mesh::cell_num_entities(cell_types.back(), dim);
   std::vector<std::vector<int>> entity_dofs;
   for (int i = 0; i < num_cell_entities; ++i)
   {

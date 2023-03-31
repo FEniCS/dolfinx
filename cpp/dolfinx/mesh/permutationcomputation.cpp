@@ -230,8 +230,13 @@ template <int BITSETSIZE>
 std::vector<std::bitset<BITSETSIZE>>
 compute_edge_reflections(const mesh::Topology& topology)
 {
+
+  auto cell_types = topology.cell_types();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("cell type permutation");
+
   const int tdim = topology.dim();
-  const mesh::CellType cell_type = topology.cell_type();
+  const mesh::CellType cell_type = cell_types.back();
   const int edges_per_cell = cell_num_entities(cell_type, 1);
 
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
@@ -295,7 +300,12 @@ compute_face_permutations(const mesh::Topology& topology)
 
   auto im = topology.index_map(0);
   assert(im);
-  const mesh::CellType cell_type = topology.cell_type();
+
+  auto cell_types = topology.cell_types();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("cell type permutation");
+
+  const mesh::CellType cell_type = cell_types.back();
   const int faces_per_cell = cell_num_entities(cell_type, 2);
   if (cell_type == mesh::CellType::triangle
       or cell_type == mesh::CellType::tetrahedron)
@@ -317,7 +327,11 @@ std::pair<std::vector<std::uint8_t>, std::vector<std::uint32_t>>
 mesh::compute_entity_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
-  const CellType cell_type = topology.cell_type();
+  auto cell_types = topology.cell_types();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("cell type permutation");
+  const CellType cell_type = cell_types.back();
+
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
   const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
 

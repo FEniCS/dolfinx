@@ -120,7 +120,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
   {
     return create_mesh(
         comm, graph::regular_adjacency_list(std::vector<std::int64_t>(), 2),
-        element, std::vector<T>(), {0, 1}, partitioner);
+        {element}, std::vector<T>(), {0, 1}, partitioner);
   }
 
   const T a = x[0];
@@ -154,7 +154,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
       cells[2 * ix + j] = ix + j;
 
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 2),
-                     element, geom, {geom.size(), 1}, partitioner);
+                     {element}, geom, {geom.size(), 1}, partitioner);
 }
 
 /// Create a uniform mesh::Mesh over the rectangle spanned by the two
@@ -328,7 +328,7 @@ Mesh<T> build_tet(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
 
   fem::CoordinateElement element(CellType::tetrahedron, 1);
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 4),
-                     element, geom, {geom.size() / 3, 3}, partitioner);
+                     {element}, geom, {geom.size() / 3, 3}, partitioner);
 }
 
 template <typename T>
@@ -372,7 +372,7 @@ mesh::Mesh<T> build_hex(MPI_Comm comm,
 
   fem::CoordinateElement element(CellType::hexahedron, 1);
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 8),
-                     element, geom, {geom.size() / 3, 3}, partitioner);
+                     {element}, geom, {geom.size() / 3, 3}, partitioner);
 }
 
 template <typename T>
@@ -420,7 +420,7 @@ Mesh<T> build_prism(MPI_Comm comm,
 
   fem::CoordinateElement element(CellType::prism, 1);
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 6),
-                     element, geom, {geom.size() / 3, 3}, partitioner);
+                     {element}, geom, {geom.size() / 3, 3}, partitioner);
 }
 
 template <typename T>
@@ -436,7 +436,7 @@ Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
   {
     return create_mesh(
         comm, graph::regular_adjacency_list(std::vector<std::int64_t>(), 3),
-        element, std::vector<T>(), {0, 2}, partitioner);
+        {element}, std::vector<T>(), {0, 2}, partitioner);
   }
 
   const std::array<double, 2> p0 = p[0];
@@ -606,7 +606,7 @@ Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
   }
 
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 3),
-                     element, geom, {geom.size() / 2, 2}, partitioner);
+                     {element}, geom, {geom.size() / 2, 2}, partitioner);
 }
 
 template <typename T>
@@ -621,7 +621,7 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
   {
     return create_mesh(
         comm, graph::regular_adjacency_list(std::vector<std::int64_t>(), 4),
-        element, std::vector<T>(), {0, 2}, partitioner);
+        {element}, std::vector<T>(), {0, 2}, partitioner);
   }
 
   const std::size_t nx = n[0];
@@ -664,7 +664,7 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
   }
 
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 4),
-                     element, geom, {geom.size() / 2, 2}, partitioner);
+                     {element}, geom, {geom.size() / 2, 2}, partitioner);
 }
 
 } // namespace impl

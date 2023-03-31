@@ -34,14 +34,14 @@ class ElementDofLayout;
 /// Build dofmap data for an element on a mesh topology
 /// @param[in] comm MPI communicator
 /// @param[in] topology The mesh topology
-/// @param[in] element_dof_layout The element dof layout for the
+/// @param[in] element_dof_layouts The element dof layouts for the
 /// function space
 /// @param[in] reorder_fn Graph reordering function that is applied to
 /// the dofmap
 /// @return The index map and local to global DOF data for the DOF map
 std::tuple<common::IndexMap, int, graph::AdjacencyList<std::int32_t>>
 build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
-                  const ElementDofLayout& element_dof_layout,
+                  const std::vector<ElementDofLayout>& element_dof_layouts,
                   const std::function<std::vector<int>(
                       const graph::AdjacencyList<std::int32_t>&)>& reorder_fn);
 

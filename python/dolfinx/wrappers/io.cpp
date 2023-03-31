@@ -74,7 +74,7 @@ void io(py::module& m)
                 std::span(values.data(), values.size()));
 
         std::size_t num_vert_per_entity = dolfinx::mesh::cell_num_entities(
-            dolfinx::mesh::cell_entity_type(mesh.topology().cell_type(),
+            dolfinx::mesh::cell_entity_type(mesh.topology().cell_types().back(),
                                             entity_dim, 0),
             0);
         std::array shape_e

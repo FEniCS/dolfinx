@@ -35,6 +35,38 @@ enum class GhostMode : int
   shared_vertex
 };
 
+namespace
+{
+/// Re-order an adjacency list
+template <typename T>
+graph::AdjacencyList<T> reorder_list(const graph::AdjacencyList<T>& list,
+                                     std::span<const std::int32_t> nodemap)
+{
+  // Copy existing data to keep ghost values (not reordered)
+  std::vector<T> data(list.array());
+  std::vector<std::int32_t> offsets(list.offsets().size());
+
+  // Compute new offsets (owned and ghost)
+  offsets[0] = 0;
+  for (std::size_t n = 0; n < nodemap.size(); ++n)
+    offsets[nodemap[n] + 1] = list.num_links(n);
+  for (std::size_t n = nodemap.size(); n < (std::size_t)list.num_nodes(); ++n)
+    offsets[n + 1] = list.num_links(n);
+  std::partial_sum(offsets.begin(), offsets.end(), offsets.begin());
+  graph::AdjacencyList<T> list_new(std::move(data), std::move(offsets));
+
+  for (std::size_t n = 0; n < nodemap.size(); ++n)
+  {
+    auto links_old = list.links(n);
+    auto links_new = list_new.links(nodemap[n]);
+    assert(links_old.size() == links_new.size());
+    std::copy(links_old.begin(), links_old.end(), links_new.begin());
+  }
+
+  return list_new;
+}
+} // namespace
+
 // See https://github.com/doxygen/doxygen/issues/9552
 /// Signature for the cell partitioning function. The function should
 /// compute the destination rank for cells currently on this rank.
@@ -248,18 +280,24 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
   if (entities.empty())
     return std::vector<T>();
 
-  if (mesh.topology().cell_type() == CellType::prism and dim == 2)
+  if (mesh.topology().cell_types().size() > 1)
+  {
+    throw std::runtime_error("Mixed topology not supported");
+  }
+
+  if (mesh.topology().cell_types()[0] == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cell");
 
   const int gdim = mesh.geometry().dim();
-  const CellType type = cell_entity_type(mesh.topology().cell_type(), dim, 0);
+  const CellType type
+      = cell_entity_type(mesh.topology().cell_types()[0], dim, 0);
 
   // Find geometry nodes for topology entities
   std::span<const T> x = mesh.geometry().x();
 
   // Orient cells if they are tetrahedron
   bool orient = false;
-  if (mesh.topology().cell_type() == CellType::tetrahedron)
+  if (mesh.topology().cell_types()[0] == CellType::tetrahedron)
     orient = true;
 
   std::vector<std::int32_t> geometry_entities
@@ -596,7 +634,11 @@ std::vector<std::int32_t>
 entities_to_geometry(const Mesh<T>& mesh, int dim,
                      std::span<const std::int32_t> entities, bool orient)
 {
-  CellType cell_type = mesh.topology().cell_type();
+  if (mesh.topology().cell_types().size() > 1)
+  {
+    throw std::runtime_error("Mixed topology not supported");
+  }
+  CellType cell_type = mesh.topology().cell_types()[0];
   if (cell_type == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cells");
   if (orient and (cell_type != CellType::tetrahedron or dim != 2))
@@ -704,14 +746,14 @@ compute_incident_entities(const Topology& topology,
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>>
 create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-            const fem::CoordinateElement& element, const U& x,
+            const std::vector<fem::CoordinateElement>& elements, const U& x,
             std::array<std::size_t, 2> xshape,
             const CellPartitionFunction& cell_partitioner)
 {
-  const fem::ElementDofLayout dof_layout = element.create_dof_layout();
+  const fem::ElementDofLayout dof_layout = elements[0].create_dof_layout();
 
   // Function top build geometry. Used to scope memory operations.
-  auto build_topology = [](auto comm, auto& element, auto& dof_layout,
+  auto build_topology = [](auto comm, auto& elements, auto& dof_layout,
                            auto& cells, auto& cell_partitioner)
   {
     // -- Partition topology
@@ -730,10 +772,10 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
     // Compute the destination rank for cells on this process via graph
     // partitioning.
     const int size = dolfinx::MPI::size(comm);
-    const int tdim = cell_dim(element.cell_shape());
-    const graph::AdjacencyList dest = cell_partitioner(
+    const int tdim = cell_dim(elements[0].cell_shape());
+    const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
         comm, size, tdim,
-        extract_topology(element.cell_shape(), dof_layout, cells));
+        extract_topology(elements[0].cell_shape(), dof_layout, cells));
 
     // -- Distribute cells (topology, includes higher-order 'nodes')
 
@@ -748,8 +790,9 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 
     // Extract cell 'topology', i.e. extract the vertices for each cell
     // and discard any 'higher-order' nodes
-    graph::AdjacencyList cells_extracted
-        = extract_topology(element.cell_shape(), dof_layout, cell_nodes);
+
+    graph::AdjacencyList<std::int64_t> cells_extracted
+        = extract_topology(elements[0].cell_shape(), dof_layout, cell_nodes);
 
     // -- Re-order cells
 
@@ -767,38 +810,6 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
             tdim);
 
     const std::vector<int> remap = graph::reorder_gps(graph);
-
-    /// Re-order an adjacency list
-    auto reorder_list
-        = [](const auto& list, std::span<const std::int32_t> nodemap)
-    {
-      using X =
-          typename std::remove_reference_t<decltype(list.array())>::value_type;
-
-      // Copy existing data to keep ghost values (not reordered)
-      std::vector<X> data(list.array());
-      std::vector<std::int32_t> offsets(list.offsets().size());
-
-      // Compute new offsets (owned and ghost)
-      offsets[0] = 0;
-      for (std::size_t n = 0; n < nodemap.size(); ++n)
-        offsets[nodemap[n] + 1] = list.num_links(n);
-      for (std::size_t n = nodemap.size(); n < (std::size_t)list.num_nodes();
-           ++n)
-        offsets[n + 1] = list.num_links(n);
-      std::partial_sum(offsets.begin(), offsets.end(), offsets.begin());
-      graph::AdjacencyList<X> list_new(std::move(data), std::move(offsets));
-
-      for (std::size_t n = 0; n < nodemap.size(); ++n)
-      {
-        auto links_old = list.links(n);
-        auto links_new = list_new.links(nodemap[n]);
-        assert(links_old.size() == links_new.size());
-        std::copy(links_old.begin(), links_old.end(), links_new.begin());
-      }
-
-      return list_new;
-    };
 
     // Create re-ordered cell lists (leaves ghosts unchanged)
     std::vector<std::int64_t> original_cell_index(original_cell_index0.size());
@@ -826,14 +837,20 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
     // Create cells and vertices with the ghosting requested. Input
     // topology includes cells shared via facet, but ghosts will be
     // removed later if not required by ghost_mode.
+
+    std::vector<std::int32_t> cell_group_offsets
+        = {0, std::int32_t(cells_extracted.num_nodes() - ghost_owners.size()),
+           cells_extracted.num_nodes()};
+
+    std::vector<mesh::CellType> cell_type = {elements[0].cell_shape()};
     return std::pair{create_topology(comm, cells_extracted, original_cell_index,
-                                     ghost_owners, element.cell_shape(),
-                                     boundary_vertices),
+                                     ghost_owners, cell_type,
+                                     cell_group_offsets, boundary_vertices),
                      std::move(cell_nodes)};
   };
 
   auto [topology, cell_nodes]
-      = build_topology(comm, element, dof_layout, cells, cell_partitioner);
+      = build_topology(comm, elements, dof_layout, cells, cell_partitioner);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
@@ -844,11 +861,12 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
       topology.create_entities(e);
   }
 
-  if (element.needs_dof_permutations())
+  if (elements[0].needs_dof_permutations())
     topology.create_entity_permutations();
 
   Geometry geometry
-      = create_geometry(comm, topology, element, cell_nodes, x, xshape[1]);
+      = create_geometry(comm, topology, elements, cell_nodes, x, xshape[1]);
+
   return Mesh<typename U::value_type>(comm, std::move(topology),
                                       std::move(geometry));
 }
@@ -866,7 +884,7 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 /// indices). For lowest order cells this will be just the cell
 /// vertices. For higher-order cells, other cells 'nodes' will be
 /// included.
-/// @param[in] element The coordinate element that describes the
+/// @param[in] elements The coordinate elements that describe the
 /// geometric mapping for cells
 /// @param[in] x The coordinates of mesh nodes
 /// @param[in] xshape The shape of `x`. It should be `(num_points, gdim)`.
@@ -875,10 +893,10 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>>
 create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-            const fem::CoordinateElement& element, const U& x,
+            const std::vector<fem::CoordinateElement>& elements, const U& x,
             std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
 {
-  return create_mesh(comm, cells, element, x, xshape,
+  return create_mesh(comm, cells, elements, x, xshape,
                      create_cell_partitioner(ghost_mode));
 }
 
