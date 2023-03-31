@@ -14,11 +14,13 @@ import pytest
 import basix
 import dolfinx.cpp
 import ufl
+from basix.ufl import blocked_element
 from dolfinx.cpp.la.petsc import create_matrix
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace, create_sparsity_pattern, form)
 from dolfinx.fem.petsc import load_petsc_lib
 from dolfinx.mesh import create_unit_square
+from ffcx.element_interface import QuadratureElement
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -287,7 +289,8 @@ def test_assembly_into_quadrature_function():
 
     quadrature_degree = 2
     quadrature_points, wts = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
-    Q_element = ufl.VectorElement("Quadrature", ufl.triangle, quadrature_degree, quad_scheme="default")
+    Q_element = blocked_element(
+        QuadratureElement("triangle", (), degree=quadrature_degree, scheme="default"), shape=(2, ))
     Q = FunctionSpace(mesh, Q_element)
     P2 = FunctionSpace(mesh, ("P", 2))
 

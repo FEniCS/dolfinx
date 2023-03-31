@@ -12,6 +12,7 @@ import pytest
 import dolfinx
 import dolfinx.graph
 import ufl
+from basix.ufl import element
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, compute_midpoints, create_box,
                           create_cell_partitioner, create_mesh)
@@ -81,8 +82,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     rank = mpi_comm.rank
     assert np.all(x_global[all_ranges[rank]:all_ranges[rank + 1]] == x)
 
-    cell = ufl.Cell(cell_shape.name)
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
+    domain = ufl.Mesh(element("Lagrange", cell_shape.name, cell_degree, rank=1))
 
     # Partition mesh in layers, capture geometrical data and topological
     # data from outer scope
@@ -106,8 +106,7 @@ def test_asymmetric_partitioner():
     mpi_comm = MPI.COMM_WORLD
     n = mpi_comm.Get_size()
     r = mpi_comm.Get_rank()
-    cell = ufl.Cell("triangle")
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 1))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, rank=1))
 
     # Create a simple triangle mesh with a strip on each process
     topo = []

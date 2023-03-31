@@ -13,7 +13,7 @@ import numpy as np
 import numpy.typing as npt
 
 import basix
-import basix.ufl_wrapper
+import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
@@ -75,6 +75,10 @@ class Mesh:
     def ufl_domain(self) -> ufl.Mesh:
         """Return the ufl domain corresponding to the mesh."""
         return self._ufl_domain
+
+    def basix_cell(self) -> ufl.Cell:
+        """Return the Basix cell type."""
+        return getattr(basix.CellType, self.topology.cell_name())
 
     def h(self, dim: int, entities: npt.NDArray[np.int32]) -> npt.NDArray[np.float64]:
         """Size measure for each cell."""
@@ -263,9 +267,9 @@ def create_submesh(msh, dim, entities):
     submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(msh._cpp_object, dim, entities)
     assert len(submsh.geometry.cmaps) == 1
     submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name(), geometric_dimension=submsh.geometry.dim)
-    submsh_domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
+    submsh_domain = ufl.Mesh(basix.ufl.element(
         "Lagrange", submsh_ufl_cell.cellname(), submsh.geometry.cmaps[0].degree, submsh.geometry.cmaps[0].variant,
-        dim=submsh.geometry.dim, gdim=submsh.geometry.dim))
+        shape=(submsh.geometry.dim, ), gdim=submsh.geometry.dim))
     return (Mesh(submsh, submsh_domain), entity_map, vertex_map, geom_map)
 
 
@@ -428,7 +432,7 @@ def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
     """
     if partitioner is None:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", "interval", 1))
+    domain = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, rank=1))
     mesh = _cpp.mesh.create_interval(comm, nx, points, ghost_mode, partitioner)
     return Mesh(mesh, domain)
 
@@ -479,7 +483,7 @@ def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
     """
     if partitioner is None:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 1))
+    domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, rank=1))
     mesh = _cpp.mesh.create_rectangle(comm, points, n, cell_type, partitioner, diagonal)
     return Mesh(mesh, domain)
 
@@ -532,7 +536,7 @@ def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
     """
     if partitioner is None:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 1))
+    domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, rank=1))
     mesh = _cpp.mesh.create_box(comm, points, n, cell_type, partitioner)
     return Mesh(mesh, domain)
 

@@ -13,11 +13,15 @@
 #include "Expression.h"
 #include "Form.h"
 #include "Function.h"
+#include "FunctionSpace.h"
 #include "sparsitybuild.h"
 #include <array>
 #include <concepts>
+#include <dolfinx/common/types.h>
 #include <dolfinx/la/SparsityPattern.h>
+#include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/utils.h>
 #include <functional>
 #include <memory>
 #include <set>
@@ -42,15 +46,8 @@ namespace dolfinx::common
 class IndexMap;
 }
 
-namespace dolfinx::mesh
-{
-class Mesh;
-class Topology;
-} // namespace dolfinx::mesh
-
 namespace dolfinx::fem
 {
-class FunctionSpace;
 
 namespace impl
 {
@@ -83,24 +80,6 @@ get_cell_facet_pairs(std::int32_t f, const std::span<const std::int32_t>& cells,
   return cell_local_facet_pairs;
 }
 
-/// @private These structs are used to get the float/value type from a
-/// template argument, including support for complex types.
-template <typename T, typename = void>
-struct scalar_value_type
-{
-  /// @internal
-  typedef T value_type;
-};
-/// @private
-template <typename T>
-struct scalar_value_type<T, std::void_t<typename T::value_type>>
-{
-  typedef typename T::value_type value_type;
-};
-/// @private Convenience typedef
-template <typename T>
-using scalar_value_type_t = typename scalar_value_type<T>::value_type;
-
 } // namespace impl
 
 /// @brief Given an integral type and MeshTags, compute the entities
@@ -118,13 +97,18 @@ using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 /// included.
 ///
 /// @param[in] integral_type Integral type
-/// @param[in] meshtags The meshtags
+/// @param[in] topology Mesh topology
+/// @param[in] entities List of tagged mesh entities
+/// @param[in] dim Topological dimension of tagged entities
+/// @param[in] values Value associated with each entity
 /// @return A list of (integral id, entities) pairs
 /// @pre The topological dimension of the integral entity type and the
 /// topological dimension of `meshtags` must be equal.
 std::vector<std::pair<int, std::vector<std::int32_t>>>
 compute_integration_domains(IntegralType integral_type,
-                            const mesh::MeshTags<int>& meshtags);
+                            mesh::Topology& topology,
+                            std::span<const std::int32_t> entities, int dim,
+                            std::span<const int> values);
 
 /// @brief Finite element cell kernel concept.
 ///
@@ -132,7 +116,7 @@ compute_integration_domains(IntegralType integral_type,
 /// must satisfy this concept.
 template <class U, class T>
 concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
-                                       const impl::scalar_value_type_t<T>*,
+                                       const scalar_value_type_t<T>*,
                                        const int*, const std::uint8_t*>;
 
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
@@ -142,19 +126,21 @@ concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
 /// @return Rectangular array of the same shape as `a` with a pair of
 /// function spaces in each array entry. If a form is null, then the
 /// returned function space pair is (null, null).
-template <typename T>
-std::vector<std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>
-extract_function_spaces(const std::vector<std::vector<const Form<T>*>>& a)
+template <typename T, std::floating_point U>
+std::vector<std::vector<std::array<std::shared_ptr<const FunctionSpace<U>>, 2>>>
+extract_function_spaces(const std::vector<std::vector<const Form<T, U>*>>& a)
 {
-  std::vector<std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>>
-      spaces(a.size(),
-             std::vector<std::array<std::shared_ptr<const FunctionSpace>, 2>>(
-                 a[0].size()));
+  std::vector<
+      std::vector<std::array<std::shared_ptr<const FunctionSpace<U>>, 2>>>
+      spaces(
+          a.size(),
+          std::vector<std::array<std::shared_ptr<const FunctionSpace<U>>, 2>>(
+              a.front().size()));
   for (std::size_t i = 0; i < a.size(); ++i)
   {
     for (std::size_t j = 0; j < a[i].size(); ++j)
     {
-      if (const Form<T>* form = a[i][j]; form)
+      if (const Form<T, U>* form = a[i][j]; form)
         spaces[i][j] = {form->function_spaces()[0], form->function_spaces()[1]};
     }
   }
@@ -174,8 +160,8 @@ la::SparsityPattern create_sparsity_pattern(
 /// for calling SparsityPattern::assemble.
 /// @param[in] a A bilinear form
 /// @return The corresponding sparsity pattern
-template <typename T>
-la::SparsityPattern create_sparsity_pattern(const Form<T>& a)
+template <typename T, std::floating_point U>
+la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
 {
   if (a.rank() != 2)
   {
@@ -287,17 +273,17 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] subdomains Subdomain markers
 /// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain
-template <typename T>
-Form<T> create_form(
+template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
+Form<T, U> create_form(
     const ufcx_form& ufcx_form,
-    const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
-    const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+    const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
+    const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
     const std::map<
         IntegralType,
         std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
-    std::shared_ptr<const mesh::Mesh> mesh = nullptr)
+    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   if (ufcx_form.rank != (int)spaces.size())
     throw std::runtime_error("Wrong number of argument spaces for Form.");
@@ -354,9 +340,8 @@ Form<T> create_form(
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
   using kern = std::function<void(
-      T*, const T*, const T*,
-      const typename impl::scalar_value_type<T>::value_type*, const int*,
-      const std::uint8_t*)>;
+      T*, const T*, const T*, const typename scalar_value_type<T>::value_type*,
+      const int*, const std::uint8_t*)>;
   std::map<IntegralType,
            std::vector<std::tuple<int, kern, std::vector<std::int32_t>>>>
       integral_data;
@@ -382,7 +367,7 @@ Form<T> create_form(
       {
         k = reinterpret_cast<void (*)(
             T*, const T*, const T*,
-            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex64);
       }
       else if constexpr (std::is_same_v<T, double>)
@@ -391,7 +376,7 @@ Form<T> create_form(
       {
         k = reinterpret_cast<void (*)(
             T*, const T*, const T*,
-            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex128);
       }
       assert(k);
@@ -440,7 +425,7 @@ Form<T> create_form(
       {
         k = reinterpret_cast<void (*)(
             T*, const T*, const T*,
-            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex64);
       }
       else if constexpr (std::is_same_v<T, double>)
@@ -449,7 +434,7 @@ Form<T> create_form(
       {
         k = reinterpret_cast<void (*)(
             T*, const T*, const T*,
-            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex128);
       }
       assert(k);
@@ -508,7 +493,7 @@ Form<T> create_form(
       {
         k = reinterpret_cast<void (*)(
             T*, const T*, const T*,
-            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex64);
       }
       else if constexpr (std::is_same_v<T, double>)
@@ -517,7 +502,7 @@ Form<T> create_form(
       {
         k = reinterpret_cast<void (*)(
             T*, const T*, const T*,
-            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex128);
       }
       assert(k);
@@ -570,8 +555,8 @@ Form<T> create_form(
     sd.insert({itg, std::move(x)});
   }
 
-  return Form<T>(spaces, integral_data, coefficients, constants,
-                 needs_facet_permutations, mesh);
+  return Form<T, U>(spaces, integral_data, coefficients, constants,
+                    needs_facet_permutations, mesh);
 }
 
 /// @brief Create a Form from UFC input
@@ -584,21 +569,21 @@ Form<T> create_form(
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional
 /// @return A Form
-template <typename T>
-Form<T> create_form(
+template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
+Form<T, U> create_form(
     const ufcx_form& ufcx_form,
-    const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
-    const std::map<std::string, std::shared_ptr<const Function<T>>>&
+    const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
+    const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::map<
         IntegralType,
         std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
-    std::shared_ptr<const mesh::Mesh> mesh = nullptr)
+    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   // Place coefficients in appropriate order
-  std::vector<std::shared_ptr<const Function<T>>> coeff_map;
+  std::vector<std::shared_ptr<const Function<T, U>>> coeff_map;
   for (const std::string& name : get_coefficient_names(ufcx_form))
   {
     if (auto it = coefficients.find(name); it != coefficients.end())
@@ -635,22 +620,22 @@ Form<T> create_form(
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional.
 /// @return A Form
-template <typename T>
-Form<T> create_form(
+template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
+Form<T, U> create_form(
     ufcx_form* (*fptr)(),
-    const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
-    const std::map<std::string, std::shared_ptr<const Function<T>>>&
+    const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
+    const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::map<
         IntegralType,
         std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
-    std::shared_ptr<const mesh::Mesh> mesh = nullptr)
+    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   ufcx_form* form = fptr();
-  Form<T> L = create_form<T>(*form, spaces, coefficients, constants, subdomains,
-                             mesh);
+  Form<T, U> L = create_form<T, U>(*form, spaces, coefficients, constants,
+                                   subdomains, mesh);
   std::free(form);
   return L;
 }
@@ -663,11 +648,41 @@ Form<T> create_form(
 /// @param[in] reorder_fn The graph reordering function to call on the
 /// dofmap. If `nullptr`, the default re-ordering is used.
 /// @return The created function space
-FunctionSpace create_functionspace(
-    std::shared_ptr<mesh::Mesh> mesh, const basix::FiniteElement& e, int bs,
-    const std::function<
-        std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-    = nullptr);
+template <std::floating_point T>
+FunctionSpace<T>
+create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
+                     const basix::FiniteElement& e, int bs,
+                     const std::function<std::vector<int>(
+                         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                     = nullptr)
+{
+  // Create a DOLFINx element
+  auto _e = std::make_shared<FiniteElement>(e, bs);
+
+  // Create UFC subdofmaps and compute offset
+  assert(_e);
+  const int num_sub_elements = _e->num_sub_elements();
+  std::vector<ElementDofLayout> sub_doflayout;
+  sub_doflayout.reserve(num_sub_elements);
+  for (int i = 0; i < num_sub_elements; ++i)
+  {
+    auto sub_element = _e->extract_sub_element({i});
+    std::vector<int> parent_map_sub(sub_element->space_dimension());
+    for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
+      parent_map_sub[j] = i + bs * j;
+    sub_doflayout.emplace_back(1, e.entity_dofs(), e.entity_closure_dofs(),
+                               parent_map_sub, std::vector<ElementDofLayout>());
+  }
+
+  // Create a dofmap
+  ElementDofLayout layout(bs, e.entity_dofs(), e.entity_closure_dofs(), {},
+                          sub_doflayout);
+  assert(mesh);
+  auto dofmap = std::make_shared<const DofMap>(
+      create_dofmap(mesh->comm(), layout, mesh->topology(), reorder_fn, *_e));
+
+  return FunctionSpace(mesh, _e, dofmap);
+}
 
 /// Create a FunctionSpace from UFC data
 ///
@@ -681,20 +696,56 @@ FunctionSpace create_functionspace(
 /// @param[in] reorder_fn The graph reordering function to call on the
 /// dofmap. If `nullptr`, the default re-ordering is used.
 /// @return The created function space
-FunctionSpace create_functionspace(
-    ufcx_function_space* (*fptr)(const char*), const std::string& function_name,
-    std::shared_ptr<mesh::Mesh> mesh,
-    const std::function<
-        std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-    = nullptr);
+template <std::floating_point T>
+FunctionSpace<T>
+create_functionspace(ufcx_function_space* (*fptr)(const char*),
+                     const std::string& function_name,
+                     std::shared_ptr<mesh::Mesh<T>> mesh,
+                     const std::function<std::vector<int>(
+                         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                     = nullptr)
+{
+  ufcx_function_space* space = fptr(function_name.c_str());
+  if (!space)
+  {
+    throw std::runtime_error(
+        "Could not create UFC function space with function name "
+        + function_name);
+  }
+
+  ufcx_finite_element* ufcx_element = space->finite_element;
+  assert(ufcx_element);
+
+  if (space->geometry_degree != mesh->geometry().cmap().degree()
+      or static_cast<basix::cell::type>(space->geometry_basix_cell)
+             != mesh::cell_type_to_basix_type(
+                 mesh->geometry().cmap().cell_shape())
+      or static_cast<basix::element::lagrange_variant>(
+             space->geometry_basix_variant)
+             != mesh->geometry().cmap().variant())
+  {
+    throw std::runtime_error("UFL mesh and CoordinateElement do not match.");
+  }
+
+  auto element = std::make_shared<FiniteElement>(*ufcx_element);
+  assert(element);
+  ufcx_dofmap* ufcx_map = space->dofmap;
+  assert(ufcx_map);
+  ElementDofLayout layout
+      = create_element_dof_layout(*ufcx_map, mesh->topology().cell_type());
+  return FunctionSpace(
+      mesh, element,
+      std::make_shared<DofMap>(create_dofmap(
+          mesh->comm(), layout, mesh->topology(), reorder_fn, *element)));
+}
 
 /// @private
 namespace impl
 {
 /// @private
-template <typename T>
+template <typename T, std::floating_point U>
 std::span<const std::uint32_t> get_cell_orientation_info(
-    const std::vector<std::shared_ptr<const Function<T>>>& coefficients)
+    const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients)
 {
   bool needs_dof_transformations = false;
   for (auto coeff : coefficients)
@@ -771,8 +822,9 @@ concept FetchCells
 /// @param[in] fetch_cells Function that fetches the cell index for an
 /// entity in active_entities.
 /// @param[in] offset The offset for c
-template <typename T>
-void pack_coefficient_entity(std::span<T> c, int cstride, const Function<T>& u,
+template <typename T, std::floating_point U>
+void pack_coefficient_entity(std::span<T> c, int cstride,
+                             const Function<T, U>& u,
                              std::span<const std::uint32_t> cell_info,
                              std::span<const std::int32_t> entities,
                              std::size_t estride, FetchCells auto&& fetch_cells,
@@ -837,13 +889,13 @@ void pack_coefficient_entity(std::span<T> c, int cstride, const Function<T>& u,
 /// @param[in] integral_type Type of integral
 /// @param[in] id The id of the integration domain
 /// @return A storage container and the column stride
-template <typename T>
+template <typename T, std::floating_point U>
 std::pair<std::vector<T>, int>
-allocate_coefficient_storage(const Form<T>& form, IntegralType integral_type,
+allocate_coefficient_storage(const Form<T, U>& form, IntegralType integral_type,
                              int id)
 {
   // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const Function<T>>>& coefficients
+  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
       = form.coefficients();
   const std::vector<int> offsets = form.coefficient_offsets();
 
@@ -876,9 +928,9 @@ allocate_coefficient_storage(const Form<T>& form, IntegralType integral_type,
 /// @param[in] form The Form
 /// @return A map from a form (integral_type, domain_id) pair to a
 /// (coeffs, cstride) pair
-template <typename T>
+template <typename T, std::floating_point U>
 std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
-allocate_coefficient_storage(const Form<T>& form)
+allocate_coefficient_storage(const Form<T, U>& form)
 {
   std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>> coeffs;
   for (auto integral_type : form.integral_types())
@@ -901,12 +953,12 @@ allocate_coefficient_storage(const Form<T>& form)
 /// @param[in] id The id of the integration domain
 /// @param[in] c The coefficient array
 /// @param[in] cstride The coefficient stride
-template <typename T>
-void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
-                       std::span<T> c, int cstride)
+template <typename T, std::floating_point U>
+void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
+                       int id, std::span<T> c, int cstride)
 {
   // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const Function<T>>>& coefficients
+  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
       = form.coefficients();
   const std::vector<int> offsets = form.coefficient_offsets();
 
@@ -977,13 +1029,13 @@ void pack_coefficients(const Form<T>& form, IntegralType integral_type, int id,
 }
 
 /// @brief Create Expression from UFC
-template <typename T>
-Expression<T> create_expression(
+template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
+Expression<T, U> create_expression(
     const ufcx_expression& expression,
-    const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+    const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-    std::shared_ptr<const mesh::Mesh> mesh = nullptr,
-    std::shared_ptr<const FunctionSpace> argument_function_space = nullptr)
+    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr,
+    std::shared_ptr<const FunctionSpace<U>> argument_function_space = nullptr)
 {
   if (expression.rank > 0 and !argument_function_space)
   {
@@ -1003,7 +1055,7 @@ Expression<T> create_expression(
     value_shape.push_back(expression.value_shape[i]);
 
   std::function<void(T*, const T*, const T*,
-                     const typename impl::scalar_value_type<T>::value_type*,
+                     const typename scalar_value_type<T>::value_type*,
                      const int*, const std::uint8_t*)>
       tabulate_tensor = nullptr;
   if constexpr (std::is_same_v<T, float>)
@@ -1012,7 +1064,7 @@ Expression<T> create_expression(
   {
     tabulate_tensor = reinterpret_cast<void (*)(
         T*, const T*, const T*,
-        const typename impl::scalar_value_type<T>::value_type*, const int*,
+        const typename scalar_value_type<T>::value_type*, const int*,
         const unsigned char*)>(expression.tabulate_tensor_complex64);
   }
   else if constexpr (std::is_same_v<T, double>)
@@ -1021,7 +1073,7 @@ Expression<T> create_expression(
   {
     tabulate_tensor = reinterpret_cast<void (*)(
         T*, const T*, const T*,
-        const typename impl::scalar_value_type<T>::value_type*, const int*,
+        const typename scalar_value_type<T>::value_type*, const int*,
         const unsigned char*)>(expression.tabulate_tensor_complex128);
   }
   else
@@ -1034,17 +1086,17 @@ Expression<T> create_expression(
 
 /// @brief Create Expression from UFC input (with named coefficients and
 /// constants).
-template <typename T>
-Expression<T> create_expression(
+template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
+Expression<T, U> create_expression(
     const ufcx_expression& expression,
-    const std::map<std::string, std::shared_ptr<const Function<T>>>&
+    const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    std::shared_ptr<const mesh::Mesh> mesh = nullptr,
-    std::shared_ptr<const FunctionSpace> argument_function_space = nullptr)
+    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr,
+    std::shared_ptr<const FunctionSpace<U>> argument_function_space = nullptr)
 {
   // Place coefficients in appropriate order
-  std::vector<std::shared_ptr<const Function<T>>> coeff_map;
+  std::vector<std::shared_ptr<const Function<T, U>>> coeff_map;
   std::vector<std::string> coefficient_names;
   for (int i = 0; i < expression.num_coefficients; ++i)
     coefficient_names.push_back(expression.coefficient_names[i]);
@@ -1086,8 +1138,8 @@ Expression<T> create_expression(
 /// @param[in] form The Form
 /// @param[in] coeffs A map from a (integral_type, domain_id) pair to a
 /// (coeffs, cstride) pair
-template <typename T>
-void pack_coefficients(const Form<T>& form,
+template <typename T, std::floating_point U>
+void pack_coefficients(const Form<T, U>& form,
                        std::map<std::pair<IntegralType, int>,
                                 std::pair<std::vector<T>, int>>& coeffs)
 {
@@ -1101,12 +1153,13 @@ void pack_coefficients(const Form<T>& form,
 /// @param[in] u The Expression
 /// @param[in] cells A list of active cells
 /// @return A pair of the form (coeffs, cstride)
-template <typename T>
+template <typename T, std::floating_point U>
 std::pair<std::vector<T>, int>
-pack_coefficients(const Expression<T>& u, std::span<const std::int32_t> cells)
+pack_coefficients(const Expression<T, U>& u,
+                  std::span<const std::int32_t> cells)
 {
   // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const Function<T>>>& coefficients
+  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
       = u.coefficients();
   const std::vector<int> offsets = u.coefficient_offsets();
 

@@ -111,8 +111,8 @@ reorder_owned(const graph::AdjacencyList<std::int32_t>& dofmap,
 
   // Re-order graph and return re-odering
   assert(reorder_fn);
-  return reorder_fn(graph::AdjacencyList<std::int32_t>(
-      std::move(graph_data), std::move(graph_offsets)));
+  return reorder_fn(
+      graph::AdjacencyList(std::move(graph_data), std::move(graph_offsets)));
 }
 
 //-----------------------------------------------------------------------------
@@ -371,9 +371,8 @@ build_basic_dofmap(
     }
   }
 
-  return {
-      graph::AdjacencyList<std::int32_t>(std::move(dofs), std::move(cell_ptr)),
-      std::move(local_to_global), std::move(dof_entity)};
+  return {graph::AdjacencyList(std::move(dofs), std::move(cell_ptr)),
+          std::move(local_to_global), std::move(dof_entity)};
 }
 //-----------------------------------------------------------------------------
 

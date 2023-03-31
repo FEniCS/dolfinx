@@ -9,7 +9,9 @@
 #include "FunctionSpace.h"
 #include <algorithm>
 #include <array>
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <functional>
@@ -24,7 +26,7 @@ namespace dolfinx::fem
 
 template <typename T>
 class Constant;
-template <typename T>
+template <typename T, std::floating_point U>
 class Function;
 
 /// @brief Type of integral
@@ -59,28 +61,16 @@ enum class IntegralType : std::int8_t
 /// (the variable `function_spaces` in the constructors below), the list
 /// of spaces should start with space number 0 (the test space) and then
 /// space number 1 (the trial space).
-template <typename T>
+template <typename T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
 class Form
 {
-  template <typename X, typename = void>
-  struct scalar_value_type
-  {
-    typedef X value_type;
-  };
-  template <typename X>
-  struct scalar_value_type<X, std::void_t<typename X::value_type>>
-  {
-    typedef typename X::value_type value_type;
-  };
-  using scalar_value_type_t = typename scalar_value_type<T>::value_type;
-
 public:
   /// @brief Create a finite element form.
   ///
   /// @note User applications will normally call a fem::Form builder
   /// function rather using this interface directly.
   ///
-  /// @param[in] function_spaces Function spaces for the form arguments
+  /// @param[in] V Function spaces for the form arguments
   /// @param[in] integrals The integrals in the form. The first key is
   /// the domain type. For each key there is a list of tuples (domain id,
   /// integration kernel, entities).
@@ -91,28 +81,27 @@ public:
   /// @param[in] mesh The mesh of the domain. This is required when
   /// there are not argument functions from which the mesh can be
   /// extracted, e.g. for functionals
-  Form(const std::vector<std::shared_ptr<const FunctionSpace>>& function_spaces,
+  Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
        const std::map<IntegralType,
                       std::vector<std::tuple<
                           int,
                           std::function<void(T*, const T*, const T*,
-                                             const scalar_value_type_t*,
+                                             const scalar_value_type_t<T>*,
                                              const int*, const std::uint8_t*)>,
                           std::vector<std::int32_t>>>>& integrals,
-       const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
+       const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
        const std::vector<std::shared_ptr<const Constant<T>>>& constants,
        bool needs_facet_permutations,
-       std::shared_ptr<const mesh::Mesh> mesh = nullptr)
-      : _function_spaces(function_spaces), _coefficients(coefficients),
-        _constants(constants), _mesh(mesh),
-        _needs_facet_permutations(needs_facet_permutations)
+       std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
+      : _function_spaces(V), _coefficients(coefficients), _constants(constants),
+        _mesh(mesh), _needs_facet_permutations(needs_facet_permutations)
   {
     // Extract _mesh from FunctionSpace, and check they are the same
-    if (!_mesh and !function_spaces.empty())
-      _mesh = function_spaces[0]->mesh();
-    for (const auto& V : function_spaces)
+    if (!_mesh and !V.empty())
+      _mesh = V[0]->mesh();
+    for (const auto& space : V)
     {
-      if (_mesh != V->mesh())
+      if (_mesh != space->mesh())
         throw std::runtime_error("Incompatible mesh");
     }
     if (!_mesh)
@@ -162,11 +151,11 @@ public:
 
   /// Extract common mesh for the form
   /// @return The mesh
-  std::shared_ptr<const mesh::Mesh> mesh() const { return _mesh; }
+  std::shared_ptr<const mesh::Mesh<U>> mesh() const { return _mesh; }
 
   /// Return function spaces for all arguments
   /// @return Function spaces
-  const std::vector<std::shared_ptr<const FunctionSpace>>&
+  const std::vector<std::shared_ptr<const FunctionSpace<U>>>&
   function_spaces() const
   {
     return _function_spaces;
@@ -177,8 +166,9 @@ public:
   /// @param[in] type Integral type
   /// @param[in] i Domain index
   /// @return Function to call for tabulate_tensor
-  const std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
-                           const int*, const std::uint8_t*)>&
+  const std::function<void(T*, const T*, const T*,
+                           const scalar_value_type_t<T>*, const int*,
+                           const std::uint8_t*)>&
   kernel(IntegralType type, int i) const
   {
     switch (type)
@@ -304,7 +294,7 @@ public:
   }
 
   /// Access coefficients
-  const std::vector<std::shared_ptr<const Function<T>>>& coefficients() const
+  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients() const
   {
     return _coefficients;
   }
@@ -339,19 +329,20 @@ public:
   using scalar_type = T;
 
 private:
-  using kern
-      = std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
-                           const int*, const std::uint8_t*)>;
+  using kern = std::function<void(T*, const T*, const T*,
+                                  const scalar_value_type_t<T>*, const int*,
+                                  const std::uint8_t*)>;
 
   /// Helper function to get the kernel for integral i from a map
   /// of integrals i.e. from _cell_integrals
   /// @param[in] integrals Map of integrals
   /// @param[in] i Domain index
   /// @return Function to call for tabulate_tensor
-  template <typename U>
-  const std::function<void(T*, const T*, const T*, const scalar_value_type_t*,
-                           const int*, const std::uint8_t*)>&
-  get_kernel_from_integrals(const U& integrals, int i) const
+  template <typename X>
+  const std::function<void(T*, const T*, const T*,
+                           const scalar_value_type_t<T>*, const int*,
+                           const std::uint8_t*)>&
+  get_kernel_from_integrals(const X& integrals, int i) const
   {
     auto it = integrals.find(i);
     if (it == integrals.end())
@@ -360,16 +351,16 @@ private:
   }
 
   // Function spaces (one for each argument)
-  std::vector<std::shared_ptr<const FunctionSpace>> _function_spaces;
+  std::vector<std::shared_ptr<const FunctionSpace<U>>> _function_spaces;
 
   // Form coefficients
-  std::vector<std::shared_ptr<const Function<T>>> _coefficients;
+  std::vector<std::shared_ptr<const Function<T, U>>> _coefficients;
 
   // Constants associated with the Form
   std::vector<std::shared_ptr<const Constant<T>>> _constants;
 
   // The mesh
-  std::shared_ptr<const mesh::Mesh> _mesh;
+  std::shared_ptr<const mesh::Mesh<U>> _mesh;
 
   // Cell integrals
   std::map<int, std::pair<kern, std::vector<std::int32_t>>> _cell_integrals;

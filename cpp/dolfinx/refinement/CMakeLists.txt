@@ -9,6 +9,5 @@ set(HEADERS_refinement
 target_sources(
   dolfinx
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/plaza.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/refine.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
 )

@@ -601,8 +601,8 @@ compute_entities_by_key_matching(
                  std::next(offsets_ev.begin()),
                  [](auto a, auto b) { return a + b; });
 
-  graph::AdjacencyList<std::int32_t> ev(
-      std::vector<std::int32_t>(offsets_ev.back()), std::move(offsets_ev));
+  graph::AdjacencyList ev(std::vector<std::int32_t>(offsets_ev.back()),
+                          std::move(offsets_ev));
   for (std::size_t i = 0; i < entity_list_shape0; ++i)
   {
     auto _ev = ev.links(local_index[i]);
@@ -619,8 +619,7 @@ compute_entities_by_key_matching(
                  std::next(offsets_ce.begin()),
                  [num_entities_per_cell](auto x)
                  { return x + num_entities_per_cell; });
-  graph::AdjacencyList<std::int32_t> ce(std::move(local_index),
-                                        std::move(offsets_ce));
+  graph::AdjacencyList ce(std::move(local_index), std::move(offsets_ce));
 
   return {std::move(ce), std::move(ev), std::move(index_map),
           std::move(interprocess_entities)};
@@ -661,8 +660,7 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
     for (std::int32_t e0 : c_d1_d0.links(e1))
       connections[offsets[e0] + counter[e0]++] = e1;
 
-  return graph::AdjacencyList<std::int32_t>(std::move(connections),
-                                            std::move(offsets));
+  return graph::AdjacencyList(std::move(connections), std::move(offsets));
 }
 //-----------------------------------------------------------------------------
 
@@ -723,8 +721,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
   }
 
   connections.shrink_to_fit();
-  return graph::AdjacencyList<std::int32_t>(std::move(connections),
-                                            std::move(offsets));
+  return graph::AdjacencyList(std::move(connections), std::move(offsets));
 }
 //-----------------------------------------------------------------------------
 } // namespace

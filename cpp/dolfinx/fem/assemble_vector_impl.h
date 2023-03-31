@@ -13,6 +13,7 @@
 #include "FunctionSpace.h"
 #include "utils.h"
 #include <algorithm>
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -724,8 +725,8 @@ void assemble_interior_facets(
 /// @param[in] x0 The array used in the lifting, typically a 'current
 /// solution' in a Newton method
 /// @param[in] scale Scaling to apply
-template <typename T>
-void lift_bc(std::span<T> b, const Form<T>& a,
+template <typename T, std::floating_point U>
+void lift_bc(std::span<T> b, const Form<T, U>& a,
              const mesh::Geometry<scalar_value_type_t<T>>& geometry,
              std::span<const T> constants,
              const std::map<std::pair<IntegralType, int>,
@@ -734,7 +735,7 @@ void lift_bc(std::span<T> b, const Form<T>& a,
              std::span<const std::int8_t> bc_markers1, std::span<const T> x0,
              T scale)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
+  std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
 
   // Get dofmap for columns and rows of a
@@ -868,14 +869,15 @@ void lift_bc(std::span<T> b, const Form<T>& a,
 /// x0[2] block
 /// @param[in] x0 The vectors used in the lifting
 /// @param[in] scale Scaling to apply
-template <typename T>
+template <typename T, std::floating_point U>
 void apply_lifting(
-    std::span<T> b, const std::vector<std::shared_ptr<const Form<T>>> a,
+    std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>> a,
     const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
+    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T, U>>>>&
+        bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
   // FIXME: make changes to reactivate this check
@@ -907,7 +909,7 @@ void apply_lifting(
       const int crange = bs1 * (map1->size_local() + map1->num_ghosts());
       bc_markers1.assign(crange, false);
       bc_values1.assign(crange, 0.0);
-      for (const std::shared_ptr<const DirichletBC<T>>& bc : bcs1[j])
+      for (const std::shared_ptr<const DirichletBC<T, U>>& bc : bcs1[j])
       {
         bc->mark_dofs(bc_markers1);
         bc->dof_values(bc_values1);
@@ -934,15 +936,15 @@ void apply_lifting(
 /// @param[in] geometry The mesh geometry
 /// @param[in] constants Packed constants that appear in `L`
 /// @param[in] coefficients Packed coefficients that appear in `L`
-template <typename T>
+template <typename T, std::floating_point U>
 void assemble_vector(
-    std::span<T> b, const Form<T>& L,
+    std::span<T> b, const Form<T, U>& L,
     const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = L.mesh();
+  std::shared_ptr<const mesh::Mesh<U>> mesh = L.mesh();
   assert(mesh);
 
   // Get dofmap data
@@ -1066,25 +1068,26 @@ void assemble_vector(
   }
 }
 
-/// Assemble linear form into a vector
+/// @brief Assemble linear form into a vector
 /// @param[in,out] b The vector to be assembled. It will not be zeroed
 /// before assembly.
 /// @param[in] L The linear forms to assemble into b
 /// @param[in] constants Packed constants that appear in `L`
 /// @param[in] coefficients Packed coefficients that appear in `L`
-template <typename T>
+template <typename T, std::floating_point U>
 void assemble_vector(
-    std::span<T> b, const Form<T>& L, std::span<const T> constants,
+    std::span<T> b, const Form<T, U>& L, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = L.mesh();
+  std::shared_ptr<const mesh::Mesh<U>> mesh = L.mesh();
   assert(mesh);
-  if constexpr (std::is_same_v<double, scalar_value_type_t<T>>)
+  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
     assemble_vector(b, L, mesh->geometry(), constants, coefficients);
   else
   {
-    assemble_vector(b, L, mesh->geometry().astype<scalar_value_type_t<T>>(),
+    assemble_vector(b, L,
+                    mesh->geometry().template astype<scalar_value_type_t<T>>(),
                     constants, coefficients);
   }
 }

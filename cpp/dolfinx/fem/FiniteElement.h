@@ -78,7 +78,7 @@ public:
   int space_dimension() const noexcept;
 
   /// Block size of the finite element function space. For
-  /// VectorElements and TensorElements, this is the number of DOFs
+  /// BlockedElements, this is the number of DOFs
   /// colocated at each DOF point. For other elements, this is always 1.
   /// @return Block size of the finite element space
   int block_size() const noexcept;
@@ -673,7 +673,7 @@ private:
   // Dimension of each value space
   std::vector<std::size_t> _value_shape;
 
-  // Block size for VectorElements and TensorElements. This gives the
+  // Block size for BlockedElements. This gives the
   // number of DOFs co-located at each dof 'point'.
   int _bs;
 

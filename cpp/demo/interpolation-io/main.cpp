@@ -1,4 +1,4 @@
-// Copyright (C) 2022 Garth N. Wells
+// Copyright (C) 2022-2023 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,6 +6,7 @@
 
 #include <basix/finite-element.h>
 #include <cmath>
+#include <concepts>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/FunctionSpace.h>
@@ -15,6 +16,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/generation.h>
+#include <dolfinx/mesh/utils.h>
 #include <filesystem>
 #include <mpi.h>
 #include <numbers>
@@ -24,9 +26,9 @@ using namespace dolfinx;
 // This function interpolations a function is a finite element space and
 // outputs the finite element function to a VTK file for visualisation.
 // It also shows how to create a finite element using Basix.
-template <typename T>
-void interpolate_scalar(std::shared_ptr<mesh::Mesh> mesh,
-                        std::filesystem::path filename)
+template <typename T, std::floating_point U>
+void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
+                        [[maybe_unused]] std::filesystem::path filename)
 {
   // Create a Basix continuous Lagrange element of degree 1
   basix::FiniteElement e = basix::create_element(
@@ -36,7 +38,7 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh> mesh,
       basix::element::dpc_variant::unset, false);
 
   // Create a scalar function space
-  auto V = std::make_shared<fem::FunctionSpace>(
+  auto V = std::make_shared<fem::FunctionSpace<U>>(
       fem::create_functionspace(mesh, e, 1));
 
   // Create a finite element Function
@@ -53,18 +55,21 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh> mesh,
         return {f, {f.size()}};
       });
 
-  // Write the function to a VTK file for visualisation, e.g. using
+#ifdef HAS_ADIOS2
+  // Write the function to a VTX file for visualisation, e.g. using
   // ParaView
-  io::VTKFile file(mesh->comm(), filename.replace_extension("pvd"), "w");
-  file.write<T>({*u}, 0.0);
+  io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"), {u});
+  outfile.write(0.0);
+  outfile.close();
+#endif
 }
 
 // This function interpolations a function is a H(curl) finite element
 // space. To visualise the function, it interpolates the H(curl) finite
 // element function in a discontinuous Lagrange space and outputs the
 // Lagrange finite element function to a VTX file for visualisation.
-template <typename T>
-void interpolate_nedelec(std::shared_ptr<mesh::Mesh> mesh,
+template <typename T, std::floating_point U>
+void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
                          [[maybe_unused]] std::filesystem::path filename)
 {
   // Create a Basix Nedelec (first kind) element of degree 2 (dim=6 on triangle)
@@ -75,7 +80,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh> mesh,
       basix::element::dpc_variant::unset, false);
 
   // Create a Nedelec function space
-  auto V = std::make_shared<fem::FunctionSpace>(
+  auto V = std::make_shared<fem::FunctionSpace<U>>(
       fem::create_functionspace(mesh, e, 1));
 
   // Create a Nedelec finite element Function
@@ -145,7 +150,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh> mesh,
       basix::element::dpc_variant::unset, true);
 
   // Create a function space
-  auto V_l = std::make_shared<fem::FunctionSpace>(
+  auto V_l = std::make_shared<fem::FunctionSpace<U>>(
       fem::create_functionspace(mesh, e_l, 2));
 
   auto u_l = std::make_shared<fem::Function<T>>(V_l);
@@ -154,13 +159,14 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh> mesh,
   // space:
   u_l->interpolate(*u);
 
-  // Output the discontinuous Lagrange space in VTK format. When
+  // Output the discontinuous Lagrange space in VTX format. When
   // plotting the x0 component the field will appear discontinuous at x0
   // = 0.5 (jump in the normal component between cells) and the x1
   // component will appear continuous (continuous tangent component
   // between cells).
 #ifdef HAS_ADIOS2
-  io::VTXWriter outfile(mesh->comm(), filename.replace_extension("bp"), {u_l});
+  io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"),
+                           {u_l});
   outfile.write(0.0);
   outfile.close();
 #endif
@@ -173,27 +179,41 @@ int main(int argc, char* argv[])
   dolfinx::init_logging(argc, argv);
   MPI_Init(&argc, &argv);
 
-  // The main body of the function is scoped with the curly braces to
-  // ensure that all objects that depend on an MPI communicator are
-  // destroyed before MPI is finalised at the end of this function.
+  // The main body of the function is scoped to ensure that all objects
+  // that depend on an MPI communicator are destroyed before MPI is
+  // finalised at the end of this function.
   {
-    // Create a mesh. For what comes later in this demo we need to
+    // Create meshes. For what comes later in this demo we need to
     // ensure that a boundary between cells is located at x0=0.5
-    auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
-        MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
-        mesh::CellType::triangle,
-        mesh::create_cell_partitioner(mesh::GhostMode::none)));
+
+    // Create mesh using float for geometry coordinates
+    auto mesh0
+        = std::make_shared<mesh::Mesh<float>>(mesh::create_rectangle<float>(
+            MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
+            mesh::CellType::triangle,
+            mesh::create_cell_partitioner(mesh::GhostMode::none)));
+
+    // Create mesh using double for geometry coordinates
+    auto mesh1
+        = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle<double>(
+            MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
+            mesh::CellType::triangle,
+            mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
     // Interpolate a function in a scalar Lagrange space and output the
-    // result to file for visualisation
-    interpolate_scalar<double>(mesh, "u");
-    interpolate_scalar<std::complex<double>>(mesh, "u_complex");
+    // result to file for visualisation using different types
+    interpolate_scalar<float>(mesh0, "u32");
+    interpolate_scalar<double>(mesh1, "u64");
+    interpolate_scalar<std::complex<float>>(mesh0, "u_complex64");
+    interpolate_scalar<std::complex<double>>(mesh1, "u_complex128");
 
     // Interpolate a function in a H(curl) finite element space, and
     // then interpolate the H(curl) function in a discontinuous Lagrange
-    // space for visualisation
-    interpolate_nedelec<double>(mesh, "u_nedelec");
-    interpolate_nedelec<std::complex<double>>(mesh, "u_nedelec_complex");
+    // space for visualisation using different types
+    interpolate_nedelec<float>(mesh0, "u_nedelec32");
+    interpolate_nedelec<double>(mesh1, "u_nedelec64");
+    interpolate_nedelec<std::complex<float>>(mesh0, "u_nedelec_complex64");
+    interpolate_nedelec<std::complex<double>>(mesh1, "u_nedelec_complex12");
   }
 
   MPI_Finalize();

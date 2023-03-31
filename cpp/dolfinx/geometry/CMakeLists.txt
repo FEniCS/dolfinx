@@ -6,9 +6,3 @@ set(HEADERS_geometry
   PARENT_SCOPE
 )
 
-target_sources(
-  dolfinx
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/BoundingBoxTree.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/gjk.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
-)

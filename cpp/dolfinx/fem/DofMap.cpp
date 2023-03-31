@@ -169,8 +169,7 @@ fem::transpose_dofmap(const graph::AdjacencyList<std::int32_t>& dofmap,
               data.begin() + index_offsets[index + 1]);
   }
 
-  return graph::AdjacencyList<std::int32_t>(std::move(data),
-                                            std::move(index_offsets));
+  return graph::AdjacencyList(std::move(data), std::move(index_offsets));
 }
 //-----------------------------------------------------------------------------
 /// Equality operator

@@ -213,7 +213,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 }
 //----------------------------------------------------------------------------
 void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
-                         const hid_t h5_id, const mesh::Mesh& mesh,
+                         const hid_t h5_id, const mesh::Mesh<double>& mesh,
                          const std::string name)
 {
   LOG(INFO) << "Adding mesh to node \"" << xml_node.path('/') << "\"";

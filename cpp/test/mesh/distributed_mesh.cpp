@@ -26,7 +26,7 @@ void create_mesh_file()
 {
   // Create mesh using all processes and save xdmf
   auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
-  auto mesh = std::make_shared<mesh::Mesh>(
+  auto mesh = std::make_shared<mesh::Mesh<double>>(
       mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {N, N},
                              mesh::CellType::triangle, part));
 
@@ -126,8 +126,8 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, {cmap},
                                                   cell_nodes, x, xshape[1]);
 
-  auto mesh = std::make_shared<mesh::Mesh>(mpi_comm, std::move(topology),
-                                           std::move(geometry));
+  auto mesh = std::make_shared<mesh::Mesh<double>>(
+      mpi_comm, std::move(topology), std::move(geometry));
 
   CHECK(mesh->topology().index_map(tdim)->size_global() == 2 * N * N);
   CHECK(mesh->topology().index_map(tdim)->size_local() > 0);
