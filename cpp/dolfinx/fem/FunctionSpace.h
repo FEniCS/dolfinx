@@ -216,12 +216,16 @@ public:
     const auto [X, Xshape] = _element->interpolation_points();
 
     // Get coordinate map
-    const CoordinateElement& cmap = _mesh->geometry().cmap();
+    if (_mesh->geometry().cmaps().size() > 1)
+    {
+      throw std::runtime_error("Mixed topology not supported");
+    }
+    const CoordinateElement& cmap = _mesh->geometry().cmaps()[0];
 
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = _mesh->geometry().dofmap();
-    const std::size_t num_dofs_g = _mesh->geometry().cmap().dim();
+    const std::size_t num_dofs_g = cmap.dim();
     std::span<const T> x_g = _mesh->geometry().x();
 
     // Array to hold coordinates to return

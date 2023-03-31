@@ -46,7 +46,13 @@ std::vector<T> interpolation_coords(const fem::FiniteElement& element,
   const std::size_t gdim = geometry.dim();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   std::span<const T> x_g = geometry.x();
-  const CoordinateElement& cmap = geometry.cmap();
+
+  if (geometry.cmaps().size() > 1)
+  {
+    throw std::runtime_error("Mixed topology not supported");
+  }
+
+  const CoordinateElement& cmap = geometry.cmaps()[0];
   const std::size_t num_dofs_g = cmap.dim();
 
   // Get the interpolation points on the reference cells
@@ -444,7 +450,10 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   const std::size_t value_size0 = element0->value_size() / bs0;
 
   // Get geometry data
-  const CoordinateElement& cmap = mesh->geometry().cmap();
+  if (mesh->geometry().cmaps().size() > 1)
+    throw std::runtime_error("Multiple cmaps");
+
+  const CoordinateElement& cmap = mesh->geometry().cmaps()[0];
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
@@ -856,7 +865,9 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
       throw std::runtime_error("Interpolation data has the wrong shape.");
 
     // Get coordinate map
-    const CoordinateElement& cmap = mesh->geometry().cmap();
+    if (mesh->geometry().cmaps().size() > 1)
+      throw std::runtime_error("Multiple cmaps");
+    const CoordinateElement& cmap = mesh->geometry().cmaps()[0];
 
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap

@@ -183,7 +183,7 @@ nearest_simplex(std::span<const T> s)
     {
       if (f_inside[0]) // The origin is inside the tetrahedron
         return {std::vector<T>(s.begin(), s.end()), {0, 0, 0}};
-      else             // The origin projection P faces BCD
+      else // The origin projection P faces BCD
         return nearest_simplex<T>(s.template subspan<0, 3 * 3>());
     }
 

@@ -100,7 +100,6 @@ adios2::Variable<T> define_variable(adios2::IO& io, std::string name,
     return io.DefineVariable<T>(name, shape, start, count);
 }
 //-----------------------------------------------------------------------------
-
 /// Extract name of functions and split into real and imaginary component
 template <typename T>
 std::vector<std::string>
@@ -179,7 +178,8 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
 
   // The Function and the mesh must have identical element_dof_layouts
   // (up to the block size)
-  assert(dofmap->element_dof_layout() == geometry.cmap().create_dof_layout());
+  assert(dofmap->element_dof_layout()
+         == geometry.cmaps()[0].create_dof_layout());
 
   const int tdim = topology->dim();
   auto cell_map = topology->index_map(tdim);
@@ -300,6 +300,7 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
 {
   const mesh::Geometry<T>& geometry = mesh.geometry();
   auto topology = mesh.topology();
+  assert(topology);
 
   // "Put" geometry data
   auto x_map = geometry.index_map();
@@ -315,9 +316,9 @@ void fides_write_mesh(adios2::IO& io, adios2::Engine& engine,
   // cell, and compute 'VTK' connectivity
   const int tdim = topology->dim();
   const std::int32_t num_cells = topology->index_map(tdim)->size_local();
-  const int num_nodes = geometry.cmap().dim();
+  const int num_nodes = geometry.cmaps()[0].dim();
   const auto [cells, shape] = io::extract_vtk_connectivity(
-      mesh.geometry().dofmap(), mesh.topology()->cell_type());
+      mesh.geometry().dofmap(), topology->cell_types()[0]);
 
   // "Put" topology data in the result in the ADIOS2 file
   adios2::Variable<std::int64_t> local_topology = define_variable<std::int64_t>(
@@ -336,11 +337,12 @@ void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh<T>& mesh)
 {
   const mesh::Geometry<T>& geometry = mesh.geometry();
   auto topology = mesh.topology();
+  assert(topology);
 
   // Check that mesh is first order mesh
-  const int num_dofs_g = geometry.cmap().dim();
+  const int num_dofs_g = geometry.cmaps()[0].dim();
   const int num_vertices_per_cell
-      = mesh::cell_num_entities(topology->cell_type(), 0);
+      = mesh::cell_num_entities(topology->cell_types()[0], 0);
   if (num_dofs_g != num_vertices_per_cell)
     throw std::runtime_error("Fides only supports lowest-order meshes.");
 
@@ -354,7 +356,7 @@ void fides_initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh<T>& mesh)
   define_attribute<std::string>(io, "Fides_Connecticity_Variable",
                                 "connectivity");
 
-  std::string cell_type = to_fides_cell(topology->cell_type());
+  std::string cell_type = to_fides_cell(topology->cell_types()[0]);
   define_attribute<std::string>(io, "Fides_Cell_Type", cell_type);
 
   define_attribute<std::string>(io, "Fides_Time_Variable", "step");
@@ -580,8 +582,10 @@ FidesWriter::FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
   }
 
   // Check that all functions are first order Lagrange
-  int num_vertices_per_cell
-      = mesh::cell_num_entities(mesh->topology()->cell_type(), 0);
+  auto cell_types = mesh->topology()->cell_types();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("Multiple cell types in IO.");
+  int num_vertices_per_cell = mesh::cell_num_entities(cell_types.back(), 0);
   for (auto& v : _u)
   {
     std::visit(
@@ -630,5 +634,6 @@ void FidesWriter::write(double t)
 
   _engine->EndStep();
 }
+//-----------------------------------------------------------------------------
 
 #endif

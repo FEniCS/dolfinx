@@ -339,11 +339,13 @@ def test_assembly_into_quadrature_function():
 
     Q_dofs_unrolled = bs * np.repeat(Q_dofs, bs).reshape(-1, bs) + np.arange(bs)
     Q_dofs_unrolled = Q_dofs_unrolled.reshape(-1, bs * quadrature_points.shape[0]).astype(Q_dofs.dtype)
+    assert len(mesh.geometry.cmaps) == 1
+
     with e_Q.vector.localForm() as local:
         e_exact_eval = np.zeros_like(local.array)
         for cell in range(num_cells):
             xg = x_g[coord_dofs.links(cell), :tdim]
-            x = mesh.geometry.cmap.push_forward(quadrature_points, xg)
+            x = mesh.geometry.cmaps[0].push_forward(quadrature_points, xg)
             e_exact_eval[Q_dofs_unrolled[cell]] = e_exact(x.T).T.flatten()
         assert np.allclose(local.array, e_exact_eval)
 

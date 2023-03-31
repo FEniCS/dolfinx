@@ -94,7 +94,13 @@ compute_point_values(const fem::Function<T, double>& u)
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
-  const int num_dofs_g = mesh->geometry().cmap().dim();
+
+  if (mesh->geometry().cmaps().size() > 1)
+  {
+    throw std::runtime_error(
+        "XDMF I/O with multiple geometry maps not implemented.");
+  }
+  const int num_dofs_g = mesh->geometry().cmaps()[0].dim();
 
   // Interpolate point values on each cell (using last computed value if
   // not continuous, e.g. discontinuous Galerkin methods)
@@ -451,16 +457,28 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
 {
   LOG(INFO) << "XDMF distribute entity data";
 
+  auto topology = mesh.topology();
+  assert(topology);
+
+  auto cell_types = topology->cell_types();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("cell type IO");
+
   // Use ElementDofLayout of the cell to get vertex dof indices (local
   // to a cell), i.e. build a map from local vertex index to associated
   // local dof index
   std::vector<int> cell_vertex_dofs;
   {
     // Get layout of dofs on 0th cell entity of dimension entity_dim
+
+    if (mesh.geometry().cmaps().size() > 1)
+    {
+      throw std::runtime_error(
+          "XDMF I/O with multiple geometry maps not implemented.");
+    }
     const fem::ElementDofLayout cmap_dof_layout
-        = mesh.geometry().cmap().create_dof_layout();
-    for (int i = 0;
-         i < mesh::cell_num_entities(mesh.topology()->cell_type(), 0); ++i)
+        = mesh.geometry().cmaps()[0].create_dof_layout();
+    for (int i = 0; i < mesh::cell_num_entities(cell_types.back(), 0); ++i)
     {
       const std::vector<int>& local_index = cmap_dof_layout.entity_dofs(0, i);
       assert(local_index.size() == 1);
@@ -526,14 +544,18 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
     const int comm_size = dolfinx::MPI::size(comm);
     const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
 
+    auto cell_types = mesh.topology()->cell_types();
+    if (cell_types.size() > 1)
+      throw std::runtime_error("cell type IO");
+
     const std::size_t num_vert_per_entity = mesh::cell_num_entities(
-        mesh::cell_entity_type(mesh.topology()->cell_type(), entity_dim, 0), 0);
+        mesh::cell_entity_type(cell_types.back(), entity_dim, 0), 0);
     auto c_to_v = mesh.topology()->connectivity(mesh.topology()->dim(), 0);
     if (!c_to_v)
       throw std::runtime_error("Missing cell-vertex connectivity.");
 
     const fem::ElementDofLayout cmap_dof_layout
-        = mesh.geometry().cmap().create_dof_layout();
+        = mesh.geometry().cmaps()[0].create_dof_layout();
     const std::vector<int> entity_layout
         = cmap_dof_layout.entity_closure_dofs(entity_dim, 0);
 
@@ -612,8 +634,11 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
     const MPI_Comm comm = mesh.comm();
     const int comm_size = dolfinx::MPI::size(comm);
 
+    auto cell_types = mesh.topology()->cell_types();
+    if (cell_types.size() > 1)
+      throw std::runtime_error("cell type IO");
     const std::size_t num_vert_per_entity = mesh::cell_num_entities(
-        mesh::cell_entity_type(mesh.topology()->cell_type(), entity_dim, 0), 0);
+        mesh::cell_entity_type(cell_types.back(), entity_dim, 0), 0);
 
     // Build map from global node index to ranks that have the node
     std::multimap<std::int64_t, int> node_to_rank;
@@ -686,8 +711,12 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
     // Build map from input global indices to local vertex numbers
     LOG(INFO) << "XDMF build map";
 
+    auto cell_types = mesh.topology()->cell_types();
+    if (cell_types.size() > 1)
+      throw std::runtime_error("cell type IO");
+
     const std::size_t num_vert_per_entity = mesh::cell_num_entities(
-        mesh::cell_entity_type(mesh.topology()->cell_type(), entity_dim, 0), 0);
+        mesh::cell_entity_type(cell_types.back(), entity_dim, 0), 0);
     auto c_to_v = mesh.topology()->connectivity(mesh.topology()->dim(), 0);
     if (!c_to_v)
       throw std::runtime_error("Missing cell-vertex connectivity.");

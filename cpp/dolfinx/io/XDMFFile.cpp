@@ -240,9 +240,8 @@ mesh::Mesh<double> XDMFFile::read_mesh(const fem::CoordinateElement& element,
 
   graph::AdjacencyList<std::int64_t> cells_adj(std::move(cells),
                                                std::move(offset));
-
   mesh::Mesh<double> mesh
-      = mesh::create_mesh(_comm.comm(), cells_adj, element, x, xshape, mode);
+      = mesh::create_mesh(_comm.comm(), cells_adj, {element}, x, xshape, mode);
   mesh.name = name;
   return mesh;
 }
@@ -349,10 +348,13 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
       entities_values = xdmf_utils::distribute_entity_data(
           mesh, mesh::cell_dim(cell_type), entities1, values);
 
+  auto cell_types = mesh.topology()->cell_types();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("cell type IO");
+
   LOG(INFO) << "XDMF create meshtags";
-  const std::size_t num_vertices_per_entity = mesh::cell_num_entities(
-      mesh::cell_entity_type(mesh.topology()->cell_type(),
-                             mesh::cell_dim(cell_type), 0),
+  std::size_t num_vertices_per_entity = mesh::cell_num_entities(
+      mesh::cell_entity_type(cell_types.back(), mesh::cell_dim(cell_type), 0),
       0);
   const graph::AdjacencyList<std::int32_t> entities_adj
       = graph::regular_adjacency_list(std::move(entities_values.first),

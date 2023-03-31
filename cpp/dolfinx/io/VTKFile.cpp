@@ -411,6 +411,9 @@ void write_function(
   vtk_node_vtu.append_attribute("version") = "2.2";
   pugi::xml_node grid_node_vtu = vtk_node_vtu.append_child("UnstructuredGrid");
 
+  auto topology0 = mesh0->topology();
+  assert(topology0);
+
   // Build mesh data using first FunctionSpace
   std::vector<double> x;
   std::array<std::size_t, 2> xshape;
@@ -422,7 +425,7 @@ void write_function(
   {
     std::vector<std::int64_t> tmp;
     std::tie(tmp, cshape) = io::extract_vtk_connectivity(
-        mesh0->geometry().dofmap(), mesh0->topology()->cell_type());
+        mesh0->geometry().dofmap(), topology0->cell_types()[0]);
     cells.assign(tmp.begin(), tmp.end());
     const mesh::Geometry<double>& geometry = mesh0->geometry();
     x.assign(geometry.x().begin(), geometry.x().end());
@@ -442,11 +445,17 @@ void write_function(
   piece_node.append_attribute("NumberOfPoints") = xshape[0];
   piece_node.append_attribute("NumberOfCells") = cshape[0];
 
+  // FIXME
+  auto cell_types = topology0->cell_types();
+  if (cell_types.size() > 1)
+  {
+    throw std::runtime_error("Multiple cell types in IO");
+  }
+
   // Add mesh data to "Piece" node
-  int tdim = mesh0->topology()->dim();
-  add_mesh(x, xshape, x_id, x_ghost, cells, cshape,
-           *mesh0->topology()->index_map(tdim), mesh0->topology()->cell_type(),
-           mesh0->topology()->dim(), piece_node);
+  int tdim = topology0->dim();
+  add_mesh(x, xshape, x_id, x_ghost, cells, cshape, *topology0->index_map(tdim),
+           cell_types.back(), topology0->dim(), piece_node);
 
   // FIXME: is this actually setting the first?
   // Set last scalar/vector/tensor Functions in u to be the 'active'
@@ -773,14 +782,18 @@ void io::VTKFile::write(const mesh::Mesh<double>& mesh, double time)
   piece_node.append_attribute("NumberOfPoints") = num_points;
   piece_node.append_attribute("NumberOfCells") = num_cells;
 
+  auto cell_types = topology->cell_types();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("Multiple cell types in IO");
+
   // Add mesh data to "Piece" node
-  const auto [cells, cshape] = extract_vtk_connectivity(
-      mesh.geometry().dofmap(), mesh.topology()->cell_type());
+  const auto [cells, cshape]
+      = extract_vtk_connectivity(mesh.geometry().dofmap(), cell_types[0]);
   std::array<std::size_t, 2> xshape = {geometry.x().size() / 3, 3};
   std::vector<std::uint8_t> x_ghost(xshape[0], 0);
   std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
   add_mesh(geometry.x(), xshape, geometry.input_global_indices(), x_ghost,
-           cells, cshape, *topology->index_map(tdim), topology->cell_type(),
+           cells, cshape, *topology->index_map(tdim), cell_types[0],
            topology->dim(), piece_node);
 
   // Create filepath for a .vtu file

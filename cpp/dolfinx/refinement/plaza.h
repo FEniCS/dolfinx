@@ -423,12 +423,17 @@ template <typename T>
 std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>, std::vector<std::int8_t>>
 refine(const mesh::Mesh<T>& mesh, bool redistribute, Option option)
 {
+  if (mesh.geometry().cmaps().size() > 1)
+  {
+    throw std::runtime_error("Mixed topology not supported");
+  }
+
   auto [cell_adj, new_coords, xshape, parent_cell, parent_facet]
       = compute_refinement_data(mesh, option);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
+    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmaps(),
                               new_coords, xshape, mesh::GhostMode::none),
             std::move(parent_cell), std::move(parent_facet)};
   }
@@ -469,13 +474,15 @@ std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>, std::vector<std::int8_t>>
 refine(const mesh::Mesh<T>& mesh, std::span<const std::int32_t> edges,
        bool redistribute, Option option)
 {
+  if (mesh.geometry().cmaps().size() > 1)
+    throw std::runtime_error("Mixed topology not supported");
 
   auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
       = compute_refinement_data(mesh, edges, option);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
+    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmaps(),
                               new_vertex_coords, xshape, mesh::GhostMode::none),
             std::move(parent_cell), std::move(parent_facet)};
   }
@@ -516,14 +523,19 @@ std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
 compute_refinement_data(const mesh::Mesh<T>& mesh, Option option)
 {
   common::Timer t0("PLAZA: refine");
+  auto topology = mesh.topology();
+  assert(topology);
 
-  if (mesh.topology()->cell_type() != mesh::CellType::triangle
-      and mesh.topology()->cell_type() != mesh::CellType::tetrahedron)
+  if (topology->cell_types().size() > 1)
+    throw std::runtime_error("Mixed topology not supported");
+
+  if (topology->cell_types()[0] != mesh::CellType::triangle
+      and topology->cell_types()[0] != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }
 
-  auto map_e = mesh.topology()->index_map(1);
+  auto map_e = topology->index_map(1);
   if (!map_e)
     throw std::runtime_error("Edges must be initialised");
 
@@ -581,14 +593,19 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
                         std::span<const std::int32_t> edges, Option option)
 {
   common::Timer t0("PLAZA: refine");
+  auto topology = mesh.topology();
+  assert(topology);
 
-  if (mesh.topology()->cell_type() != mesh::CellType::triangle
-      and mesh.topology()->cell_type() != mesh::CellType::tetrahedron)
+  if (topology->cell_types().size() > 1)
+    throw std::runtime_error("Mixed topology not supported");
+
+  if (topology->cell_types()[0] != mesh::CellType::triangle
+      and topology->cell_types()[0] != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }
 
-  auto map_e = mesh.topology()->index_map(1);
+  auto map_e = topology->index_map(1);
   if (!map_e)
     throw std::runtime_error("Edges must be initialised");
 
@@ -638,8 +655,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   // Enforce rules about refinement (i.e. if any edge is marked in a
   // triangle, then the longest edge must also be marked).
   const auto [long_edge, edge_ratio_ok] = impl::face_long_edge(mesh);
-  impl::enforce_rules(comm, edge_ranks, marked_edges, *mesh.topology(),
-                      long_edge);
+  impl::enforce_rules(comm, edge_ranks, marked_edges, *topology, long_edge);
 
   auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
       = impl::compute_refinement(comm, marked_edges, edge_ranks, mesh,

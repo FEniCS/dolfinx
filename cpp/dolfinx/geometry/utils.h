@@ -38,6 +38,12 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
 {
   const int tdim = mesh.topology()->dim();
   const mesh::Geometry<T>& geometry = mesh.geometry();
+
+  if (geometry.cmaps().size() > 1)
+  {
+    throw std::runtime_error("Mixed topology not supported");
+  }
+
   std::span<const T> geom_dofs = geometry.x();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   std::vector<T> shortest_vectors(3 * entities.size());
@@ -84,7 +90,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
       // Tabulate geometry dofs for the entity
       auto dofs = x_dofmap.links(c);
       const std::vector<int> entity_dofs
-          = geometry.cmap().create_dof_layout().entity_closure_dofs(
+          = geometry.cmaps()[0].create_dof_layout().entity_closure_dofs(
               dim, local_cell_entity);
       std::vector<T> nodes(3 * entity_dofs.size());
       for (std::size_t i = 0; i < entity_dofs.size(); i++)
@@ -492,6 +498,11 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
   std::vector<std::int32_t> cell_candidates;
   impl::_compute_collisions_point<T>(tree, point, cell_candidates);
 
+  if (mesh.geometry().cmaps().size() > 1)
+  {
+    throw std::runtime_error("Mixed topology not supported");
+  }
+
   if (cell_candidates.empty())
     return -1;
   else
@@ -500,7 +511,7 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
     const mesh::Geometry<T>& geometry = mesh.geometry();
     std::span<const T> geom_dofs = geometry.x();
     const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-    const std::size_t num_nodes = geometry.cmap().dim();
+    const std::size_t num_nodes = geometry.cmaps()[0].dim();
     std::vector<T> coordinate_dofs(num_nodes * 3);
     for (auto cell : cell_candidates)
     {
