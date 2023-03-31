@@ -127,17 +127,18 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
                                                   cell_nodes, x, xshape[1]);
 
   auto mesh = std::make_shared<mesh::Mesh<double>>(
-      mpi_comm, std::move(topology), std::move(geometry));
+      mpi_comm, std::make_shared<mesh::Topology>(std::move(topology)),
+      std::move(geometry));
 
-  CHECK(mesh->topology().index_map(tdim)->size_global() == 2 * N * N);
-  CHECK(mesh->topology().index_map(tdim)->size_local() > 0);
+  CHECK(mesh->topology()->index_map(tdim)->size_global() == 2 * N * N);
+  CHECK(mesh->topology()->index_map(tdim)->size_local() > 0);
 
-  CHECK(mesh->topology().index_map(0)->size_global() == (N + 1) * (N + 1));
-  CHECK(mesh->topology().index_map(0)->size_local() > 0);
+  CHECK(mesh->topology()->index_map(0)->size_global() == (N + 1) * (N + 1));
+  CHECK(mesh->topology()->index_map(0)->size_local() > 0);
 
   CHECK((int)mesh->geometry().x().size() / 3
-        == mesh->topology().index_map(0)->size_local()
-               + mesh->topology().index_map(0)->num_ghosts());
+        == mesh->topology()->index_map(0)->size_local()
+               + mesh->topology()->index_map(0)->num_ghosts());
 
   MPI_Group_free(&comm_group);
   MPI_Group_free(&new_group);

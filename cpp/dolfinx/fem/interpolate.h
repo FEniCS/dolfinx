@@ -330,8 +330,8 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   std::shared_ptr<const FiniteElement> element1 = V1->element();
   assert(element1);
 
-  const int tdim = mesh->topology().dim();
-  auto map = mesh->topology().index_map(tdim);
+  const int tdim = mesh->topology()->dim();
+  auto map = mesh->topology()->index_map(tdim);
   assert(map);
   std::span<T> u1_array = u1.x()->mutable_array();
   std::span<const T> u0_array = u0.x()->array();
@@ -340,8 +340,8 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   if (element1->needs_dof_transformations()
       or element0->needs_dof_transformations())
   {
-    mesh->topology_mutable().create_entity_permutations();
-    cell_info = std::span(mesh->topology().get_cell_permutation_info());
+    mesh->topology_mutable()->create_entity_permutations();
+    cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
   // Get dofmaps
@@ -411,7 +411,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   assert(mesh);
 
   // Mesh dims
-  const int tdim = mesh->topology().dim();
+  const int tdim = mesh->topology()->dim();
   const int gdim = mesh->geometry().dim();
 
   // Get elements
@@ -426,8 +426,8 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   if (element1->needs_dof_transformations()
       or element0->needs_dof_transformations())
   {
-    mesh->topology_mutable().create_entity_permutations();
-    cell_info = std::span(mesh->topology().get_cell_permutation_info());
+    mesh->topology_mutable()->create_entity_permutations();
+    cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
   // Get dofmaps
@@ -647,8 +647,8 @@ void interpolate_nonmatching_meshes(
                              "supported with the same communicator.");
 
   MPI_Comm comm = mesh->comm();
-  const int tdim = mesh->topology().dim();
-  const auto cell_map = mesh->topology().index_map(tdim);
+  const int tdim = mesh->topology()->dim();
+  const auto cell_map = mesh->topology()->index_map(tdim);
 
   std::shared_ptr<const FiniteElement> element_u
       = u.function_space()->element();
@@ -744,13 +744,13 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   assert(mesh);
 
   const int gdim = mesh->geometry().dim();
-  const int tdim = mesh->topology().dim();
+  const int tdim = mesh->topology()->dim();
 
   std::span<const std::uint32_t> cell_info;
   if (element->needs_dof_transformations())
   {
-    mesh->topology_mutable().create_entity_permutations();
-    cell_info = std::span(mesh->topology().get_cell_permutation_info());
+    mesh->topology_mutable()->create_entity_permutations();
+    cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
   const std::size_t f_shape1 = f.size() / element->value_size();
@@ -1035,8 +1035,8 @@ create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
                                              const FiniteElement& element0,
                                              const mesh::Mesh<T>& mesh1)
 {
-  int tdim = mesh0.topology().dim();
-  auto cell_map = mesh0.topology().index_map(tdim);
+  int tdim = mesh0.topology()->dim();
+  auto cell_map = mesh0.topology()->index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
   std::vector<std::int32_t> cells(num_cells, 0);
@@ -1066,7 +1066,7 @@ void interpolate(
   auto mesh = u.function_space()->mesh();
   assert(mesh);
 
-  auto cell_map0 = mesh->topology().index_map(mesh->topology().dim());
+  auto cell_map0 = mesh->topology()->index_map(mesh->topology()->dim());
   assert(cell_map0);
   std::size_t num_cells0 = cell_map0->size_local() + cell_map0->num_ghosts();
   if (u.function_space() == v.function_space() and cells.size() == num_cells0)
@@ -1105,8 +1105,8 @@ void interpolate(
       {
         // Same element, different dofmaps (or just a subset of cells)
 
-        const int tdim = mesh->topology().dim();
-        auto cell_map = mesh->topology().index_map(tdim);
+        const int tdim = mesh->topology()->dim();
+        auto cell_map = mesh->topology()->index_map(tdim);
         assert(cell_map);
 
         assert(element1->block_size() == element0->block_size());

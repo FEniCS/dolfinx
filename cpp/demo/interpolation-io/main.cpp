@@ -193,12 +193,10 @@ int main(int argc, char* argv[])
             mesh::CellType::triangle,
             mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
-    // Create mesh using double for geometry coordinates
-    auto mesh1
-        = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle<double>(
-            MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
-            mesh::CellType::triangle,
-            mesh::create_cell_partitioner(mesh::GhostMode::none)));
+    // Create mesh using same topology as mesh0, but with different
+    // scalar type for geometry
+    auto mesh1 = std::make_shared<mesh::Mesh<double>>(
+        mesh0->comm(), mesh0->topology(), mesh0->geometry().astype<double>());
 
     // Interpolate a function in a scalar Lagrange space and output the
     // result to file for visualisation using different types

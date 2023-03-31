@@ -358,7 +358,8 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
                     const mesh::Mesh<T>& mesh)
 {
   const mesh::Geometry<T>& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
+  auto topology = mesh.topology();
+  assert(topology);
 
   // "Put" geometry
   std::shared_ptr<const common::IndexMap> x_map = geometry.index_map();
@@ -374,10 +375,10 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
   const auto [vtkcells, shape] = io::extract_vtk_connectivity(
-      mesh.geometry().dofmap(), mesh.topology().cell_types()[0]);
+      geometry.dofmap(), topology->cell_types()[0]);
 
   // Add cell metadata
-  const int tdim = topology.dim();
+  const int tdim = topology->dim();
   adios2::Variable<std::uint32_t> cell_variable
       = define_variable<std::uint32_t>(io, "NumberOfCells",
                                        {adios2::LocalValueDim});
@@ -386,7 +387,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
       = define_variable<std::uint32_t>(io, "types");
   engine.Put<std::uint32_t>(
       celltype_variable,
-      cells::get_vtk_cell_type(topology.cell_types()[0], tdim));
+      cells::get_vtk_cell_type(topology->cell_types()[0], tdim));
 
   // Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
@@ -431,7 +432,9 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 {
   auto mesh = V.mesh();
   assert(mesh);
-  const int tdim = mesh->topology().dim();
+  auto topology = mesh->topology();
+  assert(topology);
+  const int tdim = topology->dim();
 
   // Get a VTK mesh with points at the 'nodes'
   const auto [x, xshape, x_id, x_ghost, vtk, vtkshape]
@@ -471,8 +474,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(vertices, num_dofs);
   engine.Put<std::uint32_t>(elements, vtkshape[0]);
   engine.Put<std::uint32_t>(
-      cell_type,
-      cells::get_vtk_cell_type(mesh->topology().cell_types()[0], tdim));
+      cell_type, cells::get_vtk_cell_type(topology->cell_types()[0], tdim));
   engine.Put<T>(local_geometry, x.data());
   engine.Put<std::int64_t>(local_topology, cells.data());
 

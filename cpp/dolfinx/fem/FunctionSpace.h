@@ -147,7 +147,7 @@ public:
 
     // Create collapsed DofMap
     auto [_collapsed_dofmap, collapsed_dofs]
-        = _dofmap->collapse(_mesh->comm(), _mesh->topology());
+        = _dofmap->collapse(_mesh->comm(), *_mesh->topology());
     auto collapsed_dofmap
         = std::make_shared<DofMap>(std::move(_collapsed_dofmap));
 
@@ -191,7 +191,7 @@ public:
     assert(_mesh);
     assert(_element);
     const std::size_t gdim = _mesh->geometry().dim();
-    const int tdim = _mesh->topology().dim();
+    const int tdim = _mesh->topology()->dim();
 
     // Get dofmap local size
     assert(_dofmap);
@@ -244,15 +244,15 @@ public:
     std::vector<T> coordinate_dofs_b(num_dofs_g * gdim);
     mdspan2_t coordinate_dofs(coordinate_dofs_b.data(), num_dofs_g, gdim);
 
-    auto map = _mesh->topology().index_map(tdim);
+    auto map = _mesh->topology()->index_map(tdim);
     assert(map);
     const int num_cells = map->size_local() + map->num_ghosts();
 
     std::span<const std::uint32_t> cell_info;
     if (_element->needs_dof_transformations())
     {
-      _mesh->topology_mutable().create_entity_permutations();
-      cell_info = std::span(_mesh->topology().get_cell_permutation_info());
+      _mesh->topology_mutable()->create_entity_permutations();
+      cell_info = std::span(_mesh->topology()->get_cell_permutation_info());
     }
 
     auto apply_dof_transformation

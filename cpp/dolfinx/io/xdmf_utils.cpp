@@ -81,7 +81,7 @@ compute_point_values(const fem::Function<T, double>& u)
   assert(V);
   auto mesh = V->mesh();
   assert(mesh);
-  const int tdim = mesh->topology().dim();
+  const int tdim = mesh->topology()->dim();
 
   // Compute in tensor (one for scalar function, . . .)
   const std::size_t value_size_loc = V->element()->value_size();
@@ -104,7 +104,7 @@ compute_point_values(const fem::Function<T, double>& u)
 
   // Interpolate point values on each cell (using last computed value if
   // not continuous, e.g. discontinuous Galerkin methods)
-  auto map = mesh->topology().index_map(tdim);
+  auto map = mesh->topology()->index_map(tdim);
   assert(map);
   const std::int32_t num_cells = map->size_local() + map->num_ghosts();
 
@@ -189,9 +189,9 @@ _get_cell_data_values(const fem::Function<Scalar, double>& u)
   const int value_rank = u.function_space()->element()->value_shape().size();
 
   // Allocate memory for function values at cell centres
-  const int tdim = mesh->topology().dim();
+  const int tdim = mesh->topology()->dim();
   const std::int32_t num_local_cells
-      = mesh->topology().index_map(tdim)->size_local();
+      = mesh->topology()->index_map(tdim)->size_local();
   const std::int32_t local_size = num_local_cells * value_size;
 
   // Build lists of dofs and create map
@@ -457,7 +457,10 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
 {
   LOG(INFO) << "XDMF distribute entity data";
 
-  auto cell_types = mesh.topology().cell_types();
+  auto topology = mesh.topology();
+  assert(topology);
+
+  auto cell_types = topology->cell_types();
   if (cell_types.size() > 1)
     throw std::runtime_error("cell type IO");
 
@@ -541,13 +544,13 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
     const int comm_size = dolfinx::MPI::size(comm);
     const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
 
-    auto cell_types = mesh.topology().cell_types();
+    auto cell_types = mesh.topology()->cell_types();
     if (cell_types.size() > 1)
       throw std::runtime_error("cell type IO");
 
     const std::size_t num_vert_per_entity = mesh::cell_num_entities(
         mesh::cell_entity_type(cell_types.back(), entity_dim, 0), 0);
-    auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
+    auto c_to_v = mesh.topology()->connectivity(mesh.topology()->dim(), 0);
     if (!c_to_v)
       throw std::runtime_error("Missing cell-vertex connectivity.");
 
@@ -631,10 +634,9 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
     const MPI_Comm comm = mesh.comm();
     const int comm_size = dolfinx::MPI::size(comm);
 
-    auto cell_types = mesh.topology().cell_types();
+    auto cell_types = mesh.topology()->cell_types();
     if (cell_types.size() > 1)
       throw std::runtime_error("cell type IO");
-
     const std::size_t num_vert_per_entity = mesh::cell_num_entities(
         mesh::cell_entity_type(cell_types.back(), entity_dim, 0), 0);
 
@@ -709,13 +711,13 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
     // Build map from input global indices to local vertex numbers
     LOG(INFO) << "XDMF build map";
 
-    auto cell_types = mesh.topology().cell_types();
+    auto cell_types = mesh.topology()->cell_types();
     if (cell_types.size() > 1)
       throw std::runtime_error("cell type IO");
 
     const std::size_t num_vert_per_entity = mesh::cell_num_entities(
         mesh::cell_entity_type(cell_types.back(), entity_dim, 0), 0);
-    auto c_to_v = mesh.topology().connectivity(mesh.topology().dim(), 0);
+    auto c_to_v = mesh.topology()->connectivity(mesh.topology()->dim(), 0);
     if (!c_to_v)
       throw std::runtime_error("Missing cell-vertex connectivity.");
 

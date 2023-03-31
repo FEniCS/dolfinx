@@ -34,7 +34,7 @@ class Geometry;
 enum class GhostMode : int;
 template <std::floating_point T>
 class Mesh;
-template <typename T, std::floating_point U>
+template <typename T>
 class MeshTags;
 } // namespace dolfinx::mesh
 
@@ -150,10 +150,12 @@ public:
 
   /// Write MeshTags
   /// @param[in] meshtags
+  /// @param[in] x Mesh geometry
   /// @param[in] geometry_xpath XPath where Geometry is already stored
-  ///   in file
+  /// in file
   /// @param[in] xpath XPath where MeshTags Grid will be inserted
-  void write_meshtags(const mesh::MeshTags<std::int32_t, double>& meshtags,
+  void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
+                      const mesh::Geometry<double>& x,
                       std::string geometry_xpath,
                       std::string xpath = "/Xdmf/Domain");
 
@@ -161,9 +163,9 @@ public:
   /// @param[in] mesh The Mesh that the data is defined on
   /// @param[in] name
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
-  mesh::MeshTags<std::int32_t, double>
-  read_meshtags(std::shared_ptr<const mesh::Mesh<double>> mesh,
-                std::string name, std::string xpath = "/Xdmf/Domain");
+  mesh::MeshTags<std::int32_t>
+  read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
+                std::string xpath = "/Xdmf/Domain");
 
   /// Write Information
   /// @param[in] name

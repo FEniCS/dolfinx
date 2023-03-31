@@ -381,7 +381,7 @@ void petsc_module(py::module& m)
         dolfinx::la::SparsityPattern sp(
             comm, {dofmap1->index_map, dofmap0->index_map},
             {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-        dolfinx::fem::sparsitybuild::cells(sp, mesh->topology(),
+        dolfinx::fem::sparsitybuild::cells(sp, *mesh->topology(),
                                            {*dofmap1, *dofmap0});
         sp.assemble();
 
@@ -389,7 +389,7 @@ void petsc_module(py::module& m)
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
         dolfinx::fem::discrete_gradient<PetscScalar>(
-            V0.mesh()->topology_mutable(), {*V0.element(), *V0.dofmap()},
+            *V0.mesh()->topology_mutable(), {*V0.element(), *V0.dofmap()},
             {*V1.element(), *V1.dofmap()},
             dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
         return A;
@@ -417,7 +417,7 @@ void petsc_module(py::module& m)
         dolfinx::la::SparsityPattern sp(
             comm, {dofmap1->index_map, dofmap0->index_map},
             {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-        dolfinx::fem::sparsitybuild::cells(sp, mesh->topology(),
+        dolfinx::fem::sparsitybuild::cells(sp, *mesh->topology(),
                                            {*dofmap1, *dofmap0});
         sp.assemble();
 

@@ -82,8 +82,8 @@ get_cell_facet_pairs(std::int32_t f, const std::span<const std::int32_t>& cells,
 
 } // namespace impl
 
-/// @brief Given an integral type and MeshTags, compute the entities
-/// that should be integrated over.
+/// @brief Given an integral type and mesh tag data, compute the
+/// entities that should be integrated over.
 ///
 /// This function returns as list `[(id, entities)]`, where `entities`
 /// are the entities in `meshtags` with tag value `id`. For cell
@@ -103,10 +103,13 @@ get_cell_facet_pairs(std::int32_t f, const std::span<const std::int32_t>& cells,
 /// @param[in] values Value associated with each entity
 /// @return A list of (integral id, entities) pairs
 /// @pre The topological dimension of the integral entity type and the
-/// topological dimension of `meshtags` must be equal.
+/// topological dimension of mesh tag data must be equal.
+/// @pre For facet integrals, the topology facet-to-cell and
+/// cell-to-facet connectivity must be computed before calling this
+/// function.
 std::vector<std::pair<int, std::vector<std::int32_t>>>
 compute_integration_domains(IntegralType integral_type,
-                            mesh::Topology& topology,
+                            const mesh::Topology& topology,
                             std::span<const std::int32_t> entities, int dim,
                             std::span<const int> values);
 
@@ -181,9 +184,9 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
       or types.find(IntegralType::exterior_facet) != types.end())
   {
     // FIXME: cleanup these calls? Some of the happen internally again.
-    const int tdim = mesh->topology().dim();
-    mesh->topology_mutable().create_entities(tdim - 1);
-    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    const int tdim = mesh->topology()->dim();
+    mesh->topology_mutable()->create_entities(tdim - 1);
+    mesh->topology_mutable()->create_connectivity(tdim - 1, tdim);
   }
 
   common::Timer t0("Build sparsity");
@@ -325,16 +328,17 @@ Form<T, U> create_form(
   if (!mesh)
     throw std::runtime_error("No mesh could be associated with the Form.");
 
-  const mesh::Topology& topology = mesh->topology();
-  const int tdim = topology.dim();
+  auto topology = mesh->topology();
+  assert(topology);
+  const int tdim = topology->dim();
 
   // Create facets, if required
   if (ufcx_form.num_integrals(exterior_facet) > 0
       or ufcx_form.num_integrals(interior_facet) > 0)
   {
-    mesh->topology_mutable().create_entities(tdim - 1);
-    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
-    mesh->topology_mutable().create_connectivity(tdim, tdim - 1);
+    mesh->topology_mutable()->create_entities(tdim - 1);
+    mesh->topology_mutable()->create_connectivity(tdim - 1, tdim);
+    mesh->topology_mutable()->create_connectivity(tdim, tdim - 1);
   }
 
   // Get list of integral IDs, and load tabulate tensor into memory for
@@ -385,9 +389,9 @@ Form<T, U> create_form(
       if (id == -1)
       {
         // Default kernel, operates on all (owned) cells
-        assert(topology.index_map(tdim));
+        assert(topology->index_map(tdim));
         std::vector<std::int32_t> e;
-        e.resize(topology.index_map(tdim)->size_local(), 0);
+        e.resize(topology->index_map(tdim)->size_local(), 0);
         std::iota(e.begin(), e.end(), 0);
         itg.first->second.emplace_back(id, k, std::move(e));
       }
@@ -440,10 +444,10 @@ Form<T, U> create_form(
       assert(k);
 
       // Build list of entities to assembler over
-      const std::vector bfacets = mesh::exterior_facet_indices(topology);
-      auto f_to_c = topology.connectivity(tdim - 1, tdim);
+      const std::vector bfacets = mesh::exterior_facet_indices(*topology);
+      auto f_to_c = topology->connectivity(tdim - 1, tdim);
       assert(f_to_c);
-      auto c_to_f = topology.connectivity(tdim, tdim - 1);
+      auto c_to_f = topology->connectivity(tdim, tdim - 1);
       assert(c_to_f);
       if (id == -1)
       {
@@ -508,16 +512,16 @@ Form<T, U> create_form(
       assert(k);
 
       // Build list of entities to assembler over
-      auto f_to_c = topology.connectivity(tdim - 1, tdim);
+      auto f_to_c = topology->connectivity(tdim - 1, tdim);
       assert(f_to_c);
-      auto c_to_f = topology.connectivity(tdim, tdim - 1);
+      auto c_to_f = topology->connectivity(tdim, tdim - 1);
       assert(c_to_f);
       if (id == -1)
       {
         // Default kernel, operates on all (owned) interior facets
         std::vector<std::int32_t> e;
-        assert(topology.index_map(tdim - 1));
-        std::int32_t num_facets = topology.index_map(tdim - 1)->size_local();
+        assert(topology->index_map(tdim - 1));
+        std::int32_t num_facets = topology->index_map(tdim - 1)->size_local();
         e.reserve(4 * num_facets);
         for (std::int32_t f = 0; f < num_facets; ++f)
         {
@@ -678,8 +682,9 @@ create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
   ElementDofLayout layout(bs, e.entity_dofs(), e.entity_closure_dofs(), {},
                           sub_doflayout);
   assert(mesh);
+  assert(mesh->topology());
   auto dofmap = std::make_shared<const DofMap>(
-      create_dofmap(mesh->comm(), layout, mesh->topology(), reorder_fn, *_e));
+      create_dofmap(mesh->comm(), layout, *mesh->topology(), reorder_fn, *_e));
 
   return FunctionSpace(mesh, _e, dofmap);
 }
@@ -717,9 +722,7 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
   assert(ufcx_element);
 
   if (mesh->geometry().cmaps().size() > 1)
-  {
     throw std::runtime_error("Not supported for Mixed Topology");
-  }
 
   if (space->geometry_degree != mesh->geometry().cmaps()[0].degree()
       or static_cast<basix::cell::type>(space->geometry_basix_cell)
@@ -736,12 +739,13 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
   assert(element);
   ufcx_dofmap* ufcx_map = space->dofmap;
   assert(ufcx_map);
+  assert(mesh->topology());
   ElementDofLayout layout
-      = create_element_dof_layout(*ufcx_map, mesh->topology().cell_types()[0]);
+      = create_element_dof_layout(*ufcx_map, mesh->topology()->cell_types()[0]);
   return FunctionSpace(
       mesh, element,
       std::make_shared<DofMap>(create_dofmap(
-          mesh->comm(), layout, mesh->topology(), reorder_fn, *element)));
+          mesh->comm(), layout, *mesh->topology(), reorder_fn, *element)));
 }
 
 /// @private
@@ -768,8 +772,8 @@ std::span<const std::uint32_t> get_cell_orientation_info(
   if (needs_dof_transformations)
   {
     auto mesh = coefficients.front()->function_space()->mesh();
-    mesh->topology_mutable().create_entity_permutations();
-    cell_info = std::span(mesh->topology().get_cell_permutation_info());
+    mesh->topology_mutable()->create_entity_permutations();
+    cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
   return cell_info;
@@ -806,13 +810,12 @@ void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
 /// @private
 /// @brief  Concepts for function that returns cell index
 template <typename F>
-concept FetchCells
-    = requires(F&& f, std::span<const std::int32_t> v) {
-        requires std::invocable<F, std::span<const std::int32_t>>;
-        {
-          f(v)
-          } -> std::convertible_to<std::int32_t>;
-      };
+concept FetchCells = requires(F&& f, std::span<const std::int32_t> v) {
+  requires std::invocable<F, std::span<const std::int32_t>>;
+  {
+    f(v)
+  } -> std::convertible_to<std::int32_t>;
+};
 
 /// @brief Pack a single coefficient for a set of active entities.
 ///

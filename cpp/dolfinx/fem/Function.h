@@ -171,8 +171,8 @@ public:
   {
     assert(_function_space);
     assert(_function_space->mesh());
-    int tdim = _function_space->mesh()->topology().dim();
-    auto cell_map = _function_space->mesh()->topology().index_map(tdim);
+    int tdim = _function_space->mesh()->topology()->dim();
+    auto cell_map = _function_space->mesh()->topology()->index_map(tdim);
     assert(cell_map);
     std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
@@ -251,8 +251,8 @@ public:
   {
     assert(_function_space);
     assert(_function_space->mesh());
-    const int tdim = _function_space->mesh()->topology().dim();
-    auto cell_map = _function_space->mesh()->topology().index_map(tdim);
+    const int tdim = _function_space->mesh()->topology()->dim();
+    auto cell_map = _function_space->mesh()->topology()->index_map(tdim);
     assert(cell_map);
     std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
@@ -338,8 +338,8 @@ public:
   {
     assert(_function_space);
     assert(_function_space->mesh());
-    const int tdim = _function_space->mesh()->topology().dim();
-    auto cell_map = _function_space->mesh()->topology().index_map(tdim);
+    const int tdim = _function_space->mesh()->topology()->dim();
+    auto cell_map = _function_space->mesh()->topology()->index_map(tdim);
     assert(cell_map);
     std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
@@ -390,8 +390,8 @@ public:
     auto mesh = _function_space->mesh();
     assert(mesh);
     const std::size_t gdim = mesh->geometry().dim();
-    const std::size_t tdim = mesh->topology().dim();
-    auto map = mesh->topology().index_map(tdim);
+    const std::size_t tdim = mesh->topology()->dim();
+    auto map = mesh->topology()->index_map(tdim);
 
     // Get coordinate map
     if (mesh->geometry().cmaps().size() > 1)
@@ -436,8 +436,8 @@ public:
     std::span<const std::uint32_t> cell_info;
     if (element->needs_dof_transformations())
     {
-      mesh->topology_mutable().create_entity_permutations();
-      cell_info = std::span(mesh->topology().get_cell_permutation_info());
+      mesh->topology_mutable()->create_entity_permutations();
+      cell_info = std::span(mesh->topology()->get_cell_permutation_info());
     }
 
     namespace stdex = std::experimental;

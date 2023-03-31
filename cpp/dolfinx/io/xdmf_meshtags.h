@@ -20,24 +20,19 @@
 
 namespace dolfinx
 {
-namespace io
+namespace io::xdmf_meshtags
 {
-namespace xdmf_meshtags
-{
-
 /// Add mesh tags to XDMF file
-template <typename T>
-void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T, double>& meshtags,
-                  pugi::xml_node& xml_node, const hid_t h5_id,
-                  const std::string name)
+template <typename T, typename U>
+void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
+                  const mesh::Geometry<U>& geometry, pugi::xml_node& xml_node,
+                  const hid_t h5_id, const std::string name)
 {
   LOG(INFO) << "XDMF: add meshtags (" << name << ")";
   // Get mesh
-  assert(meshtags.mesh());
-  auto mesh = meshtags.mesh();
   const int dim = meshtags.dim();
   std::shared_ptr<const common::IndexMap> entity_map
-      = mesh->topology().index_map(dim);
+      = meshtags.topology()->index_map(dim);
   if (!entity_map)
   {
     throw std::runtime_error("Missing entities. Did you forget to call "
@@ -52,8 +47,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T, double>& meshtags,
 
   const std::string path_prefix = "/MeshTags/" + name;
   xdmf_mesh::add_topology_data(
-      comm, xml_node, h5_id, path_prefix, mesh->topology(), mesh->geometry(),
-      dim,
+      comm, xml_node, h5_id, path_prefix, *meshtags.topology(), geometry, dim,
       std::span<const std::int32_t>(meshtags.indices().data(),
                                     num_active_entities));
 
@@ -78,6 +72,5 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T, double>& meshtags,
       {global_num_values, 1}, "", use_mpi_io);
 }
 
-} // namespace xdmf_meshtags
-} // namespace io
+} // namespace io::xdmf_meshtags
 } // namespace dolfinx

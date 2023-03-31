@@ -74,8 +74,8 @@ void io(py::module& m)
                 std::span(values.data(), values.size()));
 
         std::size_t num_vert_per_entity = dolfinx::mesh::cell_num_entities(
-            dolfinx::mesh::cell_entity_type(mesh.topology().cell_types().back(),
-                                            entity_dim, 0),
+            dolfinx::mesh::cell_entity_type(
+                mesh.topology()->cell_types().back(), entity_dim, 0),
             0);
         std::array shape_e
             = {entities_values.first.size() / num_vert_per_entity,
@@ -143,7 +143,7 @@ void io(py::module& m)
                double, std::string>(&dolfinx::io::XDMFFile::write_function),
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
       .def("write_meshtags", &dolfinx::io::XDMFFile::write_meshtags,
-           py::arg("meshtags"),
+           py::arg("meshtags"), py::arg("x"),
            py::arg("geometry_xpath") = "/Xdmf/Domain/Grid/Geometry",
            py::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
