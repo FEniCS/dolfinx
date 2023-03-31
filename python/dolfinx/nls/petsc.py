@@ -35,6 +35,10 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         self.setF(problem.F, self._b)
         self.set_form(problem.form)
 
+    def __del__(self):
+        self._A.destroy()
+        self._b.destroy()
+
     def solve(self, u: fem.Function):
         """Solve non-linear problem into function u. Returns the number
         of iterations and if the solver converged."""
@@ -59,5 +63,6 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         Args:
             P: Function to compute the preconditioner matrix
             Pmat: Matrix to assemble the preconditioner into
+
         """
         super().setP(P, Pmat)

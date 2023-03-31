@@ -9,6 +9,7 @@
 #include "assemble_matrix_impl.h"
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
+#include "utils.h"
 #include <cstdint>
 #include <memory>
 #include <span>
@@ -26,7 +27,7 @@ class FunctionSpace;
 
 /// @brief Create a map of `std::span`s from a map of `std::vector`s
 template <typename T>
-std::map<std::pair<fem::IntegralType, int>, std::pair<std::span<const T>, int>>
+std::map<std::pair<IntegralType, int>, std::pair<std::span<const T>, int>>
 make_coefficients_span(const std::map<std::pair<IntegralType, int>,
                                       std::pair<std::vector<T>, int>>& coeffs)
 {
@@ -58,7 +59,16 @@ T assemble_scalar(
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
-  return impl::assemble_scalar(M, constants, coefficients);
+  std::shared_ptr<const mesh::Mesh> mesh = M.mesh();
+  assert(mesh);
+  if constexpr (std::is_same_v<double, impl::scalar_value_type_t<T>>)
+    return impl::assemble_scalar(M, mesh->geometry(), constants, coefficients);
+  else
+  {
+    return impl::assemble_scalar(
+        M, mesh->geometry().astype<impl::scalar_value_type_t<T>>(), constants,
+        coefficients);
+  }
 }
 
 /// Assemble functional into scalar
@@ -136,9 +146,31 @@ void apply_lifting(
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
-    const std::vector<std::span<const T>>& x0, double scale)
+    const std::vector<std::span<const T>>& x0, T scale)
 {
-  impl::apply_lifting(b, a, constants, coeffs, bcs1, x0, scale);
+  std::shared_ptr<const mesh::Mesh> mesh;
+  for (auto& a_i : a)
+  {
+    if (a_i and !mesh)
+      mesh = a_i->mesh();
+    if (a_i and mesh and a_i->mesh() != mesh)
+      throw std::runtime_error("Mismatch between meshes.");
+  }
+
+  if (!mesh)
+    throw std::runtime_error("Unable to extract a mesh.");
+
+  if constexpr (std::is_same_v<double, impl::scalar_value_type_t<T>>)
+  {
+    impl::apply_lifting<T>(b, a, mesh->geometry(), constants, coeffs, bcs1, x0,
+                           scale);
+  }
+  else
+  {
+    impl::apply_lifting<T>(
+        b, a, mesh->geometry().astype<impl::scalar_value_type_t<T>>(),
+        constants, coeffs, bcs1, x0, scale);
+  }
 }
 
 /// Modify b such that:
@@ -157,7 +189,7 @@ template <typename T>
 void apply_lifting(
     std::span<T> b, const std::vector<std::shared_ptr<const Form<T>>>& a,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T>>>>& bcs1,
-    const std::vector<std::span<const T>>& x0, double scale)
+    const std::vector<std::span<const T>>& x0, T scale)
 {
   std::vector<
       std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>>
@@ -186,10 +218,47 @@ void apply_lifting(
       _coeffs;
   std::transform(coeffs.cbegin(), coeffs.cend(), std::back_inserter(_coeffs),
                  [](auto& c) { return make_coefficients_span(c); });
+
   apply_lifting(b, a, _constants, _coeffs, bcs1, x0, scale);
 }
 
 // -- Matrices ---------------------------------------------------------------
+
+/// @brief Assemble bilinear form into a matrix. Matrix must already be
+/// initialised. Does not zero or finalise the matrix.
+/// @param[in] mat_add The function for adding values into the matrix
+/// @param[in] a The bilinear form to assemble
+/// @param[in] constants Constants that appear in `a`
+/// @param[in] coefficients Coefficients that appear in `a`
+/// @param[in] dof_marker0 Boundary condition markers for the rows. If
+/// bc[i] is true then rows i in A will be zeroed. The index i is a
+/// local index.
+/// @param[in] dof_marker1 Boundary condition markers for the columns.
+/// If bc[i] is true then rows i in A will be zeroed. The index i is a
+/// local index.
+template <typename T>
+void assemble_matrix(
+    auto mat_add, const Form<T>& a, std::span<const T> constants,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<std::span<const T>, int>>& coefficients,
+    std::span<const std::int8_t> dof_marker0,
+    std::span<const std::int8_t> dof_marker1)
+
+{
+  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
+  assert(mesh);
+  if constexpr (std::is_same_v<double, impl::scalar_value_type_t<T>>)
+  {
+    impl::assemble_matrix(mat_add, a, mesh->geometry(), constants, coefficients,
+                          dof_marker0, dof_marker1);
+  }
+  else
+  {
+    impl::assemble_matrix(
+        mat_add, a, mesh->geometry().astype<impl::scalar_value_type_t<T>>(),
+        constants, coefficients, dof_marker0, dof_marker1);
+  }
+}
 
 /// Assemble bilinear form into a matrix
 /// @param[in] mat_add The function for adding values into the matrix
@@ -235,8 +304,8 @@ void assemble_matrix(
   }
 
   // Assemble
-  impl::assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
-                        dof_marker1);
+  assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
+                  dof_marker1);
 }
 
 /// Assemble bilinear form into a matrix
@@ -257,31 +326,6 @@ void assemble_matrix(
   // Assemble
   assemble_matrix(mat_add, a, std::span(constants),
                   make_coefficients_span(coefficients), bcs);
-}
-
-/// @brief Assemble bilinear form into a matrix. Matrix must already be
-/// initialised. Does not zero or finalise the matrix.
-/// @param[in] mat_add The function for adding values into the matrix
-/// @param[in] a The bilinear form to assemble
-/// @param[in] constants Constants that appear in `a`
-/// @param[in] coefficients Coefficients that appear in `a`
-/// @param[in] dof_marker0 Boundary condition markers for the rows. If
-/// bc[i] is true then rows i in A will be zeroed. The index i is a
-/// local index.
-/// @param[in] dof_marker1 Boundary condition markers for the columns.
-/// If bc[i] is true then rows i in A will be zeroed. The index i is a
-/// local index.
-template <typename T>
-void assemble_matrix(
-    auto mat_add, const Form<T>& a, std::span<const T> constants,
-    const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::span<const T>, int>>& coefficients,
-    std::span<const std::int8_t> dof_marker0,
-    std::span<const std::int8_t> dof_marker1)
-
-{
-  impl::assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
-                        dof_marker1);
 }
 
 /// @brief Assemble bilinear form into a matrix. Matrix must already be
@@ -350,7 +394,7 @@ void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
 /// @param[in] diagonal The value to add to the diagonal for rows with a
 /// boundary condition applied
 template <typename T>
-void set_diagonal(auto set_fn, const fem::FunctionSpace& V,
+void set_diagonal(auto set_fn, const FunctionSpace& V,
                   const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
                   T diagonal = 1.0)
 {
@@ -378,7 +422,7 @@ void set_diagonal(auto set_fn, const fem::FunctionSpace& V,
 template <typename T>
 void set_bc(std::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
-            std::span<const T> x0, double scale = 1.0)
+            std::span<const T> x0, T scale = 1)
 {
   if (b.size() > x0.size())
     throw std::runtime_error("Size mismatch between b and x0 vectors.");
@@ -395,7 +439,7 @@ void set_bc(std::span<T> b,
 template <typename T>
 void set_bc(std::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T>>>& bcs,
-            double scale = 1.0)
+            T scale = 1)
 {
   for (const auto& bc : bcs)
   {

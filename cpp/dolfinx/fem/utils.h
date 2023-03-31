@@ -54,6 +54,35 @@ class FunctionSpace;
 
 namespace impl
 {
+/// Helper function to get an array of of (cell, local_facet) pairs
+/// corresponding to a given facet index.
+/// @param[in] f Facet index
+/// @param[in] cells List of cells incident to the facet
+/// @param[in] c_to_f Cell to facet connectivity
+/// @return Vector of (cell, local_facet) pairs
+template <int num_cells>
+std::array<std::int32_t, 2 * num_cells>
+get_cell_facet_pairs(std::int32_t f, const std::span<const std::int32_t>& cells,
+                     const graph::AdjacencyList<std::int32_t>& c_to_f)
+{
+  // Loop over cells sharing facet
+  assert(cells.size() == num_cells);
+  std::array<std::int32_t, 2 * num_cells> cell_local_facet_pairs;
+  for (int c = 0; c < num_cells; ++c)
+  {
+    // Get local index of facet with respect to the cell
+    std::int32_t cell = cells[c];
+    auto cell_facets = c_to_f.links(cell);
+    auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), f);
+    assert(facet_it != cell_facets.end());
+    int local_f = std::distance(cell_facets.begin(), facet_it);
+    cell_local_facet_pairs[2 * c] = cell;
+    cell_local_facet_pairs[2 * c + 1] = local_f;
+  }
+
+  return cell_local_facet_pairs;
+}
+
 /// @private These structs are used to get the float/value type from a
 /// template argument, including support for complex types.
 template <typename T, typename = void>
@@ -73,6 +102,29 @@ template <typename T>
 using scalar_value_type_t = typename scalar_value_type<T>::value_type;
 
 } // namespace impl
+
+/// @brief Given an integral type and MeshTags, compute the entities
+/// that should be integrated over.
+///
+/// This function returns as list `[(id, entities)]`, where `entities`
+/// are the entities in `meshtags` with tag value `id`. For cell
+/// integrals `entities` are the cell indices. For exterior facet
+/// integrals, `entities` is a list of `(cell_index, local_facet_index)`
+/// pairs. For interior facet integrals, `entities` is a list of
+/// `(cell_index0, local_facet_index0, cell_index1,
+/// local_facet_index1)`.
+///
+/// @note Owned mesh entities only are returned. Ghost entities are not
+/// included.
+///
+/// @param[in] integral_type Integral type
+/// @param[in] meshtags The meshtags
+/// @return A list of (integral id, entities) pairs
+/// @pre The topological dimension of the integral entity type and the
+/// topological dimension of `meshtags` must be equal.
+std::vector<std::pair<int, std::vector<std::int32_t>>>
+compute_integration_domains(IntegralType integral_type,
+                            const mesh::MeshTags<int>& meshtags);
 
 /// @brief Finite element cell kernel concept.
 ///
@@ -219,7 +271,7 @@ create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
 
 /// Get the name of each coefficient in a UFC form
 /// @param[in] ufcx_form The UFC form
-/// return The name of each coefficient
+/// @return The name of each coefficient
 std::vector<std::string> get_coefficient_names(const ufcx_form& ufcx_form);
 
 /// @brief Get the name of each constant in a UFC form
@@ -233,6 +285,7 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] coefficients Coefficient fields in the form
 /// @param[in] constants Spatial constants in the form
 /// @param[in] subdomains Subdomain markers
+/// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain
 template <typename T>
 Form<T> create_form(
@@ -240,7 +293,10 @@ Form<T> create_form(
     const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
     const std::vector<std::shared_ptr<const Function<T>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
+    const std::map<
+        IntegralType,
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
+        subdomains,
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
   if (ufcx_form.rank != (int)spaces.size())
@@ -272,161 +328,246 @@ Form<T> create_form(
   }
 #endif
 
+  // Extract mesh from FunctionSpace, and check they are the same
+  if (!mesh and !spaces.empty())
+    mesh = spaces[0]->mesh();
+  for (auto& V : spaces)
+  {
+    if (mesh != V->mesh())
+      throw std::runtime_error("Incompatible mesh");
+  }
+  if (!mesh)
+    throw std::runtime_error("No mesh could be associated with the Form.");
+
+  const mesh::Topology& topology = mesh->topology();
+  const int tdim = topology.dim();
+
+  // Create facets, if required
+  if (ufcx_form.num_integrals(exterior_facet) > 0
+      or ufcx_form.num_integrals(interior_facet) > 0)
+  {
+    mesh->topology_mutable().create_entities(tdim - 1);
+    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
+    mesh->topology_mutable().create_connectivity(tdim, tdim - 1);
+  }
+
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
   using kern = std::function<void(
       T*, const T*, const T*,
       const typename impl::scalar_value_type<T>::value_type*, const int*,
       const std::uint8_t*)>;
-  std::map<IntegralType, std::pair<std::vector<std::pair<int, kern>>,
-                                   const mesh::MeshTags<int>*>>
+  std::map<IntegralType,
+           std::vector<std::tuple<int, kern, std::vector<std::int32_t>>>>
       integral_data;
 
   bool needs_facet_permutations = false;
 
   // Attach cell kernels
-  std::vector<int> cell_integral_ids(ufcx_form.integral_ids(cell),
-                                     ufcx_form.integral_ids(cell)
-                                         + ufcx_form.num_integrals(cell));
-  for (int i = 0; i < ufcx_form.num_integrals(cell); ++i)
   {
-    ufcx_integral* integral = ufcx_form.integrals(cell)[i];
-    assert(integral);
-
-    kern k = nullptr;
-    if constexpr (std::is_same_v<T, float>)
-      k = integral->tabulate_tensor_float32;
-    else if constexpr (std::is_same_v<T, std::complex<float>>)
+    std::span<const int> ids(ufcx_form.integral_ids(cell),
+                             ufcx_form.num_integrals(cell));
+    auto itg = integral_data.insert({IntegralType::cell, {}});
+    auto sd = subdomains.find(IntegralType::cell);
+    for (int i = 0; i < ufcx_form.num_integrals(cell); ++i)
     {
-      k = reinterpret_cast<void (*)(
-          T*, const T*, const T*,
-          const typename impl::scalar_value_type<T>::value_type*, const int*,
-          const unsigned char*)>(integral->tabulate_tensor_complex64);
-    }
-    else if constexpr (std::is_same_v<T, double>)
-      k = integral->tabulate_tensor_float64;
-    else if constexpr (std::is_same_v<T, std::complex<double>>)
-    {
-      k = reinterpret_cast<void (*)(
-          T*, const T*, const T*,
-          const typename impl::scalar_value_type<T>::value_type*, const int*,
-          const unsigned char*)>(integral->tabulate_tensor_complex128);
-    }
-    assert(k);
+      const int id = ids[i];
+      ufcx_integral* integral = ufcx_form.integrals(cell)[i];
+      assert(integral);
 
-    integral_data[IntegralType::cell].first.emplace_back(cell_integral_ids[i],
-                                                         k);
-    if (integral->needs_facet_permutations)
-      needs_facet_permutations = true;
-  }
+      kern k = nullptr;
+      if constexpr (std::is_same_v<T, float>)
+        k = integral->tabulate_tensor_float32;
+      else if constexpr (std::is_same_v<T, std::complex<float>>)
+      {
+        k = reinterpret_cast<void (*)(
+            T*, const T*, const T*,
+            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const unsigned char*)>(integral->tabulate_tensor_complex64);
+      }
+      else if constexpr (std::is_same_v<T, double>)
+        k = integral->tabulate_tensor_float64;
+      else if constexpr (std::is_same_v<T, std::complex<double>>)
+      {
+        k = reinterpret_cast<void (*)(
+            T*, const T*, const T*,
+            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const unsigned char*)>(integral->tabulate_tensor_complex128);
+      }
+      assert(k);
 
-  // Attach cell subdomain data
-  if (auto it = subdomains.find(IntegralType::cell);
-      it != subdomains.end() and !cell_integral_ids.empty())
-  {
-    integral_data[IntegralType::cell].second = it->second;
-  }
+      // Build list of entities to assembler over
+      if (id == -1)
+      {
+        // Default kernel, operates on all (owned) cells
+        assert(topology.index_map(tdim));
+        std::vector<std::int32_t> e;
+        e.resize(topology.index_map(tdim)->size_local(), 0);
+        std::iota(e.begin(), e.end(), 0);
+        itg.first->second.emplace_back(id, k, std::move(e));
+      }
+      else if (sd != subdomains.end())
+      {
+        // NOTE: This requires that pairs are sorted
+        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
+                                   [](auto& pair, auto val)
+                                   { return pair.first < val; });
+        if (it != sd->second.end() and it->first == id)
+          itg.first->second.emplace_back(id, k, it->second);
+      }
 
-  // FIXME: Can facets be handled better?
-
-  // Create facets, if required
-  if (ufcx_form.num_integrals(exterior_facet) > 0
-      or ufcx_form.num_integrals(interior_facet) > 0)
-  {
-    if (!spaces.empty())
-    {
-      auto mesh = spaces[0]->mesh();
-      const int tdim = mesh->topology().dim();
-      spaces[0]->mesh()->topology_mutable().create_entities(tdim - 1);
+      if (integral->needs_facet_permutations)
+        needs_facet_permutations = true;
     }
   }
 
   // Attach exterior facet kernels
-  std::vector<int> exterior_facet_integral_ids(
-      ufcx_form.integral_ids(exterior_facet),
-      ufcx_form.integral_ids(exterior_facet)
-          + ufcx_form.num_integrals(exterior_facet));
-  for (int i = 0; i < ufcx_form.num_integrals(exterior_facet); ++i)
   {
-    ufcx_integral* integral = ufcx_form.integrals(exterior_facet)[i];
-    assert(integral);
-
-    kern k = nullptr;
-    if constexpr (std::is_same_v<T, float>)
-      k = integral->tabulate_tensor_float32;
-    else if constexpr (std::is_same_v<T, std::complex<float>>)
+    std::span<const int> ids(ufcx_form.integral_ids(exterior_facet),
+                             ufcx_form.num_integrals(exterior_facet));
+    auto itg = integral_data.insert({IntegralType::exterior_facet, {}});
+    auto sd = subdomains.find(IntegralType::exterior_facet);
+    for (int i = 0; i < ufcx_form.num_integrals(exterior_facet); ++i)
     {
-      k = reinterpret_cast<void (*)(
-          T*, const T*, const T*,
-          const typename impl::scalar_value_type<T>::value_type*, const int*,
-          const unsigned char*)>(integral->tabulate_tensor_complex64);
-    }
-    else if constexpr (std::is_same_v<T, double>)
-      k = integral->tabulate_tensor_float64;
-    else if constexpr (std::is_same_v<T, std::complex<double>>)
-    {
-      k = reinterpret_cast<void (*)(
-          T*, const T*, const T*,
-          const typename impl::scalar_value_type<T>::value_type*, const int*,
-          const unsigned char*)>(integral->tabulate_tensor_complex128);
-    }
-    assert(k);
+      const int id = ids[i];
+      ufcx_integral* integral = ufcx_form.integrals(exterior_facet)[i];
+      assert(integral);
 
-    integral_data[IntegralType::exterior_facet].first.emplace_back(
-        exterior_facet_integral_ids[i], k);
-    if (integral->needs_facet_permutations)
-      needs_facet_permutations = true;
-  }
+      kern k = nullptr;
+      if constexpr (std::is_same_v<T, float>)
+        k = integral->tabulate_tensor_float32;
+      else if constexpr (std::is_same_v<T, std::complex<float>>)
+      {
+        k = reinterpret_cast<void (*)(
+            T*, const T*, const T*,
+            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const unsigned char*)>(integral->tabulate_tensor_complex64);
+      }
+      else if constexpr (std::is_same_v<T, double>)
+        k = integral->tabulate_tensor_float64;
+      else if constexpr (std::is_same_v<T, std::complex<double>>)
+      {
+        k = reinterpret_cast<void (*)(
+            T*, const T*, const T*,
+            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const unsigned char*)>(integral->tabulate_tensor_complex128);
+      }
+      assert(k);
 
-  // Attach exterior facet subdomain data
-  if (auto it = subdomains.find(IntegralType::exterior_facet);
-      it != subdomains.end() and !exterior_facet_integral_ids.empty())
-  {
-    integral_data[IntegralType::exterior_facet].second = it->second;
+      // Build list of entities to assembler over
+      const std::vector bfacets = mesh::exterior_facet_indices(topology);
+      auto f_to_c = topology.connectivity(tdim - 1, tdim);
+      assert(f_to_c);
+      auto c_to_f = topology.connectivity(tdim, tdim - 1);
+      assert(c_to_f);
+      if (id == -1)
+      {
+        // Default kernel, operates on all (owned) exterior facets
+        std::vector<std::int32_t> e;
+        e.reserve(2 * bfacets.size());
+        for (std::int32_t f : bfacets)
+        {
+          // There will only be one pair for an exterior facet integral
+          auto pair
+              = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
+          e.insert(e.end(), pair.begin(), pair.end());
+        }
+        itg.first->second.emplace_back(id, k, std::move(e));
+      }
+      else if (sd != subdomains.end())
+      {
+        // NOTE: This requires that pairs are sorted
+        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
+                                   [](auto& pair, auto val)
+                                   { return pair.first < val; });
+        if (it != sd->second.end() and it->first == id)
+          itg.first->second.emplace_back(id, k, it->second);
+      }
+
+      if (integral->needs_facet_permutations)
+        needs_facet_permutations = true;
+    }
   }
 
   // Attach interior facet kernels
-  std::vector<int> interior_facet_integral_ids(
-      ufcx_form.integral_ids(interior_facet),
-      ufcx_form.integral_ids(interior_facet)
-          + ufcx_form.num_integrals(interior_facet));
-  for (int i = 0; i < ufcx_form.num_integrals(interior_facet); ++i)
   {
-    ufcx_integral* integral = ufcx_form.integrals(interior_facet)[i];
-    assert(integral);
-
-    kern k = nullptr;
-    if constexpr (std::is_same_v<T, float>)
-      k = integral->tabulate_tensor_float32;
-    else if constexpr (std::is_same_v<T, std::complex<float>>)
+    std::span<const int> ids(ufcx_form.integral_ids(interior_facet),
+                             ufcx_form.num_integrals(interior_facet));
+    auto itg = integral_data.insert({IntegralType::interior_facet, {}});
+    auto sd = subdomains.find(IntegralType::interior_facet);
+    for (int i = 0; i < ufcx_form.num_integrals(interior_facet); ++i)
     {
-      k = reinterpret_cast<void (*)(
-          T*, const T*, const T*,
-          const typename impl::scalar_value_type<T>::value_type*, const int*,
-          const unsigned char*)>(integral->tabulate_tensor_complex64);
-    }
-    else if constexpr (std::is_same_v<T, double>)
-      k = integral->tabulate_tensor_float64;
-    else if constexpr (std::is_same_v<T, std::complex<double>>)
-    {
-      k = reinterpret_cast<void (*)(
-          T*, const T*, const T*,
-          const typename impl::scalar_value_type<T>::value_type*, const int*,
-          const unsigned char*)>(integral->tabulate_tensor_complex128);
-    }
-    assert(k);
+      const int id = ids[i];
+      ufcx_integral* integral = ufcx_form.integrals(interior_facet)[i];
+      assert(integral);
 
-    integral_data[IntegralType::interior_facet].first.emplace_back(
-        interior_facet_integral_ids[i], k);
-    if (integral->needs_facet_permutations)
-      needs_facet_permutations = true;
+      kern k = nullptr;
+      if constexpr (std::is_same_v<T, float>)
+        k = integral->tabulate_tensor_float32;
+      else if constexpr (std::is_same_v<T, std::complex<float>>)
+      {
+        k = reinterpret_cast<void (*)(
+            T*, const T*, const T*,
+            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const unsigned char*)>(integral->tabulate_tensor_complex64);
+      }
+      else if constexpr (std::is_same_v<T, double>)
+        k = integral->tabulate_tensor_float64;
+      else if constexpr (std::is_same_v<T, std::complex<double>>)
+      {
+        k = reinterpret_cast<void (*)(
+            T*, const T*, const T*,
+            const typename impl::scalar_value_type<T>::value_type*, const int*,
+            const unsigned char*)>(integral->tabulate_tensor_complex128);
+      }
+      assert(k);
+
+      // Build list of entities to assembler over
+      auto f_to_c = topology.connectivity(tdim - 1, tdim);
+      assert(f_to_c);
+      auto c_to_f = topology.connectivity(tdim, tdim - 1);
+      assert(c_to_f);
+      if (id == -1)
+      {
+        // Default kernel, operates on all (owned) interior facets
+        std::vector<std::int32_t> e;
+        assert(topology.index_map(tdim - 1));
+        std::int32_t num_facets = topology.index_map(tdim - 1)->size_local();
+        e.reserve(4 * num_facets);
+        for (std::int32_t f = 0; f < num_facets; ++f)
+        {
+          if (f_to_c->num_links(f) == 2)
+          {
+            auto pairs
+                = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
+            e.insert(e.end(), pairs.begin(), pairs.end());
+          }
+        }
+        itg.first->second.emplace_back(id, k, std::move(e));
+      }
+      else if (sd != subdomains.end())
+      {
+        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
+                                   [](auto& pair, auto val)
+                                   { return pair.first < val; });
+        if (it != sd->second.end() and it->first == id)
+          itg.first->second.emplace_back(id, k, it->second);
+      }
+
+      if (integral->needs_facet_permutations)
+        needs_facet_permutations = true;
+    }
   }
 
-  // Attach interior facet subdomain data
-  if (auto it = subdomains.find(IntegralType::interior_facet);
-      it != subdomains.end() and !interior_facet_integral_ids.empty())
+  std::map<IntegralType,
+           std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>
+      sd;
+  for (auto& [itg, data] : subdomains)
   {
-    integral_data[IntegralType::interior_facet].second = it->second;
+    std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>> x;
+    for (auto& [id, idx] : data)
+      x.emplace_back(id, std::vector(idx.data(), idx.data() + idx.size()));
+    sd.insert({itg, std::move(x)});
   }
 
   return Form<T>(spaces, integral_data, coefficients, constants,
@@ -439,6 +580,7 @@ Form<T> create_form(
 /// @param[in] coefficients Coefficient fields in the form (by name)
 /// @param[in] constants Spatial constants in the form (by name)
 /// @param[in] subdomains Subdomain makers
+/// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional
 /// @return A Form
@@ -449,7 +591,10 @@ Form<T> create_form(
     const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
+    const std::map<
+        IntegralType,
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
+        subdomains,
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
   // Place coefficients in appropriate order
@@ -486,6 +631,7 @@ Form<T> create_form(
 /// @param[in] coefficients Coefficient fields in the form (by name)
 /// @param[in] constants Spatial constants in the form (by name)
 /// @param[in] subdomains Subdomain markers
+/// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain. This is required if the form
 /// has no arguments, e.g. a functional.
 /// @return A Form
@@ -496,7 +642,10 @@ Form<T> create_form(
     const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    const std::map<IntegralType, const mesh::MeshTags<int>*>& subdomains,
+    const std::map<
+        IntegralType,
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
+        subdomains,
     std::shared_ptr<const mesh::Mesh> mesh = nullptr)
 {
   ufcx_form* form = fptr();
@@ -715,8 +864,8 @@ allocate_coefficient_storage(const Form<T>& form, IntegralType integral_type,
       num_entities = form.interior_facet_domains(id).size() / 2;
       break;
     default:
-      throw std::runtime_error(
-          "Could not allocate coefficient data. Integral type not supported.");
+      throw std::runtime_error("Could not allocate coefficient data. "
+                               "Integral type not supported.");
     }
   }
 
@@ -838,8 +987,8 @@ Expression<T> create_expression(
 {
   if (expression.rank > 0 and !argument_function_space)
   {
-    throw std::runtime_error(
-        "Expression has Argument but no Argument function space was provided.");
+    throw std::runtime_error("Expression has Argument but no Argument "
+                             "function space was provided.");
   }
 
   const std::size_t size

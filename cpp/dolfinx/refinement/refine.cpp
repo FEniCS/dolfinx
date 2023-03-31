@@ -22,7 +22,7 @@ mesh::Mesh refinement::refine(const mesh::Mesh& mesh, bool redistribute)
   }
 
   auto [refined_mesh, parent_cell, parent_facet]
-      = plaza::refine(mesh, redistribute, plaza::RefinementOptions::none);
+      = plaza::refine(mesh, redistribute, plaza::Option::none);
 
   // Report the number of refined cells
   const int D = mesh.topology().dim();
@@ -45,8 +45,8 @@ mesh::Mesh refinement::refine(const mesh::Mesh& mesh,
     throw std::runtime_error("Refinement only defined for simplices");
   }
 
-  auto [refined_mesh, parent_cell, parent_facet] = plaza::refine(
-      mesh, edges, redistribute, plaza::RefinementOptions::none);
+  auto [refined_mesh, parent_cell, parent_facet]
+      = plaza::refine(mesh, edges, redistribute, plaza::Option::none);
 
   // Report the number of refined cells
   const int D = mesh.topology().dim();

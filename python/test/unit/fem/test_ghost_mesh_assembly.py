@@ -62,6 +62,9 @@ def test_ghost_mesh_assembly(mode, dx, ds):
     normb = b.norm()
     assert normb == pytest.approx(1.582294032953906, rel=1.e-6, abs=1.e-12)
 
+    A.destroy()
+    b.destroy()
+
 
 @pytest.mark.parametrize("mode",
                          [GhostMode.shared_facet,
@@ -86,6 +89,5 @@ def test_ghost_mesh_dS_assembly(mode, dS):
 
     # Check that the norms are the same for all three modes
     normA = A.norm()
-    print(normA)
-
     assert normA == pytest.approx(2.1834054713561906, rel=1.e-6, abs=1.e-12)
+    A.destroy()
