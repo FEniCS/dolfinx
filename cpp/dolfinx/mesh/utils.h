@@ -884,7 +884,7 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 /// indices). For lowest order cells this will be just the cell
 /// vertices. For higher-order cells, other cells 'nodes' will be
 /// included.
-/// @param[in] element The coordinate element that describes the
+/// @param[in] elements The coordinate elements that describe the
 /// geometric mapping for cells
 /// @param[in] x The coordinates of mesh nodes
 /// @param[in] xshape The shape of `x`. It should be `(num_points, gdim)`.

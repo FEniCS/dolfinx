@@ -150,7 +150,7 @@ private:
 ///
 /// @param[in] comm The MPI communicator to build the Geometry on
 /// @param[in] topology The mesh topology
-/// @param[in] element The element that defines the geometry map for
+/// @param[in] elements The elements that defines the geometry map for
 /// each cell
 /// @param[in] cell_nodes The mesh cells, including higher-order
 /// geometry 'nodes'
