@@ -737,7 +737,7 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
   ufcx_dofmap* ufcx_map = space->dofmap;
   assert(ufcx_map);
   ElementDofLayout layout
-      = create_element_dof_layout(*ufcx_map, mesh->topology().cell_type());
+      = create_element_dof_layout(*ufcx_map, mesh->topology().cell_types()[0]);
   return FunctionSpace(
       mesh, element,
       std::make_shared<DofMap>(create_dofmap(
