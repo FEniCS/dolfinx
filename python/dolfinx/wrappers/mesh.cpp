@@ -140,6 +140,7 @@ template <typename T>
 void declare_mesh(py::module& m, std::string type)
 {
   std::string pyclass_geometry_name = std::string("Geometry_") + type;
+  //   std::string pyclass_geometry_name = std::string("Geometry");
   py::class_<dolfinx::mesh::Geometry<T>,
              std::shared_ptr<dolfinx::mesh::Geometry<T>>>(
       m, pyclass_geometry_name.c_str(), "Geometry object")
@@ -163,8 +164,8 @@ void declare_mesh(py::module& m, std::string type)
           &dolfinx::mesh::Geometry<double>::input_global_indices);
 
   // dolfinx::mesh::Mesh
-  std::string pyclass_mesh_name = std::string("Mesh");
-  //   std::string pyclass_mesh_name = std::string("Mesh_") + type;
+  //   std::string pyclass_mesh_name = std::string("Mesh");
+  std::string pyclass_mesh_name = std::string("Mesh_") + type;
   py::class_<dolfinx::mesh::Mesh<T>, std::shared_ptr<dolfinx::mesh::Mesh<T>>>(
       m, pyclass_mesh_name.c_str(), py::dynamic_attr(), "Mesh object")
       .def(py::init(
@@ -176,7 +177,7 @@ void declare_mesh(py::module& m, std::string type)
            py::arg("comm"), py::arg("topology"), py::arg("geometry"))
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh<T>::geometry),
-          "Mesh geometry", py::return_value_policy::reference_internal)
+          "Mesh geometry")
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh<T>::topology),
           "Mesh topology")
@@ -185,7 +186,7 @@ void declare_mesh(py::module& m, std::string type)
       .def_readwrite("name", &dolfinx::mesh::Mesh<T>::name);
 
   m.def(
-      "create_interval",
+      std::string("create_interval_" + type).c_str(),
       [](const MPICommWrapper comm, std::size_t n, std::array<double, 2> p,
          dolfinx::mesh::GhostMode ghost_mode,
          const PythonCellPartitionFunction& partitioner)
@@ -197,7 +198,7 @@ void declare_mesh(py::module& m, std::string type)
       py::arg("partitioner"));
 
   m.def(
-      "create_rectangle",
+      std::string("create_rectangle_" + type).c_str(),
       [](const MPICommWrapper comm,
          const std::array<std::array<double, 2>, 2>& p,
          std::array<std::size_t, 2> n, dolfinx::mesh::CellType celltype,
@@ -212,7 +213,7 @@ void declare_mesh(py::module& m, std::string type)
       py::arg("partitioner"), py::arg("diagonal"));
 
   m.def(
-      "create_box",
+      std::string("create_box_" + type).c_str(),
       [](const MPICommWrapper comm,
          const std::array<std::array<double, 3>, 2>& p,
          std::array<std::size_t, 3> n, dolfinx::mesh::CellType celltype,
@@ -247,8 +248,9 @@ void declare_mesh(py::module& m, std::string type)
              static_cast<std::size_t>(x.shape(1))},
             partitioner_wrapper);
       },
-      py::arg("comm"), py::arg("cells"), py::arg("element"), py::arg("x"),
-      py::arg("partitioner"), "Helper function for creating meshes.");
+      py::arg("comm"), py::arg("cells"), py::arg("element"),
+      py::arg("x").noconvert(), py::arg("partitioner"),
+      "Helper function for creating meshes.");
 
   m.def(
       "create_submesh",

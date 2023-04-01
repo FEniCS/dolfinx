@@ -255,6 +255,8 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
     except AttributeError:
         variant = basix.LagrangeVariant.unset
     cmap = _cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree, variant)
+
+    x = np.asarray(x)
     try:
         mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, partitioner)
     except TypeError:
@@ -429,7 +431,7 @@ def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
     if partitioner is None:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, rank=1))
-    mesh = _cpp.mesh.create_interval(comm, nx, points, ghost_mode, partitioner)
+    mesh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner)
     return Mesh(mesh, domain)
 
 
@@ -480,7 +482,7 @@ def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
     if partitioner is None:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, rank=1))
-    mesh = _cpp.mesh.create_rectangle(comm, points, n, cell_type, partitioner, diagonal)
+    mesh = _cpp.mesh.create_rectangle_float64(comm, points, n, cell_type, partitioner, diagonal)
     return Mesh(mesh, domain)
 
 
@@ -533,7 +535,7 @@ def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
     if partitioner is None:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, rank=1))
-    mesh = _cpp.mesh.create_box(comm, points, n, cell_type, partitioner)
+    mesh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner)
     return Mesh(mesh, domain)
 
 

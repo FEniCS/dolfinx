@@ -151,7 +151,9 @@ class XDMFFile(_cpp.io.XDMFFile):
         """Write mesh to file"""
         super().write_mesh(mesh._cpp_object, xpath)
 
-    def write_meshtags(self, tags: MeshTags, x: _cpp.mesh.Geometry, geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
+    # def write_meshtags(self, tags: MeshTags, x: _cpp.mesh.Geometry, geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
+    #                    xpath: str = "/Xdmf/Domain") -> None:
+    def write_meshtags(self, tags: MeshTags, x, geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
                        xpath: str = "/Xdmf/Domain") -> None:
         """Write mesh tags to file"""
         super().write_meshtags(tags._cpp_object, x, geometry_xpath, xpath)

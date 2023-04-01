@@ -7,12 +7,10 @@
 
 import numpy as np
 import pytest
-
 import ufl
 from basix.ufl import element
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.mesh import create_mesh
-
 from mpi4py import MPI
 
 
@@ -38,7 +36,7 @@ def test_div_conforming_triangle(space_type, order):
             output.append(result.dot(normal))
         return output
 
-    points = np.array([[0, 0], [1, 0], [1, 1], [0, 1]])
+    points = np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype=np.float64)
     cells = np.array([[0, 1, 2], [2, 3, 0]])
 
     result = perform_test(points, cells)
@@ -68,7 +66,7 @@ def test_div_conforming_tetrahedron(space_type, order):
             output.append(result.dot(normal))
         return output
 
-    points = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]])
+    points = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]], dtype=np.float64)
     cells = np.array([[0, 1, 2, 3], [1, 3, 2, 4]])
 
     result = perform_test(points, cells)
