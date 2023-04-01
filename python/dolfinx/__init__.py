@@ -26,12 +26,17 @@ del sys
 
 import sys
 
-from dolfinx import common
-from dolfinx import cpp as _cpp
-from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot
+from petsc4py import PETSc as _PETSc
+
+default_scalar_type = _PETSc.ScalarType
+
 # Initialise logging
 from dolfinx.common import (TimingType, git_commit_hash, has_debug, has_kahip,
                             has_parmetis, list_timings, timing)
+
+from dolfinx import common
+from dolfinx import cpp as _cpp
+from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot
 from dolfinx.cpp import __version__
 
 _cpp.common.init_logging(sys.argv)
@@ -48,9 +53,6 @@ def get_include(user=False):
         return os.path.join(os.path.dirname(d), "src")
 
 
-from petsc4py import PETSc as PETSc
-
-default_scalar_type = PETSc.ScalarType
 
 __all__ = [
     "fem", "common", "geometry", "graph", "io", "jit", "la", "log", "mesh", "nls", "plot",

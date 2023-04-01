@@ -22,7 +22,6 @@ import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
 from dolfinx.fem import dofmap
-
 from ufl.domain import extract_unique_domain
 
 from dolfinx import cpp as _cpp
