@@ -256,7 +256,7 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
         variant = basix.LagrangeVariant.unset
     cmap = _cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree, variant)
 
-    x = np.asarray(x)
+    x = np.asarray(x, order='C')
     try:
         mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, partitioner)
     except TypeError:
