@@ -72,7 +72,9 @@ Mat create_matrix_block(
 
   std::shared_ptr mesh = V[0][0]->mesh();
   assert(mesh);
-  const int tdim = mesh->topology()->dim();
+  auto topology = mesh->topology();
+  assert(topology);
+  const int tdim = topology->dim();
 
   // Build sparsity pattern for each block
   std::vector<std::vector<std::unique_ptr<la::SparsityPattern>>> patterns(
@@ -100,16 +102,38 @@ Mat create_matrix_block(
         auto& sp = patterns[row].back();
         assert(sp);
         if (form->num_integrals(IntegralType::cell) > 0)
-          sparsitybuild::cells(*sp, *mesh->topology(), dofmaps);
+        {
+          auto cells = topology->connectivity(tdim, 0);
+          assert(cells);
+          std::vector<std::int32_t> c(cells->num_nodes(), 0);
+          std::iota(c.begin(), c.end(), 0);
+          sparsitybuild::cells(*sp, c, dofmaps);
+        }
+
         if (form->num_integrals(IntegralType::interior_facet) > 0)
         {
           mesh->topology_mutable()->create_entities(tdim - 1);
-          sparsitybuild::interior_facets(*sp, *mesh->topology(), dofmaps);
+          sparsitybuild::interior_facets(*sp, *topology, dofmaps);
         }
+
         if (form->num_integrals(IntegralType::exterior_facet) > 0)
         {
           mesh->topology_mutable()->create_entities(tdim - 1);
-          sparsitybuild::exterior_facets(*sp, *mesh->topology(), dofmaps);
+          auto connectivity = topology->connectivity(tdim - 1, tdim);
+          if (!connectivity)
+          {
+            throw std::runtime_error(
+                "Facet-cell connectivity has not been computed.");
+          }
+
+          // Loop over owned facets
+          auto map = topology->index_map(tdim - 1);
+          assert(map);
+          std::vector<std::int32_t> cells;
+          for (int f = 0; f < map->size_local(); ++f)
+            if (auto c = connectivity->links(f); c.size() == 1)
+              cells.push_back(c[0]);
+          sparsitybuild::cells(*sp, cells, dofmaps);
         }
       }
       else

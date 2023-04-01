@@ -50,16 +50,41 @@ la::SparsityPattern fem::create_sparsity_pattern(
     switch (type)
     {
     case IntegralType::cell:
-      sparsitybuild::cells(pattern, topology, {{dofmaps[0], dofmaps[1]}});
+    {
+      auto cells = topology.connectivity(topology.dim(), 0);
+      assert(cells);
+      std::vector<std::int32_t> c(cells->num_nodes(), 0);
+      std::iota(c.begin(), c.end(), 0);
+      sparsitybuild::cells(pattern, c, {{dofmaps[0], dofmaps[1]}});
       break;
+    }
     case IntegralType::interior_facet:
       sparsitybuild::interior_facets(pattern, topology,
                                      {{dofmaps[0], dofmaps[1]}});
       break;
     case IntegralType::exterior_facet:
-      sparsitybuild::exterior_facets(pattern, topology,
-                                     {{dofmaps[0], dofmaps[1]}});
+    {
+      int tdim = topology.dim();
+
+      // Loop over owned facets
+      auto map = topology.index_map(tdim - 1);
+      if (!map)
+        throw std::runtime_error("Facets have not been created.");
+      auto connectivity = topology.connectivity(tdim - 1, tdim);
+      if (!connectivity)
+      {
+        throw std::runtime_error(
+            "Facet-to-cell connectivity has not been computed.");
+      }
+      std::vector<std::int32_t> cells;
+      for (int f = 0; f < map->size_local(); ++f)
+      {
+        if (auto c = connectivity->links(f); c.size() == 1)
+          cells.push_back(c[0]);
+      }
+      sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}});
       break;
+    }
     default:
       throw std::runtime_error("Unsupported integral type");
     }
@@ -231,11 +256,12 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
           "Topology facet-to-cell connectivity has not been computed.");
     }
     auto c_to_f = topology.connectivity(tdim, tdim - 1);
+    if (!c_to_f)
     {
-      if (!c_to_f)
-        throw std::runtime_error(
-            "Topology cell-to-facet connectivity has not been computed.");
+      throw std::runtime_error(
+          "Topology cell-to-facet connectivity has not been computed.");
     }
+
     switch (integral_type)
     {
     case IntegralType::exterior_facet:

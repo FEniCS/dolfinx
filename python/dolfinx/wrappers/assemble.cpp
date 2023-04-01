@@ -378,8 +378,13 @@ void petsc_module(py::module& m)
         dolfinx::la::SparsityPattern sp(
             comm, {dofmap1->index_map, dofmap0->index_map},
             {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-        dolfinx::fem::sparsitybuild::cells(sp, *mesh->topology(),
-                                           {*dofmap1, *dofmap0});
+
+        int tdim = mesh->topology()->dim();
+        auto cells = mesh->topology()->connectivity(tdim, 0);
+        assert(cells);
+        std::vector<std::int32_t> c(cells->num_nodes(), 0);
+        std::iota(c.begin(), c.end(), 0);
+        dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
         sp.assemble();
 
         // Build operator
@@ -414,8 +419,13 @@ void petsc_module(py::module& m)
         dolfinx::la::SparsityPattern sp(
             comm, {dofmap1->index_map, dofmap0->index_map},
             {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-        dolfinx::fem::sparsitybuild::cells(sp, *mesh->topology(),
-                                           {*dofmap1, *dofmap0});
+
+        int tdim = mesh->topology()->dim();
+        auto cells = mesh->topology()->connectivity(tdim, 0);
+        assert(cells);
+        std::vector<std::int32_t> c(cells->num_nodes(), 0);
+        std::iota(c.begin(), c.end(), 0);
+        dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
         sp.assemble();
 
         // Build operator

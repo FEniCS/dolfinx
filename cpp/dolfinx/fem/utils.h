@@ -223,8 +223,11 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
       for (int id : ids)
       {
         const std::vector<std::int32_t>& facets = a.exterior_facet_domains(id);
-        sparsitybuild::exterior_facets(pattern, facets,
-                                       {{dofmaps[0], dofmaps[1]}});
+        std::vector<std::int32_t> cells;
+        cells.reserve(facets.size() / 2);
+        for (std::size_t i = 0; i < facets.size() / 2; ++i)
+          cells.push_back(facets[2 * i]);
+        sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}});
       }
       break;
     default:

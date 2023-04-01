@@ -16,28 +16,13 @@ using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 void sparsitybuild::cells(
-    la::SparsityPattern& pattern, const mesh::Topology& topology,
+    la::SparsityPattern& pattern, std::span<const std::int32_t> cells,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps)
 {
-  const int D = topology.dim();
-  auto cells = topology.connectivity(D, 0);
-  assert(cells);
-  for (int c = 0; c < cells->num_nodes(); ++c)
-  {
-    pattern.insert(dofmaps[0].get().cell_dofs(c),
-                   dofmaps[1].get().cell_dofs(c));
-  }
-}
-//-----------------------------------------------------------------------------
-void sparsitybuild::cells(
-    la::SparsityPattern& pattern, const std::span<const std::int32_t>& cells,
-    const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps)
-{
-  for (std::int32_t c : cells)
-  {
-    pattern.insert(dofmaps[0].get().cell_dofs(c),
-                   dofmaps[1].get().cell_dofs(c));
-  }
+  const DofMap& map0 = dofmaps[0].get();
+  const DofMap& map1 = dofmaps[1].get();
+  for (auto c : cells)
+    pattern.insert(map0.cell_dofs(c), map1.cell_dofs(c));
 }
 //-----------------------------------------------------------------------------
 void sparsitybuild::interior_facets(
@@ -87,14 +72,14 @@ void sparsitybuild::interior_facets(
 }
 //-----------------------------------------------------------------------------
 void sparsitybuild::interior_facets(
-    la::SparsityPattern& pattern, const std::span<const std::int32_t>& facets,
+    la::SparsityPattern& pattern, std::span<const std::int32_t> facets,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps)
 {
   std::array<std::vector<std::int32_t>, 2> macro_dofs;
   for (std::size_t index = 0; index < facets.size(); index += 4)
   {
-    const int cell_0 = facets[index];
-    const int cell_1 = facets[index + 2];
+    int cell_0 = facets[index];
+    int cell_1 = facets[index + 2];
     for (std::size_t i = 0; i < 2; ++i)
     {
       auto cell_dofs_0 = dofmaps[i].get().cell_dofs(cell_0);
@@ -106,47 +91,6 @@ void sparsitybuild::interior_facets(
     }
 
     pattern.insert(macro_dofs[0], macro_dofs[1]);
-  }
-}
-//-----------------------------------------------------------------------------
-void sparsitybuild::exterior_facets(
-    la::SparsityPattern& pattern, const mesh::Topology& topology,
-    const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps)
-{
-  const int D = topology.dim();
-  if (!topology.connectivity(D - 1, 0))
-    throw std::runtime_error("Topology facets have not been created.");
-
-  auto connectivity = topology.connectivity(D - 1, D);
-  if (!connectivity)
-    throw std::runtime_error("Facet-cell connectivity has not been computed.");
-
-  // Loop over owned facets
-  auto map = topology.index_map(D - 1);
-  assert(map);
-  const std::int32_t num_facets = map->size_local();
-  for (int f = 0; f < num_facets; ++f)
-  {
-    // Proceed to next facet if we have an interior facet
-    if (connectivity->num_links(f) == 2)
-      continue;
-
-    auto cells = connectivity->links(f);
-    assert(cells.size() == 1);
-    pattern.insert(dofmaps[0].get().cell_dofs(cells[0]),
-                   dofmaps[1].get().cell_dofs(cells[0]));
-  }
-}
-//-----------------------------------------------------------------------------
-void sparsitybuild::exterior_facets(
-    la::SparsityPattern& pattern, const std::span<const std::int32_t>& facets,
-    const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps)
-{
-  for (std::size_t index = 0; index < facets.size(); index += 2)
-  {
-    std::int32_t cell = facets[index];
-    pattern.insert(dofmaps[0].get().cell_dofs(cell),
-                   dofmaps[1].get().cell_dofs(cell));
   }
 }
 //-----------------------------------------------------------------------------
