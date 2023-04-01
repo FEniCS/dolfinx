@@ -23,7 +23,6 @@ if typing.TYPE_CHECKING:
     from dolfinx.mesh import Mesh
 
 
-
 class FormMetaClass:
     def __init__(self, form, V: list[_cpp.fem.FunctionSpace], coeffs, constants,
                  subdomains: dict[IntegralType, typing.Union[None, _cpp.mesh.MeshTags_in32t]],
